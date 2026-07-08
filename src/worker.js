@@ -1546,6 +1546,475 @@ async function handleStewardshipGivingRetention(request, env, parishId) {
   });
 }
 
+// GET /api/parish/dashboard/:parishId/stewardship/giving/concentration
+// Board-level concentration risk: what share of annual giving comes from
+// the top 5 / top 10 households. Anonymized — same aggregation as the
+// distribution histogram, just ranked instead of bucketed, and never
+// returns anything more identifying than a rank position.
+async function handleStewardshipGivingConcentration(request, env, parishId) {
+  const auth = await verifyParishDashboard(request, env, parishId);
+  if (!auth) return unauthorized();
+  const gate = await requireStewardshipFeature(env, parishId);
+  if (gate) return gate;
+
+  const url  = new URL(request.url);
+  const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
+
+  const rows = await env.AGAPAY_DB.prepare(`
+    SELECT
+      donor_email,
+      SUM(COALESCE(json_extract(data, '$.giftAmountCents'), json_extract(data, '$.amountCents'), 0)) AS donor_total_cents
+    FROM donor_offerings
+    WHERE parish_id = ? AND payment_status = 'paid'
+      AND created_at BETWEEN ? AND ?
+    GROUP BY donor_email
+    HAVING donor_total_cents > 0
+  `).bind(parishId, `${year}-01-01`, `${year}-12-31`).all();
+
+  const totals = rows.results.map(r => r.donor_total_cents || 0).sort((a, b) => b - a);
+  const grandTotal = totals.reduce((s, v) => s + v, 0);
+  const sumTopN = (n) => totals.slice(0, n).reduce((s, v) => s + v, 0);
+  const pctTopN = (n) => grandTotal > 0 ? Math.round((sumTopN(n) / grandTotal) * 100) : null;
+
+  // A simple, standard risk band: >60% from the top 10 households is a
+  // real fragility signal for a parish (loss of 1-2 major donors would be
+  // materially destabilizing); 40-60% is worth watching; under 40% is
+  // healthy diversification. Thresholds are conservative/commonly-cited
+  // nonprofit stewardship guidance, not a proprietary formula.
+  const top10Pct = pctTopN(10);
+  const riskLevel = top10Pct === null ? null : top10Pct >= 60 ? "high" : top10Pct >= 40 ? "moderate" : "low";
+
+  return json({
+    fiscal_year: year,
+    total_donors: totals.length,
+    total_giving_cents: grandTotal,
+    top5_pct: pctTopN(5),
+    top10_pct: top10Pct,
+    top5_cents: sumTopN(5),
+    top10_cents: sumTopN(10),
+    risk_level: riskLevel,
+  });
+}
+
+// GET /api/parish/dashboard/:parishId/stewardship/giving/recurring
+// Recurring-gift stability: active recurring donors, monthly-equivalent
+// recurring revenue, failed/canceled events, and how much of total giving
+// is recurring vs one-time. This is the "cash flow stability" story.
+//
+// Note: card-expiration data isn't tracked here — that needs a Stripe
+// `customer.source.expiring` (or payment-method) webhook subscription that
+// isn't currently wired up, not something derivable from data already on
+// file. Left out rather than estimated.
+async function handleStewardshipGivingRecurring(request, env, parishId) {
+  const auth = await verifyParishDashboard(request, env, parishId);
+  if (!auth) return unauthorized();
+  const gate = await requireStewardshipFeature(env, parishId);
+  if (gate) return gate;
+
+  const url  = new URL(request.url);
+  const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
+  const yearStart = `${year}-01-01`;
+  const yearEnd   = `${year}-12-31`;
+  const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString();
+  const fortyFiveDaysAgo = new Date(Date.now() - 45 * 86400000).toISOString();
+
+  const [totalRow, recurringPaidRows, failedRow, canceledRow] = await Promise.all([
+    env.AGAPAY_DB.prepare(`
+      SELECT COALESCE(SUM(COALESCE(json_extract(data, '$.giftAmountCents'), json_extract(data, '$.amountCents'), 0)), 0) AS total_cents
+      FROM donor_offerings
+      WHERE parish_id = ? AND payment_status = 'paid' AND created_at BETWEEN ? AND ?
+    `).bind(parishId, yearStart, yearEnd).first(),
+
+    // Most recent successful charge per active recurring subscription —
+    // used both to count active recurring donors and to build a
+    // monthly-equivalent revenue figure (normalizing quarterly/annual
+    // gifts down to a monthly rate, so they're comparable).
+    env.AGAPAY_DB.prepare(`
+      SELECT
+        stripe_subscription_id,
+        donor_email,
+        MAX(created_at) AS last_charge_at,
+        COALESCE(json_extract(data, '$.giftAmountCents'), json_extract(data, '$.amountCents'), 0) AS amount_cents,
+        COALESCE(json_extract(data, '$.frequency'), 'recurring') AS frequency
+      FROM donor_offerings
+      WHERE parish_id = ? AND payment_status = 'paid'
+        AND stripe_subscription_id IS NOT NULL AND stripe_subscription_id != ''
+        AND COALESCE(json_extract(data, '$.frequency'), '') NOT IN ('once', '')
+        AND created_at >= ?
+      GROUP BY stripe_subscription_id
+    `).bind(parishId, fortyFiveDaysAgo).all(),
+
+    env.AGAPAY_DB.prepare(`
+      SELECT COUNT(*) AS n FROM donor_offerings
+      WHERE parish_id = ? AND payment_status = 'failed' AND created_at >= ?
+    `).bind(parishId, ninetyDaysAgo).first(),
+
+    env.AGAPAY_DB.prepare(`
+      SELECT COUNT(*) AS n FROM donor_offerings
+      WHERE parish_id = ? AND payment_status = 'canceled' AND created_at >= ?
+    `).bind(parishId, ninetyDaysAgo).first(),
+  ]);
+
+  const monthlyEquivFor = (amountCents, frequency) => {
+    const f = String(frequency || "").toLowerCase();
+    if (f === "annual" || f === "yearly" || f === "annually") return amountCents / 12;
+    if (f === "quarterly") return amountCents / 3;
+    if (f === "weekly") return amountCents * (52 / 12);
+    return amountCents; // monthly, or unspecified recurring — treated as monthly
+  };
+
+  const activeRecurring = recurringPaidRows.results || [];
+  const recurringDonorCount = new Set(activeRecurring.map(r => r.donor_email)).size;
+  const mrrCents = Math.round(activeRecurring.reduce((s, r) => s + monthlyEquivFor(r.amount_cents || 0, r.frequency), 0));
+  const avgRecurringGiftCents = recurringDonorCount > 0 ? Math.round(mrrCents / recurringDonorCount) : 0;
+  const totalGivingCents = totalRow?.total_cents || 0;
+  const recurringAnnualEquivCents = mrrCents * 12;
+  const pctRecurringOfTotal = totalGivingCents > 0
+    ? Math.round((Math.min(recurringAnnualEquivCents, totalGivingCents) / totalGivingCents) * 100)
+    : null;
+
+  return json({
+    fiscal_year: year,
+    recurring_donor_count: recurringDonorCount,
+    monthly_recurring_revenue_cents: mrrCents,
+    avg_recurring_gift_cents: avgRecurringGiftCents,
+    failed_payments_90d: failedRow?.n || 0,
+    canceled_gifts_90d: canceledRow?.n || 0,
+    pct_of_total_giving_recurring: pctRecurringOfTotal,
+    expiring_cards: null, // not tracked — see function comment
+  });
+}
+
+// GET /api/parish/dashboard/:parishId/stewardship/giving/health-score
+// A single composite 0-100 score parish leaders can read at a glance,
+// built from six existing signals (pledge fulfillment, recurring
+// stability, retention, lapsed count, projection-vs-goal, concentration
+// risk) rather than a new metric of its own. Reuses the same queries the
+// other cards already run — no new data source, just a weighted rollup.
+async function handleStewardshipGivingHealthScore(request, env, parishId) {
+  const auth = await verifyParishDashboard(request, env, parishId);
+  if (!auth) return unauthorized();
+  const gate = await requireStewardshipFeature(env, parishId);
+  if (gate) return gate;
+
+  const url  = new URL(request.url);
+  const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
+  const forwardedUrl = `${url.origin}${url.pathname.replace(/\/health-score$/, "")}`;
+
+  // Reuse the exact same handlers the other cards call, rather than
+  // duplicating their query logic — this guarantees the score is always
+  // consistent with what's shown elsewhere on the tab.
+  const withYear = (path) => new Request(`${forwardedUrl}/${path}?year=${year}`, request);
+  const [summaryRes, retentionRes, concentrationRes, recurringRes] = await Promise.all([
+    handleStewardshipGivingSummary(withYear("summary"), env, parishId),
+    handleStewardshipGivingRetention(withYear("retention"), env, parishId),
+    handleStewardshipGivingConcentration(withYear("concentration"), env, parishId),
+    handleStewardshipGivingRecurring(withYear("recurring"), env, parishId),
+  ]);
+  const [summary, retention, concentration, recurring] = await Promise.all(
+    [summaryRes, retentionRes, concentrationRes, recurringRes].map(r => r.json())
+  );
+
+  // Each component scores 0-100; overall score is a weighted average of
+  // whichever components have real data (a brand-new parish with no prior
+  // year won't have a retention number yet, for example — it's excluded
+  // from the average rather than penalizing the score for missing data).
+  const components = [];
+
+  if (summary.fulfillment_rate_pct !== null && summary.fulfillment_rate_pct !== undefined) {
+    components.push({ key: "pledge_fulfillment", label: "Pledge fulfillment", weight: 0.22, score: Math.min(100, summary.fulfillment_rate_pct) });
+  }
+  if (retention.retention_rate_pct !== null && retention.retention_rate_pct !== undefined) {
+    components.push({ key: "donor_retention", label: "Donor retention", weight: 0.2, score: retention.retention_rate_pct });
+  }
+  if (retention.prior_donors > 0) {
+    const lapsedRatePct = Math.round((retention.lapsed / retention.prior_donors) * 100);
+    components.push({ key: "lapsed_donors", label: "Lapsed donor count", weight: 0.13, score: Math.max(0, 100 - lapsedRatePct * 2) });
+  }
+  if (recurring.recurring_donor_count > 0 || summary.active_donors > 0) {
+    const failureRatePct = recurring.recurring_donor_count > 0
+      ? Math.min(100, Math.round((recurring.failed_payments_90d / Math.max(1, recurring.recurring_donor_count)) * 100))
+      : 0;
+    components.push({ key: "recurring_stability", label: "Recurring donor stability", weight: 0.2, score: Math.max(0, 100 - failureRatePct * 3) });
+  }
+  if (summary.total_pledged_cents > 0) {
+    const projectionPct = Math.round((summary.run_rate_cents / summary.total_pledged_cents) * 100);
+    components.push({ key: "year_end_projection", label: "Year-end projection vs. goal", weight: 0.15, score: Math.min(100, projectionPct) });
+  }
+  if (concentration.top10_pct !== null && concentration.top10_pct !== undefined) {
+    // Lower concentration is healthier — invert so a low top-10% scores high.
+    components.push({ key: "concentration_risk", label: "Concentration risk", weight: 0.1, score: Math.max(0, 100 - concentration.top10_pct) });
+  }
+
+  const totalWeight = components.reduce((s, c) => s + c.weight, 0);
+  const score = totalWeight > 0
+    ? Math.round(components.reduce((s, c) => s + c.score * c.weight, 0) / totalWeight)
+    : null;
+
+  const status = score === null ? "Not enough data yet"
+    : score >= 80 ? "On Track"
+    : score >= 60 ? "Needs Attention"
+    : "At Risk";
+
+  return json({
+    fiscal_year: year,
+    score,
+    status,
+    components: components.map(c => ({ key: c.key, label: c.label, score: Math.round(c.score) })),
+  });
+}
+
+// GET /api/parish/dashboard/:parishId/stewardship/report/monthly
+// A parish-council-ready HTML report (print-to-PDF via the browser, same
+// convention as the annual meeting packet) pulling together everything the
+// tab already tracks: giving this month, YTD, pledge progress, budget
+// pace, restricted funds, recurring giving health, lapsed/new donors, and
+// a short list of rule-based follow-up suggestions derived directly from
+// the numbers (not invented copy).
+async function handleStewardshipMonthlyReport(request, env, parishId) {
+  const url0 = new URL(request.url);
+  const token = url0.searchParams.get("t") || getBearerToken(request);
+  if (!parishId || !token) {
+    return new Response(
+      "<!DOCTYPE html><html><body><p>Session expired. <a href='/parish/dashboard'>Return to dashboard</a></p></body></html>",
+      { status: 401, headers: { "Content-Type": "text/html;charset=utf-8" } }
+    );
+  }
+  const authFound = await findRegistrationByParishId(env, parishId);
+  if (!authFound || !(await verifyParishDashboardBearer(authFound.registration, token))) {
+    return new Response(
+      "<!DOCTYPE html><html><body><p>Session expired. <a href='/parish/dashboard'>Return to dashboard</a></p></body></html>",
+      { status: 401, headers: { "Content-Type": "text/html;charset=utf-8" } }
+    );
+  }
+  const gate = await requireStewardshipFeature(env, parishId);
+  if (gate) return gate;
+
+  const found = await findRegistrationByParishId(env, parishId);
+  const registration = found?.registration || {};
+  const parishName = registration.parishName || registration.name || "Parish";
+
+  const url  = new URL(request.url);
+  const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+  const monthLabel = now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
+  // Internal calls to the JSON endpoints below still need a bearer header
+  // (they don't accept the ?t= query param), so build those forwarded
+  // requests with the token attached as a header explicitly.
+  const forwardedUrl = `${url.origin}${url.pathname.replace(/\/report\/monthly$/, "")}`;
+  const withYear = (path) => new Request(`${forwardedUrl}/${path}?year=${year}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  const [summaryRes, recurringRes, retentionRes, healthRes, monthRow, fundsRows] = await Promise.all([
+    handleStewardshipGivingSummary(withYear("summary"), env, parishId).then(r => r.json()),
+    handleStewardshipGivingRecurring(withYear("recurring"), env, parishId).then(r => r.json()),
+    handleStewardshipGivingRetention(withYear("retention"), env, parishId).then(r => r.json()),
+    handleStewardshipGivingHealthScore(withYear("health-score"), env, parishId).then(r => r.json()),
+    env.AGAPAY_DB.prepare(`
+      SELECT COALESCE(SUM(COALESCE(json_extract(data, '$.giftAmountCents'), json_extract(data, '$.amountCents'), 0)), 0) AS total_cents,
+             COUNT(DISTINCT donor_email) AS donor_count
+      FROM donor_offerings
+      WHERE parish_id = ? AND payment_status = 'paid' AND created_at BETWEEN ? AND ?
+    `).bind(parishId, monthStart, monthEnd).first(),
+    env.AGAPAY_DB.prepare(`
+      SELECT rf.fund_name, rf.ending_balance_cents
+      FROM stewardship_restricted_funds rf
+      JOIN stewardship_annual_meetings am ON am.id = rf.annual_meeting_id
+      WHERE am.parish_id = ? AND am.fiscal_year = ?
+      ORDER BY rf.sort_order ASC
+    `).bind(parishId, year).all().catch(() => ({ results: [] })),
+  ]);
+
+  const fmt = (c) => "$" + ((c || 0) / 100).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+  // Budget pace — same math as the Stewardship Reports card.
+  const goalCents = summaryRes.total_pledged_cents || 0;
+  const expectedByTodayCents = goalCents > 0 ? Math.round(goalCents * (summaryRes.day_of_year / summaryRes.days_in_year)) : 0;
+  const behindPaceCents = expectedByTodayCents - summaryRes.total_actual_cents;
+
+  const restrictedFunds = fundsRows.results || [];
+  const restrictedTotalCents = restrictedFunds.reduce((s, f) => s + (f.ending_balance_cents || 0), 0);
+
+  // Rule-based follow-up suggestions — every line ties directly back to a
+  // number already shown above it, nothing generated freeform.
+  const actions = [];
+  if (behindPaceCents > 0) {
+    actions.push(`Giving is ${fmt(behindPaceCents)} behind pace for ${monthLabel.split(" ")[1]} — consider a pledge reminder to households who haven't given this quarter.`);
+  }
+  if (recurringRes.failed_payments_90d > 0) {
+    actions.push(`${recurringRes.failed_payments_90d} recurring payment${recurringRes.failed_payments_90d === 1 ? "" : "s"} failed in the last 90 days — a quick outreach to update payment info can recover this revenue.`);
+  }
+  if (recurringRes.canceled_gifts_90d > 0) {
+    actions.push(`${recurringRes.canceled_gifts_90d} recurring gift${recurringRes.canceled_gifts_90d === 1 ? "" : "s"} canceled in the last 90 days — a personal note often wins these back.`);
+  }
+  if (retentionRes.lapsed > 0) {
+    actions.push(`${retentionRes.lapsed} donor${retentionRes.lapsed === 1 ? "" : "s"} from ${retentionRes.prior_year} hasn't given yet this year — a warm check-in outperforms a form letter.`);
+  }
+  if (retentionRes.new_donors > 0) {
+    actions.push(`${retentionRes.new_donors} new donor${retentionRes.new_donors === 1 ? "" : "s"} gave for the first time this year — a thank-you note now builds the relationship that leads to a pledge next year.`);
+  }
+  if (!actions.length) {
+    actions.push("No urgent follow-ups from this month's numbers — giving, pledges, and recurring gifts all look steady.");
+  }
+
+  const scoreTone = healthRes.score === null ? "gold" : healthRes.score >= 80 ? "green" : healthRes.score >= 60 ? "gold" : "red";
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${htmlEscape(parishName)} — Monthly Stewardship Report — ${htmlEscape(monthLabel)}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --mr-navy: #061522; --mr-gold: #b18a3e; --mr-cream: #f6f1e8; --mr-paper: #fffdf8;
+      --mr-ink: #171715; --mr-muted: #6f6a60; --mr-line: #ddd5c5;
+      --mr-red: #8a2929; --mr-green: #2e6b4a;
+      --mr-serif: "Cormorant Garamond", Georgia, serif; --mr-sans: "DM Sans", system-ui, sans-serif;
+    }
+    html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: var(--mr-cream); color: var(--mr-ink); font-family: var(--mr-sans); font-size: 14px; line-height: 1.6; }
+    @media print { body { background: white; font-size: 11.5px; } [data-no-print] { display: none !important; } .mr-page-break { page-break-before: always; } }
+    .mr-toolbar { position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; padding: .9rem 1.5rem; background: var(--mr-navy); }
+    .mr-toolbar-btn { display: inline-flex; align-items: center; gap: .4rem; padding: .5rem 1rem; border-radius: 7px; border: 1px solid rgba(184,144,47,.4); background: transparent; color: var(--mr-cream); font: 700 .82rem var(--mr-sans); cursor: pointer; text-decoration: none; }
+    .mr-toolbar-btn.mr-primary { background: var(--mr-gold); color: var(--mr-navy); border-color: var(--mr-gold); }
+    .mr-container { max-width: 820px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+    .mr-header { text-align: center; margin-bottom: 2.5rem; }
+    .mr-header .mr-eyebrow { font: 700 .72rem var(--mr-sans); letter-spacing: .14em; text-transform: uppercase; color: var(--mr-gold); }
+    .mr-header h1 { font-family: var(--mr-serif); font-size: 2rem; color: var(--mr-navy); margin: .4rem 0 .2rem; }
+    .mr-header p { color: var(--mr-muted); font-size: .9rem; }
+    .mr-section { margin-bottom: 2rem; background: var(--mr-paper); border: 1px solid var(--mr-line); border-radius: 12px; padding: 1.5rem; }
+    .mr-section h2 { font-family: var(--mr-serif); font-size: 1.25rem; color: var(--mr-navy); margin-bottom: 1rem; padding-bottom: .6rem; border-bottom: 2px solid var(--mr-gold); }
+    .mr-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .75rem; }
+    .mr-kpi { background: rgba(184,144,47,.06); border-radius: 8px; padding: .8rem .9rem; }
+    .mr-kpi span { display: block; font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; color: var(--mr-muted); margin-bottom: .3rem; }
+    .mr-kpi strong { font-family: var(--mr-serif); font-size: 1.35rem; color: var(--mr-navy); }
+    .mr-score-row { display: flex; align-items: center; gap: 1.5rem; }
+    .mr-score-badge { flex-shrink: 0; width: 92px; height: 92px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 4px solid var(--mr-tone); }
+    .mr-score-badge strong { font-family: var(--mr-serif); font-size: 1.7rem; color: var(--mr-navy); line-height: 1; }
+    .mr-score-badge span { font-size: .62rem; color: var(--mr-muted); }
+    .mr-score-status { font-family: var(--mr-serif); font-size: 1.3rem; color: var(--mr-navy); }
+    .mr-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    .mr-table th { text-align: left; font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; color: var(--mr-muted); padding: .4rem .5rem; border-bottom: 2px solid var(--mr-line); }
+    .mr-table td { padding: .55rem .5rem; border-bottom: 1px solid rgba(221,213,197,.6); }
+    .mr-table .mr-right { text-align: right; font-variant-numeric: tabular-nums; }
+    .mr-actions { display: grid; gap: .6rem; }
+    .mr-action { padding: .8rem 1rem; border-left: 3px solid var(--mr-gold); background: rgba(184,144,47,.06); border-radius: 0 6px 6px 0; font-size: .88rem; }
+    .mr-footer { text-align: center; color: var(--mr-muted); font-size: .75rem; margin-top: 2rem; }
+    .mr-pos { color: var(--mr-green); font-weight: 700; }
+    .mr-neg { color: var(--mr-red); font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="mr-toolbar" data-no-print>
+    <a href="javascript:history.back()" class="mr-toolbar-btn">&larr; Back</a>
+    <div style="display:flex;gap:.5rem;">
+      <button class="mr-toolbar-btn" onclick="window.print()">Print</button>
+      <button class="mr-toolbar-btn mr-primary" onclick="window.print()">Save as PDF</button>
+    </div>
+  </div>
+  <div class="mr-container">
+    <div class="mr-header">
+      <span class="mr-eyebrow">AGAPAY Stewardship</span>
+      <h1>Monthly Stewardship Report</h1>
+      <p>${htmlEscape(parishName)} &middot; ${htmlEscape(monthLabel)}</p>
+    </div>
+
+    <div class="mr-section">
+      <h2>Stewardship Health</h2>
+      <div class="mr-score-row">
+        <div class="mr-score-badge" style="--mr-tone: var(--mr-${scoreTone === "green" ? "green" : scoreTone === "red" ? "red" : "gold"});">
+          <strong>${healthRes.score === null ? "—" : healthRes.score}</strong>
+          <span>/ 100</span>
+        </div>
+        <div>
+          <div class="mr-score-status">${htmlEscape(healthRes.status)}</div>
+          <p style="color:var(--mr-muted);font-size:.85rem;margin-top:.2rem;">Calculated from ${healthRes.components.length} signal${healthRes.components.length === 1 ? "" : "s"}: ${healthRes.components.map(c => htmlEscape(c.label)).join(", ")}.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mr-section">
+      <h2>Giving This Month &mdash; ${htmlEscape(monthLabel)}</h2>
+      <div class="mr-kpi-grid">
+        <div class="mr-kpi"><span>Collected</span><strong>${fmt(monthRow?.total_cents)}</strong></div>
+        <div class="mr-kpi"><span>Donors</span><strong>${monthRow?.donor_count || 0}</strong></div>
+      </div>
+    </div>
+
+    <div class="mr-section">
+      <h2>Giving Year-to-Date &amp; Budget Pace</h2>
+      <div class="mr-kpi-grid">
+        <div class="mr-kpi"><span>Annual Goal</span><strong>${fmt(goalCents)}</strong></div>
+        <div class="mr-kpi"><span>Expected by Today</span><strong>${fmt(expectedByTodayCents)}</strong></div>
+        <div class="mr-kpi"><span>Actual Collected</span><strong>${fmt(summaryRes.total_actual_cents)}</strong></div>
+        <div class="mr-kpi"><span>${behindPaceCents > 0 ? "Behind Pace" : "Ahead of Pace"}</span><strong class="${behindPaceCents > 0 ? "mr-neg" : "mr-pos"}">${fmt(Math.abs(behindPaceCents))}</strong></div>
+        <div class="mr-kpi"><span>Projected Year-End</span><strong>${fmt(summaryRes.run_rate_cents)}</strong></div>
+        <div class="mr-kpi"><span>Pledge Fulfillment</span><strong>${summaryRes.fulfillment_rate_pct === null ? "—" : summaryRes.fulfillment_rate_pct + "%"}</strong></div>
+      </div>
+    </div>
+
+    <div class="mr-section">
+      <h2>Restricted Funds</h2>
+      ${restrictedFunds.length ? `
+        <table class="mr-table">
+          <thead><tr><th>Fund</th><th class="mr-right">Ending Balance</th></tr></thead>
+          <tbody>${restrictedFunds.map(f => `<tr><td>${htmlEscape(f.fund_name)}</td><td class="mr-right">${fmt(f.ending_balance_cents)}</td></tr>`).join("")}</tbody>
+        </table>
+        <p style="margin-top:.6rem;font-size:.85rem;color:var(--mr-muted);">Total restricted funds: <strong style="color:var(--mr-navy);">${fmt(restrictedTotalCents)}</strong></p>
+      ` : `<p style="color:var(--mr-muted);font-size:.88rem;">No restricted fund data recorded for ${year} yet.</p>`}
+    </div>
+
+    <div class="mr-section mr-page-break">
+      <h2>Recurring Giving Health</h2>
+      <div class="mr-kpi-grid">
+        <div class="mr-kpi"><span>Recurring Donors</span><strong>${recurringRes.recurring_donor_count}</strong></div>
+        <div class="mr-kpi"><span>Monthly Recurring Revenue</span><strong>${fmt(recurringRes.monthly_recurring_revenue_cents)}</strong></div>
+        <div class="mr-kpi"><span>Avg Recurring Gift</span><strong>${fmt(recurringRes.avg_recurring_gift_cents)}</strong></div>
+        <div class="mr-kpi"><span>% of Giving Recurring</span><strong>${recurringRes.pct_of_total_giving_recurring === null ? "—" : recurringRes.pct_of_total_giving_recurring + "%"}</strong></div>
+        <div class="mr-kpi"><span>Failed Payments (90d)</span><strong class="${recurringRes.failed_payments_90d > 0 ? "mr-neg" : ""}">${recurringRes.failed_payments_90d}</strong></div>
+        <div class="mr-kpi"><span>Canceled Gifts (90d)</span><strong class="${recurringRes.canceled_gifts_90d > 0 ? "mr-neg" : ""}">${recurringRes.canceled_gifts_90d}</strong></div>
+      </div>
+    </div>
+
+    <div class="mr-section">
+      <h2>Donor Retention</h2>
+      <div class="mr-kpi-grid">
+        <div class="mr-kpi"><span>Retention Rate</span><strong>${retentionRes.retention_rate_pct === null ? "—" : retentionRes.retention_rate_pct + "%"}</strong></div>
+        <div class="mr-kpi"><span>Retained</span><strong>${retentionRes.retained}</strong></div>
+        <div class="mr-kpi"><span>Lapsed</span><strong class="${retentionRes.lapsed > 0 ? "mr-neg" : ""}">${retentionRes.lapsed}</strong></div>
+        <div class="mr-kpi"><span>New Donors</span><strong class="mr-pos">${retentionRes.new_donors}</strong></div>
+      </div>
+    </div>
+
+    <div class="mr-section">
+      <h2>Upcoming Stewardship Actions</h2>
+      <div class="mr-actions">
+        ${actions.map(a => `<div class="mr-action">${htmlEscape(a)}</div>`).join("")}
+      </div>
+    </div>
+
+    <p class="mr-footer">Generated by AGAPAY Stewardship &middot; ${htmlEscape(now.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }))}</p>
+  </div>
+</body>
+</html>`;
+
+  return new Response(html, {
+    headers: {
+      "Content-Type": "text/html;charset=utf-8",
+      "Content-Disposition": `inline; filename="stewardship-report-${monthLabel.replace(/\s+/g, "-")}.html"`,
+    },
+  });
+}
+
 // ── PLEDGE SYNC HELPER ───────────────────────────────────────────────────────
 // Call this from handleDonorDashboard (in handlers/donor.js) whenever a donor
 // saves their pledge amount. Pass the donor's email, their default_parish_id,
@@ -2412,6 +2881,22 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/retention")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/retention", ""));
       return handleStewardshipGivingRetention(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/concentration")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/concentration", ""));
+      return handleStewardshipGivingConcentration(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/recurring")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/recurring", ""));
+      return handleStewardshipGivingRecurring(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/health-score")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/health-score", ""));
+      return handleStewardshipGivingHealthScore(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/report/monthly")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/report/monthly", ""));
+      return handleStewardshipMonthlyReport(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/activate")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/activate", ""));
