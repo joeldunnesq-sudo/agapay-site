@@ -591,6 +591,38 @@ export async function processStripeWebhookEvent(env, event) {
     || event.type === "customer.subscription.paused"
     || event.type === "customer.subscription.resumed"
   ) {
+    // A donor's recurring GIVING subscription (created via the /give
+    // checkout flow) carries donor_email in its metadata — distinct from
+    // the parish's own AGAPAY platform subscription, which uses
+    // agapay_reference instead (handled in the branch below). This was
+    // previously untracked entirely: nothing recorded when a parishioner
+    // canceled a recurring gift, so "canceled recurring gifts" had no real
+    // data source. Only the cancellation itself is recorded here — that's
+    // the actionable stewardship signal; created/updated/paused/resumed
+    // aren't needed for that metric.
+    if (object.metadata?.donor_email && event.type === "customer.subscription.deleted") {
+      await storeDonorOffering(env, {
+        id: `sub_cancel_${object.id}_${object.canceled_at || Math.floor(Date.now() / 1000)}`,
+        donorEmail: object.metadata.donor_email,
+        donorName: object.metadata.donor_name || "",
+        parishId: object.metadata.parish_id || "",
+        parishName: object.metadata.parish_name || "",
+        giftType: object.metadata.gift_type || "recurring",
+        title: "Recurring gift canceled",
+        fund: object.metadata.fund || "",
+        fundId: object.metadata.fund_id || "",
+        frequency: object.metadata.frequency || "recurring",
+        amountCents: 0,
+        chargeCents: 0,
+        status: "canceled",
+        paymentStatus: "canceled",
+        stripeCustomerId: object.customer || "",
+        stripeSubscriptionId: object.id || "",
+        createdAt: object.canceled_at ? new Date(object.canceled_at * 1000).toISOString() : new Date().toISOString()
+      }).catch(() => {});
+      return;
+    }
+
     if (object.metadata?.product === "learn") {
       const status = event.type === "customer.subscription.deleted"
         ? "cancelled"
