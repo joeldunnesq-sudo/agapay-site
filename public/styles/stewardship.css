@@ -1055,6 +1055,72 @@
   margin-bottom: 1.25rem;
 }
 
+/* ── Financial Snapshots as a full-width featured card ───────────
+   Pulled out of the 2-col tool grid so the KPI row and the
+   packets/funds layout below both have room to breathe — this is
+   what actually eliminates the internal scrollbar, not just a
+   height override. */
+.sw-tool-financials-featured {
+  margin-bottom: 1rem;
+}
+.sw-tool-financials-featured .sw-tool-card-body {
+  overflow: visible;
+}
+.sw-tool-financials-featured .sw-fin-kpi-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.sw-fin-two-col {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 760px) {
+  .sw-fin-two-col { grid-template-columns: 1fr; gap: 1.25rem; }
+}
+
+/* Year-over-year badge on a KPI card — "▲ 8% vs 2025" */
+.sw-fin-yoy {
+  display: block;
+  margin-top: .35rem;
+  font-size: .72rem;
+  font-weight: 700;
+}
+.sw-fin-yoy-good { color: var(--green, #2e6b4a); }
+.sw-fin-yoy-bad  { color: var(--red, #8a2929); }
+
+/* ── Mission-tier upgrade prompt: blurred real-layout preview
+   behind a concrete cost-justification CTA ─────────────────────── */
+.sw-fin-upsell-wrap {
+  position: relative;
+  min-height: 260px;
+}
+.sw-fin-upsell-preview {
+  filter: blur(4px);
+  opacity: .55;
+  pointer-events: none;
+  user-select: none;
+}
+.sw-fin-upsell-wrap .sw-upsell-cta {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  height: fit-content;
+  max-width: 380px;
+  background: rgba(255, 253, 248, 0.97);
+  box-shadow: 0 18px 46px rgba(6, 21, 34, 0.16);
+}
+.sw-upsell-list {
+  display: grid;
+  gap: .4rem;
+  margin: 0;
+  padding: 0 0 0 1.1rem;
+  text-align: left;
+  font-size: .82rem;
+  color: var(--stone);
+}
+.sw-upsell-list li { line-height: 1.4; }
+
 /* colour overrides for financial values */
 .sw-fin-income-lbl  { color: var(--green, #2e6b4a) !important; }
 .sw-fin-expense-lbl { color: var(--red,   #8a2929) !important; }
@@ -1121,7 +1187,7 @@
 .sw-fin-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 560px;
+  min-width: 0;
   font-size: .85rem;
 }
 .sw-fin-table .sw-th {
@@ -1315,9 +1381,12 @@
 /* ── Tool grid: 2-up, room for Reports / Financials / Retention / Distribution ── */
 .sw-suite-tool-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
   margin-bottom: 1rem;
+}
+@media (max-width: 1080px) {
+  .sw-suite-tool-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 .sw-suite-tool-card {
@@ -1564,7 +1633,6 @@
   .sw-suite-hero { grid-template-columns: 1fr; }
   .sw-suite-hero-status { align-items: flex-start; }
   .sw-suite-tool-grid { grid-template-columns: 1fr; }
-  .sw-tool-financials { grid-column: auto; }
   .sw-upsell-row-inner { grid-template-columns: 1fr; }
 }
 
