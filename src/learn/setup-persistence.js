@@ -3,6 +3,7 @@ import { requireDonor } from "../handlers/parish.js";
 import { loadLearnAcademicSnapshot } from "./academic-records.js";
 import { LEARN_FREE_CHILD_LIMIT, learnRequestHasFamilyAccessAsync } from "./billing.js";
 import { getLearnSeedSnapshot } from "./demo-data.js";
+import { applyPlannerOverrides, computeMoveUnfinishedWork } from "./planner-overrides.js";
 
 const LEARN_SETUP_KV_PREFIX = "__agapay_learn_setup:";
 const devSetupSnapshots = new Map();
@@ -365,6 +366,37 @@ function normalizeCompletion(value = {}) {
     daily: normalizeBucket(value.daily, 45),
     weekly: normalizeBucket(value.weekly, 18)
   };
+}
+
+// Sanitizes the persisted "Move unfinished work" overrides:
+//   { [weekStartIso]: { [rowId]: { [weekdayIndex]: { action, movedToWeekday, minutes, note, updatedAt } } } }
+// Caps are generous but bounded so a household can't grow this without limit.
+function normalizePlannerOverrides(value = {}) {
+  const weeks = Object.entries(value && typeof value === "object" ? value : {})
+    .filter(([weekKey, rowMap]) => /^\d{4}-\d{2}-\d{2}$/.test(weekKey) && rowMap && typeof rowMap === "object")
+    .sort(([a], [b]) => b.localeCompare(a))
+    .slice(0, 12);
+
+  return Object.fromEntries(weeks.map(([weekKey, rowMap]) => {
+    const rows = Object.entries(rowMap)
+      .filter(([rowId]) => /^[a-zA-Z0-9:_-]{1,180}$/.test(rowId))
+      .slice(0, 100);
+    return [weekKey, Object.fromEntries(rows.map(([rowId, dayMap]) => {
+      const days = Object.entries(dayMap && typeof dayMap === "object" ? dayMap : {})
+        .filter(([weekdayKey, entry]) => {
+          const weekday = Number(weekdayKey);
+          return Number.isInteger(weekday) && weekday >= 0 && weekday <= 6 && entry && typeof entry === "object";
+        })
+        .slice(0, 7);
+      return [rowId, Object.fromEntries(days.map(([weekdayKey, entry]) => [weekdayKey, {
+        action: entry.action === "reserve" ? "reserve" : "deferred",
+        movedToWeekday: Number.isInteger(entry.movedToWeekday) && entry.movedToWeekday >= 0 && entry.movedToWeekday <= 6 ? entry.movedToWeekday : null,
+        minutes: Math.max(0, int(entry.minutes, 0)),
+        note: text(entry.note, "").slice(0, 280),
+        updatedAt: text(entry.updatedAt, nowIso())
+      }]))];
+    }))];
+  }));
 }
 
 function childrenForAssignment(item = {}, children = []) {
@@ -822,6 +854,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     formationMaterials,
     historyCycle,
     completion: normalizeCompletion(payload.completion),
+    plannerOverrides: normalizePlannerOverrides(payload.plannerOverrides),
     starterWeek: payload.starterWeek && typeof payload.starterWeek === "object" ? {
       generatedAt: text(payload.starterWeek.generatedAt, ""),
       enabled: Boolean(payload.starterWeek.enabled)
@@ -1597,4 +1630,58 @@ export async function saveLearnPlannerBlock(env, request, payload = {}) {
   }
 
   return saveLearnSetup(env, request, { ...current, blockEdits });
+}
+
+// "Move unfinished work": moves a day's unfinished lesson to the next open
+// day this week, or sets it aside in Reserve for whenever there's a roomier
+// day. Shares computeMoveUnfinishedWork()/applyPlannerOverrides() with
+// repository.js's buildPlannerWeek() (both import from ./planner-overrides.js)
+// so the read side (what the planner/print shows) and this write side always
+// agree on what counts as "the next open day."
+// Accepts: { scope: "household"|"child", rowId, fromWeekday (0-6), mode: "next-open-day"|"reserve", weekDate }
+export async function saveLearnMoveUnfinishedWork(env, request, payload = {}) {
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) return { ok: false, status: 401, error: "Unauthorized" };
+  const current = await loadLearnSetupSnapshotForIdentity(env, identity);
+  if (!current) return { ok: false, status: 409, error: "Complete Learn setup before moving lessons." };
+
+  const scope = payload.scope === "child" ? "child" : "household";
+  const rowId = text(payload.rowId, "");
+  const fromWeekday = Number(payload.fromWeekday);
+  const mode = payload.mode === "reserve" ? "reserve" : "next-open-day";
+  if (!rowId || !Number.isInteger(fromWeekday) || fromWeekday < 0 || fromWeekday > 6) {
+    return { ok: false, status: 400, error: "rowId and a valid fromWeekday (0-6) are required." };
+  }
+
+  const weekDate = /^\d{4}-\d{2}-\d{2}$/.test(String(payload.weekDate || "")) ? String(payload.weekDate) : "";
+  const weekReference = weekDate ? new Date(`${weekDate}T12:00:00.000Z`) : new Date();
+  const seedForWeek = applySetupSnapshotToSeed(getLearnSeedSnapshot(), current, { weekDate });
+  const week = seedForWeek.plannerWeek || {};
+  const weekKey = list(week.dates)[0] || currentWeekWindow(weekReference).dates[0];
+  const baseRows = scope === "child" ? list(week.childRows) : list(week.householdRows);
+
+  // Apply any prior overrides for this week first, so the move sees the
+  // currently-effective state (e.g. a day already moved earlier).
+  const existingOverridesForWeek = clone((current.plannerOverrides || {})[weekKey] || {});
+  const { rows: effectiveRows } = applyPlannerOverrides(baseRows, existingOverridesForWeek);
+
+  const result = computeMoveUnfinishedWork({ rows: effectiveRows, rowId, fromWeekday, mode });
+  if (!result.ok) return { ok: false, status: 400, error: result.error };
+
+  const plannerOverrides = clone(current.plannerOverrides || {});
+  plannerOverrides[weekKey] = { ...(plannerOverrides[weekKey] || {}) };
+  plannerOverrides[weekKey][rowId] = {
+    ...(plannerOverrides[weekKey][rowId] || {}),
+    [result.fromWeekday]: {
+      action: result.action,
+      movedToWeekday: result.movedToWeekday,
+      minutes: result.minutes,
+      note: "",
+      updatedAt: nowIso()
+    }
+  };
+
+  const saved = await saveLearnSetup(env, request, { ...current, plannerOverrides });
+  if (!saved.ok) return saved;
+  return { ok: true, ...saved, ...result, weekStartIso: weekKey };
 }

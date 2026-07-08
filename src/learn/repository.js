@@ -3,6 +3,7 @@ import { buildReportCardExport, buildTranscriptExport } from "./academic-exports
 import { buildTranscriptsFromAcademicRecords } from "./academic-records.js";
 import { getLearnSeedSnapshot } from "./demo-data.js";
 import { normalizeCalendarType, SeedLiturgicalSource } from "./liturgical-source.js";
+import { applyPlannerOverrides, computeMoveUnfinishedWork, plannerStatusLegend } from "./planner-overrides.js";
 import { buildPrintJobRequest, buildWeeklyHouseholdPrintDocument } from "./print-documents.js";
 import { getLearnSeedForIdentity, learnSetupIdentity } from "./setup-persistence.js";
 
@@ -740,17 +741,32 @@ function buildPlannerWeek(seed, calendarType) {
   });
   const childLookup = childById(seed);
   const hasMinutes = (row) => Array.isArray(row.minutes) && row.minutes.some((m) => Number(m || 0) > 0);
+  const householdGraded = applyGraceModeToRows(week.householdRows, seed.graceModeRule).filter(hasMinutes);
+  const childGraded = applyGraceModeToRows(week.childRows, seed.graceModeRule).filter(hasMinutes).map((row) => ({
+    ...row,
+    child: childLookup.get(row.childId)
+  }));
+
+  // Apply any "Move unfinished work" overrides for this specific week on top
+  // of the schedule-driven rows. Overrides live on the persisted setup
+  // snapshot for real households; the in-memory seed repository (demo data
+  // and tests) also supports a top-level seed.plannerOverrides for the same
+  // shape so it's directly testable without going through setup persistence.
+  const weekKey = week.dates?.[0] || "";
+  const overridesForWeek = (seed.setupSnapshot?.plannerOverrides || seed.plannerOverrides || {})[weekKey] || {};
+  const householdApplied = applyPlannerOverrides(householdGraded, overridesForWeek);
+  const childApplied = applyPlannerOverrides(childGraded, overridesForWeek);
+
   return {
     ...week,
     liturgicalDays,
     familyDays: week.dates.map((civilDate) => familyPlanForDate(seed, civilDate, liturgicalDays.find((day) => day.civilDate === civilDate))),
     recipes: familyPlanning.recipes || [],
     groceryItems: familyPlanning.groceryItems || [],
-    householdRows: applyGraceModeToRows(week.householdRows, seed.graceModeRule).filter(hasMinutes),
-    childRows: applyGraceModeToRows(week.childRows, seed.graceModeRule).filter(hasMinutes).map((row) => ({
-      ...row,
-      child: childLookup.get(row.childId)
-    }))
+    householdRows: householdApplied.rows,
+    childRows: childApplied.rows,
+    reserveList: [...householdApplied.reserveList, ...childApplied.reserveList],
+    statusLegend: plannerStatusLegend()
   };
 }
 
@@ -1205,6 +1221,28 @@ export class SeedLearnRepository {
       },
       familyPlanning: familyPlanningWithDefaultRecipes(this.seed.familyPlanning || this.seed.setupSnapshot?.familyPlanning || {})
     };
+  }
+
+  // "Move unfinished work" for the in-memory seed repository (demo data and
+  // tests). Real households persist this the same way through
+  // saveLearnMoveUnfinishedWork() in setup-persistence.js, which shares the
+  // exact same computeMoveUnfinishedWork()/applyPlannerOverrides() logic from
+  // ./planner-overrides.js so both paths behave identically.
+  moveUnfinishedWork({ calendarType = "julian", scope = "household", rowId = "", fromWeekday, mode = "next-open-day" } = {}) {
+    const resolvedCalendar = normalizeCalendarType(calendarType);
+    const week = buildPlannerWeek(this.seed, resolvedCalendar);
+    const rows = scope === "child" ? week.childRows : week.householdRows;
+    const result = computeMoveUnfinishedWork({ rows, rowId, fromWeekday, mode });
+    if (!result.ok) return result;
+
+    const weekKey = week.dates?.[0] || "";
+    this.seed.plannerOverrides = this.seed.plannerOverrides || {};
+    this.seed.plannerOverrides[weekKey] = this.seed.plannerOverrides[weekKey] || {};
+    this.seed.plannerOverrides[weekKey][rowId] = {
+      ...(this.seed.plannerOverrides[weekKey][rowId] || {}),
+      [result.fromWeekday]: { action: result.action, movedToWeekday: result.movedToWeekday, minutes: result.minutes, note: "" }
+    };
+    return result;
   }
 
   getPrintCenter({ calendarType = "julian", month = "" } = {}) {

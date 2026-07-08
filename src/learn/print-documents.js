@@ -160,6 +160,13 @@ function calendarGridSection(heading, days) {
   return { type: "calendar-grid", heading, days };
 }
 
+// Blank ruled lines at the bottom of a printable for real life: what actually
+// happened today, not what the schedule says. Deliberately just lines — no
+// prompts or fields to fill out.
+function momNotesSection(lineCount = 5) {
+  return { type: "notes", heading: "Mom Notes", lineCount };
+}
+
 // ─── Document shells ──────────────────────────────────────────────────────────
 function baseDocument(printCenter, template, generatedAt) {
   const household = printCenter.household?.name || "Household";
@@ -346,11 +353,11 @@ function buildChildTerm(printCenter, template, generatedAt) {
 }
 
 export function buildWeeklyHouseholdPrintDocument({ household, week, calendarToggle }) {
-  return buildHouseholdWeekly(
+  return withMomNotes(buildHouseholdWeekly(
     { household, week, calendarToggle, term: { label: week?.termLabel || "Current Term" }, templates: [] },
     { id: "print_mom_weekly", title: "Weekly Household Plan" },
     new Date().toISOString()
-  );
+  ));
 }
 
 // ─── Planner document builders ────────────────────────────────────────────────
@@ -726,13 +733,19 @@ function buildPlannerLessonTermChild(printCenter, template, generatedAt) {
   return buildChildTerm(printCenter, template, generatedAt);
 }
 
-export function buildLearnPrintDocument(printCenter, {
-  templateId = "print_mom_weekly", childId = "", termId = "", month = "", year = "",
-  generatedAt = new Date().toISOString(), designedWeek = null
-} = {}) {
-  if (designedWeek && typeof designedWeek === "object") return buildDesignedWeek(printCenter, designedWeek, generatedAt);
-  const template = templateWithParams(findTemplate(printCenter, templateId), { childId, termId, month, year });
-  const type     = template.templateType || "weekly-household-plan";
+// Appends a "Mom Notes" section of blank ruled lines to a generated document.
+// Skipped for documents that use the self-contained landscape layout (their
+// own per-page "Notes:" strip already covers this — see
+// renderDesignedWeekFormsLandscape) and for anything without a sections array.
+function withMomNotes(doc) {
+  if (doc && Array.isArray(doc.sections) && doc.layout !== "designed-week-forms-landscape") {
+    doc.sections.push(momNotesSection());
+  }
+  return doc;
+}
+
+function resolveLearnPrintDocument(printCenter, template, generatedAt) {
+  const type = template.templateType || "weekly-household-plan";
 
   // ── Core Learn templates ──────────────────────────────────────────────────
   if (type === "term-plan"                  || template.id === "print_mom_term")       return buildTermPlan(printCenter, template, generatedAt);
@@ -768,6 +781,15 @@ export function buildLearnPrintDocument(printCenter, {
 
   // ── Default ───────────────────────────────────────────────────────────────
   return buildHouseholdWeekly(printCenter, template, generatedAt);
+}
+
+export function buildLearnPrintDocument(printCenter, {
+  templateId = "print_mom_weekly", childId = "", termId = "", month = "", year = "",
+  generatedAt = new Date().toISOString(), designedWeek = null
+} = {}) {
+  if (designedWeek && typeof designedWeek === "object") return buildDesignedWeek(printCenter, designedWeek, generatedAt);
+  const template = templateWithParams(findTemplate(printCenter, templateId), { childId, termId, month, year });
+  return withMomNotes(resolveLearnPrintDocument(printCenter, template, generatedAt));
 }
 
 export function buildLearnReportPrintDocument(reports, {
@@ -1022,6 +1044,19 @@ function drawList(state, section) {
       { font: state.fonts.sans, size: 9, color: INK, leading: 12 }) - 4;
   });
   state.y -= 8;
+}
+
+// ─── Mom Notes (blank ruled lines) ─────────────────────────────────────────────
+function drawNotesLines(state, section) {
+  drawHeading(state, section.heading || "Mom Notes");
+  const lineCount = Math.max(1, Number(section.lineCount) || 5);
+  const lineGap = 22;
+  fitPage(state, lineCount * lineGap + 6);
+  for (let i = 0; i < lineCount; i += 1) {
+    const y = state.y - i * lineGap;
+    state.page.drawLine({ start: { x: MARGIN, y }, end: { x: LETTER[0] - MARGIN, y }, thickness: 0.6, color: LINE });
+  }
+  state.y -= lineCount * lineGap + 10;
 }
 
 // ─── Table (with flex-width column allocation) ────────────────────────────────
@@ -1370,7 +1405,7 @@ function renderDesignedWeekFormsLandscape(document, state) {
     });
 
     const notesY = 43;
-    page.drawText("Notes:", { x: pageMargin, y: notesY + 11, size: 8, font: state.fonts.sansBold, color: INK });
+    page.drawText("Mom Notes:", { x: pageMargin, y: notesY + 11, size: 8, font: state.fonts.sansBold, color: INK });
     for (let i = 0; i < 3; i += 1) {
       page.drawLine({ start: { x: pageMargin + 42, y: notesY + 13 - i * 12 }, end: { x: W - pageMargin, y: notesY + 13 - i * 12 }, thickness: 0.35, color: LINE });
     }
@@ -1393,6 +1428,7 @@ function drawSection(state, section) {
   if (section.type === "liturgical")    return drawLiturgicalStrip(state, section);
   if (section.type === "calendar-grid") return drawCalendarGrid(state, section);
   if (section.type === "designed-week") return drawDesignedWeek(state, section);
+  if (section.type === "notes")         return drawNotesLines(state, section);
   return drawList(state, section);
 }
 

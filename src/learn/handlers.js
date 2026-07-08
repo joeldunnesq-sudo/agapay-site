@@ -12,7 +12,7 @@ import { renderPrintDocumentPdf } from "./print-engine.js";
 import { buildAcademicReportCardPdf, buildAcademicTranscriptPdf, buildLearnPrintDocument, buildLearnReportPrintDocument, renderPrintDocumentPdf as renderLocalPrintDocumentPdf } from "./print-documents.js";
 import { loadTestScores } from "./test-scores.js";
 import { createLearnRepositoryForRequest, SeedLearnRepository } from "./repository.js";
-import { learnSetupIdentity, saveLearnCompletion, saveLearnFamilyPlanning, saveLearnGraceMode, saveLearnPlannerBlock, saveLearnSetup } from "./setup-persistence.js";
+import { learnSetupIdentity, saveLearnCompletion, saveLearnFamilyPlanning, saveLearnGraceMode, saveLearnMoveUnfinishedWork, saveLearnPlannerBlock, saveLearnSetup } from "./setup-persistence.js";
 
 const LEARN_PRINT_USAGE_PREFIX = "__agapay_learn_print_usage:";
 
@@ -739,4 +739,42 @@ export async function handleLearnPlannerBlockSave(request, env) {
     month: url.searchParams.get("month") || ""
   });
   return json({ ok: true, savedAt: saved.setupSnapshot.savedAt, planner });
+}
+
+// "Move unfinished work": move a day's unfinished lesson to the next open
+// day this week, or set it aside in Reserve.
+// Accepts: { scope: "household"|"child", rowId, fromWeekday (0-6), mode: "next-open-day"|"reserve", weekDate }
+export async function handleLearnMoveUnfinishedWork(request, env) {
+  const blocked = assertLearnEnabled(env);
+  if (blocked) return blocked;
+  if (request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, { status: 405 });
+
+  const auth = await requireLearnRepository(request, env);
+  if (auth.response) return auth.response;
+
+  const payload = await request.json().catch(() => null);
+  if (!payload || typeof payload !== "object") {
+    return json({ ok: false, error: "Move request payload was invalid." }, { status: 400 });
+  }
+
+  const saved = await saveLearnMoveUnfinishedWork(env, request, payload);
+  if (!saved.ok) return json({ ok: false, error: saved.error }, { status: saved.status || 500 });
+
+  // Return the refreshed planner so the UI can re-render without a full reload.
+  const url = new URL(request.url);
+  const repository = new SeedLearnRepository(saved.onboarding);
+  const planner = repository.getPlanner({
+    calendarType: calendarTypeForRequest(url, repository),
+    view: url.searchParams.get("view") || "week",
+    month: url.searchParams.get("month") || ""
+  });
+  return json({
+    ok: true,
+    savedAt: saved.setupSnapshot.savedAt,
+    action: saved.action,
+    movedToWeekday: saved.movedToWeekday,
+    fallbackToReserve: Boolean(saved.fallbackToReserve),
+    title: saved.title,
+    planner
+  });
 }
