@@ -1940,13 +1940,34 @@
 }
 .sw-health-chip {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: .5rem;
+  flex-direction: column;
+  gap: .35rem;
   padding: .55rem .75rem;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(184,144,47,.045);
+}
+.sw-health-chip-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+.sw-health-chip--low {
+  grid-column: 1 / -1;
+  background: rgba(138,41,41,.04);
+  border-color: rgba(138,41,41,.18);
+}
+.sw-health-chip-tip {
+  font-size: .78rem;
+  color: var(--stone);
+  line-height: 1.4;
+  margin: 0;
+}
+.sw-health-score-footnote {
+  font-size: .72rem;
+  color: var(--muted);
+  margin-top: .75rem;
 }
 .sw-health-chip-label { font-size: .76rem; color: var(--stone); }
 .sw-health-chip-score { font-family: var(--serif); font-size: 1.1rem; font-weight: 600; padding: .05rem .5rem; border-radius: 6px; }
@@ -2004,4 +2025,75 @@
 @media (max-width: 640px) {
   .sw-health-score-row { flex-direction: column; align-items: flex-start; }
   .sw-concentration-row, .sw-recurring-alert-row { grid-template-columns: 1fr; }
+}
+
+/* ── Other Income (manual entry) ─────────────────────────────────────── */
+.sw-income-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  align-items: end;
+}
+.sw-income-form-row label {
+  display: grid;
+  gap: .3rem;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--stone);
+}
+.sw-income-form-row input,
+.sw-income-form-row select {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: .45rem .6rem;
+  font: inherit;
+  font-size: .85rem;
+  color: var(--deep);
+  min-width: 0;
+}
+.sw-income-form-row input[type="date"] { width: 150px; }
+.sw-income-form-row input[type="number"] { width: 110px; }
+.sw-income-notes-field { flex: 1; min-width: 160px; }
+.sw-income-source-label-field { width: 140px; }
+.sw-income-submit-btn { white-space: nowrap; }
+.sw-income-form-status {
+  font-size: .78rem;
+  margin-top: .5rem;
+  min-height: 1em;
+  color: var(--stone);
+}
+.sw-income-form-status--ok { color: var(--green, #2e6b4a); }
+.sw-income-form-status--error { color: var(--red, #8a2929); }
+.sw-income-by-source {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: .9rem;
+  padding: .6rem .8rem;
+  border-radius: 8px;
+  background: rgba(184,144,47,.045);
+  font-size: .82rem;
+  color: var(--stone);
+}
+.sw-income-by-source strong { color: var(--deep); font-family: var(--serif); font-size: 1rem; margin-right: .25rem; }
+.sw-income-table .sw-income-notes { color: var(--stone); font-size: .82rem; }
+.sw-income-delete-btn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: .2rem .4rem;
+  border-radius: 4px;
+}
+.sw-income-delete-btn:hover { color: var(--red, #8a2929); background: rgba(138,41,41,.08); }
+
+@media (max-width: 640px) {
+  .sw-income-form-row { flex-direction: column; align-items: stretch; }
+  .sw-income-form-row input[type="date"],
+  .sw-income-form-row input[type="number"],
+  .sw-income-source-label-field { width: 100%; }
 }
