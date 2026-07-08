@@ -151,7 +151,7 @@ function stewardshipComingSoonJson(status = 409) {
 }
 
 function stewardshipComingSoonHtml(registration, env) {
-  const base = absoluteWebsiteUrl(env);
+  const base = absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL);
   const parishName = registration?.parishName || registration?.name || "Your parish";
   return `<!doctype html>
 <html lang="en">
@@ -219,7 +219,7 @@ async function stripePlatformGet(env, path) {
 
 function paywallHtml(registration, env) {
   const parishName = registration.parishName || registration.name || "Your Parish";
-  const base = absoluteWebsiteUrl(env);
+  const base = absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL);
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -308,7 +308,7 @@ function paywallHtml(registration, env) {
 // ─── Module home (when subscribed) ───────────────────────────────────────────
 
 function stewardshipHomeHtml(registration, meetings, env) {
-  const base = absoluteWebsiteUrl(env);
+  const base = absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL);
   const status = stewardshipStatus(registration);
   const statusLabel = {
     active: "Active", trialing: "Trial", past_due: "Past Due",
@@ -559,7 +559,7 @@ function stewardshipHomeHtml(registration, meetings, env) {
 // ─── Billing page ─────────────────────────────────────────────────────────────
 
 function billingHtml(registration, subscription, env) {
-  const base = absoluteWebsiteUrl(env);
+  const base = absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL);
   const status = stewardshipStatus(registration);
   const periodEnd = registration.stewardshipPeriodEnd
     ? new Date(registration.stewardshipPeriodEnd * 1000).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
@@ -614,7 +614,7 @@ function billingHtml(registration, subscription, env) {
 // ─── Annual meeting list / new / edit ─────────────────────────────────────────
 
 function annualMeetingFormHtml(registration, meeting, agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions, env) {
-  const base = absoluteWebsiteUrl(env);
+  const base = absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL);
   const isNew = !meeting;
   const title = isNew ? "New Annual Meeting Packet" : `Edit: ${meeting.title}`;
   const action = isNew ? "/parish/stewardship/annual-meetings/new" : `/parish/stewardship/annual-meetings/${meeting.id}`;
@@ -846,7 +846,7 @@ function packetPreviewHtml(registration, meeting, agendaItems, reports, financia
   // row in stewardship_financial_summaries at all — d1First then returns null
   // rather than an empty object, which crashed every property access below.
   financialSummary = financialSummary || {};
-  const base         = absoluteWebsiteUrl(env);
+  const base         = absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL);
   const parishName   = meeting.parish_name_override || registration.parishName || registration.name || "Parish";
   const jurisdiction = meeting.jurisdiction || registration.jurisdiction || "";
   const address      = meeting.address || registrationAddressLine(registration) || "";
@@ -1838,7 +1838,7 @@ export async function handleParishStewardshipSubscribe(request, env, parishId) {
     return json({ error: "Stewardship pricing is not configured yet." }, { status: 500 });
   }
 
-  const base = absoluteWebsiteUrl(env);
+  const base = absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL);
   let customerId = registration.stewardshipStripeCustomerId;
   if (!customerId) {
     const customer = await stripePlatformPost(env, "/customers", {
@@ -1905,7 +1905,7 @@ export async function handleParishStewardshipBillingPortal(request, env, parishI
 
   const portal = await stripePlatformPost(env, "/billing_portal/sessions", {
     customer: customerId,
-    return_url: absoluteWebsiteUrl(env) + "/parish/dashboard?tab=stewardship",
+    return_url: absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL) + "/parish/dashboard?tab=stewardship",
   });
   if (portal.error || !portal.url) {
     return json({ error: portal.error?.message || "Could not open billing portal." }, { status: 500 });
@@ -2121,7 +2121,7 @@ export async function handleStewardshipSubscribe(request, env) {
     return json({ error: "Stewardship pricing not configured. Set STEWARDSHIP_STRIPE_PRICE_MONTHLY and STEWARDSHIP_STRIPE_PRICE_ANNUAL." }, { status: 500 });
   }
 
-  const base = absoluteWebsiteUrl(env);
+  const base = absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL);
 
   // Create or retrieve Stripe customer for this parish
   let customerId = registration.stewardshipStripeCustomerId;
@@ -2212,10 +2212,10 @@ export async function handleStewardshipBillingPortal(request, env) {
 
   const customerId = registration.stewardshipStripeCustomerId;
   if (!customerId) {
-    return Response.redirect(absoluteWebsiteUrl(env) + "/parish/stewardship", 303);
+    return Response.redirect(absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL) + "/parish/stewardship", 303);
   }
 
-  const base = absoluteWebsiteUrl(env);
+  const base = absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL);
   const portal = await stripePlatformPost(env, "/billing_portal/sessions", {
     customer: customerId,
     return_url: base + "/parish/stewardship/billing",
@@ -2249,7 +2249,7 @@ export async function handleStewardshipMeetingNew(request, env) {
   }
 
   if (!hasStewardshipToolAccess(registration)) {
-    return Response.redirect(absoluteWebsiteUrl(env) + "/parish/stewardship", 303);
+    return Response.redirect(absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL) + "/parish/stewardship", 303);
   }
 
   if (request.method === "GET") {
@@ -2285,7 +2285,7 @@ export async function handleStewardshipMeetingNew(request, env) {
 
   await saveMeetingSubRecords(env, meetingId, form);
 
-  return Response.redirect(absoluteWebsiteUrl(env) + "/parish/stewardship/annual-meetings/" + meetingId, 303);
+  return Response.redirect(absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL) + "/parish/stewardship/annual-meetings/" + meetingId, 303);
 }
 
 // GET /parish/stewardship/annual-meetings/:id
@@ -2303,7 +2303,7 @@ export async function handleStewardshipMeetingEdit(request, env, meetingId) {
   }
 
   if (!hasStewardshipToolAccess(registration)) {
-    return Response.redirect(absoluteWebsiteUrl(env) + "/parish/stewardship", 303);
+    return Response.redirect(absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL) + "/parish/stewardship", 303);
   }
 
   const meeting = await d1First(env,
@@ -2350,7 +2350,7 @@ export async function handleStewardshipMeetingEdit(request, env, meetingId) {
   await deleteMeetingSubRecords(env, meetingId);
   await saveMeetingSubRecords(env, meetingId, form);
 
-  return Response.redirect(absoluteWebsiteUrl(env) + "/parish/stewardship/annual-meetings/" + meetingId, 303);
+  return Response.redirect(absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL) + "/parish/stewardship/annual-meetings/" + meetingId, 303);
 }
 
 // GET /parish/stewardship/annual-meetings/:id/preview
@@ -2366,7 +2366,7 @@ export async function handleStewardshipMeetingPreview(request, env, meetingId) {
   }
 
   if (!hasStewardshipToolAccess(registration)) {
-    return Response.redirect(absoluteWebsiteUrl(env) + "/parish/stewardship", 303);
+    return Response.redirect(absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL) + "/parish/stewardship", 303);
   }
 
   const meeting = await d1First(env,
@@ -2446,7 +2446,7 @@ export async function handleStewardshipGivingMetricsPage(request, env) {
     return new Response(paywallHtml(registration, env), { headers: { "Content-Type": "text/html;charset=utf-8" } });
   }
 
-  const base = absoluteWebsiteUrl(env);
+  const base = absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL);
   const parishName = registration.parishName || registration.name || "Parish";
   const currentYear = new Date().getFullYear();
   const yearOptions = [0,1,2,3,4].map(n => {
@@ -2460,6 +2460,9 @@ export async function handleStewardshipGivingMetricsPage(request, env) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Stewardship Reports — AGAPAY Stewardship</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="${base}/site-chrome.css" />
   <link rel="stylesheet" href="${base}/parish/style.css" />
   <link rel="stylesheet" href="${base}/styles/stewardship.css" />
