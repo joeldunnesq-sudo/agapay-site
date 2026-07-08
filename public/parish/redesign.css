@@ -16,7 +16,7 @@
 }
 
 /* ────────── Sidebar polish ────────── */
-.sidebar { background: linear-gradient(180deg, var(--deep) 0%, var(--deep-hero-2, #0B2130) 100%); position: relative; }
+.sidebar { background: linear-gradient(180deg, var(--deep) 0%, var(--deep-hero-2, #0B2130) 100%); }
 .sidebar::before {
   content: ""; position: absolute; top: 0; right: 0; width: 1px; height: 100%;
   background: linear-gradient(180deg, transparent, var(--pdx-gold-glow) 30%, var(--pdx-gold-glow) 70%, transparent);
