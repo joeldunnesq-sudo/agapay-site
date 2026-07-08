@@ -203,13 +203,9 @@
       min-height: 46px;
       text-decoration: none;
     }
-    .app { display: grid; grid-template-columns: 300px minmax(0, 1fr); min-height: 100vh; }
-    .sidebar { background: var(--deep); color: var(--cream); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow: hidden; border-right: 1px solid rgba(184,144,47,0.2); }
-    .sidebar-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; min-height: 0; scrollbar-width: thin; scrollbar-color: rgba(184,144,47,0.38) rgba(246,241,232,0.04); }
-    .sidebar-body::-webkit-scrollbar { width: 4px; }
-    .sidebar-body::-webkit-scrollbar-track { background: transparent; }
-    .sidebar-body::-webkit-scrollbar-thumb { background: rgba(184,144,47,0.28); border-radius: 4px; }
-    .sidebar-body::-webkit-scrollbar-thumb:hover { background: rgba(184,144,47,0.55); }
+    .app { display: grid; grid-template-columns: 300px minmax(0, 1fr); min-height: 100vh; background: linear-gradient(to right, var(--deep) 300px, transparent 300px); }
+    .sidebar { background: var(--deep); color: var(--cream); display: flex; flex-direction: column; position: sticky; top: 0; align-self: start; min-height: 100vh; border-right: 1px solid rgba(184,144,47,0.2); }
+    .sidebar-body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
     .sidebar-header { padding: 1.5rem 1.25rem 1.25rem; border-bottom: 1px solid rgba(184,144,47,0.15); flex-shrink: 0; position: relative; overflow: hidden; }
     .sidebar-header::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 220px; height: 110px; background: radial-gradient(ellipse at top, rgba(184,144,47,0.14), transparent 70%); pointer-events: none; z-index: 0; }
     .sidebar-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem; position: relative; z-index: 2; }
@@ -902,7 +898,7 @@
     .bulletin-footer { margin-top: 0.75rem; font-family: var(--sans); font-size: 11px; color: var(--muted); }
 
     @media (max-width: 860px) {
-      .app { grid-template-columns: 1fr; }
+      .app { grid-template-columns: 1fr; background: none; }
       .sidebar { position: static; height: auto; }
       .form-grid, .toggle-row, .insights-layout, .insight-stats, .setup-wizard-body, .commemoration-list, .feast-grid, .history-summary, .history-filters { grid-template-columns: 1fr; }
       .qr-layout, .qr-copy-row, .qr-feature-layout { grid-template-columns: 1fr; }
