@@ -693,7 +693,7 @@
 }
 
 /* ── KPI grid (giving metrics body) ────────────────────────────── */
-.sw-kpi-grid {
+.sw-kpi-grid, .sw-budget-pace-grid, .sw-recurring-kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: .6rem;
@@ -1362,7 +1362,26 @@
   border: 1px solid rgba(184,144,47,0.36);
 }
 
-.sw-suite-hero-actions { display: flex; gap: 0.5rem; }
+.sw-suite-hero-actions { display: flex; gap: 0.5rem; align-items: center; }
+.sw-report-generate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .55rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--gold);
+  background: var(--gold);
+  color: var(--deep);
+  font: 700 .8rem var(--sans);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, opacity .15s;
+}
+.sw-report-generate-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.sw-report-generate-btn:hover { opacity: .88; }
+@media (max-width: 640px) {
+  .sw-report-generate-btn span, .sw-report-generate-btn { font-size: .74rem; padding: .5rem .75rem; }
+}
 .sw-suite-refresh-btn {
   display: grid;
   place-items: center;
@@ -1863,4 +1882,115 @@
   font: inherit;
   font-size: 13px;
   color: var(--deep);
+}
+
+/* ── Full-width featured card (Stewardship Health Score, Financial
+   Snapshots) — pulled out of the tool grid so it isn't squeezed into an
+   equal-height grid cell. ───────────────────────────────────────────── */
+.sw-tool-financials-featured {
+  margin-bottom: 1rem;
+}
+.sw-tool-financials-featured .sw-tool-card-body {
+  overflow: visible;
+}
+
+/* ── Stewardship Health Score ────────────────────────────────────────── */
+.sw-health-score-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.sw-health-score-badge {
+  flex-shrink: 0;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 4px solid var(--line);
+  background: white;
+}
+.sw-health-score-badge.tone-green { border-color: var(--green, #2e6b4a); }
+.sw-health-score-badge.tone-gold  { border-color: var(--gold); }
+.sw-health-score-badge.tone-red   { border-color: var(--red, #8a2929); }
+.sw-health-score-badge strong { font-family: var(--serif); font-size: 1.9rem; color: var(--deep); line-height: 1; }
+.sw-health-score-badge span { font-size: .65rem; color: var(--muted); }
+.sw-health-score-copy { flex: 1; min-width: 220px; }
+.sw-health-score-headline { font-family: var(--serif); font-size: 1.3rem; color: var(--deep); font-weight: 600; }
+.sw-health-score-sub { color: var(--stone); font-size: .85rem; margin-top: .25rem; }
+.sw-health-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: .5rem;
+  margin-top: 1.25rem;
+}
+.sw-health-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  padding: .55rem .75rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(184,144,47,.045);
+}
+.sw-health-chip-label { font-size: .76rem; color: var(--stone); }
+.sw-health-chip-score { font-family: var(--serif); font-size: 1.1rem; font-weight: 600; padding: .05rem .5rem; border-radius: 6px; }
+.sw-health-chip-score.tone-green { color: var(--green, #2e6b4a); }
+.sw-health-chip-score.tone-gold  { color: #9c7a2e; }
+.sw-health-chip-score.tone-red   { color: var(--red, #8a2929); }
+
+/* ── Donor Concentration Risk ────────────────────────────────────────── */
+.sw-concentration-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .75rem;
+  margin-bottom: .75rem;
+}
+.sw-concentration-stat {
+  padding: .9rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(184,144,47,.045);
+  text-align: center;
+}
+.sw-concentration-stat strong { display: block; font-family: var(--serif); font-size: 1.9rem; color: var(--deep); line-height: 1; }
+.sw-concentration-stat span { font-size: .74rem; color: var(--stone); margin-top: .25rem; display: block; }
+.sw-concentration-risk-badge {
+  display: inline-block;
+  padding: .3rem .75rem;
+  border-radius: 999px;
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.sw-concentration-risk-badge.tone-green { background: rgba(46,107,74,.12); color: var(--green, #2e6b4a); }
+.sw-concentration-risk-badge.tone-gold  { background: rgba(184,144,47,.16); color: #8a6a26; }
+.sw-concentration-risk-badge.tone-red   { background: rgba(138,41,41,.12); color: var(--red, #8a2929); }
+
+/* ── Recurring Giving Health ─────────────────────────────────────────── */
+.sw-recurring-alert-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .6rem;
+}
+.sw-recurring-alert {
+  padding: .7rem .85rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  text-align: center;
+}
+.sw-recurring-alert strong { display: block; font-family: var(--serif); font-size: 1.4rem; color: var(--deep); }
+.sw-recurring-alert span { font-size: .72rem; color: var(--muted); }
+.sw-recurring-alert--warn { background: rgba(138,41,41,.06); border-color: rgba(138,41,41,.22); }
+.sw-recurring-alert--warn strong { color: var(--red, #8a2929); }
+
+@media (max-width: 640px) {
+  .sw-health-score-row { flex-direction: column; align-items: flex-start; }
+  .sw-concentration-row, .sw-recurring-alert-row { grid-template-columns: 1fr; }
 }
