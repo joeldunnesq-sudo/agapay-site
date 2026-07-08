@@ -594,6 +594,38 @@
     );
   }
 
+  // A sample KPI grid (blurred, real layout, fake numbers) sits behind the
+  // upgrade CTA so a Mission-tier treasurer can see exactly what they're
+  // missing rather than just reading a sentence about it.
+  function renderFinancialsUpgradePrompt() {
+    const sampleKpis =
+      '<div class="sw-fin-kpi-grid">' +
+        swFinKpi('Total Income', '$84,200', '12 packets', 'income', '<span class="sw-fin-yoy sw-fin-yoy-good">\u25B2 9% vs 2025</span>') +
+        swFinKpi('Total Expenses', '$71,600', 'across all packets', 'expense', '<span class="sw-fin-yoy sw-fin-yoy-bad">\u25B2 4% vs 2025</span>') +
+        swFinKpi('Net Surplus', '$12,600', 'fiscal year 2026', 'surplus', '<span class="sw-fin-yoy sw-fin-yoy-good">\u25B2 22% vs 2025</span>') +
+        swFinKpi('Expense Ratio', '85%', 'of income spent', 'surplus', '<span class="sw-fin-yoy sw-fin-yoy-good">\u25BC 3 pts vs 2025</span>') +
+        swFinKpi('Restricted Funds', '$31,400', '4 funds tracked', '') +
+      '</div>';
+
+    return (
+      '<div class="sw-fin-upsell-wrap">' +
+        '<div class="sw-fin-upsell-preview" aria-hidden="true">' + sampleKpis + '</div>' +
+        '<div class="sw-upsell-cta">' +
+          '<strong style="font-family:var(--serif);font-size:1.1rem;color:var(--deep);">See your finances at a glance</strong>' +
+          '<p class="section-note" style="margin:0;">Year-over-year income, expenses, and restricted fund balances — the numbers your council actually asks about at every meeting.</p>' +
+          '<div class="sw-upsell-price"><strong>+$50</strong><span>/ mo vs Mission</span></div>' +
+          '<ul class="sw-upsell-list">' +
+            '<li>Year-over-year comparison on every metric</li>' +
+            '<li>Restricted fund balances tracked automatically</li>' +
+            '<li>Full stewardship reports, donor retention, and giving distribution too</li>' +
+          '</ul>' +
+          '<button type="button" class="sw-subscribe-btn" onclick="switchTab(\'settings\')">Upgrade to Parish tier</button>' +
+          '<p class="sw-upsell-note">Included at no extra cost once you\'re on the Parish tier.</p>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
   // ── Donor Retention Panel ────────────────────────────────────────────────
   async function loadDonorRetentionPanel(year) {
     const pane = document.getElementById('stewardshipRetentionPane');
@@ -676,7 +708,7 @@
     const pane = document.getElementById('stewardshipFinancialsPane');
     if (!pane || !currentParish) return;
 
-    if (!isParishTier()) { pane.innerHTML = '<p class="muted">Financial snapshots are included with the Parish tier.</p>'; return; }
+    if (!isParishTier()) { pane.innerHTML = renderFinancialsUpgradePrompt(); return; }
 
     if (year) financialsState.year = year;
 
@@ -707,8 +739,8 @@
   }
 
   function renderFinancialSnapshots(data) {
-    const fmt = (c) => '$' + ((c || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const { financialSummaries = [], restrictedFunds = [], totals, meetings = [] } = data;
+    const fmt = (c) => '$' + ((c || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    const { financialSummaries = [], restrictedFunds = [], totals, meetings = [], priorYear = null, restrictedFundsTotalCents = 0 } = data;
 
     if (!meetings.length) {
       return '<div class="sw-financials-empty">' +
@@ -718,19 +750,24 @@
       '</div>';
     }
 
-    // Income / expense summary cards
+    // Income / expense summary cards, each with a year-over-year badge when
+    // prior-year data exists — this is the "at a glance" comparison.
     let summaryHtml = '';
     if (totals) {
-      const netSign = totals.netCents >= 0 ? 'surplus' : 'deficit';
+      const expenseRatioPct = totals.totalIncomeCents > 0 ? Math.round((totals.totalExpenseCents / totals.totalIncomeCents) * 100) : null;
+      const priorExpenseRatioPct = priorYear && priorYear.totalIncomeCents > 0 ? Math.round((priorYear.totalExpenseCents / priorYear.totalIncomeCents) * 100) : null;
       summaryHtml =
         '<div class="sw-fin-kpi-grid">' +
-          swFinKpi('Total Income',  fmt(totals.totalIncomeCents),  financialSummaries.length + ' packet' + (financialSummaries.length !== 1 ? 's' : ''), 'income') +
-          swFinKpi('Total Expenses', fmt(totals.totalExpenseCents), 'across all packets', 'expense') +
-          swFinKpi('Net ' + (totals.netCents >= 0 ? 'Surplus' : 'Deficit'), fmt(Math.abs(totals.netCents)), 'fiscal year ' + financialsState.year, netSign) +
+          swFinKpi('Total Income',  fmt(totals.totalIncomeCents),  financialSummaries.length + ' packet' + (financialSummaries.length !== 1 ? 's' : ''), 'income', swFinYoy(totals.totalIncomeCents, priorYear && priorYear.totalIncomeCents, priorYear && priorYear.year)) +
+          swFinKpi('Total Expenses', fmt(totals.totalExpenseCents), 'across all packets', 'expense', swFinYoy(totals.totalExpenseCents, priorYear && priorYear.totalExpenseCents, priorYear && priorYear.year, true)) +
+          swFinKpi('Net ' + (totals.netCents >= 0 ? 'Surplus' : 'Deficit'), fmt(Math.abs(totals.netCents)), 'fiscal year ' + financialsState.year, totals.netCents >= 0 ? 'surplus' : 'deficit', swFinYoy(totals.netCents, priorYear && priorYear.netCents, priorYear && priorYear.year)) +
+          swFinKpi('Expense Ratio', expenseRatioPct === null ? '—' : expenseRatioPct + '%', 'of income spent', expenseRatioPct === null ? '' : (expenseRatioPct <= 85 ? 'surplus' : expenseRatioPct <= 100 ? '' : 'deficit'), swFinYoy(expenseRatioPct, priorExpenseRatioPct, priorYear && priorYear.year, true, true)) +
+          swFinKpi('Restricted Funds', fmt(restrictedFundsTotalCents), restrictedFunds.length + ' fund' + (restrictedFunds.length !== 1 ? 's' : '') + ' tracked', '') +
         '</div>';
     }
 
-    // Per-packet breakdown
+    // Per-packet breakdown and restricted funds side by side — the card is
+    // full-width now, so this no longer needs to stack and scroll.
     let packetsHtml = '';
     if (financialSummaries.length) {
       packetsHtml =
@@ -755,10 +792,8 @@
         '</div>';
     }
 
-    // Restricted funds table
     let fundsHtml = '';
     if (restrictedFunds.length) {
-      // Group by fund name across packets, show each row
       const rows = restrictedFunds.map(rf =>
         '<tr class="sw-fund-row">' +
           '<td class="sw-td sw-fund-name">' + escapeHtml(rf.fundName) + '</td>' +
@@ -766,36 +801,58 @@
           '<td class="sw-td sw-td-right sw-fin-income-lbl">' + fmt(rf.totalReceivedCents) + '</td>' +
           '<td class="sw-td sw-td-right sw-fin-expense-lbl">' + fmt(rf.totalDisbursedCents) + '</td>' +
           '<td class="sw-td sw-td-right ' + (rf.endingBalanceCents >= 0 ? 'sw-fin-surplus' : 'sw-fin-deficit') + '">' + fmt(rf.endingBalanceCents) + '</td>' +
-          '<td class="sw-td sw-td-muted" style="font-size:.78rem">' + escapeHtml(rf.meetingTitle || '') + '</td>' +
         '</tr>'
       ).join('');
 
       fundsHtml =
-        '<div class="sw-fin-section-label" style="margin-top:1.25rem">Restricted funds</div>' +
+        '<div class="sw-fin-section-label">Restricted funds</div>' +
         '<div class="sw-fin-table-wrap">' +
           '<table class="sw-fin-table">' +
             '<thead><tr>' +
               '<th class="sw-th">Fund</th>' +
-              '<th class="sw-th sw-th-right">Beginning</th>' +
-              '<th class="sw-th sw-th-right">Received</th>' +
-              '<th class="sw-th sw-th-right">Disbursed</th>' +
+              '<th class="sw-th sw-th-right">Begin</th>' +
+              '<th class="sw-th sw-th-right">In</th>' +
+              '<th class="sw-th sw-th-right">Out</th>' +
               '<th class="sw-th sw-th-right">Ending</th>' +
-              '<th class="sw-th">Source packet</th>' +
             '</tr></thead>' +
             '<tbody>' + rows + '</tbody>' +
           '</table>' +
         '</div>';
     }
 
-    return summaryHtml + packetsHtml + fundsHtml;
+    const twoColHtml = (packetsHtml || fundsHtml)
+      ? '<div class="sw-fin-two-col">' +
+          '<div>' + packetsHtml + '</div>' +
+          '<div>' + fundsHtml + '</div>' +
+        '</div>'
+      : '';
+
+    return summaryHtml + twoColHtml;
   }
 
-  function swFinKpi(label, value, sub, type) {
-    const cls = type === 'income' ? 'sw-fin-income-lbl' : type === 'expense' ? 'sw-fin-expense-lbl' : type === 'surplus' ? 'sw-fin-surplus' : 'sw-fin-deficit';
+  // Builds a "▲ 8% vs 2025" badge comparing current to prior-year value.
+  // `invertGood` flips the up/down color meaning for metrics where lower is
+  // better (expenses, expense ratio) rather than higher is better.
+  function swFinYoy(current, prior, priorYearLabel, invertGood, isRatioPoints) {
+    if (current === null || current === undefined || !prior) return '';
+    const delta = isRatioPoints ? (current - prior) : Math.round(((current - prior) / Math.abs(prior)) * 100);
+    if (!isFinite(delta)) return '';
+    const up = delta >= 0;
+    const good = invertGood ? !up : up;
+    const arrow = up ? '\u25B2' : '\u25BC';
+    const suffix = isRatioPoints ? ' pts' : '%';
+    return '<span class="sw-fin-yoy ' + (good ? 'sw-fin-yoy-good' : 'sw-fin-yoy-bad') + '">' +
+      arrow + ' ' + Math.abs(delta) + suffix + ' vs ' + priorYearLabel +
+    '</span>';
+  }
+
+  function swFinKpi(label, value, sub, type, yoyBadge) {
+    const cls = type === 'income' ? 'sw-fin-income-lbl' : type === 'expense' ? 'sw-fin-expense-lbl' : type === 'surplus' ? 'sw-fin-surplus' : type === 'deficit' ? 'sw-fin-deficit' : '';
     return '<div class="sw-kpi-card">' +
       '<span class="sw-kpi-label">' + label + '</span>' +
       '<strong class="sw-kpi-value ' + cls + '">' + value + '</strong>' +
       '<span class="sw-kpi-sub">' + sub + '</span>' +
+      (yoyBadge || '') +
     '</div>';
   }
 
