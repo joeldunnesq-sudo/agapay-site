@@ -224,6 +224,7 @@ import {
   handleLearnTestScores,
   handleLearnTestScoresSave,
   handleLearnGraceModeSave,
+  handleLearnMoveUnfinishedWork,
   handleLearnPlannerBlockSave,
   handleLearnBillingCancel,
   handleLearnBillingCheckout,
@@ -1842,6 +1843,9 @@ export default {
     }
     if (request.method === "POST" && url.pathname === "/api/learn/planner") {
       return handleLearnPlannerBlockSave(request, env);
+    }
+    if (request.method === "POST" && url.pathname === "/api/learn/planner/move") {
+      return handleLearnMoveUnfinishedWork(request, env);
     }
     if (request.method === "POST" && url.pathname === "/api/learn/feedback") {
       return handleLearnFeedbackSubmit(request, env);
