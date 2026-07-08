@@ -1,6 +1,26 @@
 /* public/styles/stewardship.css */
 /* Stewardship module styles — extends existing dashboard CSS */
 
+/* ── Dashboard shell (base layout for every server-rendered
+   stewardship page — home, meetings, packets, the full metrics
+   report, etc. All reference these three classes; none of them
+   had any CSS before, so pages without a page-specific companion
+   class like .sw-report-page fell back to totally unstyled HTML. */
+.dashboard-body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--paper, #f6f1e8);
+  color: var(--deep, #061522);
+}
+.dashboard-shell {
+  min-height: 100vh;
+}
+.dashboard-main {
+  width: min(1160px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 1.25rem 0 3rem;
+}
+
 /* ── Page layout ─────────────────────────────────────────────── */
 .module-card {
   background: var(--surface-2, #1a2332);
