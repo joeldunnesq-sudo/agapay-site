@@ -4,6 +4,7 @@ import { liturgicalFeastsForYear } from "../src/liturgical-calendar.js";
 import { normalizeCalendarType, SeedLiturgicalSource } from "../src/learn/liturgical-source.js";
 import { buildLearnPrintDocument, buildLearnReportPrintDocument, buildPrintJobRequest, buildWeeklyHouseholdPrintDocument, renderPrintDocumentPdf } from "../src/learn/print-documents.js";
 import { getLearnSeedSnapshot } from "../src/learn/demo-data.js";
+import { applyPlannerOverrides, computeMoveUnfinishedWork, describePlannerStatus, findNextOpenWeekday } from "../src/learn/planner-overrides.js";
 import { createSeedLearnRepository } from "../src/learn/repository.js";
 
 function assert(condition, message) {
@@ -243,5 +244,175 @@ assert(odysseyLoginHtml.includes("/learn/odyssey/faq"), "Odyssey login page shou
 
 assert(workerSource.includes('["/learn/odyssey/faq", "/learn/odyssey/faq.html"]'), "Worker asset routes should serve the Odyssey FAQ page.");
 assert(workerSource.includes('["/learn/odyssey/faq/", "/learn/odyssey/faq.html"]'), "Worker asset routes should serve the Odyssey FAQ page with a trailing slash.");
+
+// ── "Move unfinished work" — pure logic (src/learn/planner-overrides.js) ───
+{
+  const plannedRow = { id: "row_a", title: "Math", statuses: ["empty", "planned", "empty", "empty", "empty", "empty", "empty"], minutes: [0, 35, 0, 0, 0, 0, 0] };
+  assert(findNextOpenWeekday(plannedRow, 1) === 2, "findNextOpenWeekday should find the very next open day.");
+
+  const fullRow = { id: "row_b", title: "Full", statuses: ["planned", "planned", "planned", "planned", "planned", "planned", "planned"], minutes: [10, 10, 10, 10, 10, 10, 10] };
+  assert(findNextOpenWeekday(fullRow, 1) === null, "findNextOpenWeekday should return null when every other day already has work.");
+
+  // computeMoveUnfinishedWork: happy path, moves to the next open day
+  const moveResult = computeMoveUnfinishedWork({ rows: [plannedRow], rowId: "row_a", fromWeekday: 1, mode: "next-open-day" });
+  assert(moveResult.ok && moveResult.action === "deferred" && moveResult.movedToWeekday === 2, "Moving unfinished work should defer the source day and land on the next open day.");
+
+  // computeMoveUnfinishedWork: reserve mode never sets a target day
+  const reserveResult = computeMoveUnfinishedWork({ rows: [plannedRow], rowId: "row_a", fromWeekday: 1, mode: "reserve" });
+  assert(reserveResult.ok && reserveResult.action === "reserve" && reserveResult.movedToWeekday === null, "Reserve mode should set the work aside without picking a target day.");
+
+  // computeMoveUnfinishedWork: no open day this week gracefully falls back to reserve
+  const fallback = computeMoveUnfinishedWork({ rows: [fullRow], rowId: "row_b", fromWeekday: 0, mode: "next-open-day" });
+  assert(fallback.ok && fallback.action === "reserve" && fallback.fallbackToReserve === true, "With no open day left this week, moving should gracefully fall back to Reserve rather than failing.");
+
+  // computeMoveUnfinishedWork: only genuinely unfinished (planned/reduced) work can be moved
+  const completedRow = { id: "row_c", title: "Done thing", statuses: ["completed"], minutes: [20] };
+  const completedAttempt = computeMoveUnfinishedWork({ rows: [completedRow], rowId: "row_c", fromWeekday: 0, mode: "next-open-day" });
+  assert(!completedAttempt.ok, "Move Unfinished Work should refuse to move already-completed work.");
+  const emptyAttempt = computeMoveUnfinishedWork({ rows: [completedRow], rowId: "row_c", fromWeekday: 2, mode: "next-open-day" });
+  assert(!emptyAttempt.ok, "Move Unfinished Work should refuse to move a day with no scheduled work.");
+  const missingRow = computeMoveUnfinishedWork({ rows: [completedRow], rowId: "does_not_exist", fromWeekday: 0, mode: "reserve" });
+  assert(!missingRow.ok, "Move Unfinished Work should error clearly when the lesson block isn't found.");
+
+  // applyPlannerOverrides: applying a "deferred" override clears the source day and fills the target day
+  const deferApplied = applyPlannerOverrides([plannedRow], { row_a: { 1: { action: "deferred", movedToWeekday: 2, minutes: 35 } } });
+  const deferredRow = deferApplied.rows.find((row) => row.id === "row_a");
+  assert(deferredRow.statuses[1] === "deferred" && deferredRow.minutes[1] === 0, "An applied 'deferred' override should clear the source day's minutes.");
+  assert(deferredRow.statuses[2] === "planned" && deferredRow.minutes[2] === 35, "An applied 'deferred' override should place the work on the target day.");
+  assert(deferApplied.reserveList.length === 0, "A deferred (not reserved) override should not appear in the reserve list.");
+
+  // applyPlannerOverrides: applying a "reserve" override clears the day and adds to reserveList
+  const reserveApplied = applyPlannerOverrides([plannedRow], { row_a: { 1: { action: "reserve", minutes: 35 } } });
+  const reservedRow = reserveApplied.rows.find((row) => row.id === "row_a");
+  assert(reservedRow.statuses[1] === "reserve" && reservedRow.minutes[1] === 0, "An applied 'reserve' override should clear that day's minutes.");
+  assert(reserveApplied.reserveList.length === 1 && reserveApplied.reserveList[0].rowId === "row_a" && reserveApplied.reserveList[0].minutes === 35, "A reserved override should appear in the reserve list with its original minutes.");
+
+  // Status language: deferred/reserve read as reassuring, not as failure
+  assert(describePlannerStatus("deferred").label === "Moved" && /not behind/i.test(describePlannerStatus("deferred").note), "Deferred status should read as 'moved', not as falling behind.");
+  assert(describePlannerStatus("reserve").label === "In Reserve" && /no rush/i.test(describePlannerStatus("reserve").note), "Reserve status should read as intentional, unhurried set-aside time.");
+  assert(describePlannerStatus("completed").label === "Done", "Completed status should have a plain-language label.");
+  assert(describePlannerStatus("planned").label === "Planned", "Planned status should have a plain-language label.");
+}
+
+// ── "Move unfinished work" — end to end through the repository ────────────
+{
+  const moveRepository = createSeedLearnRepository();
+  const weekBefore = moveRepository.getPlanner({ view: "week" }).week;
+  assert(Array.isArray(weekBefore.reserveList), "The weekly planner should expose a reserveList for the Reserve card and printables.");
+  assert(Array.isArray(weekBefore.statusLegend) && weekBefore.statusLegend.some((entry) => entry.status === "deferred"), "The weekly planner should expose a plain-language status legend.");
+
+  const rows = [...(weekBefore.householdRows || []), ...(weekBefore.childRows || [])];
+  const scopeOf = (rowId) => (weekBefore.householdRows || []).some((row) => row.id === rowId) ? "household" : "child";
+
+  // Branch 1: a row with at least one open day this week should move there directly.
+  const partialRow = rows.find((row) =>
+    row.statuses.some((status) => status === "planned" || status === "reduced") &&
+    row.statuses.some((status) => !status || status === "empty"));
+  assert(partialRow, "Seed data should include a row with both unfinished work and an open day, to exercise a direct move.");
+  const partialFromWeekday = partialRow.statuses.findIndex((status) => status === "planned" || status === "reduced");
+  const partialMinutes = partialRow.minutes[partialFromWeekday];
+  const partialScope = scopeOf(partialRow.id);
+
+  const directMove = moveRepository.moveUnfinishedWork({ scope: partialScope, rowId: partialRow.id, fromWeekday: partialFromWeekday, mode: "next-open-day" });
+  assert(directMove.ok && directMove.action === "deferred", `A row with an open day should move directly rather than falling back to Reserve: ${directMove.error || ""}`);
+
+  const weekAfterDirect = moveRepository.getPlanner({ view: "week" }).week;
+  const partialRowAfter = [...(weekAfterDirect.householdRows || []), ...(weekAfterDirect.childRows || [])].find((row) => row.id === partialRow.id);
+  assert(partialRowAfter.statuses[partialFromWeekday] === "deferred" && partialRowAfter.minutes[partialFromWeekday] === 0, "After a direct move, the source day should read as deferred with no minutes left there.");
+  assert(partialRowAfter.statuses[directMove.movedToWeekday] === "planned" && partialRowAfter.minutes[directMove.movedToWeekday] === partialMinutes, "After a direct move, the target day should carry the original minutes.");
+
+  // The monthly planner (buildPlannerMonth) reads the same rows, so the moved
+  // work should also show up on the correct civil date, not the original day
+  // — this is the same weekday-index data the earlier weekday-mapping fix
+  // depends on, so this doubles as a regression guard for that fix too.
+  const monthKey = weekAfterDirect.dates[partialFromWeekday].slice(0, 7);
+  const monthAfterDirect = moveRepository.getPlanner({ view: "month", month: monthKey }).month;
+  const sourceCivilDate = weekAfterDirect.dates[partialFromWeekday];
+  const targetCivilDate = weekAfterDirect.dates[directMove.movedToWeekday];
+  const titlesFor = (monthPlanner, civilDate) => {
+    const cell = monthPlanner.days.find((day) => day.civilDate === civilDate);
+    return [...(cell?.householdPlan || []), ...(cell?.formPlan || [])].map((item) => item.title);
+  };
+  assert(!titlesFor(monthAfterDirect, sourceCivilDate).includes(partialRow.title), "The monthly planner should no longer show the moved lesson on its original day.");
+  assert(titlesFor(monthAfterDirect, targetCivilDate).includes(partialRow.title), "The monthly planner should show the moved lesson on its new day.");
+
+  // Re-attempting to move the same (now deferred) day should fail cleanly rather than double-moving it.
+  const repeatAttempt = moveRepository.moveUnfinishedWork({ scope: partialScope, rowId: partialRow.id, fromWeekday: partialFromWeekday, mode: "reserve" });
+  assert(!repeatAttempt.ok, "A day that was already moved should not be movable again as if it were still unfinished.");
+
+  // Branch 2: a row scheduled every day this week has no open day to move to,
+  // so "next-open-day" should gracefully fall back to Reserve.
+  const everyDayRow = rows.find((row) => row.statuses.every((status) => status && status !== "empty"));
+  assert(everyDayRow, "Seed data should include a row scheduled every day, to exercise the Reserve fallback.");
+  const fallbackWeekday = everyDayRow.statuses.findIndex((status) => status === "planned" || status === "reduced");
+  assert(fallbackWeekday >= 0, "The every-day row used for the fallback test should have at least one genuinely unfinished day.");
+  const fallbackScope = scopeOf(everyDayRow.id);
+
+  const fallbackMove = moveRepository.moveUnfinishedWork({ scope: fallbackScope, rowId: everyDayRow.id, fromWeekday: fallbackWeekday, mode: "next-open-day" });
+  assert(fallbackMove.ok && fallbackMove.action === "reserve" && fallbackMove.fallbackToReserve === true, "A fully-booked row should gracefully fall back to Reserve instead of failing outright.");
+
+  const weekAfterFallback = moveRepository.getPlanner({ view: "week" }).week;
+  assert(weekAfterFallback.reserveList.some((item) => item.rowId === everyDayRow.id), "The Reserve fallback should add the lesson to the week's reserveList.");
+  const everyDayRowAfter = [...(weekAfterFallback.householdRows || []), ...(weekAfterFallback.childRows || [])].find((row) => row.id === everyDayRow.id);
+  assert(everyDayRowAfter.statuses[fallbackWeekday] === "reserve" && everyDayRowAfter.minutes[fallbackWeekday] === 0, "After the Reserve fallback, that day should read as In Reserve with no minutes left there.");
+}
+
+// ── Persisted write path stays wired (guards against the same class of bug ──
+// as the pre-existing, never-actually-saved blockEdits field: a payload field
+// that's silently dropped because normalizeSetupPayload() doesn't return it).
+{
+  const setupPersistenceSource = readFileSync(new URL("../src/learn/setup-persistence.js", import.meta.url), "utf8");
+  assert(setupPersistenceSource.includes("plannerOverrides: normalizePlannerOverrides(payload.plannerOverrides)"), "normalizeSetupPayload should explicitly persist plannerOverrides, or Move Unfinished Work will silently fail to save.");
+  assert(setupPersistenceSource.includes("export async function saveLearnMoveUnfinishedWork"), "setup-persistence.js should export saveLearnMoveUnfinishedWork.");
+  assert(setupPersistenceSource.includes("computeMoveUnfinishedWork") && setupPersistenceSource.includes("applyPlannerOverrides"), "saveLearnMoveUnfinishedWork should share logic with the read path via planner-overrides.js.");
+
+  const handlersSource = readFileSync(new URL("../src/learn/handlers.js", import.meta.url), "utf8");
+  assert(handlersSource.includes("export async function handleLearnMoveUnfinishedWork"), "handlers.js should export handleLearnMoveUnfinishedWork.");
+
+  assert(workerSource.includes('url.pathname === "/api/learn/planner/move"') && workerSource.includes("handleLearnMoveUnfinishedWork(request, env)"), "worker.js should route POST /api/learn/planner/move to handleLearnMoveUnfinishedWork.");
+}
+
+// ── UI: Move Unfinished Work control and clearer status language ──────────
+{
+  const learnShellSource = readFileSync(new URL("../public/learn/dashboard-shell.js", import.meta.url), "utf8");
+  assert(learnShellSource.includes("data-move-unfinished") && learnShellSource.includes('data-move-mode="next-open-day"') && learnShellSource.includes('data-move-mode="reserve"'), "The Day view should render Move / Reserve controls for unfinished work.");
+  assert(learnShellSource.includes("/api/learn/planner/move"), "The Move Unfinished Work control should call the move API.");
+  assert(learnShellSource.includes('status !== "planned" && status !== "reduced"'), "The Move control should only appear on genuinely unfinished (planned/reduced) work, not completed or empty days.");
+  assert(learnShellSource.includes("PLANNER_STATUS_META") && learnShellSource.includes('"Moved"') && learnShellSource.includes('"In Reserve"'), "Status pills should use plain-language labels (Moved / In Reserve) instead of raw status strings.");
+
+  const viewModelSource = readFileSync(new URL("../public/learn/dashboard-view-models.js", import.meta.url), "utf8");
+  assert(viewModelSource.includes("planner.week?.reserveList"), "The planner view model should surface the week's reserveList into the Reserve card.");
+}
+
+// ── Print: "Mom Notes" blank lines on every printable ──────────────────────
+{
+  const printCenter = repository.getPrintCenter();
+  let sectionCount = 0;
+  let landscapeCount = 0;
+  printCenter.templates.forEach((template) => {
+    const doc = buildLearnPrintDocument(printCenter, { templateId: template.id });
+    if (doc.layout === "designed-week-forms-landscape") {
+      landscapeCount += 1;
+      return;
+    }
+    assert(Array.isArray(doc.sections) && doc.sections.some((section) => section.type === "notes"), `Printable "${template.id}" should include a Mom Notes section.`);
+    sectionCount += 1;
+  });
+  assert(sectionCount > 0, "At least one standard (non-landscape) printable should have been checked for Mom Notes.");
+  assert(landscapeCount > 0, "The landscape lesson-plan-by-form printable should exist and be exempted (it has its own per-page notes strip).");
+
+  // The exported weekly household preview (used outside the main dispatcher) should also get Mom Notes.
+  const weeklyPreview = buildWeeklyHouseholdPrintDocument(printCenter);
+  assert(weeklyPreview.sections.some((section) => section.type === "notes"), "buildWeeklyHouseholdPrintDocument should include a Mom Notes section.");
+
+  // The landscape lesson-plan-by-form printable should have its own notes strip, now labeled "Mom Notes".
+  const printDocumentsSource = readFileSync(new URL("../src/learn/print-documents.js", import.meta.url), "utf8");
+  assert(printDocumentsSource.includes('"Mom Notes:"'), "The landscape lesson-plan print should label its notes strip 'Mom Notes:' for consistent language.");
+
+  // A real PDF should still render cleanly with the new section (no layout crash).
+  const notesDoc = buildLearnPrintDocument(printCenter, { templateId: "print_mom_weekly" });
+  const notesPdfBytes = await renderPrintDocumentPdf(notesDoc);
+  assert(notesPdfBytes[0] === 0x25 && notesPdfBytes[1] === 0x50 && notesPdfBytes[2] === 0x44 && notesPdfBytes[3] === 0x46, "A printable with a Mom Notes section should still render a real PDF.");
+}
 
 console.log("AGAPAY Learn checks passed.");
