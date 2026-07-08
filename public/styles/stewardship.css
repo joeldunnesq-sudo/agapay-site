@@ -1397,7 +1397,7 @@
 .sw-suite-refresh-btn svg { width: 13px; height: 13px; }
 .sw-suite-refresh-btn:hover { background: rgba(246,241,232,0.12); color: var(--cream); }
 
-/* ── Tool grid: 2-up, room for Reports / Financials / Retention / Distribution ── */
+/* ── Tool grid: base (currently unused bare, kept for the --pair modifier) ── */
 .sw-suite-tool-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1406,6 +1406,17 @@
 }
 @media (max-width: 1080px) {
   .sw-suite-tool-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Concentration Risk + Recurring Giving Health — just the two lighter
+   cards now that Reports and Financial Snapshots are full-width above.
+   A straight 2-up pair gives each card roughly double the width it had
+   crammed into the old 3/4-wide grid. */
+.sw-suite-tool-grid--pair {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 760px) {
+  .sw-suite-tool-grid--pair { grid-template-columns: 1fr; }
 }
 
 .sw-suite-tool-card {
