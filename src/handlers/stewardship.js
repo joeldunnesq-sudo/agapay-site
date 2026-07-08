@@ -2715,6 +2715,33 @@ export async function handleStewardshipFinancials(request, env, parishId) {
       netCents:          acc.netCents          + (fs.net_cents           || 0),
     }), { totalIncomeCents: 0, totalExpenseCents: 0, netCents: 0 }) : null;
 
+    // Prior-year totals, for year-over-year comparison badges on the KPI
+    // cards. Cheap enough to always fetch alongside the main query — a
+    // single aggregate SUM, not a full row fetch like the current year.
+    const priorYearRow = await d1All(env,
+      `SELECT
+         COALESCE(SUM(fs.total_income_cents), 0)  AS total_income_cents,
+         COALESCE(SUM(fs.total_expense_cents), 0) AS total_expense_cents,
+         COALESCE(SUM(fs.net_cents), 0)           AS net_cents,
+         COUNT(*)                                  AS packet_count
+       FROM stewardship_financial_summaries fs
+       JOIN stewardship_annual_meetings am ON am.id = fs.annual_meeting_id
+       WHERE am.parish_id = ? AND am.fiscal_year = ?`,
+      parishId, year - 1
+    );
+    const priorYear = priorYearRow?.[0]?.packet_count > 0 ? {
+      year: year - 1,
+      totalIncomeCents:  priorYearRow[0].total_income_cents  || 0,
+      totalExpenseCents: priorYearRow[0].total_expense_cents || 0,
+      netCents:          priorYearRow[0].net_cents           || 0,
+    } : null;
+
+    // Restricted fund balance as of the most recent packet this year — the
+    // running total parishes actually care about, not a per-packet figure.
+    const restrictedFundsTotalCents = restrictedFunds.length
+      ? restrictedFunds.reduce((sum, rf) => sum + (rf.ending_balance_cents || 0), 0)
+      : 0;
+
     return json({
       year,
       meetings: meetings.map(m => ({ id: m.id, title: m.title, fiscalYear: m.fiscal_year, meetingDate: m.meeting_date, status: m.status })),
@@ -2741,7 +2768,9 @@ export async function handleStewardshipFinancials(request, env, parishId) {
         notes:                 rf.notes                  || "",
         sortOrder:             rf.sort_order             || 0
       })),
-      totals
+      totals,
+      priorYear,
+      restrictedFundsTotalCents
     });
   }
 
