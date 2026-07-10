@@ -208,6 +208,15 @@ import {
 } from "./handlers/stewardship.js";
 
 import {
+  handleGivingStatementPreview,
+  handleGivingStatementJobCreate,
+  handleGivingStatementJobStatus,
+  handleGivingStatementJobList,
+  handleDonorGivingStatements,
+  handleDonorGivingStatementDownload,
+} from "./handlers/giving-statements.js";
+
+import {
   handleLearnBooks,
   handleLearnCommunity,
   handleLearnCommunityFlag,
@@ -2200,7 +2209,7 @@ export default {
       .catch((error) => console.error("tax_exemption_expiration_sweep_failed", error?.message || String(error))));
   },
 
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     if (env && !env.DB && env.AGAPAY_DB) env.DB = env.AGAPAY_DB;
     const url = new URL(request.url);
 
@@ -2531,6 +2540,13 @@ export default {
     }
     if (url.pathname === "/api/donor/commemorations") {
       return handleDonorCommemorations(request, env);
+    }
+    if (url.pathname === "/api/donor/giving-statements") {
+      return handleDonorGivingStatements(request, env);
+    }
+    if (url.pathname.startsWith("/api/donor/giving-statements/") && url.pathname.endsWith("/download")) {
+      const statementId = decodeURIComponent(url.pathname.replace("/api/donor/giving-statements/", "").replace("/download", ""));
+      return handleDonorGivingStatementDownload(request, env, statementId);
     }
     if (url.pathname === "/api/donor/sacraments") {
       return handleDonorSacraments(request, env);
@@ -3067,6 +3083,23 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/financials")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/financials", ""));
       return handleStewardshipFinancials(request, env, parishId);
+    }
+
+    // ── Annual giving statements (IRS-compliant donor PDFs) ────────────────
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/giving-statements/preview")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/giving-statements/preview", ""));
+      return handleGivingStatementPreview(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/giving-statements/jobs")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/giving-statements/jobs", ""));
+      if (request.method === "POST") return handleGivingStatementJobCreate(request, env, parishId, ctx);
+      return handleGivingStatementJobList(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/giving-statements/jobs/")) {
+      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/giving-statements/jobs/");
+      const parishId = decodeURIComponent(parts[0] || "");
+      const jobId = decodeURIComponent(parts[1] || "");
+      return handleGivingStatementJobStatus(request, env, parishId, jobId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/bookstore-readiness")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/bookstore-readiness", ""));

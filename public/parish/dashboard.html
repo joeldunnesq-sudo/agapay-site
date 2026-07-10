@@ -599,6 +599,36 @@
             <div class="pdx-gv-dir-empty">Load giving history to see donor households and gift patterns.</div>
           </div>
         </section>
+
+        <!-- ANNUAL GIVING STATEMENTS -->
+        <section class="pdx-panel" id="pdxGsSection">
+          <div class="pdx-panel-header">
+            <div class="pdx-panel-title">
+              <div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg></div>
+              Annual Giving Statements
+            </div>
+          </div>
+          <div class="section-body">
+            <p class="notice" style="margin-bottom:16px;">Generate IRS-compliant annual giving statements for every donor who gave this tax year, and email each one a PDF copy. Set your parish's legal name and Federal EIN in Settings first — statements use those for compliance.</p>
+            <div class="form-grid">
+              <div class="form-group"><label class="form-label" for="gsFiscalYear">Tax year</label><select id="gsFiscalYear"></select></div>
+              <div class="form-group full"><label class="form-label" for="gsPreviewDonor">Preview a single donor's statement</label>
+                <div style="display:flex;gap:8px;">
+                  <select id="gsPreviewDonor" style="flex:1;"></select>
+                  <button class="btn btn-ghost" onclick="previewGivingStatement(this)">Preview PDF</button>
+                </div>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-gold" onclick="startGivingStatementJob(this)">Generate &amp; email all donors</button>
+            </div>
+            <div id="gsJobProgress" hidden style="margin-top:14px;">
+              <div class="pdx-recurring-empty" id="gsJobProgressText">Starting…</div>
+            </div>
+            <div class="section-divider"><span>Past batches</span></div>
+            <div id="gsJobHistory"><div class="pdx-recurring-empty">No giving-statement batches generated yet.</div></div>
+          </div>
+        </section>
       </div>
 
       <div class="tab-panel" id="tab-settings">
@@ -1471,6 +1501,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
-<script src="/parish/app.js?v=20260704b"></script>
+<script src="/parish/app.js?v=20260710a"></script>
 </body>
 </html>

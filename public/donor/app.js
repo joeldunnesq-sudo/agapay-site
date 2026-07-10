@@ -1897,9 +1897,65 @@ async function loadDonorSettingsPage() {
     const parishName = document.getElementById("settingsParishName");
     if (parishName) parishName.textContent = data.parish?.name || "Choose a parish below";
     await loadLearnSubscriptionSettings();
+    await loadGivingStatements();
   } catch (err) {
     setDonorStatus(err.message, "error");
     await loadLearnSubscriptionSettings();
+    await loadGivingStatements();
+  }
+}
+
+async function loadGivingStatements() {
+  const wrap = document.getElementById("givingStatementsList");
+  if (!wrap) return;
+  try {
+    const data = await donorApi("/api/donor/giving-statements");
+    const statements = data.statements || [];
+    if (!statements.length) {
+      wrap.innerHTML = '<p class="form-help">No giving statements yet. A parish will generate one after they run their annual statement batch.</p>';
+      return;
+    }
+    const byYear = new Map();
+    for (const s of statements) {
+      if (!byYear.has(s.fiscalYear)) byYear.set(s.fiscalYear, []);
+      byYear.get(s.fiscalYear).push(s);
+    }
+    const years = Array.from(byYear.keys()).sort((a, b) => b - a);
+    wrap.innerHTML = years.map((year) => `
+      <div class="section-divider"><span>${year}</span></div>
+      <div class="giving-statement-rows">
+        ${byYear.get(year).map((s) => `
+          <div class="giving-statement-row" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--hairline, #e5e5e5);">
+            <div>
+              <div style="font-weight:600;">${escapeHtml(s.parishName)}</div>
+              <div class="form-help" style="margin:0;">${(s.totalCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })} · ${s.giftCount} gift${s.giftCount === 1 ? "" : "s"}</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="downloadGivingStatement('${s.id}', ${s.fiscalYear})">Download PDF</button>
+          </div>`).join("")}
+      </div>`).join("");
+  } catch (err) {
+    wrap.innerHTML = `<p class="form-help">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+async function downloadGivingStatement(id, fiscalYear) {
+  try {
+    const session = donorSession();
+    const res = await fetch(`/api/donor/giving-statements/${encodeURIComponent(id)}/download`, {
+      headers: { Authorization: `Bearer ${session.token}`, "X-AGAPAY-Donor-Email": session.email }
+    });
+    if (!res.ok) throw new Error("Unable to download that statement.");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${fiscalYear}-giving-statement.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (err) {
+    setDonorStatus(err.message, "error");
   }
 }
 

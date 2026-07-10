@@ -84,5 +84,14 @@ bucket_name = "agapay-campaign-assets"
 binding = "TAX_EXEMPTION_DOCS"
 bucket_name = "agapay-tax-exemption-docs"
 
+# Private bucket for annual donor giving-statement PDFs. Same rules as
+# TAX_EXEMPTION_DOCS above: no public r2.dev URL, ever -- these are donor
+# financial documents. All access goes through authenticated Worker routes
+# (src/handlers/giving-statements.js) that stream the object directly.
+# Bucket created via `wrangler r2 bucket create agapay-giving-statements`.
+[[r2_buckets]]
+binding = "GIVING_STATEMENTS"
+bucket_name = "agapay-giving-statements"
+
 [browser]
 binding = "BROWSER"
