@@ -113,7 +113,8 @@ for (const check of checks) {
   }
 
   try {
-    const response = await page.goto(`${baseUrl}${check.path}`, { waitUntil: 'commit' });
+    const response = await page.goto(`${baseUrl}${check.path}`, { waitUntil: 'commit' })
+      || await context.request.fetch(`${baseUrl}${check.path}`, { method: check.method });
     const status = response.status();
     const passed = check.ok.includes(status);
     
