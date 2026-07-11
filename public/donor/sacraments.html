@@ -1,126 +1,14 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sacraments &amp; Services | AGAPAY Donor Dashboard</title>
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=20260711a" />
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
-}
-</script>
-  <script src="/myagapay-shell.js?v=20260712b" defer></script>
-  <script src="/donor/app.js?v=20260711a" defer></script>
-  <link rel="stylesheet" href="/styles/numbers.css" />
-  <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
-  <meta name="theme-color" content="#061522" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sacraments &amp; Services | My AGAPAY</title>
+  <meta http-equiv="refresh" content="0; url=/myagapay/sacraments" />
+  <link rel="canonical" href="https://agapay.app/myagapay/sacraments" />
 </head>
-<body class="donor-mobile-page donor-sacraments-page">
-  <div class="app">
-    <aside class="sidebar">
-      <div class="sidebar-scroll">
-        <div class="brand"><div class="brand-row"><a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home" hx-boost="false"><img src="/mark.png" alt="AGAPAY" /></a><span class="brand-name">AGAPAY</span><span class="dashboard-home-cue">Home</span></div><span class="pill">Donor Dashboard</span></div>
-        <div class="profile-panel"><div class="profile-name" id="profileName">My AGAPAY Account</div><div class="profile-meta" id="profileMeta">Sacraments &amp; parish services</div></div>
-        <nav class="nav unified-product-nav" hx-boost="false"></nav>
-        <div class="sidebar-card"><h3>How this works</h3><div class="mini-item"><strong>Your parish is notified</strong><span>Requests go straight to your priest or parish office, who will follow up to confirm.</span></div></div>
-      </div>
-      <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/giving/give"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg> Add offering</a></div>
-    </aside>
-    <main class="content donor-mobile-content">
-      <div class="topbar"><div class="topbar-title">Sacraments &amp; Services</div></div>
-      <div class="page">
-        <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
-        <section class="hero"><div class="hero-grid"><div><div class="eyebrow">Request from your parish</div><h1>House blessings, baptisms, weddings, and more.</h1><p>Submit a request directly to your parish. They'll follow up to confirm the details and schedule a time.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
-
-        <section class="layout-main">
-          <div class="card" id="sacramentFormCard">
-            <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 28 28"><path d="M14 3 5 8v7c0 6 4 11 9 12 5-1 9-6 9-12V8z"/></svg></span> New Request</div></div>
-            <div class="card-body">
-              <form id="sacramentForm" onsubmit="submitSacramentRequest(event)">
-                <div class="form-grid">
-                  <div class="form-group full"><label class="form-label">My Parish</label><div class="form-input" id="commemorationParishDisplay" aria-live="polite">Loading your parish...</div><input id="sacramentParishId" type="hidden" /></div>
-
-                  <div class="form-group full">
-                    <label class="form-label" for="sacramentType">What are you requesting?</label>
-                    <select class="form-input" id="sacramentType" onchange="toggleSacramentAddressField()" required>
-                      <option value="">Choose one...</option>
-                      <option value="house_blessing">House Blessing</option>
-                      <option value="baptism">Baptism</option>
-                      <option value="chrismation">Chrismation</option>
-                      <option value="wedding">Wedding</option>
-                      <option value="funeral">Funeral</option>
-                      <option value="memorial_service">Memorial Service</option>
-                      <option value="confession">Confession</option>
-                      <option value="home_visit">Home Visit</option>
-                      <option value="office_visit">Office Visit</option>
-                      <option value="other">Something else</option>
-                    </select>
-                  </div>
-
-                  <div class="form-group full" id="sacramentOtherLabelGroup" style="display:none;">
-                    <label class="form-label" for="sacramentOtherLabel">Please describe</label>
-                    <input class="form-input" id="sacramentOtherLabel" placeholder="What would you like to request?" />
-                  </div>
-
-                  <div class="form-group" id="sacramentLocationRow" style="display:none;">
-                    <label class="form-label" for="sacramentLocationType">Location</label>
-                    <select class="form-input" id="sacramentLocationType" onchange="toggleSacramentAddressFieldByLocation()">
-                      <option value="church">At the church</option>
-                      <option value="home">At my home</option>
-                      <option value="other">Other location</option>
-                    </select>
-                  </div>
-                  <div class="form-group" id="sacramentAddressGroup" style="display:none;">
-                    <label class="form-label" for="sacramentAddress">Address</label>
-                    <input class="form-input" id="sacramentAddress" placeholder="Street, city, state" />
-                  </div>
-
-                  <div class="form-group full" id="sacramentFreeTextFields" style="display:contents;">
-                    <div class="form-group"><label class="form-label" for="sacramentDate">Preferred date</label><input class="form-input" id="sacramentDate" type="date" /></div>
-                    <div class="form-group"><label class="form-label" for="sacramentTimeWindow">Preferred time</label><input class="form-input" id="sacramentTimeWindow" placeholder="e.g. weekday evenings, any Saturday" /></div>
-                  </div>
-                  <div class="form-group full" id="sacramentSlotPickerGroup" style="display:none;">
-                    <label class="form-label">Pick an open time</label>
-                    <div id="sacramentSlotPicker" class="sac-slot-picker"><p class="form-help">Loading availability…</p></div>
-                    <input type="hidden" id="sacramentSlotDate" /><input type="hidden" id="sacramentSlotTime" />
-                    <p class="form-help" id="sacramentSlotSelectedNote"></p>
-                  </div>
-
-                  <div class="form-group full"><label class="form-label" for="sacramentParticipants">Who is this for?</label><input class="form-input" id="sacramentParticipants" placeholder="Names of those involved" /></div>
-                  <div class="form-group"><label class="form-label" for="sacramentPhone">Best phone number</label><input class="form-input" id="sacramentPhone" type="tel" placeholder="For scheduling" /></div>
-                  <div class="form-group full"><label class="form-label" for="sacramentNotes">Additional notes</label><textarea class="form-textarea" id="sacramentNotes" placeholder="Anything your priest should know"></textarea></div>
-                </div>
-                <p class="form-help">Your request goes directly to your parish. There's no charge to submit a request.</p>
-                <div class="section-gap"><button class="btn btn-gold" type="submit">Send request</button></div>
-              </form>
-            </div>
-          </div>
-
-          <aside class="card">
-            <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/></svg></span> Your Requests</div></div>
-            <div class="card-body">
-              <div class="notice" id="sacramentUnavailableNotice" style="display:none;"></div>
-              <div class="list" id="sacramentList"></div>
-            </div>
-          </aside>
-        </section>
-      </div>
-      <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
-    </main>
-  </div>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => loadDonorSacramentsPage());
-  </script>
+<body>
+  <p><a href="/myagapay/sacraments">Continue to Sacraments &amp; Services</a></p>
+  <script>window.location.replace("/myagapay/sacraments");</script>
 </body>
 </html>

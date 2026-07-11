@@ -2588,7 +2588,9 @@ async function submitCommemoration(event) {
     const name = donor.donorName || donor.householdName || session.email.split("@")[0];
     const [firstName, ...rest] = name.split(/\s+/);
     const includeGift = document.getElementById("commemorationIncludeGift")?.checked === true;
-    const note = document.getElementById("commemorationIntentionNote")?.value || "";
+    const rawNote = document.getElementById("commemorationIntentionNote")?.value || "";
+    const liturgyDate = document.getElementById("commemorationLiturgyDate")?.value || "";
+    const note = [liturgyDate ? `Requested Liturgy date: ${liturgyDate}` : "", rawNote].filter(Boolean).join("\n");
     if (!includeGift) {
       setDonorStatus("Submitting commemoration...");
       const data = await donorApi("/api/donor/commemorations", {
@@ -2603,6 +2605,8 @@ async function submitCommemoration(event) {
       renderCommemorationsPayload(data);
       document.getElementById("commemorationLivingNames").value = "";
       document.getElementById("commemorationDepartedNames").value = "";
+      const liturgyDateInput = document.getElementById("commemorationLiturgyDate");
+      if (liturgyDateInput) liturgyDateInput.value = "";
       document.getElementById("commemorationIntentionNote").value = "";
       setDonorStatus("Commemoration submitted. Thank you for sending these names.", "success");
       return;
@@ -2959,6 +2963,8 @@ const SACRAMENT_TYPE_LABELS = {
   confession: "Confession",
   home_visit: "Home Visit",
   office_visit: "Office Visit",
+  anointing: "Holy Unction",
+  counseling: "Pastoral Counseling",
   other: "Other Request"
 };
 
@@ -2989,8 +2995,62 @@ function sacramentLocationHint(sacramentType) {
   return sacramentType === "house_blessing" || sacramentType === "home_visit";
 }
 
-const SAC_SCHEDULABLE_TYPES = ["house_blessing", "confession", "home_visit", "office_visit"];
+const SAC_SCHEDULABLE_TYPES = ["house_blessing", "confession", "home_visit", "office_visit", "anointing", "counseling"];
+const SAC_ACTIVE_STATUSES = ["requested", "acknowledged", "scheduled"];
+const SAC_ACCORDION_CARDS = [
+  { id: "confession", type: "confession", section: "sacrament", mode: "book", title: "Confession", description: "Reserve an available time for confession.", icon: "cross" },
+  { id: "house_blessing", type: "house_blessing", section: "sacrament", mode: "book", title: "House Blessing", description: "Choose an open time for a priest to visit your home.", icon: "home", locationType: "home" },
+  { id: "anointing", type: "anointing", section: "sacrament", mode: "book", title: "Holy Unction", description: "Request anointing and pastoral prayer when parish availability is open.", icon: "oil" },
+  { id: "counseling", type: "counseling", section: "sacrament", mode: "book", title: "Pastoral Counseling", description: "Book time for a pastoral conversation.", icon: "chat" },
+  { id: "baptism", type: "baptism", section: "sacrament", mode: "request", title: "Baptism", description: "Begin a baptism or chrismation request for parish review.", icon: "water" },
+  { id: "wedding", type: "wedding", section: "sacrament", mode: "request", title: "Wedding", description: "Start a wedding request and share the first details with your parish.", icon: "rings" },
+  { id: "commemorations", section: "services", mode: "commemorations", title: "Commemorations", description: "Submit names of the living and departed at no cost.", icon: "prayer" },
+  { id: "candles", section: "services", mode: "link", title: "Candles", description: "Offer a candle through the existing secure giving flow.", icon: "candle", href: "/myagapay/giving/give?quick=1&giftType=candles" }
+];
+const SAC_REQUIREMENTS = {
+  baptism: ["Candidate's full name and date of birth", "Parent or sponsor contact information", "Godparent(s) in good standing when applicable", "Preferred date or season for the service"],
+  wedding: ["Names of both parties", "Orthodox standing and prior marriage information", "Koumbaro/sponsor details when known", "Marriage license and premarital counseling status"]
+};
+const sacAccordionState = {
+  openId: "confession",
+  requests: [],
+  available: true,
+  slotsByType: {},
+  loadingSlots: {},
+  selectedSlots: {},
+  dashboard: null,
+  commemorations: null
+};
 let sacramentSelectedSlot = null;
+
+function sacramentIcon(name) {
+  const icons = {
+    cross: '<path d="M12 3v18"/><path d="M7 8h10"/><path d="M9 13h6"/>',
+    home: '<path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-6h4v6"/>',
+    oil: '<path d="M12 3c2 3 4 5.7 4 9a4 4 0 0 1-8 0c0-3.3 2-6 4-9z"/><path d="M9 20h6"/>',
+    chat: '<path d="M5 5h14v10H8l-3 3z"/><path d="M9 9h6"/><path d="M9 12h4"/>',
+    water: '<path d="M12 3c3 4 5 7 5 10a5 5 0 0 1-10 0c0-3 2-6 5-10z"/>',
+    rings: '<circle cx="9" cy="14" r="4"/><circle cx="15" cy="14" r="4"/><path d="M12 7l2-3 2 3"/>',
+    prayer: '<path d="M12 2v20"/><path d="M5 7h14"/><path d="M7 12h10"/><path d="M9 22h6"/>',
+    candle: '<path d="M12 3c0 0-4 3-4 8s4 5 4 5 4 0 4-5-4-8-4-8z"/><path d="M12 16v5"/><path d="M9 21h6"/>'
+  };
+  return `<svg viewBox="0 0 24 24" aria-hidden="true">${icons[name] || icons.cross}</svg>`;
+}
+
+function sacramentActiveRequests(type) {
+  return sacAccordionState.requests.filter((row) => row.sacramentType === type && SAC_ACTIVE_STATUSES.includes(row.status));
+}
+
+function sacramentPrimaryRequest(type) {
+  return sacramentActiveRequests(type)[0] || null;
+}
+
+function sacramentSummary(row) {
+  if (!row) return "";
+  if (row.confirmedDate || row.confirmedTime) return [row.confirmedDate, row.confirmedTime].filter(Boolean).join(" at ");
+  if (row.requestedDate || row.requestedTimeWindow) return [row.requestedDate, row.requestedTimeWindow].filter(Boolean).join(" · ");
+  return row.createdAt ? `Submitted ${shortDate(row.createdAt)}` : "Submitted";
+}
 
 function toggleSacramentAddressField() {
   const typeEl = document.getElementById("sacramentType");
@@ -3056,6 +3116,26 @@ async function loadSacramentSlots(type) {
   }
 }
 
+async function loadSacramentSlotsForCard(type, force = false) {
+  const parishId = document.getElementById("sacramentParishId")?.value || donorProfile()?.defaultParishId || "";
+  if (!parishId || !SAC_SCHEDULABLE_TYPES.includes(type)) return [];
+  if (!force && Array.isArray(sacAccordionState.slotsByType[type])) return sacAccordionState.slotsByType[type];
+  sacAccordionState.loadingSlots[type] = true;
+  renderSacramentAccordions();
+  try {
+    const data = await donorApi(`/api/donor/sacraments/availability?parishId=${encodeURIComponent(parishId)}&sacramentType=${encodeURIComponent(type)}`);
+    const slots = Array.isArray(data.slots) ? data.slots : [];
+    sacAccordionState.slotsByType[type] = slots;
+    return slots;
+  } catch {
+    sacAccordionState.slotsByType[type] = [];
+    return [];
+  } finally {
+    sacAccordionState.loadingSlots[type] = false;
+    renderSacramentAccordions();
+  }
+}
+
 function renderSacramentSlots(slots) {
   const picker = document.getElementById("sacramentSlotPicker");
   if (!picker) return;
@@ -3098,6 +3178,174 @@ function toggleSacramentAddressFieldByLocation() {
   }
 }
 
+function openSacramentAccordion(id) {
+  sacAccordionState.openId = sacAccordionState.openId === id ? "" : id;
+  renderSacramentAccordions();
+  const card = SAC_ACCORDION_CARDS.find((item) => item.id === id);
+  if (card?.mode === "book" && sacAccordionState.openId === id) loadSacramentSlotsForCard(card.type);
+}
+
+function selectSacramentAccordionSlot(type, date, time, btn) {
+  sacAccordionState.selectedSlots[type] = { date, time, label: btn?.textContent || time };
+  document.querySelectorAll(`[data-sac-slot-type="${CSS.escape(type)}"]`).forEach((el) => el.classList.remove("selected"));
+  if (btn) btn.classList.add("selected");
+  const note = document.querySelector(`[data-sac-selected-note="${CSS.escape(type)}"]`);
+  if (note) {
+    const label = new Date(date + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+    note.textContent = `Selected: ${label} at ${sacAccordionState.selectedSlots[type].label}`;
+  }
+}
+
+function renderSacramentUpcomingStrip() {
+  const el = document.getElementById("sacramentUpcomingStrip");
+  if (!el) return;
+  const rows = sacAccordionState.requests.filter((row) => SAC_ACTIVE_STATUSES.includes(row.status));
+  if (!rows.length) {
+    el.innerHTML = '<div class="sac-upcoming-empty">No upcoming sacrament or service requests yet.</div>';
+    return;
+  }
+  el.innerHTML = rows.map((row) => {
+    const statusLabel = SACRAMENT_STATUS_LABELS[row.status] || row.status;
+    const tone = SACRAMENT_STATUS_TONE[row.status] || "pending";
+    const summary = sacramentSummary(row);
+    const meta = [row.clergyAssigned, row.locationType === "home" ? "Home" : "", row.locationAddress].filter(Boolean).join(" · ");
+    return `<article class="sac-upcoming-card">
+      <span class="status-pill ${tone}">${escapeHtml(statusLabel)}</span>
+      <strong>${escapeHtml(sacramentTypeLabel(row.sacramentType, row.otherTypeLabel))}</strong>
+      <small>${escapeHtml(summary || "Parish review")}</small>
+      ${meta ? `<em>${escapeHtml(meta)}</em>` : ""}
+    </article>`;
+  }).join("");
+}
+
+function sacramentCardHeader(card, open) {
+  const request = card.type ? sacramentPrimaryRequest(card.type) : null;
+  const status = request ? `<span class="sac-card-state">${escapeHtml(SACRAMENT_STATUS_LABELS[request.status] || request.status)}</span>` : "";
+  return `<button class="sac-accordion-trigger" type="button" aria-expanded="${open ? "true" : "false"}" onclick="openSacramentAccordion('${card.id}')">
+    <span class="sac-accordion-icon">${sacramentIcon(card.icon)}</span>
+    <span class="sac-accordion-copy"><strong>${escapeHtml(card.title)}</strong><small>${escapeHtml(card.description)}</small></span>
+    ${status}
+    <span class="sac-accordion-chevron" aria-hidden="true">⌄</span>
+  </button>`;
+}
+
+function renderSlotPickerForCard(card) {
+  const existing = sacramentPrimaryRequest(card.type);
+  if (existing) {
+    return `<div class="sac-booked-panel"><strong>Booked — ${escapeHtml(sacramentSummary(existing) || card.title)}</strong><p>Your parish can see this request.</p><button class="btn btn-ghost btn-sm" type="button" onclick="cancelSacramentRequest('${existing.id}', this)">Change</button></div>`;
+  }
+  if (sacAccordionState.loadingSlots[card.type]) return '<div class="notice">Loading availability...</div>';
+  const slots = sacAccordionState.slotsByType[card.type] || [];
+  if (!slots.length) {
+    return `<form class="sac-card-form" onsubmit="submitSacramentAccordionRequest(event, '${card.type}')">
+      <p class="form-help">No online times are listed right now. Send a request and your parish will follow up.</p>
+      ${sacramentCommonFields(card)}
+      <div class="form-grid"><div class="form-group"><label class="form-label">Preferred date</label><input class="form-input" name="requestedDate" type="date" /></div><div class="form-group"><label class="form-label">Preferred time</label><input class="form-input" name="requestedTimeWindow" placeholder="e.g. weekday morning" /></div></div>
+      <button class="btn btn-gold" type="submit">Send request</button>
+    </form>`;
+  }
+  const byDate = new Map();
+  slots.forEach((slot) => {
+    if (!byDate.has(slot.date)) byDate.set(slot.date, []);
+    byDate.get(slot.date).push(slot);
+  });
+  const days = Array.from(byDate.entries()).map(([date, daySlots]) => {
+    const dayLabel = new Date(date + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+    return `<div class="sac-slot-day"><div class="sac-slot-day-label">${escapeHtml(dayLabel)}</div><div class="sac-slot-chips">${daySlots.map((slot) => {
+      const timeLabel = String(slot.label || "").split(", ").pop() || slot.time;
+      return `<button type="button" class="sac-slot-chip" data-sac-slot-type="${escapeHtml(card.type)}" onclick="selectSacramentAccordionSlot('${card.type}','${slot.date}','${slot.time}', this)">${escapeHtml(timeLabel)}</button>`;
+    }).join("")}</div></div>`;
+  }).join("");
+  return `<form class="sac-card-form" onsubmit="submitSacramentAccordionBooking(event, '${card.type}')">
+    <div class="sac-slot-picker">${days}</div>
+    <p class="form-help" data-sac-selected-note="${escapeHtml(card.type)}"></p>
+    ${sacramentCommonFields(card)}
+    <button class="btn btn-gold" type="submit">Book selected time</button>
+  </form>`;
+}
+
+function sacramentCommonFields(card) {
+  const needsAddress = card.locationType === "home" || sacramentLocationHint(card.type);
+  return `<div class="form-grid">
+    ${needsAddress ? `<div class="form-group full"><label class="form-label">Address</label><input class="form-input" name="locationAddress" placeholder="Street, city, state" required /></div>` : ""}
+    <div class="form-group full"><label class="form-label">Who is this for?</label><input class="form-input" name="participantNames" placeholder="Names of those involved" /></div>
+    <div class="form-group"><label class="form-label">Best phone number</label><input class="form-input" name="phone" type="tel" placeholder="For scheduling" /></div>
+    <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-textarea" name="notes" placeholder="Anything your priest should know"></textarea></div>
+  </div>`;
+}
+
+function renderRequestFormForCard(card) {
+  const existing = sacramentPrimaryRequest(card.type);
+  if (existing) return `<div class="sac-booked-panel"><strong>Request sent — ${escapeHtml(sacramentSummary(existing))}</strong><p>Your parish will review and follow up.</p><button class="btn btn-ghost btn-sm" type="button" onclick="cancelSacramentRequest('${existing.id}', this)">Change</button></div>`;
+  const requirements = (SAC_REQUIREMENTS[card.type] || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  const detailFields = card.type === "baptism"
+    ? `<div class="form-grid">
+        <div class="form-group full"><label class="form-label">Candidate name</label><input class="form-input" name="candidateName" required /></div>
+        <div class="form-group"><label class="form-label">Date of birth</label><input class="form-input" name="candidateDob" type="date" /></div>
+        <div class="form-group"><label class="fee-toggle"><input name="candidateIsAdult" type="checkbox" /><span><strong>Adult candidate</strong></span></label></div>
+        <div class="form-group full"><label class="form-label">Parents / sponsors</label><input class="form-input" name="parentNames" /></div>
+        <div class="form-group"><label class="form-label">Godparent name</label><input class="form-input" name="godparent1Name" /></div>
+        <div class="form-group"><label class="form-label">Godparent parish</label><input class="form-input" name="godparent1HomeParish" /></div>
+      </div>`
+    : `<div class="form-grid">
+        <div class="form-group"><label class="form-label">First party name</label><input class="form-input" name="partyAName" required /></div>
+        <div class="form-group"><label class="form-label">Second party name</label><input class="form-input" name="partyBName" required /></div>
+        <div class="form-group"><label class="fee-toggle"><input name="partyAOrthodox" type="checkbox" /><span><strong>First party is Orthodox</strong></span></label></div>
+        <div class="form-group"><label class="fee-toggle"><input name="partyBOrthodox" type="checkbox" /><span><strong>Second party is Orthodox</strong></span></label></div>
+        <div class="form-group"><label class="form-label">Koumbaro / sponsor</label><input class="form-input" name="koumbaroName" /></div>
+        <div class="form-group"><label class="form-label">Marriage license</label><select class="form-input" name="marriageLicenseStatus"><option value="not_started">Not started</option><option value="applied">Applied</option><option value="obtained">Obtained</option></select></div>
+      </div>`;
+  return `<form class="sac-card-form" onsubmit="submitSacramentAccordionRequest(event, '${card.type}')">
+    <ul class="sac-requirements">${requirements}</ul>
+    ${detailFields}
+    <div class="form-grid"><div class="form-group"><label class="form-label">Preferred date</label><input class="form-input" name="requestedDate" type="date" /></div><div class="form-group"><label class="form-label">Preferred time</label><input class="form-input" name="requestedTimeWindow" placeholder="e.g. Saturday morning" /></div><div class="form-group full"><label class="form-label">Notes</label><textarea class="form-textarea" name="notes" placeholder="Anything your parish should know"></textarea></div></div>
+    <button class="btn btn-gold" type="submit">Send request</button>
+  </form>`;
+}
+
+function renderCommemorationsCard() {
+  return `<form class="sac-card-form" id="commemorationForm" onsubmit="submitCommemoration(event)">
+    <div class="form-grid">
+      <div class="form-group full"><label class="form-label">My Parish</label><div class="form-input" id="commemorationParishDisplay" aria-live="polite">Loading your parish...</div><input id="commemorationParishId" type="hidden" /></div>
+      <div class="form-group"><label class="form-label" for="commemorationLivingNames">Living names</label><textarea class="form-textarea" id="commemorationLivingNames" placeholder="One name per line"></textarea></div>
+      <div class="form-group"><label class="form-label" for="commemorationDepartedNames">Departed names</label><textarea class="form-textarea" id="commemorationDepartedNames" placeholder="One name per line"></textarea></div>
+      <div class="form-group full"><label class="form-label" for="commemorationLiturgyDate">Liturgy date</label><input class="form-input" id="commemorationLiturgyDate" type="date" /></div>
+      <div class="form-group full"><label class="form-label" for="commemorationIntentionNote">Note for parish</label><input class="form-input" id="commemorationIntentionNote" placeholder="Optional context for the priest or parish office" /></div>
+    </div>
+    <p class="form-help">Commemorations are free. Candle offerings remain in the Give flow.</p>
+    <button class="btn btn-gold" type="submit" id="commemorationSubmitButton">Submit commemoration</button>
+    <div class="list section-gap" id="commemorationList"></div>
+  </form>`;
+}
+
+function renderSacramentCardBody(card) {
+  if (card.mode === "book") return renderSlotPickerForCard(card);
+  if (card.mode === "request") return renderRequestFormForCard(card);
+  if (card.mode === "commemorations") return renderCommemorationsCard();
+  if (card.mode === "link") return `<div class="sac-link-panel"><p>Candle offerings are paid gifts, so they continue through the secure Give checkout.</p><a class="btn btn-gold" href="${card.href}">Offer a candle</a></div>`;
+  return "";
+}
+
+function renderAccordionCard(card) {
+  const open = sacAccordionState.openId === card.id;
+  return `<article class="sac-accordion-card ${open ? "open" : ""}">
+    ${sacramentCardHeader(card, open)}
+    <div class="sac-accordion-panel" ${open ? "" : "hidden"}>${open ? renderSacramentCardBody(card) : ""}</div>
+  </article>`;
+}
+
+function renderSacramentAccordions() {
+  const sacRoot = document.getElementById("sacramentAccordion");
+  const servicesRoot = document.getElementById("servicesAccordion");
+  if (sacRoot) sacRoot.innerHTML = SAC_ACCORDION_CARDS.filter((card) => card.section === "sacrament").map(renderAccordionCard).join("");
+  if (servicesRoot) servicesRoot.innerHTML = SAC_ACCORDION_CARDS.filter((card) => card.section === "services").map(renderAccordionCard).join("");
+  renderSacramentUpcomingStrip();
+  if (sacAccordionState.openId === "commemorations") {
+    renderCommemorationParish(donorDefaultParish() || donorProfile()?.defaultParish || null);
+    renderCommemorationsPayload(sacAccordionState.commemorations || {}, sacAccordionState.dashboard);
+  }
+}
+
 async function loadDonorSacramentsPage() {
   const session = donorSession();
   const list = document.getElementById("sacramentList");
@@ -3107,6 +3355,8 @@ async function loadDonorSacramentsPage() {
 
   if (!session.email || !session.token) {
     if (list) list.innerHTML = '<div class="notice">Sign in to view your requests.</div>';
+    const strip = document.getElementById("sacramentUpcomingStrip");
+    if (strip) strip.innerHTML = '<div class="notice">Sign in to view Sacraments & Services.</div>';
     return;
   }
 
@@ -3123,6 +3373,7 @@ async function loadDonorSacramentsPage() {
       unavailableNotice.textContent = "Choose your parish in Settings before requesting a sacrament or service.";
     }
     if (list) list.innerHTML = "";
+    renderSacramentAccordions();
     return;
   }
 
@@ -3130,9 +3381,21 @@ async function loadDonorSacramentsPage() {
   if (cached) renderSacramentsPayload(cached);
 
   try {
-    const data = await donorApi("/api/donor/sacraments", {
-      headers: donorAuthHeaders({ "X-AGAPAY-Parish-Id": parishId })
-    });
+    const [sacramentsResult, dashboardResult, commemorationsResult] = await Promise.allSettled([
+      donorApi("/api/donor/sacraments", { headers: donorAuthHeaders({ "X-AGAPAY-Parish-Id": parishId }) }),
+      donorApi("/api/donor/dashboard"),
+      donorApi("/api/donor/commemorations")
+    ]);
+    if (sacramentsResult.status === "rejected") throw sacramentsResult.reason;
+    const data = sacramentsResult.value;
+    if (dashboardResult.status === "fulfilled") {
+      sacAccordionState.dashboard = dashboardResult.value;
+      if (dashboardResult.value?.donor) setDonorProfile(dashboardResult.value.donor);
+    }
+    if (commemorationsResult.status === "fulfilled") {
+      sacAccordionState.commemorations = commemorationsResult.value;
+      writeDonorCache("commemorations", renderCommemorationsPayload(commemorationsResult.value, sacAccordionState.dashboard));
+    }
     writeDonorCache("sacraments", data);
     renderSacramentsPayload(data);
   } catch (err) {
@@ -3160,12 +3423,116 @@ function renderSacramentsPayload(payload = {}) {
   }
 
   const requests = Array.isArray(payload.requests) ? payload.requests : [];
+  sacAccordionState.requests = requests;
+  sacAccordionState.available = available;
+  const parishSummary = document.getElementById("sacramentParishSummary");
+  if (parishSummary) parishSummary.textContent = donorDefaultParish()?.name || donorProfile()?.defaultParishName || payload.parishId || "My parish";
   if (list) {
     list.innerHTML = requests.length
       ? requests.map(sacramentRequestRow).join("")
       : '<div class="notice">No requests submitted yet.</div>';
   }
+  renderSacramentAccordions();
   return payload;
+}
+
+function formValue(form, name) {
+  return form?.elements?.[name]?.value || "";
+}
+
+function formChecked(form, name) {
+  return form?.elements?.[name]?.checked === true;
+}
+
+async function submitSacramentAccordionBooking(event, sacramentType) {
+  event.preventDefault();
+  const form = event.target;
+  const parishId = document.getElementById("sacramentParishId")?.value || donorProfile()?.defaultParishId || "";
+  const slot = sacAccordionState.selectedSlots[sacramentType];
+  if (!parishId) return setDonorStatus("Choose your parish in Settings before booking.", "error");
+  if (!slot) return setDonorStatus("Pick an open time to book.", "error");
+  const card = SAC_ACCORDION_CARDS.find((item) => item.type === sacramentType) || {};
+  const body = {
+    parishId,
+    sacramentType,
+    locationType: card.locationType || "church",
+    locationAddress: formValue(form, "locationAddress"),
+    date: slot.date,
+    time: slot.time,
+    participantNames: formValue(form, "participantNames"),
+    phone: formValue(form, "phone") || donorProfile()?.contactPhone || "",
+    notes: formValue(form, "notes")
+  };
+  const submitBtn = form.querySelector('button[type="submit"]');
+  try {
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Booking..."; }
+    setDonorStatus("Booking your slot...");
+    await donorApi("/api/donor/sacraments/book", { method: "POST", body: JSON.stringify(body) });
+    setDonorStatus("Booked. Your parish can see the confirmed time.", "success");
+    sacAccordionState.selectedSlots[sacramentType] = null;
+    sacAccordionState.slotsByType[sacramentType] = null;
+    await loadDonorSacramentsPage();
+  } catch (err) {
+    if (err.data?.slotTaken) {
+      setDonorStatus("That time was just taken. Pick another.", "error");
+      await loadSacramentSlotsForCard(sacramentType, true);
+    } else {
+      setDonorStatus(err.message, "error");
+    }
+  } finally {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Book selected time"; }
+  }
+}
+
+async function submitSacramentAccordionRequest(event, sacramentType) {
+  event.preventDefault();
+  const form = event.target;
+  const parishId = document.getElementById("sacramentParishId")?.value || donorProfile()?.defaultParishId || "";
+  if (!parishId) return setDonorStatus("Choose your parish in Settings before submitting a request.", "error");
+  const card = SAC_ACCORDION_CARDS.find((item) => item.type === sacramentType) || {};
+  const body = {
+    parishId,
+    sacramentType,
+    locationType: card.locationType || "church",
+    locationAddress: formValue(form, "locationAddress"),
+    requestedDate: formValue(form, "requestedDate"),
+    requestedTimeWindow: formValue(form, "requestedTimeWindow"),
+    participantNames: formValue(form, "participantNames"),
+    phone: formValue(form, "phone") || donorProfile()?.contactPhone || "",
+    notes: formValue(form, "notes")
+  };
+  if (sacramentType === "baptism") {
+    body.baptismDetails = {
+      candidateName: formValue(form, "candidateName"),
+      candidateDob: formValue(form, "candidateDob"),
+      candidateIsAdult: formChecked(form, "candidateIsAdult"),
+      parentNames: formValue(form, "parentNames"),
+      godparent1Name: formValue(form, "godparent1Name"),
+      godparent1HomeParish: formValue(form, "godparent1HomeParish")
+    };
+  }
+  if (sacramentType === "wedding") {
+    body.weddingDetails = {
+      partyAName: formValue(form, "partyAName"),
+      partyAOrthodox: formChecked(form, "partyAOrthodox"),
+      partyBName: formValue(form, "partyBName"),
+      partyBOrthodox: formChecked(form, "partyBOrthodox"),
+      koumbaroName: formValue(form, "koumbaroName"),
+      marriageLicenseStatus: formValue(form, "marriageLicenseStatus") || "not_started"
+    };
+  }
+  const submitBtn = form.querySelector('button[type="submit"]');
+  try {
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Sending..."; }
+    setDonorStatus("Sending your request...");
+    await donorApi("/api/donor/sacraments", { method: "POST", body: JSON.stringify(body) });
+    setDonorStatus("Request sent. Your parish will follow up.", "success");
+    await loadDonorSacramentsPage();
+  } catch (err) {
+    setDonorStatus(err.message, "error");
+  } finally {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Send request"; }
+  }
 }
 
 function sacramentRequestRow(row) {

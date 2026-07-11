@@ -130,7 +130,7 @@ assert.ok(serviceWorker.includes('agapay-static-v23'), "service worker cache ver
 assert.ok(listenManifest.includes('"scope": "/listen/"') && listenManifest.includes('"name": "AGAPAY Listen"'), "AGAPAY Listen PWA manifest should exist with its own scope and identity");
 assert.ok(listenIndex.includes('/listen/manifest.webmanifest'), "AGAPAY Listen page should link its own manifest, not the root or admin one");
 assert.ok(myAgapayShell.includes('id: "giving"') && myAgapayShell.includes('label: "Give"'), "shared My AGAPAY shell should define the canonical Give product tab");
-assert.ok(myAgapayShell.includes('id: "commemorations"') && myAgapayShell.includes('label: "Prayer"'), "shared My AGAPAY shell should define the Prayer product tab");
+assert.ok(myAgapayShell.includes('id: "commemorations"') && myAgapayShell.includes('label: "Sacraments & Services"'), "shared My AGAPAY shell should define the merged Sacraments & Services product tab");
 assert.ok(myAgapayShell.includes('id: "today"') && myAgapayShell.includes('label: "Today"'), "shared My AGAPAY shell should define the Today product tab");
 assert.ok(myAgapayShell.includes('id: "bookstore"') && myAgapayShell.includes('label: "Bookstore"'), "shared My AGAPAY shell should keep Bookstore in the product nav");
 assert.ok(myAgapayShell.includes('id: "learn"') && myAgapayShell.includes('label: "Learn"'), "shared My AGAPAY shell should define the canonical Learn product tab");
@@ -170,7 +170,8 @@ const donorHistory = await readFile("public/donor/offerings.html", "utf8");
 assert.ok(donorHistory.includes("Activity Timeline") && donorHistory.includes("historyProductFilters") && donorHistory.includes("agapayHistoryTimeline"), "My AGAPAY History should show a cross-product activity timeline");
 assert.ok(donorApp.includes("buildHistoryActivities") && donorApp.includes("setHistoryProductFilter"), "donor app should render and filter cross-product History activity");
 const donorCommemorations = await readFile("public/donor/commemorations.html", "utf8");
-assert.ok(donorCommemorations.includes("Submit commemorations for the living and departed at no cost") && donorCommemorations.includes("Candle offerings are paid gifts"), "Prayer hero should distinguish free commemorations from paid candle offerings");
+const myAgapaySacraments = await readFile("public/myagapay/sacraments.html", "utf8");
+assert.ok(donorCommemorations.includes("/myagapay/sacraments") && myAgapaySacraments.includes("sacramentAccordion") && myAgapaySacraments.includes("servicesAccordion"), "Commemorations should redirect into the merged Sacraments & Services accordion page");
 const donorCalendar = await readFile("public/donor/calendar.html", "utf8");
 const donorCalendarCss = await readFile("public/donor/style.css", "utf8");
 assert.ok(!donorCalendar.includes("saintLifeButton") && !donorCalendar.includes("Open saint life"), "Today hero should not duplicate the dedicated Saint of the Day card action");
@@ -201,8 +202,12 @@ const donorPages = ["bookstore", "calendar", "commemorations", "give", "index", 
 for (const page of donorPages) {
   const html = await readFile(`public/donor/${page}.html`, "utf8");
   assert.ok(!html.includes('hx-boost="true"'), `donor ${page} page should use full navigation so page initializers run`);
-  assert.ok(html.includes("/myagapay-shell.js"), `donor ${page} page should load the shared My AGAPAY shell`);
-  assert.ok(html.includes("topbar") || myAgapayShell.includes("content.prepend(topbar)"), `donor ${page} page should have a My AGAPAY topbar`);
+  if (html.includes('url=/myagapay/sacraments')) {
+    assert.ok(page === "commemorations", "only the legacy donor commemorations page should redirect to the merged Sacraments & Services page");
+  } else {
+    assert.ok(html.includes("/myagapay-shell.js"), `donor ${page} page should load the shared My AGAPAY shell`);
+    assert.ok(html.includes("topbar") || myAgapayShell.includes("content.prepend(topbar)"), `donor ${page} page should have a My AGAPAY topbar`);
+  }
 }
 
 const learnDashboardShell = await readFile("public/learn/dashboard-shell.js", "utf8");

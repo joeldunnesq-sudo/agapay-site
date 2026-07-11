@@ -1,115 +1,14 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Prayers | AGAPAY Donor Dashboard</title>
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
-}
-</script>
-  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=20260704c" />
-  <script src="/myagapay-shell.js?v=20260712b" defer></script>
-  <script src="/donor/app.js?v=20260704c" defer></script>
-  <link rel="stylesheet" href="/styles/numbers.css" />
-  <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
-  <meta name="theme-color" content="#061522" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <style>
-    .donor-commemorations-page .commem-metrics { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin:clamp(1.15rem,2.2vw,1.65rem) 0 1.45rem; }
-    @media (min-width:720px) { .donor-commemorations-page .commem-metrics { grid-template-columns:repeat(4,1fr); } }
-    .donor-commemorations-page .commem-metric { position:relative; overflow:hidden; background:linear-gradient(180deg,rgba(255,253,248,.96),rgba(246,241,232,.84)); border:1px solid rgba(184,144,47,.24); border-radius:18px; padding:18px 16px 16px; display:flex; flex-direction:column; gap:6px; box-shadow:0 14px 30px rgba(6,21,34,.06); }
-    .donor-commemorations-page .commem-metric::before { content:""; position:absolute; inset:0 0 auto; height:3px; background:linear-gradient(90deg,rgba(184,144,47,.2),rgba(218,187,112,.82),rgba(184,144,47,.2)); }
-    .donor-commemorations-page .commem-metric-num { font-family:'Cormorant Garamond',Georgia,serif; font-weight:600; font-size:2.1rem; line-height:1; color:#061522; }
-    .donor-commemorations-page .commem-metric-since { font-size:1.7rem; }
-    .donor-commemorations-page .commem-metric-label { font-family:'DM Sans',system-ui,sans-serif; font-size:.7rem; letter-spacing:.09em; text-transform:uppercase; color:#746750; }
-    .donor-commemorations-page .commem-candle-row { display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid rgba(6,21,34,.08); }
-    .donor-commemorations-page .commem-candle-row:last-child { border-bottom:0; }
-    .donor-commemorations-page .commem-candle-flame { flex:0 0 auto; display:flex; }
-    .donor-commemorations-page .commem-candle-main { display:flex; flex-direction:column; gap:2px; flex:1; min-width:0; }
-    .donor-commemorations-page .commem-candle-main strong { color:#171715; }
-    .donor-commemorations-page .commem-candle-main small { color:#6F6A60; font-size:.8rem; }
-    .donor-commemorations-page .commem-candle-amt { font-weight:600; color:#061522; white-space:nowrap; }
-  </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sacraments &amp; Services | My AGAPAY</title>
+  <meta http-equiv="refresh" content="0; url=/myagapay/sacraments" />
+  <link rel="canonical" href="https://agapay.app/myagapay/sacraments" />
 </head>
-<body class="donor-mobile-page donor-commemorations-page">
-  <div class="app">
-    <aside class="sidebar">
-      <div class="sidebar-scroll">
-        <div class="brand"><div class="brand-row"><a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home" hx-boost="false"><img src="/mark.png" alt="AGAPAY" /></a><span class="brand-name">AGAPAY</span><span class="dashboard-home-cue">Home</span></div><span class="pill">Donor Dashboard</span></div>
-        <div class="profile-panel"><div class="profile-name" id="profileName">My AGAPAY Account</div><div class="profile-meta" id="profileMeta">Weekly parish commemoration queue</div></div>
-        <nav class="nav unified-product-nav" hx-boost="false"></nav>
-        <div class="sidebar-card"><h3>Weekly Status</h3><div class="mini-item"><strong>Next email to priest</strong><span>Saturday morning, including names submitted this week.</span></div></div>
-      </div>
-      <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/giving/give"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg> Add offering</a></div>
-    </aside>
-    <main class="content donor-mobile-content">
-      <div class="topbar"><div class="topbar-title">Prayers</div><div class="topbar-actions"><a class="btn btn-ghost btn-sm" href="/myagapay/giving/calendar">View calendar</a></div></div>
-      <div class="page">
-        <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
-        <section class="hero"><div class="hero-grid"><div><div class="eyebrow">Living and departed</div><h1>Names lifted in prayer.</h1><p>Submit commemorations for the living and departed at no cost. Candle offerings are paid gifts, while commemorations are always free to send to your parish's weekly prayer queue.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
-        <section class="commem-metrics" aria-label="Your prayer summary">
-          <div class="commem-metric"><span class="commem-metric-num" id="commemMetricNames">0</span><span class="commem-metric-label">Names in prayer</span></div>
-          <div class="commem-metric"><span class="commem-metric-num" id="commemMetricCandles">0</span><span class="commem-metric-label">Candles offered</span></div>
-          <div class="commem-metric"><span class="commem-metric-num" id="commemMetricYear">0</span><span class="commem-metric-label">Names this year</span></div>
-          <div class="commem-metric"><span class="commem-metric-num commem-metric-since" id="commemMetricSince">&mdash;</span><span class="commem-metric-label">Remembering since</span></div>
-        </section>
-        <section class="layout-main">
-          <div class="card">
-            <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 28 28"><path d="M4 16c0-5 2-8 5-9 1.5-.5 3-.5 5-.5s3.5 0 5 .5c3 1 5 4 5 9"/><path d="M4 16c0 3 2 5 10 5s10-2 10-5"/><path d="M10 13c1-2 2-3 4-3s3 1 4 3"/><line x1="14" y1="7" x2="14" y2="10"/><line x1="12" y1="8" x2="16" y2="8"/></svg></span> New Commemoration</div></div>
-            <div class="card-body">
-              <form id="commemorationForm" onsubmit="submitCommemoration(event)">
-                <div class="form-grid">
-                  <div class="form-group full"><label class="form-label">My Parish</label><div class="form-input" id="commemorationParishDisplay" aria-live="polite">Loading your parish...</div><input id="commemorationParishId" type="hidden" /><input id="giftType" type="hidden" value="commemoration" /></div>
-                  <div class="form-group"><label class="form-label" for="commemorationLivingNames">Living names</label><textarea class="form-textarea" id="commemorationLivingNames" placeholder="One name per line"></textarea></div>
-                  <div class="form-group"><label class="form-label" for="commemorationDepartedNames">Departed names</label><textarea class="form-textarea" id="commemorationDepartedNames" placeholder="One name per line"></textarea></div>
-                  <div class="form-group full"><label class="form-label" for="commemorationIntentionNote">Note for parish</label><input class="form-input" id="commemorationIntentionNote" placeholder="Optional context for the priest or parish office" /></div>
-                  <div class="form-group full"><label class="fee-toggle" for="commemorationIncludeGift"><input id="commemorationIncludeGift" type="checkbox" onchange="toggleCommemorationGiftFields()" /><span><strong>Add an offering with these names</strong><small>Your commemoration will be submitted either way. A gift helps support the parish's prayer and ministry.</small></span></label></div>
-                  <div class="form-group" id="commemorationAmountField" hidden><label class="form-label" for="amount">Offering amount</label><input class="form-input" id="amount" type="number" min="1" step="1" value="5" inputmode="decimal" /></div>
-                  <div class="form-group" id="commemorationCoverFeesField" hidden><label class="form-label" for="coverFees">Cover fees</label><label class="fee-toggle"><input id="coverFees" type="checkbox" checked /><span><strong>Yes, let my parish receive the full gift</strong><small>AGAPAY will add the estimated processing cost at checkout.</small></span></label></div>
-                  <div class="form-group full" id="commemorationPaymentField" hidden>
-                    <label class="form-label">Payment</label>
-                    <div class="payment-method-options">
-                      <div class="payment-method-card"><span><strong>Secure Stripe checkout</strong><small>Cards, wallets, and any Stripe-supported options appear on the checkout page when available.</small></span></div>
-                    </div>
-                  </div>
-                </div>
-                <p class="form-help">Change your default parish anytime in <a href="/myagapay/account">Settings</a>.</p>
-                <div class="section-gap"><button class="btn btn-gold" type="submit" id="commemorationSubmitButton">Submit commemoration</button></div>
-              </form>
-            </div>
-          </div>
-          <aside>
-            <div class="card">
-              <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/></svg></span> Live Status</div></div>
-              <div class="card-body"><div class="list" id="commemorationList"></div></div>
-            </div>
-            <div class="card section-gap">
-              <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 28 28"><path d="M14 4c0 0-4 3-4 8s4 5 4 5 4 0 4-5-4-8-4-8z"/><path d="M14 17v7"/><path d="M11 24h6"/><circle class="icon-dot" cx="14" cy="10" r="1.5"/></svg></span> Candles</div><a class="btn btn-gold btn-sm" href="/myagapay/giving/give?quick=1&giftType=candles">Offer</a></div>
-              <div class="card-body">
-                <p class="form-help">Light a candle with a prayer intention. Names join your parish prayer list alongside your commemorations.</p>
-                <div class="list section-gap" id="candleList"><div class="notice">Loading your candle offerings...</div></div>
-              </div>
-            </div>
-          </aside>
-        </section>
-      </div>
-      <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
-    </main>
-  </div>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => loadDonorCommemorationsPage());
-  </script>
+<body>
+  <p><a href="/myagapay/sacraments">Continue to Sacraments &amp; Services</a></p>
+  <script>window.location.replace("/myagapay/sacraments");</script>
 </body>
 </html>
-

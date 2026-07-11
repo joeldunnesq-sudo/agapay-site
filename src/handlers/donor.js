@@ -1548,7 +1548,7 @@ function sacramentsEnabledFor(registration) {
 
 const SACRAMENT_TYPES = new Set([
   "house_blessing", "baptism", "chrismation", "wedding", "funeral",
-  "memorial_service", "confession", "home_visit", "office_visit", "other"
+  "memorial_service", "confession", "home_visit", "office_visit", "anointing", "counseling", "other"
 ]);
 const SACRAMENT_ACTIVE_STATUSES = new Set(["requested", "acknowledged", "scheduled"]);
 
@@ -1587,6 +1587,8 @@ function sacramentTypeLabel(type) {
     confession: "Confession",
     home_visit: "Home Visit",
     office_visit: "Office Visit",
+    anointing: "Holy Unction",
+    counseling: "Pastoral Counseling",
     other: "Other Request"
   }[type] || type;
 }
@@ -1934,7 +1936,7 @@ export async function handleDonorSacramentAvailability(request, env) {
 }
 
 // POST /api/donor/sacraments/book
-// Books a real open slot directly -- for house_blessing/confession/home_visit/office_visit
+// Books a real open slot directly -- for configured schedulable service types.
 // only. Skips the requested->acknowledged->scheduled review step entirely:
 // the row is created as status='scheduled' with confirmed_date/confirmed_time
 // already set, since the slot was only offered because it was open.

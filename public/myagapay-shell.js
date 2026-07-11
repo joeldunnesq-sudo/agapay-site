@@ -29,13 +29,8 @@
   function products() {
     const items = [
       { id: "giving", href: "/myagapay/dashboard", label: "Give", short: "Giving dashboard", icon: icons.give },
-      { id: "commemorations", href: "/myagapay/giving/commemorations", label: "Prayer", short: "Names and candles", icon: icons.commemorations },
+      { id: "commemorations", href: "/myagapay/sacraments", label: "Sacraments & Services", short: "Requests and prayer", icon: icons.sacraments },
       { id: "today", href: "/myagapay/giving/calendar", label: "Today", short: "Feast day and readings", icon: icons.today },
-      // mobileTabHidden: Services is the newest addition and has other entry
-      // points (desktop sidebar, Quick Give tile, account menu) -- keeping
-      // it out of the 5-slot bottom tabbar avoids pushing a 6th item onto
-      // an ugly second row on every mobile page.
-      { id: "sacraments", href: "/myagapay/sacraments", label: "Services", short: "Sacraments and requests", icon: icons.sacraments, mobileTabHidden: true },
       { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore },
       { id: "learn", href: "/myagapay/learn", label: "Learn", short: "Homeschool dashboard", icon: icons.learn }
     ];
@@ -46,11 +41,10 @@
     if (pathname.startsWith("/myagapay/learn")) return "learn";
     if (pathname === "/myagapay" || pathname === "/myagapay/" || pathname === "/myagapay/dashboard") return "giving";
     if (pathname.startsWith("/myagapay/bookstore")) return "bookstore";
-    if (pathname.startsWith("/myagapay/giving/commemorations") || pathname.startsWith("/myagapay/giving/names")) return "commemorations";
+    if (pathname.startsWith("/myagapay/sacraments") || pathname.startsWith("/myagapay/giving/commemorations") || pathname.startsWith("/myagapay/giving/names")) return "commemorations";
     if (pathname.startsWith("/myagapay/giving/calendar")) return "today";
     if (pathname.startsWith("/myagapay/giving/history") || pathname.startsWith("/myagapay/giving/offerings")) return "account";
     if (pathname.startsWith("/myagapay/giving")) return "giving";
-    if (pathname.startsWith("/myagapay/sacraments")) return "sacraments";
     if (pathname.startsWith("/myagapay/account")) return "account";
     if (pathname.startsWith("/marketplace")) return "market";
     return "home";

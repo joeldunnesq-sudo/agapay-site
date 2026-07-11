@@ -3417,6 +3417,8 @@ export function sacramentTypeLabel(type) {
     confession: "Confession",
     home_visit: "Home Visit",
     office_visit: "Office Visit",
+    anointing: "Holy Unction",
+    counseling: "Pastoral Counseling",
     other: "Other Request"
   }[type] || type;
 }
