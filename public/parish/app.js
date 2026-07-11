@@ -1422,9 +1422,9 @@
     }
 
     // Sacraments & Services is an AGAPAY Parish + feature and also has a
-    // rollout flag. Without Stewardship access, show it as gated; with access,
-    // show Coming soon unless the parish is on the live rollout list.
-    const sacIsRolledOut = Boolean(currentParish?.parishId && SACRAMENTS_ROLLOUT_PARISH_IDS.has(currentParish.parishId));
+    // soft-rollout flag. Without Stewardship access, show it as gated; with
+    // access, show Coming soon unless an admin has enabled it for this parish.
+    const sacIsRolledOut = Boolean(currentParish?.sacramentsEnabled);
     const sacNav = document.getElementById('nav-sacraments');
     const sacSoonBadge = document.getElementById('sacramentsNavSoonBadge');
     const sacBadge = document.getElementById('sacramentsNavBadge');
@@ -2322,17 +2322,15 @@
     return row.sacramentType === 'other' && row.otherTypeLabel ? row.otherTypeLabel : (SACRAMENT_TYPE_LABELS[row.sacramentType] || row.sacramentType);
   }
 
-  // Limited rollout: Sacraments & Services only shows real, live content for
-  // allowlisted parishes (currently just st-fiacre, for internal testing).
-  // Every other parish sees the coming-soon banner instead. Mirrors the
-  // server-side allowlist in handlers/parish.js and handlers/donor.js — to
-  // launch broadly, update both here and there.
-  const SACRAMENTS_ROLLOUT_PARISH_IDS = new Set(['st-fiacre']);
-
+  // Soft rollout: Sacraments & Services only shows real, live content for
+  // parishes an AGAPAY admin has enabled (registration.sacramentsEnabled,
+  // set via the admin panel). Every other parish sees the coming-soon
+  // banner instead. Mirrors the server-side gate in handlers/parish.js and
+  // handlers/donor.js (sacramentsEnabledFor).
   function loadSacramentsTab() {
     const banner = document.getElementById('sacramentsComingSoonBanner');
     const live = document.getElementById('sacramentsLiveContent');
-    const isRolledOut = Boolean(currentParish?.parishId && SACRAMENTS_ROLLOUT_PARISH_IDS.has(currentParish.parishId));
+    const isRolledOut = Boolean(currentParish?.sacramentsEnabled);
     if (banner) banner.hidden = isRolledOut;
     if (live) live.hidden = !isRolledOut;
     if (isRolledOut) loadSacramentsPanel();
@@ -2389,6 +2387,32 @@
       </div>`;
   }
 
+  // Groups requests by urgency rather than a flat active/history split, so
+  // a priest can tell at a glance what needs attention: unacknowledged
+  // requests (oldest first, flagged overdue past 48h — a client-side
+  // "tickler" highlight computed from data already on the request, no
+  // backend change needed), what's scheduled in the next 7 days, what's
+  // scheduled further out, and closed history.
+  const SACRAMENT_OVERDUE_HOURS = 48;
+
+  function daysWaiting(createdAt) {
+    if (!createdAt) return 0;
+    return Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
+  }
+
+  function isOverdue(row) {
+    if (row.status !== 'requested' || !row.createdAt) return false;
+    return (Date.now() - new Date(row.createdAt).getTime()) > SACRAMENT_OVERDUE_HOURS * 3600000;
+  }
+
+  function isThisWeek(row) {
+    if (row.status !== 'scheduled' || !row.confirmedDate) return false;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const weekAhead = new Date(today.getTime() + 7 * 86400000);
+    const confirmed = new Date(row.confirmedDate + 'T00:00:00');
+    return confirmed >= today && confirmed <= weekAhead;
+  }
+
   function renderSacramentsPanel() {
     const pane = document.getElementById('sacramentsPane');
     if (!pane) return;
@@ -2398,23 +2422,40 @@
       return;
     }
 
-    const active = requests.filter(r => ['requested', 'acknowledged', 'scheduled'].includes(r.status));
-    const closed = requests.filter(r => ['completed', 'declined', 'cancelled'].includes(r.status));
+    const needsResponse = requests.filter(r => r.status === 'requested')
+      .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    const thisWeek = requests.filter(r => isThisWeek(r))
+      .sort((a, b) => (a.confirmedDate || '').localeCompare(b.confirmedDate || ''));
+    const scheduled = requests.filter(r => r.status === 'scheduled' && !isThisWeek(r))
+      .sort((a, b) => (a.confirmedDate || '').localeCompare(b.confirmedDate || ''));
+    const acknowledged = requests.filter(r => r.status === 'acknowledged');
+    const history = requests.filter(r => ['completed', 'declined', 'cancelled'].includes(r.status));
+
+    const section = (title, rows, opts) => rows.length
+      ? `<div class="sac-parish-section"><h3>${title} <span class="sac-parish-section-count">${rows.length}</span></h3>${rows.map(r => sacramentParishRow(r, opts)).join('')}</div>`
+      : '';
 
     pane.innerHTML = `
-      ${active.length ? `<div class="sac-parish-section"><h3>Active</h3>${active.map(sacramentParishRow).join('')}</div>` : ''}
-      ${closed.length ? `<div class="sac-parish-section"><h3>History</h3>${closed.map(sacramentParishRow).join('')}</div>` : ''}
+      ${section('Needs a response', needsResponse, { showAge: true })}
+      ${section('Scheduled this week', thisWeek, {})}
+      ${section('Acknowledged', acknowledged, {})}
+      ${section('Scheduled', scheduled, {})}
+      ${history.length ? `<details class="sac-parish-section sac-parish-history"><summary><h3 style="display:inline;">History <span class="sac-parish-section-count">${history.length}</span></h3></summary>${history.map(r => sacramentParishRow(r, {})).join('')}</details>` : ''}
     `;
   }
 
-  function sacramentParishRow(row) {
+  function sacramentParishRow(row, opts = {}) {
     const typeLabel = sacramentTypeLabel(row);
     const statusOptions = SACRAMENT_STATUS_OPTIONS.map(s => `<option value="${s}" ${s === row.status ? 'selected' : ''}>${SACRAMENT_STATUS_LABELS[s]}</option>`).join('');
+    const overdue = opts.showAge && isOverdue(row);
+    const ageChip = opts.showAge
+      ? `<span class="sac-age-chip ${overdue ? 'overdue' : ''}">${daysWaiting(row.createdAt)}d waiting</span>`
+      : '';
     return `
-      <div class="sac-parish-row" id="sacrow-${row.id}">
+      <div class="sac-parish-row${overdue ? ' sac-parish-row-overdue' : ''}" id="sacrow-${row.id}">
         <div class="sac-parish-row-top">
           <div>
-            <strong>${escapeHtml(typeLabel)}</strong>
+            <strong>${escapeHtml(typeLabel)}</strong> ${ageChip}
             <span class="sac-parish-row-donor">${escapeHtml(row.donorEmail)}${row.phone ? ' · ' + escapeHtml(row.phone) : ''}</span>
           </div>
           <select class="sw-year-select" style="max-width:150px;" id="sacstatus-${row.id}" onchange="onSacramentStatusChange('${row.id}')">${statusOptions}</select>

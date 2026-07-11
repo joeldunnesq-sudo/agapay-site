@@ -185,7 +185,12 @@
   grid-column: 1 / -1;
 }
 
-.form-input, .form-select, .form-textarea {
+/* Scoped to .dashboard-body (the standalone Stewardship SSR pages — meeting
+   editor, packets, giving metrics). The parish dashboard SPA (dashboard.html)
+   reuses these same .form-input/.form-select class names in other tabs
+   (e.g. Campaigns) but does NOT carry .dashboard-body, so this dark theme
+   must not apply there -- see the Campaigns "dark navy field" bug it caused. */
+.dashboard-body .form-input, .dashboard-body .form-select, .dashboard-body .form-textarea {
   background: var(--surface-1, #111827);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -198,7 +203,7 @@
   transition: border-color .15s;
 }
 
-.form-input:focus, .form-select:focus, .form-textarea:focus {
+.dashboard-body .form-input:focus, .dashboard-body .form-select:focus, .dashboard-body .form-textarea:focus {
   outline: none;
   border-color: var(--gold, #c8972a);
 }
@@ -1894,6 +1899,51 @@
   font-size: 13px;
   color: var(--deep);
 }
+.sac-parish-section-count {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--stone);
+  background: rgba(0,0,0,0.05);
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.sac-age-chip {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--stone);
+  background: rgba(0,0,0,0.05);
+  border-radius: 999px;
+  padding: 2px 9px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.sac-age-chip.overdue {
+  color: #8B2020;
+  background: rgba(139, 32, 32, 0.1);
+}
+.sac-parish-row-overdue {
+  border-color: rgba(139, 32, 32, 0.35);
+  background: rgba(139, 32, 32, 0.03);
+}
+.sac-parish-history summary {
+  cursor: pointer;
+  list-style: none;
+  margin-bottom: 0.75rem;
+}
+.sac-parish-history summary::-webkit-details-marker { display: none; }
+.sac-parish-history summary::before {
+  content: '▸';
+  display: inline-block;
+  margin-right: 6px;
+  color: var(--stone);
+  transition: transform 0.15s;
+}
+.sac-parish-history[open] summary::before { transform: rotate(90deg); }
 
 /* ── Full-width featured card (Stewardship Health Score, Financial
    Snapshots) — pulled out of the tool grid so it isn't squeezed into an

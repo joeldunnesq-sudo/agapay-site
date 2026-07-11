@@ -3368,18 +3368,43 @@ export async function handleParishSubscriptionPortal(request, env, parishId) {
   return json({ ok: true, portalUrl: session.body.url });
 }
 
-// Feature flag: Sacraments & Services is not yet fully ready for general
-// availability. It's live only for the parishes listed here (currently just
-// the St. Fiacre demo parish, for internal testing) — every other parish
-// sees "Coming soon." To launch broadly, replace this with `() => true`.
-const SACRAMENTS_ALLOWED_PARISH_IDS = new Set(["st-fiacre"]);
-function sacramentsComingSoonFor(parishId) {
-  return !SACRAMENTS_ALLOWED_PARISH_IDS.has(String(parishId || "").trim());
+// Soft rollout: Sacraments & Services is gated per-parish by an admin-set
+// flag (registration.sacramentsEnabled), on top of the existing AGAPAY
+// Parish + tier gate (hasStewardshipAccess). Both must be true. This
+// replaces the old hardcoded single-parish allowlist -- an AGAPAY
+// superadmin now flips this on per parish as they're onboarded, via
+// handleAdminSetSacramentsEnabled below, instead of a code deploy.
+function sacramentsEnabledFor(registration) {
+  return Boolean(registration?.sacramentsEnabled) && hasStewardshipAccess(registration);
+}
+
+// POST /api/admin/sacraments/enabled
+// Body: { parishId: string, enabled: boolean }
+// Admin-only soft-rollout control -- deliberately NOT exposed on the
+// parish's own self-service dashboard PATCH route.
+export async function handleAdminSetSacramentsEnabled(request, env) {
+  if (!(await requireAdmin(request, env))) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+
+  let body = {};
+  try { body = await request.json(); } catch { body = {}; }
+  const parishId = String(body?.parishId || "").trim();
+  if (!parishId) return json({ error: "parishId is required." }, { status: 400 });
+  const enabled = Boolean(body?.enabled);
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish not found." }, { status: 404 });
+
+  const registration = { ...found.registration, sacramentsEnabled: enabled };
+  await saveRegistrationRecord(env, found.key, registration);
+
+  return json({ ok: true, parishId, sacramentsEnabled: enabled });
 }
 
 const SACRAMENT_STATUSES = new Set(["requested", "acknowledged", "scheduled", "completed", "declined", "cancelled"]);
 
-function sacramentTypeLabel(type) {
+export function sacramentTypeLabel(type) {
   return {
     house_blessing: "House Blessing",
     baptism: "Baptism",
@@ -3471,9 +3496,6 @@ function parishSacramentRequestRow(row = {}) {
 // becomes available on both ends automatically the moment a parish
 // subscribes (or is comped), with no separate enablement step.
 export async function handleParishSacraments(request, env, parishId) {
-  if (sacramentsComingSoonFor(parishId)) {
-    return json({ error: "Sacraments & Services is coming soon.", comingSoon: true }, { status: 503 });
-  }
   if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
   const limited = await rateLimit(request, env, "parish-dashboard", { limit: 80, windowSeconds: 300 });
   if (limited) return limited;
@@ -3487,10 +3509,13 @@ export async function handleParishSacraments(request, env, parishId) {
     return unauthorized();
   }
 
-  if (!hasStewardshipAccess(found.registration)) {
+  if (!sacramentsEnabledFor(found.registration)) {
     return json({
-      error: "Sacraments & Services requires AGAPAY Parish +.",
-      stewardshipRequired: true
+      error: hasStewardshipAccess(found.registration)
+        ? "Sacraments & Services is coming soon for your parish."
+        : "Sacraments & Services requires AGAPAY Parish +.",
+      stewardshipRequired: !hasStewardshipAccess(found.registration),
+      comingSoon: hasStewardshipAccess(found.registration)
     }, { status: 402 });
   }
 
@@ -3514,9 +3539,6 @@ export async function handleParishSacraments(request, env, parishId) {
 // PATCH /api/parish/dashboard/:parishId/sacraments/:requestId
 // Body: { status?, confirmedDate?, confirmedTime?, clergyAssigned?, parishNotes?, declineReason? }
 export async function handleParishSacramentUpdate(request, env, parishId, requestId) {
-  if (sacramentsComingSoonFor(parishId)) {
-    return json({ error: "Sacraments & Services is coming soon.", comingSoon: true }, { status: 503 });
-  }
   if (request.method !== "PATCH") return json({ error: "Method not allowed" }, { status: 405 });
   const limited = await rateLimit(request, env, "parish-dashboard-write", { limit: 40, windowSeconds: 300 });
   if (limited) return limited;
@@ -3530,10 +3552,13 @@ export async function handleParishSacramentUpdate(request, env, parishId, reques
     return unauthorized();
   }
 
-  if (!hasStewardshipAccess(found.registration)) {
+  if (!sacramentsEnabledFor(found.registration)) {
     return json({
-      error: "Sacraments & Services requires AGAPAY Parish +.",
-      stewardshipRequired: true
+      error: hasStewardshipAccess(found.registration)
+        ? "Sacraments & Services is coming soon for your parish."
+        : "Sacraments & Services requires AGAPAY Parish +.",
+      stewardshipRequired: !hasStewardshipAccess(found.registration),
+      comingSoon: hasStewardshipAccess(found.registration)
     }, { status: 402 });
   }
 
@@ -5301,6 +5326,7 @@ export function parishDashboardPayload(parishId, registration) {
     parishName: registration.parishName,
     communityType: registration.communityType,
     jurisdiction: registration.jurisdiction,
+    sacramentsEnabled: Boolean(registration.sacramentsEnabled),
     addressLine1: registration.addressLine1 || "",
     addressLine2: registration.addressLine2 || "",
     city: registration.city,

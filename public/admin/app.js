@@ -1374,6 +1374,81 @@ let selectedReference = '';
       }
     }
 
+    // Shared core used by both the Developer Tools card and the per-parish
+    // detail-view shortcut. Returns the parsed response so each caller can
+    // render its own status message.
+    async function submitSacramentsEnabled(parishId, enabled) {
+      const res = await fetch('/api/admin/sacraments/enabled', {
+        method: 'POST',
+        headers: {
+          ...authHeaders(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ parishId, enabled })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Update failed');
+      return data;
+    }
+
+    async function setSacramentsEnabled(btn, enabled) {
+      const status = document.getElementById('sacramentsEnabledStatus');
+      const parishInput = document.getElementById('sacramentsEnabledParishId');
+      const parishId = (parishInput?.value || '').trim();
+      if (!parishId) {
+        if (status) {
+          status.textContent = 'Enter the parish dashboard ID first.';
+          status.style.color = 'var(--red, #8b2020)';
+        }
+        parishInput?.focus();
+        return;
+      }
+      btn.disabled = true;
+      const originalText = btn.textContent;
+      btn.textContent = enabled ? 'Enabling...' : 'Disabling...';
+      if (status) status.textContent = '';
+      try {
+        await submitSacramentsEnabled(parishId, enabled);
+        if (status) {
+          status.textContent = `Sacraments & Services ${enabled ? 'enabled' : 'disabled'} for ${parishId}.`;
+          status.style.color = 'var(--green, #2a7a4b)';
+        }
+      } catch (err) {
+        if (status) {
+          status.textContent = err.message;
+          status.style.color = 'var(--red, #8b2020)';
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    }
+
+    async function setSacramentsEnabledFromDetail(parishId, enabled, btn) {
+      const status = document.getElementById('detailSacramentsStatus');
+      if (!parishId) return;
+      btn.disabled = true;
+      btn.textContent = enabled ? 'Enabling...' : 'Disabling...';
+      if (status) status.textContent = '';
+      try {
+        await submitSacramentsEnabled(parishId, enabled);
+        btn.textContent = enabled ? 'Disable' : 'Enable';
+        btn.setAttribute('onclick', `setSacramentsEnabledFromDetail('${parishId}', ${!enabled}, this)`);
+        if (status) {
+          status.textContent = `Sacraments & Services ${enabled ? 'enabled' : 'disabled'}.`;
+          status.style.color = 'var(--green, #2a7a4b)';
+        }
+      } catch (err) {
+        btn.textContent = enabled ? 'Enable' : 'Disable';
+        if (status) {
+          status.textContent = err.message;
+          status.style.color = 'var(--red, #8b2020)';
+        }
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
     async function loadPlatformSummary(btn) {
       if (btn) { btn.classList.add('loading'); btn.disabled = true; }
       if (!registrationsCache.length) {
@@ -2099,6 +2174,14 @@ let selectedReference = '';
           </div>
           <span id="detailCompGrantStatus" class="founding-promo-status"></span>
         </div>` : ''}
+        <div class="admin-section">
+          <div class="admin-section-title">Sacraments &amp; Services</div>
+          <p class="founding-promo-copy">${reg.sacramentsEnabled ? 'Enabled for this parish.' : 'Not yet enabled for this parish.'}</p>
+          <div class="btn-row">
+            <button class="secondary btn-sm" onclick="setSacramentsEnabledFromDetail('${publicParishId}', ${!reg.sacramentsEnabled}, this)">${reg.sacramentsEnabled ? 'Disable' : 'Enable'}</button>
+          </div>
+          <span id="detailSacramentsStatus" class="founding-promo-status"></span>
+        </div>
         <div class="admin-section">
           <div class="admin-section-title">Parish Giving Snapshot</div>
           <div class="giving-summary-panel" id="registrationGivingSummary">

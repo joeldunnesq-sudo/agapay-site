@@ -102,6 +102,8 @@ import {
   handleParishCommemorations,
   handleParishSacraments,
   handleParishSacramentUpdate,
+  handleAdminSetSacramentsEnabled,
+  sacramentTypeLabel,
   handleParishPayoutDiagnostics,
   handleParishReconciliation,
   handleParishReconciliationClose,
@@ -1111,6 +1113,115 @@ async function handleAdminWeeklyTreasurerCommerceEmails(request, env) {
     scheduledTime,
     results
   });
+}
+
+// Weekly digest to the priest/treasurer for each Sacraments & Services
+// enabled parish, summarizing what needs attention: unacknowledged
+// requests (flagging ones over 48h old as overdue) and anything scheduled
+// in the coming week. Deliberately weekly, not daily -- a per-parish
+// reminder cadence the user asked to keep low-noise. If a parish has
+// nothing pending, no email is sent at all that week.
+async function sendWeeklySacramentDigestEmails(env, scheduledTime, options = {}) {
+  if (!d1(env)) return [];
+  const registrations = await loadAllRegistrations(env, { status: "verified" });
+  const appUrl = env.AGAPAY_APP_URL || "https://agapay.app";
+  const now = new Date(scheduledTime || Date.now());
+  const overdueThreshold = new Date(now.getTime() - 48 * 3600 * 1000).toISOString();
+  const todayIso = now.toISOString().slice(0, 10);
+  const weekAheadIso = new Date(now.getTime() + 7 * 86400000).toISOString().slice(0, 10);
+  const parishFilter = String(options.parishId || "").trim();
+  const dryRun = Boolean(options.dryRun);
+  const results = [];
+
+  for (const registration of registrations) {
+    if (!registration.parishId) continue;
+    if (parishFilter && registration.parishId !== parishFilter) continue;
+    if (!hasStewardshipAccess(registration) || !registration.sacramentsEnabled) continue;
+    const recipient = registration.priestEmail || registration.treasurerEmail || "";
+    if (!recipient) {
+      results.push({ parishId: registration.parishId, parishName: registration.parishName || "", status: "skipped", reason: "missing_recipient_email" });
+      continue;
+    }
+
+    const needsResponse = await d1All(env,
+      `SELECT id, sacrament_type, other_type_label, created_at FROM sacrament_requests
+       WHERE parish_id = ? AND status = 'requested' ORDER BY created_at ASC LIMIT 25`,
+      registration.parishId
+    );
+    const overdue = needsResponse.filter((r) => r.created_at < overdueThreshold);
+    const thisWeek = await d1All(env,
+      `SELECT id, sacrament_type, other_type_label, confirmed_date FROM sacrament_requests
+       WHERE parish_id = ? AND status = 'scheduled' AND confirmed_date BETWEEN ? AND ?
+       ORDER BY confirmed_date ASC LIMIT 25`,
+      registration.parishId, todayIso, weekAheadIso
+    );
+
+    if (!needsResponse.length && !thisWeek.length) {
+      results.push({ parishId: registration.parishId, parishName: registration.parishName || "", status: "skipped", reason: "nothing_pending" });
+      continue;
+    }
+    if (dryRun) {
+      results.push({
+        parishId: registration.parishId, parishName: registration.parishName || "", to: recipient,
+        status: "dry_run", needsResponseCount: needsResponse.length, overdueCount: overdue.length, thisWeekCount: thisWeek.length
+      });
+      continue;
+    }
+
+    const typeLabel = (row) => htmlEscape(row.other_type_label || sacramentTypeLabel(row.sacrament_type));
+    const listItem = (label, meta) => `<li style="margin:0 0 6px;">${label}${meta ? ` <span style="color:#6F6A60;">— ${htmlEscape(meta)}</span>` : ""}</li>`;
+    const section = (title, rows, metaFn) => rows.length
+      ? `<p style="margin:18px 0 6px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#6F6A60;font-weight:700;">${title}</p><ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.6;color:#171715;">${rows.map((r) => listItem(typeLabel(r), metaFn(r))).join("")}</ul>`
+      : "";
+
+    const subject = overdue.length
+      ? `${overdue.length} sacrament request${overdue.length === 1 ? "" : "s"} waiting on ${registration.parishName || "your parish"}`
+      : `Sacraments & Services: this week at ${registration.parishName || "your parish"}`;
+
+    const email = await sendEmail(env, {
+      from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
+      to: [recipient],
+      reply_to: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
+      subject,
+      html: agapayEmailHtml(appUrl, "Sacraments & Services — Weekly Digest", `
+        <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#171715;">Here's what needs attention in Sacraments &amp; Services for <strong>${htmlEscape(registration.parishName || "your parish")}</strong>.</p>
+        ${overdue.length ? `<p style="margin:0;padding:10px 14px;background:#FBEFE9;border:1px solid rgba(178,68,30,0.28);border-radius:10px;font-size:14px;color:#8B2A0E;"><strong>${overdue.length}</strong> request${overdue.length === 1 ? "" : "s"} ha${overdue.length === 1 ? "s" : "ve"} been waiting more than 48 hours for a response.</p>` : ""}
+        ${section("Needs a response", needsResponse, (r) => `waiting since ${new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`)}
+        ${section("Scheduled this week", thisWeek, (r) => r.confirmed_date)}
+        <p style="margin:18px 0 0;font-size:13px;color:#6F6A60;">Review and respond from your parish dashboard, under Sacraments &amp; Services.</p>
+      `),
+      text: [
+        subject, "",
+        "Needs a response:",
+        ...(needsResponse.length ? needsResponse.map((r) => `- ${r.other_type_label || sacramentTypeLabel(r.sacrament_type)} (since ${r.created_at})`) : ["None"]),
+        "", "Scheduled this week:",
+        ...(thisWeek.length ? thisWeek.map((r) => `- ${r.other_type_label || sacramentTypeLabel(r.sacrament_type)} on ${r.confirmed_date}`) : ["None"])
+      ].join("\n")
+    });
+
+    results.push({
+      parishId: registration.parishId, parishName: registration.parishName || "", to: recipient,
+      status: email.status, needsResponseCount: needsResponse.length, overdueCount: overdue.length, thisWeekCount: thisWeek.length
+    });
+  }
+
+  return results;
+}
+
+async function handleAdminWeeklySacramentDigest(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "admin-maintenance", { limit: 12, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!await requireAdmin(request, env)) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const body = await request.json().catch(() => ({}));
+  const scheduledTime = body.scheduledTime || new Date().toISOString();
+  const results = await sendWeeklySacramentDigestEmails(env, scheduledTime, {
+    dryRun: body.dryRun !== false,
+    parishId: body.parishId || ""
+  });
+  return json({ ok: true, dryRun: body.dryRun !== false, scheduledTime, results });
 }
 
 // Sends a one-time heads-up email roughly 30 days before a parish's
@@ -2256,6 +2367,9 @@ export default {
     ctx.waitUntil(processExpiredTaxExemptions(env)
       .then((results) => console.log("tax_exemption_expiration_sweep", JSON.stringify(results)))
       .catch((error) => console.error("tax_exemption_expiration_sweep_failed", error?.message || String(error))));
+    ctx.waitUntil(sendWeeklySacramentDigestEmails(env, event.scheduledTime)
+      .then((results) => console.log("weekly_sacrament_digest", JSON.stringify(results)))
+      .catch((error) => console.error("weekly_sacrament_digest_failed", error?.message || String(error))));
   },
 
   async fetch(request, env, ctx) {
@@ -2634,6 +2748,9 @@ export default {
     if (url.pathname === "/api/admin/commerce/send-weekly-treasurer") {
       return handleAdminWeeklyTreasurerCommerceEmails(request, env);
     }
+    if (url.pathname === "/api/admin/sacraments/send-weekly-digest") {
+      return handleAdminWeeklySacramentDigest(request, env);
+    }
     if (url.pathname === "/api/admin/myagapay/release-flags") {
       return handleAdminMyAgapayReleaseFlags(request, env);
     }
@@ -2642,6 +2759,9 @@ export default {
     }
     if (url.pathname === "/api/admin/stewardship/comp-status" && request.method === "GET") {
       return handleAdminStewardshipCompStatus(request, env);
+    }
+    if (url.pathname === "/api/admin/sacraments/enabled" && request.method === "POST") {
+      return handleAdminSetSacramentsEnabled(request, env);
     }
     if (url.pathname === "/api/admin/seed-demo" && request.method === "POST") {
       if (!(await requireAdmin(request, env))) return unauthorized();

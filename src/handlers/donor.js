@@ -1538,13 +1538,11 @@ export async function handleDonorBookstore(request, env) {
   return json({ ok: true, id: session.body.id, orderId, url: session.body.url }, { status: 201 });
 }
 
-// Feature flag: Sacraments & Services is not yet fully ready for general
-// availability. It's live only for the parishes listed here (currently just
-// the St. Fiacre demo parish, for internal testing) — every other parish
-// sees "Coming soon." To launch broadly, replace this with `() => true`.
-const SACRAMENTS_ALLOWED_PARISH_IDS = new Set(["st-fiacre"]);
-function sacramentsComingSoonFor(parishId) {
-  return !SACRAMENTS_ALLOWED_PARISH_IDS.has(String(parishId || "").trim());
+// Soft rollout: Sacraments & Services is gated per-parish by an admin-set
+// flag (registration.sacramentsEnabled) on top of the existing AGAPAY
+// Parish + tier gate. See the matching helper in src/handlers/parish.js.
+function sacramentsEnabledFor(registration) {
+  return Boolean(registration?.sacramentsEnabled) && hasStewardshipAccess(registration);
 }
 
 const SACRAMENT_TYPES = new Set([
@@ -1659,16 +1657,16 @@ export async function handleDonorSacraments(request, env) {
     ).catch(() => []);
 
     // Sacraments & Services is an AGAPAY Parish + feature, currently in
-    // limited rollout — only tell the donor it's available if their home
-    // parish both has active AGAPAY Parish + access AND is on the rollout
-    // allowlist. This is purely informational for the GET (so the UI can
-    // show/hide the "new request" form); it never blocks viewing requests
-    // already on file, even from a parish no longer on the allowlist.
+    // soft rollout — only tell the donor it's available if their home
+    // parish both has active AGAPAY Parish + access AND has been enabled by
+    // an AGAPAY admin. This is purely informational for the GET (so the UI
+    // can show/hide the "new request" form); it never blocks viewing
+    // requests already on file, even from a parish no longer enabled.
     let available = false;
     const parishId = String(request.headers.get("X-AGAPAY-Parish-Id") || donor.defaultParishId || "").trim();
-    if (parishId && !sacramentsComingSoonFor(parishId)) {
+    if (parishId) {
       const found = await findRegistrationByParishId(env, parishId);
-      available = Boolean(found && hasStewardshipAccess(found.registration));
+      available = Boolean(found && sacramentsEnabledFor(found.registration));
     }
 
     const requestsWithDetails = await Promise.all(
@@ -1689,20 +1687,20 @@ export async function handleDonorSacraments(request, env) {
   if (!parishId) {
     return json({ error: "Choose a parish before submitting a request.", detail: "Set a home parish in Settings, or include parishId." }, { status: 400 });
   }
-  if (sacramentsComingSoonFor(parishId)) {
-    return json({ error: "Sacraments & Services is coming soon.", comingSoon: true }, { status: 503 });
-  }
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Parish not found." }, { status: 404 });
 
-  // Gate: Sacraments & Services requires the parish to have active
-  // AGAPAY Parish + access (paid subscription, trial, or a comp grant).
-  // This is what makes the feature "automatically available" the moment a
-  // parish subscribes, with no separate per-donor enablement step needed.
-  if (!hasStewardshipAccess(found.registration)) {
+  // Gate: Sacraments & Services requires both active AGAPAY Parish + access
+  // (paid subscription, trial, or a comp grant) AND an admin having flipped
+  // on the soft-rollout flag for this specific parish.
+  if (!sacramentsEnabledFor(found.registration)) {
     return json({
-      error: "This parish has not enabled Sacraments & Services.",
-      detail: "This feature is part of AGAPAY Parish +. Your parish will need to subscribe before you can submit requests here."
+      error: hasStewardshipAccess(found.registration)
+        ? "Sacraments & Services is coming soon for your parish."
+        : "This parish has not enabled Sacraments & Services.",
+      detail: hasStewardshipAccess(found.registration)
+        ? "Your parish will have this feature soon."
+        : "This feature is part of AGAPAY Parish +. Your parish will need to subscribe before you can submit requests here."
     }, { status: 402 });
   }
 
