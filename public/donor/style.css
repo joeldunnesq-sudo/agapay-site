@@ -6309,10 +6309,12 @@ body.donor-home {
   background: rgba(255, 252, 246, 0.9);
   box-shadow: 0 12px 28px rgba(6, 21, 34, 0.055);
   margin-bottom: 0.8rem;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
 }
-.sac-accordion-card.open {
+.sac-accordion-card:hover {
+  transform: translateY(-1px);
   border-color: rgba(201, 162, 91, 0.42);
-  background: linear-gradient(180deg, rgba(255, 252, 246, 0.98), rgba(246, 241, 232, 0.84));
+  box-shadow: 0 16px 34px rgba(6, 21, 34, 0.08);
 }
 .sac-accordion-trigger {
   width: 100%;
@@ -6378,14 +6380,10 @@ body.donor-home {
 }
 .sac-accordion-chevron {
   color: var(--stone);
-  font-size: 1.2rem;
+  font-size: 1.35rem;
   transition: transform 0.18s ease;
 }
-.sac-accordion-card.open .sac-accordion-chevron { transform: rotate(180deg); }
-.sac-accordion-panel {
-  border-top: 1px solid rgba(6, 21, 34, 0.08);
-  padding: 1rem;
-}
+.sac-accordion-card:hover .sac-accordion-chevron { transform: translateX(2px); }
 .sac-card-form {
   display: grid;
   gap: 1rem;
@@ -6421,6 +6419,70 @@ body.donor-home {
 }
 .sac-booked-panel p,
 .sac-link-panel p { margin: 0; line-height: 1.55; }
+.sac-modal-open { overflow: hidden; }
+.sac-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: clamp(0.75rem, 3vw, 2rem);
+  background: rgba(6, 21, 34, 0.48);
+  backdrop-filter: blur(8px);
+}
+.sac-modal[hidden] { display: none; }
+.sac-modal-dialog {
+  width: min(720px, 100%);
+  max-height: min(780px, 92vh);
+  overflow: auto;
+  border: 1px solid rgba(201, 162, 91, 0.34);
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--paper), var(--cream));
+  box-shadow: 0 30px 80px rgba(6, 21, 34, 0.32);
+}
+.sac-modal-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 0.85rem;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(6, 21, 34, 0.08);
+  background: linear-gradient(180deg, rgba(255, 252, 246, 0.98), rgba(246, 241, 232, 0.96));
+}
+.sac-modal-head h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: clamp(1.55rem, 4vw, 2.15rem);
+  line-height: 1;
+  font-weight: 600;
+}
+.sac-modal-head p {
+  margin: 0.28rem 0 0;
+  color: var(--stone);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.sac-modal-close {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(6, 21, 34, 0.12);
+  border-radius: 50%;
+  background: rgba(255, 253, 248, 0.78);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+.sac-modal-body {
+  padding: 1rem;
+}
 @media (max-width: 640px) {
   .donor-services-accordion-page .sac-section-heading {
     display: grid;
@@ -6438,5 +6500,13 @@ body.donor-home {
   .sac-accordion-chevron {
     grid-column: 3;
     grid-row: 1;
+  }
+  .sac-modal {
+    align-items: end;
+    padding: 0;
+  }
+  .sac-modal-dialog {
+    max-height: 94vh;
+    border-radius: 18px 18px 0 0;
   }
 }

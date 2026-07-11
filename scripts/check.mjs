@@ -171,7 +171,9 @@ assert.ok(donorHistory.includes("Activity Timeline") && donorHistory.includes("h
 assert.ok(donorApp.includes("buildHistoryActivities") && donorApp.includes("setHistoryProductFilter"), "donor app should render and filter cross-product History activity");
 const donorCommemorations = await readFile("public/donor/commemorations.html", "utf8");
 const myAgapaySacraments = await readFile("public/myagapay/sacraments.html", "utf8");
-assert.ok(donorCommemorations.includes("/myagapay/sacraments") && myAgapaySacraments.includes("sacramentAccordion") && myAgapaySacraments.includes("servicesAccordion"), "Commemorations should redirect into the merged Sacraments & Services accordion page");
+assert.ok(donorCommemorations.includes("/myagapay/sacraments") && myAgapaySacraments.includes("sacramentAccordion") && myAgapaySacraments.includes("servicesAccordion"), "Commemorations should redirect into the merged Sacraments & Services page");
+assert.ok(donorApp.includes('id: "house_blessing", type: "house_blessing", section: "services"') && donorApp.includes('id: "counseling", type: "counseling", section: "services"'), "Blessings and Pastoral Counseling should appear under Services, not Sacraments");
+assert.ok(donorApp.includes("function renderSacramentModal()") && donorApp.includes('aria-haspopup="dialog"'), "Sacraments & Services tiles should open focused modal dialogs");
 const donorCalendar = await readFile("public/donor/calendar.html", "utf8");
 const donorCalendarCss = await readFile("public/donor/style.css", "utf8");
 assert.ok(!donorCalendar.includes("saintLifeButton") && !donorCalendar.includes("Open saint life"), "Today hero should not duplicate the dedicated Saint of the Day card action");

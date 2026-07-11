@@ -2999,11 +2999,11 @@ const SAC_SCHEDULABLE_TYPES = ["house_blessing", "confession", "home_visit", "of
 const SAC_ACTIVE_STATUSES = ["requested", "acknowledged", "scheduled"];
 const SAC_ACCORDION_CARDS = [
   { id: "confession", type: "confession", section: "sacrament", mode: "book", title: "Confession", description: "Reserve an available time for confession.", icon: "cross" },
-  { id: "house_blessing", type: "house_blessing", section: "sacrament", mode: "book", title: "House Blessing", description: "Choose an open time for a priest to visit your home.", icon: "home", locationType: "home" },
   { id: "anointing", type: "anointing", section: "sacrament", mode: "book", title: "Holy Unction", description: "Request anointing and pastoral prayer when parish availability is open.", icon: "oil" },
-  { id: "counseling", type: "counseling", section: "sacrament", mode: "book", title: "Pastoral Counseling", description: "Book time for a pastoral conversation.", icon: "chat" },
   { id: "baptism", type: "baptism", section: "sacrament", mode: "request", title: "Baptism", description: "Begin a baptism or chrismation request for parish review.", icon: "water" },
   { id: "wedding", type: "wedding", section: "sacrament", mode: "request", title: "Wedding", description: "Start a wedding request and share the first details with your parish.", icon: "rings" },
+  { id: "house_blessing", type: "house_blessing", section: "services", mode: "book", title: "Blessings", description: "Schedule house, car, and other parish blessing requests.", icon: "home", locationType: "home" },
+  { id: "counseling", type: "counseling", section: "services", mode: "book", title: "Pastoral Counseling", description: "Book time for a pastoral conversation.", icon: "chat" },
   { id: "commemorations", section: "services", mode: "commemorations", title: "Commemorations", description: "Submit names of the living and departed at no cost.", icon: "prayer" },
   { id: "candles", section: "services", mode: "link", title: "Candles", description: "Offer a candle through the existing secure giving flow.", icon: "candle", href: "/myagapay/giving/give?quick=1&giftType=candles" }
 ];
@@ -3012,7 +3012,7 @@ const SAC_REQUIREMENTS = {
   wedding: ["Names of both parties", "Orthodox standing and prior marriage information", "Koumbaro/sponsor details when known", "Marriage license and premarital counseling status"]
 };
 const sacAccordionState = {
-  openId: "confession",
+  openId: "",
   requests: [],
   available: true,
   slotsByType: {},
@@ -3021,6 +3021,7 @@ const sacAccordionState = {
   dashboard: null,
   commemorations: null
 };
+let sacModalEscapeBound = false;
 let sacramentSelectedSlot = null;
 
 function sacramentIcon(name) {
@@ -3179,10 +3180,15 @@ function toggleSacramentAddressFieldByLocation() {
 }
 
 function openSacramentAccordion(id) {
-  sacAccordionState.openId = sacAccordionState.openId === id ? "" : id;
-  renderSacramentAccordions();
+  sacAccordionState.openId = id;
+  renderSacramentModal();
   const card = SAC_ACCORDION_CARDS.find((item) => item.id === id);
-  if (card?.mode === "book" && sacAccordionState.openId === id) loadSacramentSlotsForCard(card.type);
+  if (card?.mode === "book") loadSacramentSlotsForCard(card.type);
+}
+
+function closeSacramentModal() {
+  sacAccordionState.openId = "";
+  renderSacramentModal();
 }
 
 function selectSacramentAccordionSlot(type, date, time, btn) {
@@ -3218,14 +3224,14 @@ function renderSacramentUpcomingStrip() {
   }).join("");
 }
 
-function sacramentCardHeader(card, open) {
+function sacramentCardHeader(card) {
   const request = card.type ? sacramentPrimaryRequest(card.type) : null;
   const status = request ? `<span class="sac-card-state">${escapeHtml(SACRAMENT_STATUS_LABELS[request.status] || request.status)}</span>` : "";
-  return `<button class="sac-accordion-trigger" type="button" aria-expanded="${open ? "true" : "false"}" onclick="openSacramentAccordion('${card.id}')">
+  return `<button class="sac-accordion-trigger" type="button" aria-haspopup="dialog" onclick="openSacramentAccordion('${card.id}')">
     <span class="sac-accordion-icon">${sacramentIcon(card.icon)}</span>
     <span class="sac-accordion-copy"><strong>${escapeHtml(card.title)}</strong><small>${escapeHtml(card.description)}</small></span>
     ${status}
-    <span class="sac-accordion-chevron" aria-hidden="true">⌄</span>
+    <span class="sac-accordion-chevron" aria-hidden="true">›</span>
   </button>`;
 }
 
@@ -3327,11 +3333,49 @@ function renderSacramentCardBody(card) {
 }
 
 function renderAccordionCard(card) {
-  const open = sacAccordionState.openId === card.id;
-  return `<article class="sac-accordion-card ${open ? "open" : ""}">
-    ${sacramentCardHeader(card, open)}
-    <div class="sac-accordion-panel" ${open ? "" : "hidden"}>${open ? renderSacramentCardBody(card) : ""}</div>
+  return `<article class="sac-accordion-card">
+    ${sacramentCardHeader(card)}
   </article>`;
+}
+
+function renderSacramentModal() {
+  let modal = document.getElementById("sacramentServiceModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "sacramentServiceModal";
+    modal.className = "sac-modal";
+    modal.addEventListener("click", (event) => {
+      if (event.target === modal) closeSacramentModal();
+    });
+    document.body.appendChild(modal);
+  }
+  if (!sacModalEscapeBound) {
+    sacModalEscapeBound = true;
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && sacAccordionState.openId) closeSacramentModal();
+    });
+  }
+  const card = SAC_ACCORDION_CARDS.find((item) => item.id === sacAccordionState.openId);
+  if (!card) {
+    modal.hidden = true;
+    modal.innerHTML = "";
+    document.body.classList.remove("sac-modal-open");
+    return;
+  }
+  modal.hidden = false;
+  document.body.classList.add("sac-modal-open");
+  modal.innerHTML = `<div class="sac-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="sacModalTitle">
+    <div class="sac-modal-head">
+      <span class="sac-accordion-icon">${sacramentIcon(card.icon)}</span>
+      <div><h2 id="sacModalTitle">${escapeHtml(card.title)}</h2><p>${escapeHtml(card.description)}</p></div>
+      <button class="sac-modal-close" type="button" aria-label="Close" onclick="closeSacramentModal()">×</button>
+    </div>
+    <div class="sac-modal-body">${renderSacramentCardBody(card)}</div>
+  </div>`;
+  if (card.id === "commemorations") {
+    renderCommemorationParish(donorDefaultParish() || donorProfile()?.defaultParish || null);
+    renderCommemorationsPayload(sacAccordionState.commemorations || {}, sacAccordionState.dashboard);
+  }
 }
 
 function renderSacramentAccordions() {
@@ -3340,10 +3384,7 @@ function renderSacramentAccordions() {
   if (sacRoot) sacRoot.innerHTML = SAC_ACCORDION_CARDS.filter((card) => card.section === "sacrament").map(renderAccordionCard).join("");
   if (servicesRoot) servicesRoot.innerHTML = SAC_ACCORDION_CARDS.filter((card) => card.section === "services").map(renderAccordionCard).join("");
   renderSacramentUpcomingStrip();
-  if (sacAccordionState.openId === "commemorations") {
-    renderCommemorationParish(donorDefaultParish() || donorProfile()?.defaultParish || null);
-    renderCommemorationsPayload(sacAccordionState.commemorations || {}, sacAccordionState.dashboard);
-  }
+  renderSacramentModal();
 }
 
 async function loadDonorSacramentsPage() {
