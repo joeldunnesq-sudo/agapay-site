@@ -101,6 +101,8 @@
         display: inline-flex;
       }
       .myagapay-settings-chip {
+        -webkit-appearance: none;
+        appearance: none;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -114,6 +116,7 @@
         font: 800 0.78rem/1 "DM Sans", system-ui, sans-serif;
         text-decoration: none;
         white-space: nowrap;
+        cursor: pointer;
       }
       .myagapay-settings-chip svg {
         width: 0.95rem;
@@ -162,6 +165,17 @@
     document.body.classList.toggle("has-myagapay-ios-back", shouldShowIosBackButton());
   }
 
+  // The dashboard home pages (myagapay/index.html, donor/index.html) have a
+  // rich, hardcoded account dropdown (History / Sacraments & Services /
+  // Account Settings / Log out). Every other My AGAPAY page previously only
+  // got a bare "Account" link here, so the canonical menu visibly changed
+  // depending on which page you landed on (e.g. clicking a Quick Give tile
+  // from the dashboard home). Inject the SAME dropdown -- same markup,
+  // ids, and data-attributes the existing event delegation in donor/app.js
+  // already handles (data-donor-account-menu/-toggle/-logout, #donorHomeTopbarName,
+  // .donor-home-account-dropdown) -- everywhere else too, just with a
+  // trigger styled for the light .topbar background instead of the dark
+  // home hero.
   function ensureCanonicalHeader() {
     if (!document.body.classList.contains("donor-mobile-page")) return;
     if (document.querySelector(".donor-home-account-menu") || document.querySelector(".learn-account-utility")) return;
@@ -184,13 +198,31 @@
       actions.className = "topbar-actions";
       topbar.appendChild(actions);
     }
-    if (actions.querySelector(".myagapay-settings-chip")) return;
-    const link = document.createElement("a");
-    link.className = "myagapay-settings-chip";
-    link.href = "/myagapay/account";
-    link.setAttribute("aria-label", "Open My AGAPAY account settings");
-    link.innerHTML = `${icons.account}<span>Account</span>`;
-    actions.appendChild(link);
+    if (actions.querySelector("[data-donor-account-menu]") || actions.querySelector(".myagapay-settings-chip")) return;
+
+    const menu = document.createElement("div");
+    menu.className = "donor-home-account-menu";
+    menu.setAttribute("data-donor-account-menu", "");
+    menu.setAttribute("data-auth-required", "");
+    menu.hidden = true;
+    menu.innerHTML = `
+      <button class="myagapay-settings-chip" type="button" data-donor-account-toggle aria-haspopup="true" aria-expanded="false" aria-label="Open My AGAPAY account menu">
+        ${icons.account}<span id="donorHomeTopbarName">Account</span>
+      </button>
+      <div class="donor-home-account-dropdown" role="menu" hidden>
+        <a href="/myagapay/giving/history" role="menuitem">History</a>
+        <a href="/myagapay/sacraments" role="menuitem">Sacraments &amp; Services</a>
+        <a href="/myagapay/account" role="menuitem">Account Settings</a>
+        <button type="button" data-donor-logout role="menuitem">Log out</button>
+      </div>`;
+    actions.appendChild(menu);
+
+    const guestLink = document.createElement("a");
+    guestLink.className = "myagapay-settings-chip";
+    guestLink.href = "/myagapay/login";
+    guestLink.setAttribute("data-auth-guest", "");
+    guestLink.textContent = "Login";
+    actions.appendChild(guestLink);
   }
 
   function productNav(active = activeProduct(), className = "my-agapay-tabbar") {

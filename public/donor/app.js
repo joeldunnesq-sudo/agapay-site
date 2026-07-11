@@ -528,12 +528,10 @@ function updateQuickGiveLinks(parish) {
   const candleLink = document.getElementById("quickGiveCandle");
   const memorialLink = document.getElementById("quickGiveMemorial");
   const feastLink = document.getElementById("quickGiveFeast");
-  const campaignLink = document.getElementById("quickGiveCampaigns");
   const desktopParishLink = document.getElementById("desktopQuickParish");
   const desktopCandleLink = document.getElementById("desktopQuickCandle");
   const desktopMemorialLink = document.getElementById("desktopQuickMemorial");
   const desktopFeastLink = document.getElementById("desktopQuickFeast");
-  const desktopCampaignLink = document.getElementById("desktopQuickCampaigns");
   if (parishLink) parishLink.href = quickDonorGiftUrl("stewardship", parish);
   if (desktopParishLink) desktopParishLink.href = quickDonorGiftUrl("stewardship", parish);
   if (parishIcon) parishIcon.innerHTML = communityIconSvg(parish?.type);
@@ -544,8 +542,6 @@ function updateQuickGiveLinks(parish) {
   if (desktopMemorialLink) desktopMemorialLink.href = quickDonorGiftUrl("commemoration", parish);
   if (feastLink) feastLink.href = quickDonorGiftUrl("feast", parish);
   if (desktopFeastLink) desktopFeastLink.href = quickDonorGiftUrl("feast", parish);
-  if (campaignLink) campaignLink.href = quickDonorGiftUrl("campaign", parish);
-  if (desktopCampaignLink) desktopCampaignLink.href = quickDonorGiftUrl("campaign", parish);
   syncSacramentsEntry(parish);
 }
 
