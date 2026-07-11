@@ -2300,6 +2300,7 @@
   // decide whether to show the upsell or the actual request list, so
   // switching to this tab never needs a second status round-trip.
   let sacramentsState = { loaded: false, requests: [] };
+  let sacramentsDashboardTab = 'requests';
 
   function sacramentsApi(path = '') {
     if (!currentParish?.parishId) throw new Error('Load a parish first.');
@@ -2321,6 +2322,17 @@
 
   function sacramentTypeLabel(row) {
     return row.sacramentType === 'other' && row.otherTypeLabel ? row.otherTypeLabel : (SACRAMENT_TYPE_LABELS[row.sacramentType] || row.sacramentType);
+  }
+
+  function setSacramentsDashboardTab(tab) {
+    sacramentsDashboardTab = tab || 'requests';
+    document.querySelectorAll('[data-sac-tab]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.sacTab === sacramentsDashboardTab);
+    });
+    if (['availability', 'blackouts', 'calendar'].includes(sacramentsDashboardTab) && !sacramentsAvailabilityState.loaded) {
+      loadSacramentsAvailability();
+    }
+    renderSacramentsPanel();
   }
 
   // Soft rollout: Sacraments & Services only shows real, live content for
@@ -2393,80 +2405,153 @@
   async function loadSacramentsAvailability(force) {
     const pane = document.getElementById('sacramentsAvailabilityPane');
     if (!pane || !currentParish) return;
-    if (sacramentsAvailabilityState.loaded && !force) { renderSacramentsAvailability(); return; }
+      if (sacramentsAvailabilityState.loaded && !force) { renderSacramentsPanel(); return; }
     pane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
     try {
       const res = await fetch(sacramentsApi('/availability'), { headers: authHeaders() });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Unable to load availability.');
       sacramentsAvailabilityState = { loaded: true, timezone: data.timezone || '', rules: data.rules || [], blackouts: data.blackouts || [] };
-      renderSacramentsAvailability();
+      renderSacramentsPanel();
     } catch (err) {
       pane.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
     }
   }
 
   function renderSacramentsAvailability() {
-    const pane = document.getElementById('sacramentsAvailabilityPane');
-    if (!pane) return;
+    const st = sacramentsAvailabilityState;
+    if (!st.loaded) return '<p class="sw-tool-loading">Loading availability...</p>';
+    if (!st.timezone) {
+      return `
+        <div class="sac-admin-panel">
+          <div class="sac-admin-panel-head">
+            <div>
+              <span>Parish timezone</span>
+              <h2>Set the timezone first</h2>
+            </div>
+          </div>
+          <p class="sac-admin-muted">Online booking needs your parish timezone before weekly windows can be offered to families.</p>
+          ${renderSacramentsTimezoneForm()}
+        </div>`;
+    }
+    const rulesByType = groupSacramentsRulesByType();
+    return `
+      <div class="sac-admin-panel">
+        <div class="sac-admin-panel-head">
+          <div>
+            <span>Weekly recurring availability</span>
+            <h2>Open booking windows</h2>
+          </div>
+          <button class="sac-admin-small-btn" type="button" onclick="loadSacramentsAvailability(true)">Refresh</button>
+        </div>
+        <p class="sac-admin-muted">Set the regular times parishioners may book. These are the windows My AGAPAY uses to show real openings.</p>
+        ${renderSacramentsTimezoneForm()}
+        <div class="sac-admin-availability-list">
+          ${SAC_SCHEDULABLE_TYPES.map(type => renderSacramentsAvailabilityType(type, rulesByType[type] || [])).join('')}
+        </div>
+      </div>
+      <div class="sac-admin-panel">
+        <div class="sac-admin-panel-head">
+          <div>
+            <span>Add a window</span>
+            <h2>New weekly block</h2>
+          </div>
+        </div>
+        ${renderSacramentsAvailabilityAddForm()}
+      </div>`;
+  }
+
+  function renderSacramentsTimezoneForm() {
     const st = sacramentsAvailabilityState;
     const tzOptions = '<option value="">Choose timezone...</option>' + SAC_TIMEZONE_OPTIONS.map(([v, l]) => `<option value="${v}" ${v === st.timezone ? 'selected' : ''}>${escapeHtml(l)}</option>`).join('');
+    return `
+      <div class="sac-admin-form-row sac-admin-timezone-row">
+        <label>
+          <span>Parish timezone</span>
+          <select id="sacAvailTimezone">${tzOptions}</select>
+        </label>
+        <button class="sac-admin-outline-btn" type="button" onclick="saveSacramentsAvailabilityTimezone(this)">Save timezone</button>
+      </div>`;
+  }
 
+  function groupSacramentsRulesByType() {
     const rulesByType = {};
     SAC_SCHEDULABLE_TYPES.forEach(t => { rulesByType[t] = []; });
-    st.rules.forEach(r => { (rulesByType[r.sacramentType] = rulesByType[r.sacramentType] || []).push(r); });
+    sacramentsAvailabilityState.rules.forEach(r => { (rulesByType[r.sacramentType] = rulesByType[r.sacramentType] || []).push(r); });
+    Object.values(rulesByType).forEach(rows => rows.sort((a, b) => (a.dayOfWeek - b.dayOfWeek) || String(a.startTime).localeCompare(String(b.startTime))));
+    return rulesByType;
+  }
 
-    const rulesHtml = SAC_SCHEDULABLE_TYPES.map(type => {
-      const rows = (rulesByType[type] || []).map(r => `
-        <div class="sac-avail-rule-row">
-          <span>${SAC_DAY_LABELS[r.dayOfWeek]}, ${escapeHtml(r.startTime)}–${escapeHtml(r.endTime)} · ${r.slotMinutes} min slots</span>
-          <button class="btn btn-ghost btn-sm" type="button" onclick="deleteSacramentsAvailabilityRule('${r.id}')">Remove</button>
-        </div>`).join('') || '<p class="sw-tool-card-desc" style="margin:0 0 0.5rem;">No windows set for this type yet.</p>';
-      return `<div class="sac-avail-type-block">
-        <h4>${escapeHtml(sacramentTypeLabel({ sacramentType: type }))}</h4>
-        ${rows}
+  function renderSacramentsAvailabilityType(type, rules) {
+    const label = sacramentTypeLabel({ sacramentType: type });
+    const rows = rules.length ? rules.map(r => `
+      <div class="sac-admin-rule-row">
+        <div>
+          <strong>${SAC_DAY_LABELS[r.dayOfWeek]}</strong>
+          <span>${escapeHtml(r.startTime)}-${escapeHtml(r.endTime)} · ${r.slotMinutes} min slots</span>
+        </div>
+        <button class="sac-admin-text-btn" type="button" onclick="deleteSacramentsAvailabilityRule('${r.id}')">Remove</button>
+      </div>`).join('') : '<p class="sac-admin-empty-line">No weekly windows set.</p>';
+    return `<div class="sac-admin-type-block">
+      <h3>${escapeHtml(label)}</h3>
+      ${rows}
+    </div>`;
+  }
+
+  function renderSacramentsAvailabilityAddForm() {
+    return `
+      <div class="sac-admin-form-grid">
+        <label><span>Type</span><select id="sacAvailNewType">${SAC_SCHEDULABLE_TYPES.map(t => `<option value="${t}">${escapeHtml(sacramentTypeLabel({ sacramentType: t }))}</option>`).join('')}</select></label>
+        <label><span>Day</span><select id="sacAvailNewDay">${SAC_DAY_LABELS.map((l, i) => `<option value="${i}">${l}</option>`).join('')}</select></label>
+        <label><span>Start</span><input type="time" id="sacAvailNewStart" value="16:00" /></label>
+        <label><span>End</span><input type="time" id="sacAvailNewEnd" value="18:00" /></label>
+        <label><span>Slot length</span><input type="number" min="5" max="240" step="5" id="sacAvailNewSlotMinutes" value="30" /></label>
+      </div>
+      <div class="sac-admin-actions">
+        <button class="sac-admin-outline-btn" type="button" onclick="addSacramentsAvailabilityRule(this)">Add window</button>
+        <span id="sacAvailRuleStatus" class="sac-admin-status-text"></span>
       </div>`;
-    }).join('');
+  }
 
-    const blackoutRows = st.blackouts.map(b => `
-      <div class="sac-avail-rule-row">
-        <span>${escapeHtml(b.date)}${b.reason ? ' — ' + escapeHtml(b.reason) : ''}</span>
-        <button class="btn btn-ghost btn-sm" type="button" onclick="deleteSacramentsAvailabilityBlackout('${b.id}')">Remove</button>
-      </div>`).join('') || '<p class="sw-tool-card-desc" style="margin:0 0 0.5rem;">No blackout dates.</p>';
-
-    pane.innerHTML = `
-      <div class="form-grid" style="margin-bottom:1.25rem;align-items:end;">
-        <div class="form-group full">
-          <label class="form-label" for="sacAvailTimezone">Parish timezone</label>
-          <select class="form-select" id="sacAvailTimezone">${tzOptions}</select>
+  function renderSacramentsBlackouts() {
+    const st = sacramentsAvailabilityState;
+    if (!st.loaded) return '<p class="sw-tool-loading">Loading blackout dates...</p>';
+    const blackoutRows = st.blackouts.length ? st.blackouts.map(b => `
+      <div class="sac-admin-blackout-row">
+        <div>
+          <strong>${escapeHtml(formatSacramentDisplayDate(b.date))}</strong>
+          <span>${b.reason ? escapeHtml(b.reason) : 'Unavailable'}</span>
         </div>
-        <div><button class="btn btn-ghost btn-sm" type="button" onclick="saveSacramentsAvailabilityTimezone(this)">Save timezone</button></div>
-      </div>
-      ${st.timezone ? '' : '<p class="notice">Set and save your parish timezone before adding weekly windows.</p>'}
-      ${rulesHtml}
-      <div class="sac-avail-add-form">
-        <h4>Add a weekly window</h4>
-        <div class="form-grid">
-          <div><label class="form-label">Type</label><select class="form-select" id="sacAvailNewType">${SAC_SCHEDULABLE_TYPES.map(t => `<option value="${t}">${escapeHtml(sacramentTypeLabel({ sacramentType: t }))}</option>`).join('')}</select></div>
-          <div><label class="form-label">Day</label><select class="form-select" id="sacAvailNewDay">${SAC_DAY_LABELS.map((l, i) => `<option value="${i}">${l}</option>`).join('')}</select></div>
-          <div><label class="form-label">Start</label><input class="form-input" type="time" id="sacAvailNewStart" value="16:00" /></div>
-          <div><label class="form-label">End</label><input class="form-input" type="time" id="sacAvailNewEnd" value="18:00" /></div>
-          <div><label class="form-label">Slot length (min)</label><input class="form-input" type="number" min="5" max="240" step="5" id="sacAvailNewSlotMinutes" value="30" /></div>
+        <button class="sac-admin-text-btn" type="button" onclick="deleteSacramentsAvailabilityBlackout('${b.id}')">Remove</button>
+      </div>`).join('') : '<p class="sac-admin-empty-line">No blackout dates yet.</p>';
+    return `
+      <div class="sac-admin-panel">
+        <div class="sac-admin-panel-head">
+          <div>
+            <span>Blackout dates</span>
+            <h2>Unavailable days</h2>
+          </div>
+          <button class="sac-admin-small-btn" type="button" onclick="loadSacramentsAvailability(true)">Refresh</button>
         </div>
-        <div class="btn-row"><button class="btn btn-gold btn-sm" type="button" onclick="addSacramentsAvailabilityRule(this)">Add window</button></div>
-        <span id="sacAvailRuleStatus" style="font-size:0.82rem;color:var(--stone);"></span>
+        <p class="sac-admin-muted">Dates listed here will be hidden from parishioners looking for open booking times.</p>
+        <div class="sac-admin-blackout-list">${blackoutRows}</div>
       </div>
-      <div class="sac-avail-blackouts">
-        <h4>Blackout dates</h4>
-        ${blackoutRows}
-        <div class="form-grid">
-          <div><label class="form-label">Date</label><input class="form-input" type="date" id="sacAvailNewBlackoutDate" /></div>
-          <div class="form-group full"><label class="form-label">Reason (optional)</label><input class="form-input" id="sacAvailNewBlackoutReason" placeholder="e.g. Nativity Fast retreat" /></div>
+      <div class="sac-admin-panel">
+        <div class="sac-admin-panel-head">
+          <div>
+            <span>Add a blackout date</span>
+            <h2>Block a day</h2>
+          </div>
         </div>
-        <div class="btn-row"><button class="btn btn-ghost btn-sm" type="button" onclick="addSacramentsAvailabilityBlackout(this)">Add blackout date</button></div>
-        <span id="sacAvailBlackoutStatus" style="font-size:0.82rem;color:var(--stone);"></span>
-      </div>
-    `;
+        <div class="sac-admin-form-row">
+          <label><span>Date</span><input type="date" id="sacAvailNewBlackoutDate" /></label>
+          <label><span>Reason</span><input id="sacAvailNewBlackoutReason" placeholder="e.g. Clergy retreat" /></label>
+        </div>
+        <div class="sac-admin-actions">
+          <button class="sac-admin-outline-btn" type="button" onclick="addSacramentsAvailabilityBlackout(this)">Add date</button>
+          <span id="sacAvailBlackoutStatus" class="sac-admin-status-text"></span>
+        </div>
+      </div>`;
   }
 
   async function saveSacramentsAvailabilityTimezone(btn) {
@@ -2604,9 +2689,29 @@
   function renderSacramentsPanel() {
     const pane = document.getElementById('sacramentsPane');
     if (!pane) return;
+    document.querySelectorAll('[data-sac-tab]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.sacTab === sacramentsDashboardTab);
+    });
+    if (sacramentsDashboardTab === 'availability') {
+      pane.innerHTML = renderSacramentsAvailability();
+      return;
+    }
+    if (sacramentsDashboardTab === 'blackouts') {
+      pane.innerHTML = renderSacramentsBlackouts();
+      return;
+    }
+    if (sacramentsDashboardTab === 'calendar') {
+      pane.innerHTML = renderSacramentsCalendar();
+      return;
+    }
     const requests = sacramentsState.requests || [];
     if (!requests.length) {
-      pane.innerHTML = '<div class="sw-suite-tool-card" style="text-align:center;padding:2rem;"><p class="sw-tool-card-desc">No requests yet. When a parishioner requests a house blessing, baptism, or other service from My AGAPAY, it will appear here.</p></div>';
+      pane.innerHTML = `
+        <div class="sac-admin-panel sac-admin-empty">
+          <span>Requests</span>
+          <h2>No requests yet</h2>
+          <p>When a parishioner requests a blessing, baptism, wedding, counseling appointment, or other service from My AGAPAY, it will appear here.</p>
+        </div>`;
       return;
     }
 
@@ -2620,7 +2725,13 @@
     const history = requests.filter(r => ['completed', 'declined', 'cancelled'].includes(r.status));
 
     const section = (title, rows, opts) => rows.length
-      ? `<div class="sac-parish-section"><h3>${title} <span class="sac-parish-section-count">${rows.length}</span></h3>${rows.map(r => sacramentParishRow(r, opts)).join('')}</div>`
+      ? `<section class="sac-admin-panel">
+          <div class="sac-admin-panel-head">
+            <div><span>Requests</span><h2>${title}</h2></div>
+            <b>${rows.length}</b>
+          </div>
+          <div class="sac-admin-request-list">${rows.map(r => sacramentParishRow(r, opts)).join('')}</div>
+        </section>`
       : '';
 
     pane.innerHTML = `
@@ -2628,7 +2739,7 @@
       ${section('Scheduled this week', thisWeek, {})}
       ${section('Acknowledged', acknowledged, {})}
       ${section('Scheduled', scheduled, {})}
-      ${history.length ? `<details class="sac-parish-section sac-parish-history"><summary><h3 style="display:inline;">History <span class="sac-parish-section-count">${history.length}</span></h3></summary>${history.map(r => sacramentParishRow(r, {})).join('')}</details>` : ''}
+      ${history.length ? `<details class="sac-admin-panel sac-admin-history"><summary><span>History</span><h2>Closed requests <b>${history.length}</b></h2></summary><div class="sac-admin-request-list">${history.map(r => sacramentParishRow(r, {})).join('')}</div></details>` : ''}
     `;
   }
 
@@ -2639,39 +2750,130 @@
     const ageChip = opts.showAge
       ? `<span class="sac-age-chip ${overdue ? 'overdue' : ''}">${daysWaiting(row.createdAt)}d waiting</span>`
       : '';
+    const requested = [row.requestedDate, row.requestedTimeWindow].filter(Boolean).join(' · ');
+    const confirmed = [row.confirmedDate, row.confirmedTime].filter(Boolean).join(' · ');
+    const meta = [
+      row.participantNames || row.donorEmail,
+      confirmed || requested || formatSacramentDisplayDate(row.createdAt),
+      row.clergyAssigned
+    ].filter(Boolean).join(' · ');
     return `
-      <div class="sac-parish-row${overdue ? ' sac-parish-row-overdue' : ''}" id="sacrow-${row.id}">
-        <div class="sac-parish-row-top">
-          <div>
-            <strong>${escapeHtml(typeLabel)}</strong> ${ageChip}
-            <span class="sac-parish-row-donor">${escapeHtml(row.donorEmail)}${row.phone ? ' · ' + escapeHtml(row.phone) : ''}</span>
+      <article class="sac-admin-request${overdue ? ' overdue' : ''}" id="sacrow-${row.id}">
+        <div class="sac-admin-request-main">
+          <div class="sac-admin-request-title">
+            <strong>${escapeHtml(typeLabel)}</strong>
+            <span class="sac-admin-pill ${escapeAttr(row.status)}">${escapeHtml(SACRAMENT_STATUS_LABELS[row.status] || row.status)}</span>
+            ${ageChip}
           </div>
-          <select class="sw-year-select" style="max-width:150px;" id="sacstatus-${row.id}" onchange="onSacramentStatusChange('${row.id}')">${statusOptions}</select>
+          <span class="sac-admin-request-meta">${escapeHtml(meta || 'No date yet')}</span>
+          <span class="sac-admin-request-contact">${escapeHtml(row.donorEmail)}${row.phone ? ' · ' + escapeHtml(row.phone) : ''}</span>
         </div>
-        ${row.participantNames ? `<div class="sac-parish-row-meta"><strong>For:</strong> ${escapeHtml(row.participantNames)}</div>` : ''}
-        ${row.requestedDate || row.requestedTimeWindow ? `<div class="sac-parish-row-meta"><strong>Requested:</strong> ${escapeHtml([row.requestedDate, row.requestedTimeWindow].filter(Boolean).join(' · '))}</div>` : ''}
-        ${row.locationAddress ? `<div class="sac-parish-row-meta"><strong>Location:</strong> ${escapeHtml(row.locationAddress)}</div>` : ''}
-        ${row.notes ? `<div class="sac-parish-row-meta"><strong>Notes:</strong> ${escapeHtml(row.notes)}</div>` : ''}
+        <button class="sac-admin-text-btn" type="button" onclick="toggleSacramentRequestEditor('${row.id}')">Edit</button>
+        <div class="sac-admin-request-details">
+          ${requested ? `<span><strong>Requested:</strong> ${escapeHtml(requested)}</span>` : ''}
+          ${row.locationAddress ? `<span><strong>Location:</strong> ${escapeHtml(row.locationAddress)}</span>` : ''}
+          ${row.notes ? `<span><strong>Notes:</strong> ${escapeHtml(row.notes)}</span>` : ''}
+        </div>
+        <div class="sac-admin-request-editor" id="saceditor-${row.id}" hidden>
+          <div class="sac-admin-form-grid">
+            <label><span>Status</span><select id="sacstatus-${row.id}" onchange="onSacramentStatusChange('${row.id}')">${statusOptions}</select></label>
+            <label><span>Confirmed date</span><input type="date" id="sacdate-${row.id}" value="${escapeAttr(row.confirmedDate || '')}" /></label>
+            <label><span>Confirmed time</span><input type="text" id="sactime-${row.id}" value="${escapeAttr(row.confirmedTime || '')}" placeholder="10:00 AM" /></label>
+            <label><span>Clergy assigned</span><input type="text" id="sacclergy-${row.id}" value="${escapeAttr(row.clergyAssigned || '')}" /></label>
+          </div>
+          <div class="sac-admin-request-fields" id="sacfields-${row.id}" style="${row.status === 'scheduled' ? '' : 'display:none;'}"></div>
+          <label class="sac-admin-wide-field" id="sacdecline-${row.id}" style="${row.status === 'declined' ? '' : 'display:none;'}"><span>Reason shown to the parishioner</span><input type="text" id="sacreason-${row.id}" value="${escapeAttr(row.declineReason || '')}" /></label>
+          <label class="sac-admin-wide-field"><span>Internal notes</span><textarea id="sacnotes-${row.id}" rows="2">${escapeHtml(row.parishNotes || '')}</textarea></label>
+          <div class="sac-admin-actions">
+            <button class="sac-admin-outline-btn" type="button" onclick="saveSacramentRequest('${row.id}')">Save</button>
+          </div>
+        </div>
+      </article>`;
+  }
 
-        <div class="sac-parish-row-fields" id="sacfields-${row.id}" style="${row.status === 'scheduled' ? '' : 'display:none;'}">
-          <div class="form-grid">
-            <div><label>Confirmed date</label><input type="date" id="sacdate-${row.id}" value="${escapeAttr(row.confirmedDate || '')}" /></div>
-            <div><label>Confirmed time</label><input type="text" id="sactime-${row.id}" value="${escapeAttr(row.confirmedTime || '')}" placeholder="10:00 AM" /></div>
-            <div><label>Clergy assigned</label><input type="text" id="sacclergy-${row.id}" value="${escapeAttr(row.clergyAssigned || '')}" /></div>
+  function toggleSacramentRequestEditor(id) {
+    const editor = document.getElementById('saceditor-' + id);
+    if (editor) editor.hidden = !editor.hidden;
+  }
+
+  function formatSacramentDisplayDate(value) {
+    if (!value) return '';
+    const date = new Date(String(value).includes('T') ? value : String(value) + 'T00:00:00');
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function renderSacramentsCalendar() {
+    const requests = sacramentsState.requests || [];
+    const blackouts = sacramentsAvailabilityState.blackouts || [];
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const monthStart = new Date(year, month, 1);
+    const startOffset = monthStart.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const byDay = {};
+    requests.forEach(row => {
+      const date = row.confirmedDate || row.requestedDate || '';
+      if (!date.startsWith(monthKey)) return;
+      const day = Number(date.slice(-2));
+      if (!day) return;
+      byDay[day] = byDay[day] || [];
+      byDay[day].push(row);
+    });
+    blackouts.forEach(row => {
+      if (!String(row.date || '').startsWith(monthKey)) return;
+      const day = Number(String(row.date).slice(-2));
+      if (!day) return;
+      byDay[day] = byDay[day] || [];
+      byDay[day].push({ blackout: true, sacramentType: 'blackout', confirmedTime: 'All day', clergyAssigned: row.reason || 'Unavailable' });
+    });
+    const cells = [];
+    for (let i = 0; i < startOffset; i++) cells.push('<span class="sac-admin-cal-cell empty"></span>');
+    for (let day = 1; day <= daysInMonth; day++) {
+      const count = (byDay[day] || []).length;
+      cells.push(`<button class="sac-admin-cal-cell ${count ? 'has-items' : ''}" type="button" onclick="selectSacramentsCalendarDay(${day})">${day}${count ? '<i></i>' : ''}</button>`);
+    }
+    const firstBookedDay = Object.keys(byDay).map(Number).sort((a, b) => a - b)[0] || now.getDate();
+    const selected = Number(document.getElementById('sacramentsCalendarSelectedDay')?.value || firstBookedDay);
+    const selectedItems = byDay[selected] || [];
+    return `
+      <div class="sac-admin-calendar-layout">
+        <input type="hidden" id="sacramentsCalendarSelectedDay" value="${selected}" />
+        <section class="sac-admin-panel">
+          <div class="sac-admin-panel-head">
+            <div>
+              <span>Calendar</span>
+              <h2>${now.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</h2>
+            </div>
           </div>
-        </div>
-        <div class="sac-parish-row-fields" id="sacdecline-${row.id}" style="${row.status === 'declined' ? '' : 'display:none;'}">
-          <label>Reason (shown to the parishioner)</label>
-          <input type="text" id="sacreason-${row.id}" value="${escapeAttr(row.declineReason || '')}" />
-        </div>
-        <div class="sac-parish-row-fields">
-          <label>Internal notes (not shared with the parishioner)</label>
-          <textarea id="sacnotes-${row.id}" rows="2">${escapeHtml(row.parishNotes || '')}</textarea>
-        </div>
-        <div class="btn-row" style="margin-top:0.5rem;">
-          <button class="btn btn-gold btn-sm" type="button" onclick="saveSacramentRequest('${row.id}')">Save</button>
-        </div>
+          <div class="sac-admin-weekdays">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => `<span>${d}</span>`).join('')}</div>
+          <div class="sac-admin-calendar-grid">${cells.join('')}</div>
+          <div class="sac-admin-legend"><i></i><span>Has bookings or blackout dates</span></div>
+        </section>
+        <section class="sac-admin-panel">
+          <div class="sac-admin-panel-head">
+            <div>
+              <span>Selected day</span>
+              <h2>${formatSacramentDisplayDate(`${monthKey}-${String(selected).padStart(2, '0')}`)}</h2>
+            </div>
+          </div>
+          <div class="sac-admin-day-list">
+            ${selectedItems.length ? selectedItems.map(item => `
+              <div class="sac-admin-day-card">
+                <strong>${item.blackout ? 'Blackout' : escapeHtml(sacramentTypeLabel(item))}</strong>
+                <span>${escapeHtml(item.confirmedTime || item.requestedTimeWindow || 'Time TBD')} · ${escapeHtml(item.clergyAssigned || item.donorEmail || '')}</span>
+              </div>`).join('') : '<p class="sac-admin-empty-line">No bookings this day.</p>'}
+          </div>
+        </section>
       </div>`;
+  }
+
+  function selectSacramentsCalendarDay(day) {
+    const input = document.getElementById('sacramentsCalendarSelectedDay');
+    if (input) input.value = String(day);
+    renderSacramentsPanel();
   }
 
   function onSacramentStatusChange(id) {

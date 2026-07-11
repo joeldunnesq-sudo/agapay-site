@@ -2550,6 +2550,411 @@
       }
     }
 
+    /* Sacraments & Services parish dashboard */
+    .sac-admin-shell {
+      --sac-bg: #f3f2f2;
+      --sac-surface: #eae9e9;
+      --sac-text: #201f1d;
+      --sac-muted: rgba(32,31,29,0.58);
+      --sac-line: rgba(32,31,29,0.16);
+      --sac-line-soft: rgba(32,31,29,0.08);
+      --sac-gold: #b68235;
+      --sac-gold-dark: #7d5411;
+      --sac-gold-soft: #fff3e4;
+      margin: 0 auto;
+      max-width: 960px;
+      min-height: 68vh;
+      padding: clamp(1.4rem, 4vw, 2.6rem);
+      border: 1px solid var(--sac-line);
+      border-radius: 4px;
+      background: var(--sac-bg);
+      color: var(--sac-text);
+      font-family: "Lora", serif;
+    }
+    .sac-admin-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1.25rem;
+    }
+    .sac-admin-kicker,
+    .sac-admin-panel-head span,
+    .sac-admin-empty > span,
+    .sac-admin-form-grid label span,
+    .sac-admin-form-row label span,
+    .sac-admin-wide-field span {
+      color: var(--sac-gold);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .sac-admin-head h1,
+    .sac-admin-panel-head h2,
+    .sac-admin-empty h2,
+    .sac-admin-type-block h3,
+    .sac-admin-history summary h2 {
+      margin: 0;
+      color: var(--sac-text);
+      font-family: "Cormorant Garamond", serif;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      line-height: 1.08;
+    }
+    .sac-admin-head h1 { margin-top: 0.25rem; font-size: clamp(2rem, 5vw, 2.75rem); }
+    .sac-admin-head p,
+    .sac-admin-muted,
+    .sac-admin-empty p {
+      margin: 0.35rem 0 0;
+      color: var(--sac-muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+    .sac-admin-status {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex: 0 0 auto;
+    }
+    .sac-admin-status > span {
+      color: var(--sac-muted);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .sac-admin-icon-btn {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--sac-line);
+      border-radius: 4px;
+      background: transparent;
+      color: var(--sac-text);
+      cursor: pointer;
+    }
+    .sac-admin-icon-btn svg { width: 16px; height: 16px; }
+    .sac-admin-rule {
+      height: 1px;
+      margin: 1.25rem 0 1.1rem;
+      background: var(--sac-line);
+    }
+    .sac-admin-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 1.4rem;
+      border-bottom: 1px solid var(--sac-line);
+      overflow-x: auto;
+    }
+    .sac-admin-tab {
+      border: none;
+      border-bottom: 2px solid transparent;
+      background: transparent;
+      color: var(--sac-muted);
+      cursor: pointer;
+      font: 600 13px "Lora", serif;
+      padding: 0.65rem 0.9rem;
+      white-space: nowrap;
+    }
+    .sac-admin-tab.active {
+      border-bottom-color: var(--sac-gold);
+      color: var(--sac-gold-dark);
+      background: var(--sac-gold-soft);
+    }
+    .sac-admin-workspace {
+      display: grid;
+      gap: 1rem;
+    }
+    .sac-admin-panel {
+      border: 1px solid var(--sac-line);
+      border-radius: 4px;
+      background: transparent;
+      padding: 1rem;
+    }
+    .sac-admin-panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 0.85rem;
+    }
+    .sac-admin-panel-head h2,
+    .sac-admin-empty h2,
+    .sac-admin-history summary h2 {
+      margin-top: 0.12rem;
+      font-size: clamp(1.35rem, 3vw, 1.75rem);
+    }
+    .sac-admin-panel-head b,
+    .sac-admin-history summary b {
+      display: inline-flex;
+      min-width: 1.55rem;
+      height: 1.55rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      background: var(--sac-gold-soft);
+      color: var(--sac-gold-dark);
+      font-size: 12px;
+      font-family: "Lora", serif;
+    }
+    .sac-admin-request-list,
+    .sac-admin-availability-list,
+    .sac-admin-blackout-list,
+    .sac-admin-day-list {
+      display: grid;
+      gap: 0.65rem;
+    }
+    .sac-admin-request {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.6rem 0.9rem;
+      align-items: start;
+      border: 1px solid var(--sac-line);
+      border-radius: 4px;
+      padding: 0.85rem 0.95rem;
+      background: transparent;
+    }
+    .sac-admin-request.overdue { border-color: rgba(150,40,40,0.35); background: rgba(150,40,40,0.035); }
+    .sac-admin-request-title {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+    .sac-admin-request-title strong,
+    .sac-admin-rule-row strong,
+    .sac-admin-blackout-row strong,
+    .sac-admin-day-card strong {
+      color: var(--sac-text);
+      font-family: "Cormorant Garamond", serif;
+      font-size: 17px;
+      font-weight: 600;
+    }
+    .sac-admin-request-meta,
+    .sac-admin-request-contact,
+    .sac-admin-request-details,
+    .sac-admin-rule-row span,
+    .sac-admin-blackout-row span,
+    .sac-admin-day-card span,
+    .sac-admin-empty-line,
+    .sac-admin-status-text {
+      color: var(--sac-muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .sac-admin-request-contact { display: block; margin-top: 0.18rem; }
+    .sac-admin-request-details {
+      grid-column: 1 / -1;
+      display: grid;
+      gap: 0.25rem;
+      padding-top: 0.35rem;
+      border-top: 1px solid var(--sac-line-soft);
+    }
+    .sac-admin-pill,
+    .sac-age-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 20px;
+      padding: 0.15rem 0.45rem;
+      border-radius: 3px;
+      background: #f8f4f4;
+      color: #444141;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .sac-admin-pill.requested,
+    .sac-admin-pill.acknowledged,
+    .sac-admin-pill.scheduled {
+      background: var(--sac-gold-soft);
+      color: #5a3b0a;
+    }
+    .sac-age-chip.overdue { background: rgba(150,40,40,0.1); color: #8a2929; }
+    .sac-admin-text-btn,
+    .sac-admin-small-btn {
+      border: none;
+      background: transparent;
+      color: var(--sac-gold-dark);
+      cursor: pointer;
+      font: 600 12px "Lora", serif;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .sac-admin-small-btn {
+      border: 1px solid var(--sac-line);
+      border-radius: 4px;
+      padding: 0.45rem 0.75rem;
+      text-decoration: none;
+    }
+    .sac-admin-outline-btn {
+      min-height: 36px;
+      border: 1px solid var(--sac-gold);
+      border-radius: 4px;
+      background: transparent;
+      color: var(--sac-gold);
+      cursor: pointer;
+      font: 600 14px "Cormorant Garamond", serif;
+      padding: 0.45rem 0.95rem;
+    }
+    .sac-admin-request-editor {
+      grid-column: 1 / -1;
+      display: grid;
+      gap: 0.75rem;
+      border-top: 1px solid var(--sac-line);
+      padding-top: 0.85rem;
+    }
+    .sac-admin-form-grid,
+    .sac-admin-form-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.7rem;
+      align-items: end;
+    }
+    .sac-admin-form-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+    .sac-admin-form-grid label,
+    .sac-admin-form-row label,
+    .sac-admin-wide-field {
+      display: grid;
+      gap: 0.35rem;
+    }
+    .sac-admin-form-grid input,
+    .sac-admin-form-grid select,
+    .sac-admin-form-row input,
+    .sac-admin-form-row select,
+    .sac-admin-wide-field input,
+    .sac-admin-wide-field textarea {
+      width: 100%;
+      min-height: 36px;
+      border: 1px solid var(--sac-line);
+      border-radius: 4px;
+      background: transparent;
+      color: var(--sac-text);
+      font: 14px "Lora", serif;
+      padding: 0.45rem 0.65rem;
+    }
+    .sac-admin-wide-field textarea { resize: vertical; }
+    .sac-admin-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 0.9rem;
+    }
+    .sac-admin-type-block {
+      border-bottom: 1px solid var(--sac-line-soft);
+      padding: 0.85rem 0;
+    }
+    .sac-admin-type-block:last-child { border-bottom: none; }
+    .sac-admin-type-block h3 {
+      margin: 0 0 0.55rem;
+      font-size: 1.05rem;
+    }
+    .sac-admin-rule-row,
+    .sac-admin-blackout-row,
+    .sac-admin-day-card {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: center;
+      border: 1px solid var(--sac-line);
+      border-radius: 4px;
+      padding: 0.7rem 0.8rem;
+    }
+    .sac-admin-rule-row div,
+    .sac-admin-blackout-row div,
+    .sac-admin-day-card {
+      display: grid;
+      gap: 0.1rem;
+    }
+    .sac-admin-calendar-layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.9fr) minmax(240px, 1fr);
+      gap: 1rem;
+      align-items: start;
+    }
+    .sac-admin-weekdays,
+    .sac-admin-calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .sac-admin-weekdays {
+      margin-bottom: 0.45rem;
+      color: rgba(32,31,29,0.45);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .sac-admin-cal-cell {
+      position: relative;
+      aspect-ratio: 1;
+      border: 1px solid var(--sac-line);
+      border-radius: 4px;
+      background: transparent;
+      color: var(--sac-text);
+      cursor: pointer;
+      font: 600 13px "Lora", serif;
+    }
+    .sac-admin-cal-cell.empty {
+      border-color: transparent;
+      pointer-events: none;
+    }
+    .sac-admin-cal-cell.has-items {
+      border-color: var(--sac-gold);
+      background: var(--sac-gold-soft);
+      color: #5a3b0a;
+    }
+    .sac-admin-cal-cell i {
+      position: absolute;
+      left: calc(50% - 3px);
+      bottom: 5px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--sac-gold);
+    }
+    .sac-admin-legend {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin-top: 0.8rem;
+      color: var(--sac-muted);
+      font-size: 11px;
+    }
+    .sac-admin-legend i {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--sac-gold);
+    }
+    .sac-admin-history summary {
+      cursor: pointer;
+      list-style: none;
+    }
+    .sac-admin-history summary::-webkit-details-marker { display: none; }
+    .sac-admin-history[open] summary { margin-bottom: 0.85rem; }
+    .sac-admin-empty { text-align: center; padding: 2rem; }
+    @media (max-width: 760px) {
+      .sac-admin-shell {
+        margin: 0 -0.5rem;
+        padding: 1rem;
+      }
+      .sac-admin-head,
+      .sac-admin-panel-head,
+      .sac-admin-request,
+      .sac-admin-rule-row,
+      .sac-admin-blackout-row {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+      }
+      .sac-admin-status { align-self: flex-start; }
+      .sac-admin-form-row,
+      .sac-admin-calendar-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media (max-width: 620px) {
       .reconcile-summary { grid-template-columns: 1fr; }
       .reconcile-stat { min-height: 7rem; }
