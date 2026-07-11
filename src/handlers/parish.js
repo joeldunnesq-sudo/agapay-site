@@ -1752,6 +1752,7 @@ export function parishFromRegistration(registration) {
     recurringGivingEnabled: registration.recurringGivingEnabled ?? true,
     candlesEnabled: registration.candlesEnabled ?? true,
     commemorationsEnabled: registration.commemorationsEnabled ?? true,
+    sacramentsEnabled: sacramentsEnabledFor(registration),
     funds: Array.isArray(registration.funds) && registration.funds.length ? registration.funds : [
       {
         id: "general",

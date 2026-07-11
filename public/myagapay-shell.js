@@ -31,7 +31,11 @@
       { id: "giving", href: "/myagapay/dashboard", label: "Give", short: "Giving dashboard", icon: icons.give },
       { id: "commemorations", href: "/myagapay/giving/commemorations", label: "Prayer", short: "Names and candles", icon: icons.commemorations },
       { id: "today", href: "/myagapay/giving/calendar", label: "Today", short: "Feast day and readings", icon: icons.today },
-      { id: "sacraments", href: "/myagapay/sacraments", label: "Services", short: "Sacraments and requests", icon: icons.sacraments },
+      // mobileTabHidden: Services is the newest addition and has other entry
+      // points (desktop sidebar, Quick Give tile, account menu) -- keeping
+      // it out of the 5-slot bottom tabbar avoids pushing a 6th item onto
+      // an ugly second row on every mobile page.
+      { id: "sacraments", href: "/myagapay/sacraments", label: "Services", short: "Sacraments and requests", icon: icons.sacraments, mobileTabHidden: true },
       { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore },
       { id: "learn", href: "/myagapay/learn", label: "Learn", short: "Homeschool dashboard", icon: icons.learn }
     ];
@@ -190,9 +194,13 @@
   }
 
   function productNav(active = activeProduct(), className = "my-agapay-tabbar") {
-    const navProducts = products();
     const isLearnNav = className === "learn-product-tabbar";
     const isDesktopSideNav = className.includes("unified-product-nav");
+    // Every bottom tabbar variant (main and Learn-context alike) is a fixed
+    // 5-column grid -- drop mobileTabHidden items there so a 6th product
+    // never wraps onto an ugly second row. The full list still appears in
+    // the desktop sidebar, which has room.
+    const navProducts = isDesktopSideNav ? products() : products().filter((item) => !item.mobileTabHidden);
     const navAttrs = isDesktopSideNav ? ' hx-boost="false"' : "";
     const productLinks = navProducts.map((item) => {
       const current = item.id === active;
