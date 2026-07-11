@@ -567,10 +567,12 @@
       border-radius: 12px 12px 0 0;
     }
     .belief-card {
-      display: grid;
-      grid-template-columns: 70px 1fr;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
       gap: 1rem;
-      align-items: center;
+      min-height: 180px;
+      padding: 1.45rem 1.35rem 1.35rem;
     }
     .value-icon {
       width: 46px;
@@ -583,26 +585,37 @@
       background: rgba(255, 253, 248, 0.68);
       margin-bottom: 0.85rem;
     }
-    .belief-card .value-icon {
-      width: 64px;
-      height: 64px;
-      margin-bottom: 0;
-    }
-    .belief-card .value-icon svg { width: 34px; height: 34px; }
     .value-icon svg { width: 24px; height: 24px; stroke-width: 1.65; }
     .value-card h3,
     .belief-card h3 {
       color: var(--night);
+      line-height: 1.1;
+      margin-bottom: 0.65rem;
+    }
+    .value-card h3 {
       font-size: 0.98rem;
       letter-spacing: 0.05em;
       text-transform: uppercase;
-      margin-bottom: 0.55rem;
+    }
+    .belief-card h3 {
+      max-width: 12.5rem;
+      font-family: var(--serif);
+      font-size: clamp(1.35rem, 2.2vw, 1.75rem);
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: none;
     }
     .value-card p,
     .belief-card p {
       color: var(--stone);
       font-size: 0.93rem;
       line-height: 1.65;
+    }
+    .belief-card p {
+      max-width: 24rem;
+      margin-top: auto;
+      padding-top: 0.95rem;
+      border-top: 1px solid rgba(200, 162, 74, 0.24);
     }
 
     .scripture {
@@ -927,7 +940,6 @@
       .hero-copy h1 { font-size: clamp(3rem, 15vw, 5rem); }
       
       .section { padding: 2.2rem 1rem; }
-      .belief-card { grid-template-columns: 1fr; justify-items: center; text-align: center; }
       .serve-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .success-photo { min-height: 220px; }
       .closing-actions { display: grid; }
@@ -1010,22 +1022,16 @@
         </div>
         <div class="belief-grid">
           <article class="belief-card">
-            <div>
-              <h3>Stewardship Is Spiritual</h3>
-              <p>An offering is never a transaction. It is an act of worship.</p>
-            </div>
+            <h3>Stewardship Is Spiritual</h3>
+            <p>An offering is never a transaction. It is an act of worship.</p>
           </article>
           <article class="belief-card">
-            <div>
-              <h3>Technology Should Serve Communities</h3>
-              <p>Technology must serve the altar, never stand in front of it.</p>
-            </div>
+            <h3>Technology Should Serve Communities</h3>
+            <p>Technology must serve the altar, never stand in front of it.</p>
           </article>
           <article class="belief-card">
-            <div>
-              <h3>Trust Matters</h3>
-              <p>Every gift belongs to the Church, not the platform. We are stewards of the transfer.</p>
-            </div>
+            <h3>Trust Matters</h3>
+            <p>Every gift belongs to the Church, not the platform. We are stewards of the transfer.</p>
           </article>
         </div>
       </div>
