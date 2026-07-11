@@ -216,6 +216,7 @@ assert.ok(giveHtml.includes("function renderCampaigns"), "giving page should ren
 assert.ok(giveHtml.includes("applyGiftQueryParams"), "giving page should deep-link into specific gift types and campaigns");
 assert.ok(giveHtml.includes("/security.js") && giveHtml.includes("data-agapay-turnstile"), "public giving checkout should render Turnstile when configured");
 assert.ok(giveHtml.includes("agapaySecurityPayload"), "public giving checkout should send Turnstile tokens when configured");
+assert.ok(giveHtml.includes("Processed and protected by Stripe") && giveHtml.includes("AGAPAY never holds donated funds"), "giving checkout should reassure donors that Stripe protects transactions and AGAPAY never holds donated funds");
 const campaignPage = await readFile("public/give/parish-giving/app.js", "utf8");
 assert.ok(campaignPage.includes("/api/campaign?"), "campaign share page should load campaign data from the Worker API");
 assert.ok(campaignPage.includes('`${slug}-campaign`'), "campaign routes should resolve campaign names that already end in Campaign without breaking lookup");
@@ -240,11 +241,13 @@ assert.ok(givingOverview.includes('"@type": "SoftwareApplication"') && givingOve
 assert.ok(givingOverview.includes("Orthodox giving and tithing tools ready for parish life"), "Giving overview should describe currently available tools");
 assert.ok(givingOverview.includes("AGAPAY Parish +") && givingOverview.indexOf("AGAPAY Parish +") < givingOverview.indexOf("giving-roadmap"), "Giving overview should list AGAPAY Parish + as available now");
 assert.ok(givingOverview.includes("Text-to-Give") && givingOverview.includes("Coming Soon"), "Giving overview should clearly identify remaining coming-soon products");
+assert.ok(givingOverview.includes("processed and protected by Stripe") && givingOverview.includes("AGAPAY never holds donated funds") && givingOverview.includes("No Donation Middleman"), "Giving overview should emphasize Stripe protection and no donation middleman custody");
 const platformHome = await readFile("public/index.html", "utf8");
 assert.ok(platformHome.indexOf('href="/vision"') < platformHome.indexOf('href="/give"'), "platform homepage should lead its navigation with Vision");
 assert.ok((platformHome.match(/data-flip-word/g) || []).length >= 2, "platform homepage should animate its header and hero taglines");
 assert.ok(platformHome.includes('footer class="site-footer" data-shell="canonical"'), "platform homepage should use the canonical footer");
 assert.ok(platformHome.includes('property="og:image" content="https://agapay.app/images/app-phone-mockup.png"') && platformHome.includes('name="twitter:image" content="https://agapay.app/images/app-phone-mockup.png"'), "platform homepage share image should use the AGAPAY phone app mockup");
+assert.ok(platformHome.includes("Giving transactions are processed and protected by Stripe") && platformHome.includes("AGAPAY never holds donated funds"), "platform homepage should carry the Stripe protection and no-custody trust message");
 const canonicalChrome = await readFile("public/site-chrome.js", "utf8");
 assert.ok(canonicalChrome.indexOf('{ href: "/vision"') < canonicalChrome.indexOf('{ href: "/give"'), "canonical navigation should lead with Vision");
 assert.ok(canonicalChrome.includes('{ href: "/design", label: "AGAPAY Design"') && canonicalChrome.includes('return "design"'), "canonical navigation should include AGAPAY Design with an active route");
