@@ -292,6 +292,8 @@ assert.ok(backendSources.includes("recordAuditEvent(env, request, {") && backend
 assert.ok(backendSources.includes('action: "registration.status_changed"'), "registration status changes should record an audit event");
 assert.ok(backendSources.includes("handleAdminAuditLog"), "worker should expose an admin audit-log viewer endpoint");
 assert.ok(worker.includes('url.pathname === "/api/admin/audit-log"'), "worker should route GET /api/admin/audit-log");
+assert.ok(worker.includes("async function handleHealth") && worker.includes('url.pathname === "/api/health"'), "worker should expose GET /api/health for launch diagnostics");
+assert.ok(worker.includes("STRIPE_SECRET_KEY") && worker.includes("RESEND_API_KEY") && worker.includes("TAX_EXEMPTION_DOCS") && worker.includes("GIVING_STATEMENTS"), "health endpoint should report config presence without exposing secret values");
 
 // Stewardship tab redesign -- renamed "Stewardship Health", with a
 // composite Health Score card (absorbing retention), a Donor Concentration

@@ -35,7 +35,7 @@ const checks = [
   { name: "vision page", method: "GET", path: "/vision", ok: [200] },
   { name: "register page (bare path)", method: "GET", path: "/register", ok: [200] },
   { name: "admin login page", method: "GET", path: "/admin/login", ok: [200] },
-  { name: "health endpoint", method: "GET", path: "/api/health", ok: [200, 404] },
+  { name: "health endpoint", method: "GET", path: "/api/health", ok: [200] },
   { name: "legacy donor redirect", method: "GET", path: "/donor", ok: [200, 301, 302, 308] },
   { name: "legacy Learn dashboard redirect", method: "GET", path: "/learn/dashboard", ok: [200, 301, 302, 308] },
   { name: "Give login shell", method: "GET", path: "/give/login", ok: [200] },

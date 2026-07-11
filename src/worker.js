@@ -2193,6 +2193,55 @@ export async function syncPledgeToHousehold(env, donorEmail, parishId, pledgeAmo
   `).bind(donorEmail, parishId, year, pledgeAmountCents).run();
 }
 
+async function handleHealth(env) {
+  const now = new Date().toISOString();
+  const checks = {
+    worker: { ok: true },
+    d1: { ok: false },
+    kv: { ok: false },
+    stripe: { configured: Boolean(env.STRIPE_SECRET_KEY) },
+    email: { configured: Boolean(env.RESEND_API_KEY) },
+    turnstile: { configured: Boolean(env.TURNSTILE_SITE_KEY && env.TURNSTILE_SECRET_KEY) },
+    r2: {
+      campaignAssets: Boolean(env.CAMPAIGN_ASSETS),
+      taxExemptionDocs: Boolean(env.TAX_EXEMPTION_DOCS),
+      givingStatements: Boolean(env.GIVING_STATEMENTS)
+    }
+  };
+
+  try {
+    const db = d1(env);
+    if (db) {
+      await db.prepare("SELECT 1 AS ok").first();
+      checks.d1.ok = true;
+    } else {
+      checks.d1.error = "not_configured";
+    }
+  } catch (error) {
+    checks.d1.error = error?.message || "unavailable";
+  }
+
+  try {
+    if (env.AGAPAY_REGISTRATIONS?.get) {
+      await env.AGAPAY_REGISTRATIONS.get("__agapay_healthcheck__");
+      checks.kv.ok = true;
+    } else {
+      checks.kv.error = "not_configured";
+    }
+  } catch (error) {
+    checks.kv.error = error?.message || "unavailable";
+  }
+
+  const ok = Boolean(checks.worker.ok && checks.d1.ok && checks.kv.ok);
+  return json({
+    ok,
+    version: env.AGAPAY_BUILD_SHA || "unknown",
+    deployedAt: env.AGAPAY_DEPLOYED_AT || "",
+    checkedAt: now,
+    checks
+  }, { status: ok ? 200 : 503 });
+}
+
 export default {
   async scheduled(event, env, ctx) {
     if (env && !env.DB && env.AGAPAY_DB) env.DB = env.AGAPAY_DB;
@@ -2353,6 +2402,9 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/security/config") {
       return handleSecurityConfig(env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/health") {
+      return handleHealth(env);
     }
     if (request.method === "GET" && url.pathname === "/api/liturgical-calendar") {
       const r = await handleLiturgicalCalendar(request); return addCorsHeaders(r, env);
