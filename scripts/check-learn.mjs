@@ -187,6 +187,8 @@ assert(learnHandlers.includes("AGAPAY_LEARN_FACEBOOK_GROUP_URL"), "Community sho
 assert(learnOverviewHtml.includes("Clearly on the roadmap") && learnOverviewHtml.includes("Reports & Transcripts"), "The Learn overview should clearly separate coming-soon features.");
 assert(!learnOverviewHtml.includes("Printables, reports, and transcripts"), "The Learn overview should not advertise Reports as currently available.");
 assert(learnOverviewHtml.includes('class="button button-navy" href="/myagapay/learn/dashboard">Resume Planning') && learnPricingCss.includes(".button-navy"), "The Learn overview Resume Planning hero button should use a distinct navy style.");
+assert(learnPricingCss.includes(".button-navy:visited") && learnPricingCss.includes("color: #fffdf8"), "The Learn Resume Planning hero button text should remain light on the navy background.");
+assert(learnPricingCss.includes("font-family: var(--learn-serif)") && learnPricingCss.includes("font-style: italic"), "The Learn overview buttons should match the Give hero button typography.");
 assert(learnPricingHtml.includes("Reports Coming Soon") && learnPricingHtml.includes("Reports</div><div>Coming Soon"), "Learn pricing should clearly label Reports as coming soon.");
 assert(learnDashboardHtml.includes("/learn/mobile-gate.js"), "Learn dashboard should load the mobile gate, which owns dynamic-importing the dashboard shell (see public/learn/mobile-gate.js).");
 assert(learnMobileGate.includes("/learn/dashboard-shell.js"), "Learn mobile gate should dynamic-import the active dashboard shell.");
