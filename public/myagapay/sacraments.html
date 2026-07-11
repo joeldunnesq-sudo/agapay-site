@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=20260704c" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260711a" />
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260706a" defer></script>
-  <script src="/donor/app.js?v=20260704c" defer></script>
+  <script src="/donor/app.js?v=20260711a" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260704a" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -81,8 +81,16 @@
                     <input class="form-input" id="sacramentAddress" placeholder="Street, city, state" />
                   </div>
 
-                  <div class="form-group"><label class="form-label" for="sacramentDate">Preferred date</label><input class="form-input" id="sacramentDate" type="date" /></div>
-                  <div class="form-group"><label class="form-label" for="sacramentTimeWindow">Preferred time</label><input class="form-input" id="sacramentTimeWindow" placeholder="e.g. weekday evenings, any Saturday" /></div>
+                  <div class="form-group full" id="sacramentFreeTextFields" style="display:contents;">
+                    <div class="form-group"><label class="form-label" for="sacramentDate">Preferred date</label><input class="form-input" id="sacramentDate" type="date" /></div>
+                    <div class="form-group"><label class="form-label" for="sacramentTimeWindow">Preferred time</label><input class="form-input" id="sacramentTimeWindow" placeholder="e.g. weekday evenings, any Saturday" /></div>
+                  </div>
+                  <div class="form-group full" id="sacramentSlotPickerGroup" style="display:none;">
+                    <label class="form-label">Pick an open time</label>
+                    <div id="sacramentSlotPicker" class="sac-slot-picker"><p class="form-help">Loading availability…</p></div>
+                    <input type="hidden" id="sacramentSlotDate" /><input type="hidden" id="sacramentSlotTime" />
+                    <p class="form-help" id="sacramentSlotSelectedNote"></p>
+                  </div>
 
                   <div class="form-group full"><label class="form-label" for="sacramentParticipants">Who is this for?</label><input class="form-input" id="sacramentParticipants" placeholder="Names of those involved" /></div>
                   <div class="form-group"><label class="form-label" for="sacramentPhone">Best phone number</label><input class="form-input" id="sacramentPhone" type="tel" placeholder="For scheduling" /></div>

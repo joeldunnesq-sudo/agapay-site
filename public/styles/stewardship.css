@@ -1945,6 +1945,36 @@
 }
 .sac-parish-history[open] summary::before { transform: rotate(90deg); }
 
+/* ── Sacraments availability & online booking (parish dashboard) ────────── */
+.sac-avail-type-block { margin-bottom: 1rem; }
+.sac-avail-type-block h4 { font-size: 0.95rem; font-weight: 600; color: var(--deep); margin: 0 0 0.4rem; }
+.sac-avail-rule-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.4rem;
+  font-size: 13px;
+  color: var(--deep);
+  background: white;
+}
+.sac-avail-add-form,
+.sac-avail-blackouts {
+  border-top: 1px dashed var(--line);
+  padding-top: 1rem;
+  margin-top: 1rem;
+}
+.sac-avail-add-form h4,
+.sac-avail-blackouts h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--deep);
+  margin: 0 0 0.6rem;
+}
+
 /* ── Full-width featured card (Stewardship Health Score, Financial
    Snapshots) — pulled out of the tool grid so it isn't squeezed into an
    equal-height grid cell. ───────────────────────────────────────────── */

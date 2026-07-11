@@ -100,6 +100,7 @@ import {
 } from "../lib/settlement-profiles.js";
 
 import { recordAuditEvent } from "../lib/audit-log.js";
+import { SCHEDULABLE_SACRAMENT_TYPES } from "../lib/sacrament-availability.js";
 
 function d1(env) {
   return env.AGAPAY_DB || env.DB || null;
@@ -3465,6 +3466,47 @@ async function attachSacramentDetailsForParish(env, row) {
   return base;
 }
 
+// Batched version of attachSacramentDetailsForParish for lists -- fetches
+// baptism/chrismation and wedding detail rows with at most two IN(...)
+// queries total, instead of one extra D1 round-trip per matching row
+// (which made the parish Sacraments tab slow to load once a parish had more
+// than a handful of baptism/wedding requests).
+async function attachSacramentDetailsForParishBatch(env, rows = []) {
+  const baptismRows = rows.filter((r) => r.sacrament_type === "baptism" || r.sacrament_type === "chrismation");
+  const weddingRows = rows.filter((r) => r.sacrament_type === "wedding");
+
+  const baptismDetailsById = new Map();
+  if (baptismRows.length) {
+    const placeholders = baptismRows.map(() => "?").join(",");
+    const details = await d1All(env,
+      `SELECT * FROM sacrament_baptism_details WHERE request_id IN (${placeholders})`,
+      ...baptismRows.map((r) => r.id)
+    ).catch(() => []);
+    for (const detail of details) baptismDetailsById.set(detail.request_id, detail);
+  }
+
+  const weddingDetailsById = new Map();
+  if (weddingRows.length) {
+    const placeholders = weddingRows.map(() => "?").join(",");
+    const details = await d1All(env,
+      `SELECT * FROM sacrament_wedding_details WHERE request_id IN (${placeholders})`,
+      ...weddingRows.map((r) => r.id)
+    ).catch(() => []);
+    for (const detail of details) weddingDetailsById.set(detail.request_id, detail);
+  }
+
+  return rows.map((row) => {
+    const base = parishSacramentRequestRow(row);
+    if (row.sacrament_type === "baptism" || row.sacrament_type === "chrismation") {
+      return { ...base, baptismDetails: publicBaptismDetails(baptismDetailsById.get(row.id) || null) };
+    }
+    if (row.sacrament_type === "wedding") {
+      return { ...base, weddingDetails: publicWeddingDetails(weddingDetailsById.get(row.id) || null) };
+    }
+    return base;
+  });
+}
+
 function parishSacramentRequestRow(row = {}) {
   return {
     id: row.id,
@@ -3530,9 +3572,7 @@ export async function handleParishSacraments(request, env, parishId) {
     return json({ ok: false, error: "Sacrament requests are not installed yet.", setupRequired: true }, { status: 503 });
   }
 
-  const requestsWithDetails = await Promise.all(
-    (rows || []).map((row) => attachSacramentDetailsForParish(env, row))
-  );
+  const requestsWithDetails = await attachSacramentDetailsForParishBatch(env, rows || []);
   return json({ ok: true, requests: requestsWithDetails });
 }
 
@@ -3633,6 +3673,141 @@ async function notifyDonorOfSacramentStatusChange(env, registration, row) {
     `),
     text: statusCopy.replace(/<[^>]+>/g, "")
   });
+}
+
+// ─── Native availability booking (no third-party calendar) ─────────────────
+
+async function requireSacramentsParishContext(request, env, parishId) {
+  if (!hasProductionStore(env)) return { ok: false, response: missingProductionStoreResponse() };
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return { ok: false, response: json({ error: "Parish dashboard record not found" }, { status: 404 }) };
+  const token = getBearerToken(request);
+  if (!(await verifyParishDashboardBearer(found.registration, token))) {
+    return { ok: false, response: unauthorized() };
+  }
+  if (!sacramentsEnabledFor(found.registration)) {
+    return { ok: false, response: json({ error: "Sacraments & Services is not enabled for this parish." }, { status: 402 }) };
+  }
+  return { ok: true, registration: found.registration, key: found.key };
+}
+
+function isValidTimezone(tz) {
+  try { new Intl.DateTimeFormat(undefined, { timeZone: tz }); return true; } catch { return false; }
+}
+
+// GET /api/parish/dashboard/:parishId/sacraments/availability
+export async function handleParishSacramentAvailability(request, env, parishId) {
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-dashboard", { limit: 80, windowSeconds: 300 });
+  if (limited) return limited;
+  const ctx = await requireSacramentsParishContext(request, env, parishId);
+  if (!ctx.ok) return ctx.response;
+
+  const rules = await d1All(env,
+    "SELECT * FROM parish_availability_rules WHERE parish_id = ? ORDER BY sacrament_type, day_of_week, start_time",
+    parishId
+  ).catch(() => []);
+  const blackouts = await d1All(env,
+    "SELECT * FROM parish_availability_blackouts WHERE parish_id = ? ORDER BY date",
+    parishId
+  ).catch(() => []);
+
+  return json({
+    ok: true,
+    timezone: ctx.registration.timezone || "",
+    rules: rules.map((r) => ({
+      id: r.id, sacramentType: r.sacrament_type, dayOfWeek: r.day_of_week,
+      startTime: r.start_time, endTime: r.end_time, slotMinutes: r.slot_minutes
+    })),
+    blackouts: blackouts.map((b) => ({ id: b.id, date: b.date, reason: b.reason || "" }))
+  });
+}
+
+// POST /api/parish/dashboard/:parishId/sacraments/availability/rules
+export async function handleParishAvailabilityRuleCreate(request, env, parishId) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-dashboard-write", { limit: 40, windowSeconds: 300 });
+  if (limited) return limited;
+  const ctx = await requireSacramentsParishContext(request, env, parishId);
+  if (!ctx.ok) return ctx.response;
+  if (!ctx.registration.timezone) {
+    return json({ error: "Set your parish's timezone before adding availability." }, { status: 400 });
+  }
+
+  let body = {};
+  try { body = await request.json(); } catch { body = {}; }
+  const sacramentType = String(body.sacramentType || "").trim();
+  if (!SCHEDULABLE_SACRAMENT_TYPES.has(sacramentType)) {
+    return json({ error: "Choose a schedulable sacrament type (house blessing, confession, or home visit)." }, { status: 400 });
+  }
+  const dayOfWeek = Number(body.dayOfWeek);
+  if (!Number.isInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
+    return json({ error: "Choose a valid day of the week." }, { status: 400 });
+  }
+  const startTime = String(body.startTime || "").trim();
+  const endTime = String(body.endTime || "").trim();
+  if (!/^\d{2}:\d{2}$/.test(startTime) || !/^\d{2}:\d{2}$/.test(endTime) || startTime >= endTime) {
+    return json({ error: "Enter a valid start and end time, with the end after the start." }, { status: 400 });
+  }
+  const slotMinutes = Math.max(5, Math.min(240, parseInt(body.slotMinutes, 10) || 30));
+
+  const id = generateSecret("avail");
+  await d1Run(env, `
+    INSERT INTO parish_availability_rules
+      (id, parish_id, sacrament_type, day_of_week, start_time, end_time, slot_minutes, active, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 1, datetime('now'), datetime('now'))
+  `, id, parishId, sacramentType, dayOfWeek, startTime, endTime, slotMinutes);
+
+  return json({ ok: true, id });
+}
+
+// DELETE /api/parish/dashboard/:parishId/sacraments/availability/rules/:ruleId
+export async function handleParishAvailabilityRuleDelete(request, env, parishId, ruleId) {
+  if (request.method !== "DELETE") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-dashboard-write", { limit: 40, windowSeconds: 300 });
+  if (limited) return limited;
+  const ctx = await requireSacramentsParishContext(request, env, parishId);
+  if (!ctx.ok) return ctx.response;
+
+  await d1Run(env, "DELETE FROM parish_availability_rules WHERE id = ? AND parish_id = ?", ruleId, parishId);
+  return json({ ok: true });
+}
+
+// POST /api/parish/dashboard/:parishId/sacraments/availability/blackouts
+export async function handleParishAvailabilityBlackoutCreate(request, env, parishId) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-dashboard-write", { limit: 40, windowSeconds: 300 });
+  if (limited) return limited;
+  const ctx = await requireSacramentsParishContext(request, env, parishId);
+  if (!ctx.ok) return ctx.response;
+
+  let body = {};
+  try { body = await request.json(); } catch { body = {}; }
+  const date = String(body.date || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return json({ error: "Choose a valid date." }, { status: 400 });
+  }
+  const reason = String(body.reason || "").trim().slice(0, 200);
+
+  const id = generateSecret("blackout");
+  await d1Run(env, `
+    INSERT INTO parish_availability_blackouts (id, parish_id, date, reason, created_at)
+    VALUES (?, ?, ?, ?, datetime('now'))
+  `, id, parishId, date, reason || null);
+
+  return json({ ok: true, id });
+}
+
+// DELETE /api/parish/dashboard/:parishId/sacraments/availability/blackouts/:blackoutId
+export async function handleParishAvailabilityBlackoutDelete(request, env, parishId, blackoutId) {
+  if (request.method !== "DELETE") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-dashboard-write", { limit: 40, windowSeconds: 300 });
+  if (limited) return limited;
+  const ctx = await requireSacramentsParishContext(request, env, parishId);
+  if (!ctx.ok) return ctx.response;
+
+  await d1Run(env, "DELETE FROM parish_availability_blackouts WHERE id = ? AND parish_id = ?", blackoutId, parishId);
+  return json({ ok: true });
 }
 
 export async function handleParishCommemorations(request, env, parishId) {
@@ -5336,6 +5511,7 @@ export function parishDashboardPayload(parishId, registration) {
     website: registration.website,
     taxLegalName: registration.taxLegalName || "",
     taxEin: registration.taxEin || "",
+    timezone: registration.timezone || "",
     liturgicalCalendar: registration.liturgicalCalendar || "julian",
     patronalFeast: registration.patronalFeast || "",
     givingStatus: registration.givingStatus || "active",
@@ -5420,6 +5596,10 @@ export async function handleParishDashboard(request, env, parishId) {
       website: body.website ?? current.website ?? "",
       taxLegalName: String(body.taxLegalName ?? current.taxLegalName ?? "").trim(),
       taxEin: String(body.taxEin ?? current.taxEin ?? "").trim(),
+      timezone: (() => {
+        const requested = String(body.timezone ?? current.timezone ?? "").trim();
+        return requested && isValidTimezone(requested) ? requested : (current.timezone || "");
+      })(),
       liturgicalCalendar: body.liturgicalCalendar || current.liturgicalCalendar || "julian",
       patronalFeast: String(body.patronalFeast ?? current.patronalFeast ?? "").trim(),
       givingStatus: body.givingStatus || current.givingStatus || "active",

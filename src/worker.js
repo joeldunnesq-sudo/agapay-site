@@ -102,6 +102,11 @@ import {
   handleParishCommemorations,
   handleParishSacraments,
   handleParishSacramentUpdate,
+  handleParishSacramentAvailability,
+  handleParishAvailabilityRuleCreate,
+  handleParishAvailabilityRuleDelete,
+  handleParishAvailabilityBlackoutCreate,
+  handleParishAvailabilityBlackoutDelete,
   handleAdminSetSacramentsEnabled,
   sacramentTypeLabel,
   handleParishPayoutDiagnostics,
@@ -147,6 +152,8 @@ import {
   handleDonorBookstoreRequestFeature,
   handleDonorCommemorations,
   handleDonorSacraments,
+  handleDonorSacramentAvailability,
+  handleDonorSacramentBook,
   handleDonorSacramentCancel,
   handleDonorNotifications,
   handleDonorNotificationDismiss,
@@ -2717,6 +2724,12 @@ export default {
     if (url.pathname === "/api/donor/sacraments") {
       return handleDonorSacraments(request, env);
     }
+    if (url.pathname === "/api/donor/sacraments/availability") {
+      return handleDonorSacramentAvailability(request, env);
+    }
+    if (url.pathname === "/api/donor/sacraments/book") {
+      return handleDonorSacramentBook(request, env);
+    }
     if (url.pathname.startsWith("/api/donor/sacraments/") && url.pathname.endsWith("/cancel")) {
       const requestId = decodeURIComponent(url.pathname.replace("/api/donor/sacraments/", "").replace("/cancel", ""));
       return handleDonorSacramentCancel(request, env, requestId);
@@ -3100,6 +3113,29 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments", ""));
       return handleParishSacraments(request, env, parishId);
+    }
+    // ── Native availability booking (must be matched before the generic
+    // /sacraments/:requestId catch-all below, since "availability" would
+    // otherwise be mistaken for a request id) ──────────────────────────────
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments/availability")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments/availability", ""));
+      return handleParishSacramentAvailability(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments/availability/rules")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments/availability/rules", ""));
+      return handleParishAvailabilityRuleCreate(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/sacraments/availability/rules/")) {
+      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/sacraments/availability/rules/");
+      return handleParishAvailabilityRuleDelete(request, env, decodeURIComponent(parts[0] || ""), decodeURIComponent(parts[1] || ""));
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments/availability/blackouts")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments/availability/blackouts", ""));
+      return handleParishAvailabilityBlackoutCreate(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/sacraments/availability/blackouts/")) {
+      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/sacraments/availability/blackouts/");
+      return handleParishAvailabilityBlackoutDelete(request, env, decodeURIComponent(parts[0] || ""), decodeURIComponent(parts[1] || ""));
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/sacraments/")) {
       const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/sacraments/");

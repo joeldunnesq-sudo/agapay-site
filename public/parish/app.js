@@ -2368,9 +2368,196 @@
       if (!res.ok) throw new Error(data.error || 'Unable to load requests.');
       sacramentsState = { loaded: true, requests: data.requests || [] };
       renderSacramentsPanel();
+      loadSacramentsAvailability();
     } catch (err) {
       pane.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
     }
+  }
+
+  // ── AVAILABILITY & ONLINE BOOKING (native, no third-party calendar) ──────
+  const SAC_TIMEZONE_OPTIONS = [
+    ['America/New_York', 'Eastern (New York)'],
+    ['America/Chicago', 'Central (Chicago)'],
+    ['America/Denver', 'Mountain (Denver)'],
+    ['America/Phoenix', 'Mountain, no DST (Phoenix)'],
+    ['America/Los_Angeles', 'Pacific (Los Angeles)'],
+    ['America/Anchorage', 'Alaska (Anchorage)'],
+    ['Pacific/Honolulu', 'Hawaii (Honolulu)']
+  ];
+  const SAC_DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const SAC_SCHEDULABLE_TYPES = ['house_blessing', 'confession', 'home_visit'];
+
+  let sacramentsAvailabilityState = { loaded: false, timezone: '', rules: [], blackouts: [] };
+
+  async function loadSacramentsAvailability(force) {
+    const pane = document.getElementById('sacramentsAvailabilityPane');
+    if (!pane || !currentParish) return;
+    if (sacramentsAvailabilityState.loaded && !force) { renderSacramentsAvailability(); return; }
+    pane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
+    try {
+      const res = await fetch(sacramentsApi('/availability'), { headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to load availability.');
+      sacramentsAvailabilityState = { loaded: true, timezone: data.timezone || '', rules: data.rules || [], blackouts: data.blackouts || [] };
+      renderSacramentsAvailability();
+    } catch (err) {
+      pane.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  function renderSacramentsAvailability() {
+    const pane = document.getElementById('sacramentsAvailabilityPane');
+    if (!pane) return;
+    const st = sacramentsAvailabilityState;
+    const tzOptions = '<option value="">Choose timezone...</option>' + SAC_TIMEZONE_OPTIONS.map(([v, l]) => `<option value="${v}" ${v === st.timezone ? 'selected' : ''}>${escapeHtml(l)}</option>`).join('');
+
+    const rulesByType = {};
+    SAC_SCHEDULABLE_TYPES.forEach(t => { rulesByType[t] = []; });
+    st.rules.forEach(r => { (rulesByType[r.sacramentType] = rulesByType[r.sacramentType] || []).push(r); });
+
+    const rulesHtml = SAC_SCHEDULABLE_TYPES.map(type => {
+      const rows = (rulesByType[type] || []).map(r => `
+        <div class="sac-avail-rule-row">
+          <span>${SAC_DAY_LABELS[r.dayOfWeek]}, ${escapeHtml(r.startTime)}–${escapeHtml(r.endTime)} · ${r.slotMinutes} min slots</span>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="deleteSacramentsAvailabilityRule('${r.id}')">Remove</button>
+        </div>`).join('') || '<p class="sw-tool-card-desc" style="margin:0 0 0.5rem;">No windows set for this type yet.</p>';
+      return `<div class="sac-avail-type-block">
+        <h4>${escapeHtml(sacramentTypeLabel({ sacramentType: type }))}</h4>
+        ${rows}
+      </div>`;
+    }).join('');
+
+    const blackoutRows = st.blackouts.map(b => `
+      <div class="sac-avail-rule-row">
+        <span>${escapeHtml(b.date)}${b.reason ? ' — ' + escapeHtml(b.reason) : ''}</span>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="deleteSacramentsAvailabilityBlackout('${b.id}')">Remove</button>
+      </div>`).join('') || '<p class="sw-tool-card-desc" style="margin:0 0 0.5rem;">No blackout dates.</p>';
+
+    pane.innerHTML = `
+      <div class="form-grid" style="margin-bottom:1.25rem;align-items:end;">
+        <div class="form-group full">
+          <label class="form-label" for="sacAvailTimezone">Parish timezone</label>
+          <select class="form-select" id="sacAvailTimezone">${tzOptions}</select>
+        </div>
+        <div><button class="btn btn-ghost btn-sm" type="button" onclick="saveSacramentsAvailabilityTimezone(this)">Save timezone</button></div>
+      </div>
+      ${st.timezone ? '' : '<p class="notice">Set and save your parish timezone before adding weekly windows.</p>'}
+      ${rulesHtml}
+      <div class="sac-avail-add-form">
+        <h4>Add a weekly window</h4>
+        <div class="form-grid">
+          <div><label class="form-label">Type</label><select class="form-select" id="sacAvailNewType">${SAC_SCHEDULABLE_TYPES.map(t => `<option value="${t}">${escapeHtml(sacramentTypeLabel({ sacramentType: t }))}</option>`).join('')}</select></div>
+          <div><label class="form-label">Day</label><select class="form-select" id="sacAvailNewDay">${SAC_DAY_LABELS.map((l, i) => `<option value="${i}">${l}</option>`).join('')}</select></div>
+          <div><label class="form-label">Start</label><input class="form-input" type="time" id="sacAvailNewStart" value="16:00" /></div>
+          <div><label class="form-label">End</label><input class="form-input" type="time" id="sacAvailNewEnd" value="18:00" /></div>
+          <div><label class="form-label">Slot length (min)</label><input class="form-input" type="number" min="5" max="240" step="5" id="sacAvailNewSlotMinutes" value="30" /></div>
+        </div>
+        <div class="btn-row"><button class="btn btn-gold btn-sm" type="button" onclick="addSacramentsAvailabilityRule(this)">Add window</button></div>
+        <span id="sacAvailRuleStatus" style="font-size:0.82rem;color:var(--stone);"></span>
+      </div>
+      <div class="sac-avail-blackouts">
+        <h4>Blackout dates</h4>
+        ${blackoutRows}
+        <div class="form-grid">
+          <div><label class="form-label">Date</label><input class="form-input" type="date" id="sacAvailNewBlackoutDate" /></div>
+          <div class="form-group full"><label class="form-label">Reason (optional)</label><input class="form-input" id="sacAvailNewBlackoutReason" placeholder="e.g. Nativity Fast retreat" /></div>
+        </div>
+        <div class="btn-row"><button class="btn btn-ghost btn-sm" type="button" onclick="addSacramentsAvailabilityBlackout(this)">Add blackout date</button></div>
+        <span id="sacAvailBlackoutStatus" style="font-size:0.82rem;color:var(--stone);"></span>
+      </div>
+    `;
+  }
+
+  async function saveSacramentsAvailabilityTimezone(btn) {
+    const tz = document.getElementById('sacAvailTimezone')?.value || '';
+    if (!tz || !currentParish) return;
+    if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+    try {
+      const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId), {
+        method: 'PATCH', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ timezone: tz })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Unable to save timezone.');
+      currentParish.timezone = tz;
+      sacramentsAvailabilityState.timezone = tz;
+      setStatus('Parish timezone saved.', 'success');
+      renderSacramentsAvailability();
+    } catch (err) {
+      setStatus(err.message, 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+    }
+  }
+
+  async function addSacramentsAvailabilityRule(btn) {
+    const status = document.getElementById('sacAvailRuleStatus');
+    const sacramentType = document.getElementById('sacAvailNewType')?.value;
+    const dayOfWeek = Number(document.getElementById('sacAvailNewDay')?.value);
+    const startTime = document.getElementById('sacAvailNewStart')?.value;
+    const endTime = document.getElementById('sacAvailNewEnd')?.value;
+    const slotMinutes = Number(document.getElementById('sacAvailNewSlotMinutes')?.value) || 30;
+    if (!sacramentsAvailabilityState.timezone) {
+      if (status) { status.textContent = 'Set and save your parish timezone first.'; status.style.color = 'var(--red, #8b2020)'; }
+      return;
+    }
+    if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+    if (status) status.textContent = '';
+    try {
+      const res = await fetch(sacramentsApi('/availability/rules'), {
+        method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sacramentType, dayOfWeek, startTime, endTime, slotMinutes })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Unable to add window.');
+      if (status) { status.textContent = 'Window added.'; status.style.color = 'var(--green, #2a7a4b)'; }
+      await loadSacramentsAvailability(true);
+    } catch (err) {
+      if (status) { status.textContent = err.message; status.style.color = 'var(--red, #8b2020)'; }
+    } finally {
+      if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+    }
+  }
+
+  async function deleteSacramentsAvailabilityRule(ruleId) {
+    if (!currentParish) return;
+    try {
+      const res = await fetch(sacramentsApi('/availability/rules/' + encodeURIComponent(ruleId)), { method: 'DELETE', headers: authHeaders() });
+      if (!res.ok) throw new Error('Unable to remove window.');
+      await loadSacramentsAvailability(true);
+    } catch (err) { setStatus(err.message, 'error'); }
+  }
+
+  async function addSacramentsAvailabilityBlackout(btn) {
+    const status = document.getElementById('sacAvailBlackoutStatus');
+    const date = document.getElementById('sacAvailNewBlackoutDate')?.value;
+    const reason = document.getElementById('sacAvailNewBlackoutReason')?.value || '';
+    if (!date) { if (status) { status.textContent = 'Choose a date.'; status.style.color = 'var(--red, #8b2020)'; } return; }
+    if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+    if (status) status.textContent = '';
+    try {
+      const res = await fetch(sacramentsApi('/availability/blackouts'), {
+        method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date, reason })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Unable to add blackout date.');
+      if (status) { status.textContent = 'Blackout date added.'; status.style.color = 'var(--green, #2a7a4b)'; }
+      await loadSacramentsAvailability(true);
+    } catch (err) {
+      if (status) { status.textContent = err.message; status.style.color = 'var(--red, #8b2020)'; }
+    } finally {
+      if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+    }
+  }
+
+  async function deleteSacramentsAvailabilityBlackout(blackoutId) {
+    if (!currentParish) return;
+    try {
+      const res = await fetch(sacramentsApi('/availability/blackouts/' + encodeURIComponent(blackoutId)), { method: 'DELETE', headers: authHeaders() });
+      if (!res.ok) throw new Error('Unable to remove blackout date.');
+      await loadSacramentsAvailability(true);
+    } catch (err) { setStatus(err.message, 'error'); }
   }
 
   function renderSacramentsUpsell() {

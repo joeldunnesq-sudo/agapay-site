@@ -945,6 +945,24 @@ h1 { margin-top: 0.25rem; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 0.98
 .status-pill.pending { background: var(--gold-soft); color: #7a5c17; }
 .status-pill.wine { background: var(--wine-soft); color: var(--wine); }
 .status-pill.success { background: rgba(46, 107, 63, 0.12); color: #2E6B3F; }
+
+/* ── Sacraments real-time slot picker (native, no third-party calendar) ── */
+.sac-slot-picker { display: flex; flex-direction: column; gap: 0.75rem; }
+.sac-slot-day-label { font-size: 12px; font-weight: 700; color: var(--stone); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.35rem; }
+.sac-slot-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.sac-slot-chip {
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--deep);
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.sac-slot-chip:hover { border-color: var(--gold, #c8972a); }
+.sac-slot-chip.selected { background: var(--gold, #c8972a); border-color: var(--gold, #c8972a); color: white; }
 .status-pill.muted { background: rgba(154, 148, 136, 0.16); color: var(--stone); }
 
 /* ── Sacraments & Services ─────────────────────────────────────────── */

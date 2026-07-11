@@ -1211,6 +1211,17 @@
           <div id="sacramentsPane">
             <p class="sw-tool-loading">Loading…</p>
           </div>
+
+          <!-- AVAILABILITY — native real-time slot booking for house blessings,
+               confession, and home visits. No third-party calendar. -->
+          <div class="sac-parish-section" id="sacramentsAvailabilitySection">
+            <h3 style="display:flex;align-items:center;justify-content:space-between;">
+              <span>Availability &amp; Online Booking</span>
+              <button class="btn btn-ghost btn-sm" type="button" onclick="loadSacramentsAvailability(true)">Refresh</button>
+            </h3>
+            <p class="sw-tool-card-desc" style="margin:0 0 1rem;">Set recurring weekly windows for house blessings, confession, and home visits — parishioners will see and book real open slots directly from My AGAPAY, no back-and-forth needed.</p>
+            <div id="sacramentsAvailabilityPane"><p class="sw-tool-loading">Loading…</p></div>
+          </div>
         </div>
 
       </div>
@@ -1501,6 +1512,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
-<script src="/parish/app.js?v=20260711a"></script>
+<script src="/parish/app.js?v=20260711b"></script>
 </body>
 </html>

@@ -2997,6 +2997,9 @@ function sacramentLocationHint(sacramentType) {
   return sacramentType === "house_blessing" || sacramentType === "home_visit";
 }
 
+const SAC_SCHEDULABLE_TYPES = ["house_blessing", "confession", "home_visit"];
+let sacramentSelectedSlot = null;
+
 function toggleSacramentAddressField() {
   const typeEl = document.getElementById("sacramentType");
   const locationRow = document.getElementById("sacramentLocationRow");
@@ -3007,6 +3010,91 @@ function toggleSacramentAddressField() {
   if (locationRow) locationRow.style.display = type ? "" : "none";
   if (addressGroup) addressGroup.style.display = needsAddress ? "" : (document.getElementById("sacramentLocationType")?.value === "home" ? "" : "none");
   if (otherGroup) otherGroup.style.display = type === "other" ? "" : "none";
+  updateSacramentSchedulingUI();
+}
+
+// Real-time availability (native, no third-party calendar) for the three
+// "schedulable" sacrament types. Falls back to the free-text preferred
+// date/time fields if the parish hasn't configured any windows yet.
+function updateSacramentSchedulingUI() {
+  const type = document.getElementById("sacramentType")?.value || "";
+  const freeText = document.getElementById("sacramentFreeTextFields");
+  const slotGroup = document.getElementById("sacramentSlotPickerGroup");
+  sacramentSelectedSlot = null;
+  const dateInput = document.getElementById("sacramentSlotDate");
+  const timeInput = document.getElementById("sacramentSlotTime");
+  if (dateInput) dateInput.value = "";
+  if (timeInput) timeInput.value = "";
+  const note = document.getElementById("sacramentSlotSelectedNote");
+  if (note) note.textContent = "";
+
+  if (!SAC_SCHEDULABLE_TYPES.includes(type)) {
+    if (freeText) freeText.style.display = "contents";
+    if (slotGroup) slotGroup.style.display = "none";
+    return;
+  }
+  loadSacramentSlots(type);
+}
+
+async function loadSacramentSlots(type) {
+  const freeText = document.getElementById("sacramentFreeTextFields");
+  const slotGroup = document.getElementById("sacramentSlotPickerGroup");
+  const picker = document.getElementById("sacramentSlotPicker");
+  const parishId = document.getElementById("sacramentParishId")?.value || donorProfile()?.defaultParishId || "";
+  if (!parishId) return;
+
+  if (slotGroup) slotGroup.style.display = "";
+  if (picker) picker.innerHTML = '<p class="form-help">Loading availability…</p>';
+
+  try {
+    const data = await donorApi(`/api/donor/sacraments/availability?parishId=${encodeURIComponent(parishId)}&sacramentType=${encodeURIComponent(type)}`);
+    const slots = Array.isArray(data.slots) ? data.slots : [];
+    if (!slots.length) {
+      // No online scheduling set up for this type yet -- fall back to free text.
+      if (freeText) freeText.style.display = "contents";
+      if (slotGroup) slotGroup.style.display = "none";
+      return;
+    }
+    if (freeText) freeText.style.display = "none";
+    renderSacramentSlots(slots);
+  } catch {
+    // Availability lookup failing shouldn't block the donor -- fall back to free text.
+    if (freeText) freeText.style.display = "contents";
+    if (slotGroup) slotGroup.style.display = "none";
+  }
+}
+
+function renderSacramentSlots(slots) {
+  const picker = document.getElementById("sacramentSlotPicker");
+  if (!picker) return;
+  const byDate = new Map();
+  for (const slot of slots) {
+    if (!byDate.has(slot.date)) byDate.set(slot.date, []);
+    byDate.get(slot.date).push(slot);
+  }
+  picker.innerHTML = Array.from(byDate.entries()).map(([date, daySlots]) => {
+    const dayLabel = new Date(date + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+    const chips = daySlots.map((s) => {
+      const timeLabel = s.label.split(", ").pop();
+      return `<button type="button" class="sac-slot-chip" data-date="${escapeHtml(s.date)}" data-time="${escapeHtml(s.time)}" onclick="selectSacramentSlot('${s.date}','${s.time}', this)">${escapeHtml(timeLabel)}</button>`;
+    }).join("");
+    return `<div class="sac-slot-day"><div class="sac-slot-day-label">${escapeHtml(dayLabel)}</div><div class="sac-slot-chips">${chips}</div></div>`;
+  }).join("");
+}
+
+function selectSacramentSlot(date, time, btn) {
+  sacramentSelectedSlot = { date, time };
+  const dateInput = document.getElementById("sacramentSlotDate");
+  const timeInput = document.getElementById("sacramentSlotTime");
+  if (dateInput) dateInput.value = date;
+  if (timeInput) timeInput.value = time;
+  document.querySelectorAll(".sac-slot-chip").forEach((el) => el.classList.remove("selected"));
+  if (btn) btn.classList.add("selected");
+  const note = document.getElementById("sacramentSlotSelectedNote");
+  if (note) {
+    const label = new Date(date + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+    note.textContent = `Selected: ${label} at ${btn ? btn.textContent : time}`;
+  }
 }
 
 function toggleSacramentAddressFieldByLocation() {
@@ -3140,30 +3228,46 @@ async function submitSacramentRequest(event) {
     return;
   }
 
-  const body = {
-    parishId,
-    sacramentType,
-    otherTypeLabel,
-    locationType,
-    locationAddress,
-    requestedDate: document.getElementById("sacramentDate")?.value || "",
-    requestedTimeWindow: document.getElementById("sacramentTimeWindow")?.value || "",
-    participantNames: document.getElementById("sacramentParticipants")?.value || "",
-    phone: document.getElementById("sacramentPhone")?.value || donorProfile()?.contactPhone || "",
-    notes: document.getElementById("sacramentNotes")?.value || ""
-  };
+  const slotPickerShown = document.getElementById("sacramentSlotPickerGroup")?.style.display !== "none";
+  const isBooking = SAC_SCHEDULABLE_TYPES.includes(sacramentType) && slotPickerShown;
+  if (isBooking && !sacramentSelectedSlot) {
+    setDonorStatus("Pick an open time to book.", "error");
+    return;
+  }
+
+  const participantNames = document.getElementById("sacramentParticipants")?.value || "";
+  const phone = document.getElementById("sacramentPhone")?.value || donorProfile()?.contactPhone || "";
+  const notes = document.getElementById("sacramentNotes")?.value || "";
+
+  const body = isBooking
+    ? {
+        parishId, sacramentType, locationType, locationAddress,
+        date: sacramentSelectedSlot.date, time: sacramentSelectedSlot.time,
+        participantNames, phone, notes
+      }
+    : {
+        parishId, sacramentType, otherTypeLabel, locationType, locationAddress,
+        requestedDate: document.getElementById("sacramentDate")?.value || "",
+        requestedTimeWindow: document.getElementById("sacramentTimeWindow")?.value || "",
+        participantNames, phone, notes
+      };
 
   const submitBtn = event.target.querySelector('button[type="submit"]');
   try {
-    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Sending..."; }
-    setDonorStatus("Sending your request...");
-    await donorApi("/api/donor/sacraments", { method: "POST", body: JSON.stringify(body) });
-    setDonorStatus("Request sent. Your parish will follow up to confirm.", "success");
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = isBooking ? "Booking..." : "Sending..."; }
+    setDonorStatus(isBooking ? "Booking your slot..." : "Sending your request...");
+    await donorApi(isBooking ? "/api/donor/sacraments/book" : "/api/donor/sacraments", { method: "POST", body: JSON.stringify(body) });
+    setDonorStatus(isBooking ? "Booked! You'll see it confirmed below." : "Request sent. Your parish will follow up to confirm.", "success");
     event.target.reset();
     toggleSacramentAddressField();
     await loadDonorSacramentsPage();
   } catch (err) {
-    setDonorStatus(err.message, "error");
+    if (err.data?.slotTaken) {
+      setDonorStatus("That time was just taken by someone else — pick another.", "error");
+      loadSacramentSlots(sacramentType);
+    } else {
+      setDonorStatus(err.message, "error");
+    }
   } finally {
     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Send request"; }
   }

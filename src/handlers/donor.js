@@ -1,5 +1,6 @@
 import { bookstoreReadinessSummary, bookstoreSellerDisclosure } from "../lib/commerce-readiness.js";
 import { logEvent } from "../lib/logging.js";
+import { SCHEDULABLE_SACRAMENT_TYPES, computeAvailableSlots, isSlotStillOpen } from "../lib/sacrament-availability.js";
 import {
   applyDonorPassword,
   clampListLimit,
@@ -1641,6 +1642,45 @@ async function attachSacramentDetails(env, row) {
   return base;
 }
 
+// Batched version for lists -- at most two IN(...) queries total instead of
+// one extra D1 round-trip per baptism/wedding row. See the matching helper
+// in src/handlers/parish.js for why this matters (N+1 was slow to load).
+async function attachSacramentDetailsBatch(env, rows = []) {
+  const baptismRows = rows.filter((r) => r.sacrament_type === "baptism" || r.sacrament_type === "chrismation");
+  const weddingRows = rows.filter((r) => r.sacrament_type === "wedding");
+
+  const baptismDetailsById = new Map();
+  if (baptismRows.length) {
+    const placeholders = baptismRows.map(() => "?").join(",");
+    const details = await d1All(env,
+      `SELECT * FROM sacrament_baptism_details WHERE request_id IN (${placeholders})`,
+      ...baptismRows.map((r) => r.id)
+    ).catch(() => []);
+    for (const detail of details) baptismDetailsById.set(detail.request_id, detail);
+  }
+
+  const weddingDetailsById = new Map();
+  if (weddingRows.length) {
+    const placeholders = weddingRows.map(() => "?").join(",");
+    const details = await d1All(env,
+      `SELECT * FROM sacrament_wedding_details WHERE request_id IN (${placeholders})`,
+      ...weddingRows.map((r) => r.id)
+    ).catch(() => []);
+    for (const detail of details) weddingDetailsById.set(detail.request_id, detail);
+  }
+
+  return rows.map((row) => {
+    const base = publicSacramentRequest(row);
+    if (row.sacrament_type === "baptism" || row.sacrament_type === "chrismation") {
+      return { ...base, baptismDetails: publicBaptismDetails(baptismDetailsById.get(row.id) || null) };
+    }
+    if (row.sacrament_type === "wedding") {
+      return { ...base, weddingDetails: publicWeddingDetails(weddingDetailsById.get(row.id) || null) };
+    }
+    return base;
+  });
+}
+
 // GET  /api/donor/sacraments        — list the signed-in donor's own requests
 //   ?parishId= also returns { available } for that parish's AGAPAY Parish + status,
 //   so the frontend knows whether to show the "Request a sacrament" form at all.
@@ -1669,9 +1709,7 @@ export async function handleDonorSacraments(request, env) {
       available = Boolean(found && sacramentsEnabledFor(found.registration));
     }
 
-    const requestsWithDetails = await Promise.all(
-      (rows || []).map((row) => attachSacramentDetails(env, row))
-    );
+    const requestsWithDetails = await attachSacramentDetailsBatch(env, rows || []);
     return json({ requests: requestsWithDetails, available, parishId });
   }
 
@@ -1811,34 +1849,170 @@ export async function handleDonorSacraments(request, env) {
 
   // Best-effort notification to the parish — never blocks the request itself.
   try {
-    const registration = found.registration;
-    const to = [registration.priestEmail, registration.treasurerEmail, registration.email, registration.contactEmail]
-      .filter(Boolean);
-    if (to.length) {
-      const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-      const typeLabel = otherTypeLabel || sacramentTypeLabel(sacramentType);
-      await sendEmail(env, {
-        from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
-        to: [...new Set(to.map((a) => String(a).trim().toLowerCase()))],
-        reply_to: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
-        subject: `New request: ${typeLabel}`,
-        html: agapayEmailHtml(appUrl, "New Sacrament Request", `
-          <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#171715;">A parishioner has requested <strong>${htmlEscape(typeLabel)}</strong> through AGAPAY.</p>
-          <table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.6;">
-            <tr><td style="padding:6px 10px 6px 0;color:#595959;width:140px;vertical-align:top;"><strong>Requested by</strong></td><td style="padding:6px 0;">${htmlEscape(donor.donorName || donor.email)}</td></tr>
-            <tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Contact</strong></td><td style="padding:6px 0;"><a href="mailto:${htmlEscape(donor.email)}" style="color:#0A365B;">${htmlEscape(donor.email)}</a>${phone ? " · " + htmlEscape(phone) : ""}</td></tr>
-            ${participantNames ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>For</strong></td><td style="padding:6px 0;">${htmlEscape(participantNames)}</td></tr>` : ""}
-            ${requestedDate ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Preferred date</strong></td><td style="padding:6px 0;">${htmlEscape(requestedDate)}</td></tr>` : ""}
-            ${requestedTimeWindow ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Preferred time</strong></td><td style="padding:6px 0;">${htmlEscape(requestedTimeWindow)}</td></tr>` : ""}
-            ${locationAddress ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Location</strong></td><td style="padding:6px 0;">${htmlEscape(locationAddress)}</td></tr>` : ""}
-            ${notes ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Notes</strong></td><td style="padding:6px 0;white-space:pre-wrap;">${htmlEscape(notes)}</td></tr>` : ""}
-          </table>
-          <p style="margin:18px 0 0;font-size:13px;color:#6F6A60;">Review and respond to this request from your parish dashboard, under Sacraments &amp; Services.</p>
-        `),
-        text: `New sacrament request: ${typeLabel}\nFrom: ${donor.donorName || donor.email} <${donor.email}>${phone ? " / " + phone : ""}\n${participantNames ? "For: " + participantNames + "\n" : ""}${requestedDate ? "Preferred date: " + requestedDate + "\n" : ""}${notes ? "\nNotes:\n" + notes : ""}`
-      });
-    }
+    await notifyParishOfNewSacramentRequest(env, {
+      request, registration: found.registration, donor, sacramentType, otherTypeLabel,
+      participantNames, requestedDate, requestedTimeWindow, locationAddress, notes, phone
+    });
   } catch { /* notification failure never blocks the request */ }
+
+  const row = await d1First(env, "SELECT * FROM sacrament_requests WHERE id = ?", id);
+  return json({ ok: true, request: await attachSacramentDetails(env, row) });
+}
+
+/**
+ * Best-effort "new sacrament request" email to the parish/priest. Shared by
+ * the regular request POST above and the native availability booking
+ * endpoint below -- `booked` swaps the copy from "requested" to "booked and
+ * confirmed" since a booking skips the acknowledge/schedule review step.
+ */
+async function notifyParishOfNewSacramentRequest(env, {
+  request, registration, donor, sacramentType, otherTypeLabel,
+  participantNames, requestedDate, requestedTimeWindow, locationAddress, notes, phone,
+  booked = false, confirmedDate = "", confirmedTime = ""
+}) {
+  const to = [registration.priestEmail, registration.treasurerEmail, registration.email, registration.contactEmail]
+    .filter(Boolean);
+  if (!to.length) return;
+
+  const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+  const typeLabel = otherTypeLabel || sacramentTypeLabel(sacramentType);
+  const heading = booked ? "New Sacrament Booking" : "New Sacrament Request";
+  const verb = booked ? "booked" : "requested";
+  const when = booked && confirmedDate
+    ? `${confirmedDate}${confirmedTime ? ` at ${confirmedTime}` : ""}`
+    : "";
+
+  await sendEmail(env, {
+    from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
+    to: [...new Set(to.map((a) => String(a).trim().toLowerCase()))],
+    reply_to: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
+    subject: booked ? `New booking: ${typeLabel} on ${confirmedDate}` : `New request: ${typeLabel}`,
+    html: agapayEmailHtml(appUrl, heading, `
+      <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#171715;">A parishioner has ${verb} <strong>${htmlEscape(typeLabel)}</strong> through AGAPAY${when ? ` for <strong>${htmlEscape(when)}</strong>` : ""}.</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.6;">
+        <tr><td style="padding:6px 10px 6px 0;color:#595959;width:140px;vertical-align:top;"><strong>${booked ? "Booked by" : "Requested by"}</strong></td><td style="padding:6px 0;">${htmlEscape(donor.donorName || donor.email)}</td></tr>
+        <tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Contact</strong></td><td style="padding:6px 0;"><a href="mailto:${htmlEscape(donor.email)}" style="color:#0A365B;">${htmlEscape(donor.email)}</a>${phone ? " · " + htmlEscape(phone) : ""}</td></tr>
+        ${participantNames ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>For</strong></td><td style="padding:6px 0;">${htmlEscape(participantNames)}</td></tr>` : ""}
+        ${!booked && requestedDate ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Preferred date</strong></td><td style="padding:6px 0;">${htmlEscape(requestedDate)}</td></tr>` : ""}
+        ${!booked && requestedTimeWindow ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Preferred time</strong></td><td style="padding:6px 0;">${htmlEscape(requestedTimeWindow)}</td></tr>` : ""}
+        ${locationAddress ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Location</strong></td><td style="padding:6px 0;">${htmlEscape(locationAddress)}</td></tr>` : ""}
+        ${notes ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Notes</strong></td><td style="padding:6px 0;white-space:pre-wrap;">${htmlEscape(notes)}</td></tr>` : ""}
+      </table>
+      <p style="margin:18px 0 0;font-size:13px;color:#6F6A60;">${booked ? "This slot was booked automatically from your published availability." : "Review and respond to this request"} from your parish dashboard, under Sacraments &amp; Services.</p>
+    `),
+    text: `${booked ? "New sacrament booking" : "New sacrament request"}: ${typeLabel}${when ? " (" + when + ")" : ""}\nFrom: ${donor.donorName || donor.email} <${donor.email}>${phone ? " / " + phone : ""}\n${participantNames ? "For: " + participantNames + "\n" : ""}${!booked && requestedDate ? "Preferred date: " + requestedDate + "\n" : ""}${notes ? "\nNotes:\n" + notes : ""}`
+  });
+}
+
+// GET /api/donor/sacraments/availability?parishId=&sacramentType=
+// Real-time open slots for the "schedulable" types, computed natively (no
+// third-party calendar). Empty slots (no error) means the donor UI should
+// fall back to the free-text preferred-date/time fields.
+export async function handleDonorSacramentAvailability(request, env) {
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  const donor = await requireDonor(request, env);
+  if (!donor) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const url = new URL(request.url);
+  const parishId = String(url.searchParams.get("parishId") || donor.defaultParishId || "").trim();
+  const sacramentType = String(url.searchParams.get("sacramentType") || "").trim();
+  if (!parishId || !SCHEDULABLE_SACRAMENT_TYPES.has(sacramentType)) {
+    return json({ slots: [], timezone: "" });
+  }
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found || !sacramentsEnabledFor(found.registration)) {
+    return json({ slots: [], timezone: "" });
+  }
+
+  const result = await computeAvailableSlots(env, {
+    parishId, sacramentType, timezone: found.registration.timezone || ""
+  });
+  return json(result);
+}
+
+// POST /api/donor/sacraments/book
+// Books a real open slot directly -- for house_blessing/confession/home_visit
+// only. Skips the requested->acknowledged->scheduled review step entirely:
+// the row is created as status='scheduled' with confirmed_date/confirmed_time
+// already set, since the slot was only offered because it was open.
+export async function handleDonorSacramentBook(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const donor = await requireDonor(request, env);
+  if (!donor) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const limited = await rateLimit(request, env, "donor-sacrament-request", { limit: 10, windowSeconds: 3600 });
+  if (limited) return limited;
+
+  let body = {};
+  try { body = await request.json(); } catch { body = {}; }
+
+  const parishId = String(body.parishId || donor.defaultParishId || "").trim();
+  if (!parishId) {
+    return json({ error: "Choose a parish before booking." }, { status: 400 });
+  }
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish not found." }, { status: 404 });
+  if (!sacramentsEnabledFor(found.registration)) {
+    return json({ error: "Sacraments & Services is not enabled for this parish." }, { status: 402 });
+  }
+
+  const sacramentType = String(body.sacramentType || "").trim();
+  if (!SCHEDULABLE_SACRAMENT_TYPES.has(sacramentType)) {
+    return json({ error: "This sacrament type can't be self-booked." }, { status: 400 });
+  }
+  const date = String(body.date || "").trim();
+  const time = String(body.time || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) {
+    return json({ error: "Choose a valid date and time." }, { status: 400 });
+  }
+
+  const locationType = ["church", "home", "other"].includes(body.locationType) ? body.locationType : "church";
+  const locationAddress = String(body.locationAddress || "").trim().slice(0, 400);
+  if ((sacramentType === "home_visit" || locationType === "home") && !locationAddress) {
+    return json({ error: "An address is required for a home visit." }, { status: 400 });
+  }
+  const participantNames = String(body.participantNames || "").trim().slice(0, 1000);
+  const phone = String(body.phone || "").trim().slice(0, 40);
+  const notes = String(body.notes || "").trim().slice(0, 2000);
+
+  // Soft pre-check (nice error message on the common case) -- the real,
+  // race-safe guarantee is the DB-level unique index caught below.
+  const stillOpen = await isSlotStillOpen(env, { parishId, date, time });
+  if (!stillOpen) {
+    return json({ error: "That time was just taken — please pick another.", slotTaken: true }, { status: 409 });
+  }
+
+  const id = generateSecret("sac");
+  const now = new Date().toISOString();
+  try {
+    await d1Run(env, `
+      INSERT INTO sacrament_requests
+        (id, parish_id, donor_email, sacrament_type, status,
+         requested_date, participant_names, location_type, location_address,
+         notes, phone, confirmed_date, confirmed_time, created_at, updated_at)
+      VALUES (?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+      id, parishId, normalizeEmail(donor.email), sacramentType, date, participantNames || null,
+      locationType, locationAddress || null, notes || null, phone || null, date, time, now, now
+    );
+  } catch (error) {
+    if (/UNIQUE constraint failed/i.test(String(error?.message || error || ""))) {
+      return json({ error: "That time was just taken — please pick another.", slotTaken: true }, { status: 409 });
+    }
+    throw error;
+  }
+
+  // Best-effort notification to the parish — never blocks the booking itself.
+  try {
+    await notifyParishOfNewSacramentRequest(env, {
+      request, registration: found.registration, donor, sacramentType, otherTypeLabel: "",
+      participantNames, locationAddress, notes, phone,
+      booked: true, confirmedDate: date, confirmedTime: time
+    });
+  } catch { /* notification failure never blocks the booking */ }
 
   const row = await d1First(env, "SELECT * FROM sacrament_requests WHERE id = ?", id);
   return json({ ok: true, request: await attachSacramentDetails(env, row) });
