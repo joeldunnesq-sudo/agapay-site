@@ -185,6 +185,17 @@ h1 {
   border: 1px solid rgba(201, 162, 91, 0.42);
 }
 
+.button-navy {
+  color: #fffdf8;
+  background: #061522;
+  border: 1px solid rgba(6, 21, 34, 0.86);
+  box-shadow: 0 16px 32px rgba(6, 21, 34, 0.18);
+}
+
+.button-navy:hover {
+  background: #0d2030;
+}
+
 .button-quiet {
   color: var(--learn-night);
   background: rgba(255, 253, 248, 0.42);

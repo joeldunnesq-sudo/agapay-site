@@ -123,6 +123,7 @@ const learnSetupPersistence = readFileSync(new URL("../src/learn/setup-persisten
 const learnDashboardHtml = readFileSync(new URL("../public/learn/dashboard.html", import.meta.url), "utf8");
 const learnOverviewHtml = readFileSync(new URL("../public/learn/index.html", import.meta.url), "utf8");
 const learnPricingHtml = readFileSync(new URL("../public/learn/pricing.html", import.meta.url), "utf8");
+const learnPricingCss = readFileSync(new URL("../public/learn/pricing.css", import.meta.url), "utf8");
 const learnShellCss = readFileSync(new URL("../public/learn/shell.css", import.meta.url), "utf8");
 assert(learnShell.includes("data-dialog-checkout"), "Learn shell should include checkout dialog hooks.");
 assert(learnShell.includes("data-grace-mode"), "Learn shell should expose grace mode controls.");
@@ -185,6 +186,7 @@ assert(!learnHandlers.includes('href: "/myagapay/learn/reports"'), "Learn metada
 assert(learnHandlers.includes("AGAPAY_LEARN_FACEBOOK_GROUP_URL"), "Community should accept a configured Facebook group URL.");
 assert(learnOverviewHtml.includes("Clearly on the roadmap") && learnOverviewHtml.includes("Reports & Transcripts"), "The Learn overview should clearly separate coming-soon features.");
 assert(!learnOverviewHtml.includes("Printables, reports, and transcripts"), "The Learn overview should not advertise Reports as currently available.");
+assert(learnOverviewHtml.includes('class="button button-navy" href="/myagapay/learn/dashboard">Resume Planning') && learnPricingCss.includes(".button-navy"), "The Learn overview Resume Planning hero button should use a distinct navy style.");
 assert(learnPricingHtml.includes("Reports Coming Soon") && learnPricingHtml.includes("Reports</div><div>Coming Soon"), "Learn pricing should clearly label Reports as coming soon.");
 assert(learnDashboardHtml.includes("/learn/mobile-gate.js"), "Learn dashboard should load the mobile gate, which owns dynamic-importing the dashboard shell (see public/learn/mobile-gate.js).");
 assert(learnMobileGate.includes("/learn/dashboard-shell.js"), "Learn mobile gate should dynamic-import the active dashboard shell.");
