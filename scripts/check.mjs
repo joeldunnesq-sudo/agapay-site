@@ -113,8 +113,11 @@ const listenManifest = await readFile("public/listen/manifest.webmanifest", "utf
 const listenIndex = await readFile("public/listen/index.html", "utf8");
 const adminPwa = await readFile("public/admin/pwa.js", "utf8");
 const serviceWorker = await readFile("public/service-worker.js", "utf8");
+const givingOverviewPage = await readFile("public/give/index.html", "utf8");
 assert.ok(manifest.includes("/images/app/apple-touch-icon-blue.png"), "PWA manifest should use the blue AGAPAY iOS home screen icon");
 assert.ok(manifest.includes('"scope": "/myagapay"') && !manifest.includes('"scope": "/"'), "My AGAPAY PWA should cover /myagapay and /myagapay/learn without claiming /admin");
+assert.ok(givingOverviewPage.includes('/pwa-register.js') && givingOverviewPage.includes('id="heroInstallBtn"'), "Give homepage should register the service worker and route the hero Get the App button through install logic");
+assert.ok(givingOverviewPage.includes("const isAndroid") && givingOverviewPage.includes("triggerAndroidInstall()") && givingOverviewPage.includes('scrollToInstall(isIOS ? "apple" : "android")'), "Give homepage hero install button should prompt Android users and scroll other users to app instructions");
 assert.ok(adminHtml.includes('/admin/manifest.webmanifest') && adminLoginHtml.includes('/admin/manifest.webmanifest'), "admin console should install with the dedicated AGAPAY Admin manifest");
 assert.ok(adminHtml.includes('/images/app/agapay-admin.png') && adminLoginHtml.includes('/images/app/agapay-admin.png') && adminManifest.includes('/images/app/agapay-admin.png'), "admin PWA should use the dedicated admin app icon");
 assert.ok(adminManifest.includes('"id": "/admin-pwa"') && adminManifest.includes('"name": "AGAPAY Admin"') && adminManifest.includes('"start_url": "/admin?source=admin-pwa&tab=giving"') && adminManifest.includes('"scope": "/admin"'), "admin PWA manifest should open the mobile verification queue with a distinct app identity");

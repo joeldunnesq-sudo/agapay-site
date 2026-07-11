@@ -44,6 +44,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="stylesheet" href="/site-chrome.css" />
   <script src="/site-chrome.js" defer></script>
+  <script src="/pwa-register.js" defer></script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -174,7 +175,7 @@
               <a class="btn btn-gold" href="/onboarding">Join AGAPAY</a>
               <a class="btn btn-outline" href="/give/find-parish">Find a Parish</a>
               <a class="btn btn-outline" href="/give/why">Why AGAPAY Exists</a>
-              <a class="btn btn-navy" href="#install">Get the App</a>
+              <a class="btn btn-navy" id="heroInstallBtn" href="#install">Get the App</a>
             </div>
             <div class="hero-note">Built for stewardship, commemorations, candles, offerings, and the daily work of sustaining Orthodox life.</div>
           </div>
@@ -890,11 +891,14 @@
       // ── OS auto-detect ─────────────────────────────────────────────────────
       const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      const isAndroid = /android/i.test(navigator.userAgent);
 
       const androidBtn = document.getElementById("osAndroidBtn");
       const appleBtn   = document.getElementById("osAppleBtn");
       const panelAndroid = document.getElementById("panelAndroid");
       const panelApple   = document.getElementById("panelApple");
+      const installSection = document.getElementById("install");
+      const heroInstallBtn = document.getElementById("heroInstallBtn");
 
       function selectOS(os) {
         const isApple = os === "apple";
@@ -914,6 +918,34 @@
       let deferredPrompt = null;
       const installBtn = document.getElementById("androidInstallBtn");
 
+      function scrollToInstall(os) {
+        selectOS(os);
+        if (installSection) installSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      async function triggerAndroidInstall() {
+        selectOS("android");
+
+        if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone) {
+          window.location.href = "/myagapay/login?source=pwa";
+          return;
+        }
+
+        if (!deferredPrompt) {
+          scrollToInstall("android");
+          return;
+        }
+
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        if (installBtn) installBtn.disabled = true;
+        if (outcome === "accepted") {
+          const cta = panelAndroid.querySelector(".install-cta");
+          if (cta) cta.innerHTML = "<p style=\"color:#5a9a6a;font-weight:600;\">✓ Installing AGAPAY&hellip;</p>";
+        }
+      }
+
       window.addEventListener("beforeinstallprompt", (e) => {
         e.preventDefault();
         deferredPrompt = e;
@@ -931,20 +963,19 @@
         // Start disabled; enabled when prompt is ready
         installBtn.disabled = true;
 
-        installBtn.addEventListener("click", async () => {
-          if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            deferredPrompt = null;
-            installBtn.disabled = true;
-            if (outcome === "accepted") {
-              const cta = panelAndroid.querySelector(".install-cta");
-              if (cta) cta.innerHTML = "<p style=\"color:#5a9a6a;font-weight:600;\">✓ Installing AGAPAY&hellip;</p>";
-            }
-          } else {
-            // Prompt not available — send to the app so they can use browser menu
-            window.open("/myagapay", "_blank", "noopener");
+        installBtn.addEventListener("click", () => {
+          triggerAndroidInstall();
+        });
+      }
+
+      if (heroInstallBtn) {
+        heroInstallBtn.addEventListener("click", (event) => {
+          event.preventDefault();
+          if (isAndroid) {
+            triggerAndroidInstall();
+            return;
           }
+          scrollToInstall(isIOS ? "apple" : "android");
         });
       }
     })();
