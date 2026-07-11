@@ -4,7 +4,7 @@
   "short_name": "My AGAPAY",
   "description": "Love how you give, learn, and live.",
   "start_url": "/myagapay/login?source=pwa",
-  "scope": "/myagapay/",
+  "scope": "/myagapay",
   "display": "standalone",
   "display_override": ["standalone"],
   "background_color": "#061522",

@@ -114,7 +114,7 @@ const listenIndex = await readFile("public/listen/index.html", "utf8");
 const adminPwa = await readFile("public/admin/pwa.js", "utf8");
 const serviceWorker = await readFile("public/service-worker.js", "utf8");
 assert.ok(manifest.includes("/images/app/apple-touch-icon-blue.png"), "PWA manifest should use the blue AGAPAY iOS home screen icon");
-assert.ok(manifest.includes('"scope": "/myagapay/"') && !manifest.includes('"scope": "/"'), "My AGAPAY PWA should not claim /admin with a root app scope");
+assert.ok(manifest.includes('"scope": "/myagapay"') && !manifest.includes('"scope": "/"'), "My AGAPAY PWA should cover /myagapay and /myagapay/learn without claiming /admin");
 assert.ok(adminHtml.includes('/admin/manifest.webmanifest') && adminLoginHtml.includes('/admin/manifest.webmanifest'), "admin console should install with the dedicated AGAPAY Admin manifest");
 assert.ok(adminHtml.includes('/images/app/agapay-admin.png') && adminLoginHtml.includes('/images/app/agapay-admin.png') && adminManifest.includes('/images/app/agapay-admin.png'), "admin PWA should use the dedicated admin app icon");
 assert.ok(adminManifest.includes('"id": "/admin-pwa"') && adminManifest.includes('"name": "AGAPAY Admin"') && adminManifest.includes('"start_url": "/admin?source=admin-pwa&tab=giving"') && adminManifest.includes('"scope": "/admin"'), "admin PWA manifest should open the mobile verification queue with a distinct app identity");
@@ -123,7 +123,7 @@ assert.ok(adminApp.includes('requestedTab') && adminApp.includes('queue-mobile-s
 assert.ok(adminHtml.includes("weeklyCommemorationParishId") && adminApp.includes("runWeeklyCommemorationEmail") && adminApp.includes("/api/admin/commemorations/send-weekly"), "admin dashboard should expose a weekly commemoration email preview/send control");
 assert.ok(adminHtml.includes("weeklyTreasurerParishId") && adminApp.includes("runWeeklyTreasurerEmail") && adminApp.includes("/api/admin/commerce/send-weekly-treasurer"), "admin dashboard should expose a weekly treasurer commerce email preview/send control");
 assert.ok(adminCss.includes('admin-mobile-command') && adminCss.includes('mobile-review-bar') && adminCss.includes('product-admin-hero-giving { display: none; }'), "admin dashboard should include dedicated mobile verification layout styles");
-assert.ok(serviceWorker.includes('agapay-static-v22'), "service worker cache version should advance when PWA manifest identity changes");
+assert.ok(serviceWorker.includes('agapay-static-v23'), "service worker cache version should advance when PWA manifest identity changes");
 assert.ok(listenManifest.includes('"scope": "/listen/"') && listenManifest.includes('"name": "AGAPAY Listen"'), "AGAPAY Listen PWA manifest should exist with its own scope and identity");
 assert.ok(listenIndex.includes('/listen/manifest.webmanifest'), "AGAPAY Listen page should link its own manifest, not the root or admin one");
 assert.ok(myAgapayShell.includes('id: "giving"') && myAgapayShell.includes('label: "Give"'), "shared My AGAPAY shell should define the canonical Give product tab");
