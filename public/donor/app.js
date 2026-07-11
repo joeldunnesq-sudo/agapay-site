@@ -2967,6 +2967,7 @@ const SACRAMENT_TYPE_LABELS = {
   memorial_service: "Memorial Service",
   confession: "Confession",
   home_visit: "Home Visit",
+  office_visit: "Office Visit",
   other: "Other Request"
 };
 
@@ -2997,7 +2998,7 @@ function sacramentLocationHint(sacramentType) {
   return sacramentType === "house_blessing" || sacramentType === "home_visit";
 }
 
-const SAC_SCHEDULABLE_TYPES = ["house_blessing", "confession", "home_visit"];
+const SAC_SCHEDULABLE_TYPES = ["house_blessing", "confession", "home_visit", "office_visit"];
 let sacramentSelectedSlot = null;
 
 function toggleSacramentAddressField() {

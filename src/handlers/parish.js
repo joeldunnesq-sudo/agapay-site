@@ -3415,6 +3415,7 @@ export function sacramentTypeLabel(type) {
     memorial_service: "Memorial Service",
     confession: "Confession",
     home_visit: "Home Visit",
+    office_visit: "Office Visit",
     other: "Other Request"
   }[type] || type;
 }

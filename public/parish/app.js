@@ -2310,7 +2310,7 @@
   const SACRAMENT_TYPE_LABELS = {
     house_blessing: 'House Blessing', baptism: 'Baptism', chrismation: 'Chrismation',
     wedding: 'Wedding', funeral: 'Funeral', memorial_service: 'Memorial Service',
-    confession: 'Confession', home_visit: 'Home Visit', other: 'Other Request'
+    confession: 'Confession', home_visit: 'Home Visit', office_visit: 'Office Visit', other: 'Other Request'
   };
   const SACRAMENT_STATUS_OPTIONS = ['requested', 'acknowledged', 'scheduled', 'completed', 'declined', 'cancelled'];
   const SACRAMENT_STATUS_LABELS = {
@@ -2385,7 +2385,7 @@
     ['Pacific/Honolulu', 'Hawaii (Honolulu)']
   ];
   const SAC_DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const SAC_SCHEDULABLE_TYPES = ['house_blessing', 'confession', 'home_visit'];
+  const SAC_SCHEDULABLE_TYPES = ['house_blessing', 'confession', 'home_visit', 'office_visit'];
 
   let sacramentsAvailabilityState = { loaded: false, timezone: '', rules: [], blackouts: [] };
 

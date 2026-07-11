@@ -1,10 +1,11 @@
 // src/lib/sacrament-availability.js
 //
 // Native (no third-party) real-time availability for the "schedulable"
-// Sacraments & Services types (house_blessing, confession, home_visit). A
-// priest defines recurring weekly windows (parish_availability_rules); this
-// module turns those into concrete open slots for a donor to pick from,
-// excluding blacked-out dates and already-booked times.
+// Sacraments & Services types (house_blessing, confession, home_visit,
+// office_visit). A priest defines recurring weekly windows
+// (parish_availability_rules); this module turns those into concrete open
+// slots for a donor to pick from, excluding blacked-out dates and
+// already-booked times.
 //
 // No external calendar sync -- double-booking is only prevented against
 // other AGAPAY-booked sacraments. Timezone math uses Intl.DateTimeFormat
@@ -12,7 +13,7 @@
 
 import { d1, d1All } from "./core.js";
 
-export const SCHEDULABLE_SACRAMENT_TYPES = new Set(["house_blessing", "confession", "home_visit"]);
+export const SCHEDULABLE_SACRAMENT_TYPES = new Set(["house_blessing", "confession", "home_visit", "office_visit"]);
 
 /** { year, month, day, hour, minute, second } for `date` as observed in `timeZone`. */
 function zonedParts(date, timeZone) {
