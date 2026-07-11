@@ -1057,7 +1057,7 @@
         linear-gradient(90deg, rgba(6, 21, 34, 0.98), rgba(6, 21, 34, 0.88)),
         radial-gradient(circle at 0 50%, rgba(200, 162, 74, 0.12), transparent 24rem),
         var(--night);
-      padding-bottom: 0;
+      padding-bottom: clamp(3rem, 7vw, 5.5rem);
     }
     .join-grid {
       display: grid;
