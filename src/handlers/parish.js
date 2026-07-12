@@ -4795,7 +4795,20 @@ export async function handleParishGivingSummary(request, env, parishId) {
     generatedAt: new Date().toISOString()
   };
 
+  const url = new URL(request.url);
+  const forceStripe = url.searchParams.get("source") === "stripe";
   const storedGifts = await loadParishPaidOfferings(env, parishId, 2000);
+  if (storedGifts.length && !forceStripe) {
+    return json({
+      summary: {
+        ...summarizeStoredParishGifts(storedGifts),
+        dataSource: "stored",
+        generatedAt: new Date().toISOString(),
+        note: "Showing stored AGAPAY gift records."
+      }
+    });
+  }
+
   if (!found.registration.stripeAccountId || String(found.registration.stripeAccountId).startsWith("acct_demo_")) {
     return json({
       summary: {

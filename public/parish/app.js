@@ -486,9 +486,11 @@
         fetch(base + '/funds?year=' + y, { headers: authHeaders() })
       ]);
       const summary = await summaryRes.json().catch(() => ({}));
-      const funds = await fundsRes.json().catch(() => ({}));
+      let funds = await fundsRes.json().catch(() => ({}));
       if (!summaryRes.ok) throw new Error(summary.detail || summary.error || `Giving summary failed (${summaryRes.status}).`);
-      if (!fundsRes.ok) throw new Error(funds.detail || funds.error || `Giving funds failed (${fundsRes.status}).`);
+      if (!fundsRes.ok) {
+        funds = { funds: [], total_cents: 0, error: funds.detail || funds.error || `Giving funds failed (${fundsRes.status}).` };
+      }
       if (summary.error && summary.error.includes('not activated')) {
         pane.innerHTML = renderGivingMetricsUpgrade();
         return;
@@ -4354,10 +4356,10 @@
   async function loadGivingSummary(btn) {
     const pane = document.getElementById('givingSummaryPane'); if (!currentParish || !pane) return;
     if (btn) { btn.classList.add('loading'); btn.disabled = true; }
-    pane.innerHTML = '<div class="insights-empty-dark">Loading Stripe giving summary...</div>';
+    pane.innerHTML = '<div class="insights-empty-dark">Loading giving summary...</div>';
     try {
       const res  = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/giving-summary', { headers: authHeaders() });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.detail || data.error || 'Unable to load giving summary');
       renderGivingSummary(data.summary);
     } catch (err) { pane.innerHTML = `<div class="insights-empty-dark">${escapeHtml(err.message)}</div>`; }
