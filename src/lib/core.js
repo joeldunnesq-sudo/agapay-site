@@ -315,7 +315,7 @@ export const SECURITY_HEADERS = {
   "Permissions-Policy": "geolocation=(), microphone=(), camera=(self), payment=(self)",
   "Content-Security-Policy-Report-Only":
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; " +
+    "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://static.cloudflareinsights.com; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src 'self' https://fonts.gstatic.com data:; " +
     "img-src 'self' data: https:; " +

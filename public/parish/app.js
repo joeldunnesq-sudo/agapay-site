@@ -12,6 +12,7 @@
   let filteredGifts     = [];   // filtered view
   let reconciliationData = null;
   let stewardshipState   = { loaded: false, stewardship: null, meetings: [], selectedMeeting: null };
+  let dashboardLoadPromise = null;
   const parishSessionStorageKey = 'agapay_parish_session_token';
   const legacyParishTokenStorageKey = 'agapay_parish_token';
 
@@ -4108,6 +4109,16 @@
 
   // ── LOAD DASHBOARD ────────────────────────────────────────
   async function loadDashboard(btn) {
+    if (dashboardLoadPromise) return dashboardLoadPromise;
+    dashboardLoadPromise = loadDashboardInner(btn);
+    try {
+      return await dashboardLoadPromise;
+    } finally {
+      dashboardLoadPromise = null;
+    }
+  }
+
+  async function loadDashboardInner(btn) {
     const parishId = document.getElementById('parishId').value.trim();
     if (!parishId || !document.getElementById('parishToken').value.trim()) { setStatus('Enter the parish ID and password.','error'); return; }
     if (btn) { btn.classList.add('loading'); btn.disabled = true; }
@@ -4127,7 +4138,7 @@
       loadGivingSummary();
       loadRecurringHealth();
       loadCommemorations();
-      loadGivingHistory();
+      if (['history', 'givers', 'options'].includes(activeTab)) loadGivingHistory();
       stewardshipState.loaded = false;
       if (activeTab === 'stewardship') loadStewardshipPanel(true);
       if (activeTab === 'reconcile') loadReconciliation();
