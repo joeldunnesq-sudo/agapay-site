@@ -595,15 +595,7 @@
             '<tbody>' + fundRows + '</tbody>' +
           '</table>' +
         '</div>'
-      : '') +
-      '<div class="sw-nudge-row">' +
-        '<button class="sw-nudge-btn" id="nudgeBtn" type="button" disabled title="Checking pledge status…">'
-          + '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">'
-          + '<path d="M8 1a5 5 0 0 1 5 5c0 3.5-5 9-5 9S3 9.5 3 6a5 5 0 0 1 5-5z"/>'
-          + '<circle cx="8" cy="6" r="1.5"/>'
-          + '</svg>'
-          + ' Checking pledge status…</button>' +
-      '</div>'
+      : '')
     );
   }
 
@@ -3897,6 +3889,7 @@
 
     renderGiversDirectory();
     populateGivingStatementsPanel();
+    checkNudgeEligibility();
   }
 
   // ── ANNUAL GIVING STATEMENTS ───────────────────────────────
