@@ -635,6 +635,36 @@
               <p>Durable, append-only record of privileged actions across the platform. See <code>docs/SOFT_LAUNCH_READINESS.md</code> Phase 6 for what's currently instrumented.</p>
             </div>
           </section>
+          <section class="section-card" id="auditLogAboutCard">
+            <details id="auditLogAboutDetails">
+              <summary style="cursor:pointer;font-weight:600;padding:0.9rem 1.1rem;list-style:none;display:flex;align-items:center;gap:0.5rem;">
+                <svg viewBox="0 0 24 24" width="16" height="16" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                What is the audit log, and what do these fields mean?
+              </summary>
+              <div class="section-body" style="padding-top:0;">
+                <p class="muted" style="font-size:0.85rem;line-height:1.6;">
+                  This is a durable, <strong>append-only</strong> record of privileged or security-sensitive actions —
+                  separate from Cloudflare's routine server logs (which roll off after a few days) and separate from
+                  the per-parish notes history on a registration. Once an entry is written here, nothing ever edits
+                  or deletes it — it's the record you'd pull up weeks later to answer "who did what, when."
+                </p>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-top:0.75rem;">
+                  <div>
+                    <div style="font-weight:600;font-size:0.85rem;margin-bottom:0.4rem;">Actor types</div>
+                    <div id="auditLogActorTypeLegend" style="font-size:0.8rem;line-height:1.7;color:var(--muted);"></div>
+                  </div>
+                  <div>
+                    <div style="font-weight:600;font-size:0.85rem;margin-bottom:0.4rem;">Target types</div>
+                    <div id="auditLogTargetTypeLegend" style="font-size:0.8rem;line-height:1.7;color:var(--muted);"></div>
+                  </div>
+                </div>
+                <div style="margin-top:0.9rem;">
+                  <div style="font-weight:600;font-size:0.85rem;margin-bottom:0.4rem;">Actions, grouped by area</div>
+                  <div id="auditLogActionLegend" style="font-size:0.8rem;line-height:1.7;color:var(--muted);"></div>
+                </div>
+              </div>
+            </details>
+          </section>
           <section class="section-card" id="auditLogFilterCard">
             <div class="section-header">
               <div class="section-title">
@@ -646,23 +676,28 @@
               <div class="form-grid">
                 <div>
                   <label for="auditLogAction">Action</label>
-                  <input id="auditLogAction" placeholder="e.g. registration.status_changed" />
+                  <select id="auditLogAction"><option value="">All actions</option></select>
                 </div>
                 <div>
-                  <label for="auditLogActor">Actor</label>
-                  <input id="auditLogActor" placeholder="Admin display name or parish ID" />
+                  <label for="auditLogActorType">Actor type</label>
+                  <select id="auditLogActorType"><option value="">All actor types</option></select>
+                </div>
+                <div>
+                  <label for="auditLogActor">Actor name / ID</label>
+                  <input id="auditLogActor" placeholder="Admin display name or parish ID (exact match)" />
                 </div>
                 <div>
                   <label for="auditLogTargetType">Target type</label>
-                  <input id="auditLogTargetType" placeholder="e.g. registration, settlement_profile" />
+                  <select id="auditLogTargetType"><option value="">All target types</option></select>
                 </div>
                 <div>
                   <label for="auditLogTargetId">Target ID</label>
                   <input id="auditLogTargetId" placeholder="e.g. a parish reference or profile ID" />
                 </div>
                 <div>
-                  <label for="auditLogOrganization">Organization</label>
-                  <input id="auditLogOrganization" placeholder="Parish ID" />
+                  <label for="auditLogOrganization">Parish (organization)</label>
+                  <input id="auditLogOrganization" placeholder="Start typing a parish name or ID..." list="auditLogOrgList" />
+                  <datalist id="auditLogOrgList"></datalist>
                 </div>
                 <div>
                   <label for="auditLogSince">Since (UTC)</label>
@@ -672,6 +707,12 @@
                   <label for="auditLogUntil">Until (UTC)</label>
                   <input id="auditLogUntil" type="datetime-local" />
                 </div>
+              </div>
+              <div class="btn-row" style="margin-bottom:0.6rem;">
+                <span class="muted" style="font-size:0.78rem;align-self:center;margin-right:0.3rem;">Quick range:</span>
+                <button class="secondary btn-sm" onclick="setAuditLogQuickRange(1)">Today</button>
+                <button class="secondary btn-sm" onclick="setAuditLogQuickRange(7)">Last 7 days</button>
+                <button class="secondary btn-sm" onclick="setAuditLogQuickRange(30)">Last 30 days</button>
               </div>
               <div class="btn-row">
                 <button class="gold btn-sm" id="auditLogSearchBtn" onclick="loadAuditLog(true, this)">Search</button>

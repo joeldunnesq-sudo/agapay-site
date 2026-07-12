@@ -2824,15 +2824,151 @@ let selectedReference = '';
       if (tab === 'learn') loadLearnAdmin();
       if (tab === 'settings') loadMyAgapayReleaseFlags();
       if (tab === 'taxexemptions') loadTaxExemptionSummary(), loadTaxExemptions();
-      if (tab === 'auditlog' && !auditLogLoadedOnce) loadAuditLog(true);
+      if (tab === 'auditlog') {
+        populateAuditLogFilterOptions();
+        refreshAuditLogOrgOptions();
+        if (!auditLogLoadedOnce) loadAuditLog(true);
+      }
     }
 
     // ── AUDIT LOG (Phase 6) ──────────────────────────────────────────────
     let auditLogLoadedOnce = false;
     let auditLogCursor = '';
+    let auditLogOptionsPopulated = false;
+
+    // Every `action` value that recordAuditEvent() is actually called with
+    // anywhere in the codebase, grouped by the area of the app that writes
+    // it. Kept here (not fetched from the server) so the dropdown/legend
+    // work even before any matching event exists yet. If you add a new
+    // recordAuditEvent() call site with a new action string, add it here too
+    // so it shows up as a real filter option instead of only reachable by
+    // typing the raw string.
+    const AUDIT_ACTION_CATALOG = [
+      { group: 'Registrations', value: 'registration.status_changed', label: 'Registration status changed', description: "An admin moved a parish's registration through the verification pipeline (e.g. pending → verified)." },
+      { group: 'Registrations', value: 'registration.tax_readiness_changed', label: 'Tax readiness changed', description: "An admin updated a parish's tax-readiness flag, which gates paid-tier checkout." },
+      { group: 'Registrations', value: 'admin.index_rebuild', label: 'Registration index rebuilt', description: 'An admin manually rebuilt the parish-ID lookup index — a bulk operation, not tied to one parish.' },
+
+      { group: 'Revenue Streams', value: 'settlement_profile.renamed', label: 'Revenue stream renamed', description: 'A settlement profile (how giving/bookstore money gets routed to a bank account) was renamed.' },
+      { group: 'Revenue Streams', value: 'settlement_profile.active_changed', label: 'Revenue stream activated/deactivated', description: 'A settlement profile was turned on or off.' },
+      { group: 'Revenue Streams', value: 'settlement_profile.default_giving_changed', label: 'Default giving stream changed', description: "A parish's default revenue stream for donations was changed." },
+      { group: 'Revenue Streams', value: 'settlement_profile.default_commerce_changed', label: 'Default bookstore stream changed', description: "A parish's default revenue stream for bookstore sales was changed." },
+      { group: 'Revenue Streams', value: 'settlement_profile.module_assigned', label: 'Module routed to a revenue stream', description: 'Giving or Bookstore was explicitly pointed at a specific revenue stream/Stripe account.' },
+
+      { group: 'Sales-Tax Exemptions', value: 'claim_created', label: 'Exemption claim submitted', description: 'A parish submitted a new sales-tax exemption claim.' },
+      { group: 'Sales-Tax Exemptions', value: 'document_viewed', label: 'Exemption certificate viewed', description: 'An admin opened an uploaded exemption certificate/document.' },
+      { group: 'Sales-Tax Exemptions', value: 'admin_note_added', label: 'Internal note added', description: 'An admin added a private review note to an exemption claim (never shown to the parish).' },
+      { group: 'Sales-Tax Exemptions', value: 'approved', label: 'Exemption claim approved', description: "An admin approved a parish's exemption claim." },
+      { group: 'Sales-Tax Exemptions', value: 'rejected', label: 'Exemption claim rejected', description: "An admin rejected a parish's exemption claim." },
+      { group: 'Sales-Tax Exemptions', value: 'replacement_requested', label: 'Replacement documentation requested', description: 'An admin asked the parish to re-submit their exemption certificate.' },
+      { group: 'Sales-Tax Exemptions', value: 'revoked', label: 'Exemption revoked', description: 'A previously-approved exemption was revoked.' },
+      { group: 'Sales-Tax Exemptions', value: 'reconciliation_required', label: 'Stripe mismatch flagged', description: "The system found Stripe's exemption state no longer matches AGAPAY's record — needs manual reconciliation." },
+      { group: 'Sales-Tax Exemptions', value: 'stripe_sync_attempted', label: 'Stripe sync attempted', description: 'AGAPAY tried to push the exemption status to a Stripe customer.' },
+      { group: 'Sales-Tax Exemptions', value: 'stripe_sync_succeeded', label: 'Stripe sync succeeded', description: 'The exemption status was successfully applied in Stripe.' },
+      { group: 'Sales-Tax Exemptions', value: 'stripe_sync_partial', label: 'Stripe sync partially succeeded', description: 'One of two linked Stripe customers synced; the other still needs attention.' },
+      { group: 'Sales-Tax Exemptions', value: 'expiration_processed', label: 'Exemption expired/processed', description: 'An approved exemption passed its expiration date and was disabled (automatically or by an admin).' },
+    ];
+
+    const AUDIT_ACTOR_TYPES = [
+      { value: 'admin', label: 'Admin', description: 'An AGAPAY staff member, acting from the admin dashboard.' },
+      { value: 'parish', label: 'Parish', description: "A parish's own dashboard user (priest or treasurer)." },
+      { value: 'donor', label: 'Donor', description: 'A donor, acting from My AGAPAY.' },
+      { value: 'system', label: 'System', description: 'Automated — a scheduled job or webhook. No human involved.' },
+    ];
+
+    const AUDIT_TARGET_TYPES = [
+      { value: 'registration', label: 'Registration', description: "A single parish's registration record." },
+      { value: 'registrations', label: 'Registrations (bulk)', description: 'A platform-wide operation affecting the whole registration index, not one parish.' },
+      { value: 'settlement_profile', label: 'Revenue stream', description: 'A settlement profile — how a parish routes giving/bookstore money to a bank account.' },
+    ];
+
+    function auditActionLabel(action) {
+      const entry = AUDIT_ACTION_CATALOG.find((a) => a.value === action);
+      return entry ? entry.label : (action || 'Unknown action');
+    }
+
+    function auditActorTypeLabel(value) {
+      const entry = AUDIT_ACTOR_TYPES.find((t) => t.value === value);
+      return entry ? entry.label : (value || '');
+    }
+
+    function auditTargetTypeLabel(value) {
+      const entry = AUDIT_TARGET_TYPES.find((t) => t.value === value);
+      return entry ? entry.label : (value || '—');
+    }
+
+    function populateAuditLogFilterOptions() {
+      if (auditLogOptionsPopulated) return;
+      auditLogOptionsPopulated = true;
+
+      const actionSelect = document.getElementById('auditLogAction');
+      if (actionSelect) {
+        const groups = {};
+        AUDIT_ACTION_CATALOG.forEach((a) => { (groups[a.group] = groups[a.group] || []).push(a); });
+        actionSelect.innerHTML = '<option value="">All actions</option>' + Object.keys(groups).map((groupName) => `
+          <optgroup label="${escapeAttr(groupName)}">
+            ${groups[groupName].map((a) => `<option value="${escapeAttr(a.value)}" title="${escapeAttr(a.description)}">${escapeHtml(a.label)}</option>`).join('')}
+          </optgroup>
+        `).join('');
+      }
+
+      const actorTypeSelect = document.getElementById('auditLogActorType');
+      if (actorTypeSelect) {
+        actorTypeSelect.innerHTML = '<option value="">All actor types</option>' +
+          AUDIT_ACTOR_TYPES.map((t) => `<option value="${escapeAttr(t.value)}" title="${escapeAttr(t.description)}">${escapeHtml(t.label)}</option>`).join('');
+      }
+
+      const targetTypeSelect = document.getElementById('auditLogTargetType');
+      if (targetTypeSelect) {
+        targetTypeSelect.innerHTML = '<option value="">All target types</option>' +
+          AUDIT_TARGET_TYPES.map((t) => `<option value="${escapeAttr(t.value)}" title="${escapeAttr(t.description)}">${escapeHtml(t.label)}</option>`).join('');
+      }
+
+      const actorLegend = document.getElementById('auditLogActorTypeLegend');
+      if (actorLegend) {
+        actorLegend.innerHTML = AUDIT_ACTOR_TYPES.map((t) => `<div><strong style="color:var(--ink,inherit);">${escapeHtml(t.label)}</strong> — ${escapeHtml(t.description)}</div>`).join('');
+      }
+      const targetLegend = document.getElementById('auditLogTargetTypeLegend');
+      if (targetLegend) {
+        targetLegend.innerHTML = AUDIT_TARGET_TYPES.map((t) => `<div><strong style="color:var(--ink,inherit);">${escapeHtml(t.label)}</strong> — ${escapeHtml(t.description)}</div>`).join('');
+      }
+      const actionLegend = document.getElementById('auditLogActionLegend');
+      if (actionLegend) {
+        const groups = {};
+        AUDIT_ACTION_CATALOG.forEach((a) => { (groups[a.group] = groups[a.group] || []).push(a); });
+        actionLegend.innerHTML = Object.keys(groups).map((groupName) => `
+          <div style="margin-bottom:0.5rem;">
+            <div style="font-weight:600;color:var(--ink,inherit);">${escapeHtml(groupName)}</div>
+            ${groups[groupName].map((a) => `<div style="padding-left:0.75rem;">${escapeHtml(a.label)} — ${escapeHtml(a.description)}</div>`).join('')}
+          </div>
+        `).join('');
+      }
+
+      refreshAuditLogOrgOptions();
+    }
+
+    function refreshAuditLogOrgOptions() {
+      const list = document.getElementById('auditLogOrgList');
+      if (!list || !Array.isArray(registrationsCache) || !registrationsCache.length) return;
+      const seen = new Set();
+      list.innerHTML = registrationsCache
+        .filter((item) => item.parishId && !seen.has(item.parishId) && seen.add(item.parishId))
+        .map((item) => `<option value="${escapeAttr(item.parishId)}">${escapeHtml(item.parishName || item.parishId)}</option>`)
+        .join('');
+    }
+
+    function setAuditLogQuickRange(days) {
+      const until = new Date();
+      const since = new Date(until.getTime() - days * 24 * 60 * 60 * 1000);
+      const toLocalInputValue = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      const sinceEl = document.getElementById('auditLogSince');
+      const untilEl = document.getElementById('auditLogUntil');
+      if (sinceEl) sinceEl.value = toLocalInputValue(since);
+      if (untilEl) untilEl.value = toLocalInputValue(until);
+      loadAuditLog(true);
+    }
 
     function resetAuditLogFilters() {
-      ['auditLogAction', 'auditLogActor', 'auditLogTargetType', 'auditLogTargetId', 'auditLogOrganization', 'auditLogSince', 'auditLogUntil'].forEach((id) => {
+      ['auditLogAction', 'auditLogActorType', 'auditLogActor', 'auditLogTargetType', 'auditLogTargetId', 'auditLogOrganization', 'auditLogSince', 'auditLogUntil'].forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.value = '';
       });
@@ -2856,9 +2992,9 @@ let selectedReference = '';
       const rows = events.map((event) => `
         <tr>
           <td style="white-space:nowrap;font-size:12px;color:var(--muted);">${escapeHtml(new Date(event.createdAt + 'Z').toUTCString().replace(' GMT', ' UTC'))}</td>
-          <td><span class="badge ${escapeAttr(auditActionBadgeClass(event.action))}">${escapeHtml(event.action || 'unknown')}</span></td>
-          <td style="font-size:12px;">${escapeHtml(event.actorUserId || '—')}<br><span class="muted" style="font-size:10px;">${escapeHtml(event.actorType || '')}</span></td>
-          <td style="font-size:12px;">${escapeHtml(event.targetType || '—')}${event.targetId ? '<br><span class="muted" style="font-size:10px;">' + escapeHtml(event.targetId) + '</span>' : ''}</td>
+          <td><span class="badge ${escapeAttr(auditActionBadgeClass(event.action))}" title="${escapeAttr(event.action || '')}">${escapeHtml(auditActionLabel(event.action))}</span></td>
+          <td style="font-size:12px;">${escapeHtml(event.actorUserId || '—')}<br><span class="muted" style="font-size:10px;">${escapeHtml(auditActorTypeLabel(event.actorType))}</span></td>
+          <td style="font-size:12px;">${escapeHtml(auditTargetTypeLabel(event.targetType))}${event.targetId ? '<br><span class="muted" style="font-size:10px;">' + escapeHtml(event.targetId) + '</span>' : ''}</td>
           <td style="font-size:12px;">${escapeHtml(event.organizationId || '—')}</td>
           <td style="font-size:11px;color:var(--stone);max-width:220px;">${event.before ? '<div><strong>before:</strong> ' + escapeHtml(JSON.stringify(event.before)) + '</div>' : ''}${event.after ? '<div><strong>after:</strong> ' + escapeHtml(JSON.stringify(event.after)) + '</div>' : ''}${event.reason ? '<div><strong>reason:</strong> ' + escapeHtml(event.reason) + '</div>' : ''}</td>
         </tr>
@@ -2894,6 +3030,7 @@ let selectedReference = '';
 
       const params = new URLSearchParams();
       const action = document.getElementById('auditLogAction')?.value.trim();
+      const actorType = document.getElementById('auditLogActorType')?.value.trim();
       const actor = document.getElementById('auditLogActor')?.value.trim();
       const targetType = document.getElementById('auditLogTargetType')?.value.trim();
       const targetId = document.getElementById('auditLogTargetId')?.value.trim();
@@ -2901,6 +3038,7 @@ let selectedReference = '';
       const since = document.getElementById('auditLogSince')?.value;
       const until = document.getElementById('auditLogUntil')?.value;
       if (action) params.set('action', action);
+      if (actorType) params.set('actorType', actorType);
       if (actor) params.set('actor', actor);
       if (targetType) params.set('targetType', targetType);
       if (targetId) params.set('targetId', targetId);

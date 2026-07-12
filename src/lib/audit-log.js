@@ -116,6 +116,7 @@ export async function listAuditEvents(env, {
   cursor = "",
   action = "",
   actorUserId = "",
+  actorType = "",
   targetType = "",
   targetId = "",
   organizationId = "",
@@ -129,6 +130,7 @@ export async function listAuditEvents(env, {
   const params = [];
   if (action) { clauses.push("action = ?"); params.push(action); }
   if (actorUserId) { clauses.push("actor_user_id = ?"); params.push(actorUserId); }
+  if (actorType) { clauses.push("actor_type = ?"); params.push(actorType); }
   if (targetType) { clauses.push("target_type = ?"); params.push(targetType); }
   if (targetId) { clauses.push("target_id = ?"); params.push(targetId); }
   if (organizationId) { clauses.push("organization_id = ?"); params.push(organizationId); }

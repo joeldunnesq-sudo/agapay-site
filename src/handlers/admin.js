@@ -1259,6 +1259,7 @@ export async function handleAdminAuditLog(request, env) {
     cursor: url.searchParams.get("cursor") || "",
     action: url.searchParams.get("action") || "",
     actorUserId: url.searchParams.get("actor") || "",
+    actorType: url.searchParams.get("actorType") || "",
     targetType: url.searchParams.get("targetType") || "",
     targetId: url.searchParams.get("targetId") || "",
     organizationId: url.searchParams.get("organization") || "",
