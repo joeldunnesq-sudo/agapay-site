@@ -130,7 +130,7 @@
     if (tab === 'givers' && allGifts.length) renderGiversPanel();
     if (tab === 'options' && currentParish) renderGivingOptionsEditor();
     if (tab === 'campaigns' && currentParish) renderCampaignList(currentParish);
-    if (tab === 'qr') renderBulletinPreview();
+    if (tab === 'qr') { renderQrCode(); renderBulletinPreview(); }
     if (tab === 'stewardship') loadStewardshipPanel();
     if (tab === 'parishplus') renderParishPlusPanel();
     if (tab === 'sacraments') loadSacramentsTab();
@@ -4135,12 +4135,9 @@
       await refreshStripeStatus({ quiet: true });
       saveSession();
       renderDashboard();
-      setTimeout(() => {
-        prefetchStewardshipBadge();
-        loadGivingSummary();
-      }, 40);
-      setTimeout(() => loadRecurringHealth(), 140);
-      setTimeout(() => loadCommemorations(), 240);
+      setTimeout(() => loadGivingSummary(), 900);
+      setTimeout(() => loadRecurringHealth(), 1400);
+      setTimeout(() => loadCommemorations(), 1900);
       if (['history', 'givers', 'options'].includes(activeTab)) loadGivingHistory();
       stewardshipState.loaded = false;
       if (activeTab === 'stewardship') loadStewardshipPanel(true);
@@ -4331,7 +4328,6 @@
       </div>`;
     syncPatronalFeastOptionsFromSettings();
 
-    setTimeout(() => renderQrCode(), 0);
     editableFunds          = fallbackFundsArray(p.funds);
     editableCampaigns      = fallbackCampaignsArray(p.campaigns);
     editableFeastCampaigns = Array.isArray(p.feastCampaigns) ? p.feastCampaigns : [];
