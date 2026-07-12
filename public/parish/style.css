@@ -2866,6 +2866,45 @@
       display: grid;
       gap: 0.1rem;
     }
+    .sac-admin-rules-list {
+      display: grid;
+      gap: 0.75rem;
+    }
+    .sac-admin-rules-row {
+      display: grid;
+      grid-template-columns: minmax(160px, 0.45fr) minmax(0, 1fr);
+      gap: 1rem;
+      align-items: center;
+      border-bottom: 1px solid var(--sac-line-soft);
+      padding: 0.8rem 0;
+    }
+    .sac-admin-rules-row:last-child { border-bottom: none; }
+    .sac-admin-rules-row strong {
+      color: var(--sac-text);
+      font-family: "Cormorant Garamond", serif;
+      font-size: 17px;
+      font-weight: 600;
+    }
+    .sac-admin-day-chips {
+      display: flex;
+      gap: 0.38rem;
+      flex-wrap: wrap;
+    }
+    .sac-admin-day-chips span {
+      min-width: 40px;
+      border: 1px solid var(--sac-line);
+      border-radius: 4px;
+      color: var(--sac-muted);
+      font-size: 12px;
+      padding: 0.42rem 0.55rem;
+      text-align: center;
+    }
+    .sac-admin-day-chips span.active {
+      border-color: var(--sac-gold);
+      background: var(--sac-gold-soft);
+      color: #5a3b0a;
+      font-weight: 600;
+    }
     .sac-admin-calendar-layout {
       display: grid;
       grid-template-columns: minmax(280px, 0.9fr) minmax(240px, 1fr);
@@ -2950,7 +2989,8 @@
       }
       .sac-admin-status { align-self: flex-start; }
       .sac-admin-form-row,
-      .sac-admin-calendar-layout {
+      .sac-admin-calendar-layout,
+      .sac-admin-rules-row {
         grid-template-columns: 1fr;
       }
     }

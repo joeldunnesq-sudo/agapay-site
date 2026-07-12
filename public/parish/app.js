@@ -2300,7 +2300,7 @@
   // decide whether to show the upsell or the actual request list, so
   // switching to this tab never needs a second status round-trip.
   let sacramentsState = { loaded: false, requests: [] };
-  let sacramentsDashboardTab = 'requests';
+  let sacramentsDashboardTab = 'availability';
 
   function sacramentsApi(path = '') {
     if (!currentParish?.parishId) throw new Error('Load a parish first.');
@@ -2329,7 +2329,7 @@
     document.querySelectorAll('[data-sac-tab]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.sacTab === sacramentsDashboardTab);
     });
-    if (['availability', 'blackouts', 'calendar'].includes(sacramentsDashboardTab) && !sacramentsAvailabilityState.loaded) {
+    if (['availability', 'blackouts', 'rules', 'calendar'].includes(sacramentsDashboardTab) && !sacramentsAvailabilityState.loaded) {
       loadSacramentsAvailability();
     }
     renderSacramentsPanel();
@@ -2400,27 +2400,30 @@
   const SAC_DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const SAC_SCHEDULABLE_TYPES = ['house_blessing', 'confession', 'home_visit', 'office_visit', 'anointing', 'counseling'];
 
-  let sacramentsAvailabilityState = { loaded: false, timezone: '', rules: [], blackouts: [] };
+  let sacramentsAvailabilityState = { loaded: false, loading: false, error: '', timezone: '', rules: [], blackouts: [] };
 
   async function loadSacramentsAvailability(force) {
-    const pane = document.getElementById('sacramentsAvailabilityPane');
+    const pane = document.getElementById('sacramentsPane');
     if (!pane || !currentParish) return;
-      if (sacramentsAvailabilityState.loaded && !force) { renderSacramentsPanel(); return; }
-    pane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
+    if (sacramentsAvailabilityState.loaded && !force) { renderSacramentsPanel(); return; }
+    sacramentsAvailabilityState = { ...sacramentsAvailabilityState, loading: true, error: '' };
+    renderSacramentsPanel();
     try {
       const res = await fetch(sacramentsApi('/availability'), { headers: authHeaders() });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Unable to load availability.');
-      sacramentsAvailabilityState = { loaded: true, timezone: data.timezone || '', rules: data.rules || [], blackouts: data.blackouts || [] };
+      sacramentsAvailabilityState = { loaded: true, loading: false, error: '', timezone: data.timezone || '', rules: data.rules || [], blackouts: data.blackouts || [] };
       renderSacramentsPanel();
     } catch (err) {
-      pane.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
+      sacramentsAvailabilityState = { ...sacramentsAvailabilityState, loaded: true, loading: false, error: err.message || 'Unable to load availability.' };
+      renderSacramentsPanel();
     }
   }
 
   function renderSacramentsAvailability() {
     const st = sacramentsAvailabilityState;
-    if (!st.loaded) return '<p class="sw-tool-loading">Loading availability...</p>';
+    if (st.loading || !st.loaded) return renderSacramentsLoadingPanel('Loading weekly availability...');
+    if (st.error) return renderSacramentsErrorPanel(st.error, 'loadSacramentsAvailability(true)');
     if (!st.timezone) {
       return `
         <div class="sac-admin-panel">
@@ -2515,7 +2518,8 @@
 
   function renderSacramentsBlackouts() {
     const st = sacramentsAvailabilityState;
-    if (!st.loaded) return '<p class="sw-tool-loading">Loading blackout dates...</p>';
+    if (st.loading || !st.loaded) return renderSacramentsLoadingPanel('Loading blackout dates...');
+    if (st.error) return renderSacramentsErrorPanel(st.error, 'loadSacramentsAvailability(true)');
     const blackoutRows = st.blackouts.length ? st.blackouts.map(b => `
       <div class="sac-admin-blackout-row">
         <div>
@@ -2552,6 +2556,19 @@
           <span id="sacAvailBlackoutStatus" class="sac-admin-status-text"></span>
         </div>
       </div>`;
+  }
+
+  function renderSacramentsLoadingPanel(message) {
+    return `<div class="sac-admin-panel sac-admin-empty"><span>Loading</span><h2>${escapeHtml(message)}</h2><p>Fetching the latest parish scheduling settings.</p></div>`;
+  }
+
+  function renderSacramentsErrorPanel(message, retryAction) {
+    return `<div class="sac-admin-panel sac-admin-empty">
+      <span>Scheduling</span>
+      <h2>Could not load this section</h2>
+      <p>${escapeHtml(message)}</p>
+      <div class="sac-admin-actions" style="justify-content:center;"><button class="sac-admin-outline-btn" type="button" onclick="${retryAction}">Retry</button></div>
+    </div>`;
   }
 
   async function saveSacramentsAvailabilityTimezone(btn) {
@@ -2700,6 +2717,10 @@
       pane.innerHTML = renderSacramentsBlackouts();
       return;
     }
+    if (sacramentsDashboardTab === 'rules') {
+      pane.innerHTML = renderSacramentsRules();
+      return;
+    }
     if (sacramentsDashboardTab === 'calendar') {
       pane.innerHTML = renderSacramentsCalendar();
       return;
@@ -2796,6 +2817,46 @@
     if (editor) editor.hidden = !editor.hidden;
   }
 
+  function renderSacramentsRules() {
+    const st = sacramentsAvailabilityState;
+    if (st.loading || !st.loaded) return renderSacramentsLoadingPanel('Loading sacrament rules...');
+    if (st.error) return renderSacramentsErrorPanel(st.error, 'loadSacramentsAvailability(true)');
+    const rulesByType = groupSacramentsRulesByType();
+    const dayShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return `
+      <div class="sac-admin-panel">
+        <div class="sac-admin-panel-head">
+          <div>
+            <span>Sacrament rules</span>
+            <h2>Allowed booking days</h2>
+          </div>
+          <button class="sac-admin-small-btn" type="button" onclick="loadSacramentsAvailability(true)">Refresh</button>
+        </div>
+        <p class="sac-admin-muted">These rules are derived from the weekly availability windows. If a day is active here, parishioners can see openings for that sacrament or service on that day.</p>
+        <div class="sac-admin-rules-list">
+          ${SAC_SCHEDULABLE_TYPES.map(type => {
+            const activeDays = new Set((rulesByType[type] || []).map(rule => Number(rule.dayOfWeek)));
+            return `<div class="sac-admin-rules-row">
+              <strong>${escapeHtml(sacramentTypeLabel({ sacramentType: type }))}</strong>
+              <div class="sac-admin-day-chips">
+                ${dayShort.map((label, index) => `<span class="${activeDays.has(index) ? 'active' : ''}">${label}</span>`).join('')}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="sac-admin-panel">
+        <div class="sac-admin-panel-head">
+          <div>
+            <span>Edit rules</span>
+            <h2>Add booking windows</h2>
+          </div>
+        </div>
+        <p class="sac-admin-muted">To change the rule for a day, add or remove the weekly availability windows for that sacrament or service.</p>
+        ${st.timezone ? renderSacramentsAvailabilityAddForm() : renderSacramentsTimezoneForm()}
+      </div>`;
+  }
+
   function formatSacramentDisplayDate(value) {
     if (!value) return '';
     const date = new Date(String(value).includes('T') ? value : String(value) + 'T00:00:00');
@@ -2804,8 +2865,11 @@
   }
 
   function renderSacramentsCalendar() {
+    const st = sacramentsAvailabilityState;
+    if (st.loading || !st.loaded) return renderSacramentsLoadingPanel('Loading calendar...');
+    if (st.error) return renderSacramentsErrorPanel(st.error, 'loadSacramentsAvailability(true)');
     const requests = sacramentsState.requests || [];
-    const blackouts = sacramentsAvailabilityState.blackouts || [];
+    const blackouts = st.blackouts || [];
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth();
