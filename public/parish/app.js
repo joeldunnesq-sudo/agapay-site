@@ -1394,7 +1394,7 @@
     window.open(stewardshipMonthlyReportUrl(), '_blank');
   }
 
-  function updateStewardshipBadges(isActive) {
+  function updateStewardshipBadges(isActive, options = {}) {
     const badge = document.getElementById('parishPlusNavBadge');
     if (badge) {
       badge.textContent = isActive ? 'Active' : 'Upgrade';
@@ -1405,7 +1405,7 @@
       mobileBadge.textContent = isActive ? 'Active' : 'Upgrade';
       mobileBadge.classList.toggle('mobile-upgrade-badge--active', isActive);
     }
-    renderParishPlusPanel();
+    if (options.renderPanel !== false) renderParishPlusPanel();
     const bookstoreNav = document.getElementById('nav-bookstore');
     const bookstoreBadge = document.getElementById('bookstoreNavBadge');
     const mobileBookstoreBadge = document.getElementById('mobileBookstoreBadge');
@@ -4135,7 +4135,7 @@
       await refreshStripeStatus({ quiet: true });
       saveSession();
       renderDashboard();
-      updateStewardshipBadges(isParishPlusActive());
+      updateStewardshipBadges(isParishPlusActive(), { renderPanel: false });
       if (['history', 'givers', 'options'].includes(activeTab)) loadGivingHistory();
       stewardshipState.loaded = false;
       if (activeTab === 'stewardship') loadStewardshipPanel(true);
