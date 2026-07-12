@@ -1980,10 +1980,11 @@ export async function handleDonorSacramentBook(request, env) {
   const participantNames = String(body.participantNames || "").trim().slice(0, 1000);
   const phone = String(body.phone || "").trim().slice(0, 40);
   const notes = String(body.notes || "").trim().slice(0, 2000);
+  const priestName = String(body.priestName || "").trim().slice(0, 120);
 
   // Soft pre-check (nice error message on the common case) -- the real,
   // race-safe guarantee is the DB-level unique index caught below.
-  const stillOpen = await isSlotStillOpen(env, { parishId, date, time });
+  const stillOpen = await isSlotStillOpen(env, { parishId, date, time, priestName });
   if (!stillOpen) {
     return json({ error: "That time was just taken — please pick another.", slotTaken: true }, { status: 409 });
   }
@@ -1995,11 +1996,11 @@ export async function handleDonorSacramentBook(request, env) {
       INSERT INTO sacrament_requests
         (id, parish_id, donor_email, sacrament_type, status,
          requested_date, participant_names, location_type, location_address,
-         notes, phone, confirmed_date, confirmed_time, created_at, updated_at)
-      VALUES (?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         notes, phone, confirmed_date, confirmed_time, clergy_assigned, created_at, updated_at)
+      VALUES (?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
-      id, parishId, normalizeEmail(donor.email), sacramentType, date, participantNames || null,
-      locationType, locationAddress || null, notes || null, phone || null, date, time, now, now
+    id, parishId, normalizeEmail(donor.email), sacramentType, date, participantNames || null,
+      locationType, locationAddress || null, notes || null, phone || null, date, time, priestName || null, now, now
     );
   } catch (error) {
     if (/UNIQUE constraint failed/i.test(String(error?.message || error || ""))) {

@@ -3721,9 +3721,13 @@ export async function handleParishSacramentAvailability(request, env, parishId) 
     timezone: ctx.registration.timezone || "",
     rules: rules.map((r) => ({
       id: r.id, sacramentType: r.sacrament_type, dayOfWeek: r.day_of_week,
-      startTime: r.start_time, endTime: r.end_time, slotMinutes: r.slot_minutes
+      startTime: r.start_time, endTime: r.end_time, slotMinutes: r.slot_minutes,
+      priestName: r.priest_name || "", priestEmail: r.priest_email || ""
     })),
-    blackouts: blackouts.map((b) => ({ id: b.id, date: b.date, reason: b.reason || "" }))
+    blackouts: blackouts.map((b) => ({
+      id: b.id, date: b.date, reason: b.reason || "",
+      priestName: b.priest_name || "", priestEmail: b.priest_email || ""
+    }))
   });
 }
 
@@ -3754,13 +3758,15 @@ export async function handleParishAvailabilityRuleCreate(request, env, parishId)
     return json({ error: "Enter a valid start and end time, with the end after the start." }, { status: 400 });
   }
   const slotMinutes = Math.max(5, Math.min(240, parseInt(body.slotMinutes, 10) || 30));
+  const priestName = String(body.priestName || "").trim().slice(0, 120);
+  const priestEmail = String(body.priestEmail || "").trim().slice(0, 180);
 
   const id = generateSecret("avail");
   await d1Run(env, `
     INSERT INTO parish_availability_rules
-      (id, parish_id, sacrament_type, day_of_week, start_time, end_time, slot_minutes, active, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 1, datetime('now'), datetime('now'))
-  `, id, parishId, sacramentType, dayOfWeek, startTime, endTime, slotMinutes);
+      (id, parish_id, sacrament_type, day_of_week, start_time, end_time, slot_minutes, active, priest_name, priest_email, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, datetime('now'), datetime('now'))
+  `, id, parishId, sacramentType, dayOfWeek, startTime, endTime, slotMinutes, priestName || null, priestEmail || null);
 
   return json({ ok: true, id });
 }
@@ -3792,12 +3798,14 @@ export async function handleParishAvailabilityBlackoutCreate(request, env, paris
     return json({ error: "Choose a valid date." }, { status: 400 });
   }
   const reason = String(body.reason || "").trim().slice(0, 200);
+  const priestName = String(body.priestName || "").trim().slice(0, 120);
+  const priestEmail = String(body.priestEmail || "").trim().slice(0, 180);
 
   const id = generateSecret("blackout");
   await d1Run(env, `
-    INSERT INTO parish_availability_blackouts (id, parish_id, date, reason, created_at)
-    VALUES (?, ?, ?, ?, datetime('now'))
-  `, id, parishId, date, reason || null);
+    INSERT INTO parish_availability_blackouts (id, parish_id, date, reason, priest_name, priest_email, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+  `, id, parishId, date, reason || null, priestName || null, priestEmail || null);
 
   return json({ ok: true, id });
 }
@@ -5527,6 +5535,7 @@ export function parishDashboardPayload(parishId, registration) {
     subscriptionMonthlyCents: registration.subscriptionMonthlyCents ?? subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration))?.monthlyCents ?? null,
     parishDashboardTokenTemporary: Boolean(registration.parishDashboardTokenTemporary),
     priestEmail: registration.priestEmail || "",
+    sacramentPriests: normalizeSacramentPriests(registration),
     treasurerEmail: registration.treasurerEmail || "",
     setup: {
       contactInfoVerified: true,
@@ -5545,6 +5554,26 @@ export function parishDashboardPayload(parishId, registration) {
     campaigns: Array.isArray(registration.campaigns) ? registration.campaigns : [],
     feastCampaigns: Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : []
   };
+}
+
+function normalizeSacramentPriests(registration = {}) {
+  const saved = Array.isArray(registration.sacramentPriests) ? registration.sacramentPriests : [];
+  const rows = saved.map((priest) => ({
+    name: String(priest?.name || "").trim().slice(0, 120),
+    email: String(priest?.email || "").trim().slice(0, 180)
+  })).filter((priest) => priest.name);
+  if (rows.length) return rows.slice(0, 12);
+  const fallbackName = [registration.priestFirst, registration.priestLast].filter(Boolean).join(" ").trim() || "Parish priest";
+  return [{ name: fallbackName, email: registration.priestEmail || "" }];
+}
+
+function sanitizeSacramentPriests(value, current) {
+  if (!Array.isArray(value)) return normalizeSacramentPriests(current);
+  const rows = value.map((priest) => ({
+    name: String(priest?.name || "").trim().slice(0, 120),
+    email: String(priest?.email || "").trim().slice(0, 180)
+  })).filter((priest) => priest.name);
+  return rows.slice(0, 12);
 }
 
 export async function handleParishDashboard(request, env, parishId) {
@@ -5610,6 +5639,8 @@ export async function handleParishDashboard(request, env, parishId) {
       recurringGivingEnabled: Boolean(body.recurringGivingEnabled ?? current.recurringGivingEnabled ?? true),
       candlesEnabled: Boolean(body.candlesEnabled ?? current.candlesEnabled ?? true),
       commemorationsEnabled: Boolean(body.commemorationsEnabled ?? current.commemorationsEnabled ?? true),
+      sacramentsEnabled: Boolean(body.sacramentsEnabled ?? current.sacramentsEnabled ?? false) && hasStewardshipAccess(current),
+      sacramentPriests: body.sacramentPriests !== undefined ? sanitizeSacramentPriests(body.sacramentPriests, current) : normalizeSacramentPriests(current),
       bookstoreEnabled: Boolean(body.bookstoreEnabled ?? current.bookstoreEnabled ?? false),
       funds: Array.isArray(body.funds) ? body.funds : current.funds,
       campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,

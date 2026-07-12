@@ -1421,10 +1421,9 @@
       mobileBookstoreBadge.classList.remove('mobile-upgrade-badge--active');
     }
 
-    // Sacraments & Services is an AGAPAY Parish + feature and also has a
-    // soft-rollout flag. Without Stewardship access, show it as gated; with
-    // access, show Coming soon unless an admin has enabled it for this parish.
-    const sacIsRolledOut = Boolean(currentParish?.sacramentsEnabled);
+    // Sacraments & Services is an AGAPAY Parish + feature. Parish+ parishes
+    // can turn the donor-facing entry on or off from the Sacraments tab.
+    const sacIsOn = Boolean(currentParish?.sacramentsEnabled);
     const sacNav = document.getElementById('nav-sacraments');
     const sacSoonBadge = document.getElementById('sacramentsNavSoonBadge');
     const sacBadge = document.getElementById('sacramentsNavBadge');
@@ -1432,11 +1431,11 @@
       sacNav.classList.toggle('sidebar-nav-item--gated', !isActive);
       sacNav.title = isActive ? '' : 'Requires AGAPAY Parish +';
     }
-    if (sacSoonBadge) sacSoonBadge.hidden = !isActive || sacIsRolledOut;
+    if (sacSoonBadge) sacSoonBadge.hidden = true;
     if (sacBadge) {
-      sacBadge.hidden = isActive && !sacIsRolledOut;
-      sacBadge.textContent = isActive ? 'Active' : 'Upgrade';
-      sacBadge.classList.toggle('nav-upgrade-badge--active', isActive);
+      sacBadge.hidden = false;
+      sacBadge.textContent = isActive ? (sacIsOn ? 'On' : 'Off') : 'Upgrade';
+      sacBadge.classList.toggle('nav-upgrade-badge--active', isActive && sacIsOn);
     }
   }
 
@@ -2301,6 +2300,7 @@
   // switching to this tab never needs a second status round-trip.
   let sacramentsState = { loaded: false, requests: [] };
   let sacramentsDashboardTab = 'availability';
+  let sacramentsPriestIndex = 0;
 
   function sacramentsApi(path = '') {
     if (!currentParish?.parishId) throw new Error('Load a parish first.');
@@ -2325,13 +2325,45 @@
   }
 
   function setSacramentsDashboardTab(tab) {
-    sacramentsDashboardTab = tab || 'requests';
+    sacramentsDashboardTab = tab || 'availability';
     document.querySelectorAll('[data-sac-tab]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.sacTab === sacramentsDashboardTab);
     });
     if (['availability', 'blackouts', 'rules', 'calendar'].includes(sacramentsDashboardTab) && !sacramentsAvailabilityState.loaded) {
       loadSacramentsAvailability();
     }
+    renderSacramentsPanel();
+  }
+
+  function sacramentPriests() {
+    const saved = Array.isArray(currentParish?.sacramentPriests) ? currentParish.sacramentPriests : [];
+    const rows = saved.map((priest) => ({
+      name: String(priest?.name || '').trim(),
+      email: String(priest?.email || '').trim()
+    })).filter((priest) => priest.name);
+    if (rows.length) return rows;
+    return [{ name: 'Parish priest', email: currentParish?.priestEmail || '' }];
+  }
+
+  function selectedSacramentPriest() {
+    const priests = sacramentPriests();
+    if (sacramentsPriestIndex >= priests.length) sacramentsPriestIndex = 0;
+    return priests[sacramentsPriestIndex] || { name: '', email: '' };
+  }
+
+  function renderSacramentsPriestPicker() {
+    const root = document.getElementById('sacramentsPriestPicker');
+    if (!root) return;
+    const priests = sacramentPriests();
+    if (sacramentsPriestIndex >= priests.length) sacramentsPriestIndex = 0;
+    root.innerHTML = `<span>Priest</span><div class="sac-admin-priest-tabs">
+      ${priests.map((priest, index) => `<button type="button" class="${index === sacramentsPriestIndex ? 'active' : ''}" onclick="selectSacramentsPriest(${index})">${escapeHtml(priest.name)}</button>`).join('')}
+    </div>`;
+  }
+
+  function selectSacramentsPriest(index) {
+    sacramentsPriestIndex = Number(index) || 0;
+    renderSacramentsPriestPicker();
     renderSacramentsPanel();
   }
 
@@ -2343,10 +2375,12 @@
   function loadSacramentsTab() {
     const banner = document.getElementById('sacramentsComingSoonBanner');
     const live = document.getElementById('sacramentsLiveContent');
-    const isRolledOut = Boolean(currentParish?.sacramentsEnabled);
-    if (banner) banner.hidden = isRolledOut;
-    if (live) live.hidden = !isRolledOut;
-    if (isRolledOut) loadSacramentsPanel();
+    const isAvailable = Boolean(currentParish?.stewardshipActive);
+    if (banner) banner.hidden = isAvailable;
+    if (live) live.hidden = !isAvailable;
+    renderSacramentsFeatureToggle();
+    renderSacramentsPriestPicker();
+    if (isAvailable) loadSacramentsPanel();
   }
 
   async function loadSacramentsPanel(force = false) {
@@ -2357,6 +2391,8 @@
       if (statusLabel) statusLabel.textContent = 'Not loaded';
       return;
     }
+    renderSacramentsFeatureToggle();
+    renderSacramentsPriestPicker();
 
     // Reuse the AGAPAY Parish + status already fetched for the add-on
     // tab — no need to hit the network twice for the same gate.
@@ -2367,7 +2403,12 @@
       pane.innerHTML = renderSacramentsUpsell();
       return;
     }
-    if (statusLabel) statusLabel.textContent = 'Active';
+    if (!currentParish.sacramentsEnabled) {
+      if (statusLabel) statusLabel.textContent = 'Off';
+      pane.innerHTML = renderSacramentsDisabledPanel();
+      return;
+    }
+    if (statusLabel) statusLabel.textContent = 'On';
 
     if (sacramentsState.loaded && !force) {
       renderSacramentsPanel();
@@ -2417,6 +2458,54 @@
     } catch (err) {
       sacramentsAvailabilityState = { ...sacramentsAvailabilityState, loaded: true, loading: false, error: err.message || 'Unable to load availability.' };
       renderSacramentsPanel();
+    }
+  }
+
+  function renderSacramentsFeatureToggle() {
+    const root = document.getElementById('sacramentsFeatureToggle');
+    if (!root) return;
+    const enabled = Boolean(currentParish?.sacramentsEnabled);
+    root.innerHTML = `<label class="sac-admin-switch">
+      <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSacramentsFeature(this)" />
+      <span></span>
+      <em>${enabled ? 'Parishioners can request' : 'Off for parishioners'}</em>
+    </label>`;
+  }
+
+  function renderSacramentsDisabledPanel() {
+    return `<div class="sac-admin-panel sac-admin-empty">
+      <span>Off for parishioners</span>
+      <h2>Sacraments &amp; Services is turned off</h2>
+      <p>Parishioners will not see booking or request options while this is off. Turn it on when your parish is ready to receive requests.</p>
+    </div>`;
+  }
+
+  async function toggleSacramentsFeature(input) {
+    if (!currentParish) return;
+    const enabled = Boolean(input?.checked);
+    const previous = Boolean(currentParish.sacramentsEnabled);
+    if (input) input.disabled = true;
+    try {
+      const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId), {
+        method: 'PATCH',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sacramentsEnabled: enabled })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to update Sacraments & Services.');
+      currentParish = { ...currentParish, ...(data.parish || {}), sacramentsEnabled: Boolean(data.parish?.sacramentsEnabled ?? enabled) };
+      sacramentsState.loaded = false;
+      sacramentsAvailabilityState = { loaded: false, loading: false, error: '', timezone: '', rules: [], blackouts: [] };
+      setStatus(currentParish.sacramentsEnabled ? 'Sacraments & Services is on for parishioners.' : 'Sacraments & Services is off for parishioners.', 'success');
+      renderSacramentsFeatureToggle();
+      loadSacramentsPanel(true);
+    } catch (err) {
+      currentParish.sacramentsEnabled = previous;
+      if (input) input.checked = previous;
+      renderSacramentsFeatureToggle();
+      setStatus(err.message, 'error');
+    } finally {
+      if (input) input.disabled = false;
     }
   }
 
@@ -2479,8 +2568,11 @@
 
   function groupSacramentsRulesByType() {
     const rulesByType = {};
+    const priest = selectedSacramentPriest();
     SAC_SCHEDULABLE_TYPES.forEach(t => { rulesByType[t] = []; });
-    sacramentsAvailabilityState.rules.forEach(r => { (rulesByType[r.sacramentType] = rulesByType[r.sacramentType] || []).push(r); });
+    sacramentsAvailabilityState.rules
+      .filter(r => (r.priestName || '') === (priest.name || ''))
+      .forEach(r => { (rulesByType[r.sacramentType] = rulesByType[r.sacramentType] || []).push(r); });
     Object.values(rulesByType).forEach(rows => rows.sort((a, b) => (a.dayOfWeek - b.dayOfWeek) || String(a.startTime).localeCompare(String(b.startTime))));
     return rulesByType;
   }
@@ -2504,6 +2596,7 @@
   function renderSacramentsAvailabilityAddForm() {
     return `
       <div class="sac-admin-form-grid">
+        <label><span>Priest</span><input value="${escapeHtml(selectedSacramentPriest().name)}" disabled /></label>
         <label><span>Type</span><select id="sacAvailNewType">${SAC_SCHEDULABLE_TYPES.map(t => `<option value="${t}">${escapeHtml(sacramentTypeLabel({ sacramentType: t }))}</option>`).join('')}</select></label>
         <label><span>Day</span><select id="sacAvailNewDay">${SAC_DAY_LABELS.map((l, i) => `<option value="${i}">${l}</option>`).join('')}</select></label>
         <label><span>Start</span><input type="time" id="sacAvailNewStart" value="16:00" /></label>
@@ -2520,7 +2613,9 @@
     const st = sacramentsAvailabilityState;
     if (st.loading || !st.loaded) return renderSacramentsLoadingPanel('Loading blackout dates...');
     if (st.error) return renderSacramentsErrorPanel(st.error, 'loadSacramentsAvailability(true)');
-    const blackoutRows = st.blackouts.length ? st.blackouts.map(b => `
+    const priest = selectedSacramentPriest();
+    const priestBlackouts = st.blackouts.filter(b => (b.priestName || '') === (priest.name || ''));
+    const blackoutRows = priestBlackouts.length ? priestBlackouts.map(b => `
       <div class="sac-admin-blackout-row">
         <div>
           <strong>${escapeHtml(formatSacramentDisplayDate(b.date))}</strong>
@@ -2537,7 +2632,7 @@
           </div>
           <button class="sac-admin-small-btn" type="button" onclick="loadSacramentsAvailability(true)">Refresh</button>
         </div>
-        <p class="sac-admin-muted">Dates listed here will be hidden from parishioners looking for open booking times.</p>
+        <p class="sac-admin-muted">Dates listed here will be hidden from parishioners looking for open booking times with ${escapeHtml(priest.name)}.</p>
         <div class="sac-admin-blackout-list">${blackoutRows}</div>
       </div>
       <div class="sac-admin-panel">
@@ -2548,6 +2643,7 @@
           </div>
         </div>
         <div class="sac-admin-form-row">
+          <label><span>Priest</span><input value="${escapeHtml(priest.name)}" disabled /></label>
           <label><span>Date</span><input type="date" id="sacAvailNewBlackoutDate" /></label>
           <label><span>Reason</span><input id="sacAvailNewBlackoutReason" placeholder="e.g. Clergy retreat" /></label>
         </div>
@@ -2600,6 +2696,7 @@
     const startTime = document.getElementById('sacAvailNewStart')?.value;
     const endTime = document.getElementById('sacAvailNewEnd')?.value;
     const slotMinutes = Number(document.getElementById('sacAvailNewSlotMinutes')?.value) || 30;
+    const priest = selectedSacramentPriest();
     if (!sacramentsAvailabilityState.timezone) {
       if (status) { status.textContent = 'Set and save your parish timezone first.'; status.style.color = 'var(--red, #8b2020)'; }
       return;
@@ -2609,7 +2706,7 @@
     try {
       const res = await fetch(sacramentsApi('/availability/rules'), {
         method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sacramentType, dayOfWeek, startTime, endTime, slotMinutes })
+        body: JSON.stringify({ sacramentType, dayOfWeek, startTime, endTime, slotMinutes, priestName: priest.name, priestEmail: priest.email })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Unable to add window.');
@@ -2635,13 +2732,14 @@
     const status = document.getElementById('sacAvailBlackoutStatus');
     const date = document.getElementById('sacAvailNewBlackoutDate')?.value;
     const reason = document.getElementById('sacAvailNewBlackoutReason')?.value || '';
+    const priest = selectedSacramentPriest();
     if (!date) { if (status) { status.textContent = 'Choose a date.'; status.style.color = 'var(--red, #8b2020)'; } return; }
     if (btn) { btn.disabled = true; btn.classList.add('loading'); }
     if (status) status.textContent = '';
     try {
       const res = await fetch(sacramentsApi('/availability/blackouts'), {
         method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, reason })
+        body: JSON.stringify({ date, reason, priestName: priest.name, priestEmail: priest.email })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Unable to add blackout date.');
@@ -4171,8 +4269,9 @@
       <div class="form-grid">
         <div class="form-group"><label class="form-label">Priest access</label><input value="${escapeHtml(p.priestEmail||'Not listed')}" disabled /></div>
         <div class="form-group"><label class="form-label">Treasurer access</label><input value="${escapeHtml(p.treasurerEmail||'Not listed')}" disabled /></div>
+        <div class="form-group full"><label class="form-label" for="sacramentPriestsText">Sacraments &amp; Services priests</label><textarea id="sacramentPriestsText" rows="4" placeholder="Fr. Michael | fr.michael@example.org&#10;Fr. Andrew | fr.andrew@example.org">${escapeHtml(formatSacramentPriestsForSettings(p.sacramentPriests || []))}</textarea></div>
       </div>
-      <p class="section-note">Priest and treasurer dashboard access is included for every verified parish. Parish tier adds staff invite workflow for extra users such as bookkeepers, campaign helpers, or parish council officers.</p>
+      <p class="section-note">Priest and treasurer dashboard access is included for every verified parish. Add one Sacraments &amp; Services priest per line. Use “Name | email” when you want the email stored too.</p>
       <div class="btn-row">
         <a class="btn btn-ghost" href="mailto:support@agapay.app?subject=${encodeURIComponent('Dashboard invite request for ' + (p.parishName || p.parishId || 'our parish'))}&body=${encodeURIComponent('Please add or update dashboard access for ' + (p.parishName || p.parishId || 'our parish') + '.\n\nRequested user:\nEmail:\nRole:\n\nRequested by:\n')}" target="_blank" rel="noopener">Request additional dashboard invite</a>
       </div>
@@ -5035,12 +5134,26 @@
       candlesEnabled:         document.getElementById('candlesEnabled')?.checked,
       commemorationsEnabled:  document.getElementById('commemorationsEnabled')?.checked,
       bookstoreEnabled:       document.getElementById('bookstoreEnabled')?.checked,
+      sacramentPriests:       parseSacramentPriestsFromSettings(),
       funds:                  editableFunds,
       campaigns:              editableCampaigns,
       feastCampaigns:         editableFeastCampaigns,
     };
     if (newPw) body.newDashboardPassword = newPw;
     return body;
+  }
+
+  function formatSacramentPriestsForSettings(priests) {
+    const rows = Array.isArray(priests) ? priests : [];
+    return rows.map((priest) => [priest.name, priest.email].filter(Boolean).join(' | ')).join('\n');
+  }
+
+  function parseSacramentPriestsFromSettings() {
+    const raw = document.getElementById('sacramentPriestsText')?.value || '';
+    return raw.split(/\r?\n/).map((line) => {
+      const [name, email = ''] = line.split('|').map(part => part.trim());
+      return { name, email };
+    }).filter((priest) => priest.name).slice(0, 12);
   }
 
   async function saveDashboard(btn) {

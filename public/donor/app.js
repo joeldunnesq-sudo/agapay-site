@@ -3192,7 +3192,13 @@ function closeSacramentModal() {
 }
 
 function selectSacramentAccordionSlot(type, date, time, btn) {
-  sacAccordionState.selectedSlots[type] = { date, time, label: btn?.textContent || time };
+  sacAccordionState.selectedSlots[type] = {
+    date,
+    time,
+    label: btn?.textContent || time,
+    priestName: btn?.dataset?.priestName || "",
+    priestEmail: btn?.dataset?.priestEmail || ""
+  };
   document.querySelectorAll(`[data-sac-slot-type="${CSS.escape(type)}"]`).forEach((el) => el.classList.remove("selected"));
   if (btn) btn.classList.add("selected");
   const note = document.querySelector(`[data-sac-selected-note="${CSS.escape(type)}"]`);
@@ -3259,7 +3265,8 @@ function renderSlotPickerForCard(card) {
     const dayLabel = new Date(date + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
     return `<div class="sac-slot-day"><div class="sac-slot-day-label">${escapeHtml(dayLabel)}</div><div class="sac-slot-chips">${daySlots.map((slot) => {
       const timeLabel = String(slot.label || "").split(", ").pop() || slot.time;
-      return `<button type="button" class="sac-slot-chip" data-sac-slot-type="${escapeHtml(card.type)}" onclick="selectSacramentAccordionSlot('${card.type}','${slot.date}','${slot.time}', this)">${escapeHtml(timeLabel)}</button>`;
+      const priestSuffix = slot.priestName ? ` · ${slot.priestName}` : "";
+      return `<button type="button" class="sac-slot-chip" data-sac-slot-type="${escapeHtml(card.type)}" data-priest-name="${escapeHtml(slot.priestName || "")}" data-priest-email="${escapeHtml(slot.priestEmail || "")}" onclick="selectSacramentAccordionSlot('${card.type}','${slot.date}','${slot.time}', this)">${escapeHtml(timeLabel + priestSuffix)}</button>`;
     }).join("")}</div></div>`;
   }).join("");
   return `<form class="sac-card-form" onsubmit="submitSacramentAccordionBooking(event, '${card.type}')">
@@ -3500,6 +3507,8 @@ async function submitSacramentAccordionBooking(event, sacramentType) {
     locationAddress: formValue(form, "locationAddress"),
     date: slot.date,
     time: slot.time,
+    priestName: slot.priestName || "",
+    priestEmail: slot.priestEmail || "",
     participantNames: formValue(form, "participantNames"),
     phone: formValue(form, "phone") || donorProfile()?.contactPhone || "",
     notes: formValue(form, "notes")

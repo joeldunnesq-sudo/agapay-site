@@ -113,13 +113,14 @@ export async function computeAvailableSlots(env, { parishId, sacramentType, time
   const rangeEndLocal = addDays(todayLocal, daysAhead);
 
   const blackouts = await d1All(env,
-    "SELECT date FROM parish_availability_blackouts WHERE parish_id = ? AND date >= ? AND date <= ?",
+    "SELECT date, priest_name FROM parish_availability_blackouts WHERE parish_id = ? AND date >= ? AND date <= ?",
     parishId, todayLocal, rangeEndLocal
   ).catch(() => []);
-  const blackoutDates = new Set(blackouts.map((b) => b.date));
+  const blackoutDates = new Set(blackouts.filter((b) => !b.priest_name).map((b) => b.date));
+  const blackoutPriestDates = new Set(blackouts.filter((b) => b.priest_name).map((b) => `${b.date}|${b.priest_name}`));
 
   const occupiedRows = await d1All(env,
-    `SELECT confirmed_date, confirmed_time FROM sacrament_requests
+    `SELECT confirmed_date, confirmed_time, clergy_assigned FROM sacrament_requests
      WHERE parish_id = ? AND status = 'scheduled' AND confirmed_date IS NOT NULL
        AND confirmed_date >= ? AND confirmed_date <= ?`,
     parishId, todayLocal, rangeEndLocal
@@ -127,7 +128,7 @@ export async function computeAvailableSlots(env, { parishId, sacramentType, time
   const occupied = new Set();
   for (const row of occupiedRows) {
     const t = normalizeTimeToHHMM(row.confirmed_time);
-    if (t) occupied.add(`${row.confirmed_date}|${t}`);
+    if (t) occupied.add(`${row.confirmed_date}|${t}|${row.clergy_assigned || ""}`);
   }
 
   const rulesByWeekday = new Map();
@@ -144,18 +145,21 @@ export async function computeAvailableSlots(env, { parishId, sacramentType, time
     if (blackoutDates.has(dateStr)) continue;
     const dayRules = rulesByWeekday.get(weekdayOf(dateStr)) || [];
     for (const rule of dayRules) {
+      if (rule.priest_name && blackoutPriestDates.has(`${dateStr}|${rule.priest_name}`)) continue;
       const startMin = hhmmToMinutes(rule.start_time);
       const endMin = hhmmToMinutes(rule.end_time);
       const step = Math.max(5, Number(rule.slot_minutes) || 30);
       if (startMin === null || endMin === null) continue;
       for (let m = startMin; m + step <= endMin; m += step) {
         const timeStr = minutesToHHMM(m);
-        if (occupied.has(`${dateStr}|${timeStr}`)) continue;
+        if (occupied.has(`${dateStr}|${timeStr}|${rule.priest_name || ""}`)) continue;
         const startsAt = zonedTimeToUtc(dateStr, timeStr, timezone);
         if (startsAt.getTime() <= now) continue;
         slots.push({
           date: dateStr,
           time: timeStr,
+          priestName: rule.priest_name || "",
+          priestEmail: rule.priest_email || "",
           startsAt: startsAt.toISOString(),
           label: startsAt.toLocaleString("en-US", {
             timeZone: timezone, weekday: "short", month: "short", day: "numeric",
@@ -178,12 +182,12 @@ export async function computeAvailableSlots(env, { parishId, sacramentType, time
  * same slot. Independent of computeAvailableSlots's daysAhead/rule scan so
  * it works even for a slot near the edge of the normal lookahead window.
  */
-export async function isSlotStillOpen(env, { parishId, date, time }) {
+export async function isSlotStillOpen(env, { parishId, date, time, priestName = "" }) {
   if (!d1(env)) return true;
   const rows = await d1All(env,
-    `SELECT confirmed_date, confirmed_time FROM sacrament_requests
+    `SELECT confirmed_date, confirmed_time, clergy_assigned FROM sacrament_requests
      WHERE parish_id = ? AND status = 'scheduled' AND confirmed_date = ?`,
     parishId, date
   ).catch(() => []);
-  return !rows.some((row) => normalizeTimeToHHMM(row.confirmed_time) === time);
+  return !rows.some((row) => normalizeTimeToHHMM(row.confirmed_time) === time && String(row.clergy_assigned || "") === String(priestName || ""));
 }
