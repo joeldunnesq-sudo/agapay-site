@@ -439,7 +439,7 @@
       renderStewardshipPanel();
       // Always reload metrics/financials when switching to the tab
       const _active = isParishPlusActive();
-      if (_active) { loadGivingMetricsPanel(); loadFinancialSnapshotsPanel(); loadStewardshipHealthScorePanel(); loadDonorConcentrationPanel(); loadRecurringGivingPanel(); loadManualIncomePanel(); }
+      if (_active) loadStewardshipEssentialPanels();
       return;
     }
     if (status) status.textContent = 'Loading…';
@@ -462,16 +462,14 @@
         meetings: [], subscribePlans: [], setupRequired: false, comingSoon: true, selectedMeeting: null
       };
     }
-    updateStewardshipBadges(isParishPlusActive());
+    updateStewardshipBadges(isParishPlusActive(), { renderPanel: false });
     renderStewardshipPanel();
-    renderParishPlusPanel();
-    // Load giving metrics, financials, health score, concentration risk, and recurring giving in parallel
-    loadGivingMetricsPanel();
-    loadFinancialSnapshotsPanel();
+    loadStewardshipEssentialPanels();
+  }
+
+  function loadStewardshipEssentialPanels() {
     loadStewardshipHealthScorePanel();
-    loadDonorConcentrationPanel();
-    loadRecurringGivingPanel();
-    loadManualIncomePanel();
+    setTimeout(() => loadGivingMetricsPanel(), 300);
   }
 
   // ── Giving Metrics Panel ─────────────────────────────────────────────────
@@ -3207,7 +3205,7 @@
       statusEl.className = 'sw-suite-status-label ' + (isActive ? 'sw-suite-status--active' : 'sw-suite-status--upsell');
     }
 
-    updateStewardshipBadges(isParishPlusActive());
+    updateStewardshipBadges(isParishPlusActive(), { renderPanel: false });
 
     if (isActive) {
       renderStewardshipActiveState(planPane, sw, isTrialing);
@@ -4136,6 +4134,7 @@
       saveSession();
       renderDashboard();
       updateStewardshipBadges(isParishPlusActive(), { renderPanel: false });
+      setTimeout(() => loadGivingSummary(), 250);
       if (['history', 'givers', 'options'].includes(activeTab)) loadGivingHistory();
       stewardshipState.loaded = false;
       if (activeTab === 'stewardship') loadStewardshipPanel(true);
