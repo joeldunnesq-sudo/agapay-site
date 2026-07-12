@@ -128,6 +128,8 @@
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length) loadGivingHistory();
     if (tab === 'givers' && allGifts.length) renderGiversPanel();
+    if (tab === 'options' && currentParish) renderGivingOptionsEditor();
+    if (tab === 'campaigns' && currentParish) renderCampaignList(currentParish);
     if (tab === 'qr') renderBulletinPreview();
     if (tab === 'stewardship') loadStewardshipPanel();
     if (tab === 'parishplus') renderParishPlusPanel();
@@ -4133,11 +4135,12 @@
       await refreshStripeStatus({ quiet: true });
       saveSession();
       renderDashboard();
-      renderCampaignList(currentParish);
-      prefetchStewardshipBadge();
-      loadGivingSummary();
-      loadRecurringHealth();
-      loadCommemorations();
+      setTimeout(() => {
+        prefetchStewardshipBadge();
+        loadGivingSummary();
+      }, 40);
+      setTimeout(() => loadRecurringHealth(), 140);
+      setTimeout(() => loadCommemorations(), 240);
       if (['history', 'givers', 'options'].includes(activeTab)) loadGivingHistory();
       stewardshipState.loaded = false;
       if (activeTab === 'stewardship') loadStewardshipPanel(true);
@@ -4328,12 +4331,13 @@
       </div>`;
     syncPatronalFeastOptionsFromSettings();
 
-    renderQrCode();
+    setTimeout(() => renderQrCode(), 0);
     editableFunds          = fallbackFundsArray(p.funds);
     editableCampaigns      = fallbackCampaignsArray(p.campaigns);
     editableFeastCampaigns = Array.isArray(p.feastCampaigns) ? p.feastCampaigns : [];
-    renderGivingOptionsEditor();
-    renderBulletinPreview();
+    if (activeTab === 'options') renderGivingOptionsEditor();
+    if (activeTab === 'campaigns') renderCampaignList(p);
+    if (activeTab === 'qr') renderBulletinPreview();
   }
 
   // ── GIVING OPTIONS EDITOR ─────────────────────────────────
