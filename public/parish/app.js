@@ -483,10 +483,14 @@
     try {
       const y = givingMetricsState.year;
       const base = stewardshipApi().replace('/stewardship', '/stewardship/giving');
-      const [summary, funds] = await Promise.all([
-        fetch(base + '/summary?year=' + y, { headers: authHeaders() }).then(r => r.json()),
-        fetch(base + '/funds?year=' + y, { headers: authHeaders() }).then(r => r.json())
+      const [summaryRes, fundsRes] = await Promise.all([
+        fetch(base + '/summary?year=' + y, { headers: authHeaders() }),
+        fetch(base + '/funds?year=' + y, { headers: authHeaders() })
       ]);
+      const summary = await summaryRes.json().catch(() => ({}));
+      const funds = await fundsRes.json().catch(() => ({}));
+      if (!summaryRes.ok) throw new Error(summary.detail || summary.error || `Giving summary failed (${summaryRes.status}).`);
+      if (!fundsRes.ok) throw new Error(funds.detail || funds.error || `Giving funds failed (${fundsRes.status}).`);
       if (summary.error && summary.error.includes('not activated')) {
         pane.innerHTML = renderGivingMetricsUpgrade();
         return;
@@ -496,7 +500,7 @@
       // Background check — enable nudge button only if donors are 3+ months behind
       checkNudgeEligibility();
     } catch (e) {
-      pane.innerHTML = '<p class="muted">Giving metrics unavailable.</p>';
+      pane.innerHTML = '<p class="muted">Giving metrics unavailable' + (e.message ? ': ' + escapeHtml(e.message) : '.') + '</p>';
     }
   }
 
@@ -787,14 +791,15 @@
     try {
       const y = year || givingMetricsState.year;
       const res = await fetch(stewardshipApi('/giving/health-score?year=' + y), { headers: authHeaders() });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || data.error || `Health score failed (${res.status}).`);
       if (data.error && data.error.includes('not activated')) {
         pane.innerHTML = renderGivingMetricsUpgrade();
         return;
       }
       pane.innerHTML = renderStewardshipHealthScore(data);
     } catch (e) {
-      pane.innerHTML = '<p class="muted">Stewardship health score unavailable.</p>';
+      pane.innerHTML = '<p class="muted">Stewardship health score unavailable' + (e.message ? ': ' + escapeHtml(e.message) : '.') + '</p>';
     }
   }
 
@@ -4740,12 +4745,12 @@
     const month = document.getElementById('reconcileMonth')?.value;
     if (!month) return;
     if (btn) { btn.classList.add('loading'); btn.disabled = true; }
-    setReconciliationLoading('Matching Stripe payouts to AGAPAY gifts…');
+    setReconciliationLoading('Loading reconciliation summary…');
     try {
       const path = `/api/parish/dashboard/${encodeURIComponent(currentParish.parishId)}/reconciliation?month=${encodeURIComponent(month)}`;
       const response = await fetch(path, { headers: authHeaders() });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || data.error || 'Unable to run reconciliation.');
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || data.error || `Unable to run reconciliation (${response.status}).`);
       reconciliationData = data;
       renderReconciliation(data);
     } catch (error) {

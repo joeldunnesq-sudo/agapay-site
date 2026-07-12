@@ -4320,7 +4320,9 @@ export async function handleParishReconciliation(request, env, parishId) {
   const token = getBearerToken(request);
   if (!(await verifyParishDashboardBearer(found.registration, token))) return unauthorized();
 
-  const period = reconciliationPeriod(new URL(request.url).searchParams.get("month"));
+  const url = new URL(request.url);
+  const period = reconciliationPeriod(url.searchParams.get("month"));
+  const detailed = url.searchParams.get("detail") === "full";
   const closeRecord = await reconciliationCloseRecord(env, parishId, period.month);
   const stripeAccountId = found.registration.stripeAccountId || "";
   if (!stripeAccountId) {
@@ -4340,6 +4342,68 @@ export async function handleParishReconciliation(request, env, parishId) {
   }
 
   const payouts = payoutsResult.body.data || [];
+  if (!detailed) {
+    const payoutRows = payouts.map((payout) => ({
+      id: payout.id,
+      status: String(payout.status || "unknown").toLowerCase(),
+      amountCents: Number(payout.amount || 0),
+      arrivalDate: payout.arrival_date || 0,
+      created: payout.created || 0,
+      transactionCount: 0,
+      compositionNetCents: 0,
+      matchedNetCents: 0,
+      differenceCents: 0
+    }));
+    const depositedCents = payoutRows
+      .filter((payout) => payout.status === "paid")
+      .reduce((sum, payout) => sum + payout.amountCents, 0);
+    const inTransitCents = payoutRows
+      .filter((payout) => ["pending", "in_transit"].includes(payout.status))
+      .reduce((sum, payout) => sum + payout.amountCents, 0);
+    const failedPayoutCents = payoutRows
+      .filter((payout) => ["failed", "canceled", "cancelled"].includes(payout.status))
+      .reduce((sum, payout) => sum + payout.amountCents, 0);
+    const gifts = (await loadParishPaidOfferings(env, parishId, 2000)).filter((gift) => {
+      const time = new Date(gift.createdAt || gift.date || 0).getTime();
+      return Number.isFinite(time) && time >= Date.parse(period.startIso) && time < Date.parse(period.endIso);
+    });
+    return json({
+      available: true,
+      parishId,
+      period,
+      closeRecord,
+      summary: {
+        depositedCents,
+        inTransitCents,
+        failedPayoutCents,
+        grossActivityCents: gifts.reduce((sum, gift) => sum + Number(gift.giftAmountCents || gift.amountCents || 0), 0),
+        refundCents: 0,
+        stripeFeeCents: gifts.reduce((sum, gift) => sum + Number(gift.stripeFeeCents || 0), 0),
+        agapayFeeCents: gifts.reduce((sum, gift) => sum + Number(gift.agapayFeeCents || 0), 0),
+        totalFeeCents: gifts.reduce((sum, gift) => sum + Number(gift.totalFeeCents || 0), 0),
+        payoutCompositionNetCents: 0,
+        matchedNetCents: gifts.reduce((sum, gift) => sum + Number(gift.parishNetCents ?? gift.amountCents ?? 0), 0),
+        unmatchedNetCents: 0,
+        matchedPercent: 100,
+        payoutCount: payouts.length,
+        paidPayoutCount: payoutRows.filter((payout) => payout.status === "paid").length,
+        exceptionCount: 0
+      },
+      giftActivity: {
+        giftCount: gifts.length,
+        grossGiftCents: gifts.reduce((sum, gift) => sum + Number(gift.giftAmountCents || 0), 0),
+        parishNetCents: gifts.reduce((sum, gift) => sum + Number(gift.parishNetCents ?? gift.amountCents ?? 0), 0),
+        feeCents: gifts.reduce((sum, gift) => sum + Number(gift.totalFeeCents || 0), 0)
+      },
+      allocations: [],
+      payouts: payoutRows.sort((a, b) => Number(b.arrivalDate || 0) - Number(a.arrivalDate || 0)),
+      transactions: [],
+      exceptions: [],
+      generatedAt: new Date().toISOString(),
+      note: "Fast reconciliation summary. Detailed Stripe transaction matching is deferred to keep the dashboard responsive."
+    });
+  }
+
   const lookupState = { count: 0, limit: 80, cache: new Map() };
   const offeringCache = new Map();
   const allocations = new Map();

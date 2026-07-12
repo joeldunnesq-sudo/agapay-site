@@ -1822,11 +1822,9 @@ async function handleStewardshipGivingRecurring(request, env, parishId) {
 }
 
 // GET /api/parish/dashboard/:parishId/stewardship/giving/health-score
-// A single composite 0-100 score parish leaders can read at a glance,
-// built from six existing signals (pledge fulfillment, recurring
-// stability, retention, lapsed count, projection-vs-goal, concentration
-// risk) rather than a new metric of its own. Reuses the same queries the
-// other cards already run — no new data source, just a weighted rollup.
+// A single composite 0-100 score parish leaders can read at a glance.
+// Keep this intentionally light: it uses the giving summary only so the
+// Stewardship tab can load without chaining several dashboard reports.
 async function handleStewardshipGivingHealthScore(request, env, parishId) {
   const auth = await verifyParishDashboard(request, env, parishId);
   if (!auth) return unauthorized();
@@ -1835,21 +1833,12 @@ async function handleStewardshipGivingHealthScore(request, env, parishId) {
 
   const url  = new URL(request.url);
   const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
-  const forwardedUrl = `${url.origin}${url.pathname.replace(/\/health-score$/, "")}`;
-
-  // Reuse the exact same handlers the other cards call, rather than
-  // duplicating their query logic — this guarantees the score is always
-  // consistent with what's shown elsewhere on the tab.
-  const withYear = (path) => new Request(`${forwardedUrl}/${path}?year=${year}`, request);
-  const [summaryRes, retentionRes, concentrationRes, recurringRes] = await Promise.all([
-    handleStewardshipGivingSummary(withYear("summary"), env, parishId),
-    handleStewardshipGivingRetention(withYear("retention"), env, parishId),
-    handleStewardshipGivingConcentration(withYear("concentration"), env, parishId),
-    handleStewardshipGivingRecurring(withYear("recurring"), env, parishId),
-  ]);
-  const [summary, retention, concentration, recurring] = await Promise.all(
-    [summaryRes, retentionRes, concentrationRes, recurringRes].map(r => r.json())
+  const summaryRes = await handleStewardshipGivingSummary(
+    new Request(`${url.origin}${url.pathname.replace(/\/health-score$/, "/summary")}?year=${year}`, request),
+    env,
+    parishId
   );
+  const summary = summaryRes.ok ? await summaryRes.json() : {};
 
   // Each component scores 0-100; overall score is a weighted average of
   // whichever components have real data (a brand-new parish with no prior
@@ -1860,26 +1849,9 @@ async function handleStewardshipGivingHealthScore(request, env, parishId) {
   if (summary.fulfillment_rate_pct !== null && summary.fulfillment_rate_pct !== undefined) {
     components.push({ key: "pledge_fulfillment", label: "Pledge fulfillment", weight: 0.22, score: Math.min(100, summary.fulfillment_rate_pct) });
   }
-  if (retention.retention_rate_pct !== null && retention.retention_rate_pct !== undefined) {
-    components.push({ key: "donor_retention", label: "Donor retention", weight: 0.2, score: retention.retention_rate_pct });
-  }
-  if (retention.prior_donors > 0) {
-    const lapsedRatePct = Math.round((retention.lapsed / retention.prior_donors) * 100);
-    components.push({ key: "lapsed_donors", label: "Lapsed donor count", weight: 0.13, score: Math.max(0, 100 - lapsedRatePct * 2) });
-  }
-  if (recurring.recurring_donor_count > 0 || summary.active_donors > 0) {
-    const failureRatePct = recurring.recurring_donor_count > 0
-      ? Math.min(100, Math.round((recurring.failed_payments_90d / Math.max(1, recurring.recurring_donor_count)) * 100))
-      : 0;
-    components.push({ key: "recurring_stability", label: "Recurring donor stability", weight: 0.2, score: Math.max(0, 100 - failureRatePct * 3) });
-  }
   if (summary.total_pledged_cents > 0) {
     const projectionPct = Math.round((summary.run_rate_cents / summary.total_pledged_cents) * 100);
     components.push({ key: "year_end_projection", label: "Year-end projection vs. goal", weight: 0.15, score: Math.min(100, projectionPct) });
-  }
-  if (concentration.top10_pct !== null && concentration.top10_pct !== undefined) {
-    // Lower concentration is healthier — invert so a low top-10% scores high.
-    components.push({ key: "concentration_risk", label: "Concentration risk", weight: 0.1, score: Math.max(0, 100 - concentration.top10_pct) });
   }
 
   const totalWeight = components.reduce((s, c) => s + c.weight, 0);
