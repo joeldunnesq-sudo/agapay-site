@@ -3746,7 +3746,7 @@ export async function handleParishAvailabilityRuleCreate(request, env, parishId)
   try { body = await request.json(); } catch { body = {}; }
   const sacramentType = String(body.sacramentType || "").trim();
   if (!SCHEDULABLE_SACRAMENT_TYPES.has(sacramentType)) {
-    return json({ error: "Choose a schedulable sacrament type (house blessing, confession, or home visit)." }, { status: 400 });
+    return json({ error: "Choose a schedulable sacrament type (house blessing, confession, home visit, office visit, anointing, or counseling)." }, { status: 400 });
   }
   const dayOfWeek = Number(body.dayOfWeek);
   if (!Number.isInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
