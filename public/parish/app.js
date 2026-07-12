@@ -468,6 +468,10 @@
   function loadStewardshipEssentialPanels() {
     loadStewardshipHealthScorePanel();
     setTimeout(() => loadGivingMetricsPanel(), 300);
+    setTimeout(() => loadFinancialSnapshotsPanel(), 600);
+    setTimeout(() => loadManualIncomePanel(), 900);
+    setTimeout(() => loadDonorConcentrationPanel(), 1200);
+    setTimeout(() => loadRecurringGivingPanel(), 1500);
   }
 
   // ── Giving Metrics Panel ─────────────────────────────────────────────────
@@ -4140,6 +4144,8 @@
       renderDashboard();
       updateStewardshipBadges(isParishPlusActive(), { renderPanel: false });
       setTimeout(() => loadGivingSummary(), 250);
+      setTimeout(() => loadRecurringHealth(), 500);
+      setTimeout(() => renderQrCode(), 750);
       if (['history', 'givers', 'options'].includes(activeTab)) loadGivingHistory();
       stewardshipState.loaded = false;
       if (activeTab === 'stewardship') loadStewardshipPanel(true);
@@ -5217,9 +5223,13 @@
     if (!url || typeof qrcode === 'undefined') { targets.forEach(t => { t.innerHTML = '<span style="font-size:11px;color:var(--stone);text-align:center;line-height:1.5;">Load dashboard<br>to generate QR</span>'; }); currentQrSvg = ''; return; }
     const qr = qrcode(0,'H'); qr.addData(url); qr.make();
     const rawSvg = qr.createSvgTag(5,3).replace(/<svg /,'<svg role="img" aria-label="AGAPAY giving QR code" ').replace(/fill="#000000"/g,'fill="#061522"');
-    const logoHref = await markDataUri();
-    currentQrSvg = brandQrSvg(rawSvg, logoHref);
+    currentQrSvg = brandQrSvg(rawSvg, '');
     targets.forEach(t => { t.innerHTML = currentQrSvg; });
+    const logoHref = await markDataUri();
+    if (logoHref) {
+      currentQrSvg = brandQrSvg(rawSvg, logoHref);
+      targets.forEach(t => { t.innerHTML = currentQrSvg; });
+    }
   }
 
   function brandQrSvg(svg, logoHref) {
