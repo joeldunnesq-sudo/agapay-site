@@ -369,8 +369,7 @@
 
     const s = parishPlusCommerceState.summary;
     if (!parishPlusCommerceState.loaded) {
-      statBox.innerHTML = '<div class="pdx-pp-stat"><span class="pdx-pp-stat-unit">Loading sales…</span></div>';
-      loadParishPlusCommerceSummary();
+      statBox.innerHTML = '<div class="pdx-pp-stat"><span class="pdx-pp-stat-unit">Open Bookstore to view sales</span></div>';
     } else if (s && s.monthOrderCount > 0) {
       statBox.innerHTML = `<div class="pdx-pp-stat"><span class="pdx-pp-stat-num">${money(s.monthGrossCents)}</span><span class="pdx-pp-stat-unit">this month · ${s.monthOrderCount} order${s.monthOrderCount === 1 ? '' : 's'}</span></div>`;
     } else {
@@ -413,8 +412,7 @@
       else { stateChip.textContent = 'Included'; stateChip.className = 'pdx-pp-card-state ready'; }
     }
     if (!sacramentsState || !sacramentsState.loaded) {
-      statBox.innerHTML = '<div class="pdx-pp-stat"><span class="pdx-pp-stat-unit">Loading requests…</span></div>';
-      if (typeof loadSacramentsPanel === 'function') loadSacramentsPanel().then(() => renderParishPlusSacramentsTile(isParishPlusActive()));
+      statBox.innerHTML = '<div class="pdx-pp-stat"><span class="pdx-pp-stat-unit">Open Requests to review</span></div>';
     } else if (pendingCount > 0) {
       statBox.innerHTML = `<div class="pdx-pp-stat"><span class="pdx-pp-stat-num attention">${pendingCount}</span><span class="pdx-pp-stat-unit">pending request${pendingCount === 1 ? '' : 's'}</span></div>`;
     } else {
@@ -1725,7 +1723,7 @@
     // the dashboard payload as a fallback when the parish opens Bookstore first.
     const sw = stewardshipState.stewardship || {};
     const swActive = Boolean(currentParish.stewardshipActive || sw.active || ['active', 'trialing', 'comped'].includes(sw.status));
-    updateStewardshipBadges(swActive);
+    updateStewardshipBadges(swActive, { renderPanel: false });
     if (!swActive) {
       if (upsell) upsell.hidden = false;
       if (live) live.hidden = true;
@@ -1738,7 +1736,7 @@
       status.className = 'sw-suite-status-label ' + (currentParish.bookstoreEnabled ? 'sw-suite-status--active' : 'sw-suite-status--upsell');
     }
     renderBookstoreTaxReminder();
-    loadBookstoreSalesPanel(force);
+    setTimeout(() => loadBookstoreSalesPanel(force), 250);
 
     if (bookstoreCatalogState.loaded && !force) {
       renderBookstoreCurrentItems(bookstoreCatalogState.products);
@@ -2428,7 +2426,7 @@
       if (!res.ok) throw new Error(data.error || 'Unable to load requests.');
       sacramentsState = { loaded: true, requests: data.requests || [] };
       renderSacramentsPanel();
-      loadSacramentsAvailability();
+      setTimeout(() => loadSacramentsAvailability(), 250);
     } catch (err) {
       pane.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
     }
@@ -3095,7 +3093,7 @@
         selectedMeeting: null
       };
       const sw       = stewardshipState.stewardship || {};
-      updateStewardshipBadges(isParishPlusActive());
+      updateStewardshipBadges(isParishPlusActive(), { renderPanel: false });
       maybeShowStewardshipCompExpiryNotice(sw);
     } catch { /* silent — badge stays gold */ }
   }
