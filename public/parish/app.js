@@ -431,15 +431,14 @@
       if (status) status.textContent = 'Not loaded';
       return;
     }
-    if (!isParishTier()) {
+    if (!isParishTier() && !isParishPlusActive()) {
       renderStewardshipUnavailableForTier();
       return;
     }
     if (stewardshipState.loaded && !force) {
       renderStewardshipPanel();
       // Always reload metrics/financials when switching to the tab
-      const _sw = stewardshipState.stewardship || {};
-      const _active = _sw.active || ['active','trialing'].includes(_sw.status);
+      const _active = isParishPlusActive();
       if (_active) { loadGivingMetricsPanel(); loadFinancialSnapshotsPanel(); loadStewardshipHealthScorePanel(); loadDonorConcentrationPanel(); loadRecurringGivingPanel(); loadManualIncomePanel(); }
       return;
     }
@@ -463,6 +462,7 @@
         meetings: [], subscribePlans: [], setupRequired: false, comingSoon: true, selectedMeeting: null
       };
     }
+    updateStewardshipBadges(isParishPlusActive());
     renderStewardshipPanel();
     renderParishPlusPanel();
     // Load giving metrics, financials, health score, concentration risk, and recurring giving in parallel
@@ -4135,9 +4135,7 @@
       await refreshStripeStatus({ quiet: true });
       saveSession();
       renderDashboard();
-      setTimeout(() => loadGivingSummary(), 900);
-      setTimeout(() => loadRecurringHealth(), 1400);
-      setTimeout(() => loadCommemorations(), 1900);
+      updateStewardshipBadges(isParishPlusActive());
       if (['history', 'givers', 'options'].includes(activeTab)) loadGivingHistory();
       stewardshipState.loaded = false;
       if (activeTab === 'stewardship') loadStewardshipPanel(true);
