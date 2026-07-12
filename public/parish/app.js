@@ -4146,7 +4146,12 @@
       setTimeout(() => loadGivingSummary(), 250);
       setTimeout(() => loadRecurringHealth(), 500);
       setTimeout(() => renderQrCode(), 750);
-      if (['history', 'givers', 'options'].includes(activeTab)) loadGivingHistory();
+      setTimeout(() => loadCommemorations(), 1000);
+      if (['history', 'givers', 'options'].includes(activeTab)) {
+        loadGivingHistory();
+      } else {
+        setTimeout(() => loadGivingHistory(), 1250);
+      }
       stewardshipState.loaded = false;
       if (activeTab === 'stewardship') loadStewardshipPanel(true);
       if (activeTab === 'reconcile') loadReconciliation();
