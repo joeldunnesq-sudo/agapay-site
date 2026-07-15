@@ -1,0 +1,7 @@
+AGAPAY_ENVIRONMENT=local
+AGAPAY_APP_URL=http://localhost:8787
+AGAPAY_PUBLIC_URL=http://localhost:8787
+AGAPAY_ENABLED_PRODUCTS=give,learn,listen
+
+# Local development secrets should be placed in .dev.vars only.
+# Do not put production values in local files.

@@ -13,4 +13,5 @@ tmp-*/
 *.log
 .env
 .env.*
+.dev.vars
 .wrangler/

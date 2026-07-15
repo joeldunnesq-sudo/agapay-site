@@ -6,6 +6,7 @@
 
 import { AccountingDatabaseError } from "./errors.js";
 import { requireNonEmptyString } from "./validation.js";
+import { createAccountingConfiguration } from "./environment.js";
 
 export const ACCOUNTING_DATABASE_STATUSES = Object.freeze([
   "unconfigured",
@@ -21,19 +22,24 @@ export const ACCOUNTING_DATABASE_STATUSES = Object.freeze([
   "recovery_mode"
 ]);
 
-export function createUnconfiguredAccountingDatabase({ parishId, environment = "production" } = {}) {
+export function createUnconfiguredAccountingDatabase({ parishId, environment = "" } = {}) {
+  const config = createAccountingConfiguration({}, { environment });
   return Object.freeze({
     status: "unconfigured",
     parishId: requireNonEmptyString(parishId, "parishId"),
-    environment: environment || "production",
+    environment: config.environment,
     binding: null,
-    registryRecord: null,
+    registryRecord: Object.freeze({
+      registryName: config.accountingDatabaseRegistry.name,
+      implemented: false
+    }),
     reason: "accounting_database_registry_not_implemented"
   });
 }
 
-export async function resolveAccountingDatabase(_env, { parishId, environment = "production" } = {}) {
-  return createUnconfiguredAccountingDatabase({ parishId, environment });
+export async function resolveAccountingDatabase(_env, { parishId, environment = "" } = {}) {
+  const config = createAccountingConfiguration(_env, { environment });
+  return createUnconfiguredAccountingDatabase({ parishId, environment: config.environment });
 }
 
 export function assertAccountingDatabaseResolution(resolution) {
