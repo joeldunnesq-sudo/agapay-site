@@ -6,4 +6,8 @@ export * from "./migration-safety.js";
 export * from "./database-resolution.js";
 export * from "./context.js";
 export * from "./contracts.js";
+export * from "./stripe-source-events.js";
+export * from "./background-jobs.js";
+export * from "./observability.js";
+export * from "./storage-foundations.js";
 export * from "./gateway/index.js";

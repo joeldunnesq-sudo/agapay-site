@@ -48,6 +48,7 @@ import {
   donorName,
   ensureCommemorationEntryFromOffering,
   refundCommerceOrderFromStripe,
+  disputeCommerceOrderFromStripe,
   findRegistrationByStripeAccountId,
   findRegistrationByStripeSubscriptionId,
   loadDonorOfferingByCheckout,
@@ -467,6 +468,7 @@ export async function processStripeWebhookEvent(env, event) {
   }
 
   if (event.type === "charge.dispute.created") {
+    await disputeCommerceOrderFromStripe(env, object, "created");
     await updateDonorOfferingByPaymentIntent(env, object.payment_intent, {
       status: "disputed",
       paymentStatus: "disputed",
@@ -478,6 +480,7 @@ export async function processStripeWebhookEvent(env, event) {
   }
 
   if (event.type === "charge.dispute.closed") {
+    await disputeCommerceOrderFromStripe(env, object, "closed");
     await updateDonorOfferingByPaymentIntent(env, object.payment_intent, {
       status: object.status === "won" ? "completed" : "dispute_closed",
       paymentStatus: object.status === "won" ? "paid" : "dispute_closed",

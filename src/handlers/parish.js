@@ -5584,6 +5584,29 @@ export async function refundCommerceOrderFromStripe(env, charge = {}) {
   return order;
 }
 
+// Reflects Stripe disputes back onto bookstore orders. Safe to call for any
+// charge dispute: non-bookstore and unknown payment intents no-op.
+export async function disputeCommerceOrderFromStripe(env, dispute = {}, phase = "created") {
+  if (!d1(env)) return null;
+  const pi = stripeObjectId(dispute.payment_intent);
+  if (!pi) return null;
+  const order = await d1First(env,
+    `SELECT id FROM commerce_orders WHERE stripe_payment_intent_id = ? AND commerce_module = 'bookstore'`,
+    pi);
+  if (!order) return null;
+  const won = String(dispute.status || "").toLowerCase() === "won";
+  const state = phase === "closed"
+    ? (won ? "completed" : "dispute_closed")
+    : "disputed";
+  const paymentStatus = phase === "closed"
+    ? (won ? "paid" : "dispute_closed")
+    : "disputed";
+  await d1Run(env,
+    `UPDATE commerce_orders SET payment_status = ?, status = ?, updated_at = ? WHERE id = ?`,
+    paymentStatus, state, new Date().toISOString(), order.id);
+  return order;
+}
+
 export function parishDashboardPayload(parishId, registration) {
   return {
     parishId,
