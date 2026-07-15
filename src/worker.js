@@ -307,6 +307,17 @@ import {
   handleMarketplaceCatalog,
 } from "./handlers/marketplace.js";
 
+import {
+  handleIdentityLogin,
+  handleIdentitySession,
+  handleIdentityLogout,
+  handleIdentityInvitationAccept,
+  handleIdentityCapabilityCatalog,
+  handleMembershipInvitationCreate,
+  handleMembershipInvitationRevoke,
+  handleMembershipList,
+} from "./handlers/identity.js";
+
 async function handleWaitlist(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   const limited = await rateLimit(request, env, "waitlist", { limit: 8, windowSeconds: 300 });
@@ -2719,6 +2730,23 @@ export default {
     if (url.pathname === "/api/admin/session") {
       return handleAdminSession(request, env);
     }
+    // ── Platform Identity (Accounting Package 0.75C) ────────────────────
+    if (url.pathname === "/api/identity/login") {
+      return handleIdentityLogin(request, env);
+    }
+    if (url.pathname === "/api/identity/session") {
+      return handleIdentitySession(request, env);
+    }
+    if (url.pathname === "/api/identity/logout") {
+      return handleIdentityLogout(request, env);
+    }
+    if (url.pathname === "/api/identity/capabilities") {
+      return handleIdentityCapabilityCatalog(request);
+    }
+    if (url.pathname.startsWith("/api/identity/invitations/") && url.pathname.endsWith("/accept")) {
+      const token = decodeURIComponent(url.pathname.replace("/api/identity/invitations/", "").replace("/accept", ""));
+      return handleIdentityInvitationAccept(request, env, token);
+    }
     if (request.method === "GET" && url.pathname === "/api/admin/platform-summary") {
       return handleAdminPlatformSummary(request, env);
     }
@@ -3118,6 +3146,21 @@ export default {
       const parishId = decodeURIComponent(parts[0] || "");
       const requestId = decodeURIComponent(parts[1] || "");
       return handleParishSacramentUpdate(request, env, parishId, requestId);
+    }
+    // ── Platform Identity & Parish Memberships (Accounting Package 0.75C) ──
+    // Additive routes only -- none of these are reachable via, or affect,
+    // any existing parish-dashboard route above.
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/memberships/invitations")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/memberships/invitations", ""));
+      return handleMembershipInvitationCreate(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/memberships/invitations/")) {
+      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/memberships/invitations/");
+      return handleMembershipInvitationRevoke(request, env, decodeURIComponent(parts[0] || ""), decodeURIComponent(parts[1] || ""));
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/memberships")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/memberships", ""));
+      return handleMembershipList(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/giving-summary")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/giving-summary", ""));

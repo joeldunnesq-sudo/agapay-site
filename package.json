@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node server.mjs",
     "start": "node server.mjs",
-    "check": "node scripts/require-node-22.mjs && node --check src/worker.js && node scripts/route-map-integrity.mjs && node scripts/migration-integrity.mjs && node scripts/check.mjs && node scripts/check-learn.mjs && node scripts/worker-hardening-tests.mjs && node scripts/settlement-profiles-tests.mjs && node scripts/tax-exemption-tests.mjs && node scripts/tax-exemption-route-tests.mjs && node scripts/tax-readiness-tests.mjs",
+    "check": "node scripts/require-node-22.mjs && node --check src/worker.js && node scripts/route-map-integrity.mjs && node scripts/migration-integrity.mjs && node scripts/check.mjs && node scripts/check-learn.mjs && node scripts/worker-hardening-tests.mjs && node scripts/settlement-profiles-tests.mjs && node scripts/tax-exemption-tests.mjs && node scripts/tax-exemption-route-tests.mjs && node scripts/tax-readiness-tests.mjs && node scripts/identity-tests.mjs",
     "prelaunch": "node scripts/prelaunch-checks.mjs"
   },
   "engines": {
