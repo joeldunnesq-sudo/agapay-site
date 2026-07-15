@@ -1,5 +1,9 @@
 node_modules/
-package-lock.json
+
+# package-lock.json is intentionally tracked (not ignored) as of Package
+# 0.75A (CI Safety) -- the CI test gate uses `npm ci`, which requires a
+# committed lockfile for deterministic installs. Do not re-add this to
+# .gitignore without providing another deterministic-install mechanism.
 
 # Local scratch files created during Codex/Claude iterations
 index-script-snippet.txt

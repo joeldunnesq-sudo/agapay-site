@@ -1,14 +1,40 @@
 name: Deploy to Cloudflare Workers
 
+# Package 0.75A (CI Safety): production migrations and deployment now
+# depend on the "test" job succeeding first, via GitHub Actions job
+# dependencies ("needs:"). If the test job fails, is cancelled, or does not
+# complete successfully, the "deploy" job is skipped automatically -- this
+# is GitHub Actions' default behavior for a job with an unsatisfied "needs"
+# dependency and is not something this file has to implement itself.
+#
+# See docs/accounting/03-package-0.75a-ci-safety-report.md for the full
+# rationale, failure-path analysis, and required manual GitHub repository
+# settings.
+
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
+
+# Least-privilege default: nothing in this workflow needs to write to the
+# repository (no PR comments, no releases, no packages published).
+permissions:
+  contents: read
 
 jobs:
-  deploy:
+  test:
+    name: Test
     runs-on: ubuntu-latest
-    name: Deploy
+    # This job intentionally has no access to Cloudflare, Stripe production,
+    # or any other production secret. Every script invoked by `npm run
+    # check` runs against mocked Stripe calls and/or a local, in-memory or
+    # throwaway SQLite database (via Node's built-in node:sqlite) -- never
+    # a real D1, KV, or R2 resource. See docs/accounting/
+    # 03-package-0.75a-ci-safety-report.md section 5 for the full script
+    # inventory and why each one is safe to run here.
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -17,6 +43,47 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies (deterministic)
+        run: npm ci
+
+      - name: Run required checks (lint, route-map integrity, migration integrity, unit/integration tests)
+        run: npm run check
+
+  deploy:
+    name: Deploy
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Only this job -- the one that actually touches production -- is
+    # concurrency-limited. The "test" job above is deliberately left
+    # unrestricted: it's non-destructive and safe to run in parallel across
+    # any number of pushes or pull requests.
+    #
+    # At most one "agapay-production" run (migration + deploy) is ever in
+    # flight. A newer push to main WAITS for an older run to finish rather
+    # than cancelling it (cancel-in-progress: false) -- cancelling a run
+    # partway through a D1 migration could leave production in an unknown,
+    # ambiguous state, which is worse than a short queueing delay.
+    concurrency:
+      group: agapay-production
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Validate Cloudflare authentication
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          wranglerVersion: '4'
+          command: whoami
 
       - name: Apply D1 migrations
         uses: cloudflare/wrangler-action@v3
@@ -30,5 +97,3 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
-
-# Retrigger: confirming CLOUDFLARE_API_TOKEN secret is now set
