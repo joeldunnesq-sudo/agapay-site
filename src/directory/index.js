@@ -5,3 +5,4 @@ export * from "./privacy.js";
 export * from "./contacts.js";
 export * from "./publication.js";
 export * from "./projections.js";
+export * from "./invitations.js";
