@@ -94,6 +94,16 @@
           </article>
 
           <article class="panel">
+            <h2>Profile Photo</h2>
+            <div class="summary-list" id="photoSummary"></div>
+            <form class="form-grid" id="photoForm" hidden>
+              <label>Photo file<input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required /></label>
+              <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Household</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
+              <div class="actions"><button class="btn primary" type="submit">Upload Photo</button><button class="btn secondary" type="button" id="submitPhotoReview" hidden>Submit Photo</button><button class="btn warn" type="button" id="removePhoto" hidden>Remove Photo</button></div>
+            </form>
+          </article>
+
+          <article class="panel">
             <h2>Contacts</h2>
             <div class="contact-list" id="contactList"></div>
             <form class="form-grid" id="contactForm" hidden>
@@ -189,6 +199,20 @@
       document.getElementById("householdList").innerHTML = households.length ? households.map((household) => `<div class="mini-card"><strong>${household.displayName}</strong><small>Household administrator</small></div>`).join("") : '<div class="empty">No manageable households found.</div>';
       const requests = profileState.pendingRequests || [];
       document.getElementById("requestList").innerHTML = requests.length ? requests.map((request) => `<div class="mini-card"><strong>${request.summary}</strong><small>${request.requestType} · ${request.status}</small></div>`).join("") : '<div class="empty">No pending directory changes.</div>';
+      renderPhoto();
+    }
+    async function renderPhoto() {
+      const person = profileState?.currentPerson || profileState?.profile?.person;
+      if (!person) return;
+      document.getElementById("photoForm").hidden = false;
+      const payload = await api(`/api/directory/media/current?ownerType=person&ownerId=${encodeURIComponent(person.id)}`).catch(() => ({ assets: [] }));
+      const asset = (payload.assets || [])[0];
+      window.currentDirectoryPhoto = asset || null;
+      document.getElementById("photoSummary").innerHTML = asset
+        ? `<div class="mini-card"><strong>${asset.lifecycleStatus}</strong><small>${asset.detectedMimeType} · ${asset.originalWidth}×${asset.originalHeight} · ${asset.visibility}</small></div>`
+        : '<div class="empty">No directory profile photo yet.</div>';
+      document.getElementById("submitPhotoReview").hidden = !asset || asset.lifecycleStatus !== "ready";
+      document.getElementById("removePhoto").hidden = !asset;
     }
     async function loadDirectory() {
       if (!token || !email) {
@@ -224,6 +248,43 @@
         body: JSON.stringify({ ownerType: "person", ownerId: profileState.currentPerson.id, status: button.dataset.publication })
       });
       showNotice(button.dataset.publication === "paused" ? "Publication paused." : "Publication submitted for review.");
+      await loadDirectory();
+    });
+    document.getElementById("photoForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const person = profileState?.currentPerson || profileState?.profile?.person;
+      const fileInput = event.currentTarget.elements.photo;
+      const selected = fileInput.files && fileInput.files[0];
+      if (!person || !selected) return;
+      const visibility = event.currentTarget.elements.visibility.value || "private";
+      const sessionPayload = await api("/api/directory/media/upload-session", {
+        method: "POST",
+        body: JSON.stringify({ ownerType: "person", ownerId: person.id, visibility })
+      });
+      const form = new FormData();
+      form.append("photo", selected);
+      await fetch(`/api/directory/media/sessions/${encodeURIComponent(sessionPayload.session.id)}/complete`, {
+        method: "POST",
+        headers: { Authorization: token ? "Bearer " + token : "", "X-AGAPAY-User-Email": email },
+        body: form
+      }).then(async (response) => {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || payload.ok === false) throw new Error(payload.message || payload.error || "Photo upload failed.");
+      });
+      event.currentTarget.reset();
+      showNotice("Photo uploaded. Publication approval is separate.");
+      await loadDirectory();
+    });
+    document.getElementById("submitPhotoReview").addEventListener("click", async () => {
+      if (!window.currentDirectoryPhoto) return;
+      await api(`/api/directory/media/${encodeURIComponent(window.currentDirectoryPhoto.id)}/submit`, { method: "POST" });
+      showNotice("Photo submitted for review.");
+      await loadDirectory();
+    });
+    document.getElementById("removePhoto").addEventListener("click", async () => {
+      if (!window.currentDirectoryPhoto) return;
+      await api(`/api/directory/media/${encodeURIComponent(window.currentDirectoryPhoto.id)}`, { method: "DELETE" });
+      showNotice("Photo removed.");
       await loadDirectory();
     });
     loadDirectory().catch((error) => {

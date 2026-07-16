@@ -23,6 +23,8 @@ export const FIELD_DEFAULTS = Object.freeze({
   adult_legal_name: { visibility: "staff", eligible: false },
   adult_email: { visibility: "private", eligible: false },
   adult_phone: { visibility: "private", eligible: false },
+  person_photo: { visibility: "private", eligible: false },
+  household_photo: { visibility: "private", eligible: false },
   street_address: { visibility: "staff", eligible: false },
   city_state: { visibility: "directory_members", eligible: true },
   household_address: { visibility: "staff", eligible: false },

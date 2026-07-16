@@ -94,5 +94,12 @@ bucket_name = "agapay-tax-exemption-docs"
 binding = "GIVING_STATEMENTS"
 bucket_name = "agapay-giving-statements"
 
+# Private bucket for Parish Directory person and household photos. Never
+# enable public r2.dev access; delivery goes through authenticated Worker
+# media routes that re-check directory ownership and privacy.
+[[r2_buckets]]
+binding = "DIRECTORY_MEDIA"
+bucket_name = "agapay-directory-media"
+
 [browser]
 binding = "BROWSER"

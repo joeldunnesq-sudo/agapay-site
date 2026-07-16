@@ -312,6 +312,10 @@ import {
 } from "./handlers/directory-self-service.js";
 
 import {
+  handleDirectoryMedia,
+} from "./handlers/directory-media.js";
+
+import {
   handleIdentityLogin,
   handleIdentitySession,
   handleIdentityLogout,
@@ -2469,6 +2473,10 @@ export default {
     }
     if (url.pathname === "/api/directory/intake") {
       return handleDirectoryIntake(request, env);
+    }
+    if (url.pathname.startsWith("/api/directory/media/")) {
+      const directoryMediaResponse = await handleDirectoryMedia(request, env);
+      if (directoryMediaResponse) return directoryMediaResponse;
     }
     if (url.pathname.startsWith("/api/directory/")) {
       const directorySelfServiceResponse = await handleDirectorySelfService(request, env);
