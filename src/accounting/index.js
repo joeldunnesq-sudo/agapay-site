@@ -10,4 +10,5 @@ export * from "./stripe-source-events.js";
 export * from "./background-jobs.js";
 export * from "./observability.js";
 export * from "./storage-foundations.js";
+export * from "./control-plane.js";
 export * from "./gateway/index.js";

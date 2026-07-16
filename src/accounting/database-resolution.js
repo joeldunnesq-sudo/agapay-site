@@ -7,6 +7,7 @@
 import { AccountingDatabaseError } from "./errors.js";
 import { requireNonEmptyString } from "./validation.js";
 import { createAccountingConfiguration } from "./environment.js";
+import { resolveAccountingControlPlaneDatabase } from "./control-plane.js";
 
 export const ACCOUNTING_DATABASE_STATUSES = Object.freeze([
   "unconfigured",
@@ -39,7 +40,21 @@ export function createUnconfiguredAccountingDatabase({ parishId, environment = "
 
 export async function resolveAccountingDatabase(_env, { parishId, environment = "" } = {}) {
   const config = createAccountingConfiguration(_env, { environment });
-  return createUnconfiguredAccountingDatabase({ parishId, environment: config.environment });
+  if (!_env?.AGAPAY_DB?.prepare) {
+    return createUnconfiguredAccountingDatabase({ parishId, environment: config.environment });
+  }
+  try {
+    return await resolveAccountingControlPlaneDatabase(_env, {
+      parishId,
+      authenticatedParishId: parishId,
+      environment: config.environment
+    });
+  } catch (error) {
+    if (String(error?.message || "").includes("no such table")) {
+      return createUnconfiguredAccountingDatabase({ parishId, environment: config.environment });
+    }
+    throw error;
+  }
 }
 
 export function assertAccountingDatabaseResolution(resolution) {
