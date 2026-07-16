@@ -1,1 +1,7 @@
 export * from "./foundation.js";
+export * from "./shared.js";
+export * from "./settings.js";
+export * from "./privacy.js";
+export * from "./contacts.js";
+export * from "./publication.js";
+export * from "./projections.js";

@@ -106,7 +106,14 @@ export const CAPABILITY_CATALOG = Object.freeze([
 
   // Future Modules
   "marketplace.manage",
+  "directory.view",
+  "directory.self.manage",
+  "directory.households.manage",
   "directory.manage",
+  "directory.publication.review",
+  "directory.settings.manage",
+  "directory.private_contact.view",
+  "directory.audit.view",
   "communications.manage",
   "events.manage"
 ]);
