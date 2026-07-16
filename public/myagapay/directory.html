@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AGAPAY Directory | My AGAPAY</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260704c" />
+  <style>
+    :root { --ink:#101820; --muted:#68717d; --line:#d8ddd9; --paper:#fbfaf7; --gold:#b88a3d; --green:#235c4d; --blue:#153a5b; }
+    body { margin:0; background:#f6f3ee; color:var(--ink); font-family:"DM Sans", Arial, sans-serif; }
+    .directory-shell { min-height:100vh; display:grid; grid-template-columns:280px 1fr; }
+    .directory-side { background:#071722; color:#fff; padding:28px 22px; display:flex; flex-direction:column; gap:24px; }
+    .directory-side img { width:54px; height:54px; }
+    .directory-side a { color:#fff; text-decoration:none; display:flex; align-items:center; gap:10px; padding:10px 0; opacity:.88; }
+    .directory-side a.active { opacity:1; color:#f0c36f; }
+    .directory-main { padding:28px; }
+    .directory-top { display:flex; justify-content:space-between; gap:16px; align-items:center; margin-bottom:22px; }
+    .directory-title h1 { margin:0; font-family:"Cormorant Garamond", Georgia, serif; font-size:38px; letter-spacing:0; }
+    .directory-title p { margin:4px 0 0; color:var(--muted); max-width:740px; }
+    .status-pill { border:1px solid var(--line); background:#fff; padding:8px 12px; border-radius:8px; font-size:13px; font-weight:700; }
+    .directory-grid { display:grid; grid-template-columns:1.2fr .8fr; gap:18px; align-items:start; }
+    .panel { background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px; box-shadow:0 8px 22px rgba(20,20,20,.05); }
+    .panel h2 { font-size:18px; margin:0 0 12px; }
+    .summary-list { display:grid; gap:10px; }
+    .summary-row { display:flex; justify-content:space-between; gap:12px; border-bottom:1px solid #ecefed; padding-bottom:10px; }
+    .summary-row:last-child { border-bottom:0; padding-bottom:0; }
+    .summary-row span { color:var(--muted); }
+    .summary-row strong { text-align:right; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+    .btn { appearance:none; border:0; border-radius:8px; padding:10px 12px; font-weight:700; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; min-height:40px; }
+    .btn.primary { background:var(--green); color:#fff; }
+    .btn.secondary { background:#eef3f0; color:var(--green); }
+    .btn.warn { background:#fff4dd; color:#7a4d00; }
+    .stack { display:grid; gap:14px; }
+    .empty { color:var(--muted); background:#f7f8f6; border:1px dashed var(--line); padding:14px; border-radius:8px; }
+    .contact-list, .household-list, .request-list { display:grid; gap:10px; }
+    .mini-card { border:1px solid #e4e7e3; border-radius:8px; padding:12px; background:#fff; }
+    .mini-card strong { display:block; }
+    .mini-card small { color:var(--muted); }
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    label { display:grid; gap:6px; font-size:13px; font-weight:700; }
+    input, select { border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; min-width:0; }
+    .notice { margin:0 0 16px; padding:12px; border-radius:8px; background:#eef6fb; color:#17384a; border:1px solid #cde1ec; }
+    .error { background:#fff0ed; color:#6d2118; border-color:#ffd1c8; }
+    @media (max-width: 860px) {
+      .directory-shell { display:block; }
+      .directory-side { position:static; padding:18px; }
+      .directory-main { padding:18px; }
+      .directory-top { display:grid; }
+      .directory-grid, .form-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="directory-shell">
+    <aside class="directory-side">
+      <a href="/" aria-label="AGAPAY home"><img src="/mark.png" alt="AGAPAY" /></a>
+      <nav>
+        <a href="/myagapay/dashboard">My AGAPAY</a>
+        <a href="/myagapay/giving">Giving</a>
+        <a href="/myagapay/learn">Learn</a>
+        <a class="active" href="/myagapay/directory">Directory</a>
+        <a href="/myagapay/account">Account</a>
+      </nav>
+    </aside>
+    <main class="directory-main">
+      <div class="directory-top">
+        <div class="directory-title">
+          <h1>Directory</h1>
+          <p>Manage your own directory profile and household-owned information from your individual My AGAPAY account.</p>
+        </div>
+        <span class="status-pill" id="directoryStatus">Loading</span>
+      </div>
+
+      <div id="directoryNotice" class="notice" hidden></div>
+
+      <section class="directory-grid" aria-live="polite">
+        <div class="stack">
+          <article class="panel">
+            <h2>My Profile</h2>
+            <div class="summary-list" id="profileSummary"></div>
+            <form class="form-grid" id="profileForm" hidden>
+              <label>Preferred name<input name="preferredName" autocomplete="name" /></label>
+              <label>Middle name<input name="middleName" /></label>
+              <label>Suffix<input name="suffix" /></label>
+              <label>Date of birth<input name="dateOfBirth" placeholder="YYYY-MM-DD" /></label>
+              <input type="hidden" name="expectedVersion" />
+              <div class="actions"><button class="btn primary" type="submit">Save Profile</button></div>
+            </form>
+          </article>
+
+          <article class="panel">
+            <h2>Contacts</h2>
+            <div class="contact-list" id="contactList"></div>
+            <form class="form-grid" id="contactForm" hidden>
+              <label>Type<select name="contactType"><option value="email">Email</option><option value="phone">Phone</option></select></label>
+              <label>Label<input name="label" placeholder="personal, mobile, home" /></label>
+              <label>Value<input name="value" required /></label>
+              <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Household</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
+              <div class="actions"><button class="btn primary" type="submit">Add Contact</button></div>
+            </form>
+          </article>
+        </div>
+
+        <div class="stack">
+          <article class="panel">
+            <h2>Households</h2>
+            <div class="household-list" id="householdList"></div>
+          </article>
+
+          <article class="panel">
+            <h2>Publication</h2>
+            <div class="summary-list" id="publicationSummary"></div>
+            <div class="actions" id="publicationActions" hidden>
+              <button class="btn primary" type="button" data-publication="pending_approval">Submit for Review</button>
+              <button class="btn warn" type="button" data-publication="paused">Pause Publication</button>
+            </div>
+          </article>
+
+          <article class="panel">
+            <h2>Pending Changes</h2>
+            <div class="request-list" id="requestList"></div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const token = localStorage.getItem("agapayUserToken") || localStorage.getItem("agapayPlatformToken") || "";
+    const email = localStorage.getItem("agapayUserEmail") || localStorage.getItem("agapayPlatformEmail") || "";
+    let profileState = null;
+
+    function headers() {
+      return {
+        "Content-Type": "application/json",
+        "Authorization": token ? "Bearer " + token : "",
+        "X-AGAPAY-User-Email": email
+      };
+    }
+    function text(value) { return value === undefined || value === null || value === "" ? "Not set" : String(value); }
+    function showNotice(message, isError = false) {
+      const el = document.getElementById("directoryNotice");
+      el.textContent = message;
+      el.hidden = false;
+      el.className = "notice" + (isError ? " error" : "");
+    }
+    async function api(path, options = {}) {
+      const response = await fetch(path, { ...options, headers: { ...headers(), ...(options.headers || {}) } });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload.ok === false) throw new Error(payload.message || payload.error || "Directory action failed.");
+      return payload;
+    }
+    function renderProfile(data) {
+      profileState = data.profile || data;
+      const person = profileState.profile?.person || profileState.currentPerson || profileState.person;
+      const publication = profileState.profile?.publication || {};
+      document.getElementById("directoryStatus").textContent = profileState.claimed ? "Claimed" : "Not claimed";
+      if (!profileState.claimed) {
+        document.getElementById("profileSummary").innerHTML = '<div class="empty">No claimed directory person is linked to this account yet.</div>';
+        return;
+      }
+      document.getElementById("profileSummary").innerHTML = [
+        ["Preferred name", person.preferredName],
+        ["Legal name", person.legalName],
+        ["Protected", person.protectedPerson ? "Yes" : "No"],
+        ["Child record", person.child ? "Yes" : "No"]
+      ].map(([label, value]) => `<div class="summary-row"><span>${label}</span><strong>${text(value)}</strong></div>`).join("");
+      const form = document.getElementById("profileForm");
+      form.hidden = false;
+      form.preferredName.value = person.preferredName || "";
+      form.middleName.value = person.middleName || "";
+      form.suffix.value = person.suffix || "";
+      form.dateOfBirth.value = person.dateOfBirth || "";
+      form.expectedVersion.value = person.version || "";
+      const contacts = profileState.profile?.contacts || [];
+      document.getElementById("contactForm").hidden = false;
+      document.getElementById("contactList").innerHTML = contacts.length ? contacts.map((contact) => `<div class="mini-card"><strong>${contact.contactType}: ${text(contact.maskedValue)}</strong><small>${contact.label} · ${contact.visibility}${contact.verified ? " · verified" : ""}</small></div>`).join("") : '<div class="empty">No directory contacts yet.</div>';
+      document.getElementById("publicationSummary").innerHTML = [
+        ["Status", publication.status || "not_configured"],
+        ["Approval", publication.approvalStatus || "not_submitted"]
+      ].map(([label, value]) => `<div class="summary-row"><span>${label}</span><strong>${text(value)}</strong></div>`).join("");
+      document.getElementById("publicationActions").hidden = false;
+      const households = profileState.manageableHouseholds || [];
+      document.getElementById("householdList").innerHTML = households.length ? households.map((household) => `<div class="mini-card"><strong>${household.displayName}</strong><small>Household administrator</small></div>`).join("") : '<div class="empty">No manageable households found.</div>';
+      const requests = profileState.pendingRequests || [];
+      document.getElementById("requestList").innerHTML = requests.length ? requests.map((request) => `<div class="mini-card"><strong>${request.summary}</strong><small>${request.requestType} · ${request.status}</small></div>`).join("") : '<div class="empty">No pending directory changes.</div>';
+    }
+    async function loadDirectory() {
+      if (!token || !email) {
+        document.getElementById("directoryStatus").textContent = "Sign in";
+        showNotice("Directory self-service uses your platform-user My AGAPAY session. Please sign in before managing directory records.", true);
+        return;
+      }
+      const payload = await api("/api/directory/self/profile");
+      renderProfile(payload.profile);
+    }
+    document.getElementById("profileForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const payload = Object.fromEntries(new FormData(form).entries());
+      payload.expectedVersion = Number(payload.expectedVersion || 0);
+      await api("/api/directory/self/profile", { method: "PATCH", body: JSON.stringify(payload) });
+      showNotice("Profile saved.");
+      await loadDirectory();
+    });
+    document.getElementById("contactForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
+      await api("/api/directory/self/contacts", { method: "POST", body: JSON.stringify(payload) });
+      event.currentTarget.reset();
+      showNotice("Contact added.");
+      await loadDirectory();
+    });
+    document.getElementById("publicationActions").addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-publication]");
+      if (!button || !profileState?.currentPerson) return;
+      await api("/api/directory/publication/transition", {
+        method: "POST",
+        body: JSON.stringify({ ownerType: "person", ownerId: profileState.currentPerson.id, status: button.dataset.publication })
+      });
+      showNotice(button.dataset.publication === "paused" ? "Publication paused." : "Publication submitted for review.");
+      await loadDirectory();
+    });
+    loadDirectory().catch((error) => {
+      document.getElementById("directoryStatus").textContent = "Unavailable";
+      showNotice(error.message, true);
+    });
+  </script>
+</body>
+</html>

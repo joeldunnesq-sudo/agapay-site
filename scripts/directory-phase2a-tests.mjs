@@ -1,0 +1,327 @@
+import assert from "node:assert/strict";
+import { DatabaseSync } from "node:sqlite";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+import {
+  addHouseholdAdmin,
+  addHouseholdMember,
+  addParishAffiliation,
+  createHousehold,
+  createPerson,
+  createDirectoryChangeRequest,
+  createHouseholdAdultInvitation,
+  createSelfServiceAddress,
+  createSelfServiceContact,
+  getHouseholdSelfServiceProfile,
+  getSelfServiceProfile,
+  linkExternalIdentity,
+  resolveDirectorySelfServiceContext,
+  setPersonPrivacyFlags,
+  setSelfServicePrivacyPreference,
+  transitionSelfServicePublication,
+  updateHouseholdSelfServiceProfile,
+  updateSelfServiceContact,
+  updateSelfServicePersonProfile,
+  DirectoryServiceError
+} from "../src/directory/index.js";
+import { handleDirectorySelfService } from "../src/handlers/directory-self-service.js";
+import { ensurePlatformUser, issuePlatformUserSession, PLATFORM_USER_EMAIL_HEADER } from "../src/lib/identity.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.join(__dirname, "..");
+
+function migration(name) {
+  return readFileSync(path.join(repoRoot, "migrations", name), "utf8");
+}
+
+function makeD1Env() {
+  const db = new DatabaseSync(":memory:");
+  db.exec("PRAGMA foreign_keys = ON;");
+  db.exec(migration("0014_audit_log.sql"));
+  db.exec(migration("0020_platform_identity.sql"));
+  db.exec(migration("0022_directory_canonical_foundation.sql"));
+  db.exec(migration("0023_directory_contact_privacy_publication.sql"));
+  db.exec(migration("0024_directory_invitations_claims.sql"));
+  db.exec(migration("0025_directory_self_service_phase2a.sql"));
+
+  function wrap(sql) {
+    return {
+      _params: [],
+      bind(...params) { this._params = params; return this; },
+      async first() {
+        const row = db.prepare(sql).get(...this._params);
+        return row === undefined ? null : row;
+      },
+      async all() {
+        return { results: db.prepare(sql).all(...this._params), success: true };
+      },
+      async run() {
+        const info = db.prepare(sql).run(...this._params);
+        return { success: true, meta: { changes: info.changes, last_row_id: info.lastInsertRowid } };
+      }
+    };
+  }
+
+  const AGAPAY_DB = {
+    prepare: (sql) => wrap(sql),
+    async batch(statements) {
+      db.exec("BEGIN");
+      try {
+        const results = [];
+        for (const statement of statements) results.push(await statement.run());
+        db.exec("COMMIT");
+        return results;
+      } catch (error) {
+        db.exec("ROLLBACK");
+        throw error;
+      }
+    }
+  };
+  return { env: { AGAPAY_DB }, db };
+}
+
+function actor(parishId = "st-fiacre", capabilities = ["directory.manage"], personId = "") {
+  return { userId: `admin_${parishId}`, parishId, capabilities, personId };
+}
+
+async function fixture() {
+  const { env, db } = makeD1Env();
+  const admin = actor();
+  const user = await ensurePlatformUser(env, { email: "anna@example.org", displayName: "Anna Dunn" });
+  const session = await issuePlatformUserSession(env, user.id);
+  const adult = await createPerson(env, { actor: admin, preferredName: "Anna Dunn", legalName: "Anna Catherine Dunn", biologicalSex: "female" });
+  const spouse = await createPerson(env, { actor: admin, preferredName: "John Dunn", biologicalSex: "male" });
+  const child = await createPerson(env, { actor: admin, preferredName: "Maria Dunn", biologicalSex: "female" });
+  const household = await createHousehold(env, { actor: admin, displayName: "The Dunn Household" });
+  await addHouseholdMember(env, { actor: admin, householdId: household.id, personId: adult.id, relationship: "head" });
+  await addHouseholdMember(env, { actor: admin, householdId: household.id, personId: spouse.id, relationship: "spouse" });
+  await addHouseholdMember(env, { actor: admin, householdId: household.id, personId: child.id, relationship: "child" });
+  await addHouseholdAdmin(env, { actor: admin, householdId: household.id, personId: adult.id });
+  await addParishAffiliation(env, { actor: admin, personId: adult.id, status: "member" });
+  await addParishAffiliation(env, { actor: admin, personId: spouse.id, status: "member" });
+  await linkExternalIdentity(env, { actor: admin, personId: adult.id, linkType: "platform_user", externalId: user.id });
+  await setPersonPrivacyFlags(env, { actor: admin, personId: child.id, isChild: true });
+  const context = await resolveDirectorySelfServiceContext(env, { user });
+  return { env, db, admin, user, session, adult, spouse, child, household, context };
+}
+
+let passed = 0;
+async function test(name, fn) {
+  try {
+    await fn();
+    passed++;
+    console.log(`PASS - ${name}`);
+  } catch (error) {
+    console.error(`FAIL - ${name}`);
+    console.error(error);
+    process.exitCode = 1;
+  }
+}
+
+function auditCount(db, action) {
+  return db.prepare("SELECT COUNT(*) AS count FROM audit_log WHERE action = ?").get(action).count;
+}
+
+await test("migration creates Phase 2A change-request and notification tables", async () => {
+  const { db } = makeD1Env();
+  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map((row) => row.name);
+  assert.ok(tables.includes("directory_change_requests"));
+  assert.ok(tables.includes("directory_notification_events"));
+});
+
+await test("linked adult receives safe self-service context; unlinked user receives claimed=false", async () => {
+  const { env, context, user, household } = await fixture();
+  assert.equal(context.claimed, true);
+  assert.equal(context.user.email, "anna@example.org");
+  assert.equal(context.currentPerson.legalName, "Anna Catherine Dunn");
+  assert.equal(context.manageableHouseholds[0].id, household.id);
+  assert.equal("donorId" in context.currentPerson, false);
+  const unlinked = await ensurePlatformUser(env, { email: "unlinked@example.org" });
+  const unlinkedContext = await resolveDirectorySelfServiceContext(env, { user: unlinked });
+  assert.equal(unlinkedContext.claimed, false);
+  assert.equal(unlinkedContext.permissions.canSelfManage, false);
+  assert.equal(user.email, "anna@example.org");
+});
+
+await test("person profile update allows permitted fields, requires version, and routes protected fields to review", async () => {
+  const { env, db, context } = await fixture();
+  await assert.rejects(
+    () => updateSelfServicePersonProfile(env, { context, patch: { preferredName: "Anna D." } }),
+    (error) => error instanceof DirectoryServiceError && error.code === "stale_update_required"
+  );
+  const updated = await updateSelfServicePersonProfile(env, {
+    context,
+    patch: { expectedVersion: context.currentPerson.version, preferredName: "Anna D.", suffix: "III" }
+  });
+  assert.equal(updated.preferredName, "Anna D.");
+  assert.equal(auditCount(db, "directory.self_service.person_profile_updated"), 1);
+  await assert.rejects(
+    () => updateSelfServicePersonProfile(env, { context, patch: { expectedVersion: updated.version, parishId: "st-fiacre" } }),
+    (error) => error instanceof DirectoryServiceError && error.code === "protected_field_denied"
+  );
+  const request = await updateSelfServicePersonProfile(env, {
+    context,
+    patch: { expectedVersion: updated.version, legalName: "Anna Dunn Revised" }
+  });
+  assert.equal(request.requestType, "person_profile_review");
+});
+
+await test("person and household contacts are distinct; platform login email is not changed or auto-verified", async () => {
+  const { env, context, user, household } = await fixture();
+  const personContact = await createSelfServiceContact(env, {
+    context,
+    ownerType: "person",
+    ownerId: context.currentPerson.id,
+    data: { contactType: "email", value: "directory@example.org", primary: true, visibility: "private", verified: true }
+  });
+  assert.equal(personContact.verified, false);
+  const storedUser = await env.AGAPAY_DB.prepare("SELECT email FROM platform_users WHERE id = ?1").bind(user.id).first();
+  assert.equal(storedUser.email, "anna@example.org");
+  const householdContact = await createSelfServiceContact(env, {
+    context,
+    ownerType: "household",
+    ownerId: household.id,
+    data: { contactType: "phone", value: "555-222-3333", label: "home", visibility: "household" }
+  });
+  assert.equal(householdContact.contactType, "phone");
+  await assert.rejects(
+    () => updateSelfServiceContact(env, { context, contactId: personContact.id, patch: { expectedVersion: personContact.version, verified: true } }),
+    (error) => error instanceof DirectoryServiceError && error.code === "protected_field_denied"
+  );
+});
+
+await test("household admin can retrieve and edit household-owned profile but not canonical structure", async () => {
+  const { env, db, context, household } = await fixture();
+  const profile = await getHouseholdSelfServiceProfile(env, { context, householdId: household.id });
+  assert.equal(profile.household.displayName, "The Dunn Household");
+  assert.equal(profile.members.some((member) => member.child), true);
+  assert.equal("notes" in profile.household, false);
+  const updated = await updateHouseholdSelfServiceProfile(env, {
+    context,
+    householdId: household.id,
+    patch: { expectedVersion: profile.household.version, displayName: "Dunn Household" }
+  });
+  assert.equal(updated.household.displayName, "Dunn Household");
+  assert.equal(auditCount(db, "directory.self_service.household_profile_updated"), 1);
+  await assert.rejects(
+    () => updateHouseholdSelfServiceProfile(env, { context, householdId: household.id, patch: { expectedVersion: updated.household.version, active: false } }),
+    (error) => error instanceof DirectoryServiceError && error.code === "protected_field_denied"
+  );
+});
+
+await test("household address and privacy controls reuse Phase 1B policy and fail closed", async () => {
+  const { env, context, household } = await fixture();
+  const address = await createSelfServiceAddress(env, {
+    context,
+    householdId: household.id,
+    data: { line1: "123 Parish Way", city: "Dallas", region: "TX", postalCode: "75001", protectedAddress: true, visibility: "staff" }
+  });
+  assert.equal(address.protectedAddress, true);
+  assert.equal(address.line1, "");
+  await assert.rejects(
+    () => createSelfServiceAddress(env, {
+      context,
+      householdId: household.id,
+      data: { line1: "456 Visible Way", city: "Dallas", protectedAddress: true, visibility: "directory_members" }
+    }),
+    (error) => error instanceof DirectoryServiceError && error.code === "privacy_policy_denied"
+  );
+  await assert.rejects(
+    () => setSelfServicePrivacyPreference(env, {
+      context,
+      ownerType: "person",
+      ownerId: context.currentPerson.id,
+      fieldKey: "adult_legal_name",
+      visibility: "directory_members",
+      publicationEligible: true
+    }),
+    (error) => error instanceof DirectoryServiceError && error.code === "privacy_policy_denied"
+  );
+});
+
+await test("publication self-service allows submit and pause but denies self-approval", async () => {
+  const { env, context, household } = await fixture();
+  const pending = await transitionSelfServicePublication(env, { context, ownerType: "household", ownerId: household.id, status: "pending_approval" });
+  assert.equal(pending.status, "pending_approval");
+  await assert.rejects(
+    () => transitionSelfServicePublication(env, { context, ownerType: "household", ownerId: household.id, status: "approved" }),
+    (error) => error instanceof DirectoryServiceError && error.code === "self_approval_denied"
+  );
+  const paused = await transitionSelfServicePublication(env, { context, ownerType: "household", ownerId: household.id, status: "paused" });
+  assert.equal(paused.status, "paused");
+});
+
+await test("membership and relationship changes use controlled requests with duplicate protection and cancellation", async () => {
+  const { env, db, context, household } = await fixture();
+  const request = await createDirectoryChangeRequest(env, {
+    context,
+    parishId: "st-fiacre",
+    targetType: "household",
+    targetId: household.id,
+    householdId: household.id,
+    requestType: "household_relationship_change",
+    summary: "Correct relationship for household member",
+    payload: { personId: context.currentPerson.id, relationship: "head" }
+  });
+  assert.equal(request.status, "pending");
+  assert.equal(auditCount(db, "directory.change_request.created"), 1);
+  await assert.rejects(
+    () => createDirectoryChangeRequest(env, {
+      context,
+      parishId: "st-fiacre",
+      targetType: "household",
+      targetId: household.id,
+      householdId: household.id,
+      requestType: "household_relationship_change",
+      summary: "Correct relationship for household member",
+      payload: {}
+    }),
+    /UNIQUE/
+  );
+});
+
+await test("adult household invitation reuses Phase 1C and denies child invitations", async () => {
+  const { env, context, spouse, child, household } = await fixture();
+  const invitation = await createHouseholdAdultInvitation(env, {
+    context,
+    householdId: household.id,
+    personId: spouse.id,
+    email: "john@example.org"
+  });
+  assert.equal(invitation.invitationType, "additional_household_admin");
+  assert.equal(typeof invitation.token, "string");
+  const stored = await env.AGAPAY_DB.prepare("SELECT token_hash FROM directory_invitations WHERE id = ?1").bind(invitation.id).first();
+  assert.notEqual(stored.token_hash, invitation.token);
+  await assert.rejects(
+    () => createHouseholdAdultInvitation(env, { context, householdId: household.id, personId: child.id, email: "child@example.org" }),
+    (error) => error instanceof DirectoryServiceError && error.code === "child_invitation_denied"
+  );
+});
+
+await test("API route requires platform session and denies legacy bearer-only requests", async () => {
+  const { env, session, user } = await fixture();
+  const legacyRequest = new Request("https://agapay.app/api/directory/self/context", {
+    headers: { Authorization: "Bearer legacy-parish-token" }
+  });
+  const denied = await handleDirectorySelfService(legacyRequest, env);
+  assert.equal(denied.status, 401);
+  const request = new Request("https://agapay.app/api/directory/self/context", {
+    headers: {
+      Authorization: `Bearer ${session.token}`,
+      [PLATFORM_USER_EMAIL_HEADER]: user.email
+    }
+  });
+  const response = await handleDirectorySelfService(request, env);
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.equal(payload.context.claimed, true);
+});
+
+if (process.exitCode) {
+  console.error(`\n${passed} Phase 2A assertion group(s) passed before failure.`);
+  process.exit(process.exitCode);
+}
+
+console.log(`\n${passed} assertion group(s) passed. directory-phase2a-tests.mjs OK.`);

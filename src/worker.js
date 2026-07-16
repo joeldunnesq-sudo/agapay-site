@@ -308,6 +308,10 @@ import {
 } from "./handlers/marketplace.js";
 
 import {
+  handleDirectorySelfService,
+} from "./handlers/directory-self-service.js";
+
+import {
   handleIdentityLogin,
   handleIdentitySession,
   handleIdentityLogout,
@@ -551,7 +555,8 @@ const MYAGAPAY_ASSET_ROUTES = new Map([
   ["/myagapay/settings", "/myagapay/account.html"],
   ["/myagapay/market", "/marketplace"],
   ["/myagapay/marketplace", "/marketplace"],
-  ["/myagapay/directory", "/directory"],
+  ["/myagapay/directory", "/myagapay/directory.html"],
+  ["/myagapay/directory/", "/myagapay/directory.html"],
   ["/myagapay/learn", "/learn/dashboard"],
   ["/myagapay/learn/", "/learn/dashboard"],
   ["/myagapay/learn/dashboard", "/learn/dashboard"],
@@ -2464,6 +2469,10 @@ export default {
     }
     if (url.pathname === "/api/directory/intake") {
       return handleDirectoryIntake(request, env);
+    }
+    if (url.pathname.startsWith("/api/directory/")) {
+      const directorySelfServiceResponse = await handleDirectorySelfService(request, env);
+      if (directorySelfServiceResponse) return directorySelfServiceResponse;
     }
     if (url.pathname === "/api/parish-interest") {
       return handleParishInterest(request, env);

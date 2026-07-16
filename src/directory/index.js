@@ -6,3 +6,4 @@ export * from "./contacts.js";
 export * from "./publication.js";
 export * from "./projections.js";
 export * from "./invitations.js";
+export * from "./self-service.js";
