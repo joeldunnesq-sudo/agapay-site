@@ -182,6 +182,10 @@ function buildSubscriptionRevenueSummary(registrations = []) {
   return summary;
 }
 
+// AGAPAY no longer charges a donation platform fee (see checkoutFinancials
+// in src/handlers/parish.js) -- AGAPAY's revenue is the parish subscription
+// plan. This summary now reflects legacy/historical application-fee
+// revenue only; new gifts will always report agapayFeeCents: 0.
 function emptyDonationFeeSummary(now = new Date()) {
   return {
     month: now.getUTCMonth() + 1,
@@ -192,7 +196,7 @@ function emptyDonationFeeSummary(now = new Date()) {
     giftCount: 0,
     connectedAccounts: 0,
     dataSource: "not_configured",
-    note: "Donation fee revenue appears after connected Stripe gifts are available."
+    note: "AGAPAY no longer charges a donation fee; this reflects legacy application-fee revenue from before the change."
   };
 }
 
@@ -747,7 +751,7 @@ export async function handleAdminPlatformSummary(request, env) {
     donationFeeRevenue.dataSource = "not_connected";
   }
   if (donationFeeRevenue.dataSource === "stripe") {
-    donationFeeRevenue.note = "Current-month AGAPAY application fees from successful connected Stripe gifts.";
+    donationFeeRevenue.note = "AGAPAY no longer charges a donation fee; this month's total reflects any legacy application fees still settling from before the change.";
   }
 
   const ytdDonationsCents = monthly.reduce((sum, item) => sum + item.ytdDonationsCents, 0);

@@ -1037,7 +1037,7 @@ async function withMockFetch(handler, run) {
       assert.equal(form.get("mode"), "payment");
       assert.equal(form.get("success_url"), "https://agapay.test/give/st-checkout?success=1&session_id={CHECKOUT_SESSION_ID}");
       assert.equal(form.get("cancel_url"), "https://agapay.test/give/st-checkout?canceled=1");
-      assert.equal(form.get("payment_intent_data[application_fee_amount]"), "48");
+      assert.equal(form.get("payment_intent_data[application_fee_amount]"), null);
       assert.equal(form.get("metadata[parish_id]"), "st-checkout");
       assert.equal(form.get("metadata[donor_email]"), "giver@example.com");
       return new Response(JSON.stringify({
@@ -1073,9 +1073,9 @@ async function withMockFetch(handler, run) {
   assert.equal(offering.status, "checkout_created");
   assert.equal(offering.paymentStatus, "pending");
   assert.equal(offering.amountCents, 2500);
-  assert.equal(offering.chargeCents, 2655);
-  assert.equal(offering.agapayFeeCents, 48);
-  assert.equal(offering.estimatedStripeFeeCents, 107);
+  assert.equal(offering.chargeCents, 2603);
+  assert.equal(offering.agapayFeeCents, 0);
+  assert.equal(offering.estimatedStripeFeeCents, 105);
   assert.equal(offering.stripeCustomerId, "cus_checkout_test");
   assert.equal(await testEnv.AGAPAY_REGISTRATIONS.get("__agapay_checkout_offering__cs_checkout_test"), "__agapay_donor_offering__giver@example.com:cs_checkout_test");
 }
@@ -1196,8 +1196,8 @@ async function withMockFetch(handler, run) {
       assert.equal(init.headers["Stripe-Account"], "acct_connected_recurring");
       const form = new URLSearchParams(init.body);
       assert.equal(form.get("mode"), "subscription");
-      assert.equal(form.get("line_items[0][price_data][unit_amount]"), "2655");
-      assert.equal(form.get("subscription_data[application_fee_percent]"), "1.8079");
+      assert.equal(form.get("line_items[0][price_data][unit_amount]"), "2603");
+      assert.equal(form.get("subscription_data[application_fee_percent]"), null);
       assert.equal(form.get("payment_intent_data[application_fee_amount]"), null);
       return new Response(JSON.stringify({
         id: "cs_recurring_test",
@@ -1228,9 +1228,9 @@ async function withMockFetch(handler, run) {
   assert.ok(offeringRaw);
   const offering = JSON.parse(offeringRaw);
   assert.equal(offering.amountCents, 2500);
-  assert.equal(offering.chargeCents, 2655);
-  assert.equal(offering.agapayFeeCents, 48);
-  assert.equal(offering.estimatedStripeFeeCents, 107);
+  assert.equal(offering.chargeCents, 2603);
+  assert.equal(offering.agapayFeeCents, 0);
+  assert.equal(offering.estimatedStripeFeeCents, 105);
   assert.equal(offering.stripeCustomerId, "cus_recurring_test");
 }
 

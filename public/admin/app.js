@@ -444,8 +444,7 @@ let selectedReference = '';
     }
 
     function transactionFeeLabel(reg) {
-      if (reg.subscriptionTier === 'diocese') return 'Negotiated';
-      return '5% + $0.30 per transaction';
+      return 'No AGAPAY donation fee (Stripe processing only)';
     }
 
     function nextAction(reg) {
@@ -693,7 +692,7 @@ let selectedReference = '';
         <article class="revenue-card revenue-card-fees">
           <div class="revenue-card-head">
             <div>
-              <span>Monthly donation fees</span>
+              <span>Legacy donation fees</span>
               <h3>${moneyShort(fees.agapayFeeCents || 0)}</h3>
             </div>
             <small>${escapeHtml(fees.monthLabel || monthLabel(new Date().getMonth()))}</small>
@@ -703,7 +702,7 @@ let selectedReference = '';
             <div><strong>${fees.giftCount || 0}</strong><span>Gifts</span></div>
             <div><strong>${fees.connectedAccounts || 0}</strong><span>Accounts</span></div>
           </div>
-          <p>${escapeHtml(fees.note || 'Current-month AGAPAY application fees from connected Stripe gifts.')}</p>
+          <p>${escapeHtml(fees.note || "AGAPAY no longer charges a donation fee; this reflects legacy application-fee revenue from before the change.")}</p>
         </article>
       `;
     }
@@ -2334,8 +2333,8 @@ let selectedReference = '';
                 </select>
               </div>
               <div>
-                <label for="platformFee">Platform fee setting</label>
-                <input id="platformFee" value="${escapeAttr(reg.platformFee)}" placeholder="5% + $0.30 standard; negotiated for cathedral/diocese" />
+                <label for="platformFee">Pricing note</label>
+                <input id="platformFee" value="${escapeAttr(reg.platformFee)}" placeholder="Standard subscription tier; negotiated for cathedral/diocese" />
               </div>
               <div>
                 <label for="liturgicalCalendar">Liturgical calendar</label>
@@ -2415,7 +2414,7 @@ let selectedReference = '';
             <div class="payment-status" id="subscriptionStatusMessage"></div>
             <div class="stripe-link-box" id="subscriptionLinkBox">
               <a id="subscriptionCheckoutLink" href="#" target="_blank" rel="noopener">Open subscription checkout</a>
-              <p id="subscriptionLinkHelp">Use this link when the parish is ready to start its AGAPAY monthly platform subscription. Standard transaction fees are 5% + $0.30; cathedral/diocese pricing is negotiated.</p>
+              <p id="subscriptionLinkHelp">Use this link when the parish is ready to start its AGAPAY monthly platform subscription. AGAPAY does not charge a donation fee; cathedral/diocese subscription pricing is negotiated.</p>
             </div>
           </div>
 

@@ -720,7 +720,7 @@ body {
         <span class="fee-toggle-track"></span>
       </label>
       <div class="fee-text">
-        <strong id="feeCoverageTitle">Cover the platform fees</strong>
+        <strong id="feeCoverageTitle">Cover the processing fees</strong>
         <p>When you cover the fees, St. Seraphim Mission receives your full gift — nothing deducted.</p>
         <span class="fee-calc" id="feeCalc">You cover $2.80 · Parish receives $50.00</span>
       </div>
@@ -808,8 +808,9 @@ body {
       funds: []
     };
 
-    const AGAPAY_RATE = 0.05;
-    const AGAPAY_FIXED = 0.30;
+    // AGAPAY does not charge a donation platform fee -- only Stripe's own
+    // processing cost applies, estimated below. AGAPAY's revenue is the
+    // parish subscription plan, not a percentage of gifts.
     const STRIPE_RATE = 0.029;
     const STRIPE_FIXED = 0.30;
     const ACH_RATE = 0.026;
@@ -865,25 +866,25 @@ body {
       }
 
       if (paymentMethod === 'ach') {
-        const totalFeeCents = Math.round(amountCents * AGAPAY_RATE + AGAPAY_FIXED * 100);
-        const donorTotalCents = feeCovered ? amountCents + totalFeeCents : amountCents;
+        const preGrossUpStripeFeeCents = estimateStripeAchFeeCents(amountCents);
+        const donorTotalCents = feeCovered ? amountCents + preGrossUpStripeFeeCents : amountCents;
         const stripeFeeCents = estimateStripeAchFeeCents(donorTotalCents);
-        const agapayFeeCents = Math.max(0, totalFeeCents - stripeFeeCents);
-        const feeCents = stripeFeeCents + agapayFeeCents;
         return {
           feeLabel: 'bank transfer fees',
-          feeCents: feeCovered ? Math.max(0, donorTotalCents - amountCents) : feeCents,
-          parishReceivesCents: feeCovered ? amountCents : Math.max(0, amountCents - feeCents),
+          feeCents: feeCovered ? Math.max(0, donorTotalCents - amountCents) : stripeFeeCents,
+          parishReceivesCents: feeCovered ? amountCents : Math.max(0, amountCents - stripeFeeCents),
           donorTotalCents
         };
       }
 
-      const feeCents = Math.round(amountCents * AGAPAY_RATE + AGAPAY_FIXED * 100);
+      const preGrossUpStripeFeeCents = estimateStripeProcessingFeeCents(amountCents);
+      const donorTotalCents = feeCovered ? amountCents + preGrossUpStripeFeeCents : amountCents;
+      const stripeFeeCents = estimateStripeProcessingFeeCents(donorTotalCents);
       return {
-        feeLabel: 'platform fees',
-        feeCents,
-        parishReceivesCents: feeCovered ? amountCents : Math.max(0, amountCents - feeCents),
-        donorTotalCents: feeCovered ? amountCents + feeCents : amountCents
+        feeLabel: 'processing fees',
+        feeCents: feeCovered ? Math.max(0, donorTotalCents - amountCents) : stripeFeeCents,
+        parishReceivesCents: feeCovered ? amountCents : Math.max(0, amountCents - stripeFeeCents),
+        donorTotalCents
       };
     }
 
@@ -1253,15 +1254,11 @@ body {
       document.getElementById('summaryFee').textContent = feeCovered ? '+$' + fees.toFixed(2) : '-$' + fees.toFixed(2);
       document.getElementById('summaryTotal').textContent = '$' + donorTotal.toFixed(2);
       document.getElementById('summaryFeeRow').style.opacity = '1';
-      if (feeTitle) feeTitle.textContent = recurring ? 'Cover the processing fees' : 'Cover the platform fees';
+      if (feeTitle) feeTitle.textContent = 'Cover the processing fees';
       if (feeCopy) {
-        if (recurring) {
-          feeCopy.textContent = feeCovered
-            ? `When you cover the fees, ${currentParish.name} receives the full recurring gift. AGAPAY does not add a platform fee to renewals.`
-            : `Recurring gifts only pass through Stripe processing costs. AGAPAY does not add a platform fee to renewals.`;
-        } else {
-          feeCopy.textContent = `When you cover the fees, ${currentParish.name} receives your full gift â€” nothing deducted.`;
-        }
+        feeCopy.textContent = feeCovered
+          ? `When you cover the fees, ${currentParish.name} receives your full gift â€” nothing deducted. AGAPAY does not charge a donation fee; this covers Stripe's standard payment processing.`
+          : `${currentParish.name} receives your gift less standard Stripe processing costs. AGAPAY does not charge a donation fee.`;
       }
 
       // Show detail row for feast and funds

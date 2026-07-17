@@ -433,43 +433,50 @@ export function checkoutPaymentMethod(value, recurring) {
   return "card";
 }
 
+// AGAPAY no longer collects a donation platform fee (formerly a blended
+// 5% + $0.30 total, of which roughly 2.1% was AGAPAY's share on top of
+// Stripe's own processing cost). agapayFeeCents is always 0 below; the
+// "cover fees" gross-up now targets only Stripe's real processing cost, so
+// a donor who elects to cover fees causes the parish to receive the full
+// intended gift after Stripe's cut -- nothing is added on AGAPAY's behalf.
+// AGAPAY's revenue is the parish subscription plan (src/lib/subscriptions.js),
+// not a percentage of donations.
 export function checkoutFinancials(amountCents, coverFees, recurring, paymentMethod = "card") {
   const method = checkoutPaymentMethod(paymentMethod, recurring);
-  const totalTransactionFeeCents = Math.round(amountCents * 0.05 + 30);
   if (recurring) {
-    const chargeCents = coverFees
-      ? amountCents + totalTransactionFeeCents
-      : amountCents;
+    const preGrossUpStripeFeeCents = estimateStripeProcessingFeeCents(amountCents);
+    const chargeCents = coverFees ? amountCents + preGrossUpStripeFeeCents : amountCents;
     const estimatedStripeFeeCents = estimateStripeProcessingFeeCents(chargeCents);
     return {
       chargeCents,
       estimatedStripeFeeCents,
-      agapayFeeCents: Math.max(0, totalTransactionFeeCents - estimatedStripeFeeCents),
-      totalTransactionFeeCents,
+      agapayFeeCents: 0,
+      totalTransactionFeeCents: estimatedStripeFeeCents,
       paymentMethod: method
     };
   }
 
   if (method === "ach") {
-    const chargeCents = coverFees ? amountCents + totalTransactionFeeCents : amountCents;
+    const preGrossUpStripeFeeCents = estimateStripeAchFeeCents(amountCents);
+    const chargeCents = coverFees ? amountCents + preGrossUpStripeFeeCents : amountCents;
     const estimatedStripeFeeCents = estimateStripeAchFeeCents(chargeCents);
-    const agapayFeeCents = Math.max(0, totalTransactionFeeCents - estimatedStripeFeeCents);
     return {
       chargeCents,
       estimatedStripeFeeCents,
-      agapayFeeCents,
-      totalTransactionFeeCents,
+      agapayFeeCents: 0,
+      totalTransactionFeeCents: estimatedStripeFeeCents,
       paymentMethod: method
     };
   }
 
-  const chargeCents = coverFees ? amountCents + totalTransactionFeeCents : amountCents;
+  const preGrossUpStripeFeeCents = estimateStripeProcessingFeeCents(amountCents);
+  const chargeCents = coverFees ? amountCents + preGrossUpStripeFeeCents : amountCents;
   const estimatedStripeFeeCents = estimateStripeProcessingFeeCents(chargeCents);
   return {
     chargeCents,
     estimatedStripeFeeCents,
-    agapayFeeCents: Math.max(0, totalTransactionFeeCents - estimatedStripeFeeCents),
-    totalTransactionFeeCents,
+    agapayFeeCents: 0,
+    totalTransactionFeeCents: estimatedStripeFeeCents,
     paymentMethod: method
   };
 }
@@ -2978,14 +2985,10 @@ export async function handleCheckout(request, env) {
     }
   }
 
-  // AGAPAY's 5% + $0.30 fee applies to donations, including recurring
-  // donations. Parish SaaS subscription billing is created in a separate flow
-  // and does not use this donation application-fee logic.
-  if (recurring && agapayFeeCents > 0 && chargeCents > 0) {
-    form.set("subscription_data[application_fee_percent]", ((agapayFeeCents / chargeCents) * 100).toFixed(4));
-  } else if (!recurring) {
-    form.set("payment_intent_data[application_fee_amount]", String(agapayFeeCents));
-  }
+  // AGAPAY does not collect an application fee on donations -- AGAPAY's
+  // revenue is the parish subscription plan, not a percentage of gifts.
+  // Donations flow to the parish's connected Stripe account with only
+  // Stripe's own processing cost deducted (see checkoutFinancials above).
 
   // on_behalf_of ensures card statement descriptors and branding show the
   // parish's name rather than AGAPAY's. Required for correct Stripe Connect

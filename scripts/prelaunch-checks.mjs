@@ -72,8 +72,9 @@ assert.ok(backendSources.includes("handleAdminReleaseStatus"), "Backend should e
 assert.ok(backendSources.includes("STRIPE_WEBHOOK_SECRET_CONNECT"), "Backend should support a separate Connect webhook signing secret");
 assert.ok(backendSources.includes("handleParishStripeRefresh"), "Backend should let parishes refresh Stripe Connect status");
 assert.ok(backendSources.includes("checkoutFinancials("), "Backend should centralize donation fee calculations");
-assert.ok(backendSources.includes("subscription_data[application_fee_percent]"), "Backend should apply AGAPAY donation fees to recurring donor gifts");
-assert.ok(backendSources.includes("Parish SaaS subscription billing is created in a separate flow"), "Backend should keep parish subscription billing separate from donation fees");
+assert.ok(!backendSources.includes("subscription_data[application_fee_percent]"), "Backend should not apply an AGAPAY application fee to recurring donor gifts");
+assert.ok(!backendSources.includes("payment_intent_data[application_fee_amount]"), "Backend should not apply an AGAPAY application fee to one-time donor gifts");
+assert.ok(backendSources.includes("AGAPAY does not collect an application fee on donations"), "Backend should document that AGAPAY charges no donation platform fee");
 assert.ok(backendSources.includes("Do not add any AGAPAY platform/application fee to bookstore or future commerce checkouts"), "Backend should document that Parish Commerce checkout has no AGAPAY application fee");
 
 if (process.env.AGAPAY_BASE_URL) {

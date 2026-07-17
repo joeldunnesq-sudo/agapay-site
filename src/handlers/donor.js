@@ -399,10 +399,13 @@ export async function sendDonorDonationReceiptEmail(env, offering = {}) {
   const stripeReference = htmlEscape(offering.stripePaymentIntentId || offering.checkoutSessionId || offering.id || "");
   const donatedAt = htmlEscape(new Date(offering.completedAt || offering.createdAt || Date.now()).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }));
   const dashboardUrl = htmlEscape(`${String(appUrl).replace(/\/+$/, "")}/myagapay`);
+  // AGAPAY does not charge a donation platform fee -- totalFees here is
+  // Stripe's own processing cost only. AGAPAY's revenue is the parish
+  // subscription plan, not a percentage of this gift.
   const feeDetail = fees.coverFees
     ? `<p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Fees covered by you:</strong> ${htmlEscape(donorCovered)}</p>
        <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Parish received:</strong> ${htmlEscape(parishReceived)}</p>`
-    : `<p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Processing and AGAPAY fees deducted:</strong> ${htmlEscape(totalFees)}</p>
+    : `<p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Stripe processing fee deducted:</strong> ${htmlEscape(totalFees)}</p>
        <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Parish received:</strong> ${htmlEscape(parishReceived)}</p>`;
   const coverFeesNote = fees.coverFees ? "" : `
       <p style="margin:0 0 18px;padding:13px 15px;border-left:3px solid #C9A25B;background:#FFF8EA;font-size:14px;line-height:1.65;color:#171715;">
