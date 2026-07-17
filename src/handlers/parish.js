@@ -31,7 +31,6 @@ import {
   getAdminToken,
   getBearerToken,
   hasProductionStore,
-  hasStewardshipAccess,
   hashSessionToken,
   isSystemKvKey,
   issueAdminSession,
@@ -64,6 +63,8 @@ import {
   verifyPasswordRecord,
   verifyTurnstileIfConfigured,
 } from "../lib/core.js";
+
+import { bookstoreEnabledFor, entitlementsSummary, hasParishPlusAccess, sacramentsEnabledFor, tierIncludesParishPlus } from "../lib/entitlements.js";
 
 import {
   createTaxExemptionClaim,
@@ -3373,16 +3374,6 @@ export async function handleParishSubscriptionPortal(request, env, parishId) {
   return json({ ok: true, portalUrl: session.body.url });
 }
 
-// Soft rollout: Sacraments & Services is gated per-parish by an admin-set
-// flag (registration.sacramentsEnabled), on top of the existing AGAPAY
-// Parish + tier gate (hasStewardshipAccess). Both must be true. This
-// replaces the old hardcoded single-parish allowlist -- an AGAPAY
-// superadmin now flips this on per parish as they're onboarded, via
-// handleAdminSetSacramentsEnabled below, instead of a code deploy.
-function sacramentsEnabledFor(registration) {
-  return Boolean(registration?.sacramentsEnabled) && hasStewardshipAccess(registration);
-}
-
 // POST /api/admin/sacraments/enabled
 // Body: { parishId: string, enabled: boolean }
 // Admin-only soft-rollout control -- deliberately NOT exposed on the
@@ -3560,11 +3551,11 @@ export async function handleParishSacraments(request, env, parishId) {
 
   if (!sacramentsEnabledFor(found.registration)) {
     return json({
-      error: hasStewardshipAccess(found.registration)
+      error: hasParishPlusAccess(found.registration)
         ? "Sacraments & Services is coming soon for your parish."
         : "Sacraments & Services requires AGAPAY Parish +.",
-      stewardshipRequired: !hasStewardshipAccess(found.registration),
-      comingSoon: hasStewardshipAccess(found.registration)
+      stewardshipRequired: !hasParishPlusAccess(found.registration),
+      comingSoon: hasParishPlusAccess(found.registration)
     }, { status: 402 });
   }
 
@@ -3601,11 +3592,11 @@ export async function handleParishSacramentUpdate(request, env, parishId, reques
 
   if (!sacramentsEnabledFor(found.registration)) {
     return json({
-      error: hasStewardshipAccess(found.registration)
+      error: hasParishPlusAccess(found.registration)
         ? "Sacraments & Services is coming soon for your parish."
         : "Sacraments & Services requires AGAPAY Parish +.",
-      stewardshipRequired: !hasStewardshipAccess(found.registration),
-      comingSoon: hasStewardshipAccess(found.registration)
+      stewardshipRequired: !hasParishPlusAccess(found.registration),
+      comingSoon: hasParishPlusAccess(found.registration)
     }, { status: 402 });
   }
 
@@ -4907,7 +4898,7 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
   if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
   }
-  if (!hasStewardshipAccess(found.registration)) {
+  if (!hasParishPlusAccess(found.registration)) {
     return json({ error: "Bookstore Payments requires AGAPAY Parish +." }, { status: 403 });
   }
 
@@ -5391,7 +5382,7 @@ export async function handleParishSettlementProfiles(request, env, parishId, sub
   // verified parish — mirrors the "ensure a default profile exists" spec
   // without needing a separate onboarding hook to have run first.
   await ensureDefaultGivingProfile(env, parishId);
-  if (hasStewardshipAccess(found.registration)) {
+  if (hasParishPlusAccess(found.registration)) {
     await ensureDefaultCommerceProfile(env, parishId);
   }
 
@@ -5400,7 +5391,7 @@ export async function handleParishSettlementProfiles(request, env, parishId, sub
     return json({
       profiles,
       profileTypes: SETTLEMENT_PROFILE_TYPES,
-      stewardshipActive: hasStewardshipAccess(found.registration)
+      stewardshipActive: hasParishPlusAccess(found.registration)
     });
   }
 
@@ -5652,7 +5643,9 @@ export function parishDashboardPayload(parishId, registration) {
     candlesEnabled: registration.candlesEnabled ?? true,
     commemorationsEnabled: registration.commemorationsEnabled ?? true,
     bookstoreEnabled: registration.bookstoreEnabled ?? false,
-    stewardshipActive: hasStewardshipAccess(registration),
+    stewardshipActive: hasParishPlusAccess(registration),
+    parishPlusIncludedInTier: tierIncludesParishPlus(registration),
+    entitlements: entitlementsSummary(registration),
     funds: Array.isArray(registration.funds) ? registration.funds : [],
     campaigns: Array.isArray(registration.campaigns) ? registration.campaigns : [],
     feastCampaigns: Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : []
@@ -5742,7 +5735,7 @@ export async function handleParishDashboard(request, env, parishId) {
       recurringGivingEnabled: Boolean(body.recurringGivingEnabled ?? current.recurringGivingEnabled ?? true),
       candlesEnabled: Boolean(body.candlesEnabled ?? current.candlesEnabled ?? true),
       commemorationsEnabled: Boolean(body.commemorationsEnabled ?? current.commemorationsEnabled ?? true),
-      sacramentsEnabled: Boolean(body.sacramentsEnabled ?? current.sacramentsEnabled ?? false) && hasStewardshipAccess(current),
+      sacramentsEnabled: Boolean(body.sacramentsEnabled ?? current.sacramentsEnabled ?? false) && hasParishPlusAccess(current),
       sacramentPriests: body.sacramentPriests !== undefined ? sanitizeSacramentPriests(body.sacramentPriests, current) : normalizeSacramentPriests(current),
       bookstoreEnabled: Boolean(body.bookstoreEnabled ?? current.bookstoreEnabled ?? false),
       funds: Array.isArray(body.funds) ? body.funds : current.funds,

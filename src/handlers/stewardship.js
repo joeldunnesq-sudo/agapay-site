@@ -22,6 +22,8 @@ import {
   unauthorized,
 } from "../lib/core.js";
 
+import { hasLegacyParishPlusAddOn, hasParishPlusAccess, tierIncludesParishPlus } from "../lib/entitlements.js";
+
 import {
   absoluteWebsiteUrl,
   loadRegistrationByReference,
@@ -98,8 +100,8 @@ export { hasActiveStewardshipComp, stewardshipStatus, hasStewardshipAccess };
 
 function stewardshipPublicStatus(registration) {
   const comp = registration?.stewardshipComp || null;
-  const parishTierAccess = String(registration?.subscriptionTier || "").toLowerCase() === "parish";
-  const legacyAddOnAccess = hasStewardshipAccess(registration);
+  const parishTierAccess = tierIncludesParishPlus(registration);
+  const legacyAddOnAccess = hasLegacyParishPlusAddOn(registration);
   return {
     status: parishTierAccess ? "included" : stewardshipStatus(registration),
     active: parishTierAccess || legacyAddOnAccess,
@@ -119,7 +121,7 @@ function stewardshipPublicStatus(registration) {
 }
 
 function hasStewardshipToolAccess(registration) {
-  return String(registration?.subscriptionTier || "").toLowerCase() === "parish" || hasStewardshipAccess(registration);
+  return hasParishPlusAccess(registration);
 }
 
 function stewardshipComingSoonPayload(registration = null) {

@@ -328,11 +328,19 @@
     return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/stewardship' + path;
   }
 
+  // Both functions prefer the server-computed entitlements payload
+  // (src/lib/entitlements.js, surfaced as currentParish.entitlements) over
+  // re-deriving tier/add-on logic here -- the fallback expressions only
+  // matter for a brief window before the dashboard's first load response
+  // lands, or against stale cached parish objects.
   function isParishTier(parish = currentParish) {
+    if (parish?.entitlements) return Boolean(parish.entitlements.parishPlusIncludedInTier);
+    if (typeof parish?.parishPlusIncludedInTier === 'boolean') return parish.parishPlusIncludedInTier;
     return String(parish?.subscriptionTier || '').toLowerCase() === 'parish';
   }
 
   function isParishPlusActive() {
+    if (currentParish?.entitlements) return Boolean(currentParish.entitlements.parishPlusActive);
     const sw = stewardshipState.stewardship || {};
     return Boolean(currentParish?.stewardshipActive || sw.legacyAddOnActive || (!sw.includedInParishTier && ['active', 'trialing', 'comped'].includes(sw.status)));
   }
@@ -348,17 +356,17 @@
         const heroStatus = document.getElementById('parishPlusHeroStatus');
         if (heroStatus) heroStatus.querySelectorAll('.pdx-pp-price, .pdx-pp-hero-cta').forEach(el => el.remove());
       } else {
-        status.textContent = 'Add-on';
+        status.textContent = 'Upgrade required';
         status.className = 'pdx-pp-status-pill upsell';
         const heroStatus = document.getElementById('parishPlusHeroStatus');
         if (heroStatus && !heroStatus.querySelector('.pdx-pp-hero-cta')) {
           const price = document.createElement('span');
           price.className = 'pdx-pp-price';
-          price.innerHTML = '<b>$39</b>/mo';
+          price.innerHTML = 'Included in <b>Parish</b>';
           const cta = document.createElement('button');
           cta.className = 'pdx-pp-hero-cta';
           cta.type = 'button';
-          cta.textContent = 'Activate Parish +';
+          cta.textContent = 'Upgrade to Parish';
           cta.onclick = () => switchTab('settings');
           heroStatus.appendChild(price);
           heroStatus.appendChild(cta);
@@ -381,7 +389,7 @@
     if (!statBox || !foot) return;
 
     if (!active) {
-      if (stateChip) { stateChip.textContent = 'Parish +'; stateChip.className = 'pdx-pp-card-state locked'; }
+      if (stateChip) { stateChip.textContent = 'Parish tier'; stateChip.className = 'pdx-pp-card-state locked'; }
       statBox.innerHTML = '';
       foot.innerHTML = '<button class="pdx-pp-btn pdx-pp-btn-ghost" type="button" onclick="switchTab(\'parishplus\')">Learn more</button>';
       return;
@@ -420,7 +428,7 @@
     if (!statBox || !foot) return;
 
     if (!active) {
-      if (stateChip) { stateChip.textContent = 'Parish +'; stateChip.className = 'pdx-pp-card-state locked'; }
+      if (stateChip) { stateChip.textContent = 'Parish tier'; stateChip.className = 'pdx-pp-card-state locked'; }
       statBox.innerHTML = '';
       foot.innerHTML = '<button class="pdx-pp-btn pdx-pp-btn-ghost" type="button" onclick="switchTab(\'parishplus\')">Learn more</button>';
       return;
@@ -2649,7 +2657,7 @@
     const sw = stewardshipState.stewardship || {};
     const swActive = sw.active || ['active', 'trialing', 'comped'].includes(sw.status);
     if (!swActive) {
-      if (statusLabel) statusLabel.textContent = 'Add-on · $39/mo';
+      if (statusLabel) statusLabel.textContent = 'Included in Parish';
       pane.innerHTML = renderSacramentsUpsell();
       return;
     }
@@ -3015,12 +3023,12 @@
     return `
       <div class="sw-suite-tool-grid" style="grid-template-columns:1fr;">
         <div class="sw-suite-tool-card" style="text-align:center;padding:2.2rem 1.5rem;">
-          <strong class="sw-tool-card-title">Sacraments &amp; Services is part of AGAPAY Parish +</strong>
+          <strong class="sw-tool-card-title">Sacraments &amp; Services is included on the Parish tier</strong>
           <p class="sw-tool-card-desc" style="max-width:480px;margin:0.6rem auto 1.2rem;">
             Let parishioners request house blessings, baptisms, weddings, and more directly from My AGAPAY —
             routed straight to your parish dashboard.
           </p>
-          <button class="btn btn-gold" type="button" onclick="switchTab('parishplus')">View AGAPAY Parish +</button>
+          <button class="btn btn-gold" type="button" onclick="switchTab('parishplus')">See what's included</button>
         </div>
       </div>`;
   }
@@ -3516,7 +3524,7 @@
       return;
     }
 
-    if (stateChip) { stateChip.textContent = 'Parish +'; stateChip.className = 'pdx-pp-card-state locked'; }
+    if (stateChip) { stateChip.textContent = 'Parish tier'; stateChip.className = 'pdx-pp-card-state locked'; }
     meetingsPane.innerHTML =
       '<div class="pdx-pp-locked-items">' +
         '<div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Agenda, opening prayer, quorum call</div>' +
@@ -3526,7 +3534,7 @@
         '<div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Sign-in sheet &amp; minutes template</div>' +
         '<div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Print-ready PDF packet</div>' +
       '</div>' +
-      '<div class="pdx-pp-card-foot"><button class="pdx-pp-hero-cta" type="button" style="width:auto;" onclick="switchTab(\'settings\')">Activate Parish + — $39/mo</button></div>';
+      '<div class="pdx-pp-card-foot"><button class="pdx-pp-hero-cta" type="button" style="width:auto;" onclick="switchTab(\'settings\')">Upgrade to Parish</button></div>';
   }
 
   // Upsell state: lock Stewardship tool cards, show tier CTA in plan row
@@ -4458,6 +4466,50 @@
     pane.innerHTML=`<div class="setup-wizard-card"><div class="setup-wizard-body"><div><div class="setup-title">First-time setup</div><p class="setup-copy">Choose the parish's AGAPAY tier first, then connect Stripe so gifts can be received through the platform.</p><div class="setup-steps"><div class="setup-step done">${setupCheckMarkup()}<div><strong>1. Contact info verified</strong><span>Your registration has already supplied the parish contact details.</span></div></div><div class="setup-step ${billingDone?'done':''}">${setupCheckMarkup()}<div><strong>2. Select tier and billing</strong><span>${billingDone?'AGAPAY subscription billing is active.':'Choose the parish tier and complete billing checkout.'}</span></div></div><div class="setup-step ${stripeDone?'done':''}">${setupCheckMarkup()}<div><strong>3. Connect Stripe</strong><span>${stripeDone?'Stripe is connected for parish giving.':billingDone?'Create a Stripe onboarding link and complete the account setup.':'Stripe setup unlocks after billing is active.'}</span></div></div></div></div><div class="setup-action-panel">${billingDone?'':`<label for="setupSubscriptionTier">AGAPAY tier</label><select id="setupSubscriptionTier">${tierOptions}</select><button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startSubscriptionCheckout(this)">Start billing checkout</button><p class="setup-copy setup-action-copy">After billing is active, you will connect Stripe so the parish can receive donations.</p>`}${billingDone&&!stripeDone?'<button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startStripeOnboarding(this)">Connect Stripe</button>':''}<div class="setup-link-box" id="setupLinkBox"><a id="setupActionLink" href="#" target="_blank" rel="noopener">Open setup link</a><p id="setupLinkHelp"></p></div></div></div></div>`;
   }
 
+  // Dashboard-homepage "Your Subscription" panel: current plan, modules
+  // included (driven by the same entitlements payload the server computes
+  // in src/lib/entitlements.js), Stripe/billing status, and an upgrade
+  // nudge when a module isn't included on the parish's current tier.
+  function renderSubscriptionPanel() {
+    const p = currentParish;
+    const body = document.getElementById('pdxSubscriptionBody');
+    if (!p || !body) return;
+    const ent = p.entitlements || {};
+    const modules = ent.modules || {};
+    const tierLabel = p.subscriptionTierLabel || 'Parish';
+    const priceLabel = p.subscriptionMonthlyCents === 0 ? 'Free forever' : p.subscriptionMonthlyCents ? (money(p.subscriptionMonthlyCents) + '/mo') : 'Custom pricing';
+    const billingActive = Boolean(p.setup?.billingActive);
+    const stripeConnected = Boolean(p.setup?.stripeConnected);
+
+    const statusChip = (label, active) => `<span class="pdx-dir-badge ${active ? '' : 'urgent'}">${escapeHtml(label)}</span>`;
+    const moduleRow = (label, moduleKey) => {
+      const mod = modules[moduleKey] || {};
+      const included = Boolean(mod.included);
+      const sourceLabel = mod.source === 'legacy_addon' ? 'Legacy add-on' : included ? 'Included' : 'Not included';
+      return `<div class="pdx-dir-row">
+        <div class="pdx-dir-row-copy"><div class="pdx-dir-row-title">${escapeHtml(label)}</div></div>
+        <div class="pdx-dir-row-side"><span class="pdx-dir-badge ${included ? '' : 'count'}">${escapeHtml(sourceLabel)}</span></div>
+      </div>`;
+    };
+
+    body.innerHTML = `
+      <div class="pdx-sub-plan">
+        <div class="pdx-sub-plan-name">${escapeHtml(tierLabel)}</div>
+        <div class="pdx-sub-plan-price">${escapeHtml(priceLabel)}</div>
+        <div class="pdx-sub-status-row">
+          ${statusChip(billingActive ? 'Billing active' : 'Billing not started', billingActive)}
+          ${statusChip(stripeConnected ? 'Stripe connected' : 'Stripe not connected', stripeConnected)}
+        </div>
+        ${ent.parishPlusIncludedInTier ? '' : '<button class="pdx-dir-action-btn" type="button" onclick="switchTab(\'settings\')" style="margin-top:6px;">Upgrade to Parish</button>'}
+      </div>
+      <div class="pdx-sub-modules">
+        <div class="pdx-sub-modules-title">Modules</div>
+        ${moduleRow('Stewardship Health', 'stewardshipHealth')}
+        ${moduleRow('Sacraments & Services', 'sacraments')}
+        ${moduleRow('Commerce & Bookstore', 'bookstore')}
+      </div>`;
+  }
+
   function updateTierScopedNavigation() {
     const showStewardship = isParishTier();
     document.getElementById('nav-stewardship')?.toggleAttribute('hidden', !showStewardship);
@@ -4471,6 +4523,7 @@
   function renderDashboard() {
     const p = currentParish;
     updateTierScopedNavigation();
+    renderSubscriptionPanel();
     document.getElementById('sidebarProfile').classList.add('visible');
     document.getElementById('sidebarParishName').textContent = p.parishName || 'Parish';
     const parishMeta = [p.communityType, p.jurisdiction, [p.city,p.state].filter(Boolean).join(', ')].filter(Boolean).join(' / ');

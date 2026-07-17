@@ -16,7 +16,6 @@ import {
   generateSecret,
   hashSessionToken,
   hasProductionStore,
-  hasStewardshipAccess,
   isSystemKvKey,
   json,
   listKvKeys,
@@ -40,6 +39,8 @@ import {
   defaultSubscriptionTier,
   subscriptionTier,
 } from "../lib/subscriptions.js";
+
+import { bookstoreEnabledFor, hasParishPlusAccess, sacramentsEnabledFor } from "../lib/entitlements.js";
 
 import {
   resolveSettlementProfileId,
@@ -1118,7 +1119,7 @@ async function resolveDonorBookstoreParish(request, env, donor, explicitParishId
   const found = await findRegistrationByParishId(env, parishId);
   if (!found?.registration) return { error: json({ error: "Parish not found." }, { status: 404 }) };
   const registration = found.registration;
-  if (!hasStewardshipAccess(registration) || registration.bookstoreEnabled === false) {
+  if (!bookstoreEnabledFor(registration)) {
     return { parishId, registration, available: false };
   }
   return { parishId, registration, available: true };
@@ -1542,13 +1543,6 @@ export async function handleDonorBookstore(request, env) {
   return json({ ok: true, id: session.body.id, orderId, url: session.body.url }, { status: 201 });
 }
 
-// Soft rollout: Sacraments & Services is gated per-parish by an admin-set
-// flag (registration.sacramentsEnabled) on top of the existing AGAPAY
-// Parish + tier gate. See the matching helper in src/handlers/parish.js.
-function sacramentsEnabledFor(registration) {
-  return Boolean(registration?.sacramentsEnabled) && hasStewardshipAccess(registration);
-}
-
 const SACRAMENT_TYPES = new Set([
   "house_blessing", "baptism", "chrismation", "wedding", "funeral",
   "memorial_service", "confession", "home_visit", "office_visit", "anointing", "counseling", "other"
@@ -1739,10 +1733,10 @@ export async function handleDonorSacraments(request, env) {
   // on the soft-rollout flag for this specific parish.
   if (!sacramentsEnabledFor(found.registration)) {
     return json({
-      error: hasStewardshipAccess(found.registration)
+      error: hasParishPlusAccess(found.registration)
         ? "Sacraments & Services is coming soon for your parish."
         : "This parish has not enabled Sacraments & Services.",
-      detail: hasStewardshipAccess(found.registration)
+      detail: hasParishPlusAccess(found.registration)
         ? "Your parish will have this feature soon."
         : "This feature is part of AGAPAY Parish +. Your parish will need to subscribe before you can submit requests here."
     }, { status: 402 });

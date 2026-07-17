@@ -579,12 +579,25 @@
   .pdx-dir-access-card { flex-direction: column; }
 }
 
+/* ════════════════════════════════════════════════════════════
+   YOUR SUBSCRIPTION PANEL (dashboard homepage)
+   ════════════════════════════════════════════════════════════ */
+.pdx-sub-panel { margin-bottom: 24px; }
+.pdx-sub-body { display: grid; grid-template-columns: minmax(200px, 0.9fr) 1fr; gap: 20px; }
+.pdx-sub-plan { display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+.pdx-sub-plan-name { font-family: var(--serif); font-size: 22px; font-weight: 600; color: var(--ink); }
+.pdx-sub-plan-price { font-size: 13px; color: var(--stone); }
+.pdx-sub-status-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.pdx-sub-modules { display: grid; gap: 8px; }
+.pdx-sub-modules-title { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--stone); font-weight: 700; margin-bottom: 2px; }
+
 /* Responsive breakpoints */
 @media (max-width: 1100px) {
   .pdx-body-grid, .pdx-gv-body { grid-template-columns: 1fr; }
   .pdx-kpi-band { grid-template-columns: repeat(2, 1fr); }
   .pdx-status-strip { grid-template-columns: 1fr; }
   .pdx-rc-close-layout { grid-template-columns: 1fr; gap: 20px; }
+  .pdx-sub-body { grid-template-columns: 1fr; }
 }
 @media (max-width: 900px) {
   .pdx-hero, .pdx-rc-hero, .pdx-gv-hero { padding: 22px 20px; }

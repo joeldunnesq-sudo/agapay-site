@@ -42,7 +42,6 @@ import {
   generateSecret,
   getAdminToken,
   getBearerToken,
-  hasStewardshipAccess,
   hasProductionStore,
   hashPassword,
   hashSessionToken,
@@ -88,6 +87,8 @@ import {
   corsHeaders,
   corsPreflightResponse,
 } from "./lib/core.js";
+
+import { bookstoreEnabledFor, sacramentsEnabledFor } from "./lib/entitlements.js";
 
 import {
   verifyParishDashboardBearer,
@@ -1014,7 +1015,7 @@ async function sendWeeklyTreasurerCommerceEmails(env, scheduledTime, options = {
   for (const registration of registrations) {
     if (!registration.parishId) continue;
     if (parishFilter && registration.parishId !== parishFilter) continue;
-    if (!hasStewardshipAccess(registration) || registration.bookstoreEnabled === false) continue;
+    if (!bookstoreEnabledFor(registration)) continue;
     const recipient = registration.treasurerEmail || registration.priestEmail || "";
     if (!recipient) {
       results.push({ parishId: registration.parishId, parishName: registration.parishName || "", status: "skipped", reason: "missing_treasurer_email" });
@@ -1175,7 +1176,7 @@ async function sendWeeklySacramentDigestEmails(env, scheduledTime, options = {})
   for (const registration of registrations) {
     if (!registration.parishId) continue;
     if (parishFilter && registration.parishId !== parishFilter) continue;
-    if (!hasStewardshipAccess(registration) || !registration.sacramentsEnabled) continue;
+    if (!sacramentsEnabledFor(registration)) continue;
     const recipient = registration.priestEmail || registration.treasurerEmail || "";
     if (!recipient) {
       results.push({ parishId: registration.parishId, parishName: registration.parishName || "", status: "skipped", reason: "missing_recipient_email" });
