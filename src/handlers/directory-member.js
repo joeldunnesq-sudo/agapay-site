@@ -10,6 +10,10 @@ import {
   searchMemberDirectory,
   streamMemberDirectoryMediaVariant
 } from "../directory/member-directory.js";
+import {
+  getPublishedMinistry,
+  listPublishedMinistries
+} from "../directory/ministries.js";
 
 const PRIVATE_HEADERS = {
   "Cache-Control": "private, max-age=60",
@@ -52,6 +56,7 @@ function listArgs(url) {
     q: url.searchParams.get("q") || "",
     letter: url.searchParams.get("letter") || "",
     sort: url.searchParams.get("sort") || "az",
+    ministryId: url.searchParams.get("ministryId") || "",
     limit: url.searchParams.get("limit") || "",
     cursor: url.searchParams.get("cursor") || ""
   };
@@ -78,10 +83,19 @@ export async function handleDirectoryMember(request, env) {
       return privateJson({ ok: true, households: await listMemberDirectoryHouseholds(env, { context, ...listArgs(url) }) });
     }
 
+    if (request.method === "GET" && path === "/api/directory/member/ministries") {
+      return privateJson({ ok: true, ministries: await listPublishedMinistries(env, { context, q: url.searchParams.get("q") || "", category: url.searchParams.get("category") || "", acceptingInterest: url.searchParams.get("acceptingInterest") === "1", limit: url.searchParams.get("limit") || "", cursor: url.searchParams.get("cursor") || "" }) });
+    }
+
+    const ministryMatch = path.match(/^\/api\/directory\/member\/ministries\/([^/]+)$/);
+    if (request.method === "GET" && ministryMatch) {
+      return privateJson({ ok: true, ministry: await getPublishedMinistry(env, { context, ministryId: decodeURIComponent(ministryMatch[1]) }) });
+    }
+
     if (request.method === "GET" && path === "/api/directory/member/search") {
       const limited = await rateLimit(request, env, `directory-member-search:${context.parishId}:${context.user.id}`, { limit: 30, windowSeconds: 60 });
       if (limited) return limited;
-      return privateJson({ ok: true, results: await searchMemberDirectory(env, { context, q: url.searchParams.get("q") || "", type: url.searchParams.get("type") || "all", limit: url.searchParams.get("limit") || "", cursor: url.searchParams.get("cursor") || "" }) });
+      return privateJson({ ok: true, results: await searchMemberDirectory(env, { context, q: url.searchParams.get("q") || "", type: url.searchParams.get("type") || "all", ministryId: url.searchParams.get("ministryId") || "", limit: url.searchParams.get("limit") || "", cursor: url.searchParams.get("cursor") || "" }) });
     }
 
     const personMatch = path.match(/^\/api\/directory\/member\/people\/([^/]+)$/);

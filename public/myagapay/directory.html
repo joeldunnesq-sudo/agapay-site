@@ -69,6 +69,19 @@
     .profile-meta { display:flex; flex-wrap:wrap; gap:8px; color:var(--muted); }
     .contact-chip { display:inline-flex; gap:6px; align-items:center; border:1px solid var(--line); border-radius:8px; padding:8px 10px; background:#fff; color:var(--ink); text-decoration:none; }
     .privacy-reminder { font-size:13px; color:#53606a; background:#f8f6ef; border:1px solid #e6ddc8; border-radius:8px; padding:10px 12px; margin-top:10px; }
+    .child-card { border:1px solid #e4e7e3; border-radius:8px; padding:12px; background:#fff; display:grid; gap:10px; }
+    .child-card h3 { margin:0; font-size:15px; }
+    .status-tag { display:inline-block; font-size:12px; font-weight:700; border-radius:999px; padding:3px 9px; background:#eef3f0; color:var(--green); }
+    .status-tag.status-draft, .status-tag.status-returned { background:#fff4dd; color:#7a4d00; }
+    .status-tag.status-submitted, .status-tag.status-under_review { background:#eef6fb; color:#17384a; }
+    .status-tag.status-approved { background:#e9f6ee; color:#1c6b3a; }
+    .status-tag.status-withdrawn, .status-tag.status-revoked, .status-tag.status-rejected { background:#f3f3f2; color:var(--muted); }
+    .field-check-list { display:grid; gap:6px; }
+    .field-check-list label { display:flex; align-items:center; gap:8px; font-weight:400; font-size:14px; }
+    .field-check-list input[type="checkbox"] { width:18px; height:18px; }
+    .child-note { display:grid; gap:6px; font-size:13px; font-weight:700; }
+    .child-note textarea { border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; min-height:56px; }
+    .child-help { font-size:12px; color:var(--muted); margin:0; }
     @media (max-width: 860px) {
       .directory-shell { display:block; }
       .directory-side { position:static; padding:18px; }
@@ -179,6 +192,12 @@
           <article class="panel">
             <h2>Pending Changes</h2>
             <div class="request-list" id="requestList"></div>
+          </article>
+
+          <article class="panel" aria-labelledby="childrenHeading">
+            <h2 id="childrenHeading">Children</h2>
+            <p class="child-help">Children stay hidden from the parish directory by default. You may request publication of a limited set of fields for your own children; a parish reviewer must approve the request before anything appears, and you can withdraw it at any time.</p>
+            <div class="stack" id="childrenList" aria-live="polite"></div>
           </article>
         </div>
       </section>
@@ -363,6 +382,95 @@
       document.getElementById("submitPhotoReview").hidden = !asset || asset.lifecycleStatus !== "ready";
       document.getElementById("removePhoto").hidden = !asset;
     }
+    const CHILD_FIELD_LABELS = { preferred_name: "First / informal name", relationship_label: "Relationship (e.g. daughter, son)" };
+    let childFieldCodes = null;
+    async function loadChildFieldCodes() {
+      if (childFieldCodes) return childFieldCodes;
+      const payload = await api("/api/directory/children/publication/field-codes").catch(() => ({ fieldCodes: [] }));
+      childFieldCodes = payload.fieldCodes || [];
+      return childFieldCodes;
+    }
+    function childStatusLabel(status) {
+      return { draft: "Draft (not submitted)", submitted: "Submitted, awaiting review", under_review: "Under review", returned: "Returned for changes", approved: "Approved and published", rejected: "Not approved", withdrawn: "Withdrawn", revoked: "Revoked by parish", stale: "Needs resubmission", superseded: "Superseded" }[status] || status || "Not requested";
+    }
+    function renderChildCard(child, householdId, fieldCodes, existingRequest) {
+      const req = existingRequest || { status: "none", requestedFields: [], requestedPhoto: false, parentNote: "", id: "" };
+      const editable = ["none", "draft", "returned"].includes(req.status);
+      const fieldsHtml = fieldCodes.map((code) => `
+        <label><input type="checkbox" name="field" value="${esc(code)}" ${req.requestedFields.includes(code) ? "checked" : ""} ${editable ? "" : "disabled"} /> ${esc(CHILD_FIELD_LABELS[code] || code)}</label>
+      `).join("");
+      return `
+        <div class="child-card" data-child-id="${esc(child.personId)}" data-household-id="${esc(householdId)}" data-request-id="${esc(req.id || "")}">
+          <div><h3>${esc(child.preferredName || "Child")}</h3><span class="status-tag status-${esc(req.status || "none")}">${esc(childStatusLabel(req.status))}</span></div>
+          <fieldset class="field-check-list" ${editable ? "" : "disabled"}>
+            <legend>Fields to request for publication</legend>
+            ${fieldsHtml}
+          </fieldset>
+          <p class="child-help">A child photo cannot be published until a securely processed photo has been uploaded and approved for this child; that step is not yet available.</p>
+          <label class="child-note">Note to the parish reviewer (optional)<textarea name="parentNote" maxlength="500" ${editable ? "" : "disabled"}>${esc(req.parentNote || "")}</textarea></label>
+          <div class="actions">
+            ${editable ? `<button class="btn secondary" type="button" data-child-action="draft">Save Draft</button>` : ""}
+            ${editable ? `<button class="btn primary" type="button" data-child-action="submit">Submit for Review</button>` : ""}
+            ${["submitted", "under_review", "approved"].includes(req.status) ? `<button class="btn warn" type="button" data-child-action="withdraw">Withdraw</button>` : ""}
+          </div>
+        </div>`;
+    }
+    async function loadChildrenPanel() {
+      const container = document.getElementById("childrenList");
+      const households = profileState?.manageableHouseholds || [];
+      if (!households.length) {
+        container.innerHTML = '<div class="empty">No manageable households found.</div>';
+        return;
+      }
+      container.innerHTML = '<div class="empty">Loading children…</div>';
+      try {
+        const fieldCodes = await loadChildFieldCodes();
+        const cards = [];
+        for (const household of households) {
+          const profile = await api(`/api/directory/households/${encodeURIComponent(household.id)}/self`).catch(() => null);
+          const children = (profile?.household?.members || profile?.members || []).filter((member) => member.child && !member.protectedPerson);
+          for (const child of children) {
+            const statusPayload = await api(`/api/directory/children/${encodeURIComponent(child.personId)}/publication?householdId=${encodeURIComponent(household.id)}`).catch(() => ({ request: null }));
+            cards.push(renderChildCard(child, household.id, fieldCodes, statusPayload.request));
+          }
+        }
+        container.innerHTML = cards.length ? cards.join("") : '<div class="empty">No children found in your households.</div>';
+      } catch (error) {
+        container.innerHTML = `<div class="empty">${esc(error.message)}</div>`;
+      }
+    }
+    document.getElementById("childrenList").addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-child-action]");
+      if (!button) return;
+      const card = button.closest("[data-child-id]");
+      const childPersonId = card.dataset.childId;
+      const householdId = card.dataset.householdId;
+      const requestId = card.dataset.requestId;
+      const action = button.dataset.childAction;
+      try {
+        if (action === "draft" || action === "submit") {
+          const requestedFields = [...card.querySelectorAll('input[name="field"]:checked')].map((input) => input.value);
+          const parentNote = card.querySelector('textarea[name="parentNote"]').value || "";
+          const draftPayload = await api(`/api/directory/children/${encodeURIComponent(childPersonId)}/publication/draft`, {
+            method: "POST",
+            body: JSON.stringify({ householdId, requestedFields, requestedPhoto: false, parentNote })
+          });
+          if (action === "submit") {
+            const newRequestId = draftPayload.request?.id;
+            await api(`/api/directory/children/publication/${encodeURIComponent(newRequestId)}/submit`, { method: "POST" });
+            showNotice("Publication request submitted for parish review.");
+          } else {
+            showNotice("Draft saved.");
+          }
+        } else if (action === "withdraw" && requestId) {
+          await api(`/api/directory/children/publication/${encodeURIComponent(requestId)}/withdraw`, { method: "POST" });
+          showNotice("Publication request withdrawn.");
+        }
+        await loadChildrenPanel();
+      } catch (error) {
+        showNotice(error.message, true);
+      }
+    });
     async function loadDirectory() {
       if (!token || !email) {
         document.getElementById("directoryStatus").textContent = "Sign in";
@@ -372,6 +480,7 @@
       await loadMemberHome();
       const payload = await api("/api/directory/self/profile");
       renderProfile(payload.profile);
+      await loadChildrenPanel();
     }
     document.getElementById("profileForm").addEventListener("submit", async (event) => {
       event.preventDefault();

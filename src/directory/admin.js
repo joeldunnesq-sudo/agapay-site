@@ -17,6 +17,9 @@ import {
   listDuplicateCandidates,
   planDuplicateMerge
 } from "./duplicates.js";
+import { checkChildEligibility, sanitizeChildFields, POLICY_REVISION as CHILD_POLICY_REVISION } from "./child-publication.js";
+import { approveMinistryInterestReview, closeMinistryInterestReview } from "./ministries.js";
+import { getDirectorySettings } from "./settings.js";
 import {
   assertParishActor,
   auditStatement,
@@ -99,6 +102,21 @@ export const REVIEW_TYPES = Object.freeze({
     sourceSystem: "directory_duplicate_candidates",
     capabilities: [DIRECTORY_CAPABILITIES.duplicatesReview, DIRECTORY_CAPABILITIES.manage],
     allowedActions: ["assign", "unassign", "begin", "deny", "return", "priority", "note"]
+  },
+  // Phase 4B: deliberately requires childPublicationReview specifically --
+  // NOT publicationReview. A reviewer authorized for ordinary adult/
+  // household publication is not automatically authorized here (Part 9).
+  child_publication_review: {
+    reviewType: "child_publication_review",
+    sourceSystem: "directory_child_publication_requests",
+    capabilities: [DIRECTORY_CAPABILITIES.childPublicationReview, DIRECTORY_CAPABILITIES.manage],
+    allowedActions: ["assign", "unassign", "begin", "approve", "deny", "return", "priority", "note"]
+  },
+  ministry_interest_review: {
+    reviewType: "ministry_interest_review",
+    sourceSystem: "directory_ministry_interest_requests",
+    capabilities: [DIRECTORY_CAPABILITIES.ministryInterestReview, DIRECTORY_CAPABILITIES.requestsReview, DIRECTORY_CAPABILITIES.manage],
+    allowedActions: ["assign", "unassign", "begin", "approve", "deny", "return", "cancel", "priority", "note"]
   }
 });
 
@@ -311,7 +329,57 @@ async function reviewRows(env, parishId) {
       WHERE dc.parish_id = ?1 AND dc.candidate_status IN ('open', 'assigned', 'in_review', 'deferred', 'confirmed_duplicate', 'merge_planned', 'merge_ready', 'blocked')`,
     parishId
   ).catch(() => []);
-  return [...changeRequests, ...publication, ...media, ...duplicates];
+  // Phase 4B: child publication requests, sourced from the dedicated
+  // directory_child_publication_requests table (never directory_change_requests
+  // or directory_publication_profiles -- Part 8: "do not create a separate
+  // review queue," reused here by adding a fourth UNION arm, exactly the
+  // established pattern for media/duplicates above).
+  const childPublications = await d1All(
+    env,
+    `SELECT cpr.parish_id, 'child_publication' AS source_type, cpr.id AS source_id,
+            'child_publication_review' AS review_key, 'child_publication_review' AS review_type,
+            cpr.status AS source_status, cpr.submitted_at AS submitted_at,
+            cpr.updated_at AS source_updated_at, cpr.requester_user_id AS requester_user_id,
+            cpr.requester_person_id AS requester_person_id,
+            'person' AS target_type, cpr.child_person_id AS target_id, cpr.household_id AS household_id,
+            'Child publication request' AS safe_summary,
+            'Household administrator' AS requester_label,
+            COALESCE(p.preferred_name, 'Child record') AS target_label,
+            COALESCE(f.protected_person, 0) AS protected_record,
+            1 AS child_related,
+            rm.id AS review_item_id, rm.queue_status, rm.priority, rm.assigned_to_user_id, rm.assigned_at,
+            rm.updated_at AS metadata_updated_at
+       FROM directory_child_publication_requests cpr
+       LEFT JOIN directory_people p ON p.id = cpr.child_person_id
+       LEFT JOIN directory_person_privacy_flags f ON f.parish_id = cpr.parish_id AND f.person_id = cpr.child_person_id AND f.active = 1
+       LEFT JOIN directory_review_metadata rm ON rm.source_type = 'child_publication' AND rm.source_id = cpr.id
+      WHERE cpr.parish_id = ?1 AND cpr.status IN ('submitted', 'under_review', 'returned')`,
+    parishId
+  ).catch(() => []);
+  const ministryInterests = await d1All(
+    env,
+    `SELECT mir.parish_id, 'ministry_interest' AS source_type, mir.id AS source_id,
+            'ministry_interest_review' AS review_key, 'ministry_interest_review' AS review_type,
+            mir.status AS source_status, mir.submitted_at AS submitted_at,
+            mir.updated_at AS source_updated_at, mir.requester_user_id AS requester_user_id,
+            mir.requester_person_id AS requester_person_id,
+            'person' AS target_type, mir.person_id AS target_id, NULL AS household_id,
+            'Ministry interest request' AS safe_summary,
+            COALESCE(rp.preferred_name, 'Directory user') AS requester_label,
+            COALESCE(m.display_name, 'Ministry') AS target_label,
+            COALESCE(f.protected_person, 0) AS protected_record,
+            COALESCE(f.is_child, 0) AS child_related,
+            rm.id AS review_item_id, rm.queue_status, rm.priority, rm.assigned_to_user_id, rm.assigned_at,
+            rm.updated_at AS metadata_updated_at
+       FROM directory_ministry_interest_requests mir
+       JOIN directory_ministries m ON m.id = mir.ministry_id
+       LEFT JOIN directory_people rp ON rp.id = mir.requester_person_id
+       LEFT JOIN directory_person_privacy_flags f ON f.parish_id = mir.parish_id AND f.person_id = mir.person_id AND f.active = 1
+       LEFT JOIN directory_review_metadata rm ON rm.source_type = 'ministry_interest' AND rm.source_id = mir.id
+      WHERE mir.parish_id = ?1 AND mir.status IN ('submitted', 'under_review', 'returned')`,
+    parishId
+  ).catch(() => []);
+  return [...changeRequests, ...publication, ...media, ...duplicates, ...childPublications, ...ministryInterests];
 }
 
 function applyQueueFilters(rows, filters = {}) {
@@ -624,6 +692,34 @@ async function closeReviewItem(env, { context, row, decision, reasonCode, review
   } else if (row.source_type === "duplicate_candidate") {
     const status = decision === "return" ? "deferred" : decision === "cancel" ? "cancelled" : "not_duplicate";
     sourceUpdates.push({ sql: "UPDATE directory_duplicate_candidates SET candidate_status = ?, decision = ?, decision_reason_code = ?, decided_by_user_id = ?, decided_at = ?, updated_at = ? WHERE id = ? AND parish_id = ?", params: [status, status, cleanText(reasonCode, { max: 80 }) || null, context.user.id, timestamp, timestamp, row.source_id, context.parishId] });
+  } else if (row.source_type === "child_publication") {
+    const status = decision === "return" ? "returned" : decision === "cancel" ? "withdrawn" : "rejected";
+    sourceUpdates.push({
+      sql: `UPDATE directory_child_publication_requests
+            SET status = ?, reason_code = ?, reviewer_note = ?, reviewed_by_user_id = ?, updated_at = ?
+            WHERE id = ? AND parish_id = ? AND status IN ('submitted', 'under_review', 'returned')`,
+      params: [status, cleanText(reasonCode, { max: 80 }) || null, cleanText(reviewerNote, { max: 500 }) || null, context.user.id, timestamp, row.source_id, context.parishId]
+    });
+    sourceUpdates.push(auditStatement({
+      action: `directory.child_publication.request_${decision === "return" ? "returned" : "rejected"}`,
+      actor,
+      parishId: context.parishId,
+      targetType: "directory_child_publication_request",
+      targetId: row.source_id,
+      metadata: { reasonCode },
+      correlationId
+    }));
+  } else if (row.source_type === "ministry_interest") {
+    await closeMinistryInterestReview(env, { context, row, decision, reasonCode, reviewerNote, correlationId });
+  }
+  if (row.source_type === "ministry_interest") {
+    const id = await ensureMetadata(env, { actor, row });
+    await runAtomic(env, [
+      { sql: "UPDATE directory_review_metadata SET queue_status = ?, returned_at = ?, completed_at = ?, updated_at = ? WHERE id = ?", params: [decision === "return" ? "returned" : decision === "cancel" ? "cancelled" : "denied", decision === "return" ? timestamp : null, decision === "return" ? null : timestamp, timestamp, id] },
+      auditStatement({ action: `directory.review_item.${decision}ed`, actor, parishId: context.parishId, targetType: "directory_review_item", targetId: id, metadata: { sourceType: row.source_type, sourceId: row.source_id, reasonCode }, correlationId }),
+      notificationStatement({ context, row, eventType: `directory.review.${decision}`, safeMessage: reviewNotification(decision) })
+    ]);
+    return { ok: true, decision, reviewItemId: id };
   }
   await runAtomic(env, [
     ...sourceUpdates,
@@ -657,6 +753,13 @@ async function approveReviewItem(env, { context, row, reasonCode, reviewerNote, 
   if (row.source_type === "duplicate_candidate") {
     throw new DirectoryServiceError("use_duplicate_merge_flow", "Duplicate candidates must be confirmed, planned, and merged through the duplicate review workflow.", 422);
   }
+  if (row.source_type === "child_publication") {
+    return approveChildPublicationRequest(env, { context, row, reasonCode, reviewerNote, requesterNote, correlationId });
+  }
+  if (row.source_type === "ministry_interest") {
+    await approveMinistryInterestReview(env, { context, row, reviewerNote, correlationId });
+    return markApproved(env, { context, row, reasonCode, reviewerNote, requesterNote, correlationId });
+  }
   if (row.source_type !== "change_request") throw new DirectoryServiceError("unsupported_review_type", "Review source is not supported.", 422);
   const request = await d1First(env, "SELECT * FROM directory_change_requests WHERE id = ?1 AND parish_id = ?2 AND status = 'pending'", row.source_id, context.parishId);
   if (!request) throw new DirectoryServiceError("invalid_transition", "Only pending requests can be approved.", 409);
@@ -682,6 +785,137 @@ async function approveReviewItem(env, { context, row, reasonCode, reviewerNote, 
     throw new DirectoryServiceError("manual_review_required", "This request type can be triaged but is not auto-mutated in Phase 3A.", 422);
   }
   return markApproved(env, { context, row, reasonCode, reviewerNote, requesterNote, correlationId });
+}
+
+// Phase 4B Approval Hard Gate for child publication (Part 11). Every
+// precondition below is re-verified live at approval time -- none of them
+// are trusted from the request row's stored status alone, since the
+// child's/household's/requester's real-world state may have changed since
+// submission (Part 24 concurrency). No reviewer, staff, or platform-admin
+// override skips any of these checks.
+async function approveChildPublicationRequest(env, { context, row, reasonCode, reviewerNote, requesterNote, correlationId }) {
+  const request = await d1First(
+    env,
+    "SELECT * FROM directory_child_publication_requests WHERE id = ?1 AND parish_id = ?2 AND status IN ('submitted', 'under_review', 'returned')",
+    row.source_id,
+    context.parishId
+  );
+  if (!request) throw new DirectoryServiceError("invalid_transition", "Only a submitted request can be approved.", 409);
+
+  // Child remains eligible (active, is_child, not protected, active household).
+  const eligibility = await checkChildEligibility(env, { parishId: context.parishId, childPersonId: request.child_person_id });
+  if (!eligibility.eligible) throw new DirectoryServiceError("child_not_eligible", "This child is no longer eligible for publication.", 409);
+
+  // Requester remains an authorized household administrator of the same household.
+  const requesterStillAuthorized = await d1First(
+    env,
+    `SELECT ha.id FROM directory_household_admins ha
+       JOIN directory_person_links l ON l.person_id = ha.person_id AND l.link_type = 'platform_user' AND l.active = 1
+      WHERE ha.household_id = ?1 AND ha.active = 1 AND l.external_id = ?2`,
+    request.household_id,
+    request.requester_user_id
+  );
+  if (!requesterStillAuthorized) throw new DirectoryServiceError("requester_no_longer_authorized", "The requesting household administrator is no longer authorized.", 409);
+
+  // Parish directory must still be enabled.
+  const settings = await getDirectorySettings(env, context.parishId);
+  if (!settings.directoryEnabled) throw new DirectoryServiceError("directory_disabled", "The private directory is not enabled for this parish.", 409);
+
+  // Requested fields must be exactly allowlisted -- re-sanitize and require
+  // an exact match, so a corrupted or tampered row can never approve more
+  // than the allowlist permits.
+  const requestedFields = JSON.parse(request.requested_fields_json || "[]");
+  const sanitizedFields = sanitizeChildFields(requestedFields);
+  if (sanitizedFields.length !== requestedFields.length) {
+    throw new DirectoryServiceError("invalid_requested_fields", "Requested fields are no longer valid against the current allowlist.", 409);
+  }
+
+  // Publication-policy revision must still be current.
+  if (request.policy_revision !== CHILD_POLICY_REVISION) {
+    throw new DirectoryServiceError("stale_policy_revision", "This request was submitted under a prior publication policy and must be resubmitted.", 409);
+  }
+
+  // Canonical child/household values must not have changed materially
+  // since submission (Part 24: stale revision protection).
+  const child = await d1First(env, "SELECT updated_at FROM directory_people WHERE id = ?1", request.child_person_id);
+  const household = await d1First(env, "SELECT updated_at FROM directory_households WHERE id = ?1", request.household_id);
+  if (request.child_revision && String(child?.updated_at || "") !== request.child_revision) {
+    throw new DirectoryServiceError("stale_child_revision", "The child's record changed since this request was submitted. Ask the household to resubmit.", 409);
+  }
+  if (request.household_revision && String(household?.updated_at || "") !== request.household_revision) {
+    throw new DirectoryServiceError("stale_household_revision", "The household changed since this request was submitted. Ask the household to resubmit.", 409);
+  }
+
+  // Photo: approved only if requested AND a currently active, approved,
+  // securely-transformed photo exists for this exact child owner. If not
+  // ready, the photo is silently excluded from approval (Part 11's
+  // documented partial-approval policy) -- the rest of the request still
+  // proceeds; the reviewer does not have to reject the whole request over
+  // an unready photo.
+  let approvedPhoto = false;
+  if (Number(request.requested_photo)) {
+    const photoRow = await d1First(
+      env,
+      `SELECT a.id FROM directory_media_assets a
+         JOIN directory_media_assignments asn ON asn.media_asset_id = a.id
+        WHERE asn.parish_id = ?1 AND asn.owner_type = 'person' AND asn.owner_id = ?2
+          AND asn.assignment_status = 'active' AND a.lifecycle_status = 'approved'
+          AND a.processing_status = 'securely_transformed' AND a.visibility = 'directory_members'
+          AND a.publication_eligible = 1`,
+      context.parishId,
+      request.child_person_id
+    );
+    approvedPhoto = Boolean(photoRow);
+  }
+
+  const timestamp = nowMs();
+  const actor = actorDto(context);
+  await runAtomic(env, [
+    {
+      sql: `UPDATE directory_child_publication_requests
+            SET status = 'approved', approved_fields_json = ?1, approved_photo = ?2,
+                reviewed_by_user_id = ?3, reviewer_note = ?4, approved_at = ?5, updated_at = ?5
+            WHERE id = ?6`,
+      params: [JSON.stringify(sanitizedFields), approvedPhoto ? 1 : 0, context.user.id, cleanText(reviewerNote, { max: 500 }) || null, timestamp, request.id]
+    },
+    auditStatement({
+      action: "directory.child_publication.request_approved",
+      actor,
+      parishId: context.parishId,
+      targetType: "directory_child_publication_request",
+      targetId: request.id,
+      metadata: { fields: sanitizedFields, approvedPhoto, photoExcluded: Boolean(request.requested_photo) && !approvedPhoto },
+      correlationId
+    }),
+    auditStatement({
+      action: "directory.child_publication.projection_activated",
+      actor,
+      parishId: context.parishId,
+      targetType: "directory_person",
+      targetId: request.child_person_id,
+      metadata: { requestId: request.id },
+      correlationId
+    })
+  ]);
+  return markApproved(env, { context, row, reasonCode, reviewerNote, requesterNote, correlationId });
+}
+
+// Parish-staff revocation (Part 18/19). Immediately narrows effective
+// visibility to hidden -- approval history is preserved (status becomes
+// 'revoked', the row is never deleted), satisfying "do not automatically
+// delete publication history."
+export async function revokeChildPublicationApproval(env, { context, requestId, reasonCode = "", correlationId = "" }) {
+  const actor = actorDto(context);
+  requireAny(actor, context.parishId, [DIRECTORY_CAPABILITIES.childPublicationReview, DIRECTORY_CAPABILITIES.manage]);
+  const row = await d1First(env, "SELECT * FROM directory_child_publication_requests WHERE id = ?1 AND parish_id = ?2 AND status = 'approved'", requestId, context.parishId);
+  if (!row) throw new DirectoryServiceError("not_found", "Approved child publication request was not found.", 404);
+  const timestamp = nowMs();
+  await runAtomic(env, [
+    { sql: "UPDATE directory_child_publication_requests SET status = 'revoked', revoked_at = ?1, reason_code = ?2, reviewed_by_user_id = ?3, updated_at = ?1 WHERE id = ?4", params: [timestamp, cleanText(reasonCode, { max: 80 }) || null, context.user.id, row.id] },
+    auditStatement({ action: "directory.child_publication.approval_revoked", actor, parishId: context.parishId, targetType: "directory_child_publication_request", targetId: row.id, metadata: { reasonCode, childPersonId: row.child_person_id }, correlationId }),
+    auditStatement({ action: "directory.child_publication.projection_deactivated", actor, parishId: context.parishId, targetType: "directory_person", targetId: row.child_person_id, metadata: { reason: "revoked" }, correlationId })
+  ]);
+  return { ok: true, id: row.id };
 }
 
 async function markApproved(env, { context, row, reasonCode, reviewerNote, requesterNote, correlationId }) {

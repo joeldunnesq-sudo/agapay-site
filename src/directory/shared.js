@@ -30,7 +30,13 @@ export const DIRECTORY_CAPABILITIES = Object.freeze({
   // reprocessing is an operational/technical action, not an editorial
   // decision, and a parish may reasonably want to grant one without the
   // other. See docs/directory/26-phase-2b1-legacy-media-remediation-plan.md.
-  mediaReprocess: "directory.media.reprocess"
+  mediaReprocess: "directory.media.reprocess",
+  // Phase 4B: exact, separate capability required to review/approve/revoke
+  // child publication requests -- never satisfied by publicationReview
+  // alone. See docs/directory/40-phase-4b-parent-reviewer-authorization.md.
+  childPublicationReview: "directory.child_publication.review",
+  ministriesManage: "directory.ministries.manage",
+  ministryInterestReview: "directory.ministry_interest.review"
 });
 
 export function nowMs() {

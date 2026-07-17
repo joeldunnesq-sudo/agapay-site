@@ -3,6 +3,7 @@ import { d1All, d1First } from "../lib/core.js";
 import { DirectoryServiceError } from "./foundation.js";
 import { getDirectorySettings } from "./settings.js";
 import { cleanText, VISIBILITY_RANK } from "./shared.js";
+import { personIdsWithPublishedMinistry, publishedMinistryAffiliationsForPerson } from "./ministries.js";
 
 const PAGE_SIZE_DEFAULT = 24;
 const PAGE_SIZE_MAX = 48;
@@ -257,6 +258,7 @@ async function personDto(env, context, row, { detail = false } = {}) {
   const [contacts, city, photo] = detail
     ? await Promise.all([publishedContacts(env, context, "person", row.id), publishedCity(env, context, "person", row.id), publishedPhoto(env, context, "person", row.id)])
     : [[], await publishedCity(env, context, "person", row.id), await publishedPhoto(env, context, "person", row.id)];
+  const ministries = detail ? await publishedMinistryAffiliationsForPerson(env, { context, personId: row.id }).catch(() => []) : [];
   const displayName = row.preferred_name || "Parish member";
   if (photo) photo.alt = displayName;
   return {
@@ -270,6 +272,7 @@ async function personDto(env, context, row, { detail = false } = {}) {
     relationship: detail ? row.relationship || "" : "",
     city,
     contacts,
+    ministries,
     photo,
     profileUrl: `/myagapay/directory?view=person&id=${encodeURIComponent(row.id)}`,
     version: String(row.updated_at || "")
@@ -294,7 +297,74 @@ async function householdMembers(env, context, householdId) {
       ORDER BY p.preferred_name ASC, p.id ASC`,
     householdId, context.parishId
   );
-  return Promise.all(rows.filter((row) => Number(row.protected_person || 0) !== 1 && Number(row.is_child || 0) !== 1).map((row) => personDto(env, context, row, { detail: false })));
+  const adults = await Promise.all(
+    rows.filter((row) => Number(row.protected_person || 0) !== 1 && Number(row.is_child || 0) !== 1)
+      .map((row) => personDto(env, context, row, { detail: false }))
+  );
+  const children = await householdChildren(env, context, householdId);
+  return [...adults, ...children];
+}
+
+// Phase 4B: children are never listed, searched, or browsed as standalone
+// people (Part 14/16's chosen conservative policy -- no standalone child
+// profile, no child entries in the People tab or its alphabet index).
+// They appear only nested inside their household's member list/card, and
+// only when a currently-approved child_publication_requests row exists.
+// Every precondition is re-verified live, mirroring checkChildEligibility
+// -- an approved row is never trusted on its own as "safe to show."
+async function householdChildren(env, context, householdId) {
+  const rows = await d1All(
+    env,
+    `SELECT cpr.approved_fields_json, cpr.approved_photo, cpr.child_person_id,
+            p.id, p.preferred_name, p.updated_at,
+            hm.relationship,
+            COALESCE(f.is_child, 0) AS is_child,
+            COALESCE(f.protected_person, 0) AS protected_person,
+            aff.id AS affiliation_id
+       FROM directory_child_publication_requests cpr
+       JOIN directory_people p ON p.id = cpr.child_person_id AND p.active = 1
+       JOIN directory_household_members hm ON hm.household_id = cpr.household_id AND hm.person_id = p.id AND hm.active = 1
+       JOIN directory_households h ON h.id = cpr.household_id AND h.active = 1 AND h.parish_id = ?2
+       LEFT JOIN directory_person_privacy_flags f ON f.parish_id = ?2 AND f.person_id = p.id AND f.active = 1
+       LEFT JOIN directory_parish_affiliations aff ON aff.person_id = p.id AND aff.parish_id = ?2 AND aff.active = 1 AND aff.status != 'former_member'
+      WHERE cpr.household_id = ?1 AND cpr.parish_id = ?2 AND cpr.status = 'approved'`,
+    householdId, context.parishId
+  );
+  const eligible = rows.filter((row) => Number(row.is_child || 0) === 1 && Number(row.protected_person || 0) !== 1);
+  const items = await Promise.all(eligible.map((row) => childDto(env, context, row)));
+  return items.filter(Boolean);
+}
+
+function approvedChildFieldSet(json) {
+  try {
+    const parsed = JSON.parse(json || "[]");
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return new Set();
+  }
+}
+
+async function childDto(env, context, row) {
+  const fields = approvedChildFieldSet(row.approved_fields_json);
+  const displayName = fields.has("preferred_name") ? (row.preferred_name || "") : "";
+  // Nothing identifying was approved -- do not render an entry at all,
+  // rather than showing a placeholder that implies presence without a name.
+  if (!displayName) return null;
+  const photo = Number(row.approved_photo || 0) === 1 ? await publishedPhoto(env, context, "person", row.child_person_id) : null;
+  if (photo) photo.alt = displayName;
+  return {
+    id: row.child_person_id,
+    type: "child",
+    displayName,
+    sortKey: sortKey(displayName),
+    letter: firstLetter(displayName),
+    relationship: fields.has("relationship_label") ? row.relationship || "" : "",
+    city: "",
+    contacts: [],
+    photo,
+    profileUrl: "",
+    version: String(row.updated_at || "")
+  };
 }
 
 async function householdDto(env, context, row, { detail = false } = {}) {
@@ -354,10 +424,19 @@ function alphabet(items) {
 async function peopleItems(env, context) {
   const rows = await peopleBaseRows(env, context);
   const items = await Promise.all(rows.map((row) => personDto(env, context, row)));
-  return items.map((item) => ({
-    ...item,
-    searchText: normalizeQuery([item.displayName, item.suffix, item.household?.displayName, item.city].filter(Boolean).join(" "))
-  }));
+  const ministryRows = await Promise.all(items.map(async (item) => ({
+    id: item.id,
+    ministries: await publishedMinistryAffiliationsForPerson(env, { context, personId: item.id }).catch(() => [])
+  })));
+  const ministriesByPerson = new Map(ministryRows.map((row) => [row.id, row.ministries]));
+  return items.map((item) => {
+    const ministries = ministriesByPerson.get(item.id) || [];
+    return {
+      ...item,
+      ministries,
+      searchText: normalizeQuery([item.displayName, item.suffix, item.household?.displayName, item.city, ...ministries.map((ministry) => ministry.displayName)].filter(Boolean).join(" "))
+    };
+  });
 }
 
 async function householdItems(env, context) {
@@ -391,8 +470,13 @@ export async function getMemberDirectoryHome(env, { context }) {
   };
 }
 
-export async function listMemberDirectoryPeople(env, { context, q = "", letter = "", sort = "az", limit, cursor }) {
-  const items = applyBrowseFilters(await peopleItems(env, context), { q, letter, sort });
+export async function listMemberDirectoryPeople(env, { context, q = "", letter = "", sort = "az", ministryId = "", limit, cursor }) {
+  let all = await peopleItems(env, context);
+  if (ministryId) {
+    const allowed = await personIdsWithPublishedMinistry(env, { context, ministryId });
+    all = all.filter((item) => allowed.has(item.id));
+  }
+  const items = applyBrowseFilters(all, { q, letter, sort });
   const page = paginate(items, { limit, cursor });
   return { ...page, alphabet: alphabet(items), items: page.items.map(stripSearchText) };
 }
@@ -403,14 +487,19 @@ export async function listMemberDirectoryHouseholds(env, { context, q = "", lett
   return { ...page, alphabet: alphabet(items), items: page.items.map(stripSearchText) };
 }
 
-export async function searchMemberDirectory(env, { context, q = "", type = "all", limit, cursor }) {
+export async function searchMemberDirectory(env, { context, q = "", type = "all", ministryId = "", limit, cursor }) {
   const query = normalizeQuery(q);
   if (query.length < 2) return { items: [], nextCursor: "", totalVisible: 0, minimumQueryLength: 2 };
   const [people, households] = await Promise.all([
     type === "households" ? Promise.resolve([]) : peopleItems(env, context),
     type === "people" ? Promise.resolve([]) : householdItems(env, context)
   ]);
-  const items = applyBrowseFilters([...people, ...households], { q: query, sort: "az" });
+  let scopedPeople = people;
+  if (ministryId) {
+    const allowed = await personIdsWithPublishedMinistry(env, { context, ministryId });
+    scopedPeople = people.filter((item) => allowed.has(item.id));
+  }
+  const items = applyBrowseFilters([...scopedPeople, ...households], { q: query, sort: "az" });
   const page = paginate(items, { limit, cursor });
   return { ...page, minimumQueryLength: 2, items: page.items.map(stripSearchText) };
 }

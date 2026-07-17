@@ -11,3 +11,5 @@ export * from "./media.js";
 export * from "./admin.js";
 export * from "./duplicates.js";
 export * from "./member-directory.js";
+export * from "./child-publication.js";
+export * from "./ministries.js";

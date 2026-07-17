@@ -25,9 +25,21 @@ import {
   planDirectoryDuplicateMerge,
   requestDirectoryMediaReprocessing,
   resolveDirectoryAdminContext,
+  revokeChildPublicationApproval,
   runDirectoryDuplicateScan,
   unassignDirectoryReviewItem
 } from "../directory/admin.js";
+import {
+  assignMinistryLeader,
+  assignMinistryParticipant,
+  createMinistry,
+  endMinistryLeader,
+  getMinistryAdmin,
+  listMinistriesAdmin,
+  removeMinistryParticipant,
+  setMinistryParticipationPublication,
+  updateMinistry
+} from "../directory/ministries.js";
 
 async function body(request) {
   return request.json().catch(() => ({}));
@@ -94,6 +106,35 @@ export async function handleDirectoryAdmin(request, env, parishId) {
       if (request.method === "GET") return json({ ok: true, household: await getDirectoryHouseholdAdmin(env, { context, householdId }) });
       if (request.method === "PATCH" && path.endsWith("/correction")) return json({ ok: true, household: await applyHouseholdDirectCorrection(env, { context, householdId, ...await body(request), correlationId }) });
     }
+    if (request.method === "GET" && path === "/ministries") {
+      return json({ ok: true, ministries: await listMinistriesAdmin(env, { context, status: url.searchParams.get("status") || "", query: url.searchParams.get("q") || "", limit: url.searchParams.get("limit") || 100 }) });
+    }
+    if (request.method === "POST" && path === "/ministries") {
+      return json({ ok: true, ministry: await createMinistry(env, { context, data: await body(request), correlationId }) }, { status: 201 });
+    }
+    const ministryMatch = path.match(/^\/ministries\/([^/]+)(?:\/([^/]+))?(?:\/([^/]+))?$/);
+    if (ministryMatch) {
+      const ministryId = decodeURIComponent(ministryMatch[1]);
+      const collection = ministryMatch[2] || "";
+      const itemIdOrAction = ministryMatch[3] ? decodeURIComponent(ministryMatch[3]) : "";
+      if (request.method === "GET" && !collection) return json({ ok: true, ministry: await getMinistryAdmin(env, { context, ministryId }) });
+      if (request.method === "PATCH" && !collection) return json({ ok: true, ministry: await updateMinistry(env, { context, ministryId, patch: await body(request), correlationId }) });
+      if (request.method === "POST" && collection === "leaders") {
+        return json({ ok: true, ministry: await assignMinistryLeader(env, { context, ministryId, ...await body(request), correlationId }) }, { status: 201 });
+      }
+      if (request.method === "POST" && collection === "participants") {
+        return json({ ok: true, ministry: await assignMinistryParticipant(env, { context, ministryId, ...await body(request), correlationId }) }, { status: 201 });
+      }
+      if (request.method === "POST" && collection === "leaders-end") {
+        return json({ ok: true, result: await endMinistryLeader(env, { context, leaderId: itemIdOrAction || ministryId, correlationId }) });
+      }
+      if (request.method === "POST" && collection === "participants-remove") {
+        return json({ ok: true, result: await removeMinistryParticipant(env, { context, participantId: itemIdOrAction || ministryId, ...await body(request), correlationId }) });
+      }
+      if (request.method === "POST" && collection === "participants-publication") {
+        return json({ ok: true, result: await setMinistryParticipationPublication(env, { context, participantId: itemIdOrAction || ministryId, ...await body(request), correlationId }) });
+      }
+    }
     if (request.method === "POST" && path === "/notes") return json({ ok: true, note: await createDirectoryNote(env, { context, ...await body(request), correlationId }) }, { status: 201 });
     const noteMatch = path.match(/^\/notes\/([^/]+)\/archive$/);
     if (request.method === "POST" && noteMatch) return json({ ok: true, result: await archiveDirectoryNote(env, { context, noteId: decodeURIComponent(noteMatch[1]), correlationId }) });
@@ -108,6 +149,10 @@ export async function handleDirectoryAdmin(request, env, parishId) {
       if (request.method === "POST" && action === "decision") return json({ ok: true, candidate: await decideDirectoryDuplicateCandidate(env, { context, candidateId, ...await body(request), correlationId }) });
       if (request.method === "POST" && action === "plan") return json({ ok: true, plan: await planDirectoryDuplicateMerge(env, { context, candidateId, ...await body(request), correlationId }) });
       if (request.method === "POST" && action === "merge") return json({ ok: true, result: await executeDirectoryDuplicateMerge(env, { context, candidateId, ...await body(request), correlationId }) });
+    }
+    const childRevokeMatch = path.match(/^\/children\/([^/]+)\/revoke$/);
+    if (request.method === "POST" && childRevokeMatch) {
+      return json({ ok: true, result: await revokeChildPublicationApproval(env, { context, requestId: decodeURIComponent(childRevokeMatch[1]), ...await body(request), correlationId }) });
     }
     if (request.method === "GET" && path === "/media/legacy-audit") return json({ ok: true, audit: await getDirectoryMediaLegacyAudit(env, { context, correlationId }) });
     const reprocessMatch = path.match(/^\/media\/([^/]+)\/reprocess$/);

@@ -18,6 +18,18 @@ import {
   updateSelfServiceContact,
   updateSelfServicePersonProfile
 } from "../directory/self-service.js";
+import {
+  CHILD_FIELD_CODES,
+  createOrUpdateChildPublicationDraft,
+  getChildPublicationStatus,
+  submitChildPublicationRequest,
+  withdrawChildPublicationRequest
+} from "../directory/child-publication.js";
+import {
+  getMyMinistries,
+  submitMinistryInterest,
+  withdrawMinistryInterest
+} from "../directory/ministries.js";
 
 async function body(request) {
   return request.json().catch(() => ({}));
@@ -52,6 +64,17 @@ export async function handleDirectorySelfService(request, env) {
     }
     if (request.method === "GET" && path === "/api/directory/self/profile") {
       return json({ ok: true, profile: await getSelfServiceProfile(env, { context }) });
+    }
+    if (request.method === "GET" && path === "/api/directory/self/ministries") {
+      return json({ ok: true, ministries: await getMyMinistries(env, { context }) });
+    }
+    if (request.method === "POST" && path.startsWith("/api/directory/self/ministries/") && path.endsWith("/interest")) {
+      const ministryId = decodeURIComponent(path.replace("/api/directory/self/ministries/", "").replace("/interest", ""));
+      return json({ ok: true, request: await submitMinistryInterest(env, { context, ministryId, ...await body(request), correlationId }) }, { status: 201 });
+    }
+    if (request.method === "POST" && path.startsWith("/api/directory/self/ministry-interest/") && path.endsWith("/withdraw")) {
+      const requestId = decodeURIComponent(path.replace("/api/directory/self/ministry-interest/", "").replace("/withdraw", ""));
+      return json({ ok: true, request: await withdrawMinistryInterest(env, { context, requestId, correlationId }) });
     }
     if (request.method === "PATCH" && path === "/api/directory/self/profile") {
       return json({ ok: true, person: await updateSelfServicePersonProfile(env, { context, patch: await body(request), correlationId }) });
@@ -103,6 +126,38 @@ export async function handleDirectorySelfService(request, env) {
     }
     if (request.method === "POST" && path === "/api/directory/publication/transition") {
       return json({ ok: true, publication: await transitionSelfServicePublication(env, { context, ...await body(request), correlationId }) });
+    }
+    if (request.method === "GET" && path === "/api/directory/children/publication/field-codes") {
+      return json({ ok: true, fieldCodes: CHILD_FIELD_CODES });
+    }
+    if (request.method === "GET" && path.startsWith("/api/directory/children/") && path.endsWith("/publication")) {
+      const childPersonId = decodeURIComponent(path.replace("/api/directory/children/", "").replace("/publication", ""));
+      const householdId = url.searchParams.get("householdId") || "";
+      return json({ ok: true, request: await getChildPublicationStatus(env, { context, childPersonId, householdId }) });
+    }
+    if (request.method === "POST" && path.startsWith("/api/directory/children/") && path.endsWith("/publication/draft")) {
+      const childPersonId = decodeURIComponent(path.replace("/api/directory/children/", "").replace("/publication/draft", ""));
+      const data = await body(request);
+      return json({
+        ok: true,
+        request: await createOrUpdateChildPublicationDraft(env, {
+          context,
+          childPersonId,
+          householdId: data.householdId,
+          requestedFields: data.requestedFields,
+          requestedPhoto: Boolean(data.requestedPhoto),
+          parentNote: data.parentNote || "",
+          correlationId
+        })
+      }, { status: 201 });
+    }
+    if (request.method === "POST" && path.startsWith("/api/directory/children/publication/") && path.endsWith("/submit")) {
+      const requestId = decodeURIComponent(path.replace("/api/directory/children/publication/", "").replace("/submit", ""));
+      return json({ ok: true, request: await submitChildPublicationRequest(env, { context, requestId, correlationId }) });
+    }
+    if (request.method === "POST" && path.startsWith("/api/directory/children/publication/") && path.endsWith("/withdraw")) {
+      const requestId = decodeURIComponent(path.replace("/api/directory/children/publication/", "").replace("/withdraw", ""));
+      return json({ ok: true, request: await withdrawChildPublicationRequest(env, { context, requestId, correlationId }) });
     }
     if (request.method === "POST" && path === "/api/directory/change-requests") {
       return json({ ok: true, request: await createDirectoryChangeRequest(env, { context, ...await body(request), correlationId }) }, { status: 201 });

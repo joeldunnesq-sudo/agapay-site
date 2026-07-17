@@ -125,6 +125,13 @@ export const CAPABILITY_CATALOG = Object.freeze([
   "directory.notes.manage",
   "directory.assignments.manage",
   "directory.publication.review",
+  // Phase 4B: deliberately separate from directory.publication.review --
+  // a reviewer authorized for ordinary adult/household publication does
+  // NOT automatically receive authority over child publication requests.
+  // See docs/directory/40-phase-4b-parent-reviewer-authorization.md.
+  "directory.child_publication.review",
+  "directory.ministries.manage",
+  "directory.ministry_interest.review",
   "directory.settings.manage",
   "directory.private_contact.view",
   "directory.audit.view",
