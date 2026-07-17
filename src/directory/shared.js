@@ -7,12 +7,28 @@ export const VISIBILITY_RANK = Object.freeze(Object.fromEntries(VISIBILITY_LEVEL
 export const DIRECTORY_CAPABILITIES = Object.freeze({
   view: "directory.view",
   selfManage: "directory.self.manage",
+  peopleManage: "directory.people.manage",
   householdsManage: "directory.households.manage",
+  requestsReview: "directory.requests.review",
+  membershipsReview: "directory.memberships.review",
+  householdAdminsReview: "directory.household_admins.review",
+  correctionsReview: "directory.corrections.review",
+  protectedManage: "directory.protected.manage",
+  notesView: "directory.notes.view",
+  notesManage: "directory.notes.manage",
+  assignmentsManage: "directory.assignments.manage",
   publicationReview: "directory.publication.review",
   settingsManage: "directory.settings.manage",
   privateContactView: "directory.private_contact.view",
   auditView: "directory.audit.view",
-  manage: "directory.manage"
+  manage: "directory.manage",
+  // Phase 2B.1: narrow, operational capability for legacy-media audit and
+  // reprocessing actions specifically -- distinct from publicationReview
+  // (which authorizes ordinary approve/reject review decisions) because
+  // reprocessing is an operational/technical action, not an editorial
+  // decision, and a parish may reasonably want to grant one without the
+  // other. See docs/directory/26-phase-2b1-legacy-media-remediation-plan.md.
+  mediaReprocess: "directory.media.reprocess"
 });
 
 export function nowMs() {

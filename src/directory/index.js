@@ -8,3 +8,4 @@ export * from "./projections.js";
 export * from "./invitations.js";
 export * from "./self-service.js";
 export * from "./media.js";
+export * from "./admin.js";

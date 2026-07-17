@@ -123,7 +123,7 @@
     if (nav)   nav.classList.add('active');
     if (mobileNav) mobileNav.classList.add('active');
     activeTab = tab;
-    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship', parishplus:'AGAPAY Parish +', sacraments:'Sacraments & Services', bookstore:'Bookstore', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship', parishplus:'AGAPAY Parish +', sacraments:'Sacraments & Services', directory:'Directory Operations', bookstore:'Bookstore', qr:'QR Code & Giving Link' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length) loadGivingHistory();
@@ -134,6 +134,7 @@
     if (tab === 'stewardship') loadStewardshipPanel();
     if (tab === 'parishplus') renderParishPlusPanel();
     if (tab === 'sacraments') loadSacramentsTab();
+    if (tab === 'directory') loadDirectoryAdminTab();
     if (tab === 'bookstore') loadBookstoreCatalogTab();
     if (tab === 'reconcile' && currentParish) loadReconciliation();
     if (tab === 'settings' && currentParish) loadSettlementProfilesPanel();
@@ -144,6 +145,12 @@
   // ── AUTH ─────────────────────────────────────────────────
   function authHeaders() {
     return { 'Accept':'application/json', 'Authorization':'Bearer ' + document.getElementById('parishToken').value.trim() };
+  }
+
+  function directoryAdminHeaders() {
+    const token = localStorage.getItem('agapayUserToken') || localStorage.getItem('agapayPlatformToken') || '';
+    const email = localStorage.getItem('agapayUserEmail') || localStorage.getItem('agapayPlatformEmail') || '';
+    return { 'Accept':'application/json', 'Authorization': token ? 'Bearer ' + token : '', 'X-AGAPAY-User-Email': email };
   }
 
   function statusLabel(value) {
@@ -463,6 +470,81 @@
     updateStewardshipBadges(isParishPlusActive(), { renderPanel: false });
     renderStewardshipPanel();
     loadStewardshipEssentialPanels();
+  }
+
+  function directoryAdminApi(path = '') {
+    if (!currentParish?.parishId) return '';
+    return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/directory/admin' + path;
+  }
+
+  async function loadDirectoryAdminTab(force = false) {
+    const pane = document.getElementById('directoryAdminPane');
+    if (!pane) return;
+    if (!currentParish?.parishId) {
+      pane.innerHTML = '<p class="muted">Load your parish dashboard before opening Directory Operations.</p>';
+      return;
+    }
+    if (!force && pane.dataset.loaded === 'true') return;
+    pane.innerHTML = '<p class="sw-tool-loading">Loading directory operations...</p>';
+    try {
+      const [dashboardRes, queueRes, peopleRes, householdsRes] = await Promise.all([
+        fetch(directoryAdminApi('/dashboard'), { headers: directoryAdminHeaders() }),
+        fetch(directoryAdminApi('/queue'), { headers: directoryAdminHeaders() }),
+        fetch(directoryAdminApi('/people?limit=8'), { headers: directoryAdminHeaders() }),
+        fetch(directoryAdminApi('/households?limit=8'), { headers: directoryAdminHeaders() })
+      ]);
+      if (dashboardRes.status === 401 || dashboardRes.status === 403) {
+        pane.dataset.loaded = 'true';
+        pane.innerHTML = '<div class="dir-admin-empty"><h3>Directory operations need a staff platform session.</h3><p>Sign in to My AGAPAY with a parish staff account that has directory capabilities, then return here.</p></div>';
+        return;
+      }
+      const dashboard = await dashboardRes.json();
+      const queue = await queueRes.json();
+      const people = await peopleRes.json();
+      const households = await householdsRes.json();
+      renderDirectoryAdminPanel(dashboard.dashboard || {}, queue.items || [], people.people || [], households.households || []);
+      pane.dataset.loaded = 'true';
+    } catch (err) {
+      pane.innerHTML = '<p class="muted">Directory operations are unavailable' + (err.message ? ': ' + escapeHtml(err.message) : '.') + '</p>';
+    }
+  }
+
+  function renderDirectoryAdminPanel(dashboard, queue, people, households) {
+    const pane = document.getElementById('directoryAdminPane');
+    if (!pane) return;
+    const metrics = dashboard.metrics || {};
+    pane.innerHTML = `
+      <div class="dir-admin-metrics">
+        ${directoryMetric('Pending', metrics.totalPending)}
+        ${directoryMetric('Unassigned', metrics.unassigned)}
+        ${directoryMetric('Assigned to me', metrics.assignedToMe)}
+        ${directoryMetric('Oldest age', (metrics.oldestPendingAgeDays || 0) + 'd')}
+      </div>
+      <div class="dir-admin-grid">
+        <section class="dir-admin-panel">
+          <div class="dir-admin-panel-head"><h2>Review Queue</h2><button type="button" onclick="loadDirectoryAdminTab(true)">Refresh</button></div>
+          ${queue.length ? queue.slice(0, 10).map(directoryQueueRow).join('') : '<p class="muted">No directory review items are waiting.</p>'}
+        </section>
+        <section class="dir-admin-panel">
+          <div class="dir-admin-panel-head"><h2>People</h2></div>
+          ${people.length ? people.map(person => `<div class="dir-admin-row"><strong>${escapeHtml(person.displayName)}</strong><span>${person.pendingRequestCount || 0} pending</span></div>`).join('') : '<p class="muted">No people records available.</p>'}
+        </section>
+        <section class="dir-admin-panel">
+          <div class="dir-admin-panel-head"><h2>Households</h2></div>
+          ${households.length ? households.map(household => `<div class="dir-admin-row"><strong>${escapeHtml(household.displayName)}</strong><span>${household.memberCount || 0} members</span></div>`).join('') : '<p class="muted">No households available.</p>'}
+        </section>
+      </div>`;
+  }
+
+  function directoryMetric(label, value) {
+    return `<div class="dir-admin-metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value ?? 0)}</strong></div>`;
+  }
+
+  function directoryQueueRow(item) {
+    return `<div class="dir-admin-review-row">
+      <div><strong>${escapeHtml(item.summary || item.reviewType)}</strong><span>${escapeHtml(item.targetLabel || 'Directory record')}</span></div>
+      <em>${escapeHtml(item.priority || 'normal')}</em>
+    </div>`;
   }
 
   function loadStewardshipEssentialPanels() {

@@ -63,6 +63,7 @@ function makeD1Env() {
   db.exec(migration("0024_directory_invitations_claims.sql"));
   db.exec(migration("0025_directory_self_service_phase2a.sql"));
   db.exec(migration("0026_directory_media_phase2b.sql"));
+  db.exec(migration("0028_directory_media_secure_transformation.sql"));
 
   function wrap(sql) {
     return {
@@ -195,7 +196,7 @@ await test("linked adult can upload own person photo; object keys stay private",
   assert.equal("r2ObjectKey" in asset.variants[0], false);
   assert.equal(env.DIRECTORY_MEDIA.objects.size, 5);
   assert.equal(auditCount(db, "directory.media.person_upload_initiated"), 1);
-  assert.equal(auditCount(db, "directory.media.processing_completed"), 1);
+  assert.equal(auditCount(db, "directory.media.secure_transformation_completed"), 1);
 });
 
 await test("household admin can upload household photo; ordinary spouse person photo remains protected", async () => {

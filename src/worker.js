@@ -316,6 +316,10 @@ import {
 } from "./handlers/directory-media.js";
 
 import {
+  handleDirectoryAdmin,
+} from "./handlers/directory-admin.js";
+
+import {
   handleIdentityLogin,
   handleIdentitySession,
   handleIdentityLogout,
@@ -2473,6 +2477,11 @@ export default {
     }
     if (url.pathname === "/api/directory/intake") {
       return handleDirectoryIntake(request, env);
+    }
+    const directoryAdminMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/directory\/admin(?:\/.*)?$/);
+    if (directoryAdminMatch) {
+      const directoryAdminResponse = await handleDirectoryAdmin(request, env, decodeURIComponent(directoryAdminMatch[1]));
+      if (directoryAdminResponse) return directoryAdminResponse;
     }
     if (url.pathname.startsWith("/api/directory/media/")) {
       const directoryMediaResponse = await handleDirectoryMedia(request, env);
