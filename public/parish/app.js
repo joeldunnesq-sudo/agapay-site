@@ -153,6 +153,81 @@
     return { 'Accept':'application/json', 'Authorization': token ? 'Bearer ' + token : '', 'X-AGAPAY-User-Email': email };
   }
 
+  function directoryReturnUrl() {
+    try {
+      return window.location.pathname + window.location.search + '#directory';
+    } catch {
+      return '/parish/dashboard#directory';
+    }
+  }
+
+  function renderDirectoryStaffSessionHandoff(status = 401) {
+    const signedEmail = localStorage.getItem('agapayUserEmail') || localStorage.getItem('agapayPlatformEmail') || '';
+    const reason = status === 403
+      ? 'Your My AGAPAY staff session was found, but it does not have directory access for this parish yet.'
+      : 'Directory Operations need a named My AGAPAY staff session in addition to the parish dashboard session.';
+    return `
+      <div class="dir-admin-empty dir-admin-access-card">
+        <div>
+          <div class="dir-admin-eyebrow">Staff access required</div>
+          <h3>Connect your My AGAPAY staff session</h3>
+          <p>${escapeHtml(reason)}</p>
+        </div>
+        <div class="dir-admin-access-grid">
+          <form class="dir-admin-staff-login" id="directoryStaffLoginForm">
+            <label>Email
+              <input type="email" name="email" autocomplete="email" value="${escapeHtml(signedEmail)}" required />
+            </label>
+            <label>Password
+              <input type="password" name="password" autocomplete="current-password" required />
+            </label>
+            <button type="submit">Sign in and retry</button>
+            <p class="muted" id="directoryStaffLoginStatus" role="status"></p>
+          </form>
+          <div class="dir-admin-access-help">
+            <strong>What this checks</strong>
+            <ul>
+              <li>You are signed in as a named My AGAPAY user.</li>
+              <li>That user has an active membership for this parish.</li>
+              <li>That membership includes a directory capability such as <code>directory.manage</code> or <code>directory.ministries.manage</code>.</li>
+            </ul>
+            <div class="dir-admin-access-actions">
+              <a href="/myagapay/login?return=${encodeURIComponent(directoryReturnUrl())}" target="_blank" rel="noopener">Open My AGAPAY sign-in</a>
+              <button type="button" onclick="loadDirectoryAdminTab(true)">I signed in - retry</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  async function handleDirectoryStaffLogin(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const status = document.getElementById('directoryStaffLoginStatus');
+    const email = form.email.value.trim();
+    const password = form.password.value;
+    if (status) status.textContent = 'Checking staff session...';
+    try {
+      const res = await fetch('/api/identity/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.token) throw new Error(data.error || 'Unable to sign in with that staff account.');
+      localStorage.setItem('agapayUserToken', data.token);
+      localStorage.setItem('agapayUserEmail', data.user?.email || email);
+      localStorage.setItem('agapayPlatformToken', data.token);
+      localStorage.setItem('agapayPlatformEmail', data.user?.email || email);
+      if (status) status.textContent = 'Staff session connected. Loading Directory Operations...';
+      const pane = document.getElementById('directoryAdminPane');
+      if (pane) pane.dataset.loaded = 'false';
+      await loadDirectoryAdminTab(true);
+    } catch (err) {
+      if (status) status.textContent = err.message || 'Staff sign-in failed.';
+    }
+  }
+
   function statusLabel(value) {
     return String(value || 'active')
       .replace(/_/g, ' ')
@@ -495,7 +570,8 @@
       ]);
       if (dashboardRes.status === 401 || dashboardRes.status === 403) {
         pane.dataset.loaded = 'true';
-        pane.innerHTML = '<div class="dir-admin-empty"><h3>Directory operations need a staff platform session.</h3><p>Sign in to My AGAPAY with a parish staff account that has directory capabilities, then return here.</p></div>';
+        pane.innerHTML = renderDirectoryStaffSessionHandoff(dashboardRes.status);
+        document.getElementById('directoryStaffLoginForm')?.addEventListener('submit', handleDirectoryStaffLogin);
         return;
       }
       const dashboard = await dashboardRes.json();
