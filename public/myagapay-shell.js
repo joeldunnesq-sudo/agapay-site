@@ -43,6 +43,7 @@
     if (pathname.startsWith("/myagapay/bookstore")) return "bookstore";
     if (pathname.startsWith("/myagapay/sacraments") || pathname.startsWith("/myagapay/giving/commemorations") || pathname.startsWith("/myagapay/giving/names")) return "commemorations";
     if (pathname.startsWith("/myagapay/giving/calendar")) return "today";
+    if (pathname.startsWith("/myagapay/directory")) return "account";
     if (pathname.startsWith("/myagapay/giving/history") || pathname.startsWith("/myagapay/giving/offerings")) return "account";
     if (pathname.startsWith("/myagapay/giving")) return "giving";
     if (pathname.startsWith("/myagapay/account")) return "account";

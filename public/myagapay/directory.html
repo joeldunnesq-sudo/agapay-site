@@ -10,6 +10,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/donor/style.css?v=20260704c" />
+  <script src="/pwa-register.js" defer></script>
+  <script src="/myagapay-shell.js?v=20260717b" defer></script>
+  <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260704a" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
+  <meta name="theme-color" content="#061522" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <style>
     :root { --ink:#101820; --muted:#68717d; --line:#d8ddd9; --paper:#fbfaf7; --gold:#b88a3d; --green:#235c4d; --blue:#153a5b; }
     body { margin:0; background:#f6f3ee; color:var(--ink); font-family:"DM Sans", Arial, sans-serif; }
@@ -90,17 +99,40 @@
     .skill-card p { margin:0; color:var(--muted); }
     textarea { border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; min-height:62px; resize:vertical; }
     @media (max-width: 860px) {
+      body.donor-directory-page {
+        background:
+          radial-gradient(circle at 50% -10%, rgba(184, 144, 47, 0.18), transparent 30%),
+          linear-gradient(180deg, #efe8dc 0%, #f6f1e8 38%, #ebe3d6 100%);
+      }
       .directory-shell { display:block; }
-      .directory-side { position:static; padding:18px; }
-      .directory-main { padding:18px; }
+      .directory-side { display:none; }
+      .directory-main {
+        width:min(100%, 480px);
+        min-height:calc(100vh - 7.75rem);
+        margin:0 auto;
+        padding:1rem;
+        border:1px solid rgba(111, 106, 96, 0.15);
+        border-radius:32px;
+        background:rgba(246, 241, 232, 0.96);
+        box-shadow:0 18px 50px rgba(6, 21, 34, 0.13);
+      }
+      .donor-directory-page .directory-shell {
+        min-height:100vh;
+        padding:1.15rem .95rem 6.6rem;
+      }
       .directory-top { display:grid; }
+      .directory-title h1 { font-size:32px; line-height:1; }
+      .directory-title p { font-size:13px; }
       .directory-grid, .form-grid { grid-template-columns:1fr; }
       .directory-tools, .skills-toolbar { grid-template-columns:1fr; }
       .member-grid { grid-template-columns:1fr; }
+      .panel { border-radius:22px; padding:14px; box-shadow:0 10px 24px rgba(6,21,34,.08); }
+      .member-directory { margin-bottom:12px; }
+      .directory-top { margin-bottom:14px; }
     }
   </style>
 </head>
-<body>
+<body class="donor-mobile-page donor-directory-page">
   <div class="directory-shell">
     <aside class="directory-side">
       <a href="/" aria-label="AGAPAY home"><img src="/mark.png" alt="AGAPAY" /></a>
@@ -241,11 +273,13 @@
         </div>
       </section>
     </main>
+    <nav class="mobile-tabbar" aria-label="My AGAPAY navigation"></nav>
   </div>
 
   <script>
-    const token = localStorage.getItem("agapayUserToken") || localStorage.getItem("agapayPlatformToken") || "";
-    const email = localStorage.getItem("agapayUserEmail") || localStorage.getItem("agapayPlatformEmail") || "";
+    const token = localStorage.getItem("agapayUserToken") || localStorage.getItem("agapayPlatformToken") || localStorage.getItem("agapayDonorToken") || "";
+    const email = localStorage.getItem("agapayUserEmail") || localStorage.getItem("agapayPlatformEmail") || localStorage.getItem("agapayDonorEmail") || "";
+    const donorEmail = localStorage.getItem("agapayDonorEmail") || email;
     let profileState = null;
     let memberState = { view: "households", letter: "", cursor: "", query: "", sort: "az", loading: false };
     let skillCatalog = [];
@@ -254,7 +288,15 @@
       return {
         "Content-Type": "application/json",
         "Authorization": token ? "Bearer " + token : "",
-        "X-AGAPAY-User-Email": email
+        "X-AGAPAY-User-Email": email,
+        "X-AGAPAY-Donor-Email": donorEmail
+      };
+    }
+    function uploadHeaders() {
+      return {
+        "Authorization": token ? "Bearer " + token : "",
+        "X-AGAPAY-User-Email": email,
+        "X-AGAPAY-Donor-Email": donorEmail
       };
     }
     function text(value) { return value === undefined || value === null || value === "" ? "Not set" : String(value); }
@@ -555,7 +597,7 @@
     async function loadDirectory() {
       if (!token || !email) {
         document.getElementById("directoryStatus").textContent = "Sign in";
-        showNotice("Directory self-service uses your platform-user My AGAPAY session. Please sign in before managing directory records.", true);
+        showNotice("Sign in to My AGAPAY to manage directory records.", true);
         return;
       }
       await loadMemberHome();
@@ -637,7 +679,7 @@
       form.append("photo", selected);
       await fetch(`/api/directory/media/sessions/${encodeURIComponent(sessionPayload.session.id)}/complete`, {
         method: "POST",
-        headers: { Authorization: token ? "Bearer " + token : "", "X-AGAPAY-User-Email": email },
+        headers: uploadHeaders(),
         body: form
       }).then(async (response) => {
         const payload = await response.json().catch(() => ({}));

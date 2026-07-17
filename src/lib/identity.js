@@ -25,11 +25,13 @@ import {
   normalizeEmail,
   createPasswordRecord,
   verifyPasswordRecord,
-  getBearerToken
+  getBearerToken,
+  loadDonor
 } from "./core.js";
 
 const PLATFORM_SESSION_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours -- shorter than the donor default, appropriate for a staff/back-office identity
 const PLATFORM_USER_EMAIL_HEADER = "X-AGAPAY-User-Email";
+const DONOR_EMAIL_HEADER = "X-AGAPAY-Donor-Email";
 
 export { PLATFORM_USER_EMAIL_HEADER };
 
@@ -157,16 +159,25 @@ export async function requirePlatformUser(request, env) {
   if (!d1(env)) return null;
   const email = normalizeEmail(request.headers.get(PLATFORM_USER_EMAIL_HEADER));
   const token = getBearerToken(request);
-  if (!email || !token) return null;
+  if (!token) return null;
 
-  const row = await findPlatformUserByEmail(env, email);
+  if (email) {
+    const row = await findPlatformUserByEmail(env, email);
+    if (row?.status === "active" && row.session_token_hash && row.session_salt && (!row.session_expires_at || new Date(row.session_expires_at).getTime() >= Date.now())) {
+      const submittedHash = await hashSessionToken(token, row.session_salt);
+      if (secureCompare(submittedHash, row.session_token_hash)) return rowToPlatformUser(row);
+    }
+  }
+
+  const donorEmail = normalizeEmail(request.headers.get(DONOR_EMAIL_HEADER));
+  if (!donorEmail) return null;
+  const donor = await loadDonor(env, donorEmail);
+  if (!donor?.emailVerifiedAt || !donor.sessionTokenHash || !donor.sessionSalt) return null;
+  if (donor.sessionExpiresAt && new Date(donor.sessionExpiresAt).getTime() < Date.now()) return null;
+  const submittedDonorHash = await hashSessionToken(token, donor.sessionSalt);
+  if (!secureCompare(submittedDonorHash, donor.sessionTokenHash)) return null;
+  const row = await findPlatformUserByEmail(env, donorEmail);
   if (!row || row.status !== "active") return null;
-  if (!row.session_token_hash || !row.session_salt) return null;
-  if (row.session_expires_at && new Date(row.session_expires_at).getTime() < Date.now()) return null;
-
-  const submittedHash = await hashSessionToken(token, row.session_salt);
-  if (!secureCompare(submittedHash, row.session_token_hash)) return null;
-
   return rowToPlatformUser(row);
 }
 

@@ -50,6 +50,8 @@ import {
   ROLE_TEMPLATES
 } from "../src/lib/authorization.js";
 import { handleMembershipInvitationCreate } from "../src/handlers/identity.js";
+import { issueDonorSession } from "../src/handlers/donor.js";
+import { saveDonor } from "../src/lib/core.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -66,6 +68,14 @@ function makeD1Env() {
       reference TEXT PRIMARY KEY, parish_id TEXT, status TEXT NOT NULL DEFAULT 'pending',
       parish_name TEXT, community_type TEXT, stripe_account_id TEXT, stripe_subscription_id TEXT,
       received_at TEXT, updated_at TEXT NOT NULL, data TEXT NOT NULL
+    );
+    CREATE TABLE donors (
+      email TEXT PRIMARY KEY,
+      default_parish_id TEXT,
+      email_verified_at TEXT,
+      created_at TEXT,
+      updated_at TEXT NOT NULL,
+      data TEXT NOT NULL
     );
   `);
 
@@ -104,6 +114,17 @@ function authenticatedRequest({ email, token, url = "https://agapay.test/api/ide
     headers: {
       ...(init.headers || {}),
       "X-AGAPAY-User-Email": email || "",
+      "Authorization": token ? `Bearer ${token}` : ""
+    }
+  });
+}
+
+function donorAuthenticatedRequest({ email, token, url = "https://agapay.test/api/directory/self/profile", init = {} }) {
+  return new Request(url, {
+    ...init,
+    headers: {
+      ...(init.headers || {}),
+      "X-AGAPAY-Donor-Email": email || "",
       "Authorization": token ? `Bearer ${token}` : ""
     }
   });
@@ -176,6 +197,27 @@ await test("session issuance, resolution, and expiry", async () => {
   await revokePlatformUserSession(env, user.id);
   const revoked = await requirePlatformUser(authenticatedRequest({ email: "session@example.org", token: session.token }), env);
   assert.equal(revoked, null, "expected a revoked session to be rejected");
+});
+
+await test("current My AGAPAY donor session can resolve matching platform user", async () => {
+  const { env } = makeD1Env();
+  const user = await ensurePlatformUser(env, { email: "member@example.org", displayName: "Member" });
+  const donor = {
+    email: "member@example.org",
+    donorName: "Member",
+    emailVerifiedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  await saveDonor(env, donor);
+  const session = await issueDonorSession(env, donor);
+
+  const resolved = await requirePlatformUser(donorAuthenticatedRequest({ email: "member@example.org", token: session.token }), env);
+  assert.ok(resolved, "expected a valid donor session to resolve the matching platform user");
+  assert.equal(resolved.id, user.id);
+
+  const wrongEmail = await requirePlatformUser(donorAuthenticatedRequest({ email: "other@example.org", token: session.token }), env);
+  assert.equal(wrongEmail, null, "expected a donor session to reject mismatched email");
 });
 
 // ── Invitation + membership lifecycle ───────────────────────────────────
