@@ -316,6 +316,10 @@ import {
 } from "./handlers/directory-media.js";
 
 import {
+  handleDirectoryMember,
+} from "./handlers/directory-member.js";
+
+import {
   handleDirectoryAdmin,
 } from "./handlers/directory-admin.js";
 
@@ -2482,6 +2486,10 @@ export default {
     if (directoryAdminMatch) {
       const directoryAdminResponse = await handleDirectoryAdmin(request, env, decodeURIComponent(directoryAdminMatch[1]));
       if (directoryAdminResponse) return directoryAdminResponse;
+    }
+    if (url.pathname.startsWith("/api/directory/member")) {
+      const directoryMemberResponse = await handleDirectoryMember(request, env);
+      if (directoryMemberResponse) return directoryMemberResponse;
     }
     if (url.pathname.startsWith("/api/directory/media/")) {
       const directoryMediaResponse = await handleDirectoryMedia(request, env);

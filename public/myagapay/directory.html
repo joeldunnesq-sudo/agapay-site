@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AGAPAY Directory | My AGAPAY</title>
+  <meta name="robots" content="noindex,nofollow,noarchive" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -46,12 +47,36 @@
     input, select { border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; min-width:0; }
     .notice { margin:0 0 16px; padding:12px; border-radius:8px; background:#eef6fb; color:#17384a; border:1px solid #cde1ec; }
     .error { background:#fff0ed; color:#6d2118; border-color:#ffd1c8; }
+    .member-directory { margin-bottom:18px; }
+    .directory-tools { display:grid; grid-template-columns:minmax(220px, 1fr) auto auto; gap:10px; align-items:end; }
+    .directory-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
+    .directory-tab { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:8px; padding:9px 12px; font-weight:700; cursor:pointer; }
+    .directory-tab[aria-selected="true"] { background:var(--green); color:#fff; border-color:var(--green); }
+    .alphabet { display:flex; flex-wrap:wrap; gap:5px; margin:10px 0 14px; }
+    .alphabet button { min-width:34px; min-height:34px; border:1px solid var(--line); background:#fff; border-radius:8px; cursor:pointer; font-weight:700; }
+    .alphabet button[aria-current="true"] { background:#153a5b; color:#fff; border-color:#153a5b; }
+    .alphabet button:disabled { opacity:.42; cursor:not-allowed; }
+    .member-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:12px; }
+    .member-card { border:1px solid #e4e7e3; background:#fff; border-radius:8px; padding:12px; display:grid; grid-template-columns:54px 1fr; gap:10px; align-items:center; text-align:left; cursor:pointer; min-height:84px; }
+    .member-card:hover, .member-card:focus-visible { outline:3px solid rgba(35,92,77,.18); border-color:rgba(35,92,77,.55); }
+    .member-photo { width:54px; height:54px; border-radius:8px; background:#eef3f0; object-fit:cover; display:grid; place-items:center; font-weight:800; color:var(--green); }
+    .household-card .member-photo { border-radius:6px; }
+    .member-card strong { display:block; line-height:1.15; }
+    .member-card small { display:block; color:var(--muted); margin-top:3px; }
+    .profile-pane { display:grid; gap:12px; }
+    .profile-head { display:grid; grid-template-columns:80px 1fr; gap:14px; align-items:center; }
+    .profile-head .member-photo { width:80px; height:80px; }
+    .profile-meta { display:flex; flex-wrap:wrap; gap:8px; color:var(--muted); }
+    .contact-chip { display:inline-flex; gap:6px; align-items:center; border:1px solid var(--line); border-radius:8px; padding:8px 10px; background:#fff; color:var(--ink); text-decoration:none; }
+    .privacy-reminder { font-size:13px; color:#53606a; background:#f8f6ef; border:1px solid #e6ddc8; border-radius:8px; padding:10px 12px; margin-top:10px; }
     @media (max-width: 860px) {
       .directory-shell { display:block; }
       .directory-side { position:static; padding:18px; }
       .directory-main { padding:18px; }
       .directory-top { display:grid; }
       .directory-grid, .form-grid { grid-template-columns:1fr; }
+      .directory-tools { grid-template-columns:1fr; }
+      .member-grid { grid-template-columns:1fr; }
     }
   </style>
 </head>
@@ -77,6 +102,26 @@
       </div>
 
       <div id="directoryNotice" class="notice" hidden></div>
+
+      <section class="panel member-directory" aria-labelledby="memberDirectoryHeading">
+        <div class="directory-title">
+          <h2 id="memberDirectoryHeading">Parish Directory</h2>
+          <p id="memberDirectoryPrivacy" class="privacy-reminder">This directory is private to authorized members of your parish. Please use contact information respectfully and do not copy or distribute it outside the parish.</p>
+        </div>
+        <div class="directory-tools">
+          <label>Search published directory fields<input id="memberSearch" type="search" autocomplete="off" placeholder="Search names, households, city, or role" /></label>
+          <label>Sort<select id="memberSort"><option value="az">A-Z</option><option value="za">Z-A</option></select></label>
+          <button class="btn primary" type="button" id="memberSearchButton">Search</button>
+        </div>
+        <div class="directory-tabs" role="tablist" aria-label="Directory browse">
+          <button class="directory-tab" type="button" role="tab" aria-selected="true" data-member-view="households">Households</button>
+          <button class="directory-tab" type="button" role="tab" aria-selected="false" data-member-view="people">People</button>
+        </div>
+        <div class="alphabet" id="memberAlphabet" aria-label="Alphabetical navigation"></div>
+        <div class="member-grid" id="memberResults" aria-live="polite"></div>
+        <div class="actions"><button class="btn secondary" type="button" id="memberLoadMore" hidden>Load More</button></div>
+        <div class="profile-pane" id="memberProfile" hidden></div>
+      </section>
 
       <section class="directory-grid" aria-live="polite">
         <div class="stack">
@@ -144,6 +189,7 @@
     const token = localStorage.getItem("agapayUserToken") || localStorage.getItem("agapayPlatformToken") || "";
     const email = localStorage.getItem("agapayUserEmail") || localStorage.getItem("agapayPlatformEmail") || "";
     let profileState = null;
+    let memberState = { view: "households", letter: "", cursor: "", query: "", sort: "az", loading: false };
 
     function headers() {
       return {
@@ -153,6 +199,9 @@
       };
     }
     function text(value) { return value === undefined || value === null || value === "" ? "Not set" : String(value); }
+    function esc(value) {
+      return String(value === undefined || value === null ? "" : value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+    }
     function showNotice(message, isError = false) {
       const el = document.getElementById("directoryNotice");
       el.textContent = message;
@@ -164,6 +213,106 @@
       const payload = await response.json().catch(() => ({}));
       if (!response.ok || payload.ok === false) throw new Error(payload.message || payload.error || "Directory action failed.");
       return payload;
+    }
+    function initials(name) {
+      return String(name || "").split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "AG";
+    }
+    function photoHtml(item, className = "member-photo") {
+      return item.photo?.url
+        ? `<img class="${className}" src="${esc(item.photo.url)}" alt="${esc(item.photo.alt || item.displayName || "")}" loading="lazy" />`
+        : `<span class="${className}" aria-hidden="true">${esc(initials(item.displayName))}</span>`;
+    }
+    function memberSubtitle(item) {
+      if (item.type === "household") {
+        const names = (item.members || []).map((member) => member.displayName).slice(0, 3).join(", ");
+        return [names, item.city, `${item.publishedMemberCount || 0} published member${item.publishedMemberCount === 1 ? "" : "s"}`].filter(Boolean).join(" · ");
+      }
+      return [item.household?.displayName, item.city, item.suffix].filter(Boolean).join(" · ");
+    }
+    function renderAlphabet(alphabet = []) {
+      const current = memberState.letter || "ALL";
+      document.getElementById("memberAlphabet").innerHTML = alphabet.map((item) => {
+        const letter = item.letter;
+        return `<button type="button" data-letter="${esc(letter)}" ${item.available ? "" : "disabled"} aria-current="${current === letter ? "true" : "false"} aria-label="${letter === "ALL" ? "All results" : `Names beginning with ${letter}`}">${esc(letter)}</button>`;
+      }).join("");
+    }
+    function renderMemberCards(items = [], append = false) {
+      const target = document.getElementById("memberResults");
+      const html = items.length ? items.map((item) => `
+        <button class="member-card ${item.type === "household" ? "household-card" : ""}" type="button" data-type="${esc(item.type)}" data-id="${esc(item.id)}" aria-label="Open ${esc(item.displayName)}">
+          ${photoHtml(item)}
+          <span><strong>${esc(item.displayName)}</strong><small>${esc(memberSubtitle(item) || "Published directory profile")}</small></span>
+        </button>`).join("") : '<div class="empty">No published directory entries match this view.</div>';
+      target.innerHTML = append && !target.querySelector(".empty") ? target.innerHTML + html : html;
+    }
+    async function loadMemberDirectory({ append = false } = {}) {
+      if (!token || !email || memberState.loading) return;
+      memberState.loading = true;
+      document.getElementById("memberProfile").hidden = true;
+      const params = new URLSearchParams({
+        q: memberState.query,
+        letter: memberState.letter,
+        sort: memberState.sort,
+        limit: "24",
+        cursor: append ? memberState.cursor : ""
+      });
+      try {
+        const endpoint = memberState.query.length >= 2
+          ? `/api/directory/member/search?${new URLSearchParams({ q: memberState.query, type: memberState.view, limit: "24", cursor: append ? memberState.cursor : "" })}`
+          : `/api/directory/member/${memberState.view}?${params}`;
+        const payload = await api(endpoint);
+        const result = payload.households || payload.people || payload.results || { items: [] };
+        renderMemberCards(result.items || [], append);
+        if (result.alphabet) renderAlphabet(result.alphabet);
+        memberState.cursor = result.nextCursor || "";
+        document.getElementById("memberLoadMore").hidden = !memberState.cursor;
+      } catch (error) {
+        document.getElementById("memberResults").innerHTML = `<div class="empty">${esc(error.message)}</div>`;
+        document.getElementById("memberLoadMore").hidden = true;
+      } finally {
+        memberState.loading = false;
+      }
+    }
+    async function loadMemberHome() {
+      if (!token || !email) return;
+      try {
+        const payload = await api("/api/directory/member");
+        const directory = payload.directory || {};
+        if (directory.privacyReminder) document.getElementById("memberDirectoryPrivacy").textContent = directory.privacyReminder;
+        renderAlphabet(directory.alphabet?.households || []);
+        await loadMemberDirectory();
+      } catch (error) {
+        document.getElementById("memberResults").innerHTML = `<div class="empty">${esc(error.message)}</div>`;
+      }
+    }
+    function renderContact(contact) {
+      const label = `${contact.label || contact.type}: ${contact.value}`;
+      if (contact.type === "email") return `<a class="contact-chip" href="mailto:${esc(contact.value)}">${esc(label)}</a>`;
+      if (contact.type === "phone") return `<a class="contact-chip" href="tel:${esc(contact.value.replace(/\D/g, ""))}">${esc(label)}</a>`;
+      return `<span class="contact-chip">${esc(label)}</span>`;
+    }
+    async function openMemberProfile(type, id) {
+      const endpoint = type === "household" ? `/api/directory/member/households/${encodeURIComponent(id)}` : `/api/directory/member/people/${encodeURIComponent(id)}`;
+      const payload = await api(endpoint);
+      const profile = payload.profile?.household || payload.profile?.person;
+      if (!profile) return;
+      const contacts = (profile.contacts || []).map(renderContact).join("");
+      const members = type === "household" && profile.members?.length
+        ? `<div class="member-grid">${profile.members.map((member) => `<button class="member-card" type="button" data-type="person" data-id="${esc(member.id)}">${photoHtml(member)}<span><strong>${esc(member.displayName)}</strong><small>${esc(member.relationship || "Published member")}</small></span></button>`).join("")}</div>`
+        : "";
+      const householdLink = type === "person" && profile.household
+        ? `<button class="btn secondary" type="button" data-type="household" data-id="${esc(profile.household.id)}">Open Household</button>`
+        : "";
+      const pane = document.getElementById("memberProfile");
+      pane.hidden = false;
+      pane.innerHTML = `
+        <article class="mini-card">
+          <div class="profile-head">${photoHtml(profile)}<div><h2>${esc(profile.displayName)}</h2><div class="profile-meta">${[profile.city, profile.household?.displayName].filter(Boolean).map((value) => `<span>${esc(value)}</span>`).join("")}</div></div></div>
+          <div class="actions">${householdLink}<button class="btn secondary" type="button" id="closeMemberProfile">Back to Browse</button></div>
+          ${contacts ? `<div class="actions">${contacts}</div>` : ""}
+          ${members}
+        </article>`;
+      pane.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     function renderProfile(data) {
       profileState = data.profile || data;
@@ -220,6 +369,7 @@
         showNotice("Directory self-service uses your platform-user My AGAPAY session. Please sign in before managing directory records.", true);
         return;
       }
+      await loadMemberHome();
       const payload = await api("/api/directory/self/profile");
       renderProfile(payload.profile);
     }
@@ -286,6 +436,48 @@
       await api(`/api/directory/media/${encodeURIComponent(window.currentDirectoryPhoto.id)}`, { method: "DELETE" });
       showNotice("Photo removed.");
       await loadDirectory();
+    });
+    document.querySelector(".directory-tabs").addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-member-view]");
+      if (!button) return;
+      memberState = { ...memberState, view: button.dataset.memberView, letter: "", cursor: "", query: "", sort: document.getElementById("memberSort").value || "az" };
+      document.getElementById("memberSearch").value = "";
+      document.querySelectorAll("[data-member-view]").forEach((tab) => tab.setAttribute("aria-selected", String(tab === button)));
+      const home = await api("/api/directory/member").catch(() => null);
+      renderAlphabet(home?.directory?.alphabet?.[memberState.view] || []);
+      await loadMemberDirectory();
+    });
+    document.getElementById("memberAlphabet").addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-letter]");
+      if (!button || button.disabled) return;
+      memberState.letter = button.dataset.letter === "ALL" ? "" : button.dataset.letter;
+      memberState.cursor = "";
+      await loadMemberDirectory();
+    });
+    document.getElementById("memberSearchButton").addEventListener("click", async () => {
+      memberState.query = document.getElementById("memberSearch").value.trim();
+      memberState.sort = document.getElementById("memberSort").value || "az";
+      memberState.cursor = "";
+      await loadMemberDirectory();
+    });
+    document.getElementById("memberSearch").addEventListener("keydown", async (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        document.getElementById("memberSearchButton").click();
+      }
+    });
+    document.getElementById("memberLoadMore").addEventListener("click", () => loadMemberDirectory({ append: true }));
+    document.getElementById("memberResults").addEventListener("click", async (event) => {
+      const card = event.target.closest("[data-type][data-id]");
+      if (card) await openMemberProfile(card.dataset.type, card.dataset.id).catch((error) => showNotice(error.message, true));
+    });
+    document.getElementById("memberProfile").addEventListener("click", async (event) => {
+      if (event.target.id === "closeMemberProfile") {
+        document.getElementById("memberProfile").hidden = true;
+        return;
+      }
+      const card = event.target.closest("[data-type][data-id]");
+      if (card) await openMemberProfile(card.dataset.type, card.dataset.id).catch((error) => showNotice(error.message, true));
     });
     loadDirectory().catch((error) => {
       document.getElementById("directoryStatus").textContent = "Unavailable";

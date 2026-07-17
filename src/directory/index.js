@@ -10,3 +10,4 @@ export * from "./self-service.js";
 export * from "./media.js";
 export * from "./admin.js";
 export * from "./duplicates.js";
+export * from "./member-directory.js";
