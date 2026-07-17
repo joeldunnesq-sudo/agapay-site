@@ -3152,35 +3152,6 @@
       margin: 0.15rem 0 0.35rem;
       font-size: 1.3rem;
     }
-    .dir-admin-access-grid {
-      display: grid;
-      grid-template-columns: minmax(240px, 0.8fr) minmax(280px, 1.2fr);
-      gap: 1rem;
-      align-items: start;
-    }
-    .dir-admin-staff-login {
-      display: grid;
-      gap: 0.75rem;
-      padding: 0.85rem;
-      background: #fff;
-      border: 1px solid rgba(32,31,29,0.12);
-      border-radius: 8px;
-    }
-    .dir-admin-staff-login label {
-      display: grid;
-      gap: 0.35rem;
-      font-size: 0.86rem;
-      font-weight: 700;
-    }
-    .dir-admin-staff-login input {
-      width: 100%;
-      box-sizing: border-box;
-      border: 1px solid rgba(32,31,29,0.18);
-      border-radius: 6px;
-      padding: 0.62rem 0.7rem;
-      font: inherit;
-    }
-    .dir-admin-staff-login button,
     .dir-admin-access-actions button,
     .dir-admin-access-actions a {
       border: 0;
@@ -3192,21 +3163,6 @@
       text-decoration: none;
       cursor: pointer;
       text-align: center;
-    }
-    .dir-admin-access-help {
-      display: grid;
-      gap: 0.65rem;
-      color: rgba(32,31,29,0.76);
-    }
-    .dir-admin-access-help ul {
-      margin: 0;
-      padding-left: 1.1rem;
-    }
-    .dir-admin-access-help code {
-      background: rgba(35,92,77,0.08);
-      border-radius: 4px;
-      padding: 0.05rem 0.25rem;
-      font-size: 0.86em;
     }
     .dir-admin-access-actions {
       display: flex;

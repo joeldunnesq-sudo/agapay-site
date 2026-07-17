@@ -29,7 +29,9 @@ import {
   transitionSelfServicePublication
 } from "../src/directory/index.js";
 import { handleDirectoryAdmin } from "../src/handlers/directory-admin.js";
+import { handleDirectorySelfService } from "../src/handlers/directory-self-service.js";
 import { ensurePlatformUser, issuePlatformUserSession, PLATFORM_USER_EMAIL_HEADER } from "../src/lib/identity.js";
+import { issueParishDashboardSession } from "../src/lib/core.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(__dirname, "..");
@@ -41,6 +43,7 @@ function migration(name) {
 function makeD1Env() {
   const db = new DatabaseSync(":memory:");
   db.exec("PRAGMA foreign_keys = ON;");
+  db.exec(migration("0001_production_records.sql"));
   db.exec(migration("0014_audit_log.sql"));
   db.exec(migration("0020_platform_identity.sql"));
   db.exec(migration("0022_directory_canonical_foundation.sql"));
@@ -158,6 +161,30 @@ function requestWithSession(url, session, email, init = {}) {
   });
 }
 
+async function requestWithParishDashboardSession(env, db, parishId = "st-fiacre", init = {}) {
+  const registration = {
+    parishId,
+    parishName: parishId === "st-fiacre" ? "St. Fiacre Orthodox Church" : "Other Parish",
+    contactEmail: `${parishId}@example.org`,
+    verified: true,
+    subscriptionTier: "parish",
+    parishDashboardSessions: []
+  };
+  const issued = await issueParishDashboardSession(registration);
+  db.prepare(`
+    INSERT INTO registrations (reference, parish_id, data, received_at, updated_at)
+    VALUES (?, ?, ?, datetime('now'), datetime('now'))
+    ON CONFLICT(reference) DO UPDATE SET parish_id = excluded.parish_id, data = excluded.data, updated_at = datetime('now')
+  `).run(`reg_${parishId}`, parishId, JSON.stringify(issued.registration));
+  return new Request(`https://agapay.app/api/parish/dashboard/${encodeURIComponent(parishId)}/directory/admin/context`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${issued.token}`,
+      ...(init.headers || {})
+    }
+  });
+}
+
 let passed = 0;
 async function test(name, fn) {
   try {
@@ -178,7 +205,35 @@ await test("migration creates review metadata and internal notes", async () => {
   assert.ok(tables.includes("directory_internal_notes"));
 });
 
-await test("admin context denies legacy bearer and resolves capability-scoped platform session", async () => {
+await test("admin context accepts parish dashboard session and still resolves capability-scoped platform session", async () => {
+  const { env, db, reviewerUser } = await fixture();
+  const parishDashboard = await requestWithParishDashboardSession(env, db);
+  const dashboardResponse = await handleDirectoryAdmin(parishDashboard, env, "st-fiacre");
+  assert.equal(dashboardResponse.status, 200);
+  assert.equal(dashboardResponse.headers.get("Cache-Control"), "private, no-store");
+  const dashboardPayload = await dashboardResponse.json();
+  assert.equal(dashboardPayload.context.authenticationType, "parish_dashboard");
+  assert.equal(dashboardPayload.context.parishId, "st-fiacre");
+  assert.equal(dashboardPayload.context.permissions.canManagePeople, true);
+
+  const crossParish = await handleDirectoryAdmin(new Request("https://agapay.app/api/parish/dashboard/other-parish/directory/admin/context", {
+    headers: { Authorization: parishDashboard.headers.get("Authorization") }
+  }), env, "other-parish");
+  assert.equal(crossParish.status, 401);
+
+  const selfServiceResponse = await handleDirectorySelfService(new Request("https://agapay.app/api/directory/self/profile", {
+    headers: parishDashboard.headers
+  }), env);
+  assert.equal(selfServiceResponse.status, 401);
+
+  const session = await issuePlatformUserSession(env, reviewerUser.id);
+  const response = await handleDirectoryAdmin(requestWithSession("https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/context", session, reviewerUser.email), env, "st-fiacre");
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.equal(payload.context.permissions.canReviewRequests, true);
+});
+
+await test("admin context denies unrecognized bearer token", async () => {
   const { env, reviewerUser } = await fixture();
   const legacy = new Request("https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/context", {
     headers: { Authorization: "Bearer legacy-parish-token" }
@@ -191,6 +246,20 @@ await test("admin context denies legacy bearer and resolves capability-scoped pl
   assert.equal(response.status, 200);
   const payload = await response.json();
   assert.equal(payload.context.permissions.canReviewRequests, true);
+});
+
+await test("parish dashboard directory actions are audited as parish dashboard account", async () => {
+  const { env, db, household } = await fixture();
+  const parishDashboard = await requestWithParishDashboardSession(env, db);
+  const response = await handleDirectoryAdmin(new Request("https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/notes", {
+    method: "POST",
+    headers: { Authorization: parishDashboard.headers.get("Authorization"), "Content-Type": "application/json" },
+    body: JSON.stringify({ targetType: "household", targetId: household.id, category: "verification", body: "Dashboard account review note." })
+  }), env, "st-fiacre");
+  assert.equal(response.status, 201);
+  const audit = db.prepare("SELECT actor_user_id, actor_type, metadata_json FROM audit_log WHERE action = 'directory.internal_note.created' ORDER BY created_at DESC LIMIT 1").get();
+  assert.equal(audit.actor_user_id, "st-fiacre");
+  assert.equal(audit.actor_type, "parish_dashboard_account");
 });
 
 await test("queue aggregates Phase 2A change requests and publication submissions safely", async () => {

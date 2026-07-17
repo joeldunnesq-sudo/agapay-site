@@ -70,6 +70,7 @@ export async function runAtomic(env, statements) {
 export function normalizeActor(actor) {
   return {
     userId: cleanText(actor?.userId || actor?.user?.id, { max: 160 }),
+    actorType: cleanText(actor?.actorType, { max: 80 }) || "platform_user",
     parishId: cleanText(actor?.parishId || actor?.membership?.parishId, { max: 160 }),
     capabilities: Array.isArray(actor?.capabilities) ? actor.capabilities : [],
     personId: cleanText(actor?.personId, { max: 160 })
@@ -83,7 +84,7 @@ export function hasAnyCapability(actor, capabilities = []) {
 
 export function assertParishActor(actorInput, parishId, capabilities = [DIRECTORY_CAPABILITIES.manage]) {
   const actor = normalizeActor(actorInput);
-  if (!actor.userId) throw new DirectoryServiceError("unauthorized", "Directory services require an authenticated platform user.", 401);
+  if (!actor.userId) throw new DirectoryServiceError("unauthorized", "Directory services require an authenticated directory actor.", 401);
   if (!actor.parishId || actor.parishId !== parishId) {
     throw new DirectoryServiceError("forbidden", "Directory actor is not scoped to this parish.", 403);
   }
@@ -139,15 +140,17 @@ export function maskValue(value, type = "text") {
 }
 
 export function auditStatement({ action, actor, parishId, targetType, targetId, householdId = null, before = null, after = null, metadata = null, correlationId = "" }) {
+  const normalizedActor = normalizeActor(actor);
   return {
     sql: `INSERT INTO audit_log (
             id, actor_user_id, actor_type, action, target_type, target_id,
             organization_id, household_id, request_id, before_summary_json,
             after_summary_json, metadata_json, created_at
-          ) VALUES (?, ?, 'platform_user', ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
     params: [
       generateSecret("audit"),
-      actor.userId,
+      normalizedActor.userId,
+      normalizedActor.actorType,
       action,
       targetType,
       targetId,

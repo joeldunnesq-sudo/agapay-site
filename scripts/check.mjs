@@ -113,6 +113,7 @@ const listenManifest = await readFile("public/listen/manifest.webmanifest", "utf
 const listenIndex = await readFile("public/listen/index.html", "utf8");
 const adminPwa = await readFile("public/admin/pwa.js", "utf8");
 const serviceWorker = await readFile("public/service-worker.js", "utf8");
+const parishDashboardApp = await readFile("public/parish/app.js", "utf8");
 const givingOverviewPage = await readFile("public/give/index.html", "utf8");
 assert.ok(manifest.includes("/images/app/apple-touch-icon-blue.png"), "PWA manifest should use the blue AGAPAY iOS home screen icon");
 assert.ok(manifest.includes('"scope": "/myagapay"') && !manifest.includes('"scope": "/"'), "My AGAPAY PWA should cover /myagapay and /myagapay/learn without claiming /admin");
@@ -127,6 +128,10 @@ assert.ok(adminHtml.includes("weeklyCommemorationParishId") && adminApp.includes
 assert.ok(adminHtml.includes("weeklyTreasurerParishId") && adminApp.includes("runWeeklyTreasurerEmail") && adminApp.includes("/api/admin/commerce/send-weekly-treasurer"), "admin dashboard should expose a weekly treasurer commerce email preview/send control");
 assert.ok(adminCss.includes('admin-mobile-command') && adminCss.includes('mobile-review-bar') && adminCss.includes('product-admin-hero-giving { display: none; }'), "admin dashboard should include dedicated mobile verification layout styles");
 assert.ok(serviceWorker.includes('agapay-static-v23'), "service worker cache version should advance when PWA manifest identity changes");
+assert.ok(serviceWorker.includes('url.pathname.startsWith("/api/") return true') || serviceWorker.includes('url.pathname.startsWith("/api/")) return true'), "service worker should bypass API responses, including private Directory JSON");
+assert.ok(parishDashboardApp.includes("fetch(directoryAdminApi('/dashboard'), { headers })"), "Parish Dashboard Directory should use the parish dashboard auth headers");
+assert.ok(!parishDashboardApp.includes("directoryAdminHeaders") && !parishDashboardApp.includes("handleDirectoryStaffLogin"), "Parish Dashboard Directory should not require a second My AGAPAY staff login");
+assert.ok(!parishDashboardApp.includes("agapayPlatformToken") && !parishDashboardApp.includes("agapayUserToken"), "Parish Dashboard Directory should not read My AGAPAY tokens from localStorage");
 assert.ok(listenManifest.includes('"scope": "/listen/"') && listenManifest.includes('"name": "AGAPAY Listen"'), "AGAPAY Listen PWA manifest should exist with its own scope and identity");
 assert.ok(listenIndex.includes('/listen/manifest.webmanifest'), "AGAPAY Listen page should link its own manifest, not the root or admin one");
 assert.ok(myAgapayShell.includes('id: "giving"') && myAgapayShell.includes('label: "Give"'), "shared My AGAPAY shell should define the canonical Give product tab");
@@ -235,7 +240,6 @@ assert.ok(worker.includes('startsWith("/give/parish-giving/")'), "worker should 
 assert.ok(worker.includes("async function fetchCleanAsset"), "worker should keep rewritten asset routes at their canonical public URLs");
 assert.ok(worker.includes("canonicalCampaignPathFromLegacy"), "worker should redirect legacy campaign URLs to canonical nested campaign routes");
 assert.ok(worker.includes('/^\\/give\\/[^/]+\\/[^/]+-campaign\\/?$/'), "worker should serve canonical parish campaign routes");
-const parishDashboardApp = await readFile("public/parish/app.js", "utf8");
 assert.ok(parishDashboardApp.includes("campaignPublicUrl") && parishDashboardApp.includes("-campaign"), "parish dashboard should publish canonical nested campaign URLs");
 const parishDashboardHtml = await readFile("public/parish/dashboard.html", "utf8");
 assert.ok(parishDashboardHtml.includes('id="tab-reconcile"') && parishDashboardHtml.includes("Treasurer closeout"), "parish dashboard should include monthly reconciliation and closeout UI");

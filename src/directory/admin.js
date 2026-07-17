@@ -1,5 +1,6 @@
 import { currentUser, resolveAuthorizationContext } from "../lib/authorization.js";
-import { d1All, d1First, generateSecret } from "../lib/core.js";
+import { d1All, d1First, generateSecret, getBearerToken, resolveParishDashboardSession } from "../lib/core.js";
+import { findRegistrationByParishId } from "../handlers/parish.js";
 import {
   addHouseholdAdmin,
   addHouseholdMember,
@@ -131,6 +132,7 @@ function requireAny(actor, parishId, capabilities) {
 function actorDto(ctx) {
   return {
     userId: ctx.user.id,
+    actorType: ctx.actorType || "platform_user",
     parishId: ctx.parishId || ctx.membership?.parishId,
     capabilities: ctx.capabilities,
     personId: ctx.personId || ""
@@ -147,6 +149,9 @@ async function linkedPersonId(env, userId) {
 }
 
 export async function resolveDirectoryAdminContext(env, { request, parishId }) {
+  const parishDashboardContext = await requireParishDashboardDirectoryAccess(request, env, { parishId });
+  if (parishDashboardContext) return parishDashboardContext;
+
   const user = await currentUser(request, env);
   if (!user) throw new DirectoryServiceError("unauthorized", "Directory administration requires an authenticated platform user.", 401);
   const cleanedParishId = cleanText(parishId, { required: true, max: 160, field: "parishId" });
@@ -161,6 +166,78 @@ export async function resolveDirectoryAdminContext(env, { request, parishId }) {
     parishId: cleanedParishId,
     personId,
     capabilities: directoryCapabilities,
+    permissions: {
+      canReviewRequests: hasAny(actor, [DIRECTORY_CAPABILITIES.requestsReview, DIRECTORY_CAPABILITIES.manage]),
+      canReviewPublication: hasAny(actor, [DIRECTORY_CAPABILITIES.publicationReview, DIRECTORY_CAPABILITIES.manage]),
+      canManagePeople: hasAny(actor, [DIRECTORY_CAPABILITIES.peopleManage, DIRECTORY_CAPABILITIES.manage]),
+      canManageHouseholds: hasAny(actor, [DIRECTORY_CAPABILITIES.householdsManage, DIRECTORY_CAPABILITIES.manage]),
+      canManageProtected: hasAny(actor, [DIRECTORY_CAPABILITIES.protectedManage, DIRECTORY_CAPABILITIES.manage]),
+      canViewNotes: hasAny(actor, [DIRECTORY_CAPABILITIES.notesView, DIRECTORY_CAPABILITIES.notesManage, DIRECTORY_CAPABILITIES.manage]),
+      canManageNotes: hasAny(actor, [DIRECTORY_CAPABILITIES.notesManage, DIRECTORY_CAPABILITIES.manage]),
+      canAssign: hasAny(actor, [DIRECTORY_CAPABILITIES.assignmentsManage, DIRECTORY_CAPABILITIES.manage]),
+      canViewAudit: hasAny(actor, [DIRECTORY_CAPABILITIES.auditView, DIRECTORY_CAPABILITIES.manage]),
+      canViewPrivateContact: hasAny(actor, [DIRECTORY_CAPABILITIES.privateContactView, DIRECTORY_CAPABILITIES.manage]),
+      canReviewDuplicates: hasAny(actor, [DIRECTORY_CAPABILITIES.duplicatesReview, DIRECTORY_CAPABILITIES.manage]),
+      canMergeDuplicates: hasAny(actor, [DIRECTORY_CAPABILITIES.duplicatesMerge, DIRECTORY_CAPABILITIES.manage])
+    },
+    entitlement: { mission: true, parish: true, phase3AAvailable: true }
+  };
+}
+
+const PARISH_DASHBOARD_DIRECTORY_CAPABILITIES = Object.freeze([
+  DIRECTORY_CAPABILITIES.manage,
+  DIRECTORY_CAPABILITIES.peopleManage,
+  DIRECTORY_CAPABILITIES.householdsManage,
+  DIRECTORY_CAPABILITIES.requestsReview,
+  DIRECTORY_CAPABILITIES.membershipsReview,
+  DIRECTORY_CAPABILITIES.householdAdminsReview,
+  DIRECTORY_CAPABILITIES.correctionsReview,
+  DIRECTORY_CAPABILITIES.protectedManage,
+  DIRECTORY_CAPABILITIES.duplicatesReview,
+  DIRECTORY_CAPABILITIES.duplicatesMerge,
+  DIRECTORY_CAPABILITIES.notesView,
+  DIRECTORY_CAPABILITIES.notesManage,
+  DIRECTORY_CAPABILITIES.assignmentsManage,
+  DIRECTORY_CAPABILITIES.publicationReview,
+  DIRECTORY_CAPABILITIES.childPublicationReview,
+  DIRECTORY_CAPABILITIES.ministriesManage,
+  DIRECTORY_CAPABILITIES.ministryInterestReview,
+  DIRECTORY_CAPABILITIES.settingsManage,
+  DIRECTORY_CAPABILITIES.privateContactView,
+  DIRECTORY_CAPABILITIES.auditView,
+  DIRECTORY_CAPABILITIES.mediaReprocess
+]);
+
+export async function requireParishDashboardDirectoryAccess(request, env, { parishId } = {}) {
+  const cleanedParishId = cleanText(parishId, { required: true, max: 160, field: "parishId" });
+  if (request?.headers?.get?.("X-AGAPAY-User-Email")) return null;
+  let found = null;
+  try {
+    found = await findRegistrationByParishId(env, cleanedParishId);
+  } catch {
+    return null;
+  }
+  if (!found?.registration) return null;
+  const session = await resolveParishDashboardSession(found.registration, getBearerToken(request));
+  if (!session) return null;
+
+  const actorId = cleanedParishId;
+  const actorLabel = found.registration.contactEmail
+    || found.registration.email
+    || found.registration.parishName
+    || "Parish Dashboard Administrator";
+  const actor = { userId: actorId, actorType: "parish_dashboard_account", parishId: cleanedParishId, capabilities: [...PARISH_DASHBOARD_DIRECTORY_CAPABILITIES], personId: "" };
+  return {
+    authenticationType: "parish_dashboard",
+    actorType: "parish_dashboard_account",
+    actorId,
+    actorLabel,
+    parishSessionId: session.id || "",
+    authenticatedAt: session.expiresAt || "",
+    user: { id: actorId, email: found.registration.contactEmail || found.registration.email || "", displayName: actorLabel },
+    parishId: cleanedParishId,
+    personId: "",
+    capabilities: [...PARISH_DASHBOARD_DIRECTORY_CAPABILITIES],
     permissions: {
       canReviewRequests: hasAny(actor, [DIRECTORY_CAPABILITIES.requestsReview, DIRECTORY_CAPABILITIES.manage]),
       canReviewPublication: hasAny(actor, [DIRECTORY_CAPABILITIES.publicationReview, DIRECTORY_CAPABILITIES.manage]),
