@@ -160,8 +160,8 @@
   }
 
   // The dashboard home pages (myagapay/index.html, donor/index.html) have a
-  // rich, hardcoded account dropdown (History / Sacraments & Services /
-  // Account Settings / Log out). Every other My AGAPAY page previously only
+  // rich, hardcoded account dropdown (History / Account Settings / Log out).
+  // Every other My AGAPAY page previously only
   // got a bare "Account" link here, so the canonical menu visibly changed
   // depending on which page you landed on (e.g. clicking a Quick Give tile
   // from the dashboard home). Inject the SAME dropdown -- same markup,
@@ -205,7 +205,6 @@
       </button>
       <div class="donor-home-account-dropdown" role="menu" hidden>
         <a href="/myagapay/giving/history" role="menuitem">History</a>
-        <a href="/myagapay/sacraments" role="menuitem">Sacraments &amp; Services</a>
         <a href="/myagapay/account" role="menuitem">Account Settings</a>
         <button type="button" data-donor-logout role="menuitem">Log out</button>
       </div>`;
