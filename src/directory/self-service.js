@@ -48,6 +48,22 @@ function cleanDate(value, field) {
   return cleaned;
 }
 
+function normalizeStarterParishId(value) {
+  const cleaned = cleanText(value, { required: true, max: 160, field: "parishId" });
+  if (!/^[a-z0-9][a-z0-9_.-]{1,159}$/i.test(cleaned)) {
+    throw new DirectoryServiceError("validation_failed", "Choose a parish before starting your directory profile.", 422);
+  }
+  return cleaned;
+}
+
+function normalizeStarterVisibility(value, fallback = "private") {
+  const cleaned = cleanText(value || fallback, { max: 40, field: "visibility" }) || fallback;
+  if (!["private", "staff", "directory_members"].includes(cleaned)) {
+    throw new DirectoryServiceError("validation_failed", "Choose a supported directory sharing option.", 422);
+  }
+  return cleaned;
+}
+
 function personDto(row, flags = {}) {
   if (!row) return null;
   return {
@@ -320,6 +336,133 @@ export async function getSelfServiceProfile(env, { context }) {
       reviewFields: REVIEW_PERSON_FIELDS
     }
   };
+}
+
+export async function startSelfServiceProfile(env, { context, data = {}, correlationId = "" }) {
+  if (context.claimed) return getSelfServiceProfile(env, { context });
+  const parishId = normalizeStarterParishId(data.parishId);
+  const preferredName = cleanText(data.preferredName || context.user.displayName || context.user.email?.split("@")[0], { required: true, max: 160, field: "preferredName" });
+  const legalName = cleanText(data.legalName, { max: 160, field: "legalName" });
+  const dateOfBirth = cleanDate(data.dateOfBirth, "dateOfBirth");
+  const email = cleanText(data.email || context.user.email, { max: 320, field: "email" });
+  const phone = cleanText(data.phone, { max: 40, field: "phone" });
+  const profileVisibility = normalizeStarterVisibility(data.profileVisibility, "directory_members");
+  const emailVisibility = normalizeStarterVisibility(data.emailVisibility, "private");
+  const phoneVisibility = normalizeStarterVisibility(data.phoneVisibility, "private");
+  const publicationPreferences = {
+    adultPreferredName: { visibility: profileVisibility, publicationEligible: profileVisibility === "directory_members" },
+    adultEmail: { visibility: emailVisibility, publicationEligible: emailVisibility === "directory_members" },
+    adultPhone: { visibility: phoneVisibility, publicationEligible: phoneVisibility === "directory_members" }
+  };
+  const timestamp = nowMs();
+  const personId = generateSecret("dir_person");
+  const linkId = generateSecret("dir_link");
+  const affiliationId = generateSecret("dir_affil");
+  const publicationId = generateSecret("dir_pub");
+  const requestId = generateSecret("dir_req");
+  const actor = { userId: context.user.id, actorType: "platform_user", parishId, personId, capabilities: [DIRECTORY_CAPABILITIES.selfManage] };
+  const statements = [
+    {
+      sql: `INSERT INTO directory_people
+              (id, created_by_parish_id, preferred_name, legal_name, middle_name, suffix,
+               date_of_birth, biological_sex, deceased, active, notes, created_at, updated_at)
+            VALUES (?, ?, ?, ?, '', '', ?, 'unknown', 0, 1, ?, ?, ?)`,
+      params: [personId, parishId, preferredName, legalName, dateOfBirth, "Created from My AGAPAY self-service onboarding; pending parish review.", timestamp, timestamp]
+    },
+    {
+      sql: `INSERT INTO directory_person_links
+              (id, person_id, link_type, external_id, active, created_at, updated_at)
+            VALUES (?, ?, 'platform_user', ?, 1, ?, ?)`,
+      params: [linkId, personId, context.user.id, timestamp, timestamp]
+    },
+    {
+      sql: `INSERT INTO directory_parish_affiliations
+              (id, person_id, parish_id, status, joined_date, left_date, active, created_at, updated_at)
+            VALUES (?, ?, ?, 'visitor', NULL, NULL, 1, ?, ?)`,
+      params: [affiliationId, personId, parishId, timestamp, timestamp]
+    },
+    {
+      sql: `INSERT INTO directory_publication_profiles
+              (id, parish_id, owner_type, owner_id, status, approval_status, active, created_at, updated_at)
+            VALUES (?, ?, 'person', ?, 'draft', 'not_submitted', 1, ?, ?)`,
+      params: [publicationId, parishId, personId, timestamp, timestamp]
+    },
+    {
+      sql: `INSERT INTO directory_change_requests
+              (id, parish_id, requester_user_id, requester_person_id, target_type, target_id,
+               household_id, request_type, status, summary, requested_payload_json, created_at, updated_at)
+            VALUES (?, ?, ?, ?, 'person', ?, NULL, 'person_profile_review', 'pending', ?, ?, ?, ?)`,
+      params: [
+        requestId,
+        parishId,
+        context.user.id,
+        personId,
+        personId,
+        `New directory profile started by ${preferredName}`,
+        safeJson({ preferredName, legalName, dateOfBirth, email, phone, publicationPreferences, source: "myagapay_directory_onboarding" }) || "{}",
+        timestamp,
+        timestamp
+      ]
+    },
+    auditStatement({
+      action: "directory.self_service.profile_started",
+      actor,
+      parishId,
+      targetType: "directory_person",
+      targetId: personId,
+      after: { preferredName, status: "visitor", publicationStatus: "draft" },
+      correlationId
+    }),
+    auditStatement({
+      action: "directory.change_request.created",
+      actor,
+      parishId,
+      targetType: "directory_person",
+      targetId: personId,
+      after: { requestType: "person_profile_review", summary: `New directory profile started by ${preferredName}` },
+      correlationId
+    }),
+    await notificationStatement({
+      context: { ...context, currentPerson: { id: personId } },
+      parishId,
+      eventType: "directory.profile.started",
+      targetType: "directory_person",
+      targetId: personId,
+      safeMessage: "Your draft directory profile was started and sent to the parish for review.",
+      metadata: { source: "myagapay_directory_onboarding" }
+    })
+  ];
+  await runAtomic(env, statements);
+
+  const resolved = await resolveDirectorySelfServiceContext(env, { user: context.user });
+  await setSelfServicePrivacyPreference(env, {
+    context: resolved,
+    ownerType: "person",
+    ownerId: personId,
+    fieldKey: "adult_preferred_name",
+    visibility: profileVisibility,
+    publicationEligible: profileVisibility === "directory_members",
+    correlationId
+  }).catch(() => null);
+  if (email) {
+    await createSelfServiceContact(env, {
+      context: resolved,
+      ownerType: "person",
+      ownerId: personId,
+      data: { contactType: "email", label: "personal", value: email, visibility: emailVisibility, primary: true },
+      correlationId
+    }).catch(() => null);
+  }
+  if (phone) {
+    await createSelfServiceContact(env, {
+      context: resolved,
+      ownerType: "person",
+      ownerId: personId,
+      data: { contactType: "phone", label: "mobile", value: phone, visibility: phoneVisibility, primary: true },
+      correlationId
+    }).catch(() => null);
+  }
+  return getSelfServiceProfile(env, { context: await resolveDirectorySelfServiceContext(env, { user: context.user }) });
 }
 
 export async function updateSelfServicePersonProfile(env, { context, patch = {}, correlationId = "" }) {

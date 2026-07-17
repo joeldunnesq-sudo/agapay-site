@@ -20,6 +20,7 @@ import {
   resolveDirectorySelfServiceContext,
   setPersonPrivacyFlags,
   setSelfServicePrivacyPreference,
+  startSelfServiceProfile,
   transitionSelfServicePublication,
   updateHouseholdSelfServiceProfile,
   updateSelfServiceContact,
@@ -143,6 +144,49 @@ await test("linked adult receives safe self-service context; unlinked user recei
   assert.equal(unlinkedContext.claimed, false);
   assert.equal(unlinkedContext.permissions.canSelfManage, false);
   assert.equal(user.email, "anna@example.org");
+});
+
+await test("unlinked My AGAPAY user can start a private draft directory profile", async () => {
+  const { env, db } = await fixture();
+  const user = await ensurePlatformUser(env, { email: "newmember@example.org", displayName: "New Member" });
+  const context = await resolveDirectorySelfServiceContext(env, { user });
+  assert.equal(context.claimed, false);
+  const profile = await startSelfServiceProfile(env, {
+    context,
+    data: {
+      parishId: "st-fiacre",
+      preferredName: "New Member",
+      legalName: "New Parish Member",
+      email: "newmember@example.org",
+      phone: "555-101-2020",
+      profileVisibility: "directory_members",
+      emailVisibility: "directory_members",
+      phoneVisibility: "staff"
+    }
+  });
+  assert.equal(profile.claimed, true);
+  assert.equal(profile.currentPerson.preferredName, "New Member");
+  const link = await env.AGAPAY_DB.prepare("SELECT * FROM directory_person_links WHERE external_id = ?1 AND link_type = 'platform_user'").bind(user.id).first();
+  assert.equal(link.person_id, profile.currentPerson.id);
+  const publication = await env.AGAPAY_DB.prepare("SELECT status, approval_status FROM directory_publication_profiles WHERE owner_id = ?1").bind(profile.currentPerson.id).first();
+  assert.equal(publication.status, "draft");
+  assert.equal(publication.approval_status, "not_submitted");
+  const request = await env.AGAPAY_DB.prepare("SELECT request_type, status, requested_payload_json FROM directory_change_requests WHERE requester_person_id = ?1").bind(profile.currentPerson.id).first();
+  assert.equal(request.request_type, "person_profile_review");
+  assert.equal(request.status, "pending");
+  const requested = JSON.parse(request.requested_payload_json);
+  assert.equal(requested.publicationPreferences.adultPreferredName.visibility, "directory_members");
+  assert.equal(requested.publicationPreferences.adultEmail.visibility, "directory_members");
+  assert.equal(requested.publicationPreferences.adultPhone.visibility, "staff");
+  const contacts = await env.AGAPAY_DB.prepare("SELECT contact_type, visibility FROM directory_contact_methods WHERE owner_id = ?1 ORDER BY contact_type").bind(profile.currentPerson.id).all();
+  assert.deepEqual(contacts.results.map((row) => ({ contact_type: row.contact_type, visibility: row.visibility })), [
+    { contact_type: "email", visibility: "directory_members" },
+    { contact_type: "phone", visibility: "staff" }
+  ]);
+  const privacy = await env.AGAPAY_DB.prepare("SELECT field_key, visibility, publication_eligible FROM directory_field_privacy_preferences WHERE owner_id = ?1 AND field_key = 'adult_preferred_name'").bind(profile.currentPerson.id).first();
+  assert.equal(privacy.visibility, "directory_members");
+  assert.equal(privacy.publication_eligible, 1);
+  assert.equal(auditCount(db, "directory.self_service.profile_started"), 1);
 });
 
 await test("person profile update allows permitted fields, requires version, and routes protected fields to review", async () => {

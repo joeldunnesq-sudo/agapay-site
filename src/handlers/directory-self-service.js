@@ -13,6 +13,7 @@ import {
   resendHouseholdAdultInvitation,
   revokeHouseholdAdultInvitation,
   setSelfServicePrivacyPreference,
+  startSelfServiceProfile,
   transitionSelfServicePublication,
   updateHouseholdSelfServiceProfile,
   updateSelfServiceContact,
@@ -71,6 +72,9 @@ export async function handleDirectorySelfService(request, env) {
     }
     if (request.method === "GET" && path === "/api/directory/self/profile") {
       return json({ ok: true, profile: await getSelfServiceProfile(env, { context }) });
+    }
+    if (request.method === "POST" && path === "/api/directory/self/start-profile") {
+      return json({ ok: true, profile: await startSelfServiceProfile(env, { context, data: await body(request), correlationId }) }, { status: 201 });
     }
     if (request.method === "GET" && path === "/api/directory/self/ministries") {
       return json({ ok: true, ministries: await getMyMinistries(env, { context }) });
