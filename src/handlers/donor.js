@@ -20,7 +20,6 @@ import {
   json,
   listKvKeys,
   loadDonor,
-  loadMyAgapayReleaseFlags,
   missingProductionStoreResponse,
   normalizeEmail,
   publicDonor,
@@ -892,9 +891,6 @@ export async function handleDonorDashboard(request, env) {
 
   return json({
     donor: publicDonor(donor),
-    featureFlags: {
-      myAgapay: await loadMyAgapayReleaseFlags(env)
-    },
     parish,
     summary,
     recentOfferings: publicOfferings.slice(0, 5),

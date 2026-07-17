@@ -23,7 +23,7 @@
   <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 </head>
-<body class="donor-home">
+<body class="donor-home showing-giving-dashboard">
   <div class="app donor-app-shell">
     <aside class="sidebar donor-home-sidebar">
       <div class="sidebar-scroll">
@@ -43,7 +43,6 @@
         <nav class="nav unified-product-nav" hx-boost="false">
           <a class="active" href="/myagapay/dashboard"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg> Give</a>
           <a href="/myagapay/learn"><svg viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg> Learn</a>
-          <a href="/marketplace" data-myagapay-launch-gated hidden><svg viewBox="0 0 24 24"><path d="M6 8h12l-1 13H7z"/><path d="M9 8a3 3 0 0 1 6 0"/><path d="M9 13h6"/></svg> Marketplace</a>
           <a href="/myagapay/directory"><svg viewBox="0 0 24 24"><path d="M12 3l8 6v12H4V9z"/><path d="M9 21v-7h6v7"/><path d="M8 10h8"/><path d="M12 6v8"/></svg> Directory</a>
           <span class="unified-nav-divider" aria-hidden="true"></span>
           <a href="/myagapay/account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg> Account</a>
@@ -65,7 +64,7 @@
           <img src="/mark.png" alt="" aria-hidden="true" />
           <span>
             <strong class="topbar-title" id="donorUtilityTitle">My AGAPAY</strong>
-            <small id="donorUtilityTagline">One My AGAPAY account. Product dashboards when you need them.</small>
+            <small id="donorUtilityTagline">Giving, parish activity, and account tools.</small>
           </span>
         </div>
         <div class="topbar-actions">
@@ -86,174 +85,6 @@
           <a class="btn btn-gold btn-sm" href="/myagapay/signup" data-auth-guest>Sign up</a>
         </div>
       </div>
-
-      <section class="my-agapay-home" aria-labelledby="myAgapayTitle">
-        <div class="my-agapay-hero">
-          <div class="my-agapay-hero-copy">
-            <div class="eyebrow">Love + Give + Learn + Live</div>
-            <h1 id="myAgapayTitle">DASHBOARD</h1>
-            <p>One login. One home for your Orthodox life online.</p>
-          </div>
-          <div class="my-agapay-profile-card" aria-label="Account summary">
-            <span>Welcome</span>
-            <strong id="myAgapayGreetingName">Faithful Member</strong>
-            <small id="myAgapayDefaultParish">Choose a church in Settings</small>
-          </div>
-        </div>
-
-        <div class="my-agapay-live-grid" aria-label="AGAPAY products">
-          <article class="ag-product-card ag-product-card-live giving-card">
-            <div class="my-agapay-product-head">
-              <span class="my-agapay-product-icon giving-icon"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg></span>
-              <div>
-                <h2>Giving</h2>
-                <p>Support the Church. Make an eternal impact.</p>
-              </div>
-            </div>
-            <dl class="my-agapay-product-stats">
-              <div><dt>Church</dt><dd id="myAgapayGivingParish">Choose church</dd></div>
-              <div><dt>This Month</dt><dd id="myAgapayGivingMonth">$0</dd></div>
-              <div><dt>Latest Gift</dt><dd id="myAgapayRecentAmount">$0</dd></div>
-            </dl>
-            <a class="my-agapay-action primary" href="/myagapay/giving">Open Giving Dashboard <span aria-hidden="true">-&gt;</span></a>
-          </article>
-
-          <article class="ag-product-card ag-product-card-live learn-card">
-            <div class="my-agapay-product-head">
-              <span class="my-agapay-product-icon learn-icon"><svg viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg></span>
-              <div>
-                <h2>Learn</h2>
-                <p>Grow in faith. Learn together as a family.</p>
-              </div>
-            </div>
-            <dl class="my-agapay-product-stats">
-              <div><dt>Homeschool Planner</dt><dd id="myAgapayLearnPlanner">Ready</dd></div>
-              <div><dt>Current Term</dt><dd id="myAgapayLearnTerm">Set up term</dd></div>
-              <div><dt>Reports & Prints</dt><dd id="myAgapayLearnTier" class="status-good">Ready</dd></div>
-            </dl>
-            <a class="my-agapay-action learn-action" href="/myagapay/learn" hx-boost="false">Open Learn Dashboard <span aria-hidden="true">-&gt;</span></a>
-          </article>
-        </div>
-
-        <div class="my-agapay-coming-grid" data-myagapay-launch-gated hidden aria-label="Coming AGAPAY products">
-          <article class="ag-product-card soon-card market-card locked-product-card">
-            <div class="coming-soon-ribbon">Coming Soon</div>
-            <div class="locked-card-preview" aria-hidden="true">
-              <div class="my-agapay-product-head">
-                <span class="my-agapay-product-icon market-icon"><svg viewBox="0 0 24 24"><path d="M6 8h12l-1 13H7z"/><path d="M9 8a3 3 0 0 1 6 0"/><path d="M9 13h6"/></svg></span>
-                <div>
-                  <h2>Marketplace</h2>
-                  <span class="coming-pill">Order hub</span>
-                </div>
-              </div>
-              <p>Trusted Orthodox goods from artisans, monasteries, and makers.</p>
-              <div class="locked-data-list">
-                <div><span>Recent purchase</span><strong>Beeswax tapers from Holy Cross</strong><small>Arrives Friday</small></div>
-                <div><span>Tracking</span><strong>USPS 9400 1000 0000</strong><small>Out for delivery</small></div>
-              </div>
-            </div>
-            <form class="my-agapay-waitlist-form" data-waitlist-product="marketplace">
-              <label class="sr-only" for="marketplaceWaitlistEmail">Email for Marketplace waitlist</label>
-              <input id="marketplaceWaitlistEmail" type="email" name="email" autocomplete="email" placeholder="Email address" required />
-              <button class="my-agapay-action market-action" type="submit">Join Marketplace Waitlist</button>
-              <p class="waitlist-status" aria-live="polite"></p>
-            </form>
-          </article>
-
-          <article class="ag-product-card soon-card directory-card locked-product-card">
-            <div class="coming-soon-ribbon">Coming Soon</div>
-            <div class="locked-card-preview" aria-hidden="true">
-              <div class="my-agapay-product-head">
-                <span class="my-agapay-product-icon directory-icon"><svg viewBox="0 0 24 24"><path d="M12 3l8 6v12H4V9z"/><path d="M9 21v-7h6v7"/><path d="M8 10h8"/><path d="M12 6v8"/></svg></span>
-                <div>
-                  <h2>Directory</h2>
-                  <span class="coming-pill">Local verified</span>
-                </div>
-              </div>
-              <p>Find Orthodox parishes, monasteries, schools, and services near you.</p>
-              <div class="locked-data-list directory-preview-list">
-                <div><span>Near St. Fiacre</span><strong>St. Catherine Mission</strong><small>Parish - 4.2 miles</small></div>
-                <div><span>Verified business</span><strong>Dunn Icon Workshop</strong><small>Icons and sacred gifts</small></div>
-              </div>
-            </div>
-            <form class="my-agapay-waitlist-form" data-waitlist-product="directory">
-              <label class="sr-only" for="directoryWaitlistEmail">Email for Directory waitlist</label>
-              <input id="directoryWaitlistEmail" type="email" name="email" autocomplete="email" placeholder="Email address" required />
-              <button class="my-agapay-action directory-action" type="submit">Join Directory Waitlist</button>
-              <p class="waitlist-status" aria-live="polite"></p>
-            </form>
-          </article>
-        </div>
-
-        <div class="my-agapay-lower-grid">
-          <section class="my-agapay-panel">
-            <div class="my-agapay-section-head">
-              <div>
-                <h2>Recent Activity</h2>
-                <p>Your AGAPAY activity at a glance.</p>
-              </div>
-              <a href="/myagapay/giving/history">View All Activity</a>
-            </div>
-            <div class="my-agapay-activity-list" id="myAgapayActivity"></div>
-          </section>
-
-          <section class="my-agapay-panel">
-            <div class="my-agapay-section-head">
-              <div>
-                <h2>Quick Actions</h2>
-                <p>Jump into the work you came to do.</p>
-              </div>
-            </div>
-            <div class="my-agapay-action-grid">
-              <a href="/myagapay/giving/give"><strong>Make a Donation</strong><span>Give and support the Church</span></a>
-              <a href="/myagapay/learn" hx-boost="false"><strong>Open Today in Learn</strong><span>See today's feast and lessons</span></a>
-              <a href="/myagapay/giving/history"><strong>View Statements</strong><span>Receipts and tax statements</span></a>
-              <a href="/myagapay/account"><strong>Manage Recurring Gifts</strong><span>View and edit your gifts</span></a>
-            </div>
-          </section>
-        </div>
-
-        <div class="my-agapay-snapshot-grid">
-          <section class="my-agapay-panel">
-            <div class="my-agapay-section-head">
-              <div>
-                <h2>Giving Snapshot</h2>
-                <p>Your giving impact at a glance.</p>
-              </div>
-              <span>This Month</span>
-            </div>
-            <div class="snapshot-metrics">
-              <div><span>Donations This Month</span><strong id="myAgapaySnapshotMonth">$0</strong></div>
-              <div><span>Active Recurring Gifts</span><strong id="myAgapaySnapshotRecurring">0</strong></div>
-              <div><span>Commemorations</span><strong id="myAgapaySnapshotCommemorations">0</strong></div>
-            </div>
-          </section>
-
-          <section class="my-agapay-panel">
-            <div class="my-agapay-section-head">
-              <div>
-                <h2>Learn at a Glance</h2>
-                <p>Your family's learning overview.</p>
-              </div>
-              <span>This Week</span>
-            </div>
-            <div class="snapshot-metrics learn-snapshot">
-              <div><span>Children</span><strong>--</strong></div>
-              <div><span>Term Planner</span><strong>Forms</strong></div>
-              <div><span>Reports & Prints</span><strong>Ready</strong></div>
-            </div>
-          </section>
-        </div>
-      </section>
-
-      <nav class="my-agapay-tabbar" aria-label="My AGAPAY navigation">
-        <a class="active" href="/myagapay/dashboard"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg><span>My AGAPAY</span></a>
-        <a href="/myagapay/giving"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg><span>Giving</span></a>
-        <a href="/myagapay/learn" hx-boost="false"><svg viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg><span>Learn</span></a>
-        <a href="/marketplace" hx-boost="false" data-myagapay-launch-gated hidden><svg viewBox="0 0 24 24"><path d="M6 8h12l-1 13H7z"/><path d="M9 8a3 3 0 0 1 6 0"/><path d="M9 13h6"/></svg><span>Market</span></a>
-        <a href="/myagapay/account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><span>Account</span></a>
-      </nav>
-
       <section class="donor-desktop-home" id="giving-dashboard">
         <div class="desktop-hero">
           <a class="desktop-hero-mark" href="/" aria-label="AGAPAY home" hx-boost="false"><img src="/mark.png" alt="" /></a>
@@ -524,7 +355,6 @@
           <a href="/myagapay/dashboard"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg><span>My AGAPAY</span></a>
           <a class="active" href="/myagapay/giving"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg><span>Giving</span></a>
           <a href="/myagapay/learn"><svg viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg><span>Learn</span></a>
-          <a href="/marketplace" data-myagapay-launch-gated hidden><svg viewBox="0 0 24 24"><path d="M6 8h12l-1 13H7z"/><path d="M9 8a3 3 0 0 1 6 0"/><path d="M9 13h6"/></svg><span>Market</span></a>
           <a href="/myagapay/account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><span>Account</span></a>
         </nav>
       </div>
@@ -532,62 +362,7 @@
   </div>
 
   <script>
-    function applyDonorProductView() {
-      const isGivingView = !["#products", "#my-agapay-products"].includes(window.location.hash);
-      const home = document.querySelector(".my-agapay-home");
-      const homeTabs = document.querySelector(".my-agapay-tabbar");
-      const giving = document.querySelector(".donor-desktop-home");
-      const phone = document.querySelector(".donor-phone");
-      if (home) home.hidden = isGivingView;
-      if (homeTabs) homeTabs.hidden = isGivingView;
-      if (giving) giving.hidden = !isGivingView;
-      if (phone) phone.hidden = !isGivingView;
-      document.body.classList.toggle("showing-giving-dashboard", isGivingView);
-      const utilityTitle = document.getElementById("donorUtilityTitle");
-      const utilityTagline = document.getElementById("donorUtilityTagline");
-      const quickAction = document.querySelector(".donor-home-quick-action");
-      if (utilityTitle) utilityTitle.textContent = isGivingView ? "My AGAPAY" : "My AGAPAY Products";
-      if (utilityTagline) utilityTagline.textContent = isGivingView ? "One My AGAPAY account. Product dashboards when you need them." : "Choose Give or Learn from one account.";
-      if (quickAction) quickAction.href = isGivingView ? "/myagapay/giving/give" : "/myagapay/giving";
-    }
-
-    window.addEventListener("hashchange", applyDonorProductView);
-
-    function attachMyAgapayWaitlists() {
-      document.querySelectorAll(".my-agapay-waitlist-form").forEach((form) => {
-        form.addEventListener("submit", async (event) => {
-          event.preventDefault();
-          const input = form.querySelector("input[name='email']");
-          const button = form.querySelector("button");
-          const status = form.querySelector(".waitlist-status");
-          const product = form.dataset.waitlistProduct;
-          const email = input?.value?.trim() || "";
-          if (!email) return;
-
-          if (button) button.disabled = true;
-          if (status) status.textContent = "Adding you to the waitlist...";
-          try {
-            const response = await fetch("/api/waitlist", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ product, email, source: "myagapay-dashboard" })
-            });
-            const payload = await response.json().catch(() => ({}));
-            if (!response.ok) throw new Error(payload.error || "Could not join the waitlist.");
-            if (status) status.textContent = "You're on the waitlist. We'll keep you posted.";
-            form.classList.add("is-complete");
-          } catch (error) {
-            if (status) status.textContent = error?.message || "Could not join the waitlist. Please try again.";
-          } finally {
-            if (button) button.disabled = false;
-          }
-        });
-      });
-    }
-
     document.addEventListener("DOMContentLoaded", async () => {
-      applyDonorProductView();
-      attachMyAgapayWaitlists();
       // Pre-fill greeting from cached profile if we have a name — never show "Faithful Member" pre-emptively
       const cached = donorProfile();
       const cachedName = donorDisplayName(cached);
@@ -599,7 +374,6 @@
       }
       await handleDonorCheckoutReturn();
       await loadDonorDashboardPage();
-      applyDonorProductView();
     });
   </script>
 

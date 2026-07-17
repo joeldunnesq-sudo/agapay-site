@@ -22,7 +22,6 @@ import {
   isSystemKvKey,
   json,
   listKvKeys,
-  loadMyAgapayReleaseFlags,
   missingProductionStoreResponse,
   normalizeAdminActor,
   normalizeEmail,
@@ -34,7 +33,6 @@ import {
   recordStripeEvent,
   safeParseJsonRow,
   saveDonor,
-  saveMyAgapayReleaseFlags,
   verifyPasswordRecord,
   STRIPE_EVENT_PREFIX,
   stripeAccountIndexKey,
@@ -359,34 +357,6 @@ export async function handleAdminLearnSummary(request, env) {
       promotionCodesEnabled: true
     }
   });
-}
-
-export async function handleAdminMyAgapayReleaseFlags(request, env) {
-  const limited = await rateLimit(request, env, "admin-auth", { limit: 60, windowSeconds: 300 });
-  if (limited) return limited;
-  if (!(await requireAdmin(request, env))) return unauthorized();
-  if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
-  if (request.method === "GET") {
-    return json({ ok: true, flags: await loadMyAgapayReleaseFlags(env) });
-  }
-
-  if (request.method !== "POST" && request.method !== "PATCH") {
-    return json({ error: "Method not allowed" }, { status: 405 });
-  }
-
-  let body = {};
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const flags = await saveMyAgapayReleaseFlags(env, {
-    marketplaceDirectoryLive: body.marketplaceDirectoryLive === true
-  });
-
-  return json({ ok: true, flags });
 }
 
 export async function handleAdminLearnFeedback(request, env, feedbackId = "") {

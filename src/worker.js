@@ -53,7 +53,6 @@ import {
   listKvKeys,
   loadAdminSessionStore,
   loadDonor,
-  loadMyAgapayReleaseFlags,
   missingProductionStoreResponse,
   normalizeAdminActor,
   normalizeEmail,
@@ -179,7 +178,6 @@ import {
   handleAdminLearnSummary,
   handleAdminReleaseStatus,
   handleAdminAuditLog,
-  handleAdminMyAgapayReleaseFlags,
   handleAdminRebuildIndexes,
   handleAdminPassword,
   handleAdminRegistrationDetail,
@@ -2756,9 +2754,6 @@ export default {
       const requestId = decodeURIComponent(url.pathname.replace("/api/donor/sacraments/", "").replace("/cancel", ""));
       return handleDonorSacramentCancel(request, env, requestId);
     }
-    if (request.method === "GET" && url.pathname === "/api/myagapay/release-flags") {
-      return json({ ok: true, flags: await loadMyAgapayReleaseFlags(env) });
-    }
     if (request.method === "GET" && url.pathname === "/api/admin/registrations") {
       return handleAdminRegistrations(request, env);
     }
@@ -2802,9 +2797,6 @@ export default {
     }
     if (url.pathname === "/api/admin/sacraments/send-weekly-digest") {
       return handleAdminWeeklySacramentDigest(request, env);
-    }
-    if (url.pathname === "/api/admin/myagapay/release-flags") {
-      return handleAdminMyAgapayReleaseFlags(request, env);
     }
     if (url.pathname === "/api/admin/stewardship/comp" && request.method === "POST") {
       return handleAdminGrantStewardshipComp(request, env);

@@ -1800,9 +1800,6 @@ function renderMyAgapayDashboard(data) {
 
 function renderDonorDashboardPayload(data) {
   if (!data) return;
-  if (window.MyAgapayShell?.applyMyAgapayReleaseFlags) {
-    window.MyAgapayShell.applyMyAgapayReleaseFlags(data.featureFlags?.myAgapay || {});
-  }
   setDonorProfile(data.donor);
   const summary = data.summary || {};
   const parish = data.parish || null;

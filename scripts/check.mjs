@@ -138,17 +138,21 @@ assert.ok(listenIndex.includes('/listen/manifest.webmanifest'), "AGAPAY Listen p
 assert.ok(myAgapayShell.includes('id: "giving"') && myAgapayShell.includes('label: "Give"'), "shared My AGAPAY shell should define the canonical Give product tab");
 assert.ok(myAgapayShell.includes('id: "commemorations"') && myAgapayShell.includes('label: "Sacraments & Services"'), "shared My AGAPAY shell should define the merged Sacraments & Services product tab");
 assert.ok(myAgapayShell.includes('id: "today"') && myAgapayShell.includes('label: "Today"'), "shared My AGAPAY shell should define the Today product tab");
-assert.ok(myAgapayShell.includes('id: "bookstore"') && myAgapayShell.includes('label: "Bookstore"'), "shared My AGAPAY shell should keep Bookstore in the product nav");
+assert.ok(myAgapayShell.includes('id: "directory"') && myAgapayShell.includes('label: "Directory"'), "shared My AGAPAY shell should define Directory as a standard product tab");
 assert.ok(myAgapayShell.includes('id: "learn"') && myAgapayShell.includes('label: "Learn"'), "shared My AGAPAY shell should define the canonical Learn product tab");
+assert.ok(myAgapayShell.includes('id: "bookstore"') && myAgapayShell.includes('label: "Bookstore"') && myAgapayShell.includes('mobileTabHidden: true'), "shared My AGAPAY shell should keep Bookstore available in the desktop product nav");
 assert.ok(
   myAgapayShell.indexOf('id: "giving"') < myAgapayShell.indexOf('id: "commemorations"') &&
   myAgapayShell.indexOf('id: "commemorations"') < myAgapayShell.indexOf('id: "today"') &&
-  myAgapayShell.indexOf('id: "today"') < myAgapayShell.indexOf('id: "bookstore"') &&
-  myAgapayShell.indexOf('id: "bookstore"') < myAgapayShell.indexOf('id: "learn"'),
-  "shared My AGAPAY shell should order product tabs as Give, Prayer, Today, Bookstore, Learn"
+  myAgapayShell.indexOf('id: "today"') < myAgapayShell.indexOf('id: "directory"') &&
+  myAgapayShell.indexOf('id: "directory"') < myAgapayShell.indexOf('id: "learn"') &&
+  myAgapayShell.indexOf('id: "learn"') < myAgapayShell.indexOf('id: "bookstore"'),
+  "shared My AGAPAY shell should order product tabs as Give, Prayer, Today, Directory, Learn, Bookstore"
 );
 assert.ok(!myAgapayShell.includes('id: "home"'), "shared My AGAPAY shell should treat Give as the default product instead of a separate global home tab");
 assert.ok(myAgapayShell.includes('pathname === "/myagapay"') && myAgapayShell.includes('return "giving"'), "shared My AGAPAY shell should make /myagapay resolve to the Give product");
+assert.ok(myAgapayShell.includes('pathname.startsWith("/myagapay/directory")') && myAgapayShell.includes('return "directory"'), "shared My AGAPAY shell should make /myagapay/directory resolve to the Directory product");
+assert.ok(!myAgapayShell.includes('data-myagapay-launch-gated') && !myAgapayShell.includes('release-flags'), "shared My AGAPAY shell should not gate Marketplace or Directory behind launch controls");
 assert.ok(myAgapayShell.includes('data-myagapay-global-nav') && myAgapayShell.includes("normalizeProductNavs"), "shared shell should normalize mobile product navigation across dashboards");
 assert.ok(myAgapayShell.includes(".unified-product-nav") && myAgapayShell.includes("Bookstore") && myAgapayShell.includes("Feast day and readings"), "shared shell should normalize the desktop My AGAPAY sidebar from the same product tabs");
 assert.ok(myAgapayShell.includes("isLikelyMobileBrowser") && myAgapayShell.includes("pointer: coarse"), "shared shell should use browser capability signals before choosing the mobile My AGAPAY viewport");
@@ -163,7 +167,7 @@ assert.ok(donorHome.includes("data-auth-guest"), "donor home should mark guest-o
 assert.ok(donorHome.includes("donor-phone"), "donor home should use the mobile-first app shell");
 assert.ok(donorHome.includes("unified-product-nav"), "donor home should expose a desktop My AGAPAY sidebar for shared shell normalization");
 assert.ok(!donorHome.includes("Back to Give"), "donor account initials menu should not include a Back to Give action");
-assert.ok(donorHome.includes('const isGivingView = !["#products", "#my-agapay-products"].includes(window.location.hash)'), "My AGAPAY root should open the Give dashboard by default");
+assert.ok(donorHome.includes('showing-giving-dashboard') && !donorHome.includes('my-agapay-live-grid') && !donorHome.includes('my-agapay-coming-grid'), "My AGAPAY root should open the Give dashboard directly without a product picker");
 assert.ok(donorHome.includes("metricMonth"), "donor home should show month-to-date giving");
 assert.ok(!donorHome.includes("Counts parish offerings (tithes) only"), "mobile Annual Pledge tracker should not include the tracking explanation copy");
 assert.ok(donorHome.includes("summary-metrics-row") && donorHome.indexOf('class="summary-title"') < donorHome.indexOf('class="summary-metrics-row"'), "mobile Total Giving label should sit above the month/year metrics");

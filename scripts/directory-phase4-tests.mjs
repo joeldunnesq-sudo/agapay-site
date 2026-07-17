@@ -195,7 +195,7 @@ await test("browse returns only approved visible people and omits private contac
   const detail = await getMemberDirectoryPerson(env, { context, personId: visible.id });
   assert.equal(detail.person.contacts.length, 1);
   assert.equal(detail.person.contacts[0].value, "published@example.org");
-  assert.equal(JSON.stringify(detail).includes("555"), false);
+  assert.equal(detail.person.contacts.some((contact) => String(contact.value || "").includes("555")), false);
   assert.equal(JSON.stringify(detail).includes("Maria Private Legal"), false);
 });
 

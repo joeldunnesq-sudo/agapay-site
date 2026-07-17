@@ -10,7 +10,6 @@ let selectedReference = '';
     let lastDataLoadedAt = null;
     let latestPlatformSummary = null;
     let latestLearnAdmin = null;
-    let latestMyAgapayReleaseFlags = { marketplaceDirectoryLive: false };
 
     function token() {
       return document.getElementById('adminToken')?.value.trim() || sessionStorage.getItem(adminSessionKey) || '';
@@ -269,54 +268,6 @@ let selectedReference = '';
         setStatus(err.message, 'error');
       } finally {
         if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
-      }
-    }
-
-    function renderMyAgapayReleaseFlags(flags = latestMyAgapayReleaseFlags) {
-      latestMyAgapayReleaseFlags = {
-        marketplaceDirectoryLive: flags.marketplaceDirectoryLive === true
-      };
-      const toggle = document.getElementById('myAgapayMarketplaceDirectoryToggle');
-      const state = document.getElementById('myAgapayLaunchState');
-      if (toggle) toggle.checked = latestMyAgapayReleaseFlags.marketplaceDirectoryLive;
-      if (state) state.textContent = latestMyAgapayReleaseFlags.marketplaceDirectoryLive ? 'Live' : 'Hidden';
-    }
-
-    async function loadMyAgapayReleaseFlags() {
-      if (!token()) return;
-      try {
-        const response = await fetch('/api/admin/myagapay/release-flags', { headers: authHeaders() });
-        const result = await response.json().catch(() => ({}));
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || 'Unable to load My AGAPAY launch controls');
-        renderMyAgapayReleaseFlags(result.flags || {});
-      } catch (err) {
-        setStatus(err.message, 'error');
-      }
-    }
-
-    async function saveMyAgapayReleaseFlags(marketplaceDirectoryLive) {
-      if (!token()) {
-        setStatus('Log in first to update launch controls.', 'error');
-        renderMyAgapayReleaseFlags();
-        return;
-      }
-      const previous = latestMyAgapayReleaseFlags.marketplaceDirectoryLive;
-      renderMyAgapayReleaseFlags({ marketplaceDirectoryLive });
-      try {
-        const response = await fetch('/api/admin/myagapay/release-flags', {
-          method: 'PATCH',
-          headers: authHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({ marketplaceDirectoryLive })
-        });
-        const result = await response.json().catch(() => ({}));
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || 'Unable to update My AGAPAY launch controls');
-        renderMyAgapayReleaseFlags(result.flags || {});
-        setStatus(marketplaceDirectoryLive ? 'Marketplace and Directory are live in My AGAPAY.' : 'Marketplace and Directory are hidden from My AGAPAY.', 'success');
-      } catch (err) {
-        renderMyAgapayReleaseFlags({ marketplaceDirectoryLive: previous });
-        setStatus(err.message, 'error');
       }
     }
 
@@ -2821,7 +2772,6 @@ let selectedReference = '';
       document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
       if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
       if (tab === 'learn') loadLearnAdmin();
-      if (tab === 'settings') loadMyAgapayReleaseFlags();
       if (tab === 'taxexemptions') loadTaxExemptionSummary(), loadTaxExemptions();
       if (tab === 'auditlog') {
         populateAuditLogFilterOptions();
