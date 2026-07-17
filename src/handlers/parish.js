@@ -635,9 +635,9 @@ export function subscriptionStatusLabel(status) {
 
 export function subscriptionTierSummary(tier) {
   if (!tier) return "";
-  if (tier.monthlyCents === null) return `${tier.label} - custom / negotiated`;
-  if (tier.monthlyCents === 0) return `${tier.label} - free forever monthly subscription; ${tier.transactionRateLabel || "standard transaction fees apply"}`;
-  return `${tier.label} - $${(tier.monthlyCents / 100).toFixed(0)}/mo + ${tier.transactionRateLabel || "standard transaction fees"}`;
+  if (tier.monthlyCents === null) return `${tier.label} - custom / negotiated subscription; ${tier.transactionRateLabel || "no AGAPAY donation fee"}`;
+  if (tier.monthlyCents === 0) return `${tier.label} - free forever monthly subscription; ${tier.transactionRateLabel || "no AGAPAY donation fee"}`;
+  return `${tier.label} - $${(tier.monthlyCents / 100).toFixed(0)}/mo; ${tier.transactionRateLabel || "no AGAPAY donation fee"}`;
 }
 
 export function absoluteWebsiteUrl(value) {

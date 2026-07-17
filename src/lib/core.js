@@ -23,41 +23,6 @@ export const PARISH_SESSION_TTL_MS = 1000 * 60 * 60 * 12;
 export const PARISH_SESSION_MAX = 16;
 export const STRIPE_EVENT_PROCESSING_RETRY_MS = 1000 * 60 * 10;
 
-const subscriptionTiers = [
-  {
-    id: "mission",
-    label: "Mission",
-    monthlyCents: 4900,
-    transactionRateLabel: "5% + $0.30 per transaction",
-    stripePriceEnv: "AGAPAY_STRIPE_PRICE_MISSION_MONTHLY",
-    description: "Monthly AGAPAY platform subscription for missions."
-  },
-  {
-    id: "parish",
-    label: "Parish",
-    monthlyCents: 9900,
-    transactionRateLabel: "5% + $0.30 per transaction",
-    stripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_MONTHLY",
-    description: "Monthly AGAPAY platform subscription for established parishes."
-  },
-  {
-    id: "diocese",
-    label: "Cathedral / Diocese",
-    monthlyCents: null,
-    transactionRateLabel: "Negotiated transaction rate",
-    stripePriceEnv: "AGAPAY_STRIPE_PRICE_DIOCESE_MONTHLY",
-    description: "Custom AGAPAY pricing for cathedrals, dioceses, and multi-parish organizations."
-  },
-  {
-    id: "monastery_free",
-    label: "Monastery / Skete",
-    monthlyCents: 0,
-    transactionRateLabel: "5% + $0.30 per transaction",
-    stripePriceEnv: "",
-    description: "AGAPAY transaction pricing for Orthodox monasteries and sketes."
-  }
-];
-
 const marketplaceBrowseCategories = [
   { id: "all", label: "All Categories", icon: "grid" },
   { id: "books-media", label: "Books & Media", icon: "book-open" },

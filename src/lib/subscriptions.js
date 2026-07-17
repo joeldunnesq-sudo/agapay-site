@@ -1,9 +1,12 @@
+// AGAPAY charges no donation fee on any tier -- transactionRateLabel
+// reflects Stripe's own standard processing cost only, which AGAPAY does
+// not collect or mark up. AGAPAY's revenue is the monthly subscription.
 export const subscriptionTiers = [
   {
     id: "mission",
     label: "Mission",
     monthlyCents: 4900,
-    transactionRateLabel: "5% + $0.30 per transaction",
+    transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_MISSION_MONTHLY",
     description: "Monthly AGAPAY platform subscription for missions."
   },
@@ -11,7 +14,7 @@ export const subscriptionTiers = [
     id: "parish",
     label: "Parish",
     monthlyCents: 9900,
-    transactionRateLabel: "5% + $0.30 per transaction",
+    transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_MONTHLY",
     description: "Monthly AGAPAY platform subscription for established parishes."
   },
@@ -19,17 +22,17 @@ export const subscriptionTiers = [
     id: "diocese",
     label: "Cathedral / Diocese",
     monthlyCents: null,
-    transactionRateLabel: "Negotiated transaction rate",
+    transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_DIOCESE_MONTHLY",
-    description: "Custom AGAPAY pricing for cathedrals, dioceses, and multi-parish organizations."
+    description: "Custom AGAPAY subscription pricing for cathedrals, dioceses, and multi-parish organizations."
   },
   {
     id: "monastery_free",
     label: "Monastery / Skete",
     monthlyCents: 0,
-    transactionRateLabel: "5% + $0.30 per transaction",
+    transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "",
-    description: "AGAPAY transaction pricing for Orthodox monasteries and sketes."
+    description: "No monthly subscription fee for Orthodox monasteries and sketes."
   }
 ];
 
