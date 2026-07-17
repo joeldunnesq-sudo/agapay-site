@@ -1237,21 +1237,21 @@
 
       <!-- ── DIRECTORY ADMIN TAB ────────────────────── -->
       <div class="tab-panel" id="tab-directory">
-        <section class="dir-admin-shell" aria-label="Parish Directory administration">
-          <div class="dir-admin-head">
+        <section class="pdx-dir-hero" aria-label="Parish Directory administration">
+          <div class="pdx-dir-hero-layout">
             <div>
-              <span class="dir-admin-eyebrow">Parish Directory</span>
-              <h1>Directory Operations</h1>
-              <p>Review requests, inspect parish-scoped records, and keep internal operational notes under capability-based controls.</p>
+              <div class="pdx-gv-eyebrow">Parish Directory</div>
+              <h1 class="pdx-gv-title">Directory Operations</h1>
+              <p class="pdx-gv-subtitle">Review requests, inspect parish-scoped records, and keep internal operational notes under capability-based controls.</p>
             </div>
-            <button class="sw-suite-refresh-btn" type="button" onclick="loadDirectoryAdminTab(true)" title="Refresh">
+            <button class="sw-suite-refresh-btn pdx-dir-hero-refresh" type="button" onclick="loadDirectoryAdminTab(true)" title="Refresh">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/><polyline points="10 1 10 4 13 4"/></svg>
             </button>
           </div>
-          <div id="directoryAdminPane" class="dir-admin-workspace">
-            <p class="sw-tool-loading">Loading...</p>
-          </div>
         </section>
+        <div id="directoryAdminPane" class="pdx-dir-workspace">
+          <p class="sw-tool-loading">Loading...</p>
+        </div>
       </div>
 
       <!-- ── BOOKSTORE TAB ────────────────────── -->

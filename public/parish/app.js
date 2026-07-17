@@ -153,16 +153,17 @@
       ? (message || 'Directory Operations are not enabled for this parish, or this record belongs to another parish.')
       : 'Your Parish Dashboard session has expired. Please sign in again.';
     const action = status === 401
-      ? '<button type="button" onclick="logoutParish()">Sign in again</button>'
-      : '<button type="button" onclick="loadDirectoryAdminTab(true)">Retry</button>';
+      ? '<button type="button" class="btn btn-gold" onclick="logoutParish()">Sign in again</button>'
+      : '<button type="button" class="btn btn-gold" onclick="loadDirectoryAdminTab(true)">Retry</button>';
     return `
-      <div class="dir-admin-empty dir-admin-access-card">
-        <div>
-          <div class="dir-admin-eyebrow">Directory access</div>
+      <div class="pdx-dir-access-card">
+        <div class="pdx-dir-access-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <div class="pdx-dir-access-copy">
+          <div class="pdx-gv-eyebrow">Directory access</div>
           <h3>${escapeHtml(heading)}</h3>
           <p>${escapeHtml(reason)}</p>
         </div>
-        <div class="dir-admin-access-actions">
+        <div class="pdx-dir-access-actions">
           ${action}
         </div>
       </div>`;
@@ -535,56 +536,125 @@
     if (!pane) return;
     const metrics = dashboard.metrics || {};
     pane.innerHTML = `
-      <div class="dir-admin-metrics">
-        ${directoryMetric('Pending', metrics.totalPending)}
-        ${directoryMetric('Unassigned', metrics.unassigned)}
-        ${directoryMetric('Assigned to me', metrics.assignedToMe)}
-        ${directoryMetric('Oldest age', (metrics.oldestPendingAgeDays || 0) + 'd')}
-      </div>
-      <div class="dir-admin-grid">
-        <section class="dir-admin-panel">
-          <div class="dir-admin-panel-head"><h2>Review Queue</h2><button type="button" onclick="loadDirectoryAdminTab(true)">Refresh</button></div>
-          ${queue.length ? queue.slice(0, 10).map(directoryQueueRow).join('') : '<p class="muted">No directory review items are waiting.</p>'}
-        </section>
-        <section class="dir-admin-panel">
-          <div class="dir-admin-panel-head"><h2>People</h2></div>
-          ${people.length ? people.map(person => `<div class="dir-admin-row"><strong>${escapeHtml(person.displayName)}</strong><span>${person.pendingRequestCount || 0} pending</span></div>`).join('') : '<p class="muted">No people records available.</p>'}
-        </section>
-        <section class="dir-admin-panel">
-          <div class="dir-admin-panel-head"><h2>Households</h2></div>
-          ${households.length ? households.map(household => `<div class="dir-admin-row"><strong>${escapeHtml(household.displayName)}</strong><span>${household.memberCount || 0} members</span></div>`).join('') : '<p class="muted">No households available.</p>'}
-        </section>
-        <section class="dir-admin-panel">
-          <div class="dir-admin-panel-head"><h2>Skills &amp; Service</h2><button type="button" onclick="loadDirectoryAdminTab(true)">Refresh</button></div>
-          ${directorySkillsAdminRows(skills.listings || [])}
-          <div class="actions">
-            <button type="button" onclick="downloadDirectoryAdminExport('/exports/skills.csv')">Skills CSV</button>
-            <button type="button" onclick="downloadDirectoryAdminExport('/exports/published-adults.csv')">Published Adults CSV</button>
-            <button type="button" onclick="previewDirectoryAdminPrint('/print/skills')">Print Skills</button>
-            <button type="button" onclick="previewDirectoryAdminPrint('/print/directory')">Print Directory</button>
+      <section class="pdx-kpi-band pdx-dir-kpi-band">
+        ${directoryMetric('Pending', metrics.totalPending, '<path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>')}
+        ${directoryMetric('Unassigned', metrics.unassigned, '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>')}
+        ${directoryMetric('Assigned to me', metrics.assignedToMe, '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>')}
+        ${directoryMetric('Oldest age', (metrics.oldestPendingAgeDays || 0) + 'd', '<path d="M3 3v18h18"/><path d="M18.7 8 12 14.7 8.7 11.3 3 17"/>')}
+      </section>
+      <div class="pdx-dir-grid">
+        <section class="pdx-panel pdx-dir-panel-queue">
+          <div class="pdx-panel-header">
+            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>Review Queue</div>
+            <button class="pdx-link-btn" type="button" onclick="loadDirectoryAdminTab(true)">Refresh</button>
+          </div>
+          <div class="pdx-dir-row-list">
+            ${queue.length ? queue.slice(0, 10).map(directoryQueueRow).join('') : directoryEmptyState('All caught up', 'No directory review items are waiting.')}
           </div>
         </section>
-        <section class="dir-admin-panel">
-          <div class="dir-admin-panel-head"><h2>Maintenance</h2></div>
-          <div class="dir-admin-row"><strong>Households current</strong><span>${escapeHtml(maintenance.householdsCurrent ?? 0)}</span></div>
-          <div class="dir-admin-row"><strong>Households due</strong><span>${escapeHtml(maintenance.householdsDue ?? 0)}</span></div>
-          <div class="dir-admin-row"><strong>Overdue households</strong><span>${escapeHtml(maintenance.householdsOverdue ?? 0)}</span></div>
-          <div class="dir-admin-row"><strong>Skill consents to review</strong><span>${escapeHtml(maintenance.staleSkillConsents ?? 0)}</span></div>
-          <div class="dir-admin-row"><strong>Unclaimed people</strong><span>${escapeHtml(maintenance.unclaimedPeople ?? 0)}</span></div>
+        <section class="pdx-panel">
+          <div class="pdx-panel-header">
+            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>People</div>
+          </div>
+          <div class="pdx-dir-row-list">
+            ${people.length ? people.map(directoryPersonRow).join('') : directoryEmptyState('No records yet', 'No people records available.')}
+          </div>
+        </section>
+        <section class="pdx-panel">
+          <div class="pdx-panel-header">
+            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8"/><path d="M8 13h5"/><circle cx="17" cy="13" r="1"/></svg></div>Households</div>
+          </div>
+          <div class="pdx-dir-row-list">
+            ${households.length ? households.map(directoryHouseholdRow).join('') : directoryEmptyState('No households yet', 'No households available.')}
+          </div>
+        </section>
+        <section class="pdx-panel pdx-dir-panel-skills">
+          <div class="pdx-panel-header">
+            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3 6.5 7 1-5 5 1.5 7L12 18l-6.5 3.5L7 14.5l-5-5 7-1z"/></svg></div>Skills &amp; Service</div>
+            <button class="pdx-link-btn" type="button" onclick="loadDirectoryAdminTab(true)">Refresh</button>
+          </div>
+          <div class="pdx-dir-row-list">
+            ${directorySkillsAdminRows(skills.listings || [])}
+          </div>
+          <div class="pdx-dir-actions">
+            <button class="pdx-dir-action-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/skills.csv')">Skills CSV</button>
+            <button class="pdx-dir-action-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/published-adults.csv')">Published Adults CSV</button>
+            <button class="pdx-dir-action-btn" type="button" onclick="previewDirectoryAdminPrint('/print/skills')">Print Skills</button>
+            <button class="pdx-dir-action-btn" type="button" onclick="previewDirectoryAdminPrint('/print/directory')">Print Directory</button>
+          </div>
+        </section>
+        <section class="pdx-panel">
+          <div class="pdx-panel-header">
+            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg></div>Maintenance</div>
+          </div>
+          <div class="pdx-dir-row-list">
+            ${directoryMaintenanceRow('Households current', maintenance.householdsCurrent)}
+            ${directoryMaintenanceRow('Households due', maintenance.householdsDue)}
+            ${directoryMaintenanceRow('Overdue households', maintenance.householdsOverdue, true)}
+            ${directoryMaintenanceRow('Skill consents to review', maintenance.staleSkillConsents)}
+            ${directoryMaintenanceRow('Unclaimed people', maintenance.unclaimedPeople)}
+          </div>
         </section>
       </div>`;
   }
 
+  function directoryEmptyState(title, subtitle) {
+    return `<div class="pdx-dir-empty"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(subtitle)}</span></div>`;
+  }
+
+  function directoryPriorityBadgeClass(priority) {
+    const value = String(priority || '').toLowerCase();
+    if (value === 'urgent') return 'urgent';
+    if (value === 'high') return 'high';
+    return '';
+  }
+
+  function directoryQueueRow(item) {
+    return `<div class="pdx-dir-row">
+      <div class="pdx-dir-row-copy">
+        <div class="pdx-dir-row-title">${escapeHtml(item.summary || item.reviewType)}</div>
+        <div class="pdx-dir-row-meta">${escapeHtml(item.targetLabel || 'Directory record')}</div>
+      </div>
+      <div class="pdx-dir-row-side"><span class="pdx-dir-badge ${directoryPriorityBadgeClass(item.priority)}">${escapeHtml(item.priority || 'normal')}</span></div>
+    </div>`;
+  }
+
+  function directoryPersonRow(person) {
+    const pending = person.pendingRequestCount || 0;
+    return `<div class="pdx-dir-row">
+      <div class="pdx-dir-row-copy"><div class="pdx-dir-row-title">${escapeHtml(person.displayName)}</div></div>
+      <div class="pdx-dir-row-side">${pending ? `<span class="pdx-dir-badge high">${pending} pending</span>` : `<span class="pdx-dir-badge count">Current</span>`}</div>
+    </div>`;
+  }
+
+  function directoryHouseholdRow(household) {
+    const count = household.memberCount || 0;
+    return `<div class="pdx-dir-row">
+      <div class="pdx-dir-row-copy"><div class="pdx-dir-row-title">${escapeHtml(household.displayName)}</div></div>
+      <div class="pdx-dir-row-side"><span class="pdx-dir-badge count">${count} member${count === 1 ? '' : 's'}</span></div>
+    </div>`;
+  }
+
+  function directoryMaintenanceRow(label, value, alertIfPositive = false) {
+    const numeric = Number(value ?? 0);
+    return `<div class="pdx-dir-row">
+      <div class="pdx-dir-row-copy"><div class="pdx-dir-row-title">${escapeHtml(label)}</div></div>
+      <div class="pdx-dir-row-side"><span class="pdx-dir-badge ${alertIfPositive && numeric > 0 ? 'urgent' : 'count'}">${escapeHtml(numeric)}</span></div>
+    </div>`;
+  }
+
   function directorySkillsAdminRows(listings) {
-    if (!listings.length) return '<p class="muted">No Skills & Service listings are active or awaiting review.</p>';
+    if (!listings.length) return directoryEmptyState('Nothing to review', 'No Skills & Service listings are active or awaiting review.');
     return listings.map(item => `
-      <div class="dir-admin-row">
-        <strong>${escapeHtml(item.displayLabel || item.skill?.name || 'Skill listing')}</strong>
-        <span>${escapeHtml(item.person?.displayName || 'Member')} · ${escapeHtml(item.status || '')}</span>
-        <span class="actions">
-          ${item.status === 'hidden_by_parish' ? `<button type="button" onclick="moderateDirectorySkill('${escapeHtml(item.id)}','restore')">Restore</button>` : `<button type="button" onclick="moderateDirectorySkill('${escapeHtml(item.id)}','hide')">Hide</button>`}
-          <button type="button" onclick="moderateDirectorySkill('${escapeHtml(item.id)}','archive')">Archive</button>
-        </span>
+      <div class="pdx-dir-row">
+        <div class="pdx-dir-row-copy">
+          <div class="pdx-dir-row-title">${escapeHtml(item.displayLabel || item.skill?.name || 'Skill listing')}</div>
+          <div class="pdx-dir-row-meta">${escapeHtml(item.person?.displayName || 'Member')} · ${escapeHtml(item.status || '')}</div>
+        </div>
+        <div class="pdx-dir-row-side">
+          ${item.status === 'hidden_by_parish' ? `<button class="pdx-dir-action-btn" type="button" onclick="moderateDirectorySkill('${escapeHtml(item.id)}','restore')">Restore</button>` : `<button class="pdx-dir-action-btn" type="button" onclick="moderateDirectorySkill('${escapeHtml(item.id)}','hide')">Hide</button>`}
+          <button class="pdx-dir-action-btn" type="button" onclick="moderateDirectorySkill('${escapeHtml(item.id)}','archive')">Archive</button>
+        </div>
       </div>`).join('');
   }
 
@@ -635,14 +705,11 @@
     }
   }
 
-  function directoryMetric(label, value) {
-    return `<div class="dir-admin-metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value ?? 0)}</strong></div>`;
-  }
-
-  function directoryQueueRow(item) {
-    return `<div class="dir-admin-review-row">
-      <div><strong>${escapeHtml(item.summary || item.reviewType)}</strong><span>${escapeHtml(item.targetLabel || 'Directory record')}</span></div>
-      <em>${escapeHtml(item.priority || 'normal')}</em>
+  function directoryMetric(label, value, iconPath) {
+    return `<div class="pdx-kpi-card">
+      <div class="pdx-kpi-label">${escapeHtml(label)}</div>
+      <div class="pdx-kpi-value">${escapeHtml(value ?? 0)}</div>
+      <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24">${iconPath || ''}</svg></div>
     </div>`;
   }
 
