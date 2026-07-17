@@ -10,6 +10,14 @@ import { DirectoryServiceError } from "./foundation.js";
 import { transitionPublicationProfile } from "./publication.js";
 import { assertMediaAssetSecurelyTransformed, auditDirectoryMediaLegacyAssets, reprocessDirectoryMediaAsset } from "./media.js";
 import {
+  decideDuplicateCandidate,
+  executeDuplicateMerge,
+  generateDuplicateCandidates,
+  getDuplicateComparison,
+  listDuplicateCandidates,
+  planDuplicateMerge
+} from "./duplicates.js";
+import {
   assertParishActor,
   auditStatement,
   cleanText,
@@ -79,6 +87,18 @@ export const REVIEW_TYPES = Object.freeze({
     sourceSystem: "directory_media_assets",
     capabilities: [DIRECTORY_CAPABILITIES.publicationReview, DIRECTORY_CAPABILITIES.manage],
     allowedActions: ["assign", "unassign", "begin", "approve", "deny", "return", "priority", "note"]
+  },
+  duplicate_person: {
+    reviewType: "person_duplicate_review",
+    sourceSystem: "directory_duplicate_candidates",
+    capabilities: [DIRECTORY_CAPABILITIES.duplicatesReview, DIRECTORY_CAPABILITIES.manage],
+    allowedActions: ["assign", "unassign", "begin", "deny", "return", "priority", "note"]
+  },
+  duplicate_household: {
+    reviewType: "household_duplicate_review",
+    sourceSystem: "directory_duplicate_candidates",
+    capabilities: [DIRECTORY_CAPABILITIES.duplicatesReview, DIRECTORY_CAPABILITIES.manage],
+    allowedActions: ["assign", "unassign", "begin", "deny", "return", "priority", "note"]
   }
 });
 
@@ -133,7 +153,9 @@ export async function resolveDirectoryAdminContext(env, { request, parishId }) {
       canManageNotes: hasAny(actor, [DIRECTORY_CAPABILITIES.notesManage, DIRECTORY_CAPABILITIES.manage]),
       canAssign: hasAny(actor, [DIRECTORY_CAPABILITIES.assignmentsManage, DIRECTORY_CAPABILITIES.manage]),
       canViewAudit: hasAny(actor, [DIRECTORY_CAPABILITIES.auditView, DIRECTORY_CAPABILITIES.manage]),
-      canViewPrivateContact: hasAny(actor, [DIRECTORY_CAPABILITIES.privateContactView, DIRECTORY_CAPABILITIES.manage])
+      canViewPrivateContact: hasAny(actor, [DIRECTORY_CAPABILITIES.privateContactView, DIRECTORY_CAPABILITIES.manage]),
+      canReviewDuplicates: hasAny(actor, [DIRECTORY_CAPABILITIES.duplicatesReview, DIRECTORY_CAPABILITIES.manage]),
+      canMergeDuplicates: hasAny(actor, [DIRECTORY_CAPABILITIES.duplicatesMerge, DIRECTORY_CAPABILITIES.manage])
     },
     entitlement: { mission: true, parish: true, phase3AAvailable: true }
   };
@@ -259,7 +281,37 @@ async function reviewRows(env, parishId) {
       WHERE ma.parish_id = ?1 AND ma.lifecycle_status = 'pending_approval'`,
     parishId
   ).catch(() => []);
-  return [...changeRequests, ...publication, ...media];
+  const duplicates = await d1All(
+    env,
+    `SELECT dc.parish_id, 'duplicate_candidate' AS source_type, dc.id AS source_id,
+            CASE WHEN dc.entity_type = 'person' THEN 'duplicate_person' ELSE 'duplicate_household' END AS review_key,
+            CASE WHEN dc.entity_type = 'person' THEN 'person_duplicate_review' ELSE 'household_duplicate_review' END AS review_type,
+            dc.candidate_status AS source_status, dc.first_detected_at AS submitted_at,
+            dc.updated_at AS source_updated_at, '' AS requester_user_id, '' AS requester_person_id,
+            dc.entity_type AS target_type, dc.left_entity_id AS target_id,
+            CASE WHEN dc.entity_type = 'household' THEN dc.left_entity_id ELSE NULL END AS household_id,
+            CASE WHEN dc.entity_type = 'person' THEN 'Potential duplicate person records' ELSE 'Potential duplicate household records' END AS safe_summary,
+            'Duplicate scanner' AS requester_label,
+            CASE WHEN dc.entity_type = 'person'
+              THEN COALESCE(lp.preferred_name, 'Left record') || ' / ' || COALESCE(rp.preferred_name, 'Right record')
+              ELSE COALESCE(lh.display_name, 'Left household') || ' / ' || COALESCE(rh.display_name, 'Right household')
+            END AS target_label,
+            CASE WHEN dc.entity_type = 'person' THEN MAX(COALESCE(lf.protected_person, 0), COALESCE(rf.protected_person, 0)) ELSE 0 END AS protected_record,
+            CASE WHEN dc.entity_type = 'person' THEN MAX(COALESCE(lf.is_child, 0), COALESCE(rf.is_child, 0)) ELSE 0 END AS child_related,
+            rm.id AS review_item_id, rm.queue_status, rm.priority, rm.assigned_to_user_id, rm.assigned_at,
+            rm.updated_at AS metadata_updated_at
+       FROM directory_duplicate_candidates dc
+       LEFT JOIN directory_people lp ON dc.entity_type = 'person' AND lp.id = dc.left_entity_id
+       LEFT JOIN directory_people rp ON dc.entity_type = 'person' AND rp.id = dc.right_entity_id
+       LEFT JOIN directory_households lh ON dc.entity_type = 'household' AND lh.id = dc.left_entity_id
+       LEFT JOIN directory_households rh ON dc.entity_type = 'household' AND rh.id = dc.right_entity_id
+       LEFT JOIN directory_person_privacy_flags lf ON lf.parish_id = dc.parish_id AND lf.person_id = dc.left_entity_id AND lf.active = 1
+       LEFT JOIN directory_person_privacy_flags rf ON rf.parish_id = dc.parish_id AND rf.person_id = dc.right_entity_id AND rf.active = 1
+       LEFT JOIN directory_review_metadata rm ON rm.source_type = 'duplicate_candidate' AND rm.source_id = dc.id
+      WHERE dc.parish_id = ?1 AND dc.candidate_status IN ('open', 'assigned', 'in_review', 'deferred', 'confirmed_duplicate', 'merge_planned', 'merge_ready', 'blocked')`,
+    parishId
+  ).catch(() => []);
+  return [...changeRequests, ...publication, ...media, ...duplicates];
 }
 
 function applyQueueFilters(rows, filters = {}) {
@@ -351,6 +403,12 @@ export async function getDirectoryReviewItem(env, { context, sourceType, sourceI
   if (row.source_type === "change_request") {
     const request = await d1First(env, "SELECT requested_payload_json FROM directory_change_requests WHERE id = ?1", row.source_id);
     payload = JSON.parse(request?.requested_payload_json || "{}");
+  } else if (row.source_type === "duplicate_candidate") {
+    return {
+      item: queueDto(row, context),
+      comparison: await getDuplicateComparison(env, { context, candidateId: row.source_id }),
+      notes
+    };
   }
   return {
     item: queueDto(row, context),
@@ -376,6 +434,9 @@ async function currentSnapshot(env, row, context) {
     const household = await d1First(env, "SELECT * FROM directory_households WHERE id = ?1", row.target_id);
     if (!household) return null;
     return { id: household.id, displayName: household.display_name, active: Number(household.active || 0) === 1, version: household.updated_at };
+  }
+  if (row.source_type === "duplicate_candidate") {
+    return getDuplicateComparison(env, { context, candidateId: row.source_id });
   }
   return null;
 }
@@ -560,6 +621,9 @@ async function closeReviewItem(env, { context, row, decision, reasonCode, review
   } else if (row.source_type === "media_asset") {
     const status = decision === "return" ? "ready" : "rejected";
     sourceUpdates.push({ sql: "UPDATE directory_media_assets SET lifecycle_status = ?, updated_at = ? WHERE id = ? AND lifecycle_status = 'pending_approval'", params: [status, timestamp, row.source_id] });
+  } else if (row.source_type === "duplicate_candidate") {
+    const status = decision === "return" ? "deferred" : decision === "cancel" ? "cancelled" : "not_duplicate";
+    sourceUpdates.push({ sql: "UPDATE directory_duplicate_candidates SET candidate_status = ?, decision = ?, decision_reason_code = ?, decided_by_user_id = ?, decided_at = ?, updated_at = ? WHERE id = ? AND parish_id = ?", params: [status, status, cleanText(reasonCode, { max: 80 }) || null, context.user.id, timestamp, timestamp, row.source_id, context.parishId] });
   }
   await runAtomic(env, [
     ...sourceUpdates,
@@ -589,6 +653,9 @@ async function approveReviewItem(env, { context, row, reasonCode, reviewerNote, 
     const timestamp = nowMs();
     await runAtomic(env, [{ sql: "UPDATE directory_media_assets SET lifecycle_status = 'approved', updated_at = ? WHERE id = ? AND parish_id = ? AND lifecycle_status = 'pending_approval'", params: [timestamp, row.source_id, context.parishId] }]);
     return markApproved(env, { context, row, reasonCode, reviewerNote, requesterNote, correlationId });
+  }
+  if (row.source_type === "duplicate_candidate") {
+    throw new DirectoryServiceError("use_duplicate_merge_flow", "Duplicate candidates must be confirmed, planned, and merged through the duplicate review workflow.", 422);
   }
   if (row.source_type !== "change_request") throw new DirectoryServiceError("unsupported_review_type", "Review source is not supported.", 422);
   const request = await d1First(env, "SELECT * FROM directory_change_requests WHERE id = ?1 AND parish_id = ?2 AND status = 'pending'", row.source_id, context.parishId);
@@ -839,6 +906,58 @@ export async function listDirectoryAuditHistory(env, { context, targetType = "",
   params.push(Math.min(Number(limit) || 50, 100));
   const rows = await d1All(env, `SELECT id, actor_user_id, action, target_type, target_id, request_id, created_at FROM audit_log WHERE ${where} ORDER BY created_at DESC LIMIT ?${params.length}`, ...params);
   return rows.map((row) => ({ id: row.id, actorUserId: row.actor_user_id || "", action: row.action, targetType: row.target_type, targetId: row.target_id, requestId: row.request_id || "", createdAt: row.created_at }));
+}
+
+export async function runDirectoryDuplicateScan(env, { context, entityType = "all", correlationId = "" }) {
+  return generateDuplicateCandidates(env, { context, entityType, correlationId });
+}
+
+export async function listDirectoryDuplicateCandidates(env, { context, status = "open", entityType = "", limit = 50 }) {
+  return listDuplicateCandidates(env, { context, status, entityType, limit });
+}
+
+export async function getDirectoryDuplicateCandidate(env, { context, candidateId }) {
+  return getDuplicateComparison(env, { context, candidateId });
+}
+
+export async function decideDirectoryDuplicateCandidate(env, { context, candidateId, decision, reasonCode = "", expectedVersion = "", correlationId = "" }) {
+  const candidate = await decideDuplicateCandidate(env, { context, candidateId, decision, reasonCode, expectedVersion, correlationId });
+  const sourceRow = {
+    parish_id: context.parishId,
+    source_type: "duplicate_candidate",
+    source_id: candidate.id,
+    review_key: candidate.entityType === "person" ? "duplicate_person" : "duplicate_household",
+    review_type: candidate.entityType === "person" ? "person_duplicate_review" : "household_duplicate_review"
+  };
+  if (["not_duplicate", "deferred"].includes(candidate.status)) {
+    const reviewId = await ensureMetadata(env, { actor: actorDto(context), row: sourceRow });
+    await runAtomic(env, [{
+      sql: "UPDATE directory_review_metadata SET queue_status = ?, updated_at = ? WHERE id = ?",
+      params: [candidate.status === "deferred" ? "returned" : "completed", nowMs(), reviewId]
+    }]);
+  }
+  return candidate;
+}
+
+export async function planDirectoryDuplicateMerge(env, { context, candidateId, survivorId, expectedVersion = "", correlationId = "" }) {
+  return planDuplicateMerge(env, { context, candidateId, survivorId, expectedVersion, correlationId });
+}
+
+export async function executeDirectoryDuplicateMerge(env, { context, candidateId, expectedVersion = "", correlationId = "" }) {
+  const result = await executeDuplicateMerge(env, { context, candidateId, expectedVersion, correlationId });
+  const row = await d1First(env, "SELECT entity_type FROM directory_duplicate_candidates WHERE id = ?1 AND parish_id = ?2", candidateId, context.parishId);
+  const reviewId = await ensureMetadata(env, {
+    actor: actorDto(context),
+    row: {
+      parish_id: context.parishId,
+      source_type: "duplicate_candidate",
+      source_id: candidateId,
+      review_key: row?.entity_type === "household" ? "duplicate_household" : "duplicate_person",
+      review_type: row?.entity_type === "household" ? "household_duplicate_review" : "person_duplicate_review"
+    }
+  });
+  await runAtomic(env, [{ sql: "UPDATE directory_review_metadata SET queue_status = 'completed', completed_at = ?, updated_at = ? WHERE id = ?", params: [nowMs(), nowMs(), reviewId] }]);
+  return result;
 }
 
 // ── Phase 2B.1: legacy media audit + reprocessing (parish-scoped only) ──

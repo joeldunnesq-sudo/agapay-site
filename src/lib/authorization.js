@@ -119,6 +119,8 @@ export const CAPABILITY_CATALOG = Object.freeze([
   "directory.household_admins.review",
   "directory.corrections.review",
   "directory.protected.manage",
+  "directory.duplicates.review",
+  "directory.duplicates.merge",
   "directory.notes.view",
   "directory.notes.manage",
   "directory.assignments.manage",

@@ -14,12 +14,18 @@ import {
   getDirectoryMediaLegacyAudit,
   getDirectoryPersonAdmin,
   getDirectoryReviewItem,
+  getDirectoryDuplicateCandidate,
   listDirectoryAuditHistory,
+  listDirectoryDuplicateCandidates,
   listDirectoryHouseholdsAdmin,
   listDirectoryPeopleAdmin,
   listDirectoryReviewQueue,
+  decideDirectoryDuplicateCandidate,
+  executeDirectoryDuplicateMerge,
+  planDirectoryDuplicateMerge,
   requestDirectoryMediaReprocessing,
   resolveDirectoryAdminContext,
+  runDirectoryDuplicateScan,
   unassignDirectoryReviewItem
 } from "../directory/admin.js";
 
@@ -92,6 +98,17 @@ export async function handleDirectoryAdmin(request, env, parishId) {
     const noteMatch = path.match(/^\/notes\/([^/]+)\/archive$/);
     if (request.method === "POST" && noteMatch) return json({ ok: true, result: await archiveDirectoryNote(env, { context, noteId: decodeURIComponent(noteMatch[1]), correlationId }) });
     if (request.method === "GET" && path === "/audit") return json({ ok: true, events: await listDirectoryAuditHistory(env, { context, targetType: url.searchParams.get("targetType") || "", targetId: url.searchParams.get("targetId") || "", limit: url.searchParams.get("limit") || 50 }) });
+    if (request.method === "POST" && path === "/duplicates/scan") return json({ ok: true, scan: await runDirectoryDuplicateScan(env, { context, ...await body(request), correlationId }) });
+    if (request.method === "GET" && path === "/duplicates") return json({ ok: true, candidates: await listDirectoryDuplicateCandidates(env, { context, status: url.searchParams.get("status") || "open", entityType: url.searchParams.get("entityType") || "", limit: url.searchParams.get("limit") || 50 }) });
+    const duplicateMatch = path.match(/^\/duplicates\/([^/]+)(?:\/([^/]+))?$/);
+    if (duplicateMatch) {
+      const candidateId = decodeURIComponent(duplicateMatch[1]);
+      const action = duplicateMatch[2] || "";
+      if (request.method === "GET" && !action) return json({ ok: true, candidate: await getDirectoryDuplicateCandidate(env, { context, candidateId }) });
+      if (request.method === "POST" && action === "decision") return json({ ok: true, candidate: await decideDirectoryDuplicateCandidate(env, { context, candidateId, ...await body(request), correlationId }) });
+      if (request.method === "POST" && action === "plan") return json({ ok: true, plan: await planDirectoryDuplicateMerge(env, { context, candidateId, ...await body(request), correlationId }) });
+      if (request.method === "POST" && action === "merge") return json({ ok: true, result: await executeDirectoryDuplicateMerge(env, { context, candidateId, ...await body(request), correlationId }) });
+    }
     if (request.method === "GET" && path === "/media/legacy-audit") return json({ ok: true, audit: await getDirectoryMediaLegacyAudit(env, { context, correlationId }) });
     const reprocessMatch = path.match(/^\/media\/([^/]+)\/reprocess$/);
     if (request.method === "POST" && reprocessMatch) {

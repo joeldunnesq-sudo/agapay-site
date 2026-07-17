@@ -14,6 +14,8 @@ export const DIRECTORY_CAPABILITIES = Object.freeze({
   householdAdminsReview: "directory.household_admins.review",
   correctionsReview: "directory.corrections.review",
   protectedManage: "directory.protected.manage",
+  duplicatesReview: "directory.duplicates.review",
+  duplicatesMerge: "directory.duplicates.merge",
   notesView: "directory.notes.view",
   notesManage: "directory.notes.manage",
   assignmentsManage: "directory.assignments.manage",
