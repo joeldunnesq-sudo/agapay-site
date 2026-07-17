@@ -82,13 +82,20 @@
     .child-note { display:grid; gap:6px; font-size:13px; font-weight:700; }
     .child-note textarea { border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; min-height:56px; }
     .child-help { font-size:12px; color:var(--muted); margin:0; }
+    .skills-toolbar { display:grid; grid-template-columns:1fr 180px 180px auto; gap:10px; align-items:end; }
+    .skill-list { display:grid; gap:10px; margin-top:12px; }
+    .skill-card { border:1px solid #e4e7e3; background:#fff; border-radius:8px; padding:12px; display:grid; gap:8px; }
+    .skill-card header { display:flex; justify-content:space-between; gap:12px; align-items:start; }
+    .skill-card h3 { margin:0; font-size:16px; }
+    .skill-card p { margin:0; color:var(--muted); }
+    textarea { border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; min-height:62px; resize:vertical; }
     @media (max-width: 860px) {
       .directory-shell { display:block; }
       .directory-side { position:static; padding:18px; }
       .directory-main { padding:18px; }
       .directory-top { display:grid; }
       .directory-grid, .form-grid { grid-template-columns:1fr; }
-      .directory-tools { grid-template-columns:1fr; }
+      .directory-tools, .skills-toolbar { grid-template-columns:1fr; }
       .member-grid { grid-template-columns:1fr; }
     }
   </style>
@@ -136,6 +143,20 @@
         <div class="profile-pane" id="memberProfile" hidden></div>
       </section>
 
+      <section class="panel member-directory" aria-labelledby="skillsDirectoryHeading">
+        <div class="directory-title">
+          <h2 id="skillsDirectoryHeading">Skills &amp; Service</h2>
+          <p class="privacy-reminder" id="skillsDisclaimer">Skills and experience are self-reported. AGAPAY and the parish do not verify licenses, credentials, insurance, background checks, or suitability.</p>
+        </div>
+        <div class="skills-toolbar">
+          <label>Search skills<input id="skillSearch" type="search" autocomplete="off" placeholder="Search skill or person" /></label>
+          <label>Category<select id="skillCategory"><option value="">All categories</option></select></label>
+          <label>Service mode<select id="skillServiceMode"><option value="">All modes</option><option value="parish_projects">Parish projects</option><option value="informal_parishioner_help">Informal help</option><option value="advice_or_guidance">Advice or guidance</option><option value="transportation">Transportation</option><option value="teaching_or_tutoring">Teaching or tutoring</option><option value="emergency_assistance">Emergency assistance</option><option value="professional_services">Professional services</option><option value="other">Other</option></select></label>
+          <button class="btn primary" type="button" id="skillSearchButton">Search</button>
+        </div>
+        <div class="skill-list" id="skillResults" aria-live="polite"></div>
+      </section>
+
       <section class="directory-grid" aria-live="polite">
         <div class="stack">
           <article class="panel">
@@ -170,6 +191,24 @@
               <label>Value<input name="value" required /></label>
               <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Household</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
               <div class="actions"><button class="btn primary" type="submit">Add Contact</button></div>
+            </form>
+          </article>
+
+          <article class="panel">
+            <h2>My Skills &amp; Service</h2>
+            <p class="child-help">Share only the skills you are comfortable making available to your parish community. Listings default to private until you choose otherwise.</p>
+            <div class="skill-list" id="mySkillList"></div>
+            <form class="form-grid" id="skillForm" hidden>
+              <label>Skill<select name="skillId" required></select></label>
+              <label>Custom label<input name="customDisplayLabel" maxlength="120" /></label>
+              <label>Experience<select name="experienceLevel"><option value="willing_to_help">Willing to help</option><option value="experienced">Experienced</option><option value="professional">Professional</option><option value="retired_professional">Retired professional</option><option value="other">Other</option></select></label>
+              <label>Service mode<select name="serviceMode"><option value="informal_parishioner_help">Informal parishioner help</option><option value="parish_projects">Parish projects</option><option value="advice_or_guidance">Advice or guidance</option><option value="transportation">Transportation</option><option value="teaching_or_tutoring">Teaching or tutoring</option><option value="emergency_assistance">Emergency assistance</option><option value="professional_services">Professional services</option><option value="other">Other</option></select></label>
+              <label>Visibility<select name="visibility"><option value="private">Private</option><option value="parish_staff">Parish staff</option><option value="directory_members">Directory members</option></select></label>
+              <label>Contact preference<select name="contactPreference"><option value="parish_office">Parish office fallback</option><option value="published_email">Published email</option><option value="published_phone">Published phone</option><option value="ask_in_person">Ask in person</option><option value="no_direct_contact">No direct contact</option></select></label>
+              <label class="child-note" style="grid-column:1/-1;">Availability note<textarea name="availabilityNote" maxlength="300"></textarea></label>
+              <input type="hidden" name="status" value="draft" />
+              <input type="hidden" name="listingId" />
+              <div class="actions"><button class="btn secondary" type="submit" data-skill-save="draft">Save Draft</button><button class="btn primary" type="submit" data-skill-save="active">Activate</button><button class="btn warn" type="button" id="pauseAllSkills">Pause All</button></div>
             </form>
           </article>
         </div>
@@ -209,6 +248,7 @@
     const email = localStorage.getItem("agapayUserEmail") || localStorage.getItem("agapayPlatformEmail") || "";
     let profileState = null;
     let memberState = { view: "households", letter: "", cursor: "", query: "", sort: "az", loading: false };
+    let skillCatalog = [];
 
     function headers() {
       return {
@@ -303,6 +343,47 @@
       } catch (error) {
         document.getElementById("memberResults").innerHTML = `<div class="empty">${esc(error.message)}</div>`;
       }
+    }
+    function skillCategoryLabel(value) {
+      return String(value || "").replace(/_/g, " ").replace(/\b[a-z]/g, (c) => c.toUpperCase());
+    }
+    function renderSkillResults(items = []) {
+      document.getElementById("skillResults").innerHTML = items.length ? items.map((item) => `
+        <article class="skill-card">
+          <header><div><h3>${esc(item.displayLabel)}</h3><p>${esc(item.skill?.category || "")} · ${esc(item.experienceLevel)} · ${esc(item.serviceMode)}</p></div><span class="status-tag">${esc(item.visibility)}</span></header>
+          <p>${esc(item.person?.displayName || "Parish member")}${item.availabilityNote ? " · " + esc(item.availabilityNote) : ""}</p>
+          <p><strong>Contact:</strong> ${esc(item.contact?.value || item.contact?.label || "Contact preference unavailable")}</p>
+        </article>`).join("") : '<div class="empty">No active Skills & Service listings match this search.</div>';
+    }
+    async function loadSkillSearch() {
+      try {
+        const params = new URLSearchParams({ q: document.getElementById("skillSearch").value.trim(), category: document.getElementById("skillCategory").value, serviceMode: document.getElementById("skillServiceMode").value, limit: "24" });
+        const payload = await api(`/api/directory/member/skills?${params}`);
+        if (payload.skills?.disclaimer) document.getElementById("skillsDisclaimer").textContent = payload.skills.disclaimer;
+        renderSkillResults(payload.skills?.items || []);
+      } catch (error) {
+        document.getElementById("skillResults").innerHTML = `<div class="empty">${esc(error.message)}</div>`;
+      }
+    }
+    function renderMySkills(payload = {}) {
+      const listings = payload.listings || [];
+      skillCatalog = payload.catalog || [];
+      const select = document.querySelector('#skillForm select[name="skillId"]');
+      select.innerHTML = skillCatalog.map((skill) => `<option value="${esc(skill.id)}">${esc(skill.name)}</option>`).join("");
+      const categories = [...new Set(skillCatalog.map((skill) => skill.category))].sort();
+      document.getElementById("skillCategory").innerHTML = '<option value="">All categories</option>' + categories.map((category) => `<option value="${esc(category)}">${esc(skillCategoryLabel(category))}</option>`).join("");
+      document.getElementById("skillForm").hidden = !profileState?.claimed;
+      document.getElementById("mySkillList").innerHTML = listings.length ? listings.map((item) => `
+        <article class="skill-card" data-listing-id="${esc(item.id)}">
+          <header><div><h3>${esc(item.displayLabel)}</h3><p>${esc(item.skill?.name || "")} · ${esc(item.experienceLevel)} · ${esc(item.serviceMode)}</p></div><span class="status-tag status-${esc(item.status)}">${esc(item.status)}</span></header>
+          <p>${esc(item.visibility)} · ${esc(item.contactPreference)}${item.availabilityNote ? " · " + esc(item.availabilityNote) : ""}</p>
+          <div class="actions"><button class="btn secondary" type="button" data-edit-skill="${esc(item.id)}">Edit</button><button class="btn warn" type="button" data-withdraw-skill="${esc(item.id)}">Withdraw</button></div>
+        </article>`).join("") : '<div class="empty">No skills listed yet.</div>';
+    }
+    async function loadMySkills() {
+      const payload = await api("/api/directory/self/skills").catch(() => ({ skills: { catalog: [], listings: [] } }));
+      renderMySkills(payload.skills || {});
+      await loadSkillSearch();
     }
     function renderContact(contact) {
       const label = `${contact.label || contact.type}: ${contact.value}`;
@@ -480,8 +561,40 @@
       await loadMemberHome();
       const payload = await api("/api/directory/self/profile");
       renderProfile(payload.profile);
+      await loadMySkills();
       await loadChildrenPanel();
     }
+    document.getElementById("skillSearchButton").addEventListener("click", loadSkillSearch);
+    document.getElementById("skillSearch").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); loadSkillSearch(); } });
+    document.getElementById("skillCategory").addEventListener("change", loadSkillSearch);
+    document.getElementById("skillServiceMode").addEventListener("change", loadSkillSearch);
+    document.getElementById("skillForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const submitter = event.submitter;
+      const form = event.currentTarget;
+      const payload = Object.fromEntries(new FormData(form).entries());
+      payload.status = submitter?.dataset.skillSave || payload.status || "draft";
+      const listingId = payload.listingId;
+      delete payload.listingId;
+      await api(listingId ? `/api/directory/self/skills/${encodeURIComponent(listingId)}` : "/api/directory/self/skills", { method: listingId ? "PATCH" : "POST", body: JSON.stringify(payload) });
+      form.reset();
+      form.listingId.value = "";
+      showNotice(payload.status === "active" ? "Skill listing activated." : "Skill draft saved.");
+      await loadMySkills();
+    });
+    document.getElementById("mySkillList").addEventListener("click", async (event) => {
+      const withdraw = event.target.closest("[data-withdraw-skill]");
+      if (withdraw) {
+        await api(`/api/directory/self/skills/${encodeURIComponent(withdraw.dataset.withdrawSkill)}`, { method: "PATCH", body: JSON.stringify({ status: "withdrawn" }) });
+        showNotice("Skill consent withdrawn.");
+        await loadMySkills();
+      }
+    });
+    document.getElementById("pauseAllSkills").addEventListener("click", async () => {
+      await api("/api/directory/self/skills/pause-all", { method: "POST" });
+      showNotice("All active skill listings paused.");
+      await loadMySkills();
+    });
     document.getElementById("profileForm").addEventListener("submit", async (event) => {
       event.preventDefault();
       const form = event.currentTarget;

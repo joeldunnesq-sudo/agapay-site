@@ -40,6 +40,19 @@ import {
   setMinistryParticipationPublication,
   updateMinistry
 } from "../directory/ministries.js";
+import {
+  createParishSkill,
+  exportPublishedAdultsCsv,
+  exportSkillsRosterCsv,
+  getDirectoryMaintenanceDashboard,
+  listSkillCatalog,
+  listSkillListingsAdmin,
+  moderateSkillListing,
+  printDirectory,
+  printSkillsRoster,
+  updateParishSkill,
+  updateSkillsSettings
+} from "../directory/skills-service.js";
 
 async function body(request) {
   return request.json().catch(() => ({}));
@@ -63,6 +76,12 @@ function privateJson(payload, init = {}) {
     ...init,
     headers: { ...PRIVATE_HEADERS, ...(init.headers || {}) }
   });
+}
+
+function privateText(bodyText, { status = 200, contentType = "text/plain; charset=utf-8", filename = "" } = {}) {
+  const headers = { ...PRIVATE_HEADERS, "Content-Type": contentType };
+  if (filename) headers["Content-Disposition"] = `attachment; filename="${filename.replace(/[^a-zA-Z0-9._-]/g, "_")}"`;
+  return new Response(bodyText, { status, headers });
 }
 
 async function adminContext(request, env, parishId) {
@@ -90,6 +109,7 @@ export async function handleDirectoryAdmin(request, env, parishId) {
 
     if (request.method === "GET" && path === "/context") return privateJson({ ok: true, context });
     if (request.method === "GET" && path === "/dashboard") return privateJson({ ok: true, dashboard: await getDirectoryAdminDashboard(env, { context }) });
+    if (request.method === "GET" && path === "/maintenance") return privateJson({ ok: true, maintenance: await getDirectoryMaintenanceDashboard(env, { context }) });
     if (request.method === "GET" && path === "/queue") {
       return privateJson({ ok: true, items: await listDirectoryReviewQueue(env, { context, filters: Object.fromEntries(url.searchParams) }) });
     }
@@ -148,6 +168,36 @@ export async function handleDirectoryAdmin(request, env, parishId) {
         return privateJson({ ok: true, result: await setMinistryParticipationPublication(env, { context, participantId: itemIdOrAction || ministryId, ...await body(request), correlationId }) });
       }
     }
+    if (request.method === "GET" && path === "/skills/catalog") {
+      return privateJson({ ok: true, skills: await listSkillCatalog(env, { context }) });
+    }
+    if (request.method === "POST" && path === "/skills/catalog") {
+      return privateJson({ ok: true, skill: await createParishSkill(env, { context, data: await body(request), correlationId }) }, { status: 201 });
+    }
+    const skillCatalogMatch = path.match(/^\/skills\/catalog\/([^/]+)$/);
+    if (request.method === "PATCH" && skillCatalogMatch) {
+      return privateJson({ ok: true, skill: await updateParishSkill(env, { context, skillId: decodeURIComponent(skillCatalogMatch[1]), patch: await body(request), correlationId }) });
+    }
+    if (request.method === "GET" && path === "/skills/listings") {
+      return privateJson({ ok: true, skills: await listSkillListingsAdmin(env, { context, status: url.searchParams.get("status") || "", category: url.searchParams.get("category") || "", q: url.searchParams.get("q") || "", limit: url.searchParams.get("limit") || "" }) });
+    }
+    const skillListingAction = path.match(/^\/skills\/listings\/([^/]+)\/(hide|restore|archive)$/);
+    if (request.method === "POST" && skillListingAction) {
+      return privateJson({ ok: true, listing: await moderateSkillListing(env, { context, listingId: decodeURIComponent(skillListingAction[1]), action: skillListingAction[2], ...await body(request), correlationId }) });
+    }
+    if (request.method === "PATCH" && path === "/skills/settings") {
+      return privateJson({ ok: true, settings: await updateSkillsSettings(env, { context, patch: await body(request), correlationId }) });
+    }
+    if (request.method === "GET" && path === "/exports/skills.csv") {
+      const exported = await exportSkillsRosterCsv(env, { context });
+      return privateText(exported.body, { contentType: exported.contentType, filename: exported.filename });
+    }
+    if (request.method === "GET" && path === "/exports/published-adults.csv") {
+      const exported = await exportPublishedAdultsCsv(env, { context });
+      return privateText(exported.body, { contentType: exported.contentType, filename: exported.filename });
+    }
+    if (request.method === "GET" && path === "/print/skills") return privateJson({ ok: true, print: await printSkillsRoster(env, { context }) });
+    if (request.method === "GET" && path === "/print/directory") return privateJson({ ok: true, print: await printDirectory(env, { context }) });
     if (request.method === "POST" && path === "/notes") return privateJson({ ok: true, note: await createDirectoryNote(env, { context, ...await body(request), correlationId }) }, { status: 201 });
     const noteMatch = path.match(/^\/notes\/([^/]+)\/archive$/);
     if (request.method === "POST" && noteMatch) return privateJson({ ok: true, result: await archiveDirectoryNote(env, { context, noteId: decodeURIComponent(noteMatch[1]), correlationId }) });

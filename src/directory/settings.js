@@ -22,7 +22,15 @@ export const DEFAULT_DIRECTORY_SETTINGS = Object.freeze({
   ordinaryMemberAccessEnabled: false,
   clergyStaffAccessPolicy: "capability_required",
   reconfirmationIntervalDays: 365,
-  defaultHouseholdPublicationStatus: "draft"
+  defaultHouseholdPublicationStatus: "draft",
+  skillsDirectoryEnabled: true,
+  skillsMemberSearchEnabled: true,
+  skillsStaffOnlyMode: false,
+  skillsCustomEntriesEnabled: true,
+  skillsDisclaimerText: "Skills and experience are self-reported. AGAPAY and the parish do not verify licenses, credentials, insurance, background checks, or suitability.",
+  skillsContactFallback: "Contact the parish office if a direct published contact is unavailable.",
+  skillsLastReviewedAt: 0,
+  householdVerificationIntervalDays: 365
 });
 
 function rowToSettings(row, parishId) {
@@ -39,6 +47,14 @@ function rowToSettings(row, parishId) {
     clergyStaffAccessPolicy: row.clergy_staff_access_policy,
     reconfirmationIntervalDays: Number(row.reconfirmation_interval_days || 365),
     defaultHouseholdPublicationStatus: row.default_household_publication_status,
+    skillsDirectoryEnabled: row.skills_directory_enabled === undefined ? true : Number(row.skills_directory_enabled || 0) === 1,
+    skillsMemberSearchEnabled: row.skills_member_search_enabled === undefined ? true : Number(row.skills_member_search_enabled || 0) === 1,
+    skillsStaffOnlyMode: Number(row.skills_staff_only_mode || 0) === 1,
+    skillsCustomEntriesEnabled: row.skills_custom_entries_enabled === undefined ? true : Number(row.skills_custom_entries_enabled || 0) === 1,
+    skillsDisclaimerText: row.skills_disclaimer_text || DEFAULT_DIRECTORY_SETTINGS.skillsDisclaimerText,
+    skillsContactFallback: row.skills_contact_fallback || DEFAULT_DIRECTORY_SETTINGS.skillsContactFallback,
+    skillsLastReviewedAt: Number(row.skills_last_reviewed_at || 0),
+    householdVerificationIntervalDays: Number(row.household_verification_interval_days || 365),
     createdAt: Number(row.created_at || 0),
     updatedAt: Number(row.updated_at || 0),
     persisted: true

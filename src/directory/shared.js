@@ -36,7 +36,10 @@ export const DIRECTORY_CAPABILITIES = Object.freeze({
   // alone. See docs/directory/40-phase-4b-parent-reviewer-authorization.md.
   childPublicationReview: "directory.child_publication.review",
   ministriesManage: "directory.ministries.manage",
-  ministryInterestReview: "directory.ministry_interest.review"
+  ministryInterestReview: "directory.ministry_interest.review",
+  skillsView: "directory.skills.view",
+  skillsManage: "directory.skills.manage",
+  skillsCatalogManage: "directory.skills.catalog.manage"
 });
 
 export function nowMs() {

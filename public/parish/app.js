@@ -503,11 +503,13 @@
     pane.innerHTML = '<p class="sw-tool-loading">Loading directory operations...</p>';
     const headers = authHeaders();
     try {
-      const [dashboardRes, queueRes, peopleRes, householdsRes] = await Promise.all([
+      const [dashboardRes, queueRes, peopleRes, householdsRes, skillsRes, maintenanceRes] = await Promise.all([
         fetch(directoryAdminApi('/dashboard'), { headers }),
         fetch(directoryAdminApi('/queue'), { headers }),
         fetch(directoryAdminApi('/people?limit=8'), { headers }),
-        fetch(directoryAdminApi('/households?limit=8'), { headers })
+        fetch(directoryAdminApi('/households?limit=8'), { headers }),
+        fetch(directoryAdminApi('/skills/listings?limit=8'), { headers }),
+        fetch(directoryAdminApi('/maintenance'), { headers })
       ]);
       if (dashboardRes.status === 401 || dashboardRes.status === 403) {
         const errorPayload = await dashboardRes.json().catch(() => ({}));
@@ -519,14 +521,16 @@
       const queue = await queueRes.json();
       const people = await peopleRes.json();
       const households = await householdsRes.json();
-      renderDirectoryAdminPanel(dashboard.dashboard || {}, queue.items || [], people.people || [], households.households || []);
+      const skills = await skillsRes.json().catch(() => ({ skills: { listings: [] } }));
+      const maintenance = await maintenanceRes.json().catch(() => ({ maintenance: {} }));
+      renderDirectoryAdminPanel(dashboard.dashboard || {}, queue.items || [], people.people || [], households.households || [], skills.skills || {}, maintenance.maintenance || {});
       pane.dataset.loaded = 'true';
     } catch (err) {
       pane.innerHTML = '<p class="muted">Directory operations are unavailable' + (err.message ? ': ' + escapeHtml(err.message) : '.') + '</p>';
     }
   }
 
-  function renderDirectoryAdminPanel(dashboard, queue, people, households) {
+  function renderDirectoryAdminPanel(dashboard, queue, people, households, skills, maintenance) {
     const pane = document.getElementById('directoryAdminPane');
     if (!pane) return;
     const metrics = dashboard.metrics || {};
@@ -550,7 +554,85 @@
           <div class="dir-admin-panel-head"><h2>Households</h2></div>
           ${households.length ? households.map(household => `<div class="dir-admin-row"><strong>${escapeHtml(household.displayName)}</strong><span>${household.memberCount || 0} members</span></div>`).join('') : '<p class="muted">No households available.</p>'}
         </section>
+        <section class="dir-admin-panel">
+          <div class="dir-admin-panel-head"><h2>Skills &amp; Service</h2><button type="button" onclick="loadDirectoryAdminTab(true)">Refresh</button></div>
+          ${directorySkillsAdminRows(skills.listings || [])}
+          <div class="actions">
+            <button type="button" onclick="downloadDirectoryAdminExport('/exports/skills.csv')">Skills CSV</button>
+            <button type="button" onclick="downloadDirectoryAdminExport('/exports/published-adults.csv')">Published Adults CSV</button>
+            <button type="button" onclick="previewDirectoryAdminPrint('/print/skills')">Print Skills</button>
+            <button type="button" onclick="previewDirectoryAdminPrint('/print/directory')">Print Directory</button>
+          </div>
+        </section>
+        <section class="dir-admin-panel">
+          <div class="dir-admin-panel-head"><h2>Maintenance</h2></div>
+          <div class="dir-admin-row"><strong>Households current</strong><span>${escapeHtml(maintenance.householdsCurrent ?? 0)}</span></div>
+          <div class="dir-admin-row"><strong>Households due</strong><span>${escapeHtml(maintenance.householdsDue ?? 0)}</span></div>
+          <div class="dir-admin-row"><strong>Overdue households</strong><span>${escapeHtml(maintenance.householdsOverdue ?? 0)}</span></div>
+          <div class="dir-admin-row"><strong>Skill consents to review</strong><span>${escapeHtml(maintenance.staleSkillConsents ?? 0)}</span></div>
+          <div class="dir-admin-row"><strong>Unclaimed people</strong><span>${escapeHtml(maintenance.unclaimedPeople ?? 0)}</span></div>
+        </section>
       </div>`;
+  }
+
+  function directorySkillsAdminRows(listings) {
+    if (!listings.length) return '<p class="muted">No Skills & Service listings are active or awaiting review.</p>';
+    return listings.map(item => `
+      <div class="dir-admin-row">
+        <strong>${escapeHtml(item.displayLabel || item.skill?.name || 'Skill listing')}</strong>
+        <span>${escapeHtml(item.person?.displayName || 'Member')} · ${escapeHtml(item.status || '')}</span>
+        <span class="actions">
+          ${item.status === 'hidden_by_parish' ? `<button type="button" onclick="moderateDirectorySkill('${escapeHtml(item.id)}','restore')">Restore</button>` : `<button type="button" onclick="moderateDirectorySkill('${escapeHtml(item.id)}','hide')">Hide</button>`}
+          <button type="button" onclick="moderateDirectorySkill('${escapeHtml(item.id)}','archive')">Archive</button>
+        </span>
+      </div>`).join('');
+  }
+
+  async function moderateDirectorySkill(id, action) {
+    if (!id || !action) return;
+    try {
+      const reason = action === 'hide' ? 'Hidden from parish dashboard review.' : '';
+      const res = await fetch(directoryAdminApi('/skills/listings/' + encodeURIComponent(id) + '/' + action), {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ reason })
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Skill listing update failed.');
+      loadDirectoryAdminTab(true);
+    } catch (err) {
+      alert(err.message || 'Unable to update this skill listing.');
+    }
+  }
+
+  async function downloadDirectoryAdminExport(path) {
+    try {
+      const res = await fetch(directoryAdminApi(path), { headers: authHeaders() });
+      if (!res.ok) throw new Error('Export is unavailable.');
+      const blob = await res.blob();
+      const disposition = res.headers.get('Content-Disposition') || '';
+      const match = disposition.match(/filename="([^"]+)"/);
+      downloadBlob(match?.[1] || 'directory-export.csv', blob);
+    } catch (err) {
+      alert(err.message || 'Unable to download this export.');
+    }
+  }
+
+  async function previewDirectoryAdminPrint(path) {
+    try {
+      const res = await fetch(directoryAdminApi(path), { headers: authHeaders() });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Print view is unavailable.');
+      const print = payload.print || {};
+      const body = JSON.stringify(print, null, 2);
+      const win = window.open('', '_blank', 'noopener,noreferrer');
+      if (win) {
+        win.document.write('<pre style="font:14px/1.5 system-ui;white-space:pre-wrap;padding:24px;">' + escapeHtml(body) + '</pre>');
+        win.document.close();
+      }
+    } catch (err) {
+      alert(err.message || 'Unable to open this print view.');
+    }
   }
 
   function directoryMetric(label, value) {

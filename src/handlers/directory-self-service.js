@@ -30,6 +30,13 @@ import {
   submitMinistryInterest,
   withdrawMinistryInterest
 } from "../directory/ministries.js";
+import {
+  completeHouseholdVerification,
+  getHouseholdVerificationStatus,
+  listMySkillListings,
+  pauseAllMySkillListings,
+  saveMySkillListing
+} from "../directory/skills-service.js";
 
 async function body(request) {
   return request.json().catch(() => ({}));
@@ -67,6 +74,19 @@ export async function handleDirectorySelfService(request, env) {
     }
     if (request.method === "GET" && path === "/api/directory/self/ministries") {
       return json({ ok: true, ministries: await getMyMinistries(env, { context }) });
+    }
+    if (request.method === "GET" && path === "/api/directory/self/skills") {
+      return json({ ok: true, skills: await listMySkillListings(env, { context }) });
+    }
+    if (request.method === "POST" && path === "/api/directory/self/skills") {
+      return json({ ok: true, listing: await saveMySkillListing(env, { context, data: await body(request), correlationId }) }, { status: 201 });
+    }
+    const skillMatch = path.match(/^\/api\/directory\/self\/skills\/([^/]+)$/);
+    if (request.method === "PATCH" && skillMatch) {
+      return json({ ok: true, listing: await saveMySkillListing(env, { context, listingId: decodeURIComponent(skillMatch[1]), data: await body(request), correlationId }) });
+    }
+    if (request.method === "POST" && path === "/api/directory/self/skills/pause-all") {
+      return json({ ok: true, skills: await pauseAllMySkillListings(env, { context, correlationId }) });
     }
     if (request.method === "POST" && path.startsWith("/api/directory/self/ministries/") && path.endsWith("/interest")) {
       const ministryId = decodeURIComponent(path.replace("/api/directory/self/ministries/", "").replace("/interest", ""));
@@ -119,6 +139,16 @@ export async function handleDirectorySelfService(request, env) {
       }
       if (request.method === "POST" && collection === "invitations" && action === "revoke") {
         return json({ ok: true, invitation: await revokeHouseholdAdultInvitation(env, { context, invitationId: itemId, correlationId }) });
+      }
+    }
+    const householdVerificationMatch = path.match(/^\/api\/directory\/households\/([^/]+)\/verification(?:\/complete)?$/);
+    if (householdVerificationMatch) {
+      const householdId = decodeURIComponent(householdVerificationMatch[1]);
+      if (request.method === "GET" && !path.endsWith("/complete")) {
+        return json({ ok: true, verification: await getHouseholdVerificationStatus(env, { context, householdId }) });
+      }
+      if (request.method === "POST" && path.endsWith("/complete")) {
+        return json({ ok: true, verification: await completeHouseholdVerification(env, { context, householdId, ...await body(request), correlationId }) });
       }
     }
     if (request.method === "POST" && path === "/api/directory/privacy/preferences") {

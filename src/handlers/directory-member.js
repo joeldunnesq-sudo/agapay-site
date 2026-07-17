@@ -14,9 +14,12 @@ import {
   getPublishedMinistry,
   listPublishedMinistries
 } from "../directory/ministries.js";
+import {
+  searchSkillListings
+} from "../directory/skills-service.js";
 
 const PRIVATE_HEADERS = {
-  "Cache-Control": "private, max-age=60",
+  "Cache-Control": "private, no-store",
   "X-Robots-Tag": "noindex, nofollow",
   "Vary": "Authorization, Cookie, X-AGAPAY-User-Email"
 };
@@ -85,6 +88,11 @@ export async function handleDirectoryMember(request, env) {
 
     if (request.method === "GET" && path === "/api/directory/member/ministries") {
       return privateJson({ ok: true, ministries: await listPublishedMinistries(env, { context, q: url.searchParams.get("q") || "", category: url.searchParams.get("category") || "", acceptingInterest: url.searchParams.get("acceptingInterest") === "1", limit: url.searchParams.get("limit") || "", cursor: url.searchParams.get("cursor") || "" }) });
+    }
+    if (request.method === "GET" && path === "/api/directory/member/skills") {
+      const limited = await rateLimit(request, env, `directory-skills-search:${context.parishId}:${context.user.id}`, { limit: 30, windowSeconds: 60 });
+      if (limited) return limited;
+      return privateJson({ ok: true, skills: await searchSkillListings(env, { context, q: url.searchParams.get("q") || "", category: url.searchParams.get("category") || "", serviceMode: url.searchParams.get("serviceMode") || "", skillId: url.searchParams.get("skillId") || "", limit: url.searchParams.get("limit") || "", cursor: url.searchParams.get("cursor") || "" }) });
     }
 
     const ministryMatch = path.match(/^\/api\/directory\/member\/ministries\/([^/]+)$/);
