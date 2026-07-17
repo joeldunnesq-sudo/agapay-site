@@ -27,12 +27,12 @@
     .directory-side img { width:54px; height:54px; }
     .directory-side a { color:#fff; text-decoration:none; display:flex; align-items:center; gap:10px; padding:10px 0; opacity:.88; }
     .directory-side a.active { opacity:1; color:#f0c36f; }
-    .directory-main { padding:28px; }
+    .directory-main { padding:28px; display:flex; flex-direction:column; }
     .directory-top { display:flex; justify-content:space-between; gap:16px; align-items:center; margin-bottom:22px; }
     .directory-title h1 { margin:0; font-family:"Cormorant Garamond", Georgia, serif; font-size:38px; letter-spacing:0; }
     .directory-title p { margin:4px 0 0; color:var(--muted); max-width:740px; }
     .status-pill { border:1px solid var(--line); background:#fff; padding:8px 12px; border-radius:8px; font-size:13px; font-weight:700; }
-    .directory-grid { display:grid; grid-template-columns:1.2fr .8fr; gap:18px; align-items:start; }
+    .directory-grid { display:grid; grid-template-columns:1.2fr .8fr; gap:18px; align-items:start; order:1; margin-bottom:18px; }
     .panel { background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px; box-shadow:0 8px 22px rgba(20,20,20,.05); }
     .panel h2 { font-size:18px; margin:0 0 12px; }
     .summary-list { display:grid; gap:10px; }
@@ -66,7 +66,7 @@
     input, select { border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; min-width:0; }
     .notice { margin:0 0 16px; padding:12px; border-radius:8px; background:#eef6fb; color:#17384a; border:1px solid #cde1ec; }
     .error { background:#fff0ed; color:#6d2118; border-color:#ffd1c8; }
-    .member-directory { margin-bottom:18px; }
+    .member-directory { margin-bottom:18px; order:2; }
     .directory-tools { display:grid; grid-template-columns:minmax(220px, 1fr) auto auto; gap:10px; align-items:end; }
     .directory-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
     .directory-tab { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:8px; padding:9px 12px; font-weight:700; cursor:pointer; }
@@ -239,6 +239,7 @@
 
           <article class="panel">
             <h2>Profile Photo</h2>
+            <p class="child-help">Upload a photo here first. After it uploads, use Submit Photo if you want the parish to review it for directory publication.</p>
             <div class="summary-list" id="photoSummary"></div>
             <form class="form-grid" id="photoForm" hidden>
               <label>Photo file<input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required /></label>
@@ -249,6 +250,7 @@
 
           <article class="panel">
             <h2>Contacts</h2>
+            <p class="child-help">Add email or phone details here. Choose Directory members only for information you want the parish to consider publishing.</p>
             <div class="contact-list" id="contactList"></div>
             <form class="form-grid" id="contactForm" hidden>
               <label>Type<select name="contactType"><option value="email">Email</option><option value="phone">Phone</option></select></label>
@@ -576,7 +578,7 @@
       window.currentDirectoryPhoto = asset || null;
       document.getElementById("photoSummary").innerHTML = asset
         ? `<div class="mini-card"><strong>${asset.lifecycleStatus}</strong><small>${asset.detectedMimeType} · ${asset.originalWidth}×${asset.originalHeight} · ${asset.visibility}</small></div>`
-        : '<div class="empty">No directory profile photo yet.</div>';
+        : '<div class="empty">No directory profile photo yet. Choose a file below, then tap Upload Photo.</div>';
       document.getElementById("submitPhotoReview").hidden = !asset || asset.lifecycleStatus !== "ready";
       document.getElementById("removePhoto").hidden = !asset;
     }
@@ -763,6 +765,7 @@
       const selected = fileInput.files && fileInput.files[0];
       if (!person || !selected) return;
       const visibility = event.currentTarget.elements.visibility.value || "private";
+      showNotice("Uploading and preparing your photo...");
       const sessionPayload = await api("/api/directory/media/upload-session", {
         method: "POST",
         body: JSON.stringify({ ownerType: "person", ownerId: person.id, visibility })
@@ -778,7 +781,7 @@
         if (!response.ok || payload.ok === false) throw new Error(payload.message || payload.error || "Photo upload failed.");
       });
       event.currentTarget.reset();
-      showNotice("Photo uploaded. Publication approval is separate.");
+      showNotice("Photo uploaded. If you want it in the published directory, tap Submit Photo after the page refreshes.");
       await loadDirectory();
     });
     document.getElementById("submitPhotoReview").addEventListener("click", async () => {

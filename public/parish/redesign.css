@@ -556,6 +556,80 @@
   transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
 .pdx-dir-action-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--pdx-gold-soft); }
+.pdx-dir-action-primary { background: var(--deep); border-color: var(--deep); color: var(--cream); }
+.pdx-dir-action-primary:hover { background: var(--gold); color: var(--deep); }
+
+.pdx-dir-review-detail { margin-top: 14px; }
+.pdx-dir-review-card {
+  border: 1px solid rgba(200,162,74,0.26);
+  background: rgba(255,255,255,0.72);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: var(--pdx-shadow-sm);
+}
+.pdx-dir-review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.pdx-dir-review-grid section {
+  background: rgba(246,241,232,0.58);
+  border: 1px solid rgba(6,21,34,0.08);
+  border-radius: 14px;
+  padding: 12px;
+}
+.pdx-dir-review-grid h4 {
+  margin: 0 0 8px;
+  font-family: var(--serif);
+  font-size: 16px;
+  color: var(--ink);
+}
+.pdx-dir-review-field {
+  display: grid;
+  gap: 3px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(6,21,34,0.08);
+}
+.pdx-dir-review-field:last-child { border-bottom: 0; }
+.pdx-dir-review-field span,
+.pdx-dir-review-prefs span {
+  color: var(--stone);
+  font-size: 12px;
+}
+.pdx-dir-review-field strong {
+  color: var(--ink);
+  font-size: 13px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.pdx-dir-review-prefs {
+  display: grid;
+  gap: 5px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: rgba(200,162,74,0.08);
+  border: 1px solid rgba(200,162,74,0.18);
+}
+.pdx-dir-review-prefs strong {
+  color: var(--ink);
+  font-family: var(--serif);
+}
+.pdx-dir-review-note {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  color: var(--ink);
+  font-weight: 700;
+}
+.pdx-dir-review-note textarea {
+  width: 100%;
+  border: 1px solid rgba(6,21,34,0.14);
+  border-radius: 12px;
+  padding: 10px;
+  font: inherit;
+  background: var(--paper);
+}
 
 .pdx-dir-access-card {
   display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap;
@@ -576,6 +650,8 @@
   .pdx-dir-hero-layout { flex-direction: column; }
   .pdx-dir-grid { grid-template-columns: 1fr; }
   .pdx-dir-row { flex-direction: column; align-items: flex-start; }
+  .pdx-dir-row-side { width: 100%; justify-content: space-between; }
+  .pdx-dir-review-grid { grid-template-columns: 1fr; }
   .pdx-dir-access-card { flex-direction: column; }
 }
 

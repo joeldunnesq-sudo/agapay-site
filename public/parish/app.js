@@ -559,6 +559,7 @@
           <div class="pdx-dir-row-list">
             ${queue.length ? queue.slice(0, 10).map(directoryQueueRow).join('') : directoryEmptyState('All caught up', 'No directory review items are waiting.')}
           </div>
+          <div id="directoryReviewDetail" class="pdx-dir-review-detail"></div>
         </section>
         <section class="pdx-panel">
           <div class="pdx-panel-header">
@@ -618,13 +619,104 @@
   }
 
   function directoryQueueRow(item) {
+    const actions = Array.isArray(item.permittedActions) ? item.permittedActions : [];
     return `<div class="pdx-dir-row">
       <div class="pdx-dir-row-copy">
         <div class="pdx-dir-row-title">${escapeHtml(item.summary || item.reviewType)}</div>
-        <div class="pdx-dir-row-meta">${escapeHtml(item.targetLabel || 'Directory record')}</div>
+        <div class="pdx-dir-row-meta">${escapeHtml(item.targetLabel || 'Directory record')} · ${escapeHtml(item.requesterLabel || 'Directory user')}</div>
       </div>
-      <div class="pdx-dir-row-side"><span class="pdx-dir-badge ${directoryPriorityBadgeClass(item.priority)}">${escapeHtml(item.priority || 'normal')}</span></div>
+      <div class="pdx-dir-row-side">
+        <span class="pdx-dir-badge ${directoryPriorityBadgeClass(item.priority)}">${escapeHtml(item.priority || 'normal')}</span>
+        <button class="pdx-dir-action-btn" type="button" onclick="openDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}')">${actions.includes('approve') ? 'Review' : 'Open'}</button>
+      </div>
     </div>`;
+  }
+
+  function directoryReviewValue(value) {
+    if (value === null || value === undefined || value === '') return 'Not set';
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (typeof value === 'object') return JSON.stringify(value, null, 2);
+    return String(value);
+  }
+
+  function directoryReviewObjectRows(obj) {
+    if (!obj || typeof obj !== 'object' || !Object.keys(obj).length) return '<div class="pdx-dir-empty"><strong>No proposed fields</strong><span>This item may only need status approval.</span></div>';
+    return Object.entries(obj).map(([key, value]) => {
+      const label = key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
+      return `<div class="pdx-dir-review-field"><span>${escapeHtml(label)}</span><strong>${escapeHtml(directoryReviewValue(value))}</strong></div>`;
+    }).join('');
+  }
+
+  function directoryReviewPrefs(preferences) {
+    if (!preferences || typeof preferences !== 'object') return '';
+    const labels = { adultPreferredName: 'Name', adultEmail: 'Email', adultPhone: 'Phone' };
+    return `<div class="pdx-dir-review-prefs">
+      <strong>Parishioner sharing choices</strong>
+      ${Object.entries(preferences).map(([key, pref]) => {
+        const visibility = pref?.visibility || 'private';
+        const eligible = pref?.publicationEligible ? 'requested for directory' : 'not requested for directory';
+        return `<span>${escapeHtml(labels[key] || key)}: ${escapeHtml(visibility.replace(/_/g, ' '))} · ${escapeHtml(eligible)}</span>`;
+      }).join('')}
+    </div>`;
+  }
+
+  async function openDirectoryReview(sourceType, sourceId) {
+    const detail = document.getElementById('directoryReviewDetail');
+    if (!detail || !sourceType || !sourceId) return;
+    detail.innerHTML = '<p class="sw-tool-loading">Opening review item...</p>';
+    try {
+      const res = await fetch(directoryAdminApi('/reviews/' + encodeURIComponent(sourceType) + '/' + encodeURIComponent(sourceId)), { headers: authHeaders() });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Unable to open review item.');
+      const review = payload.review || {};
+      const item = review.item || {};
+      const proposed = review.proposed || {};
+      const actions = Array.isArray(item.permittedActions) ? item.permittedActions : [];
+      detail.innerHTML = `
+        <article class="pdx-dir-review-card">
+          <div class="pdx-panel-header">
+            <div>
+              <div class="pdx-panel-title">Review: ${escapeHtml(item.targetLabel || item.summary || 'Directory item')}</div>
+              <p class="section-note">${escapeHtml(item.summary || '')}</p>
+            </div>
+            <button class="pdx-link-btn" type="button" onclick="document.getElementById('directoryReviewDetail').innerHTML=''">Close</button>
+          </div>
+          ${directoryReviewPrefs(proposed.publicationPreferences)}
+          <div class="pdx-dir-review-grid">
+            <section><h4>Current</h4>${directoryReviewObjectRows(review.current || {})}</section>
+            <section><h4>Submitted</h4>${directoryReviewObjectRows(proposed)}</section>
+          </div>
+          ${actions.includes('approve') ? `
+            <label class="pdx-dir-review-note"><span>Reviewer note</span><textarea id="directoryReviewNote" rows="2" placeholder="Optional note"></textarea></label>
+            <div class="pdx-dir-actions">
+              <button class="pdx-dir-action-btn pdx-dir-action-primary" type="button" onclick="decideDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}','approve')">Approve</button>
+              <button class="pdx-dir-action-btn" type="button" onclick="decideDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}','return')">Return for Changes</button>
+              <button class="pdx-dir-action-btn" type="button" onclick="decideDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}','deny')">Deny</button>
+            </div>` : `<p class="section-note">This account can view the item, but it cannot approve it. Use a parish dashboard session or another staff reviewer with directory review permissions.</p>`}
+        </article>`;
+      await fetch(directoryAdminApi('/reviews/' + encodeURIComponent(sourceType) + '/' + encodeURIComponent(sourceId) + '/begin'), { method: 'POST', headers: authHeaders() }).catch(() => null);
+    } catch (err) {
+      detail.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to open this review item.')}</p>`;
+    }
+  }
+
+  async function decideDirectoryReview(sourceType, sourceId, decision) {
+    const note = document.getElementById('directoryReviewNote')?.value || '';
+    try {
+      const res = await fetch(directoryAdminApi('/reviews/' + encodeURIComponent(sourceType) + '/' + encodeURIComponent(sourceId) + '/decision'), {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ decision, reviewerNote: note })
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Review decision failed.');
+      setStatus(decision === 'approve' ? 'Directory item approved.' : 'Directory item updated.', 'success');
+      const detail = document.getElementById('directoryReviewDetail');
+      if (detail) detail.innerHTML = '';
+      await loadDirectoryAdminTab(true);
+    } catch (err) {
+      alert(err.message || 'Unable to save this review decision.');
+    }
   }
 
   function directoryPersonRow(person) {
