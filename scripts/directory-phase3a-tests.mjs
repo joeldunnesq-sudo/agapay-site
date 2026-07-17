@@ -311,6 +311,46 @@ await test("assignment, detail, approval, notification, and audit are transactio
   assert.equal(audit.some((event) => event.action === "directory.review_item.approved"), true);
 });
 
+await test("approving self-service profile setup approves requested contact publication preferences", async () => {
+  const { env, db, reviewerContext, selfContext, adult } = await fixture();
+  const change = await createDirectoryChangeRequest(env, {
+    context: selfContext,
+    parishId: "st-fiacre",
+    targetType: "person",
+    targetId: adult.id,
+    requestType: "person_profile_review",
+    summary: "Approve submitted profile and contact preferences",
+    payload: {
+      preferredName: "Anna Dunn",
+      email: "anna.public@example.org",
+      phone: "555-202-3030",
+      publicationPreferences: {
+        adultPreferredName: { visibility: "directory_members", publicationEligible: true },
+        adultEmail: { visibility: "directory_members", publicationEligible: true },
+        adultPhone: { visibility: "directory_members", publicationEligible: true }
+      }
+    }
+  });
+  const detail = await getDirectoryReviewItem(env, { context: reviewerContext, sourceType: "change_request", sourceId: change.id });
+  assert.equal(detail.proposed.publicationPreferences.adultEmail.visibility, "directory_members");
+  await decideDirectoryReviewItem(env, {
+    context: reviewerContext,
+    sourceType: "change_request",
+    sourceId: change.id,
+    decision: "approve",
+    expectedVersion: detail.item.version
+  });
+  const publication = db.prepare("SELECT status, approval_status FROM directory_publication_profiles WHERE parish_id = ? AND owner_type = 'person' AND owner_id = ?").get("st-fiacre", adult.id);
+  assert.equal(publication.status, "approved");
+  assert.equal(publication.approval_status, "approved");
+  const prefs = db.prepare("SELECT field_key, visibility, publication_eligible FROM directory_field_privacy_preferences WHERE owner_id = ? ORDER BY field_key").all(adult.id);
+  assert.deepEqual(prefs.map((row) => [row.field_key, row.visibility, row.publication_eligible]), [
+    ["adult_email", "directory_members", 1],
+    ["adult_phone", "directory_members", 1],
+    ["adult_preferred_name", "directory_members", 1]
+  ]);
+});
+
 await test("self approval and stale approval are denied", async () => {
   const { env, reviewerContext, selfContext, adult, requesterUser } = await fixture();
   const change = await createDirectoryChangeRequest(env, {

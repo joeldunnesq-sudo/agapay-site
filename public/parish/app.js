@@ -641,22 +641,24 @@
 
   function directoryReviewObjectRows(obj) {
     if (!obj || typeof obj !== 'object' || !Object.keys(obj).length) return '<div class="pdx-dir-empty"><strong>No proposed fields</strong><span>This item may only need status approval.</span></div>';
-    return Object.entries(obj).map(([key, value]) => {
+    return Object.entries(obj).filter(([key]) => !['publicationPreferences', 'source'].includes(key)).map(([key, value]) => {
       const label = key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
       return `<div class="pdx-dir-review-field"><span>${escapeHtml(label)}</span><strong>${escapeHtml(directoryReviewValue(value))}</strong></div>`;
-    }).join('');
+    }).join('') || '<div class="pdx-dir-empty"><strong>No separate field changes</strong><span>Review the sharing choices for publication approval.</span></div>';
   }
 
   function directoryReviewPrefs(preferences) {
     if (!preferences || typeof preferences !== 'object') return '';
     const labels = { adultPreferredName: 'Name', adultEmail: 'Email', adultPhone: 'Phone' };
+    const anyPublished = Object.values(preferences).some(pref => pref?.visibility === 'directory_members' && pref?.publicationEligible);
     return `<div class="pdx-dir-review-prefs">
-      <strong>Parishioner sharing choices</strong>
+      <strong>${anyPublished ? 'Approval will publish these selected fields' : 'Parishioner sharing choices'}</strong>
       ${Object.entries(preferences).map(([key, pref]) => {
         const visibility = pref?.visibility || 'private';
         const eligible = pref?.publicationEligible ? 'requested for directory' : 'not requested for directory';
         return `<span>${escapeHtml(labels[key] || key)}: ${escapeHtml(visibility.replace(/_/g, ' '))} · ${escapeHtml(eligible)}</span>`;
       }).join('')}
+      ${anyPublished ? '<em>Click Approve to approve this profile for the member directory using these contact choices.</em>' : ''}
     </div>`;
   }
 

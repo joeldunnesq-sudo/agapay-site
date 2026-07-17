@@ -9,6 +9,7 @@ import {
 } from "./foundation.js";
 import { DirectoryServiceError } from "./foundation.js";
 import { transitionPublicationProfile } from "./publication.js";
+import { setFieldPrivacyPreference } from "./privacy.js";
 import { assertMediaAssetSecurelyTransformed, auditDirectoryMediaLegacyAssets, reprocessDirectoryMediaAsset } from "./media.js";
 import {
   decideDuplicateCandidate,
@@ -597,6 +598,47 @@ function sanitizePayload(payload, context) {
   return copy;
 }
 
+function requestedDirectoryPublication(preferences = {}) {
+  if (!preferences || typeof preferences !== "object") return false;
+  return Object.values(preferences).some((pref) => pref && pref.publicationEligible && pref.visibility === "directory_members");
+}
+
+async function applyPersonPublicationPreferences(env, { context, personId, preferences = {}, correlationId = "" }) {
+  if (!preferences || typeof preferences !== "object") return;
+  const actor = actorDto(context);
+  const fieldMap = {
+    adultPreferredName: "adult_preferred_name",
+    adultEmail: "adult_email",
+    adultPhone: "adult_phone"
+  };
+  for (const [key, pref] of Object.entries(preferences)) {
+    const fieldKey = fieldMap[key];
+    if (!fieldKey || !pref || typeof pref !== "object") continue;
+    await setFieldPrivacyPreference(env, {
+      actor,
+      parishId: context.parishId,
+      ownerType: "person",
+      ownerId: personId,
+      fieldKey,
+      visibility: pref.visibility || "private",
+      publicationEligible: Boolean(pref.publicationEligible),
+      correlationId
+    });
+  }
+  if (requestedDirectoryPublication(preferences)) {
+    const profile = await d1First(
+      env,
+      "SELECT status FROM directory_publication_profiles WHERE parish_id = ?1 AND owner_type = 'person' AND owner_id = ?2 AND active = 1",
+      context.parishId,
+      personId
+    );
+    if (!profile || profile.status === "draft" || profile.status === "not_configured") {
+      await transitionPublicationProfile(env, { actor, parishId: context.parishId, ownerType: "person", ownerId: personId, status: "pending_approval", correlationId });
+    }
+    await transitionPublicationProfile(env, { actor, parishId: context.parishId, ownerType: "person", ownerId: personId, status: "approved", correlationId });
+  }
+}
+
 function cleanBoolean(value) {
   return value ? 1 : 0;
 }
@@ -853,6 +895,7 @@ async function approveReviewItem(env, { context, row, reasonCode, reviewerNote, 
       auditAction: "directory.admin.person_review_correction",
       correlationId
     });
+    await applyPersonPublicationPreferences(env, { context, personId: request.target_id, preferences: payload.publicationPreferences, correlationId });
   } else if (request.request_type === "household_membership_add") {
     await addHouseholdMember(env, { actor: actorDto(context), parishId: context.parishId, householdId: request.household_id || request.target_id, personId: payload.personId, relationship: payload.relationship || "other" });
   } else if (request.request_type === "household_membership_remove") {
