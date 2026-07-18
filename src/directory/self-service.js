@@ -204,6 +204,49 @@ async function loadLinkedPerson(env, userId) {
   return row || null;
 }
 
+async function restoreLinkedPersonFromSelfServiceRequest(env, user) {
+  if (!user?.id) return null;
+  const row = await d1First(
+    env,
+    `SELECT p.* FROM directory_change_requests r
+     JOIN directory_people p ON p.id = r.target_id
+     WHERE r.requester_user_id = ?1
+       AND r.requester_person_id = r.target_id
+       AND r.target_type = 'person'
+       AND r.request_type = 'person_profile_review'
+       AND p.active = 1
+       AND NOT EXISTS (
+         SELECT 1 FROM directory_person_links l
+         WHERE l.person_id = p.id
+           AND l.link_type = 'platform_user'
+           AND l.external_id = ?1
+           AND l.active = 1
+       )
+     ORDER BY r.created_at DESC
+     LIMIT 1`,
+    user.id
+  );
+  if (!row) return null;
+  const timestamp = nowMs();
+  const actor = { userId: user.id, actorType: "platform_user", parishId: row.created_by_parish_id, personId: row.id, capabilities: [DIRECTORY_CAPABILITIES.selfManage] };
+  await runAtomic(env, [
+    {
+      sql: `INSERT INTO directory_person_links
+              (id, person_id, link_type, external_id, active, source, claim_id, created_at, updated_at)
+            VALUES (?, ?, 'platform_user', ?, 1, 'self_service_recovered', NULL, ?, ?)`,
+      params: [generateSecret("dir_link"), row.id, user.id, timestamp, timestamp]
+    },
+    auditStatement({
+      action: "directory.self_service.profile_link_recovered",
+      actor,
+      parishId: row.created_by_parish_id,
+      targetType: "directory_person",
+      targetId: row.id
+    })
+  ]);
+  return row;
+}
+
 async function loadContextRows(env, personId) {
   const [affiliations, memberships, admins] = await Promise.all([
     d1All(env, "SELECT * FROM directory_parish_affiliations WHERE person_id = ?1 AND active = 1 AND status != 'former_member' ORDER BY parish_id", personId),
@@ -268,7 +311,7 @@ async function notificationStatement({ context, parishId, eventType, targetType,
 export async function resolveDirectorySelfServiceContext(env, { request = null, user = null } = {}) {
   const platformUser = user || await currentUser(request, env);
   if (!platformUser) throw new DirectoryServiceError("unauthorized", "Directory self-service requires an authenticated My AGAPAY account.", 401);
-  const linkedPerson = await loadLinkedPerson(env, platformUser.id);
+  const linkedPerson = await loadLinkedPerson(env, platformUser.id) || await restoreLinkedPersonFromSelfServiceRequest(env, platformUser);
   if (!linkedPerson) {
     return {
       claimed: false,

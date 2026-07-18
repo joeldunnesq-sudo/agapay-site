@@ -29,8 +29,8 @@
       { id: "commemorations", href: "/myagapay/sacraments", label: "Sacraments & Services", short: "Requests and prayer", icon: icons.sacraments },
       { id: "today", href: "/myagapay/giving/calendar", label: "Today", short: "Feast day and readings", icon: icons.today },
       { id: "directory", href: "/myagapay/directory", label: "Directory", short: "Parish member directory", icon: icons.directory },
-      { id: "learn", href: "/myagapay/learn", label: "Learn", short: "Homeschool dashboard", icon: icons.learn, mobileTabHidden: true },
-      { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore }
+      { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore },
+      { id: "learn", href: "/myagapay/learn", label: "Learn", short: "Homeschool dashboard", icon: icons.learn, mobileTabHidden: true }
     ];
     return items;
   }
@@ -271,6 +271,21 @@
     Object.values(storageKeys).forEach((key) => localStorage.removeItem(key));
   }
 
+  function syncAuthVisibility(root = document) {
+    const current = session();
+    const signedIn = Boolean(current.email && current.token);
+    root.querySelectorAll("[data-auth-required]").forEach((el) => {
+      el.hidden = !signedIn;
+    });
+    root.querySelectorAll("[data-auth-guest]").forEach((el) => {
+      el.hidden = signedIn;
+    });
+    const name = root.querySelector("#donorHomeTopbarName");
+    if (name && signedIn) {
+      name.textContent = current.email.split("@")[0] || "Account";
+    }
+  }
+
   function isProtectedPath(pathname = window.location.pathname) {
     if (!pathname.startsWith("/myagapay")) return false;
     return !["/myagapay/login", "/myagapay/signup", "/myagapay/password-reset"].some((path) => pathname.startsWith(path));
@@ -302,6 +317,7 @@
     productNav,
     redirectToLogin,
     session,
+    syncAuthVisibility,
     viewport: currentViewport
   };
 
@@ -342,6 +358,7 @@
     normalizeProductNavs();
     ensureIosBackButton();
     ensureCanonicalHeader();
+    syncAuthVisibility();
     initViewportAwareness();
     if (isProtectedPath()) {
       const current = session();
@@ -351,4 +368,5 @@
 
   window.addEventListener("resize", ensureIosBackButton);
   window.addEventListener("pageshow", ensureIosBackButton);
+  window.addEventListener("storage", () => syncAuthVisibility());
 })();

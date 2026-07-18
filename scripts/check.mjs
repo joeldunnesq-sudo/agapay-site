@@ -139,15 +139,15 @@ assert.ok(myAgapayShell.includes('id: "giving"') && myAgapayShell.includes('labe
 assert.ok(myAgapayShell.includes('id: "commemorations"') && myAgapayShell.includes('label: "Sacraments & Services"'), "shared My AGAPAY shell should define the merged Sacraments & Services product tab");
 assert.ok(myAgapayShell.includes('id: "today"') && myAgapayShell.includes('label: "Today"'), "shared My AGAPAY shell should define the Today product tab");
 assert.ok(myAgapayShell.includes('id: "directory"') && myAgapayShell.includes('label: "Directory"'), "shared My AGAPAY shell should define Directory as a standard product tab");
-assert.ok(myAgapayShell.includes('id: "learn"') && myAgapayShell.includes('label: "Learn"'), "shared My AGAPAY shell should define the canonical Learn product tab");
-assert.ok(myAgapayShell.includes('id: "bookstore"') && myAgapayShell.includes('label: "Bookstore"') && myAgapayShell.includes('mobileTabHidden: true'), "shared My AGAPAY shell should keep Bookstore available in the desktop product nav");
+assert.ok(myAgapayShell.includes('id: "learn"') && myAgapayShell.includes('label: "Learn"') && myAgapayShell.includes('mobileTabHidden: true'), "shared My AGAPAY shell should keep Learn available in the desktop product nav");
+assert.ok(myAgapayShell.includes('id: "bookstore"') && myAgapayShell.includes('label: "Bookstore"'), "shared My AGAPAY shell should define the canonical Bookstore product tab");
 assert.ok(
   myAgapayShell.indexOf('id: "giving"') < myAgapayShell.indexOf('id: "commemorations"') &&
   myAgapayShell.indexOf('id: "commemorations"') < myAgapayShell.indexOf('id: "today"') &&
   myAgapayShell.indexOf('id: "today"') < myAgapayShell.indexOf('id: "directory"') &&
-  myAgapayShell.indexOf('id: "directory"') < myAgapayShell.indexOf('id: "learn"') &&
-  myAgapayShell.indexOf('id: "learn"') < myAgapayShell.indexOf('id: "bookstore"'),
-  "shared My AGAPAY shell should order product tabs as Give, Prayer, Today, Directory, Learn, Bookstore"
+  myAgapayShell.indexOf('id: "directory"') < myAgapayShell.indexOf('id: "bookstore"') &&
+  myAgapayShell.indexOf('id: "bookstore"') < myAgapayShell.indexOf('id: "learn"'),
+  "shared My AGAPAY shell should order product tabs as Give, Prayer, Today, Directory, Bookstore, Learn"
 );
 assert.ok(!myAgapayShell.includes('id: "home"'), "shared My AGAPAY shell should treat Give as the default product instead of a separate global home tab");
 assert.ok(myAgapayShell.includes('pathname === "/myagapay"') && myAgapayShell.includes('return "giving"'), "shared My AGAPAY shell should make /myagapay resolve to the Give product");

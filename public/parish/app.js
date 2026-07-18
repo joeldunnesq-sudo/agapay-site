@@ -468,7 +468,7 @@
             <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8"/><path d="M8 13h5"/><circle cx="17" cy="13" r="1"/></svg></div>Households</div>
           </div>
           <div class="pdx-dir-row-list">
-            ${households.length ? households.map(directoryHouseholdRow).join('') : directoryEmptyState('No households yet', 'No households available.')}
+            ${households.length ? households.map(directoryHouseholdRow).join('') : directoryEmptyState('No households yet', 'Households appear after staff links people into household records. Use them to confirm household admins, children, addresses, and household publication.')}
           </div>
         </section>
         <section class="pdx-panel pdx-dir-panel-skills">
@@ -490,12 +490,13 @@
           <div class="pdx-panel-header">
             <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg></div>Maintenance</div>
           </div>
+          <p class="section-note">Maintenance highlights records that need staff attention before the directory feels complete to parishioners.</p>
           <div class="pdx-dir-row-list">
-            ${directoryMaintenanceRow('Households current', maintenance.householdsCurrent)}
-            ${directoryMaintenanceRow('Households due', maintenance.householdsDue)}
-            ${directoryMaintenanceRow('Overdue households', maintenance.householdsOverdue, true)}
-            ${directoryMaintenanceRow('Skill consents to review', maintenance.staleSkillConsents)}
-            ${directoryMaintenanceRow('Unclaimed people', maintenance.unclaimedPeople)}
+            ${directoryMaintenanceRow('Households current', maintenance.householdsCurrent, false, 'Verified recently and ready for member self-service.')}
+            ${directoryMaintenanceRow('Households due', maintenance.householdsDue, false, 'Need annual confirmation soon.')}
+            ${directoryMaintenanceRow('Overdue households', maintenance.householdsOverdue, true, 'Need staff follow-up now.')}
+            ${directoryMaintenanceRow('Skill consents to review', maintenance.staleSkillConsents, false, 'Skill listings that need renewed consent.')}
+            ${directoryMaintenanceRow('Unclaimed people', maintenance.unclaimedPeople, false, 'People records not linked to a My AGAPAY account yet.')}
           </div>
         </section>
       </div>`;
@@ -660,16 +661,23 @@
 
   function directoryHouseholdRow(household) {
     const count = household.memberCount || 0;
+    const admins = household.administratorCount || household.adminCount || 0;
+    const pending = household.pendingRequestCount || 0;
     return `<div class="pdx-dir-row">
-      <div class="pdx-dir-row-copy"><div class="pdx-dir-row-title">${escapeHtml(household.displayName)}</div></div>
-      <div class="pdx-dir-row-side"><span class="pdx-dir-badge count">${count} member${count === 1 ? '' : 's'}</span></div>
+      <div class="pdx-dir-row-copy">
+        <div class="pdx-dir-row-title">${escapeHtml(household.displayName)}</div>
+        <div class="pdx-dir-row-meta">${escapeHtml(count + ' member' + (count === 1 ? '' : 's'))} · ${escapeHtml(admins + ' household admin' + (admins === 1 ? '' : 's'))}</div>
+      </div>
+      <div class="pdx-dir-row-side">
+        ${pending ? `<span class="pdx-dir-badge high">${pending} pending</span>` : `<span class="pdx-dir-badge count">Current</span>`}
+      </div>
     </div>`;
   }
 
-  function directoryMaintenanceRow(label, value, alertIfPositive = false) {
+  function directoryMaintenanceRow(label, value, alertIfPositive = false, help = '') {
     const numeric = Number(value ?? 0);
     return `<div class="pdx-dir-row">
-      <div class="pdx-dir-row-copy"><div class="pdx-dir-row-title">${escapeHtml(label)}</div></div>
+      <div class="pdx-dir-row-copy"><div class="pdx-dir-row-title">${escapeHtml(label)}</div>${help ? `<div class="pdx-dir-row-meta">${escapeHtml(help)}</div>` : ''}</div>
       <div class="pdx-dir-row-side"><span class="pdx-dir-badge ${alertIfPositive && numeric > 0 ? 'urgent' : 'count'}">${escapeHtml(numeric)}</span></div>
     </div>`;
   }

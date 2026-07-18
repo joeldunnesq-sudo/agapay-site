@@ -189,6 +189,28 @@ await test("unlinked My AGAPAY user can start a private draft directory profile"
   assert.equal(auditCount(db, "directory.self_service.profile_started"), 1);
 });
 
+await test("self-service context recovers a missing profile link from the user's own setup request", async () => {
+  const { env, db } = await fixture();
+  const user = await ensurePlatformUser(env, { email: "recoverme@example.org", displayName: "Recover Me" });
+  const context = await resolveDirectorySelfServiceContext(env, { user });
+  const profile = await startSelfServiceProfile(env, {
+    context,
+    data: {
+      parishId: "st-fiacre",
+      preferredName: "Recover Me",
+      legalName: "Recoverable Member",
+      email: "recoverme@example.org"
+    }
+  });
+  db.prepare("DELETE FROM directory_person_links WHERE person_id = ?").run(profile.currentPerson.id);
+  const recovered = await resolveDirectorySelfServiceContext(env, { user });
+  assert.equal(recovered.claimed, true);
+  assert.equal(recovered.currentPerson.id, profile.currentPerson.id);
+  const link = db.prepare("SELECT source FROM directory_person_links WHERE person_id = ? AND external_id = ?").get(profile.currentPerson.id, user.id);
+  assert.equal(link.source, "self_service_recovered");
+  assert.equal(auditCount(db, "directory.self_service.profile_link_recovered"), 1);
+});
+
 await test("person profile update allows permitted fields, requires version, and routes protected fields to review", async () => {
   const { env, db, context } = await fixture();
   await assert.rejects(
