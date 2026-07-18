@@ -523,7 +523,35 @@ function handleLiturgicalCalendar(request) {
   });
 }
 
-async function handleDonorLiturgicalDay(request) {
+async function loadDirectoryNamedaysForLiturgicalDay(env, request, civilDate) {
+  if (!d1(env)) return [];
+  const url = new URL(request.url);
+  const requestedParishId = String(url.searchParams.get("parishId") || request.headers.get("X-AGAPAY-Parish-Id") || "").trim();
+  if (!requestedParishId) return [];
+  const donor = await requireDonor(request, env);
+  if (!donor || donor.defaultParishId !== requestedParishId) return [];
+  const monthDay = civilDate.slice(5);
+  const rows = await d1All(
+    env,
+    `SELECT display_name, saint_name, feast_month_day
+     FROM directory_household_namedays
+     WHERE parish_id = ?1
+       AND feast_month_day = ?2
+       AND visibility = 'directory_members'
+       AND active = 1
+     ORDER BY display_name
+     LIMIT 12`,
+    requestedParishId,
+    monthDay
+  ).catch(() => []);
+  return rows.map((row) => ({
+    displayName: row.display_name || "",
+    saintName: row.saint_name || "",
+    feastMonthDay: row.feast_month_day || monthDay
+  })).filter((row) => row.displayName && row.saintName);
+}
+
+async function handleDonorLiturgicalDay(request, env) {
   const url = new URL(request.url);
   const today = new Date().toISOString().slice(0, 10);
   const civilDate = /^\d{4}-\d{2}-\d{2}$/.test(String(url.searchParams.get("date") || ""))
@@ -544,6 +572,7 @@ async function handleDonorLiturgicalDay(request) {
     saints: feast?.name ? [feast.name] : [],
     saintStories: []
   }, { calendarType: readingsCalendar, civilDate });
+  enriched.nameDays = await loadDirectoryNamedaysForLiturgicalDay(env, request, civilDate);
 
   return json({
     ok: true,
@@ -2551,7 +2580,7 @@ export default {
       const r = await handleLiturgicalCalendar(request); return addCorsHeaders(r, env);
     }
     if (request.method === "GET" && url.pathname === "/api/donor/liturgical-day") {
-      return handleDonorLiturgicalDay(request);
+      return handleDonorLiturgicalDay(request, env);
     }
     if (request.method === "GET" && url.pathname === "/api/learn/meta") {
       return handleLearnMeta(env);

@@ -9,9 +9,11 @@ import {
   deleteSelfServiceContact,
   getHouseholdSelfServiceProfile,
   getSelfServiceProfile,
+  listHouseholdNamedays,
   resolveDirectorySelfServiceContext,
   resendHouseholdAdultInvitation,
   revokeHouseholdAdultInvitation,
+  saveHouseholdNameday,
   setSelfServicePrivacyPreference,
   startSelfServiceProfile,
   transitionSelfServicePublication,
@@ -116,7 +118,7 @@ export async function handleDirectorySelfService(request, env) {
         return json({ ok: true, contact: await deleteSelfServiceContact(env, { context, contactId, correlationId }) });
       }
     }
-    const householdMatch = path.match(/^\/api\/directory\/households\/([^/]+)\/self(?:\/(contacts|addresses|invitations))?(?:\/([^/]+)\/(resend|revoke))?$/);
+    const householdMatch = path.match(/^\/api\/directory\/households\/([^/]+)\/self(?:\/(contacts|addresses|invitations|namedays))?(?:\/([^/]+)\/(resend|revoke))?$/);
     if (householdMatch) {
       const householdId = decodeURIComponent(householdMatch[1]);
       const collection = householdMatch[2] || "";
@@ -133,6 +135,12 @@ export async function handleDirectorySelfService(request, env) {
       }
       if (request.method === "POST" && collection === "addresses") {
         return json({ ok: true, address: await createSelfServiceAddress(env, { context, householdId, data: await body(request), correlationId }) }, { status: 201 });
+      }
+      if (request.method === "GET" && collection === "namedays") {
+        return json({ ok: true, namedays: await listHouseholdNamedays(env, { context, householdId }) });
+      }
+      if (request.method === "POST" && collection === "namedays" && !itemId) {
+        return json({ ok: true, nameday: await saveHouseholdNameday(env, { context, householdId, data: await body(request), correlationId }) }, { status: 201 });
       }
       if (request.method === "POST" && collection === "invitations" && !itemId) {
         const data = await body(request);

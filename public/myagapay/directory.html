@@ -107,6 +107,7 @@
     .skill-card header { display:flex; justify-content:space-between; gap:12px; align-items:start; }
     .skill-card h3 { margin:0; font-size:16px; }
     .skill-card p { margin:0; color:var(--muted); }
+    .nameday-list { display:grid; gap:10px; margin-top:12px; }
     textarea { border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; min-height:62px; resize:vertical; }
     @media (max-width: 860px) {
       body.donor-directory-page {
@@ -192,6 +193,7 @@
               <div class="form-grid">
                 <label>Preferred name<input name="preferredName" autocomplete="name" required /></label>
                 <label>Legal name<input name="legalName" autocomplete="name" /></label>
+                <label>Household name<input name="householdName" placeholder="The Dunne Household" /></label>
                 <label>Date of birth<input name="dateOfBirth" placeholder="YYYY-MM-DD" /></label>
                 <label>Email<input name="email" type="email" autocomplete="email" /></label>
                 <label>Email sharing<select name="emailVisibility"><option value="private">Keep private</option><option value="staff">Parish staff only</option><option value="directory_members">Show in directory after review</option></select></label>
@@ -268,6 +270,30 @@
           <article class="panel">
             <h2>Household</h2>
             <div class="household-list" id="householdList"></div>
+          </article>
+
+          <article class="panel">
+            <h2>Family Photo</h2>
+            <p class="child-help">Use this for a household photo. You control whether it stays private, staff-only, or is submitted for directory publication.</p>
+            <div class="summary-list" id="householdPhotoSummary"></div>
+            <form class="form-grid" id="householdPhotoForm" hidden>
+              <label>Photo file<input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required /></label>
+              <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Household</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
+              <div class="actions"><button class="btn primary" type="submit">Upload Family Photo</button><button class="btn secondary" type="button" id="submitHouseholdPhotoReview" hidden>Submit Photo</button><button class="btn warn" type="button" id="removeHouseholdPhoto" hidden>Remove Photo</button></div>
+            </form>
+          </article>
+
+          <article class="panel">
+            <h2>Name Days</h2>
+            <p class="child-help">Add family name days here. Keep them private, or share them with directory members so they can later appear in parish Today reminders.</p>
+            <div class="nameday-list" id="namedayList"></div>
+            <form class="form-grid" id="namedayForm" hidden>
+              <label>Name<input name="displayName" required placeholder="Anna" /></label>
+              <label>Saint<input name="saintName" required placeholder="St. Anna" /></label>
+              <label>Date<input name="feastMonthDay" required placeholder="07-25" pattern="[0-9]{2}-[0-9]{2}" /></label>
+              <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Household</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
+              <div class="actions"><button class="btn primary" type="submit">Save Name Day</button></div>
+            </form>
           </article>
 
           <article class="panel">
@@ -371,7 +397,11 @@
       document.getElementById("photoSummary").innerHTML = `<div class="empty">${esc(message)}</div>`;
       document.getElementById("contactList").innerHTML = `<div class="empty">${esc(message)}</div>`;
       document.getElementById("mySkillList").innerHTML = `<div class="empty">${esc(message)}</div>`;
-      document.getElementById("householdList").innerHTML = '<div class="empty"><strong>No household connected yet.</strong>Your parish can connect household details after your draft profile is reviewed.</div>';
+      document.getElementById("householdList").innerHTML = '<div class="empty"><strong>Household setup comes next.</strong>Starting your profile creates a household you can edit from here.</div>';
+      document.getElementById("householdPhotoSummary").innerHTML = '<div class="empty">Family photo tools appear after your household is created.</div>';
+      document.getElementById("householdPhotoForm").hidden = true;
+      document.getElementById("namedayList").innerHTML = '<div class="empty">Name day tools appear after your household is created.</div>';
+      document.getElementById("namedayForm").hidden = true;
       document.getElementById("publicationSummary").innerHTML = '<div class="empty">Publication controls will appear after your private draft profile is created.</div>';
       document.getElementById("requestList").innerHTML = '<div class="empty">No pending directory changes yet.</div>';
       document.getElementById("childrenList").innerHTML = '<div class="empty"><strong>Children need a household link first.</strong>Once parish staff connects you as a household administrator, child publication tools will appear here.</div>';
@@ -477,15 +507,19 @@
     function renderMySkills(payload = {}) {
       const listings = payload.listings || [];
       skillCatalog = payload.catalog || [];
+      const settings = payload.settings || {};
       const person = profileState?.currentPerson || profileState?.profile?.person || {};
       const needsAdultEvidence = profileState?.claimed && !person.dateOfBirth;
       const select = document.querySelector('#skillForm select[name="skillId"]');
       select.innerHTML = skillCatalog.map((skill) => `<option value="${esc(skill.id)}">${esc(skill.name)}</option>`).join("");
       const categories = [...new Set(skillCatalog.map((skill) => skill.category))].sort();
       document.getElementById("skillCategory").innerHTML = '<option value="">All categories</option>' + categories.map((category) => `<option value="${esc(category)}">${esc(skillCategoryLabel(category))}</option>`).join("");
-      document.getElementById("skillForm").hidden = !profileState?.claimed;
+      const skillsEnabled = settings.skillsDirectoryEnabled !== false;
+      document.getElementById("skillForm").hidden = !profileState?.claimed || !skillsEnabled;
       const helper = needsAdultEvidence
         ? '<div class="empty"><strong>Add your date of birth before activating skills.</strong>You can save skill drafts now, but active Skills & Service listings require adult status on your private profile.</div>'
+        : !skillsEnabled
+          ? '<div class="empty"><strong>Skills & Service is off for this parish.</strong>Your profile and household tools still work. Parish staff can enable Skills & Service in Directory settings when they are ready to publish this section.</div>'
         : '';
       const listHtml = listings.length ? listings.map((item) => `
         <article class="skill-card" data-listing-id="${esc(item.id)}">
@@ -498,8 +532,14 @@
     async function loadMySkills() {
       const payload = await api("/api/directory/self/skills").catch(() => ({ skills: { catalog: [], listings: [] } }));
       renderMySkills(payload.skills || {});
-      if (profileState?.claimed) await loadSkillSearch();
-      else document.getElementById("skillResults").innerHTML = '<div class="empty">Start your profile to browse parish Skills & Service listings.</div>';
+      const skillsEnabled = payload.skills?.settings?.skillsDirectoryEnabled !== false;
+      if (!skillsEnabled) {
+        document.getElementById("skillResults").innerHTML = '<div class="empty">Skills & Service search will appear here when your parish enables it.</div>';
+      } else if (profileState?.claimed) {
+        await loadSkillSearch();
+      } else {
+        document.getElementById("skillResults").innerHTML = '<div class="empty">Start your profile to browse parish Skills & Service listings.</div>';
+      }
     }
     function renderContact(contact) {
       const label = `${contact.label || contact.type}: ${contact.value}`;
@@ -569,7 +609,7 @@
       document.getElementById("profileSummary").insertAdjacentHTML("beforeend", `
         <div class="empty">
           <strong>What unlocks next</strong>
-          Save a date of birth to activate Skills & Service listings. Uploading a photo creates a separate photo review. Children and household tools appear after parish staff links you to a household as an administrator. Name days are not part of the Directory yet.
+          Save a date of birth to activate Skills & Service listings. Uploading a person or family photo creates a separate photo review. Your household is editable here, and name days can be kept private or shared with directory members.
         </div>`);
       const form = document.getElementById("profileForm");
       form.hidden = false;
@@ -587,10 +627,12 @@
       ].map(([label, value]) => `<div class="summary-row"><span>${label}</span><strong>${text(value)}</strong></div>`).join("");
       document.getElementById("publicationActions").hidden = false;
       const households = profileState.manageableHouseholds || [];
-      document.getElementById("householdList").innerHTML = households.length ? households.map((household) => `<div class="mini-card"><strong>${household.displayName}</strong><small>Household administrator</small></div>`).join("") : '<div class="empty"><strong>No household connected yet.</strong>Your approved profile is separate from household administration. Ask parish staff to link you to your household and mark you as a household administrator; then children tools will appear here.</div>';
+      document.getElementById("householdList").innerHTML = households.length ? households.map((household) => `<div class="mini-card"><strong>${household.displayName}</strong><small>You can edit household details, family photos, name days, and eligible child publication requests.</small></div>`).join("") : '<div class="empty"><strong>No editable household found.</strong>New profiles create a household automatically. If this is an older profile, parish staff can link you to a household administrator role.</div>';
       const requests = profileState.pendingRequests || [];
       document.getElementById("requestList").innerHTML = requests.length ? requests.map((request) => `<div class="mini-card"><strong>${request.summary}</strong><small>${request.requestType} · ${request.status}</small></div>`).join("") : '<div class="empty">No pending directory changes.</div>';
       renderPhoto();
+      renderHouseholdPhoto();
+      loadNamedays();
     }
     async function renderPhoto() {
       const person = profileState?.currentPerson || profileState?.profile?.person;
@@ -604,6 +646,43 @@
         : '<div class="empty">No directory profile photo yet. Choose a file below, then tap Upload Photo.</div>';
       document.getElementById("submitPhotoReview").hidden = !asset || asset.lifecycleStatus !== "ready";
       document.getElementById("removePhoto").hidden = !asset;
+    }
+    function firstHousehold() {
+      return (profileState?.manageableHouseholds || [])[0] || null;
+    }
+    async function renderHouseholdPhoto() {
+      const household = firstHousehold();
+      if (!household) {
+        document.getElementById("householdPhotoForm").hidden = true;
+        document.getElementById("householdPhotoSummary").innerHTML = '<div class="empty">Family photo tools appear after your household is connected.</div>';
+        return;
+      }
+      document.getElementById("householdPhotoForm").hidden = false;
+      const payload = await api(`/api/directory/media/current?ownerType=household&ownerId=${encodeURIComponent(household.id)}`).catch(() => ({ assets: [] }));
+      const asset = (payload.assets || [])[0];
+      window.currentDirectoryHouseholdPhoto = asset || null;
+      document.getElementById("householdPhotoSummary").innerHTML = asset
+        ? `<div class="mini-card"><strong>${asset.lifecycleStatus}</strong><small>${asset.detectedMimeType} · ${asset.originalWidth}×${asset.originalHeight} · ${asset.visibility}</small></div>`
+        : '<div class="empty">No family photo yet. Choose a file below, then tap Upload Family Photo.</div>';
+      document.getElementById("submitHouseholdPhotoReview").hidden = !asset || asset.lifecycleStatus !== "ready";
+      document.getElementById("removeHouseholdPhoto").hidden = !asset;
+    }
+    function renderNamedays(items = []) {
+      document.getElementById("namedayList").innerHTML = items.length ? items.map((item) => `
+        <div class="mini-card"><strong>${esc(item.displayName)} · ${esc(item.feastMonthDay)}</strong><small>${esc(item.saintName)} · ${esc(item.visibility)}</small></div>
+      `).join("") : '<div class="empty">No family name days yet. Add one below using MM-DD for the annual feast date.</div>';
+    }
+    async function loadNamedays() {
+      const household = firstHousehold();
+      const form = document.getElementById("namedayForm");
+      if (!household) {
+        form.hidden = true;
+        document.getElementById("namedayList").innerHTML = '<div class="empty">Name day tools appear after your household is connected.</div>';
+        return;
+      }
+      form.hidden = false;
+      const payload = await api(`/api/directory/households/${encodeURIComponent(household.id)}/self/namedays`).catch(() => ({ namedays: [] }));
+      renderNamedays(payload.namedays || []);
     }
     const CHILD_FIELD_LABELS = { preferred_name: "First / informal name", relationship_label: "Relationship (e.g. daughter, son)" };
     let childFieldCodes = null;
@@ -710,7 +789,8 @@
       await Promise.allSettled([
         loadMemberHome(),
         loadMySkills(),
-        profileState?.claimed ? loadChildrenPanel() : Promise.resolve()
+        profileState?.claimed ? loadChildrenPanel() : Promise.resolve(),
+        profileState?.claimed ? loadNamedays() : Promise.resolve()
       ]);
     }
     document.getElementById("skillSearchButton").addEventListener("click", loadSkillSearch);
@@ -822,6 +902,54 @@
       await api(`/api/directory/media/${encodeURIComponent(window.currentDirectoryPhoto.id)}`, { method: "DELETE" });
       showNotice("Photo removed.");
       await loadDirectory();
+    });
+    document.getElementById("householdPhotoForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const household = firstHousehold();
+      const fileInput = event.currentTarget.elements.photo;
+      const selected = fileInput.files && fileInput.files[0];
+      if (!household || !selected) return;
+      const visibility = event.currentTarget.elements.visibility.value || "private";
+      showNotice("Uploading and preparing your family photo...");
+      const sessionPayload = await api("/api/directory/media/upload-session", {
+        method: "POST",
+        body: JSON.stringify({ ownerType: "household", ownerId: household.id, visibility })
+      });
+      const form = new FormData();
+      form.append("photo", selected);
+      await fetch(`/api/directory/media/sessions/${encodeURIComponent(sessionPayload.session.id)}/complete`, {
+        method: "POST",
+        headers: uploadHeaders(),
+        body: form
+      }).then(async (response) => {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || payload.ok === false) throw new Error(payload.message || payload.error || "Family photo upload failed.");
+      });
+      event.currentTarget.reset();
+      showNotice("Family photo uploaded. Submit it for review if you want it published.");
+      await loadDirectory();
+    });
+    document.getElementById("submitHouseholdPhotoReview").addEventListener("click", async () => {
+      if (!window.currentDirectoryHouseholdPhoto) return;
+      await api(`/api/directory/media/${encodeURIComponent(window.currentDirectoryHouseholdPhoto.id)}/submit`, { method: "POST" });
+      showNotice("Family photo submitted for review.");
+      await loadDirectory();
+    });
+    document.getElementById("removeHouseholdPhoto").addEventListener("click", async () => {
+      if (!window.currentDirectoryHouseholdPhoto) return;
+      await api(`/api/directory/media/${encodeURIComponent(window.currentDirectoryHouseholdPhoto.id)}`, { method: "DELETE" });
+      showNotice("Family photo removed.");
+      await loadDirectory();
+    });
+    document.getElementById("namedayForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const household = firstHousehold();
+      if (!household) return;
+      const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
+      await api(`/api/directory/households/${encodeURIComponent(household.id)}/self/namedays`, { method: "POST", body: JSON.stringify(payload) });
+      event.currentTarget.reset();
+      showNotice("Name day saved.");
+      await loadNamedays();
     });
     document.querySelector(".directory-tabs").addEventListener("click", async (event) => {
       const button = event.target.closest("[data-member-view]");

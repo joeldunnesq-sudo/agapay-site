@@ -948,6 +948,10 @@ function renderDonorTodayInChurch(parish, payload) {
   const saintTitle = saintDisplayTitle(today);
   const stories = Array.isArray(today.saintStories) ? today.saintStories : [];
   const saintNames = Array.isArray(today.saints) ? today.saints : [];
+  const nameDays = Array.isArray(today.nameDays) ? today.nameDays : [];
+  const nameDayText = nameDays.length
+    ? `Name days today: ${nameDays.map((item) => `${item.displayName} (${item.saintName})`).join(", ")}.`
+    : "";
   const firstStory = stories[0] || {};
   const giveHref = donorGiftUrl("feast", parish, { feast: feastTitle });
   donorCalendarState.liturgicalDay = today;
@@ -961,7 +965,7 @@ function renderDonorTodayInChurch(parish, payload) {
   setText("todayFeastTitle", feastTitle);
   setText("todayFeastNote", today.sourceConnected === false
     ? "Daily readings and saint lives are temporarily unavailable, but feast highlights still follow your Church calendar."
-    : [today.epistleRef && `Epistle: ${today.epistleRef}`, today.gospelRef && `Gospel: ${today.gospelRef}`].filter(Boolean).join(" · ") || "Daily readings, saints, and fasting notes follow the Orthodox calendar.");
+    : [today.epistleRef && `Epistle: ${today.epistleRef}`, today.gospelRef && `Gospel: ${today.gospelRef}`, nameDayText].filter(Boolean).join(" · ") || "Daily readings, saints, and fasting notes follow the Orthodox calendar.");
   setText("saintPreviewName", saintTitle);
   setText("saintPreviewNote", saintNames.length > 1
     ? `${saintNames.length} commemorations listed for today.`
@@ -981,7 +985,8 @@ function renderDonorTodayInChurch(parish, payload) {
       liturgicalRankLabel(today.feastRank || feast?.rank),
       fastingRule,
       toneOfWeekLabel(today.tone),
-      saintNames.length ? `${saintNames.length} saint${saintNames.length === 1 ? "" : "s"}` : ""
+      saintNames.length ? `${saintNames.length} saint${saintNames.length === 1 ? "" : "s"}` : "",
+      nameDays.length ? `${nameDays.length} name day${nameDays.length === 1 ? "" : "s"}` : ""
     ].filter(Boolean).map((chip) => `<span class="${isFastRule(chip) ? "is-fast" : ""}">${escapeHtml(chip)}</span>`).join("");
   }
   const give = document.getElementById("todayGiveLink");
@@ -999,8 +1004,9 @@ async function loadDonorLiturgicalDay(parish) {
   const calendar = parish?.liturgicalCalendar || donorProfile()?.defaultParish?.liturgicalCalendar || donorProfile()?.liturgicalCalendar || "julian";
   const date = todayIsoLocal();
   try {
-    const res = await fetch(`/api/donor/liturgical-day?date=${encodeURIComponent(date)}&calendar=${encodeURIComponent(calendar)}`, {
-      headers: { Accept: "application/json" }
+    const parishId = parish?.id || donorProfile()?.defaultParishId || "";
+    const res = await fetch(`/api/donor/liturgical-day?date=${encodeURIComponent(date)}&calendar=${encodeURIComponent(calendar)}&parishId=${encodeURIComponent(parishId)}`, {
+      headers: donorAuthHeaders({ "X-AGAPAY-Parish-Id": parishId })
     });
     const payload = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(payload.error || "Unable to load today's liturgical day.");

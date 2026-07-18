@@ -272,6 +272,66 @@ async function loadContextRows(env, personId) {
   return { affiliations, memberships, admins };
 }
 
+async function shouldCreateSelfServiceHousehold(env, userId, personId) {
+  const row = await d1First(
+    env,
+    `SELECT id FROM directory_change_requests
+     WHERE requester_user_id = ?1
+       AND requester_person_id = ?2
+       AND target_id = ?2
+       AND target_type = 'person'
+       AND request_type = 'person_profile_review'
+     LIMIT 1`,
+    userId,
+    personId
+  );
+  return Boolean(row);
+}
+
+async function createSelfServiceHouseholdForPerson(env, { user, person, parishId }) {
+  const timestamp = nowMs();
+  const householdId = generateSecret("dir_household");
+  const householdMemberId = generateSecret("dir_hm");
+  const householdAdminId = generateSecret("dir_ha");
+  const householdPublicationId = generateSecret("dir_pub");
+  const displayName = `${person.preferred_name || user.displayName || "My"} Household`;
+  const actor = { userId: user.id, actorType: "platform_user", parishId, personId: person.id, capabilities: [DIRECTORY_CAPABILITIES.selfManage] };
+  await runAtomic(env, [
+    {
+      sql: `INSERT INTO directory_households (id, parish_id, display_name, active, created_at, updated_at)
+            VALUES (?, ?, ?, 1, ?, ?)`,
+      params: [householdId, parishId, displayName, timestamp, timestamp]
+    },
+    {
+      sql: `INSERT INTO directory_household_members
+              (id, household_id, person_id, relationship, start_date, end_date, active, created_at, updated_at)
+            VALUES (?, ?, ?, 'head', NULL, NULL, 1, ?, ?)`,
+      params: [householdMemberId, householdId, person.id, timestamp, timestamp]
+    },
+    {
+      sql: `INSERT INTO directory_household_admins
+              (id, household_id, person_id, start_date, end_date, active, created_at, updated_at)
+            VALUES (?, ?, ?, NULL, NULL, 1, ?, ?)`,
+      params: [householdAdminId, householdId, person.id, timestamp, timestamp]
+    },
+    {
+      sql: `INSERT INTO directory_publication_profiles
+              (id, parish_id, owner_type, owner_id, status, approval_status, active, created_at, updated_at)
+            VALUES (?, ?, 'household', ?, 'draft', 'not_submitted', 1, ?, ?)`,
+      params: [householdPublicationId, parishId, householdId, timestamp, timestamp]
+    },
+    auditStatement({
+      action: "directory.self_service.household_recovered",
+      actor,
+      parishId,
+      targetType: "directory_household",
+      targetId: householdId,
+      householdId,
+      after: { displayName, administratorPersonId: person.id }
+    })
+  ]);
+}
+
 async function loadPendingRequests(env, { personId, parishIds }) {
   if (!parishIds.length) return [];
   const placeholders = parishIds.map((_, index) => `?${index + 2}`).join(", ");
@@ -327,7 +387,11 @@ export async function resolveDirectorySelfServiceContext(env, { request = null, 
   }
   const flags = await getPersonPrivacyFlags(env, { parishId: linkedPerson.created_by_parish_id, personId: linkedPerson.id });
   if (flags.isChild) throw new DirectoryServiceError("forbidden", "Child records cannot use directory self-service.", 403);
-  const rows = await loadContextRows(env, linkedPerson.id);
+  let rows = await loadContextRows(env, linkedPerson.id);
+  if (!rows.memberships.length && !rows.admins.length && await shouldCreateSelfServiceHousehold(env, platformUser.id, linkedPerson.id)) {
+    await createSelfServiceHouseholdForPerson(env, { user: platformUser, person: linkedPerson, parishId: linkedPerson.created_by_parish_id });
+    rows = await loadContextRows(env, linkedPerson.id);
+  }
   const parishIds = [...new Set([
     ...rows.affiliations.map((row) => row.parish_id),
     ...rows.memberships.map((row) => row.parish_id),
@@ -399,10 +463,15 @@ export async function startSelfServiceProfile(env, { context, data = {}, correla
   };
   const timestamp = nowMs();
   const personId = generateSecret("dir_person");
+  const householdId = generateSecret("dir_household");
   const linkId = generateSecret("dir_link");
   const affiliationId = generateSecret("dir_affil");
+  const householdMemberId = generateSecret("dir_hm");
+  const householdAdminId = generateSecret("dir_ha");
   const publicationId = generateSecret("dir_pub");
+  const householdPublicationId = generateSecret("dir_pub");
   const requestId = generateSecret("dir_req");
+  const householdName = cleanText(data.householdName || `${preferredName} Household`, { required: true, max: 200, field: "householdName" });
   const actor = { userId: context.user.id, actorType: "platform_user", parishId, personId, capabilities: [DIRECTORY_CAPABILITIES.selfManage] };
   const statements = [
     {
@@ -419,6 +488,23 @@ export async function startSelfServiceProfile(env, { context, data = {}, correla
       params: [linkId, personId, context.user.id, timestamp, timestamp]
     },
     {
+      sql: `INSERT INTO directory_households (id, parish_id, display_name, active, created_at, updated_at)
+            VALUES (?, ?, ?, 1, ?, ?)`,
+      params: [householdId, parishId, householdName, timestamp, timestamp]
+    },
+    {
+      sql: `INSERT INTO directory_household_members
+              (id, household_id, person_id, relationship, start_date, end_date, active, created_at, updated_at)
+            VALUES (?, ?, ?, 'head', NULL, NULL, 1, ?, ?)`,
+      params: [householdMemberId, householdId, personId, timestamp, timestamp]
+    },
+    {
+      sql: `INSERT INTO directory_household_admins
+              (id, household_id, person_id, start_date, end_date, active, created_at, updated_at)
+            VALUES (?, ?, ?, NULL, NULL, 1, ?, ?)`,
+      params: [householdAdminId, householdId, personId, timestamp, timestamp]
+    },
+    {
       sql: `INSERT INTO directory_parish_affiliations
               (id, person_id, parish_id, status, joined_date, left_date, active, created_at, updated_at)
             VALUES (?, ?, ?, 'visitor', NULL, NULL, 1, ?, ?)`,
@@ -429,6 +515,12 @@ export async function startSelfServiceProfile(env, { context, data = {}, correla
               (id, parish_id, owner_type, owner_id, status, approval_status, active, created_at, updated_at)
             VALUES (?, ?, 'person', ?, 'draft', 'not_submitted', 1, ?, ?)`,
       params: [publicationId, parishId, personId, timestamp, timestamp]
+    },
+    {
+      sql: `INSERT INTO directory_publication_profiles
+              (id, parish_id, owner_type, owner_id, status, approval_status, active, created_at, updated_at)
+            VALUES (?, ?, 'household', ?, 'draft', 'not_submitted', 1, ?, ?)`,
+      params: [householdPublicationId, parishId, householdId, timestamp, timestamp]
     },
     {
       sql: `INSERT INTO directory_change_requests
@@ -453,7 +545,18 @@ export async function startSelfServiceProfile(env, { context, data = {}, correla
       parishId,
       targetType: "directory_person",
       targetId: personId,
-      after: { preferredName, status: "visitor", publicationStatus: "draft" },
+      householdId,
+      after: { preferredName, householdName, status: "visitor", publicationStatus: "draft" },
+      correlationId
+    }),
+    auditStatement({
+      action: "directory.self_service.household_started",
+      actor,
+      parishId,
+      targetType: "directory_household",
+      targetId: householdId,
+      householdId,
+      after: { displayName: householdName, administratorPersonId: personId },
       correlationId
     }),
     auditStatement({
@@ -506,6 +609,86 @@ export async function startSelfServiceProfile(env, { context, data = {}, correla
     }).catch(() => null);
   }
   return getSelfServiceProfile(env, { context: await resolveDirectorySelfServiceContext(env, { user: context.user }) });
+}
+
+function namedayDto(row) {
+  return {
+    id: row.id,
+    parishId: row.parish_id,
+    householdId: row.household_id,
+    personId: row.person_id || "",
+    displayName: row.display_name || "",
+    saintName: row.saint_name || "",
+    feastMonthDay: row.feast_month_day || "",
+    visibility: row.visibility || "private",
+    version: String(row.updated_at || "")
+  };
+}
+
+function cleanMonthDay(value) {
+  const cleaned = cleanText(value, { required: true, max: 5, field: "feastMonthDay" });
+  if (!/^\d{2}-\d{2}$/.test(cleaned)) throw new DirectoryServiceError("validation_failed", "Name day must use MM-DD format.");
+  const [month, day] = cleaned.split("-").map(Number);
+  if (month < 1 || month > 12 || day < 1 || day > 31) throw new DirectoryServiceError("validation_failed", "Name day is not a valid month and day.");
+  return cleaned;
+}
+
+function namedayVisibility(value) {
+  const cleaned = cleanText(value || "private", { max: 40, field: "visibility" });
+  if (!["private", "household", "staff", "directory_members"].includes(cleaned)) throw new DirectoryServiceError("validation_failed", "Name day visibility is not supported.");
+  return cleaned;
+}
+
+export async function listHouseholdNamedays(env, { context, householdId }) {
+  const managed = context.manageableHouseholds.find((household) => household.id === householdId);
+  if (!managed) throw new DirectoryServiceError("forbidden", "You cannot manage this household.", 403);
+  const rows = await d1All(
+    env,
+    "SELECT * FROM directory_household_namedays WHERE parish_id = ?1 AND household_id = ?2 AND active = 1 ORDER BY feast_month_day, display_name",
+    managed.parishId,
+    householdId
+  );
+  return rows.map(namedayDto);
+}
+
+export async function saveHouseholdNameday(env, { context, householdId, namedayId = "", data = {}, correlationId = "" }) {
+  const managed = context.manageableHouseholds.find((household) => household.id === householdId);
+  if (!managed) throw new DirectoryServiceError("forbidden", "You cannot manage this household.", 403);
+  const existing = namedayId
+    ? await d1First(env, "SELECT * FROM directory_household_namedays WHERE id = ?1 AND parish_id = ?2 AND household_id = ?3 AND active = 1", namedayId, managed.parishId, householdId)
+    : null;
+  if (namedayId && !existing) throw new DirectoryServiceError("not_found", "Name day was not found.", 404);
+  const timestamp = nowMs();
+  const id = existing?.id || generateSecret("dir_nameday");
+  const displayName = cleanText(data.displayName ?? existing?.display_name, { required: true, max: 160, field: "displayName" });
+  const saintName = cleanText(data.saintName ?? existing?.saint_name, { required: true, max: 200, field: "saintName" });
+  const feastMonthDay = cleanMonthDay(data.feastMonthDay ?? existing?.feast_month_day);
+  const visibility = namedayVisibility(data.visibility ?? existing?.visibility);
+  await runAtomic(env, [
+    existing ? {
+      sql: `UPDATE directory_household_namedays
+            SET display_name = ?, saint_name = ?, feast_month_day = ?, visibility = ?, updated_at = ?
+            WHERE id = ? AND updated_at = ?`,
+      params: [displayName, saintName, feastMonthDay, visibility, timestamp, existing.id, existing.updated_at]
+    } : {
+      sql: `INSERT INTO directory_household_namedays
+              (id, parish_id, household_id, person_id, display_name, saint_name, feast_month_day,
+               visibility, active, created_by_user_id, created_at, updated_at)
+            VALUES (?, ?, ?, NULL, ?, ?, ?, ?, 1, ?, ?, ?)`,
+      params: [id, managed.parishId, householdId, displayName, saintName, feastMonthDay, visibility, context.user.id, timestamp, timestamp]
+    },
+    auditStatement({
+      action: existing ? "directory.household_nameday.updated" : "directory.household_nameday.created",
+      actor: selfActor(context, managed.parishId),
+      parishId: managed.parishId,
+      targetType: "directory_household_nameday",
+      targetId: id,
+      householdId,
+      after: { displayName, saintName, feastMonthDay, visibility },
+      correlationId
+    })
+  ]);
+  return namedayDto(await d1First(env, "SELECT * FROM directory_household_namedays WHERE id = ?1", id));
 }
 
 export async function updateSelfServicePersonProfile(env, { context, patch = {}, correlationId = "" }) {

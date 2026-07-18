@@ -21,6 +21,8 @@ import {
   setPersonPrivacyFlags,
   setSelfServicePrivacyPreference,
   startSelfServiceProfile,
+  listHouseholdNamedays,
+  saveHouseholdNameday,
   transitionSelfServicePublication,
   updateHouseholdSelfServiceProfile,
   updateSelfServiceContact,
@@ -46,6 +48,7 @@ function makeD1Env() {
   db.exec(migration("0023_directory_contact_privacy_publication.sql"));
   db.exec(migration("0024_directory_invitations_claims.sql"));
   db.exec(migration("0025_directory_self_service_phase2a.sql"));
+  db.exec(migration("0033_directory_household_namedays.sql"));
 
   function wrap(sql) {
     return {
@@ -166,8 +169,12 @@ await test("unlinked My AGAPAY user can start a private draft directory profile"
   });
   assert.equal(profile.claimed, true);
   assert.equal(profile.currentPerson.preferredName, "New Member");
+  assert.equal(profile.manageableHouseholds.length, 1);
+  assert.equal(profile.manageableHouseholds[0].displayName, "New Member Household");
   const link = await env.AGAPAY_DB.prepare("SELECT * FROM directory_person_links WHERE external_id = ?1 AND link_type = 'platform_user'").bind(user.id).first();
   assert.equal(link.person_id, profile.currentPerson.id);
+  const householdMember = await env.AGAPAY_DB.prepare("SELECT hm.relationship FROM directory_household_members hm JOIN directory_household_admins ha ON ha.household_id = hm.household_id WHERE hm.person_id = ?1 AND ha.person_id = ?1").bind(profile.currentPerson.id).first();
+  assert.equal(householdMember.relationship, "head");
   const publication = await env.AGAPAY_DB.prepare("SELECT status, approval_status FROM directory_publication_profiles WHERE owner_id = ?1").bind(profile.currentPerson.id).first();
   assert.equal(publication.status, "draft");
   assert.equal(publication.approval_status, "not_submitted");
@@ -187,6 +194,43 @@ await test("unlinked My AGAPAY user can start a private draft directory profile"
   assert.equal(privacy.visibility, "directory_members");
   assert.equal(privacy.publication_eligible, 1);
   assert.equal(auditCount(db, "directory.self_service.profile_started"), 1);
+});
+
+await test("household admin can save household name days with privacy", async () => {
+  const { env, context, household } = await fixture();
+  const nameday = await saveHouseholdNameday(env, {
+    context,
+    householdId: household.id,
+    data: {
+      displayName: "Anna",
+      saintName: "St. Anna",
+      feastMonthDay: "07-25",
+      visibility: "directory_members"
+    }
+  });
+  assert.equal(nameday.displayName, "Anna");
+  assert.equal(nameday.visibility, "directory_members");
+  const list = await listHouseholdNamedays(env, { context, householdId: household.id });
+  assert.equal(list.length, 1);
+  assert.equal(list[0].saintName, "St. Anna");
+});
+
+await test("self-service profile without a household receives an editable household on next load", async () => {
+  const { env, db } = await fixture();
+  const user = await ensurePlatformUser(env, { email: "oldprofile@example.org", displayName: "Old Profile" });
+  const context = await resolveDirectorySelfServiceContext(env, { user });
+  const profile = await startSelfServiceProfile(env, {
+    context,
+    data: { parishId: "st-fiacre", preferredName: "Old Profile", legalName: "Older Self Service" }
+  });
+  const householdId = profile.manageableHouseholds[0].id;
+  db.prepare("DELETE FROM directory_household_admins WHERE household_id = ?").run(householdId);
+  db.prepare("DELETE FROM directory_household_members WHERE household_id = ?").run(householdId);
+  db.prepare("DELETE FROM directory_households WHERE id = ?").run(householdId);
+  const recovered = await resolveDirectorySelfServiceContext(env, { user });
+  assert.equal(recovered.manageableHouseholds.length, 1);
+  assert.match(recovered.manageableHouseholds[0].displayName, /Old Profile Household/);
+  assert.equal(auditCount(db, "directory.self_service.household_recovered"), 1);
 });
 
 await test("self-service context recovers a missing profile link from the user's own setup request", async () => {
