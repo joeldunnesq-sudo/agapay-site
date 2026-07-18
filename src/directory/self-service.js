@@ -1,6 +1,6 @@
 import { d1All, d1First, generateSecret } from "../lib/core.js";
 import { currentUser } from "../lib/authorization.js";
-import { DirectoryServiceError } from "./foundation.js";
+import { createPerson, DirectoryServiceError } from "./foundation.js";
 import {
   createAddress,
   createContactMethod,
@@ -10,7 +10,7 @@ import {
   updateContactMethod
 } from "./contacts.js";
 import { createDirectoryInvitation, listParishDirectoryInvitations, resendDirectoryInvitation, revokeDirectoryInvitation } from "./invitations.js";
-import { getPersonPrivacyFlags, setFieldPrivacyPreference } from "./privacy.js";
+import { getPersonPrivacyFlags, setFieldPrivacyPreference, setPersonPrivacyFlags } from "./privacy.js";
 import { getPublicationProfile, transitionPublicationProfile } from "./publication.js";
 import {
   auditStatement,
@@ -996,6 +996,69 @@ export async function createDirectoryChangeRequest(env, { context, parishId, tar
     })
   ]);
   return requestDto(await d1First(env, "SELECT * FROM directory_change_requests WHERE id = ?1", id));
+}
+
+export async function requestHouseholdChildAdd(env, { context, householdId, data = {}, correlationId = "" }) {
+  const managed = context.manageableHouseholds.find((household) => household.id === householdId);
+  if (!managed) throw new DirectoryServiceError("forbidden", "You cannot add children for this household.", 403);
+  if (!await isActiveHouseholdAdmin(env, { householdId, personId: context.currentPerson?.id })) {
+    throw new DirectoryServiceError("forbidden", "Only an active household administrator can add children.", 403);
+  }
+  const preferredName = cleanText(data.preferredName, { required: true, max: 160, field: "preferredName" });
+  const legalName = cleanText(data.legalName, { max: 200, field: "legalName" });
+  const dateOfBirth = cleanDate(data.dateOfBirth || "", "dateOfBirth") || "";
+  const relationshipLabel = cleanText(data.relationship || "child", { max: 80, field: "relationship" }) || "child";
+  const note = cleanText(data.note || "", { max: 500, field: "note" });
+
+  const duplicate = await d1First(
+    env,
+    `SELECT id FROM directory_change_requests
+      WHERE parish_id = ?1 AND requester_person_id = ?2 AND household_id = ?3
+        AND request_type = 'household_membership_add' AND status = 'pending'
+        AND json_extract(requested_payload_json, '$.childAdd.preferredName') = ?4`,
+    managed.parishId,
+    context.currentPerson.id,
+    managed.id,
+    preferredName
+  );
+  if (duplicate) throw new DirectoryServiceError("duplicate_request", "A pending request for this child is already waiting for parish review.", 409);
+
+  const serviceActor = {
+    ...selfActor(context, managed.parishId),
+    capabilities: [DIRECTORY_CAPABILITIES.manage]
+  };
+  const person = await createPerson(env, {
+    actor: serviceActor,
+    parishId: managed.parishId,
+    preferredName,
+    legalName,
+    dateOfBirth,
+    biologicalSex: "unknown",
+    notes: note ? `Household child add request note: ${note}` : ""
+  });
+  await setPersonPrivacyFlags(env, {
+    actor: serviceActor,
+    parishId: managed.parishId,
+    personId: person.id,
+    isChild: true,
+    protectedPerson: false,
+    correlationId
+  });
+  return createDirectoryChangeRequest(env, {
+    context,
+    parishId: managed.parishId,
+    targetType: "household",
+    targetId: managed.id,
+    householdId: managed.id,
+    requestType: "household_membership_add",
+    summary: `Add child to household: ${preferredName}`,
+    payload: {
+      personId: person.id,
+      relationship: "child",
+      childAdd: { preferredName, legalName, dateOfBirth, relationship: relationshipLabel, note }
+    },
+    correlationId
+  });
 }
 
 export async function cancelDirectoryChangeRequest(env, { context, requestId, correlationId = "" }) {

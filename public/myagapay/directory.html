@@ -112,6 +112,15 @@
     .field-check-list { display:grid; gap:6px; }
     .field-check-list label { display:flex; align-items:center; gap:8px; font-weight:400; font-size:14px; }
     .field-check-list input[type="checkbox"] { width:18px; height:18px; }
+    .child-add-trigger { margin-bottom:12px; }
+    .directory-modal { position:fixed; inset:0; z-index:80; display:grid; place-items:center; padding:18px; background:rgba(6,21,34,.48); }
+    .directory-modal[hidden] { display:none !important; }
+    .directory-modal-card { width:min(460px, 100%); max-height:min(86vh, 720px); overflow:auto; background:#fff; border-radius:18px; border:1px solid rgba(16,24,32,.12); box-shadow:0 24px 70px rgba(6,21,34,.26); padding:16px; }
+    .directory-modal-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:12px; }
+    .directory-modal-head h2 { margin:0; font-size:20px; line-height:1.15; }
+    .directory-modal-head p { margin:4px 0 0; color:var(--muted); font-size:13px; line-height:1.45; }
+    .directory-modal-close { border:1px solid var(--line); background:#fff; border-radius:999px; width:36px; height:36px; font:inherit; font-size:20px; line-height:1; cursor:pointer; }
+    .child-add-form { display:grid; gap:10px; }
     .child-note { display:grid; gap:6px; font-size:13px; font-weight:700; }
     .child-note textarea { border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; min-height:56px; }
     .child-help { font-size:12px; color:var(--muted); margin:0; }
@@ -221,18 +230,10 @@
       body[data-mobile-view]:not([data-mobile-view="home"]) .mobile-directory-home { display:none; }
       body[data-mobile-view="home"] .directory-grid,
       body[data-mobile-view="home"] .member-directory { display:none; }
-      body[data-mobile-view="setup"] [data-mobile-section]:not([data-mobile-section~="setup"]),
-      body[data-mobile-view="family"] [data-mobile-section]:not([data-mobile-section~="family"]),
-      body[data-mobile-view="photos"] [data-mobile-section]:not([data-mobile-section~="photos"]),
-      body[data-mobile-view="privacy"] [data-mobile-section]:not([data-mobile-section~="privacy"]),
-      body[data-mobile-view="serve"] [data-mobile-section]:not([data-mobile-section~="serve"]),
+      body[data-mobile-view="household"] [data-mobile-section]:not([data-mobile-section~="household"]),
       body[data-mobile-view="browse"] [data-mobile-section]:not([data-mobile-section~="browse"]) { display:none; }
-      body[data-mobile-view="setup"] .member-directory,
-      body[data-mobile-view="family"] .member-directory,
-      body[data-mobile-view="photos"] .member-directory,
-      body[data-mobile-view="privacy"] .member-directory { display:none; }
-      body[data-mobile-view="browse"] .directory-grid,
-      body[data-mobile-view="serve"] .directory-grid { display:none; }
+      body[data-mobile-view="household"] .member-directory { display:none; }
+      body[data-mobile-view="browse"] .directory-grid { display:none; }
       .directory-grid, .form-grid { grid-template-columns:1fr; }
       .directory-tools, .skills-toolbar { grid-template-columns:1fr; }
       .member-grid { grid-template-columns:1fr; }
@@ -253,6 +254,8 @@
       .alphabet { flex-wrap:nowrap; overflow:auto; padding-bottom:4px; }
       .alphabet button { flex:0 0 auto; }
       .member-directory { margin-bottom:12px; }
+      .directory-modal { align-items:end; padding:0; }
+      .directory-modal-card { width:100%; max-height:88vh; border-radius:24px 24px 0 0; padding:18px 14px calc(18px + env(safe-area-inset-bottom)); }
     }
   </style>
 </head>
@@ -291,7 +294,7 @@
 
       <section class="directory-grid" aria-live="polite">
         <div class="stack">
-          <article class="panel" data-mobile-section="setup">
+          <article class="panel" data-mobile-section="household setup">
             <div class="panel-header"><div><div class="panel-kicker">Step 1</div><h2>My Profile</h2><p class="panel-intro">This is your own directory record. Keep private details private; submit only what you want the parish to review.</p></div></div>
             <div class="summary-list" id="profileSummary"></div>
             <form class="setup-panel" id="startProfileForm" hidden>
@@ -328,7 +331,7 @@
             </form>
           </article>
 
-          <article class="panel" data-mobile-section="privacy setup">
+          <article class="panel" data-mobile-section="household privacy setup">
             <div class="panel-header"><div><div class="panel-kicker">Step 2</div><h2>Contact &amp; Privacy</h2><p class="panel-intro">Add email or phone details. Choose Directory members only for information you want the parish to consider publishing.</p></div></div>
             <div class="contact-list" id="contactList"></div>
             <form class="form-grid" id="contactForm" hidden>
@@ -340,7 +343,7 @@
             </form>
           </article>
 
-          <article class="panel" data-mobile-section="photos">
+          <article class="panel" data-mobile-section="household photos">
             <div class="panel-header"><div><div class="panel-kicker">Optional</div><h2>Profile Photo</h2><p class="panel-intro">Upload first, then submit it if you want the parish to review it for publication.</p></div></div>
             <div class="summary-list" id="photoSummary"></div>
             <form class="form-grid" id="photoForm" hidden>
@@ -350,7 +353,7 @@
             </form>
           </article>
 
-          <article class="panel" data-mobile-section="serve">
+          <article class="panel" data-mobile-section="household serve">
             <div class="panel-header"><div><div class="panel-kicker">Serve</div><h2>My Skills &amp; Service</h2><p class="panel-intro">Share only the skills you are comfortable making available to your parish community.</p></div></div>
             <div class="skill-list" id="mySkillList"></div>
             <form class="form-grid" id="skillForm" hidden>
@@ -369,7 +372,7 @@
         </div>
 
         <div class="stack">
-          <article class="panel" data-mobile-section="setup privacy">
+          <article class="panel" data-mobile-section="household setup privacy">
             <div class="panel-header"><div><div class="panel-kicker">Review</div><h2>Publication</h2><p class="panel-intro">Nothing appears in the member directory until you submit and the parish approves it.</p></div></div>
             <div class="summary-list" id="publicationSummary"></div>
             <div class="actions" id="publicationActions" hidden>
@@ -378,7 +381,7 @@
             </div>
           </article>
 
-          <article class="panel" data-mobile-section="family setup">
+          <article class="panel" data-mobile-section="household family setup">
             <div class="panel-header"><div><div class="panel-kicker">Family</div><h2>Household</h2><p class="panel-intro">Use this for your family name and household-owned information.</p></div></div>
             <div class="household-list" id="householdList"></div>
             <form class="form-grid" id="householdDetailsForm" hidden>
@@ -389,7 +392,7 @@
             </form>
           </article>
 
-          <article class="panel" data-mobile-section="photos family">
+          <article class="panel" data-mobile-section="household photos family">
             <div class="panel-header"><div><div class="panel-kicker">Family</div><h2>Family Photo</h2><p class="panel-intro">Use this for a household photo. You control whether it stays private, staff-only, or is submitted for publication.</p></div></div>
             <div class="summary-list" id="householdPhotoSummary"></div>
             <form class="form-grid" id="householdPhotoForm" hidden>
@@ -399,7 +402,7 @@
             </form>
           </article>
 
-          <article class="panel" data-mobile-section="family">
+          <article class="panel" data-mobile-section="household family">
             <div class="panel-header"><div><div class="panel-kicker">Family</div><h2>Name Days</h2><p class="panel-intro">Add family name days. Keep them private, or share them with members so they can appear in Today reminders.</p></div></div>
             <div class="nameday-list" id="namedayList"></div>
             <form class="form-grid" id="namedayForm" hidden>
@@ -411,13 +414,14 @@
             </form>
           </article>
 
-          <article class="panel" data-mobile-section="setup">
+          <article class="panel" data-mobile-section="household setup">
             <div class="panel-header"><div><div class="panel-kicker">Status</div><h2>Pending Changes</h2></div></div>
             <div class="request-list" id="requestList"></div>
           </article>
 
-          <article class="panel" aria-labelledby="childrenHeading" data-mobile-section="family">
+          <article class="panel" aria-labelledby="childrenHeading" data-mobile-section="household family">
             <div class="panel-header"><div><div class="panel-kicker">Family</div><h2 id="childrenHeading">Children</h2><p class="panel-intro">Children stay hidden by default. You may request publication of limited fields, and parish staff must approve first.</p></div></div>
+            <button class="btn primary child-add-trigger" id="openChildAddModal" type="button" hidden>Add Child</button>
             <div class="stack" id="childrenList" aria-live="polite"></div>
           </article>
         </div>
@@ -456,6 +460,25 @@
         </div>
         <div class="skill-list" id="skillResults" aria-live="polite"></div>
       </section>
+
+      <div class="directory-modal" id="childAddModal" role="dialog" aria-modal="true" aria-labelledby="childAddModalTitle" hidden>
+        <div class="directory-modal-card">
+          <div class="directory-modal-head">
+            <div>
+              <h2 id="childAddModalTitle">Add a child</h2>
+              <p>This sends a private request to the parish. Staff must approve before the child is attached to your household.</p>
+            </div>
+            <button class="directory-modal-close" type="button" data-close-child-modal aria-label="Close">&times;</button>
+          </div>
+          <form class="child-add-form" id="childAddForm">
+            <label>Child name<input name="preferredName" autocomplete="off" required placeholder="Anna" /></label>
+            <label>Relationship<input name="relationship" autocomplete="off" placeholder="daughter, son, child" /></label>
+            <label>Birthday (optional)<input name="dateOfBirth" placeholder="YYYY-MM-DD" /></label>
+            <label class="child-note">Note to parish staff (optional)<textarea name="note" maxlength="500" placeholder="Anything staff should know"></textarea></label>
+            <button class="btn primary" type="submit">Send Add Child Request</button>
+          </form>
+        </div>
+      </div>
 
     </main>
     <nav class="mobile-tabbar" aria-label="My AGAPAY navigation"></nav>
@@ -526,6 +549,7 @@
       document.getElementById("publicationSummary").innerHTML = '<div class="empty">Publication controls will appear after your private draft profile is created.</div>';
       document.getElementById("requestList").innerHTML = '<div class="empty">No pending directory changes yet.</div>';
       document.getElementById("childrenList").innerHTML = '<div class="empty"><strong>Children need a household link first.</strong>Once parish staff connects you as a household administrator, child publication tools will appear here.</div>';
+      document.getElementById("openChildAddModal").hidden = true;
     }
     async function api(path, options = {}) {
       const response = await fetch(path, { ...options, headers: { ...headers(), ...(options.headers || {}) } });
@@ -612,19 +636,19 @@
     }
     function mobileNextStep() {
       if (!profileState?.claimed) {
-        return { view: "setup", title: "Finish directory setup", copy: "Create your private family draft and choose what can be reviewed." };
+        return { view: "household", title: "Finish household setup", copy: "Create your private family draft and choose what can be reviewed." };
       }
       const person = profileState.profile?.person || profileState.currentPerson || profileState.person || {};
       const publication = profileState.profile?.publication || {};
       const contacts = profileState.profile?.contacts || [];
       const household = firstHousehold();
-      if (!contacts.length) return { view: "privacy", title: "Add contact info", copy: "Add email or phone and choose who may see it." };
-      if (!person.dateOfBirth) return { view: "setup", title: "Add your birthday", copy: "This stays private and unlocks adult-only service tools." };
-      if (!household) return { view: "family", title: "Connect your household", copy: "Your family tools appear once a household is attached." };
+      if (!contacts.length) return { view: "household", title: "Add contact info", copy: "Add email or phone and choose who may see it." };
+      if (!person.dateOfBirth) return { view: "household", title: "Add your birthday", copy: "This stays private and unlocks adult-only service tools." };
+      if (!household) return { view: "household", title: "Connect your household", copy: "Your family tools appear once a household is attached." };
       if (publication.approvalStatus !== "approved" && publication.status !== "pending_approval") {
-        return { view: "privacy", title: "Submit for parish review", copy: "Review your sharing choices and send them to the parish." };
+        return { view: "household", title: "Submit for parish review", copy: "Review your sharing choices and send them to the parish." };
       }
-      return { view: "family", title: "Keep your family profile current", copy: "Add a photo, children, name days, or household updates." };
+      return { view: "household", title: "Keep your household current", copy: "Update family info, children, photos, name days, privacy, or service listings." };
     }
     function renderMobileHome() {
       const home = document.getElementById("mobileDirectoryHome");
@@ -644,21 +668,12 @@
             : "Your information is private until you submit it.";
       home.innerHTML = `
         <article class="mobile-home-card">
-          <h2>${esc(next.title)}</h2>
-          <p>${esc(next.copy)}</p>
-          <button class="mobile-home-primary" type="button" data-mobile-target="${esc(next.view)}"><span>Continue</span><span aria-hidden="true">&rsaquo;</span></button>
-        </article>
-        <article class="mobile-home-card">
           <h2>Directory status</h2>
           <p>${esc(statusCopy)}</p>
         </article>
         <div class="mobile-action-list">
-          ${mobileAction({ view: "setup", title: profileState?.claimed ? "My profile" : "Start setup", copy: profileState?.claimed ? "Name, birthday, review status" : "Create your private draft", current: next.view === "setup" })}
-          ${mobileAction({ view: "family", title: "Family & household", copy: household ? household.displayName || "Household details" : "Household, children, name days", current: next.view === "family" })}
-          ${mobileAction({ view: "photos", title: "Photos", copy: "Profile photo and family photo", current: next.view === "photos" })}
-          ${mobileAction({ view: "privacy", title: "Privacy choices", copy: contacts.length ? `${contacts.length} contact method${contacts.length === 1 ? "" : "s"}` : "Add what can be shared", current: next.view === "privacy" })}
-          ${mobileAction({ view: "serve", title: "Skills & service", copy: "Ways your parish can ask for help", current: next.view === "serve" })}
-          ${mobileAction({ view: "browse", title: "Browse members", copy: "Search approved parish listings", current: next.view === "browse" })}
+          ${mobileAction({ view: "household", title: "Household Info", copy: next.copy, current: next.view === "household" })}
+          ${mobileAction({ view: "browse", title: "Full Directory", copy: "Search approved parish members and households.", current: next.view === "browse" })}
         </div>`;
     }
     function setMobileView(view = "home") {
@@ -670,6 +685,12 @@
       if (next !== "home") {
         document.querySelector(".directory-main")?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
+    }
+    function setChildModal(open) {
+      const modal = document.getElementById("childAddModal");
+      modal.hidden = !open;
+      document.body.style.overflow = open ? "hidden" : "";
+      if (open) modal.querySelector('input[name="preferredName"]')?.focus();
     }
     function memberSubtitle(item) {
       if (item.type === "household") {
@@ -994,15 +1015,19 @@
     }
     async function loadChildrenPanel() {
       const container = document.getElementById("childrenList");
+      const childAddButton = document.getElementById("openChildAddModal");
       if (!profileState?.claimed) {
+        childAddButton.hidden = true;
         container.innerHTML = '<div class="empty"><strong>Start your profile first.</strong>Child publication tools appear after your profile is created and household details are connected.</div>';
         return;
       }
       const households = profileState?.manageableHouseholds || [];
       if (!households.length) {
+        childAddButton.hidden = true;
         container.innerHTML = '<div class="empty"><strong>No household connected yet.</strong>Parish staff must link you to a household as an administrator before you can manage child publication requests.</div>';
         return;
       }
+      childAddButton.hidden = false;
       container.innerHTML = '<div class="empty">Loading children…</div>';
       try {
         const fieldCodes = await loadChildFieldCodes();
@@ -1015,7 +1040,7 @@
             cards.push(renderChildCard(child, household.id, fieldCodes, statusPayload.request));
           }
         }
-        container.innerHTML = cards.length ? cards.join("") : '<div class="empty">No children found in your households.</div>';
+        container.innerHTML = cards.length ? cards.join("") : '<div class="empty"><strong>No children are attached yet.</strong>Use the form above to send an add-child request to the parish.</div>';
       } catch (error) {
         container.innerHTML = `<div class="empty">${esc(error.message)}</div>`;
       }
@@ -1264,6 +1289,33 @@
       formEl.reset();
       showNotice("Name day saved.");
       await loadNamedays();
+    });
+    document.getElementById("childAddForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const formEl = event.currentTarget;
+      const household = firstHousehold();
+      if (!household) {
+        showNotice("Connect a household before adding children.", true);
+        return;
+      }
+      try {
+        const payload = Object.fromEntries(new FormData(formEl).entries());
+        await api(`/api/directory/households/${encodeURIComponent(household.id)}/self/children`, { method: "POST", body: JSON.stringify(payload) });
+        formEl.reset();
+        setChildModal(false);
+        showNotice("Add child request sent to the parish for review.");
+        await loadDirectory();
+      } catch (error) {
+        showNotice(error.message || "Unable to send add child request.", true);
+      }
+    });
+    document.getElementById("openChildAddModal").addEventListener("click", () => setChildModal(true));
+    document.querySelectorAll("[data-close-child-modal]").forEach((button) => button.addEventListener("click", () => setChildModal(false)));
+    document.getElementById("childAddModal").addEventListener("click", (event) => {
+      if (event.target.id === "childAddModal") setChildModal(false);
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !document.getElementById("childAddModal").hidden) setChildModal(false);
     });
     document.querySelector(".directory-tabs").addEventListener("click", async (event) => {
       const button = event.target.closest("[data-member-view]");

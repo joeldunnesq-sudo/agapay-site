@@ -22,6 +22,7 @@ import {
   setSelfServicePrivacyPreference,
   startSelfServiceProfile,
   listHouseholdNamedays,
+  requestHouseholdChildAdd,
   saveHouseholdNameday,
   transitionSelfServicePublication,
   updateHouseholdSelfServiceProfile,
@@ -389,6 +390,31 @@ await test("membership and relationship changes use controlled requests with dup
       payload: {}
     }),
     /UNIQUE/
+  );
+});
+
+await test("household admin can request adding a child from self-service", async () => {
+  const { env, db, context, household } = await fixture();
+  const request = await requestHouseholdChildAdd(env, {
+    context,
+    householdId: household.id,
+    data: { preferredName: "Lucy Dunn", relationship: "daughter", dateOfBirth: "2020-05-12", note: "Recently baptized at the parish." }
+  });
+  assert.equal(request.requestType, "household_membership_add");
+  assert.equal(request.householdId, household.id);
+  assert.match(request.summary, /Lucy Dunn/);
+  const payload = JSON.parse(db.prepare("SELECT requested_payload_json FROM directory_change_requests WHERE id = ?").get(request.id).requested_payload_json);
+  assert.equal(payload.relationship, "child");
+  assert.equal(payload.childAdd.relationship, "daughter");
+  assert.equal(payload.childAdd.dateOfBirth, "2020-05-12");
+  const flags = db.prepare("SELECT is_child, protected_person FROM directory_person_privacy_flags WHERE person_id = ?").get(payload.personId);
+  assert.equal(flags.is_child, 1);
+  assert.equal(flags.protected_person, 0);
+  const linked = db.prepare("SELECT COUNT(*) AS count FROM directory_household_members WHERE household_id = ? AND person_id = ?").get(household.id, payload.personId);
+  assert.equal(linked.count, 0, "child should not be linked until parish review approves the request");
+  await assert.rejects(
+    () => requestHouseholdChildAdd(env, { context, householdId: household.id, data: { preferredName: "Lucy Dunn" } }),
+    (error) => error instanceof DirectoryServiceError && error.code === "duplicate_request"
   );
 });
 
