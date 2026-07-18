@@ -22,11 +22,6 @@
   <style>
     :root { --ink:#101820; --muted:#68717d; --line:#d8ddd9; --paper:#fbfaf7; --gold:#b88a3d; --green:#235c4d; --blue:#153a5b; }
     body { margin:0; background:#f6f3ee; color:var(--ink); font-family:"DM Sans", Arial, sans-serif; }
-    .directory-shell { min-height:100vh; display:grid; grid-template-columns:280px 1fr; }
-    .directory-side { background:#071722; color:#fff; padding:28px 22px; display:flex; flex-direction:column; gap:24px; }
-    .directory-side img { width:54px; height:54px; }
-    .directory-side a { color:#fff; text-decoration:none; display:flex; align-items:center; gap:10px; padding:10px 0; opacity:.88; }
-    .directory-side a.active { opacity:1; color:#f0c36f; }
     .directory-main { padding:28px; display:flex; flex-direction:column; }
     .directory-top { display:flex; justify-content:space-between; gap:16px; align-items:center; margin-bottom:22px; }
     .directory-title h1 { margin:0; font-family:"Cormorant Garamond", Georgia, serif; font-size:38px; letter-spacing:0; }
@@ -152,16 +147,14 @@
   </style>
 </head>
 <body class="donor-mobile-page donor-directory-page">
-  <div class="directory-shell">
-    <aside class="directory-side">
-      <a href="/" aria-label="AGAPAY home"><img src="/mark.png" alt="AGAPAY" /></a>
-      <nav>
-        <a href="/myagapay/dashboard">My AGAPAY</a>
-        <a href="/myagapay/giving">Giving</a>
-        <a href="/myagapay/bookstore">Bookstore</a>
-        <a class="active" href="/myagapay/directory">Directory</a>
-        <a href="/myagapay/account">Account</a>
-      </nav>
+  <div class="app directory-shell">
+    <aside class="sidebar directory-side">
+      <div class="sidebar-scroll">
+        <div class="brand"><div class="brand-row"><a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home" hx-boost="false"><img src="/mark.png" alt="AGAPAY" /></a><span class="brand-name">AGAPAY</span><span class="dashboard-home-cue">Home</span></div><span class="pill">Donor Dashboard</span></div>
+        <div class="profile-panel"><div class="profile-name" id="profileName">My AGAPAY Account</div><div class="profile-meta" id="profileMeta">Parish directory</div></div>
+        <nav class="nav unified-product-nav" hx-boost="false"></nav>
+      </div>
+      <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg> Account settings</a></div>
     </aside>
     <main class="directory-main">
       <div class="directory-top">
