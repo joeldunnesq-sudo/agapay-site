@@ -82,11 +82,6 @@
           <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 6h8"/><path d="M8 10h7"/></svg>
           <span class="nav-label">Stewardship Health</span>
         </div>
-        <div class="sidebar-nav-item sidebar-nav-item--suite" onclick="switchTab('parishplus')" id="nav-parishplus">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-5"/></svg>
-          <span class="nav-label">Parish +</span>
-          <span class="nav-upgrade-badge" id="parishPlusNavBadge">Upgrade</span>
-        </div>
         <div class="sidebar-nav-item" onclick="switchTab('sacraments')" id="nav-sacraments">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/></svg>
           <span class="nav-label">Sacraments &amp; Services</span>
@@ -665,7 +660,7 @@
             </div>
           </div>
           <div class="section-body">
-            <p class="notice" style="margin-bottom:16px;">Revenue Streams help your parish separate giving, bookstore, and other Parish+ activity for reporting and accounting. Most parishes use one Stripe account and one bank account. Larger parishes may use separate revenue streams for more detailed tracking.</p>
+            <p class="notice" style="margin-bottom:16px;">Revenue Streams help your parish separate giving, bookstore, and other parish commerce activity for reporting and accounting. Most parishes use one Stripe account and one bank account. Larger parishes may use separate revenue streams for more detailed tracking.</p>
             <div id="settlementProfilesBody"><p class="sw-tool-loading">Loading revenue streams&hellip;</p></div>
           </div>
         </div>
@@ -685,7 +680,7 @@
                 </span>
                 <span>
                   <strong>Stripe Account &amp; Payouts Guide</strong>
-                  <small>Verify Stripe, manage payouts and deposits, and use the Parish + Bookstore &mdash; updated July 2026.</small>
+                  <small>Verify Stripe, manage payouts and deposits, and use parish commerce &mdash; updated July 2026.</small>
                 </span>
                 <b>Open</b>
               </a>
@@ -1103,6 +1098,21 @@
 
         </div>
 
+        <!-- Annual Meeting Packets — governance workspace. Kept in
+             Stewardship Health because packets are parish records, financial
+             summaries, and annual-meeting prep rather than commerce. -->
+        <div class="sw-suite-tool-card sw-tool-financials-featured">
+          <div class="sw-tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div class="sw-tool-card-header-row">
+            <strong class="sw-tool-card-title">Annual Meeting Packets</strong>
+            <span class="pdx-pp-card-state soon" id="parishPlusPacketsState">—</span>
+          </div>
+          <p class="sw-tool-card-desc">Agenda, clergy reports, treasurer notes, nominees, resolutions, and a print-ready PDF packet.</p>
+          <div class="sw-tool-card-body" id="parishPlusMeetingsPane"><p class="sw-tool-loading">Loading…</p></div>
+        </div>
+
         <!-- Subscription / plan pane — renders inside .sw-suite-plan-row -->
         <div class="sw-suite-plan-row" id="stewardshipPlanPane"></div>
 
@@ -1120,69 +1130,6 @@
           <div class="section-body" id="stewardshipFinancialsEditorPane"></div>
         </section>
 
-      </div>
-
-      <!-- ── PARISH PLUS TAB ──────────────────────────── -->
-      <div class="tab-panel" id="tab-parishplus">
-        <section class="pdx-pp-hero">
-          <div class="pdx-pp-hero-copy">
-            <div class="pdx-pp-eyebrow">AGAPAY Parish +</div>
-            <h1 class="pdx-pp-title">Parish +</h1>
-            <p class="pdx-pp-subhead">Parish commerce and operations tools that go beyond giving: bookstore payments, annual meeting packets, sacrament and service requests, and future parish workflows.</p>
-          </div>
-          <div class="pdx-pp-hero-status" id="parishPlusHeroStatus">
-            <span class="pdx-pp-status-pill upsell" id="parishPlusStatusLabel">Loading…</span>
-          </div>
-        </section>
-
-        <div class="pdx-pp-grid">
-          <!-- Parish Commerce — live sales tile -->
-          <div class="pdx-pp-card">
-            <div class="pdx-pp-card-head">
-              <div class="pdx-pp-card-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 6h8"/><path d="M8 10h7"/></svg></div>
-              <span class="pdx-pp-card-state soon" id="parishPlusCommerceState">—</span>
-            </div>
-            <h3 class="pdx-pp-card-title">Parish Commerce</h3>
-            <div id="parishPlusCommerceStat"></div>
-            <p class="pdx-pp-card-desc">A simple in-app point of sale for bookstore items, candles, icons, and parish goods — paid through Stripe and picked up in person.</p>
-            <div class="pdx-pp-card-foot" id="parishPlusCommerceFoot"></div>
-          </div>
-
-          <!-- Sacraments & Services — pending request count -->
-          <div class="pdx-pp-card">
-            <div class="pdx-pp-card-head">
-              <div class="pdx-pp-card-icon"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/></svg></div>
-              <span class="pdx-pp-card-state soon" id="parishPlusSacramentsState">—</span>
-            </div>
-            <h3 class="pdx-pp-card-title">Sacraments &amp; Services</h3>
-            <div id="parishPlusSacramentsStat"></div>
-            <p class="pdx-pp-card-desc">House blessings, baptisms, weddings, funerals, and parish service requests from My AGAPAY.</p>
-            <div class="pdx-pp-card-foot" id="parishPlusSacramentsFoot"></div>
-          </div>
-
-          <!-- Annual Meeting Packets — workspace tile (wide) -->
-          <div class="pdx-pp-card wide">
-            <div class="pdx-pp-card-head">
-              <div class="pdx-pp-card-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-              <span class="pdx-pp-card-state soon" id="parishPlusPacketsState">—</span>
-            </div>
-            <h3 class="pdx-pp-card-title">Annual Meeting Packets</h3>
-            <p class="pdx-pp-card-desc">Agenda, clergy reports, treasurer notes, nominees, resolutions, and a print-ready PDF packet.</p>
-            <div id="parishPlusMeetingsPane"><p class="sw-tool-loading">Loading…</p></div>
-          </div>
-
-          <!-- Operations — honest placeholder (wide) -->
-          <div class="pdx-pp-card wide">
-            <div class="pdx-pp-card-head">
-              <div class="pdx-pp-card-icon"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5 20V9l7-5 7 5v11"/><path d="M8 12h5"/><path d="M8 16h4"/></svg></div>
-              <span class="pdx-pp-card-state soon">Coming soon</span>
-            </div>
-            <h3 class="pdx-pp-card-title">Operations Workflows</h3>
-            <p class="pdx-pp-card-desc">A home for the parish workflows that are not giving or stewardship tools. More Parish + workflows will appear here as they become ready.</p>
-            <div class="pdx-pp-card-foot"><button class="pdx-pp-btn pdx-pp-btn-ghost" disabled style="opacity:0.6;cursor:default;">In development</button></div>
-          </div>
-        </div>
-
         <!-- Packet editor — full-width card, hidden until opened -->
         <section class="section-card sw-suite-editor-card" id="stewardshipEditorCard" hidden>
           <div class="section-header">
@@ -1196,6 +1143,8 @@
           </div>
           <div class="section-body stewardship-editor-body" id="stewardshipEditorPane"></div>
         </section>
+
+      </div>
       </div>
 
       <!-- ── SACRAMENTS & SERVICES TAB ────────────────────── -->
@@ -1212,7 +1161,7 @@
           <div>
             <span>Coming Soon</span>
             <h2>Sacraments &amp; Services is on the way</h2>
-            <p>Parishioners will be able to request house blessings, baptisms, weddings, and other services directly from My AGAPAY — routed straight to your parish dashboard for you to review and schedule. Part of AGAPAY Parish +.</p>
+            <p>Parishioners will be able to request house blessings, baptisms, weddings, and other services directly from My AGAPAY — routed straight to your parish dashboard for you to review and schedule. Included with the Parish tier.</p>
           </div>
         </div>
 
@@ -1220,7 +1169,7 @@
           <section class="sac-admin-shell" aria-label="Sacraments and Services parish dashboard">
             <div class="sac-admin-head">
               <div>
-                <span class="sac-admin-kicker">AGAPAY Parish +</span>
+                <span class="sac-admin-kicker">Parish tier</span>
                 <h1>Sacraments &amp; Services</h1>
                 <p>Review parishioner requests, set recurring availability, and manage blackout dates for online booking.</p>
               </div>
@@ -1275,10 +1224,10 @@
             <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
           </div>
           <div>
-            <span>AGAPAY Parish +</span>
-            <h2>Bookstore Payments is part of AGAPAY Parish +</h2>
+            <span>Parish Commerce</span>
+            <h2>Bookstore Payments is included with the Parish tier</h2>
             <p>Let parishioners pay for books, prayer ropes, icons, candles, and other parish items from My AGAPAY with Stripe-powered checkout, then pick them up in person.</p>
-            <button class="btn btn-gold" type="button" onclick="switchTab('parishplus')">View Parish +</button>
+            <button class="btn btn-gold" type="button" onclick="switchTab('settings')">Review Parish tier</button>
           </div>
         </div>
 
@@ -1287,7 +1236,7 @@
             <div class="sw-suite-hero-copy">
               <span class="sw-suite-eyebrow">Parish Commerce</span>
               <h1 class="sw-suite-heading">Bookstore</h1>
-              <p class="sw-suite-subhead">Manage the items parishioners can purchase from My AGAPAY and set their prices. Payment is handled through Stripe; items are collected in person.</p>
+              <p class="sw-suite-subhead">Manage bookstore items and the broader parish goods parishioners can purchase from My AGAPAY. Payment is handled through Stripe; items are collected in person.</p>
             </div>
             <div class="sw-suite-hero-status">
               <span class="sw-suite-status-label sw-suite-status--active" id="bookstoreStatusLabel">Loading...</span>
@@ -1525,11 +1474,6 @@
   <button class="mobile-tab-link" type="button" data-nav-tab="stewardship" onclick="switchTab('stewardship')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M6 5h16v18H6z"/><path d="M10 10h8"/><path d="M10 14h8"/><path d="M10 18h5"/></svg>
     <span>Health</span>
-  </button>
-  <button class="mobile-tab-link" type="button" data-nav-tab="parishplus" onclick="switchTab('parishplus')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 3l9 4v6c0 6-4 10-9 12-5-2-9-6-9-12V7l9-4z"/><path d="M10 14l3 3 6-7"/></svg>
-    <span>Plus</span>
-    <em class="mobile-upgrade-badge" id="mobileStewBadge">Upgrade</em>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="directory" onclick="switchTab('directory')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M6 6h16v16H6z"/><path d="M10 11h8"/><path d="M10 16h5"/></svg>

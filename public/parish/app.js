@@ -114,6 +114,7 @@
 
   // ── TAB NAV ──────────────────────────────────────────────
   function switchTab(tab) {
+    if (tab === 'parishplus') tab = 'bookstore';
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.sidebar-nav-item, .mobile-tab-link').forEach(n => n.classList.remove('active'));
     const panel = document.getElementById('tab-' + tab);
@@ -123,7 +124,7 @@
     if (nav)   nav.classList.add('active');
     if (mobileNav) mobileNav.classList.add('active');
     activeTab = tab;
-    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship', parishplus:'AGAPAY Parish +', sacraments:'Sacraments & Services', directory:'Directory Operations', bookstore:'Bookstore', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship', sacraments:'Sacraments & Services', directory:'Directory Operations', bookstore:'Bookstore', qr:'QR Code & Giving Link' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length) loadGivingHistory();
@@ -132,7 +133,6 @@
     if (tab === 'campaigns' && currentParish) renderCampaignList(currentParish);
     if (tab === 'qr') { renderQrCode(); renderBulletinPreview(); }
     if (tab === 'stewardship') loadStewardshipPanel();
-    if (tab === 'parishplus') renderParishPlusPanel();
     if (tab === 'sacraments') loadSacramentsTab();
     if (tab === 'directory') loadDirectoryAdminTab();
     if (tab === 'bookstore') loadBookstoreCatalogTab();
@@ -345,113 +345,6 @@
     return Boolean(currentParish?.stewardshipActive || sw.legacyAddOnActive || (!sw.includedInParishTier && ['active', 'trialing', 'comped'].includes(sw.status)));
   }
 
-  function renderParishPlusPanel() {
-    const active = isParishPlusActive();
-    const status = document.getElementById('parishPlusStatusLabel');
-    if (status) {
-      if (active) {
-        status.textContent = 'Active';
-        status.className = 'pdx-pp-status-pill active';
-        // Clear any upsell price/CTA siblings
-        const heroStatus = document.getElementById('parishPlusHeroStatus');
-        if (heroStatus) heroStatus.querySelectorAll('.pdx-pp-price, .pdx-pp-hero-cta').forEach(el => el.remove());
-      } else {
-        status.textContent = 'Upgrade required';
-        status.className = 'pdx-pp-status-pill upsell';
-        const heroStatus = document.getElementById('parishPlusHeroStatus');
-        if (heroStatus && !heroStatus.querySelector('.pdx-pp-hero-cta')) {
-          const price = document.createElement('span');
-          price.className = 'pdx-pp-price';
-          price.innerHTML = 'Included in <b>Parish</b>';
-          const cta = document.createElement('button');
-          cta.className = 'pdx-pp-hero-cta';
-          cta.type = 'button';
-          cta.textContent = 'Upgrade to Parish';
-          cta.onclick = () => switchTab('settings');
-          heroStatus.appendChild(price);
-          heroStatus.appendChild(cta);
-        }
-      }
-    }
-
-    renderParishPlusCommerceTile(active);
-    renderParishPlusSacramentsTile(active);
-    const meetingsPane = document.getElementById('parishPlusMeetingsPane');
-    if (meetingsPane) renderParishPlusMeetingsPane(meetingsPane, active);
-  }
-
-  // Commerce tile — live this-month sales (fetched lazily, cached on state)
-  let parishPlusCommerceState = { loaded: false, summary: null };
-  function renderParishPlusCommerceTile(active) {
-    const stateChip = document.getElementById('parishPlusCommerceState');
-    const statBox = document.getElementById('parishPlusCommerceStat');
-    const foot = document.getElementById('parishPlusCommerceFoot');
-    if (!statBox || !foot) return;
-
-    if (!active) {
-      if (stateChip) { stateChip.textContent = 'Parish tier'; stateChip.className = 'pdx-pp-card-state locked'; }
-      statBox.innerHTML = '';
-      foot.innerHTML = '<button class="pdx-pp-btn pdx-pp-btn-ghost" type="button" onclick="switchTab(\'parishplus\')">Learn more</button>';
-      return;
-    }
-
-    if (stateChip) { stateChip.textContent = 'Included'; stateChip.className = 'pdx-pp-card-state ready'; }
-    foot.innerHTML = '<button class="pdx-pp-btn pdx-pp-btn-primary" type="button" onclick="switchTab(\'bookstore\')">Open Bookstore →</button>';
-
-    const s = parishPlusCommerceState.summary;
-    if (!parishPlusCommerceState.loaded) {
-      statBox.innerHTML = '<div class="pdx-pp-stat"><span class="pdx-pp-stat-unit">Open Bookstore to view sales</span></div>';
-    } else if (s && s.monthOrderCount > 0) {
-      statBox.innerHTML = `<div class="pdx-pp-stat"><span class="pdx-pp-stat-num">${money(s.monthGrossCents)}</span><span class="pdx-pp-stat-unit">this month · ${s.monthOrderCount} order${s.monthOrderCount === 1 ? '' : 's'}</span></div>`;
-    } else {
-      statBox.innerHTML = '<div class="pdx-pp-stat"><span class="pdx-pp-stat-unit">No sales yet this month</span></div>';
-    }
-  }
-
-  async function loadParishPlusCommerceSummary() {
-    if (!currentParish) return;
-    try {
-      const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/bookstore/sales-summary', { headers: authHeaders() });
-      const data = await res.json().catch(() => ({}));
-      parishPlusCommerceState = { loaded: true, summary: data.salesSummary || null };
-    } catch {
-      parishPlusCommerceState = { loaded: true, summary: null };
-    }
-    renderParishPlusCommerceTile(isParishPlusActive());
-  }
-
-  // Sacraments tile — pending request count (data already client-side)
-  function renderParishPlusSacramentsTile(active) {
-    const stateChip = document.getElementById('parishPlusSacramentsState');
-    const statBox = document.getElementById('parishPlusSacramentsStat');
-    const foot = document.getElementById('parishPlusSacramentsFoot');
-    if (!statBox || !foot) return;
-
-    if (!active) {
-      if (stateChip) { stateChip.textContent = 'Parish tier'; stateChip.className = 'pdx-pp-card-state locked'; }
-      statBox.innerHTML = '';
-      foot.innerHTML = '<button class="pdx-pp-btn pdx-pp-btn-ghost" type="button" onclick="switchTab(\'parishplus\')">Learn more</button>';
-      return;
-    }
-
-    const requests = (typeof sacramentsState !== 'undefined' && sacramentsState.requests) ? sacramentsState.requests : [];
-    const pending = requests.filter(r => ['requested', 'acknowledged', 'scheduled'].includes(r.status));
-    const pendingCount = pending.length;
-
-    if (stateChip) {
-      if (pendingCount > 0) { stateChip.textContent = 'Action needed'; stateChip.className = 'pdx-pp-card-state attention'; }
-      else { stateChip.textContent = 'Included'; stateChip.className = 'pdx-pp-card-state ready'; }
-    }
-    if (!sacramentsState || !sacramentsState.loaded) {
-      statBox.innerHTML = '<div class="pdx-pp-stat"><span class="pdx-pp-stat-unit">Open Requests to review</span></div>';
-    } else if (pendingCount > 0) {
-      statBox.innerHTML = `<div class="pdx-pp-stat"><span class="pdx-pp-stat-num attention">${pendingCount}</span><span class="pdx-pp-stat-unit">pending request${pendingCount === 1 ? '' : 's'}</span></div>`;
-    } else {
-      statBox.innerHTML = '<div class="pdx-pp-stat"><span class="pdx-pp-stat-unit">No pending requests</span></div>';
-    }
-    foot.innerHTML = '<button class="pdx-pp-btn pdx-pp-btn-primary" type="button" onclick="switchTab(\'sacraments\')">Review Requests →</button>';
-  }
-
   async function loadStewardshipPanel(force = false) {
     const status = document.getElementById('stewardshipStatusLabel');
     const planPane = document.getElementById('stewardshipPlanPane');
@@ -466,6 +359,7 @@
     }
     if (stewardshipState.loaded && !force) {
       renderStewardshipPanel();
+      renderParishPlusMeetingsPane(document.getElementById('parishPlusMeetingsPane'), isParishPlusActive());
       // Always reload metrics/financials when switching to the tab
       const _active = isParishPlusActive();
       if (_active) loadStewardshipEssentialPanels();
@@ -550,6 +444,7 @@
         ${directoryMetric('Assigned to me', metrics.assignedToMe, '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>')}
         ${directoryMetric('Oldest age', (metrics.oldestPendingAgeDays || 0) + 'd', '<path d="M3 3v18h18"/><path d="M18.7 8 12 14.7 8.7 11.3 3 17"/>')}
       </section>
+      <div id="directoryReviewDetail" class="pdx-dir-review-detail" aria-live="polite"></div>
       <div class="pdx-dir-grid">
         <section class="pdx-panel pdx-dir-panel-queue">
           <div class="pdx-panel-header">
@@ -559,7 +454,6 @@
           <div class="pdx-dir-row-list">
             ${queue.length ? queue.slice(0, 10).map(directoryQueueRow).join('') : directoryEmptyState('All caught up', 'No directory review items are waiting.')}
           </div>
-          <div id="directoryReviewDetail" class="pdx-dir-review-detail"></div>
         </section>
         <section class="pdx-panel">
           <div class="pdx-panel-header">
@@ -620,14 +514,16 @@
 
   function directoryQueueRow(item) {
     const actions = Array.isArray(item.permittedActions) ? item.permittedActions : [];
-    return `<div class="pdx-dir-row">
+    const sourceType = escapeAttr(item.sourceType);
+    const sourceId = escapeAttr(item.sourceId);
+    return `<div class="pdx-dir-row pdx-dir-queue-row" onclick="openDirectoryReview('${sourceType}','${sourceId}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDirectoryReview('${sourceType}','${sourceId}');}">
       <div class="pdx-dir-row-copy">
         <div class="pdx-dir-row-title">${escapeHtml(item.summary || item.reviewType)}</div>
         <div class="pdx-dir-row-meta">${escapeHtml(item.targetLabel || 'Directory record')} · ${escapeHtml(item.requesterLabel || 'Directory user')}</div>
       </div>
       <div class="pdx-dir-row-side">
         <span class="pdx-dir-badge ${directoryPriorityBadgeClass(item.priority)}">${escapeHtml(item.priority || 'normal')}</span>
-        <button class="pdx-dir-action-btn" type="button" onclick="openDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}')">${actions.includes('approve') ? 'Review' : 'Open'}</button>
+        <button class="pdx-dir-action-btn" type="button" onclick="event.stopPropagation();openDirectoryReview('${sourceType}','${sourceId}')">${actions.includes('approve') ? 'Review' : 'Open'}</button>
       </div>
     </div>`;
   }
@@ -635,7 +531,16 @@
   function directoryReviewValue(value) {
     if (value === null || value === undefined || value === '') return 'Not set';
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-    if (typeof value === 'object') return JSON.stringify(value, null, 2);
+    if (Array.isArray(value)) return value.length ? value.map(directoryReviewValue).join(', ') : 'None';
+    if (typeof value === 'object') {
+      return Object.entries(value)
+        .filter(([, item]) => item !== undefined && item !== null && item !== '')
+        .map(([key, item]) => {
+          const label = key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
+          return label + ': ' + directoryReviewValue(item);
+        })
+        .join('\n') || 'Not set';
+    }
     return String(value);
   }
 
@@ -649,17 +554,32 @@
 
   function directoryReviewPrefs(preferences) {
     if (!preferences || typeof preferences !== 'object') return '';
-    const labels = { adultPreferredName: 'Name', adultEmail: 'Email', adultPhone: 'Phone' };
+    const labels = { adultPreferredName: 'Name', adultEmail: 'Email', adultPhone: 'Phone', householdAddress: 'Address', personPhoto: 'Photo' };
     const anyPublished = Object.values(preferences).some(pref => pref?.visibility === 'directory_members' && pref?.publicationEligible);
     return `<div class="pdx-dir-review-prefs">
-      <strong>${anyPublished ? 'Approval will publish these selected fields' : 'Parishioner sharing choices'}</strong>
+      <div class="pdx-dir-review-prefs-head">
+        <strong>${anyPublished ? 'Approval will publish selected fields' : 'Parishioner sharing choices'}</strong>
+        <span>${anyPublished ? 'Directory-visible after approval' : 'Nothing public unless the member requested it'}</span>
+      </div>
+      <div class="pdx-dir-pref-chip-list">
       ${Object.entries(preferences).map(([key, pref]) => {
         const visibility = pref?.visibility || 'private';
-        const eligible = pref?.publicationEligible ? 'requested for directory' : 'not requested for directory';
-        return `<span>${escapeHtml(labels[key] || key)}: ${escapeHtml(visibility.replace(/_/g, ' '))} · ${escapeHtml(eligible)}</span>`;
+        const eligible = pref?.publicationEligible;
+        const chipClass = visibility === 'directory_members' && eligible ? 'publish' : (visibility === 'private' ? 'private' : '');
+        return `<span class="pdx-dir-pref-chip ${chipClass}"><b>${escapeHtml(labels[key] || key)}</b><small>${escapeHtml(visibility.replace(/_/g, ' '))}${eligible ? ' · requested' : ''}</small></span>`;
       }).join('')}
-      ${anyPublished ? '<em>Click Approve to approve this profile for the member directory using these contact choices.</em>' : ''}
+      </div>
+      ${anyPublished ? '<em>Approving this item publishes only the fields marked for directory members.</em>' : ''}
     </div>`;
+  }
+
+  function directoryReviewMeta(item) {
+    const parts = [
+      item.reviewType ? statusLabel(item.reviewType) : '',
+      item.requesterLabel ? 'Submitted by ' + item.requesterLabel : '',
+      item.priority ? statusLabel(item.priority) + ' priority' : ''
+    ].filter(Boolean);
+    return parts.join(' · ');
   }
 
   async function openDirectoryReview(sourceType, sourceId) {
@@ -676,34 +596,41 @@
       const actions = Array.isArray(item.permittedActions) ? item.permittedActions : [];
       detail.innerHTML = `
         <article class="pdx-dir-review-card">
-          <div class="pdx-panel-header">
-            <div>
-              <div class="pdx-panel-title">Review: ${escapeHtml(item.targetLabel || item.summary || 'Directory item')}</div>
-              <p class="section-note">${escapeHtml(item.summary || '')}</p>
+          <div class="pdx-dir-review-top">
+            <div class="pdx-dir-review-title-block">
+              <span class="pdx-dir-review-kicker">Directory review</span>
+              <h2>${escapeHtml(item.targetLabel || item.summary || 'Directory item')}</h2>
+              <p>${escapeHtml(item.summary || 'Review the submitted member information and publication choices before approving.')}</p>
+              <div class="pdx-dir-review-meta">${escapeHtml(directoryReviewMeta(item))}</div>
             </div>
-            <button class="pdx-link-btn" type="button" onclick="document.getElementById('directoryReviewDetail').innerHTML=''">Close</button>
+            <button class="pdx-dir-close-btn" type="button" onclick="document.getElementById('directoryReviewDetail').innerHTML=''">Close</button>
           </div>
           ${directoryReviewPrefs(proposed.publicationPreferences)}
           <div class="pdx-dir-review-grid">
-            <section><h4>Current</h4>${directoryReviewObjectRows(review.current || {})}</section>
-            <section><h4>Submitted</h4>${directoryReviewObjectRows(proposed)}</section>
+            <section class="pdx-dir-review-column"><h4>Current record</h4>${directoryReviewObjectRows(review.current || {})}</section>
+            <section class="pdx-dir-review-column pdx-dir-review-column-new"><h4>Submitted changes</h4>${directoryReviewObjectRows(proposed)}</section>
           </div>
           ${actions.includes('approve') ? `
             <label class="pdx-dir-review-note"><span>Reviewer note</span><textarea id="directoryReviewNote" rows="2" placeholder="Optional note"></textarea></label>
-            <div class="pdx-dir-actions">
-              <button class="pdx-dir-action-btn pdx-dir-action-primary" type="button" onclick="decideDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}','approve')">Approve</button>
-              <button class="pdx-dir-action-btn" type="button" onclick="decideDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}','return')">Return for Changes</button>
-              <button class="pdx-dir-action-btn" type="button" onclick="decideDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}','deny')">Deny</button>
+            <div class="pdx-dir-review-actions">
+              <button class="pdx-dir-action-btn pdx-dir-action-primary" type="button" data-review-decision="approve" onclick="decideDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}','approve', this)">Approve</button>
+              <button class="pdx-dir-action-btn" type="button" data-review-decision="return" onclick="decideDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}','return', this)">Return for Changes</button>
+              <button class="pdx-dir-action-btn pdx-dir-action-danger" type="button" data-review-decision="deny" onclick="decideDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}','deny', this)">Deny</button>
             </div>` : `<p class="section-note">This account can view the item, but it cannot approve it. Use a parish dashboard session or another staff reviewer with directory review permissions.</p>`}
         </article>`;
+      detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
       await fetch(directoryAdminApi('/reviews/' + encodeURIComponent(sourceType) + '/' + encodeURIComponent(sourceId) + '/begin'), { method: 'POST', headers: authHeaders() }).catch(() => null);
     } catch (err) {
       detail.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to open this review item.')}</p>`;
     }
   }
 
-  async function decideDirectoryReview(sourceType, sourceId, decision) {
+  async function decideDirectoryReview(sourceType, sourceId, decision, button) {
     const note = document.getElementById('directoryReviewNote')?.value || '';
+    const buttons = Array.from(document.querySelectorAll('[data-review-decision]'));
+    buttons.forEach(btn => btn.disabled = true);
+    const originalText = button?.textContent;
+    if (button) button.textContent = decision === 'approve' ? 'Approving...' : 'Saving...';
     try {
       const res = await fetch(directoryAdminApi('/reviews/' + encodeURIComponent(sourceType) + '/' + encodeURIComponent(sourceId) + '/decision'), {
         method: 'POST',
@@ -717,6 +644,8 @@
       if (detail) detail.innerHTML = '';
       await loadDirectoryAdminTab(true);
     } catch (err) {
+      buttons.forEach(btn => btn.disabled = false);
+      if (button && originalText) button.textContent = originalText;
       alert(err.message || 'Unable to save this review decision.');
     }
   }
@@ -766,7 +695,7 @@
       const reason = action === 'hide' ? 'Hidden from parish dashboard review.' : '';
       const res = await fetch(directoryAdminApi('/skills/listings/' + encodeURIComponent(id) + '/' + action), {
         method: 'POST',
-        headers: authHeaders(),
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason })
       });
       const payload = await res.json().catch(() => ({}));
@@ -1744,23 +1673,13 @@
   }
 
   function updateStewardshipBadges(isActive, options = {}) {
-    const badge = document.getElementById('parishPlusNavBadge');
-    if (badge) {
-      badge.textContent = isActive ? 'Active' : 'Upgrade';
-      badge.classList.toggle('nav-upgrade-badge--active', isActive);
-    }
-    const mobileBadge = document.getElementById('mobileStewBadge');
-    if (mobileBadge) {
-      mobileBadge.textContent = isActive ? 'Active' : 'Upgrade';
-      mobileBadge.classList.toggle('mobile-upgrade-badge--active', isActive);
-    }
-    if (options.renderPanel !== false) renderParishPlusPanel();
+    renderParishPlusMeetingsPane(document.getElementById('parishPlusMeetingsPane'), isActive);
     const bookstoreNav = document.getElementById('nav-bookstore');
     const bookstoreBadge = document.getElementById('bookstoreNavBadge');
     const mobileBookstoreBadge = document.getElementById('mobileBookstoreBadge');
     if (bookstoreNav) {
       bookstoreNav.classList.toggle('sidebar-nav-item--gated', !isActive);
-      bookstoreNav.title = isActive ? '' : 'Requires AGAPAY Parish +';
+      bookstoreNav.title = isActive ? '' : 'Requires Parish tier';
     }
     if (bookstoreBadge) {
       bookstoreBadge.hidden = isActive;
@@ -1773,7 +1692,7 @@
       mobileBookstoreBadge.classList.remove('mobile-upgrade-badge--active');
     }
 
-    // Sacraments & Services is an AGAPAY Parish + feature. Parish+ parishes
+    // Sacraments & Services is a Parish tier feature. Parish-tier parishes
     // can turn the donor-facing entry on or off from the Sacraments tab.
     const sacIsOn = Boolean(currentParish?.sacramentsEnabled);
     const sacNav = document.getElementById('nav-sacraments');
@@ -1781,7 +1700,7 @@
     const sacBadge = document.getElementById('sacramentsNavBadge');
     if (sacNav) {
       sacNav.classList.toggle('sidebar-nav-item--gated', !isActive);
-      sacNav.title = isActive ? '' : 'Requires AGAPAY Parish +';
+      sacNav.title = isActive ? '' : 'Requires Parish tier';
     }
     if (sacSoonBadge) sacSoonBadge.hidden = true;
     if (sacBadge) {
@@ -1792,7 +1711,7 @@
   }
 
   // ── BOOKSTORE ───────────────────────────────────────────────
-  // Also an AGAPAY Parish + feature, gated the same way as Sacraments.
+  // Also a Parish tier feature, gated the same way as Sacraments.
   // Two pieces: what's already in the parish's catalog, and a starter
   // list of common items they can check off instead of typing each one
   // in by hand. Prices on the starter list are suggestions, not fixed —
@@ -2067,7 +1986,7 @@
     const status = document.getElementById('bookstoreStatusLabel');
     if (!currentParish) return;
 
-    // Reuse the AGAPAY Parish + status already fetched for that tab, with
+    // Reuse the Parish tier status already fetched for that tab, with
     // the dashboard payload as a fallback when the parish opens Bookstore first.
     const sw = stewardshipState.stewardship || {};
     const swActive = Boolean(currentParish.stewardshipActive || sw.active || ['active', 'trialing', 'comped'].includes(sw.status));
@@ -2645,8 +2564,8 @@
   }
 
   // ── SACRAMENTS & SERVICES ──────────────────────────────────
-  // An AGAPAY Parish + feature — gated server-side by the exact same
-  // hasStewardshipAccess() check as the rest of the add-on. This panel
+  // A Parish tier feature — gated server-side by the exact same
+  // hasStewardshipAccess() check as the rest of the tier features. This panel
   // reuses stewardshipState (already fetched by loadStewardshipPanel) to
   // decide whether to show the upsell or the actual request list, so
   // switching to this tab never needs a second status round-trip.
@@ -2746,8 +2665,7 @@
     renderSacramentsFeatureToggle();
     renderSacramentsPriestPicker();
 
-    // Reuse the AGAPAY Parish + status already fetched for the add-on
-    // tab — no need to hit the network twice for the same gate.
+    // Reuse the Parish tier status already fetched for the feature gate.
     const sw = stewardshipState.stewardship || {};
     const swActive = sw.active || ['active', 'trialing', 'comped'].includes(sw.status);
     if (!swActive) {
@@ -3122,7 +3040,7 @@
             Let parishioners request house blessings, baptisms, weddings, and more directly from My AGAPAY —
             routed straight to your parish dashboard.
           </p>
-          <button class="btn btn-gold" type="button" onclick="switchTab('parishplus')">See what's included</button>
+          <button class="btn btn-gold" type="button" onclick="switchTab('settings')">Review Parish tier</button>
         </div>
       </div>`;
   }
@@ -3447,7 +3365,7 @@
   }
 
   // Shows a one-time-per-day pop-up when a Founding 20 free-year
-  // AGAPAY Parish + comp grant is within 30 days of expiring. Dismissal
+  // Parish tier feature grant is within 30 days of expiring. Dismissal
   // is remembered in localStorage per parish + grant expiry date, so it
   // won't nag more than once a day, and stops entirely once the grant
   // itself changes (renewed, converted to paid, or expired).
@@ -3486,10 +3404,10 @@
         '</div>' +
         '<span class="sw-comp-notice-eyebrow">Founding Parish</span>' +
         '<h2 id="swCompNoticeTitle">Your free year is ending soon</h2>' +
-        '<p>Your complimentary year of <strong>AGAPAY Parish +</strong> ends on <strong>' + escapeHtml(expiresLabel) + '</strong> \u2014 about ' + daysLeft + ' days from now.</p>' +
+        '<p>Your complimentary year of <strong>Parish tier features</strong> ends on <strong>' + escapeHtml(expiresLabel) + '</strong> \u2014 about ' + daysLeft + ' days from now.</p>' +
         '<p class="sw-comp-notice-sub">No action is needed if you would like to let it lapse. If your parish council would like to continue, you can add it as a paid feature at any time.</p>' +
         '<div class="sw-comp-notice-actions">' +
-          '<button class="sw-comp-notice-btn-primary" type="button" onclick="dismissStewardshipCompNotice(); switchTab(\'parishplus\')">View AGAPAY Parish +</button>' +
+          '<button class="sw-comp-notice-btn-primary" type="button" onclick="dismissStewardshipCompNotice(); switchTab(\'settings\')">Review Parish tier</button>' +
           '<button class="sw-comp-notice-btn-secondary" type="button" onclick="dismissStewardshipCompNotice()">Remind me later</button>' +
         '</div>' +
       '</div>';
@@ -3589,6 +3507,7 @@
   }
 
   function renderParishPlusMeetingsPane(meetingsPane, active) {
+    if (!meetingsPane) return;
     const meetings = stewardshipState.meetings || [];
     const year = new Date().getFullYear();
     const stateChip = document.getElementById('parishPlusPacketsState');
@@ -4712,11 +4631,11 @@
         <label class="check-card"><input id="recurringGivingEnabled" type="checkbox" ${(p.recurringGivingEnabled??true)?'checked':''} /> Recurring giving</label>
         <label class="check-card"><input id="candlesEnabled" type="checkbox" ${(p.candlesEnabled??true)?'checked':''} /> Candles</label>
         <label class="check-card"><input id="commemorationsEnabled" type="checkbox" ${(p.commemorationsEnabled??true)?'checked':''} /> Commemorations</label>
-        <label class="check-card" ${p.stewardshipActive?'':'title="Requires AGAPAY Parish +"'}>
+        <label class="check-card" ${p.stewardshipActive?'':'title="Requires Parish tier"'}>
           <input id="bookstoreEnabled" type="checkbox" ${p.stewardshipActive?'':'disabled'} ${(p.bookstoreEnabled??false)?'checked':''} /> Bookstore Payments
         </label>
       </div>
-      ${p.stewardshipActive ? '' : '<p class="section-note">Bookstore Payments is part of AGAPAY Parish +. <button type="button" class="inline-link-button" onclick="switchTab(\'parishplus\')">View AGAPAY Parish +</button> to let donors pay for books, prayer ropes, and other items from My AGAPAY.</p>'}
+      ${p.stewardshipActive ? '' : '<p class="section-note">Bookstore Payments is included with the Parish tier. <button type="button" class="inline-link-button" onclick="switchTab(\'settings\')">Review Parish tier</button> to let donors pay for books, prayer ropes, and other items from My AGAPAY.</p>'}
       <div class="btn-row">
         <button class="btn btn-gold" onclick="saveDashboard(this)">Save changes</button>
         ${(p.setup||{}).billingActive?'<button class="btn btn-primary" onclick="startStripeOnboarding(this)">Start Stripe onboarding</button>':'<button class="btn btn-ghost" disabled title="Complete AGAPAY billing first">Stripe unlocks after billing</button>'}

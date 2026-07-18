@@ -528,6 +528,8 @@
   transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 .pdx-dir-row:hover { transform: translateY(-1px); box-shadow: var(--pdx-shadow-sm); border-color: rgba(200,162,74,0.45); }
+.pdx-dir-queue-row { cursor: pointer; }
+.pdx-dir-queue-row:focus-visible { outline: 3px solid rgba(200,162,74,0.28); outline-offset: 2px; border-color: var(--gold); }
 .pdx-dir-row-copy { min-width: 0; }
 .pdx-dir-row-title { font-family: var(--serif); font-size: 15px; font-weight: 600; color: var(--ink); line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pdx-dir-row-meta { font-size: 11.5px; color: var(--stone); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -558,27 +560,56 @@
 .pdx-dir-action-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--pdx-gold-soft); }
 .pdx-dir-action-primary { background: var(--deep); border-color: var(--deep); color: var(--cream); }
 .pdx-dir-action-primary:hover { background: var(--gold); color: var(--deep); }
+.pdx-dir-action-danger { border-color: rgba(176,74,63,0.28); color: var(--pdx-alert); }
+.pdx-dir-action-danger:hover { background: rgba(176,74,63,0.1); border-color: var(--pdx-alert); color: var(--pdx-alert); }
+.pdx-dir-action-btn:disabled { opacity: 0.62; cursor: wait; transform: none; }
 
-.pdx-dir-review-detail { margin-top: 14px; }
+.pdx-dir-review-detail { margin: 0 0 18px; scroll-margin-top: 16px; }
+.pdx-dir-review-detail:empty { display: none; }
 .pdx-dir-review-card {
-  border: 1px solid rgba(200,162,74,0.26);
-  background: rgba(255,255,255,0.72);
+  position: relative;
+  border: 1px solid rgba(200,162,74,0.28);
+  background:
+    linear-gradient(180deg, rgba(255,253,249,0.96), rgba(255,255,255,0.9)),
+    var(--paper);
   border-radius: 18px;
-  padding: 16px;
-  box-shadow: var(--pdx-shadow-sm);
+  padding: 18px;
+  box-shadow: var(--pdx-shadow-md);
+  overflow: hidden;
+  animation: pdx-fade-up 0.24s ease-out both;
 }
+.pdx-dir-review-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, var(--gold), rgba(42,89,54,0.72), rgba(6,21,34,0.82));
+}
+.pdx-dir-review-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.pdx-dir-review-title-block { min-width: 0; }
+.pdx-dir-review-kicker { display: inline-flex; align-items: center; color: var(--gold); font-size: 10.5px; font-weight: 800; text-transform: uppercase; }
+.pdx-dir-review-title-block h2 { margin: 4px 0 5px; color: var(--ink); font-family: var(--serif); font-size: 24px; line-height: 1.12; }
+.pdx-dir-review-title-block p { margin: 0; color: var(--stone); font-size: 13px; line-height: 1.5; max-width: 760px; }
+.pdx-dir-review-meta { margin-top: 8px; color: rgba(6,21,34,0.58); font-size: 11.5px; font-weight: 700; }
+.pdx-dir-close-btn {
+  border: 1px solid rgba(6,21,34,0.1); background: rgba(255,255,255,0.82); color: var(--stone);
+  border-radius: 999px; padding: 7px 12px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.pdx-dir-close-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--pdx-gold-soft); }
 .pdx-dir-review-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 12px;
 }
-.pdx-dir-review-grid section {
+.pdx-dir-review-column {
   background: rgba(246,241,232,0.58);
   border: 1px solid rgba(6,21,34,0.08);
   border-radius: 14px;
   padding: 12px;
+  min-width: 0;
 }
+.pdx-dir-review-column-new { background: rgba(42,89,54,0.055); border-color: rgba(42,89,54,0.14); }
 .pdx-dir-review-grid h4 {
   margin: 0 0 8px;
   font-family: var(--serif);
@@ -588,33 +619,44 @@
 .pdx-dir-review-field {
   display: grid;
   gap: 3px;
-  padding: 8px 0;
+  padding: 9px 0;
   border-bottom: 1px solid rgba(6,21,34,0.08);
 }
 .pdx-dir-review-field:last-child { border-bottom: 0; }
-.pdx-dir-review-field span,
-.pdx-dir-review-prefs span {
+.pdx-dir-review-field span {
   color: var(--stone);
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 .pdx-dir-review-field strong {
   color: var(--ink);
   font-size: 13px;
+  line-height: 1.45;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 .pdx-dir-review-prefs {
   display: grid;
-  gap: 5px;
-  padding: 11px 12px;
+  gap: 10px;
+  padding: 13px 14px;
   border-radius: 14px;
   background: rgba(200,162,74,0.08);
   border: 1px solid rgba(200,162,74,0.18);
 }
-.pdx-dir-review-prefs strong {
-  color: var(--ink);
-  font-family: var(--serif);
+.pdx-dir-review-prefs-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.pdx-dir-review-prefs-head strong { color: var(--ink); font-family: var(--serif); font-size: 16px; }
+.pdx-dir-review-prefs-head span { color: var(--stone); font-size: 12px; }
+.pdx-dir-pref-chip-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.pdx-dir-pref-chip {
+  display: inline-flex; align-items: center; gap: 7px; border: 1px solid rgba(6,21,34,0.1);
+  border-radius: 999px; padding: 6px 9px; background: rgba(255,255,255,0.72); color: var(--stone); max-width: 100%;
 }
+.pdx-dir-pref-chip b { color: var(--ink); font-size: 12px; }
+.pdx-dir-pref-chip small { color: inherit; font-size: 11px; }
+.pdx-dir-pref-chip.publish { border-color: rgba(42,89,54,0.2); background: rgba(42,89,54,0.1); color: var(--pdx-success); }
+.pdx-dir-pref-chip.private { background: rgba(6,21,34,0.045); color: rgba(6,21,34,0.62); }
+.pdx-dir-review-prefs em { color: var(--stone); font-size: 12px; line-height: 1.45; }
 .pdx-dir-review-note {
   display: grid;
   gap: 6px;
@@ -629,6 +671,14 @@
   padding: 10px;
   font: inherit;
   background: var(--paper);
+}
+.pdx-dir-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(6,21,34,0.08);
 }
 
 .pdx-dir-access-card {
@@ -651,7 +701,12 @@
   .pdx-dir-grid { grid-template-columns: 1fr; }
   .pdx-dir-row { flex-direction: column; align-items: flex-start; }
   .pdx-dir-row-side { width: 100%; justify-content: space-between; }
+  .pdx-dir-review-card { padding: 15px; border-radius: 16px; }
+  .pdx-dir-review-top { flex-direction: column; }
+  .pdx-dir-close-btn { align-self: flex-start; }
+  .pdx-dir-review-title-block h2 { font-size: 21px; }
   .pdx-dir-review-grid { grid-template-columns: 1fr; }
+  .pdx-dir-review-actions .pdx-dir-action-btn { flex: 1 1 130px; }
   .pdx-dir-access-card { flex-direction: column; }
 }
 

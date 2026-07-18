@@ -464,6 +464,7 @@ function donorNavIcon(kind) {
     give: givingHandIcon,
     giving: givingHandIcon,
     learn: '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 6.5A4.5 4.5 0 0 1 9.5 2H23v20H9.5A4.5 4.5 0 0 0 5 26z"/><path d="M5 6.5V26"/><path d="M10 7h8"/><path d="M10 11h7"/></svg>',
+    bookstore: '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 22.5A3 3 0 0 1 8 19.5h16"/><path d="M8 3h16v22H8a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3z"/><path d="M10.5 8h8"/><path d="M10.5 12h7"/></svg>',
     marketplace: '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7 9h14l-1.2 15H8.2z"/><path d="M10 9a4 4 0 0 1 8 0"/><path d="M10.5 15h7"/></svg>',
     directory: '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 3.5l9 6.75V24H5V10.25z"/><path d="M10.5 24v-8h7v8"/><path d="M9.5 12h9"/><path d="M14 7.5v8.5"/></svg>',
     calendar: '<svg viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="5" width="22" height="20" rx="3"/><path d="M3 11h22"/><path d="M9 3v4M19 3v4"/><path d="M8 16h4M8 20h8"/></svg>',
@@ -480,6 +481,7 @@ function donorNavKind(href) {
   const path = String(href || "");
   if (path.includes("#giving-dashboard")) return "give";
   if (path.includes("/myagapay/giving")) return "give";
+  if (path.includes("/bookstore")) return "bookstore";
   if (path.includes("/learn")) return "learn";
   if (path.includes("/marketplace")) return "marketplace";
   if (path.includes("/directory")) return "directory";

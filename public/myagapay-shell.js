@@ -29,8 +29,8 @@
       { id: "commemorations", href: "/myagapay/sacraments", label: "Sacraments & Services", short: "Requests and prayer", icon: icons.sacraments },
       { id: "today", href: "/myagapay/giving/calendar", label: "Today", short: "Feast day and readings", icon: icons.today },
       { id: "directory", href: "/myagapay/directory", label: "Directory", short: "Parish member directory", icon: icons.directory },
-      { id: "learn", href: "/myagapay/learn", label: "Learn", short: "Homeschool dashboard", icon: icons.learn },
-      { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore, mobileTabHidden: true }
+      { id: "learn", href: "/myagapay/learn", label: "Learn", short: "Homeschool dashboard", icon: icons.learn, mobileTabHidden: true },
+      { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore }
     ];
     return items;
   }
@@ -220,8 +220,8 @@
   function productNav(active = activeProduct(), className = "my-agapay-tabbar") {
     const isLearnNav = className === "learn-product-tabbar";
     const isDesktopSideNav = className.includes("unified-product-nav");
-    // Every bottom tabbar variant (main and Learn-context alike) is a fixed
-    // 5-column grid -- drop mobileTabHidden items there so a 6th product
+    // Every bottom tabbar variant is a fixed 5-column grid -- drop
+    // mobileTabHidden items there so a 6th product
     // never wraps onto an ugly second row. The full list still appears in
     // the desktop sidebar, which has room.
     const navProducts = isDesktopSideNav ? products() : products().filter((item) => !item.mobileTabHidden);
