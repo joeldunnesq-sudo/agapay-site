@@ -518,6 +518,17 @@
 .pdx-dir-workspace { display: block; }
 .pdx-dir-kpi-band { margin-bottom: 20px; }
 
+.pdx-dir-command-center {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: center;
+  padding: 18px 20px; margin-bottom: 18px; border-radius: 16px;
+  border: 1px solid rgba(42,89,54,0.18);
+  background: linear-gradient(135deg, rgba(42,89,54,0.08), rgba(255,253,249,0.96));
+  box-shadow: var(--pdx-shadow-sm);
+}
+.pdx-dir-command-center h2 { margin: 4px 0 5px; color: var(--ink); font-family: var(--serif); font-size: 25px; line-height: 1.12; }
+.pdx-dir-command-center p { margin: 0; color: var(--stone); font-size: 13px; line-height: 1.5; max-width: 760px; }
+.pdx-dir-command-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
 .pdx-dir-grid { display: grid; grid-template-columns: minmax(320px, 1.3fr) repeat(2, minmax(240px, 1fr)); gap: 16px; align-items: start; }
 .pdx-dir-grid .pdx-panel { margin-bottom: 0; }
 
@@ -529,7 +540,8 @@
 }
 .pdx-dir-row:hover { transform: translateY(-1px); box-shadow: var(--pdx-shadow-sm); border-color: rgba(200,162,74,0.45); }
 .pdx-dir-queue-row { cursor: pointer; }
-.pdx-dir-queue-row:focus-visible { outline: 3px solid rgba(200,162,74,0.28); outline-offset: 2px; border-color: var(--gold); }
+.pdx-dir-record-row { cursor: pointer; }
+.pdx-dir-queue-row:focus-visible, .pdx-dir-record-row:focus-visible { outline: 3px solid rgba(200,162,74,0.28); outline-offset: 2px; border-color: var(--gold); }
 .pdx-dir-row-copy { min-width: 0; }
 .pdx-dir-row-title { font-family: var(--serif); font-size: 15px; font-weight: 600; color: var(--ink); line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pdx-dir-row-meta { font-size: 11.5px; color: var(--stone); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -680,6 +692,15 @@
   padding-top: 12px;
   border-top: 1px solid rgba(6,21,34,0.08);
 }
+.pdx-dir-record-card { border-color: rgba(42,89,54,0.2); }
+.pdx-dir-record-card::before { background: linear-gradient(90deg, rgba(42,89,54,0.82), var(--gold)); }
+.pdx-dir-detail-list { display: grid; gap: 8px; }
+.pdx-dir-detail-chip {
+  display: grid; gap: 3px; padding: 10px 11px; border: 1px solid rgba(6,21,34,0.08);
+  border-radius: 10px; background: rgba(255,255,255,0.72);
+}
+.pdx-dir-detail-chip strong { color: var(--ink); font-size: 13px; line-height: 1.25; overflow-wrap: anywhere; }
+.pdx-dir-detail-chip span { color: var(--stone); font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
 
 .pdx-dir-access-card {
   display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap;
@@ -697,6 +718,8 @@
   .pdx-dir-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 620px) {
+  .pdx-dir-command-center { grid-template-columns: 1fr; }
+  .pdx-dir-command-actions { justify-content: flex-start; }
   .pdx-dir-hero-layout { flex-direction: column; }
   .pdx-dir-grid { grid-template-columns: 1fr; }
   .pdx-dir-row { flex-direction: column; align-items: flex-start; }

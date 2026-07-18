@@ -437,7 +437,29 @@
     const pane = document.getElementById('directoryAdminPane');
     if (!pane) return;
     const metrics = dashboard.metrics || {};
+    const pending = Number(metrics.totalPending || 0);
+    const unclaimed = Number(maintenance.unclaimedPeople || 0);
+    const overdue = Number(maintenance.householdsOverdue || 0);
+    const nextAction = pending
+      ? `Review ${pending} pending item${pending === 1 ? '' : 's'}`
+      : overdue
+        ? `Follow up with ${overdue} overdue household${overdue === 1 ? '' : 's'}`
+        : unclaimed
+          ? `Invite ${unclaimed} unclaimed person record${unclaimed === 1 ? '' : 's'}`
+          : 'Directory is current';
     pane.innerHTML = `
+      <section class="pdx-dir-command-center">
+        <div>
+          <div class="pdx-gv-eyebrow">Directory workflow</div>
+          <h2>${escapeHtml(nextAction)}</h2>
+          <p>Start with the review queue, then inspect people or households when something needs correction. Maintenance tells staff what will confuse parishioners if left unresolved.</p>
+        </div>
+        <div class="pdx-dir-command-actions">
+          <button class="pdx-dir-action-btn pdx-dir-action-primary" type="button" onclick="document.getElementById('directoryReviewDetail')?.scrollIntoView({behavior:'smooth',block:'start'})">Review Queue</button>
+          <button class="pdx-dir-action-btn" type="button" onclick="document.getElementById('directoryRecordDetail')?.scrollIntoView({behavior:'smooth',block:'start'})">Record Detail</button>
+          <button class="pdx-dir-action-btn" type="button" onclick="loadDirectoryAdminTab(true)">Refresh</button>
+        </div>
+      </section>
       <section class="pdx-kpi-band pdx-dir-kpi-band">
         ${directoryMetric('Pending', metrics.totalPending, '<path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>')}
         ${directoryMetric('Unassigned', metrics.unassigned, '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>')}
@@ -445,6 +467,7 @@
         ${directoryMetric('Oldest age', (metrics.oldestPendingAgeDays || 0) + 'd', '<path d="M3 3v18h18"/><path d="M18.7 8 12 14.7 8.7 11.3 3 17"/>')}
       </section>
       <div id="directoryReviewDetail" class="pdx-dir-review-detail" aria-live="polite"></div>
+      <div id="directoryRecordDetail" class="pdx-dir-review-detail" aria-live="polite"></div>
       <div class="pdx-dir-grid">
         <section class="pdx-panel pdx-dir-panel-queue">
           <div class="pdx-panel-header">
@@ -459,6 +482,7 @@
           <div class="pdx-panel-header">
             <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>People</div>
           </div>
+          <p class="section-note">Open a person to see household links, publication status, contacts, and notes.</p>
           <div class="pdx-dir-row-list">
             ${people.length ? people.map(directoryPersonRow).join('') : directoryEmptyState('No records yet', 'No people records available.')}
           </div>
@@ -467,6 +491,7 @@
           <div class="pdx-panel-header">
             <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8"/><path d="M8 13h5"/><circle cx="17" cy="13" r="1"/></svg></div>Households</div>
           </div>
+          <p class="section-note">Open a household to confirm members, admins, publication state, and family-owned records.</p>
           <div class="pdx-dir-row-list">
             ${households.length ? households.map(directoryHouseholdRow).join('') : directoryEmptyState('No households yet', 'Households appear after staff links people into household records. Use them to confirm household admins, children, addresses, and household publication.')}
           </div>
@@ -527,6 +552,103 @@
         <button class="pdx-dir-action-btn" type="button" onclick="event.stopPropagation();openDirectoryReview('${sourceType}','${sourceId}')">${actions.includes('approve') ? 'Review' : 'Open'}</button>
       </div>
     </div>`;
+  }
+
+  function directoryDetailList(items, emptyTitle, emptyCopy, mapFn) {
+    if (!Array.isArray(items) || !items.length) return directoryEmptyState(emptyTitle, emptyCopy);
+    return `<div class="pdx-dir-detail-list">${items.map(mapFn).join('')}</div>`;
+  }
+
+  function directoryRecordDetailShell(kicker, title, subtitle, body) {
+    return `
+      <article class="pdx-dir-review-card pdx-dir-record-card">
+        <div class="pdx-dir-review-top">
+          <div class="pdx-dir-review-title-block">
+            <span class="pdx-dir-review-kicker">${escapeHtml(kicker)}</span>
+            <h2>${escapeHtml(title || 'Directory record')}</h2>
+            <p>${escapeHtml(subtitle || '')}</p>
+          </div>
+          <button class="pdx-dir-close-btn" type="button" onclick="document.getElementById('directoryRecordDetail').innerHTML=''">Close</button>
+        </div>
+        ${body}
+      </article>`;
+  }
+
+  async function openDirectoryPerson(personId) {
+    const detail = document.getElementById('directoryRecordDetail');
+    if (!detail || !personId) return;
+    detail.innerHTML = '<p class="sw-tool-loading">Opening person record...</p>';
+    try {
+      const res = await fetch(directoryAdminApi('/people/' + encodeURIComponent(personId)), { headers: authHeaders() });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Unable to open person record.');
+      const record = payload.person || {};
+      const person = record.person || {};
+      detail.innerHTML = directoryRecordDetailShell('Person record', person.preferredName || person.legalName || 'Directory person', 'Use this detail view to understand why a member may or may not be able to manage their Directory information.', `
+        <div class="pdx-dir-review-grid">
+          <section class="pdx-dir-review-column"><h4>Status</h4>
+            ${directoryReviewObjectRows({
+              preferredName: person.preferredName,
+              legalName: person.legalName,
+              active: person.active,
+              publication: record.publication?.status || 'not configured',
+              approval: record.publication?.approval_status || record.publication?.approvalStatus || 'not submitted'
+            })}
+          </section>
+          <section class="pdx-dir-review-column pdx-dir-review-column-new"><h4>Households</h4>
+            ${directoryDetailList(record.households, 'No household links', 'Link this person to a household before family tools feel complete.', (item) => `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.display_name || item.displayName || item.id)}</strong><span>${escapeHtml(item.relationship || 'member')}</span></div>`)}
+          </section>
+        </div>
+        <div class="pdx-dir-review-grid">
+          <section class="pdx-dir-review-column"><h4>Contacts</h4>
+            ${directoryDetailList(record.contacts, 'No contacts', 'No staff-visible contact method is attached to this person.', (item) => `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.label || item.contact_type || item.contactType)}</strong><span>${escapeHtml(item.value || '')} · ${escapeHtml(item.visibility || '')}</span></div>`)}
+          </section>
+          <section class="pdx-dir-review-column"><h4>Notes</h4>
+            ${directoryDetailList(record.notes, 'No notes', 'No internal notes are attached to this person.', (item) => `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.title || item.noteType || 'Note')}</strong><span>${escapeHtml(item.body || item.note || item.summary || '')}</span></div>`)}
+          </section>
+        </div>`);
+      detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) {
+      detail.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to open this person record.')}</p>`;
+    }
+  }
+
+  async function openDirectoryHousehold(householdId) {
+    const detail = document.getElementById('directoryRecordDetail');
+    if (!detail || !householdId) return;
+    detail.innerHTML = '<p class="sw-tool-loading">Opening household record...</p>';
+    try {
+      const res = await fetch(directoryAdminApi('/households/' + encodeURIComponent(householdId)), { headers: authHeaders() });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Unable to open household record.');
+      const record = payload.household || {};
+      const household = record.household || {};
+      detail.innerHTML = directoryRecordDetailShell('Household record', household.displayName || 'Directory household', 'This is the family container parishioners expect to edit from My AGAPAY.', `
+        <div class="pdx-dir-review-grid">
+          <section class="pdx-dir-review-column"><h4>Status</h4>
+            ${directoryReviewObjectRows({
+              householdName: household.displayName,
+              active: household.active,
+              publication: record.publication?.status || 'not configured',
+              approval: record.publication?.approval_status || record.publication?.approvalStatus || 'not submitted'
+            })}
+          </section>
+          <section class="pdx-dir-review-column pdx-dir-review-column-new"><h4>Household admins</h4>
+            ${directoryDetailList(record.administrators, 'No household admin', 'At least one adult should be a household admin so the family can edit household-owned information.', (item) => `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.preferred_name || item.preferredName || item.id)}</strong><span>Can manage household self-service</span></div>`)}
+          </section>
+        </div>
+        <div class="pdx-dir-review-grid">
+          <section class="pdx-dir-review-column"><h4>Members</h4>
+            ${directoryDetailList(record.members, 'No members', 'Add household members before children, family photos, or household publication makes sense.', (item) => `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.preferred_name || item.preferredName || item.id)}</strong><span>${escapeHtml(item.relationship || 'member')}</span></div>`)}
+          </section>
+          <section class="pdx-dir-review-column"><h4>Notes</h4>
+            ${directoryDetailList(record.notes, 'No notes', 'No internal notes are attached to this household.', (item) => `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.title || item.noteType || 'Note')}</strong><span>${escapeHtml(item.body || item.note || item.summary || '')}</span></div>`)}
+          </section>
+        </div>`);
+      detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) {
+      detail.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to open this household record.')}</p>`;
+    }
   }
 
   function directoryReviewValue(value) {
@@ -653,9 +775,9 @@
 
   function directoryPersonRow(person) {
     const pending = person.pendingRequestCount || 0;
-    return `<div class="pdx-dir-row">
-      <div class="pdx-dir-row-copy"><div class="pdx-dir-row-title">${escapeHtml(person.displayName)}</div></div>
-      <div class="pdx-dir-row-side">${pending ? `<span class="pdx-dir-badge high">${pending} pending</span>` : `<span class="pdx-dir-badge count">Current</span>`}</div>
+    return `<div class="pdx-dir-row pdx-dir-record-row" onclick="openDirectoryPerson('${escapeAttr(person.id)}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDirectoryPerson('${escapeAttr(person.id)}');}">
+      <div class="pdx-dir-row-copy"><div class="pdx-dir-row-title">${escapeHtml(person.displayName)}</div><div class="pdx-dir-row-meta">${person.claimed ? 'Claimed My AGAPAY account' : 'Not claimed'} · ${person.child ? 'Child' : 'Adult'}${person.householdCount ? ' · ' + person.householdCount + ' household link' + (person.householdCount === 1 ? '' : 's') : ''}</div></div>
+      <div class="pdx-dir-row-side">${pending ? `<span class="pdx-dir-badge high">${pending} pending</span>` : `<span class="pdx-dir-badge count">Current</span>`}<button class="pdx-dir-action-btn" type="button" onclick="event.stopPropagation();openDirectoryPerson('${escapeAttr(person.id)}')">Open</button></div>
     </div>`;
   }
 
@@ -663,13 +785,14 @@
     const count = household.memberCount || 0;
     const admins = household.administratorCount || household.adminCount || 0;
     const pending = household.pendingRequestCount || 0;
-    return `<div class="pdx-dir-row">
+    return `<div class="pdx-dir-row pdx-dir-record-row" onclick="openDirectoryHousehold('${escapeAttr(household.id)}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDirectoryHousehold('${escapeAttr(household.id)}');}">
       <div class="pdx-dir-row-copy">
         <div class="pdx-dir-row-title">${escapeHtml(household.displayName)}</div>
         <div class="pdx-dir-row-meta">${escapeHtml(count + ' member' + (count === 1 ? '' : 's'))} · ${escapeHtml(admins + ' household admin' + (admins === 1 ? '' : 's'))}</div>
       </div>
       <div class="pdx-dir-row-side">
         ${pending ? `<span class="pdx-dir-badge high">${pending} pending</span>` : `<span class="pdx-dir-badge count">Current</span>`}
+        <button class="pdx-dir-action-btn" type="button" onclick="event.stopPropagation();openDirectoryHousehold('${escapeAttr(household.id)}')">Open</button>
       </div>
     </div>`;
   }

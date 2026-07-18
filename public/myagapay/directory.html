@@ -21,15 +21,20 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <style>
     :root { --ink:#101820; --muted:#68717d; --line:#d8ddd9; --paper:#fbfaf7; --gold:#b88a3d; --green:#235c4d; --blue:#153a5b; }
+    [hidden] { display:none !important; }
     body { margin:0; background:#f6f3ee; color:var(--ink); font-family:"DM Sans", Arial, sans-serif; }
     .directory-main { padding:28px; display:flex; flex-direction:column; }
     .directory-top { display:flex; justify-content:space-between; gap:16px; align-items:center; margin-bottom:22px; }
     .directory-title h1 { margin:0; font-family:"Cormorant Garamond", Georgia, serif; font-size:38px; letter-spacing:0; }
     .directory-title p { margin:4px 0 0; color:var(--muted); max-width:740px; }
     .status-pill { border:1px solid var(--line); background:#fff; padding:8px 12px; border-radius:8px; font-size:13px; font-weight:700; }
-    .directory-grid { display:grid; grid-template-columns:minmax(0, 1.1fr) minmax(280px, .9fr); gap:18px; align-items:start; order:1; margin-bottom:18px; }
+    .directory-grid { display:grid; grid-template-columns:minmax(0, 1.05fr) minmax(300px, .95fr); gap:18px; align-items:start; order:1; margin-bottom:18px; }
     .panel { background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px; box-shadow:0 8px 22px rgba(20,20,20,.05); }
     .panel h2 { font-size:18px; margin:0 0 12px; }
+    .panel-header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:12px; }
+    .panel-header h2 { margin:0; }
+    .panel-kicker { color:var(--gold); font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+    .panel-intro { margin:3px 0 0; color:var(--muted); font-size:13px; line-height:1.45; }
     .summary-list { display:grid; gap:10px; }
     .summary-row { display:flex; justify-content:space-between; gap:12px; border-bottom:1px solid #ecefed; padding-bottom:10px; }
     .summary-row:last-child { border-bottom:0; padding-bottom:0; }
@@ -62,10 +67,19 @@
     input, select { border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; min-width:0; }
     .notice { margin:0 0 16px; padding:12px; border-radius:8px; background:#eef6fb; color:#17384a; border:1px solid #cde1ec; }
     .error { background:#fff0ed; color:#6d2118; border-color:#ffd1c8; }
-    .directory-command { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:10px; margin:0 0 18px; order:0; }
+    .directory-command { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:10px; margin:0 0 14px; order:0; }
     .command-card { border:1px solid #e3e0d8; background:#fff; border-radius:8px; padding:12px; text-align:left; text-decoration:none; color:var(--ink); display:grid; gap:5px; box-shadow:0 6px 18px rgba(20,20,20,.04); }
     .command-card strong { font-size:14px; }
     .command-card span { color:var(--muted); font-size:12px; line-height:1.35; }
+    .directory-guide { order:0; display:grid; grid-template-columns:1.15fr repeat(3, minmax(0, 1fr)); gap:10px; margin-bottom:18px; }
+    .guide-card { border:1px solid #e3e0d8; border-radius:8px; background:#fff; padding:14px; display:grid; gap:8px; box-shadow:0 8px 20px rgba(20,20,20,.04); color:var(--ink); text-decoration:none; }
+    .guide-card.primary { background:linear-gradient(135deg, #f4faf6, #fff); border-color:#cfe2d8; }
+    .guide-card small { color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+    .guide-card strong { font-size:16px; line-height:1.25; }
+    .guide-card span { color:var(--muted); font-size:13px; line-height:1.45; }
+    .guide-status { justify-self:start; border-radius:999px; background:#eef3f0; color:var(--green); font-size:11px; font-weight:800; padding:4px 9px; text-transform:uppercase; letter-spacing:.04em; }
+    .guide-status.warn { background:#fff4dd; color:#7a4d00; }
+    .guide-status.info { background:#eef6fb; color:#17384a; }
     .member-directory { margin-bottom:18px; order:2; }
     .directory-tools { display:grid; grid-template-columns:minmax(220px, 1fr) auto auto; gap:10px; align-items:end; }
     .directory-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
@@ -134,7 +148,7 @@
       .directory-top { display:grid; }
       .directory-title h1 { font-size:32px; line-height:1; }
       .directory-title p { font-size:13px; }
-      .directory-grid, .form-grid { grid-template-columns:1fr; }
+      .directory-grid, .form-grid, .directory-guide { grid-template-columns:1fr; }
       .directory-command { grid-template-columns:1fr 1fr; }
       .directory-tools, .skills-toolbar { grid-template-columns:1fr; }
       .member-grid { grid-template-columns:1fr; }
@@ -160,8 +174,8 @@
     <main class="directory-main">
       <div class="directory-top">
         <div class="directory-title">
-          <h1>Directory</h1>
-          <p>Manage your own directory profile and household-owned information from your individual My AGAPAY account.</p>
+          <h1>My Household Directory</h1>
+          <p>Set up your family profile, choose what the parish may publish, and browse approved parish member information from one place.</p>
         </div>
         <span class="status-pill" id="directoryStatus">Loading</span>
       </div>
@@ -169,16 +183,18 @@
       <div id="directoryNotice" class="notice" hidden></div>
 
       <section class="directory-command" aria-label="Directory actions">
-        <a class="command-card" href="#profileSummary"><strong>My Info</strong><span>Name, birthday, and profile status</span></a>
-        <a class="command-card" href="#contactList"><strong>Contact</strong><span>Choose what can be public</span></a>
-        <a class="command-card" href="#photoSummary"><strong>Photo</strong><span>Upload and submit for review</span></a>
-        <a class="command-card" href="#mySkillList"><strong>Skills</strong><span>Draft or activate service listings</span></a>
+        <a class="command-card" href="#profileSummary"><strong>Set Up</strong><span>Your person profile and review status</span></a>
+        <a class="command-card" href="#householdList"><strong>Household</strong><span>Family name, photo, children, name days</span></a>
+        <a class="command-card" href="#memberDirectoryHeading"><strong>Browse</strong><span>Approved parish member directory</span></a>
+        <a class="command-card" href="#mySkillList"><strong>Serve</strong><span>Skills, ministries, and availability</span></a>
       </section>
+
+      <section class="directory-guide" id="directoryGuide" aria-label="Directory next steps"></section>
 
       <section class="directory-grid" aria-live="polite">
         <div class="stack">
           <article class="panel">
-            <h2>My Directory Setup</h2>
+            <div class="panel-header"><div><div class="panel-kicker">Step 1</div><h2>My Profile</h2><p class="panel-intro">This is your own directory record. Keep private details private; submit only what you want the parish to review.</p></div></div>
             <div class="summary-list" id="profileSummary"></div>
             <form class="setup-panel" id="startProfileForm" hidden>
               <div>
@@ -215,8 +231,7 @@
           </article>
 
           <article class="panel">
-            <h2>Contact &amp; Privacy</h2>
-            <p class="child-help">Add email or phone details here. Choose Directory members only for information you want the parish to consider publishing.</p>
+            <div class="panel-header"><div><div class="panel-kicker">Step 2</div><h2>Contact &amp; Privacy</h2><p class="panel-intro">Add email or phone details. Choose Directory members only for information you want the parish to consider publishing.</p></div></div>
             <div class="contact-list" id="contactList"></div>
             <form class="form-grid" id="contactForm" hidden>
               <label>Type<select name="contactType"><option value="email">Email</option><option value="phone">Phone</option></select></label>
@@ -228,8 +243,7 @@
           </article>
 
           <article class="panel">
-            <h2>Profile Photo</h2>
-            <p class="child-help">Upload a photo here first. After it uploads, use Submit Photo if you want the parish to review it for directory publication.</p>
+            <div class="panel-header"><div><div class="panel-kicker">Optional</div><h2>Profile Photo</h2><p class="panel-intro">Upload first, then submit it if you want the parish to review it for publication.</p></div></div>
             <div class="summary-list" id="photoSummary"></div>
             <form class="form-grid" id="photoForm" hidden>
               <label>Photo file<input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required /></label>
@@ -239,8 +253,7 @@
           </article>
 
           <article class="panel">
-            <h2>My Skills &amp; Service</h2>
-            <p class="child-help">Share only the skills you are comfortable making available to your parish community. Listings default to private until you choose otherwise.</p>
+            <div class="panel-header"><div><div class="panel-kicker">Serve</div><h2>My Skills &amp; Service</h2><p class="panel-intro">Share only the skills you are comfortable making available to your parish community.</p></div></div>
             <div class="skill-list" id="mySkillList"></div>
             <form class="form-grid" id="skillForm" hidden>
               <label>Skill<select name="skillId" required></select></label>
@@ -259,7 +272,7 @@
 
         <div class="stack">
           <article class="panel">
-            <h2>Publication</h2>
+            <div class="panel-header"><div><div class="panel-kicker">Review</div><h2>Publication</h2><p class="panel-intro">Nothing appears in the member directory until you submit and the parish approves it.</p></div></div>
             <div class="summary-list" id="publicationSummary"></div>
             <div class="actions" id="publicationActions" hidden>
               <button class="btn primary" type="button" data-publication="pending_approval">Submit for Review</button>
@@ -268,7 +281,7 @@
           </article>
 
           <article class="panel">
-            <h2>Household</h2>
+            <div class="panel-header"><div><div class="panel-kicker">Family</div><h2>Household</h2><p class="panel-intro">Use this for your family name and household-owned information.</p></div></div>
             <div class="household-list" id="householdList"></div>
             <form class="form-grid" id="householdDetailsForm" hidden>
               <label style="grid-column:1/-1;">Household name<input name="displayName" maxlength="200" placeholder="The Dunne Household" required /></label>
@@ -279,8 +292,7 @@
           </article>
 
           <article class="panel">
-            <h2>Family Photo</h2>
-            <p class="child-help">Use this for a household photo. You control whether it stays private, staff-only, or is submitted for directory publication.</p>
+            <div class="panel-header"><div><div class="panel-kicker">Family</div><h2>Family Photo</h2><p class="panel-intro">Use this for a household photo. You control whether it stays private, staff-only, or is submitted for publication.</p></div></div>
             <div class="summary-list" id="householdPhotoSummary"></div>
             <form class="form-grid" id="householdPhotoForm" hidden>
               <label>Photo file<input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required /></label>
@@ -290,8 +302,7 @@
           </article>
 
           <article class="panel">
-            <h2>Name Days</h2>
-            <p class="child-help">Add family name days here. Keep them private, or share them with directory members so they can later appear in parish Today reminders.</p>
+            <div class="panel-header"><div><div class="panel-kicker">Family</div><h2>Name Days</h2><p class="panel-intro">Add family name days. Keep them private, or share them with members so they can appear in Today reminders.</p></div></div>
             <div class="nameday-list" id="namedayList"></div>
             <form class="form-grid" id="namedayForm" hidden>
               <label>Name<input name="displayName" required placeholder="Anna" /></label>
@@ -303,13 +314,12 @@
           </article>
 
           <article class="panel">
-            <h2>Pending Changes</h2>
+            <div class="panel-header"><div><div class="panel-kicker">Status</div><h2>Pending Changes</h2></div></div>
             <div class="request-list" id="requestList"></div>
           </article>
 
           <article class="panel" aria-labelledby="childrenHeading">
-            <h2 id="childrenHeading">Children</h2>
-            <p class="child-help">Children stay hidden from the parish directory by default. You may request publication of a limited set of fields for your own children; a parish reviewer must approve the request before anything appears, and you can withdraw it at any time.</p>
+            <div class="panel-header"><div><div class="panel-kicker">Family</div><h2 id="childrenHeading">Children</h2><p class="panel-intro">Children stay hidden by default. You may request publication of limited fields, and parish staff must approve first.</p></div></div>
             <div class="stack" id="childrenList" aria-live="polite"></div>
           </article>
         </div>
@@ -380,6 +390,9 @@
       };
     }
     function text(value) { return value === undefined || value === null || value === "" ? "Not set" : String(value); }
+    function statusLabel(value) {
+      return String(value || "").replace(/_/g, " ").replace(/\b[a-z]/g, (c) => c.toUpperCase());
+    }
     function esc(value) {
       return String(value === undefined || value === null ? "" : value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
     }
@@ -458,6 +471,43 @@
       return item.photo?.url
         ? `<img class="${className}" src="${esc(item.photo.url)}" alt="${esc(item.photo.alt || item.displayName || "")}" loading="lazy" />`
         : `<span class="${className}" aria-hidden="true">${esc(initials(item.displayName))}</span>`;
+    }
+    function guideCard({ kicker, title, copy, status = "", tone = "", href = "" }, primary = false) {
+      const inner = `<small>${esc(kicker)}</small><strong>${esc(title)}</strong><span>${esc(copy)}</span>${status ? `<b class="guide-status ${esc(tone)}">${esc(status)}</b>` : ""}`;
+      return href ? `<a class="guide-card ${primary ? "primary" : ""}" href="${esc(href)}">${inner}</a>` : `<div class="guide-card ${primary ? "primary" : ""}">${inner}</div>`;
+    }
+    function renderDirectoryGuide() {
+      const guide = document.getElementById("directoryGuide");
+      if (!guide) return;
+      if (!profileState?.claimed) {
+        guide.innerHTML = [
+          guideCard({ kicker: "Start here", title: "Create your private draft", copy: "This creates your person record and household. You choose what the parish may publish later.", status: "Setup needed", tone: "warn", href: "#startProfileForm" }, true),
+          guideCard({ kicker: "Privacy", title: "Nothing is public yet", copy: "Your parish reviews submitted items before they appear in the member directory.", status: "Private" }),
+          guideCard({ kicker: "Next", title: "Add household details", copy: "After setup, you can name the household, add a family photo, and add name days.", status: "After setup", tone: "info" }),
+          guideCard({ kicker: "Browse", title: "Member directory", copy: "Approved parish listings appear below once you are connected as a member.", status: "Private parish area" })
+        ].join("");
+        return;
+      }
+      const person = profileState.profile?.person || profileState.currentPerson || profileState.person || {};
+      const publication = profileState.profile?.publication || {};
+      const contacts = profileState.profile?.contacts || [];
+      const household = firstHousehold();
+      const requests = profileState.pendingRequests || [];
+      const next = !contacts.length
+        ? { title: "Add contact info", copy: "Add email or phone, then decide whether it stays private, staff-only, or directory-visible.", href: "#contactList" }
+        : !person.dateOfBirth
+          ? { title: "Add date of birth", copy: "This stays private but lets the app confirm adult-only features like Skills & Service.", href: "#profileSummary" }
+          : !household
+            ? { title: "Household connection needed", copy: "Your profile exists, but staff still needs to connect or confirm your editable household.", href: "#householdList" }
+            : publication.approvalStatus !== "approved" && publication.status !== "pending_approval"
+              ? { title: "Submit for parish review", copy: "When your profile looks right, submit it so staff can approve the fields you chose.", href: "#publicationSummary" }
+              : { title: "Keep your household current", copy: "Add a family photo, name days, children requests, or skills whenever they change.", href: "#householdList" };
+      guide.innerHTML = [
+        guideCard({ kicker: "Next best step", title: next.title, copy: next.copy, status: requests.length ? `${requests.length} pending` : "Ready", tone: requests.length ? "info" : "", href: next.href }, true),
+        guideCard({ kicker: "Profile", title: publication.approvalStatus === "approved" ? "Approved profile" : statusLabel(publication.approvalStatus || "draft"), copy: "Your personal listing is separate from your household and account name.", status: publication.status || "Draft" }),
+        guideCard({ kicker: "Household", title: household?.displayName || "No household yet", copy: household ? "Family photo, children, name days, and household name live here." : "This unlocks family-owned directory tools.", status: household ? "Editable" : "Staff step", tone: household ? "" : "warn", href: "#householdList" }),
+        guideCard({ kicker: "Privacy", title: "You choose each field", copy: "Private stays private. Directory members means staff may publish after review.", status: "Per field" })
+      ].join("");
     }
     function memberSubtitle(item) {
       if (item.type === "household") {
@@ -629,6 +679,7 @@
             <p>Use the short form below to create your private draft and tell the parish what you want visible after review. You can add a photo and Skills & Service entries next.</p>
           </div>`;
         clearSelfServicePanels();
+        renderDirectoryGuide();
         return;
       }
       document.getElementById("profileSummary").innerHTML = [
@@ -671,6 +722,7 @@
       renderPhoto();
       renderHouseholdPhoto();
       loadNamedays();
+      renderDirectoryGuide();
     }
     async function renderPhoto() {
       const person = profileState?.currentPerson || profileState?.profile?.person;
