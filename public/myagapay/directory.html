@@ -929,9 +929,10 @@
     });
     document.getElementById("contactForm").addEventListener("submit", async (event) => {
       event.preventDefault();
-      const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
+      const formEl = event.currentTarget;
+      const payload = Object.fromEntries(new FormData(formEl).entries());
       await api("/api/directory/self/contacts", { method: "POST", body: JSON.stringify(payload) });
-      event.currentTarget.reset();
+      formEl.reset();
       showNotice("Contact added.");
       await loadDirectory();
     });
@@ -947,11 +948,12 @@
     });
     document.getElementById("photoForm").addEventListener("submit", async (event) => {
       event.preventDefault();
+      const formEl = event.currentTarget;
       const person = profileState?.currentPerson || profileState?.profile?.person;
-      const fileInput = event.currentTarget.elements.photo;
+      const fileInput = formEl.elements.photo;
       const selected = fileInput.files && fileInput.files[0];
       if (!person || !selected) return;
-      const visibility = event.currentTarget.elements.visibility.value || "private";
+      const visibility = formEl.elements.visibility.value || "private";
       try {
         showNotice("Preparing your photo...");
         const prepared = await preparePhotoForUpload(selected);
@@ -967,7 +969,7 @@
           headers: uploadHeaders(),
           body: form
         });
-        event.currentTarget.reset();
+        formEl.reset();
         showNotice("Photo uploaded. If you want it in the published directory, tap Submit Photo after the page refreshes.");
         await loadDirectory();
       } catch (error) {
@@ -988,11 +990,12 @@
     });
     document.getElementById("householdPhotoForm").addEventListener("submit", async (event) => {
       event.preventDefault();
+      const formEl = event.currentTarget;
       const household = firstHousehold();
-      const fileInput = event.currentTarget.elements.photo;
+      const fileInput = formEl.elements.photo;
       const selected = fileInput.files && fileInput.files[0];
       if (!household || !selected) return;
-      const visibility = event.currentTarget.elements.visibility.value || "private";
+      const visibility = formEl.elements.visibility.value || "private";
       try {
         showNotice("Preparing your family photo...");
         const prepared = await preparePhotoForUpload(selected);
@@ -1008,7 +1011,7 @@
           headers: uploadHeaders(),
           body: form
         });
-        event.currentTarget.reset();
+        formEl.reset();
         showNotice("Family photo uploaded. Submit it for review if you want it published.");
         await loadDirectory();
       } catch (error) {
@@ -1029,11 +1032,12 @@
     });
     document.getElementById("namedayForm").addEventListener("submit", async (event) => {
       event.preventDefault();
+      const formEl = event.currentTarget;
       const household = firstHousehold();
       if (!household) return;
-      const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
+      const payload = Object.fromEntries(new FormData(formEl).entries());
       await api(`/api/directory/households/${encodeURIComponent(household.id)}/self/namedays`, { method: "POST", body: JSON.stringify(payload) });
-      event.currentTarget.reset();
+      formEl.reset();
       showNotice("Name day saved.");
       await loadNamedays();
     });
