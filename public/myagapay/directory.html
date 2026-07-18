@@ -270,6 +270,12 @@
           <article class="panel">
             <h2>Household</h2>
             <div class="household-list" id="householdList"></div>
+            <form class="form-grid" id="householdDetailsForm" hidden>
+              <label style="grid-column:1/-1;">Household name<input name="displayName" maxlength="200" placeholder="The Dunne Household" required /></label>
+              <input type="hidden" name="householdId" />
+              <input type="hidden" name="expectedVersion" />
+              <div class="actions"><button class="btn primary" type="submit">Save Household Name</button></div>
+            </form>
           </article>
 
           <article class="panel">
@@ -354,6 +360,9 @@
     let profileState = null;
     let memberState = { view: "households", letter: "", cursor: "", query: "", sort: "az", loading: false };
     let skillCatalog = [];
+    const PHOTO_UPLOAD_TIMEOUT_MS = 45000;
+    const PHOTO_MAX_EDGE = 1800;
+    const PHOTO_JPEG_QUALITY = 0.86;
 
     function headers() {
       return {
@@ -398,6 +407,7 @@
       document.getElementById("contactList").innerHTML = `<div class="empty">${esc(message)}</div>`;
       document.getElementById("mySkillList").innerHTML = `<div class="empty">${esc(message)}</div>`;
       document.getElementById("householdList").innerHTML = '<div class="empty"><strong>Household setup comes next.</strong>Starting your profile creates a household you can edit from here.</div>';
+      document.getElementById("householdDetailsForm").hidden = true;
       document.getElementById("householdPhotoSummary").innerHTML = '<div class="empty">Family photo tools appear after your household is created.</div>';
       document.getElementById("householdPhotoForm").hidden = true;
       document.getElementById("namedayList").innerHTML = '<div class="empty">Name day tools appear after your household is created.</div>';
@@ -411,6 +421,35 @@
       const payload = await response.json().catch(() => ({}));
       if (!response.ok || payload.ok === false) throw new Error(payload.message || payload.error || "Directory action failed.");
       return payload;
+    }
+    function fetchJsonWithTimeout(path, options = {}, timeoutMs = PHOTO_UPLOAD_TIMEOUT_MS) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      return fetch(path, { ...options, signal: controller.signal }).then(async (response) => {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || payload.ok === false) throw new Error(payload.message || payload.error || "Upload failed.");
+        return payload;
+      }).catch((error) => {
+        if (error.name === "AbortError") throw new Error("Photo processing is taking too long. Please try a smaller image or take a lower-resolution photo.");
+        throw error;
+      }).finally(() => clearTimeout(timer));
+    }
+    async function preparePhotoForUpload(file) {
+      if (!file || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) return file;
+      const bitmap = await createImageBitmap(file).catch(() => null);
+      if (!bitmap) return file;
+      const scale = Math.min(1, PHOTO_MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+      if (scale >= 1 && file.size <= 2500000) {
+        bitmap.close?.();
+        return file;
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close?.();
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", PHOTO_JPEG_QUALITY));
+      return blob ? new File([blob], (file.name || "photo").replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" }) : file;
     }
     function initials(name) {
       return String(name || "").split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "AG";
@@ -626,8 +665,7 @@
         ["Approval", publication.approvalStatus || "not_submitted"]
       ].map(([label, value]) => `<div class="summary-row"><span>${label}</span><strong>${text(value)}</strong></div>`).join("");
       document.getElementById("publicationActions").hidden = false;
-      const households = profileState.manageableHouseholds || [];
-      document.getElementById("householdList").innerHTML = households.length ? households.map((household) => `<div class="mini-card"><strong>${household.displayName}</strong><small>You can edit household details, family photos, name days, and eligible child publication requests.</small></div>`).join("") : '<div class="empty"><strong>No editable household found.</strong>New profiles create a household automatically. If this is an older profile, parish staff can link you to a household administrator role.</div>';
+      renderHouseholdDetails();
       const requests = profileState.pendingRequests || [];
       document.getElementById("requestList").innerHTML = requests.length ? requests.map((request) => `<div class="mini-card"><strong>${request.summary}</strong><small>${request.requestType} · ${request.status}</small></div>`).join("") : '<div class="empty">No pending directory changes.</div>';
       renderPhoto();
@@ -649,6 +687,25 @@
     }
     function firstHousehold() {
       return (profileState?.manageableHouseholds || [])[0] || null;
+    }
+    async function renderHouseholdDetails() {
+      const households = profileState.manageableHouseholds || [];
+      const form = document.getElementById("householdDetailsForm");
+      document.getElementById("householdList").innerHTML = households.length ? households.map((household) => `<div class="mini-card"><strong>${esc(household.displayName)}</strong><small>This is your family/household name for Directory. It can match the household name you use in Learn without changing your personal My AGAPAY account name.</small></div>`).join("") : '<div class="empty"><strong>No editable household found.</strong>New profiles create a household automatically. If this is an older profile, parish staff can link you to a household administrator role.</div>';
+      if (!households.length) {
+        form.hidden = true;
+        return;
+      }
+      const household = households[0];
+      form.hidden = false;
+      form.elements.householdId.value = household.id;
+      form.elements.displayName.value = household.displayName || donorProfile().householdName || "";
+      const detail = await api(`/api/directory/households/${encodeURIComponent(household.id)}/self`).catch(() => null);
+      const current = detail?.household?.household || detail?.household || null;
+      if (current) {
+        form.elements.displayName.value = current.displayName || form.elements.displayName.value;
+        form.elements.expectedVersion.value = current.version || "";
+      }
     }
     async function renderHouseholdPhoto() {
       const household = firstHousehold();
@@ -847,6 +904,29 @@
       showNotice("Your private directory draft is ready. You can add contact info, a photo, and Skills & Service entries now; publication still requires parish review.");
       await loadDirectory();
     });
+    document.getElementById("householdDetailsForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const householdId = form.elements.householdId.value;
+      const displayName = form.elements.displayName.value.trim();
+      const expectedVersion = Number(form.elements.expectedVersion.value || 0);
+      if (!householdId || !displayName || !expectedVersion) {
+        showNotice("Household details are still loading. Please try again in a moment.", true);
+        return;
+      }
+      await api(`/api/directory/households/${encodeURIComponent(householdId)}/self`, {
+        method: "PATCH",
+        body: JSON.stringify({ displayName, expectedVersion })
+      });
+      await api("/api/donor/dashboard", {
+        method: "PATCH",
+        body: JSON.stringify({ householdName: displayName })
+      }).then((payload) => {
+        if (payload.donor) localStorage.setItem("agapayDonorProfile", JSON.stringify(payload.donor));
+      }).catch(() => null);
+      showNotice("Household name saved.");
+      await loadDirectory();
+    });
     document.getElementById("contactForm").addEventListener("submit", async (event) => {
       event.preventDefault();
       const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
@@ -872,24 +952,27 @@
       const selected = fileInput.files && fileInput.files[0];
       if (!person || !selected) return;
       const visibility = event.currentTarget.elements.visibility.value || "private";
-      showNotice("Uploading and preparing your photo...");
-      const sessionPayload = await api("/api/directory/media/upload-session", {
-        method: "POST",
-        body: JSON.stringify({ ownerType: "person", ownerId: person.id, visibility })
-      });
-      const form = new FormData();
-      form.append("photo", selected);
-      await fetch(`/api/directory/media/sessions/${encodeURIComponent(sessionPayload.session.id)}/complete`, {
-        method: "POST",
-        headers: uploadHeaders(),
-        body: form
-      }).then(async (response) => {
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok || payload.ok === false) throw new Error(payload.message || payload.error || "Photo upload failed.");
-      });
-      event.currentTarget.reset();
-      showNotice("Photo uploaded. If you want it in the published directory, tap Submit Photo after the page refreshes.");
-      await loadDirectory();
+      try {
+        showNotice("Preparing your photo...");
+        const prepared = await preparePhotoForUpload(selected);
+        showNotice("Uploading and preparing your photo...");
+        const sessionPayload = await api("/api/directory/media/upload-session", {
+          method: "POST",
+          body: JSON.stringify({ ownerType: "person", ownerId: person.id, visibility })
+        });
+        const form = new FormData();
+        form.append("photo", prepared);
+        await fetchJsonWithTimeout(`/api/directory/media/sessions/${encodeURIComponent(sessionPayload.session.id)}/complete`, {
+          method: "POST",
+          headers: uploadHeaders(),
+          body: form
+        });
+        event.currentTarget.reset();
+        showNotice("Photo uploaded. If you want it in the published directory, tap Submit Photo after the page refreshes.");
+        await loadDirectory();
+      } catch (error) {
+        showNotice(error.message || "Photo upload failed.", true);
+      }
     });
     document.getElementById("submitPhotoReview").addEventListener("click", async () => {
       if (!window.currentDirectoryPhoto) return;
@@ -910,24 +993,27 @@
       const selected = fileInput.files && fileInput.files[0];
       if (!household || !selected) return;
       const visibility = event.currentTarget.elements.visibility.value || "private";
-      showNotice("Uploading and preparing your family photo...");
-      const sessionPayload = await api("/api/directory/media/upload-session", {
-        method: "POST",
-        body: JSON.stringify({ ownerType: "household", ownerId: household.id, visibility })
-      });
-      const form = new FormData();
-      form.append("photo", selected);
-      await fetch(`/api/directory/media/sessions/${encodeURIComponent(sessionPayload.session.id)}/complete`, {
-        method: "POST",
-        headers: uploadHeaders(),
-        body: form
-      }).then(async (response) => {
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok || payload.ok === false) throw new Error(payload.message || payload.error || "Family photo upload failed.");
-      });
-      event.currentTarget.reset();
-      showNotice("Family photo uploaded. Submit it for review if you want it published.");
-      await loadDirectory();
+      try {
+        showNotice("Preparing your family photo...");
+        const prepared = await preparePhotoForUpload(selected);
+        showNotice("Uploading and preparing your family photo...");
+        const sessionPayload = await api("/api/directory/media/upload-session", {
+          method: "POST",
+          body: JSON.stringify({ ownerType: "household", ownerId: household.id, visibility })
+        });
+        const form = new FormData();
+        form.append("photo", prepared);
+        await fetchJsonWithTimeout(`/api/directory/media/sessions/${encodeURIComponent(sessionPayload.session.id)}/complete`, {
+          method: "POST",
+          headers: uploadHeaders(),
+          body: form
+        });
+        event.currentTarget.reset();
+        showNotice("Family photo uploaded. Submit it for review if you want it published.");
+        await loadDirectory();
+      } catch (error) {
+        showNotice(error.message || "Family photo upload failed.", true);
+      }
     });
     document.getElementById("submitHouseholdPhotoReview").addEventListener("click", async () => {
       if (!window.currentDirectoryHouseholdPhoto) return;
