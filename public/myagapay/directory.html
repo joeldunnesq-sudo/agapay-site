@@ -62,6 +62,15 @@
     .mini-card { border:1px solid #e4e7e3; border-radius:8px; padding:12px; background:#fff; }
     .mini-card strong { display:block; }
     .mini-card small { color:var(--muted); }
+    .photo-status-card { display:grid; grid-template-columns:88px 1fr; gap:12px; align-items:center; border:1px solid #dfe6df; border-radius:8px; padding:12px; background:#fbfcfa; }
+    .photo-preview { width:88px; height:88px; border-radius:8px; background:#eef3f0; object-fit:cover; display:grid; place-items:center; color:var(--green); font-weight:800; text-align:center; }
+    .photo-preview.household { aspect-ratio:4/3; height:66px; }
+    .photo-status-card h3 { margin:0 0 4px; font-size:16px; }
+    .photo-status-card p { margin:0; color:var(--muted); font-size:13px; line-height:1.45; }
+    .photo-destination { margin-top:8px; display:inline-flex; border-radius:999px; background:#eef6fb; color:#17384a; padding:4px 9px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+    .photo-destination.ready { background:#fff4dd; color:#7a4d00; }
+    .photo-destination.approved { background:#e9f6ee; color:#1c6b3a; }
+    .photo-upload-note { grid-column:1/-1; margin:0; color:var(--muted); font-size:12px; line-height:1.45; }
     .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     label { display:grid; gap:6px; font-size:13px; font-weight:700; }
     input, select { border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; min-width:0; }
@@ -248,6 +257,9 @@
       .panel-intro { font-size:12px; }
       .summary-row { display:grid; gap:2px; }
       .summary-row strong { text-align:left; }
+      .photo-status-card { grid-template-columns:76px 1fr; }
+      .photo-preview { width:76px; height:76px; }
+      .photo-preview.household { height:57px; }
       .actions .btn, .btn { width:100%; }
       .directory-tabs { display:grid; grid-template-columns:1fr 1fr; }
       .directory-tab { min-height:42px; }
@@ -344,7 +356,7 @@
           </article>
 
           <article class="panel" data-mobile-section="household photos">
-            <div class="panel-header"><div><div class="panel-kicker">Optional</div><h2>Profile Photo</h2><p class="panel-intro">Upload first, then submit it if you want the parish to review it for publication.</p></div></div>
+            <div class="panel-header"><div><div class="panel-kicker">Optional</div><h2>Profile Photo</h2><p class="panel-intro">This shows on your personal listing in the Full Directory only after you choose Directory members, submit it, and the parish approves it.</p></div></div>
             <div class="summary-list" id="photoSummary"></div>
             <form class="form-grid" id="photoForm" hidden>
               <label>Photo file<input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required /></label>
@@ -393,7 +405,7 @@
           </article>
 
           <article class="panel" data-mobile-section="household photos family">
-            <div class="panel-header"><div><div class="panel-kicker">Family</div><h2>Family Photo</h2><p class="panel-intro">Use this for a household photo. You control whether it stays private, staff-only, or is submitted for publication.</p></div></div>
+            <div class="panel-header"><div><div class="panel-kicker">Family</div><h2>Family Photo</h2><p class="panel-intro">This shows on your household card in the Full Directory only after you choose Directory members, submit it, and the parish approves it.</p></div></div>
             <div class="summary-list" id="householdPhotoSummary"></div>
             <form class="form-grid" id="householdPhotoForm" hidden>
               <label>Photo file<input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required /></label>
@@ -491,7 +503,7 @@
     let profileState = null;
     let memberState = { view: "households", letter: "", cursor: "", query: "", sort: "az", loading: false };
     let skillCatalog = [];
-    const PHOTO_UPLOAD_TIMEOUT_MS = 45000;
+    const PHOTO_UPLOAD_TIMEOUT_MS = 90000;
     const PHOTO_MAX_EDGE = 1800;
     const PHOTO_JPEG_QUALITY = 0.86;
 
@@ -591,8 +603,109 @@
     }
     function photoHtml(item, className = "member-photo") {
       return item.photo?.url
-        ? `<img class="${className}" src="${esc(item.photo.url)}" alt="${esc(item.photo.alt || item.displayName || "")}" loading="lazy" />`
+        ? `<img class="${className}" data-auth-src="${esc(item.photo.url)}" alt="${esc(item.photo.alt || item.displayName || "")}" loading="lazy" />`
         : `<span class="${className}" aria-hidden="true">${esc(initials(item.displayName))}</span>`;
+    }
+    function mediaVariantFor(ownerType) {
+      return ownerType === "household" ? "household_card" : "avatar_medium";
+    }
+    function mediaPreviewUrl(asset, ownerType = "person") {
+      return asset?.id ? `/api/directory/media/${encodeURIComponent(asset.id)}/variants/${encodeURIComponent(mediaVariantFor(ownerType))}` : "";
+    }
+    function mediaStatusCopy(asset, ownerType = "person") {
+      if (!asset) {
+        return {
+          title: ownerType === "household" ? "No family photo yet" : "No profile photo yet",
+          copy: ownerType === "household"
+            ? "This appears on your household listing after you choose Directory members, submit it, and the parish approves it."
+            : "This appears on your personal listing after you choose Directory members, submit it, and the parish approves it.",
+          tone: "",
+          label: "Not uploaded"
+        };
+      }
+      const visibility = asset.visibility === "directory_members"
+        ? "Directory members"
+        : asset.visibility === "staff" || asset.visibility === "parish_staff"
+          ? "Parish staff only"
+          : asset.visibility === "household"
+            ? "Household only"
+            : "Private";
+      if (asset.reuploadRequired) {
+        return { title: "Re-upload needed", copy: "The previous photo cannot be safely prepared. Upload it again from this page.", tone: "ready", label: "Action needed" };
+      }
+      if (asset.lifecycleStatus === "approved") {
+        return {
+          title: visibility === "Directory members" ? "Photo is approved" : "Photo saved privately",
+          copy: visibility === "Directory members"
+            ? `This ${ownerType === "household" ? "family" : "profile"} photo can appear in the parish directory.`
+            : `This photo is saved as ${visibility.toLowerCase()} and will not appear in the public member listing.`,
+          tone: "approved",
+          label: visibility
+        };
+      }
+      if (asset.lifecycleStatus === "pending_approval") {
+        return {
+          title: "Waiting on parish review",
+          copy: visibility === "Directory members"
+            ? "The parish dashboard review queue can approve this before it appears in the directory."
+            : `This was submitted, but its visibility is ${visibility.toLowerCase()}.`,
+          tone: "",
+          label: "Pending review"
+        };
+      }
+      return {
+        title: "Uploaded, not submitted",
+        copy: visibility === "Directory members"
+          ? "Tap Submit Photo when you want the parish to review it for the member directory."
+          : `This photo is saved as ${visibility.toLowerCase()}. Change visibility to Directory members and upload again if you want it published.`,
+        tone: "ready",
+        label: "Needs submit"
+      };
+    }
+    function renderMediaSummary(asset, ownerType = "person") {
+      const status = mediaStatusCopy(asset, ownerType);
+      const url = mediaPreviewUrl(asset, ownerType);
+      const placeholder = ownerType === "household" ? "Family" : "You";
+      const preview = url
+        ? `<img class="photo-preview ${ownerType === "household" ? "household" : ""}" data-auth-src="${esc(url)}" alt="${ownerType === "household" ? "Family photo preview" : "Profile photo preview"}" loading="lazy" />`
+        : `<span class="photo-preview ${ownerType === "household" ? "household" : ""}" aria-hidden="true">${esc(placeholder)}</span>`;
+      return `<div class="photo-status-card">${preview}<div><h3>${esc(status.title)}</h3><p>${esc(status.copy)}</p><span class="photo-destination ${esc(status.tone)}">${esc(status.label)}</span></div></div>`;
+    }
+    async function hydrateAuthorizedImages(root = document) {
+      const images = [...root.querySelectorAll("img[data-auth-src]:not([data-auth-loaded])")];
+      await Promise.all(images.map(async (img) => {
+        img.dataset.authLoaded = "1";
+        try {
+          const response = await fetch(img.dataset.authSrc, { headers: headers() });
+          if (!response.ok) throw new Error("Photo preview unavailable.");
+          const blob = await response.blob();
+          const previous = img.dataset.objectUrl || "";
+          if (previous) URL.revokeObjectURL(previous);
+          const objectUrl = URL.createObjectURL(blob);
+          img.dataset.objectUrl = objectUrl;
+          img.src = objectUrl;
+        } catch {
+          img.removeAttribute("src");
+          img.alt = img.alt || "Photo preview unavailable";
+        }
+      }));
+    }
+    function renderUploadingMediaSummary(targetId, file, ownerType = "person") {
+      const previousUrlKey = ownerType === "household" ? "currentHouseholdUploadPreviewUrl" : "currentPersonUploadPreviewUrl";
+      if (window[previousUrlKey]) URL.revokeObjectURL(window[previousUrlKey]);
+      const url = file ? URL.createObjectURL(file) : "";
+      window[previousUrlKey] = url;
+      const preview = url
+        ? `<img class="photo-preview ${ownerType === "household" ? "household" : ""}" src="${esc(url)}" alt="Selected photo preview" />`
+        : `<span class="photo-preview ${ownerType === "household" ? "household" : ""}" aria-hidden="true">${ownerType === "household" ? "Family" : "You"}</span>`;
+      document.getElementById(targetId).innerHTML = `<div class="photo-status-card">${preview}<div><h3>Preparing upload</h3><p>Keep this screen open while AGAPAY prepares the photo. It will show here first, then you can submit it for parish review if you want it published.</p><span class="photo-destination ready">Uploading</span></div></div>`;
+    }
+    function setUploadBusy(formEl, busy, busyText) {
+      const submit = formEl?.querySelector('button[type="submit"]');
+      if (!submit) return;
+      if (!submit.dataset.defaultText) submit.dataset.defaultText = submit.textContent;
+      submit.disabled = busy;
+      submit.textContent = busy ? busyText : submit.dataset.defaultText;
     }
     function guideCard({ kicker, title, copy, status = "", tone = "", href = "" }, primary = false) {
       const inner = `<small>${esc(kicker)}</small><strong>${esc(title)}</strong><span>${esc(copy)}</span>${status ? `<b class="guide-status ${esc(tone)}">${esc(status)}</b>` : ""}`;
@@ -714,6 +827,7 @@
           <span><strong>${esc(item.displayName)}</strong><small>${esc(memberSubtitle(item) || "Published directory profile")}</small></span>
         </button>`).join("") : '<div class="empty">No published directory entries match this view.</div>';
       target.innerHTML = append && !target.querySelector(".empty") ? target.innerHTML + html : html;
+      hydrateAuthorizedImages(target);
     }
     async function loadMemberDirectory({ append = false } = {}) {
       if (!token || !email || memberState.loading) return;
@@ -840,6 +954,7 @@
           ${contacts ? `<div class="actions">${contacts}</div>` : ""}
           ${members}
         </article>`;
+      hydrateAuthorizedImages(pane);
       pane.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     function renderProfile(data) {
@@ -918,11 +1033,10 @@
       const payload = await api(`/api/directory/media/current?ownerType=person&ownerId=${encodeURIComponent(person.id)}`).catch(() => ({ assets: [] }));
       const asset = (payload.assets || [])[0];
       window.currentDirectoryPhoto = asset || null;
-      document.getElementById("photoSummary").innerHTML = asset
-        ? `<div class="mini-card"><strong>${asset.lifecycleStatus}</strong><small>${asset.detectedMimeType} · ${asset.originalWidth}×${asset.originalHeight} · ${asset.visibility}</small></div>`
-        : '<div class="empty">No directory profile photo yet. Choose a file below, then tap Upload Photo.</div>';
+      document.getElementById("photoSummary").innerHTML = renderMediaSummary(asset, "person");
       document.getElementById("submitPhotoReview").hidden = !asset || asset.lifecycleStatus !== "ready";
       document.getElementById("removePhoto").hidden = !asset;
+      hydrateAuthorizedImages(document.getElementById("photoSummary"));
     }
     function firstHousehold() {
       return (profileState?.manageableHouseholds || [])[0] || null;
@@ -957,11 +1071,10 @@
       const payload = await api(`/api/directory/media/current?ownerType=household&ownerId=${encodeURIComponent(household.id)}`).catch(() => ({ assets: [] }));
       const asset = (payload.assets || [])[0];
       window.currentDirectoryHouseholdPhoto = asset || null;
-      document.getElementById("householdPhotoSummary").innerHTML = asset
-        ? `<div class="mini-card"><strong>${asset.lifecycleStatus}</strong><small>${asset.detectedMimeType} · ${asset.originalWidth}×${asset.originalHeight} · ${asset.visibility}</small></div>`
-        : '<div class="empty">No family photo yet. Choose a file below, then tap Upload Family Photo.</div>';
+      document.getElementById("householdPhotoSummary").innerHTML = renderMediaSummary(asset, "household");
       document.getElementById("submitHouseholdPhotoReview").hidden = !asset || asset.lifecycleStatus !== "ready";
       document.getElementById("removeHouseholdPhoto").hidden = !asset;
+      hydrateAuthorizedImages(document.getElementById("householdPhotoSummary"));
     }
     function renderNamedays(items = []) {
       document.getElementById("namedayList").innerHTML = items.length ? items.map((item) => `
@@ -1198,6 +1311,8 @@
       if (!person || !selected) return;
       const visibility = formEl.elements.visibility.value || "private";
       try {
+        setUploadBusy(formEl, true, "Uploading...");
+        renderUploadingMediaSummary("photoSummary", selected, "person");
         showNotice("Preparing your photo...");
         const prepared = await preparePhotoForUpload(selected);
         showNotice("Uploading and preparing your photo...");
@@ -1213,10 +1328,12 @@
           body: form
         });
         formEl.reset();
-        showNotice("Photo uploaded. If you want it in the published directory, tap Submit Photo after the page refreshes.");
+        showNotice(visibility === "directory_members" ? "Photo uploaded. Tap Submit Photo so the parish can review it for the directory." : "Photo uploaded privately. It is saved here, but it will not appear in the member directory unless you upload with Directory members visibility and submit it.");
         await loadDirectory();
       } catch (error) {
         showNotice(error.message || "Photo upload failed.", true);
+      } finally {
+        setUploadBusy(formEl, false);
       }
     });
     document.getElementById("submitPhotoReview").addEventListener("click", async () => {
@@ -1240,6 +1357,8 @@
       if (!household || !selected) return;
       const visibility = formEl.elements.visibility.value || "private";
       try {
+        setUploadBusy(formEl, true, "Uploading...");
+        renderUploadingMediaSummary("householdPhotoSummary", selected, "household");
         showNotice("Preparing your family photo...");
         const prepared = await preparePhotoForUpload(selected);
         showNotice("Uploading and preparing your family photo...");
@@ -1255,10 +1374,12 @@
           body: form
         });
         formEl.reset();
-        showNotice("Family photo uploaded. Submit it for review if you want it published.");
+        showNotice(visibility === "directory_members" ? "Family photo uploaded. Tap Submit Photo so the parish can review it for the household listing." : "Family photo uploaded privately. It is saved here, but it will not appear in the member directory unless you upload with Directory members visibility and submit it.");
         await loadDirectory();
       } catch (error) {
         showNotice(error.message || "Family photo upload failed.", true);
+      } finally {
+        setUploadBusy(formEl, false);
       }
     });
     document.getElementById("submitHouseholdPhotoReview").addEventListener("click", async () => {
