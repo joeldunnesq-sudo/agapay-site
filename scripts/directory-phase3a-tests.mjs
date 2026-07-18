@@ -11,7 +11,9 @@ import {
   applyHouseholdDirectCorrection,
   applyPersonDirectCorrection,
   assignDirectoryReviewItem,
+  completeDirectoryMediaUpload,
   createDirectoryChangeRequest,
+  createDirectoryMediaUploadSession,
   createDirectoryNote,
   createHousehold,
   createPerson,
@@ -38,6 +40,25 @@ const repoRoot = path.join(__dirname, "..");
 
 function migration(name) {
   return readFileSync(path.join(repoRoot, "migrations", name), "utf8");
+}
+
+class FakeR2Bucket {
+  constructor() {
+    this.objects = new Map();
+  }
+  async put(key, body, options = {}) {
+    this.objects.set(key, {
+      body: body instanceof ArrayBuffer ? new Uint8Array(body) : body,
+      httpMetadata: options.httpMetadata || {}
+    });
+  }
+  async get(key) {
+    const object = this.objects.get(key);
+    return object ? { body: object.body, httpMetadata: object.httpMetadata } : null;
+  }
+  async delete(key) {
+    this.objects.delete(key);
+  }
 }
 
 function makeD1Env() {
@@ -87,7 +108,25 @@ function makeD1Env() {
       }
     }
   };
-  return { env: { AGAPAY_DB, AGAPAY_ENVIRONMENT: "test" }, db };
+  return { env: { AGAPAY_DB, AGAPAY_ENVIRONMENT: "test", DIRECTORY_MEDIA: new FakeR2Bucket() }, db };
+}
+
+function png1x1() {
+  return Uint8Array.from([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+    0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+    0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
+    0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44, 0x41,
+    0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
+    0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00,
+    0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae,
+    0x42, 0x60, 0x82
+  ]).buffer;
+}
+
+function file(name = "family.png", type = "image/png") {
+  return { name, type, arrayBuffer: async () => png1x1() };
 }
 
 function actor(parishId = "st-fiacre", capabilities = ["directory.manage"], userId = "seed-admin", personId = "") {
@@ -392,6 +431,25 @@ await test("people, household, direct corrections, and notes are scoped and cont
   assert.equal(householdDetail.household.displayName, "Dunne Household");
   const note = await createDirectoryNote(env, { context: reviewerContext, targetType: "household", targetId: household.id, category: "verification", body: "Name spelling confirmed." });
   assert.equal(note.category, "verification");
+});
+
+await test("household admin detail exposes uploaded family photo preview metadata", async () => {
+  const { env, reviewerContext, selfContext, household, reviewerUser } = await fixture();
+  const session = await createDirectoryMediaUploadSession(env, { context: selfContext, ownerType: "household", ownerId: household.id, visibility: "directory_members" });
+  await completeDirectoryMediaUpload(env, { context: selfContext, sessionId: session.id, file: file(), arrayBuffer: png1x1() });
+  const households = await listDirectoryHouseholdsAdmin(env, { context: reviewerContext });
+  const householdRow = households.find((item) => item.id === household.id);
+  assert.equal(householdRow.photo.lifecycleStatus, "ready");
+  assert.match(householdRow.photo.url, /\/api\/parish\/dashboard\/st-fiacre\/directory\/admin\/media\/.+\/variants\/household_card/);
+  const reviewerSession = await issuePlatformUserSession(env, reviewerUser.id);
+  const detailRequest = requestWithSession(`https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/households/${encodeURIComponent(household.id)}`, reviewerSession, reviewerUser.email);
+  const detailResponse = await handleDirectoryAdmin(detailRequest, env, "st-fiacre");
+  assert.equal(detailResponse.status, 200);
+  const payload = await detailResponse.json();
+  assert.equal(payload.household.photo.lifecycleStatus, "ready");
+  const mediaResponse = await handleDirectoryAdmin(requestWithSession("https://agapay.app" + payload.household.photo.url, reviewerSession, reviewerUser.email), env, "st-fiacre");
+  assert.equal(mediaResponse.status, 200);
+  assert.match(mediaResponse.headers.get("Content-Type") || "", /^image\//);
 });
 
 if (process.exitCode) {

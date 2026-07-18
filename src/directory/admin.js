@@ -10,7 +10,8 @@ import {
 import { DirectoryServiceError } from "./foundation.js";
 import { transitionPublicationProfile } from "./publication.js";
 import { setFieldPrivacyPreference } from "./privacy.js";
-import { assertMediaAssetSecurelyTransformed, auditDirectoryMediaLegacyAssets, reprocessDirectoryMediaAsset } from "./media.js";
+import { DIRECTORY_MEDIA_BUCKET, assertMediaAssetSecurelyTransformed, auditDirectoryMediaLegacyAssets, reprocessDirectoryMediaAsset } from "./media.js";
+import { isAcceptedPipelineVersion } from "./media-transform.js";
 import {
   decideDuplicateCandidate,
   executeDuplicateMerge,
@@ -598,6 +599,44 @@ function sanitizePayload(payload, context) {
   return copy;
 }
 
+function adminMediaDto(row, preferredVariant = "") {
+  if (!row?.id) return null;
+  const variantType = preferredVariant || (row.owner_type === "household" ? "household_card" : "avatar_medium");
+  return {
+    id: row.id,
+    ownerType: row.owner_type,
+    ownerId: row.owner_id,
+    mediaPurpose: row.media_purpose,
+    lifecycleStatus: row.lifecycle_status,
+    processingStatus: row.processing_status,
+    visibility: row.visibility,
+    publicationEligible: Number(row.publication_eligible || 0) === 1,
+    originalWidth: Number(row.original_width || 0),
+    originalHeight: Number(row.original_height || 0),
+    variantType,
+    url: `/api/parish/dashboard/${encodeURIComponent(row.parish_id)}/directory/admin/media/${encodeURIComponent(row.id)}/variants/${encodeURIComponent(variantType)}`
+  };
+}
+
+async function currentAdminMediaForOwner(env, { parishId, ownerType, ownerId }) {
+  const purpose = ownerType === "household" ? "household_profile_photo" : "person_profile_photo";
+  const row = await d1First(
+    env,
+    `SELECT a.* FROM directory_media_assets a
+       JOIN directory_media_assignments asn ON asn.media_asset_id = a.id
+      WHERE asn.parish_id = ?1 AND asn.owner_type = ?2 AND asn.owner_id = ?3
+        AND asn.media_purpose = ?4 AND asn.assignment_status IN ('active','candidate')
+        AND a.lifecycle_status NOT IN ('deleted','replaced','failed')
+      ORDER BY CASE asn.assignment_status WHEN 'active' THEN 0 ELSE 1 END, a.created_at DESC
+      LIMIT 1`,
+    parishId,
+    ownerType,
+    ownerId,
+    purpose
+  );
+  return adminMediaDto(row, ownerType === "household" ? "household_card" : "avatar_medium");
+}
+
 function requestedDirectoryPublication(preferences = {}) {
   if (!preferences || typeof preferences !== "object") return false;
   return Object.values(preferences).some((pref) => pref && pref.publicationEligible && pref.visibility === "directory_members");
@@ -1155,13 +1194,23 @@ export async function listDirectoryHouseholdsAdmin(env, { context, query = "", l
     `SELECT h.id, h.display_name, h.active, h.updated_at,
             COUNT(DISTINCT hm.person_id) AS member_count,
             COUNT(DISTINCT ha.person_id) AS admin_count,
-            COUNT(DISTINCT cr.id) AS pending_request_count,
-            MAX(COALESCE(a.protected_address, 0)) AS protected_address
+      COUNT(DISTINCT cr.id) AS pending_request_count,
+            MAX(COALESCE(a.protected_address, 0)) AS protected_address,
+            photo.id AS photo_id, photo.owner_type AS photo_owner_type, photo.owner_id AS photo_owner_id,
+            photo.media_purpose AS photo_media_purpose, photo.lifecycle_status AS photo_lifecycle_status,
+            photo.processing_status AS photo_processing_status, photo.visibility AS photo_visibility,
+            photo.publication_eligible AS photo_publication_eligible, photo.original_width AS photo_original_width,
+            photo.original_height AS photo_original_height
        FROM directory_households h
        LEFT JOIN directory_household_members hm ON hm.household_id = h.id AND hm.active = 1
        LEFT JOIN directory_household_admins ha ON ha.household_id = h.id AND ha.active = 1
        LEFT JOIN directory_change_requests cr ON cr.parish_id = h.parish_id AND cr.target_type = 'household' AND cr.target_id = h.id AND cr.status = 'pending'
        LEFT JOIN directory_addresses a ON a.parish_id = h.parish_id AND a.owner_type = 'household' AND a.owner_id = h.id AND a.active = 1
+       LEFT JOIN directory_media_assignments photo_asn ON photo_asn.parish_id = h.parish_id
+        AND photo_asn.owner_type = 'household' AND photo_asn.owner_id = h.id
+        AND photo_asn.media_purpose = 'household_profile_photo' AND photo_asn.assignment_status IN ('active','candidate')
+       LEFT JOIN directory_media_assets photo ON photo.id = photo_asn.media_asset_id
+        AND photo.lifecycle_status NOT IN ('deleted','replaced','failed')
       WHERE h.parish_id = ?1 AND (?2 = '%%' OR h.display_name LIKE ?2)
       GROUP BY h.id
       ORDER BY h.display_name
@@ -1178,6 +1227,19 @@ export async function listDirectoryHouseholdsAdmin(env, { context, query = "", l
     administratorCount: Number(row.admin_count || 0),
     pendingRequestCount: Number(row.pending_request_count || 0),
     protectedAddress: Number(row.protected_address || 0) === 1,
+    photo: adminMediaDto({
+      id: row.photo_id,
+      parish_id: context.parishId,
+      owner_type: row.photo_owner_type,
+      owner_id: row.photo_owner_id,
+      media_purpose: row.photo_media_purpose,
+      lifecycle_status: row.photo_lifecycle_status,
+      processing_status: row.photo_processing_status,
+      visibility: row.photo_visibility,
+      publication_eligible: row.photo_publication_eligible,
+      original_width: row.photo_original_width,
+      original_height: row.photo_original_height
+    }, "household_card"),
     lastUpdated: Number(row.updated_at || 0)
   }));
 }
@@ -1187,13 +1249,14 @@ export async function getDirectoryHouseholdAdmin(env, { context, householdId }) 
   const id = cleanText(householdId, { required: true, max: 180, field: "householdId" });
   const household = await d1First(env, "SELECT * FROM directory_households WHERE id = ?1 AND parish_id = ?2", id, context.parishId);
   if (!household) throw new DirectoryServiceError("not_found", "Directory household was not found.", 404);
-  const [members, admins, publication, notes] = await Promise.all([
+  const [members, admins, publication, photo, notes] = await Promise.all([
     d1All(env, `SELECT p.id, p.preferred_name, hm.relationship FROM directory_household_members hm JOIN directory_people p ON p.id = hm.person_id WHERE hm.household_id = ?1 AND hm.active = 1 ORDER BY p.preferred_name`, id),
     d1All(env, `SELECT p.id, p.preferred_name FROM directory_household_admins ha JOIN directory_people p ON p.id = ha.person_id WHERE ha.household_id = ?1 AND ha.active = 1 ORDER BY p.preferred_name`, id),
     d1First(env, "SELECT status, approval_status FROM directory_publication_profiles WHERE parish_id = ?1 AND owner_type = 'household' AND owner_id = ?2 AND active = 1", context.parishId, id),
+    currentAdminMediaForOwner(env, { parishId: context.parishId, ownerType: "household", ownerId: id }),
     context.permissions.canViewNotes ? listDirectoryNotes(env, { context, targetType: "household", targetId: id }) : []
   ]);
-  return { household: { id, displayName: household.display_name, active: Number(household.active || 0) === 1, version: household.updated_at }, members, administrators: admins, publication: publication || null, notes };
+  return { household: { id, displayName: household.display_name, active: Number(household.active || 0) === 1, version: household.updated_at }, members, administrators: admins, publication: publication || null, photo, notes };
 }
 
 export async function applyHouseholdDirectCorrection(env, { context, householdId, patch = {}, expectedVersion, correlationId = "" }) {
@@ -1340,4 +1403,39 @@ export async function requestDirectoryMediaReprocessing(env, { context, mediaAss
     correlationId
   })]);
   return asset;
+}
+
+export async function streamDirectoryAdminMediaVariant(env, { context, mediaAssetId, variantType }) {
+  requireAny(actorDto(context), context.parishId, [DIRECTORY_CAPABILITIES.householdsManage, DIRECTORY_CAPABILITIES.requestsReview, DIRECTORY_CAPABILITIES.publicationReview, DIRECTORY_CAPABILITIES.manage]);
+  const asset = await d1First(
+    env,
+    "SELECT * FROM directory_media_assets WHERE id = ?1 AND parish_id = ?2",
+    cleanText(mediaAssetId, { required: true, max: 180, field: "mediaAssetId" }),
+    context.parishId
+  );
+  if (!asset || ["deleted", "replaced", "failed"].includes(asset.lifecycle_status)) {
+    throw new DirectoryServiceError("not_found", "Directory media was not found.", 404);
+  }
+  const variant = await d1First(
+    env,
+    "SELECT * FROM directory_media_variants WHERE media_asset_id = ?1 AND variant_type = ?2 AND ready = 1 AND secure_transform_status = 'securely_transformed'",
+    asset.id,
+    cleanText(variantType, { required: true, max: 60, field: "variantType" })
+  );
+  if (!variant || !isAcceptedPipelineVersion(variant.pipeline_version)) {
+    throw new DirectoryServiceError("not_found", "Directory media variant was not found.", 404);
+  }
+  const bucket = env?.[DIRECTORY_MEDIA_BUCKET];
+  if (!bucket) throw new DirectoryServiceError("storage_unavailable", "Directory media storage is not configured.", 503);
+  const object = await bucket.get(variant.r2_object_key);
+  if (!object) throw new DirectoryServiceError("not_found", "Directory media object was not found.", 404);
+  return new Response(object.body, {
+    status: 200,
+    headers: {
+      "Content-Type": variant.mime_type,
+      "X-Content-Type-Options": "nosniff",
+      "Cache-Control": "private, no-store",
+      "Content-Security-Policy": "default-src 'none'"
+    }
+  });
 }

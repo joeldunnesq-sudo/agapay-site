@@ -27,6 +27,7 @@ import {
   resolveDirectoryAdminContext,
   revokeChildPublicationApproval,
   runDirectoryDuplicateScan,
+  streamDirectoryAdminMediaVariant,
   unassignDirectoryReviewItem
 } from "../directory/admin.js";
 import {
@@ -218,6 +219,14 @@ export async function handleDirectoryAdmin(request, env, parishId) {
       return privateJson({ ok: true, result: await revokeChildPublicationApproval(env, { context, requestId: decodeURIComponent(childRevokeMatch[1]), ...await body(request), correlationId }) });
     }
     if (request.method === "GET" && path === "/media/legacy-audit") return privateJson({ ok: true, audit: await getDirectoryMediaLegacyAudit(env, { context, correlationId }) });
+    const mediaVariantMatch = path.match(/^\/media\/([^/]+)\/variants\/([^/]+)$/);
+    if (request.method === "GET" && mediaVariantMatch) {
+      return streamDirectoryAdminMediaVariant(env, {
+        context,
+        mediaAssetId: decodeURIComponent(mediaVariantMatch[1]),
+        variantType: decodeURIComponent(mediaVariantMatch[2])
+      });
+    }
     const reprocessMatch = path.match(/^\/media\/([^/]+)\/reprocess$/);
     if (request.method === "POST" && reprocessMatch) {
       const limited = await rateLimit(request, env, "directory-media-reprocess", { limit: 20, windowSeconds: 3600 });

@@ -525,6 +525,7 @@
           </div>
         </section>
       </div>`;
+    hydrateDirectoryAdminImages(pane);
   }
 
   function directoryEmptyState(title, subtitle) {
@@ -572,6 +573,45 @@
         </div>
         ${body}
       </article>`;
+  }
+  async function hydrateDirectoryAdminImages(root = document) {
+    const images = Array.from(root.querySelectorAll('img[data-directory-admin-src]:not([data-directory-admin-loaded])'));
+    await Promise.all(images.map(async (img) => {
+      img.dataset.directoryAdminLoaded = '1';
+      try {
+        const res = await fetch(img.dataset.directoryAdminSrc, { headers: authHeaders() });
+        if (!res.ok) throw new Error('Photo unavailable');
+        const blob = await res.blob();
+        const previous = img.dataset.objectUrl || '';
+        if (previous) URL.revokeObjectURL(previous);
+        const objectUrl = URL.createObjectURL(blob);
+        img.dataset.objectUrl = objectUrl;
+        img.src = objectUrl;
+      } catch {
+        img.replaceWith(directoryPhotoPlaceholderElement('No photo'));
+      }
+    }));
+  }
+  function directoryPhotoPlaceholderElement(label) {
+    const span = document.createElement('span');
+    span.className = 'pdx-dir-thumb pdx-dir-thumb-placeholder';
+    span.textContent = label || 'No photo';
+    return span;
+  }
+  function directoryAdminPhotoImg(photo, className = 'pdx-dir-thumb', alt = 'Family photo') {
+    return photo?.url
+      ? `<img class="${className}" data-directory-admin-src="${escapeAttr(photo.url)}" alt="${escapeAttr(alt)}" />`
+      : `<span class="${className} pdx-dir-thumb-placeholder">No photo</span>`;
+  }
+  function directoryHouseholdPhotoCard(photo) {
+    if (!photo) {
+      return `<section class="pdx-dir-review-column"><h4>Family photo</h4><div class="pdx-dir-empty"><strong>No family photo uploaded</strong><span>When a household uploads one in My AGAPAY, it will appear here for staff review and context.</span></div></section>`;
+    }
+    const status = photo.lifecycleStatus === 'approved' ? 'Approved' : photo.lifecycleStatus === 'pending_approval' ? 'Waiting on review' : 'Uploaded, not submitted';
+    return `<section class="pdx-dir-review-column"><h4>Family photo</h4><div class="pdx-dir-photo-card">
+      ${directoryAdminPhotoImg(photo, 'pdx-dir-photo-preview', 'Uploaded family photo')}
+      <div><strong>${escapeHtml(status)}</strong><p>${escapeHtml((photo.visibility || 'private').replace(/_/g, ' '))} · ${escapeHtml(photo.processingStatus || 'processing status unavailable')}. This is the photo the family uploaded from My AGAPAY.</p></div>
+    </div></section>`;
   }
 
   async function openDirectoryPerson(personId) {
@@ -625,6 +665,7 @@
       const household = record.household || {};
       detail.innerHTML = directoryRecordDetailShell('Household record', household.displayName || 'Directory household', 'This is the family container parishioners expect to edit from My AGAPAY.', `
         <div class="pdx-dir-review-grid">
+          ${directoryHouseholdPhotoCard(record.photo)}
           <section class="pdx-dir-review-column"><h4>Status</h4>
             ${directoryReviewObjectRows({
               householdName: household.displayName,
@@ -633,6 +674,8 @@
               approval: record.publication?.approval_status || record.publication?.approvalStatus || 'not submitted'
             })}
           </section>
+        </div>
+        <div class="pdx-dir-review-grid">
           <section class="pdx-dir-review-column pdx-dir-review-column-new"><h4>Household admins</h4>
             ${directoryDetailList(record.administrators, 'No household admin', 'At least one adult should be a household admin so the family can edit household-owned information.', (item) => `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.preferred_name || item.preferredName || item.id)}</strong><span>Can manage household self-service</span></div>`)}
           </section>
@@ -645,6 +688,7 @@
             ${directoryDetailList(record.notes, 'No notes', 'No internal notes are attached to this household.', (item) => `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.title || item.noteType || 'Note')}</strong><span>${escapeHtml(item.body || item.note || item.summary || '')}</span></div>`)}
           </section>
         </div>`);
+      hydrateDirectoryAdminImages(detail);
       detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (err) {
       detail.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to open this household record.')}</p>`;
@@ -786,9 +830,12 @@
     const admins = household.administratorCount || household.adminCount || 0;
     const pending = household.pendingRequestCount || 0;
     return `<div class="pdx-dir-row pdx-dir-record-row" onclick="openDirectoryHousehold('${escapeAttr(household.id)}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDirectoryHousehold('${escapeAttr(household.id)}');}">
-      <div class="pdx-dir-row-copy">
-        <div class="pdx-dir-row-title">${escapeHtml(household.displayName)}</div>
-        <div class="pdx-dir-row-meta">${escapeHtml(count + ' member' + (count === 1 ? '' : 's'))} · ${escapeHtml(admins + ' household admin' + (admins === 1 ? '' : 's'))}</div>
+      <div class="pdx-dir-row-media">
+        ${directoryAdminPhotoImg(household.photo, 'pdx-dir-thumb', 'Family photo for ' + (household.displayName || 'household'))}
+        <div class="pdx-dir-row-copy">
+          <div class="pdx-dir-row-title">${escapeHtml(household.displayName)}</div>
+          <div class="pdx-dir-row-meta">${escapeHtml(count + ' member' + (count === 1 ? '' : 's'))} · ${escapeHtml(admins + ' household admin' + (admins === 1 ? '' : 's'))}${household.photo ? ' · family photo ' + escapeHtml((household.photo.lifecycleStatus || '').replace(/_/g, ' ')) : ''}</div>
+        </div>
       </div>
       <div class="pdx-dir-row-side">
         ${pending ? `<span class="pdx-dir-badge high">${pending} pending</span>` : `<span class="pdx-dir-badge count">Current</span>`}
