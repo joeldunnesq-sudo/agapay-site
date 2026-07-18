@@ -123,45 +123,140 @@
     .skill-card p { margin:0; color:var(--muted); }
     .nameday-list { display:grid; gap:10px; margin-top:12px; }
     textarea { border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; min-height:62px; resize:vertical; }
+    .mobile-directory-home { display:none; }
     @media (max-width: 860px) {
       body.donor-directory-page {
-        background:
-          radial-gradient(circle at 50% -10%, rgba(184, 144, 47, 0.18), transparent 30%),
-          linear-gradient(180deg, #efe8dc 0%, #f6f1e8 38%, #ebe3d6 100%);
+        background:#f7f3ec;
       }
       .directory-shell { display:block; }
       .directory-side { display:none; }
       .directory-main {
-        width:min(100%, 480px);
+        width:100%;
         min-height:calc(100vh - 7.75rem);
         margin:0 auto;
-        padding:1rem;
-        border:1px solid rgba(111, 106, 96, 0.15);
-        border-radius:32px;
-        background:rgba(246, 241, 232, 0.96);
-        box-shadow:0 18px 50px rgba(6, 21, 34, 0.13);
+        padding:14px 14px 6.75rem;
+        border:0;
+        border-radius:0;
+        background:#f7f3ec;
+        box-shadow:none;
       }
       .donor-directory-page .directory-shell {
         min-height:100vh;
-        padding:1.15rem .95rem 6.6rem;
+        padding:0;
       }
-      .directory-top { display:grid; }
-      .directory-title h1 { font-size:32px; line-height:1; }
-      .directory-title p { font-size:13px; }
-      .directory-grid, .form-grid, .directory-guide { grid-template-columns:1fr; }
-      .directory-command { grid-template-columns:1fr 1fr; }
+      .directory-top {
+        display:grid;
+        gap:10px;
+        margin:0 0 12px;
+        padding:14px 14px 12px;
+        border:1px solid rgba(16,24,32,.08);
+        border-radius:18px;
+        background:#fff;
+        box-shadow:0 8px 20px rgba(16,24,32,.06);
+      }
+      .directory-title h1 { font-family:"DM Sans", Arial, sans-serif; font-size:25px; line-height:1.08; font-weight:800; }
+      .directory-title p { display:none; }
+      .status-pill { justify-self:start; padding:7px 10px; border-radius:999px; background:#eef3f0; color:var(--green); }
+      .directory-command, .directory-guide { display:none; }
+      .mobile-directory-home { display:grid; gap:12px; margin-bottom:12px; }
+      .mobile-home-card {
+        border:1px solid rgba(16,24,32,.08);
+        border-radius:18px;
+        background:#fff;
+        padding:14px;
+        box-shadow:0 8px 20px rgba(16,24,32,.06);
+      }
+      .mobile-home-card h2 { margin:0 0 5px; font-size:18px; line-height:1.2; }
+      .mobile-home-card p { margin:0; color:var(--muted); font-size:13px; line-height:1.45; }
+      .mobile-home-primary {
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        width:100%;
+        margin-top:12px;
+        border:0;
+        border-radius:14px;
+        padding:13px 14px;
+        background:var(--green);
+        color:#fff;
+        font-weight:800;
+        font:inherit;
+        text-align:left;
+      }
+      .mobile-action-list { display:grid; gap:8px; }
+      .mobile-action {
+        display:grid;
+        grid-template-columns:1fr auto;
+        gap:8px;
+        align-items:center;
+        width:100%;
+        border:1px solid rgba(16,24,32,.09);
+        border-radius:14px;
+        background:#fff;
+        padding:13px 14px;
+        color:var(--ink);
+        font:inherit;
+        text-align:left;
+        box-shadow:0 5px 14px rgba(16,24,32,.045);
+      }
+      .mobile-action strong { display:block; font-size:14px; }
+      .mobile-action span { display:block; margin-top:2px; color:var(--muted); font-size:12px; line-height:1.35; }
+      .mobile-action b { color:var(--green); font-size:18px; }
+      .mobile-action[aria-current="true"] { border-color:rgba(35,92,77,.46); background:#f4faf6; }
+      .mobile-back {
+        display:none;
+        width:100%;
+        margin:0 0 10px;
+        border:1px solid rgba(16,24,32,.09);
+        border-radius:14px;
+        padding:11px 12px;
+        background:#fff;
+        color:var(--green);
+        font:inherit;
+        font-weight:800;
+        text-align:left;
+      }
+      body[data-mobile-view]:not([data-mobile-view="home"]) .mobile-back { display:block; }
+      body[data-mobile-view]:not([data-mobile-view="home"]) .mobile-directory-home { display:none; }
+      body[data-mobile-view="home"] .directory-grid,
+      body[data-mobile-view="home"] .member-directory { display:none; }
+      body[data-mobile-view="setup"] [data-mobile-section]:not([data-mobile-section~="setup"]),
+      body[data-mobile-view="family"] [data-mobile-section]:not([data-mobile-section~="family"]),
+      body[data-mobile-view="photos"] [data-mobile-section]:not([data-mobile-section~="photos"]),
+      body[data-mobile-view="privacy"] [data-mobile-section]:not([data-mobile-section~="privacy"]),
+      body[data-mobile-view="serve"] [data-mobile-section]:not([data-mobile-section~="serve"]),
+      body[data-mobile-view="browse"] [data-mobile-section]:not([data-mobile-section~="browse"]) { display:none; }
+      body[data-mobile-view="setup"] .member-directory,
+      body[data-mobile-view="family"] .member-directory,
+      body[data-mobile-view="photos"] .member-directory,
+      body[data-mobile-view="privacy"] .member-directory { display:none; }
+      body[data-mobile-view="browse"] .directory-grid,
+      body[data-mobile-view="serve"] .directory-grid { display:none; }
+      .directory-grid, .form-grid { grid-template-columns:1fr; }
       .directory-tools, .skills-toolbar { grid-template-columns:1fr; }
       .member-grid { grid-template-columns:1fr; }
-      .panel { border-radius:22px; padding:14px; box-shadow:0 10px 24px rgba(6,21,34,.08); }
+      .panel {
+        border-radius:18px;
+        padding:14px;
+        box-shadow:0 8px 20px rgba(16,24,32,.06);
+      }
+      .panel-header { margin-bottom:10px; }
+      .panel-kicker { font-size:10px; }
+      .panel-header h2 { font-size:17px; }
+      .panel-intro { font-size:12px; }
+      .summary-row { display:grid; gap:2px; }
+      .summary-row strong { text-align:left; }
+      .actions .btn, .btn { width:100%; }
+      .directory-tabs { display:grid; grid-template-columns:1fr 1fr; }
+      .directory-tab { min-height:42px; }
+      .alphabet { flex-wrap:nowrap; overflow:auto; padding-bottom:4px; }
+      .alphabet button { flex:0 0 auto; }
       .member-directory { margin-bottom:12px; }
-      .directory-top { margin-bottom:14px; }
-    }
-    @media (max-width: 430px) {
-      .directory-command { grid-template-columns:1fr; }
     }
   </style>
 </head>
-<body class="donor-mobile-page donor-directory-page">
+<body class="donor-mobile-page donor-directory-page" data-mobile-view="home">
   <div class="app directory-shell">
     <aside class="sidebar directory-side">
       <div class="sidebar-scroll">
@@ -182,6 +277,9 @@
 
       <div id="directoryNotice" class="notice" hidden></div>
 
+      <section class="mobile-directory-home" id="mobileDirectoryHome" aria-label="Directory home"></section>
+      <button class="mobile-back" type="button" data-mobile-target="home">Back to Directory Home</button>
+
       <section class="directory-command" aria-label="Directory actions">
         <a class="command-card" href="#profileSummary"><strong>Set Up</strong><span>Your person profile and review status</span></a>
         <a class="command-card" href="#householdList"><strong>Household</strong><span>Family name, photo, children, name days</span></a>
@@ -193,7 +291,7 @@
 
       <section class="directory-grid" aria-live="polite">
         <div class="stack">
-          <article class="panel">
+          <article class="panel" data-mobile-section="setup">
             <div class="panel-header"><div><div class="panel-kicker">Step 1</div><h2>My Profile</h2><p class="panel-intro">This is your own directory record. Keep private details private; submit only what you want the parish to review.</p></div></div>
             <div class="summary-list" id="profileSummary"></div>
             <form class="setup-panel" id="startProfileForm" hidden>
@@ -230,7 +328,7 @@
             </form>
           </article>
 
-          <article class="panel">
+          <article class="panel" data-mobile-section="privacy setup">
             <div class="panel-header"><div><div class="panel-kicker">Step 2</div><h2>Contact &amp; Privacy</h2><p class="panel-intro">Add email or phone details. Choose Directory members only for information you want the parish to consider publishing.</p></div></div>
             <div class="contact-list" id="contactList"></div>
             <form class="form-grid" id="contactForm" hidden>
@@ -242,7 +340,7 @@
             </form>
           </article>
 
-          <article class="panel">
+          <article class="panel" data-mobile-section="photos">
             <div class="panel-header"><div><div class="panel-kicker">Optional</div><h2>Profile Photo</h2><p class="panel-intro">Upload first, then submit it if you want the parish to review it for publication.</p></div></div>
             <div class="summary-list" id="photoSummary"></div>
             <form class="form-grid" id="photoForm" hidden>
@@ -252,7 +350,7 @@
             </form>
           </article>
 
-          <article class="panel">
+          <article class="panel" data-mobile-section="serve">
             <div class="panel-header"><div><div class="panel-kicker">Serve</div><h2>My Skills &amp; Service</h2><p class="panel-intro">Share only the skills you are comfortable making available to your parish community.</p></div></div>
             <div class="skill-list" id="mySkillList"></div>
             <form class="form-grid" id="skillForm" hidden>
@@ -271,7 +369,7 @@
         </div>
 
         <div class="stack">
-          <article class="panel">
+          <article class="panel" data-mobile-section="setup privacy">
             <div class="panel-header"><div><div class="panel-kicker">Review</div><h2>Publication</h2><p class="panel-intro">Nothing appears in the member directory until you submit and the parish approves it.</p></div></div>
             <div class="summary-list" id="publicationSummary"></div>
             <div class="actions" id="publicationActions" hidden>
@@ -280,7 +378,7 @@
             </div>
           </article>
 
-          <article class="panel">
+          <article class="panel" data-mobile-section="family setup">
             <div class="panel-header"><div><div class="panel-kicker">Family</div><h2>Household</h2><p class="panel-intro">Use this for your family name and household-owned information.</p></div></div>
             <div class="household-list" id="householdList"></div>
             <form class="form-grid" id="householdDetailsForm" hidden>
@@ -291,7 +389,7 @@
             </form>
           </article>
 
-          <article class="panel">
+          <article class="panel" data-mobile-section="photos family">
             <div class="panel-header"><div><div class="panel-kicker">Family</div><h2>Family Photo</h2><p class="panel-intro">Use this for a household photo. You control whether it stays private, staff-only, or is submitted for publication.</p></div></div>
             <div class="summary-list" id="householdPhotoSummary"></div>
             <form class="form-grid" id="householdPhotoForm" hidden>
@@ -301,7 +399,7 @@
             </form>
           </article>
 
-          <article class="panel">
+          <article class="panel" data-mobile-section="family">
             <div class="panel-header"><div><div class="panel-kicker">Family</div><h2>Name Days</h2><p class="panel-intro">Add family name days. Keep them private, or share them with members so they can appear in Today reminders.</p></div></div>
             <div class="nameday-list" id="namedayList"></div>
             <form class="form-grid" id="namedayForm" hidden>
@@ -313,19 +411,19 @@
             </form>
           </article>
 
-          <article class="panel">
+          <article class="panel" data-mobile-section="setup">
             <div class="panel-header"><div><div class="panel-kicker">Status</div><h2>Pending Changes</h2></div></div>
             <div class="request-list" id="requestList"></div>
           </article>
 
-          <article class="panel" aria-labelledby="childrenHeading">
+          <article class="panel" aria-labelledby="childrenHeading" data-mobile-section="family">
             <div class="panel-header"><div><div class="panel-kicker">Family</div><h2 id="childrenHeading">Children</h2><p class="panel-intro">Children stay hidden by default. You may request publication of limited fields, and parish staff must approve first.</p></div></div>
             <div class="stack" id="childrenList" aria-live="polite"></div>
           </article>
         </div>
       </section>
 
-      <section class="panel member-directory" aria-labelledby="memberDirectoryHeading">
+      <section class="panel member-directory" aria-labelledby="memberDirectoryHeading" data-mobile-section="browse">
         <div class="directory-title">
           <h2 id="memberDirectoryHeading">Parish Directory</h2>
           <p id="memberDirectoryPrivacy" class="privacy-reminder">This directory is private to authorized members of your parish. Please use contact information respectfully and do not copy or distribute it outside the parish.</p>
@@ -345,7 +443,7 @@
         <div class="profile-pane" id="memberProfile" hidden></div>
       </section>
 
-      <section class="panel member-directory" aria-labelledby="skillsDirectoryHeading">
+      <section class="panel member-directory" aria-labelledby="skillsDirectoryHeading" data-mobile-section="serve">
         <div class="directory-title">
           <h2 id="skillsDirectoryHeading">Skills &amp; Service</h2>
           <p class="privacy-reminder" id="skillsDisclaimer">Skills and experience are self-reported. AGAPAY and the parish do not verify licenses, credentials, insurance, background checks, or suitability.</p>
@@ -508,6 +606,70 @@
         guideCard({ kicker: "Household", title: household?.displayName || "No household yet", copy: household ? "Family photo, children, name days, and household name live here." : "This unlocks family-owned directory tools.", status: household ? "Editable" : "Staff step", tone: household ? "" : "warn", href: "#householdList" }),
         guideCard({ kicker: "Privacy", title: "You choose each field", copy: "Private stays private. Directory members means staff may publish after review.", status: "Per field" })
       ].join("");
+    }
+    function mobileAction({ view, title, copy, current = false }) {
+      return `<button class="mobile-action" type="button" data-mobile-target="${esc(view)}" ${current ? 'aria-current="true"' : ""}><span><strong>${esc(title)}</strong><span>${esc(copy)}</span></span><b aria-hidden="true">&rsaquo;</b></button>`;
+    }
+    function mobileNextStep() {
+      if (!profileState?.claimed) {
+        return { view: "setup", title: "Finish directory setup", copy: "Create your private family draft and choose what can be reviewed." };
+      }
+      const person = profileState.profile?.person || profileState.currentPerson || profileState.person || {};
+      const publication = profileState.profile?.publication || {};
+      const contacts = profileState.profile?.contacts || [];
+      const household = firstHousehold();
+      if (!contacts.length) return { view: "privacy", title: "Add contact info", copy: "Add email or phone and choose who may see it." };
+      if (!person.dateOfBirth) return { view: "setup", title: "Add your birthday", copy: "This stays private and unlocks adult-only service tools." };
+      if (!household) return { view: "family", title: "Connect your household", copy: "Your family tools appear once a household is attached." };
+      if (publication.approvalStatus !== "approved" && publication.status !== "pending_approval") {
+        return { view: "privacy", title: "Submit for parish review", copy: "Review your sharing choices and send them to the parish." };
+      }
+      return { view: "family", title: "Keep your family profile current", copy: "Add a photo, children, name days, or household updates." };
+    }
+    function renderMobileHome() {
+      const home = document.getElementById("mobileDirectoryHome");
+      if (!home) return;
+      const next = mobileNextStep();
+      const publication = profileState?.profile?.publication || {};
+      const contacts = profileState?.profile?.contacts || [];
+      const household = firstHousehold();
+      const pending = (profileState?.pendingRequests || []).length;
+      const approved = publication.approvalStatus === "approved";
+      const statusCopy = !profileState?.claimed
+        ? "Nothing is public. Start with a private draft."
+        : approved
+          ? "Your approved listing is live for parish members."
+          : pending
+            ? `${pending} item${pending === 1 ? "" : "s"} waiting on parish review.`
+            : "Your information is private until you submit it.";
+      home.innerHTML = `
+        <article class="mobile-home-card">
+          <h2>${esc(next.title)}</h2>
+          <p>${esc(next.copy)}</p>
+          <button class="mobile-home-primary" type="button" data-mobile-target="${esc(next.view)}"><span>Continue</span><span aria-hidden="true">&rsaquo;</span></button>
+        </article>
+        <article class="mobile-home-card">
+          <h2>Directory status</h2>
+          <p>${esc(statusCopy)}</p>
+        </article>
+        <div class="mobile-action-list">
+          ${mobileAction({ view: "setup", title: profileState?.claimed ? "My profile" : "Start setup", copy: profileState?.claimed ? "Name, birthday, review status" : "Create your private draft", current: next.view === "setup" })}
+          ${mobileAction({ view: "family", title: "Family & household", copy: household ? household.displayName || "Household details" : "Household, children, name days", current: next.view === "family" })}
+          ${mobileAction({ view: "photos", title: "Photos", copy: "Profile photo and family photo", current: next.view === "photos" })}
+          ${mobileAction({ view: "privacy", title: "Privacy choices", copy: contacts.length ? `${contacts.length} contact method${contacts.length === 1 ? "" : "s"}` : "Add what can be shared", current: next.view === "privacy" })}
+          ${mobileAction({ view: "serve", title: "Skills & service", copy: "Ways your parish can ask for help", current: next.view === "serve" })}
+          ${mobileAction({ view: "browse", title: "Browse members", copy: "Search approved parish listings", current: next.view === "browse" })}
+        </div>`;
+    }
+    function setMobileView(view = "home") {
+      const next = String(view || "home");
+      document.body.dataset.mobileView = next;
+      document.querySelectorAll("[data-mobile-target]").forEach((button) => {
+        if (button.classList.contains("mobile-action")) button.setAttribute("aria-current", button.dataset.mobileTarget === next ? "true" : "false");
+      });
+      if (next !== "home") {
+        document.querySelector(".directory-main")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
     function memberSubtitle(item) {
       if (item.type === "household") {
@@ -680,6 +842,8 @@
           </div>`;
         clearSelfServicePanels();
         renderDirectoryGuide();
+        renderMobileHome();
+        if (!document.body.dataset.mobileView) setMobileView("setup");
         return;
       }
       document.getElementById("profileSummary").innerHTML = [
@@ -723,6 +887,8 @@
       renderHouseholdPhoto();
       loadNamedays();
       renderDirectoryGuide();
+      renderMobileHome();
+      if (!document.body.dataset.mobileView) setMobileView("home");
     }
     async function renderPhoto() {
       const person = profileState?.currentPerson || profileState?.profile?.person;
@@ -1081,6 +1247,12 @@
       await api(`/api/directory/media/${encodeURIComponent(window.currentDirectoryHouseholdPhoto.id)}`, { method: "DELETE" });
       showNotice("Family photo removed.");
       await loadDirectory();
+    });
+    document.addEventListener("click", (event) => {
+      const target = event.target.closest("[data-mobile-target]");
+      if (!target) return;
+      event.preventDefault();
+      setMobileView(target.dataset.mobileTarget || "home");
     });
     document.getElementById("namedayForm").addEventListener("submit", async (event) => {
       event.preventDefault();
