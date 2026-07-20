@@ -1132,13 +1132,23 @@ export async function listDirectoryPeopleAdmin(env, { context, query = "", limit
             COUNT(DISTINCT cr.id) AS pending_request_count,
             MAX(COALESCE(f.protected_person, 0)) AS protected_person,
             MAX(COALESCE(f.is_child, 0)) AS is_child,
-            CASE WHEN COUNT(DISTINCT l.id) > 0 THEN 1 ELSE 0 END AS claimed
+            CASE WHEN COUNT(DISTINCT l.id) > 0 THEN 1 ELSE 0 END AS claimed,
+            photo.id AS photo_id, photo.owner_type AS photo_owner_type, photo.owner_id AS photo_owner_id,
+            photo.media_purpose AS photo_media_purpose, photo.lifecycle_status AS photo_lifecycle_status,
+            photo.processing_status AS photo_processing_status, photo.visibility AS photo_visibility,
+            photo.publication_eligible AS photo_publication_eligible, photo.original_width AS photo_original_width,
+            photo.original_height AS photo_original_height
        FROM directory_people p
        LEFT JOIN directory_household_members hm ON hm.person_id = p.id AND hm.active = 1
        LEFT JOIN directory_households h ON h.id = hm.household_id
        LEFT JOIN directory_change_requests cr ON cr.parish_id = ?1 AND cr.target_type = 'person' AND cr.target_id = p.id AND cr.status = 'pending'
        LEFT JOIN directory_person_privacy_flags f ON f.parish_id = ?1 AND f.person_id = p.id AND f.active = 1
        LEFT JOIN directory_person_links l ON l.person_id = p.id AND l.link_type = 'platform_user' AND l.active = 1
+       LEFT JOIN directory_media_assignments photo_asn ON photo_asn.parish_id = ?1
+        AND photo_asn.owner_type = 'person' AND photo_asn.owner_id = p.id
+        AND photo_asn.media_purpose = 'person_profile_photo' AND photo_asn.assignment_status IN ('active','candidate')
+       LEFT JOIN directory_media_assets photo ON photo.id = photo_asn.media_asset_id
+        AND photo.lifecycle_status NOT IN ('deleted','replaced','failed')
       WHERE (p.created_by_parish_id = ?1 OR h.parish_id = ?1) AND (?2 = '%%' OR p.preferred_name LIKE ?2)
       GROUP BY p.id
       ORDER BY p.preferred_name
@@ -1156,6 +1166,19 @@ export async function listDirectoryPeopleAdmin(env, { context, query = "", limit
     protected: context.permissions.canManageProtected ? Number(row.protected_person || 0) === 1 : Number(row.protected_person || 0) === 1,
     child: Number(row.is_child || 0) === 1,
     claimed: Number(row.claimed || 0) === 1,
+    photo: adminMediaDto({
+      id: row.photo_id,
+      parish_id: context.parishId,
+      owner_type: row.photo_owner_type,
+      owner_id: row.photo_owner_id,
+      media_purpose: row.photo_media_purpose,
+      lifecycle_status: row.photo_lifecycle_status,
+      processing_status: row.photo_processing_status,
+      visibility: row.photo_visibility,
+      publication_eligible: row.photo_publication_eligible,
+      original_width: row.photo_original_width,
+      original_height: row.photo_original_height
+    }, "avatar_medium"),
     lastUpdated: Number(row.updated_at || 0)
   }));
 }

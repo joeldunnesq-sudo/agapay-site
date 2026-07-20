@@ -185,6 +185,22 @@ export function decodeAndNormalizeSource({ sourceBytes, sourceMimeType }) {
   return { image, width, height, orientationNormalized: normalized };
 }
 
+// When the caller supplies no explicit crop, resizing straight to the
+// target box would squish/stretch any source whose aspect ratio doesn't
+// already match (nearly every real photo). This computes the largest
+// centered region of the source that matches the target's aspect ratio,
+// so the fallback path crops-to-fit instead of distorting.
+export function centerCropForAspect(sourceWidth, sourceHeight, targetWidth, targetHeight) {
+  const targetRatio = targetWidth / targetHeight;
+  const sourceRatio = sourceWidth / sourceHeight;
+  if (sourceRatio > targetRatio) {
+    const width = Math.round(sourceHeight * targetRatio);
+    return { x: Math.round((sourceWidth - width) / 2), y: 0, width, height: sourceHeight };
+  }
+  const height = Math.round(sourceWidth / targetRatio);
+  return { x: 0, y: Math.round((sourceHeight - height) / 2), width: sourceWidth, height };
+}
+
 // Produces one output variant from an already-decoded, orientation-
 // normalized source image. Re-validates crop bounds against the ACTUAL
 // decoded (post-orientation-normalization) dimensions -- never trusts a
@@ -201,9 +217,10 @@ export async function transformVariant({ decodedSource, targetWidth, targetHeigh
 
   let working = sourceImage;
   let cropApplied = false;
+  const effectiveCrop = crop || centerCropForAspect(sourceWidth, sourceHeight, targetWidth, targetHeight);
 
-  if (crop) {
-    const { x, y, width, height } = crop;
+  if (effectiveCrop) {
+    const { x, y, width, height } = effectiveCrop;
     if (![x, y, width, height].every(Number.isFinite) || x < 0 || y < 0 || width <= 0 || height <= 0) {
       fail("MEDIA_TRANSFORMATION_FAILED", "Crop values must be positive finite numbers.");
     }
@@ -217,7 +234,7 @@ export async function transformVariant({ decodedSource, targetWidth, targetHeigh
     } catch {
       fail("MEDIA_TRANSFORMATION_FAILED", "Cropping the decoded image failed.");
     }
-    cropApplied = true;
+    cropApplied = Boolean(crop);
   }
 
   let resized;

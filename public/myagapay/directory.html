@@ -124,6 +124,7 @@
     .status-tag.status-submitted, .status-tag.status-under_review { background:#eef6fb; color:#17384a; }
     .status-tag.status-approved { background:#e9f6ee; color:#1c6b3a; }
     .status-tag.status-withdrawn, .status-tag.status-revoked, .status-tag.status-rejected { background:#f3f3f2; color:var(--muted); }
+    .status-tag.status-error { background:#fff0ed; color:#6d2118; }
     .field-check-list { display:grid; gap:6px; }
     .field-check-list label { display:flex; align-items:center; gap:8px; font-weight:400; font-size:14px; }
     .field-check-list input[type="checkbox"] { width:18px; height:18px; }
@@ -1131,15 +1132,30 @@
     function childStatusLabel(status) {
       return { draft: "Draft (not submitted)", submitted: "Submitted, awaiting review", under_review: "Under review", returned: "Returned for changes", approved: "Approved and published", rejected: "Not approved", withdrawn: "Withdrawn", revoked: "Revoked by parish", stale: "Needs resubmission", superseded: "Superseded" }[status] || status || "Not requested";
     }
-    function renderChildCard(child, householdId, fieldCodes, existingRequest) {
-      const req = existingRequest || { status: "none", requestedFields: [], requestedPhoto: false, parentNote: "", id: "" };
+    function renderChildCard(child, householdId, fieldCodes, existingRequest, loadError) {
+      if (loadError) {
+        return `
+          <div class="child-card" data-child-id="${esc(child.personId)}" data-household-id="${esc(householdId)}">
+            <div><h3>${esc(child.preferredName || "Child")}</h3><span class="status-tag status-error">Status unavailable</span></div>
+            <div class="notice error">We could not load this child's publication status right now (${esc(loadError)}). Your request, if any, is unaffected — please try refreshing the page.</div>
+          </div>`;
+      }
+      const req = existingRequest || { status: "none", requestedFields: [], requestedPhoto: false, parentNote: "", reviewerNote: "", id: "" };
       const editable = ["none", "draft", "returned"].includes(req.status);
       const fieldsHtml = fieldCodes.map((code) => `
         <label><input type="checkbox" name="field" value="${esc(code)}" ${req.requestedFields.includes(code) ? "checked" : ""} ${editable ? "" : "disabled"} /> ${esc(CHILD_FIELD_LABELS[code] || code)}</label>
       `).join("");
+      const reviewerNoteHtml = req.status === "returned" && req.reviewerNote
+        ? `<div class="notice">Returned by your parish for changes: <strong>${esc(req.reviewerNote)}</strong></div>`
+        : req.status === "returned"
+        ? `<div class="notice">Your parish returned this request for changes. Update the fields below and submit again.</div>`
+        : req.status === "rejected" && req.reviewerNote
+        ? `<div class="notice error">Not approved: ${esc(req.reviewerNote)}</div>`
+        : "";
       return `
         <div class="child-card" data-child-id="${esc(child.personId)}" data-household-id="${esc(householdId)}" data-request-id="${esc(req.id || "")}">
           <div><h3>${esc(child.preferredName || "Child")}</h3><span class="status-tag status-${esc(req.status || "none")}">${esc(childStatusLabel(req.status))}</span></div>
+          ${reviewerNoteHtml}
           <fieldset class="field-check-list" ${editable ? "" : "disabled"}>
             <legend>Fields to request for publication</legend>
             ${fieldsHtml}
@@ -1176,8 +1192,14 @@
           const profile = await api(`/api/directory/households/${encodeURIComponent(household.id)}/self`).catch(() => null);
           const children = (profile?.household?.members || profile?.members || []).filter((member) => member.child && !member.protectedPerson);
           for (const child of children) {
-            const statusPayload = await api(`/api/directory/children/${encodeURIComponent(child.personId)}/publication?householdId=${encodeURIComponent(household.id)}`).catch(() => ({ request: null }));
-            cards.push(renderChildCard(child, household.id, fieldCodes, statusPayload.request));
+            let statusPayload = null;
+            let loadError = "";
+            try {
+              statusPayload = await api(`/api/directory/children/${encodeURIComponent(child.personId)}/publication?householdId=${encodeURIComponent(household.id)}`);
+            } catch (error) {
+              loadError = error.message || "unable to reach the server";
+            }
+            cards.push(renderChildCard(child, household.id, fieldCodes, statusPayload?.request, loadError));
           }
         }
         container.innerHTML = cards.length ? cards.join("") : '<div class="empty"><strong>No children are attached yet.</strong>Use the form above to send an add-child request to the parish.</div>';

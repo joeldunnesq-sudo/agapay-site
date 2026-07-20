@@ -21,6 +21,7 @@ import {
   decodeAndNormalizeSource,
   transformVariant,
   isAcceptedPipelineVersion,
+  centerCropForAspect,
   PIPELINE_VERSION,
   TRANSFORMER_NAME,
   TRANSFORMER_VERSION
@@ -334,6 +335,41 @@ await test("crop is validated against actual decoded dimensions and applied to r
     () => transformVariant({ decodedSource: decoded, targetWidth: 96, targetHeight: 96, crop: { x: -1, y: 0, width: 10, height: 10 } }),
     (error) => error instanceof DirectoryServiceError && error.code === "MEDIA_TRANSFORMATION_FAILED"
   );
+});
+
+// ── Auto center-crop (no explicit crop supplied) ───────────────────────────
+
+await test("centerCropForAspect computes a centered, aspect-matching region instead of the full source", () => {
+  // Portrait source (taller than wide) cropped to a square target -- full
+  // width is kept, height is cropped top/bottom and centered.
+  const fromPortrait = centerCropForAspect(200, 400, 100, 100);
+  assert.deepEqual(fromPortrait, { x: 0, y: 100, width: 200, height: 200 });
+
+  // Landscape source (wider than tall) cropped to a square target -- full
+  // height is kept, width is cropped left/right and centered.
+  const fromLandscape = centerCropForAspect(400, 200, 100, 100);
+  assert.deepEqual(fromLandscape, { x: 100, y: 0, width: 200, height: 200 });
+
+  // Wide landscape source cropped to a 4:3 target -- still wider than 4:3,
+  // so it crops the sides (x > 0) and keeps the full height (y === 0).
+  const fourThree = centerCropForAspect(800, 400, 640, 480);
+  assert.equal(fourThree.x > 0, true, "expected horizontal centering when source is wider than the 4:3 target");
+  assert.equal(fourThree.y, 0);
+});
+
+await test("a non-matching-aspect source is auto-cropped to fit, not squished, when no crop is supplied", async () => {
+  // 64x32 (2:1) source resized to a 96x96 (1:1) target with no explicit
+  // crop -- before the fix this would stretch the whole 64-wide frame into
+  // a square; now it should crop to the centered 32x32 region first.
+  const source = jpegWithExif({ width: 64, height: 32, orientation: 1 });
+  const decoded = decodeAndNormalizeSource({ sourceBytes: source.bytes, sourceMimeType: "image/jpeg" });
+  const output = await transformVariant({ decodedSource: decoded, targetWidth: 96, targetHeight: 96 });
+  assert.equal(output.width, 96);
+  assert.equal(output.height, 96);
+  // No explicit crop was supplied by the caller, so cropApplied (which
+  // reflects client-directed cropping for audit purposes) stays false even
+  // though the pipeline internally auto-cropped to preserve aspect ratio.
+  assert.equal(output.cropApplied, false);
 });
 
 // ── Formats ──────────────────────────────────────────────────────────────

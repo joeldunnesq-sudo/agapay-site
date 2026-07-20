@@ -169,6 +169,21 @@
       </div>`;
   }
 
+  function renderDirectoryAdminGenericError(message = '') {
+    return `
+      <div class="pdx-dir-access-card">
+        <div class="pdx-dir-access-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+        <div class="pdx-dir-access-copy">
+          <div class="pdx-gv-eyebrow">Directory access</div>
+          <h3>Directory Operations is unavailable right now</h3>
+          <p>${message ? escapeHtml(message) : 'We could not reach the directory service. Check your connection and try again.'}</p>
+        </div>
+        <div class="pdx-dir-access-actions">
+          <button type="button" class="btn btn-gold" onclick="loadDirectoryAdminTab(true)">Retry</button>
+        </div>
+      </div>`;
+  }
+
   function statusLabel(value) {
     return String(value || 'active')
       .replace(/_/g, ' ')
@@ -429,7 +444,7 @@
       renderDirectoryAdminPanel(dashboard.dashboard || {}, queue.items || [], people.people || [], households.households || [], skills.skills || {}, maintenance.maintenance || {});
       pane.dataset.loaded = 'true';
     } catch (err) {
-      pane.innerHTML = '<p class="muted">Directory operations are unavailable' + (err.message ? ': ' + escapeHtml(err.message) : '.') + '</p>';
+      pane.innerHTML = renderDirectoryAdminGenericError();
     }
   }
 
@@ -491,8 +506,9 @@
           <div class="pdx-panel-header">
             <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>People</div>
           </div>
-          <p class="section-note">Open a person to see household links, publication status, contacts, and notes.</p>
-          <div class="pdx-dir-row-list">
+          <label class="pdx-dir-panel-search">Find a person<input type="search" id="directoryPeopleSearch" placeholder="Search by name" oninput="searchDirectoryPeople(this.value)" /></label>
+          <p class="section-note" id="directoryPeopleNote">Open a person to see household links, publication status, contacts, and notes.</p>
+          <div class="pdx-dir-row-list" id="directoryPeopleList">
             ${people.length ? people.map(directoryPersonRow).join('') : directoryEmptyState('No records yet', 'No people records available.')}
           </div>
         </section>
@@ -500,7 +516,7 @@
           <div class="pdx-panel-header">
             <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8"/><path d="M8 13h5"/><circle cx="17" cy="13" r="1"/></svg></div>Households</div>
           </div>
-          <p class="section-note">Open a household to confirm members, admins, publication state, and family-owned records.</p>
+          <p class="section-note">Open a household to confirm members, admins, publication state, and family-owned records.${households.length >= 100 ? ' Showing the first 100 — use the search above the directory gallery to find one not listed here.' : ''}</p>
           <div class="pdx-dir-row-list">
             ${households.length ? households.map(directoryHouseholdRow).join('') : directoryEmptyState('No households yet', 'Households appear after staff links people into household records. Use them to confirm household admins, children, addresses, and household publication.')}
           </div>
@@ -797,7 +813,10 @@
               <p>${escapeHtml(item.summary || 'Review the submitted member information and publication choices before approving.')}</p>
               <div class="pdx-dir-review-meta">${escapeHtml(directoryReviewMeta(item))}</div>
             </div>
-            <button class="pdx-dir-close-btn" type="button" onclick="document.getElementById('directoryReviewDetail').innerHTML=''">Close</button>
+            <div class="pdx-dir-review-top-actions">
+              ${['person', 'household'].includes(item.targetType) && item.targetId ? `<button class="pdx-dir-action-btn" type="button" onclick="${item.targetType === 'household' ? 'openDirectoryHousehold' : 'openDirectoryPerson'}('${escapeAttr(item.targetId)}')">View full record</button>` : ''}
+              <button class="pdx-dir-close-btn" type="button" onclick="document.getElementById('directoryReviewDetail').innerHTML=''">Close</button>
+            </div>
           </div>
           ${directoryReviewPrefs(proposed.publicationPreferences)}
           ${submittedPhoto
@@ -850,9 +869,37 @@
   function directoryPersonRow(person) {
     const pending = person.pendingRequestCount || 0;
     return `<div class="pdx-dir-row pdx-dir-record-row" onclick="openDirectoryPerson('${escapeAttr(person.id)}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDirectoryPerson('${escapeAttr(person.id)}');}">
-      <div class="pdx-dir-row-copy"><div class="pdx-dir-row-title">${escapeHtml(person.displayName)}</div><div class="pdx-dir-row-meta">${person.claimed ? 'Claimed My AGAPAY account' : 'Not claimed'} · ${person.child ? 'Child' : 'Adult'}${person.householdCount ? ' · ' + person.householdCount + ' household link' + (person.householdCount === 1 ? '' : 's') : ''}</div></div>
+      <div class="pdx-dir-row-media">
+        ${directoryAdminPhotoImg(person.photo, 'pdx-dir-thumb pdx-dir-thumb-round', 'Photo of ' + (person.displayName || 'person'))}
+        <div class="pdx-dir-row-copy"><div class="pdx-dir-row-title">${escapeHtml(person.displayName)}</div><div class="pdx-dir-row-meta">${person.claimed ? 'Claimed My AGAPAY account' : 'Not claimed'} · ${person.child ? 'Child' : 'Adult'}${person.householdCount ? ' · ' + person.householdCount + ' household link' + (person.householdCount === 1 ? '' : 's') : ''}</div></div>
+      </div>
       <div class="pdx-dir-row-side">${pending ? `<span class="pdx-dir-badge high">${pending} pending</span>` : `<span class="pdx-dir-badge count">Current</span>`}<button class="pdx-dir-action-btn" type="button" onclick="event.stopPropagation();openDirectoryPerson('${escapeAttr(person.id)}')">Open</button></div>
     </div>`;
+  }
+
+  let directoryPeopleSearchTimer = null;
+  function searchDirectoryPeople(value) {
+    clearTimeout(directoryPeopleSearchTimer);
+    directoryPeopleSearchTimer = setTimeout(() => runDirectoryPeopleSearch(String(value || '').trim()), 250);
+  }
+  async function runDirectoryPeopleSearch(query) {
+    const list = document.getElementById('directoryPeopleList');
+    const note = document.getElementById('directoryPeopleNote');
+    if (!list) return;
+    list.innerHTML = '<p class="sw-tool-loading">Searching…</p>';
+    try {
+      const res = await fetch(directoryAdminApi('/people?limit=25' + (query ? '&q=' + encodeURIComponent(query) : '')), { headers: authHeaders() });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Search failed.');
+      const people = payload.people || [];
+      list.innerHTML = people.length ? people.map(directoryPersonRow).join('') : directoryEmptyState('No matches', query ? `No people match "${query}".` : 'No people records available.');
+      if (note) note.textContent = query
+        ? `Showing ${people.length} match${people.length === 1 ? '' : 'es'} for "${query}".`
+        : 'Open a person to see household links, publication status, contacts, and notes.';
+      hydrateDirectoryAdminImages(list);
+    } catch (err) {
+      list.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to search people.')}</p>`;
+    }
   }
 
   function directoryHouseholdRow(household) {
