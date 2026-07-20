@@ -12,3 +12,5 @@ export * from "./observability.js";
 export * from "./storage-foundations.js";
 export * from "./control-plane.js";
 export * from "./gateway/index.js";
+export * from "./provisioning/index.js";
+export * from "./ledger/index.js";

@@ -76,6 +76,14 @@ export const CAPABILITY_CATALOG = Object.freeze([
   "accounting.reports",
   "accounting.export",
   "accounting.audit",
+  "accounting.configure",
+  "accounting.accounts.manage",
+  "accounting.funds.manage",
+  "accounting.periods.manage",
+  "accounting.journals.create",
+  "accounting.journals.post",
+  "accounting.journals.reverse",
+  "accounting.opening_balances.manage",
 
   // Accounts Payable
   "ap.view",
@@ -190,6 +198,9 @@ export const ROLE_TEMPLATES = Object.freeze({
     "accounting.view", "accounting.post", "accounting.adjust", "accounting.reverse",
     "accounting.close_period", "accounting.reopen_period", "accounting.reconcile",
     "accounting.reports", "accounting.export", "accounting.audit",
+    "accounting.configure", "accounting.accounts.manage", "accounting.funds.manage",
+    "accounting.periods.manage", "accounting.journals.create", "accounting.journals.post",
+    "accounting.journals.reverse", "accounting.opening_balances.manage",
     "ap.view", "ap.enter", "ap.approve", "ap.pay", "ap.void",
     "bank.view", "bank.reconcile", "bank.manage_accounts",
     "commerce.manage", "commerce.orders", "commerce.refunds", "commerce.products",
@@ -199,13 +210,16 @@ export const ROLE_TEMPLATES = Object.freeze({
     "parish.view", "parish.members.invite",
     "accounting.view", "accounting.post", "accounting.adjust", "accounting.reverse",
     "accounting.close_period", "accounting.reconcile", "accounting.reports", "accounting.export",
+    "accounting.configure", "accounting.accounts.manage", "accounting.funds.manage",
+    "accounting.periods.manage", "accounting.journals.create", "accounting.journals.post",
+    "accounting.journals.reverse", "accounting.opening_balances.manage",
     "ap.view", "ap.enter", "ap.approve", "ap.pay", "ap.void",
     "bank.view", "bank.reconcile", "bank.manage_accounts",
     "donations.view", "donations.manage", "donor.statements"
   ],
   bookkeeper: [
     "parish.view",
-    "accounting.view", "accounting.post",
+    "accounting.view", "accounting.post", "accounting.journals.create", "accounting.journals.post",
     "ap.view", "ap.enter",
     "bank.view", "bank.reconcile",
     "donations.view"
@@ -224,7 +238,7 @@ export const ROLE_TEMPLATES = Object.freeze({
   priest: ["parish.view", "donations.view", "donor.statements"],
   administrator: [
     "parish.view", "parish.manage", "parish.members.invite", "parish.members.remove",
-    "parish.roles.assign", "parish.settings.manage"
+    "parish.roles.assign", "parish.settings.manage", "accounting.configure"
   ],
   // Reserved -- see comment above. Both intentionally empty.
   support: [],

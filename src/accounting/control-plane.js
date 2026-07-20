@@ -203,6 +203,20 @@ export async function loadAccountingDatabaseForEntity(env, entityId, environment
   return toDatabase(row);
 }
 
+// Server-only provisioning metadata. Never return this object from an API.
+export async function loadAccountingDatabaseProviderRecord(env, entityId, environment = "production") {
+  assertCentralStore(env);
+  const row = await d1First(env, "SELECT id, accounting_entity_id, environment, database_identifier FROM accounting_databases WHERE accounting_entity_id = ? AND environment = ?", requireNonEmptyString(entityId, "entityId"), normalizeEnvironment(env, environment));
+  return row ? Object.freeze({ id: row.id, accountingEntityId: row.accounting_entity_id, environment: row.environment, databaseIdentifier: row.database_identifier }) : null;
+}
+
+export async function setAccountingDatabaseProvisioningStatus(env, { entityId, environment = "production", status, healthStatus = "unknown" } = {}) {
+  if (!ACCOUNTING_DATABASE_PROVISIONING_STATUSES.includes(status)) throw new ValidationError("Unknown accounting provisioning status.");
+  if (!ACCOUNTING_DATABASE_HEALTH_STATUSES.includes(healthStatus)) throw new ValidationError("Unknown accounting health status.");
+  await d1Run(env, `UPDATE accounting_databases SET provisioning_status = ?, health_status = ?, updated_at = ? WHERE accounting_entity_id = ? AND environment = ?`, status, healthStatus, nowIso(), requireNonEmptyString(entityId, "entityId"), normalizeEnvironment(env, environment));
+  return loadAccountingDatabaseForEntity(env, entityId, environment);
+}
+
 export async function registerAccountingEntity(env, {
   parishId,
   subscriptionTier = "mission",
@@ -349,7 +363,7 @@ export async function recordProvisioningCompleted(env, {
     await d1Run(
       env,
       `UPDATE accounting_databases
-       SET provisioning_status = 'provisioned', health_status = 'healthy',
+       SET provisioning_status = 'provisioned', health_status = 'unknown',
            provisioned_at = COALESCE(provisioned_at, ?), updated_at = ?
        WHERE id = ?`,
       nowIso(),
