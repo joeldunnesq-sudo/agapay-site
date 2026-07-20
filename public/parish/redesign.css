@@ -586,6 +586,32 @@
 
 .pdx-dir-review-detail { margin: 0 0 18px; scroll-margin-top: 16px; }
 .pdx-dir-review-detail:empty { display: none; }
+.pdx-dir-gallery-section { margin: 0 0 20px; padding: 20px; border: 1px solid rgba(6,21,34,.08); border-radius: 20px; background: linear-gradient(135deg,#f8f3e8,#fff 55%,#eff6f1); box-shadow: var(--pdx-shadow-sm); scroll-margin-top: 16px; }
+.pdx-dir-gallery-head { display: flex; justify-content: space-between; gap: 20px; align-items: end; margin-bottom: 16px; }
+.pdx-dir-gallery-head h2 { margin: 4px 0; color: var(--ink); font-family: var(--serif); font-size: 28px; }
+.pdx-dir-gallery-head p { margin: 0; max-width: 680px; color: var(--stone); font-size: 13px; line-height: 1.5; }
+.pdx-dir-gallery-search { display: grid; gap: 5px; min-width: min(280px,100%); color: var(--stone); font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.pdx-dir-gallery-search input { border: 1px solid rgba(6,21,34,.14); border-radius: 11px; padding: 10px 12px; background:#fff; color:var(--ink); font: 13px var(--sans); text-transform:none; }
+.pdx-dir-gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; }
+.pdx-dir-gallery-card { border:1px solid rgba(6,21,34,.09); border-radius:16px; padding:0; overflow:hidden; background:#fff; color:inherit; text-align:left; cursor:pointer; box-shadow:0 8px 22px rgba(6,21,34,.07); transition:transform .18s ease,box-shadow .18s ease; }
+.pdx-dir-gallery-card:hover,.pdx-dir-gallery-card:focus-visible { outline:none; transform:translateY(-3px); box-shadow:0 16px 32px rgba(6,21,34,.13); }
+.pdx-dir-gallery-photo { display:block; height:150px; background:linear-gradient(145deg,#e8efe9,#f6f1e8); }
+.pdx-dir-gallery-img { width:100%; height:100%; object-fit:cover; }
+.pdx-dir-gallery-img.pdx-dir-thumb-placeholder { display:grid; place-items:center; color:var(--forest); font:600 18px var(--serif); }
+.pdx-dir-gallery-copy { display:block; padding:13px 14px 15px; }
+.pdx-dir-gallery-copy strong { display:block; color:var(--ink); font:600 19px/1.1 var(--serif); }
+.pdx-dir-gallery-copy small { display:block; margin-top:5px; color:var(--stone); font-size:11.5px; }
+.pdx-dir-maintenance-worklists { display:grid; gap:12px; margin-top:14px; }
+.pdx-dir-maintenance-worklists section { padding:12px; border:1px solid rgba(6,21,34,.08); border-radius:12px; background:rgba(255,255,255,.7); }
+.pdx-dir-maintenance-worklists h4 { margin:0 0 8px; color:var(--ink); font:600 16px var(--serif); }
+.pdx-dir-maintenance-worklists button { width:100%; display:flex; justify-content:space-between; gap:12px; align-items:center; border:0; border-top:1px solid rgba(6,21,34,.07); padding:9px 0; background:transparent; color:inherit; text-align:left; cursor:pointer; }
+.pdx-dir-maintenance-worklists button:first-of-type { border-top:0; }
+.pdx-dir-maintenance-worklists button span,.pdx-dir-maintenance-worklists button strong,.pdx-dir-maintenance-worklists button small { display:block; }
+.pdx-dir-maintenance-worklists button strong { color:var(--ink); font-size:12.5px; }
+.pdx-dir-maintenance-worklists button small { margin-top:2px; color:var(--stone); font-size:11px; }
+.pdx-dir-maintenance-worklists button b { color:var(--gold); font-size:11px; white-space:nowrap; }
+.pdx-dir-maintenance-clear { display:grid; gap:3px; margin-top:14px; padding:13px; border-radius:12px; background:rgba(42,89,54,.08); color:var(--forest); }
+.pdx-dir-maintenance-clear span { color:var(--stone); font-size:12px; }
 .pdx-dir-review-card {
   position: relative;
   border: 1px solid rgba(200,162,74,0.28);
@@ -630,6 +656,7 @@
   min-width: 0;
 }
 .pdx-dir-review-column-new { background: rgba(42,89,54,0.055); border-color: rgba(42,89,54,0.14); }
+.pdx-dir-review-grid-photo { grid-template-columns: minmax(0, 1fr); }
 .pdx-dir-review-grid h4 {
   margin: 0 0 8px;
   font-family: var(--serif);
@@ -749,6 +776,9 @@
   .pdx-dir-photo-card { grid-template-columns: 1fr; }
   .pdx-dir-review-actions .pdx-dir-action-btn { flex: 1 1 130px; }
   .pdx-dir-access-card { flex-direction: column; }
+  .pdx-dir-gallery-head { align-items:stretch; flex-direction:column; }
+  .pdx-dir-gallery { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .pdx-dir-gallery-photo { height:112px; }
 }
 
 /* ════════════════════════════════════════════════════════════

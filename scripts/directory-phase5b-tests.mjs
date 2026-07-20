@@ -279,6 +279,8 @@ await test("admin catalog, moderation, exports, print data, and maintenance dash
   assert.match(adultsCsv.body, /Rosa Loretto/);
   const maintenance = await getDirectoryMaintenanceDashboard(fx.env, { context: fx.adminContext });
   assert.equal(typeof maintenance.unclaimedPeople, "number");
+  assert.ok(maintenance.actions && Array.isArray(maintenance.actions.overdueHouseholds));
+  assert.ok(Array.isArray(maintenance.actions.unclaimedPeople));
 });
 
 await test("household verification records member confirmation and next due date", async () => {

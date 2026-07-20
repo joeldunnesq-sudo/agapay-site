@@ -550,6 +550,7 @@ export async function getDirectoryReviewItem(env, { context, sourceType, sourceI
   const row = await getReviewRow(env, context, cleanText(sourceType, { required: true, max: 80, field: "sourceType" }), cleanText(sourceId, { required: true, max: 180, field: "sourceId" }));
   const notes = context.permissions.canViewNotes ? await listDirectoryNotes(env, { context, targetType: "review_item", targetId: row.review_item_id || `virtual:${row.source_type}:${row.source_id}` }) : [];
   let payload = {};
+  let media = null;
   if (row.source_type === "change_request") {
     const request = await d1First(env, "SELECT requested_payload_json FROM directory_change_requests WHERE id = ?1", row.source_id);
     payload = JSON.parse(request?.requested_payload_json || "{}");
@@ -559,11 +560,21 @@ export async function getDirectoryReviewItem(env, { context, sourceType, sourceI
       comparison: await getDuplicateComparison(env, { context, candidateId: row.source_id }),
       notes
     };
+  } else if (row.source_type === "media_asset") {
+    const asset = await d1First(env, "SELECT * FROM directory_media_assets WHERE id = ?1 AND parish_id = ?2", row.source_id, context.parishId);
+    media = adminMediaDto(asset, asset?.owner_type === "household" ? "household_card" : "avatar_medium");
+    payload = media ? {
+      photo: media,
+      ownerType: media.ownerType,
+      visibility: media.visibility,
+      publicationEligible: media.publicationEligible
+    } : {};
   }
   return {
     item: queueDto(row, context),
-    current: await currentSnapshot(env, row, context),
+    current: row.source_type === "media_asset" ? null : await currentSnapshot(env, row, context),
     proposed: sanitizePayload(payload, context),
+    media,
     notes
   };
 }

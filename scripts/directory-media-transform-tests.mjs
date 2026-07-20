@@ -45,7 +45,8 @@ import {
   linkExternalIdentity,
   resolveDirectorySelfServiceContext,
   resolveDirectoryAdminContext,
-  decideDirectoryReviewItem
+  decideDirectoryReviewItem,
+  getDirectoryReviewItem
 } from "../src/directory/index.js";
 import { ensurePlatformUser, issuePlatformUserSession, PLATFORM_USER_EMAIL_HEADER } from "../src/lib/identity.js";
 
@@ -398,6 +399,21 @@ await test("client-supplied attestation-shaped fields cannot forge secure status
 });
 
 // ── Approval hard gate ───────────────────────────────────────────────────
+
+await test("media review detail includes the submitted photo and omits unrelated current-record fields", async () => {
+  const { env, context, adminContext } = await fixture();
+  const source = jpegWithExif({ width: 64, height: 64 });
+  const session = await createDirectoryMediaUploadSession(env, { context, ownerType: "person", ownerId: context.currentPerson.id, visibility: "directory_members" });
+  const asset = await completeDirectoryMediaUpload(env, { context, sessionId: session.id, file: file("photo.jpg", "image/jpeg", source.bytes), arrayBuffer: source.bytes.buffer });
+  await submitDirectoryMediaForReview(env, { context, mediaAssetId: asset.id });
+
+  const detail = await getDirectoryReviewItem(env, { context: adminContext, sourceType: "media_asset", sourceId: asset.id });
+  assert.equal(detail.current, null);
+  assert.equal(detail.media.id, asset.id);
+  assert.equal(detail.media.visibility, "directory_members");
+  assert.equal(detail.proposed.photo.url.includes(`/media/${asset.id}/variants/avatar_medium`), true);
+  assert.equal(typeof detail.proposed.publicationEligible, "boolean");
+});
 
 await test("a securely transformed asset passes the approval gate and can be approved through the real Phase 3A service", async () => {
   const { env, context, adminContext } = await fixture();

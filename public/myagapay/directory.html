@@ -89,22 +89,28 @@
     .guide-status { justify-self:start; border-radius:999px; background:#eef3f0; color:var(--green); font-size:11px; font-weight:800; padding:4px 9px; text-transform:uppercase; letter-spacing:.04em; }
     .guide-status.warn { background:#fff4dd; color:#7a4d00; }
     .guide-status.info { background:#eef6fb; color:#17384a; }
-    .member-directory { margin-bottom:18px; order:2; }
-    .directory-tools { display:grid; grid-template-columns:minmax(220px, 1fr) auto auto; gap:10px; align-items:end; }
-    .directory-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
+    .member-directory { margin-bottom:18px; order:2; padding:0; overflow:hidden; }
+    .member-directory-intro { padding:22px 22px 18px; background:linear-gradient(135deg, #f8f3e8, #fff 58%, #f1f7f3); border-bottom:1px solid var(--line); }
+    .member-directory-intro h2 { margin:4px 0 6px; font-family:"Cormorant Garamond", Georgia, serif; font-size:34px; line-height:1; }
+    .member-directory-intro .panel-kicker { color:var(--gold); }
+    .directory-tools { display:grid; grid-template-columns:minmax(220px, 1fr) auto auto; gap:10px; align-items:end; padding:18px 22px 0; }
+    .directory-browse-note { margin:0; color:var(--muted); font-size:13px; align-self:center; }
+    .directory-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:14px 22px 0; }
     .directory-tab { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:8px; padding:9px 12px; font-weight:700; cursor:pointer; }
     .directory-tab[aria-selected="true"] { background:var(--green); color:#fff; border-color:var(--green); }
-    .alphabet { display:flex; flex-wrap:wrap; gap:5px; margin:10px 0 14px; }
+    .alphabet { display:flex; flex-wrap:wrap; gap:5px; margin:12px 22px 16px; }
     .alphabet button { min-width:34px; min-height:34px; border:1px solid var(--line); background:#fff; border-radius:8px; cursor:pointer; font-weight:700; }
     .alphabet button[aria-current="true"] { background:#153a5b; color:#fff; border-color:#153a5b; }
     .alphabet button:disabled { opacity:.42; cursor:not-allowed; }
-    .member-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:12px; }
-    .member-card { border:1px solid #e4e7e3; background:#fff; border-radius:8px; padding:12px; display:grid; grid-template-columns:54px 1fr; gap:10px; align-items:center; text-align:left; cursor:pointer; min-height:84px; }
-    .member-card:hover, .member-card:focus-visible { outline:3px solid rgba(35,92,77,.18); border-color:rgba(35,92,77,.55); }
-    .member-photo { width:54px; height:54px; border-radius:8px; background:#eef3f0; object-fit:cover; display:grid; place-items:center; font-weight:800; color:var(--green); }
-    .household-card .member-photo { border-radius:6px; }
-    .member-card strong { display:block; line-height:1.15; }
-    .member-card small { display:block; color:var(--muted); margin-top:3px; }
+    .member-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:16px; padding:0 22px 22px; }
+    .member-card { position:relative; border:1px solid #e4e7e3; background:#fff; border-radius:18px; padding:0; display:grid; grid-template-rows:170px auto; gap:0; overflow:hidden; text-align:left; cursor:pointer; min-height:250px; box-shadow:0 10px 28px rgba(6,21,34,.07); transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+    .member-card:hover, .member-card:focus-visible { outline:none; transform:translateY(-3px); box-shadow:0 18px 36px rgba(6,21,34,.13); border-color:rgba(184,138,61,.5); }
+    .member-photo { width:100%; height:100%; border-radius:0; background:linear-gradient(145deg, #e8efe9, #f6f1e8); object-fit:cover; display:grid; place-items:center; font-family:"Cormorant Garamond", Georgia, serif; font-size:32px; font-weight:600; color:var(--green); }
+    .member-card > span:last-child { display:block; padding:15px 16px 17px; }
+    .member-card strong { display:block; color:var(--ink); font-family:"Cormorant Garamond", Georgia, serif; font-size:21px; line-height:1.08; }
+    .member-card small { display:block; color:var(--muted); margin-top:6px; font-size:12px; line-height:1.4; }
+    .member-directory > .actions { padding:0 22px 22px; }
+    .member-directory > .profile-pane { padding:22px; }
     .profile-pane { display:grid; gap:12px; }
     .profile-head { display:grid; grid-template-columns:80px 1fr; gap:14px; align-items:center; }
     .profile-head .member-photo { width:80px; height:80px; }
@@ -253,7 +259,16 @@
       body[data-mobile-view="browse"] .directory-grid { display:none; }
       .directory-grid, .form-grid { grid-template-columns:1fr; }
       .directory-tools, .skills-toolbar { grid-template-columns:1fr; }
-      .member-grid { grid-template-columns:1fr; }
+      .member-directory-intro { padding:18px 16px 15px; }
+      .member-directory-intro h2 { font-size:29px; }
+      .directory-tools { grid-template-columns:1fr; padding:16px 16px 0; }
+      .directory-tabs { margin:14px 16px 0; }
+      .alphabet { margin:12px 16px 14px; }
+      .member-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; padding:0 16px 18px; }
+      .member-card { grid-template-rows:128px auto; min-height:216px; border-radius:16px; }
+      .member-card > span:last-child { padding:12px; }
+      .member-card strong { font-size:18px; }
+      .member-card small { font-size:11px; }
       .panel {
         border-radius:18px;
         padding:14px;
@@ -279,7 +294,7 @@
     }
   </style>
 </head>
-<body class="donor-mobile-page donor-directory-page" data-mobile-view="home">
+<body class="donor-mobile-page donor-directory-page" data-mobile-view="browse">
   <div class="app directory-shell">
     <aside class="sidebar directory-side">
       <div class="sidebar-scroll">
@@ -373,7 +388,7 @@
             <form class="form-grid" id="photoForm" hidden>
               <label>Photo file<input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required /></label>
               <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Household</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
-              <div class="actions"><button class="btn primary" type="submit">Upload Photo</button><button class="btn secondary" type="button" id="submitPhotoReview" hidden>Submit Photo</button><button class="btn warn" type="button" id="removePhoto" hidden>Remove Photo</button></div>
+              <div class="actions"><button class="btn primary" type="submit">Upload Photo</button><button class="btn warn" type="button" id="removePhoto" hidden>Remove Photo</button></div>
             </form>
           </article>
 
@@ -422,7 +437,7 @@
             <form class="form-grid" id="householdPhotoForm" hidden>
               <label>Photo file<input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required /></label>
               <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Household</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
-              <div class="actions"><button class="btn primary" type="submit">Upload Family Photo</button><button class="btn secondary" type="button" id="submitHouseholdPhotoReview" hidden>Submit Photo</button><button class="btn warn" type="button" id="removeHouseholdPhoto" hidden>Remove Photo</button></div>
+              <div class="actions"><button class="btn primary" type="submit">Upload Family Photo</button><button class="btn warn" type="button" id="removeHouseholdPhoto" hidden>Remove Photo</button></div>
             </form>
           </article>
 
@@ -452,19 +467,17 @@
       </section>
 
       <section class="panel member-directory" aria-labelledby="memberDirectoryHeading" data-mobile-section="browse">
-        <div class="directory-title">
+        <div class="member-directory-intro directory-title">
+          <div class="panel-kicker">Our parish family</div>
           <h2 id="memberDirectoryHeading">Parish Directory</h2>
           <p id="memberDirectoryPrivacy" class="privacy-reminder">This directory is private to authorized members of your parish. Please use contact information respectfully and do not copy or distribute it outside the parish.</p>
         </div>
         <div class="directory-tools">
-          <label>Search published directory fields<input id="memberSearch" type="search" autocomplete="off" placeholder="Search names, households, city, or role" /></label>
+          <label>Find someone<input id="memberSearch" type="search" autocomplete="off" placeholder="Filter by name, household, city, or role" /></label>
           <label>Sort<select id="memberSort"><option value="az">A-Z</option><option value="za">Z-A</option></select></label>
-          <button class="btn primary" type="button" id="memberSearchButton">Search</button>
+          <button class="btn secondary" type="button" id="memberSearchButton">View all</button>
         </div>
-        <div class="directory-tabs" role="tablist" aria-label="Directory browse">
-          <button class="directory-tab" type="button" role="tab" aria-selected="true" data-member-view="households">Households</button>
-          <button class="directory-tab" type="button" role="tab" aria-selected="false" data-member-view="people">People</button>
-        </div>
+        <p class="directory-browse-note" id="directoryBrowseNote" style="padding:10px 22px 0;">Showing all approved households. Search is optional.</p>
         <div class="alphabet" id="memberAlphabet" aria-label="Alphabetical navigation"></div>
         <div class="member-grid" id="memberResults" aria-live="polite"></div>
         <div class="actions"><button class="btn secondary" type="button" id="memberLoadMore" hidden>Load More</button></div>
@@ -514,6 +527,7 @@
     const donorEmail = localStorage.getItem("agapayDonorEmail") || email;
     let profileState = null;
     let memberState = { view: "households", letter: "", cursor: "", query: "", sort: "az", loading: false };
+    let memberSearchTimer = 0;
     let skillCatalog = [];
     const PHOTO_UPLOAD_TIMEOUT_MS = 90000;
     const PHOTO_MAX_EDGE = 1800;
@@ -629,8 +643,8 @@
         return {
           title: ownerType === "household" ? "No family photo yet" : "No profile photo yet",
           copy: ownerType === "household"
-            ? "This appears on your household listing after you choose Directory members, submit it, and the parish approves it."
-            : "This appears on your personal listing after you choose Directory members, submit it, and the parish approves it.",
+            ? "Choose Directory members when uploading to send the family photo straight to parish review."
+            : "Choose Directory members when uploading to send the profile photo straight to parish review.",
           tone: "",
           label: "Not uploaded"
         };
@@ -666,12 +680,12 @@
         };
       }
       return {
-        title: "Uploaded, not submitted",
+        title: visibility === "Directory members" ? "Photo is ready" : "Photo saved privately",
         copy: visibility === "Directory members"
-          ? "Tap Submit Photo when you want the parish to review it for the member directory."
-          : `This photo is saved as ${visibility.toLowerCase()}. Change visibility to Directory members and upload again if you want it published.`,
+          ? "This photo is ready for parish review. Upload it again if you need to replace it."
+          : `This photo is saved as ${visibility.toLowerCase()} and does not require parish publication review.`,
         tone: "ready",
-        label: "Needs submit"
+        label: visibility
       };
     }
     function renderMediaSummary(asset, ownerType = "person") {
@@ -710,7 +724,7 @@
       const preview = url
         ? `<img class="photo-preview ${ownerType === "household" ? "household" : ""}" src="${esc(url)}" alt="Selected photo preview" />`
         : `<span class="photo-preview ${ownerType === "household" ? "household" : ""}" aria-hidden="true">${ownerType === "household" ? "Family" : "You"}</span>`;
-      document.getElementById(targetId).innerHTML = `<div class="photo-status-card">${preview}<div><h3>Preparing upload</h3><p>Keep this screen open while AGAPAY prepares the photo. It will show here first, then you can submit it for parish review if you want it published.</p><span class="photo-destination ready">Uploading</span></div></div>`;
+      document.getElementById(targetId).innerHTML = `<div class="photo-status-card">${preview}<div><h3>Preparing upload</h3><p>Keep this screen open while AGAPAY prepares the photo. Directory-member photos are submitted for parish review automatically.</p><span class="photo-destination ready">Uploading</span></div></div>`;
     }
     function setUploadBusy(formEl, busy, busyText) {
       const submit = formEl?.querySelector('button[type="submit"]');
@@ -859,6 +873,9 @@
         const payload = await api(endpoint);
         const result = payload.households || payload.people || payload.results || { items: [] };
         renderMemberCards(result.items || [], append);
+        document.getElementById("directoryBrowseNote").textContent = memberState.query
+          ? `Showing approved ${memberState.view} matching “${memberState.query}”.`
+          : `Showing all approved ${memberState.view}. Search is optional.`;
         if (result.alphabet) renderAlphabet(result.alphabet);
         memberState.cursor = result.nextCursor || "";
         document.getElementById("memberLoadMore").hidden = !memberState.cursor;
@@ -1046,7 +1063,6 @@
       const asset = (payload.assets || [])[0];
       window.currentDirectoryPhoto = asset || null;
       document.getElementById("photoSummary").innerHTML = renderMediaSummary(asset, "person");
-      document.getElementById("submitPhotoReview").hidden = !asset || asset.lifecycleStatus !== "ready";
       document.getElementById("removePhoto").hidden = !asset;
       hydrateAuthorizedImages(document.getElementById("photoSummary"));
     }
@@ -1084,7 +1100,6 @@
       const asset = (payload.assets || [])[0];
       window.currentDirectoryHouseholdPhoto = asset || null;
       document.getElementById("householdPhotoSummary").innerHTML = renderMediaSummary(asset, "household");
-      document.getElementById("submitHouseholdPhotoReview").hidden = !asset || asset.lifecycleStatus !== "ready";
       document.getElementById("removeHouseholdPhoto").hidden = !asset;
       hydrateAuthorizedImages(document.getElementById("householdPhotoSummary"));
     }
@@ -1334,25 +1349,22 @@
         });
         const form = new FormData();
         form.append("photo", prepared);
-        await fetchJsonWithTimeout(`/api/directory/media/sessions/${encodeURIComponent(sessionPayload.session.id)}/complete`, {
+        const completed = await fetchJsonWithTimeout(`/api/directory/media/sessions/${encodeURIComponent(sessionPayload.session.id)}/complete`, {
           method: "POST",
           headers: uploadHeaders(),
           body: form
         });
+        if (visibility === "directory_members" && completed.asset?.id) {
+          await api(`/api/directory/media/${encodeURIComponent(completed.asset.id)}/submit`, { method: "POST" });
+        }
         formEl.reset();
-        showNotice(visibility === "directory_members" ? "Photo uploaded. Tap Submit Photo so the parish can review it for the directory." : "Photo uploaded privately. It is saved here, but it will not appear in the member directory unless you upload with Directory members visibility and submit it.");
+        showNotice(visibility === "directory_members" ? "Photo uploaded and submitted for parish review." : "Photo uploaded and saved with your selected privacy setting.");
         await loadDirectory();
       } catch (error) {
         showNotice(error.message || "Photo upload failed.", true);
       } finally {
         setUploadBusy(formEl, false);
       }
-    });
-    document.getElementById("submitPhotoReview").addEventListener("click", async () => {
-      if (!window.currentDirectoryPhoto) return;
-      await api(`/api/directory/media/${encodeURIComponent(window.currentDirectoryPhoto.id)}/submit`, { method: "POST" });
-      showNotice("Photo submitted for review.");
-      await loadDirectory();
     });
     document.getElementById("removePhoto").addEventListener("click", async () => {
       if (!window.currentDirectoryPhoto) return;
@@ -1380,25 +1392,22 @@
         });
         const form = new FormData();
         form.append("photo", prepared);
-        await fetchJsonWithTimeout(`/api/directory/media/sessions/${encodeURIComponent(sessionPayload.session.id)}/complete`, {
+        const completed = await fetchJsonWithTimeout(`/api/directory/media/sessions/${encodeURIComponent(sessionPayload.session.id)}/complete`, {
           method: "POST",
           headers: uploadHeaders(),
           body: form
         });
+        if (visibility === "directory_members" && completed.asset?.id) {
+          await api(`/api/directory/media/${encodeURIComponent(completed.asset.id)}/submit`, { method: "POST" });
+        }
         formEl.reset();
-        showNotice(visibility === "directory_members" ? "Family photo uploaded. Tap Submit Photo so the parish can review it for the household listing." : "Family photo uploaded privately. It is saved here, but it will not appear in the member directory unless you upload with Directory members visibility and submit it.");
+        showNotice(visibility === "directory_members" ? "Family photo uploaded and submitted for parish review." : "Family photo uploaded and saved with your selected privacy setting.");
         await loadDirectory();
       } catch (error) {
         showNotice(error.message || "Family photo upload failed.", true);
       } finally {
         setUploadBusy(formEl, false);
       }
-    });
-    document.getElementById("submitHouseholdPhotoReview").addEventListener("click", async () => {
-      if (!window.currentDirectoryHouseholdPhoto) return;
-      await api(`/api/directory/media/${encodeURIComponent(window.currentDirectoryHouseholdPhoto.id)}/submit`, { method: "POST" });
-      showNotice("Family photo submitted for review.");
-      await loadDirectory();
     });
     document.getElementById("removeHouseholdPhoto").addEventListener("click", async () => {
       if (!window.currentDirectoryHouseholdPhoto) return;
@@ -1450,16 +1459,6 @@
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && !document.getElementById("childAddModal").hidden) setChildModal(false);
     });
-    document.querySelector(".directory-tabs").addEventListener("click", async (event) => {
-      const button = event.target.closest("[data-member-view]");
-      if (!button) return;
-      memberState = { ...memberState, view: button.dataset.memberView, letter: "", cursor: "", query: "", sort: document.getElementById("memberSort").value || "az" };
-      document.getElementById("memberSearch").value = "";
-      document.querySelectorAll("[data-member-view]").forEach((tab) => tab.setAttribute("aria-selected", String(tab === button)));
-      const home = await api("/api/directory/member").catch(() => null);
-      renderAlphabet(home?.directory?.alphabet?.[memberState.view] || []);
-      await loadMemberDirectory();
-    });
     document.getElementById("memberAlphabet").addEventListener("click", async (event) => {
       const button = event.target.closest("[data-letter]");
       if (!button || button.disabled) return;
@@ -1468,16 +1467,24 @@
       await loadMemberDirectory();
     });
     document.getElementById("memberSearchButton").addEventListener("click", async () => {
-      memberState.query = document.getElementById("memberSearch").value.trim();
+      document.getElementById("memberSearch").value = "";
+      memberState.query = "";
       memberState.sort = document.getElementById("memberSort").value || "az";
       memberState.cursor = "";
       await loadMemberDirectory();
     });
-    document.getElementById("memberSearch").addEventListener("keydown", async (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        document.getElementById("memberSearchButton").click();
-      }
+    document.getElementById("memberSearch").addEventListener("input", (event) => {
+      clearTimeout(memberSearchTimer);
+      memberSearchTimer = window.setTimeout(async () => {
+        memberState.query = event.target.value.trim();
+        memberState.cursor = "";
+        await loadMemberDirectory();
+      }, 260);
+    });
+    document.getElementById("memberSort").addEventListener("change", async (event) => {
+      memberState.sort = event.target.value || "az";
+      memberState.cursor = "";
+      await loadMemberDirectory();
     });
     document.getElementById("memberLoadMore").addEventListener("click", () => loadMemberDirectory({ append: true }));
     document.getElementById("memberResults").addEventListener("click", async (event) => {

@@ -410,7 +410,7 @@
         fetch(directoryAdminApi('/dashboard'), { headers }),
         fetch(directoryAdminApi('/queue'), { headers }),
         fetch(directoryAdminApi('/people?limit=8'), { headers }),
-        fetch(directoryAdminApi('/households?limit=8'), { headers }),
+        fetch(directoryAdminApi('/households?limit=100'), { headers }),
         fetch(directoryAdminApi('/skills/listings?limit=8'), { headers }),
         fetch(directoryAdminApi('/maintenance'), { headers })
       ]);
@@ -456,6 +456,8 @@
         </div>
         <div class="pdx-dir-command-actions">
           <button class="pdx-dir-action-btn pdx-dir-action-primary" type="button" onclick="document.getElementById('directoryReviewDetail')?.scrollIntoView({behavior:'smooth',block:'start'})">Review Queue</button>
+          <button class="pdx-dir-action-btn" type="button" onclick="document.getElementById('directoryGallery')?.scrollIntoView({behavior:'smooth',block:'start'})">View Directory</button>
+          <button class="pdx-dir-action-btn" type="button" onclick="previewDirectoryAdminPrint('/print/directory')">Print Directory</button>
           <button class="pdx-dir-action-btn" type="button" onclick="document.getElementById('directoryRecordDetail')?.scrollIntoView({behavior:'smooth',block:'start'})">Record Detail</button>
           <button class="pdx-dir-action-btn" type="button" onclick="loadDirectoryAdminTab(true)">Refresh</button>
         </div>
@@ -465,6 +467,13 @@
         ${directoryMetric('Unassigned', metrics.unassigned, '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>')}
         ${directoryMetric('Assigned to me', metrics.assignedToMe, '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>')}
         ${directoryMetric('Oldest age', (metrics.oldestPendingAgeDays || 0) + 'd', '<path d="M3 3v18h18"/><path d="M18.7 8 12 14.7 8.7 11.3 3 17"/>')}
+      </section>
+      <section class="pdx-dir-gallery-section" id="directoryGallery">
+        <div class="pdx-dir-gallery-head">
+          <div><span class="pdx-dir-review-kicker">Parish family</span><h2>Directory at a glance</h2><p>Browse every household visually. Open a card to see its members, family photo, administrators, and publication status.</p></div>
+          <label class="pdx-dir-gallery-search">Find a household<input type="search" placeholder="Start typing a family name" oninput="filterDirectoryAdminGallery(this.value)" /></label>
+        </div>
+        <div class="pdx-dir-gallery" id="directoryGalleryCards">${directoryAdminGallery(households)}</div>
       </section>
       <div id="directoryReviewDetail" class="pdx-dir-review-detail" aria-live="polite"></div>
       <div id="directoryRecordDetail" class="pdx-dir-review-detail" aria-live="polite"></div>
@@ -515,7 +524,7 @@
           <div class="pdx-panel-header">
             <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg></div>Maintenance</div>
           </div>
-          <p class="section-note">Maintenance highlights records that need staff attention before the directory feels complete to parishioners.</p>
+          <p class="section-note">Work these lists directly. Each item opens the record that needs staff attention.</p>
           <div class="pdx-dir-row-list">
             ${directoryMaintenanceRow('Households current', maintenance.householdsCurrent, false, 'Verified recently and ready for member self-service.')}
             ${directoryMaintenanceRow('Households due', maintenance.householdsDue, false, 'Need annual confirmation soon.')}
@@ -523,6 +532,7 @@
             ${directoryMaintenanceRow('Skill consents to review', maintenance.staleSkillConsents, false, 'Skill listings that need renewed consent.')}
             ${directoryMaintenanceRow('Unclaimed people', maintenance.unclaimedPeople, false, 'People records not linked to a My AGAPAY account yet.')}
           </div>
+          ${directoryMaintenanceActions(maintenance.actions || {})}
         </section>
       </div>`;
     hydrateDirectoryAdminImages(pane);
@@ -611,6 +621,22 @@
     return `<section class="pdx-dir-review-column"><h4>Family photo</h4><div class="pdx-dir-photo-card">
       ${directoryAdminPhotoImg(photo, 'pdx-dir-photo-preview', 'Uploaded family photo')}
       <div><strong>${escapeHtml(status)}</strong><p>${escapeHtml((photo.visibility || 'private').replace(/_/g, ' '))} · ${escapeHtml(photo.processingStatus || 'processing status unavailable')}. This is the photo the family uploaded from My AGAPAY.</p></div>
+    </div></section>`;
+  }
+
+  function directorySubmittedPhotoReview(photo) {
+    if (!photo) return `<section class="pdx-dir-review-column pdx-dir-review-column-new"><h4>Submitted photo</h4>${directoryEmptyState('Photo unavailable', 'The submitted media record could not be loaded. Return this item rather than approving it without seeing the photo.')}</section>`;
+    const ownerLabel = photo.ownerType === 'household' ? 'Household photo' : 'Individual photo';
+    const visibility = String(photo.visibility || 'private').replace(/_/g, ' ');
+    return `<section class="pdx-dir-review-column pdx-dir-review-column-new"><h4>Submitted photo</h4><div class="pdx-dir-photo-card">
+      ${directoryAdminPhotoImg(photo, 'pdx-dir-photo-preview', 'Photo submitted for parish directory review')}
+      <div>
+        <strong>${escapeHtml(ownerLabel)}</strong>
+        <p>This is the exact photo submitted from My AGAPAY.</p>
+        <div class="pdx-dir-review-field"><span>Visible to</span><strong>${escapeHtml(visibility)}</strong></div>
+        <div class="pdx-dir-review-field"><span>Ready to publish</span><strong>${photo.publicationEligible ? 'Yes' : 'No'}</strong></div>
+        <div class="pdx-dir-review-field"><span>Processing</span><strong>${escapeHtml(photo.processingStatus || 'Unknown')}</strong></div>
+      </div>
     </div></section>`;
   }
 
@@ -760,6 +786,7 @@
       const review = payload.review || {};
       const item = review.item || {};
       const proposed = review.proposed || {};
+      const submittedPhoto = review.media || proposed.photo || null;
       const actions = Array.isArray(item.permittedActions) ? item.permittedActions : [];
       detail.innerHTML = `
         <article class="pdx-dir-review-card">
@@ -773,10 +800,12 @@
             <button class="pdx-dir-close-btn" type="button" onclick="document.getElementById('directoryReviewDetail').innerHTML=''">Close</button>
           </div>
           ${directoryReviewPrefs(proposed.publicationPreferences)}
-          <div class="pdx-dir-review-grid">
-            <section class="pdx-dir-review-column"><h4>Current record</h4>${directoryReviewObjectRows(review.current || {})}</section>
-            <section class="pdx-dir-review-column pdx-dir-review-column-new"><h4>Submitted changes</h4>${directoryReviewObjectRows(proposed)}</section>
-          </div>
+          ${submittedPhoto
+            ? `<div class="pdx-dir-review-grid pdx-dir-review-grid-photo">${directorySubmittedPhotoReview(submittedPhoto)}</div>`
+            : `<div class="pdx-dir-review-grid">
+                <section class="pdx-dir-review-column"><h4>Current record</h4>${directoryReviewObjectRows(review.current || {})}</section>
+                <section class="pdx-dir-review-column pdx-dir-review-column-new"><h4>Submitted changes</h4>${directoryReviewObjectRows(proposed)}</section>
+              </div>`}
           ${actions.includes('approve') ? `
             <label class="pdx-dir-review-note"><span>Reviewer note</span><textarea id="directoryReviewNote" rows="2" placeholder="Optional note"></textarea></label>
             <div class="pdx-dir-review-actions">
@@ -786,6 +815,7 @@
             </div>` : `<p class="section-note">This account can view the item, but it cannot approve it. Use a parish dashboard session or another staff reviewer with directory review permissions.</p>`}
         </article>`;
       detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      hydrateDirectoryAdminImages(detail);
       await fetch(directoryAdminApi('/reviews/' + encodeURIComponent(sourceType) + '/' + encodeURIComponent(sourceId) + '/begin'), { method: 'POST', headers: authHeaders() }).catch(() => null);
     } catch (err) {
       detail.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to open this review item.')}</p>`;
@@ -852,6 +882,32 @@
     </div>`;
   }
 
+  function directoryAdminGallery(households = []) {
+    if (!households.length) return directoryEmptyState('No households yet', 'Households will appear here as parish records are created.');
+    return households.map((household) => `<button class="pdx-dir-gallery-card" type="button" data-directory-gallery-name="${escapeAttr(String(household.displayName || '').toLowerCase())}" onclick="openDirectoryHousehold('${escapeAttr(household.id)}')">
+      <span class="pdx-dir-gallery-photo">${directoryAdminPhotoImg(household.photo, 'pdx-dir-gallery-img', 'Family photo for ' + (household.displayName || 'household'))}</span>
+      <span class="pdx-dir-gallery-copy"><strong>${escapeHtml(household.displayName || 'Unnamed household')}</strong><small>${escapeHtml((household.memberCount || 0) + ' member' + (household.memberCount === 1 ? '' : 's'))}${household.administratorCount ? ' · ' + escapeHtml(household.administratorCount + ' admin' + (household.administratorCount === 1 ? '' : 's')) : ''}</small></span>
+    </button>`).join('');
+  }
+
+  function filterDirectoryAdminGallery(value = '') {
+    const query = String(value || '').trim().toLowerCase();
+    document.querySelectorAll('[data-directory-gallery-name]').forEach((card) => {
+      card.hidden = Boolean(query) && !String(card.dataset.directoryGalleryName || '').includes(query);
+    });
+  }
+
+  function directoryMaintenanceActions(actions = {}) {
+    const groups = [
+      ['Overdue households', actions.overdueHouseholds || [], 'household'],
+      ['Confirm soon', actions.dueHouseholds || [], 'household'],
+      ['Unclaimed people', actions.unclaimedPeople || [], 'person'],
+      ['Renew skill consent', actions.staleSkillConsents || [], 'person']
+    ].filter(([, items]) => items.length);
+    if (!groups.length) return '<div class="pdx-dir-maintenance-clear"><strong>Nothing needs attention</strong><span>The directory has no overdue confirmations, stale consents, or unclaimed records.</span></div>';
+    return `<div class="pdx-dir-maintenance-worklists">${groups.map(([title, items, type]) => `<section><h4>${escapeHtml(title)}</h4>${items.map((item) => `<button type="button" onclick="${type === 'household' ? 'openDirectoryHousehold' : 'openDirectoryPerson'}('${escapeAttr(type === 'person' ? (item.personId || item.id) : item.id)}')"><span><strong>${escapeHtml(item.displayName || 'Directory record')}</strong><small>${item.skillName ? escapeHtml(item.skillName) : item.dueAt ? 'Due ' + escapeHtml(new Date(item.dueAt).toLocaleDateString()) : 'Open record'}</small></span><b>Open →</b></button>`).join('')}</section>`).join('')}</div>`;
+  }
+
   function directorySkillsAdminRows(listings) {
     if (!listings.length) return directoryEmptyState('Nothing to review', 'No Skills & Service listings are active or awaiting review.');
     return listings.map(item => `
@@ -898,20 +954,45 @@
   }
 
   async function previewDirectoryAdminPrint(path) {
+    const win = window.open('about:blank', '_blank');
+    if (!win) {
+      alert('Allow pop-ups for AGAPAY to open the printable directory.');
+      return;
+    }
+    win.document.write('<!doctype html><title>Preparing directory…</title><p style="font:16px system-ui;padding:32px;">Preparing your printable directory…</p>');
+    win.document.close();
     try {
       const res = await fetch(directoryAdminApi(path), { headers: authHeaders() });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Print view is unavailable.');
       const print = payload.print || {};
-      const body = JSON.stringify(print, null, 2);
-      const win = window.open('', '_blank', 'noopener,noreferrer');
-      if (win) {
-        win.document.write('<pre style="font:14px/1.5 system-ui;white-space:pre-wrap;padding:24px;">' + escapeHtml(body) + '</pre>');
-        win.document.close();
-      }
+      const html = path.includes('/print/directory') ? printableDirectoryHtml(print) : printableSkillsHtml(print);
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
     } catch (err) {
+      win.close();
       alert(err.message || 'Unable to open this print view.');
     }
+  }
+
+  function printableDirectoryHtml(print = {}) {
+    const grouped = new Map();
+    (print.households || []).forEach((row) => {
+      const name = row.display_name || row.displayName || 'Household';
+      if (!grouped.has(name)) grouped.set(name, []);
+      if (row.preferred_name || row.preferredName) grouped.get(name).push(row.preferred_name || row.preferredName);
+    });
+    const cards = Array.from(grouped.entries()).map(([household, members]) => `<article><h2>${escapeHtml(household)}</h2><p>${members.length ? members.map(escapeHtml).join(' · ') : 'No published members'}</p></article>`).join('');
+    return `<!doctype html><html><head><meta charset="utf-8"><title>Parish Directory</title><style>
+      @page{size:letter;margin:.55in}*{box-sizing:border-box}body{margin:0;color:#171715;background:#f6f1e8;font-family:Arial,sans-serif}header{padding:32px;background:linear-gradient(145deg,#061522,#0b2130);color:#f6f1e8}header small{color:#e8c879;text-transform:uppercase;letter-spacing:.14em;font-weight:700}h1{margin:6px 0 4px;font:600 36px Georgia,serif}header p{margin:0;color:rgba(246,241,232,.72)}.toolbar{display:flex;justify-content:flex-end;padding:14px 24px;background:#fff;border-bottom:1px solid #ddd}.toolbar button{border:0;border-radius:9px;padding:10px 16px;background:#061522;color:#fff;font-weight:700;cursor:pointer}main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:24px}article{break-inside:avoid;padding:18px;border:1px solid #ddd5c7;border-radius:14px;background:#fff}article h2{margin:0 0 8px;font:600 22px Georgia,serif;color:#235c4d}article p{margin:0;color:#625e56;font-size:13px;line-height:1.55}footer{padding:0 24px 24px;color:#6f6a60;font-size:11px}@media print{body{background:#fff}.toolbar{display:none}header{padding:20px 24px}main{padding:18px 0}.toolbar+main{}article{box-shadow:none}}
+    </style></head><body><header><small>AGAPAY Parish Directory</small><h1>Our Parish Family</h1><p>${escapeHtml(print.privacyReminder || 'Private parish directory. Do not distribute outside the parish.')}</p></header><div class="toolbar"><button onclick="window.print()">Print directory</button></div><main>${cards || '<article><h2>No published households</h2><p>There are no approved directory entries to print yet.</p></article>'}</main><footer>Generated ${escapeHtml(new Date(print.generatedAt || Date.now()).toLocaleString())}</footer></body></html>`;
+  }
+
+  function printableSkillsHtml(print = {}) {
+    const rows = (print.listings || []).map((item) => `<article><h2>${escapeHtml(item.displayLabel || item.skill?.name || 'Skill')}</h2><p>${escapeHtml(item.person?.displayName || 'Parish member')} · ${escapeHtml(item.experienceLevel || '')} · ${escapeHtml(item.serviceMode || '')}</p></article>`).join('');
+    return `<!doctype html><html><head><meta charset="utf-8"><title>Skills &amp; Service</title><style>body{font:14px/1.5 Arial;margin:32px;color:#171715}h1,h2{font-family:Georgia,serif}button{float:right;padding:9px 14px}article{break-inside:avoid;border-bottom:1px solid #ddd;padding:12px 0}@media print{button{display:none}}</style></head><body><button onclick="window.print()">Print</button><h1>Skills &amp; Service</h1><p>${escapeHtml(print.disclaimer || '')}</p>${rows || '<p>No active listings.</p>'}</body></html>`;
   }
 
   function directoryMetric(label, value, iconPath) {

@@ -525,13 +525,53 @@ export async function getDirectoryMaintenanceDashboard(env, { context }) {
   const rows = await d1All(env, "SELECT verification_status, verification_due_at FROM directory_household_verifications WHERE parish_id = ?1", parishId);
   const staleSkills = await d1First(env, "SELECT COUNT(*) AS count FROM directory_person_skill_listings WHERE parish_id = ?1 AND status = 'active' AND consent_recorded_at < ?2", parishId, now - 365 * 86400000);
   const unclaimed = await d1First(env, "SELECT COUNT(*) AS count FROM directory_people p WHERE p.created_by_parish_id = ?1 AND p.active = 1 AND NOT EXISTS (SELECT 1 FROM directory_person_links l WHERE l.person_id = p.id AND l.link_type = 'platform_user' AND l.active = 1)", parishId);
+  const dueHouseholds = await d1All(
+    env,
+    `SELECT h.id, h.display_name, v.verification_status, v.verification_due_at
+       FROM directory_households h
+       JOIN directory_household_verifications v ON v.household_id = h.id AND v.parish_id = h.parish_id
+      WHERE h.parish_id = ?1 AND h.active = 1
+        AND (v.verification_status != 'current' OR v.verification_due_at < ?2)
+      ORDER BY v.verification_due_at ASC, h.display_name ASC
+      LIMIT 20`,
+    parishId,
+    now
+  );
+  const unclaimedRecords = await d1All(
+    env,
+    `SELECT p.id, p.preferred_name
+       FROM directory_people p
+      WHERE p.created_by_parish_id = ?1 AND p.active = 1
+        AND NOT EXISTS (SELECT 1 FROM directory_person_links l WHERE l.person_id = p.id AND l.link_type = 'platform_user' AND l.active = 1)
+      ORDER BY p.preferred_name ASC
+      LIMIT 20`,
+    parishId
+  );
+  const staleSkillRecords = await d1All(
+    env,
+    `SELECT l.id, l.person_id, p.preferred_name, s.name AS skill_name, l.consent_recorded_at
+       FROM directory_person_skill_listings l
+       JOIN directory_people p ON p.id = l.person_id
+       JOIN directory_skill_catalog s ON s.id = l.skill_id
+      WHERE l.parish_id = ?1 AND l.status = 'active' AND l.consent_recorded_at < ?2
+      ORDER BY l.consent_recorded_at ASC
+      LIMIT 20`,
+    parishId,
+    now - 365 * 86400000
+  );
   const due = rows.filter((row) => row.verification_status !== "current" || Number(row.verification_due_at || 0) < now);
   return {
     householdsCurrent: rows.length - due.length,
     householdsDue: due.filter((row) => Number(row.verification_due_at || 0) >= now).length,
     householdsOverdue: due.filter((row) => Number(row.verification_due_at || 0) < now).length,
     staleSkillConsents: Number(staleSkills?.count || 0),
-    unclaimedPeople: Number(unclaimed?.count || 0)
+    unclaimedPeople: Number(unclaimed?.count || 0),
+    actions: {
+      overdueHouseholds: dueHouseholds.filter((row) => Number(row.verification_due_at || 0) < now).map((row) => ({ id: row.id, displayName: row.display_name, dueAt: Number(row.verification_due_at || 0) })),
+      dueHouseholds: dueHouseholds.filter((row) => Number(row.verification_due_at || 0) >= now).map((row) => ({ id: row.id, displayName: row.display_name, dueAt: Number(row.verification_due_at || 0) })),
+      unclaimedPeople: unclaimedRecords.map((row) => ({ id: row.id, displayName: row.preferred_name })),
+      staleSkillConsents: staleSkillRecords.map((row) => ({ id: row.id, personId: row.person_id, displayName: row.preferred_name, skillName: row.skill_name, consentRecordedAt: Number(row.consent_recorded_at || 0) }))
+    }
   };
 }
 
