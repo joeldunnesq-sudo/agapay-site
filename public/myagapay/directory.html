@@ -147,6 +147,18 @@
     .skill-card h3 { margin:0; font-size:16px; }
     .skill-card p { margin:0; color:var(--muted); }
     .nameday-list { display:grid; gap:10px; margin-top:12px; }
+    .household-hub-identity { display:grid; grid-template-columns:minmax(180px,240px) 1fr; gap:16px; align-items:start; padding-bottom:16px; border-bottom:1px solid #ecefed; }
+    .household-hub-photo .summary-list, .household-hub-name .household-list { margin-bottom:8px; }
+    .household-hub-photo-form, .household-hub-name-form { display:grid; gap:8px; }
+    .household-hub-photo-form label, .household-hub-name-form label { font-size:12px; }
+    .household-hub-photo-form .actions, .household-hub-name-form .actions { margin-top:2px; }
+    .household-hub-namedays { padding-top:14px; }
+    .household-hub-namedays h3 { margin:0 0 3px; font-size:15px; }
+    .household-hub-namedays-note { margin:0 0 10px; color:var(--muted); font-size:12.5px; line-height:1.4; }
+    .household-hub-nameday-form { margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); }
+    @media (max-width: 640px) {
+      .household-hub-identity { grid-template-columns:1fr; }
+    }
     textarea { border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; min-height:62px; resize:vertical; }
     .mobile-directory-home { display:none; }
     .directory-top.myagapay-page-hero { display:block; margin-bottom:22px; }
@@ -421,37 +433,41 @@
             </div>
           </article>
 
-          <article class="panel" data-mobile-section="household family setup">
-            <div class="panel-header"><div><div class="panel-kicker">Family</div><h2>Household</h2><p class="panel-intro">Use this for your family name and household-owned information.</p></div></div>
-            <div class="household-list" id="householdList"></div>
-            <form class="form-grid" id="householdDetailsForm" hidden>
-              <label style="grid-column:1/-1;">Household name<input name="displayName" maxlength="200" placeholder="The Dunne Household" required /></label>
-              <input type="hidden" name="householdId" />
-              <input type="hidden" name="expectedVersion" />
-              <div class="actions"><button class="btn primary" type="submit">Save Household Name</button></div>
-            </form>
-          </article>
+          <article class="panel household-hub" data-mobile-section="household family setup photos">
+            <div class="panel-header"><div><div class="panel-kicker">Family</div><h2>Household</h2><p class="panel-intro">Your family name, photo, and name days. Household-owned info is shared with your parish directory only after you submit and staff approves.</p></div></div>
 
-          <article class="panel" data-mobile-section="household photos family">
-            <div class="panel-header"><div><div class="panel-kicker">Family</div><h2>Family Photo</h2><p class="panel-intro">This shows on your household card in the Full Directory only after you choose Directory members, submit it, and the parish approves it.</p></div></div>
-            <div class="summary-list" id="householdPhotoSummary"></div>
-            <form class="form-grid" id="householdPhotoForm" hidden>
-              <label>Photo file<input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required /></label>
-              <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Household</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
-              <div class="actions"><button class="btn primary" type="submit">Upload Family Photo</button><button class="btn warn" type="button" id="removeHouseholdPhoto" hidden>Remove Photo</button></div>
-            </form>
-          </article>
+            <div class="household-hub-identity">
+              <div class="household-hub-photo">
+                <div class="summary-list" id="householdPhotoSummary"></div>
+                <form class="household-hub-photo-form" id="householdPhotoForm" hidden>
+                  <label>Change family photo<input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required /></label>
+                  <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Household</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
+                  <div class="actions"><button class="btn secondary" type="submit">Upload</button><button class="btn warn" type="button" id="removeHouseholdPhoto" hidden>Remove</button></div>
+                </form>
+              </div>
+              <div class="household-hub-name">
+                <div class="household-list" id="householdList"></div>
+                <form class="household-hub-name-form" id="householdDetailsForm" hidden>
+                  <label>Household name<input name="displayName" maxlength="200" placeholder="The Dunne Household" required /></label>
+                  <input type="hidden" name="householdId" />
+                  <input type="hidden" name="expectedVersion" />
+                  <div class="actions"><button class="btn secondary" type="submit">Save Name</button></div>
+                </form>
+              </div>
+            </div>
 
-          <article class="panel" data-mobile-section="household family">
-            <div class="panel-header"><div><div class="panel-kicker">Family</div><h2>Name Days</h2><p class="panel-intro">Add family name days. Keep them private, or share them with members so they can appear in Today reminders.</p></div></div>
-            <div class="nameday-list" id="namedayList"></div>
-            <form class="form-grid" id="namedayForm" hidden>
-              <label>Name<input name="displayName" required placeholder="Anna" /></label>
-              <label>Saint<input name="saintName" required placeholder="St. Anna" /></label>
-              <label>Date<input name="feastMonthDay" required placeholder="07-25" pattern="[0-9]{2}-[0-9]{2}" /></label>
-              <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Household</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
-              <div class="actions"><button class="btn primary" type="submit">Save Name Day</button></div>
-            </form>
+            <div class="household-hub-namedays">
+              <h3>Name Days</h3>
+              <p class="household-hub-namedays-note">Keep them private, or share them with members so they can appear in Today reminders.</p>
+              <div class="nameday-list" id="namedayList"></div>
+              <form class="form-grid household-hub-nameday-form" id="namedayForm" hidden>
+                <label>Name<input name="displayName" required placeholder="Anna" /></label>
+                <label>Saint<input name="saintName" required placeholder="St. Anna" /></label>
+                <label>Date<input name="feastMonthDay" required placeholder="07-25" pattern="[0-9]{2}-[0-9]{2}" /></label>
+                <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Household</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
+                <div class="actions"><button class="btn secondary" type="submit">Add Name Day</button></div>
+              </form>
+            </div>
           </article>
 
           <article class="panel" data-mobile-section="household setup">
