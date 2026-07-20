@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import {
   bookstoreEnabledFor,
+  accountingEnabledFor,
+  accountingTierFor,
   entitlementsSummary,
   hasLegacyParishPlusAddOn,
   hasModuleAccess,
@@ -30,6 +32,16 @@ await test("Mission tier includes no add-on modules", async () => {
   assert.equal(tierIncludesModule(reg, "bookstore"), false);
   assert.equal(tierIncludesParishPlus(reg), false);
   assert.equal(hasParishPlusAccess(reg), false);
+});
+
+await test("Mission and Parish both receive core Accounting without crippling the Mission ledger", async () => {
+  assert.equal(accountingEnabledFor({ subscriptionTier: "mission" }), true);
+  assert.equal(accountingEnabledFor({ subscriptionTier: "parish" }), true);
+  assert.equal(accountingTierFor({ subscriptionTier: "mission" }), "core");
+  assert.equal(accountingTierFor({ subscriptionTier: "parish" }), "advanced_operations");
+  assert.equal(entitlementsSummary({ subscriptionTier: "mission" }).modules.accounting.coreLedgerIncluded, true);
+  assert.equal(entitlementsSummary({ subscriptionTier: "mission" }).modules.accounting.advancedOperationsIncluded, false);
+  assert.equal(entitlementsSummary({ subscriptionTier: "parish" }).modules.accounting.advancedOperationsIncluded, true);
 });
 
 await test("Parish tier includes every module (folded-in AGAPAY Parish +)", async () => {

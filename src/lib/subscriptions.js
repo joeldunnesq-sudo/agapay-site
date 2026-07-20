@@ -15,7 +15,7 @@ export const subscriptionTiers = [
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_MISSION_MONTHLY",
     description: "Monthly AGAPAY platform subscription for missions.",
-    modules: { stewardshipHealth: false, sacraments: false, bookstore: false }
+    modules: { stewardshipHealth: false, sacraments: false, bookstore: false, accounting: true, accountingTier: "core" }
   },
   {
     id: "parish",
@@ -24,7 +24,7 @@ export const subscriptionTiers = [
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_MONTHLY",
     description: "Monthly AGAPAY platform subscription for established parishes.",
-    modules: { stewardshipHealth: true, sacraments: true, bookstore: true }
+    modules: { stewardshipHealth: true, sacraments: true, bookstore: true, accounting: true, accountingTier: "advanced_operations" }
   },
   {
     id: "diocese",
@@ -33,7 +33,7 @@ export const subscriptionTiers = [
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_DIOCESE_MONTHLY",
     description: "Custom AGAPAY subscription pricing for cathedrals, dioceses, and multi-parish organizations.",
-    modules: { stewardshipHealth: true, sacraments: true, bookstore: true }
+    modules: { stewardshipHealth: true, sacraments: true, bookstore: true, accounting: true, accountingTier: "advanced_operations" }
   },
   {
     id: "monastery_free",
@@ -42,7 +42,7 @@ export const subscriptionTiers = [
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "",
     description: "No monthly subscription fee for Orthodox monasteries and sketes.",
-    modules: { stewardshipHealth: false, sacraments: false, bookstore: true }
+    modules: { stewardshipHealth: false, sacraments: false, bookstore: true, accounting: false, accountingTier: "unavailable" }
   }
 ];
 

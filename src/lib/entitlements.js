@@ -19,10 +19,10 @@ import { hasActiveStewardshipComp, hasStewardshipAccess, stewardshipStatus } fro
 // matches the "product and craft sale campaigns" capability already
 // promised on the public features page for monastic communities.
 const TIER_MODULES = {
-  mission: { stewardshipHealth: false, sacraments: false, bookstore: false },
-  parish: { stewardshipHealth: true, sacraments: true, bookstore: true },
-  diocese: { stewardshipHealth: true, sacraments: true, bookstore: true },
-  monastery_free: { stewardshipHealth: false, sacraments: false, bookstore: true }
+  mission: { stewardshipHealth: false, sacraments: false, bookstore: false, accounting: true, accountingAdvancedOperations: false },
+  parish: { stewardshipHealth: true, sacraments: true, bookstore: true, accounting: true, accountingAdvancedOperations: true },
+  diocese: { stewardshipHealth: true, sacraments: true, bookstore: true, accounting: true, accountingAdvancedOperations: true },
+  monastery_free: { stewardshipHealth: false, sacraments: false, bookstore: true, accounting: false, accountingAdvancedOperations: false }
 };
 const MODULE_IDS = ["stewardshipHealth", "sacraments", "bookstore"];
 
@@ -71,6 +71,15 @@ export function bookstoreEnabledFor(registration) {
   return registration?.bookstoreEnabled !== false && hasModuleAccess(registration, "bookstore");
 }
 
+export function accountingEnabledFor(registration) {
+  return registration?.accountingEnabled !== false && tierIncludesModule(registration, "accounting");
+}
+
+export function accountingTierFor(registration) {
+  if (!accountingEnabledFor(registration)) return "unavailable";
+  return tierIncludesModule(registration, "accountingAdvancedOperations") ? "advanced_operations" : "core";
+}
+
 function moduleSource(registration, moduleId) {
   if (tierIncludesModule(registration, moduleId)) return "tier";
   if (hasLegacyParishPlusAddOn(registration)) return "legacy_addon";
@@ -102,6 +111,13 @@ export function entitlementsSummary(registration) {
         included: bookstoreEnabledFor(registration),
         parishHasEnabled: registration?.bookstoreEnabled !== false,
         source: moduleSource(registration, "bookstore")
+      },
+      accounting: {
+        included: accountingEnabledFor(registration),
+        tier: accountingTierFor(registration),
+        coreLedgerIncluded: accountingEnabledFor(registration),
+        advancedOperationsIncluded: accountingTierFor(registration) === "advanced_operations",
+        source: tierIncludesModule(registration, "accounting") ? "tier" : "none"
       }
     }
   };
