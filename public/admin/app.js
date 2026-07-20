@@ -2333,7 +2333,7 @@ let selectedReference = '';
               <div>
                 <label for="subscriptionTier">Subscription tier</label>
                 <select id="subscriptionTier">
-                  <option value="mission" ${(reg.subscriptionTier || '') === 'mission' ? 'selected' : ''}>Mission - $49/mo, no donation fee</option>
+                  <option value="mission" ${(reg.subscriptionTier || '') === 'mission' ? 'selected' : ''}>Mission - $99/mo, no donation fee</option>
                   <option value="parish" ${(!reg.subscriptionTier || reg.subscriptionTier === 'parish') ? 'selected' : ''}>Parish - $199/mo, no donation fee</option>
                   <option value="diocese" ${reg.subscriptionTier === 'diocese' ? 'selected' : ''}>Cathedral / Diocese - negotiated subscription, no donation fee</option>
                   <option value="monastery_free" ${reg.subscriptionTier === 'monastery_free' ? 'selected' : ''}>Monastery / Skete - no monthly fee, no donation fee</option>

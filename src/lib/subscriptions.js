@@ -11,7 +11,7 @@ export const subscriptionTiers = [
   {
     id: "mission",
     label: "Mission",
-    monthlyCents: 4900,
+    monthlyCents: 9900,
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_MISSION_MONTHLY",
     description: "Monthly AGAPAY platform subscription for missions.",
