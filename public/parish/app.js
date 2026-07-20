@@ -421,13 +421,14 @@
     pane.innerHTML = '<p class="sw-tool-loading">Loading directory operations...</p>';
     const headers = authHeaders();
     try {
-      const [dashboardRes, queueRes, peopleRes, householdsRes, skillsRes, maintenanceRes] = await Promise.all([
+      const [dashboardRes, queueRes, peopleRes, householdsRes, skillsRes, maintenanceRes, printRes] = await Promise.all([
         fetch(directoryAdminApi('/dashboard'), { headers }),
         fetch(directoryAdminApi('/queue'), { headers }),
         fetch(directoryAdminApi('/people?limit=8'), { headers }),
         fetch(directoryAdminApi('/households?limit=100'), { headers }),
         fetch(directoryAdminApi('/skills/listings?limit=8'), { headers }),
-        fetch(directoryAdminApi('/maintenance'), { headers })
+        fetch(directoryAdminApi('/maintenance'), { headers }),
+        fetch(directoryAdminApi('/print/directory'), { headers })
       ]);
       if (dashboardRes.status === 401 || dashboardRes.status === 403) {
         const errorPayload = await dashboardRes.json().catch(() => ({}));
@@ -441,14 +442,15 @@
       const households = await householdsRes.json();
       const skills = await skillsRes.json().catch(() => ({ skills: { listings: [] } }));
       const maintenance = await maintenanceRes.json().catch(() => ({ maintenance: {} }));
-      renderDirectoryAdminPanel(dashboard.dashboard || {}, queue.items || [], people.people || [], households.households || [], skills.skills || {}, maintenance.maintenance || {});
+      const print = await printRes.json().catch(() => ({ print: {} }));
+      renderDirectoryAdminPanel(dashboard.dashboard || {}, queue.items || [], people.people || [], households.households || [], skills.skills || {}, maintenance.maintenance || {}, print.print || {});
       pane.dataset.loaded = 'true';
     } catch (err) {
       pane.innerHTML = renderDirectoryAdminGenericError();
     }
   }
 
-  let directoryAdminTab = 'queue';
+  let directoryAdminTab = 'directory';
   let directoryBrowseType = 'household';
   let directoryLastData = null;
 
@@ -477,8 +479,9 @@
   function renderDirectoryBrowseList(records) {
     const list = document.getElementById('directoryBrowseList');
     if (!list) return;
-    const emptyLabel = directoryBrowseType === 'household' ? 'households' : 'people';
-    list.innerHTML = records.length ? records.map(directoryBrowseRow).join('') : directoryEmptyState('No matches', `No ${emptyLabel} match your search.`);
+    list.innerHTML = records.length
+      ? records.map((record) => directoryCanonicalHouseholdRow(record, directoryLastData?.print?.households || [])).join('')
+      : `<tr><td colspan="4">${directoryEmptyState('No matches', 'No households match your search.')}</td></tr>`;
     hydrateDirectoryAdminImages(list);
   }
 
@@ -502,32 +505,58 @@
     if (!query) { renderDirectoryBrowseList(directoryBrowseType === 'household' ? (directoryLastData?.households || []) : (directoryLastData?.people || [])); return; }
     list.innerHTML = '<p class="sw-tool-loading">Searching…</p>';
     try {
-      const endpoint = directoryBrowseType === 'household' ? '/households' : '/people';
-      const res = await fetch(directoryAdminApi(endpoint + '?limit=25&q=' + encodeURIComponent(query)), { headers: authHeaders() });
+      const res = await fetch(directoryAdminApi('/households?limit=100&q=' + encodeURIComponent(query)), { headers: authHeaders() });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Search failed.');
-      renderDirectoryBrowseList(payload.people || payload.households || []);
+      renderDirectoryBrowseList(payload.households || []);
     } catch (err) {
       list.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to search.')}</p>`;
     }
   }
 
-  function renderDirectoryAdminPanel(dashboard, queue, people, households, skills, maintenance) {
+  function renderDirectoryAdminPanel(dashboard, queue, people, households, skills, maintenance, print) {
     const pane = document.getElementById('directoryAdminPane');
     if (!pane) return;
-    directoryLastData = { queue, people, households, skills, maintenance };
+    directoryLastData = { queue, people, households, skills, maintenance, print };
     const metrics = dashboard.metrics || {};
+    const parishName = currentParish?.parishName || currentParish?.name || 'Your parish';
+    const publishedMembers = Array.isArray(print?.households) ? print.households : [];
+    const publishedMemberCount = publishedMembers.length || people.length;
     pane.innerHTML = `
-      <section class="pdx-kpi-band pdx-dir-kpi-band">
-        ${directoryMetric('Pending', metrics.totalPending, '<path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>')}
-        ${directoryMetric('Unassigned', metrics.unassigned, '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>')}
-        ${directoryMetric('Assigned to me', metrics.assignedToMe, '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>')}
-        ${directoryMetric('Oldest age', (metrics.oldestPendingAgeDays || 0) + 'd', '<path d="M3 3v18h18"/><path d="M18.7 8 12 14.7 8.7 11.3 3 17"/>')}
+      <section class="pdx-dir-canonical-head">
+        <div>
+          <span class="pdx-dir-canonical-kicker">Parish Directory</span>
+          <h1>Church Directory</h1>
+          <p>${escapeHtml(parishName)} <i></i> <strong>${households.length}</strong> households <i></i> <strong>${publishedMemberCount}</strong> members</p>
+        </div>
+        <div class="pdx-dir-canonical-actions">
+          <button class="pdx-dir-export-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/published-adults.csv')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>Export CSV</button>
+          <button class="pdx-dir-print-btn" type="button" onclick="previewDirectoryAdminPrint('/print/directory')"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Print Directory</button>
+        </div>
       </section>
       <div class="pdx-dir-tabs" role="tablist" aria-label="Directory sections">
-        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="queue" aria-selected="true" onclick="switchDirectoryAdminTab('queue')">Review Queue ${directoryQueueBadgeMarkup(metrics.totalPending)}</button>
-        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="directory" aria-selected="false" onclick="switchDirectoryAdminTab('directory')">Directory</button>
-        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="tools" aria-selected="false" onclick="switchDirectoryAdminTab('tools')">Tools</button>
+        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="directory" aria-selected="true" onclick="switchDirectoryAdminTab('directory')">Directory</button>
+        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="queue" aria-selected="false" onclick="switchDirectoryAdminTab('queue')">Review Queue ${directoryQueueBadgeMarkup(metrics.totalPending)}</button>
+        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="tools" aria-selected="false" onclick="switchDirectoryAdminTab('tools')">Maintenance &amp; Skills</button>
+      </div>
+
+      <div class="pdx-dir-tab-panel" data-dir-panel="directory">
+        <section class="pdx-dir-privacy-bar">
+          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <div><strong>Private parish directory</strong><span>Contact information follows each household’s approved publication preferences.</span></div>
+        </section>
+        <section class="pdx-dir-canonical-controls">
+          <label><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="search" id="directoryBrowseSearch" placeholder="Search by family or member name" oninput="searchDirectoryBrowse(this.value)" /></label>
+          <button type="button" onclick="loadDirectoryAdminTab(true)">Refresh directory</button>
+        </section>
+        <div class="pdx-dir-table-wrap">
+          <table class="pdx-dir-table">
+            <thead><tr><th>Household</th><th>Members</th><th>Directory status</th><th>Parish tools</th></tr></thead>
+            <tbody id="directoryBrowseList">${households.length ? households.map((household) => directoryCanonicalHouseholdRow(household, publishedMembers)).join('') : `<tr><td colspan="4">${directoryEmptyState('No households yet', 'Households appear here after families join the parish directory.')}</td></tr>`}</tbody>
+          </table>
+        </div>
+        <p class="pdx-dir-canonical-note">Household information is entered by families in My AGAPAY and appears here for parish office use.</p>
+        <div id="directoryRecordDetail" class="pdx-dir-review-detail" aria-live="polite"></div>
       </div>
 
       <div class="pdx-dir-tab-panel" data-dir-panel="queue">
@@ -542,24 +571,6 @@
           ${queue.length > 25 ? `<p class="section-note">Showing the oldest 25 of ${queue.length} pending items.</p>` : ''}
         </section>
         <div id="directoryReviewDetail" class="pdx-dir-review-detail" aria-live="polite"></div>
-      </div>
-
-      <div class="pdx-dir-tab-panel" data-dir-panel="directory" hidden>
-        <section class="pdx-panel">
-          <div class="pdx-panel-header">
-            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8"/><path d="M8 13h5"/><circle cx="17" cy="13" r="1"/></svg></div>Directory</div>
-            <div class="pdx-dir-browse-toggle">
-              <button type="button" class="active" data-browse-type="household" onclick="switchDirectoryBrowseType('household')">Households</button>
-              <button type="button" data-browse-type="person" onclick="switchDirectoryBrowseType('person')">People</button>
-            </div>
-          </div>
-          <label class="pdx-dir-panel-search">Search<input type="search" id="directoryBrowseSearch" placeholder="Search by family name" oninput="searchDirectoryBrowse(this.value)" /></label>
-          <p class="section-note">Open a record to confirm members, admins, publication state, contacts, and notes.${households.length >= 100 ? ' Showing the first 100 households — search above to find one not listed here.' : ''}</p>
-          <div class="pdx-dir-row-list" id="directoryBrowseList">
-            ${households.length ? households.map(directoryHouseholdRow).join('') : directoryEmptyState('No households yet', 'Households appear after staff links people into household records.')}
-          </div>
-        </section>
-        <div id="directoryRecordDetail" class="pdx-dir-review-detail" aria-live="polite"></div>
       </div>
 
       <div class="pdx-dir-tab-panel" data-dir-panel="tools" hidden>
@@ -594,8 +605,20 @@
         </section>
       </div>`;
     switchDirectoryAdminTab(directoryAdminTab);
-    switchDirectoryBrowseType(directoryBrowseType);
     hydrateDirectoryAdminImages(pane);
+  }
+
+  function directoryCanonicalHouseholdRow(household, publishedMembers = []) {
+    const name = household.displayName || 'Household';
+    const members = publishedMembers.filter((row) => String(row.display_name || row.displayName || '') === String(name)).map((row) => row.preferred_name || row.preferredName).filter(Boolean);
+    const count = Number(household.memberCount || members.length || 0);
+    const pending = Number(household.pendingRequestCount || 0);
+    return `<tr class="pdx-dir-table-row" onclick="openDirectoryHousehold('${escapeAttr(household.id)}')" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDirectoryHousehold('${escapeAttr(household.id)}');}">
+      <td><div class="pdx-dir-table-household">${directoryAdminPhotoImg(household.photo, 'pdx-dir-table-photo', 'Family photo for ' + name)}<div><strong>${escapeHtml(name)}</strong><span>${count} member${count === 1 ? '' : 's'}</span></div></div></td>
+      <td><div class="pdx-dir-table-members">${members.length ? members.slice(0, 4).map((member) => `<span>${escapeHtml(member)}</span>`).join('') : `<span>${count ? count + ' household member' + (count === 1 ? '' : 's') : 'No published members'}</span>`}${members.length > 4 ? `<small>+${members.length - 4} more</small>` : ''}</div></td>
+      <td><span class="pdx-dir-table-status ${pending ? 'pending' : ''}">${pending ? pending + ' pending review' : 'Current'}</span><small>${household.photo ? 'Family photo ' + escapeHtml((household.photo.lifecycleStatus || 'available').replace(/_/g, ' ')) : 'No family photo'}</small></td>
+      <td><button class="pdx-dir-action-btn" type="button" onclick="event.stopPropagation();openDirectoryHousehold('${escapeAttr(household.id)}')">View household</button></td>
+    </tr>`;
   }
 
   function directoryEmptyState(title, subtitle) {

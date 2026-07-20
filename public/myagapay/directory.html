@@ -160,6 +160,7 @@
       .household-hub-identity { grid-template-columns:1fr; }
     }
     textarea { border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; min-height:62px; resize:vertical; }
+    .directory-mobile-header, .directory-mobile-nav { display:none; }
     .mobile-directory-home { display:none; }
     .directory-top.myagapay-page-hero { display:block; margin-bottom:22px; }
     .directory-top.myagapay-page-hero .directory-title h1 { margin:0 0 8px; color:#F6F1E8; font-family:"Cormorant Garamond", Georgia, serif; font-size:clamp(27px, 4vw, 34px); font-weight:600; line-height:1.12; }
@@ -175,12 +176,30 @@
         width:100%;
         min-height:calc(100vh - 7.75rem);
         margin:0 auto;
-        padding:14px 14px 6.75rem;
+        padding:0 14px calc(6.25rem + env(safe-area-inset-bottom));
         border:0;
         border-radius:0;
         background:#f7f3ec;
         box-shadow:none;
       }
+      .directory-mobile-header {
+        position:sticky;
+        top:0;
+        z-index:25;
+        display:block;
+        margin:0 -14px 12px;
+        padding:15px 18px 13px;
+        border-bottom:1px solid rgba(246,241,232,.12);
+        background:linear-gradient(160deg,#061522 0%,#0b2130 100%);
+        color:#f6f1e8;
+        box-shadow:0 9px 28px rgba(6,21,34,.2);
+      }
+      .directory-mobile-brand { display:flex; align-items:baseline; gap:9px; }
+      .directory-mobile-cross { color:#e8c879; font-family:Georgia,serif; font-size:22px; line-height:1; }
+      .directory-mobile-header h1 { margin:0; font-family:"Cormorant Garamond",Georgia,serif; font-size:27px; font-weight:600; line-height:1; }
+      .directory-mobile-header p { margin:6px 0 0 31px; color:rgba(246,241,232,.72); font-size:12px; line-height:1.35; }
+      .directory-top.myagapay-page-hero { display:none !important; }
+      body.donor-directory-page .mobile-tabbar { display:none !important; }
       .donor-directory-page .directory-shell {
         min-height:100vh;
         padding:0;
@@ -203,7 +222,7 @@
       .directory-title p { display:none; }
       .status-pill { justify-self:start; padding:7px 10px; border-radius:999px; background:#eef3f0; color:var(--green); }
       .directory-command, .directory-guide { display:none; }
-      .mobile-directory-home { display:grid; gap:12px; margin-bottom:12px; }
+      .mobile-directory-home { display:none; }
       .mobile-home-card {
         border:1px solid rgba(16,24,32,.08);
         border-radius:18px;
@@ -262,26 +281,39 @@
         font-weight:800;
         text-align:left;
       }
-      body[data-mobile-view]:not([data-mobile-view="home"]) .mobile-back { display:block; }
+      body[data-mobile-view]:not([data-mobile-view="home"]):not([data-mobile-view="browse"]) .mobile-back { display:block; }
       body[data-mobile-view]:not([data-mobile-view="home"]) .mobile-directory-home { display:none; }
       body[data-mobile-view="home"] .directory-grid,
       body[data-mobile-view="home"] .member-directory { display:none; }
       body[data-mobile-view="household"] [data-mobile-section]:not([data-mobile-section~="household"]),
+      body[data-mobile-view="add"] [data-mobile-section]:not([data-mobile-section~="setup"]):not([data-mobile-section~="family"]),
       body[data-mobile-view="browse"] [data-mobile-section]:not([data-mobile-section~="browse"]) { display:none; }
       body[data-mobile-view="household"] .member-directory { display:none; }
+      body[data-mobile-view="add"] .member-directory { display:none; }
       body[data-mobile-view="browse"] .directory-grid { display:none; }
       .directory-grid, .form-grid { grid-template-columns:1fr; }
       .directory-tools, .skills-toolbar { grid-template-columns:1fr; }
-      .member-directory-intro { padding:18px 16px 15px; }
-      .member-directory-intro h2 { font-size:29px; }
+      .member-directory-intro { padding:5px 2px 12px; border:0; background:transparent; }
+      .member-directory-intro .panel-kicker { display:none; }
+      .member-directory-intro h2 { margin:0; font-size:25px; }
+      .member-directory-intro .privacy-reminder { margin:9px 0 0; border-radius:12px; font-size:11px; }
       .directory-tools { grid-template-columns:1fr; padding:16px 16px 0; }
+      .directory-tools { display:grid; grid-template-columns:minmax(0,1fr) 92px; gap:8px; padding:0 0 10px; }
+      .directory-tools label:first-child { grid-column:1/-1; }
+      .directory-tools label { gap:5px; font-size:11px; color:var(--muted); }
+      .directory-tools input, .directory-tools select { min-height:44px; border-radius:12px; background:#fff; }
+      .directory-tools .btn { min-height:44px; border-radius:12px; }
+      .directory-browse-note { padding:0 2px 10px !important; font-size:11px; }
       .directory-tabs { margin:14px 16px 0; }
       .alphabet { margin:12px 16px 14px; }
-      .member-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; padding:0 16px 18px; }
-      .member-card { grid-template-rows:128px auto; min-height:216px; border-radius:16px; }
-      .member-card > span:last-child { padding:12px; }
-      .member-card strong { font-size:18px; }
-      .member-card small { font-size:11px; }
+      .member-grid { grid-template-columns:1fr; gap:10px; padding:0 0 18px; }
+      .member-card { min-height:0; grid-template-columns:68px minmax(0,1fr); grid-template-rows:68px; align-items:center; gap:12px; border-radius:16px; padding:11px; }
+      .member-card:hover, .member-card:focus-visible { transform:none; }
+      .member-card .member-photo { width:68px; height:68px; border-radius:50%; font-size:24px; }
+      .member-card.household-card .member-photo { border-radius:50%; }
+      .member-card > span:last-child { padding:0 8px 0 0; }
+      .member-card strong { font-size:21px; }
+      .member-card small { margin-top:5px; font-size:11px; line-height:1.35; }
       .panel {
         border-radius:18px;
         padding:14px;
@@ -302,6 +334,52 @@
       .alphabet { flex-wrap:nowrap; overflow:auto; padding-bottom:4px; }
       .alphabet button { flex:0 0 auto; }
       .member-directory { margin-bottom:12px; }
+      .member-directory { border:0; padding:0; overflow:visible; background:transparent; box-shadow:none; }
+      .member-directory > .actions { padding:0 0 18px; }
+      .member-directory > .profile-pane { padding:0; }
+      .profile-pane .mini-card { border:0; border-radius:0; padding:7px 2px 24px; background:transparent; }
+      .profile-pane .profile-head { display:flex; flex-direction:column; text-align:center; }
+      .profile-pane .profile-head .member-photo { width:108px; height:108px; border-radius:50%; }
+      .profile-pane .profile-head h2 { margin:7px 0 4px; font-family:"Cormorant Garamond",Georgia,serif; font-size:30px; }
+      .profile-pane .profile-meta { justify-content:center; font-size:12px; }
+      .profile-pane .member-grid { margin-top:16px; }
+      .directory-contact-reveal { width:100%; margin-top:14px; border:1px solid rgba(21,58,91,.18); border-radius:12px; padding:12px; background:#eef4f7; color:#153a5b; font:inherit; font-weight:700; }
+      body.directory-profile-open .directory-tools,
+      body.directory-profile-open .directory-browse-note,
+      body.directory-profile-open .directory-tabs,
+      body.directory-profile-open .alphabet,
+      body.directory-profile-open #memberResults,
+      body.directory-profile-open #memberLoadMore,
+      body.directory-profile-open .member-directory-intro { display:none; }
+      .directory-mobile-nav {
+        position:fixed;
+        z-index:45;
+        left:0;
+        right:0;
+        bottom:0;
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        border-top:1px solid rgba(16,24,32,.1);
+        background:rgba(255,255,255,.97);
+        box-shadow:0 -10px 28px rgba(6,21,34,.1);
+        backdrop-filter:blur(15px);
+      }
+      .directory-mobile-nav button {
+        appearance:none;
+        display:flex;
+        min-height:62px;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:3px;
+        border:0;
+        background:transparent;
+        color:#697681;
+        font:700 10px/1.1 "DM Sans",Arial,sans-serif;
+      }
+      .directory-mobile-nav svg { width:20px; height:20px; }
+      .directory-mobile-nav button[aria-current="page"] { color:#153a5b; }
+      .directory-mobile-nav button[aria-current="page"] svg { color:#b88a3d; }
       .directory-modal { align-items:end; padding:0; }
       .directory-modal-card { width:100%; max-height:88vh; border-radius:24px 24px 0 0; padding:18px 14px calc(18px + env(safe-area-inset-bottom)); }
     }
@@ -318,6 +396,10 @@
       <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg> Account settings</a></div>
     </aside>
     <main class="directory-main">
+      <header class="directory-mobile-header">
+        <div class="directory-mobile-brand"><span class="directory-mobile-cross" aria-hidden="true">☩</span><h1>My AGAPAY Directory</h1></div>
+        <p><span id="mobileDirectoryParish">Your parish</span> · <span id="mobileDirectoryCount">Directory</span></p>
+      </header>
       <section class="directory-top cal-hero myagapay-page-hero" aria-labelledby="directoryHeroTitle">
         <div class="cal-hero-inner">
           <div class="cal-hero-eyebrow">Parish life in one place</div>
@@ -333,7 +415,7 @@
       <div id="directoryNotice" class="notice" hidden></div>
 
       <section class="mobile-directory-home" id="mobileDirectoryHome" aria-label="Directory home"></section>
-      <button class="mobile-back" type="button" data-mobile-target="home">Back to Directory Home</button>
+      <button class="mobile-back" type="button" data-mobile-target="browse">Back to Directory</button>
 
       <section class="directory-command" aria-label="Directory actions">
         <a class="command-card" href="#profileSummary"><strong>Set Up</strong><span>Your person profile and review status</span></a>
@@ -535,6 +617,11 @@
       </div>
 
     </main>
+    <nav class="directory-mobile-nav" aria-label="Directory navigation">
+      <button type="button" data-mobile-target="browse" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16"/></svg><span>Directory</span></button>
+      <button type="button" data-mobile-target="add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add Household</span></button>
+      <button type="button" data-mobile-target="household"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 11 12 4l9 7v9H3z"/><path d="M9 20v-6h6v6"/></svg><span>Household Info</span></button>
+    </nav>
     <nav class="mobile-tabbar" aria-label="My AGAPAY navigation"></nav>
   </div>
 
@@ -835,8 +922,10 @@
     function setMobileView(view = "home") {
       const next = String(view || "home");
       document.body.dataset.mobileView = next;
+      document.body.classList.remove("directory-profile-open");
       document.querySelectorAll("[data-mobile-target]").forEach((button) => {
         if (button.classList.contains("mobile-action")) button.setAttribute("aria-current", button.dataset.mobileTarget === next ? "true" : "false");
+        if (button.closest(".directory-mobile-nav")) button.setAttribute("aria-current", button.dataset.mobileTarget === next ? "page" : "false");
       });
       if (next !== "home") {
         document.querySelector(".directory-main")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -890,6 +979,8 @@
         const payload = await api(endpoint);
         const result = payload.households || payload.people || payload.results || { items: [] };
         renderMemberCards(result.items || [], append);
+        const visibleCount = Number(result.totalCount ?? result.total ?? result.items?.length ?? 0);
+        document.getElementById("mobileDirectoryCount").textContent = `${visibleCount}${result.nextCursor ? "+" : ""} ${memberState.view}`;
         document.getElementById("directoryBrowseNote").textContent = memberState.query
           ? `Showing approved ${memberState.view} matching “${memberState.query}”.`
           : `Showing all approved ${memberState.view}. Search is optional.`;
@@ -908,6 +999,8 @@
       try {
         const payload = await api("/api/directory/member");
         const directory = payload.directory || {};
+        const parishLabel = directory.parishName || directory.parish?.name || profileState?.parish?.name || profileState?.profile?.parish?.name || "Your parish";
+        document.getElementById("mobileDirectoryParish").textContent = parishLabel;
         if (directory.privacyReminder) document.getElementById("memberDirectoryPrivacy").textContent = directory.privacyReminder;
         renderAlphabet(directory.alphabet?.households || []);
         await loadMemberDirectory();
@@ -993,11 +1086,12 @@
         : "";
       const pane = document.getElementById("memberProfile");
       pane.hidden = false;
+      document.body.classList.add("directory-profile-open");
       pane.innerHTML = `
         <article class="mini-card">
           <div class="profile-head">${photoHtml(profile)}<div><h2>${esc(profile.displayName)}</h2><div class="profile-meta">${[profile.city, profile.household?.displayName].filter(Boolean).map((value) => `<span>${esc(value)}</span>`).join("")}</div></div></div>
           <div class="actions">${householdLink}<button class="btn secondary" type="button" id="closeMemberProfile">Back to Browse</button></div>
-          ${contacts ? `<div class="actions">${contacts}</div>` : ""}
+          ${contacts ? `<button class="directory-contact-reveal" type="button" data-reveal-directory-contact>Reveal contact info</button><div class="actions" data-directory-contacts hidden>${contacts}</div>` : ""}
           ${members}
         </article>`;
       hydrateAuthorizedImages(pane);
@@ -1532,6 +1626,14 @@
     document.getElementById("memberProfile").addEventListener("click", async (event) => {
       if (event.target.id === "closeMemberProfile") {
         document.getElementById("memberProfile").hidden = true;
+        document.body.classList.remove("directory-profile-open");
+        return;
+      }
+      const reveal = event.target.closest("[data-reveal-directory-contact]");
+      if (reveal) {
+        reveal.hidden = true;
+        const contacts = document.querySelector("[data-directory-contacts]");
+        if (contacts) contacts.hidden = false;
         return;
       }
       const card = event.target.closest("[data-type][data-id]");
