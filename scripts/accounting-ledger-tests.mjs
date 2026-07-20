@@ -17,3 +17,4 @@ await test("draft void is allowed and healthy ledger validates",async()=>{const 
 console.log(`${passed} accounting Phase 1C test(s) passed.`);if(process.exitCode)process.exit(process.exitCode);
 await import("./accounting-setup-tests.mjs");
 await import("./accounting-phase2b-tests.mjs");
+await import("./accounting-phase2b2-tests.mjs");

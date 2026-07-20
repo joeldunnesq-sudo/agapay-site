@@ -30,8 +30,16 @@ export function createCloudflareD1ProvisioningAdapter(env) {
     },
     async execute(providerId, sql, params = []) {
       return call(`${base}/${encodeURIComponent(providerId)}/query`, { method: "POST", body: JSON.stringify({ sql, params }) });
+    },
+    async batch(providerId, statements) {
+      return call(`${base}/${encodeURIComponent(providerId)}/query`, { method: "POST", body: JSON.stringify(statements) });
     }
   });
+}
+
+export function createD1DatabaseFacade(adapter, providerId) {
+  const prepare = (sql) => ({ sql, params: [], bind(...params) { this.params = params; return this; }, async all() { const r = await adapter.execute(providerId, sql, this.params); return { results: r?.[0]?.results || r?.results || [] }; }, async first() { return (await this.all()).results[0] || null; }, async run() { const r = await adapter.execute(providerId, sql, this.params); return { success: true, meta: r?.[0]?.meta || r?.meta || {} }; } });
+  return Object.freeze({ prepare, async batch(statements) { if (adapter.batch) return adapter.batch(providerId, statements.map(s => ({ sql: s.sql, params: s.params }))); const out=[]; for(const s of statements) out.push(await s.run()); return out; } });
 }
 
 export function createInMemoryProvisioningAdapter() {

@@ -322,6 +322,8 @@ import {
   handleDirectoryAdmin,
 } from "./handlers/directory-admin.js";
 
+import { handleAccountingLedger } from "./handlers/accounting-ledger.js";
+
 import {
   handleIdentityLogin,
   handleIdentitySession,
@@ -2509,6 +2511,11 @@ export default {
     }
     if (url.pathname === "/api/directory/intake") {
       return handleDirectoryIntake(request, env);
+    }
+    const accountingMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/accounting(?:\/.*)?$/);
+    if (accountingMatch) {
+      const accountingResponse = await handleAccountingLedger(request, env, decodeURIComponent(accountingMatch[1]));
+      if (accountingResponse) return accountingResponse;
     }
     const directoryAdminMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/directory\/admin(?:\/.*)?$/);
     if (directoryAdminMatch) {
