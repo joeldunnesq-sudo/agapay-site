@@ -202,7 +202,7 @@ assert.ok(donorCalendar.includes('class="patronal"') && donorCalendarCss.include
 assert.ok(donorCalendarCss.includes("@media (max-width: 719px)") && donorCalendarCss.includes('aria-label="Saint of the Day"'), "Today mobile layout should lift Saint of the Day above lower cards without changing desktop columns");
 const donorBookstore = await readFile("public/donor/bookstore.html", "utf8");
 assert.ok(donorBookstore.includes("bookstoreHeroTitle") && donorBookstore.includes("PAY FOR YOUR ITEMS AT YOUR PARISH BOOKSTORE"), "Bookstore hero should support parish-specific payment copy");
-assert.ok(donorApp.includes("PAY FOR YOUR ITEMS AT THE ${parishName} BOOKSTORE.") && donorApp.includes("AGAPAY Parish+") && donorApp.includes("Request this feature for my parish"), "Bookstore page should preserve Parish+ unavailable messaging and feature request flow");
+assert.ok(donorApp.includes("Pay for your items at ${bookstoreLabel} bookstore.") && donorApp.includes("AGAPAY Parish+") && donorApp.includes("Request this feature for my parish"), "Bookstore page should preserve sentence-case parish payment copy, Parish+ unavailable messaging, and feature request flow");
 const donorSecurity = await readFile("public/security.js", "utf8");
 assert.ok(donorSecurity.includes("/api/security/config"), "security helper should load Turnstile config from the Worker");
 assert.ok(donorSecurity.includes("agapaySecurityPayload"), "security helper should expose Turnstile payloads to public forms");

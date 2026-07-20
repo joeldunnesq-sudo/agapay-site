@@ -4146,8 +4146,9 @@ async function loadDonorBookstorePage() {
 
   const donor = donorProfile();
   const parishId = donor?.defaultParishId || "";
-  const parishName = donor?.defaultParish?.name || donor?.defaultParishName || "YOUR PARISH";
-  setText("bookstoreHeroTitle", `PAY FOR YOUR ITEMS AT THE ${parishName} BOOKSTORE.`);
+  const parishName = donor?.defaultParish?.name || donor?.defaultParishName || "";
+  const bookstoreLabel = parishName ? `the ${parishName}` : "your parish";
+  setText("bookstoreHeroTitle", `Pay for your items at ${bookstoreLabel} bookstore.`);
   setText("bookstoreHeroDescription", "Shop at your parish bookstore, then use your phone to pay for the items you enter below.");
   const parishInput = document.getElementById("bookstoreParishId");
   if (parishInput) parishInput.value = parishId;
