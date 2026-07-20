@@ -448,79 +448,121 @@
     }
   }
 
+  let directoryAdminTab = 'queue';
+  let directoryBrowseType = 'household';
+  let directoryLastData = null;
+
+  function switchDirectoryAdminTab(tab) {
+    directoryAdminTab = tab;
+    const pane = document.getElementById('directoryAdminPane');
+    if (!pane) return;
+    pane.querySelectorAll('[data-dir-tab]').forEach((btn) => btn.setAttribute('aria-selected', String(btn.dataset.dirTab === tab)));
+    pane.querySelectorAll('[data-dir-panel]').forEach((panel) => { panel.hidden = panel.dataset.dirPanel !== tab; });
+  }
+
+  function directoryQueueBadgeMarkup(count) {
+    const n = Number(count || 0);
+    return n ? `<span class="pdx-dir-tab-count">${n}</span>` : '';
+  }
+
+  // Single browse surface shared by People and Households -- previously
+  // three separate sections (a photo gallery, a People list, a Households
+  // list) covered the same "find a record" task with three different
+  // layouts. One toggle + one search box + one result list replaces all
+  // three.
+  function directoryBrowseRow(record) {
+    return directoryBrowseType === 'household' ? directoryHouseholdRow(record) : directoryPersonRow(record);
+  }
+
+  function renderDirectoryBrowseList(records) {
+    const list = document.getElementById('directoryBrowseList');
+    if (!list) return;
+    const emptyLabel = directoryBrowseType === 'household' ? 'households' : 'people';
+    list.innerHTML = records.length ? records.map(directoryBrowseRow).join('') : directoryEmptyState('No matches', `No ${emptyLabel} match your search.`);
+    hydrateDirectoryAdminImages(list);
+  }
+
+  function switchDirectoryBrowseType(type) {
+    directoryBrowseType = type;
+    const pane = document.getElementById('directoryAdminPane');
+    pane?.querySelectorAll('[data-browse-type]').forEach((btn) => btn.classList.toggle('active', btn.dataset.browseType === type));
+    const input = document.getElementById('directoryBrowseSearch');
+    if (input) input.placeholder = type === 'household' ? 'Search by family name' : 'Search by person name';
+    renderDirectoryBrowseList(type === 'household' ? (directoryLastData?.households || []) : (directoryLastData?.people || []));
+  }
+
+  let directoryBrowseSearchTimer = null;
+  function searchDirectoryBrowse(value) {
+    clearTimeout(directoryBrowseSearchTimer);
+    directoryBrowseSearchTimer = setTimeout(() => runDirectoryBrowseSearch(String(value || '').trim()), 250);
+  }
+  async function runDirectoryBrowseSearch(query) {
+    const list = document.getElementById('directoryBrowseList');
+    if (!list) return;
+    if (!query) { renderDirectoryBrowseList(directoryBrowseType === 'household' ? (directoryLastData?.households || []) : (directoryLastData?.people || [])); return; }
+    list.innerHTML = '<p class="sw-tool-loading">Searching…</p>';
+    try {
+      const endpoint = directoryBrowseType === 'household' ? '/households' : '/people';
+      const res = await fetch(directoryAdminApi(endpoint + '?limit=25&q=' + encodeURIComponent(query)), { headers: authHeaders() });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Search failed.');
+      renderDirectoryBrowseList(payload.people || payload.households || []);
+    } catch (err) {
+      list.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to search.')}</p>`;
+    }
+  }
+
   function renderDirectoryAdminPanel(dashboard, queue, people, households, skills, maintenance) {
     const pane = document.getElementById('directoryAdminPane');
     if (!pane) return;
+    directoryLastData = { queue, people, households, skills, maintenance };
     const metrics = dashboard.metrics || {};
-    const pending = Number(metrics.totalPending || 0);
-    const unclaimed = Number(maintenance.unclaimedPeople || 0);
-    const overdue = Number(maintenance.householdsOverdue || 0);
-    const nextAction = pending
-      ? `Review ${pending} pending item${pending === 1 ? '' : 's'}`
-      : overdue
-        ? `Follow up with ${overdue} overdue household${overdue === 1 ? '' : 's'}`
-        : unclaimed
-          ? `Invite ${unclaimed} unclaimed person record${unclaimed === 1 ? '' : 's'}`
-          : 'Directory is current';
     pane.innerHTML = `
-      <section class="pdx-dir-command-center">
-        <div>
-          <div class="pdx-gv-eyebrow">Directory workflow</div>
-          <h2>${escapeHtml(nextAction)}</h2>
-          <p>Start with the review queue, then inspect people or households when something needs correction. Maintenance tells staff what will confuse parishioners if left unresolved.</p>
-        </div>
-        <div class="pdx-dir-command-actions">
-          <button class="pdx-dir-action-btn pdx-dir-action-primary" type="button" onclick="document.getElementById('directoryReviewDetail')?.scrollIntoView({behavior:'smooth',block:'start'})">Review Queue</button>
-          <button class="pdx-dir-action-btn" type="button" onclick="document.getElementById('directoryGallery')?.scrollIntoView({behavior:'smooth',block:'start'})">View Directory</button>
-          <button class="pdx-dir-action-btn" type="button" onclick="previewDirectoryAdminPrint('/print/directory')">Print Directory</button>
-          <button class="pdx-dir-action-btn" type="button" onclick="document.getElementById('directoryRecordDetail')?.scrollIntoView({behavior:'smooth',block:'start'})">Record Detail</button>
-          <button class="pdx-dir-action-btn" type="button" onclick="loadDirectoryAdminTab(true)">Refresh</button>
-        </div>
-      </section>
       <section class="pdx-kpi-band pdx-dir-kpi-band">
         ${directoryMetric('Pending', metrics.totalPending, '<path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>')}
         ${directoryMetric('Unassigned', metrics.unassigned, '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>')}
         ${directoryMetric('Assigned to me', metrics.assignedToMe, '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>')}
         ${directoryMetric('Oldest age', (metrics.oldestPendingAgeDays || 0) + 'd', '<path d="M3 3v18h18"/><path d="M18.7 8 12 14.7 8.7 11.3 3 17"/>')}
       </section>
-      <section class="pdx-dir-gallery-section" id="directoryGallery">
-        <div class="pdx-dir-gallery-head">
-          <div><span class="pdx-dir-review-kicker">Parish family</span><h2>Directory at a glance</h2><p>Browse every household visually. Open a card to see its members, family photo, administrators, and publication status.</p></div>
-          <label class="pdx-dir-gallery-search">Find a household<input type="search" placeholder="Start typing a family name" oninput="filterDirectoryAdminGallery(this.value)" /></label>
-        </div>
-        <div class="pdx-dir-gallery" id="directoryGalleryCards">${directoryAdminGallery(households)}</div>
-      </section>
-      <div id="directoryReviewDetail" class="pdx-dir-review-detail" aria-live="polite"></div>
-      <div id="directoryRecordDetail" class="pdx-dir-review-detail" aria-live="polite"></div>
-      <div class="pdx-dir-grid">
+      <div class="pdx-dir-tabs" role="tablist" aria-label="Directory sections">
+        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="queue" aria-selected="true" onclick="switchDirectoryAdminTab('queue')">Review Queue ${directoryQueueBadgeMarkup(metrics.totalPending)}</button>
+        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="directory" aria-selected="false" onclick="switchDirectoryAdminTab('directory')">Directory</button>
+        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="tools" aria-selected="false" onclick="switchDirectoryAdminTab('tools')">Tools</button>
+      </div>
+
+      <div class="pdx-dir-tab-panel" data-dir-panel="queue">
         <section class="pdx-panel pdx-dir-panel-queue">
           <div class="pdx-panel-header">
             <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>Review Queue</div>
             <button class="pdx-link-btn" type="button" onclick="loadDirectoryAdminTab(true)">Refresh</button>
           </div>
           <div class="pdx-dir-row-list">
-            ${queue.length ? queue.slice(0, 10).map(directoryQueueRow).join('') : directoryEmptyState('All caught up', 'No directory review items are waiting.')}
+            ${queue.length ? queue.slice(0, 25).map(directoryQueueRow).join('') : directoryEmptyState('All caught up', 'No directory review items are waiting.')}
           </div>
+          ${queue.length > 25 ? `<p class="section-note">Showing the oldest 25 of ${queue.length} pending items.</p>` : ''}
         </section>
+        <div id="directoryReviewDetail" class="pdx-dir-review-detail" aria-live="polite"></div>
+      </div>
+
+      <div class="pdx-dir-tab-panel" data-dir-panel="directory" hidden>
         <section class="pdx-panel">
           <div class="pdx-panel-header">
-            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>People</div>
+            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8"/><path d="M8 13h5"/><circle cx="17" cy="13" r="1"/></svg></div>Directory</div>
+            <div class="pdx-dir-browse-toggle">
+              <button type="button" class="active" data-browse-type="household" onclick="switchDirectoryBrowseType('household')">Households</button>
+              <button type="button" data-browse-type="person" onclick="switchDirectoryBrowseType('person')">People</button>
+            </div>
           </div>
-          <label class="pdx-dir-panel-search">Find a person<input type="search" id="directoryPeopleSearch" placeholder="Search by name" oninput="searchDirectoryPeople(this.value)" /></label>
-          <p class="section-note" id="directoryPeopleNote">Open a person to see household links, publication status, contacts, and notes.</p>
-          <div class="pdx-dir-row-list" id="directoryPeopleList">
-            ${people.length ? people.map(directoryPersonRow).join('') : directoryEmptyState('No records yet', 'No people records available.')}
-          </div>
-        </section>
-        <section class="pdx-panel">
-          <div class="pdx-panel-header">
-            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8"/><path d="M8 13h5"/><circle cx="17" cy="13" r="1"/></svg></div>Households</div>
-          </div>
-          <p class="section-note">Open a household to confirm members, admins, publication state, and family-owned records.${households.length >= 100 ? ' Showing the first 100 — use the search above the directory gallery to find one not listed here.' : ''}</p>
-          <div class="pdx-dir-row-list">
-            ${households.length ? households.map(directoryHouseholdRow).join('') : directoryEmptyState('No households yet', 'Households appear after staff links people into household records. Use them to confirm household admins, children, addresses, and household publication.')}
+          <label class="pdx-dir-panel-search">Search<input type="search" id="directoryBrowseSearch" placeholder="Search by family name" oninput="searchDirectoryBrowse(this.value)" /></label>
+          <p class="section-note">Open a record to confirm members, admins, publication state, contacts, and notes.${households.length >= 100 ? ' Showing the first 100 households — search above to find one not listed here.' : ''}</p>
+          <div class="pdx-dir-row-list" id="directoryBrowseList">
+            ${households.length ? households.map(directoryHouseholdRow).join('') : directoryEmptyState('No households yet', 'Households appear after staff links people into household records.')}
           </div>
         </section>
+        <div id="directoryRecordDetail" class="pdx-dir-review-detail" aria-live="polite"></div>
+      </div>
+
+      <div class="pdx-dir-tab-panel" data-dir-panel="tools" hidden>
         <section class="pdx-panel pdx-dir-panel-skills">
           <div class="pdx-panel-header">
             <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3 6.5 7 1-5 5 1.5 7L12 18l-6.5 3.5L7 14.5l-5-5 7-1z"/></svg></div>Skills &amp; Service</div>
@@ -551,6 +593,8 @@
           ${directoryMaintenanceActions(maintenance.actions || {})}
         </section>
       </div>`;
+    switchDirectoryAdminTab(directoryAdminTab);
+    switchDirectoryBrowseType(directoryBrowseType);
     hydrateDirectoryAdminImages(pane);
   }
 
@@ -877,31 +921,6 @@
     </div>`;
   }
 
-  let directoryPeopleSearchTimer = null;
-  function searchDirectoryPeople(value) {
-    clearTimeout(directoryPeopleSearchTimer);
-    directoryPeopleSearchTimer = setTimeout(() => runDirectoryPeopleSearch(String(value || '').trim()), 250);
-  }
-  async function runDirectoryPeopleSearch(query) {
-    const list = document.getElementById('directoryPeopleList');
-    const note = document.getElementById('directoryPeopleNote');
-    if (!list) return;
-    list.innerHTML = '<p class="sw-tool-loading">Searching…</p>';
-    try {
-      const res = await fetch(directoryAdminApi('/people?limit=25' + (query ? '&q=' + encodeURIComponent(query) : '')), { headers: authHeaders() });
-      const payload = await res.json().catch(() => ({}));
-      if (!res.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Search failed.');
-      const people = payload.people || [];
-      list.innerHTML = people.length ? people.map(directoryPersonRow).join('') : directoryEmptyState('No matches', query ? `No people match "${query}".` : 'No people records available.');
-      if (note) note.textContent = query
-        ? `Showing ${people.length} match${people.length === 1 ? '' : 'es'} for "${query}".`
-        : 'Open a person to see household links, publication status, contacts, and notes.';
-      hydrateDirectoryAdminImages(list);
-    } catch (err) {
-      list.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to search people.')}</p>`;
-    }
-  }
-
   function directoryHouseholdRow(household) {
     const count = household.memberCount || 0;
     const admins = household.administratorCount || household.adminCount || 0;
@@ -927,21 +946,6 @@
       <div class="pdx-dir-row-copy"><div class="pdx-dir-row-title">${escapeHtml(label)}</div>${help ? `<div class="pdx-dir-row-meta">${escapeHtml(help)}</div>` : ''}</div>
       <div class="pdx-dir-row-side"><span class="pdx-dir-badge ${alertIfPositive && numeric > 0 ? 'urgent' : 'count'}">${escapeHtml(numeric)}</span></div>
     </div>`;
-  }
-
-  function directoryAdminGallery(households = []) {
-    if (!households.length) return directoryEmptyState('No households yet', 'Households will appear here as parish records are created.');
-    return households.map((household) => `<button class="pdx-dir-gallery-card" type="button" data-directory-gallery-name="${escapeAttr(String(household.displayName || '').toLowerCase())}" onclick="openDirectoryHousehold('${escapeAttr(household.id)}')">
-      <span class="pdx-dir-gallery-photo">${directoryAdminPhotoImg(household.photo, 'pdx-dir-gallery-img', 'Family photo for ' + (household.displayName || 'household'))}</span>
-      <span class="pdx-dir-gallery-copy"><strong>${escapeHtml(household.displayName || 'Unnamed household')}</strong><small>${escapeHtml((household.memberCount || 0) + ' member' + (household.memberCount === 1 ? '' : 's'))}${household.administratorCount ? ' · ' + escapeHtml(household.administratorCount + ' admin' + (household.administratorCount === 1 ? '' : 's')) : ''}</small></span>
-    </button>`).join('');
-  }
-
-  function filterDirectoryAdminGallery(value = '') {
-    const query = String(value || '').trim().toLowerCase();
-    document.querySelectorAll('[data-directory-gallery-name]').forEach((card) => {
-      card.hidden = Boolean(query) && !String(card.dataset.directoryGalleryName || '').includes(query);
-    });
   }
 
   function directoryMaintenanceActions(actions = {}) {
