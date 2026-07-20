@@ -14,3 +14,17 @@
   Strict-Transport-Security: max-age=15552000
   Permissions-Policy: geolocation=(), microphone=(), camera=(self), payment=(self)
   Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'
+
+# The default max-age=0/must-revalidate above has no ETag/Last-Modified
+# validator on these HTML files, which some mobile WebViews (notably
+# iOS home-screen PWAs) treat leniently and serve stale from local disk
+# cache despite must-revalidate. These app-shell paths are already
+# treated as network-only/uncacheable by service-worker.js -- make the
+# HTTP layer say the same thing explicitly so no cache (browser, carrier
+# proxy, CDN edge) is tempted to reuse an old page after a deploy.
+/myagapay/*
+  Cache-Control: no-store
+/donor/*
+  Cache-Control: no-store
+/parish/*
+  Cache-Control: no-store
