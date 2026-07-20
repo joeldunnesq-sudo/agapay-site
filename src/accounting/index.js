@@ -18,3 +18,4 @@ export * from "./setup/index.js";
 export * from "./reports/index.js";
 export * from "./integrations/index.js";
 export * from "./reconciliation/index.js";
+export * from "./payables/index.js";
