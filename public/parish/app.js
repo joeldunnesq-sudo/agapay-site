@@ -123,8 +123,10 @@
     if (panel) panel.classList.add('active');
     if (nav)   nav.classList.add('active');
     if (mobileNav) mobileNav.classList.add('active');
+    document.querySelector('.app')?.classList.toggle('directory-tab-active', tab === 'directory');
+    document.querySelector('.content')?.classList.toggle('directory-tab-active', tab === 'directory');
     activeTab = tab;
-    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship', sacraments:'Sacraments & Services', directory:'Directory Operations', bookstore:'Bookstore', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship', sacraments:'Sacraments & Services', directory:'Parish Directory', bookstore:'Bookstore', qr:'QR Code & Giving Link' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length) loadGivingHistory();
@@ -480,7 +482,7 @@
     const list = document.getElementById('directoryBrowseList');
     if (!list) return;
     list.innerHTML = records.length
-      ? records.map((record) => directoryCanonicalHouseholdRow(record, directoryLastData?.print?.households || [])).join('')
+      ? records.map((record) => directoryCanonicalHouseholdRow(record, directoryLastData?.print?.households || [], directoryLastData?.skills?.listings || [])).join('')
       : `<tr><td colspan="4">${directoryEmptyState('No matches', 'No households match your search.')}</td></tr>`;
     hydrateDirectoryAdminImages(list);
   }
@@ -534,12 +536,6 @@
           <button class="pdx-dir-print-btn" type="button" onclick="previewDirectoryAdminPrint('/print/directory')"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Print Directory</button>
         </div>
       </section>
-      <div class="pdx-dir-tabs" role="tablist" aria-label="Directory sections">
-        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="directory" aria-selected="true" onclick="switchDirectoryAdminTab('directory')">Directory</button>
-        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="queue" aria-selected="false" onclick="switchDirectoryAdminTab('queue')">Review Queue ${directoryQueueBadgeMarkup(metrics.totalPending)}</button>
-        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="tools" aria-selected="false" onclick="switchDirectoryAdminTab('tools')">Maintenance &amp; Skills</button>
-      </div>
-
       <div class="pdx-dir-tab-panel" data-dir-panel="directory">
         <section class="pdx-dir-privacy-bar">
           <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -551,12 +547,18 @@
         </section>
         <div class="pdx-dir-table-wrap">
           <table class="pdx-dir-table">
-            <thead><tr><th>Household</th><th>Members</th><th>Directory status</th><th>Parish tools</th></tr></thead>
-            <tbody id="directoryBrowseList">${households.length ? households.map((household) => directoryCanonicalHouseholdRow(household, publishedMembers)).join('') : `<tr><td colspan="4">${directoryEmptyState('No households yet', 'Households appear here after families join the parish directory.')}</td></tr>`}</tbody>
+            <thead><tr><th>Household</th><th>Members &amp; Namedays</th><th>Contact &amp; Parishioner Visibility</th><th>Skills to Serve</th></tr></thead>
+            <tbody id="directoryBrowseList">${households.length ? households.map((household) => directoryCanonicalHouseholdRow(household, publishedMembers, skills.listings || [])).join('') : `<tr><td colspan="4">${directoryEmptyState('No households yet', 'Households appear here after families join the parish directory.')}</td></tr>`}</tbody>
           </table>
         </div>
         <p class="pdx-dir-canonical-note">Household information is entered by families in My AGAPAY and appears here for parish office use.</p>
         <div id="directoryRecordDetail" class="pdx-dir-review-detail" aria-live="polite"></div>
+      </div>
+
+      <div class="pdx-dir-tabs" role="tablist" aria-label="Parish directory tools">
+        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="directory" aria-selected="true" onclick="switchDirectoryAdminTab('directory')">Church Directory</button>
+        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="queue" aria-selected="false" onclick="switchDirectoryAdminTab('queue')">Review Queue ${directoryQueueBadgeMarkup(metrics.totalPending)}</button>
+        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="tools" aria-selected="false" onclick="switchDirectoryAdminTab('tools')">Maintenance &amp; Skills</button>
       </div>
 
       <div class="pdx-dir-tab-panel" data-dir-panel="queue">
@@ -608,16 +610,20 @@
     hydrateDirectoryAdminImages(pane);
   }
 
-  function directoryCanonicalHouseholdRow(household, publishedMembers = []) {
+  function directoryCanonicalHouseholdRow(household, publishedMembers = [], skillListings = []) {
     const name = household.displayName || 'Household';
     const members = publishedMembers.filter((row) => String(row.display_name || row.displayName || '') === String(name)).map((row) => row.preferred_name || row.preferredName).filter(Boolean);
     const count = Number(household.memberCount || members.length || 0);
     const pending = Number(household.pendingRequestCount || 0);
+    const householdSkills = skillListings.filter((item) => {
+      const householdName = item.household?.displayName || item.person?.householdDisplayName || item.householdDisplayName || '';
+      return String(householdName) === String(name);
+    }).map((item) => item.displayLabel || item.skill?.name).filter(Boolean);
     return `<tr class="pdx-dir-table-row" onclick="openDirectoryHousehold('${escapeAttr(household.id)}')" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDirectoryHousehold('${escapeAttr(household.id)}');}">
       <td><div class="pdx-dir-table-household">${directoryAdminPhotoImg(household.photo, 'pdx-dir-table-photo', 'Family photo for ' + name)}<div><strong>${escapeHtml(name)}</strong><span>${count} member${count === 1 ? '' : 's'}</span></div></div></td>
       <td><div class="pdx-dir-table-members">${members.length ? members.slice(0, 4).map((member) => `<span>${escapeHtml(member)}</span>`).join('') : `<span>${count ? count + ' household member' + (count === 1 ? '' : 's') : 'No published members'}</span>`}${members.length > 4 ? `<small>+${members.length - 4} more</small>` : ''}</div></td>
-      <td><span class="pdx-dir-table-status ${pending ? 'pending' : ''}">${pending ? pending + ' pending review' : 'Current'}</span><small>${household.photo ? 'Family photo ' + escapeHtml((household.photo.lifecycleStatus || 'available').replace(/_/g, ' ')) : 'No family photo'}</small></td>
-      <td><button class="pdx-dir-action-btn" type="button" onclick="event.stopPropagation();openDirectoryHousehold('${escapeAttr(household.id)}')">View household</button></td>
+      <td><span class="pdx-dir-table-status ${pending ? 'pending' : ''}">${pending ? pending + ' pending review' : 'Approved preferences'}</span><small>Open the household to review contact visibility.</small><button class="pdx-dir-table-link" type="button" onclick="event.stopPropagation();openDirectoryHousehold('${escapeAttr(household.id)}')">View household</button></td>
+      <td><div class="pdx-dir-table-skills">${householdSkills.length ? householdSkills.slice(0, 3).map((skill) => `<span>${escapeHtml(skill)}</span>`).join('') : '<small>No published skills</small>'}</div></td>
     </tr>`;
   }
 

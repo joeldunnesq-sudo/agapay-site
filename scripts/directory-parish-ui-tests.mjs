@@ -12,7 +12,9 @@ const checks = [
   ['export and working print actions remain wired', app.includes("downloadDirectoryAdminExport('/exports/published-adults.csv')") && app.includes("previewDirectoryAdminPrint('/print/directory')")],
   ['households lead with photos and members', app.includes('pdx-dir-table-photo') && app.includes('pdx-dir-table-members')],
   ['review queue and maintenance remain available', app.includes('Review Queue') && app.includes('Maintenance &amp; Skills')],
-  ['AGAPAY navy and gold style the canonical header', css.includes('background: linear-gradient(145deg, #061522') && css.includes('color: #e8c879')],
+  ['the uploaded four-column parish table is preserved', app.includes('Members &amp; Namedays') && app.includes('Contact &amp; Parishioner Visibility') && app.includes('Skills to Serve')],
+  ['the Directory bypasses the stale empty dashboard wrapper', app.includes("classList.toggle('directory-tab-active'") && css.includes('.content.directory-tab-active > .detail-wrap { display: none; }') && css.includes('.app.directory-tab-active > .sidebar { display: none; }')],
+  ['AGAPAY navy and gold style the actions', css.includes('background: #061522') && css.includes('var(--gold)')],
   ['AGAPAY serif and sans typography are used', css.includes('var(--serif)') && css.includes('var(--sans)')]
 ];
 

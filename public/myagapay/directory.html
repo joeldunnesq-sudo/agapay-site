@@ -194,10 +194,10 @@
         color:#f6f1e8;
         box-shadow:0 9px 28px rgba(6,21,34,.2);
       }
-      .directory-mobile-brand { display:flex; align-items:baseline; gap:9px; }
-      .directory-mobile-cross { color:#e8c879; font-family:Georgia,serif; font-size:22px; line-height:1; }
-      .directory-mobile-header h1 { margin:0; font-family:"Cormorant Garamond",Georgia,serif; font-size:27px; font-weight:600; line-height:1; }
-      .directory-mobile-header p { margin:6px 0 0 31px; color:rgba(246,241,232,.72); font-size:12px; line-height:1.35; }
+      .directory-mobile-brand { display:flex; align-items:center; gap:10px; }
+      .directory-mobile-logo { width:34px; height:34px; object-fit:contain; }
+      .directory-mobile-wordmark { color:#f6f1e8; font-family:"Cormorant Garamond",Georgia,serif; font-size:27px; font-weight:600; letter-spacing:.04em; line-height:1; }
+      .directory-mobile-header p { margin:6px 0 0 44px; color:rgba(246,241,232,.72); font-size:12px; line-height:1.35; }
       .directory-top.myagapay-page-hero { display:none !important; }
       body.donor-directory-page .mobile-tabbar { display:none !important; }
       .donor-directory-page .directory-shell {
@@ -380,6 +380,8 @@
       .directory-mobile-nav svg { width:20px; height:20px; }
       .directory-mobile-nav button[aria-current="page"] { color:#153a5b; }
       .directory-mobile-nav button[aria-current="page"] svg { color:#b88a3d; }
+      .directory-nav-avatar { display:grid; place-items:center; width:22px; height:22px; overflow:hidden; border:1px solid rgba(21,58,91,.18); border-radius:50%; background:#edf2f0; color:#153a5b; font:800 8px "DM Sans",Arial,sans-serif; }
+      .directory-nav-avatar img { width:100%; height:100%; object-fit:cover; }
       .directory-modal { align-items:end; padding:0; }
       .directory-modal-card { width:100%; max-height:88vh; border-radius:24px 24px 0 0; padding:18px 14px calc(18px + env(safe-area-inset-bottom)); }
     }
@@ -397,7 +399,7 @@
     </aside>
     <main class="directory-main">
       <header class="directory-mobile-header">
-        <div class="directory-mobile-brand"><span class="directory-mobile-cross" aria-hidden="true">☩</span><h1>My AGAPAY Directory</h1></div>
+        <div class="directory-mobile-brand"><img class="directory-mobile-logo" src="/mark.png" alt="" /><span class="directory-mobile-wordmark">AGAPAY</span></div>
         <p><span id="mobileDirectoryParish">Your parish</span> · <span id="mobileDirectoryCount">Directory</span></p>
       </header>
       <section class="directory-top cal-hero myagapay-page-hero" aria-labelledby="directoryHeroTitle">
@@ -618,9 +620,9 @@
 
     </main>
     <nav class="directory-mobile-nav" aria-label="Directory navigation">
+      <button type="button" id="mobileDirectoryBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Back</span></button>
       <button type="button" data-mobile-target="browse" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16"/></svg><span>Directory</span></button>
-      <button type="button" data-mobile-target="add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add Household</span></button>
-      <button type="button" data-mobile-target="household"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 11 12 4l9 7v9H3z"/><path d="M9 20v-6h6v6"/></svg><span>Household Info</span></button>
+      <button type="button" data-mobile-target="household"><span class="directory-nav-avatar" id="mobileHouseholdAvatar" aria-hidden="true">AG</span><span>Household</span></button>
     </nav>
     <nav class="mobile-tabbar" aria-label="My AGAPAY navigation"></nav>
   </div>
@@ -632,6 +634,19 @@
     let profileState = null;
     let memberState = { view: "households", letter: "", cursor: "", query: "", sort: "az", loading: false };
     let memberSearchTimer = 0;
+    function goBackFromDirectory() {
+      if (window.history.length > 1) window.history.back();
+      else window.location.href = "/myagapay";
+    }
+    function updateMobileHouseholdAvatar(household, asset = null) {
+      const avatar = document.getElementById("mobileHouseholdAvatar");
+      if (!avatar) return;
+      const url = mediaPreviewUrl(asset, "household");
+      avatar.innerHTML = url
+        ? `<img data-auth-src="${esc(url)}" alt="" />`
+        : esc(initials(household?.displayName || donorProfile().householdName || "AG"));
+      hydrateAuthorizedImages(avatar);
+    }
     let skillCatalog = [];
     const PHOTO_UPLOAD_TIMEOUT_MS = 90000;
     const PHOTO_MAX_EDGE = 1800;
@@ -1210,6 +1225,7 @@
       const payload = await api(`/api/directory/media/current?ownerType=household&ownerId=${encodeURIComponent(household.id)}`).catch(() => ({ assets: [] }));
       const asset = (payload.assets || [])[0];
       window.currentDirectoryHouseholdPhoto = asset || null;
+      updateMobileHouseholdAvatar(household, asset);
       document.getElementById("householdPhotoSummary").innerHTML = renderMediaSummary(asset, "household");
       document.getElementById("removeHouseholdPhoto").hidden = !asset;
       hydrateAuthorizedImages(document.getElementById("householdPhotoSummary"));
@@ -1547,6 +1563,7 @@
       showNotice("Family photo removed.");
       await loadDirectory();
     });
+    document.getElementById("mobileDirectoryBack").addEventListener("click", goBackFromDirectory);
     document.addEventListener("click", (event) => {
       const target = event.target.closest("[data-mobile-target]");
       if (!target) return;
