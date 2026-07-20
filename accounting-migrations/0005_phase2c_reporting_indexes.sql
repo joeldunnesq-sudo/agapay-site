@@ -1,0 +1,2 @@
+CREATE INDEX IF NOT EXISTS idx_accounting_entries_reporting ON accounting_journal_entries(status,posting_date,accounting_period_id,source_type);
+CREATE INDEX IF NOT EXISTS idx_accounting_lines_reporting ON accounting_journal_lines(account_id,fund_id,journal_entry_id,debit_amount,credit_amount);

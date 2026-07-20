@@ -18,3 +18,4 @@ console.log(`${passed} accounting Phase 1C test(s) passed.`);if(process.exitCode
 await import("./accounting-setup-tests.mjs");
 await import("./accounting-phase2b-tests.mjs");
 await import("./accounting-phase2b2-tests.mjs");
+await import("./accounting-phase2c-tests.mjs");
