@@ -22,3 +22,4 @@ await import("./accounting-phase2c-tests.mjs");
 await import("./accounting-phase2d-tests.mjs");
 await import("./accounting-phase2e-tests.mjs");
 await import("./accounting-phase3a-tests.mjs");
+await import("./accounting-phase3b-tests.mjs");
