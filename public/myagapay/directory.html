@@ -142,6 +142,10 @@
     .nameday-list { display:grid; gap:10px; margin-top:12px; }
     textarea { border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; min-height:62px; resize:vertical; }
     .mobile-directory-home { display:none; }
+    .directory-top.myagapay-page-hero { display:block; margin-bottom:22px; }
+    .directory-top.myagapay-page-hero .directory-title h1 { margin:0 0 8px; color:#F6F1E8; font-family:"Cormorant Garamond", Georgia, serif; font-size:clamp(27px, 4vw, 34px); font-weight:600; line-height:1.12; }
+    .directory-top.myagapay-page-hero .directory-title p { margin:0; max-width:720px; color:rgba(246,241,232,.75); font-size:13px; line-height:1.5; }
+    .directory-top.myagapay-page-hero .status-pill { display:inline-flex; margin-top:14px; border-color:rgba(255,255,255,.12); background:rgba(255,255,255,.08); color:#E8C879; }
     @media (max-width: 860px) {
       body.donor-directory-page {
         background:#f7f3ec;
@@ -172,6 +176,10 @@
         background:#fff;
         box-shadow:0 8px 20px rgba(16,24,32,.06);
       }
+      .directory-top.myagapay-page-hero { display:block; padding:0; border:0; border-radius:22px; background:linear-gradient(160deg, #061522 0%, #0B2130 100%); box-shadow:0 24px 60px rgba(6,21,34,.14); }
+      .directory-top.myagapay-page-hero .directory-title h1 { font-family:"Cormorant Garamond", Georgia, serif; font-size:27px; font-weight:600; }
+      .directory-top.myagapay-page-hero .directory-title p { display:block; }
+      .directory-top.myagapay-page-hero .status-pill { justify-self:auto; }
       .directory-title h1 { font-family:"DM Sans", Arial, sans-serif; font-size:25px; line-height:1.08; font-weight:800; }
       .directory-title p { display:none; }
       .status-pill { justify-self:start; padding:7px 10px; border-radius:999px; background:#eef3f0; color:var(--green); }
@@ -282,13 +290,17 @@
       <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg> Account settings</a></div>
     </aside>
     <main class="directory-main">
-      <div class="directory-top">
-        <div class="directory-title">
-          <h1>My Household Directory</h1>
-          <p>Set up your family profile, choose what the parish may publish, and browse approved parish member information from one place.</p>
+      <section class="directory-top cal-hero myagapay-page-hero" aria-labelledby="directoryHeroTitle">
+        <div class="cal-hero-inner">
+          <div class="cal-hero-eyebrow">Parish life in one place</div>
+          <div class="directory-title cal-today-main">
+            <div class="cal-today-kicker">Directory</div>
+            <h1 id="directoryHeroTitle">My Household Directory</h1>
+            <p>Set up your family profile, choose what the parish may publish, and browse approved parish member information from one place.</p>
+          </div>
+          <span class="status-pill" id="directoryStatus">Loading</span>
         </div>
-        <span class="status-pill" id="directoryStatus">Loading</span>
-      </div>
+      </section>
 
       <div id="directoryNotice" class="notice" hidden></div>
 

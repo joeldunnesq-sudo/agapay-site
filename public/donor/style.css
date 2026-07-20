@@ -5922,6 +5922,28 @@ body.donor-home {
 .cal-chip-row span::before, .cal-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .cal-chip-row span.is-fast, .cal-chip.fast { background: rgba(122,46,46,0.28); color: #F0B8B8; }
 .cal-hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Canonical top card shared by My AGAPAY product pages. Mirrors Today. */
+.myagapay-page-hero {
+  --cal-deep: #061522;
+  --cal-deep-2: #0B2130;
+  --cal-cream: #F6F1E8;
+  --cal-gold: #C8A24A;
+  --cal-gold-bright: #E8C879;
+  --cal-gold-glow: rgba(216,176,88,0.28);
+  --cal-serif: "Cormorant Garamond", Georgia, serif;
+  --cal-shadow-lg: 0 24px 60px rgba(6,21,34,0.14);
+}
+.myagapay-page-hero .cal-hero-inner { padding: 24px 26px 22px; }
+.myagapay-page-hero .cal-hero-eyebrow { margin-bottom: 10px; }
+.myagapay-page-hero .cal-today-title { font-size: clamp(27px, 4vw, 34px); }
+.myagapay-page-hero .cal-today-note { max-width: 720px; margin-bottom: 0; }
+
+@media (max-width: 720px) {
+  .myagapay-page-hero { border-radius: 22px; }
+  .myagapay-page-hero .cal-hero-inner { padding: 22px 20px 20px; }
+  .myagapay-page-hero .cal-today-title { font-size: 27px; }
+}
 .cal-btn { border: 0; border-radius: 10px; padding: 10px 16px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
 .cal-btn-gold { background: linear-gradient(135deg, var(--cal-gold), #B08A38); color: var(--cal-deep); box-shadow: 0 4px 14px rgba(200,162,74,0.3); }
 .cal-btn-ghost-light { background: rgba(255,255,255,0.08); color: var(--cal-cream); border: 1px solid rgba(255,255,255,0.16); }
