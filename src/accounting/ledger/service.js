@@ -101,6 +101,14 @@ export async function validateJournalEntryForPosting(db, { journalEntryId, expec
   if(!period||period.status!=="open"||period.fiscal_status!=="open") issues.push("period_not_open");
   const lock=period && await first(db,"SELECT id FROM accounting_period_locks WHERE accounting_period_id=? AND unlocked_at IS NULL",period.id);
   if(lock) issues.push("period_locked");
+  try {
+    const protection=await first(db,"SELECT state FROM accounting_protective_state WHERE id='primary'");
+    if(protection&&protection.state!=="normal") issues.push(protection.state==="posting_blocked"?"integrity_posting_blocked":"database_read_only");
+  } catch(error) {
+    // Phase 3E is applied independently to existing parish databases. Before that
+    // migration exists, the legacy posting contract remains unchanged.
+    if(!String(error?.message||"").includes("no such table")) throw error;
+  }
   return {ok:issues.length===0,issues,entry,lines,debits,credits,period};
 }
 

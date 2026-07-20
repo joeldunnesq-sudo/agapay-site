@@ -13,7 +13,13 @@ export const ACCOUNTING_EVENT_TYPES = Object.freeze([
   "accounting.support.action",
   "accounting.backup.requested",
   "accounting.restore.validated",
-  "accounting.source_event.received"
+  "accounting.source_event.received",
+  "accounting.integrity.scan.started",
+  "accounting.integrity.scan.completed",
+  "accounting.integrity.critical",
+  "accounting.protective_state.activated",
+  "accounting.protective_state.released",
+  "accounting.recovery.verification.completed"
 ]);
 
 const REDACTED = "[redacted]";

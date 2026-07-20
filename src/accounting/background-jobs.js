@@ -14,6 +14,9 @@ export const ACCOUNTING_JOB_TYPES = Object.freeze({
   ACCOUNTING_BACKUP_EXPORT: "accounting.backup.export",
   ACCOUNTING_RESTORE_VALIDATE: "accounting.restore.validate",
   ACCOUNTING_REPORT_GENERATE: "accounting.report.generate",
+  ACCOUNTING_INTEGRITY_SCAN: "accounting.integrity.scan",
+  ACCOUNTING_RECOVERY_VERIFY: "accounting.recovery.verify",
+  ACCOUNTING_EXPORT_GENERATE: "accounting.export.generate",
   APLOS_IMPORT: "aplos.import"
 });
 
@@ -32,6 +35,9 @@ const JOB_REGISTRY = Object.freeze({
   [ACCOUNTING_JOB_TYPES.ACCOUNTING_BACKUP_EXPORT]: { primitive: ACCOUNTING_JOB_PRIMITIVES.CRON, requiresGateway: true, requiresParish: false, maxAttempts: 3 },
   [ACCOUNTING_JOB_TYPES.ACCOUNTING_RESTORE_VALIDATE]: { primitive: ACCOUNTING_JOB_PRIMITIVES.WORKFLOW, requiresGateway: true, requiresParish: true, maxAttempts: 1 },
   [ACCOUNTING_JOB_TYPES.ACCOUNTING_REPORT_GENERATE]: { primitive: ACCOUNTING_JOB_PRIMITIVES.QUEUE, requiresGateway: true, requiresParish: true, maxAttempts: 3 },
+  [ACCOUNTING_JOB_TYPES.ACCOUNTING_INTEGRITY_SCAN]: { primitive: ACCOUNTING_JOB_PRIMITIVES.WORKFLOW, requiresGateway: true, requiresParish: true, maxAttempts: 3 },
+  [ACCOUNTING_JOB_TYPES.ACCOUNTING_RECOVERY_VERIFY]: { primitive: ACCOUNTING_JOB_PRIMITIVES.WORKFLOW, requiresGateway: true, requiresParish: true, maxAttempts: 1 },
+  [ACCOUNTING_JOB_TYPES.ACCOUNTING_EXPORT_GENERATE]: { primitive: ACCOUNTING_JOB_PRIMITIVES.QUEUE, requiresGateway: true, requiresParish: true, maxAttempts: 3 },
   [ACCOUNTING_JOB_TYPES.APLOS_IMPORT]: { primitive: ACCOUNTING_JOB_PRIMITIVES.WORKFLOW, requiresGateway: true, requiresParish: true, maxAttempts: 1 }
 });
 
