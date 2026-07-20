@@ -20,7 +20,7 @@ export const subscriptionTiers = [
   {
     id: "parish",
     label: "Parish",
-    monthlyCents: 9900,
+    monthlyCents: 19900,
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_MONTHLY",
     description: "Monthly AGAPAY platform subscription for established parishes.",

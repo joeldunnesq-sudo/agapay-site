@@ -5602,6 +5602,7 @@ export async function disputeCommerceOrderFromStripe(env, dispute = {}, phase = 
 }
 
 export function parishDashboardPayload(parishId, registration) {
+  const currentTier = subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration));
   return {
     parishId,
     parishName: registration.parishName,
@@ -5626,7 +5627,10 @@ export function parishDashboardPayload(parishId, registration) {
     subscriptionTier: registration.subscriptionTier || defaultSubscriptionTier(registration),
     subscriptionTierLabel: registration.subscriptionTierLabel || subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration))?.label || "",
     subscriptionStatus: registration.subscriptionStatus || "not_started",
-    subscriptionMonthlyCents: registration.subscriptionMonthlyCents ?? subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration))?.monthlyCents ?? null,
+    // Display the current published tier price. Stored amounts describe an
+    // earlier checkout and must not leave the dashboard advertising a stale
+    // plan price after the catalog changes.
+    subscriptionMonthlyCents: currentTier?.monthlyCents ?? null,
     parishDashboardTokenTemporary: Boolean(registration.parishDashboardTokenTemporary),
     priestEmail: registration.priestEmail || "",
     sacramentPriests: normalizeSacramentPriests(registration),
