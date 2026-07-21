@@ -603,6 +603,24 @@
 @media(max-width:980px){.acct-suite-shell{grid-template-columns:190px minmax(0,1fr)}.acct-suite-header-meta>span{display:none}.acct-suite-stats{grid-template-columns:1fr}.acct-suite-stat{border-left:0;border-top:1px solid var(--line)}.acct-suite-stat:first-child{border-top:0}.acct-suite-overview-grid{grid-template-columns:1fr}}
 @media(max-width:760px){.content.accounting-tab-active>#tab-accounting.active{padding:0}.acct-suite-shell{display:block}.acct-suite-rail{position:sticky;top:0;z-index:8;min-height:0;padding:0;background:var(--deep)}.acct-suite-brand,.acct-suite-rail-label,.acct-suite-tier{display:none}.acct-suite-rail nav{display:flex;overflow-x:auto;padding:8px}.acct-suite-rail nav button{flex:none;min-height:34px}.acct-suite-rail nav button.active{box-shadow:inset 0 -2px 0 var(--gold)}.acct-suite-main{height:auto;min-height:100vh}.acct-suite-header{top:50px;padding:12px 15px}.acct-suite-header h1{font-size:24px}.acct-suite-header-meta{gap:6px}.acct-workspace{padding:17px 14px 85px}.acct-suite-stat strong{font-size:34px}.acct-suite-modules{grid-template-columns:1fr}.acct-suite-overview-grid{gap:20px}.acct-suite-header-meta #accountingParishName{display:none}}
 
+/* Accounting's module switcher is a purpose-built top bar, not a second sidebar. */
+.acct-suite-shell { display:flex; flex-direction:column; height:100vh; min-height:0; }
+.acct-suite-rail { position:relative; z-index:8; display:grid; grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:"brand nav tier"; align-items:center; gap:22px; min-height:0; padding:0 24px; border-bottom:1px solid rgba(232,200,121,.2); background:linear-gradient(100deg,var(--deep) 0%,#0b2637 58%,#102f41 100%); box-shadow:0 8px 24px rgba(6,21,34,.12); }
+.acct-suite-brand { grid-area:brand; min-width:150px; margin:0; padding:16px 0 14px; border:0; }
+.acct-suite-brand strong { font-size:20px; }
+.acct-suite-brand span { margin-top:4px; }
+.acct-suite-rail nav { grid-area:nav; display:flex; align-self:stretch; gap:2px; min-width:0; overflow-x:auto; scrollbar-width:thin; scrollbar-color:rgba(232,200,121,.35) transparent; }
+.acct-suite-rail nav button { position:relative; flex:0 0 auto; justify-content:center; min-height:66px; border-radius:0; padding:10px 12px 8px; white-space:nowrap; }
+.acct-suite-rail nav button:hover { background:rgba(255,255,255,.045); }
+.acct-suite-rail nav button.active { background:rgba(200,162,74,.08); box-shadow:none; }
+.acct-suite-rail nav button.active::after { content:""; position:absolute; right:10px; bottom:0; left:10px; height:3px; border-radius:3px 3px 0 0; background:var(--pdx-gold-bright); }
+.acct-nav-icon { width:auto; font-size:15px; }
+.acct-suite-tier { grid-area:tier; margin:0; padding:0 0 0 18px; border:0; border-left:1px solid rgba(255,255,255,.1); }
+.acct-suite-main { flex:1 1 auto; height:auto; min-height:0; overflow:auto; }
+
+@media(max-width:1120px){.acct-suite-rail{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"brand nav";gap:15px;padding:0 16px}.acct-suite-tier{display:none}.acct-suite-rail nav button{padding-right:10px;padding-left:10px}}
+@media(max-width:760px){.acct-suite-shell{display:flex;height:100vh}.acct-suite-rail{position:relative;top:auto;display:block;padding:0;background:linear-gradient(100deg,var(--deep),#102f41)}.acct-suite-brand{display:block;padding:11px 15px 8px}.acct-suite-brand strong{font-size:18px}.acct-suite-brand span{font-size:8px}.acct-suite-rail nav{display:flex;padding:0 6px}.acct-suite-rail nav button{min-height:43px;padding:7px 10px;font-size:11px}.acct-suite-rail nav button.active{box-shadow:none}.acct-suite-rail nav button.active::after{right:8px;left:8px}.acct-suite-header{top:0}.acct-suite-main{height:auto;min-height:0}}
+
 .pdx-gv-dir-controls { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
 .pdx-gv-search { flex: 1; min-width: 200px; position: relative; }
 .pdx-gv-search input {

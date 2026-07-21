@@ -14,6 +14,7 @@ const phaseERoutes = read("src/handlers/accounting-reconciliation-commerce.js");
 const phaseFRoutes = read("src/handlers/accounting-close.js");
 const dashboard = read("public/parish/dashboard.html");
 const app = read("public/parish/app.js");
+const css = read("public/parish/redesign.css");
 
 assert.match(worker, /handleAccountingSetupReports/);
 assert.match(worker, /handleAccountingAccess/);
@@ -31,7 +32,8 @@ assert.match(dashboard, /id="nav-accounting"/);
 assert.match(dashboard, /id="tab-accounting"/);
 for (const view of ["overview", "ledger", "reports", "payables", "budgets", "banking", "close", "setup", "settings"]) assert.ok(dashboard.includes(`data-accounting-view="${view}"`), `missing Accounting UI view ${view}`);
 for (const nestedView of ["journals", "integrations"]) assert.ok(app.includes(`'${nestedView}'`), `missing nested Accounting UI view ${nestedView}`);
-for (const canonicalFeature of ["acct-suite-shell", "acct-suite-rail", "accountingPageTitle", "accountingFiscalYear"]) assert.ok(dashboard.includes(canonicalFeature), `missing canonical Accounting shell feature ${canonicalFeature}`);
+for (const canonicalFeature of ["acct-suite-shell", "acct-suite-rail", "Accounting suite navigation", "accountingPageTitle", "accountingFiscalYear"]) assert.ok(dashboard.includes(canonicalFeature), `missing canonical Accounting shell feature ${canonicalFeature}`);
+assert.match(css, /purpose-built top bar/, "Accounting module navigation should use the dedicated top bar");
 for (const staffAction of ["renderAccountingAccess", "bootstrapAccountingStaff", "verifyAccountingStaff", "addAccountingStaff", "changeAccountingPin", "lockAccountingWorkspace"]) assert.match(app, new RegExp(`function ${staffAction}\\b`), `missing Accounting staff action ${staffAction}`);
 assert.match(app, /initializeAccounting/);
 assert.match(app, /saveAccountingSettings/);
