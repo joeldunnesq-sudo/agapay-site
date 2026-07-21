@@ -37,6 +37,35 @@ export function createCloudflareD1ProvisioningAdapter(env) {
   });
 }
 
+export function createBoundD1ProvisioningAdapter(env) {
+  let configured = {};
+  try { configured = JSON.parse(String(env.ACCOUNTING_DATABASE_BINDINGS || "{}")); } catch { configured = {}; }
+  const bindings = new Map(Object.entries(configured).filter(([databaseName, bindingName]) => databaseName && typeof bindingName === "string" && env[bindingName]));
+  return Object.freeze({
+    provider: "cloudflare-d1-binding",
+    async findByName(name) {
+      const bindingName = bindings.get(name);
+      return bindingName ? { providerId: bindingName, name } : null;
+    },
+    async execute(bindingName, sql, params = []) {
+      const database = env[bindingName];
+      if (!database) throw new AccountingConfigurationError("The parish accounting database binding is not configured.");
+      return [await database.prepare(sql).bind(...params).all()];
+    },
+    async batch(bindingName, statements) {
+      const database = env[bindingName];
+      if (!database) throw new AccountingConfigurationError("The parish accounting database binding is not configured.");
+      return database.batch(statements.map(({ sql, params = [] }) => database.prepare(sql).bind(...params)));
+    }
+  });
+}
+
+export async function resolveCloudflareD1Adapter(env, databaseName) {
+  const bound = createBoundD1ProvisioningAdapter(env);
+  if (await bound.findByName(databaseName)) return bound;
+  return createCloudflareD1ProvisioningAdapter(env);
+}
+
 export function createD1DatabaseFacade(adapter, providerId) {
   const prepare = (sql) => ({ sql, params: [], bind(...params) { this.params = params; return this; }, async all() { const r = await adapter.execute(providerId, sql, this.params); return { results: r?.[0]?.results || r?.results || [] }; }, async first() { return (await this.all()).results[0] || null; }, async run() { const r = await adapter.execute(providerId, sql, this.params); return { success: true, meta: r?.[0]?.meta || r?.meta || {} }; } });
   return Object.freeze({ prepare, async batch(statements) { if (adapter.batch) return adapter.batch(providerId, statements.map(s => ({ sql: s.sql, params: s.params }))); const out=[]; for(const s of statements) out.push(await s.run()); return out; } });
