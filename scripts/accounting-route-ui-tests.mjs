@@ -34,6 +34,7 @@ for (const view of ["overview", "ledger", "reports", "payables", "budgets", "ban
 for (const nestedView of ["journals", "integrations"]) assert.ok(app.includes(`'${nestedView}'`), `missing nested Accounting UI view ${nestedView}`);
 for (const canonicalFeature of ["acct-suite-shell", "acct-suite-rail", "Accounting suite navigation", "accountingPageTitle", "accountingFiscalYear"]) assert.ok(dashboard.includes(canonicalFeature), `missing canonical Accounting shell feature ${canonicalFeature}`);
 assert.match(css, /purpose-built top bar/, "Accounting module navigation should use the dedicated top bar");
+assert.match(css, /grid-template-columns:repeat\(9,minmax\(0,1fr\)\)/, "desktop Accounting navigation should fit without a slider");
 for (const staffAction of ["renderAccountingAccess", "bootstrapAccountingStaff", "verifyAccountingStaff", "addAccountingStaff", "changeAccountingPin", "lockAccountingWorkspace"]) assert.match(app, new RegExp(`function ${staffAction}\\b`), `missing Accounting staff action ${staffAction}`);
 assert.match(app, /initializeAccounting/);
 assert.match(app, /saveAccountingSettings/);
