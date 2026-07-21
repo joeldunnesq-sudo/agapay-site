@@ -4,6 +4,7 @@ import { handleAccountingSetupReports } from "../src/handlers/accounting-setup-r
 import { handleAccountingPayablesBudgets } from "../src/handlers/accounting-payables-budgets.js";
 import { handleAccountingReconciliationCommerce } from "../src/handlers/accounting-reconciliation-commerce.js";
 import { handleAccountingClose } from "../src/handlers/accounting-close.js";
+import { handleAccountingAccess } from "../src/handlers/accounting-access.js";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const worker = read("src/worker.js");
@@ -15,6 +16,7 @@ const dashboard = read("public/parish/dashboard.html");
 const app = read("public/parish/app.js");
 
 assert.match(worker, /handleAccountingSetupReports/);
+assert.match(worker, /handleAccountingAccess/);
 for (const route of ["/setup", "/setup/initialize", "/settings", "/workspace-reference", "/reports/trial-balance", "/reports/statement-of-activities", "/reports/statement-of-financial-position", "/reports/fund-activity"]) assert.ok(routes.includes(route), `missing Accounting route ${route}`);
 assert.match(routes, /accounting\.view/);
 assert.match(routes, /accounting\.configure/);
@@ -30,6 +32,7 @@ assert.match(dashboard, /id="tab-accounting"/);
 for (const view of ["overview", "ledger", "reports", "payables", "budgets", "banking", "close", "setup", "settings"]) assert.ok(dashboard.includes(`data-accounting-view="${view}"`), `missing Accounting UI view ${view}`);
 for (const nestedView of ["journals", "integrations"]) assert.ok(app.includes(`'${nestedView}'`), `missing nested Accounting UI view ${nestedView}`);
 for (const canonicalFeature of ["acct-suite-shell", "acct-suite-rail", "accountingPageTitle", "accountingFiscalYear"]) assert.ok(dashboard.includes(canonicalFeature), `missing canonical Accounting shell feature ${canonicalFeature}`);
+for (const staffAction of ["renderAccountingAccess", "bootstrapAccountingStaff", "verifyAccountingStaff", "addAccountingStaff", "changeAccountingPin", "lockAccountingWorkspace"]) assert.match(app, new RegExp(`function ${staffAction}\\b`), `missing Accounting staff action ${staffAction}`);
 assert.match(app, /initializeAccounting/);
 assert.match(app, /saveAccountingSettings/);
 assert.match(app, /printAccountingReport/);
@@ -53,5 +56,7 @@ assert.equal(phaseEUnauthorized.headers.get("Cache-Control"), "private, no-store
 const phaseFUnauthorized = await handleAccountingClose(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/close/workspace"), {}, "parish-a");
 assert.equal(phaseFUnauthorized.status, 401);
 assert.equal(phaseFUnauthorized.headers.get("Cache-Control"), "private, no-store");
+const accessUnauthorized = await handleAccountingAccess(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting-access/profiles"), {}, "parish-a");
+assert.equal(accessUnauthorized.status, 401);
 
 console.log("Accounting route and parish UI checks passed.");

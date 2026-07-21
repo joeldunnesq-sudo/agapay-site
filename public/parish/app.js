@@ -149,7 +149,13 @@
 
   // ── AUTH ─────────────────────────────────────────────────
   function authHeaders() {
-    return { 'Accept':'application/json', 'Authorization':'Bearer ' + document.getElementById('parishToken').value.trim() };
+    const headers = { 'Accept':'application/json', 'Authorization':'Bearer ' + document.getElementById('parishToken').value.trim() };
+    const accountingSession = accountingStaffSession();
+    if (accountingSession?.profile?.id && accountingSession?.token) {
+      headers['X-AGAPAY-Accounting-Profile'] = accountingSession.profile.id;
+      headers['X-AGAPAY-Accounting-Token'] = accountingSession.token;
+    }
+    return headers;
   }
 
   function renderDirectoryAdminAccessError(status = 401, message = '') {
@@ -621,6 +627,47 @@
   let accountingJournalEditor = null;
   let accountingPayablesView = 'bills';
   let accountingBudgetReport = null;
+  function accountingStaffSessionKey() { return `agapay.accountingStaff.${currentParish?.parishId || 'unknown'}`; }
+  function accountingStaffSession() {
+    try { const value = JSON.parse(sessionStorage.getItem(accountingStaffSessionKey()) || 'null'); return value?.expiresAt && Date.parse(value.expiresAt) > Date.now() ? value : null; } catch { return null; }
+  }
+  function accountingAccessApi(path = '') { return currentParish?.parishId ? `/api/parish/dashboard/${encodeURIComponent(currentParish.parishId)}/accounting-access${path}` : ''; }
+  async function accountingAccessRequest(path, body) {
+    const response = await fetch(accountingAccessApi(path), { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify(body || {}) });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || 'Unable to update Accounting access.');
+    return payload;
+  }
+  async function renderAccountingAccess(message = '') {
+    const pane = document.getElementById('accountingPane'); if (!pane) return;
+    try {
+      const response = await fetch(accountingAccessApi('/profiles'), { headers:authHeaders() });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || 'The parish session has expired.');
+      const profiles = payload.profiles || [];
+      pane.innerHTML = profiles.length ? `<section class="acct-access-card"><span class="acct-kicker">Protected financial workspace</span><h2>Who is using Accounting?</h2><p>Select your named profile and enter your six-digit PIN. This lets AGAPAY preserve a reliable audit trail without changing the parish’s main login.</p>${message ? `<div class="acct-access-message">${escapeHtml(message)}</div>` : ''}<form onsubmit="verifyAccountingStaff(event)"><label>Staff profile<select name="profileId" required>${profiles.map((profile) => `<option value="${escapeAttr(profile.id)}">${escapeHtml(profile.displayName)} · ${escapeHtml(profile.roleTemplate.replaceAll('_',' '))}</option>`).join('')}</select></label><label>Accounting PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required placeholder="Six digits"></label><button class="acct-primary">Open Accounting</button><span class="acct-form-status"></span></form></section>` : `<section class="acct-access-card"><span class="acct-kicker">Accounting activation</span><h2>Create the first financial administrator</h2><p>The parish login remains unchanged. This named profile identifies the person working in Accounting and protects approvals, checks, and close activity with a separate six-digit PIN.</p>${message ? `<div class="acct-access-message">${escapeHtml(message)}</div>` : ''}<form onsubmit="bootstrapAccountingStaff(event)"><label>Your name<input name="displayName" maxlength="120" required autocomplete="name" placeholder="e.g. Photini Argyris"></label><label>Responsibility<select name="roleTemplate"><option value="treasurer">Treasurer</option><option value="rector">Rector</option><option value="bookkeeper">Bookkeeper</option></select></label><label>Create a six-digit PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required placeholder="Six digits"></label><button class="acct-primary">Activate Accounting access</button><span class="acct-form-status"></span></form></section>`;
+    } catch (error) { pane.innerHTML = accountingEmpty('Accounting access needs attention', error.message); }
+  }
+  async function bootstrapAccountingStaff(event) {
+    event.preventDefault(); const form=event.currentTarget,status=form.querySelector('.acct-form-status'); status.textContent='Creating profile…';
+    try { const raw=Object.fromEntries(new FormData(form)); await accountingAccessRequest('/bootstrap',raw); await renderAccountingAccess('Profile created. Enter your new PIN to continue.'); } catch(error) { status.textContent=error.message; }
+  }
+  async function verifyAccountingStaff(event) {
+    event.preventDefault(); const form=event.currentTarget,status=form.querySelector('.acct-form-status'); status.textContent='Verifying…';
+    try { const payload=await accountingAccessRequest('/verify',Object.fromEntries(new FormData(form))); sessionStorage.setItem(accountingStaffSessionKey(),JSON.stringify({ token:payload.token,expiresAt:payload.expiresAt,profile:payload.profile })); const pane=document.getElementById('accountingPane'); if(pane)pane.dataset.loaded='false'; await loadAccountingTab(true); } catch(error) { status.textContent=error.message; }
+  }
+  async function addAccountingStaff(event) {
+    event.preventDefault(); const form=event.currentTarget,status=form.querySelector('.acct-form-status'); status.textContent='Adding profile…';
+    try { await accountingAccessRequest('/profiles',Object.fromEntries(new FormData(form))); form.reset(); status.textContent='Staff profile added.'; } catch(error) { status.textContent=error.message; }
+  }
+  async function changeAccountingPin(event) {
+    event.preventDefault(); const form=event.currentTarget,status=form.querySelector('.acct-form-status');
+    try { await accountingAccessRequest('/pin',Object.fromEntries(new FormData(form))); form.reset(); status.textContent='Your Accounting PIN has been changed.'; } catch(error) { status.textContent=error.message; }
+  }
+  async function lockAccountingWorkspace() {
+    const session=accountingStaffSession(); if(session) await accountingAccessRequest('/logout',{profileId:session.profile.id}).catch(()=>{});
+    sessionStorage.removeItem(accountingStaffSessionKey()); await renderAccountingAccess('Accounting has been locked.');
+  }
   function accountingApi(path = '') {
     return currentParish?.parishId ? `/api/parish/dashboard/${encodeURIComponent(currentParish.parishId)}/accounting${path}` : '';
   }
@@ -670,7 +717,8 @@
     if (accountingView === 'settings') {
       const settings = accountingData.setup?.settings;
       if (!settings) { pane.innerHTML = accountingEmpty('Accounting settings are not loaded', 'Refresh to load the parish accounting configuration.'); return; }
-      pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Accounting configuration</span><h2>Settings</h2><p>Manage the fiscal calendar and opening-balance policy for this parish.</p></div></div><div class="acct-setup-grid"><section class="acct-card acct-settings"><span class="acct-kicker">Fiscal calendar</span><h2>Parish accounting year</h2><label>Fiscal year starts<select id="accountingFiscalMonth">${Array.from({length:12},(_,index)=>`<option value="${index+1}" ${Number(settings.fiscalYearStartMonth||1)===index+1?'selected':''}>${new Date(2026,index,1).toLocaleString('en-US',{month:'long'})}</option>`).join('')}</select></label><label>Opening balances<select id="accountingOpeningDisposition"><option value="pending" ${settings.openingBalancesDisposition==='pending'?'selected':''}>Still to be entered</option><option value="required" ${settings.openingBalancesDisposition==='required'?'selected':''}>Required</option><option value="deferred" ${settings.openingBalancesDisposition==='deferred'?'selected':''}>Deferred</option><option value="not_applicable" ${settings.openingBalancesDisposition==='not_applicable'?'selected':''}>Not applicable</option><option value="posted" ${settings.openingBalancesDisposition==='posted'?'selected':''}>Posted</option></select></label><button type="button" class="acct-primary" onclick="saveAccountingSettings()">Save settings</button></section><section class="acct-card"><span class="acct-kicker">Connected activity</span><h2>Give &amp; Commerce</h2><p>Manage automatic posting, Stripe clearing, fees, refunds, and Parish Bookstore accounting.</p><button class="acct-primary" onclick="setAccountingView('integrations')">Open integration settings</button></section></div>`; return;
+      const staff=accountingStaffSession()?.profile;
+      pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Accounting configuration</span><h2>Settings</h2><p>Manage the fiscal calendar, staff access, and connected accounting.</p></div><button class="acct-refresh" onclick="lockAccountingWorkspace()">Lock Accounting</button></div><div class="acct-setup-grid"><section class="acct-card acct-settings"><span class="acct-kicker">Fiscal calendar</span><h2>Parish accounting year</h2><label>Fiscal year starts<select id="accountingFiscalMonth">${Array.from({length:12},(_,index)=>`<option value="${index+1}" ${Number(settings.fiscalYearStartMonth||1)===index+1?'selected':''}>${new Date(2026,index,1).toLocaleString('en-US',{month:'long'})}</option>`).join('')}</select></label><label>Opening balances<select id="accountingOpeningDisposition"><option value="pending" ${settings.openingBalancesDisposition==='pending'?'selected':''}>Still to be entered</option><option value="required" ${settings.openingBalancesDisposition==='required'?'selected':''}>Required</option><option value="deferred" ${settings.openingBalancesDisposition==='deferred'?'selected':''}>Deferred</option><option value="not_applicable" ${settings.openingBalancesDisposition==='not_applicable'?'selected':''}>Not applicable</option><option value="posted" ${settings.openingBalancesDisposition==='posted'?'selected':''}>Posted</option></select></label><button type="button" class="acct-primary" onclick="saveAccountingSettings()">Save settings</button></section><section class="acct-card acct-settings"><span class="acct-kicker">Current operator</span><h2>${escapeHtml(staff?.displayName || 'Accounting staff')}</h2><p>${escapeHtml((staff?.roleTemplate || '').replaceAll('_',' '))} · Four-hour protected Accounting session.</p><form onsubmit="changeAccountingPin(event)"><label>New six-digit PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required></label><button class="acct-primary">Change my PIN</button><span class="acct-form-status"></span></form></section><section class="acct-card acct-settings"><span class="acct-kicker">Staff access</span><h2>Add a named profile</h2><form onsubmit="addAccountingStaff(event)"><label>Name<input name="displayName" required maxlength="120"></label><label>Responsibility<select name="roleTemplate"><option value="bookkeeper">Bookkeeper</option><option value="treasurer">Treasurer</option><option value="rector">Rector</option><option value="council_member">Council member</option></select></label><label>Temporary six-digit PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required></label><button class="acct-primary">Add profile</button><span class="acct-form-status"></span></form></section><section class="acct-card"><span class="acct-kicker">Connected activity</span><h2>Give &amp; Commerce</h2><p>Manage automatic posting, Stripe clearing, fees, refunds, and Parish Bookstore accounting.</p><button class="acct-primary" onclick="setAccountingView('integrations')">Open integration settings</button></section></div>`; return;
     }
     if (accountingView === 'setup') {
       const overview = accountingData.setup;
@@ -762,6 +810,7 @@
       const trial = await trialRes.json().catch(() => ({}));
       const activities = await activitiesRes.json().catch(() => ({}));
       const position = await positionRes.json().catch(() => ({}));
+      if (setupRes.status === 401) { await renderAccountingAccess(); return; }
       if (!setupRes.ok) throw new Error(setup.message || setup.error || 'Accounting setup is unavailable.');
       if (!referenceRes.ok) throw new Error(reference.message || reference.error || 'The chart of accounts is unavailable.');
       if (!journalRes.ok) throw new Error(journals.message || journals.error || 'Accounting is unavailable.');

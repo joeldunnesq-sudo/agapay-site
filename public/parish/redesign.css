@@ -581,6 +581,15 @@
 .acct-suite-health strong { font:600 14px var(--serif); }
 .acct-suite-health strong::before { content:''; display:inline-block; width:8px; height:8px; margin-right:8px; border-radius:50%; background:var(--forest); }
 .acct-suite-health p { margin:7px 0 0; color:var(--stone); font-size:11px; line-height:1.5; }
+.acct-access-card { width:min(520px,100%); margin:5vh auto; padding:34px 38px; border:1px solid var(--line); border-radius:7px; background:rgba(255,255,255,.42); box-shadow:var(--pdx-shadow-sm); }
+.acct-access-card h2 { margin:7px 0 10px; color:var(--ink); font:600 30px/1.08 var(--serif); }
+.acct-access-card>p { margin:0 0 22px; color:var(--stone); font-size:12px; line-height:1.65; }
+.acct-access-card form { display:grid; gap:13px; }
+.acct-access-card label,.acct-card form label { display:grid; gap:5px; color:var(--stone); font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
+.acct-access-card input,.acct-access-card select,.acct-card form input,.acct-card form select { width:100%; min-height:40px; border:1px solid var(--line); border-radius:5px; padding:9px 11px; background:rgba(255,255,255,.7); color:var(--ink); font:500 13px var(--sans); text-transform:none; }
+.acct-access-card input:focus,.acct-access-card select:focus,.acct-card form input:focus,.acct-card form select:focus { border-color:var(--gold); outline:2px solid rgba(200,162,74,.13); }
+.acct-access-card .acct-primary { min-height:41px; margin-top:4px; }
+.acct-access-message { margin:0 0 16px; border-left:2px solid var(--forest); padding:8px 11px; background:rgba(74,124,89,.07); color:var(--forest); font-size:11px; }
 .acct-ledger-toggle { display:inline-flex; overflow:hidden; margin-bottom:14px; border:1px solid var(--line); border-radius:5px; }
 .acct-ledger-toggle button { border:0; border-left:1px solid var(--line); padding:7px 12px; background:transparent; color:var(--stone); font:600 11px var(--serif); cursor:pointer; }
 .acct-ledger-toggle button:first-child { border-left:0; }

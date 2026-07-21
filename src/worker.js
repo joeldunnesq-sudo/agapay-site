@@ -327,6 +327,7 @@ import { handleAccountingSetupReports } from "./handlers/accounting-setup-report
 import { handleAccountingPayablesBudgets } from "./handlers/accounting-payables-budgets.js";
 import { handleAccountingReconciliationCommerce } from "./handlers/accounting-reconciliation-commerce.js";
 import { handleAccountingClose } from "./handlers/accounting-close.js";
+import { handleAccountingAccess } from "./handlers/accounting-access.js";
 
 import {
   handleIdentityLogin,
@@ -2516,6 +2517,8 @@ export default {
     if (url.pathname === "/api/directory/intake") {
       return handleDirectoryIntake(request, env);
     }
+    const accountingAccessMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/accounting-access(?:\/.*)?$/);
+    if (accountingAccessMatch) return handleAccountingAccess(request, env, decodeURIComponent(accountingAccessMatch[1]));
     const accountingMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/accounting(?:\/.*)?$/);
     if (accountingMatch) {
       const accountingParishId = decodeURIComponent(accountingMatch[1]);
