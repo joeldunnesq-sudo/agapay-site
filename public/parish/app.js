@@ -126,7 +126,7 @@
     document.querySelector('.app')?.classList.toggle('directory-tab-active', tab === 'directory');
     document.querySelector('.content')?.classList.toggle('directory-tab-active', tab === 'directory');
     activeTab = tab;
-    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship', sacraments:'Sacraments & Services', directory:'Parish Directory', bookstore:'Bookstore', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship', accounting:'Accounting', sacraments:'Sacraments & Services', directory:'Parish Directory', bookstore:'Bookstore', qr:'QR Code & Giving Link' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length) loadGivingHistory();
@@ -137,6 +137,7 @@
     if (tab === 'stewardship') loadStewardshipPanel();
     if (tab === 'sacraments') loadSacramentsTab();
     if (tab === 'directory') loadDirectoryAdminTab();
+    if (tab === 'accounting') loadAccountingTab();
     if (tab === 'bookstore') loadBookstoreCatalogTab();
     if (tab === 'reconcile' && currentParish) loadReconciliation();
     if (tab === 'settings' && currentParish) loadSettlementProfilesPanel();
@@ -608,6 +609,166 @@
       </div>`;
     switchDirectoryAdminTab(directoryAdminTab);
     hydrateDirectoryAdminImages(pane);
+  }
+
+  let accountingView = 'setup';
+  let accountingReportView = 'trialBalance';
+  let accountingData = { setup: null, journals: [], ledger: [], reports: {}, tier: '' };
+  function accountingApi(path = '') {
+    return currentParish?.parishId ? `/api/parish/dashboard/${encodeURIComponent(currentParish.parishId)}/accounting${path}` : '';
+  }
+  function accountingMoney(value) {
+    const number = Number(value || 0);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number.isInteger(number) ? number / 100 : number);
+  }
+  function accountingDate(value) {
+    if (!value) return '—';
+    const date = new Date(String(value).length === 10 ? `${value}T12:00:00` : value);
+    return Number.isNaN(date.getTime()) ? escapeHtml(value) : date.toLocaleDateString();
+  }
+  function accountingEmpty(title, copy) {
+    return `<div class="acct-empty"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(copy)}</span></div>`;
+  }
+  function renderAccountingPane() {
+    const pane = document.getElementById('accountingPane');
+    if (!pane) return;
+    document.querySelectorAll('[data-accounting-view]').forEach((button) => button.classList.toggle('active', button.dataset.accountingView === accountingView));
+    if (accountingView === 'setup') {
+      const overview = accountingData.setup;
+      if (!overview) { pane.innerHTML = accountingEmpty('Accounting setup is not loaded', 'Refresh to check the secure parish ledger.'); return; }
+      const settings = overview.settings || {};
+      pane.innerHTML = `<div class="acct-setup-grid">
+        <section class="acct-card acct-setup-lead"><span class="acct-kicker">Setup progress</span><h2>${overview.initialization?.operational ? 'Your ledger is ready.' : 'Initialize your parish ledger.'}</h2><p>${overview.initialization?.operational ? `${overview.activeAccountCount || 0} accounts and ${overview.activeFundCount || 0} fund are ready for use.` : 'Create the protected nonprofit chart of accounts, General Operating Fund, fiscal year, and periods.'}</p>${overview.initialization?.operational ? '' : '<button type="button" class="acct-primary" onclick="initializeAccounting()">Initialize Accounting</button>'}</section>
+        <section class="acct-card"><span class="acct-kicker">Readiness</span><div class="acct-checklist">${(overview.checklist || []).map((item) => `<div class="${item.complete ? 'complete' : ''}"><i>${item.complete ? '✓' : '○'}</i><span>${escapeHtml(item.label)}</span></div>`).join('')}</div></section>
+        <section class="acct-card acct-settings"><span class="acct-kicker">Parish settings</span><h2>Fiscal year & opening balances</h2><label>Fiscal year starts<select id="accountingFiscalMonth">${Array.from({ length: 12 }, (_, index) => `<option value="${index + 1}" ${Number(settings.fiscalYearStartMonth || 1) === index + 1 ? 'selected' : ''}>${new Date(2026, index, 1).toLocaleString('en-US', { month: 'long' })}</option>`).join('')}</select></label><label>Opening balances<select id="accountingOpeningDisposition"><option value="pending" ${settings.openingBalancesDisposition === 'pending' ? 'selected' : ''}>Still to be entered</option><option value="required" ${settings.openingBalancesDisposition === 'required' ? 'selected' : ''}>Required</option><option value="deferred" ${settings.openingBalancesDisposition === 'deferred' ? 'selected' : ''}>Deferred</option><option value="not_applicable" ${settings.openingBalancesDisposition === 'not_applicable' ? 'selected' : ''}>Not applicable</option><option value="posted" ${settings.openingBalancesDisposition === 'posted' ? 'selected' : ''}>Posted</option></select></label><button type="button" class="acct-primary" onclick="saveAccountingSettings()" ${settings.version ? '' : 'disabled'}>Save settings</button></section>
+        <section class="acct-card"><span class="acct-kicker">Current books</span><div class="acct-facts"><div><strong>${escapeHtml(overview.currentFiscalYear?.name || 'Not set')}</strong><span>Fiscal year</span></div><div><strong>${escapeHtml(overview.currentPeriod?.name || 'Not open')}</strong><span>Open period</span></div><div><strong>${overview.validation?.ok ? 'Healthy' : 'Review needed'}</strong><span>Ledger integrity</span></div></div></section>
+      </div>`;
+      return;
+    }
+    if (accountingView === 'reports') {
+      const report = accountingData.reports[accountingReportView];
+      const reportTabs = [['trialBalance','Trial Balance'],['activities','Activities'],['position','Financial Position']];
+      if (!report) { pane.innerHTML = accountingEmpty('No report available yet', 'Initialize Accounting, then refresh to prepare financial statements.'); return; }
+      const rows = report.rows || [];
+      const amount = (row) => row.amount ?? (Number(row.endingDebit || 0) - Number(row.endingCredit || 0));
+      pane.innerHTML = `<div class="acct-report-head"><div class="acct-view-switch">${reportTabs.map(([id,label]) => `<button type="button" class="${accountingReportView === id ? 'active' : ''}" onclick="setAccountingReportView('${id}')">${label}</button>`).join('')}</div><div class="acct-report-actions"><button type="button" class="acct-refresh" onclick="printAccountingReport()">Print</button><button type="button" class="acct-refresh" onclick="downloadAccountingReport()">Export CSV</button></div></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Account</th><th>Category</th><th>Amount</th></tr></thead><tbody>${rows.map((row) => `<tr><td><strong>${escapeHtml(row.accountNumber || '')}</strong> ${escapeHtml(row.accountName || row.name || '')}</td><td>${escapeHtml(row.category || row.accountType || '')}</td><td>${accountingMoney(amount(row))}</td></tr>`).join('') || '<tr><td colspan="3">No posted activity in this period.</td></tr>'}</tbody></table></div>`;
+      return;
+    }
+    const rows = accountingView === 'ledger' ? accountingData.ledger : accountingData.journals;
+    if (!rows.length) {
+      pane.innerHTML = accountingEmpty(accountingView === 'ledger' ? 'No ledger activity yet' : 'No journal entries yet', 'Accounting is ready. Activity will appear here as entries are created and posted.');
+      return;
+    }
+    pane.innerHTML = accountingView === 'ledger' ? `
+      <div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Date</th><th>Account</th><th>Fund</th><th>Description</th><th>Debit</th><th>Credit</th></tr></thead><tbody>${rows.map((row) => `<tr><td>${accountingDate(row.postingDate || row.entryDate || row.date)}</td><td><strong>${escapeHtml(row.accountNumber || row.account_number || '')}</strong> ${escapeHtml(row.accountName || row.account_name || '')}</td><td>${escapeHtml(row.fundName || row.fund_name || '—')}</td><td>${escapeHtml(row.description || row.memo || '')}</td><td>${accountingMoney(row.debitAmount ?? row.debit_amount)}</td><td>${accountingMoney(row.creditAmount ?? row.credit_amount)}</td></tr>`).join('')}</tbody></table></div>` : `
+      <div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Date</th><th>Entry</th><th>Description</th><th>Source</th><th>Status</th></tr></thead><tbody>${rows.map((row) => `<tr><td>${accountingDate(row.entryDate || row.entry_date || row.postingDate)}</td><td><strong>${escapeHtml(row.entryNumber || row.entry_number || row.id || '')}</strong></td><td>${escapeHtml(row.description || row.memo || '')}</td><td>${escapeHtml(row.sourceType || row.source_type || 'Manual')}</td><td><span class="acct-status ${escapeAttr(row.status || 'draft')}">${escapeHtml(row.status || 'draft')}</span></td></tr>`).join('')}</tbody></table></div>`;
+  }
+  function setAccountingView(view) {
+    accountingView = ['setup', 'reports', 'journals', 'ledger'].includes(view) ? view : 'setup';
+    renderAccountingPane();
+  }
+  function setAccountingReportView(view) { accountingReportView = view; renderAccountingPane(); }
+  async function loadAccountingTab(force = false) {
+    const pane = document.getElementById('accountingPane');
+    if (!pane || !currentParish?.parishId) return;
+    if (!force && pane.dataset.loaded === 'true') return;
+    pane.innerHTML = '<p class="sw-tool-loading">Loading Accounting...</p>';
+    try {
+      const [setupRes, journalRes, ledgerRes, trialRes, activitiesRes, positionRes] = await Promise.all([
+        fetch(accountingApi('/setup'), { headers: authHeaders() }),
+        fetch(accountingApi('/journals?limit=50'), { headers: authHeaders() }),
+        fetch(accountingApi('/general-ledger'), { headers: authHeaders() }),
+        fetch(accountingApi('/reports/trial-balance'), { headers: authHeaders() }),
+        fetch(accountingApi('/reports/statement-of-activities'), { headers: authHeaders() }),
+        fetch(accountingApi('/reports/statement-of-financial-position'), { headers: authHeaders() })
+      ]);
+      const setup = await setupRes.json().catch(() => ({}));
+      const journals = await journalRes.json().catch(() => ({}));
+      const ledger = await ledgerRes.json().catch(() => ({}));
+      const trial = await trialRes.json().catch(() => ({}));
+      const activities = await activitiesRes.json().catch(() => ({}));
+      const position = await positionRes.json().catch(() => ({}));
+      if (!setupRes.ok) throw new Error(setup.message || setup.error || 'Accounting setup is unavailable.');
+      if (!journalRes.ok) throw new Error(journals.message || journals.error || 'Accounting is unavailable.');
+      if (!ledgerRes.ok) throw new Error(ledger.message || ledger.error || 'The general ledger is unavailable.');
+      accountingData = { setup: setup.overview, journals: journals.entries || [], ledger: ledger.rows || [], reports: { trialBalance: trial.report, activities: activities.report, position: position.report }, tier: setup.tier || journals.tier || '' };
+      document.getElementById('accountingTierCopy').textContent = accountingData.tier === 'advanced_operations' ? 'Parish Accounting · Core ledger, funds, reporting, payables, budgets, and close.' : 'Mission Accounting · Essential ledger, funds, and financial reporting.';
+      pane.dataset.loaded = 'true';
+      renderAccountingPane();
+    } catch (error) {
+      pane.innerHTML = `<div class="acct-empty error"><strong>Accounting needs attention</strong><span>${escapeHtml(error.message || 'Unable to load Accounting.')}</span><button type="button" onclick="loadAccountingTab(true)">Try again</button></div>`;
+    }
+  }
+  async function initializeAccounting() {
+    const res = await fetch(accountingApi('/setup/initialize'), { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: '{}' });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) { alert(payload.message || payload.error || 'Unable to initialize Accounting.'); return; }
+    loadAccountingTab(true);
+  }
+  async function saveAccountingSettings() {
+    const settings = accountingData.setup?.settings;
+    if (!settings) return;
+    const patch = { fiscalYearStartMonth: Number(document.getElementById('accountingFiscalMonth').value), openingBalancesDisposition: document.getElementById('accountingOpeningDisposition').value };
+    const res = await fetch(accountingApi('/settings'), { method: 'PATCH', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ expectedVersion: settings.version, patch }) });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) { alert(payload.message || payload.error || 'Unable to save Accounting settings.'); return; }
+    loadAccountingTab(true);
+  }
+  function downloadAccountingReport() {
+    const paths = { trialBalance: 'trial-balance', activities: 'statement-of-activities', position: 'statement-of-financial-position' };
+    downloadAccountingFile(accountingApi(`/reports/${paths[accountingReportView]}.csv`), `agapay-${paths[accountingReportView]}.csv`);
+  }
+  function printAccountingReport() {
+    const report = accountingData.reports[accountingReportView];
+    if (!report) return;
+    const titles = { trialBalance: 'Trial Balance', activities: 'Statement of Activities', position: 'Statement of Financial Position' };
+    const win = window.open('about:blank', '_blank');
+    if (!win) { alert('Allow pop-ups for AGAPAY to open the printable report.'); return; }
+    const rows = (report.rows || []).map((row) => `<tr><td>${escapeHtml(row.accountNumber || '')}</td><td>${escapeHtml(row.accountName || row.name || '')}</td><td>${escapeHtml(row.category || row.accountType || '')}</td><td>${accountingMoney(row.amount ?? (Number(row.endingDebit || 0) - Number(row.endingCredit || 0)))}</td></tr>`).join('');
+    win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${titles[accountingReportView]}</title><style>body{margin:40px;color:#061522;font:13px Arial,sans-serif}h1{font:32px Georgia,serif}p{color:#68716d}table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid #d9d5ca;text-align:left}th{font-size:10px;text-transform:uppercase}@media print{button{display:none}}</style></head><body><h1>${titles[accountingReportView]}</h1><p>${escapeHtml(report.startDate || '')}${report.endDate ? ` through ${escapeHtml(report.endDate)}` : report.asOfDate ? `As of ${escapeHtml(report.asOfDate)}` : ''}</p><button onclick="print()">Print</button><table><thead><tr><th>Number</th><th>Account</th><th>Category</th><th>Amount</th></tr></thead><tbody>${rows || '<tr><td colspan="4">No posted activity.</td></tr>'}</tbody></table></body></html>`);
+    win.document.close(); win.focus();
+  }
+  async function downloadAccountingFile(url, fallbackName) {
+    try {
+      const res = await fetch(url, { headers: authHeaders() });
+      if (!res.ok) throw new Error('The Accounting export is unavailable.');
+      const blob = await res.blob();
+      const match = (res.headers.get('Content-Disposition') || '').match(/filename="?([^";]+)"?/);
+      downloadBlob(match?.[1] || fallbackName, blob);
+    } catch (error) { alert(error.message || 'Unable to download this Accounting export.'); }
+  }
+  async function downloadAccountingLedger() {
+    try {
+      const res = await fetch(accountingApi('/exports/general-ledger.csv'), { headers: authHeaders() });
+      if (!res.ok) throw new Error('The general ledger export is unavailable.');
+      const blob = await res.blob();
+      const disposition = res.headers.get('Content-Disposition') || '';
+      const match = disposition.match(/filename="([^"]+)"/);
+      downloadBlob(match?.[1] || 'agapay-ledger.csv', blob);
+    } catch (error) {
+      alert(error.message || 'Unable to export the general ledger.');
+    }
+  }
+  async function printAccountingLedger() {
+    const win = window.open('about:blank', '_blank');
+    if (!win) {
+      alert('Allow pop-ups for AGAPAY to open the printable ledger.');
+      return;
+    }
+    win.document.write('<!doctype html><title>Preparing ledger…</title><p style="font:16px system-ui;padding:32px;">Preparing your printable ledger…</p>');
+    win.document.close();
+    try {
+      const res = await fetch(accountingApi('/print/general-ledger'), { headers: authHeaders() });
+      const html = await res.text();
+      if (!res.ok) throw new Error('The printable general ledger is unavailable.');
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+    } catch (error) {
+      win.close();
+      alert(error.message || 'Unable to open the printable ledger.');
+    }
   }
 
   function directoryCanonicalHouseholdRow(household, publishedMembers = [], skillListings = []) {

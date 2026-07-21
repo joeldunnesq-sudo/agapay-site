@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/parish/style.css" />
-  <link rel="stylesheet" href="/parish/redesign.css?v=20260720b" />
+  <link rel="stylesheet" href="/parish/redesign.css?v=20260720c" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="stylesheet" href="/styles/stewardship.css" />
   <link rel="manifest" href="/manifest.webmanifest" />
@@ -81,6 +81,10 @@
         <div class="sidebar-nav-item" onclick="switchTab('stewardship')" id="nav-stewardship">
           <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 6h8"/><path d="M8 10h7"/></svg>
           <span class="nav-label">Stewardship Health</span>
+        </div>
+        <div class="sidebar-nav-item" onclick="switchTab('accounting')" id="nav-accounting">
+          <svg viewBox="0 0 24 24"><path d="M4 3h16v18H4z"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h3"/><path d="M15 14v4"/><path d="M13 16h4"/></svg>
+          <span class="nav-label">Accounting</span>
         </div>
         <div class="sidebar-nav-item" onclick="switchTab('sacraments')" id="nav-sacraments">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/></svg>
@@ -1205,6 +1209,31 @@
         </div>
       </div>
 
+      <!-- ── ACCOUNTING TAB ────────────────────── -->
+      <div class="tab-panel" id="tab-accounting">
+        <section class="acct-hero">
+          <div>
+            <span>AGAPAY Accounting</span>
+            <h1>Parish books, clearly kept.</h1>
+            <p id="accountingTierCopy">Core fund accounting for your parish.</p>
+          </div>
+          <div class="acct-hero-actions">
+            <button type="button" onclick="downloadAccountingLedger()">Export CSV</button>
+            <button type="button" class="primary" onclick="printAccountingLedger()">Print Ledger</button>
+          </div>
+        </section>
+        <div class="acct-toolbar">
+          <div class="acct-view-switch" role="tablist" aria-label="Accounting views">
+            <button type="button" class="active" data-accounting-view="setup" onclick="setAccountingView('setup')">Setup</button>
+            <button type="button" data-accounting-view="reports" onclick="setAccountingView('reports')">Reports</button>
+            <button type="button" data-accounting-view="journals" onclick="setAccountingView('journals')">Journal Entries</button>
+            <button type="button" data-accounting-view="ledger" onclick="setAccountingView('ledger')">General Ledger</button>
+          </div>
+          <button type="button" class="acct-refresh" onclick="loadAccountingTab(true)">Refresh</button>
+        </div>
+        <div id="accountingPane" class="acct-workspace"><p class="sw-tool-loading">Loading Accounting...</p></div>
+      </div>
+
       <!-- ── BOOKSTORE TAB ────────────────────── -->
       <div class="tab-panel" id="tab-bookstore">
         <div id="bookstoreUpsellBanner" class="text-give-launch" hidden>
@@ -1490,6 +1519,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
-<script src="/parish/app.js?v=20260720b"></script>
+<script src="/parish/app.js?v=20260720c"></script>
 </body>
 </html>
