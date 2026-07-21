@@ -324,6 +324,9 @@ import {
 
 import { handleAccountingLedger } from "./handlers/accounting-ledger.js";
 import { handleAccountingSetupReports } from "./handlers/accounting-setup-reports.js";
+import { handleAccountingPayablesBudgets } from "./handlers/accounting-payables-budgets.js";
+import { handleAccountingReconciliationCommerce } from "./handlers/accounting-reconciliation-commerce.js";
+import { handleAccountingClose } from "./handlers/accounting-close.js";
 
 import {
   handleIdentityLogin,
@@ -2516,6 +2519,12 @@ export default {
     const accountingMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/accounting(?:\/.*)?$/);
     if (accountingMatch) {
       const accountingParishId = decodeURIComponent(accountingMatch[1]);
+      const phaseDResponse = await handleAccountingPayablesBudgets(request, env, accountingParishId);
+      if (phaseDResponse) return phaseDResponse;
+      const phaseEResponse = await handleAccountingReconciliationCommerce(request, env, accountingParishId);
+      if (phaseEResponse) return phaseEResponse;
+      const phaseFResponse = await handleAccountingClose(request, env, accountingParishId);
+      if (phaseFResponse) return phaseFResponse;
       const setupReportsResponse = await handleAccountingSetupReports(request, env, accountingParishId);
       if (setupReportsResponse) return setupReportsResponse;
       const accountingResponse = await handleAccountingLedger(request, env, accountingParishId);

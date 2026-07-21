@@ -33,7 +33,7 @@ export function createAccountingStorageRegistry(env = {}, config = createAccount
       taxExemptionDocs: bindingStatus(env, "TAX_EXEMPTION_DOCS"),
       givingStatements: bindingStatus(env, "GIVING_STATEMENTS"),
       accountingDocuments: Object.freeze({ binding: "ACCOUNTING_DOCUMENTS", present: false, implemented: false }),
-      accountingBackups: Object.freeze({ binding: "ACCOUNTING_BACKUPS", present: false, implemented: false })
+      accountingBackups: Object.freeze({ ...bindingStatus(env, "ACCOUNTING_BACKUPS"), implemented: true })
     }),
     kv: Object.freeze({
       nonAccountingRegistrations: bindingStatus(env, "AGAPAY_REGISTRATIONS")

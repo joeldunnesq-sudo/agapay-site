@@ -77,12 +77,14 @@ await test("database resolution is environment-aware without exposing raw databa
 });
 
 await test("storage abstraction reports existing and future bindings without direct Cloudflare calls", async () => {
-  const env = { AGAPAY_ENVIRONMENT: "test", AGAPAY_DB: { prepare() {} }, TAX_EXEMPTION_DOCS: {}, AGAPAY_REGISTRATIONS: {} };
+  const env = { AGAPAY_ENVIRONMENT: "test", AGAPAY_DB: { prepare() {} }, TAX_EXEMPTION_DOCS: {}, ACCOUNTING_BACKUPS: {}, AGAPAY_REGISTRATIONS: {} };
   const config = createAccountingConfiguration(env);
   const registry = createAccountingStorageRegistry(env, config);
   assert.equal(registry.centralD1.present, true);
   assert.equal(registry.r2.taxExemptionDocs.present, true);
   assert.equal(registry.r2.accountingDocuments.implemented, false);
+  assert.equal(registry.r2.accountingBackups.present, true);
+  assert.equal(registry.r2.accountingBackups.implemented, true);
   assert.equal(registry.kv.nonAccountingRegistrations.present, true);
   assert.equal(validateAccountingStorageRegistry(registry), registry);
   assert.throws(

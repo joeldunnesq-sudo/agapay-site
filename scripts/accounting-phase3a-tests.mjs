@@ -15,6 +15,11 @@ import {
   payablesOverview,
   postBill,
   postPayment,
+  listPayments,
+  nextCheckNumber,
+  paymentDetail,
+  recordCheckPrint,
+  voidPayment,
   statementOfActivities,
   submitBill,
 } from "../src/accounting/index.js";
@@ -69,6 +74,7 @@ const prepare = (q) => ({
     "ap.enter",
     "ap.approve",
     "ap.pay",
+    "ap.void",
       "accounting.bank_accounts.manage",
     ],
   },
@@ -85,6 +91,7 @@ for (const f of [
   "0006_phase2d_give_stripe_integration.sql",
   "0007_phase2e_bank_reconciliation.sql",
   "0008_phase3a_accounts_payable.sql",
+  "0013_phase_h_check_printing.sql",
 ])
   s.exec(readFileSync(path.join(root, "accounting-migrations", f), "utf8"));
 const bank = await createBankAccount(db, {
@@ -192,20 +199,31 @@ payment = await postPayment(db, {
   idempotencyKey: "pay",
 });
 assert.equal(payment.status, "posted");
+assert.equal(await nextCheckNumber(db,{actor:creator,entitlementTier:"parish",bankAccountId:bank.id}),1001);
+let checkDetail=await recordCheckPrint(db,{actor:creator,entitlementTier:"parish",paymentId:payment.id});
+assert.equal(checkDetail.prints.length,1);
+assert.equal(await nextCheckNumber(db,{actor:creator,entitlementTier:"parish",bankAccountId:bank.id}),1002);
+await assert.rejects(()=>recordCheckPrint(db,{actor:creator,entitlementTier:"parish",paymentId:payment.id}),/reason/i);
+checkDetail=await recordCheckPrint(db,{actor:creator,entitlementTier:"parish",paymentId:payment.id,reason:"Printer jam"});
+assert.equal(checkDetail.prints[1].printType,"reprint");
+assert.equal((await listPayments(db,{actor:creator,entitlementTier:"parish"}))[0].printCount,2);
+assert.equal((await paymentDetail(db,{actor:creator,entitlementTier:"parish",paymentId:payment.id})).applications[0].amountApplied,4000);
+payment=await voidPayment(db,{actor:creator,entitlementTier:"parish",paymentId:payment.id,expectedVersion:2,reason:"Check damaged"});
+assert.equal(payment.status,"voided");
 const paidBill = s
   .prepare(
     "SELECT status,amount_paid,amount_due FROM accounting_bills WHERE id=?",
   )
   .get(bill.id);
-assert.equal(paidBill.status, "partially_paid");
-assert.equal(paidBill.amount_paid, 4000);
-assert.equal(paidBill.amount_due, 6000);
+assert.equal(paidBill.status, "posted");
+assert.equal(paidBill.amount_paid, 0);
+assert.equal(paidBill.amount_due, 10000);
 const aging = await accountsPayableAging(db, {
   actor: approver,
   entitlementTier: "parish",
   asOfDate: "2026-08-31",
 });
-assert.equal(aging.totalDue, 6000);
+assert.equal(aging.totalDue, 10000);
 assert.equal(
   (
     await payablesOverview(db, {
@@ -214,15 +232,15 @@ assert.equal(
       asOfDate: "2026-08-31",
     })
   ).openPayables,
-  6000,
+  10000,
 );
 assert.equal(
   s
     .prepare(
-      "SELECT COUNT(*) count FROM accounting_journal_entries WHERE status='posted'",
+      "SELECT COUNT(*) count FROM accounting_journal_entries WHERE status IN('posted','reversed')",
     )
     .get().count,
-  2,
+  3,
 );
 console.log(
   "PASS - Phase 3A Parish-only vendors, accrual bills, approval separation, AP posting, partial payments, bank integration, and aging",

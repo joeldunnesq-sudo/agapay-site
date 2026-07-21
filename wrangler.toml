@@ -101,5 +101,12 @@ bucket_name = "agapay-giving-statements"
 binding = "DIRECTORY_MEDIA"
 bucket_name = "agapay-directory-media"
 
+# Private operational backups for per-parish accounting databases. Objects
+# are written and restored only by the accounting backup runbook; never
+# expose this bucket through r2.dev or an unauthenticated route.
+[[r2_buckets]]
+binding = "ACCOUNTING_BACKUPS"
+bucket_name = "agapay-accounting-backups"
+
 [browser]
 binding = "BROWSER"

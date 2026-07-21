@@ -6,6 +6,15 @@ const HEADERS = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex
 const reply = (payload, status = 200) => json(payload, { status, headers: HEADERS });
 const today = () => new Date().toISOString().slice(0, 10);
 const yearStart = () => `${new Date().getUTCFullYear()}-01-01`;
+const results = async (db, sql) => (await db.prepare(sql).all()).results || [];
+
+async function workspaceReference(db) {
+  const [accounts, funds] = await Promise.all([
+    results(db, "SELECT a.id,a.account_number accountNumber,a.name,a.normal_balance normalBalance,t.category FROM accounting_accounts a JOIN accounting_account_types t ON t.id=a.account_type_id WHERE a.is_active=1 AND a.is_posting_account=1 AND a.archived_at IS NULL ORDER BY a.account_number"),
+    results(db, "SELECT id,code,name,restriction_type restrictionType,is_default isDefault FROM accounting_funds WHERE is_active=1 AND archived_at IS NULL ORDER BY is_default DESC,code")
+  ]);
+  return { accounts, funds };
+}
 
 function reportRequest(path, url, db, actor) {
   const startDate = url.searchParams.get("from") || yearStart();
@@ -25,7 +34,7 @@ export async function handleAccountingSetupReports(request, env, parishId) {
   let path = url.pathname.slice(base.length);
   const csv = path.endsWith(".csv");
   if (csv) path = path.slice(0, -4);
-  const supported = path === "/setup" || path === "/setup/initialize" || path === "/settings" || path.startsWith("/reports/");
+  const supported = path === "/setup" || path === "/setup/initialize" || path === "/settings" || path === "/workspace-reference" || path.startsWith("/reports/");
   if (!supported) return null;
   const capability = request.method === "GET" ? "accounting.view" : "accounting.configure";
   try {
@@ -35,6 +44,7 @@ export async function handleAccountingSetupReports(request, env, parishId) {
     if (request.method === "GET" && path === "/setup") return reply({ ok: true, tier: ctx.tier, overview: await getAccountingSetupOverview(ctx.db, { actor: ctx.actor, entitlementTier: ctx.tier, databaseStatus: ctx.databaseStatus, databaseHealth: ctx.databaseHealth }) });
     if (request.method === "POST" && path === "/setup/initialize") return reply({ ok: true, setup: await initializeAccountingSetup(ctx.db, { actor: ctx.actor }) }, 201);
     if (request.method === "GET" && path === "/settings") return reply({ ok: true, settings: await getAccountingSettings(ctx.db, { actor: ctx.actor }) });
+    if (request.method === "GET" && path === "/workspace-reference") return reply({ ok: true, ...(await workspaceReference(ctx.db)) });
     if (request.method === "PATCH" && path === "/settings") {
       const body = await request.json().catch(() => ({}));
       return reply({ ok: true, settings: await updateAccountingSettings(ctx.db, { actor: ctx.actor, expectedVersion: body.expectedVersion, patch: body.patch || {} }) });
