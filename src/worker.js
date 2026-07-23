@@ -329,6 +329,8 @@ import { handleAccountingPayablesBudgets } from "./handlers/accounting-payables-
 import { handleAccountingReconciliationCommerce } from "./handlers/accounting-reconciliation-commerce.js";
 import { handleAccountingClose } from "./handlers/accounting-close.js";
 import { handleAccountingAccess } from "./handlers/accounting-access.js";
+import { handleAccountingRecurring } from "./handlers/accounting-recurring.js";
+import { runScheduledRecurringTransactions } from "./accounting/recurring/scheduler.js";
 
 import {
   handleIdentityLogin,
@@ -2403,6 +2405,10 @@ async function handleHealth(env) {
 export default {
   async scheduled(event, env, ctx) {
     if (env && !env.DB && env.AGAPAY_DB) env.DB = env.AGAPAY_DB;
+    ctx.waitUntil(runScheduledRecurringTransactions(env, event.scheduledTime)
+      .then((results) => console.log("scheduled_accounting_recurring", JSON.stringify(results)))
+      .catch((error) => console.error("scheduled_accounting_recurring_failed", error?.message || String(error))));
+    if (event.cron === "0 8 * * *") return;
     ctx.waitUntil(runScheduledAccountingIntegrity(env, event.scheduledTime)
       .then((results) => console.log("scheduled_accounting_integrity", JSON.stringify(results)))
       .catch((error) => console.error("scheduled_accounting_integrity_failed", error?.message || String(error))));
@@ -2526,6 +2532,8 @@ export default {
     const accountingMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/accounting(?:\/.*)?$/);
     if (accountingMatch) {
       const accountingParishId = decodeURIComponent(accountingMatch[1]);
+      const recurringResponse = await handleAccountingRecurring(request, env, accountingParishId);
+      if (recurringResponse) return recurringResponse;
       const phaseDResponse = await handleAccountingPayablesBudgets(request, env, accountingParishId);
       if (phaseDResponse) return phaseDResponse;
       const phaseEResponse = await handleAccountingReconciliationCommerce(request, env, accountingParishId);

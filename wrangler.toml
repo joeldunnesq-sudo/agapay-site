@@ -29,7 +29,7 @@ TAX_EXEMPTION_DOCUMENT_UPLOAD_ENABLED = "true"
 TAX_EXEMPTION_STRIPE_SYNC_ENABLED = "true"
 
 [triggers]
-crons = ["0 14 * * 6"]
+crons = ["0 8 * * *", "0 14 * * 6"]
 
 [assets]
 directory = "./public"

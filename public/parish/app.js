@@ -621,7 +621,8 @@
   }
 
   let accountingView = 'overview';
-  let accountingReportView = 'trialBalance';
+  let accountingReportView = 'library';
+  let accountingCustomReport = null;
   let accountingData = { setup: null, journals: [], ledger: [], reports: {}, accounts: [], funds: [], payables: null, budgets: null, banking: null, integrations: null, close: null, tier: '' };
   let accountingBankPreview = null;
   let accountingFundCatalog = null;
@@ -634,6 +635,8 @@
   let accountingLedgerNewestFirst = false;
   let accountingLedgerAccountNumber = '';
   let accountingLedgerSearch = '';
+  let accountingRegisterEntryMode = 'transaction';
+  let accountingRecurringEditor = null;
   let accountingPayablesView = 'bills';
   let accountingBudgetReport = null;
   function accountingStaffSessionKey() { return `agapay.accountingStaff.${currentParish?.parishId || 'unknown'}`; }
@@ -722,12 +725,10 @@
       <aside><div class="acct-suite-section-head"><h2>Fund balances</h2></div><div class="acct-suite-funds">${accountingData.funds.map((fund) => `<div class="acct-suite-fund"><div><strong>${escapeHtml(fund.name)}</strong><span>${accountingMoney(fundBalance(fund))}</span></div><small>${escapeHtml(fund.restrictionType || fund.restriction_type || (Number(fund.isDefault) ? 'Unrestricted' : 'Fund'))}</small></div>`).join('') || '<div class="acct-suite-fund"><strong>No funds configured</strong></div>'}</div><div class="acct-suite-health"><strong>Financial integrity: ${position.validation?.status === 'validated' ? 'healthy' : 'needs review'}</strong><p>The trial balance and financial-position equation are checked whenever reports load.</p></div></aside></div>`;
   }
   function accountingRegisterModel() {
-    const accounts = new Map();
-    accountingData.ledger.forEach((row) => {
-      const number = String(row.accountNumber || row.account_number || '');
-      if (number && !accounts.has(number)) accounts.set(number, { number, name: row.accountName || row.account_name || 'Account' });
-    });
-    const options = [...accounts.values()].sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric:true }));
+    const options = accountingData.accounts
+      .filter((item) => ['asset','liability'].includes(String(item.category || '').toLowerCase()))
+      .map((item) => ({ id:item.id, number:String(item.accountNumber || item.account_number || ''), name:item.name || 'Account', category:item.category }))
+      .sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric:true }));
     if (!options.some((account) => account.number === accountingLedgerAccountNumber)) {
       accountingLedgerAccountNumber = options.find((account) => /checking|cash|bank/i.test(account.name))?.number || options[0]?.number || '';
     }
@@ -748,12 +749,36 @@
     const visible = query ? chronological.filter((row) => [row.entryNumber,row.description,row.fundName,row.fund_name,row.sourceType].join(' ').toLowerCase().includes(query)) : chronological;
     return {
       account,
+      configuration,
       options,
       rows:accountingLedgerNewestFirst ? [...visible].reverse() : visible,
       balance,
       debits:chronological.reduce((sum, row) => sum + Number(row.debitAmount ?? row.debit_amount ?? 0), 0),
       credits:chronological.reduce((sum, row) => sum + Number(row.creditAmount ?? row.credit_amount ?? 0), 0)
     };
+  }
+  function accountingRegisterEntryForm(register) {
+    const selectedAccountId = register.configuration?.id || register.account.id || '';
+    const defaultFund = accountingData.funds.find((fund) => Number(fund.isDefault)) || accountingData.funds[0];
+    const fundOptions = accountingData.funds.map((fund) => `<option value="${escapeAttr(fund.id)}" ${fund.id === defaultFund?.id ? 'selected' : ''}>${escapeHtml(fund.code)} · ${escapeHtml(fund.name)}</option>`).join('');
+    const accountOptions = accountingData.accounts
+      .filter((account) => account.id !== selectedAccountId)
+      .map((account) => `<option value="${escapeAttr(account.id)}" data-default-fund="${escapeAttr(account.defaultFundId || '')}">${escapeHtml(account.accountNumber)} · ${escapeHtml(account.name)}</option>`).join('');
+    const revenueOptions = accountingData.accounts
+      .filter((account) => account.category === 'revenue')
+      .map((account) => `<option value="${escapeAttr(account.id)}" data-default-fund="${escapeAttr(account.defaultFundId || '')}">${escapeHtml(account.accountNumber)} · ${escapeHtml(account.name)}</option>`).join('');
+    const today = new Date().toISOString().slice(0,10);
+    const transaction = `<form class="acct-register-entry-form" onsubmit="submitAccountingRegisterEntry(event,'transaction')"><div class="acct-register-entry-grid"><label>Date<input name="entryDate" type="date" required value="${today}"></label><label>Payee / source<input name="payee" maxlength="120" required placeholder="Who was paid or who sent this?"></label><label>Offset account<select name="offsetAccountId" required onchange="applyAccountingRegisterDefaultFund(this)"><option value="">Choose account</option>${accountOptions}</select></label><label>Fund<select name="fundId" required>${fundOptions}</select></label><label>Check / reference<input name="reference" maxlength="60" placeholder="Optional"></label><label class="wide">Comment<input name="comment" maxlength="240" placeholder="What was this for?"></label><label>Payment<input name="payment" inputmode="decimal" type="number" min="0" step="0.01" placeholder="0.00"></label><label>Deposit<input name="deposit" inputmode="decimal" type="number" min="0" step="0.01" placeholder="0.00"></label></div><div class="acct-register-entry-foot"><span class="acct-form-status">Enter either a payment or a deposit.</span><button class="acct-primary">Post transaction</button></div></form>`;
+    const contribution = `<form class="acct-register-entry-form" onsubmit="submitAccountingRegisterEntry(event,'contribution')"><div class="acct-register-entry-grid contribution"><label>Date<input name="entryDate" type="date" required value="${today}"></label><label>Contributor<input name="payee" maxlength="120" required placeholder="Name or contribution source"></label><label>Contribution account<select name="offsetAccountId" required onchange="applyAccountingRegisterDefaultFund(this)"><option value="">Choose income account</option>${revenueOptions}</select></label><label>Fund<select name="fundId" required>${fundOptions}</select></label><label class="wide">Comment<input name="comment" maxlength="240" placeholder="Contribution details"></label><label>Deposit amount<input name="deposit" inputmode="decimal" type="number" min="0.01" step="0.01" required placeholder="0.00"></label></div><div class="acct-register-entry-foot"><span class="acct-form-status">The contribution will increase this register account and the selected fund.</span><button class="acct-primary">Post contribution</button></div></form>`;
+    return `<section class="acct-register-entry"><div class="acct-register-entry-tabs"><button type="button" class="${accountingRegisterEntryMode === 'transaction' ? 'active' : ''}" onclick="setAccountingRegisterEntryMode('transaction')">＋ Deposit / Payment</button><button type="button" class="${accountingRegisterEntryMode === 'contribution' ? 'active' : ''}" onclick="setAccountingRegisterEntryMode('contribution')">＋ Contribution</button></div>${accountingRegisterEntryMode === 'contribution' ? contribution : transaction}</section>`;
+  }
+  function accountingRecurringPanel(register) {
+    const items=accountingData.recurring||[],active=items.filter((item)=>item.status==='active');
+    if(accountingRecurringEditor){
+      const item=accountingRecurringEditor,registerAccounts=accountingData.accounts.filter((account)=>['asset','liability'].includes(account.category)),expenses=accountingData.accounts.filter((account)=>account.category==='expense'),defaultFund=accountingData.funds.find((fund)=>Number(fund.isDefault))||accountingData.funds[0];
+      return `<section class="acct-recurring-panel"><div class="acct-recurring-head"><div><span class="acct-kicker">${item.id?'Edit schedule':'New recurring expense'}</span><h2>${item.id?escapeHtml(item.name):'Set it once. Let AGAPAY post it.'}</h2><p>Due expenses are posted automatically each morning with an auditable journal entry.</p></div><button class="acct-refresh" onclick="accountingRecurringEditor=null;renderAccountingPane()">Cancel</button></div><form class="acct-recurring-form" onsubmit="saveAccountingRecurring(event)"><label>Schedule name<input name="name" required maxlength="120" value="${escapeAttr(item.name||'')}" placeholder="Monthly internet bill"></label><label>Payee<input name="payee" required maxlength="120" value="${escapeAttr(item.payee||'')}" placeholder="Internet provider"></label><label>Pay from<select name="registerAccountId" required>${registerAccounts.map((account)=>`<option value="${escapeAttr(account.id)}" ${(item.registerAccountId||register.configuration?.id)===account.id?'selected':''}>${escapeHtml(account.accountNumber)} · ${escapeHtml(account.name)}</option>`).join('')}</select></label><label>Expense account<select name="expenseAccountId" required onchange="applyAccountingRegisterDefaultFund(this)"><option value="">Choose expense</option>${expenses.map((account)=>`<option value="${escapeAttr(account.id)}" data-default-fund="${escapeAttr(account.defaultFundId||'')}" ${item.expenseAccountId===account.id?'selected':''}>${escapeHtml(account.accountNumber)} · ${escapeHtml(account.name)}</option>`).join('')}</select></label><label>Fund<select name="fundId" required>${accountingData.funds.map((fund)=>`<option value="${escapeAttr(fund.id)}" ${(item.fundId||defaultFund?.id)===fund.id?'selected':''}>${escapeHtml(fund.code)} · ${escapeHtml(fund.name)}</option>`).join('')}</select></label><label>Amount<input name="amountDollars" required type="number" min=".01" step=".01" value="${item.amount?(item.amount/100).toFixed(2):''}" placeholder="0.00"></label><label>Frequency<select name="frequency">${[['weekly','Weekly'],['biweekly','Every two weeks'],['monthly','Monthly'],['quarterly','Quarterly'],['annual','Annually']].map(([value,label])=>`<option value="${value}" ${item.frequency===value?'selected':''}>${label}</option>`).join('')}</select></label><label>Next posting date<input name="nextPostingDate" required type="date" value="${escapeAttr(item.nextPostingDate||new Date().toISOString().slice(0,10))}"></label><label>End date <small>Optional</small><input name="endDate" type="date" value="${escapeAttr(item.endDate||'')}"></label><label class="wide">Description<input name="description" maxlength="240" value="${escapeAttr(item.description||'')}" placeholder="What is this recurring expense for?"></label><div class="acct-recurring-foot"><span class="acct-form-status"></span><button class="acct-primary">${item.id?'Save schedule':'Start schedule'}</button></div></form></section>`;
+    }
+    return `<section class="acct-recurring-panel compact"><div class="acct-recurring-head"><div><span class="acct-kicker">Automation</span><h2>Recurring expenses</h2><p>${active.length} active schedule${active.length===1?'':'s'} · Due transactions post automatically each morning.</p></div><button class="acct-primary" onclick="accountingRecurringEditor={};renderAccountingPane()">＋ Schedule expense</button></div><div class="acct-recurring-list">${items.map((item)=>`<article><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.payee)} · ${escapeHtml(item.expenseAccount)} · ${escapeHtml(item.fund)}</small></div><span>${accountingMoney(item.amount)}<small>${escapeHtml(item.frequency)} · next ${accountingDate(item.nextPostingDate)}</small></span><i class="acct-status ${item.status==='active'?'posted':''}">${escapeHtml(item.status)}</i><div><button onclick="editAccountingRecurring('${escapeAttr(item.id)}')">Edit</button>${item.status==='active'?`<button onclick="toggleAccountingRecurring('${escapeAttr(item.id)}',${item.version},'paused')">Pause</button>`:item.status==='paused'?`<button onclick="toggleAccountingRecurring('${escapeAttr(item.id)}',${item.version},'active')">Resume</button>`:''}</div></article>`).join('')||'<div class="acct-fund-account-empty">No recurring expenses yet.</div>'}</div></section>`;
   }
   function renderAccountingPane() {
     const pane = document.getElementById('accountingPane');
@@ -782,16 +807,7 @@
       </div>`;
       return;
     }
-    if (accountingView === 'reports') {
-      const report = accountingData.reports[accountingReportView === 'expenses' ? 'activities' : accountingReportView];
-      const reportTabs = [['trialBalance','Trial Balance'],['activities','Activities'],['expenses','Expenses'],['position','Financial Position']];
-      if (!report) { pane.innerHTML = accountingEmpty('No report available yet', 'Initialize Accounting, then refresh to prepare financial statements.'); return; }
-      if (accountingReportView === 'expenses') { renderAccountingExpenses(pane, report, reportTabs); return; }
-      const rows = report.rows || [];
-      const amount = (row) => row.amount ?? (Number(row.endingDebit || 0) - Number(row.endingCredit || 0));
-      pane.innerHTML = `<div class="acct-report-head"><div class="acct-view-switch">${reportTabs.map(([id,label]) => `<button type="button" class="${accountingReportView === id ? 'active' : ''}" onclick="setAccountingReportView('${id}')">${label}</button>`).join('')}</div><div class="acct-report-actions"><button type="button" class="acct-refresh" onclick="printAccountingReport()">Print</button><button type="button" class="acct-refresh" onclick="downloadAccountingReport()">Export CSV</button></div></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Account</th><th>Category</th><th>Amount</th></tr></thead><tbody>${rows.map((row) => `<tr><td><strong>${escapeHtml(row.accountNumber || '')}</strong> ${escapeHtml(row.accountName || row.name || '')}</td><td>${escapeHtml(row.category || row.accountType || '')}</td><td>${accountingMoney(amount(row))}</td></tr>`).join('') || '<tr><td colspan="3">No posted activity in this period.</td></tr>'}</tbody></table></div>`;
-      return;
-    }
+    if (accountingView === 'reports') { renderAccountingReports(pane); return; }
     if (accountingView === 'funds') { renderAccountingFunds(pane); return; }
     if (accountingView === 'payables') { renderAccountingPayables(pane); return; }
     if (accountingView === 'budgets') { renderAccountingBudgets(pane); return; }
@@ -801,12 +817,12 @@
     if (accountingJournalEditor) { renderAccountingJournalEditor(pane); return; }
     const register = accountingView === 'ledger' ? accountingRegisterModel() : null;
     const rows = register ? register.rows : accountingData.journals;
-    if (accountingView === 'ledger' ? !accountingData.ledger.length : !rows.length) {
-      pane.innerHTML = accountingView === 'ledger' ? accountingEmpty('No ledger activity yet', 'Posted activity will appear here.') : `<div class="acct-list-head"><div><span class="acct-kicker">Manual ledger</span><h2>Journal entries</h2></div><button type="button" class="acct-primary" onclick="newAccountingJournal()">New journal entry</button></div>${accountingEmpty('No journal entries yet', 'Create a balanced debit and credit to begin.')}`;
+    if (accountingView !== 'ledger' && !rows.length) {
+      pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Manual ledger</span><h2>Journal entries</h2></div><button type="button" class="acct-primary" onclick="newAccountingJournal()">New journal entry</button></div>${accountingEmpty('No journal entries yet', 'Create a balanced debit and credit to begin.')}`;
       return;
     }
     pane.innerHTML = accountingView === 'ledger' ? `
-      <section class="acct-register-hero"><div class="acct-register-account"><span class="acct-kicker">Account register</span><label><select onchange="setAccountingLedgerAccount(this.value)">${register.options.map((account) => `<option value="${escapeAttr(account.number)}" ${account.number === register.account.number ? 'selected' : ''}>${escapeHtml(account.number)} · ${escapeHtml(account.name)}</option>`).join('')}</select></label><p>Posted activity and running balance for this account.</p></div><div class="acct-register-balance"><span>Current balance</span><strong>${accountingMoney(register.balance)}</strong><small>${register.rows.length} visible transaction${register.rows.length === 1 ? '' : 's'}</small></div><div class="acct-register-totals"><div><span>Total debits</span><strong>${accountingMoney(register.debits)}</strong></div><div><span>Total credits</span><strong>${accountingMoney(register.credits)}</strong></div></div></section><div class="acct-register-actions"><div><button class="acct-primary" onclick="newAccountingRegisterEntry('transaction')">＋ New transaction</button><button class="acct-refresh" onclick="newAccountingRegisterEntry('contribution')">＋ Record contribution</button></div><div><button class="acct-refresh" onclick="toggleAccountingLedgerOrder()">${accountingLedgerNewestFirst ? 'Oldest first' : 'Newest first'}</button><button class="acct-refresh" onclick="downloadAccountingLedger()">Export</button><button class="acct-refresh" onclick="printAccountingLedger()">Print</button></div></div><div class="acct-ledger-toggle"><button class="active" onclick="setAccountingView('ledger')">Register</button><button onclick="setAccountingView('journals')">Journal entries</button></div><section class="acct-ledger-guide" aria-label="How to use the general ledger"><div><strong>Register</strong><span>Choose an account to see its posted debits, credits, and running balance. Search it to trace a fund, entry, or description.</span></div><div><strong>Journal entries</strong><span>Review the complete balanced transaction behind register activity, or create corrections and adjustments.</span></div><p>Every posted journal entry has equal debits and credits. Its individual account lines appear in the appropriate registers.</p></section><div class="acct-register-history-head"><div><span class="acct-kicker">Transaction history</span><h2>${escapeHtml(register.account.name)}</h2></div><form onsubmit="searchAccountingLedger(event)"><input name="query" value="${escapeAttr(accountingLedgerSearch)}" placeholder="Search this register"><button class="acct-refresh">Search</button>${accountingLedgerSearch ? '<button type="button" class="acct-link" onclick="clearAccountingLedgerSearch()">Clear</button>' : ''}</form></div><div class="acct-table-wrap acct-register-table"><table class="acct-table"><thead><tr><th>Date</th><th>Entry</th><th>Fund</th><th>Description</th><th>Debit</th><th>Credit</th><th>Balance</th></tr></thead><tbody>${rows.map((row) => `<tr><td>${accountingDate(row.postingDate || row.entryDate || row.date)}</td><td><strong>${escapeHtml(row.entryNumber || row.entry_number || '—')}</strong></td><td>${escapeHtml(row.fundName || row.fund_name || '—')}</td><td>${escapeHtml(row.description || row.memo || '')}</td><td>${Number(row.debitAmount ?? row.debit_amount ?? 0) ? accountingMoney(row.debitAmount ?? row.debit_amount) : '—'}</td><td>${Number(row.creditAmount ?? row.credit_amount ?? 0) ? accountingMoney(row.creditAmount ?? row.credit_amount) : '—'}</td><td><strong>${accountingMoney(row.registerBalance)}</strong></td></tr>`).join('') || '<tr><td colspan="7">No transactions match this register view.</td></tr>'}</tbody></table></div>` : `
+      <section class="acct-register-hero"><div class="acct-register-account"><span class="acct-kicker">Account register</span><label><select onchange="setAccountingLedgerAccount(this.value)">${register.options.map((account) => `<option value="${escapeAttr(account.number)}" ${account.number === register.account.number ? 'selected' : ''}>${escapeHtml(account.number)} · ${escapeHtml(account.name)}</option>`).join('')}</select></label><p>Choose the account where money was deposited or paid.</p></div><div class="acct-register-balance"><span>Current balance</span><strong>${accountingMoney(register.balance)}</strong><small>${register.rows.length} visible transaction${register.rows.length === 1 ? '' : 's'}</small></div><div class="acct-register-totals"><div><span>Total debits</span><strong>${accountingMoney(register.debits)}</strong></div><div><span>Total credits</span><strong>${accountingMoney(register.credits)}</strong></div></div></section>${accountingRegisterEntryForm(register)}${accountingRecurringPanel(register)}<div class="acct-register-actions"><div class="acct-ledger-toggle"><button class="active" onclick="setAccountingView('ledger')">Register</button><button onclick="setAccountingView('journals')">Journal entries</button></div><div><button class="acct-refresh" onclick="toggleAccountingLedgerOrder()">${accountingLedgerNewestFirst ? 'Oldest first' : 'Newest first'}</button><button class="acct-refresh" onclick="downloadAccountingLedger()">Export</button><button class="acct-refresh" onclick="printAccountingLedger()">Print</button></div></div><section class="acct-ledger-guide" aria-label="How to use the general ledger"><div><strong>Register</strong><span>Choose a cash, bank, or liability account, then record a payment, deposit, or contribution without building debit and credit lines yourself.</span></div><div><strong>Journal entries</strong><span>Use the journal-entry view for transfers, corrections, accruals, and other multi-line adjustments.</span></div><p>AGAPAY creates and posts the balanced journal entry behind every register transaction.</p></section><div class="acct-register-history-head"><div><span class="acct-kicker">Transaction history</span><h2>${escapeHtml(register.account.name)}</h2></div><form onsubmit="searchAccountingLedger(event)"><input name="query" value="${escapeAttr(accountingLedgerSearch)}" placeholder="Search this register"><button class="acct-refresh">Search</button>${accountingLedgerSearch ? '<button type="button" class="acct-link" onclick="clearAccountingLedgerSearch()">Clear</button>' : ''}</form></div><div class="acct-table-wrap acct-register-table"><table class="acct-table"><thead><tr><th>Date</th><th>Entry</th><th>Fund</th><th>Description</th><th>Payment</th><th>Deposit</th><th>Balance</th></tr></thead><tbody>${rows.map((row) => `<tr><td>${accountingDate(row.postingDate || row.entryDate || row.date)}</td><td><strong>${escapeHtml(row.entryNumber || row.entry_number || '—')}</strong></td><td>${escapeHtml(row.fundName || row.fund_name || '—')}</td><td>${escapeHtml(row.description || row.memo || '')}</td><td>${Number(row.creditAmount ?? row.credit_amount ?? 0) ? accountingMoney(row.creditAmount ?? row.credit_amount) : '—'}</td><td>${Number(row.debitAmount ?? row.debit_amount ?? 0) ? accountingMoney(row.debitAmount ?? row.debit_amount) : '—'}</td><td><strong>${accountingMoney(row.registerBalance)}</strong></td></tr>`).join('') || '<tr><td colspan="7">No transactions in this account yet.</td></tr>'}</tbody></table></div>` : `
       <div class="acct-list-head"><div><span class="acct-kicker">Manual ledger</span><h2>Journal entries</h2></div><button type="button" class="acct-primary" onclick="newAccountingJournal()">New journal entry</button></div><div class="acct-ledger-toggle"><button onclick="setAccountingView('ledger')">Register</button><button class="active" onclick="setAccountingView('journals')">Journal entries</button></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Date</th><th>Entry</th><th>Description</th><th>Source</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody>${rows.map((row) => `<tr><td>${accountingDate(row.entryDate || row.entry_date || row.postingDate)}</td><td><strong>${escapeHtml(row.entryNumber || row.entry_number || row.id || '')}</strong></td><td>${escapeHtml(row.description || row.memo || '')}</td><td>${escapeHtml(row.sourceType || row.source_type || 'Manual')}</td><td><strong>${accountingMoney(row.totalDebits ?? row.total_debits ?? row.totalCredits ?? row.total_credits ?? 0)}</strong></td><td><span class="acct-status ${escapeAttr(row.status || 'draft')}">${escapeHtml(row.status || 'draft')}</span></td><td>${row.status === 'draft' ? `<button type="button" class="acct-link" onclick="editAccountingJournal('${escapeAttr(row.id)}')">Continue</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`;
   }
   function toggleAccountingLedgerOrder() {
@@ -816,11 +832,61 @@
   function setAccountingLedgerAccount(accountNumber) { accountingLedgerAccountNumber = accountNumber; accountingLedgerSearch = ''; renderAccountingPane(); }
   function searchAccountingLedger(event) { event.preventDefault(); accountingLedgerSearch = String(new FormData(event.currentTarget).get('query') || '').trim(); renderAccountingPane(); }
   function clearAccountingLedgerSearch() { accountingLedgerSearch = ''; renderAccountingPane(); }
-  function newAccountingRegisterEntry(kind) {
-    const defaultFund = accountingData.funds.find((fund) => Number(fund.isDefault)) || accountingData.funds[0];
-    accountingJournalEditor = { id:'', version:0, entryDate:new Date().toISOString().slice(0,10), description:kind === 'contribution' ? 'Contribution' : '', lines:[{ fundId:defaultFund?.id || '' },{ fundId:defaultFund?.id || '' }] };
-    accountingView = 'journals';
+  function setAccountingRegisterEntryMode(mode) {
+    accountingRegisterEntryMode = mode === 'contribution' ? 'contribution' : 'transaction';
     renderAccountingPane();
+  }
+  function applyAccountingRegisterDefaultFund(accountSelect) {
+    const defaultFundId = accountSelect.selectedOptions[0]?.dataset.defaultFund || '';
+    const fundSelect = accountSelect.form?.elements?.fundId;
+    if (defaultFundId && fundSelect) fundSelect.value = defaultFundId;
+  }
+  async function submitAccountingRegisterEntry(event, kind) {
+    event.preventDefault();
+    const form = event.currentTarget, status = form.querySelector('.acct-form-status'), button = form.querySelector('button[type="submit"],button.acct-primary');
+    const data = Object.fromEntries(new FormData(form));
+    const register = accountingRegisterModel(), registerAccountId = register.configuration?.id || register.account.id || '';
+    const payment = Math.round(Number(data.payment || 0) * 100), deposit = Math.round(Number(data.deposit || 0) * 100);
+    const amount = kind === 'contribution' ? deposit : payment || deposit;
+    if (!registerAccountId || !data.offsetAccountId || !data.fundId || !data.entryDate || !data.payee || !Number.isSafeInteger(amount) || amount <= 0 || (kind === 'transaction' && payment > 0 && deposit > 0)) {
+      status.textContent = kind === 'contribution' ? 'Complete every required field and enter a contribution amount.' : 'Complete every required field and enter either a payment or a deposit.';
+      status.className = 'acct-form-status error'; return;
+    }
+    const detail = [data.payee, data.comment, data.reference ? `Ref ${data.reference}` : ''].filter(Boolean).join(' · ');
+    const lines = kind === 'contribution' || deposit > 0
+      ? [{ accountId:registerAccountId, fundId:data.fundId, description:detail, debitAmount:amount }, { accountId:data.offsetAccountId, fundId:data.fundId, description:detail, creditAmount:amount }]
+      : [{ accountId:data.offsetAccountId, fundId:data.fundId, description:detail, debitAmount:amount }, { accountId:registerAccountId, fundId:data.fundId, description:detail, creditAmount:amount }];
+    button.disabled = true; status.className = 'acct-form-status'; status.textContent = 'Creating the balanced entry…';
+    try {
+      const createResponse = await fetch(accountingApi('/journals'), { method:'POST', headers:{...authHeaders(),'Content-Type':'application/json'}, body:JSON.stringify({ entryDate:data.entryDate, description:detail, sourceType:kind === 'contribution' ? 'manual_register_contribution' : 'manual_register_transaction', lines }) });
+      const created = await createResponse.json().catch(() => ({}));
+      if (!createResponse.ok) throw new Error(created.message || created.error || 'Unable to create this transaction.');
+      const validationResponse = await fetch(accountingApi(`/journals/${encodeURIComponent(created.entry.id)}/validate`), { method:'POST', headers:{...authHeaders(),'Content-Type':'application/json'}, body:JSON.stringify({ expectedVersion:created.entry.version }) });
+      const validation = await validationResponse.json().catch(() => ({}));
+      if (!validationResponse.ok || !validation.validation?.ok) throw new Error((validation.validation?.issues || [validation.message || 'The entry could not be validated.']).join(' · ').replaceAll('_',' '));
+      status.textContent = 'Posting to the ledger…';
+      const key = `register-ui-${created.entry.id}-${created.entry.version}`;
+      const postResponse = await fetch(accountingApi(`/journals/${encodeURIComponent(created.entry.id)}/post`), { method:'POST', headers:{...authHeaders(),'Content-Type':'application/json'}, body:JSON.stringify({ expectedVersion:created.entry.version, idempotencyKey:key, requestHash:key }) });
+      const posted = await postResponse.json().catch(() => ({}));
+      if (!postResponse.ok) throw new Error(posted.message || posted.error || 'Unable to post this transaction.');
+      await loadAccountingTab(true);
+    } catch (error) {
+      status.textContent = error.message || 'Unable to post this transaction.';
+      status.className = 'acct-form-status error'; button.disabled = false;
+    }
+  }
+  function editAccountingRecurring(id){accountingRecurringEditor=(accountingData.recurring||[]).find((item)=>item.id===id)||null;renderAccountingPane();}
+  async function saveAccountingRecurring(event){
+    event.preventDefault();const form=event.currentTarget,status=form.querySelector('.acct-form-status'),body=Object.fromEntries(new FormData(form));body.amount=Math.round(Number(body.amountDollars||0)*100);delete body.amountDollars;
+    if(accountingRecurringEditor?.id)body.expectedVersion=accountingRecurringEditor.version;
+    status.textContent='Saving schedule…';
+    const response=await fetch(accountingApi(accountingRecurringEditor?.id?`/recurring-transactions/${encodeURIComponent(accountingRecurringEditor.id)}`:'/recurring-transactions'),{method:accountingRecurringEditor?.id?'PATCH':'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)}),payload=await response.json().catch(()=>({}));
+    if(!response.ok){status.textContent=payload.message||payload.error||'Unable to save this recurring expense.';status.className='acct-form-status error';return;}
+    accountingRecurringEditor=null;await loadAccountingTab(true);
+  }
+  async function toggleAccountingRecurring(id,expectedVersion,status){
+    const response=await fetch(accountingApi(`/recurring-transactions/${encodeURIComponent(id)}`),{method:'PATCH',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({expectedVersion,status})}),payload=await response.json().catch(()=>({}));
+    if(!response.ok){alert(payload.message||payload.error||'Unable to update this recurring expense.');return;}await loadAccountingTab(true);
   }
   function accountingParishOnly() { return `<div class="acct-tier-gate"><span class="acct-kicker">Parish Accounting</span><h2>Advanced parish operations</h2><p>Payables and budgeting are included with the Parish tier. Mission Accounting continues to include the essential ledger and reports.</p></div>`; }
   function renderAccountingPayables(pane) {
@@ -854,7 +920,106 @@
     if (accountingView === 'funds' && !accountingFundCatalog) loadAccountingFunds();
     if (accountingView === 'close' && !accountingData.close) loadAccountingPhaseF();
   }
-  function setAccountingReportView(view) { accountingReportView = view; renderAccountingPane(); }
+  const ACCOUNTING_REPORT_LIBRARY = [
+    { id:'activities', title:'Income Statement', group:'Income statements', copy:'Revenue, expenses, and change in net assets for the current period.' },
+    { id:'comparativePeriods', title:'Comparative Income Statement Periods', group:'Income statements', copy:'Compare this month with the immediately preceding month.' },
+    { id:'incomeByFund', title:'Income Statement by Fund', group:'Income statements', copy:'Revenue, expenses, and net activity for every fund.' },
+    { id:'incomeByMonth', title:'Income Statement by Month', group:'Income statements', copy:'Monthly revenue, expense, and net-activity trend.' },
+    { id:'comparativeIncome', title:'Comparative Income Statement', group:'Income statements', copy:'Compare current-year activity with the same period last year.' },
+    { id:'position', title:'Balance Sheet', group:'Balance sheets', copy:'Assets, liabilities, and net assets as of today.' },
+    { id:'balanceByFund', title:'Balance Sheet by Fund', group:'Balance sheets', copy:'Financial position summarized separately for each fund.' },
+    { id:'budgetActual', title:'Budget to Actual', group:'Budgeting', copy:'Compare the active budget with posted actual activity.', parishOnly:true },
+    { id:'comparativeBudget', title:'Comparative Budget to Actual', group:'Budgeting', copy:'Compare the two most recent budget versions and actual results.', parishOnly:true },
+    { id:'budgetByFund', title:'Budget by Fund', group:'Budgeting', copy:'Budget, actual, and variance summarized for each fund.', parishOnly:true },
+    { id:'trialBalance', title:'Trial Balance', group:'Accounting detail', copy:'Ending debits and credits for every posting account.' },
+    { id:'expenses', title:'Expense Breakdown', group:'Accounting detail', copy:'Visual expense analysis including automatically posted AGAPAY fees.' }
+  ];
+  function accountingReportPeriod() {
+    const fiscal = accountingData.setup?.currentFiscalYear || {};
+    const now = new Date(), today = now.toISOString().slice(0,10);
+    return { start:fiscal.startDate || `${now.getUTCFullYear()}-01-01`, end:fiscal.endDate && fiscal.endDate < today ? fiscal.endDate : today };
+  }
+  function accountingReportLedgerRows(startDate = '0001-01-01', endDate = '9999-12-31') {
+    const accounts = new Map(accountingData.accounts.map((account) => [String(account.accountNumber || ''),account]));
+    return accountingData.ledger.filter((row) => {
+      const date = String(row.postingDate || row.entryDate || row.date || '');
+      return date >= startDate && date <= endDate;
+    }).map((row) => {
+      const account = accounts.get(String(row.accountNumber || row.account_number || '')) || {};
+      const debit = Number(row.debitAmount ?? row.debit_amount ?? 0), credit = Number(row.creditAmount ?? row.credit_amount ?? 0);
+      const category = account.category || '';
+      const amount = ['revenue','liability','net_asset'].includes(category) ? credit - debit : debit - credit;
+      return { ...row, account, category, amount, date:String(row.postingDate || row.entryDate || row.date || ''), fund:String(row.fundName || row.fund_name || 'Unassigned') };
+    });
+  }
+  function accountingTabularReport(id) {
+    const period = accountingReportPeriod(), current = accountingReportLedgerRows(period.start,period.end);
+    const moneyColumn = (key,label) => ({ key,label,money:true });
+    if (id === 'incomeByFund') {
+      const groups = new Map();
+      for (const row of current.filter((item)=>['revenue','expense'].includes(item.category))) { const item=groups.get(row.fund)||{name:row.fund,revenue:0,expenses:0}; item[row.category==='revenue'?'revenue':'expenses']+=row.amount; groups.set(row.fund,item); }
+      const rows=[...groups.values()].map((row)=>({...row,net:row.revenue-row.expenses})).sort((a,b)=>a.name.localeCompare(b.name));
+      return { title:'Income Statement by Fund', subtitle:`${period.start} through ${period.end}`, columns:[{key:'name',label:'Fund'},moneyColumn('revenue','Revenue'),moneyColumn('expenses','Expenses'),moneyColumn('net','Net activity')], rows };
+    }
+    if (id === 'balanceByFund') {
+      const all = accountingReportLedgerRows('0001-01-01',period.end), groups=new Map();
+      for (const row of all) { const item=groups.get(row.fund)||{name:row.fund,assets:0,liabilities:0,netAssets:0}; if(row.category==='asset')item.assets+=row.amount; else if(row.category==='liability')item.liabilities+=row.amount; else if(row.category==='net_asset')item.netAssets+=row.amount; else if(row.category==='revenue')item.netAssets+=row.amount; else if(row.category==='expense')item.netAssets-=row.amount; groups.set(row.fund,item); }
+      return { title:'Balance Sheet by Fund', subtitle:`As of ${period.end}`, columns:[{key:'name',label:'Fund'},moneyColumn('assets','Assets'),moneyColumn('liabilities','Liabilities'),moneyColumn('netAssets','Net assets')], rows:[...groups.values()].sort((a,b)=>a.name.localeCompare(b.name)) };
+    }
+    if (id === 'incomeByMonth') {
+      const groups=new Map();
+      for(const row of current.filter((item)=>['revenue','expense'].includes(item.category))){const key=row.date.slice(0,7),item=groups.get(key)||{month:key,revenue:0,expenses:0};item[row.category==='revenue'?'revenue':'expenses']+=row.amount;groups.set(key,item);}
+      return { title:'Income Statement by Month', subtitle:`${period.start} through ${period.end}`, columns:[{key:'month',label:'Month'},moneyColumn('revenue','Revenue'),moneyColumn('expenses','Expenses'),moneyColumn('net','Net activity')], rows:[...groups.values()].sort((a,b)=>a.month.localeCompare(b.month)).map((row)=>({...row,net:row.revenue-row.expenses})) };
+    }
+    const accountComparison = (leftStart,leftEnd,rightStart,rightEnd,title,leftLabel,rightLabel) => {
+      const groups=new Map(), add=(rows,key)=>rows.filter((item)=>['revenue','expense'].includes(item.category)).forEach((row)=>{const id=row.account.id||row.accountNumber,item=groups.get(id)||{account:`${row.account.accountNumber||row.accountNumber||''} · ${row.account.name||row.accountName||''}`,category:row.category,left:0,right:0};item[key]+=row.amount;groups.set(id,item);});
+      add(accountingReportLedgerRows(leftStart,leftEnd),'left'); add(accountingReportLedgerRows(rightStart,rightEnd),'right');
+      return { title, subtitle:`${leftLabel} compared with ${rightLabel}`, columns:[{key:'account',label:'Account'},{key:'category',label:'Category'},moneyColumn('left',leftLabel),moneyColumn('right',rightLabel),moneyColumn('change','Change')], rows:[...groups.values()].sort((a,b)=>a.account.localeCompare(b.account)).map((row)=>({...row,change:row.left-row.right})) };
+    };
+    if(id==='comparativePeriods'){const end=new Date(`${period.end}T00:00:00Z`),leftStart=new Date(Date.UTC(end.getUTCFullYear(),end.getUTCMonth(),1)),priorEnd=new Date(leftStart);priorEnd.setUTCDate(0);const priorStart=new Date(Date.UTC(priorEnd.getUTCFullYear(),priorEnd.getUTCMonth(),1));return accountComparison(leftStart.toISOString().slice(0,10),period.end,priorStart.toISOString().slice(0,10),priorEnd.toISOString().slice(0,10),'Comparative Income Statement Periods','Current month','Prior month');}
+    if(id==='comparativeIncome'){const priorStart=String(Number(period.start.slice(0,4))-1)+period.start.slice(4),priorEnd=String(Number(period.end.slice(0,4))-1)+period.end.slice(4);return accountComparison(period.start,period.end,priorStart,priorEnd,'Comparative Income Statement','Current year','Prior year');}
+    return null;
+  }
+  function renderAccountingReportLibrary(pane) {
+    const groups=[...new Set(ACCOUNTING_REPORT_LIBRARY.map((report)=>report.group))];
+    pane.innerHTML=`<section class="acct-report-library-head"><div><span class="acct-kicker">Financial reporting</span><h2>Reports</h2><p>Create clear parish financial statements, fund views, comparisons, and budget reports.</p></div><label>Search reports<input type="search" placeholder="Search by report name" oninput="filterAccountingReportLibrary(this.value)"></label></section><div class="acct-report-quick"><span>Quick access</span><button onclick="openAccountingReport('position')">Balance Sheet</button><button onclick="openAccountingReport('activities')">Income Statement</button><button onclick="openAccountingReport('budgetActual')">Budget to Actual</button></div><div class="acct-report-library">${groups.map((group)=>`<section><div class="acct-report-library-section"><div><strong>${escapeHtml(group)}</strong><small>${ACCOUNTING_REPORT_LIBRARY.filter((report)=>report.group===group).length} reports</small></div><span>⌄</span></div><div class="acct-report-library-grid">${ACCOUNTING_REPORT_LIBRARY.filter((report)=>report.group===group).map((report)=>`<button class="acct-report-library-card" data-report-search="${escapeAttr(`${report.title} ${report.copy} ${group}`.toLowerCase())}" onclick="openAccountingReport('${report.id}')"><i>☆</i><span><strong>${escapeHtml(report.title)}</strong><small>${escapeHtml(report.copy)}</small></span>${report.parishOnly&&accountingData.tier!=='advanced_operations'?'<b>Parish</b>':'<b>Open →</b>'}</button>`).join('')}</div></section>`).join('')}</div>`;
+  }
+  function filterAccountingReportLibrary(query) { const value=String(query||'').trim().toLowerCase(); document.querySelectorAll('[data-report-search]').forEach((card)=>card.hidden=value&&!card.dataset.reportSearch.includes(value)); }
+  async function openAccountingReport(id) {
+    const definition=ACCOUNTING_REPORT_LIBRARY.find((report)=>report.id===id); if(!definition)return;
+    if(definition.parishOnly&&accountingData.tier!=='advanced_operations'){alert('This budgeting report is available with Parish Accounting.');return;}
+    accountingReportView=id; accountingCustomReport=null;
+    if(['activities','position','trialBalance','expenses'].includes(id)){renderAccountingPane();return;}
+    if(['budgetActual','comparativeBudget','budgetByFund'].includes(id)){await loadAccountingBudgetLibraryReport(id);return;}
+    accountingCustomReport=accountingTabularReport(id); renderAccountingPane();
+  }
+  async function loadAccountingBudgetLibraryReport(id) {
+    const pane=document.getElementById('accountingPane'); if(pane)pane.innerHTML='<p class="sw-tool-loading">Creating budget report…</p>';
+    try{
+      const listResponse=await fetch(accountingApi('/budgets'),{headers:authHeaders()}),list=await listResponse.json().catch(()=>({}));
+      if(!listResponse.ok)throw new Error(list.message||'Budgets are unavailable.');
+      const budgets=(list.budgets||list.items||[]).filter((budget)=>budget.status!=='voided');
+      if(!budgets.length)throw new Error('Create a budget before running this report.');
+      const selected=budgets.slice(0,id==='comparativeBudget'?2:1),reports=[];
+      for(const budget of selected){const response=await fetch(accountingApi(`/budgets/${encodeURIComponent(budget.id)}/variance?throughMonth=${new Date().getUTCMonth()+1}`),{headers:authHeaders()}),payload=await response.json().catch(()=>({}));if(!response.ok)throw new Error(payload.message||'The budget report is unavailable.');reports.push(payload.report);}
+      const moneyColumn=(key,label)=>({key,label,money:true});
+      if(id==='budgetByFund'){const groups=new Map();for(const row of reports[0].rows||[]){const fund=accountingData.funds.find((item)=>item.id===row.fundId),name=fund?.name||'Unassigned',item=groups.get(name)||{name,budget:0,actual:0,variance:0};item.budget+=Number(row.budget||0);item.actual+=Number(row.actual||0);item.variance+=Number(row.variance||0);groups.set(name,item);}accountingCustomReport={title:'Budget by Fund',subtitle:reports[0].budget?.name||'',columns:[{key:'name',label:'Fund'},moneyColumn('budget','Budget'),moneyColumn('actual','Actual'),moneyColumn('variance','Variance')],rows:[...groups.values()]};}
+      else if(id==='comparativeBudget'){const prior=new Map((reports[1]?.rows||[]).map((row)=>[row.accountId,row]));accountingCustomReport={title:'Comparative Budget to Actual',subtitle:`${reports[0].budget?.name||'Current budget'}${reports[1]?` compared with ${reports[1].budget?.name}`:''}`,columns:[{key:'account',label:'Account'},moneyColumn('budget','Current budget'),moneyColumn('actual','Current actual'),moneyColumn('priorBudget','Prior budget'),moneyColumn('variance','Variance')],rows:(reports[0].rows||[]).map((row)=>({account:`${row.accountNumber} · ${row.account}`,budget:row.budget,actual:row.actual,priorBudget:prior.get(row.accountId)?.budget||0,variance:row.variance}))};}
+      else accountingCustomReport={title:'Budget to Actual',subtitle:reports[0].budget?.name||'',columns:[{key:'account',label:'Account'},moneyColumn('budget','Budget'),moneyColumn('actual','Actual'),moneyColumn('variance','Variance'),{key:'assessment',label:'Assessment'}],rows:(reports[0].rows||[]).map((row)=>({account:`${row.accountNumber} · ${row.account}`,budget:row.budget,actual:row.actual,variance:row.variance,assessment:row.varianceLabel}))};
+      renderAccountingPane();
+    }catch(error){accountingCustomReport={error:error.message||'Unable to create this report.'};renderAccountingPane();}
+  }
+  function renderAccountingReports(pane) {
+    if(accountingReportView==='library'){renderAccountingReportLibrary(pane);return;}
+    if(accountingCustomReport){if(accountingCustomReport.error){pane.innerHTML=`<div class="acct-list-head"><button class="acct-refresh" onclick="setAccountingReportView('library')">← All reports</button></div>${accountingEmpty('Report unavailable',accountingCustomReport.error)}`;return;}const report=accountingCustomReport;pane.innerHTML=`<div class="acct-report-head"><div><button class="acct-link" onclick="setAccountingReportView('library')">← All reports</button><h2>${escapeHtml(report.title)}</h2><p>${escapeHtml(report.subtitle||'')}</p></div><div class="acct-report-actions"><button class="acct-refresh" onclick="printAccountingReport()">Print</button><button class="acct-refresh" onclick="downloadAccountingReport()">Export CSV</button></div></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr>${report.columns.map((column)=>`<th>${escapeHtml(column.label)}</th>`).join('')}</tr></thead><tbody>${report.rows.map((row)=>`<tr>${report.columns.map((column)=>`<td>${column.money?accountingMoney(row[column.key]):escapeHtml(row[column.key]??'')}</td>`).join('')}</tr>`).join('')||`<tr><td colspan="${report.columns.length}">No posted activity for this report.</td></tr>`}</tbody></table></div>`;return;}
+    const report=accountingData.reports[accountingReportView==='expenses'?'activities':accountingReportView];
+    if(!report){pane.innerHTML=accountingEmpty('No report available yet','Initialize Accounting, then refresh to prepare financial statements.');return;}
+    const reportTabs=[['library','All reports'],['trialBalance','Trial Balance'],['activities','Income Statement'],['expenses','Expenses'],['position','Balance Sheet']];
+    if(accountingReportView==='expenses'){renderAccountingExpenses(pane,report,reportTabs);return;}
+    const rows=report.rows||[],amount=(row)=>row.amount??(Number(row.endingDebit||0)-Number(row.endingCredit||0));
+    pane.innerHTML=`<div class="acct-report-head"><div class="acct-view-switch">${reportTabs.map(([id,label])=>`<button type="button" class="${accountingReportView===id?'active':''}" onclick="setAccountingReportView('${id}')">${label}</button>`).join('')}</div><div class="acct-report-actions"><button type="button" class="acct-refresh" onclick="printAccountingReport()">Print</button><button type="button" class="acct-refresh" onclick="downloadAccountingReport()">Export CSV</button></div></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Account</th><th>Category</th><th>Amount</th></tr></thead><tbody>${rows.map((row)=>`<tr><td><strong>${escapeHtml(row.accountNumber||'')}</strong> ${escapeHtml(row.accountName||row.name||'')}</td><td>${escapeHtml(row.category||row.accountType||'')}</td><td>${accountingMoney(amount(row))}</td></tr>`).join('')||'<tr><td colspan="3">No posted activity in this period.</td></tr>'}</tbody></table></div>`;
+  }
+  function setAccountingReportView(view) { accountingReportView=view; accountingCustomReport=null; renderAccountingPane(); }
   function renderAccountingExpenses(pane, report, reportTabs) {
     const grouped = new Map();
     for (const row of (report.rows || []).filter((item) => item.category === 'expense' && Number(item.amount) !== 0)) {
@@ -996,14 +1161,15 @@
     if (!force && pane.dataset.loaded === 'true') return;
     pane.innerHTML = '<p class="sw-tool-loading">Loading Accounting...</p>';
     try {
-      const [setupRes, referenceRes, journalRes, ledgerRes, trialRes, activitiesRes, positionRes] = await Promise.all([
+      const [setupRes, referenceRes, journalRes, ledgerRes, trialRes, activitiesRes, positionRes, recurringRes] = await Promise.all([
         fetch(accountingApi('/setup'), { headers: authHeaders() }),
         fetch(accountingApi('/workspace-reference'), { headers: authHeaders() }),
         fetch(accountingApi('/journals?limit=50'), { headers: authHeaders() }),
         fetch(accountingApi('/general-ledger'), { headers: authHeaders() }),
         fetch(accountingApi('/reports/trial-balance'), { headers: authHeaders() }),
         fetch(accountingApi('/reports/statement-of-activities'), { headers: authHeaders() }),
-        fetch(accountingApi('/reports/statement-of-financial-position'), { headers: authHeaders() })
+        fetch(accountingApi('/reports/statement-of-financial-position'), { headers: authHeaders() }),
+        fetch(accountingApi('/recurring-transactions'), { headers: authHeaders() })
       ]);
       const setup = await setupRes.json().catch(() => ({}));
       const reference = await referenceRes.json().catch(() => ({}));
@@ -1012,12 +1178,14 @@
       const trial = await trialRes.json().catch(() => ({}));
       const activities = await activitiesRes.json().catch(() => ({}));
       const position = await positionRes.json().catch(() => ({}));
+      const recurring = await recurringRes.json().catch(() => ({}));
       if (setupRes.status === 401) { await renderAccountingAccess(); return; }
       if (!setupRes.ok) throw new Error(setup.message || setup.error || 'Accounting setup is unavailable.');
       if (!referenceRes.ok) throw new Error(reference.message || reference.error || 'The chart of accounts is unavailable.');
       if (!journalRes.ok) throw new Error(journals.message || journals.error || 'Accounting is unavailable.');
       if (!ledgerRes.ok) throw new Error(ledger.message || ledger.error || 'The general ledger is unavailable.');
-      accountingData = { setup: setup.overview, accounts: reference.accounts || [], funds: reference.funds || [], journals: journals.entries || [], ledger: ledger.rows || [], reports: { trialBalance: trial.report, activities: activities.report, position: position.report }, payables: accountingData.payables, budgets: accountingData.budgets, banking: accountingData.banking, integrations: accountingData.integrations, close: accountingData.close, tier: setup.tier || journals.tier || '' };
+      if (!recurringRes.ok) throw new Error(recurring.message || recurring.error || 'Recurring transactions are unavailable.');
+      accountingData = { setup: setup.overview, accounts: reference.accounts || [], funds: reference.funds || [], journals: journals.entries || [], ledger: ledger.rows || [], recurring: recurring.items || [], reports: { trialBalance: trial.report, activities: activities.report, position: position.report }, payables: accountingData.payables, budgets: accountingData.budgets, banking: accountingData.banking, integrations: accountingData.integrations, close: accountingData.close, tier: setup.tier || journals.tier || '' };
       document.getElementById('accountingTierLabel').textContent = accountingData.tier === 'advanced_operations' ? 'Parish Accounting' : 'Mission Accounting';
       document.getElementById('accountingTierCopy').textContent = accountingData.tier === 'advanced_operations' ? 'Advanced operations enabled' : 'Essential ledger and reports';
       document.getElementById('accountingParishName').textContent = currentParish.name || currentParish.parishName || 'Your parish';
@@ -1272,10 +1440,23 @@
     loadAccountingTab(true);
   }
   function downloadAccountingReport() {
+    if (accountingCustomReport) {
+      const quote=(value)=>`"${String(value??'').replaceAll('"','""')}"`;
+      const lines=[accountingCustomReport.columns.map((column)=>quote(column.label)).join(','),...accountingCustomReport.rows.map((row)=>accountingCustomReport.columns.map((column)=>quote(column.money?(Number(row[column.key]||0)/100).toFixed(2):row[column.key])).join(','))];
+      downloadBlob(`agapay-${accountingReportView.replaceAll(/([A-Z])/g,'-$1').toLowerCase()}.csv`,new Blob([lines.join('\r\n')],{type:'text/csv;charset=utf-8'}));
+      return;
+    }
     const paths = { trialBalance: 'trial-balance', activities: 'statement-of-activities', expenses: 'statement-of-activities', position: 'statement-of-financial-position' };
     downloadAccountingFile(accountingApi(`/reports/${paths[accountingReportView]}.csv`), `agapay-${paths[accountingReportView]}.csv`);
   }
   function printAccountingReport() {
+    if (accountingCustomReport) {
+      const report=accountingCustomReport,win=window.open('about:blank','_blank');
+      if(!win){alert('Allow pop-ups for AGAPAY to open the printable report.');return;}
+      const headings=report.columns.map((column)=>`<th>${escapeHtml(column.label)}</th>`).join('');
+      const rows=report.rows.map((row)=>`<tr>${report.columns.map((column)=>`<td>${column.money?accountingMoney(row[column.key]):escapeHtml(row[column.key]??'')}</td>`).join('')}</tr>`).join('');
+      win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(report.title)}</title><style>body{margin:40px;color:#061522;font:13px Arial,sans-serif}h1{font:32px Georgia,serif}p{color:#68716d}table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid #d9d5ca;text-align:left}th{font-size:10px;text-transform:uppercase}@media print{button{display:none}}</style></head><body><h1>${escapeHtml(report.title)}</h1><p>${escapeHtml(report.subtitle||'')}</p><button onclick="print()">Print</button><table><thead><tr>${headings}</tr></thead><tbody>${rows||`<tr><td colspan="${report.columns.length}">No posted activity.</td></tr>`}</tbody></table></body></html>`);win.document.close();win.focus();return;
+    }
     const report = accountingData.reports[accountingReportView === 'expenses' ? 'activities' : accountingReportView];
     if (!report) return;
     const titles = { trialBalance: 'Trial Balance', activities: 'Statement of Activities', expenses: 'Expense Breakdown', position: 'Statement of Financial Position' };

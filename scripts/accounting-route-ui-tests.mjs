@@ -5,6 +5,7 @@ import { handleAccountingPayablesBudgets } from "../src/handlers/accounting-paya
 import { handleAccountingReconciliationCommerce } from "../src/handlers/accounting-reconciliation-commerce.js";
 import { handleAccountingClose } from "../src/handlers/accounting-close.js";
 import { handleAccountingAccess } from "../src/handlers/accounting-access.js";
+import { handleAccountingRecurring } from "../src/handlers/accounting-recurring.js";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const worker = read("src/worker.js");
@@ -58,9 +59,10 @@ assert.ok(app.includes("<th>Source</th><th>Amount</th><th>Status</th>"), "journa
 assert.ok(app.includes("row.totalDebits ?? row.total_debits ?? row.totalCredits"), "journal entry amount should use the balanced entry total");
 assert.match(app, /function toggleAccountingLedgerOrder\b/, "general ledger should expose a chronological order toggle");
 assert.ok(app.includes("accountingLedgerNewestFirst ? 'Oldest first' : 'Newest first'"), "general ledger should label both sort directions");
-assert.ok(app.includes("Every posted journal entry has equal debits and credits"), "general ledger should explain how the register relates to journal entries");
+assert.ok(app.includes("AGAPAY creates and posts the balanced journal entry behind every register transaction"), "general ledger should explain how the register relates to journal entries");
 for (const registerFeature of ["accountingRegisterModel", "Account register", "Current balance", "Transaction history", "Search this register", "registerBalance"]) assert.ok(app.includes(registerFeature), `missing premium account register feature ${registerFeature}`);
-for (const registerAction of ["setAccountingLedgerAccount", "searchAccountingLedger", "clearAccountingLedgerSearch", "newAccountingRegisterEntry"]) assert.match(app, new RegExp(`function ${registerAction}\\b`), `missing account register action ${registerAction}`);
+for (const registerAction of ["setAccountingLedgerAccount", "searchAccountingLedger", "clearAccountingLedgerSearch", "setAccountingRegisterEntryMode", "applyAccountingRegisterDefaultFund", "submitAccountingRegisterEntry"]) assert.match(app, new RegExp(`function ${registerAction}\\b`), `missing account register action ${registerAction}`);
+for (const entryFeature of ["Deposit / Payment", "Contribution account", "Post transaction", "Post contribution", "manual_register_contribution", "manual_register_transaction"]) assert.ok(app.includes(entryFeature), `missing streamlined register-entry feature ${entryFeature}`);
 for (const fundFeature of ["Fund directory", "Every fund automatically receives a matching equity / fund-balance row", "Equity / Fund Balances", "Unrestricted net assets", "Restricted net assets"]) assert.ok(app.includes(fundFeature), `missing premium fund-account feature ${fundFeature}`);
 assert.match(app, /function toggleAccountingFundAccountSection\b/, "fund accounts should be expandable");
 assert.ok(app.includes("Fund Balance</strong>"), "each fund should surface as an automatic fund-balance row");
@@ -69,6 +71,11 @@ for (const expenseAction of ["showAccountingExpenseAccountForm", "saveAccounting
 assert.ok(app.includes('data-default-fund='), "journal account choices should carry their configured default fund");
 assert.ok(app.includes("fundSelect.value = defaultFundId"), "selecting an expense account should automatically select its default fund");
 assert.ok(routes.includes('path.match(/^\\/accounts'), "accounting setup handler should expose account creation and editing");
+for (const reportName of ["Balance Sheet", "Income Statement", "Comparative Income Statement Periods", "Budget to Actual", "Income Statement by Fund", "Balance Sheet by Fund", "Income Statement by Month", "Comparative Income Statement", "Comparative Budget to Actual", "Budget by Fund"]) assert.ok(app.includes(`title:'${reportName}'`), `missing report library option ${reportName}`);
+for (const reportAction of ["renderAccountingReportLibrary", "filterAccountingReportLibrary", "openAccountingReport", "loadAccountingBudgetLibraryReport", "renderAccountingReports"]) assert.match(app, new RegExp(`function ${reportAction}\\b`), `missing report library action ${reportAction}`);
+assert.ok(app.includes("accountingCustomReport"), "custom comparative and fund reports should support screen, print, and CSV output");
+for (const recurringFeature of ["Recurring expenses", "Schedule expense", "Due transactions post automatically each morning", "Every two weeks"]) assert.ok(app.includes(recurringFeature), `missing recurring transaction feature ${recurringFeature}`);
+for (const recurringAction of ["accountingRecurringPanel", "saveAccountingRecurring", "toggleAccountingRecurring"]) assert.match(app, new RegExp(`function ${recurringAction}\\b`), `missing recurring transaction action ${recurringAction}`);
 const unauthorized = await handleAccountingSetupReports(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/setup"), {}, "parish-a");
 assert.equal(unauthorized.status, 401);
 assert.equal(unauthorized.headers.get("Cache-Control"), "private, no-store");
@@ -83,5 +90,7 @@ assert.equal(phaseFUnauthorized.status, 401);
 assert.equal(phaseFUnauthorized.headers.get("Cache-Control"), "private, no-store");
 const accessUnauthorized = await handleAccountingAccess(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting-access/profiles"), {}, "parish-a");
 assert.equal(accessUnauthorized.status, 401);
+const recurringUnauthorized = await handleAccountingRecurring(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/recurring-transactions"), {}, "parish-a");
+assert.equal(recurringUnauthorized.status, 401);
 
 console.log("Accounting route and parish UI checks passed.");
