@@ -7,6 +7,15 @@ const reply = (payload, status = 200) => json(payload, { status, headers: HEADER
 const today = () => new Date().toISOString().slice(0, 10);
 const yearStart = () => `${new Date().getUTCFullYear()}-01-01`;
 const results = async (db, sql) => (await db.prepare(sql).all()).results || [];
+const FUND_RESTRICTIONS = new Set(["unrestricted", "board_designated", "donor_restricted_temporary", "donor_restricted_permanent"]);
+const clean = (value) => String(value || "").trim();
+
+async function listFunds(db) {
+  return results(db, `SELECT id,code,name,description,restriction_type restrictionType,purpose,
+    is_default isDefault,is_active isActive,is_system isSystem,version,
+    CASE WHEN description LIKE 'Synced from AGAPAY %' THEN 1 ELSE 0 END isGivingSynced
+    FROM accounting_funds ORDER BY is_active DESC,is_default DESC,code`);
+}
 
 async function workspaceReference(db) {
   const [accounts, funds] = await Promise.all([
@@ -34,9 +43,10 @@ export async function handleAccountingSetupReports(request, env, parishId) {
   let path = url.pathname.slice(base.length);
   const csv = path.endsWith(".csv");
   if (csv) path = path.slice(0, -4);
-  const supported = path === "/setup" || path === "/setup/initialize" || path === "/settings" || path === "/workspace-reference" || path.startsWith("/reports/");
+  const fundMatch = path.match(/^\/funds(?:\/([^/]+))?$/);
+  const supported = path === "/setup" || path === "/setup/initialize" || path === "/settings" || path === "/workspace-reference" || fundMatch || path.startsWith("/reports/");
   if (!supported) return null;
-  const capability = request.method === "GET" ? "accounting.view" : "accounting.configure";
+  const capability = fundMatch && request.method !== "GET" ? "accounting.funds.manage" : request.method === "GET" ? "accounting.view" : "accounting.configure";
   try {
     const ctx = await accountingContext(request, env, parishId, capability);
     if (!ctx) return reply({ error: "Unauthorized" }, 401);
@@ -45,6 +55,35 @@ export async function handleAccountingSetupReports(request, env, parishId) {
     if (request.method === "POST" && path === "/setup/initialize") return reply({ ok: true, setup: await initializeAccountingSetup(ctx.db, { actor: ctx.actor }) }, 201);
     if (request.method === "GET" && path === "/settings") return reply({ ok: true, settings: await getAccountingSettings(ctx.db, { actor: ctx.actor }) });
     if (request.method === "GET" && path === "/workspace-reference") return reply({ ok: true, ...(await workspaceReference(ctx.db)) });
+    if (request.method === "GET" && fundMatch && !fundMatch[1]) return reply({ ok: true, funds: await listFunds(ctx.db) });
+    if (request.method === "POST" && fundMatch && !fundMatch[1]) {
+      const body = await request.json().catch(() => ({}));
+      const code = clean(body.code).toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 24);
+      const name = clean(body.name).slice(0, 120);
+      const restriction = clean(body.restrictionType) || "unrestricted";
+      if (!code || !name || !FUND_RESTRICTIONS.has(restriction)) return reply({ error: "invalid_fund", message: "Code, name, and a valid restriction are required." }, 422);
+      const id = `fund_${crypto.randomUUID()}`;
+      await ctx.db.prepare(`INSERT INTO accounting_funds
+        (id,code,name,description,restriction_type,purpose,is_default,is_active,is_system)
+        VALUES(?,?,?,?,?,?,0,1,0)`).bind(id, code, name, clean(body.description) || null, restriction, clean(body.purpose) || null).run();
+      return reply({ ok: true, fund: (await listFunds(ctx.db)).find((fund) => fund.id === id) }, 201);
+    }
+    if (request.method === "PATCH" && fundMatch?.[1]) {
+      const body = await request.json().catch(() => ({}));
+      const id = decodeURIComponent(fundMatch[1]);
+      const current = await ctx.db.prepare("SELECT * FROM accounting_funds WHERE id=?").bind(id).first();
+      if (!current) return reply({ error: "not_found", message: "Fund was not found." }, 404);
+      if (Number(current.version) !== Number(body.expectedVersion)) return reply({ error: "conflict", message: "This fund changed. Reload and try again." }, 409);
+      const code = clean(body.code ?? current.code).toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 24);
+      const name = clean(body.name ?? current.name).slice(0, 120);
+      const restriction = clean(body.restrictionType ?? current.restriction_type);
+      if (!code || !name || !FUND_RESTRICTIONS.has(restriction)) return reply({ error: "invalid_fund", message: "Code, name, and a valid restriction are required." }, 422);
+      await ctx.db.prepare(`UPDATE accounting_funds SET code=?,name=?,description=?,restriction_type=?,purpose=?,
+        version=version+1,updated_at=datetime('now') WHERE id=? AND version=?`)
+        .bind(code, name, clean(body.description ?? current.description) || null, restriction,
+          clean(body.purpose ?? current.purpose) || null, id, Number(body.expectedVersion)).run();
+      return reply({ ok: true, fund: (await listFunds(ctx.db)).find((fund) => fund.id === id) });
+    }
     if (request.method === "PATCH" && path === "/settings") {
       const body = await request.json().catch(() => ({}));
       return reply({ ok: true, settings: await updateAccountingSettings(ctx.db, { actor: ctx.actor, expectedVersion: body.expectedVersion, patch: body.patch || {} }) });

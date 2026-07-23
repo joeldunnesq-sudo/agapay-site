@@ -624,6 +624,8 @@
   let accountingReportView = 'trialBalance';
   let accountingData = { setup: null, journals: [], ledger: [], reports: {}, accounts: [], funds: [], payables: null, budgets: null, banking: null, integrations: null, close: null, tier: '' };
   let accountingBankPreview = null;
+  let accountingFundCatalog = null;
+  let accountingFundEditor = null;
   let accountingReconciliationView = 'giving';
   let accountingCloseDetail = null;
   let accountingJournalEditor = null;
@@ -686,7 +688,7 @@
     return `<div class="acct-empty"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(copy)}</span></div>`;
   }
   function accountingViewTitle() {
-    return ({ overview:'Overview', ledger:'General Ledger', journals:'Journal Entries', reports:'Financial Reports', payables:'Payables', budgets:'Budgets', banking:'Reconciliation', close:'Period Close', setup:'Setup', settings:'Settings', integrations:'Settings' })[accountingView] || 'Overview';
+    return ({ overview:'Overview', ledger:'General Ledger', journals:'Journal Entries', funds:'Funds', reports:'Financial Reports', payables:'Payables', budgets:'Budgets', banking:'Reconciliation', close:'Period Close', setup:'Setup', settings:'Settings', integrations:'Settings' })[accountingView] || 'Overview';
   }
   function renderAccountingOverview(pane) {
     const position = accountingData.reports.position || {}, activities = accountingData.reports.activities || {};
@@ -746,6 +748,7 @@
       pane.innerHTML = `<div class="acct-report-head"><div class="acct-view-switch">${reportTabs.map(([id,label]) => `<button type="button" class="${accountingReportView === id ? 'active' : ''}" onclick="setAccountingReportView('${id}')">${label}</button>`).join('')}</div><div class="acct-report-actions"><button type="button" class="acct-refresh" onclick="printAccountingReport()">Print</button><button type="button" class="acct-refresh" onclick="downloadAccountingReport()">Export CSV</button></div></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Account</th><th>Category</th><th>Amount</th></tr></thead><tbody>${rows.map((row) => `<tr><td><strong>${escapeHtml(row.accountNumber || '')}</strong> ${escapeHtml(row.accountName || row.name || '')}</td><td>${escapeHtml(row.category || row.accountType || '')}</td><td>${accountingMoney(amount(row))}</td></tr>`).join('') || '<tr><td colspan="3">No posted activity in this period.</td></tr>'}</tbody></table></div>`;
       return;
     }
+    if (accountingView === 'funds') { renderAccountingFunds(pane); return; }
     if (accountingView === 'payables') { renderAccountingPayables(pane); return; }
     if (accountingView === 'budgets') { renderAccountingBudgets(pane); return; }
     if (accountingView === 'banking') { renderAccountingBanking(pane); return; }
@@ -786,13 +789,72 @@
     pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Financial planning</span><h2>Budget versions</h2></div><button class="acct-primary" onclick="showAccountingBudgetForm()">New budget</button></div><div id="accountingPhaseDForm"></div><div class="acct-card-grid">${data.items.map((budget) => `<article class="acct-budget-card"><div><span>Version ${budget.versionNumber}</span><h3>${escapeHtml(budget.name)}</h3><p>${escapeHtml(budget.description || 'Parish operating plan')}</p></div><span class="acct-status ${escapeAttr(budget.status)}">${escapeHtml(budget.status)}</span><div class="acct-row-actions"><button onclick="openAccountingBudgetVariance('${escapeAttr(budget.id)}')">Variance</button><button onclick="openAccountingCouncilPacket('${escapeAttr(budget.id)}')">Council packet</button>${budget.status === 'draft' ? `<button onclick="accountingBudgetAction('${escapeAttr(budget.id)}','submit',${budget.version})">Submit</button>` : ''}${budget.status === 'submitted' ? `<button onclick="accountingBudgetAction('${escapeAttr(budget.id)}','approve',${budget.version})">Approve</button>` : ''}${budget.status === 'approved' ? `<button onclick="accountingBudgetAction('${escapeAttr(budget.id)}','lock',${budget.version})">Lock</button>` : ''}</div></article>`).join('') || accountingEmpty('No budgets yet','Create the first operating budget and allocate it by account and fund.')}</div>`;
   }
   function setAccountingView(view) {
-    accountingView = ['overview', 'setup', 'settings', 'reports', 'journals', 'ledger', 'payables', 'budgets', 'banking', 'integrations', 'close'].includes(view) ? view : 'overview';
+    accountingView = ['overview', 'setup', 'settings', 'reports', 'journals', 'ledger', 'funds', 'payables', 'budgets', 'banking', 'integrations', 'close'].includes(view) ? view : 'overview';
     renderAccountingPane();
     if (['payables', 'budgets'].includes(accountingView) && accountingData.tier === 'advanced_operations' && !accountingData[accountingView]) loadAccountingPhaseD();
     if (['banking', 'integrations'].includes(accountingView) && !accountingData[accountingView]) loadAccountingPhaseE();
+    if (accountingView === 'funds' && !accountingFundCatalog) loadAccountingFunds();
     if (accountingView === 'close' && !accountingData.close) loadAccountingPhaseF();
   }
   function setAccountingReportView(view) { accountingReportView = view; renderAccountingPane(); }
+  async function loadAccountingFunds() {
+    const pane = document.getElementById('accountingPane');
+    try {
+      const response = await fetch(accountingApi('/funds'), { headers: authHeaders() });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.message || payload.error || 'Unable to load funds.');
+      accountingFundCatalog = payload.funds || [];
+      accountingData.funds = accountingFundCatalog.filter((fund) => Number(fund.isActive));
+      renderAccountingPane();
+    } catch (error) {
+      if (pane) pane.innerHTML = accountingEmpty('Funds need attention', error.message);
+    }
+  }
+  function restrictionLabel(value) {
+    return ({ unrestricted:'Unrestricted', board_designated:'Board designated', donor_restricted_temporary:'Donor restricted · temporary', donor_restricted_permanent:'Donor restricted · permanent' })[value] || value;
+  }
+  function renderAccountingFunds(pane) {
+    if (!accountingFundCatalog) { pane.innerHTML = '<p class="sw-tool-loading">Loading funds...</p>'; return; }
+    if (accountingFundEditor) {
+      const fund = accountingFundEditor.id ? accountingFundEditor : { code:'',name:'',description:'',purpose:'',restrictionType:'unrestricted' };
+      pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">${fund.id ? 'Edit fund' : 'New fund'}</span><h2>${fund.id ? escapeHtml(fund.name) : 'Add an accounting fund'}</h2><p>Funds keep every journal entry, budget, contribution, and report assigned to the right purpose.</p></div><button class="acct-refresh" onclick="accountingFundEditor=null;renderAccountingPane()">Cancel</button></div>
+        <form class="acct-phase-form acct-fund-form" onsubmit="saveAccountingFund(event)">
+          <div class="acct-form-grid"><label>Fund code<input name="code" maxlength="24" required value="${escapeAttr(fund.code)}" placeholder="BUILDING"></label><label>Fund name<input name="name" maxlength="120" required value="${escapeAttr(fund.name)}" placeholder="Building Fund"></label></div>
+          <label>Restriction<select name="restrictionType">${[['unrestricted','Unrestricted'],['board_designated','Board designated'],['donor_restricted_temporary','Donor restricted · temporary'],['donor_restricted_permanent','Donor restricted · permanent']].map(([value,label])=>`<option value="${value}" ${fund.restrictionType===value?'selected':''}>${label}</option>`).join('')}</select></label>
+          <label>Purpose<input name="purpose" value="${escapeAttr(fund.purpose||'')}" placeholder="What this fund supports"></label>
+          <label>Description<textarea name="description" rows="4" placeholder="Internal accounting description">${escapeHtml(fund.description||'')}</textarea></label>
+          ${fund.isGivingSynced ? '<div class="notice">This fund originated in Funds &amp; Alms. Its name and restriction may be refreshed when that parish configuration is saved.</div>' : ''}
+          <div class="acct-phase-form-foot"><button class="acct-primary">${fund.id ? 'Save fund' : 'Add fund'}</button><span class="acct-form-status"></span></div>
+        </form>`;
+      return;
+    }
+    const active = accountingFundCatalog.filter((fund) => Number(fund.isActive));
+    pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Fund accounting</span><h2>Funds</h2><p>Manage the funds available across journal entries, budgets, giving integrations, and reports.</p></div><button class="acct-primary" onclick="accountingFundEditor={};renderAccountingPane()">Add fund</button></div>
+      <div class="acct-kpis"><div><span>Active funds</span><strong>${active.length}</strong></div><div><span>Giving synced</span><strong>${active.filter(f=>Number(f.isGivingSynced)).length}</strong></div><div><span>Restricted</span><strong>${active.filter(f=>String(f.restrictionType).startsWith('donor_restricted')).length}</strong></div></div>
+      <div class="acct-fund-tools"><label>Find a fund<input type="search" placeholder="Search by name, code, or purpose" oninput="filterAccountingFunds(this.value)"></label><span>${accountingFundCatalog.length} total · ${accountingFundCatalog.length-active.length} retired</span></div>
+      <div class="acct-fund-list">${accountingFundCatalog.map((fund)=>`<article class="acct-fund-row ${Number(fund.isActive)?'':'retired'}" data-fund-search="${escapeAttr(`${fund.code} ${fund.name} ${fund.purpose||''} ${fund.description||''}`.toLowerCase())}"><div class="acct-fund-code">${escapeHtml(fund.code)}</div><div><h3>${escapeHtml(fund.name)}</h3><p>${escapeHtml(fund.purpose||fund.description||'No purpose recorded.')}</p><div class="acct-fund-tags"><span>${escapeHtml(restrictionLabel(fund.restrictionType))}</span>${Number(fund.isDefault)?'<span>Default</span>':''}${Number(fund.isGivingSynced)?'<span>Funds &amp; Alms</span>':'<span>Accounting only</span>'}${Number(fund.isActive)?'':'<span>Retired</span>'}</div></div><button class="acct-refresh" onclick="editAccountingFund('${escapeAttr(fund.id)}')">Edit</button></article>`).join('') || accountingEmpty('No funds','Add the first fund for this ledger.')}</div>`;
+  }
+  function editAccountingFund(id) {
+    accountingFundEditor = accountingFundCatalog?.find((fund) => fund.id === id) || null;
+    renderAccountingPane();
+  }
+  function filterAccountingFunds(query) {
+    const needle = String(query || '').trim().toLowerCase();
+    document.querySelectorAll('.acct-fund-row[data-fund-search]').forEach((row) => { row.hidden = needle && !row.dataset.fundSearch.includes(needle); });
+  }
+  async function saveAccountingFund(event) {
+    event.preventDefault();
+    const form = event.currentTarget, status = form.querySelector('.acct-form-status');
+    status.textContent = 'Saving…';
+    const body = Object.fromEntries(new FormData(form));
+    if (accountingFundEditor?.id) body.expectedVersion = accountingFundEditor.version;
+    const path = accountingFundEditor?.id ? `/funds/${encodeURIComponent(accountingFundEditor.id)}` : '/funds';
+    const response = await fetch(accountingApi(path), { method: accountingFundEditor?.id ? 'PATCH' : 'POST', headers:{...authHeaders(),'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) { status.textContent = payload.message || payload.error || 'Unable to save fund.'; return; }
+    accountingFundEditor = null; accountingFundCatalog = null;
+    await loadAccountingFunds();
+  }
   async function loadAccountingTab(force = false) {
     const pane = document.getElementById('accountingPane');
     if (!pane || !currentParish?.parishId) return;

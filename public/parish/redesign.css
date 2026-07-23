@@ -1350,3 +1350,44 @@
 @media(max-width:600px) {
   .acct-reconcile-switch { display: grid; grid-template-columns: 1fr; }
 }
+.acct-fund-list { display: grid; gap: 9px; }
+.acct-fund-tools { display:flex; align-items:end; justify-content:space-between; gap:16px; margin:0 0 12px; }
+.acct-fund-tools label { width:min(420px,100%); color:var(--stone); font-size:11px; font-weight:700; }
+.acct-fund-tools input { width:100%; margin-top:5px; }
+.acct-fund-tools > span { color:var(--muted); font-size:11px; }
+.acct-fund-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0,1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255,255,255,.72);
+}
+.acct-fund-code {
+  overflow: hidden;
+  color: var(--gold);
+  font: 700 12px var(--sans);
+  letter-spacing: .08em;
+  text-overflow: ellipsis;
+}
+.acct-fund-row h3 { margin: 0; color: var(--deep); font: 600 20px var(--serif); }
+.acct-fund-row p { margin: 4px 0 7px; color: var(--stone); font-size: 12px; }
+.acct-fund-row.retired { opacity:.62; background:rgba(255,255,255,.38); }
+.acct-fund-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.acct-fund-tags span {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(200,162,74,.12);
+  color: #735817;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.acct-fund-form { max-width: 760px; }
+.acct-fund-form textarea { width: 100%; box-sizing: border-box; resize: vertical; }
+@media(max-width:600px) {
+  .acct-fund-row { grid-template-columns: 1fr auto; gap: 9px; }
+  .acct-fund-code { grid-column: 1 / -1; }
+}
