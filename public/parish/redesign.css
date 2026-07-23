@@ -605,12 +605,12 @@
 
 /* Accounting's module switcher is a purpose-built top bar, not a second sidebar. */
 .acct-suite-shell { display:flex; flex-direction:column; height:100vh; min-height:0; }
-.acct-suite-rail { position:relative; z-index:8; display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"brand tier" "nav nav"; align-items:center; gap:0 22px; min-height:0; padding:0 24px; border-bottom:1px solid rgba(232,200,121,.2); background:linear-gradient(100deg,var(--deep) 0%,#0b2637 58%,#102f41 100%); box-shadow:0 8px 24px rgba(6,21,34,.12); }
+.acct-suite-rail { position:relative; z-index:8; display:grid; flex:0 0 auto; grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"brand tier" "nav nav"; align-items:center; gap:0 22px; min-height:0; overflow:hidden; padding:0 24px; border-bottom:1px solid rgba(232,200,121,.2); background:linear-gradient(100deg,var(--deep) 0%,#0b2637 58%,#102f41 100%); box-shadow:0 8px 24px rgba(6,21,34,.12); }
 .acct-suite-brand { grid-area:brand; min-width:150px; margin:0; padding:13px 0 9px; border:0; }
 .acct-suite-brand strong { font-size:20px; }
 .acct-suite-brand span { margin-top:4px; }
 .acct-suite-rail nav { grid-area:nav; display:grid; grid-template-columns:repeat(9,minmax(0,1fr)); align-self:stretch; gap:2px; min-width:0; overflow:visible; border-top:1px solid rgba(255,255,255,.08); }
-.acct-suite-rail nav button { position:relative; justify-content:center; min-width:0; min-height:43px; border-radius:0; padding:8px 6px 7px; white-space:nowrap; }
+.acct-suite-rail nav button { position:relative; box-sizing:border-box; justify-content:center; min-width:0; min-height:43px; border-radius:0; padding:8px 6px 7px; white-space:nowrap; }
 .acct-suite-rail nav button:hover { background:rgba(255,255,255,.045); }
 .acct-suite-rail nav button.active { background:rgba(200,162,74,.08); box-shadow:none; }
 .acct-suite-rail nav button.active::after { content:""; position:absolute; right:10px; bottom:0; left:10px; height:3px; border-radius:3px 3px 0 0; background:var(--pdx-gold-bright); }
@@ -619,7 +619,7 @@
 .acct-suite-main { flex:1 1 auto; height:auto; min-height:0; overflow:auto; }
 
 @media(max-width:1120px){.acct-suite-rail{padding:0 16px}.acct-suite-tier{display:none}.acct-suite-rail nav{grid-template-columns:repeat(5,minmax(0,1fr))}.acct-suite-rail nav button{white-space:normal}}
-@media(max-width:760px){.acct-suite-shell{display:flex;height:100vh}.acct-suite-rail{position:relative;top:auto;display:grid;grid-template-columns:1fr;grid-template-areas:"brand" "nav";padding:0 8px;background:linear-gradient(100deg,var(--deep),#102f41)}.acct-suite-brand{display:block;padding:11px 7px 8px}.acct-suite-brand strong{font-size:18px}.acct-suite-brand span{font-size:8px}.acct-suite-rail nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:0}.acct-suite-rail nav button{min-height:38px;padding:6px 4px;font-size:10px}.acct-suite-rail nav button.active{box-shadow:none}.acct-suite-rail nav button.active::after{right:8px;left:8px}.acct-suite-header{top:0}.acct-suite-main{height:auto;min-height:0}}
+@media(max-width:760px){.acct-suite-shell{display:flex;width:100%;max-width:100vw;min-width:0;height:100vh;overflow:hidden}.acct-suite-rail{position:relative;top:auto;display:grid;width:100%;max-width:100%;min-width:0;grid-template-columns:minmax(0,1fr);grid-template-areas:"brand" "nav";padding:0 8px;background:linear-gradient(100deg,var(--deep),#102f41)}.acct-suite-brand{display:block;min-width:0;padding:11px 7px 8px}.acct-suite-brand strong{font-size:18px}.acct-suite-brand span{font-size:8px}.acct-suite-rail nav{display:grid;width:100%;min-width:0;grid-template-columns:repeat(3,minmax(0,1fr));padding:0}.acct-suite-rail nav button{width:100%;min-width:0;min-height:38px;padding:6px 4px;font-size:10px;white-space:normal}.acct-suite-rail nav button.active{box-shadow:none}.acct-suite-rail nav button.active::after{right:8px;left:8px}.acct-suite-header{top:0}.acct-suite-main{width:100%;min-width:0;height:auto;min-height:0}}
 
 .pdx-gv-dir-controls { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
 .pdx-gv-search { flex: 1; min-width: 200px; position: relative; }

@@ -10,7 +10,9 @@ AGAPAY_REGISTRATION_NOTIFY_EMAIL = "hello@agapay.app"
 AGAPAY_APP_URL = "https://agapay.app"
 AGAPAY_PUBLIC_URL = "https://agapay.app"
 AGAPAY_ENVIRONMENT = "production"
-ACCOUNTING_DATABASE_BINDINGS = '{"agapay-acct-production-4ab22bac06dca8b80e70":"ACCOUNTING_DB_ST_FIACRE"}'
+ACCOUNTING_DATABASE_BINDINGS = '{"agapay-acct-production-4ab22bac06dca8b80e70":"ACCOUNTING_DB_ST_FIACRE","agapay-acct-production-e4601e1d985ec8dcb9fe":"ACCOUNTING_DB_PHASE_G_CANARY"}'
+ACCOUNTING_CANARY_PARISH_ID = "agapay-phase-g-canary"
+ACCOUNTING_ALERT_EMAIL = "joeldunnesq@gmail.com"
 TURNSTILE_SITE_KEY = "0x4AAAAAADgGWu1JfBKOSH_g"
 CAMPAIGN_ASSETS_URL = "https://pub-a8aecb95751f49ac9b078c3e3ed378b8.r2.dev"
 AGAPAY_ENABLED_PRODUCTS = "give,learn,listen"
@@ -75,6 +77,11 @@ database_id = "24f514a6-6904-425b-a4c8-b3584b23c0be"
 binding = "ACCOUNTING_DB_ST_FIACRE"
 database_name = "agapay-acct-production-4ab22bac06dca8b80e70"
 database_id = "7d3a6a59-f622-4303-9e84-e1074879d11d"
+
+[[d1_databases]]
+binding = "ACCOUNTING_DB_PHASE_G_CANARY"
+database_name = "agapay-acct-production-e4601e1d985ec8dcb9fe"
+database_id = "0b55d572-7dbc-4f6d-97a5-826841f4bbb8"
 
 [[r2_buckets]]
 binding = "CAMPAIGN_ASSETS"

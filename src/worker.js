@@ -88,6 +88,7 @@ import {
 } from "./lib/core.js";
 
 import { bookstoreEnabledFor, sacramentsEnabledFor } from "./lib/entitlements.js";
+import { runScheduledAccountingIntegrity } from "./accounting/integrity/scheduler.js";
 
 import {
   verifyParishDashboardBearer,
@@ -2402,6 +2403,9 @@ async function handleHealth(env) {
 export default {
   async scheduled(event, env, ctx) {
     if (env && !env.DB && env.AGAPAY_DB) env.DB = env.AGAPAY_DB;
+    ctx.waitUntil(runScheduledAccountingIntegrity(env, event.scheduledTime)
+      .then((results) => console.log("scheduled_accounting_integrity", JSON.stringify(results)))
+      .catch((error) => console.error("scheduled_accounting_integrity_failed", error?.message || String(error))));
     ctx.waitUntil(sendWeeklyCommemorationEmails(env, event.scheduledTime)
       .then((results) => console.log("weekly_commemoration_emails", JSON.stringify(results)))
       .catch((error) => console.error("weekly_commemoration_emails_failed", error?.message || String(error))));
