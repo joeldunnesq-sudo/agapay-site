@@ -62,6 +62,12 @@ import {
   updateDonorOfferingByCheckout,
   updateDonorOfferingByPaymentIntent,
 } from "./parish.js";
+import {
+  wireCommerceOrderToAccounting,
+  wireCommerceRefundsToAccounting,
+  wireGivingOfferingToAccounting,
+  wireGivingRefundsToAccounting,
+} from "../accounting/source-wiring.js";
 
 // src/handlers/stripe.js
 // Stripe webhook, onboarding, subscription checkout, and refresh handlers.
@@ -330,7 +336,8 @@ export async function processStripeWebhookEvent(env, event) {
 
     if (object.metadata?.commerce_module === "bookstore"
       || String(object.metadata?.order_id || "").startsWith("bookstore_")) {
-      await completeCommerceOrderFromStripe(env, object, "session");
+      const order = await completeCommerceOrderFromStripe(env, object, "session");
+      if (order?.id) await wireCommerceOrderToAccounting(env, order.id);
       return;
     }
 
@@ -356,6 +363,7 @@ export async function processStripeWebhookEvent(env, event) {
       ...feeUpdates
     });
     if (status === "completed" || paymentStatus === "paid") {
+      if (updatedOffering) await wireGivingOfferingToAccounting(env, updatedOffering);
       await ensureCommemorationEntryFromOffering(env, updatedOffering || {}, {
         checkoutSessionId: object.id,
         id: object.id,
@@ -406,7 +414,8 @@ export async function processStripeWebhookEvent(env, event) {
   if (event.type === "payment_intent.succeeded") {
     if (object.metadata?.commerce_module === "bookstore"
       || String(object.metadata?.order_id || "").startsWith("bookstore_")) {
-      await completeCommerceOrderFromStripe(env, object, "payment_intent");
+      const order = await completeCommerceOrderFromStripe(env, object, "payment_intent");
+      if (order?.id) await wireCommerceOrderToAccounting(env, order.id);
       return;
     }
     const existingOffering = await loadDonorOfferingByPaymentIntent(env, object.id);
@@ -423,6 +432,7 @@ export async function processStripeWebhookEvent(env, event) {
       completedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString(),
       ...feeUpdates
     });
+    if (updatedOffering) await wireGivingOfferingToAccounting(env, updatedOffering);
     await ensureCommemorationEntryFromOffering(env, updatedOffering || {}, {
       id: updatedOffering?.checkoutSessionId || updatedOffering?.stripePaymentIntentId || object.id,
       stripePaymentIntentId: object.id,
@@ -458,13 +468,15 @@ export async function processStripeWebhookEvent(env, event) {
   }
 
   if (event.type === "charge.refunded") {
-    await refundCommerceOrderFromStripe(env, object);
-    await updateDonorOfferingByPaymentIntent(env, object.payment_intent, {
+    const commerceOrder = await refundCommerceOrderFromStripe(env, object);
+    if (commerceOrder?.id) await wireCommerceRefundsToAccounting(env, commerceOrder.id, object);
+    const refundedOffering = await updateDonorOfferingByPaymentIntent(env, object.payment_intent, {
       status: object.amount_refunded >= object.amount ? "refunded" : "partially_refunded",
       paymentStatus: object.amount_refunded >= object.amount ? "refunded" : "partially_refunded",
       refundedCents: object.amount_refunded || 0,
       refundedAt: new Date().toISOString()
     });
+    if (refundedOffering) await wireGivingRefundsToAccounting(env, refundedOffering, object);
   }
 
   if (event.type === "charge.dispute.created") {

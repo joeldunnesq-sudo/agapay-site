@@ -63,6 +63,7 @@ import {
   verifyPasswordRecord,
   verifyTurnstileIfConfigured,
 } from "../lib/core.js";
+import { synchronizeGivingCatalogWithAccounting } from "../accounting/source-wiring.js";
 
 import { bookstoreEnabledFor, entitlementsSummary, hasParishPlusAccess, sacramentsEnabledFor, tierIncludesParishPlus } from "../lib/entitlements.js";
 
@@ -5520,7 +5521,7 @@ export async function completeCommerceOrderFromStripe(env, object = {}, kind = "
       paymentIntentId);
   }
   if (!order) return null;
-  if (order.payment_status === "paid") return order; // idempotent
+  if (order.payment_status === "paid") return order; // accounting wiring can still replay safely
 
   const fees = paymentIntentId
     ? await stripePaymentIntentFinancialUpdates(env, paymentIntentId, order.parish_id, {
@@ -5555,7 +5556,11 @@ export async function completeCommerceOrderFromStripe(env, object = {}, kind = "
     completedAt, now, order.id
   );
 
-  return { ...order, payment_status: "paid", status: "completed" };
+  return { ...order, payment_status: "paid", status: "completed", tax_cents: taxCents,
+    total_charged_cents: totalCents, stripe_fee_cents: stripeFeeCents,
+    agapay_fee_cents: agapayFeeCents, parish_net_cents: netCents,
+    stripe_payment_intent_id: paymentIntentId || order.stripe_payment_intent_id || "",
+    completed_at: completedAt };
 }
 
 // Reflects a Stripe refund back onto the bookstore order so sales reporting
@@ -5760,6 +5765,7 @@ export async function handleParishDashboard(request, env, parishId) {
     }
 
     await saveRegistrationRecord(env, found.key, updated, current);
+    await synchronizeGivingCatalogWithAccounting(env, parishId, updated);
     return json({
       ok: true,
       parish: updated,

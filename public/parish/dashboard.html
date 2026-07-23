@@ -49,10 +49,6 @@
           <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           Giving Overview
         </div>
-        <div class="sidebar-nav-item" onclick="switchTab('reconcile')" id="nav-reconcile">
-          <svg viewBox="0 0 24 24"><path d="M4 3h16v18H4z"/><path d="M8 7h8"/><path d="M8 11h3"/><path d="M8 15h3"/><path d="m14 15 1.5 1.5L19 13"/></svg>
-          Reconcile
-        </div>
         <div class="sidebar-nav-item" onclick="switchTab('options')" id="nav-options">
           <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           Funds &amp; Alms
@@ -305,6 +301,7 @@
 
       <!-- ── MONTHLY RECONCILIATION TAB ─────────────────────── -->
       <div class="tab-panel" id="tab-reconcile">
+        <div id="reconcileWorkspace">
         <!-- HERO -->
         <section class="pdx-rc-hero">
           <div class="pdx-rc-hero-top">
@@ -453,6 +450,7 @@
             </div>
           </div>
         </section>
+        </div>
       </div>
 
       <!-- ── GIVING HISTORY TAB ──────────────────────────────── -->

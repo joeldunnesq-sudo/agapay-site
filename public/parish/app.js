@@ -624,6 +624,7 @@
   let accountingReportView = 'trialBalance';
   let accountingData = { setup: null, journals: [], ledger: [], reports: {}, accounts: [], funds: [], payables: null, budgets: null, banking: null, integrations: null, close: null, tier: '' };
   let accountingBankPreview = null;
+  let accountingReconciliationView = 'giving';
   let accountingCloseDetail = null;
   let accountingJournalEditor = null;
   let accountingPayablesView = 'bills';
@@ -685,7 +686,7 @@
     return `<div class="acct-empty"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(copy)}</span></div>`;
   }
   function accountingViewTitle() {
-    return ({ overview:'Overview', ledger:'General Ledger', journals:'Journal Entries', reports:'Financial Reports', payables:'Payables', budgets:'Budgets', banking:'Bank Reconciliation', close:'Period Close', setup:'Setup', settings:'Settings', integrations:'Settings' })[accountingView] || 'Overview';
+    return ({ overview:'Overview', ledger:'General Ledger', journals:'Journal Entries', reports:'Financial Reports', payables:'Payables', budgets:'Budgets', banking:'Reconciliation', close:'Period Close', setup:'Setup', settings:'Settings', integrations:'Settings' })[accountingView] || 'Overview';
   }
   function renderAccountingOverview(pane) {
     const position = accountingData.reports.position || {}, activities = accountingData.reports.activities || {};
@@ -712,6 +713,9 @@
   function renderAccountingPane() {
     const pane = document.getElementById('accountingPane');
     if (!pane) return;
+    const reconcileWorkspace = document.getElementById('reconcileWorkspace');
+    const reconcileParking = document.getElementById('tab-reconcile');
+    if (reconcileWorkspace && reconcileParking && reconcileWorkspace.parentElement !== reconcileParking) reconcileParking.append(reconcileWorkspace);
     document.querySelectorAll('[data-accounting-view]').forEach((button) => button.classList.toggle('active', button.dataset.accountingView === accountingView || (button.dataset.accountingView === 'ledger' && accountingView === 'journals')));
     const pageTitle = document.getElementById('accountingPageTitle'); if (pageTitle) pageTitle.textContent = accountingViewTitle();
     if (accountingView === 'overview') { renderAccountingOverview(pane); return; }
@@ -841,14 +845,33 @@
       renderAccountingPane();
     } catch (error) { if (pane) pane.innerHTML = `<div class="acct-empty error"><strong>Unable to load Parish Accounting</strong><span>${escapeHtml(error.message)}</span><button onclick="loadAccountingPhaseD()">Try again</button></div>`; }
   }
-  function renderAccountingBanking(pane) {
+  function renderAccountingBankStatements(pane) {
     const data = accountingData.banking; if (!data) { pane.innerHTML = '<p class="sw-tool-loading">Loading Bank Reconciliation...</p>'; return; }
     const accountOptions = data.accounts.map((a) => `<option value="${escapeAttr(a.id)}">${escapeHtml(a.name)}${a.maskedLast4 ? ` · •••• ${escapeHtml(a.maskedLast4)}` : ''}</option>`).join('');
-    pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Double-entry bank reconciliation</span><h2>Match statements to the ledger</h2><p>This is separate from Giving payout matching in the main Reconcile tab.</p></div></div>
+    pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Double-entry bank reconciliation</span><h2>Match statements to the ledger</h2><p>Use this after reviewing Giving and Stripe activity for the same period.</p></div></div>
       <div class="acct-kpis"><div><span>Bank accounts</span><strong>${data.accounts.length}</strong></div><div><span>Open reconciliations</span><strong>${data.sessions.filter(s=>s.status!=='completed').length}</strong></div><div><span>Completed</span><strong>${data.sessions.filter(s=>s.status==='completed').length}</strong></div></div>
       <div class="acct-setup-grid"><section class="acct-card"><span class="acct-kicker">Statement import</span><h2>Import bank activity</h2>${data.accounts.length ? `<form class="acct-phase-form" onsubmit="previewAccountingBankCsv(event)"><label>Bank account<select name="bankAccountId" required>${accountOptions}</select></label><label>CSV statement<input name="statement" type="file" accept=".csv,text/csv" required></label><button class="acct-primary">Preview import</button><span class="acct-form-status"></span></form>` : '<p>Add a bank account before importing a statement.</p>'}${accountingBankPreview ? `<div class="acct-import-preview"><strong>${accountingBankPreview.validRows} ready</strong><span>${accountingBankPreview.invalidRows} need review · ${accountingMoney(accountingBankPreview.totalCredits)} credits · ${accountingMoney(accountingBankPreview.totalDebits)} debits</span><button class="acct-primary" onclick="commitAccountingBankCsv()">Import transactions</button></div>` : ''}</section>
       <section class="acct-card"><span class="acct-kicker">New statement period</span><h2>Start reconciliation</h2>${data.accounts.length ? `<form class="acct-phase-form" onsubmit="createAccountingReconciliation(event)"><label>Bank account<select name="bankAccountId" required>${accountOptions}</select></label><div class="acct-form-grid"><label>Start<input name="startDate" type="date" required></label><label>End<input name="endDate" type="date" required></label><label>Beginning balance<input name="beginningBalance" type="number" step="0.01" required></label><label>Ending balance<input name="endingBalance" type="number" step="0.01" required></label></div><button class="acct-primary">Start reconciliation</button><span class="acct-form-status"></span></form>` : `<p>Create a bank account by linking an asset account in Accounting Setup.</p><button class="acct-primary" onclick="showAccountingBankAccountForm()">Add bank account</button>`}</section></div>
       <div class="acct-list-head"><div><span class="acct-kicker">Statement history</span><h2>Reconciliation sessions</h2></div>${data.accounts.length ? '<button class="acct-refresh" onclick="showAccountingBankAccountForm()">Add bank account</button>' : ''}</div><div id="accountingPhaseEForm"></div><div class="acct-card-grid">${data.sessions.map(s=>`<article class="acct-budget-card"><div><span>${accountingDate(s.startDate)} – ${accountingDate(s.endDate)}</span><h3>${escapeHtml(s.bankAccountName)}</h3><p>Statement ending ${accountingMoney(s.endingBalance)} · Difference ${accountingMoney(s.difference)}</p></div><span class="acct-status ${escapeAttr(s.status)}">${escapeHtml(s.status)}</span><div class="acct-row-actions"><button onclick="downloadAccountingFile(accountingApi('/bank/reconciliations/${escapeAttr(s.id)}.csv'),'agapay-bank-reconciliation.csv')">Export</button>${s.status!=='completed'&&Number(s.difference)===0?`<button onclick="completeAccountingReconciliation('${escapeAttr(s.id)}',${s.version})">Complete</button>`:''}</div></article>`).join('') || accountingEmpty('No reconciliations yet','Import a statement and begin the first period.')}</div>`;
+  }
+  function renderAccountingBanking(pane) {
+    const tabs = `<div class="acct-reconcile-switch" role="tablist" aria-label="Reconciliation workspace">
+      <button type="button" class="${accountingReconciliationView === 'giving' ? 'active' : ''}" onclick="setAccountingReconciliationView('giving')">Giving &amp; Stripe</button>
+      <button type="button" class="${accountingReconciliationView === 'bank' ? 'active' : ''}" onclick="setAccountingReconciliationView('bank')">Bank statements &amp; ledger</button>
+    </div>`;
+    if (accountingReconciliationView === 'bank') {
+      renderAccountingBankStatements(pane);
+      pane.insertAdjacentHTML('afterbegin', tabs);
+      return;
+    }
+    pane.innerHTML = `${tabs}<div class="acct-reconcile-intro"><span class="acct-kicker">Connected giving activity</span><p>Review Stripe deposits, fund allocations, fees, refunds, and exceptions before completing the formal bank-statement reconciliation.</p></div>`;
+    const workspace = document.getElementById('reconcileWorkspace');
+    if (workspace) pane.append(workspace);
+    loadReconciliation();
+  }
+  function setAccountingReconciliationView(view) {
+    accountingReconciliationView = view === 'bank' ? 'bank' : 'giving';
+    renderAccountingPane();
   }
   function renderAccountingIntegrations(pane) {
     const data=accountingData.integrations;if(!data){pane.innerHTML='<p class="sw-tool-loading">Loading Give & Commerce...</p>';return;}const give=data.give||{},settings=data.settings||{},commerce=data.commerce;
