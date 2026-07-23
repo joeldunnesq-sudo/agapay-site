@@ -1427,7 +1427,7 @@
     linear-gradient(105deg,#061522 0%,#0a2638 57%,#123b50 100%);
   box-shadow:0 10px 30px rgba(6,21,34,.18);
 }
-.acct-suite-rail nav { grid-template-columns:repeat(10,minmax(0,1fr)); }
+.acct-suite-rail nav { grid-template-columns:repeat(9,minmax(0,1fr)); }
 .acct-suite-rail nav button {
   color:rgba(246,241,232,.72);
   letter-spacing:.01em;
