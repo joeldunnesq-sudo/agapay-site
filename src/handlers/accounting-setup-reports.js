@@ -61,7 +61,7 @@ export async function handleAccountingSetupReports(request, env, parishId) {
       const code = clean(body.code).toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 24);
       const name = clean(body.name).slice(0, 120);
       const restriction = clean(body.restrictionType) || "unrestricted";
-      if (!code || !name || !FUND_RESTRICTIONS.has(restriction)) return reply({ error: "invalid_fund", message: "Code, name, and a valid restriction are required." }, 422);
+      if (!code || !name || !FUND_RESTRICTIONS.has(restriction)) return reply({ error: "invalid_fund", message: "Fund account number, name, and a valid restriction are required." }, 422);
       const id = `fund_${crypto.randomUUID()}`;
       await ctx.db.prepare(`INSERT INTO accounting_funds
         (id,code,name,description,restriction_type,purpose,is_default,is_active,is_system)
@@ -77,7 +77,7 @@ export async function handleAccountingSetupReports(request, env, parishId) {
       const code = clean(body.code ?? current.code).toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 24);
       const name = clean(body.name ?? current.name).slice(0, 120);
       const restriction = clean(body.restrictionType ?? current.restriction_type);
-      if (!code || !name || !FUND_RESTRICTIONS.has(restriction)) return reply({ error: "invalid_fund", message: "Code, name, and a valid restriction are required." }, 422);
+      if (!code || !name || !FUND_RESTRICTIONS.has(restriction)) return reply({ error: "invalid_fund", message: "Fund account number, name, and a valid restriction are required." }, 422);
       await ctx.db.prepare(`UPDATE accounting_funds SET code=?,name=?,description=?,restriction_type=?,purpose=?,
         version=version+1,updated_at=datetime('now') WHERE id=? AND version=?`)
         .bind(code, name, clean(body.description ?? current.description) || null, restriction,

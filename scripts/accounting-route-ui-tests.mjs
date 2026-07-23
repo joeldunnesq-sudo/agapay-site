@@ -31,11 +31,11 @@ for (const capability of ["accounting.close.view", "accounting.close.create", "a
 assert.match(dashboard, /id="nav-accounting"/);
 assert.match(dashboard, /id="tab-accounting"/);
 assert.match(dashboard, /data-nav-tab="accounting"/, "Accounting must be reachable from the mobile parish navigation");
-for (const view of ["overview", "funds", "payables", "banking", "reports", "budgets", "close", "setup", "settings"]) assert.ok(dashboard.includes(`data-accounting-view="${view}"`), `missing Accounting UI view ${view}`);
-for (const nestedView of ["ledger", "journals", "integrations"]) assert.ok(app.includes(`'${nestedView}'`), `missing nested Accounting UI view ${nestedView}`);
+for (const view of ["overview", "ledger", "funds", "payables", "banking", "reports", "budgets", "close", "setup", "settings"]) assert.ok(dashboard.includes(`data-accounting-view="${view}"`), `missing Accounting UI view ${view}`);
+for (const nestedView of ["journals", "integrations"]) assert.ok(app.includes(`'${nestedView}'`), `missing nested Accounting UI view ${nestedView}`);
 for (const canonicalFeature of ["acct-suite-shell", "acct-suite-rail", "Accounting suite navigation", "accountingPageTitle", "accountingFiscalYear"]) assert.ok(dashboard.includes(canonicalFeature), `missing canonical Accounting shell feature ${canonicalFeature}`);
 assert.match(css, /purpose-built top bar/, "Accounting module navigation should use the dedicated top bar");
-assert.match(css, /grid-template-columns:repeat\(9,minmax\(0,1fr\)\)/, "desktop Accounting navigation should fit without a slider");
+assert.match(css, /grid-template-columns:repeat\(10,minmax\(0,1fr\)\)/, "desktop Accounting navigation should fit without a slider");
 assert.match(css, /flex:0 0 auto/, "Accounting navigation must retain its full height above the cream workspace");
 for (const staffAction of ["renderAccountingAccess", "bootstrapAccountingStaff", "verifyAccountingStaff", "addAccountingStaff", "changeAccountingPin", "lockAccountingWorkspace"]) assert.match(app, new RegExp(`function ${staffAction}\\b`), `missing Accounting staff action ${staffAction}`);
 assert.match(app, /initializeAccounting/);

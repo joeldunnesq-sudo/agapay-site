@@ -609,7 +609,7 @@
 .acct-suite-brand { grid-area:brand; min-width:150px; margin:0; padding:13px 0 9px; border:0; }
 .acct-suite-brand strong { font-size:20px; }
 .acct-suite-brand span { margin-top:4px; }
-.acct-suite-rail nav { grid-area:nav; display:grid; grid-template-columns:repeat(9,minmax(0,1fr)); align-self:stretch; gap:2px; min-width:0; overflow:visible; border-top:1px solid rgba(255,255,255,.08); }
+.acct-suite-rail nav { grid-area:nav; display:grid; grid-template-columns:repeat(10,minmax(0,1fr)); align-self:stretch; gap:2px; min-width:0; overflow:visible; border-top:1px solid rgba(255,255,255,.08); }
 .acct-suite-rail nav button { position:relative; box-sizing:border-box; justify-content:center; min-width:0; min-height:43px; border-radius:0; padding:8px 6px 7px; white-space:nowrap; }
 .acct-suite-rail nav button:hover { background:rgba(255,255,255,.045); }
 .acct-suite-rail nav button.active { background:rgba(200,162,74,.08); box-shadow:none; }
@@ -1372,6 +1372,7 @@
   letter-spacing: .08em;
   text-overflow: ellipsis;
 }
+.acct-fund-code small { display:block; margin-bottom:4px; color:var(--muted); font-size:8px; letter-spacing:.11em; text-transform:uppercase; }
 .acct-fund-row h3 { margin: 0; color: var(--deep); font: 600 20px var(--serif); }
 .acct-fund-row p { margin: 4px 0 7px; color: var(--stone); font-size: 12px; }
 .acct-fund-row.retired { opacity:.62; background:rgba(255,255,255,.38); }
@@ -1427,7 +1428,7 @@
     linear-gradient(105deg,#061522 0%,#0a2638 57%,#123b50 100%);
   box-shadow:0 10px 30px rgba(6,21,34,.18);
 }
-.acct-suite-rail nav { grid-template-columns:repeat(9,minmax(0,1fr)); }
+.acct-suite-rail nav { grid-template-columns:repeat(10,minmax(0,1fr)); }
 .acct-suite-rail nav button {
   color:rgba(246,241,232,.72);
   letter-spacing:.01em;
