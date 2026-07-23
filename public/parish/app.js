@@ -698,10 +698,14 @@
     const drafts = accountingData.journals.filter((entry) => entry.status === 'draft').length;
     const payables = accountingData.payables?.overview || {}, banking = accountingData.banking || {}, close = accountingData.close || {};
     const fundBalance = (fund) => accountingData.ledger.filter((row) => row.fundId === fund.id || row.fund_id === fund.id).reduce((sum,row) => sum + Number(row.debitAmount ?? row.debit_amount ?? 0) - Number(row.creditAmount ?? row.credit_amount ?? 0), 0);
-    pane.innerHTML = `<div class="acct-suite-stats">
-      <div class="acct-suite-stat"><span>Cash on hand</span><strong>${accountingMoney(cash)}</strong><small>Across active cash and bank accounts</small></div>
+    pane.innerHTML = `<section class="acct-command-hero">
+      <div><span class="acct-kicker">Financial command center</span><h2>Clarity for every parish dollar.</h2><p>Fund accounting, giving, commerce, payables, and bank activity—one balanced set of books.</p></div>
+      <div class="acct-command-actions"><button onclick="accountingView='journals';newAccountingJournal()"><b>＋</b><span>New journal<small>Record an entry</small></span></button><button onclick="accountingFundEditor={};setAccountingView('funds')"><b>◫</b><span>Add fund<small>Track a purpose</small></span></button><button onclick="setAccountingView('banking')"><b>⇄</b><span>Reconcile<small>Match the bank</small></span></button><button onclick="setAccountingView('reports')"><b>▤</b><span>Run reports<small>Review results</small></span></button></div>
+    </section><div class="acct-suite-stats">
+      <div class="acct-suite-stat featured"><span>Cash on hand</span><strong>${accountingMoney(cash)}</strong><small>Across active cash and bank accounts</small></div>
       <div class="acct-suite-stat"><span>Total net assets</span><strong>${accountingMoney(netAssets)}</strong><small>${position.validation?.status === 'validated' ? 'Financial position is balanced' : 'Review the financial position'}</small></div>
       <div class="acct-suite-stat"><span>Current activity</span><strong>${accountingMoney(activity)}</strong><small>${posted.length} posted entries · ${drafts} draft${drafts === 1 ? '' : 's'}</small></div>
+      <div class="acct-suite-stat"><span>Tracked funds</span><strong>${accountingData.funds.length}</strong><small>${accountingData.funds.filter(f=>String(f.restrictionType||f.restriction_type).startsWith('donor_restricted')).length} donor restricted</small></div>
     </div><div class="acct-suite-overview-grid"><div><div class="acct-suite-section-head"><h2>Where things stand</h2><span>Open a module to continue</span></div><div class="acct-suite-modules">
       <button class="acct-suite-module" onclick="setAccountingView('payables')"><span>Payables</span><strong>${accountingMoney(payables.openPayables)}</strong><small>${payables.awaitingApproval || 0} awaiting approval</small></button>
       <button class="acct-suite-module" onclick="setAccountingView('banking')"><span>Reconciliation</span><strong>${(banking.sessions || []).filter((item) => item.status !== 'completed').length} open</strong><small>${(banking.accounts || []).length} connected bank account${(banking.accounts || []).length === 1 ? '' : 's'}</small></button>
@@ -740,9 +744,10 @@
       return;
     }
     if (accountingView === 'reports') {
-      const report = accountingData.reports[accountingReportView];
-      const reportTabs = [['trialBalance','Trial Balance'],['activities','Activities'],['position','Financial Position']];
+      const report = accountingData.reports[accountingReportView === 'expenses' ? 'activities' : accountingReportView];
+      const reportTabs = [['trialBalance','Trial Balance'],['activities','Activities'],['expenses','Expenses'],['position','Financial Position']];
       if (!report) { pane.innerHTML = accountingEmpty('No report available yet', 'Initialize Accounting, then refresh to prepare financial statements.'); return; }
+      if (accountingReportView === 'expenses') { renderAccountingExpenses(pane, report, reportTabs); return; }
       const rows = report.rows || [];
       const amount = (row) => row.amount ?? (Number(row.endingDebit || 0) - Number(row.endingCredit || 0));
       pane.innerHTML = `<div class="acct-report-head"><div class="acct-view-switch">${reportTabs.map(([id,label]) => `<button type="button" class="${accountingReportView === id ? 'active' : ''}" onclick="setAccountingReportView('${id}')">${label}</button>`).join('')}</div><div class="acct-report-actions"><button type="button" class="acct-refresh" onclick="printAccountingReport()">Print</button><button type="button" class="acct-refresh" onclick="downloadAccountingReport()">Export CSV</button></div></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Account</th><th>Category</th><th>Amount</th></tr></thead><tbody>${rows.map((row) => `<tr><td><strong>${escapeHtml(row.accountNumber || '')}</strong> ${escapeHtml(row.accountName || row.name || '')}</td><td>${escapeHtml(row.category || row.accountType || '')}</td><td>${accountingMoney(amount(row))}</td></tr>`).join('') || '<tr><td colspan="3">No posted activity in this period.</td></tr>'}</tbody></table></div>`;
@@ -797,6 +802,24 @@
     if (accountingView === 'close' && !accountingData.close) loadAccountingPhaseF();
   }
   function setAccountingReportView(view) { accountingReportView = view; renderAccountingPane(); }
+  function renderAccountingExpenses(pane, report, reportTabs) {
+    const grouped = new Map();
+    for (const row of (report.rows || []).filter((item) => item.category === 'expense' && Number(item.amount) !== 0)) {
+      const key = row.accountId || row.accountNumber || row.accountName;
+      const current = grouped.get(key) || { ...row, amount:0 };
+      current.amount += Number(row.amount || 0); grouped.set(key,current);
+    }
+    const expenses = [...grouped.values()].filter((row)=>row.amount>0).sort((a,b)=>b.amount-a.amount);
+    const total = expenses.reduce((sum,row)=>sum+row.amount,0);
+    const palette = ['#c8a24a','#315f71','#7d5d91','#4f7c59','#ba6d46','#587fa5','#9a7b3f','#6b7280'];
+    let cursor = 0;
+    const stops = expenses.map((row,index)=>{const start=cursor;cursor+=total?row.amount/total*100:0;return `${palette[index%palette.length]} ${start.toFixed(2)}% ${cursor.toFixed(2)}%`;});
+    const agapay = expenses.find((row)=>row.accountId==='acct_5850'||/agapay platform fees/i.test(row.accountName||''));
+    pane.innerHTML = `<div class="acct-report-head"><div class="acct-view-switch">${reportTabs.map(([id,label])=>`<button type="button" class="${accountingReportView===id?'active':''}" onclick="setAccountingReportView('${id}')">${label}</button>`).join('')}</div><div class="acct-report-actions"><button type="button" class="acct-refresh" onclick="printAccountingReport()">Print</button><button type="button" class="acct-refresh" onclick="downloadAccountingReport()">Export CSV</button></div></div>
+      <section class="acct-expense-hero"><div><span class="acct-kicker">Statement of activities · expenses</span><h2>What is costing the parish?</h2><p>Posted expenses for ${accountingDate(report.startDate)} through ${accountingDate(report.endDate)}. AGAPAY platform fees are recorded automatically from completed gifts.</p></div><div class="acct-expense-total"><span>Total expenses</span><strong>${accountingMoney(total)}</strong><small>${expenses.length} active expense categor${expenses.length===1?'y':'ies'}</small></div></section>
+      <div class="acct-expense-layout"><section class="acct-expense-chart-card"><div class="acct-expense-pie" style="background:${stops.length?`conic-gradient(${stops.join(',')})`:'rgba(6,21,34,.08)'}"><div><strong>${accountingMoney(total)}</strong><span>total</span></div></div><div class="acct-expense-legend">${expenses.map((row,index)=>`<div><i style="background:${palette[index%palette.length]}"></i><span><strong>${escapeHtml(row.accountName||row.name)}</strong><small>${total?Math.round(row.amount/total*100):0}% of expenses</small></span><b>${accountingMoney(row.amount)}</b></div>`).join('')||'<p>No posted expenses for this period.</p>'}</div></section>
+      <aside class="acct-expense-insights"><article class="acct-card"><span class="acct-kicker">Largest cost</span><h2>${escapeHtml(expenses[0]?.accountName||'No expenses yet')}</h2><strong>${accountingMoney(expenses[0]?.amount||0)}</strong><p>${total&&expenses[0]?`${Math.round(expenses[0].amount/total*100)}% of posted expenses for this period.`:'Expense entries will appear automatically after posting.'}</p></article><article class="acct-card agapay-fee"><span class="acct-kicker">Automatically recorded</span><h2>AGAPAY Platform Fees</h2><strong>${accountingMoney(agapay?.amount||0)}</strong><p>No manual entry required. Completed giving transactions feed this account directly.</p></article></aside></div>`;
+  }
   async function loadAccountingFunds() {
     const pane = document.getElementById('accountingPane');
     try {
@@ -829,10 +852,16 @@
       return;
     }
     const active = accountingFundCatalog.filter((fund) => Number(fund.isActive));
+    const balanceFor = (fund) => accountingData.ledger.filter((row) => row.fundId === fund.id || row.fund_id === fund.id || row.fundCode === fund.code || row.fund_code === fund.code).reduce((sum,row) => sum + Number(row.debitAmount ?? row.debit_amount ?? 0) - Number(row.creditAmount ?? row.credit_amount ?? 0), 0);
+    const fundBalances = active.map((fund) => ({ fund, balance: balanceFor(fund) }));
+    const largestFundBalance = Math.max(1, ...fundBalances.map((item) => Math.abs(item.balance)));
     pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Fund accounting</span><h2>Funds</h2><p>Manage the funds available across journal entries, budgets, giving integrations, and reports.</p></div><button class="acct-primary" onclick="accountingFundEditor={};renderAccountingPane()">Add fund</button></div>
       <div class="acct-kpis"><div><span>Active funds</span><strong>${active.length}</strong></div><div><span>Giving synced</span><strong>${active.filter(f=>Number(f.isGivingSynced)).length}</strong></div><div><span>Restricted</span><strong>${active.filter(f=>String(f.restrictionType).startsWith('donor_restricted')).length}</strong></div></div>
       <div class="acct-fund-tools"><label>Find a fund<input type="search" placeholder="Search by name, code, or purpose" oninput="filterAccountingFunds(this.value)"></label><span>${accountingFundCatalog.length} total · ${accountingFundCatalog.length-active.length} retired</span></div>
-      <div class="acct-fund-list">${accountingFundCatalog.map((fund)=>`<article class="acct-fund-row ${Number(fund.isActive)?'':'retired'}" data-fund-search="${escapeAttr(`${fund.code} ${fund.name} ${fund.purpose||''} ${fund.description||''}`.toLowerCase())}"><div class="acct-fund-code">${escapeHtml(fund.code)}</div><div><h3>${escapeHtml(fund.name)}</h3><p>${escapeHtml(fund.purpose||fund.description||'No purpose recorded.')}</p><div class="acct-fund-tags"><span>${escapeHtml(restrictionLabel(fund.restrictionType))}</span>${Number(fund.isDefault)?'<span>Default</span>':''}${Number(fund.isGivingSynced)?'<span>Funds &amp; Alms</span>':'<span>Accounting only</span>'}${Number(fund.isActive)?'':'<span>Retired</span>'}</div></div><button class="acct-refresh" onclick="editAccountingFund('${escapeAttr(fund.id)}')">Edit</button></article>`).join('') || accountingEmpty('No funds','Add the first fund for this ledger.')}</div>`;
+      <div class="acct-fund-list">${accountingFundCatalog.map((fund)=>`<article class="acct-fund-row ${Number(fund.isActive)?'':'retired'}" data-fund-search="${escapeAttr(`${fund.code} ${fund.name} ${fund.purpose||''} ${fund.description||''}`.toLowerCase())}"><div class="acct-fund-code">${escapeHtml(fund.code)}</div><div><h3>${escapeHtml(fund.name)}</h3><p>${escapeHtml(fund.purpose||fund.description||'No purpose recorded.')}</p><div class="acct-fund-tags"><span>${escapeHtml(restrictionLabel(fund.restrictionType))}</span>${Number(fund.isDefault)?'<span>Default</span>':''}${Number(fund.isGivingSynced)?'<span>Funds &amp; Alms</span>':'<span>Accounting only</span>'}${Number(fund.isActive)?'':'<span>Retired</span>'}</div></div><button class="acct-refresh" onclick="editAccountingFund('${escapeAttr(fund.id)}')">Edit</button></article>`).join('') || accountingEmpty('No funds','Add the first fund for this ledger.')}</div>
+      <section class="acct-fund-chart"><div class="acct-list-head"><div><span class="acct-kicker">Posted ledger composition</span><h2>Fund balances at a glance</h2><p>Relative balances based on posted journal activity. Negative balances extend in the same scale and are labeled clearly.</p></div><button class="acct-refresh" onclick="setAccountingView('reports')">Open fund report</button></div>
+        <div class="acct-fund-bars">${fundBalances.map(({fund,balance})=>`<div class="acct-fund-bar-row"><div class="acct-fund-bar-label"><strong>${escapeHtml(fund.name)}</strong><span>${escapeHtml(fund.code)}</span></div><div class="acct-fund-bar-track"><i class="${String(fund.restrictionType).startsWith('donor_restricted')?'restricted':''} ${balance<0?'negative':''}" style="width:${Math.max(balance===0?0:3,Math.round(Math.abs(balance)/largestFundBalance*100))}%"></i></div><strong class="${balance<0?'negative':''}">${accountingMoney(balance)}</strong></div>`).join('') || '<div class="acct-empty"><strong>No active funds</strong><span>Add a fund to begin tracking balances.</span></div>'}</div>
+      </section>`;
   }
   function editAccountingFund(id) {
     accountingFundEditor = accountingFundCatalog?.find((fund) => fund.id === id) || null;
@@ -1128,13 +1157,13 @@
     loadAccountingTab(true);
   }
   function downloadAccountingReport() {
-    const paths = { trialBalance: 'trial-balance', activities: 'statement-of-activities', position: 'statement-of-financial-position' };
+    const paths = { trialBalance: 'trial-balance', activities: 'statement-of-activities', expenses: 'statement-of-activities', position: 'statement-of-financial-position' };
     downloadAccountingFile(accountingApi(`/reports/${paths[accountingReportView]}.csv`), `agapay-${paths[accountingReportView]}.csv`);
   }
   function printAccountingReport() {
-    const report = accountingData.reports[accountingReportView];
+    const report = accountingData.reports[accountingReportView === 'expenses' ? 'activities' : accountingReportView];
     if (!report) return;
-    const titles = { trialBalance: 'Trial Balance', activities: 'Statement of Activities', position: 'Statement of Financial Position' };
+    const titles = { trialBalance: 'Trial Balance', activities: 'Statement of Activities', expenses: 'Expense Breakdown', position: 'Statement of Financial Position' };
     const win = window.open('about:blank', '_blank');
     if (!win) { alert('Allow pop-ups for AGAPAY to open the printable report.'); return; }
     const rows = (report.rows || []).map((row) => `<tr><td>${escapeHtml(row.accountNumber || '')}</td><td>${escapeHtml(row.accountName || row.name || '')}</td><td>${escapeHtml(row.category || row.accountType || '')}</td><td>${accountingMoney(row.amount ?? (Number(row.endingDebit || 0) - Number(row.endingCredit || 0)))}</td></tr>`).join('');

@@ -2,7 +2,7 @@ import { AccountingDatabaseError, ValidationError } from "../errors.js";
 import { createJournalDraft, postJournalEntry } from "../ledger/service.js";
 
 export const GIVE_STRIPE_SOURCE_TYPES = Object.freeze([
-  "donation_succeeded", "stripe_fee_assessed", "stripe_fee_refunded",
+  "donation_succeeded", "stripe_fee_assessed", "agapay_fee_assessed", "stripe_fee_refunded",
   "donation_refunded", "donation_partially_refunded", "stripe_dispute_created",
   "stripe_dispute_won", "stripe_dispute_lost", "stripe_chargeback_fee",
   "stripe_payout_paid", "stripe_payout_failed", "stripe_payout_canceled", "stripe_payout_reversed"
@@ -128,7 +128,7 @@ function proposalFor(event,mapping) {
   const fundId=mapping.fundId, description=`${event.source_type.replaceAll("_"," ")} · ${event.source_object_id}`;
   let lines=[];
   if(event.source_type==="donation_succeeded") lines=[{accountId:mapping.clearingAccountId,fundId,debitAmount:Number(event.gross_amount)},{accountId:mapping.revenueAccountId,fundId,creditAmount:Number(event.gross_amount)}];
-  else if(event.source_type==="stripe_fee_assessed"||event.source_type==="stripe_chargeback_fee") lines=[{accountId:mapping.feeExpenseAccountId,fundId,debitAmount:Number(event.fee_amount||event.dispute_amount)},{accountId:mapping.clearingAccountId,fundId,creditAmount:Number(event.fee_amount||event.dispute_amount)}];
+  else if(event.source_type==="stripe_fee_assessed"||event.source_type==="stripe_chargeback_fee"||event.source_type==="agapay_fee_assessed") lines=[{accountId:event.source_type==="agapay_fee_assessed"?"acct_5850":mapping.feeExpenseAccountId,fundId,debitAmount:Number(event.fee_amount||event.dispute_amount)},{accountId:mapping.clearingAccountId,fundId,creditAmount:Number(event.fee_amount||event.dispute_amount)}];
   else if(event.source_type==="stripe_fee_refunded") lines=[{accountId:mapping.clearingAccountId,fundId,debitAmount:Number(event.fee_amount)},{accountId:mapping.feeExpenseAccountId,fundId,creditAmount:Number(event.fee_amount)}];
   else if(["donation_refunded","donation_partially_refunded","stripe_dispute_created","stripe_dispute_lost"].includes(event.source_type)) { const amount=Number(event.refund_amount||event.dispute_amount); lines=[{accountId:mapping.revenueAccountId,fundId,debitAmount:amount},{accountId:mapping.clearingAccountId,fundId,creditAmount:amount}]; }
   else if(event.source_type==="stripe_dispute_won") lines=[{accountId:mapping.clearingAccountId,fundId,debitAmount:Number(event.dispute_amount)},{accountId:mapping.disputeAccountId,fundId,creditAmount:Number(event.dispute_amount)}];
@@ -158,7 +158,7 @@ export async function processAccountingSourceEvent(db,{actor,entitlementTier,sou
   if(event.donor_restricted&&!mapping.fundId) return exception(db,event,"restricted_fund_unmapped","A donor-restricted gift requires its original designated fund.");
   const requirements=[await eligibleAccount(db,mapping.clearingAccountId,"asset")];
   if(event.source_type==="donation_succeeded"||event.source_type.includes("refund")||event.source_type.includes("dispute")) requirements.push(await eligibleAccount(db,mapping.revenueAccountId,"revenue"));
-  if(event.source_type.includes("fee")) requirements.push(await eligibleAccount(db,mapping.feeExpenseAccountId,"expense"));
+  if(event.source_type.includes("fee")) requirements.push(await eligibleAccount(db,event.source_type==="agapay_fee_assessed"?"acct_5850":mapping.feeExpenseAccountId,"expense"));
   if(event.source_type.includes("payout")) requirements.push(await eligibleAccount(db,mapping.bankAccountId,"asset"));
   const fund=await first(db,"SELECT id FROM accounting_funds WHERE id=? AND is_active=1 AND archived_at IS NULL",mapping.fundId);
   if(requirements.some((item)=>!item)||!fund) return exception(db,event,"missing_mapping","Eligible account and fund mappings are required.");
@@ -182,11 +182,12 @@ export async function integrationOverview(db,{actor,entitlementTier}) {
   requireCapability(actor,"accounting.integrations.view"); assertTier(entitlementTier);
   const totals=await first(db,`SELECT COUNT(*) events,COALESCE(SUM(CASE WHEN status='posted' AND source_type='donation_succeeded' THEN gross_amount ELSE 0 END),0) gross_contributions,
     COALESCE(SUM(CASE WHEN status='posted' AND source_type='stripe_fee_assessed' THEN fee_amount ELSE 0 END),0) stripe_fees,
+    COALESCE(SUM(CASE WHEN status='posted' AND source_type='agapay_fee_assessed' THEN fee_amount ELSE 0 END),0) agapay_fees,
     COALESCE(SUM(CASE WHEN status='posted' AND source_type LIKE 'donation_%refunded' THEN refund_amount ELSE 0 END),0) refunds,
     COALESCE(SUM(CASE WHEN status='posted' AND source_type='stripe_payout_paid' THEN net_amount ELSE 0 END),0) payouts,
     SUM(CASE WHEN status='exception' THEN 1 ELSE 0 END) exceptions,SUM(CASE WHEN status NOT IN('posted','ignored') THEN 1 ELSE 0 END) unposted FROM accounting_integration_source_events`);
   return Object.freeze({tier:entitlementTier,coreGiveIntegrationIncluded:true,settings:settingsDto(await first(db,"SELECT * FROM accounting_integration_settings WHERE id='give_stripe'")),
-    totals:Object.freeze({events:Number(totals.events),grossContributions:Number(totals.gross_contributions),stripeFees:Number(totals.stripe_fees),refunds:Number(totals.refunds),payouts:Number(totals.payouts),exceptions:Number(totals.exceptions),unposted:Number(totals.unposted)})});
+    totals:Object.freeze({events:Number(totals.events),grossContributions:Number(totals.gross_contributions),stripeFees:Number(totals.stripe_fees),agapayFees:Number(totals.agapay_fees),refunds:Number(totals.refunds),payouts:Number(totals.payouts),exceptions:Number(totals.exceptions),unposted:Number(totals.unposted)})});
 }
 
 export async function stripeClearingValidation(db,{actor,entitlementTier,startDate,endDate,stripeReportedBalance=null}) {

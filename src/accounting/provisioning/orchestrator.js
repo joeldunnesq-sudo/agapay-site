@@ -39,7 +39,7 @@ export async function activatePreparedParishAccounting(env, { adapter, parishId,
     if (entity.entityStatus === "provisioning") entity = await recordProvisioningCompleted(env, { parishId, environment, actorUserId, actorType: "system", reason: "Bound D1 database validated", correlationId });
     if (entity.entityStatus === "provisioned") entity = await transitionAccountingEntity(env, { parishId, toState: "migrating", actorUserId, actorType: "system", reason: "Validating production accounting schema", correlationId });
     await setAccountingDatabaseProvisioningStatus(env, { entityId: entity.id, environment, status: "migrating" });
-    await updateAccountingSchemaVersion(env, { parishId, environment, schemaVersion: 14, migrationVersion: "0014_phase_g_query_indexes", actorUserId, actorType: "system", reason: "Full accounting schema validated", correlationId });
+    await updateAccountingSchemaVersion(env, { parishId, environment, schemaVersion: 15, migrationVersion: "0015_agapay_fee_expense", actorUserId, actorType: "system", reason: "Full accounting schema validated", correlationId });
     entity = await loadAccountingEntityByParish(env, parishId);
     if (entity.entityStatus === "migrating") await transitionAccountingEntity(env, { parishId, toState: "ready", actorUserId, actorType: "system", reason: "Prepared accounting database activated", correlationId });
     return validateAccountingRegistry(env, { parishId, environment });

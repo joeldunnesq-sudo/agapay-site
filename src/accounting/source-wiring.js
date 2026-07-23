@@ -102,6 +102,9 @@ export async function wireGivingOfferingToAccounting(env, offering = {}) {
     entitlementTier: "parish",
     sourceEventId: event.id
   });
+  await db.prepare(`INSERT OR IGNORE INTO accounting_accounts
+    (id,account_number,name,account_type_id,normal_balance,is_posting_account,is_system,requires_fund)
+    VALUES('acct_5850','5850','AGAPAY Platform Fees','type_expense','debit',1,1,1)`).run();
   const fee = cents(offering.stripeFeeCents);
   if (fee) {
     const feeEvent = await ingestAccountingSourceEvent(db, {
@@ -117,6 +120,21 @@ export async function wireGivingOfferingToAccounting(env, offering = {}) {
     });
     await processAccountingSourceEvent(db, {
       actor: actor("accounting.integrations.post"), entitlementTier: "parish", sourceEventId: feeEvent.id
+    });
+  }
+  const agapayFee = cents(offering.agapayFeeCents);
+  if (agapayFee) {
+    const agapayFeeEvent = await ingestAccountingSourceEvent(db, {
+      actor: actor("accounting.integrations.post"), entitlementTier: "parish",
+      event: {
+        sourceSystem: "agapay_give", sourceType: "agapay_fee_assessed",
+        sourceEventId: `give:${donationId}:agapay_fee`, sourceObjectId: donationId,
+        occurredAt, currency: text(offering.currency) || "USD", feeAmount: agapayFee,
+        donationId, paymentIntentId, designatedFundId: fundId
+      }
+    });
+    await processAccountingSourceEvent(db, {
+      actor: actor("accounting.integrations.post"), entitlementTier: "parish", sourceEventId: agapayFeeEvent.id
     });
   }
   return processed;

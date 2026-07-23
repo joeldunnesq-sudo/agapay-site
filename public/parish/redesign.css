@@ -1387,7 +1387,212 @@
 }
 .acct-fund-form { max-width: 760px; }
 .acct-fund-form textarea { width: 100%; box-sizing: border-box; resize: vertical; }
+.acct-fund-chart {
+  margin-top:26px;
+  padding:22px;
+  border:1px solid rgba(6,21,34,.10);
+  border-radius:12px;
+  background:rgba(255,255,255,.58);
+  box-shadow:0 8px 26px rgba(6,21,34,.05);
+}
+.acct-fund-bars { display:grid; gap:13px; margin-top:17px; }
+.acct-fund-bar-row { display:grid; grid-template-columns:minmax(135px,220px) minmax(140px,1fr) 105px; gap:14px; align-items:center; }
+.acct-fund-bar-label { min-width:0; }
+.acct-fund-bar-label strong,.acct-fund-bar-label span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.acct-fund-bar-label strong { color:var(--deep); font:600 14px var(--serif); }
+.acct-fund-bar-label span { margin-top:2px; color:var(--muted); font-size:9px; font-weight:700; letter-spacing:.08em; }
+.acct-fund-bar-track { height:11px; overflow:hidden; border-radius:99px; background:rgba(6,21,34,.07); }
+.acct-fund-bar-track i { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#c8a24a,#e6c875); box-shadow:0 0 10px rgba(200,162,74,.24); }
+.acct-fund-bar-track i.restricted { background:linear-gradient(90deg,#315f71,#5f91a3); box-shadow:0 0 10px rgba(49,95,113,.20); }
+.acct-fund-bar-track i.negative { background:linear-gradient(90deg,#8c4138,#c76a5e); }
+.acct-fund-bar-row > strong { color:var(--deep); font:600 15px var(--serif); text-align:right; font-feature-settings:'tnum'; }
+.acct-fund-bar-row > strong.negative { color:#8c4138; }
 @media(max-width:600px) {
   .acct-fund-row { grid-template-columns: 1fr auto; gap: 9px; }
   .acct-fund-code { grid-column: 1 / -1; }
+  .acct-fund-bar-row { grid-template-columns:minmax(0,1fr) auto; gap:6px 12px; }
+  .acct-fund-bar-track { grid-column:1 / -1; grid-row:2; }
+}
+
+/* Accounting Suite — premium command-center finish. */
+.content.accounting-tab-active > #tab-accounting.active {
+  background:
+    radial-gradient(circle at 86% 4%, rgba(200,162,74,.10), transparent 27rem),
+    linear-gradient(180deg,#f8f5ef 0%,#f2eee5 100%);
+}
+.acct-suite-rail {
+  border-bottom-color:rgba(232,200,121,.28);
+  background:
+    radial-gradient(circle at 82% -100%,rgba(200,162,74,.28),transparent 42%),
+    linear-gradient(105deg,#061522 0%,#0a2638 57%,#123b50 100%);
+  box-shadow:0 10px 30px rgba(6,21,34,.18);
+}
+.acct-suite-rail nav { grid-template-columns:repeat(10,minmax(0,1fr)); }
+.acct-suite-rail nav button {
+  color:rgba(246,241,232,.72);
+  letter-spacing:.01em;
+}
+.acct-suite-rail nav button.active {
+  color:#fff9e9;
+  background:linear-gradient(180deg,rgba(232,200,121,.11),rgba(232,200,121,.04));
+}
+.acct-suite-header {
+  padding:15px 30px;
+  border-bottom-color:rgba(6,21,34,.09);
+  background:rgba(249,247,242,.88);
+  box-shadow:0 3px 16px rgba(6,21,34,.04);
+  backdrop-filter:blur(16px) saturate(1.2);
+}
+.acct-suite-header h1 { font-size:30px; letter-spacing:-.025em; }
+.acct-workspace { max-width:1380px; padding:30px clamp(20px,3vw,42px) 70px; }
+.acct-command-hero {
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(300px,1fr) minmax(430px,1.15fr);
+  gap:34px;
+  align-items:center;
+  overflow:hidden;
+  margin-bottom:18px;
+  padding:28px 30px;
+  border:1px solid rgba(200,162,74,.30);
+  border-radius:14px;
+  color:var(--cream);
+  background:
+    radial-gradient(circle at 91% 8%,rgba(232,200,121,.24),transparent 38%),
+    linear-gradient(125deg,#061522 0%,#0d2c3f 62%,#17495d 100%);
+  box-shadow:0 18px 45px rgba(6,21,34,.16);
+}
+.acct-command-hero::after {
+  content:"";
+  position:absolute;
+  width:260px;
+  height:260px;
+  right:-110px;
+  bottom:-190px;
+  border:1px solid rgba(232,200,121,.25);
+  border-radius:50%;
+}
+.acct-command-hero h2 {
+  margin:6px 0 7px;
+  color:#fffaf0;
+  font:500 clamp(30px,3.2vw,45px)/.98 var(--serif);
+  letter-spacing:-.035em;
+}
+.acct-command-hero p { max-width:590px; margin:0; color:rgba(246,241,232,.66); font-size:12px; line-height:1.6; }
+.acct-command-actions { position:relative; z-index:1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.acct-command-actions button {
+  display:flex;
+  align-items:center;
+  gap:11px;
+  min-width:0;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:9px;
+  padding:11px 12px;
+  color:var(--cream);
+  background:rgba(255,255,255,.065);
+  text-align:left;
+  cursor:pointer;
+  transition:transform .16s ease,border-color .16s ease,background .16s ease;
+}
+.acct-command-actions button:hover { transform:translateY(-1px); border-color:rgba(232,200,121,.5); background:rgba(255,255,255,.10); }
+.acct-command-actions b { display:grid; place-items:center; width:31px; height:31px; flex:none; border-radius:7px; color:#f0d38d; background:rgba(232,200,121,.12); font:500 17px var(--serif); }
+.acct-command-actions span,.acct-command-actions small { display:block; }
+.acct-command-actions span { overflow:hidden; font:600 12px var(--sans); }
+.acct-command-actions small { margin-top:2px; overflow:hidden; color:rgba(246,241,232,.52); font-size:9px; font-weight:500; text-overflow:ellipsis; white-space:nowrap; }
+.acct-suite-stats {
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  margin-bottom:28px;
+  border-color:rgba(6,21,34,.10);
+  border-radius:11px;
+  background:rgba(255,255,255,.58);
+  box-shadow:0 8px 26px rgba(6,21,34,.06);
+}
+.acct-suite-stat { position:relative; min-width:0; padding:20px 22px; }
+.acct-suite-stat.featured::before { content:""; position:absolute; top:0; right:22px; left:22px; height:2px; background:linear-gradient(90deg,var(--gold),#ebd79f); }
+.acct-suite-stat strong { overflow:hidden; font-size:clamp(29px,3vw,41px); text-overflow:ellipsis; white-space:nowrap; }
+.acct-suite-modules { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.acct-suite-module {
+  min-height:130px;
+  border-color:rgba(6,21,34,.10);
+  border-radius:10px;
+  padding:17px;
+  background:rgba(255,255,255,.55);
+  box-shadow:0 5px 18px rgba(6,21,34,.035);
+}
+.acct-suite-module:hover { transform:translateY(-2px); border-color:rgba(200,162,74,.65); box-shadow:0 13px 28px rgba(6,21,34,.09); }
+.acct-table-wrap,.acct-card,.acct-journal-editor,.acct-kpis>div,.acct-mini-card,.acct-budget-card,.acct-suite-funds,.acct-suite-health {
+  border-color:rgba(6,21,34,.10);
+  border-radius:10px;
+  background:rgba(255,255,255,.58);
+  box-shadow:0 7px 24px rgba(6,21,34,.045);
+}
+@media(max-width:1120px) {
+  .acct-suite-rail nav { grid-template-columns:repeat(5,minmax(0,1fr)); }
+  .acct-command-hero { grid-template-columns:1fr; }
+  .acct-suite-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .acct-suite-stat:nth-child(3) { border-left:0; border-top:1px solid var(--line); }
+  .acct-suite-stat:nth-child(4) { border-top:1px solid var(--line); }
+}
+@media(max-width:760px) {
+  .acct-suite-rail nav { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .acct-command-hero { padding:22px 18px; }
+  .acct-command-actions { grid-template-columns:1fr 1fr; }
+  .acct-suite-stats { grid-template-columns:1fr; }
+  .acct-suite-stat,.acct-suite-stat:nth-child(3) { border-left:0; border-top:1px solid var(--line); }
+  .acct-suite-stat:first-child { border-top:0; }
+  .acct-suite-modules { grid-template-columns:1fr; }
+}
+.acct-expense-hero {
+  display:flex;
+  align-items:end;
+  justify-content:space-between;
+  gap:24px;
+  margin:18px 0;
+  padding:24px 26px;
+  border:1px solid rgba(200,162,74,.30);
+  border-radius:12px;
+  background:linear-gradient(120deg,rgba(255,255,255,.72),rgba(246,236,210,.62));
+}
+.acct-expense-hero h2 { margin:5px 0; color:var(--deep); font:600 30px var(--serif); }
+.acct-expense-hero p { max-width:700px; margin:0; color:var(--stone); font-size:12px; line-height:1.55; }
+.acct-expense-total { flex:none; text-align:right; }
+.acct-expense-total span,.acct-expense-total small { display:block; color:var(--stone); font-size:10px; }
+.acct-expense-total strong { display:block; margin:3px 0; color:var(--deep); font:500 34px var(--serif); }
+.acct-expense-layout { display:grid; grid-template-columns:minmax(0,1.8fr) minmax(260px,.7fr); gap:18px; }
+.acct-expense-chart-card {
+  display:grid;
+  grid-template-columns:minmax(210px,.7fr) minmax(280px,1.3fr);
+  gap:30px;
+  align-items:center;
+  min-height:390px;
+  padding:28px;
+  border:1px solid rgba(6,21,34,.10);
+  border-radius:12px;
+  background:rgba(255,255,255,.66);
+  box-shadow:0 12px 34px rgba(6,21,34,.06);
+}
+.acct-expense-pie { position:relative; width:min(270px,100%); aspect-ratio:1; margin:auto; border-radius:50%; box-shadow:inset 0 0 0 1px rgba(6,21,34,.05),0 14px 30px rgba(6,21,34,.10); }
+.acct-expense-pie::after { content:""; position:absolute; inset:23%; border-radius:50%; background:#faf8f3; box-shadow:0 0 0 1px rgba(6,21,34,.06); }
+.acct-expense-pie > div { position:absolute; z-index:1; inset:30%; display:grid; place-content:center; text-align:center; }
+.acct-expense-pie strong { color:var(--deep); font:600 clamp(18px,2vw,27px) var(--serif); white-space:nowrap; }
+.acct-expense-pie span { color:var(--muted); font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+.acct-expense-legend { display:grid; gap:2px; }
+.acct-expense-legend > div { display:grid; grid-template-columns:10px minmax(0,1fr) auto; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid rgba(6,21,34,.07); }
+.acct-expense-legend i { width:9px; height:9px; border-radius:3px; }
+.acct-expense-legend span strong,.acct-expense-legend span small { display:block; }
+.acct-expense-legend span strong { color:var(--deep); font-size:12px; }
+.acct-expense-legend span small { margin-top:2px; color:var(--muted); font-size:9px; }
+.acct-expense-legend b { color:var(--deep); font:600 14px var(--serif); }
+.acct-expense-insights { display:grid; align-content:start; gap:14px; }
+.acct-expense-insights .acct-card { padding:22px; }
+.acct-expense-insights .acct-card > strong { display:block; margin:9px 0 6px; color:var(--deep); font:500 30px var(--serif); }
+.acct-expense-insights .agapay-fee { border-color:rgba(200,162,74,.35); background:linear-gradient(145deg,rgba(255,255,255,.75),rgba(246,236,210,.62)); }
+@media(max-width:900px) {
+  .acct-expense-layout,.acct-expense-chart-card { grid-template-columns:1fr; }
+  .acct-expense-chart-card { min-height:0; }
+}
+@media(max-width:600px) {
+  .acct-expense-hero { align-items:start; flex-direction:column; }
+  .acct-expense-total { text-align:left; }
+  .acct-expense-chart-card { padding:20px 15px; }
 }
