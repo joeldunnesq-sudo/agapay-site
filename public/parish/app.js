@@ -537,7 +537,6 @@
     const skillOptions = [...new Set((skills.listings || []).map((item) => item.displayLabel || item.skill?.name).filter(Boolean))].sort();
     const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     pane.innerHTML = `
-      <div class="pdx-dir-admin-nav"><span>☩</span><strong>My AGAPAY — Parish Admin</strong><small>${escapeHtml(parishName)}</small></div>
       <div class="pdx-dir-print-sheet">
       <section class="pdx-dir-canonical-head">
         <div>
