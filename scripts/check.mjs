@@ -119,6 +119,7 @@ const parishDashboardApp = await readFile("public/parish/app.js", "utf8");
 const givingOverviewPage = await readFile("public/give/index.html", "utf8");
 const rootPage = await readFile("public/index.html", "utf8");
 const rootManifest = await readFile("public/manifest.webmanifest", "utf8");
+const myAgapayLoginPage = await readFile("public/myagapay/login.html", "utf8");
 assert.ok(manifest.includes("/images/app/apple-touch-icon-blue.png"), "PWA manifest should use the blue AGAPAY iOS home screen icon");
 assert.ok(manifest.includes('"scope": "/myagapay"') && !manifest.includes('"scope": "/"'), "My AGAPAY PWA should cover /myagapay and /myagapay/learn without claiming /admin");
 assert.ok(manifest.includes('"orientation": "portrait-primary"'), "My AGAPAY PWA manifest should prefer the phone-first portrait orientation");
@@ -127,6 +128,7 @@ for (const screenshot of ["giving-dashboard.jpg", "today-in-the-church.jpg", "pa
   await access(`public/images/app/screenshots/${screenshot}`);
 }
 assert.equal((manifest.match(/"form_factor": "narrow"/g) || []).length, 3, "My AGAPAY PWA screenshots should declare the narrow mobile form factor");
+assert.ok(myAgapayLoginPage.includes("/myagapay/manifest.webmanifest?v=20260724a"), "My AGAPAY login should use the current manifest URL so PWA analyzers do not reuse a stale report");
 assert.ok(pwaRegister.includes("registerOrUpdate();") && !pwaRegister.includes('window.addEventListener("load"'), "PWA registration should start immediately so automated analyzers can detect the service worker");
 assert.ok(rootPage.includes('/manifest.webmanifest') && rootPage.includes('/pwa-register.js'), "public homepage should expose the root manifest and register the root service worker");
 assert.ok(rootManifest.includes('"start_url": "/?source=pwa"') && rootManifest.includes('"scope": "/"'), "root PWA manifest should launch and scope the public AGAPAY app at the site root");
