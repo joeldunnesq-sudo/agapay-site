@@ -534,10 +534,13 @@
     const parishName = currentParish?.parishName || currentParish?.name || 'Your parish';
     const publishedMembers = Array.isArray(print?.households) ? print.households : [];
     const publishedMemberCount = publishedMembers.length || people.length;
+    const skillOptions = [...new Set((skills.listings || []).map((item) => item.displayLabel || item.skill?.name).filter(Boolean))].sort();
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     pane.innerHTML = `
+      <div class="pdx-dir-admin-nav"><span>☩</span><strong>My AGAPAY — Parish Admin</strong><small>${escapeHtml(parishName)}</small></div>
+      <div class="pdx-dir-print-sheet">
       <section class="pdx-dir-canonical-head">
         <div>
-          <span class="pdx-dir-canonical-kicker">Parish Directory</span>
           <h1>Church Directory</h1>
           <p>${escapeHtml(parishName)} <i></i> <strong>${households.length}</strong> households <i></i> <strong>${publishedMemberCount}</strong> members</p>
         </div>
@@ -549,11 +552,17 @@
       <div class="pdx-dir-tab-panel" data-dir-panel="directory">
         <section class="pdx-dir-privacy-bar">
           <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <div><strong>Private parish directory</strong><span>Contact information follows each household’s approved publication preferences.</span></div>
+          <span>Contact info shown to other parishioners:</span>
+          <div class="pdx-dir-contact-mode" role="radiogroup" aria-label="Contact display mode">
+            <label><input type="radio" name="directoryContactMode" value="tap" checked onchange="setDirectoryContactMode(this.value)">Hidden until tap</label>
+            <label><input type="radio" name="directoryContactMode" value="always" onchange="setDirectoryContactMode(this.value)">Always visible</label>
+          </div>
+          <small>Toggle email, phone, or city per family below</small>
         </section>
         <section class="pdx-dir-canonical-controls">
           <label><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="search" id="directoryBrowseSearch" placeholder="Search by family or member name" oninput="searchDirectoryBrowse(this.value)" /></label>
-          <button type="button" onclick="loadDirectoryAdminTab(true)">Refresh directory</button>
+          <select id="directoryNamedayFilter" onchange="filterCanonicalDirectoryRows()"><option value="">All namedays</option>${months.map((month) => `<option value="${month}">${month}</option>`).join('')}</select>
+          <select id="directorySkillFilter" onchange="filterCanonicalDirectoryRows()"><option value="">All skills</option>${skillOptions.map((skill) => `<option value="${escapeAttr(skill)}">${escapeHtml(skill)}</option>`).join('')}</select>
         </section>
         <div class="pdx-dir-table-wrap">
           <table class="pdx-dir-table">
@@ -563,6 +572,7 @@
         </div>
         <p class="pdx-dir-canonical-note">Household information is entered by families in My AGAPAY and appears here for parish office use.</p>
         <div id="directoryRecordDetail" class="pdx-dir-review-detail" aria-live="polite"></div>
+      </div>
       </div>
 
       <div class="pdx-dir-tabs" role="tablist" aria-label="Parish directory tools">
@@ -1519,19 +1529,71 @@
 
   function directoryCanonicalHouseholdRow(household, publishedMembers = [], skillListings = []) {
     const name = household.displayName || 'Household';
-    const members = publishedMembers.filter((row) => String(row.display_name || row.displayName || '') === String(name)).map((row) => row.preferred_name || row.preferredName).filter(Boolean);
-    const count = Number(household.memberCount || members.length || 0);
-    const pending = Number(household.pendingRequestCount || 0);
+    const memberRows = publishedMembers.filter((row) =>
+      String(row.household_id || row.householdId || '') === String(household.id || '') ||
+      String(row.display_name || row.displayName || '') === String(name)
+    );
+    const uniqueMembers = [...new Map(memberRows.map((row) => [row.person_id || row.personId || row.preferred_name || row.preferredName, row])).values()];
+    const count = Number(household.memberCount || uniqueMembers.length || 0);
     const householdSkills = skillListings.filter((item) => {
       const householdName = item.household?.displayName || item.person?.householdDisplayName || item.householdDisplayName || '';
       return String(householdName) === String(name);
     }).map((item) => item.displayLabel || item.skill?.name).filter(Boolean);
-    return `<tr class="pdx-dir-table-row" onclick="openDirectoryHousehold('${escapeAttr(household.id)}')" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDirectoryHousehold('${escapeAttr(household.id)}');}">
-      <td><div class="pdx-dir-table-household">${directoryAdminPhotoImg(household.photo, 'pdx-dir-table-photo', 'Family photo for ' + name)}<div><strong>${escapeHtml(name)}</strong><span>${count} member${count === 1 ? '' : 's'}</span></div></div></td>
-      <td><div class="pdx-dir-table-members">${members.length ? members.slice(0, 4).map((member) => `<span>${escapeHtml(member)}</span>`).join('') : `<span>${count ? count + ' household member' + (count === 1 ? '' : 's') : 'No published members'}</span>`}${members.length > 4 ? `<small>+${members.length - 4} more</small>` : ''}</div></td>
-      <td><span class="pdx-dir-table-status ${pending ? 'pending' : ''}">${pending ? pending + ' pending review' : 'Approved preferences'}</span><small>Open the household to review contact visibility.</small><button class="pdx-dir-table-link" type="button" onclick="event.stopPropagation();openDirectoryHousehold('${escapeAttr(household.id)}')">View household</button></td>
+    const first = memberRows[0] || {};
+    const city = [first.city, first.region].filter(Boolean).join(', ');
+    const email = first.email || '';
+    const phone = first.phone || '';
+    const initials = String(name).replace(/^The\s+/i, '').replace(/\s+Family$/i, '').slice(0, 2).toUpperCase() || 'FA';
+    const memberMarkup = uniqueMembers.length ? uniqueMembers.slice(0, 5).map((member) => {
+      const feast = String(member.feast_month_day || member.feastMonthDay || '');
+      let nameday = '';
+      if (/^\d{2}-\d{2}$/.test(feast)) {
+        const [month, day] = feast.split('-').map(Number);
+        nameday = new Intl.DateTimeFormat(undefined, { month:'long', day:'numeric', timeZone:'UTC' }).format(new Date(Date.UTC(2024, month - 1, day)));
+      }
+      const saint = member.saint_name || member.saintName || '';
+      return `<div>${escapeHtml(member.preferred_name || member.preferredName || '')}${nameday || saint ? ` <span>— ${escapeHtml([nameday, saint].filter(Boolean).join(' – '))}</span>` : ''}</div>`;
+    }).join('') : `<div>${count ? count + ' family member' + (count === 1 ? '' : 's') : 'No published members'}</div>`;
+    const contactField = (label, value) => `<div class="pdx-dir-contact-field ${value ? 'is-hidden' : 'is-empty'}">
+      <button type="button" onclick="event.stopPropagation();toggleDirectoryContactField(this)" aria-label="Toggle ${escapeAttr(label)} visibility">◉</button>
+      <small>${escapeHtml(label)}</small><span data-value="${escapeAttr(value || 'Not shared')}">${value ? 'Tap to reveal' : 'Not shared'}</span>
+    </div>`;
+    const namedaySearch = memberRows.map((row) => {
+      const feast = String(row.feast_month_day || '');
+      if (!/^\d{2}-\d{2}$/.test(feast)) return '';
+      return new Intl.DateTimeFormat(undefined, { month:'long', timeZone:'UTC' }).format(new Date(Date.UTC(2024, Number(feast.slice(0,2)) - 1, 1)));
+    }).join(' ');
+    return `<tr class="pdx-dir-table-row" data-namedays="${escapeAttr(namedaySearch)}" data-skills="${escapeAttr(householdSkills.join(' '))}" onclick="openDirectoryHousehold('${escapeAttr(household.id)}')" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDirectoryHousehold('${escapeAttr(household.id)}');}">
+      <td><div class="pdx-dir-table-household"><span class="pdx-dir-table-avatar">${escapeHtml(initials)}</span><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(city || `${count} member${count === 1 ? '' : 's'}`)}</span></div></div></td>
+      <td><div class="pdx-dir-table-members">${memberMarkup}</div></td>
+      <td><div class="pdx-dir-table-contacts">${contactField('Email', email)}${contactField('Phone', phone)}${contactField('City', city)}</div></td>
       <td><div class="pdx-dir-table-skills">${householdSkills.length ? householdSkills.slice(0, 3).map((skill) => `<span>${escapeHtml(skill)}</span>`).join('') : '<small>No published skills</small>'}</div></td>
     </tr>`;
+  }
+
+  function setDirectoryContactMode(mode) {
+    const always = mode === 'always';
+    document.querySelectorAll('#directoryBrowseList .pdx-dir-contact-field:not(.is-empty)').forEach((field) => {
+      const value = field.querySelector('[data-value]');
+      field.classList.toggle('is-hidden', !always);
+      if (value) value.textContent = always ? value.dataset.value : 'Tap to reveal';
+    });
+  }
+
+  function toggleDirectoryContactField(button) {
+    const field = button.closest('.pdx-dir-contact-field');
+    const value = field?.querySelector('[data-value]');
+    if (!field || !value || field.classList.contains('is-empty')) return;
+    field.classList.toggle('is-hidden');
+    value.textContent = field.classList.contains('is-hidden') ? 'Tap to reveal' : value.dataset.value;
+  }
+
+  function filterCanonicalDirectoryRows() {
+    const month = document.getElementById('directoryNamedayFilter')?.value || '';
+    const skill = document.getElementById('directorySkillFilter')?.value || '';
+    document.querySelectorAll('#directoryBrowseList .pdx-dir-table-row').forEach((row) => {
+      row.hidden = Boolean((month && !row.dataset.namedays.includes(month)) || (skill && !row.dataset.skills.includes(skill)));
+    });
   }
 
   function directoryEmptyState(title, subtitle) {

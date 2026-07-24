@@ -628,12 +628,26 @@ export async function printDirectory(env, { context }) {
   const parishId = parishIdFor(context);
   const rows = await d1All(
     env,
-    `SELECT h.display_name, p.preferred_name
+    `SELECT h.id AS household_id, h.display_name, p.id AS person_id, p.preferred_name,
+            a.city, a.region,
+            n.saint_name, n.feast_month_day,
+            (SELECT c.value FROM directory_contact_methods c
+              WHERE c.parish_id = ?1 AND c.owner_type = 'household' AND c.owner_id = h.id
+                AND c.contact_type = 'email' AND c.active = 1 AND c.visibility = 'directory_members'
+              ORDER BY c.is_primary DESC, c.created_at ASC LIMIT 1) AS email,
+            (SELECT c.value FROM directory_contact_methods c
+              WHERE c.parish_id = ?1 AND c.owner_type = 'household' AND c.owner_id = h.id
+                AND c.contact_type = 'phone' AND c.active = 1 AND c.visibility = 'directory_members'
+              ORDER BY c.is_primary DESC, c.created_at ASC LIMIT 1) AS phone
        FROM directory_households h
        JOIN directory_household_members hm ON hm.household_id = h.id AND hm.active = 1
        JOIN directory_people p ON p.id = hm.person_id AND p.active = 1
        JOIN directory_publication_profiles pub ON pub.parish_id = ?1 AND pub.owner_type = 'person' AND pub.owner_id = p.id
        LEFT JOIN directory_person_privacy_flags f ON f.parish_id = ?1 AND f.person_id = p.id AND f.active = 1
+       LEFT JOIN directory_addresses a ON a.parish_id = ?1 AND a.owner_type = 'household' AND a.owner_id = h.id
+         AND a.active = 1 AND a.visibility = 'directory_members' AND a.protected_address = 0
+       LEFT JOIN directory_household_namedays n ON n.parish_id = ?1 AND n.household_id = h.id
+         AND n.person_id = p.id AND n.active = 1 AND n.visibility = 'directory_members'
       WHERE h.parish_id = ?1 AND h.active = 1 AND pub.status = 'approved' AND pub.approval_status = 'approved'
         AND COALESCE(f.is_child, 0) = 0 AND COALESCE(f.protected_person, 0) = 0
       ORDER BY h.display_name ASC, p.preferred_name ASC`,
