@@ -114,12 +114,15 @@ const listenManifest = await readFile("public/listen/manifest.webmanifest", "utf
 const listenIndex = await readFile("public/listen/index.html", "utf8");
 const adminPwa = await readFile("public/admin/pwa.js", "utf8");
 const serviceWorker = await readFile("public/service-worker.js", "utf8");
+const pwaRegister = await readFile("public/pwa-register.js", "utf8");
 const parishDashboardApp = await readFile("public/parish/app.js", "utf8");
 const givingOverviewPage = await readFile("public/give/index.html", "utf8");
 const rootPage = await readFile("public/index.html", "utf8");
 const rootManifest = await readFile("public/manifest.webmanifest", "utf8");
 assert.ok(manifest.includes("/images/app/apple-touch-icon-blue.png"), "PWA manifest should use the blue AGAPAY iOS home screen icon");
 assert.ok(manifest.includes('"scope": "/myagapay"') && !manifest.includes('"scope": "/"'), "My AGAPAY PWA should cover /myagapay and /myagapay/learn without claiming /admin");
+assert.ok(manifest.includes('"orientation": "portrait-primary"'), "My AGAPAY PWA manifest should prefer the phone-first portrait orientation");
+assert.ok(pwaRegister.includes("registerOrUpdate();") && !pwaRegister.includes('window.addEventListener("load"'), "PWA registration should start immediately so automated analyzers can detect the service worker");
 assert.ok(rootPage.includes('/manifest.webmanifest') && rootPage.includes('/pwa-register.js'), "public homepage should expose the root manifest and register the root service worker");
 assert.ok(rootManifest.includes('"start_url": "/?source=pwa"') && rootManifest.includes('"scope": "/"'), "root PWA manifest should launch and scope the public AGAPAY app at the site root");
 assert.ok(rootManifest.includes('"orientation": "portrait-primary"'), "root PWA manifest should prefer the phone-first portrait orientation");

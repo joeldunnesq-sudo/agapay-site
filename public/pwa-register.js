@@ -3,6 +3,7 @@
  * Include on any page with: <script src="/pwa-register.js" defer></script>
  *
  * - Registers /service-worker.js with scope "/"
+ * - Registers immediately so automated PWA analyzers can detect it
  * - If a registration already exists (from this script or any other),
  *   calls update() instead of registering again
  * - Never throws: registration/update failures are swallowed
@@ -30,9 +31,5 @@
       .catch(function () {});
   }
 
-  if (document.readyState === "complete") {
-    registerOrUpdate();
-  } else {
-    window.addEventListener("load", registerOrUpdate, { once: true });
-  }
+  registerOrUpdate();
 })();
