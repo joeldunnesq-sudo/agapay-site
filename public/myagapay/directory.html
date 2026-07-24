@@ -432,6 +432,51 @@
       .directory-nav-avatar img { width:100%; height:100%; object-fit:cover; }
       .directory-modal { align-items:end; padding:0; }
       .directory-modal-card { width:100%; max-height:88vh; border-radius:24px 24px 0 0; padding:18px 14px calc(18px + env(safe-area-inset-bottom)); }
+      /* Canonical Church Directory mobile language from the supplied reference. */
+      body.donor-directory-page { background:#e9e5dc; }
+      .donor-directory-page .directory-shell { width:min(430px,100%); min-height:100vh; margin:0 auto; background:#fffdf8; box-shadow:0 20px 60px rgba(6,21,34,.18); }
+      .directory-main { min-height:100vh; padding:0 16px calc(82px + env(safe-area-inset-bottom)); background:#fffdf8; }
+      .directory-mobile-header {
+        margin:0 -16px 16px;
+        padding:16px 16px 13px;
+        border-bottom:1px solid rgba(6,21,34,.12);
+        background:#fffdf8;
+        color:#061522;
+        box-shadow:none;
+      }
+      .directory-mobile-brand { align-items:baseline; gap:8px; }
+      .directory-mobile-logo { display:none; }
+      .directory-mobile-cross { color:#a97c25; font-family:Georgia,serif; font-size:23px; line-height:1; }
+      .directory-mobile-wordmark { color:#061522; font-family:"Cormorant Garamond",Georgia,serif; font-size:27px; font-weight:600; letter-spacing:0; }
+      .directory-mobile-header p { margin:4px 0 0; color:#70695d; font-size:12px; }
+      .member-directory-intro { display:none; }
+      .directory-tools { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:0 0 12px; }
+      .directory-tools label:first-child { grid-column:1/-1; }
+      .directory-tools label { color:#70695d; font-size:11px; }
+      .directory-tools input,.directory-tools select,.directory-tools .btn { min-height:42px; border:1px solid rgba(6,21,34,.14); border-radius:7px; background:#fff; }
+      .directory-browse-note { padding:0 0 10px !important; color:#70695d; }
+      .alphabet { display:none; }
+      .member-grid { gap:10px; padding:0 0 18px; }
+      .member-card {
+        grid-template-columns:56px minmax(0,1fr);
+        grid-template-rows:minmax(56px,auto);
+        gap:12px;
+        min-height:0;
+        padding:12px;
+        border:1px solid rgba(6,21,34,.12);
+        border-radius:8px;
+        background:#fff;
+        box-shadow:none;
+      }
+      .member-card .member-photo { width:56px; height:56px; border-radius:50%; background:#efe7d8; color:#6f4f16; font-size:21px; }
+      .member-card > span:last-child { padding:0; }
+      .member-card strong { font-size:19px; }
+      .member-card small { color:#70695d; font-size:12px; line-height:1.5; }
+      .directory-mobile-nav { left:50%; right:auto; width:min(430px,100%); transform:translateX(-50%); border-top:1px solid rgba(6,21,34,.12); background:#fffdf8; box-shadow:none; }
+      .directory-mobile-nav button { color:#70695d; }
+      .directory-mobile-nav button[aria-current="page"] { color:#a97c25; }
+      .profile-pane .mini-card { padding-top:0; }
+      .household-member-detail { border-radius:7px; box-shadow:none; }
     }
   </style>
 </head>
@@ -447,7 +492,7 @@
     </aside>
     <main class="directory-main">
       <header class="directory-mobile-header">
-        <div class="directory-mobile-brand"><img class="directory-mobile-logo" src="/mark.png" alt="" /><span class="directory-mobile-wordmark">AGAPAY</span></div>
+        <div class="directory-mobile-brand"><span class="directory-mobile-cross" aria-hidden="true">☩</span><span class="directory-mobile-wordmark" id="mobileDirectoryTitle">My AGAPAY Directory</span></div>
         <p><span id="mobileDirectoryParish">Your parish</span> · <span id="mobileDirectoryCount">Directory</span></p>
       </header>
       <section class="directory-top cal-hero myagapay-page-hero" aria-labelledby="directoryHeroTitle">
@@ -702,9 +747,9 @@
 
     </main>
     <nav class="directory-mobile-nav" aria-label="Directory navigation">
-      <button type="button" id="mobileDirectoryBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Back</span></button>
       <button type="button" data-mobile-target="browse" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16"/></svg><span>Directory</span></button>
-      <button type="button" data-mobile-target="household"><span class="directory-nav-avatar" id="mobileHouseholdAvatar" aria-hidden="true">AG</span><span>Household</span></button>
+      <button type="button" id="mobileAddHousehold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span>Add Household</span></button>
+      <button type="button" data-mobile-target="household"><span class="directory-nav-avatar" id="mobileHouseholdAvatar" aria-hidden="true">AG</span><span>My Household</span></button>
     </nav>
     <nav class="mobile-tabbar" aria-label="My AGAPAY navigation"></nav>
   </div>
@@ -1026,6 +1071,7 @@
       }
       document.body.dataset.mobileView = next;
       document.body.classList.remove("directory-profile-open");
+      document.getElementById("mobileDirectoryTitle").textContent = "My AGAPAY Directory";
       document.querySelectorAll("[data-mobile-target]").forEach((button) => {
         if (button.classList.contains("mobile-action")) button.setAttribute("aria-current", button.dataset.mobileTarget === next ? "true" : "false");
         if (button.closest(".directory-mobile-nav")) button.setAttribute("aria-current", button.dataset.mobileTarget === next ? "page" : "false");
@@ -1043,7 +1089,11 @@
     function memberSubtitle(item) {
       if (item.type === "household") {
         const names = (item.members || []).map((member) => member.displayName).slice(0, 3).join(", ");
-        return [names, item.city, `${item.publishedMemberCount || 0} published member${item.publishedMemberCount === 1 ? "" : "s"}`].filter(Boolean).join(" · ");
+        const namedays = (item.members || []).flatMap((member) => (member.namedays || []).map((nameday) => {
+          const date = formatNamedayDate(nameday.feastMonthDay);
+          return `${member.displayName}: ${date || nameday.feastMonthDay}`;
+        })).slice(0, 2).join(" · ");
+        return [item.city, names, namedays].filter(Boolean).join(" · ");
       }
       return [item.household?.displayName, item.city, item.suffix].filter(Boolean).join(" · ");
     }
@@ -1218,6 +1268,7 @@
       const pane = document.getElementById("memberProfile");
       pane.hidden = false;
       document.body.classList.add("directory-profile-open");
+      document.getElementById("mobileDirectoryTitle").textContent = type === "household" ? "Household" : "Parish Member";
       pane.innerHTML = `
         <article class="mini-card">
           <div class="profile-head">${photoHtml(profile)}<div><h2>${esc(profile.displayName)}</h2><div class="profile-meta">${[profile.city, profile.household?.displayName].filter(Boolean).map((value) => `<span>${esc(value)}</span>`).join("")}</div></div></div>
@@ -1674,7 +1725,7 @@
       showNotice("Family photo removed.");
       await loadDirectory();
     });
-    document.getElementById("mobileDirectoryBack").addEventListener("click", goBackFromDirectory);
+    document.getElementById("mobileAddHousehold").addEventListener("click", () => openPersonalDirectorySettings("household"));
     document.addEventListener("click", (event) => {
       const target = event.target.closest("[data-mobile-target]");
       if (!target) return;
@@ -1791,6 +1842,7 @@
       if (event.target.id === "closeMemberProfile") {
         document.getElementById("memberProfile").hidden = true;
         document.body.classList.remove("directory-profile-open");
+        document.getElementById("mobileDirectoryTitle").textContent = "My AGAPAY Directory";
         return;
       }
       const reveal = event.target.closest("[data-reveal-directory-contact]");

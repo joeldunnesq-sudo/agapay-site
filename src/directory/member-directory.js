@@ -278,7 +278,7 @@ async function personDto(env, context, row, { detail = false } = {}) {
       publishedCity(env, context, "person", row.id),
       publishedPhoto(env, context, "person", row.id)
     ])
-    : [[], [], await publishedCity(env, context, "person", row.id), await publishedPhoto(env, context, "person", row.id)];
+    : [[], await publishedNamedaysForPerson(env, context, row.id), await publishedCity(env, context, "person", row.id), await publishedPhoto(env, context, "person", row.id)];
   const ministries = detail ? await publishedMinistryAffiliationsForPerson(env, { context, personId: row.id }).catch(() => []) : [];
   const displayName = row.preferred_name || "Parish member";
   if (photo) photo.alt = displayName;
