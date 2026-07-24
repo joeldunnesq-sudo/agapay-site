@@ -63,7 +63,7 @@ import {
   verifyPasswordRecord,
   verifyTurnstileIfConfigured,
 } from "../lib/core.js";
-import { synchronizeGivingCatalogWithAccounting } from "../accounting/source-wiring.js";
+import { loadGivingCatalogFromAccounting, synchronizeGivingCatalogWithAccounting } from "../accounting/source-wiring.js";
 
 import { bookstoreEnabledFor, entitlementsSummary, hasParishPlusAccess, sacramentsEnabledFor, tierIncludesParishPlus } from "../lib/entitlements.js";
 
@@ -5701,8 +5701,15 @@ export async function handleParishDashboard(request, env, parishId) {
 
   if (request.method === "GET") {
     const { registration } = found;
+    const catalog = await loadGivingCatalogFromAccounting(env, parishId, registration);
     return json({
-      parish: parishDashboardPayload(parishId, registration)
+      parish: parishDashboardPayload(parishId, {
+        ...registration,
+        funds: catalog.funds,
+        campaigns: catalog.campaigns,
+        feastCampaigns: catalog.feastCampaigns
+      }),
+      accountingCatalogConnected: catalog.available
     });
   }
 
@@ -5764,11 +5771,33 @@ export async function handleParishDashboard(request, env, parishId) {
       updated = nextSession.registration;
     }
 
+    const catalogChanged = JSON.stringify(updated.funds || []) !== JSON.stringify(current.funds || [])
+      || JSON.stringify(updated.campaigns || []) !== JSON.stringify(current.campaigns || [])
+      || JSON.stringify(updated.feastCampaigns || []) !== JSON.stringify(current.feastCampaigns || []);
+    let catalogSync = { available: true, synchronized: 0 };
+    if (catalogChanged) {
+      catalogSync = await synchronizeGivingCatalogWithAccounting(env, parishId, updated);
+      if (!catalogSync.available) {
+        return json({
+          error: "accounting_catalog_unavailable",
+          message: "Funds & Alms could not be saved because the Accounting catalog is unavailable. Nothing was changed."
+        }, { status: 503 });
+      }
+      updated = {
+        ...updated,
+        funds: catalogSync.funds,
+        campaigns: catalogSync.campaigns,
+        feastCampaigns: [
+          ...(catalogSync.feastCampaigns || []),
+          ...(updated.feastCampaigns || []).filter((item) => item.enabled === false)
+        ]
+      };
+    }
     await saveRegistrationRecord(env, found.key, updated, current);
-    await synchronizeGivingCatalogWithAccounting(env, parishId, updated);
     return json({
       ok: true,
       parish: updated,
+      accountingCatalog: catalogSync,
       token: nextSession?.token || "",
       expiresAt: nextSession?.expiresAt || ""
     });

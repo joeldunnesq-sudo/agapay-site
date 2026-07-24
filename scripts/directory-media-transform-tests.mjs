@@ -448,11 +448,11 @@ await test("media review detail includes the submitted photo and omits unrelated
   assert.equal(detail.media.id, asset.id);
   assert.equal(detail.media.visibility, "directory_members");
   assert.equal(detail.proposed.photo.url.includes(`/media/${asset.id}/variants/avatar_medium`), true);
-  assert.equal(typeof detail.proposed.publicationEligible, "boolean");
+  assert.equal(detail.proposed.publicationEligible, true, "a member-visible photo must remain publication eligible for approval");
 });
 
 await test("a securely transformed asset passes the approval gate and can be approved through the real Phase 3A service", async () => {
-  const { env, context, adminContext } = await fixture();
+  const { env, db, context, adminContext } = await fixture();
   const source = jpegWithExif({ width: 64, height: 64 });
   const session = await createDirectoryMediaUploadSession(env, { context, ownerType: "person", ownerId: context.currentPerson.id });
   const asset = await completeDirectoryMediaUpload(env, { context, sessionId: session.id, file: file("photo.jpg", "image/jpeg", source.bytes), arrayBuffer: source.bytes.buffer, crop: { x: 0, y: 0, width: 64, height: 64 } });
@@ -462,6 +462,11 @@ await test("a securely transformed asset passes the approval gate and can be app
   assert.equal(result.decision, "approve");
   const approved = await getDirectoryMediaAsset(env, { context, mediaAssetId: asset.id });
   assert.equal(approved.lifecycleStatus, "approved");
+  assert.equal(
+    db.prepare("SELECT assignment_status FROM directory_media_assignments WHERE media_asset_id = ?").get(asset.id).assignment_status,
+    "active",
+    "approving a photo must activate its directory assignment"
+  );
 });
 
 await test("an asset with a missing/corrupted variant cannot be approved -- MEDIA_SECURE_TRANSFORMATION_REQUIRED, no override", async () => {

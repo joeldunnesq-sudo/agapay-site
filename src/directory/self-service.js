@@ -1061,6 +1061,68 @@ export async function requestHouseholdChildAdd(env, { context, householdId, data
   });
 }
 
+export async function requestHouseholdAdultAdd(env, { context, householdId, data = {}, correlationId = "" }) {
+  const managed = context.manageableHouseholds.find((household) => household.id === householdId);
+  if (!managed) throw new DirectoryServiceError("forbidden", "You cannot add an adult for this household.", 403);
+  if (!await isActiveHouseholdAdmin(env, { householdId, personId: context.currentPerson?.id })) {
+    throw new DirectoryServiceError("forbidden", "Only an active household administrator can add a spouse or other adult.", 403);
+  }
+  const preferredName = cleanText(data.preferredName, { required: true, max: 160, field: "preferredName" });
+  const legalName = cleanText(data.legalName, { max: 200, field: "legalName" });
+  const dateOfBirth = cleanDate(data.dateOfBirth || "", "dateOfBirth") || "";
+  const relationship = cleanText(data.relationship || "spouse", { max: 80, field: "relationship" }) || "spouse";
+  const email = cleanText(data.email || "", { max: 320, field: "email" });
+  const note = cleanText(data.note || "", { max: 500, field: "note" });
+  const duplicate = await d1First(
+    env,
+    `SELECT id FROM directory_change_requests
+      WHERE parish_id = ?1 AND requester_person_id = ?2 AND household_id = ?3
+        AND request_type = 'household_membership_add' AND status = 'pending'
+        AND json_extract(requested_payload_json, '$.adultAdd.preferredName') = ?4`,
+    managed.parishId, context.currentPerson.id, managed.id, preferredName
+  );
+  if (duplicate) throw new DirectoryServiceError("duplicate_request", "A pending request for this adult is already waiting for parish review.", 409);
+  const serviceActor = { ...selfActor(context, managed.parishId), capabilities: [DIRECTORY_CAPABILITIES.manage] };
+  const person = await createPerson(env, {
+    actor: serviceActor,
+    parishId: managed.parishId,
+    preferredName,
+    legalName,
+    dateOfBirth,
+    biologicalSex: "unknown",
+    notes: note ? `Household adult add request note: ${note}` : ""
+  });
+  if (email) {
+    await createContactMethod(env, {
+      actor: serviceActor,
+      parishId: managed.parishId,
+      ownerType: "person",
+      ownerId: person.id,
+      contactType: "email",
+      value: email,
+      label: "personal",
+      primary: true,
+      visibility: "private",
+      correlationId
+    });
+  }
+  return createDirectoryChangeRequest(env, {
+    context,
+    parishId: managed.parishId,
+    targetType: "household",
+    targetId: managed.id,
+    householdId: managed.id,
+    requestType: "household_membership_add",
+    summary: `Add ${relationship} to household: ${preferredName}`,
+    payload: {
+      personId: person.id,
+      relationship,
+      adultAdd: { preferredName, legalName, dateOfBirth, relationship, email, note }
+    },
+    correlationId
+  });
+}
+
 export async function cancelDirectoryChangeRequest(env, { context, requestId, correlationId = "" }) {
   const existing = await d1First(env, "SELECT * FROM directory_change_requests WHERE id = ?1", cleanText(requestId, { required: true, max: 160, field: "requestId" }));
   if (!existing || existing.requester_person_id !== context.currentPerson?.id) throw new DirectoryServiceError("not_found", "Change request was not found.", 404);

@@ -55,7 +55,8 @@ function makeD1Env() {
     "0029_directory_duplicates_phase3b.sql",
     "0030_directory_child_publication_phase4b.sql",
     "0031_directory_ministries_phase5a.sql",
-    "0032_directory_phase5b_skills_completion.sql"
+    "0032_directory_phase5b_skills_completion.sql",
+    "0033_directory_household_namedays.sql"
   ]) db.exec(migration(name));
 
   function wrap(sql) {

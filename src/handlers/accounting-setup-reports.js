@@ -91,29 +91,35 @@ export async function handleAccountingSetupReports(request, env, parishId) {
       const body = await request.json().catch(() => ({}));
       const id = decodeURIComponent(accountMatch[1]);
       const current = await ctx.db.prepare(`SELECT a.*,t.category FROM accounting_accounts a JOIN accounting_account_types t ON t.id=a.account_type_id WHERE a.id=?`).bind(id).first();
-      if (!current || current.category !== "expense") return reply({ error:"not_found", message:"Expense account was not found." }, 404);
+      if (!current) return reply({ error:"not_found", message:"Account was not found." }, 404);
       if (Number(current.version) !== Number(body.expectedVersion)) return reply({ error:"conflict", message:"This account changed. Reload and try again." }, 409);
-      const accountNumber = current.is_system ? current.account_number : clean(body.accountNumber ?? current.account_number).replace(/[^A-Za-z0-9._-]/g, "").slice(0, 24);
-      const name = current.is_system ? current.name : clean(body.name ?? current.name).slice(0, 120);
+      const accountNumber = clean(body.accountNumber ?? current.account_number).replace(/[^A-Za-z0-9._-]/g, "").slice(0, 24);
+      const name = clean(body.name ?? current.name).slice(0, 120);
       const expenseGroup = clean(body.expenseGroup);
       const defaultFundId = clean(body.defaultFundId);
       const parentAccountId = clean(body.parentAccountId);
-      if (!accountNumber || !name || !["administrative","other"].includes(expenseGroup) || !defaultFundId) return reply({ error:"invalid_account", message:"Account number, name, expense group, and default fund are required." }, 422);
-      const fund = await ctx.db.prepare("SELECT id FROM accounting_funds WHERE id=? AND is_active=1 AND archived_at IS NULL").bind(defaultFundId).first();
-      if (!fund) return reply({ error:"invalid_fund", message:"Choose an active default fund." }, 422);
+      if (!accountNumber || !name) return reply({ error:"invalid_account", message:"Account number and name are required." }, 422);
+      if (current.category === "expense" && (!["administrative","other"].includes(expenseGroup) || !defaultFundId)) return reply({ error:"invalid_account", message:"Account number, name, expense group, and default fund are required." }, 422);
+      if (current.category === "expense") {
+        const fund = await ctx.db.prepare("SELECT id FROM accounting_funds WHERE id=? AND is_active=1 AND archived_at IS NULL").bind(defaultFundId).first();
+        if (!fund) return reply({ error:"invalid_fund", message:"Choose an active default fund." }, 422);
+      }
       if (parentAccountId === id) return reply({ error:"invalid_parent", message:"An account cannot be its own parent." }, 422);
       if (parentAccountId) {
         const parent = await ctx.db.prepare(`SELECT a.id,a.parent_account_id FROM accounting_accounts a JOIN accounting_account_types t ON t.id=a.account_type_id
-          WHERE a.id=? AND a.is_active=1 AND a.archived_at IS NULL AND t.category='expense'`).bind(parentAccountId).first();
-        if (!parent || parent.parent_account_id === id) return reply({ error:"invalid_parent", message:"Choose an expense account that does not create a circular hierarchy." }, 422);
+          WHERE a.id=? AND a.is_active=1 AND a.archived_at IS NULL AND t.category=?`).bind(parentAccountId, current.category).first();
+        if (!parent || parent.parent_account_id === id) return reply({ error:"invalid_parent", message:"Choose an account in the same category that does not create a circular hierarchy." }, 422);
       }
-      await ctx.db.batch([
+      const statements = [
         ctx.db.prepare("UPDATE accounting_accounts SET account_number=?,name=?,description=?,parent_account_id=?,version=version+1,updated_at=datetime('now') WHERE id=? AND version=?")
-          .bind(accountNumber, name, clean(body.description ?? current.description) || null, parentAccountId || null, id, Number(body.expectedVersion)),
+          .bind(accountNumber, name, clean(body.description ?? current.description) || null, parentAccountId || null, id, Number(body.expectedVersion))
+      ];
+      if (current.category === "expense") statements.push(
         ctx.db.prepare(`INSERT INTO accounting_account_presentations(account_id,expense_group,default_fund_id)
           VALUES(?,?,?) ON CONFLICT(account_id) DO UPDATE SET expense_group=excluded.expense_group,
           default_fund_id=excluded.default_fund_id,updated_at=datetime('now')`).bind(id, expenseGroup, defaultFundId)
-      ]);
+      );
+      await ctx.db.batch(statements);
       return reply({ ok:true, account:(await workspaceReference(ctx.db)).accounts.find((account) => account.id === id) });
     }
     if (request.method === "GET" && fundMatch && !fundMatch[1]) return reply({ ok: true, funds: await listFunds(ctx.db) });

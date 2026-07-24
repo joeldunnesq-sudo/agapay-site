@@ -218,6 +218,22 @@ async function publishedContacts(env, context, ownerType, ownerId) {
   return rows.map(contactDto);
 }
 
+async function publishedNamedaysForPerson(env, context, personId) {
+  const rows = await d1All(
+    env,
+    `SELECT saint_name, feast_month_day
+       FROM directory_household_namedays
+      WHERE parish_id = ?1 AND person_id = ?2 AND active = 1
+        AND visibility = 'directory_members'
+      ORDER BY feast_month_day ASC, saint_name ASC`,
+    context.parishId, personId
+  );
+  return rows.map((row) => ({
+    saintName: row.saint_name || "",
+    feastMonthDay: row.feast_month_day || ""
+  }));
+}
+
 async function publishedCity(env, context, ownerType, ownerId) {
   const row = await d1First(
     env,
@@ -255,9 +271,14 @@ async function publishedPhoto(env, context, ownerType, ownerId) {
 }
 
 async function personDto(env, context, row, { detail = false } = {}) {
-  const [contacts, city, photo] = detail
-    ? await Promise.all([publishedContacts(env, context, "person", row.id), publishedCity(env, context, "person", row.id), publishedPhoto(env, context, "person", row.id)])
-    : [[], await publishedCity(env, context, "person", row.id), await publishedPhoto(env, context, "person", row.id)];
+  const [contacts, namedays, city, photo] = detail
+    ? await Promise.all([
+      publishedContacts(env, context, "person", row.id),
+      publishedNamedaysForPerson(env, context, row.id),
+      publishedCity(env, context, "person", row.id),
+      publishedPhoto(env, context, "person", row.id)
+    ])
+    : [[], [], await publishedCity(env, context, "person", row.id), await publishedPhoto(env, context, "person", row.id)];
   const ministries = detail ? await publishedMinistryAffiliationsForPerson(env, { context, personId: row.id }).catch(() => []) : [];
   const displayName = row.preferred_name || "Parish member";
   if (photo) photo.alt = displayName;
@@ -272,6 +293,7 @@ async function personDto(env, context, row, { detail = false } = {}) {
     relationship: detail ? row.relationship || "" : "",
     city,
     contacts,
+    namedays,
     ministries,
     photo,
     profileUrl: `/myagapay/directory?view=person&id=${encodeURIComponent(row.id)}`,
@@ -279,7 +301,7 @@ async function personDto(env, context, row, { detail = false } = {}) {
   };
 }
 
-async function householdMembers(env, context, householdId) {
+async function householdMembers(env, context, householdId, { detail = false } = {}) {
   const rows = await d1All(
     env,
     `SELECT p.id, p.preferred_name, p.suffix, p.updated_at, hm.relationship,
@@ -299,7 +321,7 @@ async function householdMembers(env, context, householdId) {
   );
   const adults = await Promise.all(
     rows.filter((row) => Number(row.protected_person || 0) !== 1 && Number(row.is_child || 0) !== 1)
-      .map((row) => personDto(env, context, row, { detail: false }))
+      .map((row) => personDto(env, context, row, { detail }))
   );
   const children = await householdChildren(env, context, householdId);
   return [...adults, ...children];
@@ -369,7 +391,7 @@ async function childDto(env, context, row) {
 
 async function householdDto(env, context, row, { detail = false } = {}) {
   const [members, contacts, city, photo] = await Promise.all([
-    householdMembers(env, context, row.id),
+    householdMembers(env, context, row.id, { detail }),
     detail ? publishedContacts(env, context, "household", row.id) : Promise.resolve([]),
     publishedCity(env, context, "household", row.id),
     publishedPhoto(env, context, "household", row.id)

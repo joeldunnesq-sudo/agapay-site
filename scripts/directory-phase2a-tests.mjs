@@ -22,6 +22,7 @@ import {
   setSelfServicePrivacyPreference,
   startSelfServiceProfile,
   listHouseholdNamedays,
+  requestHouseholdAdultAdd,
   requestHouseholdChildAdd,
   saveHouseholdNameday,
   transitionSelfServicePublication,
@@ -416,6 +417,26 @@ await test("household admin can request adding a child from self-service", async
     () => requestHouseholdChildAdd(env, { context, householdId: household.id, data: { preferredName: "Lucy Dunn" } }),
     (error) => error instanceof DirectoryServiceError && error.code === "duplicate_request"
   );
+});
+
+await test("household admin can enter a spouse for parish confirmation", async () => {
+  const { env, db, context, household } = await fixture();
+  const request = await requestHouseholdAdultAdd(env, {
+    context,
+    householdId: household.id,
+    data: { preferredName: "Alex Dunn", relationship: "spouse", dateOfBirth: "1988-08-14", email: "alex@example.org" }
+  });
+  const payload = JSON.parse(db.prepare("SELECT requested_payload_json FROM directory_change_requests WHERE id = ?").get(request.id).requested_payload_json);
+  assert.equal(request.requestType, "household_membership_add");
+  assert.equal(payload.relationship, "spouse");
+  assert.equal(payload.adultAdd.preferredName, "Alex Dunn");
+  const contact = db.prepare("SELECT value, visibility FROM directory_contact_methods WHERE owner_type = 'person' AND owner_id = ?").get(payload.personId);
+  assert.equal(contact.value, "alex@example.org");
+  assert.equal(contact.visibility, "private");
+  const flags = db.prepare("SELECT is_child FROM directory_person_privacy_flags WHERE person_id = ?").get(payload.personId);
+  assert.equal(flags?.is_child || 0, 0);
+  const linked = db.prepare("SELECT COUNT(*) AS count FROM directory_household_members WHERE household_id = ? AND person_id = ?").get(household.id, payload.personId);
+  assert.equal(linked.count, 0, "spouse should not be linked until parish review approves the request");
 });
 
 await test("adult household invitation reuses Phase 1C and denies child invitations", async () => {

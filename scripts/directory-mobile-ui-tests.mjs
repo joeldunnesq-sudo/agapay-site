@@ -18,5 +18,12 @@ assert.match(page, /data-reveal-directory-contact/);
 assert.match(page, /body\.donor-directory-page \.mobile-tabbar \{ display:none !important; \}/);
 assert.match(page, /font-family:"Cormorant Garamond"/);
 assert.match(page, /background:linear-gradient\(160deg,#061522 0%,#0b2130 100%\)/);
+assert.match(page, /\.btn\.primary \{ background:var\(--gold\); color:var\(--ink\); \}/);
+assert.match(page, /\.directory-tab\[aria-selected="true"\] \{ background:var\(--gold\); color:var\(--ink\); border-color:var\(--gold\); \}/);
+assert.match(page, /\.settings-section-nav button\[aria-selected="true"\] \{ border-color:var\(--gold\); background:var\(--gold\); color:var\(--ink\); \}/);
+assert.match(page, /id="adultAddStatus" role="status" aria-live="polite"/);
+assert.match(page, /button\.textContent = "Sending\.\.\."/);
+assert.doesNotMatch(page, /\.btn\.primary \{[^}]*background:var\(--green\)/);
+assert.doesNotMatch(page, /button\[aria-selected="true"\] \{[^}]*background:var\(--green\)/);
 
 console.log("PASS - Canonical mobile Directory header, photo-led cards, detail privacy, navigation, and AGAPAY visual system");

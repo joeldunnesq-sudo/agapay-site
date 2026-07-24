@@ -919,7 +919,27 @@ async function approveReviewItem(env, { context, row, reasonCode, reviewerNote, 
     // docs/directory/25-phase-2b1-security-review.md.
     await assertMediaAssetSecurelyTransformed(env, { mediaAssetId: row.source_id, parishId: context.parishId });
     const timestamp = nowMs();
-    await runAtomic(env, [{ sql: "UPDATE directory_media_assets SET lifecycle_status = 'approved', updated_at = ? WHERE id = ? AND parish_id = ? AND lifecycle_status = 'pending_approval'", params: [timestamp, row.source_id, context.parishId] }]);
+    await runAtomic(env, [
+      {
+        sql: `UPDATE directory_media_assignments
+          SET assignment_status='replaced',replaced_at=?,updated_at=?
+          WHERE parish_id=? AND assignment_status='active'
+            AND (owner_type,owner_id,media_purpose)=(
+              SELECT owner_type,owner_id,media_purpose FROM directory_media_assignments WHERE media_asset_id=?
+            )`,
+        params: [timestamp, timestamp, context.parishId, row.source_id]
+      },
+      {
+        sql: `UPDATE directory_media_assignments
+          SET assignment_status='active',updated_at=?
+          WHERE parish_id=? AND media_asset_id=? AND assignment_status='candidate'`,
+        params: [timestamp, context.parishId, row.source_id]
+      },
+      {
+        sql: "UPDATE directory_media_assets SET lifecycle_status = 'approved', updated_at = ? WHERE id = ? AND parish_id = ? AND lifecycle_status = 'pending_approval'",
+        params: [timestamp, row.source_id, context.parishId]
+      }
+    ]);
     return markApproved(env, { context, row, reasonCode, reviewerNote, requesterNote, correlationId });
   }
   if (row.source_type === "duplicate_candidate") {

@@ -158,7 +158,7 @@ export async function evaluateFieldPolicy(env, { parishId, ownerType, ownerId, f
   if (fieldKey.includes("email") || fieldKey.includes("phone")) maxVisibility = settings.contactMaxVisibility;
   let visibility = mostRestrictive(baseVisibility, maxVisibility);
 
-  const explicitOptInEligible = ["adult_email", "adult_phone", "city_state", "household_display_name", "adult_preferred_name"].includes(fieldKey);
+  const explicitOptInEligible = ["adult_email", "adult_phone", "city_state", "household_display_name", "adult_preferred_name", "person_photo", "household_photo"].includes(fieldKey);
   let eligible = preference ? Number(preference.publication_eligible || 0) === 1 : Boolean(publicationEligible && (defaults.eligible || explicitOptInEligible));
   if (ownerType === "person") {
     const flags = await getPersonPrivacyFlags(env, { parishId, personId: ownerId });

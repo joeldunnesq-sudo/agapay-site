@@ -13,6 +13,7 @@ import {
   linkExternalIdentity,
   resolveMemberDirectoryContext,
   getMemberDirectoryHome,
+  getMemberDirectoryHousehold,
   getMemberDirectoryPerson,
   listMemberDirectoryHouseholds,
   listMemberDirectoryPeople,
@@ -44,7 +45,8 @@ function makeD1Env() {
     "0027_directory_admin_phase3a.sql",
     "0028_directory_media_secure_transformation.sql",
     "0029_directory_duplicates_phase3b.sql",
-    "0030_directory_child_publication_phase4b.sql"
+    "0030_directory_child_publication_phase4b.sql",
+    "0033_directory_household_namedays.sql"
   ]) db.exec(migration(name));
 
   function wrap(sql) {
@@ -197,6 +199,23 @@ await test("browse returns only approved visible people and omits private contac
   assert.equal(detail.person.contacts[0].value, "published@example.org");
   assert.equal(detail.person.contacts.some((contact) => String(contact.value || "").includes("555")), false);
   assert.equal(JSON.stringify(detail).includes("Maria Private Legal"), false);
+});
+
+await test("household detail includes each adult's shared contacts and name day without another profile request", async () => {
+  const { env, db, viewer, household, visible } = await fixture();
+  db.prepare(`INSERT INTO directory_household_namedays
+    (id, parish_id, household_id, person_id, display_name, saint_name, feast_month_day, visibility, active, created_by_user_id, created_at, updated_at)
+    VALUES ('nameday_maria', 'st-fiacre', ?, ?, 'Maria Antioch', 'St. Maria', '07-22', 'directory_members', 1, 'seed-admin', 1, 1)`)
+    .run(household.id, visible.id);
+  db.prepare(`INSERT INTO directory_household_namedays
+    (id, parish_id, household_id, person_id, display_name, saint_name, feast_month_day, visibility, active, created_by_user_id, created_at, updated_at)
+    VALUES ('nameday_private', 'st-fiacre', ?, ?, 'Maria Antioch', 'Private Saint', '01-01', 'private', 1, 'seed-admin', 1, 1)`)
+    .run(household.id, visible.id);
+  const context = await resolveMemberDirectoryContext(env, { request: await requestFor(env, db, viewer, "/api/directory/member") });
+  const detail = await getMemberDirectoryHousehold(env, { context, householdId: household.id });
+  assert.equal(detail.household.members.length, 1);
+  assert.equal(detail.household.members[0].contacts[0].value, "published@example.org");
+  assert.deepEqual(detail.household.members[0].namedays, [{ saintName: "St. Maria", feastMonthDay: "07-22" }]);
 });
 
 await test("protected people and children are absent from browse, search, counts, and household members", async () => {

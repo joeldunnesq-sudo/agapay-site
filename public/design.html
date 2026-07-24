@@ -15,7 +15,7 @@
   <meta property="og:image" content="https://agapay.app/images/design/agapay-design-share.png" />
   <meta property="og:image:width" content="1731" />
   <meta property="og:image:height" content="909" />
-  <meta property="og:image:alt" content="AGAPAY Design Orthodox web design preview with parish and bookstore website examples." />
+  <meta property="og:image:alt" content="AGAPAY Design portfolio featuring custom websites for Orthodox businesses and professional organizations." />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="AGAPAY Design | Orthodox Web Design" />
   <meta name="twitter:description" content="Websites built with care, craft, and tradition." />
@@ -270,6 +270,15 @@
       background: var(--paper);
       box-shadow: 0 18px 48px rgba(6, 21, 34, 0.08);
     }
+    .work-list {
+      display: grid;
+      gap: clamp(1.25rem, 3vw, 2rem);
+    }
+    .work-feature.reverse {
+      grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.05fr);
+    }
+    .work-feature.reverse .work-shot { order: 2; }
+    .work-feature.reverse .work-copy { order: 1; }
     .work-shot {
       min-height: 340px;
       display: grid;
@@ -472,10 +481,13 @@
     @media (max-width: 880px) {
       .hero-inner,
       .work-feature,
+      .work-feature.reverse,
       .process-grid,
       .pricing-grid {
         grid-template-columns: 1fr;
       }
+      .work-feature.reverse .work-shot,
+      .work-feature.reverse .work-copy { order: initial; }
       .design-hero {
         min-height: auto;
       }
@@ -533,27 +545,69 @@
       <div class="design-section">
         <div class="section-head">
           <p class="design-eyebrow">Selected work</p>
-          <h2>Recent project</h2>
-          <p>A practical, polished example of the kind of site AGAPAY Design can build from strategy through launch.</p>
+          <h2>Recent projects</h2>
+          <p>Distinct websites shaped around each client’s craft, audience, and goals—from strategy and copy through design and launch.</p>
         </div>
-        <div class="work-feature">
-          <div class="work-shot" aria-label="Chariot Concepts website preview">
-            <div class="work-video-frame">
-              <video src="/videos/design/chariot-concepts.webm" autoplay muted loop playsinline preload="metadata" aria-label="Chariot Concepts website walkthrough"></video>
-              <span class="work-video-label">Live site preview</span>
+        <div class="work-list">
+          <article class="work-feature">
+            <div class="work-shot" aria-label="Chariot Concepts website preview">
+              <div class="work-video-frame">
+                <video src="/videos/design/chariot-concepts.webm" autoplay muted loop playsinline preload="metadata" aria-label="Chariot Concepts website walkthrough"></video>
+                <span class="work-video-label">Live site preview</span>
+              </div>
             </div>
-          </div>
-          <div class="work-copy">
-            <span class="project-pill">Live client project</span>
-            <h3>Chariot Concepts</h3>
-            <p>A full e-commerce site for a retail tire-industry hardware brand: product catalog, checkout, wholesale and dealer inquiries, built end to end.</p>
-            <div class="chip-row">
-              <span class="service-chip">E-commerce</span>
-              <span class="service-chip">Checkout and payments</span>
-              <span class="service-chip">Wholesale inquiries</span>
+            <div class="work-copy">
+              <span class="project-pill">Live client project</span>
+              <h3>Chariot Concepts</h3>
+              <p>A full e-commerce site for a retail tire-industry hardware brand: product catalog, checkout, wholesale and dealer inquiries, built end to end.</p>
+              <div class="chip-row">
+                <span class="service-chip">E-commerce</span>
+                <span class="service-chip">Checkout and payments</span>
+                <span class="service-chip">Wholesale inquiries</span>
+              </div>
+              <a class="design-button primary" href="https://trustack-website.vercel.app/" target="_blank" rel="noopener">View Live Site</a>
             </div>
-            <a class="design-button primary" href="https://trustack-website.vercel.app/" target="_blank" rel="noopener">View Live Site</a>
-          </div>
+          </article>
+
+          <article class="work-feature reverse">
+            <div class="work-shot" aria-label="Kovcheg Woodworking website preview">
+              <div class="work-video-frame">
+                <video src="/videos/design/kovcheg-woodworking.webm" autoplay muted loop playsinline preload="metadata" aria-label="Kovcheg Woodworking website walkthrough"></video>
+                <span class="work-video-label">Live site preview</span>
+              </div>
+            </div>
+            <div class="work-copy">
+              <span class="project-pill">Orthodox-owned business</span>
+              <h3>Kovcheg Woodworking</h3>
+              <p>A richly crafted website for a family Orthodox woodworking studio in Hutto, Texas. The site presents custom iconostases, kyots, analogions, home icon corners, and commissions with an online shop and a clear inquiry path for parishes.</p>
+              <div class="chip-row">
+                <span class="service-chip">Brand storytelling</span>
+                <span class="service-chip">Commission inquiries</span>
+                <span class="service-chip">Online shop</span>
+              </div>
+              <a class="design-button primary" href="https://kovcheg-woodworking.netlify.app/" target="_blank" rel="noopener">View Live Site</a>
+            </div>
+          </article>
+
+          <article class="work-feature">
+            <div class="work-shot" aria-label="The Educational Leadership Collective website preview">
+              <div class="work-video-frame">
+                <video src="/videos/design/the-elc.webm" autoplay muted loop playsinline preload="metadata" aria-label="The Educational Leadership Collective website walkthrough"></video>
+                <span class="work-video-label">Live site preview</span>
+              </div>
+            </div>
+            <div class="work-copy">
+              <span class="project-pill">Professional services</span>
+              <h3>The Educational Leadership Collective</h3>
+              <p>A confident, approachable professional-services site for Dr. Kelley Finley’s work with rural and small schools. It clarifies on-site professional development, leadership coaching, customized district training, and conference speaking while guiding education leaders toward a conversation.</p>
+              <div class="chip-row">
+                <span class="service-chip">Service positioning</span>
+                <span class="service-chip">Founder-led brand</span>
+                <span class="service-chip">Lead generation</span>
+              </div>
+              <a class="design-button primary" href="https://theelc.org/" target="_blank" rel="noopener">View Live Site</a>
+            </div>
+          </article>
         </div>
       </div>
     </section>

@@ -53,7 +53,8 @@ function makeD1Env() {
     "0027_directory_admin_phase3a.sql",
     "0028_directory_media_secure_transformation.sql",
     "0029_directory_duplicates_phase3b.sql",
-    "0030_directory_child_publication_phase4b.sql"
+    "0030_directory_child_publication_phase4b.sql",
+    "0033_directory_household_namedays.sql"
   ]) db.exec(migration(name));
 
   function wrap(sql) {
