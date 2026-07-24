@@ -123,6 +123,13 @@ const myAgapayLoginPage = await readFile("public/myagapay/login.html", "utf8");
 assert.ok(manifest.includes("/images/app/apple-touch-icon-blue.png"), "PWA manifest should use the blue AGAPAY iOS home screen icon");
 assert.ok(manifest.includes('"scope": "/myagapay"') && !manifest.includes('"scope": "/"'), "My AGAPAY PWA should cover /myagapay and /myagapay/learn without claiming /admin");
 assert.ok(manifest.includes('"orientation": "portrait-primary"'), "My AGAPAY PWA manifest should prefer the phone-first portrait orientation");
+assert.ok(manifest.includes('"lang": "en-US"') && manifest.includes('"dir": "ltr"'), "My AGAPAY PWA manifest should declare its language and text direction");
+for (const category of ["finance", "lifestyle", "education"]) {
+  assert.ok(manifest.includes(`"${category}"`), `My AGAPAY PWA manifest should include the ${category} category`);
+}
+for (const shortcut of ["/myagapay", "/myagapay/giving/calendar", "/myagapay/directory"]) {
+  assert.ok(manifest.includes(`"url": "${shortcut}"`), `My AGAPAY PWA manifest should include the ${shortcut} shortcut`);
+}
 for (const screenshot of ["giving-dashboard.jpg", "today-in-the-church.jpg", "parish-bookstore.jpg"]) {
   assert.ok(manifest.includes(`/images/app/screenshots/${screenshot}`), `My AGAPAY PWA manifest should include ${screenshot}`);
   await access(`public/images/app/screenshots/${screenshot}`);

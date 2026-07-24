@@ -3,6 +3,9 @@
   "name": "My AGAPAY",
   "short_name": "My AGAPAY",
   "description": "Love how you give, learn, and live.",
+  "lang": "en-US",
+  "dir": "ltr",
+  "categories": ["finance", "lifestyle", "education"],
   "start_url": "/myagapay/login?source=pwa",
   "scope": "/myagapay",
   "display": "standalone",
@@ -57,6 +60,26 @@
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "Parish bookstore checkout"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Give",
+      "short_name": "Give",
+      "description": "Open the My AGAPAY giving dashboard.",
+      "url": "/myagapay"
+    },
+    {
+      "name": "Today",
+      "short_name": "Today",
+      "description": "View today's Church calendar, readings, and saints.",
+      "url": "/myagapay/giving/calendar"
+    },
+    {
+      "name": "Directory",
+      "short_name": "Directory",
+      "description": "Open the Orthodox parish and community directory.",
+      "url": "/myagapay/directory"
     }
   ]
 }
