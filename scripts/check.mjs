@@ -129,6 +129,7 @@ for (const screenshot of ["giving-dashboard.jpg", "today-in-the-church.jpg", "pa
 }
 assert.equal((manifest.match(/"form_factor": "narrow"/g) || []).length, 3, "My AGAPAY PWA screenshots should declare the narrow mobile form factor");
 assert.ok(myAgapayLoginPage.includes("/myagapay/manifest.webmanifest?v=20260724a"), "My AGAPAY login should use the current manifest URL so PWA analyzers do not reuse a stale report");
+assert.ok(/navigator\.serviceWorker\.register\(\s*(["'])\/service-worker\.js\1/.test(myAgapayLoginPage), "My AGAPAY login HTML should directly register the service worker for PWABuilder's source parser");
 assert.ok(pwaRegister.includes("registerOrUpdate();") && !pwaRegister.includes('window.addEventListener("load"'), "PWA registration should start immediately so automated analyzers can detect the service worker");
 assert.ok(rootPage.includes('/manifest.webmanifest') && rootPage.includes('/pwa-register.js'), "public homepage should expose the root manifest and register the root service worker");
 assert.ok(rootManifest.includes('"start_url": "/?source=pwa"') && rootManifest.includes('"scope": "/"'), "root PWA manifest should launch and scope the public AGAPAY app at the site root");
