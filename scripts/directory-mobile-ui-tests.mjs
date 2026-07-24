@@ -36,6 +36,19 @@ assert.match(page, /\.directory-tab\[aria-selected="true"\] \{ background:var\(-
 assert.match(page, /\.settings-section-nav button\[aria-selected="true"\] \{ border-color:var\(--gold\); background:var\(--gold\); color:var\(--ink\); \}/);
 assert.match(page, /id="adultAddStatus" role="status" aria-live="polite"/);
 assert.match(page, /button\.textContent = "Sending\.\.\."/);
+assert.match(page, /skillListingsById = new Map/);
+assert.match(page, /event\.target\.closest\("\[data-edit-skill\]"\)/);
+assert.match(page, /form\.elements\.listingId\.value = listing\.id/);
+assert.match(page, /id="cancelSkillEdit" hidden/);
+assert.match(page, /data-settings-section="family"[^>]*>Family Info</);
+assert.match(page, /data-settings-section="service"[^>]*>Service</);
+assert.doesNotMatch(page, /data-settings-section="personal"/);
+assert.doesNotMatch(page, /data-settings-section="household"/);
+assert.match(page, /id="namedayForm" hidden aria-hidden="true"/);
+assert.match(page, /id="adultAddForm"[\s\S]*?name="saintName"[\s\S]*?name="feastMonthDay"[\s\S]*?name="namedayVisibility"/);
+assert.match(page, /id="childAddForm"[\s\S]*?name="saintName"[\s\S]*?name="feastMonthDay"[\s\S]*?name="namedayVisibility"/);
+assert.match(page, /function personRequestPayload\(formEl\)/);
+assert.match(page, /await savePersonNameday\(household, nameday\)/);
 assert.doesNotMatch(page, /\.btn\.primary \{[^}]*background:var\(--green\)/);
 assert.doesNotMatch(page, /button\[aria-selected="true"\] \{[^}]*background:var\(--green\)/);
 

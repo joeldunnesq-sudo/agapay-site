@@ -543,13 +543,12 @@
       <details class="personal-settings" id="personalDirectorySettings">
         <summary><span><strong>Edit my information</strong><span>Choose a section below. Changes stay private unless you submit them for parish review.</span></span></summary>
         <nav class="settings-section-nav" aria-label="Information sections">
-          <button type="button" data-settings-section="personal" aria-selected="true">Personal</button>
-          <button type="button" data-settings-section="household" aria-selected="false">Family</button>
+          <button type="button" data-settings-section="family" aria-selected="true">Family Info</button>
           <button type="button" data-settings-section="service" aria-selected="false">Service</button>
         </nav>
       <section class="directory-grid" aria-live="polite">
         <div class="stack">
-          <article class="panel" data-settings-panel="personal" data-mobile-section="household setup">
+          <article class="panel" data-settings-panel="family" data-mobile-section="household setup">
             <div class="panel-header"><div><div class="panel-kicker">Step 1</div><h2>My Profile</h2><p class="panel-intro">This is your own directory record. Keep private details private; submit only what you want the parish to review.</p></div></div>
             <div class="summary-list" id="profileSummary"></div>
             <form class="setup-panel" id="startProfileForm" hidden>
@@ -586,7 +585,7 @@
             </form>
           </article>
 
-          <article class="panel" data-settings-panel="personal" data-mobile-section="household privacy setup">
+          <article class="panel" data-settings-panel="family" data-mobile-section="household privacy setup">
             <div class="panel-header"><div><div class="panel-kicker">Step 2</div><h2>Contact &amp; Privacy</h2><p class="panel-intro">Add email or phone details. Choose Directory members only for information you want the parish to consider publishing.</p></div></div>
             <div class="contact-list" id="contactList"></div>
             <form class="form-grid" id="contactForm" hidden>
@@ -611,13 +610,13 @@
               <label class="child-note" style="grid-column:1/-1;">Availability note<textarea name="availabilityNote" maxlength="300"></textarea></label>
               <input type="hidden" name="status" value="draft" />
               <input type="hidden" name="listingId" />
-              <div class="actions"><button class="btn secondary" type="submit" data-skill-save="draft">Save Draft</button><button class="btn primary" type="submit" data-skill-save="active">Activate</button><button class="btn warn" type="button" id="pauseAllSkills">Pause All</button></div>
+              <div class="actions"><button class="btn secondary" type="submit" data-skill-save="draft">Save Draft</button><button class="btn primary" type="submit" data-skill-save="active">Activate</button><button class="btn secondary" type="button" id="cancelSkillEdit" hidden>Cancel Edit</button><button class="btn warn" type="button" id="pauseAllSkills">Pause All</button></div>
             </form>
           </article>
         </div>
 
         <div class="stack">
-          <article class="panel" data-settings-panel="personal" data-mobile-section="household setup privacy">
+          <article class="panel" data-settings-panel="family" data-mobile-section="household setup privacy">
             <div class="panel-header"><div><div class="panel-kicker">Review</div><h2>Publication</h2><p class="panel-intro">Nothing appears in the member directory until you submit and the parish approves it.</p></div></div>
             <div class="summary-list" id="publicationSummary"></div>
             <div class="actions" id="publicationActions" hidden>
@@ -626,7 +625,7 @@
             </div>
           </article>
 
-          <article class="panel household-hub" data-settings-panel="household" data-mobile-section="household family setup photos">
+          <article class="panel household-hub" data-settings-panel="family" data-mobile-section="household family setup photos">
             <div class="panel-header"><div><div class="panel-kicker">Directory</div><h2>Family</h2><p class="panel-intro">Keep your family in one place: your spouse, children, family name, and name days. Parish staff reviews additions before they appear.</p></div></div>
 
             <div class="household-hub-identity">
@@ -661,6 +660,9 @@
                 <label>Relationship<select name="relationship"><option value="spouse">Spouse</option><option value="adult_child">Adult child</option><option value="other">Other adult</option></select></label>
                 <label>Email for account connection (optional)<input name="email" type="email" autocomplete="email" placeholder="maria@example.com" /></label>
                 <label>Birthday (optional)<input name="dateOfBirth" type="date" /></label>
+                <label>Patron saint (optional)<input name="saintName" placeholder="St. Maria" /></label>
+                <label>Nameday (optional)<input name="feastMonthDay" placeholder="07-22" pattern="[0-9]{2}-[0-9]{2}" /></label>
+                <label>Nameday sharing<select name="namedayVisibility"><option value="private">Private</option><option value="household">Family</option><option value="staff">Parish staff</option><option value="directory_members">Directory members</option></select></label>
                 <label class="child-note">Note (optional)<textarea name="note" maxlength="500"></textarea></label>
                 <div class="actions"><button class="btn primary" id="addAdultButton" type="submit">Add Adult</button></div>
                 <p class="notice" id="adultAddStatus" role="status" aria-live="polite" hidden></p>
@@ -668,25 +670,19 @@
             </div>
 
             <div class="household-hub-namedays">
-              <h3>Name Days</h3>
-              <p class="household-hub-namedays-note">Keep them private, or share them with members so they can appear in Today reminders.</p>
+              <h3>Family Namedays</h3>
+              <p class="household-hub-namedays-note">Namedays are added with each spouse, adult, or child so each person’s information stays together.</p>
               <div class="nameday-list" id="namedayList"></div>
-              <form class="form-grid household-hub-nameday-form" id="namedayForm" hidden>
-                <label>Name<input name="displayName" required placeholder="Anna" /></label>
-                <label>Saint<input name="saintName" required placeholder="St. Anna" /></label>
-                <label>Date<input name="feastMonthDay" required placeholder="07-25" pattern="[0-9]{2}-[0-9]{2}" /></label>
-                <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Family</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
-                <div class="actions"><button class="btn secondary" type="submit">Add Name Day</button></div>
-              </form>
+              <form id="namedayForm" hidden aria-hidden="true"></form>
             </div>
           </article>
 
-          <article class="panel" data-settings-panel="household" data-mobile-section="household setup">
+          <article class="panel" data-settings-panel="family" data-mobile-section="household setup">
             <div class="panel-header"><div><div class="panel-kicker">Status</div><h2>Pending Changes</h2></div></div>
             <div class="request-list" id="requestList"></div>
           </article>
 
-          <article class="panel" data-settings-panel="household" aria-labelledby="childrenHeading" data-mobile-section="household family">
+          <article class="panel" data-settings-panel="family" aria-labelledby="childrenHeading" data-mobile-section="household family">
             <div class="panel-header"><div><div class="panel-kicker">Family</div><h2 id="childrenHeading">Children</h2><p class="panel-intro">Children stay hidden by default. You may request publication of limited fields, and parish staff must approve first.</p></div></div>
             <button class="btn primary child-add-trigger" id="openChildAddModal" type="button" hidden>Add a Child</button>
             <div class="stack" id="childrenList" aria-live="polite"></div>
@@ -700,7 +696,7 @@
           <div class="panel-kicker">Our parish family</div>
           <div class="member-directory-heading-row">
             <h2 id="memberDirectoryHeading">Parish Directory</h2>
-            <button class="btn primary edit-directory-profile" id="editDirectoryProfile" type="button" onclick="openPersonalDirectorySettings('personal')">Edit my information</button>
+            <button class="btn primary edit-directory-profile" id="editDirectoryProfile" type="button" onclick="openPersonalDirectorySettings('family')">Edit my information</button>
           </div>
           <p id="memberDirectoryPrivacy" class="privacy-reminder">This directory is private to authorized members of your parish. Please use contact information respectfully and do not copy or distribute it outside the parish.</p>
         </div>
@@ -744,6 +740,9 @@
             <label>Child name<input name="preferredName" autocomplete="off" required placeholder="Anna" /></label>
             <label>Relationship<input name="relationship" autocomplete="off" placeholder="daughter, son, child" /></label>
             <label>Birthday (optional)<input name="dateOfBirth" placeholder="YYYY-MM-DD" /></label>
+            <label>Patron saint (optional)<input name="saintName" placeholder="St. Anna" /></label>
+            <label>Nameday (optional)<input name="feastMonthDay" placeholder="07-25" pattern="[0-9]{2}-[0-9]{2}" /></label>
+            <label>Nameday sharing<select name="namedayVisibility"><option value="private">Private</option><option value="household">Family</option><option value="staff">Parish staff</option><option value="directory_members">Directory members</option></select></label>
             <label class="child-note">Note to parish staff (optional)<textarea name="note" maxlength="500" placeholder="Anything staff should know"></textarea></label>
             <button class="btn primary" type="submit">Send Add Child Request</button>
           </form>
@@ -779,6 +778,7 @@
     const donorEmail = localStorage.getItem("agapayDonorEmail") || email;
     let profileState = null;
     let memberState = { view: "households", letter: "", cursor: "", query: "", sort: "az", loading: false };
+    let skillListingsById = new Map();
     let memberSearchTimer = 0;
     function goBackFromDirectory() {
       if (window.history.length > 1) window.history.back();
@@ -1080,7 +1080,7 @@
       const next = String(view || "home");
       const settings = document.getElementById("personalDirectorySettings");
       if (settings && window.matchMedia("(max-width: 760px)").matches && next === "household") {
-        setSettingsSection("household");
+        setSettingsSection("family");
         settings.open = true;
       }
       document.body.dataset.mobileView = next;
@@ -1229,6 +1229,7 @@
     }
     function renderMySkills(payload = {}) {
       const listings = payload.listings || [];
+      skillListingsById = new Map(listings.map((listing) => [String(listing.id), listing]));
       skillCatalog = payload.catalog || [];
       const settings = payload.settings || {};
       const person = profileState?.currentPerson || profileState?.profile?.person || {};
@@ -1475,17 +1476,14 @@
     function renderNamedays(items = []) {
       document.getElementById("namedayList").innerHTML = items.length ? items.map((item) => `
         <div class="mini-card"><strong>${esc(item.displayName)} · ${esc(item.feastMonthDay)}</strong><small>${esc(item.saintName)} · ${esc(item.visibility)}</small></div>
-      `).join("") : '<div class="empty">No family name days yet. Add one below using MM-DD for the annual feast date.</div>';
+      `).join("") : '<div class="empty">No family name days yet. Add one while entering a spouse, adult, or child.</div>';
     }
     async function loadNamedays() {
       const household = firstHousehold();
-      const form = document.getElementById("namedayForm");
       if (!household) {
-        form.hidden = true;
         document.getElementById("namedayList").innerHTML = '<div class="empty">Name day tools appear after your family is connected.</div>';
         return;
       }
-      form.hidden = false;
       const payload = await api(`/api/directory/households/${encodeURIComponent(household.id)}/self/namedays`).catch(() => ({ namedays: [] }));
       renderNamedays(payload.namedays || []);
     }
@@ -1624,8 +1622,8 @@
       ]);
     }
     document.getElementById("skillSearchButton").addEventListener("click", loadSkillSearch);
-    function setSettingsSection(section = "personal") {
-      const selected = ["personal", "household", "service"].includes(section) ? section : "personal";
+    function setSettingsSection(section = "family") {
+      const selected = ["family", "service"].includes(section) ? section : "family";
       document.querySelectorAll("[data-settings-section]").forEach((button) => {
         button.setAttribute("aria-selected", button.dataset.settingsSection === selected ? "true" : "false");
       });
@@ -1633,7 +1631,7 @@
         panel.hidden = panel.dataset.settingsPanel !== selected;
       });
     }
-    function openPersonalDirectorySettings(section = "personal") {
+    function openPersonalDirectorySettings(section = "family") {
       const settings = document.getElementById("personalDirectorySettings");
       setSettingsSection(section);
       settings.open = true;
@@ -1659,7 +1657,8 @@
       try {
         await api(listingId ? `/api/directory/self/skills/${encodeURIComponent(listingId)}` : "/api/directory/self/skills", { method: listingId ? "PATCH" : "POST", body: JSON.stringify(payload) });
         form.reset();
-        form.listingId.value = "";
+        form.elements.listingId.value = "";
+        document.getElementById("cancelSkillEdit").hidden = true;
         showNotice(payload.status === "active" ? "Skill listing activated." : "Skill draft saved.");
         await loadMySkills();
       } catch (error) {
@@ -1667,12 +1666,41 @@
       }
     });
     document.getElementById("mySkillList").addEventListener("click", async (event) => {
+      const edit = event.target.closest("[data-edit-skill]");
+      if (edit) {
+        const listing = skillListingsById.get(String(edit.dataset.editSkill));
+        if (!listing) {
+          showNotice("That service listing is no longer available. Refresh and try again.", true);
+          return;
+        }
+        const form = document.getElementById("skillForm");
+        form.elements.skillId.value = listing.skill?.id || "";
+        form.elements.customDisplayLabel.value = listing.displayLabel === listing.skill?.name ? "" : (listing.displayLabel || "");
+        form.elements.experienceLevel.value = listing.experienceLevel || "willing_to_help";
+        form.elements.serviceMode.value = listing.serviceMode || "informal_parishioner_help";
+        form.elements.visibility.value = listing.visibility || "private";
+        form.elements.contactPreference.value = listing.contactPreference || "parish_office";
+        form.elements.availabilityNote.value = listing.availabilityNote || "";
+        form.elements.status.value = listing.status || "draft";
+        form.elements.listingId.value = listing.id;
+        document.getElementById("cancelSkillEdit").hidden = false;
+        form.scrollIntoView({ behavior: "smooth", block: "start" });
+        showNotice(`Editing ${listing.displayLabel || listing.skill?.name || "service listing"}.`);
+        return;
+      }
       const withdraw = event.target.closest("[data-withdraw-skill]");
       if (withdraw) {
         await api(`/api/directory/self/skills/${encodeURIComponent(withdraw.dataset.withdrawSkill)}`, { method: "PATCH", body: JSON.stringify({ status: "withdrawn" }) });
         showNotice("Skill consent withdrawn.");
         await loadMySkills();
       }
+    });
+    document.getElementById("cancelSkillEdit").addEventListener("click", () => {
+      const form = document.getElementById("skillForm");
+      form.reset();
+      form.elements.listingId.value = "";
+      document.getElementById("cancelSkillEdit").hidden = true;
+      showNotice("Service edit cancelled.");
     });
     document.getElementById("pauseAllSkills").addEventListener("click", async () => {
       await api("/api/directory/self/skills/pause-all", { method: "POST" });
@@ -1807,17 +1835,31 @@
       event.preventDefault();
       setMobileView(target.dataset.mobileTarget || "home");
     });
-    document.getElementById("namedayForm").addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const formEl = event.currentTarget;
-      const household = firstHousehold();
-      if (!household) return;
+    function personRequestPayload(formEl) {
       const payload = Object.fromEntries(new FormData(formEl).entries());
-      await api(`/api/directory/households/${encodeURIComponent(household.id)}/self/namedays`, { method: "POST", body: JSON.stringify(payload) });
-      formEl.reset();
-      showNotice("Name day saved.");
-      await loadNamedays();
-    });
+      const saintName = String(payload.saintName || "").trim();
+      const feastMonthDay = String(payload.feastMonthDay || "").trim();
+      const visibility = payload.namedayVisibility || "private";
+      delete payload.saintName;
+      delete payload.feastMonthDay;
+      delete payload.namedayVisibility;
+      if ((saintName && !feastMonthDay) || (!saintName && feastMonthDay)) {
+        throw new Error("Enter both the patron saint and nameday date, or leave both blank.");
+      }
+      return {
+        payload,
+        nameday: saintName && feastMonthDay
+          ? { displayName: payload.preferredName, saintName, feastMonthDay, visibility }
+          : null
+      };
+    }
+    async function savePersonNameday(household, nameday) {
+      if (!nameday) return;
+      await api(`/api/directory/households/${encodeURIComponent(household.id)}/self/namedays`, {
+        method: "POST",
+        body: JSON.stringify(nameday)
+      });
+    }
     document.getElementById("adultAddForm").addEventListener("submit", async (event) => {
       event.preventDefault();
       const formEl = event.currentTarget;
@@ -1836,12 +1878,19 @@
         status.textContent = "Sending this family addition to your parish...";
         status.className = "notice";
         status.hidden = false;
-        const payload = Object.fromEntries(new FormData(formEl).entries());
+        const { payload, nameday } = personRequestPayload(formEl);
         await api(`/api/directory/households/${encodeURIComponent(household.id)}/self/adults`, { method: "POST", body: JSON.stringify(payload) });
+        let namedayWarning = "";
+        try {
+          await savePersonNameday(household, nameday);
+        } catch {
+          namedayWarning = " The family request was sent, but the nameday could not be saved.";
+        }
         formEl.reset();
-        status.textContent = "Adult family member sent to the parish for confirmation.";
-        status.className = "notice";
-        showNotice("Adult family member sent to the parish for confirmation.");
+        const successMessage = "Adult family member sent to the parish for confirmation." + namedayWarning;
+        status.textContent = successMessage;
+        status.className = "notice" + (namedayWarning ? " error" : "");
+        showNotice(successMessage, Boolean(namedayWarning));
         await loadDirectory();
       } catch (error) {
         const message = error.message || "Unable to add this family member.";
@@ -1863,11 +1912,17 @@
         return;
       }
       try {
-        const payload = Object.fromEntries(new FormData(formEl).entries());
+        const { payload, nameday } = personRequestPayload(formEl);
         await api(`/api/directory/households/${encodeURIComponent(household.id)}/self/children`, { method: "POST", body: JSON.stringify(payload) });
+        let namedayWarning = "";
+        try {
+          await savePersonNameday(household, nameday);
+        } catch {
+          namedayWarning = " The child request was sent, but the nameday could not be saved.";
+        }
         formEl.reset();
         setChildModal(false);
-        showNotice("Add child request sent to the parish for review.");
+        showNotice("Add child request sent to the parish for review." + namedayWarning, Boolean(namedayWarning));
         await loadDirectory();
       } catch (error) {
         showNotice(error.message || "Unable to send add child request.", true);
@@ -1933,7 +1988,7 @@
     if (window.matchMedia("(max-width: 760px)").matches) {
       document.getElementById("personalDirectorySettings").open = false;
     }
-    setSettingsSection("personal");
+    setSettingsSection("family");
     loadDirectory().catch((error) => {
       document.getElementById("directoryStatus").textContent = "Unavailable";
       showNotice(error.message, true);
