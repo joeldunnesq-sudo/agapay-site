@@ -470,8 +470,27 @@
       }
       .member-card .member-photo { width:56px; height:56px; border-radius:50%; background:#efe7d8; color:#6f4f16; font-size:21px; }
       .member-card > span:last-child { padding:0; }
-      .member-card strong { font-size:19px; }
-      .member-card small { color:#70695d; font-size:12px; line-height:1.5; }
+      .member-card strong { font-size:18px; margin-bottom:2px; }
+      .member-card small { color:#70695d; font-size:12px; line-height:1.35; }
+      .member-card .member-card-meta { margin:0 0 6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .member-card .member-card-namedays { margin:0 0 6px; color:#3e3a34; }
+      .member-card-skills { display:flex !important; flex-wrap:wrap; gap:6px; padding:0 !important; }
+      .member-card-skills > span { border:1px solid rgba(169,124,37,.28); border-radius:999px; background:#f8f1e2; color:#6f4f16; padding:3px 7px; font-size:11px; line-height:1.1; }
+      .family-detail { padding:0; border:0; background:transparent; box-shadow:none; }
+      .family-detail-hero { display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px 0 16px; text-align:center; }
+      .family-detail-avatar { display:grid; place-items:center; width:96px; height:96px; border-radius:50%; background:#efe7d8; color:#6f4f16; font-family:"Cormorant Garamond",Georgia,serif; font-size:36px; font-weight:600; }
+      .family-detail-hero h2 { margin:4px 0 0; font-family:"Cormorant Garamond",Georgia,serif; font-size:26px; font-weight:600; }
+      .family-detail-hero p { margin:0; color:#70695d; font-size:13px; line-height:1.45; }
+      .family-detail-section { padding:16px 0; border-top:1px solid rgba(6,21,34,.12); }
+      .family-detail-kicker { margin-bottom:8px; color:#70695d; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+      .family-detail-member { display:flex; justify-content:space-between; gap:14px; align-items:baseline; padding:9px 0; border-bottom:1px solid rgba(6,21,34,.1); }
+      .family-detail-member:last-child { border-bottom:0; }
+      .family-detail-member strong { font-size:15px; font-weight:500; }
+      .family-detail-member span { color:#6f4f16; font-size:13px; text-align:right; }
+      .family-detail-skills { display:flex; flex-wrap:wrap; gap:6px; }
+      .family-detail-skills span { border:1px solid rgba(169,124,37,.28); border-radius:999px; background:#f8f1e2; color:#6f4f16; padding:4px 8px; font-size:11px; }
+      .family-detail-empty { margin:0; color:#70695d; font-size:13px; }
+      .family-detail .actions { margin-top:8px; }
       .directory-mobile-nav { left:50%; right:auto; width:min(430px,100%); transform:translateX(-50%); border-top:1px solid rgba(6,21,34,.12); background:#fffdf8; box-shadow:none; }
       .directory-mobile-nav button { color:#70695d; }
       .directory-mobile-nav button[aria-current="page"] { color:#a97c25; }
@@ -500,7 +519,7 @@
           <div class="cal-hero-eyebrow">Parish life in one place</div>
           <div class="directory-title cal-today-main">
             <div class="cal-today-kicker">Parish Directory</div>
-            <h1 id="directoryHeroTitle">My Household Directory</h1>
+            <h1 id="directoryHeroTitle">My Family Directory</h1>
             <p>Set up your family profile, choose what the parish may publish, and browse approved parish member information from one place.</p>
           </div>
           <span class="status-pill" id="directoryStatus">Loading</span>
@@ -514,7 +533,7 @@
 
       <section class="directory-command" aria-label="Directory actions">
         <a class="command-card" href="#profileSummary"><strong>Set Up</strong><span>Your person profile and review status</span></a>
-        <a class="command-card" href="#householdList"><strong>Household</strong><span>Family name, photo, children, name days</span></a>
+        <a class="command-card" href="#householdList"><strong>Family</strong><span>Family name, members, and name days</span></a>
         <a class="command-card" href="#memberDirectoryHeading"><strong>Browse</strong><span>Approved parish member directory</span></a>
         <a class="command-card" href="#mySkillList"><strong>Serve</strong><span>Skills, ministries, and availability</span></a>
       </section>
@@ -525,7 +544,7 @@
         <summary><span><strong>Edit my information</strong><span>Choose a section below. Changes stay private unless you submit them for parish review.</span></span></summary>
         <nav class="settings-section-nav" aria-label="Information sections">
           <button type="button" data-settings-section="personal" aria-selected="true">Personal</button>
-          <button type="button" data-settings-section="household" aria-selected="false">Household</button>
+          <button type="button" data-settings-section="household" aria-selected="false">Family</button>
           <button type="button" data-settings-section="service" aria-selected="false">Service</button>
         </nav>
       <section class="directory-grid" aria-live="polite">
@@ -541,12 +560,12 @@
               <ul class="setup-steps">
                 <li>Add your name and optional contact info here.</li>
                 <li>Choose what you want the parish to make visible after review.</li>
-                <li>The parish can connect household details after review.</li>
+                <li>The parish can connect family details after review.</li>
               </ul>
               <div class="form-grid">
                 <label>Preferred name<input name="preferredName" autocomplete="name" required /></label>
                 <label>Legal name<input name="legalName" autocomplete="name" /></label>
-                <label>Household name<input name="householdName" placeholder="The Dunne Household" /></label>
+                <label>Family name<input name="householdName" placeholder="The Dunne Family" /></label>
                 <label>Date of birth<input name="dateOfBirth" placeholder="YYYY-MM-DD" /></label>
                 <label>Email<input name="email" type="email" autocomplete="email" /></label>
                 <label>Email sharing<select name="emailVisibility"><option value="private">Keep private</option><option value="staff">Parish staff only</option><option value="directory_members">Show in directory after review</option></select></label>
@@ -574,7 +593,7 @@
               <label>Type<select name="contactType"><option value="email">Email</option><option value="phone">Phone</option></select></label>
               <label>Label<input name="label" placeholder="personal, mobile, home" /></label>
               <label>Value<input name="value" required /></label>
-              <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Household</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
+              <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Family</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
               <div class="actions"><button class="btn primary" type="submit">Add Contact</button></div>
             </form>
           </article>
@@ -608,35 +627,35 @@
           </article>
 
           <article class="panel household-hub" data-settings-panel="household" data-mobile-section="household family setup photos">
-            <div class="panel-header"><div><div class="panel-kicker">Family</div><h2>Household</h2><p class="panel-intro">Keep your household in one place: one family photo, your spouse, children, and family name days. Parish staff reviews additions before they appear.</p></div></div>
+            <div class="panel-header"><div><div class="panel-kicker">Directory</div><h2>Family</h2><p class="panel-intro">Keep your family in one place: your spouse, children, family name, and name days. Parish staff reviews additions before they appear.</p></div></div>
 
             <div class="household-hub-identity">
-              <div class="household-hub-photo">
+              <div class="household-hub-photo" hidden>
                 <div class="summary-list" id="householdPhotoSummary"></div>
                 <form class="household-hub-photo-form" id="householdPhotoForm" hidden>
                   <label>Change family photo<input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required /></label>
-                  <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Household</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
+                  <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Family</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
                   <div class="actions"><button class="btn secondary" type="submit">Upload</button><button class="btn warn" type="button" id="removeHouseholdPhoto" hidden>Remove</button></div>
                 </form>
               </div>
               <div class="household-hub-name">
                 <div class="household-list" id="householdList"></div>
                 <form class="household-hub-name-form" id="householdDetailsForm" hidden>
-                  <label>Household name<input name="displayName" maxlength="200" placeholder="The Dunne Household" required /></label>
+                  <label>Family name<input name="displayName" maxlength="200" placeholder="The Dunne Family" required /></label>
                   <input type="hidden" name="householdId" />
                   <input type="hidden" name="expectedVersion" />
                   <div class="actions"><button class="btn secondary" type="submit">Save Name</button></div>
                 </form>
                 <div class="summary-list" id="householdPublicationSummary"></div>
                 <div class="actions" id="householdPublicationActions" hidden>
-                  <button class="btn primary" type="button" data-household-publication="pending_approval">Submit Household for Review</button>
+                  <button class="btn primary" type="button" data-household-publication="pending_approval">Submit Family for Review</button>
                 </div>
               </div>
             </div>
 
             <div class="household-hub-namedays">
               <h3>Spouse or other adult</h3>
-              <p class="household-hub-namedays-note">Enter the person here and the parish will confirm the household connection. Their contact information starts private. Once connected to their own My AGAPAY account, they—not another household member—choose whether their email or phone appears in the directory.</p>
+              <p class="household-hub-namedays-note">Enter the person here and the parish will confirm the family connection. Their contact information starts private. Once connected to their own My AGAPAY account, they—not another family member—choose whether their email or phone appears in the directory.</p>
               <form class="form-grid" id="adultAddForm" hidden>
                 <label>Name<input name="preferredName" required placeholder="Maria Dunne" /></label>
                 <label>Relationship<select name="relationship"><option value="spouse">Spouse</option><option value="adult_child">Adult child</option><option value="other">Other adult</option></select></label>
@@ -656,7 +675,7 @@
                 <label>Name<input name="displayName" required placeholder="Anna" /></label>
                 <label>Saint<input name="saintName" required placeholder="St. Anna" /></label>
                 <label>Date<input name="feastMonthDay" required placeholder="07-25" pattern="[0-9]{2}-[0-9]{2}" /></label>
-                <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Household</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
+                <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Family</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
                 <div class="actions"><button class="btn secondary" type="submit">Add Name Day</button></div>
               </form>
             </div>
@@ -686,11 +705,11 @@
           <p id="memberDirectoryPrivacy" class="privacy-reminder">This directory is private to authorized members of your parish. Please use contact information respectfully and do not copy or distribute it outside the parish.</p>
         </div>
         <div class="directory-tools">
-          <label>Find someone<input id="memberSearch" type="search" autocomplete="off" placeholder="Filter by name, household, city, or role" /></label>
+          <label>Find someone<input id="memberSearch" type="search" autocomplete="off" placeholder="Filter by name, family, city, or role" /></label>
           <label>Sort<select id="memberSort"><option value="az">A-Z</option><option value="za">Z-A</option></select></label>
           <button class="btn secondary" type="button" id="memberSearchButton">View all</button>
         </div>
-        <p class="directory-browse-note" id="directoryBrowseNote" style="padding:10px 22px 0;">Showing all approved households. Search is optional.</p>
+        <p class="directory-browse-note" id="directoryBrowseNote" style="padding:10px 22px 0;">Showing all approved families. Search is optional.</p>
         <div class="alphabet" id="memberAlphabet" aria-label="Alphabetical navigation"></div>
         <div class="member-grid" id="memberResults" aria-live="polite"></div>
         <div class="actions"><button class="btn secondary" type="button" id="memberLoadMore" hidden>Load More</button></div>
@@ -717,7 +736,7 @@
           <div class="directory-modal-head">
             <div>
               <h2 id="childAddModalTitle">Add a child</h2>
-              <p>This sends a private request to the parish. Staff must approve before the child is attached to your household.</p>
+              <p>This sends a private request to the parish. Staff must approve before the child is attached to your family.</p>
             </div>
             <button class="directory-modal-close" type="button" data-close-child-modal aria-label="Close">&times;</button>
           </div>
@@ -747,9 +766,9 @@
 
     </main>
     <nav class="directory-mobile-nav" aria-label="Directory navigation">
+      <button type="button" id="mobileGiveNav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-4.4-7-11a4 4 0 0 1 7-2.7A4 4 0 0 1 19 10c0 6.6-7 11-7 11Z"/></svg><span>Give</span></button>
       <button type="button" data-mobile-target="browse" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16"/></svg><span>Directory</span></button>
-      <button type="button" id="mobileAddHousehold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span>Add Household</span></button>
-      <button type="button" data-mobile-target="household"><span class="directory-nav-avatar" id="mobileHouseholdAvatar" aria-hidden="true">AG</span><span>My Household</span></button>
+      <button type="button" id="mobileFamilyNav" data-mobile-target="household"><span class="directory-nav-avatar" id="mobileHouseholdAvatar" aria-hidden="true">+</span><span id="mobileFamilyNavLabel">Add Family</span></button>
     </nav>
     <nav class="mobile-tabbar" aria-label="My AGAPAY navigation"></nav>
   </div>
@@ -768,11 +787,8 @@
     function updateMobileHouseholdAvatar(household, asset = null) {
       const avatar = document.getElementById("mobileHouseholdAvatar");
       if (!avatar) return;
-      const url = mediaPreviewUrl(asset, "household");
-      avatar.innerHTML = url
-        ? `<img data-auth-src="${esc(url)}" alt="" />`
-        : esc(initials(household?.displayName || donorProfile().householdName || "AG"));
-      hydrateAuthorizedImages(avatar);
+      avatar.textContent = household ? initials(household.displayName || "Family") : "+";
+      document.getElementById("mobileFamilyNavLabel").textContent = household ? "My Family" : "Add Family";
     }
     let skillCatalog = [];
     const PHOTO_UPLOAD_TIMEOUT_MS = 90000;
@@ -822,18 +838,18 @@
       document.getElementById("publicationActions").hidden = true;
       document.getElementById("contactList").innerHTML = `<div class="empty">${esc(message)}</div>`;
       document.getElementById("mySkillList").innerHTML = `<div class="empty">${esc(message)}</div>`;
-      document.getElementById("householdList").innerHTML = '<div class="empty"><strong>Household setup comes next.</strong>Starting your profile creates a household you can edit from here.</div>';
+      document.getElementById("householdList").innerHTML = '<div class="empty"><strong>Family setup comes next.</strong>Starting your profile creates a family you can edit from here.</div>';
       document.getElementById("householdDetailsForm").hidden = true;
       document.getElementById("householdPublicationActions").hidden = true;
       document.getElementById("householdPublicationSummary").innerHTML = "";
       document.getElementById("householdPhotoSummary").innerHTML = '<div class="empty">Family photo tools appear after your household is created.</div>';
       document.getElementById("householdPhotoForm").hidden = true;
       document.getElementById("adultAddForm").hidden = true;
-      document.getElementById("namedayList").innerHTML = '<div class="empty">Name day tools appear after your household is created.</div>';
+      document.getElementById("namedayList").innerHTML = '<div class="empty">Name day tools appear after your family is created.</div>';
       document.getElementById("namedayForm").hidden = true;
       document.getElementById("publicationSummary").innerHTML = '<div class="empty">Publication controls will appear after your private draft profile is created.</div>';
       document.getElementById("requestList").innerHTML = '<div class="empty">No pending directory changes yet.</div>';
-      document.getElementById("childrenList").innerHTML = '<div class="empty"><strong>Children need a household link first.</strong>Once parish staff connects you as a household administrator, child publication tools will appear here.</div>';
+      document.getElementById("childrenList").innerHTML = '<div class="empty"><strong>Children need a family link first.</strong>Once parish staff connects you as a family administrator, child publication tools will appear here.</div>';
       document.getElementById("openChildAddModal").hidden = true;
     }
     async function api(path, options = {}) {
@@ -875,9 +891,7 @@
       return String(name || "").split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "AG";
     }
     function photoHtml(item, className = "member-photo") {
-      return item.photo?.url
-        ? `<img class="${className}" data-auth-src="${esc(item.photo.url)}" alt="${esc(item.photo.alt || item.displayName || "")}" loading="lazy" />`
-        : `<span class="${className}" aria-hidden="true">${esc(initials(item.displayName))}</span>`;
+      return `<span class="${className}" aria-hidden="true">${esc(initials(item.displayName))}</span>`;
     }
     function mediaVariantFor(ownerType) {
       return ownerType === "household" ? "household_card" : "avatar_medium";
@@ -901,7 +915,7 @@
         : asset.visibility === "staff" || asset.visibility === "parish_staff"
           ? "Parish staff only"
           : asset.visibility === "household"
-            ? "Household only"
+            ? "Family only"
             : "Private";
       if (asset.reuploadRequired) {
         return { title: "Re-upload needed", copy: "The previous photo cannot be safely prepared. Upload it again from this page.", tone: "ready", label: "Action needed" };
@@ -989,9 +1003,9 @@
       if (!guide) return;
       if (!profileState?.claimed) {
         guide.innerHTML = [
-          guideCard({ kicker: "Start here", title: "Create your private draft", copy: "This creates your person record and household. You choose what the parish may publish later.", status: "Setup needed", tone: "warn", href: "#startProfileForm" }, true),
+          guideCard({ kicker: "Start here", title: "Create your private draft", copy: "This creates your person record and family. You choose what the parish may publish later.", status: "Setup needed", tone: "warn", href: "#startProfileForm" }, true),
           guideCard({ kicker: "Privacy", title: "Nothing is public yet", copy: "Your parish reviews submitted items before they appear in the member directory.", status: "Private" }),
-          guideCard({ kicker: "Next", title: "Add household details", copy: "After setup, you can name the household, add a family photo, and add name days.", status: "After setup", tone: "info" }),
+          guideCard({ kicker: "Next", title: "Add family details", copy: "After setup, you can name the family, add members, and add name days.", status: "After setup", tone: "info" }),
           guideCard({ kicker: "Browse", title: "Member directory", copy: "Approved parish listings appear below once you are connected as a member.", status: "Private parish area" })
         ].join("");
         return;
@@ -1006,14 +1020,14 @@
         : !person.dateOfBirth
           ? { title: "Add date of birth", copy: "This stays private but lets the app confirm adult-only features like Skills & Service.", href: "#profileSummary" }
           : !household
-            ? { title: "Household connection needed", copy: "Your profile exists, but staff still needs to connect or confirm your editable household.", href: "#householdList" }
+            ? { title: "Family connection needed", copy: "Your profile exists, but staff still needs to connect or confirm your editable family.", href: "#householdList" }
             : publication.approvalStatus !== "approved" && publication.status !== "pending_approval"
               ? { title: "Submit for parish review", copy: "When your profile looks right, submit it so staff can approve the fields you chose.", href: "#publicationSummary" }
-              : { title: "Keep your household current", copy: "Add a family photo, name days, children requests, or skills whenever they change.", href: "#householdList" };
+              : { title: "Keep your family current", copy: "Update family members, name days, children requests, or skills whenever they change.", href: "#householdList" };
       guide.innerHTML = [
         guideCard({ kicker: "Next best step", title: next.title, copy: next.copy, status: requests.length ? `${requests.length} pending` : "Ready", tone: requests.length ? "info" : "", href: next.href }, true),
-        guideCard({ kicker: "Profile", title: publication.approvalStatus === "approved" ? "Approved profile" : statusLabel(publication.approvalStatus || "draft"), copy: "Your personal listing is separate from your household and account name.", status: publication.status || "Draft" }),
-        guideCard({ kicker: "Household", title: household?.displayName || "No household yet", copy: household ? "Family photo, children, name days, and household name live here." : "This unlocks family-owned directory tools.", status: household ? "Editable" : "Staff step", tone: household ? "" : "warn", href: "#householdList" }),
+        guideCard({ kicker: "Profile", title: publication.approvalStatus === "approved" ? "Approved profile" : statusLabel(publication.approvalStatus || "draft"), copy: "Your personal listing is separate from your family and account name.", status: publication.status || "Draft" }),
+        guideCard({ kicker: "Family", title: household?.displayName || "No family yet", copy: household ? "Children, name days, and the family name live here." : "This unlocks family-owned directory tools.", status: household ? "Editable" : "Staff step", tone: household ? "" : "warn", href: "#householdList" }),
         guideCard({ kicker: "Privacy", title: "You choose each field", copy: "Private stays private. Directory members means staff may publish after review.", status: "Per field" })
       ].join("");
     }
@@ -1022,7 +1036,7 @@
     }
     function mobileNextStep() {
       if (!profileState?.claimed) {
-        return { view: "household", title: "Finish household setup", copy: "Create your private family draft and choose what can be reviewed." };
+        return { view: "household", title: "Finish family setup", copy: "Create your private family draft and choose what can be reviewed." };
       }
       const person = profileState.profile?.person || profileState.currentPerson || profileState.person || {};
       const publication = profileState.profile?.publication || {};
@@ -1030,11 +1044,11 @@
       const household = firstHousehold();
       if (!contacts.length) return { view: "household", title: "Add contact info", copy: "Add email or phone and choose who may see it." };
       if (!person.dateOfBirth) return { view: "household", title: "Add your birthday", copy: "This stays private and unlocks adult-only service tools." };
-      if (!household) return { view: "household", title: "Connect your household", copy: "Your family tools appear once a household is attached." };
+      if (!household) return { view: "household", title: "Connect your family", copy: "Your family tools appear once a family is attached." };
       if (publication.approvalStatus !== "approved" && publication.status !== "pending_approval") {
         return { view: "household", title: "Submit for parish review", copy: "Review your sharing choices and send them to the parish." };
       }
-      return { view: "household", title: "Keep your household current", copy: "Update family info, children, photos, name days, privacy, or service listings." };
+      return { view: "household", title: "Keep your family current", copy: "Update family info, children, name days, privacy, or service listings." };
     }
     function renderMobileHome() {
       const home = document.getElementById("mobileDirectoryHome");
@@ -1058,8 +1072,8 @@
           <p>${esc(statusCopy)}</p>
         </article>
         <div class="mobile-action-list">
-          ${mobileAction({ view: "household", title: "Household Info", copy: next.copy, current: next.view === "household" })}
-          ${mobileAction({ view: "browse", title: "Full Directory", copy: "Search approved parish members and households.", current: next.view === "browse" })}
+          ${mobileAction({ view: "household", title: "Family Info", copy: next.copy, current: next.view === "household" })}
+          ${mobileAction({ view: "browse", title: "Full Directory", copy: "Search approved parish members and families.", current: next.view === "browse" })}
         </div>`;
     }
     function setMobileView(view = "home") {
@@ -1097,6 +1111,28 @@
       }
       return [item.household?.displayName, item.city, item.suffix].filter(Boolean).join(" · ");
     }
+    function memberCardBody(item) {
+      const family = item.type === "household";
+      const meta = family
+        ? [item.parishName, item.city].filter(Boolean).join(" · ")
+        : [item.household?.displayName, item.city].filter(Boolean).join(" · ");
+      const namedays = family
+        ? (item.members || []).flatMap((member) => (member.namedays || []).map((nameday) => {
+            const date = formatNamedayDate(nameday.feastMonthDay);
+            return `${String(member.displayName || "").split(/\s+/)[0]} (${date || nameday.feastMonthDay})`;
+          })).slice(0, 4).join(" • ")
+        : (item.namedays || []).map((nameday) => {
+            const date = formatNamedayDate(nameday.feastMonthDay);
+            return `${date || nameday.feastMonthDay}${nameday.saintName ? ` – ${nameday.saintName}` : ""}`;
+          }).join(" • ");
+      const skills = (item.skillsPreview || item.skills || []).slice(0, 3);
+      return `<span class="member-card-copy">
+        <strong>${esc(item.displayName)}</strong>
+        ${meta ? `<small class="member-card-meta">${esc(meta)}</small>` : ""}
+        ${namedays ? `<small class="member-card-namedays">${esc(namedays)}</small>` : ""}
+        ${skills.length ? `<span class="member-card-skills">${skills.map((skill) => `<span>${esc(skill.displayLabel || skill.name || skill)}</span>`).join("")}</span>` : ""}
+      </span>`;
+    }
     function renderAlphabet(alphabet = []) {
       const current = memberState.letter || "ALL";
       document.getElementById("memberAlphabet").innerHTML = alphabet.map((item) => {
@@ -1110,14 +1146,14 @@
       const showOwnDraft = !append && memberState.view === "households" && !memberState.query && !memberState.letter
         && household && !items.some((item) => item.id === household.id);
       const ownDraft = showOwnDraft ? `
-        <article class="member-card household-card" aria-label="Your household">
-          <span class="member-photo">${esc(initials(household.displayName || "Household"))}</span>
-          <span><strong>${esc(household.displayName)}</strong><small>Your household · Only you can see this preview until parish review is complete.</small></span>
+        <article class="member-card household-card" aria-label="Your family">
+          <span class="member-photo">${esc(initials(household.displayName || "Family"))}</span>
+          <span><strong>${esc(household.displayName)}</strong><small>Your family · Only you can see this preview until parish review is complete.</small></span>
         </article>` : "";
       const html = items.length || ownDraft ? ownDraft + items.map((item) => `
         <button class="member-card ${item.type === "household" ? "household-card" : ""}" type="button" data-type="${esc(item.type)}" data-id="${esc(item.id)}" aria-label="Open ${esc(item.displayName)}">
           ${photoHtml(item)}
-          <span><strong>${esc(item.displayName)}</strong><small>${esc(memberSubtitle(item) || "Published directory profile")}</small></span>
+          ${memberCardBody(item)}
         </button>`).join("") : '<div class="empty">No published directory entries match this view.</div>';
       target.innerHTML = append && !target.querySelector(".empty") ? target.innerHTML + html : html;
       hydrateAuthorizedImages(target);
@@ -1141,10 +1177,11 @@
         const result = payload.households || payload.people || payload.results || { items: [] };
         renderMemberCards(result.items || [], append);
         const visibleCount = Number(result.totalCount ?? result.total ?? result.items?.length ?? 0);
-        document.getElementById("mobileDirectoryCount").textContent = `${visibleCount}${result.nextCursor ? "+" : ""} ${memberState.view}`;
+        const viewLabel = memberState.view === "households" ? "families" : memberState.view;
+        document.getElementById("mobileDirectoryCount").textContent = `${visibleCount}${result.nextCursor ? "+" : ""} ${viewLabel}`;
         document.getElementById("directoryBrowseNote").textContent = memberState.query
-          ? `Showing approved ${memberState.view} matching “${memberState.query}”.`
-          : `Showing all approved ${memberState.view}. Search is optional.`;
+          ? `Showing approved ${viewLabel} matching “${memberState.query}”.`
+          : `Showing all approved ${viewLabel}. Search is optional.`;
         if (result.alphabet) renderAlphabet(result.alphabet);
         memberState.cursor = result.nextCursor || "";
         document.getElementById("memberLoadMore").hidden = !memberState.cursor;
@@ -1205,7 +1242,7 @@
       const helper = needsAdultEvidence
         ? '<div class="empty"><strong>Add your date of birth before activating skills.</strong>You can save skill drafts now, but active Skills & Service listings require adult status on your private profile.</div>'
         : !skillsEnabled
-          ? '<div class="empty"><strong>Skills & Service is off for this parish.</strong>Your profile and household tools still work. Parish staff can enable Skills & Service in Directory settings when they are ready to publish this section.</div>'
+          ? '<div class="empty"><strong>Skills & Service is off for this parish.</strong>Your profile and family tools still work. Parish staff can enable Skills & Service in Directory settings when they are ready to publish this section.</div>'
         : '';
       const listHtml = listings.length ? listings.map((item) => `
         <article class="skill-card" data-listing-id="${esc(item.id)}">
@@ -1250,8 +1287,19 @@
         : `<small>No contact information or name day shared.</small>`;
       return `<article class="household-member-detail">
         ${photoHtml(member)}
-        <div><h3>${esc(member.displayName)}</h3><small>${esc(member.relationship || "Household member")}</small>${shared}</div>
+        <div><h3>${esc(member.displayName)}</h3><small>${esc(member.relationship || "Family member")}</small>${shared}</div>
       </article>`;
+    }
+    function renderFamilyDetailMember(member) {
+      const nameday = (member.namedays || [])[0];
+      const date = formatNamedayDate(nameday?.feastMonthDay);
+      const namedayLabel = nameday
+        ? [date || nameday.feastMonthDay, nameday.saintName].filter(Boolean).join(" – ")
+        : "";
+      return `<div class="family-detail-member">
+        <strong>${esc(member.displayName)}</strong>
+        <span>${esc(namedayLabel || member.relationship || "")}</span>
+      </div>`;
     }
     async function openMemberProfile(type, id) {
       const endpoint = type === "household" ? `/api/directory/member/households/${encodeURIComponent(id)}` : `/api/directory/member/people/${encodeURIComponent(id)}`;
@@ -1263,19 +1311,44 @@
         ? `<div class="household-member-list">${profile.members.map(renderHouseholdMember).join("")}</div>`
         : "";
       const householdLink = type === "person" && profile.household
-        ? `<button class="btn secondary" type="button" data-type="household" data-id="${esc(profile.household.id)}">Open Household</button>`
+        ? `<button class="btn secondary" type="button" data-type="household" data-id="${esc(profile.household.id)}">Open Family</button>`
         : "";
       const pane = document.getElementById("memberProfile");
       pane.hidden = false;
       document.body.classList.add("directory-profile-open");
-      document.getElementById("mobileDirectoryTitle").textContent = type === "household" ? "Household" : "Parish Member";
-      pane.innerHTML = `
+      document.getElementById("mobileDirectoryTitle").textContent = type === "household" ? "Family" : "Parish Member";
+      if (type === "household") {
+        const skills = (profile.skillsPreview || profile.skills || []).slice(0, 8);
+        pane.innerHTML = `
+        <article class="family-detail">
+          <div class="family-detail-hero">
+            <span class="family-detail-avatar" aria-hidden="true">${esc(initials(profile.displayName))}</span>
+            <h2>${esc(profile.displayName)}</h2>
+            <p>${[profile.parishName, profile.city].filter(Boolean).map(esc).join("<br>")}</p>
+          </div>
+          <section class="family-detail-section">
+            <div class="family-detail-kicker">Members &amp; Namedays</div>
+            ${profile.members?.length ? profile.members.map(renderFamilyDetailMember).join("") : '<p class="family-detail-empty">No family members are shared.</p>'}
+          </section>
+          <section class="family-detail-section">
+            <div class="family-detail-kicker">Can Serve With</div>
+            ${skills.length ? `<div class="family-detail-skills">${skills.map((skill) => `<span>${esc(skill.displayLabel || skill.name || skill)}</span>`).join("")}</div>` : '<p class="family-detail-empty">No service skills are shared.</p>'}
+          </section>
+          <section class="family-detail-section">
+            <div class="family-detail-kicker">Family Contact</div>
+            ${contacts ? `<button class="directory-contact-reveal" type="button" data-reveal-directory-contact>Reveal contact info</button><div class="actions" data-directory-contacts hidden>${contacts}</div>` : '<p class="family-detail-empty">No contact information is shared.</p>'}
+          </section>
+          <div class="actions"><button class="btn secondary" type="button" id="closeMemberProfile">Back to Directory</button></div>
+        </article>`;
+      } else {
+        pane.innerHTML = `
         <article class="mini-card">
-          <div class="profile-head">${photoHtml(profile)}<div><h2>${esc(profile.displayName)}</h2><div class="profile-meta">${[profile.city, profile.household?.displayName].filter(Boolean).map((value) => `<span>${esc(value)}</span>`).join("")}</div></div></div>
+          <div class="profile-head">${type === "household" ? "" : photoHtml(profile)}<div><h2>${esc(profile.displayName)}</h2><div class="profile-meta">${[profile.city, profile.household?.displayName].filter(Boolean).map((value) => `<span>${esc(value)}</span>`).join("")}</div></div></div>
           <div class="actions">${householdLink}<button class="btn secondary" type="button" id="closeMemberProfile">Back to Browse</button></div>
           ${contacts ? `<button class="directory-contact-reveal" type="button" data-reveal-directory-contact>Reveal contact info</button><div class="actions" data-directory-contacts hidden>${contacts}</div>` : ""}
           ${members}
         </article>`;
+      }
       hydrateAuthorizedImages(pane);
       pane.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -1299,7 +1372,7 @@
         document.getElementById("profileSummary").innerHTML = `
           <div class="setup-panel">
             <h3>Your directory profile is ready to set up</h3>
-            <p>Use the short form below to create your private draft and tell the parish what you want visible after review. You can add your family photo and household members next.</p>
+            <p>Use the short form below to create your private draft and tell the parish what you want visible after review. You can add family members and name days next.</p>
           </div>`;
         clearSelfServicePanels();
         renderDirectoryGuide();
@@ -1316,15 +1389,14 @@
       const checklist = [
         ["Add a contact method", (profileState.profile?.contacts || []).length ? "Done" : "Next"],
         ["Add a date of birth", person.dateOfBirth ? "Done" : "Needed for skills"],
-        ["Connect household", ((profileState.manageableHouseholds || []).length || (profileState.memberHouseholds || []).length) ? "Done" : "Parish staff step"],
-        ["Add one family photo", window.currentDirectoryHouseholdPhoto ? "Done" : "Optional"],
+        ["Connect family", ((profileState.manageableHouseholds || []).length || (profileState.memberHouseholds || []).length) ? "Done" : "Parish staff step"],
         ["Choose publication settings", publication.status && publication.status !== "draft" ? "Submitted" : "Private draft"]
       ].map(([label, status]) => `<div class="onboarding-item"><span>${esc(label)}</span><strong>${esc(status)}</strong></div>`).join("");
       document.getElementById("profileSummary").insertAdjacentHTML("beforeend", `<div class="onboarding-list">${checklist}</div>`);
       document.getElementById("profileSummary").insertAdjacentHTML("beforeend", `
         <div class="empty">
           <strong>What unlocks next</strong>
-          Save a date of birth to activate Skills & Service listings. Your household has one family photo, and spouse or child additions are sent to the parish for confirmation.
+          Save a date of birth to activate Skills & Service listings. Spouse or child additions are sent to the parish for confirmation.
         </div>`);
       const form = document.getElementById("profileForm");
       form.hidden = false;
@@ -1344,7 +1416,6 @@
       renderHouseholdDetails();
       const requests = profileState.pendingRequests || [];
       document.getElementById("requestList").innerHTML = requests.length ? requests.map((request) => `<div class="mini-card"><strong>${request.summary}</strong><small>${request.requestType} · ${request.status}</small></div>`).join("") : '<div class="empty">No pending directory changes.</div>';
-      renderHouseholdPhoto();
       loadNamedays();
       renderDirectoryGuide();
       renderMobileHome();
@@ -1356,11 +1427,13 @@
     async function renderHouseholdDetails() {
       const households = profileState.manageableHouseholds || [];
       const memberOnly = (profileState.memberHouseholds || []).filter((member) => !households.some((household) => household.id === member.id));
+      const navHousehold = households[0] || memberOnly[0] || null;
+      updateMobileHouseholdAvatar(navHousehold);
       const form = document.getElementById("householdDetailsForm");
       document.getElementById("householdList").innerHTML = [
-        ...households.map((household) => `<div class="mini-card"><strong>${esc(household.displayName)}</strong><small>Your editable family household.</small></div>`),
-        ...memberOnly.map((household) => `<div class="mini-card"><strong>${esc(household.displayName)}</strong><small>You are listed as ${esc(household.relationship || "a member")}. Ask parish staff to make you a household administrator to edit it here.</small></div>`)
-      ].join("") || '<div class="empty"><strong>No household found.</strong>New profiles create one automatically; parish staff can also connect an existing parish household.</div>';
+        ...households.map((household) => `<div class="mini-card"><strong>${esc(household.displayName)}</strong><small>Your editable family.</small></div>`),
+        ...memberOnly.map((household) => `<div class="mini-card"><strong>${esc(household.displayName)}</strong><small>You are listed as ${esc(household.relationship || "a member")}. Ask parish staff to make you a family administrator to edit it here.</small></div>`)
+      ].join("") || '<div class="empty"><strong>No family found.</strong>New profiles create one automatically; parish staff can also connect an existing parish family.</div>';
       document.getElementById("adultAddForm").hidden = !households.length;
       if (!households.length) {
         form.hidden = true;
@@ -1379,8 +1452,8 @@
         form.elements.expectedVersion.value = current.version || "";
       }
       document.getElementById("householdPublicationSummary").innerHTML = publication
-        ? `<div class="summary-row"><span>Household directory status</span><strong>${esc(statusLabel(publication.status || "draft"))}</strong></div>`
-        : '<div class="summary-row"><span>Household directory status</span><strong>Private draft</strong></div>';
+        ? `<div class="summary-row"><span>Family directory status</span><strong>${esc(statusLabel(publication.status || "draft"))}</strong></div>`
+        : '<div class="summary-row"><span>Family directory status</span><strong>Private draft</strong></div>';
       document.getElementById("householdPublicationActions").hidden = !["draft", "returned", "paused"].includes(publication?.status || "draft");
     }
     async function renderHouseholdPhoto() {
@@ -1409,7 +1482,7 @@
       const form = document.getElementById("namedayForm");
       if (!household) {
         form.hidden = true;
-        document.getElementById("namedayList").innerHTML = '<div class="empty">Name day tools appear after your household is connected.</div>';
+        document.getElementById("namedayList").innerHTML = '<div class="empty">Name day tools appear after your family is connected.</div>';
         return;
       }
       form.hidden = false;
@@ -1469,13 +1542,13 @@
       const childAddButton = document.getElementById("openChildAddModal");
       if (!profileState?.claimed) {
         childAddButton.hidden = true;
-        container.innerHTML = '<div class="empty"><strong>Start your profile first.</strong>Child publication tools appear after your profile is created and household details are connected.</div>';
+        container.innerHTML = '<div class="empty"><strong>Start your profile first.</strong>Child publication tools appear after your profile is created and family details are connected.</div>';
         return;
       }
       const households = profileState?.manageableHouseholds || [];
       if (!households.length) {
         childAddButton.hidden = true;
-        container.innerHTML = '<div class="empty"><strong>No household connected yet.</strong>Parish staff must link you to a household as an administrator before you can manage child publication requests.</div>';
+        container.innerHTML = '<div class="empty"><strong>No family connected yet.</strong>Parish staff must link you to a family as an administrator before you can manage child publication requests.</div>';
         return;
       }
       childAddButton.hidden = false;
@@ -1632,7 +1705,7 @@
       const displayName = form.elements.displayName.value.trim();
       const expectedVersion = Number(form.elements.expectedVersion.value || 0);
       if (!householdId || !displayName || !expectedVersion) {
-        showNotice("Household details are still loading. Please try again in a moment.", true);
+        showNotice("Family details are still loading. Please try again in a moment.", true);
         return;
       }
       await api(`/api/directory/households/${encodeURIComponent(householdId)}/self`, {
@@ -1645,7 +1718,7 @@
       }).then((payload) => {
         if (payload.donor) localStorage.setItem("agapayDonorProfile", JSON.stringify(payload.donor));
       }).catch(() => null);
-      showNotice("Household name saved.");
+      showNotice("Family name saved.");
       await loadDirectory();
     });
     document.getElementById("contactForm").addEventListener("submit", async (event) => {
@@ -1676,10 +1749,10 @@
           method: "POST",
           body: JSON.stringify({ ownerType: "household", ownerId: household.id, status: button.dataset.householdPublication })
         });
-        showNotice("Household submitted to the parish for directory review.");
+        showNotice("Family submitted to the parish for directory review.");
         await loadDirectory();
       } catch (error) {
-        showNotice(error.message || "Unable to submit the household for review.", true);
+        showNotice(error.message || "Unable to submit the family for review.", true);
       }
     });
     document.getElementById("householdPhotoForm").addEventListener("submit", async (event) => {
@@ -1725,7 +1798,9 @@
       showNotice("Family photo removed.");
       await loadDirectory();
     });
-    document.getElementById("mobileAddHousehold").addEventListener("click", () => openPersonalDirectorySettings("household"));
+    document.getElementById("mobileGiveNav").addEventListener("click", () => {
+      window.location.href = "/myagapay/give";
+    });
     document.addEventListener("click", (event) => {
       const target = event.target.closest("[data-mobile-target]");
       if (!target) return;
@@ -1750,7 +1825,7 @@
       const button = document.getElementById("addAdultButton");
       const status = document.getElementById("adultAddStatus");
       if (!household) {
-        status.textContent = "Your household is still loading. Please try again in a moment.";
+        status.textContent = "Your family is still loading. Please try again in a moment.";
         status.className = "notice error";
         status.hidden = false;
         return;
@@ -1758,18 +1833,18 @@
       try {
         button.disabled = true;
         button.textContent = "Sending...";
-        status.textContent = "Sending this household addition to your parish...";
+        status.textContent = "Sending this family addition to your parish...";
         status.className = "notice";
         status.hidden = false;
         const payload = Object.fromEntries(new FormData(formEl).entries());
         await api(`/api/directory/households/${encodeURIComponent(household.id)}/self/adults`, { method: "POST", body: JSON.stringify(payload) });
         formEl.reset();
-        status.textContent = "Adult household member sent to the parish for confirmation.";
+        status.textContent = "Adult family member sent to the parish for confirmation.";
         status.className = "notice";
-        showNotice("Adult household member sent to the parish for confirmation.");
+        showNotice("Adult family member sent to the parish for confirmation.");
         await loadDirectory();
       } catch (error) {
-        const message = error.message || "Unable to add this household member.";
+        const message = error.message || "Unable to add this family member.";
         status.textContent = message;
         status.className = "notice error";
         status.hidden = false;
@@ -1784,7 +1859,7 @@
       const formEl = event.currentTarget;
       const household = firstHousehold();
       if (!household) {
-        showNotice("Connect a household before adding children.", true);
+        showNotice("Connect a family before adding children.", true);
         return;
       }
       try {
