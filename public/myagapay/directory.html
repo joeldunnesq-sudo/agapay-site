@@ -101,19 +101,25 @@
     .skill-explorer > .directory-title, .skill-explorer > .skills-toolbar, .skill-explorer > .skill-list { margin:16px 20px; }
     .personal-settings:not([open]) { display:none; }
     .personal-settings[open] { position:fixed; inset:0; z-index:90; display:block; margin:0; padding:24px; background:rgba(6,21,34,.58); overflow:auto; }
-    .personal-settings > summary, .personal-settings > .settings-section-nav, .personal-settings > .directory-grid { width:min(900px, 100%); margin-inline:auto; background:#fff; }
+    .personal-settings > summary, .personal-settings > .edit-wizard-head, .personal-settings > .directory-grid, .personal-settings > .edit-wizard-footer { width:min(720px, 100%); margin-inline:auto; background:#fff; }
     .personal-settings > summary { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:18px 22px; cursor:pointer; list-style:none; color:var(--ink); border-radius:18px 18px 0 0; }
     .personal-settings > summary::-webkit-details-marker { display:none; }
     .personal-settings > summary strong { display:block; font-size:17px; }
     .personal-settings > summary span { display:block; margin-top:3px; color:var(--muted); font-size:13px; font-weight:400; }
     .personal-settings > summary::after { content:"Close"; flex:0 0 auto; border:1px solid rgba(184,138,61,.42); border-radius:999px; padding:8px 12px; background:#f8f1e2; color:#6f4f16; font-size:12px; font-weight:800; }
-    .settings-section-nav { display:flex; gap:8px; padding:0 22px 16px; border-bottom:1px solid var(--line); }
-    .settings-section-nav button { border:1px solid var(--line); border-radius:999px; padding:9px 14px; background:#fff; color:var(--ink); font:inherit; font-size:13px; font-weight:800; cursor:pointer; }
-    .settings-section-nav button[aria-selected="true"] { border-color:var(--gold); background:var(--gold); color:var(--ink); }
-    .personal-settings > .directory-grid { display:block; padding:18px 22px 24px; margin:0 auto 24px; border-radius:0 0 18px 18px; }
+    .edit-wizard-head { padding:0 22px 18px; border-bottom:1px solid var(--line); }
+    .edit-wizard-title { display:flex; justify-content:space-between; gap:16px; align-items:baseline; margin-bottom:12px; }
+    .edit-wizard-title h2 { margin:0; font-family:"Cormorant Garamond",Georgia,serif; font-size:25px; }
+    .edit-wizard-title span { color:var(--muted); font-size:12px; font-weight:700; }
+    .edit-wizard-progress { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
+    .edit-wizard-progress span { height:5px; border-radius:999px; background:#e2e5e2; }
+    .edit-wizard-progress span.complete { background:var(--gold); }
+    .personal-settings > .directory-grid { display:block; padding:18px 22px 8px; margin:0 auto; }
     .personal-settings .directory-grid > .stack { display:contents; }
     .personal-settings article.panel { margin-bottom:14px; box-shadow:none; }
     .personal-settings article.panel[hidden] { display:none !important; }
+    .edit-wizard-footer { position:sticky; bottom:0; z-index:3; display:flex; gap:10px; justify-content:flex-end; padding:14px 22px; border-top:1px solid var(--line); border-radius:0 0 18px 18px; box-shadow:0 -8px 22px rgba(6,21,34,.07); }
+    .edit-wizard-footer .btn { min-width:120px; }
     .member-directory-intro { padding:22px 22px 18px; background:linear-gradient(135deg, #f8f3e8, #fff 58%, #f1f7f3); border-bottom:1px solid var(--line); }
     .member-directory-heading-row { display:flex; align-items:center; justify-content:space-between; gap:18px; }
     .edit-directory-profile { flex:0 0 auto; }
@@ -336,7 +342,7 @@
       .directory-grid, .form-grid { grid-template-columns:1fr; }
       .personal-settings[open] { padding:0; background:#f4f5f1; }
       .personal-settings > summary { display:flex; position:sticky; top:0; z-index:2; border-radius:0; }
-      .personal-settings > .settings-section-nav { position:sticky; top:78px; z-index:2; overflow:auto; }
+      .personal-settings > .edit-wizard-head { position:sticky; top:78px; z-index:2; }
       .personal-settings > .directory-grid { padding:12px; border-radius:0; }
       .directory-tools, .skills-toolbar { grid-template-columns:1fr; }
       .member-directory-intro { padding:5px 2px 12px; border:0; background:transparent; }
@@ -541,15 +547,15 @@
       <section class="directory-guide" id="directoryGuide" aria-label="Directory next steps"></section>
 
       <details class="personal-settings" id="personalDirectorySettings">
-        <summary><span><strong>Edit my information</strong><span>Choose a section below. Changes stay private unless you submit them for parish review.</span></span></summary>
-        <nav class="settings-section-nav" aria-label="Information sections">
-          <button type="button" data-settings-section="family" aria-selected="true">Family Info</button>
-          <button type="button" data-settings-section="service" aria-selected="false">Service</button>
-        </nav>
+        <summary><span><strong>Edit my information</strong><span>Four short steps. Save only the information you want to add or change.</span></span></summary>
+        <div class="edit-wizard-head">
+          <div class="edit-wizard-title"><h2 id="editWizardTitle">Family Info</h2><span id="editWizardCount">Step 1 of 4</span></div>
+          <div class="edit-wizard-progress" id="editWizardProgress" aria-label="Editing progress"><span></span><span></span><span></span><span></span></div>
+        </div>
       <section class="directory-grid" aria-live="polite">
         <div class="stack">
-          <article class="panel" data-settings-panel="family" data-mobile-section="household setup">
-            <div class="panel-header"><div><div class="panel-kicker">Step 1</div><h2>My Profile</h2><p class="panel-intro">This is your own directory record. Keep private details private; submit only what you want the parish to review.</p></div></div>
+          <article class="panel" data-wizard-step="1" data-mobile-section="household setup">
+            <div class="panel-header"><div><div class="panel-kicker">About you</div><h2>Your Name</h2><p class="panel-intro">Start with the basic information that identifies you in your parish family.</p></div></div>
             <div class="summary-list" id="profileSummary"></div>
             <form class="setup-panel" id="startProfileForm" hidden>
               <div>
@@ -585,8 +591,8 @@
             </form>
           </article>
 
-          <article class="panel" data-settings-panel="family" data-mobile-section="household privacy setup">
-            <div class="panel-header"><div><div class="panel-kicker">Step 2</div><h2>Contact &amp; Privacy</h2><p class="panel-intro">Add email or phone details. Choose Directory members only for information you want the parish to consider publishing.</p></div></div>
+          <article class="panel" data-wizard-step="3" data-mobile-section="household privacy setup">
+            <div class="panel-header"><div><div class="panel-kicker">Contact</div><h2>Email &amp; Phone</h2><p class="panel-intro">Add a contact method and choose exactly who may see it.</p></div></div>
             <div class="contact-list" id="contactList"></div>
             <form class="form-grid" id="contactForm" hidden>
               <label>Type<select name="contactType"><option value="email">Email</option><option value="phone">Phone</option></select></label>
@@ -597,8 +603,8 @@
             </form>
           </article>
 
-          <article class="panel" data-settings-panel="service" data-mobile-section="household serve">
-            <div class="panel-header"><div><div class="panel-kicker">Serve</div><h2>My Skills &amp; Service</h2><p class="panel-intro">Share only the skills you are comfortable making available to your parish community.</p></div></div>
+          <article class="panel" data-wizard-step="4" data-mobile-section="household serve">
+            <div class="panel-header"><div><div class="panel-kicker">Optional</div><h2>Skills to Serve</h2><p class="panel-intro">Add a skill if you would like your parish community to know how you can help. You can skip this step.</p></div></div>
             <div class="skill-list" id="mySkillList"></div>
             <form class="form-grid" id="skillForm" hidden>
               <label>Skill<select name="skillId" required></select></label>
@@ -616,7 +622,7 @@
         </div>
 
         <div class="stack">
-          <article class="panel" data-settings-panel="family" data-mobile-section="household setup privacy">
+          <article class="panel" data-wizard-step="3" data-mobile-section="household setup privacy">
             <div class="panel-header"><div><div class="panel-kicker">Review</div><h2>Publication</h2><p class="panel-intro">Nothing appears in the member directory until you submit and the parish approves it.</p></div></div>
             <div class="summary-list" id="publicationSummary"></div>
             <div class="actions" id="publicationActions" hidden>
@@ -625,10 +631,10 @@
             </div>
           </article>
 
-          <article class="panel household-hub" data-settings-panel="family" data-mobile-section="household family setup photos">
+          <article class="panel household-hub" data-wizard-container="1,2" data-mobile-section="household family setup photos">
             <div class="panel-header"><div><div class="panel-kicker">Directory</div><h2>Family</h2><p class="panel-intro">Keep your family in one place: your spouse, children, family name, and name days. Parish staff reviews additions before they appear.</p></div></div>
 
-            <div class="household-hub-identity">
+            <div class="household-hub-identity" data-wizard-step="1">
               <div class="household-hub-photo" hidden>
                 <div class="summary-list" id="householdPhotoSummary"></div>
                 <form class="household-hub-photo-form" id="householdPhotoForm" hidden>
@@ -652,7 +658,7 @@
               </div>
             </div>
 
-            <div class="household-hub-namedays">
+            <div class="household-hub-namedays" data-wizard-step="2">
               <h3>Spouse or other adult</h3>
               <p class="household-hub-namedays-note">Enter the person here and the parish will confirm the family connection. Their contact information starts private. Once connected to their own My AGAPAY account, they—not another family member—choose whether their email or phone appears in the directory.</p>
               <form class="form-grid" id="adultAddForm" hidden>
@@ -669,7 +675,7 @@
               </form>
             </div>
 
-            <div class="household-hub-namedays">
+            <div class="household-hub-namedays" data-wizard-step="2">
               <h3>Family Namedays</h3>
               <p class="household-hub-namedays-note">Namedays are added with each spouse, adult, or child so each person’s information stays together.</p>
               <div class="nameday-list" id="namedayList"></div>
@@ -677,18 +683,23 @@
             </div>
           </article>
 
-          <article class="panel" data-settings-panel="family" data-mobile-section="household setup">
+          <article class="panel" data-wizard-step="2" data-mobile-section="household setup">
             <div class="panel-header"><div><div class="panel-kicker">Status</div><h2>Pending Changes</h2></div></div>
             <div class="request-list" id="requestList"></div>
           </article>
 
-          <article class="panel" data-settings-panel="family" aria-labelledby="childrenHeading" data-mobile-section="household family">
+          <article class="panel" data-wizard-step="2" aria-labelledby="childrenHeading" data-mobile-section="household family">
             <div class="panel-header"><div><div class="panel-kicker">Family</div><h2 id="childrenHeading">Children</h2><p class="panel-intro">Children stay hidden by default. You may request publication of limited fields, and parish staff must approve first.</p></div></div>
             <button class="btn primary child-add-trigger" id="openChildAddModal" type="button" hidden>Add a Child</button>
             <div class="stack" id="childrenList" aria-live="polite"></div>
           </article>
         </div>
       </section>
+      <footer class="edit-wizard-footer">
+        <button class="btn secondary" id="editWizardBack" type="button" hidden>Back</button>
+        <button class="btn primary" id="editWizardNext" type="button">Continue</button>
+        <button class="btn primary" id="editWizardDone" type="button" hidden>Done</button>
+      </footer>
       </details>
 
       <section class="panel member-directory" aria-labelledby="memberDirectoryHeading" data-mobile-section="browse">
@@ -696,7 +707,7 @@
           <div class="panel-kicker">Our parish family</div>
           <div class="member-directory-heading-row">
             <h2 id="memberDirectoryHeading">Parish Directory</h2>
-            <button class="btn primary edit-directory-profile" id="editDirectoryProfile" type="button" onclick="openPersonalDirectorySettings('family')">Edit my information</button>
+            <button class="btn primary edit-directory-profile" id="editDirectoryProfile" type="button" onclick="openPersonalDirectorySettings()">Edit my information</button>
           </div>
           <p id="memberDirectoryPrivacy" class="privacy-reminder">This directory is private to authorized members of your parish. Please use contact information respectfully and do not copy or distribute it outside the parish.</p>
         </div>
@@ -1080,7 +1091,7 @@
       const next = String(view || "home");
       const settings = document.getElementById("personalDirectorySettings");
       if (settings && window.matchMedia("(max-width: 760px)").matches && next === "household") {
-        setSettingsSection("family");
+        setWizardStep(1);
         settings.open = true;
       }
       document.body.dataset.mobileView = next;
@@ -1302,6 +1313,14 @@
         <span>${esc(namedayLabel || member.relationship || "")}</span>
       </div>`;
     }
+    function renderFamilyContact(member, contact) {
+      const value = esc(contact.value);
+      const person = esc(member.displayName || "Family member");
+      const label = esc(contact.label || contact.type || "Contact");
+      if (contact.type === "email") return `<a class="contact-chip" href="mailto:${value}"><strong>${person}</strong> · ${label}: ${value}</a>`;
+      if (contact.type === "phone") return `<a class="contact-chip" href="tel:${esc(String(contact.value || "").replace(/\D/g, ""))}"><strong>${person}</strong> · ${label}: ${value}</a>`;
+      return `<span class="contact-chip"><strong>${person}</strong> · ${label}: ${value}</span>`;
+    }
     async function openMemberProfile(type, id) {
       const endpoint = type === "household" ? `/api/directory/member/households/${encodeURIComponent(id)}` : `/api/directory/member/people/${encodeURIComponent(id)}`;
       const payload = await api(endpoint);
@@ -1320,6 +1339,10 @@
       document.getElementById("mobileDirectoryTitle").textContent = type === "household" ? "Family" : "Parish Member";
       if (type === "household") {
         const skills = (profile.skillsPreview || profile.skills || []).slice(0, 8);
+        const memberContacts = (profile.members || []).flatMap((member) =>
+          (member.contacts || []).map((contact) => renderFamilyContact(member, contact))
+        ).join("");
+        const familyContacts = contacts + memberContacts;
         pane.innerHTML = `
         <article class="family-detail">
           <div class="family-detail-hero">
@@ -1337,7 +1360,7 @@
           </section>
           <section class="family-detail-section">
             <div class="family-detail-kicker">Family Contact</div>
-            ${contacts ? `<button class="directory-contact-reveal" type="button" data-reveal-directory-contact>Reveal contact info</button><div class="actions" data-directory-contacts hidden>${contacts}</div>` : '<p class="family-detail-empty">No contact information is shared.</p>'}
+            ${familyContacts ? `<button class="directory-contact-reveal" type="button" data-reveal-directory-contact>Reveal contact info</button><div class="actions" data-directory-contacts hidden>${familyContacts}</div>` : '<p class="family-detail-empty">No contact information is shared.</p>'}
           </section>
           <div class="actions"><button class="btn secondary" type="button" id="closeMemberProfile">Back to Directory</button></div>
         </article>`;
@@ -1622,23 +1645,36 @@
       ]);
     }
     document.getElementById("skillSearchButton").addEventListener("click", loadSkillSearch);
-    function setSettingsSection(section = "family") {
-      const selected = ["family", "service"].includes(section) ? section : "family";
-      document.querySelectorAll("[data-settings-section]").forEach((button) => {
-        button.setAttribute("aria-selected", button.dataset.settingsSection === selected ? "true" : "false");
+    const EDIT_WIZARD_TITLES = ["Family Info", "Members & Namedays", "Contact & Privacy", "Skills to Serve"];
+    let editWizardStep = 1;
+    function setWizardStep(step = 1) {
+      editWizardStep = Math.max(1, Math.min(4, Number(step) || 1));
+      document.getElementById("editWizardTitle").textContent = EDIT_WIZARD_TITLES[editWizardStep - 1];
+      document.getElementById("editWizardCount").textContent = `Step ${editWizardStep} of 4`;
+      document.querySelectorAll("[data-wizard-step]").forEach((section) => {
+        section.hidden = Number(section.dataset.wizardStep) !== editWizardStep;
       });
-      document.querySelectorAll("[data-settings-panel]").forEach((panel) => {
-        panel.hidden = panel.dataset.settingsPanel !== selected;
+      document.querySelectorAll("[data-wizard-container]").forEach((section) => {
+        section.hidden = !section.dataset.wizardContainer.split(",").map(Number).includes(editWizardStep);
       });
+      document.querySelectorAll("#editWizardProgress span").forEach((dot, index) => {
+        dot.classList.toggle("complete", index < editWizardStep);
+      });
+      document.getElementById("editWizardBack").hidden = editWizardStep === 1;
+      document.getElementById("editWizardNext").hidden = editWizardStep === 4;
+      document.getElementById("editWizardDone").hidden = editWizardStep !== 4;
+      document.querySelector(".personal-settings > .directory-grid")?.scrollIntoView({ block: "start" });
     }
-    function openPersonalDirectorySettings(section = "family") {
+    function openPersonalDirectorySettings() {
       const settings = document.getElementById("personalDirectorySettings");
-      setSettingsSection(section);
+      setWizardStep(1);
       settings.open = true;
       document.body.style.overflow = "hidden";
     }
-    document.querySelectorAll("[data-settings-section]").forEach((button) => {
-      button.addEventListener("click", () => setSettingsSection(button.dataset.settingsSection));
+    document.getElementById("editWizardBack").addEventListener("click", () => setWizardStep(editWizardStep - 1));
+    document.getElementById("editWizardNext").addEventListener("click", () => setWizardStep(editWizardStep + 1));
+    document.getElementById("editWizardDone").addEventListener("click", () => {
+      document.getElementById("personalDirectorySettings").open = false;
     });
     document.getElementById("personalDirectorySettings").addEventListener("toggle", (event) => {
       document.body.style.overflow = event.currentTarget.open ? "hidden" : "";
@@ -1988,7 +2024,7 @@
     if (window.matchMedia("(max-width: 760px)").matches) {
       document.getElementById("personalDirectorySettings").open = false;
     }
-    setSettingsSection("family");
+    setWizardStep(1);
     loadDirectory().catch((error) => {
       document.getElementById("directoryStatus").textContent = "Unavailable";
       showNotice(error.message, true);
