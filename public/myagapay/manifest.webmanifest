@@ -35,5 +35,28 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "screenshots": [
+    {
+      "src": "/images/app/screenshots/giving-dashboard.jpg",
+      "sizes": "1440x3120",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "My AGAPAY giving dashboard"
+    },
+    {
+      "src": "/images/app/screenshots/today-in-the-church.jpg",
+      "sizes": "1440x3120",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Today in the Church calendar"
+    },
+    {
+      "src": "/images/app/screenshots/parish-bookstore.jpg",
+      "sizes": "1440x3120",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Parish bookstore checkout"
+    }
   ]
 }
