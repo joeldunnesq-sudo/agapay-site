@@ -1,4 +1,5 @@
 import { getBearerToken, json, rateLimit } from "../lib/core.js";
+import { accountingAvailableForParish } from "../lib/accounting-demo-access.js";
 import { expandRoleTemplate } from "../lib/authorization.js";
 import { createAccountingStaffProfile, listAccountingStaffProfiles, requireAccountingStaffProfile, revokeAccountingStaffSession, updateAccountingStaffPin, verifyAccountingStaffPin } from "../lib/accounting-staff.js";
 import { findRegistrationByParishId, verifyParishDashboardBearer } from "./parish.js";
@@ -11,6 +12,7 @@ async function parishGate(request, env, parishId) {
 }
 
 export async function handleAccountingAccess(request, env, parishId) {
+  if (!accountingAvailableForParish(parishId)) return reply({ error:"Not found" }, 404);
   const base = `/api/parish/dashboard/${encodeURIComponent(parishId)}/accounting-access`;
   const url = new URL(request.url); if (!url.pathname.startsWith(base)) return null;
   const path = url.pathname.slice(base.length);

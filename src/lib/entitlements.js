@@ -19,15 +19,17 @@ import { hasActiveStewardshipComp, hasStewardshipAccess, stewardshipStatus } fro
 // matches the "product and craft sale campaigns" capability already
 // promised on the public features page for monastic communities.
 const TIER_MODULES = {
-  mission: { stewardshipHealth: false, sacraments: false, bookstore: false, accounting: true, accountingAdvancedOperations: false },
-  parish: { stewardshipHealth: true, sacraments: true, bookstore: true, accounting: true, accountingAdvancedOperations: true },
-  diocese: { stewardshipHealth: true, sacraments: true, bookstore: true, accounting: true, accountingAdvancedOperations: true },
-  monastery_free: { stewardshipHealth: false, sacraments: false, bookstore: true, accounting: false, accountingAdvancedOperations: false }
+  giving: { stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
+  stewardship: { stewardshipHealth: true, sacraments: false, directory: false, bookstore: true, textToGive: false, accounting: false, accountingAdvancedOperations: false },
+  parish: { stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, textToGive: true, accounting: true, accountingAdvancedOperations: true },
+  diocese: { stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, textToGive: true, accounting: true, accountingAdvancedOperations: true },
+  monastery_free: { stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingAdvancedOperations: false }
 };
-const MODULE_IDS = ["stewardshipHealth", "sacraments", "bookstore"];
+const MODULE_IDS = ["stewardshipHealth", "sacraments", "directory", "bookstore", "textToGive"];
 
 export function normalizedSubscriptionTier(registration) {
-  return String(registration?.subscriptionTier || "").toLowerCase();
+  const tier = String(registration?.subscriptionTier || "").toLowerCase();
+  return tier === "mission" ? "giving" : tier;
 }
 
 export function tierIncludesModule(registration, moduleId) {
@@ -49,6 +51,11 @@ export function hasLegacyParishPlusAddOn(registration) {
 }
 
 export function hasModuleAccess(registration, moduleId) {
+  // Directory and Text-to-Give were never part of the retired Parish + add-on.
+  // They are available only through a tier that explicitly includes them.
+  if (moduleId === "directory" || moduleId === "textToGive") {
+    return tierIncludesModule(registration, moduleId);
+  }
   return tierIncludesModule(registration, moduleId) || hasLegacyParishPlusAddOn(registration);
 }
 
@@ -111,6 +118,14 @@ export function entitlementsSummary(registration) {
         included: bookstoreEnabledFor(registration),
         parishHasEnabled: registration?.bookstoreEnabled !== false,
         source: moduleSource(registration, "bookstore")
+      },
+      directory: {
+        included: hasModuleAccess(registration, "directory"),
+        source: moduleSource(registration, "directory")
+      },
+      textToGive: {
+        included: hasModuleAccess(registration, "textToGive"),
+        source: moduleSource(registration, "textToGive")
       },
       accounting: {
         included: accountingEnabledFor(registration),

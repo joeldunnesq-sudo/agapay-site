@@ -25,8 +25,8 @@ async function test(name, fn) {
   }
 }
 
-await test("Mission tier includes no add-on modules", async () => {
-  const reg = { subscriptionTier: "mission" };
+await test("Giving includes only the essential giving platform", async () => {
+  const reg = { subscriptionTier: "giving" };
   assert.equal(tierIncludesModule(reg, "stewardshipHealth"), false);
   assert.equal(tierIncludesModule(reg, "sacraments"), false);
   assert.equal(tierIncludesModule(reg, "bookstore"), false);
@@ -34,21 +34,32 @@ await test("Mission tier includes no add-on modules", async () => {
   assert.equal(hasParishPlusAccess(reg), false);
 });
 
-await test("Mission and Parish both receive core Accounting without crippling the Mission ledger", async () => {
-  assert.equal(accountingEnabledFor({ subscriptionTier: "mission" }), true);
+await test("Accounting remains unavailable outside the private Parish demo", async () => {
+  assert.equal(accountingEnabledFor({ subscriptionTier: "giving" }), false);
+  assert.equal(accountingEnabledFor({ subscriptionTier: "stewardship" }), false);
   assert.equal(accountingEnabledFor({ subscriptionTier: "parish" }), true);
-  assert.equal(accountingTierFor({ subscriptionTier: "mission" }), "core");
+  assert.equal(accountingTierFor({ subscriptionTier: "giving" }), "unavailable");
   assert.equal(accountingTierFor({ subscriptionTier: "parish" }), "advanced_operations");
-  assert.equal(entitlementsSummary({ subscriptionTier: "mission" }).modules.accounting.coreLedgerIncluded, true);
-  assert.equal(entitlementsSummary({ subscriptionTier: "mission" }).modules.accounting.advancedOperationsIncluded, false);
+  assert.equal(entitlementsSummary({ subscriptionTier: "giving" }).modules.accounting.coreLedgerIncluded, false);
   assert.equal(entitlementsSummary({ subscriptionTier: "parish" }).modules.accounting.advancedOperationsIncluded, true);
 });
 
-await test("Parish tier includes every module (folded-in AGAPAY Parish +)", async () => {
+await test("Stewardship adds insights but not parish operations", async () => {
+  const reg = { subscriptionTier: "stewardship" };
+  assert.equal(tierIncludesModule(reg, "stewardshipHealth"), true);
+  assert.equal(tierIncludesModule(reg, "sacraments"), false);
+  assert.equal(tierIncludesModule(reg, "directory"), false);
+  assert.equal(tierIncludesModule(reg, "bookstore"), true);
+  assert.equal(tierIncludesModule(reg, "textToGive"), false);
+});
+
+await test("Parish tier includes every public module", async () => {
   const reg = { subscriptionTier: "parish" };
   assert.equal(tierIncludesModule(reg, "stewardshipHealth"), true);
   assert.equal(tierIncludesModule(reg, "sacraments"), true);
   assert.equal(tierIncludesModule(reg, "bookstore"), true);
+  assert.equal(tierIncludesModule(reg, "directory"), true);
+  assert.equal(tierIncludesModule(reg, "textToGive"), true);
   assert.equal(tierIncludesParishPlus(reg), true);
   assert.equal(hasParishPlusAccess(reg), true);
 });
@@ -59,21 +70,23 @@ await test("Diocese tier includes every module, same as Parish", async () => {
   assert.equal(hasModuleAccess(reg, "sacraments"), true);
 });
 
-await test("Monastery tier includes Bookstore only, not Stewardship or Sacraments", async () => {
+await test("Monastery tier receives the basic Giving feature set for free", async () => {
   const reg = { subscriptionTier: "monastery_free" };
-  assert.equal(tierIncludesModule(reg, "bookstore"), true);
+  assert.equal(tierIncludesModule(reg, "bookstore"), false);
   assert.equal(tierIncludesModule(reg, "stewardshipHealth"), false);
   assert.equal(tierIncludesModule(reg, "sacraments"), false);
   assert.equal(tierIncludesParishPlus(reg), false);
 });
 
-await test("An active legacy $39/mo add-on subscription grandfathers a Mission-tier parish into every module", async () => {
+await test("An active legacy add-on preserves its original modules but not new Parish-only features", async () => {
   const reg = { subscriptionTier: "mission", stewardshipStatus: "active" };
   assert.equal(hasLegacyParishPlusAddOn(reg), true);
   assert.equal(hasParishPlusAccess(reg), true);
   assert.equal(hasModuleAccess(reg, "stewardshipHealth"), true);
   assert.equal(hasModuleAccess(reg, "sacraments"), true);
   assert.equal(hasModuleAccess(reg, "bookstore"), true);
+  assert.equal(hasModuleAccess(reg, "directory"), false);
+  assert.equal(hasModuleAccess(reg, "textToGive"), false);
 });
 
 await test("A cancelled legacy add-on does not grant access on Mission tier", async () => {
@@ -110,8 +123,8 @@ await test("sacramentsEnabledFor requires both parish opt-in AND module access",
 await test("bookstoreEnabledFor defaults open (not explicitly false) once module access exists", async () => {
   assert.equal(bookstoreEnabledFor({ subscriptionTier: "parish" }), true);
   assert.equal(bookstoreEnabledFor({ subscriptionTier: "parish", bookstoreEnabled: false }), false);
-  assert.equal(bookstoreEnabledFor({ subscriptionTier: "mission" }), false);
-  assert.equal(bookstoreEnabledFor({ subscriptionTier: "monastery_free" }), true);
+  assert.equal(bookstoreEnabledFor({ subscriptionTier: "giving" }), false);
+  assert.equal(bookstoreEnabledFor({ subscriptionTier: "monastery_free" }), false);
 });
 
 await test("entitlementsSummary reports source as tier, legacy_addon, or none", async () => {

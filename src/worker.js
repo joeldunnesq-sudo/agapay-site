@@ -88,6 +88,7 @@ import {
 } from "./lib/core.js";
 
 import { bookstoreEnabledFor, sacramentsEnabledFor } from "./lib/entitlements.js";
+import { accountingAvailableForParish } from "./lib/accounting-demo-access.js";
 import { runScheduledAccountingIntegrity } from "./accounting/integrity/scheduler.js";
 
 import {
@@ -183,6 +184,7 @@ import {
   handleAdminPassword,
   handleAdminRegistrationDetail,
   handleAdminLearnFeedback,
+  handleAdminParishSupportTickets,
   requireAdmin,
 } from "./handlers/admin.js";
 
@@ -2528,10 +2530,25 @@ export default {
       return handleDirectoryIntake(request, env);
     }
     const accountingAccessMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/accounting-access(?:\/.*)?$/);
-    if (accountingAccessMatch) return handleAccountingAccess(request, env, decodeURIComponent(accountingAccessMatch[1]));
+    if (accountingAccessMatch) {
+      const accountingParishId = decodeURIComponent(accountingAccessMatch[1]);
+      if (!accountingAvailableForParish(accountingParishId)) {
+        return json(
+          { error: "Not found" },
+          { status: 404, headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" } }
+        );
+      }
+      return handleAccountingAccess(request, env, accountingParishId);
+    }
     const accountingMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/accounting(?:\/.*)?$/);
     if (accountingMatch) {
       const accountingParishId = decodeURIComponent(accountingMatch[1]);
+      if (!accountingAvailableForParish(accountingParishId)) {
+        return json(
+          { error: "Not found" },
+          { status: 404, headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" } }
+        );
+      }
       const recurringResponse = await handleAccountingRecurring(request, env, accountingParishId);
       if (recurringResponse) return recurringResponse;
       const phaseDResponse = await handleAccountingPayablesBudgets(request, env, accountingParishId);
@@ -3116,6 +3133,12 @@ export default {
     }
     if (url.pathname.startsWith("/api/admin/learn/feedback/")) {
       return handleAdminLearnFeedback(request, env, decodeURIComponent(url.pathname.slice("/api/admin/learn/feedback/".length)));
+    }
+    if (url.pathname === "/api/admin/parish-support-tickets") {
+      return handleAdminParishSupportTickets(request, env);
+    }
+    if (url.pathname.startsWith("/api/admin/parish-support-tickets/")) {
+      return handleAdminParishSupportTickets(request, env, decodeURIComponent(url.pathname.slice("/api/admin/parish-support-tickets/".length)));
     }
     if (url.pathname === "/api/admin/learn/scholarships") {
       return handleAdminLearnScholarship(request, env);

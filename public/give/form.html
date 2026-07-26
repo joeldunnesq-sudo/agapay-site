@@ -437,7 +437,7 @@ body {
           <span class="gift-type-name">Candles &amp; Panikhida</span>
         </button>
 
-        <button class="gift-type-card" data-type="feast" data-needs-names="false" data-needs-frequency="false" data-needs-feast="true" data-needs-funds="false" onclick="selectGiftType(this)">
+        <button class="gift-type-card" id="festalAlmsCard" data-type="feast" data-needs-names="false" data-needs-frequency="false" data-needs-feast="true" data-needs-funds="false" onclick="selectGiftType(this)">
           <div class="gift-type-icon">
             <svg width="24" height="24" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="5" width="22" height="20" rx="3"/>
@@ -486,7 +486,8 @@ body {
 
     <!-- FEAST DAY DESCRIPTION -->
     <div class="contextual-section hidden reveal reveal-delay-1" id="feastSection">
-      <div class="section-label">Festal alms note</div>
+      <div class="section-label">Current Festal Alms campaign</div>
+      <div class="fund-options" id="currentFestalCampaign" aria-live="polite"></div>
       <input
         type="text"
         class="contextual-input"
@@ -494,7 +495,7 @@ body {
         placeholder="Optional note or intention"
         aria-label="Festal alms note"
       />
-      <p class="contextual-hint">Festal Alms are routed to the parish Benevolence Fund for the poor and needy.</p>
+      <p class="contextual-hint">Festal Alms are routed to the parish Benevolence Fund for the poor and needy. Feast campaigns appear from the beginning of their prescribed fast through one week after the feast; other feasts appear one week before through one week after.</p>
     </div>
 
     <!-- IN MEMORIAM -->
@@ -798,6 +799,7 @@ body {
     let feeCovered = true;
     let selectedFund = 'Building & Renovation Fund';
     let selectedCampaign = 'Disaster Relief';
+    let selectedFestalCampaign = null;
     let pendingClaimSessionId = '';
     let currentParish = {
       id: '',
@@ -1011,13 +1013,38 @@ body {
     }
 
     function activeCampaigns(parish) {
-      return [
-        ...(Array.isArray(parish?.campaigns) ? parish.campaigns : []),
-        ...(Array.isArray(parish?.feastCampaigns) ? parish.feastCampaigns : [])
-      ].filter(campaign => {
+      return (Array.isArray(parish?.campaigns) ? parish.campaigns : []).filter(campaign => {
         const status = String(campaign?.status || (campaign?.enabled === false ? 'hidden' : 'active')).toLowerCase();
         return campaign && !['hidden', 'paused', 'cancelled', 'ended', 'inactive'].includes(status);
       });
+    }
+
+    function renderCurrentFestalCampaign(parish) {
+      const target = document.getElementById('currentFestalCampaign');
+      const card = document.getElementById('festalAlmsCard');
+      if (!target) return;
+      const campaign = Array.isArray(parish?.feastCampaigns) ? parish.feastCampaigns[0] : null;
+      selectedFestalCampaign = campaign;
+      if (card) card.hidden = !campaign;
+      if (!campaign) {
+        target.innerHTML = `
+          <div class="fund-option selected">
+            <div class="fund-info">
+              <div class="fund-name">No Festal Alms campaign is active today</div>
+              <div class="fund-desc">The parish's next selected feast campaign will appear automatically when its giving window opens.</div>
+            </div>
+          </div>`;
+        return;
+      }
+      const label = campaignLabel(campaign);
+      const description = campaign.description || `Parish-approved alms connected to ${label}.`;
+      target.innerHTML = `
+        <div class="fund-option selected">
+          <div class="fund-info">
+            <div class="fund-name">${escapeHtml(label)}</div>
+            <div class="fund-desc">${escapeHtml(description)}</div>
+          </div>
+        </div>`;
     }
 
     function campaignLabel(campaign) {
@@ -1123,6 +1150,7 @@ body {
         if (successText) successText.innerHTML = `Your gift to <strong>${parish.name}</strong> has been received.<br>A confirmation will be sent to your email.`;
         renderFunds(parish.funds);
         renderCampaigns(activeCampaigns(parish));
+        renderCurrentFestalCampaign(parish);
         applyGiftQueryParams();
         updateSummary();
       } catch (err) {
@@ -1270,9 +1298,9 @@ body {
         document.getElementById('summaryDetailValue').textContent = inMemoriam ? `${selectedFund} · ${inMemoriam}` : selectedFund;
       } else if (selectedType === 'feast') {
         const desc = document.getElementById('feastDescription').value.trim();
-        const detail = [desc, inMemoriam].filter(Boolean).join(' · ');
+        const detail = [campaignLabel(selectedFestalCampaign), desc, inMemoriam].filter(Boolean).join(' · ');
         detailRow.style.display = detail ? 'flex' : 'none';
-        document.getElementById('summaryDetailLabel').textContent = 'Intention';
+        document.getElementById('summaryDetailLabel').textContent = 'Festal Alms';
         document.getElementById('summaryDetailValue').textContent = detail || '';
       } else if (selectedType === 'campaign') {
         const campaignNote = document.getElementById('campaignDescription').value.trim();
@@ -1417,6 +1445,10 @@ body {
         return;
       }
       if (selectedType === 'funds' && !selectedFund) { alert('Please select a fund.'); return; }
+      if (selectedType === 'feast' && !selectedFestalCampaign) {
+        alert('This parish does not have a Festal Alms campaign active today.');
+        return;
+      }
 
       const submitBtn = document.getElementById('submitGiftBtn');
       const originalText = submitBtn.textContent;
@@ -1436,8 +1468,14 @@ body {
             fundId: selectedType === 'feast' ? 'benevolence' : '',
             feastDescription: document.getElementById('feastDescription').value.trim(),
             inMemoriam: document.getElementById('inMemoriam').value.trim(),
-            campaign: selectedType === 'campaign' ? selectedCampaign : '',
-            campaignDescription: document.getElementById('campaignDescription').value.trim(),
+            campaign: selectedType === 'campaign'
+              ? selectedCampaign
+              : selectedType === 'feast'
+                ? (selectedFestalCampaign?.id || selectedFestalCampaign?.feastId || selectedFestalCampaign?.name || '')
+                : '',
+            campaignDescription: selectedType === 'feast'
+              ? campaignLabel(selectedFestalCampaign)
+              : document.getElementById('campaignDescription').value.trim(),
             namesLiving: document.getElementById('namesLiving').value.trim(),
             namesDeparted: document.getElementById('namesDeparted').value.trim(),
             paymentMethod: selectedPaymentMethod,

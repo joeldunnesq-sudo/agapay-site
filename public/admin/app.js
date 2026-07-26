@@ -389,7 +389,8 @@ let selectedReference = '';
     function subscriptionTierLabel(reg) {
       if (reg.subscriptionTierLabel) return reg.subscriptionTierLabel;
       if (reg.subscriptionTier === 'monastery_free') return 'Monastery / Skete';
-      if (reg.subscriptionTier === 'mission') return 'Mission';
+      if (reg.subscriptionTier === 'giving' || reg.subscriptionTier === 'mission') return 'Giving';
+      if (reg.subscriptionTier === 'stewardship') return 'Stewardship';
       if (reg.subscriptionTier === 'diocese') return 'Cathedral / Diocese';
       return 'Parish';
     }
@@ -745,6 +746,45 @@ let selectedReference = '';
             </div>
           </article>`;
         }).join('') || '<div class="revenue-empty">No Learn dashboard suggestions have been submitted yet.</div>'}</div>`;
+    }
+
+    function renderParishSupportTickets(data = {}) {
+      const list = document.getElementById('parishSupportTicketQueue');
+      if (!list) return;
+      const counts = data.counts || {};
+      const tickets = data.tickets || [];
+      list.innerHTML = `
+        <div class="learn-moderation-summary"><span><strong>${Number(counts.new || 0)}</strong> New</span><span><strong>${Number(counts.in_progress || 0)}</strong> In progress</span><span><strong>${Number(counts.resolved || 0)}</strong> Resolved</span><span><strong>${Number(counts.total || 0)}</strong> Total</span></div>
+        <div class="learn-feedback-list">${tickets.map((ticket) => `<article class="learn-feedback-row ${(ticket.status || 'new') === 'new' ? 'is-new' : ''}">
+          <div class="learn-moderation-copy"><span class="learn-moderation-status">${escapeHtml(readable(ticket.status || 'new'))} · ${escapeHtml(readable(ticket.type || 'help'))}${ticket.email?.status ? ` · Email: ${escapeHtml(readable(ticket.email.status))}` : ''}</span><strong>${escapeHtml(ticket.subject || 'Parish support ticket')}</strong><p>${escapeHtml(ticket.message || '')}</p><small>${escapeHtml(ticket.parishName || ticket.parishId || 'Parish')} · ${escapeHtml(ticket.page || 'dashboard')} · ${escapeHtml(ticket.submittedBy || 'No reply address')} · ${escapeHtml(shortDate(ticket.createdAt))}</small>${ticket.adminNote ? `<small>Note: ${escapeHtml(ticket.adminNote)} · ${escapeHtml(ticket.updatedBy || 'Admin')}</small>` : ''}</div>
+          <div class="learn-moderation-actions"><select id="support-status-${jsAttr(ticket.id)}"><option value="new" ${ticket.status === 'new' ? 'selected' : ''}>New</option><option value="in_progress" ${ticket.status === 'in_progress' ? 'selected' : ''}>In progress</option><option value="resolved" ${ticket.status === 'resolved' ? 'selected' : ''}>Resolved</option><option value="closed" ${ticket.status === 'closed' ? 'selected' : ''}>Closed</option></select><button class="gold btn-sm" onclick="updateParishSupportTicket('${jsAttr(ticket.id)}',this)">Save</button></div>
+        </article>`).join('') || '<div class="revenue-empty">No parish support tickets have been submitted yet.</div>'}</div>`;
+    }
+
+    async function loadParishSupportTickets() {
+      const list = document.getElementById('parishSupportTicketQueue');
+      if (list) list.innerHTML = '<div class="revenue-empty">Loading parish support tickets…</div>';
+      try {
+        const response = await fetch('/api/admin/parish-support-tickets', { headers: authHeaders() });
+        const result = await response.json().catch(() => ({}));
+        if (handleAuthFailure(response, result)) return;
+        if (!response.ok) throw new Error(result.error || 'Unable to load parish support tickets.');
+        renderParishSupportTickets(result);
+      } catch (error) { if (list) list.innerHTML = `<div class="revenue-empty">${escapeHtml(error.message || 'Unable to load parish support tickets.')}</div>`; }
+    }
+
+    async function updateParishSupportTicket(ticketId, button) {
+      const select = document.getElementById(`support-status-${ticketId}`);
+      if (!select) return;
+      button.disabled = true;
+      try {
+        const response = await fetch(`/api/admin/parish-support-tickets/${encodeURIComponent(ticketId)}`, { method: 'PATCH', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ status: select.value }) });
+        const result = await response.json().catch(() => ({}));
+        if (handleAuthFailure(response, result)) return;
+        if (!response.ok) throw new Error(result.error || 'Unable to update ticket.');
+        setStatus('Support ticket updated.', 'success');
+        await loadParishSupportTickets();
+      } catch (error) { setStatus(error.message || 'Unable to update ticket.', 'error'); } finally { button.disabled = false; }
     }
 
     function renderLearnAdmin(data = {}) {
@@ -1913,7 +1953,7 @@ let selectedReference = '';
                 </label>
 
                 <div class="queue-primary">
-                  <div class="queue-name">${escapeHtml(item.parishName || item.reference)}${item.promo === 'founding-20' ? '<span class="queue-promo-badge" title="Signed up via the Founding 20 free-year offer">Founding 20</span>' : ''}</div>
+                  <div class="queue-name">${escapeHtml(item.parishName || item.reference)}</div>
                   <div class="queue-meta-line">
                     <span>${escapeHtml(community)}</span>
                     <span>${escapeHtml(jurisdiction)}</span>
@@ -2115,15 +2155,6 @@ let selectedReference = '';
             <div class="step-chip ${subscriptionDone ? 'done' : stripeDone ? 'current' : ''}"><strong>4. Subscription</strong><span>${subscriptionDone ? 'AGAPAY billing is set.' : 'Set platform subscription tier/status.'}</span></div>
           </div>
         </div>
-        ${reg.promo === 'founding-20' ? `
-        <div class="admin-section founding-promo-callout">
-          <div class="admin-section-title">Founding 20 &mdash; Free Year Offer</div>
-          <p class="founding-promo-copy">This parish registered through the Founding 20 free-year AGAPAY Parish + offer. Grant the free year below, or from Developer Tools.</p>
-          <div class="btn-row">
-            <button class="secondary btn-sm" id="detailCompGrantBtn" onclick="grantStewardshipCompFromDetail('${publicParishId}', this)">Grant free year to ${publicParishId}</button>
-          </div>
-          <span id="detailCompGrantStatus" class="founding-promo-status"></span>
-        </div>` : ''}
         <div class="admin-section">
           <div class="admin-section-title">Sacraments &amp; Services</div>
           <p class="founding-promo-copy">${reg.sacramentsEnabled ? 'Enabled for this parish.' : 'Not yet enabled for this parish.'}</p>
@@ -2333,7 +2364,8 @@ let selectedReference = '';
               <div>
                 <label for="subscriptionTier">Subscription tier</label>
                 <select id="subscriptionTier">
-                  <option value="mission" ${(reg.subscriptionTier || '') === 'mission' ? 'selected' : ''}>Mission - $99/mo, no donation fee</option>
+                  <option value="giving" ${['giving','mission'].includes(reg.subscriptionTier || '') ? 'selected' : ''}>Giving - $49/mo, no donation fee</option>
+                  <option value="stewardship" ${(reg.subscriptionTier || '') === 'stewardship' ? 'selected' : ''}>Stewardship - $99/mo, no donation fee</option>
                   <option value="parish" ${(!reg.subscriptionTier || reg.subscriptionTier === 'parish') ? 'selected' : ''}>Parish - $199/mo, no donation fee</option>
                   <option value="diocese" ${reg.subscriptionTier === 'diocese' ? 'selected' : ''}>Cathedral / Diocese - negotiated subscription, no donation fee</option>
                   <option value="monastery_free" ${reg.subscriptionTier === 'monastery_free' ? 'selected' : ''}>Monastery / Skete - no monthly fee, no donation fee</option>
@@ -2762,6 +2794,7 @@ let selectedReference = '';
         learn: 'AGAPAY Learn',
         marketplace: 'AGAPAY Marketplace',
         directory: 'AGAPAY Directory',
+        support: 'Support Tickets',
         taxexemptions: 'Sales Tax Exemptions',
         auditlog: 'Audit Log',
         settings: 'Settings',
@@ -2772,6 +2805,7 @@ let selectedReference = '';
       document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
       if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
       if (tab === 'learn') loadLearnAdmin();
+      if (tab === 'support') loadParishSupportTickets();
       if (tab === 'taxexemptions') loadTaxExemptionSummary(), loadTaxExemptions();
       if (tab === 'auditlog') {
         populateAuditLogFilterOptions();

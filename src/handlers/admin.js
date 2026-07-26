@@ -76,6 +76,7 @@ import {
   listLearnFeedback,
   updateLearnFeedbackStatus,
 } from "../learn/feedback-store.js";
+import { listParishSupportTickets, updateParishSupportTicket } from "../lib/parish-support-tickets.js";
 
 import {
   listYtdStripeCharges,
@@ -368,6 +369,22 @@ export async function handleAdminLearnFeedback(request, env, feedbackId = "") {
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object") return json({ ok: false, error: "Suggestion update was invalid." }, { status: 400 });
   const result = await updateLearnFeedbackStatus(env, request, adminContext, feedbackId, body);
+  return json(result, { status: result.ok ? 200 : result.status || 500 });
+}
+
+export async function handleAdminParishSupportTickets(request, env, ticketId = "") {
+  const limited = await rateLimit(request, env, "admin-parish-support", { limit: 60, windowSeconds: 300 });
+  if (limited) return limited;
+  const adminContext = await requireAdminContext(request, env);
+  if (!adminContext) return unauthorized();
+  if (request.method === "GET") {
+    const tickets = await listParishSupportTickets(env, { limit: 200 });
+    return json({ ok: true, tickets, counts: tickets.reduce((counts, ticket) => { const status = ticket.status || "new"; counts[status] = (counts[status] || 0) + 1; counts.total += 1; return counts; }, { total: 0, new: 0, in_progress: 0, resolved: 0, closed: 0 }) });
+  }
+  if (request.method !== "PATCH") return json({ error: "Method not allowed" }, { status: 405 });
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object") return json({ error: "Ticket update was invalid." }, { status: 400 });
+  const result = await updateParishSupportTicket(env, adminContext, ticketId, body);
   return json(result, { status: result.ok ? 200 : result.status || 500 });
 }
 

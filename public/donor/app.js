@@ -552,10 +552,7 @@ function updateQuickGiveLinks(parish) {
 }
 
 function activeParishCampaigns(parish) {
-  const campaigns = [
-    ...(Array.isArray(parish?.campaigns) ? parish.campaigns : []),
-    ...(Array.isArray(parish?.feastCampaigns) ? parish.feastCampaigns : [])
-  ];
+  const campaigns = Array.isArray(parish?.campaigns) ? parish.campaigns : [];
   return campaigns.filter((campaign) => {
     const status = String(campaign?.status || (campaign?.enabled === false ? "hidden" : "active")).toLowerCase();
     return campaign && !["hidden", "paused", "cancelled", "ended", "inactive"].includes(status);

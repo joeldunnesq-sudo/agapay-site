@@ -22,7 +22,7 @@ import {
   unauthorized,
 } from "../lib/core.js";
 
-import { hasLegacyParishPlusAddOn, hasParishPlusAccess, tierIncludesParishPlus } from "../lib/entitlements.js";
+import { hasLegacyParishPlusAddOn, stewardshipToolAccess, tierIncludesModule } from "../lib/entitlements.js";
 
 import {
   absoluteWebsiteUrl,
@@ -100,7 +100,7 @@ export { hasActiveStewardshipComp, stewardshipStatus, hasStewardshipAccess };
 
 function stewardshipPublicStatus(registration) {
   const comp = registration?.stewardshipComp || null;
-  const parishTierAccess = tierIncludesParishPlus(registration);
+  const parishTierAccess = tierIncludesModule(registration, "stewardshipHealth");
   const legacyAddOnAccess = hasLegacyParishPlusAddOn(registration);
   return {
     status: parishTierAccess ? "included" : stewardshipStatus(registration),
@@ -121,7 +121,7 @@ function stewardshipPublicStatus(registration) {
 }
 
 function hasStewardshipToolAccess(registration) {
-  return hasParishPlusAccess(registration);
+  return stewardshipToolAccess(registration);
 }
 
 function stewardshipComingSoonPayload(registration = null) {
@@ -2670,7 +2670,7 @@ export async function handleStewardshipFinancials(request, env, parishId) {
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Parish not found" }, { status: 404 });
   if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) return unauthorized();
-  if (!hasStewardshipToolAccess(found.registration)) return json({ error: "Stewardship requires the Parish tier." }, { status: 403 });
+  if (!hasStewardshipToolAccess(found.registration)) return json({ error: "Stewardship requires the Stewardship or Parish plan." }, { status: 403 });
 
   const url = new URL(request.url);
   const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
@@ -2903,7 +2903,7 @@ export async function handleStewardshipNudge(request, env, parishId) {
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
   if (!hasStewardshipToolAccess(registration)) {
-    return json({ error: "Stewardship requires the Parish tier." }, { status: 403 });
+    return json({ error: "Stewardship requires the Stewardship or Parish plan." }, { status: 403 });
   }
   if (request.method !== "GET" && request.method !== "POST") {
     return json({ error: "Method not allowed" }, { status: 405 });

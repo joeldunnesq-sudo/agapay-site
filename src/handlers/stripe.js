@@ -12,6 +12,7 @@ import { logEvent } from "../lib/logging.js";
 
 import {
   subscriptionTier,
+  subscriptionTierFromStripePriceId,
 } from "../lib/subscriptions.js";
 
 import {
@@ -655,6 +656,13 @@ export async function processStripeWebhookEvent(env, event) {
     }
 
     const reference = object.metadata?.agapay_reference || "";
+    const activePriceId = object.items?.data?.[0]?.price?.id || "";
+    const selectedTier = subscriptionTierFromStripePriceId(env, activePriceId);
+    const tierUpdates = selectedTier ? {
+      subscriptionTier: selectedTier.id,
+      subscriptionTierLabel: selectedTier.label,
+      subscriptionMonthlyCents: selectedTier.monthlyCents
+    } : {};
     const status = event.type === "customer.subscription.deleted"
       ? "cancelled"
       : event.type === "customer.subscription.paused"
@@ -666,7 +674,8 @@ export async function processStripeWebhookEvent(env, event) {
       await updateSubscriptionRecord(env, reference, {
         subscriptionStatus: status,
         stripeSubscriptionId: object.id || "",
-        stripeCustomerId: object.customer || ""
+        stripeCustomerId: object.customer || "",
+        ...tierUpdates
       });
     } else {
       const found = await findRegistrationByStripeSubscriptionId(env, object.id);
@@ -674,7 +683,8 @@ export async function processStripeWebhookEvent(env, event) {
         await updateSubscriptionRecord(env, found.key, {
           subscriptionStatus: status,
           stripeSubscriptionId: object.id || "",
-          stripeCustomerId: object.customer || ""
+          stripeCustomerId: object.customer || "",
+          ...tierUpdates
         });
       }
     }

@@ -318,11 +318,6 @@
     </div>
   </header>
 
-  <div id="promoBanner" class="promo-banner" style="display:none;">
-    <svg viewBox="0 0 24 24" class="promo-banner-icon"><path d="M12 2 4 6v6c0 5.25 3.4 9.74 8 11 4.6-1.26 8-5.75 8-11V6l-8-4z" fill="currentColor"/></svg>
-    <span><strong>Founding 20 offer applied.</strong> Your parish will receive a free year of AGAPAY Parish + once your registration is approved.</span>
-  </div>
-
   <main class="main">
 
     <div class="entry-card-wrap" id="registrationEntry">
@@ -677,15 +672,6 @@
   </main>
   <script src="/security.js"></script>
   <script>
-    // Show the Founding 20 confirmation banner when arriving via that offer's link
-    (function showPromoBanner() {
-      const promo = new URLSearchParams(window.location.search).get('promo');
-      if (promo === 'founding-20') {
-        const banner = document.getElementById('promoBanner');
-        if (banner) banner.style.display = 'flex';
-      }
-    })();
-
     // ─── STATE ───────────────────────────────────────────────
     let currentStep = 1;
     let communityType = 'Parish';

@@ -1,6 +1,8 @@
 // src/handlers/parish.js
 // Parish handlers and shared helpers (Stripe, donor, admin extracted to own files).
 
+import { activeFestalAlmsCampaigns } from "../festal-alms.js";
+import { submitParishSupportTicket } from "../lib/parish-support-tickets.js";
 import {
   ADMIN_PASSWORD_KV_KEY,
   COMMEMORATION_KEY_PREFIX,
@@ -65,7 +67,7 @@ import {
 } from "../lib/core.js";
 import { loadGivingCatalogFromAccounting, synchronizeGivingCatalogWithAccounting } from "../accounting/source-wiring.js";
 
-import { bookstoreEnabledFor, entitlementsSummary, hasParishPlusAccess, sacramentsEnabledFor, tierIncludesParishPlus } from "../lib/entitlements.js";
+import { bookstoreEnabledFor, entitlementsSummary, hasParishPlusAccess, sacramentsEnabledFor, stewardshipToolAccess, tierIncludesParishPlus } from "../lib/entitlements.js";
 
 import {
   createTaxExemptionClaim,
@@ -2361,7 +2363,7 @@ function campaignGiftKeys(gift = {}) {
 
 function giftMatchesCampaignKeys(gift, keys) {
   const giftType = String(gift.giftType || "").toLowerCase();
-  return ["campaign", "alms"].includes(giftType) && campaignGiftKeys(gift).some((key) => keys.has(key));
+  return ["campaign", "alms", "feast"].includes(giftType) && campaignGiftKeys(gift).some((key) => keys.has(key));
 }
 
 export function campaignRaisedTotals(campaign, gifts) {
@@ -2475,7 +2477,10 @@ export async function enrichParishGivingOptions(env, parish) {
   return {
     ...parish,
     campaigns: (parish.campaigns || []).map(enrichCampaign),
-    feastCampaigns: (parish.feastCampaigns || []).map(enrichCampaign)
+    feastCampaigns: activeFestalAlmsCampaigns(
+      parish.feastCampaigns,
+      parish.liturgicalCalendar
+    ).map(enrichCampaign)
   };
 }
 
@@ -3364,6 +3369,9 @@ export async function handleParishSubscriptionPortal(request, env, parishId) {
     customer: customerId,
     return_url: `${appUrl}/parish/dashboard?parish=${encodeURIComponent(parishId)}`
   });
+  if (env.AGAPAY_STRIPE_BILLING_PORTAL_CONFIGURATION) {
+    form.set("configuration", env.AGAPAY_STRIPE_BILLING_PORTAL_CONFIGURATION);
+  }
   const session = await stripeFormRequest(env, "/v1/billing_portal/sessions", form);
   if (!session.ok) {
     return json(
@@ -5383,7 +5391,7 @@ export async function handleParishSettlementProfiles(request, env, parishId, sub
   // verified parish — mirrors the "ensure a default profile exists" spec
   // without needing a separate onboarding hook to have run first.
   await ensureDefaultGivingProfile(env, parishId);
-  if (hasParishPlusAccess(found.registration)) {
+  if (bookstoreEnabledFor(found.registration)) {
     await ensureDefaultCommerceProfile(env, parishId);
   }
 
@@ -5392,7 +5400,7 @@ export async function handleParishSettlementProfiles(request, env, parishId, sub
     return json({
       profiles,
       profileTypes: SETTLEMENT_PROFILE_TYPES,
-      stewardshipActive: hasParishPlusAccess(found.registration)
+      stewardshipActive: bookstoreEnabledFor(found.registration)
     });
   }
 
@@ -5652,7 +5660,7 @@ export function parishDashboardPayload(parishId, registration) {
     candlesEnabled: registration.candlesEnabled ?? true,
     commemorationsEnabled: registration.commemorationsEnabled ?? true,
     bookstoreEnabled: registration.bookstoreEnabled ?? false,
-    stewardshipActive: hasParishPlusAccess(registration),
+    stewardshipActive: stewardshipToolAccess(registration),
     parishPlusIncludedInTier: tierIncludesParishPlus(registration),
     entitlements: entitlementsSummary(registration),
     funds: Array.isArray(registration.funds) ? registration.funds : [],
@@ -5685,8 +5693,8 @@ export async function handleParishDashboard(request, env, parishId) {
   const limited = await rateLimit(
     request,
     env,
-    request.method === "PATCH" ? "parish-dashboard-write" : "parish-auth",
-    { limit: request.method === "PATCH" ? 20 : 40, windowSeconds: 300 }
+    ["PATCH", "POST"].includes(request.method) ? "parish-dashboard-write" : "parish-auth",
+    { limit: ["PATCH", "POST"].includes(request.method) ? 20 : 40, windowSeconds: 300 }
   );
   if (limited) return limited;
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
@@ -5697,6 +5705,13 @@ export async function handleParishDashboard(request, env, parishId) {
   const token = getBearerToken(request);
   if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
+  }
+
+  if (request.method === "POST") {
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== "object") return json({ error: "Support request was invalid." }, { status: 400 });
+    const result = await submitParishSupportTicket(env, request, { ...found.registration, parishId }, body);
+    return json(result, { status: result.ok ? 201 : result.status || 500 });
   }
 
   if (request.method === "GET") {

@@ -6,6 +6,7 @@ import { handleAccountingReconciliationCommerce } from "../src/handlers/accounti
 import { handleAccountingClose } from "../src/handlers/accounting-close.js";
 import { handleAccountingAccess } from "../src/handlers/accounting-access.js";
 import { handleAccountingRecurring } from "../src/handlers/accounting-recurring.js";
+import { accountingAvailableForParish, ACCOUNTING_DEMO_PARISH_ID } from "../src/lib/accounting-demo-access.js";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const worker = read("src/worker.js");
@@ -19,6 +20,13 @@ const css = read("public/parish/redesign.css");
 
 assert.match(worker, /handleAccountingSetupReports/);
 assert.match(worker, /handleAccountingAccess/);
+assert.match(worker, /accountingAvailableForParish\(accountingParishId\)/);
+assert.equal(ACCOUNTING_DEMO_PARISH_ID, "st-fiacre");
+assert.equal(accountingAvailableForParish("st-fiacre"), true);
+assert.equal(accountingAvailableForParish("ST-FIACRE"), true);
+assert.equal(accountingAvailableForParish("parish-a"), false);
+assert.match(app, /currentParish\?\.parishId !== 'st-fiacre'/);
+assert.match(app, /const showAccounting = currentParish\?\.parishId === 'st-fiacre'/);
 for (const route of ["/setup", "/setup/initialize", "/settings", "/workspace-reference", "/reports/trial-balance", "/reports/statement-of-activities", "/reports/statement-of-financial-position", "/reports/fund-activity"]) assert.ok(routes.includes(route), `missing Accounting route ${route}`);
 assert.match(routes, /accounting\.view/);
 assert.match(routes, /accounting\.configure/);
@@ -77,20 +85,20 @@ assert.ok(app.includes("accountingCustomReport"), "custom comparative and fund r
 for (const recurringFeature of ["Recurring expenses", "Schedule expense", "Due transactions post automatically each morning", "Every two weeks"]) assert.ok(app.includes(recurringFeature), `missing recurring transaction feature ${recurringFeature}`);
 for (const recurringAction of ["accountingRecurringPanel", "saveAccountingRecurring", "toggleAccountingRecurring"]) assert.match(app, new RegExp(`function ${recurringAction}\\b`), `missing recurring transaction action ${recurringAction}`);
 const unauthorized = await handleAccountingSetupReports(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/setup"), {}, "parish-a");
-assert.equal(unauthorized.status, 401);
+assert.equal(unauthorized.status, 404);
 assert.equal(unauthorized.headers.get("Cache-Control"), "private, no-store");
 const phaseDUnauthorized = await handleAccountingPayablesBudgets(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/payables/overview"), {}, "parish-a");
-assert.equal(phaseDUnauthorized.status, 401);
+assert.equal(phaseDUnauthorized.status, 404);
 assert.equal(phaseDUnauthorized.headers.get("Cache-Control"), "private, no-store");
 const phaseEUnauthorized = await handleAccountingReconciliationCommerce(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/bank/accounts"), {}, "parish-a");
-assert.equal(phaseEUnauthorized.status, 401);
+assert.equal(phaseEUnauthorized.status, 404);
 assert.equal(phaseEUnauthorized.headers.get("Cache-Control"), "private, no-store");
 const phaseFUnauthorized = await handleAccountingClose(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/close/workspace"), {}, "parish-a");
-assert.equal(phaseFUnauthorized.status, 401);
+assert.equal(phaseFUnauthorized.status, 404);
 assert.equal(phaseFUnauthorized.headers.get("Cache-Control"), "private, no-store");
 const accessUnauthorized = await handleAccountingAccess(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting-access/profiles"), {}, "parish-a");
-assert.equal(accessUnauthorized.status, 401);
+assert.equal(accessUnauthorized.status, 404);
 const recurringUnauthorized = await handleAccountingRecurring(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/recurring-transactions"), {}, "parish-a");
-assert.equal(recurringUnauthorized.status, 401);
+assert.equal(recurringUnauthorized.status, 404);
 
 console.log("Accounting route and parish UI checks passed.");
