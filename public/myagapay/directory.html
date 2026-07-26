@@ -330,6 +330,7 @@
         text-align:left;
       }
       body[data-mobile-view]:not([data-mobile-view="home"]):not([data-mobile-view="browse"]) .mobile-back { display:block; }
+      body.directory-profile-open .mobile-back { display:block; }
       body[data-mobile-view]:not([data-mobile-view="home"]) .mobile-directory-home { display:none; }
       body[data-mobile-view="home"] .directory-grid,
       body[data-mobile-view="home"] .member-directory { display:none; }
@@ -547,9 +548,9 @@
       <section class="directory-guide" id="directoryGuide" aria-label="Directory next steps"></section>
 
       <details class="personal-settings" id="personalDirectorySettings">
-        <summary><span><strong>Edit my information</strong><span>Four short steps. Save only the information you want to add or change.</span></span></summary>
+        <summary><span><strong>Edit household</strong><span>Four simple steps for your family directory entry.</span></span></summary>
         <div class="edit-wizard-head">
-          <div class="edit-wizard-title"><h2 id="editWizardTitle">Family Info</h2><span id="editWizardCount">Step 1 of 4</span></div>
+          <div class="edit-wizard-title"><h2 id="editWizardTitle">Household Info</h2><span id="editWizardCount">Step 1 of 4</span></div>
           <div class="edit-wizard-progress" id="editWizardProgress" aria-label="Editing progress"><span></span><span></span><span></span><span></span></div>
         </div>
       <section class="directory-grid" aria-live="polite">
@@ -712,11 +713,11 @@
           <p id="memberDirectoryPrivacy" class="privacy-reminder">This directory is private to authorized members of your parish. Please use contact information respectfully and do not copy or distribute it outside the parish.</p>
         </div>
         <div class="directory-tools">
-          <label>Find someone<input id="memberSearch" type="search" autocomplete="off" placeholder="Filter by name, family, city, or role" /></label>
-          <label>Sort<select id="memberSort"><option value="az">A-Z</option><option value="za">Z-A</option></select></label>
-          <button class="btn secondary" type="button" id="memberSearchButton">View all</button>
+          <label>Search families<input id="memberSearch" type="search" autocomplete="off" placeholder="Search by family or member name" /></label>
+          <label>Nameday<select id="memberNamedayFilter"><option value="">All namedays</option><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></label>
+          <label>Skills<select id="memberSkillFilter"><option value="">All skills</option></select></label>
         </div>
-        <p class="directory-browse-note" id="directoryBrowseNote" style="padding:10px 22px 0;">Showing all approved families. Search is optional.</p>
+        <p class="directory-browse-note" id="directoryBrowseNote" style="padding:10px 22px 0;">Search by family or member, then narrow by nameday or skill.</p>
         <div class="alphabet" id="memberAlphabet" aria-label="Alphabetical navigation"></div>
         <div class="member-grid" id="memberResults" aria-live="polite"></div>
         <div class="actions"><button class="btn secondary" type="button" id="memberLoadMore" hidden>Load More</button></div>
@@ -788,7 +789,7 @@
     const email = localStorage.getItem("agapayDonorEmail") || localStorage.getItem("agapayUserEmail") || localStorage.getItem("agapayPlatformEmail") || "";
     const donorEmail = localStorage.getItem("agapayDonorEmail") || email;
     let profileState = null;
-    let memberState = { view: "households", letter: "", cursor: "", query: "", sort: "az", loading: false };
+    let memberState = { view: "households", letter: "", cursor: "", query: "", sort: "az", namedayMonth: "", skill: "", items: [], loading: false };
     let skillListingsById = new Map();
     let memberSearchTimer = 0;
     function goBackFromDirectory() {
@@ -1096,6 +1097,8 @@
       }
       document.body.dataset.mobileView = next;
       document.body.classList.remove("directory-profile-open");
+      if (next === "browse") document.getElementById("memberProfile").hidden = true;
+      document.querySelector(".mobile-back").textContent = "Back to Directory";
       document.getElementById("mobileDirectoryTitle").textContent = "My AGAPAY Directory";
       document.querySelectorAll("[data-mobile-target]").forEach((button) => {
         if (button.classList.contains("mobile-action")) button.setAttribute("aria-current", button.dataset.mobileTarget === next ? "true" : "false");
@@ -1154,7 +1157,7 @@
     function renderMemberCards(items = [], append = false) {
       const target = document.getElementById("memberResults");
       const household = firstHousehold();
-      const showOwnDraft = !append && memberState.view === "households" && !memberState.query && !memberState.letter
+      const showOwnDraft = !append && memberState.view === "households" && !memberState.query && !memberState.letter && !memberState.namedayMonth && !memberState.skill
         && household && !items.some((item) => item.id === household.id);
       const ownDraft = showOwnDraft ? `
         <article class="member-card household-card" aria-label="Your family">
@@ -1168,6 +1171,39 @@
         </button>`).join("") : '<div class="empty">No published directory entries match this view.</div>';
       target.innerHTML = append && !target.querySelector(".empty") ? target.innerHTML + html : html;
       hydrateAuthorizedImages(target);
+    }
+    function memberSkills(item) {
+      return (item.skillsPreview || item.skills || []).map((skill) => String(skill.displayLabel || skill.name || skill || "").trim()).filter(Boolean);
+    }
+    function memberHasNamedayInMonth(item, month) {
+      if (!month) return true;
+      const namedays = item.type === "household"
+        ? (item.members || []).flatMap((member) => member.namedays || [])
+        : (item.namedays || []);
+      return namedays.some((nameday) => String(nameday.feastMonthDay || "").startsWith(`${month}-`));
+    }
+    function populateMemberSkillFilter(items = []) {
+      const select = document.getElementById("memberSkillFilter");
+      const selected = memberState.skill;
+      const skills = [...new Set(items.flatMap(memberSkills))].sort((a, b) => a.localeCompare(b));
+      select.innerHTML = '<option value="">All skills</option>' + skills.map((skill) => `<option value="${esc(skill)}">${esc(skill)}</option>`).join("");
+      select.value = skills.includes(selected) ? selected : "";
+      memberState.skill = select.value;
+    }
+    function refreshMemberCards() {
+      const items = memberState.items.filter((item) =>
+        memberHasNamedayInMonth(item, memberState.namedayMonth)
+        && (!memberState.skill || memberSkills(item).includes(memberState.skill))
+      );
+      renderMemberCards(items);
+      const activeFilters = [memberState.namedayMonth, memberState.skill].filter(Boolean).length;
+      const label = `${items.length} ${items.length === 1 ? "family" : "families"}`;
+      document.getElementById("mobileDirectoryCount").textContent = label;
+      document.getElementById("directoryBrowseNote").textContent = activeFilters
+        ? `Showing ${label} matching your ${activeFilters === 2 ? "nameday and skill filters" : "filter"}.`
+        : memberState.query
+          ? `Showing approved families matching “${memberState.query}”.`
+          : "Search by family or member, then narrow by nameday or skill.";
     }
     async function loadMemberDirectory({ append = false } = {}) {
       if (!token || !email || memberState.loading) return;
@@ -1186,13 +1222,9 @@
           : `/api/directory/member/${memberState.view}?${params}`;
         const payload = await api(endpoint);
         const result = payload.households || payload.people || payload.results || { items: [] };
-        renderMemberCards(result.items || [], append);
-        const visibleCount = Number(result.totalCount ?? result.total ?? result.items?.length ?? 0);
-        const viewLabel = memberState.view === "households" ? "families" : memberState.view;
-        document.getElementById("mobileDirectoryCount").textContent = `${visibleCount}${result.nextCursor ? "+" : ""} ${viewLabel}`;
-        document.getElementById("directoryBrowseNote").textContent = memberState.query
-          ? `Showing approved ${viewLabel} matching “${memberState.query}”.`
-          : `Showing all approved ${viewLabel}. Search is optional.`;
+        memberState.items = append ? [...memberState.items, ...(result.items || [])] : (result.items || []);
+        populateMemberSkillFilter(memberState.items);
+        refreshMemberCards();
         if (result.alphabet) renderAlphabet(result.alphabet);
         memberState.cursor = result.nextCursor || "";
         document.getElementById("memberLoadMore").hidden = !memberState.cursor;
@@ -1337,6 +1369,7 @@
       pane.hidden = false;
       document.body.classList.add("directory-profile-open");
       document.getElementById("mobileDirectoryTitle").textContent = type === "household" ? "Family" : "Parish Member";
+      document.querySelector(".mobile-back").textContent = "‹ Back to Directory";
       if (type === "household") {
         const skills = (profile.skillsPreview || profile.skills || []).slice(0, 8);
         const memberContacts = (profile.members || []).flatMap((member) =>
@@ -1645,7 +1678,7 @@
       ]);
     }
     document.getElementById("skillSearchButton").addEventListener("click", loadSkillSearch);
-    const EDIT_WIZARD_TITLES = ["Family Info", "Members & Namedays", "Contact & Privacy", "Skills to Serve"];
+    const EDIT_WIZARD_TITLES = ["Household Info", "Members & Namedays", "Parent Contact", "Skills to Serve"];
     let editWizardStep = 1;
     function setWizardStep(step = 1) {
       editWizardStep = Math.max(1, Math.min(4, Number(step) || 1));
@@ -1660,7 +1693,7 @@
       document.querySelectorAll("#editWizardProgress span").forEach((dot, index) => {
         dot.classList.toggle("complete", index < editWizardStep);
       });
-      document.getElementById("editWizardBack").hidden = editWizardStep === 1;
+      document.getElementById("editWizardBack").hidden = false;
       document.getElementById("editWizardNext").hidden = editWizardStep === 4;
       document.getElementById("editWizardDone").hidden = editWizardStep !== 4;
       document.querySelector(".personal-settings > .directory-grid")?.scrollIntoView({ block: "start" });
@@ -1671,7 +1704,10 @@
       settings.open = true;
       document.body.style.overflow = "hidden";
     }
-    document.getElementById("editWizardBack").addEventListener("click", () => setWizardStep(editWizardStep - 1));
+    document.getElementById("editWizardBack").addEventListener("click", () => {
+      if (editWizardStep === 1) document.getElementById("personalDirectorySettings").open = false;
+      else setWizardStep(editWizardStep - 1);
+    });
     document.getElementById("editWizardNext").addEventListener("click", () => setWizardStep(editWizardStep + 1));
     document.getElementById("editWizardDone").addEventListener("click", () => {
       document.getElementById("personalDirectorySettings").open = false;
@@ -1979,13 +2015,6 @@
       memberState.cursor = "";
       await loadMemberDirectory();
     });
-    document.getElementById("memberSearchButton").addEventListener("click", async () => {
-      document.getElementById("memberSearch").value = "";
-      memberState.query = "";
-      memberState.sort = document.getElementById("memberSort").value || "az";
-      memberState.cursor = "";
-      await loadMemberDirectory();
-    });
     document.getElementById("memberSearch").addEventListener("input", (event) => {
       clearTimeout(memberSearchTimer);
       memberSearchTimer = window.setTimeout(async () => {
@@ -1994,10 +2023,13 @@
         await loadMemberDirectory();
       }, 260);
     });
-    document.getElementById("memberSort").addEventListener("change", async (event) => {
-      memberState.sort = event.target.value || "az";
-      memberState.cursor = "";
-      await loadMemberDirectory();
+    document.getElementById("memberNamedayFilter").addEventListener("change", (event) => {
+      memberState.namedayMonth = event.target.value || "";
+      refreshMemberCards();
+    });
+    document.getElementById("memberSkillFilter").addEventListener("change", (event) => {
+      memberState.skill = event.target.value || "";
+      refreshMemberCards();
     });
     document.getElementById("memberLoadMore").addEventListener("click", () => loadMemberDirectory({ append: true }));
     document.getElementById("memberResults").addEventListener("click", async (event) => {
