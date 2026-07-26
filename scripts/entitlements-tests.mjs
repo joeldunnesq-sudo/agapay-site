@@ -64,6 +64,20 @@ await test("Parish tier includes every public module", async () => {
   assert.equal(hasParishPlusAccess(reg), true);
 });
 
+await test("A cancelled no-card demo loses its tier modules", async () => {
+  const reg = {
+    subscriptionTier: "parish",
+    subscriptionStatus: "cancelled",
+    subscriptionTrialDays: 30,
+    sacramentsEnabled: true,
+    bookstoreEnabled: true
+  };
+  assert.equal(tierIncludesModule(reg, "directory"), false);
+  assert.equal(accountingEnabledFor(reg), false);
+  assert.equal(sacramentsEnabledFor(reg), false);
+  assert.equal(bookstoreEnabledFor(reg), false);
+});
+
 await test("Diocese tier includes every module, same as Parish", async () => {
   const reg = { subscriptionTier: "diocese" };
   assert.equal(tierIncludesParishPlus(reg), true);

@@ -834,7 +834,7 @@ export async function handleAdminReleaseStatus(request, env) {
          COUNT(*) AS registration_count,
          SUM(CASE WHEN status = 'verified' THEN 1 ELSE 0 END) AS verified_count,
          SUM(CASE WHEN status = 'verified' AND json_extract(data, '$.stripeAccountStatus') IN ('charges_enabled', 'payouts_enabled') THEN 1 ELSE 0 END) AS stripe_ready_count,
-         SUM(CASE WHEN status = 'verified' AND json_extract(data, '$.subscriptionStatus') IN ('active', 'free_forever') THEN 1 ELSE 0 END) AS subscription_ready_count
+         SUM(CASE WHEN status = 'verified' AND json_extract(data, '$.subscriptionStatus') IN ('active', 'trialing', 'free_forever') THEN 1 ELSE 0 END) AS subscription_ready_count
        FROM registrations`
     );
     registrationCount = Number(row?.registration_count || 0);
@@ -1231,6 +1231,7 @@ export async function createSubscriptionCheckoutForRegistration(request, env, re
     registration,
     body,
     returnPath,
+    allowTrial: true,
     saveRegistrationRecord
   });
 }

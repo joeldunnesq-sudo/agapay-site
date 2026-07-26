@@ -404,7 +404,7 @@ let selectedReference = '';
       if ((reg.status || 'pending') !== 'verified') return { title: 'Review canonical standing', body: 'Confirm jurisdiction, bishop/deanery, website, and contact details before marking verified.' };
       if (reg.dashboardInviteEmailStatus !== 'sent') return { title: 'Send dashboard invite', body: 'Email the priest and treasurer their parish ID, temporary token, and Stripe onboarding instructions.' };
       if (!['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus)) return { title: 'Connect Stripe', body: 'Create onboarding or ask the parish to finish Stripe from the dashboard.' };
-      if (!['active', 'free_forever'].includes(reg.subscriptionStatus)) return { title: 'Set up AGAPAY subscription', body: 'Create subscription checkout or mark monastery/skete as free forever.' };
+      if (!['active', 'trialing', 'free_forever'].includes(reg.subscriptionStatus)) return { title: 'Set up AGAPAY subscription', body: 'Create subscription checkout, start a free demo, or mark a monastery/skete as free forever.' };
       return { title: 'Parish is ready', body: 'Canonical verification, dashboard invite, Stripe, and subscription status are all in place.' };
     }
 
@@ -1748,11 +1748,11 @@ let selectedReference = '';
       const invitesNeeded = verified.filter(item => item.dashboardInviteEmailStatus !== 'sent').length;
       const stripeNeeded = verified.filter(item => !['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus)).length;
       const stripeReady = verified.filter(item => ['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus));
-      const billingNeeded = stripeReady.filter(item => !['active', 'free_forever'].includes(item.subscriptionStatus)).length;
+      const billingNeeded = stripeReady.filter(item => !['active', 'trialing', 'free_forever'].includes(item.subscriptionStatus)).length;
       const ready = verified.filter(item =>
         item.dashboardInviteEmailStatus === 'sent' &&
         ['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus) &&
-        ['active', 'free_forever'].includes(item.subscriptionStatus)
+        ['active', 'trialing', 'free_forever'].includes(item.subscriptionStatus)
       ).length;
       const readyPercent = total ? Math.round((ready / total) * 100) : 0;
 
@@ -1788,7 +1788,7 @@ let selectedReference = '';
     function currentWorkflowStep(reg) {
       const status = reg.status || 'pending';
       const stripeDone = ['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus);
-      const subscriptionDone = ['active', 'free_forever'].includes(reg.subscriptionStatus);
+      const subscriptionDone = ['active', 'trialing', 'free_forever'].includes(reg.subscriptionStatus);
       if (status === 'pending') return { key: 'review', label: 'canonical review' };
       if (status === 'needs_more_info') return { key: 'follow_up', label: 'follow-up review' };
       if (status !== 'verified') return { key: 'inactive', label: 'inactive status' };
@@ -1816,7 +1816,7 @@ let selectedReference = '';
     function nextActionPriority(reg) {
       const status = reg.status || 'pending';
       const stripeDone = ['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus);
-      const subscriptionDone = ['active', 'free_forever'].includes(reg.subscriptionStatus);
+      const subscriptionDone = ['active', 'trialing', 'free_forever'].includes(reg.subscriptionStatus);
       const step = currentWorkflowStep(reg);
       const stalledDays = daysSince(workflowLastActivityAt(reg));
 
@@ -2135,7 +2135,7 @@ let selectedReference = '';
       const reviewDone = reg.status === 'verified';
       const inviteDone = reg.dashboardInviteEmailStatus === 'sent';
       const stripeDone = ['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus);
-      const subscriptionDone = ['active', 'free_forever'].includes(reg.subscriptionStatus);
+      const subscriptionDone = ['active', 'trialing', 'free_forever'].includes(reg.subscriptionStatus);
       const reference = jsAttr(reg.reference);
       const publicParishId = escapeHtml(reg.parishId || '');
       document.getElementById('registrationDetail').innerHTML = `
@@ -2376,6 +2376,8 @@ let selectedReference = '';
                 <select id="subscriptionStatus">
                   <option value="not_started" ${(reg.subscriptionStatus || 'not_started') === 'not_started' ? 'selected' : ''}>Not started</option>
                   <option value="checkout_created" ${reg.subscriptionStatus === 'checkout_created' ? 'selected' : ''}>Checkout created</option>
+                  <option value="trial_checkout_created" ${reg.subscriptionStatus === 'trial_checkout_created' ? 'selected' : ''}>Demo checkout created</option>
+                  <option value="trialing" ${reg.subscriptionStatus === 'trialing' ? 'selected' : ''}>Free demo</option>
                   <option value="active" ${reg.subscriptionStatus === 'active' ? 'selected' : ''}>Active</option>
                   <option value="past_due" ${reg.subscriptionStatus === 'past_due' ? 'selected' : ''}>Past due</option>
                   <option value="cancelled" ${reg.subscriptionStatus === 'cancelled' ? 'selected' : ''}>Cancelled</option>
@@ -2393,7 +2395,9 @@ let selectedReference = '';
             </div>
             <div class="button-row" style="margin-top:0.75rem;">
               <button class="gold" onclick="createSubscriptionCheckout('${reference}', this)">Create subscription checkout</button>
+              <button class="secondary" onclick="createSubscriptionCheckout('${reference}', this, { trialDays: 30 })">Create 30-day free demo</button>
             </div>
+            <p style="margin:0.65rem 0 0; color:var(--stone); font-size:11px; line-height:1.55;">The demo uses the selected tier, requires no card, and cancels automatically after 30 days unless the church intentionally adds a payment method in Stripe. Donation processing uses the church's separate connected Stripe account.</p>
             <div class="payment-status" id="subscriptionStatusMessage"></div>
             <div class="stripe-link-box" id="subscriptionLinkBox">
               <a id="subscriptionCheckoutLink" href="#" target="_blank" rel="noopener">Open subscription checkout</a>
@@ -2650,7 +2654,7 @@ let selectedReference = '';
       setStatus(message, tone);
     }
 
-    async function createSubscriptionCheckout(reference, btn) {
+    async function createSubscriptionCheckout(reference, btn, options = {}) {
       if (btn) { btn.classList.add('loading'); btn.disabled = true; }
       
       try {
@@ -2661,7 +2665,8 @@ let selectedReference = '';
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            subscriptionTier: document.getElementById('subscriptionTier').value
+            subscriptionTier: document.getElementById('subscriptionTier').value,
+            trialDays: options.trialDays || 0
           })
         });
         const result = await response.json();
@@ -2691,10 +2696,17 @@ let selectedReference = '';
         } catch {
           copied = false;
         }
-        if (help) help.textContent = copied
-          ? 'The subscription checkout link was copied to your clipboard. Send it to the parish treasurer when they are ready to activate AGAPAY billing.'
-          : 'Clipboard access was blocked, but the subscription checkout link is ready here.';
-        setSubscriptionStatus(copied ? 'Subscription checkout created and copied.' : 'Subscription checkout created.', 'success');
+        const isTrial = Number(options.trialDays || 0) > 0;
+        if (help) help.textContent = isTrial
+          ? (copied
+            ? 'The 30-day demo link was copied. No card is required; Stripe cancels the subscription at the end unless the church adds a payment method.'
+            : 'The 30-day demo link is ready here. No card is required; Stripe cancels the subscription at the end unless the church adds a payment method.')
+          : (copied
+            ? 'The subscription checkout link was copied to your clipboard. Send it to the parish treasurer when they are ready to activate AGAPAY billing.'
+            : 'Clipboard access was blocked, but the subscription checkout link is ready here.');
+        setSubscriptionStatus(isTrial
+          ? (copied ? '30-day free demo created and copied.' : '30-day free demo created.')
+          : (copied ? 'Subscription checkout created and copied.' : 'Subscription checkout created.'), 'success');
       } catch (err) {
         setSubscriptionStatus(err.message, 'error');
       } finally {

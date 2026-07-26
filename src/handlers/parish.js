@@ -629,6 +629,8 @@ export function subscriptionStatusLabel(status) {
   const labels = {
     not_started: "Not started",
     checkout_created: "Checkout created",
+    trial_checkout_created: "Demo checkout created",
+    trialing: "Free demo",
     active: "Active",
     past_due: "Past due",
     cancelled: "Cancelled",
@@ -3321,7 +3323,7 @@ export async function handleParishSubscriptionRefresh(request, env, parishId) {
     stripeSession.subscription &&
     (stripeSession.status === "complete" || stripeSession.payment_status === "paid")
   ) {
-    updates.subscriptionStatus = "active";
+    updates.subscriptionStatus = Number(registration.subscriptionTrialDays || 0) > 0 ? "trialing" : "active";
     updates.stripeSubscriptionId = stripeSession.subscription;
     updates.subscriptionActivatedAt = registration.subscriptionActivatedAt || now;
   }

@@ -5792,9 +5792,9 @@
     return tiers.map(t => `<option value="${escapeHtml(t.id)}" ${t.id===selectedId?'selected':''}>${escapeHtml(t.label)} - ${escapeHtml(tierPriceLabel(t))}</option>`).join('');
   }
   function setupCheckMarkup() { return '<span class="setup-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>'; }
-  function billingStatusDone(status) { return ['active','free_forever'].includes(status); }
+  function billingStatusDone(status) { return ['active','trialing','free_forever'].includes(status); }
   async function refreshSubscriptionStatus(options) {
-    if (!currentParish || !currentParish.parishId || currentParish.subscriptionStatus !== 'checkout_created') return;
+    if (!currentParish || !currentParish.parishId || !['checkout_created','trial_checkout_created'].includes(currentParish.subscriptionStatus)) return;
     try {
       const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/subscription-refresh', { method:'POST', headers:authHeaders() });
       const data = await res.json();

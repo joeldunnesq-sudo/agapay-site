@@ -34,6 +34,10 @@ export function normalizedSubscriptionTier(registration) {
 
 export function tierIncludesModule(registration, moduleId) {
   const tier = normalizedSubscriptionTier(registration) || "parish";
+  const status = String(registration?.subscriptionStatus || "").toLowerCase();
+  const isEndedDemo = Number(registration?.subscriptionTrialDays || 0) > 0
+    && ["cancelled", "canceled", "paused", "past_due", "unpaid", "incomplete_expired"].includes(status);
+  if (isEndedDemo) return false;
   return Boolean(TIER_MODULES[tier]?.[moduleId]);
 }
 

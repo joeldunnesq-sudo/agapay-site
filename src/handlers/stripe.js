@@ -105,6 +105,7 @@ export async function handleSubscriptionCheckout(request, env, reference) {
     registration,
     body,
     returnPath: "/admin",
+    allowTrial: true,
     saveRegistrationRecord
   });
   let payload = null;
@@ -115,11 +116,17 @@ export async function handleSubscriptionCheckout(request, env, reference) {
   }
   if (!response.ok || !payload?.registration) return response;
 
-  const audited = appendAdminAudit(payload.registration, "subscription_checkout_created", adminContext.actor, {
+  const audited = appendAdminAudit(
+    payload.registration,
+    payload.registration.subscriptionTrialDays ? "subscription_demo_checkout_created" : "subscription_checkout_created",
+    adminContext.actor,
+    {
     subscriptionTier: payload.registration.subscriptionTier || "",
     subscriptionStatus: payload.registration.subscriptionStatus || "",
+    trialDays: payload.registration.subscriptionTrialDays || 0,
     checkoutSessionId: payload.registration.stripeSubscriptionCheckoutSessionId || ""
-  });
+    }
+  );
   await saveRegistrationRecord(env, reference, audited, payload.registration);
   payload.registration = audited;
   return json(payload, { status: response.status });
@@ -182,7 +189,7 @@ export async function verifyStripeWebhookWithAnySecret(payload, signatureHeader,
 }
 
 export function subscriptionStatusFromStripe(status) {
-  if (status === "active" || status === "trialing") return "active";
+  if (status === "active" || status === "trialing") return status;
   if (status === "past_due" || status === "unpaid") return "past_due";
   if (status === "canceled" || status === "incomplete_expired") return "cancelled";
   if (status === "paused") return "paused";
@@ -591,8 +598,10 @@ export async function processStripeWebhookEvent(env, event) {
     }
 
     const reference = object.metadata?.agapay_reference || object.client_reference_id || "";
+    const trialDays = Math.max(0, Number(object.metadata?.agapay_trial_days || 0));
     await updateSubscriptionRecord(env, reference, {
-      subscriptionStatus: "active",
+      subscriptionStatus: trialDays ? "trialing" : "active",
+      subscriptionTrialDays: trialDays,
       stripeCustomerId: object.customer || "",
       stripeSubscriptionId: object.subscription || "",
       stripeSubscriptionCheckoutSessionId: object.id || "",
@@ -670,11 +679,16 @@ export async function processStripeWebhookEvent(env, event) {
         : event.type === "customer.subscription.resumed"
           ? "active"
       : subscriptionStatusFromStripe(object.status);
+    const trialUpdates = {
+      subscriptionTrialStartedAt: object.trial_start ? new Date(object.trial_start * 1000).toISOString() : "",
+      subscriptionTrialEndsAt: object.trial_end ? new Date(object.trial_end * 1000).toISOString() : ""
+    };
     if (reference) {
       await updateSubscriptionRecord(env, reference, {
         subscriptionStatus: status,
         stripeSubscriptionId: object.id || "",
         stripeCustomerId: object.customer || "",
+        ...trialUpdates,
         ...tierUpdates
       });
     } else {
@@ -684,6 +698,7 @@ export async function processStripeWebhookEvent(env, event) {
           subscriptionStatus: status,
           stripeSubscriptionId: object.id || "",
           stripeCustomerId: object.customer || "",
+          ...trialUpdates,
           ...tierUpdates
         });
       }

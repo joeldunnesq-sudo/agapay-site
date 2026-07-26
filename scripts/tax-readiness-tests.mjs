@@ -20,6 +20,7 @@ import {
   taxReadinessCheckoutGate
 } from "../src/lib/tax-readiness.js";
 import { createSubscriptionCheckoutForRegistration } from "../src/lib/subscription-checkout.js";
+import { subscriptionReady } from "../src/lib/subscriptions.js";
 
 let failures = 0;
 function check(label, fn) {
@@ -114,6 +115,11 @@ check("gate: passes when verified + address complete + tax_ready_for_checkout", 
   const result = taxReadinessCheckoutGate({ status: "verified", ...COMPLETE_ADDRESS, taxReadinessStatus: "tax_ready_for_checkout" });
   assert.equal(result.ok, true);
 });
+check("subscription readiness: an explicit cancellation overrides an old Stripe subscription ID", () => {
+  assert.equal(subscriptionReady({ stripeSubscriptionId: "sub_old", subscriptionStatus: "cancelled" }), false);
+  assert.equal(subscriptionReady({ stripeSubscriptionId: "sub_trial", subscriptionStatus: "trialing" }), true);
+  assert.equal(subscriptionReady({ stripeSubscriptionId: "sub_legacy" }), true);
+});
 
 // ── End-to-end via the real createSubscriptionCheckoutForRegistration() ────
 const fakeRequest = { url: "https://agapay.app/api/admin/registrations/test-ref/subscription-checkout" };
@@ -199,6 +205,79 @@ await checkAsync("checkout: verified + complete address + tax_ready_for_checkout
     assert.equal(payload.ok, true);
     assert.equal(payload.checkoutUrl, "https://checkout.stripe.com/fake");
     assert.equal(calls.length, 2); // customer create + checkout session create
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+await checkAsync("checkout: admin-authorized demo creates a no-card trial that cancels if no payment method is added", async () => {
+  let checkoutBody = "";
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options = {}) => {
+    if (String(url).includes("/v1/checkout/sessions")) {
+      checkoutBody = String(options.body || "");
+      return { ok: true, json: async () => ({ id: "cs_trial123", url: "https://checkout.stripe.com/trial" }) };
+    }
+    throw new Error("Unexpected fetch: " + url);
+  };
+  try {
+    const registration = {
+      status: "verified", subscriptionTier: "parish", taxReadinessStatus: "tax_ready_for_checkout",
+      stripeCustomerId: "cus_existing", parishName: "St. Fiacre", ...COMPLETE_ADDRESS
+    };
+    const response = await createSubscriptionCheckoutForRegistration({
+      request: fakeRequest,
+      env: { STRIPE_SECRET_KEY: "sk_test_fake" },
+      reference: "test-ref",
+      registration,
+      body: { trialDays: 30 },
+      allowTrial: true,
+      saveRegistrationRecord: noopSave
+    });
+    const payload = await response.json();
+    const params = new URLSearchParams(checkoutBody);
+    assert.equal(response.status, 201);
+    assert.equal(payload.registration.subscriptionStatus, "trial_checkout_created");
+    assert.equal(payload.registration.subscriptionTrialDays, 30);
+    assert.equal(params.get("payment_method_collection"), "if_required");
+    assert.equal(params.get("subscription_data[trial_period_days]"), "30");
+    assert.equal(params.get("subscription_data[trial_settings][end_behavior][missing_payment_method]"), "cancel");
+    assert.equal(params.get("metadata[agapay_trial_days]"), "30");
+    assert.equal(params.get("subscription_data[metadata][agapay_trial_days]"), "30");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+await checkAsync("checkout: parish-supplied trialDays cannot create a free trial", async () => {
+  let checkoutBody = "";
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options = {}) => {
+    if (String(url).includes("/v1/checkout/sessions")) {
+      checkoutBody = String(options.body || "");
+      return { ok: true, json: async () => ({ id: "cs_paid123", url: "https://checkout.stripe.com/paid" }) };
+    }
+    throw new Error("Unexpected fetch: " + url);
+  };
+  try {
+    const registration = {
+      status: "verified", subscriptionTier: "parish", taxReadinessStatus: "tax_ready_for_checkout",
+      stripeCustomerId: "cus_existing", parishName: "St. Fiacre", ...COMPLETE_ADDRESS
+    };
+    const response = await createSubscriptionCheckoutForRegistration({
+      request: fakeRequest,
+      env: { STRIPE_SECRET_KEY: "sk_test_fake" },
+      reference: "test-ref",
+      registration,
+      body: { trialDays: 30 },
+      saveRegistrationRecord: noopSave
+    });
+    const payload = await response.json();
+    const params = new URLSearchParams(checkoutBody);
+    assert.equal(response.status, 201);
+    assert.equal(payload.registration.subscriptionStatus, "checkout_created");
+    assert.equal(params.has("subscription_data[trial_period_days]"), false);
+    assert.equal(params.has("payment_method_collection"), false);
   } finally {
     globalThis.fetch = originalFetch;
   }

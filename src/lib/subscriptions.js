@@ -83,10 +83,9 @@ export function subscriptionTier(registration = {}) {
 }
 
 export function subscriptionReady(registration = {}) {
-  return Boolean(
-    registration.subscriptionId ||
-    registration.stripeSubscriptionId ||
-    registration.subscriptionStatus === "active" ||
-    registration.billingStatus === "active"
-  );
+  const explicitStatus = String(registration.subscriptionStatus || registration.billingStatus || "").toLowerCase();
+  if (explicitStatus) return ["active", "trialing", "free_forever"].includes(explicitStatus);
+  // Backward compatibility for records created before subscription status
+  // was stored. Once an explicit status exists, it is authoritative.
+  return Boolean(registration.subscriptionId || registration.stripeSubscriptionId);
 }

@@ -13,6 +13,7 @@ export async function createSubscriptionCheckoutForRegistration({
   registration,
   body = {},
   returnPath = "/admin",
+  allowTrial = false,
   saveRegistrationRecord
 }) {
   const tierId = body.subscriptionTier || registration.subscriptionTier || defaultSubscriptionTier(registration);
@@ -44,6 +45,8 @@ export async function createSubscriptionCheckoutForRegistration({
   if (!gate.ok) return json(gate.body, { status: gate.status });
 
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+  const requestedTrialDays = allowTrial ? Math.trunc(Number(body.trialDays || 0)) : 0;
+  const trialDays = requestedTrialDays >= 1 && requestedTrialDays <= 90 ? requestedTrialDays : 0;
   let stripeCustomerId = registration.stripeCustomerId || "";
   if (!stripeCustomerId) {
     const customerForm = new URLSearchParams({
@@ -93,11 +96,19 @@ export async function createSubscriptionCheckoutForRegistration({
     "metadata[agapay_reference]": reference,
     "metadata[agapay_parish_id]": registration.parishId || slugify(registration.parishName),
     "metadata[agapay_subscription_tier]": tier.id,
+    "metadata[agapay_trial_days]": trialDays ? String(trialDays) : "",
     "subscription_data[metadata][agapay_reference]": reference,
     "subscription_data[metadata][agapay_parish_id]": registration.parishId || slugify(registration.parishName),
     "subscription_data[metadata][agapay_subscription_tier]": tier.id,
+    "subscription_data[metadata][agapay_trial_days]": trialDays ? String(trialDays) : "",
     "line_items[0][quantity]": "1"
   });
+
+  if (trialDays) {
+    checkoutForm.set("payment_method_collection", "if_required");
+    checkoutForm.set("subscription_data[trial_period_days]", String(trialDays));
+    checkoutForm.set("subscription_data[trial_settings][end_behavior][missing_payment_method]", "cancel");
+  }
 
   const configuredPriceId = tier.stripePriceEnv ? env[tier.stripePriceEnv] : "";
   if (configuredPriceId) {
@@ -134,7 +145,9 @@ export async function createSubscriptionCheckoutForRegistration({
     subscriptionTier: tier.id,
     subscriptionTierLabel: tier.label,
     subscriptionMonthlyCents: tier.monthlyCents,
-    subscriptionStatus: "checkout_created",
+    subscriptionStatus: trialDays ? "trial_checkout_created" : "checkout_created",
+    subscriptionTrialDays: trialDays || 0,
+    subscriptionTrialRequestedAt: trialDays ? new Date().toISOString() : "",
     stripeCustomerId,
     stripeSubscriptionCheckoutSessionId: session.body.id || "",
     stripeSubscriptionCheckoutCreatedAt: new Date().toISOString()

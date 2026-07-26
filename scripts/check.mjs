@@ -299,6 +299,8 @@ assert.ok(platformHome.includes("Giving transactions are processed and protected
 const canonicalChrome = await readFile("public/site-chrome.js", "utf8");
 assert.ok(canonicalChrome.indexOf('{ href: "/vision"') < canonicalChrome.indexOf('{ href: "/give"'), "canonical navigation should lead with Vision");
 assert.ok(canonicalChrome.includes('{ href: "/design", label: "AGAPAY Design"') && canonicalChrome.includes('return "design"'), "canonical navigation should include AGAPAY Design with an active route");
+assert.ok(canonicalChrome.includes('href="/register"') && canonicalChrome.includes("Start Free Demo"), "canonical marketing navigation should offer the free demo registration CTA");
+assert.ok(registerHtml.includes("free 30-day AGAPAY demo") && registerHtml.includes("No card is required"), "parish registration should explain the free demo terms");
 const designPage = await readFile("public/design.html", "utf8");
 assert.ok(designPage.includes("AGAPAY Design") && designPage.includes("site-chrome.js") && designPage.includes("Straightforward packages"), "AGAPAY Design should render as a canonical public product page");
 assert.ok(designPage.includes("/videos/design/chariot-concepts.webm") && designPage.includes("work-video-frame"), "AGAPAY Design should show the Chariot Concepts video preview");
@@ -385,6 +387,9 @@ const learnBillingLib = await readFile("src/learn/billing.js", "utf8");
 assert.ok(taxReadinessLib.includes("export function taxReadinessCheckoutGate"), "tax-readiness.js should export the checkout gate");
 assert.ok(taxReadinessLib.includes("export function withTaxReadinessDefaults"), "tax-readiness.js should export a non-destructive defaults helper");
 assert.ok(subscriptionCheckoutLib.includes("taxReadinessCheckoutGate(registration)"), "subscription-checkout.js should call the tax readiness gate");
+assert.ok(subscriptionCheckoutLib.includes('"subscription_data[trial_settings][end_behavior][missing_payment_method]", "cancel"'), "demo checkout should cancel at trial end when no payment method was added");
+assert.ok(stripeHandler.includes("allowTrial: true"), "the authenticated admin checkout route should be authorized to create demos");
+assert.ok(!parishHandler.includes("allowTrial: true"), "the parish checkout route must not be able to grant its own free trial");
 assert.ok(
   subscriptionCheckoutLib.indexOf("tier.monthlyCents === 0") < subscriptionCheckoutLib.indexOf("taxReadinessCheckoutGate(registration)"),
   "the free-tier early return must come BEFORE the tax readiness gate, so free/non-billable tiers bypass it entirely"
