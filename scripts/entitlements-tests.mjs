@@ -3,6 +3,7 @@ import {
   bookstoreEnabledFor,
   accountingEnabledFor,
   accountingTierFor,
+  directoryEnabledFor,
   entitlementsSummary,
   hasLegacyParishPlusAddOn,
   hasModuleAccess,
@@ -132,6 +133,14 @@ await test("sacramentsEnabledFor requires both parish opt-in AND module access",
   assert.equal(sacramentsEnabledFor({ subscriptionTier: "parish", sacramentsEnabled: true }), true);
   assert.equal(sacramentsEnabledFor({ subscriptionTier: "parish", sacramentsEnabled: false }), false);
   assert.equal(sacramentsEnabledFor({ subscriptionTier: "mission", sacramentsEnabled: true }), false);
+});
+
+await test("directoryEnabledFor requires the tier and both parish member-directory switches", async () => {
+  const enabled = { directoryEnabled: true, ordinaryMemberAccessEnabled: true };
+  assert.equal(directoryEnabledFor({ subscriptionTier: "parish" }, enabled), true);
+  assert.equal(directoryEnabledFor({ subscriptionTier: "giving" }, enabled), false);
+  assert.equal(directoryEnabledFor({ subscriptionTier: "parish" }, { ...enabled, directoryEnabled: false }), false);
+  assert.equal(directoryEnabledFor({ subscriptionTier: "parish" }, { ...enabled, ordinaryMemberAccessEnabled: false }), false);
 });
 
 await test("bookstoreEnabledFor defaults open (not explicitly false) once module access exists", async () => {

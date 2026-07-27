@@ -78,6 +78,12 @@ export function sacramentsEnabledFor(registration) {
   return Boolean(registration?.sacramentsEnabled) && hasModuleAccess(registration, "sacraments");
 }
 
+export function directoryEnabledFor(registration, settings = {}) {
+  return Boolean(settings?.directoryEnabled)
+    && Boolean(settings?.ordinaryMemberAccessEnabled)
+    && hasModuleAccess(registration, "directory");
+}
+
 export function bookstoreEnabledFor(registration) {
   return registration?.bookstoreEnabled !== false && hasModuleAccess(registration, "bookstore");
 }

@@ -162,7 +162,7 @@ assert.ok(myAgapayShell.includes('id: "giving"') && myAgapayShell.includes('labe
 assert.ok(myAgapayShell.includes('id: "commemorations"') && myAgapayShell.includes('label: "Sacraments & Services"'), "shared My AGAPAY shell should define the merged Sacraments & Services product tab");
 assert.ok(myAgapayShell.includes('id: "today"') && myAgapayShell.includes('label: "Today"'), "shared My AGAPAY shell should define the Today product tab");
 assert.ok(myAgapayShell.includes('id: "directory"') && myAgapayShell.includes('label: "Directory"'), "shared My AGAPAY shell should define Directory as a standard product tab");
-assert.ok(myAgapayShell.includes('id: "learn"') && myAgapayShell.includes('label: "Learn"') && myAgapayShell.includes('mobileTabHidden: true'), "shared My AGAPAY shell should keep Learn available in the desktop product nav");
+assert.ok(myAgapayShell.includes('id: "learn"') && myAgapayShell.includes('label: "Learn"') && myAgapayShell.includes("visibleProducts()"), "shared My AGAPAY shell should keep Learn available in the desktop product nav");
 assert.ok(myAgapayShell.includes('id: "bookstore"') && myAgapayShell.includes('label: "Bookstore"'), "shared My AGAPAY shell should define the canonical Bookstore product tab");
 assert.ok(
   myAgapayShell.indexOf('id: "giving"') < myAgapayShell.indexOf('id: "commemorations"') &&
@@ -176,6 +176,11 @@ assert.ok(!myAgapayShell.includes('id: "home"'), "shared My AGAPAY shell should 
 assert.ok(myAgapayShell.includes('pathname === "/myagapay"') && myAgapayShell.includes('return "giving"'), "shared My AGAPAY shell should make /myagapay resolve to the Give product");
 assert.ok(myAgapayShell.includes('pathname.startsWith("/myagapay/directory")') && myAgapayShell.includes('return "directory"'), "shared My AGAPAY shell should make /myagapay/directory resolve to the Directory product");
 assert.ok(!myAgapayShell.includes('data-myagapay-launch-gated') && !myAgapayShell.includes('release-flags'), "shared My AGAPAY shell should not gate Marketplace or Directory behind launch controls");
+assert.ok(myAgapayShell.includes('parishFeature: "sacramentsEnabled"'), "shared My AGAPAY shell should gate Sacraments & Services on the parish capability");
+assert.ok(myAgapayShell.includes('parishFeature: "directoryEnabled"'), "shared My AGAPAY shell should gate Directory on the parish capability");
+assert.ok(myAgapayShell.includes('mobileFallbackFor: "sacramentsEnabled"') && myAgapayShell.includes('label: "History"'), "Giving History should replace unavailable Sacraments & Services in the bottom nav");
+assert.ok(myAgapayShell.includes('mobileFallbackFor: "directoryEnabled"') && myAgapayShell.includes('label: "Learn"'), "Learn should replace unavailable Directory in the bottom nav");
+assert.ok(myAgapayShell.includes('fetch("/api/donor/dashboard"'), "shared My AGAPAY shell should load the donor home parish capabilities");
 assert.ok(myAgapayShell.includes('data-myagapay-global-nav') && myAgapayShell.includes("normalizeProductNavs"), "shared shell should normalize mobile product navigation across dashboards");
 assert.ok(myAgapayShell.includes(".unified-product-nav") && myAgapayShell.includes("Bookstore") && myAgapayShell.includes("Feast day and readings"), "shared shell should normalize the desktop My AGAPAY sidebar from the same product tabs");
 assert.ok(myAgapayShell.includes("isLikelyMobileBrowser") && myAgapayShell.includes("pointer: coarse"), "shared shell should use browser capability signals before choosing the mobile My AGAPAY viewport");

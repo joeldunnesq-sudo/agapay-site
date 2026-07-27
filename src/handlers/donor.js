@@ -39,7 +39,8 @@ import {
   subscriptionTier,
 } from "../lib/subscriptions.js";
 
-import { bookstoreEnabledFor, hasParishPlusAccess, sacramentsEnabledFor } from "../lib/entitlements.js";
+import { bookstoreEnabledFor, directoryEnabledFor, hasParishPlusAccess, sacramentsEnabledFor } from "../lib/entitlements.js";
+import { getDirectorySettings } from "../directory/settings.js";
 
 import {
   resolveSettlementProfileId,
@@ -884,7 +885,13 @@ export async function handleDonorDashboard(request, env) {
   let parish = null;
   if (donor.defaultParishId) {
     const found = await findRegistrationByParishId(env, donor.defaultParishId);
-    if (found) parish = parishFromRegistration(found.registration);
+    if (found) {
+      parish = parishFromRegistration(found.registration);
+      if (parish) {
+        const directorySettings = await getDirectorySettings(env, parish.id);
+        parish.directoryEnabled = directoryEnabledFor(found.registration, directorySettings);
+      }
+    }
     if (parish) parish = await enrichParishGivingOptions(env, parish);
     if (parish) parish = attachDonorCampaignGiving(parish, offerings);
   }

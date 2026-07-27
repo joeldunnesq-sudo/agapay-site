@@ -26,13 +26,34 @@
   function products() {
     const items = [
       { id: "giving", href: "/myagapay/dashboard", label: "Give", short: "Giving dashboard", icon: icons.give },
-      { id: "commemorations", href: "/myagapay/sacraments", label: "Sacraments & Services", short: "Requests and prayer", icon: icons.sacraments },
+      { id: "commemorations", href: "/myagapay/sacraments", label: "Sacraments & Services", short: "Requests and prayer", icon: icons.sacraments, parishFeature: "sacramentsEnabled" },
+      { id: "history", href: "/myagapay/giving/history", label: "History", short: "Giving history", icon: icons.history, mobileFallbackFor: "sacramentsEnabled", desktopHidden: true },
       { id: "today", href: "/myagapay/giving/calendar", label: "Today", short: "Feast day and readings", icon: icons.today },
-      { id: "directory", href: "/myagapay/directory", label: "Directory", short: "Parish member directory", icon: icons.directory },
+      { id: "directory", href: "/myagapay/directory", label: "Directory", short: "Parish member directory", icon: icons.directory, parishFeature: "directoryEnabled" },
       { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore },
-      { id: "learn", href: "/myagapay/learn", label: "Learn", short: "Homeschool dashboard", icon: icons.learn, mobileTabHidden: true }
+      { id: "learn", href: "/myagapay/learn", label: "Learn", short: "Homeschool dashboard", icon: icons.learn, mobileFallbackFor: "directoryEnabled" }
     ];
     return items;
+  }
+
+  let parishCapabilities = {
+    sacramentsEnabled: false,
+    directoryEnabled: false
+  };
+
+  function visibleProducts() {
+    return products().filter((item) => {
+      if (item.desktopHidden) return false;
+      return !item.parishFeature || parishCapabilities[item.parishFeature] === true;
+    });
+  }
+
+  function mobileProducts() {
+    return products().filter((item) => {
+      if (item.parishFeature) return parishCapabilities[item.parishFeature] === true;
+      if (item.mobileFallbackFor) return parishCapabilities[item.mobileFallbackFor] !== true;
+      return true;
+    });
   }
 
   function activeProduct(pathname = window.location.pathname) {
@@ -224,10 +245,12 @@
     // mobileTabHidden items there so a 6th product
     // never wraps onto an ugly second row. The full list still appears in
     // the desktop sidebar, which has room.
-    const navProducts = isDesktopSideNav ? products() : products().filter((item) => !item.mobileTabHidden);
-    const navAttrs = isDesktopSideNav ? ' hx-boost="false"' : "";
+    const navProducts = isDesktopSideNav ? visibleProducts() : mobileProducts();
+    const navAttrs = isDesktopSideNav
+      ? ' hx-boost="false"'
+      : ` style="grid-template-columns:repeat(${Math.max(navProducts.length, 1)},minmax(0,1fr))"`;
     const productLinks = navProducts.map((item) => {
-      const current = item.id === active;
+      const current = item.id === active || (item.id === "history" && active === "account");
       const activeClass = current ? (isLearnNav ? "is-active" : "active") : "";
       const label = isDesktopSideNav ? `<span><strong>${item.label}</strong><small>${item.short}</small></span>` : `<span>${item.label}</span>`;
       return `<a class="${activeClass}" href="${item.href}"${current ? ' aria-current="page"' : ""}>${item.icon}${label}</a>`;
@@ -250,6 +273,37 @@
       holder.innerHTML = productNav(active, className);
       nav.replaceWith(holder.firstElementChild);
     });
+  }
+
+  function setParishCapabilities(parish = null) {
+    parishCapabilities = {
+      sacramentsEnabled: Boolean(parish?.sacramentsEnabled),
+      directoryEnabled: Boolean(parish?.directoryEnabled)
+    };
+    normalizeProductNavs();
+    window.dispatchEvent(new CustomEvent("myagapay:parish-capabilities", {
+      detail: { ...parishCapabilities }
+    }));
+  }
+
+  async function loadParishCapabilities() {
+    const current = session();
+    if (!current.email || !current.token) {
+      setParishCapabilities(null);
+      return;
+    }
+    try {
+      const response = await fetch("/api/donor/dashboard", {
+        headers: authHeaders(),
+        cache: "no-store"
+      });
+      if (handleUnauthorized(response)) return;
+      if (!response.ok) throw new Error("Unable to load parish features");
+      const payload = await response.json();
+      setParishCapabilities(payload.parish || null);
+    } catch {
+      setParishCapabilities(null);
+    }
   }
 
   function session() {
@@ -315,6 +369,7 @@
     isProtectedPath,
     normalizeProductNavs,
     productNav,
+    setParishCapabilities,
     redirectToLogin,
     session,
     syncAuthVisibility,
@@ -363,6 +418,7 @@
     if (isProtectedPath()) {
       const current = session();
       if (!current.email || !current.token) redirectToLogin("sign-in-required");
+      else loadParishCapabilities();
     }
   });
 
