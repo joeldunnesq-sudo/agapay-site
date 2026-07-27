@@ -81,6 +81,7 @@ await assert.rejects(access("public/_routes.json"), undefined, "Wrangler Worker 
 await assert.rejects(access("public/donor/verify.html"), undefined, "static donor verify HTML should not shadow the Worker route");
 
 const registerHtml = await readFile("public/register.html", "utf8");
+const parishOnboardingGuide = await readFile("public/docs/AGAPAY-Stripe-Setup-Guide.pdf");
 assert.ok(!registerHtml.includes("WEB3FORMS_KEY"), "registration should not expose Web3Forms key");
 assert.ok(registerHtml.includes("/api/registrations"), "registration should post to AgaPay API");
 assert.ok(registerHtml.includes("startDonorRegistration"), "registration should begin with a donor/family entry point");
@@ -88,6 +89,12 @@ assert.ok(registerHtml.includes("startOrganizationRegistration"), "registration 
 assert.ok(registerHtml.includes("organizationDescription"), "registration should collect values-review copy when needed");
 assert.ok(registerHtml.includes("requiresJurisdiction"), "registration should branch required fields by organization type");
 assert.ok(registerHtml.includes("requiresWebsite"), "registration should require websites for businesses");
+assert.ok(registerHtml.includes('id="subscriptionTier"') && registerHtml.includes("Starter — $9/month") && registerHtml.includes("Parish — $149/month"), "registration should require a current starting-tier choice");
+assert.ok(registerHtml.includes("subscriptionTier: document.getElementById('subscriptionTier').value"), "registration should submit the selected starting tier");
+assert.ok(parishHandler.includes('requiredFields') && parishHandler.includes('"subscriptionTier"') && parishHandler.includes("validTierForCommunity"), "registration backend should validate the selected tier for the community type");
+assert.ok(parishHandler.includes("loadParishOnboardingGuideAttachment") && parishHandler.includes("currentGuideAttachment"), "new-parish email should attach the same current guide served by the dashboard");
+assert.equal(parishOnboardingGuide.subarray(0, 4).toString(), "%PDF", "parish onboarding guide should be a real PDF");
+assert.ok(parishOnboardingGuide.length > 10000, "parish onboarding guide should contain the complete current setup guide");
 
 const onboardingPage = await readFile("public/onboarding.html", "utf8");
 assert.ok(onboardingPage.includes("Register your Orthodox parish.") && onboardingPage.includes("Register Parish"), "onboarding page should present parish registration only for now");
