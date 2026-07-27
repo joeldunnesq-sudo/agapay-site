@@ -659,14 +659,13 @@
   }
 
   function hasGivingPlusAccess() {
-    if (currentParish?.entitlements) return Boolean(currentParish.entitlements.modules?.givingPlus?.included);
+    if (currentParish?.entitlements) return Boolean(currentParish.entitlements.givingFeatures?.branding);
     return String(currentParish?.subscriptionTier || '').toLowerCase() !== 'starter';
   }
 
   const starterLockedFeatures = {
     options: ['Custom funds & alms', 'Create and name custom funds, organize designated giving, and manage standing alms with Giving Plus.'],
     campaigns: ['Campaign pages', 'Create goal-based, shareable campaigns with Giving Plus.'],
-    qr: ['QR code toolkit', 'Download bulletin-ready QR codes and giving materials with Giving Plus.'],
     givers: ['Giver insights', 'See donor-level history and deeper giving reports with Giving Plus.'],
     reconcile: ['Monthly reconciliation', 'Match gifts, fees, refunds, and Stripe deposits with Giving Plus.'],
     commemorations: ['Commemorations', 'Candles, liturgical commemorations, Moliebens, Panikhidas, and the priest queue are included with Giving Plus.'],
@@ -688,7 +687,6 @@
     const targets = {
       options: document.getElementById('tab-options'),
       campaigns: document.getElementById('tab-campaigns'),
-      qr: document.getElementById('tab-qr'),
       givers: document.getElementById('tab-givers'),
       reconcile: document.getElementById('tab-reconcile'),
       commemorations: document.getElementById('commemorationQueueCard'),
@@ -6092,17 +6090,23 @@
         <div class="form-group full">
           <label class="form-label">Parish logo</label>
           <div class="parish-logo-settings">
-            ${p.logoUrl
+            ${!hasGivingPlusAccess()
+              ? `<div class="parish-logo-preview parish-logo-placeholder">Giving Plus<br>feature</div>
+                <div>
+                  <p class="section-note">Add your parish logo to the dashboard, public giving pages, campaign pages, and church search with Giving Plus. Any logo previously uploaded is preserved and will reappear if you upgrade.</p>
+                  <button class="btn btn-gold" type="button" onclick="switchTab('settings')">Upgrade to Giving Plus</button>
+                </div>`
+              : p.logoUrl
               ? `<img class="parish-logo-preview" src="${escapeHtml(p.logoUrl)}" alt="${escapeHtml((p.parishName || 'Parish') + ' logo')}" />`
               : '<div class="parish-logo-preview parish-logo-placeholder">No logo<br>uploaded</div>'}
-            <div>
+            ${hasGivingPlusAccess() ? `<div>
               <div class="parish-logo-actions">
                 <input id="parishLogoFile" type="file" accept="image/png,image/jpeg,image/webp" />
                 <button class="btn btn-gold" type="button" onclick="uploadParishLogo(this)">Upload logo</button>
                 ${p.logoUrl ? '<button class="btn btn-ghost" type="button" onclick="removeParishLogo(this)">Remove</button>' : ''}
               </div>
               <p class="section-note">PNG, JPG, or WebP, up to 5MB. A square image with a transparent or white background works best. Your logo appears on the dashboard, giving pages, campaigns, and church search.</p>
-            </div>
+            </div>` : ''}
           </div>
         </div>
         <div class="form-group full"><label class="form-label" for="parishName">Parish name</label><input id="parishName" value="${escapeHtml(p.parishName||'')}" placeholder="Parish name" /></div>

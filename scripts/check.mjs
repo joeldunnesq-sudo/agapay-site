@@ -268,21 +268,42 @@ const subscriptionCatalog = await readFile("src/lib/subscriptions.js", "utf8");
 assert.ok(
   subscriptionCatalog.includes('id: "starter"')
     && subscriptionCatalog.includes("monthlyCents: 900")
+    && subscriptionCatalog.includes("monthlyCents: 14900")
     && subscriptionCatalog.includes('label: "Giving Plus"'),
-  "subscription catalog should expose Starter at $9 while preserving Giving as Giving Plus"
+  "subscription catalog should expose Starter at $9, Giving Plus, and Parish at $149"
 );
 assert.ok(
   givePricingHtml.includes('<h2 class="tier-title">Starter</h2>')
     && givePricingHtml.includes('<div class="tier-price">$9 <span>/ mo</span></div>')
-    && givePricingHtml.includes('<h2 class="tier-title">Giving Plus</h2>'),
-  "Give pricing should show Starter and Giving Plus as distinct tiers"
+    && givePricingHtml.includes('<h2 class="tier-title">Giving Plus</h2>')
+    && givePricingHtml.includes('<div class="tier-price">$149 <span>/ mo</span></div>')
+    && givePricingHtml.includes("Everything in Starter, plus")
+    && givePricingHtml.includes("Parish logo across giving pages and church search")
+    && !givePricingHtml.includes("Parish logo, public page, and church search listing")
+    && ["Small mission chapel", "Parish church", "Domed Orthodox church", "Large three-domed Orthodox church"].every((label) => givePricingHtml.includes(`aria-label="${label}"`)),
+  "Give pricing should show the $149 Parish plan and progressively larger church icons"
 );
 assert.ok(
   parishDashboardApp.includes("function updateStarterPaywalls()")
     && parishDashboardApp.includes("Upgrade to Giving Plus")
-    && parishDashboardApp.includes("modules?.givingPlus?.included"),
+    && parishDashboardApp.includes("givingFeatures?.branding"),
   "Starter dashboard should preview locked Giving Plus features with an upgrade paywall"
 );
+assert.ok(
+  parishHandler.includes('Parish logo branding is available with Giving Plus.')
+    && parishHandler.includes('logoUrl: givingPlus ? registration.logoUrl || "" : ""')
+    && parishDashboardApp.includes("Any logo previously uploaded is preserved"),
+  "parish logo branding should be preserved but displayed and uploaded only with Giving Plus"
+);
+for (const enforcement of [
+  "Campaigns are available with Giving Plus.",
+  "Commemorations are available with Giving Plus.",
+  "Monthly reconciliation is available with Giving Plus.",
+  "Recurring-gift insights are available with Giving Plus.",
+  "Custom funds and campaigns are available with Giving Plus."
+]) {
+  assert.ok(parishHandler.includes(enforcement), `backend should enforce tier access: ${enforcement}`);
+}
 assert.ok(giveHtml.includes("/api/create-checkout-session"), "giving page should post to checkout API");
 assert.ok(giveHtml.includes("/api/checkout-session-status"), "giving page should reconcile returned Stripe checkout sessions");
 assert.ok(giveHtml.includes("/api/parishes"), "giving page should load registered parishes from the Worker API");

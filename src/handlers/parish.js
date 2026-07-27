@@ -67,7 +67,7 @@ import {
 } from "../lib/core.js";
 import { loadGivingCatalogFromAccounting, synchronizeGivingCatalogWithAccounting } from "../accounting/source-wiring.js";
 
-import { bookstoreEnabledFor, entitlementsSummary, hasParishPlusAccess, sacramentsEnabledFor, stewardshipToolAccess, tierIncludesModule, tierIncludesParishPlus } from "../lib/entitlements.js";
+import { bookstoreEnabledFor, entitlementsSummary, givingFeatureAccess, hasParishPlusAccess, sacramentsEnabledFor, stewardshipToolAccess, tierIncludesModule, tierIncludesParishPlus } from "../lib/entitlements.js";
 
 import {
   createTaxExemptionClaim,
@@ -1751,7 +1751,7 @@ export function parishFromRegistration(registration) {
   if (!id || registration.status !== "verified") return null;
   if (registration.givingStatus && registration.givingStatus !== "active") return null;
   const type = normalizeCommunityType(registration.communityType);
-  const givingPlus = tierIncludesModule(registration, "givingPlus");
+  const givingPlus = givingFeatureAccess(registration, "branding");
 
   return {
     id,
@@ -1764,9 +1764,9 @@ export function parishFromRegistration(registration) {
     status: "verified",
     givingStatus: registration.givingStatus || "active",
     source: "registration",
-    logoUrl: registration.logoUrl || "",
-    imageUrl: registration.logoUrl || registration.imageUrl || registration.photoUrl || communitySketchImage(type),
-    imageAlt: registration.logoUrl
+    logoUrl: givingPlus ? registration.logoUrl || "" : "",
+    imageUrl: (givingPlus ? registration.logoUrl : "") || registration.imageUrl || registration.photoUrl || communitySketchImage(type),
+    imageAlt: givingPlus && registration.logoUrl
       ? `${registration.parishName || "Orthodox community"} logo`
       : registration.imageAlt || communitySketchAlt(type),
     liturgicalCalendar: registration.liturgicalCalendar || "julian",
@@ -2583,6 +2583,9 @@ export async function handleParishCampaignUpload(request, env, parishId) {
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
   const token = getBearerToken(request);
   if (!(await verifyParishDashboardBearer(found.registration, token))) return unauthorized();
+  if (!givingFeatureAccess(found.registration, "campaigns")) {
+    return json({ error: "Campaigns are available with Giving Plus." }, { status: 403 });
+  }
 
   if (!env.CAMPAIGN_ASSETS || !env.CAMPAIGN_ASSETS_URL) {
     return json({ error: "Campaign photo storage is not configured." }, { status: 503 });
@@ -2645,6 +2648,9 @@ export async function handleParishLogo(request, env, parishId) {
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
   const token = getBearerToken(request);
   if (!(await verifyParishDashboardBearer(found.registration, token))) return unauthorized();
+  if (request.method === "POST" && !givingFeatureAccess(found.registration, "branding")) {
+    return json({ error: "Parish logo branding is available with Giving Plus." }, { status: 403 });
+  }
   if (!env.CAMPAIGN_ASSETS || !env.CAMPAIGN_ASSETS_URL) {
     return json({ error: "Parish logo storage is not configured." }, { status: 503 });
   }
@@ -3965,6 +3971,9 @@ export async function handleParishCommemorations(request, env, parishId) {
   if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
   }
+  if (!givingFeatureAccess(found.registration, "commemorations")) {
+    return json({ error: "Commemorations are available with Giving Plus." }, { status: 403 });
+  }
 
   const { start, end } = weekWindow();
   const entries = await loadCommemorationEntries(env, parishId, start, end);
@@ -4449,6 +4458,9 @@ export async function handleParishReconciliation(request, env, parishId) {
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
   const token = getBearerToken(request);
   if (!(await verifyParishDashboardBearer(found.registration, token))) return unauthorized();
+  if (!givingFeatureAccess(found.registration, "reconciliation")) {
+    return json({ error: "Monthly reconciliation is available with Giving Plus." }, { status: 403 });
+  }
 
   const url = new URL(request.url);
   const period = reconciliationPeriod(url.searchParams.get("month"));
@@ -4727,6 +4739,9 @@ export async function handleParishReconciliationClose(request, env, parishId) {
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
   const token = getBearerToken(request);
   if (!(await verifyParishDashboardBearer(found.registration, token))) return unauthorized();
+  if (!givingFeatureAccess(found.registration, "reconciliation")) {
+    return json({ error: "Monthly reconciliation is available with Giving Plus." }, { status: 403 });
+  }
 
   let body;
   try { body = await request.json(); } catch { return json({ error: "Invalid JSON body" }, { status: 400 }); }
@@ -5013,6 +5028,9 @@ export async function handleParishRecurringHealth(request, env, parishId) {
   const token = getBearerToken(request);
   if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
+  }
+  if (!givingFeatureAccess(found.registration, "giverInsights")) {
+    return json({ error: "Recurring-gift insights are available with Giving Plus." }, { status: 403 });
   }
 
   const records = await loadParishRecurringOfferings(env, parishId, 1000);
@@ -5743,10 +5761,11 @@ export async function disputeCommerceOrderFromStripe(env, dispute = {}, phase = 
 
 export function parishDashboardPayload(parishId, registration) {
   const currentTier = subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration));
+  const givingPlus = givingFeatureAccess(registration, "branding");
   return {
     parishId,
     parishName: registration.parishName,
-    logoUrl: registration.logoUrl || "",
+    logoUrl: givingPlus ? registration.logoUrl || "" : "",
     communityType: registration.communityType,
     jurisdiction: registration.jurisdiction,
     sacramentsEnabled: Boolean(registration.sacramentsEnabled),
@@ -5836,7 +5855,6 @@ export async function handleParishDashboard(request, env, parishId) {
   if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
   }
-
   if (request.method === "POST") {
     const body = await request.json().catch(() => null);
     if (!body || typeof body !== "object") return json({ error: "Support request was invalid." }, { status: 400 });
@@ -5870,7 +5888,7 @@ export async function handleParishDashboard(request, env, parishId) {
     }
 
     const current = found.registration;
-    const givingPlus = tierIncludesModule(current, "givingPlus");
+    const givingPlus = givingFeatureAccess(current, "customFunds");
     if (!givingPlus && (body.funds !== undefined || body.campaigns !== undefined || body.feastCampaigns !== undefined)) {
       return json({ error: "Custom funds and campaigns are available with Giving Plus." }, { status: 403 });
     }

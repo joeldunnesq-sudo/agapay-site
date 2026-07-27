@@ -5,6 +5,7 @@ import {
   accountingTierFor,
   directoryEnabledFor,
   entitlementsSummary,
+  givingFeatureAccess,
   hasLegacyParishPlusAddOn,
   hasModuleAccess,
   hasParishPlusAccess,
@@ -41,6 +42,13 @@ await test("Starter provides core giving without Giving Plus features", async ()
   assert.equal(tierIncludesModule(reg, "stewardshipHealth"), false);
   assert.equal(entitlementsSummary(reg).modules.givingPlus.included, false);
   assert.equal(tierIncludesModule({ subscriptionTier: "giving" }, "givingPlus"), true);
+  for (const feature of ["branding", "customFunds", "campaigns", "commemorations", "annualStatements", "reconciliation", "giverInsights"]) {
+    assert.equal(givingFeatureAccess(reg, feature), false);
+    assert.equal(givingFeatureAccess({ subscriptionTier: "giving" }, feature), true);
+  }
+  assert.equal(givingFeatureAccess(reg, "basicGiving"), true);
+  assert.equal(givingFeatureAccess(reg, "qrToolkit"), true);
+  assert.equal(entitlementsSummary(reg).givingFeatures.branding, false);
 });
 
 await test("Accounting remains unavailable outside the private Parish demo", async () => {

@@ -27,6 +27,17 @@ const TIER_MODULES = {
   monastery_free: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingAdvancedOperations: false }
 };
 const MODULE_IDS = ["stewardshipHealth", "sacraments", "directory", "bookstore", "textToGive"];
+export const GIVING_FEATURES = Object.freeze({
+  basicGiving: null,
+  branding: "givingPlus",
+  customFunds: "givingPlus",
+  campaigns: "givingPlus",
+  commemorations: "givingPlus",
+  annualStatements: "givingPlus",
+  reconciliation: "givingPlus",
+  giverInsights: "givingPlus",
+  qrToolkit: null
+});
 
 export function normalizedSubscriptionTier(registration) {
   const tier = String(registration?.subscriptionTier || "").toLowerCase();
@@ -40,6 +51,12 @@ export function tierIncludesModule(registration, moduleId) {
     && ["cancelled", "canceled", "paused", "past_due", "unpaid", "incomplete_expired"].includes(status);
   if (isEndedDemo) return false;
   return Boolean(TIER_MODULES[tier]?.[moduleId]);
+}
+
+export function givingFeatureAccess(registration, featureId) {
+  if (!Object.prototype.hasOwnProperty.call(GIVING_FEATURES, featureId)) return false;
+  const requiredModule = GIVING_FEATURES[featureId];
+  return requiredModule === null || tierIncludesModule(registration, requiredModule);
 }
 
 // Back-compat convenience: "Parish +" as a bundle, true if the parish's
@@ -149,6 +166,9 @@ export function entitlementsSummary(registration) {
         advancedOperationsIncluded: accountingTierFor(registration) === "advanced_operations",
         source: tierIncludesModule(registration, "accounting") ? "tier" : "none"
       }
-    }
+    },
+    givingFeatures: Object.fromEntries(
+      Object.keys(GIVING_FEATURES).map((featureId) => [featureId, givingFeatureAccess(registration, featureId)])
+    )
   };
 }

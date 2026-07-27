@@ -2366,7 +2366,7 @@ let selectedReference = '';
                 <select id="subscriptionTier">
                   <option value="giving" ${['giving','mission'].includes(reg.subscriptionTier || '') ? 'selected' : ''}>Giving - $49/mo, no donation fee</option>
                   <option value="stewardship" ${(reg.subscriptionTier || '') === 'stewardship' ? 'selected' : ''}>Stewardship - $99/mo, no donation fee</option>
-                  <option value="parish" ${(!reg.subscriptionTier || reg.subscriptionTier === 'parish') ? 'selected' : ''}>Parish - $199/mo, no donation fee</option>
+                  <option value="parish" ${(!reg.subscriptionTier || reg.subscriptionTier === 'parish') ? 'selected' : ''}>Parish - $149/mo, no donation fee</option>
                   <option value="diocese" ${reg.subscriptionTier === 'diocese' ? 'selected' : ''}>Cathedral / Diocese - negotiated subscription, no donation fee</option>
                   <option value="monastery_free" ${reg.subscriptionTier === 'monastery_free' ? 'selected' : ''}>Monastery / Skete - no monthly fee, no donation fee</option>
                 </select>

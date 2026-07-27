@@ -2979,7 +2979,7 @@ export default {
         communityType: "Parish",
         subscriptionTier: "parish",
         subscriptionTierLabel: "Parish",
-        subscriptionMonthlyCents: 19900,
+        subscriptionMonthlyCents: 14900,
         subscriptionStatus: baseRegistration.subscriptionStatus || "active",
         givingFunds: demoFunds,
         campaigns: demoCampaigns,

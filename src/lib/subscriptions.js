@@ -38,9 +38,11 @@ export const subscriptionTiers = [
   {
     id: "parish",
     label: "Parish",
-    monthlyCents: 19900,
+    monthlyCents: 14900,
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
-    stripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_MONTHLY",
+    // Version the binding when the published price changes so an older
+    // Cloudflare secret can never silently charge the previous $199 rate.
+    stripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_149_MONTHLY",
     description: "Monthly AGAPAY platform subscription for established parishes.",
     modules: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, textToGive: true, accounting: true, accountingTier: "advanced_operations" }
   },
