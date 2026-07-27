@@ -34,8 +34,8 @@
       || campaign.imageUrl
       || campaign.photoUrl
       || firstPhotoUrl(campaign.photos)
-      || parish.imageUrl
       || parish.logoUrl
+      || parish.imageUrl
       || "";
   }
 
@@ -364,7 +364,7 @@
       renderHero(campaign, parish);
 
       const parishName = parish.name || "Orthodox Parish";
-      const parishImage = parish.imageUrl || parish.logoUrl || "";
+      const parishImage = parish.logoUrl || parish.imageUrl || "";
       const initials = parishName.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
       el("headerParishName").textContent = parishName;
       if (parishImage) {

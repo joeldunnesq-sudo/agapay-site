@@ -123,6 +123,7 @@ import {
   handleParishSession,
   handleParishes,
   handleParishCampaignUpload,
+  handleParishLogo,
   handlePublicPlatformSummary,
   handlePublicCampaign,
   handleRegistrations,
@@ -3315,6 +3316,10 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/campaign-upload")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/campaign-upload", ""));
       return handleParishCampaignUpload(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/logo")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/logo", ""));
+      return handleParishLogo(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship", ""));

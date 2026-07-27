@@ -1759,8 +1759,11 @@ export function parishFromRegistration(registration) {
     status: "verified",
     givingStatus: registration.givingStatus || "active",
     source: "registration",
-    imageUrl: registration.imageUrl || registration.photoUrl || communitySketchImage(type),
-    imageAlt: registration.imageAlt || communitySketchAlt(type),
+    logoUrl: registration.logoUrl || "",
+    imageUrl: registration.logoUrl || registration.imageUrl || registration.photoUrl || communitySketchImage(type),
+    imageAlt: registration.logoUrl
+      ? `${registration.parishName || "Orthodox community"} logo`
+      : registration.imageAlt || communitySketchAlt(type),
     liturgicalCalendar: registration.liturgicalCalendar || "julian",
     recurringGivingEnabled: registration.recurringGivingEnabled ?? true,
     candlesEnabled: registration.candlesEnabled ?? true,
@@ -2618,6 +2621,75 @@ export async function handleParishCampaignUpload(request, env, parishId) {
     contentType,
     size: bytes.byteLength
   });
+}
+
+export async function handleParishLogo(request, env, parishId) {
+  if (!["POST", "DELETE"].includes(request.method)) {
+    return json({ error: "Method not allowed" }, { status: 405 });
+  }
+  const limited = await rateLimit(request, env, "parish-logo", { limit: 12, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+  const token = getBearerToken(request);
+  if (!(await verifyParishDashboardBearer(found.registration, token))) return unauthorized();
+  if (!env.CAMPAIGN_ASSETS || !env.CAMPAIGN_ASSETS_URL) {
+    return json({ error: "Parish logo storage is not configured." }, { status: 503 });
+  }
+
+  const previousKey = String(found.registration.logoStorageKey || "");
+  if (request.method === "DELETE") {
+    const updated = {
+      ...found.registration,
+      logoUrl: "",
+      logoStorageKey: "",
+      parishUpdatedAt: new Date().toISOString()
+    };
+    await saveRegistrationRecord(env, found.key, updated, found.registration);
+    if (previousKey) await env.CAMPAIGN_ASSETS.delete(previousKey);
+    return json({ ok: true, logoUrl: "" });
+  }
+
+  const contentType = String(request.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+  const allowed = new Map([
+    ["image/jpeg", "jpg"],
+    ["image/png", "png"],
+    ["image/webp", "webp"]
+  ]);
+  const ext = allowed.get(contentType);
+  if (!ext) return json({ error: "Logo must be a JPG, PNG, or WebP image." }, { status: 415 });
+
+  const maxBytes = 5 * 1024 * 1024;
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (contentLength && contentLength > maxBytes) {
+    return json({ error: "Logo must be 5MB or smaller." }, { status: 413 });
+  }
+  const bytes = await request.arrayBuffer();
+  if (!bytes.byteLength) return json({ error: "Logo image is empty." }, { status: 422 });
+  if (bytes.byteLength > maxBytes) return json({ error: "Logo must be 5MB or smaller." }, { status: 413 });
+
+  const key = `parish-logos/${slugify(parishId)}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+  await env.CAMPAIGN_ASSETS.put(key, bytes, {
+    httpMetadata: { contentType, cacheControl: "public, max-age=31536000, immutable" }
+  });
+  const publicBase = String(env.CAMPAIGN_ASSETS_URL || "").replace(/\/+$/, "");
+  const logoUrl = `${publicBase}/${key}`;
+  const updated = {
+    ...found.registration,
+    logoUrl,
+    logoStorageKey: key,
+    parishUpdatedAt: new Date().toISOString()
+  };
+  try {
+    await saveRegistrationRecord(env, found.key, updated, found.registration);
+  } catch (error) {
+    await env.CAMPAIGN_ASSETS.delete(key);
+    throw error;
+  }
+  if (previousKey && previousKey !== key) await env.CAMPAIGN_ASSETS.delete(previousKey);
+  return json({ ok: true, logoUrl, key, contentType, size: bytes.byteLength });
 }
 
 export async function loadPaidDonorOfferingPlatformTotals(env) {
@@ -5621,6 +5693,7 @@ export function parishDashboardPayload(parishId, registration) {
   return {
     parishId,
     parishName: registration.parishName,
+    logoUrl: registration.logoUrl || "",
     communityType: registration.communityType,
     jurisdiction: registration.jurisdiction,
     sacramentsEnabled: Boolean(registration.sacramentsEnabled),

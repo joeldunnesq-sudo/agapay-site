@@ -978,8 +978,8 @@ body {
     }
 
     function parishArtwork(parish) {
-      const imageUrl = parish.imageUrl || parishSketchImage(parish.type);
-      const imageAlt = parish.imageAlt || `${parish.name || 'Orthodox community'} sketch`;
+      const imageUrl = parish.logoUrl || parish.imageUrl || parishSketchImage(parish.type);
+      const imageAlt = parish.logoUrl ? `${parish.name || 'Orthodox community'} logo` : parish.imageAlt || `${parish.name || 'Orthodox community'} sketch`;
       return `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(imageAlt)}" />`;
     }
 

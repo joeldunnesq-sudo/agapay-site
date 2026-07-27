@@ -546,6 +546,7 @@
     }
 
     function parishImage(parish) {
+      if (parish.logoUrl) return parish.logoUrl;
       if (parish.imageUrl) return parish.imageUrl;
       if (parish.type === "monastery") return "/images/giving/monastery-square.png";
       if (parish.type === "mission") return "/images/giving/mission-church-square.png";
@@ -584,7 +585,7 @@
       }
       grid.innerHTML = shown.map((parish) => `
         <article class="parish-card">
-          <img src="${escapeHtml(parishImage(parish))}" alt="${escapeHtml(parish.imageAlt || `${parish.name || "Orthodox community"} sketch`)}" loading="lazy" />
+          <img src="${escapeHtml(parishImage(parish))}" alt="${escapeHtml(parish.logoUrl ? `${parish.name || "Orthodox community"} logo` : parish.imageAlt || `${parish.name || "Orthodox community"} sketch`)}" loading="lazy" />
           <div class="parish-body">
             <span class="type">${escapeHtml(parishType(parish))}</span>
             <h2>${escapeHtml(parish.name)}</h2>

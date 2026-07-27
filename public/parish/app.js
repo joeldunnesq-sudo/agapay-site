@@ -5908,6 +5908,12 @@
     renderSubscriptionPanel();
     document.getElementById('sidebarProfile').classList.add('visible');
     document.getElementById('sidebarParishName').textContent = p.parishName || 'Parish';
+    const sidebarLogo = document.getElementById('sidebarParishLogo');
+    if (sidebarLogo) {
+      sidebarLogo.hidden = !p.logoUrl;
+      sidebarLogo.src = p.logoUrl || '';
+      sidebarLogo.alt = p.logoUrl ? `${p.parishName || 'Parish'} logo` : '';
+    }
     const parishMeta = [p.communityType, p.jurisdiction, [p.city,p.state].filter(Boolean).join(', ')].filter(Boolean).join(' / ');
     document.getElementById('sidebarParishMeta').textContent = parishMeta;
     const chip = document.getElementById('sidebarStatusChip');
@@ -5942,6 +5948,22 @@
     const tierOptions = tierOptionsMarkup(p.subscriptionTier);
     document.getElementById('settingsPane').innerHTML = `
       <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-label">Parish logo</label>
+          <div class="parish-logo-settings">
+            ${p.logoUrl
+              ? `<img class="parish-logo-preview" src="${escapeHtml(p.logoUrl)}" alt="${escapeHtml((p.parishName || 'Parish') + ' logo')}" />`
+              : '<div class="parish-logo-preview parish-logo-placeholder">No logo<br>uploaded</div>'}
+            <div>
+              <div class="parish-logo-actions">
+                <input id="parishLogoFile" type="file" accept="image/png,image/jpeg,image/webp" />
+                <button class="btn btn-gold" type="button" onclick="uploadParishLogo(this)">Upload logo</button>
+                ${p.logoUrl ? '<button class="btn btn-ghost" type="button" onclick="removeParishLogo(this)">Remove</button>' : ''}
+              </div>
+              <p class="section-note">PNG, JPG, or WebP, up to 5MB. A square image with a transparent or white background works best. Your logo appears on the dashboard, giving pages, campaigns, and church search.</p>
+            </div>
+          </div>
+        </div>
         <div class="form-group full"><label class="form-label" for="parishName">Parish name</label><input id="parishName" value="${escapeHtml(p.parishName||'')}" placeholder="Parish name" /></div>
         <div class="form-group"><label class="form-label">Jurisdiction</label><input value="${escapeHtml(p.jurisdiction||'')}" disabled /></div>
         <div class="form-group full"><label class="form-label" for="addressLine1">Address line 1</label><input id="addressLine1" value="${escapeHtml(p.addressLine1||'')}" placeholder="Street address" /></div>
@@ -6037,6 +6059,46 @@
       <details class="advanced-editor"><summary>Advanced edit (JSON)</summary><div class="editor-label-row"><label for="fundsJson">Designated funds</label><span class="editor-hint">Each item needs id, name, description</span></div><textarea id="fundsJson" spellcheck="false" onchange="syncGivingOptionsFromAdvanced()">${JSON.stringify(editableFunds,null,2)}</textarea><div style="height:0.9rem;"></div><div class="editor-label-row"><label for="campaignsJson">Alms campaigns</label><span class="editor-hint">Each item needs id, name, description</span></div><textarea id="campaignsJson" spellcheck="false" onchange="syncGivingOptionsFromAdvanced()">${JSON.stringify(editableCampaigns,null,2)}</textarea></details>
       <div class="btn-row"><button class="btn btn-gold" onclick="saveDashboard(this)">Save giving options</button><button class="btn btn-ghost" onclick="loadDashboard()">Discard changes</button></div>`;
     syncGivingOptionEditors();
+  }
+
+  async function uploadParishLogo(btn) {
+    const file = document.getElementById('parishLogoFile')?.files?.[0];
+    if (!file) { setStatus('Choose a logo image first.', 'error'); return; }
+    if (file.size > 5 * 1024 * 1024) { setStatus('Logo must be 5MB or smaller.', 'error'); return; }
+    if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+    try {
+      const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/logo', {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': file.type },
+        body: file
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to upload logo.');
+      setStatus('Parish logo uploaded.', 'success');
+      await loadDashboard();
+    } catch (err) {
+      setStatus(err.message || 'Unable to upload logo.', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+    }
+  }
+
+  async function removeParishLogo(btn) {
+    if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+    try {
+      const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/logo', {
+        method: 'DELETE',
+        headers: authHeaders()
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to remove logo.');
+      setStatus('Parish logo removed.', 'success');
+      await loadDashboard();
+    } catch (err) {
+      setStatus(err.message || 'Unable to remove logo.', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+    }
   }
 
   // ── GIVING SUMMARY (YTD chart) ────────────────────────────
