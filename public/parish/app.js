@@ -115,7 +115,10 @@
   // ── TAB NAV ──────────────────────────────────────────────
   function switchTab(tab) {
     if (tab === 'parishplus') tab = 'bookstore';
-    if (tab === 'accounting' && currentParish?.parishId !== 'st-fiacre') tab = 'giving';
+    if (tab === 'accounting' && currentParish?.parishId !== 'st-fiacre') {
+      setStatus('Accounting is coming soon.');
+      return;
+    }
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.sidebar-nav-item, .mobile-tab-link').forEach(n => n.classList.remove('active'));
     const panel = document.getElementById('tab-' + tab);
@@ -5895,17 +5898,46 @@
 
   function updateTierScopedNavigation() {
     const showStewardship = isParishTier();
-    const showAccounting = currentParish?.parishId === 'st-fiacre';
+    const accountingDemoActive = currentParish?.parishId === 'st-fiacre';
+    const accountingNav = document.getElementById('nav-accounting');
+    const accountingBadge = document.getElementById('accountingNavSoonBadge');
     document.getElementById('nav-stewardship')?.toggleAttribute('hidden', !showStewardship);
-    document.getElementById('nav-accounting')?.toggleAttribute('hidden', !showAccounting);
+    accountingNav?.classList.toggle('sidebar-nav-item--gated', !accountingDemoActive);
+    if (accountingNav) accountingNav.title = accountingDemoActive ? 'Demo Accounting workspace' : 'Accounting is coming soon';
+    if (accountingBadge) accountingBadge.hidden = accountingDemoActive;
     document.querySelectorAll('.mobile-tab-link[data-nav-tab="accounting"]').forEach((el) => {
-      el.hidden = !showAccounting;
+      el.classList.toggle('mobile-tab-link--gated', !accountingDemoActive);
+      const badge = el.querySelector('.mobile-soon-badge');
+      if (badge) badge.hidden = accountingDemoActive;
     });
     document.querySelectorAll('.mobile-tab-link[data-nav-tab="stewardship"]').forEach((el) => {
       el.hidden = !showStewardship;
     });
     if (!showStewardship && activeTab === 'stewardship') switchTab('giving');
-    if (!showAccounting && activeTab === 'accounting') switchTab('giving');
+    if (!accountingDemoActive && activeTab === 'accounting') switchTab('giving');
+    orderTierNavigation();
+  }
+
+  function orderTierNavigation() {
+    // Navigation follows the subscription ladder: Giving, Stewardship,
+    // Parish, announced future modules, then account settings.
+    const tierOrder = [
+      'giving', 'options', 'campaigns', 'qr', 'history', 'givers', 'reconcile',
+      'stewardship', 'bookstore',
+      'sacraments', 'directory',
+      'text', 'accounting',
+      'settings'
+    ];
+    const sidebar = document.querySelector('.sidebar-nav');
+    tierOrder.forEach((tab) => {
+      const item = document.getElementById(`nav-${tab}`);
+      if (sidebar && item) sidebar.appendChild(item);
+    });
+    const mobile = document.querySelector('.mobile-tabbar');
+    tierOrder.forEach((tab) => {
+      const item = document.querySelector(`.mobile-tab-link[data-nav-tab="${tab}"]`);
+      if (mobile && item) mobile.appendChild(item);
+    });
   }
 
   // ── RENDER DASHBOARD ──────────────────────────────────────

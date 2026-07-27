@@ -283,7 +283,20 @@ assert.ok(worker.includes("async function fetchCleanAsset"), "worker should keep
 assert.ok(worker.includes("canonicalCampaignPathFromLegacy"), "worker should redirect legacy campaign URLs to canonical nested campaign routes");
 assert.ok(worker.includes('/^\\/give\\/[^/]+\\/[^/]+-campaign\\/?$/'), "worker should serve canonical parish campaign routes");
 assert.ok(parishDashboardApp.includes("campaignPublicUrl") && parishDashboardApp.includes("-campaign"), "parish dashboard should publish canonical nested campaign URLs");
+assert.ok(
+  parishDashboardApp.includes("function orderTierNavigation()")
+    && parishDashboardApp.includes("'stewardship', 'bookstore'")
+    && parishDashboardApp.includes("'sacraments', 'directory'")
+    && parishDashboardApp.includes("'text', 'accounting'"),
+  "parish dashboard tabs should follow Giving, Stewardship, Parish, and upcoming-module tier order"
+);
 const parishDashboardHtml = await readFile("public/parish/dashboard.html", "utf8");
+assert.ok(
+  parishDashboardHtml.includes('id="accountingNavSoonBadge">Coming soon</span>')
+    && parishDashboardApp.includes("const accountingDemoActive = currentParish?.parishId === 'st-fiacre'")
+    && parishDashboardApp.includes("if (accountingBadge) accountingBadge.hidden = accountingDemoActive"),
+  "Accounting should be marked coming soon except for the active St. Fiacre demo workspace"
+);
 assert.ok(parishDashboardHtml.includes('id="tab-reconcile"') && parishDashboardHtml.includes("Treasurer closeout"), "parish dashboard should include monthly reconciliation and closeout UI");
 assert.ok(parishDashboardHtml.includes("sac-admin-shell") && parishDashboardHtml.indexOf("Weekly Availability") < parishDashboardHtml.indexOf("Blackout Dates") && parishDashboardHtml.indexOf("Blackout Dates") < parishDashboardHtml.indexOf("Sacrament Rules") && parishDashboardHtml.indexOf("Sacrament Rules") < parishDashboardHtml.indexOf(">Requests<") && parishDashboardHtml.indexOf(">Requests<") < parishDashboardHtml.indexOf(">Calendar<"), "parish Sacraments & Services dashboard tabs should match the uploaded template order");
 assert.ok(parishDashboardApp.includes("function setSacramentsDashboardTab") && parishDashboardApp.includes("function renderSacramentsCalendar") && parishDashboardApp.includes("function renderSacramentsBlackouts") && parishDashboardApp.includes("function renderSacramentsRules"), "parish Sacraments & Services dashboard should render availability, blackouts, rules, requests, and calendar views");
