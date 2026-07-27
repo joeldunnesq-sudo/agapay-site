@@ -5924,7 +5924,9 @@
     const parishMeta = [p.communityType, p.jurisdiction, [p.city,p.state].filter(Boolean).join(', ')].filter(Boolean).join(' / ');
     document.getElementById('sidebarParishMeta').textContent = parishMeta;
     const chip = document.getElementById('sidebarStatusChip');
-    chip.textContent = p.givingStatus || 'active';
+    const tierLabel = String(p.subscriptionTierLabel || p.subscriptionTier || 'Unassigned').trim();
+    const tierDisplay = /\btier$/i.test(tierLabel) ? tierLabel : `${tierLabel} tier`;
+    chip.textContent = `${statusLabel(p.givingStatus || 'active')} · ${tierDisplay}`;
     chip.className   = 'sidebar-status-chip ' + (p.givingStatus || 'active');
     const overviewStatus = document.getElementById('overviewGivingStatus');
     const overviewStatusNote = document.getElementById('overviewGivingStatusNote');
