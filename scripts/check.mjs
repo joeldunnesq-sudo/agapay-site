@@ -280,8 +280,8 @@ assert.ok(
     && givePricingHtml.includes("Everything in Starter, plus")
     && givePricingHtml.includes("Parish logo across giving pages and church search")
     && !givePricingHtml.includes("Parish logo, public page, and church search listing")
-    && ["Small mission chapel", "Parish church", "Domed Orthodox church", "Large three-domed Orthodox church"].every((label) => givePricingHtml.includes(`aria-label="${label}"`)),
-  "Give pricing should show the $149 Parish plan and progressively larger church icons"
+    && ["Small mission chapel", "Parish church", "Domed Orthodox church", "Large three-domed Orthodox church", "Grand five-domed Orthodox cathedral", "Orthodox monastery complex"].every((label) => givePricingHtml.includes(`aria-label="${label}"`)),
+  "Give pricing should show the $149 Parish plan with distinct, progressively ornate church, cathedral, and monastic icons"
 );
 assert.ok(
   parishDashboardApp.includes("function updateStarterPaywalls()")
