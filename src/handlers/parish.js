@@ -3351,6 +3351,38 @@ export async function handleParishSubscriptionCheckout(request, env, parishId) {
   });
 }
 
+export async function handleParishDemoTier(request, env, parishId) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (parishId !== "st-fiacre") return json({ error: "Demo tier switching is available only for St. Fiacre." }, { status: 404 });
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+  const token = getBearerToken(request);
+  if (!(await verifyParishDashboardBearer(found.registration, token))) return unauthorized();
+
+  const body = await request.json().catch(() => ({}));
+  const requestedTier = String(body.subscriptionTier || "").trim().toLowerCase();
+  const tier = sharedSubscriptionTier({ subscriptionTier: requestedTier });
+  if (!tier || !["giving", "stewardship", "parish"].includes(tier.id)) {
+    return json({ error: "Choose Giving, Stewardship, or Parish for the demo." }, { status: 422 });
+  }
+
+  const current = found.registration;
+  const updated = {
+    ...current,
+    subscriptionTier: tier.id,
+    subscriptionTierLabel: tier.label,
+    subscriptionMonthlyCents: tier.monthlyCents,
+    subscriptionStatus: "active",
+    subscriptionTrialDays: 0,
+    demoTierChangedAt: new Date().toISOString(),
+    parishUpdatedAt: new Date().toISOString()
+  };
+  await saveRegistrationRecord(env, found.key, updated, current);
+  return json({ ok: true, parish: parishDashboardPayload(parishId, updated) });
+}
+
 export async function handleParishSubscriptionRefresh(request, env, parishId) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   const limited = await rateLimit(request, env, "parish-money-actions", { limit: 30, windowSeconds: 300 });

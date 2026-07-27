@@ -99,6 +99,7 @@ import {
   handleDashboardInvite,
   handleParishStripeOnboarding,
   handleParishSubscriptionCheckout,
+  handleParishDemoTier,
   handleParishSubscriptionRefresh,
   handleParishSubscriptionPortal,
   handleParishCommemorations,
@@ -3216,6 +3217,10 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/subscription-checkout")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/subscription-checkout", ""));
       return handleParishSubscriptionCheckout(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/demo-tier")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/demo-tier", ""));
+      return handleParishDemoTier(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/subscription-refresh")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/subscription-refresh", ""));

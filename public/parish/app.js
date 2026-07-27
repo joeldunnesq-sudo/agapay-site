@@ -6032,9 +6032,11 @@
         <div class="form-group"><label class="form-label">Billing status</label><input value="${escapeHtml(statusLabel(p.subscriptionStatus || 'not_started'))}" disabled /></div>
         <div class="form-group full"><label class="form-label" for="subscriptionTierUpgrade">Change AGAPAY tier</label><select id="subscriptionTierUpgrade">${tierOptions}</select></div>
       </div>
-      <p class="section-note">${billingActive ? "Use Stripe's secure billing portal to upgrade or downgrade, update payment details, or cancel at any time." : 'Choose a tier and complete billing checkout. Stewardship unlocks pledge and giving-health tools; Parish adds the complete operations suite.'}</p>
+      <p class="section-note">${p.parishId === 'st-fiacre' ? 'Demo mode: switch tiers instantly to show churches how AGAPAY changes at each level. No Stripe billing is changed.' : billingActive ? "Use Stripe's secure billing portal to upgrade or downgrade, update payment details, or cancel at any time." : 'Choose a tier and complete billing checkout. Stewardship unlocks pledge and giving-health tools; Parish adds the complete operations suite.'}</p>
       <div class="btn-row">
-        ${billingActive
+        ${p.parishId === 'st-fiacre'
+          ? '<button class="btn btn-gold" onclick="changeDemoTier(this)">Apply demo tier</button>'
+          : billingActive
           ? '<button class="btn btn-gold" onclick="openSubscriptionPortal(this)">Change tier in billing portal</button><button class="btn btn-ghost" onclick="openSubscriptionPortal(this)">Manage payment details</button>'
           : '<button class="btn btn-gold" onclick="startSubscriptionCheckout(this, \'subscriptionTierUpgrade\')">Start tier checkout</button>'}
       </div>
@@ -7139,6 +7141,29 @@
       setStatus(win?'Subscription checkout opened in a new tab.':'Checkout created.','success');
     } catch(err){if(win)win.close();setStatus(err.message,'error');}
     finally{if(btn){btn.classList.remove('loading');btn.disabled=false;}}
+  }
+
+  async function changeDemoTier(btn) {
+    if (currentParish?.parishId !== 'st-fiacre') return;
+    const tier = document.getElementById('subscriptionTierUpgrade')?.value || '';
+    if (btn){btn.classList.add('loading');btn.disabled=true;}
+    try {
+      const res = await fetch('/api/parish/dashboard/st-fiacre/demo-tier', {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriptionTier: tier })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Unable to change the demo tier');
+      currentParish = { ...currentParish, ...(data.parish || {}) };
+      await loadDashboard();
+      switchTab('settings');
+      setStatus(`St. Fiacre is now demonstrating the ${data.parish?.subscriptionTierLabel || tier} tier.`, 'success');
+    } catch (err) {
+      setStatus(err.message, 'error');
+    } finally {
+      if (btn){btn.classList.remove('loading');btn.disabled=false;}
+    }
   }
 
   async function openSubscriptionPortal(btn) {
