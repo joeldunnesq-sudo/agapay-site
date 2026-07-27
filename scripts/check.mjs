@@ -29,6 +29,11 @@ assert.ok(backendSources.includes("verifyTurnstileIfConfigured"), "worker should
 assert.ok(backendSources.includes("handleSecurityConfig"), "worker should expose public security config for Turnstile-capable clients");
 assert.ok(backendSources.includes('"admin-auth"'), "admin auth routes should be rate-limited before password checks");
 assert.ok(backendSources.includes('"parish-auth"'), "parish dashboard login routes should be rate-limited before password checks");
+assert.ok(
+  backendSources.includes("const dashboardParish = await enrichParishGivingOptions(env")
+    && backendSources.includes("parish: dashboardParish"),
+  "parish dashboard campaigns should aggregate progress from the same paid offerings as donor and public views"
+);
 assert.ok(backendSources.includes('"admin-money-actions"'), "admin Stripe/billing actions should be rate-limited");
 assert.ok(backendSources.includes('"parish-money-actions"'), "parish Stripe/billing actions should be rate-limited");
 assert.ok(backendSources.includes("claimStripeEvent(env, event)") && backendSources.includes("finishStripeEvent(env, event.id"), "Stripe webhooks should claim and finish events for idempotency");

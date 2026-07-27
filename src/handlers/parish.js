@@ -5829,10 +5829,16 @@ export async function handleParishDashboard(request, env, parishId) {
   if (request.method === "GET") {
     const { registration } = found;
     const catalog = await loadGivingCatalogFromAccounting(env, parishId, registration);
+    const dashboardParish = await enrichParishGivingOptions(env, {
+      ...parishDashboardPayload(parishId, registration),
+      id: parishId
+    });
     return json({
       // The parish-managed Funds & Alms record is authoritative. Accounting
       // consumes it on save; accounting must never overwrite this editor.
-      parish: parishDashboardPayload(parishId, registration),
+      // Campaign progress comes from the same paid offerings that power the
+      // donor dashboard and public campaign pages.
+      parish: dashboardParish,
       accountingCatalogConnected: catalog.available
     });
   }
