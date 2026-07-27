@@ -118,10 +118,12 @@
     @media (max-width:860px){ .clarity-inner,.clarity-body{grid-template-columns:1fr;} .clarity-tabs{grid-template-columns:1fr;} }
 
     .pricing-content { padding: 2rem 2rem 2.4rem; background: linear-gradient(180deg, rgba(255, 253, 248, 0.82), rgba(246, 241, 232, 0.72)); }
-    .pricing-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; align-items: stretch; }
+    .pricing-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1rem; align-items: stretch; }
+    .tier-card--primary { grid-column: span 2; }
+    .tier-card--monastic { grid-column: 2 / span 2; grid-row: 2; }
+    .tier-card--cathedral { grid-column: 4 / span 2; grid-row: 2; }
     .tier-card { position: relative; border: 1px solid rgba(166, 159, 145, 0.35); border-radius: 16px; background: rgba(255, 253, 248, 0.94); padding: 1.25rem 1.05rem 1.05rem; box-shadow: 0 12px 30px rgba(6, 21, 34, 0.06); display: grid; gap: 0.8rem; }
     .tier-card.featured { border-color: rgba(200, 162, 74, 0.78); box-shadow: 0 16px 34px rgba(200, 162, 74, 0.14); }
-    .popular { position: absolute; top: -0.72rem; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #D6AF5B, #B98832); color: #0B2130; border-radius: 999px; padding: 0.28rem 0.8rem; font-size: 0.68rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
     .tier-icon { width: 62px; height: 62px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; border: 1px solid rgba(200, 162, 74, 0.36); color: #A5792B; background: rgba(200, 162, 74, 0.07); }
     .tier-icon svg { width: 35px; height: 35px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
     .tier-title { text-align: center; color: #071729; text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--serif); font-weight: 600; font-size: 1.5rem; line-height: 0.98; }
@@ -234,6 +236,9 @@
       .pricing-hero { grid-template-columns: 1fr; padding: 1.6rem 1.25rem; min-height: auto; }
       .hero-art { min-height: 300px; order: 2; background-position: center; margin-top: 0.5rem; }
       .pricing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tier-card--primary, .tier-card--monastic, .tier-card--cathedral { grid-column: auto; grid-row: auto; }
+      .tier-card--monastic { order: 4; }
+      .tier-card--cathedral { order: 5; }
       .fee-banner, .lower-grid, .closing-cta { grid-template-columns: 1fr; }
       .parish-plus-head, .parish-plus-body { grid-template-columns: 1fr; }
       .parish-plus-price { justify-self: stretch; }
@@ -294,7 +299,7 @@
         </div>
         <div class="clarity-panel">
           <div class="clarity-tabs" role="tablist" aria-label="Pricing clarity preview">
-            <button class="clarity-tab" type="button" role="tab" aria-selected="true" data-clarity="subscription">Recommended tier</button>
+            <button class="clarity-tab" type="button" role="tab" aria-selected="true" data-clarity="subscription">How tiers work</button>
             <button class="clarity-tab" type="button" role="tab" aria-selected="false" data-clarity="transaction">Donation fee</button>
             <button class="clarity-tab" type="button" role="tab" aria-selected="false" data-clarity="covered">Donor-covered</button>
           </div>
@@ -313,7 +318,7 @@
     </section>
 
     <section class="pricing-content" aria-label="Pricing plans">
-      <aside class="fee-banner" aria-label="Recommended parish tier guidance" style="margin-top:0;margin-bottom:1.25rem;">
+      <aside class="fee-banner" aria-label="Parish tier guidance" style="margin-top:0;margin-bottom:1.25rem;">
         <div class="fee-main">
           <div class="fee-badge">★</div>
           <div>
@@ -335,7 +340,7 @@
           <div class="fee-line">
             <span class="fee-label">Parish</span>
             <strong>Complete parish operations</strong>
-            <span>Directory, Sacraments &amp; Services, commerce, staff workflows, guided onboarding, and Text-to-Give.</span>
+            <span>Directory, Sacraments &amp; Services, commerce, staff workflows, guided setup, and Text-to-Give.</span>
           </div>
         </div>
         <div class="fee-note">
@@ -344,7 +349,7 @@
         </div>
       </aside>
       <div class="pricing-grid">
-        <article class="tier-card">
+        <article class="tier-card tier-card--primary">
           <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M6 20V11l3-3 3 3v9"/><path d="M12 11h6l2 2v7"/><path d="M9 8V5"/><path d="M7.8 6.5h2.4"/></svg></div>
           <h2 class="tier-title">Giving</h2>
           <div class="tier-price">$49 <span>/ mo</span></div>
@@ -361,7 +366,7 @@
           <a class="small-btn primary" href="/register">Choose Giving</a>
         </article>
 
-        <article class="tier-card">
+        <article class="tier-card tier-card--primary">
           <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></div>
           <h2 class="tier-title">Stewardship</h2>
           <div class="tier-price">$99 <span>/ mo</span></div>
@@ -378,8 +383,7 @@
           <a class="small-btn primary" href="/register">Choose Stewardship</a>
         </article>
 
-        <article class="tier-card featured">
-          <div class="popular">Recommended for churches</div>
+        <article class="tier-card tier-card--primary">
           <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M6 20V10l6-5 6 5v10"/><path d="M8 10a4 4 0 0 1 8 0"/><path d="M12 5V2"/><path d="M10.5 3.5h3"/></svg></div>
           <h2 class="tier-title">Parish</h2>
           <div class="tier-price">$199 <span>/ mo</span></div>
@@ -395,13 +399,13 @@
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Parish Directory and member workflows</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Text-to-Give</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Additional administrator seats, roles, and invite workflow</li>
-            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Guided onboarding, configuration, and data-import assistance</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Guided in-dashboard setup and configuration support</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Priority email support</li>
           </ul>
           <a class="small-btn primary" href="/register">Start for free</a>
         </article>
 
-        <article class="tier-card">
+        <article class="tier-card tier-card--cathedral">
           <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M2.5 20h19"/><path d="M5 20V11l3-2 4-4 4 4 3 2v9"/><path d="M12 5V2"/><path d="M10.5 3.5h3"/></svg></div>
           <h2 class="tier-title">Cathedral / Diocese</h2>
           <div class="tier-price">Custom</div>
@@ -417,7 +421,7 @@
           <a class="small-btn primary" href="/contact">Contact us</a>
         </article>
 
-         <article class="tier-card">
+         <article class="tier-card tier-card--monastic">
           <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M4 20V11l3-2 3 2 2-2 2 2 3-2 3 2v9"/><path d="M7 9V6"/><path d="M15 9V6"/></svg></div>
           <h2 class="tier-title">Monastic</h2>
           <div class="tier-price">$0 <span>/ mo</span></div>

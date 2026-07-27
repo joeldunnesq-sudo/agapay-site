@@ -115,6 +115,12 @@
       font-size: clamp(1.04rem, 2vw, 1.2rem);
       line-height: 1.65;
     }
+    .hero-actions {
+      display: flex;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+      margin-top: 1.35rem;
+    }
     .hero-art {
       border: 1px solid rgba(214, 175, 91, 0.28);
       border-radius: 18px;
@@ -241,6 +247,7 @@
     .invite-section {
       position: relative;
       overflow: hidden;
+      scroll-margin-top: 1rem;
       padding: clamp(4rem, 8vw, 7rem) 0;
       color: var(--cream);
       background:
@@ -412,6 +419,7 @@
       .wrap { width: min(100% - 1rem, 1160px); }
       h1 { font-size: clamp(2.9rem, 15vw, 4.2rem); }
       .find-hero { padding-top: 3.2rem; }
+      .hero-actions .button { width: 100%; }
       .card-actions .button { width: 100%; }
       .form-grid { grid-template-columns: 1fr; gap: 0; }
       .interest-form { padding: 1rem; }
@@ -427,6 +435,9 @@
           <h1>Find your Parish.</h1>
           <h2>Love how you give.</h2>
           <p class="hero-copy">Search verified Orthodox parishes, missions, and monasteries receiving gifts through AGAPAY. Choose a community, then give directly through its parish giving page.</p>
+          <div class="hero-actions">
+            <a class="button secondary" href="#bring-agapay-to-your-parish">Bring AGAPAY Give to your parish</a>
+          </div>
         </div>
         <div class="hero-art" aria-hidden="true">
           <img src="/images/giving/church-sketch-hero.png" alt="" />
@@ -449,7 +460,7 @@
       </div>
     </section>
 
-    <section class="invite-section" aria-labelledby="inviteParishHeading">
+    <section class="invite-section" id="bring-agapay-to-your-parish" aria-labelledby="inviteParishHeading">
       <div class="wrap invite-grid">
         <div class="invite-copy">
           <p class="eyebrow">Your parish isn't listed yet?</p>
