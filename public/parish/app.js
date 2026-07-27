@@ -115,8 +115,8 @@
   // ── TAB NAV ──────────────────────────────────────────────
   function switchTab(tab) {
     if (tab === 'parishplus') tab = 'bookstore';
-    if (tab === 'accounting' && currentParish?.parishId !== 'st-fiacre') {
-      setStatus('Accounting is coming soon.');
+    if (tab === 'directory' && currentParish && !moduleIncluded('directory')) {
+      setStatus('The Parish Directory is available with the Parish tier.');
       return;
     }
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -483,9 +483,8 @@
     pane.innerHTML = '<p class="sw-tool-loading">Loading directory operations...</p>';
     const headers = authHeaders();
     try {
-      const [dashboardRes, queueRes, peopleRes, householdsRes, skillsRes, maintenanceRes, printRes] = await Promise.all([
+      const [dashboardRes, peopleRes, householdsRes, skillsRes, maintenanceRes, printRes] = await Promise.all([
         fetch(directoryAdminApi('/dashboard'), { headers }),
-        fetch(directoryAdminApi('/queue'), { headers }),
         fetch(directoryAdminApi('/people?limit=8'), { headers }),
         fetch(directoryAdminApi('/households?limit=100'), { headers }),
         fetch(directoryAdminApi('/skills/listings?limit=8'), { headers }),
@@ -499,13 +498,12 @@
         return;
       }
       const dashboard = await dashboardRes.json();
-      const queue = await queueRes.json();
       const people = await peopleRes.json();
       const households = await householdsRes.json();
       const skills = await skillsRes.json().catch(() => ({ skills: { listings: [] } }));
       const maintenance = await maintenanceRes.json().catch(() => ({ maintenance: {} }));
       const print = await printRes.json().catch(() => ({ print: {} }));
-      renderDirectoryAdminPanel(dashboard.dashboard || {}, queue.items || [], people.people || [], households.households || [], skills.skills || {}, maintenance.maintenance || {}, print.print || {});
+      renderDirectoryAdminPanel(dashboard.dashboard || {}, people.people || [], households.households || [], skills.skills || {}, maintenance.maintenance || {}, print.print || {});
       pane.dataset.loaded = 'true';
     } catch (err) {
       pane.innerHTML = renderDirectoryAdminGenericError();
@@ -524,11 +522,6 @@
     pane.querySelectorAll('[data-dir-panel]').forEach((panel) => { panel.hidden = panel.dataset.dirPanel !== tab; });
   }
 
-  function directoryQueueBadgeMarkup(count) {
-    const n = Number(count || 0);
-    return n ? `<span class="pdx-dir-tab-count">${n}</span>` : '';
-  }
-
   // Single browse surface shared by People and Households -- previously
   // three separate sections (a photo gallery, a People list, a Households
   // list) covered the same "find a record" task with three different
@@ -541,8 +534,9 @@
   function renderDirectoryBrowseList(records) {
     const list = document.getElementById('directoryBrowseList');
     if (!list) return;
-    list.innerHTML = records.length
-      ? records.map((record) => directoryCanonicalHouseholdRow(record, directoryLastData?.print?.households || [], directoryLastData?.skills?.listings || [])).join('')
+    const sortedRecords = [...records].sort((a, b) => directoryHouseholdSortKey(a.displayName).localeCompare(directoryHouseholdSortKey(b.displayName)));
+    list.innerHTML = sortedRecords.length
+      ? sortedRecords.map((record) => directoryCanonicalHouseholdRow(record, directoryLastData?.print?.households || [], directoryLastData?.skills?.listings || [])).join('')
       : `<tr><td colspan="4">${directoryEmptyState('No matches', 'No households match your search.')}</td></tr>`;
     hydrateDirectoryAdminImages(list);
   }
@@ -576,11 +570,11 @@
     }
   }
 
-  function renderDirectoryAdminPanel(dashboard, queue, people, households, skills, maintenance, print) {
+  function renderDirectoryAdminPanel(dashboard, people, households, skills, maintenance, print) {
     const pane = document.getElementById('directoryAdminPane');
     if (!pane) return;
-    directoryLastData = { queue, people, households, skills, maintenance, print };
-    const metrics = dashboard.metrics || {};
+    const sortedHouseholds = [...households].sort((a, b) => directoryHouseholdSortKey(a.displayName).localeCompare(directoryHouseholdSortKey(b.displayName)));
+    directoryLastData = { people, households: sortedHouseholds, skills, maintenance, print };
     const parishName = currentParish?.parishName || currentParish?.name || 'Your parish';
     const publishedMembers = Array.isArray(print?.households) ? print.households : [];
     const publishedMemberCount = publishedMembers.length || people.length;
@@ -616,7 +610,7 @@
         <div class="pdx-dir-table-wrap">
           <table class="pdx-dir-table">
             <thead><tr><th>Household</th><th>Members &amp; Namedays</th><th>Contact &amp; Parishioner Visibility</th><th>Skills to Serve</th></tr></thead>
-            <tbody id="directoryBrowseList">${households.length ? households.map((household) => directoryCanonicalHouseholdRow(household, publishedMembers, skills.listings || [])).join('') : `<tr><td colspan="4">${directoryEmptyState('No households yet', 'Households appear here after families join the parish directory.')}</td></tr>`}</tbody>
+            <tbody id="directoryBrowseList">${sortedHouseholds.length ? sortedHouseholds.map((household) => directoryCanonicalHouseholdRow(household, publishedMembers, skills.listings || [])).join('') : `<tr><td colspan="4">${directoryEmptyState('No households yet', 'Households appear here after families join the parish directory.')}</td></tr>`}</tbody>
           </table>
         </div>
         <p class="pdx-dir-canonical-note">Household information is entered by families in My AGAPAY and appears here for parish office use.</p>
@@ -626,22 +620,7 @@
 
       <div class="pdx-dir-tabs" role="tablist" aria-label="Parish directory tools">
         <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="directory" aria-selected="true" onclick="switchDirectoryAdminTab('directory')">Church Directory</button>
-        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="queue" aria-selected="false" onclick="switchDirectoryAdminTab('queue')">Review Queue ${directoryQueueBadgeMarkup(metrics.totalPending)}</button>
         <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="tools" aria-selected="false" onclick="switchDirectoryAdminTab('tools')">Maintenance &amp; Skills</button>
-      </div>
-
-      <div class="pdx-dir-tab-panel" data-dir-panel="queue">
-        <section class="pdx-panel pdx-dir-panel-queue">
-          <div class="pdx-panel-header">
-            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>Review Queue</div>
-            <button class="pdx-link-btn" type="button" onclick="loadDirectoryAdminTab(true)">Refresh</button>
-          </div>
-          <div class="pdx-dir-row-list">
-            ${queue.length ? queue.slice(0, 25).map(directoryQueueRow).join('') : directoryEmptyState('All caught up', 'No directory review items are waiting.')}
-          </div>
-          ${queue.length > 25 ? `<p class="section-note">Showing the oldest 25 of ${queue.length} pending items.</p>` : ''}
-        </section>
-        <div id="directoryReviewDetail" class="pdx-dir-review-detail" aria-live="polite"></div>
       </div>
 
       <div class="pdx-dir-tab-panel" data-dir-panel="tools" hidden>
@@ -756,6 +735,59 @@
   }
   function accountingEmpty(title, copy) {
     return `<div class="acct-empty"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(copy)}</span></div>`;
+  }
+  function accountingPreviewOnly() {
+    return currentParish?.parishId !== 'st-fiacre';
+  }
+  function renderAccountingPaywall(pane = document.getElementById('accountingPane')) {
+    if (!pane) return;
+    const included = moduleIncluded('accounting');
+    document.getElementById('accountingTierLabel').textContent = included ? 'Parish Accounting' : 'Parish tier';
+    document.getElementById('accountingTierCopy').textContent = included ? 'Beta access coming soon' : 'Upgrade to unlock';
+    document.getElementById('accountingParishName').textContent = currentParish?.name || currentParish?.parishName || 'Your parish';
+    document.getElementById('accountingFiscalYear').textContent = 'Current fiscal year';
+    pane.dataset.loaded = 'preview';
+    pane.innerHTML = `
+      <section class="acct-paywall-launch">
+        <div class="acct-paywall-launch-icon">₳</div>
+        <div>
+          <span>${included ? 'Beta testing' : 'Included with Parish'}</span>
+          <h2>${included ? 'Your Accounting Suite preview is ready' : 'See the whole parish financial picture'}</h2>
+          <p>Go beyond donation totals with true fund accounting, a balanced general ledger, payables, budgets, bank reconciliation, and parish-ready reports in one workspace.</p>
+          <button class="btn btn-gold" type="button" onclick="switchTab('settings')">${included ? 'Review subscription' : 'Review Parish tier'}</button>
+        </div>
+      </section>
+      <section class="acct-paywall-preview" aria-label="Preview of the AGAPAY Accounting Suite">
+        <div class="acct-paywall-veil">
+          <div>
+            <span class="acct-paywall-lock">⌑</span>
+            <strong>${included ? 'Accounting is currently in beta testing' : 'Unlock the Accounting Suite'}</strong>
+            <small>${included ? 'St. Fiacre remains the live demonstration parish while access is prepared.' : 'Available with the Parish tier after beta testing.'}</small>
+            <button class="acct-primary" type="button" onclick="switchTab('settings')">${included ? 'View plan details' : 'Explore Parish tier'}</button>
+          </div>
+        </div>
+        <section class="acct-command-hero">
+          <div><span class="acct-kicker">Financial command center</span><h2>Clarity for every parish dollar.</h2><p>Fund accounting, giving, payables, and bank activity—one balanced set of books.</p></div>
+          <div class="acct-command-actions"><button><b>＋</b><span>New journal<small>Record an entry</small></span></button><button><b>◫</b><span>Manage funds<small>Track restrictions</small></span></button><button><b>⇄</b><span>Reconcile<small>Match the bank</small></span></button><button><b>▤</b><span>Run reports<small>Review results</small></span></button></div>
+        </section>
+        <div class="acct-suite-stats">
+          <div class="acct-suite-stat featured"><span>Cash on hand</span><strong>$84,260</strong><small>Across active cash and bank accounts</small></div>
+          <div class="acct-suite-stat"><span>Total net assets</span><strong>$126,840</strong><small>Financial position is balanced</small></div>
+          <div class="acct-suite-stat"><span>Current activity</span><strong>$12,475</strong><small>24 posted entries · 2 drafts</small></div>
+          <div class="acct-suite-stat"><span>Tracked funds</span><strong>7</strong><small>3 donor restricted</small></div>
+        </div>
+        <div class="acct-suite-overview-grid">
+          <div>
+            <div class="acct-suite-section-head"><h2>Where things stand</h2><span>One connected set of books</span></div>
+            <div class="acct-suite-modules">
+              <button class="acct-suite-module"><span>Payables</span><strong>$3,480</strong><small>2 awaiting approval</small></button>
+              <button class="acct-suite-module"><span>Reconciliation</span><strong>1 open</strong><small>2 connected bank accounts</small></button>
+              <button class="acct-suite-module"><span>Budget vs actual</span><strong>On track</strong><small>Current operating plan</small></button>
+              <button class="acct-suite-module"><span>Financial reports</span><strong>Balanced</strong><small>Statements and trial balance</small></button>
+            </div>
+          </div>
+        </div>
+      </section>`;
   }
   function accountingViewTitle() {
     return ({ overview:'Overview', ledger:'General Ledger', journals:'Journal Entries', funds:'Funds', reports:'Financial Reports', payables:'Payables', budgets:'Budgets', banking:'Reconciliation', close:'Period Close', setup:'Setup', settings:'Settings', integrations:'Settings' })[accountingView] || 'Overview';
@@ -975,6 +1007,7 @@
     pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Financial planning</span><h2>Budget versions</h2></div><button class="acct-primary" onclick="showAccountingBudgetForm()">New budget</button></div><div id="accountingPhaseDForm"></div><div class="acct-card-grid">${data.items.map((budget) => `<article class="acct-budget-card"><div><span>Version ${budget.versionNumber}</span><h3>${escapeHtml(budget.name)}</h3><p>${escapeHtml(budget.description || 'Parish operating plan')}</p></div><span class="acct-status ${escapeAttr(budget.status)}">${escapeHtml(budget.status)}</span><div class="acct-row-actions"><button onclick="openAccountingBudgetVariance('${escapeAttr(budget.id)}')">Variance</button><button onclick="openAccountingCouncilPacket('${escapeAttr(budget.id)}')">Council packet</button>${budget.status === 'draft' ? `<button onclick="accountingBudgetAction('${escapeAttr(budget.id)}','submit',${budget.version})">Submit</button>` : ''}${budget.status === 'submitted' ? `<button onclick="accountingBudgetAction('${escapeAttr(budget.id)}','approve',${budget.version})">Approve</button>` : ''}${budget.status === 'approved' ? `<button onclick="accountingBudgetAction('${escapeAttr(budget.id)}','lock',${budget.version})">Lock</button>` : ''}</div></article>`).join('') || accountingEmpty('No budgets yet','Create the first operating budget and allocate it by account and fund.')}</div>`;
   }
   function setAccountingView(view) {
+    if (accountingPreviewOnly()) { renderAccountingPaywall(); return; }
     accountingView = ['overview', 'setup', 'settings', 'reports', 'journals', 'ledger', 'funds', 'payables', 'budgets', 'banking', 'integrations', 'close'].includes(view) ? view : 'overview';
     renderAccountingPane();
     if (['payables', 'budgets'].includes(accountingView) && accountingData.tier === 'advanced_operations' && !accountingData[accountingView]) loadAccountingPhaseD();
@@ -1198,6 +1231,7 @@
   async function loadAccountingTab(force = false) {
     const pane = document.getElementById('accountingPane');
     if (!pane || !currentParish?.parishId) return;
+    if (accountingPreviewOnly()) { renderAccountingPaywall(pane); return; }
     if (!force && pane.dataset.loaded === 'true') return;
     pane.innerHTML = '<p class="sw-tool-loading">Loading Accounting...</p>';
     try {
@@ -1549,6 +1583,20 @@
     }
   }
 
+  function directoryHouseholdLastName(name) {
+    const normalized = String(name || '').trim().replace(/^the\s+/i, '').replace(/\s+(family|household)$/i, '');
+    const parts = normalized.split(/\s+/).filter(Boolean);
+    return parts.at(-1) || normalized || 'Household';
+  }
+
+  function directoryHouseholdSortKey(name) {
+    return `${directoryHouseholdLastName(name).toLocaleLowerCase('en-US')}\u0000${String(name || '').toLocaleLowerCase('en-US')}`;
+  }
+
+  function directoryHouseholdInitials(name) {
+    return `${directoryHouseholdLastName(name).charAt(0)}H`.toUpperCase();
+  }
+
   function directoryCanonicalHouseholdRow(household, publishedMembers = [], skillListings = []) {
     const name = household.displayName || 'Household';
     const memberRows = publishedMembers.filter((row) =>
@@ -1565,7 +1613,7 @@
     const city = [first.city, first.region].filter(Boolean).join(', ');
     const email = first.email || '';
     const phone = first.phone || '';
-    const initials = String(name).replace(/^The\s+/i, '').replace(/\s+Family$/i, '').slice(0, 2).toUpperCase() || 'FA';
+    const initials = directoryHouseholdInitials(name);
     const memberMarkup = uniqueMembers.length ? uniqueMembers.slice(0, 5).map((member) => {
       const feast = String(member.feast_month_day || member.feastMonthDay || '');
       let nameday = '';
@@ -5898,10 +5946,15 @@
 
   function updateTierScopedNavigation() {
     const showStewardship = isParishTier();
+    const directoryActive = moduleIncluded('directory');
     const accountingDemoActive = currentParish?.parishId === 'st-fiacre';
     const accountingNav = document.getElementById('nav-accounting');
     const accountingBadge = document.getElementById('accountingNavSoonBadge');
     document.getElementById('nav-stewardship')?.toggleAttribute('hidden', !showStewardship);
+    document.getElementById('nav-directory')?.toggleAttribute('hidden', !directoryActive);
+    document.querySelectorAll('.mobile-tab-link[data-nav-tab="directory"]').forEach((el) => {
+      el.hidden = !directoryActive;
+    });
     accountingNav?.classList.toggle('sidebar-nav-item--gated', !accountingDemoActive);
     if (accountingNav) accountingNav.title = accountingDemoActive ? 'Demo Accounting workspace' : 'Accounting is coming soon';
     if (accountingBadge) accountingBadge.hidden = false;
@@ -5914,7 +5967,7 @@
       el.hidden = !showStewardship;
     });
     if (!showStewardship && activeTab === 'stewardship') switchTab('giving');
-    if (!accountingDemoActive && activeTab === 'accounting') switchTab('giving');
+    if (!directoryActive && activeTab === 'directory') switchTab('giving');
     orderTierNavigation();
   }
 

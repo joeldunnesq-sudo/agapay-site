@@ -227,7 +227,7 @@ export async function createAddress(env, { actor: actorInput, parishId, ownerTyp
     parishId: cleanedParishId,
     ownerType: owner.ownerType,
     ownerId: owner.ownerId,
-    fieldKey: "street_address",
+    fieldKey: protectedAddress ? "street_address" : "city_state",
     requestedVisibility,
     publicationEligible: false,
     protectedAddress

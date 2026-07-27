@@ -38,12 +38,24 @@ function normalizeLetter(value) {
   return /^[A-Z]$/.test(cleaned) ? cleaned : "";
 }
 
-function sortKey(value) {
-  return String(value || "").trim().toLocaleLowerCase("en-US");
+function nameParts(value) {
+  return String(value || "").trim().split(/\s+/).filter(Boolean);
 }
 
-function firstLetter(value) {
-  const first = String(value || "").trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").charAt(0).toUpperCase();
+function directoryLastName(value, type = "person") {
+  const normalized = type === "household"
+    ? String(value || "").trim().replace(/^the\s+/i, "").replace(/\s+(family|household)$/i, "")
+    : String(value || "").trim();
+  return nameParts(normalized).at(-1) || normalized || "Parishioner";
+}
+
+function directorySortKey(value, type = "person") {
+  const fullName = String(value || "").trim().toLocaleLowerCase("en-US");
+  return `${directoryLastName(value, type).toLocaleLowerCase("en-US")}\u0000${fullName}`;
+}
+
+function directoryFirstLetter(value, type = "person") {
+  const first = directoryLastName(value, type).normalize("NFD").replace(/[\u0300-\u036f]/g, "").charAt(0).toUpperCase();
   return /^[A-Z]$/.test(first) ? first : "#";
 }
 
@@ -286,8 +298,8 @@ async function personDto(env, context, row, { detail = false } = {}) {
     id: row.id,
     type: "person",
     displayName,
-    sortKey: sortKey(displayName),
-    letter: firstLetter(displayName),
+    sortKey: directorySortKey(displayName, "person"),
+    letter: directoryFirstLetter(displayName, "person"),
     suffix: row.suffix || "",
     household: row.household_id ? { id: row.household_id, displayName: row.household_name || "" } : null,
     relationship: detail ? row.relationship || "" : "",
@@ -378,8 +390,8 @@ async function childDto(env, context, row) {
     id: row.child_person_id,
     type: "child",
     displayName,
-    sortKey: sortKey(displayName),
-    letter: firstLetter(displayName),
+    sortKey: directorySortKey(displayName, "person"),
+    letter: directoryFirstLetter(displayName, "person"),
     relationship: fields.has("relationship_label") ? row.relationship || "" : "",
     city: "",
     contacts: [],
@@ -402,8 +414,8 @@ async function householdDto(env, context, row, { detail = false } = {}) {
     id: row.id,
     type: "household",
     displayName,
-    sortKey: sortKey(displayName),
-    letter: firstLetter(displayName),
+    sortKey: directorySortKey(displayName, "household"),
+    letter: directoryFirstLetter(displayName, "household"),
     city,
     members,
     publishedMemberCount: members.length,

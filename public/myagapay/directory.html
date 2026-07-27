@@ -170,7 +170,7 @@
     .field-check-list label { display:flex; align-items:center; gap:8px; font-weight:400; font-size:14px; }
     .field-check-list input[type="checkbox"] { width:18px; height:18px; }
     .child-add-trigger { margin-bottom:12px; }
-    .directory-modal { position:fixed; inset:0; z-index:80; display:grid; place-items:center; padding:18px; background:rgba(6,21,34,.48); }
+    .directory-modal { position:fixed; inset:0; z-index:120; display:grid; place-items:center; padding:18px; background:rgba(6,21,34,.48); }
     .directory-modal[hidden] { display:none !important; }
     .directory-modal-card { width:min(460px, 100%); max-height:min(86vh, 720px); overflow:auto; background:#fff; border-radius:18px; border:1px solid rgba(16,24,32,.12); box-shadow:0 24px 70px rgba(6,21,34,.26); padding:16px; }
     .directory-modal-card.setup-wizard-card { width:min(720px, 100%); padding:22px; }
@@ -539,9 +539,9 @@
       <button class="mobile-back" type="button" data-mobile-target="browse">Back to Directory</button>
 
       <section class="directory-command" aria-label="Directory actions">
-        <a class="command-card" href="#profileSummary"><strong>Set Up</strong><span>Your person profile and review status</span></a>
+        <a class="command-card" href="#profileSummary"><strong>Set Up</strong><span>Your household directory entry</span></a>
         <a class="command-card" href="#householdList"><strong>Family</strong><span>Family name, members, and name days</span></a>
-        <a class="command-card" href="#memberDirectoryHeading"><strong>Browse</strong><span>Approved parish member directory</span></a>
+        <a class="command-card" href="#memberDirectoryHeading"><strong>Browse</strong><span>Your parish family directory</span></a>
         <a class="command-card" href="#mySkillList"><strong>Serve</strong><span>Skills, ministries, and availability</span></a>
       </section>
 
@@ -561,12 +561,12 @@
             <form class="setup-panel" id="startProfileForm" hidden>
               <div>
                 <h3>Start your directory profile</h3>
-                <p>This creates a private draft linked to your My AGAPAY account. Your parish reviews it before anything appears in the member directory.</p>
+                <p>Build your family directory entry in four simple steps. You control which contact details other directory members may see.</p>
               </div>
               <ul class="setup-steps">
-                <li>Add your name and optional contact info here.</li>
-                <li>Choose what you want the parish to make visible after review.</li>
-                <li>The parish can connect family details after review.</li>
+                <li>Add your family name and your own basic information.</li>
+                <li>Add household members and their namedays.</li>
+                <li>Choose contact sharing, then add optional skills to serve.</li>
               </ul>
               <div class="form-grid">
                 <label>Preferred name<input name="preferredName" autocomplete="name" required /></label>
@@ -574,10 +574,10 @@
                 <label>Family name<input name="householdName" placeholder="The Dunne Family" /></label>
                 <label>Date of birth<input name="dateOfBirth" placeholder="YYYY-MM-DD" /></label>
                 <label>Email<input name="email" type="email" autocomplete="email" /></label>
-                <label>Email sharing<select name="emailVisibility"><option value="private">Keep private</option><option value="staff">Parish staff only</option><option value="directory_members">Show in directory after review</option></select></label>
+                <label>Email sharing<select name="emailVisibility"><option value="private">Keep private</option><option value="staff">Parish staff only</option><option value="directory_members">Show to directory members</option></select></label>
                 <label>Phone<input name="phone" autocomplete="tel" /></label>
-                <label>Phone sharing<select name="phoneVisibility"><option value="private">Keep private</option><option value="staff">Parish staff only</option><option value="directory_members">Show in directory after review</option></select></label>
-                <label>Name sharing<select name="profileVisibility"><option value="directory_members">Show my name after review</option><option value="staff">Parish staff only</option><option value="private">Keep private</option></select></label>
+                <label>Phone sharing<select name="phoneVisibility"><option value="private">Keep private</option><option value="staff">Parish staff only</option><option value="directory_members">Show to directory members</option></select></label>
+                <label>Name sharing<select name="profileVisibility"><option value="directory_members">Show my name in the directory</option><option value="staff">Parish staff only</option><option value="private">Keep private</option></select></label>
                 <label id="starterParishField">Parish ID<input name="parishId" placeholder="st-fiacre" required /></label>
               </div>
               <div class="actions"><button class="btn primary" type="submit">Start My Profile</button></div>
@@ -624,16 +624,16 @@
 
         <div class="stack">
           <article class="panel" data-wizard-step="3" data-mobile-section="household setup privacy">
-            <div class="panel-header"><div><div class="panel-kicker">Review</div><h2>Publication</h2><p class="panel-intro">Nothing appears in the member directory until you submit and the parish approves it.</p></div></div>
+            <div class="panel-header"><div><div class="panel-kicker">Privacy</div><h2>Directory Sharing</h2><p class="panel-intro">Choose when this entry is ready to share. Private fields always remain private.</p></div></div>
             <div class="summary-list" id="publicationSummary"></div>
             <div class="actions" id="publicationActions" hidden>
-              <button class="btn primary" type="button" data-publication="pending_approval">Submit for Review</button>
+              <button class="btn primary" type="button" data-publication="pending_approval">Share in Directory</button>
               <button class="btn warn" type="button" data-publication="paused">Pause Publication</button>
             </div>
           </article>
 
           <article class="panel household-hub" data-wizard-container="1,2" data-mobile-section="household family setup photos">
-            <div class="panel-header"><div><div class="panel-kicker">Directory</div><h2>Family</h2><p class="panel-intro">Keep your family in one place: your spouse, children, family name, and name days. Parish staff reviews additions before they appear.</p></div></div>
+            <div class="panel-header"><div><div class="panel-kicker">Directory</div><h2>Family</h2><p class="panel-intro">Keep your family in one place: your spouse, children, family name, photo, and namedays.</p></div></div>
 
             <div class="household-hub-identity" data-wizard-step="1">
               <div class="household-hub-photo" hidden>
@@ -648,13 +648,16 @@
                 <div class="household-list" id="householdList"></div>
                 <form class="household-hub-name-form" id="householdDetailsForm" hidden>
                   <label>Family name<input name="displayName" maxlength="200" placeholder="The Dunne Family" required /></label>
+                  <label>City<input name="city" maxlength="120" placeholder="Wheaton" required /></label>
+                  <label>State / Province<input name="region" maxlength="120" placeholder="Illinois" required /></label>
+                  <label>Location sharing<select name="locationVisibility"><option value="directory_members">Show city and state to directory members</option><option value="staff">Parish staff only</option><option value="household">Family only</option><option value="private">Keep private</option></select></label>
                   <input type="hidden" name="householdId" />
                   <input type="hidden" name="expectedVersion" />
                   <div class="actions"><button class="btn secondary" type="submit">Save Name</button></div>
                 </form>
                 <div class="summary-list" id="householdPublicationSummary"></div>
                 <div class="actions" id="householdPublicationActions" hidden>
-                  <button class="btn primary" type="button" data-household-publication="pending_approval">Submit Family for Review</button>
+                  <button class="btn primary" type="button" data-household-publication="pending_approval">Share Family in Directory</button>
                 </div>
               </div>
             </div>
@@ -678,16 +681,20 @@
 
             <div class="household-hub-namedays" data-wizard-step="2">
               <h3>Family Namedays</h3>
-              <p class="household-hub-namedays-note">Namedays are added with each spouse, adult, or child so each person’s information stays together.</p>
+              <p class="household-hub-namedays-note">Add your own nameday here, or add one for any person already in your household.</p>
               <div class="nameday-list" id="namedayList"></div>
-              <form id="namedayForm" hidden aria-hidden="true"></form>
+              <form class="form-grid household-hub-nameday-form" id="namedayForm" hidden>
+                <label>Family member<input name="displayName" required placeholder="Joel Dunne" /></label>
+                <label>Patron saint<input name="saintName" required placeholder="St. Joel the Prophet" /></label>
+                <label>Nameday month<select name="feastMonth" required><option value="">Choose month</option><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></label>
+                <label>Day<input name="feastDay" type="number" required min="1" max="31" inputmode="numeric" placeholder="19" /></label>
+                <label>Who may see it?<select name="visibility"><option value="directory_members">Directory members</option><option value="household">Family only</option><option value="staff">Parish staff</option><option value="private">Private</option></select></label>
+                <div class="actions"><button class="btn primary" type="submit">Add Nameday</button></div>
+              </form>
             </div>
           </article>
 
-          <article class="panel" data-wizard-step="2" data-mobile-section="household setup">
-            <div class="panel-header"><div><div class="panel-kicker">Status</div><h2>Pending Changes</h2></div></div>
-            <div class="request-list" id="requestList"></div>
-          </article>
+          <div id="requestList" hidden aria-hidden="true"></div>
 
           <article class="panel" data-wizard-step="2" aria-labelledby="childrenHeading" data-mobile-section="household family">
             <div class="panel-header"><div><div class="panel-kicker">Family</div><h2 id="childrenHeading">Children</h2><p class="panel-intro">Children stay hidden by default. You may request publication of limited fields, and parish staff must approve first.</p></div></div>
@@ -699,7 +706,7 @@
       <footer class="edit-wizard-footer">
         <button class="btn secondary" id="editWizardBack" type="button" hidden>Back</button>
         <button class="btn primary" id="editWizardNext" type="button">Continue</button>
-        <button class="btn primary" id="editWizardDone" type="button" hidden>Done</button>
+        <button class="btn primary" id="editWizardDone" type="button" hidden>Save &amp; Close</button>
       </footer>
       </details>
 
@@ -799,7 +806,7 @@
     function updateMobileHouseholdAvatar(household, asset = null) {
       const avatar = document.getElementById("mobileHouseholdAvatar");
       if (!avatar) return;
-      avatar.textContent = household ? initials(household.displayName || "Family") : "+";
+      avatar.textContent = household ? directoryInitials(household.displayName || "Family", "household") : "+";
       document.getElementById("mobileFamilyNavLabel").textContent = household ? "My Family" : "Add Family";
     }
     let skillCatalog = [];
@@ -899,11 +906,22 @@
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", PHOTO_JPEG_QUALITY));
       return blob ? new File([blob], (file.name || "photo").replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" }) : file;
     }
-    function initials(name) {
-      return String(name || "").split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "AG";
+    function directoryLastName(name, type = "person") {
+      const normalized = type === "household"
+        ? String(name || "").trim().replace(/^the\s+/i, "").replace(/\s+(family|household)$/i, "")
+        : String(name || "").trim();
+      const parts = normalized.split(/\s+/).filter(Boolean);
+      return parts.at(-1) || normalized || "Parishioner";
+    }
+    function directoryInitials(name, type = "person") {
+      if (type === "household") {
+        return `${directoryLastName(name, type).charAt(0)}H`.toUpperCase();
+      }
+      const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+      return `${parts[0]?.charAt(0) || ""}${parts.length > 1 ? parts.at(-1).charAt(0) : ""}`.toUpperCase() || "AG";
     }
     function photoHtml(item, className = "member-photo") {
-      return `<span class="${className}" aria-hidden="true">${esc(initials(item.displayName))}</span>`;
+      return `<span class="${className}" aria-hidden="true">${esc(directoryInitials(item.displayName, item.type))}</span>`;
     }
     function mediaVariantFor(ownerType) {
       return ownerType === "household" ? "household_card" : "avatar_medium";
@@ -1161,7 +1179,7 @@
         && household && !items.some((item) => item.id === household.id);
       const ownDraft = showOwnDraft ? `
         <article class="member-card household-card" aria-label="Your family">
-          <span class="member-photo">${esc(initials(household.displayName || "Family"))}</span>
+          <span class="member-photo">${esc(directoryInitials(household.displayName || "Family", "household"))}</span>
           <span><strong>${esc(household.displayName)}</strong><small>Your family · Only you can see this preview until parish review is complete.</small></span>
         </article>` : "";
       const html = items.length || ownDraft ? ownDraft + items.map((item) => `
@@ -1379,7 +1397,7 @@
         pane.innerHTML = `
         <article class="family-detail">
           <div class="family-detail-hero">
-            <span class="family-detail-avatar" aria-hidden="true">${esc(initials(profile.displayName))}</span>
+            <span class="family-detail-avatar" aria-hidden="true">${esc(directoryInitials(profile.displayName, "household"))}</span>
             <h2>${esc(profile.displayName)}</h2>
             <p>${[profile.parishName, profile.city].filter(Boolean).map(esc).join("<br>")}</p>
           </div>
@@ -1508,6 +1526,14 @@
         form.elements.displayName.value = current.displayName || form.elements.displayName.value;
         form.elements.expectedVersion.value = current.version || "";
       }
+      const primaryAddress = (detail?.household?.addresses || detail?.addresses || []).find((address) => address.primary)
+        || (detail?.household?.addresses || detail?.addresses || [])[0];
+      form.elements.city.value = primaryAddress?.city || "";
+      form.elements.region.value = primaryAddress?.region || "";
+      form.elements.locationVisibility.value = primaryAddress?.visibility || "directory_members";
+      form.dataset.savedCity = primaryAddress?.city || "";
+      form.dataset.savedRegion = primaryAddress?.region || "";
+      form.dataset.savedLocationVisibility = primaryAddress?.visibility || "";
       document.getElementById("householdPublicationSummary").innerHTML = publication
         ? `<div class="summary-row"><span>Family directory status</span><strong>${esc(statusLabel(publication.status || "draft"))}</strong></div>`
         : '<div class="summary-row"><span>Family directory status</span><strong>Private draft</strong></div>';
@@ -1532,13 +1558,20 @@
     function renderNamedays(items = []) {
       document.getElementById("namedayList").innerHTML = items.length ? items.map((item) => `
         <div class="mini-card"><strong>${esc(item.displayName)} · ${esc(item.feastMonthDay)}</strong><small>${esc(item.saintName)} · ${esc(item.visibility)}</small></div>
-      `).join("") : '<div class="empty">No family name days yet. Add one while entering a spouse, adult, or child.</div>';
+      `).join("") : '<div class="empty"><strong>No family namedays yet.</strong>Use the form below to add yours first.</div>';
     }
     async function loadNamedays() {
       const household = firstHousehold();
+      const form = document.getElementById("namedayForm");
       if (!household) {
+        form.hidden = true;
         document.getElementById("namedayList").innerHTML = '<div class="empty">Name day tools appear after your family is connected.</div>';
         return;
+      }
+      form.hidden = false;
+      if (!form.elements.displayName.value) {
+        const person = profileState?.currentPerson || profileState?.profile?.person || {};
+        form.elements.displayName.value = person.preferredName || donorProfile().displayName || "";
       }
       const payload = await api(`/api/directory/households/${encodeURIComponent(household.id)}/self/namedays`).catch(() => ({ namedays: [] }));
       renderNamedays(payload.namedays || []);
@@ -1803,22 +1836,47 @@
       const form = event.currentTarget;
       const householdId = form.elements.householdId.value;
       const displayName = form.elements.displayName.value.trim();
+      const city = form.elements.city.value.trim();
+      const region = form.elements.region.value.trim();
+      const locationVisibility = form.elements.locationVisibility.value;
       const expectedVersion = Number(form.elements.expectedVersion.value || 0);
-      if (!householdId || !displayName || !expectedVersion) {
+      if (!householdId || !expectedVersion) {
         showNotice("Family details are still loading. Please try again in a moment.", true);
+        return;
+      }
+      if (!displayName || !city || !region) {
+        showNotice("Enter your family name, city, and state before saving.", true);
         return;
       }
       await api(`/api/directory/households/${encodeURIComponent(householdId)}/self`, {
         method: "PATCH",
         body: JSON.stringify({ displayName, expectedVersion })
       });
+      const locationChanged = city !== (form.dataset.savedCity || "")
+        || region !== (form.dataset.savedRegion || "")
+        || locationVisibility !== (form.dataset.savedLocationVisibility || "");
+      if (locationChanged) {
+        await api(`/api/directory/households/${encodeURIComponent(householdId)}/self/addresses`, {
+          method: "POST",
+          body: JSON.stringify({
+            addressType: "residential",
+            line1: `${city}, ${region}`,
+            city,
+            region,
+            country: "US",
+            primary: true,
+            protectedAddress: false,
+            visibility: locationVisibility
+          })
+        });
+      }
       await api("/api/donor/dashboard", {
         method: "PATCH",
         body: JSON.stringify({ householdName: displayName })
       }).then((payload) => {
         if (payload.donor) localStorage.setItem("agapayDonorProfile", JSON.stringify(payload.donor));
       }).catch(() => null);
-      showNotice("Family name saved.");
+      showNotice("Family name and location saved.");
       await loadDirectory();
     });
     document.getElementById("contactForm").addEventListener("submit", async (event) => {
@@ -1829,6 +1887,35 @@
       formEl.reset();
       showNotice("Contact added.");
       await loadDirectory();
+    });
+    document.getElementById("namedayForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const household = firstHousehold();
+      if (!household) {
+        showNotice("Connect your household before adding a nameday.", true);
+        return;
+      }
+      const values = Object.fromEntries(new FormData(form).entries());
+      const payload = {
+        displayName: values.displayName,
+        saintName: values.saintName,
+        feastMonthDay: `${values.feastMonth}-${String(values.feastDay || "").padStart(2, "0")}`,
+        visibility: values.visibility
+      };
+      try {
+        await api(`/api/directory/households/${encodeURIComponent(household.id)}/self/namedays`, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+        const savedName = payload.displayName;
+        form.reset();
+        form.elements.displayName.value = savedName;
+        showNotice("Nameday added.");
+        await loadNamedays();
+      } catch (error) {
+        showNotice(error.message || "Unable to add the nameday.", true);
+      }
     });
     document.getElementById("publicationActions").addEventListener("click", async (event) => {
       const button = event.target.closest("[data-publication]");
