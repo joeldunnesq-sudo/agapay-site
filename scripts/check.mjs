@@ -263,6 +263,26 @@ const learnDashboardShell = await readFile("public/learn/dashboard-shell.js", "u
 assert.ok(!learnDashboardShell.includes("Back to Give"), "Learn account initials menu should not include a Back to Give action");
 
 const giveHtml = await readFile("public/give/form.html", "utf8");
+const givePricingHtml = await readFile("public/give/pricing.html", "utf8");
+const subscriptionCatalog = await readFile("src/lib/subscriptions.js", "utf8");
+assert.ok(
+  subscriptionCatalog.includes('id: "starter"')
+    && subscriptionCatalog.includes("monthlyCents: 900")
+    && subscriptionCatalog.includes('label: "Giving Plus"'),
+  "subscription catalog should expose Starter at $9 while preserving Giving as Giving Plus"
+);
+assert.ok(
+  givePricingHtml.includes('<h2 class="tier-title">Starter</h2>')
+    && givePricingHtml.includes('<div class="tier-price">$9 <span>/ mo</span></div>')
+    && givePricingHtml.includes('<h2 class="tier-title">Giving Plus</h2>'),
+  "Give pricing should show Starter and Giving Plus as distinct tiers"
+);
+assert.ok(
+  parishDashboardApp.includes("function updateStarterPaywalls()")
+    && parishDashboardApp.includes("Upgrade to Giving Plus")
+    && parishDashboardApp.includes("modules?.givingPlus?.included"),
+  "Starter dashboard should preview locked Giving Plus features with an upgrade paywall"
+);
 assert.ok(giveHtml.includes("/api/create-checkout-session"), "giving page should post to checkout API");
 assert.ok(giveHtml.includes("/api/checkout-session-status"), "giving page should reconcile returned Stripe checkout sessions");
 assert.ok(giveHtml.includes("/api/parishes"), "giving page should load registered parishes from the Worker API");

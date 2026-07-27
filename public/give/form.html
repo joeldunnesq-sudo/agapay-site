@@ -1178,6 +1178,11 @@ body {
         if (feeText) feeText.textContent = `When you cover the fees, ${parish.name} receives your full gift — nothing deducted.`;
         const successText = document.querySelector('.success-parish');
         if (successText) successText.innerHTML = `Your gift to <strong>${parish.name}</strong> has been received.<br>A confirmation will be sent to your email.`;
+        if (!parish.givingPlusEnabled) {
+          document.querySelectorAll('.gift-type-card').forEach(card => {
+            card.hidden = card.dataset.type !== 'stewardship';
+          });
+        }
         renderFunds(parish.funds);
         renderCampaigns(activeCampaigns(parish));
         renderCurrentFestalCampaign(parish);

@@ -19,11 +19,12 @@ import { hasActiveStewardshipComp, hasStewardshipAccess, stewardshipStatus } fro
 // matches the "product and craft sale campaigns" capability already
 // promised on the public features page for monastic communities.
 const TIER_MODULES = {
-  giving: { stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
-  stewardship: { stewardshipHealth: true, sacraments: false, directory: false, bookstore: true, textToGive: false, accounting: false, accountingAdvancedOperations: false },
-  parish: { stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, textToGive: true, accounting: true, accountingAdvancedOperations: true },
-  diocese: { stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, textToGive: true, accounting: true, accountingAdvancedOperations: true },
-  monastery_free: { stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingAdvancedOperations: false }
+  starter: { givingPlus: false, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
+  giving: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
+  stewardship: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: false, bookstore: true, textToGive: false, accounting: false, accountingAdvancedOperations: false },
+  parish: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, textToGive: true, accounting: true, accountingAdvancedOperations: true },
+  diocese: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, textToGive: true, accounting: true, accountingAdvancedOperations: true },
+  monastery_free: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingAdvancedOperations: false }
 };
 const MODULE_IDS = ["stewardshipHealth", "sacraments", "directory", "bookstore", "textToGive"];
 
@@ -115,6 +116,10 @@ export function entitlementsSummary(registration) {
     legacyAddOnStatus: stewardshipStatus(registration),
     comped: hasActiveStewardshipComp(registration),
     modules: {
+      givingPlus: {
+        included: tierIncludesModule(registration, "givingPlus"),
+        source: tierIncludesModule(registration, "givingPlus") ? "tier" : "none"
+      },
       stewardshipHealth: {
         included: hasModuleAccess(registration, "stewardshipHealth"),
         source: moduleSource(registration, "stewardshipHealth")

@@ -35,6 +35,14 @@ await test("Giving includes only the essential giving platform", async () => {
   assert.equal(hasParishPlusAccess(reg), false);
 });
 
+await test("Starter provides core giving without Giving Plus features", async () => {
+  const reg = { subscriptionTier: "starter" };
+  assert.equal(tierIncludesModule(reg, "givingPlus"), false);
+  assert.equal(tierIncludesModule(reg, "stewardshipHealth"), false);
+  assert.equal(entitlementsSummary(reg).modules.givingPlus.included, false);
+  assert.equal(tierIncludesModule({ subscriptionTier: "giving" }, "givingPlus"), true);
+});
+
 await test("Accounting remains unavailable outside the private Parish demo", async () => {
   assert.equal(accountingEnabledFor({ subscriptionTier: "giving" }), false);
   assert.equal(accountingEnabledFor({ subscriptionTier: "stewardship" }), false);

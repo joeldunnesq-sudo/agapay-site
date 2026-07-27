@@ -9,13 +9,22 @@
 // currently has access (that's what entitlementsSummary() is for).
 export const subscriptionTiers = [
   {
+    id: "starter",
+    label: "Starter",
+    monthlyCents: 900,
+    transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
+    stripePriceEnv: "AGAPAY_STRIPE_PRICE_STARTER_MONTHLY",
+    description: "Simple online and recurring giving for Orthodox churches.",
+    modules: { givingPlus: false, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
+  },
+  {
     id: "giving",
-    label: "Giving",
+    label: "Giving Plus",
     monthlyCents: 4900,
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_GIVING_MONTHLY",
     description: "Essential online giving tools for Orthodox churches.",
-    modules: { stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
+    modules: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
   },
   {
     id: "stewardship",
@@ -24,7 +33,7 @@ export const subscriptionTiers = [
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_STEWARDSHIP_MONTHLY",
     description: "Giving plus pledge, donor, and Stewardship Health tools.",
-    modules: { stewardshipHealth: true, sacraments: false, directory: false, bookstore: true, textToGive: false, accounting: false, accountingTier: "unavailable" }
+    modules: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: false, bookstore: true, textToGive: false, accounting: false, accountingTier: "unavailable" }
   },
   {
     id: "parish",
@@ -33,7 +42,7 @@ export const subscriptionTiers = [
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_MONTHLY",
     description: "Monthly AGAPAY platform subscription for established parishes.",
-    modules: { stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, textToGive: true, accounting: true, accountingTier: "advanced_operations" }
+    modules: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, textToGive: true, accounting: true, accountingTier: "advanced_operations" }
   },
   {
     id: "diocese",
@@ -42,7 +51,7 @@ export const subscriptionTiers = [
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_DIOCESE_MONTHLY",
     description: "Custom AGAPAY subscription pricing for cathedrals, dioceses, and multi-parish organizations.",
-    modules: { stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, textToGive: true, accounting: true, accountingTier: "advanced_operations" }
+    modules: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, textToGive: true, accounting: true, accountingTier: "advanced_operations" }
   },
   {
     id: "monastery_free",
@@ -51,7 +60,7 @@ export const subscriptionTiers = [
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "",
     description: "No monthly subscription fee for Orthodox monasteries and sketes.",
-    modules: { stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
+    modules: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
   }
 ];
 
@@ -68,7 +77,7 @@ export function defaultSubscriptionTier(registration = {}) {
   const type = String(registration.communityType || registration.parishType || "").toLowerCase();
   if (type.includes("cathedral") || type.includes("diocese")) return "diocese";
   if (type.includes("monastery") || type.includes("skete")) return "monastery_free";
-  if (type.includes("mission")) return "giving";
+  if (type.includes("mission")) return "starter";
   return "parish";
 }
 

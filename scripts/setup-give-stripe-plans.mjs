@@ -45,7 +45,8 @@ if (!product) {
 }
 
 const plans = [
-  { key: "giving", label: "Giving", cents: 4900 },
+  { key: "starter", label: "Starter", cents: 900 },
+  { key: "giving", label: "Giving Plus", cents: 4900 },
   { key: "stewardship", label: "Stewardship", cents: 9900 },
   { key: "parish", label: "Parish", cents: 19900 }
 ];
@@ -96,6 +97,7 @@ const portalConfiguration = await stripe("/billing_portal/configurations", {
     ["features[subscription_update][default_allowed_updates][]", "price"],
     ["features[subscription_update][proration_behavior]", "create_prorations"],
     ["features[subscription_update][products][0][product]", product.id],
+    ["features[subscription_update][products][0][prices][]", prices.starter],
     ["features[subscription_update][products][0][prices][]", prices.giving],
     ["features[subscription_update][products][0][prices][]", prices.stewardship],
     ["features[subscription_update][products][0][prices][]", prices.parish],
@@ -105,6 +107,7 @@ const portalConfiguration = await stripe("/billing_portal/configurations", {
 
 console.log(JSON.stringify({
   AGAPAY_STRIPE_PRODUCT_GIVE: product.id,
+  AGAPAY_STRIPE_PRICE_STARTER_MONTHLY: prices.starter,
   AGAPAY_STRIPE_PRICE_GIVING_MONTHLY: prices.giving,
   AGAPAY_STRIPE_PRICE_STEWARDSHIP_MONTHLY: prices.stewardship,
   AGAPAY_STRIPE_PRICE_PARISH_MONTHLY: prices.parish,

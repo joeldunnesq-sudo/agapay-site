@@ -67,7 +67,7 @@ import {
 } from "../lib/core.js";
 import { loadGivingCatalogFromAccounting, synchronizeGivingCatalogWithAccounting } from "../accounting/source-wiring.js";
 
-import { bookstoreEnabledFor, entitlementsSummary, hasParishPlusAccess, sacramentsEnabledFor, stewardshipToolAccess, tierIncludesParishPlus } from "../lib/entitlements.js";
+import { bookstoreEnabledFor, entitlementsSummary, hasParishPlusAccess, sacramentsEnabledFor, stewardshipToolAccess, tierIncludesModule, tierIncludesParishPlus } from "../lib/entitlements.js";
 
 import {
   createTaxExemptionClaim,
@@ -1751,6 +1751,7 @@ export function parishFromRegistration(registration) {
   if (!id || registration.status !== "verified") return null;
   if (registration.givingStatus && registration.givingStatus !== "active") return null;
   const type = normalizeCommunityType(registration.communityType);
+  const givingPlus = tierIncludesModule(registration, "givingPlus");
 
   return {
     id,
@@ -1773,18 +1774,19 @@ export function parishFromRegistration(registration) {
     patronalFeastName: registration.patronalFeastName || registration.parishPatronalFeastName || "",
     patronalFeastDate: registration.patronalFeastDate || registration.parishPatronalFeastDate || "",
     recurringGivingEnabled: registration.recurringGivingEnabled ?? true,
-    candlesEnabled: registration.candlesEnabled ?? true,
-    commemorationsEnabled: registration.commemorationsEnabled ?? true,
+    givingPlusEnabled: givingPlus,
+    candlesEnabled: givingPlus && (registration.candlesEnabled ?? true),
+    commemorationsEnabled: givingPlus && (registration.commemorationsEnabled ?? true),
     sacramentsEnabled: sacramentsEnabledFor(registration),
-    funds: Array.isArray(registration.funds) && registration.funds.length ? registration.funds : [
+    funds: givingPlus && Array.isArray(registration.funds) && registration.funds.length ? registration.funds : [
       {
         id: "general",
         name: "General Operating Fund",
         description: "Utilities, supplies, ministries, and day-to-day parish needs."
       }
     ],
-    campaigns: Array.isArray(registration.campaigns) ? registration.campaigns : [],
-    feastCampaigns: Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : []
+    campaigns: givingPlus && Array.isArray(registration.campaigns) ? registration.campaigns : [],
+    feastCampaigns: givingPlus && Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : []
   };
 }
 
@@ -2968,6 +2970,10 @@ export async function handleCheckout(request, env) {
 
   const parish = await findCheckoutParish(env, body.parishId);
   if (!parish || parish.status !== "verified") return json({ error: "Verified parish not found" }, { status: 404 });
+  const requestedGiftType = String(body.giftType || "").trim().toLowerCase();
+  if (!parish.givingPlusEnabled && !["stewardship", "general"].includes(requestedGiftType)) {
+    return json({ error: "This offering type is available with Giving Plus." }, { status: 403 });
+  }
 
   if (!env.STRIPE_SECRET_KEY) {
     return json({
@@ -3376,8 +3382,8 @@ export async function handleParishDemoTier(request, env, parishId) {
   const body = await request.json().catch(() => ({}));
   const requestedTier = String(body.subscriptionTier || "").trim().toLowerCase();
   const tier = sharedSubscriptionTier({ subscriptionTier: requestedTier });
-  if (!tier || !["giving", "stewardship", "parish"].includes(tier.id)) {
-    return json({ error: "Choose Giving, Stewardship, or Parish for the demo." }, { status: 422 });
+  if (!tier || !["starter", "giving", "stewardship", "parish"].includes(tier.id)) {
+    return json({ error: "Choose Starter, Giving Plus, Stewardship, or Parish for the demo." }, { status: 422 });
   }
 
   const current = found.registration;
@@ -5762,7 +5768,7 @@ export function parishDashboardPayload(parishId, registration) {
     stripeAccountId: registration.stripeAccountId || "",
     stripeAccountStatus: registration.stripeAccountStatus || "not_started",
     subscriptionTier: registration.subscriptionTier || defaultSubscriptionTier(registration),
-    subscriptionTierLabel: registration.subscriptionTierLabel || subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration))?.label || "",
+    subscriptionTierLabel: currentTier?.label || registration.subscriptionTierLabel || "",
     subscriptionStatus: registration.subscriptionStatus || "not_started",
     // Display the current published tier price. Stored amounts describe an
     // earlier checkout and must not leave the dashboard advertising a stale
@@ -5864,6 +5870,10 @@ export async function handleParishDashboard(request, env, parishId) {
     }
 
     const current = found.registration;
+    const givingPlus = tierIncludesModule(current, "givingPlus");
+    if (!givingPlus && (body.funds !== undefined || body.campaigns !== undefined || body.feastCampaigns !== undefined)) {
+      return json({ error: "Custom funds and campaigns are available with Giving Plus." }, { status: 403 });
+    }
     const requestedPassword = body.newDashboardPassword !== undefined
       ? String(body.newDashboardPassword || "").trim()
       : "";

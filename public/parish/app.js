@@ -658,6 +658,51 @@
     hydrateDirectoryAdminImages(pane);
   }
 
+  function hasGivingPlusAccess() {
+    if (currentParish?.entitlements) return Boolean(currentParish.entitlements.modules?.givingPlus?.included);
+    return String(currentParish?.subscriptionTier || '').toLowerCase() !== 'starter';
+  }
+
+  const starterLockedFeatures = {
+    options: ['Custom funds & alms', 'Create and name custom funds, organize designated giving, and manage standing alms with Giving Plus.'],
+    campaigns: ['Campaign pages', 'Create goal-based, shareable campaigns with Giving Plus.'],
+    qr: ['QR code toolkit', 'Download bulletin-ready QR codes and giving materials with Giving Plus.'],
+    givers: ['Giver insights', 'See donor-level history and deeper giving reports with Giving Plus.'],
+    reconcile: ['Monthly reconciliation', 'Match gifts, fees, refunds, and Stripe deposits with Giving Plus.'],
+    commemorations: ['Commemorations', 'Candles, liturgical commemorations, Moliebens, Panikhidas, and the priest queue are included with Giving Plus.'],
+    statements: ['Annual giving statements', 'Generate and email annual donor statements with Giving Plus.']
+  };
+
+  function starterPaywallMarkup(featureKey) {
+    const [title, copy] = starterLockedFeatures[featureKey];
+    return `<div class="starter-tier-paywall">
+      <span class="starter-tier-paywall-badge">Giving Plus</span>
+      <strong>${escapeHtml(title)}</strong>
+      <p>${escapeHtml(copy)}</p>
+      <button class="btn btn-gold" type="button" onclick="switchTab('settings')">Upgrade to Giving Plus</button>
+    </div>`;
+  }
+
+  function updateStarterPaywalls() {
+    const locked = !hasGivingPlusAccess();
+    const targets = {
+      options: document.getElementById('tab-options'),
+      campaigns: document.getElementById('tab-campaigns'),
+      qr: document.getElementById('tab-qr'),
+      givers: document.getElementById('tab-givers'),
+      reconcile: document.getElementById('tab-reconcile'),
+      commemorations: document.getElementById('commemorationQueueCard'),
+      statements: document.getElementById('pdxGsSection')
+    };
+    Object.entries(targets).forEach(([key, element]) => {
+      if (!element) return;
+      element.classList.toggle('starter-tier-locked', locked);
+      let paywall = element.querySelector(':scope > .starter-tier-paywall');
+      if (locked && !paywall) element.insertAdjacentHTML('beforeend', starterPaywallMarkup(key));
+      if (!locked && paywall) paywall.remove();
+    });
+  }
+
   function moduleIncluded(moduleId) {
     return Boolean(currentParish?.entitlements?.modules?.[moduleId]?.included);
   }
@@ -5936,6 +5981,7 @@
       </div>
       <div class="pdx-sub-modules">
         <div class="pdx-sub-modules-title">Modules</div>
+        ${moduleRow('Giving Plus tools', 'givingPlus')}
         ${moduleRow('Stewardship Health', 'stewardshipHealth')}
         ${moduleRow('Parish Directory', 'directory')}
         ${moduleRow('Sacraments & Services', 'sacraments')}
@@ -6037,6 +6083,7 @@
     const overviewEmpty = document.getElementById('overviewEmpty');
     if (overviewEmpty) overviewEmpty.style.display = 'none';
     renderSetupWizard();
+    updateStarterPaywalls();
 
     const billingActive = Boolean((p.setup||{}).billingActive);
     const tierOptions = tierOptionsMarkup(p.subscriptionTier);
@@ -7025,9 +7072,11 @@
       commemorationsEnabled:  document.getElementById('commemorationsEnabled')?.checked,
       bookstoreEnabled:       document.getElementById('bookstoreEnabled')?.checked,
       sacramentPriests:       parseSacramentPriestsFromSettings(),
-      funds:                  editableFunds,
-      campaigns:              editableCampaigns,
-      feastCampaigns:         editableFeastCampaigns,
+      ...(hasGivingPlusAccess() ? {
+        funds: editableFunds,
+        campaigns: editableCampaigns,
+        feastCampaigns: editableFeastCampaigns
+      } : {}),
     };
     if (newPw) body.newDashboardPassword = newPw;
     return body;
