@@ -5904,11 +5904,11 @@
     document.getElementById('nav-stewardship')?.toggleAttribute('hidden', !showStewardship);
     accountingNav?.classList.toggle('sidebar-nav-item--gated', !accountingDemoActive);
     if (accountingNav) accountingNav.title = accountingDemoActive ? 'Demo Accounting workspace' : 'Accounting is coming soon';
-    if (accountingBadge) accountingBadge.hidden = accountingDemoActive;
+    if (accountingBadge) accountingBadge.hidden = false;
     document.querySelectorAll('.mobile-tab-link[data-nav-tab="accounting"]').forEach((el) => {
       el.classList.toggle('mobile-tab-link--gated', !accountingDemoActive);
       const badge = el.querySelector('.mobile-soon-badge');
-      if (badge) badge.hidden = accountingDemoActive;
+      if (badge) badge.hidden = false;
     });
     document.querySelectorAll('.mobile-tab-link[data-nav-tab="stewardship"]').forEach((el) => {
       el.hidden = !showStewardship;
@@ -5925,7 +5925,7 @@
       'giving', 'options', 'campaigns', 'qr', 'history', 'givers', 'reconcile',
       'stewardship', 'bookstore',
       'sacraments', 'directory',
-      'text', 'accounting',
+      'accounting', 'text',
       'settings'
     ];
     const sidebar = document.querySelector('.sidebar-nav');

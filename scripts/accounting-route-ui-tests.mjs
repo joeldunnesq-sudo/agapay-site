@@ -28,7 +28,7 @@ assert.equal(accountingAvailableForParish("parish-a"), false);
 assert.match(app, /currentParish\?\.parishId !== 'st-fiacre'/);
 assert.match(app, /const accountingDemoActive = currentParish\?\.parishId === 'st-fiacre'/);
 assert.match(app, /Accounting is coming soon/);
-assert.match(app, /accountingBadge\.hidden = accountingDemoActive/);
+assert.match(app, /accountingBadge\.hidden = false/);
 for (const route of ["/setup", "/setup/initialize", "/settings", "/workspace-reference", "/reports/trial-balance", "/reports/statement-of-activities", "/reports/statement-of-financial-position", "/reports/fund-activity"]) assert.ok(routes.includes(route), `missing Accounting route ${route}`);
 assert.match(routes, /accounting\.view/);
 assert.match(routes, /accounting\.configure/);
