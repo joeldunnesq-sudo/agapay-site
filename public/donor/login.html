@@ -129,6 +129,13 @@ if ("serviceWorker" in navigator) {
         setStatus("");
       }
 
+      function safeNextPath() {
+        const requested = new URLSearchParams(window.location.search).get("next") || "";
+        return requested.startsWith("/myagapay/") && !requested.startsWith("//")
+          ? requested
+          : "/myagapay/";
+      }
+
       async function postJson(url, body) {
         const response = await fetch(url, {
           method: "POST",
@@ -172,8 +179,9 @@ if ("serviceWorker" in navigator) {
             const profile = { ...data.donor, email: donorEmail };
             localStorage.setItem("agapayDonorProfile", JSON.stringify(profile));
           }
-          setStatus("Signed in. Opening My AGAPAY...", "success");
-          window.location.href = "/myagapay/";
+          const destination = safeNextPath();
+          setStatus(destination.startsWith("/myagapay/learn") ? "Signed in. Opening AGAPAY Learn..." : "Signed in. Opening My AGAPAY...", "success");
+          window.location.href = destination;
         } catch (error) {
           localStorage.removeItem("agapayDonorToken");
           setStatus(error.message === "Unauthorized"

@@ -13,7 +13,7 @@
   const SIGN_IN_LINKS = [
     { href: "/myagapay/login", label: "My AGAPAY" },
     { href: "/give/login", label: "Parish Dashboard" },
-    { href: "/myagapay/login?next=%2Fmyagapay%2Flearn", label: "AGAPAY Learn" }
+    { href: "/myagapay/login?next=%2Fmyagapay%2Flearn%2Fdashboard", label: "AGAPAY Learn" }
   ];
 
   function activeKeyFromPath() {
@@ -70,7 +70,7 @@
           <div class="nav-actions">
             <a class="btn-donate ${activeKey === "give" ? "active" : ""}" href="/register">
               ${shellIcon("giving-hand")}
-              Start Free Demo
+              Start for free
             </a>
 
             <div class="signin-wrap">
@@ -103,7 +103,7 @@
           </nav>
           <a class="drawer-join" href="/register">
             ${shellIcon("giving-hand")}
-            Start Free Demo
+            Start for free
           </a>
           <div class="drawer-divider"></div>
           <nav class="drawer-links" aria-label="Sign in options">
@@ -134,7 +134,7 @@
               <a href="/design">AGAPAY Design</a>
               <a href="/marketplace">Marketplace</a>
               <a href="/directory">Directory</a>
-              <a href="/register">Start Free Demo</a>
+              <a href="/register">Start for free</a>
             </nav>
             <nav class="footer-col" aria-label="AGAPAY Give">
               <h4>Give</h4>
