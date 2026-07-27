@@ -30,12 +30,26 @@ function feastOccurrencesNear(dateIso, calendar) {
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
+function annualCustomFeastOccurrences(dateIso, campaign = {}) {
+  const raw = String(campaign.feastDate || campaign.patronalFeastDate || "").trim();
+  const monthDay = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw.slice(5) : raw;
+  if (!/^\d{2}-\d{2}$/.test(monthDay)) return [];
+  const year = Number(dateIso.slice(0, 4));
+  return [year - 1, year, year + 1].map((occurrenceYear) => ({
+    id: campaignFeastId(campaign),
+    name: campaign.name || campaign.campaignName || "Patronal Feast",
+    date: `${occurrenceYear}-${monthDay}`
+  }));
+}
+
 export function festalAlmsVisibilityWindow(campaign, calendar = "julian", referenceDate = new Date()) {
   const dateIso = isoDate(referenceDate);
   const feastId = campaignFeastId(campaign);
   if (!feastId) return null;
 
-  const occurrences = feastOccurrencesNear(dateIso, calendar);
+  const calendarOccurrences = feastOccurrencesNear(dateIso, calendar);
+  const customOccurrences = annualCustomFeastOccurrences(dateIso, campaign);
+  const occurrences = customOccurrences.length ? customOccurrences : calendarOccurrences;
   const feast = occurrences
     .filter((item) => item.id === feastId)
     .sort((a, b) => Math.abs(Date.parse(`${a.date}T12:00:00Z`) - Date.parse(`${dateIso}T12:00:00Z`))

@@ -38,4 +38,19 @@ assert.equal(onlyNearest[0].id, "theophany");
 
 assert.equal(activeFestalAlmsCampaigns([{ ...campaign("theophany"), enabled: false }], "gregorian", "2026-01-06").length, 0);
 
+const saintNicholas = {
+  id: "st-nicholas-the-wonderworker",
+  name: "St. Nicholas the Wonderworker",
+  feastDate: "12-19",
+  enabled: true
+};
+assert.deepEqual(festalAlmsVisibilityWindow(saintNicholas, "julian", "2026-12-19"), {
+  feastDate: "2026-12-19",
+  startsAt: "2026-12-12",
+  endsAt: "2026-12-26",
+  fastStartId: null
+});
+assert.equal(activeFestalAlmsCampaigns([saintNicholas], "julian", "2026-12-12").length, 1);
+assert.equal(activeFestalAlmsCampaigns([saintNicholas], "julian", "2026-12-27").length, 0);
+
 console.log("festal alms visibility tests passed");

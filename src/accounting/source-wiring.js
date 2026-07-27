@@ -205,9 +205,12 @@ export async function synchronizeGivingCatalogWithAccounting(env, parishId, regi
     ...(Array.isArray(registration.campaigns) ? registration.campaigns : []).map((item) => ({ ...item, sourceType: "campaign" })),
     ...(Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : []).map((item) => ({ ...item, sourceType: "campaign", feastCampaign: true }))
   ].filter((item) => item.enabled !== false);
+  // Funds & Alms is the parish-managed catalog. Retire every non-system,
+  // non-default accounting fund before republishing that catalog so parallel
+  // fund lists cannot drift. Historical journal lines keep their fund IDs.
   await db.prepare(`UPDATE accounting_funds SET is_active=0,archived_at=COALESCE(archived_at,datetime('now')),
     giving_enabled=0,version=version+1,updated_at=datetime('now')
-    WHERE giving_source_type IS NOT NULL AND giving_source_id IS NOT NULL`).run();
+    WHERE is_system=0 AND is_default=0`).run();
   const synchronized = [];
   for (const item of records) {
     const sourceId = text(item.id) || text(item.code) || text(item.slug) || text(item.name) || text(item.title);

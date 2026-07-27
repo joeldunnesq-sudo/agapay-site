@@ -1765,6 +1765,9 @@ export function parishFromRegistration(registration) {
       ? `${registration.parishName || "Orthodox community"} logo`
       : registration.imageAlt || communitySketchAlt(type),
     liturgicalCalendar: registration.liturgicalCalendar || "julian",
+    patronalFeast: registration.patronalFeast || "",
+    patronalFeastName: registration.patronalFeastName || registration.parishPatronalFeastName || "",
+    patronalFeastDate: registration.patronalFeastDate || registration.parishPatronalFeastDate || "",
     recurringGivingEnabled: registration.recurringGivingEnabled ?? true,
     candlesEnabled: registration.candlesEnabled ?? true,
     commemorationsEnabled: registration.commemorationsEnabled ?? true,
@@ -5709,6 +5712,8 @@ export function parishDashboardPayload(parishId, registration) {
     timezone: registration.timezone || "",
     liturgicalCalendar: registration.liturgicalCalendar || "julian",
     patronalFeast: registration.patronalFeast || "",
+    patronalFeastName: registration.patronalFeastName || registration.parishPatronalFeastName || "",
+    patronalFeastDate: registration.patronalFeastDate || registration.parishPatronalFeastDate || "",
     givingStatus: registration.givingStatus || "active",
     stripeAccountId: registration.stripeAccountId || "",
     stripeAccountStatus: registration.stripeAccountStatus || "not_started",
@@ -5793,12 +5798,9 @@ export async function handleParishDashboard(request, env, parishId) {
     const { registration } = found;
     const catalog = await loadGivingCatalogFromAccounting(env, parishId, registration);
     return json({
-      parish: parishDashboardPayload(parishId, {
-        ...registration,
-        funds: catalog.funds,
-        campaigns: catalog.campaigns,
-        feastCampaigns: catalog.feastCampaigns
-      }),
+      // The parish-managed Funds & Alms record is authoritative. Accounting
+      // consumes it on save; accounting must never overwrite this editor.
+      parish: parishDashboardPayload(parishId, registration),
       accountingCatalogConnected: catalog.available
     });
   }
@@ -5837,6 +5839,11 @@ export async function handleParishDashboard(request, env, parishId) {
       })(),
       liturgicalCalendar: body.liturgicalCalendar || current.liturgicalCalendar || "julian",
       patronalFeast: String(body.patronalFeast ?? current.patronalFeast ?? "").trim(),
+      patronalFeastName: String(body.patronalFeastName ?? current.patronalFeastName ?? current.parishPatronalFeastName ?? "").trim().slice(0, 160),
+      patronalFeastDate: (() => {
+        const value = String(body.patronalFeastDate ?? current.patronalFeastDate ?? current.parishPatronalFeastDate ?? "").trim();
+        return /^(?:\d{4}-)?\d{2}-\d{2}$/.test(value) ? value.slice(-5) : "";
+      })(),
       givingStatus: body.givingStatus || current.givingStatus || "active",
       recurringGivingEnabled: Boolean(body.recurringGivingEnabled ?? current.recurringGivingEnabled ?? true),
       candlesEnabled: Boolean(body.candlesEnabled ?? current.candlesEnabled ?? true),

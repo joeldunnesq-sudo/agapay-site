@@ -686,7 +686,6 @@
   let accountingData = { setup: null, journals: [], ledger: [], reports: {}, accounts: [], funds: [], payables: null, budgets: null, banking: null, integrations: null, close: null, tier: '' };
   let accountingBankPreview = null;
   let accountingFundCatalog = null;
-  let accountingFundEditor = null;
   let accountingFundAccountSections = new Set(['net_asset']);
   let accountingExpenseAccountEditor = null;
   let accountingReconciliationView = 'giving';
@@ -768,7 +767,7 @@
     const fundBalance = (fund) => accountingData.ledger.filter((row) => row.fundId === fund.id || row.fund_id === fund.id).reduce((sum,row) => sum + Number(row.debitAmount ?? row.debit_amount ?? 0) - Number(row.creditAmount ?? row.credit_amount ?? 0), 0);
     pane.innerHTML = `<section class="acct-command-hero">
       <div><span class="acct-kicker">Financial command center</span><h2>Clarity for every parish dollar.</h2><p>Fund accounting, giving, commerce, payables, and bank activity—one balanced set of books.</p></div>
-      <div class="acct-command-actions"><button onclick="accountingView='journals';newAccountingJournal()"><b>＋</b><span>New journal<small>Record an entry</small></span></button><button onclick="accountingFundEditor={};setAccountingView('funds')"><b>◫</b><span>Add fund<small>Track a purpose</small></span></button><button onclick="setAccountingView('banking')"><b>⇄</b><span>Reconcile<small>Match the bank</small></span></button><button onclick="setAccountingView('reports')"><b>▤</b><span>Run reports<small>Review results</small></span></button></div>
+      <div class="acct-command-actions"><button onclick="accountingView='journals';newAccountingJournal()"><b>＋</b><span>New journal<small>Record an entry</small></span></button><button onclick="switchTab('options')"><b>◫</b><span>Manage funds<small>Open Funds &amp; Alms</small></span></button><button onclick="setAccountingView('banking')"><b>⇄</b><span>Reconcile<small>Match the bank</small></span></button><button onclick="setAccountingView('reports')"><b>▤</b><span>Run reports<small>Review results</small></span></button></div>
     </section><div class="acct-suite-stats">
       <div class="acct-suite-stat featured"><span>Cash on hand</span><strong>${accountingMoney(cash)}</strong><small>Across active cash and bank accounts</small></div>
       <div class="acct-suite-stat"><span>Total net assets</span><strong>${accountingMoney(netAssets)}</strong><small>${position.validation?.status === 'validated' ? 'Financial position is balanced' : 'Review the financial position'}</small></div>
@@ -1120,19 +1119,6 @@
   }
   function renderAccountingFunds(pane) {
     if (!accountingFundCatalog) { pane.innerHTML = '<p class="sw-tool-loading">Loading funds...</p>'; return; }
-    if (accountingFundEditor) {
-      const fund = accountingFundEditor.id ? accountingFundEditor : { code:'',name:'',description:'',purpose:'',restrictionType:'unrestricted' };
-      pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">${fund.id ? 'Edit fund' : 'New fund'}</span><h2>${fund.id ? escapeHtml(fund.name) : 'Add an accounting fund'}</h2><p>Funds keep every journal entry, budget, contribution, and report assigned to the right purpose.</p></div><button class="acct-refresh" onclick="accountingFundEditor=null;renderAccountingPane()">Cancel</button></div>
-        <form class="acct-phase-form acct-fund-form" onsubmit="saveAccountingFund(event)">
-          <div class="acct-form-grid"><label>Fund account number<input name="code" maxlength="24" required value="${escapeAttr(fund.code)}" placeholder="2100 or BUILDING"><small>Used to identify this fund across entries, budgets, and reports.</small></label><label>Fund name<input name="name" maxlength="120" required value="${escapeAttr(fund.name)}" placeholder="Building Fund"></label></div>
-          <label>Restriction<select name="restrictionType">${[['unrestricted','Unrestricted'],['board_designated','Board designated'],['donor_restricted_temporary','Donor restricted · temporary'],['donor_restricted_permanent','Donor restricted · permanent']].map(([value,label])=>`<option value="${value}" ${fund.restrictionType===value?'selected':''}>${label}</option>`).join('')}</select></label>
-          <label>Purpose<input name="purpose" value="${escapeAttr(fund.purpose||'')}" placeholder="What this fund supports"></label>
-          <label>Description<textarea name="description" rows="4" placeholder="Internal accounting description">${escapeHtml(fund.description||'')}</textarea></label>
-          ${fund.isGivingSynced ? '<div class="notice">This fund originated in Funds &amp; Alms. Its name and restriction may be refreshed when that parish configuration is saved.</div>' : ''}
-          <div class="acct-phase-form-foot"><button class="acct-primary">${fund.id ? 'Save fund' : 'Add fund'}</button><span class="acct-form-status"></span></div>
-        </form>`;
-      return;
-    }
     const active = accountingFundCatalog.filter((fund) => Number(fund.isActive));
     const accountsByNumber = new Map(accountingData.accounts.map((account) => [String(account.accountNumber || account.account_number || ''), account]));
     const balanceFor = (fund) => accountingData.ledger
@@ -1151,7 +1137,7 @@
     const restricted = fundBalances.filter(({fund}) => String(fund.restrictionType).startsWith('donor_restricted'));
     const categories = [['asset','Assets'],['liability','Liabilities'],['net_asset','Equity / Fund Balances'],['revenue','Income'],['expense','Expenses']];
     const standardAccountRows = (category) => accountingData.accounts.filter((account) => account.category === category).map((account) => `<button class="acct-fund-account-row" onclick="showAccountingAccountForm('${escapeAttr(account.id)}')"><span>${escapeHtml(account.accountNumber)}</span><strong>${escapeHtml(account.name)}</strong><small>${escapeHtml(account.normalBalance)} normal balance · Edit number or name</small></button>`).join('') || '<div class="acct-fund-account-empty">No active posting accounts in this group.</div>';
-    const fundBalanceRows = (items, empty) => items.length ? items.map(({fund,balance}) => `<button class="acct-fund-balance-row" onclick="editAccountingFund('${escapeAttr(fund.id)}')"><span>${escapeHtml(fund.code)}</span><strong>${escapeHtml(fund.name)} · Fund Balance</strong><small>${escapeHtml(restrictionLabel(fund.restrictionType))}</small><b class="${balance<0?'negative':''}">${accountingMoney(balance)}</b></button>`).join('') : `<div class="acct-fund-account-empty">${empty}</div>`;
+    const fundBalanceRows = (items, empty) => items.length ? items.map(({fund,balance}) => `<div class="acct-fund-balance-row"><span>${escapeHtml(fund.code)}</span><strong>${escapeHtml(fund.name)} · Fund Balance</strong><small>${escapeHtml(restrictionLabel(fund.restrictionType))}</small><b class="${balance<0?'negative':''}">${accountingMoney(balance)}</b></div>`).join('') : `<div class="acct-fund-account-empty">${empty}</div>`;
     const expenseRows = (group) => {
       const rows = accountingData.accounts.filter((account) => account.category === 'expense' && (account.expenseGroup || 'other') === group);
       return `<div class="acct-expense-account-group"><div class="acct-expense-account-group-head"><div><strong>${group === 'administrative' ? 'Administrative Expenses' : 'Other Expenses'}</strong><small>${group === 'administrative' ? 'Salaries, clergy support, rent, and routine administration' : 'Travel, utilities, AGAPAY fees, building costs, and other operations'}</small></div><button onclick="showAccountingExpenseAccountForm('${group}')">＋ Add account</button></div>${rows.map((account)=>{const fund=active.find((item)=>item.id===account.defaultFundId),parent=accountingData.accounts.find((item)=>item.id===account.parentAccountId);return `<button class="acct-expense-account-row ${parent?'subaccount':''}" onclick="showAccountingExpenseAccountForm('${group}','${escapeAttr(account.id)}')"><span>${escapeHtml(account.accountNumber)}</span><strong>${escapeHtml(account.name)}</strong><small>${parent?`Sub-account of ${escapeHtml(parent.name)} · `:''}${escapeHtml(fund?.name || 'Choose fund when posting')}</small><b>${Number(account.isSystem)?'Configure':'Edit'}</b></button>`}).join('') || '<div class="acct-fund-account-empty">No accounts in this expense group yet.</div>'}</div>`;
@@ -1162,19 +1148,15 @@
       const parentOptions = accountingData.accounts.filter((item)=>item.category==='expense'&&item.id!==account.id);
       return `<form class="acct-expense-account-form" onsubmit="saveAccountingExpenseAccount(event)"><div><span class="acct-kicker">${account.id?'Edit account':'New expense account'}</span><h3>${account.id?escapeHtml(account.name):account.expenseGroup==='administrative'?'Administrative expense':'Other expense'}</h3><p>Every account has both a number and a name. The account category and normal balance remain protected.</p></div><div class="acct-form-grid"><label>Account number<input name="accountNumber" maxlength="24" required value="${escapeAttr(account.accountNumber||'')}" placeholder="5000"></label><label>Account name<input name="name" maxlength="120" required value="${escapeAttr(account.name||'')}" placeholder="Salaries"></label>${isExpense?`<label>Expense group<select name="expenseGroup"><option value="administrative" ${account.expenseGroup==='administrative'?'selected':''}>Administrative Expenses</option><option value="other" ${account.expenseGroup==='other'?'selected':''}>Other Expenses</option></select></label><label>Default fund<select name="defaultFundId" required>${active.map((fund)=>`<option value="${escapeAttr(fund.id)}" ${account.defaultFundId===fund.id?'selected':''}>${escapeHtml(fund.code)} · ${escapeHtml(fund.name)}</option>`).join('')}</select><small>Selected automatically when this account is used in a new journal entry.</small></label><label>Parent account<select name="parentAccountId"><option value="">No parent account</option>${parentOptions.map((parent)=>`<option value="${escapeAttr(parent.id)}" ${account.parentAccountId===parent.id?'selected':''}>${escapeHtml(parent.accountNumber)} · ${escapeHtml(parent.name)}</option>`).join('')}</select><small>Optional: organize this as a sub-account.</small></label>`:`<input type="hidden" name="parentAccountId" value="${escapeAttr(account.parentAccountId||'')}"><label>Category<input value="${escapeAttr(String(account.category||'').replaceAll('_',' '))}" readonly></label><label>Normal balance<input value="${escapeAttr(account.normalBalance||'')}" readonly></label>`}</div><label>Description<input name="description" value="${escapeAttr(account.description||'')}" placeholder="What should be posted to this account?"></label><div class="acct-phase-form-foot"><button class="acct-primary">${account.id?'Save account':'Add account'}</button><button type="button" class="acct-refresh" onclick="accountingExpenseAccountEditor=null;renderAccountingPane()">Cancel</button><span class="acct-form-status"></span></div></form>`;
     })() : '';
-    pane.innerHTML = `<section class="acct-funds-directory"><div class="acct-list-head"><div><span class="acct-kicker">Fund directory</span><h2>Funds</h2><p>Every fund automatically receives a matching equity / fund-balance row below.</p></div><button class="acct-primary" onclick="accountingFundEditor={};renderAccountingPane()">＋ Add fund</button></div>
+    pane.innerHTML = `<section class="acct-funds-directory"><div class="acct-list-head"><div><span class="acct-kicker">Fund directory</span><h2>Funds</h2><p>Funds &amp; Alms is the source of truth. Every fund automatically receives a matching equity / fund-balance row and is available throughout Accounting.</p></div><button class="acct-primary" onclick="switchTab('options')">Manage in Funds &amp; Alms</button></div>
       <div class="acct-fund-tools"><label>Find a fund<input type="search" placeholder="Search by name, number, or purpose" oninput="filterAccountingFunds(this.value)"></label><span>${active.length} active · ${accountingFundCatalog.length-active.length} retired</span></div>
-      <div class="acct-funds-directory-grid">${accountingFundCatalog.map((fund)=>`<button class="acct-fund-directory-card ${Number(fund.isActive)?'':'retired'}" data-fund-search="${escapeAttr(`${fund.code} ${fund.name} ${fund.purpose||''} ${fund.description||''}`.toLowerCase())}" onclick="editAccountingFund('${escapeAttr(fund.id)}')"><span>${escapeHtml(fund.code)}</span><strong>${escapeHtml(fund.name)}</strong><small>${escapeHtml(restrictionLabel(fund.restrictionType))}${Number(fund.isDefault)?' · Default':''}</small></button>`).join('') || accountingEmpty('No funds','Add the first fund for this ledger.')}</div></section>
+      <div class="acct-funds-directory-grid">${accountingFundCatalog.map((fund)=>`<div class="acct-fund-directory-card ${Number(fund.isActive)?'':'retired'}" data-fund-search="${escapeAttr(`${fund.code} ${fund.name} ${fund.purpose||''} ${fund.description||''}`.toLowerCase())}"><span>${escapeHtml(fund.code)}</span><strong>${escapeHtml(fund.name)}</strong><small>${escapeHtml(restrictionLabel(fund.restrictionType))}${Number(fund.isDefault)?' · Default':''}</small></div>`).join('') || accountingEmpty('No funds','Add the first fund in Funds &amp; Alms.')}</div></section>
       <section class="acct-fund-accounts"><div class="acct-fund-accounts-head"><div><span class="acct-kicker">Chart of accounts</span><h2>Accounts</h2><p>Expand a group to review posting accounts and the fund-balance structure.</p></div><div><span>${accountingData.accounts.length} posting accounts</span><strong>${active.length} fund balances</strong></div></div>
         <div class="acct-fund-account-groups">${categories.map(([category,label])=>{const expanded=accountingFundAccountSections.has(category), editorHere=accountingExpenseAccountEditor&&(accountingExpenseAccountEditor.category||'expense')===category;return `<section class="acct-fund-account-group ${expanded?'expanded':''}"><button class="acct-fund-account-group-head" onclick="toggleAccountingFundAccountSection('${category}')" aria-expanded="${expanded}"><span>${escapeHtml(label)}</span><small>${category==='net_asset'?`${active.length} automatic fund balance${active.length===1?'':'s'}`:`${accountingData.accounts.filter(account=>account.category===category).length} account${accountingData.accounts.filter(account=>account.category===category).length===1?'':'s'}`}</small><b>${expanded?'−':'＋'}</b></button>${expanded?`<div class="acct-fund-account-group-body">${editorHere?accountForm:''}${category==='net_asset'?`${standardAccountRows(category)}<div class="acct-fund-net-assets"><div class="acct-fund-net-group"><h3><span>Unrestricted net assets</span><small>General and board-designated funds</small></h3>${fundBalanceRows(unrestricted,'No unrestricted funds.')}</div><div class="acct-fund-net-group restricted"><h3><span>Restricted net assets</span><small>Donor-restricted purposes</small></h3>${fundBalanceRows(restricted,'No restricted funds.')}</div></div>`:category==='expense'?`${expenseRows('administrative')}${expenseRows('other')}`:standardAccountRows(category)}</div>`:''}</section>`}).join('')}</div>
       </section>
       <section class="acct-fund-chart"><div class="acct-list-head"><div><span class="acct-kicker">Posted ledger composition</span><h2>Fund balances at a glance</h2><p>Relative balances based on posted journal activity. Negative balances extend in the same scale and are labeled clearly.</p></div><button class="acct-refresh" onclick="setAccountingView('reports')">Open fund report</button></div>
         <div class="acct-fund-bars">${fundBalances.map(({fund,balance})=>`<div class="acct-fund-bar-row"><div class="acct-fund-bar-label"><strong>${escapeHtml(fund.name)}</strong><span>${escapeHtml(fund.code)}</span></div><div class="acct-fund-bar-track"><i class="${String(fund.restrictionType).startsWith('donor_restricted')?'restricted':''} ${balance<0?'negative':''}" style="width:${Math.max(balance===0?0:3,Math.round(Math.abs(balance)/largestFundBalance*100))}%"></i></div><strong class="${balance<0?'negative':''}">${accountingMoney(balance)}</strong></div>`).join('') || '<div class="acct-empty"><strong>No active funds</strong><span>Add a fund to begin tracking balances.</span></div>'}</div>
       </section>`;
-  }
-  function editAccountingFund(id) {
-    accountingFundEditor = accountingFundCatalog?.find((fund) => fund.id === id) || null;
-    renderAccountingPane();
   }
   function filterAccountingFunds(query) {
     const needle = String(query || '').trim().toLowerCase();
@@ -1209,19 +1191,6 @@
     accountingData.accounts = data.accounts || accountingData.accounts;
     accountingExpenseAccountEditor = null;
     renderAccountingPane();
-  }
-  async function saveAccountingFund(event) {
-    event.preventDefault();
-    const form = event.currentTarget, status = form.querySelector('.acct-form-status');
-    status.textContent = 'Saving…';
-    const body = Object.fromEntries(new FormData(form));
-    if (accountingFundEditor?.id) body.expectedVersion = accountingFundEditor.version;
-    const path = accountingFundEditor?.id ? `/funds/${encodeURIComponent(accountingFundEditor.id)}` : '/funds';
-    const response = await fetch(accountingApi(path), { method: accountingFundEditor?.id ? 'PATCH' : 'POST', headers:{...authHeaders(),'Content-Type':'application/json'}, body:JSON.stringify(body) });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) { status.textContent = payload.message || payload.error || 'Unable to save fund.'; return; }
-    accountingFundEditor = null; accountingFundCatalog = null;
-    await loadAccountingFunds();
   }
   async function loadAccountingTab(force = false) {
     const pane = document.getElementById('accountingPane');
@@ -5682,7 +5651,7 @@
     `).join('')}</div>`;
   }
 
-  function addGivingOption(kind) { const prefix=kind==='fund'?'fund':'campaign'; const nameEl=document.getElementById(`${prefix}Name`); const descEl=document.getElementById(`${prefix}Description`); const name=nameEl?.value.trim(); if(!name){setStatus(`Enter a ${kind} name.`,'error');return;} const item={id:slugifyLocal(name),name,description:descEl?.value.trim()||(kind==='fund'?'Designated support for this parish.':'Parish-approved alms for this need.'),accountNumber:document.getElementById(`${prefix}AccountNumber`)?.value.trim()||'',restrictionType:document.getElementById(`${prefix}Restriction`)?.value||(kind==='campaign'?'donor_restricted_temporary':'unrestricted')}; if(kind==='campaign'){const goalCents=parseDollarsToCents(document.getElementById('campaignGoal')?.value); if(goalCents>0) item.goalCents=goalCents;} if(kind==='fund') editableFunds.push(item); else editableCampaigns.push(item); nameEl.value=''; descEl.value=''; const goalEl=document.getElementById(`${prefix}Goal`); if(goalEl) goalEl.value=''; renderGivingOptionsEditor(); setStatus(`${kind==='fund'?'Fund':'Campaign'} added. Save when ready.`,'success'); }
+  function addGivingOption(kind) { const prefix=kind==='fund'?'fund':'campaign'; const nameEl=document.getElementById(`${prefix}Name`); const descEl=document.getElementById(`${prefix}Description`); const name=nameEl?.value.trim(); if(!name){setStatus(`Enter a ${kind} name.`,'error');return;} const id=slugifyLocal(name); const target=kind==='fund'?editableFunds:editableCampaigns; if(target.some((item)=>item.id===id||String(item.name||'').trim().toLowerCase()===name.toLowerCase())){setStatus(`A ${kind} with that name already exists.`,'error');return;} const item={id,name,description:descEl?.value.trim()||(kind==='fund'?'Designated support for this parish.':'Parish-approved alms for this need.'),accountNumber:document.getElementById(`${prefix}AccountNumber`)?.value.trim()||'',restrictionType:document.getElementById(`${prefix}Restriction`)?.value||(kind==='campaign'?'donor_restricted_temporary':'unrestricted'),...(kind==='fund'?{fundType:document.getElementById('fundPreset')?.value==='custom'?'custom':'preset'}:{})}; if(kind==='campaign'){const goalCents=parseDollarsToCents(document.getElementById('campaignGoal')?.value); if(goalCents>0) item.goalCents=goalCents;} target.push(item); nameEl.value=''; descEl.value=''; const goalEl=document.getElementById(`${prefix}Goal`); if(goalEl) goalEl.value=''; renderGivingOptionsEditor(); setStatus(`${kind==='fund'?'Fund':'Campaign'} added. Save when ready.`,'success'); }
   function removeGivingOption(kind,i) { if(kind==='fund') editableFunds.splice(i,1); else editableCampaigns.splice(i,1); renderGivingOptionsEditor(); setStatus('Option removed. Save when ready.','success'); }
 
   // ── FEAST CAMPAIGN HELPERS ────────────────────────────────
@@ -5701,24 +5670,33 @@
     const cal = document.getElementById('settingsLiturgicalCalendar')?.value || currentParish?.liturgicalCalendar || 'julian';
     return feastPresetsForCalendar(cal);
   }
-  function syncPatronalFeastOptionsFromSettings() {
-    const select = document.getElementById('patronalFeast');
-    if (!select) return;
-    const selected = select.value || currentParish?.patronalFeast || '';
-    const calendar = document.getElementById('settingsLiturgicalCalendar')?.value || currentParish?.liturgicalCalendar || 'julian';
-    const options = allFeastPresets();
-    select.innerHTML = `<option value="">Select a patronal feast day...</option>${options.map((feast) => `<option value="${escapeHtml(feast.id)}" ${selected === feast.id ? 'selected' : ''}>${escapeHtml(feast.name)} (${escapeHtml(feastDateLabel(feast))})</option>`).join('')}`;
+  function patronalFeastDisplayName(parish) {
+    if (parish?.patronalFeastName) return parish.patronalFeastName;
+    const selected = parish?.patronalFeast || '';
+    return allFeastPresets().find((feast) => feast.id === selected)?.name || selected;
   }
-  function upsertPatronalFeastCampaign(patronalFeastId, calendar) {
+  function patronalDateInputValue(value) {
+    const monthDay = String(value || '').slice(-5);
+    return /^\d{2}-\d{2}$/.test(monthDay) ? `${new Date().getFullYear()}-${monthDay}` : '';
+  }
+  function syncPatronalFeastOptionsFromSettings() {
+    const nameInput = document.getElementById('patronalFeastName');
+    const dateInput = document.getElementById('patronalFeastDate');
+    if (!nameInput || !dateInput) return;
+    const match = allFeastPresets().find((feast) => feast.name === nameInput.value);
+    if (match && !dateInput.value) dateInput.value = String(match.date || '').slice(0, 10);
+  }
+  function upsertPatronalFeastCampaign(patronalFeastId, calendar, customName = '', customDate = '') {
     if (!patronalFeastId) return;
     const feast = feastPresetsForCalendar(calendar).find(item => item.id === patronalFeastId)
       || feastPresetsForCalendar(calendar === 'julian' ? 'gregorian' : 'julian').find(item => item.id === patronalFeastId)
-      || fallbackFeastPresets.find(item => item.id === patronalFeastId);
-    if (!feast) return;
+      || fallbackFeastPresets.find(item => item.id === patronalFeastId)
+      || { id: patronalFeastId, name: customName || 'Patronal Feast', date: customDate };
     const existing = editableFeastCampaigns.find(item => item.id === patronalFeastId);
     if (existing) {
-      existing.name = feast.name;
+      existing.name = customName || feast.name;
       existing.enabled = true;
+      if (customDate) existing.feastDate = customDate.slice(-5);
       if (!existing.campaignName) existing.campaignName = `${feast.name} Patronal Feast Campaign`;
       if (!existing.description) existing.description = `Parish-approved alms connected to ${feast.name}.`;
       existing.patronal = true;
@@ -5726,9 +5704,10 @@
     }
     editableFeastCampaigns.push({
       id: feast.id,
-      name: feast.name,
+      name: customName || feast.name,
       enabled: true,
       patronal: true,
+      ...(customDate ? { feastDate: customDate.slice(-5) } : {}),
       campaignName: `${feast.name} Patronal Feast Campaign`,
       description: `Parish-approved alms connected to ${feast.name}.`
     });
@@ -5975,8 +5954,17 @@
         <div class="form-group full"><label class="form-label" for="website">Website</label><input id="website" value="${escapeHtml(p.website||'')}" placeholder="https://example.org" /></div>
         <div class="form-group full"><label class="form-label" for="taxLegalName">Legal name for tax receipts</label><input id="taxLegalName" value="${escapeHtml(p.taxLegalName||'')}" placeholder="Defaults to parish name if left blank" /></div>
         <div class="form-group"><label class="form-label" for="taxEin">Federal EIN</label><input id="taxEin" value="${escapeHtml(p.taxEin||'')}" placeholder="##-#######" /></div>
-        <div class="form-group full"><label class="form-label" for="settingsLiturgicalCalendar">Liturgical calendar</label><select id="settingsLiturgicalCalendar" onchange="syncPatronalFeastOptionsFromSettings()"><option value="julian" ${(p.liturgicalCalendar||'julian')==='julian'?'selected':''}>Julian</option><option value="gregorian" ${p.liturgicalCalendar==='gregorian'?'selected':''}>Revised-Julian</option></select></div>
-        <div class="form-group full"><label class="form-label" for="patronalFeast">Patronal feast day</label><select id="patronalFeast"></select></div>
+        <div class="form-group full"><label class="form-label" for="settingsLiturgicalCalendar">Liturgical calendar</label><select id="settingsLiturgicalCalendar"><option value="julian" ${(p.liturgicalCalendar||'julian')==='julian'?'selected':''}>Julian</option><option value="gregorian" ${p.liturgicalCalendar==='gregorian'?'selected':''}>Revised-Julian</option></select></div>
+        <div class="form-group full">
+          <label class="form-label" for="patronalFeastName">Patronal saint or feast</label>
+          <input id="patronalFeastName" list="patronalFeastSuggestions" value="${escapeHtml(patronalFeastDisplayName(p))}" placeholder="e.g. St. Nicholas the Wonderworker" onchange="syncPatronalFeastOptionsFromSettings()" />
+          <datalist id="patronalFeastSuggestions">${allFeastPresets().map((feast) => `<option value="${escapeHtml(feast.name)}"></option>`).join('')}</datalist>
+          <p class="section-note">Begin typing or enter any Orthodox saint or feast. The suggestions are conveniences, not the complete Church calendar.</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="patronalFeastDate">Observed feast date</label>
+          <input id="patronalFeastDate" type="date" value="${escapeHtml(patronalDateInputValue(p.patronalFeastDate))}" />
+        </div>
         <div class="form-group"><label class="form-label" for="givingStatus">Giving page status</label><select id="givingStatus"><option value="active" ${p.givingStatus==='active'?'selected':''}>Active</option><option value="paused" ${p.givingStatus==='paused'?'selected':''}>Paused</option><option value="hidden" ${p.givingStatus==='hidden'?'selected':''}>Hidden</option></select></div>
         <div class="form-group"><label class="form-label">Stripe onboarding</label><input value="${escapeHtml(p.stripeAccountStatus||'not_started')}" disabled /></div>
       </div>
@@ -6053,7 +6041,7 @@
     pane.innerHTML = `
       ${renderOptionsProgressSummary()}
       <div class="giving-options-intro">These are the choices donors see after selecting <strong>Designated Fund</strong> or <strong>Alms Campaign</strong>. Add presets or write your own.</div>
-      <div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Designated funds</h3><span class="option-group-count">${editableFunds.length} shown</span></div><div class="option-list">${optionCards(editableFunds,'fund','No funds configured yet.')}</div><div class="option-builder"><div class="option-builder-title">Add a fund</div><div class="builder-grid"><select id="fundPreset" onchange="fillGivingPreset('fund')"><option value="">Choose a preset...</option>${presetOptions(fundPresets)}</select><input id="fundAccountNumber" maxlength="24" placeholder="Account number, e.g. 2100" /><input id="fundName" placeholder="Fund name, e.g. New Iconostasis Fund" /><select id="fundRestriction"><option value="unrestricted">Unrestricted</option><option value="board_designated">Board designated</option><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option></select><textarea id="fundDescription" placeholder="Describe this fund in plain language."></textarea><button class="btn btn-ghost" onclick="addGivingOption('fund')">Add fund</button></div></div></div>
+      <div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Designated funds</h3><span class="option-group-count">${editableFunds.length} shown</span></div><p class="section-note">This list is the source of truth for donor choices and the Accounting suite. Saving creates, updates, or retires the matching accounting funds automatically.</p><div class="option-list">${optionCards(editableFunds,'fund','No funds configured yet.')}</div><div class="option-builder"><div class="option-builder-title">Add a fund</div><div class="builder-grid"><select id="fundPreset" onchange="fillGivingPreset('fund')"><option value="custom" selected>Custom fund — name it yourself</option><optgroup label="Start from a preset">${presetOptions(fundPresets)}</optgroup></select><input id="fundAccountNumber" maxlength="24" placeholder="Fund account number (optional), e.g. 2100" /><input id="fundName" maxlength="120" placeholder="Custom fund name, e.g. New Iconostasis Fund" /><select id="fundRestriction"><option value="unrestricted">Unrestricted</option><option value="board_designated">Board designated</option><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option></select><textarea id="fundDescription" maxlength="500" placeholder="Describe what this parish-created fund supports."></textarea><button class="btn btn-gold" onclick="addGivingOption('fund')">Add custom fund</button></div></div></div>
       <div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Alms campaigns</h3><span class="option-group-count">${editableCampaigns.length} shown</span></div><div class="option-list">${optionCards(editableCampaigns,'campaign','No alms campaigns configured yet.')}</div><div class="option-builder"><div class="option-builder-title">Add an alms campaign</div><div class="builder-grid"><select id="campaignPreset" onchange="fillGivingPreset('campaign')"><option value="">Choose a preset...</option>${presetOptions(campaignPresets)}</select><input id="campaignAccountNumber" maxlength="24" placeholder="Account number, e.g. 2200" /><input id="campaignName" placeholder="Campaign name, e.g. Support for the Petrov Family" /><select id="campaignRestriction"><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option><option value="board_designated">Board designated</option><option value="unrestricted">Unrestricted</option></select><textarea id="campaignDescription" placeholder="Describe the need in plain language."></textarea><input id="campaignGoal" type="number" min="0" step="1" placeholder="Goal amount, e.g. 45000" /><button class="btn btn-ghost" onclick="addGivingOption('campaign')">Add campaign</button></div></div></div>
       ${renderFeastCampaignSetup()}
       <details class="advanced-editor"><summary>Advanced edit (JSON)</summary><div class="editor-label-row"><label for="fundsJson">Designated funds</label><span class="editor-hint">Each item needs id, name, description</span></div><textarea id="fundsJson" spellcheck="false" onchange="syncGivingOptionsFromAdvanced()">${JSON.stringify(editableFunds,null,2)}</textarea><div style="height:0.9rem;"></div><div class="editor-label-row"><label for="campaignsJson">Alms campaigns</label><span class="editor-hint">Each item needs id, name, description</span></div><textarea id="campaignsJson" spellcheck="false" onchange="syncGivingOptionsFromAdvanced()">${JSON.stringify(editableCampaigns,null,2)}</textarea></details>
@@ -6876,8 +6864,11 @@
       || document.getElementById('settingsLiturgicalCalendar')?.value
       || currentParish?.liturgicalCalendar
       || 'julian';
-    const patronalFeast = document.getElementById('patronalFeast')?.value || '';
-    upsertPatronalFeastCampaign(patronalFeast, liturgicalCalendar);
+    const patronalFeastName = document.getElementById('patronalFeastName')?.value.trim() || '';
+    const patronalFeastDate = document.getElementById('patronalFeastDate')?.value.slice(-5) || '';
+    const knownPatronalFeast = allFeastPresets().find((feast) => feast.name === patronalFeastName);
+    const patronalFeast = patronalFeastName ? (knownPatronalFeast?.id || slugifyLocal(patronalFeastName)) : '';
+    upsertPatronalFeastCampaign(patronalFeast, liturgicalCalendar, patronalFeastName, patronalFeastDate);
     const body = {
       parishName:             document.getElementById('parishName')?.value,
       addressLine1:           document.getElementById('addressLine1')?.value,
@@ -6891,6 +6882,8 @@
       taxEin:                 document.getElementById('taxEin')?.value,
       liturgicalCalendar,
       patronalFeast,
+      patronalFeastName,
+      patronalFeastDate,
       givingStatus:           document.getElementById('givingStatus')?.value,
       recurringGivingEnabled: document.getElementById('recurringGivingEnabled')?.checked,
       candlesEnabled:         document.getElementById('candlesEnabled')?.checked,

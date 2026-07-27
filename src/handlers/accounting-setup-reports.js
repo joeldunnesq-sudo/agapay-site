@@ -7,7 +7,6 @@ const reply = (payload, status = 200) => json(payload, { status, headers: HEADER
 const today = () => new Date().toISOString().slice(0, 10);
 const yearStart = () => `${new Date().getUTCFullYear()}-01-01`;
 const results = async (db, sql) => (await db.prepare(sql).all()).results || [];
-const FUND_RESTRICTIONS = new Set(["unrestricted", "board_designated", "donor_restricted_temporary", "donor_restricted_permanent"]);
 const clean = (value) => String(value || "").trim();
 
 async function listFunds(db) {
@@ -124,32 +123,16 @@ export async function handleAccountingSetupReports(request, env, parishId) {
     }
     if (request.method === "GET" && fundMatch && !fundMatch[1]) return reply({ ok: true, funds: await listFunds(ctx.db) });
     if (request.method === "POST" && fundMatch && !fundMatch[1]) {
-      const body = await request.json().catch(() => ({}));
-      const code = clean(body.code).toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 24);
-      const name = clean(body.name).slice(0, 120);
-      const restriction = clean(body.restrictionType) || "unrestricted";
-      if (!code || !name || !FUND_RESTRICTIONS.has(restriction)) return reply({ error: "invalid_fund", message: "Fund account number, name, and a valid restriction are required." }, 422);
-      const id = `fund_${crypto.randomUUID()}`;
-      await ctx.db.prepare(`INSERT INTO accounting_funds
-        (id,code,name,description,restriction_type,purpose,is_default,is_active,is_system)
-        VALUES(?,?,?,?,?,?,0,1,0)`).bind(id, code, name, clean(body.description) || null, restriction, clean(body.purpose) || null).run();
-      return reply({ ok: true, fund: (await listFunds(ctx.db)).find((fund) => fund.id === id) }, 201);
+      return reply({
+        error: "fund_catalog_managed_in_parish_dashboard",
+        message: "Create and name funds in the Funds & Alms tab. Accounting updates automatically when that catalog is saved."
+      }, 409);
     }
     if (request.method === "PATCH" && fundMatch?.[1]) {
-      const body = await request.json().catch(() => ({}));
-      const id = decodeURIComponent(fundMatch[1]);
-      const current = await ctx.db.prepare("SELECT * FROM accounting_funds WHERE id=?").bind(id).first();
-      if (!current) return reply({ error: "not_found", message: "Fund was not found." }, 404);
-      if (Number(current.version) !== Number(body.expectedVersion)) return reply({ error: "conflict", message: "This fund changed. Reload and try again." }, 409);
-      const code = clean(body.code ?? current.code).toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 24);
-      const name = clean(body.name ?? current.name).slice(0, 120);
-      const restriction = clean(body.restrictionType ?? current.restriction_type);
-      if (!code || !name || !FUND_RESTRICTIONS.has(restriction)) return reply({ error: "invalid_fund", message: "Fund account number, name, and a valid restriction are required." }, 422);
-      await ctx.db.prepare(`UPDATE accounting_funds SET code=?,name=?,description=?,restriction_type=?,purpose=?,
-        version=version+1,updated_at=datetime('now') WHERE id=? AND version=?`)
-        .bind(code, name, clean(body.description ?? current.description) || null, restriction,
-          clean(body.purpose ?? current.purpose) || null, id, Number(body.expectedVersion)).run();
-      return reply({ ok: true, fund: (await listFunds(ctx.db)).find((fund) => fund.id === id) });
+      return reply({
+        error: "fund_catalog_managed_in_parish_dashboard",
+        message: "Edit funds in the Funds & Alms tab. Accounting updates automatically when that catalog is saved."
+      }, 409);
     }
     if (request.method === "PATCH" && path === "/settings") {
       const body = await request.json().catch(() => ({}));
