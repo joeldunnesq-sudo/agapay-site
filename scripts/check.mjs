@@ -297,8 +297,19 @@ assert.ok(
     && parishDashboardApp.includes("if (accountingBadge) accountingBadge.hidden = accountingDemoActive"),
   "Accounting should be marked coming soon except for the active St. Fiacre demo workspace"
 );
+assert.ok(
+  parishDashboardHtml.includes('class="sac-paywall" id="sacramentsComingSoonBanner"')
+    && parishDashboardHtml.includes("Bring pastoral requests into one organized workflow")
+    && parishDashboardHtml.includes("Parishioner requests")
+    && parishDashboardHtml.includes("Clergy workspace"),
+  "non-Parish-tier Sacraments should show a polished feature preview and upgrade path"
+);
 assert.ok(parishDashboardHtml.includes('id="tab-reconcile"') && parishDashboardHtml.includes("Treasurer closeout"), "parish dashboard should include monthly reconciliation and closeout UI");
-assert.ok(parishDashboardHtml.includes("sac-admin-shell") && parishDashboardHtml.indexOf("Weekly Availability") < parishDashboardHtml.indexOf("Blackout Dates") && parishDashboardHtml.indexOf("Blackout Dates") < parishDashboardHtml.indexOf("Sacrament Rules") && parishDashboardHtml.indexOf("Sacrament Rules") < parishDashboardHtml.indexOf(">Requests<") && parishDashboardHtml.indexOf(">Requests<") < parishDashboardHtml.indexOf(">Calendar<"), "parish Sacraments & Services dashboard tabs should match the uploaded template order");
+const sacramentsLiveHtml = parishDashboardHtml.slice(
+  parishDashboardHtml.indexOf('id="sacramentsLiveContent"'),
+  parishDashboardHtml.indexOf("<!-- ── DIRECTORY ADMIN TAB")
+);
+assert.ok(sacramentsLiveHtml.includes("sac-admin-shell") && sacramentsLiveHtml.indexOf("Weekly Availability") < sacramentsLiveHtml.indexOf("Blackout Dates") && sacramentsLiveHtml.indexOf("Blackout Dates") < sacramentsLiveHtml.indexOf("Sacrament Rules") && sacramentsLiveHtml.indexOf("Sacrament Rules") < sacramentsLiveHtml.indexOf(">Requests<") && sacramentsLiveHtml.indexOf(">Requests<") < sacramentsLiveHtml.indexOf(">Calendar<"), "parish Sacraments & Services dashboard tabs should match the uploaded template order");
 assert.ok(parishDashboardApp.includes("function setSacramentsDashboardTab") && parishDashboardApp.includes("function renderSacramentsCalendar") && parishDashboardApp.includes("function renderSacramentsBlackouts") && parishDashboardApp.includes("function renderSacramentsRules"), "parish Sacraments & Services dashboard should render availability, blackouts, rules, requests, and calendar views");
 assert.ok(parishDashboardHtml.includes("sacramentsFeatureToggle") && parishDashboardApp.includes("function toggleSacramentsFeature") && parishDashboardApp.includes("Off for parishioners"), "parish Sacraments & Services dashboard should include a self-service on/off switch");
 assert.ok(parishDashboardApp.includes("sacramentsDashboardTab = 'availability'") && parishDashboardApp.includes("renderSacramentsDisabledPanel"), "parish Sacraments & Services should default to weekly availability and show an off state");
