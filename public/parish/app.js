@@ -7279,7 +7279,12 @@
     entries.forEach(entry => {
       const from = entry.donorName || entry.name || entry.donorEmail || 'Anonymous';
       const when = shortDate(entry.createdAt || entry.date || entry.paidAt);
-      const meta = when ? `from ${escapeHtml(from)} · ${escapeHtml(when)}` : `from ${escapeHtml(from)}`;
+      const service = entry.commemorationKind === 'molieben_panikhida'
+        ? 'Molieben / Panikhida'
+        : 'Proskomedia / Liturgy';
+      const meta = when
+        ? `${escapeHtml(service)} · from ${escapeHtml(from)} · ${escapeHtml(when)}`
+        : `${escapeHtml(service)} · from ${escapeHtml(from)}`;
       const living = Array.isArray(entry.living) ? entry.living.filter(Boolean) : [];
       const departed = Array.isArray(entry.departed) ? entry.departed.filter(Boolean) : [];
       if (living.length) {

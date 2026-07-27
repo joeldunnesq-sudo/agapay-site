@@ -1107,6 +1107,7 @@ export async function storeCommemorationEntry(env, sourceId, metadata = {}, fall
     parishName: metadata.parish_name || fallback.parishName || "",
     sourceId: sourceId || "",
     giftType: metadata.gift_type || fallback.giftType || "commemoration",
+    commemorationKind: metadata.commemoration_kind || fallback.commemorationKind || "proskomedia_liturgy",
     frequency: metadata.frequency || fallback.frequency || "once",
     donorEmail: normalizeEmail(fallback.donorEmail || metadata.donor_email || ""),
     donorName: fallback.donorName || metadata.donor_name || "",
@@ -1142,7 +1143,8 @@ export async function ensureCommemorationEntryFromOffering(env, offering = {}, o
       gift_type: giftType,
       frequency: overrides.frequency || offering.frequency || "once",
       names_living: overrides.namesLiving || offering.namesLiving || "",
-      names_departed: overrides.namesDeparted || offering.namesDeparted || ""
+      names_departed: overrides.namesDeparted || offering.namesDeparted || "",
+      commemoration_kind: overrides.commemorationKind || offering.commemorationKind || "proskomedia_liturgy"
     },
     {
       parishId: overrides.parishId || offering.parishId || "",
@@ -1154,6 +1156,7 @@ export async function ensureCommemorationEntryFromOffering(env, offering = {}, o
       amountCents: Number(overrides.amountCents ?? offering.amountCents ?? 0),
       namesLiving: overrides.namesLiving || offering.namesLiving || "",
       namesDeparted: overrides.namesDeparted || offering.namesDeparted || "",
+      commemorationKind: overrides.commemorationKind || offering.commemorationKind || "proskomedia_liturgy",
       createdAt: overrides.createdAt || offering.createdAt || new Date().toISOString()
     }
   );
@@ -1240,6 +1243,7 @@ export async function storeDonorOffering(env, offering) {
     stripeFeeSource: offering.stripeFeeSource || "",
     namesLiving: offering.namesLiving || "",
     namesDeparted: offering.namesDeparted || "",
+    commemorationKind: offering.commemorationKind || "",
     emailReceiptStatus: offering.emailReceiptStatus || "",
     emailReceiptId: offering.emailReceiptId || "",
     emailReceiptDetail: offering.emailReceiptDetail || "",
@@ -2144,7 +2148,8 @@ export function publicParishGiftFromOffering(offering = {}) {
     frequency: offering.frequency || "once",
     recurring: Boolean(offering.frequency && offering.frequency !== "once"),
     type: offering.frequency && offering.frequency !== "once" ? "recurring" : "one_time",
-    commemorationNames: [...living, ...departed]
+    commemorationNames: [...living, ...departed],
+    commemorationKind: offering.commemorationKind || ""
   };
 }
 
@@ -2983,6 +2988,11 @@ export async function handleCheckout(request, env) {
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   const normalizedDonorEmail = normalizeEmail(body.email);
   const normalizedGiftType = String(body.giftType || "").toLowerCase();
+  const checkoutGiftType = normalizedGiftType === "love" ? "commemoration" : normalizedGiftType;
+  const commemorationKind = checkoutGiftType === "commemoration"
+    && String(body.commemorationKind || "") === "molieben_panikhida"
+    ? "molieben_panikhida"
+    : "proskomedia_liturgy";
   const isFestalAlms = ["alms", "feast"].includes(normalizedGiftType);
   const checkoutFund = isFestalAlms ? "Benevolence Fund" : body.fund || "";
   const checkoutFundId = isFestalAlms ? "benevolence" : body.fundId || "";
@@ -3007,7 +3017,7 @@ export async function handleCheckout(request, env) {
     totalTransactionFeeCents,
     paymentMethod
   } = checkoutFinancials(amountCents, Boolean(body.coverFees), recurring, body.paymentMethod);
-  const giftLabel = String(body.giftType).replace(/-/g, " ");
+  const giftLabel = checkoutGiftType.replace(/-/g, " ");
   const normalizedDonorName = donorName(body);
   const customer = await findOrCreateDonorCustomer(env, parish, body);
   if (!customer.ok) {
@@ -3028,7 +3038,8 @@ export async function handleCheckout(request, env) {
     donor_name: normalizedDonorName,
     donor_first_name: body.firstName || "",
     donor_last_name: body.lastName || "",
-    gift_type: body.giftType,
+    gift_type: checkoutGiftType,
+    commemoration_kind: checkoutGiftType === "commemoration" ? commemorationKind : "",
     fund: checkoutFund,
     fund_id: checkoutFundId,
     feast_description: body.feastDescription || "",
@@ -3116,7 +3127,7 @@ export async function handleCheckout(request, env) {
     donorName: normalizedDonorName,
     parishId: parish.id,
     parishName: parish.name,
-    giftType: body.giftType,
+    giftType: checkoutGiftType,
     title: `${parish.name} - ${giftLabel}`,
     fund: checkoutFund,
     fundId: checkoutFundId,
@@ -3141,7 +3152,8 @@ export async function handleCheckout(request, env) {
     checkoutUrl: stripeBody.url || "",
     stripeCustomerId: customer.body.id || "",
     namesLiving: body.namesLiving || "",
-    namesDeparted: body.namesDeparted || ""
+    namesDeparted: body.namesDeparted || "",
+    commemorationKind: checkoutGiftType === "commemoration" ? commemorationKind : ""
   });
 
   return json({ id: stripeBody.id, url: stripeBody.url }, { status: 201 });

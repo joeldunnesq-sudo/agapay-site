@@ -384,6 +384,7 @@ export async function processStripeWebhookEvent(env, event) {
         amountCents: numericCents(object.metadata?.amount_cents) || updatedOffering?.amountCents || object.amount_subtotal || object.amount_total || 0,
         namesLiving: object.metadata?.names_living || updatedOffering?.namesLiving || "",
         namesDeparted: object.metadata?.names_departed || updatedOffering?.namesDeparted || "",
+        commemorationKind: object.metadata?.commemoration_kind || updatedOffering?.commemorationKind || "proskomedia_liturgy",
         createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
       });
       await sendDonationReceiptIfNeeded(env, updatedOffering || {});
@@ -453,6 +454,7 @@ export async function processStripeWebhookEvent(env, event) {
       amountCents: updatedOffering?.amountCents || object.amount_received || object.amount || 0,
       namesLiving: updatedOffering?.namesLiving || object.metadata?.names_living || "",
       namesDeparted: updatedOffering?.namesDeparted || object.metadata?.names_departed || "",
+      commemorationKind: updatedOffering?.commemorationKind || object.metadata?.commemoration_kind || "proskomedia_liturgy",
       createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
     });
     await sendDonationReceiptIfNeeded(env, updatedOffering || {});
@@ -566,6 +568,7 @@ export async function processStripeWebhookEvent(env, event) {
         stripeSubscriptionId: object.subscription || "",
         namesLiving: metadata.names_living || "",
         namesDeparted: metadata.names_departed || "",
+        commemorationKind: metadata.commemoration_kind || "proskomedia_liturgy",
         createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString(),
         ...feeUpdates
       });
@@ -580,6 +583,7 @@ export async function processStripeWebhookEvent(env, event) {
         amountCents: giftAmountCents,
         namesLiving: metadata.names_living || "",
         namesDeparted: metadata.names_departed || "",
+        commemorationKind: metadata.commemoration_kind || "proskomedia_liturgy",
         createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
       });
       await sendDonationReceiptIfNeeded(env, storedOffering || {});
@@ -735,6 +739,7 @@ export async function processStripeWebhookEvent(env, event) {
         stripeSubscriptionId: subscriptionId,
         namesLiving: metadata.names_living || "",
         namesDeparted: metadata.names_departed || "",
+        commemorationKind: metadata.commemoration_kind || "proskomedia_liturgy",
         failureMessage: object.last_finalization_error?.message || "Recurring payment failed.",
         failedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString(),
         createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
