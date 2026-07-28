@@ -684,6 +684,17 @@
     </div>`;
   }
 
+  function syncDashboardPaywall(element, featureKey, tierLabel, locked) {
+    if (!element) return;
+    element.classList.toggle('starter-tier-locked', locked);
+    let paywall = element.querySelector(':scope > .starter-tier-paywall');
+    if (locked && !paywall) {
+      element.insertAdjacentHTML('beforeend', starterPaywallMarkup(featureKey, tierLabel));
+      paywall = element.querySelector(':scope > .starter-tier-paywall');
+    }
+    if (!locked && paywall) paywall.remove();
+  }
+
   function updateStarterPaywalls() {
     const givingPlusLocked = !hasGivingPlusAccess();
     const givingPlusTargets = {
@@ -695,11 +706,7 @@
       statements: document.getElementById('pdxGsSection')
     };
     Object.entries(givingPlusTargets).forEach(([key, element]) => {
-      if (!element) return;
-      element.classList.toggle('starter-tier-locked', givingPlusLocked);
-      let paywall = element.querySelector(':scope > .starter-tier-paywall');
-      if (givingPlusLocked && !paywall) element.insertAdjacentHTML('beforeend', starterPaywallMarkup(key));
-      if (!givingPlusLocked && paywall) paywall.remove();
+      syncDashboardPaywall(element, key, 'Giving Plus', givingPlusLocked);
     });
 
     const stewardshipTargets = {
@@ -707,12 +714,8 @@
       bookstore: document.getElementById('tab-bookstore')
     };
     Object.entries(stewardshipTargets).forEach(([key, element]) => {
-      if (!element) return;
       const locked = !moduleIncluded(key === 'bookstore' ? 'bookstore' : 'stewardshipHealth');
-      element.classList.toggle('starter-tier-locked', locked);
-      let paywall = element.querySelector(':scope > .starter-tier-paywall');
-      if (locked && !paywall) element.insertAdjacentHTML('beforeend', starterPaywallMarkup(key, 'Stewardship'));
-      if (!locked && paywall) paywall.remove();
+      syncDashboardPaywall(element, key, 'Stewardship', locked);
     });
   }
 
@@ -3488,13 +3491,11 @@
     const status = document.getElementById('bookstoreStatusLabel');
     if (!currentParish) return;
 
-    // Reuse the Parish tier status already fetched for that tab, with
-    // the dashboard payload as a fallback when the parish opens Bookstore first.
-    const sw = stewardshipState.stewardship || {};
     const swActive = moduleIncluded('bookstore');
+    syncDashboardPaywall(document.getElementById('tab-bookstore'), 'bookstore', 'Stewardship', !swActive);
     updateStewardshipBadges(swActive, { renderPanel: false });
     if (!swActive) {
-      if (upsell) upsell.hidden = false;
+      if (upsell) upsell.hidden = true;
       if (live) live.hidden = true;
       return;
     }
