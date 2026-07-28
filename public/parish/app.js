@@ -6108,7 +6108,7 @@
     // Navigation follows the subscription ladder: Giving, Stewardship,
     // Parish, announced future modules, then account settings.
     const tierOrder = [
-      'giving', 'options', 'campaigns', 'qr', 'history', 'givers', 'reconcile',
+      'giving', 'qr', 'history', 'options', 'campaigns', 'givers', 'reconcile',
       'stewardship', 'bookstore',
       'sacraments', 'directory',
       'accounting', 'text',
