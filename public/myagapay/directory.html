@@ -571,6 +571,83 @@
       .profile-pane .mini-card { padding-top:0; }
       .household-member-detail { border-radius:7px; box-shadow:none; }
     }
+    @media (max-width: 860px) {
+      html,
+      body.donor-directory-page {
+        width:100%;
+        max-width:100%;
+        overflow-x:hidden;
+      }
+      .donor-directory-page .directory-shell,
+      .donor-directory-page .directory-main,
+      .donor-directory-page .personal-settings,
+      .donor-directory-page .directory-grid,
+      .donor-directory-page .stack,
+      .donor-directory-page .panel,
+      .donor-directory-page form,
+      .donor-directory-page fieldset,
+      .donor-directory-page .member-directory,
+      .donor-directory-page .profile-pane {
+        min-width:0;
+        max-width:100%;
+      }
+      .donor-directory-page fieldset.field-group,
+      .donor-directory-page .form-grid,
+      .donor-directory-page .household-hub-identity,
+      .donor-directory-page .skills-toolbar {
+        grid-template-columns:minmax(0,1fr);
+      }
+      .donor-directory-page input,
+      .donor-directory-page select,
+      .donor-directory-page textarea,
+      .donor-directory-page button {
+        min-width:0;
+        max-width:100%;
+      }
+      .donor-directory-page input,
+      .donor-directory-page select,
+      .donor-directory-page textarea {
+        width:100%;
+      }
+      .donor-directory-page .panel-header-row,
+      .donor-directory-page .photo-status-card,
+      .donor-directory-page .household-member-detail {
+        min-width:0;
+      }
+      .donor-directory-page .panel-header-row > div,
+      .donor-directory-page .photo-status-card > div,
+      .donor-directory-page .household-member-detail > div,
+      .donor-directory-page .member-card > span:last-child {
+        min-width:0;
+        overflow-wrap:anywhere;
+      }
+      .donor-directory-page .personal-settings[open] > summary,
+      .donor-directory-page .personal-settings[open] > .edit-wizard-head,
+      .donor-directory-page .personal-settings[open] > .directory-grid,
+      .donor-directory-page .personal-settings[open] > .edit-wizard-footer {
+        width:100%;
+        max-width:100%;
+      }
+    }
+    @media (max-width: 430px) {
+      .donor-directory-page .directory-tools {
+        grid-template-columns:minmax(0,1fr);
+      }
+      .donor-directory-page .directory-tools label:first-child {
+        grid-column:auto;
+      }
+      .donor-directory-page .directory-tabs {
+        grid-template-columns:minmax(0,1fr);
+        margin-inline:0;
+      }
+      .donor-directory-page .photo-status-card {
+        grid-template-columns:64px minmax(0,1fr);
+      }
+      .donor-directory-page .photo-preview {
+        width:64px;
+        height:64px;
+      }
+    }
   </style>
 </head>
 <body class="donor-mobile-page donor-directory-page" data-mobile-view="browse">
