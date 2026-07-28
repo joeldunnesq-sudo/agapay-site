@@ -1453,6 +1453,8 @@ export async function handleDonorBookstore(request, env) {
     order_id: orderId,
     parish_id: resolved.parishId,
     commerce_module: "bookstore",
+    agapay_payment_class: "nonqualifying_commerce",
+    agapay_classification_version: "1",
     donor_email: donorEmail,
     donor_name: normalizedDonorName,
     item_count: String(items.length),

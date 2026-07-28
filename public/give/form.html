@@ -826,15 +826,9 @@ body {
       jurisdictionLabel: '',
       city: '',
       state: '',
-      funds: []
+      funds: [],
+      processingFeeSchedules: {}
     };
-
-    // AGAPAY does not charge a donation platform fee -- only Stripe's own
-    // processing cost applies, estimated below. AGAPAY's revenue is the
-    // parish subscription plan, not a percentage of gifts.
-    const STRIPE_RATE = 0.029;
-    const STRIPE_FIXED = 0.30;
-    const ACH_RATE = 0.026;
 
     function cents(value) {
       return Math.max(0, Math.round((Number(value) || 0) * 100));
@@ -844,65 +838,40 @@ body {
       return ((Number(centsValue) || 0) / 100).toFixed(2);
     }
 
-    function estimateStripeProcessingFeeCents(chargeCents) {
-      if (!Number.isFinite(chargeCents) || chargeCents <= 0) return 0;
-      return Math.max(0, Math.round(chargeCents * STRIPE_RATE + STRIPE_FIXED * 100));
+    function feeSchedule(paymentMethod) {
+      return currentParish.processingFeeSchedules?.[paymentMethod === 'ach' ? 'ach' : 'card'] || null;
     }
 
-    function estimateStripeAchFeeCents(chargeCents) {
+    function estimatePaymentFeeCents(chargeCents, schedule) {
       if (!Number.isFinite(chargeCents) || chargeCents <= 0) return 0;
-      return Math.max(0, Math.round(chargeCents * ACH_RATE + STRIPE_FIXED * 100));
+      if (!schedule) return 0;
+      const percentage = Math.round(chargeCents * (Number(schedule.rateBasisPoints) || 0) / 10000);
+      const uncapped = percentage + Math.max(0, Number(schedule.fixedFeeCents) || 0);
+      return schedule.maxFeeCents == null ? uncapped : Math.min(uncapped, Math.max(0, Number(schedule.maxFeeCents) || 0));
     }
 
-    function grossUpForStripeProcessingFeeCents(netAmountCents) {
+    function grossUpForPaymentFeeCents(netAmountCents, schedule) {
       if (!Number.isFinite(netAmountCents) || netAmountCents <= 0) return 0;
-      let chargeCents = Math.max(netAmountCents, Math.ceil((netAmountCents + (STRIPE_FIXED * 100)) / (1 - STRIPE_RATE)));
-      while (chargeCents - estimateStripeProcessingFeeCents(chargeCents) < netAmountCents) chargeCents += 1;
-      while (chargeCents > netAmountCents && ((chargeCents - 1) - estimateStripeProcessingFeeCents(chargeCents - 1) >= netAmountCents)) {
-        chargeCents -= 1;
-      }
-      return chargeCents;
-    }
-
-    function grossUpForAchFeeCents(netAmountCents, agapayFeeCents) {
-      const targetAfterStripe = netAmountCents + Math.max(0, agapayFeeCents || 0);
-      let chargeCents = Math.max(targetAfterStripe, Math.ceil((targetAfterStripe + (STRIPE_FIXED * 100)) / (1 - ACH_RATE)));
-      while (chargeCents - estimateStripeAchFeeCents(chargeCents) < targetAfterStripe) chargeCents += 1;
-      while (chargeCents > targetAfterStripe && ((chargeCents - 1) - estimateStripeAchFeeCents(chargeCents - 1) >= targetAfterStripe)) {
+      if (!schedule) return netAmountCents;
+      const rate = Math.max(0, Number(schedule.rateBasisPoints) || 0) / 10000;
+      const fixed = Math.max(0, Number(schedule.fixedFeeCents) || 0);
+      const uncapped = rate < 1 ? Math.ceil((netAmountCents + fixed) / (1 - rate)) : netAmountCents + fixed;
+      const capped = schedule.maxFeeCents == null ? uncapped : netAmountCents + Math.max(0, Number(schedule.maxFeeCents) || 0);
+      let chargeCents = Math.max(netAmountCents, Math.min(uncapped, capped));
+      while (chargeCents - estimatePaymentFeeCents(chargeCents, schedule) < netAmountCents) chargeCents += 1;
+      while (chargeCents > netAmountCents && ((chargeCents - 1) - estimatePaymentFeeCents(chargeCents - 1, schedule) >= netAmountCents)) {
         chargeCents -= 1;
       }
       return chargeCents;
     }
 
     function feeModel(amountCents, feeCovered, recurring, paymentMethod = 'card') {
-      if (recurring) {
-        const donorTotalCents = feeCovered ? grossUpForStripeProcessingFeeCents(amountCents) : amountCents;
-        const stripeFeeCents = estimateStripeProcessingFeeCents(donorTotalCents);
-        return {
-          feeLabel: 'processing fees',
-          feeCents: Math.max(0, donorTotalCents - amountCents),
-          parishReceivesCents: feeCovered ? amountCents : Math.max(0, amountCents - stripeFeeCents),
-          donorTotalCents
-        };
-      }
-
-      if (paymentMethod === 'ach') {
-        const preGrossUpStripeFeeCents = estimateStripeAchFeeCents(amountCents);
-        const donorTotalCents = feeCovered ? amountCents + preGrossUpStripeFeeCents : amountCents;
-        const stripeFeeCents = estimateStripeAchFeeCents(donorTotalCents);
-        return {
-          feeLabel: 'bank transfer fees',
-          feeCents: feeCovered ? Math.max(0, donorTotalCents - amountCents) : stripeFeeCents,
-          parishReceivesCents: feeCovered ? amountCents : Math.max(0, amountCents - stripeFeeCents),
-          donorTotalCents
-        };
-      }
-
-      const preGrossUpStripeFeeCents = estimateStripeProcessingFeeCents(amountCents);
-      const donorTotalCents = feeCovered ? amountCents + preGrossUpStripeFeeCents : amountCents;
-      const stripeFeeCents = estimateStripeProcessingFeeCents(donorTotalCents);
+      const method = recurring ? 'card' : paymentMethod;
+      const schedule = feeSchedule(method);
+      const donorTotalCents = feeCovered ? grossUpForPaymentFeeCents(amountCents, schedule) : amountCents;
+      const stripeFeeCents = estimatePaymentFeeCents(donorTotalCents, schedule);
       return {
-        feeLabel: 'processing fees',
+        feeLabel: method === 'ach' ? 'ACH Direct Debit fees' : 'processing fees',
         feeCents: feeCovered ? Math.max(0, donorTotalCents - amountCents) : stripeFeeCents,
         parishReceivesCents: feeCovered ? amountCents : Math.max(0, amountCents - stripeFeeCents),
         donorTotalCents

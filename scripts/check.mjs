@@ -530,3 +530,5 @@ assert.ok(learnBillingLib.includes('params.set("automatic_tax[enabled]", "true")
 assert.ok(learnBillingLib.includes("billingAddressLine1: record.billingAddressLine1"), "Learn household billing record should support storing a billing address");
 
 console.log("AGAPAY platform checks passed.");
+import "./stripe-nonprofit-volume-tests.mjs";
+import "./nonprofit-pricing-workflow-tests.mjs";

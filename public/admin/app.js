@@ -2808,6 +2808,7 @@ let selectedReference = '';
         directory: 'AGAPAY Directory',
         support: 'Support Tickets',
         taxexemptions: 'Sales Tax Exemptions',
+        nonprofitpricing: 'Stripe Nonprofit Pricing',
         auditlog: 'Audit Log',
         settings: 'Settings',
         developer: 'Developer Tools'
@@ -2819,10 +2820,76 @@ let selectedReference = '';
       if (tab === 'learn') loadLearnAdmin();
       if (tab === 'support') loadParishSupportTickets();
       if (tab === 'taxexemptions') loadTaxExemptionSummary(), loadTaxExemptions();
+      if (tab === 'nonprofitpricing') loadAdminNonprofitPricing();
       if (tab === 'auditlog') {
         populateAuditLogFilterOptions();
         refreshAuditLogOrgOptions();
         if (!auditLogLoadedOnce) loadAuditLog(true);
+      }
+    }
+
+    async function loadAdminNonprofitPricing(btn) {
+      const tableBody = document.getElementById('nonprofitPricingTableBody');
+      const cards = document.getElementById('nonprofitPricingSummaryCards');
+      if (!tableBody || !cards) return;
+      if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+      try {
+        const response = await fetch('/api/admin/nonprofit-pricing', { headers: authHeaders() });
+        const data = await response.json().catch(() => ({}));
+        if (handleAuthFailure(response, data)) return;
+        if (!response.ok) throw new Error(data.error || 'Unable to load nonprofit-pricing thresholds');
+        const totals = data.totals || {};
+        cards.innerHTML = [
+          ['Monitored', totals.monitored || 0, 'Connected parish accounts'],
+          ['Watch', totals.watch || 0, '15–17.49% exposure'],
+          ['Near threshold', totals.near || 0, '17.5–19.99% exposure'],
+          ['At or over 20%', totals.breached || 0, 'Immediate review']
+        ].map(([label, value, note]) => `<article class="revenue-card"><div class="revenue-label">${escapeHtml(label)}</div><div class="revenue-value">${Number(value).toLocaleString()}</div><div class="revenue-meta">${escapeHtml(note)}</div></article>`).join('');
+        const parishes = data.parishes || [];
+        tableBody.innerHTML = parishes.length ? parishes.map(parish => {
+          const exposure = Number(parish.risk?.thresholdExposurePercent || 0);
+          const width = Math.max(0, Math.min(100, (exposure / 20) * 100));
+          const color = parish.risk?.riskBand === 'breached' ? '#8a2828' : parish.risk?.riskBand === 'near' ? '#b66a1c' : parish.risk?.riskBand === 'watch' ? '#c49a3e' : '#2f6e55';
+          return `<tr>
+            <td><strong>${escapeHtml(parish.parishName)}</strong><br><small>${escapeHtml(parish.parishId)}</small></td>
+            <td>${escapeHtml(String(parish.applicationStatus || 'not_started').replaceAll('_', ' '))}</td>
+            <td>${Number(parish.volume?.donationPercent || 0).toFixed(2)}%<br><small>${money(parish.volume?.donationNetCents || 0)}</small></td>
+            <td>${Number(parish.risk?.classifiedNonDonationPercent || 0).toFixed(2)}%<br><small>${money(parish.volume?.nonDonationNetCents || 0)}</small></td>
+            <td>${money(parish.volume?.unclassifiedNetCents || 0)}</td>
+            <td style="min-width:240px;"><div style="height:10px;background:#e8e2d5;border-radius:999px;overflow:hidden;"><div style="height:100%;width:${width}%;background:${color};"></div></div><small>${exposure.toFixed(2)}% of 20% · ${Number(parish.risk?.headroomPercent || 0).toFixed(2)} points left<br>Current capacity: ${money(parish.risk?.additionalNonDonationCapacityCents || 0)}</small><div style="display:flex;gap:6px;margin-top:6px;"><input type="number" min="0" step="0.01" placeholder="Planned non-donation $" style="width:145px;" oninput="calculateNonprofitProjection(this,${Number(parish.volume?.totalNetCents || 0)},${Number(parish.risk?.thresholdExposureCents || 0)})"><small class="nonprofit-projection-result"></small></div></td>
+            <td><span class="status-badge status-${escapeAttr(parish.risk?.riskBand || 'safe')}">${escapeHtml(parish.risk?.riskBand || 'safe')}</span></td>
+            <td>${parish.volume?.scan?.complete ? 'Complete' : 'Incomplete'}<br><small>${escapeHtml(shortDate(parish.volume?.scan?.lastCompletedAt) || '')}</small></td>
+          </tr>`;
+        }).join('') : '<tr><td colspan="8"><div class="revenue-empty">No connected parish Stripe accounts are available.</div></td></tr>';
+      } catch (err) {
+        tableBody.innerHTML = `<tr><td colspan="8"><div class="revenue-empty">${escapeHtml(err.message)}</div></td></tr>`;
+      } finally {
+        if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+      }
+    }
+
+    function calculateNonprofitProjection(input, currentTotalCents, currentExposureCents) {
+      const addedCents = Math.max(0, Math.round((Number(input.value) || 0) * 100));
+      const projectedTotal = Number(currentTotalCents || 0) + addedCents;
+      const projectedExposure = Number(currentExposureCents || 0) + addedCents;
+      const percent = projectedTotal ? (projectedExposure / projectedTotal) * 100 : 0;
+      const output = input.parentElement?.querySelector('.nonprofit-projection-result');
+      if (output) output.textContent = input.value ? `${percent.toFixed(2)}% projected` : '';
+    }
+
+    async function runNonprofitPricingAlerts(btn) {
+      if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+      try {
+        const response = await fetch('/api/admin/nonprofit-pricing/alerts/run', { method: 'POST', headers: authHeaders() });
+        const data = await response.json().catch(() => ({}));
+        if (handleAuthFailure(response, data)) return;
+        if (!response.ok) throw new Error(data.error || 'Unable to run threshold alerts');
+        setStatus(`Threshold alert check complete. ${Number(data.result?.sent || 0)} email alert(s) sent.`, 'success');
+        await loadAdminNonprofitPricing();
+      } catch (err) {
+        setStatus(err.message, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
       }
     }
 
@@ -2839,6 +2906,7 @@ let selectedReference = '';
     // so it shows up as a real filter option instead of only reachable by
     // typing the raw string.
     const AUDIT_ACTION_CATALOG = [
+      { group: 'Nonprofit Pricing', value: 'nonprofit_pricing.alert_check_run', label: 'Threshold alert check run', description: 'An admin manually ran the site-wide nonprofit-pricing threshold notification check.' },
       { group: 'Registrations', value: 'registration.status_changed', label: 'Registration status changed', description: "An admin moved a parish's registration through the verification pipeline (e.g. pending → verified)." },
       { group: 'Registrations', value: 'registration.tax_readiness_changed', label: 'Tax readiness changed', description: "An admin updated a parish's tax-readiness flag, which gates paid-tier checkout." },
       { group: 'Registrations', value: 'admin.index_rebuild', label: 'Registration index rebuilt', description: 'An admin manually rebuilt the parish-ID lookup index — a bulk operation, not tied to one parish.' },

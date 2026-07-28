@@ -6441,6 +6441,7 @@
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.detail || data.error || 'Unable to load giving summary');
       renderGivingSummary(data.summary);
+      loadStripeVolume();
     } catch (err) { pane.innerHTML = `<div class="insights-empty-dark">${escapeHtml(err.message)}</div>`; }
     finally { if (btn) { btn.classList.remove('loading'); btn.disabled = false; } }
   }
@@ -7442,6 +7443,224 @@
       setStatus(win?'Subscription checkout opened in a new tab.':'Checkout created.','success');
     } catch(err){if(win)win.close();setStatus(err.message,'error');}
     finally{if(btn){btn.classList.remove('loading');btn.disabled=false;}}
+  }
+
+  async function loadStripeVolume(btn) {
+    const body = document.getElementById('stripeVolumeBody');
+    if (!currentParish || !body) return;
+    if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+    try {
+      const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/stripe-volume', { headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok && !data.volume) throw new Error(data.detail || data.error || 'Unable to load Stripe volume');
+      renderStripeVolume(data.volume || {});
+      await loadNonprofitPricing();
+    } catch (err) {
+      body.innerHTML = `<div class="insights-empty-dark">${escapeHtml(err.message)}</div>`;
+    } finally {
+      if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+    }
+  }
+
+  function renderStripeVolume(volume) {
+    const body = document.getElementById('stripeVolumeBody');
+    if (!body) return;
+    if (!volume.connected) {
+      body.innerHTML = `<div class="insights-empty-dark">${escapeHtml(volume.note || 'Connect Stripe to begin volume tracking.')}</div>`;
+      return;
+    }
+    const complete = Boolean(volume.scan?.complete);
+    const percent = Number(volume.donationPercent || 0);
+    const thresholdMet = complete && percent >= Number(volume.thresholdPercent || 80);
+    const status = !complete ? 'Scan in progress' : thresholdMet ? 'Volume threshold met' : 'Below 80% threshold';
+    body.innerHTML = `
+      <div class="pdx-kpi-band" style="margin:0;">
+        <div class="pdx-kpi-card"><div class="pdx-kpi-label">Donation share</div><div class="pdx-kpi-value">${percent.toFixed(2)}%</div><div class="pdx-kpi-meta">${escapeHtml(status)}</div></div>
+        <div class="pdx-kpi-card"><div class="pdx-kpi-label">Donations</div><div class="pdx-kpi-value">${money(volume.donationNetCents || 0)}</div><div class="pdx-kpi-meta">Net Stripe volume</div></div>
+        <div class="pdx-kpi-card"><div class="pdx-kpi-label">Non-donations</div><div class="pdx-kpi-value">${money(volume.nonDonationNetCents || 0)}</div><div class="pdx-kpi-meta">Commerce and other classified payments</div></div>
+        <div class="pdx-kpi-card"><div class="pdx-kpi-label">Unclassified</div><div class="pdx-kpi-value">${money(volume.unclassifiedNetCents || 0)}</div><div class="pdx-kpi-meta">Included in total, not counted as donations</div></div>
+      </div>
+      <p style="margin:14px 0 0;color:var(--muted);font-size:13px;">${escapeHtml(volume.note || '')} This is an operational estimate; Stripe makes the pricing decision.</p>
+    `;
+  }
+
+  async function nonprofitPricingFetch(path = '', init = {}) {
+    const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/nonprofit-pricing' + path, {
+      ...init,
+      headers: { ...authHeaders(), ...(init.headers || {}) }
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || data.detail || 'Unable to update the nonprofit-pricing application');
+    return data;
+  }
+
+  async function loadNonprofitPricing(btn) {
+    const body = document.getElementById('nonprofitPricingApplicationBody');
+    if (!currentParish || !body) return;
+    if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+    try {
+      const data = await nonprofitPricingFetch();
+      renderNonprofitPricingApplication(data);
+    } catch (err) {
+      body.innerHTML = `<div class="insights-empty-dark">${escapeHtml(err.message)}</div>`;
+    } finally {
+      if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+    }
+  }
+
+  function renderNonprofitPricingApplication(data) {
+    const body = document.getElementById('nonprofitPricingApplicationBody');
+    if (!body) return;
+    const application = data.application || {};
+    const readiness = application.readiness || {};
+    const confirmations = application.confirmations || {};
+    const documents = (application.documents || []).filter(document => document.isCurrent);
+    const statusLabel = String(application.status || 'not_started').replaceAll('_', ' ');
+    const measuredPercent = Number(data.volume?.donationPercent || 0).toFixed(2);
+    const applicationStatement = `${currentParish.name} confirms that ${measuredPercent}% of its measured year-to-date Stripe payment volume is from tax-deductible donations. The parish is a registered nonprofit organization and requests review for Stripe nonprofit pricing for connected account ${application.stripeAccountId || ''}. An authorized account owner is submitting this request while logged into the parish Stripe account.`;
+    const checks = [
+      ['Complete Stripe volume scan', readiness.measurementComplete],
+      ['At least 80% measured donation volume', readiness.measuredAtOrAbove80],
+      ['Signed parish attestation', readiness.attestationComplete],
+      ['Nonprofit documentation uploaded', readiness.hasNonprofitProof]
+    ];
+    body.innerHTML = `
+      <div style="display:grid;gap:18px;">
+        <div class="insights-empty-dark" style="text-align:left;">
+          <strong>Stripe confirmed:</strong> each Standard connected parish must apply separately. The account owner must be logged into the parish Stripe account and contact Stripe directly. AGAPAY prepares and tracks the packet but cannot submit it for the parish.
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;"><strong>Application status</strong><span>${escapeHtml(statusLabel)}</span></div>
+          <div style="display:grid;gap:6px;margin-top:10px;">${checks.map(([label, done]) => `<div>${done ? '✓' : '○'} ${escapeHtml(label)}</div>`).join('')}</div>
+        </div>
+        <div style="display:grid;gap:8px;">
+          <strong>Application statement</strong>
+          <textarea id="nppApplicationStatement" rows="4" readonly>${escapeHtml(applicationStatement)}</textarea>
+          <button class="btn btn-secondary btn-sm" type="button" onclick="copyNonprofitPricingStatement()">Copy statement</button>
+          <small style="color:var(--muted);">AGAPAY uses year-to-date volume because Stripe did not confirm its review team’s measurement period. Stripe makes the final determination.</small>
+        </div>
+        <form onsubmit="saveNonprofitPricingAttestation(event)" style="display:grid;gap:10px;">
+          <strong>Authorized representative attestation</strong>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;">
+            <input id="nppAttestedName" required maxlength="160" placeholder="Representative name" value="${escapeAttr(application.attestedByName || '')}" />
+            <input id="nppAttestedTitle" required maxlength="160" placeholder="Title, e.g. Treasurer" value="${escapeAttr(application.attestedByTitle || '')}" />
+            <input id="nppEinLastFour" required maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="EIN last four" value="${escapeAttr(application.einLastFour || '')}" />
+          </div>
+          <label><input id="nppRegistered" type="checkbox" ${confirmations.registeredNonprofit ? 'checked' : ''}> I confirm the parish is a registered nonprofit organization.</label>
+          <label><input id="nppTaxDeductible" type="checkbox" ${confirmations.taxDeductibleDonations ? 'checked' : ''}> I confirm the payments classified as donations are tax-deductible donations.</label>
+          <label><input id="nppOver80" type="checkbox" ${confirmations.over80Percent ? 'checked' : ''}> I confirm that more than 80% of this Stripe account’s payment volume comes from tax-deductible donations.</label>
+          <label><input id="nppOwnerSubmit" type="checkbox" ${confirmations.accountOwnerSubmission ? 'checked' : ''}> I understand an authorized parish account owner must sign in to Stripe and submit the request directly.</label>
+          <button class="btn btn-primary btn-sm" type="submit">Sign and save attestation</button>
+        </form>
+        <form onsubmit="uploadNonprofitPricingDocument(event)" style="display:grid;gap:10px;">
+          <strong>Private supporting documents</strong>
+          <p style="margin:0;color:var(--muted);font-size:13px;">Upload an IRS determination letter, tax-exempt proof, or Stripe’s eventual approval message. Files remain private and are served only through authenticated dashboard routes.</p>
+          <div style="display:grid;grid-template-columns:minmax(180px,0.5fr) minmax(220px,1fr) auto;gap:10px;">
+            <select id="nppDocumentType"><option value="irs_determination">IRS determination letter</option><option value="tax_exempt_proof">Other tax-exempt proof</option><option value="stripe_approval">Stripe approval message</option><option value="other">Other</option></select>
+            <input id="nppDocumentFile" type="file" required accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" />
+            <button class="btn btn-secondary btn-sm" type="submit">Upload</button>
+          </div>
+          <div>${documents.length ? documents.map(document => `<button type="button" class="pdx-link-btn" onclick="viewNonprofitPricingDocument('${escapeAttr(document.id)}')">${escapeHtml(document.documentType.replaceAll('_', ' '))}: ${escapeHtml(document.filename)}</button>`).join('<br>') : '<span style="color:var(--muted);">No documents uploaded yet.</span>'}</div>
+        </form>
+        <div style="display:grid;gap:10px;">
+          <strong>Submit through the parish Stripe account</strong>
+          <p style="margin:0;color:var(--muted);font-size:13px;">When all four readiness checks are complete, sign in to Stripe, open Support, and request nonprofit pricing. Include the account ID, registered email, donation-volume confirmation, tax registration details, and tax-exempt documentation.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;"><a class="btn btn-secondary btn-sm" href="https://support.stripe.com/contact" target="_blank" rel="noopener">Open Stripe Support</a><input id="nppStripeCaseId" maxlength="120" placeholder="Stripe support case ID (if provided)" value="${escapeAttr(application.stripeSupportCaseId || '')}" /><button class="btn btn-primary btn-sm" type="button" onclick="markNonprofitPricingSubmitted(this)" ${readiness.readyToSubmit ? '' : 'disabled'}>I submitted this to Stripe</button></div>
+        </div>
+        ${application.status === 'submitted_to_stripe' || application.status === 'stripe_approved' || application.status === 'stripe_declined' ? `
+          <div style="display:grid;gap:10px;">
+            <strong>Record Stripe’s response</strong>
+            <p style="margin:0;color:var(--muted);font-size:13px;">Stripe said its review team will notify the connected account when pricing is applied. Upload that message above before recording approval.</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;"><input id="nppEffectiveDate" type="date" value="${escapeAttr(application.stripeEffectiveDate || '')}" /><button class="btn btn-primary btn-sm" type="button" onclick="recordNonprofitPricingDecision('approved',this)">Stripe approved</button><button class="btn btn-secondary btn-sm" type="button" onclick="recordNonprofitPricingDecision('declined',this)">Stripe declined</button></div>
+          </div>` : ''}
+      </div>
+    `;
+  }
+
+  async function copyNonprofitPricingStatement() {
+    const statement = document.getElementById('nppApplicationStatement')?.value || '';
+    try {
+      await navigator.clipboard.writeText(statement);
+      setStatus('Application statement copied.', 'success');
+    } catch {
+      const field = document.getElementById('nppApplicationStatement');
+      field?.select();
+      setStatus('Select and copy the application statement.', '');
+    }
+  }
+
+  async function saveNonprofitPricingAttestation(event) {
+    event.preventDefault();
+    try {
+      const data = await nonprofitPricingFetch('', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'save_attestation',
+          name: document.getElementById('nppAttestedName')?.value || '',
+          title: document.getElementById('nppAttestedTitle')?.value || '',
+          einLastFour: document.getElementById('nppEinLastFour')?.value || '',
+          registeredNonprofit: Boolean(document.getElementById('nppRegistered')?.checked),
+          taxDeductibleDonations: Boolean(document.getElementById('nppTaxDeductible')?.checked),
+          over80Percent: Boolean(document.getElementById('nppOver80')?.checked),
+          accountOwnerSubmission: Boolean(document.getElementById('nppOwnerSubmit')?.checked)
+        })
+      });
+      renderNonprofitPricingApplication(data);
+      setStatus('Nonprofit-pricing attestation saved.', 'success');
+    } catch (err) { setStatus(err.message, 'error'); }
+  }
+
+  async function uploadNonprofitPricingDocument(event) {
+    event.preventDefault();
+    const file = document.getElementById('nppDocumentFile')?.files?.[0];
+    if (!file) return;
+    const form = new FormData();
+    form.set('documentType', document.getElementById('nppDocumentType')?.value || '');
+    form.set('document', file);
+    try {
+      await nonprofitPricingFetch('/documents', { method: 'POST', body: form });
+      await loadNonprofitPricing();
+      setStatus('Private nonprofit document uploaded.', 'success');
+    } catch (err) { setStatus(err.message, 'error'); }
+  }
+
+  async function markNonprofitPricingSubmitted(btn) {
+    if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+    try {
+      const data = await nonprofitPricingFetch('', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'mark_submitted', stripeSupportCaseId: document.getElementById('nppStripeCaseId')?.value || '' })
+      });
+      renderNonprofitPricingApplication(data);
+      setStatus('Stripe submission recorded.', 'success');
+    } catch (err) { setStatus(err.message, 'error'); }
+    finally { if (btn?.isConnected) { btn.disabled = false; btn.classList.remove('loading'); } }
+  }
+
+  async function recordNonprofitPricingDecision(decision, btn) {
+    if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+    try {
+      const data = await nonprofitPricingFetch('', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'record_decision', decision, effectiveDate: document.getElementById('nppEffectiveDate')?.value || '' })
+      });
+      renderNonprofitPricingApplication(data);
+      setStatus(`Stripe ${decision} decision recorded.`, 'success');
+    } catch (err) { setStatus(err.message, 'error'); }
+    finally { if (btn?.isConnected) { btn.disabled = false; btn.classList.remove('loading'); } }
+  }
+
+  async function viewNonprofitPricingDocument(documentId) {
+    try {
+      const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/nonprofit-pricing/documents/' + encodeURIComponent(documentId), { headers: authHeaders() });
+      if (!response.ok) throw new Error('Unable to open document');
+      const url = URL.createObjectURL(await response.blob());
+      window.open(url, '_blank', 'noopener');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (err) { setStatus(err.message, 'error'); }
   }
 
   async function changeDemoTier(btn) {

@@ -90,6 +90,15 @@ import {
 import { bookstoreEnabledFor, sacramentsEnabledFor } from "./lib/entitlements.js";
 import { accountingAvailableForParish } from "./lib/accounting-demo-access.js";
 import { runScheduledAccountingIntegrity } from "./accounting/integrity/scheduler.js";
+import {
+  handleAdminNonprofitPricing,
+  handleAdminNonprofitPricingAlerts,
+  handleAdminNonprofitPricingDocumentView,
+  handleParishNonprofitPricing,
+  handleParishNonprofitPricingDocumentUpload,
+  handleParishNonprofitPricingDocumentView,
+} from "./handlers/nonprofit-pricing.js";
+import { sendNonprofitThresholdAlerts } from "./lib/nonprofit-pricing.js";
 
 import {
   verifyParishDashboardBearer,
@@ -116,6 +125,7 @@ import {
   handleParishReconciliation,
   handleParishReconciliationClose,
   handleParishGivingSummary,
+  handleParishStripeVolume,
   handleParishGivingHistory,
   handleParishRecurringHealth,
   handleParishBookstore,
@@ -2369,6 +2379,7 @@ async function handleHealth(env) {
     r2: {
       campaignAssets: Boolean(env.CAMPAIGN_ASSETS),
       taxExemptionDocs: Boolean(env.TAX_EXEMPTION_DOCS),
+      nonprofitPricingDocs: Boolean(env.NONPROFIT_PRICING_DOCS),
       givingStatements: Boolean(env.GIVING_STATEMENTS)
     }
   };
@@ -2412,6 +2423,9 @@ export default {
     ctx.waitUntil(runScheduledRecurringTransactions(env, event.scheduledTime)
       .then((results) => console.log("scheduled_accounting_recurring", JSON.stringify(results)))
       .catch((error) => console.error("scheduled_accounting_recurring_failed", error?.message || String(error))));
+    ctx.waitUntil(sendNonprofitThresholdAlerts(env)
+      .then((results) => console.log("nonprofit_pricing_threshold_alerts", JSON.stringify(results)))
+      .catch((error) => console.error("nonprofit_pricing_threshold_alerts_failed", error?.message || String(error))));
     if (event.cron === "0 8 * * *") return;
     ctx.waitUntil(runScheduledAccountingIntegrity(env, event.scheduledTime)
       .then((results) => console.log("scheduled_accounting_integrity", JSON.stringify(results)))
@@ -3191,6 +3205,24 @@ export default {
       if (!action) return handleAdminTaxExemptionDetail(request, env, taxExemptionId);
       return json({ error: "Not found" }, { status: 404 });
     }
+    if (url.pathname === "/api/admin/nonprofit-pricing") {
+      return handleAdminNonprofitPricing(request, env);
+    }
+    if (url.pathname === "/api/admin/nonprofit-pricing/alerts/run") {
+      return handleAdminNonprofitPricingAlerts(request, env);
+    }
+    if (url.pathname.startsWith("/api/admin/nonprofit-pricing/applications/") && url.pathname.includes("/documents/")) {
+      const rest = url.pathname.replace("/api/admin/nonprofit-pricing/applications/", "");
+      const [applicationId, documentPart] = rest.split("/documents/");
+      const documentId = decodeURIComponent(String(documentPart || "").replace(/\/download$/, ""));
+      return handleAdminNonprofitPricingDocumentView(
+        request,
+        env,
+        decodeURIComponent(applicationId),
+        documentId,
+        String(documentPart || "").endsWith("/download") ? "attachment" : "inline"
+      );
+    }
 
     if (url.pathname.startsWith("/api/admin/registrations/")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", ""));
@@ -3285,6 +3317,29 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/giving-summary")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/giving-summary", ""));
       return handleParishGivingSummary(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stripe-volume")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stripe-volume", ""));
+      return handleParishStripeVolume(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/nonprofit-pricing")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/nonprofit-pricing", ""));
+      return handleParishNonprofitPricing(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/nonprofit-pricing/documents")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/nonprofit-pricing/documents", ""));
+      return handleParishNonprofitPricingDocumentUpload(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/nonprofit-pricing/documents/")) {
+      const [parishId, documentPart] = url.pathname.replace("/api/parish/dashboard/", "").split("/nonprofit-pricing/documents/");
+      const documentId = decodeURIComponent(String(documentPart || "").replace(/\/download$/, ""));
+      return handleParishNonprofitPricingDocumentView(
+        request,
+        env,
+        decodeURIComponent(parishId),
+        documentId,
+        String(documentPart || "").endsWith("/download") ? "attachment" : "inline"
+      );
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/giving-history")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/giving-history", ""));

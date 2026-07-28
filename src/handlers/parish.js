@@ -105,6 +105,20 @@ import {
 
 import { recordAuditEvent } from "../lib/audit-log.js";
 import { SCHEDULABLE_SACRAMENT_TYPES } from "../lib/sacrament-availability.js";
+import {
+  checkoutFinancials as calculateCheckoutFinancials,
+  estimateStripeAchFeeCents as estimateAchFee,
+  estimateStripeProcessingFeeCents as estimateCardFee,
+  grossUpForAchFeeCents as grossUpAch,
+  grossUpForStripeProcessingFeeCents as grossUpCard,
+  normalizePaymentMethod,
+  publicPaymentFeeSchedules,
+} from "../lib/payment-fees.js";
+import {
+  classifyStripeCharge,
+  refreshStripeVolume,
+  summarizeStoredStripeVolume,
+} from "../lib/stripe-volume.js";
 
 function d1(env) {
   return env.AGAPAY_DB || env.DB || null;
@@ -391,50 +405,23 @@ export function donationAmountError(amount) {
 }
 
 export function estimateStripeProcessingFeeCents(chargeCents) {
-  if (!Number.isFinite(chargeCents) || chargeCents <= 0) return 0;
-  return Math.max(0, Math.round(chargeCents * 0.029 + 30));
+  return estimateCardFee(chargeCents);
 }
 
 export function estimateStripeAchFeeCents(chargeCents) {
-  if (!Number.isFinite(chargeCents) || chargeCents <= 0) return 0;
-  return Math.max(0, Math.round(chargeCents * 0.026 + 30));
+  return estimateAchFee(chargeCents);
 }
 
 export function grossUpForStripeProcessingFeeCents(netAmountCents) {
-  if (!Number.isFinite(netAmountCents) || netAmountCents <= 0) return 0;
-  let chargeCents = Math.max(
-    netAmountCents,
-    Math.ceil((netAmountCents + 30) / (1 - 0.029))
-  );
-  while (chargeCents - estimateStripeProcessingFeeCents(chargeCents) < netAmountCents) chargeCents += 1;
-  while (
-    chargeCents > netAmountCents
-    && (chargeCents - 1) - estimateStripeProcessingFeeCents(chargeCents - 1) >= netAmountCents
-  ) {
-    chargeCents -= 1;
-  }
-  return chargeCents;
+  return grossUpCard(netAmountCents);
 }
 
 export function grossUpForAchFeeCents(netAmountCents, agapayFeeCents) {
-  if (!Number.isFinite(netAmountCents) || netAmountCents <= 0) return 0;
-  const targetAfterStripe = netAmountCents + Math.max(0, Number(agapayFeeCents) || 0);
-  let chargeCents = Math.max(targetAfterStripe, Math.ceil((targetAfterStripe + 30) / (1 - 0.026)));
-  while (chargeCents - estimateStripeAchFeeCents(chargeCents) < targetAfterStripe) chargeCents += 1;
-  while (
-    chargeCents > targetAfterStripe
-    && (chargeCents - 1) - estimateStripeAchFeeCents(chargeCents - 1) >= targetAfterStripe
-  ) {
-    chargeCents -= 1;
-  }
-  return chargeCents;
+  return grossUpAch(netAmountCents, agapayFeeCents);
 }
 
 export function checkoutPaymentMethod(value, recurring) {
-  const method = String(value || "card").toLowerCase().trim();
-  if (recurring) return "card";
-  if (["ach", "bank", "bank_account", "us_bank_account"].includes(method)) return "ach";
-  return "card";
+  return normalizePaymentMethod(value, recurring);
 }
 
 // AGAPAY no longer collects a donation platform fee (formerly a blended
@@ -446,43 +433,7 @@ export function checkoutPaymentMethod(value, recurring) {
 // AGAPAY's revenue is the parish subscription plan (src/lib/subscriptions.js),
 // not a percentage of donations.
 export function checkoutFinancials(amountCents, coverFees, recurring, paymentMethod = "card") {
-  const method = checkoutPaymentMethod(paymentMethod, recurring);
-  if (recurring) {
-    const preGrossUpStripeFeeCents = estimateStripeProcessingFeeCents(amountCents);
-    const chargeCents = coverFees ? amountCents + preGrossUpStripeFeeCents : amountCents;
-    const estimatedStripeFeeCents = estimateStripeProcessingFeeCents(chargeCents);
-    return {
-      chargeCents,
-      estimatedStripeFeeCents,
-      agapayFeeCents: 0,
-      totalTransactionFeeCents: estimatedStripeFeeCents,
-      paymentMethod: method
-    };
-  }
-
-  if (method === "ach") {
-    const preGrossUpStripeFeeCents = estimateStripeAchFeeCents(amountCents);
-    const chargeCents = coverFees ? amountCents + preGrossUpStripeFeeCents : amountCents;
-    const estimatedStripeFeeCents = estimateStripeAchFeeCents(chargeCents);
-    return {
-      chargeCents,
-      estimatedStripeFeeCents,
-      agapayFeeCents: 0,
-      totalTransactionFeeCents: estimatedStripeFeeCents,
-      paymentMethod: method
-    };
-  }
-
-  const preGrossUpStripeFeeCents = estimateStripeProcessingFeeCents(amountCents);
-  const chargeCents = coverFees ? amountCents + preGrossUpStripeFeeCents : amountCents;
-  const estimatedStripeFeeCents = estimateStripeProcessingFeeCents(chargeCents);
-  return {
-    chargeCents,
-    estimatedStripeFeeCents,
-    agapayFeeCents: 0,
-    totalTransactionFeeCents: estimatedStripeFeeCents,
-    paymentMethod: method
-  };
+  return calculateCheckoutFinancials(amountCents, coverFees, recurring, paymentMethod);
 }
 
 export function numericCents(value) {
@@ -1459,7 +1410,7 @@ export function paidOfferingStatus(offering = {}) {
 }
 
 export function normalizedCheckoutPaymentStatus(session = {}, fallback = "pending") {
-  if (session.payment_status === "paid" || session.status === "complete") return "paid";
+  if (session.payment_status === "paid") return "paid";
   if (session.status === "expired") return session.payment_status || "unpaid";
   return session.payment_status || fallback || "pending";
 }
@@ -1568,7 +1519,7 @@ export async function refreshDonorOfferingFromStripeCheckout(env, offering = {})
   const session = stripe.body || {};
   const paymentStatus = normalizedCheckoutPaymentStatus(session, offering.paymentStatus);
   let status = offering.status || "checkout_created";
-  if (paymentStatus === "paid" || session.status === "complete") status = "completed";
+  if (paymentStatus === "paid") status = "completed";
   if (session.status === "expired") status = "expired";
   const paymentIntentId = checkoutPaymentIntentId(session) || offering.stripePaymentIntentId || "";
   const feeUpdates = status === "completed" || paymentStatus === "paid"
@@ -1804,6 +1755,7 @@ export function parishFromRegistration(registration) {
     commemorationsEnabled: givingPlus && (registration.commemorationsEnabled ?? true),
     sacramentsEnabled: sacramentsEnabledFor(registration),
     bookstoreEnabled: bookstoreEnabledFor(registration),
+    processingFeeSchedules: publicPaymentFeeSchedules(),
     funds: givingPlus && Array.isArray(registration.funds) && registration.funds.length ? registration.funds : [
       {
         id: "general",
@@ -3082,6 +3034,8 @@ export async function handleCheckout(request, env) {
     public_anonymous: publicBoolean(body.publicAnonymous) ? "true" : "false",
     public_display_name: publicBoolean(body.publicAnonymous) ? "Anonymous" : normalizedDonorName,
     public_comment: publicComment(body.publicComment),
+    agapay_payment_class: "qualifying_donation",
+    agapay_classification_version: "1",
     parish_id: parish.id,
     parish_name: parish.name || "",
     stripe_customer_id: customer.body.id || "",
@@ -3256,7 +3210,7 @@ export async function handleCheckoutSessionStatus(request, env) {
   const paymentIntentId = checkoutPaymentIntentId(session);
   const paymentStatus = normalizedCheckoutPaymentStatus(session, offering.paymentStatus);
   let status = offering.status || "checkout_created";
-  if (paymentStatus === "paid" || session.status === "complete") status = "completed";
+  if (paymentStatus === "paid") status = "completed";
   if (session.status === "expired") status = "expired";
   const feeUpdates = status === "completed" || paymentStatus === "paid"
     ? await stripePaymentIntentFinancialUpdates(env, paymentIntentId, offering.parishId, offering)
@@ -4836,6 +4790,7 @@ export function summarizeCharges(charges) {
 
   for (const charge of charges) {
     if (charge.status !== "succeeded" || charge.paid === false) continue;
+    if (classifyStripeCharge(charge).paymentClass !== "qualifying_donation") continue;
 
     const created = new Date((charge.created || 0) * 1000);
     if (created.getUTCFullYear() !== year) continue;
@@ -5032,6 +4987,49 @@ export async function handleParishGivingSummary(request, env, parishId) {
       note: result.body.data?.length >= 500 ? "Showing the first 500 Stripe charges for this year." : ""
     }
   });
+}
+
+export async function handleParishStripeVolume(request, env, parishId) {
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-stripe-volume", { limit: 12, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!hasProductionStore(env) || !d1(env)) return missingProductionStoreResponse();
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+  if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) return unauthorized();
+
+  const stripeAccountId = found.registration.stripeAccountId || "";
+  if (!stripeAccountId || stripeAccountId.startsWith("acct_demo_")) {
+    return json({
+      volume: {
+        ...(await summarizeStoredStripeVolume(env, parishId)),
+        connected: false,
+        note: "Connect the parish Stripe account to begin payment-volume tracking."
+      }
+    });
+  }
+
+  try {
+    const refresh = await refreshStripeVolume(env, parishId, stripeAccountId);
+    const volume = await summarizeStoredStripeVolume(env, parishId, refresh.periodStart);
+    return json({
+      volume: {
+        ...volume,
+        connected: true,
+        note: volume.scan.complete
+          ? "Donation share is an AGAPAY estimate based on classified Stripe charge volume."
+          : "Stripe history is still being scanned. Refresh again to continue before relying on the percentage."
+      }
+    });
+  } catch (error) {
+    const volume = await summarizeStoredStripeVolume(env, parishId);
+    return json({
+      error: "Stripe volume refresh failed",
+      detail: error?.message || "Stripe request failed",
+      volume: { ...volume, connected: true }
+    }, { status: 502 });
+  }
 }
 
 export async function handleParishGivingHistory(request, env, parishId) {
