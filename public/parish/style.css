@@ -3139,9 +3139,9 @@
       z-index: 20;
       inset: 0;
       display: grid;
-      place-content: center;
+      place-content: start center;
       justify-items: center;
-      padding: 2rem;
+      padding: clamp(1.5rem, 5vh, 3.5rem) 2rem 2rem;
       text-align: center;
       background: linear-gradient(180deg, rgba(246,241,232,0.38), rgba(246,241,232,0.96) 52%, rgba(246,241,232,0.99));
     }
