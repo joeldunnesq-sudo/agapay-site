@@ -20,200 +20,268 @@
   <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <style>
-    :root { --ink:#101820; --muted:#68717d; --line:#d8ddd9; --paper:#fbfaf7; --gold:#b88a3d; --green:#235c4d; --blue:#153a5b; }
+    :root {
+      --navy:#061522; --navy-2:#0b2130;
+      --ink:#182028; --muted:#657081; --muted-2:#8a92a0;
+      --line:#e3e0d5; --line-soft:#edeade;
+      --paper:#fffdf8; --cream:#f7f2e7; --canvas:#f6f2ea;
+      --gold:#c8a24a; --gold-deep:#8a651f; --gold-ink:#6f4f16; --gold-tint:#f8f1e2; --gold-tint-2:#fbf5e8;
+      --green:#235c4d; --green-tint:#e9f6ee;
+      --blue:#153a5b; --blue-tint:#eef6fb;
+      --warn-bg:#fff4dd; --warn-ink:#7a4d00;
+      --danger-bg:#fff0ed; --danger-ink:#6d2118;
+      --r-sm:8px; --r-md:12px; --r-lg:18px; --r-xl:24px;
+      --shadow-sm:0 4px 14px rgba(16,24,32,.05);
+      --shadow-md:0 10px 28px rgba(16,24,32,.07);
+      --shadow-lg:0 22px 54px rgba(6,21,34,.14);
+      --font-display:"Cormorant Garamond", Georgia, serif;
+      --font-body:"DM Sans", Arial, sans-serif;
+    }
     [hidden] { display:none !important; }
-    body { margin:0; background:#f6f3ee; color:var(--ink); font-family:"DM Sans", Arial, sans-serif; }
-    .directory-main { padding:28px; display:flex; flex-direction:column; }
-    .directory-top { display:flex; justify-content:space-between; gap:16px; align-items:center; margin-bottom:22px; }
-    .directory-title h1 { margin:0; font-family:"Cormorant Garamond", Georgia, serif; font-size:38px; letter-spacing:0; }
-    .directory-title p { margin:4px 0 0; color:var(--muted); max-width:740px; }
-    .status-pill { border:1px solid var(--line); background:#fff; padding:8px 12px; border-radius:8px; font-size:13px; font-weight:700; }
-    .directory-grid { display:grid; grid-template-columns:minmax(0, 1.05fr) minmax(300px, .95fr); gap:18px; align-items:start; margin-bottom:18px; }
-    .panel { background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px; box-shadow:0 8px 22px rgba(20,20,20,.05); }
-    .panel h2 { font-size:18px; margin:0 0 12px; }
-    .panel-header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:12px; }
-    .panel-header h2 { margin:0; }
-    .panel-kicker { color:var(--gold); font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
-    .panel-intro { margin:3px 0 0; color:var(--muted); font-size:13px; line-height:1.45; }
-    .summary-list { display:grid; gap:10px; }
-    .summary-row { display:flex; justify-content:space-between; gap:12px; border-bottom:1px solid #ecefed; padding-bottom:10px; }
-    .summary-row:last-child { border-bottom:0; padding-bottom:0; }
-    .summary-row span { color:var(--muted); }
-    .summary-row strong { text-align:right; }
-    .setup-panel { display:grid; gap:12px; border:1px solid #d8e6dd; background:#f4faf6; border-radius:8px; padding:14px; }
-    .setup-panel h3 { margin:0; font-size:18px; }
-    .setup-panel p { margin:0; color:#53606a; }
-    .setup-steps { display:grid; gap:8px; margin:0; padding:0; list-style:none; }
-    .setup-steps li { display:flex; gap:8px; align-items:flex-start; color:#53606a; }
-    .setup-steps li::before { content:""; flex:0 0 8px; width:8px; height:8px; border-radius:999px; background:var(--green); margin-top:7px; }
-    .onboarding-list { display:grid; gap:8px; margin-top:12px; }
-    .onboarding-item { display:flex; justify-content:space-between; gap:10px; border:1px solid #e4e7e3; border-radius:8px; padding:10px; background:#fbfcfa; }
-    .onboarding-item span { color:#53606a; }
-    .onboarding-item strong { color:var(--green); }
-    .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
-    .btn { appearance:none; border:0; border-radius:8px; padding:10px 12px; font-weight:700; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; min-height:40px; }
-    .btn.primary { background:var(--gold); color:var(--ink); }
-    .btn.primary:hover, .btn.primary:focus-visible { background:#c9a24a; }
-    .btn.secondary { border:1px solid rgba(184,138,61,.38); background:#f8f1e2; color:#6f4f16; }
-    .btn.warn { background:#fff4dd; color:#7a4d00; }
-    .stack { display:grid; gap:14px; }
-    .empty { color:var(--muted); background:#f7f8f6; border:1px dashed var(--line); padding:14px; border-radius:8px; }
-    .empty strong { display:block; color:var(--ink); margin-bottom:4px; }
-    .contact-list, .household-list, .request-list { display:grid; gap:10px; }
-    .mini-card { border:1px solid #e4e7e3; border-radius:8px; padding:12px; background:#fff; }
-    .mini-card strong { display:block; }
-    .mini-card small { color:var(--muted); }
-    .photo-status-card { display:grid; grid-template-columns:88px 1fr; gap:12px; align-items:center; border:1px solid #dfe6df; border-radius:8px; padding:12px; background:#fbfcfa; }
-    .photo-preview { width:88px; height:88px; border-radius:8px; background:#eef3f0; object-fit:cover; object-position:center; display:grid; place-items:center; color:var(--green); font-weight:800; text-align:center; }
-    .photo-preview.household { display:block; width:100%; height:auto; aspect-ratio:auto; object-fit:contain; object-position:center; }
-    .photo-status-card h3 { margin:0 0 4px; font-size:16px; }
-    .photo-status-card p { margin:0; color:var(--muted); font-size:13px; line-height:1.45; }
-    .photo-destination { margin-top:8px; display:inline-flex; border-radius:999px; background:#eef6fb; color:#17384a; padding:4px 9px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
-    .photo-destination.ready { background:#fff4dd; color:#7a4d00; }
-    .photo-destination.approved { background:#e9f6ee; color:#1c6b3a; }
-    .photo-upload-note { grid-column:1/-1; margin:0; color:var(--muted); font-size:12px; line-height:1.45; }
-    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    label { display:grid; gap:6px; font-size:13px; font-weight:700; }
-    input, select { border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; min-width:0; }
-    .notice { margin:0 0 16px; padding:12px; border-radius:8px; background:#eef6fb; color:#17384a; border:1px solid #cde1ec; }
-    .error { background:#fff0ed; color:#6d2118; border-color:#ffd1c8; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--canvas); color:var(--ink); font-family:var(--font-body); -webkit-font-smoothing:antialiased; }
+    :focus-visible { outline:2px solid var(--gold-deep); outline-offset:2px; border-radius:4px; }
+
+    /* Layout shell */
+    .directory-main { padding:32px 34px 60px; display:flex; flex-direction:column; max-width:1180px; margin:0 auto; width:100%; }
+
+    /* Hero */
+    .directory-top { display:flex; justify-content:space-between; gap:16px; align-items:center; margin-bottom:26px; }
+    .directory-title h1 { margin:0; font-family:var(--font-display); font-weight:600; font-size:38px; letter-spacing:0; color:var(--navy); }
+    .directory-title p { margin:6px 0 0; color:var(--muted); max-width:740px; line-height:1.5; }
+    .status-pill { border:1px solid var(--line); background:#fff; padding:8px 14px; border-radius:999px; font-size:12px; font-weight:700; letter-spacing:.02em; text-transform:uppercase; color:var(--gold-deep); box-shadow:var(--shadow-sm); }
+    .directory-top.myagapay-page-hero { display:block; margin-bottom:26px; border-radius:var(--r-xl); overflow:hidden; background:linear-gradient(155deg, var(--navy) 0%, var(--navy-2) 62%, #10344a 100%); box-shadow:var(--shadow-lg); }
+    .cal-hero-inner { padding:30px 34px; position:relative; }
+    .cal-hero-inner::after { content:""; position:absolute; inset:0; pointer-events:none; background:radial-gradient(520px 220px at 88% -10%, rgba(200,162,74,.18), transparent 70%); }
+    .cal-hero-eyebrow { position:relative; color:var(--gold); font-size:11px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; margin-bottom:10px; }
+    .cal-today-kicker { display:none; }
+    .directory-top.myagapay-page-hero .directory-title h1 { margin:0 0 10px; color:#faf7f0; font-family:var(--font-display); font-size:clamp(28px, 4vw, 40px); font-weight:600; line-height:1.1; }
+    .directory-top.myagapay-page-hero .directory-title p { margin:0; max-width:640px; color:rgba(250,247,240,.72); font-size:14.5px; line-height:1.55; }
+    .directory-top.myagapay-page-hero .status-pill { position:relative; display:inline-flex; margin-top:18px; border-color:rgba(255,255,255,.14); background:rgba(255,255,255,.08); color:#f0d391; backdrop-filter:blur(6px); }
+
+    /* Command / guide cards (currently unused on desktop but styled for safety) */
     .directory-command { display:none; }
-    .command-card { border:1px solid #e3e0d8; background:#fff; border-radius:8px; padding:12px; text-align:left; text-decoration:none; color:var(--ink); display:grid; gap:5px; box-shadow:0 6px 18px rgba(20,20,20,.04); }
+    .command-card { border:1px solid var(--line); background:#fff; border-radius:var(--r-md); padding:14px; text-align:left; text-decoration:none; color:var(--ink); display:grid; gap:5px; box-shadow:var(--shadow-sm); }
     .command-card strong { font-size:14px; }
     .command-card span { color:var(--muted); font-size:12px; line-height:1.35; }
     .directory-guide { display:none; }
-    .guide-card { border:1px solid #e3e0d8; border-radius:8px; background:#fff; padding:14px; display:grid; gap:8px; box-shadow:0 8px 20px rgba(20,20,20,.04); color:var(--ink); text-decoration:none; }
-    .guide-card.primary { background:linear-gradient(135deg, #f4faf6, #fff); border-color:#cfe2d8; }
+    .guide-card { border:1px solid var(--line); border-radius:var(--r-md); background:#fff; padding:16px; display:grid; gap:8px; box-shadow:var(--shadow-sm); color:var(--ink); text-decoration:none; }
+    .guide-card.primary { background:linear-gradient(135deg, var(--green-tint), #fff); border-color:#cfe2d8; }
     .guide-card small { color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
     .guide-card strong { font-size:16px; line-height:1.25; }
     .guide-card span { color:var(--muted); font-size:13px; line-height:1.45; }
-    .guide-status { justify-self:start; border-radius:999px; background:#eef3f0; color:var(--green); font-size:11px; font-weight:800; padding:4px 9px; text-transform:uppercase; letter-spacing:.04em; }
-    .guide-status.warn { background:#fff4dd; color:#7a4d00; }
-    .guide-status.info { background:#eef6fb; color:#17384a; }
-    .member-directory { margin-bottom:18px; padding:0; overflow:hidden; }
+    .guide-status { justify-self:start; border-radius:999px; background:var(--green-tint); color:var(--green); font-size:11px; font-weight:800; padding:4px 9px; text-transform:uppercase; letter-spacing:.04em; }
+    .guide-status.warn { background:var(--warn-bg); color:var(--warn-ink); }
+    .guide-status.info { background:var(--blue-tint); color:var(--blue); }
+
+    /* Grid + panels */
+    .directory-grid { display:grid; grid-template-columns:minmax(0, 1.05fr) minmax(320px, .95fr); gap:20px; align-items:start; margin-bottom:20px; }
+    .panel { background:#fff; border:1px solid var(--line); border-radius:var(--r-lg); padding:22px; box-shadow:var(--shadow-sm); transition:box-shadow .18s ease; }
+    .panel h2 { font-size:19px; margin:0 0 12px; font-family:var(--font-display); font-weight:600; color:var(--navy); }
+    .panel-header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--line-soft); }
+    .panel-header h2 { margin:2px 0 0; }
+    .panel-kicker { color:var(--gold-deep); font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+    .panel-intro { margin:4px 0 0; color:var(--muted); font-size:13px; line-height:1.5; }
+
+    /* Section icon badge — used to give each panel a visual anchor */
+    .panel-header { position:relative; padding-left:0; }
+    .panel-icon { display:inline-grid; place-items:center; width:38px; height:38px; border-radius:11px; background:var(--gold-tint); color:var(--gold-deep); flex:0 0 auto; margin-right:12px; }
+    .panel-icon svg { width:19px; height:19px; }
+    .panel-header-row { display:flex; align-items:flex-start; }
+
+    .summary-list { display:grid; gap:0; }
+    .summary-row { display:flex; justify-content:space-between; gap:12px; border-bottom:1px solid var(--line-soft); padding:11px 0; }
+    .summary-row:first-child { padding-top:0; }
+    .summary-row:last-child { border-bottom:0; padding-bottom:0; }
+    .summary-row span { color:var(--muted); font-size:13.5px; }
+    .summary-row strong { text-align:right; font-weight:600; }
+
+    .setup-panel { display:grid; gap:14px; border:1px solid #d8e6dd; background:linear-gradient(160deg, var(--green-tint), #fff 70%); border-radius:var(--r-md); padding:18px; }
+    .setup-panel h3 { margin:0; font-size:18px; font-family:var(--font-display); font-weight:600; }
+    .setup-panel p { margin:0; color:#4a5560; line-height:1.5; }
+    .setup-steps { display:grid; gap:9px; margin:0; padding:0; list-style:none; }
+    .setup-steps li { display:flex; gap:9px; align-items:flex-start; color:#4a5560; font-size:13.5px; line-height:1.4; }
+    .setup-steps li::before { content:""; flex:0 0 7px; width:7px; height:7px; border-radius:999px; background:var(--green); margin-top:6px; }
+    .onboarding-list { display:grid; gap:8px; margin-top:12px; }
+    .onboarding-item { display:flex; justify-content:space-between; gap:10px; border:1px solid var(--line-soft); border-radius:var(--r-sm); padding:11px; background:#fbfcfa; }
+    .onboarding-item span { color:#53606a; }
+    .onboarding-item strong { color:var(--green); }
+
+    /* Buttons */
+    .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+    .btn { appearance:none; border:0; border-radius:var(--r-sm); padding:11px 16px; font-weight:700; font-size:13.5px; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; min-height:42px; transition:transform .12s ease, box-shadow .12s ease, background .12s ease; font-family:var(--font-body); }
+    .btn.primary { background:linear-gradient(155deg, #d8b66a, var(--gold)); color:#241a04; box-shadow:0 6px 16px rgba(200,162,74,.35); }
+    .btn.primary:hover, .btn.primary:focus-visible { background:linear-gradient(155deg, #e2c37e, #d1ab55); transform:translateY(-1px); box-shadow:0 10px 22px rgba(200,162,74,.42); }
+    .btn.primary:active { transform:translateY(0); }
+    .btn.secondary { border:1px solid rgba(184,138,61,.34); background:var(--gold-tint); color:var(--gold-ink); }
+    .btn.secondary:hover, .btn.secondary:focus-visible { background:#f3e6c8; }
+    .btn.warn { background:var(--warn-bg); color:var(--warn-ink); }
+    .btn.warn:hover { background:#ffecc2; }
+    .stack { display:grid; gap:16px; }
+    .empty { color:var(--muted); background:var(--cream); border:1px dashed var(--line); padding:16px; border-radius:var(--r-md); font-size:13.5px; line-height:1.5; }
+    .empty strong { display:block; color:var(--ink); margin-bottom:4px; font-size:14.5px; }
+
+    .contact-list, .household-list, .request-list { display:grid; gap:10px; }
+    .mini-card { border:1px solid var(--line-soft); border-radius:var(--r-md); padding:13px; background:#fff; }
+    .mini-card strong { display:block; }
+    .mini-card small { color:var(--muted); }
+
+    .photo-status-card { display:grid; grid-template-columns:88px 1fr; gap:14px; align-items:center; border:1px solid var(--line-soft); border-radius:var(--r-md); padding:14px; background:#fbfcfa; }
+    .photo-preview { width:88px; height:88px; border-radius:var(--r-md); background:linear-gradient(150deg,var(--cream),var(--gold-tint)); object-fit:cover; object-position:center; display:grid; place-items:center; color:var(--green); font-weight:800; text-align:center; }
+    .photo-preview.household { display:block; width:100%; height:auto; aspect-ratio:auto; object-fit:contain; object-position:center; }
+    .photo-status-card h3 { margin:0 0 4px; font-size:16px; font-family:var(--font-display); font-weight:600; }
+    .photo-status-card p { margin:0; color:var(--muted); font-size:13px; line-height:1.5; }
+    .photo-destination { margin-top:9px; display:inline-flex; border-radius:999px; background:var(--blue-tint); color:var(--blue); padding:4px 10px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+    .photo-destination.ready { background:var(--warn-bg); color:var(--warn-ink); }
+    .photo-destination.approved { background:var(--green-tint); color:var(--green); }
+    .photo-upload-note { grid-column:1/-1; margin:0; color:var(--muted); font-size:12px; line-height:1.5; }
+
+    /* Forms */
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px 12px; }
+    fieldset { border:0; margin:0; padding:0; display:contents; }
+    fieldset.field-group { display:grid; grid-template-columns:1fr 1fr; gap:14px 12px; grid-column:1/-1; }
+    legend.group-legend { grid-column:1/-1; padding:0 0 2px; margin:6px 0 -2px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-deep); border-top:1px solid var(--line-soft); padding-top:14px; width:100%; }
+    legend.group-legend:first-child { border-top:0; padding-top:0; }
+    label { display:grid; gap:6px; font-size:12.5px; font-weight:700; color:#3c4753; }
+    input, select, textarea { border:1px solid var(--line); border-radius:var(--r-sm); padding:11px 12px; font:inherit; min-width:0; background:#fff; color:var(--ink); transition:border-color .12s ease, box-shadow .12s ease; }
+    input:hover, select:hover, textarea:hover { border-color:#c9cdd6; }
+    input:focus, select:focus, textarea:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(200,162,74,.18); outline:none; }
+    input::placeholder, textarea::placeholder { color:#a7adb6; }
+    textarea { min-height:64px; resize:vertical; }
+
+    /* Compact visibility control — reduces repeated full-width "who can see this" selects to a small labeled pill */
+    label.visibility-field { display:flex; flex-direction:row; align-items:center; gap:8px; font-weight:600; color:var(--muted); }
+    label.visibility-field::before { content:"\\1F441"; font-size:11px; opacity:.55; }
+    label.visibility-field select { flex:1; padding:8px 10px; font-size:12.5px; background:var(--gold-tint-2); border-color:rgba(184,138,61,.28); color:var(--gold-ink); font-weight:700; }
+    .visibility-legend { display:flex; flex-wrap:wrap; gap:6px 14px; margin:2px 0 14px; padding:10px 12px; background:var(--blue-tint); border:1px solid #cde1ec; border-radius:var(--r-sm); font-size:11.5px; color:#2c4d63; }
+    .visibility-legend b { color:#153a5b; }
+
+    .notice { margin:0 0 18px; padding:13px 15px; border-radius:var(--r-md); background:var(--blue-tint); color:#17384a; border:1px solid #cde1ec; font-size:13.5px; line-height:1.5; }
+    .error { background:var(--danger-bg); color:var(--danger-ink); border-color:#ffd1c8; }
+
+    /* Wizard shell (Edit household) */
+    .member-directory { margin-bottom:20px; padding:0; overflow:hidden; border-radius:var(--r-xl); }
     .member-directory[data-mobile-section="browse"] { order:0; }
     .skill-explorer { order:2; padding:0; }
-    .skill-explorer > summary { list-style:none; cursor:pointer; padding:16px 20px; color:var(--green); font-weight:800; }
+    .skill-explorer > summary { list-style:none; cursor:pointer; padding:18px 22px; color:var(--green); font-weight:800; font-size:15px; }
     .skill-explorer > summary::-webkit-details-marker { display:none; }
-    .skill-explorer > summary::after { content:"Open"; float:right; color:var(--muted); font-size:12px; }
+    .skill-explorer > summary::after { content:"Open ↓"; float:right; color:var(--muted); font-size:12px; font-weight:700; }
     .skill-explorer[open] > summary { border-bottom:1px solid var(--line); }
-    .skill-explorer[open] > summary::after { content:"Close"; }
-    .skill-explorer > .directory-title, .skill-explorer > .skills-toolbar, .skill-explorer > .skill-list { margin:16px 20px; }
+    .skill-explorer[open] > summary::after { content:"Close ↑"; }
+    .skill-explorer > .directory-title, .skill-explorer > .skills-toolbar, .skill-explorer > .skill-list { margin:18px 22px; }
+
     .personal-settings:not([open]) { display:none; }
-    .personal-settings[open] { position:fixed; inset:0; z-index:90; display:block; margin:0; padding:24px; background:rgba(6,21,34,.58); overflow:auto; }
-    .personal-settings > summary, .personal-settings > .edit-wizard-head, .personal-settings > .directory-grid, .personal-settings > .edit-wizard-footer { width:min(720px, 100%); margin-inline:auto; background:#fff; }
-    .personal-settings > summary { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:18px 22px; cursor:pointer; list-style:none; color:var(--ink); border-radius:18px 18px 0 0; }
+    .personal-settings[open] { position:fixed; inset:0; z-index:90; display:block; margin:0; padding:28px; background:rgba(6,21,34,.62); overflow:auto; backdrop-filter:blur(2px); }
+    .personal-settings > summary, .personal-settings > .edit-wizard-head, .personal-settings > .directory-grid, .personal-settings > .edit-wizard-footer { width:min(760px, 100%); margin-inline:auto; background:#fff; }
+    .personal-settings > summary { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:20px 26px; cursor:pointer; list-style:none; color:var(--navy); border-radius:var(--r-xl) var(--r-xl) 0 0; background:linear-gradient(160deg,#fff,var(--gold-tint-2)); }
     .personal-settings > summary::-webkit-details-marker { display:none; }
-    .personal-settings > summary strong { display:block; font-size:17px; }
+    .personal-settings > summary strong { display:block; font-size:18px; font-family:var(--font-display); }
     .personal-settings > summary span { display:block; margin-top:3px; color:var(--muted); font-size:13px; font-weight:400; }
-    .personal-settings > summary::after { content:"Close"; flex:0 0 auto; border:1px solid rgba(184,138,61,.42); border-radius:999px; padding:8px 12px; background:#f8f1e2; color:#6f4f16; font-size:12px; font-weight:800; }
-    .edit-wizard-head { padding:0 22px 18px; border-bottom:1px solid var(--line); }
-    .edit-wizard-title { display:flex; justify-content:space-between; gap:16px; align-items:baseline; margin-bottom:12px; }
-    .edit-wizard-title h2 { margin:0; font-family:"Cormorant Garamond",Georgia,serif; font-size:25px; }
-    .edit-wizard-title span { color:var(--muted); font-size:12px; font-weight:700; }
+    .personal-settings > summary::after { content:"Close"; flex:0 0 auto; border:1px solid rgba(184,138,61,.42); border-radius:999px; padding:9px 14px; background:#fff; color:var(--gold-ink); font-size:12px; font-weight:800; }
+    .edit-wizard-head { padding:0 26px 20px; border-bottom:1px solid var(--line); }
+    .edit-wizard-title { display:flex; justify-content:space-between; gap:16px; align-items:baseline; margin-bottom:14px; }
+    .edit-wizard-title h2 { margin:0; font-family:var(--font-display); font-size:26px; color:var(--navy); }
+    .edit-wizard-title span { color:var(--gold-deep); font-size:12px; font-weight:800; letter-spacing:.04em; }
     .edit-wizard-progress { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
-    .edit-wizard-progress span { height:5px; border-radius:999px; background:#e2e5e2; }
+    .edit-wizard-progress span { height:6px; border-radius:999px; background:#e2e5e2; }
     .edit-wizard-progress span.complete { background:var(--gold); }
-    .personal-settings > .directory-grid { display:block; padding:18px 22px 8px; margin:0 auto; }
+    .personal-settings > .directory-grid { display:block; padding:22px 26px 10px; margin:0 auto; }
     .personal-settings .directory-grid > .stack { display:contents; }
-    .personal-settings article.panel { margin-bottom:14px; box-shadow:none; }
+    .personal-settings article.panel { margin-bottom:16px; box-shadow:none; border-radius:var(--r-md); }
     .personal-settings article.panel[hidden] { display:none !important; }
-    .edit-wizard-footer { position:sticky; bottom:0; z-index:3; display:flex; gap:10px; justify-content:flex-end; padding:14px 22px; border-top:1px solid var(--line); border-radius:0 0 18px 18px; box-shadow:0 -8px 22px rgba(6,21,34,.07); }
+    .edit-wizard-footer { position:sticky; bottom:0; z-index:3; display:flex; gap:10px; justify-content:flex-end; padding:16px 26px; border-top:1px solid var(--line); border-radius:0 0 var(--r-xl) var(--r-xl); box-shadow:0 -8px 22px rgba(6,21,34,.07); }
     .edit-wizard-footer .btn { min-width:120px; }
-    .member-directory-intro { padding:22px 22px 18px; background:linear-gradient(135deg, #f8f3e8, #fff 58%, #f1f7f3); border-bottom:1px solid var(--line); }
+
+    /* Browse directory */
+    .member-directory-intro { padding:26px 26px 20px; background:linear-gradient(135deg, #f8f3e8, #fff 58%, #f1f7f3); border-bottom:1px solid var(--line); }
     .member-directory-heading-row { display:flex; align-items:center; justify-content:space-between; gap:18px; }
     .edit-directory-profile { flex:0 0 auto; }
-    .member-directory-intro h2 { margin:4px 0 6px; font-family:"Cormorant Garamond", Georgia, serif; font-size:34px; line-height:1; }
-    .member-directory-intro .panel-kicker { color:var(--gold); }
-    .directory-tools { display:grid; grid-template-columns:minmax(220px, 1fr) auto auto; gap:10px; align-items:end; padding:18px 22px 0; }
+    .member-directory-intro h2 { margin:4px 0 6px; font-family:var(--font-display); font-size:34px; font-weight:600; line-height:1; color:var(--navy); }
+    .member-directory-intro .panel-kicker { color:var(--gold-deep); }
+    .directory-tools { display:grid; grid-template-columns:minmax(220px, 1fr) auto auto; gap:10px; align-items:end; padding:20px 26px 0; }
     .directory-browse-note { margin:0; color:var(--muted); font-size:13px; align-self:center; }
-    .directory-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:14px 22px 0; }
-    .directory-tab { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:8px; padding:9px 12px; font-weight:700; cursor:pointer; }
-    .directory-tab[aria-selected="true"] { background:var(--gold); color:var(--ink); border-color:var(--gold); }
-    .alphabet { display:flex; flex-wrap:wrap; gap:5px; margin:12px 22px 16px; }
-    .alphabet button { min-width:34px; min-height:34px; border:1px solid var(--line); background:#fff; border-radius:8px; cursor:pointer; font-weight:700; }
-    .alphabet button[aria-current="true"] { background:#153a5b; color:#fff; border-color:#153a5b; }
-    .alphabet button:disabled { opacity:.42; cursor:not-allowed; }
-    .member-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:16px; padding:0 22px 22px; }
-    .member-card { position:relative; border:1px solid #e4e7e3; background:#fff; border-radius:18px; padding:0; display:grid; grid-template-rows:170px auto; gap:0; overflow:hidden; text-align:left; cursor:pointer; min-height:250px; box-shadow:0 10px 28px rgba(6,21,34,.07); transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
-    .member-card:hover, .member-card:focus-visible { outline:none; transform:translateY(-3px); box-shadow:0 18px 36px rgba(6,21,34,.13); border-color:rgba(184,138,61,.5); }
-    .member-photo { width:100%; height:100%; border-radius:0; background:linear-gradient(145deg, #e8efe9, #f6f1e8); object-fit:cover; object-position:center; display:grid; place-items:center; font-family:"Cormorant Garamond", Georgia, serif; font-size:32px; font-weight:600; color:var(--green); }
+    .directory-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:16px 26px 0; }
+    .directory-tab { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:9px 14px; font-weight:700; cursor:pointer; font-size:13px; }
+    .directory-tab[aria-selected="true"] { background:var(--gold); color:#241a04; border-color:var(--gold); }
+    .alphabet { display:flex; flex-wrap:wrap; gap:5px; margin:14px 26px 18px; }
+    .alphabet button { min-width:34px; min-height:34px; border:1px solid var(--line); background:#fff; border-radius:var(--r-sm); cursor:pointer; font-weight:700; color:#3c4753; }
+    .alphabet button[aria-current="true"] { background:var(--navy); color:#fff; border-color:var(--navy); }
+    .alphabet button:disabled { opacity:.38; cursor:not-allowed; }
+    .member-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(232px, 1fr)); gap:16px; padding:0 26px 26px; }
+    .member-card { position:relative; border:1px solid var(--line-soft); background:#fff; border-radius:20px; padding:0; display:grid; grid-template-rows:170px auto; gap:0; overflow:hidden; text-align:left; cursor:pointer; min-height:250px; box-shadow:var(--shadow-md); transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+    .member-card:hover, .member-card:focus-visible { outline:none; transform:translateY(-3px); box-shadow:0 18px 36px rgba(6,21,34,.14); border-color:rgba(200,162,74,.55); }
+    .member-photo { width:100%; height:100%; border-radius:0; background:linear-gradient(145deg, #e8efe9, #f6f1e8); object-fit:cover; object-position:center; display:grid; place-items:center; font-family:var(--font-display); font-size:32px; font-weight:600; color:var(--green); }
     img.member-photo { display:block; }
     .household-card img.member-photo { object-fit:contain; }
-    .member-card > span:last-child { display:block; padding:15px 16px 17px; }
-    .member-card strong { display:block; color:var(--ink); font-family:"Cormorant Garamond", Georgia, serif; font-size:21px; line-height:1.08; }
+    .member-card > span:last-child { display:block; padding:16px 17px 18px; }
+    .member-card strong { display:block; color:var(--ink); font-family:var(--font-display); font-size:21px; line-height:1.1; }
     .member-card small { display:block; color:var(--muted); margin-top:6px; font-size:12px; line-height:1.4; }
-    .member-directory > .actions { padding:0 22px 22px; }
-    .member-directory > .profile-pane { padding:22px; }
-    .profile-pane { display:grid; gap:12px; }
-    .profile-head { display:grid; grid-template-columns:80px 1fr; gap:14px; align-items:center; }
-    .profile-head .member-photo { width:80px; height:80px; }
+    .member-directory > .actions { padding:0 26px 26px; }
+    .member-directory > .profile-pane { padding:26px; }
+    .profile-pane { display:grid; gap:14px; }
+    .profile-head { display:grid; grid-template-columns:80px 1fr; gap:16px; align-items:center; }
+    .profile-head .member-photo { width:80px; height:80px; border-radius:50%; }
     .profile-meta { display:flex; flex-wrap:wrap; gap:8px; color:var(--muted); }
-    .contact-chip { display:inline-flex; gap:6px; align-items:center; border:1px solid var(--line); border-radius:8px; padding:8px 10px; background:#fff; color:var(--ink); text-decoration:none; }
+    .contact-chip { display:inline-flex; gap:6px; align-items:center; border:1px solid var(--line); border-radius:var(--r-sm); padding:9px 11px; background:#fff; color:var(--ink); text-decoration:none; }
     .household-member-list { display:grid; gap:10px; margin-top:16px; }
-    .household-member-detail { display:grid; grid-template-columns:64px minmax(0,1fr); gap:14px; align-items:start; padding:14px; border:1px solid var(--line); border-radius:12px; background:#fff; }
+    .household-member-detail { display:grid; grid-template-columns:64px minmax(0,1fr); gap:14px; align-items:start; padding:15px; border:1px solid var(--line); border-radius:var(--r-md); background:#fff; }
     .household-member-detail .member-photo { width:64px; height:64px; border-radius:50%; }
-    .household-member-detail h3 { margin:0; font-size:18px; }
+    .household-member-detail h3 { margin:0; font-size:18px; font-family:var(--font-display); }
     .household-member-detail small { display:block; margin-top:3px; color:var(--muted); }
     .household-member-details { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-    .nameday-chip { display:inline-flex; align-items:center; border-radius:8px; padding:8px 10px; background:#f8f1e2; color:#6f4f16; font-size:13px; }
-    .privacy-reminder { font-size:13px; color:#53606a; background:#f8f6ef; border:1px solid #e6ddc8; border-radius:8px; padding:10px 12px; margin-top:10px; }
-    .child-card { border:1px solid #e4e7e3; border-radius:8px; padding:12px; background:#fff; display:grid; gap:10px; }
+    .nameday-chip { display:inline-flex; align-items:center; border-radius:var(--r-sm); padding:8px 11px; background:var(--gold-tint); color:var(--gold-ink); font-size:13px; }
+    .privacy-reminder { font-size:12.5px; color:#53606a; background:var(--cream); border:1px solid #e6ddc8; border-radius:var(--r-sm); padding:11px 13px; margin-top:12px; line-height:1.5; }
+    .child-card { border:1px solid var(--line-soft); border-radius:var(--r-md); padding:14px; background:#fff; display:grid; gap:10px; }
     .child-card h3 { margin:0; font-size:15px; }
-    .status-tag { display:inline-block; font-size:12px; font-weight:700; border-radius:999px; padding:3px 9px; background:#eef3f0; color:var(--green); }
-    .status-tag.status-draft, .status-tag.status-returned { background:#fff4dd; color:#7a4d00; }
-    .status-tag.status-submitted, .status-tag.status-under_review { background:#eef6fb; color:#17384a; }
-    .status-tag.status-approved { background:#e9f6ee; color:#1c6b3a; }
+    .status-tag { display:inline-block; font-size:11.5px; font-weight:700; border-radius:999px; padding:4px 10px; background:var(--green-tint); color:var(--green); }
+    .status-tag.status-draft, .status-tag.status-returned { background:var(--warn-bg); color:var(--warn-ink); }
+    .status-tag.status-submitted, .status-tag.status-under_review { background:var(--blue-tint); color:var(--blue); }
+    .status-tag.status-approved { background:var(--green-tint); color:var(--green); }
     .status-tag.status-withdrawn, .status-tag.status-revoked, .status-tag.status-rejected { background:#f3f3f2; color:var(--muted); }
-    .status-tag.status-error { background:#fff0ed; color:#6d2118; }
-    .field-check-list { display:grid; gap:6px; }
+    .status-tag.status-error { background:var(--danger-bg); color:var(--danger-ink); }
+    .field-check-list { display:grid; gap:7px; }
     .field-check-list label { display:flex; align-items:center; gap:8px; font-weight:400; font-size:14px; }
     .field-check-list input[type="checkbox"] { width:18px; height:18px; }
     .child-add-trigger { margin-bottom:12px; }
-    .directory-modal { position:fixed; inset:0; z-index:120; display:grid; place-items:center; padding:18px; background:rgba(6,21,34,.48); }
+    .directory-modal { position:fixed; inset:0; z-index:120; display:grid; place-items:center; padding:18px; background:rgba(6,21,34,.5); backdrop-filter:blur(2px); }
     .directory-modal[hidden] { display:none !important; }
-    .directory-modal-card { width:min(460px, 100%); max-height:min(86vh, 720px); overflow:auto; background:#fff; border-radius:18px; border:1px solid rgba(16,24,32,.12); box-shadow:0 24px 70px rgba(6,21,34,.26); padding:16px; }
-    .directory-modal-card.setup-wizard-card { width:min(720px, 100%); padding:22px; }
-    .setup-wizard-progress { display:flex; gap:8px; margin:4px 0 18px; }
+    .directory-modal-card { width:min(460px, 100%); max-height:min(86vh, 720px); overflow:auto; background:#fff; border-radius:var(--r-xl); border:1px solid rgba(16,24,32,.1); box-shadow:0 24px 70px rgba(6,21,34,.26); padding:18px; }
+    .directory-modal-card.setup-wizard-card { width:min(720px, 100%); padding:26px; }
+    .setup-wizard-progress { display:flex; gap:8px; margin:6px 0 20px; }
     .setup-wizard-progress span { height:5px; flex:1; border-radius:999px; background:#e7ece8; }
     .setup-wizard-progress span:first-child { background:var(--gold); }
-    .directory-modal-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:12px; }
-    .directory-modal-head h2 { margin:0; font-size:20px; line-height:1.15; }
-    .directory-modal-head p { margin:4px 0 0; color:var(--muted); font-size:13px; line-height:1.45; }
+    .directory-modal-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:14px; }
+    .directory-modal-head h2 { margin:0; font-size:21px; line-height:1.2; font-family:var(--font-display); color:var(--navy); }
+    .directory-modal-head p { margin:5px 0 0; color:var(--muted); font-size:13px; line-height:1.5; }
     .directory-modal-close { border:1px solid var(--line); background:#fff; border-radius:999px; width:36px; height:36px; font:inherit; font-size:20px; line-height:1; cursor:pointer; }
-    .child-add-form { display:grid; gap:10px; }
-    .child-note { display:grid; gap:6px; font-size:13px; font-weight:700; }
-    .child-note textarea { border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; min-height:56px; }
+    .child-add-form { display:grid; gap:12px; }
+    .child-note { display:grid; gap:6px; font-size:12.5px; font-weight:700; }
+    .child-note textarea { border:1px solid var(--line); border-radius:var(--r-sm); padding:11px; font:inherit; min-height:58px; }
     .child-help { font-size:12px; color:var(--muted); margin:0; }
     .skills-toolbar { display:grid; grid-template-columns:1fr 180px 180px auto; gap:10px; align-items:end; }
-    .skill-list { display:grid; gap:10px; margin-top:12px; }
-    .skill-card { border:1px solid #e4e7e3; background:#fff; border-radius:8px; padding:12px; display:grid; gap:8px; }
+    .skill-list { display:grid; gap:10px; margin-top:14px; }
+    .skill-card { border:1px solid var(--line-soft); background:#fff; border-radius:var(--r-md); padding:14px; display:grid; gap:8px; }
     .skill-card header { display:flex; justify-content:space-between; gap:12px; align-items:start; }
     .skill-card h3 { margin:0; font-size:16px; }
     .skill-card p { margin:0; color:var(--muted); }
-    .nameday-list { display:grid; gap:10px; margin-top:12px; }
-    .household-hub-identity { display:grid; grid-template-columns:minmax(180px,240px) 1fr; gap:16px; align-items:start; padding-bottom:16px; border-bottom:1px solid #ecefed; }
+    .nameday-list { display:grid; gap:10px; margin-top:14px; }
+    .household-hub-identity { display:grid; grid-template-columns:minmax(180px,240px) 1fr; gap:18px; align-items:start; padding-bottom:18px; border-bottom:1px solid var(--line-soft); }
     .household-hub-photo .summary-list, .household-hub-name .household-list { margin-bottom:8px; }
-    .household-hub-photo .photo-status-card { display:block; padding:10px; }
-    .household-hub-photo .photo-status-card > div { padding:10px 2px 2px; }
+    .household-hub-photo .photo-status-card { display:block; padding:11px; }
+    .household-hub-photo .photo-status-card > div { padding:11px 2px 2px; }
     .household-hub-photo img.photo-preview.household { display:block; }
-    .household-hub-photo-form, .household-hub-name-form { display:grid; gap:8px; }
+    .household-hub-photo-form, .household-hub-name-form { display:grid; gap:9px; }
     .household-hub-photo-form label, .household-hub-name-form label { font-size:12px; }
     .household-hub-photo-form .actions, .household-hub-name-form .actions { margin-top:2px; }
-    .household-hub-namedays { padding-top:14px; }
-    .household-hub-namedays h3 { margin:0 0 3px; font-size:15px; }
-    .household-hub-namedays-note { margin:0 0 10px; color:var(--muted); font-size:12.5px; line-height:1.4; }
-    .household-hub-nameday-form { margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); }
+    .household-hub-namedays { padding-top:16px; }
+    .household-hub-namedays h3 { margin:0 0 3px; font-size:15.5px; font-family:var(--font-display); }
+    .household-hub-namedays-note { margin:0 0 11px; color:var(--muted); font-size:12.5px; line-height:1.45; }
+    .household-hub-nameday-form { margin-top:11px; padding-top:11px; border-top:1px dashed var(--line); }
     @media (max-width: 640px) {
       .household-hub-identity { grid-template-columns:1fr; }
     }
-    textarea { border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; min-height:62px; resize:vertical; }
     .directory-mobile-header, .directory-mobile-nav { display:none; }
     .mobile-directory-home { display:none; }
-    .directory-top.myagapay-page-hero { display:block; margin-bottom:22px; }
-    .directory-top.myagapay-page-hero .directory-title h1 { margin:0 0 8px; color:#F6F1E8; font-family:"Cormorant Garamond", Georgia, serif; font-size:clamp(27px, 4vw, 34px); font-weight:600; line-height:1.12; }
-    .directory-top.myagapay-page-hero .directory-title p { margin:0; max-width:720px; color:rgba(246,241,232,.75); font-size:13px; line-height:1.5; }
-    .directory-top.myagapay-page-hero .status-pill { display:inline-flex; margin-top:14px; border-color:rgba(255,255,255,.12); background:rgba(255,255,255,.08); color:#E8C879; }
     @media (max-width: 860px) {
       body.donor-directory-page {
         background:#f7f3ec;
@@ -452,8 +520,7 @@
         box-shadow:none;
       }
       .directory-mobile-brand { align-items:baseline; gap:8px; }
-      .directory-mobile-logo { display:none; }
-      .directory-mobile-cross { color:#a97c25; font-family:Georgia,serif; font-size:23px; line-height:1; }
+      .directory-mobile-logo { display:block; width:26px; height:26px; }
       .directory-mobile-wordmark { color:#061522; font-family:"Cormorant Garamond",Georgia,serif; font-size:27px; font-weight:600; letter-spacing:0; }
       .directory-mobile-header p { margin:4px 0 0; color:#70695d; font-size:12px; }
       .member-directory-intro { display:none; }
@@ -518,7 +585,7 @@
     </aside>
     <main class="directory-main">
       <header class="directory-mobile-header">
-        <div class="directory-mobile-brand"><span class="directory-mobile-cross" aria-hidden="true">☩</span><span class="directory-mobile-wordmark" id="mobileDirectoryTitle">My AGAPAY Directory</span></div>
+        <div class="directory-mobile-brand"><img class="directory-mobile-logo" src="/mark.png" alt="" aria-hidden="true" /><span class="directory-mobile-wordmark" id="mobileDirectoryTitle">My AGAPAY Directory</span></div>
         <p><span id="mobileDirectoryParish">Your parish</span> · <span id="mobileDirectoryCount">Directory</span></p>
       </header>
       <section class="directory-top cal-hero myagapay-page-hero" aria-labelledby="directoryHeroTitle">
@@ -556,7 +623,7 @@
       <section class="directory-grid" aria-live="polite">
         <div class="stack">
           <article class="panel" data-wizard-step="1" data-mobile-section="household setup">
-            <div class="panel-header"><div><div class="panel-kicker">About you</div><h2>Your Name</h2><p class="panel-intro">Start with the basic information that identifies you in your parish family.</p></div></div>
+            <div class="panel-header"><div class="panel-header-row"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg></span><div><div class="panel-kicker">About you</div><h2>Your Name</h2><p class="panel-intro">Start with the basic information that identifies you in your parish family.</p></div></div></div>
             <div class="summary-list" id="profileSummary"></div>
             <form class="setup-panel" id="startProfileForm" hidden>
               <div>
@@ -569,16 +636,23 @@
                 <li>Choose contact sharing, then add optional skills to serve.</li>
               </ul>
               <div class="form-grid">
-                <label>Preferred name<input name="preferredName" autocomplete="name" required /></label>
-                <label>Legal name<input name="legalName" autocomplete="name" /></label>
-                <label>Family name<input name="householdName" placeholder="The Dunne Family" /></label>
-                <label>Date of birth<input name="dateOfBirth" placeholder="YYYY-MM-DD" /></label>
-                <label>Email<input name="email" type="email" autocomplete="email" /></label>
-                <label>Email sharing<select name="emailVisibility"><option value="private">Keep private</option><option value="staff">Parish staff only</option><option value="directory_members">Show to directory members</option></select></label>
-                <label>Phone<input name="phone" autocomplete="tel" /></label>
-                <label>Phone sharing<select name="phoneVisibility"><option value="private">Keep private</option><option value="staff">Parish staff only</option><option value="directory_members">Show to directory members</option></select></label>
-                <label>Name sharing<select name="profileVisibility"><option value="directory_members">Show my name in the directory</option><option value="staff">Parish staff only</option><option value="private">Keep private</option></select></label>
-                <label id="starterParishField">Parish ID<input name="parishId" placeholder="st-fiacre" required /></label>
+                <fieldset class="field-group">
+                  <legend class="group-legend">Basic info</legend>
+                  <label>Preferred name<input name="preferredName" autocomplete="name" required /></label>
+                  <label>Legal name<input name="legalName" autocomplete="name" /></label>
+                  <label>Family name<input name="householdName" placeholder="The Dunne Family" /></label>
+                  <label>Date of birth<input name="dateOfBirth" type="date" /></label>
+                  <label id="starterParishField">Parish ID<input name="parishId" placeholder="st-fiacre" required /></label>
+                </fieldset>
+                <fieldset class="field-group">
+                  <legend class="group-legend">Contact &amp; sharing</legend>
+                  <p class="visibility-legend" style="grid-column:1/-1;"><b>Private</b> only you · <b>Staff</b> parish office · <b>Directory members</b> approved parish families</p>
+                  <label>Email<input name="email" type="email" autocomplete="email" /></label>
+                  <label class="visibility-field">Email sharing<select name="emailVisibility"><option value="private">Keep private</option><option value="staff">Parish staff only</option><option value="directory_members">Show to directory members</option></select></label>
+                  <label>Phone<input name="phone" autocomplete="tel" /></label>
+                  <label class="visibility-field">Phone sharing<select name="phoneVisibility"><option value="private">Keep private</option><option value="staff">Parish staff only</option><option value="directory_members">Show to directory members</option></select></label>
+                  <label class="visibility-field">Name sharing<select name="profileVisibility"><option value="directory_members">Show my name in the directory</option><option value="staff">Parish staff only</option><option value="private">Keep private</option></select></label>
+                </fieldset>
               </div>
               <div class="actions"><button class="btn primary" type="submit">Start My Profile</button></div>
             </form>
@@ -586,33 +660,33 @@
               <label>Preferred name<input name="preferredName" autocomplete="name" /></label>
               <label>Middle name<input name="middleName" /></label>
               <label>Suffix<input name="suffix" /></label>
-              <label>Date of birth<input name="dateOfBirth" placeholder="YYYY-MM-DD" /></label>
+              <label>Date of birth<input name="dateOfBirth" type="date" /></label>
               <input type="hidden" name="expectedVersion" />
               <div class="actions"><button class="btn primary" type="submit">Save Profile</button></div>
             </form>
           </article>
 
           <article class="panel" data-wizard-step="3" data-mobile-section="household privacy setup">
-            <div class="panel-header"><div><div class="panel-kicker">Contact</div><h2>Email &amp; Phone</h2><p class="panel-intro">Add a contact method and choose exactly who may see it.</p></div></div>
+            <div class="panel-header"><div class="panel-header-row"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></span><div><div class="panel-kicker">Contact</div><h2>Email &amp; Phone</h2><p class="panel-intro">Add a contact method and choose exactly who may see it.</p></div></div></div>
             <div class="contact-list" id="contactList"></div>
             <form class="form-grid" id="contactForm" hidden>
               <label>Type<select name="contactType"><option value="email">Email</option><option value="phone">Phone</option></select></label>
               <label>Label<input name="label" placeholder="personal, mobile, home" /></label>
               <label>Value<input name="value" required /></label>
-              <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Family</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
+              <label class="visibility-field">Visibility<select name="visibility"><option value="private">Private</option><option value="household">Family</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
               <div class="actions"><button class="btn primary" type="submit">Add Contact</button></div>
             </form>
           </article>
 
           <article class="panel" data-wizard-step="4" data-mobile-section="household serve">
-            <div class="panel-header"><div><div class="panel-kicker">Optional</div><h2>Skills to Serve</h2><p class="panel-intro">Add a skill if you would like your parish community to know how you can help. You can skip this step.</p></div></div>
+            <div class="panel-header"><div class="panel-header-row"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-4.4-7-11a4 4 0 0 1 7-2.7A4 4 0 0 1 19 10c0 6.6-7 11-7 11Z"/></svg></span><div><div class="panel-kicker">Optional</div><h2>Skills to Serve</h2><p class="panel-intro">Add a skill if you would like your parish community to know how you can help. You can skip this step.</p></div></div></div>
             <div class="skill-list" id="mySkillList"></div>
             <form class="form-grid" id="skillForm" hidden>
               <label>Skill<select name="skillId" required></select></label>
               <label>Custom label<input name="customDisplayLabel" maxlength="120" /></label>
               <label>Experience<select name="experienceLevel"><option value="willing_to_help">Willing to help</option><option value="experienced">Experienced</option><option value="professional">Professional</option><option value="retired_professional">Retired professional</option><option value="other">Other</option></select></label>
               <label>Service mode<select name="serviceMode"><option value="informal_parishioner_help">Informal parishioner help</option><option value="parish_projects">Parish projects</option><option value="advice_or_guidance">Advice or guidance</option><option value="transportation">Transportation</option><option value="teaching_or_tutoring">Teaching or tutoring</option><option value="emergency_assistance">Emergency assistance</option><option value="professional_services">Professional services</option><option value="other">Other</option></select></label>
-              <label>Visibility<select name="visibility"><option value="private">Private</option><option value="parish_staff">Parish staff</option><option value="directory_members">Directory members</option></select></label>
+              <label class="visibility-field">Visibility<select name="visibility"><option value="private">Private</option><option value="parish_staff">Parish staff</option><option value="directory_members">Directory members</option></select></label>
               <label>Contact preference<select name="contactPreference"><option value="parish_office">Parish office fallback</option><option value="published_email">Published email</option><option value="published_phone">Published phone</option><option value="ask_in_person">Ask in person</option><option value="no_direct_contact">No direct contact</option></select></label>
               <label class="child-note" style="grid-column:1/-1;">Availability note<textarea name="availabilityNote" maxlength="300"></textarea></label>
               <input type="hidden" name="status" value="draft" />
@@ -624,7 +698,7 @@
 
         <div class="stack">
           <article class="panel" data-wizard-step="3" data-mobile-section="household setup privacy">
-            <div class="panel-header"><div><div class="panel-kicker">Privacy</div><h2>Directory Sharing</h2><p class="panel-intro">Choose when this entry is ready to share. Private fields always remain private.</p></div></div>
+            <div class="panel-header"><div class="panel-header-row"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><div><div class="panel-kicker">Privacy</div><h2>Directory Sharing</h2><p class="panel-intro">Choose when this entry is ready to share. Private fields always remain private.</p></div></div></div>
             <div class="summary-list" id="publicationSummary"></div>
             <div class="actions" id="publicationActions" hidden>
               <button class="btn primary" type="button" data-publication="pending_approval">Share in Directory</button>
@@ -633,14 +707,14 @@
           </article>
 
           <article class="panel household-hub" data-wizard-container="1,2" data-mobile-section="household family setup photos">
-            <div class="panel-header"><div><div class="panel-kicker">Directory</div><h2>Family</h2><p class="panel-intro">Keep your family in one place: your spouse, children, family name, photo, and namedays.</p></div></div>
+            <div class="panel-header"><div class="panel-header-row"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21v-2a4 4 0 0 1 4-4h1a4 4 0 0 1 4 4v2"/><circle cx="8.5" cy="8" r="3"/><path d="M15 21v-1.5a3.5 3.5 0 0 0-2.5-3.36"/><circle cx="17" cy="7.5" r="2.5"/></svg></span><div><div class="panel-kicker">Directory</div><h2>Family</h2><p class="panel-intro">Keep your family in one place: your spouse, children, family name, photo, and namedays.</p></div></div></div>
 
             <div class="household-hub-identity" data-wizard-step="1">
               <div class="household-hub-photo" hidden>
                 <div class="summary-list" id="householdPhotoSummary"></div>
                 <form class="household-hub-photo-form" id="householdPhotoForm" hidden>
                   <label>Change family photo<input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required /></label>
-                  <label>Visibility<select name="visibility"><option value="private">Private</option><option value="household">Family</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
+                  <label class="visibility-field">Visibility<select name="visibility"><option value="private">Private</option><option value="household">Family</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
                   <div class="actions"><button class="btn secondary" type="submit">Upload</button><button class="btn warn" type="button" id="removeHouseholdPhoto" hidden>Remove</button></div>
                 </form>
               </div>
@@ -650,7 +724,7 @@
                   <label>Family name<input name="displayName" maxlength="200" placeholder="The Dunne Family" required /></label>
                   <label>City<input name="city" maxlength="120" placeholder="Wheaton" required /></label>
                   <label>State / Province<input name="region" maxlength="120" placeholder="Illinois" required /></label>
-                  <label>Location sharing<select name="locationVisibility"><option value="directory_members">Show city and state to directory members</option><option value="staff">Parish staff only</option><option value="household">Family only</option><option value="private">Keep private</option></select></label>
+                  <label class="visibility-field">Location sharing<select name="locationVisibility"><option value="directory_members">Show city and state to directory members</option><option value="staff">Parish staff only</option><option value="household">Family only</option><option value="private">Keep private</option></select></label>
                   <input type="hidden" name="householdId" />
                   <input type="hidden" name="expectedVersion" />
                   <div class="actions"><button class="btn secondary" type="submit">Save Name</button></div>
@@ -672,7 +746,7 @@
                 <label>Birthday (optional)<input name="dateOfBirth" type="date" /></label>
                 <label>Patron saint (optional)<input name="saintName" placeholder="St. Maria" /></label>
                 <label>Nameday (optional)<input name="feastMonthDay" placeholder="07-22" pattern="[0-9]{2}-[0-9]{2}" /></label>
-                <label>Nameday sharing<select name="namedayVisibility"><option value="private">Private</option><option value="household">Family</option><option value="staff">Parish staff</option><option value="directory_members">Directory members</option></select></label>
+                <label class="visibility-field">Nameday sharing<select name="namedayVisibility"><option value="private">Private</option><option value="household">Family</option><option value="staff">Parish staff</option><option value="directory_members">Directory members</option></select></label>
                 <label class="child-note">Note (optional)<textarea name="note" maxlength="500"></textarea></label>
                 <div class="actions"><button class="btn primary" id="addAdultButton" type="submit">Add Adult</button></div>
                 <p class="notice" id="adultAddStatus" role="status" aria-live="polite" hidden></p>
@@ -688,7 +762,7 @@
                 <label>Patron saint<input name="saintName" required placeholder="St. Joel the Prophet" /></label>
                 <label>Nameday month<select name="feastMonth" required><option value="">Choose month</option><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></label>
                 <label>Day<input name="feastDay" type="number" required min="1" max="31" inputmode="numeric" placeholder="19" /></label>
-                <label>Who may see it?<select name="visibility"><option value="directory_members">Directory members</option><option value="household">Family only</option><option value="staff">Parish staff</option><option value="private">Private</option></select></label>
+                <label class="visibility-field">Who may see it?<select name="visibility"><option value="directory_members">Directory members</option><option value="household">Family only</option><option value="staff">Parish staff</option><option value="private">Private</option></select></label>
                 <div class="actions"><button class="btn primary" type="submit">Add Nameday</button></div>
               </form>
             </div>
@@ -697,7 +771,7 @@
           <div id="requestList" hidden aria-hidden="true"></div>
 
           <article class="panel" data-wizard-step="2" aria-labelledby="childrenHeading" data-mobile-section="household family">
-            <div class="panel-header"><div><div class="panel-kicker">Family</div><h2 id="childrenHeading">Children</h2><p class="panel-intro">Children stay hidden by default. You may request publication of limited fields, and parish staff must approve first.</p></div></div>
+            <div class="panel-header"><div class="panel-header-row"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="7" r="3"/><path d="M7 21c0-3 2.5-5.5 5-5.5s5 2.5 5 5.5"/></svg></span><div><div class="panel-kicker">Family</div><h2 id="childrenHeading">Children</h2><p class="panel-intro">Children stay hidden by default. You may request publication of limited fields, and parish staff must approve first.</p></div></div></div>
             <button class="btn primary child-add-trigger" id="openChildAddModal" type="button" hidden>Add a Child</button>
             <div class="stack" id="childrenList" aria-live="polite"></div>
           </article>
@@ -758,10 +832,10 @@
           <form class="child-add-form" id="childAddForm">
             <label>Child name<input name="preferredName" autocomplete="off" required placeholder="Anna" /></label>
             <label>Relationship<input name="relationship" autocomplete="off" placeholder="daughter, son, child" /></label>
-            <label>Birthday (optional)<input name="dateOfBirth" placeholder="YYYY-MM-DD" /></label>
+            <label>Birthday (optional)<input name="dateOfBirth" type="date" /></label>
             <label>Patron saint (optional)<input name="saintName" placeholder="St. Anna" /></label>
             <label>Nameday (optional)<input name="feastMonthDay" placeholder="07-25" pattern="[0-9]{2}-[0-9]{2}" /></label>
-            <label>Nameday sharing<select name="namedayVisibility"><option value="private">Private</option><option value="household">Family</option><option value="staff">Parish staff</option><option value="directory_members">Directory members</option></select></label>
+            <label class="visibility-field">Nameday sharing<select name="namedayVisibility"><option value="private">Private</option><option value="household">Family</option><option value="staff">Parish staff</option><option value="directory_members">Directory members</option></select></label>
             <label class="child-note">Note to parish staff (optional)<textarea name="note" maxlength="500" placeholder="Anything staff should know"></textarea></label>
             <button class="btn primary" type="submit">Send Add Child Request</button>
           </form>
