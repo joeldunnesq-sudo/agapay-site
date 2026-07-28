@@ -207,6 +207,7 @@ assert.ok(donorApp.includes('nav.setAttribute("hx-boost", "false")'), "donor she
 assert.ok(donorApp.includes("function updateDonorAuthState()"), "donor shell should update guest/authenticated controls from localStorage session");
 assert.ok(donorApp.includes('link.closest("[data-myagapay-global-nav]")'), "donor icon enhancement should not overwrite canonical global product icons");
 const donorHome = await readFile("public/donor/index.html", "utf8");
+const myAgapayGiveHome = await readFile("public/myagapay/index.html", "utf8");
 assert.ok(donorHome.includes("data-auth-guest"), "donor home should mark guest-only controls so signed-in donors do not see login prompts");
 assert.ok(donorHome.includes("donor-phone"), "donor home should use the mobile-first app shell");
 assert.ok(donorHome.includes("unified-product-nav"), "donor home should expose a desktop My AGAPAY sidebar for shared shell normalization");
@@ -218,6 +219,14 @@ assert.ok(donorHome.includes("summary-metrics-row") && donorHome.indexOf('class=
 assert.ok(donorHome.includes("/myagapay/account"), "donor home avatar should link to My AGAPAY settings");
 assert.ok(donorHome.includes("Active Funds") && donorHome.includes("desktopActiveFunds") && donorHome.includes("activeFunds"), "Give dashboard should show active parish funds on desktop and mobile");
 assert.ok(donorHome.includes("Next Feast Offering"), "Give dashboard should use a giving-oriented feast card heading");
+assert.ok(
+  myAgapayGiveHome.includes("desktopRecurringHomeAction")
+    && myAgapayGiveHome.includes("mobileRecurringHomeAction")
+    && myAgapayGiveHome.includes("Manage recurring giving")
+    && donorApp.includes("function renderRecurringHomeCard")
+    && donorApp.includes('openDonorRecurringPortal("", button)'),
+  "My AGAPAY Give home should provide functional recurring-giving management on desktop and mobile"
+);
 const donorSettings = await readFile("public/donor/settings.html", "utf8");
 assert.ok(donorSettings.includes("saveDonorSettings(event)"), "donor settings should save through the donor API");
 const donorHistory = await readFile("public/donor/offerings.html", "utf8");

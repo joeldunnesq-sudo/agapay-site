@@ -1822,6 +1822,7 @@ function renderDonorDashboardPayload(data) {
   setText("desktopMetricOfferings", String(summary.offeringCount || 0));
   setText("desktopMetricCommemorations", String(summary.commemorationCount || 0));
   setText("desktopParishName", parish?.name || "Choose a church in Settings to personalize your dashboard.");
+  renderRecurringHomeCard(summary);
 
   renderPledgeTracker(data.donor, summary);
   updateQuickGiveLinks(parish);
@@ -1833,6 +1834,28 @@ function renderDonorDashboardPayload(data) {
   if (recent) recent.innerHTML = offeringRows(recentOfferings);
   const desktopRecent = document.getElementById("desktopRecentOfferings");
   if (desktopRecent) desktopRecent.innerHTML = offeringRows(recentOfferings);
+}
+
+function renderRecurringHomeCard(summary = {}) {
+  const hasRecurring = Number(summary.recurringCount || 0) > 0;
+  ["desktop", "mobile"].forEach((layout) => {
+    const button = document.getElementById(`${layout}RecurringHomeAction`);
+    const copy = document.getElementById(`${layout}RecurringHomeCopy`);
+    if (!button || !copy) return;
+    if (hasRecurring) {
+      button.type = "button";
+      button.innerHTML = `${layout === "desktop" ? "Manage recurring giving" : "Manage"} <span aria-hidden="true">→</span>`;
+      button.onclick = () => openDonorRecurringPortal("", button);
+      copy.textContent = layout === "desktop"
+        ? "Review recurring offerings, update payment details, or make changes securely through Stripe."
+        : "Update a recurring offering or payment method securely.";
+    } else {
+      button.type = "button";
+      button.innerHTML = `Start recurring giving <span aria-hidden="true">→</span>`;
+      button.onclick = () => { window.location.href = "/myagapay/giving/give?frequency=monthly"; };
+      copy.textContent = "Set up a dependable monthly offering to support your parish.";
+    }
+  });
 }
 
 async function loadDonorDashboardPage() {

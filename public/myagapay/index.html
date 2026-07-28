@@ -9,12 +9,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=20260704c" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260727a" />
   <script src="/liturgical-calendar.js"></script>
 <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260724a" />
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260717a" defer></script>
-  <script src="/donor/app.js?v=20260712a" defer></script>
+  <script src="/donor/app.js?v=20260727a" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -155,6 +155,16 @@
             </div>
           </section>
 
+          <section class="recurring-home-card recurring-home-card--desktop" aria-labelledby="desktopRecurringHomeTitle">
+            <span class="recurring-home-icon" aria-hidden="true"><svg viewBox="0 0 28 28"><path d="M22 9V4l-2 2a9 9 0 1 0 2.2 9"/><path d="M22 4h-5"/><path d="M14 9v5l3 2"/></svg></span>
+            <div class="recurring-home-copy">
+              <span class="recurring-home-kicker">Your giving, your control</span>
+              <h2 id="desktopRecurringHomeTitle">Manage recurring giving</h2>
+              <p id="desktopRecurringHomeCopy">Review recurring offerings, update payment details, or make changes securely through Stripe.</p>
+            </div>
+            <button class="recurring-home-action" id="desktopRecurringHomeAction" type="button" onclick="openDonorRecurringPortal('', this)">Manage recurring giving <span aria-hidden="true">→</span></button>
+          </section>
+
           <section class="desktop-panel">
             <div class="desktop-panel-head">
               <h2>Active Campaign</h2>
@@ -264,6 +274,16 @@
             </div>
           </div>
           <img class="summary-watermark" src="/mark.png" alt="" />
+        </section>
+
+        <section class="recurring-home-card recurring-home-card--mobile" aria-labelledby="mobileRecurringHomeTitle">
+          <span class="recurring-home-icon" aria-hidden="true"><svg viewBox="0 0 28 28"><path d="M22 9V4l-2 2a9 9 0 1 0 2.2 9"/><path d="M22 4h-5"/><path d="M14 9v5l3 2"/></svg></span>
+          <div class="recurring-home-copy">
+            <span class="recurring-home-kicker">Your giving, your control</span>
+            <h2 id="mobileRecurringHomeTitle">Manage recurring giving</h2>
+            <p id="mobileRecurringHomeCopy">Update a recurring offering or payment method securely.</p>
+          </div>
+          <button class="recurring-home-action" id="mobileRecurringHomeAction" type="button" onclick="openDonorRecurringPortal('', this)">Manage <span aria-hidden="true">→</span></button>
         </section>
 
         <section class="mobile-section">
