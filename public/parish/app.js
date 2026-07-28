@@ -422,6 +422,10 @@
     return Boolean(currentParish?.stewardshipActive || sw.legacyAddOnActive || (!sw.includedInParishTier && ['active', 'trialing', 'comped'].includes(sw.status)));
   }
 
+  function isStarterTier(parish = currentParish) {
+    return String(parish?.subscriptionTier || '').toLowerCase() === 'starter';
+  }
+
   async function loadStewardshipPanel(force = false) {
     const status = document.getElementById('stewardshipStatusLabel');
     const planPane = document.getElementById('stewardshipPlanPane');
@@ -430,7 +434,9 @@
       if (status) status.textContent = 'Not loaded';
       return;
     }
-    if (!isParishTier() && !isParishPlusActive()) {
+    const stewardshipLocked = isStarterTier() || (!isParishTier() && !isParishPlusActive());
+    syncDashboardPaywall(document.getElementById('tab-stewardship'), 'stewardship', 'Stewardship', stewardshipLocked);
+    if (stewardshipLocked) {
       renderStewardshipUnavailableForTier();
       return;
     }
@@ -714,7 +720,7 @@
       bookstore: document.getElementById('tab-bookstore')
     };
     Object.entries(stewardshipTargets).forEach(([key, element]) => {
-      const locked = !moduleIncluded(key === 'bookstore' ? 'bookstore' : 'stewardshipHealth');
+      const locked = isStarterTier() || !moduleIncluded(key === 'bookstore' ? 'bookstore' : 'stewardshipHealth');
       syncDashboardPaywall(element, key, 'Stewardship', locked);
     });
   }
@@ -3491,7 +3497,7 @@
     const status = document.getElementById('bookstoreStatusLabel');
     if (!currentParish) return;
 
-    const swActive = moduleIncluded('bookstore');
+    const swActive = !isStarterTier() && moduleIncluded('bookstore');
     syncDashboardPaywall(document.getElementById('tab-bookstore'), 'bookstore', 'Stewardship', !swActive);
     updateStewardshipBadges(swActive, { renderPanel: false });
     if (!swActive) {
@@ -6069,7 +6075,7 @@
   }
 
   function updateTierScopedNavigation() {
-    const stewardshipIncluded = isParishTier() || isParishPlusActive();
+    const stewardshipIncluded = !isStarterTier() && (isParishTier() || isParishPlusActive());
     const directoryActive = moduleIncluded('directory');
     const accountingDemoActive = currentParish?.parishId === 'st-fiacre';
     const accountingNav = document.getElementById('nav-accounting');
