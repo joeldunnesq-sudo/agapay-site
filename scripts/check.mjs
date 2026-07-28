@@ -360,6 +360,12 @@ assert.ok(
   "tier requirement labels should sit beneath tab names and Directory should retain a Parish-tier upgrade path"
 );
 assert.ok(
+  parishDashboardApp.includes("pdx-sub-plan-kicker")
+    && parishDashboardApp.includes("pdx-sub-module-grid")
+    && parishDashboardApp.includes("Explore upgrade options"),
+  "Giving Overview should render the polished subscription plan and module-access card"
+);
+assert.ok(
   parishDashboardApp.includes("syncTierRequirementNavigation('stewardship', 'Stewardship', stewardshipActive)")
     && parishDashboardApp.includes("sacBadge.hidden = false"),
   "late dashboard badge refreshes should preserve Stewardship and Sacraments upgrade pills"

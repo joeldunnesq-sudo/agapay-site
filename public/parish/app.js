@@ -6108,35 +6108,41 @@
     const billingActive = Boolean(p.setup?.billingActive);
     const stripeConnected = Boolean(p.setup?.stripeConnected);
 
-    const statusChip = (label, active) => `<span class="pdx-dir-badge ${active ? '' : 'urgent'}">${escapeHtml(label)}</span>`;
-    const moduleRow = (label, moduleKey) => {
+    const statusChip = (label, active) => `<span class="pdx-sub-status ${active ? 'is-ready' : 'needs-attention'}"><span aria-hidden="true">${active ? '✓' : '!'}</span>${escapeHtml(label)}</span>`;
+    const moduleRow = (label, moduleKey, description) => {
       const mod = modules[moduleKey] || {};
       const included = Boolean(mod.included);
-      const sourceLabel = mod.source === 'legacy_addon' ? 'Legacy add-on' : included ? 'Included' : 'Not included';
-      return `<div class="pdx-dir-row">
-        <div class="pdx-dir-row-copy"><div class="pdx-dir-row-title">${escapeHtml(label)}</div></div>
-        <div class="pdx-dir-row-side"><span class="pdx-dir-badge ${included ? '' : 'count'}">${escapeHtml(sourceLabel)}</span></div>
+      const sourceLabel = mod.source === 'legacy_addon' ? 'Legacy add-on' : included ? 'Included' : 'Upgrade';
+      return `<div class="pdx-sub-module ${included ? 'is-included' : 'is-locked'}">
+        <span class="pdx-sub-module-mark" aria-hidden="true">${included ? '✓' : '◇'}</span>
+        <div class="pdx-sub-module-copy"><strong>${escapeHtml(label)}</strong><small>${escapeHtml(description)}</small></div>
+        <span class="pdx-sub-module-state">${escapeHtml(sourceLabel)}</span>
       </div>`;
     };
 
     body.innerHTML = `
       <div class="pdx-sub-plan">
+        <div class="pdx-sub-plan-glow" aria-hidden="true"></div>
+        <div class="pdx-sub-plan-kicker">Current plan</div>
         <div class="pdx-sub-plan-name">${escapeHtml(tierLabel)}</div>
-        <div class="pdx-sub-plan-price">${escapeHtml(priceLabel)}</div>
+        <div class="pdx-sub-plan-price">${escapeHtml(priceLabel)} <span>Simple monthly subscription</span></div>
+        <p class="pdx-sub-plan-copy">Your plan controls which parish tools are ready now. Giving deposits continue to flow directly through your connected Stripe account.</p>
         <div class="pdx-sub-status-row">
           ${statusChip(billingActive ? 'Billing active' : 'Billing not started', billingActive)}
           ${statusChip(stripeConnected ? 'Stripe connected' : 'Stripe not connected', stripeConnected)}
         </div>
-        ${ent.parishPlusIncludedInTier ? '' : '<button class="pdx-dir-action-btn" type="button" onclick="switchTab(\'settings\')" style="margin-top:6px;">Upgrade to Parish</button>'}
+        <button class="pdx-sub-plan-action" type="button" onclick="switchTab('settings')">${ent.parishPlusIncludedInTier ? 'Manage subscription' : 'Explore upgrade options'}<span aria-hidden="true">→</span></button>
       </div>
       <div class="pdx-sub-modules">
-        <div class="pdx-sub-modules-title">Modules</div>
-        ${moduleRow('Giving Plus tools', 'givingPlus')}
-        ${moduleRow('Stewardship Health', 'stewardshipHealth')}
-        ${moduleRow('Parish Directory', 'directory')}
-        ${moduleRow('Sacraments & Services', 'sacraments')}
-        ${moduleRow('Commerce & Bookstore', 'bookstore')}
-        ${moduleRow('Text-to-Give', 'textToGive')}
+        <div class="pdx-sub-modules-head"><div><span>Plan access</span><strong>Included parish tools</strong></div><button type="button" onclick="switchTab('settings')">Compare tiers</button></div>
+        <div class="pdx-sub-module-grid">
+          ${moduleRow('Giving Plus', 'givingPlus', 'Custom funds, campaigns, givers, and reconciliation')}
+          ${moduleRow('Stewardship Health', 'stewardshipHealth', 'Pledges, insights, and stewardship reporting')}
+          ${moduleRow('Parish Directory', 'directory', 'Member, household, and ministry records')}
+          ${moduleRow('Sacraments & Services', 'sacraments', 'Pastoral requests and clergy coordination')}
+          ${moduleRow('Bookstore', 'bookstore', 'Parish commerce and Stripe-powered sales')}
+          ${moduleRow('Text-to-Give', 'textToGive', 'Keywords that route donors to your giving page')}
+        </div>
       </div>`;
   }
 
