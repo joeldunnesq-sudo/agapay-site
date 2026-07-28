@@ -366,7 +366,10 @@ assert.ok(
   "Giving Overview should render the polished subscription plan and module-access card"
 );
 assert.ok(
-  parishDashboardApp.includes("Included with Stewardship add-on")
+  parishDashboardApp.includes("Included with ${includedTier}")
+    && parishDashboardApp.includes("'Giving Plus')")
+    && parishDashboardApp.includes("'Stewardship')")
+    && parishDashboardApp.includes("'Parish')")
     && parishDashboardApp.indexOf("moduleRow('Stewardship Health'") < parishDashboardApp.indexOf("moduleRow('Bookstore'")
     && parishDashboardApp.indexOf("moduleRow('Bookstore'") < parishDashboardApp.indexOf("moduleRow('Parish Directory'"),
   "subscription modules should use clear add-on language and follow tier availability order"

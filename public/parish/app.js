@@ -6109,10 +6109,10 @@
     const stripeConnected = Boolean(p.setup?.stripeConnected);
 
     const statusChip = (label, active) => `<span class="pdx-sub-status ${active ? 'is-ready' : 'needs-attention'}"><span aria-hidden="true">${active ? '✓' : '!'}</span>${escapeHtml(label)}</span>`;
-    const moduleRow = (label, moduleKey, description) => {
+    const moduleRow = (label, moduleKey, description, includedTier) => {
       const mod = modules[moduleKey] || {};
       const included = Boolean(mod.included);
-      const sourceLabel = mod.source === 'legacy_addon' ? 'Included with Stewardship add-on' : included ? 'Included' : 'Upgrade';
+      const sourceLabel = included ? `Included with ${includedTier}` : 'Upgrade';
       return `<div class="pdx-sub-module ${included ? 'is-included' : 'is-locked'}">
         <span class="pdx-sub-module-mark" aria-hidden="true">${included ? '✓' : '◇'}</span>
         <div class="pdx-sub-module-copy"><strong>${escapeHtml(label)}</strong><small>${escapeHtml(description)}</small></div>
@@ -6136,12 +6136,12 @@
       <div class="pdx-sub-modules">
         <div class="pdx-sub-modules-head"><div><span>Plan access</span><strong>Included parish tools</strong></div><button type="button" onclick="switchTab('settings')">Compare tiers</button></div>
         <div class="pdx-sub-module-grid">
-          ${moduleRow('Giving Plus', 'givingPlus', 'Custom funds, campaigns, givers, and reconciliation')}
-          ${moduleRow('Stewardship Health', 'stewardshipHealth', 'Pledges, insights, and stewardship reporting')}
-          ${moduleRow('Bookstore', 'bookstore', 'Parish commerce and Stripe-powered sales')}
-          ${moduleRow('Parish Directory', 'directory', 'Member, household, and ministry records')}
-          ${moduleRow('Sacraments & Services', 'sacraments', 'Pastoral requests and clergy coordination')}
-          ${moduleRow('Text-to-Give', 'textToGive', 'Keywords that route donors to your giving page')}
+          ${moduleRow('Giving Plus', 'givingPlus', 'Custom funds, campaigns, givers, and reconciliation', 'Giving Plus')}
+          ${moduleRow('Stewardship Health', 'stewardshipHealth', 'Pledges, insights, and stewardship reporting', 'Stewardship')}
+          ${moduleRow('Bookstore', 'bookstore', 'Parish commerce and Stripe-powered sales', 'Stewardship')}
+          ${moduleRow('Parish Directory', 'directory', 'Member, household, and ministry records', 'Parish')}
+          ${moduleRow('Sacraments & Services', 'sacraments', 'Pastoral requests and clergy coordination', 'Parish')}
+          ${moduleRow('Text-to-Give', 'textToGive', 'Keywords that route donors to your giving page', 'Parish')}
         </div>
       </div>`;
   }
