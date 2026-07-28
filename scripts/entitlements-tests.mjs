@@ -164,6 +164,7 @@ await test("bookstoreEnabledFor defaults open (not explicitly false) once module
   assert.equal(bookstoreEnabledFor({ subscriptionTier: "parish", bookstoreEnabled: false }), false);
   assert.equal(bookstoreEnabledFor({ subscriptionTier: "giving" }), false);
   assert.equal(bookstoreEnabledFor({ subscriptionTier: "monastery_free" }), false);
+  assert.equal(bookstoreEnabledFor({ subscriptionTier: "starter", stewardshipStatus: "active" }), false);
 });
 
 await test("entitlementsSummary reports source as tier, legacy_addon, or none", async () => {

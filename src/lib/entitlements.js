@@ -103,6 +103,7 @@ export function directoryEnabledFor(registration, settings = {}) {
 }
 
 export function bookstoreEnabledFor(registration) {
+  if (normalizedSubscriptionTier(registration) === "starter") return false;
   return registration?.bookstoreEnabled !== false && hasModuleAccess(registration, "bookstore");
 }
 

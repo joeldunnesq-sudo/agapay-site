@@ -1803,6 +1803,7 @@ export function parishFromRegistration(registration) {
     candlesEnabled: givingPlus && (registration.candlesEnabled ?? true),
     commemorationsEnabled: givingPlus && (registration.commemorationsEnabled ?? true),
     sacramentsEnabled: sacramentsEnabledFor(registration),
+    bookstoreEnabled: bookstoreEnabledFor(registration),
     funds: givingPlus && Array.isArray(registration.funds) && registration.funds.length ? registration.funds : [
       {
         id: "general",

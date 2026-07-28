@@ -30,7 +30,8 @@
       { id: "history", href: "/myagapay/giving/history", label: "History", short: "Giving history", icon: icons.history, mobileFallbackFor: "sacramentsEnabled", desktopHidden: true },
       { id: "today", href: "/myagapay/giving/calendar", label: "Today", short: "Feast day and readings", icon: icons.today },
       { id: "directory", href: "/myagapay/directory", label: "Directory", short: "Parish member directory", icon: icons.directory, parishFeature: "directoryEnabled" },
-      { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore },
+      { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore, parishFeature: "bookstoreEnabled" },
+      { id: "settings", href: "/myagapay/account", label: "Settings", short: "Account settings", icon: icons.account, mobileFallbackFor: "bookstoreEnabled", desktopHidden: true },
       { id: "learn", href: "/myagapay/learn", label: "Learn", short: "Homeschool dashboard", icon: icons.learn, mobileFallbackFor: "directoryEnabled" }
     ];
     return items;
@@ -38,7 +39,8 @@
 
   let parishCapabilities = {
     sacramentsEnabled: false,
-    directoryEnabled: false
+    directoryEnabled: false,
+    bookstoreEnabled: false
   };
 
   function visibleProducts() {
@@ -63,7 +65,7 @@
     if (pathname.startsWith("/myagapay/sacraments") || pathname.startsWith("/myagapay/giving/commemorations") || pathname.startsWith("/myagapay/giving/names")) return "commemorations";
     if (pathname.startsWith("/myagapay/giving/calendar")) return "today";
     if (pathname.startsWith("/myagapay/directory")) return "directory";
-    if (pathname.startsWith("/myagapay/giving/history") || pathname.startsWith("/myagapay/giving/offerings")) return "account";
+    if (pathname.startsWith("/myagapay/giving/history") || pathname.startsWith("/myagapay/giving/offerings")) return "history";
     if (pathname.startsWith("/myagapay/giving")) return "giving";
     if (pathname.startsWith("/myagapay/account")) return "account";
     if (pathname.startsWith("/marketplace")) return "market";
@@ -250,7 +252,7 @@
       ? ' hx-boost="false"'
       : ` style="grid-template-columns:repeat(${Math.max(navProducts.length, 1)},minmax(0,1fr))"`;
     const productLinks = navProducts.map((item) => {
-      const current = item.id === active || (item.id === "history" && active === "account");
+      const current = item.id === active || (item.id === "settings" && active === "account");
       const activeClass = current ? (isLearnNav ? "is-active" : "active") : "";
       const label = isDesktopSideNav ? `<span><strong>${item.label}</strong><small>${item.short}</small></span>` : `<span>${item.label}</span>`;
       return `<a class="${activeClass}" href="${item.href}"${current ? ' aria-current="page"' : ""}>${item.icon}${label}</a>`;
@@ -278,7 +280,8 @@
   function setParishCapabilities(parish = null) {
     parishCapabilities = {
       sacramentsEnabled: Boolean(parish?.sacramentsEnabled),
-      directoryEnabled: Boolean(parish?.directoryEnabled)
+      directoryEnabled: Boolean(parish?.directoryEnabled),
+      bookstoreEnabled: Boolean(parish?.bookstoreEnabled)
     };
     normalizeProductNavs();
     window.dispatchEvent(new CustomEvent("myagapay:parish-capabilities", {
