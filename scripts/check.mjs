@@ -366,6 +366,12 @@ assert.ok(
   "Giving Overview should render the polished subscription plan and module-access card"
 );
 assert.ok(
+  parishDashboardApp.includes("Included with Stewardship add-on")
+    && parishDashboardApp.indexOf("moduleRow('Stewardship Health'") < parishDashboardApp.indexOf("moduleRow('Bookstore'")
+    && parishDashboardApp.indexOf("moduleRow('Bookstore'") < parishDashboardApp.indexOf("moduleRow('Parish Directory'"),
+  "subscription modules should use clear add-on language and follow tier availability order"
+);
+assert.ok(
   parishDashboardApp.includes("syncTierRequirementNavigation('stewardship', 'Stewardship', stewardshipActive)")
     && parishDashboardApp.includes("sacBadge.hidden = false"),
   "late dashboard badge refreshes should preserve Stewardship and Sacraments upgrade pills"
