@@ -359,6 +359,11 @@ assert.ok(
     && parishDashboardApp.includes("syncTierRequirementNavigation('directory', 'Parish', directoryActive)"),
   "tier requirement labels should sit beneath tab names and Directory should retain a Parish-tier upgrade path"
 );
+assert.ok(
+  parishDashboardApp.includes("syncTierRequirementNavigation('stewardship', 'Stewardship', stewardshipActive)")
+    && parishDashboardApp.includes("sacBadge.hidden = false"),
+  "late dashboard badge refreshes should preserve Stewardship and Sacraments upgrade pills"
+);
 const parishDashboardHtml = await readFile("public/parish/dashboard.html", "utf8");
 assert.ok(
   parishDashboardHtml.includes('id="accountingNavSoonBadge">Beta testing</span>')

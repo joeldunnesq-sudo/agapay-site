@@ -3253,8 +3253,10 @@
 
   function updateStewardshipBadges(isActive, options = {}) {
     renderParishPlusMeetingsPane(document.getElementById('parishPlusMeetingsPane'), isActive);
+    const stewardshipActive = !isStarterTier() && moduleIncluded('stewardshipHealth');
     const bookstoreActive = moduleIncluded('bookstore');
     const sacramentsActive = moduleIncluded('sacraments');
+    syncTierRequirementNavigation('stewardship', 'Stewardship', stewardshipActive);
     const bookstoreBadge = document.getElementById('bookstoreNavBadge');
     const mobileBookstoreBadge = document.getElementById('mobileBookstoreBadge');
     syncTierRequirementNavigation('bookstore', 'Stewardship', bookstoreActive);
@@ -3277,7 +3279,7 @@
     syncTierRequirementNavigation('sacraments', 'Parish', sacramentsActive);
     if (sacSoonBadge) sacSoonBadge.hidden = true;
     if (sacBadge) {
-      sacBadge.hidden = !sacramentsActive;
+      sacBadge.hidden = false;
       sacBadge.textContent = sacramentsActive ? (sacIsOn ? 'On' : 'Off') : 'Upgrade';
       sacBadge.classList.toggle('nav-upgrade-badge--active', sacramentsActive && sacIsOn);
     }
