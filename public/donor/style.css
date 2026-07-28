@@ -1073,12 +1073,8 @@ h1 { margin-top: 0.25rem; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 0.98
 
 .recurring-home-action:hover { transform: translateY(-1px); background: #e8c879; }
 .recurring-home-action:disabled { cursor: wait; opacity: 0.7; transform: none; }
-.recurring-home-card--desktop { grid-column: 1 / -1; }
-.recurring-home-card--mobile { margin: 0 1rem 1rem; }
-
 @media (max-width: 760px) {
-  .recurring-home-card--desktop { display: none; }
-  .recurring-home-card--mobile {
+  .recurring-home-card--history {
     grid-template-columns: auto minmax(0, 1fr);
     gap: 0.8rem;
     border-radius: 16px;
@@ -1087,10 +1083,6 @@ h1 { margin-top: 0.25rem; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 0.98
   .recurring-home-icon { width: 40px; height: 40px; border-radius: 12px; }
   .recurring-home-copy h2 { font-size: 20px; }
   .recurring-home-action { grid-column: 1 / -1; width: 100%; }
-}
-
-@media (min-width: 761px) {
-  .recurring-home-card--mobile { display: none; }
 }
 
 .recurring-management-list {

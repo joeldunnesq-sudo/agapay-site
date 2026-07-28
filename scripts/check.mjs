@@ -222,13 +222,15 @@ assert.ok(donorHome.includes("summary-metrics-row") && donorHome.indexOf('class=
 assert.ok(donorHome.includes("/myagapay/account"), "donor home avatar should link to My AGAPAY settings");
 assert.ok(donorHome.includes("Active Funds") && donorHome.includes("desktopActiveFunds") && donorHome.includes("activeFunds"), "Give dashboard should show active parish funds on desktop and mobile");
 assert.ok(donorHome.includes("Next Feast Offering"), "Give dashboard should use a giving-oriented feast card heading");
+const myAgapayHistory = await readFile("public/myagapay/giving/history.html", "utf8");
 assert.ok(
-  myAgapayGiveHome.includes("desktopRecurringHomeAction")
-    && myAgapayGiveHome.includes("mobileRecurringHomeAction")
-    && myAgapayGiveHome.includes("Manage recurring giving")
+  !myAgapayGiveHome.includes("RecurringHomeAction")
+    && myAgapayHistory.includes("historyRecurringHomeAction")
+    && myAgapayHistory.includes("Manage recurring giving")
+    && myAgapayHistory.indexOf("historyRecurringHomeAction") < myAgapayHistory.indexOf("Activity Timeline")
     && donorApp.includes("function renderRecurringHomeCard")
     && donorApp.includes('openDonorRecurringPortal("", button)'),
-  "My AGAPAY Give home should provide functional recurring-giving management on desktop and mobile"
+  "My AGAPAY History should show recurring-giving management immediately above the activity timeline"
 );
 const donorSettings = await readFile("public/donor/settings.html", "utf8");
 assert.ok(donorSettings.includes("saveDonorSettings(event)"), "donor settings should save through the donor API");

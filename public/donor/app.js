@@ -1838,17 +1838,17 @@ function renderDonorDashboardPayload(data) {
 
 function renderRecurringHomeCard(summary = {}) {
   const hasRecurring = Number(summary.recurringCount || 0) > 0;
-  ["desktop", "mobile"].forEach((layout) => {
+  ["desktop", "mobile", "history"].forEach((layout) => {
     const button = document.getElementById(`${layout}RecurringHomeAction`);
     const copy = document.getElementById(`${layout}RecurringHomeCopy`);
     if (!button || !copy) return;
     if (hasRecurring) {
       button.type = "button";
-      button.innerHTML = `${layout === "desktop" ? "Manage recurring giving" : "Manage"} <span aria-hidden="true">→</span>`;
+      button.innerHTML = `${layout === "mobile" ? "Manage" : "Manage recurring giving"} <span aria-hidden="true">→</span>`;
       button.onclick = () => openDonorRecurringPortal("", button);
-      copy.textContent = layout === "desktop"
-        ? "Review recurring offerings, update payment details, or make changes securely through Stripe."
-        : "Update a recurring offering or payment method securely.";
+      copy.textContent = layout === "mobile"
+        ? "Update a recurring offering or payment method securely."
+        : "Review recurring offerings, update payment details, or make changes securely through Stripe.";
     } else {
       button.type = "button";
       button.innerHTML = `Start recurring giving <span aria-hidden="true">→</span>`;
@@ -2195,6 +2195,7 @@ function renderOfferingsPayload(payload = {}, fallbackDashboard = null, statusTe
   setText("offeringsRecurring", String(summary.recurringCount || 0));
   setText("offeringsStatus", offerings.length ? statusText : "No data yet");
   renderHistorySummary(window.donorHistoryActivities, summary);
+  renderRecurringHomeCard(summary);
   renderAgapayHistoryTimeline();
   renderRecurringManagement(offerings);
   renderDonorOfferings();
