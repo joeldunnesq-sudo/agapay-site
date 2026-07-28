@@ -1889,6 +1889,8 @@ async function loadDonorSettingsPage() {
     setValue("settingsCountry", donor.country || "US");
     const parishName = document.getElementById("settingsParishName");
     if (parishName) parishName.textContent = data.parish?.name || "Choose a parish below";
+    const directorySettingsCard = document.getElementById("directorySettingsCard");
+    if (directorySettingsCard) directorySettingsCard.hidden = data.parish?.directoryEnabled !== true;
     await loadLearnSubscriptionSettings();
     await loadGivingStatements();
   } catch (err) {

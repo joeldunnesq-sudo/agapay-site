@@ -284,6 +284,10 @@
       bookstoreEnabled: Boolean(parish?.bookstoreEnabled)
     };
     normalizeProductNavs();
+    if (activeProduct() === "directory" && !parishCapabilities.directoryEnabled) {
+      window.location.replace("/myagapay/dashboard");
+      return;
+    }
     window.dispatchEvent(new CustomEvent("myagapay:parish-capabilities", {
       detail: { ...parishCapabilities }
     }));

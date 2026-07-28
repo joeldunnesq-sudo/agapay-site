@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const page = readFileSync("public/myagapay/directory.html", "utf8");
+const accountPage = readFileSync("public/myagapay/account.html", "utf8");
+const donorApp = readFileSync("public/donor/app.js", "utf8");
+const myAgapayShell = readFileSync("public/myagapay-shell.js", "utf8");
 
 assert.match(page, /Four simple steps for your family directory entry/);
 assert.match(page, /const EDIT_WIZARD_TITLES = \["Household Info", "Members & Namedays", "Parent Contact", "Skills to Serve"\]/);
@@ -20,7 +23,11 @@ assert.match(page, /class="directory-mobile-nav"/);
 assert.match(page, /data-mobile-target="browse"/);
 assert.match(page, /id="mobileGiveNav"/);
 assert.match(page, />Give</);
-assert.match(page, /window\.location\.href = "\/myagapay\/give"/);
+assert.match(page, /window\.location\.href = "\/myagapay\/dashboard"/);
+assert.doesNotMatch(page, /window\.location\.href = "\/myagapay\/give"/);
+assert.match(accountPage, /id="directorySettingsCard" hidden/);
+assert.match(donorApp, /directorySettingsCard\.hidden = data\.parish\?\.directoryEnabled !== true/);
+assert.match(myAgapayShell, /activeProduct\(\) === "directory" && !parishCapabilities\.directoryEnabled/);
 assert.match(page, /id="mobileFamilyNav"/);
 assert.match(page, />Add Family</);
 assert.match(page, /household \? "My Family" : "Add Family"/);
