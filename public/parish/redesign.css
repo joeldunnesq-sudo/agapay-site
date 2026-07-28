@@ -1688,6 +1688,27 @@
 .acct-paywall-lock { display:grid; place-items:center; width:38px; height:38px; margin-bottom:10px; border-radius:50%; color:#7a5c16; background:rgba(200,162,74,.16); font-size:22px; }
 .acct-paywall-veil strong { color:var(--deep); font:600 23px var(--serif); }
 .acct-paywall-veil small { margin:7px 0 15px; color:var(--muted); font-size:11px; line-height:1.55; }
+.acct-suite-shell--tier-paywall { display:block; min-height:100%; }
+.acct-suite-shell--tier-paywall > .acct-suite-rail,
+.acct-suite-shell--tier-paywall > .acct-suite-main > .acct-suite-header { display:none; }
+.acct-suite-shell--tier-paywall > .acct-suite-main { height:auto; min-height:100%; background:transparent; }
+.acct-suite-shell--tier-paywall .acct-workspace { padding:1.5rem 2rem 3rem; background:#f4f0e8; }
+.acct-tier-paywall { max-width:1240px; margin:0 auto; }
+.acct-tier-paywall-mark,
+.acct-tier-paywall-icon { font:500 31px var(--serif); }
+.acct-tier-paywall .sac-paywall-launch { grid-template-columns:auto minmax(0,1fr) auto; align-items:center; }
+.acct-tier-card-icon { display:grid; place-items:center; color:var(--deep); font:700 18px var(--serif); }
+.acct-tier-preview-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; padding:1.25rem; }
+.acct-tier-preview-stats div { display:grid; gap:5px; padding:16px; border:1px solid rgba(6,21,34,.09); border-radius:10px; background:var(--paper); }
+.acct-tier-preview-stats span,
+.acct-tier-module-list span { color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+.acct-tier-preview-stats strong { color:var(--deep); font:600 clamp(20px,2.5vw,30px) var(--serif); }
+.acct-tier-locked { min-height:190px; }
+.acct-tier-module-list { display:grid; gap:0; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+.acct-tier-module-list div { display:flex; justify-content:space-between; gap:16px; padding:15px 16px; border-bottom:1px solid var(--line); background:#fff; }
+.acct-tier-module-list div:last-child { border-bottom:0; }
+.acct-tier-module-list strong { color:var(--deep); font-size:12px; }
+.acct-tier-inline-lock { font-size:16px; line-height:1; }
 @media(max-width:700px) {
   .acct-paywall-launch { grid-template-columns:1fr; padding:21px; }
   .acct-paywall-launch-icon { width:46px; height:46px; }
@@ -1695,6 +1716,9 @@
   .acct-paywall-preview > .acct-command-hero { grid-template-columns:1fr; margin:12px; }
   .acct-paywall-preview > .acct-suite-stats { margin:0 12px; }
   .acct-paywall-veil { align-items:start; padding:125px 18px 18px; }
+  .acct-suite-shell--tier-paywall .acct-workspace { padding:.85rem .85rem 5.5rem; }
+  .acct-tier-paywall .sac-paywall-launch { grid-template-columns:1fr; align-items:start; }
+  .acct-tier-preview-stats { grid-template-columns:1fr; }
 }
 .acct-command-hero h2 {
   margin:6px 0 7px;

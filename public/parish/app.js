@@ -785,11 +785,74 @@
   function renderAccountingPaywall(pane = document.getElementById('accountingPane')) {
     if (!pane) return;
     const included = moduleIncluded('accounting');
+    const shell = pane.closest('.acct-suite-shell');
+    shell?.classList.toggle('acct-suite-shell--tier-paywall', !included);
     document.getElementById('accountingTierLabel').textContent = included ? 'Parish Accounting' : 'Parish tier';
     document.getElementById('accountingTierCopy').textContent = included ? 'Beta access coming soon' : 'Upgrade to unlock';
     document.getElementById('accountingParishName').textContent = currentParish?.name || currentParish?.parishName || 'Your parish';
     document.getElementById('accountingFiscalYear').textContent = 'Current fiscal year';
     pane.dataset.loaded = 'preview';
+    if (!included) {
+      pane.innerHTML = `
+        <div class="acct-tier-paywall">
+          <div class="text-give-header">
+            <div>
+              <div class="text-give-eyebrow">Parish finances</div>
+              <h1>Accounting</h1>
+              <p>Keep giving, expenses, funds, budgets, reconciliation, and financial reporting together in one balanced set of parish books.</p>
+            </div>
+            <div class="text-give-header-mark acct-tier-paywall-mark" aria-hidden="true">₳</div>
+          </div>
+
+          <div class="text-give-launch sac-paywall-launch">
+            <div class="text-give-launch-icon acct-tier-paywall-icon" aria-hidden="true">₳</div>
+            <div>
+              <span>Included with Parish</span>
+              <h2>See the whole parish financial picture</h2>
+              <p>Upgrade for true fund accounting, a balanced general ledger, payables, budgets, bank reconciliation, and parish-ready reports in one workspace.</p>
+            </div>
+            <button class="btn btn-gold sac-paywall-upgrade" type="button" onclick="switchTab('settings')">Review Parish tier</button>
+          </div>
+
+          <div class="text-give-grid sac-paywall-grid">
+            <section class="text-give-card">
+              <div class="text-give-card-head">
+                <div class="section-title-icon acct-tier-card-icon" aria-hidden="true">≡</div>
+                <div><h3>Connected parish books</h3><p>Giving and operations in one financial workspace</p></div>
+              </div>
+              <div class="acct-tier-preview-stats">
+                <div><span>Cash on hand</span><strong>$84,260</strong></div>
+                <div><span>Current activity</span><strong>$12,475</strong></div>
+                <div><span>Tracked funds</span><strong>7</strong></div>
+              </div>
+            </section>
+
+            <section class="text-give-card">
+              <div class="text-give-card-head">
+                <div class="section-title-icon acct-tier-card-icon" aria-hidden="true">▤</div>
+                <div><h3>Accounting workspace</h3><p>Ledger, payables, budgets, reconciliation, and reports</p></div>
+              </div>
+              <div class="text-give-locked-region acct-tier-locked">
+                <div class="text-give-lock-veil">
+                  <span><span class="acct-tier-inline-lock" aria-hidden="true">⌑</span>Parish tier</span>
+                </div>
+                <div class="acct-tier-module-list">
+                  <div><span>General ledger</span><strong>Balanced</strong></div>
+                  <div><span>Bank reconciliation</span><strong>Ready to match</strong></div>
+                  <div><span>Financial reports</span><strong>Parish ready</strong></div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="feature-guide-grid sac-paywall-benefits">
+            <article class="feature-guide-card"><span class="sac-paywall-number">01</span><h3>Track every fund</h3><p>Keep unrestricted, designated, and donor-restricted activity clear without separate spreadsheets.</p></article>
+            <article class="feature-guide-card"><span class="sac-paywall-number">02</span><h3>Stay balanced</h3><p>Connect giving, expenses, payables, and bank activity to one dependable general ledger.</p></article>
+            <article class="feature-guide-card"><span class="sac-paywall-number">03</span><h3>Report with confidence</h3><p>Prepare parish council, treasurer, and year-end reports from the same set of books.</p></article>
+          </div>
+        </div>`;
+      return;
+    }
     pane.innerHTML = `
       <section class="acct-paywall-launch">
         <div class="acct-paywall-launch-icon">₳</div>
@@ -1275,6 +1338,7 @@
     const pane = document.getElementById('accountingPane');
     if (!pane || !currentParish?.parishId) return;
     if (accountingPreviewOnly()) { renderAccountingPaywall(pane); return; }
+    pane.closest('.acct-suite-shell')?.classList.remove('acct-suite-shell--tier-paywall');
     if (!force && pane.dataset.loaded === 'true') return;
     pane.innerHTML = '<p class="sw-tool-loading">Loading Accounting...</p>';
     try {
