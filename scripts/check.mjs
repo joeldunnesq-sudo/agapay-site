@@ -335,15 +335,16 @@ assert.ok(
   parishDashboardApp.includes("function orderTierNavigation()")
     && parishDashboardApp.includes("'stewardship', 'bookstore'")
     && parishDashboardApp.includes("'sacraments', 'directory'")
-    && parishDashboardApp.includes("'accounting', 'text'"),
+    && parishDashboardApp.includes("'accounting', 'text'")
+    && parishDashboardApp.includes("'settings'"),
   "parish dashboard tabs should follow Giving, Stewardship, Parish, and upcoming-module tier order"
 );
 const parishDashboardHtml = await readFile("public/parish/dashboard.html", "utf8");
 assert.ok(
   parishDashboardHtml.includes('id="accountingNavSoonBadge">Beta testing</span>')
-    && parishDashboardApp.includes("const accountingDemoActive = currentParish?.parishId === 'st-fiacre'")
-    && parishDashboardApp.includes("if (accountingBadge) accountingBadge.hidden = false"),
-  "Accounting should show the Beta testing pill while retaining the active St. Fiacre demo workspace"
+    && parishDashboardApp.includes("const accountingIncluded = moduleIncluded('accounting')")
+    && parishDashboardApp.includes("if (accountingBadge) accountingBadge.hidden = !accountingIncluded"),
+  "Accounting should show the Beta testing pill only when the parish tier includes Accounting"
 );
 assert.ok(
   parishDashboardHtml.includes('class="sac-paywall" id="sacramentsComingSoonBanner"')

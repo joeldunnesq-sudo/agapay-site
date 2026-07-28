@@ -133,9 +133,10 @@
     document.querySelector('.content')?.classList.toggle('accounting-tab-active', tab === 'accounting');
     if (tab === 'accounting') window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     activeTab = tab;
-    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship', accounting:'Accounting', sacraments:'Sacraments & Services', directory:'Parish Directory', bookstore:'Bookstore', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship Health', accounting:'Accounting', sacraments:'Sacraments & Services', directory:'Parish Directory', bookstore:'Bookstore', qr:'QR Code & Giving Link' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
+    syncTopbarTabIcon(tab);
     if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length) loadGivingHistory();
     if (tab === 'givers' && allGifts.length) renderGiversPanel();
     if (tab === 'options' && currentParish) renderGivingOptionsEditor();
@@ -161,6 +162,14 @@
       headers['X-AGAPAY-Accounting-Token'] = accountingSession.token;
     }
     return headers;
+  }
+
+  function syncTopbarTabIcon(tab) {
+    const icon = document.getElementById('topbarTitleIcon');
+    const navIcon = document.getElementById(`nav-${tab}`)?.querySelector(':scope > svg');
+    if (!icon) return;
+    icon.replaceChildren();
+    if (navIcon) icon.appendChild(navIcon.cloneNode(true));
   }
 
   function openParishSupportTicket() {
@@ -677,7 +686,10 @@
     commemorations: ['Commemorations', 'Candles, liturgical commemorations, Moliebens, Panikhidas, and the priest queue are included with Giving Plus.'],
     statements: ['Annual giving statements', 'Generate and email annual donor statements with Giving Plus.'],
     stewardship: ['Stewardship Health', 'Track pledges, understand giving health, prepare stewardship reports, and keep annual records with the Stewardship tier.'],
-    bookstore: ['Parish bookstore', 'Manage books, icons, prayer ropes, and other parish items with catalog tools and Stripe-powered payments in the Stewardship tier.']
+    bookstore: ['Parish bookstore', 'Manage books, icons, prayer ropes, and other parish items with catalog tools and Stripe-powered payments in the Stewardship tier.'],
+    sacraments: ['Sacraments & Services', 'Receive pastoral requests, coordinate clergy schedules, and keep families informed with the Parish tier.'],
+    text: ['Text-to-Give', 'Reserve parish keywords and route donors from the shared AGAPAY number to the right giving page with the Parish tier.'],
+    accounting: ['Parish Accounting', 'Keep funds, ledgers, payables, budgets, reconciliation, and financial reports together with the Parish tier.']
   };
 
   function starterPaywallMarkup(featureKey, tierLabel = 'Giving Plus') {
@@ -701,6 +713,36 @@
     if (!locked && paywall) paywall.remove();
   }
 
+  function syncTierRequirementNavigation(tab, tierLabel, included) {
+    const desktop = document.getElementById(`nav-${tab}`);
+    const mobile = document.querySelector(`.mobile-tab-link[data-nav-tab="${tab}"]`);
+    [[desktop, 'span', 'nav-requirement-label', 'nav-upgrade-badge'], [mobile, 'em', 'mobile-requirement-label', 'mobile-upgrade-badge']].forEach(([element, tag, className, upgradeClass]) => {
+      if (!element) return;
+      element.classList.toggle(element === desktop ? 'sidebar-nav-item--gated' : 'mobile-tab-link--gated', !included);
+      let label = element.querySelector(`:scope > .${className}`);
+      let upgrade = element.querySelector(`:scope > .${upgradeClass}`);
+      if (!included && !label) {
+        label = document.createElement(tag);
+        label.className = className;
+        element.insertBefore(label, upgrade || null);
+      }
+      if (!included && !upgrade) {
+        upgrade = document.createElement(element === desktop ? 'span' : 'em');
+        upgrade.className = upgradeClass;
+        upgrade.dataset.tierUpgrade = 'true';
+        element.appendChild(upgrade);
+      }
+      if (label) label.textContent = `Requires ${tierLabel}`;
+      if (upgrade) {
+        upgrade.textContent = 'Upgrade';
+        upgrade.hidden = included;
+      }
+      const statusBadge = element.querySelector(':scope > .nav-soon-badge, :scope > .mobile-soon-badge');
+      if (statusBadge) statusBadge.hidden = !included;
+      if (included && label) label.remove();
+    });
+  }
+
   function updateStarterPaywalls() {
     const givingPlusLocked = !hasGivingPlusAccess();
     const givingPlusTargets = {
@@ -713,6 +755,7 @@
     };
     Object.entries(givingPlusTargets).forEach(([key, element]) => {
       syncDashboardPaywall(element, key, 'Giving Plus', givingPlusLocked);
+      if (['options', 'campaigns', 'givers', 'reconcile'].includes(key)) syncTierRequirementNavigation(key, 'Giving Plus', !givingPlusLocked);
     });
 
     const stewardshipTargets = {
@@ -722,6 +765,19 @@
     Object.entries(stewardshipTargets).forEach(([key, element]) => {
       const locked = isStarterTier() || !moduleIncluded(key === 'bookstore' ? 'bookstore' : 'stewardshipHealth');
       syncDashboardPaywall(element, key, 'Stewardship', locked);
+      syncTierRequirementNavigation(key, 'Stewardship', !locked);
+    });
+
+    const parishTargets = {
+      sacraments: document.getElementById('tab-sacraments'),
+      text: document.getElementById('tab-text'),
+      accounting: document.getElementById('tab-accounting')
+    };
+    Object.entries(parishTargets).forEach(([key, element]) => {
+      const moduleKey = key === 'text' ? 'textToGive' : key;
+      const locked = !moduleIncluded(moduleKey);
+      syncDashboardPaywall(element, key, 'Parish', locked);
+      syncTierRequirementNavigation(key, 'Parish', !locked);
     });
   }
 
@@ -804,7 +860,7 @@
     return `<div class="acct-empty"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(copy)}</span></div>`;
   }
   function accountingPreviewOnly() {
-    return currentParish?.parishId !== 'st-fiacre';
+    return !moduleIncluded('accounting') || currentParish?.parishId !== 'st-fiacre';
   }
   function renderAccountingPaywall(pane = document.getElementById('accountingPane')) {
     if (!pane) return;
@@ -3185,13 +3241,9 @@
     renderParishPlusMeetingsPane(document.getElementById('parishPlusMeetingsPane'), isActive);
     const bookstoreActive = moduleIncluded('bookstore');
     const sacramentsActive = moduleIncluded('sacraments');
-    const bookstoreNav = document.getElementById('nav-bookstore');
     const bookstoreBadge = document.getElementById('bookstoreNavBadge');
     const mobileBookstoreBadge = document.getElementById('mobileBookstoreBadge');
-    if (bookstoreNav) {
-      bookstoreNav.classList.toggle('sidebar-nav-item--gated', !bookstoreActive);
-      bookstoreNav.title = bookstoreActive ? '' : 'Requires Stewardship or Parish';
-    }
+    syncTierRequirementNavigation('bookstore', 'Stewardship', bookstoreActive);
     if (bookstoreBadge) {
       bookstoreBadge.hidden = bookstoreActive;
       bookstoreBadge.textContent = 'Upgrade';
@@ -3206,16 +3258,12 @@
     // Sacraments & Services is a Parish tier feature. Parish-tier parishes
     // can turn the donor-facing entry on or off from the Sacraments tab.
     const sacIsOn = Boolean(currentParish?.sacramentsEnabled);
-    const sacNav = document.getElementById('nav-sacraments');
     const sacSoonBadge = document.getElementById('sacramentsNavSoonBadge');
     const sacBadge = document.getElementById('sacramentsNavBadge');
-    if (sacNav) {
-      sacNav.classList.toggle('sidebar-nav-item--gated', !sacramentsActive);
-      sacNav.title = sacramentsActive ? '' : 'Requires Parish';
-    }
+    syncTierRequirementNavigation('sacraments', 'Parish', sacramentsActive);
     if (sacSoonBadge) sacSoonBadge.hidden = true;
     if (sacBadge) {
-      sacBadge.hidden = false;
+      sacBadge.hidden = !sacramentsActive;
       sacBadge.textContent = sacramentsActive ? (sacIsOn ? 'On' : 'Off') : 'Upgrade';
       sacBadge.classList.toggle('nav-upgrade-badge--active', sacramentsActive && sacIsOn);
     }
@@ -4156,6 +4204,8 @@
     const banner = document.getElementById('sacramentsComingSoonBanner');
     const live = document.getElementById('sacramentsLiveContent');
     const isAvailable = moduleIncluded('sacraments');
+    syncDashboardPaywall(document.getElementById('tab-sacraments'), 'sacraments', 'Parish', !isAvailable);
+    syncTierRequirementNavigation('sacraments', 'Parish', isAvailable);
     if (banner) banner.hidden = isAvailable;
     if (live) live.hidden = !isAvailable;
     renderSacramentsFeatureToggle();
@@ -6077,24 +6127,23 @@
   function updateTierScopedNavigation() {
     const stewardshipIncluded = !isStarterTier() && (isParishTier() || isParishPlusActive());
     const directoryActive = moduleIncluded('directory');
-    const accountingDemoActive = currentParish?.parishId === 'st-fiacre';
+    const accountingIncluded = moduleIncluded('accounting');
     const accountingNav = document.getElementById('nav-accounting');
     const accountingBadge = document.getElementById('accountingNavSoonBadge');
     const stewardshipNav = document.getElementById('nav-stewardship');
     stewardshipNav?.removeAttribute('hidden');
-    stewardshipNav?.classList.toggle('sidebar-nav-item--gated', !stewardshipIncluded);
-    if (stewardshipNav) stewardshipNav.title = stewardshipIncluded ? 'Stewardship Health' : 'Upgrade to Stewardship';
+    syncTierRequirementNavigation('stewardship', 'Stewardship', stewardshipIncluded);
+    if (stewardshipNav) stewardshipNav.title = stewardshipIncluded ? 'Stewardship Health' : 'Requires Stewardship';
     document.getElementById('nav-directory')?.toggleAttribute('hidden', !directoryActive);
     document.querySelectorAll('.mobile-tab-link[data-nav-tab="directory"]').forEach((el) => {
       el.hidden = !directoryActive;
     });
-    accountingNav?.classList.toggle('sidebar-nav-item--gated', !accountingDemoActive);
-    if (accountingNav) accountingNav.title = accountingDemoActive ? 'Demo Accounting workspace' : 'Accounting is coming soon';
-    if (accountingBadge) accountingBadge.hidden = false;
+    syncTierRequirementNavigation('accounting', 'Parish', accountingIncluded);
+    if (accountingNav) accountingNav.title = accountingIncluded ? 'Accounting workspace' : 'Requires Parish';
+    if (accountingBadge) accountingBadge.hidden = !accountingIncluded;
     document.querySelectorAll('.mobile-tab-link[data-nav-tab="accounting"]').forEach((el) => {
-      el.classList.toggle('mobile-tab-link--gated', !accountingDemoActive);
       const badge = el.querySelector('.mobile-soon-badge');
-      if (badge) badge.hidden = false;
+      if (badge) badge.hidden = !accountingIncluded;
     });
     document.querySelectorAll('.mobile-tab-link[data-nav-tab="stewardship"]').forEach((el) => {
       el.hidden = false;
@@ -6165,6 +6214,7 @@
     if (overviewCampaigns) overviewCampaigns.textContent = (p.campaigns || []).length;
     document.getElementById('sidebarPublicLink').href = dedicatedGivingUrl();
     document.getElementById('topbarTitle').textContent = p.parishName || 'Parish Dashboard';
+    syncTopbarTabIcon(activeTab);
     const commIcon = document.getElementById('commemorationCommunityIcon');
     if (commIcon) commIcon.innerHTML = communityMarkIcon(p);
     const overviewEmpty = document.getElementById('overviewEmpty');
