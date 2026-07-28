@@ -669,22 +669,24 @@
     givers: ['Giver insights', 'See donor-level history and deeper giving reports with Giving Plus.'],
     reconcile: ['Monthly reconciliation', 'Match gifts, fees, refunds, and Stripe deposits with Giving Plus.'],
     commemorations: ['Commemorations', 'Candles, liturgical commemorations, Moliebens, Panikhidas, and the priest queue are included with Giving Plus.'],
-    statements: ['Annual giving statements', 'Generate and email annual donor statements with Giving Plus.']
+    statements: ['Annual giving statements', 'Generate and email annual donor statements with Giving Plus.'],
+    stewardship: ['Stewardship Health', 'Track pledges, understand giving health, prepare stewardship reports, and keep annual records with the Stewardship tier.'],
+    bookstore: ['Parish bookstore', 'Manage books, icons, prayer ropes, and other parish items with catalog tools and Stripe-powered payments in the Stewardship tier.']
   };
 
-  function starterPaywallMarkup(featureKey) {
+  function starterPaywallMarkup(featureKey, tierLabel = 'Giving Plus') {
     const [title, copy] = starterLockedFeatures[featureKey];
     return `<div class="starter-tier-paywall">
-      <span class="starter-tier-paywall-badge">Giving Plus</span>
+      <span class="starter-tier-paywall-badge">${escapeHtml(tierLabel)}</span>
       <strong>${escapeHtml(title)}</strong>
       <p>${escapeHtml(copy)}</p>
-      <button class="btn btn-gold" type="button" onclick="switchTab('settings')">Upgrade to Giving Plus</button>
+      <button class="btn btn-gold" type="button" onclick="switchTab('settings')">Upgrade to ${escapeHtml(tierLabel)}</button>
     </div>`;
   }
 
   function updateStarterPaywalls() {
-    const locked = !hasGivingPlusAccess();
-    const targets = {
+    const givingPlusLocked = !hasGivingPlusAccess();
+    const givingPlusTargets = {
       options: document.getElementById('tab-options'),
       campaigns: document.getElementById('tab-campaigns'),
       givers: document.getElementById('tab-givers'),
@@ -692,11 +694,24 @@
       commemorations: document.getElementById('commemorationQueueCard'),
       statements: document.getElementById('pdxGsSection')
     };
-    Object.entries(targets).forEach(([key, element]) => {
+    Object.entries(givingPlusTargets).forEach(([key, element]) => {
       if (!element) return;
+      element.classList.toggle('starter-tier-locked', givingPlusLocked);
+      let paywall = element.querySelector(':scope > .starter-tier-paywall');
+      if (givingPlusLocked && !paywall) element.insertAdjacentHTML('beforeend', starterPaywallMarkup(key));
+      if (!givingPlusLocked && paywall) paywall.remove();
+    });
+
+    const stewardshipTargets = {
+      stewardship: document.getElementById('tab-stewardship'),
+      bookstore: document.getElementById('tab-bookstore')
+    };
+    Object.entries(stewardshipTargets).forEach(([key, element]) => {
+      if (!element) return;
+      const locked = !moduleIncluded(key === 'bookstore' ? 'bookstore' : 'stewardshipHealth');
       element.classList.toggle('starter-tier-locked', locked);
       let paywall = element.querySelector(':scope > .starter-tier-paywall');
-      if (locked && !paywall) element.insertAdjacentHTML('beforeend', starterPaywallMarkup(key));
+      if (locked && !paywall) element.insertAdjacentHTML('beforeend', starterPaywallMarkup(key, 'Stewardship'));
       if (!locked && paywall) paywall.remove();
     });
   }
@@ -6053,12 +6068,15 @@
   }
 
   function updateTierScopedNavigation() {
-    const showStewardship = isParishTier();
+    const stewardshipIncluded = isParishTier() || isParishPlusActive();
     const directoryActive = moduleIncluded('directory');
     const accountingDemoActive = currentParish?.parishId === 'st-fiacre';
     const accountingNav = document.getElementById('nav-accounting');
     const accountingBadge = document.getElementById('accountingNavSoonBadge');
-    document.getElementById('nav-stewardship')?.toggleAttribute('hidden', !showStewardship);
+    const stewardshipNav = document.getElementById('nav-stewardship');
+    stewardshipNav?.removeAttribute('hidden');
+    stewardshipNav?.classList.toggle('sidebar-nav-item--gated', !stewardshipIncluded);
+    if (stewardshipNav) stewardshipNav.title = stewardshipIncluded ? 'Stewardship Health' : 'Upgrade to Stewardship';
     document.getElementById('nav-directory')?.toggleAttribute('hidden', !directoryActive);
     document.querySelectorAll('.mobile-tab-link[data-nav-tab="directory"]').forEach((el) => {
       el.hidden = !directoryActive;
@@ -6072,9 +6090,9 @@
       if (badge) badge.hidden = false;
     });
     document.querySelectorAll('.mobile-tab-link[data-nav-tab="stewardship"]').forEach((el) => {
-      el.hidden = !showStewardship;
+      el.hidden = false;
+      el.classList.toggle('mobile-tab-link--gated', !stewardshipIncluded);
     });
-    if (!showStewardship && activeTab === 'stewardship') switchTab('giving');
     if (!directoryActive && activeTab === 'directory') switchTab('giving');
     orderTierNavigation();
   }
