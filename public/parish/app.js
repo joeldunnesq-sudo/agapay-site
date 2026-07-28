@@ -115,10 +115,6 @@
   // ── TAB NAV ──────────────────────────────────────────────
   function switchTab(tab) {
     if (tab === 'parishplus') tab = 'bookstore';
-    if (tab === 'directory' && currentParish && !moduleIncluded('directory')) {
-      setStatus('The Parish Directory is available with the Parish tier.');
-      return;
-    }
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.sidebar-nav-item, .mobile-tab-link').forEach(n => n.classList.remove('active'));
     const panel = document.getElementById('tab-' + tab);
@@ -144,7 +140,7 @@
     if (tab === 'qr') { renderQrCode(); renderBulletinPreview(); }
     if (tab === 'stewardship') loadStewardshipPanel();
     if (tab === 'sacraments') loadSacramentsTab();
-    if (tab === 'directory') loadDirectoryAdminTab();
+    if (tab === 'directory' && moduleIncluded('directory')) loadDirectoryAdminTab();
     if (tab === 'accounting') loadAccountingTab();
     if (tab === 'bookstore') loadBookstoreCatalogTab();
     if (tab === 'reconcile' && currentParish) loadReconciliation();
@@ -689,7 +685,8 @@
     bookstore: ['Parish bookstore', 'Manage books, icons, prayer ropes, and other parish items with catalog tools and Stripe-powered payments in the Stewardship tier.'],
     sacraments: ['Sacraments & Services', 'Receive pastoral requests, coordinate clergy schedules, and keep families informed with the Parish tier.'],
     text: ['Text-to-Give', 'Reserve parish keywords and route donors from the shared AGAPAY number to the right giving page with the Parish tier.'],
-    accounting: ['Parish Accounting', 'Keep funds, ledgers, payables, budgets, reconciliation, and financial reports together with the Parish tier.']
+    accounting: ['Parish Accounting', 'Keep funds, ledgers, payables, budgets, reconciliation, and financial reports together with the Parish tier.'],
+    directory: ['Parish Directory', 'Manage member and household records, privacy controls, namedays, ministries, and parish connections with the Parish tier.']
   };
 
   function starterPaywallMarkup(featureKey, tierLabel = 'Giving Plus') {
@@ -719,12 +716,28 @@
     [[desktop, 'span', 'nav-requirement-label', 'nav-upgrade-badge'], [mobile, 'em', 'mobile-requirement-label', 'mobile-upgrade-badge']].forEach(([element, tag, className, upgradeClass]) => {
       if (!element) return;
       element.classList.toggle(element === desktop ? 'sidebar-nav-item--gated' : 'mobile-tab-link--gated', !included);
+      let stack = element.querySelector(':scope > .nav-label-stack');
+      if (!stack) {
+        const name = element.querySelector(':scope > .nav-label') || (element === mobile ? element.querySelector(':scope > span') : null);
+        const textNode = element === desktop
+          ? Array.from(element.childNodes).find((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim())
+          : null;
+        const resolvedName = name || (textNode ? Object.assign(document.createElement('span'), { className: 'nav-label', textContent: textNode.textContent.trim() }) : null);
+        if (resolvedName) {
+          stack = document.createElement('span');
+          stack.className = 'nav-label-stack';
+          element.insertBefore(stack, name || textNode);
+          if (textNode) textNode.remove();
+          stack.appendChild(resolvedName);
+        }
+      }
       let label = element.querySelector(`:scope > .${className}`);
+      if (!label) label = stack?.querySelector(`:scope > .${className}`) || null;
       let upgrade = element.querySelector(`:scope > .${upgradeClass}`);
       if (!included && !label) {
         label = document.createElement(tag);
         label.className = className;
-        element.insertBefore(label, upgrade || null);
+        (stack || element).appendChild(label);
       }
       if (!included && !upgrade) {
         upgrade = document.createElement(element === desktop ? 'span' : 'em');
@@ -770,6 +783,7 @@
 
     const parishTargets = {
       sacraments: document.getElementById('tab-sacraments'),
+      directory: document.getElementById('tab-directory'),
       text: document.getElementById('tab-text'),
       accounting: document.getElementById('tab-accounting')
     };
@@ -6134,10 +6148,11 @@
     stewardshipNav?.removeAttribute('hidden');
     syncTierRequirementNavigation('stewardship', 'Stewardship', stewardshipIncluded);
     if (stewardshipNav) stewardshipNav.title = stewardshipIncluded ? 'Stewardship Health' : 'Requires Stewardship';
-    document.getElementById('nav-directory')?.toggleAttribute('hidden', !directoryActive);
+    document.getElementById('nav-directory')?.removeAttribute('hidden');
     document.querySelectorAll('.mobile-tab-link[data-nav-tab="directory"]').forEach((el) => {
-      el.hidden = !directoryActive;
+      el.hidden = false;
     });
+    syncTierRequirementNavigation('directory', 'Parish', directoryActive);
     syncTierRequirementNavigation('accounting', 'Parish', accountingIncluded);
     if (accountingNav) accountingNav.title = accountingIncluded ? 'Accounting workspace' : 'Requires Parish';
     if (accountingBadge) accountingBadge.hidden = !accountingIncluded;
@@ -6149,7 +6164,6 @@
       el.hidden = false;
       el.classList.toggle('mobile-tab-link--gated', !stewardshipIncluded);
     });
-    if (!directoryActive && activeTab === 'directory') switchTab('giving');
     orderTierNavigation();
   }
 

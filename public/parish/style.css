@@ -249,7 +249,8 @@
       color: rgba(184,144,47,0.68);
     }
     .nav-requirement-label {
-      margin-left: auto;
+      display: block;
+      margin-top: 0.16rem;
       color: rgba(166,159,145,0.74);
       font-size: 8px;
       font-weight: 800;
@@ -258,12 +259,13 @@
       text-transform: uppercase;
       white-space: nowrap;
     }
+    .nav-label-stack { display: flex; min-width: 0; flex: 1 1 auto; flex-direction: column; align-items: flex-start; }
+    .nav-label-stack > .nav-label { display: block; }
     .sidebar-nav-item svg, .sidebar-link svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
     .sidebar-nav-item svg { color: var(--gold); }
     .sidebar-nav-item .nav-label { min-width: 0; }
     .nav-soon-badge { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(184,144,47,0.42); border-radius: 999px; background: rgba(184,144,47,0.14); color: var(--gold); padding: 0.16rem 0.45rem; font-size: 8px; font-weight: 800; letter-spacing: 0.08em; line-height: 1; text-transform: uppercase; white-space: nowrap; }
     .nav-upgrade-badge { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(184,144,47,0.42); border-radius: 999px; background: rgba(184,144,47,0.14); color: var(--gold); padding: 0.16rem 0.45rem; font-size: 8px; font-weight: 800; letter-spacing: 0.08em; line-height: 1; text-transform: uppercase; white-space: nowrap; }
-    .nav-requirement-label + .nav-upgrade-badge { margin-left: 0.3rem; }
     .nav-upgrade-badge--active { border-color: rgba(46,107,74,0.45); background: rgba(46,107,74,0.12); color: #3a8f5f; }
     .sidebar-links { padding: 1rem 1.25rem; margin-top: auto; }
     .sidebar-link { display: flex; align-items: center; gap: 8px; color: rgba(166,159,145,0.62); font-size: 12px; text-decoration: none; margin-bottom: 0.5rem; transition: color 0.15s ease; }
@@ -2585,6 +2587,8 @@
       }
     }
     .mobile-requirement-label {
+      display: block;
+      margin-top: 0.12rem;
       color: rgba(111,106,96,0.82);
       font-size: 7px;
       font-style: normal;
@@ -2594,7 +2598,7 @@
       text-transform: uppercase;
       white-space: nowrap;
     }
-    .mobile-requirement-label + .mobile-upgrade-badge { margin-left: 0.3rem; }
+    .mobile-tab-link .nav-label-stack { align-items: center; justify-content: center; }
 
     /* Sacraments & Services parish dashboard */
     .sac-admin-shell {

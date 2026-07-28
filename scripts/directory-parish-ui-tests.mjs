@@ -11,8 +11,8 @@ if (app.includes("fetch(directoryAdminApi('/queue')")) {
 const checks = [
   ['the legacy Directory Operations hero is removed', !dashboard.includes('Directory Operations')],
   ['the live Directory API remains wired', app.includes("directoryAdminApi('/households?limit=100')") && app.includes("directoryAdminApi('/print/directory')")],
-  ['Directory is gated to the Parish tier module', app.includes("tab === 'directory' && currentParish && !moduleIncluded('directory')") && app.includes("const directoryActive = moduleIncluded('directory')")],
-  ['lower tiers hide Directory in desktop and mobile navigation', app.includes("getElementById('nav-directory')?.toggleAttribute('hidden', !directoryActive)") && app.includes(".mobile-tab-link[data-nav-tab=\"directory\"]")],
+  ['Directory is gated to the Parish tier module', app.includes("directory: document.getElementById('tab-directory')") && app.includes("const directoryActive = moduleIncluded('directory')")],
+  ['lower tiers retain a visible Directory upgrade path', app.includes("getElementById('nav-directory')?.removeAttribute('hidden')") && app.includes("syncTierRequirementNavigation('directory', 'Parish', directoryActive)")],
   ['the directory is the default parish view', app.includes("let directoryAdminTab = 'directory'")],
   ['canonical Church Directory heading is present', app.includes('<h1>Church Directory</h1>')],
   ['export and working print actions remain wired', app.includes("downloadDirectoryAdminExport('/exports/published-adults.csv')") && app.includes("previewDirectoryAdminPrint('/print/directory')")],

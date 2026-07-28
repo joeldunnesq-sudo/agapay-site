@@ -353,6 +353,12 @@ assert.ok(
     && parishDashboardApp.includes("'settings'"),
   "parish dashboard tabs should follow Giving, Stewardship, Parish, and upcoming-module tier order"
 );
+assert.ok(
+  parishDashboardApp.includes("nav-label-stack")
+    && parishDashboardApp.includes("(stack || element).appendChild(label)")
+    && parishDashboardApp.includes("syncTierRequirementNavigation('directory', 'Parish', directoryActive)"),
+  "tier requirement labels should sit beneath tab names and Directory should retain a Parish-tier upgrade path"
+);
 const parishDashboardHtml = await readFile("public/parish/dashboard.html", "utf8");
 assert.ok(
   parishDashboardHtml.includes('id="accountingNavSoonBadge">Beta testing</span>')
