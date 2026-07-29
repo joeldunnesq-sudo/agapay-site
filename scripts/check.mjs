@@ -328,6 +328,11 @@ assert.ok(
   "Parish pricing should inherit Stewardship without duplicating its benefits and should distinguish the full Commerce suite from Stewardship Bookstore"
 );
 assert.equal(
+  givePricingHtml.match(/Enhanced giving, (?:donor, fund|fund, donor), and pledge reports/g)?.length,
+  1,
+  "enhanced giving reports should appear only in the Stewardship tier"
+);
+assert.equal(
   givePricingHtml.match(/Parish council and annual-meeting-ready stewardship insights/g)?.length,
   1,
   "annual-meeting-ready stewardship insights should appear exactly once"
