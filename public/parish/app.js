@@ -14,6 +14,7 @@
   let reconciliationData = null;
   let stewardshipState   = { loaded: false, stewardship: null, meetings: [], selectedMeeting: null };
   let dashboardLoadPromise = null;
+  let activeParishFeatureRequest = null;
   const parishSessionStorageKey = 'agapay_parish_session_token';
   const legacyParishTokenStorageKey = 'agapay_parish_token';
 
@@ -149,7 +150,7 @@
     if (tab === 'directory' && moduleIncluded('directory')) loadDirectoryAdminTab();
     if (tab === 'accounting') loadAccountingTab();
     if (tab === 'bookstore') {
-      switchCommerceProduct('overview', false);
+      switchCommerceProduct(moduleIncluded('commerceSuite') ? 'overview' : 'bookstore', false);
       loadBookstoreCatalogTab();
     }
     if (tab === 'reconcile' && currentParish) loadReconciliation();
@@ -188,6 +189,45 @@
     const dialog = document.getElementById('parishSupportDialog');
     if (!dialog) return;
     if (typeof dialog.close === 'function') dialog.close(); else dialog.removeAttribute('open');
+  }
+
+  function showParishFeatureRequestPopup(featureRequests = []) {
+    const request = featureRequests.find((item) => item?.featureId === 'pledge-tracker');
+    const dialog = document.getElementById('parishFeatureRequestDialog');
+    if (!request || !dialog) return;
+    activeParishFeatureRequest = request;
+    const count = Math.max(1, Number(request.count || 1));
+    const copy = document.getElementById('parishFeatureRequestCopy');
+    const status = document.getElementById('parishFeatureRequestStatus');
+    if (copy) copy.textContent = count === 1
+      ? 'A parishioner asked your church to add pledge tracking and the Stewardship features that support it.'
+      : `${count} parishioners asked your church to add pledge tracking and the Stewardship features that support it.`;
+    if (status) status.textContent = 'Requests are counted privately; donor identities are not shown.';
+    if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open', '');
+  }
+
+  async function dismissParishFeatureRequest(viewStewardship = false) {
+    const request = activeParishFeatureRequest;
+    const dialog = document.getElementById('parishFeatureRequestDialog');
+    const status = document.getElementById('parishFeatureRequestStatus');
+    if (!request || !currentParish?.parishId) return;
+    if (status) status.textContent = 'Saving…';
+    try {
+      const response = await fetch(
+        `/api/parish/dashboard/${encodeURIComponent(currentParish.parishId)}/feature-requests/${encodeURIComponent(request.featureId)}/dismiss`,
+        { method: 'POST', headers: authHeaders() }
+      );
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Unable to dismiss this request.');
+      activeParishFeatureRequest = null;
+      if (typeof dialog?.close === 'function') dialog.close(); else dialog?.removeAttribute('open');
+      if (viewStewardship) {
+        switchTab('settings');
+        document.getElementById('subscriptionTierUpgrade')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    } catch (error) {
+      if (status) status.textContent = error.message || 'Unable to save. Please try again.';
+    }
   }
 
   async function submitParishSupportTicket() {
@@ -3557,7 +3597,9 @@
   }
 
   // ── BOOKSTORE ───────────────────────────────────────────────
-  // Also a Parish tier feature, gated the same way as Sacraments.
+  // Bookstore is available with Stewardship. The broader Commerce overview
+  // and future product workspaces require the Parish-only commerceSuite
+  // entitlement.
   // Two pieces: what's already in the parish's catalog, and a starter
   // list of common items they can check off instead of typing each one
   // in by hand. Prices on the starter list are suggestions, not fixed —
@@ -3566,9 +3608,12 @@
   let commerceProductState = 'overview';
 
   function switchCommerceProduct(product, focus = true) {
-    const allowed = new Set(['overview', 'bookstore']);
-    commerceProductState = allowed.has(product) ? product : 'overview';
+    const fullSuite = moduleIncluded('commerceSuite');
+    const allowed = fullSuite ? new Set(['overview', 'bookstore']) : new Set(['bookstore']);
+    commerceProductState = allowed.has(product) ? product : (fullSuite ? 'overview' : 'bookstore');
     document.querySelectorAll('.commerce-product-tab').forEach((tab) => {
+      const fullSuiteOnly = tab.dataset.commerceProduct !== 'bookstore';
+      tab.hidden = fullSuiteOnly && !fullSuite;
       const active = tab.dataset.commerceProduct === commerceProductState;
       tab.classList.toggle('is-active', active);
       tab.setAttribute('aria-selected', active ? 'true' : 'false');
@@ -3599,6 +3644,10 @@
   function renderCommerceOverview() {
     const body = document.getElementById('commerceOverviewBody');
     if (!body) return;
+    if (!moduleIncluded('commerceSuite')) {
+      body.replaceChildren();
+      return;
+    }
     const sales = bookstoreSalesState.data;
     const catalogReady = bookstoreCatalogState.loaded;
     if (!sales || !catalogReady) {
@@ -3989,6 +4038,7 @@
     }
     if (upsell) upsell.hidden = true;
     if (live) live.hidden = false;
+    switchCommerceProduct(moduleIncluded('commerceSuite') ? commerceProductState : 'bookstore', false);
     renderBookstoreFeatureToggle();
     if (status) {
       status.textContent = currentParish.bookstoreEnabled ? 'Live in My AGAPAY' : 'Hidden until enabled';
@@ -6852,6 +6902,7 @@
       await refreshStripeStatus({ quiet: true });
       saveSession();
       renderDashboard();
+      showParishFeatureRequestPopup(data.featureRequests || []);
       updateStewardshipBadges(isParishPlusActive(), { renderPanel: false });
       setTimeout(() => loadGivingSummary(), 250);
       setTimeout(() => loadRecurringHealth(), 500);

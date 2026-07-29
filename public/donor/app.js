@@ -6,7 +6,7 @@ const donorStore = {
   shellVersion: "agapayDonorShellVersion"
 };
 
-const DONOR_SHELL_VERSION = "2026-06-26-pledge-tracker";
+const DONOR_SHELL_VERSION = "2026-07-29-pledge-tier-gate";
 
 async function refreshStaleDashboardShell() {
   if (!("serviceWorker" in navigator) || !("caches" in window)) return;
@@ -1847,7 +1847,7 @@ function renderDonorDashboardPayload(data, { renderPledge = true } = {}) {
   setText("desktopParishName", parish?.name || "Choose a church in Settings to personalize your dashboard.");
   renderRecurringHomeCard(summary);
 
-  if (renderPledge) renderPledgeTracker(data.donor, summary);
+  if (renderPledge) renderPledgeTracker(data.donor, summary, parish);
   updateQuickGiveLinks(parish);
   renderActiveCampaigns(parish);
   renderNextFeast(parish);
@@ -2979,8 +2979,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // ── PLEDGE TRACKER ────────────────────────────────────────────────────────
-function renderPledgeTracker(donor, summary) {
+function renderPledgeTracker(donor, summary, parish) {
   if (!donor) return;
+  const trackerEnabled = parish?.pledgeTrackerEnabled === true;
   const pledgeCents = Number(donor.pledgeAmountCents || 0);
   const pledgeYear  = String(new Date().getFullYear());
   // Pledge progress counts parish offerings (tithe/stewardship) only — not designated
@@ -2990,9 +2991,15 @@ function renderPledgeTracker(donor, summary) {
   // Mobile tracker
   const mobileCard = document.getElementById("pledgeTrackerCard");
   if (mobileCard) {
-    mobileCard.hidden = false;
+    mobileCard.hidden = !parish;
     const activeState = document.getElementById("pledgeActiveState");
     const emptyState  = document.getElementById("pledgeEmptyState");
+    const lockedState = document.getElementById("pledgeLockedState");
+    if (lockedState) lockedState.hidden = trackerEnabled;
+    if (!trackerEnabled) {
+      if (activeState) activeState.hidden = true;
+      if (emptyState) emptyState.hidden = true;
+    } else
     if (!pledgeCents) {
       if (activeState) activeState.hidden = true;
       if (emptyState) emptyState.hidden = false;
@@ -3020,9 +3027,15 @@ function renderPledgeTracker(donor, summary) {
   // Desktop tracker
   const desktopCard = document.getElementById("desktopPledgeTracker");
   if (desktopCard) {
-    desktopCard.hidden = false;
+    desktopCard.hidden = !parish;
     const activeState = document.getElementById("desktopPledgeActiveState");
     const emptyState  = document.getElementById("desktopPledgeEmptyState");
+    const lockedState = document.getElementById("desktopPledgeLockedState");
+    if (lockedState) lockedState.hidden = trackerEnabled;
+    if (!trackerEnabled) {
+      if (activeState) activeState.hidden = true;
+      if (emptyState) emptyState.hidden = true;
+    } else
     if (!pledgeCents) {
       if (activeState) activeState.hidden = true;
       if (emptyState) emptyState.hidden = false;
@@ -3572,6 +3585,23 @@ async function submitCustomSacramentRequest(event, cardId) {
     setDonorStatus(err.message, "error");
   } finally {
     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Send request"; }
+  }
+}
+
+async function requestParishStewardshipUpgrade(clickedButton) {
+  const buttons = [...document.querySelectorAll(".pledge-encourage-btn")];
+  const statuses = [...document.querySelectorAll("[data-pledge-request-status]")];
+  buttons.forEach((button) => { button.disabled = true; });
+  statuses.forEach((status) => { status.textContent = "Sending your request…"; });
+  try {
+    const result = await donorApi("/api/donor/stewardship-feature-request", { method: "POST" });
+    const message = result.message || "Your parish will see your request in its dashboard.";
+    statuses.forEach((status) => { status.textContent = message; });
+    buttons.forEach((button) => { button.textContent = "Request sent"; });
+  } catch (error) {
+    statuses.forEach((status) => { status.textContent = error.message || "Unable to send your request."; });
+    buttons.forEach((button) => { button.disabled = false; });
+    if (clickedButton) clickedButton.focus();
   }
 }
 

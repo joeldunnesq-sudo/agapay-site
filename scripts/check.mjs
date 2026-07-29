@@ -12,6 +12,7 @@ const stripeHandler = await readFile("src/handlers/stripe.js", "utf8");
 const parishInterestHandler = await readFile("src/handlers/parish-interest.js", "utf8");
 const wrangler = await readFile("wrangler.toml", "utf8");
 const d1Migration = await readFile("migrations/0001_production_records.sql", "utf8");
+const parishFeatureRequestMigration = await readFile("migrations/0059_parish_feature_requests.sql", "utf8");
 const siteChrome = await readFile("public/site-chrome.js", "utf8");
 assert.ok(siteChrome.includes('{ href: "/why", label: "Why AGAPAY", key: "why" }'), "canonical static-site navigation should include Why AGAPAY");
 assert.ok(!/btn-donate[\s\S]{0,180}shellIcon\("giving-hand"\)/.test(siteChrome), "canonical Start for free button should not include an unrelated giving-hand icon");
@@ -21,6 +22,11 @@ assert.equal(parishSlug("St. Fiacre Orthodox Church", "Munster"), "st-fiacre-mun
 assert.equal(parishSlug("Holy Resurrection Orthodox Church", "Boston"), "holy-resurrection-boston", "parish usernames should normalize common church suffixes");
 assert.ok(wrangler.includes('binding = "AGAPAY_DB"'), "wrangler should bind the production D1 database");
 assert.ok(d1Migration.includes("CREATE TABLE IF NOT EXISTS registrations"), "D1 migration should create registrations table");
+assert.ok(
+  parishFeatureRequestMigration.includes("PRIMARY KEY (parish_id, feature_id, donor_hash)")
+    && parishFeatureRequestMigration.includes("parish_feature_request_dismissals"),
+  "parish feature requests should use idempotent donor-level D1 storage and persistent dismissals"
+);
 assert.ok(backendSources.includes("AGAPAY_DB"), "worker should prefer D1 for production records");
 assert.ok(worker.includes("handleAdminMigrateKvToD1"), "worker should include an admin KV-to-D1 migration endpoint");
 assert.ok(backendSources.includes("AGAPAY_REGISTRATIONS"), "worker should retain KV fallback during migration");
@@ -220,6 +226,13 @@ assert.ok(donorHome.includes("myagapay-menu-trigger") && !donorHome.includes("do
 assert.ok(donorHome.includes('showing-giving-dashboard') && !donorHome.includes('my-agapay-live-grid') && !donorHome.includes('my-agapay-coming-grid'), "My AGAPAY root should open the Give dashboard directly without a product picker");
 assert.ok(donorHome.includes("metricMonth"), "donor home should show month-to-date giving");
 assert.ok(!donorHome.includes("Counts parish offerings (tithes) only"), "mobile Annual Pledge tracker should not include the tracking explanation copy");
+assert.ok(
+  donorHome.includes('id="pledgeLockedState"')
+    && donorHome.includes("Encourage my parish")
+    && donorApp.includes('parish?.pledgeTrackerEnabled === true')
+    && donorApp.includes("/api/donor/stewardship-feature-request"),
+  "My AGAPAY should gate pledge progress with a visible Stewardship request action"
+);
 assert.ok(donorHome.includes("summary-metrics-row") && donorHome.indexOf('class="summary-title"') < donorHome.indexOf('class="summary-metrics-row"'), "mobile Total Giving label should sit above the month/year metrics");
 assert.ok(donorHome.includes("/myagapay/account"), "donor home avatar should link to My AGAPAY settings");
 assert.ok(donorHome.includes("Active Funds") && donorHome.includes("desktopActiveFunds") && donorHome.includes("activeFunds"), "Give dashboard should show active parish funds on desktop and mobile");
@@ -308,6 +321,28 @@ assert.ok(
   "Give pricing should show the $149 Parish plan with distinct, progressively ornate church, cathedral, and monastic icons"
 );
 assert.ok(
+  !givePricingHtml.includes("Stewardship Health dashboard for parish giving trends")
+    && !givePricingHtml.includes("Pledge progress, giving gaps, and follow-up visibility")
+    && givePricingHtml.includes("Full Parish Commerce suite")
+    && givePricingHtml.includes("Stewardship's Bookstore access"),
+  "Parish pricing should inherit Stewardship without duplicating its benefits and should distinguish the full Commerce suite from Stewardship Bookstore"
+);
+assert.equal(
+  givePricingHtml.match(/Parish council and annual-meeting-ready stewardship insights/g)?.length,
+  1,
+  "annual-meeting-ready stewardship insights should appear exactly once"
+);
+assert.ok(
+  givePricingHtml.indexOf("Parish council and annual-meeting-ready stewardship insights")
+    < givePricingHtml.indexOf('<h2 class="tier-title">Parish</h2>'),
+  "annual-meeting-ready stewardship insights should belong to the Stewardship tier"
+);
+assert.ok(
+  subscriptionCatalog.includes("bookstore: true, commerceSuite: false")
+    && subscriptionCatalog.includes("bookstore: true, commerceSuite: true"),
+  "subscription metadata should separate Stewardship Bookstore from the Parish Commerce suite"
+);
+assert.ok(
   parishDashboardApp.includes("function updateStarterPaywalls()")
     && parishDashboardApp.includes("Upgrade to Giving Plus")
     && parishDashboardApp.includes("givingFeatures?.branding"),
@@ -384,6 +419,13 @@ assert.ok(
   "late dashboard badge refreshes should preserve upgrade pills below the tier and show Sacraments on/off status within the tier"
 );
 const parishDashboardHtml = await readFile("public/parish/dashboard.html", "utf8");
+assert.ok(
+  parishDashboardHtml.includes('id="parishFeatureRequestDialog"')
+    && parishDashboardApp.includes("showParishFeatureRequestPopup(data.featureRequests || [])")
+    && parishDashboardApp.includes("/feature-requests/${encodeURIComponent(request.featureId)}/dismiss")
+    && worker.includes('url.pathname === "/api/donor/stewardship-feature-request"'),
+  "donor Stewardship requests should surface as dismissible parish-dashboard login popups"
+);
 assert.ok(
   parishDashboardHtml.includes('id="accountingNavSoonBadge">Beta testing</span>')
     && parishDashboardApp.includes("const accountingIncluded = moduleIncluded('accounting')")

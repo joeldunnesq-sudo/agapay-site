@@ -2791,6 +2791,52 @@ body.donor-home {
 .desktop-pledge-meta span:first-child { color: rgba(246,241,232,0.7); }
 .desktop-pledge-meta span:nth-child(2) { font-weight: 800; color: var(--gold); }
 .desktop-pledge-meta span:last-child { color: rgba(246,241,232,0.5); }
+.pledge-locked-state {
+  display: grid;
+  justify-items: start;
+  gap: 0.55rem;
+}
+.pledge-locked-state[hidden] { display: none; }
+.pledge-lock-badge {
+  display: inline-flex;
+  border: 1px solid rgba(200, 162, 74, 0.36);
+  border-radius: 999px;
+  padding: 0.24rem 0.55rem;
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.pledge-locked-state h2 {
+  margin: 0;
+  color: #fff;
+  font-family: var(--serif);
+  font-size: 20px;
+  line-height: 1.15;
+}
+.pledge-locked-state p {
+  margin: 0;
+  max-width: 560px;
+  color: rgba(246, 241, 232, 0.76);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.pledge-encourage-btn {
+  border: 0;
+  border-radius: 6px;
+  padding: 0.55rem 0.85rem;
+  background: var(--gold);
+  color: #061522;
+  cursor: pointer;
+  font: 700 12px var(--sans);
+}
+.pledge-encourage-btn:disabled { cursor: default; opacity: 0.72; }
+.pledge-request-status {
+  min-height: 1em;
+  color: rgba(246, 241, 232, 0.78);
+  font-size: 11px;
+}
 
 .quick-give-grid {
   display: grid;

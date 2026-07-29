@@ -39,7 +39,8 @@ import {
   subscriptionTier,
 } from "../lib/subscriptions.js";
 
-import { bookstoreEnabledFor, directoryEnabledFor, hasParishPlusAccess, sacramentsEnabledFor } from "../lib/entitlements.js";
+import { bookstoreEnabledFor, directoryEnabledFor, hasParishPlusAccess, sacramentsEnabledFor, stewardshipToolAccess } from "../lib/entitlements.js";
+import { recordParishFeatureRequest } from "../lib/parish-feature-requests.js";
 import { getDirectorySettings } from "../directory/settings.js";
 import { resolveDirectorySelfServiceContext, syncSelfServiceContactsFromDonor } from "../directory/self-service.js";
 
@@ -899,6 +900,7 @@ export async function handleDonorDashboard(request, env) {
       if (parish) {
         const directorySettings = await getDirectorySettings(env, parish.id);
         parish.directoryEnabled = directoryEnabledFor(found.registration, directorySettings);
+        parish.pledgeTrackerEnabled = stewardshipToolAccess(found.registration);
       }
     }
     if (parish) parish = await enrichParishGivingOptions(env, parish);
@@ -912,6 +914,44 @@ export async function handleDonorDashboard(request, env) {
     recentOfferings: publicOfferings.slice(0, 5),
     recentCommemorations: commemorations.slice(0, 5)
   });
+}
+
+export async function handleDonorStewardshipFeatureRequest(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const donor = await requireDonor(request, env);
+  if (!donor) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  if (!donor.defaultParishId) {
+    return json({ error: "Choose your home parish before sending this request." }, { status: 422 });
+  }
+
+  const limited = await rateLimitByKey(
+    request,
+    env,
+    "donor-stewardship-feature-request",
+    `${donor.email}:${donor.defaultParishId}`,
+    { limit: 3, windowSeconds: 86400 }
+  );
+  if (limited) return limited;
+
+  const found = await findRegistrationByParishId(env, donor.defaultParishId);
+  if (!found) return json({ error: "Your selected parish could not be found." }, { status: 404 });
+  if (stewardshipToolAccess(found.registration)) {
+    return json({ ok: true, alreadyEnabled: true, message: "Your parish already includes pledge tracking." });
+  }
+
+  const result = await recordParishFeatureRequest(env, {
+    parishId: donor.defaultParishId,
+    featureId: "pledge-tracker",
+    donorEmail: donor.email
+  });
+  return json({
+    ok: true,
+    duplicate: result.duplicate,
+    message: result.duplicate
+      ? "Your parish has already received your request."
+      : "Thank you. Your parish will see this request the next time they open their dashboard."
+  }, { status: result.duplicate ? 200 : 201 });
 }
 
 export async function handleDonorOfferings(request, env) {

@@ -19,14 +19,14 @@ import { hasActiveStewardshipComp, hasStewardshipAccess, stewardshipStatus } fro
 // matches the "product and craft sale campaigns" capability already
 // promised on the public features page for monastic communities.
 const TIER_MODULES = {
-  starter: { givingPlus: false, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
-  giving: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
-  stewardship: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: false, bookstore: true, textToGive: false, accounting: false, accountingAdvancedOperations: false },
-  parish: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, textToGive: true, accounting: true, accountingAdvancedOperations: true },
-  diocese: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, textToGive: true, accounting: true, accountingAdvancedOperations: true },
-  monastery_free: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingAdvancedOperations: false }
+  starter: { givingPlus: false, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
+  giving: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
+  stewardship: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: false, bookstore: true, commerceSuite: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
+  parish: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, commerceSuite: true, textToGive: true, accounting: true, accountingAdvancedOperations: true },
+  diocese: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, commerceSuite: true, textToGive: true, accounting: true, accountingAdvancedOperations: true },
+  monastery_free: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, textToGive: false, accounting: false, accountingAdvancedOperations: false }
 };
-const MODULE_IDS = ["stewardshipHealth", "sacraments", "directory", "bookstore", "textToGive"];
+const MODULE_IDS = ["stewardshipHealth", "sacraments", "directory", "bookstore", "commerceSuite", "textToGive"];
 export const GIVING_FEATURES = Object.freeze({
   basicGiving: null,
   branding: "givingPlus",
@@ -75,7 +75,7 @@ export function hasLegacyParishPlusAddOn(registration) {
 export function hasModuleAccess(registration, moduleId) {
   // Directory and Text-to-Give were never part of the retired Parish + add-on.
   // They are available only through a tier that explicitly includes them.
-  if (moduleId === "directory" || moduleId === "textToGive") {
+  if (moduleId === "directory" || moduleId === "textToGive" || moduleId === "commerceSuite") {
     return tierIncludesModule(registration, moduleId);
   }
   return tierIncludesModule(registration, moduleId) || hasLegacyParishPlusAddOn(registration);
@@ -105,6 +105,10 @@ export function directoryEnabledFor(registration, settings = {}) {
 export function bookstoreEnabledFor(registration) {
   if (normalizedSubscriptionTier(registration) === "starter") return false;
   return registration?.bookstoreEnabled !== false && hasModuleAccess(registration, "bookstore");
+}
+
+export function commerceSuiteEnabledFor(registration) {
+  return tierIncludesModule(registration, "commerceSuite");
 }
 
 export function accountingEnabledFor(registration) {
@@ -156,6 +160,10 @@ export function entitlementsSummary(registration) {
         included: hasModuleAccess(registration, "bookstore"),
         parishHasEnabled: registration?.bookstoreEnabled !== false,
         source: moduleSource(registration, "bookstore")
+      },
+      commerceSuite: {
+        included: commerceSuiteEnabledFor(registration),
+        source: commerceSuiteEnabledFor(registration) ? "tier" : "none"
       },
       directory: {
         included: hasModuleAccess(registration, "directory"),

@@ -135,6 +135,7 @@ import {
   handleParishRecurringHealth,
   handleParishBookstore,
   handleParishDashboard,
+  handleParishFeatureRequestDismiss,
   handleParishSettlementProfiles,
   handleParishSession,
   handleParishes,
@@ -162,6 +163,7 @@ import {
   handleDonorVerify,
   handleDonorVerifyPage,
   handleDonorDashboard,
+  handleDonorStewardshipFeatureRequest,
   handleDonorOfferings,
   handleDonorSubscriptionPortal,
   handleDonorBookstore,
@@ -3018,6 +3020,9 @@ export default {
     if (url.pathname === "/api/donor/dashboard") {
       return handleDonorDashboard(request, env);
     }
+    if (url.pathname === "/api/donor/stewardship-feature-request") {
+      return handleDonorStewardshipFeatureRequest(request, env);
+    }
     if (url.pathname === "/api/donor/offerings") {
       return handleDonorOfferings(request, env);
     }
@@ -3725,6 +3730,11 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/bookstore-readiness")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/bookstore-readiness", ""));
       return handleParishBookstoreReadiness(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/feature-requests/") && url.pathname.endsWith("/dismiss")) {
+      const [parishId, featurePart] = url.pathname.replace("/api/parish/dashboard/", "").split("/feature-requests/");
+      const featureId = decodeURIComponent(featurePart.replace("/dismiss", ""));
+      return handleParishFeatureRequestDismiss(request, env, decodeURIComponent(parishId), featureId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/tax-exemption/document")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/tax-exemption/document", ""));

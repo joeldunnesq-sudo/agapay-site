@@ -3,6 +3,7 @@
 
 import { activeFestalAlmsCampaigns } from "../festal-alms.js";
 import { submitParishSupportTicket } from "../lib/parish-support-tickets.js";
+import { dismissParishFeatureRequest, loadPendingParishFeatureRequests } from "../lib/parish-feature-requests.js";
 import {
   ADMIN_PASSWORD_KV_KEY,
   COMMEMORATION_KEY_PREFIX,
@@ -6013,9 +6014,10 @@ export async function handleParishDashboard(request, env, parishId) {
 
   if (request.method === "GET") {
     const { registration } = found;
-    const [catalog, directorySettings] = await Promise.all([
+    const [catalog, directorySettings, featureRequests] = await Promise.all([
       loadGivingCatalogFromAccounting(env, parishId, registration),
-      getDirectorySettings(env, parishId)
+      getDirectorySettings(env, parishId),
+      stewardshipToolAccess(registration) ? Promise.resolve([]) : loadPendingParishFeatureRequests(env, parishId)
     ]);
     const dashboardParish = await enrichParishGivingOptions(env, {
       ...parishDashboardPayload(parishId, registration),
@@ -6028,7 +6030,8 @@ export async function handleParishDashboard(request, env, parishId) {
       // Campaign progress comes from the same paid offerings that power the
       // donor dashboard and public campaign pages.
       parish: dashboardParish,
-      accountingCatalogConnected: catalog.available
+      accountingCatalogConnected: catalog.available,
+      featureRequests
     });
   }
 
@@ -6129,6 +6132,17 @@ export async function handleParishDashboard(request, env, parishId) {
   }
 
   return json({ error: "Method not allowed" }, { status: 405 });
+}
+
+export async function handleParishFeatureRequestDismiss(request, env, parishId, featureId) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+  if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) return unauthorized();
+  if (featureId !== "pledge-tracker") return json({ error: "Unknown feature request" }, { status: 404 });
+  await dismissParishFeatureRequest(env, parishId, featureId);
+  return json({ ok: true });
 }
 
 export async function handleParishSession(request, env, parishId) {
