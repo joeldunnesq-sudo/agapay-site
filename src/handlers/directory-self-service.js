@@ -1,11 +1,17 @@
-import { json, unauthorized } from "../lib/core.js";
+import { json, rateLimit, unauthorized } from "../lib/core.js";
 import { DirectoryServiceError } from "../directory/foundation.js";
+import {
+  acceptDirectoryInvitation,
+  inspectDirectoryInvitationForRecipient
+} from "../directory/claims.js";
 import {
   cancelDirectoryChangeRequest,
   createDirectoryChangeRequest,
   createHouseholdAdultInvitation,
   createSelfServiceAddress,
   createSelfServiceContact,
+  deleteHouseholdMember,
+  deleteHouseholdNameday,
   deleteSelfServiceContact,
   getHouseholdSelfServiceProfile,
   getSelfServiceProfile,
@@ -19,6 +25,7 @@ import {
   setSelfServicePrivacyPreference,
   startSelfServiceProfile,
   transitionSelfServicePublication,
+  updateHouseholdMember,
   updateHouseholdSelfServiceProfile,
   updateSelfServiceContact,
   updateSelfServicePersonProfile
@@ -71,6 +78,26 @@ export async function handleDirectorySelfService(request, env) {
     const context = await withContext(request, env);
     if (!context) return unauthorized();
 
+    const invitationMatch = path.match(/^\/api\/directory\/invitations\/([^/]+)(?:\/(accept))?$/);
+    if (invitationMatch) {
+      const limited = await rateLimit(request, env, "directory-invitation-recipient", { limit: 30, windowSeconds: 300 });
+      if (limited) return limited;
+      const token = decodeURIComponent(invitationMatch[1]);
+      const action = invitationMatch[2] || "";
+      if (request.method === "GET" && !action) {
+        return json({ ok: true, invitation: await inspectDirectoryInvitationForRecipient(env, { token }) });
+      }
+      if (request.method === "POST" && action === "accept") {
+        return json({
+          ok: true,
+          result: await acceptDirectoryInvitation(env, {
+            user: context.user,
+            token,
+            correlationId
+          })
+        });
+      }
+    }
     if (request.method === "GET" && path === "/api/directory/self/context") {
       return json({ ok: true, context });
     }
@@ -118,6 +145,41 @@ export async function handleDirectorySelfService(request, env) {
       }
       if (request.method === "DELETE") {
         return json({ ok: true, contact: await deleteSelfServiceContact(env, { context, contactId, correlationId }) });
+      }
+    }
+    const namedayMatch = path.match(/^\/api\/directory\/households\/([^/]+)\/self\/namedays\/([^/]+)$/);
+    if (request.method === "PATCH" && namedayMatch) {
+      return json({
+        ok: true,
+        nameday: await saveHouseholdNameday(env, {
+          context,
+          householdId: decodeURIComponent(namedayMatch[1]),
+          namedayId: decodeURIComponent(namedayMatch[2]),
+          data: await body(request),
+          correlationId
+        })
+      });
+    }
+    if (request.method === "DELETE" && namedayMatch) {
+      return json({
+        ok: true,
+        nameday: await deleteHouseholdNameday(env, {
+          context,
+          householdId: decodeURIComponent(namedayMatch[1]),
+          namedayId: decodeURIComponent(namedayMatch[2]),
+          correlationId
+        })
+      });
+    }
+    const memberMatch = path.match(/^\/api\/directory\/households\/([^/]+)\/self\/members\/([^/]+)$/);
+    if (memberMatch) {
+      const householdId = decodeURIComponent(memberMatch[1]);
+      const personId = decodeURIComponent(memberMatch[2]);
+      if (request.method === "PATCH") {
+        return json({ ok: true, member: await updateHouseholdMember(env, { context, householdId, personId, data: await body(request), correlationId }) });
+      }
+      if (request.method === "DELETE") {
+        return json({ ok: true, member: await deleteHouseholdMember(env, { context, householdId, personId, correlationId }) });
       }
     }
     const householdMatch = path.match(/^\/api\/directory\/households\/([^/]+)\/self(?:\/(contacts|addresses|invitations|namedays|children|adults))?(?:\/([^/]+)\/(resend|revoke))?$/);
@@ -203,7 +265,13 @@ export async function handleDirectorySelfService(request, env) {
     }
     if (request.method === "POST" && path.startsWith("/api/directory/children/publication/") && path.endsWith("/submit")) {
       const requestId = decodeURIComponent(path.replace("/api/directory/children/publication/", "").replace("/submit", ""));
-      return json({ ok: true, request: await submitChildPublicationRequest(env, { context, requestId, correlationId }) });
+      const data = await body(request);
+      return json({ ok: true, request: await submitChildPublicationRequest(env, {
+        context,
+        requestId,
+        householdAdminPublish: Boolean(data.householdAdminPublish),
+        correlationId
+      }) });
     }
     if (request.method === "POST" && path.startsWith("/api/directory/children/publication/") && path.endsWith("/withdraw")) {
       const requestId = decodeURIComponent(path.replace("/api/directory/children/publication/", "").replace("/withdraw", ""));

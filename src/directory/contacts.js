@@ -156,12 +156,18 @@ export async function updateContactMethod(env, { actor: actorInput, parishId, co
   if (existing.parish_id !== cleanedParishId) throw new DirectoryServiceError("not_found", "Directory contact method was not found for this parish.", 404);
   const actor = await assertCanManageOwner(env, actorInput, { parishId: cleanedParishId, ownerType: existing.owner_type, ownerId: existing.owner_id });
   const next = rowToContact(existing);
+  const valueChanged = "value" in patch && String(patch.value || "").trim() !== existing.value;
+  if ("value" in patch) {
+    next.value = cleanText(patch.value, { required: true, max: 320, field: "value" });
+    next.normalizedValue = next.contactType === "email" ? normalizeEmailValue(next.value) : normalizePhoneValue(next.value);
+  }
   if ("label" in patch) next.label = normalizeContactLabel(next.contactType, patch.label);
   if ("visibility" in patch) next.visibility = assertVisibility(patch.visibility);
   if ("verified" in patch) next.verified = Boolean(patch.verified);
   if ("smsCapable" in patch) next.smsCapable = patch.smsCapable === null ? null : Boolean(patch.smsCapable);
   if ("primary" in patch) next.primary = Boolean(patch.primary);
   if ("active" in patch) next.active = Boolean(patch.active);
+  if (valueChanged) next.verified = false;
   const policy = await evaluateFieldPolicy(env, {
     parishId: cleanedParishId,
     ownerType: existing.owner_type,
@@ -181,9 +187,9 @@ export async function updateContactMethod(env, { actor: actorInput, parishId, co
   }
   statements.push({
     sql: `UPDATE directory_contact_methods
-          SET label = ?, is_primary = ?, verified = ?, sms_capable = ?, visibility = ?, active = ?, updated_at = ?
+          SET value = ?, normalized_value = ?, label = ?, is_primary = ?, verified = ?, sms_capable = ?, visibility = ?, active = ?, updated_at = ?
           WHERE id = ?`,
-    params: [next.label, boolToInt(next.primary), boolToInt(next.verified), next.smsCapable === null ? null : boolToInt(next.smsCapable), next.visibility, boolToInt(next.active, true), timestamp, existing.id]
+    params: [next.value, next.normalizedValue, next.label, boolToInt(next.primary), boolToInt(next.verified), next.smsCapable === null ? null : boolToInt(next.smsCapable), next.visibility, boolToInt(next.active, true), timestamp, existing.id]
   });
   statements.push(auditStatement({
     action: next.active ? "directory.contact_updated" : "directory.contact_deactivated",
@@ -275,6 +281,68 @@ export async function createAddress(env, { actor: actorInput, parishId, ownerTyp
   }));
   await runAtomic(env, statements);
   return rowToAddress(await d1First(env, "SELECT * FROM directory_addresses WHERE id = ?1", id));
+}
+
+export async function updateAddress(env, { actor: actorInput, parishId, addressId, patch = {}, correlationId = "" }) {
+  const existing = await d1First(env, "SELECT * FROM directory_addresses WHERE id = ?1", cleanText(addressId, { required: true, max: 160, field: "addressId" }));
+  if (!existing) throw new DirectoryServiceError("not_found", "Directory address was not found.", 404);
+  const cleanedParishId = cleanText(parishId || actorInput?.parishId, { required: true, max: 160, field: "parishId" });
+  if (existing.parish_id !== cleanedParishId) throw new DirectoryServiceError("not_found", "Directory address was not found for this parish.", 404);
+  const actor = await assertCanManageOwner(env, actorInput, { parishId: cleanedParishId, ownerType: existing.owner_type, ownerId: existing.owner_id });
+  const current = rowToAddress(existing);
+  const next = {
+    ...current,
+    line1: "line1" in patch ? cleanText(patch.line1, { required: true, max: 200, field: "line1" }) : current.line1,
+    line2: "line2" in patch ? cleanText(patch.line2, { max: 200 }) : current.line2,
+    city: "city" in patch ? cleanText(patch.city, { required: true, max: 120, field: "city" }) : current.city,
+    region: "region" in patch ? cleanText(patch.region, { max: 120 }) : current.region,
+    postalCode: "postalCode" in patch ? cleanText(patch.postalCode, { max: 40 }) : current.postalCode,
+    country: "country" in patch ? cleanText(patch.country, { required: true, max: 2, field: "country" }).toUpperCase() : current.country,
+    primary: "primary" in patch ? Boolean(patch.primary) : current.primary,
+    visibility: "visibility" in patch ? assertVisibility(patch.visibility) : current.visibility,
+    active: "active" in patch ? Boolean(patch.active) : current.active
+  };
+  const policy = await evaluateFieldPolicy(env, {
+    parishId: cleanedParishId,
+    ownerType: existing.owner_type,
+    ownerId: existing.owner_id,
+    fieldKey: current.protectedAddress ? "street_address" : "city_state",
+    requestedVisibility: next.visibility,
+    publicationEligible: next.visibility === "directory_members",
+    protectedAddress: current.protectedAddress
+  });
+  if (policy.visibility !== next.visibility) throw new DirectoryServiceError("privacy_policy_denied", "Requested address visibility is not permitted.", 403);
+  const timestamp = nowMs();
+  const statements = [];
+  if (next.primary) {
+    statements.push({
+      sql: "UPDATE directory_addresses SET is_primary = 0, updated_at = ? WHERE owner_type = ? AND owner_id = ? AND address_type = ? AND active = 1",
+      params: [timestamp, existing.owner_type, existing.owner_id, existing.address_type]
+    });
+  }
+  statements.push({
+    sql: `UPDATE directory_addresses
+          SET line1 = ?, line2 = ?, city = ?, region = ?, postal_code = ?, country = ?,
+              normalized_value = ?, is_primary = ?, visibility = ?, active = ?, updated_at = ?
+          WHERE id = ?`,
+    params: [
+      next.line1, next.line2, next.city, next.region, next.postalCode, next.country,
+      normalizeAddressValue(next), boolToInt(next.primary), next.visibility, boolToInt(next.active, true),
+      timestamp, existing.id
+    ]
+  });
+  statements.push(auditStatement({
+    action: next.active ? "directory.address_updated" : "directory.address_deactivated",
+    actor,
+    parishId: cleanedParishId,
+    targetType: "directory_address",
+    targetId: existing.id,
+    before: { visibility: existing.visibility, primary: Boolean(existing.is_primary), maskedValue: maskValue(existing.line1, "address") },
+    after: { visibility: next.visibility, primary: next.primary, active: next.active, maskedValue: maskValue(next.line1, "address") },
+    correlationId
+  }));
+  await runAtomic(env, statements);
+  return rowToAddress(await d1First(env, "SELECT * FROM directory_addresses WHERE id = ?1", existing.id));
 }
 
 export async function listActiveContactsForOwner(env, { parishId, ownerType, ownerId }) {

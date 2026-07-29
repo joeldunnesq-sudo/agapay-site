@@ -46,12 +46,16 @@ export async function resolveOperationalAccountingDatabase(env, parishId) {
 
 async function accountingFund(db, {
   sourceType, sourceId, name, description = "", purpose = "", accountNumber = "",
-  restrictionType = "", restricted = false, goalCents = null, slug = "", metadata = {}, publish = false
+  restrictionType = "", restricted = false, goalCents = null, slug = "", metadata = {}, publish = false,
+  accountingFundId = ""
 }) {
   if (!sourceId && !name) return "fund_general";
   const identity = `${sourceType}:${sourceId || name.toLowerCase()}`;
   const suffix = await digest(identity);
-  const id = `fund_operational_${suffix}`;
+  // Once a catalog record is linked to a ledger fund, retain that identity.
+  // Posted journal lines are immutable and must never be orphaned by replacing
+  // their fund solely because the parish later edits its catalog metadata.
+  const id = text(accountingFundId) || `fund_operational_${suffix}`;
   if (!publish) {
     const existing = await db.prepare(`SELECT id FROM accounting_funds
       WHERE giving_source_type=? AND giving_source_id=? AND is_active=1 AND archived_at IS NULL`)
@@ -235,6 +239,7 @@ export async function synchronizeGivingCatalogWithAccounting(env, parishId, regi
         enabled: item.enabled !== false,
         campaignName: item.campaignName || null
       },
+      accountingFundId: item.accountingFundId,
       publish: true
     });
     const row = await db.prepare(`SELECT code,name,description,restriction_type,purpose

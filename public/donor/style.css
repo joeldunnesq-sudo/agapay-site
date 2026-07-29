@@ -916,8 +916,8 @@ h1 { margin-top: 0.25rem; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 0.98
 }
 
 .history-product-bookstore .history-activity-icon {
-  background: rgba(46, 107, 63, 0.1);
-  color: var(--forest);
+  background: rgba(11, 33, 48, 0.1);
+  color: var(--deep);
 }
 
 .history-product-services .history-activity-icon {
@@ -929,6 +929,228 @@ h1 { margin-top: 0.25rem; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 0.98
   background: rgba(11, 33, 48, 0.1);
   color: var(--deep);
 }
+
+/* ── My AGAPAY giving story ───────────────────────────────── */
+.history-story-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) auto minmax(220px, 0.65fr);
+  gap: 1.4rem;
+  align-items: stretch;
+  padding: 1.5rem 1.65rem;
+  overflow: hidden;
+  border: 1px solid rgba(184,144,47,0.3);
+  border-radius: 18px;
+  background:
+    radial-gradient(ellipse 70% 150% at 100% 40%, rgba(184,144,47,0.2), transparent),
+    linear-gradient(135deg, #061522 0%, #0b2130 64%, #061522 100%);
+  color: var(--cream);
+  box-shadow: 0 22px 54px rgba(6,21,34,0.18);
+}
+.history-story-copy h1 {
+  max-width: 13ch;
+  margin: 0.25rem 0 0.45rem;
+  color: var(--cream);
+  font: 500 clamp(2rem, 3.4vw, 3.15rem)/0.92 var(--serif);
+}
+.history-story-copy > p {
+  max-width: 58ch;
+  margin: 0;
+  color: rgba(246,241,232,0.7);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.history-story-latest {
+  margin-top: 0.75rem;
+  color: rgba(246,241,232,0.58);
+  font-size: 10px;
+  font-weight: 700;
+}
+.history-story-latest strong { color: var(--gold); }
+.history-story-total {
+  align-self: center;
+  min-width: 170px;
+  padding: 1rem 1.15rem;
+  border: 1px solid rgba(246,241,232,0.14);
+  border-radius: 13px;
+  background: rgba(255,255,255,0.07);
+}
+.history-story-total span,
+.history-story-total small {
+  display: block;
+  color: rgba(246,241,232,0.62);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.history-story-total strong {
+  display: block;
+  margin: 0.4rem 0;
+  color: var(--gold);
+  font: 600 2.35rem/1 var(--serif);
+}
+.history-story-chart {
+  display: flex;
+  align-items: stretch;
+  min-height: 145px;
+  padding: 0.75rem;
+  border-radius: 13px;
+  background: rgba(255,255,255,0.055);
+}
+.history-story-bars {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.4rem;
+  width: 100%;
+}
+.history-story-bars > div { display: grid; grid-template-rows: 1fr auto; gap: 0.3rem; text-align: center; }
+.history-story-bars > div > span { display: flex; align-items: flex-end; justify-content: center; border-bottom: 1px solid rgba(246,241,232,0.14); }
+.history-story-bars i {
+  display: block;
+  width: min(22px, 70%);
+  border-radius: 5px 5px 2px 2px;
+  background: linear-gradient(180deg, var(--gold), #9a711f);
+}
+.history-story-bars small { color: rgba(246,241,232,0.58); font-size: 8px; font-weight: 700; }
+.history-story-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+.history-story-kpis article {
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(6,21,34,0.1);
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 7px 20px rgba(6,21,34,0.055);
+}
+.history-story-kpis span {
+  display: block;
+  color: var(--stone);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.history-story-kpis strong {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--deep);
+  font: 600 1.75rem/1 var(--serif);
+}
+.history-story-kpis small {
+  display: block;
+  margin-top: 0.38rem;
+  color: var(--muted);
+  font-size: 9px;
+}
+.history-story-insights {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.9rem;
+}
+.history-story-panel {
+  overflow: hidden;
+  border: 1px solid rgba(6,21,34,0.1);
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(6,21,34,0.055);
+}
+.history-story-panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.history-story-panel > header span {
+  display: block;
+  color: var(--gold);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+.history-story-panel > header h2 {
+  margin: 0.18rem 0 0;
+  color: var(--deep);
+  font: 600 1.22rem var(--serif);
+}
+.history-story-panel > header small { color: var(--muted); font-size: 9px; font-weight: 800; text-transform: uppercase; }
+.history-story-funds { display: grid; gap: 0.7rem; padding: 1rem; }
+.history-story-fund-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: center;
+}
+.history-story-fund-row > span {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 7px;
+  background: rgba(184,144,47,0.13);
+  color: #8a6317;
+  font-size: 9px;
+  font-weight: 900;
+}
+.history-story-fund-row strong { display: block; color: var(--deep); font-size: 11px; text-transform: capitalize; }
+.history-story-fund-row i { display: block; height: 4px; margin-top: 0.35rem; overflow: hidden; border-radius: 999px; background: rgba(6,21,34,0.07); }
+.history-story-fund-row i b { display: block; height: 100%; border-radius: inherit; background: var(--gold); }
+.history-story-fund-row em { color: var(--deep); font: 600 12px var(--serif); font-style: normal; }
+.history-rhythm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.history-rhythm-grid > div { min-height: 84px; padding: 0.9rem 1rem; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.history-rhythm-grid > div:nth-child(2n) { border-right: 0; }
+.history-rhythm-grid > div:nth-last-child(-n+2) { border-bottom: 0; }
+.history-rhythm-grid span { display: block; color: var(--muted); font-size: 8px; font-weight: 900; letter-spacing: 0.07em; text-transform: uppercase; }
+.history-rhythm-grid strong { display: block; margin-top: 0.45rem; overflow-wrap: anywhere; color: var(--deep); font: 600 1.05rem/1.1 var(--serif); }
+.history-timeline-header,
+.history-timeline-controls,
+.history-timeline-meta { display: flex; align-items: center; justify-content: space-between; gap: 0.7rem; }
+.history-timeline-controls { align-items: flex-end; margin-bottom: 1rem; }
+.history-timeline-controls .history-product-tabs { margin-bottom: 0; }
+.history-year-filter { display: grid; gap: 0.25rem; min-width: 132px; }
+.history-year-filter span { color: var(--muted); font-size: 8px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+.history-year-filter select { min-height: 36px; border: 1px solid rgba(184,144,47,0.24); border-radius: 9px; background: #fff; color: var(--deep); padding: 0 0.7rem; font-size: 11px; font-weight: 700; }
+.history-statements-card { border-top: 3px solid var(--gold); }
+.donor-offerings-page .status-pill {
+  background: rgba(11,33,48,0.09);
+  color: var(--deep);
+}
+.giving-receipt-month { overflow: hidden; border: 1px solid var(--line); border-radius: 13px; background: #fff; }
+.giving-receipt-month + .giving-receipt-month { margin-top: 0.75rem; }
+.giving-receipt-month > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0.9rem;
+  background: rgba(246,241,232,0.58);
+  color: var(--stone);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.giving-receipt-month > header strong { color: var(--deep); font: 600 15px var(--serif); }
+.giving-receipt-row {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) auto auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.8rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+}
+.giving-receipt-row:last-child { border-bottom: 0; }
+.giving-receipt-date { color: var(--stone); font-size: 10px; font-weight: 700; }
+.giving-receipt-copy strong,
+.giving-receipt-copy small { display: block; }
+.giving-receipt-copy strong { color: var(--deep); font-size: 12px; text-transform: capitalize; }
+.giving-receipt-copy small { margin-top: 0.2rem; color: var(--muted); font-size: 9px; line-height: 1.4; }
+.giving-receipt-amount { min-width: 70px; text-align: right; }
+.giving-receipt-amount strong { display: block; color: var(--deep); font: 600 17px var(--serif); }
+.giving-receipt-amount small { display: block; margin-top: 0.2rem; color: var(--muted); font-size: 8px; font-weight: 800; text-transform: uppercase; }
 
 .status-pill {
   display: inline-flex;
@@ -1749,6 +1971,8 @@ body.donor-login-simple {
   .page { padding: 1rem 1rem 2rem; }
   .hero-grid { grid-template-columns: 1fr; }
   .hero-mark { display: none; }
+  .history-story-hero { grid-template-columns: minmax(0, 1fr) auto; }
+  .history-story-chart { grid-column: 1 / -1; min-height: 125px; }
 }
 
 @media (max-width: 640px) {
@@ -6601,10 +6825,31 @@ body.donor-home {
   padding: 1rem;
 }
 @media (max-width: 640px) {
+  .donor-offerings-page .donor-mobile-content {
+    width: 100%;
+    min-width: 0;
+  }
+  .donor-offerings-page .page {
+    width: 100%;
+    max-width: 480px;
+    min-width: 0;
+  }
   .donor-services-accordion-page .sac-section-heading {
     display: grid;
     align-items: start;
   }
+  .history-story-hero { grid-template-columns: 1fr; padding: 1.25rem; }
+  .history-story-total { min-width: 0; }
+  .history-story-chart { grid-column: auto; }
+  .history-story-kpis { grid-template-columns: 1fr 1fr; }
+  .history-story-insights { grid-template-columns: 1fr; }
+  .history-timeline-controls { align-items: stretch; flex-direction: column; }
+  .history-product-tabs { flex-wrap: nowrap; width: 100%; overflow-x: auto; padding-bottom: 0.25rem; }
+  .history-year-filter { width: 100%; }
+  .history-timeline-header { align-items: flex-start; flex-direction: column; }
+  .giving-receipt-row { grid-template-columns: 70px minmax(0, 1fr) auto; }
+  .giving-receipt-row .status-pill { grid-column: 2; width: fit-content; }
+  .giving-receipt-amount { grid-column: 3; grid-row: 1 / span 2; }
   .sac-parish-summary { text-align: left; }
   .sac-accordion-trigger {
     grid-template-columns: auto 1fr auto;

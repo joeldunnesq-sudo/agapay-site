@@ -376,8 +376,9 @@ assert.ok(
 );
 assert.ok(
   parishDashboardApp.includes("syncTierRequirementNavigation('stewardship', 'Stewardship', stewardshipActive)")
-    && parishDashboardApp.includes("sacBadge.hidden = false"),
-  "late dashboard badge refreshes should preserve Stewardship and Sacraments upgrade pills"
+    && parishDashboardApp.includes("sacBadge.hidden = sacramentsActive")
+    && parishDashboardApp.includes("syncModuleStatusNavigation('sacraments', sacramentsActive, sacIsOn)"),
+  "late dashboard badge refreshes should preserve upgrade pills below the tier and show Sacraments on/off status within the tier"
 );
 const parishDashboardHtml = await readFile("public/parish/dashboard.html", "utf8");
 assert.ok(
@@ -398,10 +399,10 @@ const sacramentsLiveHtml = parishDashboardHtml.slice(
   parishDashboardHtml.indexOf('id="sacramentsLiveContent"'),
   parishDashboardHtml.indexOf("<!-- ── DIRECTORY ADMIN TAB")
 );
-assert.ok(sacramentsLiveHtml.includes("sac-admin-shell") && sacramentsLiveHtml.indexOf("Weekly Availability") < sacramentsLiveHtml.indexOf("Blackout Dates") && sacramentsLiveHtml.indexOf("Blackout Dates") < sacramentsLiveHtml.indexOf("Sacrament Rules") && sacramentsLiveHtml.indexOf("Sacrament Rules") < sacramentsLiveHtml.indexOf(">Requests<") && sacramentsLiveHtml.indexOf(">Requests<") < sacramentsLiveHtml.indexOf(">Calendar<"), "parish Sacraments & Services dashboard tabs should match the uploaded template order");
+assert.ok(sacramentsLiveHtml.includes("sac-admin-shell") && !sacramentsLiveHtml.includes(">Weekly Availability<") && sacramentsLiveHtml.indexOf("Blackout Dates") < sacramentsLiveHtml.indexOf("Sacrament Rules") && sacramentsLiveHtml.indexOf("Sacrament Rules") < sacramentsLiveHtml.indexOf(">Requests<") && sacramentsLiveHtml.indexOf(">Requests<") < sacramentsLiveHtml.indexOf(">Calendar<"), "parish Sacraments & Services dashboard tabs should consolidate weekly availability into Sacrament Rules");
 assert.ok(parishDashboardApp.includes("function setSacramentsDashboardTab") && parishDashboardApp.includes("function renderSacramentsCalendar") && parishDashboardApp.includes("function renderSacramentsBlackouts") && parishDashboardApp.includes("function renderSacramentsRules"), "parish Sacraments & Services dashboard should render availability, blackouts, rules, requests, and calendar views");
 assert.ok(parishDashboardHtml.includes("sacramentsFeatureToggle") && parishDashboardApp.includes("function toggleSacramentsFeature") && parishDashboardApp.includes("Off for parishioners"), "parish Sacraments & Services dashboard should include a self-service on/off switch");
-assert.ok(parishDashboardApp.includes("sacramentsDashboardTab = 'availability'") && parishDashboardApp.includes("renderSacramentsDisabledPanel"), "parish Sacraments & Services should default to weekly availability and show an off state");
+assert.ok(parishDashboardApp.includes("sacramentsDashboardTab = 'rules'") && parishDashboardApp.includes("renderSacramentsDisabledPanel"), "parish Sacraments & Services should default to Sacrament Rules and show an off state");
 assert.ok(parishDashboardHtml.includes("sacramentsPriestPicker") && parishDashboardApp.includes("function selectSacramentsPriest") && parishDashboardApp.includes("sacramentPriestsText"), "parish Sacraments & Services should support multiple priests managed from Settings");
 assert.ok(parishDashboardApp.includes("loadReconciliation") && parishDashboardApp.includes("exportReconciliationCsv") && parishDashboardApp.includes("saveReconciliationClose"), "parish dashboard should load, export, and close monthly reconciliations");
 assert.ok(worker.includes("handleParishReconciliation") && worker.includes("/reconciliation/close"), "worker should route authenticated parish reconciliation endpoints");
@@ -497,10 +498,10 @@ assert.ok(worker.includes('endsWith("/stewardship/giving/concentration")') && wo
 assert.ok(worker.includes('endsWith("/stewardship/report/monthly")'), "worker should route the monthly stewardship report endpoint");
 assert.ok(!parishDashboardHtml.includes('id="swGivingFullLink"'), "standalone Full metrics report link should be retired -- combined into the Monthly Stewardship Report instead");
 assert.ok(worker.includes("handleStewardshipGivingFunds(withYear(\"funds\")"), "monthly report should include the Giving by Fund breakdown that used to be exclusive to the standalone report");
-assert.ok(parishDashboardHtml.includes('id="stewardshipManualIncomePane"'), "Stewardship Health tab should include an Other Income card for manual entry");
+assert.ok(parishDashboardHtml.includes('id="stewardshipManualIncomePane"') && parishDashboardHtml.includes("Record outside-AGAPAY giving"), "Financial Snapshots should include compact outside-AGAPAY contribution intake");
 assert.ok(parishAppJs.includes("function loadManualIncomePanel") && parishAppJs.includes("function submitManualIncomeEntry") && parishAppJs.includes("function deleteManualIncomeEntry"), "app.js should define the manual income entry functions");
 assert.ok(worker.includes("manual_income_entries"), "worker should reference the manual_income_entries table");
-assert.ok(worker.includes("manualIncomeTotalCents"), "manual income should fold into the giving summary totals used by Budget Pace and Stewardship Health");
+assert.ok(worker.includes("manualIncomeTotalCents") && worker.includes("contribution_eligible = 1"), "only contribution-qualified outside giving should fold into Budget Pace and Stewardship Health");
 
 // Tax readiness gate -- parish canonical verification vs. AGAPAY billing/tax
 // readiness are separate (src/lib/tax-readiness.js). Functional coverage

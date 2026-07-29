@@ -151,6 +151,20 @@ await test("sacramentsEnabledFor requires both parish opt-in AND module access",
   assert.equal(sacramentsEnabledFor({ subscriptionTier: "mission", sacramentsEnabled: true }), false);
 });
 
+await test("Sacraments dashboard access remains included when the donor-facing feature is off", async () => {
+  const summary = entitlementsSummary({ subscriptionTier: "parish", sacramentsEnabled: false });
+  assert.equal(summary.modules.sacraments.included, true);
+  assert.equal(summary.modules.sacraments.parishHasEnabled, false);
+  assert.equal(sacramentsEnabledFor({ subscriptionTier: "parish", sacramentsEnabled: false }), false);
+});
+
+await test("Bookstore dashboard access remains included when the donor-facing feature is off", async () => {
+  const summary = entitlementsSummary({ subscriptionTier: "parish", bookstoreEnabled: false });
+  assert.equal(summary.modules.bookstore.included, true);
+  assert.equal(summary.modules.bookstore.parishHasEnabled, false);
+  assert.equal(bookstoreEnabledFor({ subscriptionTier: "parish", bookstoreEnabled: false }), false);
+});
+
 await test("directoryEnabledFor requires the tier and both parish member-directory switches", async () => {
   const enabled = { directoryEnabled: true, ordinaryMemberAccessEnabled: true };
   assert.equal(directoryEnabledFor({ subscriptionTier: "parish" }, enabled), true);

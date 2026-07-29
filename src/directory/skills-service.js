@@ -147,7 +147,10 @@ async function assertAdultSelf(context, env, parishId) {
   const flags = await getPersonPrivacyFlags(env, { parishId, personId });
   if (flags.isChild || flags.protectedPerson) throw new DirectoryServiceError("forbidden", "This person cannot be listed in Skills & Service.", 403);
   const row = await d1First(env, "SELECT date_of_birth FROM directory_people WHERE id = ?1 AND active = 1", personId);
-  if (!row?.date_of_birth) throw new DirectoryServiceError("adult_evidence_required", "Adult status must be recorded before skills can be published.", 403);
+  if (!row?.date_of_birth) {
+    if ((context.manageableHouseholds || []).length) return personId;
+    throw new DirectoryServiceError("adult_evidence_required", "Adult status must be recorded before skills can be published.", 403);
+  }
   const birthday = Date.parse(`${row.date_of_birth}T00:00:00Z`);
   if (!Number.isFinite(birthday) || Date.now() - birthday < 18 * 365.2425 * 86400000) {
     throw new DirectoryServiceError("child_not_allowed", "Children cannot be listed in Skills & Service.", 403);
@@ -264,10 +267,26 @@ export async function saveMySkillListing(env, { context, listingId = "", data = 
   const settings = await assertFeatureEnabled(env, parishId, { activation: data.status === "active" });
   const personId = data.status === "active" ? await assertAdultSelf(context, env, parishId) : context.currentPerson?.id;
   if (!personId) throw new DirectoryServiceError("unclaimed", "Claim a directory person before using skills.", 403);
-  const existingListing = listingId ? await listingRow(env, { parishId, listingId }) : null;
+  let effectiveListingId = listingId;
+  let existingListing = effectiveListingId ? await listingRow(env, { parishId, listingId: effectiveListingId }) : null;
   if (existingListing && existingListing.person_id !== personId) throw new DirectoryServiceError("not_found", "Skill listing was not found.", 404);
   const skill = await loadSkill(env, { parishId, skillId: data.skillId || existingListing?.skill_id });
-  if (Number(skill.is_active || 0) !== 1 && !listingId) throw new DirectoryServiceError("disabled_skill", "This skill is not available for new listings.", 409);
+  if (!existingListing) {
+    const duplicate = await d1First(
+      env,
+      `SELECT id FROM directory_person_skill_listings
+        WHERE parish_id = ?1 AND person_id = ?2 AND skill_id = ?3
+        LIMIT 1`,
+      parishId,
+      personId,
+      skill.id
+    );
+    if (duplicate?.id) {
+      effectiveListingId = duplicate.id;
+      existingListing = await listingRow(env, { parishId, listingId: duplicate.id });
+    }
+  }
+  if (Number(skill.is_active || 0) !== 1 && !effectiveListingId) throw new DirectoryServiceError("disabled_skill", "This skill is not available for new listings.", 409);
   if (skill.parish_id && skill.parish_id !== parishId) throw new DirectoryServiceError("not_found", "Skill was not found.", 404);
   if (!settings.skillsCustomEntriesEnabled && data.customDisplayLabel) throw new DirectoryServiceError("custom_entries_disabled", "Custom skill labels are disabled for this parish.", 403);
   const status = enumValue(data.status, STATUSES, "status", existingListing?.status || "draft");
@@ -284,7 +303,7 @@ export async function saveMySkillListing(env, { context, listingId = "", data = 
     visibility,
     status
   };
-  if (listingId) {
+  if (effectiveListingId) {
     const existing = existingListing;
     if (existing.status === "hidden_by_parish" && status === "active") throw new DirectoryServiceError("hidden_by_parish", "The parish must restore this listing before it can be active.", 409);
     await runAtomic(env, [
@@ -522,27 +541,49 @@ export async function getDirectoryMaintenanceDashboard(env, { context }) {
   assertParishActor(actorFromContext(context), parishIdFor(context), VIEW_CAPS);
   const parishId = parishIdFor(context);
   const now = nowMs();
-  const rows = await d1All(env, "SELECT verification_status, verification_due_at FROM directory_household_verifications WHERE parish_id = ?1", parishId);
-  const staleSkills = await d1First(env, "SELECT COUNT(*) AS count FROM directory_person_skill_listings WHERE parish_id = ?1 AND status = 'active' AND consent_recorded_at < ?2", parishId, now - 365 * 86400000);
-  const unclaimed = await d1First(env, "SELECT COUNT(*) AS count FROM directory_people p WHERE p.created_by_parish_id = ?1 AND p.active = 1 AND NOT EXISTS (SELECT 1 FROM directory_person_links l WHERE l.person_id = p.id AND l.link_type = 'platform_user' AND l.active = 1)", parishId);
-  const dueHouseholds = await d1All(
+  const rows = await d1All(
     env,
-    `SELECT h.id, h.display_name, v.verification_status, v.verification_due_at
+    `SELECT h.id, h.display_name, v.verification_status, v.verification_due_at,
+            CASE WHEN EXISTS (
+              SELECT 1
+                FROM directory_household_admins ha
+                JOIN directory_person_links l
+                  ON l.person_id = ha.person_id
+                 AND l.link_type = 'platform_user' AND l.active = 1
+               WHERE ha.household_id = h.id AND ha.active = 1
+            ) THEN 1 ELSE 0 END AS account_managed
        FROM directory_households h
-       JOIN directory_household_verifications v ON v.household_id = h.id AND v.parish_id = h.parish_id
+       LEFT JOIN directory_household_verifications v
+         ON v.household_id = h.id AND v.parish_id = h.parish_id
       WHERE h.parish_id = ?1 AND h.active = 1
-        AND (v.verification_status != 'current' OR v.verification_due_at < ?2)
-      ORDER BY v.verification_due_at ASC, h.display_name ASC
-      LIMIT 20`,
-    parishId,
-    now
+      ORDER BY h.display_name`,
+    parishId
   );
+  const staleSkills = await d1First(env, "SELECT COUNT(*) AS count FROM directory_person_skill_listings WHERE parish_id = ?1 AND status = 'active' AND consent_recorded_at < ?2", parishId, now - 365 * 86400000);
   const unclaimedRecords = await d1All(
     env,
-    `SELECT p.id, p.preferred_name
+    `SELECT p.id, p.preferred_name, hm.household_id, h.display_name AS household_name
        FROM directory_people p
+       LEFT JOIN directory_person_privacy_flags f
+         ON f.parish_id = ?1 AND f.person_id = p.id AND f.active = 1
+       LEFT JOIN directory_household_members hm
+         ON hm.person_id = p.id AND hm.active = 1
+       LEFT JOIN directory_households h
+         ON h.id = hm.household_id AND h.parish_id = ?1 AND h.active = 1
       WHERE p.created_by_parish_id = ?1 AND p.active = 1
+        AND COALESCE(f.is_child, 0) = 0
         AND NOT EXISTS (SELECT 1 FROM directory_person_links l WHERE l.person_id = p.id AND l.link_type = 'platform_user' AND l.active = 1)
+        AND NOT EXISTS (
+          SELECT 1
+            FROM directory_household_members person_hm
+            JOIN directory_household_admins linked_admin
+              ON linked_admin.household_id = person_hm.household_id AND linked_admin.active = 1
+            JOIN directory_person_links admin_link
+              ON admin_link.person_id = linked_admin.person_id
+             AND admin_link.link_type = 'platform_user' AND admin_link.active = 1
+           WHERE person_hm.person_id = p.id AND person_hm.active = 1
+        )
+      GROUP BY p.id, hm.household_id, h.display_name
       ORDER BY p.preferred_name ASC
       LIMIT 20`,
     parishId
@@ -559,17 +600,29 @@ export async function getDirectoryMaintenanceDashboard(env, { context }) {
     parishId,
     now - 365 * 86400000
   );
-  const due = rows.filter((row) => row.verification_status !== "current" || Number(row.verification_due_at || 0) < now);
+  const notStarted = rows.filter((row) => !row.verification_status);
+  const due = rows.filter((row) => row.verification_status && (row.verification_status !== "current" || Number(row.verification_due_at || 0) < now));
+  const unmanagedHouseholds = rows.filter((row) => Number(row.account_managed || 0) !== 1);
   return {
-    householdsCurrent: rows.length - due.length,
+    householdsCurrent: rows.length - due.length - notStarted.length,
     householdsDue: due.filter((row) => Number(row.verification_due_at || 0) >= now).length,
     householdsOverdue: due.filter((row) => Number(row.verification_due_at || 0) < now).length,
+    householdsNotStarted: notStarted.length,
+    accountManagedHouseholds: rows.length - unmanagedHouseholds.length,
+    householdsNeedingAccountAccess: unmanagedHouseholds.length,
     staleSkillConsents: Number(staleSkills?.count || 0),
-    unclaimedPeople: Number(unclaimed?.count || 0),
+    unclaimedPeople: unclaimedRecords.length,
     actions: {
-      overdueHouseholds: dueHouseholds.filter((row) => Number(row.verification_due_at || 0) < now).map((row) => ({ id: row.id, displayName: row.display_name, dueAt: Number(row.verification_due_at || 0) })),
-      dueHouseholds: dueHouseholds.filter((row) => Number(row.verification_due_at || 0) >= now).map((row) => ({ id: row.id, displayName: row.display_name, dueAt: Number(row.verification_due_at || 0) })),
-      unclaimedPeople: unclaimedRecords.map((row) => ({ id: row.id, displayName: row.preferred_name })),
+      overdueHouseholds: due.filter((row) => Number(row.verification_due_at || 0) < now).slice(0, 20).map((row) => ({ id: row.id, displayName: row.display_name, dueAt: Number(row.verification_due_at || 0) })),
+      dueHouseholds: due.filter((row) => Number(row.verification_due_at || 0) >= now).slice(0, 20).map((row) => ({ id: row.id, displayName: row.display_name, dueAt: Number(row.verification_due_at || 0) })),
+      notStartedHouseholds: notStarted.slice(0, 20).map((row) => ({ id: row.id, displayName: row.display_name })),
+      householdsNeedingAccountAccess: unmanagedHouseholds.slice(0, 20).map((row) => ({ id: row.id, displayName: row.display_name })),
+      unclaimedPeople: unclaimedRecords.map((row) => ({
+        id: row.id,
+        displayName: row.preferred_name,
+        householdId: row.household_id || "",
+        householdName: row.household_name || ""
+      })),
       staleSkillConsents: staleSkillRecords.map((row) => ({ id: row.id, personId: row.person_id, displayName: row.preferred_name, skillName: row.skill_name, consentRecordedAt: Number(row.consent_recorded_at || 0) }))
     }
   };
@@ -626,17 +679,24 @@ export async function exportPublishedAdultsCsv(env, { context }) {
 export async function printDirectory(env, { context }) {
   const actor = assertParishActor(actorFromContext(context), parishIdFor(context), VIEW_CAPS);
   const parishId = parishIdFor(context);
-  const rows = await d1All(
+  const adultRows = await d1All(
     env,
     `SELECT h.id AS household_id, h.display_name, p.id AS person_id, p.preferred_name,
-            a.city, a.region,
+            (SELECT a.city FROM directory_addresses a
+              WHERE a.parish_id = ?1 AND a.owner_type = 'household' AND a.owner_id = h.id
+                AND a.active = 1 AND a.visibility = 'directory_members' AND a.protected_address = 0
+              ORDER BY a.is_primary DESC, a.created_at ASC LIMIT 1) AS city,
+            (SELECT a.region FROM directory_addresses a
+              WHERE a.parish_id = ?1 AND a.owner_type = 'household' AND a.owner_id = h.id
+                AND a.active = 1 AND a.visibility = 'directory_members' AND a.protected_address = 0
+              ORDER BY a.is_primary DESC, a.created_at ASC LIMIT 1) AS region,
             n.saint_name, n.feast_month_day,
             (SELECT c.value FROM directory_contact_methods c
-              WHERE c.parish_id = ?1 AND c.owner_type = 'household' AND c.owner_id = h.id
+              WHERE c.parish_id = ?1 AND c.owner_type = 'person' AND c.owner_id = p.id
                 AND c.contact_type = 'email' AND c.active = 1 AND c.visibility = 'directory_members'
               ORDER BY c.is_primary DESC, c.created_at ASC LIMIT 1) AS email,
             (SELECT c.value FROM directory_contact_methods c
-              WHERE c.parish_id = ?1 AND c.owner_type = 'household' AND c.owner_id = h.id
+              WHERE c.parish_id = ?1 AND c.owner_type = 'person' AND c.owner_id = p.id
                 AND c.contact_type = 'phone' AND c.active = 1 AND c.visibility = 'directory_members'
               ORDER BY c.is_primary DESC, c.created_at ASC LIMIT 1) AS phone
        FROM directory_households h
@@ -644,14 +704,51 @@ export async function printDirectory(env, { context }) {
        JOIN directory_people p ON p.id = hm.person_id AND p.active = 1
        JOIN directory_publication_profiles pub ON pub.parish_id = ?1 AND pub.owner_type = 'person' AND pub.owner_id = p.id
        LEFT JOIN directory_person_privacy_flags f ON f.parish_id = ?1 AND f.person_id = p.id AND f.active = 1
-       LEFT JOIN directory_addresses a ON a.parish_id = ?1 AND a.owner_type = 'household' AND a.owner_id = h.id
-         AND a.active = 1 AND a.visibility = 'directory_members' AND a.protected_address = 0
        LEFT JOIN directory_household_namedays n ON n.parish_id = ?1 AND n.household_id = h.id
          AND n.person_id = p.id AND n.active = 1 AND n.visibility = 'directory_members'
       WHERE h.parish_id = ?1 AND h.active = 1 AND pub.status = 'approved' AND pub.approval_status = 'approved'
         AND COALESCE(f.is_child, 0) = 0 AND COALESCE(f.protected_person, 0) = 0
       ORDER BY h.display_name ASC, p.preferred_name ASC`,
     parishId
+  );
+  const approvedChildRows = await d1All(
+    env,
+    `SELECT h.id AS household_id, h.display_name, p.id AS person_id, p.preferred_name,
+            (SELECT a.city FROM directory_addresses a
+              WHERE a.parish_id = ?1 AND a.owner_type = 'household' AND a.owner_id = h.id
+                AND a.active = 1 AND a.visibility = 'directory_members' AND a.protected_address = 0
+              ORDER BY a.is_primary DESC, a.created_at ASC LIMIT 1) AS city,
+            (SELECT a.region FROM directory_addresses a
+              WHERE a.parish_id = ?1 AND a.owner_type = 'household' AND a.owner_id = h.id
+                AND a.active = 1 AND a.visibility = 'directory_members' AND a.protected_address = 0
+              ORDER BY a.is_primary DESC, a.created_at ASC LIMIT 1) AS region,
+            n.saint_name, n.feast_month_day, '' AS email, '' AS phone,
+            request.approved_fields_json
+       FROM directory_child_publication_requests request
+       JOIN directory_people p ON p.id = request.child_person_id AND p.active = 1
+       JOIN directory_household_members hm
+         ON hm.person_id = p.id AND hm.household_id = request.household_id AND hm.active = 1
+       JOIN directory_households h ON h.id = hm.household_id AND h.parish_id = ?1 AND h.active = 1
+       LEFT JOIN directory_person_privacy_flags f ON f.parish_id = ?1 AND f.person_id = p.id AND f.active = 1
+       LEFT JOIN directory_household_namedays n ON n.parish_id = ?1 AND n.household_id = h.id
+         AND n.person_id = p.id AND n.active = 1 AND n.visibility = 'directory_members'
+      WHERE request.parish_id = ?1 AND request.status = 'approved'
+        AND COALESCE(f.is_child, 0) = 1 AND COALESCE(f.protected_person, 0) = 0
+      ORDER BY h.display_name ASC, p.preferred_name ASC`,
+    parishId
+  );
+  const childRows = approvedChildRows
+    .filter((row) => {
+      try {
+        return JSON.parse(row.approved_fields_json || "[]").includes("preferred_name");
+      } catch {
+        return false;
+      }
+    })
+    .map(({ approved_fields_json, ...row }) => row);
+  const rows = [...adultRows, ...childRows].sort((a, b) =>
+    String(a.display_name || "").localeCompare(String(b.display_name || "")) ||
+    String(a.preferred_name || "").localeCompare(String(b.preferred_name || ""))
   );
   await runAtomic(env, [auditStatement({ action: "directory.print.household_directory_generated", actor, parishId, targetType: "directory_print", targetId: `directory-${timestampSlug()}`, metadata: { count: rows.length } })]);
   return { parishId, generatedAt: new Date().toISOString(), privacyReminder: "Private parish directory. Do not distribute outside the parish.", households: rows };

@@ -267,6 +267,29 @@
     .nav-soon-badge { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(184,144,47,0.42); border-radius: 999px; background: rgba(184,144,47,0.14); color: var(--gold); padding: 0.16rem 0.45rem; font-size: 8px; font-weight: 800; letter-spacing: 0.08em; line-height: 1; text-transform: uppercase; white-space: nowrap; }
     .nav-upgrade-badge { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(184,144,47,0.42); border-radius: 999px; background: rgba(184,144,47,0.14); color: var(--gold); padding: 0.16rem 0.45rem; font-size: 8px; font-weight: 800; letter-spacing: 0.08em; line-height: 1; text-transform: uppercase; white-space: nowrap; }
     .nav-upgrade-badge--active { border-color: rgba(46,107,74,0.45); background: rgba(46,107,74,0.12); color: #3a8f5f; }
+    .nav-module-status {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      border: 1px solid rgba(169,58,58,0.42);
+      border-radius: 999px;
+      background: rgba(169,58,58,0.14);
+      color: #e88989;
+      padding: 0.16rem 0.42rem;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .nav-module-status.is-on {
+      border-color: rgba(70,164,106,0.48);
+      background: rgba(70,164,106,0.16);
+      color: #75d59a;
+    }
     .sidebar-links { padding: 1rem 1.25rem; margin-top: auto; }
     .sidebar-link { display: flex; align-items: center; gap: 8px; color: rgba(166,159,145,0.62); font-size: 12px; text-decoration: none; margin-bottom: 0.5rem; transition: color 0.15s ease; }
     .sidebar-link:hover { color: var(--cream); }
@@ -714,6 +737,17 @@
     .option-name { color: var(--deep); font-weight: 700; line-height: 1.25; }
     .option-desc { margin-top: 0.25rem; color: var(--stone); font-size: 12px; line-height: 1.5; }
     .option-item-head { display: flex; justify-content: space-between; gap: 0.65rem; align-items: start; }
+    .option-item-actions { display: flex; align-items: center; gap: 6px; }
+    .option-edit-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid var(--line); }
+    .option-edit-form label { display: grid; gap: 5px; color: var(--stone); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+    .option-edit-form label.full { grid-column: 1 / -1; }
+    .option-edit-form textarea { min-height: 76px; font-family: var(--sans); }
+    .option-edit-actions { grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .option-edit-actions small { color: var(--muted); font-size: 11px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+    @media (max-width: 720px) {
+      .option-edit-form { grid-template-columns: 1fr; }
+      .option-edit-form label.full, .option-edit-actions { grid-column: auto; }
+    }
     .option-empty { font-size: 12px; color: var(--stone); line-height: 1.5; padding: 0.2rem; }
     .option-builder { border-top: 1px solid var(--line); padding: 1rem; background: var(--paper); }
     .option-builder-title { font-size: 12px; font-weight: 700; color: var(--deep); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; }
@@ -871,6 +905,32 @@
     }
     .options-progress-row strong { color: var(--deep); }
     .options-progress-row span { color: var(--stone); }
+    .option-summary-identity { min-width: 0; }
+    .option-summary-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.65rem;
+    }
+    .option-summary-title strong { overflow-wrap: anywhere; }
+    .option-summary-title .btn { flex: 0 0 auto; }
+    .option-summary-description {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+    }
+    .options-summary-edit {
+      grid-column: 1 / -1;
+      margin-top: 0;
+      padding: 0.85rem;
+      border: 1px solid rgba(184,144,47,0.22);
+      border-radius: 12px;
+      background: var(--paper);
+    }
+    .options-summary-empty { padding: 1rem; }
+    .options-summary-builder .section-note { margin: -0.35rem 0 0.8rem; }
     .option-progress {
       height: 8px;
       border-radius: 999px;
@@ -2147,6 +2207,13 @@
       font-weight: 500;
     }
 
+    .stewardship-editor-section > div:first-child p {
+      margin: 0.3rem 0 0;
+      color: var(--stone);
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
     .stewardship-repeat-row {
       display: grid;
       grid-template-columns: minmax(160px, 1fr) minmax(90px, 0.35fr) auto;
@@ -2155,17 +2222,67 @@
       margin-bottom: 0.65rem;
     }
 
-    #stewardshipReportRows .stewardship-repeat-row,
+    #stewardshipReportRows .stewardship-repeat-row {
+      grid-template-columns: minmax(120px, 0.3fr) minmax(150px, 0.45fr) minmax(240px, 1fr) minmax(150px, 0.42fr) auto;
+    }
+
+    #stewardshipNomineeRows .stewardship-repeat-row {
+      grid-template-columns: minmax(170px, 0.55fr) minmax(150px, 0.45fr) minmax(220px, 1fr) minmax(170px, 0.55fr) auto;
+    }
+
     #stewardshipResolutionRows .stewardship-repeat-row {
-      grid-template-columns: minmax(120px, 0.28fr) minmax(160px, 0.4fr) minmax(220px, 1fr) auto;
+      grid-template-columns: minmax(190px, 0.32fr) minmax(0, 1fr) auto;
+    }
+
+    .stewardship-row-field {
+      min-width: 0;
+    }
+
+    .stewardship-row-field > span {
+      min-height: 1.2rem;
+      color: var(--stone);
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      line-height: 1.3;
+      text-transform: uppercase;
+    }
+
+    .stewardship-row-field > span small {
+      color: rgba(79, 86, 92, 0.66);
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .stewardship-resolution-text textarea {
+      min-height: 13rem;
+      resize: vertical;
+      line-height: 1.55;
+    }
+
+    .stewardship-packet-layout-section > div:first-child {
+      display: block;
+    }
+
+    .stewardship-packet-layout-section p {
+      margin: 0.3rem 0 0;
+      color: var(--stone);
+      font-size: 0.84rem;
+      line-height: 1.5;
+    }
+
+    .stewardship-packet-layout-section label small {
+      color: var(--stone);
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0;
+      line-height: 1.45;
+      text-transform: none;
     }
 
     #stewardshipFundRows .stewardship-repeat-row {
       grid-template-columns: minmax(160px, 1fr) repeat(4, minmax(90px, 0.45fr)) auto;
-    }
-
-    #stewardshipNomineeRows .stewardship-repeat-row {
-      grid-template-columns: minmax(160px, 1fr) minmax(140px, 0.7fr) auto;
     }
 
     .error-text {
@@ -2585,6 +2702,28 @@
       .bookstore-starter-fields {
         grid-template-columns: 1fr;
       }
+    }
+    .mobile-module-status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: -0.08rem;
+      border: 1px solid rgba(169,58,58,0.42);
+      border-radius: 999px;
+      background: rgba(169,58,58,0.12);
+      color: #a93a3a;
+      padding: 0.08rem 0.34rem;
+      font-size: 7px;
+      font-style: normal;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+    .mobile-module-status.is-on {
+      border-color: rgba(46,107,74,0.42);
+      background: rgba(46,107,74,0.12);
+      color: #2e6b4a;
     }
     .mobile-requirement-label {
       display: block;
@@ -3345,4 +3484,194 @@
       .dir-admin-access-actions {
         display: grid;
       }
+    }
+
+    /* Authoritative financial snapshots + compact outside-giving intake */
+    .sw-fin-source-note,
+    .sw-fin-authority-status,
+    .sw-outside-giving-head,
+    .sw-fin-revision-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+    }
+    .sw-fin-source-note {
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      margin: 0 0 0.8rem;
+      color: var(--stone);
+      font-size: 0.75rem;
+    }
+    .sw-fin-source-note span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .sw-fin-source-dot {
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .sw-fin-source-dot--auto { background: var(--deep); }
+    .sw-fin-source-dot--editable { background: var(--gold); }
+    .sw-fin-authority-status {
+      padding: 0.75rem 0.85rem;
+      margin-bottom: 0.85rem;
+      border: 1px solid rgba(8, 37, 54, 0.14);
+      border-radius: 10px;
+      background: rgba(8, 37, 54, 0.045);
+    }
+    .sw-fin-authority-status strong,
+    .sw-fin-authority-status span {
+      display: block;
+    }
+    .sw-fin-authority-status strong { color: var(--deep); }
+    .sw-fin-authority-status span {
+      color: var(--stone);
+      font-size: 0.76rem;
+      text-align: right;
+    }
+    .sw-fin-revisions {
+      margin-top: 1rem;
+      border-top: 1px solid rgba(32, 31, 29, 0.09);
+      padding-top: 0.85rem;
+    }
+    .sw-fin-revision-row {
+      padding: 0.55rem 0;
+      color: var(--stone);
+      font-size: 0.76rem;
+      border-top: 1px solid rgba(32, 31, 29, 0.06);
+    }
+    .sw-fin-revision-row span:first-child {
+      color: var(--deep);
+      font-weight: 700;
+    }
+    .sw-fin-derived-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.7rem;
+      margin: 0.8rem 0 1rem;
+    }
+    .sw-fin-derived-grid > div {
+      padding: 0.75rem;
+      border-radius: 9px;
+      background: rgba(8, 37, 54, 0.055);
+      border: 1px solid rgba(8, 37, 54, 0.1);
+    }
+    .sw-fin-derived-grid span,
+    .sw-fin-derived-grid strong {
+      display: block;
+    }
+    .sw-fin-derived-grid span {
+      color: var(--stone);
+      font-size: 0.75rem;
+      margin-bottom: 0.25rem;
+    }
+    .sw-fin-derived-grid strong {
+      color: var(--deep);
+      font-family: var(--serif);
+      font-size: 1.3rem;
+    }
+    .sw-outside-giving-panel {
+      margin-top: 1rem;
+      padding: 1rem;
+      border: 1px solid rgba(8, 37, 54, 0.14);
+      border-radius: 12px;
+      background: #f8fafb;
+    }
+    .sw-outside-giving-head {
+      align-items: flex-start;
+      margin-bottom: 0.85rem;
+    }
+    .sw-outside-giving-head strong {
+      color: var(--deep);
+      font-family: var(--serif);
+      font-size: 1.05rem;
+    }
+    .sw-outside-giving-head p {
+      margin: 0.2rem 0 0;
+      color: var(--stone);
+      font-size: 0.78rem;
+    }
+    .sw-income-form-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(140px, 1fr));
+      gap: 0.7rem;
+      align-items: end;
+    }
+    .sw-income-form-row label {
+      display: grid;
+      gap: 0.28rem;
+      color: var(--stone);
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    .sw-income-form-row input,
+    .sw-income-form-row select {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid rgba(32, 31, 29, 0.16);
+      border-radius: 7px;
+      background: #fff;
+      color: var(--ink);
+      padding: 0.62rem 0.68rem;
+      font: inherit;
+      font-weight: 500;
+    }
+    .sw-income-submit-btn { min-height: 2.55rem; }
+    .sw-income-form-status {
+      min-height: 1.1rem;
+      margin-top: 0.45rem;
+      color: var(--stone);
+      font-size: 0.76rem;
+    }
+    .sw-income-form-status--ok { color: var(--deep); }
+    .sw-income-form-status--error { color: #9b2c2c; }
+    .sw-income-by-source {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 0.35rem;
+    }
+    .sw-income-by-source span {
+      padding: 0.34rem 0.55rem;
+      border-radius: 999px;
+      color: var(--deep);
+      background: rgba(8, 37, 54, 0.06);
+      font-size: 0.72rem;
+    }
+    .sw-income-delete-btn {
+      border: 0;
+      background: transparent;
+      color: #9b2c2c;
+      cursor: pointer;
+      font-size: 1.15rem;
+    }
+
+    @media (max-width: 980px) {
+      .sw-income-form-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 620px) {
+      .sw-tool-card-actions {
+        width: 100%;
+        align-items: stretch;
+      }
+      .sw-tool-card-actions .sw-action-btn,
+      .sw-tool-card-actions .sw-year-select {
+        width: 100%;
+      }
+      .sw-fin-authority-status,
+      .sw-outside-giving-head,
+      .sw-fin-revision-row {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .sw-fin-authority-status span { text-align: left; }
+      .sw-fin-derived-grid,
+      .sw-income-form-row { grid-template-columns: 1fr; }
+      .sw-income-submit-btn { width: 100%; }
+      .sw-income-table { min-width: 680px; }
     }

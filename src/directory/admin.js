@@ -180,7 +180,8 @@ export async function resolveDirectoryAdminContext(env, { request, parishId }) {
       canViewAudit: hasAny(actor, [DIRECTORY_CAPABILITIES.auditView, DIRECTORY_CAPABILITIES.manage]),
       canViewPrivateContact: hasAny(actor, [DIRECTORY_CAPABILITIES.privateContactView, DIRECTORY_CAPABILITIES.manage]),
       canReviewDuplicates: hasAny(actor, [DIRECTORY_CAPABILITIES.duplicatesReview, DIRECTORY_CAPABILITIES.manage]),
-      canMergeDuplicates: hasAny(actor, [DIRECTORY_CAPABILITIES.duplicatesMerge, DIRECTORY_CAPABILITIES.manage])
+      canMergeDuplicates: hasAny(actor, [DIRECTORY_CAPABILITIES.duplicatesMerge, DIRECTORY_CAPABILITIES.manage]),
+      canManageInvitations: hasAny(actor, ["directory.invitations.manage", DIRECTORY_CAPABILITIES.manage])
     },
     entitlement: { mission: true, parish: true, phase3AAvailable: true }
   };
@@ -210,7 +211,8 @@ const PARISH_DASHBOARD_DIRECTORY_CAPABILITIES = Object.freeze([
   DIRECTORY_CAPABILITIES.settingsManage,
   DIRECTORY_CAPABILITIES.privateContactView,
   DIRECTORY_CAPABILITIES.auditView,
-  DIRECTORY_CAPABILITIES.mediaReprocess
+  DIRECTORY_CAPABILITIES.mediaReprocess,
+  "directory.invitations.manage"
 ]);
 
 export async function requireParishDashboardDirectoryAccess(request, env, { parishId } = {}) {
@@ -255,7 +257,8 @@ export async function requireParishDashboardDirectoryAccess(request, env, { pari
       canViewAudit: hasAny(actor, [DIRECTORY_CAPABILITIES.auditView, DIRECTORY_CAPABILITIES.manage]),
       canViewPrivateContact: hasAny(actor, [DIRECTORY_CAPABILITIES.privateContactView, DIRECTORY_CAPABILITIES.manage]),
       canReviewDuplicates: hasAny(actor, [DIRECTORY_CAPABILITIES.duplicatesReview, DIRECTORY_CAPABILITIES.manage]),
-      canMergeDuplicates: hasAny(actor, [DIRECTORY_CAPABILITIES.duplicatesMerge, DIRECTORY_CAPABILITIES.manage])
+      canMergeDuplicates: hasAny(actor, [DIRECTORY_CAPABILITIES.duplicatesMerge, DIRECTORY_CAPABILITIES.manage]),
+      canManageInvitations: hasAny(actor, ["directory.invitations.manage", DIRECTORY_CAPABILITIES.manage])
     },
     entitlement: { mission: true, parish: true, phase3AAvailable: true }
   };
@@ -1153,6 +1156,16 @@ export async function listDirectoryPeopleAdmin(env, { context, query = "", limit
             MAX(COALESCE(f.protected_person, 0)) AS protected_person,
             MAX(COALESCE(f.is_child, 0)) AS is_child,
             CASE WHEN COUNT(DISTINCT l.id) > 0 THEN 1 ELSE 0 END AS claimed,
+            CASE WHEN EXISTS (
+              SELECT 1
+                FROM directory_household_members person_hm
+                JOIN directory_household_admins linked_admin
+                  ON linked_admin.household_id = person_hm.household_id AND linked_admin.active = 1
+                JOIN directory_person_links admin_link
+                  ON admin_link.person_id = linked_admin.person_id
+                 AND admin_link.link_type = 'platform_user' AND admin_link.active = 1
+               WHERE person_hm.person_id = p.id AND person_hm.active = 1
+            ) THEN 1 ELSE 0 END AS household_managed,
             photo.id AS photo_id, photo.owner_type AS photo_owner_type, photo.owner_id AS photo_owner_id,
             photo.media_purpose AS photo_media_purpose, photo.lifecycle_status AS photo_lifecycle_status,
             photo.processing_status AS photo_processing_status, photo.visibility AS photo_visibility,
@@ -1186,6 +1199,7 @@ export async function listDirectoryPeopleAdmin(env, { context, query = "", limit
     protected: context.permissions.canManageProtected ? Number(row.protected_person || 0) === 1 : Number(row.protected_person || 0) === 1,
     child: Number(row.is_child || 0) === 1,
     claimed: Number(row.claimed || 0) === 1,
+    householdManaged: Number(row.household_managed || 0) === 1,
     photo: adminMediaDto({
       id: row.photo_id,
       parish_id: context.parishId,
@@ -1208,12 +1222,40 @@ export async function getDirectoryPersonAdmin(env, { context, personId }) {
   const id = cleanText(personId, { required: true, max: 180, field: "personId" });
   const row = await d1First(env, "SELECT * FROM directory_people WHERE id = ?1", id);
   if (!row) throw new DirectoryServiceError("not_found", "Directory person was not found.", 404);
-  const [households, affiliations, publication, contacts, notes] = await Promise.all([
+  const [households, affiliations, publication, contacts, notes, flags, accountLink, householdManager, invitation] = await Promise.all([
     d1All(env, `SELECT h.id, h.display_name, hm.relationship FROM directory_household_members hm JOIN directory_households h ON h.id = hm.household_id WHERE hm.person_id = ?1 AND h.parish_id = ?2 AND hm.active = 1`, id, context.parishId),
     d1All(env, "SELECT status, active FROM directory_parish_affiliations WHERE person_id = ?1 AND parish_id = ?2", id, context.parishId),
     d1First(env, "SELECT status, approval_status FROM directory_publication_profiles WHERE parish_id = ?1 AND owner_type = 'person' AND owner_id = ?2 AND active = 1", context.parishId, id),
     context.permissions.canViewPrivateContact ? d1All(env, "SELECT contact_type, label, value, visibility FROM directory_contact_methods WHERE parish_id = ?1 AND owner_type = 'person' AND owner_id = ?2 AND active = 1", context.parishId, id) : [],
-    context.permissions.canViewNotes ? listDirectoryNotes(env, { context, targetType: "person", targetId: id }) : []
+    context.permissions.canViewNotes ? listDirectoryNotes(env, { context, targetType: "person", targetId: id }) : [],
+    d1First(env, "SELECT is_child FROM directory_person_privacy_flags WHERE parish_id = ?1 AND person_id = ?2 AND active = 1 ORDER BY updated_at DESC LIMIT 1", context.parishId, id),
+    d1First(env, "SELECT id FROM directory_person_links WHERE person_id = ?1 AND link_type = 'platform_user' AND active = 1", id),
+    d1First(
+      env,
+      `SELECT linked_admin.person_id
+         FROM directory_household_members person_hm
+         JOIN directory_households h
+           ON h.id = person_hm.household_id AND h.parish_id = ?2 AND h.active = 1
+         JOIN directory_household_admins linked_admin
+           ON linked_admin.household_id = person_hm.household_id AND linked_admin.active = 1
+         JOIN directory_person_links admin_link
+           ON admin_link.person_id = linked_admin.person_id
+          AND admin_link.link_type = 'platform_user' AND admin_link.active = 1
+        WHERE person_hm.person_id = ?1 AND person_hm.active = 1
+        LIMIT 1`,
+      id,
+      context.parishId
+    ),
+    d1First(
+      env,
+      `SELECT id, status, recipient_email, intended_household_id, created_at, expires_at
+         FROM directory_invitations
+        WHERE parish_id = ?1 AND intended_person_id = ?2
+          AND status IN ('pending','sent','opened','accepted')
+        ORDER BY created_at DESC LIMIT 1`,
+      context.parishId,
+      id
+    )
   ]);
   return {
     person: { id: row.id, preferredName: row.preferred_name, legalName: context.permissions.canManagePeople ? row.legal_name || "" : maskValue(row.legal_name), active: Number(row.active || 0) === 1, version: row.updated_at },
@@ -1221,7 +1263,20 @@ export async function getDirectoryPersonAdmin(env, { context, personId }) {
     affiliations,
     publication: publication || null,
     contacts: contacts.map((contact) => ({ ...contact, value: context.permissions.canViewPrivateContact ? contact.value : maskValue(contact.value, contact.contact_type) })),
-    notes
+    notes,
+    accountAccess: {
+      child: Number(flags?.is_child || 0) === 1,
+      linked: Boolean(accountLink),
+      householdManaged: Boolean(householdManager),
+      activeInvitation: invitation ? {
+        id: invitation.id,
+        status: invitation.status,
+        recipientEmail: invitation.recipient_email || "",
+        householdId: invitation.intended_household_id || "",
+        createdAt: Number(invitation.created_at || 0),
+        expiresAt: Number(invitation.expires_at || 0)
+      } : null
+    }
   };
 }
 
@@ -1248,8 +1303,57 @@ export async function listDirectoryHouseholdsAdmin(env, { context, query = "", l
     `SELECT h.id, h.display_name, h.active, h.updated_at,
             COUNT(DISTINCT hm.person_id) AS member_count,
             COUNT(DISTINCT ha.person_id) AS admin_count,
-      COUNT(DISTINCT cr.id) AS pending_request_count,
+            COUNT(DISTINCT cr.id) AS pending_request_count,
             MAX(COALESCE(a.protected_address, 0)) AS protected_address,
+            (SELECT c.value
+               FROM directory_contact_methods c
+               JOIN directory_household_members hm_contact ON hm_contact.person_id = c.owner_id AND hm_contact.active = 1
+              WHERE hm_contact.household_id = h.id AND c.parish_id = h.parish_id
+                AND c.owner_type = 'person' AND c.contact_type = 'email' AND c.active = 1
+              ORDER BY CASE hm_contact.relationship WHEN 'head' THEN 0 WHEN 'spouse' THEN 1 ELSE 2 END,
+                       c.is_primary DESC, c.created_at ASC LIMIT 1) AS staff_email,
+            (SELECT c.visibility
+               FROM directory_contact_methods c
+               JOIN directory_household_members hm_contact ON hm_contact.person_id = c.owner_id AND hm_contact.active = 1
+              WHERE hm_contact.household_id = h.id AND c.parish_id = h.parish_id
+                AND c.owner_type = 'person' AND c.contact_type = 'email' AND c.active = 1
+              ORDER BY CASE hm_contact.relationship WHEN 'head' THEN 0 WHEN 'spouse' THEN 1 ELSE 2 END,
+                       c.is_primary DESC, c.created_at ASC LIMIT 1) AS email_visibility,
+            (SELECT c.value
+               FROM directory_contact_methods c
+               JOIN directory_household_members hm_contact ON hm_contact.person_id = c.owner_id AND hm_contact.active = 1
+              WHERE hm_contact.household_id = h.id AND c.parish_id = h.parish_id
+                AND c.owner_type = 'person' AND c.contact_type = 'phone' AND c.active = 1
+              ORDER BY CASE hm_contact.relationship WHEN 'head' THEN 0 WHEN 'spouse' THEN 1 ELSE 2 END,
+                       c.is_primary DESC, c.created_at ASC LIMIT 1) AS staff_phone,
+            (SELECT c.visibility
+               FROM directory_contact_methods c
+               JOIN directory_household_members hm_contact ON hm_contact.person_id = c.owner_id AND hm_contact.active = 1
+              WHERE hm_contact.household_id = h.id AND c.parish_id = h.parish_id
+                AND c.owner_type = 'person' AND c.contact_type = 'phone' AND c.active = 1
+              ORDER BY CASE hm_contact.relationship WHEN 'head' THEN 0 WHEN 'spouse' THEN 1 ELSE 2 END,
+                       c.is_primary DESC, c.created_at ASC LIMIT 1) AS phone_visibility,
+            (SELECT da.line1 FROM directory_addresses da
+              WHERE da.parish_id = h.parish_id AND da.owner_type = 'household' AND da.owner_id = h.id AND da.active = 1
+              ORDER BY da.is_primary DESC, da.created_at ASC LIMIT 1) AS address_line1,
+            (SELECT da.line2 FROM directory_addresses da
+              WHERE da.parish_id = h.parish_id AND da.owner_type = 'household' AND da.owner_id = h.id AND da.active = 1
+              ORDER BY da.is_primary DESC, da.created_at ASC LIMIT 1) AS address_line2,
+            (SELECT da.city FROM directory_addresses da
+              WHERE da.parish_id = h.parish_id AND da.owner_type = 'household' AND da.owner_id = h.id AND da.active = 1
+              ORDER BY da.is_primary DESC, da.created_at ASC LIMIT 1) AS address_city,
+            (SELECT da.region FROM directory_addresses da
+              WHERE da.parish_id = h.parish_id AND da.owner_type = 'household' AND da.owner_id = h.id AND da.active = 1
+              ORDER BY da.is_primary DESC, da.created_at ASC LIMIT 1) AS address_region,
+            (SELECT da.postal_code FROM directory_addresses da
+              WHERE da.parish_id = h.parish_id AND da.owner_type = 'household' AND da.owner_id = h.id AND da.active = 1
+              ORDER BY da.is_primary DESC, da.created_at ASC LIMIT 1) AS address_postal_code,
+            (SELECT da.country FROM directory_addresses da
+              WHERE da.parish_id = h.parish_id AND da.owner_type = 'household' AND da.owner_id = h.id AND da.active = 1
+              ORDER BY da.is_primary DESC, da.created_at ASC LIMIT 1) AS address_country,
+            (SELECT da.visibility FROM directory_addresses da
+              WHERE da.parish_id = h.parish_id AND da.owner_type = 'household' AND da.owner_id = h.id AND da.active = 1
+              ORDER BY da.is_primary DESC, da.created_at ASC LIMIT 1) AS address_visibility,
             photo.id AS photo_id, photo.owner_type AS photo_owner_type, photo.owner_id AS photo_owner_id,
             photo.media_purpose AS photo_media_purpose, photo.lifecycle_status AS photo_lifecycle_status,
             photo.processing_status AS photo_processing_status, photo.visibility AS photo_visibility,
@@ -1281,6 +1385,19 @@ export async function listDirectoryHouseholdsAdmin(env, { context, query = "", l
     administratorCount: Number(row.admin_count || 0),
     pendingRequestCount: Number(row.pending_request_count || 0),
     protectedAddress: Number(row.protected_address || 0) === 1,
+    staffContact: context.permissions.canViewPrivateContact ? {
+      email: { value: row.staff_email || "", visibility: row.email_visibility || "private" },
+      phone: { value: row.staff_phone || "", visibility: row.phone_visibility || "private" },
+      address: {
+        line1: row.address_line1 || "",
+        line2: row.address_line2 || "",
+        city: row.address_city || "",
+        region: row.address_region || "",
+        postalCode: row.address_postal_code || "",
+        country: row.address_country || "",
+        visibility: row.address_visibility || "private"
+      }
+    } : null,
     photo: adminMediaDto({
       id: row.photo_id,
       parish_id: context.parishId,
@@ -1303,14 +1420,96 @@ export async function getDirectoryHouseholdAdmin(env, { context, householdId }) 
   const id = cleanText(householdId, { required: true, max: 180, field: "householdId" });
   const household = await d1First(env, "SELECT * FROM directory_households WHERE id = ?1 AND parish_id = ?2", id, context.parishId);
   if (!household) throw new DirectoryServiceError("not_found", "Directory household was not found.", 404);
-  const [members, admins, publication, photo, notes] = await Promise.all([
-    d1All(env, `SELECT p.id, p.preferred_name, hm.relationship FROM directory_household_members hm JOIN directory_people p ON p.id = hm.person_id WHERE hm.household_id = ?1 AND hm.active = 1 ORDER BY p.preferred_name`, id),
-    d1All(env, `SELECT p.id, p.preferred_name FROM directory_household_admins ha JOIN directory_people p ON p.id = ha.person_id WHERE ha.household_id = ?1 AND ha.active = 1 ORDER BY p.preferred_name`, id),
+  const [members, admins, publication, photo, notes, contacts, addresses] = await Promise.all([
+    d1All(
+      env,
+      `SELECT p.id, p.preferred_name, hm.relationship,
+              MAX(COALESCE(f.is_child, 0)) AS is_child,
+              CASE WHEN COUNT(DISTINCT l.id) > 0 THEN 1 ELSE 0 END AS account_linked
+         FROM directory_household_members hm
+         JOIN directory_people p ON p.id = hm.person_id
+         LEFT JOIN directory_person_privacy_flags f
+           ON f.parish_id = ?2 AND f.person_id = p.id AND f.active = 1
+         LEFT JOIN directory_person_links l
+           ON l.person_id = p.id AND l.link_type = 'platform_user' AND l.active = 1
+        WHERE hm.household_id = ?1 AND hm.active = 1
+        GROUP BY p.id, hm.relationship
+        ORDER BY p.preferred_name`,
+      id,
+      context.parishId
+    ),
+    d1All(
+      env,
+      `SELECT p.id, p.preferred_name,
+              CASE WHEN COUNT(DISTINCT l.id) > 0 THEN 1 ELSE 0 END AS account_linked
+         FROM directory_household_admins ha
+         JOIN directory_people p ON p.id = ha.person_id
+         LEFT JOIN directory_person_links l
+           ON l.person_id = p.id AND l.link_type = 'platform_user' AND l.active = 1
+        WHERE ha.household_id = ?1 AND ha.active = 1
+        GROUP BY p.id
+        ORDER BY p.preferred_name`,
+      id
+    ),
     d1First(env, "SELECT status, approval_status FROM directory_publication_profiles WHERE parish_id = ?1 AND owner_type = 'household' AND owner_id = ?2 AND active = 1", context.parishId, id),
     currentAdminMediaForOwner(env, { parishId: context.parishId, ownerType: "household", ownerId: id }),
-    context.permissions.canViewNotes ? listDirectoryNotes(env, { context, targetType: "household", targetId: id }) : []
+    context.permissions.canViewNotes ? listDirectoryNotes(env, { context, targetType: "household", targetId: id }) : [],
+    context.permissions.canViewPrivateContact ? d1All(
+      env,
+      `SELECT c.contact_type, c.label, c.value, c.visibility, c.is_primary, p.preferred_name, p.id AS person_id
+         FROM directory_household_members hm
+         JOIN directory_people p ON p.id = hm.person_id
+         JOIN directory_contact_methods c ON c.owner_type = 'person' AND c.owner_id = p.id AND c.active = 1
+        WHERE hm.household_id = ?1 AND hm.active = 1 AND c.parish_id = ?2
+        ORDER BY CASE hm.relationship WHEN 'head' THEN 0 WHEN 'spouse' THEN 1 ELSE 2 END,
+                 c.contact_type, c.is_primary DESC, c.created_at ASC`,
+      id,
+      context.parishId
+    ) : [],
+    context.permissions.canViewPrivateContact ? d1All(
+      env,
+      `SELECT address_type, line1, line2, city, region, postal_code, country, visibility, is_primary
+         FROM directory_addresses
+        WHERE parish_id = ?1 AND owner_type = 'household' AND owner_id = ?2 AND active = 1
+        ORDER BY is_primary DESC, created_at ASC`,
+      context.parishId,
+      id
+    ) : []
   ]);
-  return { household: { id, displayName: household.display_name, active: Number(household.active || 0) === 1, version: household.updated_at }, members, administrators: admins, publication: publication || null, photo, notes };
+  return {
+    household: { id, displayName: household.display_name, active: Number(household.active || 0) === 1, version: household.updated_at },
+    members: members.map((member) => ({
+      ...member,
+      child: Number(member.is_child || 0) === 1,
+      accountLinked: Number(member.account_linked || 0) === 1
+    })),
+    administrators: admins.map((admin) => ({ ...admin, accountLinked: Number(admin.account_linked || 0) === 1 })),
+    accountManaged: admins.some((admin) => Number(admin.account_linked || 0) === 1),
+    publication: publication || null,
+    photo,
+    notes,
+    contacts: contacts.map((contact) => ({
+      contactType: contact.contact_type,
+      label: contact.label,
+      value: contact.value,
+      visibility: contact.visibility || "private",
+      primary: Number(contact.is_primary || 0) === 1,
+      personId: contact.person_id,
+      personName: contact.preferred_name
+    })),
+    addresses: addresses.map((address) => ({
+      addressType: address.address_type,
+      line1: address.line1 || "",
+      line2: address.line2 || "",
+      city: address.city || "",
+      region: address.region || "",
+      postalCode: address.postal_code || "",
+      country: address.country || "",
+      visibility: address.visibility || "private",
+      primary: Number(address.is_primary || 0) === 1,
+      directoryDisplay: [address.city, address.region].filter(Boolean).join(", ")
+    }))
+  };
 }
 
 export async function applyHouseholdDirectCorrection(env, { context, householdId, patch = {}, expectedVersion, correlationId = "" }) {

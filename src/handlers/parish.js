@@ -67,7 +67,8 @@ import {
 } from "../lib/core.js";
 import { loadGivingCatalogFromAccounting, synchronizeGivingCatalogWithAccounting } from "../accounting/source-wiring.js";
 
-import { bookstoreEnabledFor, entitlementsSummary, givingFeatureAccess, hasParishPlusAccess, sacramentsEnabledFor, stewardshipToolAccess, tierIncludesModule, tierIncludesParishPlus } from "../lib/entitlements.js";
+import { bookstoreEnabledFor, directoryEnabledFor, entitlementsSummary, givingFeatureAccess, hasParishPlusAccess, sacramentsEnabledFor, stewardshipToolAccess, tierIncludesModule, tierIncludesParishPlus } from "../lib/entitlements.js";
+import { getDirectorySettings } from "../directory/settings.js";
 
 import {
   createTaxExemptionClaim,
@@ -2998,7 +2999,7 @@ export async function handleCheckout(request, env) {
     : "proskomedia_liturgy";
   const isFestalAlms = ["alms", "feast"].includes(normalizedGiftType);
   const checkoutFund = isFestalAlms ? "Benevolence Fund" : body.fund || "";
-  const checkoutFundId = isFestalAlms ? "benevolence" : body.fundId || "";
+  const checkoutFundId = isFestalAlms ? "benevolence-fund" : body.fundId || "";
   const donor = await requireDonor(request, env);
   const donorDashboardReturn = Boolean(donor?.email && normalizeEmail(donor.email) === normalizedDonorEmail);
   const campaignPageCheckout = String(body.source || "").toLowerCase() === "campaign_page";
@@ -3854,7 +3855,7 @@ export async function handleParishSacramentAvailability(request, env, parishId) 
       priestName: r.priest_name || "", priestEmail: r.priest_email || ""
     })),
     blackouts: blackouts.map((b) => ({
-      id: b.id, date: b.date, reason: b.reason || "",
+      id: b.id, date: b.date, startDate: b.date, endDate: b.end_date || b.date, reason: b.reason || "",
       priestName: b.priest_name || "", priestEmail: b.priest_email || ""
     }))
   });
@@ -3922,9 +3923,13 @@ export async function handleParishAvailabilityBlackoutCreate(request, env, paris
 
   let body = {};
   try { body = await request.json(); } catch { body = {}; }
-  const date = String(body.date || "").trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return json({ error: "Choose a valid date." }, { status: 400 });
+  const startDate = String(body.startDate || body.date || "").trim();
+  const endDate = String(body.endDate || startDate).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+    return json({ error: "Choose a valid start and end date." }, { status: 400 });
+  }
+  if (endDate < startDate) {
+    return json({ error: "The end date must be on or after the start date." }, { status: 400 });
   }
   const reason = String(body.reason || "").trim().slice(0, 200);
   const priestName = String(body.priestName || "").trim().slice(0, 120);
@@ -3932,9 +3937,9 @@ export async function handleParishAvailabilityBlackoutCreate(request, env, paris
 
   const id = generateSecret("blackout");
   await d1Run(env, `
-    INSERT INTO parish_availability_blackouts (id, parish_id, date, reason, priest_name, priest_email, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
-  `, id, parishId, date, reason || null, priestName || null, priestEmail || null);
+    INSERT INTO parish_availability_blackouts (id, parish_id, date, end_date, reason, priest_name, priest_email, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+  `, id, parishId, startDate, endDate, reason || null, priestName || null, priestEmail || null);
 
   return json({ ok: true, id });
 }
@@ -5845,7 +5850,7 @@ export function parishDashboardPayload(parishId, registration) {
     recurringGivingEnabled: registration.recurringGivingEnabled ?? true,
     candlesEnabled: registration.candlesEnabled ?? true,
     commemorationsEnabled: registration.commemorationsEnabled ?? true,
-    bookstoreEnabled: registration.bookstoreEnabled ?? false,
+    bookstoreEnabled: bookstoreEnabledFor(registration),
     stewardshipActive: stewardshipToolAccess(registration),
     parishPlusIncludedInTier: tierIncludesParishPlus(registration),
     entitlements: entitlementsSummary(registration),
@@ -5859,18 +5864,51 @@ function normalizeSacramentPriests(registration = {}) {
   const saved = Array.isArray(registration.sacramentPriests) ? registration.sacramentPriests : [];
   const rows = saved.map((priest) => ({
     name: String(priest?.name || "").trim().slice(0, 120),
-    email: String(priest?.email || "").trim().slice(0, 180)
+    email: String(priest?.email || "").trim().slice(0, 180),
+    serviceTypes: sanitizeSacramentServiceTypes(priest?.serviceTypes),
+    customServices: sanitizeCustomSacramentServices(priest?.customServices)
   })).filter((priest) => priest.name);
   if (rows.length) return rows.slice(0, 12);
   const fallbackName = [registration.priestFirst, registration.priestLast].filter(Boolean).join(" ").trim() || "Parish priest";
-  return [{ name: fallbackName, email: registration.priestEmail || "" }];
+  return [{
+    name: fallbackName,
+    email: registration.priestEmail || "",
+    serviceTypes: defaultSacramentServiceTypes(),
+    customServices: []
+  }];
+}
+
+const DEFAULT_SACRAMENT_SERVICE_TYPES = [
+  "house_blessing", "confession", "counseling", "baptism", "wedding"
+];
+const EDITABLE_SACRAMENT_SERVICE_TYPES = new Set([
+  ...DEFAULT_SACRAMENT_SERVICE_TYPES, "home_visit", "office_visit", "anointing"
+]);
+
+function defaultSacramentServiceTypes() {
+  return [...DEFAULT_SACRAMENT_SERVICE_TYPES];
+}
+
+function sanitizeSacramentServiceTypes(value) {
+  if (!Array.isArray(value)) return defaultSacramentServiceTypes();
+  return [...new Set(value.map((type) => String(type || "").trim()).filter((type) => EDITABLE_SACRAMENT_SERVICE_TYPES.has(type)))];
+}
+
+function sanitizeCustomSacramentServices(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map((service) => ({
+    id: String(service?.id || "").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 80),
+    label: String(service?.label || "").trim().slice(0, 120)
+  })).filter((service) => service.id && service.label).slice(0, 20);
 }
 
 function sanitizeSacramentPriests(value, current) {
   if (!Array.isArray(value)) return normalizeSacramentPriests(current);
   const rows = value.map((priest) => ({
     name: String(priest?.name || "").trim().slice(0, 120),
-    email: String(priest?.email || "").trim().slice(0, 180)
+    email: String(priest?.email || "").trim().slice(0, 180),
+    serviceTypes: sanitizeSacramentServiceTypes(priest?.serviceTypes),
+    customServices: sanitizeCustomSacramentServices(priest?.customServices)
   })).filter((priest) => priest.name);
   return rows.slice(0, 12);
 }
@@ -5901,10 +5939,14 @@ export async function handleParishDashboard(request, env, parishId) {
 
   if (request.method === "GET") {
     const { registration } = found;
-    const catalog = await loadGivingCatalogFromAccounting(env, parishId, registration);
+    const [catalog, directorySettings] = await Promise.all([
+      loadGivingCatalogFromAccounting(env, parishId, registration),
+      getDirectorySettings(env, parishId)
+    ]);
     const dashboardParish = await enrichParishGivingOptions(env, {
       ...parishDashboardPayload(parishId, registration),
-      id: parishId
+      id: parishId,
+      directoryEnabled: directoryEnabledFor(registration, directorySettings)
     });
     return json({
       // The parish-managed Funds & Alms record is authoritative. Accounting

@@ -143,12 +143,17 @@ export function entitlementsSummary(registration) {
         source: moduleSource(registration, "stewardshipHealth")
       },
       sacraments: {
-        included: sacramentsEnabledFor(registration),
+        // Tier access and the parish's donor-facing on/off choice are
+        // separate concerns. The dashboard workspace must remain available
+        // to an entitled parish so staff can turn the feature on.
+        included: hasModuleAccess(registration, "sacraments"),
         parishHasEnabled: Boolean(registration?.sacramentsEnabled),
         source: moduleSource(registration, "sacraments")
       },
       bookstore: {
-        included: bookstoreEnabledFor(registration),
+        // Tier access and the parish's donor-facing on/off choice are
+        // separate concerns, just as they are for Sacraments.
+        included: hasModuleAccess(registration, "bookstore"),
         parishHasEnabled: registration?.bookstoreEnabled !== false,
         source: moduleSource(registration, "bookstore")
       },

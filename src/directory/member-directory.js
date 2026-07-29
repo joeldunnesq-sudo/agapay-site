@@ -1,5 +1,5 @@
 import { currentMembership, currentUser } from "../lib/authorization.js";
-import { d1All, d1First } from "../lib/core.js";
+import { d1All, d1First, safeParseJsonRow } from "../lib/core.js";
 import { DirectoryServiceError } from "./foundation.js";
 import { getDirectorySettings } from "./settings.js";
 import { cleanText, VISIBILITY_RANK } from "./shared.js";
@@ -71,6 +71,31 @@ function contactDto(row) {
 function cityDto(row) {
   if (!row || Number(row.protected_address || 0) === 1 || !visibleToMembers(row.visibility)) return "";
   return [row.city, row.region].filter(Boolean).join(", ");
+}
+
+async function parishDirectoryIdentity(env, parishId) {
+  let row = null;
+  try {
+    row = await d1First(
+      env,
+      `SELECT parish_name, data
+         FROM registrations
+        WHERE parish_id = ?1
+        ORDER BY updated_at DESC, reference DESC
+        LIMIT 1`,
+      parishId
+    );
+  } catch {
+    // Directory-only test and recovery databases may not include registration
+    // records. The member directory remains available with a safe fallback.
+  }
+  const registration = safeParseJsonRow(row) || {};
+  return {
+    id: parishId,
+    name: registration.parishName || row?.parish_name || "Parish",
+    city: registration.city || "",
+    state: registration.state || ""
+  };
 }
 
 function photoDto(row, preferredVariant) {
@@ -384,7 +409,10 @@ async function childDto(env, context, row) {
   // Nothing identifying was approved -- do not render an entry at all,
   // rather than showing a placeholder that implies presence without a name.
   if (!displayName) return null;
-  const photo = Number(row.approved_photo || 0) === 1 ? await publishedPhoto(env, context, "person", row.child_person_id) : null;
+  const [photo, namedays] = await Promise.all([
+    Number(row.approved_photo || 0) === 1 ? publishedPhoto(env, context, "person", row.child_person_id) : Promise.resolve(null),
+    publishedNamedaysForPerson(env, context, row.child_person_id)
+  ]);
   if (photo) photo.alt = displayName;
   return {
     id: row.child_person_id,
@@ -395,6 +423,7 @@ async function childDto(env, context, row) {
     relationship: fields.has("relationship_label") ? row.relationship || "" : "",
     city: "",
     contacts: [],
+    namedays,
     photo,
     profileUrl: "",
     version: String(row.updated_at || "")
@@ -488,17 +517,54 @@ function stripSearchText(item) {
 }
 
 export async function getMemberDirectoryHome(env, { context }) {
-  const [people, households] = await Promise.all([peopleItems(env, context), householdItems(env, context)]);
+  const [peopleRows, householdRows, parish] = await Promise.all([
+    peopleBaseRows(env, context),
+    householdBaseRows(env, context),
+    parishDirectoryIdentity(env, context.parishId)
+  ]);
+  const peopleIndex = peopleRows.map((row) => {
+    const displayName = row.preferred_name || "Parish member";
+    return {
+      id: row.id,
+      displayName,
+      sortKey: directorySortKey(displayName, "person"),
+      letter: directoryFirstLetter(displayName, "person"),
+      searchText: normalizeQuery(displayName)
+    };
+  });
+  const householdById = new Map(householdRows.map((row) => [row.id, row]));
+  const householdIndex = householdRows.map((row) => {
+    const displayName = row.display_name || "Parish household";
+    return {
+      id: row.id,
+      displayName,
+      sortKey: directorySortKey(displayName, "household"),
+      letter: directoryFirstLetter(displayName, "household"),
+      searchText: normalizeQuery(displayName)
+    };
+  });
+  const firstPageIndex = paginate(applyBrowseFilters(householdIndex, { sort: "az" }), { limit: 24, cursor: "" });
+  const firstPageItems = await Promise.all(firstPageIndex.items.map(async (item) => {
+    const row = householdById.get(item.id);
+    return stripSearchText(await householdDto(env, context, row));
+  }));
   return {
+    parish,
     context: {
       parishId: context.parishId,
       viewerClass: context.viewerClass,
       entitlement: context.entitlement
     },
-    counts: { people: people.length, households: households.length },
+    counts: { people: peopleIndex.length, households: householdIndex.length },
     alphabet: {
-      people: alphabet(people),
-      households: alphabet(households)
+      people: alphabet(peopleIndex),
+      households: alphabet(householdIndex)
+    },
+    households: {
+      items: firstPageItems,
+      nextCursor: firstPageIndex.nextCursor,
+      totalVisible: firstPageIndex.totalVisible,
+      alphabet: alphabet(householdIndex)
     },
     privacyReminder: "This directory is private to authorized members of your parish. Please use contact information respectfully and do not copy or distribute it outside the parish."
   };

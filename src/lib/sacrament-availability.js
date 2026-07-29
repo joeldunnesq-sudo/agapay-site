@@ -113,11 +113,16 @@ export async function computeAvailableSlots(env, { parishId, sacramentType, time
   const rangeEndLocal = addDays(todayLocal, daysAhead);
 
   const blackouts = await d1All(env,
-    "SELECT date, priest_name FROM parish_availability_blackouts WHERE parish_id = ? AND date >= ? AND date <= ?",
-    parishId, todayLocal, rangeEndLocal
+    `SELECT date, COALESCE(end_date, date) AS end_date, priest_name
+     FROM parish_availability_blackouts
+     WHERE parish_id = ? AND date <= ? AND COALESCE(end_date, date) >= ?`,
+    parishId, rangeEndLocal, todayLocal
   ).catch(() => []);
-  const blackoutDates = new Set(blackouts.filter((b) => !b.priest_name).map((b) => b.date));
-  const blackoutPriestDates = new Set(blackouts.filter((b) => b.priest_name).map((b) => `${b.date}|${b.priest_name}`));
+  const isBlackedOut = (date, priestName = "") => blackouts.some((row) =>
+    date >= row.date
+    && date <= (row.end_date || row.date)
+    && (!row.priest_name || row.priest_name === priestName)
+  );
 
   const occupiedRows = await d1All(env,
     `SELECT confirmed_date, confirmed_time, clergy_assigned FROM sacrament_requests
@@ -142,10 +147,9 @@ export async function computeAvailableSlots(env, { parishId, sacramentType, time
   const slots = [];
   for (let i = 0; i < daysAhead && slots.length < maxSlots; i++) {
     const dateStr = addDays(todayLocal, i);
-    if (blackoutDates.has(dateStr)) continue;
     const dayRules = rulesByWeekday.get(weekdayOf(dateStr)) || [];
     for (const rule of dayRules) {
-      if (rule.priest_name && blackoutPriestDates.has(`${dateStr}|${rule.priest_name}`)) continue;
+      if (isBlackedOut(dateStr, rule.priest_name || "")) continue;
       const startMin = hhmmToMinutes(rule.start_time);
       const endMin = hhmmToMinutes(rule.end_time);
       const step = Math.max(5, Number(rule.slot_minutes) || 30);

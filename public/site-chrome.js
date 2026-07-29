@@ -4,8 +4,8 @@
 
   const PRIMARY_LINKS = [
     { href: "/vision", label: "Vision", key: "vision" },
-    { href: "/give", label: "AGAPAY Give", key: "give" },
     { href: "/why", label: "Why AGAPAY", key: "why" },
+    { href: "/give", label: "AGAPAY Give", key: "give" },
     { href: "/learn", label: "AGAPAY Learn", key: "learn" },
     { href: "/design", label: "AGAPAY Design", key: "design" },
     { href: "/about", label: "About", key: "about" }

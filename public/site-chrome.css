@@ -627,3 +627,31 @@ body.drawer-open {
     height: 15px;
   }
 }
+
+.stripe-nonprofit-rate-link {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.stripe-fee-disclaimer {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 1.5rem auto 2rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(184, 144, 47, 0.24);
+  border-radius: 12px;
+  background: rgba(253, 251, 247, 0.78);
+  color: #625f58;
+  font: 400 0.78rem/1.6 "DM Sans", sans-serif;
+}
+
+.stripe-fee-disclaimer strong {
+  color: #152d3d;
+}
+
+.stripe-fee-disclaimer:target {
+  border-color: rgba(184, 144, 47, 0.7);
+  box-shadow: 0 0 0 3px rgba(184, 144, 47, 0.12);
+}

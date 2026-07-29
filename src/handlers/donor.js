@@ -41,6 +41,7 @@ import {
 
 import { bookstoreEnabledFor, directoryEnabledFor, hasParishPlusAccess, sacramentsEnabledFor } from "../lib/entitlements.js";
 import { getDirectorySettings } from "../directory/settings.js";
+import { resolveDirectorySelfServiceContext, syncSelfServiceContactsFromDonor } from "../directory/self-service.js";
 
 import {
   resolveSettlementProfileId,
@@ -809,6 +810,7 @@ export async function handleDonorDashboard(request, env) {
     } catch {
       return json({ error: "Invalid JSON body" }, { status: 400 });
     }
+    const directoryContext = await resolveDirectorySelfServiceContext(env, { request }).catch(() => null);
 
     let updated = {
       ...donor,
@@ -856,6 +858,13 @@ export async function handleDonorDashboard(request, env) {
       await deleteDonor(env, donor.email);
     }
     await saveDonor(env, updated);
+    if (directoryContext?.claimed) {
+      await syncSelfServiceContactsFromDonor(env, {
+        context: directoryContext,
+        donor: updated,
+        correlationId: request.headers.get("X-Correlation-ID") || ""
+      }).catch(() => null);
+    }
 
     // Sync pledge amount to household_pledges for parish stewardship reporting.
     // Runs whenever the donor saves settings — harmless no-op if D1 isn't available
@@ -1595,6 +1604,25 @@ function sacramentTypeLabel(type) {
   }[type] || type;
 }
 
+function donorSacramentOfferings(registration = {}) {
+  const defaults = ["house_blessing", "confession", "counseling", "baptism", "wedding"];
+  const priests = Array.isArray(registration.sacramentPriests) && registration.sacramentPriests.length
+    ? registration.sacramentPriests
+    : [{ serviceTypes: defaults, customServices: [] }];
+  const types = new Set();
+  const customById = new Map();
+  for (const priest of priests) {
+    const serviceTypes = Array.isArray(priest?.serviceTypes) ? priest.serviceTypes : defaults;
+    serviceTypes.forEach((type) => types.add(String(type || "")));
+    (Array.isArray(priest?.customServices) ? priest.customServices : []).forEach((service) => {
+      const id = String(service?.id || "").trim();
+      const label = String(service?.label || "").trim();
+      if (id && label) customById.set(id, { id, label });
+    });
+  }
+  return { types: [...types], custom: [...customById.values()] };
+}
+
 // Structured detail for baptism/chrismation and wedding requests. Lives in
 // satellite tables keyed on sacrament_requests.id — see
 // migration_sacrament_details.sql. Every other sacrament type has no detail
@@ -1708,14 +1736,16 @@ export async function handleDonorSacraments(request, env) {
     // can show/hide the "new request" form); it never blocks viewing
     // requests already on file, even from a parish no longer enabled.
     let available = false;
+    let offerings = donorSacramentOfferings();
     const parishId = String(request.headers.get("X-AGAPAY-Parish-Id") || donor.defaultParishId || "").trim();
     if (parishId) {
       const found = await findRegistrationByParishId(env, parishId);
       available = Boolean(found && sacramentsEnabledFor(found.registration));
+      if (found) offerings = donorSacramentOfferings(found.registration);
     }
 
     const requestsWithDetails = await attachSacramentDetailsBatch(env, rows || []);
-    return json({ requests: requestsWithDetails, available, parishId });
+    return json({ requests: requestsWithDetails, available, parishId, offerings });
   }
 
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
@@ -1750,6 +1780,9 @@ export async function handleDonorSacraments(request, env) {
   const sacramentType = String(body.sacramentType || "").trim();
   if (!SACRAMENT_TYPES.has(sacramentType)) {
     return json({ error: "Choose a valid sacrament or service type." }, { status: 400 });
+  }
+  if (sacramentType !== "other" && !donorSacramentOfferings(found.registration).types.includes(sacramentType)) {
+    return json({ error: "This priest is not currently accepting that request online." }, { status: 400 });
   }
   const otherTypeLabel = sacramentType === "other" ? String(body.otherTypeLabel || "").trim().slice(0, 120) : "";
   if (sacramentType === "other" && !otherTypeLabel) {
@@ -1930,6 +1963,9 @@ export async function handleDonorSacramentAvailability(request, env) {
   if (!found || !sacramentsEnabledFor(found.registration)) {
     return json({ slots: [], timezone: "" });
   }
+  if (!donorSacramentOfferings(found.registration).types.includes(sacramentType)) {
+    return json({ slots: [], timezone: found.registration.timezone || "" });
+  }
 
   const result = await computeAvailableSlots(env, {
     parishId, sacramentType, timezone: found.registration.timezone || ""
@@ -1967,6 +2003,9 @@ export async function handleDonorSacramentBook(request, env) {
   const sacramentType = String(body.sacramentType || "").trim();
   if (!SCHEDULABLE_SACRAMENT_TYPES.has(sacramentType)) {
     return json({ error: "This sacrament type can't be self-booked." }, { status: 400 });
+  }
+  if (!donorSacramentOfferings(found.registration).types.includes(sacramentType)) {
+    return json({ error: "This priest is not currently offering that service for online booking." }, { status: 400 });
   }
   const date = String(body.date || "").trim();
   const time = String(body.time || "").trim();

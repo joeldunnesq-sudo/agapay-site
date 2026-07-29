@@ -4,6 +4,7 @@
   let editableFunds     = [];
   let editableCampaigns = [];
   let editableFeastCampaigns = [];
+  let editingGivingOption = null;
   let activeTab         = 'giving';
   let editingCampaignId = null;
   let campaignCoverUrl  = '';
@@ -62,7 +63,7 @@
     general:    { id:'general',    name:'General Operating Fund',    description:'Utilities, supplies, ministries, and day-to-day parish needs.' },
     building:   { id:'building',   name:'New Building Fund',          description:'Support for property purchase, construction, renovation, or long-term building needs.' },
     clergy:     { id:'clergy',     name:'Clergy Support Fund',        description:'Direct support for the priest, clergy family, and clergy-related parish needs.' },
-    benevolence:{ id:'benevolence',name:'Benevolence Fund',           description:'Parish-approved assistance for families and neighbors facing hardship.' },
+    benevolence:{ id:'benevolence',name:'Benevolence Fund',           description:'Restricted assistance for the poor, needy families, and neighbors facing hardship.', restrictionType:'donor_restricted_temporary' },
     education:  { id:'education',  name:'Education & Youth Fund',     description:'Catechism, youth programs, parish school materials, retreats, and formation.' },
     icons:      { id:'icons',      name:'Icons & Beautification Fund',description:'Icons, liturgical furnishings, vestments, candles, and beautification of the church.' },
     missions:   { id:'missions',   name:'Mission & Outreach Fund',    description:'Evangelism, local outreach, charitable work, and mission-related parish efforts.' }
@@ -115,6 +116,7 @@
   // ── TAB NAV ──────────────────────────────────────────────
   function switchTab(tab) {
     if (tab === 'parishplus') tab = 'bookstore';
+    if (tab === 'commerce') tab = 'bookstore';
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.sidebar-nav-item, .mobile-tab-link').forEach(n => n.classList.remove('active'));
     const panel = document.getElementById('tab-' + tab);
@@ -127,9 +129,13 @@
     document.querySelector('.content')?.classList.toggle('directory-tab-active', tab === 'directory');
     document.querySelector('.app')?.classList.toggle('accounting-tab-active', tab === 'accounting');
     document.querySelector('.content')?.classList.toggle('accounting-tab-active', tab === 'accounting');
+    document.querySelector('.app')?.classList.toggle('commerce-tab-active', tab === 'bookstore');
+    document.querySelector('.content')?.classList.toggle('commerce-tab-active', tab === 'bookstore');
+    document.querySelector('.app')?.classList.toggle('sacraments-tab-active', tab === 'sacraments');
+    document.querySelector('.content')?.classList.toggle('sacraments-tab-active', tab === 'sacraments');
     if (tab === 'accounting') window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     activeTab = tab;
-    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship Health', accounting:'Accounting', sacraments:'Sacraments & Services', directory:'Parish Directory', bookstore:'Bookstore', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship Health', accounting:'Accounting', sacraments:'Sacraments & Services', directory:'Parish Directory', bookstore:'Commerce', qr:'QR Code & Giving Link' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     syncTopbarTabIcon(tab);
@@ -142,7 +148,10 @@
     if (tab === 'sacraments') loadSacramentsTab();
     if (tab === 'directory' && moduleIncluded('directory')) loadDirectoryAdminTab();
     if (tab === 'accounting') loadAccountingTab();
-    if (tab === 'bookstore') loadBookstoreCatalogTab();
+    if (tab === 'bookstore') {
+      switchCommerceProduct('overview', false);
+      loadBookstoreCatalogTab();
+    }
     if (tab === 'reconcile' && currentParish) loadReconciliation();
     if (tab === 'settings' && currentParish) loadSettlementProfilesPanel();
     document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -494,7 +503,8 @@
     pane.innerHTML = '<p class="sw-tool-loading">Loading directory operations...</p>';
     const headers = authHeaders();
     try {
-      const [dashboardRes, peopleRes, householdsRes, skillsRes, maintenanceRes, printRes] = await Promise.all([
+      const [settingsRes, dashboardRes, peopleRes, householdsRes, skillsRes, maintenanceRes, printRes] = await Promise.all([
+        fetch(directoryAdminApi('/settings'), { headers }),
         fetch(directoryAdminApi('/dashboard'), { headers }),
         fetch(directoryAdminApi('/people?limit=8'), { headers }),
         fetch(directoryAdminApi('/households?limit=100'), { headers }),
@@ -508,13 +518,14 @@
         pane.innerHTML = renderDirectoryAdminAccessError(dashboardRes.status, errorPayload.message || errorPayload.error || '');
         return;
       }
+      const settings = await settingsRes.json().catch(() => ({ settings: {} }));
       const dashboard = await dashboardRes.json();
       const people = await peopleRes.json();
       const households = await householdsRes.json();
       const skills = await skillsRes.json().catch(() => ({ skills: { listings: [] } }));
       const maintenance = await maintenanceRes.json().catch(() => ({ maintenance: {} }));
       const print = await printRes.json().catch(() => ({ print: {} }));
-      renderDirectoryAdminPanel(dashboard.dashboard || {}, people.people || [], households.households || [], skills.skills || {}, maintenance.maintenance || {}, print.print || {});
+      renderDirectoryAdminPanel(dashboard.dashboard || {}, people.people || [], households.households || [], skills.skills || {}, maintenance.maintenance || {}, print.print || {}, settings.settings || {});
       pane.dataset.loaded = 'true';
     } catch (err) {
       pane.innerHTML = renderDirectoryAdminGenericError();
@@ -581,11 +592,11 @@
     }
   }
 
-  function renderDirectoryAdminPanel(dashboard, people, households, skills, maintenance, print) {
+  function renderDirectoryAdminPanel(dashboard, people, households, skills, maintenance, print, settings = {}) {
     const pane = document.getElementById('directoryAdminPane');
     if (!pane) return;
     const sortedHouseholds = [...households].sort((a, b) => directoryHouseholdSortKey(a.displayName).localeCompare(directoryHouseholdSortKey(b.displayName)));
-    directoryLastData = { people, households: sortedHouseholds, skills, maintenance, print };
+    directoryLastData = { people, households: sortedHouseholds, skills, maintenance, print, settings };
     const parishName = currentParish?.parishName || currentParish?.name || 'Your parish';
     const publishedMembers = Array.isArray(print?.households) ? print.households : [];
     const publishedMemberCount = publishedMembers.length || people.length;
@@ -593,25 +604,37 @@
     const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     pane.innerHTML = `
       <div class="pdx-dir-print-sheet">
-      <section class="pdx-dir-canonical-head">
-        <div>
-          <h1>Church Directory</h1>
-          <p>${escapeHtml(parishName)} <i></i> <strong>${households.length}</strong> households <i></i> <strong>${publishedMemberCount}</strong> members</p>
+      <section class="pdx-dir-canonical-head sw-suite-hero">
+        <div class="sw-suite-hero-copy">
+          <span class="pdx-dir-canonical-kicker sw-suite-eyebrow">Parish member records</span>
+          <h1 class="sw-suite-heading">Parish Directory</h1>
+          <p class="sw-suite-subhead">Find families, member contact information, namedays, and ways parishioners can help. <strong>${households.length}</strong> households <i></i> <strong>${publishedMemberCount}</strong> members</p>
         </div>
-        <div class="pdx-dir-canonical-actions">
+        <div class="pdx-dir-canonical-actions sw-suite-hero-status agapay-feature-actions">
+          ${renderDirectoryFeatureToggle(settings)}
           <button class="pdx-dir-export-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/published-adults.csv')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>Export CSV</button>
-          <button class="pdx-dir-print-btn" type="button" onclick="previewDirectoryAdminPrint('/print/directory')"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Print Directory</button>
+          <button class="pdx-dir-print-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/directory.pdf')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>Download PDF</button>
         </div>
       </section>
+      <div class="pdx-dir-tabs pdx-dir-view-switcher" role="tablist" aria-label="Parish directory views">
+        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="directory" aria-selected="true" onclick="switchDirectoryAdminTab('directory')">
+          <span class="pdx-dir-tab-mark" aria-hidden="true">1</span>
+          <span><strong>Families &amp; Members</strong><small>Search and review parish household records</small></span>
+        </button>
+        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="tools" aria-selected="false" onclick="switchDirectoryAdminTab('tools')">
+          <span class="pdx-dir-tab-mark" aria-hidden="true">2</span>
+          <span><strong>Directory Management</strong><small>Skills, exports, and records needing attention</small></span>
+        </button>
+      </div>
       <div class="pdx-dir-tab-panel" data-dir-panel="directory">
         <section class="pdx-dir-privacy-bar">
           <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <span>Contact info shown to other parishioners:</span>
-          <div class="pdx-dir-contact-mode" role="radiogroup" aria-label="Contact display mode">
-            <label><input type="radio" name="directoryContactMode" value="tap" checked onchange="setDirectoryContactMode(this.value)">Hidden until tap</label>
-            <label><input type="radio" name="directoryContactMode" value="always" onchange="setDirectoryContactMode(this.value)">Always visible</label>
+          <span>Authorized parish staff always see the complete contact record.</span>
+          <div class="pdx-dir-contact-mode" aria-label="Directory sharing legend">
+            <span class="pdx-dir-contact-visibility is-shared" aria-hidden="true">●</span><b>Visible in My AGAPAY directory</b>
+            <span class="pdx-dir-contact-visibility is-private" aria-hidden="true">●</span><b>Private from parishioners</b>
           </div>
-          <small>Toggle email, phone, or city per family below</small>
+          <small>The eye reports the family’s sharing choice. A street address is never shown to parishioners; only city and state can be shared.</small>
         </section>
         <section class="pdx-dir-canonical-controls">
           <label><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="search" id="directoryBrowseSearch" placeholder="Search by family or member name" oninput="searchDirectoryBrowse(this.value)" /></label>
@@ -624,22 +647,21 @@
             <tbody id="directoryBrowseList">${sortedHouseholds.length ? sortedHouseholds.map((household) => directoryCanonicalHouseholdRow(household, publishedMembers, skills.listings || [])).join('') : `<tr><td colspan="4">${directoryEmptyState('No households yet', 'Households appear here after families join the parish directory.')}</td></tr>`}</tbody>
           </table>
         </div>
-        <p class="pdx-dir-canonical-note">Household information is entered by families in My AGAPAY and appears here for parish office use.</p>
-        <div id="directoryRecordDetail" class="pdx-dir-review-detail" aria-live="polite"></div>
-      </div>
-      </div>
-
-      <div class="pdx-dir-tabs" role="tablist" aria-label="Parish directory tools">
-        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="directory" aria-selected="true" onclick="switchDirectoryAdminTab('directory')">Church Directory</button>
-        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="tools" aria-selected="false" onclick="switchDirectoryAdminTab('tools')">Maintenance &amp; Skills</button>
+        <p class="pdx-dir-canonical-note"><strong>Where do these records come from?</strong> Families enter and maintain their information in My AGAPAY. Parish staff can review the information here without changing a family’s privacy choices.</p>
       </div>
 
       <div class="pdx-dir-tab-panel" data-dir-panel="tools" hidden>
+        <section class="pdx-dir-management-intro">
+          <span>Directory Management</span>
+          <h2>Keep parish information useful and current</h2>
+          <p>Review parishioner skills, export office lists, and follow up on records that need confirmation. Nothing in this area changes what parishioners can see unless you explicitly approve a publication request.</p>
+        </section>
         <section class="pdx-panel pdx-dir-panel-skills">
           <div class="pdx-panel-header">
-            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3 6.5 7 1-5 5 1.5 7L12 18l-6.5 3.5L7 14.5l-5-5 7-1z"/></svg></div>Skills &amp; Service</div>
+            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3 6.5 7 1-5 5 1.5 7L12 18l-6.5 3.5L7 14.5l-5-5 7-1z"/></svg></div>Parishioner Skills &amp; Service</div>
             <button class="pdx-link-btn" type="button" onclick="loadDirectoryAdminTab(true)">Refresh</button>
           </div>
+          <p class="section-note">See the skills parishioners have volunteered to share, such as cooking, repairs, teaching, transportation, or event help.</p>
           <div class="pdx-dir-row-list">
             ${directorySkillsAdminRows(skills.listings || [])}
           </div>
@@ -647,26 +669,67 @@
             <button class="pdx-dir-action-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/skills.csv')">Skills CSV</button>
             <button class="pdx-dir-action-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/published-adults.csv')">Published Adults CSV</button>
             <button class="pdx-dir-action-btn" type="button" onclick="previewDirectoryAdminPrint('/print/skills')">Print Skills</button>
-            <button class="pdx-dir-action-btn" type="button" onclick="previewDirectoryAdminPrint('/print/directory')">Print Directory</button>
+            <button class="pdx-dir-action-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/directory.pdf')">Download Directory PDF</button>
           </div>
         </section>
         <section class="pdx-panel">
           <div class="pdx-panel-header">
-            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg></div>Maintenance</div>
+            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg></div>Directory Health</div>
           </div>
-          <p class="section-note">Work these lists directly. Each item opens the record that needs staff attention.</p>
+          <p class="section-note">These lists identify records that may need parish-office follow-up. Select an item to open the relevant record.</p>
           <div class="pdx-dir-row-list">
             ${directoryMaintenanceRow('Households current', maintenance.householdsCurrent, false, 'Verified recently and ready for member self-service.')}
             ${directoryMaintenanceRow('Households due', maintenance.householdsDue, false, 'Need annual confirmation soon.')}
             ${directoryMaintenanceRow('Overdue households', maintenance.householdsOverdue, true, 'Need staff follow-up now.')}
+            ${directoryMaintenanceRow('Households not yet confirmed', maintenance.householdsNotStarted, true, 'These families were missing before because no confirmation record existed.')}
+            ${directoryMaintenanceRow('Families with a My AGAPAY manager', maintenance.accountManagedHouseholds, false, 'One linked household account maintains the family directory entry and tax documents.')}
+            ${directoryMaintenanceRow('Families needing account access', maintenance.householdsNeedingAccountAccess, true, 'No linked family account can maintain this household yet.')}
             ${directoryMaintenanceRow('Skill consents to review', maintenance.staleSkillConsents, false, 'Skill listings that need renewed consent.')}
-            ${directoryMaintenanceRow('Unclaimed people', maintenance.unclaimedPeople, false, 'People records not linked to a My AGAPAY account yet.')}
+            ${directoryMaintenanceRow('People not connected to a family account', maintenance.unclaimedPeople, true, 'Spouses and other adults are covered when their household already has a My AGAPAY manager.')}
           </div>
           ${directoryMaintenanceActions(maintenance.actions || {})}
         </section>
+        <div id="directoryManagementDetail" class="pdx-dir-review-detail" aria-live="polite"></div>
+      </div>
       </div>`;
     switchDirectoryAdminTab(directoryAdminTab);
     hydrateDirectoryAdminImages(pane);
+  }
+
+  function renderDirectoryFeatureToggle(settings = {}) {
+    const enabled = Boolean(settings.directoryEnabled && settings.ordinaryMemberAccessEnabled);
+    return `<label class="sac-admin-switch pdx-dir-feature-switch agapay-feature-switch" title="Show or hide the parish directory in My AGAPAY">
+      <input type="checkbox" aria-label="Show parish directory in My AGAPAY" ${enabled ? 'checked' : ''} onchange="toggleDirectoryFeature(this)" />
+      <span aria-hidden="true"></span>
+      <em>${enabled ? 'Visible in My AGAPAY' : 'Hidden from My AGAPAY'}</em>
+    </label>`;
+  }
+
+  async function toggleDirectoryFeature(input) {
+    if (!currentParish) return;
+    const enabled = Boolean(input?.checked);
+    const previous = Boolean(currentParish.directoryEnabled);
+    if (input) input.disabled = true;
+    try {
+      const response = await fetch(directoryAdminApi('/settings'), {
+        method: 'PATCH',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ directoryEnabled: enabled, ordinaryMemberAccessEnabled: enabled })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Unable to update the parish directory.');
+      const saved = payload.settings || {};
+      currentParish.directoryEnabled = Boolean(saved.directoryEnabled && saved.ordinaryMemberAccessEnabled);
+      syncModuleStatusNavigation('directory', moduleIncluded('directory'), currentParish.directoryEnabled);
+      setStatus(currentParish.directoryEnabled ? 'Parish Directory is on for parishioners.' : 'Parish Directory is off for parishioners.', 'success');
+      await loadDirectoryAdminTab(true);
+    } catch (error) {
+      currentParish.directoryEnabled = previous;
+      if (input) input.checked = previous;
+      setStatus(error.message, 'error');
+    } finally {
+      if (input) input.disabled = false;
+    }
   }
 
   function hasGivingPlusAccess() {
@@ -682,7 +745,7 @@
     commemorations: ['Commemorations', 'Candles, liturgical commemorations, Moliebens, Panikhidas, and the priest queue are included with Giving Plus.'],
     statements: ['Annual giving statements', 'Generate and email annual donor statements with Giving Plus.'],
     stewardship: ['Stewardship Health', 'Track pledges, understand giving health, prepare stewardship reports, and keep annual records with the Stewardship tier.'],
-    bookstore: ['Parish bookstore', 'Manage books, icons, prayer ropes, and other parish items with catalog tools and Stripe-powered payments in the Stewardship tier.'],
+    bookstore: ['Parish Commerce', 'Manage bookstore sales now and add more parish commerce products as they become available in the Stewardship tier.'],
     sacraments: ['Sacraments & Services', 'Receive pastoral requests, coordinate clergy schedules, and keep families informed with the Parish tier.'],
     text: ['Text-to-Give', 'Reserve parish keywords and route donors from the shared AGAPAY number to the right giving page with the Parish tier.'],
     accounting: ['Parish Accounting', 'Keep funds, ledgers, payables, budgets, reconciliation, and financial reports together with the Parish tier.'],
@@ -753,6 +816,17 @@
       const statusBadge = element.querySelector(':scope > .nav-soon-badge, :scope > .mobile-soon-badge');
       if (statusBadge) statusBadge.hidden = !included;
       if (included && label) label.remove();
+    });
+  }
+
+  function syncModuleStatusNavigation(tab, included, enabled) {
+    const desktop = document.querySelector(`#nav-${tab} > .nav-module-status`);
+    const mobile = document.querySelector(`.mobile-tab-link[data-nav-tab="${tab}"] > .mobile-module-status`);
+    [desktop, mobile].forEach((badge) => {
+      if (!badge) return;
+      badge.hidden = !included;
+      badge.textContent = enabled ? 'On' : 'Off';
+      badge.classList.toggle('is-on', Boolean(enabled));
     });
   }
 
@@ -1810,10 +1884,17 @@
       const householdName = item.household?.displayName || item.person?.householdDisplayName || item.householdDisplayName || '';
       return String(householdName) === String(name);
     }).map((item) => item.displayLabel || item.skill?.name).filter(Boolean);
-    const first = memberRows[0] || {};
-    const city = [first.city, first.region].filter(Boolean).join(', ');
-    const email = first.email || '';
-    const phone = first.phone || '';
+    const staffContact = household.staffContact || {};
+    const address = staffContact.address || {};
+    const city = [address.city, address.region].filter(Boolean).join(', ');
+    const email = staffContact.email?.value || '';
+    const phone = staffContact.phone?.value || '';
+    const fullAddress = [
+      address.line1,
+      address.line2,
+      [address.city, address.region, address.postalCode].filter(Boolean).join(' '),
+      address.country && address.country !== 'US' ? address.country : ''
+    ].filter(Boolean).join(', ');
     const initials = directoryHouseholdInitials(name);
     const memberMarkup = uniqueMembers.length ? uniqueMembers.slice(0, 5).map((member) => {
       const feast = String(member.feast_month_day || member.feastMonthDay || '');
@@ -1825,38 +1906,30 @@
       const saint = member.saint_name || member.saintName || '';
       return `<div>${escapeHtml(member.preferred_name || member.preferredName || '')}${nameday || saint ? ` <span>— ${escapeHtml([nameday, saint].filter(Boolean).join(' – '))}</span>` : ''}</div>`;
     }).join('') : `<div>${count ? count + ' family member' + (count === 1 ? '' : 's') : 'No published members'}</div>`;
-    const contactField = (label, value) => `<div class="pdx-dir-contact-field ${value ? 'is-hidden' : 'is-empty'}">
-      <button type="button" onclick="event.stopPropagation();toggleDirectoryContactField(this)" aria-label="Toggle ${escapeAttr(label)} visibility">◉</button>
-      <small>${escapeHtml(label)}</small><span data-value="${escapeAttr(value || 'Not shared')}">${value ? 'Tap to reveal' : 'Not shared'}</span>
+    const contactField = (label, value, visibility, addressField = false) => {
+      const shared = visibility === 'directory_members';
+      const sharingLabel = shared
+        ? (addressField ? 'City and state are visible to parishioners; street address remains private' : 'Visible to parishioners in My AGAPAY')
+        : 'Private from parishioners';
+      return `<div class="pdx-dir-contact-field ${value ? '' : 'is-empty'} ${shared ? 'is-shared' : 'is-private'}" title="${escapeAttr(sharingLabel)}">
+      <span class="pdx-dir-contact-eye" role="img" aria-label="${escapeAttr(sharingLabel)}">${shared
+        ? '<svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>'
+        : '<svg viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M10.6 6.2A10.8 10.8 0 0 1 12 6c6 0 9.5 6 9.5 6a15 15 0 0 1-2.1 2.8M6.1 6.2C3.8 7.8 2.5 12 2.5 12s3.5 6 9.5 6c1.5 0 2.9-.4 4.1-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>'
+      }</span>
+      <small>${escapeHtml(label)}</small><span>${escapeHtml(value || 'Not entered')}</span>
     </div>`;
+    };
     const namedaySearch = memberRows.map((row) => {
       const feast = String(row.feast_month_day || '');
       if (!/^\d{2}-\d{2}$/.test(feast)) return '';
       return new Intl.DateTimeFormat(undefined, { month:'long', timeZone:'UTC' }).format(new Date(Date.UTC(2024, Number(feast.slice(0,2)) - 1, 1)));
     }).join(' ');
-    return `<tr class="pdx-dir-table-row" data-namedays="${escapeAttr(namedaySearch)}" data-skills="${escapeAttr(householdSkills.join(' '))}" onclick="openDirectoryHousehold('${escapeAttr(household.id)}')" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDirectoryHousehold('${escapeAttr(household.id)}');}">
+    return `<tr class="pdx-dir-table-row" data-namedays="${escapeAttr(namedaySearch)}" data-skills="${escapeAttr(householdSkills.join(' '))}">
       <td><div class="pdx-dir-table-household"><span class="pdx-dir-table-avatar">${escapeHtml(initials)}</span><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(city || `${count} member${count === 1 ? '' : 's'}`)}</span></div></div></td>
       <td><div class="pdx-dir-table-members">${memberMarkup}</div></td>
-      <td><div class="pdx-dir-table-contacts">${contactField('Email', email)}${contactField('Phone', phone)}${contactField('City', city)}</div></td>
+      <td><div class="pdx-dir-table-contacts">${contactField('Email', email, staffContact.email?.visibility)}${contactField('Phone', phone, staffContact.phone?.visibility)}${contactField('Address', fullAddress || city, address.visibility, true)}</div></td>
       <td><div class="pdx-dir-table-skills">${householdSkills.length ? householdSkills.slice(0, 3).map((skill) => `<span>${escapeHtml(skill)}</span>`).join('') : '<small>No published skills</small>'}</div></td>
     </tr>`;
-  }
-
-  function setDirectoryContactMode(mode) {
-    const always = mode === 'always';
-    document.querySelectorAll('#directoryBrowseList .pdx-dir-contact-field:not(.is-empty)').forEach((field) => {
-      const value = field.querySelector('[data-value]');
-      field.classList.toggle('is-hidden', !always);
-      if (value) value.textContent = always ? value.dataset.value : 'Tap to reveal';
-    });
-  }
-
-  function toggleDirectoryContactField(button) {
-    const field = button.closest('.pdx-dir-contact-field');
-    const value = field?.querySelector('[data-value]');
-    if (!field || !value || field.classList.contains('is-empty')) return;
-    field.classList.toggle('is-hidden');
-    value.textContent = field.classList.contains('is-hidden') ? 'Tap to reveal' : value.dataset.value;
   }
 
   function filterCanonicalDirectoryRows() {
@@ -1899,7 +1972,14 @@
     return `<div class="pdx-dir-detail-list">${items.map(mapFn).join('')}</div>`;
   }
 
-  function directoryRecordDetailShell(kicker, title, subtitle, body) {
+  function directoryDetailTarget() {
+    const tools = document.querySelector('[data-dir-panel="tools"]');
+    return tools && !tools.hidden
+      ? document.getElementById('directoryManagementDetail')
+      : document.getElementById('directoryRecordDetail');
+  }
+
+  function directoryRecordDetailShell(kicker, title, subtitle, body, targetId = 'directoryRecordDetail') {
     return `
       <article class="pdx-dir-review-card pdx-dir-record-card">
         <div class="pdx-dir-review-top">
@@ -1908,7 +1988,7 @@
             <h2>${escapeHtml(title || 'Directory record')}</h2>
             <p>${escapeHtml(subtitle || '')}</p>
           </div>
-          <button class="pdx-dir-close-btn" type="button" onclick="document.getElementById('directoryRecordDetail').innerHTML=''">Close</button>
+          <button class="pdx-dir-close-btn" type="button" onclick="document.getElementById('${escapeAttr(targetId)}').innerHTML=''">Close</button>
         </div>
         ${body}
       </article>`;
@@ -1970,7 +2050,7 @@
   }
 
   async function openDirectoryPerson(personId) {
-    const detail = document.getElementById('directoryRecordDetail');
+    const detail = directoryDetailTarget();
     if (!detail || !personId) return;
     detail.innerHTML = '<p class="sw-tool-loading">Opening person record...</p>';
     try {
@@ -1979,6 +2059,22 @@
       if (!res.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Unable to open person record.');
       const record = payload.person || {};
       const person = record.person || {};
+      const access = record.accountAccess || {};
+      const invitation = access.activeInvitation || null;
+      const household = (record.households || [])[0] || {};
+      const accessPanel = access.child
+        ? `<div class="pdx-dir-empty"><strong>Managed through the family account</strong><span>Children do not need a separate My AGAPAY account.</span></div>`
+        : access.linked
+          ? `<div class="pdx-dir-empty"><strong>Family account manager</strong><span>This adult’s My AGAPAY account manages the household directory entry and family tax documents.</span></div>`
+          : access.householdManaged
+            ? `<div class="pdx-dir-empty"><strong>Managed through the family account</strong><span>This adult does not need a separate My AGAPAY login or invitation. The linked family account manages this household.</span></div>${invitation ? `<div class="pdx-dir-actions"><button class="pdx-dir-action-btn" type="button" onclick="revokeDirectoryAccountInvitation('${escapeAttr(invitation.id)}','${escapeAttr(person.id)}')">Revoke old invitation</button></div>` : ''}`
+          : invitation
+            ? `<div class="pdx-dir-detail-chip"><strong>Invitation ${escapeHtml(invitation.status)}</strong><span>${escapeHtml(invitation.recipientEmail || '')} · expires ${escapeHtml(new Date(invitation.expiresAt).toLocaleDateString())}</span></div>
+               <div class="pdx-dir-actions"><button class="pdx-dir-action-btn" type="button" onclick="resendDirectoryAccountInvitation('${escapeAttr(invitation.id)}','${escapeAttr(person.id)}')">Resend invitation</button><button class="pdx-dir-action-btn" type="button" onclick="revokeDirectoryAccountInvitation('${escapeAttr(invitation.id)}','${escapeAttr(person.id)}')">Revoke</button></div>`
+            : `<form class="pdx-dir-actions" onsubmit="sendDirectoryAccountInvitation(event,'${escapeAttr(person.id)}','${escapeAttr(household.id || '')}')">
+                 <label style="flex:1;min-width:220px">Adult email<input name="email" type="email" autocomplete="email" required placeholder="name@example.com" /></label>
+                 <button class="pdx-dir-action-btn" type="submit">Send My AGAPAY invitation</button>
+               </form><p class="section-note">The secure link connects this adult to their directory record${household.id ? ' and makes them a household administrator' : ''}.</p>`;
       detail.innerHTML = directoryRecordDetailShell('Person record', person.preferredName || person.legalName || 'Directory person', 'Use this detail view to understand why a member may or may not be able to manage their Directory information.', `
         <div class="pdx-dir-review-grid">
           <section class="pdx-dir-review-column"><h4>Status</h4>
@@ -1994,6 +2090,7 @@
             ${directoryDetailList(record.households, 'No household links', 'Link this person to a household before family tools feel complete.', (item) => `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.display_name || item.displayName || item.id)}</strong><span>${escapeHtml(item.relationship || 'member')}</span></div>`)}
           </section>
         </div>
+        <section class="pdx-dir-review-column"><h4>My AGAPAY access</h4>${accessPanel}<div id="directoryInvitationResult"></div></section>
         <div class="pdx-dir-review-grid">
           <section class="pdx-dir-review-column"><h4>Contacts</h4>
             ${directoryDetailList(record.contacts, 'No contacts', 'No staff-visible contact method is attached to this person.', (item) => `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.label || item.contact_type || item.contactType)}</strong><span>${escapeHtml(item.value || '')} · ${escapeHtml(item.visibility || '')}</span></div>`)}
@@ -2001,7 +2098,7 @@
           <section class="pdx-dir-review-column"><h4>Notes</h4>
             ${directoryDetailList(record.notes, 'No notes', 'No internal notes are attached to this person.', (item) => `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.title || item.noteType || 'Note')}</strong><span>${escapeHtml(item.body || item.note || item.summary || '')}</span></div>`)}
           </section>
-        </div>`);
+        </div>`, detail.id);
       detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (err) {
       detail.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to open this person record.')}</p>`;
@@ -2009,7 +2106,7 @@
   }
 
   async function openDirectoryHousehold(householdId) {
-    const detail = document.getElementById('directoryRecordDetail');
+    const detail = directoryDetailTarget();
     if (!detail || !householdId) return;
     detail.innerHTML = '<p class="sw-tool-loading">Opening household record...</p>';
     try {
@@ -2018,6 +2115,15 @@
       if (!res.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Unable to open household record.');
       const record = payload.household || {};
       const household = record.household || {};
+      const contactRows = (record.contacts || []).map((item) => {
+        const shared = item.visibility === 'directory_members';
+        return `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.personName || 'Household')} · ${escapeHtml(item.label || item.contactType || 'Contact')}</strong><span>${escapeHtml(item.value || '')} · ${shared ? 'visible in My AGAPAY directory' : 'private from parishioners'}</span></div>`;
+      });
+      const addressRows = (record.addresses || []).map((item) => {
+        const fullAddress = [item.line1, item.line2, [item.city, item.region, item.postalCode].filter(Boolean).join(' '), item.country && item.country !== 'US' ? item.country : ''].filter(Boolean).join(', ');
+        const shared = item.visibility === 'directory_members';
+        return `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.primary ? 'Primary household address' : item.addressType || 'Household address')}</strong><span>${escapeHtml(fullAddress || 'Not entered')} · ${shared ? 'city/state visible in My AGAPAY; street private' : 'private from parishioners'}</span></div>`;
+      });
       detail.innerHTML = directoryRecordDetailShell('Household record', household.displayName || 'Directory household', 'This is the family container parishioners expect to edit from My AGAPAY.', `
         <div class="pdx-dir-review-grid">
           ${directoryHouseholdPhotoCard(record.photo)}
@@ -2025,6 +2131,7 @@
             ${directoryReviewObjectRows({
               householdName: household.displayName,
               active: household.active,
+              myAGAPAYAccess: record.accountManaged ? 'Managed by one family account' : 'Needs one family account manager',
               publication: record.publication?.status || 'not configured',
               approval: record.publication?.approval_status || record.publication?.approvalStatus || 'not submitted'
             })}
@@ -2032,17 +2139,21 @@
         </div>
         <div class="pdx-dir-review-grid">
           <section class="pdx-dir-review-column pdx-dir-review-column-new"><h4>Household admins</h4>
-            ${directoryDetailList(record.administrators, 'No household admin', 'At least one adult should be a household admin so the family can edit household-owned information.', (item) => `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.preferred_name || item.preferredName || item.id)}</strong><span>Can manage household self-service</span></div>`)}
+            ${directoryDetailList(record.administrators, 'No household admin', 'One adult should manage the family through the household’s My AGAPAY account.', (item) => `<button type="button" class="pdx-dir-detail-chip" onclick="openDirectoryPerson('${escapeAttr(item.id)}')"><strong>${escapeHtml(item.preferred_name || item.preferredName || item.id)}</strong><span>${item.accountLinked ? 'Family account manager' : record.accountManaged ? 'Managed through family account' : 'Household admin · account not linked'}</span></button>`)}
           </section>
         </div>
         <div class="pdx-dir-review-grid">
+          <section class="pdx-dir-review-column"><h4>Complete contact information</h4>
+            ${directoryDetailList([...contactRows, ...addressRows], 'No contact information', 'Phone, email, and address will populate from the family account settings.', (item) => item)}
+            <p class="pdx-dir-staff-contact-note">Staff-only view. Full street addresses are never published in the donor-side directory.</p>
+          </section>
           <section class="pdx-dir-review-column"><h4>Members</h4>
-            ${directoryDetailList(record.members, 'No members', 'Add household members before children, family photos, or household publication makes sense.', (item) => `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.preferred_name || item.preferredName || item.id)}</strong><span>${escapeHtml(item.relationship || 'member')}</span></div>`)}
+            ${directoryDetailList(record.members, 'No members', 'Add household members before children, family photos, or household publication makes sense.', (item) => `<button type="button" class="pdx-dir-detail-chip" onclick="openDirectoryPerson('${escapeAttr(item.id)}')"><strong>${escapeHtml(item.preferred_name || item.preferredName || item.id)}</strong><span>${escapeHtml(item.relationship || 'member')} · ${item.accountLinked ? 'family account manager' : record.accountManaged ? 'managed through family account' : item.child ? 'managed through household' : 'family needs an account manager'}</span></button>`)}
           </section>
           <section class="pdx-dir-review-column"><h4>Notes</h4>
             ${directoryDetailList(record.notes, 'No notes', 'No internal notes are attached to this household.', (item) => `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.title || item.noteType || 'Note')}</strong><span>${escapeHtml(item.body || item.note || item.summary || '')}</span></div>`)}
           </section>
-        </div>`);
+        </div>`, detail.id);
       hydrateDirectoryAdminImages(detail);
       detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (err) {
@@ -2179,12 +2290,79 @@
     }
   }
 
+  async function directoryInvitationMutation(path, body = {}) {
+    const res = await fetch(directoryAdminApi(path), {
+      method: 'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Unable to update this invitation.');
+    return payload;
+  }
+
+  async function sendDirectoryAccountInvitation(event, personId, householdId) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector('button[type="submit"]');
+    const email = String(new FormData(form).get('email') || '').trim();
+    if (button) { button.disabled = true; button.textContent = 'Sending…'; }
+    try {
+      const payload = await directoryInvitationMutation('/invitations', { personId, householdId, email });
+      const result = document.getElementById('directoryInvitationResult');
+      if (result) result.innerHTML = `<div class="pdx-dir-empty"><strong>${payload.delivery === 'sent' ? 'Invitation emailed' : 'Invitation created'}</strong><span>${payload.delivery === 'sent' ? 'The adult can use the secure link in their email.' : 'Email delivery is not configured. Copy this secure link and send it only to the intended adult.'}</span>${payload.delivery === 'sent' ? '' : `<button class="pdx-dir-action-btn" type="button" data-invitation-url="${escapeAttr(payload.invitationUrl || '')}" onclick="copyDirectoryInvitationLink(this)">Copy secure link</button>`}</div>`;
+      setStatus(payload.delivery === 'sent' ? 'My AGAPAY invitation sent.' : 'Invitation created; copy the secure link.', payload.delivery === 'sent' ? 'success' : '');
+      window.setTimeout(() => openDirectoryPerson(personId), 900);
+    } catch (error) {
+      setStatus(error.message || 'Unable to send invitation.', 'error');
+      if (button) { button.disabled = false; button.textContent = 'Send My AGAPAY invitation'; }
+    }
+  }
+
+  async function copyDirectoryInvitationLink(button) {
+    const url = button?.dataset?.invitationUrl || '';
+    if (!url) return;
+    await navigator.clipboard.writeText(url);
+    setStatus('Secure invitation link copied.', 'success');
+  }
+
+  async function resendDirectoryAccountInvitation(invitationId, personId) {
+    try {
+      const payload = await directoryInvitationMutation('/invitations/' + encodeURIComponent(invitationId) + '/resend');
+      if (payload.delivery !== 'sent' && payload.invitationUrl) {
+        await navigator.clipboard.writeText(payload.invitationUrl).catch(() => {});
+      }
+      setStatus(payload.delivery === 'sent' ? 'Invitation resent.' : 'New secure link copied.', 'success');
+      await openDirectoryPerson(personId);
+    } catch (error) {
+      setStatus(error.message || 'Unable to resend invitation.', 'error');
+    }
+  }
+
+  async function revokeDirectoryAccountInvitation(invitationId, personId) {
+    if (!confirm('Revoke this directory invitation? Its secure link will stop working.')) return;
+    try {
+      await directoryInvitationMutation('/invitations/' + encodeURIComponent(invitationId) + '/revoke');
+      setStatus('Invitation revoked.', 'success');
+      await openDirectoryPerson(personId);
+    } catch (error) {
+      setStatus(error.message || 'Unable to revoke invitation.', 'error');
+    }
+  }
+
   function directoryPersonRow(person) {
     const pending = person.pendingRequestCount || 0;
+    const accessLabel = person.child
+      ? 'Managed through family account'
+      : person.claimed
+        ? 'Family account manager'
+        : person.householdManaged
+          ? 'Managed through family account'
+          : 'Family needs a My AGAPAY manager';
     return `<div class="pdx-dir-row pdx-dir-record-row" onclick="openDirectoryPerson('${escapeAttr(person.id)}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDirectoryPerson('${escapeAttr(person.id)}');}">
       <div class="pdx-dir-row-media">
         ${directoryAdminPhotoImg(person.photo, 'pdx-dir-thumb pdx-dir-thumb-round', 'Photo of ' + (person.displayName || 'person'))}
-        <div class="pdx-dir-row-copy"><div class="pdx-dir-row-title">${escapeHtml(person.displayName)}</div><div class="pdx-dir-row-meta">${person.claimed ? 'Claimed My AGAPAY account' : 'Not claimed'} · ${person.child ? 'Child' : 'Adult'}${person.householdCount ? ' · ' + person.householdCount + ' household link' + (person.householdCount === 1 ? '' : 's') : ''}</div></div>
+        <div class="pdx-dir-row-copy"><div class="pdx-dir-row-title">${escapeHtml(person.displayName)}</div><div class="pdx-dir-row-meta">${escapeHtml(accessLabel)} · ${person.child ? 'Child' : 'Adult'}${person.householdCount ? ' · ' + person.householdCount + ' household link' + (person.householdCount === 1 ? '' : 's') : ''}</div></div>
       </div>
       <div class="pdx-dir-row-side">${pending ? `<span class="pdx-dir-badge high">${pending} pending</span>` : `<span class="pdx-dir-badge count">Current</span>`}<button class="pdx-dir-action-btn" type="button" onclick="event.stopPropagation();openDirectoryPerson('${escapeAttr(person.id)}')">Open</button></div>
     </div>`;
@@ -2221,10 +2399,12 @@
     const groups = [
       ['Overdue households', actions.overdueHouseholds || [], 'household'],
       ['Confirm soon', actions.dueHouseholds || [], 'household'],
-      ['Unclaimed people', actions.unclaimedPeople || [], 'person'],
+      ['Confirmation not started', actions.notStartedHouseholds || [], 'household'],
+      ['Households needing account access', actions.householdsNeedingAccountAccess || [], 'household'],
+      ['People not connected to a family account', actions.unclaimedPeople || [], 'person'],
       ['Renew skill consent', actions.staleSkillConsents || [], 'person']
     ].filter(([, items]) => items.length);
-    if (!groups.length) return '<div class="pdx-dir-maintenance-clear"><strong>Nothing needs attention</strong><span>The directory has no overdue confirmations, stale consents, or unclaimed records.</span></div>';
+    if (!groups.length) return '<div class="pdx-dir-maintenance-clear"><strong>Nothing needs attention</strong><span>The directory has no overdue confirmations, stale consents, or adults needing account access.</span></div>';
     return `<div class="pdx-dir-maintenance-worklists">${groups.map(([title, items, type]) => `<section><h4>${escapeHtml(title)}</h4>${items.map((item) => `<button type="button" onclick="${type === 'household' ? 'openDirectoryHousehold' : 'openDirectoryPerson'}('${escapeAttr(type === 'person' ? (item.personId || item.id) : item.id)}')"><span><strong>${escapeHtml(item.displayName || 'Directory record')}</strong><small>${item.skillName ? escapeHtml(item.skillName) : item.dueAt ? 'Due ' + escapeHtml(new Date(item.dueAt).toLocaleDateString()) : 'Open record'}</small></span><b>Open →</b></button>`).join('')}</section>`).join('')}</div>`;
   }
 
@@ -2508,20 +2688,36 @@
     );
   }
 
-  // ── Other Income (manual entry) Panel ───────────────────────────────────
-  // Lets a treasurer log weekly cash & check totals, plus income received
-  // through other platforms (Tithe.ly, PayPal, etc.) that never touches
-  // AGAPAY Give directly. These entries fold into the same totals used by
-  // Budget Pace, Stewardship Health, and the Monthly Report — logged once,
-  // reflected everywhere, without re-entering it in multiple places.
-  const manualIncomeSourceLabels = { cash_and_checks: 'Cash & Checks', tithely: 'Tithe.ly', paypal: 'PayPal', other: 'Other' };
+  // ── Outside-AGAPAY contribution intake ──────────────────────────────────
+  // This is intentionally limited to contributions. Bookstore, retreat,
+  // rental, grant, and other operating revenue belongs in the financial
+  // snapshot (and eventually Accounting), never in stewardship-giving health.
+  const manualIncomeSourceLabels = {
+    cash_and_checks: 'Cash/Check Collection',
+    tithely: 'Tithe.ly',
+    paypal: 'PayPal',
+    other_giving_platform: 'Another Giving Platform'
+  };
+
+  function openOutsideAgapayGiving() {
+    const pane = document.getElementById('stewardshipManualIncomePane');
+    if (!pane) return;
+    pane.hidden = false;
+    loadManualIncomePanel(financialsState.year);
+    pane.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function closeOutsideAgapayGiving() {
+    const pane = document.getElementById('stewardshipManualIncomePane');
+    if (pane) pane.hidden = true;
+  }
 
   async function loadManualIncomePanel(year) {
     const pane = document.getElementById('stewardshipManualIncomePane');
     if (!pane || !currentParish) return;
     if (!isParishTier()) { pane.innerHTML = renderGivingMetricsUpgrade(); return; }
 
-    const y = year || givingMetricsState.year;
+    const y = year || financialsState.year || givingMetricsState.year;
     if (!pane.querySelector('.sw-income-form')) pane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
     try {
       const res = await fetch(stewardshipApi('/income/manual?year=' + y), { headers: authHeaders() });
@@ -2532,7 +2728,7 @@
       }
       pane.innerHTML = renderManualIncome(data);
     } catch (e) {
-      pane.innerHTML = '<p class="muted">Other income data unavailable.</p>';
+      pane.innerHTML = '<p class="muted">Outside-AGAPAY giving data unavailable.</p>';
     }
   }
 
@@ -2545,11 +2741,12 @@
       '<tr class="sw-income-row">' +
         '<td>' + escapeHtml(e.entryDate) + '</td>' +
         '<td>' + escapeHtml(e.sourceLabel) + '</td>' +
+        '<td>' + escapeHtml(e.fundCode || '') + '</td>' +
         '<td class="sw-td-right">' + fmt(e.amountCents) + '</td>' +
-        '<td class="sw-income-notes">' + escapeHtml(e.notes || '') + '</td>' +
+        '<td class="sw-income-notes">' + escapeHtml([e.batchReference, e.notes].filter(Boolean).join(' · ')) + '</td>' +
         '<td><button type="button" class="sw-income-delete-btn" onclick="deleteManualIncomeEntry(\'' + escapeAttr(e.id) + '\')" title="Delete entry">&times;</button></td>' +
       '</tr>'
-    ).join('') : '<tr><td colspan="5" class="muted" style="text-align:center;padding:1rem;">No other income logged yet for this year.</td></tr>';
+    ).join('') : '<tr><td colspan="6" class="muted" style="text-align:center;padding:1rem;">No outside-AGAPAY contributions recorded for this year.</td></tr>';
 
     const bySourceHtml = Object.keys(d.by_source_cents || {}).length
       ? '<div class="sw-income-by-source">' + Object.entries(d.by_source_cents).map(([src, cents]) =>
@@ -2558,30 +2755,36 @@
       : '';
 
     return (
+      '<div class="sw-outside-giving-head">' +
+        '<div><strong>Record outside-AGAPAY giving</strong><p>Only contributions belong here. Operating revenue is entered in the financial snapshot.</p></div>' +
+        '<button type="button" class="btn btn-ghost btn-sm" onclick="closeOutsideAgapayGiving()">Close</button>' +
+      '</div>' +
       '<form class="sw-income-form" onsubmit="submitManualIncomeEntry(event)">' +
         '<div class="sw-income-form-row">' +
           '<label>Date<input type="date" name="entryDate" value="' + today + '" max="' + today + '" required /></label>' +
-          '<label>Source<select name="source" required onchange="this.closest(\'.sw-income-form-row\').querySelector(\'.sw-income-source-label-field\').hidden = (this.value !== \'other\')">' +
-            '<option value="cash_and_checks">Cash &amp; Checks</option>' +
+          '<label>Contribution source<select name="source" required onchange="this.closest(\'.sw-income-form-row\').querySelector(\'.sw-income-source-label-field\').hidden = (this.value !== \'other_giving_platform\')">' +
+            '<option value="cash_and_checks">Cash/Check Collection</option>' +
             '<option value="tithely">Tithe.ly</option>' +
             '<option value="paypal">PayPal</option>' +
-            '<option value="other">Other</option>' +
+            '<option value="other_giving_platform">Another Giving Platform</option>' +
           '</select></label>' +
-          '<label class="sw-income-source-label-field" hidden>Label<input type="text" name="sourceLabel" placeholder="e.g. Venmo" maxlength="60" /></label>' +
+          '<label class="sw-income-source-label-field" hidden>Platform name<input type="text" name="sourceLabel" placeholder="e.g. Venmo" maxlength="60" /></label>' +
           '<label>Amount<input type="number" name="amountCents" inputmode="decimal" step="0.01" min="0.01" placeholder="0.00" required /></label>' +
-          '<label class="sw-income-notes-field">Notes (optional)<input type="text" name="notes" placeholder="e.g. Sunday collection" maxlength="200" /></label>' +
-          '<button type="submit" class="sw-action-btn sw-income-submit-btn">+ Log Income</button>' +
+          '<label>Fund/designation<input type="text" name="fundCode" placeholder="e.g. General Fund" maxlength="60" required /></label>' +
+          '<label>Deposit or batch reference<input type="text" name="batchReference" placeholder="Optional reference" maxlength="120" /></label>' +
+          '<label class="sw-income-notes-field">Optional note<input type="text" name="notes" placeholder="e.g. Sunday collection" maxlength="200" /></label>' +
+          '<button type="submit" class="sw-action-btn sw-income-submit-btn">Record contribution</button>' +
         '</div>' +
         '<div class="sw-income-form-status" aria-live="polite"></div>' +
       '</form>' +
       (bySourceHtml || '') +
       '<div class="sw-fin-table-wrap" style="margin-top:.75rem;">' +
         '<table class="sw-fin-table sw-income-table">' +
-          '<thead><tr><th>Date</th><th>Source</th><th class="sw-th-right">Amount</th><th>Notes</th><th></th></tr></thead>' +
+          '<thead><tr><th>Date</th><th>Source</th><th>Fund</th><th class="sw-th-right">Amount</th><th>Reference / note</th><th></th></tr></thead>' +
           '<tbody>' + rows + '</tbody>' +
         '</table>' +
       '</div>' +
-      '<p class="muted" style="font-size:.72rem;margin:.6rem 0 0;">Logged here, this rolls into Budget Pace, Stewardship Health, and the Monthly Stewardship Report automatically — no need to re-enter it anywhere else.</p>'
+      '<p class="muted" style="font-size:.72rem;margin:.6rem 0 0;">These contribution entries flow into Budget Pace, Stewardship Health, the monthly report, and the authoritative financial snapshot.</p>'
     );
   }
 
@@ -2597,6 +2800,8 @@
       source: fd.get('source'),
       sourceLabel: fd.get('sourceLabel') || '',
       amountCents: Math.round((amountDollars || 0) * 100),
+      fundCode: fd.get('fundCode') || '',
+      batchReference: fd.get('batchReference') || '',
       notes: fd.get('notes') || '',
     };
     if (status) { status.textContent = 'Saving…'; status.className = 'sw-income-form-status'; }
@@ -2611,10 +2816,14 @@
       if (!res.ok || data.error) throw new Error(data.error || 'Could not save entry.');
       if (status) { status.textContent = 'Saved.'; status.className = 'sw-income-form-status sw-income-form-status--ok'; }
       form.reset();
+      const platformField = form.querySelector('.sw-income-source-label-field');
+      if (platformField) platformField.hidden = true;
       loadManualIncomePanel();
-      // Manual income affects Budget Pace and Stewardship Health too — refresh those.
+      // Qualified outside contributions affect Budget Pace, Stewardship Health,
+      // and the derived contribution total in the fiscal-year snapshot.
       loadGivingMetricsPanel();
       loadStewardshipHealthScorePanel();
+      loadFinancialSnapshotsPanel();
     } catch (e) {
       if (status) { status.textContent = e.message; status.className = 'sw-income-form-status sw-income-form-status--error'; }
     } finally {
@@ -2623,17 +2832,20 @@
   }
 
   async function deleteManualIncomeEntry(entryId) {
-    if (!confirm('Delete this income entry? This cannot be undone.')) return;
+    if (!confirm('Delete this outside-AGAPAY contribution? This cannot be undone.')) return;
     try {
-      await fetch(stewardshipApi('/income/manual/' + encodeURIComponent(entryId)), {
+      const res = await fetch(stewardshipApi('/income/manual/' + encodeURIComponent(entryId)), {
         method: 'DELETE',
         headers: authHeaders(),
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Delete failed.');
       loadManualIncomePanel();
       loadGivingMetricsPanel();
       loadStewardshipHealthScorePanel();
+      loadFinancialSnapshotsPanel();
     } catch (e) {
-      alert('Could not delete entry: ' + e.message);
+      alert('Could not delete contribution: ' + e.message);
     }
   }
 
@@ -2828,95 +3040,89 @@
   }
 
   function renderFinancialSnapshots(data) {
-    const fmt = (c) => '$' + ((c || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-    const { financialSummaries = [], restrictedFunds = [], totals, meetings = [], priorYear = null, restrictedFundsTotalCents = 0 } = data;
+    const fmt = (c) => {
+      const value = Number(c || 0);
+      return (value < 0 ? '-$' : '$') + (Math.abs(value) / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    };
+    const snapshot = data.snapshot || null;
+    const totals = data.totals || { totalIncomeCents: 0, totalExpenseCents: 0, netCents: 0 };
+    const contributions = data.contributionTotals || {};
+    const agapayRestrictedFunds = data.agapayRestrictedFunds || [];
+    const externalAssets = data.externalAssets || [];
+    const priorYear = data.priorYear || null;
+    const revisions = data.revisions || [];
+    const expenseRatioPct = totals.totalIncomeCents > 0 ? Math.round((totals.totalExpenseCents / totals.totalIncomeCents) * 100) : null;
+    const priorExpenseRatioPct = priorYear?.totalIncomeCents > 0 ? Math.round((priorYear.totalExpenseCents / priorYear.totalIncomeCents) * 100) : null;
+    const summaryHtml =
+      '<div class="sw-fin-source-note">' +
+        '<span><i class="sw-fin-source-dot sw-fin-source-dot--auto"></i>Calculated automatically</span>' +
+        '<span><i class="sw-fin-source-dot sw-fin-source-dot--editable"></i>Editable until Accounting launches</span>' +
+      '</div>' +
+      '<div class="sw-fin-kpi-grid">' +
+        swFinKpi('AGAPAY Contributions', fmt(contributions.agapayContributionsCents), 'calculated from completed gifts', 'income', '') +
+        swFinKpi('Outside Contributions', fmt(contributions.outsideContributionsCents), 'qualified contribution entries', 'income', '') +
+        swFinKpi('Other Revenue', fmt(snapshot?.otherRevenueCents || 0), 'editable non-contribution revenue', '', '') +
+        swFinKpi('Total Income', fmt(totals.totalIncomeCents), 'all revenue for ' + financialsState.year, 'income', swFinYoy(totals.totalIncomeCents, priorYear?.totalIncomeCents, priorYear?.fiscalYear)) +
+        swFinKpi('Total Expenses', fmt(totals.totalExpenseCents), 'editable until Accounting', 'expense', swFinYoy(totals.totalExpenseCents, priorYear?.totalExpenseCents, priorYear?.fiscalYear, true)) +
+        swFinKpi('Net ' + (totals.netCents >= 0 ? 'Surplus' : 'Deficit'), fmt(Math.abs(totals.netCents)), 'fiscal year ' + financialsState.year, totals.netCents >= 0 ? 'surplus' : 'deficit', swFinYoy(totals.netCents, priorYear?.netCents, priorYear?.fiscalYear)) +
+        swFinKpi('Expense Ratio', expenseRatioPct === null ? '—' : expenseRatioPct + '%', 'of income spent', expenseRatioPct === null ? '' : (expenseRatioPct <= 85 ? 'surplus' : expenseRatioPct <= 100 ? '' : 'deficit'), swFinYoy(expenseRatioPct, priorExpenseRatioPct, priorYear?.fiscalYear, true, true)) +
+      '</div>' +
+      (!snapshot ? '<div class="sw-financials-empty"><p>The calculated contribution and restricted-fund inflow totals are live. Complete the snapshot to add expenses, other revenue, externally held assets, and notes.</p><button class="sw-new-packet-btn" type="button" onclick="openFinancialsEditor()">Complete ' + financialsState.year + ' snapshot</button></div>' : '');
 
-    if (!meetings.length) {
-      return '<div class="sw-financials-empty">' +
-        '<p>No financial data for ' + financialsState.year + ' yet.</p>' +
-        '<p class="muted" style="font-size:.82rem">Create a financial snapshot to record income, expenses, and restricted fund balances.</p>' +
-        '<button class="sw-new-packet-btn" type="button" onclick="openFinancialsEditor(null)" style="margin-top:.5rem">+ New financial snapshot</button>' +
-      '</div>';
-    }
-
-    // Income / expense summary cards, each with a year-over-year badge when
-    // prior-year data exists — this is the "at a glance" comparison.
-    let summaryHtml = '';
-    if (totals) {
-      const expenseRatioPct = totals.totalIncomeCents > 0 ? Math.round((totals.totalExpenseCents / totals.totalIncomeCents) * 100) : null;
-      const priorExpenseRatioPct = priorYear && priorYear.totalIncomeCents > 0 ? Math.round((priorYear.totalExpenseCents / priorYear.totalIncomeCents) * 100) : null;
-      summaryHtml =
-        '<div class="sw-fin-kpi-grid">' +
-          swFinKpi('Total Income',  fmt(totals.totalIncomeCents),  financialSummaries.length + ' packet' + (financialSummaries.length !== 1 ? 's' : ''), 'income', swFinYoy(totals.totalIncomeCents, priorYear && priorYear.totalIncomeCents, priorYear && priorYear.year)) +
-          swFinKpi('Total Expenses', fmt(totals.totalExpenseCents), 'across all packets', 'expense', swFinYoy(totals.totalExpenseCents, priorYear && priorYear.totalExpenseCents, priorYear && priorYear.year, true)) +
-          swFinKpi('Net ' + (totals.netCents >= 0 ? 'Surplus' : 'Deficit'), fmt(Math.abs(totals.netCents)), 'fiscal year ' + financialsState.year, totals.netCents >= 0 ? 'surplus' : 'deficit', swFinYoy(totals.netCents, priorYear && priorYear.netCents, priorYear && priorYear.year)) +
-          swFinKpi('Expense Ratio', expenseRatioPct === null ? '—' : expenseRatioPct + '%', 'of income spent', expenseRatioPct === null ? '' : (expenseRatioPct <= 85 ? 'surplus' : expenseRatioPct <= 100 ? '' : 'deficit'), swFinYoy(expenseRatioPct, priorExpenseRatioPct, priorYear && priorYear.year, true, true)) +
-          swFinKpi('Restricted Funds', fmt(restrictedFundsTotalCents), restrictedFunds.length + ' fund' + (restrictedFunds.length !== 1 ? 's' : '') + ' tracked', '') +
-        '</div>';
-    }
-
-    // Per-packet breakdown and restricted funds side by side — the card is
-    // full-width now, so this no longer needs to stack and scroll.
-    let packetsHtml = '';
-    if (financialSummaries.length) {
-      packetsHtml =
-        '<div class="sw-fin-section-label">By packet</div>' +
-        '<div class="sw-fin-packets">' +
-        financialSummaries.map(fs => {
-          const net = fs.netCents;
-          const netCls = net >= 0 ? 'sw-fin-surplus' : 'sw-fin-deficit';
-          return '<div class="sw-fin-packet-row">' +
-            '<div class="sw-fin-packet-info">' +
-              '<span class="sw-fin-packet-title">' + escapeHtml(fs.meetingTitle || 'Packet') + '</span>' +
-              (fs.meetingDate ? '<span class="sw-fin-packet-date">' + new Date(fs.meetingDate + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + '</span>' : '') +
-            '</div>' +
-            '<div class="sw-fin-packet-amounts">' +
-              '<span class="sw-fin-income-lbl">' + fmt(fs.totalIncomeCents) + '</span>' +
-              '<span class="sw-fin-expense-lbl">' + fmt(fs.totalExpenseCents) + '</span>' +
-              '<span class="' + netCls + '">' + (net >= 0 ? '+' : '') + fmt(net) + '</span>' +
-            '</div>' +
-            '<button class="sw-action-btn" type="button" onclick="openFinancialsEditor(\'' + escapeAttr(fs.annualMeetingId) + '\')">Edit</button>' +
-          '</div>';
-        }).join('') +
-        '</div>';
-    }
-
-    let fundsHtml = '';
-    if (restrictedFunds.length) {
-      const rows = restrictedFunds.map(rf =>
+    const agapayFundRows = agapayRestrictedFunds.map(rf =>
         '<tr class="sw-fund-row">' +
-          '<td class="sw-td sw-fund-name">' + escapeHtml(rf.fundName) + '</td>' +
-          '<td class="sw-td sw-td-right">' + fmt(rf.beginningBalanceCents) + '</td>' +
-          '<td class="sw-td sw-td-right sw-fin-income-lbl">' + fmt(rf.totalReceivedCents) + '</td>' +
-          '<td class="sw-td sw-td-right sw-fin-expense-lbl">' + fmt(rf.totalDisbursedCents) + '</td>' +
-          '<td class="sw-td sw-td-right ' + (rf.endingBalanceCents >= 0 ? 'sw-fin-surplus' : 'sw-fin-deficit') + '">' + fmt(rf.endingBalanceCents) + '</td>' +
+          '<td class="sw-td sw-fund-name"><strong>' + escapeHtml(rf.name) + '</strong><small>' + fmt(rf.agapayReceivedCents) + ' AGAPAY · ' + fmt(rf.outsideReceivedCents) + ' outside</small></td>' +
+          '<td class="sw-td sw-td-right">' + fmt(rf.openingBalanceCents) + '</td>' +
+          '<td class="sw-td sw-td-right sw-fin-income-lbl">' + fmt(rf.receivedCents) + '</td>' +
+          '<td class="sw-td sw-td-right sw-fin-expense-lbl">' + fmt(rf.deductionsCents) + '</td>' +
+          '<td class="sw-td sw-td-right ' + (rf.endingBalanceCents < 0 ? 'sw-fin-deficit' : 'sw-fin-surplus') + '">' + fmt(rf.endingBalanceCents) + '</td>' +
         '</tr>'
-      ).join('');
-
-      fundsHtml =
-        '<div class="sw-fin-section-label">Restricted funds</div>' +
+      ).join('') || '<tr><td colspan="5" class="muted" style="text-align:center;padding:1rem;">No donor-restricted funds are configured in Funds &amp; Alms.</td></tr>';
+    const automaticFundsHtml =
+        '<div class="sw-fin-section-head"><div><div class="sw-fin-section-label">Restricted fund balances</div><p>Contributions calculate automatically; opening balances and deductions are maintained in the snapshot.</p></div><span class="sw-fin-auto-pill">Calculated</span></div>' +
         '<div class="sw-fin-table-wrap">' +
           '<table class="sw-fin-table">' +
             '<thead><tr>' +
               '<th class="sw-th">Fund</th>' +
-              '<th class="sw-th sw-th-right">Begin</th>' +
-              '<th class="sw-th sw-th-right">In</th>' +
-              '<th class="sw-th sw-th-right">Out</th>' +
+              '<th class="sw-th sw-th-right">Opening</th>' +
+              '<th class="sw-th sw-th-right">Inflows</th>' +
+              '<th class="sw-th sw-th-right">Deductions</th>' +
               '<th class="sw-th sw-th-right">Ending</th>' +
             '</tr></thead>' +
-            '<tbody>' + rows + '</tbody>' +
+            '<tbody>' + agapayFundRows + '</tbody>' +
           '</table>' +
-        '</div>';
-    }
-
-    const twoColHtml = (packetsHtml || fundsHtml)
-      ? '<div class="sw-fin-two-col">' +
-          '<div>' + packetsHtml + '</div>' +
-          '<div>' + fundsHtml + '</div>' +
+        '</div>' +
+        '<p class="sw-fin-basis-note">Ending balance = opening balance + AGAPAY and qualified outside contributions − expenses or deductions. A deficit remains visible when deductions exceed available funds.</p>';
+    const externalAssetLabels = {
+      investment: 'Investment',
+      endowment: 'Endowment',
+      real_property: 'Real property',
+      external_fund: 'External fund',
+      other: 'Other asset'
+    };
+    const externalRows = externalAssets.map(asset =>
+      '<tr class="sw-fund-row">' +
+        '<td class="sw-td sw-fund-name"><strong>' + escapeHtml(asset.name) + '</strong><small>' + escapeHtml(externalAssetLabels[asset.assetType] || 'External asset') + '</small></td>' +
+        '<td class="sw-td">' + escapeHtml(asset.asOfDate || 'Not dated') + '</td>' +
+        '<td class="sw-td">' + escapeHtml(asset.notes || '') + '</td>' +
+        '<td class="sw-td sw-td-right sw-fin-surplus">' + fmt(asset.valueCents) + '</td>' +
+      '</tr>'
+    ).join('') || '<tr><td colspan="4" class="muted" style="text-align:center;padding:1rem;">No externally held assets have been added.</td></tr>';
+    const externalAssetsHtml =
+      '<div class="sw-fin-section-head"><div><div class="sw-fin-section-label">Externally held assets</div><p>Investments, endowments, real property, and funds maintained outside AGAPAY.</p></div><span class="sw-fin-editable-pill">Editable</span></div>' +
+      '<div class="sw-fin-table-wrap"><table class="sw-fin-table"><thead><tr><th>Asset</th><th>Valuation date</th><th>Note</th><th class="sw-th-right">Reported value</th></tr></thead><tbody>' +
+      externalRows + '</tbody></table></div>';
+    const revisionHtml = revisions.length
+      ? '<div class="sw-fin-revisions"><div class="sw-fin-section-label">Revision history</div>' +
+        revisions.map(revision => '<div class="sw-fin-revision-row"><span>Version ' + revision.version + '</span><span>' +
+          escapeHtml(new Date(revision.createdAt).toLocaleString()) + '</span><span>' +
+          fmt(revision.totalIncomeCents) + ' income · ' + fmt(revision.totalExpenseCents) + ' expenses</span></div>').join('') +
         '</div>'
       : '';
-
-    return summaryHtml + twoColHtml;
+    const statusHtml = snapshot
+      ? '<div class="sw-fin-authority-status"><strong>Authoritative ' + financialsState.year + ' snapshot</strong><span>Version ' + snapshot.version + ' · Updated ' + escapeHtml(new Date(snapshot.updatedAt).toLocaleString()) + '</span></div>'
+      : '';
+    return statusHtml + summaryHtml + automaticFundsHtml + externalAssetsHtml + revisionHtml;
   }
 
   // Builds a "▲ 8% vs 2025" badge comparing current to prior-year value.
@@ -2945,55 +3151,61 @@
     '</div>';
   }
 
-  function openFinancialsEditor(meetingId) {
+  function openFinancialsEditor() {
     const card = document.getElementById('stewardshipFinancialsEditorCard');
     const pane = document.getElementById('stewardshipFinancialsEditorPane');
     const title = document.getElementById('financialsEditorTitle');
     if (!card || !pane) return;
 
-    // Find existing data for this meeting if provided
-    const existing = meetingId && financialsState.data
-      ? {
-          summary: financialsState.data.financialSummaries.find(fs => fs.annualMeetingId === meetingId),
-          funds:   financialsState.data.restrictedFunds.filter(rf => rf.annualMeetingId === meetingId),
-          meeting: financialsState.data.meetings.find(m => m.id === meetingId)
-        }
-      : null;
-
-    if (title) title.textContent = existing?.meeting ? 'Edit: ' + (existing.meeting.title || 'Packet') : 'New Financial Snapshot';
-
-    const fs = existing?.summary || {};
-    const funds = existing?.funds || [];
+    const fs = financialsState.data?.snapshot || {};
+    const contributions = financialsState.data?.contributionTotals || {};
+    const restrictedFunds = financialsState.data?.agapayRestrictedFunds || [];
+    const externalAssets = financialsState.data?.externalAssets || [];
+    if (title) title.textContent = fs.id ? 'Edit Authoritative Financial Snapshot' : 'Complete Authoritative Financial Snapshot';
     const fmt100 = (c) => c ? (c / 100).toFixed(2) : '';
 
-    const fundRows = funds.length
-      ? funds.map((rf, i) => renderFinancialsEditorFundRow(rf, i)).join('')
-      : renderFinancialsEditorFundRow({}, 0);
+    const assetRows = externalAssets.length
+      ? externalAssets.map((asset, i) => renderFinancialsEditorAssetRow(asset, i)).join('')
+      : renderFinancialsEditorAssetRow({}, 0);
+    const restrictedFundRows = restrictedFunds.map((fund) => renderFinancialsRestrictedAdjustmentRow(fund)).join('');
 
     pane.innerHTML =
       '<form id="financialsEditorForm" onsubmit="saveFinancialsSnapshot(event)">' +
-        (meetingId ? '<input type="hidden" name="annualMeetingId" value="' + escapeAttr(meetingId) + '" />' : '') +
-        (!meetingId ? '<div class="stewardship-form-grid" style="margin-bottom:.85rem">' +
-          '<label>Snapshot title<input name="title" value="' + financialsState.year + ' Financial Snapshot" /></label>' +
-          '<label>Fiscal year<input name="fiscalYear" type="number" value="' + financialsState.year + '" /></label>' +
-        '</div>' : '') +
+        '<div class="stewardship-form-grid" style="margin-bottom:.85rem">' +
+          '<label>Snapshot title<input name="title" value="' + escapeAttr(fs.title || financialsState.year + ' Financial Snapshot') + '" /></label>' +
+          '<label>Fiscal year<input name="fiscalYear" type="number" value="' + financialsState.year + '" readonly /></label>' +
+        '</div>' +
         '<div class="stewardship-editor-section">' +
-          '<div><h3>Income &amp; Expenses</h3></div>' +
+          '<div>' +
+            '<h3>Restricted Fund Balances</h3>' +
+            '<p>Inflows are calculated from AGAPAY and qualified outside contributions. Enter the opening balance and expenses or deductions for each fund.</p>' +
+          '</div>' +
+          (restrictedFundRows
+            ? '<div class="sw-fin-restricted-header"><span>Fund</span><span>Opening</span><span>Inflows</span><span>Deductions</span><span>Ending</span><span>Note</span></div><div id="financialsRestrictedAdjustmentRows">' + restrictedFundRows + '</div>'
+            : '<p class="muted">No donor-restricted funds are configured in Funds &amp; Alms.</p>') +
+        '</div>' +
+        '<div class="stewardship-editor-section">' +
+          '<div><div><h3>Income &amp; Expenses</h3><p>Contribution totals are calculated and cannot be overwritten here.</p></div></div>' +
+          '<div class="sw-fin-derived-grid">' +
+            '<div><span>AGAPAY contributions</span><strong>' + fmtDollars(contributions.agapayContributionsCents || 0) + '</strong></div>' +
+            '<div><span>Outside-AGAPAY contributions</span><strong>' + fmtDollars(contributions.outsideContributionsCents || 0) + '</strong></div>' +
+          '</div>' +
           '<div class="stewardship-form-grid">' +
-            '<label>Total income ($)<input name="totalIncomeDollars" type="number" step="0.01" min="0" value="' + fmt100(fs.totalIncomeCents) + '" placeholder="0.00" /></label>' +
+            '<label>Other revenue ($)<input name="otherRevenueDollars" type="number" step="0.01" min="0" value="' + fmt100(fs.otherRevenueCents) + '" placeholder="0.00" /><small>Bookstore, retreat, rental, grant, and other non-contribution revenue.</small></label>' +
             '<label>Total expenses ($)<input name="totalExpenseDollars" type="number" step="0.01" min="0" value="' + fmt100(fs.totalExpenseCents) + '" placeholder="0.00" /></label>' +
-            '<label style="grid-column:1/-1">Notes<textarea name="notes" rows="2" placeholder="Budget notes, audit status, carryover details\u2026">' + escapeHtml(fs.notes || '') + '</textarea></label>' +
+            '<label style="grid-column:1/-1">Notes<textarea name="notes" rows="3" placeholder="Budget notes, audit status, carryover details\u2026">' + escapeHtml(fs.notes || '') + '</textarea></label>' +
           '</div>' +
         '</div>' +
         '<div class="stewardship-editor-section">' +
           '<div>' +
-            '<h3>Restricted Funds</h3>' +
-            '<button class="btn btn-ghost btn-sm" type="button" onclick="addFinancialsFundRow()">Add fund</button>' +
+            '<h3>Externally Held Assets</h3>' +
+            '<p>Only add assets maintained outside AGAPAY. Restricted giving inside AGAPAY is calculated automatically.</p>' +
+            '<button class="btn btn-ghost btn-sm" type="button" onclick="addFinancialsAssetRow()">Add asset</button>' +
           '</div>' +
-          '<div class="sw-fin-fund-header">'+
-            '<span>Fund name</span><span>Beginning</span><span>Received</span><span>Disbursed</span><span>Ending</span><span></span>' +
+          '<div class="sw-fin-asset-header">'+
+            '<span>Type</span><span>Name</span><span>Reported value</span><span>Valuation date</span><span>Note</span><span></span>' +
           '</div>' +
-          '<div id="financialsFundRows">' + fundRows + '</div>' +
+          '<div id="financialsAssetRows">' + assetRows + '</div>' +
         '</div>' +
         '<div class="btn-row">' +
           '<button class="btn btn-gold" type="submit" id="financialsSaveBtn">Save snapshot</button>' +
@@ -3006,31 +3218,66 @@
     card.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  function renderFinancialsEditorFundRow(rf, i) {
-    const fmt100 = (c) => c ? (c / 100).toFixed(2) : '';
-    return '<div class="stewardship-repeat-row sw-fin-fund-row-edit" data-row-type="fund">' +
-      '<input type="text" data-field="fundName" value="' + escapeAttr(rf.fundName || '') + '" placeholder="Fund name" />' +
-      '<input type="number" step="0.01" min="0" data-field="beginningBalance" value="' + fmt100(rf.beginningBalanceCents) + '" placeholder="0.00" />' +
-      '<input type="number" step="0.01" min="0" data-field="totalReceived" value="' + fmt100(rf.totalReceivedCents) + '" placeholder="0.00" />' +
-      '<input type="number" step="0.01" min="0" data-field="totalDisbursed" value="' + fmt100(rf.totalDisbursedCents) + '" placeholder="0.00" />' +
-      '<input type="number" step="0.01" min="0" data-field="endingBalance" value="' + fmt100(rf.endingBalanceCents) + '" placeholder="0.00" />' +
-      '<button class="btn btn-ghost btn-sm" type="button" onclick="removeFinancialsFundRow(this)">×</button>' +
+  function renderFinancialsRestrictedAdjustmentRow(fund) {
+    const dollars = (c) => Number(c || 0) ? (Number(c) / 100).toFixed(2) : '';
+    return '<div class="sw-fin-restricted-adjustment-row" data-fund-id="' + escapeAttr(fund.id || fund.code || fund.name || '') + '" data-received-cents="' + Number(fund.receivedCents || 0) + '">' +
+      '<div class="sw-fin-restricted-name"><strong>' + escapeHtml(fund.name || 'Restricted fund') + '</strong><small>' + fmtDollars(fund.agapayReceivedCents || 0) + ' AGAPAY · ' + fmtDollars(fund.outsideReceivedCents || 0) + ' outside</small></div>' +
+      '<label><span>Opening</span><input type="number" step="0.01" min="0" data-field="openingBalance" value="' + dollars(fund.openingBalanceCents) + '" placeholder="0.00" oninput="recalculateRestrictedFundRow(this)" /></label>' +
+      '<div class="sw-fin-restricted-derived"><span>Inflows</span><strong>' + fmtDollars(fund.receivedCents || 0) + '</strong></div>' +
+      '<label><span>Deductions</span><input type="number" step="0.01" min="0" data-field="deductions" value="' + dollars(fund.deductionsCents) + '" placeholder="0.00" oninput="recalculateRestrictedFundRow(this)" /></label>' +
+      '<div class="sw-fin-restricted-derived"><span>Ending</span><strong data-field="endingBalance">' + fmtDollars(fund.endingBalanceCents || 0) + '</strong></div>' +
+      '<label><span>Note</span><input type="text" maxlength="1000" data-field="notes" value="' + escapeAttr(fund.adjustmentNotes || '') + '" placeholder="Optional expense detail" /></label>' +
     '</div>';
   }
 
-  function addFinancialsFundRow() {
-    const container = document.getElementById('financialsFundRows');
-    if (!container) return;
-    const count = container.querySelectorAll('.sw-fin-fund-row-edit').length;
-    container.insertAdjacentHTML('beforeend', renderFinancialsEditorFundRow({}, count));
+  function recalculateRestrictedFundRow(control) {
+    const row = control?.closest('.sw-fin-restricted-adjustment-row');
+    if (!row) return;
+    const opening = Math.round(parseFloat(row.querySelector('[data-field="openingBalance"]')?.value || '0') * 100);
+    const deductions = Math.round(parseFloat(row.querySelector('[data-field="deductions"]')?.value || '0') * 100);
+    const ending = opening + Number(row.dataset.receivedCents || 0) - deductions;
+    const output = row.querySelector('[data-field="endingBalance"]');
+    if (output) {
+      output.textContent = fmtDollars(ending);
+      output.classList.toggle('sw-fin-deficit', ending < 0);
+      output.classList.toggle('sw-fin-surplus', ending >= 0);
+    }
   }
 
-  function removeFinancialsFundRow(btn) {
-    const row = btn?.closest('.sw-fin-fund-row-edit');
+  function renderFinancialsEditorAssetRow(asset, i) {
+    const fmt100 = (c) => c ? (c / 100).toFixed(2) : '';
+    const options = [
+      ['investment', 'Investment'],
+      ['endowment', 'Endowment'],
+      ['real_property', 'Real property'],
+      ['external_fund', 'External fund'],
+      ['other', 'Other asset']
+    ].map(([value, label]) => '<option value="' + value + '" ' + ((asset.assetType || 'investment') === value ? 'selected' : '') + '>' + label + '</option>').join('');
+    return '<div class="stewardship-repeat-row sw-fin-asset-row-edit" data-row-type="external-asset">' +
+      '<select data-field="assetType">' + options + '</select>' +
+      '<input type="text" data-field="name" value="' + escapeAttr(asset.name || '') + '" placeholder="Asset or fund name" />' +
+      '<input type="number" step="0.01" min="0" data-field="value" value="' + fmt100(asset.valueCents) + '" placeholder="0.00" />' +
+      '<input type="date" data-field="asOfDate" value="' + escapeAttr(asset.asOfDate || '') + '" />' +
+      '<input type="text" data-field="notes" value="' + escapeAttr(asset.notes || '') + '" maxlength="1000" placeholder="Optional note" />' +
+      '<button class="btn btn-ghost btn-sm" type="button" onclick="removeFinancialsAssetRow(this)">×</button>' +
+    '</div>';
+  }
+
+  function addFinancialsAssetRow() {
+    const container = document.getElementById('financialsAssetRows');
+    if (!container) return;
+    const count = container.querySelectorAll('.sw-fin-asset-row-edit').length;
+    container.insertAdjacentHTML('beforeend', renderFinancialsEditorAssetRow({}, count));
+  }
+
+  function removeFinancialsAssetRow(btn) {
+    const row = btn?.closest('.sw-fin-asset-row-edit');
     const parent = row?.parentElement;
     if (!row || !parent) return;
-    if (parent.querySelectorAll('.sw-fin-fund-row-edit').length <= 1) {
-      row.querySelectorAll('input').forEach(inp => inp.value = '');
+    if (parent.querySelectorAll('.sw-fin-asset-row-edit').length <= 1) {
+      row.querySelectorAll('input').forEach((input) => { input.value = ''; });
+      const select = row.querySelector('select');
+      if (select) select.value = 'investment';
     } else {
       row.remove();
     }
@@ -3044,31 +3291,38 @@
     if (!form || !currentParish) return;
 
     const fd = new FormData(form);
-    const annualMeetingId = fd.get('annualMeetingId') || null;
-    const totalIncomeCents  = Math.round(parseFloat(fd.get('totalIncomeDollars') || '0') * 100);
+    const otherRevenueCents = Math.round(parseFloat(fd.get('otherRevenueDollars') || '0') * 100);
     const totalExpenseCents = Math.round(parseFloat(fd.get('totalExpenseDollars') || '0') * 100);
 
-    const fundRows = [...form.querySelectorAll('.sw-fin-fund-row-edit')];
-    const restrictedFunds = fundRows.map(row => {
+    const assetRows = [...form.querySelectorAll('.sw-fin-asset-row-edit')];
+    const externalAssets = assetRows.map(row => {
       const get = (f) => row.querySelector('[data-field="' + f + '"]')?.value || '';
       return {
-        fundName:              get('fundName').trim(),
-        beginningBalanceCents: Math.round(parseFloat(get('beginningBalance') || '0') * 100),
-        totalReceivedCents:    Math.round(parseFloat(get('totalReceived')    || '0') * 100),
-        totalDisbursedCents:   Math.round(parseFloat(get('totalDisbursed')   || '0') * 100),
-        endingBalanceCents:    Math.round(parseFloat(get('endingBalance')    || '0') * 100),
+        assetType: get('assetType'),
+        name: get('name').trim(),
+        valueCents: Math.round(parseFloat(get('value') || '0') * 100),
+        asOfDate: get('asOfDate'),
+        notes: get('notes').trim()
       };
-    }).filter(rf => rf.fundName);
+    }).filter(asset => asset.name);
+    const restrictedFundAdjustments = [...form.querySelectorAll('.sw-fin-restricted-adjustment-row')].map(row => {
+      const get = (f) => row.querySelector('[data-field="' + f + '"]')?.value || '';
+      return {
+        fundId: row.dataset.fundId || '',
+        openingBalanceCents: Math.round(parseFloat(get('openingBalance') || '0') * 100),
+        deductionsCents: Math.round(parseFloat(get('deductions') || '0') * 100),
+        notes: get('notes').trim()
+      };
+    }).filter(fund => fund.fundId);
 
     const payload = {
-      annualMeetingId,
-      totalIncomeCents,
+      otherRevenueCents,
       totalExpenseCents,
-      netCents: totalIncomeCents - totalExpenseCents,
       notes: fd.get('notes') || '',
       fiscalYear: parseInt(fd.get('fiscalYear') || financialsState.year, 10),
       title: fd.get('title') || '',
-      restrictedFunds
+      externalAssets,
+      restrictedFundAdjustments
     };
 
     if (btn) { btn.disabled = true; btn.classList.add('loading'); }
@@ -3251,6 +3505,22 @@
     window.open(stewardshipMonthlyReportUrl(), '_blank');
   }
 
+  function stewardshipMonthlyFinancialReportUrl() {
+    const token = document.getElementById('parishToken')?.value.trim() || sessionStorage.getItem(parishSessionStorageKey) || '';
+    const year = financialsState.year || givingMetricsState.year || new Date().getFullYear();
+    const month = String(new Date().getMonth() + 1).padStart(2, '0');
+    const url = new URL('/api/parish/dashboard/' + encodeURIComponent(currentParish?.parishId || '') + '/stewardship/report/monthly-financial', window.location.origin);
+    url.searchParams.set('year', String(year));
+    url.searchParams.set('month', String(year) + '-' + month);
+    url.searchParams.set('t', token);
+    return url.pathname + url.search;
+  }
+
+  function openStewardshipMonthlyFinancialReport() {
+    if (!currentParish) return;
+    window.open(stewardshipMonthlyFinancialReportUrl(), '_blank');
+  }
+
   function updateStewardshipBadges(isActive, options = {}) {
     renderParishPlusMeetingsPane(document.getElementById('parishPlusMeetingsPane'), isActive);
     const stewardshipActive = !isStarterTier() && moduleIncluded('stewardshipHealth');
@@ -3270,19 +3540,20 @@
       mobileBookstoreBadge.textContent = 'Upgrade';
       mobileBookstoreBadge.classList.remove('mobile-upgrade-badge--active');
     }
+    syncModuleStatusNavigation('bookstore', bookstoreActive, Boolean(currentParish?.bookstoreEnabled));
 
     // Sacraments & Services is a Parish tier feature. Parish-tier parishes
     // can turn the donor-facing entry on or off from the Sacraments tab.
     const sacIsOn = Boolean(currentParish?.sacramentsEnabled);
-    const sacSoonBadge = document.getElementById('sacramentsNavSoonBadge');
     const sacBadge = document.getElementById('sacramentsNavBadge');
     syncTierRequirementNavigation('sacraments', 'Parish', sacramentsActive);
-    if (sacSoonBadge) sacSoonBadge.hidden = true;
     if (sacBadge) {
-      sacBadge.hidden = false;
-      sacBadge.textContent = sacramentsActive ? (sacIsOn ? 'On' : 'Off') : 'Upgrade';
-      sacBadge.classList.toggle('nav-upgrade-badge--active', sacramentsActive && sacIsOn);
+      sacBadge.hidden = sacramentsActive;
+      sacBadge.textContent = 'Upgrade';
+      sacBadge.classList.remove('nav-upgrade-badge--active');
     }
+    syncModuleStatusNavigation('sacraments', sacramentsActive, sacIsOn);
+    syncModuleStatusNavigation('directory', moduleIncluded('directory'), Boolean(currentParish?.directoryEnabled));
   }
 
   // ── BOOKSTORE ───────────────────────────────────────────────
@@ -3292,6 +3563,115 @@
   // in by hand. Prices on the starter list are suggestions, not fixed —
   // the parish edits them before anything gets added.
   let bookstoreCatalogState = { loaded: false, products: [], starterCatalog: [] };
+  let commerceProductState = 'overview';
+
+  function switchCommerceProduct(product, focus = true) {
+    const allowed = new Set(['overview', 'bookstore']);
+    commerceProductState = allowed.has(product) ? product : 'overview';
+    document.querySelectorAll('.commerce-product-tab').forEach((tab) => {
+      const active = tab.dataset.commerceProduct === commerceProductState;
+      tab.classList.toggle('is-active', active);
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
+      if (active && focus) tab.focus({ preventScroll: true });
+    });
+    document.querySelectorAll('.commerce-workspace-panel').forEach((panel) => {
+      const active = panel.dataset.commercePanel === commerceProductState;
+      panel.hidden = !active;
+      panel.classList.toggle('is-active', active);
+    });
+    if (commerceProductState === 'overview') renderCommerceOverview();
+  }
+
+  function setCommerceOverviewRange(range) {
+    bookstoreSalesState.range = ['30d', '90d', 'ytd', 'all'].includes(range) ? range : '90d';
+    document.querySelectorAll('[data-commerce-range], .bk-range-btn').forEach((button) => {
+      const active = button.getAttribute('data-commerce-range') === bookstoreSalesState.range
+        || button.getAttribute('data-range') === bookstoreSalesState.range;
+      button.classList.toggle('is-active', active);
+    });
+    loadBookstoreSalesPanel(true);
+  }
+
+  function refreshCommerceOverview() {
+    loadBookstoreCatalogTab(true);
+  }
+
+  function renderCommerceOverview() {
+    const body = document.getElementById('commerceOverviewBody');
+    if (!body) return;
+    const sales = bookstoreSalesState.data;
+    const catalogReady = bookstoreCatalogState.loaded;
+    if (!sales || !catalogReady) {
+      body.innerHTML = '<p class="sw-tool-loading">Loading Commerce activity…</p>';
+      return;
+    }
+
+    const kpis = sales.kpis || {};
+    const products = bookstoreCatalogState.products || [];
+    const activeProducts = products.filter((product) => String(product.status || 'active').toLowerCase() === 'active');
+    const orders = bookstoreSalesState.orders || [];
+    const hasActivity = Number(kpis.orderCount || 0) > 0;
+    const bookstoreState = currentParish?.bookstoreEnabled ? 'Live in My AGAPAY' : 'Hidden from My AGAPAY';
+
+    body.innerHTML = `
+      <section class="commerce-overview-kpis" aria-label="Commerce metrics">
+        <article class="commerce-overview-kpi commerce-overview-kpi--primary">
+          <span>Net revenue</span>
+          <strong>${money(kpis.netCents || 0)}</strong>
+          <small>After payment fees${kpis.taxCents ? ` · ${money(kpis.taxCents)} tax collected` : ''}</small>
+        </article>
+        <article class="commerce-overview-kpi">
+          <span>Gross sales</span>
+          <strong>${money(kpis.grossCents || 0)}</strong>
+          <small>${Number(kpis.orderCount || 0)} order${Number(kpis.orderCount || 0) === 1 ? '' : 's'} across Commerce</small>
+        </article>
+        <article class="commerce-overview-kpi">
+          <span>Customers</span>
+          <strong>${Number(kpis.uniqueCustomers || 0)}</strong>
+          <small>${Number(kpis.repeatCustomers || 0)} returning customer${Number(kpis.repeatCustomers || 0) === 1 ? '' : 's'}</small>
+        </article>
+        <article class="commerce-overview-kpi">
+          <span>Active offerings</span>
+          <strong>${activeProducts.length}</strong>
+          <small>${Number(kpis.unitsSold || 0)} item${Number(kpis.unitsSold || 0) === 1 ? '' : 's'} sold this period</small>
+        </article>
+      </section>
+
+      <div class="commerce-overview-grid">
+        <section class="commerce-overview-card commerce-product-summary">
+          <header>
+            <div><span class="commerce-card-eyebrow">Products</span><h2>Commerce activity</h2></div>
+            <span class="commerce-card-note">All products</span>
+          </header>
+          <button class="commerce-product-summary-row" type="button" onclick="switchCommerceProduct('bookstore')">
+            <span class="commerce-product-summary-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            </span>
+            <span class="commerce-product-summary-copy"><strong>Bookstore</strong><small>${escapeHtml(bookstoreState)} · ${activeProducts.length} active offering${activeProducts.length === 1 ? '' : 's'}</small></span>
+            <span class="commerce-product-summary-metrics"><strong>${money(kpis.netCents || 0)}</strong><small>${Number(kpis.orderCount || 0)} order${Number(kpis.orderCount || 0) === 1 ? '' : 's'}</small></span>
+            <span class="commerce-product-summary-arrow" aria-hidden="true">→</span>
+          </button>
+          <div class="commerce-coming-products">
+            <span>Events</span><span>Meals</span><span>Retreats</span><span>Camp</span><span>Tuition</span>
+            <small>Additional product activity will roll into this overview as each product launches.</small>
+          </div>
+        </section>
+
+        <section class="commerce-overview-card commerce-recent-activity">
+          <header>
+            <div><span class="commerce-card-eyebrow">Latest</span><h2>Recent activity</h2></div>
+            ${hasActivity ? `<button type="button" onclick="switchCommerceProduct('bookstore')">View Bookstore</button>` : ''}
+          </header>
+          ${orders.length ? `<div class="commerce-activity-list">${orders.slice(0, 5).map((order) => `
+            <article>
+              <span class="commerce-activity-avatar">${escapeHtml(bkInitials(order.donorName))}</span>
+              <span class="commerce-activity-copy"><strong>${escapeHtml(order.donorName || 'Parishioner')}</strong><small>${escapeHtml(order.summary || 'Bookstore purchase')} · ${bkAgo(order.createdAt)}</small></span>
+              <span class="commerce-activity-amount"><strong>${moneyFull(order.grossCents || 0)}</strong><small>Bookstore</small></span>
+            </article>`).join('')}</div>`
+            : `<div class="commerce-overview-empty"><strong>No Commerce sales yet</strong><p>Orders from every active Commerce product will appear here as parishioners make purchases.</p><button type="button" onclick="switchCommerceProduct('bookstore')">Set up Bookstore</button></div>`}
+        </section>
+      </div>`;
+  }
   let bookstoreEditingProductId = null;
 
   function bookstoreApi(path = '') {
@@ -3555,6 +3935,44 @@
     box.innerHTML = `<strong>Sales tax reminder:</strong> ${escapeHtml(stateLabel)} may require sales tax on bookstore items. Set up Stripe Tax in your connected Stripe account before taking live bookstore payments so Stripe can show any required tax on the payment page.`;
   }
 
+  function renderBookstoreFeatureToggle() {
+    const root = document.getElementById('bookstoreFeatureToggle');
+    if (!root) return;
+    const enabled = Boolean(currentParish?.bookstoreEnabled);
+    root.innerHTML = `<label class="sac-admin-switch agapay-feature-switch" title="Show or hide Bookstore in My AGAPAY">
+      <input type="checkbox" aria-label="Show Bookstore in My AGAPAY" ${enabled ? 'checked' : ''} onchange="toggleBookstoreFeature(this)" />
+      <span aria-hidden="true"></span>
+      <em>${enabled ? 'Visible in My AGAPAY' : 'Hidden from My AGAPAY'}</em>
+    </label>`;
+  }
+
+  async function toggleBookstoreFeature(input) {
+    if (!currentParish) return;
+    const enabled = Boolean(input?.checked);
+    const previous = Boolean(currentParish.bookstoreEnabled);
+    if (input) input.disabled = true;
+    try {
+      const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId), {
+        method: 'PATCH',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookstoreEnabled: enabled })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || 'Unable to update Bookstore.');
+      currentParish = { ...currentParish, ...(payload.parish || {}), bookstoreEnabled: Boolean(payload.parish?.bookstoreEnabled ?? enabled) };
+      syncModuleStatusNavigation('bookstore', moduleIncluded('bookstore'), currentParish.bookstoreEnabled);
+      setStatus(currentParish.bookstoreEnabled ? 'Bookstore is on for parishioners.' : 'Bookstore is off for parishioners.', 'success');
+      loadBookstoreCatalogTab();
+    } catch (error) {
+      currentParish.bookstoreEnabled = previous;
+      if (input) input.checked = previous;
+      renderBookstoreFeatureToggle();
+      setStatus(error.message, 'error');
+    } finally {
+      if (input) input.disabled = false;
+    }
+  }
+
   async function loadBookstoreCatalogTab(force = false) {
     const upsell = document.getElementById('bookstoreUpsellBanner');
     const live = document.getElementById('bookstoreLiveContent');
@@ -3571,6 +3989,7 @@
     }
     if (upsell) upsell.hidden = true;
     if (live) live.hidden = false;
+    renderBookstoreFeatureToggle();
     if (status) {
       status.textContent = currentParish.bookstoreEnabled ? 'Live in My AGAPAY' : 'Hidden until enabled';
       status.className = 'sw-suite-status-label ' + (currentParish.bookstoreEnabled ? 'sw-suite-status--active' : 'sw-suite-status--upsell');
@@ -3581,6 +4000,7 @@
     if (bookstoreCatalogState.loaded && !force) {
       renderBookstoreCurrentItems(bookstoreCatalogState.products);
       renderBookstoreStarterCatalogUI(bookstoreCatalogState.starterCatalog);
+      renderCommerceOverview();
       return;
     }
 
@@ -3602,6 +4022,7 @@
       bookstoreCatalogState = { loaded: true, products: productsData.products || [], starterCatalog: catalogData.catalog || [] };
       renderBookstoreCurrentItems(bookstoreCatalogState.products);
       renderBookstoreStarterCatalogUI(bookstoreCatalogState.starterCatalog);
+      renderCommerceOverview();
     } catch (err) {
       if (itemsPane) itemsPane.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
       if (starterPane) starterPane.innerHTML = '';
@@ -3635,6 +4056,7 @@
       bookstoreSalesState.nextCursor = data.nextCursor || null;
       bookstoreSalesState.loaded = true;
       renderBookstoreSalesPanel();
+      renderCommerceOverview();
     } catch (err) {
       body.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
     } finally {
@@ -4143,7 +4565,7 @@
   // decide whether to show the upsell or the actual request list, so
   // switching to this tab never needs a second status round-trip.
   let sacramentsState = { loaded: false, requests: [] };
-  let sacramentsDashboardTab = 'availability';
+  let sacramentsDashboardTab = 'rules';
   let sacramentsPriestIndex = 0;
 
   function sacramentsApi(path = '') {
@@ -4173,7 +4595,7 @@
     document.querySelectorAll('[data-sac-tab]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.sacTab === sacramentsDashboardTab);
     });
-    if (['availability', 'blackouts', 'rules', 'calendar'].includes(sacramentsDashboardTab) && !sacramentsAvailabilityState.loaded) {
+    if (['blackouts', 'rules', 'calendar'].includes(sacramentsDashboardTab) && !sacramentsAvailabilityState.loaded) {
       loadSacramentsAvailability();
     }
     renderSacramentsPanel();
@@ -4183,10 +4605,12 @@
     const saved = Array.isArray(currentParish?.sacramentPriests) ? currentParish.sacramentPriests : [];
     const rows = saved.map((priest) => ({
       name: String(priest?.name || '').trim(),
-      email: String(priest?.email || '').trim()
+      email: String(priest?.email || '').trim(),
+      serviceTypes: Array.isArray(priest?.serviceTypes) ? priest.serviceTypes : defaultSacramentServiceTypes(),
+      customServices: Array.isArray(priest?.customServices) ? priest.customServices : []
     })).filter((priest) => priest.name);
     if (rows.length) return rows;
-    return [{ name: 'Parish priest', email: currentParish?.priestEmail || '' }];
+    return [{ name: 'Parish priest', email: currentParish?.priestEmail || '', serviceTypes: defaultSacramentServiceTypes(), customServices: [] }];
   }
 
   function selectedSacramentPriest() {
@@ -4240,14 +4664,6 @@
     renderSacramentsFeatureToggle();
     renderSacramentsPriestPicker();
 
-    // Reuse the Parish tier status already fetched for the feature gate.
-    const sw = stewardshipState.stewardship || {};
-    const swActive = sw.active || ['active', 'trialing', 'comped'].includes(sw.status);
-    if (!swActive) {
-      if (statusLabel) statusLabel.textContent = 'Included in Parish';
-      pane.innerHTML = renderSacramentsUpsell();
-      return;
-    }
     if (!currentParish.sacramentsEnabled) {
       if (statusLabel) statusLabel.textContent = 'Off';
       pane.innerHTML = renderSacramentsDisabledPanel();
@@ -4284,7 +4700,23 @@
     ['Pacific/Honolulu', 'Hawaii (Honolulu)']
   ];
   const SAC_DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const SAC_DEFAULT_SERVICE_TYPES = ['house_blessing', 'confession', 'counseling', 'baptism', 'wedding'];
+  const SAC_EDITABLE_SERVICE_TYPES = [...SAC_DEFAULT_SERVICE_TYPES];
   const SAC_SCHEDULABLE_TYPES = ['house_blessing', 'confession', 'home_visit', 'office_visit', 'anointing', 'counseling'];
+
+  function defaultSacramentServiceTypes() {
+    return [...SAC_DEFAULT_SERVICE_TYPES];
+  }
+
+  function selectedSacramentServiceTypes() {
+    const types = selectedSacramentPriest().serviceTypes;
+    return Array.isArray(types) ? types : defaultSacramentServiceTypes();
+  }
+
+  function selectedSchedulableSacramentTypes() {
+    const enabled = new Set(selectedSacramentServiceTypes());
+    return SAC_SCHEDULABLE_TYPES.filter(type => enabled.has(type));
+  }
 
   let sacramentsAvailabilityState = { loaded: false, loading: false, error: '', timezone: '', rules: [], blackouts: [] };
 
@@ -4310,10 +4742,10 @@
     const root = document.getElementById('sacramentsFeatureToggle');
     if (!root) return;
     const enabled = Boolean(currentParish?.sacramentsEnabled);
-    root.innerHTML = `<label class="sac-admin-switch">
-      <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSacramentsFeature(this)" />
-      <span></span>
-      <em>${enabled ? 'Parishioners can request' : 'Off for parishioners'}</em>
+    root.innerHTML = `<label class="sac-admin-switch agapay-feature-switch" title="Show or hide Sacraments &amp; Services in My AGAPAY">
+      <input type="checkbox" aria-label="Show Sacraments and Services in My AGAPAY" ${enabled ? 'checked' : ''} onchange="toggleSacramentsFeature(this)" />
+      <span aria-hidden="true"></span>
+      <em>${enabled ? 'Visible in My AGAPAY' : 'Hidden from My AGAPAY'}</em>
     </label>`;
   }
 
@@ -4342,11 +4774,13 @@
       sacramentsState.loaded = false;
       sacramentsAvailabilityState = { loaded: false, loading: false, error: '', timezone: '', rules: [], blackouts: [] };
       setStatus(currentParish.sacramentsEnabled ? 'Sacraments & Services is on for parishioners.' : 'Sacraments & Services is off for parishioners.', 'success');
+      syncModuleStatusNavigation('sacraments', moduleIncluded('sacraments'), currentParish.sacramentsEnabled);
       renderSacramentsFeatureToggle();
       loadSacramentsPanel(true);
     } catch (err) {
       currentParish.sacramentsEnabled = previous;
       if (input) input.checked = previous;
+      syncModuleStatusNavigation('sacraments', moduleIncluded('sacraments'), previous);
       renderSacramentsFeatureToggle();
       setStatus(err.message, 'error');
     } finally {
@@ -4372,7 +4806,9 @@
         </div>`;
     }
     const rulesByType = groupSacramentsRulesByType();
+    const schedulableTypes = selectedSchedulableSacramentTypes();
     return `
+      ${renderSacramentsOfferingsEditor()}
       <div class="sac-admin-panel">
         <div class="sac-admin-panel-head">
           <div>
@@ -4384,7 +4820,9 @@
         <p class="sac-admin-muted">Set the regular times parishioners may book. These are the windows My AGAPAY uses to show real openings.</p>
         ${renderSacramentsTimezoneForm()}
         <div class="sac-admin-availability-list">
-          ${SAC_SCHEDULABLE_TYPES.map(type => renderSacramentsAvailabilityType(type, rulesByType[type] || [])).join('')}
+          ${schedulableTypes.length
+            ? schedulableTypes.map(type => renderSacramentsAvailabilityType(type, rulesByType[type] || [])).join('')
+            : '<p class="sac-admin-empty-line">Turn on at least one bookable service above to add weekly availability.</p>'}
         </div>
       </div>
       <div class="sac-admin-panel">
@@ -4422,6 +4860,108 @@
     return rulesByType;
   }
 
+  function renderSacramentsOfferingsEditor() {
+    const priest = selectedSacramentPriest();
+    const enabled = new Set(selectedSacramentServiceTypes());
+    const custom = Array.isArray(priest.customServices) ? priest.customServices : [];
+    return `
+      <div class="sac-admin-panel">
+        <div class="sac-admin-panel-head">
+          <div>
+            <span>Online offerings</span>
+            <h2>Sacraments &amp; services offered by ${escapeHtml(priest.name)}</h2>
+          </div>
+        </div>
+        <p class="sac-admin-muted">Choose the standard offerings this priest accepts online. Holy Unction, Home Visit, and Office Visit are not included by default; add one below if this priest offers it.</p>
+        <div class="sac-admin-offering-checks">
+          ${SAC_EDITABLE_SERVICE_TYPES.map(type => `
+            <label>
+              <input type="checkbox" ${enabled.has(type) ? 'checked' : ''} onchange="toggleSacramentsOffering('${type}', this.checked)" />
+              <span>${escapeHtml(sacramentTypeLabel({ sacramentType: type }))}</span>
+            </label>`).join('')}
+        </div>
+        ${custom.length ? `<div class="sac-admin-custom-offerings">${custom.map(service => `
+          <span>${escapeHtml(service.label)}<button type="button" aria-label="Remove ${escapeAttr(service.label)}" onclick="removeCustomSacramentsOffering('${escapeAttr(service.id)}')">×</button></span>
+        `).join('')}</div>` : ''}
+        <div class="sac-admin-actions">
+          <label class="sac-admin-add-offering"><span>Add another offering</span><input id="sacAvailCustomOffering" placeholder="e.g. Holy Unction" /></label>
+          <button class="sac-admin-outline-btn" type="button" onclick="addCustomSacramentsOffering(this)">Add offering</button>
+          <span id="sacAvailOfferingStatus" class="sac-admin-status-text"></span>
+        </div>
+      </div>`;
+  }
+
+  async function saveSelectedSacramentPriestOfferings(serviceTypes, customServices, statusMessage) {
+    if (!currentParish) return;
+    const priests = sacramentPriests().map((priest, index) => index === sacramentsPriestIndex
+      ? { ...priest, serviceTypes, customServices }
+      : priest);
+    const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId), {
+      method: 'PATCH',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sacramentPriests: priests })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Unable to update online offerings.');
+    currentParish = { ...currentParish, ...(data.parish || {}), sacramentPriests: data.parish?.sacramentPriests || priests };
+    setStatus(statusMessage || 'Online offerings updated.', 'success');
+    renderSacramentsPriestPicker();
+    renderSacramentsPanel();
+  }
+
+  async function toggleSacramentsOffering(type, enabled) {
+    const priest = selectedSacramentPriest();
+    const next = new Set(selectedSacramentServiceTypes());
+    enabled ? next.add(type) : next.delete(type);
+    try {
+      await saveSelectedSacramentPriestOfferings([...next], priest.customServices || [], 'Online offerings updated.');
+    } catch (err) {
+      setStatus(err.message, 'error');
+      renderSacramentsPanel();
+    }
+  }
+
+  async function addCustomSacramentsOffering(btn) {
+    const input = document.getElementById('sacAvailCustomOffering');
+    const status = document.getElementById('sacAvailOfferingStatus');
+    const label = String(input?.value || '').trim();
+    if (!label) {
+      if (status) status.textContent = 'Enter an offering name.';
+      return;
+    }
+    const aliases = { 'holy unction': 'anointing', unction: 'anointing', 'home visit': 'home_visit', 'office visit': 'office_visit' };
+    const builtIn = aliases[label.toLowerCase()];
+    const priest = selectedSacramentPriest();
+    const types = new Set(selectedSacramentServiceTypes());
+    const custom = [...(priest.customServices || [])];
+    if (builtIn) {
+      types.add(builtIn);
+    } else {
+      const id = 'custom_' + label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 60);
+      if (!id || id === 'custom_') return;
+      if (!custom.some(service => service.id === id)) custom.push({ id, label });
+    }
+    if (btn) btn.disabled = true;
+    try {
+      await saveSelectedSacramentPriestOfferings([...types], custom, `${label} added for ${priest.name}.`);
+    } catch (err) {
+      if (status) status.textContent = err.message;
+      setStatus(err.message, 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function removeCustomSacramentsOffering(id) {
+    const priest = selectedSacramentPriest();
+    const custom = (priest.customServices || []).filter(service => service.id !== id);
+    try {
+      await saveSelectedSacramentPriestOfferings(selectedSacramentServiceTypes(), custom, 'Offering removed.');
+    } catch (err) {
+      setStatus(err.message, 'error');
+    }
+  }
+
   function renderSacramentsAvailabilityType(type, rules) {
     const label = sacramentTypeLabel({ sacramentType: type });
     const rows = rules.length ? rules.map(r => `
@@ -4439,17 +4979,18 @@
   }
 
   function renderSacramentsAvailabilityAddForm() {
+    const types = selectedSchedulableSacramentTypes();
     return `
       <div class="sac-admin-form-grid">
         <label><span>Priest</span><input value="${escapeHtml(selectedSacramentPriest().name)}" disabled /></label>
-        <label><span>Type</span><select id="sacAvailNewType">${SAC_SCHEDULABLE_TYPES.map(t => `<option value="${t}">${escapeHtml(sacramentTypeLabel({ sacramentType: t }))}</option>`).join('')}</select></label>
+        <label><span>Type</span><select id="sacAvailNewType" ${types.length ? '' : 'disabled'}>${types.map(t => `<option value="${t}">${escapeHtml(sacramentTypeLabel({ sacramentType: t }))}</option>`).join('')}</select></label>
         <label><span>Day</span><select id="sacAvailNewDay">${SAC_DAY_LABELS.map((l, i) => `<option value="${i}">${l}</option>`).join('')}</select></label>
         <label><span>Start</span><input type="time" id="sacAvailNewStart" value="16:00" /></label>
         <label><span>End</span><input type="time" id="sacAvailNewEnd" value="18:00" /></label>
         <label><span>Slot length</span><input type="number" min="5" max="240" step="5" id="sacAvailNewSlotMinutes" value="30" /></label>
       </div>
       <div class="sac-admin-actions">
-        <button class="sac-admin-outline-btn" type="button" onclick="addSacramentsAvailabilityRule(this)">Add window</button>
+        <button class="sac-admin-outline-btn" type="button" onclick="addSacramentsAvailabilityRule(this)" ${types.length ? '' : 'disabled'}>Add window</button>
         <span id="sacAvailRuleStatus" class="sac-admin-status-text"></span>
       </div>`;
   }
@@ -4463,7 +5004,7 @@
     const blackoutRows = priestBlackouts.length ? priestBlackouts.map(b => `
       <div class="sac-admin-blackout-row">
         <div>
-          <strong>${escapeHtml(formatSacramentDisplayDate(b.date))}</strong>
+          <strong>${escapeHtml(formatSacramentDateRange(b.startDate || b.date, b.endDate || b.date))}</strong>
           <span>${b.reason ? escapeHtml(b.reason) : 'Unavailable'}</span>
         </div>
         <button class="sac-admin-text-btn" type="button" onclick="deleteSacramentsAvailabilityBlackout('${b.id}')">Remove</button>
@@ -4483,17 +5024,18 @@
       <div class="sac-admin-panel">
         <div class="sac-admin-panel-head">
           <div>
-            <span>Add a blackout date</span>
-            <h2>Block a day</h2>
+            <span>Add a blackout date range</span>
+            <h2>Block one day or a range</h2>
           </div>
         </div>
         <div class="sac-admin-form-row">
           <label><span>Priest</span><input value="${escapeHtml(priest.name)}" disabled /></label>
-          <label><span>Date</span><input type="date" id="sacAvailNewBlackoutDate" /></label>
+          <label><span>Start date</span><input type="date" id="sacAvailNewBlackoutStartDate" onchange="syncSacramentsBlackoutEndDate()" /></label>
+          <label><span>End date</span><input type="date" id="sacAvailNewBlackoutEndDate" /></label>
           <label><span>Reason</span><input id="sacAvailNewBlackoutReason" placeholder="e.g. Clergy retreat" /></label>
         </div>
         <div class="sac-admin-actions">
-          <button class="sac-admin-outline-btn" type="button" onclick="addSacramentsAvailabilityBlackout(this)">Add date</button>
+          <button class="sac-admin-outline-btn" type="button" onclick="addSacramentsAvailabilityBlackout(this)">Add blackout</button>
           <span id="sacAvailBlackoutStatus" class="sac-admin-status-text"></span>
         </div>
       </div>`;
@@ -4575,20 +5117,22 @@
 
   async function addSacramentsAvailabilityBlackout(btn) {
     const status = document.getElementById('sacAvailBlackoutStatus');
-    const date = document.getElementById('sacAvailNewBlackoutDate')?.value;
+    const startDate = document.getElementById('sacAvailNewBlackoutStartDate')?.value;
+    const endDate = document.getElementById('sacAvailNewBlackoutEndDate')?.value || startDate;
     const reason = document.getElementById('sacAvailNewBlackoutReason')?.value || '';
     const priest = selectedSacramentPriest();
-    if (!date) { if (status) { status.textContent = 'Choose a date.'; status.style.color = 'var(--red, #8b2020)'; } return; }
+    if (!startDate) { if (status) { status.textContent = 'Choose a start date.'; status.style.color = 'var(--red, #8b2020)'; } return; }
+    if (endDate < startDate) { if (status) { status.textContent = 'End date must be on or after the start date.'; status.style.color = 'var(--red, #8b2020)'; } return; }
     if (btn) { btn.disabled = true; btn.classList.add('loading'); }
     if (status) status.textContent = '';
     try {
       const res = await fetch(sacramentsApi('/availability/blackouts'), {
         method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, reason, priestName: priest.name, priestEmail: priest.email })
+        body: JSON.stringify({ startDate, endDate, reason, priestName: priest.name, priestEmail: priest.email })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Unable to add blackout date.');
-      if (status) { status.textContent = 'Blackout date added.'; status.style.color = 'var(--green, #2a7a4b)'; }
+      if (status) { status.textContent = 'Blackout added.'; status.style.color = 'var(--green, #2a7a4b)'; }
       await loadSacramentsAvailability(true);
     } catch (err) {
       if (status) { status.textContent = err.message; status.style.color = 'var(--red, #8b2020)'; }
@@ -4765,8 +5309,10 @@
     if (st.loading || !st.loaded) return renderSacramentsLoadingPanel('Loading sacrament rules...');
     if (st.error) return renderSacramentsErrorPanel(st.error, 'loadSacramentsAvailability(true)');
     const rulesByType = groupSacramentsRulesByType();
+    const offeredTypes = selectedSacramentServiceTypes();
     const dayShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     return `
+      ${renderSacramentsOfferingsEditor()}
       <div class="sac-admin-panel">
         <div class="sac-admin-panel-head">
           <div>
@@ -4777,15 +5323,17 @@
         </div>
         <p class="sac-admin-muted">These rules are derived from the weekly availability windows. If a day is active here, parishioners can see openings for that sacrament or service on that day.</p>
         <div class="sac-admin-rules-list">
-          ${SAC_SCHEDULABLE_TYPES.map(type => {
+          ${offeredTypes.map(type => {
             const activeDays = new Set((rulesByType[type] || []).map(rule => Number(rule.dayOfWeek)));
             return `<div class="sac-admin-rules-row">
               <strong>${escapeHtml(sacramentTypeLabel({ sacramentType: type }))}</strong>
               <div class="sac-admin-day-chips">
-                ${dayShort.map((label, index) => `<span class="${activeDays.has(index) ? 'active' : ''}">${label}</span>`).join('')}
+                ${SAC_SCHEDULABLE_TYPES.includes(type)
+                  ? dayShort.map((label, index) => `<span class="${activeDays.has(index) ? 'active' : ''}">${label}</span>`).join('')
+                  : '<span class="active">Request only</span>'}
               </div>
             </div>`;
-          }).join('')}
+          }).join('') || '<p class="sac-admin-empty-line">No online offerings selected.</p>'}
         </div>
       </div>
       <div class="sac-admin-panel">
@@ -4811,8 +5359,13 @@
     const st = sacramentsAvailabilityState;
     if (st.loading || !st.loaded) return renderSacramentsLoadingPanel('Loading calendar...');
     if (st.error) return renderSacramentsErrorPanel(st.error, 'loadSacramentsAvailability(true)');
-    const requests = sacramentsState.requests || [];
-    const blackouts = st.blackouts || [];
+    const priest = selectedSacramentPriest();
+    const requests = (sacramentsState.requests || []).filter(row =>
+      row.status === 'scheduled' && (row.clergyAssigned || '') === (priest.name || '')
+    );
+    const blackouts = (st.blackouts || []).filter(row =>
+      (row.priestName || '') === (priest.name || '')
+    );
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth();
@@ -4830,17 +5383,23 @@
       byDay[day].push(row);
     });
     blackouts.forEach(row => {
-      if (!String(row.date || '').startsWith(monthKey)) return;
-      const day = Number(String(row.date).slice(-2));
-      if (!day) return;
-      byDay[day] = byDay[day] || [];
-      byDay[day].push({ blackout: true, sacramentType: 'blackout', confirmedTime: 'All day', clergyAssigned: row.reason || 'Unavailable' });
+      const start = String(row.startDate || row.date || '');
+      const end = String(row.endDate || row.date || start);
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = `${monthKey}-${String(day).padStart(2, '0')}`;
+        if (date < start || date > end) continue;
+        byDay[day] = byDay[day] || [];
+        byDay[day].push({ blackout: true, sacramentType: 'blackout', confirmedTime: 'All day', clergyAssigned: row.reason || 'Unavailable' });
+      }
     });
     const cells = [];
     for (let i = 0; i < startOffset; i++) cells.push('<span class="sac-admin-cal-cell empty"></span>');
     for (let day = 1; day <= daysInMonth; day++) {
-      const count = (byDay[day] || []).length;
-      cells.push(`<button class="sac-admin-cal-cell ${count ? 'has-items' : ''}" type="button" onclick="selectSacramentsCalendarDay(${day})">${day}${count ? '<i></i>' : ''}</button>`);
+      const items = byDay[day] || [];
+      const hasBlackout = items.some(item => item.blackout);
+      const hasScheduled = items.some(item => !item.blackout);
+      const stateClass = hasBlackout && hasScheduled ? 'has-blackout has-scheduled' : hasBlackout ? 'has-blackout' : hasScheduled ? 'has-scheduled' : '';
+      cells.push(`<button class="sac-admin-cal-cell ${stateClass}" type="button" onclick="selectSacramentsCalendarDay(${day})">${day}</button>`);
     }
     const firstBookedDay = Object.keys(byDay).map(Number).sort((a, b) => a - b)[0] || now.getDate();
     const selected = Number(document.getElementById('sacramentsCalendarSelectedDay')?.value || firstBookedDay);
@@ -4851,13 +5410,16 @@
         <section class="sac-admin-panel">
           <div class="sac-admin-panel-head">
             <div>
-              <span>Calendar</span>
+              <span>${escapeHtml(priest.name)}’s calendar</span>
               <h2>${now.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</h2>
             </div>
           </div>
           <div class="sac-admin-weekdays">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => `<span>${d}</span>`).join('')}</div>
           <div class="sac-admin-calendar-grid">${cells.join('')}</div>
-          <div class="sac-admin-legend"><i></i><span>Has bookings or blackout dates</span></div>
+          <div class="sac-admin-calendar-legends">
+            <div class="sac-admin-legend blackout"><i></i><span>Blackout date</span></div>
+            <div class="sac-admin-legend scheduled"><i></i><span>Scheduled date</span></div>
+          </div>
         </section>
         <section class="sac-admin-panel">
           <div class="sac-admin-panel-head">
@@ -4868,7 +5430,7 @@
           </div>
           <div class="sac-admin-day-list">
             ${selectedItems.length ? selectedItems.map(item => `
-              <div class="sac-admin-day-card">
+              <div class="sac-admin-day-card ${item.blackout ? 'blackout' : 'scheduled'}">
                 <strong>${item.blackout ? 'Blackout' : escapeHtml(sacramentTypeLabel(item))}</strong>
                 <span>${escapeHtml(item.confirmedTime || item.requestedTimeWindow || 'Time TBD')} · ${escapeHtml(item.clergyAssigned || item.donorEmail || '')}</span>
               </div>`).join('') : '<p class="sac-admin-empty-line">No bookings this day.</p>'}
@@ -5247,14 +5809,14 @@
         '</div>';
     }
 
-    // ── Other Income tool card — locked ─────────────────────────────────────
+    // ── Outside-AGAPAY contribution intake — locked ─────────────────────────
     const manualIncomePane = document.getElementById('stewardshipManualIncomePane');
     if (manualIncomePane) {
       manualIncomePane.innerHTML =
         '<div class="sw-tool-locked">' +
           '<div class="sw-tool-locked-items">' +
             '<div><span>✓</span> Log weekly cash &amp; check totals</div>' +
-            '<div><span>✓</span> Add income from Tithe.ly, PayPal, and other platforms</div>' +
+            '<div><span>✓</span> Add contributions from Tithe.ly, PayPal, and other giving platforms</div>' +
           '</div>' +
           '<div class="sw-tool-locked-badge">Subscribe to unlock</div>' +
         '</div>';
@@ -5326,9 +5888,16 @@
       // Seeded from the parish's Settings tab — editable per meeting from there.
       jurisdiction: currentParish?.jurisdiction || '',
       address: parishAddressLine(currentParish),
+      signatureLineCount: 24,
+      noteLineCount: 12,
       status: 'draft',
       agendaItems: [{ title:'Opening prayer', durationMinutes:5 }, { title:'Reports', durationMinutes:30 }, { title:'Financial review', durationMinutes:20 }],
-      reports: [{ reportType:'priest', title:'Rector Report', body:'' }, { reportType:'treasurer', title:'Treasurer Report', body:'' }],
+      reports: [
+        { reportType:'priest', title:'Rector Report', body:'', createdBy:'' },
+        { reportType:'treasurer', title:'Treasurer Report', body:'', createdBy:'' },
+        { reportType:'brotherhood', title:'Brotherhood Report', body:'', createdBy:'' },
+        { reportType:'sisterhood', title:'Sisterhood Report', body:'', createdBy:'' }
+      ],
       financialSummary: { totalIncomeCents:0, totalExpenseCents:0, netCents:0, notes:'' },
       restrictedFunds: [],
       nominees: [],
@@ -5366,41 +5935,65 @@
     if (card) card.hidden = true;
   }
 
+  function formatSacramentDateRange(startDate, endDate) {
+    const start = formatSacramentDisplayDate(startDate);
+    const end = formatSacramentDisplayDate(endDate);
+    return !end || startDate === endDate ? start : `${start} – ${end}`;
+  }
+
+  function syncSacramentsBlackoutEndDate() {
+    const start = document.getElementById('sacAvailNewBlackoutStartDate');
+    const end = document.getElementById('sacAvailNewBlackoutEndDate');
+    if (start && end && (!end.value || end.value < start.value)) end.value = start.value;
+    if (start && end) end.min = start.value;
+  }
+
+  function stewardshipMeetingReports(items = []) {
+    const reports = Array.isArray(items) ? items.map(item => ({ ...item })) : [];
+    [
+      { reportType: 'brotherhood', title: 'Brotherhood Report', body: '', createdBy: '' },
+      { reportType: 'sisterhood', title: 'Sisterhood Report', body: '', createdBy: '' }
+    ].forEach(required => {
+      if (!reports.some(report => report.reportType === required.reportType)) reports.push(required);
+    });
+    return reports;
+  }
+
   function stewardshipRepeaterRows(type, items) {
     const rows = items && items.length ? items : [{}];
     return rows.map((item, index) => {
       if (type === 'agenda') return `<div class="stewardship-repeat-row" data-row-type="agenda">
-        <input type="text" data-field="title" value="${escapeAttr(item.title)}" placeholder="Agenda item" />
-        <input type="number" data-field="durationMinutes" value="${escapeAttr(item.durationMinutes)}" placeholder="Minutes" />
+        <label class="stewardship-row-field"><span>Agenda item</span><input type="text" data-field="title" value="${escapeAttr(item.title)}" placeholder="e.g. Treasurer's report" /></label>
+        <label class="stewardship-row-field"><span>Time allotted</span><input type="number" min="0" data-field="durationMinutes" value="${escapeAttr(item.durationMinutes)}" placeholder="Minutes" /></label>
         <button class="btn btn-ghost btn-sm" type="button" onclick="removeStewardshipRow(this)">Remove</button>
       </div>`;
       if (type === 'report') return `<div class="stewardship-repeat-row" data-row-type="report">
-        <select data-field="reportType">
-          ${['priest','warden','treasurer','stewardship','ministry','custom'].map(t=>`<option value="${t}" ${item.reportType===t?'selected':''}>${statusLabel(t)}</option>`).join('')}
-        </select>
-        <input type="text" data-field="title" value="${escapeAttr(item.title)}" placeholder="Report title" />
-        <textarea data-field="body" rows="3" placeholder="Report notes">${escapeHtml(item.body)}</textarea>
-        <input type="text" data-field="createdBy" value="${escapeAttr(item.createdBy)}" placeholder="Signed by (optional)" />
+        <label class="stewardship-row-field"><span>Report type</span><select data-field="reportType">
+          ${['priest','warden','treasurer','stewardship','brotherhood','sisterhood','ministry','custom'].map(t=>`<option value="${t}" ${item.reportType===t?'selected':''}>${statusLabel(t)}</option>`).join('')}
+        </select></label>
+        <label class="stewardship-row-field"><span>Report title</span><input type="text" data-field="title" value="${escapeAttr(item.title)}" placeholder="Title shown in packet" /></label>
+        <label class="stewardship-row-field stewardship-row-field--wide"><span>Report content</span><textarea data-field="body" rows="5" placeholder="Write or paste the report here">${escapeHtml(item.body)}</textarea></label>
+        <label class="stewardship-row-field"><span>Leader / presenter <small>Optional</small></span><input type="text" data-field="createdBy" value="${escapeAttr(item.createdBy)}" placeholder="Name of the report leader or presenter" /></label>
         <button class="btn btn-ghost btn-sm" type="button" onclick="removeStewardshipRow(this)">Remove</button>
       </div>`;
       if (type === 'fund') return `<div class="stewardship-repeat-row" data-row-type="fund">
-        <input type="text" data-field="fundName" value="${escapeAttr(item.fundName)}" placeholder="Fund name" />
-        <input type="number" data-field="beginningBalance" value="${Number(item.beginningBalanceCents||0)/100 || ''}" placeholder="Beginning $" />
-        <input type="number" data-field="totalReceived" value="${Number(item.totalReceivedCents||0)/100 || ''}" placeholder="Received $" />
-        <input type="number" data-field="totalDisbursed" value="${Number(item.totalDisbursedCents||0)/100 || ''}" placeholder="Disbursed $" />
-        <input type="number" data-field="endingBalance" value="${Number(item.endingBalanceCents||0)/100 || ''}" placeholder="Ending $" />
+        <label class="stewardship-row-field"><span>Fund name</span><input type="text" data-field="fundName" value="${escapeAttr(item.fundName)}" placeholder="Restricted fund" /></label>
+        <label class="stewardship-row-field"><span>Beginning balance</span><input type="number" step="0.01" data-field="beginningBalance" value="${Number(item.beginningBalanceCents||0)/100 || ''}" placeholder="$0.00" /></label>
+        <label class="stewardship-row-field"><span>Received</span><input type="number" step="0.01" data-field="totalReceived" value="${Number(item.totalReceivedCents||0)/100 || ''}" placeholder="$0.00" /></label>
+        <label class="stewardship-row-field"><span>Disbursed</span><input type="number" step="0.01" data-field="totalDisbursed" value="${Number(item.totalDisbursedCents||0)/100 || ''}" placeholder="$0.00" /></label>
+        <label class="stewardship-row-field"><span>Ending balance</span><input type="number" step="0.01" data-field="endingBalance" value="${Number(item.endingBalanceCents||0)/100 || ''}" placeholder="$0.00" /></label>
         <button class="btn btn-ghost btn-sm" type="button" onclick="removeStewardshipRow(this)">Remove</button>
       </div>`;
       if (type === 'nominee') return `<div class="stewardship-repeat-row" data-row-type="nominee">
-        <input type="text" data-field="fullName" value="${escapeAttr(item.fullName)}" placeholder="Nominee name" />
-        <input type="text" data-field="position" value="${escapeAttr(item.position)}" placeholder="Position" />
-        <textarea data-field="bio" rows="2" placeholder="Short bio (optional)">${escapeHtml(item.bio)}</textarea>
-        <input type="text" data-field="nominatedBy" value="${escapeAttr(item.nominatedBy)}" placeholder="Nominated by (optional)" />
+        <label class="stewardship-row-field"><span>Nominee's full name</span><input type="text" data-field="fullName" value="${escapeAttr(item.fullName)}" placeholder="Candidate's name" /></label>
+        <label class="stewardship-row-field"><span>Position</span><input type="text" data-field="position" value="${escapeAttr(item.position)}" placeholder="e.g. Parish council member" /></label>
+        <label class="stewardship-row-field stewardship-row-field--wide"><span>Candidate biography <small>Optional</small></span><textarea data-field="bio" rows="3" placeholder="Short biography for the packet">${escapeHtml(item.bio)}</textarea></label>
+        <label class="stewardship-row-field"><span>Nominated by <small>Optional</small></span><input type="text" data-field="nominatedBy" value="${escapeAttr(item.nominatedBy)}" placeholder="Name of the person making the nomination" /></label>
         <button class="btn btn-ghost btn-sm" type="button" onclick="removeStewardshipRow(this)">Remove</button>
       </div>`;
       return `<div class="stewardship-repeat-row" data-row-type="resolution">
-        <input type="text" data-field="title" value="${escapeAttr(item.title)}" placeholder="Resolution title" />
-        <textarea data-field="resolvedText" rows="3" placeholder="Resolved text">${escapeHtml(item.resolvedText)}</textarea>
+        <label class="stewardship-row-field"><span>Resolution title</span><input type="text" data-field="title" value="${escapeAttr(item.title)}" placeholder="Short descriptive title" /></label>
+        <label class="stewardship-row-field stewardship-resolution-text"><span>Full resolution text</span><textarea data-field="resolvedText" rows="8" placeholder="Write the complete action to be considered. The packet will add “RESOLVED, THAT” when printed.">${escapeHtml(item.resolvedText)}</textarea></label>
         <button class="btn btn-ghost btn-sm" type="button" onclick="removeStewardshipRow(this)">Remove</button>
       </div>`;
     }).join('');
@@ -5427,8 +6020,15 @@
           <label>Jurisdiction<input name="jurisdiction" value="${escapeAttr(meeting.jurisdiction)}" /></label>
         </div>
         <label>Address<textarea name="address" rows="2">${escapeHtml(meeting.address)}</textarea></label>
+        <div class="stewardship-editor-section stewardship-packet-layout-section">
+          <div><div><h3>Printed packet layout</h3><p>Choose how much handwriting space to include in the final packet.</p></div></div>
+          <div class="stewardship-form-grid">
+            <label>Sign-in lines<input name="signatureLineCount" type="number" min="1" max="200" value="${escapeAttr(meeting.signatureLineCount || 24)}" /><small>Numbered attendee signature rows on the sign-in sheet.</small></label>
+            <label>Note-taking lines<input name="noteLineCount" type="number" min="0" max="200" value="${escapeAttr(meeting.noteLineCount ?? 12)}" /><small>Blank ruled lines on the meeting-minutes page.</small></label>
+          </div>
+        </div>
         <div class="stewardship-editor-section"><div><h3>Agenda</h3><button class="btn btn-ghost btn-sm" type="button" onclick="addStewardshipRow('agenda')">Add item</button></div><div id="stewardshipAgendaRows">${stewardshipRepeaterRows('agenda', meeting.agendaItems)}</div></div>
-        <div class="stewardship-editor-section"><div><h3>Reports</h3><button class="btn btn-ghost btn-sm" type="button" onclick="addStewardshipRow('report')">Add report</button></div><div id="stewardshipReportRows">${stewardshipRepeaterRows('report', meeting.reports)}</div></div>
+        <div class="stewardship-editor-section"><div><div><h3>Reports</h3><p>Include the report title, written content, and the leader or presenter responsible for it.</p></div><button class="btn btn-ghost btn-sm" type="button" onclick="addStewardshipRow('report')">Add report</button></div><div id="stewardshipReportRows">${stewardshipRepeaterRows('report', stewardshipMeetingReports(meeting.reports))}</div></div>
         <div class="stewardship-editor-section"><div><h3>Financial summary</h3></div><div class="stewardship-form-grid">
           <label>Total income<input name="totalIncome" type="number" step="0.01" value="${income || ''}" /></label>
           <label>Total expenses<input name="totalExpense" type="number" step="0.01" value="${expense || ''}" /></label>
@@ -5492,6 +6092,8 @@
       location: fd.get('location'),
       jurisdiction: fd.get('jurisdiction'),
       address: fd.get('address'),
+      signatureLineCount: fd.get('signatureLineCount'),
+      noteLineCount: fd.get('noteLineCount'),
       status,
       agendaItems: readStewardshipRows('stewardshipAgendaRows'),
       reports: readStewardshipRows('stewardshipReportRows'),
@@ -5528,20 +6130,46 @@
   // ── GIVING OPTIONS HELPERS ────────────────────────────────
   function optionCards(items, kind, emptyText) {
     if (!items || !items.length) return `<div class="option-empty">${emptyText}</div>`;
-    return items.map((item, i) => `
+    return items.map((item, i) => {
+      const isEditing = editingGivingOption?.kind === kind && editingGivingOption?.index === i;
+      const restrictionType = item.restrictionType || (kind === 'campaign' ? 'donor_restricted_temporary' : 'unrestricted');
+      return `
       <div class="option-item">
         <div class="option-item-head">
           <div class="option-name">${escapeHtml(item.name || item.id || 'Untitled')}</div>
-          <button class="icon-button" onclick="removeGivingOption('${kind}',${i})">x</button>
+          <div class="option-item-actions">
+            <button class="btn btn-ghost btn-sm" type="button" onclick="editGivingOption('${kind}',${i})">${isEditing ? 'Close' : 'Edit'}</button>
+            <button class="icon-button" type="button" aria-label="Remove ${escapeAttr(item.name || kind)}" onclick="removeGivingOption('${kind}',${i})">x</button>
+          </div>
         </div>
         <div class="option-desc">${escapeHtml(item.description || '')}</div>
-        <small>${escapeHtml(item.accountNumber || 'Number assigned when saved')} · ${escapeHtml(restrictionLabel(item.restrictionType || (kind === 'campaign' ? 'donor_restricted_temporary' : 'unrestricted')))}</small>
-      </div>`).join('');
+        <small>${escapeHtml(item.accountNumber || 'Number assigned when saved')} · ${escapeHtml(restrictionLabel(restrictionType))}</small>
+        ${isEditing ? `
+          <form class="option-edit-form" onsubmit="updateGivingOption(event,'${kind}',${i})">
+            <label>Name<input name="name" maxlength="120" required value="${escapeAttr(item.name || '')}" /></label>
+            <label>Account number<input name="accountNumber" maxlength="24" value="${escapeAttr(item.accountNumber || '')}" placeholder="e.g. BENEVOLENCE" /></label>
+            <label>Restriction
+              <select name="restrictionType">
+                <option value="unrestricted" ${restrictionType === 'unrestricted' ? 'selected' : ''}>Unrestricted</option>
+                <option value="board_designated" ${restrictionType === 'board_designated' ? 'selected' : ''}>Board designated</option>
+                <option value="donor_restricted_temporary" ${restrictionType === 'donor_restricted_temporary' ? 'selected' : ''}>Donor restricted · temporary</option>
+                <option value="donor_restricted_permanent" ${restrictionType === 'donor_restricted_permanent' ? 'selected' : ''}>Donor restricted · permanent</option>
+              </select>
+            </label>
+            <label class="full">Description<textarea name="description" maxlength="500">${escapeHtml(item.description || '')}</textarea></label>
+            <div class="option-edit-actions">
+              <button class="btn btn-primary btn-sm" type="submit">Apply changes</button>
+              <button class="btn btn-ghost btn-sm" type="button" onclick="editGivingOption('${kind}',${i})">Cancel</button>
+              <small>The fund ID stays unchanged so prior gifts remain linked correctly.</small>
+            </div>
+          </form>` : ''}
+      </div>`;
+    }).join('');
   }
   function presetOptions(presets) { return Object.entries(presets).map(([k,v])=>`<option value="${k}">${escapeHtml(v.name)}</option>`).join(''); }
   function syncGivingOptionEditors() { const f=document.getElementById('fundsJson'); const c=document.getElementById('campaignsJson'); if(f) f.value=JSON.stringify(editableFunds,null,2); if(c) c.value=JSON.stringify(editableCampaigns,null,2); }
   function syncGivingOptionsFromAdvanced() { const f=document.getElementById('fundsJson'); const c=document.getElementById('campaignsJson'); if(f) editableFunds=JSON.parse(f.value||'[]'); if(c) editableCampaigns=JSON.parse(c.value||'[]'); }
-  function fillGivingPreset(kind) { const presets=kind==='fund'?fundPresets:campaignPresets; const prefix=kind==='fund'?'fund':'campaign'; const preset=presets[document.getElementById(`${prefix}Preset`)?.value]; if(!preset) return; document.getElementById(`${prefix}Name`).value=preset.name; document.getElementById(`${prefix}Description`).value=preset.description; }
+  function fillGivingPreset(kind) { const presets=kind==='fund'?fundPresets:campaignPresets; const prefix=kind==='fund'?'fund':'campaign'; const preset=presets[document.getElementById(`${prefix}Preset`)?.value]; if(!preset) return; document.getElementById(`${prefix}Name`).value=preset.name; document.getElementById(`${prefix}Description`).value=preset.description; const restriction=document.getElementById(`${prefix}Restriction`); if(restriction&&preset.restrictionType) restriction.value=preset.restrictionType; }
   function parseDollarsToCents(value) {
     const amount = Number(String(value || '').replace(/[^0-9.]/g, ''));
     return Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : 0;
@@ -5576,15 +6204,55 @@
 
   function renderOptionsProgressSummary() {
     const rows = [
-      ...editableFunds.map(item => ({ kind: 'fund', label: 'Fund', item })),
+      ...editableFunds.map((item, index) => ({ kind: 'fund', label: 'Fund', item, index })),
       ...editableCampaigns.map(item => ({ kind: 'campaign', label: 'Campaign', item })),
       ...editableFeastCampaigns.filter(item => item.enabled !== false).map(item => ({ kind: 'campaign', label: 'Feast campaign', item }))
     ];
-    if (!rows.length) return '';
-    return `<div class="options-summary-card"><div class="options-summary-head"><span>Active giving options</span><small>Based on paid gifts in AGAPAY</small></div><div class="options-progress-table">${rows.map(row => {
+    return `<div class="options-summary-card"><div class="options-summary-head"><span>Active giving options</span><small>Based on paid gifts in AGAPAY</small></div><div class="options-progress-table">${rows.length ? rows.map(row => {
       const progress = optionProgress(row.item, row.kind);
-      return `<div class="options-progress-row"><span>${escapeHtml(row.label)}</span><strong>${escapeHtml(row.item.name || row.item.campaignName || row.item.id || 'Giving option')}</strong><span>${moneyFull(progress.raisedCents)} raised</span><span>${row.kind === 'campaign' && progress.goalCents ? `Goal ${moneyFull(progress.goalCents)}` : ''}</span><div>${progressMarkup(progress.raisedCents, progress.goalCents)}</div></div>`;
-    }).join('')}</div></div>`;
+      const isEditableFund = row.kind === 'fund' && Number.isInteger(row.index);
+      const isEditing = isEditableFund && editingGivingOption?.kind === 'fund' && editingGivingOption?.index === row.index;
+      const restrictionType = row.item.restrictionType || (row.kind === 'campaign' ? 'donor_restricted_temporary' : 'unrestricted');
+      return `<div class="options-progress-row">
+        <span>${escapeHtml(row.label)}</span>
+        <div class="option-summary-identity">
+          <div class="option-summary-title">
+            <strong>${escapeHtml(row.item.name || row.item.campaignName || row.item.id || 'Giving option')}</strong>
+            ${isEditableFund ? `<button class="btn btn-ghost btn-sm" type="button" onclick="editGivingOption('fund',${row.index})">${isEditing ? 'Close' : 'Edit'}</button>` : ''}
+          </div>
+          ${row.item.description ? `<small class="option-summary-description">${escapeHtml(row.item.description)}</small>` : ''}
+          <small>${escapeHtml(row.item.accountNumber || 'Number assigned when saved')} · ${escapeHtml(restrictionLabel(restrictionType))}</small>
+        </div>
+        <span>${moneyFull(progress.raisedCents)} raised</span>
+        <span>${row.kind === 'campaign' && progress.goalCents ? `Goal ${moneyFull(progress.goalCents)}` : ''}</span>
+        <div>${progressMarkup(progress.raisedCents, progress.goalCents)}</div>
+        ${isEditing ? `
+          <form class="option-edit-form options-summary-edit" onsubmit="updateGivingOption(event,'fund',${row.index})">
+            <label>Name<input name="name" maxlength="120" required value="${escapeAttr(row.item.name || '')}" /></label>
+            <label>Account number<input name="accountNumber" maxlength="24" value="${escapeAttr(row.item.accountNumber || '')}" placeholder="e.g. BENEVOLENCE" /></label>
+            <label>Restriction
+              <select name="restrictionType">
+                <option value="unrestricted" ${restrictionType === 'unrestricted' ? 'selected' : ''}>Unrestricted</option>
+                <option value="board_designated" ${restrictionType === 'board_designated' ? 'selected' : ''}>Board designated</option>
+                <option value="donor_restricted_temporary" ${restrictionType === 'donor_restricted_temporary' ? 'selected' : ''}>Donor restricted · temporary</option>
+                <option value="donor_restricted_permanent" ${restrictionType === 'donor_restricted_permanent' ? 'selected' : ''}>Donor restricted · permanent</option>
+              </select>
+            </label>
+            <label class="full">Description<textarea name="description" maxlength="500">${escapeHtml(row.item.description || '')}</textarea></label>
+            <div class="option-edit-actions">
+              <button class="btn btn-primary btn-sm" type="submit">Apply changes</button>
+              <button class="btn btn-ghost btn-sm" type="button" onclick="editGivingOption('fund',${row.index})">Cancel</button>
+              <small>The fund ID stays unchanged so prior gifts remain linked correctly.</small>
+            </div>
+          </form>` : ''}
+      </div>`;
+    }).join('') : '<div class="option-empty options-summary-empty">No giving options configured yet.</div>'}</div>
+      <div class="option-builder options-summary-builder">
+        <div class="option-builder-title">Add a fund</div>
+        <p class="section-note">Funds shown above are the source of truth for donor choices and the Accounting suite. Saving creates or updates the matching accounting funds automatically.</p>
+        <div class="builder-grid"><select id="fundPreset" onchange="fillGivingPreset('fund')"><option value="custom" selected>Custom fund — name it yourself</option><optgroup label="Start from a preset">${presetOptions(fundPresets)}</optgroup></select><input id="fundAccountNumber" maxlength="24" placeholder="Fund account number (optional), e.g. 2100" /><input id="fundName" maxlength="120" placeholder="Custom fund name, e.g. New Iconostasis Fund" /><select id="fundRestriction"><option value="unrestricted">Unrestricted</option><option value="board_designated">Board designated</option><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option></select><textarea id="fundDescription" maxlength="500" placeholder="Describe what this parish-created fund supports."></textarea><button class="btn btn-gold" onclick="addGivingOption('fund')">Add custom fund</button></div>
+      </div>
+    </div>`;
   }
 
   let pdxGiversSort = 'amount';
@@ -5898,7 +6566,37 @@
   }
 
   function addGivingOption(kind) { const prefix=kind==='fund'?'fund':'campaign'; const nameEl=document.getElementById(`${prefix}Name`); const descEl=document.getElementById(`${prefix}Description`); const name=nameEl?.value.trim(); if(!name){setStatus(`Enter a ${kind} name.`,'error');return;} const id=slugifyLocal(name); const target=kind==='fund'?editableFunds:editableCampaigns; if(target.some((item)=>item.id===id||String(item.name||'').trim().toLowerCase()===name.toLowerCase())){setStatus(`A ${kind} with that name already exists.`,'error');return;} const item={id,name,description:descEl?.value.trim()||(kind==='fund'?'Designated support for this parish.':'Parish-approved alms for this need.'),accountNumber:document.getElementById(`${prefix}AccountNumber`)?.value.trim()||'',restrictionType:document.getElementById(`${prefix}Restriction`)?.value||(kind==='campaign'?'donor_restricted_temporary':'unrestricted'),...(kind==='fund'?{fundType:document.getElementById('fundPreset')?.value==='custom'?'custom':'preset'}:{})}; if(kind==='campaign'){const goalCents=parseDollarsToCents(document.getElementById('campaignGoal')?.value); if(goalCents>0) item.goalCents=goalCents;} target.push(item); nameEl.value=''; descEl.value=''; const goalEl=document.getElementById(`${prefix}Goal`); if(goalEl) goalEl.value=''; renderGivingOptionsEditor(); setStatus(`${kind==='fund'?'Fund':'Campaign'} added. Save when ready.`,'success'); }
-  function removeGivingOption(kind,i) { if(kind==='fund') editableFunds.splice(i,1); else editableCampaigns.splice(i,1); renderGivingOptionsEditor(); setStatus('Option removed. Save when ready.','success'); }
+  function editGivingOption(kind, i) {
+    editingGivingOption = editingGivingOption?.kind === kind && editingGivingOption?.index === i ? null : { kind, index: i };
+    renderGivingOptionsEditor();
+  }
+  function updateGivingOption(event, kind, i) {
+    event.preventDefault();
+    const target = kind === 'fund' ? editableFunds : editableCampaigns;
+    const current = target[i];
+    if (!current) return;
+    const form = event.currentTarget;
+    const name = String(form.elements.name?.value || '').trim();
+    if (!name) { setStatus(`Enter a ${kind} name.`, 'error'); return; }
+    if (target.some((item, index) => index !== i && String(item.name || '').trim().toLowerCase() === name.toLowerCase())) {
+      setStatus(`Another ${kind} already uses that name.`, 'error');
+      return;
+    }
+    const validRestrictions = new Set(['unrestricted','board_designated','donor_restricted_temporary','donor_restricted_permanent']);
+    const requestedRestriction = String(form.elements.restrictionType?.value || '');
+    const accountNumber = String(form.elements.accountNumber?.value || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 24);
+    target[i] = {
+      ...current,
+      name,
+      description: String(form.elements.description?.value || '').trim(),
+      accountNumber: accountNumber || current.accountNumber || '',
+      restrictionType: validRestrictions.has(requestedRestriction) ? requestedRestriction : (current.restrictionType || 'unrestricted')
+    };
+    editingGivingOption = null;
+    renderGivingOptionsEditor();
+    setStatus(`${kind === 'fund' ? 'Fund' : 'Campaign'} updated. Save giving options to publish the change.`, 'success');
+  }
+  function removeGivingOption(kind,i) { if(kind==='fund') editableFunds.splice(i,1); else editableCampaigns.splice(i,1); editingGivingOption=null; renderGivingOptionsEditor(); setStatus('Option removed. Save when ready.','success'); }
 
   // ── FEAST CAMPAIGN HELPERS ────────────────────────────────
   function calendarLabel(v) { return window.AGAPAYLiturgicalCalendar?.calendarLabel(v) || (v==='gregorian'?'Revised-Julian':'Julian'); }
@@ -6383,7 +7081,6 @@
     pane.innerHTML = `
       ${renderOptionsProgressSummary()}
       <div class="giving-options-intro">These are the choices donors see after selecting <strong>Designated Fund</strong> or <strong>Alms Campaign</strong>. Add presets or write your own.</div>
-      <div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Designated funds</h3><span class="option-group-count">${editableFunds.length} shown</span></div><p class="section-note">This list is the source of truth for donor choices and the Accounting suite. Saving creates, updates, or retires the matching accounting funds automatically.</p><div class="option-list">${optionCards(editableFunds,'fund','No funds configured yet.')}</div><div class="option-builder"><div class="option-builder-title">Add a fund</div><div class="builder-grid"><select id="fundPreset" onchange="fillGivingPreset('fund')"><option value="custom" selected>Custom fund — name it yourself</option><optgroup label="Start from a preset">${presetOptions(fundPresets)}</optgroup></select><input id="fundAccountNumber" maxlength="24" placeholder="Fund account number (optional), e.g. 2100" /><input id="fundName" maxlength="120" placeholder="Custom fund name, e.g. New Iconostasis Fund" /><select id="fundRestriction"><option value="unrestricted">Unrestricted</option><option value="board_designated">Board designated</option><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option></select><textarea id="fundDescription" maxlength="500" placeholder="Describe what this parish-created fund supports."></textarea><button class="btn btn-gold" onclick="addGivingOption('fund')">Add custom fund</button></div></div></div>
       <div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Alms campaigns</h3><span class="option-group-count">${editableCampaigns.length} shown</span></div><div class="option-list">${optionCards(editableCampaigns,'campaign','No alms campaigns configured yet.')}</div><div class="option-builder"><div class="option-builder-title">Add an alms campaign</div><div class="builder-grid"><select id="campaignPreset" onchange="fillGivingPreset('campaign')"><option value="">Choose a preset...</option>${presetOptions(campaignPresets)}</select><input id="campaignAccountNumber" maxlength="24" placeholder="Account number, e.g. 2200" /><input id="campaignName" placeholder="Campaign name, e.g. Support for the Petrov Family" /><select id="campaignRestriction"><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option><option value="board_designated">Board designated</option><option value="unrestricted">Unrestricted</option></select><textarea id="campaignDescription" placeholder="Describe the need in plain language."></textarea><input id="campaignGoal" type="number" min="0" step="1" placeholder="Goal amount, e.g. 45000" /><button class="btn btn-ghost" onclick="addGivingOption('campaign')">Add campaign</button></div></div></div>
       ${renderFeastCampaignSetup()}
       <details class="advanced-editor"><summary>Advanced edit (JSON)</summary><div class="editor-label-row"><label for="fundsJson">Designated funds</label><span class="editor-hint">Each item needs id, name, description</span></div><textarea id="fundsJson" spellcheck="false" onchange="syncGivingOptionsFromAdvanced()">${JSON.stringify(editableFunds,null,2)}</textarea><div style="height:0.9rem;"></div><div class="editor-label-row"><label for="campaignsJson">Alms campaigns</label><span class="editor-hint">Each item needs id, name, description</span></div><textarea id="campaignsJson" spellcheck="false" onchange="syncGivingOptionsFromAdvanced()">${JSON.stringify(editableCampaigns,null,2)}</textarea></details>
@@ -6713,15 +7410,80 @@
     const q    = (document.getElementById('histSearch')?.value || '').toLowerCase();
     const type = document.getElementById('histTypeFilter')?.value || 'all';
     const fund = document.getElementById('histFundFilter')?.value  || 'all';
+    const range = document.getElementById('histRangeFilter')?.value || 'ytd';
+    const now = new Date();
+    const rangeStart = range === '30d'
+      ? new Date(now.getTime() - 30 * 86400000)
+      : range === '90d'
+        ? new Date(now.getTime() - 90 * 86400000)
+        : range === 'ytd'
+          ? new Date(now.getFullYear(), 0, 1)
+          : null;
     filteredGifts = allGifts.filter(g => {
-      const haystack = [g.donorName, g.donorEmail, g.fund, g.fundId, g.description].join(' ').toLowerCase();
+      const haystack = [g.donorName, g.donorEmail, g.fund, g.fundId, g.description, ...(g.commemorationNames || [])].join(' ').toLowerCase();
       const matchQ    = !q    || haystack.includes(q);
       const matchType = type === 'all' || g.type === type || (type === 'recurring' && g.recurring) || (type === 'one_time' && !g.recurring);
       const matchFund = fund === 'all' || (g.fund || g.fundId || 'General') === fund;
-      return matchQ && matchType && matchFund;
-    });
+      const giftDate = new Date(g.date || g.createdAt || 0);
+      const matchRange = !rangeStart || (!Number.isNaN(giftDate.getTime()) && giftDate >= rangeStart);
+      return matchQ && matchType && matchFund && matchRange;
+    }).sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0));
     renderHistoryTable();
     renderGiversPanel();
+  }
+
+  function renderHistoryInsights() {
+    const trendPane = document.getElementById('historyTrendPanel');
+    const fundPane = document.getElementById('historyFundPanel');
+    const gifts = filteredGifts || [];
+    const latestDate = gifts.reduce((latest, gift) => {
+      const date = new Date(gift.date || gift.createdAt || 0);
+      return !Number.isNaN(date.getTime()) && date > latest ? date : latest;
+    }, new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+    const months = [];
+    for (let offset = 5; offset >= 0; offset -= 1) {
+      const date = new Date(latestDate.getFullYear(), latestDate.getMonth() - offset, 1);
+      months.push({
+        key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
+        label: date.toLocaleDateString('en-US', { month: 'short' }),
+        cents: 0,
+        gifts: 0
+      });
+    }
+    const monthMap = new Map(months.map(month => [month.key, month]));
+    const fundMap = new Map();
+    gifts.forEach((gift) => {
+      const date = new Date(gift.date || gift.createdAt || 0);
+      const cents = Number((gift.parishNetCents ?? gift.amountCents) || 0);
+      if (!Number.isNaN(date.getTime())) {
+        const bucket = monthMap.get(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`);
+        if (bucket) { bucket.cents += cents; bucket.gifts += 1; }
+      }
+      const fund = gift.fund || gift.fundId || 'General';
+      fundMap.set(fund, (fundMap.get(fund) || 0) + cents);
+    });
+    const maxMonth = Math.max(1, ...months.map(month => month.cents));
+    if (trendPane) {
+      trendPane.innerHTML = gifts.length ? `
+        <div class="parish-history-bars">${months.map((month) => `
+          <div class="parish-history-bar-column" title="${escapeAttr(month.label)} · ${moneyFull(month.cents)} · ${month.gifts} gift${month.gifts === 1 ? '' : 's'}">
+            <div class="parish-history-bar-track"><span style="height:${Math.max(month.cents ? 9 : 2, Math.round(month.cents / maxMonth * 100))}%"></span></div>
+            <strong>${escapeHtml(month.label)}</strong>
+            <small>${month.cents ? money(month.cents) : '—'}</small>
+          </div>`).join('')}</div>`
+        : '<div class="parish-history-insight-empty">No giving activity matches this view.</div>';
+    }
+    const funds = [...fundMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const maxFund = Math.max(1, ...funds.map(([, cents]) => cents));
+    if (fundPane) {
+      fundPane.innerHTML = funds.length ? funds.map(([fund, cents], index) => `
+        <div class="parish-history-fund-row">
+          <span class="parish-history-fund-rank">${index + 1}</span>
+          <span class="parish-history-fund-copy"><strong>${escapeHtml(fund)}</strong><i><b style="width:${Math.max(4, Math.round(cents / maxFund * 100))}%"></b></i></span>
+          <span class="parish-history-fund-amount">${money(cents)}</span>
+        </div>`).join('')
+        : '<div class="parish-history-insight-empty">Fund allocation will appear after gifts are recorded.</div>';
+    }
   }
 
   function renderHistoryTable() {
@@ -6729,10 +7491,19 @@
     const total    = filteredGifts.reduce((s, g) => s + ((g.parishNetCents ?? g.amountCents) || 0), 0);
     const avg      = filteredGifts.length ? Math.round(total / filteredGifts.length) : 0;
     const recurring = filteredGifts.filter(g => g.recurring).length;
+    const donors = new Set(filteredGifts.map(g => String(g.donorEmail || g.donorName || '').trim().toLowerCase()).filter(Boolean)).size;
+    const feeCovered = filteredGifts.filter(g => g.coverFees).length;
     document.getElementById('histStatTotal').textContent     = filteredGifts.length;
     document.getElementById('histStatAmount').textContent    = money(total);
     document.getElementById('histStatAvg').textContent      = filteredGifts.length ? money(avg) : '—';
     document.getElementById('histStatRecurring').textContent = recurring;
+    const donorStat = document.getElementById('histStatDonors');
+    if (donorStat) donorStat.textContent = donors;
+    const context = document.getElementById('historyHeroContext');
+    if (context) context.textContent = `${recurring} recurring gift${recurring === 1 ? '' : 's'} · ${feeCovered} fee-covered · ${donors} distinct donor${donors === 1 ? '' : 's'}`;
+    const resultCount = document.getElementById('historyResultCount');
+    if (resultCount) resultCount.textContent = `Showing ${filteredGifts.length} of ${allGifts.length} gift${allGifts.length === 1 ? '' : 's'}`;
+    renderHistoryInsights();
 
     const wrap = document.getElementById('historyTableWrap');
     if (!wrap) return;
@@ -6740,23 +7511,29 @@
       wrap.innerHTML = `<div class="history-empty">${allGifts.length ? 'No gifts match the current filters.' : 'No gift history found. Connect Stripe to see recent gifts here.'}</div>`;
       return;
     }
-    const rows = filteredGifts.map(g => `
-      <tr>
-        <td>${escapeHtml(fullDate(g.date || g.createdAt))}</td>
-        <td><span class="history-amount">${moneyFull((g.parishNetCents ?? g.amountCents) || 0)}</span><span class="history-subamount">Gift ${moneyFull((g.giftAmountCents ?? g.amountCents) || 0)}</span></td>
-        <td><span class="history-fee ${g.coverFees ? 'covered' : 'absorbed'}">${g.coverFees ? 'Covered' : '-' + moneyFull(g.totalFeeCents || 0)}</span></td>
-        <td>${g.donorName ? escapeHtml(g.donorName) : '<span style="color:var(--muted)">Anonymous</span>'}</td>
-        <td>${g.donorEmail ? escapeHtml(g.donorEmail) : '—'}</td>
-        <td><span class="history-fund">${escapeHtml(g.fund || g.fundId || 'General')}</span></td>
-        <td><span class="history-type">${g.recurring ? 'Recurring' : 'One-time'}</span></td>
-        <td style="color:var(--stone);font-size:12px;">${g.commemorationNames ? escapeHtml(g.commemorationNames.join(', ')) : '—'}</td>
-      </tr>`).join('');
+    const rows = filteredGifts.map(g => {
+      const giftCents = Number((g.giftAmountCents ?? g.amountCents) || 0);
+      const netCents = Number((g.parishNetCents ?? g.amountCents) || 0);
+      const feeCents = Number(g.totalFeeCents || 0);
+      const details = (g.commemorationNames || []).length
+        ? `<span class="parish-history-row-note">For ${escapeHtml(g.commemorationNames.join(', '))}</span>` : '';
+      return `
+        <tr>
+          <td data-label="Date"><strong class="parish-history-date">${escapeHtml(fullDate(g.date || g.createdAt))}</strong></td>
+          <td data-label="Donor"><span class="parish-history-donor"><strong>${g.donorName ? escapeHtml(g.donorName) : 'Anonymous donor'}</strong><small>${g.donorEmail ? escapeHtml(g.donorEmail) : 'No email available'}</small></span></td>
+          <td data-label="Fund"><span class="history-fund">${escapeHtml(g.fund || g.fundId || 'General')}</span>${details}</td>
+          <td data-label="Gift"><span class="history-amount">${moneyFull(giftCents)}</span></td>
+          <td data-label="Fees"><span class="history-fee ${g.coverFees ? 'covered' : 'absorbed'}">${g.coverFees ? 'Donor covered' : (feeCents ? '-' + moneyFull(feeCents) : 'No fee')}</span></td>
+          <td data-label="Net"><span class="parish-history-net">${moneyFull(netCents)}</span></td>
+          <td data-label="Type"><span class="history-type">${g.recurring ? 'Recurring' : 'One-time'}</span></td>
+        </tr>`;
+    }).join('');
 
     wrap.innerHTML = `
       <div class="history-table-wrap">
         <table class="history-table">
           <thead><tr>
-            <th>Date</th><th>Parish received</th><th>Fees</th><th>Donor</th><th>Email</th><th>Fund</th><th>Type</th><th>Commemorations</th>
+            <th>Date</th><th>Donor</th><th>Fund &amp; intention</th><th>Gift</th><th>Fees</th><th>Net</th><th>Type</th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
@@ -7255,9 +8032,19 @@
 
   function parseSacramentPriestsFromSettings() {
     const raw = document.getElementById('sacramentPriestsText')?.value || '';
+    const existing = Array.isArray(currentParish?.sacramentPriests) ? currentParish.sacramentPriests : [];
     return raw.split(/\r?\n/).map((line) => {
       const [name, email = ''] = line.split('|').map(part => part.trim());
-      return { name, email };
+      const saved = existing.find(priest =>
+        (email && String(priest.email || '').toLowerCase() === email.toLowerCase())
+        || String(priest.name || '').toLowerCase() === name.toLowerCase()
+      );
+      return {
+        name,
+        email,
+        serviceTypes: Array.isArray(saved?.serviceTypes) ? saved.serviceTypes : defaultSacramentServiceTypes(),
+        customServices: Array.isArray(saved?.customServices) ? saved.customServices : []
+      };
     }).filter((priest) => priest.name).slice(0, 12);
   }
 
@@ -7464,9 +8251,31 @@
 
   function renderStripeVolume(volume) {
     const body = document.getElementById('stripeVolumeBody');
+    const panel = document.getElementById('stripeVolumePanel');
     if (!body) return;
+    panel?.classList.toggle('npp-panel-expanded', Boolean(volume.connected));
     if (!volume.connected) {
-      body.innerHTML = `<div class="insights-empty-dark">${escapeHtml(volume.note || 'Connect Stripe to begin volume tracking.')}</div>`;
+      const billingReady = Boolean(currentParish?.setup?.billingActive);
+      body.innerHTML = `
+        <div class="npp-empty-state">
+          <div class="npp-empty-mark" aria-hidden="true">S</div>
+          <div class="npp-empty-content">
+            <span class="npp-eyebrow">Required first step</span>
+            <h3>Connect your parish Stripe account</h3>
+            <p>AGAPAY needs a Standard connected account before it can measure donation and non-donation payment volume.</p>
+            <div class="npp-benefit-row" aria-label="What happens after connecting Stripe">
+              <span>Automatic volume tracking</span>
+              <span>80% eligibility monitoring</span>
+              <span>Secure parish-level reporting</span>
+            </div>
+            <div class="npp-empty-actions">
+              <button class="btn btn-primary" type="button" onclick="startStripeOnboarding(this)" ${billingReady ? '' : 'disabled title="Complete AGAPAY subscription billing first"'}>
+                ${billingReady ? 'Connect Stripe' : 'Complete billing to connect Stripe'}
+              </button>
+              <small>${billingReady ? 'You will finish securely in Stripe.' : 'Stripe connection unlocks after subscription billing is active.'}</small>
+            </div>
+          </div>
+        </div>`;
       return;
     }
     const complete = Boolean(volume.scan?.complete);
@@ -7502,15 +8311,42 @@
       const data = await nonprofitPricingFetch();
       renderNonprofitPricingApplication(data);
     } catch (err) {
-      body.innerHTML = `<div class="insights-empty-dark">${escapeHtml(err.message)}</div>`;
+      if (/connect the parish standard stripe account/i.test(err.message || '')) {
+        renderNonprofitPricingDisconnected();
+      } else {
+        document.getElementById('nonprofitPricingApplicationPanel')?.classList.remove('npp-panel-expanded');
+        body.innerHTML = `<div class="insights-empty-dark">${escapeHtml(err.message)}</div>`;
+      }
     } finally {
       if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
     }
   }
 
+  function renderNonprofitPricingDisconnected() {
+    const body = document.getElementById('nonprofitPricingApplicationBody');
+    if (!body) return;
+    document.getElementById('nonprofitPricingApplicationPanel')?.classList.remove('npp-panel-expanded');
+    body.innerHTML = `
+      <div class="npp-empty-state npp-empty-state-secondary">
+        <div class="npp-empty-mark npp-empty-mark-muted" aria-hidden="true">%</div>
+        <div class="npp-empty-content">
+          <span class="npp-eyebrow">Unlocks after Stripe connection</span>
+          <h3>Your application workspace will appear here</h3>
+          <p>Once Stripe is connected, AGAPAY will calculate the parish’s donation share and guide you through attestation, document upload, and submission to Stripe.</p>
+          <div class="npp-mini-steps" aria-label="Nonprofit pricing application steps">
+            <div class="is-current"><strong>1</strong><span>Connect Stripe</span></div>
+            <div><strong>2</strong><span>Verify 80% donation volume</span></div>
+            <div><strong>3</strong><span>Prepare and submit</span></div>
+          </div>
+          <button class="btn btn-primary npp-stripe-account-button" type="button" onclick="document.getElementById('stripeVolumePanel')?.scrollIntoView({ behavior: 'smooth', block: 'center' })">Manage Stripe Account</button>
+        </div>
+      </div>`;
+  }
+
   function renderNonprofitPricingApplication(data) {
     const body = document.getElementById('nonprofitPricingApplicationBody');
     if (!body) return;
+    document.getElementById('nonprofitPricingApplicationPanel')?.classList.add('npp-panel-expanded');
     const application = data.application || {};
     const readiness = application.readiness || {};
     const confirmations = application.confirmations || {};

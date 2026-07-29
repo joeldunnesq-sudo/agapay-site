@@ -476,7 +476,7 @@
             <span class="fee-label">Card & wallet</span>
             <strong>Familiar, fast checkout</strong>
             <span>Includes cards, Apple Pay, and Google Pay when available.</span>
-            <small>Stripe's standard processing applies (about 2.9% + $0.30 for cards). AGAPAY adds nothing on top &mdash; ever.</small>
+            <small>Eligible nonprofit donation pricing: cards 2.2% + $0.30; ACH 0.8%, capped at $5.<a class="stripe-nonprofit-rate-link" href="#stripe-nonprofit-fee-disclaimer" aria-label="See Stripe nonprofit pricing eligibility disclaimer">*</a> AGAPAY adds nothing on top &mdash; ever.</small>
           </div>
         </div>
         <div class="fee-note">
@@ -506,15 +506,15 @@
           </div>
           <div class="calc-results">
             <div class="result-row"><span>Total gifts</span><strong id="grossDisplay">$20,000.00</strong></div>
-            <div class="result-row negative"><span>Total estimated fees</span><strong id="feeDisplay">-$660.10</strong></div>
-            <div class="result-row muted"><span id="stripeLabel">Stripe processing (100% of fees)</span><strong id="stripeDisplay">-$660.10</strong></div>
+            <div class="result-row negative"><span>Total estimated fees</span><strong id="feeDisplay">-$520.10</strong></div>
+            <div class="result-row muted"><span id="stripeLabel">Estimated nonprofit Stripe card processing*</span><strong id="stripeDisplay">-$520.10</strong></div>
             <div class="result-row muted"><span>AGAPAY donation fee</span><strong id="agapayDisplay">$0.00</strong></div>
-            <div class="result-row positive"><span>Donor-covered offset</span><strong id="coveredDisplay">+$495.08</strong></div>
-            <div class="result-row negative"><span>Parish-absorbed fees</span><strong id="parishFeesDisplay">-$165.02</strong></div>
-            <div class="result-row net"><span>Net deposited</span><strong id="netDisplay">$19,834.98</strong></div>
-            <div class="result-row muted"><span>Reconciliation</span><strong id="reconcileDisplay">$20,000.00 - $165.02 = $19,834.98</strong></div>
+            <div class="result-row positive"><span>Donor-covered offset</span><strong id="coveredDisplay">+$390.08</strong></div>
+            <div class="result-row negative"><span>Parish-absorbed fees</span><strong id="parishFeesDisplay">-$130.02</strong></div>
+            <div class="result-row net"><span>Net deposited</span><strong id="netDisplay">$19,869.98</strong></div>
+            <div class="result-row muted"><span>Reconciliation</span><strong id="reconcileDisplay">$20,000.00 - $130.02 = $19,869.98</strong></div>
             <div class="result-row muted"><span>Payout timing</span><strong id="timingDisplay">Fastest</strong></div>
-            <div class="result-row positive"><span>Effective yield</span><strong id="yieldDisplay">99.17%</strong></div>
+            <div class="result-row positive"><span>Effective yield</span><strong id="yieldDisplay">99.35%</strong></div>
           </div>
         </section>
 
@@ -614,6 +614,9 @@
         </div>
       </section>
     </section>
+    <aside class="stripe-fee-disclaimer" id="stripe-nonprofit-fee-disclaimer">
+      <strong>* Stripe nonprofit pricing disclaimer:</strong> Discounted donation transaction fees are subject to Stripe&rsquo;s review, approval, and ongoing determination. AGAPAY cannot guarantee eligibility or that Stripe will apply or maintain these rates.
+    </aside>
   </main>
 <script>
     const body = document.body;
@@ -698,8 +701,9 @@
       const averageGift = Math.max(5, Number(averageGiftInput && averageGiftInput.value || 75));
       const transactions = Math.max(1, Math.round(monthlyVolume / averageGift));
       // AGAPAY charges no donation fee -- the only fee here is Stripe's own
-      // standard payment processing (~2.9% + $0.30 per card gift).
-      const stripeRate = 0.029;
+      // discounted nonprofit card processing (2.2% + $0.30 per card gift).
+      // Stripe alone determines whether a connected parish is eligible.
+      const stripeRate = 0.022;
       const estimatedStripeCents = Math.round(monthlyCents * stripeRate) + (transactions * 30);
       const totalFeeCents = estimatedStripeCents;
       const estimatedAgapayCents = 0;
@@ -713,7 +717,7 @@
       document.getElementById("grossDisplay").textContent = formatCents(monthlyCents);
       document.getElementById("feeDisplay").textContent = `-${formatCents(totalFeeCents)}`;
       document.getElementById("coveredDisplay").textContent = `+${formatCents(donorCoveredCents)}`;
-      document.getElementById("stripeLabel").textContent = "Estimated Stripe processing (100% of fees)";
+      document.getElementById("stripeLabel").textContent = "Estimated nonprofit Stripe card processing*";
       document.getElementById("stripeDisplay").textContent = `-${formatCents(estimatedStripeCents)}`;
       document.getElementById("agapayDisplay").textContent = `-${formatCents(estimatedAgapayCents)}`;
       document.getElementById("parishFeesDisplay").textContent = `-${formatCents(parishFeeCents)}`;

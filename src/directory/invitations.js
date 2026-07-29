@@ -184,6 +184,15 @@ export async function createDirectoryInvitation(env, {
   if (!person.active) {
     throw new DirectoryServiceError("validation_failed", "Cannot invite a claim for an inactive directory person.");
   }
+  const privacyFlags = await d1First(
+    env,
+    "SELECT is_child FROM directory_person_privacy_flags WHERE parish_id = ?1 AND person_id = ?2 AND active = 1 ORDER BY updated_at DESC LIMIT 1",
+    parishId,
+    personId
+  );
+  if (Number(privacyFlags?.is_child || 0) === 1) {
+    throw new DirectoryServiceError("child_invitation_denied", "Children are managed through their household and cannot receive a My AGAPAY account invitation.", 403);
+  }
 
   let householdId = null;
   if (type === "household_admin" || type === "additional_household_admin") {
@@ -271,6 +280,43 @@ export async function createDirectoryInvitation(env, {
   // the email-delivery step in Part 11) -- it is never persisted and this
   // function never logs it.
   return { invitation: invitationRowToDto(row), rawToken };
+}
+
+/**
+ * Records the first delivery of an invitation without rotating its token.
+ * The caller sends or copies the one-time raw token returned by
+ * createDirectoryInvitation, then marks that exact invitation as sent.
+ */
+export async function markDirectoryInvitationSent(env, {
+  actor: actorInput,
+  parishId: parishIdInput,
+  invitationId,
+  correlationId = ""
+}) {
+  const parishId = cleanText(parishIdInput, { required: true, max: 160, field: "parishId" });
+  const actor = assertParishActor(actorInput, parishId, [DIRECTORY_INVITATION_CAPABILITIES.invitationsManage]);
+  const row = await loadInvitationForParish(env, invitationId, parishId);
+  if (row.status !== "pending") {
+    throw new DirectoryServiceError("invalid_transition", `Cannot send an invitation in status "${row.status}".`, 409);
+  }
+  assertLegalTransition("pending", "sent");
+  const timestamp = nowMs();
+  await runAtomic(env, [
+    {
+      sql: "UPDATE directory_invitations SET status = 'sent', last_sent_at = ?1, updated_at = ?1 WHERE id = ?2 AND status = 'pending'",
+      params: [timestamp, invitationId]
+    },
+    auditStatement({
+      action: "directory.invitation.sent",
+      actor,
+      parishId,
+      targetType: "directory_invitation",
+      targetId: invitationId,
+      householdId: row.intended_household_id,
+      correlationId
+    })
+  ]);
+  return invitationRowToDto(await d1First(env, "SELECT * FROM directory_invitations WHERE id = ?1", invitationId));
 }
 
 /**
