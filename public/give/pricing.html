@@ -134,6 +134,62 @@
     .tier-features li { display: grid; grid-template-columns: 18px 1fr; gap: 0.42rem; color: #28323A; font-size: 0.82rem; line-height: 1.4; align-items: start; }
     .tier-features li .ck { width: 16px; height: 16px; margin-top: 0.12rem; }
     .tier-features li .ck svg { width: 16px; height: 16px; stroke: var(--gold-dark); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .tier-coming-soon {
+      margin-top: 0.15rem;
+      padding: 0.72rem;
+      border: 1px solid rgba(200, 162, 74, 0.34);
+      border-radius: 12px;
+      background: linear-gradient(145deg, rgba(200, 162, 74, 0.11), rgba(255, 253, 248, 0.92));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+    .tier-coming-soon-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.58rem;
+    }
+    .tier-coming-soon-kicker {
+      color: #5D4B23;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .tier-coming-soon-badge {
+      padding: 0.18rem 0.48rem;
+      border-radius: 999px;
+      background: var(--night);
+      color: #F5E7B7;
+      font-size: 0.6rem;
+      font-weight: 800;
+      letter-spacing: 0.045em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .tier-coming-soon-list { display: grid; gap: 0.42rem; }
+    .tier-coming-soon-item {
+      display: grid;
+      grid-template-columns: 29px minmax(0, 1fr);
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.45rem 0.48rem;
+      border: 1px solid rgba(200, 162, 74, 0.18);
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.68);
+    }
+    .tier-coming-soon-icon {
+      width: 29px;
+      height: 29px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: rgba(200, 162, 74, 0.16);
+      color: #765D20;
+    }
+    .tier-coming-soon-icon svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+    .tier-coming-soon-item strong { display: block; color: var(--night); font-size: 0.76rem; line-height: 1.2; }
+    .tier-coming-soon-item small { display: block; margin-top: 0.08rem; color: #66727B; font-size: 0.64rem; line-height: 1.3; }
     .tier-card .small-btn { margin-top: auto; width: 100%; min-height: 42px; font-size: 0.75rem; }
 
     .fee-banner { margin-top: 1.25rem; border: 1px solid rgba(200, 162, 74, 0.42); border-radius: 14px; background: linear-gradient(135deg, rgba(255, 253, 248, 0.94), rgba(248, 242, 231, 0.82)); display: grid; grid-template-columns: minmax(270px, 0.88fr) minmax(420px, 1.2fr) minmax(260px, 0.82fr); gap: 1rem; align-items: stretch; padding: 1.1rem 1.25rem; box-shadow: 0 12px 30px rgba(6, 21, 34, 0.06); }
@@ -382,7 +438,7 @@
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Parish logo across giving pages and church search</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Online giving and recurring donations</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Donor-covered fee option</li>
-            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Campaigns, direct parish links, and QR codes</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Campaigns</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Basic donor, fund, and gift reporting</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Annual giving statements</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Liturgical calendar timing</li>
@@ -418,12 +474,30 @@
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Sacraments &amp; Services requests from parishioners</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Full Parish Commerce suite, with new products added as they launch</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Parish Directory and member workflows</li>
-            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Text-to-Give <strong>&mdash; coming soon</strong></li>
-            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Parish Accounting suite <strong>&mdash; coming soon</strong></li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Additional administrator seats, roles, and invite workflow</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Guided in-dashboard setup and configuration support</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Priority email support</li>
           </ul>
+          <div class="tier-coming-soon" aria-label="Coming soon">
+            <div class="tier-coming-soon-head">
+              <span class="tier-coming-soon-kicker">On the way</span>
+              <span class="tier-coming-soon-badge">Coming soon</span>
+            </div>
+            <div class="tier-coming-soon-list">
+              <div class="tier-coming-soon-item">
+                <span class="tier-coming-soon-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 9h8M8 13h5"/></svg>
+                </span>
+                <span><strong>Text-to-Give</strong><small>Simple giving by text message</small></span>
+              </div>
+              <div class="tier-coming-soon-item">
+                <span class="tier-coming-soon-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M4 3h16v18H4z"/><path d="M8 7h8M8 11h8M8 15h3M15 15h1"/></svg>
+                </span>
+                <span><strong>Parish Accounting</strong><small>Connected parish financial workflows</small></span>
+              </div>
+            </div>
+          </div>
           <a class="small-btn primary" href="/register">Start for free</a>
         </article>
 

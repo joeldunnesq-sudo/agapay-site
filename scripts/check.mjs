@@ -333,9 +333,17 @@ assert.equal(
   "enhanced giving reports should appear only in the Stewardship tier"
 );
 assert.ok(
-  givePricingHtml.includes("Text-to-Give <strong>&mdash; coming soon</strong>")
-    && givePricingHtml.includes("Parish Accounting suite <strong>&mdash; coming soon</strong>"),
-  "Parish pricing should identify Text-to-Give and the Accounting suite as coming soon"
+  givePricingHtml.includes('class="tier-coming-soon"')
+    && givePricingHtml.includes('class="tier-coming-soon-badge">Coming soon</span>')
+    && givePricingHtml.includes("<strong>Text-to-Give</strong>")
+    && givePricingHtml.includes("<strong>Parish Accounting</strong>")
+    && givePricingHtml.indexOf('class="tier-coming-soon"') > givePricingHtml.indexOf("Priority email support"),
+  "Parish pricing should group polished coming-soon features at the bottom of the card"
+);
+assert.ok(
+  givePricingHtml.includes("</svg></span>Campaigns</li>")
+    && !givePricingHtml.includes("Campaigns, direct parish links, and QR codes"),
+  "Giving Plus should list campaigns without repeating Starter's direct links and QR codes"
 );
 assert.equal(
   givePricingHtml.match(/Parish council and annual-meeting-ready stewardship insights/g)?.length,
