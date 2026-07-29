@@ -14,6 +14,10 @@
 import { d1, d1All } from "./core.js";
 
 export const SCHEDULABLE_SACRAMENT_TYPES = new Set(["house_blessing", "confession", "home_visit", "office_visit", "anointing", "counseling"]);
+export function isSchedulableOfferingKey(value) {
+  const key = String(value || "").trim();
+  return SCHEDULABLE_SACRAMENT_TYPES.has(key) || /^custom_[a-z0-9_-]{1,72}$/.test(key);
+}
 
 /** { year, month, day, hour, minute, second } for `date` as observed in `timeZone`. */
 function zonedParts(date, timeZone) {
@@ -99,7 +103,7 @@ function normalizeTimeToHHMM(value) {
  * back to the free-text request fields in that case.
  */
 export async function computeAvailableSlots(env, { parishId, sacramentType, timezone, daysAhead = 21, maxSlots = 40 }) {
-  if (!d1(env) || !parishId || !SCHEDULABLE_SACRAMENT_TYPES.has(sacramentType) || !timezone) {
+  if (!d1(env) || !parishId || !isSchedulableOfferingKey(sacramentType) || !timezone) {
     return { slots: [], timezone: timezone || "" };
   }
 

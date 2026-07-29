@@ -3176,11 +3176,14 @@ function sacramentCards() {
   const custom = (sacAccordionState.offerings?.custom || []).map((service) => ({
     id: service.id,
     type: "other",
+    schedulingType: service.id,
     otherTypeLabel: service.label,
     section: "services",
-    mode: "custom-request",
+    mode: service.mode === "schedule" ? "book" : "custom-request",
     title: service.label,
-    description: `Send a ${service.label.toLowerCase()} request to your parish.`,
+    description: service.mode === "schedule"
+      ? `Choose an available time for ${service.label.toLowerCase()}.`
+      : `Send a ${service.label.toLowerCase()} request to your parish.`,
     icon: "cross"
   }));
   return [...standard, ...custom];
@@ -3208,6 +3211,15 @@ function sacramentActiveRequests(type) {
 
 function sacramentPrimaryRequest(type) {
   return sacramentActiveRequests(type)[0] || null;
+}
+
+function sacramentPrimaryRequestForCard(card) {
+  if (!card) return null;
+  return sacAccordionState.requests.find((row) =>
+    SAC_ACTIVE_STATUSES.includes(row.status)
+    && row.sacramentType === card.type
+    && (card.type !== "other" || String(row.otherTypeLabel || "").toLowerCase() === String(card.otherTypeLabel || "").toLowerCase())
+  ) || null;
 }
 
 function sacramentSummary(row) {
@@ -3283,7 +3295,7 @@ async function loadSacramentSlots(type) {
 
 async function loadSacramentSlotsForCard(type, force = false) {
   const parishId = document.getElementById("sacramentParishId")?.value || donorProfile()?.defaultParishId || "";
-  if (!parishId || !SAC_SCHEDULABLE_TYPES.includes(type)) return [];
+  if (!parishId || (!SAC_SCHEDULABLE_TYPES.includes(type) && !/^custom_[a-z0-9_-]+$/.test(type))) return [];
   if (!force && Array.isArray(sacAccordionState.slotsByType[type])) return sacAccordionState.slotsByType[type];
   sacAccordionState.loadingSlots[type] = true;
   renderSacramentAccordions();
@@ -3347,7 +3359,7 @@ function openSacramentAccordion(id) {
   sacAccordionState.openId = id;
   renderSacramentModal();
   const card = sacramentCards().find((item) => item.id === id);
-  if (card?.mode === "book") loadSacramentSlotsForCard(card.type);
+  if (card?.mode === "book") loadSacramentSlotsForCard(card.schedulingType || card.type);
 }
 
 function closeSacramentModal() {
@@ -3395,7 +3407,7 @@ function renderSacramentUpcomingStrip() {
 }
 
 function sacramentCardHeader(card) {
-  const request = card.type ? sacramentPrimaryRequest(card.type) : null;
+  const request = card.type ? sacramentPrimaryRequestForCard(card) : null;
   const status = request ? `<span class="sac-card-state">${escapeHtml(SACRAMENT_STATUS_LABELS[request.status] || request.status)}</span>` : "";
   return `<button class="sac-accordion-trigger" type="button" aria-haspopup="dialog" onclick="openSacramentAccordion('${card.id}')">
     <span class="sac-accordion-icon">${sacramentIcon(card.icon)}</span>
@@ -3406,14 +3418,17 @@ function sacramentCardHeader(card) {
 }
 
 function renderSlotPickerForCard(card) {
-  const existing = sacramentPrimaryRequest(card.type);
+  const existing = sacramentPrimaryRequestForCard(card);
+  const schedulingType = card.schedulingType || card.type;
   if (existing) {
     return `<div class="sac-booked-panel"><strong>Booked — ${escapeHtml(sacramentSummary(existing) || card.title)}</strong><p>Your parish can see this request.</p><button class="btn btn-ghost btn-sm" type="button" onclick="cancelSacramentRequest('${existing.id}', this)">Change</button></div>`;
   }
-  if (sacAccordionState.loadingSlots[card.type]) return '<div class="notice">Loading availability...</div>';
-  const slots = sacAccordionState.slotsByType[card.type] || [];
+  if (sacAccordionState.loadingSlots[schedulingType]) return '<div class="notice">Loading availability...</div>';
+  const slots = sacAccordionState.slotsByType[schedulingType] || [];
   if (!slots.length) {
-    return `<form class="sac-card-form" onsubmit="submitSacramentAccordionRequest(event, '${card.type}')">
+    return card.type === "other"
+      ? renderCustomSacramentRequestForm(card)
+      : `<form class="sac-card-form" onsubmit="submitSacramentAccordionRequest(event, '${card.type}')">
       <p class="form-help">No online times are listed right now. Send a request and your parish will follow up.</p>
       ${sacramentCommonFields(card)}
       <div class="form-grid"><div class="form-group"><label class="form-label">Preferred date</label><input class="form-input" name="requestedDate" type="date" /></div><div class="form-group"><label class="form-label">Preferred time</label><input class="form-input" name="requestedTimeWindow" placeholder="e.g. weekday morning" /></div></div>
@@ -3430,12 +3445,12 @@ function renderSlotPickerForCard(card) {
     return `<div class="sac-slot-day"><div class="sac-slot-day-label">${escapeHtml(dayLabel)}</div><div class="sac-slot-chips">${daySlots.map((slot) => {
       const timeLabel = String(slot.label || "").split(", ").pop() || slot.time;
       const priestSuffix = slot.priestName ? ` · ${slot.priestName}` : "";
-      return `<button type="button" class="sac-slot-chip" data-sac-slot-type="${escapeHtml(card.type)}" data-priest-name="${escapeHtml(slot.priestName || "")}" data-priest-email="${escapeHtml(slot.priestEmail || "")}" onclick="selectSacramentAccordionSlot('${card.type}','${slot.date}','${slot.time}', this)">${escapeHtml(timeLabel + priestSuffix)}</button>`;
+      return `<button type="button" class="sac-slot-chip" data-sac-slot-type="${escapeHtml(schedulingType)}" data-priest-name="${escapeHtml(slot.priestName || "")}" data-priest-email="${escapeHtml(slot.priestEmail || "")}" onclick="selectSacramentAccordionSlot('${schedulingType}','${slot.date}','${slot.time}', this)">${escapeHtml(timeLabel + priestSuffix)}</button>`;
     }).join("")}</div></div>`;
   }).join("");
-  return `<form class="sac-card-form" onsubmit="submitSacramentAccordionBooking(event, '${card.type}')">
+  return `<form class="sac-card-form" onsubmit="submitSacramentAccordionBooking(event, '${card.id}')">
     <div class="sac-slot-picker">${days}</div>
-    <p class="form-help" data-sac-selected-note="${escapeHtml(card.type)}"></p>
+    <p class="form-help" data-sac-selected-note="${escapeHtml(schedulingType)}"></p>
     ${sacramentCommonFields(card)}
     <button class="btn btn-gold" type="submit">Book selected time</button>
   </form>`;
@@ -3704,17 +3719,21 @@ function formChecked(form, name) {
   return form?.elements?.[name]?.checked === true;
 }
 
-async function submitSacramentAccordionBooking(event, sacramentType) {
+async function submitSacramentAccordionBooking(event, cardId) {
   event.preventDefault();
   const form = event.target;
   const parishId = document.getElementById("sacramentParishId")?.value || donorProfile()?.defaultParishId || "";
-  const slot = sacAccordionState.selectedSlots[sacramentType];
+  const card = sacramentCards().find((item) => item.id === cardId) || {};
+  const schedulingType = card.schedulingType || card.type || cardId;
+  const sacramentType = card.type || cardId;
+  const slot = sacAccordionState.selectedSlots[schedulingType];
   if (!parishId) return setDonorStatus("Choose your parish in Settings before booking.", "error");
   if (!slot) return setDonorStatus("Pick an open time to book.", "error");
-  const card = SAC_ACCORDION_CARDS.find((item) => item.type === sacramentType) || {};
   const body = {
     parishId,
     sacramentType,
+    schedulingType,
+    otherTypeLabel: card.otherTypeLabel || "",
     locationType: card.locationType || "church",
     locationAddress: formValue(form, "locationAddress"),
     date: slot.date,
@@ -3731,13 +3750,13 @@ async function submitSacramentAccordionBooking(event, sacramentType) {
     setDonorStatus("Booking your slot...");
     await donorApi("/api/donor/sacraments/book", { method: "POST", body: JSON.stringify(body) });
     setDonorStatus("Booked. Your parish can see the confirmed time.", "success");
-    sacAccordionState.selectedSlots[sacramentType] = null;
-    sacAccordionState.slotsByType[sacramentType] = null;
+    sacAccordionState.selectedSlots[schedulingType] = null;
+    sacAccordionState.slotsByType[schedulingType] = null;
     await loadDonorSacramentsPage();
   } catch (err) {
     if (err.data?.slotTaken) {
       setDonorStatus("That time was just taken. Pick another.", "error");
-      await loadSacramentSlotsForCard(sacramentType, true);
+      await loadSacramentSlotsForCard(schedulingType, true);
     } else {
       setDonorStatus(err.message, "error");
     }

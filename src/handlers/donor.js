@@ -1,6 +1,6 @@
 import { bookstoreReadinessSummary, bookstoreSellerDisclosure } from "../lib/commerce-readiness.js";
 import { logEvent } from "../lib/logging.js";
-import { SCHEDULABLE_SACRAMENT_TYPES, computeAvailableSlots, isSlotStillOpen } from "../lib/sacrament-availability.js";
+import { SCHEDULABLE_SACRAMENT_TYPES, computeAvailableSlots, isSchedulableOfferingKey, isSlotStillOpen } from "../lib/sacrament-availability.js";
 import {
   applyDonorPassword,
   clampListLimit,
@@ -1617,7 +1617,8 @@ function donorSacramentOfferings(registration = {}) {
     (Array.isArray(priest?.customServices) ? priest.customServices : []).forEach((service) => {
       const id = String(service?.id || "").trim();
       const label = String(service?.label || "").trim();
-      if (id && label) customById.set(id, { id, label });
+      const mode = service?.mode === "schedule" ? "schedule" : "request";
+      if (id && label) customById.set(id, { id, label, mode });
     });
   }
   return { types: [...types], custom: [...customById.values()] };
@@ -1954,8 +1955,8 @@ export async function handleDonorSacramentAvailability(request, env) {
 
   const url = new URL(request.url);
   const parishId = String(url.searchParams.get("parishId") || donor.defaultParishId || "").trim();
-  const sacramentType = String(url.searchParams.get("sacramentType") || "").trim();
-  if (!parishId || !SCHEDULABLE_SACRAMENT_TYPES.has(sacramentType)) {
+  const offeringKey = String(url.searchParams.get("sacramentType") || "").trim();
+  if (!parishId || !isSchedulableOfferingKey(offeringKey)) {
     return json({ slots: [], timezone: "" });
   }
 
@@ -1963,12 +1964,15 @@ export async function handleDonorSacramentAvailability(request, env) {
   if (!found || !sacramentsEnabledFor(found.registration)) {
     return json({ slots: [], timezone: "" });
   }
-  if (!donorSacramentOfferings(found.registration).types.includes(sacramentType)) {
+  const offerings = donorSacramentOfferings(found.registration);
+  const isBuiltInOffering = offerings.types.includes(offeringKey) && SCHEDULABLE_SACRAMENT_TYPES.has(offeringKey);
+  const isCustomScheduledOffering = offerings.custom.some((service) => service.id === offeringKey && service.mode === "schedule");
+  if (!isBuiltInOffering && !isCustomScheduledOffering) {
     return json({ slots: [], timezone: found.registration.timezone || "" });
   }
 
   const result = await computeAvailableSlots(env, {
-    parishId, sacramentType, timezone: found.registration.timezone || ""
+    parishId, sacramentType: offeringKey, timezone: found.registration.timezone || ""
   });
   return json(result);
 }
@@ -2001,12 +2005,19 @@ export async function handleDonorSacramentBook(request, env) {
   }
 
   const sacramentType = String(body.sacramentType || "").trim();
-  if (!SCHEDULABLE_SACRAMENT_TYPES.has(sacramentType)) {
+  const schedulingType = String(body.schedulingType || sacramentType).trim();
+  const offerings = donorSacramentOfferings(found.registration);
+  const customOffering = offerings.custom.find((service) => service.id === schedulingType && service.mode === "schedule") || null;
+  const builtInOffering = SCHEDULABLE_SACRAMENT_TYPES.has(sacramentType)
+    && schedulingType === sacramentType
+    && offerings.types.includes(sacramentType);
+  if (!isSchedulableOfferingKey(schedulingType) || (!builtInOffering && !customOffering)) {
     return json({ error: "This sacrament type can't be self-booked." }, { status: 400 });
   }
-  if (!donorSacramentOfferings(found.registration).types.includes(sacramentType)) {
-    return json({ error: "This priest is not currently offering that service for online booking." }, { status: 400 });
+  if (customOffering && sacramentType !== "other") {
+    return json({ error: "This custom offering is not valid for online booking." }, { status: 400 });
   }
+  const otherTypeLabel = customOffering?.label || "";
   const date = String(body.date || "").trim();
   const time = String(body.time || "").trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) {
@@ -2035,12 +2046,12 @@ export async function handleDonorSacramentBook(request, env) {
   try {
     await d1Run(env, `
       INSERT INTO sacrament_requests
-        (id, parish_id, donor_email, sacrament_type, status,
+        (id, parish_id, donor_email, sacrament_type, other_type_label, status,
          requested_date, participant_names, location_type, location_address,
          notes, phone, confirmed_date, confirmed_time, clergy_assigned, created_at, updated_at)
-      VALUES (?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
-    id, parishId, normalizeEmail(donor.email), sacramentType, date, participantNames || null,
+    id, parishId, normalizeEmail(donor.email), sacramentType, otherTypeLabel || null, date, participantNames || null,
       locationType, locationAddress || null, notes || null, phone || null, date, time, priestName || null, now, now
     );
   } catch (error) {
@@ -2053,7 +2064,7 @@ export async function handleDonorSacramentBook(request, env) {
   // Best-effort notification to the parish — never blocks the booking itself.
   try {
     await notifyParishOfNewSacramentRequest(env, {
-      request, registration: found.registration, donor, sacramentType, otherTypeLabel: "",
+      request, registration: found.registration, donor, sacramentType, otherTypeLabel,
       participantNames, locationAddress, notes, phone,
       booked: true, confirmedDate: date, confirmedTime: time
     });

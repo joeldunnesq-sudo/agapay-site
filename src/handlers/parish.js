@@ -105,7 +105,7 @@ import {
 } from "../lib/settlement-profiles.js";
 
 import { recordAuditEvent } from "../lib/audit-log.js";
-import { SCHEDULABLE_SACRAMENT_TYPES } from "../lib/sacrament-availability.js";
+import { SCHEDULABLE_SACRAMENT_TYPES, isSchedulableOfferingKey } from "../lib/sacrament-availability.js";
 import {
   checkoutFinancials as calculateCheckoutFinancials,
   estimateStripeAchFeeCents as estimateAchFee,
@@ -3875,8 +3875,14 @@ export async function handleParishAvailabilityRuleCreate(request, env, parishId)
   let body = {};
   try { body = await request.json(); } catch { body = {}; }
   const sacramentType = String(body.sacramentType || "").trim();
-  if (!SCHEDULABLE_SACRAMENT_TYPES.has(sacramentType)) {
-    return json({ error: "Choose a schedulable sacrament type (house blessing, confession, home visit, office visit, anointing, or counseling)." }, { status: 400 });
+  const requestedPriestName = String(body.priestName || "").trim().slice(0, 120);
+  const configuredPriest = normalizeSacramentPriests(ctx.registration).find((priest) => priest.name === requestedPriestName);
+  const configuredCustomOffering = configuredPriest?.customServices?.some((service) =>
+    service.id === sacramentType && service.mode === "schedule"
+  );
+  if (!isSchedulableOfferingKey(sacramentType)
+    || (!SCHEDULABLE_SACRAMENT_TYPES.has(sacramentType) && !configuredCustomOffering)) {
+    return json({ error: "Choose an offering configured for online scheduling." }, { status: 400 });
   }
   const dayOfWeek = Number(body.dayOfWeek);
   if (!Number.isInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
@@ -3888,7 +3894,7 @@ export async function handleParishAvailabilityRuleCreate(request, env, parishId)
     return json({ error: "Enter a valid start and end time, with the end after the start." }, { status: 400 });
   }
   const slotMinutes = Math.max(5, Math.min(240, parseInt(body.slotMinutes, 10) || 30));
-  const priestName = String(body.priestName || "").trim().slice(0, 120);
+  const priestName = requestedPriestName;
   const priestEmail = String(body.priestEmail || "").trim().slice(0, 180);
 
   const id = generateSecret("avail");
@@ -5898,7 +5904,8 @@ function sanitizeCustomSacramentServices(value) {
   if (!Array.isArray(value)) return [];
   return value.map((service) => ({
     id: String(service?.id || "").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 80),
-    label: String(service?.label || "").trim().slice(0, 120)
+    label: String(service?.label || "").trim().slice(0, 120),
+    mode: service?.mode === "schedule" ? "schedule" : "request"
   })).filter((service) => service.id && service.label).slice(0, 20);
 }
 

@@ -4715,7 +4715,16 @@
 
   function selectedSchedulableSacramentTypes() {
     const enabled = new Set(selectedSacramentServiceTypes());
-    return SAC_SCHEDULABLE_TYPES.filter(type => enabled.has(type));
+    const builtIn = SAC_SCHEDULABLE_TYPES.filter(type => enabled.has(type));
+    const custom = (selectedSacramentPriest().customServices || [])
+      .filter(service => service.mode === 'schedule')
+      .map(service => service.id);
+    return [...builtIn, ...custom];
+  }
+
+  function selectedSacramentOfferingLabel(type) {
+    const custom = (selectedSacramentPriest().customServices || []).find(service => service.id === type);
+    return custom?.label || sacramentTypeLabel({ sacramentType: type });
   }
 
   let sacramentsAvailabilityState = { loaded: false, loading: false, error: '', timezone: '', rules: [], blackouts: [] };
@@ -4852,7 +4861,7 @@
   function groupSacramentsRulesByType() {
     const rulesByType = {};
     const priest = selectedSacramentPriest();
-    SAC_SCHEDULABLE_TYPES.forEach(t => { rulesByType[t] = []; });
+    selectedSchedulableSacramentTypes().forEach(t => { rulesByType[t] = []; });
     sacramentsAvailabilityState.rules
       .filter(r => (r.priestName || '') === (priest.name || ''))
       .forEach(r => { (rulesByType[r.sacramentType] = rulesByType[r.sacramentType] || []).push(r); });
@@ -4865,26 +4874,40 @@
     const enabled = new Set(selectedSacramentServiceTypes());
     const custom = Array.isArray(priest.customServices) ? priest.customServices : [];
     return `
-      <div class="sac-admin-panel">
-        <div class="sac-admin-panel-head">
+      <div class="sac-admin-panel sac-admin-offerings-panel">
+        <div class="sac-admin-offerings-glow" aria-hidden="true"></div>
+        <div class="sac-admin-panel-head sac-admin-offerings-head">
           <div>
             <span>Online offerings</span>
             <h2>Sacraments &amp; services offered by ${escapeHtml(priest.name)}</h2>
+            <p>Curate the parishioner experience, then decide whether each added service begins with a request or can be booked from published availability.</p>
           </div>
+          <div class="sac-admin-offerings-count"><strong>${enabled.size + custom.length}</strong><span>active</span></div>
         </div>
-        <p class="sac-admin-muted">Choose the standard offerings this priest accepts online. Holy Unction, Home Visit, and Office Visit are not included by default; add one below if this priest offers it.</p>
+        <div class="sac-admin-offerings-legend"><span><i class="request"></i>Parish follow-up</span><span><i class="schedule"></i>Direct scheduling</span></div>
         <div class="sac-admin-offering-checks">
           ${SAC_EDITABLE_SERVICE_TYPES.map(type => `
-            <label>
+            <label class="${enabled.has(type) ? 'is-active' : ''}">
+              <span class="sac-admin-offering-icon">${SAC_SCHEDULABLE_TYPES.includes(type) ? '◷' : '✦'}</span>
+              <span class="sac-admin-offering-copy"><strong>${escapeHtml(sacramentTypeLabel({ sacramentType: type }))}</strong><small>${SAC_SCHEDULABLE_TYPES.includes(type) ? 'Online scheduling' : 'By request'}</small></span>
               <input type="checkbox" ${enabled.has(type) ? 'checked' : ''} onchange="toggleSacramentsOffering('${type}', this.checked)" />
-              <span>${escapeHtml(sacramentTypeLabel({ sacramentType: type }))}</span>
+              <span class="sac-admin-offering-toggle" aria-hidden="true"></span>
             </label>`).join('')}
         </div>
         ${custom.length ? `<div class="sac-admin-custom-offerings">${custom.map(service => `
-          <span>${escapeHtml(service.label)}<button type="button" aria-label="Remove ${escapeAttr(service.label)}" onclick="removeCustomSacramentsOffering('${escapeAttr(service.id)}')">×</button></span>
-        `).join('')}</div>` : ''}
-        <div class="sac-admin-actions">
-          <label class="sac-admin-add-offering"><span>Add another offering</span><input id="sacAvailCustomOffering" placeholder="e.g. Holy Unction" /></label>
+          <article class="sac-admin-custom-offering">
+            <div><span class="sac-admin-custom-mark">${service.mode === 'schedule' ? '◷' : '✦'}</span><span><strong>${escapeHtml(service.label)}</strong><small>Custom offering</small></span></div>
+            <select aria-label="How ${escapeAttr(service.label)} is offered" onchange="updateCustomSacramentsOfferingMode('${escapeAttr(service.id)}', this.value)">
+              <option value="request" ${service.mode !== 'schedule' ? 'selected' : ''}>By request</option>
+              <option value="schedule" ${service.mode === 'schedule' ? 'selected' : ''}>Online scheduling</option>
+            </select>
+            <button type="button" aria-label="Remove ${escapeAttr(service.label)}" onclick="removeCustomSacramentsOffering('${escapeAttr(service.id)}')">×</button>
+          </article>
+        `).join('')}</div>` : '<p class="sac-admin-empty-line sac-admin-offerings-empty">Add a parish-specific offering below—memorial prayers, churching, vehicle blessings, or another pastoral service.</p>'}
+        <div class="sac-admin-add-offering-box">
+          <div><span>Add a custom offering</span><strong>What else may parishioners request?</strong></div>
+          <label class="sac-admin-add-offering"><span>Offering name</span><input id="sacAvailCustomOffering" placeholder="e.g. Memorial Service" /></label>
+          <label class="sac-admin-add-offering-mode"><span>How it works</span><select id="sacAvailCustomOfferingMode"><option value="request">By request</option><option value="schedule">Online scheduling</option></select></label>
           <button class="sac-admin-outline-btn" type="button" onclick="addCustomSacramentsOffering(this)">Add offering</button>
           <span id="sacAvailOfferingStatus" class="sac-admin-status-text"></span>
         </div>
@@ -4925,6 +4948,7 @@
     const input = document.getElementById('sacAvailCustomOffering');
     const status = document.getElementById('sacAvailOfferingStatus');
     const label = String(input?.value || '').trim();
+    const mode = document.getElementById('sacAvailCustomOfferingMode')?.value === 'schedule' ? 'schedule' : 'request';
     if (!label) {
       if (status) status.textContent = 'Enter an offering name.';
       return;
@@ -4939,7 +4963,7 @@
     } else {
       const id = 'custom_' + label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 60);
       if (!id || id === 'custom_') return;
-      if (!custom.some(service => service.id === id)) custom.push({ id, label });
+      if (!custom.some(service => service.id === id)) custom.push({ id, label, mode });
     }
     if (btn) btn.disabled = true;
     try {
@@ -4949,6 +4973,25 @@
       setStatus(err.message, 'error');
     } finally {
       if (btn) btn.disabled = false;
+    }
+  }
+
+  async function updateCustomSacramentsOfferingMode(id, mode) {
+    const priest = selectedSacramentPriest();
+    const custom = (priest.customServices || []).map(service =>
+      service.id === id ? { ...service, mode: mode === 'schedule' ? 'schedule' : 'request' } : service
+    );
+    try {
+      await saveSelectedSacramentPriestOfferings(
+        selectedSacramentServiceTypes(),
+        custom,
+        mode === 'schedule' ? 'Online scheduling enabled for this offering.' : 'This offering will now begin by request.'
+      );
+      sacramentsAvailabilityState.loaded = false;
+      loadSacramentsAvailability(true);
+    } catch (err) {
+      setStatus(err.message, 'error');
+      renderSacramentsPanel();
     }
   }
 
@@ -4963,7 +5006,7 @@
   }
 
   function renderSacramentsAvailabilityType(type, rules) {
-    const label = sacramentTypeLabel({ sacramentType: type });
+    const label = selectedSacramentOfferingLabel(type);
     const rows = rules.length ? rules.map(r => `
       <div class="sac-admin-rule-row">
         <div>
@@ -4983,7 +5026,7 @@
     return `
       <div class="sac-admin-form-grid">
         <label><span>Priest</span><input value="${escapeHtml(selectedSacramentPriest().name)}" disabled /></label>
-        <label><span>Type</span><select id="sacAvailNewType" ${types.length ? '' : 'disabled'}>${types.map(t => `<option value="${t}">${escapeHtml(sacramentTypeLabel({ sacramentType: t }))}</option>`).join('')}</select></label>
+        <label><span>Type</span><select id="sacAvailNewType" ${types.length ? '' : 'disabled'}>${types.map(t => `<option value="${t}">${escapeHtml(selectedSacramentOfferingLabel(t))}</option>`).join('')}</select></label>
         <label><span>Day</span><select id="sacAvailNewDay">${SAC_DAY_LABELS.map((l, i) => `<option value="${i}">${l}</option>`).join('')}</select></label>
         <label><span>Start</span><input type="time" id="sacAvailNewStart" value="16:00" /></label>
         <label><span>End</span><input type="time" id="sacAvailNewEnd" value="18:00" /></label>
@@ -5309,7 +5352,10 @@
     if (st.loading || !st.loaded) return renderSacramentsLoadingPanel('Loading sacrament rules...');
     if (st.error) return renderSacramentsErrorPanel(st.error, 'loadSacramentsAvailability(true)');
     const rulesByType = groupSacramentsRulesByType();
-    const offeredTypes = selectedSacramentServiceTypes();
+    const offeredTypes = [
+      ...selectedSacramentServiceTypes(),
+      ...(selectedSacramentPriest().customServices || []).map(service => service.id)
+    ];
     const dayShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     return `
       ${renderSacramentsOfferingsEditor()}
@@ -5326,9 +5372,9 @@
           ${offeredTypes.map(type => {
             const activeDays = new Set((rulesByType[type] || []).map(rule => Number(rule.dayOfWeek)));
             return `<div class="sac-admin-rules-row">
-              <strong>${escapeHtml(sacramentTypeLabel({ sacramentType: type }))}</strong>
+              <strong>${escapeHtml(selectedSacramentOfferingLabel(type))}</strong>
               <div class="sac-admin-day-chips">
-                ${SAC_SCHEDULABLE_TYPES.includes(type)
+                ${selectedSchedulableSacramentTypes().includes(type)
                   ? dayShort.map((label, index) => `<span class="${activeDays.has(index) ? 'active' : ''}">${label}</span>`).join('')
                   : '<span class="active">Request only</span>'}
               </div>

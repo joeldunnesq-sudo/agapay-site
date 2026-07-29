@@ -3,6 +3,10 @@ import fs from 'node:fs';
 const dashboard = fs.readFileSync(new URL('../public/parish/dashboard.html', import.meta.url), 'utf8');
 const app = fs.readFileSync(new URL('../public/parish/app.js', import.meta.url), 'utf8');
 const css = fs.readFileSync(new URL('../public/styles/stewardship.css', import.meta.url), 'utf8');
+const donorApp = fs.readFileSync(new URL('../public/donor/app.js', import.meta.url), 'utf8');
+const donorHandler = fs.readFileSync(new URL('../src/handlers/donor.js', import.meta.url), 'utf8');
+const parishHandler = fs.readFileSync(new URL('../src/handlers/parish.js', import.meta.url), 'utf8');
+const availability = fs.readFileSync(new URL('../src/lib/sacrament-availability.js', import.meta.url), 'utf8');
 const liveDashboard = dashboard.slice(
   dashboard.indexOf('id="sacramentsLiveContent"'),
   dashboard.indexOf('<!-- ── DIRECTORY ADMIN TAB')
@@ -17,6 +21,10 @@ const checks = [
   ['priest calendars distinguish blackout and scheduled dates', app.includes("row.status === 'scheduled'") && app.includes("has-blackout") && app.includes("has-scheduled") && css.includes('.sac-admin-cal-cell.has-blackout') && css.includes('.sac-admin-cal-cell.has-scheduled')],
   ['blackouts accept inclusive date ranges', app.includes('sacAvailNewBlackoutStartDate') && app.includes('sacAvailNewBlackoutEndDate') && app.includes('formatSacramentDateRange')],
   ['online offerings are editable per priest', app.includes('renderSacramentsOfferingsEditor') && app.includes('toggleSacramentsOffering') && app.includes('addCustomSacramentsOffering')],
+  ['online offerings use the premium card treatment', app.includes('sac-admin-offerings-panel') && app.includes('sac-admin-offerings-count') && css.includes('.sac-admin-offerings-glow') && css.includes('.sac-admin-add-offering-box')],
+  ['custom offerings can be request based or schedulable', app.includes('sacAvailCustomOfferingMode') && app.includes('updateCustomSacramentsOfferingMode') && app.includes("service.mode === 'schedule'")],
+  ['custom scheduled offerings reach My AGAPAY booking', donorApp.includes('schedulingType: service.id') && donorApp.includes('otherTypeLabel: card.otherTypeLabel') && donorHandler.includes('isCustomScheduledOffering') && donorHandler.includes('customOffering?.label')],
+  ['availability accepts configured custom service keys', availability.includes('isSchedulableOfferingKey') && parishHandler.includes('configuredCustomOffering')],
   ['Sacraments workspace matches the full dashboard width', css.includes('.sac-admin-shell {') && css.includes('width: min(1180px, 100%)') && css.includes('background: transparent')],
   ['Sacraments tabs use the shared navy and gold treatment', css.includes('.sac-admin-tab.active {') && css.includes('background: var(--deep)') && css.includes('color: var(--cream)')],
   ['Sacraments cards and forms use dashboard surfaces', css.includes('.sac-admin-panel {') && css.includes('border-radius: 12px') && css.includes('.sac-admin-wide-field textarea:focus')],
