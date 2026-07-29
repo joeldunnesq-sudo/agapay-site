@@ -341,9 +341,10 @@ assert.ok(
   "Parish pricing should group polished coming-soon features at the bottom of the card"
 );
 assert.ok(
-  givePricingHtml.includes("</svg></span>Campaigns</li>")
+  givePricingHtml.includes("</svg></span>Campaign Giving</li>")
+    && !givePricingHtml.includes("</svg></span>Campaigns</li>")
     && !givePricingHtml.includes("Campaigns, direct parish links, and QR codes"),
-  "Giving Plus should list campaigns without repeating Starter's direct links and QR codes"
+  "Giving Plus should list Campaign Giving without repeating Starter's direct links and QR codes"
 );
 assert.equal(
   givePricingHtml.match(/Parish council and annual-meeting-ready stewardship insights/g)?.length,
