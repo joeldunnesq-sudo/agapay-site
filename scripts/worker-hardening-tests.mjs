@@ -1658,4 +1658,48 @@ async function withMockFetch(handler, run) {
   assert.equal(afterStale.stewardshipStatus, "no_subscription");
 }
 
+{
+  const testEnv = env();
+  const registration = {
+    reference: "AGP-STARTER-GIVING-REQUEST",
+    status: "verified",
+    parishId: "st-test",
+    parishName: "St. Test Orthodox Church",
+    communityType: "parish",
+    givingStatus: "active",
+    subscriptionTier: "starter",
+    subscriptionStatus: "active"
+  };
+  await testEnv.AGAPAY_REGISTRATIONS.put(registration.reference, JSON.stringify(registration));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_parish_id__st-test", registration.reference);
+  const donor = await verifiedDonorSession(testEnv, "starter-giver@example.com");
+
+  const requestUpgrade = await worker.fetch(request("/api/donor/giving-plus-feature-request", {
+    method: "POST",
+    headers: donor.headers
+  }), testEnv);
+  assert.equal(requestUpgrade.status, 201);
+  assert.equal((await json(requestUpgrade)).duplicate, false);
+
+  const duplicate = await worker.fetch(request("/api/donor/giving-plus-feature-request", {
+    method: "POST",
+    headers: donor.headers
+  }), testEnv);
+  assert.equal(duplicate.status, 200);
+  assert.equal((await json(duplicate)).duplicate, true);
+  const requests = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get("parish-feature-requests:st-test"));
+  assert.equal(requests.features["giving-plus"].count, 1);
+
+  await testEnv.AGAPAY_REGISTRATIONS.put(registration.reference, JSON.stringify({
+    ...registration,
+    subscriptionTier: "giving"
+  }));
+  const alreadyEnabled = await worker.fetch(request("/api/donor/giving-plus-feature-request", {
+    method: "POST",
+    headers: donor.headers
+  }), testEnv);
+  assert.equal(alreadyEnabled.status, 200);
+  assert.equal((await json(alreadyEnabled)).alreadyEnabled, true);
+}
+
 console.log("AGAPAY Worker hardening tests passed.");

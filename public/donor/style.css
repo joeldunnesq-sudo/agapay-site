@@ -5111,6 +5111,121 @@ body.donor-mobile-page {
   opacity: 0.68;
 }
 
+.giving-tier-locked {
+  position: relative;
+  border-color: rgba(201, 162, 91, 0.5) !important;
+  background: linear-gradient(145deg, rgba(246, 241, 232, 0.96), rgba(239, 229, 208, 0.92)) !important;
+}
+
+.giving-tier-locked::after {
+  content: "Upgrade";
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  padding: 0.2rem 0.48rem;
+  border-radius: 999px;
+  background: #061522;
+  color: #f6f1e8;
+  font: 800 0.62rem/1 "DM Sans", system-ui, sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.giving-plus-paywall {
+  width: min(560px, calc(100% - 28px));
+  max-width: 560px;
+  border: 0;
+  border-radius: 20px;
+  padding: 0;
+  color: #061522;
+  background: #fffdf8;
+  box-shadow: 0 26px 80px rgba(6, 21, 34, 0.36);
+}
+
+.giving-plus-paywall::backdrop {
+  background: rgba(6, 21, 34, 0.66);
+  backdrop-filter: blur(3px);
+}
+
+.giving-plus-paywall-inner {
+  position: relative;
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1.5rem, 5vw, 2.25rem);
+}
+
+.giving-plus-paywall-close {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.9rem;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(6, 21, 34, 0.07);
+  color: #061522;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.giving-plus-paywall-badge {
+  width: max-content;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: #f2e5c7;
+  color: #886218;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.giving-plus-paywall h2 {
+  margin: 0;
+  padding-right: 1.5rem;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(1.75rem, 6vw, 2.35rem);
+  line-height: 1.05;
+}
+
+.giving-plus-paywall p {
+  margin: 0;
+  color: #526571;
+  line-height: 1.65;
+}
+
+.giving-plus-paywall-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.giving-plus-paywall-status {
+  min-height: 1.25rem;
+  font-size: 0.78rem;
+}
+
+.starter-fund-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.starter-fund-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+  background: #061522;
+  color: #f6f1e8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
 .coming-pill {
   display: inline-flex;
   width: fit-content;

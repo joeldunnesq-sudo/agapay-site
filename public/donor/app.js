@@ -6,7 +6,7 @@ const donorStore = {
   shellVersion: "agapayDonorShellVersion"
 };
 
-const DONOR_SHELL_VERSION = "2026-07-29-pledge-tier-gate";
+const DONOR_SHELL_VERSION = "2026-07-29-starter-giving-gate";
 
 async function refreshStaleDashboardShell() {
   if (!("serviceWorker" in navigator) || !("caches" in window)) return;
@@ -418,6 +418,104 @@ function normalizeDonorGiftType(value) {
   return aliases[normalized] || normalized;
 }
 
+function isGivingPlusGiftType(value) {
+  return ["fund", "candles", "commemoration", "campaign", "feast"].includes(normalizeDonorGiftType(value));
+}
+
+function parishHasGivingPlus(parish) {
+  return Boolean(parish?.givingPlusEnabled);
+}
+
+function ensureGivingPlusPaywall() {
+  let dialog = document.getElementById("givingPlusPaywall");
+  if (dialog) return dialog;
+  dialog = document.createElement("dialog");
+  dialog.id = "givingPlusPaywall";
+  dialog.className = "giving-plus-paywall";
+  dialog.innerHTML = `
+    <div class="giving-plus-paywall-inner">
+      <button class="giving-plus-paywall-close" type="button" aria-label="Close" onclick="closeGivingPlusPaywall()">×</button>
+      <span class="giving-plus-paywall-badge">Giving Plus feature</span>
+      <h2 id="givingPlusPaywallTitle">Help your parish offer more ways to give</h2>
+      <p id="givingPlusPaywallCopy">Your parish's Starter plan includes one-time and recurring gifts to its General Operating Fund. Giving Plus unlocks designated funds, candles, commemorations, campaigns, and festal alms.</p>
+      <div class="giving-plus-paywall-actions">
+        <button class="btn btn-ghost" type="button" onclick="closeGivingPlusPaywall()">Not now</button>
+        <button class="btn btn-gold" id="givingPlusEncourageButton" type="button" onclick="requestParishGivingPlusUpgrade(this)">Encourage my parish</button>
+      </div>
+      <p class="giving-plus-paywall-status" id="givingPlusPaywallStatus" aria-live="polite"></p>
+    </div>`;
+  dialog.addEventListener("click", (event) => {
+    if (event.target === dialog) closeGivingPlusPaywall();
+  });
+  document.body.appendChild(dialog);
+  return dialog;
+}
+
+function closeGivingPlusPaywall() {
+  const dialog = document.getElementById("givingPlusPaywall");
+  if (!dialog) return;
+  if (typeof dialog.close === "function") dialog.close();
+  else dialog.removeAttribute("open");
+}
+
+function openGivingPlusPaywall(event, parish, giftType = "") {
+  event?.preventDefault();
+  const selectedParish = parish || selectedPublicParish() || window.agapaySelectedGivingParish || null;
+  window.agapaySelectedGivingParish = selectedParish;
+  const dialog = ensureGivingPlusPaywall();
+  const status = document.getElementById("givingPlusPaywallStatus");
+  const button = document.getElementById("givingPlusEncourageButton");
+  const label = donorGiftTypeCopy[normalizeDonorGiftType(giftType)]?.detailsTitle || "This giving option";
+  const copy = document.getElementById("givingPlusPaywallCopy");
+  if (copy) {
+    copy.textContent = `${label} is available with Giving Plus. ${selectedParish?.name || "This parish"} currently offers Starter giving: one-time or recurring gifts to one General Operating Fund.`;
+  }
+  if (status) status.textContent = selectedParish
+    ? "You can privately let parish leadership know that you want more giving options."
+    : "Choose your home parish before sending an upgrade request.";
+  if (button) {
+    button.disabled = !selectedParish;
+    button.textContent = "Encourage my parish";
+  }
+  if (typeof dialog.showModal === "function") dialog.showModal();
+  else dialog.setAttribute("open", "");
+  return false;
+}
+
+async function requestParishGivingPlusUpgrade(button) {
+  const status = document.getElementById("givingPlusPaywallStatus");
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Sending…";
+  }
+  if (status) status.textContent = "Sending your request…";
+  try {
+    const result = await donorApi("/api/donor/giving-plus-feature-request", { method: "POST" });
+    if (status) status.textContent = result.message || "Your parish will see your request in its dashboard.";
+    if (button) button.textContent = "Request sent";
+  } catch (error) {
+    if (status) status.textContent = error.message || "Unable to send your request.";
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Try again";
+    }
+  }
+}
+
+function updateGivingTierTiles(parish) {
+  if (parish) window.agapaySelectedGivingParish = parish;
+  const givingPlus = parishHasGivingPlus(parish);
+  document.querySelectorAll("[data-giving-plus-gift]").forEach((tile) => {
+    const giftType = tile.getAttribute("data-giving-plus-gift") || "";
+    tile.classList.toggle("giving-tier-locked", !givingPlus);
+    tile.setAttribute("aria-label", !givingPlus
+      ? `${tile.textContent.trim()} — requires Giving Plus`
+      : tile.textContent.trim());
+    tile.href = givingPlus ? quickDonorGiftUrl(giftType, parish) : "#giving-plus";
+    tile.onclick = givingPlus ? null : (event) => openGivingPlusPaywall(event, parish, giftType);
+  });
+}
+
 const donorGiftTypeCopy = {
   stewardship: {
     eyebrow: "Quick Parish Offering",
@@ -532,30 +630,19 @@ function syncSacramentsEntry(parish) {
 }
 
 function updateQuickGiveLinks(parish) {
-  const parishLink = document.getElementById("quickGiveParish");
+  const oneTimeLink = document.getElementById("quickGiveOneTime");
+  const recurringLink = document.getElementById("quickGiveRecurring");
   const parishIcon = document.getElementById("quickGiveParishIcon");
   const desktopParishIcon = document.getElementById("desktopParishIcon");
-  const candleLink = document.getElementById("quickGiveCandle");
-  const memorialLink = document.getElementById("quickGiveMemorial");
-  const feastLink = document.getElementById("quickGiveFeast");
-  const campaignLink = document.getElementById("quickGiveCampaigns");
-  const desktopParishLink = document.getElementById("desktopQuickParish");
-  const desktopCandleLink = document.getElementById("desktopQuickCandle");
-  const desktopMemorialLink = document.getElementById("desktopQuickMemorial");
-  const desktopFeastLink = document.getElementById("desktopQuickFeast");
-  const desktopCampaignLink = document.getElementById("desktopQuickCampaigns");
-  if (parishLink) parishLink.href = quickDonorGiftUrl("stewardship", parish);
-  if (desktopParishLink) desktopParishLink.href = quickDonorGiftUrl("stewardship", parish);
+  const desktopOneTimeLink = document.getElementById("desktopQuickOneTime");
+  const desktopRecurringLink = document.getElementById("desktopQuickRecurring");
+  if (oneTimeLink) oneTimeLink.href = quickDonorGiftUrl("stewardship", parish, { frequency: "once" });
+  if (recurringLink) recurringLink.href = quickDonorGiftUrl("stewardship", parish, { frequency: "monthly" });
+  if (desktopOneTimeLink) desktopOneTimeLink.href = quickDonorGiftUrl("stewardship", parish, { frequency: "once" });
+  if (desktopRecurringLink) desktopRecurringLink.href = quickDonorGiftUrl("stewardship", parish, { frequency: "monthly" });
   if (parishIcon) parishIcon.innerHTML = communityIconSvg(parish?.type);
   if (desktopParishIcon) desktopParishIcon.innerHTML = communityIconSvg(parish?.type);
-  if (candleLink) candleLink.href = quickDonorGiftUrl("candles", parish);
-  if (desktopCandleLink) desktopCandleLink.href = quickDonorGiftUrl("candles", parish);
-  if (memorialLink) memorialLink.href = quickDonorGiftUrl("commemoration", parish);
-  if (desktopMemorialLink) desktopMemorialLink.href = quickDonorGiftUrl("commemoration", parish);
-  if (feastLink) feastLink.href = quickDonorGiftUrl("feast", parish);
-  if (desktopFeastLink) desktopFeastLink.href = quickDonorGiftUrl("feast", parish);
-  if (campaignLink) campaignLink.href = quickDonorGiftUrl("campaign", parish);
-  if (desktopCampaignLink) desktopCampaignLink.href = quickDonorGiftUrl("campaign", parish);
+  updateGivingTierTiles(parish);
   syncSacramentsEntry(parish);
 }
 
@@ -768,6 +855,25 @@ function fundLabel(fund) {
 function renderActiveFunds(parish) {
   const targets = [document.getElementById("activeFunds"), document.getElementById("desktopActiveFunds")].filter(Boolean);
   if (!targets.length) return;
+  if (parish && !parishHasGivingPlus(parish)) {
+    const starterFund = Array.isArray(parish.funds) && parish.funds[0]
+      ? parish.funds[0]
+      : { name: "General Operating Fund", description: "Support your parish's day-to-day mission." };
+    const html = `
+      <article class="active-funds-card">
+        <div>
+          <span class="campaign-pill">Starter fund</span>
+          <h3>${escapeHtml(fundLabel(starterFund))}</h3>
+          <p>${escapeHtml(starterFund.description || "Support your parish's day-to-day mission.")}</p>
+        </div>
+        <div class="starter-fund-actions">
+          <a href="${escapeHtml(quickDonorGiftUrl("stewardship", parish, { frequency: "once" }))}">One-time</a>
+          <a href="${escapeHtml(quickDonorGiftUrl("stewardship", parish, { frequency: "monthly" }))}">Recurring</a>
+        </div>
+      </article>`;
+    targets.forEach((target) => { target.innerHTML = html; });
+    return;
+  }
   const funds = (Array.isArray(parish?.funds) ? parish.funds : [])
     .filter((fund) => fund && fund.active !== false && String(fund.status || "active").toLowerCase() !== "archived")
     .slice(0, 4);
@@ -1207,7 +1313,8 @@ function renderDonorCalendarPrompts(parish) {
     prompts.push({
       title: `${nextFeast.name} Offering`,
       description: `Support ${parish.name || "your church"} for the upcoming feast.`,
-      href: donorGiftUrl("feast", parish, { feast: nextFeast.name })
+      href: donorGiftUrl("feast", parish, { feast: nextFeast.name }),
+      lockedGiftType: parishHasGivingPlus(parish) ? "" : "feast"
     });
   }
 
@@ -1242,7 +1349,7 @@ function renderDonorCalendarPrompts(parish) {
   }
 
   target.innerHTML = prompts.slice(0, 4).map((prompt) => `
-    <a class="cal-prompt" href="${escapeHtml(prompt.href)}">
+    <a class="cal-prompt${prompt.lockedGiftType ? " giving-tier-locked" : ""}" href="${prompt.lockedGiftType ? "#giving-plus" : escapeHtml(prompt.href)}"${prompt.lockedGiftType ? ` onclick="return openGivingPlusPaywall(event, window.agapaySelectedGivingParish, '${prompt.lockedGiftType}')"` : ""}>
       <span class="cal-prompt-icon"><svg viewBox="0 0 24 24"><path d="M12 2s5 5.5 5 10a5 5 0 0 1-10 0c0-4.5 5-10 5-10z"/><path d="M9 21h6"/></svg></span>
       <span class="cal-prompt-body">
         <span class="cal-prompt-title">${escapeHtml(prompt.title)}</span>
@@ -1283,11 +1390,16 @@ function applyDonorGiveParams() {
   const params = new URLSearchParams(window.location.search);
   const parish = params.get("parish");
   const giftType = normalizeDonorGiftType(params.get("giftType"));
+  const frequency = params.get("frequency");
   const isQuick = params.get("quick") === "1";
   const parishSelect = document.getElementById("parish");
   const giftTypeSelect = document.getElementById("giftType");
+  const frequencySelect = document.getElementById("frequency");
   if (parish && parishSelect) parishSelect.value = parish;
   if (giftType && giftTypeSelect) giftTypeSelect.value = giftType;
+  if (frequency && frequencySelect && Array.from(frequencySelect.options).some((option) => option.value === frequency)) {
+    frequencySelect.value = frequency;
+  }
   toggleGiftDetailFields();
   if (params.get("campaign") && document.getElementById("campaign")) {
     document.getElementById("campaign").value = params.get("campaign");
@@ -1327,7 +1439,21 @@ function toggleCandleIntentionFields() {
 }
 
 function toggleGiftDetailFields() {
-  const giftType = normalizeDonorGiftType(document.getElementById("giftType")?.value);
+  const giftTypeSelect = document.getElementById("giftType");
+  let giftType = normalizeDonorGiftType(giftTypeSelect?.value);
+  const parish = selectedPublicParish();
+  updateGivingTierTiles(parish);
+  if (giftTypeSelect) {
+    Array.from(giftTypeSelect.options).forEach((option) => {
+      option.disabled = !parishHasGivingPlus(parish) && isGivingPlusGiftType(option.value);
+    });
+  }
+  if (!parishHasGivingPlus(parish) && isGivingPlusGiftType(giftType)) {
+    const lockedGiftType = giftType;
+    giftType = "stewardship";
+    if (giftTypeSelect) giftTypeSelect.value = giftType;
+    openGivingPlusPaywall(null, parish, lockedGiftType);
+  }
   populateGiftOptionFields();
   const candleFields = document.getElementById("candleIntentionFields");
   const commemorationFields = document.getElementById("commemorationIntentionFields");
@@ -2822,6 +2948,10 @@ async function startDonorCheckout(event) {
   const normalizedGiftType = normalizeDonorGiftType(giftType);
   const parish = (window.agapayPublicParishes || [])
     .find((item) => item.id === document.getElementById("parish")?.value);
+  if (!parishHasGivingPlus(parish) && isGivingPlusGiftType(normalizedGiftType)) {
+    openGivingPlusPaywall(null, parish, normalizedGiftType);
+    return;
+  }
   const selectedFund = parish
     ?.funds?.find((fund) => [fund.id, fund.name].filter(Boolean).map(String).includes(document.getElementById("fund")?.value));
   const campaign = selectedCampaign();

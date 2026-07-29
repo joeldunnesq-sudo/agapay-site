@@ -218,6 +218,7 @@ assert.ok(donorApp.includes("function updateDonorAuthState()"), "donor shell sho
 assert.ok(donorApp.includes('link.closest("[data-myagapay-global-nav]")'), "donor icon enhancement should not overwrite canonical global product icons");
 const donorHome = await readFile("public/donor/index.html", "utf8");
 const myAgapayGiveHome = await readFile("public/myagapay/index.html", "utf8");
+const myAgapayGivePage = await readFile("public/myagapay/giving/give.html", "utf8");
 assert.ok(donorHome.includes("data-auth-guest"), "donor home should mark guest-only controls so signed-in donors do not see login prompts");
 assert.ok(donorHome.includes("donor-phone"), "donor home should use the mobile-first app shell");
 assert.ok(donorHome.includes("unified-product-nav"), "donor home should expose a desktop My AGAPAY sidebar for shared shell normalization");
@@ -237,6 +238,28 @@ assert.ok(donorHome.includes("summary-metrics-row") && donorHome.indexOf('class=
 assert.ok(donorHome.includes("/myagapay/account"), "donor home avatar should link to My AGAPAY settings");
 assert.ok(donorHome.includes("Active Funds") && donorHome.includes("desktopActiveFunds") && donorHome.includes("activeFunds"), "Give dashboard should show active parish funds on desktop and mobile");
 assert.ok(donorHome.includes("Next Feast Offering"), "Give dashboard should use a giving-oriented feast card heading");
+assert.ok(
+  myAgapayGiveHome.includes('id="quickGiveOneTime"')
+    && myAgapayGiveHome.includes('id="quickGiveRecurring"')
+    && myAgapayGiveHome.includes('data-giving-plus-gift="candles"')
+    && myAgapayGivePage.includes("<h3>One-time Gift</h3>")
+    && myAgapayGivePage.includes("<h3>Recurring Gift</h3>"),
+  "My AGAPAY should present Starter donors with one-time and recurring giving while marking specialty tiles for Giving Plus"
+);
+assert.ok(
+  donorApp.includes("function parishHasGivingPlus")
+    && donorApp.includes("function updateGivingTierTiles")
+    && donorApp.includes("function openGivingPlusPaywall")
+    && donorApp.includes("/api/donor/giving-plus-feature-request"),
+  "My AGAPAY should gate Giving Plus tiles with an upgrade paywall and a parish encouragement action"
+);
+assert.ok(
+  donorHandler.includes('featureId: "giving-plus"')
+    && worker.includes('url.pathname === "/api/donor/giving-plus-feature-request"')
+    && parishDashboardApp.includes("item?.featureId === 'giving-plus'")
+    && parishHandler.includes('["pledge-tracker", "giving-plus"].includes(featureId)'),
+  "Giving Plus donor requests should be stored, surfaced in the parish dashboard, and dismissible"
+);
 const myAgapayHistory = await readFile("public/myagapay/giving/history.html", "utf8");
 assert.ok(
   !myAgapayGiveHome.includes("RecurringHomeAction")
@@ -302,6 +325,18 @@ assert.ok(learnDashboardShell.includes("myagapay-menu-trigger") && !learnDashboa
 const giveHtml = await readFile("public/give/form.html", "utf8");
 const givePricingHtml = await readFile("public/give/pricing.html", "utf8");
 const subscriptionCatalog = await readFile("src/lib/subscriptions.js", "utf8");
+const starterPricingCard = givePricingHtml.slice(
+  givePricingHtml.indexOf('<h2 class="tier-title">Starter</h2>'),
+  givePricingHtml.indexOf('<h2 class="tier-title">Giving Plus</h2>')
+);
+const givingPlusPricingCard = givePricingHtml.slice(
+  givePricingHtml.indexOf('<h2 class="tier-title">Giving Plus</h2>'),
+  givePricingHtml.indexOf('<h2 class="tier-title">Stewardship</h2>')
+);
+const stewardshipPricingCard = givePricingHtml.slice(
+  givePricingHtml.indexOf('<h2 class="tier-title">Stewardship</h2>'),
+  givePricingHtml.indexOf('<h2 class="tier-title">Parish</h2>')
+);
 assert.ok(
   subscriptionCatalog.includes('id: "starter"')
     && subscriptionCatalog.includes("monthlyCents: 900")
@@ -314,7 +349,7 @@ assert.ok(
     && givePricingHtml.includes('<div class="tier-price">$9 <span>/ mo</span></div>')
     && givePricingHtml.includes('<h2 class="tier-title">Giving Plus</h2>')
     && givePricingHtml.includes('<div class="tier-price">$149 <span>/ mo</span></div>')
-    && givePricingHtml.includes("Everything in Starter, plus")
+    && givingPlusPricingCard.includes('<ul class="tier-features">\n            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Everything in Starter, plus</li>')
     && givePricingHtml.includes("Parish logo across giving pages and church search")
     && !givePricingHtml.includes("Parish logo, public page, and church search listing")
     && ["Small mission chapel", "Parish church", "Domed Orthodox church", "Large three-domed Orthodox church", "Grand five-domed Orthodox cathedral", "Orthodox monastery complex"].every((label) => givePricingHtml.includes(`aria-label="${label}"`)),
@@ -341,15 +376,30 @@ assert.ok(
   "Parish pricing should group polished coming-soon features at the bottom of the card"
 );
 assert.ok(
-  givePricingHtml.includes("</svg></span>Campaign Giving</li>")
-    && !givePricingHtml.includes("</svg></span>Campaigns</li>")
-    && !givePricingHtml.includes("Campaigns, direct parish links, and QR codes"),
-  "Giving Plus should list Campaign Giving without repeating Starter's direct links and QR codes"
+  starterPricingCard.includes("Direct parish giving links and QR codes")
+    && !starterPricingCard.includes("Parish logo across giving pages and church search")
+    && !starterPricingCard.includes("Multiple funds and restricted funds")
+    && givingPlusPricingCard.includes("Parish logo across giving pages and church search")
+    && givingPlusPricingCard.includes("Multiple funds and restricted funds")
+    && givingPlusPricingCard.includes("</svg></span>Campaign Giving</li>")
+    && givingPlusPricingCard.includes("Liturgical calendar integration")
+    && !givingPlusPricingCard.includes("Liturgical calendar timing")
+    && !givingPlusPricingCard.includes("Direct parish giving links and QR codes")
+    && !givePricingHtml.includes("Campaigns, direct parish links, and QR codes")
+    && !givePricingHtml.includes("Parish logo, public page, and church search listing")
+    && !givePricingHtml.includes("</svg></span>Campaigns</li>"),
+  "Starter should own direct parish links and QR codes while Giving Plus owns parish-logo branding and Campaign Giving"
 );
 assert.equal(
   givePricingHtml.match(/Parish council and annual-meeting-ready stewardship insights/g)?.length,
   1,
   "annual-meeting-ready stewardship insights should appear exactly once"
+);
+assert.ok(
+  stewardshipPricingCard.includes("Annual meeting packet creator")
+    && !starterPricingCard.includes("Annual meeting packet creator")
+    && !givingPlusPricingCard.includes("Annual meeting packet creator"),
+  "the annual meeting packet creator should be listed in Stewardship, not Starter or Giving Plus"
 );
 assert.ok(
   givePricingHtml.indexOf("Parish council and annual-meeting-ready stewardship insights")

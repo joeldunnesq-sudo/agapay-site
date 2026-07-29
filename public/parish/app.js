@@ -192,16 +192,26 @@
   }
 
   function showParishFeatureRequestPopup(featureRequests = []) {
-    const request = featureRequests.find((item) => item?.featureId === 'pledge-tracker');
+    const request = featureRequests.find((item) => item?.featureId === 'giving-plus')
+      || featureRequests.find((item) => item?.featureId === 'pledge-tracker');
     const dialog = document.getElementById('parishFeatureRequestDialog');
     if (!request || !dialog) return;
     activeParishFeatureRequest = request;
     const count = Math.max(1, Number(request.count || 1));
     const copy = document.getElementById('parishFeatureRequestCopy');
+    const featureTitle = document.getElementById('parishFeatureRequestTitle');
+    const featureDescription = document.getElementById('parishFeatureRequestDescription');
+    const action = document.getElementById('parishFeatureRequestAction');
     const status = document.getElementById('parishFeatureRequestStatus');
+    const givingPlus = request.featureId === 'giving-plus';
     if (copy) copy.textContent = count === 1
-      ? 'A parishioner asked your church to add pledge tracking and the Stewardship features that support it.'
-      : `${count} parishioners asked your church to add pledge tracking and the Stewardship features that support it.`;
+      ? `A parishioner asked your church to add ${givingPlus ? 'more giving options through Giving Plus' : 'pledge tracking and the Stewardship features that support it'}.`
+      : `${count} parishioners asked your church to add ${givingPlus ? 'more giving options through Giving Plus' : 'pledge tracking and the Stewardship features that support it'}.`;
+    if (featureTitle) featureTitle.textContent = givingPlus ? 'More ways to give' : 'Annual pledge progress';
+    if (featureDescription) featureDescription.textContent = givingPlus
+      ? 'Giving Plus unlocks designated funds, candles, commemorations, campaigns, festal alms, and other donor giving choices.'
+      : 'The Stewardship tier gives parishioners a live pledge tracker and gives parish leaders pledge, giving-health, and annual-meeting insights.';
+    if (action) action.textContent = givingPlus ? 'View Giving Plus tier' : 'View Stewardship tier';
     if (status) status.textContent = 'Requests are counted privately; donor identities are not shown.';
     if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open', '');
   }

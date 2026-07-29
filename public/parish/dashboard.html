@@ -1721,19 +1721,19 @@
       <p id="parishFeatureRequestCopy" style="margin:0;color:#526571;font-size:14px;line-height:1.6"></p>
     </div>
     <div style="padding:14px 16px;border-radius:12px;background:#f7f3ea;border:1px solid #e5dcc8">
-      <strong style="display:block;color:#061522;font-size:14px">Annual pledge progress</strong>
-      <span style="display:block;margin-top:4px;color:#62717c;font-size:12px;line-height:1.5">The Stewardship tier gives parishioners a live pledge tracker and gives parish leaders pledge, giving-health, and annual-meeting insights.</span>
+      <strong id="parishFeatureRequestTitle" style="display:block;color:#061522;font-size:14px">Requested feature</strong>
+      <span id="parishFeatureRequestDescription" style="display:block;margin-top:4px;color:#62717c;font-size:12px;line-height:1.5"></span>
     </div>
     <p id="parishFeatureRequestStatus" style="margin:0;color:#62717c;font-size:12px" aria-live="polite"></p>
     <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end">
       <button type="button" class="btn btn-ghost" onclick="dismissParishFeatureRequest(false)">Not now</button>
-      <button type="button" class="btn btn-gold" onclick="dismissParishFeatureRequest(true)">View Stewardship tier</button>
+      <button type="button" class="btn btn-gold" id="parishFeatureRequestAction" onclick="dismissParishFeatureRequest(true)">View upgrade options</button>
     </div>
   </div>
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
-  <script src="/parish/app.js?v=20260729featurerequests1"></script>
+  <script src="/parish/app.js?v=20260729givingrequests1"></script>
 </body>
 </html>

@@ -163,6 +163,7 @@ import {
   handleDonorVerify,
   handleDonorVerifyPage,
   handleDonorDashboard,
+  handleDonorGivingPlusFeatureRequest,
   handleDonorStewardshipFeatureRequest,
   handleDonorOfferings,
   handleDonorSubscriptionPortal,
@@ -3022,6 +3023,9 @@ export default {
     }
     if (url.pathname === "/api/donor/stewardship-feature-request") {
       return handleDonorStewardshipFeatureRequest(request, env);
+    }
+    if (url.pathname === "/api/donor/giving-plus-feature-request") {
+      return handleDonorGivingPlusFeatureRequest(request, env);
     }
     if (url.pathname === "/api/donor/offerings") {
       return handleDonorOfferings(request, env);
