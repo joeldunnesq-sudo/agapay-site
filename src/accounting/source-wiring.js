@@ -17,6 +17,8 @@ const cents = (value) => Number.isSafeInteger(Number(value)) && Number(value) >=
 const restrictions = new Set(["unrestricted", "board_designated", "donor_restricted_temporary", "donor_restricted_permanent"]);
 const restriction = (value, fallback = "unrestricted") => restrictions.has(text(value)) ? text(value) : fallback;
 const fundCode = (value) => text(value).toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 24);
+const generalFundAliases = new Set(["general", "general operating fund", "general stewardship", "stewardship"]);
+const isGeneralOperatingFund = (...values) => values.some((value) => generalFundAliases.has(text(value).toLowerCase()));
 
 async function digest(value) {
   const bytes = new TextEncoder().encode(String(value));
@@ -50,6 +52,17 @@ async function accountingFund(db, {
   accountingFundId = ""
 }) {
   if (!sourceId && !name) return "fund_general";
+  if (sourceType === "fund" && isGeneralOperatingFund(sourceId, name)) {
+    await db.prepare(`UPDATE accounting_funds SET
+      name='General Operating Fund',description=?,restriction_type='unrestricted',
+      purpose='Parish operations',is_default=1,is_active=1,is_system=1,
+      giving_source_type='fund',giving_source_id='general',giving_enabled=1,
+      giving_slug=NULL,giving_goal_cents=NULL,giving_metadata_json='{}',
+      archived_at=NULL,version=version+1,updated_at=datetime('now')
+      WHERE id='fund_general'`)
+      .bind("Stewardship and other unrestricted support for day-to-day parish operations.").run();
+    return "fund_general";
+  }
   const identity = `${sourceType}:${sourceId || name.toLowerCase()}`;
   const suffix = await digest(identity);
   // Once a catalog record is linked to a ledger fund, retain that identity.
@@ -86,10 +99,13 @@ export async function wireGivingOfferingToAccounting(env, offering = {}) {
   const db = await resolveOperationalAccountingDatabase(env, parishId);
   if (!db || !parishId) return null;
   const campaignId = text(offering.campaignId);
-  const fundSourceId = campaignId || text(offering.fundId) || text(offering.fund) || text(offering.giftType);
-  const fundName = campaignId ? text(offering.campaign) : (text(offering.fund) || text(offering.giftType) || "General");
+  const festalAlmsGift = ["alms", "feast"].includes(text(offering.giftType).toLowerCase());
+  const campaignGift = Boolean(campaignId) && !festalAlmsGift;
+  const stewardshipGift = !campaignGift && isGeneralOperatingFund(offering.giftType, offering.fundId, offering.fund);
+  const fundSourceId = campaignGift ? campaignId : (stewardshipGift ? "general" : text(offering.fundId) || text(offering.fund) || text(offering.giftType));
+  const fundName = campaignGift ? text(offering.campaign) : (stewardshipGift ? "General Operating Fund" : text(offering.fund) || text(offering.giftType) || "General Operating Fund");
   const fundId = await accountingFund(db, {
-    sourceType: campaignId ? "campaign" : "fund",
+    sourceType: campaignGift ? "campaign" : "fund",
     sourceId: fundSourceId,
     name: fundName,
     restricted: Boolean(offering.donorRestricted)
@@ -169,10 +185,13 @@ export async function wireGivingRefundsToAccounting(env, offering = {}, charge =
     || text(offering.stripePaymentIntentId) || text(offering.checkoutSessionId);
   if (!db || !donationId) return [];
   const campaignId = text(offering.campaignId);
+  const festalAlmsGift = ["alms", "feast"].includes(text(offering.giftType).toLowerCase());
+  const campaignGift = Boolean(campaignId) && !festalAlmsGift;
+  const stewardshipGift = !campaignGift && isGeneralOperatingFund(offering.giftType, offering.fundId, offering.fund);
   const fundId = await accountingFund(db, {
-    sourceType: campaignId ? "campaign" : "fund",
-    sourceId: campaignId || text(offering.fundId) || text(offering.fund) || text(offering.giftType),
-    name: campaignId ? text(offering.campaign) : (text(offering.fund) || text(offering.giftType) || "General"),
+    sourceType: campaignGift ? "campaign" : "fund",
+    sourceId: campaignGift ? campaignId : (stewardshipGift ? "general" : text(offering.fundId) || text(offering.fund) || text(offering.giftType)),
+    name: campaignGift ? text(offering.campaign) : (stewardshipGift ? "General Operating Fund" : text(offering.fund) || text(offering.giftType) || "General Operating Fund"),
     restricted: Boolean(offering.donorRestricted)
   });
   const refunds = Array.isArray(charge.refunds?.data) ? charge.refunds.data : [];
@@ -206,8 +225,7 @@ export async function synchronizeGivingCatalogWithAccounting(env, parishId, regi
   if (!db) return { available: false, synchronized: 0 };
   const records = [
     ...(Array.isArray(registration.funds) ? registration.funds : []).map((item) => ({ ...item, sourceType: "fund" })),
-    ...(Array.isArray(registration.campaigns) ? registration.campaigns : []).map((item) => ({ ...item, sourceType: "campaign" })),
-    ...(Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : []).map((item) => ({ ...item, sourceType: "campaign", feastCampaign: true }))
+    ...(Array.isArray(registration.campaigns) ? registration.campaigns : []).map((item) => ({ ...item, sourceType: "campaign" }))
   ].filter((item) => item.enabled !== false);
   // Funds & Alms is the parish-managed catalog. Retire every non-system,
   // non-default accounting fund before republishing that catalog so parallel
@@ -258,9 +276,9 @@ export async function synchronizeGivingCatalogWithAccounting(env, parishId, regi
   return {
     available: true,
     synchronized: synchronized.length,
-    funds: synchronized.filter((item) => item.sourceType === "fund").map(({ sourceType, feastCampaign, ...item }) => item),
-    campaigns: synchronized.filter((item) => item.sourceType === "campaign" && !item.feastCampaign).map(({ sourceType, feastCampaign, ...item }) => item),
-    feastCampaigns: synchronized.filter((item) => item.sourceType === "campaign" && item.feastCampaign).map(({ sourceType, feastCampaign, ...item }) => item)
+    funds: synchronized.filter((item) => item.sourceType === "fund").map(({ sourceType, ...item }) => item),
+    campaigns: synchronized.filter((item) => item.sourceType === "campaign").map(({ sourceType, ...item }) => item),
+    feastCampaigns: Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : []
   };
 }
 
@@ -306,14 +324,7 @@ export async function loadGivingCatalogFromAccounting(env, parishId, registratio
       if (row?.giving_source_type !== "campaign") return false;
       try { return !JSON.parse(row.giving_metadata_json || "{}").feastCampaign; } catch { return true; }
     }),
-    feastCampaigns: [
-      ...mapped.filter((item) => {
-      const row = rows.find((candidate) => candidate.id === item.accountingFundId);
-      if (row?.giving_source_type !== "campaign") return false;
-      try { return Boolean(JSON.parse(row.giving_metadata_json || "{}").feastCampaign); } catch { return false; }
-      }),
-      ...(Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns.filter((item) => item.enabled === false) : [])
-    ]
+    feastCampaigns: Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : []
   };
 }
 

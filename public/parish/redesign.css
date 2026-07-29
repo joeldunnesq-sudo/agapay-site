@@ -2135,3 +2135,57 @@
   .acct-expense-total { text-align:left; }
   .acct-expense-chart-card { padding:20px 15px; }
 }
+
+/* Viewport containment for every Parish dashboard tab. Tables and ledgers
+   may scroll inside their dedicated wrappers, but the page itself never does. */
+html,
+body {
+  width:100%;
+  max-width:100%;
+  overflow-x:clip;
+}
+
+.app,
+.content,
+.detail-wrap,
+.tab-panel,
+.tab-panel.active {
+  width:100%;
+  max-width:100%;
+  min-width:0;
+}
+
+.content > *,
+.detail-wrap > *,
+.tab-panel > * {
+  min-width:0;
+  max-width:100%;
+}
+
+img,
+svg,
+video,
+canvas,
+iframe,
+input,
+select,
+textarea {
+  max-width:100%;
+}
+
+@media(max-width:760px) {
+  .detail-wrap,
+  .sidebar-auth,
+  .sidebar-profile,
+  .mobile-page-actions {
+    width:100%;
+    max-width:none;
+  }
+}
+
+@supports not (overflow:clip) {
+  html,
+  body {
+    overflow-x:hidden;
+  }
+}

@@ -1660,7 +1660,12 @@ async function handleStewardshipGivingFunds(request, env, parishId) {
       COALESCE(SUM(COALESCE(json_extract(o.data, '$.giftAmountCents'), json_extract(o.data, '$.amountCents'), 0)), 0) AS total_cents
     FROM giving_funds gf
     LEFT JOIN donor_offerings o
-           ON COALESCE(json_extract(o.data, '$.giftType'), json_extract(o.data, '$.fund')) = gf.code
+           ON CASE
+                WHEN lower(COALESCE(json_extract(o.data, '$.giftType'), json_extract(o.data, '$.fund'), ''))
+                  IN ('stewardship','general','general stewardship','general operating fund')
+                THEN 'general'
+                ELSE lower(COALESCE(json_extract(o.data, '$.giftType'), json_extract(o.data, '$.fund'), ''))
+              END = lower(gf.code)
           AND o.parish_id = ?
           AND o.payment_status = 'paid'
           AND o.created_at BETWEEN ? AND ?
@@ -3124,7 +3129,7 @@ export default {
       const DEMO_REFERENCE  = foundRegistration?.key || "demo-st-fiacre-2025";
       const now = new Date().toISOString();
       const demoFunds = [
-        { name: "General Stewardship",  code: "stewardship", isDefault: true,  sortOrder: 0 },
+        { name: "General Operating Fund", code: "general",    isDefault: true,  sortOrder: 0 },
         { name: "Candles / Vigil Lights", code: "candle",   isDefault: false, sortOrder: 1 },
         { name: "Building Fund",        code: "building",   isDefault: false, sortOrder: 2 },
         { name: "Benevolence Fund",     code: "alms",       isDefault: false, sortOrder: 3 },
@@ -3141,7 +3146,7 @@ export default {
           status: "active",
           active: true,
           goalCents: 1000000,
-          raisedCents: 735000,
+          raisedCents: 557500,
           coverPhotoUrl: "/images/marketplace/dome-cross.jpg",
           photos: ["/images/marketplace/dome-cross.jpg"],
           createdAt: "2025-01-01T10:00:00.000Z",
@@ -3225,30 +3230,33 @@ export default {
       // Seed realistic donation history in D1
       const demoIdPrefix = `demo_${DEMO_PARISH_ID.replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "") || "parish"}`;
       const donations = [
-        { id: "demo_don_001", email: "maria.petrov@email.com",     name: "Maria Petrov",      amount: 20000, fund: "stewardship", date: "2024-10-06T11:15:00.000Z" },
+        { id: "demo_don_001", email: "maria.petrov@email.com",     name: "Maria Petrov",      amount: 20000, fund: "general", date: "2024-10-06T11:15:00.000Z" },
         { id: "demo_don_002", email: "nikolai.volkov@email.com",   name: "Nikolai Volkov",    amount: 5000,  fund: "candle",      date: "2024-10-06T09:42:00.000Z" },
-        { id: "demo_don_003", email: "anna.kozlov@email.com",      name: "Anna Kozlov",       amount: 50000, fund: "stewardship", date: "2024-10-13T12:00:00.000Z" },
+        { id: "demo_don_003", email: "anna.kozlov@email.com",      name: "Anna Kozlov",       amount: 50000, fund: "general", date: "2024-10-13T12:00:00.000Z" },
         { id: "demo_don_004", email: "dmitri.morozov@email.com",   name: "Dmitri Morozov",    amount: 15000, fund: "building",    date: "2024-10-13T10:30:00.000Z" },
-        { id: "demo_don_005", email: "elena.sokolov@email.com",    name: "Elena Sokolov",     amount: 10000, fund: "stewardship", date: "2024-10-20T11:00:00.000Z" },
-        { id: "demo_don_006", email: "peter.novak@email.com",      name: "Peter Novak",       amount: 25000, fund: "stewardship", date: "2024-10-20T09:15:00.000Z" },
+        { id: "demo_don_005", email: "elena.sokolov@email.com",    name: "Elena Sokolov",     amount: 10000, fund: "general", date: "2024-10-20T11:00:00.000Z" },
+        { id: "demo_don_006", email: "peter.novak@email.com",      name: "Peter Novak",       amount: 25000, fund: "general", date: "2024-10-20T09:15:00.000Z" },
         { id: "demo_don_007", email: "sophia.lebedev@email.com",   name: "Sophia Lebedev",    amount: 7500,  fund: "alms",        date: "2024-10-27T13:00:00.000Z" },
-        { id: "demo_don_008", email: "michael.orlov@email.com",    name: "Michael Orlov",     amount: 30000, fund: "stewardship", date: "2024-11-03T10:00:00.000Z" },
+        { id: "demo_don_008", email: "michael.orlov@email.com",    name: "Michael Orlov",     amount: 30000, fund: "general", date: "2024-11-03T10:00:00.000Z" },
         { id: "demo_don_009", email: "natalia.popov@email.com",    name: "Natalia Popov",     amount: 10000, fund: "iconography", date: "2024-11-03T11:30:00.000Z" },
-        { id: "demo_don_010", email: "ivan.fedorov@email.com",     name: "Ivan Fedorov",      amount: 20000, fund: "stewardship", date: "2024-11-10T09:00:00.000Z" },
+        { id: "demo_don_010", email: "ivan.fedorov@email.com",     name: "Ivan Fedorov",      amount: 20000, fund: "general", date: "2024-11-10T09:00:00.000Z" },
         { id: "demo_don_011", email: "olga.karpov@email.com",      name: "Olga Karpov",       amount: 5000,  fund: "candle",      date: "2024-11-10T10:45:00.000Z" },
         { id: "demo_don_012", email: "sergei.belov@email.com",     name: "Sergei Belov",      amount: 100000,fund: "building",    date: "2024-11-17T12:00:00.000Z" },
-        { id: "demo_don_013", email: "marina.titov@email.com",     name: "Marina Titov",      amount: 15000, fund: "stewardship", date: "2024-11-24T09:30:00.000Z" },
-        { id: "demo_don_014", email: "alexei.gusev@email.com",     name: "Alexei Gusev",      amount: 20000, fund: "stewardship", date: "2024-12-01T10:00:00.000Z" },
+        { id: "demo_don_013", email: "marina.titov@email.com",     name: "Marina Titov",      amount: 15000, fund: "general", date: "2024-11-24T09:30:00.000Z" },
+        { id: "demo_don_014", email: "alexei.gusev@email.com",     name: "Alexei Gusev",      amount: 20000, fund: "general", date: "2024-12-01T10:00:00.000Z" },
         { id: "demo_don_015", email: "vera.nikitin@email.com",     name: "Vera Nikitin",      amount: 10000, fund: "memorial",    date: "2024-12-08T11:00:00.000Z" },
-        { id: "demo_don_016", email: "boris.fomin@email.com",      name: "Boris Fomin",       amount: 25000, fund: "stewardship", date: "2024-12-15T09:45:00.000Z" },
+        { id: "demo_don_016", email: "boris.fomin@email.com",      name: "Boris Fomin",       amount: 25000, fund: "general", date: "2024-12-15T09:45:00.000Z" },
         { id: "demo_don_017", email: "lyudmila.zaytsev@email.com", name: "Lyudmila Zaytsev",  amount: 5000,  fund: "candle",      date: "2024-12-22T10:30:00.000Z" },
-        { id: "demo_don_018", email: "andrei.morozov@email.com",   name: "Andrei Morozov",    amount: 50000, fund: "stewardship", date: "2024-12-29T12:00:00.000Z" },
-        { id: "demo_don_019", email: "tatiana.volkov@email.com",   name: "Tatiana Volkov",    amount: 20000, fund: "stewardship", date: "2025-01-05T10:00:00.000Z" },
+        { id: "demo_don_018", email: "andrei.morozov@email.com",   name: "Andrei Morozov",    amount: 50000, fund: "general", date: "2024-12-29T12:00:00.000Z" },
+        { id: "demo_don_019", email: "tatiana.volkov@email.com",   name: "Tatiana Volkov",    amount: 20000, fund: "general", date: "2025-01-05T10:00:00.000Z" },
         { id: "demo_don_020", email: "konstantin.smirnov@email.com",name: "Konstantin Smirnov",amount: 30000, fund: "building",   date: "2025-01-12T09:00:00.000Z" },
-        { id: "demo_don_021", email: "maria.petrov@email.com",     name: "Maria Petrov",      amount: 250000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", publicComment: "In thanksgiving for the mission and all who worship here.", date: "2025-01-19T11:15:00.000Z" },
-        { id: "demo_don_022", email: "peter.novak@email.com",      name: "Peter Novak",       amount: 200000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", publicAnonymous: true, publicComment: "Praying this roof protects the church for many years.", date: "2025-01-26T09:45:00.000Z" },
-        { id: "demo_don_023", email: "anna.kozlov@email.com",      name: "Anna Kozlov",       amount: 185000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", publicComment: "For our children and the future of the parish.", date: "2025-02-02T10:30:00.000Z" },
-        { id: "demo_don_024", email: "nikolai.volkov@email.com",   name: "Nikolai Volkov",    amount: 100000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", publicComment: "Glory to God for this parish and the work ahead.", date: "2025-02-09T13:00:00.000Z" },
+        { id: "demo_don_022", email: "maria.petrov@email.com",     name: "Maria Petrov",      amount: 50000,  fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "alms", publicComment: "In thanksgiving for the mission and all who worship here.", date: "2026-02-01T11:15:00.000Z" },
+        { id: "demo_don_023", email: "peter.novak@email.com",      name: "Peter Novak",       amount: 75000,  fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "alms", publicAnonymous: true, publicComment: "Praying this roof protects the church for many years.", date: "2026-02-22T09:45:00.000Z" },
+        { id: "demo_don_024", email: "anna.kozlov@email.com",      name: "Anna Kozlov",       amount: 100000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "alms", publicComment: "For our children and the future of the parish.", date: "2026-03-15T10:30:00.000Z" },
+        { id: "demo_don_025", email: "nikolai.volkov@email.com",   name: "Nikolai Volkov",    amount: 125000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "alms", publicComment: "Glory to God for this parish and the work ahead.", date: "2026-04-05T13:00:00.000Z" },
+        { id: "demo_don_026", email: "elena.sokolov@email.com",    name: "Elena Sokolov",     amount: 65000,  fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "alms", publicComment: "With love for our parish home.", date: "2026-05-03T10:00:00.000Z" },
+        { id: "demo_don_027", email: "dmitri.morozov@email.com",   name: "Dmitri Morozov",    amount: 80000,  fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "alms", publicAnonymous: true, publicComment: "For the continued life of the parish.", date: "2026-06-07T12:30:00.000Z" },
+        { id: "demo_don_028", email: "sophia.lebedev@email.com",   name: "Sophia Lebedev",    amount: 55000,  fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "alms", publicComment: "May this church shelter generations to come.", date: "2026-07-05T09:30:00.000Z" },
       ];
 
       try {

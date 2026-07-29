@@ -403,6 +403,7 @@ assert.ok(sacramentsLiveHtml.includes("sac-admin-shell") && !sacramentsLiveHtml.
 assert.ok(parishDashboardApp.includes("function setSacramentsDashboardTab") && parishDashboardApp.includes("function renderSacramentsCalendar") && parishDashboardApp.includes("function renderSacramentsBlackouts") && parishDashboardApp.includes("function renderSacramentsRules"), "parish Sacraments & Services dashboard should render availability, blackouts, rules, requests, and calendar views");
 assert.ok(parishDashboardHtml.includes("sacramentsFeatureToggle") && parishDashboardApp.includes("function toggleSacramentsFeature") && parishDashboardApp.includes("Off for parishioners"), "parish Sacraments & Services dashboard should include a self-service on/off switch");
 assert.ok(parishDashboardApp.includes("sacramentsDashboardTab = 'rules'") && parishDashboardApp.includes("renderSacramentsDisabledPanel"), "parish Sacraments & Services should default to Sacrament Rules and show an off state");
+assert.equal(parishDashboardApp.split("<em>${enabled ? 'On' : 'Off'}</em>").length - 1, 3, "Directory, Bookstore, and Sacraments feature switches should use concise On/Off labels");
 assert.ok(parishDashboardHtml.includes("sacramentsPriestPicker") && parishDashboardApp.includes("function selectSacramentsPriest") && parishDashboardApp.includes("sacramentPriestsText"), "parish Sacraments & Services should support multiple priests managed from Settings");
 assert.ok(parishDashboardApp.includes("loadReconciliation") && parishDashboardApp.includes("exportReconciliationCsv") && parishDashboardApp.includes("saveReconciliationClose"), "parish dashboard should load, export, and close monthly reconciliations");
 assert.ok(worker.includes("handleParishReconciliation") && worker.includes("/reconciliation/close"), "worker should route authenticated parish reconciliation endpoints");
@@ -486,9 +487,12 @@ assert.ok(worker.includes("STRIPE_SECRET_KEY") && worker.includes("RESEND_API_KE
 // Recurring Giving Health card, and a Monthly Stewardship Report button.
 const parishAppJs = await readFile("public/parish/app.js", "utf8");
 assert.ok(parishDashboardHtml.includes('id="stewardshipHealthScorePane"'), "Stewardship Health tab should include a Health Score card");
+assert.ok(parishDashboardHtml.includes('points="3.8 12 7.2 12 9.2 8.3 12.3 15.8 14.5 12 20.2 12"'), "Stewardship Health card should use the heartbeat icon");
 assert.ok(parishDashboardHtml.includes('id="stewardshipConcentrationPane"'), "Stewardship Health tab should include a Donor Concentration Risk card");
 assert.ok(parishDashboardHtml.includes('id="stewardshipRecurringPane"'), "Stewardship Health tab should include a Recurring Giving Health card");
 assert.ok(parishDashboardHtml.includes("openStewardshipMonthlyReport()"), "Stewardship Health tab should have a Generate Monthly Stewardship Report button");
+assert.ok(parishDashboardHtml.includes("sw-report-card-header") && !parishDashboardHtml.includes("sw-report-button-stack"), "Stewardship report actions should live in their respective cards, not the hero");
+assert.ok(!/onclick="loadStewardshipPanel\(true\)" title="Refresh"/.test(parishDashboardHtml), "Stewardship Health hero should not include a refresh button");
 assert.ok(parishAppJs.includes("function loadStewardshipHealthScorePanel"), "app.js should define loadStewardshipHealthScorePanel");
 assert.ok(parishAppJs.includes("function loadDonorConcentrationPanel"), "app.js should define loadDonorConcentrationPanel");
 assert.ok(parishAppJs.includes("function loadRecurringGivingPanel"), "app.js should define loadRecurringGivingPanel");

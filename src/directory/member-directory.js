@@ -348,11 +348,9 @@ async function householdMembers(env, context, householdId, { detail = false } = 
        FROM directory_household_members hm
        JOIN directory_people p ON p.id = hm.person_id
        JOIN directory_households h ON h.id = hm.household_id
-       JOIN directory_publication_profiles pub ON pub.parish_id = ?2 AND pub.owner_type = 'person' AND pub.owner_id = p.id
        LEFT JOIN directory_person_privacy_flags f ON f.parish_id = ?2 AND f.person_id = p.id AND f.active = 1
       WHERE hm.household_id = ?1 AND hm.active = 1 AND p.active = 1
         AND h.parish_id = ?2
-        AND pub.active = 1 AND pub.status = 'approved' AND pub.approval_status = 'approved'
       ORDER BY p.preferred_name ASC, p.id ASC`,
     householdId, context.parishId
   );

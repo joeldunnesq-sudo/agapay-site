@@ -66,6 +66,7 @@ import {
   verifyTurnstileIfConfigured,
 } from "../lib/core.js";
 import { loadGivingCatalogFromAccounting, synchronizeGivingCatalogWithAccounting } from "../accounting/source-wiring.js";
+import { mergeStewardshipFundsIntoRegistration } from "../lib/stewardship-funds.js";
 
 import { bookstoreEnabledFor, directoryEnabledFor, entitlementsSummary, givingFeatureAccess, hasParishPlusAccess, sacramentsEnabledFor, stewardshipToolAccess, tierIncludesModule, tierIncludesParishPlus } from "../lib/entitlements.js";
 import { getDirectorySettings } from "../directory/settings.js";
@@ -1631,7 +1632,8 @@ export function donorSummaryFromOfferings(offerings, commemorations = []) {
   // and should not count toward a donor's annual pledge progress. Offerings without a
   // giftType predate giftType tracking and are treated as stewardship, matching how
   // they're normalized everywhere else in the app.
-  const isStewardshipOffering = (item) => String(item.giftType || "stewardship").toLowerCase() === "stewardship";
+  const isStewardshipOffering = (item) =>
+    ["stewardship", "general"].includes(String(item.giftType || "stewardship").toLowerCase());
   const stewardshipPaid = paid.filter(isStewardshipOffering);
   const stewardshipYtdCents = stewardshipPaid.reduce((sum, item) => sum + offeringFeeBreakdown(item).giftAmountCents, 0);
   const monthCents = paid
@@ -1724,6 +1726,7 @@ export function communitySketchAlt(type) {
 
 export function parishFromRegistration(registration) {
   if (!registration) return null;
+  registration = mergeStewardshipFundsIntoRegistration(registration).registration;
   const id = registration.parishId || parishSlug(registration.parishName, registration.city);
   if (!id || registration.status !== "verified") return null;
   if (registration.givingStatus && registration.givingStatus !== "active") return null;
@@ -2120,8 +2123,12 @@ export function publicParishGiftFromOffering(offering = {}) {
     coverFees: fees.coverFees,
     donorName: giftDisplayName(offering),
     donorEmail: offering.email || offering.donorEmail || "",
-    fund: offering.fund || offering.fundId || (offering.giftType === "stewardship" ? "General Operating Fund" : ""),
-    fundId: offering.fundId || offering.fund || "",
+    fund: ["stewardship", "general"].includes(String(offering.giftType || "").toLowerCase())
+      ? "General Operating Fund"
+      : offering.fund || offering.fundId || "",
+    fundId: ["stewardship", "general"].includes(String(offering.giftType || "").toLowerCase())
+      ? "general"
+      : offering.fundId || offering.fund || "",
     campaign: offering.campaign || offering.campaignId || "",
     campaignId: offering.campaignId || offering.campaign || "",
     description: offering.description || offering.campaignDescription || offering.inMemoriam || "",
@@ -2404,32 +2411,60 @@ function campaignPublicSupporters(campaign, gifts) {
 function stFiacreRoofDemoSupporters() {
   return [
     {
-      name: "Nikolai Volkov",
-      amountCents: 100000,
-      comment: "Glory to God for this parish and the work ahead.",
+      name: "Sophia Lebedev",
+      amountCents: 55000,
+      comment: "May this church shelter generations to come.",
       anonymous: false,
-      createdAt: "2025-02-09T13:00:00.000Z"
-    },
-    {
-      name: "Anna Kozlov",
-      amountCents: 185000,
-      comment: "For our children and the future of the parish.",
-      anonymous: false,
-      createdAt: "2025-02-02T10:30:00.000Z"
+      createdAt: "2026-07-05T09:30:00.000Z"
     },
     {
       name: "Anonymous",
-      amountCents: 200000,
+      amountCents: 80000,
+      comment: "For the continued life of the parish.",
+      anonymous: true,
+      createdAt: "2026-06-07T12:30:00.000Z"
+    },
+    {
+      name: "Elena Sokolov",
+      amountCents: 65000,
+      comment: "With love for our parish home.",
+      anonymous: false,
+      createdAt: "2026-05-03T10:00:00.000Z"
+    },
+    {
+      name: "Nikolai Volkov",
+      amountCents: 125000,
+      comment: "Glory to God for this parish and the work ahead.",
+      anonymous: false,
+      createdAt: "2026-04-05T13:00:00.000Z"
+    },
+    {
+      name: "Anna Kozlov",
+      amountCents: 100000,
+      comment: "For our children and the future of the parish.",
+      anonymous: false,
+      createdAt: "2026-03-15T10:30:00.000Z"
+    },
+    {
+      name: "Anonymous",
+      amountCents: 75000,
       comment: "Praying this roof protects the church for many years.",
       anonymous: true,
-      createdAt: "2025-01-26T09:45:00.000Z"
+      createdAt: "2026-02-22T09:45:00.000Z"
     },
     {
       name: "Maria Petrov",
-      amountCents: 250000,
+      amountCents: 50000,
       comment: "In thanksgiving for the mission and all who worship here.",
       anonymous: false,
-      createdAt: "2025-01-19T11:15:00.000Z"
+      createdAt: "2026-02-01T11:15:00.000Z"
+    },
+    {
+      name: "Joel Dunn",
+      amountCents: 7500,
+      comment: "May God bless this work.",
+      anonymous: false,
+      createdAt: "2026-01-18T11:15:00.000Z"
     }
   ];
 }
@@ -2455,7 +2490,7 @@ export async function enrichParishGivingOptions(env, parish) {
       || (typeof photos[0] === "string" ? photos[0] : photos[0]?.url)
       || (isStFiacreRoofDemo ? "/images/marketplace/dome-cross.jpg" : "")
       || "";
-    const seededRaisedCents = isStFiacreRoofDemo ? 735000 : 0;
+    const seededRaisedCents = isStFiacreRoofDemo ? 557500 : 0;
     return {
       ...campaign,
       name: isStFiacreRoofDemo ? "Church Roof Restoration" : campaign.name || campaign.campaignName || "Parish Campaign",
@@ -2463,8 +2498,12 @@ export async function enrichParishGivingOptions(env, parish) {
       category: isStFiacreRoofDemo ? "Building" : campaign.category,
       goalCents: isStFiacreRoofDemo ? 1000000 : Number(campaign.goalCents || campaign.targetCents || campaign.goalAmountCents || 0),
       coverPhotoUrl,
-      raisedCents: totals.raisedCents || Number(campaign.raisedCents || campaign.amountCents || campaign.currentCents || seededRaisedCents),
-      giftCount: totals.giftCount || Number(campaign.giftCount || campaign.donorCount || (isStFiacreRoofDemo ? 4 : 0)),
+      raisedCents: totals.raisedCents || (isStFiacreRoofDemo
+        ? seededRaisedCents
+        : Number(campaign.raisedCents || campaign.amountCents || campaign.currentCents || 0)),
+      giftCount: totals.giftCount || (isStFiacreRoofDemo
+        ? 8
+        : Number(campaign.giftCount || campaign.donorCount || 0)),
       supporters: supporters.length ? supporters : (isStFiacreRoofDemo ? stFiacreRoofDemoSupporters() : [])
     };
   };
@@ -2998,8 +3037,35 @@ export async function handleCheckout(request, env) {
     ? "molieben_panikhida"
     : "proskomedia_liturgy";
   const isFestalAlms = ["alms", "feast"].includes(normalizedGiftType);
-  const checkoutFund = isFestalAlms ? "Benevolence Fund" : body.fund || "";
-  const checkoutFundId = isFestalAlms ? "benevolence-fund" : body.fundId || "";
+  const isGeneralStewardship = ["stewardship", "general"].includes(checkoutGiftType);
+  const requestedCampaignId = String(body.campaignId || body.campaign || "").trim();
+  const checkoutFeastCampaigns = isFestalAlms
+    ? activeFestalAlmsCampaigns(parish.feastCampaigns, parish.liturgicalCalendar)
+    : [];
+  const feastCampaign = isFestalAlms
+    ? checkoutFeastCampaigns.find((campaign) =>
+      [campaign?.id, campaign?.feastId, campaign?.name, campaign?.campaignName]
+        .filter(Boolean).map(String).includes(requestedCampaignId)
+    )
+    : null;
+  const destinationFundId = String(feastCampaign?.destinationFundId || "benevolence-fund");
+  const destinationFund = isFestalAlms
+    ? (Array.isArray(parish.funds) ? parish.funds : []).find((fund) =>
+      [fund?.id, fund?.code, fund?.name].filter(Boolean).map(String).includes(destinationFundId)
+    )
+    : null;
+  const checkoutFund = isFestalAlms
+    ? destinationFund?.name || "Benevolence Fund"
+    : isGeneralStewardship ? "General Operating Fund" : body.fund || "";
+  const checkoutFundId = isFestalAlms
+    ? destinationFund?.id || destinationFund?.code || "benevolence-fund"
+    : isGeneralStewardship ? "general" : body.fundId || "";
+  const checkoutCampaign = isFestalAlms
+    ? feastCampaign?.campaignName || feastCampaign?.name || body.campaign || ""
+    : body.campaign || "";
+  const checkoutCampaignId = isFestalAlms
+    ? feastCampaign?.id || feastCampaign?.feastId || requestedCampaignId
+    : body.campaignId || body.campaign || "";
   const donor = await requireDonor(request, env);
   const donorDashboardReturn = Boolean(donor?.email && normalizeEmail(donor.email) === normalizedDonorEmail);
   const campaignPageCheckout = String(body.source || "").toLowerCase() === "campaign_page";
@@ -3050,7 +3116,8 @@ export async function handleCheckout(request, env) {
     fund_id: checkoutFundId,
     feast_description: body.feastDescription || "",
     in_memoriam: body.inMemoriam || "",
-    campaign: body.campaign || "",
+    campaign: checkoutCampaign,
+    campaign_id: checkoutCampaignId,
     campaign_description: body.campaignDescription || "",
     frequency: body.frequency || "once",
     amount_cents: String(amountCents),
@@ -3137,8 +3204,8 @@ export async function handleCheckout(request, env) {
     title: `${parish.name} - ${giftLabel}`,
     fund: checkoutFund,
     fundId: checkoutFundId,
-    campaign: body.campaign || "",
-    campaignId: body.campaign || "",
+    campaign: checkoutCampaign,
+    campaignId: checkoutCampaignId,
     campaignDescription: body.campaignDescription || "",
     publicAnonymous: publicBoolean(body.publicAnonymous),
     publicDisplayName: publicBoolean(body.publicAnonymous) ? "Anonymous" : normalizedDonorName,
@@ -4138,7 +4205,7 @@ function reconciliationAllocation(offering = {}) {
   if (["memorial", "commemoration", "commemorations"].includes(giftType)) {
     return { key: "commemorations", category: "Commemorations", label: "Memorials & Commemorations" };
   }
-  if (fund && !/^general( operating)?( fund)?$/i.test(fund)) {
+  if (fund && !/^(?:general(?: operating)?(?: fund)?|general stewardship|stewardship)$/i.test(fund)) {
     return { key: `fund:${fund}`, category: "Designated Fund", label: fund };
   }
   return { key: "general", category: "General Giving", label: fund || "General Operating Fund" };
@@ -6048,10 +6115,7 @@ export async function handleParishDashboard(request, env, parishId) {
         ...updated,
         funds: catalogSync.funds,
         campaigns: catalogSync.campaigns,
-        feastCampaigns: [
-          ...(catalogSync.feastCampaigns || []),
-          ...(updated.feastCampaigns || []).filter((item) => item.enabled === false)
-        ]
+        feastCampaigns: catalogSync.feastCampaigns || []
       };
     }
     await saveRegistrationRecord(env, found.key, updated, current);

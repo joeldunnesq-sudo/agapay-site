@@ -3338,10 +3338,16 @@ export async function handleStewardshipNudge(request, env, parishId) {
   const yearEnd = year + "-12-31";
   const yearStartStr = year + "-01-01";
   const givenRows = await d1All(env,
-    `SELECT donor_email, SUM(json_extract(data, '$.giftAmountCents')) AS given_cents
+    `SELECT donor_email,
+            SUM(COALESCE(
+              json_extract(data, '$.giftAmountCents'),
+              json_extract(data, '$.amountCents'),
+              0
+            )) AS given_cents
      FROM donor_offerings
      WHERE parish_id = ? AND payment_status IN ('paid','succeeded')
-       AND created_at BETWEEN ? AND ?
+       AND created_at >= ? AND created_at < datetime(?, '+1 day')
+       AND lower(COALESCE(json_extract(data, '$.giftType'), 'stewardship')) IN ('stewardship','general')
        AND donor_email IN (${pledges.map(() => "?").join(",")})
      GROUP BY donor_email`,
     parishId, yearStartStr, yearEnd, ...pledges.map(p => p.donor_email)

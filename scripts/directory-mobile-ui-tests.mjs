@@ -16,6 +16,8 @@ assert.match(page, /id="memberEditForm"[\s\S]*name="saintName"[\s\S]*name="feast
 assert.match(page, /Save Member &amp; Nameday/);
 assert.match(page, /feastMonthDay: `\$\{feastMonth\}-\$\{feastDay\.padStart\(2, "0"\)\}`/);
 assert.match(page, /id="householdDetailsForm"[\s\S]*name="city"[\s\S]*name="region"[\s\S]*name="locationVisibility"/);
+assert.match(page, /class="household-hub-identity" data-wizard-step="2"[\s\S]*Family name<input name="displayName"/);
+assert.doesNotMatch(page, /class="household-hub-identity" data-wizard-step="0"/);
 assert.match(page, /self\/addresses`, \{[\s\S]*city,[\s\S]*region,[\s\S]*visibility: locationVisibility/);
 assert.match(page, /class="directory-mobile-header"/);
 assert.match(page, /class="directory-mobile-logo" src="\/mark\.png"/);

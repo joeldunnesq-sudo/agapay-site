@@ -235,6 +235,19 @@ await test("household detail includes each adult's shared contacts and name day 
   assert.deepEqual(detail.household.members[0].namedays, [{ saintName: "St. Maria", feastMonthDay: "07-22" }]);
 });
 
+await test("an approved household includes active non-protected adults without separate person publication", async () => {
+  const { env, db, viewer, household } = await fixture();
+  const actor = seedActor();
+  const spouse = await createPerson(env, { actor, preferredName: "Stephanie Antioch" });
+  await addHouseholdMember(env, { actor, householdId: household.id, personId: spouse.id, relationship: "spouse" });
+  const context = await resolveMemberDirectoryContext(env, { request: await requestFor(env, db, viewer, "/api/directory/member") });
+  const detail = await getMemberDirectoryHousehold(env, { context, householdId: household.id });
+  const publishedSpouse = detail.household.members.find((member) => member.id === spouse.id);
+  assert.equal(publishedSpouse?.displayName, "Stephanie Antioch");
+  assert.equal(publishedSpouse?.relationship, "spouse");
+  assert.deepEqual(publishedSpouse?.contacts, []);
+});
+
 await test("protected people and children are absent from browse, search, counts, and household members", async () => {
   const { env, db, viewer, hidden, child } = await fixture();
   const context = await resolveMemberDirectoryContext(env, { request: await requestFor(env, db, viewer, "/api/directory/member") });

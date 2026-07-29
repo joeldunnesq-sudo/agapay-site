@@ -63,7 +63,7 @@
     general:    { id:'general',    name:'General Operating Fund',    description:'Utilities, supplies, ministries, and day-to-day parish needs.' },
     building:   { id:'building',   name:'New Building Fund',          description:'Support for property purchase, construction, renovation, or long-term building needs.' },
     clergy:     { id:'clergy',     name:'Clergy Support Fund',        description:'Direct support for the priest, clergy family, and clergy-related parish needs.' },
-    benevolence:{ id:'benevolence',name:'Benevolence Fund',           description:'Restricted assistance for the poor, needy families, and neighbors facing hardship.', restrictionType:'donor_restricted_temporary' },
+    benevolence:{ id:'benevolence-fund',name:'Benevolence Fund',      description:'Restricted assistance for the poor, needy families, and neighbors facing hardship.', restrictionType:'donor_restricted_temporary' },
     education:  { id:'education',  name:'Education & Youth Fund',     description:'Catechism, youth programs, parish school materials, retreats, and formation.' },
     icons:      { id:'icons',      name:'Icons & Beautification Fund',description:'Icons, liturgical furnishings, vestments, candles, and beautification of the church.' },
     missions:   { id:'missions',   name:'Mission & Outreach Fund',    description:'Evangelism, local outreach, charitable work, and mission-related parish efforts.' }
@@ -701,7 +701,7 @@
     return `<label class="sac-admin-switch pdx-dir-feature-switch agapay-feature-switch" title="Show or hide the parish directory in My AGAPAY">
       <input type="checkbox" aria-label="Show parish directory in My AGAPAY" ${enabled ? 'checked' : ''} onchange="toggleDirectoryFeature(this)" />
       <span aria-hidden="true"></span>
-      <em>${enabled ? 'Visible in My AGAPAY' : 'Hidden from My AGAPAY'}</em>
+      <em>${enabled ? 'On' : 'Off'}</em>
     </label>`;
   }
 
@@ -3942,7 +3942,7 @@
     root.innerHTML = `<label class="sac-admin-switch agapay-feature-switch" title="Show or hide Bookstore in My AGAPAY">
       <input type="checkbox" aria-label="Show Bookstore in My AGAPAY" ${enabled ? 'checked' : ''} onchange="toggleBookstoreFeature(this)" />
       <span aria-hidden="true"></span>
-      <em>${enabled ? 'Visible in My AGAPAY' : 'Hidden from My AGAPAY'}</em>
+      <em>${enabled ? 'On' : 'Off'}</em>
     </label>`;
   }
 
@@ -4591,7 +4591,7 @@
   }
 
   function setSacramentsDashboardTab(tab) {
-    sacramentsDashboardTab = tab || 'availability';
+    sacramentsDashboardTab = tab || 'rules';
     document.querySelectorAll('[data-sac-tab]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.sacTab === sacramentsDashboardTab);
     });
@@ -4631,6 +4631,7 @@
 
   function selectSacramentsPriest(index) {
     sacramentsPriestIndex = Number(index) || 0;
+    sacramentsRuleEditor = { type: '', dayOfWeek: -1 };
     renderSacramentsPriestPicker();
     renderSacramentsPanel();
   }
@@ -4728,6 +4729,7 @@
   }
 
   let sacramentsAvailabilityState = { loaded: false, loading: false, error: '', timezone: '', rules: [], blackouts: [] };
+  let sacramentsRuleEditor = { type: '', dayOfWeek: -1 };
 
   async function loadSacramentsAvailability(force) {
     const pane = document.getElementById('sacramentsPane');
@@ -4754,7 +4756,7 @@
     root.innerHTML = `<label class="sac-admin-switch agapay-feature-switch" title="Show or hide Sacraments &amp; Services in My AGAPAY">
       <input type="checkbox" aria-label="Show Sacraments and Services in My AGAPAY" ${enabled ? 'checked' : ''} onchange="toggleSacramentsFeature(this)" />
       <span aria-hidden="true"></span>
-      <em>${enabled ? 'Visible in My AGAPAY' : 'Hidden from My AGAPAY'}</em>
+      <em>${enabled ? 'On' : 'Off'}</em>
     </label>`;
   }
 
@@ -4875,37 +4877,32 @@
     const custom = Array.isArray(priest.customServices) ? priest.customServices : [];
     return `
       <div class="sac-admin-panel sac-admin-offerings-panel">
-        <div class="sac-admin-offerings-glow" aria-hidden="true"></div>
-        <div class="sac-admin-panel-head sac-admin-offerings-head">
+        <div class="sac-admin-panel-head">
           <div>
             <span>Online offerings</span>
-            <h2>Sacraments &amp; services offered by ${escapeHtml(priest.name)}</h2>
-            <p>Curate the parishioner experience, then decide whether each added service begins with a request or can be booked from published availability.</p>
+            <h2>Available from ${escapeHtml(priest.name)}</h2>
           </div>
-          <div class="sac-admin-offerings-count"><strong>${enabled.size + custom.length}</strong><span>active</span></div>
         </div>
-        <div class="sac-admin-offerings-legend"><span><i class="request"></i>Parish follow-up</span><span><i class="schedule"></i>Direct scheduling</span></div>
+        <p class="sac-admin-muted">Choose what parishioners can request online. Added services may begin with parish follow-up or use the booking windows below.</p>
         <div class="sac-admin-offering-checks">
           ${SAC_EDITABLE_SERVICE_TYPES.map(type => `
-            <label class="${enabled.has(type) ? 'is-active' : ''}">
-              <span class="sac-admin-offering-icon">${SAC_SCHEDULABLE_TYPES.includes(type) ? '◷' : '✦'}</span>
-              <span class="sac-admin-offering-copy"><strong>${escapeHtml(sacramentTypeLabel({ sacramentType: type }))}</strong><small>${SAC_SCHEDULABLE_TYPES.includes(type) ? 'Online scheduling' : 'By request'}</small></span>
+            <label>
               <input type="checkbox" ${enabled.has(type) ? 'checked' : ''} onchange="toggleSacramentsOffering('${type}', this.checked)" />
-              <span class="sac-admin-offering-toggle" aria-hidden="true"></span>
+              <span><strong>${escapeHtml(sacramentTypeLabel({ sacramentType: type }))}</strong><small>${SAC_SCHEDULABLE_TYPES.includes(type) ? 'Online scheduling' : 'By request'}</small></span>
             </label>`).join('')}
         </div>
         ${custom.length ? `<div class="sac-admin-custom-offerings">${custom.map(service => `
           <article class="sac-admin-custom-offering">
-            <div><span class="sac-admin-custom-mark">${service.mode === 'schedule' ? '◷' : '✦'}</span><span><strong>${escapeHtml(service.label)}</strong><small>Custom offering</small></span></div>
+            <div><span><strong>${escapeHtml(service.label)}</strong><small>Custom offering</small></span></div>
             <select aria-label="How ${escapeAttr(service.label)} is offered" onchange="updateCustomSacramentsOfferingMode('${escapeAttr(service.id)}', this.value)">
               <option value="request" ${service.mode !== 'schedule' ? 'selected' : ''}>By request</option>
               <option value="schedule" ${service.mode === 'schedule' ? 'selected' : ''}>Online scheduling</option>
             </select>
             <button type="button" aria-label="Remove ${escapeAttr(service.label)}" onclick="removeCustomSacramentsOffering('${escapeAttr(service.id)}')">×</button>
           </article>
-        `).join('')}</div>` : '<p class="sac-admin-empty-line sac-admin-offerings-empty">Add a parish-specific offering below—memorial prayers, churching, vehicle blessings, or another pastoral service.</p>'}
+        `).join('')}</div>` : ''}
         <div class="sac-admin-add-offering-box">
-          <div><span>Add a custom offering</span><strong>What else may parishioners request?</strong></div>
+          <div><strong>Add another offering</strong></div>
           <label class="sac-admin-add-offering"><span>Offering name</span><input id="sacAvailCustomOffering" placeholder="e.g. Memorial Service" /></label>
           <label class="sac-admin-add-offering-mode"><span>How it works</span><select id="sacAvailCustomOfferingMode"><option value="request">By request</option><option value="schedule">Online scheduling</option></select></label>
           <button class="sac-admin-outline-btn" type="button" onclick="addCustomSacramentsOffering(this)">Add offering</button>
@@ -5111,7 +5108,7 @@
       currentParish.timezone = tz;
       sacramentsAvailabilityState.timezone = tz;
       setStatus('Parish timezone saved.', 'success');
-      renderSacramentsAvailability();
+      renderSacramentsPanel();
     } catch (err) {
       setStatus(err.message, 'error');
     } finally {
@@ -5367,30 +5364,67 @@
           </div>
           <button class="sac-admin-small-btn" type="button" onclick="loadSacramentsAvailability(true)">Refresh</button>
         </div>
-        <p class="sac-admin-muted">These rules are derived from the weekly availability windows. If a day is active here, parishioners can see openings for that sacrament or service on that day.</p>
+        <p class="sac-admin-muted">Choose a day to view its current windows or publish a new opening. Highlighted days already have availability.</p>
         <div class="sac-admin-rules-list">
           ${offeredTypes.map(type => {
-            const activeDays = new Set((rulesByType[type] || []).map(rule => Number(rule.dayOfWeek)));
+            const typeRules = rulesByType[type] || [];
+            const activeDays = new Set(typeRules.map(rule => Number(rule.dayOfWeek)));
+            const schedulable = selectedSchedulableSacramentTypes().includes(type);
+            const selectedDay = sacramentsRuleEditor.type === type ? Number(sacramentsRuleEditor.dayOfWeek) : -1;
             return `<div class="sac-admin-rules-row">
               <strong>${escapeHtml(selectedSacramentOfferingLabel(type))}</strong>
               <div class="sac-admin-day-chips">
-                ${selectedSchedulableSacramentTypes().includes(type)
-                  ? dayShort.map((label, index) => `<span class="${activeDays.has(index) ? 'active' : ''}">${label}</span>`).join('')
+                ${schedulable
+                  ? dayShort.map((label, index) => `<button type="button" class="${activeDays.has(index) ? 'active' : ''} ${selectedDay === index ? 'selected' : ''}" aria-expanded="${selectedDay === index ? 'true' : 'false'}" onclick="selectSacramentRuleDay('${escapeAttr(type)}', ${index})">${label}</button>`).join('')
                   : '<span class="active">Request only</span>'}
               </div>
+              ${schedulable && selectedDay >= 0 ? renderSacramentRuleDayEditor(type, selectedDay, typeRules) : ''}
             </div>`;
           }).join('') || '<p class="sac-admin-empty-line">No online offerings selected.</p>'}
         </div>
-      </div>
-      <div class="sac-admin-panel">
-        <div class="sac-admin-panel-head">
-          <div>
-            <span>Edit rules</span>
-            <h2>Add booking windows</h2>
-          </div>
+      </div>`;
+  }
+
+  function selectSacramentRuleDay(type, dayOfWeek) {
+    const isSame = sacramentsRuleEditor.type === type && Number(sacramentsRuleEditor.dayOfWeek) === Number(dayOfWeek);
+    sacramentsRuleEditor = isSame ? { type: '', dayOfWeek: -1 } : { type, dayOfWeek: Number(dayOfWeek) };
+    renderSacramentsPanel();
+  }
+
+  function renderSacramentRuleDayEditor(type, dayOfWeek, rules) {
+    const dayRules = (rules || []).filter(rule => Number(rule.dayOfWeek) === Number(dayOfWeek));
+    const label = selectedSacramentOfferingLabel(type);
+    return `
+      <div class="sac-admin-rule-window-editor">
+        <div class="sac-admin-rule-window-head">
+          <div><span>${escapeHtml(label)}</span><strong>${SAC_DAY_LABELS[dayOfWeek]} windows</strong></div>
+          <button type="button" aria-label="Close ${escapeAttr(SAC_DAY_LABELS[dayOfWeek])} window editor" onclick="selectSacramentRuleDay('${escapeAttr(type)}', ${dayOfWeek})">×</button>
         </div>
-        <p class="sac-admin-muted">To change the rule for a day, add or remove the weekly availability windows for that sacrament or service.</p>
-        ${st.timezone ? renderSacramentsAvailabilityAddForm() : renderSacramentsTimezoneForm()}
+        ${dayRules.length ? `<div class="sac-admin-rule-window-list">${dayRules.map(rule => `
+          <div>
+            <span><strong>${escapeHtml(rule.startTime)}–${escapeHtml(rule.endTime)}</strong><small>${Number(rule.slotMinutes) || 30} minute appointments</small></span>
+            <button type="button" onclick="deleteSacramentsAvailabilityRule('${escapeAttr(rule.id)}')">Remove</button>
+          </div>`).join('')}</div>` : '<p class="sac-admin-empty-line">No windows published for this day yet.</p>'}
+        ${sacramentsAvailabilityState.timezone ? `
+          <div class="sac-admin-rule-window-form">
+            <input type="hidden" id="sacAvailNewType" value="${escapeAttr(type)}" />
+            <input type="hidden" id="sacAvailNewDay" value="${dayOfWeek}" />
+            <label><span>Starts</span><input type="time" id="sacAvailNewStart" value="16:00" /></label>
+            <label><span>Ends</span><input type="time" id="sacAvailNewEnd" value="18:00" /></label>
+            <label><span>Appointment length</span><select id="sacAvailNewSlotMinutes">
+              <option value="15">15 minutes</option>
+              <option value="30" selected>30 minutes</option>
+              <option value="45">45 minutes</option>
+              <option value="60">60 minutes</option>
+              <option value="90">90 minutes</option>
+            </select></label>
+            <button class="sac-admin-outline-btn" type="button" onclick="addSacramentsAvailabilityRule(this)">Add window</button>
+            <span id="sacAvailRuleStatus" class="sac-admin-status-text" aria-live="polite"></span>
+          </div>` : `
+          <div class="sac-admin-rule-timezone">
+            <p class="sac-admin-muted">Set the parish timezone before publishing this window.</p>
+            ${renderSacramentsTimezoneForm()}
+          </div>`}
       </div>`;
   }
 
@@ -6213,8 +6247,6 @@
     }).join('');
   }
   function presetOptions(presets) { return Object.entries(presets).map(([k,v])=>`<option value="${k}">${escapeHtml(v.name)}</option>`).join(''); }
-  function syncGivingOptionEditors() { const f=document.getElementById('fundsJson'); const c=document.getElementById('campaignsJson'); if(f) f.value=JSON.stringify(editableFunds,null,2); if(c) c.value=JSON.stringify(editableCampaigns,null,2); }
-  function syncGivingOptionsFromAdvanced() { const f=document.getElementById('fundsJson'); const c=document.getElementById('campaignsJson'); if(f) editableFunds=JSON.parse(f.value||'[]'); if(c) editableCampaigns=JSON.parse(c.value||'[]'); }
   function fillGivingPreset(kind) { const presets=kind==='fund'?fundPresets:campaignPresets; const prefix=kind==='fund'?'fund':'campaign'; const preset=presets[document.getElementById(`${prefix}Preset`)?.value]; if(!preset) return; document.getElementById(`${prefix}Name`).value=preset.name; document.getElementById(`${prefix}Description`).value=preset.description; const restriction=document.getElementById(`${prefix}Restriction`); if(restriction&&preset.restrictionType) restriction.value=preset.restrictionType; }
   function parseDollarsToCents(value) {
     const amount = Number(String(value || '').replace(/[^0-9.]/g, ''));
@@ -6261,17 +6293,17 @@
       const restrictionType = row.item.restrictionType || (row.kind === 'campaign' ? 'donor_restricted_temporary' : 'unrestricted');
       return `<div class="options-progress-row">
         <span>${escapeHtml(row.label)}</span>
-        <div class="option-summary-identity">
-          <div class="option-summary-title">
-            <strong>${escapeHtml(row.item.name || row.item.campaignName || row.item.id || 'Giving option')}</strong>
-            ${isEditableFund ? `<button class="btn btn-ghost btn-sm" type="button" onclick="editGivingOption('fund',${row.index})">${isEditing ? 'Close' : 'Edit'}</button>` : ''}
-          </div>
+          <div class="option-summary-identity">
+            <div class="option-summary-title">
+              <strong>${escapeHtml(row.item.name || row.item.campaignName || row.item.id || 'Giving option')}</strong>
+            </div>
           ${row.item.description ? `<small class="option-summary-description">${escapeHtml(row.item.description)}</small>` : ''}
           <small>${escapeHtml(row.item.accountNumber || 'Number assigned when saved')} · ${escapeHtml(restrictionLabel(restrictionType))}</small>
         </div>
         <span>${moneyFull(progress.raisedCents)} raised</span>
         <span>${row.kind === 'campaign' && progress.goalCents ? `Goal ${moneyFull(progress.goalCents)}` : ''}</span>
         <div>${progressMarkup(progress.raisedCents, progress.goalCents)}</div>
+        <div class="options-summary-action">${isEditableFund ? `<button class="btn btn-ghost btn-sm" type="button" onclick="editGivingOption('fund',${row.index})">${isEditing ? 'Close' : 'Edit'}</button>` : ''}</div>
         ${isEditing ? `
           <form class="option-edit-form options-summary-edit" onsubmit="updateGivingOption(event,'fund',${row.index})">
             <label>Name<input name="name" maxlength="120" required value="${escapeAttr(row.item.name || '')}" /></label>
@@ -6654,8 +6686,64 @@
       .map(feast => ({ id:feast.id, name:feast.name, displayDate:feast.displayDate, sourceDate:feast.sourceDate }));
   }
   function feastDateLabel(feast) { return feast.displayDate || feast.date || ''; }
+  function patronalFeastCampaignChoice(cal) {
+    const saved = editableFeastCampaigns.find((campaign) => campaign?.patronal);
+    const id = currentParish?.patronalFeast || saved?.id || '';
+    const name = currentParish?.patronalFeastName || saved?.name || '';
+    const feastDate = currentParish?.patronalFeastDate || saved?.feastDate || '';
+    if (!id || !name) return null;
+    const monthDay = patronalMonthDay(feastDate);
+    const displayDate = monthDay.month && monthDay.day
+      ? new Date(2024, monthDay.month - 1, monthDay.day).toLocaleDateString('en-US', { month:'short', day:'numeric' })
+      : 'Date set in parish settings';
+    return { id, name, displayDate, feastDate: feastDate.slice(-5), patronal:true, calendar:cal };
+  }
+  function feastCampaignChoices(cal) {
+    const feasts = feastPresetsForCalendar(cal);
+    const patronal = patronalFeastCampaignChoice(cal);
+    if (!patronal) return feasts;
+    const existingIndex = feasts.findIndex((feast) => feast.id === patronal.id);
+    if (existingIndex >= 0) {
+      feasts[existingIndex] = { ...feasts[existingIndex], patronal:true, feastDate:patronal.feastDate };
+      return feasts;
+    }
+    return [...feasts, patronal];
+  }
   function isFeastEnabled(id) { return editableFeastCampaigns.some(f=>f.id===id&&f.enabled!==false); }
-  function toggleFeastCampaign(id,checked) { const cal=document.getElementById('feastLiturgicalCalendar')?.value||currentParish?.liturgicalCalendar||'julian'; const feast=feastPresetsForCalendar(cal).find(f=>f.id===id); if(!feast) return; editableFeastCampaigns=editableFeastCampaigns.filter(f=>f.id!==id); if(checked) editableFeastCampaigns.push({id:feast.id,name:feast.name,enabled:true,campaignName:`${feast.name} Alms Campaign`,description:`Parish-approved alms connected to ${feast.name}.`}); renderGivingOptionsEditor(); setStatus(checked?`${feast.name} enabled. Save when ready.`:`${feast.name} disabled. Save when ready.`,'success'); }
+  function toggleFeastCampaign(id,checked) {
+    const cal=document.getElementById('feastLiturgicalCalendar')?.value||currentParish?.liturgicalCalendar||'julian';
+    const feast=feastCampaignChoices(cal).find(f=>f.id===id);
+    if(!feast) return;
+    editableFeastCampaigns=editableFeastCampaigns.filter(f=>f.id!==id);
+    if(checked) editableFeastCampaigns.push({
+      id:feast.id,
+      name:feast.name,
+      enabled:true,
+      campaignName:`${feast.name} Alms Campaign`,
+      description:`Parish-approved alms connected to ${feast.name}.`,
+      destinationFundId:'benevolence-fund',
+      ...(feast.patronal ? { patronal:true, feastDate:feast.feastDate } : {})
+    });
+    renderGivingOptionsEditor();
+    setStatus(checked?`${feast.name} enabled. Save when ready.`:`${feast.name} disabled. Save when ready.`,'success');
+  }
+  function feastDestinationFundOptions(selectedId) {
+    const selected = selectedId || 'benevolence-fund';
+    return editableFunds
+      .filter((fund) => fund && fund.enabled !== false)
+      .map((fund) => {
+        const id = String(fund.id || fund.code || fund.name || '');
+        const name = String(fund.name || fund.id || 'Designated fund');
+        return `<option value="${escapeHtml(id)}" ${id===selected?'selected':''}>${escapeHtml(name)}</option>`;
+      }).join('');
+  }
+  function updateFeastCampaignFund(feastId, destinationFundId) {
+    const campaign = editableFeastCampaigns.find((item) => item.id === feastId);
+    if (!campaign) return;
+    campaign.destinationFundId = destinationFundId || 'benevolence-fund';
+    const fund = editableFunds.find((item) => [item?.id,item?.code,item?.name].filter(Boolean).map(String).includes(campaign.destinationFundId));
+    setStatus(`${campaign.name || 'Feast'} gifts will go to ${fund?.name || 'Benevolence Fund'}. Save when ready.`, 'success');
+  }
   function allFeastPresets() {
     const cal = document.getElementById('settingsLiturgicalCalendar')?.value || currentParish?.liturgicalCalendar || 'julian';
     return feastPresetsForCalendar(cal);
@@ -6713,10 +6801,11 @@
     const existing = editableFeastCampaigns.find(item => item.id === patronalFeastId);
     if (existing) {
       existing.name = customName || feast.name;
-      existing.enabled = true;
+      if (existing.enabled == null) existing.enabled = true;
       if (customDate) existing.feastDate = customDate.slice(-5);
       if (!existing.campaignName) existing.campaignName = `${feast.name} Patronal Feast Campaign`;
       if (!existing.description) existing.description = `Parish-approved alms connected to ${feast.name}.`;
+      if (!existing.destinationFundId) existing.destinationFundId = 'benevolence-fund';
       existing.patronal = true;
       return;
     }
@@ -6727,13 +6816,14 @@
       patronal: true,
       ...(customDate ? { feastDate: customDate.slice(-5) } : {}),
       campaignName: `${feast.name} Patronal Feast Campaign`,
-      description: `Parish-approved alms connected to ${feast.name}.`
+      description: `Parish-approved alms connected to ${feast.name}.`,
+      destinationFundId: 'benevolence-fund'
     });
   }
   function renderFeastCampaignSetup() {
     const cal=document.getElementById('feastLiturgicalCalendar')?.value||currentParish?.liturgicalCalendar||'julian';
-    const feasts=feastPresetsForCalendar(cal);
-    return `<div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Major feast alms campaigns</h3><span class="option-group-count">${editableFeastCampaigns.filter(f=>f.enabled!==false).length} enabled</span></div><div class="option-builder"><div class="option-builder-title">Calendar timing</div><div class="builder-grid"><select id="feastLiturgicalCalendar" onchange="renderGivingOptionsEditor()"><option value="julian" ${cal==='julian'?'selected':''}>Julian</option><option value="gregorian" ${cal==='gregorian'?'selected':''}>Revised-Julian</option></select><p class="section-note" style="margin:0;">AGAPAY computes fixed feasts from this calendar and keeps Pascha-based feasts on the shared Orthodox paschalion.</p></div></div><div class="option-list"><div class="feast-grid">${feasts.map(feast=>{const enabled=isFeastEnabled(feast.id);return `<div class="feast-card ${enabled?'enabled':''}"><div><div class="feast-name">${escapeHtml(feast.name)}</div><div class="feast-meta">${escapeHtml(calendarLabel(cal))} · ${escapeHtml(feastDateLabel(feast))}</div></div><label class="mini-toggle" aria-label="Toggle ${escapeHtml(feast.name)}"><input type="checkbox" ${enabled?'checked':''} onchange="toggleFeastCampaign('${escapeHtml(feast.id)}',this.checked)"/><span></span></label></div>`;}).join('')}</div></div></div>`;
+    const feasts=feastCampaignChoices(cal);
+    return `<div class="option-group"><div class="option-group-head"><div><h3 class="option-group-title">Major feast alms campaigns</h3><p class="section-note" style="margin:.25rem 0 0;">Each feast defaults to Benevolence Fund. Choose General Operating or another designated fund when appropriate.</p></div><span class="option-group-count">${editableFeastCampaigns.filter(f=>f.enabled!==false).length} enabled</span></div><div class="option-builder"><div class="option-builder-title">Calendar timing</div><div class="builder-grid"><select id="feastLiturgicalCalendar" onchange="renderGivingOptionsEditor()"><option value="julian" ${cal==='julian'?'selected':''}>Julian</option><option value="gregorian" ${cal==='gregorian'?'selected':''}>Revised-Julian</option></select><p class="section-note" style="margin:0;">AGAPAY computes fixed feasts from this calendar and keeps Pascha-based feasts on the shared Orthodox paschalion. The parish feast day comes from Parish Settings.</p></div></div><div class="option-list"><div class="feast-grid">${feasts.map(feast=>{const campaign=editableFeastCampaigns.find(item=>item.id===feast.id);const enabled=campaign&&campaign.enabled!==false;const destinationFundId=campaign?.destinationFundId||'benevolence-fund';return `<div class="feast-card ${enabled?'enabled':''}"><div><div class="feast-name">${escapeHtml(feast.name)}${feast.patronal?'<span class="feast-patronal-badge">Parish feast day</span>':''}</div><div class="feast-meta">${escapeHtml(calendarLabel(cal))} · ${escapeHtml(feastDateLabel(feast))}</div></div><label class="mini-toggle" aria-label="Toggle ${escapeHtml(feast.name)}"><input type="checkbox" ${enabled?'checked':''} onchange="toggleFeastCampaign('${escapeHtml(feast.id)}',this.checked)"/><span></span></label>${enabled?`<label class="feast-fund-select"><span>Gift destination</span><select onchange="updateFeastCampaignFund('${escapeHtml(feast.id)}',this.value)">${feastDestinationFundOptions(destinationFundId)}</select></label>`:''}</div>`;}).join('')}</div></div></div>`;
   }
 
   // ── LOAD DASHBOARD ────────────────────────────────────────
@@ -7115,7 +7205,17 @@
 
     editableFunds          = fallbackFundsArray(p.funds);
     editableCampaigns      = fallbackCampaignsArray(p.campaigns);
-    editableFeastCampaigns = Array.isArray(p.feastCampaigns) ? p.feastCampaigns : [];
+    editableFeastCampaigns = Array.isArray(p.feastCampaigns)
+      ? p.feastCampaigns.map((campaign) => ({ ...campaign, destinationFundId: campaign.destinationFundId || 'benevolence-fund' }))
+      : [];
+    if (p.patronalFeast && (p.patronalFeastName || p.parishPatronalFeastName)) {
+      upsertPatronalFeastCampaign(
+        p.patronalFeast,
+        p.liturgicalCalendar || 'julian',
+        p.patronalFeastName || p.parishPatronalFeastName,
+        p.patronalFeastDate || p.parishPatronalFeastDate || ''
+      );
+    }
     if (activeTab === 'options') renderGivingOptionsEditor();
     if (activeTab === 'campaigns') renderCampaignList(p);
     if (activeTab === 'qr') renderBulletinPreview();
@@ -7129,9 +7229,7 @@
       <div class="giving-options-intro">These are the choices donors see after selecting <strong>Designated Fund</strong> or <strong>Alms Campaign</strong>. Add presets or write your own.</div>
       <div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Alms campaigns</h3><span class="option-group-count">${editableCampaigns.length} shown</span></div><div class="option-list">${optionCards(editableCampaigns,'campaign','No alms campaigns configured yet.')}</div><div class="option-builder"><div class="option-builder-title">Add an alms campaign</div><div class="builder-grid"><select id="campaignPreset" onchange="fillGivingPreset('campaign')"><option value="">Choose a preset...</option>${presetOptions(campaignPresets)}</select><input id="campaignAccountNumber" maxlength="24" placeholder="Account number, e.g. 2200" /><input id="campaignName" placeholder="Campaign name, e.g. Support for the Petrov Family" /><select id="campaignRestriction"><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option><option value="board_designated">Board designated</option><option value="unrestricted">Unrestricted</option></select><textarea id="campaignDescription" placeholder="Describe the need in plain language."></textarea><input id="campaignGoal" type="number" min="0" step="1" placeholder="Goal amount, e.g. 45000" /><button class="btn btn-ghost" onclick="addGivingOption('campaign')">Add campaign</button></div></div></div>
       ${renderFeastCampaignSetup()}
-      <details class="advanced-editor"><summary>Advanced edit (JSON)</summary><div class="editor-label-row"><label for="fundsJson">Designated funds</label><span class="editor-hint">Each item needs id, name, description</span></div><textarea id="fundsJson" spellcheck="false" onchange="syncGivingOptionsFromAdvanced()">${JSON.stringify(editableFunds,null,2)}</textarea><div style="height:0.9rem;"></div><div class="editor-label-row"><label for="campaignsJson">Alms campaigns</label><span class="editor-hint">Each item needs id, name, description</span></div><textarea id="campaignsJson" spellcheck="false" onchange="syncGivingOptionsFromAdvanced()">${JSON.stringify(editableCampaigns,null,2)}</textarea></details>
       <div class="btn-row"><button class="btn btn-gold" onclick="saveDashboard(this)">Save giving options</button><button class="btn btn-ghost" onclick="loadDashboard()">Discard changes</button></div>`;
-    syncGivingOptionEditors();
   }
 
   async function uploadParishLogo(btn) {
@@ -8022,7 +8120,6 @@
 
   // ── SAVE DASHBOARD ────────────────────────────────────────
   function payload() {
-    syncGivingOptionsFromAdvanced();
     const newPw = document.getElementById('newDashboardPassword')?.value.trim() || '';
     const conPw = document.getElementById('confirmDashboardPassword')?.value.trim() || '';
     if (newPw || conPw) { if (newPw.length < 8) throw new Error('Password must be at least 8 characters.'); if (newPw !== conPw) throw new Error('Passwords do not match.'); }

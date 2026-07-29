@@ -116,6 +116,12 @@ assert.match(css, /\.sw-outside-giving-panel/);
 assert.match(css, /\.sw-fin-derived-grid/);
 assert.match(stewardshipCss, /\.sw-fin-asset-row-edit/);
 assert.match(stewardshipCss, /\.sw-fin-restricted-adjustment-row/);
-assert.match(stewardshipCss, /\.sw-report-button-stack/);
+assert.match(stewardshipCss, /\.sw-report-card-header/);
+assert.match(dashboard, /sw-report-card-header[\s\S]*openStewardshipMonthlyFinancialReport\(\)[\s\S]*sw-financials-secondary-actions/);
+assert.ok(
+  dashboard.indexOf('openFinancialsEditor()') < dashboard.indexOf('id="financialsYearSelect"')
+    && dashboard.indexOf('id="financialsYearSelect"') < dashboard.indexOf('openOutsideAgapayGiving()'),
+  'Financial snapshot secondary controls should appear below the report action in edit, year, outside-AGAPAY order'
+);
 
 console.log("PASS - outside giving classification and authoritative fiscal-year snapshot lifecycle");

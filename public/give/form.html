@@ -502,7 +502,7 @@ body {
         placeholder="Optional note or intention"
         aria-label="Festal alms note"
       />
-      <p class="contextual-hint">Festal Alms are routed to the parish Benevolence Fund for the poor and needy. Feast campaigns appear from the beginning of their prescribed fast through one week after the feast; other feasts appear one week before through one week after.</p>
+      <p class="contextual-hint">Festal Alms are routed to the fund selected by the parish for that feast campaign. Feast campaigns appear from the beginning of their prescribed fast through one week after the feast; other feasts appear one week before through one week after.</p>
     </div>
 
     <!-- IN MEMORIAM -->
@@ -952,6 +952,15 @@ body {
       updateSummary();
     }
 
+    function selectFestalCampaign(label, index) {
+      document.querySelectorAll('#currentFestalCampaign .fund-option').forEach(option => option.classList.remove('selected'));
+      label.classList.add('selected');
+      const input = label.querySelector('input[name="festalCampaign"]');
+      if (input) input.checked = true;
+      selectedFestalCampaign = currentParish.feastCampaigns?.[index] || null;
+      updateSummary();
+    }
+
     function parishSlugFromPath() {
       const params = new URLSearchParams(window.location.search);
       if (params.get('parish')) return params.get('parish');
@@ -1022,10 +1031,10 @@ body {
       const target = document.getElementById('currentFestalCampaign');
       const card = document.getElementById('festalAlmsCard');
       if (!target) return;
-      const campaign = Array.isArray(parish?.feastCampaigns) ? parish.feastCampaigns[0] : null;
-      selectedFestalCampaign = campaign;
-      if (card) card.hidden = !campaign;
-      if (!campaign) {
+      const campaigns = Array.isArray(parish?.feastCampaigns) ? parish.feastCampaigns : [];
+      selectedFestalCampaign = campaigns[0] || null;
+      if (card) card.hidden = !campaigns.length;
+      if (!campaigns.length) {
         target.innerHTML = `
           <div class="fund-option selected">
             <div class="fund-info">
@@ -1035,15 +1044,23 @@ body {
           </div>`;
         return;
       }
-      const label = campaignLabel(campaign);
-      const description = campaign.description || `Parish-approved alms connected to ${label}.`;
-      target.innerHTML = `
-        <div class="fund-option selected">
+      target.innerHTML = campaigns.map((campaign, index) => {
+        const label = campaignLabel(campaign);
+        const description = campaign.description || `Parish-approved alms connected to ${label}.`;
+        const destinationId = campaign.destinationFundId || 'benevolence-fund';
+        const destination = (Array.isArray(parish?.funds) ? parish.funds : []).find((fund) =>
+          [fund?.id, fund?.code, fund?.name].filter(Boolean).map(String).includes(String(destinationId))
+        );
+        return `
+        <div class="fund-option ${index === 0 ? 'selected' : ''}" onclick="selectFestalCampaign(this,${index})">
+          <input type="radio" name="festalCampaign" value="${escapeHtml(campaign.id || campaign.feastId || label)}" ${index === 0 ? 'checked' : ''} />
+          <div class="fund-radio"><div class="fund-radio-dot"></div></div>
           <div class="fund-info">
-            <div class="fund-name">${escapeHtml(label)}</div>
-            <div class="fund-desc">${escapeHtml(description)}</div>
+            <div class="fund-name">${escapeHtml(label)}${campaign.patronal ? ' · Parish feast day' : ''}</div>
+            <div class="fund-desc">${escapeHtml(description)} Gifts go to ${escapeHtml(destination?.name || 'Benevolence Fund')}.</div>
           </div>
         </div>`;
+      }).join('');
     }
 
     function campaignLabel(campaign) {
@@ -1460,6 +1477,12 @@ body {
       submitBtn.textContent = 'Preparing secure checkout...';
 
       try {
+        const festalDestinationId = selectedFestalCampaign?.destinationFundId || 'benevolence-fund';
+        const festalDestination = selectedType === 'feast'
+          ? (Array.isArray(currentParish?.funds) ? currentParish.funds : []).find((fund) =>
+            [fund?.id, fund?.code, fund?.name].filter(Boolean).map(String).includes(String(festalDestinationId))
+          )
+          : null;
         const response = await fetch('/api/create-checkout-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -1468,15 +1491,14 @@ body {
             giftType: selectedType,
             amount: selectedAmount,
             frequency: selectedFreq,
-            fund: selectedType === 'feast' ? 'Benevolence Fund' : selectedType === 'funds' ? selectedFund : '',
-            fundId: selectedType === 'feast' ? 'benevolence-fund' : '',
+            fund: selectedType === 'feast' ? (festalDestination?.name || 'Benevolence Fund') : selectedType === 'funds' ? selectedFund : '',
+            fundId: selectedType === 'feast' ? (festalDestination?.id || festalDestination?.code || 'benevolence-fund') : '',
             feastDescription: document.getElementById('feastDescription').value.trim(),
             inMemoriam: document.getElementById('inMemoriam').value.trim(),
-            campaign: selectedType === 'campaign'
-              ? selectedCampaign
-              : selectedType === 'feast'
-                ? (selectedFestalCampaign?.id || selectedFestalCampaign?.feastId || selectedFestalCampaign?.name || '')
-                : '',
+            campaign: selectedType === 'campaign' ? selectedCampaign : selectedType === 'feast' ? campaignLabel(selectedFestalCampaign) : '',
+            campaignId: selectedType === 'feast'
+              ? (selectedFestalCampaign?.id || selectedFestalCampaign?.feastId || selectedFestalCampaign?.name || '')
+              : '',
             campaignDescription: selectedType === 'feast'
               ? campaignLabel(selectedFestalCampaign)
               : document.getElementById('campaignDescription').value.trim(),

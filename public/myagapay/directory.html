@@ -43,7 +43,7 @@
     :focus-visible { outline:2px solid var(--gold-deep); outline-offset:2px; border-radius:4px; }
 
     /* Layout shell */
-    .directory-main { padding:32px 34px 60px; display:flex; flex-direction:column; max-width:1180px; margin:0 auto; width:100%; }
+    .directory-main { padding:32px 34px 60px; display:flex; flex-direction:column; max-width:none; min-width:0; margin:0; width:100%; }
 
     /* Hero */
     .directory-top { display:flex; justify-content:space-between; gap:16px; align-items:center; margin-bottom:26px; }
@@ -954,7 +954,7 @@
           <article class="panel household-hub" data-wizard-container="2" data-mobile-section="household family setup photos">
             <div class="panel-header"><div class="panel-header-row"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21v-2a4 4 0 0 1 4-4h1a4 4 0 0 1 4 4v2"/><circle cx="8.5" cy="8" r="3"/><path d="M15 21v-1.5a3.5 3.5 0 0 0-2.5-3.36"/><circle cx="17" cy="7.5" r="2.5"/></svg></span><div><div class="panel-kicker">Directory</div><h2>Family</h2><p class="panel-intro">Keep your family in one place: your spouse, children, family name, photo, and namedays.</p></div></div></div>
 
-            <div class="household-hub-identity" data-wizard-step="0">
+            <div class="household-hub-identity" data-wizard-step="2">
               <div class="household-hub-photo" hidden>
                 <div class="summary-list" id="householdPhotoSummary"></div>
                 <form class="household-hub-photo-form" id="householdPhotoForm" hidden>
@@ -966,7 +966,8 @@
               <div class="household-hub-name">
                 <div class="household-list" id="householdList"></div>
                 <form class="household-hub-name-form" id="householdDetailsForm" hidden>
-                  <label>Family name<input name="displayName" maxlength="200" placeholder="The Dunne Family" required /></label>
+                  <label>Family name<input name="displayName" maxlength="200" autocomplete="organization" placeholder="The Dunne Family" aria-describedby="familyNameHelp" required /></label>
+                  <p class="household-hub-namedays-note" id="familyNameHelp">This is the family name shown on your household entry, such as “The Dunne Family.”</p>
                   <label>City<input name="city" maxlength="120" placeholder="Wheaton" required /></label>
                   <label>State / Province<input name="region" maxlength="120" placeholder="Illinois" required /></label>
                   <label class="visibility-field">Location sharing<select name="locationVisibility"><option value="directory_members">Show city and state to directory members</option><option value="staff">Parish staff only</option><option value="household">Family only</option><option value="private">Keep private</option></select></label>

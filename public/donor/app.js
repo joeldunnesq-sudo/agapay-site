@@ -155,6 +155,14 @@ function writeDonorCache(name, data) {
   }
 }
 
+function clearDonorCache(name) {
+  try {
+    localStorage.removeItem(donorCacheKey(name));
+  } catch {
+    // Cache cleanup must never block the live dashboard.
+  }
+}
+
 function money(cents) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format((Number(cents) || 0) / 100);
 }
@@ -450,8 +458,8 @@ const donorGiftTypeCopy = {
     eyebrow: "Quick Festal Alms",
     title: "Mark the feast with alms.",
     detailsTitle: "Festal Alms Offering",
-    intro: "Make an alms offering tied to the Church calendar and routed to the parish Benevolence Fund.",
-    context: "Your gift will be routed to the parish Benevolence Fund for the poor and needy."
+    intro: "Make an alms offering tied to the Church calendar and the parish's chosen destination fund.",
+    context: "Your parish chooses the fund that receives gifts for each Major Feast Alms campaign."
   }
 };
 
@@ -559,6 +567,14 @@ function activeParishCampaigns(parish) {
   });
 }
 
+function activeParishFeastCampaigns(parish) {
+  const campaigns = Array.isArray(parish?.feastCampaigns) ? parish.feastCampaigns : [];
+  return campaigns.filter((campaign) => {
+    const status = String(campaign?.status || (campaign?.enabled === false ? "hidden" : "active")).toLowerCase();
+    return campaign && !["hidden", "paused", "cancelled", "ended", "inactive"].includes(status);
+  });
+}
+
 function selectedPublicParish() {
   const selected = document.getElementById("parish")?.value || "";
   return (window.agapayPublicParishes || []).find((parish) => parish.id === selected) || null;
@@ -590,7 +606,11 @@ function campaignImageUrl(campaign) {
 function selectedCampaign() {
   const selected = document.getElementById("campaign")?.value || "";
   if (!selected) return null;
-  return activeParishCampaigns(selectedPublicParish()).find((campaign) => {
+  const giftType = normalizeDonorGiftType(document.getElementById("giftType")?.value);
+  const campaigns = giftType === "feast"
+    ? activeParishFeastCampaigns(selectedPublicParish())
+    : activeParishCampaigns(selectedPublicParish());
+  return campaigns.find((campaign) => {
     const keys = [campaign.id, campaign.feastId, campaign.name, campaign.campaignName].filter(Boolean).map(String);
     return keys.includes(selected);
   }) || null;
@@ -611,9 +631,10 @@ function populateGiftOptionFields() {
   const campaignSelect = document.getElementById("campaign");
   if (campaignSelect) {
     const current = campaignSelect.value;
-    const campaigns = activeParishCampaigns(parish);
+    const giftType = normalizeDonorGiftType(document.getElementById("giftType")?.value);
+    const campaigns = giftType === "feast" ? activeParishFeastCampaigns(parish) : activeParishCampaigns(parish);
     campaignSelect.innerHTML = campaigns.length
-      ? campaigns.map((campaign) => `<option value="${escapeHtml(campaign.id || campaign.feastId || campaign.name || campaign.campaignName)}">${escapeHtml(campaignLabel(campaign))}</option>`).join("")
+      ? campaigns.map((campaign) => `<option value="${escapeHtml(campaign.id || campaign.feastId || campaign.name || campaign.campaignName)}">${escapeHtml(campaignLabel(campaign))}${campaign.patronal ? " · Parish feast day" : ""}</option>`).join("")
       : '<option value="">No active campaigns</option>';
     if (current && Array.from(campaignSelect.options).some((option) => option.value === current)) campaignSelect.value = current;
   }
@@ -1315,8 +1336,8 @@ function toggleGiftDetailFields() {
   if (candleFields) candleFields.hidden = giftType !== "candles";
   if (commemorationFields) commemorationFields.hidden = giftType !== "commemoration";
   if (fundFields) fundFields.hidden = giftType !== "fund";
-  if (campaignFields) campaignFields.hidden = giftType !== "campaign";
-  renderCampaignChoicePreview(giftType === "campaign" ? selectedCampaign() : null);
+  if (campaignFields) campaignFields.hidden = !["campaign", "feast"].includes(giftType);
+  renderCampaignChoicePreview(["campaign", "feast"].includes(giftType) ? selectedCampaign() : null);
 }
 
 async function loginFromDashboard() {
@@ -1805,7 +1826,7 @@ function renderMyAgapayDashboard(data) {
   `).join("");
 }
 
-function renderDonorDashboardPayload(data) {
+function renderDonorDashboardPayload(data, { renderPledge = true } = {}) {
   if (!data) return;
   setDonorProfile(data.donor);
   const summary = data.summary || {};
@@ -1826,7 +1847,7 @@ function renderDonorDashboardPayload(data) {
   setText("desktopParishName", parish?.name || "Choose a church in Settings to personalize your dashboard.");
   renderRecurringHomeCard(summary);
 
-  renderPledgeTracker(data.donor, summary);
+  if (renderPledge) renderPledgeTracker(data.donor, summary);
   updateQuickGiveLinks(parish);
   renderActiveCampaigns(parish);
   renderNextFeast(parish);
@@ -1868,7 +1889,9 @@ async function loadDonorDashboardPage() {
     return;
   }
   const cachedDashboard = readDonorCache("dashboard");
-  if (cachedDashboard) renderDonorDashboardPayload(cachedDashboard);
+  // Cached content can paint the nonfinancial shell instantly, but pledge
+  // progress must always wait for current giving data from the API.
+  if (cachedDashboard) renderDonorDashboardPayload(cachedDashboard, { renderPledge: false });
   try {
     const data = await donorApi("/api/donor/dashboard");
     cacheDonorDashboardPayload(data);
@@ -1881,6 +1904,11 @@ async function loadDonorDashboardPage() {
       showGuestDonorDashboard();
       return;
     }
+    clearDonorCache("dashboard");
+    ["pledgeTrackerCard", "desktopPledgeTracker"].forEach((id) => {
+      const card = document.getElementById(id);
+      if (card) card.hidden = true;
+    });
     setDonorStatus(err.message, "error");
   }
 }
@@ -2792,10 +2820,17 @@ async function startDonorCheckout(event) {
   const [firstName, ...rest] = name.split(/\s+/);
   const giftType = document.getElementById("giftType")?.value;
   const normalizedGiftType = normalizeDonorGiftType(giftType);
-  const selectedFund = (window.agapayPublicParishes || [])
-    .find((parish) => parish.id === document.getElementById("parish")?.value)
+  const parish = (window.agapayPublicParishes || [])
+    .find((item) => item.id === document.getElementById("parish")?.value);
+  const selectedFund = parish
     ?.funds?.find((fund) => [fund.id, fund.name].filter(Boolean).map(String).includes(document.getElementById("fund")?.value));
   const campaign = selectedCampaign();
+  const feastDestinationId = campaign?.destinationFundId || "benevolence-fund";
+  const feastDestinationFund = normalizedGiftType === "feast"
+    ? (Array.isArray(parish?.funds) ? parish.funds : []).find((fund) =>
+      [fund?.id, fund?.code, fund?.name].filter(Boolean).map(String).includes(String(feastDestinationId))
+    )
+    : null;
   const livingNames = normalizedGiftType === "candles"
     ? document.getElementById("candleLivingNames")?.value || ""
     : normalizedGiftType === "commemoration"
@@ -2834,11 +2869,11 @@ async function startDonorCheckout(event) {
         firstName: firstName || "AGAPAY",
         lastName: rest.join(" "),
         email: session.email,
-        fund: normalizedGiftType === "feast" ? "Benevolence Fund" : normalizedGiftType === "fund" ? (selectedFund?.name || document.getElementById("fund")?.value || "") : "",
-        fundId: normalizedGiftType === "feast" ? "benevolence-fund" : normalizedGiftType === "fund" ? (selectedFund?.id || document.getElementById("fund")?.value || "") : "",
-        campaign: normalizedGiftType === "campaign" ? campaignLabel(campaign) : "",
-        campaignId: normalizedGiftType === "campaign" ? (campaign?.id || campaign?.feastId || document.getElementById("campaign")?.value || "") : "",
-        campaignDescription: normalizedGiftType === "campaign" ? campaign?.description || "" : "",
+        fund: normalizedGiftType === "feast" ? (feastDestinationFund?.name || "Benevolence Fund") : normalizedGiftType === "fund" ? (selectedFund?.name || document.getElementById("fund")?.value || "") : "",
+        fundId: normalizedGiftType === "feast" ? (feastDestinationFund?.id || feastDestinationFund?.code || "benevolence-fund") : normalizedGiftType === "fund" ? (selectedFund?.id || document.getElementById("fund")?.value || "") : "",
+        campaign: ["campaign", "feast"].includes(normalizedGiftType) ? campaignLabel(campaign) : "",
+        campaignId: ["campaign", "feast"].includes(normalizedGiftType) ? (campaign?.id || campaign?.feastId || document.getElementById("campaign")?.value || "") : "",
+        campaignDescription: ["campaign", "feast"].includes(normalizedGiftType) ? campaign?.description || "" : "",
         namesLiving: livingNames,
         namesDeparted: departedNames,
         inMemoriam: intentionNote,

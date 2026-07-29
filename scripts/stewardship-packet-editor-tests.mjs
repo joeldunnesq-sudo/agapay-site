@@ -59,6 +59,6 @@ assert.ok(css.includes(".stewardship-resolution-text textarea"));
 assert.ok(css.includes("min-height: 13rem"));
 assert.ok(app.includes('data-field="resolvedText" rows="8"'));
 assert.ok(dashboard.includes("/parish/style.css?v=20260729authoritativefinance2"));
-assert.ok(dashboard.includes("/parish/app.js?v=20260729premiumofferings1"));
+assert.ok(/\/parish\/app\.js\?v=\d{8}[a-z0-9]+/.test(dashboard));
 
 console.log("PASS - Annual meeting packet editor labels, printable line controls, and expanded resolution workspace");

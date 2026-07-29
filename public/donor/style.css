@@ -6872,3 +6872,68 @@ body.donor-home {
     border-radius: 18px 18px 0 0;
   }
 }
+
+/* Keep every My AGAPAY screen contained by the viewport. Wide data regions
+   retain their own horizontal scrolling without moving the whole page. */
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.app,
+.content,
+.page,
+.donor-phone-stage,
+.donor-phone,
+.donor-mobile-content,
+.donor-desktop-home,
+.my-agapay-home {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.content > *,
+.page > *,
+.donor-phone > *,
+.my-agapay-home > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.layout-main,
+.cal-page .cal-hero,
+.cal-page .cal-saint-strip {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.cal-page .cal-hero,
+.cal-page .cal-saint-strip {
+  width: 100%;
+}
+
+.donor-mobile-page .page,
+.donor-home .donor-desktop-home {
+  width: 100%;
+  max-width: none;
+}
+
+img,
+svg,
+video,
+canvas,
+iframe,
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
+@supports not (overflow: clip) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+}
