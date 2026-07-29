@@ -16,7 +16,7 @@ if ("serviceWorker" in navigator) {
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css?v=20260704c" />
   <script src="/security.js"></script>
-  <script src="/myagapay-shell.js?v=20260717a" defer></script>
+  <script src="/myagapay-shell.js?v=20260729b" defer></script>
   <script src="/donor/app.js?v=20260712a" defer></script>
 <script src="/donor/pwa-install.js" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
@@ -77,10 +77,8 @@ if ("serviceWorker" in navigator) {
         <div class="topbar-actions">
           <a class="btn btn-gold btn-sm donor-home-quick-action" href="/myagapay/giving/give">Quick Action</a>
           <div class="donor-home-account-menu" data-donor-account-menu data-auth-required hidden>
-            <button class="donor-home-account-chip" type="button" data-donor-account-toggle aria-haspopup="true" aria-expanded="false">
-              <span class="donor-home-mini-avatar">FM</span>
-              <span><strong id="donorHomeTopbarName">Faithful Member</strong><small>View Account</small></span>
-              <span class="donor-home-account-caret" aria-hidden="true">⌄</span>
+            <button class="donor-home-account-chip myagapay-menu-trigger" type="button" data-donor-account-toggle aria-haspopup="true" aria-expanded="false" aria-label="Open My AGAPAY menu">
+              <span class="myagapay-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span>
             </button>
             <div class="donor-home-account-dropdown" role="menu" hidden>
               <a href="/myagapay/giving/history" role="menuitem">History</a>

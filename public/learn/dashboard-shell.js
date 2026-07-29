@@ -694,13 +694,8 @@ function topbar(vm) {
         <button class="learn-quick-action learn-feedback-action" type="button" data-learn-feedback-open>Suggest</button>
         <a class="learn-quick-action" href="${learnSectionHref("onboarding", "simple=1")}">Quick Setup</a>
         <div class="learn-account-menu" data-learn-account-menu>
-          <button class="learn-account-utility" type="button" data-learn-account-toggle aria-haspopup="true" aria-expanded="false">
-            <span class="learn-account-utility-avatar">${html(vm.shell.accountInitials || "FM")}</span>
-            <span class="learn-account-utility-copy">
-              <span>${html(vm.shell.accountName || "Faithful Member")}</span>
-              <small>View Account</small>
-            </span>
-            <span class="learn-account-utility-caret">⌄</span>
+          <button class="learn-account-utility myagapay-menu-trigger" type="button" data-learn-account-toggle aria-haspopup="true" aria-expanded="false" aria-label="Open My AGAPAY menu">
+            <span class="myagapay-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span>
           </button>
           <div class="learn-account-dropdown" role="menu" hidden>
             <a href="${experience.odyssey ? learnSectionHref("onboarding") : "/myagapay/account"}" role="menuitem">Account Settings</a>

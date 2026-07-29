@@ -226,7 +226,7 @@ function setDonorProfile(donor) {
   if (profileName) profileName.textContent = name;
   if (profileMeta) profileMeta.textContent = donor.defaultParishId ? `${donor.email} - ${donor.defaultParishId}` : donor.email || "Faithful account loaded";
   setText("donorHomeTopbarName", donorDisplayName(donor));
-  document.querySelectorAll(".mobile-avatar, .desktop-avatar, .donor-home-mini-avatar").forEach((avatar) => {
+  document.querySelectorAll(".mobile-avatar, .desktop-avatar").forEach((avatar) => {
     avatar.textContent = donorInitials(donor);
   });
   const greeting = document.getElementById("greeting");

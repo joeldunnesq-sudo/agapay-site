@@ -46,13 +46,27 @@ export async function resolveOperationalAccountingDatabase(env, parishId) {
   return physical ? createD1DatabaseFacade(adapter, physical.providerId) : null;
 }
 
-async function accountingFund(db, {
+async function releaseConflictingGivingIdentity(db, sourceType, sourceId, accountingFundId) {
+  const normalizedSourceId = text(sourceId);
+  if (!sourceType || !normalizedSourceId || !accountingFundId) return;
+  // Keep the archived fund and its immutable journal history, but release a
+  // stale publishing identity before assigning it to the canonical linked
+  // fund.
+  await db.prepare(`UPDATE accounting_funds SET
+    giving_source_type=NULL,giving_source_id=NULL,giving_enabled=0,
+    version=version+1,updated_at=datetime('now')
+    WHERE giving_source_type=? AND giving_source_id=? AND id<>?`)
+    .bind(sourceType, normalizedSourceId, accountingFundId).run();
+}
+
+export async function accountingFund(db, {
   sourceType, sourceId, name, description = "", purpose = "", accountNumber = "",
   restrictionType = "", restricted = false, goalCents = null, slug = "", metadata = {}, publish = false,
   accountingFundId = ""
 }) {
   if (!sourceId && !name) return "fund_general";
   if (sourceType === "fund" && isGeneralOperatingFund(sourceId, name)) {
+    await releaseConflictingGivingIdentity(db, "fund", "general", "fund_general");
     await db.prepare(`UPDATE accounting_funds SET
       name='General Operating Fund',description=?,restriction_type='unrestricted',
       purpose='Parish operations',is_default=1,is_active=1,is_system=1,
@@ -68,7 +82,17 @@ async function accountingFund(db, {
   // Once a catalog record is linked to a ledger fund, retain that identity.
   // Posted journal lines are immutable and must never be orphaned by replacing
   // their fund solely because the parish later edits its catalog metadata.
-  const id = text(accountingFundId) || `fund_operational_${suffix}`;
+  let id = text(accountingFundId) || `fund_operational_${suffix}`;
+  const identityOwner = await db.prepare(`SELECT id FROM accounting_funds
+    WHERE giving_source_type=? AND giving_source_id=? LIMIT 1`)
+    .bind(sourceType, text(sourceId)).first();
+  if (identityOwner?.id && identityOwner.id !== id) {
+    if (text(accountingFundId)) {
+      await releaseConflictingGivingIdentity(db, sourceType, sourceId, id);
+    } else {
+      id = identityOwner.id;
+    }
+  }
   if (!publish) {
     const existing = await db.prepare(`SELECT id FROM accounting_funds
       WHERE giving_source_type=? AND giving_source_id=? AND is_active=1 AND archived_at IS NULL`)

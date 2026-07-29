@@ -8198,7 +8198,7 @@
     try {
       const res  = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId), { method:'PATCH', headers:{...authHeaders(),'Content-Type':'application/json'}, body:JSON.stringify(body) });
       const data = await res.json();
-      if (!res.ok) { setStatus(data.error || 'Unable to save dashboard.','error'); return; }
+      if (!res.ok) { setStatus(data.error || data.detail || 'Unable to save dashboard.','error'); return; }
       if (body.newDashboardPassword && data.token) { document.getElementById('parishToken').value = data.token; saveSession(); }
       setStatus(body.newDashboardPassword ? 'Settings saved. Password updated.' : 'Parish settings saved.', 'success');
       await loadDashboard();

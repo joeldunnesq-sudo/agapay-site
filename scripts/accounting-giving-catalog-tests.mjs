@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import { mergeStewardshipFundsIntoRegistration, STEWARDSHIP_FUND_DEFAULTS } from "../src/lib/stewardship-funds.js";
+import { accountingFund } from "../src/accounting/source-wiring.js";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const db = new DatabaseSync(":memory:");
@@ -150,13 +151,61 @@ for (const column of ["giving_source_type", "giving_source_id", "giving_enabled"
 const accountColumns = db.prepare("PRAGMA table_info(accounting_accounts)").all().map((row) => row.name);
 assert.ok(accountColumns.includes("account_number"), "every ledger account must retain an account number");
 
+const asyncDb = {
+  prepare(sql) {
+    let params = [];
+    return {
+      bind(...values) { params = values; return this; },
+      async first() { return db.prepare(sql).get(...params) || null; },
+      async run() { return db.prepare(sql).run(...params); }
+    };
+  }
+};
+db.prepare(`INSERT OR IGNORE INTO accounting_funds
+  (id,code,name,restriction_type,purpose,is_default,is_active,is_system)
+  VALUES('fund_general','GENERAL','General Operating Fund','unrestricted','Parish operations',1,1,1)`).run();
+db.prepare(`INSERT INTO accounting_funds
+  (id,code,name,restriction_type,purpose,is_default,is_active,is_system,giving_source_type,giving_source_id,giving_enabled)
+  VALUES('fund_general_legacy','OLD-GENERAL','General Operating Fund (Legacy)','unrestricted','Legacy',0,0,0,'fund','general',0)`).run();
+await accountingFund(asyncDb, {
+  sourceType: "fund",
+  sourceId: "general",
+  name: "General Operating Fund",
+  accountingFundId: "fund_general",
+  publish: true
+});
+assert.equal(
+  db.prepare("SELECT id FROM accounting_funds WHERE giving_source_type='fund' AND giving_source_id='general'").get().id,
+  "fund_general",
+  "catalog saves must reclaim the General Operating publishing identity from an archived legacy fund"
+);
+db.prepare(`INSERT INTO accounting_funds
+  (id,code,name,restriction_type,purpose,is_default,is_active,is_system,giving_source_type,giving_source_id,giving_enabled)
+  VALUES('fund_catalog_old','OLD-CATALOG','Old catalog fund','unrestricted','Legacy',0,0,0,'fund','catalog-test',0)`).run();
+db.prepare(`INSERT INTO accounting_funds
+  (id,code,name,restriction_type,purpose,is_default,is_active,is_system)
+  VALUES('fund_catalog_linked','LINKED-CATALOG','Linked catalog fund','unrestricted','Linked',0,1,0)`).run();
+await accountingFund(asyncDb, {
+  sourceType: "fund",
+  sourceId: "catalog-test",
+  name: "Updated catalog fund",
+  accountingFundId: "fund_catalog_linked",
+  publish: true
+});
+assert.equal(
+  db.prepare("SELECT id FROM accounting_funds WHERE giving_source_type='fund' AND giving_source_id='catalog-test'").get().id,
+  "fund_catalog_linked",
+  "an explicitly linked ledger fund must reclaim its publishing identity without deleting the historical fund"
+);
+assert.ok(db.prepare("SELECT id FROM accounting_funds WHERE id='fund_catalog_old'").get(), "historical ledger funds must remain intact");
+
 const wiring = read("src/accounting/source-wiring.js");
 const parish = read("src/handlers/parish.js");
 const accountingRoutes = read("src/handlers/accounting-setup-reports.js");
 const app = read("public/parish/app.js");
 
 assert.match(wiring, /giving_source_type/);
-assert.match(wiring, /const id = text\(accountingFundId\)/, "catalog publishing must preserve an existing ledger fund ID");
+assert.match(wiring, /let id = text\(accountingFundId\)/, "catalog publishing must preserve an existing ledger fund ID");
 assert.match(wiring, /restrictionType/);
 assert.match(wiring, /giving_goal_cents/);
 assert.match(wiring, /loadGivingCatalogFromAccounting/);
@@ -164,6 +213,7 @@ assert.match(wiring, /return "fund_general"/, "stewardship accounting wiring mus
 assert.match(wiring, /stewardshipGift \? "general"/, "new stewardship source events must resolve to the General Operating identity");
 assert.match(wiring, /campaignGift = Boolean\(campaignId\) && !festalAlmsGift/, "feast appeals must post to their chosen fund instead of creating campaign funds");
 assert.match(wiring, /WHERE is_system=0 AND is_default=0/, "Funds & Alms must retire parallel accounting-only funds");
+assert.match(wiring, /releaseConflictingGivingIdentity/, "catalog saves must release stale unique publishing identities before republishing");
 assert.match(parish, /accounting_catalog_unavailable/);
 const worker = read("src/worker.js");
 const stewardship = read("src/handlers/stewardship.js");
