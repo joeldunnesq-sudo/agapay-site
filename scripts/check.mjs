@@ -332,6 +332,11 @@ assert.equal(
   1,
   "enhanced giving reports should appear only in the Stewardship tier"
 );
+assert.ok(
+  givePricingHtml.includes("Text-to-Give <strong>&mdash; coming soon</strong>")
+    && givePricingHtml.includes("Parish Accounting suite <strong>&mdash; coming soon</strong>"),
+  "Parish pricing should identify Text-to-Give and the Accounting suite as coming soon"
+);
 assert.equal(
   givePricingHtml.match(/Parish council and annual-meeting-ready stewardship insights/g)?.length,
   1,
