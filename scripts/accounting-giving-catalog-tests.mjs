@@ -62,6 +62,7 @@ db.exec(read("migrations/0055_st_fiacre_roof_campaign_preserve_existing_demo_gif
 db.exec(read("migrations/0056_st_fiacre_joel_stewardship_demo_amount.sql"));
 db.exec(read("migrations/0057_st_fiacre_2026_demo_received_total.sql"));
 db.exec(read("migrations/0058_st_fiacre_2026_nudge_demo.sql"));
+db.exec(read("migrations/0060_st_fiacre_joel_givers_nudge_demo.sql"));
 const correctedRegistration = JSON.parse(db.prepare("SELECT data FROM registrations WHERE parish_id='st-fiacre'").get().data);
 assert.equal(correctedRegistration.funds[1].restrictionType, "donor_restricted_temporary", "St. Fiacre Benevolence must be restricted");
 for (const expected of STEWARDSHIP_FUND_DEFAULTS) {
@@ -116,6 +117,16 @@ const nudgeDemo = db.prepare(`WITH stewardship AS (
 assert.equal(nudgeDemo.count, 5, "St. Fiacre must have five behind-pace demo households");
 assert.equal(db.prepare(`SELECT target_amount_cents FROM household_pledges
   WHERE donor_email='joeldunnesq@gmail.com' AND parish_id='st-fiacre' AND fiscal_year=2026`).get().target_amount_cents, 600000, "Joel's demo pledge must qualify for the nudge preview");
+const joelGiversNudge = db.prepare(`SELECT
+    MAX(json_extract(data,'$.createdAt')) AS last_gift_at,
+    MAX(CASE WHEN COALESCE(json_extract(data,'$.frequency'),'once') != 'once' THEN 1 ELSE 0 END) AS recurring,
+    CAST(julianday('2026-07-29') - julianday(MAX(json_extract(data,'$.createdAt'))) AS INTEGER) AS days_quiet
+  FROM donor_offerings
+  WHERE parish_id='st-fiacre'
+    AND lower(COALESCE(json_extract(data,'$.donorEmail'),''))='joeldunnesq@gmail.com'`).get();
+assert.equal(joelGiversNudge.last_gift_at, "2026-06-11T10:00:00.000Z", "Joel's latest locally seeded demo gift should be moved into June");
+assert.equal(joelGiversNudge.recurring, 1, "Joel must have a recurring demo gift for the Givers-page nudge card");
+assert.ok(joelGiversNudge.days_quiet >= 30, "Joel's latest demo gift must be at least 30 days old on the demo date");
 const firstMerge = mergeStewardshipFundsIntoRegistration({ funds: [{ id: "general", name: "General Operating Fund" }] });
 assert.equal(firstMerge.added.length, STEWARDSHIP_FUND_DEFAULTS.length - 1, "activation must retain General Operating and add the remaining reporting funds");
 const secondMerge = mergeStewardshipFundsIntoRegistration(firstMerge.registration);
