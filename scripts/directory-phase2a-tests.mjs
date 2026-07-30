@@ -14,6 +14,8 @@ import {
   createHouseholdAdultInvitation,
   createSelfServiceAddress,
   createSelfServiceContact,
+  deleteHouseholdMember,
+  deleteHouseholdNameday,
   getHouseholdSelfServiceProfile,
   getSelfServiceProfile,
   linkExternalIdentity,
@@ -21,11 +23,13 @@ import {
   setPersonPrivacyFlags,
   setSelfServicePrivacyPreference,
   startSelfServiceProfile,
+  syncSelfServiceContactsFromDonor,
   listHouseholdNamedays,
   requestHouseholdAdultAdd,
   requestHouseholdChildAdd,
   saveHouseholdNameday,
   transitionSelfServicePublication,
+  updateHouseholdMember,
   updateHouseholdSelfServiceProfile,
   updateSelfServiceContact,
   updateSelfServicePersonProfile,
@@ -151,6 +155,59 @@ await test("linked adult receives safe self-service context; unlinked user recei
   assert.equal(user.email, "anna@example.org");
 });
 
+await test("account settings auto-populate private directory contacts and preserve explicit sharing", async () => {
+  const { env, context, adult, household } = await fixture();
+  await syncSelfServiceContactsFromDonor(env, {
+    context,
+    donor: {
+      email: "anna@example.org",
+      emailVerifiedAt: "2026-07-28T00:00:00.000Z",
+      contactPhone: "(555) 111-2233",
+      addressLine1: "42 Settings Way",
+      addressLine2: "Apt 7",
+      city: "Amarillo",
+      state: "TX",
+      postalCode: "79101",
+      country: "US"
+    }
+  });
+  let contacts = await env.AGAPAY_DB.prepare("SELECT * FROM directory_contact_methods WHERE owner_id = ?1 ORDER BY contact_type").bind(adult.id).all();
+  assert.deepEqual(contacts.results.map((row) => [row.contact_type, row.value, row.visibility]), [
+    ["email", "anna@example.org", "private"],
+    ["phone", "(555) 111-2233", "private"]
+  ]);
+  let address = await env.AGAPAY_DB.prepare("SELECT * FROM directory_addresses WHERE owner_id = ?1 AND is_primary = 1").bind(household.id).first();
+  assert.equal(address.line1, "42 Settings Way");
+  assert.equal(address.line2, "Apt 7");
+  assert.equal(address.visibility, "private");
+
+  const email = contacts.results.find((row) => row.contact_type === "email");
+  await updateSelfServiceContact(env, {
+    context,
+    contactId: email.id,
+    patch: { visibility: "directory_members", expectedVersion: email.updated_at }
+  });
+  await syncSelfServiceContactsFromDonor(env, {
+    context,
+    donor: {
+      email: "anna.updated@example.org",
+      contactPhone: "(555) 111-2233",
+      addressLine1: "84 Updated Way",
+      city: "Amarillo",
+      state: "TX",
+      postalCode: "79102",
+      country: "US"
+    }
+  });
+  contacts = await env.AGAPAY_DB.prepare("SELECT * FROM directory_contact_methods WHERE owner_id = ?1 AND contact_type = 'email' AND active = 1").bind(adult.id).all();
+  assert.equal(contacts.results.length, 1);
+  assert.equal(contacts.results[0].value, "anna.updated@example.org");
+  assert.equal(contacts.results[0].visibility, "directory_members", "settings sync does not reset a donor's explicit opt-in");
+  address = await env.AGAPAY_DB.prepare("SELECT * FROM directory_addresses WHERE owner_id = ?1 AND is_primary = 1").bind(household.id).first();
+  assert.equal(address.line1, "84 Updated Way");
+  assert.equal(address.visibility, "private");
+});
+
 await test("unlinked My AGAPAY user can start a private draft directory profile", async () => {
   const { env, db } = await fixture();
   const user = await ensurePlatformUser(env, { email: "newmember@example.org", displayName: "New Member" });
@@ -199,22 +256,25 @@ await test("unlinked My AGAPAY user can start a private draft directory profile"
 });
 
 await test("household admin can save household name days with privacy", async () => {
-  const { env, context, household } = await fixture();
+  const { env, context, household, adult } = await fixture();
   const nameday = await saveHouseholdNameday(env, {
     context,
     householdId: household.id,
     data: {
-      displayName: "Anna",
+      personId: adult.id,
+      displayName: "Anna Dunn",
       saintName: "St. Anna",
       feastMonthDay: "07-25",
       visibility: "directory_members"
     }
   });
-  assert.equal(nameday.displayName, "Anna");
+  assert.equal(nameday.displayName, "Anna Dunn");
+  assert.equal(nameday.personId, adult.id);
   assert.equal(nameday.visibility, "directory_members");
   const list = await listHouseholdNamedays(env, { context, householdId: household.id });
   assert.equal(list.length, 1);
   assert.equal(list[0].saintName, "St. Anna");
+  assert.equal(list[0].personId, adult.id);
 });
 
 await test("self-service profile without a household receives an editable household on next load", async () => {
@@ -340,6 +400,28 @@ await test("household address and privacy controls reuse Phase 1B policy and fai
     }),
     (error) => error instanceof DirectoryServiceError && error.code === "privacy_policy_denied"
   );
+  await setSelfServicePrivacyPreference(env, {
+    context,
+    ownerType: "household",
+    ownerId: household.id,
+    fieldKey: "city_state",
+    visibility: "directory_members",
+    publicationEligible: true
+  });
+  const sharedLocation = await createSelfServiceAddress(env, {
+    context,
+    householdId: household.id,
+    data: {
+      line1: "Dallas, TX",
+      city: "Dallas",
+      region: "TX",
+      protectedAddress: false,
+      visibility: "directory_members",
+      primary: true
+    }
+  });
+  assert.equal(sharedLocation.visibility, "directory_members");
+  assert.equal(sharedLocation.city, "Dallas");
   await assert.rejects(
     () => setSelfServicePrivacyPreference(env, {
       context,
@@ -394,28 +476,58 @@ await test("membership and relationship changes use controlled requests with dup
   );
 });
 
-await test("household admin can request adding a child from self-service", async () => {
+await test("household admin can add a child directly without parish approval", async () => {
   const { env, db, context, household } = await fixture();
-  const request = await requestHouseholdChildAdd(env, {
+  const child = await requestHouseholdChildAdd(env, {
     context,
     householdId: household.id,
-    data: { preferredName: "Lucy Dunn", relationship: "daughter", dateOfBirth: "2020-05-12", note: "Recently baptized at the parish." }
+    data: { preferredName: "Lucy Dunn", relationship: "daughter", dateOfBirth: "2020-05-12" }
   });
-  assert.equal(request.requestType, "household_membership_add");
-  assert.equal(request.householdId, household.id);
-  assert.match(request.summary, /Lucy Dunn/);
-  const payload = JSON.parse(db.prepare("SELECT requested_payload_json FROM directory_change_requests WHERE id = ?").get(request.id).requested_payload_json);
-  assert.equal(payload.relationship, "child");
-  assert.equal(payload.childAdd.relationship, "daughter");
-  assert.equal(payload.childAdd.dateOfBirth, "2020-05-12");
-  const flags = db.prepare("SELECT is_child, protected_person FROM directory_person_privacy_flags WHERE person_id = ?").get(payload.personId);
+  assert.equal(child.direct, true);
+  assert.equal(child.householdId, household.id);
+  assert.equal(child.relationship, "daughter");
+  const flags = db.prepare("SELECT is_child, protected_person FROM directory_person_privacy_flags WHERE person_id = ?").get(child.personId);
   assert.equal(flags.is_child, 1);
   assert.equal(flags.protected_person, 0);
-  const linked = db.prepare("SELECT COUNT(*) AS count FROM directory_household_members WHERE household_id = ? AND person_id = ?").get(household.id, payload.personId);
-  assert.equal(linked.count, 0, "child should not be linked until parish review approves the request");
+  const linked = db.prepare("SELECT COUNT(*) AS count FROM directory_household_members WHERE household_id = ? AND person_id = ?").get(household.id, child.personId);
+  assert.equal(linked.count, 1, "child should be linked immediately");
+  assert.equal(db.prepare("SELECT COUNT(*) AS count FROM directory_change_requests WHERE household_id = ?").get(household.id).count, 0);
   await assert.rejects(
     () => requestHouseholdChildAdd(env, { context, householdId: household.id, data: { preferredName: "Lucy Dunn" } }),
-    (error) => error instanceof DirectoryServiceError && error.code === "duplicate_request"
+    (error) => error instanceof DirectoryServiceError && error.code === "duplicate_member"
+  );
+});
+
+await test("household admin can edit and remove members and delete duplicate namedays", async () => {
+  const { env, db, context, household } = await fixture();
+  const child = await requestHouseholdChildAdd(env, {
+    context,
+    householdId: household.id,
+    data: { preferredName: "Lucy Old", relationship: "child" }
+  });
+  const nameday = await saveHouseholdNameday(env, {
+    context,
+    householdId: household.id,
+    data: { displayName: "Lucy Old", saintName: "St. Lucy", feastMonthDay: "12-13", visibility: "private" }
+  });
+  const updated = await updateHouseholdMember(env, {
+    context,
+    householdId: household.id,
+    personId: child.personId,
+    data: { preferredName: "Lucy Dunn", relationship: "child" }
+  });
+  assert.equal(updated.preferredName, "Lucy Dunn");
+  assert.equal(db.prepare("SELECT preferred_name FROM directory_people WHERE id = ?").get(child.personId).preferred_name, "Lucy Dunn");
+  assert.equal(db.prepare("SELECT display_name FROM directory_household_namedays WHERE id = ?").get(nameday.id).display_name, "Lucy Dunn");
+
+  await deleteHouseholdNameday(env, { context, householdId: household.id, namedayId: nameday.id });
+  assert.equal(db.prepare("SELECT active FROM directory_household_namedays WHERE id = ?").get(nameday.id).active, 0);
+
+  await deleteHouseholdMember(env, { context, householdId: household.id, personId: child.personId });
+  assert.equal(db.prepare("SELECT active FROM directory_household_members WHERE household_id = ? AND person_id = ?").get(household.id, child.personId).active, 0);
+  await assert.rejects(
+    () => deleteHouseholdMember(env, { context, householdId: household.id, personId: context.currentPerson.id }),
+    (error) => error instanceof DirectoryServiceError && error.code === "cannot_remove_self"
   );
 });
 
@@ -437,6 +549,43 @@ await test("household admin can enter a spouse for parish confirmation", async (
   assert.equal(flags?.is_child || 0, 0);
   const linked = db.prepare("SELECT COUNT(*) AS count FROM directory_household_members WHERE household_id = ? AND person_id = ?").get(household.id, payload.personId);
   assert.equal(linked.count, 0, "spouse should not be linked until parish review approves the request");
+});
+
+await test("verified household admin adds children and adults directly without repeat parish approval", async () => {
+  const { env, db, context, household, adult: householdAdmin } = await fixture();
+  db.prepare(`INSERT INTO directory_publication_profiles
+    (id, parish_id, owner_type, owner_id, status, approval_status, approved_by_user_id, approved_at, active, created_at, updated_at)
+    VALUES ('pub_verified_household', ?, 'household', ?, 'approved', 'approved', 'parish-admin', 1, 1, 1, 1)`)
+    .run(household.parishId, household.id);
+
+  const selfPublication = await transitionSelfServicePublication(env, {
+    context,
+    ownerType: "person",
+    ownerId: householdAdmin.id,
+    status: "pending_approval"
+  });
+  assert.equal(selfPublication.status, "approved");
+  assert.equal(selfPublication.approvalStatus, "approved");
+
+  const child = await requestHouseholdChildAdd(env, {
+    context,
+    householdId: household.id,
+    data: { preferredName: "Lucy Direct", relationship: "daughter", dateOfBirth: "2020-05-12" }
+  });
+  assert.equal(child.direct, true);
+  assert.equal(db.prepare("SELECT COUNT(*) AS count FROM directory_household_members WHERE household_id = ? AND person_id = ? AND active = 1").get(household.id, child.personId).count, 1);
+  assert.equal(db.prepare("SELECT is_child FROM directory_person_privacy_flags WHERE person_id = ?").get(child.personId).is_child, 1);
+
+  const adult = await requestHouseholdAdultAdd(env, {
+    context,
+    householdId: household.id,
+    data: { preferredName: "Alex Direct", relationship: "spouse", email: "alex-direct@example.org" }
+  });
+  assert.equal(adult.direct, true);
+  assert.equal(adult.accountManaged, true);
+  assert.equal(db.prepare("SELECT COUNT(*) AS count FROM directory_household_members WHERE household_id = ? AND person_id = ? AND active = 1").get(household.id, adult.personId).count, 1);
+  assert.equal(db.prepare("SELECT COUNT(*) AS count FROM directory_invitations WHERE intended_person_id = ?").get(adult.personId).count, 0, "adding a spouse must not create a second family account invitation");
+  assert.equal(db.prepare("SELECT COUNT(*) AS count FROM directory_change_requests WHERE household_id = ? AND status = 'pending'").get(household.id).count, 0);
 });
 
 await test("adult household invitation reuses Phase 1C and denies child invitations", async () => {

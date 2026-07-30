@@ -20,7 +20,8 @@
     learn: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg>',
     market: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8h12l-1 13H7z"/><path d="M9 8a3 3 0 0 1 6 0"/><path d="M9 13h6"/></svg>',
     directory: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 6v12H4V9z"/><path d="M9 21v-7h6v7"/><path d="M8 10h8"/><path d="M12 6v8"/></svg>',
-    account: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg>'
+    account: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg>',
+    menu: '<span class="myagapay-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span>'
   };
 
   function products() {
@@ -30,7 +31,8 @@
       { id: "history", href: "/myagapay/giving/history", label: "History", short: "Giving history", icon: icons.history, mobileFallbackFor: "sacramentsEnabled", desktopHidden: true },
       { id: "today", href: "/myagapay/giving/calendar", label: "Today", short: "Feast day and readings", icon: icons.today },
       { id: "directory", href: "/myagapay/directory", label: "Directory", short: "Parish member directory", icon: icons.directory, parishFeature: "directoryEnabled" },
-      { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore },
+      { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore, parishFeature: "bookstoreEnabled" },
+      { id: "settings", href: "/myagapay/account", label: "Settings", short: "Account settings", icon: icons.account, mobileFallbackFor: "bookstoreEnabled", desktopHidden: true },
       { id: "learn", href: "/myagapay/learn", label: "Learn", short: "Homeschool dashboard", icon: icons.learn, mobileFallbackFor: "directoryEnabled" }
     ];
     return items;
@@ -38,7 +40,8 @@
 
   let parishCapabilities = {
     sacramentsEnabled: false,
-    directoryEnabled: false
+    directoryEnabled: false,
+    bookstoreEnabled: false
   };
 
   function visibleProducts() {
@@ -63,7 +66,7 @@
     if (pathname.startsWith("/myagapay/sacraments") || pathname.startsWith("/myagapay/giving/commemorations") || pathname.startsWith("/myagapay/giving/names")) return "commemorations";
     if (pathname.startsWith("/myagapay/giving/calendar")) return "today";
     if (pathname.startsWith("/myagapay/directory")) return "directory";
-    if (pathname.startsWith("/myagapay/giving/history") || pathname.startsWith("/myagapay/giving/offerings")) return "account";
+    if (pathname.startsWith("/myagapay/giving/history") || pathname.startsWith("/myagapay/giving/offerings")) return "history";
     if (pathname.startsWith("/myagapay/giving")) return "giving";
     if (pathname.startsWith("/myagapay/account")) return "account";
     if (pathname.startsWith("/marketplace")) return "market";
@@ -140,6 +143,39 @@
         stroke-width: 2;
         stroke-linecap: round;
         stroke-linejoin: round;
+      }
+      .myagapay-menu-trigger {
+        -webkit-appearance: none;
+        appearance: none;
+        display: inline-grid;
+        width: 46px;
+        min-width: 46px;
+        height: 46px;
+        min-height: 46px;
+        place-items: center;
+        border: 1px solid rgba(201, 162, 91, 0.52);
+        border-radius: 12px;
+        padding: 0;
+        background: rgba(255, 255, 255, 0.08);
+        color: inherit;
+        cursor: pointer;
+        box-shadow: 0 6px 18px rgba(6, 21, 34, 0.12);
+      }
+      .myagapay-menu-icon {
+        display: grid;
+        width: 21px;
+        gap: 4px;
+      }
+      .myagapay-menu-icon > span {
+        display: block;
+        width: 100%;
+        height: 2px;
+        border-radius: 999px;
+        background: currentColor;
+      }
+      .donor-mobile-page .topbar .myagapay-menu-trigger {
+        background: rgba(255, 255, 255, 0.78);
+        color: #061522;
       }
       .donor-mobile-page .topbar .myagapay-settings-chip {
         color: #061522;
@@ -220,8 +256,8 @@
     menu.setAttribute("data-auth-required", "");
     menu.hidden = true;
     menu.innerHTML = `
-      <button class="myagapay-settings-chip" type="button" data-donor-account-toggle aria-haspopup="true" aria-expanded="false" aria-label="Open My AGAPAY account menu">
-        ${icons.account}<span id="donorHomeTopbarName">Account</span>
+      <button class="myagapay-settings-chip myagapay-menu-trigger" type="button" data-donor-account-toggle aria-haspopup="true" aria-expanded="false" aria-label="Open My AGAPAY menu">
+        ${icons.menu}
       </button>
       <div class="donor-home-account-dropdown" role="menu" hidden>
         <a href="/myagapay/giving/history" role="menuitem">History</a>
@@ -250,7 +286,7 @@
       ? ' hx-boost="false"'
       : ` style="grid-template-columns:repeat(${Math.max(navProducts.length, 1)},minmax(0,1fr))"`;
     const productLinks = navProducts.map((item) => {
-      const current = item.id === active || (item.id === "history" && active === "account");
+      const current = item.id === active || (item.id === "settings" && active === "account");
       const activeClass = current ? (isLearnNav ? "is-active" : "active") : "";
       const label = isDesktopSideNav ? `<span><strong>${item.label}</strong><small>${item.short}</small></span>` : `<span>${item.label}</span>`;
       return `<a class="${activeClass}" href="${item.href}"${current ? ' aria-current="page"' : ""}>${item.icon}${label}</a>`;
@@ -278,9 +314,14 @@
   function setParishCapabilities(parish = null) {
     parishCapabilities = {
       sacramentsEnabled: Boolean(parish?.sacramentsEnabled),
-      directoryEnabled: Boolean(parish?.directoryEnabled)
+      directoryEnabled: Boolean(parish?.directoryEnabled),
+      bookstoreEnabled: Boolean(parish?.bookstoreEnabled)
     };
     normalizeProductNavs();
+    if (activeProduct() === "directory" && !parishCapabilities.directoryEnabled) {
+      window.location.replace("/myagapay/dashboard");
+      return;
+    }
     window.dispatchEvent(new CustomEvent("myagapay:parish-capabilities", {
       detail: { ...parishCapabilities }
     }));

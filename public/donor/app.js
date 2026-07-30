@@ -6,7 +6,7 @@ const donorStore = {
   shellVersion: "agapayDonorShellVersion"
 };
 
-const DONOR_SHELL_VERSION = "2026-06-26-pledge-tracker";
+const DONOR_SHELL_VERSION = "2026-07-29-starter-giving-gate";
 
 async function refreshStaleDashboardShell() {
   if (!("serviceWorker" in navigator) || !("caches" in window)) return;
@@ -155,6 +155,14 @@ function writeDonorCache(name, data) {
   }
 }
 
+function clearDonorCache(name) {
+  try {
+    localStorage.removeItem(donorCacheKey(name));
+  } catch {
+    // Cache cleanup must never block the live dashboard.
+  }
+}
+
 function money(cents) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format((Number(cents) || 0) / 100);
 }
@@ -218,7 +226,7 @@ function setDonorProfile(donor) {
   if (profileName) profileName.textContent = name;
   if (profileMeta) profileMeta.textContent = donor.defaultParishId ? `${donor.email} - ${donor.defaultParishId}` : donor.email || "Faithful account loaded";
   setText("donorHomeTopbarName", donorDisplayName(donor));
-  document.querySelectorAll(".mobile-avatar, .desktop-avatar, .donor-home-mini-avatar").forEach((avatar) => {
+  document.querySelectorAll(".mobile-avatar, .desktop-avatar").forEach((avatar) => {
     avatar.textContent = donorInitials(donor);
   });
   const greeting = document.getElementById("greeting");
@@ -410,6 +418,104 @@ function normalizeDonorGiftType(value) {
   return aliases[normalized] || normalized;
 }
 
+function isGivingPlusGiftType(value) {
+  return ["fund", "candles", "commemoration", "campaign", "feast"].includes(normalizeDonorGiftType(value));
+}
+
+function parishHasGivingPlus(parish) {
+  return Boolean(parish?.givingPlusEnabled);
+}
+
+function ensureGivingPlusPaywall() {
+  let dialog = document.getElementById("givingPlusPaywall");
+  if (dialog) return dialog;
+  dialog = document.createElement("dialog");
+  dialog.id = "givingPlusPaywall";
+  dialog.className = "giving-plus-paywall";
+  dialog.innerHTML = `
+    <div class="giving-plus-paywall-inner">
+      <button class="giving-plus-paywall-close" type="button" aria-label="Close" onclick="closeGivingPlusPaywall()">×</button>
+      <span class="giving-plus-paywall-badge">Giving Plus feature</span>
+      <h2 id="givingPlusPaywallTitle">Help your parish offer more ways to give</h2>
+      <p id="givingPlusPaywallCopy">Your parish's Starter plan includes one-time and recurring gifts to its General Operating Fund. Giving Plus unlocks designated funds, candles, commemorations, campaigns, and festal alms.</p>
+      <div class="giving-plus-paywall-actions">
+        <button class="btn btn-ghost" type="button" onclick="closeGivingPlusPaywall()">Not now</button>
+        <button class="btn btn-gold" id="givingPlusEncourageButton" type="button" onclick="requestParishGivingPlusUpgrade(this)">Encourage my parish</button>
+      </div>
+      <p class="giving-plus-paywall-status" id="givingPlusPaywallStatus" aria-live="polite"></p>
+    </div>`;
+  dialog.addEventListener("click", (event) => {
+    if (event.target === dialog) closeGivingPlusPaywall();
+  });
+  document.body.appendChild(dialog);
+  return dialog;
+}
+
+function closeGivingPlusPaywall() {
+  const dialog = document.getElementById("givingPlusPaywall");
+  if (!dialog) return;
+  if (typeof dialog.close === "function") dialog.close();
+  else dialog.removeAttribute("open");
+}
+
+function openGivingPlusPaywall(event, parish, giftType = "") {
+  event?.preventDefault();
+  const selectedParish = parish || selectedPublicParish() || window.agapaySelectedGivingParish || null;
+  window.agapaySelectedGivingParish = selectedParish;
+  const dialog = ensureGivingPlusPaywall();
+  const status = document.getElementById("givingPlusPaywallStatus");
+  const button = document.getElementById("givingPlusEncourageButton");
+  const label = donorGiftTypeCopy[normalizeDonorGiftType(giftType)]?.detailsTitle || "This giving option";
+  const copy = document.getElementById("givingPlusPaywallCopy");
+  if (copy) {
+    copy.textContent = `${label} is available with Giving Plus. ${selectedParish?.name || "This parish"} currently offers Starter giving: one-time or recurring gifts to one General Operating Fund.`;
+  }
+  if (status) status.textContent = selectedParish
+    ? "You can privately let parish leadership know that you want more giving options."
+    : "Choose your home parish before sending an upgrade request.";
+  if (button) {
+    button.disabled = !selectedParish;
+    button.textContent = "Encourage my parish";
+  }
+  if (typeof dialog.showModal === "function") dialog.showModal();
+  else dialog.setAttribute("open", "");
+  return false;
+}
+
+async function requestParishGivingPlusUpgrade(button) {
+  const status = document.getElementById("givingPlusPaywallStatus");
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Sending…";
+  }
+  if (status) status.textContent = "Sending your request…";
+  try {
+    const result = await donorApi("/api/donor/giving-plus-feature-request", { method: "POST" });
+    if (status) status.textContent = result.message || "Your parish will see your request in its dashboard.";
+    if (button) button.textContent = "Request sent";
+  } catch (error) {
+    if (status) status.textContent = error.message || "Unable to send your request.";
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Try again";
+    }
+  }
+}
+
+function updateGivingTierTiles(parish) {
+  if (parish) window.agapaySelectedGivingParish = parish;
+  const givingPlus = parishHasGivingPlus(parish);
+  document.querySelectorAll("[data-giving-plus-gift]").forEach((tile) => {
+    const giftType = tile.getAttribute("data-giving-plus-gift") || "";
+    tile.classList.toggle("giving-tier-locked", !givingPlus);
+    tile.setAttribute("aria-label", !givingPlus
+      ? `${tile.textContent.trim()} — requires Giving Plus`
+      : tile.textContent.trim());
+    tile.href = givingPlus ? quickDonorGiftUrl(giftType, parish) : "#giving-plus";
+    tile.onclick = givingPlus ? null : (event) => openGivingPlusPaywall(event, parish, giftType);
+  });
+}
+
 const donorGiftTypeCopy = {
   stewardship: {
     eyebrow: "Quick Parish Offering",
@@ -450,8 +556,8 @@ const donorGiftTypeCopy = {
     eyebrow: "Quick Festal Alms",
     title: "Mark the feast with alms.",
     detailsTitle: "Festal Alms Offering",
-    intro: "Make an alms offering tied to the Church calendar and routed to the parish Benevolence Fund.",
-    context: "Your gift will be routed to the parish Benevolence Fund for the poor and needy."
+    intro: "Make an alms offering tied to the Church calendar and the parish's chosen destination fund.",
+    context: "Your parish chooses the fund that receives gifts for each Major Feast Alms campaign."
   }
 };
 
@@ -524,35 +630,32 @@ function syncSacramentsEntry(parish) {
 }
 
 function updateQuickGiveLinks(parish) {
-  const parishLink = document.getElementById("quickGiveParish");
+  const oneTimeLink = document.getElementById("quickGiveOneTime");
+  const recurringLink = document.getElementById("quickGiveRecurring");
   const parishIcon = document.getElementById("quickGiveParishIcon");
   const desktopParishIcon = document.getElementById("desktopParishIcon");
-  const candleLink = document.getElementById("quickGiveCandle");
-  const memorialLink = document.getElementById("quickGiveMemorial");
-  const feastLink = document.getElementById("quickGiveFeast");
-  const campaignLink = document.getElementById("quickGiveCampaigns");
-  const desktopParishLink = document.getElementById("desktopQuickParish");
-  const desktopCandleLink = document.getElementById("desktopQuickCandle");
-  const desktopMemorialLink = document.getElementById("desktopQuickMemorial");
-  const desktopFeastLink = document.getElementById("desktopQuickFeast");
-  const desktopCampaignLink = document.getElementById("desktopQuickCampaigns");
-  if (parishLink) parishLink.href = quickDonorGiftUrl("stewardship", parish);
-  if (desktopParishLink) desktopParishLink.href = quickDonorGiftUrl("stewardship", parish);
+  const desktopOneTimeLink = document.getElementById("desktopQuickOneTime");
+  const desktopRecurringLink = document.getElementById("desktopQuickRecurring");
+  if (oneTimeLink) oneTimeLink.href = quickDonorGiftUrl("stewardship", parish, { frequency: "once" });
+  if (recurringLink) recurringLink.href = quickDonorGiftUrl("stewardship", parish, { frequency: "monthly" });
+  if (desktopOneTimeLink) desktopOneTimeLink.href = quickDonorGiftUrl("stewardship", parish, { frequency: "once" });
+  if (desktopRecurringLink) desktopRecurringLink.href = quickDonorGiftUrl("stewardship", parish, { frequency: "monthly" });
   if (parishIcon) parishIcon.innerHTML = communityIconSvg(parish?.type);
   if (desktopParishIcon) desktopParishIcon.innerHTML = communityIconSvg(parish?.type);
-  if (candleLink) candleLink.href = quickDonorGiftUrl("candles", parish);
-  if (desktopCandleLink) desktopCandleLink.href = quickDonorGiftUrl("candles", parish);
-  if (memorialLink) memorialLink.href = quickDonorGiftUrl("commemoration", parish);
-  if (desktopMemorialLink) desktopMemorialLink.href = quickDonorGiftUrl("commemoration", parish);
-  if (feastLink) feastLink.href = quickDonorGiftUrl("feast", parish);
-  if (desktopFeastLink) desktopFeastLink.href = quickDonorGiftUrl("feast", parish);
-  if (campaignLink) campaignLink.href = quickDonorGiftUrl("campaign", parish);
-  if (desktopCampaignLink) desktopCampaignLink.href = quickDonorGiftUrl("campaign", parish);
+  updateGivingTierTiles(parish);
   syncSacramentsEntry(parish);
 }
 
 function activeParishCampaigns(parish) {
   const campaigns = Array.isArray(parish?.campaigns) ? parish.campaigns : [];
+  return campaigns.filter((campaign) => {
+    const status = String(campaign?.status || (campaign?.enabled === false ? "hidden" : "active")).toLowerCase();
+    return campaign && !["hidden", "paused", "cancelled", "ended", "inactive"].includes(status);
+  });
+}
+
+function activeParishFeastCampaigns(parish) {
+  const campaigns = Array.isArray(parish?.feastCampaigns) ? parish.feastCampaigns : [];
   return campaigns.filter((campaign) => {
     const status = String(campaign?.status || (campaign?.enabled === false ? "hidden" : "active")).toLowerCase();
     return campaign && !["hidden", "paused", "cancelled", "ended", "inactive"].includes(status);
@@ -590,7 +693,11 @@ function campaignImageUrl(campaign) {
 function selectedCampaign() {
   const selected = document.getElementById("campaign")?.value || "";
   if (!selected) return null;
-  return activeParishCampaigns(selectedPublicParish()).find((campaign) => {
+  const giftType = normalizeDonorGiftType(document.getElementById("giftType")?.value);
+  const campaigns = giftType === "feast"
+    ? activeParishFeastCampaigns(selectedPublicParish())
+    : activeParishCampaigns(selectedPublicParish());
+  return campaigns.find((campaign) => {
     const keys = [campaign.id, campaign.feastId, campaign.name, campaign.campaignName].filter(Boolean).map(String);
     return keys.includes(selected);
   }) || null;
@@ -611,9 +718,10 @@ function populateGiftOptionFields() {
   const campaignSelect = document.getElementById("campaign");
   if (campaignSelect) {
     const current = campaignSelect.value;
-    const campaigns = activeParishCampaigns(parish);
+    const giftType = normalizeDonorGiftType(document.getElementById("giftType")?.value);
+    const campaigns = giftType === "feast" ? activeParishFeastCampaigns(parish) : activeParishCampaigns(parish);
     campaignSelect.innerHTML = campaigns.length
-      ? campaigns.map((campaign) => `<option value="${escapeHtml(campaign.id || campaign.feastId || campaign.name || campaign.campaignName)}">${escapeHtml(campaignLabel(campaign))}</option>`).join("")
+      ? campaigns.map((campaign) => `<option value="${escapeHtml(campaign.id || campaign.feastId || campaign.name || campaign.campaignName)}">${escapeHtml(campaignLabel(campaign))}${campaign.patronal ? " · Parish feast day" : ""}</option>`).join("")
       : '<option value="">No active campaigns</option>';
     if (current && Array.from(campaignSelect.options).some((option) => option.value === current)) campaignSelect.value = current;
   }
@@ -747,6 +855,25 @@ function fundLabel(fund) {
 function renderActiveFunds(parish) {
   const targets = [document.getElementById("activeFunds"), document.getElementById("desktopActiveFunds")].filter(Boolean);
   if (!targets.length) return;
+  if (parish && !parishHasGivingPlus(parish)) {
+    const starterFund = Array.isArray(parish.funds) && parish.funds[0]
+      ? parish.funds[0]
+      : { name: "General Operating Fund", description: "Support your parish's day-to-day mission." };
+    const html = `
+      <article class="active-funds-card">
+        <div>
+          <span class="campaign-pill">Starter fund</span>
+          <h3>${escapeHtml(fundLabel(starterFund))}</h3>
+          <p>${escapeHtml(starterFund.description || "Support your parish's day-to-day mission.")}</p>
+        </div>
+        <div class="starter-fund-actions">
+          <a href="${escapeHtml(quickDonorGiftUrl("stewardship", parish, { frequency: "once" }))}">One-time</a>
+          <a href="${escapeHtml(quickDonorGiftUrl("stewardship", parish, { frequency: "monthly" }))}">Recurring</a>
+        </div>
+      </article>`;
+    targets.forEach((target) => { target.innerHTML = html; });
+    return;
+  }
   const funds = (Array.isArray(parish?.funds) ? parish.funds : [])
     .filter((fund) => fund && fund.active !== false && String(fund.status || "active").toLowerCase() !== "archived")
     .slice(0, 4);
@@ -910,7 +1037,8 @@ function toneOfWeekLabel(tone = "") {
 function saintDisplayTitle(day = {}) {
   const stories = Array.isArray(day.saintStories) ? day.saintStories : [];
   const names = Array.isArray(day.saints) ? day.saints : [];
-  return stories[0]?.name || stories[0]?.title || names[0] || "Lives of the Saints";
+  const primary = stories.find((story) => story?.primary) || stories[0];
+  return day.primarySaintTitle || primary?.name || primary?.title || names[0] || "Lives of the Saints";
 }
 
 function saintStoryModalHtml(saints = [], unavailableMessage = "") {
@@ -940,7 +1068,7 @@ function renderDonorTodayInChurch(parish, payload) {
   const parts = longDateParts(date);
   const today = payload?.today || {};
   const feast = payload?.feast || null;
-  const feastTitle = today.feastTitle || feast?.name || (parts.weekday === "Sunday" ? "The Lord's Day" : "Today in the Church");
+  const feastTitle = today.primarySaintTitle || today.feastTitle || feast?.name || (parts.weekday === "Sunday" ? "The Lord's Day" : "Today in the Church");
   const fastingRule = today.fastingRule || (feast?.rank === "fast" ? "Fast" : "No Fast");
   const saintTitle = saintDisplayTitle(today);
   const stories = Array.isArray(today.saintStories) ? today.saintStories : [];
@@ -949,7 +1077,8 @@ function renderDonorTodayInChurch(parish, payload) {
   const nameDayText = nameDays.length
     ? `Name days today: ${nameDays.map((item) => `${item.displayName} (${item.saintName})`).join(", ")}.`
     : "";
-  const firstStory = stories[0] || {};
+  const firstStory = stories.find((story) => story?.primary) || stories[0] || {};
+  const saintCount = stories.length || saintNames.length;
   const giveHref = donorGiftUrl("feast", parish, { feast: feastTitle });
   donorCalendarState.liturgicalDay = today;
   donorCalendarState.calendar = calendar;
@@ -964,8 +1093,8 @@ function renderDonorTodayInChurch(parish, payload) {
     ? "Daily readings and saint lives are temporarily unavailable, but feast highlights still follow your Church calendar."
     : [today.epistleRef && `Epistle: ${today.epistleRef}`, today.gospelRef && `Gospel: ${today.gospelRef}`, nameDayText].filter(Boolean).join(" · ") || "Daily readings, saints, and fasting notes follow the Orthodox calendar.");
   setText("saintPreviewName", saintTitle);
-  setText("saintPreviewNote", saintNames.length > 1
-    ? `${saintNames.length} commemorations listed for today.`
+  setText("saintPreviewNote", saintCount > 1
+    ? `${saintCount} commemorations listed for today.`
     : firstStory.reposeCentury || "Open the life for today's commemoration.");
 
   const saintIcon = document.getElementById("saintPreviewIcon");
@@ -982,7 +1111,7 @@ function renderDonorTodayInChurch(parish, payload) {
       liturgicalRankLabel(today.feastRank || feast?.rank),
       fastingRule,
       toneOfWeekLabel(today.tone),
-      saintNames.length ? `${saintNames.length} saint${saintNames.length === 1 ? "" : "s"}` : "",
+      saintCount ? `${saintCount} saint${saintCount === 1 ? "" : "s"}` : "",
       nameDays.length ? `${nameDays.length} name day${nameDays.length === 1 ? "" : "s"}` : ""
     ].filter(Boolean).map((chip) => `<span class="${isFastRule(chip) ? "is-fast" : ""}">${escapeHtml(chip)}</span>`).join("");
   }
@@ -1184,7 +1313,8 @@ function renderDonorCalendarPrompts(parish) {
     prompts.push({
       title: `${nextFeast.name} Offering`,
       description: `Support ${parish.name || "your church"} for the upcoming feast.`,
-      href: donorGiftUrl("feast", parish, { feast: nextFeast.name })
+      href: donorGiftUrl("feast", parish, { feast: nextFeast.name }),
+      lockedGiftType: parishHasGivingPlus(parish) ? "" : "feast"
     });
   }
 
@@ -1219,7 +1349,7 @@ function renderDonorCalendarPrompts(parish) {
   }
 
   target.innerHTML = prompts.slice(0, 4).map((prompt) => `
-    <a class="cal-prompt" href="${escapeHtml(prompt.href)}">
+    <a class="cal-prompt${prompt.lockedGiftType ? " giving-tier-locked" : ""}" href="${prompt.lockedGiftType ? "#giving-plus" : escapeHtml(prompt.href)}"${prompt.lockedGiftType ? ` onclick="return openGivingPlusPaywall(event, window.agapaySelectedGivingParish, '${prompt.lockedGiftType}')"` : ""}>
       <span class="cal-prompt-icon"><svg viewBox="0 0 24 24"><path d="M12 2s5 5.5 5 10a5 5 0 0 1-10 0c0-4.5 5-10 5-10z"/><path d="M9 21h6"/></svg></span>
       <span class="cal-prompt-body">
         <span class="cal-prompt-title">${escapeHtml(prompt.title)}</span>
@@ -1260,11 +1390,16 @@ function applyDonorGiveParams() {
   const params = new URLSearchParams(window.location.search);
   const parish = params.get("parish");
   const giftType = normalizeDonorGiftType(params.get("giftType"));
+  const frequency = params.get("frequency");
   const isQuick = params.get("quick") === "1";
   const parishSelect = document.getElementById("parish");
   const giftTypeSelect = document.getElementById("giftType");
+  const frequencySelect = document.getElementById("frequency");
   if (parish && parishSelect) parishSelect.value = parish;
   if (giftType && giftTypeSelect) giftTypeSelect.value = giftType;
+  if (frequency && frequencySelect && Array.from(frequencySelect.options).some((option) => option.value === frequency)) {
+    frequencySelect.value = frequency;
+  }
   toggleGiftDetailFields();
   if (params.get("campaign") && document.getElementById("campaign")) {
     document.getElementById("campaign").value = params.get("campaign");
@@ -1304,7 +1439,21 @@ function toggleCandleIntentionFields() {
 }
 
 function toggleGiftDetailFields() {
-  const giftType = normalizeDonorGiftType(document.getElementById("giftType")?.value);
+  const giftTypeSelect = document.getElementById("giftType");
+  let giftType = normalizeDonorGiftType(giftTypeSelect?.value);
+  const parish = selectedPublicParish();
+  updateGivingTierTiles(parish);
+  if (giftTypeSelect) {
+    Array.from(giftTypeSelect.options).forEach((option) => {
+      option.disabled = !parishHasGivingPlus(parish) && isGivingPlusGiftType(option.value);
+    });
+  }
+  if (!parishHasGivingPlus(parish) && isGivingPlusGiftType(giftType)) {
+    const lockedGiftType = giftType;
+    giftType = "stewardship";
+    if (giftTypeSelect) giftTypeSelect.value = giftType;
+    openGivingPlusPaywall(null, parish, lockedGiftType);
+  }
   populateGiftOptionFields();
   const candleFields = document.getElementById("candleIntentionFields");
   const commemorationFields = document.getElementById("commemorationIntentionFields");
@@ -1313,8 +1462,8 @@ function toggleGiftDetailFields() {
   if (candleFields) candleFields.hidden = giftType !== "candles";
   if (commemorationFields) commemorationFields.hidden = giftType !== "commemoration";
   if (fundFields) fundFields.hidden = giftType !== "fund";
-  if (campaignFields) campaignFields.hidden = giftType !== "campaign";
-  renderCampaignChoicePreview(giftType === "campaign" ? selectedCampaign() : null);
+  if (campaignFields) campaignFields.hidden = !["campaign", "feast"].includes(giftType);
+  renderCampaignChoicePreview(["campaign", "feast"].includes(giftType) ? selectedCampaign() : null);
 }
 
 async function loginFromDashboard() {
@@ -1803,7 +1952,7 @@ function renderMyAgapayDashboard(data) {
   `).join("");
 }
 
-function renderDonorDashboardPayload(data) {
+function renderDonorDashboardPayload(data, { renderPledge = true } = {}) {
   if (!data) return;
   setDonorProfile(data.donor);
   const summary = data.summary || {};
@@ -1822,8 +1971,9 @@ function renderDonorDashboardPayload(data) {
   setText("desktopMetricOfferings", String(summary.offeringCount || 0));
   setText("desktopMetricCommemorations", String(summary.commemorationCount || 0));
   setText("desktopParishName", parish?.name || "Choose a church in Settings to personalize your dashboard.");
+  renderRecurringHomeCard(summary);
 
-  renderPledgeTracker(data.donor, summary);
+  if (renderPledge) renderPledgeTracker(data.donor, summary, parish);
   updateQuickGiveLinks(parish);
   renderActiveCampaigns(parish);
   renderNextFeast(parish);
@@ -1835,6 +1985,28 @@ function renderDonorDashboardPayload(data) {
   if (desktopRecent) desktopRecent.innerHTML = offeringRows(recentOfferings);
 }
 
+function renderRecurringHomeCard(summary = {}) {
+  const hasRecurring = Number(summary.recurringCount || 0) > 0;
+  ["desktop", "mobile", "history"].forEach((layout) => {
+    const button = document.getElementById(`${layout}RecurringHomeAction`);
+    const copy = document.getElementById(`${layout}RecurringHomeCopy`);
+    if (!button || !copy) return;
+    if (hasRecurring) {
+      button.type = "button";
+      button.innerHTML = `${layout === "mobile" ? "Manage" : "Manage recurring giving"} <span aria-hidden="true">→</span>`;
+      button.onclick = () => openDonorRecurringPortal("", button);
+      copy.textContent = layout === "mobile"
+        ? "Update a recurring offering or payment method securely."
+        : "Review recurring offerings, update payment details, or make changes securely through Stripe.";
+    } else {
+      button.type = "button";
+      button.innerHTML = `Start recurring giving <span aria-hidden="true">→</span>`;
+      button.onclick = () => { window.location.href = "/myagapay/giving/give?frequency=monthly"; };
+      copy.textContent = "Set up a dependable monthly offering to support your parish.";
+    }
+  });
+}
+
 async function loadDonorDashboardPage() {
   const session = donorSession();
   if (!session.email || !session.token) {
@@ -1843,7 +2015,9 @@ async function loadDonorDashboardPage() {
     return;
   }
   const cachedDashboard = readDonorCache("dashboard");
-  if (cachedDashboard) renderDonorDashboardPayload(cachedDashboard);
+  // Cached content can paint the nonfinancial shell instantly, but pledge
+  // progress must always wait for current giving data from the API.
+  if (cachedDashboard) renderDonorDashboardPayload(cachedDashboard, { renderPledge: false });
   try {
     const data = await donorApi("/api/donor/dashboard");
     cacheDonorDashboardPayload(data);
@@ -1856,6 +2030,11 @@ async function loadDonorDashboardPage() {
       showGuestDonorDashboard();
       return;
     }
+    clearDonorCache("dashboard");
+    ["pledgeTrackerCard", "desktopPledgeTracker"].forEach((id) => {
+      const card = document.getElementById(id);
+      if (card) card.hidden = true;
+    });
     setDonorStatus(err.message, "error");
   }
 }
@@ -1889,6 +2068,8 @@ async function loadDonorSettingsPage() {
     setValue("settingsCountry", donor.country || "US");
     const parishName = document.getElementById("settingsParishName");
     if (parishName) parishName.textContent = data.parish?.name || "Choose a parish below";
+    const directorySettingsCard = document.getElementById("directorySettingsCard");
+    if (directorySettingsCard) directorySettingsCard.hidden = data.parish?.directoryEnabled !== true;
     await loadLearnSubscriptionSettings();
     await loadGivingStatements();
   } catch (err) {
@@ -1998,17 +2179,33 @@ async function saveDonorSettings(event) {
 
 function offeringRows(offerings) {
   if (!offerings.length) return '<div class="notice">No offerings have been recorded for this donor account yet.</div>';
-  return offerings.map((item) => `
-    <div class="list-item">
-      <div class="list-main">
-        <strong>${escapeHtml(item.fund || item.campaign || item.title || item.giftType || "AGAPAY offering")}</strong>
-        <span>${escapeHtml(item.parishName || item.parishId || "Parish")} - ${shortDate(item.createdAt)}</span>
-        <span>${item.coverFees ? "Fees covered" : `Parish received ${money(item.parishNetCents ?? item.amountCents)}`}</span>
-        <span class="status-pill ${item.paymentStatus === "pending" ? "pending" : ""}">${escapeHtml(item.paymentStatus || item.status || "recorded")}</span>
-      </div>
-      <div class="list-amount">${money(item.amountCents)}<small>${item.coverFees ? `charged ${money(item.chargeCents || item.amountCents)}` : `fees ${money(item.totalFeeCents || 0)}`}</small></div>
-    </div>
-  `).join("");
+  const groups = new Map();
+  offerings.forEach((item) => {
+    const date = new Date(item.createdAt || item.updatedAt || 0);
+    const key = Number.isNaN(date.getTime()) ? "Earlier" : date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  });
+  return [...groups.entries()].map(([month, items]) => `
+    <section class="giving-receipt-month">
+      <header><span>${escapeHtml(month)}</span><strong>${money(items.filter(donorOfferingIsComplete).reduce((sum, item) => sum + Number(item.amountCents || 0), 0))}</strong></header>
+      <div class="giving-receipt-list">${items.map((item) => {
+        const status = item.paymentStatus || item.status || "recorded";
+        const detail = item.coverFees
+          ? `You covered ${money(item.totalFeeCents || Math.max(0, Number(item.chargeCents || 0) - Number(item.amountCents || 0)))} in processing fees`
+          : `Parish received ${money(item.parishNetCents ?? item.amountCents)}`;
+        return `
+          <article class="giving-receipt-row">
+            <span class="giving-receipt-date">${shortDate(item.createdAt || item.updatedAt)}</span>
+            <span class="giving-receipt-copy">
+              <strong>${escapeHtml(item.fund || item.campaign || item.title || item.giftType || "Parish offering")}</strong>
+              <small>${escapeHtml(item.parishName || item.parishId || "Parish")} · ${escapeHtml(detail)}</small>
+            </span>
+            <span class="status-pill ${status === "pending" || status === "unpaid" ? "pending" : ""}">${escapeHtml(status)}</span>
+            <span class="giving-receipt-amount"><strong>${money(item.amountCents)}</strong><small>${item.frequency && item.frequency !== "once" ? escapeHtml(item.frequency) : "one-time"}</small></span>
+          </article>`;
+      }).join("")}</div>
+    </section>`).join("");
 }
 
 function activityDate(item = {}) {
@@ -2117,6 +2314,82 @@ function historyActivityRows(activities = []) {
   `).join("");
 }
 
+function donorOfferingIsComplete(item = {}) {
+  const status = String(item.paymentStatus || item.status || "recorded").toLowerCase();
+  return !["unpaid", "pending", "failed", "canceled", "cancelled", "expired"].includes(status);
+}
+
+function renderDonorGivingStory(offerings = []) {
+  const now = new Date();
+  const complete = offerings.filter(donorOfferingIsComplete);
+  const thisYear = complete.filter((item) => {
+    const date = new Date(item.createdAt || item.updatedAt || 0);
+    return !Number.isNaN(date.getTime()) && date.getFullYear() === now.getFullYear();
+  });
+  const feeCovered = thisYear.filter(item => item.coverFees).length;
+  const activeMonths = new Set(thisYear.map(item => String(item.createdAt || item.updatedAt || "").slice(0, 7)).filter(Boolean));
+  const total = thisYear.reduce((sum, item) => sum + Number(item.amountCents || 0), 0);
+  const monthlyAverage = activeMonths.size ? Math.round(total / activeMonths.size) : 0;
+  setText("historyGiftCount", String(thisYear.length));
+  setText("historyMonthlyAverage", money(monthlyAverage));
+  setText("historyFeesCovered", String(feeCovered));
+
+  const months = [];
+  for (let offset = 5; offset >= 0; offset -= 1) {
+    const date = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+    months.push({
+      key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`,
+      label: date.toLocaleDateString("en-US", { month: "short" }),
+      cents: 0
+    });
+  }
+  const monthMap = new Map(months.map(month => [month.key, month]));
+  complete.forEach((item) => {
+    const key = String(item.createdAt || item.updatedAt || "").slice(0, 7);
+    if (monthMap.has(key)) monthMap.get(key).cents += Number(item.amountCents || 0);
+  });
+  const maxMonth = Math.max(1, ...months.map(month => month.cents));
+  const trend = document.getElementById("myHistoryTrend");
+  if (trend) {
+    trend.innerHTML = `<div class="history-story-bars">${months.map(month => `
+      <div title="${escapeHtml(month.label)} · ${money(month.cents)}">
+        <span><i style="height:${Math.max(month.cents ? 10 : 2, Math.round(month.cents / maxMonth * 100))}%"></i></span>
+        <small>${escapeHtml(month.label)}</small>
+      </div>`).join("")}</div>`;
+  }
+
+  const fundTotals = new Map();
+  thisYear.forEach((item) => {
+    const fund = item.fund || item.campaign || item.title || "Parish offering";
+    fundTotals.set(fund, (fundTotals.get(fund) || 0) + Number(item.amountCents || 0));
+  });
+  const funds = [...fundTotals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const maxFund = Math.max(1, ...funds.map(([, cents]) => cents));
+  const fundPane = document.getElementById("myHistoryFunds");
+  if (fundPane) {
+    fundPane.innerHTML = funds.length ? funds.map(([fund, cents], index) => `
+      <div class="history-story-fund-row">
+        <span>${index + 1}</span>
+        <div><strong>${escapeHtml(fund)}</strong><i><b style="width:${Math.max(4, Math.round(cents / maxFund * 100))}%"></b></i></div>
+        <em>${money(cents)}</em>
+      </div>`).join("") : '<p class="form-help">Your giving destinations will appear after your first completed gift.</p>';
+  }
+
+  const rhythm = document.getElementById("myHistoryRhythm");
+  if (rhythm) {
+    const recurring = thisYear.filter(item => item.frequency && item.frequency !== "once").length;
+    const topFund = funds[0]?.[0] || "No fund yet";
+    const latest = thisYear[0];
+    rhythm.innerHTML = `
+      <div class="history-rhythm-grid">
+        <div><span>Most-supported fund</span><strong>${escapeHtml(topFund)}</strong></div>
+        <div><span>Recurring gifts</span><strong>${recurring}</strong></div>
+        <div><span>Active giving months</span><strong>${activeMonths.size}</strong></div>
+        <div><span>Latest completed gift</span><strong>${latest ? shortDate(latest.createdAt || latest.updatedAt) : "None yet"}</strong></div>
+      </div>`;
+  }
+}
+
 function renderProductFilterState() {
   const filter = window.donorHistoryFilter || "all";
   document.querySelectorAll("[data-history-filter]").forEach((button) => {
@@ -2128,9 +2401,16 @@ function renderAgapayHistoryTimeline() {
   const list = document.getElementById("agapayHistoryTimeline");
   if (!list) return;
   const filter = window.donorHistoryFilter || "all";
+  const period = window.donorHistoryPeriod || "all";
   const activities = window.donorHistoryActivities || [];
-  const filtered = filter === "all" ? activities : activities.filter((item) => item.product === filter);
+  const filtered = activities.filter((item) => {
+    const matchesProduct = filter === "all" || item.product === filter;
+    const itemYear = new Date(item.date || 0).getFullYear();
+    const matchesPeriod = period === "all" || String(itemYear) === String(period);
+    return matchesProduct && matchesPeriod;
+  });
   list.innerHTML = historyActivityRows(filtered);
+  setText("historyTimelineCount", `${filtered.length} activit${filtered.length === 1 ? "y" : "ies"}`);
   renderProductFilterState();
 }
 
@@ -2139,6 +2419,12 @@ function renderHistorySummary(activities = [], summary = {}) {
   setText("historyProductsCount", String(productCount));
   setText("historyLatestActivity", activities[0] ? productActivityLabel(activities[0].product) : "None");
   setText("offeringsReceiptCount", `${summary.offeringCount || (window.donorOfferings || []).length || 0} receipts`);
+  const period = document.getElementById("historyPeriodFilter");
+  if (period) {
+    const selected = window.donorHistoryPeriod || "all";
+    const years = [...new Set(activities.map(item => new Date(item.date || 0).getFullYear()).filter(year => Number.isFinite(year) && year > 2000))].sort((a, b) => b - a);
+    period.innerHTML = '<option value="all">All activity</option>' + years.map(year => `<option value="${year}" ${String(year) === String(selected) ? "selected" : ""}>${year}</option>`).join("");
+  }
 }
 
 function renderOfferingsPayload(payload = {}, fallbackDashboard = null, statusText = "Live data", productPayloads = {}) {
@@ -2170,6 +2456,8 @@ function renderOfferingsPayload(payload = {}, fallbackDashboard = null, statusTe
   setText("offeringsRecurring", String(summary.recurringCount || 0));
   setText("offeringsStatus", offerings.length ? statusText : "No data yet");
   renderHistorySummary(window.donorHistoryActivities, summary);
+  renderDonorGivingStory(offerings);
+  renderRecurringHomeCard(summary);
   renderAgapayHistoryTimeline();
   renderRecurringManagement(offerings);
   renderDonorOfferings();
@@ -2192,6 +2480,7 @@ async function loadDonorOfferingsPage() {
   if (cachedOfferings || cachedDashboard) {
     renderOfferingsPayload(cachedOfferings || {}, cachedDashboard, "Refreshing...");
   }
+  loadGivingStatements();
 
   try {
     const profileParishId = donorProfile()?.defaultParishId || "";
@@ -2346,6 +2635,11 @@ function searchOfferings() {
 
 function setHistoryProductFilter(product = "all") {
   window.donorHistoryFilter = product;
+  renderAgapayHistoryTimeline();
+}
+
+function setHistoryPeriodFilter(period = "all") {
+  window.donorHistoryPeriod = period;
   renderAgapayHistoryTimeline();
 }
 
@@ -2652,10 +2946,21 @@ async function startDonorCheckout(event) {
   const [firstName, ...rest] = name.split(/\s+/);
   const giftType = document.getElementById("giftType")?.value;
   const normalizedGiftType = normalizeDonorGiftType(giftType);
-  const selectedFund = (window.agapayPublicParishes || [])
-    .find((parish) => parish.id === document.getElementById("parish")?.value)
+  const parish = (window.agapayPublicParishes || [])
+    .find((item) => item.id === document.getElementById("parish")?.value);
+  if (!parishHasGivingPlus(parish) && isGivingPlusGiftType(normalizedGiftType)) {
+    openGivingPlusPaywall(null, parish, normalizedGiftType);
+    return;
+  }
+  const selectedFund = parish
     ?.funds?.find((fund) => [fund.id, fund.name].filter(Boolean).map(String).includes(document.getElementById("fund")?.value));
   const campaign = selectedCampaign();
+  const feastDestinationId = campaign?.destinationFundId || "benevolence-fund";
+  const feastDestinationFund = normalizedGiftType === "feast"
+    ? (Array.isArray(parish?.funds) ? parish.funds : []).find((fund) =>
+      [fund?.id, fund?.code, fund?.name].filter(Boolean).map(String).includes(String(feastDestinationId))
+    )
+    : null;
   const livingNames = normalizedGiftType === "candles"
     ? document.getElementById("candleLivingNames")?.value || ""
     : normalizedGiftType === "commemoration"
@@ -2694,11 +2999,11 @@ async function startDonorCheckout(event) {
         firstName: firstName || "AGAPAY",
         lastName: rest.join(" "),
         email: session.email,
-        fund: normalizedGiftType === "feast" ? "Benevolence Fund" : normalizedGiftType === "fund" ? (selectedFund?.name || document.getElementById("fund")?.value || "") : "",
-        fundId: normalizedGiftType === "feast" ? "benevolence" : normalizedGiftType === "fund" ? (selectedFund?.id || document.getElementById("fund")?.value || "") : "",
-        campaign: normalizedGiftType === "campaign" ? campaignLabel(campaign) : "",
-        campaignId: normalizedGiftType === "campaign" ? (campaign?.id || campaign?.feastId || document.getElementById("campaign")?.value || "") : "",
-        campaignDescription: normalizedGiftType === "campaign" ? campaign?.description || "" : "",
+        fund: normalizedGiftType === "feast" ? (feastDestinationFund?.name || "Benevolence Fund") : normalizedGiftType === "fund" ? (selectedFund?.name || document.getElementById("fund")?.value || "") : "",
+        fundId: normalizedGiftType === "feast" ? (feastDestinationFund?.id || feastDestinationFund?.code || "benevolence-fund") : normalizedGiftType === "fund" ? (selectedFund?.id || document.getElementById("fund")?.value || "") : "",
+        campaign: ["campaign", "feast"].includes(normalizedGiftType) ? campaignLabel(campaign) : "",
+        campaignId: ["campaign", "feast"].includes(normalizedGiftType) ? (campaign?.id || campaign?.feastId || document.getElementById("campaign")?.value || "") : "",
+        campaignDescription: ["campaign", "feast"].includes(normalizedGiftType) ? campaign?.description || "" : "",
         namesLiving: livingNames,
         namesDeparted: departedNames,
         inMemoriam: intentionNote,
@@ -2804,8 +3109,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // ── PLEDGE TRACKER ────────────────────────────────────────────────────────
-function renderPledgeTracker(donor, summary) {
+function renderPledgeTracker(donor, summary, parish) {
   if (!donor) return;
+  const trackerEnabled = parish?.pledgeTrackerEnabled === true;
   const pledgeCents = Number(donor.pledgeAmountCents || 0);
   const pledgeYear  = String(new Date().getFullYear());
   // Pledge progress counts parish offerings (tithe/stewardship) only — not designated
@@ -2815,9 +3121,15 @@ function renderPledgeTracker(donor, summary) {
   // Mobile tracker
   const mobileCard = document.getElementById("pledgeTrackerCard");
   if (mobileCard) {
-    mobileCard.hidden = false;
+    mobileCard.hidden = !parish;
     const activeState = document.getElementById("pledgeActiveState");
     const emptyState  = document.getElementById("pledgeEmptyState");
+    const lockedState = document.getElementById("pledgeLockedState");
+    if (lockedState) lockedState.hidden = trackerEnabled;
+    if (!trackerEnabled) {
+      if (activeState) activeState.hidden = true;
+      if (emptyState) emptyState.hidden = true;
+    } else
     if (!pledgeCents) {
       if (activeState) activeState.hidden = true;
       if (emptyState) emptyState.hidden = false;
@@ -2845,9 +3157,15 @@ function renderPledgeTracker(donor, summary) {
   // Desktop tracker
   const desktopCard = document.getElementById("desktopPledgeTracker");
   if (desktopCard) {
-    desktopCard.hidden = false;
+    desktopCard.hidden = !parish;
     const activeState = document.getElementById("desktopPledgeActiveState");
     const emptyState  = document.getElementById("desktopPledgeEmptyState");
+    const lockedState = document.getElementById("desktopPledgeLockedState");
+    if (lockedState) lockedState.hidden = trackerEnabled;
+    if (!trackerEnabled) {
+      if (activeState) activeState.hidden = true;
+      if (emptyState) emptyState.hidden = true;
+    } else
     if (!pledgeCents) {
       if (activeState) activeState.hidden = true;
       if (emptyState) emptyState.hidden = false;
@@ -3005,6 +3323,8 @@ const SAC_ACCORDION_CARDS = [
   { id: "baptism", type: "baptism", section: "sacrament", mode: "request", title: "Baptism", description: "Begin a baptism or chrismation request for parish review.", icon: "water" },
   { id: "wedding", type: "wedding", section: "sacrament", mode: "request", title: "Wedding", description: "Start a wedding request and share the first details with your parish.", icon: "rings" },
   { id: "house_blessing", type: "house_blessing", section: "services", mode: "book", title: "Blessings", description: "Schedule house, car, and other parish blessing requests.", icon: "home", locationType: "home" },
+  { id: "home_visit", type: "home_visit", section: "services", mode: "book", title: "Home Visit", description: "Reserve an available time for a pastoral visit at home.", icon: "home", locationType: "home" },
+  { id: "office_visit", type: "office_visit", section: "services", mode: "book", title: "Office Visit", description: "Reserve an available time to meet at the parish office.", icon: "chat" },
   { id: "counseling", type: "counseling", section: "services", mode: "book", title: "Pastoral Counseling", description: "Book time for a pastoral conversation.", icon: "chat" },
   { id: "commemorations", section: "services", mode: "commemorations", title: "Commemorations", description: "Submit names of the living and departed at no cost.", icon: "prayer" },
   { id: "candles", section: "services", mode: "link", title: "Candles", description: "Offer a candle through the existing secure giving flow.", icon: "candle", href: "/myagapay/giving/give?quick=1&giftType=candles" }
@@ -3020,9 +3340,32 @@ const sacAccordionState = {
   slotsByType: {},
   loadingSlots: {},
   selectedSlots: {},
+  offerings: {
+    types: ["house_blessing", "confession", "counseling", "baptism", "wedding"],
+    custom: []
+  },
   dashboard: null,
   commemorations: null
 };
+
+function sacramentCards() {
+  const enabled = new Set(sacAccordionState.offerings?.types || []);
+  const standard = SAC_ACCORDION_CARDS.filter((card) => !card.type || enabled.has(card.type));
+  const custom = (sacAccordionState.offerings?.custom || []).map((service) => ({
+    id: service.id,
+    type: "other",
+    schedulingType: service.id,
+    otherTypeLabel: service.label,
+    section: "services",
+    mode: service.mode === "schedule" ? "book" : "custom-request",
+    title: service.label,
+    description: service.mode === "schedule"
+      ? `Choose an available time for ${service.label.toLowerCase()}.`
+      : `Send a ${service.label.toLowerCase()} request to your parish.`,
+    icon: "cross"
+  }));
+  return [...standard, ...custom];
+}
 let sacModalEscapeBound = false;
 let sacramentSelectedSlot = null;
 
@@ -3046,6 +3389,15 @@ function sacramentActiveRequests(type) {
 
 function sacramentPrimaryRequest(type) {
   return sacramentActiveRequests(type)[0] || null;
+}
+
+function sacramentPrimaryRequestForCard(card) {
+  if (!card) return null;
+  return sacAccordionState.requests.find((row) =>
+    SAC_ACTIVE_STATUSES.includes(row.status)
+    && row.sacramentType === card.type
+    && (card.type !== "other" || String(row.otherTypeLabel || "").toLowerCase() === String(card.otherTypeLabel || "").toLowerCase())
+  ) || null;
 }
 
 function sacramentSummary(row) {
@@ -3121,7 +3473,7 @@ async function loadSacramentSlots(type) {
 
 async function loadSacramentSlotsForCard(type, force = false) {
   const parishId = document.getElementById("sacramentParishId")?.value || donorProfile()?.defaultParishId || "";
-  if (!parishId || !SAC_SCHEDULABLE_TYPES.includes(type)) return [];
+  if (!parishId || (!SAC_SCHEDULABLE_TYPES.includes(type) && !/^custom_[a-z0-9_-]+$/.test(type))) return [];
   if (!force && Array.isArray(sacAccordionState.slotsByType[type])) return sacAccordionState.slotsByType[type];
   sacAccordionState.loadingSlots[type] = true;
   renderSacramentAccordions();
@@ -3184,8 +3536,8 @@ function toggleSacramentAddressFieldByLocation() {
 function openSacramentAccordion(id) {
   sacAccordionState.openId = id;
   renderSacramentModal();
-  const card = SAC_ACCORDION_CARDS.find((item) => item.id === id);
-  if (card?.mode === "book") loadSacramentSlotsForCard(card.type);
+  const card = sacramentCards().find((item) => item.id === id);
+  if (card?.mode === "book") loadSacramentSlotsForCard(card.schedulingType || card.type);
 }
 
 function closeSacramentModal() {
@@ -3233,7 +3585,7 @@ function renderSacramentUpcomingStrip() {
 }
 
 function sacramentCardHeader(card) {
-  const request = card.type ? sacramentPrimaryRequest(card.type) : null;
+  const request = card.type ? sacramentPrimaryRequestForCard(card) : null;
   const status = request ? `<span class="sac-card-state">${escapeHtml(SACRAMENT_STATUS_LABELS[request.status] || request.status)}</span>` : "";
   return `<button class="sac-accordion-trigger" type="button" aria-haspopup="dialog" onclick="openSacramentAccordion('${card.id}')">
     <span class="sac-accordion-icon">${sacramentIcon(card.icon)}</span>
@@ -3244,14 +3596,17 @@ function sacramentCardHeader(card) {
 }
 
 function renderSlotPickerForCard(card) {
-  const existing = sacramentPrimaryRequest(card.type);
+  const existing = sacramentPrimaryRequestForCard(card);
+  const schedulingType = card.schedulingType || card.type;
   if (existing) {
     return `<div class="sac-booked-panel"><strong>Booked — ${escapeHtml(sacramentSummary(existing) || card.title)}</strong><p>Your parish can see this request.</p><button class="btn btn-ghost btn-sm" type="button" onclick="cancelSacramentRequest('${existing.id}', this)">Change</button></div>`;
   }
-  if (sacAccordionState.loadingSlots[card.type]) return '<div class="notice">Loading availability...</div>';
-  const slots = sacAccordionState.slotsByType[card.type] || [];
+  if (sacAccordionState.loadingSlots[schedulingType]) return '<div class="notice">Loading availability...</div>';
+  const slots = sacAccordionState.slotsByType[schedulingType] || [];
   if (!slots.length) {
-    return `<form class="sac-card-form" onsubmit="submitSacramentAccordionRequest(event, '${card.type}')">
+    return card.type === "other"
+      ? renderCustomSacramentRequestForm(card)
+      : `<form class="sac-card-form" onsubmit="submitSacramentAccordionRequest(event, '${card.type}')">
       <p class="form-help">No online times are listed right now. Send a request and your parish will follow up.</p>
       ${sacramentCommonFields(card)}
       <div class="form-grid"><div class="form-group"><label class="form-label">Preferred date</label><input class="form-input" name="requestedDate" type="date" /></div><div class="form-group"><label class="form-label">Preferred time</label><input class="form-input" name="requestedTimeWindow" placeholder="e.g. weekday morning" /></div></div>
@@ -3268,12 +3623,12 @@ function renderSlotPickerForCard(card) {
     return `<div class="sac-slot-day"><div class="sac-slot-day-label">${escapeHtml(dayLabel)}</div><div class="sac-slot-chips">${daySlots.map((slot) => {
       const timeLabel = String(slot.label || "").split(", ").pop() || slot.time;
       const priestSuffix = slot.priestName ? ` · ${slot.priestName}` : "";
-      return `<button type="button" class="sac-slot-chip" data-sac-slot-type="${escapeHtml(card.type)}" data-priest-name="${escapeHtml(slot.priestName || "")}" data-priest-email="${escapeHtml(slot.priestEmail || "")}" onclick="selectSacramentAccordionSlot('${card.type}','${slot.date}','${slot.time}', this)">${escapeHtml(timeLabel + priestSuffix)}</button>`;
+      return `<button type="button" class="sac-slot-chip" data-sac-slot-type="${escapeHtml(schedulingType)}" data-priest-name="${escapeHtml(slot.priestName || "")}" data-priest-email="${escapeHtml(slot.priestEmail || "")}" onclick="selectSacramentAccordionSlot('${schedulingType}','${slot.date}','${slot.time}', this)">${escapeHtml(timeLabel + priestSuffix)}</button>`;
     }).join("")}</div></div>`;
   }).join("");
-  return `<form class="sac-card-form" onsubmit="submitSacramentAccordionBooking(event, '${card.type}')">
+  return `<form class="sac-card-form" onsubmit="submitSacramentAccordionBooking(event, '${card.id}')">
     <div class="sac-slot-picker">${days}</div>
-    <p class="form-help" data-sac-selected-note="${escapeHtml(card.type)}"></p>
+    <p class="form-help" data-sac-selected-note="${escapeHtml(schedulingType)}"></p>
     ${sacramentCommonFields(card)}
     <button class="btn btn-gold" type="submit">Book selected time</button>
   </form>`;
@@ -3318,6 +3673,68 @@ function renderRequestFormForCard(card) {
   </form>`;
 }
 
+function renderCustomSacramentRequestForm(card) {
+  return `<form class="sac-card-form" onsubmit="submitCustomSacramentRequest(event, '${escapeHtml(card.id)}')">
+    <div class="form-grid">
+      <div class="form-group full"><label class="form-label">Who is this for?</label><input class="form-input" name="participantNames" placeholder="Names of those involved" /></div>
+      <div class="form-group"><label class="form-label">Preferred date</label><input class="form-input" name="requestedDate" type="date" /></div>
+      <div class="form-group"><label class="form-label">Preferred time</label><input class="form-input" name="requestedTimeWindow" placeholder="e.g. weekday morning" /></div>
+      <div class="form-group"><label class="form-label">Best phone number</label><input class="form-input" name="phone" type="tel" /></div>
+      <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-textarea" name="notes"></textarea></div>
+    </div>
+    <button class="btn btn-gold" type="submit">Send request</button>
+  </form>`;
+}
+
+async function submitCustomSacramentRequest(event, cardId) {
+  event.preventDefault();
+  const form = event.target;
+  const card = sacramentCards().find((item) => item.id === cardId);
+  const parishId = document.getElementById("sacramentParishId")?.value || donorProfile()?.defaultParishId || "";
+  if (!parishId || !card?.otherTypeLabel) return setDonorStatus("Choose your parish before submitting a request.", "error");
+  const submitBtn = form.querySelector('button[type="submit"]');
+  try {
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Sending..."; }
+    await donorApi("/api/donor/sacraments", {
+      method: "POST",
+      body: JSON.stringify({
+        parishId,
+        sacramentType: "other",
+        otherTypeLabel: card.otherTypeLabel,
+        locationType: "church",
+        requestedDate: formValue(form, "requestedDate"),
+        requestedTimeWindow: formValue(form, "requestedTimeWindow"),
+        participantNames: formValue(form, "participantNames"),
+        phone: formValue(form, "phone") || donorProfile()?.contactPhone || "",
+        notes: formValue(form, "notes")
+      })
+    });
+    setDonorStatus("Request sent. Your parish will follow up.", "success");
+    await loadDonorSacramentsPage();
+  } catch (err) {
+    setDonorStatus(err.message, "error");
+  } finally {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Send request"; }
+  }
+}
+
+async function requestParishStewardshipUpgrade(clickedButton) {
+  const buttons = [...document.querySelectorAll(".pledge-encourage-btn")];
+  const statuses = [...document.querySelectorAll("[data-pledge-request-status]")];
+  buttons.forEach((button) => { button.disabled = true; });
+  statuses.forEach((status) => { status.textContent = "Sending your request…"; });
+  try {
+    const result = await donorApi("/api/donor/stewardship-feature-request", { method: "POST" });
+    const message = result.message || "Your parish will see your request in its dashboard.";
+    statuses.forEach((status) => { status.textContent = message; });
+    buttons.forEach((button) => { button.textContent = "Request sent"; });
+  } catch (error) {
+    statuses.forEach((status) => { status.textContent = error.message || "Unable to send your request."; });
+    buttons.forEach((button) => { button.disabled = false; });
+    if (clickedButton) clickedButton.focus();
+  }
+}
+
 function renderCommemorationsCard() {
   return `<form class="sac-card-form" id="commemorationForm" onsubmit="submitCommemoration(event)">
     <div class="form-grid">
@@ -3336,6 +3753,7 @@ function renderCommemorationsCard() {
 function renderSacramentCardBody(card) {
   if (card.mode === "book") return renderSlotPickerForCard(card);
   if (card.mode === "request") return renderRequestFormForCard(card);
+  if (card.mode === "custom-request") return renderCustomSacramentRequestForm(card);
   if (card.mode === "commemorations") return renderCommemorationsCard();
   if (card.mode === "link") return `<div class="sac-link-panel"><p>Candle offerings are paid gifts, so they continue through the secure Give checkout.</p><a class="btn btn-gold" href="${card.href}">Offer a candle</a></div>`;
   return "";
@@ -3364,7 +3782,7 @@ function renderSacramentModal() {
       if (event.key === "Escape" && sacAccordionState.openId) closeSacramentModal();
     });
   }
-  const card = SAC_ACCORDION_CARDS.find((item) => item.id === sacAccordionState.openId);
+  const card = sacramentCards().find((item) => item.id === sacAccordionState.openId);
   if (!card) {
     modal.hidden = true;
     modal.innerHTML = "";
@@ -3390,8 +3808,9 @@ function renderSacramentModal() {
 function renderSacramentAccordions() {
   const sacRoot = document.getElementById("sacramentAccordion");
   const servicesRoot = document.getElementById("servicesAccordion");
-  if (sacRoot) sacRoot.innerHTML = SAC_ACCORDION_CARDS.filter((card) => card.section === "sacrament").map(renderAccordionCard).join("");
-  if (servicesRoot) servicesRoot.innerHTML = SAC_ACCORDION_CARDS.filter((card) => card.section === "services").map(renderAccordionCard).join("");
+  const cards = sacramentCards();
+  if (sacRoot) sacRoot.innerHTML = cards.filter((card) => card.section === "sacrament").map(renderAccordionCard).join("");
+  if (servicesRoot) servicesRoot.innerHTML = cards.filter((card) => card.section === "services").map(renderAccordionCard).join("");
   renderSacramentUpcomingStrip();
   renderSacramentModal();
 }
@@ -3475,6 +3894,7 @@ function renderSacramentsPayload(payload = {}) {
   const requests = Array.isArray(payload.requests) ? payload.requests : [];
   sacAccordionState.requests = requests;
   sacAccordionState.available = available;
+  if (payload.offerings) sacAccordionState.offerings = payload.offerings;
   const parishSummary = document.getElementById("sacramentParishSummary");
   if (parishSummary) parishSummary.textContent = donorDefaultParish()?.name || donorProfile()?.defaultParishName || payload.parishId || "My parish";
   if (list) {
@@ -3494,17 +3914,21 @@ function formChecked(form, name) {
   return form?.elements?.[name]?.checked === true;
 }
 
-async function submitSacramentAccordionBooking(event, sacramentType) {
+async function submitSacramentAccordionBooking(event, cardId) {
   event.preventDefault();
   const form = event.target;
   const parishId = document.getElementById("sacramentParishId")?.value || donorProfile()?.defaultParishId || "";
-  const slot = sacAccordionState.selectedSlots[sacramentType];
+  const card = sacramentCards().find((item) => item.id === cardId) || {};
+  const schedulingType = card.schedulingType || card.type || cardId;
+  const sacramentType = card.type || cardId;
+  const slot = sacAccordionState.selectedSlots[schedulingType];
   if (!parishId) return setDonorStatus("Choose your parish in Settings before booking.", "error");
   if (!slot) return setDonorStatus("Pick an open time to book.", "error");
-  const card = SAC_ACCORDION_CARDS.find((item) => item.type === sacramentType) || {};
   const body = {
     parishId,
     sacramentType,
+    schedulingType,
+    otherTypeLabel: card.otherTypeLabel || "",
     locationType: card.locationType || "church",
     locationAddress: formValue(form, "locationAddress"),
     date: slot.date,
@@ -3521,13 +3945,13 @@ async function submitSacramentAccordionBooking(event, sacramentType) {
     setDonorStatus("Booking your slot...");
     await donorApi("/api/donor/sacraments/book", { method: "POST", body: JSON.stringify(body) });
     setDonorStatus("Booked. Your parish can see the confirmed time.", "success");
-    sacAccordionState.selectedSlots[sacramentType] = null;
-    sacAccordionState.slotsByType[sacramentType] = null;
+    sacAccordionState.selectedSlots[schedulingType] = null;
+    sacAccordionState.slotsByType[schedulingType] = null;
     await loadDonorSacramentsPage();
   } catch (err) {
     if (err.data?.slotTaken) {
       setDonorStatus("That time was just taken. Pick another.", "error");
-      await loadSacramentSlotsForCard(sacramentType, true);
+      await loadSacramentSlotsForCard(schedulingType, true);
     } else {
       setDonorStatus(err.message, "error");
     }

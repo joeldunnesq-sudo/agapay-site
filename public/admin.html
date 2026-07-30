@@ -65,6 +65,10 @@
             <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.5 0 2.9.37 4.14 1.02"/></svg>
             Tax Exemptions
           </div>
+          <div class="sidebar-nav-item" onclick="switchTab('nonprofitpricing')" id="nav-nonprofitpricing">
+            <svg viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M5 7h14"/><path d="M7 17h10"/><circle cx="12" cy="12" r="9"/></svg>
+            Nonprofit Pricing
+          </div>
           <div class="sidebar-nav-item" onclick="switchTab('auditlog')" id="nav-auditlog">
             <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>
             Audit Log
@@ -640,6 +644,35 @@
           </section>
         </div>
 
+        <div class="tab-panel" id="tab-nonprofitpricing">
+          <section class="admin-command-hero">
+            <div>
+              <div class="admin-kicker">Stripe nonprofit pricing</div>
+              <h1>Donation-volume threshold monitor</h1>
+              <p>Monitor every connected parish against Stripe’s published requirement that more than 80% of payment volume come from tax-deductible donations. Unclassified volume is treated as exposure until reviewed.</p>
+            </div>
+            <button class="secondary" onclick="runNonprofitPricingAlerts(this)">Run alerts now</button>
+          </section>
+          <section class="revenue-grid" id="nonprofitPricingSummaryCards">
+            <article class="revenue-card"><div class="revenue-empty">Loading summary…</div></article>
+          </section>
+          <section class="section-card">
+            <div class="section-header">
+              <div class="section-title">Site-wide parish threshold meter</div>
+              <button class="secondary btn-sm" onclick="loadAdminNonprofitPricing(this)">Refresh</button>
+            </div>
+            <div class="section-body">
+              <p style="margin:0 0 1rem;color:var(--stone);font-size:13px;line-height:1.65;">Alert bands: watch at 15%, near at 17.5%, and threshold reached at 20% non-donation plus unclassified exposure. Email alerts are sent once when a parish enters a new band.</p>
+              <div class="tex-table-wrap">
+                <table class="tex-table" aria-label="Parish nonprofit pricing thresholds">
+                  <thead><tr><th>Parish</th><th>Application</th><th>Donation</th><th>Classified non-donation</th><th>Unclassified</th><th>20% exposure meter & calculator</th><th>Risk</th><th>Scan</th></tr></thead>
+                  <tbody id="nonprofitPricingTableBody"><tr><td colspan="8"><div class="revenue-empty">Open this tab to load parish volume.</div></td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+
         <div class="tab-panel" id="tab-auditlog">
           <section class="admin-command-hero">
             <div>
@@ -953,6 +986,10 @@
     <button class="mobile-tab-link" type="button" data-nav-tab="taxexemptions" onclick="switchTab('taxexemptions')">
       <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="10"/><path d="M10 14l2.5 2.5L19 10"/></svg>
       <span>Tax</span>
+    </button>
+    <button class="mobile-tab-link" type="button" data-nav-tab="nonprofitpricing" onclick="switchTab('nonprofitpricing')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg>
+      <span>Pricing</span>
     </button>
     <button class="mobile-tab-link" type="button" data-nav-tab="settings" onclick="switchTab('settings')">
       <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="3"/><path d="M14 5v3"/><path d="M14 20v3"/><path d="M5 14h3"/><path d="M20 14h3"/><path d="m7.6 7.6 2.1 2.1"/><path d="m18.3 18.3 2.1 2.1"/><path d="m20.4 7.6-2.1 2.1"/><path d="m9.7 18.3-2.1 2.1"/></svg>

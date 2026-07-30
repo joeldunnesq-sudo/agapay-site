@@ -34,7 +34,7 @@ import {
 
 import { findRegistrationByParishId, requireDonor, verifyParishDashboardBearer } from "./parish.js";
 import { offeringLabel } from "./donor.js";
-import { tierIncludesModule } from "../lib/entitlements.js";
+import { givingFeatureAccess } from "../lib/entitlements.js";
 
 // ─── Auth ──────────────────────────────────────────────────────────────────
 
@@ -46,7 +46,7 @@ async function requireParishApiContext(request, env, parishId) {
   if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return { ok: false, response: unauthorized() };
   }
-  if (!tierIncludesModule(found.registration, "givingPlus")) {
+  if (!givingFeatureAccess(found.registration, "annualStatements")) {
     return { ok: false, response: json({ error: "Annual giving statements are available with Giving Plus." }, { status: 403 }) };
   }
   return { ok: true, registration: found.registration, key: found.key };

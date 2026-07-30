@@ -10,10 +10,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/parish/style.css" />
-  <link rel="stylesheet" href="/parish/redesign.css?v=20260720e" />
+  <link rel="stylesheet" href="/parish/style.css?v=20260729authoritativefinance2" />
+  <link rel="stylesheet" href="/parish/redesign.css?v=20260729nooverflow1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
-  <link rel="stylesheet" href="/styles/stewardship.css" />
+  <link rel="stylesheet" href="/styles/stewardship.css?v=20260729financialactions1" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -47,7 +47,7 @@
 
       <nav class="sidebar-nav">
         <div class="sidebar-nav-item active" onclick="switchTab('giving')" id="nav-giving">
-          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 16v-4"/><path d="M12 16V8"/><path d="M17 16v-6"/></svg>
           Giving Overview
         </div>
         <div class="sidebar-nav-item" onclick="switchTab('options')" id="nav-options">
@@ -71,23 +71,25 @@
           Givers
         </div>
         <div class="sidebar-nav-item" onclick="switchTab('stewardship')" id="nav-stewardship">
-          <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 6h8"/><path d="M8 10h7"/></svg>
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           <span class="nav-label">Stewardship Health</span>
         </div>
-        <div class="sidebar-nav-item" onclick="switchTab('bookstore')" id="nav-bookstore">
-          <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 6h8"/><path d="M8 10h7"/></svg>
-          <span class="nav-label">Bookstore</span>
+        <div class="sidebar-nav-item" onclick="switchTab('commerce')" id="nav-bookstore">
+          <svg viewBox="0 0 24 24"><path d="M5 8h14l1 13H4L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/><path d="M8 13h8"/></svg>
+          <span class="nav-label">Commerce</span>
+          <span class="nav-module-status" id="bookstoreNavStatus" hidden>Off</span>
           <span class="nav-upgrade-badge" id="bookstoreNavBadge" hidden>Upgrade</span>
         </div>
         <div class="sidebar-nav-item" onclick="switchTab('sacraments')" id="nav-sacraments">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/></svg>
           <span class="nav-label">Sacraments &amp; Services</span>
-          <span class="nav-soon-badge" id="sacramentsNavSoonBadge">Coming soon</span>
+          <span class="nav-module-status" id="sacramentsNavStatus" hidden>Off</span>
           <span class="nav-upgrade-badge" id="sacramentsNavBadge" hidden>Upgrade</span>
         </div>
         <div class="sidebar-nav-item" onclick="switchTab('directory')" id="nav-directory">
           <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8"/><path d="M8 13h5"/><circle cx="17" cy="13" r="1"/></svg>
           <span class="nav-label">Directory</span>
+          <span class="nav-module-status" id="directoryNavStatus" hidden>Off</span>
         </div>
         <div class="sidebar-nav-item" onclick="switchTab('text')" id="nav-text">
           <svg viewBox="0 0 24 24"><path d="M22 16.92V19a2 2 0 0 1-2.18 2A19.86 19.86 0 0 1 3 4.18 2 2 0 0 1 5 2h2.09a2 2 0 0 1 2 1.72c.13 1 .37 1.96.71 2.89a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.93.34 1.9.58 2.89.71A2 2 0 0 1 22 16.92z"/></svg>
@@ -133,7 +135,7 @@
   <div class="content">
     <div class="topbar">
       <div class="topbar-identity">
-        <div class="topbar-title" id="topbarTitle">Parish Dashboard</div>
+        <div class="topbar-title"><span class="topbar-title-icon" id="topbarTitleIcon" aria-hidden="true"></span><span id="topbarTitle">Parish Dashboard</span></div>
       </div>
       <div class="topbar-actions">
         <button class="btn btn-ghost btn-sm" onclick="loadDashboard(this)">Refresh</button>
@@ -208,17 +210,28 @@
           </div>
         </section>
 
-        <!-- YOUR SUBSCRIPTION -->
-        <section class="pdx-panel pdx-sub-panel" id="pdxSubscriptionPanel">
-          <div class="pdx-panel-header">
-            <div class="pdx-panel-title">
-              <div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></div>
-              Your Subscription
+        <!-- STATUS STRIP -->
+        <section class="pdx-status-strip" id="overviewStatusCard">
+          <div class="pdx-status-tile">
+            <div class="pdx-status-icon"><svg viewBox="0 0 24 24"><path d="M20 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6"/><path d="M22 6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2l10 7 10-7z"/></svg></div>
+            <div class="pdx-status-body">
+              <span class="pdx-status-label">Stripe</span>
+              <span class="pdx-status-value" id="pdxStripeStatusWrap"><span id="overviewStripeStatus">—</span></span>
             </div>
-            <button class="pdx-link-btn" type="button" onclick="switchTab('settings')">Manage plan</button>
           </div>
-          <div id="pdxSubscriptionBody" class="pdx-sub-body">
-            <div class="pdx-recurring-empty">Load your dashboard to see your plan and included modules.</div>
+          <div class="pdx-status-tile">
+            <div class="pdx-status-icon"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+            <div class="pdx-status-body">
+              <span class="pdx-status-label">Active funds</span>
+              <span class="pdx-status-value"><span id="overviewFundsCount">0</span></span>
+            </div>
+          </div>
+          <div class="pdx-status-tile">
+            <div class="pdx-status-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+            <div class="pdx-status-body">
+              <span class="pdx-status-label">Live campaigns</span>
+              <span class="pdx-status-value"><span id="overviewCampaignsCount">0</span></span>
+            </div>
           </div>
         </section>
 
@@ -268,28 +281,52 @@
           </div>
         </section>
 
-        <!-- STATUS STRIP -->
-        <section class="pdx-status-strip" id="overviewStatusCard">
-          <div class="pdx-status-tile">
-            <div class="pdx-status-icon"><svg viewBox="0 0 24 24"><path d="M20 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6"/><path d="M22 6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2l10 7 10-7z"/></svg></div>
-            <div class="pdx-status-body">
-              <span class="pdx-status-label">Stripe</span>
-              <span class="pdx-status-value" id="pdxStripeStatusWrap"><span id="overviewStripeStatus">—</span></span>
+        <!-- STRIPE NONPROFIT PRICING -->
+        <div class="npp-dashboard-grid">
+          <section class="pdx-panel npp-panel" id="stripeVolumePanel">
+            <div class="pdx-panel-header">
+              <div class="pdx-panel-title">
+                <div class="pdx-panel-title-icon npp-panel-title-icon">1</div>
+                <div>
+                  <span class="npp-panel-kicker">Stripe Discount Eligibility monitoring</span>
+                  Stripe nonprofit volume
+                </div>
+              </div>
+              <button class="pdx-link-btn" type="button" onclick="loadStripeVolume(this)">Refresh</button>
             </div>
+            <div id="stripeVolumeBody" class="npp-panel-body">
+              <div class="insights-empty-dark">Loading donation and non-donation volume…</div>
+            </div>
+          </section>
+
+          <section class="pdx-panel npp-panel" id="nonprofitPricingApplicationPanel">
+            <div class="pdx-panel-header">
+              <div class="pdx-panel-title">
+                <div class="pdx-panel-title-icon npp-panel-title-icon">2</div>
+                <div>
+                  <span class="npp-panel-kicker">Application workspace</span>
+                  Apply for Stripe nonprofit pricing
+                </div>
+              </div>
+              <button class="pdx-link-btn" type="button" onclick="loadNonprofitPricing(this)">Refresh</button>
+            </div>
+            <div id="nonprofitPricingApplicationBody" class="npp-panel-body">
+              <div class="insights-empty-dark">Loading application workflow…</div>
+            </div>
+          </section>
+        </div>
+
+        <!-- YOUR SUBSCRIPTION -->
+        <section class="pdx-panel pdx-sub-panel" id="pdxSubscriptionPanel">
+          <div class="pdx-panel-header">
+            <div class="pdx-panel-title">
+              <div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></div>
+              Your Subscription
+            </div>
+            <button class="pdx-link-btn" type="button" onclick="switchTab('settings')">Manage plan</button>
           </div>
-          <div class="pdx-status-tile">
-            <div class="pdx-status-icon"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
-            <div class="pdx-status-body">
-              <span class="pdx-status-label">Active funds</span>
-              <span class="pdx-status-value"><span id="overviewFundsCount">0</span></span>
-            </div>
-          </div>
-          <div class="pdx-status-tile">
-            <div class="pdx-status-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-            <div class="pdx-status-body">
-              <span class="pdx-status-label">Live campaigns</span>
-              <span class="pdx-status-value"><span id="overviewCampaignsCount">0</span></span>
-            </div>
+          <div id="pdxSubscriptionBody" class="pdx-sub-body">
+            <div class="pdx-recurring-empty">Load your dashboard to see your plan and included modules.</div>
           </div>
         </section>
 
@@ -462,48 +499,83 @@
 
       <!-- ── GIVING HISTORY TAB ──────────────────────────────── -->
       <div class="tab-panel" id="tab-history">
-        <div class="history-summary">
-          <div class="history-stat"><div class="history-stat-val" id="histStatTotal">—</div><div class="history-stat-label">Total gifts</div></div>
-          <div class="history-stat"><div class="history-stat-val" id="histStatAmount">—</div><div class="history-stat-label">Total given</div></div>
-          <div class="history-stat"><div class="history-stat-val" id="histStatAvg">—</div><div class="history-stat-label">Avg gift</div></div>
-          <div class="history-stat"><div class="history-stat-val" id="histStatRecurring">—</div><div class="history-stat-label">Recurring</div></div>
-        </div>
-
-        <div class="section-card">
-          <div class="section-header">
-            <div class="section-title">
-              <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg></div>
-              Recent Gifts
-            </div>
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-ghost btn-sm" onclick="exportHistoryCsv()">Export CSV</button>
-              <button class="btn btn-ghost btn-sm" onclick="loadGivingHistory(this)">Refresh</button>
-            </div>
+        <section class="parish-history-hero">
+          <div class="parish-history-hero-copy">
+            <span class="parish-history-eyebrow">Giving intelligence</span>
+            <h1>See the story behind every gift.</h1>
+            <p>Follow giving momentum, understand which funds parishioners support, and find the transaction detail you need.</p>
+            <span id="historyHeroContext">Load giving history to see current patterns.</span>
           </div>
-          <div class="history-filters" style="padding:0.85rem 1.25rem;border-bottom:1px solid var(--line);background:var(--paper);">
-            <div>
-              <label style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Search donor / fund</label>
-              <input id="histSearch" type="search" placeholder="Name, email, or fund..." oninput="filterHistory()" style="background:white;" />
+          <div class="parish-history-hero-total">
+            <span>Net received</span>
+            <strong id="histStatAmount">—</strong>
+            <small>For the selected period and filters</small>
+          </div>
+          <div class="parish-history-hero-actions">
+            <button type="button" onclick="exportHistoryCsv()">Export CSV</button>
+            <button type="button" onclick="loadGivingHistory(this)">Refresh</button>
+          </div>
+        </section>
+
+        <section class="parish-history-kpis" aria-label="Giving history summary">
+          <article><span>Gifts</span><strong id="histStatTotal">—</strong><small>Matching this view</small></article>
+          <article><span>Distinct donors</span><strong id="histStatDonors">—</strong><small>Named or email-identified</small></article>
+          <article><span>Average gift</span><strong id="histStatAvg">—</strong><small>Net to the parish</small></article>
+          <article><span>Recurring gifts</span><strong id="histStatRecurring">—</strong><small>Reliable giving activity</small></article>
+        </section>
+
+        <section class="parish-history-insights">
+          <article class="parish-history-insight-card">
+            <header><div><span>Momentum</span><h2>Giving by month</h2></div><small>Net received</small></header>
+            <div id="historyTrendPanel" class="parish-history-chart"><p class="sw-tool-loading">Loading trend…</p></div>
+          </article>
+          <article class="parish-history-insight-card">
+            <header><div><span>Allocation</span><h2>Where gifts are going</h2></div><small>Top funds</small></header>
+            <div id="historyFundPanel" class="parish-history-funds"><p class="sw-tool-loading">Loading funds…</p></div>
+          </article>
+        </section>
+
+        <section class="parish-history-ledger">
+          <header class="parish-history-ledger-head">
+            <div><span>Transaction record</span><h2>Giving activity</h2><p id="historyResultCount">Load the dashboard to view gifts.</p></div>
+            <div class="parish-history-ledger-actions">
+              <button type="button" onclick="exportHistoryCsv()">Export CSV</button>
+              <button type="button" onclick="loadGivingHistory(this)">Refresh</button>
             </div>
-            <div>
-              <label style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Type</label>
-              <select id="histTypeFilter" onchange="filterHistory()" style="background:white;">
+          </header>
+          <div class="history-filters parish-history-filters">
+            <label class="parish-history-search">
+              <span>Search</span>
+              <input id="histSearch" type="search" placeholder="Donor, email, fund, or commemoration…" oninput="filterHistory()" />
+            </label>
+            <label>
+              <span>Period</span>
+              <select id="histRangeFilter" onchange="filterHistory()">
+                <option value="30d">Last 30 days</option>
+                <option value="90d">Last 90 days</option>
+                <option value="ytd" selected>Year to date</option>
+                <option value="all">All history</option>
+              </select>
+            </label>
+            <label>
+              <span>Gift type</span>
+              <select id="histTypeFilter" onchange="filterHistory()">
                 <option value="all">All types</option>
                 <option value="one_time">One-time</option>
                 <option value="recurring">Recurring</option>
               </select>
-            </div>
-            <div>
-              <label style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Fund</label>
-              <select id="histFundFilter" onchange="filterHistory()" style="background:white;">
+            </label>
+            <label>
+              <span>Fund</span>
+              <select id="histFundFilter" onchange="filterHistory()">
                 <option value="all">All funds</option>
               </select>
-            </div>
+            </label>
           </div>
           <div id="historyTableWrap">
             <div class="history-empty">Load your dashboard to view recent gifts.</div>
           </div>
-        </div>
+        </section>
       </div>
 
       <!-- ── SETTINGS TAB ────────────────────────────────────── -->
@@ -688,8 +760,8 @@
                   <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 15h8"/><path d="M8 19h5"/></svg>
                 </span>
                 <span>
-                  <strong>Stripe Account &amp; Payouts Guide</strong>
-                  <small>Verify Stripe, manage payouts and deposits, and use parish commerce &mdash; updated July 2026.</small>
+                  <strong>Stripe, Payouts, Nonprofit Pricing &amp; Bookstore Guide</strong>
+                  <small>Connect Stripe, request eligible nonprofit pricing, launch giving, reconcile deposits, and operate parish commerce &mdash; updated July 2026.</small>
                 </span>
                 <b>Open</b>
               </a>
@@ -997,15 +1069,6 @@
           </div>
           <div class="sw-suite-hero-status" id="stewardshipHeroStatus">
             <span class="sw-suite-status-label" id="stewardshipStatusLabel">Loading…</span>
-            <div class="sw-suite-hero-actions">
-              <button class="sw-report-generate-btn" type="button" onclick="openStewardshipMonthlyReport()">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 1.5h6l3 3v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1z"/><path d="M10 1.5V4.5h3"/><path d="M5.5 8.5h5M5.5 10.5h5M5.5 12h3"/></svg>
-                Generate Monthly Stewardship Report
-              </button>
-              <button class="sw-suite-refresh-btn" type="button" onclick="loadStewardshipPanel(true)" title="Refresh">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/><polyline points="10 1 10 4 13 4"/></svg>
-              </button>
-            </div>
           </div>
         </div>
 
@@ -1013,7 +1076,7 @@
              A single composite score, not another wall of numbers. -->
         <div class="sw-suite-tool-card sw-tool-health-score sw-tool-financials-featured">
           <div class="sw-tool-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6.5 7 1-5 5 1.5 7L12 18l-6.5 3.5L7 14.5l-5-5 7-1z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z"/><polyline points="3.8 12 7.2 12 9.2 8.3 12.3 15.8 14.5 12 20.2 12"/></svg>
           </div>
           <strong class="sw-tool-card-title">Stewardship Health</strong>
           <p class="sw-tool-card-desc">One score, calculated from pledge fulfillment, recurring donor stability, retention, lapsed donors, year-end projection, and concentration risk.</p>
@@ -1030,7 +1093,13 @@
               <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
             </svg>
           </div>
-          <strong class="sw-tool-card-title">Stewardship Reports</strong>
+          <div class="sw-tool-card-header-row sw-report-card-header">
+            <strong class="sw-tool-card-title">Stewardship Reports</strong>
+            <button class="sw-report-generate-btn" type="button" onclick="openStewardshipMonthlyReport()">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 1.5h6l3 3v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1z"/><path d="M10 1.5V4.5h3"/><path d="M5.5 8.5h5M5.5 10.5h5M5.5 12h3"/></svg>
+              Generate Monthly Stewardship Report
+            </button>
+          </div>
           <p class="sw-tool-card-desc">Fund breakdown, giving trends, budget pace, and year-over-year snapshots.</p>
           <div class="sw-tool-card-body" id="givingMetricsPane">
             <p class="sw-tool-loading">Loading…</p>
@@ -1045,32 +1114,23 @@
               <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
             </svg>
           </div>
-          <div class="sw-tool-card-header-row">
+          <div class="sw-tool-card-header-row sw-report-card-header">
             <strong class="sw-tool-card-title">Financial Snapshots</strong>
-            <div class="sw-tool-card-actions" id="financialsHeaderActions" hidden>
-              <select class="sw-year-select" id="financialsYearSelect" onchange="loadFinancialSnapshotsPanel(+this.value)"></select>
-              <button class="sw-action-btn" type="button" onclick="openFinancialsEditor(null)">+ New</button>
-            </div>
+            <button class="sw-report-generate-btn" type="button" onclick="openStewardshipMonthlyFinancialReport()">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 1.5h6l3 3v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1z"/><path d="M10 1.5V4.5h3"/><path d="M5 11.5l2-2 1.5 1.5L11.5 8"/></svg>
+              Generate Monthly Financial Report
+            </button>
           </div>
-          <p class="sw-tool-card-desc">Income, expenses, and restricted fund balances by fiscal year.</p>
+          <div class="sw-tool-card-actions sw-financials-secondary-actions" id="financialsHeaderActions" hidden>
+            <button class="sw-action-btn" type="button" onclick="openFinancialsEditor()">Edit snapshot</button>
+            <select class="sw-year-select" id="financialsYearSelect" aria-label="Financial snapshot year" onchange="loadFinancialSnapshotsPanel(+this.value)"></select>
+            <button class="sw-action-btn" type="button" onclick="openOutsideAgapayGiving()">Record outside-AGAPAY giving</button>
+          </div>
+          <p class="sw-tool-card-desc">One authoritative fiscal-year view. Contributions and restricted-fund inflows calculate automatically; fund deductions, expenses, other revenue, externally held assets, and notes remain editable until Accounting is active.</p>
           <div class="sw-tool-card-body" id="stewardshipFinancialsPane">
             <p class="sw-tool-loading">Loading…</p>
           </div>
-        </div>
-
-        <!-- Other Income — full-width featured card. Where the treasurer logs
-             cash & check totals and income from other platforms (Tithe.ly,
-             PayPal, etc.) so the full financial picture rolls into Budget
-             Pace, Stewardship Health, and the Monthly Report automatically. -->
-        <div class="sw-suite-tool-card sw-tool-manual-income sw-tool-financials-featured">
-          <div class="sw-tool-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/><path d="M6 14h4"/>
-            </svg>
-          </div>
-          <strong class="sw-tool-card-title">Other Income</strong>
-          <p class="sw-tool-card-desc">Log cash &amp; check deposits and income from Tithe.ly, PayPal, or other platforms — it's automatically included everywhere AGAPAY shows total giving.</p>
-          <div class="sw-tool-card-body" id="stewardshipManualIncomePane">
+          <div class="sw-outside-giving-panel" id="stewardshipManualIncomePane" hidden>
             <p class="sw-tool-loading">Loading…</p>
           </div>
         </div>
@@ -1164,11 +1224,11 @@
       <div class="tab-panel" id="tab-sacraments">
 
         <div class="sac-paywall" id="sacramentsComingSoonBanner">
-          <div class="text-give-header">
-            <div>
-              <div class="text-give-eyebrow">Parish operations</div>
-              <h1>Sacraments &amp; Services</h1>
-              <p>Give parishioners a clear way to request pastoral care while your clergy manage availability, scheduling, and follow-up in one private workspace.</p>
+          <div class="text-give-header sw-suite-hero sac-paywall-hero">
+            <div class="sw-suite-hero-copy">
+              <div class="text-give-eyebrow sw-suite-eyebrow">Parish operations</div>
+              <h1 class="sw-suite-heading">Sacraments &amp; Services</h1>
+              <p class="sw-suite-subhead">Give parishioners a clear way to request pastoral care while your clergy manage availability, scheduling, and follow-up in one private workspace.</p>
             </div>
             <div class="text-give-header-mark">
               <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="M12 7v8"/><path d="M9 10h6"/></svg>
@@ -1230,26 +1290,26 @@
 
         <div id="sacramentsLiveContent" hidden>
           <section class="sac-admin-shell" aria-label="Sacraments and Services parish dashboard">
-            <div class="sac-admin-head">
-              <div>
-                <span class="sac-admin-kicker">Parish tier</span>
-                <h1>Sacraments &amp; Services</h1>
-                <p>Review parishioner requests, set recurring availability, and manage blackout dates for online booking.</p>
+            <div class="sac-admin-head sw-suite-hero">
+              <div class="sw-suite-hero-copy">
+                <span class="sac-admin-kicker sw-suite-eyebrow">Parish operations</span>
+                <h1 class="sw-suite-heading">Sacraments &amp; Services</h1>
+                <p class="sw-suite-subhead">Review parishioner requests, set recurring availability, and manage blackout dates for online booking.</p>
               </div>
-              <div class="sac-admin-status">
-                <div class="sac-admin-priest-picker" id="sacramentsPriestPicker"></div>
+              <div class="sac-admin-status sw-suite-hero-status agapay-feature-actions">
                 <div id="sacramentsFeatureToggle"></div>
-                <span id="sacramentsStatusLabel">Loading...</span>
-                <button class="sac-admin-icon-btn" type="button" onclick="loadSacramentsPanel(true)" title="Refresh">
+                <button class="sac-admin-icon-btn sw-suite-refresh-btn" type="button" onclick="loadSacramentsPanel(true)" title="Refresh Sacraments &amp; Services" aria-label="Refresh Sacraments &amp; Services">
                   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/><polyline points="10 1 10 4 13 4"/></svg>
                 </button>
               </div>
             </div>
-            <div class="sac-admin-rule"></div>
+            <div class="sac-admin-context-bar">
+              <div class="sac-admin-priest-picker" id="sacramentsPriestPicker"></div>
+              <span class="sac-admin-context-status" id="sacramentsStatusLabel">Loading...</span>
+            </div>
             <div class="sac-admin-tabs" role="tablist" aria-label="Sacraments and Services tools">
-              <button class="sac-admin-tab active" type="button" data-sac-tab="availability" onclick="setSacramentsDashboardTab('availability')">Weekly Availability</button>
               <button class="sac-admin-tab" type="button" data-sac-tab="blackouts" onclick="setSacramentsDashboardTab('blackouts')">Blackout Dates</button>
-              <button class="sac-admin-tab" type="button" data-sac-tab="rules" onclick="setSacramentsDashboardTab('rules')">Sacrament Rules</button>
+              <button class="sac-admin-tab active" type="button" data-sac-tab="rules" onclick="setSacramentsDashboardTab('rules')">Sacrament Rules</button>
               <button class="sac-admin-tab" type="button" data-sac-tab="requests" onclick="setSacramentsDashboardTab('requests')">Requests</button>
               <button class="sac-admin-tab" type="button" data-sac-tab="calendar" onclick="setSacramentsDashboardTab('calendar')">Calendar</button>
             </div>
@@ -1302,7 +1362,7 @@
         </div>
       </div>
 
-      <!-- ── BOOKSTORE TAB ────────────────────── -->
+      <!-- ── COMMERCE TAB ────────────────────── -->
       <div class="tab-panel" id="tab-bookstore">
         <div id="bookstoreUpsellBanner" class="text-give-launch" hidden>
           <div class="text-give-launch-icon">
@@ -1310,21 +1370,71 @@
           </div>
           <div>
             <span>Parish Commerce</span>
-            <h2>Bookstore Payments is included with the Parish tier</h2>
-            <p>Let parishioners pay for books, prayer ropes, icons, candles, and other parish items from My AGAPAY with Stripe-powered checkout, then pick them up in person.</p>
+            <h2>Commerce is included with the Parish tier</h2>
+            <p>Start with Bookstore payments for books, prayer ropes, icons, and other parish items. Additional Commerce products will appear here as they become available.</p>
             <button class="btn btn-gold" type="button" onclick="switchTab('settings')">Review Parish tier</button>
           </div>
         </div>
 
         <div id="bookstoreLiveContent" hidden>
+          <nav class="commerce-product-tabs" role="tablist" aria-label="Commerce products">
+            <button class="commerce-product-tab is-active" type="button" role="tab" aria-selected="true" data-commerce-product="overview" onclick="switchCommerceProduct('overview')">
+              <span>Overview</span>
+            </button>
+            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" data-commerce-product="bookstore" onclick="switchCommerceProduct('bookstore')">
+              <span>Bookstore</span>
+            </button>
+            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="events">
+              <span>Events</span><em>Coming soon</em>
+            </button>
+            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="meals">
+              <span>Meals</span><em>Coming soon</em>
+            </button>
+            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="retreats">
+              <span>Retreats</span><em>Coming soon</em>
+            </button>
+            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="camp">
+              <span>Camp</span><em>Coming soon</em>
+            </button>
+            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="tuition">
+              <span>Tuition</span><em>Coming soon</em>
+            </button>
+          </nav>
+
+          <section class="commerce-workspace-panel is-active" id="commerceOverviewPanel" data-commerce-panel="overview">
+            <div class="sw-suite-hero commerce-overview-hero">
+              <div class="sw-suite-hero-copy">
+                <span class="sw-suite-eyebrow">Parish Commerce</span>
+                <h1 class="sw-suite-heading">Commerce Overview</h1>
+                <p class="sw-suite-subhead">See revenue, customers, orders, and activity across every Commerce product in one place.</p>
+              </div>
+              <div class="sw-suite-hero-status">
+                <span class="commerce-overview-range-label">Reporting period</span>
+                <div class="commerce-overview-range" role="group" aria-label="Commerce reporting period">
+                  <button type="button" data-commerce-range="30d" onclick="setCommerceOverviewRange('30d')">30d</button>
+                  <button class="is-active" type="button" data-commerce-range="90d" onclick="setCommerceOverviewRange('90d')">90d</button>
+                  <button type="button" data-commerce-range="ytd" onclick="setCommerceOverviewRange('ytd')">YTD</button>
+                  <button type="button" data-commerce-range="all" onclick="setCommerceOverviewRange('all')">All</button>
+                </div>
+                <button class="sw-suite-refresh-btn commerce-overview-refresh" type="button" onclick="refreshCommerceOverview()" title="Refresh Commerce overview" aria-label="Refresh Commerce overview">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/><polyline points="10 1 10 4 13 4"/></svg>
+                </button>
+              </div>
+            </div>
+            <div id="commerceOverviewBody" class="commerce-overview-body" aria-live="polite">
+              <p class="sw-tool-loading">Loading Commerce activity…</p>
+            </div>
+          </section>
+
+          <section class="commerce-workspace-panel" id="commerceBookstorePanel" data-commerce-panel="bookstore" hidden>
           <div class="sw-suite-hero bookstore-hero">
             <div class="sw-suite-hero-copy">
               <span class="sw-suite-eyebrow">Parish Commerce</span>
               <h1 class="sw-suite-heading">Bookstore</h1>
               <p class="sw-suite-subhead">Manage bookstore items and the broader parish goods parishioners can purchase from My AGAPAY. Payment is handled through Stripe; items are collected in person.</p>
             </div>
-            <div class="sw-suite-hero-status">
-              <span class="sw-suite-status-label sw-suite-status--active" id="bookstoreStatusLabel">Loading...</span>
+            <div class="sw-suite-hero-status agapay-feature-actions">
+              <div id="bookstoreFeatureToggle"></div>
               <div class="sw-suite-hero-actions">
                 <button class="sw-suite-refresh-btn" type="button" onclick="loadBookstoreCatalogTab(true)" title="Refresh">
                   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/><polyline points="10 1 10 4 13 4"/></svg>
@@ -1405,6 +1515,7 @@
               <p class="section-note">Choose common parish bookstore items, adjust the price, then add them to your live catalog.</p>
               <div id="bookstoreStarterCatalog"><p class="sw-tool-loading">Loading...</p></div>
             </div>
+          </section>
           </section>
         </div>
       </div>
@@ -1532,7 +1643,7 @@
 
 <nav class="mobile-tabbar" aria-label="Parish dashboard sections">
   <button class="mobile-tab-link active" type="button" data-nav-tab="giving" onclick="switchTab('giving')">
-    <svg viewBox="0 0 38 38" aria-hidden="true"><path d="M19 4.5 8.5 13v18h21V13L19 4.5Z"/><path d="M14.5 31V20.5h9V31"/><path d="M5.5 31h27"/><path d="M19 9v6"/><path d="M16.2 12h5.6"/></svg>
+    <svg viewBox="0 0 38 38" aria-hidden="true"><rect x="6" y="6" width="26" height="26" rx="3"/><path d="M12 26v-7"/><path d="M19 26V12"/><path d="M26 26V16"/></svg>
     <span>Giving</span>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="reconcile" onclick="switchTab('reconcile')">
@@ -1557,7 +1668,7 @@
     <em class="mobile-soon-badge">Soon</em>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="stewardship" onclick="switchTab('stewardship')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M6 5h16v18H6z"/><path d="M10 10h8"/><path d="M10 14h8"/><path d="M10 18h5"/></svg>
+    <svg viewBox="0 0 28 28" aria-hidden="true"><polyline points="26 14 21 14 17.5 25 10.5 3 7 14 2 14"/></svg>
     <span>Health</span>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="accounting" onclick="switchTab('accounting')">
@@ -1568,14 +1679,17 @@
   <button class="mobile-tab-link" type="button" data-nav-tab="sacraments" onclick="switchTab('sacraments')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 3.5 23 7v6.5c0 6.2-3.7 10.2-9 12-5.3-1.8-9-5.8-9-12V7l9-3.5Z"/><path d="M14 8v10"/><path d="M10.5 11.5h7"/></svg>
     <span>Sacraments</span>
+    <em class="mobile-module-status" hidden>Off</em>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="directory" onclick="switchTab('directory')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M6 6h16v16H6z"/><path d="M10 11h8"/><path d="M10 16h5"/></svg>
     <span>Directory</span>
+    <em class="mobile-module-status" hidden>Off</em>
   </button>
-  <button class="mobile-tab-link" type="button" data-nav-tab="bookstore" onclick="switchTab('bookstore')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7 22a3 3 0 0 1 3-3h12"/><path d="M10 4h12v20H10a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3z"/><path d="M11 9h7"/></svg>
-    <span>Store</span>
+  <button class="mobile-tab-link" type="button" data-nav-tab="bookstore" onclick="switchTab('commerce')">
+    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M6 10h16l1 15H5L6 10z"/><path d="M10 10V7a4 4 0 0 1 8 0v3"/><path d="M9 16h10"/></svg>
+    <span>Commerce</span>
+    <em class="mobile-module-status" hidden>Off</em>
     <em class="mobile-upgrade-badge" id="mobileBookstoreBadge" hidden>Upgrade</em>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="settings" onclick="switchTab('settings')">
@@ -1603,9 +1717,28 @@
     <div style="display:flex;gap:10px;justify-content:flex-end"><button type="button" class="btn btn-ghost" onclick="closeParishSupportTicket()">Cancel</button><button type="button" class="btn btn-gold" id="parishSupportSend" onclick="submitParishSupportTicket()">Send ticket</button></div>
   </form>
 </dialog>
+<dialog id="parishFeatureRequestDialog" style="width:min(540px,calc(100% - 32px));border:0;border-radius:18px;padding:0;box-shadow:0 24px 70px rgba(6,21,34,.34)">
+  <div style="padding:26px;display:grid;gap:16px">
+    <div style="width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:#f5ead0;color:#8b651d;font-size:22px" aria-hidden="true">✦</div>
+    <div>
+      <div style="color:#a97c25;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase">Parishioner interest</div>
+      <h2 style="margin:5px 0 8px;font-family:Georgia,serif;font-size:27px;color:#061522">Your donors want more AGAPAY features</h2>
+      <p id="parishFeatureRequestCopy" style="margin:0;color:#526571;font-size:14px;line-height:1.6"></p>
+    </div>
+    <div style="padding:14px 16px;border-radius:12px;background:#f7f3ea;border:1px solid #e5dcc8">
+      <strong id="parishFeatureRequestTitle" style="display:block;color:#061522;font-size:14px">Requested feature</strong>
+      <span id="parishFeatureRequestDescription" style="display:block;margin-top:4px;color:#62717c;font-size:12px;line-height:1.5"></span>
+    </div>
+    <p id="parishFeatureRequestStatus" style="margin:0;color:#62717c;font-size:12px" aria-live="polite"></p>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end">
+      <button type="button" class="btn btn-ghost" onclick="dismissParishFeatureRequest(false)">Not now</button>
+      <button type="button" class="btn btn-gold" id="parishFeatureRequestAction" onclick="dismissParishFeatureRequest(true)">View upgrade options</button>
+    </div>
+  </div>
+</dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
-<script src="/parish/app.js?v=20260720e"></script>
+  <script src="/parish/app.js?v=20260729givingrequests1"></script>
 </body>
 </html>

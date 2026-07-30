@@ -3,6 +3,7 @@ import fs from 'node:fs';
 const dashboard = fs.readFileSync(new URL('../public/parish/dashboard.html', import.meta.url), 'utf8');
 const app = fs.readFileSync(new URL('../public/parish/app.js', import.meta.url), 'utf8');
 const css = fs.readFileSync(new URL('../public/parish/redesign.css', import.meta.url), 'utf8');
+const stewardshipCss = fs.readFileSync(new URL('../public/styles/stewardship.css', import.meta.url), 'utf8');
 
 if (app.includes("fetch(directoryAdminApi('/queue')")) {
   throw new Error('Parish Directory must not fetch a review queue');
@@ -11,25 +12,33 @@ if (app.includes("fetch(directoryAdminApi('/queue')")) {
 const checks = [
   ['the legacy Directory Operations hero is removed', !dashboard.includes('Directory Operations')],
   ['the live Directory API remains wired', app.includes("directoryAdminApi('/households?limit=100')") && app.includes("directoryAdminApi('/print/directory')")],
-  ['Directory is gated to the Parish tier module', app.includes("tab === 'directory' && currentParish && !moduleIncluded('directory')") && app.includes("const directoryActive = moduleIncluded('directory')")],
-  ['lower tiers hide Directory in desktop and mobile navigation', app.includes("getElementById('nav-directory')?.toggleAttribute('hidden', !directoryActive)") && app.includes(".mobile-tab-link[data-nav-tab=\"directory\"]")],
+  ['Directory has a parish-facing on/off switch', app.includes('function toggleDirectoryFeature(input)') && app.includes("directoryAdminApi('/settings')") && app.includes('ordinaryMemberAccessEnabled: enabled')],
+  ['Directory and Bookstore share the same visible feature switch', app.includes('pdx-dir-feature-switch agapay-feature-switch') && app.includes('class="sac-admin-switch agapay-feature-switch"') && app.includes('aria-label="Show parish directory in My AGAPAY"') && app.includes('aria-label="Show Bookstore in My AGAPAY"') && stewardshipCss.includes('.agapay-feature-switch input:checked + span') && stewardshipCss.includes('.agapay-feature-switch input:focus-visible + span')],
+  ['Directory and Bookstore share the same AGAPAY hero treatment', app.includes('pdx-dir-canonical-head sw-suite-hero') && dashboard.includes('sw-suite-hero bookstore-hero') && app.includes('agapay-feature-actions') && dashboard.includes('agapay-feature-actions')],
+  ['Directory is gated to the Parish tier module', app.includes("directory: document.getElementById('tab-directory')") && app.includes("const directoryActive = moduleIncluded('directory')")],
+  ['lower tiers retain a visible Directory upgrade path', app.includes("getElementById('nav-directory')?.removeAttribute('hidden')") && app.includes("syncTierRequirementNavigation('directory', 'Parish', directoryActive)")],
   ['the directory is the default parish view', app.includes("let directoryAdminTab = 'directory'")],
-  ['canonical Church Directory heading is present', app.includes('<h1>Church Directory</h1>')],
-  ['export and working print actions remain wired', app.includes("downloadDirectoryAdminExport('/exports/published-adults.csv')") && app.includes("previewDirectoryAdminPrint('/print/directory')")],
+  ['canonical Parish Directory heading is present', app.includes('<h1 class="sw-suite-heading">Parish Directory</h1>')],
+  ['directory views appear directly beneath the page header with plain-language labels', app.indexOf('pdx-dir-view-switcher') < app.indexOf('data-dir-panel="directory"') && app.includes('Families &amp; Members') && app.includes('Directory Management')],
+  ['CSV and designed PDF directory downloads remain wired', app.includes("downloadDirectoryAdminExport('/exports/published-adults.csv')") && app.includes("downloadDirectoryAdminExport('/exports/directory.pdf')") && app.includes('Download PDF')],
   ['households lead with prototype initials and members', app.includes('pdx-dir-table-avatar') && app.includes('pdx-dir-table-members')],
+  ['family rows no longer expand into an unhelpful record card', !app.includes(`data-skills="\${escapeAttr(householdSkills.join(' '))}" onclick="openDirectoryHousehold`) && !app.includes('id="directoryRecordDetail"')],
   ['household initials use surname plus H', app.includes('function directoryHouseholdInitials(name)') && app.includes("${directoryHouseholdLastName(name).charAt(0)}H")],
   ['households are ordered by normalized family surname', app.includes('function directoryHouseholdSortKey(name)') && app.includes('const sortedHouseholds = [...households].sort')],
   ['duplicate parish-admin masthead is absent', !app.includes('My AGAPAY — Parish Admin') && !css.includes('.pdx-dir-admin-nav')],
-  ['prototype contact display control is present', app.includes('Hidden until tap') && app.includes('Always visible') && app.includes('toggleDirectoryContactField')],
+  ['staff always sees complete contacts while eyes report donor-side sharing', app.includes('Authorized parish staff always see the complete contact record') && app.includes('The eye reports the family’s sharing choice') && app.includes('staffContact.email?.visibility') && app.includes('private from parishioners')],
+  ['street address is explicitly staff-only while city and state may be shared', app.includes('A street address is never shown to parishioners') && app.includes('city/state visible in My AGAPAY; street private') && app.includes('Full street addresses are never published')],
   ['prototype nameday and skills filters are present', app.includes('All namedays') && app.includes('All skills') && app.includes('filterCanonicalDirectoryRows')],
-  ['parish directory keeps maintenance without a review queue', !app.includes('data-dir-tab="queue"') && app.includes('Maintenance &amp; Skills')],
+  ['parish directory keeps clearly labeled management tools without a review queue', !app.includes('data-dir-tab="queue"') && app.includes('Directory Health') && app.includes('Parishioner Skills &amp; Service')],
+  ['one family account manages spouses and children', app.includes('Managed through the family account') && app.includes('does not need a separate My AGAPAY login or invitation')],
+  ['the dashboard does not label household-managed adults as needing invitations', !app.includes('adult needs invitation') && !app.includes('Adults needing an account invitation')],
   ['the uploaded four-column parish table is preserved', app.includes('Members &amp; Namedays') && app.includes('Contact &amp; Parishioner Visibility') && app.includes('Skills to Serve')],
   ['the Directory bypasses the stale empty dashboard wrapper', app.includes("classList.toggle('directory-tab-active'") && css.includes('.content.directory-tab-active > .detail-wrap { display: none; }') && css.includes('.app.directory-tab-active > .sidebar { display: none; }')],
   ['AGAPAY navy and gold style the actions', css.includes('background:#061522') && css.includes('var(--gold)')],
   ['AGAPAY serif and sans typography are used', css.includes('var(--serif)') && css.includes('var(--sans)')],
   ['prototype print sheet width and flat table are preserved', css.includes('width:min(1180px,100%)') && css.includes('box-shadow:none')],
   ['initials medallions retain true centering', css.includes('.pdx-dir-table-avatar { display:grid; place-items:center;') && css.includes('.pdx-dir-table-household > div > span')],
-  ['Church Directory hero uses the signature AGAPAY navy', css.includes('.pdx-dir-canonical-head {') && css.includes('background:#061522') && css.includes('color: var(--cream)')]
+  ['Parish Directory hero uses the signature AGAPAY navy', css.includes('.pdx-dir-canonical-head {') && css.includes('background:#061522') && css.includes('color: var(--cream)')]
 ];
 
 const failures = checks.filter(([, passed]) => !passed);

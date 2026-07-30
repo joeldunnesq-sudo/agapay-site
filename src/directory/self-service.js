@@ -1,17 +1,18 @@
-import { d1All, d1First, generateSecret } from "../lib/core.js";
+import { d1All, d1First, generateSecret, loadDonor } from "../lib/core.js";
 import { currentUser } from "../lib/authorization.js";
-import { createPerson, DirectoryServiceError } from "./foundation.js";
+import { addHouseholdMember, createPerson, DirectoryServiceError, removeHouseholdMember } from "./foundation.js";
 import {
   createAddress,
   createContactMethod,
   deactivateContactMethod,
   listActiveAddressesForOwner,
   listActiveContactsForOwner,
+  updateAddress,
   updateContactMethod
 } from "./contacts.js";
 import { createDirectoryInvitation, listParishDirectoryInvitations, resendDirectoryInvitation, revokeDirectoryInvitation } from "./invitations.js";
 import { getPersonPrivacyFlags, setFieldPrivacyPreference, setPersonPrivacyFlags } from "./privacy.js";
-import { getPublicationProfile, transitionPublicationProfile } from "./publication.js";
+import { createPublicationProfile, getPublicationProfile, transitionPublicationProfile } from "./publication.js";
 import {
   auditStatement,
   cleanText,
@@ -64,6 +65,34 @@ function normalizeStarterVisibility(value, fallback = "private") {
   return cleaned;
 }
 
+async function householdWasParishVerified(env, parishId, householdId) {
+  const row = await d1First(
+    env,
+    `SELECT id FROM directory_publication_profiles
+      WHERE parish_id = ?1 AND owner_type = 'household' AND owner_id = ?2
+        AND approval_status = 'approved'
+      ORDER BY approved_at DESC LIMIT 1`,
+    parishId,
+    householdId
+  );
+  return Boolean(row);
+}
+
+async function personBelongsToVerifiedHousehold(env, parishId, personId) {
+  const row = await d1First(
+    env,
+    `SELECT hm.id FROM directory_household_members hm
+      JOIN directory_households h ON h.id = hm.household_id AND h.parish_id = ?1 AND h.active = 1
+      JOIN directory_publication_profiles pub
+        ON pub.parish_id = ?1 AND pub.owner_type = 'household' AND pub.owner_id = h.id
+     WHERE hm.person_id = ?2 AND hm.active = 1 AND pub.approval_status = 'approved'
+     LIMIT 1`,
+    parishId,
+    personId
+  );
+  return Boolean(row);
+}
+
 function personDto(row, flags = {}) {
   if (!row) return null;
   return {
@@ -106,7 +135,9 @@ function memberDto(row) {
     preferredName: row.preferred_name,
     relationship: row.relationship,
     child: toBool(row.is_child),
-    protectedPerson: toBool(row.protected_person)
+    protectedPerson: toBool(row.protected_person),
+    accountLinked: toBool(row.account_linked),
+    version: Number(row.person_updated_at || 0)
   };
 }
 
@@ -426,11 +457,22 @@ export async function resolveDirectorySelfServiceContext(env, { request = null, 
 
 export async function getSelfServiceProfile(env, { context }) {
   if (!context.claimed) return context;
+  const donor = await loadDonor(env, context.user.email).catch(() => null);
+  if (donor) await syncSelfServiceContactsFromDonor(env, { context, donor }).catch(() => null);
   const parishId = context.activeParishContexts[0]?.parishId || context.currentPerson.id;
-  const [contacts, addresses, publication] = await Promise.all([
+  const [contacts, addresses, publication, namePreference] = await Promise.all([
     listActiveContactsForOwner(env, { parishId, ownerType: "person", ownerId: context.currentPerson.id }),
     listActiveAddressesForOwner(env, { parishId, ownerType: "person", ownerId: context.currentPerson.id }),
-    getPublicationProfile(env, { parishId, ownerType: "person", ownerId: context.currentPerson.id })
+    getPublicationProfile(env, { parishId, ownerType: "person", ownerId: context.currentPerson.id }),
+    d1First(
+      env,
+      `SELECT visibility, publication_eligible
+       FROM directory_field_privacy_preferences
+       WHERE parish_id = ?1 AND owner_type = 'person' AND owner_id = ?2
+         AND field_key = 'adult_preferred_name' AND active = 1`,
+      parishId,
+      context.currentPerson.id
+    )
   ]);
   return {
     ...context,
@@ -439,10 +481,99 @@ export async function getSelfServiceProfile(env, { context }) {
       contacts: contacts.map(contactDto),
       addresses: addresses.map(addressDto),
       publication,
+      sharing: {
+        name: {
+          visibility: namePreference?.visibility || "directory_members",
+          publicationEligible: namePreference ? toBool(namePreference.publication_eligible) : true
+        }
+      },
       editableFields: EDITABLE_PERSON_FIELDS,
       reviewFields: REVIEW_PERSON_FIELDS
     }
   };
+}
+
+export async function syncSelfServiceContactsFromDonor(env, { context, donor, correlationId = "" }) {
+  if (!context?.claimed || !donor) return { synced: false };
+  const parishId = context.activeParishContexts[0]?.parishId;
+  const personId = context.currentPerson?.id;
+  if (!parishId || !personId) return { synced: false };
+  const actor = selfActor(context, parishId);
+  const contacts = await listActiveContactsForOwner(env, { parishId, ownerType: "person", ownerId: personId });
+  const syncContact = async (contactType, value, label) => {
+    const cleaned = String(value || "").trim();
+    if (!cleaned) return;
+    const existing = contacts.find((contact) => contact.contactType === contactType && contact.primary)
+      || contacts.find((contact) => contact.contactType === contactType);
+    if (!existing) {
+      await createContactMethod(env, {
+        actor,
+        parishId,
+        ownerType: "person",
+        ownerId: personId,
+        contactType,
+        value: cleaned,
+        label,
+        primary: true,
+        verified: contactType === "email" && Boolean(donor.emailVerifiedAt),
+        visibility: "private",
+        correlationId
+      });
+    } else if (String(existing.value || "").trim() !== cleaned) {
+      await updateContactMethod(env, {
+        actor,
+        parishId,
+        contactId: existing.id,
+        patch: { value: cleaned, label: existing.label || label, primary: true, visibility: existing.visibility || "private" },
+        correlationId
+      });
+    }
+  };
+  await syncContact("email", donor.email, "personal").catch(() => null);
+  await syncContact("phone", donor.contactPhone, "mobile").catch(() => null);
+
+  const household = context.manageableHouseholds.find((item) => item.parishId === parishId)
+    || context.manageableHouseholds[0];
+  const addressComplete = String(donor.addressLine1 || "").trim() && String(donor.city || "").trim();
+  if (household && addressComplete) {
+    const addresses = await listActiveAddressesForOwner(env, { parishId: household.parishId, ownerType: "household", ownerId: household.id });
+    const existing = addresses.find((address) => address.primary) || addresses[0];
+    const addressData = {
+      line1: donor.addressLine1,
+      line2: donor.addressLine2 || "",
+      city: donor.city,
+      region: donor.state || "",
+      postalCode: donor.postalCode || "",
+      country: donor.country || "US",
+      primary: true
+    };
+    if (existing) {
+      const changed = ["line1", "line2", "city", "region", "postalCode", "country"]
+        .some((key) => String(existing[key] || "").trim() !== String(addressData[key] || "").trim());
+      if (changed) {
+        await updateAddress(env, {
+          actor: selfActor(context, household.parishId),
+          parishId: household.parishId,
+          addressId: existing.id,
+          patch: { ...addressData, visibility: existing.visibility || "private" },
+          correlationId
+        }).catch(() => null);
+      }
+    } else {
+      await createAddress(env, {
+        actor: selfActor(context, household.parishId),
+        parishId: household.parishId,
+        ownerType: "household",
+        ownerId: household.id,
+        addressType: "residential",
+        ...addressData,
+        protectedAddress: false,
+        visibility: "private",
+        correlationId
+      }).catch(() => null);
+    }
+  }
+  return { synced: true };
 }
 
 export async function startSelfServiceProfile(env, { context, data = {}, correlationId = "" }) {
@@ -664,18 +795,43 @@ export async function saveHouseholdNameday(env, { context, householdId, namedayI
   const saintName = cleanText(data.saintName ?? existing?.saint_name, { required: true, max: 200, field: "saintName" });
   const feastMonthDay = cleanMonthDay(data.feastMonthDay ?? existing?.feast_month_day);
   const visibility = namedayVisibility(data.visibility ?? existing?.visibility);
+  let personId = cleanText(data.personId ?? existing?.person_id, { max: 180, field: "personId" });
+  if (!personId) {
+    const matchingMember = await d1First(
+      env,
+      `SELECT p.id
+         FROM directory_household_members hm
+         JOIN directory_people p ON p.id = hm.person_id AND p.active = 1
+        WHERE hm.household_id = ?1 AND hm.active = 1
+          AND LOWER(p.preferred_name) = LOWER(?2)
+        ORDER BY p.id
+        LIMIT 1`,
+      householdId,
+      displayName
+    );
+    personId = matchingMember?.id || "";
+  }
+  if (personId) {
+    const member = await d1First(
+      env,
+      "SELECT id FROM directory_household_members WHERE household_id = ?1 AND person_id = ?2 AND active = 1",
+      householdId,
+      personId
+    );
+    if (!member) throw new DirectoryServiceError("validation_failed", "Choose a nameday person from this household.", 422);
+  }
   await runAtomic(env, [
     existing ? {
       sql: `UPDATE directory_household_namedays
-            SET display_name = ?, saint_name = ?, feast_month_day = ?, visibility = ?, updated_at = ?
+            SET person_id = ?, display_name = ?, saint_name = ?, feast_month_day = ?, visibility = ?, updated_at = ?
             WHERE id = ? AND updated_at = ?`,
-      params: [displayName, saintName, feastMonthDay, visibility, timestamp, existing.id, existing.updated_at]
+      params: [personId || null, displayName, saintName, feastMonthDay, visibility, timestamp, existing.id, existing.updated_at]
     } : {
       sql: `INSERT INTO directory_household_namedays
               (id, parish_id, household_id, person_id, display_name, saint_name, feast_month_day,
                visibility, active, created_by_user_id, created_at, updated_at)
-            VALUES (?, ?, ?, NULL, ?, ?, ?, ?, 1, ?, ?, ?)`,
-      params: [id, managed.parishId, householdId, displayName, saintName, feastMonthDay, visibility, context.user.id, timestamp, timestamp]
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
+      params: [id, managed.parishId, householdId, personId || null, displayName, saintName, feastMonthDay, visibility, context.user.id, timestamp, timestamp]
     },
     auditStatement({
       action: existing ? "directory.household_nameday.updated" : "directory.household_nameday.created",
@@ -684,7 +840,7 @@ export async function saveHouseholdNameday(env, { context, householdId, namedayI
       targetType: "directory_household_nameday",
       targetId: id,
       householdId,
-      after: { displayName, saintName, feastMonthDay, visibility },
+      after: { personId, displayName, saintName, feastMonthDay, visibility },
       correlationId
     })
   ]);
@@ -762,8 +918,10 @@ export async function getHouseholdSelfServiceProfile(env, { context, householdId
     getPublicationProfile(env, { parishId: managed.parishId, ownerType: "household", ownerId: cleanedHouseholdId }),
     d1All(
       env,
-      `SELECT hm.person_id, hm.relationship, p.preferred_name, COALESCE(f.is_child, 0) AS is_child,
-              COALESCE(f.protected_person, 0) AS protected_person
+      `SELECT hm.person_id, hm.relationship, p.preferred_name, p.updated_at AS person_updated_at,
+              COALESCE(f.is_child, 0) AS is_child,
+              COALESCE(f.protected_person, 0) AS protected_person,
+              EXISTS(SELECT 1 FROM directory_person_links l WHERE l.person_id = p.id AND l.active = 1) AS account_linked
        FROM directory_household_members hm
        JOIN directory_people p ON p.id = hm.person_id
        LEFT JOIN directory_person_privacy_flags f ON f.person_id = p.id AND f.parish_id = ?2 AND f.active = 1
@@ -806,6 +964,132 @@ export async function getHouseholdSelfServiceProfile(env, { context, householdId
     pendingRequests: requests.map(requestDto),
     editableFields: EDITABLE_HOUSEHOLD_FIELDS
   };
+}
+
+export async function updateHouseholdMember(env, { context, householdId, personId, data = {}, correlationId = "" }) {
+  const managed = context.manageableHouseholds.find((household) => household.id === householdId);
+  if (!managed) throw new DirectoryServiceError("forbidden", "You cannot edit this household.", 403);
+  if (!await isActiveHouseholdAdmin(env, { householdId, personId: context.currentPerson?.id })) {
+    throw new DirectoryServiceError("forbidden", "Only a household administrator can edit family members.", 403);
+  }
+  const member = await d1First(
+    env,
+    `SELECT hm.person_id, hm.relationship, p.preferred_name, p.updated_at AS person_updated_at,
+            COALESCE(f.is_child, 0) AS is_child,
+            EXISTS(SELECT 1 FROM directory_person_links l WHERE l.person_id = p.id AND l.active = 1) AS account_linked
+       FROM directory_household_members hm
+       JOIN directory_people p ON p.id = hm.person_id AND p.active = 1
+       LEFT JOIN directory_person_privacy_flags f ON f.person_id = p.id AND f.parish_id = ?3 AND f.active = 1
+      WHERE hm.household_id = ?1 AND hm.person_id = ?2 AND hm.active = 1`,
+    householdId,
+    personId,
+    managed.parishId
+  );
+  if (!member) throw new DirectoryServiceError("not_found", "That household member was not found.", 404);
+  const relationship = cleanText(data.relationship || member.relationship, { required: true, max: 80, field: "relationship" });
+  if (!["spouse", "child", "adult_child", "other"].includes(relationship)) {
+    throw new DirectoryServiceError("validation_failed", "Choose a supported household relationship.", 422);
+  }
+  const canRename = toBool(member.is_child) || !toBool(member.account_linked);
+  const preferredName = cleanText(data.preferredName || member.preferred_name, { required: true, max: 160, field: "preferredName" });
+  if (!canRename && preferredName !== member.preferred_name) {
+    throw new DirectoryServiceError("account_managed", "This adult manages their own name through My AGAPAY.", 409);
+  }
+  const timestamp = nowMs();
+  const statements = [
+    {
+      sql: "UPDATE directory_household_members SET relationship = ?, updated_at = ? WHERE household_id = ? AND person_id = ? AND active = 1",
+      params: [relationship, timestamp, householdId, personId]
+    }
+  ];
+  if (preferredName !== member.preferred_name) {
+    statements.push(
+      {
+        sql: "UPDATE directory_people SET preferred_name = ?, updated_at = ? WHERE id = ? AND active = 1",
+        params: [preferredName, timestamp, personId]
+      },
+      {
+        sql: "UPDATE directory_household_namedays SET display_name = ?, updated_at = ? WHERE parish_id = ? AND household_id = ? AND active = 1 AND display_name = ?",
+        params: [preferredName, timestamp, managed.parishId, householdId, member.preferred_name]
+      }
+    );
+  }
+  statements.push(auditStatement({
+    action: "directory.self_service.household_member_updated",
+    actor: selfActor(context, managed.parishId),
+    parishId: managed.parishId,
+    targetType: "directory_person",
+    targetId: personId,
+    householdId,
+    before: { preferredName: member.preferred_name, relationship: member.relationship },
+    after: { preferredName, relationship },
+    correlationId
+  }));
+  await runAtomic(env, statements);
+  return { personId, preferredName, relationship, child: toBool(member.is_child), accountLinked: toBool(member.account_linked), version: timestamp };
+}
+
+export async function deleteHouseholdMember(env, { context, householdId, personId, correlationId = "" }) {
+  const managed = context.manageableHouseholds.find((household) => household.id === householdId);
+  if (!managed) throw new DirectoryServiceError("forbidden", "You cannot edit this household.", 403);
+  if (!await isActiveHouseholdAdmin(env, { householdId, personId: context.currentPerson?.id })) {
+    throw new DirectoryServiceError("forbidden", "Only a household administrator can remove family members.", 403);
+  }
+  if (personId === context.currentPerson?.id) {
+    throw new DirectoryServiceError("cannot_remove_self", "You cannot remove yourself from the household here.", 409);
+  }
+  const otherAdmin = await d1First(
+    env,
+    "SELECT id FROM directory_household_admins WHERE household_id = ?1 AND person_id = ?2 AND active = 1",
+    householdId,
+    personId
+  );
+  if (otherAdmin) {
+    throw new DirectoryServiceError("administrator_member", "A household administrator must be removed by parish staff.", 409);
+  }
+  const serviceActor = { ...selfActor(context, managed.parishId), capabilities: [DIRECTORY_CAPABILITIES.manage] };
+  return removeHouseholdMember(env, {
+    actor: serviceActor,
+    parishId: managed.parishId,
+    householdId,
+    personId,
+    correlationId
+  });
+}
+
+export async function deleteHouseholdNameday(env, { context, householdId, namedayId, correlationId = "" }) {
+  const managed = context.manageableHouseholds.find((household) => household.id === householdId);
+  if (!managed) throw new DirectoryServiceError("forbidden", "You cannot edit this household.", 403);
+  if (!await isActiveHouseholdAdmin(env, { householdId, personId: context.currentPerson?.id })) {
+    throw new DirectoryServiceError("forbidden", "Only a household administrator can remove namedays.", 403);
+  }
+  const existing = await d1First(
+    env,
+    "SELECT * FROM directory_household_namedays WHERE id = ?1 AND parish_id = ?2 AND household_id = ?3 AND active = 1",
+    namedayId,
+    managed.parishId,
+    householdId
+  );
+  if (!existing) throw new DirectoryServiceError("not_found", "That nameday was not found.", 404);
+  const timestamp = nowMs();
+  await runAtomic(env, [
+    {
+      sql: "UPDATE directory_household_namedays SET active = 0, updated_at = ? WHERE id = ? AND active = 1",
+      params: [timestamp, namedayId]
+    },
+    auditStatement({
+      action: "directory.household_nameday.deleted",
+      actor: selfActor(context, managed.parishId),
+      parishId: managed.parishId,
+      targetType: "directory_household_nameday",
+      targetId: namedayId,
+      householdId,
+      before: namedayDto(existing),
+      after: { active: false },
+      correlationId
+    })
+  ]);
+  return { ...namedayDto(existing), active: false };
 }
 
 export async function updateHouseholdSelfServiceProfile(env, { context, householdId, patch = {}, correlationId = "" }) {
@@ -884,6 +1168,29 @@ export async function deleteSelfServiceContact(env, { context, contactId, correl
 export async function createSelfServiceAddress(env, { context, householdId, data = {}, correlationId = "" }) {
   const managed = context.manageableHouseholds.find((household) => household.id === householdId);
   if (!managed) throw new DirectoryServiceError("forbidden", "You cannot manage this household address.", 403);
+  const addresses = await listActiveAddressesForOwner(env, { parishId: managed.parishId, ownerType: "household", ownerId: householdId });
+  const existing = Boolean(data.primary)
+    ? addresses.find((address) => address.primary && address.addressType === (data.addressType || "residential"))
+    : null;
+  if (existing) {
+    const updated = await updateAddress(env, {
+      actor: selfActor(context, managed.parishId),
+      parishId: managed.parishId,
+      addressId: existing.id,
+      patch: {
+        line1: data.line1,
+        line2: data.line2 || "",
+        city: data.city,
+        region: data.region || "",
+        postalCode: data.postalCode || "",
+        country: data.country || "US",
+        primary: true,
+        visibility: data.visibility || existing.visibility || "private"
+      },
+      correlationId
+    });
+    return addressDto(updated);
+  }
   const address = await createAddress(env, {
     actor: selfActor(context, managed.parishId),
     parishId: managed.parishId,
@@ -929,6 +1236,42 @@ export async function transitionSelfServicePublication(env, { context, ownerType
     : context.activeParishContexts[0]?.parishId;
   if (!parishId) throw new DirectoryServiceError("forbidden", "You cannot manage this publication profile.", 403);
   if (ownerType === "person" && ownerId !== context.currentPerson?.id) throw new DirectoryServiceError("forbidden", "You cannot publish another adult's person profile.", 403);
+  const existing = await getPublicationProfile(env, { parishId, ownerType, ownerId });
+  const trustedHouseholdMember = ownerType === "person"
+    && await personBelongsToVerifiedHousehold(env, parishId, ownerId);
+  const returningToDirectory = status === "pending_approval"
+    && (existing.approvalStatus === "approved" || trustedHouseholdMember);
+  if (returningToDirectory) {
+    let trustedProfile = existing;
+    if (!trustedProfile.persisted) {
+      trustedProfile = await createPublicationProfile(env, {
+        actor: { ...selfActor(context, parishId), capabilities: [DIRECTORY_CAPABILITIES.manage] },
+        parishId,
+        ownerType,
+        ownerId,
+        status: "draft",
+        correlationId
+      });
+    }
+    if (trustedProfile.status === "draft") {
+      trustedProfile = await transitionPublicationProfile(env, {
+        actor: selfActor(context, parishId),
+        parishId,
+        ownerType,
+        ownerId,
+        status: "pending_approval",
+        correlationId
+      });
+    }
+    return transitionPublicationProfile(env, {
+      actor: { ...selfActor(context, parishId), capabilities: [DIRECTORY_CAPABILITIES.manage] },
+      parishId,
+      ownerType,
+      ownerId,
+      status: "approved",
+      correlationId
+    });
+  }
   return transitionPublicationProfile(env, {
     actor: selfActor(context, parishId),
     parishId,
@@ -1008,20 +1351,16 @@ export async function requestHouseholdChildAdd(env, { context, householdId, data
   const legalName = cleanText(data.legalName, { max: 200, field: "legalName" });
   const dateOfBirth = cleanDate(data.dateOfBirth || "", "dateOfBirth") || "";
   const relationshipLabel = cleanText(data.relationship || "child", { max: 80, field: "relationship" }) || "child";
-  const note = cleanText(data.note || "", { max: 500, field: "note" });
-
-  const duplicate = await d1First(
+  const existingMember = await d1First(
     env,
-    `SELECT id FROM directory_change_requests
-      WHERE parish_id = ?1 AND requester_person_id = ?2 AND household_id = ?3
-        AND request_type = 'household_membership_add' AND status = 'pending'
-        AND json_extract(requested_payload_json, '$.childAdd.preferredName') = ?4`,
-    managed.parishId,
-    context.currentPerson.id,
+    `SELECT p.id FROM directory_household_members hm
+      JOIN directory_people p ON p.id = hm.person_id
+     WHERE hm.household_id = ?1 AND hm.active = 1 AND p.active = 1
+       AND LOWER(p.preferred_name) = LOWER(?2)`,
     managed.id,
     preferredName
   );
-  if (duplicate) throw new DirectoryServiceError("duplicate_request", "A pending request for this child is already waiting for parish review.", 409);
+  if (existingMember) throw new DirectoryServiceError("duplicate_member", "This child is already in your household.", 409);
 
   const serviceActor = {
     ...selfActor(context, managed.parishId),
@@ -1034,7 +1373,7 @@ export async function requestHouseholdChildAdd(env, { context, householdId, data
     legalName,
     dateOfBirth,
     biologicalSex: "unknown",
-    notes: note ? `Household child add request note: ${note}` : ""
+    notes: ""
   });
   await setPersonPrivacyFlags(env, {
     actor: serviceActor,
@@ -1044,21 +1383,22 @@ export async function requestHouseholdChildAdd(env, { context, householdId, data
     protectedPerson: false,
     correlationId
   });
-  return createDirectoryChangeRequest(env, {
-    context,
+  const membership = await addHouseholdMember(env, {
+    actor: serviceActor,
     parishId: managed.parishId,
-    targetType: "household",
-    targetId: managed.id,
     householdId: managed.id,
-    requestType: "household_membership_add",
-    summary: `Add child to household: ${preferredName}`,
-    payload: {
-      personId: person.id,
-      relationship: "child",
-      childAdd: { preferredName, legalName, dateOfBirth, relationship: relationshipLabel, note }
-    },
-    correlationId
+    personId: person.id,
+    relationship: "child"
   });
+  return {
+    direct: true,
+    personId: person.id,
+    householdId: managed.id,
+    membershipId: membership.id,
+    preferredName,
+    relationship: relationshipLabel,
+    privacy: "private_by_default"
+  };
 }
 
 export async function requestHouseholdAdultAdd(env, { context, householdId, data = {}, correlationId = "" }) {
@@ -1073,6 +1413,19 @@ export async function requestHouseholdAdultAdd(env, { context, householdId, data
   const relationship = cleanText(data.relationship || "spouse", { max: 80, field: "relationship" }) || "spouse";
   const email = cleanText(data.email || "", { max: 320, field: "email" });
   const note = cleanText(data.note || "", { max: 500, field: "note" });
+  const householdVerified = await householdWasParishVerified(env, managed.parishId, managed.id);
+  if (householdVerified) {
+    const existingMember = await d1First(
+      env,
+      `SELECT p.id FROM directory_household_members hm
+        JOIN directory_people p ON p.id = hm.person_id
+       WHERE hm.household_id = ?1 AND hm.active = 1 AND p.active = 1
+         AND LOWER(p.preferred_name) = LOWER(?2)`,
+      managed.id,
+      preferredName
+    );
+    if (existingMember) throw new DirectoryServiceError("duplicate_member", "This person is already in your household.", 409);
+  }
   const duplicate = await d1First(
     env,
     `SELECT id FROM directory_change_requests
@@ -1105,6 +1458,24 @@ export async function requestHouseholdAdultAdd(env, { context, householdId, data
       visibility: "private",
       correlationId
     });
+  }
+  if (householdVerified) {
+    const membership = await addHouseholdMember(env, {
+      actor: serviceActor,
+      parishId: managed.parishId,
+      householdId: managed.id,
+      personId: person.id,
+      relationship
+    });
+    return {
+      direct: true,
+      personId: person.id,
+      householdId: managed.id,
+      membershipId: membership.id,
+      preferredName,
+      relationship,
+      accountManaged: true
+    };
   }
   return createDirectoryChangeRequest(env, {
     context,

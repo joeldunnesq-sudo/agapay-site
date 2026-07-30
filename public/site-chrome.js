@@ -4,6 +4,7 @@
 
   const PRIMARY_LINKS = [
     { href: "/vision", label: "Vision", key: "vision" },
+    { href: "/why", label: "Why AGAPAY", key: "why" },
     { href: "/give", label: "AGAPAY Give", key: "give" },
     { href: "/learn", label: "AGAPAY Learn", key: "learn" },
     { href: "/design", label: "AGAPAY Design", key: "design" },
@@ -17,7 +18,7 @@
   ];
 
   function activeKeyFromPath() {
-    if (path === "/give/why" || path.endsWith("/give/why.html")) return "give";
+    if (path === "/why" || path === "/give/why" || path.endsWith("/give/why.html")) return "why";
     if (path === "/vision" || path.endsWith("/vision.html")) return "vision";
     if (path === "/give/features" || path.endsWith("/give/features.html")) return "give";
     if (path === "/give/pricing" || path.endsWith("/give/pricing.html")) return "give";
@@ -68,8 +69,7 @@
           </div>
 
           <div class="nav-actions">
-            <a class="btn-donate ${activeKey === "give" ? "active" : ""}" href="/register">
-              ${shellIcon("giving-hand")}
+            <a class="btn-donate" href="/register">
               Start for free
             </a>
 
@@ -102,7 +102,6 @@
             ${PRIMARY_LINKS.map((item) => navLink(item, activeKey)).join("")}
           </nav>
           <a class="drawer-join" href="/register">
-            ${shellIcon("giving-hand")}
             Start for free
           </a>
           <div class="drawer-divider"></div>

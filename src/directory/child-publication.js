@@ -236,13 +236,16 @@ export async function createOrUpdateChildPublicationDraft(env, {
   return getChildPublicationStatus(env, { context, childPersonId, householdId });
 }
 
-export async function submitChildPublicationRequest(env, { context, requestId, correlationId = "" }) {
+export async function submitChildPublicationRequest(env, { context, requestId, householdAdminPublish = false, correlationId = "" }) {
   const row = await d1First(env, "SELECT * FROM directory_child_publication_requests WHERE id = ?1", requestId);
   if (!row) throw new DirectoryServiceError("not_found", "Child publication request was not found.", 404);
   const managed = await assertRequesterAuthority(env, { context, householdId: row.household_id });
   const parishId = managed.parishId;
   if (row.parish_id !== parishId) throw new DirectoryServiceError("not_found", "Child publication request was not found.", 404);
-  if (!["draft", "returned"].includes(row.status)) throw new DirectoryServiceError("invalid_transition", "Only a draft or returned request can be submitted.", 409);
+  const allowedStatuses = householdAdminPublish ? ["draft", "returned", "submitted", "under_review"] : ["draft", "returned"];
+  if (!allowedStatuses.includes(row.status)) {
+    throw new DirectoryServiceError("invalid_transition", "Only an unpublished child sharing choice can be published.", 409);
+  }
 
   const fields = safeJsonParse(row.requested_fields_json);
   if (!fields.length && !Number(row.requested_photo)) {
@@ -253,9 +256,46 @@ export async function submitChildPublicationRequest(env, { context, requestId, c
 
   const child = await d1First(env, "SELECT updated_at FROM directory_people WHERE id = ?1", row.child_person_id);
   const household = await d1First(env, "SELECT updated_at FROM directory_households WHERE id = ?1", row.household_id);
+  const verifiedHousehold = await d1First(
+    env,
+    `SELECT id FROM directory_publication_profiles
+      WHERE parish_id = ?1 AND owner_type = 'household' AND owner_id = ?2
+        AND approval_status = 'approved'
+      ORDER BY approved_at DESC LIMIT 1`,
+    parishId,
+    row.household_id
+  );
   const timestamp = nowMs();
   const actor = actorFromContext(context);
   actor.parishId = parishId;
+
+  if (verifiedHousehold || householdAdminPublish) {
+    // The household's publication profile still controls whether the family is
+    // visible at all. The My AGAPAY sharing toggle is the parent's explicit
+    // opt-in, so it does not create a second child-review task.
+    await runAtomic(env, [
+      {
+        sql: `UPDATE directory_child_publication_requests
+              SET status = 'approved', submitted_at = ?1, approved_at = ?1,
+                  approved_fields_json = requested_fields_json,
+                  approved_photo = 0,
+                  child_revision = ?2, household_revision = ?3,
+                  request_revision = request_revision + 1, updated_at = ?1
+              WHERE id = ?4`,
+        params: [timestamp, String(child?.updated_at || ""), String(household?.updated_at || ""), row.id]
+      },
+      auditStatement({
+        action: "directory.child_publication.parent_published",
+        actor,
+        parishId,
+        targetType: "directory_child_publication_request",
+        targetId: row.id,
+        metadata: { childPersonId: row.child_person_id, householdAdminOptIn: Boolean(householdAdminPublish), photoExcludedFromAutomaticPublication: true },
+        correlationId
+      })
+    ]);
+    return getChildPublicationStatus(env, { context, childPersonId: row.child_person_id, householdId: row.household_id });
+  }
 
   await runAtomic(env, [
     {

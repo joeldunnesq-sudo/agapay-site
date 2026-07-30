@@ -1,6 +1,6 @@
 import { bookstoreReadinessSummary, bookstoreSellerDisclosure } from "../lib/commerce-readiness.js";
 import { logEvent } from "../lib/logging.js";
-import { SCHEDULABLE_SACRAMENT_TYPES, computeAvailableSlots, isSlotStillOpen } from "../lib/sacrament-availability.js";
+import { SCHEDULABLE_SACRAMENT_TYPES, computeAvailableSlots, isSchedulableOfferingKey, isSlotStillOpen } from "../lib/sacrament-availability.js";
 import {
   applyDonorPassword,
   clampListLimit,
@@ -39,8 +39,10 @@ import {
   subscriptionTier,
 } from "../lib/subscriptions.js";
 
-import { bookstoreEnabledFor, directoryEnabledFor, hasParishPlusAccess, sacramentsEnabledFor } from "../lib/entitlements.js";
+import { bookstoreEnabledFor, directoryEnabledFor, givingFeatureAccess, hasParishPlusAccess, sacramentsEnabledFor, stewardshipToolAccess } from "../lib/entitlements.js";
+import { recordParishFeatureRequest } from "../lib/parish-feature-requests.js";
 import { getDirectorySettings } from "../directory/settings.js";
+import { resolveDirectorySelfServiceContext, syncSelfServiceContactsFromDonor } from "../directory/self-service.js";
 
 import {
   resolveSettlementProfileId,
@@ -809,6 +811,7 @@ export async function handleDonorDashboard(request, env) {
     } catch {
       return json({ error: "Invalid JSON body" }, { status: 400 });
     }
+    const directoryContext = await resolveDirectorySelfServiceContext(env, { request }).catch(() => null);
 
     let updated = {
       ...donor,
@@ -856,6 +859,13 @@ export async function handleDonorDashboard(request, env) {
       await deleteDonor(env, donor.email);
     }
     await saveDonor(env, updated);
+    if (directoryContext?.claimed) {
+      await syncSelfServiceContactsFromDonor(env, {
+        context: directoryContext,
+        donor: updated,
+        correlationId: request.headers.get("X-Correlation-ID") || ""
+      }).catch(() => null);
+    }
 
     // Sync pledge amount to household_pledges for parish stewardship reporting.
     // Runs whenever the donor saves settings — harmless no-op if D1 isn't available
@@ -890,6 +900,7 @@ export async function handleDonorDashboard(request, env) {
       if (parish) {
         const directorySettings = await getDirectorySettings(env, parish.id);
         parish.directoryEnabled = directoryEnabledFor(found.registration, directorySettings);
+        parish.pledgeTrackerEnabled = stewardshipToolAccess(found.registration);
       }
     }
     if (parish) parish = await enrichParishGivingOptions(env, parish);
@@ -903,6 +914,82 @@ export async function handleDonorDashboard(request, env) {
     recentOfferings: publicOfferings.slice(0, 5),
     recentCommemorations: commemorations.slice(0, 5)
   });
+}
+
+export async function handleDonorStewardshipFeatureRequest(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const donor = await requireDonor(request, env);
+  if (!donor) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  if (!donor.defaultParishId) {
+    return json({ error: "Choose your home parish before sending this request." }, { status: 422 });
+  }
+
+  const limited = await rateLimitByKey(
+    request,
+    env,
+    "donor-stewardship-feature-request",
+    `${donor.email}:${donor.defaultParishId}`,
+    { limit: 3, windowSeconds: 86400 }
+  );
+  if (limited) return limited;
+
+  const found = await findRegistrationByParishId(env, donor.defaultParishId);
+  if (!found) return json({ error: "Your selected parish could not be found." }, { status: 404 });
+  if (stewardshipToolAccess(found.registration)) {
+    return json({ ok: true, alreadyEnabled: true, message: "Your parish already includes pledge tracking." });
+  }
+
+  const result = await recordParishFeatureRequest(env, {
+    parishId: donor.defaultParishId,
+    featureId: "pledge-tracker",
+    donorEmail: donor.email
+  });
+  return json({
+    ok: true,
+    duplicate: result.duplicate,
+    message: result.duplicate
+      ? "Your parish has already received your request."
+      : "Thank you. Your parish will see this request the next time they open their dashboard."
+  }, { status: result.duplicate ? 200 : 201 });
+}
+
+export async function handleDonorGivingPlusFeatureRequest(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const donor = await requireDonor(request, env);
+  if (!donor) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  if (!donor.defaultParishId) {
+    return json({ error: "Choose your home parish before sending this request." }, { status: 422 });
+  }
+
+  const limited = await rateLimitByKey(
+    request,
+    env,
+    "donor-giving-plus-feature-request",
+    `${donor.email}:${donor.defaultParishId}`,
+    { limit: 3, windowSeconds: 86400 }
+  );
+  if (limited) return limited;
+
+  const found = await findRegistrationByParishId(env, donor.defaultParishId);
+  if (!found) return json({ error: "Your selected parish could not be found." }, { status: 404 });
+  if (givingFeatureAccess(found.registration, "customFunds")) {
+    return json({ ok: true, alreadyEnabled: true, message: "Your parish already includes Giving Plus." });
+  }
+
+  const result = await recordParishFeatureRequest(env, {
+    parishId: donor.defaultParishId,
+    featureId: "giving-plus",
+    donorEmail: donor.email
+  });
+  return json({
+    ok: true,
+    duplicate: result.duplicate,
+    message: result.duplicate
+      ? "Your parish has already received your request."
+      : "Thank you. Your parish will see this request the next time they open their dashboard."
+  }, { status: result.duplicate ? 200 : 201 });
 }
 
 export async function handleDonorOfferings(request, env) {
@@ -1453,6 +1540,8 @@ export async function handleDonorBookstore(request, env) {
     order_id: orderId,
     parish_id: resolved.parishId,
     commerce_module: "bookstore",
+    agapay_payment_class: "nonqualifying_commerce",
+    agapay_classification_version: "1",
     donor_email: donorEmail,
     donor_name: normalizedDonorName,
     item_count: String(items.length),
@@ -1593,6 +1682,26 @@ function sacramentTypeLabel(type) {
   }[type] || type;
 }
 
+function donorSacramentOfferings(registration = {}) {
+  const defaults = ["house_blessing", "confession", "counseling", "baptism", "wedding"];
+  const priests = Array.isArray(registration.sacramentPriests) && registration.sacramentPriests.length
+    ? registration.sacramentPriests
+    : [{ serviceTypes: defaults, customServices: [] }];
+  const types = new Set();
+  const customById = new Map();
+  for (const priest of priests) {
+    const serviceTypes = Array.isArray(priest?.serviceTypes) ? priest.serviceTypes : defaults;
+    serviceTypes.forEach((type) => types.add(String(type || "")));
+    (Array.isArray(priest?.customServices) ? priest.customServices : []).forEach((service) => {
+      const id = String(service?.id || "").trim();
+      const label = String(service?.label || "").trim();
+      const mode = service?.mode === "schedule" ? "schedule" : "request";
+      if (id && label) customById.set(id, { id, label, mode });
+    });
+  }
+  return { types: [...types], custom: [...customById.values()] };
+}
+
 // Structured detail for baptism/chrismation and wedding requests. Lives in
 // satellite tables keyed on sacrament_requests.id — see
 // migration_sacrament_details.sql. Every other sacrament type has no detail
@@ -1706,14 +1815,16 @@ export async function handleDonorSacraments(request, env) {
     // can show/hide the "new request" form); it never blocks viewing
     // requests already on file, even from a parish no longer enabled.
     let available = false;
+    let offerings = donorSacramentOfferings();
     const parishId = String(request.headers.get("X-AGAPAY-Parish-Id") || donor.defaultParishId || "").trim();
     if (parishId) {
       const found = await findRegistrationByParishId(env, parishId);
       available = Boolean(found && sacramentsEnabledFor(found.registration));
+      if (found) offerings = donorSacramentOfferings(found.registration);
     }
 
     const requestsWithDetails = await attachSacramentDetailsBatch(env, rows || []);
-    return json({ requests: requestsWithDetails, available, parishId });
+    return json({ requests: requestsWithDetails, available, parishId, offerings });
   }
 
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
@@ -1748,6 +1859,9 @@ export async function handleDonorSacraments(request, env) {
   const sacramentType = String(body.sacramentType || "").trim();
   if (!SACRAMENT_TYPES.has(sacramentType)) {
     return json({ error: "Choose a valid sacrament or service type." }, { status: 400 });
+  }
+  if (sacramentType !== "other" && !donorSacramentOfferings(found.registration).types.includes(sacramentType)) {
+    return json({ error: "This priest is not currently accepting that request online." }, { status: 400 });
   }
   const otherTypeLabel = sacramentType === "other" ? String(body.otherTypeLabel || "").trim().slice(0, 120) : "";
   if (sacramentType === "other" && !otherTypeLabel) {
@@ -1919,8 +2033,8 @@ export async function handleDonorSacramentAvailability(request, env) {
 
   const url = new URL(request.url);
   const parishId = String(url.searchParams.get("parishId") || donor.defaultParishId || "").trim();
-  const sacramentType = String(url.searchParams.get("sacramentType") || "").trim();
-  if (!parishId || !SCHEDULABLE_SACRAMENT_TYPES.has(sacramentType)) {
+  const offeringKey = String(url.searchParams.get("sacramentType") || "").trim();
+  if (!parishId || !isSchedulableOfferingKey(offeringKey)) {
     return json({ slots: [], timezone: "" });
   }
 
@@ -1928,9 +2042,15 @@ export async function handleDonorSacramentAvailability(request, env) {
   if (!found || !sacramentsEnabledFor(found.registration)) {
     return json({ slots: [], timezone: "" });
   }
+  const offerings = donorSacramentOfferings(found.registration);
+  const isBuiltInOffering = offerings.types.includes(offeringKey) && SCHEDULABLE_SACRAMENT_TYPES.has(offeringKey);
+  const isCustomScheduledOffering = offerings.custom.some((service) => service.id === offeringKey && service.mode === "schedule");
+  if (!isBuiltInOffering && !isCustomScheduledOffering) {
+    return json({ slots: [], timezone: found.registration.timezone || "" });
+  }
 
   const result = await computeAvailableSlots(env, {
-    parishId, sacramentType, timezone: found.registration.timezone || ""
+    parishId, sacramentType: offeringKey, timezone: found.registration.timezone || ""
   });
   return json(result);
 }
@@ -1963,9 +2083,19 @@ export async function handleDonorSacramentBook(request, env) {
   }
 
   const sacramentType = String(body.sacramentType || "").trim();
-  if (!SCHEDULABLE_SACRAMENT_TYPES.has(sacramentType)) {
+  const schedulingType = String(body.schedulingType || sacramentType).trim();
+  const offerings = donorSacramentOfferings(found.registration);
+  const customOffering = offerings.custom.find((service) => service.id === schedulingType && service.mode === "schedule") || null;
+  const builtInOffering = SCHEDULABLE_SACRAMENT_TYPES.has(sacramentType)
+    && schedulingType === sacramentType
+    && offerings.types.includes(sacramentType);
+  if (!isSchedulableOfferingKey(schedulingType) || (!builtInOffering && !customOffering)) {
     return json({ error: "This sacrament type can't be self-booked." }, { status: 400 });
   }
+  if (customOffering && sacramentType !== "other") {
+    return json({ error: "This custom offering is not valid for online booking." }, { status: 400 });
+  }
+  const otherTypeLabel = customOffering?.label || "";
   const date = String(body.date || "").trim();
   const time = String(body.time || "").trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) {
@@ -1994,12 +2124,12 @@ export async function handleDonorSacramentBook(request, env) {
   try {
     await d1Run(env, `
       INSERT INTO sacrament_requests
-        (id, parish_id, donor_email, sacrament_type, status,
+        (id, parish_id, donor_email, sacrament_type, other_type_label, status,
          requested_date, participant_names, location_type, location_address,
          notes, phone, confirmed_date, confirmed_time, clergy_assigned, created_at, updated_at)
-      VALUES (?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
-    id, parishId, normalizeEmail(donor.email), sacramentType, date, participantNames || null,
+    id, parishId, normalizeEmail(donor.email), sacramentType, otherTypeLabel || null, date, participantNames || null,
       locationType, locationAddress || null, notes || null, phone || null, date, time, priestName || null, now, now
     );
   } catch (error) {
@@ -2012,7 +2142,7 @@ export async function handleDonorSacramentBook(request, env) {
   // Best-effort notification to the parish — never blocks the booking itself.
   try {
     await notifyParishOfNewSacramentRequest(env, {
-      request, registration: found.registration, donor, sacramentType, otherTypeLabel: "",
+      request, registration: found.registration, donor, sacramentType, otherTypeLabel,
       participantNames, locationAddress, notes, phone,
       booked: true, confirmedDate: date, confirmedTime: time
     });

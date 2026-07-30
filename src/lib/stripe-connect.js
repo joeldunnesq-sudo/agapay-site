@@ -1,18 +1,13 @@
 import { monthLabel } from "./format.js";
+import {
+  estimateStripeAchFeeCents,
+  estimateStripeProcessingFeeCents,
+} from "./payment-fees.js";
+import { classifyStripeCharge } from "./payment-classification.js";
 
 export function numericCents(value) {
   const number = Number(value || 0);
   return Number.isFinite(number) ? Math.round(number) : 0;
-}
-
-export function estimateStripeProcessingFeeCents(chargeCents) {
-  if (!Number.isFinite(chargeCents) || chargeCents <= 0) return 0;
-  return Math.max(0, Math.round(chargeCents * 0.029 + 30));
-}
-
-export function estimateStripeAchFeeCents(chargeCents) {
-  if (!Number.isFinite(chargeCents) || chargeCents <= 0) return 0;
-  return Math.max(0, Math.round(chargeCents * 0.026 + 30));
 }
 
 export async function stripeFormRequest(env, path, form, method = "POST") {
@@ -83,7 +78,7 @@ export function stripeReady(registration = {}) {
 }
 
 export function normalizedCheckoutPaymentStatus(session = {}, fallback = "pending") {
-  if (session.payment_status === "paid" || session.status === "complete") return "paid";
+  if (session.payment_status === "paid") return "paid";
   if (session.status === "expired") return session.payment_status || "unpaid";
   return session.payment_status || fallback || "pending";
 }
@@ -153,6 +148,7 @@ export function summarizeCharges(charges) {
   let lastGiftAt = "";
   for (const charge of charges) {
     if (charge.status !== "succeeded" || charge.paid === false) continue;
+    if (classifyStripeCharge(charge).paymentClass !== "qualifying_donation") continue;
     const created = new Date((charge.created || 0) * 1000);
     if (created.getUTCFullYear() !== year) continue;
     const chargeCents = numericCents(charge.amount_captured || charge.amount);

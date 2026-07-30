@@ -34,6 +34,23 @@ function migration(name) {
 function makeD1Env() {
   const db = new DatabaseSync(":memory:");
   db.exec("PRAGMA foreign_keys = ON;");
+  db.exec(`
+    CREATE TABLE registrations (
+      reference TEXT PRIMARY KEY,
+      parish_id TEXT,
+      parish_name TEXT,
+      updated_at TEXT,
+      data TEXT
+    );
+    INSERT INTO registrations (reference, parish_id, parish_name, updated_at, data)
+    VALUES (
+      'reg_st_fiacre',
+      'st-fiacre',
+      'St. Fiacre Orthodox Church',
+      '2026-07-28T00:00:00.000Z',
+      '{"parishName":"St. Fiacre Orthodox Church","city":"Dallas","state":"TX"}'
+    );
+  `);
   for (const name of [
     "0014_audit_log.sql",
     "0020_platform_identity.sql",
@@ -218,12 +235,33 @@ await test("household detail includes each adult's shared contacts and name day 
   assert.deepEqual(detail.household.members[0].namedays, [{ saintName: "St. Maria", feastMonthDay: "07-22" }]);
 });
 
+await test("an approved household includes active non-protected adults without separate person publication", async () => {
+  const { env, db, viewer, household } = await fixture();
+  const actor = seedActor();
+  const spouse = await createPerson(env, { actor, preferredName: "Stephanie Antioch" });
+  await addHouseholdMember(env, { actor, householdId: household.id, personId: spouse.id, relationship: "spouse" });
+  const context = await resolveMemberDirectoryContext(env, { request: await requestFor(env, db, viewer, "/api/directory/member") });
+  const detail = await getMemberDirectoryHousehold(env, { context, householdId: household.id });
+  const publishedSpouse = detail.household.members.find((member) => member.id === spouse.id);
+  assert.equal(publishedSpouse?.displayName, "Stephanie Antioch");
+  assert.equal(publishedSpouse?.relationship, "spouse");
+  assert.deepEqual(publishedSpouse?.contacts, []);
+});
+
 await test("protected people and children are absent from browse, search, counts, and household members", async () => {
   const { env, db, viewer, hidden, child } = await fixture();
   const context = await resolveMemberDirectoryContext(env, { request: await requestFor(env, db, viewer, "/api/directory/member") });
   const home = await getMemberDirectoryHome(env, { context });
+  assert.deepEqual(home.parish, {
+    id: "st-fiacre",
+    name: "St. Fiacre Orthodox Church",
+    city: "Dallas",
+    state: "TX"
+  });
   assert.equal(home.counts.people, 1);
   assert.equal(home.counts.households, 1);
+  assert.ok(Array.isArray(home.households.items), "home response should include the first household page");
+  assert.equal(home.households.totalVisible, home.counts.households);
   assert.equal((await searchMemberDirectory(env, { context, q: "Hidden" })).items.length, 0);
   assert.equal((await searchMemberDirectory(env, { context, q: "Child" })).items.length, 0);
   const households = await listMemberDirectoryHouseholds(env, { context });

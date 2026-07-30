@@ -193,6 +193,24 @@ await test("privacy defaults fail closed for children and protected addresses", 
     () => updateDirectorySettings(env, { actor: { ...admin, capabilities: ["directory.settings.manage"] }, parishId: "st-fiacre", patch: { addressMaxVisibility: "directory_members" } }),
     (error) => error instanceof DirectoryServiceError && error.code === "unsafe_setting"
   );
+  await setFieldPrivacyPreference(env, {
+    actor: admin,
+    ownerType: "household",
+    ownerId: household.id,
+    fieldKey: "city_state",
+    visibility: "directory_members",
+    publicationEligible: true
+  });
+  const sharedCity = await createAddress(env, {
+    actor: admin,
+    ownerType: "household",
+    ownerId: household.id,
+    line1: "Dallas, TX",
+    city: "Dallas",
+    region: "TX",
+    visibility: "directory_members"
+  });
+  assert.equal(sharedCity.visibility, "directory_members");
   await createAddress(env, { actor: admin, ownerType: "household", ownerId: household.id, line1: "Protected House", city: "Dallas", protectedAddress: true, visibility: "staff" });
   await assert.rejects(
     () => createAddress(env, { actor: admin, ownerType: "household", ownerId: household.id, line1: "Too Visible", city: "Dallas", protectedAddress: true, visibility: "directory_members" }),

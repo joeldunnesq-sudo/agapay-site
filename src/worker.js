@@ -90,6 +90,20 @@ import {
 import { bookstoreEnabledFor, sacramentsEnabledFor } from "./lib/entitlements.js";
 import { accountingAvailableForParish } from "./lib/accounting-demo-access.js";
 import { runScheduledAccountingIntegrity } from "./accounting/integrity/scheduler.js";
+import { synchronizeGivingCatalogWithAccounting } from "./accounting/source-wiring.js";
+import {
+  STEWARDSHIP_FUND_DEFAULTS,
+  mergeStewardshipFundsIntoRegistration
+} from "./lib/stewardship-funds.js";
+import {
+  handleAdminNonprofitPricing,
+  handleAdminNonprofitPricingAlerts,
+  handleAdminNonprofitPricingDocumentView,
+  handleParishNonprofitPricing,
+  handleParishNonprofitPricingDocumentUpload,
+  handleParishNonprofitPricingDocumentView,
+} from "./handlers/nonprofit-pricing.js";
+import { sendNonprofitThresholdAlerts } from "./lib/nonprofit-pricing.js";
 
 import {
   verifyParishDashboardBearer,
@@ -116,10 +130,12 @@ import {
   handleParishReconciliation,
   handleParishReconciliationClose,
   handleParishGivingSummary,
+  handleParishStripeVolume,
   handleParishGivingHistory,
   handleParishRecurringHealth,
   handleParishBookstore,
   handleParishDashboard,
+  handleParishFeatureRequestDismiss,
   handleParishSettlementProfiles,
   handleParishSession,
   handleParishes,
@@ -147,6 +163,8 @@ import {
   handleDonorVerify,
   handleDonorVerifyPage,
   handleDonorDashboard,
+  handleDonorGivingPlusFeatureRequest,
+  handleDonorStewardshipFeatureRequest,
   handleDonorOfferings,
   handleDonorSubscriptionPortal,
   handleDonorBookstore,
@@ -1519,20 +1537,13 @@ async function handleAdminRecentActivity(request, env) {
 
 
 async function seedStewardshipFunds(env, parishId) {
-  const defaults = [
-    { name: "General Stewardship",    code: "stewardship", is_default: 1, sort_order: 0 },
-    { name: "Candles / Vigil Lights", code: "candle",      is_default: 0, sort_order: 1 },
-    { name: "Building Fund",          code: "building",    is_default: 0, sort_order: 2 },
-    { name: "Poor Box / Alms",        code: "alms",        is_default: 0, sort_order: 3 },
-    { name: "Campaign / Appeal",      code: "campaign",    is_default: 0, sort_order: 4 },
-    { name: "Iconography Fund",       code: "iconography", is_default: 0, sort_order: 5 },
-    { name: "Memorial / Panakhida",   code: "memorial",    is_default: 0, sort_order: 6 },
-  ];
-  const stmts = defaults.map(f =>
+  const stmts = STEWARDSHIP_FUND_DEFAULTS.map(f =>
     env.AGAPAY_DB.prepare(
-      `INSERT OR IGNORE INTO giving_funds (parish_id, name, code, is_default, sort_order)
-       VALUES (?, ?, ?, ?, ?)`
-    ).bind(parishId, f.name, f.code, f.is_default, f.sort_order)
+      `INSERT INTO giving_funds (parish_id, name, code, is_default, sort_order)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(parish_id, code) DO UPDATE SET
+         name=excluded.name,is_default=excluded.is_default,sort_order=excluded.sort_order`
+    ).bind(parishId, f.name, f.reportCode || f.id, f.isDefault ? 1 : 0, f.sortOrder)
   );
   await env.AGAPAY_DB.batch(stmts);
 }
@@ -1542,9 +1553,22 @@ async function handleStewardshipGivingActivate(request, env, parishId) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   const auth = await verifyParishDashboard(request, env, parishId);
   if (!auth) return unauthorized();
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
 
   const body = await request.json().catch(() => ({}));
   const { stripeSubscriptionItemId } = body;
+
+  const merged = mergeStewardshipFundsIntoRegistration(found.registration);
+  if (merged.changed) {
+    const catalogSync = await synchronizeGivingCatalogWithAccounting(env, parishId, merged.registration);
+    const updated = {
+      ...merged.registration,
+      funds: catalogSync.available ? catalogSync.funds : merged.registration.funds,
+      parishUpdatedAt: new Date().toISOString()
+    };
+    await saveRegistrationRecord(env, found.key, updated, found.registration);
+  }
 
   await env.AGAPAY_DB.prepare(`
     INSERT INTO parish_stewardship_settings (parish_id, has_stewardship_suite, stripe_subscription_item_id)
@@ -1556,7 +1580,7 @@ async function handleStewardshipGivingActivate(request, env, parishId) {
   `).bind(parishId, stripeSubscriptionItemId || null).run();
 
   await seedStewardshipFunds(env, parishId);
-  return json({ ok: true });
+  return json({ ok: true, fundsAdded: merged.added.length, fundsRemoved: merged.removed.length });
 }
 
 // GET /api/parish/dashboard/:parishId/stewardship/giving/summary
@@ -1645,7 +1669,12 @@ async function handleStewardshipGivingFunds(request, env, parishId) {
       COALESCE(SUM(COALESCE(json_extract(o.data, '$.giftAmountCents'), json_extract(o.data, '$.amountCents'), 0)), 0) AS total_cents
     FROM giving_funds gf
     LEFT JOIN donor_offerings o
-           ON COALESCE(json_extract(o.data, '$.giftType'), json_extract(o.data, '$.fund')) = gf.code
+           ON CASE
+                WHEN lower(COALESCE(json_extract(o.data, '$.giftType'), json_extract(o.data, '$.fund'), ''))
+                  IN ('stewardship','general','general stewardship','general operating fund')
+                THEN 'general'
+                ELSE lower(COALESCE(json_extract(o.data, '$.giftType'), json_extract(o.data, '$.fund'), ''))
+              END = lower(gf.code)
           AND o.parish_id = ?
           AND o.payment_status = 'paid'
           AND o.created_at BETWEEN ? AND ?
@@ -1955,12 +1984,12 @@ async function handleStewardshipGivingHealthScore(request, env, parishId) {
 // pace, restricted funds, recurring giving health, lapsed/new donors, and
 // a short list of rule-based follow-up suggestions derived directly from
 // the numbers (not invented copy).
-const MANUAL_INCOME_SOURCES = new Set(["cash_and_checks", "tithely", "paypal", "other"]);
+const MANUAL_INCOME_SOURCES = new Set(["cash_and_checks", "tithely", "paypal", "other_giving_platform"]);
 const MANUAL_INCOME_SOURCE_LABELS = {
-  cash_and_checks: "Cash & Checks",
+  cash_and_checks: "Cash/Check Collection",
   tithely: "Tithe.ly",
   paypal: "PayPal",
-  other: "Other",
+  other_giving_platform: "Another Giving Platform",
 };
 
 function manualIncomeRowToJson(row) {
@@ -1968,9 +1997,10 @@ function manualIncomeRowToJson(row) {
     id: row.id,
     entryDate: row.entry_date,
     source: row.source,
-    sourceLabel: row.source === "other" && row.source_label ? row.source_label : MANUAL_INCOME_SOURCE_LABELS[row.source] || row.source,
+    sourceLabel: row.source === "other_giving_platform" && row.source_label ? row.source_label : MANUAL_INCOME_SOURCE_LABELS[row.source] || row.source,
     amountCents: row.amount_cents || 0,
     fundCode: row.fund_code || "",
+    batchReference: row.batch_reference || "",
     notes: row.notes || "",
     enteredBy: row.entered_by || "",
     createdAt: row.created_at,
@@ -1978,8 +2008,8 @@ function manualIncomeRowToJson(row) {
 }
 
 // GET /api/parish/dashboard/:parishId/stewardship/income/manual?year=YYYY
-// List this year's manually-logged income (cash/check deposits, income
-// from other giving platforms), with totals by source. This is what lets
+// List this year's manually logged outside-AGAPAY contributions (cash/check
+// deposits and giving platforms), with totals by source. This is what lets
 // a treasurer see the offline/other-platform picture alongside what
 // AGAPAY Give collected online.
 async function handleStewardshipManualIncomeList(request, env, parishId) {
@@ -1993,7 +2023,7 @@ async function handleStewardshipManualIncomeList(request, env, parishId) {
 
   const rows = await env.AGAPAY_DB.prepare(`
     SELECT * FROM manual_income_entries
-    WHERE parish_id = ? AND entry_date BETWEEN ? AND ?
+    WHERE parish_id = ? AND contribution_eligible = 1 AND entry_date BETWEEN ? AND ?
     ORDER BY entry_date DESC, created_at DESC
   `).bind(parishId, `${year}-01-01`, `${year}-12-31`).all();
 
@@ -2013,7 +2043,7 @@ async function handleStewardshipManualIncomeList(request, env, parishId) {
 }
 
 // POST /api/parish/dashboard/:parishId/stewardship/income/manual
-// Add one manual income entry. Deliberately simple — a treasurer logging
+// Add one outside-AGAPAY contribution. Deliberately simple — a treasurer logging
 // this Sunday's cash-and-check count, or a month's Tithe.ly total, should
 // take seconds, not require itemizing individual donors.
 async function handleStewardshipManualIncomeCreate(request, env, parishId) {
@@ -2033,7 +2063,7 @@ async function handleStewardshipManualIncomeCreate(request, env, parishId) {
     return json({ error: "A valid entry date is required." }, { status: 400 });
   }
   if (!MANUAL_INCOME_SOURCES.has(source)) {
-    return json({ error: "Choose a valid income source." }, { status: 400 });
+    return json({ error: "Choose a valid contribution source." }, { status: 400 });
   }
   if (!Number.isFinite(amountCents) || amountCents <= 0) {
     return json({ error: "Enter an amount greater than zero." }, { status: 400 });
@@ -2041,18 +2071,30 @@ async function handleStewardshipManualIncomeCreate(request, env, parishId) {
 
   const id = `manual_income_${parishId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const now = new Date().toISOString();
-  const sourceLabel = source === "other" ? String(body.sourceLabel || "").trim().slice(0, 60) : "";
+  const sourceLabel = source === "other_giving_platform" ? String(body.sourceLabel || "").trim().slice(0, 60) : "";
   const notes = String(body.notes || "").trim().slice(0, 500);
   const fundCode = String(body.fundCode || "").trim().slice(0, 60);
+  const batchReference = String(body.batchReference || "").trim().slice(0, 120);
   const enteredBy = String(body.enteredByEmail || "").trim().slice(0, 200);
+  if (source === "other_giving_platform" && !sourceLabel) {
+    return json({ error: "Enter the name of the giving platform." }, { status: 400 });
+  }
+  if (!fundCode) {
+    return json({ error: "Choose or enter a fund/designation." }, { status: 400 });
+  }
 
   await env.AGAPAY_DB.prepare(`
     INSERT INTO manual_income_entries
-      (id, parish_id, entry_date, source, source_label, amount_cents, fund_code, notes, entered_by, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(id, parishId, entryDate, source, sourceLabel || null, amountCents, fundCode || null, notes || null, enteredBy || null, now, now).run();
+      (id, parish_id, entry_date, source, source_label, amount_cents, fund_code,
+       batch_reference, contribution_eligible, notes, entered_by, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
+  `).bind(id, parishId, entryDate, source, sourceLabel || null, amountCents, fundCode,
+    batchReference || null, notes || null, enteredBy || null, now, now).run();
 
-  return json({ ok: true, entry: manualIncomeRowToJson({ id, entry_date: entryDate, source, source_label: sourceLabel, amount_cents: amountCents, fund_code: fundCode, notes, entered_by: enteredBy, created_at: now }) });
+  return json({ ok: true, entry: manualIncomeRowToJson({
+    id, entry_date: entryDate, source, source_label: sourceLabel, amount_cents: amountCents,
+    fund_code: fundCode, batch_reference: batchReference, notes, entered_by: enteredBy, created_at: now
+  }) });
 }
 
 // DELETE /api/parish/dashboard/:parishId/stewardship/income/manual/:entryId
@@ -2070,14 +2112,14 @@ async function handleStewardshipManualIncomeDelete(request, env, parishId, entry
   return json({ ok: true });
 }
 
-// Sums manual income for a parish within a date range — shared by the
+// Sums contribution-qualified outside giving within a date range — shared by the
 // summary/budget-pace figures and the monthly report, so both stay
 // consistent with what the treasurer has actually logged.
 async function manualIncomeTotalCents(env, parishId, startDate, endDate) {
   const row = await env.AGAPAY_DB.prepare(`
     SELECT COALESCE(SUM(amount_cents), 0) AS total_cents
     FROM manual_income_entries
-    WHERE parish_id = ? AND entry_date BETWEEN ? AND ?
+    WHERE parish_id = ? AND contribution_eligible = 1 AND entry_date BETWEEN ? AND ?
   `).bind(parishId, startDate, endDate).first().catch(() => null);
   return row?.total_cents || 0;
 }
@@ -2339,6 +2381,185 @@ async function handleStewardshipMonthlyReport(request, env, parishId) {
   });
 }
 
+// GET /api/parish/dashboard/:parishId/stewardship/report/monthly-financial
+// A print-ready financial companion to the monthly stewardship report. Giving
+// is date-based; expense and non-contribution revenue figures come from the
+// parish's single authoritative fiscal-year snapshot until Accounting can
+// calculate those ledgers month by month.
+async function handleStewardshipMonthlyFinancialReport(request, env, parishId) {
+  const url = new URL(request.url);
+  const token = url.searchParams.get("t") || getBearerToken(request);
+  const expired = () => new Response(
+    "<!DOCTYPE html><html><body><p>Session expired. <a href='/parish/dashboard'>Return to dashboard</a></p></body></html>",
+    { status: 401, headers: { "Content-Type": "text/html;charset=utf-8" } }
+  );
+  if (!parishId || !token) return expired();
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found || !(await verifyParishDashboardBearer(found.registration, token))) return expired();
+  const gate = await requireStewardshipFeature(env, parishId);
+  if (gate) return gate;
+
+  const requestedYear = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
+  const fallbackMonth = `${requestedYear}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+  const requestedMonth = /^\d{4}-(0[1-9]|1[0-2])$/.test(url.searchParams.get("month") || "")
+    ? url.searchParams.get("month")
+    : fallbackMonth;
+  const [monthYear, monthNumber] = requestedMonth.split("-").map(Number);
+  const year = Number.isInteger(requestedYear) && requestedYear >= 2000 && requestedYear <= 2100
+    ? requestedYear
+    : monthYear;
+  const monthStart = `${monthYear}-${String(monthNumber).padStart(2, "0")}-01`;
+  const nextMonthDate = new Date(Date.UTC(monthYear, monthNumber, 1));
+  const nextMonthStart = nextMonthDate.toISOString().slice(0, 10);
+  const monthEnd = new Date(Date.UTC(monthYear, monthNumber, 0)).toISOString().slice(0, 10);
+  const monthLabel = new Date(Date.UTC(monthYear, monthNumber - 1, 1)).toLocaleDateString("en-US", {
+    timeZone: "UTC", month: "long", year: "numeric"
+  });
+  const parishName = found.registration?.parishName || found.registration?.name || "Parish";
+  const generatedOn = new Date();
+  const authRequest = new Request(
+    `${url.origin}/api/parish/dashboard/${encodeURIComponent(parishId)}/stewardship/financials?year=${year}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+
+  const [financialResponse, agapayMonth, outsideMonth] = await Promise.all([
+    handleStewardshipFinancials(authRequest, env, parishId),
+    d1First(env, `SELECT
+        COALESCE(SUM(COALESCE(json_extract(data, '$.giftAmountCents'), json_extract(data, '$.amountCents'), 0)), 0) AS total_cents,
+        COUNT(*) AS transaction_count
+      FROM donor_offerings
+      WHERE parish_id = ? AND payment_status IN ('paid','succeeded')
+        AND created_at >= ? AND created_at < ?`,
+      parishId, monthStart, nextMonthStart),
+    d1First(env, `SELECT COALESCE(SUM(amount_cents), 0) AS total_cents, COUNT(*) AS transaction_count
+      FROM manual_income_entries
+      WHERE parish_id = ? AND contribution_eligible = 1
+        AND entry_date BETWEEN ? AND ?`,
+      parishId, monthStart, monthEnd)
+  ]);
+  const financials = await financialResponse.json().catch(() => ({}));
+  if (!financialResponse.ok) {
+    return new Response(`<p>${htmlEscape(financials.error || "Unable to build financial report.")}</p>`, {
+      status: financialResponse.status,
+      headers: { "Content-Type": "text/html;charset=utf-8" }
+    });
+  }
+
+  const snapshot = financials.snapshot || null;
+  const totals = financials.totals || {};
+  const contributions = financials.contributionTotals || {};
+  const funds = financials.agapayRestrictedFunds || [];
+  const assets = financials.externalAssets || [];
+  const monthAgapayCents = Number(agapayMonth?.total_cents || 0);
+  const monthOutsideCents = Number(outsideMonth?.total_cents || 0);
+  const monthTotalCents = monthAgapayCents + monthOutsideCents;
+  const fmt = (c) => {
+    const value = Number(c || 0);
+    return `${value < 0 ? "-$" : "$"}${(Math.abs(value) / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+  };
+  const assetLabels = {
+    investment: "Investment", endowment: "Endowment", real_property: "Real property",
+    external_fund: "External fund", other: "Other asset"
+  };
+  const reportStatus = snapshot ? `Authoritative snapshot · Version ${snapshot.version}` : "Live contributions · Snapshot not yet completed";
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${htmlEscape(parishName)} — Monthly Financial Report — ${htmlEscape(monthLabel)}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--navy:#061522;--blue:#17364b;--gold:#b18a3e;--cream:#f6f1e8;--paper:#fffdf8;--ink:#171715;--muted:#6f6a60;--line:#ddd5c5;--red:#8a2929;--green:#2e6b4a;--serif:"Cormorant Garamond",Georgia,serif;--sans:"DM Sans",system-ui,sans-serif}
+    html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{background:var(--cream);color:var(--ink);font:14px/1.55 var(--sans)}
+    .toolbar{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;gap:1rem;padding:.9rem 1.5rem;background:var(--navy)}
+    .btn{display:inline-flex;align-items:center;padding:.5rem 1rem;border:1px solid rgba(177,138,62,.5);border-radius:7px;background:transparent;color:var(--cream);font:700 .82rem var(--sans);text-decoration:none;cursor:pointer}.btn.primary{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+    .page{max-width:900px;margin:0 auto;padding:2.5rem 2rem 4rem}
+    .hero{position:relative;overflow:hidden;padding:2.1rem 2.25rem;margin-bottom:1.4rem;border-radius:14px;background:var(--navy);color:var(--cream)}
+    .hero::after{content:"";position:absolute;right:-55px;top:-90px;width:240px;height:240px;border:1px solid rgba(177,138,62,.25);border-radius:50%;box-shadow:0 0 0 32px rgba(177,138,62,.06)}
+    .eyebrow{display:block;margin-bottom:.4rem;color:#d6b86f;font-size:.7rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase}.hero h1{font:600 2.2rem/1.05 var(--serif)}.hero p{margin-top:.45rem;color:rgba(246,241,232,.72)}.status{display:inline-flex;margin-top:1rem;padding:.3rem .6rem;border:1px solid rgba(214,184,111,.35);border-radius:999px;color:#e8cf93;font-size:.68rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+    .section{margin-bottom:1.25rem;padding:1.4rem 1.5rem;border:1px solid var(--line);border-radius:12px;background:var(--paper)}.section h2{margin-bottom:.9rem;padding-bottom:.55rem;border-bottom:2px solid var(--gold);color:var(--navy);font:600 1.35rem var(--serif)}.section-note{margin:-.45rem 0 .9rem;color:var(--muted);font-size:.78rem}
+    .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:.7rem}.kpi{padding:.85rem .9rem;border-radius:8px;background:rgba(6,21,34,.045)}.kpi span{display:block;margin-bottom:.22rem;color:var(--muted);font-size:.65rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase}.kpi strong{color:var(--navy);font:600 1.4rem var(--serif)}.positive{color:var(--green)!important}.negative{color:var(--red)!important}
+    table{width:100%;border-collapse:collapse;font-size:.84rem}th{padding:.4rem .5rem;border-bottom:2px solid var(--line);color:var(--muted);font-size:.64rem;letter-spacing:.07em;text-align:left;text-transform:uppercase}td{padding:.58rem .5rem;border-bottom:1px solid rgba(221,213,197,.65)}th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}.fund-name strong,.fund-name small{display:block}.fund-name small{color:var(--muted);font-size:.68rem}
+    .formula{margin-top:.75rem;padding:.65rem .75rem;border-radius:7px;background:rgba(177,138,62,.08);color:var(--muted);font-size:.76rem}.empty{color:var(--muted);font-size:.85rem}.footer{margin-top:1.8rem;color:var(--muted);font-size:.72rem;text-align:center}
+    @media(max-width:620px){.page{padding:1rem}.hero{padding:1.5rem}.hero h1{font-size:1.8rem}.table-wrap{overflow-x:auto}table{min-width:650px}.toolbar{padding:.7rem}}
+    @media print{body{background:#fff;font-size:11px}.toolbar{display:none}.page{max-width:none;padding:.2in}.hero{break-inside:avoid}.section{break-inside:avoid;margin-bottom:.14in;padding:.16in}.page-break{break-before:page}}
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <a class="btn" href="/parish/dashboard" onclick="window.close();return true;">&larr; Back</a>
+    <div><button class="btn" onclick="window.print()">Print</button> <button class="btn primary" onclick="window.print()">Save as PDF</button></div>
+  </div>
+  <main class="page">
+    <header class="hero">
+      <span class="eyebrow">AGAPAY Financial Stewardship</span>
+      <h1>Monthly Financial Report</h1>
+      <p>${htmlEscape(parishName)} &middot; ${htmlEscape(monthLabel)}</p>
+      <span class="status">${htmlEscape(reportStatus)}</span>
+    </header>
+    <section class="section">
+      <h2>${htmlEscape(monthLabel)} Contributions</h2>
+      <div class="kpis">
+        <div class="kpi"><span>Through AGAPAY</span><strong>${fmt(monthAgapayCents)}</strong></div>
+        <div class="kpi"><span>Outside AGAPAY</span><strong>${fmt(monthOutsideCents)}</strong></div>
+        <div class="kpi"><span>Monthly Total</span><strong class="positive">${fmt(monthTotalCents)}</strong></div>
+        <div class="kpi"><span>Transactions / Entries</span><strong>${Number(agapayMonth?.transaction_count || 0) + Number(outsideMonth?.transaction_count || 0)}</strong></div>
+      </div>
+    </section>
+    <section class="section">
+      <h2>${year} Financial Position</h2>
+      <p class="section-note">Contribution totals are live. Other revenue and expenses come from the authoritative fiscal-year snapshot.</p>
+      <div class="kpis">
+        <div class="kpi"><span>AGAPAY Contributions</span><strong>${fmt(contributions.agapayContributionsCents)}</strong></div>
+        <div class="kpi"><span>Outside Contributions</span><strong>${fmt(contributions.outsideContributionsCents)}</strong></div>
+        <div class="kpi"><span>Other Revenue</span><strong>${fmt(snapshot?.otherRevenueCents)}</strong></div>
+        <div class="kpi"><span>Total Income</span><strong>${fmt(totals.totalIncomeCents)}</strong></div>
+        <div class="kpi"><span>Total Expenses</span><strong class="negative">${fmt(totals.totalExpenseCents)}</strong></div>
+        <div class="kpi"><span>Net ${Number(totals.netCents || 0) >= 0 ? "Surplus" : "Deficit"}</span><strong class="${Number(totals.netCents || 0) >= 0 ? "positive" : "negative"}">${fmt(totals.netCents)}</strong></div>
+      </div>
+    </section>
+    <section class="section">
+      <h2>Restricted Fund Balances</h2>
+      ${funds.length ? `<div class="table-wrap"><table>
+        <thead><tr><th>Fund</th><th class="num">Opening</th><th class="num">AGAPAY</th><th class="num">Outside</th><th class="num">Deductions</th><th class="num">Ending</th></tr></thead>
+        <tbody>${funds.map(fund => `<tr>
+          <td class="fund-name"><strong>${htmlEscape(fund.name)}</strong>${fund.adjustmentNotes ? `<small>${htmlEscape(fund.adjustmentNotes)}</small>` : ""}</td>
+          <td class="num">${fmt(fund.openingBalanceCents)}</td><td class="num positive">${fmt(fund.agapayReceivedCents)}</td>
+          <td class="num positive">${fmt(fund.outsideReceivedCents)}</td><td class="num negative">${fmt(fund.deductionsCents)}</td>
+          <td class="num ${Number(fund.endingBalanceCents || 0) < 0 ? "negative" : "positive"}">${fmt(fund.endingBalanceCents)}</td>
+        </tr>`).join("")}</tbody>
+      </table></div>
+      <p class="formula">Ending balance = opening balance + contributions received − expenses and deductions.</p>` : `<p class="empty">No donor-restricted funds are configured.</p>`}
+    </section>
+    <section class="section page-break">
+      <h2>Externally Held Assets</h2>
+      ${assets.length ? `<div class="table-wrap"><table>
+        <thead><tr><th>Asset</th><th>Type</th><th>Valuation Date</th><th>Note</th><th class="num">Value</th></tr></thead>
+        <tbody>${assets.map(asset => `<tr><td><strong>${htmlEscape(asset.name)}</strong></td><td>${htmlEscape(assetLabels[asset.assetType] || "External asset")}</td><td>${htmlEscape(asset.asOfDate || "Not dated")}</td><td>${htmlEscape(asset.notes || "")}</td><td class="num">${fmt(asset.valueCents)}</td></tr>`).join("")}</tbody>
+      </table></div>` : `<p class="empty">No externally held assets have been entered.</p>`}
+    </section>
+    ${snapshot?.notes ? `<section class="section"><h2>Treasurer Notes</h2><p>${htmlEscape(snapshot.notes).replace(/\n/g, "<br />")}</p></section>` : ""}
+    <section class="section">
+      <h2>Reporting Basis</h2>
+      <p class="section-note" style="margin:0">Monthly contribution activity covers ${htmlEscape(monthStart)} through ${htmlEscape(monthEnd)}. Fiscal-year contributions are calculated from AGAPAY and contribution-qualified outside entries. Until the Accounting suite launches, other revenue, expenses, restricted-fund deductions, and externally held assets are maintained in the authoritative snapshot rather than calculated from a monthly ledger.</p>
+    </section>
+    <p class="footer">Generated by AGAPAY &middot; ${htmlEscape(generatedOn.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }))}</p>
+  </main>
+</body>
+</html>`;
+  return new Response(html, {
+    headers: {
+      "Content-Type": "text/html;charset=utf-8",
+      "Content-Disposition": `inline; filename="financial-report-${requestedMonth}.html"`
+    }
+  });
+}
+
 // ── PLEDGE SYNC HELPER ───────────────────────────────────────────────────────
 // Call this from handleDonorDashboard (in handlers/donor.js) whenever a donor
 // saves their pledge amount. Pass the donor's email, their default_parish_id,
@@ -2375,6 +2596,7 @@ async function handleHealth(env) {
     r2: {
       campaignAssets: Boolean(env.CAMPAIGN_ASSETS),
       taxExemptionDocs: Boolean(env.TAX_EXEMPTION_DOCS),
+      nonprofitPricingDocs: Boolean(env.NONPROFIT_PRICING_DOCS),
       givingStatements: Boolean(env.GIVING_STATEMENTS)
     }
   };
@@ -2418,6 +2640,9 @@ export default {
     ctx.waitUntil(runScheduledRecurringTransactions(env, event.scheduledTime)
       .then((results) => console.log("scheduled_accounting_recurring", JSON.stringify(results)))
       .catch((error) => console.error("scheduled_accounting_recurring_failed", error?.message || String(error))));
+    ctx.waitUntil(sendNonprofitThresholdAlerts(env)
+      .then((results) => console.log("nonprofit_pricing_threshold_alerts", JSON.stringify(results)))
+      .catch((error) => console.error("nonprofit_pricing_threshold_alerts_failed", error?.message || String(error))));
     if (event.cron === "0 8 * * *") return;
     ctx.waitUntil(runScheduledAccountingIntegrity(env, event.scheduledTime)
       .then((results) => console.log("scheduled_accounting_integrity", JSON.stringify(results)))
@@ -2810,6 +3035,12 @@ export default {
     if (url.pathname === "/api/donor/dashboard") {
       return handleDonorDashboard(request, env);
     }
+    if (url.pathname === "/api/donor/stewardship-feature-request") {
+      return handleDonorStewardshipFeatureRequest(request, env);
+    }
+    if (url.pathname === "/api/donor/giving-plus-feature-request") {
+      return handleDonorGivingPlusFeatureRequest(request, env);
+    }
     if (url.pathname === "/api/donor/offerings") {
       return handleDonorOfferings(request, env);
     }
@@ -2924,10 +3155,10 @@ export default {
       const DEMO_REFERENCE  = foundRegistration?.key || "demo-st-fiacre-2025";
       const now = new Date().toISOString();
       const demoFunds = [
-        { name: "General Stewardship",  code: "stewardship", isDefault: true,  sortOrder: 0 },
+        { name: "General Operating Fund", code: "general",    isDefault: true,  sortOrder: 0 },
         { name: "Candles / Vigil Lights", code: "candle",   isDefault: false, sortOrder: 1 },
         { name: "Building Fund",        code: "building",   isDefault: false, sortOrder: 2 },
-        { name: "Poor Box / Alms",      code: "alms",       isDefault: false, sortOrder: 3 },
+        { name: "Benevolence Fund",     code: "alms",       isDefault: false, sortOrder: 3 },
         { name: "Iconography Fund",     code: "iconography",isDefault: false, sortOrder: 4 },
         { name: "Memorial / Panakhida", code: "memorial",   isDefault: false, sortOrder: 5 },
       ];
@@ -2941,7 +3172,7 @@ export default {
           status: "active",
           active: true,
           goalCents: 1000000,
-          raisedCents: 735000,
+          raisedCents: 557500,
           coverPhotoUrl: "/images/marketplace/dome-cross.jpg",
           photos: ["/images/marketplace/dome-cross.jpg"],
           createdAt: "2025-01-01T10:00:00.000Z",
@@ -2996,7 +3227,7 @@ export default {
         communityType: "Parish",
         subscriptionTier: "parish",
         subscriptionTierLabel: "Parish",
-        subscriptionMonthlyCents: 19900,
+        subscriptionMonthlyCents: 14900,
         subscriptionStatus: baseRegistration.subscriptionStatus || "active",
         givingFunds: demoFunds,
         campaigns: demoCampaigns,
@@ -3025,30 +3256,33 @@ export default {
       // Seed realistic donation history in D1
       const demoIdPrefix = `demo_${DEMO_PARISH_ID.replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "") || "parish"}`;
       const donations = [
-        { id: "demo_don_001", email: "maria.petrov@email.com",     name: "Maria Petrov",      amount: 20000, fund: "stewardship", date: "2024-10-06T11:15:00.000Z" },
+        { id: "demo_don_001", email: "maria.petrov@email.com",     name: "Maria Petrov",      amount: 20000, fund: "general", date: "2024-10-06T11:15:00.000Z" },
         { id: "demo_don_002", email: "nikolai.volkov@email.com",   name: "Nikolai Volkov",    amount: 5000,  fund: "candle",      date: "2024-10-06T09:42:00.000Z" },
-        { id: "demo_don_003", email: "anna.kozlov@email.com",      name: "Anna Kozlov",       amount: 50000, fund: "stewardship", date: "2024-10-13T12:00:00.000Z" },
+        { id: "demo_don_003", email: "anna.kozlov@email.com",      name: "Anna Kozlov",       amount: 50000, fund: "general", date: "2024-10-13T12:00:00.000Z" },
         { id: "demo_don_004", email: "dmitri.morozov@email.com",   name: "Dmitri Morozov",    amount: 15000, fund: "building",    date: "2024-10-13T10:30:00.000Z" },
-        { id: "demo_don_005", email: "elena.sokolov@email.com",    name: "Elena Sokolov",     amount: 10000, fund: "stewardship", date: "2024-10-20T11:00:00.000Z" },
-        { id: "demo_don_006", email: "peter.novak@email.com",      name: "Peter Novak",       amount: 25000, fund: "stewardship", date: "2024-10-20T09:15:00.000Z" },
+        { id: "demo_don_005", email: "elena.sokolov@email.com",    name: "Elena Sokolov",     amount: 10000, fund: "general", date: "2024-10-20T11:00:00.000Z" },
+        { id: "demo_don_006", email: "peter.novak@email.com",      name: "Peter Novak",       amount: 25000, fund: "general", date: "2024-10-20T09:15:00.000Z" },
         { id: "demo_don_007", email: "sophia.lebedev@email.com",   name: "Sophia Lebedev",    amount: 7500,  fund: "alms",        date: "2024-10-27T13:00:00.000Z" },
-        { id: "demo_don_008", email: "michael.orlov@email.com",    name: "Michael Orlov",     amount: 30000, fund: "stewardship", date: "2024-11-03T10:00:00.000Z" },
+        { id: "demo_don_008", email: "michael.orlov@email.com",    name: "Michael Orlov",     amount: 30000, fund: "general", date: "2024-11-03T10:00:00.000Z" },
         { id: "demo_don_009", email: "natalia.popov@email.com",    name: "Natalia Popov",     amount: 10000, fund: "iconography", date: "2024-11-03T11:30:00.000Z" },
-        { id: "demo_don_010", email: "ivan.fedorov@email.com",     name: "Ivan Fedorov",      amount: 20000, fund: "stewardship", date: "2024-11-10T09:00:00.000Z" },
+        { id: "demo_don_010", email: "ivan.fedorov@email.com",     name: "Ivan Fedorov",      amount: 20000, fund: "general", date: "2024-11-10T09:00:00.000Z" },
         { id: "demo_don_011", email: "olga.karpov@email.com",      name: "Olga Karpov",       amount: 5000,  fund: "candle",      date: "2024-11-10T10:45:00.000Z" },
         { id: "demo_don_012", email: "sergei.belov@email.com",     name: "Sergei Belov",      amount: 100000,fund: "building",    date: "2024-11-17T12:00:00.000Z" },
-        { id: "demo_don_013", email: "marina.titov@email.com",     name: "Marina Titov",      amount: 15000, fund: "stewardship", date: "2024-11-24T09:30:00.000Z" },
-        { id: "demo_don_014", email: "alexei.gusev@email.com",     name: "Alexei Gusev",      amount: 20000, fund: "stewardship", date: "2024-12-01T10:00:00.000Z" },
+        { id: "demo_don_013", email: "marina.titov@email.com",     name: "Marina Titov",      amount: 15000, fund: "general", date: "2024-11-24T09:30:00.000Z" },
+        { id: "demo_don_014", email: "alexei.gusev@email.com",     name: "Alexei Gusev",      amount: 20000, fund: "general", date: "2024-12-01T10:00:00.000Z" },
         { id: "demo_don_015", email: "vera.nikitin@email.com",     name: "Vera Nikitin",      amount: 10000, fund: "memorial",    date: "2024-12-08T11:00:00.000Z" },
-        { id: "demo_don_016", email: "boris.fomin@email.com",      name: "Boris Fomin",       amount: 25000, fund: "stewardship", date: "2024-12-15T09:45:00.000Z" },
+        { id: "demo_don_016", email: "boris.fomin@email.com",      name: "Boris Fomin",       amount: 25000, fund: "general", date: "2024-12-15T09:45:00.000Z" },
         { id: "demo_don_017", email: "lyudmila.zaytsev@email.com", name: "Lyudmila Zaytsev",  amount: 5000,  fund: "candle",      date: "2024-12-22T10:30:00.000Z" },
-        { id: "demo_don_018", email: "andrei.morozov@email.com",   name: "Andrei Morozov",    amount: 50000, fund: "stewardship", date: "2024-12-29T12:00:00.000Z" },
-        { id: "demo_don_019", email: "tatiana.volkov@email.com",   name: "Tatiana Volkov",    amount: 20000, fund: "stewardship", date: "2025-01-05T10:00:00.000Z" },
+        { id: "demo_don_018", email: "andrei.morozov@email.com",   name: "Andrei Morozov",    amount: 50000, fund: "general", date: "2024-12-29T12:00:00.000Z" },
+        { id: "demo_don_019", email: "tatiana.volkov@email.com",   name: "Tatiana Volkov",    amount: 20000, fund: "general", date: "2025-01-05T10:00:00.000Z" },
         { id: "demo_don_020", email: "konstantin.smirnov@email.com",name: "Konstantin Smirnov",amount: 30000, fund: "building",   date: "2025-01-12T09:00:00.000Z" },
-        { id: "demo_don_021", email: "maria.petrov@email.com",     name: "Maria Petrov",      amount: 250000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", publicComment: "In thanksgiving for the mission and all who worship here.", date: "2025-01-19T11:15:00.000Z" },
-        { id: "demo_don_022", email: "peter.novak@email.com",      name: "Peter Novak",       amount: 200000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", publicAnonymous: true, publicComment: "Praying this roof protects the church for many years.", date: "2025-01-26T09:45:00.000Z" },
-        { id: "demo_don_023", email: "anna.kozlov@email.com",      name: "Anna Kozlov",       amount: 185000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", publicComment: "For our children and the future of the parish.", date: "2025-02-02T10:30:00.000Z" },
-        { id: "demo_don_024", email: "nikolai.volkov@email.com",   name: "Nikolai Volkov",    amount: 100000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", publicComment: "Glory to God for this parish and the work ahead.", date: "2025-02-09T13:00:00.000Z" },
+        { id: "demo_don_022", email: "maria.petrov@email.com",     name: "Maria Petrov",      amount: 50000,  fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "alms", publicComment: "In thanksgiving for the mission and all who worship here.", date: "2026-02-01T11:15:00.000Z" },
+        { id: "demo_don_023", email: "peter.novak@email.com",      name: "Peter Novak",       amount: 75000,  fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "alms", publicAnonymous: true, publicComment: "Praying this roof protects the church for many years.", date: "2026-02-22T09:45:00.000Z" },
+        { id: "demo_don_024", email: "anna.kozlov@email.com",      name: "Anna Kozlov",       amount: 100000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "alms", publicComment: "For our children and the future of the parish.", date: "2026-03-15T10:30:00.000Z" },
+        { id: "demo_don_025", email: "nikolai.volkov@email.com",   name: "Nikolai Volkov",    amount: 125000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "alms", publicComment: "Glory to God for this parish and the work ahead.", date: "2026-04-05T13:00:00.000Z" },
+        { id: "demo_don_026", email: "elena.sokolov@email.com",    name: "Elena Sokolov",     amount: 65000,  fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "alms", publicComment: "With love for our parish home.", date: "2026-05-03T10:00:00.000Z" },
+        { id: "demo_don_027", email: "dmitri.morozov@email.com",   name: "Dmitri Morozov",    amount: 80000,  fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "alms", publicAnonymous: true, publicComment: "For the continued life of the parish.", date: "2026-06-07T12:30:00.000Z" },
+        { id: "demo_don_028", email: "sophia.lebedev@email.com",   name: "Sophia Lebedev",    amount: 55000,  fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "alms", publicComment: "May this church shelter generations to come.", date: "2026-07-05T09:30:00.000Z" },
       ];
 
       try {
@@ -3208,6 +3442,24 @@ export default {
       if (!action) return handleAdminTaxExemptionDetail(request, env, taxExemptionId);
       return json({ error: "Not found" }, { status: 404 });
     }
+    if (url.pathname === "/api/admin/nonprofit-pricing") {
+      return handleAdminNonprofitPricing(request, env);
+    }
+    if (url.pathname === "/api/admin/nonprofit-pricing/alerts/run") {
+      return handleAdminNonprofitPricingAlerts(request, env);
+    }
+    if (url.pathname.startsWith("/api/admin/nonprofit-pricing/applications/") && url.pathname.includes("/documents/")) {
+      const rest = url.pathname.replace("/api/admin/nonprofit-pricing/applications/", "");
+      const [applicationId, documentPart] = rest.split("/documents/");
+      const documentId = decodeURIComponent(String(documentPart || "").replace(/\/download$/, ""));
+      return handleAdminNonprofitPricingDocumentView(
+        request,
+        env,
+        decodeURIComponent(applicationId),
+        documentId,
+        String(documentPart || "").endsWith("/download") ? "attachment" : "inline"
+      );
+    }
 
     if (url.pathname.startsWith("/api/admin/registrations/")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", ""));
@@ -3302,6 +3554,29 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/giving-summary")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/giving-summary", ""));
       return handleParishGivingSummary(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stripe-volume")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stripe-volume", ""));
+      return handleParishStripeVolume(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/nonprofit-pricing")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/nonprofit-pricing", ""));
+      return handleParishNonprofitPricing(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/nonprofit-pricing/documents")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/nonprofit-pricing/documents", ""));
+      return handleParishNonprofitPricingDocumentUpload(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/nonprofit-pricing/documents/")) {
+      const [parishId, documentPart] = url.pathname.replace("/api/parish/dashboard/", "").split("/nonprofit-pricing/documents/");
+      const documentId = decodeURIComponent(String(documentPart || "").replace(/\/download$/, ""));
+      return handleParishNonprofitPricingDocumentView(
+        request,
+        env,
+        decodeURIComponent(parishId),
+        documentId,
+        String(documentPart || "").endsWith("/download") ? "attachment" : "inline"
+      );
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/giving-history")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/giving-history", ""));
@@ -3423,6 +3698,10 @@ export default {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/health-score", ""));
       return handleStewardshipGivingHealthScore(request, env, parishId);
     }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/report/monthly-financial")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/report/monthly-financial", ""));
+      return handleStewardshipMonthlyFinancialReport(request, env, parishId);
+    }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/report/monthly")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/report/monthly", ""));
       return handleStewardshipMonthlyReport(request, env, parishId);
@@ -3480,6 +3759,11 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/bookstore-readiness")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/bookstore-readiness", ""));
       return handleParishBookstoreReadiness(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/feature-requests/") && url.pathname.endsWith("/dismiss")) {
+      const [parishId, featurePart] = url.pathname.replace("/api/parish/dashboard/", "").split("/feature-requests/");
+      const featureId = decodeURIComponent(featurePart.replace("/dismiss", ""));
+      return handleParishFeatureRequestDismiss(request, env, decodeURIComponent(parishId), featureId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/tax-exemption/document")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/tax-exemption/document", ""));

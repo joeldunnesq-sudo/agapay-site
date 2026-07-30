@@ -10,18 +10,18 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-chrome-192x192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/favicons/android-chrome-512x512.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
-  <meta name="description" content="AGAPAY plans for Orthodox churches: Starter at $9/month, Giving Plus at $49/month, Stewardship at $99/month, and the complete Parish platform at $199/month." />
+  <meta name="description" content="AGAPAY plans for Orthodox churches: Starter at $9/month, Giving Plus at $49/month, Stewardship at $99/month, and the complete Parish platform at $149/month." />
   <link rel="canonical" href="https://agapay.app/give/pricing" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="AGAPAY" />
   <meta property="og:title" content="Pricing | AGAPAY" />
-  <meta property="og:description" content="No AGAPAY donation fee, transparent subscription tiers, and Orthodox-first stewardship pricing with Parish-tier Stewardship Health and pledge tools." />
+  <meta property="og:description" content="No AGAPAY donation fee, transparent subscription tiers, and Orthodox-first plans from giving and stewardship through complete parish operations." />
   <meta property="og:url" content="https://agapay.app/give/pricing" />
   <meta property="og:image" content="https://agapay.app/images/pricing/alms-box-hero.png" />
   <meta property="og:image:alt" content="Orthodox alms box sketch used on the AGAPAY pricing page" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Pricing | AGAPAY" />
-  <meta name="twitter:description" content="No AGAPAY donation fee, transparent subscription tiers, and Orthodox-first stewardship pricing with Parish-tier Stewardship Health and pledge tools." />
+  <meta name="twitter:description" content="No AGAPAY donation fee, transparent subscription tiers, and Orthodox-first plans from giving and stewardship through complete parish operations." />
   <meta name="twitter:image" content="https://agapay.app/images/pricing/alms-box-hero.png" />
   <meta name="theme-color" content="#061522" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -134,6 +134,62 @@
     .tier-features li { display: grid; grid-template-columns: 18px 1fr; gap: 0.42rem; color: #28323A; font-size: 0.82rem; line-height: 1.4; align-items: start; }
     .tier-features li .ck { width: 16px; height: 16px; margin-top: 0.12rem; }
     .tier-features li .ck svg { width: 16px; height: 16px; stroke: var(--gold-dark); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .tier-coming-soon {
+      margin-top: 0.15rem;
+      padding: 0.72rem;
+      border: 1px solid rgba(200, 162, 74, 0.34);
+      border-radius: 12px;
+      background: linear-gradient(145deg, rgba(200, 162, 74, 0.11), rgba(255, 253, 248, 0.92));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+    .tier-coming-soon-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.58rem;
+    }
+    .tier-coming-soon-kicker {
+      color: #5D4B23;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .tier-coming-soon-badge {
+      padding: 0.18rem 0.48rem;
+      border-radius: 999px;
+      background: var(--night);
+      color: #F5E7B7;
+      font-size: 0.6rem;
+      font-weight: 800;
+      letter-spacing: 0.045em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .tier-coming-soon-list { display: grid; gap: 0.42rem; }
+    .tier-coming-soon-item {
+      display: grid;
+      grid-template-columns: 29px minmax(0, 1fr);
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.45rem 0.48rem;
+      border: 1px solid rgba(200, 162, 74, 0.18);
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.68);
+    }
+    .tier-coming-soon-icon {
+      width: 29px;
+      height: 29px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: rgba(200, 162, 74, 0.16);
+      color: #765D20;
+    }
+    .tier-coming-soon-icon svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+    .tier-coming-soon-item strong { display: block; color: var(--night); font-size: 0.76rem; line-height: 1.2; }
+    .tier-coming-soon-item small { display: block; margin-top: 0.08rem; color: #66727B; font-size: 0.64rem; line-height: 1.3; }
     .tier-card .small-btn { margin-top: auto; width: 100%; min-height: 42px; font-size: 0.75rem; }
 
     .fee-banner { margin-top: 1.25rem; border: 1px solid rgba(200, 162, 74, 0.42); border-radius: 14px; background: linear-gradient(135deg, rgba(255, 253, 248, 0.94), rgba(248, 242, 231, 0.82)); display: grid; grid-template-columns: minmax(270px, 0.88fr) minmax(420px, 1.2fr) minmax(260px, 0.82fr); gap: 1rem; align-items: stretch; padding: 1.1rem 1.25rem; box-shadow: 0 12px 30px rgba(6, 21, 34, 0.06); }
@@ -295,7 +351,7 @@
         <div class="clarity-copy">
           <div class="section-kicker">Pricing clarity</div>
           <h2 id="clarity-title">Start simply. Add Orthodox giving tools when you need them.</h2>
-          <p>Starter keeps online giving affordable. Giving Plus adds campaigns, funds, commemorations, statements, and QR tools. Stewardship and Parish add leadership insights and parish operations.</p>
+          <p>Starter includes direct parish giving links and QR codes. Giving Plus adds parish-logo branding, campaigns, custom funds, commemorations, and annual statements. Stewardship and Parish add leadership insights and parish operations.</p>
         </div>
         <div class="clarity-panel">
           <div class="clarity-tabs" role="tablist" aria-label="Pricing clarity preview">
@@ -330,12 +386,12 @@
           <div class="fee-line">
             <span class="fee-label">Starter</span>
             <strong>Simple online giving</strong>
-            <span>One general fund, one-time and recurring gifts, basic history, receipts, and CSV export.</span>
+            <span>One general fund, one-time and recurring gifts, direct parish links and QR codes, basic history, receipts, and CSV export.</span>
           </div>
           <div class="fee-line">
             <span class="fee-label">Giving Plus</span>
             <strong>Essential giving</strong>
-            <span>Custom funds, campaigns, commemorations, annual statements, enhanced reports, and QR tools.</span>
+            <span>Parish-logo branding, custom funds, campaigns, commemorations, annual statements, and enhanced reports.</span>
           </div>
           <div class="fee-line">
             <span class="fee-label">Stewardship</span>
@@ -355,16 +411,17 @@
       </aside>
       <div class="pricing-grid">
         <article class="tier-card tier-card--primary">
-          <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M6 20V11l3-3 3 3v9"/><path d="M12 11h6l2 2v7"/><path d="M9 8V5"/><path d="M7.8 6.5h2.4"/></svg></div>
+          <div class="tier-icon"><svg viewBox="0 0 24 24" aria-label="Small mission chapel"><path d="M4 20h16"/><path d="M7 20v-8l5-4 5 4v8"/><path d="M10 20v-4a2 2 0 0 1 4 0v4"/><path d="M12 8V4"/><path d="M10.5 5.5h3"/></svg></div>
           <h2 class="tier-title">Starter</h2>
           <div class="tier-price">$9 <span>/ mo</span></div>
           <p class="tier-sub">A simple, low-cost way for an Orthodox parish to receive gifts online.</p>
           <ul class="tier-features">
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>One-time and recurring online giving</li>
-            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>One General Stewardship fund</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>One General Operating Fund</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Card and ACH payments through Stripe</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Donor-covered processing-fee option</li>
-            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Parish logo, public page, and church search listing</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Public giving page and church search listing</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Direct parish giving links and QR codes</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Basic gift history, receipts, and CSV export</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>One parish administrator and email support</li>
           </ul>
@@ -372,14 +429,17 @@
         </article>
 
         <article class="tier-card tier-card--primary">
-          <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M6 20V11l3-3 3 3v9"/><path d="M12 11h6l2 2v7"/><path d="M9 8V5"/><path d="M7.8 6.5h2.4"/></svg></div>
+          <div class="tier-icon"><svg viewBox="0 0 24 24" aria-label="Parish church"><path d="M3 20h18"/><path d="M5 20v-8l7-5 7 5v8"/><path d="M9 20v-5a3 3 0 0 1 6 0v5"/><path d="M12 7V3"/><path d="M10.5 4.5h3"/><path d="M7 13h2M15 13h2"/></svg></div>
           <h2 class="tier-title">Giving Plus</h2>
           <div class="tier-price">$49 <span>/ mo</span></div>
           <p class="tier-sub">Orthodox giving tools for parishes ready to go beyond the basics.</p>
           <ul class="tier-features">
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Everything in Starter, plus</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Parish logo across giving pages and church search</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Multiple funds and restricted funds</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Online giving and recurring donations</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Donor-covered fee option</li>
-            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Campaigns, direct parish links, and QR codes</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Campaign Giving</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Basic donor, fund, and gift reporting</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Annual giving statements</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Liturgical calendar integration</li>
@@ -389,44 +449,62 @@
         </article>
 
         <article class="tier-card tier-card--primary">
-          <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></div>
+          <div class="tier-icon"><svg viewBox="0 0 24 24" aria-label="Domed Orthodox church"><path d="M2.5 20h19"/><path d="M4 20v-7h4v7M16 20v-7h4v7"/><path d="M8 20V11h8v9"/><path d="M9 11c0-3 1.4-4.5 3-5.5 1.6 1 3 2.5 3 5.5"/><path d="M12 5.5V2"/><path d="M10.5 3.5h3"/><path d="M10 20v-4a2 2 0 0 1 4 0v4"/></svg></div>
           <h2 class="tier-title">Stewardship</h2>
           <div class="tier-price">$99 <span>/ mo</span></div>
           <p class="tier-sub">Giving plus the insight leaders need to cultivate faithful stewardship.</p>
           <ul class="tier-features">
-            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Everything in Giving, plus</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Everything in Giving Plus, plus</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Stewardship Health dashboard and giving trends</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Pledge progress and giving-gap visibility</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Donor histories and recurring-gift insights</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Enhanced giving, donor, fund, and pledge reports</li>
-            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Parish council-ready stewardship insights</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Annual meeting packet creator</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Parish council and annual-meeting-ready stewardship insights</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Bookstore payments for parish goods</li>
           </ul>
           <a class="small-btn primary" href="/register">Choose Stewardship</a>
         </article>
 
         <article class="tier-card tier-card--primary">
-          <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M6 20V10l6-5 6 5v10"/><path d="M8 10a4 4 0 0 1 8 0"/><path d="M12 5V2"/><path d="M10.5 3.5h3"/></svg></div>
+          <div class="tier-icon"><svg viewBox="0 0 24 24" aria-label="Large three-domed Orthodox church"><path d="M1.5 20h21"/><path d="M3 20v-8h5v8M16 20v-8h5v8"/><path d="M8 20V9h8v11"/><path d="M4 12c0-2 1-3 1.5-3.8C6 9 7 10 7 12M17 12c0-2 1-3 1.5-3.8C19 9 20 10 20 12"/><path d="M9 9c0-3 1.5-4.5 3-5.5 1.5 1 3 2.5 3 5.5"/><path d="M12 3.5V1.5M10.7 2.5h2.6M5.5 8.2V5.5M4.4 6.5h2.2M18.5 8.2V5.5M17.4 6.5h2.2"/><path d="M10 20v-5a2 2 0 0 1 4 0v5"/></svg></div>
           <h2 class="tier-title">Parish</h2>
-          <div class="tier-price">$199 <span>/ mo</span></div>
+          <div class="tier-price">$149 <span>/ mo</span></div>
           <p class="tier-sub">A complete parish operations platform for established churches that want to cultivate stewardship and serve parishioners well.</p>
           <ul class="tier-features">
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Everything in Stewardship, plus</li>
-            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Stewardship Health dashboard for parish giving trends</li>
-            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Enhanced giving, fund, donor, and pledge reports</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Sacraments &amp; Services requests from parishioners</li>
-            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Expanded Parish Commerce workflows as they launch</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Full Parish Commerce suite, with new products added as they launch</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Parish Directory and member workflows</li>
-            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Text-to-Give</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Additional administrator seats, roles, and invite workflow</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Guided in-dashboard setup and configuration support</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Priority email support</li>
           </ul>
+          <div class="tier-coming-soon" aria-label="Coming soon">
+            <div class="tier-coming-soon-head">
+              <span class="tier-coming-soon-kicker">On the way</span>
+              <span class="tier-coming-soon-badge">Coming soon</span>
+            </div>
+            <div class="tier-coming-soon-list">
+              <div class="tier-coming-soon-item">
+                <span class="tier-coming-soon-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 9h8M8 13h5"/></svg>
+                </span>
+                <span><strong>Text-to-Give</strong><small>Simple giving by text message</small></span>
+              </div>
+              <div class="tier-coming-soon-item">
+                <span class="tier-coming-soon-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M4 3h16v18H4z"/><path d="M8 7h8M8 11h8M8 15h3M15 15h1"/></svg>
+                </span>
+                <span><strong>Parish Accounting</strong><small>Connected parish financial workflows</small></span>
+              </div>
+            </div>
+          </div>
           <a class="small-btn primary" href="/register">Start for free</a>
         </article>
 
         <article class="tier-card tier-card--cathedral">
-          <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M2.5 20h19"/><path d="M5 20V11l3-2 4-4 4 4 3 2v9"/><path d="M12 5V2"/><path d="M10.5 3.5h3"/></svg></div>
+          <div class="tier-icon"><svg viewBox="0 0 24 24" aria-label="Grand five-domed Orthodox cathedral"><path d="M1 20h22"/><path d="M3 20v-7h4v7M17 20v-7h4v7"/><path d="M7 20V10h10v10"/><path d="M8 10c0-2.4 1.2-3.8 2.4-4.7M16 10c0-2.4-1.2-3.8-2.4-4.7"/><path d="M10.4 5.3C10.4 3.5 11.2 2.4 12 2c.8.4 1.6 1.5 1.6 3.3"/><path d="M3.5 13c0-1.7.8-2.8 1.5-3.4.7.6 1.5 1.7 1.5 3.4M17.5 13c0-1.7.8-2.8 1.5-3.4.7.6 1.5 1.7 1.5 3.4"/><path d="M8 10c0-1.6.7-2.6 1.4-3.2M16 10c0-1.6-.7-2.6-1.4-3.2"/><path d="M12 2V.5M10.8 1.2h2.4M5 9.6V7.4M4 8.2h2M19 9.6V7.4M18 8.2h2"/><path d="M9.5 20v-5a2.5 2.5 0 0 1 5 0v5"/><path d="M4.2 16h1.6M18.2 16h1.6"/></svg></div>
           <h2 class="tier-title">Cathedral / Diocese</h2>
           <div class="tier-price">Custom</div>
           <p class="tier-sub">For 301+ households, cathedrals, and diocesan use.</p>
@@ -442,7 +520,7 @@
         </article>
 
          <article class="tier-card tier-card--monastic">
-          <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M4 20V11l3-2 3 2 2-2 2 2 3-2 3 2v9"/><path d="M7 9V6"/><path d="M15 9V6"/></svg></div>
+          <div class="tier-icon"><svg viewBox="0 0 24 24" aria-label="Orthodox monastery complex"><path d="M1.5 20h21"/><path d="M2.5 20v-7l3-2 3 2v7M15.5 20v-7l3-2 3 2v7"/><path d="M8.5 20V10h7v10"/><path d="M9.5 10c0-2.3 1.2-3.7 2.5-4.6 1.3.9 2.5 2.3 2.5 4.6"/><path d="M12 5.4V2.2M10.7 3.5h2.6"/><path d="M3.5 13V8h3v3M17.5 11V6h3v7"/><path d="M5 8V5.5M4 6.5h2M19 6V3.5M18 4.5h2"/><path d="M10 20v-4a2 2 0 0 1 4 0v4"/><path d="M4 16h2M18 16h2"/></svg></div>
           <h2 class="tier-title">Monastic</h2>
           <div class="tier-price">$0 <span>/ mo</span></div>
           <p class="tier-sub">Giving Plus, free for monasteries, sketes, and convents.</p>
@@ -471,7 +549,7 @@
             <span class="fee-label">Card & wallet</span>
             <strong>Familiar, fast checkout</strong>
             <span>Includes cards, Apple Pay, and Google Pay when available.</span>
-            <small>Stripe's standard processing applies (about 2.9% + $0.30 for cards). AGAPAY adds nothing on top &mdash; ever.</small>
+            <small>Eligible nonprofit donation pricing: cards 2.2% + $0.30; ACH 0.8%, capped at $5.<a class="stripe-nonprofit-rate-link" href="#stripe-nonprofit-fee-disclaimer" aria-label="See Stripe nonprofit pricing eligibility disclaimer">*</a> AGAPAY adds nothing on top &mdash; ever.</small>
           </div>
         </div>
         <div class="fee-note">
@@ -501,15 +579,15 @@
           </div>
           <div class="calc-results">
             <div class="result-row"><span>Total gifts</span><strong id="grossDisplay">$20,000.00</strong></div>
-            <div class="result-row negative"><span>Total estimated fees</span><strong id="feeDisplay">-$660.10</strong></div>
-            <div class="result-row muted"><span id="stripeLabel">Stripe processing (100% of fees)</span><strong id="stripeDisplay">-$660.10</strong></div>
+            <div class="result-row negative"><span>Total estimated fees</span><strong id="feeDisplay">-$520.10</strong></div>
+            <div class="result-row muted"><span id="stripeLabel">Estimated nonprofit Stripe card processing*</span><strong id="stripeDisplay">-$520.10</strong></div>
             <div class="result-row muted"><span>AGAPAY donation fee</span><strong id="agapayDisplay">$0.00</strong></div>
-            <div class="result-row positive"><span>Donor-covered offset</span><strong id="coveredDisplay">+$495.08</strong></div>
-            <div class="result-row negative"><span>Parish-absorbed fees</span><strong id="parishFeesDisplay">-$165.02</strong></div>
-            <div class="result-row net"><span>Net deposited</span><strong id="netDisplay">$19,834.98</strong></div>
-            <div class="result-row muted"><span>Reconciliation</span><strong id="reconcileDisplay">$20,000.00 - $165.02 = $19,834.98</strong></div>
+            <div class="result-row positive"><span>Donor-covered offset</span><strong id="coveredDisplay">+$390.08</strong></div>
+            <div class="result-row negative"><span>Parish-absorbed fees</span><strong id="parishFeesDisplay">-$130.02</strong></div>
+            <div class="result-row net"><span>Net deposited</span><strong id="netDisplay">$19,869.98</strong></div>
+            <div class="result-row muted"><span>Reconciliation</span><strong id="reconcileDisplay">$20,000.00 - $130.02 = $19,869.98</strong></div>
             <div class="result-row muted"><span>Payout timing</span><strong id="timingDisplay">Fastest</strong></div>
-            <div class="result-row positive"><span>Effective yield</span><strong id="yieldDisplay">99.17%</strong></div>
+            <div class="result-row positive"><span>Effective yield</span><strong id="yieldDisplay">99.35%</strong></div>
           </div>
         </section>
 
@@ -580,7 +658,7 @@
           </article>
           <article class="faq">
             <button type="button" aria-expanded="false">What does Parish add beyond Stewardship? <span>+</span></button>
-            <p>Parish adds the operational tools that serve the whole community: Directory, Sacraments &amp; Services, staff workflows, Parish Commerce and Bookstore, Text-to-Give, guided onboarding, and priority support.</p>
+            <p>Parish adds the operational tools that serve the whole community: Directory, Sacraments &amp; Services, staff workflows, the full Parish Commerce suite beyond Stewardship's Bookstore access, Text-to-Give, guided onboarding, and priority support.</p>
           </article>
           <article class="faq">
             <button type="button" aria-expanded="false">How does AGAPAY verify canonical standing? <span>+</span></button>
@@ -609,6 +687,9 @@
         </div>
       </section>
     </section>
+    <aside class="stripe-fee-disclaimer" id="stripe-nonprofit-fee-disclaimer">
+      <strong>* Stripe nonprofit pricing disclaimer:</strong> Discounted donation transaction fees are subject to Stripe&rsquo;s review, approval, and ongoing determination. AGAPAY cannot guarantee eligibility or that Stripe will apply or maintain these rates.
+    </aside>
   </main>
 <script>
     const body = document.body;
@@ -693,8 +774,9 @@
       const averageGift = Math.max(5, Number(averageGiftInput && averageGiftInput.value || 75));
       const transactions = Math.max(1, Math.round(monthlyVolume / averageGift));
       // AGAPAY charges no donation fee -- the only fee here is Stripe's own
-      // standard payment processing (~2.9% + $0.30 per card gift).
-      const stripeRate = 0.029;
+      // discounted nonprofit card processing (2.2% + $0.30 per card gift).
+      // Stripe alone determines whether a connected parish is eligible.
+      const stripeRate = 0.022;
       const estimatedStripeCents = Math.round(monthlyCents * stripeRate) + (transactions * 30);
       const totalFeeCents = estimatedStripeCents;
       const estimatedAgapayCents = 0;
@@ -708,7 +790,7 @@
       document.getElementById("grossDisplay").textContent = formatCents(monthlyCents);
       document.getElementById("feeDisplay").textContent = `-${formatCents(totalFeeCents)}`;
       document.getElementById("coveredDisplay").textContent = `+${formatCents(donorCoveredCents)}`;
-      document.getElementById("stripeLabel").textContent = "Estimated Stripe processing (100% of fees)";
+      document.getElementById("stripeLabel").textContent = "Estimated nonprofit Stripe card processing*";
       document.getElementById("stripeDisplay").textContent = `-${formatCents(estimatedStripeCents)}`;
       document.getElementById("agapayDisplay").textContent = `-${formatCents(estimatedAgapayCents)}`;
       document.getElementById("parishFeesDisplay").textContent = `-${formatCents(parishFeeCents)}`;

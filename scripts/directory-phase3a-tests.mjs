@@ -17,9 +17,13 @@ import {
   createDirectoryNote,
   createHousehold,
   createPerson,
+  createSelfServiceAddress,
+  createSelfServiceContact,
   decideDirectoryReviewItem,
   DirectoryServiceError,
   getDirectoryAdminDashboard,
+  getDirectoryHouseholdAdmin,
+  getDirectoryPersonAdmin,
   getDirectoryReviewItem,
   linkExternalIdentity,
   listDirectoryAuditHistory,
@@ -74,6 +78,8 @@ function makeD1Env() {
   db.exec(migration("0026_directory_media_phase2b.sql"));
   db.exec(migration("0027_directory_admin_phase3a.sql"));
   db.exec(migration("0028_directory_media_secure_transformation.sql"));
+  db.exec(migration("0030_directory_child_publication_phase4b.sql"));
+  db.exec(migration("0033_directory_household_namedays.sql"));
 
   function wrap(sql) {
     return {
@@ -162,7 +168,10 @@ async function fixture() {
       "directory.notes.view",
       "directory.notes.manage",
       "directory.assignments.manage",
-      "directory.audit.view"
+      "directory.audit.view",
+      "directory.private_contact.view",
+      "directory.skills.view",
+      "directory.invitations.manage"
     ]
   });
   grant(db, { userId: requesterUser.id, capabilities: ["directory.self.manage"] });
@@ -420,9 +429,13 @@ await test("self approval and stale approval are denied", async () => {
 });
 
 await test("people, household, direct corrections, and notes are scoped and controlled", async () => {
-  const { env, reviewerContext, adult, household } = await fixture();
+  const { env, reviewerContext, adult, spouse, household } = await fixture();
   const people = await listDirectoryPeopleAdmin(env, { context: reviewerContext });
   assert.equal(people.some((person) => person.id === adult.id), true);
+  assert.equal(people.find((person) => person.id === spouse.id)?.householdManaged, true);
+  const spouseDetail = await getDirectoryPersonAdmin(env, { context: reviewerContext, personId: spouse.id });
+  assert.equal(spouseDetail.accountAccess.linked, false);
+  assert.equal(spouseDetail.accountAccess.householdManaged, true, "a spouse is covered by the linked family account");
   const households = await listDirectoryHouseholdsAdmin(env, { context: reviewerContext });
   assert.equal(households.some((item) => item.id === household.id), true);
   const personDetail = await applyPersonDirectCorrection(env, { context: reviewerContext, personId: adult.id, expectedVersion: adult.updatedAt, patch: { preferredName: "Anna Dunne" } });
@@ -431,6 +444,84 @@ await test("people, household, direct corrections, and notes are scoped and cont
   assert.equal(householdDetail.household.displayName, "Dunne Household");
   const note = await createDirectoryNote(env, { context: reviewerContext, targetType: "household", targetId: household.id, category: "verification", body: "Name spelling confirmed." });
   assert.equal(note.category, "verification");
+});
+
+await test("parish household records expose complete staff contact data with separate donor visibility", async () => {
+  const { env, reviewerContext, selfContext, adult, household } = await fixture();
+  await createSelfServiceContact(env, {
+    context: selfContext,
+    ownerType: "person",
+    ownerId: adult.id,
+    data: { contactType: "email", value: "anna.private@example.org", label: "personal", primary: true, visibility: "private" }
+  });
+  await createSelfServiceContact(env, {
+    context: selfContext,
+    ownerType: "person",
+    ownerId: adult.id,
+    data: { contactType: "phone", value: "(555) 765-4321", label: "mobile", primary: true, visibility: "directory_members" }
+  });
+  await createSelfServiceAddress(env, {
+    context: selfContext,
+    householdId: household.id,
+    data: {
+      addressType: "residential",
+      line1: "123 Parish Lane",
+      line2: "Unit 4",
+      city: "Amarillo",
+      region: "TX",
+      postalCode: "79101",
+      country: "US",
+      primary: true,
+      visibility: "directory_members"
+    }
+  });
+  const rows = await listDirectoryHouseholdsAdmin(env, { context: reviewerContext });
+  const row = rows.find((item) => item.id === household.id);
+  assert.equal(row.staffContact.email.value, "anna.private@example.org");
+  assert.equal(row.staffContact.email.visibility, "private");
+  assert.equal(row.staffContact.phone.value, "(555) 765-4321");
+  assert.equal(row.staffContact.phone.visibility, "directory_members");
+  assert.equal(row.staffContact.address.line1, "123 Parish Lane");
+  assert.equal(row.staffContact.address.visibility, "directory_members");
+  const detail = await getDirectoryHouseholdAdmin(env, { context: reviewerContext, householdId: household.id });
+  assert.equal(detail.contacts.find((item) => item.contactType === "email").value, "anna.private@example.org");
+  assert.equal(detail.addresses[0].line1, "123 Parish Lane");
+  assert.equal(detail.addresses[0].directoryDisplay, "Amarillo, TX");
+  assert.equal("line1" in detail.addresses[0], true, "staff detail retains the full address");
+});
+
+await test("parish staff cannot invite a spouse already covered by the family account", async () => {
+  const { env, reviewerUser, spouse, household } = await fixture();
+  const session = await issuePlatformUserSession(env, reviewerUser.id);
+  const response = await handleDirectoryAdmin(requestWithSession(
+    "https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/invitations",
+    session,
+    reviewerUser.email,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ personId: spouse.id, householdId: household.id, email: "spouse@example.org" })
+    }
+  ), env, "st-fiacre");
+  assert.equal(response.status, 409);
+  const payload = await response.json();
+  assert.match(payload.message || payload.error, /managed through the family's My AGAPAY account/i);
+});
+
+await test("authorized parish staff can download a private PDF directory", async () => {
+  const { env, reviewerUser } = await fixture();
+  const session = await issuePlatformUserSession(env, reviewerUser.id);
+  const response = await handleDirectoryAdmin(requestWithSession(
+    "https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/exports/directory.pdf",
+    session,
+    reviewerUser.email
+  ), env, "st-fiacre");
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("Content-Type"), "application/pdf");
+  assert.match(response.headers.get("Content-Disposition") || "", /st-fiacre-parish-directory\.pdf/);
+  assert.equal(response.headers.get("Cache-Control"), "private, no-store");
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  assert.equal(String.fromCharCode(...bytes.slice(0, 4)), "%PDF");
 });
 
 await test("household admin detail exposes uploaded family photo preview metadata", async () => {

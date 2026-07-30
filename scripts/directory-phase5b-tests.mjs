@@ -229,6 +229,20 @@ await test("adult members can self-list skills, activate consent, search, and wi
   assert.equal(results.items.length, 1);
   assert.match(results.disclaimer, /self-reported/i);
 
+  const retried = await saveMySkillListing(fx.env, {
+    context: fx.memberSelfContext,
+    data: {
+      skillId,
+      experienceLevel: "professional",
+      visibility: "directory_members",
+      status: "active",
+      contactPreference: "ask_in_person"
+    }
+  });
+  assert.equal(retried.id, draft.id);
+  assert.equal(retried.experienceLevel, "professional");
+  assert.equal(fx.db.prepare("SELECT COUNT(*) AS count FROM directory_person_skill_listings WHERE person_id = ? AND skill_id = ?").get(fx.member.id, skillId).count, 1);
+
   const withdrawn = await saveMySkillListing(fx.env, {
     context: fx.memberSelfContext,
     listingId: draft.id,
@@ -282,6 +296,22 @@ await test("admin catalog, moderation, exports, print data, and maintenance dash
   assert.equal(typeof maintenance.unclaimedPeople, "number");
   assert.ok(maintenance.actions && Array.isArray(maintenance.actions.overdueHouseholds));
   assert.ok(Array.isArray(maintenance.actions.unclaimedPeople));
+});
+
+await test("maintenance is household-centered, includes never-confirmed families, and never flags children as unclaimed", async () => {
+  const fx = await fixture();
+  const child = fx.db.prepare("SELECT id FROM directory_people WHERE preferred_name = 'Young Loretto'").get();
+  fx.db.prepare("DELETE FROM directory_person_links WHERE person_id = ?").run(child.id);
+  fx.db.prepare(`INSERT OR IGNORE INTO directory_household_admins
+    (id, household_id, person_id, active, created_at, updated_at)
+    VALUES ('admin_loretto', ?, ?, 1, ?, ?)`).run(fx.household.id, fx.member.id, Date.now(), Date.now());
+
+  const maintenance = await getDirectoryMaintenanceDashboard(fx.env, { context: fx.adminContext });
+  assert.equal(maintenance.householdsNotStarted, 1);
+  assert.equal(maintenance.accountManagedHouseholds, 1);
+  assert.equal(maintenance.householdsNeedingAccountAccess, 0);
+  assert.ok(maintenance.actions.notStartedHouseholds.some((item) => item.id === fx.household.id));
+  assert.ok(!maintenance.actions.unclaimedPeople.some((item) => item.id === child.id), "an unlinked child must not enter the account-invitation worklist");
 });
 
 await test("household verification records member confirmation and next due date", async () => {

@@ -15,7 +15,7 @@ export const subscriptionTiers = [
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_STARTER_MONTHLY",
     description: "Simple online and recurring giving for Orthodox churches.",
-    modules: { givingPlus: false, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
+    modules: { givingPlus: false, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
   },
   {
     id: "giving",
@@ -24,7 +24,7 @@ export const subscriptionTiers = [
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_GIVING_MONTHLY",
     description: "Essential online giving tools for Orthodox churches.",
-    modules: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
+    modules: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
   },
   {
     id: "stewardship",
@@ -33,16 +33,18 @@ export const subscriptionTiers = [
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_STEWARDSHIP_MONTHLY",
     description: "Giving plus pledge, donor, and Stewardship Health tools.",
-    modules: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: false, bookstore: true, textToGive: false, accounting: false, accountingTier: "unavailable" }
+    modules: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: false, bookstore: true, commerceSuite: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
   },
   {
     id: "parish",
     label: "Parish",
-    monthlyCents: 19900,
+    monthlyCents: 14900,
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
-    stripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_MONTHLY",
+    // Version the binding when the published price changes so an older
+    // Cloudflare secret can never silently charge the previous $199 rate.
+    stripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_149_MONTHLY",
     description: "Monthly AGAPAY platform subscription for established parishes.",
-    modules: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, textToGive: true, accounting: true, accountingTier: "advanced_operations" }
+    modules: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, commerceSuite: true, textToGive: true, accounting: true, accountingTier: "advanced_operations" }
   },
   {
     id: "diocese",
@@ -51,7 +53,7 @@ export const subscriptionTiers = [
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_DIOCESE_MONTHLY",
     description: "Custom AGAPAY subscription pricing for cathedrals, dioceses, and multi-parish organizations.",
-    modules: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, textToGive: true, accounting: true, accountingTier: "advanced_operations" }
+    modules: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, commerceSuite: true, textToGive: true, accounting: true, accountingTier: "advanced_operations" }
   },
   {
     id: "monastery_free",
@@ -60,7 +62,7 @@ export const subscriptionTiers = [
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "",
     description: "No monthly subscription fee for Orthodox monasteries and sketes.",
-    modules: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
+    modules: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
   }
 ];
 

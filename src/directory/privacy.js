@@ -154,7 +154,10 @@ export async function evaluateFieldPolicy(env, { parishId, ownerType, ownerId, f
   const requested = requestedVisibility ? assertVisibility(requestedVisibility) : null;
   const baseVisibility = preference?.visibility || requested || defaults.visibility;
   let maxVisibility = "directory_members";
-  if (fieldKey.includes("address") || fieldKey === "street_address" || fieldKey === "city_state") maxVisibility = settings.addressMaxVisibility;
+  // City/state is the coarse location shown in the member directory. Keep the
+  // parish's stricter address cap for street/full-address fields without
+  // accidentally suppressing an adult household's explicit city/state opt-in.
+  if (fieldKey.includes("address") || fieldKey === "street_address") maxVisibility = settings.addressMaxVisibility;
   if (fieldKey.includes("email") || fieldKey.includes("phone")) maxVisibility = settings.contactMaxVisibility;
   let visibility = mostRestrictive(baseVisibility, maxVisibility);
 

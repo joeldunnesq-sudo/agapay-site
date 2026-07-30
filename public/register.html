@@ -192,6 +192,7 @@
     .type-btn.coming-soon:hover { transform: none; border-color: rgba(166,159,145,0.4); color: rgba(111,106,96,0.82); background: rgba(246,241,232,0.58); }
     .type-btn small { display: block; margin-top: 3px; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); font-weight: 700; }
     .conditional-hidden { display: none !important; }
+    .tier-choice-note { margin-top: 6px; padding: 10px 12px; border-left: 3px solid var(--gold); background: rgba(200,162,74,0.08); border-radius: 0 var(--r) var(--r) 0; font-size: 12px; line-height: 1.55; color: var(--stone); }
 
     /* DIVIDERS */
     .form-divider { border: none; border-top: 0.5px solid rgba(166,159,145,0.25); margin: 1.75rem 0; }
@@ -372,6 +373,20 @@
             <button class="type-btn coming-soon" data-type="Ministry / Nonprofit" type="button" aria-disabled="true" disabled>Ministry <small>Coming soon</small></button>
             <button class="type-btn coming-soon" data-type="School / Academy" type="button" aria-disabled="true" disabled>School <small>Coming soon</small></button>
           </div>
+        </div>
+
+        <div class="form-group" id="subscriptionTierGroup">
+          <label for="subscriptionTier">Starting AGAPAY tier <span class="required">*</span></label>
+          <div class="select-wrap">
+            <select id="subscriptionTier">
+              <option value="">Choose the tier you want to start with</option>
+              <option value="starter">Starter — $9/month</option>
+              <option value="giving">Giving Plus — $49/month</option>
+              <option value="stewardship">Stewardship — $99/month</option>
+              <option value="parish">Parish — $149/month</option>
+            </select>
+          </div>
+          <span class="tier-choice-note" id="subscriptionTierNote">Your selection will be included with your canonical-standing review. Billing does not begin until approval and checkout.</span>
         </div>
 
         <div class="form-group">
@@ -851,6 +866,32 @@
       setGroupVisibility('calendarGroup', config.showsCalendar);
       setGroupVisibility('descriptionGroup', config.requiresDescription || communityType === 'Business');
 
+      const tierSelect = document.getElementById('subscriptionTier');
+      const tierNote = document.getElementById('subscriptionTierNote');
+      if (communityType === 'Cathedral') {
+        tierSelect.innerHTML = '<option value="diocese">Cathedral / Diocese — custom pricing</option>';
+        tierSelect.value = 'diocese';
+        tierSelect.disabled = true;
+        tierNote.textContent = 'Cathedral and diocesan registrations receive custom pricing after canonical review.';
+      } else if (communityType === 'Monastery') {
+        tierSelect.innerHTML = '<option value="monastery_free">Monastic — $0/month</option>';
+        tierSelect.value = 'monastery_free';
+        tierSelect.disabled = true;
+        tierNote.textContent = 'Canonical monasteries, sketes, and convents receive Giving Plus capabilities with no monthly platform fee.';
+      } else {
+        const selectedTier = ['starter', 'giving', 'stewardship', 'parish'].includes(tierSelect.value) ? tierSelect.value : '';
+        tierSelect.innerHTML = [
+          '<option value="">Choose the tier you want to start with</option>',
+          '<option value="starter">Starter — $9/month</option>',
+          '<option value="giving">Giving Plus — $49/month</option>',
+          '<option value="stewardship">Stewardship — $99/month</option>',
+          '<option value="parish">Parish — $149/month</option>'
+        ].join('');
+        tierSelect.value = selectedTier;
+        tierSelect.disabled = false;
+        tierNote.textContent = 'Your selection will be included with your canonical-standing review. Billing does not begin until approval and checkout.';
+      }
+
       document.getElementById('agreementText').innerHTML = `${config.agreement} I have read and agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.`;
     }
 
@@ -886,6 +927,7 @@
         if (!document.getElementById('city').value.trim())         { alert('Please enter your city.'); return false; }
         if (!document.getElementById('state').value)               { alert('Please select your state.'); return false; }
         if (!document.getElementById('postalCode').value.trim())   { alert('Please enter the ZIP or postal code.'); return false; }
+        if (!document.getElementById('subscriptionTier').value)    { alert('Please choose the AGAPAY tier you want to start with.'); return false; }
         if (config.requiresWebsite && !document.getElementById('website').value.trim()) { alert('Please enter the business website so AGAPAY can verify fit.'); return false; }
         if (config.requiresDescription && !document.getElementById('organizationDescription').value.trim()) { alert('Please enter a short description so AGAPAY can review fit.'); return false; }
       }
@@ -911,6 +953,7 @@
       ].filter(Boolean).join(', ');
       const community = [
         ['Community type', communityType],
+        ['Starting tier',  document.getElementById('subscriptionTier').selectedOptions[0]?.textContent || 'Not selected'],
         ['Name',           document.getElementById('parishName').value],
         ['Address',        address],
         ...(config.requiresJurisdiction || document.getElementById('jurisdiction').value ? [['Jurisdiction', document.getElementById('jurisdiction').value || '-']] : []),
@@ -1064,6 +1107,7 @@
       const promoParam = new URLSearchParams(window.location.search).get('promo');
       const payload = {
         communityType,
+        subscriptionTier: document.getElementById('subscriptionTier').value,
         ...(promoParam ? { promo: promoParam } : {}),
         parishName,
         jurisdiction: document.getElementById('jurisdiction').value,

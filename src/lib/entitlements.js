@@ -19,14 +19,25 @@ import { hasActiveStewardshipComp, hasStewardshipAccess, stewardshipStatus } fro
 // matches the "product and craft sale campaigns" capability already
 // promised on the public features page for monastic communities.
 const TIER_MODULES = {
-  starter: { givingPlus: false, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
-  giving: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
-  stewardship: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: false, bookstore: true, textToGive: false, accounting: false, accountingAdvancedOperations: false },
-  parish: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, textToGive: true, accounting: true, accountingAdvancedOperations: true },
-  diocese: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, textToGive: true, accounting: true, accountingAdvancedOperations: true },
-  monastery_free: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, textToGive: false, accounting: false, accountingAdvancedOperations: false }
+  starter: { givingPlus: false, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
+  giving: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
+  stewardship: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: false, bookstore: true, commerceSuite: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
+  parish: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, commerceSuite: true, textToGive: true, accounting: true, accountingAdvancedOperations: true },
+  diocese: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, commerceSuite: true, textToGive: true, accounting: true, accountingAdvancedOperations: true },
+  monastery_free: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, textToGive: false, accounting: false, accountingAdvancedOperations: false }
 };
-const MODULE_IDS = ["stewardshipHealth", "sacraments", "directory", "bookstore", "textToGive"];
+const MODULE_IDS = ["stewardshipHealth", "sacraments", "directory", "bookstore", "commerceSuite", "textToGive"];
+export const GIVING_FEATURES = Object.freeze({
+  basicGiving: null,
+  branding: "givingPlus",
+  customFunds: "givingPlus",
+  campaigns: "givingPlus",
+  commemorations: "givingPlus",
+  annualStatements: "givingPlus",
+  reconciliation: "givingPlus",
+  giverInsights: "givingPlus",
+  qrToolkit: null
+});
 
 export function normalizedSubscriptionTier(registration) {
   const tier = String(registration?.subscriptionTier || "").toLowerCase();
@@ -40,6 +51,12 @@ export function tierIncludesModule(registration, moduleId) {
     && ["cancelled", "canceled", "paused", "past_due", "unpaid", "incomplete_expired"].includes(status);
   if (isEndedDemo) return false;
   return Boolean(TIER_MODULES[tier]?.[moduleId]);
+}
+
+export function givingFeatureAccess(registration, featureId) {
+  if (!Object.prototype.hasOwnProperty.call(GIVING_FEATURES, featureId)) return false;
+  const requiredModule = GIVING_FEATURES[featureId];
+  return requiredModule === null || tierIncludesModule(registration, requiredModule);
 }
 
 // Back-compat convenience: "Parish +" as a bundle, true if the parish's
@@ -58,7 +75,7 @@ export function hasLegacyParishPlusAddOn(registration) {
 export function hasModuleAccess(registration, moduleId) {
   // Directory and Text-to-Give were never part of the retired Parish + add-on.
   // They are available only through a tier that explicitly includes them.
-  if (moduleId === "directory" || moduleId === "textToGive") {
+  if (moduleId === "directory" || moduleId === "textToGive" || moduleId === "commerceSuite") {
     return tierIncludesModule(registration, moduleId);
   }
   return tierIncludesModule(registration, moduleId) || hasLegacyParishPlusAddOn(registration);
@@ -86,7 +103,12 @@ export function directoryEnabledFor(registration, settings = {}) {
 }
 
 export function bookstoreEnabledFor(registration) {
+  if (normalizedSubscriptionTier(registration) === "starter") return false;
   return registration?.bookstoreEnabled !== false && hasModuleAccess(registration, "bookstore");
+}
+
+export function commerceSuiteEnabledFor(registration) {
+  return tierIncludesModule(registration, "commerceSuite");
 }
 
 export function accountingEnabledFor(registration) {
@@ -125,14 +147,23 @@ export function entitlementsSummary(registration) {
         source: moduleSource(registration, "stewardshipHealth")
       },
       sacraments: {
-        included: sacramentsEnabledFor(registration),
+        // Tier access and the parish's donor-facing on/off choice are
+        // separate concerns. The dashboard workspace must remain available
+        // to an entitled parish so staff can turn the feature on.
+        included: hasModuleAccess(registration, "sacraments"),
         parishHasEnabled: Boolean(registration?.sacramentsEnabled),
         source: moduleSource(registration, "sacraments")
       },
       bookstore: {
-        included: bookstoreEnabledFor(registration),
+        // Tier access and the parish's donor-facing on/off choice are
+        // separate concerns, just as they are for Sacraments.
+        included: hasModuleAccess(registration, "bookstore"),
         parishHasEnabled: registration?.bookstoreEnabled !== false,
         source: moduleSource(registration, "bookstore")
+      },
+      commerceSuite: {
+        included: commerceSuiteEnabledFor(registration),
+        source: commerceSuiteEnabledFor(registration) ? "tier" : "none"
       },
       directory: {
         included: hasModuleAccess(registration, "directory"),
@@ -149,6 +180,9 @@ export function entitlementsSummary(registration) {
         advancedOperationsIncluded: accountingTierFor(registration) === "advanced_operations",
         source: tierIncludesModule(registration, "accounting") ? "tier" : "none"
       }
-    }
+    },
+    givingFeatures: Object.fromEntries(
+      Object.keys(GIVING_FEATURES).map((featureId) => [featureId, givingFeatureAccess(registration, featureId)])
+    )
   };
 }

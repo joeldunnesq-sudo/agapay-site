@@ -42,6 +42,7 @@ import {
   stripeGetRequest,
   stripeObjectId,
 } from "../lib/stripe-connect.js";
+import { upsertStripeChargeVolumeRecord } from "../lib/stripe-volume.js";
 
 import {
   appendAdminAudit,
@@ -305,6 +306,16 @@ export async function handleStripeWebhook(request, env) {
 
 export async function processStripeWebhookEvent(env, event) {
   const object = event.data?.object || {};
+  if (event.type === "charge.succeeded" || event.type === "charge.updated" || event.type === "charge.refunded") {
+    const stripeAccountId = event.account || stripeObjectId(object.on_behalf_of);
+    const found = stripeAccountId
+      ? await findRegistrationByStripeAccountId(env, stripeAccountId)
+      : null;
+    const parishId = found?.registration?.parishId || object.metadata?.parish_id || "";
+    if (parishId && stripeAccountId && object.id) {
+      await upsertStripeChargeVolumeRecord(env, parishId, stripeAccountId, object);
+    }
+  }
   if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
     if (object.metadata?.product === "learn") {
       await persistLearnBillingFromStripe(env, {

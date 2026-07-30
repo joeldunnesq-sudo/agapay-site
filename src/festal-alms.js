@@ -75,13 +75,24 @@ export function activeFestalAlmsCampaigns(campaigns, calendar = "julian", refere
     .filter(campaignIsEnabled)
     .map((campaign) => {
       const visibility = festalAlmsVisibilityWindow(campaign, calendar, dateIso);
+      if (campaign.patronal) {
+        return {
+          ...campaign,
+          visibility: {
+            ...(visibility || { feastDate: dateIso, fastStartId: null }),
+            startsAt: "0001-01-01",
+            endsAt: "9999-12-31",
+            alwaysVisible: true
+          }
+        };
+      }
       return visibility ? { ...campaign, visibility } : null;
     })
     .filter((campaign) => campaign && dateIso >= campaign.visibility.startsAt && dateIso <= campaign.visibility.endsAt)
     .sort((a, b) => {
+      if (Boolean(a.patronal) !== Boolean(b.patronal)) return a.patronal ? -1 : 1;
       const aDistance = Math.abs(Date.parse(`${a.visibility.feastDate}T12:00:00Z`) - Date.parse(`${dateIso}T12:00:00Z`));
       const bDistance = Math.abs(Date.parse(`${b.visibility.feastDate}T12:00:00Z`) - Date.parse(`${dateIso}T12:00:00Z`));
       return aDistance - bDistance;
-    })
-    .slice(0, 1);
+    });
 }

@@ -872,6 +872,8 @@ export async function handleAdminReleaseStatus(request, env) {
       resendConfigured: Boolean(env.RESEND_API_KEY),
       appUrlConfigured: Boolean(env.AGAPAY_APP_URL),
       turnstileConfigured: Boolean(env.TURNSTILE_SITE_KEY && env.TURNSTILE_SECRET_KEY),
+      nonprofitPricingDocsConfigured: Boolean(env.NONPROFIT_PRICING_DOCS),
+      nonprofitPricingAlertEmailConfigured: Boolean(env.NONPROFIT_PRICING_ALERT_EMAIL),
       adminPasswordConfigured: Boolean(storedAdminPassword || env.AGAPAY_ADMIN_TOKEN),
       registrationCount,
       verifiedCount,

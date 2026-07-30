@@ -9,12 +9,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=20260704c" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260729pledgegate1" />
   <script src="/liturgical-calendar.js"></script>
 <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260724a" />
   <script src="/pwa-register.js" defer></script>
-  <script src="/myagapay-shell.js?v=20260717a" defer></script>
-  <script src="/donor/app.js?v=20260712a" defer></script>
+  <script src="/myagapay-shell.js?v=20260729b" defer></script>
+  <script src="/donor/app.js?v=20260729pledgegate1" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -70,10 +70,8 @@
         <div class="topbar-actions">
           <a class="btn btn-gold btn-sm donor-home-quick-action" href="/myagapay/giving/give">Make Offering</a>
           <div class="donor-home-account-menu" data-donor-account-menu data-auth-required hidden>
-            <button class="donor-home-account-chip" type="button" data-donor-account-toggle aria-haspopup="true" aria-expanded="false">
-              <span class="donor-home-mini-avatar">FM</span>
-              <span><strong id="donorHomeTopbarName">Faithful Member</strong><small>View Account</small></span>
-              <span class="donor-home-account-caret" aria-hidden="true">⌄</span>
+            <button class="donor-home-account-chip myagapay-menu-trigger" type="button" data-donor-account-toggle aria-haspopup="true" aria-expanded="false" aria-label="Open My AGAPAY menu">
+              <span class="myagapay-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span>
             </button>
             <div class="donor-home-account-dropdown" role="menu" hidden>
               <a href="/myagapay/giving/history" role="menuitem">History</a>
@@ -129,6 +127,13 @@
                 </p>
                 <a href="/myagapay/account#pledge" style="flex: none; display: inline-block; background: var(--gold); color: #061522; font-weight: 700; font-size: 12px; padding: 8px 18px; border-radius: 4px; text-decoration: none;">Set Pledge Amount</a>
               </div>
+            </div>
+            <div class="pledge-locked-state desktop-pledge-inner" id="desktopPledgeLockedState" hidden>
+              <span class="pledge-lock-badge">Stewardship feature</span>
+              <h2>Your pledge progress could appear here</h2>
+              <p>Annual pledge tracking is available when your parish adopts the Stewardship tier. Let parish leadership know this would help you.</p>
+              <button class="pledge-encourage-btn" type="button" onclick="requestParishStewardshipUpgrade(this)">Encourage my parish</button>
+              <span class="pledge-request-status" data-pledge-request-status aria-live="polite"></span>
             </div>
           </div>
 
@@ -247,6 +252,13 @@
             <div style="text-align: right;">
               <a href="/myagapay/account#pledge" style="display: inline-block; background: var(--gold); color: #061522; font-weight: 700; font-size: 12px; padding: 6px 16px; border-radius: 4px; text-decoration: none;">Set Pledge Amount</a>
             </div>
+          </div>
+          <div class="pledge-locked-state" id="pledgeLockedState" hidden>
+            <span class="pledge-lock-badge">Stewardship feature</span>
+            <h2>Your pledge progress could appear here</h2>
+            <p>Annual pledge tracking is available when your parish adopts the Stewardship tier.</p>
+            <button class="pledge-encourage-btn" type="button" onclick="requestParishStewardshipUpgrade(this)">Encourage my parish</button>
+            <span class="pledge-request-status" data-pledge-request-status aria-live="polite"></span>
           </div>
         </section>
 
