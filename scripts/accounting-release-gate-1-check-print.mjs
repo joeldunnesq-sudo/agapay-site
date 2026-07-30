@@ -10,10 +10,10 @@ import {
 
 const baseUrl = baseUrlFrom();
 const credentials = requiredEnvironment([
-  "ACCOUNTING_GATE_PARISH_A_ID",
-  "ACCOUNTING_GATE_PARISH_A_PASSWORD",
-  "ACCOUNTING_GATE_STAFF_A_PROFILE_ID",
-  "ACCOUNTING_GATE_STAFF_A_PIN"
+  "ACCOUNTING_GATE_PARISH_B_ID",
+  "ACCOUNTING_GATE_PARISH_B_PASSWORD",
+  "ACCOUNTING_GATE_STAFF_B_PROFILE_ID",
+  "ACCOUNTING_GATE_STAFF_B_PIN"
 ]);
 const artifactRoot = "artifacts/check-print";
 await mkdir(artifactRoot, { recursive:true });
@@ -24,7 +24,7 @@ const page = await context.newPage();
 const runId = new Date().toISOString().replace(/\D/g, "").slice(0, 14);
 const vendorName = `Release Gate Printer ${runId}`;
 const invoiceNumber = `RG-${runId}`;
-const evidence = { generatedAt:new Date().toISOString(), baseUrl, parishId:credentials.ACCOUNTING_GATE_PARISH_A_ID, vendorName, invoiceNumber, layouts:[] };
+const evidence = { generatedAt:new Date().toISOString(), baseUrl, parishId:credentials.ACCOUNTING_GATE_PARISH_B_ID, vendorName, invoiceNumber, layouts:[] };
 
 async function paymentRow() {
   const row = page.locator("#accountingPane tbody tr").filter({ hasText:vendorName }).first();
@@ -57,10 +57,10 @@ async function capturePrint(name, { reprintReason = "" } = {}) {
 try {
   await loginParishAccounting(page, {
     baseUrl,
-    parishId:credentials.ACCOUNTING_GATE_PARISH_A_ID,
-    parishPassword:credentials.ACCOUNTING_GATE_PARISH_A_PASSWORD,
-    profileId:credentials.ACCOUNTING_GATE_STAFF_A_PROFILE_ID,
-    pin:credentials.ACCOUNTING_GATE_STAFF_A_PIN
+    parishId:credentials.ACCOUNTING_GATE_PARISH_B_ID,
+    parishPassword:credentials.ACCOUNTING_GATE_PARISH_B_PASSWORD,
+    profileId:credentials.ACCOUNTING_GATE_STAFF_B_PROFILE_ID,
+    pin:credentials.ACCOUNTING_GATE_STAFF_B_PIN
   });
 
   await page.getByRole("button", { name:/^Payables/ }).first().click();
@@ -124,7 +124,7 @@ try {
       body:JSON.stringify({ reason:"must reject after void" })
     });
     return { status:response.status, body:await response.text() };
-  }, { parishId:credentials.ACCOUNTING_GATE_PARISH_A_ID, paymentId });
+  }, { parishId:credentials.ACCOUNTING_GATE_PARISH_B_ID, paymentId });
   assert.ok(rejection.status >= 400);
   evidence.voidPrintRejection = rejection;
   await page.screenshot({ path:`${artifactRoot}/void-print-rejection.png`, fullPage:true });
