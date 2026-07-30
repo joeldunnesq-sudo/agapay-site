@@ -26,6 +26,10 @@ const DEFAULT_ACCOUNTS = Object.freeze([
 
 function id(prefix) { return `${prefix}_${crypto.randomUUID()}`; }
 function now() { return new Date().toISOString(); }
+async function hash(value) {
+  const bytes = new TextEncoder().encode(JSON.stringify(value));
+  return [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
 function requireCapability(actor, capability) {
   if (!actor?.id || !Array.isArray(actor.capabilities) || !actor.capabilities.includes(capability)) throw new AccountingDatabaseError("Accounting capability is required.", { details: { capability } });
 }
@@ -129,6 +133,22 @@ export async function postJournalEntry(db,{actor,journalEntryId,idempotencyKey,r
   ];
   await db.batch(statements);
   return safeEntry(await first(db,"SELECT * FROM accounting_journal_entries WHERE id=?",journalEntryId));
+}
+
+export async function recordSimpleDeposit(db, { actor, entryDate, description, depositAccountId, revenueAccountId, fundId, amount, correlationId = "" }) {
+  const lines = [
+    { accountId: depositAccountId, fundId, debitAmount: amount },
+    { accountId: revenueAccountId, fundId, creditAmount: amount }
+  ];
+  const draft = await createJournalDraft(db, { actor, entryDate, description, sourceType: "manual", lines, correlationId });
+  return postJournalEntry(db, {
+    actor,
+    journalEntryId: draft.id,
+    idempotencyKey: `simple_deposit:${draft.id}`,
+    requestHash: await hash({ entryDate, depositAccountId, revenueAccountId, fundId, amount }),
+    expectedVersion: 1,
+    correlationId
+  });
 }
 
 export async function reverseJournalEntry(db,{actor,journalEntryId,entryDate,reason,idempotencyKey,requestHash,correlationId=""}){
