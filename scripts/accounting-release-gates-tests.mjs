@@ -62,6 +62,7 @@ assert.match(gate1, /Save draft bill/);
 assert.match(gate1, /data-accounting-view=["']payables["']/);
 assert.match(gate1, /loginPlatformUser/);
 assert.match(gate1, /Independent platform-treasurer approval/);
+assert.match(gate1, /hasText:\/posted\/i/);
 assert.match(gate1, /ACCOUNTING_GATE_PARISH_B_ID/);
 assert.doesNotMatch(gate1, /ACCOUNTING_GATE_PARISH_A_ID/);
 console.log("PASS - gate 1 drives the real UI and preserves layout, reprint, and void evidence");

@@ -111,6 +111,10 @@ try {
   });
   billRow = page.locator("#accountingPane tbody tr").filter({ hasText:invoiceNumber }).first();
   await billRow.getByRole("button", { name:"Post", exact:true }).click();
+  await page.locator("#accountingPane tbody tr")
+    .filter({ hasText:invoiceNumber })
+    .filter({ hasText:/posted/i })
+    .waitFor();
 
   await page.getByRole("button", { name:"Payments & Checks", exact:true }).click();
   await page.getByRole("button", { name:"Pay bills", exact:true }).click();
