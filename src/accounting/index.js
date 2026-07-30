@@ -25,3 +25,4 @@ export * from "./close/index.js";
 export * from "./integrity/index.js";
 export * from "./recurring/index.js";
 export * from "./attachments/index.js";
+export * from "./migration/index.js";

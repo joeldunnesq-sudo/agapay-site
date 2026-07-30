@@ -156,14 +156,14 @@ export async function voidJournalDraft(db,{actor,journalEntryId,reason,correlati
   return safeEntry(await first(db,"SELECT * FROM accounting_journal_entries WHERE id=?",journalEntryId));
 }
 
-export async function postOpeningBalanceBatch(db,{actor,effectiveDate,description,lines,idempotencyKey,requestHash,correlationId=""}){
+export async function postOpeningBalanceBatch(db,{actor,effectiveDate,description,lines,idempotencyKey,requestHash,sourceSystem="initialization",correlationId=""}){
   requireCapability(actor,"accounting.opening_balances.manage");
   const prior=await first(db,"SELECT journal_entry_id FROM accounting_opening_balance_batches WHERE id=?",idempotencyKey);
   if(prior?.journal_entry_id) return safeEntry(await first(db,"SELECT * FROM accounting_journal_entries WHERE id=?",prior.journal_entry_id));
   if(!Array.isArray(lines)||lines.length<2) throw new ValidationError("Opening balances require at least two lines.");
   const debits=lines.reduce((sum,line)=>sum+Number(line.debitAmount||0),0),credits=lines.reduce((sum,line)=>sum+Number(line.creditAmount||0),0);
   if(debits<=0||debits!==credits) throw new ValidationError("Opening balance batch must balance before posting.");
-  await run(db,`INSERT INTO accounting_opening_balance_batches(id,effective_date,description,status,source_system,created_by) VALUES(?,?,?,'draft','initialization',?)`,idempotencyKey,effectiveDate,description,actor.id);
+  await run(db,`INSERT INTO accounting_opening_balance_batches(id,effective_date,description,status,source_system,created_by) VALUES(?,?,?,'draft',?,?)`,idempotencyKey,effectiveDate,description,sourceSystem,actor.id);
   for(const line of lines) await run(db,`INSERT INTO accounting_opening_balance_lines(id,batch_id,account_id,fund_id,debit_amount,credit_amount,description) VALUES(?,?,?,?,?,?,?)`,id("opening_line"),idempotencyKey,line.accountId,line.fundId,Number(line.debitAmount||0),Number(line.creditAmount||0),line.description||null);
   const elevated={...actor,capabilities:[...new Set([...actor.capabilities,"accounting.journals.create","accounting.journals.post"])]};
   const draft=await createJournalDraft(db,{actor:elevated,entryDate:effectiveDate,description,sourceType:"opening_balance",sourceId:idempotencyKey,lines,correlationId});

@@ -84,6 +84,7 @@ export const CAPABILITY_CATALOG = Object.freeze([
   "accounting.journals.post",
   "accounting.journals.reverse",
   "accounting.opening_balances.manage",
+  "accounting.migration.import",
 
   // Accounts Payable
   "ap.view",
@@ -266,7 +267,7 @@ export const ROLE_TEMPLATES = Object.freeze({
     "accounting.close_period", "accounting.reconcile", "accounting.reports", "accounting.export",
     "accounting.configure", "accounting.accounts.manage", "accounting.funds.manage",
     "accounting.periods.manage", "accounting.journals.create", "accounting.journals.post",
-    "accounting.journals.reverse", "accounting.opening_balances.manage",
+    "accounting.journals.reverse", "accounting.opening_balances.manage", "accounting.migration.import",
     "ap.view", "ap.enter", "ap.approve", "ap.pay", "ap.void",
     "budgets.view", "budgets.manage", "budgets.approve", "budgets.lock",
     "bank.view", "bank.reconcile", "bank.manage_accounts",

@@ -1,14 +1,11 @@
 import { AccountingDatabaseError, ValidationError } from "../errors.js";
 import { createJournalDraft, postJournalEntry } from "../ledger/service.js";
+import { cents, csvRows, digest, normalize, text } from "../csv-utils.js";
 const DATE=/^\d{4}-\d{2}-\d{2}$/; const MAX_BYTES=1_000_000,MAX_ROWS=5000;
 function id(prefix){return `${prefix}_${crypto.randomUUID()}`;} function now(){return new Date().toISOString();}
 function requireCapability(actor,capability){if(!actor?.id||!actor.capabilities?.includes(capability))throw new AccountingDatabaseError("Bank reconciliation capability is required.",{details:{capability}});}
 function assertTier(tier){if(!["mission","parish"].includes(tier))throw new AccountingDatabaseError("Bank reconciliation is not included for this parish.");}
 async function first(db,sql,...params){return db.prepare(sql).bind(...params).first();} async function all(db,sql,...params){return(await db.prepare(sql).bind(...params).all()).results||[];} async function run(db,sql,...params){return db.prepare(sql).bind(...params).run();}
-async function digest(value){const bytes=new TextEncoder().encode(value);return[...new Uint8Array(await crypto.subtle.digest("SHA-256",bytes))].map(x=>x.toString(16).padStart(2,"0")).join("");}
-function text(value){return String(value??"").trim();} function normalize(value){return text(value).toLowerCase().replace(/[^a-z0-9]+/g," ").trim();}
-function cents(value){const cleaned=text(value).replace(/[$,\s]/g,"");if(!/^-?\d+(\.\d{1,2})?$/.test(cleaned))throw new ValidationError("Bank amount is invalid.");return Math.round(Number(cleaned)*100);}
-function csvRows(csv,delimiter=","){const rows=[];let row=[],field="",quoted=false;for(let i=0;i<csv.length;i++){const c=csv[i];if(c==='"'){if(quoted&&csv[i+1]==='"'){field+='"';i++;}else quoted=!quoted;}else if(c===delimiter&&!quoted){row.push(field);field="";}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&csv[i+1]==='\n')i++;row.push(field);if(row.some(v=>v!==""))rows.push(row);row=[];field="";}else field+=c;}row.push(field);if(row.some(v=>v!==""))rows.push(row);return rows;}
 function bankDto(row){return row&&Object.freeze({id:row.id,name:row.name,ledgerAccountId:row.account_id,accountType:row.account_type,institutionName:row.institution_name||"",maskedLast4:row.masked_last4||"",currency:row.currency,settlementProfileId:row.settlement_profile_id||"",stripeDestinationReference:row.stripe_external_account_id||"",isDefault:Boolean(row.is_default),status:row.status,isActive:Boolean(row.is_active),version:Number(row.version)});}
 function transactionDto(row){return row&&Object.freeze({id:row.id,bankAccountId:row.bank_account_id,sourceType:row.source_type,postedDate:row.posted_date,description:row.description,referenceNumber:row.reference_number||"",checkNumber:row.check_number||"",amount:Number(row.amount),direction:row.direction,currency:row.currency,status:row.status,matchStatus:row.match_status,matchedAmount:Number(row.matched_amount),unmatchedAmount:Number(row.unmatched_amount),version:Number(row.version)});}
 
