@@ -229,5 +229,10 @@ assertImports(admin, "../lib/stripe-connect.js", [
 assert.match(stripe, /from "\.\.\/lib\/parish-notifications\.js"/);
 assert.match(donor, /from "\.\.\/lib\/stripe-fees\.js"/);
 assert.match(admin, /from "\.\.\/lib\/parish-notifications\.js"/);
+assert.match(
+  parish,
+  /async function createStripeOnboardingSession\([^)]*\)\s*{[\s\S]*?import\("\.\/stripe\.js"\)[\s\S]*?stripeModule\.createStripeOnboardingSession\(/,
+  "parish Stripe onboarding should delegate to the extracted Stripe handler instead of calling an undefined helper",
+);
 
 console.log("Parish extraction tests passed.");

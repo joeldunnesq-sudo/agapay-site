@@ -261,6 +261,11 @@ async function refreshStripeStatusForRegistration(env, reference, registration) 
   return stripeModule.refreshStripeStatusForRegistration(env, reference, registration);
 }
 
+async function createStripeOnboardingSession(request, env, reference, registration, returnPath) {
+  const stripeModule = await import("./stripe.js");
+  return stripeModule.createStripeOnboardingSession(request, env, reference, registration, returnPath);
+}
+
 export async function verifyParishDashboardBearer(registration, token) {
   return Boolean(await resolveParishDashboardSession(registration, token));
 }
