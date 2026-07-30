@@ -121,5 +121,14 @@ bucket_name = "agapay-directory-media"
 binding = "ACCOUNTING_BACKUPS"
 bucket_name = "agapay-accounting-backups"
 
+# Private bucket for accounting attachments (bill invoices, journal entry
+# support, bank statements, close-packet documents). Never enable a public
+# r2.dev URL -- all access goes through authenticated Worker routes that
+# re-check parish accounting authorization on every request and stream the
+# object directly, same convention as TAX_EXEMPTION_DOCS.
+[[r2_buckets]]
+binding = "ACCOUNTING_ATTACHMENTS"
+bucket_name = "agapay-accounting-attachments"
+
 [browser]
 binding = "BROWSER"
