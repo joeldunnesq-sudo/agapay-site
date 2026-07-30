@@ -329,6 +329,7 @@ import {
 } from "./handlers/directory-admin.js";
 
 import { handleAccountingLedger } from "./handlers/accounting-ledger.js";
+import { handleAccountingAttachments } from "./handlers/accounting-attachments.js";
 import { handleAccountingSetupReports } from "./handlers/accounting-setup-reports.js";
 import { handleAccountingPayablesBudgets } from "./handlers/accounting-payables-budgets.js";
 import { handleAccountingReconciliationCommerce } from "./handlers/accounting-reconciliation-commerce.js";
@@ -2568,6 +2569,8 @@ export default {
       if (adjustmentsResponse) return adjustmentsResponse;
       const governanceResponse = await handleAccountingGovernance(request, env, accountingParishId);
       if (governanceResponse) return governanceResponse;
+      const attachmentsResponse = await handleAccountingAttachments(request, env, accountingParishId);
+      if (attachmentsResponse) return attachmentsResponse;
       const accountingResponse = await handleAccountingLedger(request, env, accountingParishId);
       if (accountingResponse) return accountingResponse;
     }

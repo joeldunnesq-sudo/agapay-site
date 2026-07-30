@@ -142,6 +142,8 @@ export const CAPABILITY_CATALOG = Object.freeze([
   "accounting.integrity.scan",
   "accounting.integrity.protect",
   "accounting.recovery.verify",
+  "accounting.attachments.view",
+  "accounting.attachments.manage",
 
   // Commerce
   "commerce.manage",
@@ -272,7 +274,7 @@ export const ROLE_TEMPLATES = Object.freeze({
     "accounting.reconciliation.create", "accounting.reconciliation.view", "accounting.reconciliation.match", "accounting.reconciliation.complete", "accounting.reconciliation.reopen", "accounting.reconciliation.adjust",
     "accounting.integrations.view", "accounting.integrations.configure", "accounting.integrations.post", "accounting.integrations.review", "accounting.integrations.backfill",
     "accounting.commerce.view", "accounting.commerce.configure", "accounting.commerce.post", "accounting.commerce.review", "accounting.commerce.backfill", "accounting.commerce.reports.view",
-    "accounting.close.view", "accounting.close.create", "accounting.close.validate", "accounting.close.adjust", "accounting.close.review", "accounting.close.approve", "accounting.close.complete", "accounting.close.reopen", "accounting.year_end.view", "accounting.year_end.execute", "accounting.accountant_exports.generate", "accounting.audit_exports.generate", "accounting.retention.manage", "accounting.legal_hold.manage", "accounting.integrity.view",
+    "accounting.close.view", "accounting.close.create", "accounting.close.validate", "accounting.close.adjust", "accounting.close.review", "accounting.close.approve", "accounting.close.complete", "accounting.close.reopen", "accounting.year_end.view", "accounting.year_end.execute", "accounting.accountant_exports.generate", "accounting.audit_exports.generate", "accounting.retention.manage", "accounting.legal_hold.manage", "accounting.integrity.view", "accounting.attachments.view", "accounting.attachments.manage",
     "donations.view", "donations.manage", "donor.statements"
   ],
   bookkeeper: [
@@ -283,7 +285,7 @@ export const ROLE_TEMPLATES = Object.freeze({
     "bank.view", "bank.reconcile",
     "accounting.bank_accounts.view", "accounting.bank_imports.manage", "accounting.reconciliation.create", "accounting.reconciliation.view", "accounting.reconciliation.match", "accounting.reconciliation.adjust",
     "accounting.integrations.view", "accounting.integrations.post",
-    "accounting.close.view", "accounting.close.create", "accounting.close.validate", "accounting.close.adjust", "accounting.close.review", "accounting.retention.manage", "accounting.legal_hold.manage", "accounting.integrity.view",
+    "accounting.close.view", "accounting.close.create", "accounting.close.validate", "accounting.close.adjust", "accounting.close.review", "accounting.retention.manage", "accounting.legal_hold.manage", "accounting.integrity.view", "accounting.attachments.view", "accounting.attachments.manage",
     "donations.view"
   ],
   secretary: [
