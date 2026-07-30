@@ -62,6 +62,7 @@ const backendFiles = [
   "src/handlers/admin.js",
   "src/handlers/donor.js",
   "src/handlers/parish.js",
+  "src/handlers/parish-reconciliation.js",
   "src/handlers/stripe.js",
   "src/handlers/stewardship.js",
   "src/lib/parish-notifications.js",
