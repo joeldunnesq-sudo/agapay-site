@@ -1,5 +1,5 @@
 import { json } from "../lib/core.js";
-import { accountsPayableAging, addBudgetLine, approveBill, approveBudget, budgetReportCsv, budgetVsActual, copyBudget, councilBudgetPacket, createBillDraft, createBudget, createVendor, forecastBudget, listBudgets, listVendors, lockBudget, payablesOverview, postBill, rejectBill, submitBill, submitBudget, createPayment, postPayment, listPayments, paymentDetail, getCheckSettings, updateCheckSettings, recordCheckPrint, voidPayment } from "../accounting/index.js";
+import { accountsPayableAging, addBudgetLine, approveBill, approveBudget, budgetReportCsv, budgetVsActual, copyBudget, councilBudgetPacket, createBillDraft, createBudget, createVendor, forecastBudget, listBudgets, listVendors, lockBudget, payablesOverview, postBill, rejectBill, submitBill, submitBudget, createPayment, postPayment, listPayments, paymentDetail, getCheckSettings, updateBudgetLine, updateCheckSettings, recordCheckPrint, voidPayment } from "../accounting/index.js";
 import { accountingContext } from "./accounting-ledger.js";
 
 const HEADERS = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow", Vary: "Authorization" };
@@ -68,6 +68,8 @@ export async function handleAccountingPayablesBudgets(request, env, parishId) {
     }
     if (request.method === "GET" && path === "/budgets") return reply({ ok: true, budgets: await listBudgets(ctx.db, { actor: ctx.actor, entitlementTier: tier, fiscalYearId: url.searchParams.get("fiscalYearId") || null }) });
     if (request.method === "POST" && path === "/budgets") return reply({ ok: true, budget: await createBudget(ctx.db, { actor: ctx.actor, entitlementTier: tier, input: body }) }, 201);
+    const budgetLine = path.match(/^\/budgets\/([^/]+)\/lines\/([^/]+)$/);
+    if (request.method === "PATCH" && budgetLine) return reply({ ok: true, line: await updateBudgetLine(ctx.db, { actor: ctx.actor, entitlementTier: tier, budgetId: decodeURIComponent(budgetLine[1]), lineId: decodeURIComponent(budgetLine[2]), expectedVersion: body.expectedVersion, input: body.input || body }) });
     const budgetMatch = path.match(/^\/budgets\/([^/]+)(?:\/(lines|submit|approve|lock|copy|variance|forecast|council-packet))?$/);
     if (budgetMatch) {
       const budgetId = decodeURIComponent(budgetMatch[1]), action = budgetMatch[2] || "", throughMonth = Number(url.searchParams.get("throughMonth") || new Date().getUTCMonth() + 1);
