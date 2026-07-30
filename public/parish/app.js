@@ -937,7 +937,7 @@
   let accountingReportView = 'library';
   let accountingCustomReport = null;
   let accountingDepthComparative = true;
-  let accountingData = { setup: null, journals: [], ledger: [], reports: {}, accounts: [], accountCatalog: [], funds: [], payables: null, budgets: null, banking: null, integrations: null, close: null, adjustments: null, governance: null, tier: '' };
+  let accountingData = { setup: null, journals: [], ledger: [], reports: {}, accounts: [], accountCatalog: [], funds: [], bankAccounts: [], payables: null, budgets: null, banking: null, integrations: null, close: null, adjustments: null, governance: null, tier: '' };
   let accountingBankPreview = null;
   let accountingFundCatalog = null;
   let accountingFundAccountSections = new Set(['net_asset']);
@@ -957,6 +957,16 @@
   let accountingBudgetReport = null;
   let accountingBudgetEditor = null;
   let accountingMigration = { active:false, session:null, sessions:[], step:'source', previews:{}, advanced:false };
+  let accountingExperienceMode = 'treasurer';
+  let accountingSimpleIncomeMessage = '';
+  try { if (sessionStorage.getItem('agapay.accountingExperienceMode') === 'accountant') accountingExperienceMode = 'accountant'; } catch {}
+  const ACCOUNTING_SIMPLE_REVENUE_LABELS = Object.freeze({
+    acct_4000:'Stewardship & Tithes',
+    acct_4010:'General Donations',
+    acct_4030:'Candle Offerings',
+    acct_4040:'Commemorations',
+    acct_4300:'Bookstore Sales'
+  });
   function accountingStaffSessionKey() { return `agapay.accountingStaff.${currentParish?.parishId || 'unknown'}`; }
   function accountingStaffSession() {
     try { const value = JSON.parse(sessionStorage.getItem(accountingStaffSessionKey()) || 'null'); return value?.expiresAt && Date.parse(value.expiresAt) > Date.now() ? value : null; } catch { return null; }
@@ -1165,7 +1175,55 @@
   function accountingViewTitle() {
     return ({ overview:'Overview', ledger:'General Ledger', journals:'Journal Entries', funds:'Funds', reports:'Financial Reports', payables:'Payables', budgets:'Budgets', banking:'Reconciliation', close:'Period Close', governance:'Governance', setup:'Setup', settings:'Settings', integrations:'Settings' })[accountingView] || 'Overview';
   }
+  function syncAccountingExperienceChrome() {
+    const shell = document.querySelector('.acct-suite-shell');
+    if (shell) shell.dataset.accountingExperience = accountingExperienceMode;
+    document.querySelectorAll('[data-accounting-experience]').forEach((button) => {
+      const active = button.dataset.accountingExperience === accountingExperienceMode;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+    const advancedViews = new Set(['close','governance','setup','settings']);
+    document.querySelectorAll('[data-accounting-view]').forEach((button) => {
+      button.hidden = accountingExperienceMode === 'treasurer' && advancedViews.has(button.dataset.accountingView);
+    });
+  }
+  function setAccountingExperienceMode(mode) {
+    accountingExperienceMode = mode === 'accountant' ? 'accountant' : 'treasurer';
+    try { sessionStorage.setItem('agapay.accountingExperienceMode', accountingExperienceMode); } catch {}
+    if (accountingExperienceMode === 'treasurer' && ['journals','close','governance','setup','settings','integrations'].includes(accountingView)) {
+      accountingView = 'overview';
+      accountingJournalEditor = null;
+    }
+    renderAccountingPane();
+  }
+  function accountingSimpleRevenueOptions() {
+    const order = Object.keys(ACCOUNTING_SIMPLE_REVENUE_LABELS);
+    return accountingData.accounts
+      .filter((account) => account.category === 'revenue' && account.isActive !== false && !account.archivedAt)
+      .sort((left, right) => {
+        const leftIndex = order.indexOf(left.id), rightIndex = order.indexOf(right.id);
+        if (leftIndex >= 0 || rightIndex >= 0) return (leftIndex < 0 ? order.length : leftIndex) - (rightIndex < 0 ? order.length : rightIndex);
+        return String(left.name || '').localeCompare(String(right.name || ''));
+      })
+      .map((account) => `<option value="${escapeAttr(account.id)}">${escapeHtml(ACCOUNTING_SIMPLE_REVENUE_LABELS[account.id] || account.name)}</option>`)
+      .join('');
+  }
+  function accountingSimpleIncomeForm() {
+    const defaultFund = accountingData.funds.find((fund) => Number(fund.isDefault)) || accountingData.funds[0];
+    const banks = accountingData.bankAccounts || [];
+    if (!banks.length) return `<section class="acct-simple-income"><div><span class="acct-kicker">Record Income</span><h2>Add a bank account first</h2><p>A deposit needs a destination account. Open Reconciliation to add the parish checking or savings account.</p></div><button class="acct-primary" onclick="setAccountingView('banking')">Open bank accounts</button></section>`;
+    return `<section class="acct-simple-income"><div class="acct-simple-income-head"><div><span class="acct-kicker">Record Income</span><h2>Record a deposit</h2><p>Tell AGAPAY what happened. The complete ledger entry is created and posted for you.</p></div><small>Need to split one deposit across several funds or income categories? Switch to Accountant view and enter a custom journal entry.</small></div><form onsubmit="submitAccountingSimpleIncome(event)"><div class="acct-simple-income-grid"><label>Where did the money go?<select name="depositAccountId" required>${banks.map((bank) => `<option value="${escapeAttr(bank.ledgerAccountId)}">${escapeHtml(bank.name)}${bank.maskedLast4 ? ` · •••• ${escapeHtml(bank.maskedLast4)}` : ''}</option>`).join('')}</select></label><label>What kind of income was this?<select name="revenueAccountId" required><option value="">Choose income type</option>${accountingSimpleRevenueOptions()}</select></label><label>Which fund?<select name="fundId" required>${accountingData.funds.map((fund) => `<option value="${escapeAttr(fund.id)}" ${fund.id === defaultFund?.id ? 'selected' : ''}>${escapeHtml(fund.code)} · ${escapeHtml(fund.name)}</option>`).join('')}</select></label><label>Amount<input name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="0.00"></label><label>Date<input name="entryDate" type="date" required value="${new Date().toISOString().slice(0,10)}"></label><label class="wide">Description<input name="description" maxlength="240" required placeholder="Sunday offering, fundraiser deposit, or other detail"></label></div><div class="acct-simple-income-foot"><span class="acct-form-status">${escapeHtml(accountingSimpleIncomeMessage)}</span><button class="acct-primary">Record income</button></div></form></section>`;
+  }
+  function accountingSimpleActivityFeed() {
+    const entries = accountingData.journals.filter((entry) => ['posted','reversed'].includes(entry.status)).slice(0, 8);
+    return `<section class="acct-simple-feed"><div class="acct-suite-section-head"><div><span class="acct-kicker">Recent activity</span><h2>What has been recorded</h2></div></div>${entries.map((entry) => `<article><i>✓</i><p>You recorded <strong>${accountingMoney(entry.totalDebits ?? entry.total_debits ?? 0)}</strong> for ${escapeHtml(entry.description || 'parish activity')} on ${accountingDate(entry.postingDate || entry.entryDate)}.</p></article>`).join('') || accountingEmpty('No activity yet', 'Recorded income and posted parish activity will appear here.')}</section>`;
+  }
+  function renderAccountingTreasurerHome(pane) {
+    pane.innerHTML = `<section class="acct-simple-hero"><div><span class="acct-kicker">Treasurer view</span><h2>What would you like to do?</h2><p>Weekly parish bookkeeping in plain language, backed by the same audited accounting records.</p></div><div class="acct-simple-actions"><button onclick="openAccountingSimpleIncome()"><b>＋</b><span>Record Income<small>Cash, checks, and deposits</small></span></button><button onclick="openAccountingSimpleBill()"><b>◇</b><span>Pay a Bill<small>Enter a vendor expense</small></span></button></div></section><div class="acct-simple-overview"><div>${accountingSimpleActivityFeed()}</div><aside><section class="acct-card"><span class="acct-kicker">Budget vs actual</span><h2>Stay on plan</h2><p>Review parish spending against the approved budget.</p><button class="acct-primary" onclick="setAccountingView('budgets')">Review budgets</button></section><section class="acct-card"><span class="acct-kicker">Reports</span><h2>See the parish picture</h2><p>Open the existing financial reports whenever you need them.</p><button class="acct-refresh" onclick="setAccountingView('reports')">Open reports</button></section></aside></div>`;
+  }
   function renderAccountingOverview(pane) {
+    if (accountingExperienceMode === 'treasurer') { renderAccountingTreasurerHome(pane); return; }
     const position = accountingData.reports.position || {}, activities = accountingData.reports.activities || {};
     const cash = (position.rows || []).filter((row) => row.category === 'asset' && /cash|checking|bank|undeposited/i.test(`${row.accountName || ''}`)).reduce((sum,row) => sum + Number(row.amount || 0), 0);
     const netAssets = Number(position.totals?.netAssets || 0), activity = Number(activities.totals?.changeInNetAssets || 0);
@@ -1257,6 +1315,7 @@
     const reconcileWorkspace = document.getElementById('reconcileWorkspace');
     const reconcileParking = document.getElementById('tab-reconcile');
     if (reconcileWorkspace && reconcileParking && reconcileWorkspace.parentElement !== reconcileParking) reconcileParking.append(reconcileWorkspace);
+    syncAccountingExperienceChrome();
     document.querySelectorAll('[data-accounting-view]').forEach((button) => button.classList.toggle('active', button.dataset.accountingView === accountingView || (button.dataset.accountingView === 'ledger' && accountingView === 'journals')));
     const pageTitle = document.getElementById('accountingPageTitle'); if (pageTitle) pageTitle.textContent = accountingViewTitle();
     if (accountingView === 'overview') { renderAccountingOverview(pane); return; }
@@ -1290,6 +1349,10 @@
     if (accountingView === 'integrations') { renderAccountingIntegrations(pane); return; }
     if (accountingView === 'close') { renderAccountingClose(pane); return; }
     if (accountingView === 'governance') { renderAccountingGovernance(pane); return; }
+    if (accountingExperienceMode === 'treasurer' && accountingView === 'ledger') {
+      pane.innerHTML = `${accountingSimpleIncomeForm()}${accountingSimpleActivityFeed()}`;
+      return;
+    }
     if (accountingJournalEditor) { renderAccountingJournalEditor(pane); return; }
     const register = accountingView === 'ledger' ? accountingRegisterModel() : null;
     const rows = register ? register.rows : accountingData.journals;
@@ -1423,6 +1486,44 @@
     if (accountingView === 'funds' && !accountingFundCatalog) loadAccountingFunds();
     if (accountingView === 'close' && !accountingData.close) loadAccountingPhaseF();
     if (accountingView === 'governance' && !accountingData.governance) loadAccountingGovernance();
+  }
+  function openAccountingSimpleIncome() {
+    accountingSimpleIncomeMessage = '';
+    accountingView = 'ledger';
+    renderAccountingPane();
+  }
+  async function openAccountingSimpleBill() {
+    accountingPayablesView = 'bills';
+    accountingView = 'payables';
+    if (!accountingData.payables) await loadAccountingPhaseD();
+    else renderAccountingPane();
+    showAccountingBillForm();
+  }
+  async function submitAccountingSimpleIncome(event) {
+    event.preventDefault();
+    const form = event.currentTarget, status = form.querySelector('.acct-form-status'), button = form.querySelector('button[type="submit"],button.acct-primary');
+    const raw = Object.fromEntries(new FormData(form)), amount = Math.round(Number(raw.amount) * 100);
+    if (!raw.depositAccountId || !raw.revenueAccountId || !raw.fundId || !raw.entryDate || !raw.description.trim() || !Number.isSafeInteger(amount) || amount <= 0) {
+      status.textContent = 'Complete every field and enter an amount greater than zero.';
+      return;
+    }
+    button.disabled = true;
+    status.textContent = 'Recording income…';
+    const response = await fetch(accountingApi('/simple/deposits'), {
+      method:'POST',
+      headers:{ ...authHeaders(), 'Content-Type':'application/json' },
+      body:JSON.stringify({ entryDate:raw.entryDate, description:raw.description.trim(), depositAccountId:raw.depositAccountId, revenueAccountId:raw.revenueAccountId, fundId:raw.fundId, amount, correlationId:`simple-income-ui-${Date.now()}` })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      status.textContent = payload.message || payload.error || 'Unable to record this income.';
+      button.disabled = false;
+      return;
+    }
+    accountingSimpleIncomeMessage = `${accountingMoney(amount)} was recorded successfully.`;
+    await loadAccountingTab(true);
+    accountingView = 'ledger';
+    renderAccountingPane();
   }
   const ACCOUNTING_REPORT_LIBRARY = [
     { id:'activities', title:'Income Statement', group:'Income statements', copy:'Revenue, expenses, and change in net assets for the current period.' },
@@ -1707,7 +1808,7 @@
     if (!force && pane.dataset.loaded === 'true') return;
     pane.innerHTML = '<p class="sw-tool-loading">Loading Accounting...</p>';
     try {
-      const [setupRes, referenceRes, journalRes, ledgerRes, trialRes, activitiesRes, positionRes, recurringRes, ledgerStatusRes] = await Promise.all([
+      const [setupRes, referenceRes, journalRes, ledgerRes, trialRes, activitiesRes, positionRes, recurringRes, ledgerStatusRes, bankAccountsRes] = await Promise.all([
         fetch(accountingApi('/setup'), { headers: authHeaders() }),
         fetch(accountingApi('/workspace-reference'), { headers: authHeaders() }),
         fetch(accountingApi('/journals?limit=50'), { headers: authHeaders() }),
@@ -1716,7 +1817,8 @@
         fetch(accountingApi('/reports/statement-of-activities'), { headers: authHeaders() }),
         fetch(accountingApi('/reports/statement-of-financial-position'), { headers: authHeaders() }),
         fetch(accountingApi('/recurring-transactions'), { headers: authHeaders() }),
-        fetch(accountingApi('/ledger/status'), { headers: authHeaders() })
+        fetch(accountingApi('/ledger/status'), { headers: authHeaders() }),
+        fetch(accountingApi('/bank/accounts'), { headers: authHeaders() })
       ]);
       const setup = await setupRes.json().catch(() => ({}));
       const reference = await referenceRes.json().catch(() => ({}));
@@ -1727,6 +1829,7 @@
       const position = await positionRes.json().catch(() => ({}));
       const recurring = await recurringRes.json().catch(() => ({}));
       const ledgerStatus = await ledgerStatusRes.json().catch(() => ({}));
+      const bankAccounts = await bankAccountsRes.json().catch(() => ({}));
       if (setupRes.status === 401) { await renderAccountingAccess(); return; }
       if (!setupRes.ok) throw new Error(setup.message || setup.error || 'Accounting setup is unavailable.');
       if (!referenceRes.ok) throw new Error(reference.message || reference.error || 'The chart of accounts is unavailable.');
@@ -1735,7 +1838,7 @@
       if (!recurringRes.ok) throw new Error(recurring.message || recurring.error || 'Recurring transactions are unavailable.');
       if (!ledgerStatusRes.ok) throw new Error(ledgerStatus.message || ledgerStatus.error || 'Ledger initialization status is unavailable.');
       if (setup.overview) setup.overview.initialization = ledgerStatus.status || setup.overview.initialization;
-      accountingData = { setup: setup.overview, accounts: reference.accounts || [], accountCatalog: reference.accountCatalog || reference.accounts || [], funds: reference.funds || [], journals: journals.entries || [], ledger: ledger.rows || [], recurring: recurring.items || [], reports: { trialBalance: trial.report, activities: activities.report, position: position.report }, payables: accountingData.payables, budgets: accountingData.budgets, banking: accountingData.banking, integrations: accountingData.integrations, close: accountingData.close, adjustments: accountingData.adjustments, governance: accountingData.governance, tier: setup.tier || journals.tier || '' };
+      accountingData = { setup: setup.overview, accounts: reference.accounts || [], accountCatalog: reference.accountCatalog || reference.accounts || [], funds: reference.funds || [], bankAccounts: bankAccountsRes.ok ? bankAccounts.accounts || [] : [], journals: journals.entries || [], ledger: ledger.rows || [], recurring: recurring.items || [], reports: { trialBalance: trial.report, activities: activities.report, position: position.report }, payables: accountingData.payables, budgets: accountingData.budgets, banking: accountingData.banking, integrations: accountingData.integrations, close: accountingData.close, adjustments: accountingData.adjustments, governance: accountingData.governance, tier: setup.tier || journals.tier || '' };
       document.getElementById('accountingTierLabel').textContent = accountingData.tier === 'advanced_operations' ? 'Parish Accounting' : 'Mission Accounting';
       document.getElementById('accountingTierCopy').textContent = accountingData.tier === 'advanced_operations' ? 'Advanced operations enabled' : 'Essential ledger and reports';
       document.getElementById('accountingParishName').textContent = currentParish.name || currentParish.parishName || 'Your parish';

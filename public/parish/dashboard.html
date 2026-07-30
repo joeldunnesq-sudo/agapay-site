@@ -1351,6 +1351,10 @@
           <section class="acct-suite-main">
             <header class="acct-suite-header">
               <div><span>Accounting</span><h1 id="accountingPageTitle">Overview</h1></div>
+              <div class="acct-experience-toggle" role="group" aria-label="Accounting view detail">
+                <button type="button" class="active" data-accounting-experience="treasurer" onclick="setAccountingExperienceMode('treasurer')" aria-pressed="true">Treasurer view</button>
+                <button type="button" data-accounting-experience="accountant" onclick="setAccountingExperienceMode('accountant')" aria-pressed="false">Accountant view</button>
+              </div>
               <div class="acct-suite-header-meta"><span id="accountingParishName">Parish books</span><span id="accountingFiscalYear">Current fiscal year</span><button type="button" class="acct-refresh" onclick="loadAccountingTab(true)" aria-label="Refresh accounting data">Refresh</button></div>
             </header>
             <div id="accountingPane" class="acct-workspace"><p class="sw-tool-loading">Loading Accounting...</p></div>
