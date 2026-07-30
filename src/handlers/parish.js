@@ -67,7 +67,7 @@ import {
   verifyTurnstileIfConfigured,
 } from "../lib/core.js";
 import { loadGivingCatalogFromAccounting, synchronizeGivingCatalogWithAccounting } from "../accounting/source-wiring.js";
-import { mergeStewardshipFundsIntoRegistration } from "../lib/stewardship-funds.js";
+import { ensureBenevolenceFundInRegistration, mergeStewardshipFundsIntoRegistration } from "../lib/stewardship-funds.js";
 
 export {
   d1All,
@@ -2318,7 +2318,7 @@ export async function handleRegistrations(request, env) {
     if (collision) return json({ error: "Unable to create a unique parish ID. Please contact AGAPAY support." }, { status: 409 });
   }
   const parishDashboardToken = generateDashboardToken();
-  const registration = {
+  const registrationWithTier = {
     reference,
     status: "pending",
     receivedAt: new Date().toISOString(),
@@ -2334,6 +2334,9 @@ export async function handleRegistrations(request, env) {
     subscriptionMonthlyCents: tier?.monthlyCents ?? null,
     subscriptionTierLabel: tier?.label || ""
   };
+  const registration = tier?.modules?.givingPlus
+    ? ensureBenevolenceFundInRegistration(registrationWithTier).registration
+    : registrationWithTier;
 
   let taxExemptionResult = null;
   if (env.AGAPAY_REGISTRATIONS) {
@@ -2893,7 +2896,7 @@ export async function handleParishDemoTier(request, env, parishId) {
   }
 
   const current = found.registration;
-  const updated = {
+  const tierUpdate = {
     ...current,
     subscriptionTier: tier.id,
     subscriptionTierLabel: tier.label,
@@ -2903,6 +2906,9 @@ export async function handleParishDemoTier(request, env, parishId) {
     demoTierChangedAt: new Date().toISOString(),
     parishUpdatedAt: new Date().toISOString()
   };
+  const updated = tier.modules?.givingPlus
+    ? ensureBenevolenceFundInRegistration(tierUpdate).registration
+    : tierUpdate;
   await saveRegistrationRecord(env, found.key, updated, current);
   return json({ ok: true, parish: parishDashboardPayload(parishId, updated) });
 }

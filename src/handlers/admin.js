@@ -105,6 +105,7 @@ import {
 import { recordAuditEvent, listAuditEvents } from "../lib/audit-log.js";
 import { TAX_READINESS_STATUSES, withTaxReadinessDefaults } from "../lib/tax-readiness.js";
 import { accountingEnabledFor, accountingTierFor } from "../lib/entitlements.js";
+import { ensureBenevolenceFundInRegistration } from "../lib/stewardship-funds.js";
 import { accountingHealthOverview, activatePreparedParishAccounting, activateProtectiveState, createBoundD1ProvisioningAdapter, detectAccountingEnvironment, releaseProtectiveState, runIntegrityScan, verifyRecoveryEvidence } from "../accounting/index.js";
 import { resolveAccountingDatabaseForParish } from "./accounting-ledger.js";
 
@@ -1141,6 +1142,9 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
         ? current.publicProfileCreatedAt || new Date().toISOString()
         : current.publicProfileCreatedAt
     };
+    if (nextTier?.modules?.givingPlus) {
+      updated = ensureBenevolenceFundInRegistration(updated).registration;
+    }
 
     const reviewerNote = String(body.reviewerNotes || "").trim();
     if (reviewerNote) {

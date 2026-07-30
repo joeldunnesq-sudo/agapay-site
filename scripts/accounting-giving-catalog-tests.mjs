@@ -1,11 +1,28 @@
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
-import { mergeStewardshipFundsIntoRegistration, STEWARDSHIP_FUND_DEFAULTS } from "../src/lib/stewardship-funds.js";
+import {
+  ensureBenevolenceFundInRegistration,
+  mergeStewardshipFundsIntoRegistration,
+  STEWARDSHIP_FUND_DEFAULTS
+} from "../src/lib/stewardship-funds.js";
 import { accountingFund } from "../src/accounting/source-wiring.js";
 import { givingCatalogChanged } from "../src/handlers/parish.js";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+const benevolenceUpgrade = ensureBenevolenceFundInRegistration({
+  subscriptionTier: "parish",
+  funds: [{ id: "general", name: "General Operating Fund" }],
+  campaigns: []
+});
+assert.equal(benevolenceUpgrade.changed, true, "a tier upgrade must add the canonical Benevolence Fund");
+assert.equal(benevolenceUpgrade.registration.funds.at(-1)?.id, "benevolence-fund");
+assert.deepEqual(benevolenceUpgrade.registration.campaigns, [], "adding the Benevolence Fund must not create a campaign");
+assert.equal(
+  ensureBenevolenceFundInRegistration(benevolenceUpgrade.registration).changed,
+  false,
+  "the Benevolence Fund upgrade must be idempotent"
+);
 const db = new DatabaseSync(":memory:");
 db.exec(read("accounting-migrations/0001_accounting_database_foundation.sql"));
 db.exec(read("accounting-migrations/0002_core_ledger.sql"));
@@ -254,6 +271,7 @@ const worker = read("src/worker.js");
 const stewardship = read("src/handlers/stewardship.js");
 const donorApp = read("public/donor/app.js");
 const adminApp = read("public/admin/app.js");
+const subscriptionCheckout = read("src/lib/subscription-checkout.js");
 assert.match(worker, /mergeStewardshipFundsIntoRegistration/, "manual activation must update Funds & Alms");
 assert.match(stewardship, /mergeStewardshipFundsIntoRegistration/, "Stripe activation must update Funds & Alms");
 assert.match(stewardship, /giftType'\), 'stewardship'\)\) IN \('stewardship','general'\)/, "pledge nudges must count stewardship/general gifts only");
@@ -294,6 +312,8 @@ assert.match(app, /funds: editableFunds,[\s\S]*campaigns: editableCampaigns,[\s\
 assert.match(app, /givingCatalogChanged: givingCatalogSnapshot\(\) !== givingCatalogBaseline/, "ordinary settings saves must identify unchanged Funds & Alms state");
 assert.match(app, /accountingCatalogChanged: accountingCatalogSnapshot\(\) !== accountingCatalogBaseline/, "patronal feast settings must not be treated as an Accounting catalog change");
 assert.match(parish, /body\.accountingCatalogChanged === true[\s\S]*body\.accountingCatalogChanged === undefined/, "the server must honor the explicit Accounting-only catalog signal");
+assert.match(subscriptionCheckout, /tier\?\.modules\?\.givingPlus[\s\S]*ensureBenevolenceFundInRegistration/, "Giving Plus tier changes must create the canonical Benevolence Fund");
+assert.match(read("migrations/0061_giving_plus_benevolence_fund.sql"), /Campaigns remain opt-in[\s\S]*'benevolence-fund'/, "existing eligible parishes must receive Benevolence without campaigns");
 assert.match(app, /function fallbackCampaigns\(v\) \{ return JSON\.stringify\(Array\.isArray\(v\) \? v : \[\]/, "an empty campaign catalog must remain empty until the parish creates a campaign");
 assert.doesNotMatch(adminApp, /jsonForTextarea\(reg\.campaigns,\s*\[\{\s*id:\s*['"]campaign['"]/, "admin verification must not create a placeholder parish campaign");
 assert.doesNotMatch(app, /Advanced edit \(JSON\)|fundsJson|campaignsJson/, "Funds & Alms must not expose an internal JSON editor");

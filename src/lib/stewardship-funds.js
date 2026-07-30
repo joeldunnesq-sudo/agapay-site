@@ -1,3 +1,12 @@
+export const BENEVOLENCE_FUND_DEFAULT = Object.freeze({
+  id: "benevolence-fund",
+  reportCode: "alms",
+  name: "Benevolence Fund",
+  restrictionType: "donor_restricted_temporary",
+  description: "Alms designated exclusively for the poor and needy.",
+  sortOrder: 3
+});
+
 export const STEWARDSHIP_FUND_DEFAULTS = Object.freeze([
   {
     id: "general",
@@ -22,14 +31,7 @@ export const STEWARDSHIP_FUND_DEFAULTS = Object.freeze([
     description: "Gifts designated for parish building needs.",
     sortOrder: 2
   },
-  {
-    id: "benevolence-fund",
-    reportCode: "alms",
-    name: "Benevolence Fund",
-    restrictionType: "donor_restricted_temporary",
-    description: "Alms designated exclusively for the poor and needy.",
-    sortOrder: 3
-  },
+  BENEVOLENCE_FUND_DEFAULT,
   {
     id: "iconography",
     name: "Iconography Fund",
@@ -58,6 +60,22 @@ const legacyGenericCampaignFund = (fund) => normalized(fund?.id) === "campaign"
 const generalOperatingFund = (fund) => normalized(fund?.id) === "general"
   || normalized(fund?.code) === "general"
   || normalized(fund?.name) === "general operating fund";
+
+export function ensureBenevolenceFundInRegistration(registration = {}) {
+  const funds = Array.isArray(registration.funds) ? registration.funds : [];
+  const exists = funds.some((fund) =>
+    normalized(fund?.id) === "benevolence-fund"
+    || normalized(fund?.reportCode) === "alms"
+    || normalized(fund?.name) === "benevolence fund"
+  );
+  if (exists) return { registration, added: false, changed: false };
+  const { reportCode, ...fund } = BENEVOLENCE_FUND_DEFAULT;
+  return {
+    registration: { ...registration, funds: [...funds, fund] },
+    added: true,
+    changed: true
+  };
+}
 
 export function mergeStewardshipFundsIntoRegistration(registration = {}) {
   const original = Array.isArray(registration.funds) ? registration.funds : [];
