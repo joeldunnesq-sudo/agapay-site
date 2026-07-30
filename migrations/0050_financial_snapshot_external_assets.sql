@@ -19,3 +19,4 @@ UPDATE stewardship_financial_snapshot_revisions
  WHERE external_assets_json = '[]'
    AND restricted_funds_json IS NOT NULL
    AND restricted_funds_json <> '[]';
+-- Original filename retained because D1 identifies applied migrations by filename.

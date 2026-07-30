@@ -25,3 +25,4 @@ WHERE parish_id = 'st-fiacre'
 UPDATE giving_funds
 SET name = 'Benevolence Fund'
 WHERE parish_id = 'st-fiacre' AND code = 'alms';
+-- Original filename retained because D1 identifies applied migrations by filename.

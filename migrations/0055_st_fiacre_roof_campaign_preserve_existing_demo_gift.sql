@@ -5,3 +5,4 @@ DELETE FROM donor_offerings
 WHERE id = 'demo_st_fiacre_demo_don_021'
   AND parish_id = 'st-fiacre'
   AND json_extract(data, '$.campaignId') = 'alms';
+-- Original filename retained because D1 identifies applied migrations by filename.

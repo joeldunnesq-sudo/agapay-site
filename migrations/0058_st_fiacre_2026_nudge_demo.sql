@@ -32,3 +32,4 @@ VALUES
 ON CONFLICT(donor_email,parish_id,fiscal_year) DO UPDATE SET
   target_amount_cents = excluded.target_amount_cents,
   updated_at = excluded.updated_at;
+-- Original filename retained because D1 identifies applied migrations by filename.

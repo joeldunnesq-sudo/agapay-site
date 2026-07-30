@@ -34,11 +34,11 @@ db.prepare("INSERT INTO registrations(reference,parish_id,updated_at,data) VALUE
     feastCampaigns: [{ id: "nativity-christ", name: "Nativity of Christ", enabled: true }]
   })
 );
-db.exec(read("migrations/0045_st_fiacre_benevolence_restriction.sql"));
-db.exec(read("migrations/0046_st_fiacre_stewardship_fund_catalog.sql"));
-db.exec(read("migrations/0047_st_fiacre_stewardship_accounting_links.sql"));
-db.exec(read("migrations/0048_st_fiacre_preserve_posted_fund_ids.sql"));
-db.exec(read("migrations/0049_st_fiacre_merge_alms_into_benevolence.sql"));
+db.exec(read("migrations/0043_st_fiacre_benevolence_restriction.sql"));
+db.exec(read("migrations/0044_st_fiacre_stewardship_fund_catalog.sql"));
+db.exec(read("migrations/0045_st_fiacre_stewardship_accounting_links.sql"));
+db.exec(read("migrations/0046_st_fiacre_preserve_posted_fund_ids.sql"));
+db.exec(read("migrations/0047_st_fiacre_merge_alms_into_benevolence.sql"));
 db.prepare("INSERT INTO giving_funds(id,parish_id,name,code,is_default,sort_order) VALUES(?,?,?,?,?,?)")
   .run("legacy-stewardship", "st-fiacre", "General Stewardship", "stewardship", 1, 0);
 db.prepare("INSERT INTO giving_funds(id,parish_id,name,code,is_default,sort_order) VALUES(?,?,?,?,?,?)")
@@ -56,13 +56,13 @@ db.prepare("INSERT INTO donor_offerings(id,parish_id,updated_at,data) VALUES(?,?
   }));
 db.prepare("INSERT INTO household_pledges(donor_email,parish_id,fiscal_year,target_amount_cents) VALUES(?,?,?,?)")
   .run("joeldunnesq@gmail.com", "st-fiacre", 2026, 250000);
-db.exec(read("migrations/0055_merge_stewardship_into_general_operating.sql"));
-db.exec(read("migrations/0056_st_fiacre_roof_campaign_demo_gifts.sql"));
-db.exec(read("migrations/0057_st_fiacre_roof_campaign_preserve_existing_demo_gift.sql"));
-db.exec(read("migrations/0058_st_fiacre_joel_stewardship_demo_amount.sql"));
-db.exec(read("migrations/0059_st_fiacre_2026_demo_received_total.sql"));
-db.exec(read("migrations/0060_st_fiacre_2026_nudge_demo.sql"));
-db.exec(read("migrations/0062_st_fiacre_joel_givers_nudge_demo.sql"));
+db.exec(read("migrations/0053_merge_stewardship_into_general_operating.sql"));
+db.exec(read("migrations/0054_st_fiacre_roof_campaign_demo_gifts.sql"));
+db.exec(read("migrations/0055_st_fiacre_roof_campaign_preserve_existing_demo_gift.sql"));
+db.exec(read("migrations/0056_st_fiacre_joel_stewardship_demo_amount.sql"));
+db.exec(read("migrations/0057_st_fiacre_2026_demo_received_total.sql"));
+db.exec(read("migrations/0058_st_fiacre_2026_nudge_demo.sql"));
+db.exec(read("migrations/0060_st_fiacre_joel_givers_nudge_demo.sql"));
 const correctedRegistration = JSON.parse(db.prepare("SELECT data FROM registrations WHERE parish_id='st-fiacre'").get().data);
 assert.equal(correctedRegistration.funds[1].restrictionType, "donor_restricted_temporary", "St. Fiacre Benevolence must be restricted");
 for (const expected of STEWARDSHIP_FUND_DEFAULTS) {

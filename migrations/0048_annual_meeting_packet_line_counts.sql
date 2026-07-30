@@ -5,3 +5,4 @@ ALTER TABLE stewardship_annual_meetings
 
 ALTER TABLE stewardship_annual_meetings
   ADD COLUMN note_line_count INTEGER NOT NULL DEFAULT 12;
+-- Original filename retained because D1 identifies applied migrations by filename.

@@ -8,7 +8,7 @@ import {
 import { generateNonprofitPricingStorageKey } from "../src/lib/nonprofit-pricing-storage.js";
 
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
-const migration = read("migrations/0044_nonprofit_pricing_applications.sql");
+const migration = read("migrations/0042_nonprofit_pricing_applications.sql");
 const worker = read("src/worker.js");
 const handler = read("src/handlers/nonprofit-pricing.js");
 const parishHtml = read("public/parish/dashboard.html");

@@ -63,3 +63,4 @@ UPDATE manual_income_entries
 
 CREATE INDEX IF NOT EXISTS idx_manual_income_eligible_date
   ON manual_income_entries(parish_id, contribution_eligible, entry_date);
+-- Original filename retained because D1 identifies applied migrations by filename.

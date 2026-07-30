@@ -186,3 +186,4 @@ WHERE lower(code) = 'general';
 DELETE FROM giving_funds
 WHERE lower(code) = 'campaign'
    OR lower(name) = 'campaign / appeal';
+-- Original filename retained because D1 identifies applied migrations by filename.

@@ -55,3 +55,4 @@ SELECT
     'createdAt', gift_date
   )
 FROM gifts;
+-- Original filename retained because D1 identifies applied migrations by filename.

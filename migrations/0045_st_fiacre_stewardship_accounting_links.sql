@@ -63,3 +63,4 @@ SET data = json_set(
 )
 WHERE parish_id = 'st-fiacre'
   AND EXISTS (SELECT 1 FROM json_each(registrations.data, '$.funds') WHERE json_extract(value, '$.id') = 'memorial');
+-- Original filename retained because D1 identifies applied migrations by filename.

@@ -66,7 +66,7 @@ assert.equal(pending.find((item) => item.featureId === "pledge-tracker")?.count,
 console.log("Parish feature request tests passed.");
 
 const db = new DatabaseSync(":memory:");
-db.exec(await readFile(new URL("../migrations/0061_parish_feature_requests.sql", import.meta.url), "utf8"));
+db.exec(await readFile(new URL("../migrations/0059_parish_feature_requests.sql", import.meta.url), "utf8"));
 const d1Env = {
   AGAPAY_DB: {
     prepare(sql) {

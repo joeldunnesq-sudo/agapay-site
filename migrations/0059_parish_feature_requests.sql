@@ -15,3 +15,4 @@ CREATE TABLE IF NOT EXISTS parish_feature_request_dismissals (
   dismissed_at TEXT NOT NULL,
   PRIMARY KEY (parish_id, feature_id)
 );
+-- Original filename retained because D1 identifies applied migrations by filename.

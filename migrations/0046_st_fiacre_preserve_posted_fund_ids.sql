@@ -22,3 +22,4 @@ SET data = json_set(
 updated_at = datetime('now')
 WHERE parish_id = 'st-fiacre'
   AND EXISTS (SELECT 1 FROM json_each(registrations.data, '$.funds') WHERE json_extract(value, '$.id') = 'stewardship');
+-- Original filename retained because D1 identifies applied migrations by filename.

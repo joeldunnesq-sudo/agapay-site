@@ -21,3 +21,4 @@ WHERE parish_id = 'st-fiacre'
     WHERE lower(COALESCE(json_extract(item.value, '$.id'), '')) = 'benevolence-fund'
        OR lower(COALESCE(json_extract(item.value, '$.name'), '')) = 'benevolence fund'
   );
+-- Original filename retained because D1 identifies applied migrations by filename.
