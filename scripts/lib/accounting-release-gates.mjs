@@ -127,6 +127,10 @@ export async function loginParishAccounting(page, {
   await page.locator("#parishToken").fill(parishPassword);
   await page.getByRole("button", { name: /^log in$/i }).click();
   await page.waitForURL((url) => url.pathname === "/parish/dashboard");
+  await page.waitForFunction(() => {
+    const name = document.getElementById("sidebarParishName")?.textContent?.trim();
+    return Boolean(name && name !== "-");
+  });
   await page.locator("#nav-accounting").click();
   const accessForm = page.locator("#accountingPane form");
   await accessForm.waitFor();
