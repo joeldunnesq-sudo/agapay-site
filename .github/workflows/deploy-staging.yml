@@ -1,0 +1,108 @@
+name: Deploy accounting release-gate staging
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - staging
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run required checks
+        run: npm run check
+
+  deploy:
+    name: Migrate and deploy staging
+    needs: test
+    runs-on: ubuntu-latest
+    environment: accounting-release-gates
+    concurrency:
+      group: agapay-accounting-staging
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install Wrangler
+        run: npm ci
+
+      - name: Validate Cloudflare authentication
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          wranglerVersion: '4'
+          command: whoami
+
+      # The historical 0003_stewardship migration was replaced after
+      # production had already applied its original schema. A brand-new D1
+      # needs those preconditions before the retained compatibility rebuilds.
+      - name: Bootstrap central staging migration preconditions
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute agapay-staging --env staging --remote --file scripts/accounting-staging-central-bootstrap.sql
+          npx wrangler d1 execute agapay-staging --env staging --remote --file migrations/0005_stewardship_annual_meetings.sql
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Apply central staging migrations
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          wranglerVersion: '4'
+          command: d1 migrations apply agapay-staging --env staging --remote
+
+      # Accounting migration 0006 intentionally expects initializeLedger's
+      # default chart and fund. Bootstrap that state between the foundation
+      # migrations and the complete Wrangler migration pass.
+      - name: Apply both parish accounting migration sets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for database in agapay-acct-staging-parish-a agapay-acct-staging-parish-b; do
+            for migration in \
+              accounting-migrations/0001_accounting_database_foundation.sql \
+              accounting-migrations/0002_core_ledger.sql; do
+              npx wrangler d1 execute "$database" --env staging --remote --file "$migration"
+            done
+            npx wrangler d1 execute "$database" --env staging --remote --file scripts/accounting-canary-bootstrap.sql
+            for migration in \
+              accounting-migrations/0003_phase2a_setup_configuration.sql \
+              accounting-migrations/0004_phase2b_manual_ledger.sql \
+              accounting-migrations/0005_phase2c_reporting_indexes.sql; do
+              npx wrangler d1 execute "$database" --env staging --remote --file "$migration"
+            done
+            npx wrangler d1 migrations apply "$database" --env staging --remote
+          done
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy isolated staging Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          wranglerVersion: '4'
+          command: deploy --env staging
