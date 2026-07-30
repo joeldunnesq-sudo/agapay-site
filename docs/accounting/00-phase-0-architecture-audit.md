@@ -16,7 +16,7 @@
 - Tenancy today is **enforced by parish-scoped WHERE clauses inside a shared database**, authenticated by a **single shared bearer credential per parish** (`verifyParishDashboardBearer`, `src/handlers/parish.js`) — not by per-user roles. There is no rector/treasurer/bookkeeper/approver distinction anywhere in the schema or code. This is the single largest authorization gap for accounting, where separation of duties (the person who enters a bill ≠ the person who approves it ≠ the person who cuts the check) is a hard requirement, not a nicety.
 - The financial event pipeline (Stripe webhooks) is **genuinely solid**: signature verification, an idempotency ledger (`stripe_events` table, claim/finish pattern), structured logging, and a real append-only `audit_log` table already exist. This is real, reusable infrastructure for posting into a ledger safely.
 - There are **no Cloudflare Queues, no Workflows, and no dispatch namespaces** anywhere in `wrangler.toml`. There is exactly one cron trigger (`0 14 * * 6`, weekly). Background/async processing is currently done synchronously inside request handlers or manually via admin-triggered routes. Any multi-database provisioning, migration-fanout, or retry-heavy accounting posting will need infrastructure that doesn't exist yet.
-- **CI does not run tests before deploy.** `workflows/deploy.yml` deploys on every push to `main` with no `npm run check` gate. There is a real test suite (`scripts/*.mjs`, custom assertions, no Jest/Vitest), but it isn't wired to block a bad deploy. This must change before anything with real money and legal/audit exposure (accounting) ships.
+- **CI does not run tests before deploy.** The root-level deploy draft examined in this audit deploys on every push to `main` with no `npm run check` gate. There is a real test suite (`scripts/*.mjs`, custom assertions, no Jest/Vitest), but it isn't wired to block a bad deploy. This must change before anything with real money and legal/audit exposure (accounting) ships.
 - **Recommended architecture (detailed in Section 5/6):** a **central "Accounting Gateway" pattern** — one Worker (either the existing Worker extended, or a new internal Worker reached via a **Service Binding**) that owns all D1 accounting bindings, resolves `parish_id → accounting D1 binding` server-side from a registry table in the central `AGAPAY_DB`, and is the only code in the system allowed to open an accounting database. This is compatible with Cloudflare's actual binding model (static bindings, many of them, one Worker) and scales to on the order of dozens–low hundreds of statically-bound databases before requiring a different pattern (see Section 5 table for the ceiling and what changes above it).
 - **Should implementation proceed immediately?** No. Five prerequisites (Section 12 / end-of-report) should land first. None of them are large rewrites — they're a registry table, a role system, a CI test gate, a background-job primitive, and a written decision on the binding-scaling ceiling.
 
@@ -38,7 +38,7 @@
 - **Queues/Workflows/dispatch namespaces:** none declared. Confirmed by absence in `wrangler.toml` (no `[[queues]]`, no `[[workflows]]`, no dispatch namespace config).
 - **Local dev:** `server.mjs` — a plain Node `http` server (not `wrangler dev`) that reimplements routing for local development by importing handler functions directly, with hardcoded local-preview auth (`localPreviewEmail = "preview@agapay.local"`, `localPreviewToken = "agapay-local-preview"`). This means local dev does **not** exercise the actual Workers runtime, D1 bindings, or `wrangler.toml` bindings config — it's a parallel harness. **This matters directly for Phase 0**, because any new binding-based architecture (Service Bindings, multiple D1 bindings) needs its own local-dev story, since `server.mjs` doesn't currently model bindings at all.
 - **Secrets vs vars:** `wrangler.toml [vars]` holds non-secret config (from-email addresses, feature flags, public URL). Stripe secret key, Stripe webhook secret(s), and `AGAPAY_ADMIN_TOKEN` are referenced as `env.STRIPE_SECRET_KEY`-style bindings in code but are **not** in `wrangler.toml` — confirming they're Wrangler secrets (`wrangler secret put`), not plaintext vars. This is correct practice. I did not and will not print any secret values; none were encountered in plaintext in the repo.
-- **Deployment:** GitHub Actions (`workflows/deploy.yml`) deploys via `cloudflare/wrangler-action@v3` on every push to `main`. **No test step runs first** (see Section 11/13).
+- **Deployment:** The root-level deploy draft examined in this audit deploys via `cloudflare/wrangler-action@v3` on every push to `main`. **No test step runs first** (see Section 11/13).
 
 ### Text architecture diagram (current state)
 
@@ -78,7 +78,7 @@
 
 **Cloudflare configuration**
 - `wrangler.toml` — the entire runtime topology: one Worker, one D1, one KV, three R2, one cron, `BROWSER` binding, feature-flag vars.
-- `workflows/deploy.yml` — GitHub Actions deploy-on-push, no test gate.
+- Root-level deploy draft — deploy-on-push configuration with no test gate.
 
 **Database access**
 - `src/lib/core.js` — `d1(env)` (hardcoded to `AGAPAY_DB`), `d1First`/`d1All`/`d1Run`/`d1Batch` (thin prepare/bind/run wrappers), `d1GetSetting`/`d1SetSetting`. This is the closest thing AGAPAY has to a data-access layer, and it is **not a repository pattern** — most handlers still write raw SQL inline, just through these four helper functions rather than hitting `env.AGAPAY_DB` directly (confirmed: only `src/worker.js`, `src/lib/core.js`, and `src/handlers/stewardship.js`/`donor.js` call `.prepare(` directly; everything else that touches D1 goes through the `d1*` helpers — a good sign for centralizing a future rewrite).
@@ -125,7 +125,7 @@
 - `scripts/prelaunch-checks.mjs`, `scripts/smoke-live.mjs`, `scripts/smoke-api.mjs`.
 
 **Deployment**
-- `workflows/deploy.yml` (see above). No staging/preview environment block found in `wrangler.toml` (no `[env.staging]` or `[env.preview]` sections) — **confirmed: this repo has no formally declared second environment**, though Cloudflare Workers previews/branch deployments may exist outside this file (out of scope to verify without dashboard access).
+- Root-level deploy draft (see above). No staging/preview environment block found in `wrangler.toml` (no `[env.staging]` or `[env.preview]` sections) — **confirmed: this repo has no formally declared second environment**, though Cloudflare Workers previews/branch deployments may exist outside this file (out of scope to verify without dashboard access).
 
 ---
 
@@ -260,7 +260,7 @@ Cloudflare D1 bindings are declared statically in `wrangler.toml` and attached t
 | # | Finding | Severity | Affected files | Impact | Remediation | Blocks accounting? |
 |---|---|---|---|---|---|---|
 | 1 | No per-user role system; parish access is a single shared bearer credential per parish (`verifyParishDashboardBearer`) | **High** | `src/handlers/parish.js` (auth gate functions throughout) | Cannot enforce separation of duties (bill entry vs. approval vs. check-signing) — a foundational requirement for any accounting system, doubly so for a nonprofit/church context where trust and auditability matter | Design and ship a real role/permission model before ledger write paths exist | **Yes — blocks ledger development**, not necessarily Phase 1 control-plane work |
-| 2 | CI deploys on push with no test gate (`workflows/deploy.yml` has no `run: npm run check` step) | **High** | `workflows/deploy.yml` | A broken migration or a broken posting-logic change could reach production `agapay-production` (and, later, every parish accounting DB) with no automated check | Add `npm run check` (or equivalent) as a required step before the deploy step | Yes — blocks pilot |
+| 2 | CI deploys on push with no test gate (the root-level deploy draft has no `run: npm run check` step) | **High** | Root-level deploy draft | A broken migration or a broken posting-logic change could reach production `agapay-production` (and, later, every parish accounting DB) with no automated check | Add `npm run check` (or equivalent) as a required step before the deploy step | Yes — blocks pilot |
 | 3 | Central `d1(env)` helper hardcodes a single database (`src/lib/core.js:531`) | **Medium** (architectural, not an active vulnerability) | `src/lib/core.js` and every caller of `d1First`/`d1All`/`d1Run`/`d1Batch` | Not a security hole today, but any naive extension to "just add a second binding" without changing this function risks accidentally querying the wrong database if not done carefully | Introduce a parish-aware resolver before any second D1 database is wired in | Blocks ledger development, not Phase 1 |
 | 4 | R2 object keys are opaque random tokens with no parish scoping encoded in the key itself; tenancy is enforced only by an app-layer D1 lookup before streaming | **Medium** | `src/lib/tax-exemption-storage.js`, `src/lib/giving-statement-storage.js` | Not exploitable today because access always routes through an authenticated handler that checks the DB-side parish match — but it means R2 IAM/bucket policy alone provides zero tenant isolation; a bug in the app-layer check is a full cross-tenant file read | Continue app-layer checks (do not weaken them) for any new accounting-document bucket; consider parish-id-prefixed key convention for defense-in-depth on the new bucket | No — mitigated today, worth hardening for the new bucket |
 | 5 | `donors`/`registrations`/other tables store a JSON blob in a `data` TEXT column alongside a handful of indexed columns, rather than fully normalized schema | **Low** | `migrations/0001_production_records.sql` and most subsequent migrations | Fine for the current feature set; would be a poor fit for ledger tables specifically, where every column needs to be queryable, constrainable, and summable by SQL (a JSON-blob amount field cannot be `SUM()`'d efficiently or constrained to be non-negative at the DB layer) | Design accounting-DB schema as fully normalized relational tables from day one — do not reuse the "row + JSON blob" convention for journal lines | No, but is a real design-pattern deviation the team must consciously choose to not carry over |
@@ -275,7 +275,7 @@ No Critical findings were identified in the areas sampled. This should not be re
 ## 9. Required Foundational Refactors (ranked)
 
 **Must complete before Phase 1 (accounting control plane / registry):**
-1. Add `npm run check` as a required, blocking CI step in `workflows/deploy.yml`.
+1. Add `npm run check` as a required, blocking CI step in the active deployment workflow.
 2. Confirm (via full read of `processStripeWebhookEvent`) whether Stripe fee amounts and refund/dispute events are captured today; close the gap if not.
 
 **Must complete before ledger development (journal entries, posting):**
@@ -360,7 +360,7 @@ This is explicitly **not** a recommendation for a shared multi-tenant accounting
 **2. Recommended per-parish D1 access architecture:** Static D1 binding per parish, held by a dedicated internal Accounting Gateway Worker, reached from the main Worker via Service Binding, with parish→binding resolution driven by a server-side registry table in central `AGAPAY_DB` — never by client-supplied identifiers.
 
 **3. Five highest-priority prerequisites:**
-   1. CI test gate before deploy (currently absent — `workflows/deploy.yml`).
+   1. CI test gate before deploy (currently absent from the deploy draft examined here).
    2. Confirm Stripe fee/refund/dispute event capture in `processStripeWebhookEvent` (unconfirmed in this pass).
    3. Real role/permission system supporting separation of duties (none exists today).
    4. Parish-aware D1 resolver to replace the hardcoded single-database `d1(env)` helper.

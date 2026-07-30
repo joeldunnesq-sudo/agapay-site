@@ -17,13 +17,10 @@
 //      database_name, so a copy-paste/typo mismatch between the workflow
 //      and the Wrangler config fails loudly in CI instead of silently
 //      targeting the wrong (or no) database at deploy time.
-//   4. Duplicate numeric filename prefixes are reported as a WARNING, not a
-//      failure. Several already exist in this repository's history
-//      (e.g. two different "0003_*.sql" files) and are already applied in
-//      production — failing CI over already-shipped history would be a
-//      retroactive, disruptive change out of scope for this package. New
-//      duplicates are still worth a human's attention, so they're printed,
-//      just not treated as a blocking error.
+//   4. Duplicate numeric filename prefixes fail unless the exact set of
+//      filenames is grandfathered below. The allowlist preserves migrations
+//      already recorded in production's D1 ledger while ensuring a new file
+//      cannot silently reuse any existing prefix.
 //
 // This script intentionally does NOT attempt full SQL syntax validation.
 // A subset of migrations are already exercised against a real SQLite
@@ -45,6 +42,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(__dirname, "..");
 const migrationsDir = path.join(repoRoot, "migrations");
 const wranglerTomlPath = path.join(repoRoot, "wrangler.toml");
+
+// D1 records applied migrations by filename. These exact collisions are
+// already present in production and therefore cannot be safely renamed.
+// Matching exact filename sets (rather than allowing a prefix wholesale)
+// ensures that any additional reuse of one of these prefixes still fails.
+const ALLOWED_DUPLICATE_PREFIXES = new Map([
+  ["0003", new Set(["0003_agapay_learn_phase1.sql", "0003_stewardship.sql"])],
+  ["0004", new Set(["0004_agapay_learn_phase2.sql", "0004_household_pledges_pk.sql", "0004_stewardship_seed.sql"])],
+  ["0005", new Set(["0005_agapay_learn_phase3.sql", "0005_donor_notifications.sql", "0005_stewardship_annual_meetings.sql"])],
+  ["0006", new Set(["0006_agapay_learn_high_school_records.sql", "0006_st_fiacre_demo.sql"])],
+  ["0041", new Set(["0041_stewardship_accounting_import.sql", "0041_stripe_nonprofit_volume_tracking.sql"])],
+  ["0042", new Set(["0042_accounting_migration_import_capability.sql", "0042_nonprofit_pricing_applications.sql"])]
+]);
 
 let failed = false;
 function fail(message) {
@@ -124,7 +134,7 @@ if (!databaseNameMatch) {
   }
 }
 
-// --- 4: duplicate numeric prefixes (warning only, not a failure) ---
+// --- 4: duplicate numeric prefixes (exact production-history allowlist) ---
 const prefixCounts = new Map();
 for (const file of sqlFiles) {
   const match = file.match(/^(\d+)_/);
@@ -136,7 +146,19 @@ let duplicatesFound = false;
 for (const [prefix, files] of prefixCounts) {
   if (files.length > 1) {
     duplicatesFound = true;
-    warn(`Numeric prefix "${prefix}" is used by ${files.length} migration files: ${files.join(", ")}. This is already the case in production history and is not being treated as an error here, but new duplicate prefixes should be avoided going forward for readability.`);
+    const allowedFiles = ALLOWED_DUPLICATE_PREFIXES.get(prefix);
+    const actualFiles = new Set(files);
+    const exactAllowedSet = allowedFiles
+      && allowedFiles.size === actualFiles.size
+      && [...allowedFiles].every((file) => actualFiles.has(file));
+    if (exactAllowedSet) {
+      warn(`Numeric prefix "${prefix}" is used by the grandfathered production migration set: ${files.join(", ")}.`);
+    } else {
+      fail(
+        `Numeric prefix "${prefix}" is used by ${files.length} migration files: ${files.join(", ")}. ` +
+        "Only exact filename sets already recorded in production may share a prefix; assign a new unused prefix."
+      );
+    }
   }
 }
 if (!duplicatesFound) {

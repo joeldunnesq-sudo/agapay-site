@@ -690,7 +690,7 @@ These require review with the design-partner parish and an experienced nonprofit
   **Governing principle it conflicts with:** Section 10's "synchronous vs. queued posting" framing and Section 28's queue-retry/dead-letter requirements presuppose that infrastructure exists.
   **When it must be resolved:** Before any accounting feature depends on asynchronous posting or retry-based processing — synchronous-only posting may be sufficient for an initial Mission-tier release, but this must be a deliberate scoping decision, not an accidental one.
 
-- **Existing behavior:** No CI test gate blocks deployment (`workflows/deploy.yml` deploys on push with no test step).
+- **Existing behavior at the time of this phase:** No CI test gate blocks deployment (the then-present root-level deploy draft deploys on push with no test step).
   **Governing principle it conflicts with:** No single section states this directly, but it undermines every invariant in Section 32 in practice — an invariant that isn't tested and enforced in CI is a policy on paper, not a guarantee.
   **When it must be resolved:** Before any accounting code reaches production, full stop.
 
