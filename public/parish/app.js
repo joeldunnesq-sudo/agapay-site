@@ -1074,7 +1074,7 @@
     await renderAccountingAttachments(entityType, entityId, button.closest('[data-accounting-attachments]'));
   }
   function accountingPreviewOnly() {
-    return !moduleIncluded('accounting') || currentParish?.parishId !== 'st-fiacre';
+    return !moduleIncluded('accounting') || !currentParish?.accountingAvailable;
   }
   function renderAccountingPaywall(pane = document.getElementById('accountingPane')) {
     if (!pane) return;

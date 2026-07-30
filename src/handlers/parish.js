@@ -67,6 +67,7 @@ import {
   verifyTurnstileIfConfigured,
 } from "../lib/core.js";
 import { loadGivingCatalogFromAccounting, synchronizeGivingCatalogWithAccounting } from "../accounting/source-wiring.js";
+import { accountingAvailableForParish } from "../lib/accounting-demo-access.js";
 import { ensureBenevolenceFundInRegistration, mergeStewardshipFundsIntoRegistration } from "../lib/stewardship-funds.js";
 
 export {
@@ -4992,6 +4993,7 @@ export async function handleParishDashboard(request, env, parishId) {
     const dashboardParish = await enrichParishGivingOptions(env, {
       ...parishDashboardPayload(parishId, registration),
       id: parishId,
+      accountingAvailable: accountingAvailableForParish(parishId, env),
       directoryEnabled: directoryEnabledFor(registration, directorySettings)
     });
     return json({

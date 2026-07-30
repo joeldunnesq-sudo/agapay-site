@@ -22,6 +22,7 @@ const admin = read("src/handlers/admin.js");
 const adminHtml = read("public/admin.html");
 const adminApp = read("public/admin/app.js");
 const ledgerHandler = read("src/handlers/accounting-ledger.js");
+const parishHandler = read("src/handlers/parish.js");
 
 assert.match(worker, /handleAccountingSetupReports/);
 assert.match(worker, /handleAccountingAccess/);
@@ -35,6 +36,9 @@ assert.equal(accountingAvailableForParish("parish-b", { AGAPAY_ENVIRONMENT:"prod
 assert.equal(accountingAvailableForParish("parish-b", { ACCOUNTING_TEST_PARISH_IDS:"parish-b" }), false);
 assert.equal(adminRegistrationSummary({ parishId:"st-fiacre" }).parishId, "st-fiacre", "admin registration summaries must expose the parish target ID");
 assert.match(app, /function accountingPreviewOnly\(\)/);
+assert.match(app, /!currentParish\?\.accountingAvailable/, "the parish UI must use server-computed Accounting availability");
+assert.doesNotMatch(app, /return !moduleIncluded\('accounting'\) \|\| currentParish\?\.parishId !== 'st-fiacre'/, "the parish UI must not hard-code a single Accounting parish");
+assert.match(parishHandler, /accountingAvailable:\s*accountingAvailableForParish\(parishId,\s*env\)/, "the dashboard payload must expose environment-aware Accounting availability");
 assert.match(ledgerHandler, /detectAccountingEnvironment\(env\)/, "accounting database resolution must use the active environment");
 assert.doesNotMatch(ledgerHandler, /loadAccountingDatabaseForEntity\(env,entity\.id,"production"\)/, "staging must not resolve production registry records");
 assert.match(admin, /\/api\/admin\/accounting\/activate-prepared/);
