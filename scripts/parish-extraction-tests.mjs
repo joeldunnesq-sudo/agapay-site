@@ -257,6 +257,16 @@ for (const name of ["completeCommerceOrderFromStripe", "disputeCommerceOrderFrom
 }
 assert.match(donor, /export async function handleParishBookstoreReadiness\b/, "donor bookstore readiness must remain self-contained");
 assert.doesNotMatch(donor, /from "\.\/parish-commerce\.js"/, "donor bookstore readiness must not depend on the parish commerce handler");
+assert.match(
+  donor,
+  /stripeFormConnectedRequest\(env,\s*"\/v1\/checkout\/sessions",\s*form,\s*resolved\.registration\.stripeAccountId\)/,
+  "bookstore Checkout should remain a direct charge scoped by the connected-account header",
+);
+assert.doesNotMatch(
+  donor,
+  /payment_intent_data\[on_behalf_of\]/,
+  "direct bookstore charges must not also set on_behalf_of to the same connected account",
+);
 assert.doesNotMatch(parish, /export (?:async )?function (?:donorName|sendDashboardInvite)\b/);
 assert.doesNotMatch(
   parish,
