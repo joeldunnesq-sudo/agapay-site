@@ -71,7 +71,6 @@ import {
 
 import {
   donorSummaryFromOfferings,
-  enrichParishGivingOptions,
   findCheckoutParish,
   findOrCreateDonorCustomer,
   findRegistrationByParishId,
@@ -92,6 +91,7 @@ import {
   stripePaymentIntentFinancialUpdates,
   updateDonorOfferingByCheckout,
 } from "./parish.js";
+import { enrichParishGivingOptions } from "./parish-giving-catalog.js";
 import { sacramentTypeLabel } from "./parish-sacraments.js";
 
 // src/handlers/donor.js

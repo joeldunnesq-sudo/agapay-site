@@ -123,11 +123,6 @@ import {
   handleParishDashboard,
   handleParishFeatureRequestDismiss,
   handleParishSession,
-  handleParishes,
-  handleParishCampaignUpload,
-  handleParishLogo,
-  handlePublicPlatformSummary,
-  handlePublicCampaign,
   handleRegistrations,
   handleCheckout,
   handleCheckoutSessionStatus,
@@ -142,6 +137,14 @@ import {
   handleParishReconciliation,
   handleParishReconciliationClose,
 } from "./handlers/parish-reconciliation.js";
+
+import {
+  handleParishes,
+  handleParishCampaignUpload,
+  handleParishLogo,
+  handlePublicCampaign,
+  handlePublicPlatformSummary,
+} from "./handlers/parish-giving-catalog.js";
 
 import {
   handleParishBookstore,
