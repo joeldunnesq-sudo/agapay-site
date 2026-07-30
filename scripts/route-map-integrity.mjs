@@ -121,16 +121,6 @@ const accountingServiceAllowList = new Set([
   "validateProvisionedAccountingDatabase",
   "nextCheckNumber",
   "classifyIntegritySeverity",
-  // Phase J
-  "getRetentionSettings",
-  "updateRetentionSettings",
-  "createLegalHold",
-  "releaseLegalHold",
-  "runIntegrityScan",
-  "accountingHealthOverview",
-  "activateProtectiveState",
-  "releaseProtectiveState",
-  "verifyRecoveryEvidence",
 ]);
 const accountingDir = path.join(repoRoot, "src/accounting");
 const handlerDir = path.join(repoRoot, "src/handlers");
