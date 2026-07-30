@@ -26,13 +26,14 @@ assert.notEqual(
   credentials.ACCOUNTING_GATE_USER_B_EMAIL.toLowerCase()
 );
 
-async function requestJson(path, { method = "GET", token = "", body } = {}) {
+async function requestJson(path, { method = "GET", token = "", userEmail = "", body } = {}) {
   const response = await fetch(`${baseUrl}${path}`, {
     method,
     headers: {
       accept: "application/json",
       ...(body === undefined ? {} : { "content-type": "application/json" }),
-      ...(token ? { authorization: `Bearer ${token}` } : {})
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+      ...(userEmail ? { "X-AGAPAY-User-Email": userEmail } : {})
     },
     body: body === undefined ? undefined : JSON.stringify(body)
   });
@@ -50,7 +51,10 @@ async function identitySession(email, password) {
   assert.equal(login.response.status, 200, `Platform-user login returned HTTP ${login.response.status}.`);
   assert.ok(login.payload.token, "Platform-user login did not return a token.");
 
-  const session = await requestJson("/api/identity/session", { token: login.payload.token });
+  const session = await requestJson("/api/identity/session", {
+    token: login.payload.token,
+    userEmail: email
+  });
   assert.equal(session.response.status, 200, `Platform-user session returned HTTP ${session.response.status}.`);
   return session.payload;
 }

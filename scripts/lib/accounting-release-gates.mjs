@@ -108,7 +108,15 @@ export async function loginPlatformUser(page, { baseUrl, email, password }) {
   const payload = await response.json();
   const token = String(payload?.token || "");
   if (!token) throw new Error("Platform-user login succeeded without a session token.");
-  return { Authorization: `Bearer ${token}` };
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    "X-AGAPAY-User-Email": email
+  };
+  const session = await page.request.get(`${baseUrl}/api/identity/session`, { headers });
+  if (!session.ok()) {
+    throw new Error(`Platform-user session verification failed with HTTP ${session.status()}.`);
+  }
+  return headers;
 }
 
 export async function loginParishAccounting(page, {

@@ -47,6 +47,7 @@ assert.match(gate3, /runCrossTenantMatrix/);
 assert.match(gate3, /platform-a-to-b/);
 assert.match(gate3, /staff-b-to-a/);
 assert.match(helpers, /\/api\/identity\/login/);
+assert.match(helpers, /["']X-AGAPAY-User-Email["']/);
 assert.doesNotMatch(helpers, /\/myagapay\/login|agapayDonorToken/);
 console.log(`PASS - gate 3 inventories ${inventory.routes.length} routes across ${inventory.coverage.length} handler files`);
 
@@ -71,6 +72,7 @@ assert.ok(
 assert.match(bootstrap, /hostname\.toLowerCase\(\)\.includes\(["']staging["']\)/);
 assert.match(bootstrap, /memberships\/invitations/);
 assert.match(bootstrap, /identity\/invitations/);
+assert.match(bootstrap, /["']X-AGAPAY-User-Email["']/);
 assert.match(bootstrap, /membership\.status === ["']active["']/);
 assert.match(workflow, /upload-artifact@v4/);
 assert.match(smoke, /ACCOUNTING_READ_SMOKE_PATHS|readAccountingSections/);
