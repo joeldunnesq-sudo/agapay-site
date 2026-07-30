@@ -111,13 +111,13 @@ routes. Do not seed registration or authorization rows directly.
 
 ### Parish B
 
-1. Register a genuinely separate synthetic parish with the intended ID
-   `release-gate-b`.
+1. Register a genuinely separate synthetic parish. The current staging
+   Parish B is `st-tester-san-antonio`.
 2. Complete the same normal review, password, and accounting activation flows,
    targeting `agapay-acct-staging-parish-b`.
 3. Verify the same ready/active/healthy states.
 4. If the real registration produces a different parish ID, replace
-   `ACCOUNTING_TEST_PARISH_IDS = "release-gate-b"` in
+   `ACCOUNTING_TEST_PARISH_IDS = "st-tester-san-antonio"` in
    `[env.staging.vars]` with the actual ID and redeploy staging.
 
 For each parish, create through the real UI/API:

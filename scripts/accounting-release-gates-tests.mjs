@@ -29,6 +29,7 @@ console.log("PASS - authenticated parish/API caching remains prohibited and gate
 
 assert.equal(accountingAvailableForParish("st-fiacre"), true);
 assert.equal(accountingAvailableForParish("release-gate-b", { AGAPAY_ENVIRONMENT:"staging", ACCOUNTING_TEST_PARISH_IDS:"release-gate-b" }), true);
+assert.equal(accountingAvailableForParish("st-tester-san-antonio", { AGAPAY_ENVIRONMENT:"staging", ACCOUNTING_TEST_PARISH_IDS:"st-tester-san-antonio" }), true);
 assert.equal(accountingAvailableForParish("release-gate-b", { AGAPAY_ENVIRONMENT:"production", ACCOUNTING_TEST_PARISH_IDS:"release-gate-b" }), false);
 assert.equal(accountingAvailableForParish("release-gate-b", { ACCOUNTING_TEST_PARISH_IDS:"release-gate-b" }), false);
 console.log("PASS - a second test parish is possible only in an explicit non-production environment");
