@@ -10,7 +10,8 @@ export const ACCOUNTING_HANDLER_FILES = Object.freeze([
   "accounting-adjustments.js",
   "accounting-governance.js",
   "accounting-attachments.js",
-  "accounting-recurring.js"
+  "accounting-recurring.js",
+  "accounting-migration.js"
 ]);
 
 export const ACCOUNTING_READ_SMOKE_PATHS = Object.freeze([

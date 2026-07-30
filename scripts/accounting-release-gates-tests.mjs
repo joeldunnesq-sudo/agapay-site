@@ -36,8 +36,8 @@ console.log("PASS - a second test parish is possible only in an explicit non-pro
 const inventory = await enumerateAccountingRoutes();
 assert.equal(inventory.coverage.length, ACCOUNTING_HANDLER_FILES.length);
 assert.ok(inventory.coverage.every((item) => item.routes > 0));
-assert.ok(inventory.routes.length >= 75, `Expected at least 75 routes; found ${inventory.routes.length}.`);
-for (const family of ["ledger","setup-reports","payables-budgets","reconciliation-commerce","close","adjustments","governance","attachments"]) {
+assert.ok(inventory.routes.length >= 85, `Expected at least 85 routes; found ${inventory.routes.length}.`);
+for (const family of ["ledger","setup-reports","payables-budgets","reconciliation-commerce","close","adjustments","governance","attachments","migration"]) {
   assert.ok(inventory.coverage.some((item) => item.handler.includes(family)), `Missing ${family} handler coverage.`);
 }
 assert.match(gate3, /runCrossTenantMatrix/);

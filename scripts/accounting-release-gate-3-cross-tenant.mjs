@@ -28,9 +28,9 @@ const credentials = requiredEnvironment([
 assert.notEqual(credentials.ACCOUNTING_GATE_PARISH_A_ID, credentials.ACCOUNTING_GATE_PARISH_B_ID);
 
 const inventory = await enumerateAccountingRoutes();
-assert.equal(inventory.coverage.length, 9, "Every current accounting handler family must be inventoried.");
+assert.equal(inventory.coverage.length, 10, "Every current accounting handler family must be inventoried.");
 assert.ok(inventory.coverage.every((item) => item.routes > 0), "Every accounting handler must contribute routes.");
-assert.ok(inventory.routes.length >= 75, `Expected at least 75 current routes, found ${inventory.routes.length}.`);
+assert.ok(inventory.routes.length >= 85, `Expected at least 85 current routes, found ${inventory.routes.length}.`);
 await writeArtifact("artifacts/accounting-release-gates/route-inventory.json", inventory);
 
 const browser = await chromium.launch({ headless:true });
