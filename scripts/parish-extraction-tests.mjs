@@ -104,6 +104,7 @@ try {
 
 const parish = await readFile(new URL("../src/handlers/parish.js", import.meta.url), "utf8");
 const parishSacraments = await readFile(new URL("../src/handlers/parish-sacraments.js", import.meta.url), "utf8");
+const parishReconciliation = await readFile(new URL("../src/handlers/parish-reconciliation.js", import.meta.url), "utf8");
 const stripe = await readFile(new URL("../src/handlers/stripe.js", import.meta.url), "utf8");
 const donor = await readFile(new URL("../src/handlers/donor.js", import.meta.url), "utf8");
 const admin = await readFile(new URL("../src/handlers/admin.js", import.meta.url), "utf8");
@@ -125,6 +126,7 @@ function assertImports(source, modulePath, names) {
 
 assert.ok(parish.split(/\r?\n/).length <= 5750, "parish.js should retain the extraction size reduction");
 assert.ok(parish.split(/\r?\n/).length <= 5300, "parish.js should retain the sacraments extraction size reduction");
+assert.ok(parish.split(/\r?\n/).length <= 4560, "parish.js should retain the payout reconciliation extraction size reduction");
 const sacramentPublicFunctions = [
   "handleAdminSetSacramentsEnabled",
   "sacramentTypeLabel",
@@ -180,6 +182,58 @@ assert.doesNotMatch(
 assertImports(worker, "./handlers/parish-sacraments.js", sacramentPublicFunctions);
 const parishWorkerImports = importedNames(worker, "./handlers/parish.js");
 for (const name of sacramentPublicFunctions) {
+  assert.ok(!parishWorkerImports.has(name), `worker should no longer import ${name} from parish.js`);
+}
+const reconciliationPublicFunctions = [
+  "listRecentStripePayouts",
+  "listStripeBalanceTransactionsForPayout",
+  "reconciliationPeriod",
+  "listStripePayoutsForPeriod",
+  "listRecentStripeBalanceTransactions",
+  "handleParishPayoutDiagnostics",
+  "handleParishReconciliation",
+  "handleParishReconciliationClose",
+];
+const reconciliationPrivateHelpers = [
+  "paymentIntentFromStripeSource",
+  "reconciliationAllocation",
+  "signedFeeParts",
+  "reconciliationCloseRecord",
+  "saveReconciliationCloseRecord",
+  "paymentIntentForReconciliationTransaction",
+];
+for (const name of [...reconciliationPublicFunctions, ...reconciliationPrivateHelpers]) {
+  assert.doesNotMatch(parish, new RegExp(`(?:async\\s+)?function\\s+${name}\\b`), `${name} should move out of parish.js`);
+  assert.match(parishReconciliation, new RegExp(`(?:async\\s+)?function\\s+${name}\\b`), `${name} should live in parish-reconciliation.js`);
+}
+assertImports(parishReconciliation, "./parish.js", [
+  "findRegistrationByParishId",
+  "getBearerToken",
+  "giftDisplayName",
+  "givingFeatureAccess",
+  "hasProductionStore",
+  "json",
+  "loadDonorOfferingByPaymentIntent",
+  "loadParishPaidOfferings",
+  "missingProductionStoreResponse",
+  "rateLimit",
+  "unauthorized",
+  "verifyParishDashboardBearer",
+]);
+assertImports(parishReconciliation, "../lib/core.js", [
+  "d1GetSetting",
+  "d1SetSetting",
+]);
+assertImports(parishReconciliation, "../lib/stripe-connect.js", [
+  "stripeGetConnectedRequest",
+  "stripeObjectId",
+]);
+assertImports(worker, "./handlers/parish-reconciliation.js", [
+  "handleParishPayoutDiagnostics",
+  "handleParishReconciliation",
+  "handleParishReconciliationClose",
+]);
+for (const name of reconciliationPublicFunctions) {
   assert.ok(!parishWorkerImports.has(name), `worker should no longer import ${name} from parish.js`);
 }
 assert.doesNotMatch(parish, /export (?:async )?function (?:donorName|sendDashboardInvite)\b/);
