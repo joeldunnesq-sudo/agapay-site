@@ -1,7 +1,7 @@
 import { json } from "./core.js";
 import { slugify } from "./format.js";
-import { defaultSubscriptionTier, subscriptionTier } from "./subscriptions.js";
-import { stripeFormRequest } from "./stripe-connect.js";
+import { defaultSubscriptionTier, subscriptionReady, subscriptionTier } from "./subscriptions.js";
+import { stripeFormRequest, stripeGetRequest } from "./stripe-connect.js";
 import { applySubscriptionTaxCode } from "./tax-codes.js";
 import { applyApprovedExemptionIfExists } from "./tax-exemption.js";
 import { taxReadinessCheckoutGate } from "./tax-readiness.js";
@@ -47,6 +47,79 @@ export async function createSubscriptionCheckoutForRegistration({
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   const requestedTrialDays = allowTrial ? Math.trunc(Number(body.trialDays || 0)) : 0;
   const trialDays = requestedTrialDays >= 1 && requestedTrialDays <= 90 ? requestedTrialDays : 0;
+
+  // An active parish already has a Stripe subscription. Change its existing
+  // subscription item instead of creating a second subscription or relying
+  // on a Billing Portal configuration that may not expose every AGAPAY tier.
+  // Stripe supports either a configured Price ID or inline price_data when
+  // updating a subscription item.
+  if (registration.stripeSubscriptionId && subscriptionReady(registration) && !trialDays) {
+    const subscription = await stripeGetRequest(
+      env,
+      `/v1/subscriptions/${encodeURIComponent(registration.stripeSubscriptionId)}?expand[]=items.data.price.product`
+    );
+    if (!subscription.ok) {
+      return json(
+        { error: "Stripe subscription lookup failed", detail: subscription.body.error?.message || "Unknown Stripe error" },
+        { status: 502 }
+      );
+    }
+
+    const item = subscription.body?.items?.data?.[0];
+    const currentProduct = typeof item?.price?.product === "string"
+      ? item.price.product
+      : item?.price?.product?.id || "";
+    if (!item?.id || (!env[tier.stripePriceEnv] && !currentProduct)) {
+      return json(
+        { error: "Stripe subscription cannot be changed", detail: "The current subscription item or product could not be resolved." },
+        { status: 502 }
+      );
+    }
+
+    const updateForm = new URLSearchParams({
+      "items[0][id]": item.id,
+      "items[0][quantity]": "1",
+      proration_behavior: "create_prorations",
+      "metadata[agapay_reference]": reference,
+      "metadata[agapay_parish_id]": registration.parishId || slugify(registration.parishName),
+      "metadata[agapay_subscription_tier]": tier.id
+    });
+    const configuredPriceId = tier.stripePriceEnv ? env[tier.stripePriceEnv] : "";
+    if (configuredPriceId) {
+      updateForm.set("items[0][price]", configuredPriceId);
+    } else {
+      updateForm.set("items[0][price_data][currency]", "usd");
+      updateForm.set("items[0][price_data][product]", currentProduct);
+      updateForm.set("items[0][price_data][recurring][interval]", "month");
+      updateForm.set("items[0][price_data][unit_amount]", String(tier.monthlyCents));
+      updateForm.set("items[0][price_data][tax_behavior]", "exclusive");
+    }
+
+    const changed = await stripeFormRequest(
+      env,
+      `/v1/subscriptions/${encodeURIComponent(registration.stripeSubscriptionId)}`,
+      updateForm
+    );
+    if (!changed.ok) {
+      return json(
+        { error: "Stripe subscription update failed", detail: changed.body.error?.message || "Unknown Stripe error" },
+        { status: 502 }
+      );
+    }
+
+    const updated = {
+      ...registration,
+      subscriptionTier: tier.id,
+      subscriptionTierLabel: tier.label,
+      subscriptionMonthlyCents: tier.monthlyCents,
+      subscriptionStatus: changed.body.status || registration.subscriptionStatus || "active",
+      stripeSubscriptionId: changed.body.id || registration.stripeSubscriptionId,
+      subscriptionUpdatedAt: new Date().toISOString()
+    };
+    await saveRegistrationRecord(env, reference, updated, registration);
+    return json({ ok: true, subscriptionChanged: true, registration: updated });
+  }
+
   let stripeCustomerId = registration.stripeCustomerId || "";
   if (!stripeCustomerId) {
     const customerForm = new URLSearchParams({
