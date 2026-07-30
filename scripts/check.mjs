@@ -218,6 +218,7 @@ assert.ok(myAgapayShell.includes('mobileFallbackFor: "directoryEnabled"') && myA
 assert.ok(myAgapayShell.includes('fetch("/api/donor/dashboard"'), "shared My AGAPAY shell should load the donor home parish capabilities");
 assert.ok(siteChrome.includes("/myagapay/login?next=%2Fmyagapay%2Flearn%2Fdashboard"), "the site account menu should send AGAPAY Learn sign-ins directly to the Learn Dashboard");
 assert.ok(parishDashboardApp.includes("changeDemoTier") && parishDashboardApp.includes("/api/parish/dashboard/st-fiacre/demo-tier"), "St. Fiacre dashboard should support instant demo tier switching");
+assert.ok(parishDashboardApp.includes("Apply tier change") && parishDashboardApp.includes("startSubscriptionCheckout(this, \\'subscriptionTierUpgrade\\')"), "active parish subscriptions should change the selected tier without depending on Billing Portal product configuration");
 assert.ok(parishDashboardApp.includes("sidebarStatusChip") && parishDashboardApp.includes("tierDisplay") && parishDashboardApp.includes("subscriptionTierLabel"), "Parish Dashboard active status should display the subscribed tier");
 assert.ok(myAgapayShell.includes('data-myagapay-global-nav') && myAgapayShell.includes("normalizeProductNavs"), "shared shell should normalize mobile product navigation across dashboards");
 assert.ok(myAgapayShell.includes(".unified-product-nav") && myAgapayShell.includes("Bookstore") && myAgapayShell.includes("Feast day and readings"), "shared shell should normalize the desktop My AGAPAY sidebar from the same product tabs");
