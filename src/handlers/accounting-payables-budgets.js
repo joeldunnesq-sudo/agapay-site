@@ -1,5 +1,5 @@
 import { json } from "../lib/core.js";
-import { accountsPayableAging, addBudgetLine, approveBill, approveBudget, archiveVendor, budgetReportCsv, budgetVsActual, copyBudget, councilBudgetPacket, createBillDraft, createBudget, createVendor, createPaymentRun, forecastBudget, listBudgets, listPaymentRuns, listVendors, lockBudget, payablesOverview, paymentRunDetail, postBill, postPaymentRun, printPaymentRun, rejectBill, submitBill, submitBudget, createPayment, postPayment, listPayments, paymentDetail, getCheckSettings, unarchiveVendor, updateBudgetLine, updateCheckSettings, updateVendor, recordCheckPrint, vendor1099Summary, vendor1099SummaryCsv, voidPayment } from "../accounting/index.js";
+import { accountsPayableAging, addBudgetLine, approveBill, approveBudget, archiveVendor, budgetReportCsv, budgetVsActual, copyBudget, councilBudgetPacket, createBillDraft, createBudget, createVendor, createPaymentRun, forecastBudget, getCheckSettings, listBudgets, listPaymentRuns, listVendors, lockBudget, payablesOverview, paymentRunDetail, postBill, postPaymentRun, printPaymentRun, rejectBill, seedCheckPayerIdentity, submitBill, submitBudget, createPayment, postPayment, listPayments, paymentDetail, unarchiveVendor, updateBudgetLine, updateCheckSettings, updateVendor, recordCheckPrint, vendor1099Summary, vendor1099SummaryCsv, voidPayment } from "../accounting/index.js";
 import { printableCheck as sharedPrintableCheck } from "../accounting/payables/check-printing.js";
 import { accountingContext } from "./accounting-ledger.js";
 
@@ -8,6 +8,37 @@ const reply = (payload, status = 200) => json(payload, { status, headers: HEADER
 const today = () => new Date().toISOString().slice(0, 10);
 const serviceTier = (tier) => tier === "advanced_operations" ? "parish" : "mission";
 const rows = async (db, sql, ...params) => (await db.prepare(sql).bind(...params).all()).results || [];
+
+export function parishCheckPayerIdentity(registration = {}) {
+  const city = String(registration.city || "").trim();
+  const region = String(registration.state || "").trim();
+  const postalCode = String(registration.postalCode || "").trim();
+  const locality = `${[city, region].filter(Boolean).join(", ")}${postalCode ? ` ${postalCode}` : ""}`.trim();
+  const country = String(registration.country || "US").trim();
+  return Object.freeze({
+    payerName: String(registration.parishName || "").trim(),
+    payerAddress: [
+      registration.addressLine1,
+      registration.addressLine2,
+      locality,
+      country && country.toUpperCase() !== "US" ? country : ""
+    ].map((value) => String(value || "").trim()).filter(Boolean).join("\n")
+  });
+}
+
+const actorWithView = (actor) => ({ ...actor, capabilities: [...new Set([...(actor.capabilities || []), "ap.view"])] });
+async function seedParishCheckPayer(ctx, tier, bankAccountId) {
+  const identity = parishCheckPayerIdentity(ctx.registration);
+  if (!identity.payerName && !identity.payerAddress) {
+    return getCheckSettings(ctx.db, { actor: ctx.actor, entitlementTier: tier, bankAccountId });
+  }
+  return seedCheckPayerIdentity(ctx.db, {
+    actor: ctx.actor,
+    entitlementTier: tier,
+    bankAccountId,
+    ...identity
+  });
+}
 
 async function bills(db) {
   return rows(db, `SELECT b.id,b.bill_number billNumber,b.vendor_id vendorId,v.display_name vendorName,b.vendor_invoice_number vendorInvoiceNumber,b.bill_date billDate,b.due_date dueDate,b.description,b.status,b.approval_status approvalStatus,b.payment_status paymentStatus,b.total_amount totalAmount,b.amount_paid amountPaid,b.amount_due amountDue,b.version FROM accounting_bills b JOIN accounting_vendors v ON v.id=b.vendor_id ORDER BY b.due_date DESC,b.created_at DESC`);
@@ -102,9 +133,13 @@ export async function handleAccountingPayablesBudgets(request, env, parishId) {
       const paymentRunId = decodeURIComponent(paymentRunAction[1]), action = paymentRunAction[2] || "";
       if (request.method === "GET" && !action) return reply({ ok: true, detail: await paymentRunDetail(ctx.db, { actor: ctx.actor, entitlementTier: tier, paymentRunId }) });
       if (request.method === "POST" && action === "post") return reply({ ok: true, detail: await postPaymentRun(ctx.db, { actor: ctx.actor, entitlementTier: tier, paymentRunId, expectedVersion: body.expectedVersion }) });
-      if (request.method === "POST" && action === "print") return reply({ ok: true, print: await printPaymentRun(ctx.db, { actor: ctx.actor, entitlementTier: tier, paymentRunId, reason: body.reason || "" }) });
+      if (request.method === "POST" && action === "print") {
+        const detail = await paymentRunDetail(ctx.db, { actor: actorWithView(ctx.actor), entitlementTier: tier, paymentRunId });
+        await seedParishCheckPayer(ctx, tier, detail.run.bankAccountId);
+        return reply({ ok: true, print: await printPaymentRun(ctx.db, { actor: ctx.actor, entitlementTier: tier, paymentRunId, reason: body.reason || "" }) });
+      }
     }
-    if (request.method === "GET" && path === "/payables/check-settings") return reply({ ok: true, settings: await getCheckSettings(ctx.db, { actor: ctx.actor, entitlementTier: tier, bankAccountId: url.searchParams.get("bankAccountId") }) });
+    if (request.method === "GET" && path === "/payables/check-settings") return reply({ ok: true, settings: await seedParishCheckPayer(ctx, tier, url.searchParams.get("bankAccountId")) });
     if (request.method === "PATCH" && path === "/payables/check-settings") return reply({ ok: true, settings: await updateCheckSettings(ctx.db, { actor: ctx.actor, entitlementTier: tier, bankAccountId: body.bankAccountId, expectedVersion: body.expectedVersion, patch: body.patch || {} }) });
     const paymentAction = path.match(/^\/payables\/payments\/([^/]+)(?:\/(post|print|void))?$/);
     if (paymentAction) {
@@ -113,6 +148,8 @@ export async function handleAccountingPayablesBudgets(request, env, parishId) {
       if (request.method === "POST" && action === "post") return reply({ ok: true, payment: await postPayment(ctx.db, { actor: ctx.actor, entitlementTier: tier, paymentId, expectedVersion: body.expectedVersion, idempotencyKey: body.idempotencyKey }) });
       if (request.method === "POST" && action === "void") return reply({ ok: true, payment: await voidPayment(ctx.db, { actor: ctx.actor, entitlementTier: tier, paymentId, expectedVersion: body.expectedVersion, reason: body.reason }) });
       if (request.method === "POST" && action === "print") {
+        const current = await paymentDetail(ctx.db, { actor: actorWithView(ctx.actor), entitlementTier: tier, paymentId });
+        await seedParishCheckPayer(ctx, tier, current.bankAccount.id);
         const detail = await recordCheckPrint(ctx.db, { actor: ctx.actor, entitlementTier: tier, paymentId, reason: body.reason || "" });
         return reply({ ok: true, detail, html: sharedPrintableCheck(detail) });
       }
