@@ -30,7 +30,10 @@ const invoiceNumber = `RG-${runId}`;
 const evidence = { generatedAt:new Date().toISOString(), baseUrl, parishId:credentials.ACCOUNTING_GATE_PARISH_B_ID, vendorName, invoiceNumber, layouts:[] };
 
 async function paymentRow() {
-  const row = page.locator("#accountingPane tbody tr").filter({ hasText:vendorName }).first();
+  const row = page.locator("#accountingPane tbody tr")
+    .filter({ hasText:vendorName })
+    .filter({ has:page.locator('button[onclick^="printAccountingCheck"]') })
+    .first();
   await row.waitFor();
   return row;
 }
@@ -151,6 +154,7 @@ try {
   const paymentForm = page.locator("#accountingPhaseDForm form");
   const payableBillRow = paymentForm.locator("tbody tr").filter({ hasText:invoiceNumber });
   await payableBillRow.locator("[data-payment-bill]").check();
+  await page.waitForFunction(() => Boolean(document.getElementById("accountingCheckNumber")?.value));
   await paymentForm.getByRole("button", { name:"Create check", exact:true }).click();
   const createdRow = await paymentRow();
   const printHandler = await createdRow.getByRole("button", { name:"Print", exact:true }).getAttribute("onclick");
