@@ -1,0 +1,81 @@
+name: Deploy Accounting Release-Gate Staging
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - staging
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run required checks
+        run: npm run check
+
+  deploy-staging:
+    name: Migrate and deploy staging
+    needs: test
+    runs-on: ubuntu-latest
+    concurrency:
+      group: agapay-accounting-staging
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Validate Cloudflare authentication
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          wranglerVersion: '4'
+          command: whoami
+
+      - name: Apply central staging migrations
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          wranglerVersion: '4'
+          command: d1 migrations apply AGAPAY_DB --env staging --remote
+
+      - name: Apply Parish A accounting migrations
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          wranglerVersion: '4'
+          command: d1 migrations apply ACCOUNTING_DB_ST_FIACRE --env staging --remote
+
+      - name: Apply Parish B accounting migrations
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          wranglerVersion: '4'
+          command: d1 migrations apply ACCOUNTING_DB_RELEASE_GATE_B --env staging --remote
+
+      - name: Deploy staging Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          wranglerVersion: '4'
+          command: deploy --env staging

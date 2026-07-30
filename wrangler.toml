@@ -139,3 +139,46 @@ bucket_name = "agapay-accounting-attachments"
 
 [browser]
 binding = "BROWSER"
+
+# Accounting release-gate staging is intentionally narrow and isolated from
+# every production binding above. It has only the resources required by the
+# authenticated accounting gates; do not add general-purpose production
+# buckets or Browser Rendering here.
+[env.staging]
+name = "agapay-site-staging"
+
+[env.staging.vars]
+AGAPAY_APP_URL = "https://agapay-site-staging.joeldunnesq.workers.dev"
+AGAPAY_PUBLIC_URL = "https://agapay-site-staging.joeldunnesq.workers.dev"
+AGAPAY_ENVIRONMENT = "staging"
+ACCOUNTING_DATABASE_BINDINGS = '{"agapay-acct-staging-parish-a":"ACCOUNTING_DB_ST_FIACRE","agapay-acct-staging-parish-b":"ACCOUNTING_DB_RELEASE_GATE_B"}'
+ACCOUNTING_TEST_PARISH_IDS = "release-gate-b"
+
+[env.staging.triggers]
+crons = []
+
+[[env.staging.kv_namespaces]]
+binding = "AGAPAY_REGISTRATIONS"
+id = "671fa037f7fc425189e356691b758f5a"
+
+[[env.staging.d1_databases]]
+binding = "AGAPAY_DB"
+database_name = "agapay-staging"
+database_id = "cc6c97d1-01aa-4e3a-a5fe-7df467396a01"
+migrations_dir = "migrations"
+
+[[env.staging.d1_databases]]
+binding = "ACCOUNTING_DB_ST_FIACRE"
+database_name = "agapay-acct-staging-parish-a"
+database_id = "8f0253f6-a76e-467b-8149-e16ce9593fbf"
+migrations_dir = "accounting-migrations"
+
+[[env.staging.d1_databases]]
+binding = "ACCOUNTING_DB_RELEASE_GATE_B"
+database_name = "agapay-acct-staging-parish-b"
+database_id = "12a847b3-b292-4ba6-8694-091a30368659"
+migrations_dir = "accounting-migrations"
+
+[[env.staging.r2_buckets]]
+binding = "ACCOUNTING_ATTACHMENTS"
+bucket_name = "agapay-accounting-attachments-staging"
