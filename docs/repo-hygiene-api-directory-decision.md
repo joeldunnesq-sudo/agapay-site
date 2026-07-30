@@ -1,8 +1,17 @@
 # Root `api/` and `lib/` decision record
 
-## Decision needed
+## Owner decision
 
-Do not remove the root `api/` or root `lib/` directories until the repository owner confirms whether an external serverless deployment still routes production or preview traffic to them.
+On 2026-07-29, the repository owner approved Option A after a read-only review confirmed:
+
+- `agapay.app` is attached directly to the `agapay-site` Cloudflare Worker;
+- Cloudflare DNS has no `api`, `www`, Vercel, Netlify, or other external web-origin record;
+- GitHub reports no external deployments or repository webhooks; and
+- the current commit checks come only from GitHub Actions and Cloudflare.
+
+The root `api/` and `lib/` implementation is therefore confirmed unused. It remains unchanged in this hygiene PR; removal belongs in the documented follow-up PR so that deletion stays independently reviewable.
+
+The original decision constraint was: do not remove the root `api/` or root `lib/` directories until the repository owner confirms whether an external serverless deployment still routes production or preview traffic to them.
 
 The repository contains no deployment configuration that activates these files, but a Vercel-style deployment can be configured entirely outside the repository. That external fact cannot be proven from source control alone.
 
@@ -49,4 +58,4 @@ Then wire `scripts/smoke-api.mjs` into an appropriate CI command so the live cod
 
 ## Recommendation
 
-The repository evidence favors Option A, but deletion should wait for an owner check of external deployment dashboards and DNS/routing. Until that confirmation is recorded, leave both directories unchanged.
+Option A is confirmed. Remove root `api/`, its private root `lib/` dependencies, and `scripts/smoke-api.mjs` in a separate follow-up PR, with the normal full regression suite and a final reference search.
