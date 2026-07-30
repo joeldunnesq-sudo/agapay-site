@@ -120,6 +120,7 @@ const accountingServiceAllowList = new Set([
   "provisionAccountingDatabase",
   "validateProvisionedAccountingDatabase",
   "nextCheckNumber",
+  "reserveCheckNumbers",
   "classifyIntegritySeverity",
 ]);
 const accountingDir = path.join(repoRoot, "src/accounting");
