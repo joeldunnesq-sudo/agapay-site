@@ -710,11 +710,14 @@
   let accountingView = 'overview';
   let accountingReportView = 'library';
   let accountingCustomReport = null;
-  let accountingData = { setup: null, journals: [], ledger: [], reports: {}, accounts: [], funds: [], payables: null, budgets: null, banking: null, integrations: null, close: null, adjustments: null, governance: null, tier: '' };
+  let accountingData = { setup: null, journals: [], ledger: [], reports: {}, accounts: [], accountCatalog: [], funds: [], payables: null, budgets: null, banking: null, integrations: null, close: null, adjustments: null, governance: null, tier: '' };
   let accountingBankPreview = null;
   let accountingFundCatalog = null;
   let accountingFundAccountSections = new Set(['net_asset']);
   let accountingExpenseAccountEditor = null;
+  let accountingVendorLifecycleConfirm = null;
+  let accountingAccountLifecycleConfirm = null;
+  let accountingLifecycleMessage = null;
   let accountingReconciliationView = 'giving';
   let accountingCloseDetail = null;
   let accountingJournalEditor = null;
@@ -1038,8 +1041,13 @@
     if (!data) { pane.innerHTML = '<p class="sw-tool-loading">Loading payables...</p>'; return; }
     if (accountingPayablesView === 'payments') { renderAccountingPayments(pane, data); return; }
     const overview = data.overview || {}, tabs = [['bills','Bills'],['payments','Payments & Checks'],['vendors','Vendors'],['aging','Aging']];
+    const vendorLifecycle = (vendor) => {
+      const action = vendor.status === 'archived' ? 'unarchive' : 'archive', confirming = accountingVendorLifecycleConfirm?.id === vendor.id && accountingVendorLifecycleConfirm.action === action;
+      const message = accountingLifecycleMessage?.type === 'vendor' && accountingLifecycleMessage.id === vendor.id ? `<span class="acct-lifecycle-message">${escapeHtml(accountingLifecycleMessage.text)}</span>` : '';
+      return `<div class="acct-lifecycle-actions">${confirming ? `<span>${action === 'archive' ? 'Archive this vendor?' : 'Restore this vendor?'}</span><button type="button" onclick="changeAccountingVendorLifecycle('${escapeAttr(vendor.id)}','${action}',${vendor.version})">Confirm</button><button type="button" onclick="cancelAccountingLifecycle()">Cancel</button>` : `<button type="button" onclick="showAccountingVendorForm('${escapeAttr(vendor.id)}')">Edit</button><button type="button" onclick="beginAccountingVendorLifecycle('${escapeAttr(vendor.id)}','${action}')">${action === 'archive' ? 'Archive' : 'Unarchive'}</button>`}${message}</div>`;
+    };
     let body = '';
-    if (accountingPayablesView === 'vendors') body = `<div class="acct-list-head"><div><span class="acct-kicker">Vendor directory</span><h2>${data.vendors.length} vendors</h2></div><button class="acct-primary" type="button" onclick="showAccountingVendorForm()">New vendor</button></div><div id="accountingPhaseDForm"></div><div class="acct-card-grid">${data.vendors.map((vendor) => `<article class="acct-mini-card"><span>${escapeHtml(vendor.vendorNumber)}</span><h3>${escapeHtml(vendor.displayName)}</h3><p>${escapeHtml(vendor.email || vendor.vendorType || 'Active vendor')}</p></article>`).join('') || accountingEmpty('No vendors yet','Add the first vendor before entering a bill.')}</div>`;
+    if (accountingPayablesView === 'vendors') body = `<div class="acct-list-head"><div><span class="acct-kicker">Vendor directory</span><h2>${data.vendors.length} vendors</h2></div><button class="acct-primary" type="button" onclick="showAccountingVendorForm()">New vendor</button></div><div id="accountingPhaseDForm"></div><div class="acct-card-grid">${data.vendors.map((vendor) => `<article class="acct-mini-card ${vendor.status==='archived'?'retired':''}"><span>${escapeHtml(vendor.vendorNumber)} · ${escapeHtml(vendor.status)}</span><h3>${escapeHtml(vendor.displayName)}</h3><p>${escapeHtml(vendor.email || vendor.vendorType || 'Active vendor')}</p>${vendorLifecycle(vendor)}</article>`).join('') || accountingEmpty('No vendors yet','Add the first vendor before entering a bill.')}</div>`;
     else if (accountingPayablesView === 'aging') body = `<div class="acct-list-head"><div><span class="acct-kicker">Accounts payable aging</span><h2>${accountingMoney(data.aging.totalDue)} outstanding</h2></div></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Vendor</th><th>Current</th><th>1–30</th><th>31–60</th><th>61–90</th><th>90+</th><th>Total</th></tr></thead><tbody>${(data.aging.rows || []).map((row) => `<tr><td><strong>${escapeHtml(row.vendor)}</strong></td><td>${accountingMoney(row.current)}</td><td>${accountingMoney(row.days1to30)}</td><td>${accountingMoney(row.days31to60)}</td><td>${accountingMoney(row.days61to90)}</td><td>${accountingMoney(row.over90)}</td><td><strong>${accountingMoney(row.totalDue)}</strong></td></tr>`).join('') || '<tr><td colspan="7">No outstanding payables.</td></tr>'}</tbody></table></div>`;
     else body = `<div class="acct-list-head"><div><span class="acct-kicker">Bill workflow</span><h2>Vendor bills & approvals</h2></div><button class="acct-primary" type="button" onclick="showAccountingBillForm()">Enter bill</button></div><div id="accountingPhaseDForm"></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Due</th><th>Vendor</th><th>Invoice</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody>${data.bills.map((bill) => `<tr><td>${accountingDate(bill.dueDate)}</td><td><strong>${escapeHtml(bill.vendorName)}</strong></td><td>${escapeHtml(bill.vendorInvoiceNumber || bill.billNumber)}</td><td>${accountingMoney(bill.amountDue ?? bill.totalAmount)}</td><td><span class="acct-status ${escapeAttr(bill.status)}">${escapeHtml(bill.status)}</span></td><td><div class="acct-row-actions">${bill.status === 'draft' ? `<button onclick="accountingBillAction('${escapeAttr(bill.id)}','submit',${bill.version})">Submit</button>` : ''}${bill.status === 'submitted' ? `<button onclick="accountingBillAction('${escapeAttr(bill.id)}','approve',${bill.version})">Approve</button>` : ''}${bill.status === 'approved' ? `<button onclick="accountingBillAction('${escapeAttr(bill.id)}','post',${bill.version})">Post</button>` : ''}</div></td></tr>`).join('') || '<tr><td colspan="6">No bills entered.</td></tr>'}</tbody></table></div>`;
     pane.innerHTML = `<div class="acct-kpis"><div><span>Open payables</span><strong>${accountingMoney(overview.openPayables)}</strong></div><div><span>Awaiting approval</span><strong>${overview.awaitingApproval || 0}</strong></div><div><span>Overdue bills</span><strong>${overview.overdue || 0}</strong></div></div><div class="acct-subtabs">${tabs.map(([id,label]) => `<button class="${accountingPayablesView === id ? 'active' : ''}" onclick="setAccountingPayablesView('${id}')">${label}</button>`).join('')}</div>${body}`;
@@ -1206,7 +1214,8 @@
   function renderAccountingFunds(pane) {
     if (!accountingFundCatalog) { pane.innerHTML = '<p class="sw-tool-loading">Loading funds...</p>'; return; }
     const active = accountingFundCatalog.filter((fund) => Number(fund.isActive));
-    const accountsByNumber = new Map(accountingData.accounts.map((account) => [String(account.accountNumber || account.account_number || ''), account]));
+    const accountCatalog = accountingData.accountCatalog?.length ? accountingData.accountCatalog : accountingData.accounts;
+    const accountsByNumber = new Map(accountCatalog.map((account) => [String(account.accountNumber || account.account_number || ''), account]));
     const balanceFor = (fund) => accountingData.ledger
       .filter((row) => row.fundId === fund.id || row.fund_id === fund.id || row.fundCode === fund.code || row.fund_code === fund.code)
       .reduce((sum,row) => {
@@ -1222,23 +1231,28 @@
     const unrestricted = fundBalances.filter(({fund}) => !String(fund.restrictionType).startsWith('donor_restricted'));
     const restricted = fundBalances.filter(({fund}) => String(fund.restrictionType).startsWith('donor_restricted'));
     const categories = [['asset','Assets'],['liability','Liabilities'],['net_asset','Equity / Fund Balances'],['revenue','Income'],['expense','Expenses']];
-    const standardAccountRows = (category) => accountingData.accounts.filter((account) => account.category === category).map((account) => `<button class="acct-fund-account-row" onclick="showAccountingAccountForm('${escapeAttr(account.id)}')"><span>${escapeHtml(account.accountNumber)}</span><strong>${escapeHtml(account.name)}</strong><small>${escapeHtml(account.normalBalance)} normal balance · Edit number or name</small></button>`).join('') || '<div class="acct-fund-account-empty">No active posting accounts in this group.</div>';
+    const accountLifecycle = (account) => {
+      const action = Number(account.isActive) ? 'archive' : 'unarchive', confirming = accountingAccountLifecycleConfirm?.id === account.id && accountingAccountLifecycleConfirm.action === action;
+      const message = accountingLifecycleMessage?.type === 'account' && accountingLifecycleMessage.id === account.id ? `<span class="acct-lifecycle-message">${escapeHtml(accountingLifecycleMessage.text)}</span>` : '';
+      return `<div class="acct-lifecycle-actions">${confirming ? `<span>${action === 'archive' ? 'Archive this account?' : 'Restore this account?'}</span><button type="button" onclick="changeAccountingAccountLifecycle('${escapeAttr(account.id)}','${action}',${account.version})">Confirm</button><button type="button" onclick="cancelAccountingLifecycle()">Cancel</button>` : `<button type="button" onclick="beginAccountingAccountLifecycle('${escapeAttr(account.id)}','${action}')">${action === 'archive' ? 'Archive' : 'Unarchive'}</button>`}${message}</div>`;
+    };
+    const standardAccountRows = (category) => accountCatalog.filter((account) => account.category === category).map((account) => `<div class="acct-account-lifecycle-row ${Number(account.isActive)?'':'retired'}"><button class="acct-fund-account-row" onclick="showAccountingAccountForm('${escapeAttr(account.id)}')"><span>${escapeHtml(account.accountNumber)}</span><strong>${escapeHtml(account.name)}</strong><small>${escapeHtml(account.normalBalance)} normal balance · ${Number(account.isActive)?'Edit number or name':'Archived'}</small></button>${accountLifecycle(account)}</div>`).join('') || '<div class="acct-fund-account-empty">No posting accounts in this group.</div>';
     const fundBalanceRows = (items, empty) => items.length ? items.map(({fund,balance}) => `<div class="acct-fund-balance-row"><span>${escapeHtml(fund.code)}</span><strong>${escapeHtml(fund.name)} · Fund Balance</strong><small>${escapeHtml(restrictionLabel(fund.restrictionType))}</small><b class="${balance<0?'negative':''}">${accountingMoney(balance)}</b></div>`).join('') : `<div class="acct-fund-account-empty">${empty}</div>`;
     const expenseRows = (group) => {
-      const rows = accountingData.accounts.filter((account) => account.category === 'expense' && (account.expenseGroup || 'other') === group);
-      return `<div class="acct-expense-account-group"><div class="acct-expense-account-group-head"><div><strong>${group === 'administrative' ? 'Administrative Expenses' : 'Other Expenses'}</strong><small>${group === 'administrative' ? 'Salaries, clergy support, rent, and routine administration' : 'Travel, utilities, AGAPAY fees, building costs, and other operations'}</small></div><button onclick="showAccountingExpenseAccountForm('${group}')">＋ Add account</button></div>${rows.map((account)=>{const fund=active.find((item)=>item.id===account.defaultFundId),parent=accountingData.accounts.find((item)=>item.id===account.parentAccountId);return `<button class="acct-expense-account-row ${parent?'subaccount':''}" onclick="showAccountingExpenseAccountForm('${group}','${escapeAttr(account.id)}')"><span>${escapeHtml(account.accountNumber)}</span><strong>${escapeHtml(account.name)}</strong><small>${parent?`Sub-account of ${escapeHtml(parent.name)} · `:''}${escapeHtml(fund?.name || 'Choose fund when posting')}</small><b>${Number(account.isSystem)?'Configure':'Edit'}</b></button>`}).join('') || '<div class="acct-fund-account-empty">No accounts in this expense group yet.</div>'}</div>`;
+      const rows = accountCatalog.filter((account) => account.category === 'expense' && (account.expenseGroup || 'other') === group);
+      return `<div class="acct-expense-account-group"><div class="acct-expense-account-group-head"><div><strong>${group === 'administrative' ? 'Administrative Expenses' : 'Other Expenses'}</strong><small>${group === 'administrative' ? 'Salaries, clergy support, rent, and routine administration' : 'Travel, utilities, AGAPAY fees, building costs, and other operations'}</small></div><button onclick="showAccountingExpenseAccountForm('${group}')">＋ Add account</button></div>${rows.map((account)=>{const fund=active.find((item)=>item.id===account.defaultFundId),parent=accountCatalog.find((item)=>item.id===account.parentAccountId);return `<div class="acct-account-lifecycle-row ${Number(account.isActive)?'':'retired'}"><button class="acct-expense-account-row ${parent?'subaccount':''}" onclick="showAccountingExpenseAccountForm('${group}','${escapeAttr(account.id)}')"><span>${escapeHtml(account.accountNumber)}</span><strong>${escapeHtml(account.name)}</strong><small>${parent?`Sub-account of ${escapeHtml(parent.name)} · `:''}${Number(account.isActive)?escapeHtml(fund?.name || 'Choose fund when posting'):'Archived'}</small><b>${Number(account.isSystem)?'Configure':'Edit'}</b></button>${accountLifecycle(account)}</div>`}).join('') || '<div class="acct-fund-account-empty">No accounts in this expense group yet.</div>'}</div>`;
     };
     const accountForm = accountingExpenseAccountEditor ? (() => {
       const account = accountingExpenseAccountEditor.id ? accountingExpenseAccountEditor : { accountNumber:'',name:'',description:'',expenseGroup:accountingExpenseAccountEditor.expenseGroup || 'other',defaultFundId:active.find((fund)=>Number(fund.isDefault))?.id || active[0]?.id || '' };
       const isExpense = (account.category || 'expense') === 'expense';
-      const parentOptions = accountingData.accounts.filter((item)=>item.category==='expense'&&item.id!==account.id);
+      const parentOptions = accountCatalog.filter((item)=>item.category==='expense'&&Number(item.isActive)&&item.id!==account.id);
       return `<form class="acct-expense-account-form" onsubmit="saveAccountingExpenseAccount(event)"><div><span class="acct-kicker">${account.id?'Edit account':'New expense account'}</span><h3>${account.id?escapeHtml(account.name):account.expenseGroup==='administrative'?'Administrative expense':'Other expense'}</h3><p>Every account has both a number and a name. The account category and normal balance remain protected.</p></div><div class="acct-form-grid"><label>Account number<input name="accountNumber" maxlength="24" required value="${escapeAttr(account.accountNumber||'')}" placeholder="5000"></label><label>Account name<input name="name" maxlength="120" required value="${escapeAttr(account.name||'')}" placeholder="Salaries"></label>${isExpense?`<label>Expense group<select name="expenseGroup"><option value="administrative" ${account.expenseGroup==='administrative'?'selected':''}>Administrative Expenses</option><option value="other" ${account.expenseGroup==='other'?'selected':''}>Other Expenses</option></select></label><label>Default fund<select name="defaultFundId" required>${active.map((fund)=>`<option value="${escapeAttr(fund.id)}" ${account.defaultFundId===fund.id?'selected':''}>${escapeHtml(fund.code)} · ${escapeHtml(fund.name)}</option>`).join('')}</select><small>Selected automatically when this account is used in a new journal entry.</small></label><label>Parent account<select name="parentAccountId"><option value="">No parent account</option>${parentOptions.map((parent)=>`<option value="${escapeAttr(parent.id)}" ${account.parentAccountId===parent.id?'selected':''}>${escapeHtml(parent.accountNumber)} · ${escapeHtml(parent.name)}</option>`).join('')}</select><small>Optional: organize this as a sub-account.</small></label>`:`<input type="hidden" name="parentAccountId" value="${escapeAttr(account.parentAccountId||'')}"><label>Category<input value="${escapeAttr(String(account.category||'').replaceAll('_',' '))}" readonly></label><label>Normal balance<input value="${escapeAttr(account.normalBalance||'')}" readonly></label>`}</div><label>Description<input name="description" value="${escapeAttr(account.description||'')}" placeholder="What should be posted to this account?"></label><div class="acct-phase-form-foot"><button class="acct-primary">${account.id?'Save account':'Add account'}</button><button type="button" class="acct-refresh" onclick="accountingExpenseAccountEditor=null;renderAccountingPane()">Cancel</button><span class="acct-form-status"></span></div></form>`;
     })() : '';
     pane.innerHTML = `<section class="acct-funds-directory"><div class="acct-list-head"><div><span class="acct-kicker">Fund directory</span><h2>Funds</h2><p>Funds &amp; Alms is the source of truth. Every fund automatically receives a matching equity / fund-balance row and is available throughout Accounting.</p></div><button class="acct-primary" onclick="switchTab('options')">Manage in Funds &amp; Alms</button></div>
       <div class="acct-fund-tools"><label>Find a fund<input type="search" placeholder="Search by name, number, or purpose" oninput="filterAccountingFunds(this.value)"></label><span>${active.length} active · ${accountingFundCatalog.length-active.length} retired</span></div>
       <div class="acct-funds-directory-grid">${accountingFundCatalog.map((fund)=>`<div class="acct-fund-directory-card ${Number(fund.isActive)?'':'retired'}" data-fund-search="${escapeAttr(`${fund.code} ${fund.name} ${fund.purpose||''} ${fund.description||''}`.toLowerCase())}"><span>${escapeHtml(fund.code)}</span><strong>${escapeHtml(fund.name)}</strong><small>${escapeHtml(restrictionLabel(fund.restrictionType))}${Number(fund.isDefault)?' · Default':''}</small></div>`).join('') || accountingEmpty('No funds','Add the first fund in Funds &amp; Alms.')}</div></section>
-      <section class="acct-fund-accounts"><div class="acct-fund-accounts-head"><div><span class="acct-kicker">Chart of accounts</span><h2>Accounts</h2><p>Expand a group to review posting accounts and the fund-balance structure.</p></div><div><span>${accountingData.accounts.length} posting accounts</span><strong>${active.length} fund balances</strong></div></div>
-        <div class="acct-fund-account-groups">${categories.map(([category,label])=>{const expanded=accountingFundAccountSections.has(category), editorHere=accountingExpenseAccountEditor&&(accountingExpenseAccountEditor.category||'expense')===category;return `<section class="acct-fund-account-group ${expanded?'expanded':''}"><button class="acct-fund-account-group-head" onclick="toggleAccountingFundAccountSection('${category}')" aria-expanded="${expanded}"><span>${escapeHtml(label)}</span><small>${category==='net_asset'?`${active.length} automatic fund balance${active.length===1?'':'s'}`:`${accountingData.accounts.filter(account=>account.category===category).length} account${accountingData.accounts.filter(account=>account.category===category).length===1?'':'s'}`}</small><b>${expanded?'−':'＋'}</b></button>${expanded?`<div class="acct-fund-account-group-body">${editorHere?accountForm:''}${category==='net_asset'?`${standardAccountRows(category)}<div class="acct-fund-net-assets"><div class="acct-fund-net-group"><h3><span>Unrestricted net assets</span><small>General and board-designated funds</small></h3>${fundBalanceRows(unrestricted,'No unrestricted funds.')}</div><div class="acct-fund-net-group restricted"><h3><span>Restricted net assets</span><small>Donor-restricted purposes</small></h3>${fundBalanceRows(restricted,'No restricted funds.')}</div></div>`:category==='expense'?`${expenseRows('administrative')}${expenseRows('other')}`:standardAccountRows(category)}</div>`:''}</section>`}).join('')}</div>
+      <section class="acct-fund-accounts"><div class="acct-fund-accounts-head"><div><span class="acct-kicker">Chart of accounts</span><h2>Accounts</h2><p>Expand a group to review posting accounts and the fund-balance structure.</p></div><div><span>${accountingData.accounts.length} active · ${accountCatalog.length-accountingData.accounts.length} archived</span><strong>${active.length} fund balances</strong></div></div>
+        <div class="acct-fund-account-groups">${categories.map(([category,label])=>{const expanded=accountingFundAccountSections.has(category), editorHere=accountingExpenseAccountEditor&&(accountingExpenseAccountEditor.category||'expense')===category, categoryAccounts=accountCatalog.filter(account=>account.category===category);return `<section class="acct-fund-account-group ${expanded?'expanded':''}"><button class="acct-fund-account-group-head" onclick="toggleAccountingFundAccountSection('${category}')" aria-expanded="${expanded}"><span>${escapeHtml(label)}</span><small>${category==='net_asset'?`${active.length} automatic fund balance${active.length===1?'':'s'}`:`${categoryAccounts.length} account${categoryAccounts.length===1?'':'s'}`}</small><b>${expanded?'−':'＋'}</b></button>${expanded?`<div class="acct-fund-account-group-body">${editorHere?accountForm:''}${category==='net_asset'?`${standardAccountRows(category)}<div class="acct-fund-net-assets"><div class="acct-fund-net-group"><h3><span>Unrestricted net assets</span><small>General and board-designated funds</small></h3>${fundBalanceRows(unrestricted,'No unrestricted funds.')}</div><div class="acct-fund-net-group restricted"><h3><span>Restricted net assets</span><small>Donor-restricted purposes</small></h3>${fundBalanceRows(restricted,'No restricted funds.')}</div></div>`:category==='expense'?`${expenseRows('administrative')}${expenseRows('other')}`:standardAccountRows(category)}</div>`:''}</section>`}).join('')}</div>
       </section>
       <section class="acct-fund-chart"><div class="acct-list-head"><div><span class="acct-kicker">Posted ledger composition</span><h2>Fund balances at a glance</h2><p>Relative balances based on posted journal activity. Negative balances extend in the same scale and are labeled clearly.</p></div><button class="acct-refresh" onclick="setAccountingView('reports')">Open fund report</button></div>
         <div class="acct-fund-bars">${fundBalances.map(({fund,balance})=>`<div class="acct-fund-bar-row"><div class="acct-fund-bar-label"><strong>${escapeHtml(fund.name)}</strong><span>${escapeHtml(fund.code)}</span></div><div class="acct-fund-bar-track"><i class="${String(fund.restrictionType).startsWith('donor_restricted')?'restricted':''} ${balance<0?'negative':''}" style="width:${Math.max(balance===0?0:3,Math.round(Math.abs(balance)/largestFundBalance*100))}%"></i></div><strong class="${balance<0?'negative':''}">${accountingMoney(balance)}</strong></div>`).join('') || '<div class="acct-empty"><strong>No active funds</strong><span>Add a fund to begin tracking balances.</span></div>'}</div>
@@ -1249,13 +1263,13 @@
     document.querySelectorAll('[data-fund-search]').forEach((row) => { row.hidden = needle && !row.dataset.fundSearch.includes(needle); });
   }
   function showAccountingExpenseAccountForm(group = 'other', id = '') {
-    const existing = id ? accountingData.accounts.find((account) => account.id === id) : null;
+    const existing = id ? (accountingData.accountCatalog || accountingData.accounts).find((account) => account.id === id) : null;
     accountingExpenseAccountEditor = existing ? { ...existing, expenseGroup:existing.expenseGroup || group } : { expenseGroup:group };
     accountingFundAccountSections.add('expense');
     renderAccountingPane();
   }
   function showAccountingAccountForm(id) {
-    const existing = accountingData.accounts.find((account) => account.id === id);
+    const existing = (accountingData.accountCatalog || accountingData.accounts).find((account) => account.id === id);
     if (!existing) return;
     accountingExpenseAccountEditor = { ...existing };
     accountingFundAccountSections.add(existing.category);
@@ -1275,7 +1289,42 @@
     const data = await reference.json().catch(() => ({}));
     if (!reference.ok) { status.textContent = data.message || 'Account saved, but the list could not refresh.'; return; }
     accountingData.accounts = data.accounts || accountingData.accounts;
+    accountingData.accountCatalog = data.accountCatalog || data.accounts || accountingData.accountCatalog;
     accountingExpenseAccountEditor = null;
+    renderAccountingPane();
+  }
+  function beginAccountingAccountLifecycle(id, action) {
+    accountingAccountLifecycleConfirm = { id, action };
+    accountingLifecycleMessage = null;
+    renderAccountingPane();
+  }
+  function cancelAccountingLifecycle() {
+    accountingAccountLifecycleConfirm = null;
+    accountingVendorLifecycleConfirm = null;
+    accountingLifecycleMessage = null;
+    renderAccountingPane();
+  }
+  async function changeAccountingAccountLifecycle(id, action, expectedVersion) {
+    const response = await fetch(accountingApi(`/accounts/${encodeURIComponent(id)}/${action}`), { method:'POST', headers:{...authHeaders(),'Content-Type':'application/json'}, body:JSON.stringify({ expectedVersion }) });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      accountingAccountLifecycleConfirm = null;
+      accountingLifecycleMessage = { type:'account', id, text:payload.message || payload.error || 'Unable to update this account.' };
+      renderAccountingPane();
+      return;
+    }
+    const reference = await fetch(accountingApi('/workspace-reference'), { headers:authHeaders() });
+    const data = await reference.json().catch(() => ({}));
+    if (!reference.ok) {
+      accountingLifecycleMessage = { type:'account', id, text:data.message || data.error || 'Account updated, but the list could not refresh.' };
+      renderAccountingPane();
+      return;
+    }
+    accountingData.accounts = data.accounts || [];
+    accountingData.accountCatalog = data.accountCatalog || data.accounts || [];
+    accountingExpenseAccountEditor = null;
+    accountingAccountLifecycleConfirm = null;
+    accountingLifecycleMessage = null;
     renderAccountingPane();
   }
   async function loadAccountingTab(force = false) {
@@ -1313,7 +1362,7 @@
       if (!recurringRes.ok) throw new Error(recurring.message || recurring.error || 'Recurring transactions are unavailable.');
       if (!ledgerStatusRes.ok) throw new Error(ledgerStatus.message || ledgerStatus.error || 'Ledger initialization status is unavailable.');
       if (setup.overview) setup.overview.initialization = ledgerStatus.status || setup.overview.initialization;
-      accountingData = { setup: setup.overview, accounts: reference.accounts || [], funds: reference.funds || [], journals: journals.entries || [], ledger: ledger.rows || [], recurring: recurring.items || [], reports: { trialBalance: trial.report, activities: activities.report, position: position.report }, payables: accountingData.payables, budgets: accountingData.budgets, banking: accountingData.banking, integrations: accountingData.integrations, close: accountingData.close, adjustments: accountingData.adjustments, governance: accountingData.governance, tier: setup.tier || journals.tier || '' };
+      accountingData = { setup: setup.overview, accounts: reference.accounts || [], accountCatalog: reference.accountCatalog || reference.accounts || [], funds: reference.funds || [], journals: journals.entries || [], ledger: ledger.rows || [], recurring: recurring.items || [], reports: { trialBalance: trial.report, activities: activities.report, position: position.report }, payables: accountingData.payables, budgets: accountingData.budgets, banking: accountingData.banking, integrations: accountingData.integrations, close: accountingData.close, adjustments: accountingData.adjustments, governance: accountingData.governance, tier: setup.tier || journals.tier || '' };
       document.getElementById('accountingTierLabel').textContent = accountingData.tier === 'advanced_operations' ? 'Parish Accounting' : 'Mission Accounting';
       document.getElementById('accountingTierCopy').textContent = accountingData.tier === 'advanced_operations' ? 'Advanced operations enabled' : 'Essential ledger and reports';
       document.getElementById('accountingParishName').textContent = currentParish.name || currentParish.parishName || 'Your parish';
@@ -1413,19 +1462,32 @@
   async function releaseAccountingLegalHold(id,expectedVersion){if(!confirm('Release this legal hold? The record remains in the governance history.'))return;const res=await fetch(accountingApi(`/governance/legal-holds/${encodeURIComponent(id)}/release`),{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({expectedVersion})}),payload=await res.json().catch(()=>({}));if(!res.ok){alert(payload.message||payload.error||'Unable to release legal hold.');return;}accountingData.governance=null;await loadAccountingGovernance();}
   function setAccountingPayablesView(view) { accountingPayablesView = ['bills','payments','vendors','aging'].includes(view) ? view : 'bills'; renderAccountingPane(); }
   function phaseDForm() { return document.getElementById('accountingPhaseDForm'); }
-  function showAccountingVendorForm() {
+  function showAccountingVendorForm(id = '') {
     const holder = phaseDForm(); if (!holder) return;
+    const vendor = id ? accountingData.payables.vendors.find((item) => item.id === id) : null;
     const expenseOptions = accountingData.accounts.filter((account) => ['expense','asset'].includes(account.category)).map((account) => `<option value="${escapeAttr(account.id)}">${escapeHtml(account.accountNumber)} · ${escapeHtml(account.name)}</option>`).join('');
     const fundOptions = accountingData.funds.map((fund) => `<option value="${escapeAttr(fund.id)}">${escapeHtml(fund.code)} · ${escapeHtml(fund.name)}</option>`).join('');
-    holder.innerHTML = `<form class="acct-phase-form" onsubmit="createAccountingVendor(event)"><div class="acct-list-head"><div><span class="acct-kicker">New vendor</span><h2>Add a payee</h2></div><button type="button" class="acct-link" onclick="phaseDForm().innerHTML=''">Cancel</button></div><div class="acct-form-grid"><label>Vendor name<input name="displayName" required></label><label>Email<input name="email" type="email"></label><label>Default expense account<select name="defaultExpenseAccountId"><option value="">None</option>${expenseOptions}</select></label><label>Default fund<select name="defaultFundId"><option value="">None</option>${fundOptions}</select></label></div><button class="acct-primary" type="submit">Save vendor</button><span class="acct-form-status"></span></form>`;
+    holder.innerHTML = `<form class="acct-phase-form" onsubmit="saveAccountingVendor(event,'${escapeAttr(vendor?.id||'')}',${Number(vendor?.version||0)})"><div class="acct-list-head"><div><span class="acct-kicker">${vendor?'Edit vendor':'New vendor'}</span><h2>${vendor?escapeHtml(vendor.displayName):'Add a payee'}</h2></div><button type="button" class="acct-link" onclick="phaseDForm().innerHTML=''">Cancel</button></div><div class="acct-form-grid"><label>Vendor name<input name="displayName" required value="${escapeAttr(vendor?.displayName||'')}"></label><label>Email<input name="email" type="email" value="${escapeAttr(vendor?.email||'')}"></label><label>Default expense account<select name="defaultExpenseAccountId"><option value="">None</option>${expenseOptions.replace(`value="${escapeAttr(vendor?.defaultExpenseAccountId||'')}"`,`value="${escapeAttr(vendor?.defaultExpenseAccountId||'')}" selected`)}</select></label><label>Default fund<select name="defaultFundId"><option value="">None</option>${fundOptions.replace(`value="${escapeAttr(vendor?.defaultFundId||'')}"`,`value="${escapeAttr(vendor?.defaultFundId||'')}" selected`)}</select></label></div><button class="acct-primary" type="submit">Save vendor</button><span class="acct-form-status"></span></form>`;
   }
-  async function createAccountingVendor(event) {
+  async function saveAccountingVendor(event, vendorId, expectedVersion) {
     event.preventDefault(); const form = event.currentTarget, data = Object.fromEntries(new FormData(form));
-    await accountingPhaseDMutation('/payables/vendors', data, 'Vendor saved.');
+    const response = await fetch(accountingApi(vendorId ? `/payables/vendors/${encodeURIComponent(vendorId)}` : '/payables/vendors'), { method:vendorId?'PATCH':'POST', headers:{...authHeaders(),'Content-Type':'application/json'}, body:JSON.stringify(vendorId ? { expectedVersion, patch:data } : data) });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) { form.querySelector('.acct-form-status').textContent = payload.message || payload.error || 'Unable to save vendor.'; return; }
+    accountingData.payables = null;
+    await loadAccountingPhaseD();
+  }
+  async function createAccountingVendor(event) { return saveAccountingVendor(event, '', 0); }
+  function beginAccountingVendorLifecycle(id, action) { accountingVendorLifecycleConfirm = { id, action }; accountingLifecycleMessage = null; renderAccountingPane(); }
+  async function changeAccountingVendorLifecycle(id, action, expectedVersion) {
+    const response = await fetch(accountingApi(`/payables/vendors/${encodeURIComponent(id)}/${action}`), { method:'POST', headers:{...authHeaders(),'Content-Type':'application/json'}, body:JSON.stringify({ expectedVersion }) });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) { accountingVendorLifecycleConfirm = null; accountingLifecycleMessage = { type:'vendor', id, text:payload.message || payload.error || 'Unable to update this vendor.' }; renderAccountingPane(); return; }
+    accountingVendorLifecycleConfirm = null; accountingLifecycleMessage = null; accountingData.payables = null; await loadAccountingPhaseD();
   }
   function showAccountingBillForm() {
     const holder = phaseDForm(); if (!holder) return;
-    const vendors = accountingData.payables.vendors.map((vendor) => `<option value="${escapeAttr(vendor.id)}">${escapeHtml(vendor.displayName)}</option>`).join('');
+    const vendors = accountingData.payables.vendors.filter((vendor) => vendor.status === 'active').map((vendor) => `<option value="${escapeAttr(vendor.id)}">${escapeHtml(vendor.displayName)}</option>`).join('');
     const accounts = accountingData.accounts.filter((account) => ['expense','asset'].includes(account.category)).map((account) => `<option value="${escapeAttr(account.id)}">${escapeHtml(account.accountNumber)} · ${escapeHtml(account.name)}</option>`).join('');
     const funds = accountingData.funds.map((fund) => `<option value="${escapeAttr(fund.id)}">${escapeHtml(fund.code)} · ${escapeHtml(fund.name)}</option>`).join('');
     holder.innerHTML = `<form class="acct-phase-form" onsubmit="createAccountingBill(event)"><div class="acct-list-head"><div><span class="acct-kicker">Bill entry</span><h2>Record a vendor bill</h2></div><button type="button" class="acct-link" onclick="phaseDForm().innerHTML=''">Cancel</button></div><div class="acct-form-grid"><label>Vendor<select name="vendorId" required><option value="">Choose vendor</option>${vendors}</select></label><label>Invoice number<input name="vendorInvoiceNumber"></label><label>Bill date<input name="billDate" type="date" value="${new Date().toISOString().slice(0,10)}" required></label><label>Description<input name="description" required></label><label>Expense account<select name="accountId" required><option value="">Choose account</option>${accounts}</select></label><label>Fund<select name="fundId" required><option value="">Choose fund</option>${funds}</select></label><label>Amount<input name="amount" type="number" min="0.01" step="0.01" required></label></div><button class="acct-primary" type="submit">Save draft bill</button><span class="acct-form-status"></span></form>`;
