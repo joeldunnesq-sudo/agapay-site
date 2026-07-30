@@ -43,7 +43,7 @@ export async function initializeLedger(db, { actor, date = new Date(), correlati
     for (const type of REQUIRED_TYPES) await run(db, `INSERT OR IGNORE INTO accounting_account_types(id,code,name,category,normal_balance,statement_type,sort_order,is_system) VALUES(?,?,?,?,?,?,?,1)`, ...type);
     for (const account of DEFAULT_ACCOUNTS) {
       const type = REQUIRED_TYPES.find((item) => item[0] === account[3]);
-      await run(db, `INSERT OR IGNORE INTO accounting_accounts(id,account_number,name,account_type_id,normal_balance,is_posting_account,is_system,requires_fund) VALUES(?,?,?,?,?,?,?,1)`, account[0],account[1],account[2],account[3],type[4],account[4],account[5]);
+      await run(db, `INSERT OR IGNORE INTO accounting_accounts(id,account_number,name,account_type_id,normal_balance,is_posting_account,is_system,requires_fund,cash_flow_classification) VALUES(?,?,?,?,?,?,?,1,'operating')`, account[0],account[1],account[2],account[3],type[4],account[4],account[5]);
     }
     await run(db, `INSERT OR IGNORE INTO accounting_funds(id,code,name,restriction_type,is_default,is_active,is_system) VALUES('fund_general','GENERAL','General Operating Fund','unrestricted',1,1,1)`);
     const year = date.getUTCFullYear();

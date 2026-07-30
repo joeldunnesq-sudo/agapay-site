@@ -1,5 +1,5 @@
 import { json } from "../lib/core.js";
-import { archiveAccount, fundActivity, getAccountingSettings, getAccountingSetupOverview, initializeAccountingSetup, reportCsv, statementOfActivities, statementOfFinancialPosition, trialBalance, unarchiveAccount, updateAccountingSettings } from "../accounting/index.js";
+import { archiveAccount, fundActivity, getAccountingSettings, getAccountingSetupOverview, initializeAccountingSetup, netAssetRollforward, reportCsv, statementOfActivities, statementOfCashFlows, statementOfFinancialPosition, statementOfFunctionalExpenses, trialBalance, unarchiveAccount, updateAccountingSettings } from "../accounting/index.js";
 import { accountingContext } from "./accounting-ledger.js";
 
 const HEADERS = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow", Vary: "Authorization" };
@@ -20,7 +20,7 @@ async function workspaceReference(db) {
   const [accountCatalog, funds] = await Promise.all([
     results(db, `SELECT a.id,a.account_number accountNumber,a.name,a.description,a.normal_balance normalBalance,
       a.parent_account_id parentAccountId,
-      a.is_system isSystem,a.is_active isActive,a.archived_at archivedAt,a.version,t.category,p.expense_group expenseGroup,p.default_fund_id defaultFundId
+      a.is_system isSystem,a.is_active isActive,a.archived_at archivedAt,a.version,a.cash_flow_classification cashFlowClassification,t.category,p.expense_group expenseGroup,p.default_fund_id defaultFundId
       FROM accounting_accounts a JOIN accounting_account_types t ON t.id=a.account_type_id
       LEFT JOIN accounting_account_presentations p ON p.account_id=a.id
       WHERE a.is_posting_account=1 ORDER BY a.is_active DESC,a.account_number`),
@@ -33,10 +33,15 @@ function reportRequest(path, url, db, actor) {
   const startDate = url.searchParams.get("from") || yearStart();
   const endDate = url.searchParams.get("to") || today();
   const fundId = url.searchParams.get("fundId") || "";
-  if (path === "/reports/trial-balance") return trialBalance(db, { actor, startDate, endDate, fundId, includeZero: url.searchParams.get("includeZero") === "true" });
+  const priorStartDate = url.searchParams.get("priorFrom") || "";
+  const priorEndDate = url.searchParams.get("priorTo") || "";
+  if (path === "/reports/trial-balance") return trialBalance(db, { actor, startDate, endDate, fundId, priorStartDate, priorEndDate, includeZero: url.searchParams.get("includeZero") === "true" });
   if (path === "/reports/statement-of-activities") return statementOfActivities(db, { actor, startDate, endDate, fundId });
-  if (path === "/reports/statement-of-financial-position") return statementOfFinancialPosition(db, { actor, asOfDate: url.searchParams.get("asOf") || endDate, fundId });
-  if (path === "/reports/fund-activity") return fundActivity(db, { actor, startDate, endDate });
+  if (path === "/reports/statement-of-financial-position") return statementOfFinancialPosition(db, { actor, asOfDate: url.searchParams.get("asOf") || endDate, priorAsOfDate: url.searchParams.get("priorAsOf") || "", fundId });
+  if (path === "/reports/fund-activity") return fundActivity(db, { actor, startDate, endDate, fundId, priorStartDate, priorEndDate });
+  if (path === "/reports/statement-of-cash-flows") return statementOfCashFlows(db, { actor, startDate, endDate, fundId, priorStartDate, priorEndDate });
+  if (path === "/reports/statement-of-functional-expenses") return statementOfFunctionalExpenses(db, { actor, startDate, endDate, fundId, priorStartDate, priorEndDate });
+  if (path === "/reports/net-asset-rollforward") return netAssetRollforward(db, { actor, startDate, endDate, fundId });
   return null;
 }
 
@@ -67,7 +72,8 @@ export async function handleAccountingSetupReports(request, env, parishId) {
       const expenseGroup = clean(body.expenseGroup);
       const defaultFundId = clean(body.defaultFundId);
       const parentAccountId = clean(body.parentAccountId);
-      if (!accountNumber || !name || !["administrative","other"].includes(expenseGroup) || !defaultFundId) return reply({ error:"invalid_account", message:"Account number, name, expense group, and default fund are required." }, 422);
+      const cashFlowClassification = clean(body.cashFlowClassification);
+      if (!accountNumber || !name || !["administrative","other"].includes(expenseGroup) || !defaultFundId || !["operating","investing","financing"].includes(cashFlowClassification)) return reply({ error:"invalid_account", message:"Account number, name, expense group, default fund, and cash-flow classification are required." }, 422);
       const fund = await ctx.db.prepare("SELECT id FROM accounting_funds WHERE id=? AND is_active=1 AND archived_at IS NULL").bind(defaultFundId).first();
       if (!fund) return reply({ error:"invalid_fund", message:"Choose an active default fund." }, 422);
       if (parentAccountId) {
@@ -79,8 +85,8 @@ export async function handleAccountingSetupReports(request, env, parishId) {
       await ctx.db.batch([
         ctx.db.prepare(`INSERT INTO accounting_accounts
           (id,account_number,name,description,account_type_id,parent_account_id,normal_balance,is_posting_account,is_system,is_active,requires_fund,cash_flow_classification)
-          VALUES(?,?,?,?,'type_expense',?,'debit',1,0,1,1,'operating')`)
-          .bind(id, accountNumber, name, clean(body.description) || null, parentAccountId || null),
+          VALUES(?,?,?,?,'type_expense',?,'debit',1,0,1,1,?)`)
+          .bind(id, accountNumber, name, clean(body.description) || null, parentAccountId || null, cashFlowClassification),
         ctx.db.prepare("INSERT INTO accounting_account_presentations(account_id,expense_group,default_fund_id) VALUES(?,?,?)")
           .bind(id, expenseGroup, defaultFundId)
       ]);
@@ -103,7 +109,9 @@ export async function handleAccountingSetupReports(request, env, parishId) {
       const expenseGroup = clean(body.expenseGroup);
       const defaultFundId = clean(body.defaultFundId);
       const parentAccountId = clean(body.parentAccountId);
+      const cashFlowClassification = clean(body.cashFlowClassification ?? current.cash_flow_classification);
       if (!accountNumber || !name) return reply({ error:"invalid_account", message:"Account number and name are required." }, 422);
+      if (!["operating","investing","financing"].includes(cashFlowClassification)) return reply({ error:"invalid_cash_flow_classification", message:"Choose operating, investing, or financing." }, 422);
       if (current.category === "expense" && (!["administrative","other"].includes(expenseGroup) || !defaultFundId)) return reply({ error:"invalid_account", message:"Account number, name, expense group, and default fund are required." }, 422);
       if (current.category === "expense") {
         const fund = await ctx.db.prepare("SELECT id FROM accounting_funds WHERE id=? AND is_active=1 AND archived_at IS NULL").bind(defaultFundId).first();
@@ -116,8 +124,8 @@ export async function handleAccountingSetupReports(request, env, parishId) {
         if (!parent || parent.parent_account_id === id) return reply({ error:"invalid_parent", message:"Choose an account in the same category that does not create a circular hierarchy." }, 422);
       }
       const statements = [
-        ctx.db.prepare("UPDATE accounting_accounts SET account_number=?,name=?,description=?,parent_account_id=?,version=version+1,updated_at=datetime('now') WHERE id=? AND version=?")
-          .bind(accountNumber, name, clean(body.description ?? current.description) || null, parentAccountId || null, id, Number(body.expectedVersion))
+        ctx.db.prepare("UPDATE accounting_accounts SET account_number=?,name=?,description=?,parent_account_id=?,cash_flow_classification=?,version=version+1,updated_at=datetime('now') WHERE id=? AND version=?")
+          .bind(accountNumber, name, clean(body.description ?? current.description) || null, parentAccountId || null, cashFlowClassification, id, Number(body.expectedVersion))
       ];
       if (current.category === "expense") statements.push(
         ctx.db.prepare(`INSERT INTO accounting_account_presentations(account_id,expense_group,default_fund_id)
