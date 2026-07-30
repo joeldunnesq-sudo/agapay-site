@@ -8,6 +8,7 @@ const stripeConnect = await readFile("src/lib/stripe-connect.js", "utf8");
 const adminHandler = await readFile("src/handlers/admin.js", "utf8");
 const donorHandler = await readFile("src/handlers/donor.js", "utf8");
 const parishHandler = await readFile("src/handlers/parish.js", "utf8");
+const parishGivingCatalogHandler = await readFile("src/handlers/parish-giving-catalog.js", "utf8");
 const parishSacramentsHandler = await readFile("src/handlers/parish-sacraments.js", "utf8");
 const parishReconciliationHandler = await readFile("src/handlers/parish-reconciliation.js", "utf8");
 const parishNotifications = await readFile("src/lib/parish-notifications.js", "utf8");
@@ -21,8 +22,8 @@ const siteChrome = await readFile("public/site-chrome.js", "utf8");
 assert.ok(siteChrome.includes('{ href: "/why", label: "Why AGAPAY", key: "why" }'), "canonical static-site navigation should include Why AGAPAY");
 assert.ok(!/btn-donate[\s\S]{0,180}shellIcon\("giving-hand"\)/.test(siteChrome), "canonical Start for free button should not include an unrelated giving-hand icon");
 assert.ok(!/drawer-join[\s\S]{0,120}shellIcon\("giving-hand"\)/.test(siteChrome), "mobile Start for free button should not include an unrelated giving-hand icon");
-const backendSources = worker + core + stripeConnect + adminHandler + donorHandler + parishHandler + parishSacramentsHandler + parishReconciliationHandler + parishNotifications + stripeFees + stripeHandler + parishInterestHandler;
-const parishHandlers = parishHandler + parishSacramentsHandler + parishReconciliationHandler;
+const backendSources = worker + core + stripeConnect + adminHandler + donorHandler + parishHandler + parishGivingCatalogHandler + parishSacramentsHandler + parishReconciliationHandler + parishNotifications + stripeFees + stripeHandler + parishInterestHandler;
+const parishHandlers = parishHandler + parishGivingCatalogHandler + parishSacramentsHandler + parishReconciliationHandler;
 assert.equal(parishSlug("St. Fiacre Orthodox Church", "Munster"), "st-fiacre-munster", "parish usernames should include patronal name and city");
 assert.equal(parishSlug("Holy Resurrection Orthodox Church", "Boston"), "holy-resurrection-boston", "parish usernames should normalize common church suffixes");
 assert.ok(wrangler.includes('binding = "AGAPAY_DB"'), "wrangler should bind the production D1 database");
@@ -430,7 +431,7 @@ assert.ok(
   "Starter dashboard should preview locked Giving Plus features with an upgrade paywall"
 );
 assert.ok(
-  parishHandler.includes('Parish logo branding is available with Giving Plus.')
+  parishHandlers.includes('Parish logo branding is available with Giving Plus.')
     && parishHandler.includes('logoUrl: givingPlus ? registration.logoUrl || "" : ""')
     && parishDashboardApp.includes("Any logo previously uploaded is preserved"),
   "parish logo branding should be preserved but displayed and uploaded only with Giving Plus"

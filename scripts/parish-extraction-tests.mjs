@@ -106,6 +106,7 @@ const parish = await readFile(new URL("../src/handlers/parish.js", import.meta.u
 const parishSacraments = await readFile(new URL("../src/handlers/parish-sacraments.js", import.meta.url), "utf8");
 const parishCommerce = await readFile(new URL("../src/handlers/parish-commerce.js", import.meta.url), "utf8");
 const parishReconciliation = await readFile(new URL("../src/handlers/parish-reconciliation.js", import.meta.url), "utf8");
+const parishGivingCatalog = await readFile(new URL("../src/handlers/parish-giving-catalog.js", import.meta.url), "utf8");
 const stripe = await readFile(new URL("../src/handlers/stripe.js", import.meta.url), "utf8");
 const donor = await readFile(new URL("../src/handlers/donor.js", import.meta.url), "utf8");
 const admin = await readFile(new URL("../src/handlers/admin.js", import.meta.url), "utf8");
@@ -129,6 +130,7 @@ assert.ok(parish.split(/\r?\n/).length <= 5750, "parish.js should retain the ext
 assert.ok(parish.split(/\r?\n/).length <= 5300, "parish.js should retain the sacraments extraction size reduction");
 assert.ok(parish.split(/\r?\n/).length <= 4620, "parish.js should retain the commerce extraction size reduction");
 assert.ok(parish.split(/\r?\n/).length <= 3830, "parish.js should retain the reconciliation extraction size reduction");
+assert.ok(parish.split(/\r?\n/).length <= 3380, "parish.js should retain the giving catalog extraction size reduction");
 const sacramentPublicFunctions = [
   "handleAdminSetSacramentsEnabled",
   "sacramentTypeLabel",
@@ -334,6 +336,85 @@ for (const name of ["handleParishPayoutDiagnostics", "handleParishReconciliation
 }
 assert.match(parish, /export function summarizeCharges\b/, "summarizeCharges should remain in parish.js");
 assert.doesNotMatch(parishReconciliation, /function\s+summarizeCharges\b/, "parish-reconciliation should not absorb summarizeCharges");
+const givingCatalogPublicFunctions = [
+  "normalizedOptionKeys",
+  "campaignRaisedTotals",
+  "enrichParishGivingOptions",
+  "handleParishes",
+  "handlePublicCampaign",
+  "handleParishCampaignUpload",
+  "handleParishLogo",
+  "loadPaidDonorOfferingPlatformTotals",
+  "handlePublicPlatformSummary",
+];
+const givingCatalogPrivateHelpers = [
+  "campaignGiftKeys",
+  "giftMatchesCampaignKeys",
+  "publicBoolean",
+  "publicComment",
+  "campaignPublicSupporters",
+  "stFiacreRoofDemoSupporters",
+];
+for (const name of [...givingCatalogPublicFunctions, ...givingCatalogPrivateHelpers]) {
+  assert.doesNotMatch(parish, new RegExp(`(?:async\\s+)?function\\s+${name}\\b`), `${name} should move out of parish.js`);
+  assert.match(parishGivingCatalog, new RegExp(`(?:async\\s+)?function\\s+${name}\\b`), `${name} should live in parish-giving-catalog.js`);
+}
+for (const name of givingCatalogPublicFunctions) {
+  assert.match(
+    parishGivingCatalog,
+    new RegExp(`export\\s+(?:async\\s+)?function\\s+${name}\\b`),
+    `${name} should be exported by parish-giving-catalog.js`,
+  );
+}
+assertImports(parishGivingCatalog, "./parish.js", [
+  "findRegistrationByParishId",
+  "getBearerToken",
+  "givingFeatureAccess",
+  "hasProductionStore",
+  "json",
+  "loadParishPaidOfferings",
+  "loadVerifiedRegistrationParishPage",
+  "missingProductionStoreResponse",
+  "paidOfferingStatus",
+  "parishFromRegistration",
+  "rateLimit",
+  "registrationRequiresJurisdiction",
+  "saveRegistrationRecord",
+  "slugify",
+  "unauthorized",
+  "verifiedRegistrationParishes",
+  "verifyParishDashboardBearer",
+]);
+assert.doesNotMatch(
+  parishGivingCatalog,
+  /(?:async\s+)?function\s+registrationRequiresJurisdiction\b/,
+  "parish-giving-catalog should import registrationRequiresJurisdiction instead of absorbing the next cluster",
+);
+assertImports(parishGivingCatalog, "../festal-alms.js", ["activeFestalAlmsCampaigns"]);
+assertImports(parishGivingCatalog, "../lib/core.js", [
+  "DONOR_OFFERING_KEY_PREFIX",
+  "d1",
+  "d1First",
+  "listKvKeys",
+]);
+assertImports(worker, "./handlers/parish-giving-catalog.js", [
+  "handleParishes",
+  "handleParishCampaignUpload",
+  "handleParishLogo",
+  "handlePublicCampaign",
+  "handlePublicPlatformSummary",
+]);
+for (const name of ["handleParishes", "handleParishCampaignUpload", "handleParishLogo", "handlePublicCampaign", "handlePublicPlatformSummary"]) {
+  assert.ok(!parishWorkerImports.has(name), `worker should no longer import ${name} from parish.js`);
+}
+assertImports(donor, "./parish-giving-catalog.js", ["enrichParishGivingOptions"]);
+const donorParishImports = importedNames(donor, "./parish.js");
+assert.ok(!donorParishImports.has("enrichParishGivingOptions"), "donor should no longer import enrichParishGivingOptions from parish.js");
+assertImports(parish, "./parish-giving-catalog.js", [
+  "enrichParishGivingOptions",
+  "publicBoolean",
+  "publicComment",
+]);
 assert.match(donor, /export async function handleParishBookstoreReadiness\b/, "donor bookstore readiness must remain self-contained");
 assert.doesNotMatch(donor, /from "\.\/parish-commerce\.js"/, "donor bookstore readiness must not depend on the parish commerce handler");
 assert.match(

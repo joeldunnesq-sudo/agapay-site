@@ -48,6 +48,12 @@ jobs:
           ACCOUNTING_GATE_PARISH_A_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_A_ID }}
           ACCOUNTING_GATE_PARISH_A_PASSWORD: ${{ secrets.ACCOUNTING_GATE_PARISH_A_PASSWORD }}
 
+      - name: Giving catalog — directory, campaign, upload, and platform summary evidence
+        run: node scripts/parish-giving-catalog-staging-smoke.mjs "${{ inputs.target_url }}"
+        env:
+          ACCOUNTING_GATE_PARISH_A_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_A_ID }}
+          ACCOUNTING_GATE_PARISH_A_PASSWORD: ${{ secrets.ACCOUNTING_GATE_PARISH_A_PASSWORD }}
+
       - name: Gate 1 — authenticated check-print evidence
         run: node scripts/accounting-release-gate-1-check-print.mjs "${{ inputs.target_url }}"
         env:
