@@ -1,5 +1,5 @@
 import { json } from "../lib/core.js";
-import { fundActivity, getAccountingSettings, getAccountingSetupOverview, initializeAccountingSetup, reportCsv, statementOfActivities, statementOfFinancialPosition, trialBalance, updateAccountingSettings } from "../accounting/index.js";
+import { archiveAccount, fundActivity, getAccountingSettings, getAccountingSetupOverview, initializeAccountingSetup, reportCsv, statementOfActivities, statementOfFinancialPosition, trialBalance, unarchiveAccount, updateAccountingSettings } from "../accounting/index.js";
 import { accountingContext } from "./accounting-ledger.js";
 
 const HEADERS = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow", Vary: "Authorization" };
@@ -17,16 +17,16 @@ async function listFunds(db) {
 }
 
 async function workspaceReference(db) {
-  const [accounts, funds] = await Promise.all([
+  const [accountCatalog, funds] = await Promise.all([
     results(db, `SELECT a.id,a.account_number accountNumber,a.name,a.description,a.normal_balance normalBalance,
       a.parent_account_id parentAccountId,
-      a.is_system isSystem,a.version,t.category,p.expense_group expenseGroup,p.default_fund_id defaultFundId
+      a.is_system isSystem,a.is_active isActive,a.archived_at archivedAt,a.version,t.category,p.expense_group expenseGroup,p.default_fund_id defaultFundId
       FROM accounting_accounts a JOIN accounting_account_types t ON t.id=a.account_type_id
       LEFT JOIN accounting_account_presentations p ON p.account_id=a.id
-      WHERE a.is_active=1 AND a.is_posting_account=1 AND a.archived_at IS NULL ORDER BY a.account_number`),
+      WHERE a.is_posting_account=1 ORDER BY a.is_active DESC,a.account_number`),
     results(db, "SELECT id,code,name,restriction_type restrictionType,is_default isDefault FROM accounting_funds WHERE is_active=1 AND archived_at IS NULL ORDER BY is_default DESC,code")
   ]);
-  return { accounts, funds };
+  return { accounts: accountCatalog.filter((account) => Number(account.isActive)), accountCatalog, funds };
 }
 
 function reportRequest(path, url, db, actor) {
@@ -48,7 +48,7 @@ export async function handleAccountingSetupReports(request, env, parishId) {
   const csv = path.endsWith(".csv");
   if (csv) path = path.slice(0, -4);
   const fundMatch = path.match(/^\/funds(?:\/([^/]+))?$/);
-  const accountMatch = path.match(/^\/accounts(?:\/([^/]+))?$/);
+  const accountMatch = path.match(/^\/accounts(?:\/([^/]+)(?:\/(archive|unarchive))?)?$/);
   const supported = path === "/setup" || path === "/setup/initialize" || path === "/settings" || path === "/workspace-reference" || fundMatch || accountMatch || path.startsWith("/reports/");
   if (!supported) return null;
   const capability = fundMatch && request.method !== "GET" ? "accounting.funds.manage" : accountMatch && request.method !== "GET" ? "accounting.configure" : request.method === "GET" ? "accounting.view" : "accounting.configure";
@@ -86,7 +86,13 @@ export async function handleAccountingSetupReports(request, env, parishId) {
       ]);
       return reply({ ok:true, account:(await workspaceReference(ctx.db)).accounts.find((account) => account.id === id) }, 201);
     }
-    if (request.method === "PATCH" && accountMatch?.[1]) {
+    if (request.method === "POST" && accountMatch?.[1] && accountMatch[2]) {
+      const body = await request.json().catch(() => ({}));
+      const args = { actor: ctx.actor, entitlementTier: ctx.tier, accountId: decodeURIComponent(accountMatch[1]), expectedVersion: body.expectedVersion };
+      const account = accountMatch[2] === "archive" ? await archiveAccount(ctx.db, args) : await unarchiveAccount(ctx.db, args);
+      return reply({ ok: true, account });
+    }
+    if (request.method === "PATCH" && accountMatch?.[1] && !accountMatch[2]) {
       const body = await request.json().catch(() => ({}));
       const id = decodeURIComponent(accountMatch[1]);
       const current = await ctx.db.prepare(`SELECT a.*,t.category FROM accounting_accounts a JOIN accounting_account_types t ON t.id=a.account_type_id WHERE a.id=?`).bind(id).first();

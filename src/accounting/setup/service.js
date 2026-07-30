@@ -15,6 +15,10 @@ function settingsDto(row) {
   return Object.freeze({ baseCurrency: row.base_currency, fiscalYearStartMonth: Number(row.fiscal_year_start_month), defaultFundId: row.default_fund_id || "", openingBalancesRequired: boolean(row.opening_balances_required), openingBalancesDisposition: row.opening_balances_disposition, accountNumbersRequired: boolean(row.account_numbers_required), allowCustomAccountNumbers: boolean(row.allow_custom_account_numbers), softCloseOverrideEnabled: boolean(row.soft_close_override_enabled), setupCompleted: Boolean(row.setup_completed_at), setupCompletedAt: row.setup_completed_at || "", version: Number(row.settings_version) });
 }
 
+function accountLifecycleDto(row) {
+  return row && Object.freeze({ id: row.id, isActive: boolean(row.is_active), archivedAt: row.archived_at || "", version: Number(row.version) });
+}
+
 export async function getAccountingSettings(db, { actor } = {}) {
   requireCapability(actor, "accounting.view");
   return settingsDto(await first(db, "SELECT * FROM accounting_settings WHERE id='primary'"));
@@ -40,6 +44,33 @@ export async function updateAccountingSettings(db, { actor, expectedVersion, pat
   const result = await run(db, `UPDATE accounting_settings SET base_currency=?,fiscal_year_start_month=?,opening_balances_required=?,opening_balances_disposition=?,account_numbers_required=?,allow_custom_account_numbers=?,soft_close_override_enabled=?,settings_version=settings_version+1,updated_at=datetime('now') WHERE id='primary' AND settings_version=?`, currency,month,flag(patch.openingBalancesRequired,boolean(current.opening_balances_required)),disposition,flag(patch.accountNumbersRequired,boolean(current.account_numbers_required)),flag(patch.allowCustomAccountNumbers,boolean(current.allow_custom_account_numbers)),flag(patch.softCloseOverrideEnabled,boolean(current.soft_close_override_enabled)),Number(expectedVersion));
   if (!result.meta?.changes) throw new AccountingDatabaseError("Accounting settings changed. Reload and try again.", { details: { conflict: true } });
   return settingsDto(await first(db, "SELECT * FROM accounting_settings WHERE id='primary'"));
+}
+
+export async function archiveAccount(db, { actor, entitlementTier, accountId, expectedVersion } = {}) {
+  requireCapability(actor, "accounting.configure");
+  void entitlementTier;
+  const current = await first(db, "SELECT * FROM accounting_accounts WHERE id=?", accountId);
+  if (!current || !boolean(current.is_active) || Number(current.version) !== Number(expectedVersion)) throw new AccountingDatabaseError("Account changed. Reload and try again.", { details: { conflict: true } });
+  if (await first(db, "SELECT id FROM accounting_vendors WHERE default_expense_account_id=? AND status='active' LIMIT 1", accountId)) throw new ValidationError("This account is the default expense account for an active vendor and cannot be archived.");
+  if (await first(db, `SELECT l.id FROM accounting_journal_lines l
+    JOIN accounting_journal_entries e ON e.id=l.journal_entry_id
+    JOIN accounting_periods p ON p.id=e.accounting_period_id
+    WHERE l.account_id=? AND e.status='posted' AND p.status='open' LIMIT 1`, accountId)) throw new ValidationError("This account has posted journal activity in the currently open fiscal period and cannot be archived.");
+  if (await first(db, `SELECT l.id FROM accounting_bill_lines l JOIN accounting_bills b ON b.id=l.bill_id
+    WHERE l.account_id=? AND b.status NOT IN('paid','voided','rejected') LIMIT 1`, accountId)) throw new ValidationError("This account is referenced by an open bill and cannot be archived.");
+  const result = await run(db, "UPDATE accounting_accounts SET is_active=0,archived_at=datetime('now'),version=version+1,updated_at=datetime('now') WHERE id=? AND version=?", accountId, Number(expectedVersion));
+  if (!result.meta?.changes) throw new AccountingDatabaseError("Account changed. Reload and try again.", { details: { conflict: true } });
+  return accountLifecycleDto(await first(db, "SELECT * FROM accounting_accounts WHERE id=?", accountId));
+}
+
+export async function unarchiveAccount(db, { actor, entitlementTier, accountId, expectedVersion } = {}) {
+  requireCapability(actor, "accounting.configure");
+  void entitlementTier;
+  const current = await first(db, "SELECT * FROM accounting_accounts WHERE id=?", accountId);
+  if (!current || boolean(current.is_active) || Number(current.version) !== Number(expectedVersion)) throw new AccountingDatabaseError("Account changed. Reload and try again.", { details: { conflict: true } });
+  const result = await run(db, "UPDATE accounting_accounts SET is_active=1,archived_at=NULL,version=version+1,updated_at=datetime('now') WHERE id=? AND version=?", accountId, Number(expectedVersion));
+  if (!result.meta?.changes) throw new AccountingDatabaseError("Account changed. Reload and try again.", { details: { conflict: true } });
+  return accountLifecycleDto(await first(db, "SELECT * FROM accounting_accounts WHERE id=?", accountId));
 }
 
 export async function getAccountingSetupOverview(db, { actor, entitlementTier = "core", databaseStatus = "ready", databaseHealth = "healthy" } = {}) {

@@ -1,5 +1,5 @@
 import { json } from "../lib/core.js";
-import { accountsPayableAging, addBudgetLine, approveBill, approveBudget, budgetReportCsv, budgetVsActual, copyBudget, councilBudgetPacket, createBillDraft, createBudget, createVendor, forecastBudget, listBudgets, listVendors, lockBudget, payablesOverview, postBill, rejectBill, submitBill, submitBudget, createPayment, postPayment, listPayments, paymentDetail, getCheckSettings, updateBudgetLine, updateCheckSettings, recordCheckPrint, voidPayment } from "../accounting/index.js";
+import { accountsPayableAging, addBudgetLine, approveBill, approveBudget, archiveVendor, budgetReportCsv, budgetVsActual, copyBudget, councilBudgetPacket, createBillDraft, createBudget, createVendor, forecastBudget, listBudgets, listVendors, lockBudget, payablesOverview, postBill, rejectBill, submitBill, submitBudget, createPayment, postPayment, listPayments, paymentDetail, getCheckSettings, unarchiveVendor, updateBudgetLine, updateCheckSettings, updateVendor, recordCheckPrint, voidPayment } from "../accounting/index.js";
 import { accountingContext } from "./accounting-ledger.js";
 
 const HEADERS = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow", Vary: "Authorization" };
@@ -18,6 +18,7 @@ async function budgetDetail(db, budgetId) {
 
 function requiredCapability(path, method) {
   if (path === "/payables/check-settings") return "ap.pay";
+  if (path.startsWith("/payables/vendors") && method !== "GET") return "ap.enter";
   if (path.includes("/payments/") && path.endsWith("/void")) return "ap.void";
   if (path.startsWith("/payables/payments") && method !== "GET") return "ap.pay";
   if (method === "GET") return path.startsWith("/payables") ? "ap.view" : "budgets.view";
@@ -40,6 +41,14 @@ export async function handleAccountingPayablesBudgets(request, env, parishId) {
     if (request.method === "GET" && path === "/payables/overview") return reply({ ok: true, overview: await payablesOverview(ctx.db, { actor: ctx.actor, entitlementTier: tier, asOfDate: url.searchParams.get("asOf") || today() }) });
     if (request.method === "GET" && path === "/payables/vendors") return reply({ ok: true, vendors: await listVendors(ctx.db, { actor: ctx.actor, entitlementTier: tier }) });
     if (request.method === "POST" && path === "/payables/vendors") return reply({ ok: true, vendor: await createVendor(ctx.db, { actor: ctx.actor, entitlementTier: tier, input: body }) }, 201);
+    const vendorAction = path.match(/^\/payables\/vendors\/([^/]+)(?:\/(archive|unarchive))?$/);
+    if (vendorAction) {
+      const vendorId = decodeURIComponent(vendorAction[1]), action = vendorAction[2] || "";
+      if (request.method === "PATCH" && !action) return reply({ ok: true, vendor: await updateVendor(ctx.db, { actor: ctx.actor, entitlementTier: tier, vendorId, expectedVersion: body.expectedVersion, patch: body.patch || body }) });
+      const args = { actor: ctx.actor, entitlementTier: tier, vendorId, expectedVersion: body.expectedVersion };
+      if (request.method === "POST" && action === "archive") return reply({ ok: true, vendor: await archiveVendor(ctx.db, args) });
+      if (request.method === "POST" && action === "unarchive") return reply({ ok: true, vendor: await unarchiveVendor(ctx.db, args) });
+    }
     if (request.method === "GET" && path === "/payables/bills") return reply({ ok: true, bills: await bills(ctx.db) });
     if (request.method === "POST" && path === "/payables/bills") return reply({ ok: true, bill: await createBillDraft(ctx.db, { actor: ctx.actor, entitlementTier: tier, input: body }) }, 201);
     if (request.method === "GET" && path === "/payables/aging") return reply({ ok: true, aging: await accountsPayableAging(ctx.db, { actor: ctx.actor, entitlementTier: tier, asOfDate: url.searchParams.get("asOf") || today() }) });
