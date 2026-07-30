@@ -63,7 +63,7 @@ try {
     pin:credentials.ACCOUNTING_GATE_STAFF_B_PIN
   });
 
-  await page.getByRole("button", { name:/^Payables/ }).first().click();
+  await page.locator('[data-accounting-view="payables"]').click();
   await page.getByRole("button", { name:"Vendors", exact:true }).click();
   await page.getByRole("button", { name:"New vendor", exact:true }).click();
   const vendorForm = page.locator("#accountingPhaseDForm form");
