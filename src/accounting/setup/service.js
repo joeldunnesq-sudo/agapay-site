@@ -12,7 +12,7 @@ function flag(value, fallback) { return (value === undefined ? fallback : Boolea
 
 function settingsDto(row) {
   if (!row) return null;
-  return Object.freeze({ baseCurrency: row.base_currency, fiscalYearStartMonth: Number(row.fiscal_year_start_month), defaultFundId: row.default_fund_id || "", openingBalancesRequired: boolean(row.opening_balances_required), openingBalancesDisposition: row.opening_balances_disposition, accountNumbersRequired: boolean(row.account_numbers_required), allowCustomAccountNumbers: boolean(row.allow_custom_account_numbers), softCloseOverrideEnabled: boolean(row.soft_close_override_enabled), setupCompleted: Boolean(row.setup_completed_at), setupCompletedAt: row.setup_completed_at || "", version: Number(row.settings_version) });
+  return Object.freeze({ baseCurrency: row.base_currency, fiscalYearStartMonth: Number(row.fiscal_year_start_month), defaultFundId: row.default_fund_id || "", pledgeComparisonAccountId: row.pledge_comparison_account_id || null, openingBalancesRequired: boolean(row.opening_balances_required), openingBalancesDisposition: row.opening_balances_disposition, accountNumbersRequired: boolean(row.account_numbers_required), allowCustomAccountNumbers: boolean(row.allow_custom_account_numbers), softCloseOverrideEnabled: boolean(row.soft_close_override_enabled), setupCompleted: Boolean(row.setup_completed_at), setupCompletedAt: row.setup_completed_at || "", version: Number(row.settings_version) });
 }
 
 function accountLifecycleDto(row) {
@@ -39,9 +39,18 @@ export async function updateAccountingSettings(db, { actor, expectedVersion, pat
   const currency = String(patch.baseCurrency ?? current.base_currency).trim().toUpperCase();
   const month = Number(patch.fiscalYearStartMonth ?? current.fiscal_year_start_month);
   const disposition = String(patch.openingBalancesDisposition ?? current.opening_balances_disposition);
+  const pledgeComparisonAccountId = patch.pledgeComparisonAccountId === undefined
+    ? current.pledge_comparison_account_id || null
+    : String(patch.pledgeComparisonAccountId || "").trim() || null;
   if (!/^[A-Z]{3}$/.test(currency) || !Number.isInteger(month) || month < 1 || month > 12) throw new ValidationError("Currency or fiscal-year start month is invalid.");
   if (!['pending','required','deferred','not_applicable','posted'].includes(disposition)) throw new ValidationError("Opening-balance disposition is invalid.");
-  const result = await run(db, `UPDATE accounting_settings SET base_currency=?,fiscal_year_start_month=?,opening_balances_required=?,opening_balances_disposition=?,account_numbers_required=?,allow_custom_account_numbers=?,soft_close_override_enabled=?,settings_version=settings_version+1,updated_at=datetime('now') WHERE id='primary' AND settings_version=?`, currency,month,flag(patch.openingBalancesRequired,boolean(current.opening_balances_required)),disposition,flag(patch.accountNumbersRequired,boolean(current.account_numbers_required)),flag(patch.allowCustomAccountNumbers,boolean(current.allow_custom_account_numbers)),flag(patch.softCloseOverrideEnabled,boolean(current.soft_close_override_enabled)),Number(expectedVersion));
+  if (pledgeComparisonAccountId) {
+    const account = await first(db, `SELECT a.id FROM accounting_accounts a
+      JOIN accounting_account_types t ON t.id=a.account_type_id
+      WHERE a.id=? AND a.is_active=1 AND a.archived_at IS NULL AND a.is_posting_account=1 AND t.category='revenue'`, pledgeComparisonAccountId);
+    if (!account) throw new ValidationError("Choose an active posting revenue account for pledge comparison.");
+  }
+  const result = await run(db, `UPDATE accounting_settings SET base_currency=?,fiscal_year_start_month=?,pledge_comparison_account_id=?,opening_balances_required=?,opening_balances_disposition=?,account_numbers_required=?,allow_custom_account_numbers=?,soft_close_override_enabled=?,settings_version=settings_version+1,updated_at=datetime('now') WHERE id='primary' AND settings_version=?`, currency,month,pledgeComparisonAccountId,flag(patch.openingBalancesRequired,boolean(current.opening_balances_required)),disposition,flag(patch.accountNumbersRequired,boolean(current.account_numbers_required)),flag(patch.allowCustomAccountNumbers,boolean(current.allow_custom_account_numbers)),flag(patch.softCloseOverrideEnabled,boolean(current.soft_close_override_enabled)),Number(expectedVersion));
   if (!result.meta?.changes) throw new AccountingDatabaseError("Accounting settings changed. Reload and try again.", { details: { conflict: true } });
   return settingsDto(await first(db, "SELECT * FROM accounting_settings WHERE id='primary'"));
 }

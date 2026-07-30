@@ -16,6 +16,40 @@ async function budgetDetail(db, budgetId) {
   const lines = await rows(db, `SELECT l.id,l.account_id accountId,a.account_number accountNumber,a.name accountName,l.fund_id fundId,f.code fundCode,l.annual_amount annualAmount,l.allocation_strategy allocationStrategy,l.version FROM accounting_budget_lines l JOIN accounting_accounts a ON a.id=l.account_id JOIN accounting_funds f ON f.id=l.fund_id WHERE l.budget_id=? ORDER BY a.account_number`, budgetId);
   return { lines };
 }
+export async function budgetPledgeComparison(env, db, parishId, budgetId) {
+  const budget = await db.prepare(`SELECT b.id,CAST(strftime('%Y',fy.start_date) AS INTEGER) fiscal_year
+    FROM accounting_budgets b JOIN accounting_fiscal_years fy ON fy.id=b.fiscal_year_id
+    WHERE b.id=?`).bind(budgetId).first();
+  if (!budget) return null;
+  const setting = await db.prepare(`SELECT s.pledge_comparison_account_id account_id,a.account_number,a.name account_name
+    FROM accounting_settings s
+    LEFT JOIN accounting_accounts a ON a.id=s.pledge_comparison_account_id
+    WHERE s.id='primary'`).first();
+  // Keep this aggregation byte-for-byte aligned with Giving Metrics:
+  // same table, parish/year filter, count, and sum.
+  const pledgeRow = await env.AGAPAY_DB.prepare(`
+      SELECT COUNT(*) AS pledging_donors, SUM(target_amount_cents) AS total_pledged_cents
+      FROM household_pledges WHERE parish_id = ? AND fiscal_year = ?
+    `).bind(parishId, Number(budget.fiscal_year)).first();
+  const accountId = setting?.account_id || null;
+  const budgetLine = accountId
+    ? await db.prepare(`SELECT SUM(annual_amount) annual_amount FROM accounting_budget_lines
+        WHERE budget_id=? AND account_id=?`).bind(budgetId, accountId).first()
+    : null;
+  const hasBudgetLine = budgetLine?.annual_amount !== null && budgetLine?.annual_amount !== undefined;
+  const pledgedTotalCents = Number(pledgeRow?.total_pledged_cents || 0);
+  const budgetedLineAmountCents = hasBudgetLine ? Number(budgetLine.annual_amount) : null;
+  return {
+    fiscalYear: Number(budget.fiscal_year),
+    pledgedTotalCents,
+    pledgingHouseholds: Number(pledgeRow?.pledging_donors || 0),
+    budgetedLineAmountCents,
+    accountId,
+    accountNumber: setting?.account_number || "",
+    accountName: setting?.account_name || "",
+    varianceCents: budgetedLineAmountCents === null ? null : budgetedLineAmountCents - pledgedTotalCents,
+  };
+}
 
 function requiredCapability(path, method) {
   if (path === "/payables/check-settings") return "ap.pay";
@@ -93,6 +127,11 @@ export async function handleAccountingPayablesBudgets(request, env, parishId) {
     }
     if (request.method === "GET" && path === "/budgets") return reply({ ok: true, budgets: await listBudgets(ctx.db, { actor: ctx.actor, entitlementTier: tier, fiscalYearId: url.searchParams.get("fiscalYearId") || null }) });
     if (request.method === "POST" && path === "/budgets") return reply({ ok: true, budget: await createBudget(ctx.db, { actor: ctx.actor, entitlementTier: tier, input: body }) }, 201);
+    const pledgeComparison = path.match(/^\/budgets\/([^/]+)\/pledge-comparison$/);
+    if (request.method === "GET" && pledgeComparison) {
+      const comparison = await budgetPledgeComparison(env, ctx.db, parishId, decodeURIComponent(pledgeComparison[1]));
+      return comparison ? reply({ ok: true, comparison }) : reply({ error: "Budget not found" }, 404);
+    }
     const budgetLine = path.match(/^\/budgets\/([^/]+)\/lines\/([^/]+)$/);
     if (request.method === "PATCH" && budgetLine) return reply({ ok: true, line: await updateBudgetLine(ctx.db, { actor: ctx.actor, entitlementTier: tier, budgetId: decodeURIComponent(budgetLine[1]), lineId: decodeURIComponent(budgetLine[2]), expectedVersion: body.expectedVersion, input: body.input || body }) });
     const budgetMatch = path.match(/^\/budgets\/([^/]+)(?:\/(lines|submit|approve|lock|copy|variance|forecast|council-packet))?$/);

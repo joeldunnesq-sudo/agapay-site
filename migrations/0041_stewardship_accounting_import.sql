@@ -1,0 +1,2 @@
+ALTER TABLE stewardship_financial_summaries
+ADD COLUMN imported_from_accounting_at TEXT;
