@@ -6,6 +6,23 @@ import { applySubscriptionTaxCode } from "./tax-codes.js";
 import { applyApprovedExemptionIfExists } from "./tax-exemption.js";
 import { taxReadinessCheckoutGate } from "./tax-readiness.js";
 
+async function activeGiveSubscriptionProduct(env) {
+  const query = encodeURIComponent("metadata['agapay_product_key']:'give_platform'");
+  const search = await stripeGetRequest(env, `/v1/products/search?query=${query}`);
+  if (!search.ok) return search;
+  const existing = Array.isArray(search.body?.data)
+    ? search.body.data.find((product) => product?.active !== false && product?.id)
+    : null;
+  if (existing) return { ok: true, body: existing };
+
+  const productForm = new URLSearchParams({
+    name: "AGAPAY Give",
+    description: "Orthodox giving, stewardship, and parish operations platform.",
+    "metadata[agapay_product_key]": "give_platform"
+  });
+  return stripeFormRequest(env, "/v1/products", productForm);
+}
+
 export async function createSubscriptionCheckoutForRegistration({
   request,
   env,
@@ -66,9 +83,10 @@ export async function createSubscriptionCheckoutForRegistration({
     }
 
     const item = subscription.body?.items?.data?.[0];
-    const currentProduct = typeof item?.price?.product === "string"
+    const currentProductObject = item?.price?.product;
+    const currentProduct = typeof currentProductObject === "string"
       ? item.price.product
-      : item?.price?.product?.id || "";
+      : currentProductObject?.id || "";
     if (!item?.id || (!env[tier.stripePriceEnv] && !currentProduct)) {
       return json(
         { error: "Stripe subscription cannot be changed", detail: "The current subscription item or product could not be resolved." },
@@ -88,8 +106,19 @@ export async function createSubscriptionCheckoutForRegistration({
     if (configuredPriceId) {
       updateForm.set("items[0][price]", configuredPriceId);
     } else {
+      let priceProductId = currentProduct;
+      if (typeof currentProductObject === "object" && currentProductObject?.active === false) {
+        const activeProduct = await activeGiveSubscriptionProduct(env);
+        if (!activeProduct.ok || !activeProduct.body?.id) {
+          return json(
+            { error: "Stripe subscription product setup failed", detail: activeProduct.body?.error?.message || "No active AGAPAY subscription product is available." },
+            { status: 502 }
+          );
+        }
+        priceProductId = activeProduct.body.id;
+      }
       updateForm.set("items[0][price_data][currency]", "usd");
-      updateForm.set("items[0][price_data][product]", currentProduct);
+      updateForm.set("items[0][price_data][product]", priceProductId);
       updateForm.set("items[0][price_data][recurring][interval]", "month");
       updateForm.set("items[0][price_data][unit_amount]", String(tier.monthlyCents));
       updateForm.set("items[0][price_data][tax_behavior]", "exclusive");

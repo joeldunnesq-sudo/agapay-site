@@ -266,6 +266,60 @@ await checkAsync("active subscription: changes the existing item instead of crea
   }
 });
 
+await checkAsync("active subscription: replaces an archived inline Checkout product with the active AGAPAY product", async () => {
+  const originalFetch = globalThis.fetch;
+  let updateBody = "";
+  globalThis.fetch = async (url, options = {}) => {
+    const value = String(url);
+    if (value.includes("/v1/subscriptions/sub_archived") && (!options.method || options.method === "GET")) {
+      return {
+        ok: true,
+        json: async () => ({
+          id: "sub_archived",
+          status: "active",
+          items: { data: [{ id: "si_archived", price: { product: { id: "prod_archived", active: false } } }] }
+        })
+      };
+    }
+    if (value.includes("/v1/products/search")) {
+      return { ok: true, json: async () => ({ data: [{ id: "prod_agapay_give", active: true }] }) };
+    }
+    if (value.includes("/v1/subscriptions/sub_archived") && options.method === "POST") {
+      updateBody = String(options.body || "");
+      return { ok: true, json: async () => ({ id: "sub_archived", status: "active" }) };
+    }
+    throw new Error("Unexpected fetch: " + url);
+  };
+  try {
+    const registration = {
+      status: "verified",
+      subscriptionTier: "starter",
+      subscriptionStatus: "active",
+      stripeSubscriptionId: "sub_archived",
+      parishId: "st-test",
+      parishName: "St. Test",
+      taxReadinessStatus: "tax_ready_for_checkout",
+      ...COMPLETE_ADDRESS
+    };
+    const response = await createSubscriptionCheckoutForRegistration({
+      request: fakeRequest,
+      env: { STRIPE_SECRET_KEY: "sk_test_fake" },
+      reference: "test-ref",
+      registration,
+      body: { subscriptionTier: "parish" },
+      saveRegistrationRecord: noopSave
+    });
+    const payload = await response.json();
+    const params = new URLSearchParams(updateBody);
+    assert.equal(response.status, 200);
+    assert.equal(payload.subscriptionChanged, true);
+    assert.equal(params.get("items[0][price_data][product]"), "prod_agapay_give");
+    assert.equal(params.get("items[0][price_data][unit_amount]"), "14900");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 await checkAsync("checkout: admin-authorized demo creates a no-card trial that cancels if no payment method is added", async () => {
   let checkoutBody = "";
   const originalFetch = globalThis.fetch;
