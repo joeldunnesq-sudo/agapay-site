@@ -332,6 +332,7 @@ import { handleAccountingSetupReports } from "./handlers/accounting-setup-report
 import { handleAccountingPayablesBudgets } from "./handlers/accounting-payables-budgets.js";
 import { handleAccountingReconciliationCommerce } from "./handlers/accounting-reconciliation-commerce.js";
 import { handleAccountingClose } from "./handlers/accounting-close.js";
+import { handleAccountingAdjustments } from "./handlers/accounting-adjustments.js";
 import { handleAccountingAccess } from "./handlers/accounting-access.js";
 import { handleAccountingRecurring } from "./handlers/accounting-recurring.js";
 import { runScheduledRecurringTransactions } from "./accounting/recurring/scheduler.js";
@@ -2561,6 +2562,8 @@ export default {
       if (phaseFResponse) return phaseFResponse;
       const setupReportsResponse = await handleAccountingSetupReports(request, env, accountingParishId);
       if (setupReportsResponse) return setupReportsResponse;
+      const adjustmentsResponse = await handleAccountingAdjustments(request, env, accountingParishId);
+      if (adjustmentsResponse) return adjustmentsResponse;
       const accountingResponse = await handleAccountingLedger(request, env, accountingParishId);
       if (accountingResponse) return accountingResponse;
     }

@@ -15,7 +15,7 @@
 // this reads it as text and parses out just the route table literals,
 // the same convention scripts/check.mjs already uses.
 
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -109,10 +109,56 @@ for (const f of odysseyFiles) {
   checkFile("explicit Odyssey coverage", f);
 }
 
+// --- 5. Accounting service route coverage ---------------------------------
+const accountingServiceAllowList = new Set([
+  "processDueRecurringTransactions",
+  "runAutoReversal",
+  "processAccountingSourceEvent",
+  "ingestAccountingSourceEvent",
+  "processCommerceSourceEvent",
+  "ingestCommerceSourceEvent",
+  "provisionAccountingDatabase",
+  "validateProvisionedAccountingDatabase",
+  "nextCheckNumber",
+  "classifyIntegritySeverity",
+  // Phase J
+  "getRetentionSettings",
+  "updateRetentionSettings",
+  "createLegalHold",
+  "releaseLegalHold",
+  "runIntegrityScan",
+  "accountingHealthOverview",
+  "activateProtectiveState",
+  "releaseProtectiveState",
+  "verifyRecoveryEvidence",
+]);
+const accountingDir = path.join(repoRoot, "src/accounting");
+const handlerDir = path.join(repoRoot, "src/handlers");
+const handlerSource = readdirSync(handlerDir)
+  .filter((name) => name.endsWith(".js"))
+  .map((name) => readFileSync(path.join(handlerDir, name), "utf8"))
+  .join("\n");
+let accountingExportsChecked = 0;
+for (const domain of readdirSync(accountingDir, { withFileTypes: true })) {
+  if (!domain.isDirectory()) continue;
+  const servicePath = path.join(accountingDir, domain.name, "service.js");
+  if (!existsSync(servicePath)) continue;
+  const serviceSource = readFileSync(servicePath, "utf8");
+  for (const match of serviceSource.matchAll(/export\s+(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/g)) {
+    const functionName = match[1];
+    accountingExportsChecked++;
+    if (!handlerSource.includes(functionName) && !accountingServiceAllowList.has(functionName)) {
+      failures++;
+      console.error(`FAIL: accounting service export ${domain.name}/${functionName} is neither referenced by a handler nor explicitly allow-listed.`);
+    }
+  }
+}
+
 // --- Report ---------------------------------------------------------------
 console.log(
   `Route-map integrity: ${fileTargetsChecked} file-backed route target(s) checked against public/.`
 );
+console.log(`Accounting route integrity: ${accountingExportsChecked} service export(s) checked.`);
 if (skippedNonFileTargets.length) {
   console.log(
     `(${skippedNonFileTargets.length} internal path-rewrite entries skipped -- not file targets, e.g.:`
