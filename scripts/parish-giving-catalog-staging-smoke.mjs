@@ -77,7 +77,7 @@ let uploaded;
 let campaignResult;
 try {
   uploaded = await requestJson(
-    `${dashboardPath}/campaign-upload?campaign=roof-restoration`,
+    `${dashboardPath}/campaign-upload?campaign=roof-campaign`,
     { method: "POST", token, rawBody: png, contentType: "image/png" },
   );
   assert.equal(uploaded.response.status, 200, `Campaign upload returned HTTP ${uploaded.response.status}.`);
@@ -85,9 +85,9 @@ try {
   assert.ok(uploaded.payload.url, "Campaign upload should return its public URL.");
 
   const temporaryCampaign = {
-    id: "roof-restoration",
-    slug: "roof-restoration",
-    name: "Church Roof Restoration",
+    id: "roof-campaign",
+    slug: "roof-campaign",
+    name: "Catalog Extraction Smoke",
     description: "Temporary staging verification campaign.",
     category: "Building",
     goalCents: 1000000,
@@ -106,7 +106,7 @@ try {
   assert.equal(saved.response.status, 200, `Temporary campaign save returned HTTP ${saved.response.status}.`);
 
   campaignResult = await requestJson(
-    `/api/campaign?parish=${encodeURIComponent(parishId)}&slug=roof-restoration`,
+    `/api/campaign?parish=${encodeURIComponent(parishId)}&slug=roof-campaign`,
   );
   assert.equal(campaignResult.response.status, 200, `Public campaign returned HTTP ${campaignResult.response.status}.`);
   assert.equal(campaignResult.payload.campaign?.name, "Church Roof Restoration");
