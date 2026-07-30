@@ -125,14 +125,22 @@ import {
   estimateStripeProcessingFeeCents,
   grossUpForAchFeeCents,
   grossUpForStripeProcessingFeeCents,
-  numericCents,
   offeringFeeBreakdown,
+} from "../lib/stripe-fees.js";
+import {
+  booleanFromStripeMetadata,
+  checkoutPaymentIntentId,
+  listYtdStripeCharges,
+  normalizedCheckoutPaymentStatus,
+  numericCents,
   stripeAccountStatus,
   stripeFormConnectedRequest,
   stripeFormRequest,
   stripeGetConnectedRequest,
   stripeGetRequest,
-} from "../lib/stripe-fees.js";
+  stripeObjectId,
+  stripeReady,
+} from "../lib/stripe-connect.js";
 import {
   agapayEmailHtml,
   generateDashboardToken,
@@ -146,8 +154,6 @@ import {
   sendParishPasswordResetEmail,
   sendRegistrationConfirmation,
   sendTreasurerStripeInvite,
-  startOfYearUnix,
-  stripeReady,
   subscriptionReady,
 } from "../lib/parish-notifications.js";
 
@@ -849,37 +855,11 @@ export function paidOfferingStatus(offering = {}) {
     || paymentStatus === "succeeded";
 }
 
-export function normalizedCheckoutPaymentStatus(session = {}, fallback = "pending") {
-  if (session.payment_status === "paid") return "paid";
-  if (session.status === "expired") return session.payment_status || "unpaid";
-  return session.payment_status || fallback || "pending";
-}
-
-export function checkoutPaymentIntentId(session = {}) {
-  return typeof session.payment_intent === "string"
-    ? session.payment_intent
-    : session.payment_intent?.id || "";
-}
-
-export function stripeObjectId(value) {
-  if (!value) return "";
-  if (typeof value === "string") return value;
-  return value.id || "";
-}
-
 export function stripeObjectMetadata(...objects) {
   return objects.reduce((metadata, object) => ({
     ...metadata,
     ...(object?.metadata || {})
   }), {});
-}
-
-export function booleanFromStripeMetadata(value, fallback = false) {
-  if (typeof value === "boolean") return value;
-  const normalized = String(value || "").trim().toLowerCase();
-  if (["true", "1", "yes", "on"].includes(normalized)) return true;
-  if (["false", "0", "no", "off"].includes(normalized)) return false;
-  return Boolean(fallback);
 }
 
 export async function stripePaymentIntentFinancialUpdates(env, paymentIntentId, parishId, fallback = {}) {
@@ -3493,33 +3473,6 @@ export async function handleParishCommemorations(request, env, parishId) {
     },
     entries
   });
-}
-
-export async function listYtdStripeCharges(env, stripeAccountId) {
-  const charges = [];
-  let startingAfter = "";
-  let pages = 0;
-
-  do {
-    const params = new URLSearchParams({
-      limit: "100",
-      "created[gte]": String(startOfYearUnix())
-    });
-    params.append("expand[]", "data.balance_transaction");
-    if (startingAfter) params.set("starting_after", startingAfter);
-
-    const result = await stripeGetConnectedRequest(env, `/v1/charges?${params.toString()}`, stripeAccountId);
-    if (!result.ok) return result;
-
-    const data = Array.isArray(result.body.data) ? result.body.data : [];
-    charges.push(...data);
-    startingAfter = data.length ? data[data.length - 1].id : "";
-    pages += 1;
-
-    if (!result.body.has_more || !startingAfter || pages >= 5) break;
-  } while (true);
-
-  return { ok: true, body: { data: charges } };
 }
 
 export async function listRecentStripePayouts(env, stripeAccountId, limit = 10) {

@@ -413,10 +413,6 @@ export function publicSubscriptionTiers() {
   return sharedPublicSubscriptionTiers();
 }
 
-export function stripeReady(registration) {
-  return ["charges_enabled", "payouts_enabled"].includes(registration.stripeAccountStatus);
-}
-
 export function subscriptionReady(registration) {
   return sharedSubscriptionReady(registration);
 }
