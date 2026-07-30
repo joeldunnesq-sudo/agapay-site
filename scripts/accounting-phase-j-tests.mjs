@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
+import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -9,6 +10,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
 const read=file=>readFileSync(path.join(root,file),"utf8");
 const worker=read("src/worker.js"),governance=read("src/handlers/accounting-governance.js"),admin=read("src/handlers/admin.js");
 const parishApp=read("public/parish/app.js"),parishHtml=read("public/parish/dashboard.html"),adminApp=read("public/admin/app.js"),adminHtml=read("public/admin.html");
+const governanceBackfill=read("migrations/0062_accounting_governance_capability_backfill.sql");
 const has=(source,needles,label)=>needles.forEach(needle=>assert.ok(source.includes(needle),`${label} must include ${needle}`));
 const capabilities=["accounting.integrity.view","accounting.integrity.scan","accounting.integrity.protect","accounting.recovery.verify"];
 for(const capability of capabilities)assert.ok(CAPABILITY_CATALOG.includes(capability),`${capability} must be registered`);
@@ -25,4 +27,22 @@ has(parishHtml,["data-accounting-view=\"governance\"","setAccountingView('govern
 has(parishApp,["renderAccountingGovernance","saveAccountingRetention","createAccountingLegalHold","releaseAccountingLegalHold","acct-governance-disclaimer"],"parish governance UI");
 has(adminHtml,["nav-accountingops","tab-accountingops","accountingOpsParish","Scan now","Type parish ID to confirm","Recovery evidence verification"],"admin accounting operations console");
 has(adminApp,["loadAdminAccountingOperations","runAdminIntegrityScan","changeAdminProtectiveState","confirmation!==parishId","verifyAdminRecoveryEvidence"],"admin accounting operations UI");
+
+const sqlite=new DatabaseSync(":memory:");
+sqlite.exec(read("migrations/0020_platform_identity.sql"));
+sqlite.exec(read("migrations/0037_accounting_staff_profiles.sql"));
+for(const role of ["treasurer","bookkeeper","rector"]){
+  sqlite.prepare("INSERT INTO platform_users(id,email) VALUES(?1,?2)").run(`user-${role}`,`${role}@example.test`);
+  sqlite.prepare("INSERT INTO parish_memberships(id,user_id,parish_id,role_template,status) VALUES(?1,?2,'parish-a',?3,'active')").run(`membership-${role}`,`user-${role}`,role);
+  sqlite.prepare("INSERT INTO accounting_staff_profiles(id,parish_id,display_name,role_template,capabilities_json,pin_record,created_by_actor_type) VALUES(?1,'parish-a',?2,?3,'[\"accounting.view\"]','{}','test')").run(`staff-${role}`,role,role);
+}
+sqlite.exec(governanceBackfill);
+sqlite.exec(governanceBackfill);
+for(const role of ["treasurer","bookkeeper"]){
+  assert.equal(sqlite.prepare("SELECT COUNT(*) count FROM membership_capabilities WHERE membership_id=?1 AND capability='accounting.integrity.view'").get(`membership-${role}`).count,1,`${role} membership must receive one integrity-view grant`);
+  const grants=JSON.parse(sqlite.prepare("SELECT capabilities_json FROM accounting_staff_profiles WHERE id=?1").get(`staff-${role}`).capabilities_json);
+  assert.equal(grants.filter(grant=>grant==="accounting.integrity.view").length,1,`${role} staff profile must receive one integrity-view grant`);
+}
+assert.equal(sqlite.prepare("SELECT COUNT(*) count FROM membership_capabilities WHERE membership_id='membership-rector' AND capability='accounting.integrity.view'").get().count,0,"rector membership must not receive integrity-view");
+assert.deepEqual(JSON.parse(sqlite.prepare("SELECT capabilities_json FROM accounting_staff_profiles WHERE id='staff-rector'").get().capabilities_json),["accounting.view"],"rector staff profile must remain unchanged");
 console.log("Accounting Phase J governance and operations checks passed.");
