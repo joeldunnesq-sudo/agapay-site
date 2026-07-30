@@ -7734,12 +7734,12 @@
         <div class="form-group"><label class="form-label">Billing status</label><input value="${escapeHtml(statusLabel(p.subscriptionStatus || 'not_started'))}" disabled /></div>
         <div class="form-group full"><label class="form-label" for="subscriptionTierUpgrade">Change AGAPAY tier</label><select id="subscriptionTierUpgrade">${tierOptions}</select></div>
       </div>
-      <p class="section-note">${p.parishId === 'st-fiacre' ? 'Demo mode: switch tiers instantly to show churches how AGAPAY changes at each level. No Stripe billing is changed.' : billingActive ? "Use Stripe's secure billing portal to upgrade or downgrade, update payment details, or cancel at any time." : 'Choose a tier and complete billing checkout. Stewardship unlocks pledge and giving-health tools; Parish adds the complete operations suite.'}</p>
+      <p class="section-note">${p.parishId === 'st-fiacre' ? 'Demo mode: switch tiers instantly to show churches how AGAPAY changes at each level. No Stripe billing is changed.' : billingActive ? "Choose a tier here to update the existing AGAPAY subscription. Use Stripe's secure billing portal for payment details or cancellation." : 'Choose a tier and complete billing checkout. Stewardship unlocks pledge and giving-health tools; Parish adds the complete operations suite.'}</p>
       <div class="btn-row">
         ${p.parishId === 'st-fiacre'
           ? '<button class="btn btn-gold" onclick="changeDemoTier(this)">Apply demo tier</button>'
           : billingActive
-          ? '<button class="btn btn-gold" onclick="openSubscriptionPortal(this)">Change tier in billing portal</button><button class="btn btn-ghost" onclick="openSubscriptionPortal(this)">Manage payment details</button>'
+          ? '<button class="btn btn-gold" onclick="startSubscriptionCheckout(this, \'subscriptionTierUpgrade\')">Apply tier change</button><button class="btn btn-ghost" onclick="openSubscriptionPortal(this)">Manage payment details or cancel</button>'
           : '<button class="btn btn-gold" onclick="startSubscriptionCheckout(this, \'subscriptionTierUpgrade\')">Start tier checkout</button>'}
       </div>
       <div class="setup-link-box" id="subscriptionUpgradeLinkBox"><a id="subscriptionUpgradeLink" href="#" target="_blank" rel="noopener">Open billing checkout</a><p id="subscriptionUpgradeHelp"></p></div>

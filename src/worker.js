@@ -123,10 +123,8 @@ import {
   handleParishStripeVolume,
   handleParishGivingHistory,
   handleParishRecurringHealth,
-  handleParishBookstore,
   handleParishDashboard,
   handleParishFeatureRequestDismiss,
-  handleParishSettlementProfiles,
   handleParishSession,
   handleParishes,
   handleParishCampaignUpload,
@@ -142,6 +140,11 @@ import {
   requireDonor,
   weekWindow,
 } from "./handlers/parish.js";
+
+import {
+  handleParishBookstore,
+  handleParishSettlementProfiles,
+} from "./handlers/parish-commerce.js";
 
 import {
   handleAdminSetSacramentsEnabled,

@@ -83,6 +83,9 @@ assert.ok(!backendSources.includes("subscription_data[application_fee_percent]")
 assert.ok(!backendSources.includes("payment_intent_data[application_fee_amount]"), "worker should not apply an AGAPAY application fee to one-time donor gifts");
 assert.ok(backendSources.includes("AGAPAY does not collect an application fee on donations"), "worker should document that AGAPAY charges no donation platform fee");
 assert.ok(backendSources.includes("Do not add any AGAPAY platform/application fee to bookstore or future commerce checkouts"), "worker should document that Parish Commerce checkout has no AGAPAY application fee");
+assert.ok(!parishHandler.includes("payment_intent_data[on_behalf_of]"), "direct parish donation charges should not set the connected parish as on_behalf_of");
+assert.ok(!parishHandler.includes("subscription_data[on_behalf_of]"), "direct recurring parish donations should not set the connected parish as on_behalf_of");
+assert.ok(!donorHandler.includes("payment_intent_data[on_behalf_of]"), "direct parish commerce charges should not set the connected parish as on_behalf_of");
 assert.ok(worker.includes("/api/checkout-session-status"), "worker should expose checkout return reconciliation");
 assert.ok(backendSources.includes("session_id={CHECKOUT_SESSION_ID}"), "Stripe success URLs should include the Checkout session id");
 assert.ok(backendSources.includes("/myagapay?gift_success=1"), "authenticated donor checkouts should return to the My AGAPAY dashboard");
@@ -215,6 +218,7 @@ assert.ok(myAgapayShell.includes('mobileFallbackFor: "directoryEnabled"') && myA
 assert.ok(myAgapayShell.includes('fetch("/api/donor/dashboard"'), "shared My AGAPAY shell should load the donor home parish capabilities");
 assert.ok(siteChrome.includes("/myagapay/login?next=%2Fmyagapay%2Flearn%2Fdashboard"), "the site account menu should send AGAPAY Learn sign-ins directly to the Learn Dashboard");
 assert.ok(parishDashboardApp.includes("changeDemoTier") && parishDashboardApp.includes("/api/parish/dashboard/st-fiacre/demo-tier"), "St. Fiacre dashboard should support instant demo tier switching");
+assert.ok(parishDashboardApp.includes("Apply tier change") && parishDashboardApp.includes("startSubscriptionCheckout(this, \\'subscriptionTierUpgrade\\')"), "active parish subscriptions should change the selected tier without depending on Billing Portal product configuration");
 assert.ok(parishDashboardApp.includes("sidebarStatusChip") && parishDashboardApp.includes("tierDisplay") && parishDashboardApp.includes("subscriptionTierLabel"), "Parish Dashboard active status should display the subscribed tier");
 assert.ok(myAgapayShell.includes('data-myagapay-global-nav') && myAgapayShell.includes("normalizeProductNavs"), "shared shell should normalize mobile product navigation across dashboards");
 assert.ok(myAgapayShell.includes(".unified-product-nav") && myAgapayShell.includes("Bookstore") && myAgapayShell.includes("Feast day and readings"), "shared shell should normalize the desktop My AGAPAY sidebar from the same product tabs");
