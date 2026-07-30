@@ -92,6 +92,7 @@ import {
   stripePaymentIntentFinancialUpdates,
   updateDonorOfferingByCheckout,
 } from "./parish.js";
+import { sacramentTypeLabel } from "./parish-sacraments.js";
 
 // src/handlers/donor.js
 // Donor session, dashboard, offerings, commemorations, and password handlers.
@@ -1665,23 +1666,6 @@ function publicSacramentRequest(row = {}) {
     updatedAt: row.updated_at
     // parish_notes is intentionally omitted — internal to the parish only.
   };
-}
-
-function sacramentTypeLabel(type) {
-  return {
-    house_blessing: "House Blessing",
-    baptism: "Baptism",
-    chrismation: "Chrismation",
-    wedding: "Wedding",
-    funeral: "Funeral",
-    memorial_service: "Memorial Service",
-    confession: "Confession",
-    home_visit: "Home Visit",
-    office_visit: "Office Visit",
-    anointing: "Holy Unction",
-    counseling: "Pastoral Counseling",
-    other: "Other Request"
-  }[type] || type;
 }
 
 function donorSacramentOfferings(registration = {}) {

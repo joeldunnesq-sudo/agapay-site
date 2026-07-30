@@ -8,6 +8,7 @@ const stripeConnect = await readFile("src/lib/stripe-connect.js", "utf8");
 const adminHandler = await readFile("src/handlers/admin.js", "utf8");
 const donorHandler = await readFile("src/handlers/donor.js", "utf8");
 const parishHandler = await readFile("src/handlers/parish.js", "utf8");
+const parishSacramentsHandler = await readFile("src/handlers/parish-sacraments.js", "utf8");
 const parishNotifications = await readFile("src/lib/parish-notifications.js", "utf8");
 const stripeFees = await readFile("src/lib/stripe-fees.js", "utf8");
 const stripeHandler = await readFile("src/handlers/stripe.js", "utf8");
@@ -19,7 +20,8 @@ const siteChrome = await readFile("public/site-chrome.js", "utf8");
 assert.ok(siteChrome.includes('{ href: "/why", label: "Why AGAPAY", key: "why" }'), "canonical static-site navigation should include Why AGAPAY");
 assert.ok(!/btn-donate[\s\S]{0,180}shellIcon\("giving-hand"\)/.test(siteChrome), "canonical Start for free button should not include an unrelated giving-hand icon");
 assert.ok(!/drawer-join[\s\S]{0,120}shellIcon\("giving-hand"\)/.test(siteChrome), "mobile Start for free button should not include an unrelated giving-hand icon");
-const backendSources = worker + core + stripeConnect + adminHandler + donorHandler + parishHandler + parishNotifications + stripeFees + stripeHandler + parishInterestHandler;
+const backendSources = worker + core + stripeConnect + adminHandler + donorHandler + parishHandler + parishSacramentsHandler + parishNotifications + stripeFees + stripeHandler + parishInterestHandler;
+const parishHandlers = parishHandler + parishSacramentsHandler;
 assert.equal(parishSlug("St. Fiacre Orthodox Church", "Munster"), "st-fiacre-munster", "parish usernames should include patronal name and city");
 assert.equal(parishSlug("Holy Resurrection Orthodox Church", "Boston"), "holy-resurrection-boston", "parish usernames should normalize common church suffixes");
 assert.ok(wrangler.includes('binding = "AGAPAY_DB"'), "wrangler should bind the production D1 database");
@@ -438,7 +440,7 @@ for (const enforcement of [
   "Recurring-gift insights are available with Giving Plus.",
   "Custom funds and campaigns are available with Giving Plus."
 ]) {
-  assert.ok(parishHandler.includes(enforcement), `backend should enforce tier access: ${enforcement}`);
+  assert.ok(parishHandlers.includes(enforcement), `backend should enforce tier access: ${enforcement}`);
 }
 assert.ok(giveHtml.includes("/api/create-checkout-session"), "giving page should post to checkout API");
 assert.ok(giveHtml.includes("/api/checkout-session-status"), "giving page should reconcile returned Stripe checkout sessions");

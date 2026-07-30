@@ -116,16 +116,6 @@ import {
   handleParishDemoTier,
   handleParishSubscriptionRefresh,
   handleParishSubscriptionPortal,
-  handleParishCommemorations,
-  handleParishSacraments,
-  handleParishSacramentUpdate,
-  handleParishSacramentAvailability,
-  handleParishAvailabilityRuleCreate,
-  handleParishAvailabilityRuleDelete,
-  handleParishAvailabilityBlackoutCreate,
-  handleParishAvailabilityBlackoutDelete,
-  handleAdminSetSacramentsEnabled,
-  sacramentTypeLabel,
   handleParishPayoutDiagnostics,
   handleParishReconciliation,
   handleParishReconciliationClose,
@@ -152,6 +142,19 @@ import {
   requireDonor,
   weekWindow,
 } from "./handlers/parish.js";
+
+import {
+  handleAdminSetSacramentsEnabled,
+  handleParishAvailabilityBlackoutCreate,
+  handleParishAvailabilityBlackoutDelete,
+  handleParishAvailabilityRuleCreate,
+  handleParishAvailabilityRuleDelete,
+  handleParishCommemorations,
+  handleParishSacramentAvailability,
+  handleParishSacramentUpdate,
+  handleParishSacraments,
+  sacramentTypeLabel,
+} from "./handlers/parish-sacraments.js";
 
 import {
   handleDonorClaimCheckout,

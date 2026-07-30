@@ -103,9 +103,11 @@ try {
 }
 
 const parish = await readFile(new URL("../src/handlers/parish.js", import.meta.url), "utf8");
+const parishSacraments = await readFile(new URL("../src/handlers/parish-sacraments.js", import.meta.url), "utf8");
 const stripe = await readFile(new URL("../src/handlers/stripe.js", import.meta.url), "utf8");
 const donor = await readFile(new URL("../src/handlers/donor.js", import.meta.url), "utf8");
 const admin = await readFile(new URL("../src/handlers/admin.js", import.meta.url), "utf8");
+const worker = await readFile(new URL("../src/worker.js", import.meta.url), "utf8");
 
 function importedNames(source, modulePath) {
   const imports = [...source.matchAll(/import\s*{([\s\S]*?)}\s*from "([^"]+)";/g)];
@@ -122,6 +124,64 @@ function assertImports(source, modulePath, names) {
 }
 
 assert.ok(parish.split(/\r?\n/).length <= 5750, "parish.js should retain the extraction size reduction");
+assert.ok(parish.split(/\r?\n/).length <= 5300, "parish.js should retain the sacraments extraction size reduction");
+const sacramentPublicFunctions = [
+  "handleAdminSetSacramentsEnabled",
+  "sacramentTypeLabel",
+  "handleParishSacraments",
+  "handleParishSacramentUpdate",
+  "handleParishSacramentAvailability",
+  "handleParishAvailabilityRuleCreate",
+  "handleParishAvailabilityRuleDelete",
+  "handleParishAvailabilityBlackoutCreate",
+  "handleParishAvailabilityBlackoutDelete",
+  "handleParishCommemorations",
+];
+const sacramentPrivateHelpers = [
+  "attachSacramentDetailsForParish",
+  "attachSacramentDetailsForParishBatch",
+  "notifyDonorOfSacramentStatusChange",
+  "parishSacramentRequestRow",
+  "isValidTimezone",
+  "requireSacramentsParishContext",
+  "publicBaptismDetails",
+  "publicWeddingDetails",
+];
+for (const name of [...sacramentPublicFunctions, ...sacramentPrivateHelpers]) {
+  assert.doesNotMatch(parish, new RegExp(`(?:async\\s+)?function\\s+${name}\\b`), `${name} should move out of parish.js`);
+  assert.match(parishSacraments, new RegExp(`(?:async\\s+)?function\\s+${name}\\b`), `${name} should live in parish-sacraments.js`);
+}
+assertImports(parishSacraments, "./parish.js", [
+  "d1All",
+  "d1First",
+  "d1Run",
+  "findRegistrationByParishId",
+  "generateSecret",
+  "getBearerToken",
+  "hasParishPlusAccess",
+  "hasProductionStore",
+  "json",
+  "loadCommemorationEntries",
+  "missingProductionStoreResponse",
+  "normalizeSacramentPriests",
+  "rateLimit",
+  "requireAdmin",
+  "sacramentsEnabledFor",
+  "saveRegistrationRecord",
+  "unauthorized",
+  "verifyParishDashboardBearer",
+  "weekWindow",
+]);
+assert.doesNotMatch(
+  parishSacraments,
+  /(?:async\s+)?function\s+normalizeSacramentPriests\b/,
+  "parish-sacraments should import normalizeSacramentPriests instead of redefining it",
+);
+assertImports(worker, "./handlers/parish-sacraments.js", sacramentPublicFunctions);
+const parishWorkerImports = importedNames(worker, "./handlers/parish.js");
+for (const name of sacramentPublicFunctions) {
+  assert.ok(!parishWorkerImports.has(name), `worker should no longer import ${name} from parish.js`);
+}
 assert.doesNotMatch(parish, /export (?:async )?function (?:donorName|sendDashboardInvite)\b/);
 assert.doesNotMatch(
   parish,
