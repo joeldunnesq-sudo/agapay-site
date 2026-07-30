@@ -78,3 +78,4 @@ CREATE TABLE IF NOT EXISTS nonprofit_pricing_threshold_alerts (
   last_observed_at TEXT NOT NULL,
   PRIMARY KEY (parish_id, risk_band)
 );
+-- Original filename retained because D1 identifies applied migrations by filename.

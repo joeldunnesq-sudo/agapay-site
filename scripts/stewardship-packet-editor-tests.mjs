@@ -13,7 +13,7 @@ const dashboard = read("public/parish/dashboard.html");
 
 const db = new DatabaseSync(":memory:");
 db.exec(read("migrations/0005_stewardship_annual_meetings.sql"));
-db.exec(read("migrations/0050_annual_meeting_packet_line_counts.sql"));
+db.exec(read("migrations/0048_annual_meeting_packet_line_counts.sql"));
 const columns = db.prepare("PRAGMA table_info(stewardship_annual_meetings)").all();
 const signatureColumn = columns.find((column) => column.name === "signature_line_count");
 const noteColumn = columns.find((column) => column.name === "note_line_count");

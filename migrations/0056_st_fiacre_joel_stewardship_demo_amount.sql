@@ -15,3 +15,4 @@ SET data = json_set(
     updated_at = datetime('now')
 WHERE id = 'off_jul_stew_2026'
   AND parish_id = 'st-fiacre';
+-- Original filename retained because D1 identifies applied migrations by filename.

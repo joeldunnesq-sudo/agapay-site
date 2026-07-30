@@ -15,3 +15,4 @@ DROP INDEX IF EXISTS uq_sacrament_requests_scheduled_slot;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_sacrament_requests_scheduled_priest_slot
   ON sacrament_requests(parish_id, confirmed_date, confirmed_time, COALESCE(clergy_assigned, ''))
   WHERE status = 'scheduled';
+-- Original filename retained because D1 identifies applied migrations by filename.

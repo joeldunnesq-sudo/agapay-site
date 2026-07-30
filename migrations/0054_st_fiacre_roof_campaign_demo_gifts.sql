@@ -75,3 +75,4 @@ WHERE parish_id = 'st-fiacre'
        OR lower(COALESCE(json_extract(value, '$.slug'), '')) IN ('roof-campaign','roof-restoration')
        OR lower(COALESCE(json_extract(value, '$.name'), '')) = 'church roof restoration'
   );
+-- Original filename retained because D1 identifies applied migrations by filename.

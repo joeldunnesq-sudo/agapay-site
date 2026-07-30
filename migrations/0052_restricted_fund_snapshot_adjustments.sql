@@ -13,3 +13,4 @@ ALTER TABLE stewardship_financial_snapshot_revisions
 
 ALTER TABLE stewardship_financial_snapshot_revisions
   ADD COLUMN restricted_fund_balances_json TEXT NOT NULL DEFAULT '[]';
+-- Original filename retained because D1 identifies applied migrations by filename.

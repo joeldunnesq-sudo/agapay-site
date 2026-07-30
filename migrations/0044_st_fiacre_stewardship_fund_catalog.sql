@@ -46,3 +46,4 @@ SET data = json_insert(data, '$.funds[#]', json('{"id":"memorial","name":"Memori
     updated_at = datetime('now')
 WHERE parish_id = 'st-fiacre'
   AND NOT EXISTS (SELECT 1 FROM json_each(registrations.data, '$.funds') WHERE lower(COALESCE(json_extract(value, '$.id'), '')) = 'memorial');
+-- Original filename retained because D1 identifies applied migrations by filename.

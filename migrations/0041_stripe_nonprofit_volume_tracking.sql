@@ -32,3 +32,4 @@ CREATE TABLE IF NOT EXISTS stripe_payment_volume_scans (
   updated_at TEXT NOT NULL,
   PRIMARY KEY (parish_id, period_start)
 );
+-- Original filename retained because D1 identifies applied migrations by filename.

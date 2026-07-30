@@ -6,9 +6,9 @@ import { fileURLToPath } from "node:url";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => readFileSync(path.join(root, file), "utf8");
-const migration = read("migrations/0051_authoritative_stewardship_financial_snapshots.sql");
-const externalAssetsMigration = read("migrations/0052_financial_snapshot_external_assets.sql");
-const restrictedAdjustmentsMigration = read("migrations/0054_restricted_fund_snapshot_adjustments.sql");
+const migration = read("migrations/0049_authoritative_stewardship_financial_snapshots.sql");
+const externalAssetsMigration = read("migrations/0050_financial_snapshot_external_assets.sql");
+const restrictedAdjustmentsMigration = read("migrations/0052_restricted_fund_snapshot_adjustments.sql");
 const worker = read("src/worker.js");
 const handler = read("src/handlers/stewardship.js");
 const app = read("public/parish/app.js");

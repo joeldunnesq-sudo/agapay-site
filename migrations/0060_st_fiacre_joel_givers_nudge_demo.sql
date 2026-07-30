@@ -24,3 +24,4 @@ SET created_at = (SELECT gift_at FROM demo_dates WHERE demo_dates.id = donor_off
     updated_at = datetime('now')
 WHERE id IN (SELECT id FROM demo_dates)
   AND parish_id = 'st-fiacre';
+-- Original filename retained because D1 identifies applied migrations by filename.
