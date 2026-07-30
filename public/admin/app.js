@@ -2834,7 +2834,8 @@ let selectedReference = '';
 
     function populateAdminAccountingParishes() {
       const select=document.getElementById('accountingOpsParish');if(!select)return;const current=select.value;
-      select.innerHTML='<option value="">Select a parish</option>'+registrationsCache.filter(reg=>reg.parishId).map(reg=>`<option value="${escapeAttr(reg.parishId)}">${escapeHtml(reg.parishName||reg.parishId)} · ${escapeHtml(reg.parishId)}</option>`).join('');
+      const targets=[{parishId:'st-fiacre',parishName:'St. Fiacre'},...registrationsCache.filter(reg=>reg.parishId)].filter((reg,index,rows)=>rows.findIndex(item=>item.parishId===reg.parishId)===index);
+      select.innerHTML='<option value="">Select a parish</option>'+targets.map(reg=>`<option value="${escapeAttr(reg.parishId)}">${escapeHtml(reg.parishName||reg.parishId)} · ${escapeHtml(reg.parishId)}</option>`).join('');
       if([...select.options].some(option=>option.value===current))select.value=current;
     }
 

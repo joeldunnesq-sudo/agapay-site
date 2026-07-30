@@ -42,6 +42,7 @@ assert.match(admin, /environment==="production"/, "prepared database activation 
 assert.match(admin, /ACCOUNTING_PREPARED_PARISH_DATABASES/, "prepared database activation must use a configured parish mapping");
 assert.match(adminHtml, /Activate prepared staging database/);
 assert.match(adminApp, /function activateAdminPreparedAccounting\b/);
+assert.match(adminApp, /parishId:'st-fiacre'/, "the built-in accounting parish must remain selectable when cached registration summaries omit IDs");
 assert.match(app, /function renderAccountingPaywall\(/);
 assert.match(app, /Unlock the Accounting Suite/);
 assert.match(app, /Financial command center/);
