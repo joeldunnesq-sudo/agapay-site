@@ -1,4 +1,4 @@
-const AGAPAY_CACHE = "agapay-static-v23";
+const AGAPAY_CACHE = "agapay-static-v26";
 
 const STATIC_ASSETS = [
   "/myagapay/login",
@@ -17,6 +17,14 @@ const STATIC_ASSETS = [
   "/images/app/icon-192.png",
   "/images/app/icon-512.png",
   "/images/app/icon-512-maskable.png",
+  "/images/app/shortcuts/give.png",
+  "/images/app/shortcuts/today.png",
+  "/images/app/shortcuts/directory.png",
+  "/images/app/shortcuts/bookstore.png",
+  "/images/app/shortcuts/give-v2.png",
+  "/images/app/shortcuts/today-v2.png",
+  "/images/app/shortcuts/directory-v2.png",
+  "/images/app/shortcuts/bookstore-v2.png",
   "/images/app/listen-icon-192.png",
   "/listen.html",
   "/listen/app.js",

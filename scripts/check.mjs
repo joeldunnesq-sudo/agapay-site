@@ -149,15 +149,21 @@ assert.ok(manifest.includes('"lang": "en-US"') && manifest.includes('"dir": "ltr
 for (const category of ["finance", "lifestyle", "education"]) {
   assert.ok(manifest.includes(`"${category}"`), `My AGAPAY PWA manifest should include the ${category} category`);
 }
-for (const shortcut of ["/myagapay", "/myagapay/giving/calendar", "/myagapay/directory"]) {
+for (const shortcut of ["/myagapay", "/myagapay/giving/calendar", "/myagapay/directory", "/myagapay/bookstore"]) {
   assert.ok(manifest.includes(`"url": "${shortcut}"`), `My AGAPAY PWA manifest should include the ${shortcut} shortcut`);
+}
+const parsedManifest = JSON.parse(manifest);
+assert.ok(parsedManifest.shortcuts.slice(0, 3).some((shortcut) => shortcut.url === "/myagapay/bookstore"), "Bookstore should be among the first three shortcuts for launchers that cap the menu at three");
+for (const shortcutIcon of ["give-v2.png", "today-v2.png", "directory-v2.png", "bookstore-v2.png"]) {
+  assert.ok(manifest.includes(`/images/app/shortcuts/${shortcutIcon}`), `My AGAPAY PWA manifest should include the ${shortcutIcon} shortcut icon`);
+  await access(`public/images/app/shortcuts/${shortcutIcon}`);
 }
 for (const screenshot of ["giving-dashboard.jpg", "today-in-the-church.jpg", "parish-bookstore.jpg"]) {
   assert.ok(manifest.includes(`/images/app/screenshots/${screenshot}`), `My AGAPAY PWA manifest should include ${screenshot}`);
   await access(`public/images/app/screenshots/${screenshot}`);
 }
 assert.equal((manifest.match(/"form_factor": "narrow"/g) || []).length, 3, "My AGAPAY PWA screenshots should declare the narrow mobile form factor");
-assert.ok(myAgapayLoginPage.includes("/myagapay/manifest.webmanifest?v=20260724a"), "My AGAPAY login should use the current manifest URL so PWA analyzers do not reuse a stale report");
+assert.ok(myAgapayLoginPage.includes("/myagapay/manifest.webmanifest?v=20260729c"), "My AGAPAY login should use the current manifest URL so PWA analyzers do not reuse a stale report");
 assert.ok(/navigator\.serviceWorker\.register\(\s*(["'])\/service-worker\.js\1/.test(myAgapayLoginPage), "My AGAPAY login HTML should directly register the service worker for PWABuilder's source parser");
 assert.ok(pwaRegister.includes("registerOrUpdate();") && !pwaRegister.includes('window.addEventListener("load"'), "PWA registration should start immediately so automated analyzers can detect the service worker");
 assert.ok(rootPage.includes('/manifest.webmanifest') && rootPage.includes('/pwa-register.js'), "public homepage should expose the root manifest and register the root service worker");
@@ -173,7 +179,7 @@ assert.ok(adminApp.includes('requestedTab') && adminApp.includes('queue-mobile-s
 assert.ok(adminHtml.includes("weeklyCommemorationParishId") && adminApp.includes("runWeeklyCommemorationEmail") && adminApp.includes("/api/admin/commemorations/send-weekly"), "admin dashboard should expose a weekly commemoration email preview/send control");
 assert.ok(adminHtml.includes("weeklyTreasurerParishId") && adminApp.includes("runWeeklyTreasurerEmail") && adminApp.includes("/api/admin/commerce/send-weekly-treasurer"), "admin dashboard should expose a weekly treasurer commerce email preview/send control");
 assert.ok(adminCss.includes('admin-mobile-command') && adminCss.includes('mobile-review-bar') && adminCss.includes('product-admin-hero-giving { display: none; }'), "admin dashboard should include dedicated mobile verification layout styles");
-assert.ok(serviceWorker.includes('agapay-static-v23'), "service worker cache version should advance when PWA manifest identity changes");
+assert.ok(serviceWorker.includes('agapay-static-v26'), "service worker cache version should advance when PWA manifest identity changes");
 assert.ok(serviceWorker.includes('url.pathname.startsWith("/api/") return true') || serviceWorker.includes('url.pathname.startsWith("/api/")) return true'), "service worker should bypass API responses, including private Directory JSON");
 assert.ok(parishDashboardApp.includes("fetch(directoryAdminApi('/dashboard'), { headers })"), "Parish Dashboard Directory should use the parish dashboard auth headers");
 assert.ok(!parishDashboardApp.includes("directoryAdminHeaders") && !parishDashboardApp.includes("handleDirectoryStaffLogin"), "Parish Dashboard Directory should not require a second My AGAPAY staff login");
