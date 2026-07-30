@@ -9,7 +9,7 @@ import {
 
 import {
   disputeCommerceOrderFromStripe
-} from "../src/handlers/parish.js";
+} from "../src/handlers/parish-commerce.js";
 
 function makeCommerceEnv() {
   const db = new DatabaseSync(":memory:");

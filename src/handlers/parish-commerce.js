@@ -1,5 +1,5 @@
 // src/handlers/parish-commerce.js
-// Parish bookstore operations and settlement-profile administration.
+// Parish bookstore operations, settlement profiles, and commerce webhooks.
 
 import {
   SETTLEMENT_PROFILE_TYPES,
@@ -15,6 +15,11 @@ import {
   settlementProfileToJson,
 } from "../lib/settlement-profiles.js";
 import {
+  checkoutPaymentIntentId,
+  numericCents,
+  stripeObjectId,
+} from "../lib/stripe-connect.js";
+import {
   bookstoreEnabledFor,
   centsFromBody,
   d1All,
@@ -28,8 +33,10 @@ import {
   json,
   missingProductionStoreResponse,
   normalizeBookstoreBody,
+  parishDashboardPayload,
   rateLimit,
   recordAuditEvent,
+  stripePaymentIntentFinancialUpdates,
   unauthorized,
   verifyParishDashboardBearer,
 } from "./parish.js";
@@ -682,4 +689,121 @@ export async function handleParishSettlementProfiles(request, env, parishId, sub
   }
 
   return json({ error: "Not found" }, { status: 404 });
+}
+
+// Marks a bookstore commerce order paid once Stripe confirms, and reconciles
+// real Stripe fees / parish net from the balance transaction. Without this the
+// order sits at payment_status='pending' forever and never shows up in sales
+// reporting. Idempotent: a second call for an already-paid order is a no-op.
+// `object` is the Stripe checkout.session (kind='session') or payment_intent
+// (kind='payment_intent') from the webhook.
+export async function completeCommerceOrderFromStripe(env, object = {}, kind = "session") {
+  if (!commerceDatabase(env)) return null;
+  const meta = object.metadata || {};
+  if (meta.commerce_module && meta.commerce_module !== "bookstore") return null;
+
+  const paymentIntentId = kind === "payment_intent"
+    ? (object.id || "")
+    : (checkoutPaymentIntentId(object) || stripeObjectId(object.payment_intent) || "");
+
+  let order = null;
+  if (kind === "session" && object.id) {
+    order = await d1First(env,
+      `SELECT * FROM commerce_orders WHERE checkout_session_id = ? AND commerce_module = 'bookstore'`,
+      object.id);
+  }
+  if (!order && meta.order_id) {
+    order = await d1First(env,
+      `SELECT * FROM commerce_orders WHERE id = ? AND commerce_module = 'bookstore'`,
+      meta.order_id);
+  }
+  if (!order && paymentIntentId) {
+    order = await d1First(env,
+      `SELECT * FROM commerce_orders WHERE stripe_payment_intent_id = ? AND commerce_module = 'bookstore'`,
+      paymentIntentId);
+  }
+  if (!order) return null;
+  if (order.payment_status === "paid") return order; // accounting wiring can still replay safely
+
+  const fees = paymentIntentId
+    ? await stripePaymentIntentFinancialUpdates(env, paymentIntentId, order.parish_id, {
+      chargeCents: numericCents(object.amount_total || object.amount_received || order.total_charged_cents),
+      coverFees: order.cover_fees === 1
+    })
+    : {};
+
+  const totalCents = numericCents(object.amount_total || object.amount_received)
+    || Number(fees.chargeCents || 0)
+    || Number(order.subtotal_cents || 0);
+  const taxCents = numericCents(object.total_details?.amount_tax) || Number(order.tax_cents || 0);
+  const stripeFeeCents = Number(fees.stripeFeeCents || 0);
+  const agapayFeeCents = Number(fees.agapayFeeCents || 0); // bookstore takes no AGAPAY fee
+  const netCents = Number(fees.parishNetCents || Math.max(0, totalCents - stripeFeeCents - agapayFeeCents));
+  const now = new Date().toISOString();
+  const completedAt = object.created ? new Date(object.created * 1000).toISOString() : now;
+
+  await d1Run(env,
+    `UPDATE commerce_orders
+     SET payment_status = 'paid', status = 'completed',
+         tax_cents = ?, total_charged_cents = ?, stripe_fee_cents = ?, agapay_fee_cents = ?,
+         parish_net_cents = ?, stripe_payment_intent_id = ?, stripe_charge_id = ?,
+         stripe_customer_id = COALESCE(NULLIF(?, ''), stripe_customer_id),
+         fulfillment_status = CASE WHEN fulfillment_status = 'pending' THEN 'ready' ELSE fulfillment_status END,
+         completed_at = ?, updated_at = ?
+     WHERE id = ?`,
+    taxCents, totalCents, stripeFeeCents, agapayFeeCents, netCents,
+    paymentIntentId || order.stripe_payment_intent_id || "",
+    fees.stripeChargeId || order.stripe_charge_id || "",
+    object.customer || order.stripe_customer_id || "",
+    completedAt, now, order.id
+  );
+
+  return { ...order, payment_status: "paid", status: "completed", tax_cents: taxCents,
+    total_charged_cents: totalCents, stripe_fee_cents: stripeFeeCents,
+    agapay_fee_cents: agapayFeeCents, parish_net_cents: netCents,
+    stripe_payment_intent_id: paymentIntentId || order.stripe_payment_intent_id || "",
+    completed_at: completedAt };
+}
+
+// Reflects a Stripe refund back onto the bookstore order so sales reporting
+// stays honest. Safe to call for any charge — no-ops when the charge isn't a
+// bookstore order.
+export async function refundCommerceOrderFromStripe(env, charge = {}) {
+  if (!commerceDatabase(env)) return null;
+  const pi = stripeObjectId(charge.payment_intent);
+  if (!pi) return null;
+  const order = await d1First(env,
+    `SELECT id, total_charged_cents FROM commerce_orders WHERE stripe_payment_intent_id = ? AND commerce_module = 'bookstore'`,
+    pi);
+  if (!order) return null;
+  const refunded = numericCents(charge.amount_refunded);
+  const full = refunded >= numericCents(charge.amount || order.total_charged_cents);
+  const state = full ? "refunded" : "partially_refunded";
+  await d1Run(env,
+    `UPDATE commerce_orders SET payment_status = ?, status = ?, updated_at = ? WHERE id = ?`,
+    state, state, new Date().toISOString(), order.id);
+  return order;
+}
+
+// Reflects Stripe disputes back onto bookstore orders. Safe to call for any
+// charge dispute: non-bookstore and unknown payment intents no-op.
+export async function disputeCommerceOrderFromStripe(env, dispute = {}, phase = "created") {
+  if (!commerceDatabase(env)) return null;
+  const pi = stripeObjectId(dispute.payment_intent);
+  if (!pi) return null;
+  const order = await d1First(env,
+    `SELECT id FROM commerce_orders WHERE stripe_payment_intent_id = ? AND commerce_module = 'bookstore'`,
+    pi);
+  if (!order) return null;
+  const won = String(dispute.status || "").toLowerCase() === "won";
+  const state = phase === "closed"
+    ? (won ? "completed" : "dispute_closed")
+    : "disputed";
+  const paymentStatus = phase === "closed"
+    ? (won ? "paid" : "dispute_closed")
+    : "disputed";
+  await d1Run(env,
+    `UPDATE commerce_orders SET payment_status = ?, status = ?, updated_at = ? WHERE id = ?`,
+    paymentStatus, state, new Date().toISOString(), order.id);
+  return order;
 }

@@ -48,10 +48,7 @@ import { sendTreasurerStripeInvite } from "../lib/parish-notifications.js";
 
 import {
   appendAdminAudit,
-  completeCommerceOrderFromStripe,
   ensureCommemorationEntryFromOffering,
-  refundCommerceOrderFromStripe,
-  disputeCommerceOrderFromStripe,
   findRegistrationByStripeAccountId,
   findRegistrationByStripeSubscriptionId,
   loadDonorOfferingByCheckout,
@@ -64,6 +61,11 @@ import {
   updateDonorOfferingByCheckout,
   updateDonorOfferingByPaymentIntent,
 } from "./parish.js";
+import {
+  completeCommerceOrderFromStripe,
+  disputeCommerceOrderFromStripe,
+  refundCommerceOrderFromStripe,
+} from "./parish-commerce.js";
 import {
   wireCommerceOrderToAccounting,
   wireCommerceRefundsToAccounting,

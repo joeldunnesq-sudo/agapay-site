@@ -126,7 +126,7 @@ function assertImports(source, modulePath, names) {
 
 assert.ok(parish.split(/\r?\n/).length <= 5750, "parish.js should retain the extraction size reduction");
 assert.ok(parish.split(/\r?\n/).length <= 5300, "parish.js should retain the sacraments extraction size reduction");
-assert.ok(parish.split(/\r?\n/).length <= 4620, "parish.js should retain the bookstore and settlement-profile extraction size reduction");
+assert.ok(parish.split(/\r?\n/).length <= 4620, "parish.js should retain the commerce extraction size reduction");
 const sacramentPublicFunctions = [
   "handleAdminSetSacramentsEnabled",
   "sacramentTypeLabel",
@@ -187,10 +187,15 @@ for (const name of sacramentPublicFunctions) {
 const commercePublicFunctions = [
   "handleParishBookstore",
   "handleParishSettlementProfiles",
+  "completeCommerceOrderFromStripe",
+  "refundCommerceOrderFromStripe",
+  "disputeCommerceOrderFromStripe",
 ];
 for (const name of commercePublicFunctions) {
-  assert.doesNotMatch(parish, new RegExp(`export\\s+async\\s+function\\s+${name}\\b`), `${name} should move out of parish.js`);
+  assert.doesNotMatch(parish, new RegExp(`(?:async\\s+)?function\\s+${name}\\b`), `${name} should move out of parish.js`);
   assert.match(parishCommerce, new RegExp(`export\\s+async\\s+function\\s+${name}\\b`), `${name} should live in parish-commerce.js`);
+}
+for (const name of ["handleParishBookstore", "handleParishSettlementProfiles"]) {
   assert.ok(!parishWorkerImports.has(name), `worker should no longer import ${name} from parish.js`);
 }
 assertImports(parishCommerce, "./parish.js", [
@@ -207,11 +212,18 @@ assertImports(parishCommerce, "./parish.js", [
   "json",
   "missingProductionStoreResponse",
   "normalizeBookstoreBody",
+  "parishDashboardPayload",
   "rateLimit",
   "recordAuditEvent",
+  "stripePaymentIntentFinancialUpdates",
   "unauthorized",
   "verifyParishDashboardBearer",
 ]);
+assert.doesNotMatch(
+  parishCommerce,
+  /(?:async\s+)?function\s+(?:stripePaymentIntentFinancialUpdates|parishDashboardPayload)\b/,
+  "parish-commerce should import shared parish helpers instead of redefining them",
+);
 assertImports(parishCommerce, "../lib/settlement-profiles.js", [
   "SETTLEMENT_PROFILE_TYPES",
   "assignModuleProfile",
@@ -225,7 +237,24 @@ assertImports(parishCommerce, "../lib/settlement-profiles.js", [
   "setProfileActive",
   "settlementProfileToJson",
 ]);
-assertImports(worker, "./handlers/parish-commerce.js", commercePublicFunctions);
+assertImports(parishCommerce, "../lib/stripe-connect.js", [
+  "checkoutPaymentIntentId",
+  "numericCents",
+  "stripeObjectId",
+]);
+assertImports(worker, "./handlers/parish-commerce.js", [
+  "handleParishBookstore",
+  "handleParishSettlementProfiles",
+]);
+assertImports(stripe, "./parish-commerce.js", [
+  "completeCommerceOrderFromStripe",
+  "disputeCommerceOrderFromStripe",
+  "refundCommerceOrderFromStripe",
+]);
+const stripeParishImports = importedNames(stripe, "./parish.js");
+for (const name of ["completeCommerceOrderFromStripe", "disputeCommerceOrderFromStripe", "refundCommerceOrderFromStripe"]) {
+  assert.ok(!stripeParishImports.has(name), `stripe should no longer import ${name} from parish.js`);
+}
 assert.match(donor, /export async function handleParishBookstoreReadiness\b/, "donor bookstore readiness must remain self-contained");
 assert.doesNotMatch(donor, /from "\.\/parish-commerce\.js"/, "donor bookstore readiness must not depend on the parish commerce handler");
 assert.doesNotMatch(parish, /export (?:async )?function (?:donorName|sendDashboardInvite)\b/);
