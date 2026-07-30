@@ -21,7 +21,7 @@
 
 ## 3. Confirmed Current State
 
-- **The actual GitHub Actions workflow is `.github/workflows/deploy.yml`**, not the `workflows/deploy.yml` Phase 0 examined (that file also exists but GitHub only executes workflows under `.github/workflows/`). The real deploy workflow: on every push to `main`, runs `wrangler d1 migrations apply agapay-production --remote` **unconditionally**, then deploys the Worker. **No test step runs in this workflow at all.**
+- **The actual GitHub Actions workflow is `.github/workflows/deploy.yml`**, not the root-level deploy draft Phase 0 examined (that stale draft existed outside `.github/`, where GitHub would never execute it). The real deploy workflow: on every push to `main`, runs `wrangler d1 migrations apply agapay-production --remote` **unconditionally**, then deploys the Worker. **No test step runs in this workflow at all.**
 - **A second workflow, `.github/workflows/smoke-check.yml`, does run `npm run check`** (the full custom test-script suite) — but only on manual `workflow_dispatch`, never automatically, and never as a gate on the deploy workflow.
 - **Stripe fee/gross/net capture is confirmed present and good**, sourced from Stripe's own Balance Transaction object via `stripePaymentIntentFinancialUpdates` (`src/handlers/parish.js:1452–1511`) — this corrects Phase 0's "unconfirmed" flag on this point.
 - **Stripe refund and dispute handling is confirmed present** for the giving path; **confirmed absent for the commerce path's dispute case specifically** (disputes update `donor_offerings` but never `commerce_orders`) — a new finding, not previously identified.

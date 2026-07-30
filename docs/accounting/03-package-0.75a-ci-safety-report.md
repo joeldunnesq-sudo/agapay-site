@@ -10,7 +10,7 @@
 
 ## 2. Previous Workflow
 
-`.github/workflows/deploy.yml` (the file GitHub Actions actually reads — a second, non-functional copy exists at `workflows/deploy.yml` at the repository root, outside `.github/`, which GitHub Actions never executes; this stray file was the source of the Phase 0 architecture audit's less urgent framing of this issue, since Phase 0 examined that file instead of the real one):
+`.github/workflows/deploy.yml` (the file GitHub Actions actually reads — at the time, a second, non-functional deploy draft existed at the repository root, outside `.github/`, which GitHub Actions never executes; that stray file was the source of the Phase 0 architecture audit's less urgent framing of this issue, since Phase 0 examined it instead of the real one):
 
 ```yaml
 on:
@@ -141,7 +141,7 @@ No other file was modified. No accounting table, accounting route, identity syst
 - **Full local D1 migration validation** — actually applying every migration file, in sequence, against a throwaway local D1/SQLite database as part of CI, rather than the lighter-weight structural checks this package adds — is deferred to **Package 0.75G (Staging and Local Development)**, per the Package 0.75A brief's own instruction to document this limitation and defer it there. The existing `node:sqlite`-based tests in `scripts/settlement-profiles-tests.mjs` and `scripts/tax-exemption-tests.mjs` already validate a meaningful subset of migrations behaviorally; extending that coverage to every migration file, in applied order, is real additional work belonging to 0.75G's local/staging environment design.
 - **Resolving the pre-existing duplicate numeric-prefix migration filenames** (e.g., two different `0003_*.sql` files) — not fixed here, since renaming already-applied production migration files is a nontrivial, separate risk this package's scope explicitly excludes ("do not invent brittle validation," "do not apply any migration"). The new integrity script surfaces these as warnings so they're visible without forcing a fix.
 - **GitHub Environment-based deployment approval** — noted as a possible future enhancement in Section 12, not implemented.
-- **Deleting the stray, non-functional `workflows/deploy.yml`** at the repository root (outside `.github/`) — this file is never executed by GitHub Actions and was the source of the Phase 0 audit's confusion about which workflow was real. Removing it would reduce future confusion, but doing so is a small, separate cleanup this package did not treat as in-scope (it's not part of the CI safety mechanism itself); recommended as a quick, low-risk follow-up whenever convenient.
+- **Deleting the stray, non-functional deploy draft** at the repository root (outside `.github/`) — this file is never executed by GitHub Actions and was the source of the Phase 0 audit's confusion about which workflow was real. Removing it would reduce future confusion, but doing so is a small, separate cleanup this package did not treat as in-scope (it's not part of the CI safety mechanism itself); recommended as a quick, low-risk follow-up whenever convenient.
 - **`actionlint` verification** — not run in this session (unavailable, and not installed per instruction); recommend confirming via GitHub's own workflow-syntax validation on the next actual push, or by installing `actionlint` locally at Joel's convenience.
 
 ## 15. Acceptance Criteria
