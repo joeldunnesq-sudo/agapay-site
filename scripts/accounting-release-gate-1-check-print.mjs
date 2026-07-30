@@ -4,6 +4,7 @@ import { chromium } from "playwright";
 import {
   baseUrlFrom,
   loginParishAccounting,
+  loginPlatformUser,
   requiredEnvironment,
   writeArtifact
 } from "./lib/accounting-release-gates.mjs";
@@ -13,7 +14,9 @@ const credentials = requiredEnvironment([
   "ACCOUNTING_GATE_PARISH_B_ID",
   "ACCOUNTING_GATE_PARISH_B_PASSWORD",
   "ACCOUNTING_GATE_STAFF_B_PROFILE_ID",
-  "ACCOUNTING_GATE_STAFF_B_PIN"
+  "ACCOUNTING_GATE_STAFF_B_PIN",
+  "ACCOUNTING_GATE_USER_B_EMAIL",
+  "ACCOUNTING_GATE_USER_B_PASSWORD"
 ]);
 const artifactRoot = "artifacts/check-print";
 await mkdir(artifactRoot, { recursive:true });
@@ -83,18 +86,37 @@ try {
   await billForm.locator('input[name="amount"]').fill("12.34");
   await billForm.getByRole("button", { name:"Save draft bill", exact:true }).click();
 
-  for (const action of ["Submit", "Approve", "Post"]) {
-    const row = page.locator("#accountingPane tbody tr").filter({ hasText:invoiceNumber }).first();
-    await row.getByRole("button", { name:action, exact:true }).click();
-    await page.waitForTimeout(250);
-    if (action !== "Post") await page.locator("#accountingPane tbody tr").filter({ hasText:invoiceNumber }).first().getByRole("button", { name:action === "Submit" ? "Approve" : "Post", exact:true }).waitFor();
-  }
+  let billRow = page.locator("#accountingPane tbody tr").filter({ hasText:invoiceNumber }).first();
+  await billRow.getByRole("button", { name:"Submit", exact:true }).click();
+  const approveButton = billRow.getByRole("button", { name:"Approve", exact:true });
+  await approveButton.waitFor();
+  const approveHandler = await approveButton.getAttribute("onclick");
+  const approveMatch = approveHandler?.match(/accountingBillAction\('([^']+)','approve',(\d+)\)/);
+  assert.ok(approveMatch, "The submitted bill ID and version must be recoverable from the UI action.");
+
+  const platformHeaders = await loginPlatformUser(page, {
+    baseUrl,
+    email:credentials.ACCOUNTING_GATE_USER_B_EMAIL,
+    password:credentials.ACCOUNTING_GATE_USER_B_PASSWORD
+  });
+  const approval = await page.request.post(
+    `${baseUrl}/api/parish/dashboard/${encodeURIComponent(credentials.ACCOUNTING_GATE_PARISH_B_ID)}/accounting/payables/bills/${encodeURIComponent(approveMatch[1])}/approve`,
+    { headers:platformHeaders, data:{ expectedVersion:Number(approveMatch[2]) } }
+  );
+  assert.equal(approval.status(), 200, `Independent platform-treasurer approval returned HTTP ${approval.status()}.`);
+
+  await page.evaluate(async () => {
+    accountingData.payables = null;
+    await loadAccountingPhaseD();
+  });
+  billRow = page.locator("#accountingPane tbody tr").filter({ hasText:invoiceNumber }).first();
+  await billRow.getByRole("button", { name:"Post", exact:true }).click();
 
   await page.getByRole("button", { name:"Payments & Checks", exact:true }).click();
   await page.getByRole("button", { name:"Pay bills", exact:true }).click();
   const paymentForm = page.locator("#accountingPhaseDForm form");
-  const billRow = paymentForm.locator("tbody tr").filter({ hasText:invoiceNumber });
-  await billRow.locator("[data-payment-bill]").check();
+  const payableBillRow = paymentForm.locator("tbody tr").filter({ hasText:invoiceNumber });
+  await payableBillRow.locator("[data-payment-bill]").check();
   await paymentForm.getByRole("button", { name:"Create check", exact:true }).click();
   const createdRow = await paymentRow();
   const printHandler = await createdRow.getByRole("button", { name:"Print", exact:true }).getAttribute("onclick");

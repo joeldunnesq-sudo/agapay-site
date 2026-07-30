@@ -49,6 +49,8 @@ jobs:
           ACCOUNTING_GATE_PARISH_B_PASSWORD: ${{ secrets.ACCOUNTING_GATE_PARISH_B_PASSWORD }}
           ACCOUNTING_GATE_STAFF_B_PROFILE_ID: ${{ secrets.ACCOUNTING_GATE_STAFF_B_PROFILE_ID }}
           ACCOUNTING_GATE_STAFF_B_PIN: ${{ secrets.ACCOUNTING_GATE_STAFF_B_PIN }}
+          ACCOUNTING_GATE_USER_B_EMAIL: ${{ secrets.ACCOUNTING_GATE_USER_B_EMAIL }}
+          ACCOUNTING_GATE_USER_B_PASSWORD: ${{ secrets.ACCOUNTING_GATE_USER_B_PASSWORD }}
 
       - name: Gate 2 — service-worker bypass, disconnect, update, and reconnect
         run: node scripts/accounting-release-gate-2-sw-lifecycle.mjs
