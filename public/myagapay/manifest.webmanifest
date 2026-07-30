@@ -67,19 +67,53 @@
       "name": "Give",
       "short_name": "Give",
       "description": "Open the My AGAPAY giving dashboard.",
-      "url": "/myagapay"
+      "url": "/myagapay",
+      "icons": [
+        {
+          "src": "/images/app/shortcuts/give-v2.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Today",
       "short_name": "Today",
       "description": "View today's Church calendar, readings, and saints.",
-      "url": "/myagapay/giving/calendar"
+      "url": "/myagapay/giving/calendar",
+      "icons": [
+        {
+          "src": "/images/app/shortcuts/today-v2.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Bookstore",
+      "short_name": "Bookstore",
+      "description": "Open the My AGAPAY parish bookstore.",
+      "url": "/myagapay/bookstore",
+      "icons": [
+        {
+          "src": "/images/app/shortcuts/bookstore-v2.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Directory",
       "short_name": "Directory",
       "description": "Open the Orthodox parish and community directory.",
-      "url": "/myagapay/directory"
+      "url": "/myagapay/directory",
+      "icons": [
+        {
+          "src": "/images/app/shortcuts/directory-v2.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }
