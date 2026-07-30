@@ -19,7 +19,6 @@ const credentials = requiredEnvironment([
   "ACCOUNTING_GATE_PARISH_A_PASSWORD",
 ]);
 const parishId = credentials.ACCOUNTING_GATE_PARISH_A_ID;
-const month = new Date().toISOString().slice(0, 7);
 
 async function requestJson(path, { method = "GET", token = "", body } = {}) {
   const response = await fetch(`${baseUrl}${path}`, {
@@ -44,6 +43,17 @@ const login = await requestJson(
 );
 assert.equal(login.response.status, 200, `Parish login returned HTTP ${login.response.status}.`);
 assert.ok(login.payload.token, "Parish login did not return a token.");
+
+const diagnostics = await requestJson(
+  `/api/parish/dashboard/${encodeURIComponent(parishId)}/payout-diagnostics`,
+  { token: login.payload.token },
+);
+assert.equal(diagnostics.response.status, 200, `Payout diagnostics returned HTTP ${diagnostics.response.status}.`);
+assert.ok(diagnostics.payload.payouts?.length > 0, "Payout diagnostics should return a real test payout.");
+const latestPayout = diagnostics.payload.payouts[0];
+const payoutTimestamp = Number(latestPayout.arrivalDate || latestPayout.created || 0) * 1000;
+assert.ok(payoutTimestamp > 0, "Latest test payout should include an arrival or creation date.");
+const month = new Date(payoutTimestamp).toISOString().slice(0, 7);
 
 const reconciliationPath = `/api/parish/dashboard/${encodeURIComponent(parishId)}/reconciliation`;
 const fast = await requestJson(`${reconciliationPath}?month=${encodeURIComponent(month)}`, {
