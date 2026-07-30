@@ -116,9 +116,6 @@ import {
   handleParishDemoTier,
   handleParishSubscriptionRefresh,
   handleParishSubscriptionPortal,
-  handleParishPayoutDiagnostics,
-  handleParishReconciliation,
-  handleParishReconciliationClose,
   handleParishGivingSummary,
   handleParishStripeVolume,
   handleParishGivingHistory,
@@ -142,6 +139,12 @@ import {
   requireDonor,
   weekWindow,
 } from "./handlers/parish.js";
+
+import {
+  handleParishPayoutDiagnostics,
+  handleParishReconciliation,
+  handleParishReconciliationClose,
+} from "./handlers/parish-reconciliation.js";
 
 import {
   handleAdminSetSacramentsEnabled,
