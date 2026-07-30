@@ -253,6 +253,7 @@ assert.equal(givingCatalogChanged({
 const worker = read("src/worker.js");
 const stewardship = read("src/handlers/stewardship.js");
 const donorApp = read("public/donor/app.js");
+const adminApp = read("public/admin/app.js");
 assert.match(worker, /mergeStewardshipFundsIntoRegistration/, "manual activation must update Funds & Alms");
 assert.match(stewardship, /mergeStewardshipFundsIntoRegistration/, "Stripe activation must update Funds & Alms");
 assert.match(stewardship, /giftType'\), 'stewardship'\)\) IN \('stewardship','general'\)/, "pledge nudges must count stewardship/general gifts only");
@@ -291,6 +292,8 @@ assert.match(app, /Benevolence Fund'[^}\n]+restrictionType:'donor_restricted_tem
 assert.match(app, /Funds &amp; Alms is the source of truth/);
 assert.match(app, /funds: editableFunds,[\s\S]*campaigns: editableCampaigns,[\s\S]*feastCampaigns: editableFeastCampaigns/, "saving another dashboard tab must retain Funds & Alms state");
 assert.match(app, /givingCatalogChanged: givingCatalogSnapshot\(\) !== givingCatalogBaseline/, "ordinary settings saves must identify unchanged Funds & Alms state");
+assert.match(app, /function fallbackCampaigns\(v\) \{ return JSON\.stringify\(Array\.isArray\(v\) \? v : \[\]/, "an empty campaign catalog must remain empty until the parish creates a campaign");
+assert.doesNotMatch(adminApp, /jsonForTextarea\(reg\.campaigns,\s*\[\{\s*id:\s*['"]campaign['"]/, "admin verification must not create a placeholder parish campaign");
 assert.doesNotMatch(app, /Advanced edit \(JSON\)|fundsJson|campaignsJson/, "Funds & Alms must not expose an internal JSON editor");
 
 console.log("PASS - Funds & Alms accounting catalog, restrictions, metadata, failure safety, and account numbers");

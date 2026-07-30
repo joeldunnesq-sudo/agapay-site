@@ -462,7 +462,7 @@
   }
 
   function fallbackFunds(v)     { return JSON.stringify(v && v.length ? v : [{ id:'general', name:'General Operating Fund', description:'Utilities, supplies, ministries, and day-to-day parish needs.' }], null, 2); }
-  function fallbackCampaigns(v) { return JSON.stringify(v && v.length ? v : [{ id:'alms', name:'Alms Campaign', description:'Parish-approved alms for a specific need.' }], null, 2); }
+  function fallbackCampaigns(v) { return JSON.stringify(Array.isArray(v) ? v : [], null, 2); }
   function fallbackFundsArray(v)     { return JSON.parse(fallbackFunds(v)); }
   function fallbackCampaignsArray(v) { return JSON.parse(fallbackCampaigns(v)); }
   function dedicatedGivingUrl() { return currentParish ? `${window.location.origin}/give/${encodeURIComponent(currentParish.parishId)}` : ''; }
