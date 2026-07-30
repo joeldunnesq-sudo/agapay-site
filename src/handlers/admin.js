@@ -92,6 +92,7 @@ import {
 
 import {
   appendAdminAudit,
+  findRegistrationByParishId,
   loadRegistrationByReference,
   requireAdmin,
   requireAdminContext,
@@ -103,8 +104,8 @@ import {
 
 import { recordAuditEvent, listAuditEvents } from "../lib/audit-log.js";
 import { TAX_READINESS_STATUSES, withTaxReadinessDefaults } from "../lib/tax-readiness.js";
-import { accountingTierFor } from "../lib/entitlements.js";
-import { accountingHealthOverview, activateProtectiveState, releaseProtectiveState, runIntegrityScan, verifyRecoveryEvidence } from "../accounting/index.js";
+import { accountingEnabledFor, accountingTierFor } from "../lib/entitlements.js";
+import { accountingHealthOverview, activatePreparedParishAccounting, activateProtectiveState, createBoundD1ProvisioningAdapter, detectAccountingEnvironment, releaseProtectiveState, runIntegrityScan, verifyRecoveryEvidence } from "../accounting/index.js";
 import { resolveAccountingDatabaseForParish } from "./accounting-ledger.js";
 
 export { requireAdmin };
@@ -1273,8 +1274,11 @@ const ADMIN_ACCOUNTING_ACTOR=Object.freeze({id:"accounting-integrity-operator",t
 const PROTECTIVE_STATES=new Set(["normal","degraded_read_only","posting_blocked","recovering"]);
 const accountingRows=async(db,sql,...params)=>(await db.prepare(sql).bind(...params).all()).results||[];
 const accountingServiceTier=tier=>tier==="advanced_operations"?"parish":"mission";
+function preparedAccountingDatabase(env,parishId){let configured={};try{configured=JSON.parse(String(env.ACCOUNTING_PREPARED_PARISH_DATABASES||"{}"));}catch{return"";}const identifier=configured?.[parishId];return typeof identifier==="string"?identifier.trim():"";}
 async function adminAccountingTarget(env,parishId){const resolved=await resolveAccountingDatabaseForParish(env,parishId);if(!resolved.registration)return{error:json({error:"Parish was not found."},{status:404})};if(!resolved.entity||resolved.entity.entityStatus!=="ready"||resolved.registry?.provisioningStatus!=="ready")return{error:json({error:"Parish accounting is not provisioned."},{status:409})};if(!resolved.db)return{error:json({error:"Parish accounting database is unavailable."},{status:503})};return{...resolved,tier:accountingServiceTier(accountingTierFor(resolved.registration))};}
-export async function handleAdminAccountingOperations(request,env){const admin=await requireAdminContext(request,env);if(!admin)return unauthorized();const url=new URL(request.url),path=url.pathname,body=request.method==="GET"?{}:await request.json().catch(()=>({})),parishId=String(request.method==="GET"?url.searchParams.get("parishId")||"":body.parishId||"").trim();if(!parishId)return json({error:"parishId is required."},{status:422});try{const target=await adminAccountingTarget(env,parishId);if(target.error)return target.error;const {db,tier}=target;
+export async function handleAdminAccountingOperations(request,env){const admin=await requireAdminContext(request,env);if(!admin)return unauthorized();const url=new URL(request.url),path=url.pathname,body=request.method==="GET"?{}:await request.json().catch(()=>({})),parishId=String(request.method==="GET"?url.searchParams.get("parishId")||"":body.parishId||"").trim();if(!parishId)return json({error:"parishId is required."},{status:422});try{
+if(request.method==="POST"&&path==="/api/admin/accounting/activate-prepared"){const environment=detectAccountingEnvironment(env);if(environment==="production")return json({error:"Prepared database activation is unavailable in production."},{status:403});const registration=(await findRegistrationByParishId(env,parishId))?.registration||null;if(!registration)return json({error:"Parish was not found."},{status:404});if(!accountingEnabledFor(registration))return json({error:"Accounting is not included in this subscription."},{status:403});const databaseIdentifier=preparedAccountingDatabase(env,parishId);if(!databaseIdentifier)return json({error:"No prepared accounting database is assigned to this parish."},{status:409});const result=await activatePreparedParishAccounting(env,{adapter:createBoundD1ProvisioningAdapter(env),parishId,databaseIdentifier,environment,subscriptionTier:accountingServiceTier(accountingTierFor(registration)),actorUserId:admin.actor,correlationId:`admin-activation-${Date.now()}`});await recordAuditEvent(env,request,{action:"accounting.prepared_database.activate",actorUserId:admin.actor,actorType:"admin",targetType:"parish_accounting",targetId:parishId,organizationId:parishId,reason:"Activate configured prepared accounting database",metadata:{environment,databaseIdentifier,result}});return json({ok:true,parishId,result});}
+const target=await adminAccountingTarget(env,parishId);if(target.error)return target.error;const {db,tier}=target;
 if(request.method==="GET"&&path==="/api/admin/accounting/health")return json({ok:true,parishId,health:await accountingHealthOverview(db,{actor:ADMIN_ACCOUNTING_ACTOR,entitlementTier:tier})});
 if(request.method==="GET"&&path==="/api/admin/accounting/integrity-scans")return json({ok:true,parishId,scans:await accountingRows(db,`SELECT s.id,s.scan_type scanType,s.scope,s.status,s.started_at startedAt,s.completed_at completedAt,s.checks_total checksTotal,s.checks_passed checksPassed,s.checks_warned checksWarned,s.checks_failed checksFailed,s.critical_failures criticalFailures,s.scanner_version scannerVersion,s.schema_version schemaVersion,s.correlation_id correlationId,COUNT(f.id) findingCount,SUM(CASE WHEN f.severity='critical' THEN 1 ELSE 0 END) criticalFindingCount FROM accounting_integrity_scans s LEFT JOIN accounting_integrity_findings f ON f.scan_id=s.id GROUP BY s.id ORDER BY s.created_at DESC LIMIT 50`)});
 if(request.method==="GET"&&path==="/api/admin/accounting/recovery-verifications")return json({ok:true,parishId,verifications:await accountingRows(db,`SELECT id,verification_type verificationType,status,artifact_reference artifactReference,artifact_checksum artifactChecksum,manifest_checksum manifestChecksum,schema_valid schemaValid,trial_balance_hash trialBalanceHash,source_links_valid sourceLinksValid,reconciliations_valid reconciliationsValid,close_snapshots_valid closeSnapshotsValid,verified_by verifiedBy,verified_at verifiedAt,expires_at expiresAt,correlation_id correlationId FROM accounting_recovery_verifications ORDER BY verified_at DESC LIMIT 50`)});

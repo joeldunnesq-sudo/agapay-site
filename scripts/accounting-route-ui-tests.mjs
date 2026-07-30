@@ -17,6 +17,10 @@ const phaseFRoutes = read("src/handlers/accounting-close.js");
 const dashboard = read("public/parish/dashboard.html");
 const app = read("public/parish/app.js");
 const css = read("public/parish/redesign.css");
+const admin = read("src/handlers/admin.js");
+const adminHtml = read("public/admin.html");
+const adminApp = read("public/admin/app.js");
+const ledgerHandler = read("src/handlers/accounting-ledger.js");
 
 assert.match(worker, /handleAccountingSetupReports/);
 assert.match(worker, /handleAccountingAccess/);
@@ -29,6 +33,13 @@ assert.equal(accountingAvailableForParish("parish-b", { AGAPAY_ENVIRONMENT:"stag
 assert.equal(accountingAvailableForParish("parish-b", { AGAPAY_ENVIRONMENT:"production", ACCOUNTING_TEST_PARISH_IDS:"parish-b" }), false);
 assert.equal(accountingAvailableForParish("parish-b", { ACCOUNTING_TEST_PARISH_IDS:"parish-b" }), false);
 assert.match(app, /function accountingPreviewOnly\(\)/);
+assert.match(ledgerHandler, /detectAccountingEnvironment\(env\)/, "accounting database resolution must use the active environment");
+assert.doesNotMatch(ledgerHandler, /loadAccountingDatabaseForEntity\(env,entity\.id,"production"\)/, "staging must not resolve production registry records");
+assert.match(admin, /\/api\/admin\/accounting\/activate-prepared/);
+assert.match(admin, /environment==="production"/, "prepared database activation must fail closed in production");
+assert.match(admin, /ACCOUNTING_PREPARED_PARISH_DATABASES/, "prepared database activation must use a configured parish mapping");
+assert.match(adminHtml, /Activate prepared staging database/);
+assert.match(adminApp, /function activateAdminPreparedAccounting\b/);
 assert.match(app, /function renderAccountingPaywall\(/);
 assert.match(app, /Unlock the Accounting Suite/);
 assert.match(app, /Financial command center/);

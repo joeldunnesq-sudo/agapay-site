@@ -152,6 +152,7 @@ AGAPAY_APP_URL = "https://agapay-site-staging.joeldunnesq.workers.dev"
 AGAPAY_PUBLIC_URL = "https://agapay-site-staging.joeldunnesq.workers.dev"
 AGAPAY_ENVIRONMENT = "staging"
 ACCOUNTING_DATABASE_BINDINGS = '{"agapay-acct-staging-parish-a":"ACCOUNTING_DB_ST_FIACRE","agapay-acct-staging-parish-b":"ACCOUNTING_DB_RELEASE_GATE_B"}'
+ACCOUNTING_PREPARED_PARISH_DATABASES = '{"st-fiacre":"agapay-acct-staging-parish-a","release-gate-b":"agapay-acct-staging-parish-b"}'
 ACCOUNTING_TEST_PARISH_IDS = "release-gate-b"
 
 [env.staging.triggers]
