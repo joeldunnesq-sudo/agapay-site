@@ -1,0 +1,67 @@
+name: Accounting Release-Gate Evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: Provisioned non-production URL containing two isolated accounting parishes
+        required: true
+      environment:
+        description: GitHub environment holding the protected release-gate credentials
+        required: true
+        default: accounting-release-gates
+
+permissions:
+  contents: read
+
+jobs:
+  accounting-release-gates:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+      - run: npx playwright install chromium --with-deps
+
+      - name: Gate 1 — authenticated check-print evidence
+        run: node scripts/accounting-release-gate-1-check-print.mjs "${{ inputs.target_url }}"
+        env:
+          ACCOUNTING_GATE_PARISH_A_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_A_ID }}
+          ACCOUNTING_GATE_PARISH_A_PASSWORD: ${{ secrets.ACCOUNTING_GATE_PARISH_A_PASSWORD }}
+          ACCOUNTING_GATE_STAFF_A_PROFILE_ID: ${{ secrets.ACCOUNTING_GATE_STAFF_A_PROFILE_ID }}
+          ACCOUNTING_GATE_STAFF_A_PIN: ${{ secrets.ACCOUNTING_GATE_STAFF_A_PIN }}
+
+      - name: Gate 2 — service-worker bypass, disconnect, update, and reconnect
+        run: node scripts/accounting-release-gate-2-sw-lifecycle.mjs
+
+      - name: Gate 3 — two-credential, two-parish isolation matrix
+        run: node scripts/accounting-release-gate-3-cross-tenant.mjs "${{ inputs.target_url }}"
+        env:
+          ACCOUNTING_GATE_PARISH_A_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_A_ID }}
+          ACCOUNTING_GATE_PARISH_B_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_B_ID }}
+          ACCOUNTING_GATE_USER_A_EMAIL: ${{ secrets.ACCOUNTING_GATE_USER_A_EMAIL }}
+          ACCOUNTING_GATE_USER_A_PASSWORD: ${{ secrets.ACCOUNTING_GATE_USER_A_PASSWORD }}
+          ACCOUNTING_GATE_USER_B_EMAIL: ${{ secrets.ACCOUNTING_GATE_USER_B_EMAIL }}
+          ACCOUNTING_GATE_USER_B_PASSWORD: ${{ secrets.ACCOUNTING_GATE_USER_B_PASSWORD }}
+          ACCOUNTING_GATE_PARISH_A_PASSWORD: ${{ secrets.ACCOUNTING_GATE_PARISH_A_PASSWORD }}
+          ACCOUNTING_GATE_PARISH_B_PASSWORD: ${{ secrets.ACCOUNTING_GATE_PARISH_B_PASSWORD }}
+          ACCOUNTING_GATE_STAFF_A_PROFILE_ID: ${{ secrets.ACCOUNTING_GATE_STAFF_A_PROFILE_ID }}
+          ACCOUNTING_GATE_STAFF_A_PIN: ${{ secrets.ACCOUNTING_GATE_STAFF_A_PIN }}
+          ACCOUNTING_GATE_STAFF_B_PROFILE_ID: ${{ secrets.ACCOUNTING_GATE_STAFF_B_PROFILE_ID }}
+          ACCOUNTING_GATE_STAFF_B_PIN: ${{ secrets.ACCOUNTING_GATE_STAFF_B_PIN }}
+
+      - name: Upload accounting release-gate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accounting-release-gate-evidence-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 30

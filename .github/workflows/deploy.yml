@@ -97,3 +97,44 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
+
+  post-deploy-accounting-smoke:
+    name: Post-deploy accounting smoke
+    needs: deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+      - run: npx playwright install chromium --with-deps
+
+      - name: Run public and authenticated accounting smoke
+        run: node scripts/accounting-smoke-live.mjs https://agapay.app --allow-unconfigured
+        env:
+          ACCOUNTING_GATE_PARISH_A_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_A_ID }}
+          ACCOUNTING_GATE_PARISH_B_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_B_ID }}
+          ACCOUNTING_GATE_USER_A_EMAIL: ${{ secrets.ACCOUNTING_GATE_USER_A_EMAIL }}
+          ACCOUNTING_GATE_USER_A_PASSWORD: ${{ secrets.ACCOUNTING_GATE_USER_A_PASSWORD }}
+          ACCOUNTING_GATE_USER_B_EMAIL: ${{ secrets.ACCOUNTING_GATE_USER_B_EMAIL }}
+          ACCOUNTING_GATE_USER_B_PASSWORD: ${{ secrets.ACCOUNTING_GATE_USER_B_PASSWORD }}
+          ACCOUNTING_GATE_PARISH_A_PASSWORD: ${{ secrets.ACCOUNTING_GATE_PARISH_A_PASSWORD }}
+          ACCOUNTING_GATE_PARISH_B_PASSWORD: ${{ secrets.ACCOUNTING_GATE_PARISH_B_PASSWORD }}
+          ACCOUNTING_GATE_STAFF_A_PROFILE_ID: ${{ secrets.ACCOUNTING_GATE_STAFF_A_PROFILE_ID }}
+          ACCOUNTING_GATE_STAFF_A_PIN: ${{ secrets.ACCOUNTING_GATE_STAFF_A_PIN }}
+          ACCOUNTING_GATE_STAFF_B_PROFILE_ID: ${{ secrets.ACCOUNTING_GATE_STAFF_B_PROFILE_ID }}
+          ACCOUNTING_GATE_STAFF_B_PIN: ${{ secrets.ACCOUNTING_GATE_STAFF_B_PIN }}
+
+      - name: Upload post-deploy accounting smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: post-deploy-accounting-smoke-${{ github.sha }}
+          path: artifacts/accounting-release-gates/
+          if-no-files-found: error
+          retention-days: 30

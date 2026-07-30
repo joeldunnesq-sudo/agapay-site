@@ -2540,7 +2540,7 @@ export default {
     const accountingAccessMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/accounting-access(?:\/.*)?$/);
     if (accountingAccessMatch) {
       const accountingParishId = decodeURIComponent(accountingAccessMatch[1]);
-      if (!accountingAvailableForParish(accountingParishId)) {
+      if (!accountingAvailableForParish(accountingParishId, env)) {
         return json(
           { error: "Not found" },
           { status: 404, headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" } }
@@ -2551,7 +2551,7 @@ export default {
     const accountingMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/accounting(?:\/.*)?$/);
     if (accountingMatch) {
       const accountingParishId = decodeURIComponent(accountingMatch[1]);
-      if (!accountingAvailableForParish(accountingParishId)) {
+      if (!accountingAvailableForParish(accountingParishId, env)) {
         return json(
           { error: "Not found" },
           { status: 404, headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" } }

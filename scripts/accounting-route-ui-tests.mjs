@@ -20,11 +20,14 @@ const css = read("public/parish/redesign.css");
 
 assert.match(worker, /handleAccountingSetupReports/);
 assert.match(worker, /handleAccountingAccess/);
-assert.match(worker, /accountingAvailableForParish\(accountingParishId\)/);
+assert.match(worker, /accountingAvailableForParish\(accountingParishId,\s*env\)/);
 assert.equal(ACCOUNTING_DEMO_PARISH_ID, "st-fiacre");
 assert.equal(accountingAvailableForParish("st-fiacre"), true);
 assert.equal(accountingAvailableForParish("ST-FIACRE"), true);
 assert.equal(accountingAvailableForParish("parish-a"), false);
+assert.equal(accountingAvailableForParish("parish-b", { AGAPAY_ENVIRONMENT:"staging", ACCOUNTING_TEST_PARISH_IDS:"parish-b, parish-c" }), true);
+assert.equal(accountingAvailableForParish("parish-b", { AGAPAY_ENVIRONMENT:"production", ACCOUNTING_TEST_PARISH_IDS:"parish-b" }), false);
+assert.equal(accountingAvailableForParish("parish-b", { ACCOUNTING_TEST_PARISH_IDS:"parish-b" }), false);
 assert.match(app, /function accountingPreviewOnly\(\)/);
 assert.match(app, /function renderAccountingPaywall\(/);
 assert.match(app, /Unlock the Accounting Suite/);
