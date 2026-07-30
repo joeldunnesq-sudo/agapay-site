@@ -58,13 +58,43 @@ async function capturePrint(name, { reprintReason = "" } = {}) {
 }
 
 try {
-  await loginParishAccounting(page, {
+  const staffHeaders = await loginParishAccounting(page, {
     baseUrl,
     parishId:credentials.ACCOUNTING_GATE_PARISH_B_ID,
     parishPassword:credentials.ACCOUNTING_GATE_PARISH_B_PASSWORD,
     profileId:credentials.ACCOUNTING_GATE_STAFF_B_PROFILE_ID,
     pin:credentials.ACCOUNTING_GATE_STAFF_B_PIN
   });
+
+  const accountingBase = `${baseUrl}/api/parish/dashboard/${encodeURIComponent(credentials.ACCOUNTING_GATE_PARISH_B_ID)}/accounting`;
+  const bankResponse = await page.request.get(`${accountingBase}/bank/accounts`, { headers:staffHeaders });
+  assert.equal(bankResponse.status(), 200, `Bank-account readiness returned HTTP ${bankResponse.status()}.`);
+  const banks = (await bankResponse.json()).accounts || [];
+  if (!banks.some((bank) => bank.status === "active" && bank.isActive !== false)) {
+    const referenceResponse = await page.request.get(`${accountingBase}/workspace-reference`, { headers:staffHeaders });
+    assert.equal(referenceResponse.status(), 200, `Workspace reference returned HTTP ${referenceResponse.status()}.`);
+    const reference = await referenceResponse.json();
+    const assetAccount = (reference.accounts || []).find(
+      (account) => account.category === "asset" && Number(account.isActive) !== 0
+    );
+    assert.ok(assetAccount?.id, "An active asset posting account is required for the staging bank fixture.");
+    const createdBank = await page.request.post(`${accountingBase}/bank/accounts`, {
+      headers:staffHeaders,
+      data:{
+        name:"AGAPAY Release Gate Checking",
+        ledgerAccountId:assetAccount.id,
+        accountType:"checking",
+        institutionName:"Staging fixture",
+        maskedLast4:"0000",
+        currency:"USD",
+        isDefault:true
+      }
+    });
+    assert.equal(createdBank.status(), 201, `Staging bank-account fixture returned HTTP ${createdBank.status()}.`);
+    evidence.bankFixtureCreated = true;
+  } else {
+    evidence.bankFixtureCreated = false;
+  }
 
   await page.locator('[data-accounting-view="payables"]').click();
   await page.getByRole("button", { name:"Vendors", exact:true }).click();
