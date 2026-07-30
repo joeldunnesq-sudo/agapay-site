@@ -146,6 +146,7 @@ export async function loginParishAccounting(page, {
     const raw = sessionStorage.getItem(`agapay.accountingStaff.${id}`);
     return Boolean(raw && JSON.parse(raw)?.token);
   }, parishId);
+  await page.locator('#accountingPane[data-loaded="true"]').waitFor();
   return page.evaluate((id) => {
     const parishToken = document.getElementById("parishToken")?.value || "";
     const staff = JSON.parse(sessionStorage.getItem(`agapay.accountingStaff.${id}`) || "{}");

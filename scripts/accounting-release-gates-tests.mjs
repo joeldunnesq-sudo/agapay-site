@@ -50,6 +50,7 @@ assert.match(helpers, /\/api\/identity\/login/);
 assert.match(helpers, /["']X-AGAPAY-User-Email["']/);
 assert.doesNotMatch(helpers, /\/myagapay\/login|agapayDonorToken/);
 assert.match(helpers, /sidebarParishName/);
+assert.match(helpers, /accountingPane\[data-loaded=["']true["']\]/);
 console.log(`PASS - gate 3 inventories ${inventory.routes.length} routes across ${inventory.coverage.length} handler files`);
 
 for (const style of ["top_check_two_stubs","bottom_check_two_stubs","check_only"]) assert.match(gate1, new RegExp(style));
