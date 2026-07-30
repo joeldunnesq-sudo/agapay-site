@@ -83,6 +83,9 @@ assert.ok(!backendSources.includes("subscription_data[application_fee_percent]")
 assert.ok(!backendSources.includes("payment_intent_data[application_fee_amount]"), "worker should not apply an AGAPAY application fee to one-time donor gifts");
 assert.ok(backendSources.includes("AGAPAY does not collect an application fee on donations"), "worker should document that AGAPAY charges no donation platform fee");
 assert.ok(backendSources.includes("Do not add any AGAPAY platform/application fee to bookstore or future commerce checkouts"), "worker should document that Parish Commerce checkout has no AGAPAY application fee");
+assert.ok(!parishHandler.includes("payment_intent_data[on_behalf_of]"), "direct parish donation charges should not set the connected parish as on_behalf_of");
+assert.ok(!parishHandler.includes("subscription_data[on_behalf_of]"), "direct recurring parish donations should not set the connected parish as on_behalf_of");
+assert.ok(!donorHandler.includes("payment_intent_data[on_behalf_of]"), "direct parish commerce charges should not set the connected parish as on_behalf_of");
 assert.ok(worker.includes("/api/checkout-session-status"), "worker should expose checkout return reconciliation");
 assert.ok(backendSources.includes("session_id={CHECKOUT_SESSION_ID}"), "Stripe success URLs should include the Checkout session id");
 assert.ok(backendSources.includes("/myagapay?gift_success=1"), "authenticated donor checkouts should return to the My AGAPAY dashboard");

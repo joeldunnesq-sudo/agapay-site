@@ -1508,7 +1508,6 @@ export async function handleDonorBookstore(request, env) {
     cancel_url: `${appUrl}/myagapay/bookstore?order_canceled=1`,
     customer: customer.body.id,
     "automatic_tax[enabled]": "true",
-    "payment_intent_data[on_behalf_of]": resolved.registration.stripeAccountId,
     // Seller-identity disclosure surfaced on the Stripe-hosted Checkout
     // page itself via the submit-type/custom text field -- reinforces the
     // parish, not AGAPAY, as the seller at the one checkout surface every
@@ -1555,6 +1554,9 @@ export async function handleDonorBookstore(request, env) {
     form.set(`payment_intent_data[metadata][${key}]`, value);
   }
 
+  // This is a direct charge in the parish account. The connected-account
+  // request context supplies parish branding and settlement; pairing it with
+  // on_behalf_of for the same account would make Stripe reject the session.
   const session = await stripeFormConnectedRequest(env, "/v1/checkout/sessions", form, resolved.registration.stripeAccountId);
   if (!session.ok) {
     return json({ error: "Stripe checkout session failed", detail: session.body.error?.message || "Unknown Stripe error" }, { status: 502 });

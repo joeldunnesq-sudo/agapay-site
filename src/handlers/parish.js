@@ -2543,16 +2543,11 @@ export async function handleCheckout(request, env) {
   // Donations flow to the parish's connected Stripe account with only
   // Stripe's own processing cost deducted (see checkoutFinancials above).
 
-  // on_behalf_of ensures card statement descriptors and branding show the
-  // parish's name rather than AGAPAY's. Required for correct Stripe Connect
-  // settlement and dispute ownership on standard connected accounts.
-  if (parish.stripeAccountId) {
-    if (recurring) {
-      form.set("subscription_data[on_behalf_of]", parish.stripeAccountId);
-    } else {
-      form.set("payment_intent_data[on_behalf_of]", parish.stripeAccountId);
-    }
-  }
+  // Checkout is created as a direct charge in the parish account by the
+  // Stripe-Account header below. Do not also set on_behalf_of to that same
+  // account: Stripe rejects that combination, and the direct-charge context
+  // already gives the parish its own branding, statement descriptor,
+  // settlement, and dispute ownership.
 
   if (recurring) {
     form.set("line_items[0][price_data][recurring][interval]", body.frequency === "weekly" || body.frequency === "biweekly" ? "week" : "month");
