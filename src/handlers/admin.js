@@ -64,6 +64,10 @@ import {
 import {
   listLearnBillingRecords,
 } from "../learn/billing.js";
+import {
+  generateDashboardToken,
+  sendDashboardInvite,
+} from "../lib/parish-notifications.js";
 
 import {
   createCuratedLearnCommunityResource,
@@ -88,13 +92,11 @@ import {
 
 import {
   appendAdminAudit,
-  generateDashboardToken,
   loadRegistrationByReference,
   requireAdmin,
   requireAdminContext,
   saveCommemorationEntry,
   saveRegistrationRecord,
-  sendDashboardInvite,
   statusTimelineWithNext,
   storeDonorOffering,
 } from "./parish.js";

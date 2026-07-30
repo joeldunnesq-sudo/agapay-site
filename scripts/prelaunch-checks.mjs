@@ -63,7 +63,9 @@ const backendFiles = [
   "src/handlers/donor.js",
   "src/handlers/parish.js",
   "src/handlers/stripe.js",
-  "src/handlers/stewardship.js"
+  "src/handlers/stewardship.js",
+  "src/lib/parish-notifications.js",
+  "src/lib/stripe-fees.js"
 ];
 const backendSources = (await Promise.all(backendFiles.map((file) => readFile(file, "utf8")))).join("\n");
 assert.ok(backendSources.includes("X-AGAPAY-Admin-Token"), "Backend should accept AGAPAY admin auth header");

@@ -14,6 +14,8 @@ const sourceFiles = [
   "src/handlers/donor.js",
   "src/handlers/admin.js",
   "src/handlers/stripe.js",
+  "src/lib/parish-notifications.js",
+  "src/lib/stripe-fees.js",
   "src/worker.js"
 ];
 
