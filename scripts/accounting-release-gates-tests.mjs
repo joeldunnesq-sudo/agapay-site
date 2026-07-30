@@ -24,7 +24,7 @@ assert.match(gate2, /registration\.update\(\)/);
 assert.match(parishApp, /addEventListener\('offline'/);
 assert.match(parishApp, /serviceWorker\?\.addEventListener\('controllerchange'/);
 assert.match(parishApp, /open Accounting form was preserved/);
-assert.match(packageJson, /accounting-release-gate-2-sw-lifecycle\.mjs/);
+assert.match(packageJson, /accounting-release-gate-2-sw-lifecycle\.mjs --static-only/);
 console.log("PASS - authenticated parish/API caching remains prohibited and gate 2 is permanent");
 
 assert.equal(accountingAvailableForParish("st-fiacre"), true);

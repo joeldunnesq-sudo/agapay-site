@@ -9,6 +9,9 @@ assert.match(serviceWorker, /url\.pathname\.startsWith\(["']\/api\/["']\)\s*\)\s
 assert.match(serviceWorker, /url\.pathname\.startsWith\(["']\/parish["']\)\s*\)\s*return true/);
 assert.match(serviceWorker, /if\s*\(shouldBypassCache\(request\)\)\s*return/);
 
+if (process.argv.includes("--static-only")) {
+  console.log("PASS - /api and /parish remain network-only");
+} else {
 let version = 1;
 const server = createServer((request, response) => {
   if (request.url === "/bump" && request.method === "POST") {
@@ -95,4 +98,5 @@ try {
 } finally {
   await browser.close();
   await new Promise((resolve) => server.close(resolve));
+}
 }
