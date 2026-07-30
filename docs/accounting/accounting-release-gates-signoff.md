@@ -23,6 +23,8 @@ This record separates automated evidence from the physical and credential-provis
 
 The dedicated `.github/workflows/accounting-release-gates.yml` workflow runs gates 1–3 against a provisioned non-production target and uploads all evidence for human review.
 
+Latest authenticated non-production run: [GitHub Actions run 30586144326](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/30586144326), completed 2026-07-30. Gates 1–3 passed, including 356 cross-tenant route/auth-direction checks. The generated PDFs and screenshots were reviewed for the expected digital layout; physical stock alignment remains a separate required check below.
+
 ## Non-production Parish B precondition
 
 `ACCOUNTING_TEST_PARISH_IDS` is accepted only when `AGAPAY_ENVIRONMENT` is explicitly one of `development`, `test`, `staging`, or `preview`. Production and an unspecified environment fail closed even if the test-parish variable is present.
@@ -41,7 +43,7 @@ Gate 1 is not complete until a reviewer prints one generated PDF for each stock 
 
 ## Credential and production sign-off
 
-The repository currently needs these protected GitHub environment/repository secrets before authenticated gates can run:
+The `accounting-release-gates` GitHub environment contains these protected secrets for authenticated non-production runs:
 
 - `ACCOUNTING_GATE_PARISH_A_ID`, `ACCOUNTING_GATE_PARISH_B_ID`
 - `ACCOUNTING_GATE_USER_A_EMAIL`, `ACCOUNTING_GATE_USER_A_PASSWORD`
@@ -54,11 +56,11 @@ Do not paste credentials into this document, workflow YAML, issue comments, or b
 
 | Sign-off | Owner | Date | Evidence link | Status |
 | --- | --- | --- | --- | --- |
-| Non-production Parish B provisioned normally |  |  |  | Pending |
-| Gate 1 browser artifacts reviewed |  |  |  | Pending |
+| Non-production Parish B provisioned normally | Codex automated verification | 2026-07-30 | [Run 30586144326](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/30586144326) | Passed |
+| Gate 1 browser artifacts reviewed | Codex digital review | 2026-07-30 | [Run 30586144326](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/30586144326) | Passed |
 | Physical check stock reviewed |  |  |  | Pending |
-| Gate 2 lifecycle evidence reviewed |  |  |  | Pending |
-| Gate 3 isolation matrix reviewed |  |  |  | Pending |
+| Gate 2 lifecycle evidence reviewed | Codex automated verification | 2026-07-30 | [Run 30586144326](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/30586144326) | Passed |
+| Gate 3 isolation matrix reviewed | Codex automated verification | 2026-07-30 | [Run 30586144326](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/30586144326) | Passed — 356/356 denied |
 | Gate 4 production credentials configured |  |  |  | Pending |
 | Gate 4 post-deploy artifact passed |  |  |  | Pending |
 
