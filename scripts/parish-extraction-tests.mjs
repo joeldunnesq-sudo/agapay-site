@@ -104,6 +104,7 @@ try {
 
 const parish = await readFile(new URL("../src/handlers/parish.js", import.meta.url), "utf8");
 const parishSacraments = await readFile(new URL("../src/handlers/parish-sacraments.js", import.meta.url), "utf8");
+const parishCommerce = await readFile(new URL("../src/handlers/parish-commerce.js", import.meta.url), "utf8");
 const stripe = await readFile(new URL("../src/handlers/stripe.js", import.meta.url), "utf8");
 const donor = await readFile(new URL("../src/handlers/donor.js", import.meta.url), "utf8");
 const admin = await readFile(new URL("../src/handlers/admin.js", import.meta.url), "utf8");
@@ -125,6 +126,7 @@ function assertImports(source, modulePath, names) {
 
 assert.ok(parish.split(/\r?\n/).length <= 5750, "parish.js should retain the extraction size reduction");
 assert.ok(parish.split(/\r?\n/).length <= 5300, "parish.js should retain the sacraments extraction size reduction");
+assert.ok(parish.split(/\r?\n/).length <= 4620, "parish.js should retain the commerce extraction size reduction");
 const sacramentPublicFunctions = [
   "handleAdminSetSacramentsEnabled",
   "sacramentTypeLabel",
@@ -182,6 +184,104 @@ const parishWorkerImports = importedNames(worker, "./handlers/parish.js");
 for (const name of sacramentPublicFunctions) {
   assert.ok(!parishWorkerImports.has(name), `worker should no longer import ${name} from parish.js`);
 }
+const commercePublicFunctions = [
+  "handleParishBookstore",
+  "handleParishSettlementProfiles",
+  "completeCommerceOrderFromStripe",
+  "refundCommerceOrderFromStripe",
+  "disputeCommerceOrderFromStripe",
+];
+for (const name of commercePublicFunctions) {
+  assert.doesNotMatch(parish, new RegExp(`(?:async\\s+)?function\\s+${name}\\b`), `${name} should move out of parish.js`);
+  assert.match(parishCommerce, new RegExp(`export\\s+async\\s+function\\s+${name}\\b`), `${name} should live in parish-commerce.js`);
+}
+for (const name of ["handleParishBookstore", "handleParishSettlementProfiles"]) {
+  assert.ok(!parishWorkerImports.has(name), `worker should no longer import ${name} from parish.js`);
+}
+assertImports(parishCommerce, "./parish.js", [
+  "bookstoreEnabledFor",
+  "centsFromBody",
+  "d1All",
+  "d1First",
+  "d1Run",
+  "findRegistrationByParishId",
+  "generateSecret",
+  "getBearerToken",
+  "hasParishPlusAccess",
+  "hasProductionStore",
+  "json",
+  "missingProductionStoreResponse",
+  "normalizeBookstoreBody",
+  "parishDashboardPayload",
+  "rateLimit",
+  "recordAuditEvent",
+  "stripePaymentIntentFinancialUpdates",
+  "unauthorized",
+  "verifyParishDashboardBearer",
+]);
+assert.doesNotMatch(
+  parishCommerce,
+  /(?:async\s+)?function\s+(?:stripePaymentIntentFinancialUpdates|parishDashboardPayload)\b/,
+  "parish-commerce should import shared parish helpers instead of redefining them",
+);
+assert.match(
+  parish,
+  /stripeDisputed:\s*charge\?\.disputed === true/,
+  "payment-intent financial updates must expose Stripe's current dispute state",
+);
+assert.match(
+  parishCommerce,
+  /const refundedCents = Number\(fees\.stripeRefundedCents[\s\S]*?const paymentStatus = fees\.stripeDisputed[\s\S]*?"disputed"/,
+  "commerce completion must preserve dispute/refund state even when lifecycle webhooks race",
+);
+assertImports(parishCommerce, "../lib/settlement-profiles.js", [
+  "SETTLEMENT_PROFILE_TYPES",
+  "assignModuleProfile",
+  "createSettlementProfile",
+  "ensureDefaultCommerceProfile",
+  "ensureDefaultGivingProfile",
+  "listSettlementProfiles",
+  "renameSettlementProfile",
+  "setDefaultCommerceProfile",
+  "setDefaultGivingProfile",
+  "setProfileActive",
+  "settlementProfileToJson",
+]);
+assertImports(parishCommerce, "../lib/stripe-connect.js", [
+  "checkoutPaymentIntentId",
+  "numericCents",
+  "stripeObjectId",
+]);
+assertImports(worker, "./handlers/parish-commerce.js", [
+  "handleParishBookstore",
+  "handleParishSettlementProfiles",
+]);
+assertImports(stripe, "./parish-commerce.js", [
+  "completeCommerceOrderFromStripe",
+  "disputeCommerceOrderFromStripe",
+  "refundCommerceOrderFromStripe",
+]);
+const stripeParishImports = importedNames(stripe, "./parish.js");
+for (const name of ["completeCommerceOrderFromStripe", "disputeCommerceOrderFromStripe", "refundCommerceOrderFromStripe"]) {
+  assert.ok(!stripeParishImports.has(name), `stripe should no longer import ${name} from parish.js`);
+}
+assert.match(donor, /export async function handleParishBookstoreReadiness\b/, "donor bookstore readiness must remain self-contained");
+assert.doesNotMatch(donor, /from "\.\/parish-commerce\.js"/, "donor bookstore readiness must not depend on the parish commerce handler");
+assert.match(
+  donor,
+  /stripeFormConnectedRequest\(env,\s*"\/v1\/checkout\/sessions",\s*form,\s*resolved\.registration\.stripeAccountId\)/,
+  "bookstore Checkout should remain a direct charge scoped by the connected-account header",
+);
+assert.doesNotMatch(
+  donor,
+  /payment_intent_data\[on_behalf_of\]/,
+  "direct bookstore charges must not also set on_behalf_of to the same connected account",
+);
+assert.match(
+  donor,
+  /"automatic_tax\[enabled\]":\s*"true"[\s\S]*?"customer_update\[address\]":\s*"auto"/,
+  "bookstore Checkout must collect and save the customer address required by Stripe automatic tax",
+);
 assert.doesNotMatch(parish, /export (?:async )?function (?:donorName|sendDashboardInvite)\b/);
 assert.doesNotMatch(
   parish,

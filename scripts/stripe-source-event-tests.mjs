@@ -8,8 +8,9 @@ import {
 } from "../src/accounting/stripe-source-events.js";
 
 import {
+  completeCommerceOrderFromStripe,
   disputeCommerceOrderFromStripe
-} from "../src/handlers/parish.js";
+} from "../src/handlers/parish-commerce.js";
 
 function makeCommerceEnv() {
   const db = new DatabaseSync(":memory:");
@@ -139,6 +140,30 @@ function makeCommerceEnv() {
   row = db.prepare("SELECT payment_status, status FROM commerce_orders WHERE id = ?").get("order_dispute");
   assert.equal(row.payment_status, "dispute_closed");
   assert.equal(row.status, "dispute_closed");
+}
+
+{
+  const { env, db } = makeCommerceEnv();
+  db.prepare(`
+    INSERT INTO commerce_orders
+      (id, commerce_module, parish_id, payment_status, status, total_charged_cents, stripe_payment_intent_id, updated_at)
+    VALUES (?, 'bookstore', 'st-test', 'disputed', 'disputed', 100, ?, ?)
+  `).run("order_out_of_order_dispute", "pi_out_of_order_dispute", new Date().toISOString());
+
+  await completeCommerceOrderFromStripe(env, {
+    id: "pi_out_of_order_dispute",
+    amount_received: 100,
+    metadata: {
+      commerce_module: "bookstore",
+      order_id: "order_out_of_order_dispute",
+    },
+  }, "payment_intent");
+
+  const row = db.prepare(
+    "SELECT payment_status, status FROM commerce_orders WHERE id = ?"
+  ).get("order_out_of_order_dispute");
+  assert.equal(row.payment_status, "disputed");
+  assert.equal(row.status, "disputed");
 }
 
 console.log("All Stripe source-event tests passed.");
