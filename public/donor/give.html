@@ -16,7 +16,7 @@ if ("serviceWorker" in navigator) {
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css?v=20260704c" />
   <script src="/security.js"></script>
-  <script src="/myagapay-shell.js?v=20260717a" defer></script>
+  <script src="/myagapay-shell.js?v=20260729b" defer></script>
   <script src="/donor/app.js?v=20260712a" defer></script>
 <script src="/donor/pwa-install.js" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
@@ -77,10 +77,8 @@ if ("serviceWorker" in navigator) {
         <div class="topbar-actions">
           <a class="btn btn-gold btn-sm donor-home-quick-action" href="/myagapay/giving/give">Quick Action</a>
           <div class="donor-home-account-menu" data-donor-account-menu data-auth-required hidden>
-            <button class="donor-home-account-chip" type="button" data-donor-account-toggle aria-haspopup="true" aria-expanded="false">
-              <span class="donor-home-mini-avatar">FM</span>
-              <span><strong id="donorHomeTopbarName">Faithful Member</strong><small>View Account</small></span>
-              <span class="donor-home-account-caret" aria-hidden="true">⌄</span>
+            <button class="donor-home-account-chip myagapay-menu-trigger" type="button" data-donor-account-toggle aria-haspopup="true" aria-expanded="false" aria-label="Open My AGAPAY menu">
+              <span class="myagapay-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span>
             </button>
             <div class="donor-home-account-dropdown" role="menu" hidden>
               <a href="/myagapay/giving/history" role="menuitem">History</a>
@@ -104,7 +102,7 @@ if ("serviceWorker" in navigator) {
               <a class="offering-card" href="/myagapay/giving/give?quick=1&giftType=stewardship"><span class="offering-icon"><svg viewBox="0 0 28 28"><rect x="3" y="7" width="22" height="16" rx="3"/><path d="M3 11h22"/><circle class="icon-dot" cx="8" cy="17" r="1.5"/><path d="M12 17h8"/></svg></span><h3>Tithe / Stewardship</h3><p>General recurring or one-time support for your parish.</p></a>
               <a class="offering-card" href="/myagapay/giving/give?quick=1&giftType=candles"><span class="offering-icon"><svg viewBox="0 0 28 28"><path d="M14 4c0 0-4 3-4 8s4 5 4 5 4 0 4-5-4-8-4-8z"/><path d="M14 17v7"/><path d="M11 24h6"/><circle class="icon-dot" cx="14" cy="10" r="1.5"/></svg></span><h3>Candles</h3><p>Offer candles with prayer intentions for living or departed.</p></a>
               <a class="offering-card" href="/myagapay/giving/give?quick=1&giftType=commemoration"><span class="offering-icon"><svg viewBox="0 0 28 28"><path d="M4 16c0-5 2-8 5-9 1.5-.5 3-.5 5-.5s3.5 0 5 .5c3 1 5 4 5 9"/><path d="M4 16c0 3 2 5 10 5s10-2 10-5"/><path d="M10 13c1-2 2-3 4-3s3 1 4 3"/><line x1="14" y1="7" x2="14" y2="10"/><line x1="12" y1="8" x2="16" y2="8"/></svg></span><h3>Memorials</h3><p>Submit names for the parish commemoration queue.</p></a>
-              <a class="offering-card" href="/myagapay/giving/give?quick=1&giftType=feast"><span class="offering-icon"><svg viewBox="0 0 28 28"><rect x="3" y="5" width="22" height="20" rx="3"/><path d="M3 11h22"/><path d="M9 3v4M19 3v4"/><path d="M8 16h4M8 20h8"/></svg></span><h3>Festal Alms</h3><p>Give through the Benevolence Fund for the poor and needy.</p></a>
+              <a class="offering-card" href="/myagapay/giving/give?quick=1&giftType=feast"><span class="offering-icon"><svg viewBox="0 0 28 28"><rect x="3" y="5" width="22" height="20" rx="3"/><path d="M3 11h22"/><path d="M9 3v4M19 3v4"/><path d="M8 16h4M8 20h8"/></svg></span><h3>Festal Alms</h3><p>Give to the fund selected by your parish for the active feast.</p></a>
               <a class="offering-card" href="/myagapay/giving/give?quick=1&giftType=campaign"><span class="offering-icon"><svg viewBox="0 0 28 28"><path d="M14 24.5C14 24.5 5 18 5 11.5C5 8.5 7.5 6 10.5 6C12.5 6 13.5 7 14 8C14.5 7 15.5 6 17.5 6C20.5 6 23 8.5 23 11.5C23 18 14 24.5 14 24.5Z"/></svg></span><h3>Campaign</h3><p>Support parish-approved needs, projects, and focused appeals.</p></a>
               <a class="offering-card" href="/myagapay/giving/give?quick=1&giftType=fund"><span class="offering-icon"><svg viewBox="0 0 28 28"><path d="M4 22h20"/><path d="M6 22V14l3-2v10"/><path d="M12 22V10l3-2v14"/><path d="M18 22V6l3-2v18"/></svg></span><h3>Designated Fund</h3><p>Building, clergy support, education, icons, and other parish funds.</p></a>
               <a class="offering-card" href="/myagapay/sacraments" data-sacraments-entry hidden><span class="offering-icon"><svg viewBox="0 0 28 28"><path d="M14 3 5 7v6c0 5.9 3.8 10.9 9 12.4 5.2-1.5 9-6.5 9-12.4V7l-9-4z"/><path d="M14 9v9M10 13h8"/></svg></span><h3>Sacraments &amp; Services</h3><p>Request a baptism, wedding, house blessing, or other service — book real open times where available.</p></a>

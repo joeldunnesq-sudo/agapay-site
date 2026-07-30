@@ -14,6 +14,10 @@
 import { d1, d1All } from "./core.js";
 
 export const SCHEDULABLE_SACRAMENT_TYPES = new Set(["house_blessing", "confession", "home_visit", "office_visit", "anointing", "counseling"]);
+export function isSchedulableOfferingKey(value) {
+  const key = String(value || "").trim();
+  return SCHEDULABLE_SACRAMENT_TYPES.has(key) || /^custom_[a-z0-9_-]{1,72}$/.test(key);
+}
 
 /** { year, month, day, hour, minute, second } for `date` as observed in `timeZone`. */
 function zonedParts(date, timeZone) {
@@ -99,7 +103,7 @@ function normalizeTimeToHHMM(value) {
  * back to the free-text request fields in that case.
  */
 export async function computeAvailableSlots(env, { parishId, sacramentType, timezone, daysAhead = 21, maxSlots = 40 }) {
-  if (!d1(env) || !parishId || !SCHEDULABLE_SACRAMENT_TYPES.has(sacramentType) || !timezone) {
+  if (!d1(env) || !parishId || !isSchedulableOfferingKey(sacramentType) || !timezone) {
     return { slots: [], timezone: timezone || "" };
   }
 
@@ -113,11 +117,16 @@ export async function computeAvailableSlots(env, { parishId, sacramentType, time
   const rangeEndLocal = addDays(todayLocal, daysAhead);
 
   const blackouts = await d1All(env,
-    "SELECT date, priest_name FROM parish_availability_blackouts WHERE parish_id = ? AND date >= ? AND date <= ?",
-    parishId, todayLocal, rangeEndLocal
+    `SELECT date, COALESCE(end_date, date) AS end_date, priest_name
+     FROM parish_availability_blackouts
+     WHERE parish_id = ? AND date <= ? AND COALESCE(end_date, date) >= ?`,
+    parishId, rangeEndLocal, todayLocal
   ).catch(() => []);
-  const blackoutDates = new Set(blackouts.filter((b) => !b.priest_name).map((b) => b.date));
-  const blackoutPriestDates = new Set(blackouts.filter((b) => b.priest_name).map((b) => `${b.date}|${b.priest_name}`));
+  const isBlackedOut = (date, priestName = "") => blackouts.some((row) =>
+    date >= row.date
+    && date <= (row.end_date || row.date)
+    && (!row.priest_name || row.priest_name === priestName)
+  );
 
   const occupiedRows = await d1All(env,
     `SELECT confirmed_date, confirmed_time, clergy_assigned FROM sacrament_requests
@@ -142,10 +151,9 @@ export async function computeAvailableSlots(env, { parishId, sacramentType, time
   const slots = [];
   for (let i = 0; i < daysAhead && slots.length < maxSlots; i++) {
     const dateStr = addDays(todayLocal, i);
-    if (blackoutDates.has(dateStr)) continue;
     const dayRules = rulesByWeekday.get(weekdayOf(dateStr)) || [];
     for (const rule of dayRules) {
-      if (rule.priest_name && blackoutPriestDates.has(`${dateStr}|${rule.priest_name}`)) continue;
+      if (isBlackedOut(dateStr, rule.priest_name || "")) continue;
       const startMin = hhmmToMinutes(rule.start_time);
       const endMin = hhmmToMinutes(rule.end_time);
       const step = Math.max(5, Number(rule.slot_minutes) || 30);

@@ -33,7 +33,7 @@ const onlyNearest = activeFestalAlmsCampaigns(
   "gregorian",
   "2026-01-05"
 );
-assert.equal(onlyNearest.length, 1);
+assert.equal(onlyNearest.length, 2);
 assert.equal(onlyNearest[0].id, "theophany");
 
 assert.equal(activeFestalAlmsCampaigns([{ ...campaign("theophany"), enabled: false }], "gregorian", "2026-01-06").length, 0);
@@ -52,5 +52,21 @@ assert.deepEqual(festalAlmsVisibilityWindow(saintNicholas, "julian", "2026-12-19
 });
 assert.equal(activeFestalAlmsCampaigns([saintNicholas], "julian", "2026-12-12").length, 1);
 assert.equal(activeFestalAlmsCampaigns([saintNicholas], "julian", "2026-12-27").length, 0);
+
+const patronalCampaign = {
+  ...saintNicholas,
+  patronal: true,
+  destinationFundId: "benevolence-fund"
+};
+assert.equal(activeFestalAlmsCampaigns([patronalCampaign], "julian", "2026-04-01").length, 1);
+assert.equal(activeFestalAlmsCampaigns([patronalCampaign], "julian", "2026-04-01")[0].visibility.alwaysVisible, true);
+assert.equal(activeFestalAlmsCampaigns([{ ...patronalCampaign, enabled: false }], "julian", "2026-04-01").length, 0);
+const patronalAndSeasonal = activeFestalAlmsCampaigns(
+  [campaign("dormition"), patronalCampaign],
+  "gregorian",
+  "2026-08-15"
+);
+assert.equal(patronalAndSeasonal.length, 2);
+assert.equal(patronalAndSeasonal[0].patronal, true);
 
 console.log("festal alms visibility tests passed");

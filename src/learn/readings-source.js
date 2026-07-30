@@ -68,6 +68,19 @@ function saintNameKey(value = "") {
     .trim();
 }
 
+function saintTitleMatchScore(leftValue = "", rightValue = "") {
+  const left = saintNameKey(leftValue);
+  const right = saintNameKey(rightValue);
+  if (!left || !right) return 0;
+  if (left === right || left.includes(right) || right.includes(left)) return 1;
+  const leftTokens = new Set(left.split(" ").filter((token) => token.length > 2));
+  const rightTokens = new Set(right.split(" ").filter((token) => token.length > 2));
+  if (!leftTokens.size || !rightTokens.size) return 0;
+  let shared = 0;
+  for (const token of leftTokens) if (rightTokens.has(token)) shared += 1;
+  return shared / Math.min(leftTokens.size, rightTokens.size);
+}
+
 export function orthocalSaintStories(day = {}) {
   const saintNames = Array.isArray(day.saints) ? day.saints : [];
   // Orthocal's 2026-06-19 response confirms `saints` is a string[] of names,
@@ -119,7 +132,16 @@ export function orthocalSaintStories(day = {}) {
     })
     .filter((entry) => entry.name || entry.storyText);
 
-  return [...fromSaints, ...extraStories];
+  const combined = [...fromSaints, ...extraStories];
+  const primaryTitle = String(day.summary_title || "").trim();
+  const primaryIndex = primaryTitle
+    ? combined.findIndex((entry) => saintTitleMatchScore(primaryTitle, entry.title || entry.name) >= 0.45)
+    : -1;
+  if (primaryIndex >= 0) {
+    const [primary] = combined.splice(primaryIndex, 1);
+    combined.unshift({ ...primary, name: primaryTitle, primary: true });
+  }
+  return combined;
 }
 
 export async function fetchOrthocalDay({ calendarType = "julian", civilDate, fetcher = fetch } = {}) {
@@ -138,6 +160,7 @@ export async function enrichLiturgicalDayWithOrthocal(liturgicalDay, { calendarT
     const titles = Array.isArray(day.titles) ? day.titles : [];
     const saints = Array.isArray(day.saints) ? day.saints : [];
     const saintStories = orthocalSaintStories(day);
+    const primarySaintTitle = saintStories.find((story) => story.primary)?.name || saintStories[0]?.name || saints[0] || "";
     return {
       ...liturgicalDay,
       feastTitle: day.summary_title || titles[0] || liturgicalDay.feastTitle,
@@ -145,6 +168,7 @@ export async function enrichLiturgicalDayWithOrthocal(liturgicalDay, { calendarT
       fastingRule: fastingLabel(day),
       saints: saints.length ? saints : liturgicalDay.saints,
       saintStories: saintStories.length ? saintStories : liturgicalDay.saintStories,
+      primarySaintTitle,
       tone: day.tone ? `Tone ${day.tone}` : liturgicalDay.tone,
       epistleRef: readingRef(day, "epistle"),
       gospelRef: readingRef(day, "gospel"),

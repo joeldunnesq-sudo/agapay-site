@@ -23,6 +23,7 @@ import {
   resolveDirectorySelfServiceContext,
   resolveMemberDirectoryContext,
   revokeChildPublicationApproval,
+  saveHouseholdNameday,
   sanitizeChildFields,
   searchMemberDirectory,
   setPersonPrivacyFlags,
@@ -202,8 +203,14 @@ async function test(name, fn) {
 }
 
 async function submitForReview(env, { context, householdId, childPersonId, requestedFields = ["preferred_name"], requestedPhoto = false }) {
+  await env.AGAPAY_DB.prepare(
+    "UPDATE directory_publication_profiles SET status = 'draft', approval_status = 'not_submitted' WHERE owner_type = 'household' AND owner_id = ?1"
+  ).bind(householdId).run();
   const draft = await createOrUpdateChildPublicationDraft(env, { context, householdId, childPersonId, requestedFields, requestedPhoto });
   await submitChildPublicationRequest(env, { context, requestId: draft.id });
+  await env.AGAPAY_DB.prepare(
+    "UPDATE directory_publication_profiles SET status = 'approved', approval_status = 'approved' WHERE owner_type = 'household' AND owner_id = ?1"
+  ).bind(householdId).run();
   return draft;
 }
 
@@ -252,7 +259,7 @@ await test("a protected child can never be drafted for publication", async () =>
   );
 });
 
-await test("parent can draft, submit, and see status; unknown fields are dropped server-side", async () => {
+await test("verified household parent can publish selected child fields without another parish review", async () => {
   const { env, parentSelfContext, household, child } = await fixture();
   const draft = await createOrUpdateChildPublicationDraft(env, {
     context: parentSelfContext, householdId: household.id, childPersonId: child.id,
@@ -261,15 +268,49 @@ await test("parent can draft, submit, and see status; unknown fields are dropped
   assert.deepEqual(draft.requestedFields.sort(), ["preferred_name", "relationship_label"]);
   assert.equal(draft.status, "draft");
   const submitted = await submitChildPublicationRequest(env, { context: parentSelfContext, requestId: draft.id });
-  assert.equal(submitted.status, "submitted");
+  assert.equal(submitted.status, "approved");
+  assert.deepEqual(submitted.approvedFields.sort(), ["preferred_name", "relationship_label"]);
+  assert.equal(submitted.approvedPhoto, false);
   const status = await getChildPublicationStatus(env, { context: parentSelfContext, childPersonId: child.id, householdId: household.id });
-  assert.equal(status.status, "submitted");
+  assert.equal(status.status, "approved");
 });
 
-await test("a submitted request appears in the shared Phase 3A review queue with requester tracked for self-approval protection", async () => {
+await test("household sharing toggle publishes a child directly and includes the child's shared nameday", async () => {
+  const { env, parentUser, parentSelfContext, household, child } = await fixture();
+  const draft = await createOrUpdateChildPublicationDraft(env, {
+    context: parentSelfContext,
+    householdId: household.id,
+    childPersonId: child.id,
+    requestedFields: ["preferred_name", "relationship_label"]
+  });
+  const published = await submitChildPublicationRequest(env, {
+    context: parentSelfContext,
+    requestId: draft.id,
+    householdAdminPublish: true
+  });
+  assert.equal(published.status, "approved");
+  await saveHouseholdNameday(env, {
+    context: parentSelfContext,
+    householdId: household.id,
+    data: {
+      personId: child.id,
+      displayName: "Wren Marsh",
+      saintName: "St. Wren",
+      feastMonthDay: "07-28",
+      visibility: "directory_members"
+    }
+  });
+  const memberContext = await resolveMemberDirectoryContext(env, {
+    request: await requestFor(env, parentUser, "/api/directory/member")
+  });
+  const detail = await getMemberDirectoryHousehold(env, { context: memberContext, householdId: household.id });
+  const projected = detail.household.members.find((member) => member.id === child.id);
+  assert.deepEqual(projected.namedays, [{ saintName: "St. Wren", feastMonthDay: "07-28" }]);
+});
+
+await test("an unverified household child request still enters the parish review queue", async () => {
   const { env, parentSelfContext, reviewerAdminContext, household, child } = await fixture();
-  const draft = await createOrUpdateChildPublicationDraft(env, { context: parentSelfContext, householdId: household.id, childPersonId: child.id, requestedFields: ["preferred_name"] });
-  await submitChildPublicationRequest(env, { context: parentSelfContext, requestId: draft.id });
+  const draft = await submitForReview(env, { context: parentSelfContext, householdId: household.id, childPersonId: child.id });
   const queue = await listDirectoryReviewQueue(env, { context: reviewerAdminContext });
   const item = queue.find((entry) => entry.reviewType === "child_publication_review" && entry.sourceId === draft.id);
   assert.ok(item, "expected the child publication request to appear in the review queue");

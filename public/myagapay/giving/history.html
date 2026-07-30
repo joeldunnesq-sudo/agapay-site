@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=20260704c" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260728history3" />
   <script src="/pwa-register.js" defer></script>
-  <script src="/myagapay-shell.js?v=20260717a" defer></script>
-  <script src="/donor/app.js?v=20260712a" defer></script>
+  <script src="/myagapay-shell.js?v=20260729b" defer></script>
+  <script src="/donor/app.js?v=20260728history2" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260724a" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -33,38 +33,72 @@
       <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/giving/give"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg> Make another gift</a></div>
     </aside>
     <main class="content donor-mobile-content">
-      <div class="topbar"><div class="topbar-title">History</div><div class="topbar-actions"><button class="btn btn-gold btn-sm" type="button" onclick="openDonorRecurringPortal()">Manage recurring</button><button class="btn btn-ghost btn-sm" type="button" onclick="setHistoryProductFilter('all')">All products</button><button class="btn btn-ghost btn-sm" type="button" onclick="setHistoryProductFilter('give')">Give</button><button class="btn btn-ghost btn-sm" type="button" onclick="setHistoryProductFilter('bookstore')">Bookstore</button></div></div>
+      <div class="topbar"><div class="topbar-title">History</div><div class="topbar-actions"><button class="btn btn-ghost btn-sm" type="button" onclick="setHistoryProductFilter('all')">All products</button><button class="btn btn-ghost btn-sm" type="button" onclick="setHistoryProductFilter('give')">Give</button><button class="btn btn-ghost btn-sm" type="button" onclick="setHistoryProductFilter('bookstore')">Bookstore</button></div></div>
       <div class="page">
         <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
-        <section class="hero history-hero"><div class="hero-grid"><div><div class="eyebrow">My AGAPAY activity</div><h1>Everything you did across AGAPAY, in one place.</h1><p>See giving, bookstore orders, commemorations, services, and learning activity as your household uses more AGAPAY products.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
-        <section class="grid three section-gap history-summary-grid">
-          <div class="metric-card"><div class="metric-label">Giving this year</div><div class="metric-value" id="offeringsYtd">$0</div><div class="metric-note">Paid parish gifts and offerings.</div></div>
-          <div class="metric-card"><div class="metric-label">Products used</div><div class="metric-value" id="historyProductsCount">0</div><div class="metric-note">AGAPAY areas with recorded activity.</div></div>
-          <div class="metric-card"><div class="metric-label">Latest activity</div><div class="metric-value history-latest-value" id="historyLatestActivity">None</div><div class="metric-note">Most recent item in your timeline.</div></div>
+        <section class="history-story-hero">
+          <div class="history-story-copy">
+            <div class="eyebrow">Your giving story</div>
+            <h1>Your generosity, clearly remembered.</h1>
+            <p>See how your household has supported parish life, revisit every AGAPAY activity, and keep receipts and annual statements together.</p>
+            <div class="history-story-latest">Latest activity · <strong id="historyLatestActivity">None</strong></div>
+          </div>
+          <div class="history-story-total">
+            <span>Giving this year</span>
+            <strong id="offeringsYtd">$0</strong>
+            <small>Completed parish gifts and offerings</small>
+          </div>
+          <div id="myHistoryTrend" class="history-story-chart" aria-label="Your monthly giving trend"></div>
+        </section>
+        <section class="history-story-kpis section-gap" aria-label="Giving summary">
+          <article><span>Completed gifts</span><strong id="historyGiftCount">0</strong><small>Recorded for your household</small></article>
+          <article><span>Monthly average</span><strong id="historyMonthlyAverage">$0</strong><small>Across active giving months</small></article>
+          <article><span>Fees covered</span><strong id="historyFeesCovered">0</strong><small>Gifts where you covered fees</small></article>
+          <article><span>Products used</span><strong id="historyProductsCount">0</strong><small>AGAPAY areas with activity</small></article>
+        </section>
+        <section class="history-story-insights section-gap">
+          <article class="history-story-panel">
+            <header><div><span>Your impact</span><h2>Where you gave</h2></div><small>This year</small></header>
+            <div id="myHistoryFunds" class="history-story-funds"><p class="form-help">Loading giving destinations…</p></div>
+          </article>
+          <article class="history-story-panel history-story-next">
+            <header><div><span>At a glance</span><h2>Your giving rhythm</h2></div></header>
+            <div id="myHistoryRhythm"><p class="form-help">Loading your giving pattern…</p></div>
+          </article>
+        </section>
+        <section class="recurring-home-card recurring-home-card--history section-gap" aria-labelledby="historyRecurringHomeTitle">
+          <span class="recurring-home-icon" aria-hidden="true"><svg viewBox="0 0 28 28"><path d="M22 9V4l-2 2a9 9 0 1 0 2.2 9"/><path d="M22 4h-5"/><path d="M14 9v5l3 2"/></svg></span>
+          <div class="recurring-home-copy">
+            <span class="recurring-home-kicker">Your giving, your control</span>
+            <h2 id="historyRecurringHomeTitle">Manage recurring giving</h2>
+            <p id="historyRecurringHomeCopy">Review recurring offerings, update payment details, or make changes securely through Stripe.</p>
+          </div>
+          <button class="recurring-home-action" id="historyRecurringHomeAction" type="button" onclick="openDonorRecurringPortal('', this)">Manage recurring giving <span aria-hidden="true">→</span></button>
         </section>
         <section class="card section-gap history-overview-card">
-          <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/><path d="M8 3v4"/><path d="M16 10v4"/><path d="M12 17v4"/></svg></span> Activity Timeline</div><span class="status-pill" id="offeringsStatus">Sign in</span></div>
+          <div class="card-header history-timeline-header">
+            <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/><path d="M8 3v4"/><path d="M16 10v4"/><path d="M12 17v4"/></svg></span> Activity Timeline</div>
+            <div class="history-timeline-meta"><span class="status-pill" id="historyTimelineCount">0 activities</span><span class="status-pill" id="offeringsStatus">Sign in</span></div>
+          </div>
           <div class="card-body">
-            <div class="history-product-tabs" id="historyProductFilters" aria-label="Filter history by product">
-              <button class="active" type="button" data-history-filter="all" onclick="setHistoryProductFilter('all')">All</button>
-              <button type="button" data-history-filter="give" onclick="setHistoryProductFilter('give')">Give</button>
-              <button type="button" data-history-filter="bookstore" onclick="setHistoryProductFilter('bookstore')">Bookstore</button>
-              <button type="button" data-history-filter="services" onclick="setHistoryProductFilter('services')">Services</button>
-              <button type="button" data-history-filter="learn" onclick="setHistoryProductFilter('learn')">Learn</button>
+            <div class="history-timeline-controls">
+              <div class="history-product-tabs" id="historyProductFilters" aria-label="Filter history by product">
+                <button class="active" type="button" data-history-filter="all" onclick="setHistoryProductFilter('all')">All</button>
+                <button type="button" data-history-filter="give" onclick="setHistoryProductFilter('give')">Give</button>
+                <button type="button" data-history-filter="bookstore" onclick="setHistoryProductFilter('bookstore')">Bookstore</button>
+                <button type="button" data-history-filter="services" onclick="setHistoryProductFilter('services')">Services</button>
+                <button type="button" data-history-filter="learn" onclick="setHistoryProductFilter('learn')">Learn</button>
+              </div>
+              <label class="history-year-filter"><span>Period</span><select id="historyPeriodFilter" onchange="setHistoryPeriodFilter(this.value)"><option value="all">All activity</option></select></label>
             </div>
             <div class="agapay-history-timeline" id="agapayHistoryTimeline">
               <div class="notice">Sign in to view your AGAPAY activity.</div>
             </div>
           </div>
         </section>
-        <section class="card section-gap recurring-management-card">
-          <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/><path d="M17 15l2 2 3-4"/></svg></span> Manage Recurring Giving</div><span class="status-pill" id="recurringManageStatus">Secure portal</span></div>
-          <div class="card-body">
-            <p class="card-copy">Change payment methods, update recurring amounts, or cancel recurring gifts in Stripe's secure donor portal.</p>
-            <div class="recurring-management-list" id="recurringManagementList">
-              <div class="notice">Sign in to load recurring giving management.</div>
-            </div>
-          </div>
+        <section class="card section-gap history-statements-card">
+          <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M6 2h9l4 4v16H6z"/><path d="M14 2v5h5"/><path d="M9 12h7"/><path d="M9 16h7"/></svg></span> Annual Giving Statements</div><span class="status-pill">Tax records</span></div>
+          <div class="card-body" id="givingStatementsList"><p class="form-help">Loading annual statements…</p></div>
         </section>
         <section class="card section-gap">
           <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></span> Giving Receipts</div><span class="status-pill" id="offeringsReceiptCount">0 receipts</span></div>

@@ -48,7 +48,7 @@ const plans = [
   { key: "starter", label: "Starter", cents: 900 },
   { key: "giving", label: "Giving Plus", cents: 4900 },
   { key: "stewardship", label: "Stewardship", cents: 9900 },
-  { key: "parish", label: "Parish", cents: 19900 }
+  { key: "parish", label: "Parish", cents: 14900 }
 ];
 
 const prices = {};
@@ -110,6 +110,6 @@ console.log(JSON.stringify({
   AGAPAY_STRIPE_PRICE_STARTER_MONTHLY: prices.starter,
   AGAPAY_STRIPE_PRICE_GIVING_MONTHLY: prices.giving,
   AGAPAY_STRIPE_PRICE_STEWARDSHIP_MONTHLY: prices.stewardship,
-  AGAPAY_STRIPE_PRICE_PARISH_MONTHLY: prices.parish,
+  AGAPAY_STRIPE_PRICE_PARISH_149_MONTHLY: prices.parish,
   AGAPAY_STRIPE_BILLING_PORTAL_CONFIGURATION: portalConfiguration.id
 }, null, 2));

@@ -23,6 +23,7 @@ function makeD1Env() {
   const db = new DatabaseSync(":memory:");
 
   db.exec(readMigration("0014_audit_log.sql"));
+  db.exec(readMigration("0020_platform_identity.sql"));
   db.exec(readMigration("0022_directory_canonical_foundation.sql"));
   db.exec(readMigration("0023_directory_contact_privacy_publication.sql"));
   db.exec(readMigration("0024_directory_invitations_claims.sql"));
@@ -99,8 +100,9 @@ function pass(label) {
 
 const { createDirectoryInvitation, resendDirectoryInvitation, revokeDirectoryInvitation,
   inspectDirectoryInvitationByToken, expireStaleDirectoryInvitations, listParishDirectoryInvitations,
-  buildAcceptInvitationStatement, buildCompleteInvitationStatement, DIRECTORY_INVITATION_CAPABILITIES }
+  markDirectoryInvitationSent, buildAcceptInvitationStatement, buildCompleteInvitationStatement, DIRECTORY_INVITATION_CAPABILITIES }
   = await import("../src/directory/invitations.js");
+const { acceptDirectoryInvitation, inspectDirectoryInvitationForRecipient } = await import("../src/directory/claims.js");
 
 // --- Test 1: create a person-claim invitation; raw token not stored ---
 {
@@ -326,7 +328,64 @@ const { createDirectoryInvitation, resendDirectoryInvitation, revokeDirectoryInv
     (err) => err.status === 403,
     "Parish B actor must not be able to list Parish A's invitations"
   );
-  pass("invitation listing is parish-scoped; cross-parish listing denied");
+pass("invitation listing is parish-scoped; cross-parish listing denied");
+}
+
+// --- Test 12: children are household-managed and cannot receive an account invitation ---
+{
+  const { env, db } = makeD1Env();
+  const { personId } = seedPersonAndHousehold(db);
+  db.prepare(`INSERT INTO directory_person_privacy_flags
+    (id, parish_id, person_id, is_child, protected_person, active, created_at, updated_at)
+    VALUES ('flags_child', 'parish_a', ?, 1, 0, 1, ?, ?)`).run(personId, Date.now(), Date.now());
+  const actor = actorFor("parish_a", [DIRECTORY_INVITATION_CAPABILITIES.invitationsManage]);
+  await assert.rejects(
+    () => createDirectoryInvitation(env, {
+      actor,
+      parishId: "parish_a",
+      invitationType: "person_claim",
+      intendedPersonId: personId,
+      intendedAuthority: "link_person",
+      recipientEmail: "child@example.org"
+    }),
+    (error) => error.code === "child_invitation_denied"
+  );
+  pass("children cannot receive separate My AGAPAY account invitations");
+}
+
+// --- Test 13: an emailed adult invitation completes the person link and household-admin grant ---
+{
+  const { env, db } = makeD1Env();
+  const { personId, householdId } = seedPersonAndHousehold(db);
+  const actor = actorFor("parish_a", [DIRECTORY_INVITATION_CAPABILITIES.invitationsManage]);
+  const created = await createDirectoryInvitation(env, {
+    actor,
+    parishId: "parish_a",
+    invitationType: "household_admin",
+    intendedPersonId: personId,
+    intendedHouseholdId: householdId,
+    intendedAuthority: "link_and_grant_household_admin",
+    recipientEmail: "maria@example.org"
+  });
+  await markDirectoryInvitationSent(env, {
+    actor,
+    parishId: "parish_a",
+    invitationId: created.invitation.id
+  });
+  const inspected = await inspectDirectoryInvitationForRecipient(env, { token: created.rawToken });
+  assert.equal(inspected.personName, "Maria Papadopoulos");
+  assert.equal(inspected.householdName, "Papadopoulos Household");
+
+  const result = await acceptDirectoryInvitation(env, {
+    user: { id: "user_maria", email: "maria@example.org" },
+    token: created.rawToken
+  });
+  assert.equal(result.claimed, true);
+  assert.equal(db.prepare("SELECT external_id FROM directory_person_links WHERE person_id = ?").get(personId).external_id, "user_maria");
+  assert.equal(db.prepare("SELECT active FROM directory_household_admins WHERE household_id = ? AND person_id = ?").get(householdId, personId).active, 1);
+  assert.equal(db.prepare("SELECT status FROM directory_invitations WHERE id = ?").get(created.invitation.id).status, "completed");
+  assert.equal(db.prepare("SELECT status FROM directory_claims WHERE invitation_id = ?").get(created.invitation.id).status, "completed");
+  pass("adult invitation acceptance links My AGAPAY and grants household management atomically");
 }
 
 console.log(`\n${passCount} assertions passed. directory-invitations-tests.mjs OK.`);
