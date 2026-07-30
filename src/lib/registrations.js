@@ -13,6 +13,7 @@ export function adminRegistrationSummary(registration = {}, fallbackReference = 
   registration = registration || {};
   return {
     reference: registration.reference || fallbackReference || "",
+    parishId: registration.parishId || "",
     status: registration.status || "pending",
     parishName: registration.parishName || "",
     communityType: registration.communityType || "",

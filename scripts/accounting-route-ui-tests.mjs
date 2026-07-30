@@ -7,6 +7,7 @@ import { handleAccountingClose } from "../src/handlers/accounting-close.js";
 import { handleAccountingAccess } from "../src/handlers/accounting-access.js";
 import { handleAccountingRecurring } from "../src/handlers/accounting-recurring.js";
 import { accountingAvailableForParish, ACCOUNTING_DEMO_PARISH_ID } from "../src/lib/accounting-demo-access.js";
+import { adminRegistrationSummary } from "../src/lib/registrations.js";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const worker = read("src/worker.js");
@@ -32,6 +33,7 @@ assert.equal(accountingAvailableForParish("parish-a"), false);
 assert.equal(accountingAvailableForParish("parish-b", { AGAPAY_ENVIRONMENT:"staging", ACCOUNTING_TEST_PARISH_IDS:"parish-b, parish-c" }), true);
 assert.equal(accountingAvailableForParish("parish-b", { AGAPAY_ENVIRONMENT:"production", ACCOUNTING_TEST_PARISH_IDS:"parish-b" }), false);
 assert.equal(accountingAvailableForParish("parish-b", { ACCOUNTING_TEST_PARISH_IDS:"parish-b" }), false);
+assert.equal(adminRegistrationSummary({ parishId:"st-fiacre" }).parishId, "st-fiacre", "admin registration summaries must expose the parish target ID");
 assert.match(app, /function accountingPreviewOnly\(\)/);
 assert.match(ledgerHandler, /detectAccountingEnvironment\(env\)/, "accounting database resolution must use the active environment");
 assert.doesNotMatch(ledgerHandler, /loadAccountingDatabaseForEntity\(env,entity\.id,"production"\)/, "staging must not resolve production registry records");
