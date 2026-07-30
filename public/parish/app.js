@@ -7493,7 +7493,7 @@
       const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/stripe-refresh', { method:'POST', headers:authHeaders() });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || data.error || 'Unable to refresh Stripe status');
-      if (data.parish) currentParish = data.parish;
+      if (data.parish) currentParish = { ...currentParish, ...data.parish };
     } catch (err) {
       if (!options || !options.quiet) setStatus(err.message, 'error');
     }

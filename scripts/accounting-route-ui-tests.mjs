@@ -38,6 +38,7 @@ assert.equal(adminRegistrationSummary({ parishId:"st-fiacre" }).parishId, "st-fi
 assert.match(app, /function accountingPreviewOnly\(\)/);
 assert.match(app, /!currentParish\?\.accountingAvailable/, "the parish UI must use server-computed Accounting availability");
 assert.doesNotMatch(app, /return !moduleIncluded\('accounting'\) \|\| currentParish\?\.parishId !== 'st-fiacre'/, "the parish UI must not hard-code a single Accounting parish");
+assert.match(app, /if \(data\.parish\) currentParish = \{ \.\.\.currentParish, \.\.\.data\.parish \};/, "Stripe refresh must preserve server-computed feature access");
 assert.match(parishHandler, /accountingAvailable:\s*accountingAvailableForParish\(parishId,\s*env\)/, "the dashboard payload must expose environment-aware Accounting availability");
 assert.match(ledgerHandler, /detectAccountingEnvironment\(env\)/, "accounting database resolution must use the active environment");
 assert.doesNotMatch(ledgerHandler, /loadAccountingDatabaseForEntity\(env,entity\.id,"production"\)/, "staging must not resolve production registry records");
