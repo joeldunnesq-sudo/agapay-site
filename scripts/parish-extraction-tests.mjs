@@ -224,6 +224,16 @@ assert.doesNotMatch(
   /(?:async\s+)?function\s+(?:stripePaymentIntentFinancialUpdates|parishDashboardPayload)\b/,
   "parish-commerce should import shared parish helpers instead of redefining them",
 );
+assert.match(
+  parish,
+  /stripeDisputed:\s*charge\?\.disputed === true/,
+  "payment-intent financial updates must expose Stripe's current dispute state",
+);
+assert.match(
+  parishCommerce,
+  /const refundedCents = Number\(fees\.stripeRefundedCents[\s\S]*?const paymentStatus = fees\.stripeDisputed[\s\S]*?"disputed"/,
+  "commerce completion must preserve dispute/refund state even when lifecycle webhooks race",
+);
 assertImports(parishCommerce, "../lib/settlement-profiles.js", [
   "SETTLEMENT_PROFILE_TYPES",
   "assignModuleProfile",

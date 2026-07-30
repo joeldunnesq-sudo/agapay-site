@@ -885,6 +885,8 @@ export async function stripePaymentIntentFinancialUpdates(env, paymentIntentId, 
     coverFees,
     paymentMethod,
     stripeChargeId: charge?.id || fallback.stripeChargeId || "",
+    stripeDisputed: charge?.disputed === true,
+    stripeRefundedCents: numericCents(charge?.amount_refunded),
     stripeBalanceTransactionId: balanceTransaction?.id || fallback.stripeBalanceTransactionId || "",
     stripeFeeSource: balanceTransaction ? "balance_transaction" : "estimated",
     feeReconciledAt: new Date().toISOString()

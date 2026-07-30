@@ -744,26 +744,35 @@ export async function completeCommerceOrderFromStripe(env, object = {}, kind = "
   const stripeFeeCents = Number(fees.stripeFeeCents || 0);
   const agapayFeeCents = Number(fees.agapayFeeCents || 0); // bookstore takes no AGAPAY fee
   const netCents = Number(fees.parishNetCents || Math.max(0, totalCents - stripeFeeCents - agapayFeeCents));
+  const refundedCents = Number(fees.stripeRefundedCents || 0);
+  const paymentStatus = fees.stripeDisputed
+    ? "disputed"
+    : refundedCents >= totalCents
+      ? "refunded"
+      : refundedCents > 0
+        ? "partially_refunded"
+        : "paid";
+  const status = paymentStatus === "paid" ? "completed" : paymentStatus;
   const now = new Date().toISOString();
   const completedAt = object.created ? new Date(object.created * 1000).toISOString() : now;
 
   await d1Run(env,
     `UPDATE commerce_orders
-     SET payment_status = 'paid', status = 'completed',
+     SET payment_status = ?, status = ?,
          tax_cents = ?, total_charged_cents = ?, stripe_fee_cents = ?, agapay_fee_cents = ?,
          parish_net_cents = ?, stripe_payment_intent_id = ?, stripe_charge_id = ?,
          stripe_customer_id = COALESCE(NULLIF(?, ''), stripe_customer_id),
          fulfillment_status = CASE WHEN fulfillment_status = 'pending' THEN 'ready' ELSE fulfillment_status END,
          completed_at = ?, updated_at = ?
      WHERE id = ?`,
-    taxCents, totalCents, stripeFeeCents, agapayFeeCents, netCents,
+    paymentStatus, status, taxCents, totalCents, stripeFeeCents, agapayFeeCents, netCents,
     paymentIntentId || order.stripe_payment_intent_id || "",
     fees.stripeChargeId || order.stripe_charge_id || "",
     object.customer || order.stripe_customer_id || "",
     completedAt, now, order.id
   );
 
-  return { ...order, payment_status: "paid", status: "completed", tax_cents: taxCents,
+  return { ...order, payment_status: paymentStatus, status, tax_cents: taxCents,
     total_charged_cents: totalCents, stripe_fee_cents: stripeFeeCents,
     agapay_fee_cents: agapayFeeCents, parish_net_cents: netCents,
     stripe_payment_intent_id: paymentIntentId || order.stripe_payment_intent_id || "",
