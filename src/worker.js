@@ -220,6 +220,7 @@ import {
   handleAdminGrantStewardshipComp,
   handleAdminStewardshipCompStatus,
 } from "./handlers/stewardship.js";
+import { handleStewardshipAccountingBridge } from "./handlers/stewardship-accounting-bridge.js";
 
 import {
   handleGivingStatementPreview,
@@ -3443,6 +3444,14 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/nudge")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/nudge", ""));
       return handleStewardshipNudge(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/financials/accounting-summary")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/financials/accounting-summary", ""));
+      return handleStewardshipAccountingBridge(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/financials/import-from-accounting")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/financials/import-from-accounting", ""));
+      return handleStewardshipAccountingBridge(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/financials")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/financials", ""));

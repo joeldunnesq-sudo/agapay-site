@@ -38,6 +38,7 @@ import { requireAdmin } from "./admin.js";
 
 import { getBearerToken } from "../lib/core.js";
 import { applyApprovedExemptionIfExists } from "../lib/tax-exemption.js";
+import { upsertStewardshipFinancialSnapshot } from "../stewardship/financial-snapshots.js";
 
 // Auth for stewardship SSR pages.
 // The parish SPA links here with ?parishId=XX&t=TOKEN (token from localStorage).
@@ -2756,7 +2757,8 @@ export async function handleStewardshipFinancials(request, env, parishId) {
         totalExpenseCents: fs.total_expense_cents || 0,
         netCents:          fs.net_cents           || 0,
         notes:             fs.notes               || "",
-        snapshotTakenAt:   fs.snapshot_taken_at   || ""
+        snapshotTakenAt:   fs.snapshot_taken_at   || "",
+        importedFromAccountingAt: fs.imported_from_accounting_at || ""
       })),
       restrictedFunds: restrictedFunds.map(rf => ({
         id:                    rf.id,
@@ -2781,113 +2783,25 @@ export async function handleStewardshipFinancials(request, env, parishId) {
     let body;
     try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, { status: 400 }); }
 
-    const meetingId = body.annualMeetingId || null;
-
-    // If annualMeetingId provided, upsert into that meeting's financial summary
-    if (meetingId) {
-      const meeting = await d1First(env,
-        "SELECT id FROM stewardship_annual_meetings WHERE id = ? AND parish_id = ?",
-        meetingId, parishId
-      );
-      if (!meeting) return json({ error: "Meeting not found for this parish" }, { status: 404 });
-
-      const existing = await d1First(env,
-        "SELECT id FROM stewardship_financial_summaries WHERE annual_meeting_id = ?",
-        meetingId
-      );
-      const income  = Math.round(Number(body.totalIncomeCents  || 0));
-      const expense = Math.round(Number(body.totalExpenseCents || 0));
-      const net     = Math.round(Number(body.netCents ?? (income - expense)));
-      const now     = new Date().toISOString();
-
-      if (existing) {
-        await d1Run(env,
-          `UPDATE stewardship_financial_summaries
-           SET total_income_cents = ?, total_expense_cents = ?, net_cents = ?, notes = ?,
-               snapshot_taken_at = ?, updated_at = ?
-           WHERE id = ?`,
-          income, expense, net, body.notes || null, now, now, existing.id
-        );
-      } else {
-        await d1Run(env,
-          `INSERT INTO stewardship_financial_summaries
-             (id, annual_meeting_id, total_income_cents, total_expense_cents, net_cents, notes, snapshot_taken_at, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          await newId(), meetingId, income, expense, net, body.notes || null, now, now, now
-        );
-      }
-
-      // Upsert restricted funds if provided
-      if (Array.isArray(body.restrictedFunds) && body.restrictedFunds.length) {
-        // Delete and re-insert for simplicity (same pattern as packet editor)
-        await d1Run(env,
-          "DELETE FROM stewardship_restricted_fund_snapshots WHERE annual_meeting_id = ?",
-          meetingId
-        );
-        for (let i = 0; i < body.restrictedFunds.length; i++) {
-          const rf = body.restrictedFunds[i];
-          if (!rf.fundName?.trim()) continue;
-          await d1Run(env,
-            `INSERT INTO stewardship_restricted_fund_snapshots
-               (id, annual_meeting_id, fund_name, beginning_balance_cents, total_received_cents,
-                total_disbursed_cents, ending_balance_cents, notes, sort_order, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            await newId(), meetingId, rf.fundName.trim(),
-             Math.round(Number(rf.beginningBalanceCents || 0)),
-             Math.round(Number(rf.totalReceivedCents    || 0)),
-             Math.round(Number(rf.totalDisbursedCents   || 0)),
-             Math.round(Number(rf.endingBalanceCents    || 0)),
-             rf.notes || null, i, now
-          );
-        }
-      }
-
-      return json({ ok: true });
+    try {
+      const saved = await upsertStewardshipFinancialSnapshot(env, {
+        parishId,
+        annualMeetingId: body.annualMeetingId || null,
+        fiscalYear: body.fiscalYear || year,
+        title: body.title || "",
+        totalIncomeCents: body.totalIncomeCents,
+        totalExpenseCents: body.totalExpenseCents,
+        netCents: body.netCents,
+        notes: body.notes || "",
+        restrictedFunds: body.restrictedFunds,
+      });
+      return json({
+        ok: true,
+        ...(body.annualMeetingId ? {} : { annualMeetingId: saved.annualMeetingId }),
+      });
+    } catch (error) {
+      return json({ error: error.message || "Unable to save financial snapshot" }, { status: error.status || 400 });
     }
-
-    // No meeting ID — create a new minimal meeting record as the container
-    const fiscalYear = parseInt(body.fiscalYear || year, 10);
-    const newMeetingId = await newId();
-    const now = new Date().toISOString();
-    await d1Run(env,
-      `INSERT INTO stewardship_annual_meetings
-         (id, parish_id, title, fiscal_year, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, 'draft', ?, ?)`,
-      newMeetingId, parishId,
-       body.title || (fiscalYear + " Financial Snapshot"),
-       fiscalYear, now, now
-    );
-
-    const income  = Math.round(Number(body.totalIncomeCents  || 0));
-    const expense = Math.round(Number(body.totalExpenseCents || 0));
-    const net     = Math.round(Number(body.netCents ?? (income - expense)));
-    await d1Run(env,
-      `INSERT INTO stewardship_financial_summaries
-         (id, annual_meeting_id, total_income_cents, total_expense_cents, net_cents, notes, snapshot_taken_at, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      await newId(), newMeetingId, income, expense, net, body.notes || null, now, now, now
-    );
-
-    if (Array.isArray(body.restrictedFunds)) {
-      for (let i = 0; i < body.restrictedFunds.length; i++) {
-        const rf = body.restrictedFunds[i];
-        if (!rf.fundName?.trim()) continue;
-        await d1Run(env,
-          `INSERT INTO stewardship_restricted_fund_snapshots
-             (id, annual_meeting_id, fund_name, beginning_balance_cents, total_received_cents,
-              total_disbursed_cents, ending_balance_cents, notes, sort_order, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          await newId(), newMeetingId, rf.fundName.trim(),
-           Math.round(Number(rf.beginningBalanceCents || 0)),
-           Math.round(Number(rf.totalReceivedCents    || 0)),
-           Math.round(Number(rf.totalDisbursedCents   || 0)),
-           Math.round(Number(rf.endingBalanceCents    || 0)),
-           rf.notes || null, i, now
-        );
-      }
-    }
-
-    return json({ ok: true, annualMeetingId: newMeetingId });
   }
 
   return json({ error: "Method not allowed" }, { status: 405 });
