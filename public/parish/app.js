@@ -4,6 +4,7 @@
   let editableFunds     = [];
   let editableCampaigns = [];
   let editableFeastCampaigns = [];
+  let givingCatalogBaseline = '';
   let editingGivingOption = null;
   let activeTab         = 'giving';
   let editingCampaignId = null;
@@ -17,6 +18,14 @@
   let activeParishFeatureRequest = null;
   const parishSessionStorageKey = 'agapay_parish_session_token';
   const legacyParishTokenStorageKey = 'agapay_parish_token';
+
+  function givingCatalogSnapshot() {
+    return JSON.stringify({
+      funds: editableFunds,
+      campaigns: editableCampaigns,
+      feastCampaigns: editableFeastCampaigns
+    });
+  }
 
   // ── SESSION PERSISTENCE ──────────────────────────────────
   (function restoreSession() {
@@ -7785,6 +7794,7 @@
         p.patronalFeastDate || p.parishPatronalFeastDate || ''
       );
     }
+    givingCatalogBaseline = givingCatalogSnapshot();
     if (activeTab === 'options') renderGivingOptionsEditor();
     if (activeTab === 'campaigns') renderCampaignList(p);
     if (activeTab === 'qr') renderBulletinPreview();
@@ -8730,7 +8740,8 @@
       ...(hasGivingPlusAccess() ? {
         funds: editableFunds,
         campaigns: editableCampaigns,
-        feastCampaigns: editableFeastCampaigns
+        feastCampaigns: editableFeastCampaigns,
+        givingCatalogChanged: givingCatalogSnapshot() !== givingCatalogBaseline
       } : {}),
     };
     if (newPw) body.newDashboardPassword = newPw;

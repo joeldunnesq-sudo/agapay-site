@@ -3,6 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import { mergeStewardshipFundsIntoRegistration, STEWARDSHIP_FUND_DEFAULTS } from "../src/lib/stewardship-funds.js";
 import { accountingFund } from "../src/accounting/source-wiring.js";
+import { givingCatalogChanged } from "../src/handlers/parish.js";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const db = new DatabaseSync(":memory:");
@@ -226,6 +227,29 @@ assert.match(wiring, /campaignGift = Boolean\(campaignId\) && !festalAlmsGift/, 
 assert.match(wiring, /WHERE is_system=0 AND is_default=0/, "Funds & Alms must retire parallel accounting-only funds");
 assert.match(wiring, /releaseConflictingGivingIdentity/, "catalog saves must release stale unique publishing identities before republishing");
 assert.match(parish, /accounting_catalog_unavailable/);
+assert.equal(givingCatalogChanged({
+  campaigns: [{
+    id: "campaign",
+    name: "Parish Campaign",
+    description: "Parish-approved campaign for a specific need.",
+    goalCents: 0,
+    coverPhotoUrl: "",
+    raisedCents: 2500,
+    giftCount: 1,
+    supporters: [{ name: "Donor" }]
+  }]
+}, {
+  campaigns: [{
+    id: "campaign",
+    name: "Parish Campaign",
+    description: "Parish-approved campaign for a specific need."
+  }]
+}), false, "computed campaign progress must not turn an ordinary settings save into an accounting catalog save");
+assert.equal(givingCatalogChanged({
+  campaigns: [{ id: "campaign", name: "New campaign name" }]
+}, {
+  campaigns: [{ id: "campaign", name: "Parish Campaign" }]
+}), true, "editable campaign changes must still require catalog synchronization");
 const worker = read("src/worker.js");
 const stewardship = read("src/handlers/stewardship.js");
 const donorApp = read("public/donor/app.js");
@@ -266,6 +290,7 @@ assert.doesNotMatch(app, /<h3 class="option-group-title">Designated funds<\/h3>/
 assert.match(app, /Benevolence Fund'[^}\n]+restrictionType:'donor_restricted_temporary'/, "new Benevolence funds must default to donor restricted");
 assert.match(app, /Funds &amp; Alms is the source of truth/);
 assert.match(app, /funds: editableFunds,[\s\S]*campaigns: editableCampaigns,[\s\S]*feastCampaigns: editableFeastCampaigns/, "saving another dashboard tab must retain Funds & Alms state");
+assert.match(app, /givingCatalogChanged: givingCatalogSnapshot\(\) !== givingCatalogBaseline/, "ordinary settings saves must identify unchanged Funds & Alms state");
 assert.doesNotMatch(app, /Advanced edit \(JSON\)|fundsJson|campaignsJson/, "Funds & Alms must not expose an internal JSON editor");
 
 console.log("PASS - Funds & Alms accounting catalog, restrictions, metadata, failure safety, and account numbers");

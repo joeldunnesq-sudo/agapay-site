@@ -4920,6 +4920,34 @@ function sanitizeSacramentPriests(value, current) {
   return rows.slice(0, 12);
 }
 
+const GIVING_CATALOG_COMPUTED_FIELDS = new Set([
+  "giftCount",
+  "raisedCents",
+  "supporters",
+  "visibility"
+]);
+
+function comparableGivingCatalogValue(value, key = "") {
+  if (Array.isArray(value)) return value.map((item) => comparableGivingCatalogValue(item));
+  if (!value || typeof value !== "object") return value;
+  const comparable = {};
+  Object.keys(value).sort().forEach((field) => {
+    if (GIVING_CATALOG_COMPUTED_FIELDS.has(field)) return;
+    const fieldValue = value[field];
+    if (field === "goalCents" && Number(fieldValue || 0) === 0) return;
+    if (field === "coverPhotoUrl" && !String(fieldValue || "").trim()) return;
+    comparable[field] = comparableGivingCatalogValue(fieldValue, field);
+  });
+  return comparable;
+}
+
+export function givingCatalogChanged(next = {}, current = {}) {
+  return ["funds", "campaigns", "feastCampaigns"].some((field) =>
+    JSON.stringify(comparableGivingCatalogValue(next[field] || [], field))
+      !== JSON.stringify(comparableGivingCatalogValue(current[field] || [], field))
+  );
+}
+
 export async function handleParishDashboard(request, env, parishId) {
   const limited = await rateLimit(
     request,
@@ -4991,6 +5019,19 @@ export async function handleParishDashboard(request, env, parishId) {
       return json({ error: "Dashboard password must be at least 8 characters." }, { status: 400 });
     }
 
+    const catalogFieldsSubmitted = body.funds !== undefined
+      || body.campaigns !== undefined
+      || body.feastCampaigns !== undefined;
+    const submittedCatalog = {
+      funds: Array.isArray(body.funds) ? body.funds : current.funds,
+      campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,
+      feastCampaigns: Array.isArray(body.feastCampaigns) ? body.feastCampaigns : current.feastCampaigns
+    };
+    const catalogChanged = catalogFieldsSubmitted && (
+      body.givingCatalogChanged === true
+      || (body.givingCatalogChanged === undefined && givingCatalogChanged(submittedCatalog, current))
+    );
+
     let updated = {
       ...current,
       parishName: String(body.parishName ?? current.parishName ?? "").trim() || current.parishName || "",
@@ -5027,9 +5068,9 @@ export async function handleParishDashboard(request, env, parishId) {
       sacramentsEnabled: Boolean(body.sacramentsEnabled ?? current.sacramentsEnabled ?? false) && hasParishPlusAccess(current),
       sacramentPriests: body.sacramentPriests !== undefined ? sanitizeSacramentPriests(body.sacramentPriests, current) : normalizeSacramentPriests(current),
       bookstoreEnabled: Boolean(body.bookstoreEnabled ?? current.bookstoreEnabled ?? false),
-      funds: Array.isArray(body.funds) ? body.funds : current.funds,
-      campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,
-      feastCampaigns: Array.isArray(body.feastCampaigns) ? body.feastCampaigns : current.feastCampaigns,
+      funds: catalogChanged ? submittedCatalog.funds : current.funds,
+      campaigns: catalogChanged ? submittedCatalog.campaigns : current.campaigns,
+      feastCampaigns: catalogChanged ? submittedCatalog.feastCampaigns : current.feastCampaigns,
       parishUpdatedAt: new Date().toISOString()
     };
 
@@ -5044,11 +5085,15 @@ export async function handleParishDashboard(request, env, parishId) {
       updated = nextSession.registration;
     }
 
-    const catalogChanged = JSON.stringify(updated.funds || []) !== JSON.stringify(current.funds || [])
-      || JSON.stringify(updated.campaigns || []) !== JSON.stringify(current.campaigns || [])
-      || JSON.stringify(updated.feastCampaigns || []) !== JSON.stringify(current.feastCampaigns || []);
+    const accountingCatalogChanged = catalogChanged && givingCatalogChanged({
+      funds: updated.funds,
+      campaigns: updated.campaigns
+    }, {
+      funds: current.funds,
+      campaigns: current.campaigns
+    });
     let catalogSync = { available: true, synchronized: 0 };
-    if (catalogChanged) {
+    if (accountingCatalogChanged) {
       catalogSync = await synchronizeGivingCatalogWithAccounting(env, parishId, updated);
       if (!catalogSync.available) {
         return json({
