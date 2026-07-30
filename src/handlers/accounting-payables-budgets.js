@@ -1,5 +1,6 @@
 import { json } from "../lib/core.js";
-import { accountsPayableAging, addBudgetLine, approveBill, approveBudget, archiveVendor, budgetReportCsv, budgetVsActual, copyBudget, councilBudgetPacket, createBillDraft, createBudget, createVendor, forecastBudget, listBudgets, listVendors, lockBudget, payablesOverview, postBill, rejectBill, submitBill, submitBudget, createPayment, postPayment, listPayments, paymentDetail, getCheckSettings, unarchiveVendor, updateBudgetLine, updateCheckSettings, updateVendor, recordCheckPrint, voidPayment } from "../accounting/index.js";
+import { accountsPayableAging, addBudgetLine, approveBill, approveBudget, archiveVendor, budgetReportCsv, budgetVsActual, copyBudget, councilBudgetPacket, createBillDraft, createBudget, createVendor, createPaymentRun, forecastBudget, listBudgets, listPaymentRuns, listVendors, lockBudget, payablesOverview, paymentRunDetail, postBill, postPaymentRun, printPaymentRun, rejectBill, submitBill, submitBudget, createPayment, postPayment, listPayments, paymentDetail, getCheckSettings, unarchiveVendor, updateBudgetLine, updateCheckSettings, updateVendor, recordCheckPrint, vendor1099Summary, vendor1099SummaryCsv, voidPayment } from "../accounting/index.js";
+import { printableCheck as sharedPrintableCheck } from "../accounting/payables/check-printing.js";
 import { accountingContext } from "./accounting-ledger.js";
 
 const HEADERS = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow", Vary: "Authorization" };
@@ -18,6 +19,7 @@ async function budgetDetail(db, budgetId) {
 
 function requiredCapability(path, method) {
   if (path === "/payables/check-settings") return "ap.pay";
+  if (path.startsWith("/payables/payment-runs") && method !== "GET") return "ap.pay";
   if (path.startsWith("/payables/vendors") && method !== "GET") return "ap.enter";
   if (path.includes("/payments/") && path.endsWith("/void")) return "ap.void";
   if (path.startsWith("/payables/payments") && method !== "GET") return "ap.pay";
@@ -54,6 +56,20 @@ export async function handleAccountingPayablesBudgets(request, env, parishId) {
     if (request.method === "GET" && path === "/payables/aging") return reply({ ok: true, aging: await accountsPayableAging(ctx.db, { actor: ctx.actor, entitlementTier: tier, asOfDate: url.searchParams.get("asOf") || today() }) });
     if (request.method === "GET" && path === "/payables/payments") return reply({ ok: true, payments: await listPayments(ctx.db, { actor: ctx.actor, entitlementTier: tier }) });
     if (request.method === "POST" && path === "/payables/payments") return reply({ ok: true, payment: await createPayment(ctx.db, { actor: ctx.actor, entitlementTier: tier, input: body }) }, 201);
+    if (request.method === "GET" && path === "/payables/payment-runs") return reply({ ok: true, paymentRuns: await listPaymentRuns(ctx.db, { actor: ctx.actor, entitlementTier: tier }) });
+    if (request.method === "POST" && path === "/payables/payment-runs") return reply({ ok: true, detail: await createPaymentRun(ctx.db, { actor: ctx.actor, entitlementTier: tier, bankAccountId: body.bankAccountId, runDate: body.runDate, selections: body.selections, memo: body.memo }) }, 201);
+    if (request.method === "GET" && path === "/payables/1099-summary") {
+      const report = await vendor1099Summary(ctx.db, { actor: ctx.actor, entitlementTier: tier, calendarYear: url.searchParams.get("year") || String(new Date().getUTCFullYear()) });
+      if (csv) return new Response(vendor1099SummaryCsv(report), { headers: { ...HEADERS, "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename=agapay-1099-review-${report.calendarYear}.csv` } });
+      return reply({ ok: true, report });
+    }
+    const paymentRunAction = path.match(/^\/payables\/payment-runs\/([^/]+)(?:\/(post|print))?$/);
+    if (paymentRunAction) {
+      const paymentRunId = decodeURIComponent(paymentRunAction[1]), action = paymentRunAction[2] || "";
+      if (request.method === "GET" && !action) return reply({ ok: true, detail: await paymentRunDetail(ctx.db, { actor: ctx.actor, entitlementTier: tier, paymentRunId }) });
+      if (request.method === "POST" && action === "post") return reply({ ok: true, detail: await postPaymentRun(ctx.db, { actor: ctx.actor, entitlementTier: tier, paymentRunId, expectedVersion: body.expectedVersion }) });
+      if (request.method === "POST" && action === "print") return reply({ ok: true, print: await printPaymentRun(ctx.db, { actor: ctx.actor, entitlementTier: tier, paymentRunId, reason: body.reason || "" }) });
+    }
     if (request.method === "GET" && path === "/payables/check-settings") return reply({ ok: true, settings: await getCheckSettings(ctx.db, { actor: ctx.actor, entitlementTier: tier, bankAccountId: url.searchParams.get("bankAccountId") }) });
     if (request.method === "PATCH" && path === "/payables/check-settings") return reply({ ok: true, settings: await updateCheckSettings(ctx.db, { actor: ctx.actor, entitlementTier: tier, bankAccountId: body.bankAccountId, expectedVersion: body.expectedVersion, patch: body.patch || {} }) });
     const paymentAction = path.match(/^\/payables\/payments\/([^/]+)(?:\/(post|print|void))?$/);
@@ -64,7 +80,7 @@ export async function handleAccountingPayablesBudgets(request, env, parishId) {
       if (request.method === "POST" && action === "void") return reply({ ok: true, payment: await voidPayment(ctx.db, { actor: ctx.actor, entitlementTier: tier, paymentId, expectedVersion: body.expectedVersion, reason: body.reason }) });
       if (request.method === "POST" && action === "print") {
         const detail = await recordCheckPrint(ctx.db, { actor: ctx.actor, entitlementTier: tier, paymentId, reason: body.reason || "" });
-        return reply({ ok: true, detail, html: printableCheck(detail) });
+        return reply({ ok: true, detail, html: sharedPrintableCheck(detail) });
       }
     }
     const billAction = path.match(/^\/payables\/bills\/([^/]+)\/(submit|approve|reject|post)$/);
