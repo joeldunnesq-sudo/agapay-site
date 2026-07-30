@@ -5085,13 +5085,16 @@ export async function handleParishDashboard(request, env, parishId) {
       updated = nextSession.registration;
     }
 
-    const accountingCatalogChanged = catalogChanged && givingCatalogChanged({
-      funds: updated.funds,
-      campaigns: updated.campaigns
-    }, {
-      funds: current.funds,
-      campaigns: current.campaigns
-    });
+    const accountingCatalogChanged = catalogChanged && (
+      body.accountingCatalogChanged === true
+      || (body.accountingCatalogChanged === undefined && givingCatalogChanged({
+        funds: updated.funds,
+        campaigns: updated.campaigns
+      }, {
+        funds: current.funds,
+        campaigns: current.campaigns
+      }))
+    );
     let catalogSync = { available: true, synchronized: 0 };
     if (accountingCatalogChanged) {
       catalogSync = await synchronizeGivingCatalogWithAccounting(env, parishId, updated);

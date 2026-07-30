@@ -5,6 +5,7 @@
   let editableCampaigns = [];
   let editableFeastCampaigns = [];
   let givingCatalogBaseline = '';
+  let accountingCatalogBaseline = '';
   let editingGivingOption = null;
   let activeTab         = 'giving';
   let editingCampaignId = null;
@@ -24,6 +25,13 @@
       funds: editableFunds,
       campaigns: editableCampaigns,
       feastCampaigns: editableFeastCampaigns
+    });
+  }
+
+  function accountingCatalogSnapshot() {
+    return JSON.stringify({
+      funds: editableFunds,
+      campaigns: editableCampaigns
     });
   }
 
@@ -7795,6 +7803,7 @@
       );
     }
     givingCatalogBaseline = givingCatalogSnapshot();
+    accountingCatalogBaseline = accountingCatalogSnapshot();
     if (activeTab === 'options') renderGivingOptionsEditor();
     if (activeTab === 'campaigns') renderCampaignList(p);
     if (activeTab === 'qr') renderBulletinPreview();
@@ -8741,7 +8750,8 @@
         funds: editableFunds,
         campaigns: editableCampaigns,
         feastCampaigns: editableFeastCampaigns,
-        givingCatalogChanged: givingCatalogSnapshot() !== givingCatalogBaseline
+        givingCatalogChanged: givingCatalogSnapshot() !== givingCatalogBaseline,
+        accountingCatalogChanged: accountingCatalogSnapshot() !== accountingCatalogBaseline
       } : {}),
     };
     if (newPw) body.newDashboardPassword = newPw;

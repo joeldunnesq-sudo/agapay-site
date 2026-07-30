@@ -292,6 +292,8 @@ assert.match(app, /Benevolence Fund'[^}\n]+restrictionType:'donor_restricted_tem
 assert.match(app, /Funds &amp; Alms is the source of truth/);
 assert.match(app, /funds: editableFunds,[\s\S]*campaigns: editableCampaigns,[\s\S]*feastCampaigns: editableFeastCampaigns/, "saving another dashboard tab must retain Funds & Alms state");
 assert.match(app, /givingCatalogChanged: givingCatalogSnapshot\(\) !== givingCatalogBaseline/, "ordinary settings saves must identify unchanged Funds & Alms state");
+assert.match(app, /accountingCatalogChanged: accountingCatalogSnapshot\(\) !== accountingCatalogBaseline/, "patronal feast settings must not be treated as an Accounting catalog change");
+assert.match(parish, /body\.accountingCatalogChanged === true[\s\S]*body\.accountingCatalogChanged === undefined/, "the server must honor the explicit Accounting-only catalog signal");
 assert.match(app, /function fallbackCampaigns\(v\) \{ return JSON\.stringify\(Array\.isArray\(v\) \? v : \[\]/, "an empty campaign catalog must remain empty until the parish creates a campaign");
 assert.doesNotMatch(adminApp, /jsonForTextarea\(reg\.campaigns,\s*\[\{\s*id:\s*['"]campaign['"]/, "admin verification must not create a placeholder parish campaign");
 assert.doesNotMatch(app, /Advanced edit \(JSON\)|fundsJson|campaignsJson/, "Funds & Alms must not expose an internal JSON editor");
