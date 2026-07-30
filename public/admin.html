@@ -69,6 +69,10 @@
             <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>
             Audit Log
           </div>
+          <div class="sidebar-nav-item" onclick="switchTab('accountingops')" id="nav-accountingops">
+            <svg viewBox="0 0 24 24"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l3-3 3 2 5-6"/></svg>
+            Accounting Ops
+          </div>
           <div class="sidebar-nav-item" onclick="switchTab('settings')" id="nav-settings">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Settings
@@ -742,6 +746,41 @@
               <div class="btn-row" style="margin-top:0.85rem;">
                 <button class="secondary btn-sm" id="auditLogMoreBtn" onclick="loadAuditLog(false, this)" style="display:none;">Load more</button>
               </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="tab-panel" id="tab-accountingops">
+          <section class="product-admin-hero">
+            <div><div class="admin-kicker">Platform reliability controls</div><h2>Accounting Integrity Operations</h2><p>Inspect parish accounting health, run integrity scans, manage protective states, and verify recovery evidence. These controls are intentionally unavailable in parish dashboards.</p></div>
+          </section>
+          <section class="section-card">
+            <div class="section-header"><div class="section-title">Parish accounting target</div></div>
+            <div class="section-body">
+              <div class="form-grid"><div><label for="accountingOpsParish">Parish</label><select id="accountingOpsParish" onchange="loadAdminAccountingOperations()"><option value="">Select a provisioned parish</option></select></div></div>
+              <div id="accountingOpsStatus" class="email-log-empty">Select a parish to load accounting health.</div>
+            </div>
+          </section>
+          <section class="section-card">
+            <div class="section-header"><div class="section-title">Health overview</div><button class="secondary btn-sm" onclick="loadAdminAccountingOperations()">Refresh</button></div>
+            <div class="section-body" id="accountingOpsHealth"><div class="email-log-empty">No parish selected.</div></div>
+          </section>
+          <section class="section-card">
+            <div class="section-header"><div class="section-title">Integrity scans</div><button class="gold btn-sm" onclick="runAdminIntegrityScan(this)">Scan now</button></div>
+            <div class="section-body"><div class="form-grid"><div><label for="accountingScanScope">Scope</label><select id="accountingScanScope"><option value="full">Full</option><option value="ledger">Ledger</option><option value="integration">Integration</option><option value="reconciliation">Reconciliation</option><option value="modules">Modules</option><option value="close">Close</option><option value="schema">Schema</option></select></div></div><div id="accountingOpsScans" class="email-log-empty">No scans loaded.</div></div>
+          </section>
+          <section class="section-card">
+            <div class="section-header"><div class="section-title">Protective state control</div></div>
+            <div class="section-body">
+              <div class="form-grid"><div><label for="accountingProtectiveState">State</label><select id="accountingProtectiveState"><option value="degraded_read_only">Degraded read-only</option><option value="posting_blocked">Posting blocked</option><option value="recovering">Recovering</option><option value="normal">Normal (release only)</option></select></div><div><label for="accountingProtectiveReason">Required reason</label><input id="accountingProtectiveReason" required placeholder="Incident or verification reason"></div><div><label for="accountingProtectiveConfirm">Type parish ID to confirm</label><input id="accountingProtectiveConfirm" required autocomplete="off"></div></div>
+              <div class="btn-row"><button class="gold btn-sm" onclick="changeAdminProtectiveState(false,this)">Apply protective state</button><button class="secondary btn-sm" onclick="changeAdminProtectiveState(true,this)">Release to normal</button></div>
+            </div>
+          </section>
+          <section class="section-card">
+            <div class="section-header"><div class="section-title">Recovery evidence verification</div></div>
+            <div class="section-body">
+              <form onsubmit="verifyAdminRecoveryEvidence(event)"><div class="form-grid"><div><label>Verification type<select name="verificationType"><option value="backup">Backup</option><option value="restore">Restore</option><option value="migration_preflight">Migration preflight</option><option value="post_restore">Post-restore</option></select></label></div><div><label>Artifact reference<input name="artifactReference" required></label></div><div><label>Artifact body<textarea name="artifactBody" required></textarea></label></div><div><label>Manifest JSON<textarea name="manifest" required placeholder='{"artifactChecksum":"..."}'></textarea></label></div></div><button class="gold btn-sm">Verify recovery evidence</button></form>
+              <div id="accountingOpsRecovery" class="email-log-empty">No recovery verifications loaded.</div>
             </div>
           </section>
         </div>

@@ -187,6 +187,7 @@ import {
   handleAdminRegistrationDetail,
   handleAdminLearnFeedback,
   handleAdminParishSupportTickets,
+  handleAdminAccountingOperations,
   requireAdmin,
 } from "./handlers/admin.js";
 
@@ -333,6 +334,7 @@ import { handleAccountingPayablesBudgets } from "./handlers/accounting-payables-
 import { handleAccountingReconciliationCommerce } from "./handlers/accounting-reconciliation-commerce.js";
 import { handleAccountingClose } from "./handlers/accounting-close.js";
 import { handleAccountingAdjustments } from "./handlers/accounting-adjustments.js";
+import { handleAccountingGovernance } from "./handlers/accounting-governance.js";
 import { handleAccountingAccess } from "./handlers/accounting-access.js";
 import { handleAccountingRecurring } from "./handlers/accounting-recurring.js";
 import { runScheduledRecurringTransactions } from "./accounting/recurring/scheduler.js";
@@ -2564,6 +2566,8 @@ export default {
       if (setupReportsResponse) return setupReportsResponse;
       const adjustmentsResponse = await handleAccountingAdjustments(request, env, accountingParishId);
       if (adjustmentsResponse) return adjustmentsResponse;
+      const governanceResponse = await handleAccountingGovernance(request, env, accountingParishId);
+      if (governanceResponse) return governanceResponse;
       const accountingResponse = await handleAccountingLedger(request, env, accountingParishId);
       if (accountingResponse) return accountingResponse;
     }
@@ -2874,6 +2878,9 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/admin/audit-log") {
       return handleAdminAuditLog(request, env);
+    }
+    if (url.pathname.startsWith("/api/admin/accounting/")) {
+      return handleAdminAccountingOperations(request, env);
     }
     if (url.pathname === "/api/admin/commemorations/send-weekly") {
       return handleAdminWeeklyCommemorationEmails(request, env);

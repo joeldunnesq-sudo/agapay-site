@@ -10,6 +10,7 @@ let selectedReference = '';
     let lastDataLoadedAt = null;
     let latestPlatformSummary = null;
     let latestLearnAdmin = null;
+    let adminAccountingHealth = null;
 
     function token() {
       return document.getElementById('adminToken')?.value.trim() || sessionStorage.getItem(adminSessionKey) || '';
@@ -1577,6 +1578,7 @@ let selectedReference = '';
         } while (cursor);
 
         registrationsCache = loaded;
+        populateAdminAccountingParishes();
         const hasCurrent = preserveSelection && selectedReference && registrationsCache.some(item => item.reference === selectedReference);
         if (!hasCurrent) {
           collapseRegistrationDetail();
@@ -2809,6 +2811,7 @@ let selectedReference = '';
         support: 'Support Tickets',
         taxexemptions: 'Sales Tax Exemptions',
         auditlog: 'Audit Log',
+        accountingops: 'Accounting Integrity Operations',
         settings: 'Settings',
         developer: 'Developer Tools'
       };
@@ -2819,12 +2822,29 @@ let selectedReference = '';
       if (tab === 'learn') loadLearnAdmin();
       if (tab === 'support') loadParishSupportTickets();
       if (tab === 'taxexemptions') loadTaxExemptionSummary(), loadTaxExemptions();
+      if (tab === 'accountingops') populateAdminAccountingParishes(), loadAdminAccountingOperations();
       if (tab === 'auditlog') {
         populateAuditLogFilterOptions();
         refreshAuditLogOrgOptions();
         if (!auditLogLoadedOnce) loadAuditLog(true);
       }
     }
+
+    function populateAdminAccountingParishes() {
+      const select=document.getElementById('accountingOpsParish');if(!select)return;const current=select.value;
+      select.innerHTML='<option value="">Select a provisioned parish</option>'+registrationsCache.filter(reg=>reg.parishId).map(reg=>`<option value="${escapeAttr(reg.parishId)}">${escapeHtml(reg.parishName||reg.parishId)} · ${escapeHtml(reg.parishId)}</option>`).join('');
+      if([...select.options].some(option=>option.value===current))select.value=current;
+    }
+
+    function adminAccountingParish(){return document.getElementById('accountingOpsParish')?.value||'';}
+    async function adminAccountingFetch(path,options={}){const parishId=adminAccountingParish();if(!parishId)throw new Error('Select a parish first.');const method=options.method||'GET',url=method==='GET'?`${path}?parishId=${encodeURIComponent(parishId)}`:path,body=method==='GET'?undefined:JSON.stringify({parishId,...(options.body||{})}),response=await fetch(url,{method,headers:authHeaders(body?{'Content-Type':'application/json'}:{}),body}),payload=await response.json().catch(()=>({}));if(handleAuthFailure(response,payload))throw new Error('Admin session expired.');if(!response.ok)throw new Error(payload.message||payload.error||'Accounting operation failed.');return payload;}
+    async function loadAdminAccountingOperations(){const parishId=adminAccountingParish(),status=document.getElementById('accountingOpsStatus');if(!parishId){if(status)status.textContent='Select a parish to load accounting health.';return;}if(status)status.textContent='Loading accounting operations…';try{const [health,scans,recovery]=await Promise.all([adminAccountingFetch('/api/admin/accounting/health'),adminAccountingFetch('/api/admin/accounting/integrity-scans'),adminAccountingFetch('/api/admin/accounting/recovery-verifications')]);adminAccountingHealth=health.health||null;renderAdminAccountingHealth(health.health||{});renderAdminIntegrityScans(scans.scans||[]);renderAdminRecoveryVerifications(recovery.verifications||[]);status.textContent=`Loaded ${parishId}.`; }catch(error){status.textContent=error.message;setStatus(error.message,'error');}}
+    function renderAdminAccountingHealth(health){const box=document.getElementById('accountingOpsHealth'),protective=health.protectiveState||{};if(!box)return;box.innerHTML=`<div class="fields-grid"><div class="field"><div class="field-key">Health</div><div class="field-val">${escapeHtml(String(health.status||'unknown').replaceAll('_',' '))}</div></div><div class="field"><div class="field-key">Protective state</div><div class="field-val">${escapeHtml(String(protective.state||'unknown').replaceAll('_',' '))} · version ${Number(protective.version||0)}</div></div><div class="field"><div class="field-key">Open findings</div><div class="field-val">${(health.findings||[]).length}</div></div><div class="field"><div class="field-key">Active work</div><div class="field-val">${Number(health.activeWork||0)}</div></div></div><p class="muted">${escapeHtml(protective.safeSummary||'No protective restriction is active.')}</p><p class="muted">${escapeHtml(health.disclaimer||'')}</p>`;}
+    function renderAdminIntegrityScans(scans){const box=document.getElementById('accountingOpsScans');if(!box)return;box.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Started</th><th>Type / scope</th><th>Status</th><th>Checks</th><th>Findings</th></tr></thead><tbody>${scans.map(scan=>`<tr><td>${escapeHtml(shortDate(scan.startedAt||scan.completedAt))}</td><td>${escapeHtml(scan.scanType)} · ${escapeHtml(scan.scope)}</td><td>${escapeHtml(scan.status)}</td><td>${Number(scan.checksPassed||0)} passed / ${Number(scan.checksFailed||0)} failed</td><td>${Number(scan.findingCount||0)} total · ${Number(scan.criticalFindingCount||0)} critical</td></tr>`).join('')||'<tr><td colspan="5">No integrity scans.</td></tr>'}</tbody></table></div>`;}
+    function renderAdminRecoveryVerifications(rows){const box=document.getElementById('accountingOpsRecovery');if(!box)return;box.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Verified</th><th>Type</th><th>Artifact</th><th>Status</th></tr></thead><tbody>${rows.map(row=>`<tr><td>${escapeHtml(shortDate(row.verifiedAt))}</td><td>${escapeHtml(row.verificationType)}</td><td>${escapeHtml(row.artifactReference||'—')}</td><td>${escapeHtml(row.status)}</td></tr>`).join('')||'<tr><td colspan="4">No recovery verifications.</td></tr>'}</tbody></table></div>`;}
+    async function runAdminIntegrityScan(btn){if(btn){btn.disabled=true;btn.classList.add('loading');}try{await adminAccountingFetch('/api/admin/accounting/integrity-scan',{method:'POST',body:{scanType:'manual',scope:document.getElementById('accountingScanScope').value,correlationId:`admin-${Date.now()}`}});await loadAdminAccountingOperations();setStatus('Integrity scan completed.','success');}catch(error){setStatus(error.message,'error');}finally{if(btn){btn.disabled=false;btn.classList.remove('loading');}}}
+    async function changeAdminProtectiveState(release,btn){const parishId=adminAccountingParish(),confirmation=document.getElementById('accountingProtectiveConfirm').value.trim(),reason=document.getElementById('accountingProtectiveReason').value.trim(),state=document.getElementById('accountingProtectiveState').value;if(!parishId||confirmation!==parishId){setStatus('Type the exact parish ID to confirm this protective-state change.','error');return;}if(!reason){setStatus('A free-text reason is required.','error');return;}if(btn){btn.disabled=true;btn.classList.add('loading');}try{const expectedVersion=adminAccountingHealth?.protectiveState?.version;if(release)await adminAccountingFetch('/api/admin/accounting/protective-state/release',{method:'POST',body:{expectedVersion,reason}});else await adminAccountingFetch('/api/admin/accounting/protective-state',{method:'POST',body:{state,reasonCode:reason,safeSummary:reason,expectedVersion}});document.getElementById('accountingProtectiveConfirm').value='';await loadAdminAccountingOperations();setStatus(release?'Protective state released.':'Protective state updated.','success');}catch(error){setStatus(error.message,'error');}finally{if(btn){btn.disabled=false;btn.classList.remove('loading');}}}
+    async function verifyAdminRecoveryEvidence(event){event.preventDefault();const form=event.currentTarget,raw=Object.fromEntries(new FormData(form));try{raw.manifest=JSON.parse(raw.manifest);await adminAccountingFetch('/api/admin/accounting/recovery-verification',{method:'POST',body:{...raw,correlationId:`admin-recovery-${Date.now()}`}});form.reset();await loadAdminAccountingOperations();setStatus('Recovery evidence verification completed.','success');}catch(error){setStatus(error.message,'error');}}
 
     // ── AUDIT LOG (Phase 6) ──────────────────────────────────────────────
     let auditLogLoadedOnce = false;
