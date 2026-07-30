@@ -6,6 +6,7 @@ import {
   grossUpForStripeProcessingFeeCents as grossUpCard,
   normalizePaymentMethod,
 } from "./payment-fees.js";
+import { numericCents } from "./stripe-connect.js";
 
 export const MAX_DONATION_CENTS = 5_000_000;
 
@@ -58,11 +59,6 @@ export function checkoutFinancials(amountCents, coverFees, recurring, paymentMet
   return calculateCheckoutFinancials(amountCents, coverFees, recurring, paymentMethod);
 }
 
-export function numericCents(value) {
-  const number = Number(value || 0);
-  return Number.isFinite(number) ? Math.round(number) : 0;
-}
-
 export function offeringFeeBreakdown(offering = {}) {
   const giftAmountCents = numericCents(offering.giftAmountCents ?? offering.amountCents);
   const chargeCents = numericCents(offering.chargeCents ?? offering.amountChargedCents ?? giftAmountCents);
@@ -98,94 +94,4 @@ export function donorName(body) {
     .map((part) => String(part || "").trim())
     .filter(Boolean)
     .join(" ");
-}
-
-export async function stripeFormRequest(env, path, form, method = "POST") {
-  if (!env.STRIPE_SECRET_KEY) {
-    return {
-      ok: false,
-      status: 500,
-      body: { error: { message: "STRIPE_SECRET_KEY is not configured" } }
-    };
-  }
-
-  const response = await fetch(`https://api.stripe.com${path}`, {
-    method,
-    headers: {
-      Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-      "Content-Type": "application/x-www-form-urlencoded"
-    },
-    body: form
-  });
-  const body = await response.json();
-  return { ok: response.ok, status: response.status, body };
-}
-
-export async function stripeGetRequest(env, path) {
-  if (!env.STRIPE_SECRET_KEY) {
-    return {
-      ok: false,
-      status: 500,
-      body: { error: { message: "STRIPE_SECRET_KEY is not configured" } }
-    };
-  }
-
-  const response = await fetch(`https://api.stripe.com${path}`, {
-    headers: {
-      Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`
-    }
-  });
-  const body = await response.json();
-  return { ok: response.ok, status: response.status, body };
-}
-
-export async function stripeGetConnectedRequest(env, path, stripeAccountId) {
-  if (!env.STRIPE_SECRET_KEY) {
-    return {
-      ok: false,
-      status: 500,
-      body: { error: { message: "STRIPE_SECRET_KEY is not configured" } }
-    };
-  }
-
-  const response = await fetch(`https://api.stripe.com${path}`, {
-    headers: {
-      Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-      "Stripe-Account": stripeAccountId
-    }
-  });
-  const body = await response.json();
-  return { ok: response.ok, status: response.status, body };
-}
-
-export async function stripeFormConnectedRequest(env, path, form, stripeAccountId, method = "POST") {
-  if (!env.STRIPE_SECRET_KEY) {
-    return {
-      ok: false,
-      status: 500,
-      body: { error: { message: "STRIPE_SECRET_KEY is not configured" } }
-    };
-  }
-
-  const headers = {
-    Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-    "Content-Type": "application/x-www-form-urlencoded"
-  };
-  if (stripeAccountId) headers["Stripe-Account"] = stripeAccountId;
-
-  const response = await fetch(`https://api.stripe.com${path}`, {
-    method,
-    headers,
-    body: form
-  });
-  const body = await response.json();
-  return { ok: response.ok, status: response.status, body };
-}
-
-export function stripeAccountStatus(account) {
-  if (account.payouts_enabled) return "payouts_enabled";
-  if (account.charges_enabled) return "charges_enabled";
-  if (account.requirements?.disabled_reason) return "restricted";
-  if (account.details_submitted) return "onboarding";
-  return "invited";
 }

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 import * as notifications from "../src/lib/parish-notifications.js";
+import * as stripeConnect from "../src/lib/stripe-connect.js";
 import * as stripeFees from "../src/lib/stripe-fees.js";
 
 const stripeExports = [
@@ -14,14 +15,24 @@ const stripeExports = [
   "grossUpForAchFeeCents",
   "checkoutPaymentMethod",
   "checkoutFinancials",
-  "numericCents",
   "offeringFeeBreakdown",
   "donorName",
+];
+
+const consolidatedStripeExports = [
+  "numericCents",
   "stripeFormRequest",
   "stripeGetRequest",
   "stripeGetConnectedRequest",
   "stripeFormConnectedRequest",
   "stripeAccountStatus",
+  "stripeReady",
+  "normalizedCheckoutPaymentStatus",
+  "checkoutPaymentIntentId",
+  "stripeObjectId",
+  "booleanFromStripeMetadata",
+  "listYtdStripeCharges",
+  "summarizeCharges",
 ];
 
 const notificationExports = [
@@ -38,16 +49,22 @@ const notificationExports = [
   "sendRegistrationConfirmation",
   "sendAdminRegistrationNotice",
   "publicSubscriptionTiers",
-  "stripeReady",
   "subscriptionReady",
 ];
 
-for (const name of stripeExports) {
-  assert.ok(name in stripeFees, `stripe-fees should export ${name}`);
+assert.deepEqual(Object.keys(stripeFees).sort(), [...stripeExports].sort(), "stripe-fees should expose only parish-specific fee helpers");
+assert.deepEqual(
+  stripeExports.filter((name) => name in stripeConnect),
+  [],
+  "parish-specific fee helpers should not have hidden exports in stripe-connect",
+);
+for (const name of consolidatedStripeExports) {
+  assert.ok(name in stripeConnect, `stripe-connect should remain the canonical owner of ${name}`);
 }
 for (const name of notificationExports) {
   assert.ok(name in notifications, `parish-notifications should export ${name}`);
 }
+assert.ok(!("stripeReady" in notifications), "parish-notifications should use stripe-connect as the sole stripeReady owner");
 
 assert.equal(stripeFees.centsFromAmount("12.34"), 1234);
 assert.equal(stripeFees.donationAmountError(0), "Amount must be greater than zero.");
@@ -90,9 +107,65 @@ const stripe = await readFile(new URL("../src/handlers/stripe.js", import.meta.u
 const donor = await readFile(new URL("../src/handlers/donor.js", import.meta.url), "utf8");
 const admin = await readFile(new URL("../src/handlers/admin.js", import.meta.url), "utf8");
 
+function importedNames(source, modulePath) {
+  const imports = [...source.matchAll(/import\s*{([\s\S]*?)}\s*from "([^"]+)";/g)];
+  const match = imports.find((entry) => entry[2] === modulePath);
+  assert.ok(match, `expected an import from ${modulePath}`);
+  return new Set(match[1].split(",").map((name) => name.trim().split(/\s+as\s+/)[0]).filter(Boolean));
+}
+
+function assertImports(source, modulePath, names) {
+  const imported = importedNames(source, modulePath);
+  for (const name of names) {
+    assert.ok(imported.has(name), `${modulePath} should supply ${name}`);
+  }
+}
+
 assert.ok(parish.split(/\r?\n/).length <= 5750, "parish.js should retain the extraction size reduction");
 assert.doesNotMatch(parish, /export (?:async )?function (?:donorName|sendDashboardInvite)\b/);
-assert.match(stripe, /from "\.\.\/lib\/stripe-fees\.js"/);
+assert.doesNotMatch(
+  parish,
+  /export (?:async )?function (?:normalizedCheckoutPaymentStatus|checkoutPaymentIntentId|stripeObjectId|booleanFromStripeMetadata|listYtdStripeCharges)\b/,
+);
+assert.match(
+  parish,
+  /export function summarizeCharges\(charges\)/,
+  "parish summarizeCharges should remain until its drift from the canonical monthly output is resolved explicitly",
+);
+assertImports(parish, "../lib/stripe-connect.js", [
+  "booleanFromStripeMetadata",
+  "checkoutPaymentIntentId",
+  "listYtdStripeCharges",
+  "normalizedCheckoutPaymentStatus",
+  "numericCents",
+  "stripeAccountStatus",
+  "stripeFormConnectedRequest",
+  "stripeFormRequest",
+  "stripeGetConnectedRequest",
+  "stripeGetRequest",
+  "stripeObjectId",
+  "stripeReady",
+]);
+assertImports(stripe, "../lib/stripe-connect.js", [
+  "numericCents",
+  "stripeAccountStatus",
+  "stripeFormRequest",
+  "stripeGetRequest",
+  "stripeObjectId",
+]);
+assertImports(donor, "../lib/stripe-connect.js", [
+  "normalizedCheckoutPaymentStatus",
+  "stripeAccountStatus",
+  "stripeFormConnectedRequest",
+  "stripeGetConnectedRequest",
+]);
+assertImports(admin, "../lib/stripe-connect.js", [
+  "listYtdStripeCharges",
+  "stripeAccountStatus",
+  "stripeFormRequest",
+  "stripeReady",
+  "summarizeCharges",
+]);
 assert.match(stripe, /from "\.\.\/lib\/parish-notifications\.js"/);
 assert.match(donor, /from "\.\.\/lib\/stripe-fees\.js"/);
 assert.match(admin, /from "\.\.\/lib\/parish-notifications\.js"/);
