@@ -43,11 +43,12 @@ import {
   stripeObjectId,
 } from "../lib/stripe-connect.js";
 import { upsertStripeChargeVolumeRecord } from "../lib/stripe-volume.js";
+import { donorName } from "../lib/stripe-fees.js";
+import { sendTreasurerStripeInvite } from "../lib/parish-notifications.js";
 
 import {
   appendAdminAudit,
   completeCommerceOrderFromStripe,
-  donorName,
   ensureCommemorationEntryFromOffering,
   refundCommerceOrderFromStripe,
   disputeCommerceOrderFromStripe,
@@ -58,7 +59,6 @@ import {
   loadRegistrationByReference,
   requireAdminContext,
   saveRegistrationRecord,
-  sendTreasurerStripeInvite,
   storeDonorOffering,
   stripePaymentIntentFinancialUpdates,
   updateDonorOfferingByCheckout,

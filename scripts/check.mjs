@@ -8,6 +8,8 @@ const stripeConnect = await readFile("src/lib/stripe-connect.js", "utf8");
 const adminHandler = await readFile("src/handlers/admin.js", "utf8");
 const donorHandler = await readFile("src/handlers/donor.js", "utf8");
 const parishHandler = await readFile("src/handlers/parish.js", "utf8");
+const parishNotifications = await readFile("src/lib/parish-notifications.js", "utf8");
+const stripeFees = await readFile("src/lib/stripe-fees.js", "utf8");
 const stripeHandler = await readFile("src/handlers/stripe.js", "utf8");
 const parishInterestHandler = await readFile("src/handlers/parish-interest.js", "utf8");
 const wrangler = await readFile("wrangler.toml", "utf8");
@@ -17,7 +19,7 @@ const siteChrome = await readFile("public/site-chrome.js", "utf8");
 assert.ok(siteChrome.includes('{ href: "/why", label: "Why AGAPAY", key: "why" }'), "canonical static-site navigation should include Why AGAPAY");
 assert.ok(!/btn-donate[\s\S]{0,180}shellIcon\("giving-hand"\)/.test(siteChrome), "canonical Start for free button should not include an unrelated giving-hand icon");
 assert.ok(!/drawer-join[\s\S]{0,120}shellIcon\("giving-hand"\)/.test(siteChrome), "mobile Start for free button should not include an unrelated giving-hand icon");
-const backendSources = worker + core + stripeConnect + adminHandler + donorHandler + parishHandler + stripeHandler + parishInterestHandler;
+const backendSources = worker + core + stripeConnect + adminHandler + donorHandler + parishHandler + parishNotifications + stripeFees + stripeHandler + parishInterestHandler;
 assert.equal(parishSlug("St. Fiacre Orthodox Church", "Munster"), "st-fiacre-munster", "parish usernames should include patronal name and city");
 assert.equal(parishSlug("Holy Resurrection Orthodox Church", "Boston"), "holy-resurrection-boston", "parish usernames should normalize common church suffixes");
 assert.ok(wrangler.includes('binding = "AGAPAY_DB"'), "wrangler should bind the production D1 database");
@@ -101,7 +103,7 @@ assert.ok(registerHtml.includes("requiresWebsite"), "registration should require
 assert.ok(registerHtml.includes('id="subscriptionTier"') && registerHtml.includes("Starter — $9/month") && registerHtml.includes("Parish — $149/month"), "registration should require a current starting-tier choice");
 assert.ok(registerHtml.includes("subscriptionTier: document.getElementById('subscriptionTier').value"), "registration should submit the selected starting tier");
 assert.ok(parishHandler.includes('requiredFields') && parishHandler.includes('"subscriptionTier"') && parishHandler.includes("validTierForCommunity"), "registration backend should validate the selected tier for the community type");
-assert.ok(parishHandler.includes("loadParishOnboardingGuideAttachment") && parishHandler.includes("currentGuideAttachment"), "new-parish email should attach the same current guide served by the dashboard");
+assert.ok(parishNotifications.includes("loadParishOnboardingGuideAttachment") && parishNotifications.includes("currentGuideAttachment"), "new-parish email should attach the same current guide served by the dashboard");
 assert.equal(parishOnboardingGuide.subarray(0, 4).toString(), "%PDF", "parish onboarding guide should be a real PDF");
 assert.ok(parishOnboardingGuide.length > 10000, "parish onboarding guide should contain the complete current setup guide");
 

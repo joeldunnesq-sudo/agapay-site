@@ -64,6 +64,10 @@ import {
   stripeFormConnectedRequest,
   stripeGetConnectedRequest,
 } from "../lib/stripe-connect.js";
+import {
+  donorName,
+  offeringFeeBreakdown,
+} from "../lib/stripe-fees.js";
 
 import {
   donorSummaryFromOfferings,
@@ -77,14 +81,12 @@ import {
   loadDonorOfferings,
   loadReconciledDonorCommemorations,
   migrateDonorEmailReferences,
-  offeringFeeBreakdown,
   paidOfferingStatus,
   parishFromRegistration,
   publicDonorOffering,
   reconcilePendingDonorOfferings,
   requireDonor,
   slugify,
-  donorName,
   storeCommemorationEntry,
   storeDonorOffering,
   stripePaymentIntentFinancialUpdates,
