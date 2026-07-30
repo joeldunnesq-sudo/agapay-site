@@ -1508,6 +1508,7 @@ export async function handleDonorBookstore(request, env) {
     cancel_url: `${appUrl}/myagapay/bookstore?order_canceled=1`,
     customer: customer.body.id,
     "automatic_tax[enabled]": "true",
+    "customer_update[address]": "auto",
     // Seller-identity disclosure surfaced on the Stripe-hosted Checkout
     // page itself via the submit-type/custom text field -- reinforces the
     // parish, not AGAPAY, as the seller at the one checkout surface every

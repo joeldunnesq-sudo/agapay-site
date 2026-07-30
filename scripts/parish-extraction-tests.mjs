@@ -267,6 +267,11 @@ assert.doesNotMatch(
   /payment_intent_data\[on_behalf_of\]/,
   "direct bookstore charges must not also set on_behalf_of to the same connected account",
 );
+assert.match(
+  donor,
+  /"automatic_tax\[enabled\]":\s*"true"[\s\S]*?"customer_update\[address\]":\s*"auto"/,
+  "bookstore Checkout must collect and save the customer address required by Stripe automatic tax",
+);
 assert.doesNotMatch(parish, /export (?:async )?function (?:donorName|sendDashboardInvite)\b/);
 assert.doesNotMatch(
   parish,
