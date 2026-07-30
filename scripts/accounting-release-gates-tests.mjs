@@ -4,12 +4,14 @@ import { accountingAvailableForParish } from "../src/lib/accounting-demo-access.
 import { ACCOUNTING_HANDLER_FILES, enumerateAccountingRoutes } from "./lib/accounting-release-gates.mjs";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
-const [serviceWorker, parishApp, gate1, gate2, gate3, smoke, deploy, workflow, signoff, packageJson] = await Promise.all([
+const [serviceWorker, parishApp, gate1, gate2, gate3, bootstrap, helpers, smoke, deploy, workflow, signoff, packageJson] = await Promise.all([
   read("public/service-worker.js"),
   read("public/parish/app.js"),
   read("scripts/accounting-release-gate-1-check-print.mjs"),
   read("scripts/accounting-release-gate-2-sw-lifecycle.mjs"),
   read("scripts/accounting-release-gate-3-cross-tenant.mjs"),
+  read("scripts/accounting-release-gate-bootstrap-users.mjs"),
+  read("scripts/lib/accounting-release-gates.mjs"),
   read("scripts/accounting-smoke-live.mjs"),
   read(".github/workflows/deploy.yml"),
   read(".github/workflows/accounting-release-gates.yml"),
@@ -44,6 +46,8 @@ for (const family of ["ledger","setup-reports","payables-budgets","reconciliatio
 assert.match(gate3, /runCrossTenantMatrix/);
 assert.match(gate3, /platform-a-to-b/);
 assert.match(gate3, /staff-b-to-a/);
+assert.match(helpers, /\/api\/identity\/login/);
+assert.doesNotMatch(helpers, /\/myagapay\/login|agapayDonorToken/);
 console.log(`PASS - gate 3 inventories ${inventory.routes.length} routes across ${inventory.coverage.length} handler files`);
 
 for (const style of ["top_check_two_stubs","bottom_check_two_stubs","check_only"]) assert.match(gate1, new RegExp(style));
@@ -59,6 +63,15 @@ assert.match(deploy, /post-deploy-accounting-smoke/);
 assert.match(workflow, /accounting-release-gate-1-check-print\.mjs/);
 assert.match(workflow, /accounting-release-gate-2-sw-lifecycle\.mjs/);
 assert.match(workflow, /accounting-release-gate-3-cross-tenant\.mjs/);
+assert.match(workflow, /accounting-release-gate-bootstrap-users\.mjs/);
+assert.ok(
+  workflow.indexOf("accounting-release-gate-bootstrap-users.mjs") < workflow.indexOf("accounting-release-gate-3-cross-tenant.mjs"),
+  "Dedicated platform users must be bootstrapped before the cross-tenant gate."
+);
+assert.match(bootstrap, /hostname\.toLowerCase\(\)\.includes\(["']staging["']\)/);
+assert.match(bootstrap, /memberships\/invitations/);
+assert.match(bootstrap, /identity\/invitations/);
+assert.match(bootstrap, /membership\.status === ["']active["']/);
 assert.match(workflow, /upload-artifact@v4/);
 assert.match(smoke, /ACCOUNTING_READ_SMOKE_PATHS|readAccountingSections/);
 assert.match(signoff, /Physical check-stock verification/);

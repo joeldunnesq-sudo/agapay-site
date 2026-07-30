@@ -99,12 +99,15 @@ export async function enumerateAccountingRoutes(root = process.cwd()) {
 }
 
 export async function loginPlatformUser(page, { baseUrl, email, password }) {
-  await page.goto(`${baseUrl}/myagapay/login`, { waitUntil: "domcontentloaded" });
-  await page.locator("#donorEmail").fill(email);
-  await page.locator("#donorPassword").fill(password);
-  await page.getByRole("button", { name: /sign in/i }).click();
-  await page.waitForFunction(() => Boolean(localStorage.getItem("agapayDonorToken")));
-  const token = await page.evaluate(() => localStorage.getItem("agapayDonorToken"));
+  const response = await page.request.post(`${baseUrl}/api/identity/login`, {
+    data: { email, password }
+  });
+  if (!response.ok()) {
+    throw new Error(`Platform-user login failed with HTTP ${response.status()}.`);
+  }
+  const payload = await response.json();
+  const token = String(payload?.token || "");
+  if (!token) throw new Error("Platform-user login succeeded without a session token.");
   return { Authorization: `Bearer ${token}` };
 }
 
