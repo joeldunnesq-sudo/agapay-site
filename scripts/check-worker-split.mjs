@@ -11,6 +11,7 @@ const sourceFiles = [
   "src/learn/community-store.js",
   "src/learn/handlers.js",
   "src/handlers/parish.js",
+  "src/handlers/parish-reconciliation.js",
   "src/handlers/donor.js",
   "src/handlers/admin.js",
   "src/handlers/stripe.js",

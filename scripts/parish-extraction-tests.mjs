@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 import * as notifications from "../src/lib/parish-notifications.js";
+import * as reconciliationModule from "../src/handlers/parish-reconciliation.js";
 import * as stripeConnect from "../src/lib/stripe-connect.js";
 import * as stripeFees from "../src/lib/stripe-fees.js";
 
@@ -103,9 +104,11 @@ try {
 }
 
 const parish = await readFile(new URL("../src/handlers/parish.js", import.meta.url), "utf8");
+const reconciliation = await readFile(new URL("../src/handlers/parish-reconciliation.js", import.meta.url), "utf8");
 const stripe = await readFile(new URL("../src/handlers/stripe.js", import.meta.url), "utf8");
 const donor = await readFile(new URL("../src/handlers/donor.js", import.meta.url), "utf8");
 const admin = await readFile(new URL("../src/handlers/admin.js", import.meta.url), "utf8");
+const worker = await readFile(new URL("../src/worker.js", import.meta.url), "utf8");
 
 function importedNames(source, modulePath) {
   const imports = [...source.matchAll(/import\s*{([\s\S]*?)}\s*from "([^"]+)";/g)];
@@ -121,7 +124,7 @@ function assertImports(source, modulePath, names) {
   }
 }
 
-assert.ok(parish.split(/\r?\n/).length <= 5750, "parish.js should retain the extraction size reduction");
+assert.ok(parish.split(/\r?\n/).length <= 4950, "parish.js should retain the roughly 790-line reconciliation extraction");
 assert.doesNotMatch(parish, /export (?:async )?function (?:donorName|sendDashboardInvite)\b/);
 assert.doesNotMatch(
   parish,
@@ -132,6 +135,7 @@ assert.match(
   /export function summarizeCharges\(charges\)/,
   "parish summarizeCharges should remain until its drift from the canonical monthly output is resolved explicitly",
 );
+assert.doesNotMatch(reconciliation, /function summarizeCharges\b/, "reconciliation extraction must not absorb giving-summary reporting");
 assertImports(parish, "../lib/stripe-connect.js", [
   "booleanFromStripeMetadata",
   "checkoutPaymentIntentId",
@@ -166,6 +170,82 @@ assertImports(admin, "../lib/stripe-connect.js", [
   "stripeReady",
   "summarizeCharges",
 ]);
+
+const reconciliationPublicFunctions = [
+  "listRecentStripePayouts",
+  "listStripeBalanceTransactionsForPayout",
+  "reconciliationPeriod",
+  "listStripePayoutsForPeriod",
+  "listRecentStripeBalanceTransactions",
+  "handleParishPayoutDiagnostics",
+  "handleParishReconciliation",
+  "handleParishReconciliationClose",
+];
+const reconciliationPrivateFunctions = [
+  "paymentIntentFromStripeSource",
+  "reconciliationAllocation",
+  "signedFeeParts",
+  "reconciliationCloseRecord",
+  "saveReconciliationCloseRecord",
+  "paymentIntentForReconciliationTransaction",
+];
+for (const name of reconciliationPublicFunctions) {
+  assert.equal(typeof reconciliationModule[name], "function", `parish-reconciliation should export ${name}`);
+}
+for (const name of reconciliationPrivateFunctions) {
+  assert.match(reconciliation, new RegExp(`(?:async\\s+)?function\\s+${name}\\b`), `parish-reconciliation should retain private helper ${name}`);
+  assert.doesNotMatch(reconciliation, new RegExp(`export\\s+(?:async\\s+)?function\\s+${name}\\b`), `${name} should remain private`);
+}
+for (const name of [...reconciliationPublicFunctions, ...reconciliationPrivateFunctions]) {
+  assert.doesNotMatch(parish, new RegExp(`(?:export\\s+)?(?:async\\s+)?function\\s+${name}\\b`), `parish.js should no longer define ${name}`);
+}
+
+assertImports(reconciliation, "./parish.js", [
+  "findRegistrationByParishId",
+  "verifyParishDashboardBearer",
+  "loadDonorOfferingByPaymentIntent",
+  "loadParishPaidOfferings",
+  "giftDisplayName",
+]);
+assertImports(reconciliation, "../lib/core.js", [
+  "d1",
+  "hasProductionStore",
+  "missingProductionStoreResponse",
+  "rateLimit",
+  "getBearerToken",
+  "unauthorized",
+  "json",
+  "d1GetSetting",
+  "d1SetSetting",
+]);
+assertImports(reconciliation, "../lib/entitlements.js", ["givingFeatureAccess"]);
+assertImports(reconciliation, "../lib/stripe-connect.js", ["stripeObjectId", "stripeGetConnectedRequest"]);
+assertImports(worker, "./handlers/parish-reconciliation.js", [
+  "handleParishPayoutDiagnostics",
+  "handleParishReconciliation",
+  "handleParishReconciliationClose",
+]);
+for (const name of [
+  "handleParishPayoutDiagnostics",
+  "handleParishReconciliation",
+  "handleParishReconciliationClose",
+]) {
+  assert.ok(!importedNames(worker, "./handlers/parish.js").has(name), `worker should not import ${name} from parish.js`);
+}
+
+assert.deepEqual(
+  reconciliationModule.reconciliationPeriod("2026-02", new Date("2026-07-30T00:00:00Z")),
+  {
+    month: "2026-02",
+    year: 2026,
+    monthNumber: 2,
+    label: "February 2026",
+    startIso: "2026-02-01T00:00:00.000Z",
+    endIso: "2026-03-01T00:00:00.000Z",
+    startUnix: 1769904000,
+    endUnix: 1772323200,
+  },
+);
 assert.match(stripe, /from "\.\.\/lib\/parish-notifications\.js"/);
 assert.match(donor, /from "\.\.\/lib\/stripe-fees\.js"/);
 assert.match(admin, /from "\.\.\/lib\/parish-notifications\.js"/);
