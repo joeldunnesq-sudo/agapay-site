@@ -723,7 +723,12 @@ export async function completeCommerceOrderFromStripe(env, object = {}, kind = "
       paymentIntentId);
   }
   if (!order) return null;
-  if (order.payment_status === "paid") return order; // accounting wiring can still replay safely
+  // Stripe does not guarantee webhook delivery order. A refund or dispute can
+  // be processed before a delayed payment/session completion event, so never
+  // let completion regress one of those later lifecycle states back to paid.
+  if (["paid", "partially_refunded", "refunded", "disputed", "dispute_closed"].includes(order.payment_status)) {
+    return order; // accounting wiring can still replay safely
+  }
 
   const fees = paymentIntentId
     ? await stripePaymentIntentFinancialUpdates(env, paymentIntentId, order.parish_id, {
