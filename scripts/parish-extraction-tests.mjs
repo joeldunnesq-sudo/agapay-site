@@ -104,6 +104,7 @@ try {
 
 const parish = await readFile(new URL("../src/handlers/parish.js", import.meta.url), "utf8");
 const parishSacraments = await readFile(new URL("../src/handlers/parish-sacraments.js", import.meta.url), "utf8");
+const parishCommerce = await readFile(new URL("../src/handlers/parish-commerce.js", import.meta.url), "utf8");
 const stripe = await readFile(new URL("../src/handlers/stripe.js", import.meta.url), "utf8");
 const donor = await readFile(new URL("../src/handlers/donor.js", import.meta.url), "utf8");
 const admin = await readFile(new URL("../src/handlers/admin.js", import.meta.url), "utf8");
@@ -125,6 +126,7 @@ function assertImports(source, modulePath, names) {
 
 assert.ok(parish.split(/\r?\n/).length <= 5750, "parish.js should retain the extraction size reduction");
 assert.ok(parish.split(/\r?\n/).length <= 5300, "parish.js should retain the sacraments extraction size reduction");
+assert.ok(parish.split(/\r?\n/).length <= 4620, "parish.js should retain the bookstore and settlement-profile extraction size reduction");
 const sacramentPublicFunctions = [
   "handleAdminSetSacramentsEnabled",
   "sacramentTypeLabel",
@@ -182,6 +184,50 @@ const parishWorkerImports = importedNames(worker, "./handlers/parish.js");
 for (const name of sacramentPublicFunctions) {
   assert.ok(!parishWorkerImports.has(name), `worker should no longer import ${name} from parish.js`);
 }
+const commercePublicFunctions = [
+  "handleParishBookstore",
+  "handleParishSettlementProfiles",
+];
+for (const name of commercePublicFunctions) {
+  assert.doesNotMatch(parish, new RegExp(`export\\s+async\\s+function\\s+${name}\\b`), `${name} should move out of parish.js`);
+  assert.match(parishCommerce, new RegExp(`export\\s+async\\s+function\\s+${name}\\b`), `${name} should live in parish-commerce.js`);
+  assert.ok(!parishWorkerImports.has(name), `worker should no longer import ${name} from parish.js`);
+}
+assertImports(parishCommerce, "./parish.js", [
+  "bookstoreEnabledFor",
+  "centsFromBody",
+  "d1All",
+  "d1First",
+  "d1Run",
+  "findRegistrationByParishId",
+  "generateSecret",
+  "getBearerToken",
+  "hasParishPlusAccess",
+  "hasProductionStore",
+  "json",
+  "missingProductionStoreResponse",
+  "normalizeBookstoreBody",
+  "rateLimit",
+  "recordAuditEvent",
+  "unauthorized",
+  "verifyParishDashboardBearer",
+]);
+assertImports(parishCommerce, "../lib/settlement-profiles.js", [
+  "SETTLEMENT_PROFILE_TYPES",
+  "assignModuleProfile",
+  "createSettlementProfile",
+  "ensureDefaultCommerceProfile",
+  "ensureDefaultGivingProfile",
+  "listSettlementProfiles",
+  "renameSettlementProfile",
+  "setDefaultCommerceProfile",
+  "setDefaultGivingProfile",
+  "setProfileActive",
+  "settlementProfileToJson",
+]);
+assertImports(worker, "./handlers/parish-commerce.js", commercePublicFunctions);
+assert.match(donor, /export async function handleParishBookstoreReadiness\b/, "donor bookstore readiness must remain self-contained");
+assert.doesNotMatch(donor, /from "\.\/parish-commerce\.js"/, "donor bookstore readiness must not depend on the parish commerce handler");
 assert.doesNotMatch(parish, /export (?:async )?function (?:donorName|sendDashboardInvite)\b/);
 assert.doesNotMatch(
   parish,
