@@ -106,6 +106,16 @@
     setTimeout(() => { toast.classList.remove('show'); toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);
   }
 
+  window.addEventListener('offline', () => {
+    if (activeTab === 'accounting') setStatus('Connection lost. Your open Accounting form is still here; reconnect before submitting again.', 'error');
+  });
+  window.addEventListener('online', () => {
+    if (activeTab === 'accounting') setStatus('Connection restored. Review the open form, then retry once.', 'success');
+  });
+  navigator.serviceWorker?.addEventListener('controllerchange', () => {
+    if (activeTab === 'accounting') setStatus('AGAPAY was updated safely. Your open Accounting form was preserved.', 'success');
+  });
+
   function setPaymentStatus(msg, tone) {
     const el = document.getElementById('paymentStatus');
     if (el) el.textContent = msg || '';
