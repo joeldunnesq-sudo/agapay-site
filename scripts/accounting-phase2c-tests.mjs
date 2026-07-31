@@ -8,3 +8,12 @@ await postJournalEntry(db,{actor,journalEntryId:currentExpense.id,idempotencyKey
 const fundRollforward=await fundActivity(db,{actor,startDate:"2026-07-21",endDate:"2026-07-31"});
 assert.deepEqual({beginning:fundRollforward.rows[0].beginningBalance,revenue:fundRollforward.rows[0].revenue,expenses:fundRollforward.rows[0].expenses,ending:fundRollforward.rows[0].endingBalance},{beginning:15000,revenue:0,expenses:2000,ending:13000});
 console.log("PASS - fund balances roll forward prior activity and current revenue and expenses without double counting");
+const restrictedFund="fund_restricted_reporting";
+s.prepare("INSERT INTO accounting_funds(id,code,name,restriction_type,is_default,is_active,is_system) VALUES(?,?,?,'donor_restricted_temporary',0,1,0)").run(restrictedFund,"RESTRICTED-REPORTING","Restricted Reporting Fund");
+const restrictedGift=await createJournalDraft(db,{actor,entryDate:"2026-07-20",description:"Restricted gift",lines:[{accountId:"acct_1010",fundId:restrictedFund,debitAmount:2500},{accountId:"acct_4010",fundId:restrictedFund,creditAmount:2500}]});
+await postJournalEntry(db,{actor,journalEntryId:restrictedGift.id,idempotencyKey:"restricted-reporting",requestHash:"restricted-reporting",expectedVersion:1});
+const consolidatedPosition=await statementOfFinancialPosition(db,{actor,asOfDate:"2026-07-31"});
+assert.equal(consolidatedPosition.rows.filter(row=>row.accountId==="acct_1010").length,1);
+assert.equal(consolidatedPosition.rows.find(row=>row.accountId==="acct_1010").amount,15500);
+assert.equal(consolidatedPosition.totals.difference,0);
+console.log("PASS - financial position consolidates one account across fund restriction classes");

@@ -163,6 +163,16 @@ async function activityRows(db, { startDate, endDate, fundId = "" }) {
     ...params,
   );
 }
+async function financialPositionRows(db, { asOfDate, fundId = "" }) {
+  const params = ["0001-01-01", asOfDate],
+    fund = fundId ? " AND l.fund_id=?" : "";
+  if (fundId) params.push(fundId);
+  return all(
+    db,
+    `SELECT a.id,a.account_number,a.name,a.normal_balance,a.cash_flow_classification,t.category,t.name account_type,SUM(l.debit_amount-l.credit_amount) raw_balance FROM accounting_journal_lines l JOIN accounting_journal_entries e ON e.id=l.journal_entry_id JOIN accounting_accounts a ON a.id=l.account_id JOIN accounting_account_types t ON t.id=a.account_type_id WHERE e.status IN ('posted','reversed') AND COALESCE(e.posting_date,e.entry_date) BETWEEN ? AND ?${fund} GROUP BY a.id ORDER BY t.sort_order,a.account_number`,
+    ...params,
+  );
+}
 export async function statementOfActivities(
   db,
   { actor, startDate, endDate, fundId = "" } = {},
@@ -214,11 +224,7 @@ export async function statementOfFinancialPosition(
     const comparative = await statementOfFinancialPosition(db, { actor, asOfDate: priorAsOfDate, fundId });
     return comparativeReport(current, comparative);
   }
-  const rows = await activityRows(db, {
-      startDate: "0001-01-01",
-      endDate: asOfDate,
-      fundId,
-    }),
+  const rows = await financialPositionRows(db, { asOfDate, fundId }),
     mapped = rows
       .filter((r) => ["asset", "liability", "net_asset"].includes(r.category))
       .map((r) =>
