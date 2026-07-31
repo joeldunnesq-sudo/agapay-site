@@ -4381,7 +4381,8 @@
   // list of common items they can check off instead of typing each one
   // in by hand. Prices on the starter list are suggestions, not fixed —
   // the parish edits them before anything gets added.
-  let bookstoreCatalogState = { loaded: false, products: [], starterCatalog: [] };
+  let bookstoreCatalogState = { loaded: false, products: [], lowStockProducts: [], starterCatalog: [] };
+  let bookstoreLowStockOnly = false;
   let commerceProductState = 'overview';
 
   function switchCommerceProduct(product, focus = true) {
@@ -4435,6 +4436,7 @@
     const kpis = sales.kpis || {};
     const products = bookstoreCatalogState.products || [];
     const activeProducts = products.filter((product) => String(product.status || 'active').toLowerCase() === 'active');
+    const lowStockCount = (bookstoreCatalogState.lowStockProducts || []).length;
     const orders = bookstoreSalesState.orders || [];
     const hasActivity = Number(kpis.orderCount || 0) > 0;
     const bookstoreState = currentParish?.bookstoreEnabled ? 'Live in My AGAPAY' : 'Hidden from My AGAPAY';
@@ -4473,7 +4475,7 @@
             <span class="commerce-product-summary-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
             </span>
-            <span class="commerce-product-summary-copy"><strong>Bookstore</strong><small>${escapeHtml(bookstoreState)} · ${activeProducts.length} active offering${activeProducts.length === 1 ? '' : 's'}</small></span>
+            <span class="commerce-product-summary-copy"><strong>Bookstore</strong><small>${escapeHtml(bookstoreState)} · ${activeProducts.length} active offering${activeProducts.length === 1 ? '' : 's'}${lowStockCount ? ` · ${lowStockCount} item${lowStockCount === 1 ? '' : 's'} low on stock` : ''}</small></span>
             <span class="commerce-product-summary-metrics"><strong>${money(kpis.netCents || 0)}</strong><small>${Number(kpis.orderCount || 0)} order${Number(kpis.orderCount || 0) === 1 ? '' : 's'}</small></span>
             <span class="commerce-product-summary-arrow" aria-hidden="true">→</span>
           </button>
@@ -4504,6 +4506,28 @@
   function bookstoreApi(path = '') {
     if (!currentParish?.parishId) throw new Error('Load a parish first.');
     return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/bookstore' + path;
+  }
+
+  function syncBookstoreLowStockNavigation() {
+    const badge = document.getElementById('bookstoreLowStockNavBadge');
+    if (!badge) return;
+    const count = (bookstoreCatalogState.lowStockProducts || []).length;
+    badge.hidden = count === 0;
+    badge.textContent = count ? `${count} item${count === 1 ? '' : 's'} low on stock` : '';
+  }
+
+  async function loadBookstoreLowStockBadge() {
+    if (!currentParish || isStarterTier() || !moduleIncluded('bookstore')) return;
+    try {
+      const res = await fetch(bookstoreApi('/products/low-stock'), { headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to load low-stock items.');
+      bookstoreCatalogState.lowStockProducts = data.products || [];
+      syncBookstoreLowStockNavigation();
+      renderCommerceOverview();
+    } catch (error) {
+      console.warn('Unable to load bookstore low-stock badge.', error);
+    }
   }
 
   function settlementProfilesApi(path = '') {
@@ -4828,6 +4852,7 @@
     if (bookstoreCatalogState.loaded && !force) {
       renderBookstoreCurrentItems(bookstoreCatalogState.products);
       renderBookstoreStarterCatalogUI(bookstoreCatalogState.starterCatalog);
+      syncBookstoreLowStockNavigation();
       renderCommerceOverview();
       return;
     }
@@ -4838,18 +4863,27 @@
     if (starterPane) starterPane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
 
     try {
-      const [productsRes, catalogRes] = await Promise.all([
+      const [productsRes, lowStockRes, catalogRes] = await Promise.all([
         fetch(bookstoreApi('/products'), { headers: authHeaders() }),
+        fetch(bookstoreApi('/products/low-stock'), { headers: authHeaders() }),
         fetch(bookstoreApi('/starter-catalog'), { headers: authHeaders() })
       ]);
       const productsData = await productsRes.json().catch(() => ({}));
+      const lowStockData = await lowStockRes.json().catch(() => ({}));
       const catalogData = await catalogRes.json().catch(() => ({}));
       if (!productsRes.ok) throw new Error(productsData.error || 'Unable to load your bookstore items.');
+      if (!lowStockRes.ok) throw new Error(lowStockData.error || 'Unable to load low-stock items.');
       if (!catalogRes.ok) throw new Error(catalogData.error || 'Unable to load the starter catalog.');
 
-      bookstoreCatalogState = { loaded: true, products: productsData.products || [], starterCatalog: catalogData.catalog || [] };
+      bookstoreCatalogState = {
+        loaded: true,
+        products: productsData.products || [],
+        lowStockProducts: lowStockData.products || [],
+        starterCatalog: catalogData.catalog || []
+      };
       renderBookstoreCurrentItems(bookstoreCatalogState.products);
       renderBookstoreStarterCatalogUI(bookstoreCatalogState.starterCatalog);
+      syncBookstoreLowStockNavigation();
       renderCommerceOverview();
     } catch (err) {
       if (itemsPane) itemsPane.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
@@ -5139,29 +5173,77 @@
       pane.innerHTML = '<p class="bookstore-empty">Nothing added yet. Use the starter catalog below or add a custom item.</p>';
       return;
     }
+    const lowStockProducts = bookstoreCatalogState.lowStockProducts || [];
+    const visibleProducts = bookstoreLowStockOnly ? lowStockProducts : products;
+    const lowStockIds = new Set(lowStockProducts.map(product => product.variantId || product.id));
     pane.innerHTML = `
+      <div class="bookstore-inventory-filter" role="group" aria-label="Filter bookstore inventory">
+        <button type="button" class="${bookstoreLowStockOnly ? '' : 'is-active'}" aria-pressed="${bookstoreLowStockOnly ? 'false' : 'true'}" onclick="setBookstoreLowStockFilter(false)">All items <span>${products.length}</span></button>
+        <button type="button" class="${bookstoreLowStockOnly ? 'is-active' : ''}" aria-pressed="${bookstoreLowStockOnly ? 'true' : 'false'}" onclick="setBookstoreLowStockFilter(true)">Low stock <span>${lowStockProducts.length}</span></button>
+      </div>
+      ${visibleProducts.length ? `
       <div class="bookstore-current-list">
-        ${products.map(p => `
-          <article class="bookstore-current-row">
+        ${visibleProducts.map(p => {
+          const isLow = lowStockIds.has(p.variantId || p.id);
+          return `
+          <article class="bookstore-current-row ${isLow ? 'is-low-stock' : ''}">
             <div class="bookstore-current-main">
               <strong>${escapeHtml(p.name || 'Bookstore item')}</strong>
               <span>${escapeHtml(BOOKSTORE_CATEGORY_LABELS[p.category] || p.category || 'Other')}${p.sku ? ` · ${escapeHtml(p.sku)}` : ''}</span>
               ${p.description ? `<small>${escapeHtml(p.description)}</small>` : ''}
+              ${isLow ? `<em class="bookstore-low-stock-pill">Low stock</em>` : ''}
             </div>
             <div class="bookstore-current-metrics">
               <b>${moneyFull(Number(p.priceCents || 0))}</b>
-              <span>${Number(p.stockQuantity || 0)} in stock</span>
+              <span>${Number(p.stockQuantity || 0)} in stock${Number(p.reorderThreshold || 0) > 0 ? ` · reorder at ${Number(p.reorderThreshold)}` : ''}</span>
               <em class="bookstore-status-pill">${escapeHtml(p.status || 'active')}</em>
             </div>
             <div class="bookstore-row-actions">
+              ${isLow ? `<form class="bookstore-threshold-edit" onsubmit="saveBookstoreReorderThreshold(event, '${escapeAttr(p.id)}')">
+                <label>Reorder at <input type="number" min="0" step="1" required value="${Number(p.reorderThreshold || 0)}" aria-label="Reorder threshold for ${escapeAttr(p.name || 'bookstore item')}" /></label>
+                <button class="sw-action-btn" type="submit">Save threshold</button>
+              </form>` : ''}
               <button class="sw-action-btn" type="button" onclick="openBookstoreItemModal('${escapeAttr(p.id)}')">Edit</button>
               <button class="sw-action-btn" type="button" onclick="openBookstoreItemModal('${escapeAttr(p.id)}', 'receive')">Receive stock</button>
               <button class="sw-action-btn danger" type="button" onclick="archiveBookstoreItem('${escapeAttr(p.id)}', this)">Archive</button>
             </div>
           </article>
-        `).join('')}
+        `}).join('')}
       </div>
-    `;
+      ` : `<p class="bookstore-empty">No items are at or below a reorder threshold. Items with a threshold of zero are not treated as low stock.</p>`}`;
+  }
+
+  function setBookstoreLowStockFilter(enabled) {
+    bookstoreLowStockOnly = Boolean(enabled);
+    renderBookstoreCurrentItems(bookstoreCatalogState.products || []);
+  }
+
+  async function saveBookstoreReorderThreshold(event, productId) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const input = form.querySelector('input');
+    const button = form.querySelector('button[type="submit"]');
+    const reorderThreshold = Number(input?.value);
+    if (!Number.isInteger(reorderThreshold) || reorderThreshold < 0) {
+      setStatus('Reorder threshold must be a non-negative whole number.', 'error');
+      input?.focus();
+      return;
+    }
+    if (button) { button.disabled = true; button.textContent = 'Saving…'; }
+    try {
+      const res = await fetch(bookstoreApi('/products/' + encodeURIComponent(productId)), {
+        method: 'PATCH',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reorderThreshold })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to save the reorder threshold.');
+      await loadBookstoreCatalogTab(true);
+      setStatus(`Reorder threshold updated to ${reorderThreshold}.`, 'success');
+    } catch (error) {
+      setStatus(error.message, 'error');
+      if (button) { button.disabled = false; button.textContent = 'Save threshold'; }
+    }
   }
 
   function buildBookstoreItemModal() {
@@ -5336,7 +5418,7 @@
       document.getElementById('bookstoreReceiveUnitCost').value = '';
       document.getElementById('bookstoreReceiveReference').value = '';
       syncBookstoreStockReason();
-      renderBookstoreCurrentItems(bookstoreCatalogState.products);
+      await loadBookstoreCatalogTab(true);
       await loadBookstoreMovementHistory(productId);
       setStatus(`Received ${quantity} item${quantity === 1 ? '' : 's'} into bookstore stock.`, 'success');
     } catch (err) {
@@ -7810,8 +7892,12 @@
       currentParish = data.parish;
       await refreshSubscriptionStatus({ quiet: true });
       await refreshStripeStatus({ quiet: true });
+      bookstoreCatalogState = { loaded: false, products: [], lowStockProducts: [], starterCatalog: [] };
+      bookstoreLowStockOnly = false;
       saveSession();
       renderDashboard();
+      syncBookstoreLowStockNavigation();
+      setTimeout(() => loadBookstoreLowStockBadge(), 150);
       showParishFeatureRequestPopup(data.featureRequests || []);
       updateStewardshipBadges(isParishPlusActive(), { renderPanel: false });
       setTimeout(() => loadGivingSummary(), 250);
