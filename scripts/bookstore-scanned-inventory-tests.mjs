@@ -133,6 +133,8 @@ assert.match(publicStore, /\.store-hero\{min-height:260px/, "the desktop storefr
 assert.match(publicStore, /id="addBookPanel" open/);
 assert.match(publicStoreApp, /source: "scan_and_go"/);
 assert.match(publicStoreApp, /joins catalog after payment/);
+assert.match(publicStoreApp, /sold-out-badge/);
 assert.match(myAgapayStore, /onclick="startBookstoreBookScan\(\)"/);
+assert.match(myAgapayStore, /bookstore-product-stock-out/);
 
 console.log("PASS - paid barcode scans populate the shared parish bookstore catalog idempotently");

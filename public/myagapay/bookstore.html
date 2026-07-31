@@ -14,7 +14,7 @@
   <script src="/security.js"></script>
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260729b" defer></script>
-  <script src="/donor/app.js?v=20260731bookscan1" defer></script>
+  <script src="/donor/app.js?v=20260731bookstock1" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -146,6 +146,12 @@
     @media (max-width: 900px) {
       .bookstore-shop-grid { grid-template-columns: 1fr; }
       .bookstore-cart-card { position: static; order: -1; }
+    }
+    .bookstore-product-card:disabled { cursor: not-allowed; opacity: 1; background: #F5F2EC; transform: none; box-shadow: none; }
+    .bookstore-product-card:disabled > *:not(.bookstore-product-stock-out) { opacity: 0.56; }
+    .bookstore-product-stock-out {
+      position: absolute; top: 9px; right: 9px; z-index: 2; padding: 4px 8px; border-radius: 999px;
+      background: #9D4A46; color: #fff; font: 800 9px/1.2 var(--sans, sans-serif); letter-spacing: .06em; text-transform: uppercase;
     }
     @media (max-width: 620px) {
       .bookstore-scan-feature { grid-template-columns: 48px 1fr; }
