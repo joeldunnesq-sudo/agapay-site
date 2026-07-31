@@ -1,4 +1,4 @@
-import { getReadContentIds, markContentRead } from "../lib/content-reads.js";
+import { getReadContentIds, getReadReceipts, markContentRead } from "../lib/content-reads.js";
 import { communicationsEnabledFor } from "../lib/entitlements.js";
 import { agapayEmailHtml, sendEmail } from "../lib/email.js";
 import { loadAllRegistrations } from "../lib/registrations.js";
@@ -155,7 +155,63 @@ export async function listParishAnnouncements(db, parishId) {
     WHERE parish_id = ?
     ORDER BY pinned DESC, updated_at DESC, created_at DESC
   `).bind(parishId).all();
-  return (result.results || []).map(announcementFromRow);
+  return Promise.all((result.results || []).map(async (row) => {
+    const announcement = announcementFromRow(row);
+    if (announcement.status !== "published") return { ...announcement, readCount: 0 };
+    const receipts = await getReadReceipts(db, {
+      parishId,
+      contentType: CONTENT_TYPE,
+      contentId: announcement.id,
+    });
+    return { ...announcement, readCount: receipts.length };
+  }));
+}
+
+function donorDisplayName(row = {}) {
+  let donor = {};
+  try { donor = JSON.parse(row.donor_data || "{}"); } catch { donor = {}; }
+  return String(
+    donor.donorName
+    || [donor.firstName, donor.lastName].filter(Boolean).join(" ")
+    || donor.householdName
+    || row.donor_email
+    || "Parishioner"
+  ).trim();
+}
+
+export async function getAnnouncementReadVisibility(db, { parishId, announcementId }) {
+  const announcement = await db.prepare(`
+    SELECT id, status FROM parish_announcements WHERE id = ? AND parish_id = ?
+  `).bind(announcementId, parishId).first();
+  if (!announcement) return null;
+  if (announcement.status !== "published") return { count: 0, readers: [] };
+
+  const receipts = await getReadReceipts(db, {
+    parishId,
+    contentType: CONTENT_TYPE,
+    contentId: announcementId,
+  });
+  if (!receipts.length) return { count: 0, readers: [] };
+  const resolvedRows = [];
+  for (let index = 0; index < receipts.length; index += 40) {
+    const batch = receipts.slice(index, index + 40);
+    const values = batch.map(() => "(?, ?)").join(", ");
+    const parameters = batch.flatMap(({ donorId, readAt }) => [donorId, readAt]);
+    const result = await db.prepare(`
+      WITH receipt_rows(donor_email, read_at) AS (VALUES ${values})
+      SELECT rr.donor_email, rr.read_at, d.data AS donor_data
+      FROM receipt_rows rr
+      LEFT JOIN donors d ON d.email = rr.donor_email
+      ORDER BY rr.read_at ASC, rr.donor_email ASC
+    `).bind(...parameters).all();
+    resolvedRows.push(...(result.results || []));
+  }
+  const readers = resolvedRows.map((row) => ({
+    donorId: row.donor_email,
+    displayName: donorDisplayName(row),
+    readAt: row.read_at,
+  }));
+  return { count: readers.length, readers };
 }
 
 export async function createParishAnnouncement(db, { parishId, createdBy, input }) {
@@ -622,6 +678,15 @@ export async function handleParishCommunications(request, env, parishId, subpath
       });
       return announcement
         ? json({ ok: true, announcement })
+        : json({ error: "Announcement not found" }, { status: 404 });
+    }
+    if (parts.length === 2 && parts[1] === "readers" && request.method === "GET") {
+      const visibility = await getAnnouncementReadVisibility(db, {
+        parishId,
+        announcementId: decodeURIComponent(parts[0]),
+      });
+      return visibility
+        ? json({ ok: true, ...visibility })
         : json({ error: "Announcement not found" }, { status: 404 });
     }
     if (parts.length === 2 && parts[1] === "archive" && request.method === "POST") {

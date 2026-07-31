@@ -10114,7 +10114,7 @@
   }
 
   // ── COMMUNICATIONS ────────────────────────────────────────
-  let communicationsState = { loaded: false, announcements: [] };
+  let communicationsState = { loaded: false, announcements: [], readers: {} };
 
   function communicationsApi(path = '') {
     return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/communications' + path;
@@ -10137,12 +10137,39 @@
         ${item.heroImageUrl ? `<img class="communications-row-image" src="${escapeAttr(item.heroImageUrl)}" alt="" loading="lazy" />` : ''}
         <div class="communications-row-copy"><div class="communications-row-meta"><span class="communications-status is-${escapeAttr(item.status)}">${announcementStatusLabel(item.status)}</span>${item.pinned ? '<span>📌 Pinned</span>' : ''}<span>${escapeHtml(shortDate(item.publishedAt || item.updatedAt || item.createdAt))}</span></div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p></div>
         <div class="communications-row-actions">
+          ${item.status === 'published' ? `<button class="btn btn-ghost btn-sm" type="button" onclick="toggleAnnouncementReaders('${escapeAttr(item.id)}',this)">${Number(item.readCount || 0)} read</button>` : ''}
           ${item.status !== 'archived' ? `<button class="btn btn-ghost btn-sm" type="button" onclick="editAnnouncement('${escapeAttr(item.id)}')">Edit</button>` : ''}
           ${item.status === 'draft' ? `<button class="btn btn-gold btn-sm" type="button" onclick="publishAnnouncement('${escapeAttr(item.id)}',this)">Publish</button>` : ''}
           ${item.status !== 'archived' ? `<button class="btn btn-danger btn-sm" type="button" onclick="archiveAnnouncement('${escapeAttr(item.id)}',this)">Archive</button>` : ''}
         </div>
+        <div class="communications-readers" id="communicationsReaders-${escapeAttr(item.id)}" hidden></div>
       </article>
     `).join('');
+  }
+
+  async function toggleAnnouncementReaders(id, button) {
+    const panel = document.getElementById('communicationsReaders-' + id);
+    if (!panel) return;
+    if (!panel.hidden) { panel.hidden = true; button?.setAttribute('aria-expanded','false'); return; }
+    button?.setAttribute('aria-expanded','true');
+    panel.hidden = false;
+    const cached = communicationsState.readers[id];
+    if (cached) { renderAnnouncementReaders(panel, cached); return; }
+    panel.innerHTML = '<p>Loading readers...</p>';
+    try {
+      const response = await fetch(communicationsApi('/' + encodeURIComponent(id) + '/readers'), { headers:authHeaders(), cache:'no-store' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to load readers.');
+      communicationsState.readers[id] = data;
+      renderAnnouncementReaders(panel, data);
+    } catch (error) {
+      panel.innerHTML = `<p>${escapeHtml(error.message || 'Unable to load readers.')}</p>`;
+    }
+  }
+
+  function renderAnnouncementReaders(panel, data) {
+    const readers = data.readers || [];
+    panel.innerHTML = readers.length ? `<strong>${readers.length} parishioner${readers.length === 1 ? '' : 's'} read this</strong><ul>${readers.map(reader => `<li><span>${escapeHtml(reader.displayName || reader.donorId || 'Parishioner')}</span><time>${escapeHtml(new Date(reader.readAt).toLocaleString())}</time></li>`).join('')}</ul>` : '<strong>No readers yet</strong><p>Readers will appear here after opening this announcement in My AGAPAY.</p>';
   }
 
   function insertAnnouncementFormatting(kind) {
@@ -10186,7 +10213,7 @@
     const response = await fetch(communicationsApi(), { headers: authHeaders(), cache: 'no-store' });
     const data = await response.json();
     if (!response.ok) { setStatus(data.error || 'Unable to load announcements.','error'); return; }
-    communicationsState = { loaded: true, announcements: data.announcements || [] };
+    communicationsState = { loaded: true, announcements: data.announcements || [], readers: communicationsState.readers || {} };
     renderCommunicationsList();
   }
 

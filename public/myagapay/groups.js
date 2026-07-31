@@ -1,4 +1,4 @@
-let ministryGroupsState = { groups: [], activeGroupId: "", messages: [] };
+let ministryGroupsState = { groups: [], activeGroupId: "", messages: [], catchUp: {} };
 let initialGroupId = new URLSearchParams(window.location.search).get("group") || "";
 
 function groupsEscape(value) {
@@ -38,14 +38,48 @@ function renderGroupThread(group, messages) {
   const panel = document.getElementById("groupThreadPanel");
   if (!panel) return;
   panel.innerHTML = `
-    <div class="group-thread-head"><div><span class="eyebrow">Private group</span><h2>${groupsEscape(group.name)}</h2><p>${groupsEscape(group.description || "Messages for current ministry members and leaders.")}</p></div><button type="button" class="groups-refresh" onclick="openMinistryGroup('${groupsEscape(group.id)}')">Refresh messages</button></div>
+    <div class="group-thread-head"><div><span class="eyebrow">Private group</span><h2>${groupsEscape(group.name)}</h2><p>${groupsEscape(group.description || "Messages for current ministry members and leaders.")}</p></div><div class="group-thread-actions">${group.role === "leader" ? `<button type="button" class="groups-refresh" onclick="toggleGroupCatchUp('${groupsEscape(group.id)}',this)" aria-expanded="false">Who’s caught up</button>` : ""}<button type="button" class="groups-refresh" onclick="openMinistryGroup('${groupsEscape(group.id)}')">Refresh messages</button></div></div>
     <div class="group-message-list" id="groupMessageList">${messages.length ? messages.map(message => `
       <article class="group-message${message.read ? "" : " is-unread"}"><div><strong>${groupsEscape(message.authorName)}</strong><time>${groupsEscape(groupMessageTime(message.createdAt))}</time></div><p>${groupsEscape(message.body)}</p></article>
     `).join("") : '<div class="group-thread-empty"><strong>No messages yet</strong><p>Start the conversation for your ministry.</p></div>'}</div>
+    ${group.role === "leader" ? `<section class="group-catch-up" id="groupCatchUp-${groupsEscape(group.id)}" hidden></section>` : ""}
     <form class="group-compose" onsubmit="postMinistryGroupMessage(event)"><label for="groupMessageBody">Post a message</label><textarea id="groupMessageBody" maxlength="8000" rows="4" required placeholder="Write a message to your group..."></textarea><button type="submit">Post message</button></form>
   `;
   const messageList = document.getElementById("groupMessageList");
   if (messageList) messageList.scrollTop = messageList.scrollHeight;
+}
+
+function renderGroupCatchUp(panel, data) {
+  const members = data.members || [];
+  if (!data.latestMessage) {
+    panel.innerHTML = '<strong>Who’s caught up</strong><p>Post the first message to begin tracking the latest-message read status.</p>';
+    return;
+  }
+  panel.innerHTML = `<div class="group-catch-up-head"><div><strong>Who’s caught up</strong><small>${Number(data.caughtUpCount || 0)} of ${Number(data.memberCount || 0)} read the latest message</small></div><time>${groupsEscape(groupMessageTime(data.latestMessage.createdAt))}</time></div><ul>${members.map(member => {
+    const label = !member.accountLinked ? 'No linked account' : member.caughtUp ? 'Caught up' : 'Not yet';
+    return `<li><span><strong>${groupsEscape(member.displayName)}</strong><small>${member.role === 'leader' ? 'Leader' : 'Member'}</small></span><em class="${member.caughtUp ? 'is-caught-up' : ''}">${label}</em></li>`;
+  }).join('')}</ul>`;
+}
+
+async function toggleGroupCatchUp(groupId, button) {
+  const panel = document.getElementById(`groupCatchUp-${groupId}`);
+  if (!panel) return;
+  if (!panel.hidden) { panel.hidden = true; button?.setAttribute('aria-expanded','false'); return; }
+  panel.hidden = false;
+  button?.setAttribute('aria-expanded','true');
+  if (ministryGroupsState.catchUp[groupId]) {
+    renderGroupCatchUp(panel, ministryGroupsState.catchUp[groupId]);
+    return;
+  }
+  panel.innerHTML = '<p>Checking the latest message...</p>';
+  try {
+    const data = await groupsFetch(`/api/donor/groups/${encodeURIComponent(groupId)}/caught-up`);
+    if (!data) return;
+    ministryGroupsState.catchUp[groupId] = data;
+    renderGroupCatchUp(panel, data);
+  } catch (error) {
+    panel.innerHTML = `<p>${groupsEscape(error.message || 'Unable to load member read status.')}</p>`;
+  }
 }
 
 async function groupsFetch(path, options = {}) {
@@ -87,7 +121,8 @@ async function openMinistryGroup(groupId) {
     ministryGroupsState.activeGroupId = groupId;
     ministryGroupsState.messages = data.messages || [];
     renderGroupsList();
-    renderGroupThread(data.group, ministryGroupsState.messages);
+    const membership = ministryGroupsState.groups.find(({ id }) => id === groupId);
+    renderGroupThread({ ...data.group, role: membership?.role || "participant" }, ministryGroupsState.messages);
     const unread = ministryGroupsState.messages.filter(message => !message.read);
     if (unread.length) {
       await Promise.all(unread.map(message => groupsFetch(`/api/donor/groups/${encodeURIComponent(groupId)}/messages/${encodeURIComponent(message.id)}/read`, { method: "POST" }).catch(() => null)));
@@ -113,6 +148,7 @@ async function postMinistryGroupMessage(event) {
       method: "POST",
       body: JSON.stringify({ body }),
     });
+    delete ministryGroupsState.catchUp[ministryGroupsState.activeGroupId];
     await openMinistryGroup(ministryGroupsState.activeGroupId);
     await loadGroups();
   } catch (error) {

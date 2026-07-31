@@ -7,6 +7,7 @@ import {
   archiveParishAnnouncement,
   ANNOUNCEMENT_ALLOWED_TAGS,
   createParishAnnouncement,
+  getAnnouncementReadVisibility,
   getDonorAnnouncementFeed,
   listParishAnnouncements,
   markAnnouncementRead,
@@ -22,6 +23,12 @@ import { communicationsEnabledFor, entitlementsSummary } from "../src/lib/entitl
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sqlite = new DatabaseSync(":memory:");
+sqlite.exec(`
+  CREATE TABLE donors (
+    email TEXT PRIMARY KEY,
+    data TEXT NOT NULL
+  );
+`);
 for (const migration of ["0064_parish_content_reads.sql", "0065_parish_announcements.sql", "0067_parish_announcement_hero_images.sql"]) {
   sqlite.exec(readFileSync(path.join(root, "migrations", migration), "utf8"));
 }
@@ -100,6 +107,28 @@ feed = await getDonorAnnouncementFeed(db, { parishId: "parish-one", donorId: "do
 assert.deepEqual(feed.announcements.map(({ id }) => id), [draft.id], "publishing should make a draft visible");
 assert.equal(feed.unreadCount, 1);
 
+sqlite.prepare("INSERT INTO donors (email, data) VALUES (?, ?), (?, ?)").run(
+  "anna@example.test", JSON.stringify({ donorName: "Anna Reader" }),
+  "boris@example.test", JSON.stringify({ firstName: "Boris", lastName: "Reader" })
+);
+await markAnnouncementRead(db, {
+  parishId: "parish-one", announcementId: draft.id, donorId: "anna@example.test",
+});
+await markAnnouncementRead(db, {
+  parishId: "parish-one", announcementId: draft.id, donorId: "boris@example.test",
+});
+const publishedAdminList = await listParishAnnouncements(db, "parish-one");
+assert.equal(
+  publishedAdminList.find(({ id }) => id === draft.id).readCount,
+  2,
+  "the parish dashboard count must match the distinct shared read receipts"
+);
+const readVisibility = await getAnnouncementReadVisibility(db, {
+  parishId: "parish-one", announcementId: draft.id,
+});
+assert.equal(readVisibility.count, 2);
+assert.deepEqual(readVisibility.readers.map(({ displayName }) => displayName), ["Anna Reader", "Boris Reader"]);
+
 const pinnedDraft = await createParishAnnouncement(db, {
   parishId: "parish-one",
   createdBy: "treasurer@example.test",
@@ -135,7 +164,7 @@ const adminAnnouncements = await listParishAnnouncements(db, "parish-one");
 assert.equal(adminAnnouncements.find(({ id }) => id === draft.id).status, "archived", "archiving should retain the announcement in the admin list");
 
 const handlerSource = readFileSync(path.join(root, "src", "handlers", "parish-communications.js"), "utf8");
-assert.match(handlerSource, /import \{ getReadContentIds, markContentRead \} from "\.\.\/lib\/content-reads\.js"/);
+assert.match(handlerSource, /import \{ getReadContentIds, getReadReceipts, markContentRead \} from "\.\.\/lib\/content-reads\.js"/);
 assert.match(handlerSource, /const CONTENT_TYPE = "announcement"/);
 assert.match(handlerSource, /getReadContentIds\(db, \{[\s\S]*?contentType: CONTENT_TYPE,[\s\S]*?contentIds,/);
 assert.match(handlerSource, /markContentRead\(db, \{[\s\S]*?contentType: CONTENT_TYPE,/);
@@ -143,5 +172,8 @@ assert.doesNotMatch(handlerSource, /parish_content_reads/, "the announcement fea
 assert.doesNotMatch(handlerSource, /directory\/media\.js/, "announcement images must not use Directory's consent-oriented media pipeline");
 assert.match(handlerSource, /rateLimit\(request, env, "parish-communications-upload"/);
 assert.match(handlerSource, /PARISH_EDITORIAL_IMAGE_MAX_BYTES/);
+const adminUiSource = readFileSync(path.join(root, "public", "parish", "app.js"), "utf8");
+assert.match(adminUiSource, /toggleAnnouncementReaders/);
+assert.match(adminUiSource, /\/readers/);
 
-console.log("PASS - parish announcements support safe rich text and bounded hero images without mutating authored source");
+console.log("PASS - parish announcements expose accurate admin-only reader counts and names alongside safe authoring");

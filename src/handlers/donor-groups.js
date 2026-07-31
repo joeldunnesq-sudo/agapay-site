@@ -1,5 +1,5 @@
 import { currentUser } from "../lib/authorization.js";
-import { getReadContentIds, markContentRead } from "../lib/content-reads.js";
+import { getReadContentIds, getReadReceipts, markContentRead } from "../lib/content-reads.js";
 import { sendGroupMessagePush } from "../lib/push-notifications.js";
 import {
   d1All,
@@ -74,6 +74,26 @@ export async function isActiveMinistryMember(env, { parishId, ministryId, person
 async function requireActiveMinistryMember(env, context, ministryId) {
   if (!await isActiveMinistryMember(env, { ...context, ministryId })) {
     throw new GroupMessageAccessError();
+  }
+}
+
+export async function isActiveMinistryLeader(env, { parishId, ministryId, personId }) {
+  if (!parishId || !ministryId || !personId) return false;
+  const row = await d1First(env, `
+    SELECT m.id
+    FROM directory_ministries m
+    JOIN directory_ministry_leaders ml
+      ON ml.parish_id = m.parish_id AND ml.ministry_id = m.id
+    WHERE m.id = ? AND m.parish_id = ? AND m.status = 'active'
+      AND ml.person_id = ? AND ml.active = 1
+    LIMIT 1
+  `, ministryId, parishId, personId);
+  return Boolean(row);
+}
+
+async function requireActiveMinistryLeader(env, context, ministryId) {
+  if (!await isActiveMinistryLeader(env, { ...context, ministryId })) {
+    throw new GroupMessageAccessError("Only active ministry leaders can view member read status.", 403);
   }
 }
 
@@ -196,6 +216,66 @@ export async function markGroupMessageRead(env, { parishId, ministryId, messageI
   });
 }
 
+export async function getLatestGroupMessageCatchUp(env, { parishId, ministryId, personId }) {
+  await requireActiveMinistryLeader(env, { parishId, personId }, ministryId);
+  const latestMessage = await d1First(env, `
+    SELECT id, created_at
+    FROM parish_group_messages
+    WHERE parish_id = ? AND ministry_id = ?
+    ORDER BY created_at DESC, id DESC
+    LIMIT 1
+  `, parishId, ministryId);
+  const receipts = latestMessage ? await getReadReceipts(database(env), {
+    parishId,
+    contentType: CONTENT_TYPE,
+    contentId: latestMessage.id,
+  }) : [];
+  const readSet = new Set(receipts.map(({ donorId }) => normalizeEmail(donorId)));
+  const rows = await d1All(env, `
+    WITH active_members(person_id) AS (
+      SELECT mp.person_id
+      FROM directory_ministry_participants mp
+      WHERE mp.parish_id = ? AND mp.ministry_id = ? AND mp.status = 'active'
+      UNION
+      SELECT ml.person_id
+      FROM directory_ministry_leaders ml
+      WHERE ml.parish_id = ? AND ml.ministry_id = ? AND ml.active = 1
+    )
+    SELECT p.id AS person_id, p.preferred_name,
+      EXISTS (
+        SELECT 1 FROM directory_ministry_leaders leader
+        WHERE leader.parish_id = ? AND leader.ministry_id = ?
+          AND leader.person_id = p.id AND leader.active = 1
+      ) AS is_leader,
+      COALESCE((
+        SELECT pu.email
+        FROM directory_person_links l
+        JOIN platform_users pu ON pu.id = l.external_id AND pu.status = 'active'
+        WHERE l.person_id = p.id AND l.link_type = 'platform_user' AND l.active = 1
+        ORDER BY l.created_at ASC LIMIT 1
+      ), '') AS donor_id
+    FROM active_members members
+    JOIN directory_people p ON p.id = members.person_id AND p.active = 1
+    ORDER BY p.preferred_name ASC, p.id ASC
+  `, parishId, ministryId, parishId, ministryId, parishId, ministryId);
+  const members = rows.map((row) => {
+    const donorId = normalizeEmail(row.donor_id || "");
+    return {
+      personId: row.person_id,
+      displayName: row.preferred_name || "Parish member",
+      role: Number(row.is_leader || 0) === 1 ? "leader" : "participant",
+      accountLinked: Boolean(donorId),
+      caughtUp: latestMessage ? Boolean(donorId && readSet.has(donorId)) : null,
+    };
+  });
+  return {
+    latestMessage: latestMessage ? { id: latestMessage.id, createdAt: latestMessage.created_at || "" } : null,
+    memberCount: members.length,
+    caughtUpCount: latestMessage ? members.filter(({ caughtUp }) => caughtUp).length : 0,
+    members,
+  };
+}
+
 async function resolveGroupContext(request, env) {
   const [donor, user] = await Promise.all([requireDonor(request, env), currentUser(request, env)]);
   if (!donor?.email || !user?.id) return null;
@@ -251,6 +331,9 @@ export async function handleDonorGroups(request, env, ctx = null) {
         ctx.waitUntil(delivery);
       }
       return privateJson({ ok: true, message }, { status: 201 });
+    }
+    if (parts.length === 2 && parts[1] === "caught-up" && request.method === "GET") {
+      return privateJson(await getLatestGroupMessageCatchUp(env, { ...context, ministryId: parts[0] }));
     }
     if (parts.length === 4 && parts[1] === "messages" && parts[3] === "read" && request.method === "POST") {
       await markGroupMessageRead(env, { ...context, ministryId: parts[0], messageId: parts[2] });
