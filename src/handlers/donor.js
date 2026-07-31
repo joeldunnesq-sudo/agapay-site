@@ -1112,9 +1112,14 @@ function normalizeBookstoreQuantity(value) {
 export function guestBookstoreItemError(items = []) {
   for (const item of items) {
     if (String(item?.productId || "").trim() || String(item?.variantId || "").trim()) continue;
+    const category = String(item?.itemCategory || "").trim();
+    const categoryConfig = BOOKSTORE_ITEM_FIELD_CATEGORIES.find(entry => entry.category === category);
+    const specifics = item?.specifics && typeof item.specifics === "object" ? item.specifics : {};
     const isbn = String(item?.specifics?.isbn || item?.barcode || "").replace(/[^0-9Xx]/g, "");
-    if (item?.source !== "scan_and_go" || item?.itemCategory !== "book" || ![10, 13].includes(isbn.length)) {
-      return "Buyer-added guest items must be books with a valid ISBN barcode.";
+    if (item?.source === "scan_and_go" && category === "book" && [10, 13].includes(isbn.length)) continue;
+    const description = String(specifics.description || specifics.title || specifics.saint_or_feast || "").trim();
+    if (item?.source !== "shopper_added" || !categoryConfig || !description) {
+      return "Describe every shopper-added item and choose a valid category.";
     }
   }
   return "";
@@ -1122,6 +1127,7 @@ export function guestBookstoreItemError(items = []) {
 
 export function bookstoreOrderSource(items = [], isGuestCheckout = false) {
   if (items.some(item => item.source === "scan_and_go")) return "scan_and_go";
+  if (items.some(item => item.source === "shopper_added")) return "shopper_added";
   if (isGuestCheckout) return "guest_checkout";
   if (items.some(item => item.source === "catalog")) return "catalog";
   return "manual_entry";
@@ -1150,25 +1156,34 @@ function normalizeBookstoreProduct(row = {}) {
     priceLabel: `$${(priceCents / 100).toFixed(2)}`,
     stockQuantity: Number(row.stock_quantity || 0),
     trackInventory: Number(row.track_inventory ?? 1) !== 0,
+    unitsSold: Number(row.units_sold || 0),
     imageUrl: row.image_url || ""
   };
 }
 
-async function loadDonorBookstoreProducts(env, parishId) {
+export async function loadDonorBookstoreProducts(env, parishId) {
   if (!d1(env)) return [];
   const rows = await d1All(env, `
     SELECT p.id, p.name, p.description, p.item_category, p.default_sku, p.default_tax_code,
            p.fulfillment_type, p.image_url,
            v.id AS variant_id, v.sku, v.barcode, v.variant_name, v.unit_price_cents,
            v.tax_code, v.fulfillment_type AS variant_fulfillment_type,
-           v.stock_quantity, v.track_inventory
+           v.stock_quantity, v.track_inventory, COALESCE(sales.units_sold, 0) AS units_sold
     FROM commerce_products p
     LEFT JOIN commerce_product_variants v
-      ON v.product_id = p.id AND v.parish_id = p.parish_id
+     ON v.product_id = p.id AND v.parish_id = p.parish_id
      AND v.commerce_module = 'bookstore' AND v.status = 'active'
+    LEFT JOIN (
+      SELECT i.variant_id, SUM(i.quantity) AS units_sold
+      FROM commerce_order_items i
+      JOIN commerce_orders o ON o.id = i.order_id
+      WHERE i.parish_id = ? AND i.commerce_module = 'bookstore'
+        AND (o.payment_status = 'paid' OR o.status = 'completed')
+      GROUP BY i.variant_id
+    ) sales ON sales.variant_id = v.id
     WHERE p.parish_id = ? AND p.commerce_module = 'bookstore' AND p.status = 'active'
     ORDER BY p.name COLLATE NOCASE, v.variant_name COLLATE NOCASE
-  `, parishId);
+  `, parishId, parishId);
   return rows.map(normalizeBookstoreProduct).filter(product => product.variantId && product.priceCents > 0);
 }
 
@@ -1361,7 +1376,7 @@ export async function normalizeBookstoreCartItems(env, parishId, items) {
     if (!unitPriceCents) throw new Error("Enter a valid price for every manual item.");
     if (!itemName || itemName === "Item") throw new Error("Describe every manual item before checkout.");
     normalized.push({
-      source: raw.source === "scan_and_go" ? "scan_and_go" : "manual_entry",
+      source: raw.source === "scan_and_go" ? "scan_and_go" : raw.source === "shopper_added" ? "shopper_added" : "manual_entry",
       productId: "",
       variantId: "",
       sku: String(specifics.isbn || raw.barcode || "").slice(0, 80),

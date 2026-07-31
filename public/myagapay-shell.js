@@ -47,14 +47,17 @@
   function visibleProducts() {
     return products().filter((item) => {
       if (item.desktopHidden) return false;
-      return !item.parishFeature || parishCapabilities[item.parishFeature] === true;
+      return !item.parishFeature || parishCapabilities[item.parishFeature] === true || item.id === activeProduct();
     });
   }
 
   function mobileProducts() {
     return products().filter((item) => {
-      if (item.parishFeature) return parishCapabilities[item.parishFeature] === true;
-      if (item.mobileFallbackFor) return parishCapabilities[item.mobileFallbackFor] !== true;
+      if (item.parishFeature) return parishCapabilities[item.parishFeature] === true || item.id === activeProduct();
+      if (item.mobileFallbackFor) {
+        const featureProduct = products().find(product => product.parishFeature === item.mobileFallbackFor);
+        return parishCapabilities[item.mobileFallbackFor] !== true && featureProduct?.id !== activeProduct();
+      }
       return true;
     });
   }

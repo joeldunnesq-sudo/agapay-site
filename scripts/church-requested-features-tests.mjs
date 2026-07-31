@@ -16,7 +16,7 @@ assert.match(donorHandler, /updated\.pledgeCadence === "monthly" \? 12 : 1/);
 assert.match(worker, /\/api\/public\/bookstore\//);
 assert.match(worker, /\/bookstore\/index\.html/);
 assert.ok(worker.includes('^\\/[^/]+\\/bookstore\\/?$'), "the public storefront should resolve /[parish]/bookstore");
-assert.match(donorHandler, /Buyer-added guest items must be books with a valid ISBN barcode/);
+assert.match(donorHandler, /Describe every shopper-added item and choose a valid category/);
 assert.ok(donorHandler.includes('`/${encodeURIComponent(resolved.parishId)}/bookstore`'));
 assert.match(parishHtml, /bookstoreGuestCheckoutQr/);
 assert.match(parishApp, /qrcode\(0, 'H'\)/);
