@@ -267,7 +267,7 @@ export async function applyBookstoreInventoryAtCompletion(env, order, now = new 
 
 export async function patchBookstoreProduct(env, parishId, productId, body = {}, now = new Date().toISOString()) {
   const product = await d1First(env,
-    `SELECT p.id, v.id AS variant_id, v.stock_quantity
+    `SELECT p.id, v.id AS variant_id, v.stock_quantity, v.cost_basis_cents
      FROM commerce_products p
      LEFT JOIN commerce_product_variants v ON v.product_id = p.id AND v.status = 'active'
      WHERE p.id = ? AND p.parish_id = ? AND p.commerce_module = 'bookstore'`,
@@ -280,8 +280,11 @@ export async function patchBookstoreProduct(env, parishId, productId, body = {},
   if (item.priceCents < 1) return json({ error: "Price must be greater than zero." }, { status: 422 });
 
   const stockSubmitted = Object.prototype.hasOwnProperty.call(body, "stockQuantity");
+  const costSubmitted = Object.prototype.hasOwnProperty.call(body, "costBasisCents");
   const oldStock = Number(product.stock_quantity || 0);
   const newStock = stockSubmitted ? item.stockQuantity : oldStock;
+  const currentCost = Number(product.cost_basis_cents || 0);
+  const newCost = costSubmitted ? item.costBasisCents : currentCost;
   const stockChanged = newStock !== oldStock;
   const stockAdjustmentReason = String(body.stockAdjustmentReason || "").trim().slice(0, 500);
   if (stockChanged && !stockAdjustmentReason) {
@@ -314,7 +317,7 @@ export async function patchBookstoreProduct(env, parishId, productId, body = {},
       sql: `UPDATE commerce_product_variants
             SET sku = ?, unit_price_cents = ?, stock_quantity = ?, cost_basis_cents = ?, reorder_threshold = ?, updated_at = ?
             WHERE id = ? AND parish_id = ?${stockChanged ? " AND stock_quantity = ?" : ""}`,
-      params: [item.sku || null, item.priceCents, newStock, item.costBasisCents, item.reorderThreshold,
+      params: [item.sku || null, item.priceCents, newStock, newCost, item.reorderThreshold,
         now, product.variant_id, parishId, ...(stockChanged ? [oldStock] : [])]
     });
   } else {
@@ -344,6 +347,66 @@ export async function patchBookstoreProduct(env, parishId, productId, body = {},
     return json({ error: "Stock changed while this item was open. Reload it and try again." }, { status: 409 });
   }
   return json({ ok: true });
+}
+
+export async function receiveBookstoreStock(env, parishId, productId, body = {}, now = new Date().toISOString()) {
+  const quantity = Number(body.quantity);
+  if (!Number.isInteger(quantity) || quantity <= 0) {
+    return json({ error: "Receiving quantity must be a positive whole number." }, { status: 422 });
+  }
+
+  const costProvided = Object.prototype.hasOwnProperty.call(body, "unitCostCents")
+    && body.unitCostCents !== null && body.unitCostCents !== "";
+  const unitCostCents = Number(body.unitCostCents);
+  if (costProvided && (!Number.isInteger(unitCostCents) || unitCostCents < 0)) {
+    return json({ error: "Unit cost must be a non-negative whole number of cents." }, { status: 422 });
+  }
+  const reference = String(body.reference || "").trim().slice(0, 500);
+
+  const product = await d1First(env,
+    `SELECT p.id, v.id AS variant_id, v.sku
+     FROM commerce_products p
+     JOIN commerce_product_variants v ON v.product_id = p.id AND v.status = 'active'
+     WHERE p.id = ? AND p.parish_id = ? AND p.commerce_module = 'bookstore'
+       AND v.parish_id = ? AND v.commerce_module = 'bookstore'`,
+    productId, parishId, parishId
+  );
+  if (!product) return json({ error: "Bookstore item not found." }, { status: 404 });
+
+  const statements = [
+    {
+      sql: `INSERT INTO commerce_inventory_movements
+              (id, parish_id, commerce_module, product_id, variant_id, sku,
+               movement_type, quantity_delta, unit_cost_cents, note, created_at)
+            SELECT ?, ?, 'bookstore', ?, id, sku, 'receiving', ?, ?, ?, ?
+            FROM commerce_product_variants
+            WHERE id = ? AND parish_id = ? AND commerce_module = 'bookstore' AND track_inventory = 1`,
+      params: [generateSecret("inventory_movement"), parishId, productId, quantity,
+        costProvided ? unitCostCents : null, reference || null, now, product.variant_id, parishId]
+    },
+    {
+      sql: `UPDATE commerce_product_variants
+            SET stock_quantity = stock_quantity + ?,
+                ${costProvided ? "cost_basis_cents = ?," : ""}
+                updated_at = ?
+            WHERE id = ? AND parish_id = ? AND commerce_module = 'bookstore' AND track_inventory = 1`,
+      params: [quantity, ...(costProvided ? [unitCostCents] : []), now, product.variant_id, parishId]
+    }
+  ];
+  const results = await d1Batch(env, statements);
+  if (changedRows(results?.[1]) !== 1) {
+    return json({ error: "Inventory tracking is not enabled for this item." }, { status: 409 });
+  }
+  const updated = await d1First(env,
+    `SELECT stock_quantity, cost_basis_cents FROM commerce_product_variants
+     WHERE id = ? AND parish_id = ? AND commerce_module = 'bookstore'`,
+    product.variant_id, parishId
+  );
+  return json({
+    ok: true,
+    stockQuantity: Number(updated?.stock_quantity || 0),
+    costBasisCents: Number(updated?.cost_basis_cents || 0)
+  });
 }
 
 export async function handleParishBookstore(request, env, parishId, subpath = "") {
@@ -791,6 +854,12 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
         orderNumber: row.order_number || null,
         createdAt: row.created_at
       })) });
+    }
+
+    if (request.method === "POST" && segments[2] === "receive" && segments.length === 3) {
+      let body = {};
+      try { body = await request.json(); } catch { return json({ error: "Invalid JSON body" }, { status: 400 }); }
+      return receiveBookstoreStock(env, parishId, productId, body, now);
     }
 
     if (request.method === "PATCH" && segments.length === 2) {
