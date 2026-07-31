@@ -19,6 +19,55 @@ function feedHeaders() {
   return window.MyAgapayShell?.authHeaders({ "Content-Type": "application/json" }) || {};
 }
 
+function setDigestPreferenceUi(subscribed, message = "") {
+  const toggle = document.getElementById("feedDigestToggle");
+  const label = document.getElementById("feedDigestToggleLabel");
+  const status = document.getElementById("feedDigestStatus");
+  if (!toggle || !label || !status) return;
+  toggle.checked = Boolean(subscribed);
+  toggle.disabled = false;
+  label.textContent = subscribed ? "Digest on" : "Digest off";
+  status.textContent = message;
+}
+
+async function loadDigestPreference() {
+  const toggle = document.getElementById("feedDigestToggle");
+  if (!toggle) return;
+  try {
+    const response = await fetch("/api/donor/digest/subscription", { headers: feedHeaders(), cache: "no-store" });
+    if (window.MyAgapayShell?.handleUnauthorized(response)) return;
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Unable to load your digest preference.");
+    setDigestPreferenceUi(data.subscribed);
+  } catch (error) {
+    toggle.disabled = true;
+    document.getElementById("feedDigestToggleLabel").textContent = "Preference unavailable";
+    document.getElementById("feedDigestStatus").textContent = error.message || "Unable to load your digest preference.";
+  }
+}
+
+async function updateDigestPreference() {
+  const toggle = document.getElementById("feedDigestToggle");
+  const requested = toggle.checked;
+  toggle.disabled = true;
+  document.getElementById("feedDigestStatus").textContent = "Saving...";
+  try {
+    const response = await fetch("/api/donor/digest/subscription", {
+      method: "POST",
+      headers: feedHeaders(),
+      body: JSON.stringify({ subscribed: requested }),
+    });
+    if (window.MyAgapayShell?.handleUnauthorized(response)) return;
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Unable to update your digest preference.");
+    setDigestPreferenceUi(data.subscribed, data.subscribed
+      ? "You’ll receive a digest only when your parish publishes something new."
+      : "You won’t receive parish announcement digests.");
+  } catch (error) {
+    setDigestPreferenceUi(!requested, error.message || "Unable to update your digest preference.");
+  }
+}
+
 function renderParishFeed() {
   const list = document.getElementById("feedList");
   const summary = document.getElementById("feedUnreadSummary");
@@ -94,4 +143,7 @@ async function loadParishFeed() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", loadParishFeed);
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("feedDigestToggle")?.addEventListener("change", updateDigestPreference);
+  void Promise.all([loadParishFeed(), loadDigestPreference()]);
+});

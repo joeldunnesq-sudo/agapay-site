@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/donor/style.css?v=20260731communications2" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260731digest1" />
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260731communications1" defer></script>
-  <script src="/myagapay/feed.js?v=20260731communications2" defer></script>
+  <script src="/myagapay/feed.js?v=20260731digest1" defer></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -33,6 +33,19 @@
         <section class="feed-hero" aria-labelledby="feedHeading">
           <div><span class="eyebrow">Parish life</span><h1 id="feedHeading">News from your church.</h1><p>Announcements, reminders, and timely parish updates in one quiet place.</p></div>
           <span class="feed-unread-summary" id="feedUnreadSummary" hidden></span>
+        </section>
+        <section class="feed-digest-card" aria-labelledby="feedDigestHeading">
+          <div>
+            <span class="eyebrow">Optional email</span>
+            <h2 id="feedDigestHeading">Weekly announcement digest</h2>
+            <p>Receive one email when your parish has published something new. You can unsubscribe here or from any digest email.</p>
+          </div>
+          <label class="feed-digest-toggle" for="feedDigestToggle">
+            <input id="feedDigestToggle" type="checkbox" disabled />
+            <span aria-hidden="true"></span>
+            <strong id="feedDigestToggleLabel">Loading preference</strong>
+          </label>
+          <p class="feed-digest-status" id="feedDigestStatus" role="status" aria-live="polite"></p>
         </section>
         <div class="notice" id="feedStatus">Loading parish announcements...</div>
         <section class="feed-list" id="feedList" aria-live="polite"></section>

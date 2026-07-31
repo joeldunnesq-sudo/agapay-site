@@ -203,8 +203,11 @@ import {
 } from "./handlers/donor.js";
 
 import {
+  handleAnnouncementDigestUnsubscribe,
+  handleDonorDigestSubscription,
   handleDonorFeed,
   handleParishCommunications,
+  sendWeeklyAnnouncementDigestEmails,
 } from "./handlers/parish-communications.js";
 import { handleDonorGroups } from "./handlers/donor-groups.js";
 
@@ -1362,6 +1365,23 @@ async function handleAdminWeeklySacramentDigest(request, env) {
   const results = await sendWeeklySacramentDigestEmails(env, scheduledTime, {
     dryRun: body.dryRun !== false,
     parishId: body.parishId || ""
+  });
+  return json({ ok: true, dryRun: body.dryRun !== false, scheduledTime, results });
+}
+
+async function handleAdminWeeklyAnnouncementDigest(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "admin-maintenance", { limit: 12, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!await requireAdmin(request, env)) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const body = await request.json().catch(() => ({}));
+  const scheduledTime = body.scheduledTime || new Date().toISOString();
+  const results = await sendWeeklyAnnouncementDigestEmails(env, scheduledTime, {
+    dryRun: body.dryRun !== false,
+    parishId: body.parishId || "",
+    donorId: body.donorId || "",
   });
   return json({ ok: true, dryRun: body.dryRun !== false, scheduledTime, results });
 }
@@ -2698,6 +2718,9 @@ export default {
     ctx.waitUntil(sendWeeklySacramentDigestEmails(env, event.scheduledTime)
       .then((results) => console.log("weekly_sacrament_digest", JSON.stringify(results)))
       .catch((error) => console.error("weekly_sacrament_digest_failed", error?.message || String(error))));
+    ctx.waitUntil(sendWeeklyAnnouncementDigestEmails(env, event.scheduledTime)
+      .then((results) => console.log("weekly_announcement_digest", JSON.stringify(results)))
+      .catch((error) => console.error("weekly_announcement_digest_failed", error?.message || String(error))));
   },
 
   async fetch(request, env, ctx) {
@@ -3078,6 +3101,12 @@ export default {
     if (url.pathname === "/api/donor/feed") {
       return handleDonorFeed(request, env);
     }
+    if (url.pathname === "/api/donor/digest/subscription") {
+      return handleDonorDigestSubscription(request, env);
+    }
+    if (url.pathname === "/api/donor/digest/unsubscribe") {
+      return handleAnnouncementDigestUnsubscribe(request, env);
+    }
     if (url.pathname.startsWith("/api/donor/feed/") && url.pathname.endsWith("/read")) {
       const announcementId = decodeURIComponent(url.pathname.replace("/api/donor/feed/", "").replace("/read", ""));
       return handleDonorFeed(request, env, announcementId);
@@ -3185,6 +3214,9 @@ export default {
     }
     if (url.pathname === "/api/admin/sacraments/send-weekly-digest") {
       return handleAdminWeeklySacramentDigest(request, env);
+    }
+    if (url.pathname === "/api/admin/communications/send-weekly-digest") {
+      return handleAdminWeeklyAnnouncementDigest(request, env);
     }
     if (url.pathname === "/api/admin/stewardship/comp" && request.method === "POST") {
       return handleAdminGrantStewardshipComp(request, env);

@@ -1,5 +1,7 @@
 import { getReadContentIds, markContentRead } from "../lib/content-reads.js";
 import { communicationsEnabledFor } from "../lib/entitlements.js";
+import { agapayEmailHtml, sendEmail } from "../lib/email.js";
+import { loadAllRegistrations } from "../lib/registrations.js";
 import {
   generateSecret,
   getBearerToken,
@@ -249,6 +251,246 @@ export async function markAnnouncementRead(db, { parishId, announcementId, donor
 
 function database(env) {
   return env.AGAPAY_DB || env.DB || null;
+}
+
+function digestSubscriptionFromRow(row = {}) {
+  return {
+    parishId: row.parish_id || "",
+    donorId: row.donor_id || "",
+    subscribedAt: row.subscribed_at || "",
+    unsubscribedAt: row.unsubscribed_at || "",
+    unsubscribeToken: row.unsubscribe_token || "",
+    lastDigestSentAt: row.last_digest_sent_at || "",
+    subscribed: Boolean(row.subscribed_at && !row.unsubscribed_at),
+  };
+}
+
+export async function getAnnouncementDigestSubscription(db, { parishId, donorId }) {
+  const row = await db.prepare(`
+    SELECT * FROM parish_announcement_digest_subscriptions
+    WHERE parish_id = ? AND donor_id = ?
+  `).bind(parishId, normalizeEmail(donorId)).first();
+  return row ? digestSubscriptionFromRow(row) : {
+    parishId,
+    donorId: normalizeEmail(donorId),
+    subscribedAt: "",
+    unsubscribedAt: "",
+    unsubscribeToken: "",
+    lastDigestSentAt: "",
+    subscribed: false,
+  };
+}
+
+export async function setAnnouncementDigestSubscription(db, { parishId, donorId, subscribed, now = new Date().toISOString() }) {
+  const normalizedDonorId = normalizeEmail(donorId);
+  const current = await getAnnouncementDigestSubscription(db, { parishId, donorId: normalizedDonorId });
+  if (subscribed && !current.subscribed) {
+    const unsubscribeToken = generateSecret("digest_unsubscribe");
+    await db.prepare(`
+      INSERT INTO parish_announcement_digest_subscriptions
+        (parish_id, donor_id, subscribed_at, unsubscribed_at, unsubscribe_token, last_digest_sent_at)
+      VALUES (?, ?, ?, NULL, ?, NULL)
+      ON CONFLICT(parish_id, donor_id) DO UPDATE SET
+        subscribed_at = excluded.subscribed_at,
+        unsubscribed_at = NULL,
+        unsubscribe_token = excluded.unsubscribe_token,
+        last_digest_sent_at = NULL
+    `).bind(parishId, normalizedDonorId, now, unsubscribeToken).run();
+  } else if (!subscribed && current.subscribed) {
+    await db.prepare(`
+      UPDATE parish_announcement_digest_subscriptions
+      SET unsubscribed_at = ?
+      WHERE parish_id = ? AND donor_id = ? AND unsubscribed_at IS NULL
+    `).bind(now, parishId, normalizedDonorId).run();
+  }
+  return getAnnouncementDigestSubscription(db, { parishId, donorId: normalizedDonorId });
+}
+
+export async function unsubscribeAnnouncementDigest(db, token, now = new Date().toISOString()) {
+  const normalizedToken = String(token || "").trim();
+  if (!normalizedToken) return false;
+  const subscription = await db.prepare(`
+    SELECT parish_id FROM parish_announcement_digest_subscriptions
+    WHERE unsubscribe_token = ?
+  `).bind(normalizedToken).first();
+  if (!subscription) return false;
+  await db.prepare(`
+    UPDATE parish_announcement_digest_subscriptions
+    SET unsubscribed_at = ?
+    WHERE unsubscribe_token = ?
+  `).bind(now, normalizedToken).run();
+  return true;
+}
+
+function digestAddress(registration = {}) {
+  const locality = [registration.city, registration.state, registration.postalCode]
+    .map((value) => String(value || "").trim()).filter(Boolean).join(" ");
+  return [registration.addressLine1, registration.addressLine2, locality, registration.country]
+    .map((value) => String(value || "").trim()).filter(Boolean);
+}
+
+function hasDigestPhysicalAddress(registration = {}) {
+  return [registration.addressLine1, registration.city, registration.state, registration.postalCode]
+    .every((value) => String(value || "").trim());
+}
+
+function digestExcerpt(body) {
+  const source = String(body || "").trim();
+  return source.length > 420 ? `${source.slice(0, 417).trimEnd()}...` : source;
+}
+
+export function buildAnnouncementDigestEmail({ registration, subscription, announcements, appUrl }) {
+  const baseUrl = String(appUrl || "https://agapay.app").replace(/\/+$/, "");
+  const unsubscribeUrl = `${baseUrl}/api/donor/digest/unsubscribe?token=${encodeURIComponent(subscription.unsubscribeToken)}`;
+  const address = digestAddress(registration);
+  if (!hasDigestPhysicalAddress(registration)) {
+    throw new Error("A parish physical mailing address is required before digest email can be sent.");
+  }
+  const parishName = registration.parishName || "Your parish";
+  const announcementHtml = announcements.map((announcement) => `
+    <article style="margin:0 0 24px;padding:0 0 22px;border-bottom:1px solid rgba(201,162,91,0.3);">
+      ${announcement.hero_image_url ? `<img src="${escapeAnnouncementHtml(announcement.hero_image_url)}" alt="" width="600" style="display:block;width:100%;max-width:600px;height:auto;margin:0 0 14px;border-radius:12px;" />` : ""}
+      <h2 style="margin:0 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:23px;line-height:1.25;color:#061522;">${escapeAnnouncementHtml(announcement.title)}</h2>
+      <div style="font-size:15px;line-height:1.7;color:#334650;">${renderAnnouncementBody(digestExcerpt(announcement.body))}</div>
+    </article>
+  `).join("");
+  const addressHtml = address.map(escapeAnnouncementHtml).join("<br>");
+  const subject = `${parishName}: weekly parish announcements`;
+  return {
+    subject,
+    unsubscribeUrl,
+    html: agapayEmailHtml(baseUrl, "Weekly Parish Announcements", `
+      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">Here are the latest announcements from <strong>${escapeAnnouncementHtml(parishName)}</strong>.</p>
+      ${announcementHtml}
+      <p style="margin:18px 0 8px;font-size:12px;line-height:1.6;color:#595959;">${addressHtml}</p>
+      <p style="margin:0;font-size:12px;line-height:1.6;color:#595959;">You opted in to this weekly digest in My AGAPAY. <a href="${escapeAnnouncementHtml(unsubscribeUrl)}" style="color:#72561e;">Unsubscribe</a> at any time; no login is required.</p>
+    `),
+    text: [
+      subject,
+      "",
+      ...announcements.flatMap((announcement) => [announcement.title, digestExcerpt(announcement.body), ""]),
+      address.join("\n"),
+      "",
+      `Unsubscribe (no login required): ${unsubscribeUrl}`,
+    ].join("\n"),
+  };
+}
+
+export async function sendWeeklyAnnouncementDigestEmails(env, scheduledTime, options = {}, dependencies = {}) {
+  const db = database(env);
+  if (!db) return [];
+  const cutoff = new Date(scheduledTime || Date.now()).toISOString();
+  const dryRun = Boolean(options.dryRun);
+  const parishFilter = String(options.parishId || "").trim();
+  const donorFilter = normalizeEmail(options.donorId || "");
+  const registrations = dependencies.registrations || await loadAllRegistrations(env, { status: "verified" });
+  const registrationsByParish = new Map(registrations.map((registration) => [registration.parishId, registration]));
+  const subscriptions = await db.prepare(`
+    SELECT * FROM parish_announcement_digest_subscriptions
+    WHERE subscribed_at IS NOT NULL AND unsubscribed_at IS NULL
+    ORDER BY parish_id, donor_id
+  `).all();
+  const results = [];
+  const send = dependencies.sendEmail || sendEmail;
+
+  for (const row of subscriptions.results || []) {
+    const subscription = digestSubscriptionFromRow(row);
+    if (parishFilter && subscription.parishId !== parishFilter) continue;
+    if (donorFilter && subscription.donorId !== donorFilter) continue;
+    const registration = registrationsByParish.get(subscription.parishId);
+    if (!registration || !communicationsEnabledFor(registration)) continue;
+    const since = subscription.lastDigestSentAt || subscription.subscribedAt;
+    const announcementRows = await db.prepare(`
+      SELECT id, title, body, hero_image_url, published_at
+      FROM parish_announcements
+      WHERE parish_id = ? AND status = 'published' AND published_at > ? AND published_at <= ?
+      ORDER BY published_at ASC LIMIT 50
+    `).bind(subscription.parishId, since, cutoff).all();
+    const announcements = announcementRows.results || [];
+    if (!announcements.length) {
+      results.push({ parishId: subscription.parishId, donorId: subscription.donorId, status: "skipped", reason: "nothing_new" });
+      continue;
+    }
+    if (!hasDigestPhysicalAddress(registration)) {
+      results.push({ parishId: subscription.parishId, donorId: subscription.donorId, status: "skipped", reason: "missing_physical_address" });
+      continue;
+    }
+    const content = buildAnnouncementDigestEmail({
+      registration,
+      subscription,
+      announcements,
+      appUrl: env.AGAPAY_APP_URL || "https://agapay.app",
+    });
+    if (dryRun) {
+      results.push({ parishId: subscription.parishId, donorId: subscription.donorId, status: "dry_run", announcementCount: announcements.length });
+      continue;
+    }
+    const email = await send(env, {
+      from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
+      to: [subscription.donorId],
+      reply_to: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
+      subject: content.subject,
+      html: content.html,
+      text: content.text,
+      headers: { "List-Unsubscribe": `<${content.unsubscribeUrl}>` },
+    });
+    if (email.status === "sent") {
+      await db.prepare(`
+        UPDATE parish_announcement_digest_subscriptions
+        SET last_digest_sent_at = ?
+        WHERE parish_id = ? AND donor_id = ? AND unsubscribe_token = ? AND unsubscribed_at IS NULL
+      `).bind(cutoff, subscription.parishId, subscription.donorId, subscription.unsubscribeToken).run();
+    }
+    results.push({
+      parishId: subscription.parishId,
+      donorId: subscription.donorId,
+      status: email.status,
+      announcementCount: announcements.length,
+      httpStatus: email.httpStatus || 0,
+    });
+  }
+  return results;
+}
+
+export async function handleDonorDigestSubscription(request, env) {
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const db = database(env);
+  if (!db) return missingProductionStoreResponse();
+  const donor = await requireDonor(request, env);
+  if (!donor?.email) return unauthorized();
+  const parishId = String(donor.defaultParishId || "").trim();
+  if (!parishId) return json({ error: "Choose your home parish before subscribing." }, { status: 422 });
+  if (request.method === "GET") {
+    const subscription = await getAnnouncementDigestSubscription(db, { parishId, donorId: donor.email });
+    return json({ subscribed: subscription.subscribed, subscribedAt: subscription.subscribedAt });
+  }
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "donor-digest-subscription", { limit: 20, windowSeconds: 300 });
+  if (limited) return limited;
+  const input = await request.json().catch(() => ({}));
+  if (typeof input.subscribed !== "boolean") return json({ error: "subscribed must be true or false" }, { status: 422 });
+  const subscription = await setAnnouncementDigestSubscription(db, {
+    parishId,
+    donorId: donor.email,
+    subscribed: input.subscribed,
+  });
+  return json({ ok: true, subscribed: subscription.subscribed, subscribedAt: subscription.subscribedAt });
+}
+
+export async function handleAnnouncementDigestUnsubscribe(request, env) {
+  if (request.method !== "GET") return new Response("Method not allowed", { status: 405, headers: { Allow: "GET" } });
+  const db = database(env);
+  if (!db) return new Response("Email preferences are temporarily unavailable.", { status: 503 });
+  const token = new URL(request.url).searchParams.get("token") || "";
+  const unsubscribed = await unsubscribeAnnouncementDigest(db, token);
+  const title = unsubscribed ? "You’re unsubscribed" : "Unsubscribe link unavailable";
+  const message = unsubscribed
+    ? "You will no longer receive weekly parish announcement digests. You can opt in again from your My AGAPAY Feed at any time."
+    : "This unsubscribe link is invalid.";
+  return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>${title} | AGAPAY</title></head><body style="margin:0;background:#f4f0e6;color:#061522;font-family:Arial,sans-serif;"><main style="max-width:620px;margin:10vh auto;padding:36px;background:#fff;border:1px solid #d9c69e;border-radius:18px;"><p style="color:#8a6a25;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">AGAPAY</p><h1 style="font-family:Georgia,serif;font-size:36px;">${title}</h1><p style="font-size:17px;line-height:1.7;">${message}</p></main></body></html>`, {
+    status: unsubscribed ? 200 : 404,
+    headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
+  });
 }
 
 export async function validateAnnouncementHeroImage(request) {

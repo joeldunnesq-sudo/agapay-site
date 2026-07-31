@@ -10192,8 +10192,9 @@
 
   async function createAnnouncementDraft(event) {
     event.preventDefault();
+    const form = event.currentTarget;
     const heroImage = document.getElementById('announcementHeroImage')?.files?.[0] || null;
-    const button = event.currentTarget.querySelector('button[type="submit"]');
+    const button = form.querySelector('button[type="submit"]');
     if (button) { button.disabled = true; button.classList.add('loading'); }
     try {
       const response = await fetch(communicationsApi(), {
@@ -10203,7 +10204,7 @@
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Unable to save announcement.');
       if (heroImage) await uploadAnnouncementHero(data.announcement.id, heroImage);
-      event.currentTarget.reset();
+      form.reset();
       await loadCommunicationsTab(true);
       setStatus(heroImage ? 'Announcement and hero image saved as a draft.' : 'Announcement saved as a draft.','success');
     } catch (error) { setStatus(error.message,'error'); }
