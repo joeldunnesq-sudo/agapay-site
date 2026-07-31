@@ -5052,13 +5052,13 @@
             <div class="bk-order-buyer">
               <div class="bk-order-avatar">${escapeHtml(bkInitials(o.donorName))}</div>
               <div>
-                <strong>${escapeHtml(o.donorName)}${o.isMyAgapay ? '<span class="bk-tag">My AGAPAY</span>' : ''}${inventoryAttention ? '<span class="bk-tag bk-tag--danger">Stock attention</span>' : ''}</strong>
+                <strong>${escapeHtml(o.donorName)}${o.isMyAgapay ? '<span class="bk-tag">My AGAPAY</span>' : ''}${inventoryAttention ? '<span class="bk-tag bk-tag--danger bk-oversold-badge">Oversold · needs review</span>' : ''}</strong>
                 <span class="bk-order-sub">${escapeHtml(o.summary)}${o.quantity > 1 ? ` · ${o.quantity} items` : ''}</span>
               </div>
             </div>
             <div class="bk-order-side">
               <div class="bk-order-amounts"><b>${moneyFull(o.grossCents)}</b><span>net ${moneyFull(o.netCents)}</span></div>
-              <div class="bk-order-tags">${inventoryAttention ? '<span class="bk-pill bk-pill--danger">Stock attention</span>' : ''}${bkPaymentPill(o.paymentStatus)}${bkFulfillPill(o.fulfillmentStatus)}</div>
+              <div class="bk-order-tags">${inventoryAttention ? '<span class="bk-pill bk-pill--danger bk-oversold-badge">Oversold · needs review</span>' : ''}${bkPaymentPill(o.paymentStatus)}${bkFulfillPill(o.fulfillmentStatus)}</div>
               <span class="bk-order-date">${dateLabel}</span>
               <svg class="bk-order-caret" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m3 5 3 3 3-3"/></svg>
             </div>
@@ -5155,6 +5155,7 @@
             </div>
             <div class="bookstore-row-actions">
               <button class="sw-action-btn" type="button" onclick="openBookstoreItemModal('${escapeAttr(p.id)}')">Edit</button>
+              <button class="sw-action-btn" type="button" onclick="openBookstoreItemModal('${escapeAttr(p.id)}', 'receive')">Receive stock</button>
               <button class="sw-action-btn danger" type="button" onclick="archiveBookstoreItem('${escapeAttr(p.id)}', this)">Archive</button>
             </div>
           </article>
@@ -5192,6 +5193,18 @@
             <textarea id="bookstoreModalStockReason" rows="2" maxlength="500" placeholder="Example: Received 12 books and counted them by hand"></textarea>
             <small>A reason is required whenever stock on hand changes.</small>
           </label>
+          <section class="bookstore-receive-panel full" aria-labelledby="bookstoreReceiveTitle">
+            <div class="bookstore-receive-head">
+              <div><span>Routine restocking</span><h3 id="bookstoreReceiveTitle">Receive stock</h3></div>
+              <p>On hand: <strong id="bookstoreReceiveStock">0</strong> · Latest unit cost: <strong id="bookstoreReceiveCost">$0.00</strong></p>
+            </div>
+            <div class="bookstore-receive-fields">
+              <label>Quantity<input id="bookstoreReceiveQuantity" type="number" min="1" step="1" placeholder="12" /></label>
+              <label>Unit cost (optional)<input id="bookstoreReceiveUnitCost" type="number" min="0" step="0.01" placeholder="18.50" /></label>
+              <label class="full">Reference (optional)<input id="bookstoreReceiveReference" maxlength="500" placeholder="PO number, supplier, or shipment note" /></label>
+            </div>
+            <button class="btn btn-ghost" type="button" onclick="submitBookstoreReceiving(this)">Add received stock</button>
+          </section>
           <section class="bookstore-movement-panel full" aria-labelledby="bookstoreMovementTitle">
             <div><span>Inventory audit trail</span><h3 id="bookstoreMovementTitle">Stock history</h3></div>
             <div id="bookstoreMovementHistory" class="bookstore-movement-list"><p>Loading stock history…</p></div>
@@ -5208,7 +5221,7 @@
     return modal;
   }
 
-  function openBookstoreItemModal(productId) {
+  function openBookstoreItemModal(productId, focusSection = 'edit') {
     const product = bookstoreCatalogState.products.find(p => p.id === productId);
     if (!product) { setStatus('Bookstore item not found.', 'error'); return; }
     const modal = buildBookstoreItemModal();
@@ -5222,11 +5235,16 @@
     document.getElementById('bookstoreModalStockReason').value = '';
     document.getElementById('bookstoreModalSku').value = product.sku || '';
     document.getElementById('bookstoreModalImage').value = product.imageUrl || '';
+    document.getElementById('bookstoreReceiveQuantity').value = '';
+    document.getElementById('bookstoreReceiveUnitCost').value = '';
+    document.getElementById('bookstoreReceiveReference').value = '';
+    document.getElementById('bookstoreReceiveStock').textContent = bookstoreEditingOriginalStock;
+    document.getElementById('bookstoreReceiveCost').textContent = moneyFull(Number(product.costBasisCents || 0));
     syncBookstoreStockReason();
     loadBookstoreMovementHistory(productId);
     modal.hidden = false;
     document.body.classList.add('bookstore-modal-open');
-    setTimeout(() => document.getElementById('bookstoreModalName')?.focus(), 0);
+    setTimeout(() => document.getElementById(focusSection === 'receive' ? 'bookstoreReceiveQuantity' : 'bookstoreModalName')?.focus(), 0);
   }
 
   function closeBookstoreItemModal() {
@@ -5259,7 +5277,8 @@
     pane.innerHTML = movements.map(movement => {
       const delta = Number(movement.quantityDelta || 0);
       const deltaLabel = delta > 0 ? `+${delta}` : String(delta).replace('-', '−');
-      const type = movement.movementType === 'sale' ? 'Sale' : 'Manual adjustment';
+      const type = movement.movementType === 'sale' ? 'Sale'
+        : movement.movementType === 'receiving' ? 'Received stock' : 'Manual adjustment';
       const order = movement.orderNumber || movement.orderId;
       return `<article class="bookstore-movement-row">
         <strong class="${delta < 0 ? 'is-negative' : 'is-positive'}">${escapeHtml(deltaLabel)}</strong>
@@ -5278,6 +5297,52 @@
       if (bookstoreEditingProductId === productId) renderBookstoreMovementHistory(data.movements || []);
     } catch (err) {
       if (pane && bookstoreEditingProductId === productId) pane.innerHTML = `<p class="bookstore-movement-error">${escapeHtml(err.message)}</p>`;
+    }
+  }
+
+  async function submitBookstoreReceiving(btn) {
+    const productId = bookstoreEditingProductId;
+    const quantity = Number(document.getElementById('bookstoreReceiveQuantity')?.value || 0);
+    const unitCostInput = document.getElementById('bookstoreReceiveUnitCost');
+    const unitCostValue = String(unitCostInput?.value || '').trim();
+    const reference = document.getElementById('bookstoreReceiveReference')?.value || '';
+    if (!productId) return;
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      setStatus('Receiving quantity must be a positive whole number.', 'error');
+      document.getElementById('bookstoreReceiveQuantity')?.focus();
+      return;
+    }
+    const body = { quantity, reference };
+    if (unitCostValue !== '') body.unitCostCents = Math.round(Number(unitCostValue) * 100);
+    if (btn) { btn.disabled = true; btn.textContent = 'Receiving…'; }
+    try {
+      const res = await fetch(bookstoreApi('/products/' + encodeURIComponent(productId) + '/receive'), {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to receive stock.');
+      const product = bookstoreCatalogState.products.find(item => item.id === productId);
+      if (product) {
+        product.stockQuantity = Number(data.stockQuantity || 0);
+        product.costBasisCents = Number(data.costBasisCents || 0);
+      }
+      bookstoreEditingOriginalStock = Number(data.stockQuantity || 0);
+      document.getElementById('bookstoreModalStock').value = bookstoreEditingOriginalStock;
+      document.getElementById('bookstoreReceiveStock').textContent = bookstoreEditingOriginalStock;
+      document.getElementById('bookstoreReceiveCost').textContent = moneyFull(Number(data.costBasisCents || 0));
+      document.getElementById('bookstoreReceiveQuantity').value = '';
+      document.getElementById('bookstoreReceiveUnitCost').value = '';
+      document.getElementById('bookstoreReceiveReference').value = '';
+      syncBookstoreStockReason();
+      renderBookstoreCurrentItems(bookstoreCatalogState.products);
+      await loadBookstoreMovementHistory(productId);
+      setStatus(`Received ${quantity} item${quantity === 1 ? '' : 's'} into bookstore stock.`, 'success');
+    } catch (err) {
+      setStatus(err.message, 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Add received stock'; }
     }
   }
 

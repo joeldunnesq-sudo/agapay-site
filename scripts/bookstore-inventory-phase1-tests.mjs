@@ -159,7 +159,7 @@ assert.equal(sqlite.prepare("SELECT stock_quantity FROM commerce_product_variant
   "a replayed completion must not decrement stock again");
 
 const parishApp = await import("node:fs").then(fs => fs.readFileSync(new URL("../public/parish/app.js", import.meta.url), "utf8"));
-assert.match(parishApp, /Stock attention/);
+assert.match(parishApp, /Oversold · needs review/);
 assert.match(parishApp, /Paid past available stock/);
 
 console.log("PASS - bookstore Phase 1 rejects zero stock, atomically decrements the last unit, and flags one raced paid order");

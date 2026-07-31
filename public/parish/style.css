@@ -2589,6 +2589,46 @@
       color: var(--stone);
       font-size: 11.5px;
     }
+    .bookstore-receive-panel {
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 0.25rem;
+      border: 1px solid rgba(200,162,74,0.3);
+      border-radius: 12px;
+      background: rgba(200,162,74,0.07);
+      padding: 0.9rem;
+    }
+    .bookstore-receive-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: end;
+    }
+    .bookstore-receive-head span {
+      color: var(--gold-dark);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .bookstore-receive-head h3 {
+      margin: 0.15rem 0 0;
+      color: var(--deep);
+      font: 600 1.05rem var(--serif);
+    }
+    .bookstore-receive-head p {
+      margin: 0;
+      color: var(--stone);
+      font-size: 11.5px;
+      text-align: right;
+    }
+    .bookstore-receive-fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.7rem;
+    }
+    .bookstore-receive-fields .full { grid-column: 1 / -1; }
+    .bookstore-receive-panel > button { justify-self: start; }
     .bookstore-movement-panel {
       margin-top: 0.2rem;
       border-top: 1px solid rgba(111,106,96,0.18);
@@ -2640,6 +2680,10 @@
     .bookstore-movement-row span { color: var(--stone); font-size: 11.5px; }
     .bookstore-movement-row q { margin-top: 0.2rem; color: var(--ink); font-size: 12px; }
     .bookstore-movement-error { color: #8a2929 !important; }
+    .bk-oversold-badge {
+      box-shadow: 0 0 0 2px rgba(138,41,41,0.12);
+      font-weight: 800;
+    }
     .bookstore-starter-fields input,
     .bookstore-starter-fields select {
       width: 100%;
@@ -2744,6 +2788,10 @@
       .bookstore-modal-form {
         grid-template-columns: 1fr;
       }
+      .bookstore-receive-head { align-items: start; flex-direction: column; }
+      .bookstore-receive-head p { text-align: left; }
+      .bookstore-receive-fields { grid-template-columns: 1fr; }
+      .bookstore-receive-fields .full { grid-column: auto; }
       .bookstore-current-metrics {
         text-align: left;
       }
