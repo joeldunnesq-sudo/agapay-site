@@ -2524,7 +2524,7 @@
 .sw-suite-refresh-btn svg { width: 13px; height: 13px; }
 .sw-suite-refresh-btn:hover { background: rgba(246,241,232,0.12); color: var(--cream); }
 
-/* ── Tool grid: base (currently unused bare, kept for the --pair modifier) ── */
+/* ── Tool grid ───────────────────────────────────────────────────────── */
 .sw-suite-tool-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2535,15 +2535,28 @@
   .sw-suite-tool-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* Concentration Risk + Recurring Giving Health — just the two lighter
-   cards now that Reports and Financial Snapshots are full-width above.
-   A straight 2-up pair gives each card roughly double the width it had
-   crammed into the old 3/4-wide grid. */
-.sw-suite-tool-grid--pair {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.sw-suite-tool-grid--health .sw-suite-tool-card {
+  min-width: 0;
 }
-@media (max-width: 760px) {
-  .sw-suite-tool-grid--pair { grid-template-columns: 1fr; }
+.sw-suite-tool-grid--health .sw-tool-card-body {
+  overflow: visible;
+}
+.sw-suite-tool-grid--health .sw-health-score-row {
+  align-items: flex-start;
+  gap: .85rem;
+}
+.sw-suite-tool-grid--health .sw-health-score-badge {
+  width: 74px;
+  height: 74px;
+}
+.sw-suite-tool-grid--health .sw-health-score-copy {
+  min-width: 0;
+}
+.sw-suite-tool-grid--health .sw-health-score-headline {
+  font-size: 1.08rem;
+}
+.sw-suite-tool-grid--health .sw-health-chips {
+  grid-template-columns: 1fr;
 }
 
 .sw-suite-tool-card {
@@ -2567,6 +2580,57 @@
   height: 3px;
   background: linear-gradient(90deg, var(--gold), rgba(184,144,47,0.55));
   pointer-events: none;
+}
+
+/* Annual Meeting Packets is a primary annual staff workflow, not a
+   secondary report. The stronger frame and workspace label make it easy to
+   rediscover without competing with the dashboard hero. */
+.sw-tool-meeting-packets-featured {
+  margin-top: .25rem;
+  border-color: rgba(184,144,47,.48);
+  background:
+    linear-gradient(120deg, rgba(184,144,47,.17), rgba(255,255,255,.98) 48%, rgba(11,33,48,.045)),
+    #fff;
+  box-shadow: 0 12px 30px rgba(6,21,34,.1), 0 0 0 1px rgba(184,144,47,.08);
+}
+.sw-tool-meeting-packets-featured::before {
+  height: 5px;
+  background: linear-gradient(90deg, #a77b18, var(--gold) 55%, rgba(184,144,47,.45));
+}
+.sw-tool-meeting-packets-featured .sw-tool-card-icon {
+  width: 44px;
+  height: 44px;
+  color: var(--deep);
+  border-color: rgba(184,144,47,.45);
+  background: rgba(184,144,47,.2);
+}
+.sw-meeting-packets-header {
+  justify-content: space-between;
+  gap: .75rem 1rem;
+}
+.sw-meeting-packets-title-group {
+  display: grid;
+  gap: .22rem;
+  min-width: 0;
+}
+.sw-meeting-packets-kicker {
+  color: #8a6718;
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .11em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.sw-meeting-packets-title-group .sw-tool-card-title {
+  font-size: 1.4rem;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+.sw-tool-meeting-packets-featured .sw-tool-card-desc {
+  color: var(--deep);
+  font-size: .84rem;
+  background: rgba(255,255,255,.42);
 }
 
 .sw-tool-card-icon {

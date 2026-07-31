@@ -653,10 +653,31 @@ assert.ok(worker.includes("STRIPE_SECRET_KEY") && worker.includes("RESEND_API_KE
 // Risk card (reusing the distribution endpoint's aggregation), a new
 // Recurring Giving Health card, and a Monthly Stewardship Report button.
 const parishAppJs = await readFile("public/parish/app.js", "utf8");
+const stewardshipCss = await readFile("public/styles/stewardship.css", "utf8");
 assert.ok(parishDashboardHtml.includes('id="stewardshipHealthScorePane"'), "Stewardship Health tab should include a Health Score card");
 assert.ok(parishDashboardHtml.includes('points="3.8 12 7.2 12 9.2 8.3 12.3 15.8 14.5 12 20.2 12"'), "Stewardship Health card should use the heartbeat icon");
 assert.ok(parishDashboardHtml.includes('id="stewardshipConcentrationPane"'), "Stewardship Health tab should include a Donor Concentration Risk card");
 assert.ok(parishDashboardHtml.includes('id="stewardshipRecurringPane"'), "Stewardship Health tab should include a Recurring Giving Health card");
+const stewardshipHealthGridStart = parishDashboardHtml.indexOf('class="sw-suite-tool-grid sw-suite-tool-grid--health"');
+const stewardshipReportsStart = parishDashboardHtml.indexOf('<!-- Stewardship Reports');
+assert.ok(
+  stewardshipHealthGridStart >= 0
+    && parishDashboardHtml.indexOf('id="stewardshipHealthScorePane"', stewardshipHealthGridStart) < stewardshipReportsStart
+    && parishDashboardHtml.indexOf('id="stewardshipConcentrationPane"', stewardshipHealthGridStart) < stewardshipReportsStart
+    && parishDashboardHtml.indexOf('id="stewardshipRecurringPane"', stewardshipHealthGridStart) < stewardshipReportsStart,
+  "the three Stewardship health signals should share the top three-column grid"
+);
+assert.ok(
+  /\.sw-suite-tool-grid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/.test(stewardshipCss)
+    && stewardshipCss.includes(".sw-suite-tool-grid--health .sw-health-score-copy"),
+  "the Stewardship health grid should use three desktop columns with compact score content"
+);
+assert.ok(
+  parishDashboardHtml.includes("sw-tool-meeting-packets-featured")
+    && parishDashboardHtml.includes("Annual planning workspace")
+    && stewardshipCss.includes(".sw-tool-meeting-packets-featured"),
+  "Annual Meeting Packets should have a prominent, labeled staff-workspace treatment"
+);
 assert.ok(parishDashboardHtml.includes("openStewardshipMonthlyReport()"), "Stewardship Health tab should have a Generate Monthly Stewardship Report button");
 assert.ok(parishDashboardHtml.includes("sw-report-card-header") && !parishDashboardHtml.includes("sw-report-button-stack"), "Stewardship report actions should live in their respective cards, not the hero");
 assert.ok(!/onclick="loadStewardshipPanel\(true\)" title="Refresh"/.test(parishDashboardHtml), "Stewardship Health hero should not include a refresh button");
