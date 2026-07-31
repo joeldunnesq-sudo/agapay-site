@@ -174,6 +174,7 @@ assert.match(publicStoreApp, /sold-out-badge/);
 assert.match(publicStore, /id="categoryFilters"/);
 assert.match(publicStore, /id="popularShelf"/);
 assert.match(publicStore, /Add an unlisted item/);
+assert.match(publicStore, /\.scan-row\[hidden\],#bookAuthorField\[hidden\]\{display:none\}/);
 assert.match(publicStoreApp, /activeCategory/);
 assert.match(publicStoreApp, /unitsSold/);
 assert.match(publicStoreApp, /source: category === "book" && isbn \? "scan_and_go" : "shopper_added"/);
