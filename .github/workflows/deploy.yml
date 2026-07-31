@@ -92,6 +92,20 @@ jobs:
           wranglerVersion: '4'
           command: d1 migrations apply agapay-production --remote
 
+      - name: Apply St. Fiacre accounting migrations
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          wranglerVersion: '4'
+          command: d1 migrations apply ACCOUNTING_DB_ST_FIACRE --remote
+
+      - name: Apply accounting canary migrations
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          wranglerVersion: '4'
+          command: d1 migrations apply ACCOUNTING_DB_PHASE_G_CANARY --remote
+
       - name: Deploy with Wrangler
         uses: cloudflare/wrangler-action@v3
         with:

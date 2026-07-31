@@ -1,5 +1,5 @@
 import { json } from "../lib/core.js";
-import { accountsPayableAging, addBudgetLine, approveBill, approveBudget, archiveVendor, budgetReportCsv, budgetVsActual, copyBudget, councilBudgetPacket, createBillDraft, createBudget, createVendor, createPaymentRun, forecastBudget, getCheckSettings, listBudgets, listPaymentRuns, listVendors, lockBudget, payablesOverview, paymentRunDetail, postBill, postPaymentRun, printPaymentRun, rejectBill, seedCheckPayerIdentity, submitBill, submitBudget, createPayment, postPayment, listPayments, paymentDetail, unarchiveVendor, updateBudgetLine, updateCheckSettings, updateVendor, recordCheckPrint, vendor1099Summary, vendor1099SummaryCsv, voidPayment } from "../accounting/index.js";
+import { accountsPayableAging, addBudgetLine, approveBill, approveBudget, archiveVendor, budgetReportCsv, budgetVsActual, copyBudget, councilBudgetPacket, createBillDraft, createBudget, createVendor, createPaymentRun, createRecurringBillSchedule, forecastBudget, getCheckSettings, listBudgets, listPaymentRuns, listRecurringBillSchedules, listVendors, lockBudget, payablesOverview, paymentRunDetail, postBill, postPaymentRun, printPaymentRun, rejectBill, seedCheckPayerIdentity, submitBill, submitBudget, createPayment, postPayment, listPayments, paymentDetail, unarchiveVendor, updateBudgetLine, updateCheckSettings, updateRecurringBillSchedule, updateVendor, recordCheckPrint, vendor1099Summary, vendor1099SummaryCsv, voidPayment } from "../accounting/index.js";
 import { printableCheck as sharedPrintableCheck } from "../accounting/payables/check-printing.js";
 import { accountingContext } from "./accounting-ledger.js";
 
@@ -118,6 +118,18 @@ export async function handleAccountingPayablesBudgets(request, env, parishId) {
     }
     if (request.method === "GET" && path === "/payables/bills") return reply({ ok: true, bills: await bills(ctx.db) });
     if (request.method === "POST" && path === "/payables/bills") return reply({ ok: true, bill: await createBillDraft(ctx.db, { actor: ctx.actor, entitlementTier: tier, input: body }) }, 201);
+    if (request.method === "GET" && path === "/payables/recurring-bills") return reply({ ok: true, schedules: await listRecurringBillSchedules(ctx.db, { actor: ctx.actor, entitlementTier: tier }) });
+    if (request.method === "POST" && path === "/payables/recurring-bills") return reply({ ok: true, schedule: await createRecurringBillSchedule(ctx.db, { actor: ctx.actor, entitlementTier: tier, input: body }) }, 201);
+    const recurringBill = path.match(/^\/payables\/recurring-bills\/([^/]+)$/);
+    if (request.method === "PATCH" && recurringBill) {
+      return reply({ ok: true, schedule: await updateRecurringBillSchedule(ctx.db, {
+        actor: ctx.actor,
+        entitlementTier: tier,
+        scheduleId: decodeURIComponent(recurringBill[1]),
+        expectedVersion: body.expectedVersion,
+        patch: body
+      }) });
+    }
     if (request.method === "GET" && path === "/payables/aging") return reply({ ok: true, aging: await accountsPayableAging(ctx.db, { actor: ctx.actor, entitlementTier: tier, asOfDate: url.searchParams.get("asOf") || today() }) });
     if (request.method === "GET" && path === "/payables/payments") return reply({ ok: true, payments: await listPayments(ctx.db, { actor: ctx.actor, entitlementTier: tier }) });
     if (request.method === "POST" && path === "/payables/payments") return reply({ ok: true, payment: await createPayment(ctx.db, { actor: ctx.actor, entitlementTier: tier, input: body }) }, 201);

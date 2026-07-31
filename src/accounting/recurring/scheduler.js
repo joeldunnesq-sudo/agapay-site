@@ -1,11 +1,12 @@
 import { d1All } from "../../lib/core.js";
 import { createBoundD1ProvisioningAdapter, createD1DatabaseFacade } from "../provisioning/adapters.js";
+import { processDueRecurringBills } from "../payables/recurring-bills.js";
 import { processDueRecurringTransactions } from "./service.js";
 
 const SYSTEM_ACTOR=Object.freeze({
   id:"accounting-recurring-scheduler",
   type:"system",
-  capabilities:Object.freeze(["accounting.journals.create","accounting.journals.post"])
+  capabilities:Object.freeze(["accounting.journals.create","accounting.journals.post","ap.enter"])
 });
 function configuredBindings(env){try{return JSON.parse(String(env.ACCOUNTING_DATABASE_BINDINGS||"{}"));}catch{return{};}}
 
@@ -19,7 +20,13 @@ export async function runScheduledRecurringTransactions(env,scheduledTime=Date.n
   for(const row of rows){
     const bindingName=configured[row.database_identifier];if(!bindingName||!env[bindingName])continue;
     const db=createD1DatabaseFacade(adapter,bindingName);
-    try{const postings=await processDueRecurringTransactions(db,{asOfDate,actor:SYSTEM_ACTOR});results.push({parishId:row.parish_id,processed:postings.length,postings});}
+    try{
+      const [postings,bills]=await Promise.all([
+        processDueRecurringTransactions(db,{asOfDate,actor:SYSTEM_ACTOR}),
+        processDueRecurringBills(db,{asOfDate,actor:SYSTEM_ACTOR,entitlementTier:"parish"})
+      ]);
+      results.push({parishId:row.parish_id,processed:postings.length+bills.length,postings,bills});
+    }
     catch(error){if(String(error?.message||"").includes("no such table"))continue;results.push({parishId:row.parish_id,error:error?.message||String(error)});}
   }
   return Object.freeze({asOfDate,parishes:results.length,results:Object.freeze(results)});

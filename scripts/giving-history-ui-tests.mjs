@@ -6,10 +6,13 @@ const parishCss = fs.readFileSync(new URL('../public/styles/stewardship.css', im
 const myHistory = fs.readFileSync(new URL('../public/myagapay/giving/history.html', import.meta.url), 'utf8');
 const donorApp = fs.readFileSync(new URL('../public/donor/app.js', import.meta.url), 'utf8');
 const donorCss = fs.readFileSync(new URL('../public/donor/style.css', import.meta.url), 'utf8');
+const givingReports = fs.readFileSync(new URL('../src/handlers/parish-giving-reports.js', import.meta.url), 'utf8');
 
 const checks = [
   ['parish history leads with a useful giving story', parishDashboard.includes('class="parish-history-hero"') && parishDashboard.includes('See the story behind every gift.')],
   ['parish history includes live momentum and fund allocation', parishDashboard.includes('id="historyTrendPanel"') && parishDashboard.includes('id="historyFundPanel"') && parishApp.includes('function renderHistoryInsights()')],
+  ['candle overview includes separately loaded manual accounting gifts', parishApp.includes('manualAccountingGifts = data.manualAccountingGifts || []') && parishApp.includes('[...allGifts, ...manualAccountingGifts].filter(isCandleGift)')],
+  ['manual accounting gifts are limited to posted manual revenue credits', givingReports.includes("e.source_type IN ('manual','manual_register_contribution')") && givingReports.includes("t.category='revenue' AND l.credit_amount>0") && givingReports.includes('manualAccountingGifts')],
   ['parish history supports date, type, fund, and text filtering', ['histRangeFilter', 'histTypeFilter', 'histFundFilter', 'histSearch'].every(id => parishDashboard.includes(`id="${id}"`)) && parishApp.includes('const matchRange')],
   ['parish transaction rows preserve donor, gift, fee, net, fund, recurrence, and intentions', ['parish-history-donor', 'history-fee', 'parish-history-net', 'history-fund', 'history-type', 'parish-history-row-note'].every(token => parishApp.includes(token))],
   ['parish history is responsive', parishCss.includes('.parish-history-hero {') && parishCss.includes('.parish-history-kpis {') && parishCss.includes('.parish-history-ledger .history-table td::before')],

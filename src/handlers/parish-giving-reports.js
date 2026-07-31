@@ -27,10 +27,59 @@ import {
   refreshStripeVolume,
   summarizeStoredStripeVolume,
 } from "../lib/stripe-volume.js";
+import { resolveOperationalAccountingDatabase } from "../accounting/source-wiring.js";
 
 // Keep parishDashboardPayload in the explicit shared-core dependency contract for
 // this reporting cluster, even though the current endpoints return narrower payloads.
 void parishDashboardPayload;
+
+const MANUAL_GIVING_SIGNAL = /\b(alms?|candle|candles|collection|contribution|donation|gift|giving|offering|stewardship|tithe|tithes|vigil)\b/i;
+
+export async function loadManualAccountingGivingEntries(env, parishId, limit = 500) {
+  const db = await resolveOperationalAccountingDatabase(env, parishId);
+  if (!db) return [];
+  try {
+    const result = await db.prepare(`
+      SELECT e.id entry_id,l.id line_id,COALESCE(e.posting_date,e.entry_date) gift_date,
+        e.description entry_description,e.source_type,l.credit_amount,
+        a.account_number,a.name account_name,f.code fund_code,f.name fund_name
+      FROM accounting_journal_entries e
+      JOIN accounting_journal_lines l ON l.journal_entry_id=e.id
+      JOIN accounting_accounts a ON a.id=l.account_id
+      JOIN accounting_account_types t ON t.id=a.account_type_id
+      JOIN accounting_funds f ON f.id=l.fund_id
+      WHERE e.status='posted'
+        AND e.source_type IN ('manual','manual_register_contribution')
+        AND t.category='revenue' AND l.credit_amount>0
+      ORDER BY gift_date DESC,e.created_at DESC,l.line_number
+      LIMIT ?
+    `).bind(Math.max(1, Math.min(2000, Number(limit) || 500))).all();
+    return (result.results || [])
+      .filter((row) => row.source_type === "manual_register_contribution"
+        || MANUAL_GIVING_SIGNAL.test(`${row.account_name || ""} ${row.entry_description || ""}`))
+      .map((row) => ({
+        id: `accounting:${row.entry_id}:${row.line_id}`,
+        source: "manual_accounting",
+        giftType: "manual_accounting",
+        amountCents: Number(row.credit_amount || 0),
+        parishNetCents: Number(row.credit_amount || 0),
+        giftAmountCents: Number(row.credit_amount || 0),
+        createdAt: row.gift_date,
+        date: row.gift_date,
+        description: [row.entry_description, row.account_name].filter(Boolean).join(" · "),
+        label: row.account_name || "",
+        fund: row.fund_name || "",
+        fundId: row.fund_code || "",
+        donorName: "",
+        donorEmail: "",
+        recurring: false,
+        type: "one_time"
+      }));
+  } catch (error) {
+    if (/no such table|not configured|unavailable/i.test(String(error?.message || ""))) return [];
+    throw error;
+  }
+}
 
 export function summarizeStoredParishGifts(gifts = []) {
   const now = new Date();
@@ -229,9 +278,13 @@ export async function handleParishGivingHistory(request, env, parishId) {
     return unauthorized();
   }
 
-  const gifts = await loadParishPaidOfferings(env, parishId, 500);
+  const [gifts, manualAccountingGifts] = await Promise.all([
+    loadParishPaidOfferings(env, parishId, 500),
+    loadManualAccountingGivingEntries(env, parishId, 500)
+  ]);
   return json({
     gifts,
+    manualAccountingGifts,
     generatedAt: new Date().toISOString()
   });
 }
