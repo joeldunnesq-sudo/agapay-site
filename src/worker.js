@@ -785,7 +785,7 @@ function cleanAssetRequest(request) {
     url.pathname = "/give/find-parish.html";
     return new Request(url, request);
   }
-  if (/^\/bookstore\/[^/]+\/?$/.test(url.pathname)) {
+  if (/^\/[^/]+\/bookstore\/?$/.test(url.pathname) || /^\/bookstore\/[^/]+\/?$/.test(url.pathname)) {
     url.pathname = "/bookstore/index.html";
     return new Request(url, request);
   }

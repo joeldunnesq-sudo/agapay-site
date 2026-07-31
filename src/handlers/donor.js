@@ -1460,7 +1460,7 @@ export async function handleDonorBookstore(request, env, publicParishId = "") {
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   const sellerDisplayName = resolved.registration.commerceSellerDisplayName || resolved.registration.name || resolved.registration.parishName || "";
   const sellerDisclosure = bookstoreSellerDisclosure(sellerDisplayName);
-  const publicStorePath = `/bookstore/${encodeURIComponent(resolved.parishId)}`;
+  const publicStorePath = `/${encodeURIComponent(resolved.parishId)}/bookstore`;
   const form = new URLSearchParams({
     mode: "payment",
     success_url: isGuestCheckout

@@ -1,4 +1,9 @@
-const parishId = decodeURIComponent(location.pathname.replace(/^\/bookstore\//, "").replace(/\/$/, ""));
+const bookstorePathSegments = location.pathname.split("/").filter(Boolean);
+const parishId = decodeURIComponent(
+  bookstorePathSegments[0] === "bookstore"
+    ? (bookstorePathSegments[1] || "")
+    : (bookstorePathSegments[1] === "bookstore" ? bookstorePathSegments[0] : "")
+);
 let products = [];
 let cart = [];
 

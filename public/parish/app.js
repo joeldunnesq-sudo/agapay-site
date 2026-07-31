@@ -4900,10 +4900,10 @@
 
   function bookstoreGuestCheckoutUrl() {
     if (!currentParish?.parishId) return '';
-    return window.location.origin + '/bookstore/' + encodeURIComponent(currentParish.parishId);
+    return window.location.origin + '/' + encodeURIComponent(currentParish.parishId) + '/bookstore';
   }
 
-  function renderBookstoreGuestCheckout() {
+  async function renderBookstoreGuestCheckout() {
     const url = bookstoreGuestCheckoutUrl();
     const input = document.getElementById('bookstoreGuestCheckoutUrl');
     const link = document.getElementById('bookstoreGuestCheckoutLink');
@@ -4914,9 +4914,12 @@
     const qr = qrcode(0, 'H');
     qr.addData(url);
     qr.make();
-    target.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
-    const svg = target.querySelector('svg');
-    if (svg) { svg.style.width = '148px'; svg.style.height = '148px'; }
+    const rawSvg = qr.createSvgTag(4, 3)
+      .replace(/<svg /, '<svg role="img" aria-label="AGAPAY bookstore QR code" ')
+      .replace(/fill="#000000"/g, 'fill="#061522"');
+    target.innerHTML = brandQrSvg(rawSvg, '');
+    const logoHref = await markDataUri();
+    if (logoHref && target.isConnected) target.innerHTML = brandQrSvg(rawSvg, logoHref);
   }
 
   async function copyBookstoreGuestCheckoutLink() {
