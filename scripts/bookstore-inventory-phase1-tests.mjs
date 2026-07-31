@@ -32,6 +32,11 @@ sqlite.exec(`
     item_name TEXT, item_description TEXT, quantity INTEGER, unit_price_cents INTEGER,
     tax_code TEXT, snapshot_json TEXT, fulfillment_type TEXT, created_at TEXT, updated_at TEXT
   );
+  CREATE TABLE commerce_inventory_movements (
+    id TEXT PRIMARY KEY, parish_id TEXT, commerce_module TEXT, product_id TEXT,
+    variant_id TEXT, sku TEXT, movement_type TEXT, quantity_delta INTEGER,
+    unit_cost_cents INTEGER, order_id TEXT, note TEXT, created_by TEXT, created_at TEXT
+  );
 `);
 
 function statement(sql) {
@@ -143,6 +148,8 @@ assert.equal(completed.filter(order => order.fulfillment_status === "pending").l
   "the oversold order should remain pending for treasurer attention");
 assert.equal(completed.filter(order => order.fulfillment_status === "ready").length, 1,
   "the order that received the last unit should be ready normally");
+assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM commerce_inventory_movements WHERE movement_type = 'sale'").get().count, 1,
+  "the successful last-unit decrement should write exactly one sale movement");
 
 await completeCommerceOrderFromStripe(env, {
   id: "cs_a", amount_total: 2495, payment_status: "paid",
