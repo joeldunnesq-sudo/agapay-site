@@ -128,7 +128,8 @@ assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM commerce_products").g
 const publicStore = readFileSync(new URL("../public/bookstore/index.html", import.meta.url), "utf8");
 const publicStoreApp = readFileSync(new URL("../public/bookstore/app.js", import.meta.url), "utf8");
 const myAgapayStore = readFileSync(new URL("../public/myagapay/bookstore.html", import.meta.url), "utf8");
-assert.match(publicStore, /Scan a book now/);
+assert.doesNotMatch(publicStore, /class="hero-actions"/, "the hero stays visually quiet without duplicate bookstore actions");
+assert.match(publicStore, /\.store-hero\{min-height:260px/, "the desktop storefront hero stays compact");
 assert.match(publicStore, /id="addBookPanel" open/);
 assert.match(publicStoreApp, /source: "scan_and_go"/);
 assert.match(publicStoreApp, /joins catalog after payment/);
