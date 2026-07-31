@@ -234,14 +234,59 @@ assert.equal(
   ).openPayables,
   10000,
 );
+await assert.rejects(
+  () => createPayment(db, {
+    actor: creator,
+    entitlementTier: "parish",
+    input: {
+      vendorId: vendor.id,
+      paymentDate: "2026-07-21",
+      paymentMethod: "external",
+      bankAccountId: bank.id,
+      applications: [{ billId: bill.id, amountApplied: 10000 }],
+    },
+  }),
+  /confirmation or reference number/i,
+);
+let onlinePayment = await createPayment(db, {
+  actor: creator,
+  entitlementTier: "parish",
+  input: {
+    vendorId: vendor.id,
+    paymentDate: "2026-07-21",
+    paymentMethod: "external",
+    bankAccountId: bank.id,
+    referenceNumber: "ONLINE-84219",
+    applications: [{ billId: bill.id, amountApplied: 10000 }],
+  },
+});
+assert.equal(onlinePayment.referenceNumber, "ONLINE-84219");
+assert.equal(onlinePayment.checkNumber, "");
+onlinePayment = await postPayment(db, {
+  actor: creator,
+  entitlementTier: "parish",
+  paymentId: onlinePayment.id,
+  expectedVersion: 1,
+  idempotencyKey: "online-payment",
+});
+assert.equal(onlinePayment.status, "posted");
+const onlinePaidBill = s
+  .prepare(
+    "SELECT status,payment_status,amount_paid,amount_due FROM accounting_bills WHERE id=?",
+  )
+  .get(bill.id);
+assert.deepEqual(
+  { ...onlinePaidBill },
+  { status: "paid", payment_status: "paid", amount_paid: 10000, amount_due: 0 },
+);
 assert.equal(
   s
     .prepare(
       "SELECT COUNT(*) count FROM accounting_journal_entries WHERE status IN('posted','reversed')",
     )
     .get().count,
-  3,
+  4,
 );
 console.log(
-  "PASS - Phase 3A Parish-only vendors, accrual bills, approval separation, AP posting, partial payments, bank integration, and aging",
+  "PASS - Phase 3A Parish-only vendors, accrual bills, approval separation, AP posting, check and online payments, bank integration, and aging",
 );

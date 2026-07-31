@@ -81,6 +81,18 @@ assert.match(dashboard, />Accountant view<\/button>/);
 assert.match(app, /function renderAccountingJournalEditor/);
 assert.match(app, /accountingExperienceMode === 'treasurer' && accountingView === 'ledger'/);
 assert.match(app, /newAccountingJournal\(\)/);
+assert.match(app, /function accountingOverviewHero\(\)/);
+assert.match(app, /if \(accountingExperienceMode === 'treasurer'\) return `<section class="acct-command-hero">/);
+assert.match(app, /pane\.innerHTML = `\$\{accountingOverviewHero\(\)\}<div class="acct-suite-stats">/);
+assert.doesNotMatch(app, /renderAccountingTreasurerHome/);
+const overviewHero = app.slice(app.indexOf("function accountingOverviewHero"), app.indexOf("function renderAccountingOverview"));
+const treasurerHero = overviewHero.slice(0, overviewHero.indexOf("\n    return `<section class=\"acct-command-hero\">"));
+assert.match(treasurerHero, /Record Income/);
+assert.match(treasurerHero, /Pay a Bill/);
+assert.doesNotMatch(treasurerHero, /New journal|Manage funds|Reconcile|Run reports/);
+assert.match(app, /document\.querySelectorAll\('\[data-accounting-view\]'\)[\s\S]*?button\.hidden = false;/);
+assert.doesNotMatch(app, /button\.hidden = accountingExperienceMode/);
+assert.doesNotMatch(app, /accountingExperienceMode === 'treasurer' && \[[^\]]+\]\.includes\(accountingView\)/);
 console.log("PASS - Treasurer view is the session default and Accountant view keeps the journal editor reachable");
 
 const expectedLabels = {

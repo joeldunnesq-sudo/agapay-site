@@ -2232,3 +2232,25 @@ textarea {
     overflow-x:hidden;
   }
 }
+
+/* Both experience modes expose all eleven modules; keep desktop navigation
+   in one deliberate row instead of letting the final tab spill below. */
+@media(min-width:761px) {
+  .acct-suite-rail nav {
+    grid-template-columns:repeat(11,minmax(0,1fr));
+  }
+}
+
+@media(min-width:761px) and (max-width:1120px) {
+  .acct-suite-rail nav button {
+    gap:4px;
+    padding-right:3px;
+    padding-left:3px;
+    font-size:10px;
+    white-space:nowrap;
+  }
+
+  .acct-nav-icon {
+    font-size:13px;
+  }
+}

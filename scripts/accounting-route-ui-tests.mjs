@@ -72,6 +72,7 @@ for (const nestedView of ["journals", "integrations"]) assert.ok(app.includes(`'
 for (const canonicalFeature of ["acct-suite-shell", "acct-suite-rail", "Accounting suite navigation", "accountingPageTitle", "accountingFiscalYear"]) assert.ok(dashboard.includes(canonicalFeature), `missing canonical Accounting shell feature ${canonicalFeature}`);
 assert.match(css, /purpose-built top bar/, "Accounting module navigation should use the dedicated top bar");
 assert.match(css, /grid-template-columns:repeat\(10,minmax\(0,1fr\)\)/, "desktop Accounting navigation should fit without a slider");
+assert.match(css, /@media\(min-width:761px\)\s*\{\s*\.acct-suite-rail nav\s*\{\s*grid-template-columns:repeat\(11,minmax\(0,1fr\)\)/s, "both Accounting views should keep all eleven tabs on one desktop row");
 assert.match(css, /flex:0 0 auto/, "Accounting navigation must retain its full height above the cream workspace");
 for (const staffAction of ["renderAccountingAccess", "bootstrapAccountingStaff", "verifyAccountingStaff", "addAccountingStaff", "changeAccountingPin", "lockAccountingWorkspace"]) assert.match(app, new RegExp(`function ${staffAction}\\b`), `missing Accounting staff action ${staffAction}`);
 assert.match(app, /initializeAccounting/);
@@ -81,6 +82,11 @@ assert.match(app, /downloadAccountingReport/);
 for (const action of ["newAccountingJournal", "editAccountingJournal", "saveAccountingJournal", "validateAccountingJournal", "postAccountingJournal"]) assert.match(app, new RegExp(`function ${action}\\b`), `missing journal UI action ${action}`);
 for (const action of ["loadAccountingPhaseD", "createAccountingVendor", "createAccountingBill", "accountingBillAction", "createAccountingBudget", "accountingBudgetAction", "openAccountingBudgetVariance", "openAccountingCouncilPacket"]) assert.match(app, new RegExp(`function ${action}\\b`), `missing Phase D UI action ${action}`);
 for (const action of ["renderAccountingPayments", "showAccountingPaymentForm", "showAccountingCheckSettings", "saveAccountingCheckSettings", "loadNextAccountingCheckNumber", "createAccountingPayment", "printAccountingCheck", "postAccountingPayment", "voidAccountingPayment"]) assert.match(app, new RegExp(`function ${action}\\b`), `missing Phase H UI action ${action}`);
+assert.match(app, /function syncAccountingPaymentMethod\b/, "bill payments must switch between check and online-payment fields");
+for (const paymentOption of ["Online bill pay", "ACH / bank transfer", "Wire transfer", "Debit card", "Credit card", "Printed check"]) assert.ok(app.includes(paymentOption), `missing bill-payment method ${paymentOption}`);
+assert.match(app, /Confirmation \/ reference number/);
+assert.match(app, /raw\.paymentMethod!=='check'/, "non-check bill payments should post immediately after they are recorded");
+assert.match(app, /isCheck&&!payment\.printCount/, "only unprinted check payments should have posting disabled");
 for (const stock of ["top_check_two_stubs", "bottom_check_two_stubs", "check_only"]) assert.ok(app.includes(stock) && phaseDRoutes.includes(stock), `missing Phase H check stock support ${stock}`);
 assert.match(app, /Reason for reprinting this check/);
 assert.match(app, /Original printed/);
@@ -99,6 +105,8 @@ for (const registerFeature of ["accountingRegisterModel", "Account register", "C
 for (const registerAction of ["setAccountingLedgerAccount", "searchAccountingLedger", "clearAccountingLedgerSearch", "setAccountingRegisterEntryMode", "applyAccountingRegisterDefaultFund", "submitAccountingRegisterEntry"]) assert.match(app, new RegExp(`function ${registerAction}\\b`), `missing account register action ${registerAction}`);
 for (const entryFeature of ["Deposit / Payment", "Contribution account", "Post transaction", "Post contribution", "manual_register_contribution", "manual_register_transaction"]) assert.ok(app.includes(entryFeature), `missing streamlined register-entry feature ${entryFeature}`);
 for (const fundFeature of ["Fund directory", "Every fund automatically receives a matching equity / fund-balance row", "Equity / Fund Balances", "Unrestricted net assets", "Restricted net assets"]) assert.ok(app.includes(fundFeature), `missing premium fund-account feature ${fundFeature}`);
+const fundsRenderer = app.slice(app.indexOf("function renderAccountingFunds"), app.indexOf("function filterAccountingFunds"));
+assert.ok(fundsRenderer.indexOf("Fund balances at a glance") < fundsRenderer.indexOf("Fund directory"), "fund balances at a glance should be the first Funds-tab section");
 assert.match(app, /function toggleAccountingFundAccountSection\b/, "fund accounts should be expandable");
 assert.ok(app.includes("Fund Balance</strong>"), "each fund should surface as an automatic fund-balance row");
 for (const expenseFeature of ["Administrative Expenses", "Other Expenses", "Default fund", "Parent account", "Sub-account of"]) assert.ok(app.includes(expenseFeature), `missing expense-account feature ${expenseFeature}`);
