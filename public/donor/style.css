@@ -710,6 +710,46 @@ h1 { margin-top: 0.25rem; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 0.98
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
 .form-group { display: flex; flex-direction: column; gap: 5px; }
 .form-group.full { grid-column: 1 / -1; }
+.gift-frequency-pills {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  padding: 4px;
+  border: 1px solid rgba(111, 106, 96, 0.2);
+  border-radius: 999px;
+  background: rgba(6, 21, 34, 0.045);
+}
+.gift-frequency-pills button {
+  min-width: 0;
+  min-height: 40px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--stone);
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+.gift-frequency-pills button:hover { color: var(--deep); }
+.gift-frequency-pills button.active {
+  border-color: rgba(184, 144, 47, 0.5);
+  background: var(--paper);
+  color: var(--deep);
+  box-shadow: 0 3px 12px rgba(6, 21, 34, 0.09);
+}
+.gift-frequency-pills button:focus-visible {
+  outline: 3px solid rgba(184, 144, 47, 0.28);
+  outline-offset: 2px;
+}
+.recurring-frequency-field {
+  display: block;
+  margin-top: 0.45rem;
+}
+.recurring-frequency-field[hidden] { display: none; }
 .form-textarea { min-height: 112px; resize: vertical; line-height: 1.55; }
 .form-help { margin-top: 5px; color: var(--stone); font-size: 12px; line-height: 1.5; }
 .donor-commemoration-kind-options {

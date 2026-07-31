@@ -113,7 +113,9 @@ import {
 } from "../lib/subscription-checkout.js";
 
 import {
+  PARISH_INTRO_DEMO_DAYS,
   defaultSubscriptionTier as sharedDefaultSubscriptionTier,
+  parishIntroDemoEligible,
   subscriptionTier as sharedSubscriptionTier,
 } from "../lib/subscriptions.js";
 
@@ -2223,6 +2225,7 @@ export async function handleParishSubscriptionCheckout(request, env, parishId) {
     reference: found.key,
     registration: found.registration,
     body,
+    introductoryTrialDays: parishIntroDemoEligible(found.registration) ? PARISH_INTRO_DEMO_DAYS : 0,
     returnPath: `/parish/dashboard?parish=${encodeURIComponent(parishId)}`,
     saveRegistrationRecord
   });
@@ -2310,9 +2313,16 @@ export async function handleParishSubscriptionRefresh(request, env, parishId) {
     stripeSession.subscription &&
     (stripeSession.status === "complete" || stripeSession.payment_status === "paid")
   ) {
-    updates.subscriptionStatus = Number(registration.subscriptionTrialDays || 0) > 0 ? "trialing" : "active";
+    const trialDays = Number(registration.subscriptionTrialDays || 0);
+    updates.subscriptionStatus = trialDays > 0 ? "trialing" : "active";
     updates.stripeSubscriptionId = stripeSession.subscription;
     updates.subscriptionActivatedAt = registration.subscriptionActivatedAt || now;
+    if (trialDays > 0) {
+      updates.subscriptionIntroDemoRedeemedAt = registration.subscriptionIntroDemoRedeemedAt || now;
+      updates.subscriptionTrialStartedAt = registration.subscriptionTrialStartedAt || now;
+      updates.subscriptionTrialEndsAt = registration.subscriptionTrialEndsAt
+        || new Date(Date.now() + trialDays * 86400000).toISOString();
+    }
   }
 
   const updated = {
@@ -2326,6 +2336,8 @@ export async function handleParishSubscriptionRefresh(request, env, parishId) {
     subscriptionStatus: updated.subscriptionStatus || "not_started",
     stripeSubscriptionId: updated.stripeSubscriptionId || "",
     stripeCustomerId: updated.stripeCustomerId || "",
+    subscriptionTrialStartedAt: updated.subscriptionTrialStartedAt || "",
+    subscriptionTrialEndsAt: updated.subscriptionTrialEndsAt || "",
     stripeSubscriptionCheckoutSessionStatus: updated.stripeSubscriptionCheckoutSessionStatus || "",
     stripeSubscriptionCheckoutPaymentStatus: updated.stripeSubscriptionCheckoutPaymentStatus || ""
   });
@@ -2486,6 +2498,10 @@ export function parishDashboardPayload(parishId, registration) {
     // earlier checkout and must not leave the dashboard advertising a stale
     // plan price after the catalog changes.
     subscriptionMonthlyCents: currentTier?.monthlyCents ?? null,
+    subscriptionTrialDays: Number(registration.subscriptionTrialDays || 0),
+    subscriptionTrialStartedAt: registration.subscriptionTrialStartedAt || "",
+    subscriptionTrialEndsAt: registration.subscriptionTrialEndsAt || "",
+    subscriptionIntroDemoEligible: parishIntroDemoEligible(registration),
     parishDashboardTokenTemporary: Boolean(registration.parishDashboardTokenTemporary),
     priestEmail: registration.priestEmail || "",
     sacramentPriests: normalizeSacramentPriests(registration),

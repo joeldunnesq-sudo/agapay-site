@@ -14,6 +14,7 @@ import {
   tierIncludesModule,
   tierIncludesParishPlus
 } from "../src/lib/entitlements.js";
+import { parishIntroDemoEligible } from "../src/lib/subscriptions.js";
 
 let passed = 0;
 async function test(name, fn) {
@@ -99,6 +100,14 @@ await test("A cancelled no-card demo loses its tier modules", async () => {
   assert.equal(accountingEnabledFor(reg), false);
   assert.equal(sacramentsEnabledFor(reg), false);
   assert.equal(bookstoreEnabledFor(reg), false);
+});
+
+await test("The introductory parish demo is available only before the first activation", async () => {
+  assert.equal(parishIntroDemoEligible({ subscriptionStatus: "not_started" }), true);
+  assert.equal(parishIntroDemoEligible({ subscriptionStatus: "trial_checkout_created", subscriptionTrialDays: 30 }), true);
+  assert.equal(parishIntroDemoEligible({ subscriptionActivatedAt: "2026-07-01T00:00:00.000Z" }), false);
+  assert.equal(parishIntroDemoEligible({ subscriptionTrialEndsAt: "2026-08-01T00:00:00.000Z" }), false);
+  assert.equal(parishIntroDemoEligible({ stripeSubscriptionId: "sub_previous" }), false);
 });
 
 await test("Diocese tier includes every module, same as Parish", async () => {
