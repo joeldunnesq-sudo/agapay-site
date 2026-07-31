@@ -8,9 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/donor/style.css?v=20260731digest1" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260731push1" />
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260731communications1" defer></script>
+  <script src="/myagapay/push-notifications.js?v=20260731push1" defer></script>
   <script src="/myagapay/feed.js?v=20260731digest1" defer></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -33,6 +34,12 @@
         <section class="feed-hero" aria-labelledby="feedHeading">
           <div><span class="eyebrow">Parish life</span><h1 id="feedHeading">News from your church.</h1><p>Announcements, reminders, and timely parish updates in one quiet place.</p></div>
           <span class="feed-unread-summary" id="feedUnreadSummary" hidden></span>
+        </section>
+        <section class="push-notification-card" data-push-notifications aria-labelledby="feedPushHeading">
+          <div><span class="eyebrow">Timely updates</span><h2 id="feedPushHeading">Parish notifications</h2><p>Choose whether this device should alert you when your parish publishes an announcement or your groups receive a message.</p></div>
+          <div class="push-notification-actions"><button type="button" class="btn btn-primary" data-push-enable>Enable notifications</button><button type="button" class="btn btn-ghost" data-push-disable hidden>Disable notifications</button></div>
+          <div class="push-ios-guidance" data-push-ios-guidance hidden><strong>Add My AGAPAY to your Home Screen first</strong><p>In Safari, tap Share, choose <em>Add to Home Screen</em>, then open the installed My AGAPAY app and enable notifications there.</p></div>
+          <p class="push-notification-status" data-push-status role="status" aria-live="polite">Checking this device…</p>
         </section>
         <section class="feed-digest-card" aria-labelledby="feedDigestHeading">
           <div>

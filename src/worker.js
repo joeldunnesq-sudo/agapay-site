@@ -210,6 +210,7 @@ import {
   sendWeeklyAnnouncementDigestEmails,
 } from "./handlers/parish-communications.js";
 import { handleDonorGroups } from "./handlers/donor-groups.js";
+import { handleDonorPush } from "./lib/push-notifications.js";
 
 import {
   loadAllRegistrations,
@@ -3107,12 +3108,16 @@ export default {
     if (url.pathname === "/api/donor/digest/unsubscribe") {
       return handleAnnouncementDigestUnsubscribe(request, env);
     }
+    if (url.pathname.startsWith("/api/donor/push/")) {
+      const pushAction = url.pathname.replace("/api/donor/push/", "").replace(/\/+$/, "");
+      return handleDonorPush(request, env, pushAction);
+    }
     if (url.pathname.startsWith("/api/donor/feed/") && url.pathname.endsWith("/read")) {
       const announcementId = decodeURIComponent(url.pathname.replace("/api/donor/feed/", "").replace("/read", ""));
       return handleDonorFeed(request, env, announcementId);
     }
     if (url.pathname === "/api/donor/groups" || url.pathname.startsWith("/api/donor/groups/")) {
-      return handleDonorGroups(request, env);
+      return handleDonorGroups(request, env, ctx);
     }
     if (url.pathname === "/api/donor/stewardship-feature-request") {
       return handleDonorStewardshipFeatureRequest(request, env);
@@ -3596,7 +3601,7 @@ export default {
       const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/communications");
       const parishId = decodeURIComponent(parts[0].replace(/\/+$/, ""));
       const subpath = parts.slice(1).join("/communications") || "";
-      return handleParishCommunications(request, env, parishId, subpath);
+      return handleParishCommunications(request, env, parishId, subpath, ctx);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments", ""));

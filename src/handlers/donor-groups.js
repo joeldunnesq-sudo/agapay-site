@@ -1,5 +1,6 @@
 import { currentUser } from "../lib/authorization.js";
 import { getReadContentIds, markContentRead } from "../lib/content-reads.js";
+import { sendGroupMessagePush } from "../lib/push-notifications.js";
 import {
   d1All,
   d1First,
@@ -42,6 +43,7 @@ function messageFromRow(row = {}) {
     ministryId: row.ministry_id || "",
     authorPersonId: row.author_person_id || "",
     authorName: row.author_name || "Parish member",
+    ministryName: row.ministry_name || "Ministry",
     body: row.body || "",
     createdAt: row.created_at || "",
   };
@@ -170,8 +172,10 @@ export async function postGroupMessage(env, { parishId, ministryId, personId, bo
     VALUES (?, ?, ?, ?, ?)
   `).bind(id, parishId, ministryId, personId, cleanedBody).run();
   const row = await d1First(env, `
-    SELECT gm.*, p.preferred_name AS author_name
-    FROM parish_group_messages gm JOIN directory_people p ON p.id = gm.author_person_id
+    SELECT gm.*, p.preferred_name AS author_name, m.display_name AS ministry_name
+    FROM parish_group_messages gm
+    JOIN directory_people p ON p.id = gm.author_person_id
+    JOIN directory_ministries m ON m.id = gm.ministry_id AND m.parish_id = gm.parish_id
     WHERE gm.id = ? AND gm.parish_id = ? AND gm.ministry_id = ?
   `, id, parishId, ministryId);
   return messageFromRow(row);
@@ -215,7 +219,7 @@ function errorResponse(error) {
   throw error;
 }
 
-export async function handleDonorGroups(request, env) {
+export async function handleDonorGroups(request, env, ctx = null) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   if (!database(env)) return missingProductionStoreResponse();
   try {
@@ -234,6 +238,18 @@ export async function handleDonorGroups(request, env) {
     if (parts.length === 2 && parts[1] === "messages" && request.method === "POST") {
       const input = await request.json().catch(() => ({}));
       const message = await postGroupMessage(env, { ...context, ministryId: parts[0], body: input.body });
+      if (ctx?.waitUntil) {
+        const delivery = sendGroupMessagePush(env, {
+          parishId: context.parishId,
+          ministryId: parts[0],
+          ministryName: message.ministryName,
+          authorPersonId: context.personId,
+          authorName: message.authorName,
+          message,
+        }).then((summary) => console.log("group_push_delivery", JSON.stringify({ parishId: context.parishId, ministryId: parts[0], messageId: message.id, ...summary })))
+          .catch((error) => console.error("group_push_delivery_failed", error?.message || String(error)));
+        ctx.waitUntil(delivery);
+      }
       return privateJson({ ok: true, message }, { status: 201 });
     }
     if (parts.length === 4 && parts[1] === "messages" && parts[3] === "read" && request.method === "POST") {

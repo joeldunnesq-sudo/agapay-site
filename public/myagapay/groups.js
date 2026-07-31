@@ -1,4 +1,5 @@
 let ministryGroupsState = { groups: [], activeGroupId: "", messages: [] };
+let initialGroupId = new URLSearchParams(window.location.search).get("group") || "";
 
 function groupsEscape(value) {
   return String(value ?? "")
@@ -63,6 +64,11 @@ async function loadGroups() {
     ministryGroupsState.groups = data.groups || [];
     status.hidden = true;
     renderGroupsList();
+    if (initialGroupId && ministryGroupsState.groups.some(({ id }) => id === initialGroupId)) {
+      const requestedGroupId = initialGroupId;
+      initialGroupId = "";
+      await openMinistryGroup(requestedGroupId);
+    }
     if (ministryGroupsState.activeGroupId && !ministryGroupsState.groups.some(({ id }) => id === ministryGroupsState.activeGroupId)) {
       ministryGroupsState.activeGroupId = "";
       document.getElementById("groupThreadPanel").innerHTML = '<div class="group-thread-empty"><strong>Group unavailable</strong><p>Your active ministry memberships changed.</p></div>';

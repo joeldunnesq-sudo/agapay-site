@@ -2,6 +2,7 @@ import { getReadContentIds, markContentRead } from "../lib/content-reads.js";
 import { communicationsEnabledFor } from "../lib/entitlements.js";
 import { agapayEmailHtml, sendEmail } from "../lib/email.js";
 import { loadAllRegistrations } from "../lib/registrations.js";
+import { sendAnnouncementPush } from "../lib/push-notifications.js";
 import {
   generateSecret,
   getBearerToken,
@@ -168,7 +169,7 @@ export async function createParishAnnouncement(db, { parishId, createdBy, input 
   return announcementFromRow(await db.prepare("SELECT * FROM parish_announcements WHERE id = ?").bind(id).first());
 }
 
-export async function updateParishAnnouncement(db, { parishId, announcementId, input }) {
+export async function updateParishAnnouncement(db, { parishId, announcementId, input, onPublished }) {
   const current = await db.prepare(
     "SELECT * FROM parish_announcements WHERE id = ? AND parish_id = ?"
   ).bind(announcementId, parishId).first();
@@ -195,7 +196,11 @@ export async function updateParishAnnouncement(db, { parishId, announcementId, i
     SET title = ?, body = ?, pinned = ?, status = ?, published_at = ?, updated_at = datetime('now')
     WHERE id = ? AND parish_id = ?
   `).bind(title, body, pinned, requestedStatus, publishedAt, announcementId, parishId).run();
-  return announcementFromRow(await db.prepare("SELECT * FROM parish_announcements WHERE id = ?").bind(announcementId).first());
+  const announcement = announcementFromRow(await db.prepare("SELECT * FROM parish_announcements WHERE id = ?").bind(announcementId).first());
+  if (current.status !== "published" && requestedStatus === "published" && typeof onPublished === "function") {
+    onPublished(announcement);
+  }
+  return announcement;
 }
 
 export async function archiveParishAnnouncement(db, { parishId, announcementId }) {
@@ -576,7 +581,7 @@ async function requireCommunicationsAdmin(request, env, parishId) {
   return { found };
 }
 
-export async function handleParishCommunications(request, env, parishId, subpath = "") {
+export async function handleParishCommunications(request, env, parishId, subpath = "", ctx = null) {
   const normalizedSubpath = String(subpath || "").replace(/^\/+|\/+$/g, "");
   const parts = normalizedSubpath ? normalizedSubpath.split("/") : [];
   if (parts.length === 2 && parts[1] === "hero-image") {
@@ -604,6 +609,16 @@ export async function handleParishCommunications(request, env, parishId, subpath
         parishId,
         announcementId: decodeURIComponent(parts[0]),
         input: await request.json(),
+        onPublished: (publishedAnnouncement) => {
+          if (!ctx?.waitUntil) return;
+          const delivery = sendAnnouncementPush(env, {
+            parishId,
+            parishName: auth.found.registration.parishName || "your parish",
+            announcement: publishedAnnouncement,
+          }).then((summary) => console.log("announcement_push_delivery", JSON.stringify({ parishId, announcementId: publishedAnnouncement.id, ...summary })))
+            .catch((error) => console.error("announcement_push_delivery_failed", error?.message || String(error)));
+          ctx.waitUntil(delivery);
+        },
       });
       return announcement
         ? json({ ok: true, announcement })

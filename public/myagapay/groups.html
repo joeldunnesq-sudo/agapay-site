@@ -8,9 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/donor/style.css?v=20260731groups1" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260731push1" />
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260731groups1" defer></script>
+  <script src="/myagapay/push-notifications.js?v=20260731push1" defer></script>
   <script src="/myagapay/groups.js?v=20260731groups1" defer></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <meta name="theme-color" content="#061522" />
@@ -30,6 +31,12 @@
       <div class="topbar"><div class="topbar-title">Your Groups</div></div>
       <div class="page groups-page-shell">
         <section class="groups-hero"><span class="eyebrow">Parish ministries</span><h1>Gather, serve, and stay connected.</h1><p>Your active ministry spaces appear here. Messages are private to each group’s current members and leaders.</p></section>
+        <section class="push-notification-card" data-push-notifications aria-labelledby="groupsPushHeading">
+          <div><span class="eyebrow">Timely updates</span><h2 id="groupsPushHeading">Group notifications</h2><p>Choose whether this device should alert you when your groups receive a new message or your parish publishes an announcement.</p></div>
+          <div class="push-notification-actions"><button type="button" class="btn btn-primary" data-push-enable>Enable notifications</button><button type="button" class="btn btn-ghost" data-push-disable hidden>Disable notifications</button></div>
+          <div class="push-ios-guidance" data-push-ios-guidance hidden><strong>Add My AGAPAY to your Home Screen first</strong><p>In Safari, tap Share, choose <em>Add to Home Screen</em>, then open the installed My AGAPAY app and enable notifications there.</p></div>
+          <p class="push-notification-status" data-push-status role="status" aria-live="polite">Checking this device…</p>
+        </section>
         <div class="notice" id="groupsStatus">Loading your groups...</div>
         <div class="groups-layout">
           <section class="groups-list-panel" aria-labelledby="groupsListHeading"><div class="groups-panel-head"><div><span class="eyebrow">Memberships</span><h2 id="groupsListHeading">Your Groups</h2></div><button type="button" class="groups-refresh" onclick="loadGroups()">Refresh</button></div><div id="groupsList"></div></section>

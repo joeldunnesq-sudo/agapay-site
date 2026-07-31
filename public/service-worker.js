@@ -1,4 +1,4 @@
-const AGAPAY_CACHE = "agapay-static-v26";
+const AGAPAY_CACHE = "agapay-static-v27";
 
 const STATIC_ASSETS = [
   "/myagapay/login",
@@ -110,4 +110,42 @@ self.addEventListener("fetch", (event) => {
         .catch(() => caches.match(request))
     );
   }
+});
+
+self.addEventListener("push", (event) => {
+  let notification = {};
+  try {
+    notification = event.data ? event.data.json() : {};
+  } catch {
+    notification = { body: event.data ? event.data.text() : "" };
+  }
+  const title = String(notification.title || "My AGAPAY");
+  event.waitUntil(self.registration.showNotification(title, {
+    body: String(notification.body || "You have a new parish update."),
+    icon: "/images/app/icon-192.png",
+    badge: "/favicons/favicon-32x32.png",
+    tag: String(notification.tag || "myagapay-update"),
+    data: { url: String(notification.url || "/myagapay/") },
+  }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  let targetUrl;
+  try {
+    targetUrl = new URL(event.notification.data?.url || "/myagapay/", self.location.origin);
+    if (targetUrl.origin !== self.location.origin || !targetUrl.pathname.startsWith("/myagapay")) {
+      targetUrl = new URL("/myagapay/", self.location.origin);
+    }
+  } catch {
+    targetUrl = new URL("/myagapay/", self.location.origin);
+  }
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (clients) => {
+    const existing = clients.find(client => new URL(client.url).origin === targetUrl.origin);
+    if (existing) {
+      if ("navigate" in existing) await existing.navigate(targetUrl.href);
+      return existing.focus();
+    }
+    return self.clients.openWindow(targetUrl.href);
+  }));
 });
