@@ -656,6 +656,8 @@ const MYAGAPAY_ASSET_ROUTES = new Map([
   ["/myagapay/marketplace", "/marketplace"],
   ["/myagapay/directory", "/myagapay/directory.html"],
   ["/myagapay/directory/", "/myagapay/directory.html"],
+  ["/myagapay/bookstore", "/myagapay/bookstore.html"],
+  ["/myagapay/bookstore/", "/myagapay/bookstore.html"],
   ["/myagapay/learn", "/learn/dashboard"],
   ["/myagapay/learn/", "/learn/dashboard"],
   ["/myagapay/learn/dashboard", "/learn/dashboard"],
