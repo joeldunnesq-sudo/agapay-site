@@ -1,0 +1,43 @@
+name: Parish Commemorations Staging Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: Deployed staging Worker URL
+        required: true
+        default: https://agapay-site-staging.joeldunnesq.workers.dev
+      environment:
+        description: GitHub environment holding the protected parish credentials
+        required: true
+        default: accounting-release-gates
+
+permissions:
+  contents: read
+
+jobs:
+  staging-smoke:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Verify the parish commemorations dashboard path
+        run: node scripts/parish-commemorations-staging-smoke.mjs "${{ inputs.target_url }}"
+        env:
+          ACCOUNTING_GATE_PARISH_A_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_A_ID }}
+          ACCOUNTING_GATE_PARISH_A_PASSWORD: ${{ secrets.ACCOUNTING_GATE_PARISH_A_PASSWORD }}
+
+      - name: Upload staging evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parish-commemorations-staging-smoke-${{ github.run_id }}
+          path: artifacts/parish-commemorations-staging-smoke.json
+          if-no-files-found: error
+          retention-days: 30

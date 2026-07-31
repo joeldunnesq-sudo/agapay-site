@@ -86,11 +86,11 @@ import {
   reconcilePendingDonorOfferings,
   requireDonor,
   slugify,
-  storeCommemorationEntry,
   storeDonorOffering,
   stripePaymentIntentFinancialUpdates,
   updateDonorOfferingByCheckout,
 } from "./parish.js";
+import { storeCommemorationEntry } from "./parish-commemorations.js";
 import { enrichParishGivingOptions } from "./parish-giving-catalog.js";
 import { sacramentTypeLabel } from "./parish-sacraments.js";
 
