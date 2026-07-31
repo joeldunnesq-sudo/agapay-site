@@ -71,8 +71,9 @@ for (const view of ["overview", "ledger", "funds", "payables", "banking", "repor
 for (const nestedView of ["journals", "integrations"]) assert.ok(app.includes(`'${nestedView}'`), `missing nested Accounting UI view ${nestedView}`);
 for (const canonicalFeature of ["acct-suite-shell", "acct-suite-rail", "Accounting suite navigation", "accountingPageTitle", "accountingFiscalYear"]) assert.ok(dashboard.includes(canonicalFeature), `missing canonical Accounting shell feature ${canonicalFeature}`);
 assert.match(css, /purpose-built top bar/, "Accounting module navigation should use the dedicated top bar");
-assert.match(css, /grid-template-columns:repeat\(10,minmax\(0,1fr\)\)/, "desktop Accounting navigation should fit without a slider");
-assert.match(css, /@media\(min-width:761px\)\s*\{\s*\.acct-suite-rail nav\s*\{\s*grid-template-columns:repeat\(11,minmax\(0,1fr\)\)/s, "both Accounting views should keep all eleven tabs on one desktop row");
+assert.doesNotMatch(css, /grid-template-columns:repeat\(10,minmax\(0,1fr\)\)/, "Accounting navigation must not retain the stale ten-column layout");
+assert.match(css, /@media\(min-width:761px\)\s*\{\s*\.acct-suite-rail nav\s*\{\s*grid-template-columns:repeat\(11,minmax\(0,1fr\)\)/s, "Accountant view should keep all eleven tabs on one desktop row");
+assert.match(css, /\.acct-suite-rail nav button\s*\{[^}]*min-height:44px/s, "Accounting navigation needs a 44px desktop touch target");
 assert.match(css, /flex:0 0 auto/, "Accounting navigation must retain its full height above the cream workspace");
 assert.match(app, /acct-table-wrap acct-overview-activity-table/, "Overview activity needs its own non-scrolling table treatment");
 assert.match(css, /\.acct-overview-activity-table\s*\{[^}]*overflow-x:hidden/s);

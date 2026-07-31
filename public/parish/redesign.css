@@ -660,7 +660,7 @@
 .acct-card { padding:22px; border:1px solid var(--line); border-radius:14px; background:#fff; box-shadow:var(--pdx-shadow-sm); }
 .acct-card h2 { margin:5px 0 8px; color:var(--ink); font:600 25px/1.08 var(--serif); }.acct-card p { margin:0 0 16px; color:var(--stone); font-size:13px; line-height:1.55; }
 .acct-kicker { color:var(--gold); font-size:10px; font-weight:800; letter-spacing:.11em; text-transform:uppercase; }
-.acct-primary { border:0; border-radius:9px; padding:10px 15px; background:var(--deep); color:#fff; font:700 12px var(--sans); cursor:pointer; }.acct-primary:disabled { opacity:.45; cursor:not-allowed; }
+.acct-primary:disabled { opacity:.45; cursor:not-allowed; }
 .acct-checklist { display:grid; gap:9px; margin-top:13px; }.acct-checklist div { display:flex; align-items:center; gap:9px; color:var(--stone); font-size:12px; }.acct-checklist div.complete { color:var(--forest); }.acct-checklist i { display:grid; place-items:center; width:20px; height:20px; border-radius:50%; background:rgba(6,21,34,.06); font-style:normal; font-weight:800; }.acct-checklist .complete i { background:rgba(42,89,54,.12); }
 .acct-settings { display:grid; gap:12px; }.acct-settings label { display:grid; gap:5px; color:var(--stone); font-size:11px; font-weight:700; }.acct-settings select { width:100%; border:1px solid var(--line); border-radius:9px; padding:10px; background:#fff; color:var(--ink); font:500 13px var(--sans); }
 .acct-guide-card { grid-column:1/-1; display:flex; align-items:center; justify-content:space-between; gap:24px; border-color:rgba(200,162,74,.42); background:linear-gradient(120deg,rgba(200,162,74,.12),rgba(255,255,255,.45)); }
@@ -722,8 +722,6 @@
 
 /* Accounting Suite — canonical accounting workspace, retuned to AGAPAY. */
 .content.accounting-tab-active>#tab-accounting.active { padding:0; overflow:hidden; background:#f5f1e9; }
-.acct-suite-shell { display:grid; grid-template-columns:224px minmax(0,1fr); width:100%; min-height:calc(100vh - 1px); background:#f5f1e9; color:var(--ink); }
-.acct-suite-rail { display:flex; flex-direction:column; min-height:100%; padding:0 12px 16px; background:linear-gradient(180deg,var(--deep) 0%,#0b2130 100%); color:rgba(246,241,232,.72); }
 .acct-suite-brand { margin:0 -12px 14px; padding:22px 20px 17px; border-bottom:1px solid rgba(255,255,255,.08); }
 .acct-suite-brand strong,.acct-suite-brand span { display:block; }
 .acct-suite-brand strong { color:var(--cream); font:600 22px/1 var(--serif); letter-spacing:.035em; }
@@ -731,7 +729,6 @@
 .acct-suite-brand span { margin-top:6px; }
 .acct-suite-rail-label { padding:7px 10px 6px; }
 .acct-suite-rail nav { display:grid; gap:2px; }
-.acct-suite-rail nav button { display:flex; align-items:center; gap:10px; min-height:38px; border:0; border-radius:7px; padding:8px 10px; background:transparent; color:rgba(246,241,232,.67); font:600 12px var(--sans); text-align:left; cursor:pointer; transition:.15s ease; }
 .acct-suite-rail nav button:hover { background:rgba(255,255,255,.05); color:var(--cream); }
 .acct-suite-rail nav button.active { background:linear-gradient(90deg,rgba(200,162,74,.18),rgba(200,162,74,.03)); color:var(--cream); box-shadow:inset 2px 0 0 var(--gold); }
 .acct-nav-icon { display:grid; place-items:center; width:18px; color:rgba(232,200,121,.7); font:500 16px/1 var(--serif); }
@@ -981,7 +978,7 @@
 .acct-table-wrap,.acct-card,.acct-journal-editor,.acct-kpis>div,.acct-mini-card,.acct-budget-card { border-radius:6px; box-shadow:none; background:rgba(255,255,255,.32); }
 .acct-table th { background:rgba(6,21,34,.025); }
 .acct-card h2,.acct-list-head h2,.acct-mini-card h3,.acct-budget-card h3,.acct-tier-gate h2 { font-weight:600; }
-.acct-primary { border:1px solid var(--gold); border-radius:5px; background:transparent; color:var(--gold); font-family:var(--serif); }
+.acct-primary { border:1px solid var(--gold); border-radius:5px; padding:10px 15px; background:transparent; color:var(--gold); font:700 12px var(--serif); cursor:pointer; }
 .acct-primary:hover { background:rgba(200,162,74,.08); }
 .acct-subtabs button,.acct-row-actions button,.acct-link { font-family:var(--serif); }
 @media(max-width:980px){.acct-suite-shell{grid-template-columns:190px minmax(0,1fr)}.acct-suite-header-meta>span{display:none}.acct-suite-stats{grid-template-columns:1fr}.acct-suite-stat{border-left:0;border-top:1px solid var(--line)}.acct-suite-stat:first-child{border-top:0}.acct-suite-overview-grid{grid-template-columns:1fr}}
@@ -993,8 +990,9 @@
 .acct-suite-brand { grid-area:brand; min-width:150px; margin:0; padding:13px 0 9px; border:0; }
 .acct-suite-brand strong { font-size:20px; }
 .acct-suite-brand span { margin-top:4px; }
-.acct-suite-rail nav { grid-area:nav; display:grid; grid-template-columns:repeat(10,minmax(0,1fr)); align-self:stretch; gap:2px; min-width:0; overflow:visible; border-top:1px solid rgba(255,255,255,.08); }
-.acct-suite-rail nav button { position:relative; box-sizing:border-box; justify-content:center; min-width:0; min-height:43px; border-radius:0; padding:8px 6px 7px; white-space:nowrap; }
+.acct-suite-rail nav { grid-area:nav; display:grid; grid-template-columns:repeat(11,minmax(0,1fr)); align-self:stretch; gap:2px; min-width:0; overflow:visible; border-top:1px solid rgba(255,255,255,.08); }
+.acct-suite-rail nav button { position:relative; box-sizing:border-box; display:flex; align-items:center; justify-content:center; gap:10px; min-width:0; min-height:44px; border:0; border-radius:0; padding:8px 6px 7px; background:transparent; color:rgba(246,241,232,.67); font:600 12px var(--sans); text-align:left; white-space:nowrap; cursor:pointer; transition:.15s ease; }
+.acct-suite-rail nav button[hidden] { display:none; }
 .acct-suite-rail nav button:hover { background:rgba(255,255,255,.045); }
 .acct-suite-rail nav button.active { background:rgba(200,162,74,.08); box-shadow:none; }
 .acct-suite-rail nav button.active::after { content:""; position:absolute; right:10px; bottom:0; left:10px; height:3px; border-radius:3px 3px 0 0; background:var(--pdx-gold-bright); }
@@ -1958,7 +1956,7 @@
     linear-gradient(105deg,#061522 0%,#0a2638 57%,#123b50 100%);
   box-shadow:0 10px 30px rgba(6,21,34,.18);
 }
-.acct-suite-rail nav { grid-template-columns:repeat(10,minmax(0,1fr)); }
+.acct-suite-rail nav { grid-template-columns:repeat(11,minmax(0,1fr)); }
 .acct-suite-rail nav button {
   color:rgba(246,241,232,.72);
   letter-spacing:.01em;
@@ -2274,11 +2272,19 @@ textarea {
   }
 }
 
-/* Both experience modes expose all eleven modules; keep desktop navigation
-   in one deliberate row instead of letting the final tab spill below. */
+/* Accountant view keeps all eleven modules in one deliberate row. Treasurer
+   view leads with six routine modules and one Advanced disclosure. */
 @media(min-width:761px) {
   .acct-suite-rail nav {
     grid-template-columns:repeat(11,minmax(0,1fr));
+  }
+
+  .acct-suite-shell[data-accounting-experience="treasurer"] .acct-suite-rail nav {
+    grid-template-columns:repeat(7,minmax(0,1fr));
+  }
+
+  .acct-suite-shell[data-accounting-experience="treasurer"].acct-suite-shell--advanced-open .acct-suite-rail nav {
+    grid-template-columns:repeat(6,minmax(0,1fr));
   }
 }
 

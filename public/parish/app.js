@@ -977,6 +977,7 @@
   let accountingBudgetEditor = null;
   let accountingMigration = { active:false, session:null, sessions:[], step:'source', previews:{}, advanced:false };
   let accountingExperienceMode = 'treasurer';
+  let accountingAdvancedNavExpanded = false;
   let accountingSimpleIncomeMessage = '';
   let accountingSimpleEntryMode = 'income';
   let accountingInKindGiftMessage = '';
@@ -1204,14 +1205,39 @@
       button.classList.toggle('active', active);
       button.setAttribute('aria-pressed', String(active));
     });
-    document.querySelectorAll('[data-accounting-view]').forEach((button) => {
-      button.hidden = false;
+    const isTreasurer = accountingExperienceMode === 'treasurer';
+    const nav = document.querySelector('.acct-suite-rail nav');
+    const advancedToggle = document.querySelector('[data-accounting-advanced-toggle]');
+    const navOrder = isTreasurer
+      ? ['overview','funds','payables','banking','reports','budgets','advanced','ledger','close','governance','setup','settings']
+      : ['overview','ledger','funds','payables','banking','reports','budgets','close','governance','setup','settings'];
+    if (nav && nav.dataset.accountingNavMode !== accountingExperienceMode) {
+      navOrder.forEach((view) => {
+        const button = view === 'advanced' ? advancedToggle : nav.querySelector(`[data-accounting-view="${view}"]`);
+        if (button) nav.append(button);
+      });
+      nav.dataset.accountingNavMode = accountingExperienceMode;
+    }
+    document.querySelectorAll('[data-accounting-advanced]').forEach((button) => {
+      button.hidden = isTreasurer && !accountingAdvancedNavExpanded;
     });
+    if (advancedToggle) {
+      const advancedViewActive = ['ledger','journals','close','governance','setup','settings','integrations'].includes(accountingView);
+      advancedToggle.hidden = !isTreasurer;
+      advancedToggle.setAttribute('aria-expanded', String(accountingAdvancedNavExpanded));
+      advancedToggle.classList.toggle('active', advancedViewActive);
+    }
+    if (shell) shell.classList.toggle('acct-suite-shell--advanced-open', isTreasurer && accountingAdvancedNavExpanded);
   }
   function setAccountingExperienceMode(mode) {
     accountingExperienceMode = mode === 'accountant' ? 'accountant' : 'treasurer';
+    accountingAdvancedNavExpanded = false;
     try { sessionStorage.setItem('agapay.accountingExperienceMode', accountingExperienceMode); } catch {}
     renderAccountingPane();
+  }
+  function toggleAccountingAdvancedNav() {
+    accountingAdvancedNavExpanded = !accountingAdvancedNavExpanded;
+    syncAccountingExperienceChrome();
   }
   function accountingSimpleRevenueOptions(selectedId = '') {
     const order = Object.keys(ACCOUNTING_SIMPLE_REVENUE_LABELS);

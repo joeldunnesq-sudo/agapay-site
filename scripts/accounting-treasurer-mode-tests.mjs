@@ -194,10 +194,13 @@ const treasurerHero = overviewHero.slice(0, overviewHero.indexOf("\n    return `
 assert.match(treasurerHero, /Record Income/);
 assert.match(treasurerHero, /Pay a Bill/);
 assert.doesNotMatch(treasurerHero, /New journal|Manage funds|Reconcile|Run reports/);
-assert.match(app, /document\.querySelectorAll\('\[data-accounting-view\]'\)[\s\S]*?button\.hidden = false;/);
-assert.doesNotMatch(app, /button\.hidden = accountingExperienceMode/);
+assert.match(dashboard, /data-accounting-advanced-toggle/);
+assert.equal((dashboard.match(/data-accounting-advanced(?:\s|>)/g) || []).length, 5);
+assert.match(app, /button\.hidden = isTreasurer && !accountingAdvancedNavExpanded/);
+assert.match(app, /advancedToggle\.hidden = !isTreasurer/);
+assert.match(app, /function toggleAccountingAdvancedNav\(\)/);
 assert.doesNotMatch(app, /accountingExperienceMode === 'treasurer' && \[[^\]]+\]\.includes\(accountingView\)/);
-console.log("PASS - Treasurer view is the session default and Accountant view keeps the journal editor reachable");
+console.log("PASS - Treasurer view defaults to six routine modules plus Advanced, while Accountant view keeps all modules reachable");
 
 const expectedLabels = {
   acct_4000:"Stewardship & Tithes",
