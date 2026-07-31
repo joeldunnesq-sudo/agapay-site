@@ -304,6 +304,7 @@ async function promotePaidScannedBooksToCatalog(env, order, now) {
     SELECT * FROM commerce_order_items
     WHERE order_id = ? AND parish_id = ? AND commerce_module = 'bookstore'
       AND item_category = 'book' AND barcode IS NOT NULL AND barcode <> ''
+      AND (product_id IS NULL OR product_id = '')
     ORDER BY created_at, id
   `, order.id, order.parish_id);
 

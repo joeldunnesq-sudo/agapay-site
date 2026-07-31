@@ -1109,6 +1109,24 @@ function normalizeBookstoreQuantity(value) {
   return Math.min(quantity, 50);
 }
 
+export function guestBookstoreItemError(items = []) {
+  for (const item of items) {
+    if (String(item?.productId || "").trim() || String(item?.variantId || "").trim()) continue;
+    const isbn = String(item?.specifics?.isbn || item?.barcode || "").replace(/[^0-9Xx]/g, "");
+    if (item?.source !== "scan_and_go" || item?.itemCategory !== "book" || ![10, 13].includes(isbn.length)) {
+      return "Buyer-added guest items must be books with a valid ISBN barcode.";
+    }
+  }
+  return "";
+}
+
+export function bookstoreOrderSource(items = [], isGuestCheckout = false) {
+  if (items.some(item => item.source === "scan_and_go")) return "scan_and_go";
+  if (isGuestCheckout) return "guest_checkout";
+  if (items.some(item => item.source === "catalog")) return "catalog";
+  return "manual_entry";
+}
+
 function describeManualBookstoreItem(category, specifics = {}) {
   if (category === "book") return [specifics.title, specifics.author ? `by ${specifics.author}` : ""].filter(Boolean).join(" ") || "Book";
   if (category === "icon") return specifics.saint_or_feast || specifics.description || "Icon";
@@ -1391,7 +1409,7 @@ export async function handleDonorBookstore(request, env, publicParishId = "") {
     if (resolved.error) return resolved.error;
     return json({
       available: Boolean(resolved.available),
-      parish: { id: resolved.parishId, name: resolved.registration?.name || "" },
+      parish: { id: resolved.parishId, name: resolved.registration?.name || resolved.registration?.parishName || "" },
       sellerDisclosure: resolved.registration ? bookstoreSellerDisclosure(resolved.registration.commerceSellerDisplayName || resolved.registration.name || resolved.registration.parishName) : "",
       products: resolved.available ? await loadDonorBookstoreProducts(env, resolved.parishId) : [],
       orders: isGuestCheckout ? [] : await loadDonorBookstoreOrders(env, resolved.parishId, normalizeEmail(donor.email))
@@ -1416,9 +1434,8 @@ export async function handleDonorBookstore(request, env, publicParishId = "") {
   if (!d1(env)) return missingProductionStoreResponse();
 
   const submittedItems = Array.isArray(body.items) && body.items.length ? body.items : [body];
-  if (isGuestCheckout && submittedItems.some((item) => !String(item?.productId || "").trim() && !String(item?.variantId || "").trim())) {
-    return json({ error: "Guest checkout is limited to items in the parish catalog." }, { status: 422 });
-  }
+  const guestItemError = isGuestCheckout ? guestBookstoreItemError(submittedItems) : "";
+  if (guestItemError) return json({ error: guestItemError }, { status: 422 });
 
   let items;
   try {
@@ -1538,7 +1555,7 @@ export async function handleDonorBookstore(request, env, publicParishId = "") {
             'checkout_created', 'pending', ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
   `,
     orderId,
-    isGuestCheckout ? "guest_checkout" : (items.some(item => item.source === "scan_and_go") ? "scan_and_go" : items.some(item => item.source === "catalog") ? "catalog" : "manual_entry"),
+    bookstoreOrderSource(items, isGuestCheckout),
     resolved.parishId,
     donorEmail,
     normalizedDonorName,
