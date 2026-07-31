@@ -206,6 +206,34 @@
     .fee-note svg { width: 52px; height: 52px; stroke: #A5792B; fill: none; stroke-width: 1.55; stroke-linecap: round; stroke-linejoin: round; }
     .fee-note strong { display: block; color: var(--night); font-family: var(--serif); font-size: 1.12rem; line-height: 1.15; margin-bottom: 0.18rem; }
 
+    .nonprofit-rate-guide { margin-top: 1.25rem; border: 1px solid rgba(200, 162, 74, 0.42); border-radius: 16px; overflow: hidden; background: #FFFDF8; box-shadow: 0 14px 34px rgba(6, 21, 34, 0.07); }
+    .nonprofit-rate-head { padding: clamp(1.35rem, 3vw, 2rem); display: grid; grid-template-columns: minmax(280px, 0.9fr) minmax(440px, 1.1fr); gap: 1.5rem; align-items: end; color: var(--cream); background: linear-gradient(110deg, #061522, #0B2130); }
+    .nonprofit-rate-kicker { color: var(--gold); font-size: 0.72rem; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 0.55rem; }
+    .nonprofit-rate-head h2 { font-family: var(--serif); font-size: clamp(2.1rem, 4vw, 3.3rem); line-height: 0.98; font-weight: 600; }
+    .nonprofit-rate-head > p { color: rgba(246, 241, 232, 0.75); line-height: 1.65; max-width: 650px; }
+    .nonprofit-rate-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: rgba(200, 162, 74, 0.25); }
+    .nonprofit-rate-card { padding: 1.15rem; background: rgba(255, 253, 248, 0.98); }
+    .nonprofit-rate-card span { display: block; color: var(--gold-dark); font-size: 0.68rem; font-weight: 900; letter-spacing: 0.11em; text-transform: uppercase; }
+    .nonprofit-rate-card strong { display: block; margin: 0.3rem 0 0.35rem; color: var(--night); font-family: var(--serif); font-size: clamp(1.75rem, 3vw, 2.45rem); line-height: 1; }
+    .nonprofit-rate-card p { color: #4A565E; font-size: 0.84rem; line-height: 1.48; }
+    .nonprofit-rate-body { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(300px, 0.92fr); gap: 1px; background: rgba(200, 162, 74, 0.2); }
+    .nonprofit-eligibility, .nonprofit-apply { padding: clamp(1.15rem, 2.5vw, 1.65rem); background: rgba(255, 253, 248, 0.98); }
+    .nonprofit-rate-body h3 { color: var(--night); font-family: var(--serif); font-size: 1.55rem; line-height: 1.05; margin-bottom: 0.65rem; }
+    .nonprofit-rate-body p { color: #44505A; font-size: 0.9rem; line-height: 1.6; }
+    .nonprofit-checks { margin-top: 0.85rem; list-style: none; display: grid; gap: 0.62rem; }
+    .nonprofit-checks li { position: relative; padding-left: 1.35rem; color: #34434B; font-size: 0.88rem; line-height: 1.52; }
+    .nonprofit-checks li::before { content: "✓"; position: absolute; left: 0; top: 0; color: var(--gold-dark); font-weight: 900; }
+    .nonprofit-exclusions { margin-top: 0.85rem; padding: 0.85rem; border: 1px solid rgba(200, 162, 74, 0.3); border-radius: 10px; background: rgba(246, 241, 232, 0.72); color: #4A565E; font-size: 0.84rem; line-height: 1.5; }
+    .nonprofit-exclusions strong { color: var(--night); }
+    .nonprofit-apply { display: grid; align-content: start; }
+    .nonprofit-apply-actions { display: flex; gap: 0.65rem; flex-wrap: wrap; margin-top: 1rem; }
+    .nonprofit-apply-actions a { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; padding: 0 1rem; border-radius: 7px; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.035em; text-transform: uppercase; }
+    .nonprofit-apply-actions .support-link { background: var(--night); color: var(--cream); border: 1px solid rgba(200, 162, 74, 0.35); }
+    .nonprofit-apply-actions .email-link { color: #6F4C14; border: 1px solid rgba(200, 162, 74, 0.55); background: rgba(246, 241, 232, 0.72); }
+    .nonprofit-timing { margin-top: 0.9rem; color: #6B6255; font-size: 0.78rem; line-height: 1.5; }
+    .stripe-fee-disclaimer { display: block; margin: 0 auto 2rem; width: min(1260px, calc(100% - 2rem)); padding: 0.9rem 1rem; border: 1px solid rgba(166, 159, 145, 0.28); border-radius: 10px; background: rgba(255, 253, 248, 0.86); color: #665F55; font-size: 0.76rem; line-height: 1.55; }
+    .stripe-fee-disclaimer a { color: #765D20; font-weight: 800; text-decoration: underline; text-underline-offset: 2px; }
+
     .parish-plus-addon { margin-top: 1.35rem; border: 1px solid rgba(200, 162, 74, 0.42); border-radius: 16px; overflow: hidden; background: #FFFDF8; box-shadow: 0 14px 34px rgba(6, 21, 34, 0.08); }
     .parish-plus-head { display: grid; grid-template-columns: minmax(280px, 0.9fr) minmax(360px, 1.1fr); gap: 1.5rem; align-items: center; padding: clamp(1.4rem, 3vw, 2.2rem); color: var(--cream); background: linear-gradient(110deg, #061522, #0B2130); }
     .parish-plus-kicker { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--gold); font-size: 0.72rem; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 0.6rem; }
@@ -296,7 +324,7 @@
       .tier-card--monastic { order: 5; }
       .tier-card--cathedral { order: 6; }
       .fee-banner, .lower-grid, .closing-cta { grid-template-columns: 1fr; }
-      .parish-plus-head, .parish-plus-body { grid-template-columns: 1fr; }
+      .parish-plus-head, .parish-plus-body, .nonprofit-rate-head, .nonprofit-rate-body { grid-template-columns: 1fr; }
       .parish-plus-price { justify-self: stretch; }
       .fee-split { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .fee-note { border-left: 0; border-top: 1px solid rgba(166, 159, 145, 0.24); padding: 1rem 0 0; }
@@ -315,6 +343,7 @@
       .fee-main { grid-template-columns: 1fr; }
       .fee-badge { width: 58px; height: 58px; font-size: 1.6rem; }
       .fee-split { grid-template-columns: 1fr; }
+      .nonprofit-rate-cards { grid-template-columns: 1fr; }
       .payment-method-grid { grid-template-columns: 1fr; }
       .calc-results { border-left: 0; border-top: 1px solid rgba(166, 159, 145, 0.24); }
       .closing-actions { min-width: 0; }
@@ -558,6 +587,53 @@
         </div>
       </aside>
 
+      <section class="nonprofit-rate-guide" aria-labelledby="stripe-nonprofit-title">
+        <div class="nonprofit-rate-head">
+          <div>
+            <div class="nonprofit-rate-kicker">Stripe nonprofit pricing</div>
+            <h2 id="stripe-nonprofit-title">Lower processing rates may be available for donation-first nonprofits.</h2>
+          </div>
+          <p>Stripe offers discounted processing to eligible U.S. nonprofit accounts used primarily for tax-deductible donations. Stripe reviews and approves eligibility directly; AGAPAY does not control these rates.</p>
+        </div>
+        <div class="nonprofit-rate-cards" aria-label="Stripe nonprofit processing rates">
+          <article class="nonprofit-rate-card">
+            <span>Standard cards</span>
+            <strong>2.2% + $0.30</strong>
+            <p>Eligible nonprofit donation pricing for standard U.S. credit-card gifts.</p>
+          </article>
+          <article class="nonprofit-rate-card">
+            <span>ACH bank transfer</span>
+            <strong>0.8%</strong>
+            <p>Capped at $5 per payment under Stripe&rsquo;s standard ACH pricing.</p>
+          </article>
+          <article class="nonprofit-rate-card">
+            <span>American Express</span>
+            <strong>3.5%</strong>
+            <p>AMEX is an exception and may process at this higher nonprofit card rate.</p>
+          </article>
+        </div>
+        <div class="nonprofit-rate-body">
+          <div class="nonprofit-eligibility">
+            <h3>Who qualifies?</h3>
+            <p>Your organization must be a registered nonprofit with valid tax documentation, and its Stripe account must be used primarily to receive donations.</p>
+            <ul class="nonprofit-checks">
+              <li><strong>Donation-volume requirement:</strong> at least 80% of Stripe payment volume must come from tax-deductible donations.</li>
+              <li><strong>Documentation:</strong> be ready to provide your EIN, IRS 501(c)(3) determination letter, Stripe account ID, and confirmation of donation volume.</li>
+            </ul>
+            <div class="nonprofit-exclusions"><strong>What does not count toward the 80% threshold:</strong> ticket sales, membership dues, tuition, registration fees, and auction payments. These transactions process at standard or separately applicable rates.</div>
+          </div>
+          <div class="nonprofit-apply">
+            <h3>Apply directly with Stripe.</h3>
+            <p>Sign in to the Stripe account connected to your parish and submit a nonprofit-pricing request through Stripe Support. You may also contact Stripe&rsquo;s nonprofit team by email.</p>
+            <div class="nonprofit-apply-actions">
+              <a class="support-link" href="https://support.stripe.com/questions/fee-discount-for-nonprofit-organizations" target="_blank" rel="noopener">Open Stripe&rsquo;s application guide</a>
+              <a class="email-link" href="mailto:nonprofit@stripe.com">Email nonprofit@stripe.com</a>
+            </div>
+            <p class="nonprofit-timing"><strong>AGAPAY recommends applying before active fundraising begins.</strong> Approval is not automatic, and you should not assume Stripe will apply discounted rates retroactively.</p>
+          </div>
+        </div>
+      </section>
+
       <div class="lower-grid" id="calculator">
         <section class="calculator" aria-label="Fee calculator">
           <div class="calc-controls">
@@ -646,7 +722,7 @@
           </article>
           <article class="faq">
             <button type="button" aria-expanded="false">How do card and bank fees work? <span>+</span></button>
-            <p>AGAPAY does not charge a donation fee. Every gift is processed by Stripe, and Stripe's own standard processing cost is the only fee involved &mdash; the same whether the donor pays by card or bank transfer. Donors can choose to cover that cost at checkout so the parish receives the full intended gift.</p>
+            <p>AGAPAY does not charge a donation fee. Stripe&rsquo;s processing rate depends on the payment method and your account&rsquo;s approved pricing. Eligible U.S. nonprofits may receive 2.2% + $0.30 standard-card donation pricing, while ACH is generally 0.8% capped at $5. Donors can choose to cover the processing cost at checkout.</p>
           </article>
           <article class="faq">
             <button type="button" aria-expanded="false">Does AGAPAY ever hold donated funds? <span>+</span></button>
@@ -688,7 +764,7 @@
       </section>
     </section>
     <aside class="stripe-fee-disclaimer" id="stripe-nonprofit-fee-disclaimer">
-      <strong>* Stripe nonprofit pricing disclaimer:</strong> Discounted donation transaction fees are subject to Stripe&rsquo;s review, approval, and ongoing determination. AGAPAY cannot guarantee eligibility or that Stripe will apply or maintain these rates.
+      <strong>* Stripe nonprofit pricing disclaimer:</strong> Rates and eligibility are determined by Stripe and may change. Discounted donation pricing is subject to Stripe&rsquo;s review, approval, supported payment methods, and ongoing determination. AGAPAY cannot guarantee eligibility or that Stripe will apply or maintain a particular rate. Review <a href="https://support.stripe.com/questions/fee-discount-for-nonprofit-organizations" target="_blank" rel="noopener">Stripe&rsquo;s current nonprofit requirements</a> and <a href="https://stripe.com/pricing" target="_blank" rel="noopener">payment-method pricing</a> before relying on an estimate.
     </aside>
   </main>
 <script>

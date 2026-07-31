@@ -620,6 +620,23 @@ body {
       <p class="contextual-hint">Funds are restricted and used only for the purpose named. Full transparency reporting provided to donors.</p>
     </div>
 
+    <!-- COMMEMORATION TYPE -->
+    <div class="names-section hidden reveal reveal-delay-1" id="commemorationKindSection">
+      <div class="section-label">Step 2 — Choose a commemoration</div>
+      <div class="commemoration-kind-options" role="radiogroup" aria-label="Type of commemoration">
+        <label class="commemoration-kind-option selected" onclick="selectCommemorationKind(this)">
+          <input type="radio" name="commemorationKind" value="proskomedia_liturgy" checked>
+          <span class="commemoration-kind-name">Liturgical commemoration</span>
+          <span class="commemoration-kind-copy">At the Proskomedia and Divine Liturgy · suggested offering $1</span>
+        </label>
+        <label class="commemoration-kind-option" onclick="selectCommemorationKind(this)">
+          <input type="radio" name="commemorationKind" value="molieben_panikhida">
+          <span class="commemoration-kind-name">Molieben (Paraklesis) &amp; Panikhida (Parastas)</span>
+          <span class="commemoration-kind-copy">Prayer service for the living or memorial service for the departed · suggested offering $25</span>
+        </label>
+      </div>
+    </div>
+
     <!-- AMOUNT -->
     <div class="amount-section reveal reveal-delay-1" id="genericAmountSection">
       <div class="section-label" id="amountStepLabel">Step 2 — Choose an amount</div>
@@ -631,7 +648,7 @@ body {
       </div>
       <div class="custom-amount-wrap">
         <span class="custom-amount-symbol">$</span>
-        <input type="number" class="custom-amount-input" id="customAmount" placeholder="Other amount" min="1" step="1" aria-label="Custom amount" />
+        <input type="number" class="custom-amount-input" id="customAmount" placeholder="Other amount" min="1" step="0.01" aria-label="Custom amount" />
       </div>
     </div>
 
@@ -665,18 +682,6 @@ body {
     <!-- NAMES / INTENTION -->
     <div class="names-section hidden reveal reveal-delay-2" id="namesSection">
       <div class="section-label">Names for commemoration</div>
-      <div class="commemoration-kind-options" role="radiogroup" aria-label="Type of commemoration">
-        <label class="commemoration-kind-option selected" onclick="selectCommemorationKind(this)">
-          <input type="radio" name="commemorationKind" value="proskomedia_liturgy" checked>
-          <span class="commemoration-kind-name">Liturgical commemoration</span>
-          <span class="commemoration-kind-copy">At the Proskomedia and Divine Liturgy</span>
-        </label>
-        <label class="commemoration-kind-option" onclick="selectCommemorationKind(this)">
-          <input type="radio" name="commemorationKind" value="molieben_panikhida">
-          <span class="commemoration-kind-name">Molieben (Paraklesis) &amp; Panikhida (Parastas)</span>
-          <span class="commemoration-kind-copy">Prayer service for the living or memorial service for the departed</span>
-        </label>
-      </div>
       <p class="names-intro" id="commemorationKindIntro">These names will be <strong>transmitted directly to the priest</strong> for commemoration at the Proskomedia and Divine Liturgy. Enter one name per line.</p>
       <div class="names-tabs" role="group" aria-label="Living or departed">
         <button class="names-tab active" data-tab="living" onclick="selectNamesTab(this)">For the living</button>
@@ -813,6 +818,7 @@ body {
   <script>
     let selectedType = 'stewardship';
     let selectedAmount = 50;
+    let amountManuallyEdited = false;
     let selectedFreq = 'once';
     let selectedPaymentMethod = 'card';
     let feeCovered = true;
@@ -891,6 +897,7 @@ body {
 
     // GIFT TYPE
     function selectGiftType(card) {
+      const previousType = selectedType;
       document.querySelectorAll('.gift-type-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
       selectedType = card.dataset.type;
@@ -904,6 +911,7 @@ body {
       const needsMemorial = selectedType === 'feast' || selectedType === 'funds';
 
       document.getElementById('namesSection').classList.toggle('hidden', !needsNames);
+      document.getElementById('commemorationKindSection').classList.toggle('hidden', !needsNames);
       document.getElementById('frequencySection').style.display = needsFreq ? 'block' : 'none';
       document.getElementById('feastSection').classList.toggle('hidden', !needsFeast);
       document.getElementById('fundsSection').classList.toggle('hidden', !needsFunds);
@@ -918,9 +926,13 @@ body {
         recalcCandleTotal();
       }
 
+      if (needsNames && previousType !== selectedType && !amountManuallyEdited) {
+        applyCommemorationDefaultAmount();
+      }
+
       // Step numbering
       const hasExtra = needsFreq || needsNames || needsFeast || needsFunds || needsCampaign || needsMemorial;
-      document.getElementById('amountStepLabel').textContent = hasExtra ? 'Step 2 — Choose an amount' : 'Step 2 — Choose an amount';
+      document.getElementById('amountStepLabel').textContent = needsNames ? 'Step 3 — Choose an amount' : 'Step 2 — Choose an amount';
       document.getElementById('donorStepLabel').textContent = hasExtra ? 'Step 4 — Your information' : 'Step 3 — Your information';
 
       updateSummary();
@@ -932,9 +944,18 @@ body {
       const input = label.querySelector('input[name="commemorationKind"]');
       if (input) input.checked = true;
       const isService = input?.value === 'molieben_panikhida';
+      if (!amountManuallyEdited) applyCommemorationDefaultAmount();
       document.getElementById('commemorationKindIntro').innerHTML = isService
         ? 'These names will be <strong>transmitted directly to the priest</strong> for a Molieben (Paraklesis) for the living or a Panikhida (Parastas) for the departed. Enter one name per line.'
         : 'These names will be <strong>transmitted directly to the priest</strong> for commemoration at the Proskomedia and Divine Liturgy. Enter one name per line.';
+    }
+
+    function applyCommemorationDefaultAmount() {
+      const kind = document.querySelector('input[name="commemorationKind"]:checked')?.value;
+      selectedAmount = kind === 'molieben_panikhida' ? 25 : 1;
+      document.querySelectorAll('.preset-btn').forEach(button => button.classList.remove('selected'));
+      document.getElementById('customAmount').value = String(selectedAmount);
+      updateSummary();
     }
 
     // FUND SELECTION
@@ -1181,6 +1202,7 @@ body {
 
     // AMOUNT
     function selectAmount(btn) {
+      amountManuallyEdited = true;
       document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       selectedAmount = parseFloat(btn.dataset.amount);
@@ -1189,6 +1211,7 @@ body {
     }
 
     document.getElementById('customAmount').addEventListener('input', function() {
+      amountManuallyEdited = true;
       document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('selected'));
       selectedAmount = parseFloat(this.value) || 0;
       updateSummary();

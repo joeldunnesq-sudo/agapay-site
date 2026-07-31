@@ -561,6 +561,23 @@ const donorGiftTypeCopy = {
   }
 };
 
+let donorGiftAmountEdited = false;
+let activeDonorGiftType = "";
+
+function markDonorGiftAmountEdited() {
+  donorGiftAmountEdited = true;
+}
+
+function syncDonorCommemorationAmount(kind, options = {}) {
+  const amountInput = document.getElementById("amount");
+  if (!amountInput) return;
+  const nextDefault = kind === "molieben_panikhida" ? "25" : "1";
+  const previousDefault = amountInput.dataset.commemorationDefault || "";
+  const shouldApply = options.force || !donorGiftAmountEdited || !amountInput.value || amountInput.value === previousDefault;
+  amountInput.dataset.commemorationDefault = nextDefault;
+  if (shouldApply) amountInput.value = nextDefault;
+}
+
 function donorNavIcon(kind) {
   const sharedKind = kind === "giving" ? "give" : kind === "marketplace" ? "market" : kind;
   if (window.MyAgapayShell?.icons?.[sharedKind]) return window.MyAgapayShell.icons[sharedKind];
@@ -1390,12 +1407,9 @@ function applyDonorGiveParams() {
   const isQuick = params.get("quick") === "1";
   const parishSelect = document.getElementById("parish");
   const giftTypeSelect = document.getElementById("giftType");
-  const frequencySelect = document.getElementById("frequency");
   if (parish && parishSelect) parishSelect.value = parish;
   if (giftType && giftTypeSelect) giftTypeSelect.value = giftType;
-  if (frequency && frequencySelect && Array.from(frequencySelect.options).some((option) => option.value === frequency)) {
-    frequencySelect.value = frequency;
-  }
+  setDonorGiftFrequency(frequency || document.getElementById("frequency")?.value || "once");
   toggleGiftDetailFields();
   if (params.get("campaign") && document.getElementById("campaign")) {
     document.getElementById("campaign").value = params.get("campaign");
@@ -1425,9 +1439,31 @@ function applyDonorGiveParams() {
   if (card) {
     window.requestAnimationFrame(() => {
       card.scrollIntoView({ behavior: "smooth", block: "start" });
-      document.getElementById("amount")?.focus({ preventScroll: true });
+      const firstField = giftType === "commemoration"
+        ? document.querySelector('input[name="commemorationKind"]:checked')
+        : document.getElementById("amount");
+      firstField?.focus({ preventScroll: true });
     });
   }
+}
+
+function setDonorGiftFrequency(value = "once") {
+  const frequencyInput = document.getElementById("frequency");
+  const recurringSelect = document.getElementById("recurringFrequency");
+  const recurringField = document.getElementById("recurringFrequencyField");
+  if (!frequencyInput) return;
+  const recurringValues = new Set(["weekly", "biweekly", "monthly"]);
+  const requested = String(value || "once").toLowerCase();
+  const recurring = requested === "recurring" || recurringValues.has(requested);
+  if (recurringValues.has(requested) && recurringSelect) recurringSelect.value = requested;
+  const cadence = recurringSelect?.value || "monthly";
+  frequencyInput.value = recurring ? cadence : "once";
+  if (recurringField) recurringField.hidden = !recurring;
+  document.querySelectorAll("[data-gift-frequency-mode]").forEach((button) => {
+    const active = button.dataset.giftFrequencyMode === (recurring ? "recurring" : "once");
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
 }
 
 function toggleCandleIntentionFields() {
@@ -1437,6 +1473,7 @@ function toggleCandleIntentionFields() {
 function toggleGiftDetailFields() {
   const giftTypeSelect = document.getElementById("giftType");
   let giftType = normalizeDonorGiftType(giftTypeSelect?.value);
+  const giftTypeChanged = giftType !== activeDonorGiftType;
   const parish = selectedPublicParish();
   updateGivingTierTiles(parish);
   if (giftTypeSelect) {
@@ -1452,13 +1489,20 @@ function toggleGiftDetailFields() {
   }
   populateGiftOptionFields();
   const candleFields = document.getElementById("candleIntentionFields");
+  const commemorationKindFields = document.getElementById("commemorationKindFields");
   const commemorationFields = document.getElementById("commemorationIntentionFields");
   const fundFields = document.getElementById("fundFields");
   const campaignFields = document.getElementById("campaignFields");
   if (candleFields) candleFields.hidden = giftType !== "candles";
+  if (commemorationKindFields) commemorationKindFields.hidden = giftType !== "commemoration";
   if (commemorationFields) commemorationFields.hidden = giftType !== "commemoration";
   if (fundFields) fundFields.hidden = giftType !== "fund";
   if (campaignFields) campaignFields.hidden = !["campaign", "feast"].includes(giftType);
+  if (giftType === "commemoration") {
+    const kind = document.querySelector('input[name="commemorationKind"]:checked')?.value || "proskomedia_liturgy";
+    syncDonorCommemorationAmount(kind, { force: giftTypeChanged && !donorGiftAmountEdited });
+  }
+  activeDonorGiftType = giftType;
   renderCampaignChoicePreview(["campaign", "feast"].includes(giftType) ? selectedCampaign() : null);
 }
 
@@ -4259,7 +4303,7 @@ function renderBookstoreProducts(products = []) {
   const container = document.getElementById("bookstoreProductCatalog");
   if (!container) return;
   if (!products.length) {
-    container.innerHTML = '<div class="notice">No parish products yet. Enter or scan an item below and it will be added to the parish catalog after checkout starts.</div>';
+    container.innerHTML = '<div class="notice">No parish products yet. Scan a book below and, after purchase, it will be added to the parish catalog for other parishioners.</div>';
     return;
   }
 

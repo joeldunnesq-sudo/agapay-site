@@ -359,6 +359,43 @@ await checkAsync("checkout: admin-authorized demo creates a no-card trial that c
   }
 });
 
+await checkAsync("checkout: trusted parish introductory demo creates a 30-day no-card trial", async () => {
+  let checkoutBody = "";
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options = {}) => {
+    if (String(url).includes("/v1/checkout/sessions")) {
+      checkoutBody = String(options.body || "");
+      return { ok: true, json: async () => ({ id: "cs_parish_intro", url: "https://checkout.stripe.com/parish-intro" }) };
+    }
+    throw new Error("Unexpected fetch: " + url);
+  };
+  try {
+    const registration = {
+      status: "verified", subscriptionTier: "parish", taxReadinessStatus: "tax_ready_for_checkout",
+      stripeCustomerId: "cus_existing", parishName: "St. Nicholas", ...COMPLETE_ADDRESS
+    };
+    const response = await createSubscriptionCheckoutForRegistration({
+      request: fakeRequest,
+      env: { STRIPE_SECRET_KEY: "sk_test_fake" },
+      reference: "canonical-parish-ref",
+      registration,
+      body: { subscriptionTier: "parish", trialDays: 90 },
+      introductoryTrialDays: 30,
+      saveRegistrationRecord: noopSave
+    });
+    const payload = await response.json();
+    const params = new URLSearchParams(checkoutBody);
+    assert.equal(response.status, 201);
+    assert.equal(payload.registration.subscriptionStatus, "trial_checkout_created");
+    assert.equal(payload.registration.subscriptionTrialDays, 30);
+    assert.equal(params.get("payment_method_collection"), "if_required");
+    assert.equal(params.get("subscription_data[trial_period_days]"), "30");
+    assert.equal(params.get("subscription_data[trial_settings][end_behavior][missing_payment_method]"), "cancel");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 await checkAsync("checkout: parish-supplied trialDays cannot create a free trial", async () => {
   let checkoutBody = "";
   const originalFetch = globalThis.fetch;

@@ -616,13 +616,17 @@ export async function processStripeWebhookEvent(env, event) {
 
     const reference = object.metadata?.agapay_reference || object.client_reference_id || "";
     const trialDays = Math.max(0, Number(object.metadata?.agapay_trial_days || 0));
+    const activatedAt = new Date().toISOString();
     await updateSubscriptionRecord(env, reference, {
       subscriptionStatus: trialDays ? "trialing" : "active",
       subscriptionTrialDays: trialDays,
       stripeCustomerId: object.customer || "",
       stripeSubscriptionId: object.subscription || "",
       stripeSubscriptionCheckoutSessionId: object.id || "",
-      subscriptionActivatedAt: new Date().toISOString()
+      subscriptionActivatedAt: activatedAt,
+      subscriptionIntroDemoRedeemedAt: trialDays ? activatedAt : "",
+      subscriptionTrialStartedAt: trialDays ? activatedAt : "",
+      subscriptionTrialEndsAt: trialDays ? new Date(Date.now() + trialDays * 86400000).toISOString() : ""
     });
   }
 

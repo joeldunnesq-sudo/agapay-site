@@ -339,7 +339,15 @@
   }
 
   function statusLabel(value) {
-    return String(value || 'active')
+    const normalized = String(value || 'active').toLowerCase();
+    const subscriptionLabels = {
+      trialing: 'Free demo',
+      trial_checkout_created: 'Demo setup started',
+      checkout_created: 'Checkout started',
+      free_forever: 'Free forever'
+    };
+    if (subscriptionLabels[normalized]) return subscriptionLabels[normalized];
+    return normalized
       .replace(/_/g, ' ')
       .replace(/\b[a-z]/g, c => c.toUpperCase());
   }
@@ -5036,25 +5044,27 @@
       const items = (o.items || []).map(it =>
         `<li><span>${escapeHtml(it.name)}${it.quantity > 1 ? ` <em>×${it.quantity}</em>` : ''}</span><span>${moneyFull(it.totalCents)}</span></li>`).join('');
       const refunded = o.paymentStatus === 'refunded' || o.paymentStatus === 'partially_refunded';
+      const inventoryAttention = Boolean(o.inventoryAttention);
       return `
-        <div class="bk-order${refunded ? ' is-refunded' : ''}">
+        <div class="bk-order${refunded ? ' is-refunded' : ''}${inventoryAttention ? ' needs-inventory-attention' : ''}">
           <button class="bk-order-head" type="button" onclick="this.closest('.bk-order').classList.toggle('is-open')">
             <div class="bk-order-buyer">
               <div class="bk-order-avatar">${escapeHtml(bkInitials(o.donorName))}</div>
               <div>
-                <strong>${escapeHtml(o.donorName)}${o.isMyAgapay ? '<span class="bk-tag">My AGAPAY</span>' : ''}</strong>
+                <strong>${escapeHtml(o.donorName)}${o.isMyAgapay ? '<span class="bk-tag">My AGAPAY</span>' : ''}${inventoryAttention ? '<span class="bk-tag bk-tag--danger">Stock attention</span>' : ''}</strong>
                 <span class="bk-order-sub">${escapeHtml(o.summary)}${o.quantity > 1 ? ` · ${o.quantity} items` : ''}</span>
               </div>
             </div>
             <div class="bk-order-side">
               <div class="bk-order-amounts"><b>${moneyFull(o.grossCents)}</b><span>net ${moneyFull(o.netCents)}</span></div>
-              <div class="bk-order-tags">${bkPaymentPill(o.paymentStatus)}${bkFulfillPill(o.fulfillmentStatus)}</div>
+              <div class="bk-order-tags">${inventoryAttention ? '<span class="bk-pill bk-pill--danger">Stock attention</span>' : ''}${bkPaymentPill(o.paymentStatus)}${bkFulfillPill(o.fulfillmentStatus)}</div>
               <span class="bk-order-date">${dateLabel}</span>
               <svg class="bk-order-caret" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m3 5 3 3 3-3"/></svg>
             </div>
           </button>
           <div class="bk-order-detail">
             <div class="bk-order-detail-inner">
+              ${inventoryAttention ? `<div class="bk-inventory-alert"><strong>Paid past available stock</strong><span>This order needs treasurer review. Confirm the count, arrange a backorder, or refund the donor as appropriate.</span></div>` : ''}
               <div class="bk-order-detail-meta">
                 <span>${escapeHtml(o.donorEmail)}</span>
                 ${o.orderNumber ? `<span>#${escapeHtml(o.orderNumber)}</span>` : ''}
@@ -7694,6 +7704,23 @@
 
   // ── SETUP WIZARD ─────────────────────────────────────────
   function tierPriceLabel(tier) { if(!tier) return ''; if(tier.monthlyCents===null) return 'Custom'; if(Number(tier.monthlyCents)===0) return '$0/mo'; return `${money(tier.monthlyCents)}/mo`; }
+  function subscriptionDemoActive(parish = currentParish) { return String(parish?.subscriptionStatus || '').toLowerCase() === 'trialing'; }
+  function subscriptionDemoEnd(parish = currentParish) {
+    const explicit = new Date(parish?.subscriptionTrialEndsAt || '');
+    if (!Number.isNaN(explicit.getTime())) return explicit;
+    const started = new Date(parish?.subscriptionTrialStartedAt || parish?.subscriptionActivatedAt || '');
+    const days = Number(parish?.subscriptionTrialDays || 0);
+    if (!Number.isNaN(started.getTime()) && days > 0) return new Date(started.getTime() + days * 86400000);
+    return null;
+  }
+  function subscriptionDemoDateLabel(parish = currentParish) {
+    const end = subscriptionDemoEnd(parish);
+    return end ? end.toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' }) : '';
+  }
+  function subscriptionDemoDaysRemaining(parish = currentParish) {
+    const end = subscriptionDemoEnd(parish);
+    return end ? Math.max(0, Math.ceil((end.getTime() - Date.now()) / 86400000)) : Number(parish?.subscriptionTrialDays || 30);
+  }
   function tierOptionsMarkup(selectedId) {
     const tiers = currentParish?.subscriptionTiers || [];
     return tiers.map(t => `<option value="${escapeHtml(t.id)}" ${t.id===selectedId?'selected':''}>${escapeHtml(t.label)} - ${escapeHtml(tierPriceLabel(t))}</option>`).join('');
@@ -7710,6 +7737,8 @@
         currentParish.subscriptionStatus = data.subscriptionStatus;
         currentParish.stripeSubscriptionId = data.stripeSubscriptionId || currentParish.stripeSubscriptionId || '';
         currentParish.stripeCustomerId = data.stripeCustomerId || currentParish.stripeCustomerId || '';
+        currentParish.subscriptionTrialStartedAt = data.subscriptionTrialStartedAt || currentParish.subscriptionTrialStartedAt || '';
+        currentParish.subscriptionTrialEndsAt = data.subscriptionTrialEndsAt || currentParish.subscriptionTrialEndsAt || '';
         currentParish.setup = {
           ...(currentParish.setup || {}),
           billingActive: billingStatusDone(data.subscriptionStatus)
@@ -7744,7 +7773,10 @@
     const setup=currentParish.setup||{}; const stripeDone=Boolean(setup.stripeConnected); const billingDone=Boolean(setup.billingActive);
     if(stripeDone&&billingDone){pane.innerHTML='';return;}
     const tierOptions=tierOptionsMarkup(currentParish.subscriptionTier);
-    pane.innerHTML=`<div class="setup-wizard-card"><div class="setup-wizard-body"><div><div class="setup-title">First-time setup</div><p class="setup-copy">Choose the parish's AGAPAY tier first, then connect Stripe so gifts can be received through the platform.</p><div class="setup-steps"><div class="setup-step done">${setupCheckMarkup()}<div><strong>1. Contact info verified</strong><span>Your registration has already supplied the parish contact details.</span></div></div><div class="setup-step ${billingDone?'done':''}">${setupCheckMarkup()}<div><strong>2. Select tier and billing</strong><span>${billingDone?'AGAPAY subscription billing is active.':'Choose the parish tier and complete billing checkout.'}</span></div></div><div class="setup-step ${stripeDone?'done':''}">${setupCheckMarkup()}<div><strong>3. Connect Stripe</strong><span>${stripeDone?'Stripe is connected for parish giving.':billingDone?'Create a Stripe onboarding link and complete the account setup.':'Stripe setup unlocks after billing is active.'}</span></div></div></div></div><div class="setup-action-panel">${billingDone?'':`<label for="setupSubscriptionTier">AGAPAY tier</label><select id="setupSubscriptionTier">${tierOptions}</select><button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startSubscriptionCheckout(this)">Start billing checkout</button><p class="setup-copy setup-action-copy">After billing is active, you will connect Stripe so the parish can receive donations.</p>`}${billingDone&&!stripeDone?'<button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startStripeOnboarding(this)">Connect Stripe</button>':''}<div class="setup-link-box" id="setupLinkBox"><a id="setupActionLink" href="#" target="_blank" rel="noopener">Open setup link</a><p id="setupLinkHelp"></p></div></div></div></div>`;
+    const demoEligible=Boolean(currentParish.subscriptionIntroDemoEligible);
+    const pendingDemo=currentParish.subscriptionStatus==='trial_checkout_created';
+    const freeDemoPath=demoEligible||pendingDemo;
+    pane.innerHTML=`<div class="setup-wizard-card"><div class="setup-wizard-body"><div><div class="setup-title">${freeDemoPath?'First-time setup':'Continue with AGAPAY'}</div><p class="setup-copy">${freeDemoPath?'Start with a free 30-day AGAPAY demo, then connect Stripe so the parish can receive gifts.':'Your free demo has ended. Choose a tier and add billing information to restore subscription access.'}</p><div class="setup-steps"><div class="setup-step done">${setupCheckMarkup()}<div><strong>1. Contact info verified</strong><span>Your canonical parish registration has been verified.</span></div></div><div class="setup-step done">${setupCheckMarkup()}<div><strong>2. Choose your ${freeDemoPath?'demo ':''}tier</strong><span>${escapeHtml(currentParish.subscriptionTierLabel || currentParish.subscriptionTier || 'Your selected tier')} determines which tools are available.</span></div></div><div class="setup-step ${billingDone?'done':''}">${setupCheckMarkup()}<div><strong>3. ${freeDemoPath?'Start the free demo':'Activate the subscription'}</strong><span>${billingDone?'Your free demo is active. No card was required.':pendingDemo?'Finish the no-card demo confirmation to activate AGAPAY.':demoEligible?'Confirm the free 30-day demo. No card is required.':'Add billing information to continue with the selected tier.'}</span></div></div><div class="setup-step ${stripeDone?'done':''}">${setupCheckMarkup()}<div><strong>4. Connect Stripe for donations</strong><span>${stripeDone?'Stripe is connected for parish giving.':billingDone?'Connect the parish payout account. This is separate from AGAPAY billing.':freeDemoPath?'Donation setup unlocks after the demo begins.':'Donation setup remains separate from the AGAPAY subscription.'}</span></div></div></div></div><div class="setup-action-panel">${billingDone?'':`<label for="setupSubscriptionTier">AGAPAY ${freeDemoPath?'demo ':''}tier</label><select id="setupSubscriptionTier">${tierOptions}</select><button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startSubscriptionCheckout(this)">${pendingDemo?'Continue demo setup':demoEligible?'Start free 30-day demo':'Activate subscription'}</button><p class="setup-copy setup-action-copy">${freeDemoPath?'No card required. You will add billing information only if you choose to continue after the demo.':'Secure checkout collects the billing information needed to reactivate AGAPAY.'}</p>`}${billingDone&&!stripeDone?'<button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startStripeOnboarding(this)">Connect Stripe for donations</button><p class="setup-copy setup-action-copy">This asks for parish payout and organization details—not payment for AGAPAY.</p>':''}<div class="setup-link-box" id="setupLinkBox"><a id="setupActionLink" href="#" target="_blank" rel="noopener">${freeDemoPath?'Open free demo setup':'Open subscription setup'}</a><p id="setupLinkHelp"></p></div></div></div></div>`;
   }
 
   // Dashboard-homepage "Your Subscription" panel: current plan, modules
@@ -7758,7 +7790,11 @@
     const ent = p.entitlements || {};
     const modules = ent.modules || {};
     const tierLabel = p.subscriptionTierLabel || 'Parish';
-    const priceLabel = p.subscriptionMonthlyCents === 0 ? 'Free forever' : p.subscriptionMonthlyCents ? (money(p.subscriptionMonthlyCents) + '/mo') : 'Custom pricing';
+    const demoActive = subscriptionDemoActive(p);
+    const demoEndLabel = subscriptionDemoDateLabel(p);
+    const demoDays = subscriptionDemoDaysRemaining(p);
+    const standardPriceLabel = p.subscriptionMonthlyCents === 0 ? 'Free forever' : p.subscriptionMonthlyCents ? (money(p.subscriptionMonthlyCents) + '/mo') : 'Custom pricing';
+    const priceLabel = demoActive ? `${demoDays} day${demoDays===1?'':'s'} remaining` : standardPriceLabel;
     const billingActive = Boolean(p.setup?.billingActive);
     const stripeConnected = Boolean(p.setup?.stripeConnected);
 
@@ -7777,15 +7813,15 @@
     body.innerHTML = `
       <div class="pdx-sub-plan">
         <div class="pdx-sub-plan-glow" aria-hidden="true"></div>
-        <div class="pdx-sub-plan-kicker">Current plan</div>
+        <div class="pdx-sub-plan-kicker">${demoActive?'Free 30-day demo':'Current plan'}</div>
         <div class="pdx-sub-plan-name">${escapeHtml(tierLabel)}</div>
-        <div class="pdx-sub-plan-price">${escapeHtml(priceLabel)} <span>Simple monthly subscription</span></div>
-        <p class="pdx-sub-plan-copy">Your plan controls which parish tools are ready now. Giving deposits continue to flow directly through your connected Stripe account.</p>
+        <div class="pdx-sub-plan-price">${escapeHtml(priceLabel)} <span>${demoActive?`Then ${escapeHtml(standardPriceLabel)}`:'Simple monthly subscription'}</span></div>
+        <p class="pdx-sub-plan-copy">${demoActive?`No card is required during your demo${demoEndLabel?`, which runs through ${escapeHtml(demoEndLabel)}`:''}. Add billing information before it ends only if you want to continue.`:'Your plan controls which parish tools are ready now. Giving deposits continue to flow directly through your connected Stripe account.'}</p>
         <div class="pdx-sub-status-row">
-          ${statusChip(billingActive ? 'Billing active' : 'Billing not started', billingActive)}
+          ${statusChip(demoActive ? 'Free demo active' : billingActive ? 'Billing active' : 'Billing not started', billingActive)}
           ${statusChip(stripeConnected ? 'Stripe connected' : 'Stripe not connected', stripeConnected)}
         </div>
-        <button class="pdx-sub-plan-action" type="button" onclick="switchTab('settings')">${ent.parishPlusIncludedInTier ? 'Manage subscription' : 'Explore upgrade options'}<span aria-hidden="true">→</span></button>
+        <button class="pdx-sub-plan-action" type="button" onclick="switchTab('settings')">${demoActive?'Add billing details or manage demo':ent.parishPlusIncludedInTier ? 'Manage subscription' : 'Explore upgrade options'}<span aria-hidden="true">→</span></button>
       </div>
       <div class="pdx-sub-modules">
         <div class="pdx-sub-modules-head"><div><span>Plan access</span><strong>Included parish tools</strong></div><button type="button" onclick="switchTab('settings')">Compare tiers</button></div>
@@ -7899,6 +7935,9 @@
     updateStarterPaywalls();
 
     const billingActive = Boolean((p.setup||{}).billingActive);
+    const demoActive = subscriptionDemoActive(p);
+    const demoEligible = Boolean(p.subscriptionIntroDemoEligible);
+    const demoEndLabel = subscriptionDemoDateLabel(p);
     const tierOptions = tierOptionsMarkup(p.subscriptionTier);
     document.getElementById('settingsPane').innerHTML = `
       <div class="form-grid">
@@ -7985,13 +8024,15 @@
         <div class="form-group"><label class="form-label">Billing status</label><input value="${escapeHtml(statusLabel(p.subscriptionStatus || 'not_started'))}" disabled /></div>
         <div class="form-group full"><label class="form-label" for="subscriptionTierUpgrade">Change AGAPAY tier</label><select id="subscriptionTierUpgrade">${tierOptions}</select></div>
       </div>
-      <p class="section-note">${p.parishId === 'st-fiacre' ? 'Demo mode: switch tiers instantly to show churches how AGAPAY changes at each level. No Stripe billing is changed.' : billingActive ? "Choose a tier here to update the existing AGAPAY subscription. Use Stripe's secure billing portal for payment details or cancellation." : 'Choose a tier and complete billing checkout. Stewardship unlocks pledge and giving-health tools; Parish adds the complete operations suite.'}</p>
+      <p class="section-note">${p.parishId === 'st-fiacre' ? 'Demo mode: switch tiers instantly to show churches how AGAPAY changes at each level. No Stripe billing is changed.' : demoActive ? `Your free 30-day demo is active${demoEndLabel?` through ${escapeHtml(demoEndLabel)}`:''}. No card is required during the demo. Add billing information in the secure portal only if you want to continue afterward.` : billingActive ? "Choose a tier here to update the existing AGAPAY subscription. Use Stripe's secure billing portal for payment details or cancellation." : demoEligible ? 'Choose a tier and start the free 30-day demo. No card is required. Stewardship unlocks pledge and giving-health tools; Parish adds the complete operations suite.' : 'Choose a tier and complete subscription checkout to reactivate AGAPAY.'}</p>
       <div class="btn-row">
         ${p.parishId === 'st-fiacre'
           ? '<button class="btn btn-gold" onclick="changeDemoTier(this)">Apply demo tier</button>'
+          : demoActive
+          ? '<button class="btn btn-gold" onclick="startSubscriptionCheckout(this, \'subscriptionTierUpgrade\')">Apply demo tier change</button><button class="btn btn-ghost" onclick="openSubscriptionPortal(this)">Add billing details or cancel</button>'
           : billingActive
           ? '<button class="btn btn-gold" onclick="startSubscriptionCheckout(this, \'subscriptionTierUpgrade\')">Apply tier change</button><button class="btn btn-ghost" onclick="openSubscriptionPortal(this)">Manage payment details or cancel</button>'
-          : '<button class="btn btn-gold" onclick="startSubscriptionCheckout(this, \'subscriptionTierUpgrade\')">Start tier checkout</button>'}
+          : `<button class="btn btn-gold" onclick="startSubscriptionCheckout(this, 'subscriptionTierUpgrade')">${demoEligible?'Start free 30-day demo':'Start tier checkout'}</button>`}
       </div>
       <div class="setup-link-box" id="subscriptionUpgradeLinkBox"><a id="subscriptionUpgradeLink" href="#" target="_blank" rel="noopener">Open billing checkout</a><p id="subscriptionUpgradeHelp"></p></div>
       <div class="section-divider"><span>Stripe account</span></div>
@@ -9182,6 +9223,7 @@
   // ── SUBSCRIPTION CHECKOUT ─────────────────────────────────
   async function startSubscriptionCheckout(btn, tierSelectId) {
     if (!currentParish) return;
+    const startingFreeDemo = Boolean(currentParish.subscriptionIntroDemoEligible) || currentParish.subscriptionStatus === 'trial_checkout_created';
     const win = window.open('','_blank'); if (win) win.opener = null;
     if (btn){btn.classList.add('loading');btn.disabled=true;}
     try {
@@ -9193,9 +9235,9 @@
       const sb=tierSelectId ? (document.getElementById('subscriptionUpgradeLinkBox') || document.getElementById('setupLinkBox')) : (document.getElementById('setupLinkBox') || document.getElementById('subscriptionUpgradeLinkBox'));
       const sl=tierSelectId ? (document.getElementById('subscriptionUpgradeLink') || document.getElementById('setupActionLink')) : (document.getElementById('setupActionLink') || document.getElementById('subscriptionUpgradeLink'));
       const sh=tierSelectId ? (document.getElementById('subscriptionUpgradeHelp') || document.getElementById('setupLinkHelp')) : (document.getElementById('setupLinkHelp') || document.getElementById('subscriptionUpgradeHelp'));
-      if(sb&&sl){sl.href=data.checkoutUrl;sl.textContent='Open billing checkout';sb.classList.add('visible');if(sh)sh.textContent=win?'Billing checkout opened in a new tab.':'Your browser blocked the new tab. Use this link.';}
+      if(sb&&sl){sl.href=data.checkoutUrl;sl.textContent=startingFreeDemo?'Open free demo setup':'Open billing checkout';sb.classList.add('visible');if(sh)sh.textContent=win?(startingFreeDemo?'Free demo setup opened in a new tab. No card is required.':'Billing checkout opened in a new tab.'):'Your browser blocked the new tab. Use this link.';}
       if(win) win.location.href=data.checkoutUrl;
-      setStatus(win?'Subscription checkout opened in a new tab.':'Checkout created.','success');
+      setStatus(win?(startingFreeDemo?'Free demo setup opened in a new tab.':'Subscription checkout opened in a new tab.'):(startingFreeDemo?'Free demo setup is ready.':'Checkout created.'),'success');
     } catch(err){if(win)win.close();setStatus(err.message,'error');}
     finally{if(btn){btn.classList.remove('loading');btn.disabled=false;}}
   }

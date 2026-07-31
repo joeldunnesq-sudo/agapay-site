@@ -1272,7 +1272,7 @@ export async function handleDonorBookstoreRequestFeature(request, env) {
   return json({ ok: true, alreadySent: false });
 }
 
-async function normalizeBookstoreCartItems(env, parishId, items) {
+export async function normalizeBookstoreCartItems(env, parishId, items) {
   const normalized = [];
   for (const raw of items) {
     const productId = String(raw.productId || "").trim();
@@ -1294,8 +1294,10 @@ async function normalizeBookstoreCartItems(env, parishId, items) {
       `, parishId, productId, productId, variantId, variantId);
       if (!row) throw new Error("One of the selected products is no longer available.");
       const product = normalizeBookstoreProduct(row);
-      if (product.trackInventory && product.stockQuantity > 0 && quantity > product.stockQuantity) {
-        throw new Error(`${product.name} only has ${product.stockQuantity} available.`);
+      if (product.trackInventory && quantity > product.stockQuantity) {
+        throw new Error(product.stockQuantity <= 0
+          ? `${product.name} is currently out of stock.`
+          : `${product.name} only has ${product.stockQuantity} available.`);
       }
       normalized.push({
         source: "catalog",
@@ -1340,85 +1342,6 @@ async function normalizeBookstoreCartItems(env, parishId, items) {
   if (!normalized.length) throw new Error("Add at least one item before checkout.");
   if (normalized.length > 20) throw new Error("Checkout can include up to 20 items at a time.");
   return normalized;
-}
-
-async function ensureBookstoreCatalogProductFromOrderItem(env, parishId, item, now) {
-  if (item.productId || !d1(env)) return item;
-  const sku = String(item.sku || item.barcode || "").trim();
-  let existing = null;
-  if (sku) {
-    existing = await d1First(env, `
-      SELECT p.id, p.name, p.description, p.item_category, p.default_sku, p.default_tax_code,
-             p.fulfillment_type, p.image_url,
-             v.id AS variant_id, v.sku, v.barcode, v.unit_price_cents, v.tax_code,
-             v.fulfillment_type AS variant_fulfillment_type, v.stock_quantity, v.track_inventory
-      FROM commerce_product_variants v
-      JOIN commerce_products p ON p.id = v.product_id
-      WHERE v.parish_id = ? AND v.commerce_module = 'bookstore'
-        AND (v.sku = ? OR v.barcode = ? OR p.default_sku = ?)
-      LIMIT 1
-    `, parishId, sku, sku, sku).catch(() => null);
-  }
-  if (existing) {
-    const product = normalizeBookstoreProduct(existing);
-    return {
-      ...item,
-      source: "catalog",
-      productId: product.id,
-      variantId: product.variantId,
-      sku: product.sku || item.sku,
-      barcode: product.barcode || item.barcode,
-      taxCode: product.taxCode || item.taxCode,
-      snapshot: { ...item.snapshot, catalogProductId: product.id, catalogVariantId: product.variantId }
-    };
-  }
-
-  const productId = `product_${generateSecret(18)}`;
-  const variantId = `variant_${generateSecret(18)}`;
-  const productName = String(item.itemName || "Bookstore item").slice(0, 180);
-  const productDescription = String(item.itemDescription || item.itemName || "").slice(0, 600);
-  await d1Run(env, `
-    INSERT INTO commerce_products
-      (id, parish_id, commerce_module, name, description, item_category, default_sku,
-       default_tax_code, fulfillment_type, status, image_url, created_at, updated_at)
-    VALUES (?, ?, 'bookstore', ?, ?, ?, ?, ?, ?, 'active', '', ?, ?)
-  `,
-    productId,
-    parishId,
-    productName,
-    productDescription,
-    item.itemCategory || "other",
-    sku,
-    item.taxCode || "",
-    item.fulfillmentType || "physical_pickup",
-    now,
-    now
-  );
-  await d1Run(env, `
-    INSERT INTO commerce_product_variants
-      (id, product_id, parish_id, commerce_module, sku, barcode, variant_name,
-       unit_price_cents, cost_basis_cents, tax_code, fulfillment_type, stock_quantity,
-       reorder_threshold, track_inventory, status, created_at, updated_at)
-    VALUES (?, ?, ?, 'bookstore', ?, ?, '', ?, 0, ?, ?, 0, 0, 1, 'active', ?, ?)
-  `,
-    variantId,
-    productId,
-    parishId,
-    sku,
-    item.barcode || sku,
-    item.unitPriceCents,
-    item.taxCode || "",
-    item.fulfillmentType || "physical_pickup",
-    now,
-    now
-  );
-  return {
-    ...item,
-    source: "catalog",
-    productId,
-    variantId,
-    snapshot: { ...item.snapshot, catalogProductId: productId, catalogVariantId: variantId, donorSuggested: true }
-  };
 }
 
 export async function handleParishBookstoreReadiness(request, env, parishId) {
@@ -1486,7 +1409,6 @@ export async function handleDonorBookstore(request, env) {
   const orderId = `bookstore_${generateSecret(18)}`;
   const checkoutLocalId = `checkout_${generateSecret(18)}`;
   const now = new Date().toISOString();
-  items = await Promise.all(items.map(item => ensureBookstoreCatalogProductFromOrderItem(env, resolved.parishId, item, now)));
   const firstItem = items[0];
   const itemDescription = items.length === 1 ? firstItem.itemName : `${items.length} bookstore items`;
   const quantityTotal = items.reduce((sum, item) => sum + item.quantity, 0);
