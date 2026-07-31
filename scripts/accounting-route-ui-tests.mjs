@@ -81,6 +81,13 @@ assert.match(app, /fetch\(accountingApi\('\/reports\/fund-activity'\)/, "Account
 assert.match(app, /reports:\s*\{[^}]*fundActivity:\s*fundActivity\.report/s, "Accounting state must retain the canonical fund-activity report");
 assert.match(app, /fundActivity\.find\(\(row\) => row\.fundId === fund\.id \|\| row\.code === fund\.code\)\?\.endingBalance/, "Overview and Funds must render the report's ending fund balance");
 assert.doesNotMatch(app, /const fundBalance = \(fund\) => accountingData\.ledger/, "Overview must not total balanced debit and credit lines as a fund balance");
+assert.match(routes, /giving_source_type givingSourceType,giving_source_id givingSourceId/, "Accounting fund references must retain their Giving catalog identity");
+assert.match(app, /accountingOverviewFundSummary/);
+assert.match(app, /campaign\?\.raisedCents/);
+assert.match(app, /label:\s*'Campaign raised'/, "Unposted campaign progress must be labeled as raised giving, not a ledger balance");
+assert.match(app, /accountingOverviewFundRank/);
+assert.match(app, /benevolence/i, "Benevolence must be promoted into the visible overview fund group");
+assert.match(app, /\$\{overviewFunds\.length\} active/, "The overview must state how many active funds are listed");
 assert.match(app, /Accounting Suite Guide/, "Accounting Settings must surface the comprehensive guide");
 assert.match(app, /\/docs\/AGAPAY-Accounting-Suite-Guide-Comprehensive\.pdf/g, "Accounting Settings must open and download the guide");
 assert.match(css, /\.acct-guide-card\s*\{[^}]*grid-column:1\/-1/s, "Accounting guide should be prominent across the Settings grid");

@@ -24,7 +24,9 @@ async function workspaceReference(db) {
       FROM accounting_accounts a JOIN accounting_account_types t ON t.id=a.account_type_id
       LEFT JOIN accounting_account_presentations p ON p.account_id=a.id
       WHERE a.is_posting_account=1 ORDER BY a.is_active DESC,a.account_number`),
-    results(db, "SELECT id,code,name,restriction_type restrictionType,is_default isDefault FROM accounting_funds WHERE is_active=1 AND archived_at IS NULL ORDER BY is_default DESC,code")
+    results(db, `SELECT id,code,name,restriction_type restrictionType,is_default isDefault,
+      giving_source_type givingSourceType,giving_source_id givingSourceId
+      FROM accounting_funds WHERE is_active=1 AND archived_at IS NULL ORDER BY is_default DESC,code`)
   ]);
   return { accounts: accountCatalog.filter((account) => Number(account.isActive)), accountCatalog, funds };
 }

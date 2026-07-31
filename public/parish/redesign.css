@@ -833,6 +833,8 @@
 .acct-suite-fund strong { font:600 14px var(--serif); }
 .acct-suite-fund span { font-size:12px; font-feature-settings:'tnum'; }
 .acct-suite-fund small { display:block; margin-top:4px; color:var(--gold); font-size:9px; letter-spacing:.08em; text-transform:uppercase; }
+.acct-suite-fund.campaign-progress { background:linear-gradient(90deg,rgba(200,162,74,.10),rgba(255,255,255,.2)); }
+.acct-suite-fund.campaign-progress small::after { content:' · Giving progress'; color:var(--stone); }
 .acct-suite-health { margin-top:18px; border:1px solid var(--line); border-radius:6px; padding:15px; }
 .acct-suite-health strong { font:600 14px var(--serif); }
 .acct-suite-health strong::before { content:''; display:inline-block; width:8px; height:8px; margin-right:8px; border-radius:50%; background:var(--forest); }

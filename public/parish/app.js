@@ -1325,6 +1325,28 @@
       <div class="acct-command-actions"><button onclick="accountingView='journals';newAccountingJournal()"><b>＋</b><span>New journal<small>Record an entry</small></span></button><button onclick="switchTab('options')"><b>◫</b><span>Manage funds<small>Open Funds &amp; Alms</small></span></button><button onclick="setAccountingView('banking')"><b>⇄</b><span>Reconcile<small>Match the bank</small></span></button><button onclick="setAccountingView('reports')"><b>▤</b><span>Run reports<small>Review results</small></span></button></div>
     </section>`;
   }
+  function accountingOverviewFundSummary(fund, fundActivity) {
+    const ledgerBalance = Number(fundActivity.find((row) => row.fundId === fund.id || row.code === fund.code)?.endingBalance || 0);
+    const sourceId = String(fund.givingSourceId || fund.giving_source_id || '');
+    const campaign = (currentParish?.campaigns || []).find((item) =>
+      item.accountingFundId === fund.id || (sourceId && String(item.id || item.slug || '') === sourceId)
+    );
+    const raisedCents = Number(campaign?.raisedCents || 0);
+    if (String(fund.givingSourceType || fund.giving_source_type) === 'campaign' && !ledgerBalance && raisedCents > 0) {
+      return { amount: raisedCents, label: 'Campaign raised', campaignProgress: true };
+    }
+    return {
+      amount: ledgerBalance,
+      label: fund.restrictionType || fund.restriction_type || (Number(fund.isDefault) ? 'Unrestricted' : 'Fund'),
+      campaignProgress: false
+    };
+  }
+  function accountingOverviewFundRank(fund) {
+    if (Number(fund.isDefault)) return 0;
+    if (String(fund.givingSourceType || fund.giving_source_type) === 'campaign') return 1;
+    if (/benevolence/i.test(`${fund.name || ''} ${fund.givingSourceId || fund.giving_source_id || ''}`)) return 2;
+    return 3;
+  }
   function renderAccountingOverview(pane) {
     const position = accountingData.reports.position || {}, activities = accountingData.reports.activities || {};
     const cash = (position.rows || []).filter((row) => row.category === 'asset' && /cash|checking|bank|undeposited/i.test(`${row.accountName || ''}`)).reduce((sum,row) => sum + Number(row.amount || 0), 0);
@@ -1333,7 +1355,10 @@
     const drafts = accountingData.journals.filter((entry) => entry.status === 'draft').length;
     const payables = accountingData.payables?.overview || {}, banking = accountingData.banking || {}, close = accountingData.close || {};
     const fundActivity = accountingData.reports.fundActivity?.rows || [];
-    const fundBalance = (fund) => Number(fundActivity.find((row) => row.fundId === fund.id || row.code === fund.code)?.endingBalance || 0);
+    const overviewFunds = accountingData.funds
+      .map((fund) => ({ fund, summary: accountingOverviewFundSummary(fund, fundActivity) }))
+      .sort((a, b) => accountingOverviewFundRank(a.fund) - accountingOverviewFundRank(b.fund)
+        || String(a.fund.name || '').localeCompare(String(b.fund.name || '')));
     pane.innerHTML = `${accountingOverviewHero()}<div class="acct-suite-stats">
       <div class="acct-suite-stat featured"><span>Cash on hand</span><strong>${accountingMoney(cash)}</strong><small>Across active cash and bank accounts</small></div>
       <div class="acct-suite-stat"><span>Total net assets</span><strong>${accountingMoney(netAssets)}</strong><small>${position.validation?.status === 'validated' ? 'Financial position is balanced' : 'Review the financial position'}</small></div>
@@ -1347,7 +1372,7 @@
       <button class="acct-suite-module" onclick="setAccountingView('ledger')"><span>Giving → Ledger</span><strong>${posted.length ? 'In sync' : 'Ready'}</strong><small>${posted.length} posted source entries</small></button>
       <button class="acct-suite-module" onclick="setAccountingView('reports')"><span>Financial reports</span><strong>${position.validation?.status === 'validated' ? 'Balanced' : 'Review'}</strong><small>Statements and trial balance</small></button>
     </div><div class="acct-suite-activity"><div class="acct-suite-section-head"><h2>Recent posted activity</h2><button class="acct-link" onclick="setAccountingView('ledger')">View ledger →</button></div><div class="acct-table-wrap acct-overview-activity-table"><table class="acct-table"><colgroup><col class="date"><col class="entry"><col class="memo"><col class="amount"></colgroup><thead><tr><th>Date</th><th>Entry</th><th>Memo</th><th>Amount</th></tr></thead><tbody>${posted.slice(0,5).map((entry) => `<tr><td>${accountingDate(entry.postingDate || entry.entryDate)}</td><td><strong>${escapeHtml(entry.entryNumber || entry.id || '')}</strong></td><td>${escapeHtml(entry.description || entry.memo || '')}</td><td>${accountingMoney(entry.totalDebits || entry.total_debits)}</td></tr>`).join('') || '<tr><td colspan="4">Posted activity will appear here.</td></tr>'}</tbody></table></div></div></div>
-      <aside><div class="acct-suite-section-head"><h2>Fund balances</h2></div><div class="acct-suite-funds">${accountingData.funds.map((fund) => `<div class="acct-suite-fund"><div><strong>${escapeHtml(fund.name)}</strong><span>${accountingMoney(fundBalance(fund))}</span></div><small>${escapeHtml(fund.restrictionType || fund.restriction_type || (Number(fund.isDefault) ? 'Unrestricted' : 'Fund'))}</small></div>`).join('') || '<div class="acct-suite-fund"><strong>No funds configured</strong></div>'}</div><div class="acct-suite-health"><strong>Financial integrity: ${position.validation?.status === 'validated' ? 'healthy' : 'needs review'}</strong><p>The trial balance and financial-position equation are checked whenever reports load.</p></div></aside></div>`;
+      <aside><div class="acct-suite-section-head"><h2>Fund balances</h2><span>${overviewFunds.length} active</span></div><div class="acct-suite-funds">${overviewFunds.map(({ fund, summary }) => `<div class="acct-suite-fund ${summary.campaignProgress ? 'campaign-progress' : ''}"><div><strong>${escapeHtml(fund.name)}</strong><span>${accountingMoney(summary.amount)}</span></div><small>${escapeHtml(summary.label)}</small></div>`).join('') || '<div class="acct-suite-fund"><strong>No funds configured</strong></div>'}</div><div class="acct-suite-health"><strong>Financial integrity: ${position.validation?.status === 'validated' ? 'healthy' : 'needs review'}</strong><p>The trial balance and financial-position equation are checked whenever reports load.</p></div></aside></div>`;
   }
   function accountingRegisterModel() {
     const options = accountingData.accounts
