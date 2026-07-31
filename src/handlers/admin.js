@@ -96,11 +96,11 @@ import {
   loadRegistrationByReference,
   requireAdmin,
   requireAdminContext,
-  saveCommemorationEntry,
   saveRegistrationRecord,
   statusTimelineWithNext,
   storeDonorOffering,
 } from "./parish.js";
+import { saveCommemorationEntry } from "./parish-commemorations.js";
 
 import { recordAuditEvent, listAuditEvents } from "../lib/audit-log.js";
 import { TAX_READINESS_STATUSES, withTaxReadinessDefaults } from "../lib/tax-readiness.js";

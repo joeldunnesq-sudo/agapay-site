@@ -103,6 +103,7 @@ try {
 }
 
 const parish = await readFile(new URL("../src/handlers/parish.js", import.meta.url), "utf8");
+const parishCommemorations = await readFile(new URL("../src/handlers/parish-commemorations.js", import.meta.url), "utf8");
 const parishSacraments = await readFile(new URL("../src/handlers/parish-sacraments.js", import.meta.url), "utf8");
 const parishCommerce = await readFile(new URL("../src/handlers/parish-commerce.js", import.meta.url), "utf8");
 const parishReconciliation = await readFile(new URL("../src/handlers/parish-reconciliation.js", import.meta.url), "utf8");
@@ -131,6 +132,7 @@ assert.ok(parish.split(/\r?\n/).length <= 5300, "parish.js should retain the sac
 assert.ok(parish.split(/\r?\n/).length <= 4620, "parish.js should retain the commerce extraction size reduction");
 assert.ok(parish.split(/\r?\n/).length <= 3830, "parish.js should retain the reconciliation extraction size reduction");
 assert.ok(parish.split(/\r?\n/).length <= 3380, "parish.js should retain the giving catalog extraction size reduction");
+assert.ok(parish.split(/\r?\n/).length <= 3220, "parish.js should retain the commemorations data-layer extraction size reduction");
 const sacramentPublicFunctions = [
   "handleAdminSetSacramentsEnabled",
   "sacramentTypeLabel",
@@ -167,7 +169,6 @@ assertImports(parishSacraments, "./parish.js", [
   "hasParishPlusAccess",
   "hasProductionStore",
   "json",
-  "loadCommemorationEntries",
   "missingProductionStoreResponse",
   "normalizeSacramentPriests",
   "rateLimit",
@@ -176,6 +177,9 @@ assertImports(parishSacraments, "./parish.js", [
   "saveRegistrationRecord",
   "unauthorized",
   "verifyParishDashboardBearer",
+]);
+assertImports(parishSacraments, "./parish-commemorations.js", [
+  "loadCommemorationEntries",
   "weekWindow",
 ]);
 assert.doesNotMatch(
@@ -427,6 +431,64 @@ assert.doesNotMatch(
   /payment_intent_data\[on_behalf_of\]/,
   "direct bookstore charges must not also set on_behalf_of to the same connected account",
 );
+
+const commemorationFunctions = [
+  "weekWindow",
+  "splitSubmittedNames",
+  "commemorationKey",
+  "loadCommemorationEntries",
+  "storeCommemorationEntry",
+  "commemorationSourceIdFromOffering",
+  "ensureCommemorationEntryFromOffering",
+  "saveCommemorationEntry",
+];
+for (const name of commemorationFunctions) {
+  assert.doesNotMatch(parish, new RegExp(`(?:async\\s+)?function\\s+${name}\\b`), `${name} should move out of parish.js`);
+  assert.match(
+    parishCommemorations,
+    new RegExp(`export\\s+(?:async\\s+)?function\\s+${name}\\b`),
+    `${name} should be exported by parish-commemorations.js`,
+  );
+}
+assertImports(parishCommemorations, "../lib/core.js", [
+  "COMMEMORATION_KEY_PREFIX",
+  "d1",
+  "d1All",
+  "d1Run",
+  "hasProductionStore",
+  "listKvKeys",
+  "normalizeEmail",
+  "parseJsonRow",
+]);
+assertImports(worker, "./handlers/parish-commemorations.js", [
+  "loadCommemorationEntries",
+  "weekWindow",
+]);
+assertImports(parishSacraments, "./parish-commemorations.js", [
+  "loadCommemorationEntries",
+  "weekWindow",
+]);
+assertImports(donor, "./parish-commemorations.js", ["storeCommemorationEntry"]);
+assertImports(stripe, "./parish-commemorations.js", ["ensureCommemorationEntryFromOffering"]);
+assertImports(admin, "./parish-commemorations.js", ["saveCommemorationEntry"]);
+assertImports(parish, "./parish-commemorations.js", [
+  "commemorationSourceIdFromOffering",
+  "ensureCommemorationEntryFromOffering",
+  "saveCommemorationEntry",
+  "splitSubmittedNames",
+]);
+for (const [source, modulePath, names] of [
+  [worker, "./handlers/parish.js", ["loadCommemorationEntries", "weekWindow"]],
+  [parishSacraments, "./parish.js", ["loadCommemorationEntries", "weekWindow"]],
+  [donor, "./parish.js", ["storeCommemorationEntry"]],
+  [stripe, "./parish.js", ["ensureCommemorationEntryFromOffering"]],
+  [admin, "./parish.js", ["saveCommemorationEntry"]],
+]) {
+  const imports = importedNames(source, modulePath);
+  for (const name of names) {
+    assert.ok(!imports.has(name), `${modulePath} should no longer supply ${name} to its consumer`);
+  }
+}
 assert.match(
   donor,
   /"automatic_tax\[enabled\]":\s*"true"[\s\S]*?"customer_update\[address\]":\s*"auto"/,

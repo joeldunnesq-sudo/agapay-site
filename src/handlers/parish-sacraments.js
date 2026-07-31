@@ -23,7 +23,6 @@ import {
   hasParishPlusAccess,
   hasProductionStore,
   json,
-  loadCommemorationEntries,
   missingProductionStoreResponse,
   normalizeSacramentPriests,
   rateLimit,
@@ -32,8 +31,11 @@ import {
   saveRegistrationRecord,
   unauthorized,
   verifyParishDashboardBearer,
-  weekWindow,
 } from "./parish.js";
+import {
+  loadCommemorationEntries,
+  weekWindow,
+} from "./parish-commemorations.js";
 
 // POST /api/admin/sacraments/enabled
 // Body: { parishId: string, enabled: boolean }

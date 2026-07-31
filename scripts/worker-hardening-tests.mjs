@@ -1702,4 +1702,101 @@ async function withMockFetch(handler, run) {
   assert.equal((await json(alreadyEnabled)).alreadyEnabled, true);
 }
 
+{
+  const testEnv = env();
+  const registration = {
+    reference: "AGP-COMMEMORATIONS-EXTRACTION",
+    status: "verified",
+    parishId: "st-test",
+    parishName: "St. Test Orthodox Church",
+    communityType: "parish",
+    givingStatus: "active",
+    subscriptionTier: "giving",
+    subscriptionStatus: "active",
+    parishDashboardToken: "commemoration-dashboard-password"
+  };
+  await testEnv.AGAPAY_REGISTRATIONS.put(registration.reference, JSON.stringify(registration));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_parish_id__st-test", registration.reference);
+
+  const donor = await verifiedDonorSession(testEnv, "commemoration-giver@example.com");
+  const submitted = await worker.fetch(request("/api/donor/commemorations", {
+    method: "POST",
+    headers: donor.headers,
+    body: {
+      parishId: "st-test",
+      namesLiving: "Basil, Macrina",
+      namesDeparted: "Gregory",
+      note: "Donor handler extraction check"
+    }
+  }), testEnv);
+  assert.equal(submitted.status, 200);
+  const submittedBody = await json(submitted);
+  assert.equal(submittedBody.ok, true);
+  assert.deepEqual(submittedBody.entry.living, ["Basil", "Macrina"]);
+  assert.deepEqual(submittedBody.entry.departed, ["Gregory"]);
+
+  const offeringKey = "__agapay_donor_offering__commemoration-giver@example.com:cs_commemoration_webhook";
+  await testEnv.AGAPAY_REGISTRATIONS.put(offeringKey, JSON.stringify({
+    id: "cs_commemoration_webhook",
+    checkoutSessionId: "cs_commemoration_webhook",
+    donorEmail: "commemoration-giver@example.com",
+    donorName: "Webhook Giver",
+    parishId: "st-test",
+    parishName: "St. Test Orthodox Church",
+    giftType: "commemoration",
+    frequency: "once",
+    amountCents: 2500,
+    namesLiving: "Photini",
+    namesDeparted: "Nicholas",
+    commemorationKind: "proskomedia_liturgy",
+    status: "checkout_created",
+    paymentStatus: "pending",
+    createdAt: new Date().toISOString()
+  }));
+  await testEnv.AGAPAY_REGISTRATIONS.put(
+    "__agapay_checkout_offering__cs_commemoration_webhook",
+    offeringKey
+  );
+  const webhook = await postStripeWebhook(testEnv, {
+    id: "evt_commemoration_checkout_completed",
+    type: "checkout.session.completed",
+    data: {
+      object: {
+        id: "cs_commemoration_webhook",
+        payment_status: "paid",
+        mode: "payment",
+        customer: "cus_commemoration",
+        created: Math.floor(Date.now() / 1000),
+        metadata: {
+          parish_id: "st-test",
+          parish_name: "St. Test Orthodox Church",
+          donor_email: "commemoration-giver@example.com",
+          donor_name: "Webhook Giver",
+          gift_type: "commemoration",
+          frequency: "once",
+          amount_cents: "2500",
+          names_living: "Photini",
+          names_departed: "Nicholas",
+          commemoration_kind: "proskomedia_liturgy"
+        }
+      }
+    }
+  });
+  assert.equal(webhook.status, 200);
+
+  const parishLogin = await parishSession(
+    testEnv,
+    "st-test",
+    "commemoration-dashboard-password"
+  );
+  const dashboard = await worker.fetch(request("/api/parish/dashboard/st-test/commemorations", {
+    headers: { Authorization: `Bearer ${parishLogin.token}` }
+  }), testEnv);
+  assert.equal(dashboard.status, 200);
+  const dashboardBody = await json(dashboard);
+  assert.equal(dashboardBody.entries.length, 2);
+  assert.ok(dashboardBody.entries.some((entry) => entry.living.includes("Basil")));
+  assert.ok(dashboardBody.entries.some((entry) => entry.living.includes("Photini")));
+}
+
 console.log("AGAPAY Worker hardening tests passed.");

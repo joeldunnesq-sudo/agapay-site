@@ -128,10 +128,12 @@ import {
   handleCheckoutSessionStatus,
   handleParishPasswordResetRequest,
   handleParishPasswordResetConfirm,
-  loadCommemorationEntries,
   requireDonor,
-  weekWindow,
 } from "./handlers/parish.js";
+import {
+  loadCommemorationEntries,
+  weekWindow,
+} from "./handlers/parish-commemorations.js";
 import {
   handleParishPayoutDiagnostics,
   handleParishReconciliation,
