@@ -909,15 +909,25 @@
 @media(max-width:760px) { .acct-ledger-guide { grid-template-columns:1fr; } .acct-ledger-guide p { grid-column:auto; } }
 @media(max-width:900px) { .acct-register-hero { grid-template-columns:1fr 1fr; } .acct-register-account { grid-column:1/-1; border-right:0; border-bottom:1px solid rgba(255,255,255,.14); } .acct-register-entry-grid,.acct-register-entry-grid.contribution,.acct-recurring-form { grid-template-columns:repeat(2,minmax(0,1fr)); } .acct-recurring-list article { grid-template-columns:minmax(0,1fr) auto; } .acct-register-actions,.acct-register-history-head { align-items:stretch; flex-direction:column; } .acct-register-actions>div,.acct-register-history-head form { flex-wrap:wrap; } }
 @media(max-width:560px) { .acct-register-hero { grid-template-columns:1fr; } .acct-register-account { grid-column:auto; } .acct-register-balance { border-right:0; border-bottom:1px solid rgba(255,255,255,.14); } .acct-register-entry-tabs button { flex:1; padding:12px 8px; } .acct-register-entry-grid,.acct-register-entry-grid.contribution,.acct-recurring-form { grid-template-columns:1fr; } .acct-register-entry-grid label.wide,.acct-recurring-form label.wide { grid-column:auto; } .acct-register-entry-foot,.acct-recurring-head { align-items:stretch; flex-direction:column; } .acct-recurring-foot { grid-column:auto; align-items:stretch; flex-direction:column; } .acct-register-history-head input { min-width:0; flex:1; } }
-.acct-funds-directory { margin-bottom:22px; padding:20px; border:1px solid rgba(184,144,47,.25); border-radius:12px; background:linear-gradient(145deg,rgba(255,255,255,.76),rgba(249,245,234,.62)); box-shadow:0 12px 32px rgba(6,21,34,.07); }
-.acct-funds-directory-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:9px; }
-.acct-fund-directory-card { display:grid; gap:4px; min-width:0; border:1px solid var(--line); border-radius:9px; padding:13px 14px; text-align:left; background:rgba(255,255,255,.74); color:var(--ink); cursor:pointer; transition:.16s ease; }
+.acct-funds-directory { margin:22px 0; padding:22px; border:1px solid rgba(184,144,47,.25); border-radius:12px; background:linear-gradient(145deg,rgba(255,255,255,.76),rgba(249,245,234,.62)); box-shadow:0 12px 32px rgba(6,21,34,.07); }
+.acct-funds-directory-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:15px; }
+.acct-fund-directory-card { display:grid; gap:6px; min-width:0; min-height:92px; border:1px solid var(--line); border-radius:11px; padding:16px 17px; text-align:left; background:rgba(255,255,255,.78); color:var(--ink); cursor:default; transition:.16s ease; }
 .acct-fund-directory-card:hover { transform:translateY(-1px); border-color:rgba(184,144,47,.5); box-shadow:0 8px 20px rgba(6,21,34,.07); }
 .acct-fund-directory-card>span { color:var(--gold); font:700 10px var(--sans); letter-spacing:.08em; text-transform:uppercase; }
 .acct-fund-directory-card>strong { overflow:hidden; font:600 16px var(--serif); text-overflow:ellipsis; white-space:nowrap; }
 .acct-fund-directory-card>small { color:var(--stone); font:10px/1.4 var(--sans); }
 .acct-fund-directory-card.retired { opacity:.52; }
-.acct-fund-accounts { overflow:hidden; margin-bottom:22px; border:1px solid rgba(6,21,34,.12); border-radius:12px; background:rgba(255,255,255,.44); box-shadow:0 12px 32px rgba(6,21,34,.06); }
+.acct-fund-directory-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:10px; }
+.acct-fund-directory-actions>span { color:var(--muted); font-size:11px; }
+.acct-fund-visibility-toggle { display:flex; align-items:center; gap:9px; border:1px solid rgba(6,21,34,.14); border-radius:999px; padding:7px 12px 7px 8px; background:rgba(255,255,255,.72); color:var(--ink); cursor:pointer; transition:.16s ease; }
+.acct-fund-visibility-toggle:hover,.acct-fund-visibility-toggle.active { border-color:rgba(184,144,47,.55); background:rgba(184,144,47,.10); box-shadow:0 5px 14px rgba(6,21,34,.06); }
+.acct-fund-visibility-toggle>b { display:grid; place-items:center; width:24px; height:24px; border-radius:50%; background:rgba(184,144,47,.16); color:#735817; font:700 12px var(--sans); }
+.acct-fund-visibility-toggle span,.acct-fund-visibility-toggle strong,.acct-fund-visibility-toggle small { display:block; text-align:left; }
+.acct-fund-visibility-toggle strong { font:700 10px var(--sans); }
+.acct-fund-visibility-toggle small { margin-top:1px; color:var(--muted); font:9px var(--sans); }
+.acct-fund-workspace { overflow:hidden; margin:26px 0 22px; border:1px solid rgba(6,21,34,.12); border-radius:14px; background:rgba(255,255,255,.52); box-shadow:0 14px 38px rgba(6,21,34,.07); }
+.acct-fund-summary { padding:22px 22px 24px; background:linear-gradient(145deg,rgba(255,255,255,.86),rgba(249,245,234,.68)); }
+.acct-fund-accounts { overflow:hidden; border-top:1px solid rgba(6,21,34,.10); background:rgba(255,255,255,.38); }
 .acct-fund-accounts-head { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:20px 22px; background:linear-gradient(110deg,#0b273a,#174858); color:#fff; }
 .acct-fund-accounts-head h2 { margin:3px 0 4px; color:#fff; font:600 28px/1 var(--serif); }
 .acct-fund-accounts-head p { margin:0; color:rgba(255,255,255,.65); font:11px var(--sans); }
@@ -967,7 +977,7 @@
 .acct-expense-account-form input,.acct-expense-account-form select { width:100%; box-sizing:border-box; border:1px solid var(--line); border-radius:6px; padding:10px 11px; background:rgba(255,255,255,.82); color:var(--ink); font:12px var(--sans); }
 .acct-expense-account-form label small { color:var(--stone); font:9px/1.35 var(--sans); letter-spacing:0; text-transform:none; }
 @media(max-width:680px) { .acct-expense-account-row { grid-template-columns:70px minmax(0,1fr) auto; } .acct-expense-account-row>small { display:none; } .acct-expense-account-group-head { align-items:flex-start; } }
-@media(max-width:680px) { .acct-funds-directory { padding:15px; } .acct-fund-accounts-head { align-items:flex-start; flex-direction:column; } .acct-fund-accounts-head>div:last-child { text-align:left; } .acct-fund-account-group-head { grid-template-columns:minmax(0,1fr) 24px; } .acct-fund-account-group-head>small { display:none; } .acct-fund-account-row,.acct-fund-balance-row { grid-template-columns:72px minmax(0,1fr) auto; } .acct-fund-account-row>small,.acct-fund-balance-row>small { display:none; } }
+@media(max-width:680px) { .acct-funds-directory { padding:15px; } .acct-fund-tools,.acct-fund-directory-actions { align-items:stretch; flex-direction:column; } .acct-fund-directory-actions { justify-content:flex-start; } .acct-fund-visibility-toggle { width:100%; border-radius:10px; } .acct-fund-accounts-head { align-items:flex-start; flex-direction:column; } .acct-fund-accounts-head>div:last-child { text-align:left; } .acct-fund-account-group-head { grid-template-columns:minmax(0,1fr) 24px; } .acct-fund-account-group-head>small { display:none; } .acct-fund-account-row,.acct-fund-balance-row { grid-template-columns:72px minmax(0,1fr) auto; } .acct-fund-account-row>small,.acct-fund-balance-row>small { display:none; } }
 .acct-table-wrap,.acct-card,.acct-journal-editor,.acct-kpis>div,.acct-mini-card,.acct-budget-card { border-radius:6px; box-shadow:none; background:rgba(255,255,255,.32); }
 .acct-table th { background:rgba(6,21,34,.025); }
 .acct-card h2,.acct-list-head h2,.acct-mini-card h3,.acct-budget-card h3,.acct-tier-gate h2 { font-weight:600; }
