@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { getReadContentIds, markContentRead } from "../src/lib/content-reads.js";
+import { getReadContentIds, getReadReceipts, markContentRead } from "../src/lib/content-reads.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const migrationPath = path.join(root, "migrations", "0064_parish_content_reads.sql");
@@ -11,6 +11,7 @@ const modulePath = path.join(root, "src", "lib", "content-reads.js");
 const sqlite = new DatabaseSync(":memory:");
 
 sqlite.exec(readFileSync(migrationPath, "utf8"));
+sqlite.exec(readFileSync(path.join(root, "migrations", "0068_parish_content_read_receipts_index.sql"), "utf8"));
 
 const db = {
   prepare(sql) {
@@ -52,6 +53,55 @@ await markContentRead(db, {
   contentId: "content-two",
   donorId: "donor-two"
 });
+
+await markContentRead(db, {
+  parishId: "parish-one",
+  contentType: "announcement",
+  contentId: "content-one",
+  donorId: "donor-two"
+});
+await markContentRead(db, {
+  parishId: "parish-two",
+  contentType: "announcement",
+  contentId: "content-one",
+  donorId: "donor-other-parish"
+});
+await markContentRead(db, {
+  parishId: "parish-one",
+  contentType: "announcement",
+  contentId: "content-other",
+  donorId: "donor-other-content"
+});
+sqlite.prepare("UPDATE parish_content_reads SET read_at = ? WHERE donor_id = ?").run("2026-07-31T10:00:00.000Z", "donor-one");
+sqlite.prepare("UPDATE parish_content_reads SET read_at = ? WHERE donor_id = ?").run("2026-07-31T11:00:00.000Z", "donor-two");
+
+assert.deepEqual(
+  await getReadReceipts(db, {
+    parishId: "parish-one",
+    contentType: "announcement",
+    contentId: "content-one"
+  }),
+  [
+    { donorId: "donor-one", readAt: "2026-07-31T10:00:00.000Z" },
+    { donorId: "donor-two", readAt: "2026-07-31T11:00:00.000Z" }
+  ],
+  "reverse lookup should be ordered and must not leak another parish, content item, or content type"
+);
+const receiptPlan = sqlite.prepare(`
+  EXPLAIN QUERY PLAN
+  SELECT donor_id, read_at FROM parish_content_reads
+  WHERE parish_id = ? AND content_type = ? AND content_id = ?
+  ORDER BY read_at ASC, donor_id ASC
+`).all("parish-one", "announcement", "content-one");
+assert.ok(
+  receiptPlan.some(({ detail }) => detail.includes("idx_parish_content_reads_receipts")),
+  "reverse receipt lookup should use its parish/content covering index"
+);
+assert.equal(
+  receiptPlan.some(({ detail }) => detail.includes("TEMP B-TREE")),
+  false,
+  "receipt ordering should be satisfied by the covering index"
+);
 await markContentRead(db, {
   parishId: "parish-two",
   contentType: "announcement",
@@ -102,4 +152,4 @@ assert.equal(
   "the generic module should not reference feature-specific content"
 );
 
-console.log("PASS - shared content read tracking is idempotent, scoped, constrained, and feature-agnostic");
+console.log("PASS - shared content read tracking is bidirectional, scoped, ordered, and feature-agnostic");

@@ -30,3 +30,22 @@ export async function getReadContentIds(db, { parishId, contentType, donorId, co
 
   return (result.results || []).map(({ content_id: contentId }) => contentId);
 }
+
+export async function getReadReceipts(db, { parishId, contentType, contentId }) {
+  const result = await db
+    .prepare(`
+      SELECT donor_id, read_at
+      FROM parish_content_reads
+      WHERE parish_id = ?
+        AND content_type = ?
+        AND content_id = ?
+      ORDER BY read_at ASC, donor_id ASC
+    `)
+    .bind(parishId, contentType, contentId)
+    .all();
+
+  return (result.results || []).map(({ donor_id: donorId, read_at: readAt }) => ({
+    donorId,
+    readAt,
+  }));
+}
