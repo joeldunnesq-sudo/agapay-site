@@ -209,6 +209,7 @@ import {
   handleParishCommunications,
   sendWeeklyAnnouncementDigestEmails,
 } from "./handlers/parish-communications.js";
+import { handleParishEmailCredentials } from "./handlers/parish-email-credentials.js";
 import { handleDonorGroups } from "./handlers/donor-groups.js";
 import { handleDonorPush } from "./lib/push-notifications.js";
 
@@ -3602,6 +3603,10 @@ export default {
       const parishId = decodeURIComponent(parts[0].replace(/\/+$/, ""));
       const subpath = parts.slice(1).join("/communications") || "";
       return handleParishCommunications(request, env, parishId, subpath, ctx);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/email-credentials")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/email-credentials", ""));
+      return handleParishEmailCredentials(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments", ""));

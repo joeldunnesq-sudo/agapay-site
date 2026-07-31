@@ -5,10 +5,9 @@ import {
   givingFeatureAccess,
 } from "../lib/entitlements.js";
 import {
-  agapayEmailHtml,
   htmlEscape,
-  sendEmail,
 } from "../lib/parish-notifications.js";
+import { agapayEmailHtml, sendEmail } from "../lib/email.js";
 import {
   SCHEDULABLE_SACRAMENT_TYPES,
   isSchedulableOfferingKey,

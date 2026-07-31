@@ -163,7 +163,6 @@ import {
   stripeReady,
 } from "../lib/stripe-connect.js";
 import {
-  agapayEmailHtml,
   generateDashboardToken,
   htmlEscape,
   loadParishOnboardingGuideAttachment,
@@ -171,12 +170,12 @@ import {
   publicSubscriptionTiers,
   sendAdminRegistrationNotice,
   sendDashboardInvite,
-  sendEmail,
   sendParishPasswordResetEmail,
   sendRegistrationConfirmation,
   sendTreasurerStripeInvite,
   subscriptionReady,
 } from "../lib/parish-notifications.js";
+import { agapayEmailHtml, sendEmail } from "../lib/email.js";
 
 function d1(env) {
   return env.AGAPAY_DB || env.DB || null;

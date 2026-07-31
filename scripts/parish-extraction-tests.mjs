@@ -37,11 +37,9 @@ const consolidatedStripeExports = [
 
 const notificationExports = [
   "htmlEscape",
-  "agapayEmailHtml",
   "generateDashboardToken",
   "startOfYearUnix",
   "monthLabel",
-  "sendEmail",
   "loadParishOnboardingGuideAttachment",
   "sendTreasurerStripeInvite",
   "sendDashboardInvite",

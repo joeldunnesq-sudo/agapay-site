@@ -183,7 +183,10 @@
       loadBookstoreCatalogTab();
     }
     if (tab === 'reconcile' && currentParish) loadReconciliation();
-    if (tab === 'settings' && currentParish) loadSettlementProfilesPanel();
+    if (tab === 'settings' && currentParish) {
+      loadSettlementProfilesPanel();
+      loadParishEmailCredentials();
+    }
     document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
     if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -197,6 +200,101 @@
       headers['X-AGAPAY-Accounting-Token'] = accountingSession.token;
     }
     return headers;
+  }
+
+  function parishEmailCredentialsApi() {
+    return `/api/parish/dashboard/${encodeURIComponent(currentParish?.parishId || '')}/email-credentials`;
+  }
+
+  function renderParishEmailCredentials(status = {}) {
+    const body = document.getElementById('parishEmailCredentialsBody');
+    if (!body) return;
+    const configured = Boolean(status.configured);
+    const domain = String(status.sendingDomain || '').trim();
+    const configuredDate = status.configuredAt
+      ? new Date(status.configuredAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
+      : '';
+    const sender = domain ? `announcements@${domain}` : 'your parish domain';
+    body.innerHTML = `
+      <div class="parish-email-account-status ${configured ? 'connected' : ''}">
+        <span aria-hidden="true">${configured ? '✓' : '!'}</span>
+        <div><strong>${configured ? 'Parish Resend account connected' : 'Using AGAPAY shared email sending'}</strong>
+        <small>${configured ? `Connected ${escapeHtml(configuredDate)}. The saved API key is intentionally never displayed.` : 'Weekly announcement digests use AGAPAY’s shared Resend account until your parish connects its own.'}</small></div>
+      </div>
+      <div class="parish-email-setup-grid">
+        <div>
+          <h3>Before connecting</h3>
+          <ol>
+            <li>Verify <strong>${escapeHtml(domain || 'the domain in your Parish Information website field')}</strong> in your parish’s Resend account.</li>
+            <li>Create a <strong>Sending access</strong> API key restricted to that verified domain.</li>
+            <li>Paste the key here. AGAPAY validates it with Resend before saving.</li>
+          </ol>
+          <p class="section-note">The key alone does not verify a domain or improve deliverability. Domain verification happens in Resend and remains the parish’s responsibility. When connected, parish digests send as <strong>${escapeHtml(sender)}</strong>; other AGAPAY email continues through the shared platform account.</p>
+        </div>
+        <form class="parish-email-key-form" onsubmit="saveParishEmailCredentials(event)">
+          <label class="form-label" for="parishResendApiKey">Resend API key</label>
+          <input id="parishResendApiKey" name="resendApiKey" type="password" autocomplete="new-password" placeholder="re_••••••••••••••••" required ${domain ? '' : 'disabled'} />
+          <p class="section-note">For security, AGAPAY cannot show the key again after it is saved. Paste a new key to rotate it.</p>
+          <div class="btn-row">
+            <button class="btn btn-gold" type="submit" ${domain ? '' : 'disabled'}>${configured ? 'Replace connected key' : 'Validate and connect'}</button>
+            ${configured ? '<button class="btn btn-ghost" type="button" onclick="disconnectParishEmailCredentials()">Disconnect</button>' : ''}
+          </div>
+          <span class="parish-email-form-status" role="status"></span>
+        </form>
+      </div>`;
+  }
+
+  async function loadParishEmailCredentials() {
+    const body = document.getElementById('parishEmailCredentialsBody');
+    if (!body || !currentParish?.parishId) return;
+    body.innerHTML = '<p class="sw-tool-loading">Loading email sending settings&hellip;</p>';
+    try {
+      const response = await fetch(parishEmailCredentialsApi(), { headers: authHeaders() });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Unable to load email sending settings.');
+      renderParishEmailCredentials(result);
+    } catch (error) {
+      body.innerHTML = `<div class="notice error">${escapeHtml(error.message || 'Unable to load email sending settings.')}</div>`;
+    }
+  }
+
+  async function saveParishEmailCredentials(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector('button[type="submit"]');
+    const status = form.querySelector('.parish-email-form-status');
+    const resendApiKey = form.elements.resendApiKey.value.trim();
+    button.disabled = true;
+    status.textContent = 'Validating with Resend…';
+    try {
+      const response = await fetch(parishEmailCredentialsApi(), {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resendApiKey }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Unable to connect this Resend account.');
+      form.reset();
+      setStatus('Parish Resend account connected.', 'success');
+      renderParishEmailCredentials(result);
+    } catch (error) {
+      status.textContent = error.message || 'Unable to connect this Resend account.';
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  async function disconnectParishEmailCredentials() {
+    if (!window.confirm('Disconnect the parish Resend account and return announcement digests to AGAPAY shared sending?')) return;
+    try {
+      const response = await fetch(parishEmailCredentialsApi(), { method: 'DELETE', headers: authHeaders() });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Unable to disconnect this Resend account.');
+      setStatus('Parish Resend account disconnected.', 'success');
+      renderParishEmailCredentials(result);
+    } catch (error) {
+      setStatus(error.message || 'Unable to disconnect this Resend account.', 'error');
+    }
   }
 
   function syncTopbarTabIcon(tab) {
