@@ -209,11 +209,13 @@
     .about-you-form .actions { grid-column:1/-1; justify-content:flex-end; margin-top:4px; }
     .about-you-note { grid-column:1/-1; margin:0; color:var(--muted); font-size:12.5px; line-height:1.5; }
     .sharing-list { display:grid; gap:0; border:1px solid var(--line-soft); border-radius:var(--r-md); overflow:hidden; }
-    .sharing-row { display:grid; grid-template-columns:1fr auto; gap:18px; align-items:center; padding:15px 16px; background:#fff; border-bottom:1px solid var(--line-soft); cursor:pointer; }
+    .sharing-row { display:grid; grid-template-columns:1fr minmax(180px,auto); gap:18px; align-items:center; padding:15px 16px; background:#fff; border-bottom:1px solid var(--line-soft); }
     .sharing-row:last-child { border-bottom:0; }
     .sharing-row strong, .sharing-row small { display:block; }
     .sharing-row strong { color:var(--navy); font-size:14px; }
     .sharing-row small { margin-top:3px; color:var(--muted); font-size:12px; font-weight:500; }
+    .sharing-row select { min-width:180px; width:auto; }
+    .sharing-row-toggle { grid-template-columns:1fr auto; cursor:pointer; }
     .sharing-row input { position:absolute; opacity:0; pointer-events:none; }
     .sharing-switch { position:relative; width:44px; height:25px; border-radius:999px; background:#d9dde0; transition:.18s ease; }
     .sharing-switch::after { content:""; position:absolute; top:3px; left:3px; width:19px; height:19px; border-radius:50%; background:#fff; box-shadow:0 2px 6px rgba(6,21,34,.2); transition:.18s ease; }
@@ -771,6 +773,17 @@
       }
     }
     @media (max-width: 430px) {
+      .donor-directory-page .sharing-row {
+        grid-template-columns:minmax(0,1fr);
+        gap:10px;
+      }
+      .donor-directory-page .sharing-row select {
+        width:100%;
+        min-width:0;
+      }
+      .donor-directory-page .sharing-row-toggle {
+        grid-template-columns:minmax(0,1fr) auto;
+      }
       .donor-directory-page .directory-tools {
         grid-template-columns:minmax(0,1fr);
       }
@@ -880,13 +893,10 @@
                   <label id="starterParishField">Parish ID<input name="parishId" placeholder="st-fiacre" required /></label>
                 </fieldset>
                 <fieldset class="field-group">
-                  <legend class="group-legend">Contact &amp; sharing</legend>
-                  <p class="visibility-legend" style="grid-column:1/-1;"><b>Private</b> only you · <b>Staff</b> parish office · <b>Directory members</b> approved parish families</p>
+                  <legend class="group-legend">Contact details</legend>
+                  <p class="visibility-legend" style="grid-column:1/-1;">Add contact details now. You will choose who can see them in step three.</p>
                   <label>Email<input name="email" type="email" autocomplete="email" /></label>
-                  <label class="visibility-field">Email sharing<select name="emailVisibility"><option value="private">Keep private</option><option value="staff">Parish staff only</option><option value="directory_members">Show to directory members</option></select></label>
                   <label>Phone<input name="phone" autocomplete="tel" /></label>
-                  <label class="visibility-field">Phone sharing<select name="phoneVisibility"><option value="private">Keep private</option><option value="staff">Parish staff only</option><option value="directory_members">Show to directory members</option></select></label>
-                  <label class="visibility-field">Name sharing<select name="profileVisibility"><option value="directory_members">Show my name in the directory</option><option value="staff">Parish staff only</option><option value="private">Keep private</option></select></label>
                 </fieldset>
               </div>
               <div class="actions"><button class="btn primary" type="submit">Start My Profile</button></div>
@@ -907,16 +917,17 @@
           </article>
 
           <article class="panel" data-wizard-step="3" data-mobile-section="household privacy setup">
-            <div class="panel-header"><div class="panel-header-row"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></span><div><div class="panel-kicker">Directory sharing</div><h2>Choose what parishioners can see</h2><p class="panel-intro">Turn on only the details you want shown in the private parish directory. Everything else stays private.</p></div></div></div>
+            <div class="panel-header"><div class="panel-header-row"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></span><div><div class="panel-kicker">Directory sharing</div><h2>Choose who can see each detail</h2><p class="panel-intro">Set every detail to private, parish staff only, or directory members. Staff-only choices remain staff only.</p></div></div></div>
             <div class="contact-list" id="contactList" hidden></div>
             <form id="contactForm" hidden>
               <div class="sharing-list">
-                <label class="sharing-row"><span><strong>Name</strong><small id="shareNameValue">Your main adult’s name</small></span><input name="shareName" type="checkbox" /><span class="sharing-switch" aria-hidden="true"></span></label>
-                <label class="sharing-row"><span><strong>Email</strong><small id="shareEmailValue">No email entered</small></span><input name="shareEmail" type="checkbox" /><span class="sharing-switch" aria-hidden="true"></span></label>
-                <label class="sharing-row"><span><strong>Phone</strong><small id="sharePhoneValue">No phone entered</small></span><input name="sharePhone" type="checkbox" /><span class="sharing-switch" aria-hidden="true"></span></label>
-                <label class="sharing-row"><span><strong>Location</strong><small id="shareLocationValue">No location entered</small></span><input name="shareLocation" type="checkbox" /><span class="sharing-switch" aria-hidden="true"></span></label>
-                <label class="sharing-row"><span><strong>Children</strong><small id="shareChildrenValue">No children entered</small></span><input name="shareChildren" type="checkbox" /><span class="sharing-switch" aria-hidden="true"></span></label>
-                <label class="sharing-row"><span><strong>Namedays</strong><small id="shareNamedayValue">No namedays entered</small></span><input name="shareNameday" type="checkbox" /><span class="sharing-switch" aria-hidden="true"></span></label>
+                <label class="sharing-row"><span><strong>Name</strong><small id="shareNameValue">Your main adult’s name</small></span><select name="shareNameVisibility" aria-label="Name sharing"><option value="private">Private</option><option value="staff">Parish staff only</option><option value="directory_members">Directory members</option></select></label>
+                <label class="sharing-row"><span><strong>Email</strong><small id="shareEmailValue">No email entered</small></span><select name="shareEmailVisibility" aria-label="Email sharing"><option value="private">Private</option><option value="staff">Parish staff only</option><option value="directory_members">Directory members</option></select></label>
+                <label class="sharing-row"><span><strong>Phone</strong><small id="sharePhoneValue">No phone entered</small></span><select name="sharePhoneVisibility" aria-label="Phone sharing"><option value="private">Private</option><option value="staff">Parish staff only</option><option value="directory_members">Directory members</option></select></label>
+                <label class="sharing-row"><span><strong>Location</strong><small id="shareLocationValue">No location entered</small></span><select name="shareLocationVisibility" aria-label="Location sharing"><option value="private">Private</option><option value="staff">Parish staff only</option><option value="directory_members">Directory members</option></select></label>
+                <label class="sharing-row"><span><strong>Family photo</strong><small id="sharePhotoValue">No family photo uploaded</small></span><select name="sharePhotoVisibility" aria-label="Family photo sharing"><option value="private">Private</option><option value="staff">Parish staff only</option><option value="directory_members">Directory members</option></select></label>
+                <label class="sharing-row sharing-row-toggle"><span><strong>Children</strong><small id="shareChildrenValue">No children entered</small></span><input name="shareChildren" type="checkbox" /><span class="sharing-switch" aria-hidden="true"></span></label>
+                <div id="namedaySharingRows"></div>
               </div>
               <div class="actions"><button class="btn primary" type="submit">Save Sharing Choices</button></div>
             </form>
@@ -952,14 +963,14 @@
           </article>
 
           <article class="panel household-hub" data-wizard-container="2" data-mobile-section="household family setup photos">
-            <div class="panel-header"><div class="panel-header-row"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21v-2a4 4 0 0 1 4-4h1a4 4 0 0 1 4 4v2"/><circle cx="8.5" cy="8" r="3"/><path d="M15 21v-1.5a3.5 3.5 0 0 0-2.5-3.36"/><circle cx="17" cy="7.5" r="2.5"/></svg></span><div><div class="panel-kicker">Directory</div><h2>Family</h2><p class="panel-intro">Keep your family in one place: your spouse, children, family name, photo, and namedays.</p></div></div></div>
+            <div class="panel-header"><div class="panel-header-row"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21v-2a4 4 0 0 1 4-4h1a4 4 0 0 1 4 4v2"/><circle cx="8.5" cy="8" r="3"/><path d="M15 21v-1.5a3.5 3.5 0 0 0-2.5-3.36"/><circle cx="17" cy="7.5" r="2.5"/></svg></span><div><div class="panel-kicker">Directory</div><h2>Family</h2><p class="panel-intro">Add your spouse, children, family name, photo, and namedays here. Choose who can see them in step three.</p></div></div></div>
 
             <div class="household-hub-identity" data-wizard-step="2">
               <div class="household-hub-photo" hidden>
                 <div class="summary-list" id="householdPhotoSummary"></div>
                 <form class="household-hub-photo-form" id="householdPhotoForm" hidden>
                   <label>Change family photo<input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required /></label>
-                  <label class="visibility-field">Visibility<select name="visibility"><option value="private">Private</option><option value="household">Family</option><option value="staff">Staff</option><option value="directory_members">Directory members</option></select></label>
+                  <input name="visibility" type="hidden" value="private" />
                   <div class="actions"><button class="btn secondary" type="submit">Upload</button><button class="btn warn" type="button" id="removeHouseholdPhoto" hidden>Remove</button></div>
                 </form>
               </div>
@@ -970,7 +981,6 @@
                   <p class="household-hub-namedays-note" id="familyNameHelp">This is the family name shown on your household entry, such as “The Dunne Family.”</p>
                   <label>City<input name="city" maxlength="120" placeholder="Wheaton" required /></label>
                   <label>State / Province<input name="region" maxlength="120" placeholder="Illinois" required /></label>
-                  <label class="visibility-field">Location sharing<select name="locationVisibility"><option value="directory_members">Show city and state to directory members</option><option value="staff">Parish staff only</option><option value="household">Family only</option><option value="private">Keep private</option></select></label>
                   <input type="hidden" name="householdId" />
                   <input type="hidden" name="expectedVersion" />
                   <div class="actions"><button class="btn secondary" type="submit">Save Name</button></div>
@@ -992,7 +1002,6 @@
                 <label>Patron saint (optional)<input name="saintName" placeholder="St. Maria" /></label>
                 <label>Nameday month<select name="feastMonth"><option value="">No nameday</option><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></label>
                 <label>Nameday day<input name="feastDay" type="number" min="1" max="31" inputmode="numeric" placeholder="22" /></label>
-                <label class="visibility-field">Nameday sharing<select name="visibility"><option value="directory_members">Directory members</option><option value="household">Family only</option><option value="staff">Parish staff</option><option value="private">Private</option></select></label>
                 <input type="hidden" name="personId" />
                 <input type="hidden" name="namedayId" />
                 <div class="actions"><button class="btn primary" type="submit">Save Member &amp; Nameday</button><button class="btn secondary" type="button" id="cancelMemberEdit">Cancel</button></div>
@@ -1944,29 +1953,33 @@
       }
       const sharing = document.getElementById("contactForm");
       if (!sharing) return;
-      sharing.elements.shareName.checked = (profileState?.profile?.sharing?.name?.visibility || "directory_members") === "directory_members";
-      sharing.elements.shareEmail.checked = emailContact?.visibility === "directory_members";
-      sharing.elements.sharePhone.checked = phoneContact?.visibility === "directory_members";
-      sharing.elements.shareLocation.checked = address?.visibility === "directory_members";
+      const sharingVisibility = (value, fallback = "private") => ["private", "staff", "directory_members"].includes(value) ? value : fallback;
+      sharing.elements.shareNameVisibility.value = sharingVisibility(profileState?.profile?.sharing?.name?.visibility, "directory_members");
+      sharing.elements.shareEmailVisibility.value = sharingVisibility(emailContact?.visibility);
+      sharing.elements.sharePhoneVisibility.value = sharingVisibility(phoneContact?.visibility);
+      sharing.elements.shareLocationVisibility.value = sharingVisibility(address?.visibility);
+      sharing.elements.sharePhotoVisibility.value = sharingVisibility(window.currentDirectoryHouseholdPhoto?.visibility);
       sharing.elements.shareChildren.checked = directoryChildSharing.length > 0
         && directoryChildSharing.every((item) => item.request?.status === "approved");
-      sharing.elements.shareNameday.checked = householdNamedays.length > 0
-        && householdNamedays.every((item) => item.visibility === "directory_members");
-      sharing.elements.shareEmail.disabled = !emailContact && !defaults.email;
-      sharing.elements.sharePhone.disabled = !phoneContact && !defaults.phone;
-      sharing.elements.shareLocation.disabled = !firstHousehold() || !location?.city || !location?.region;
+      sharing.elements.shareEmailVisibility.disabled = !emailContact && !defaults.email;
+      sharing.elements.sharePhoneVisibility.disabled = !phoneContact && !defaults.phone;
+      sharing.elements.shareLocationVisibility.disabled = !firstHousehold() || !location?.city || !location?.region;
+      sharing.elements.sharePhotoVisibility.disabled = !window.currentDirectoryHouseholdPhoto;
       sharing.elements.shareChildren.disabled = !directoryChildSharing.length;
-      sharing.elements.shareNameday.disabled = !householdNamedays.length;
       document.getElementById("shareNameValue").textContent = person.preferredName || "No name entered";
       document.getElementById("shareEmailValue").textContent = emailContact?.maskedValue || defaults.email || "No email entered";
       document.getElementById("sharePhoneValue").textContent = phoneContact?.maskedValue || defaults.phone || "No phone entered";
       document.getElementById("shareLocationValue").textContent = [location?.city, location?.region].filter(Boolean).join(", ") || "No location entered";
+      document.getElementById("sharePhotoValue").textContent = window.currentDirectoryHouseholdPhoto ? "Current family photo" : "No family photo uploaded";
       document.getElementById("shareChildrenValue").textContent = directoryChildSharing.length
         ? `${directoryChildSharing.length} ${directoryChildSharing.length === 1 ? "child" : "children"}`
         : "No children entered";
-      document.getElementById("shareNamedayValue").textContent = householdNamedays.length
-        ? `${householdNamedays.length} family ${householdNamedays.length === 1 ? "nameday" : "namedays"}`
-        : "No namedays entered";
+      document.getElementById("namedaySharingRows").innerHTML = householdNamedays.length
+        ? householdNamedays.map((nameday) => {
+          const namedayVisibility = sharingVisibility(nameday.visibility);
+          return `<label class="sharing-row"><span><strong>${esc(nameday.displayName || "Family member")}’s nameday</strong><small>${esc(nameday.saintName || nameday.feastMonthDay || "Nameday")}</small></span><select name="namedayVisibility" data-nameday-id="${esc(nameday.id)}" aria-label="${esc(nameday.displayName || "Family member")} nameday sharing"><option value="private"${namedayVisibility === "private" ? " selected" : ""}>Private</option><option value="staff"${namedayVisibility === "staff" ? " selected" : ""}>Parish staff only</option><option value="directory_members"${namedayVisibility === "directory_members" ? " selected" : ""}>Directory members</option></select></label>`;
+        }).join("")
+        : '<div class="sharing-row"><span><strong>Namedays</strong><small>No namedays entered</small></span></div>';
     }
     function publicationIsLive(publication = {}) {
       return publication.status === "approved" && publication.approvalStatus === "approved";
@@ -2072,10 +2085,8 @@
       syncAdultAddSection(members);
       form.elements.city.value = primaryAddress?.city || "";
       form.elements.region.value = primaryAddress?.region || "";
-      form.elements.locationVisibility.value = primaryAddress?.visibility || "directory_members";
       form.dataset.savedCity = primaryAddress?.city || "";
       form.dataset.savedRegion = primaryAddress?.region || "";
-      form.dataset.savedLocationVisibility = primaryAddress?.visibility || "";
       document.getElementById("householdPublicationSummary").innerHTML = publication
         ? `<div class="summary-row"><span>Family directory status</span><strong>${esc(statusLabel(publication.status || "draft"))}</strong></div>`
         : '<div class="summary-row"><span>Family directory status</span><strong>Private draft</strong></div>';
@@ -2131,6 +2142,7 @@
       document.getElementById("householdPhotoSummary").innerHTML = renderMediaSummary(asset, "household");
       document.getElementById("removeHouseholdPhoto").hidden = !asset;
       hydrateAuthorizedImages(document.getElementById("householdPhotoSummary"));
+      hydrateAboutYou();
     }
     async function loadNamedays() {
       const household = firstHousehold();
@@ -2294,9 +2306,9 @@
     document.getElementById("skillSearchButton").addEventListener("click", loadSkillSearch);
     const EDIT_WIZARD_TITLES = ["About You", "Members & Namedays", "Directory Sharing", "Skills"];
     const EDIT_WIZARD_HELP = [
-      "Add just the essentials. You will choose what is shared in step three.",
-      "Keep your household members and namedays current with short, simple forms.",
-      "Switch on each detail you want visible in the private parish directory.",
+      "Add just the essentials. Sharing choices are collected in step three.",
+      "Keep household members, namedays, and your family photo current. Their sharing choices are in step three.",
+      "Choose Private, Parish staff only, or Directory members for every household detail.",
       "Optionally add one or more ways you would be happy to help your parish."
     ];
     let editWizardStep = 1;
@@ -2620,7 +2632,7 @@
       const displayName = form.elements.displayName.value.trim();
       const city = form.elements.city.value.trim();
       const region = form.elements.region.value.trim();
-      const locationVisibility = form.elements.locationVisibility.value;
+      const locationVisibility = householdDetailState?.primaryAddress?.visibility || "private";
       const expectedVersion = Number(form.elements.expectedVersion.value || 0);
       if (!householdId || !expectedVersion) {
         showNotice("Family details are still loading. Please try again in a moment.", true);
@@ -2635,8 +2647,7 @@
         body: JSON.stringify({ displayName, expectedVersion })
       });
       const locationChanged = city !== (form.dataset.savedCity || "")
-        || region !== (form.dataset.savedRegion || "")
-        || locationVisibility !== (form.dataset.savedLocationVisibility || "");
+        || region !== (form.dataset.savedRegion || "");
       if (locationChanged) {
         const savedAddress = householdDetailState?.primaryAddress || {};
         await api(`/api/directory/households/${encodeURIComponent(householdId)}/self/addresses`, {
@@ -2715,7 +2726,12 @@
           region: defaults.region,
           country: "US"
         } : null);
-      const visibility = (checked) => checked ? "directory_members" : "private";
+      const nameVisibility = form.elements.shareNameVisibility.value;
+      const emailVisibility = form.elements.shareEmailVisibility.value;
+      const phoneVisibility = form.elements.sharePhoneVisibility.value;
+      const locationVisibility = form.elements.shareLocationVisibility.value;
+      const photoVisibility = form.elements.sharePhotoVisibility.value;
+      const isPublishable = (visibility) => visibility === "directory_members";
       const preferenceJobs = [
         () => api("/api/directory/privacy/preferences", {
           method: "POST",
@@ -2723,8 +2739,8 @@
             ownerType: "person",
             ownerId: person.id,
             fieldKey: "adult_preferred_name",
-            visibility: visibility(form.elements.shareName.checked),
-            publicationEligible: form.elements.shareName.checked
+            visibility: nameVisibility,
+            publicationEligible: isPublishable(nameVisibility)
           })
         })
       ];
@@ -2734,8 +2750,8 @@
           ownerType: "person",
           ownerId: person.id,
           fieldKey: "adult_email",
-          visibility: visibility(form.elements.shareEmail.checked),
-          publicationEligible: form.elements.shareEmail.checked
+          visibility: emailVisibility,
+          publicationEligible: isPublishable(emailVisibility)
         })
       }));
       if (phoneValue) preferenceJobs.push(() => api("/api/directory/privacy/preferences", {
@@ -2744,8 +2760,8 @@
           ownerType: "person",
           ownerId: person.id,
           fieldKey: "adult_phone",
-          visibility: visibility(form.elements.sharePhone.checked),
-          publicationEligible: form.elements.sharePhone.checked
+          visibility: phoneVisibility,
+          publicationEligible: isPublishable(phoneVisibility)
         })
       }));
       if (household && address) preferenceJobs.push(() => api("/api/directory/privacy/preferences", {
@@ -2754,37 +2770,47 @@
           ownerType: "household",
           ownerId: household.id,
           fieldKey: "city_state",
-          visibility: visibility(form.elements.shareLocation.checked),
-          publicationEligible: form.elements.shareLocation.checked
+          visibility: locationVisibility,
+          publicationEligible: isPublishable(locationVisibility)
+        })
+      }));
+      if (household && window.currentDirectoryHouseholdPhoto) preferenceJobs.push(() => api("/api/directory/privacy/preferences", {
+        method: "POST",
+        body: JSON.stringify({
+          ownerType: "household",
+          ownerId: household.id,
+          fieldKey: "household_photo",
+          visibility: photoVisibility,
+          publicationEligible: isPublishable(photoVisibility)
         })
       }));
       const jobs = [];
       if (emailContact) jobs.push(() => api(`/api/directory/self/contacts/${encodeURIComponent(emailContact.id)}`, {
         method: "PATCH",
-        body: JSON.stringify({ visibility: visibility(form.elements.shareEmail.checked), expectedVersion: emailContact.version })
+        body: JSON.stringify({ visibility: emailVisibility, expectedVersion: emailContact.version })
       }));
-      else if (emailValue && form.elements.shareEmail.checked) jobs.push(() => api("/api/directory/self/contacts", {
+      else if (emailValue) jobs.push(() => api("/api/directory/self/contacts", {
         method: "POST",
         body: JSON.stringify({
           contactType: "email",
           value: emailValue,
           label: "personal",
           primary: true,
-          visibility: "directory_members"
+          visibility: emailVisibility
         })
       }));
       if (phoneContact) jobs.push(() => api(`/api/directory/self/contacts/${encodeURIComponent(phoneContact.id)}`, {
         method: "PATCH",
-        body: JSON.stringify({ visibility: visibility(form.elements.sharePhone.checked), expectedVersion: phoneContact.version })
+        body: JSON.stringify({ visibility: phoneVisibility, expectedVersion: phoneContact.version })
       }));
-      else if (phoneValue && form.elements.sharePhone.checked) jobs.push(() => api("/api/directory/self/contacts", {
+      else if (phoneValue) jobs.push(() => api("/api/directory/self/contacts", {
         method: "POST",
         body: JSON.stringify({
           contactType: "phone",
           value: phoneValue,
           label: "mobile",
           primary: true,
-          visibility: "directory_members"
+          visibility: phoneVisibility
         })
       }));
       if (household && address) jobs.push(() => api(`/api/directory/households/${encodeURIComponent(household.id)}/self/addresses`, {
@@ -2799,9 +2825,18 @@
             country: address.country || "US",
           primary: true,
           protectedAddress: false,
-          visibility: visibility(form.elements.shareLocation.checked)
+          visibility: locationVisibility
         })
       }));
+      if (window.currentDirectoryHouseholdPhoto) jobs.push(async () => {
+        const result = await api(`/api/directory/media/${encodeURIComponent(window.currentDirectoryHouseholdPhoto.id)}/visibility`, {
+          method: "PATCH",
+          body: JSON.stringify({ visibility: photoVisibility })
+        });
+        if (photoVisibility === "directory_members" && result.asset?.lifecycleStatus === "ready") {
+          await api(`/api/directory/media/${encodeURIComponent(result.asset.id)}/submit`, { method: "POST" });
+        }
+      });
       if (directoryChildSharing.length) jobs.push(() => setDirectoryChildrenSharing(form.elements.shareChildren.checked));
       if (household) householdNamedays.forEach((nameday) => jobs.push(
         () => api(`/api/directory/households/${encodeURIComponent(household.id)}/self/namedays/${encodeURIComponent(nameday.id)}`, {
@@ -2811,7 +2846,7 @@
             displayName: nameday.displayName,
             saintName: nameday.saintName,
             feastMonthDay: nameday.feastMonthDay,
-            visibility: visibility(form.elements.shareNameday.checked)
+            visibility: form.querySelector(`[data-nameday-id="${CSS.escape(nameday.id)}"]`)?.value || nameday.visibility || "private"
           })
         })
       ));
@@ -2855,7 +2890,6 @@
         form.elements.saintName.value = nameday?.saintName || "";
         form.elements.feastMonth.value = month || "";
         form.elements.feastDay.value = day ? Number(day) : "";
-        form.elements.visibility.value = nameday?.visibility || "directory_members";
         form.dataset.isSelf = isSelf ? "true" : "false";
         form.dataset.dirty = "";
         form.hidden = false;
@@ -2889,6 +2923,7 @@
       const feastMonth = String(values.feastMonth || "").trim();
       const feastDay = String(values.feastDay || "").trim();
       const namedayId = String(values.namedayId || "");
+      const namedayVisibility = householdNamedays.find((item) => item.id === namedayId)?.visibility || "private";
       try {
         if ((saintName || feastMonth || feastDay) && (!saintName || !feastMonth || !feastDay)) {
           throw new Error("Enter the patron saint, month, and day—or leave all three blank.");
@@ -2911,7 +2946,7 @@
               displayName: values.preferredName,
               saintName,
               feastMonthDay: `${feastMonth}-${feastDay.padStart(2, "0")}`,
-              visibility: values.visibility
+              visibility: namedayVisibility
             })
           });
         } else if (namedayId) {

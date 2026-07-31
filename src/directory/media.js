@@ -434,6 +434,30 @@ export async function getDirectoryMediaAsset(env, { context, mediaAssetId }) {
   return mediaAssetDto(asset, variants);
 }
 
+export async function updateDirectoryMediaVisibility(env, { context, mediaAssetId, visibility = "private", correlationId = "" }) {
+  const asset = await d1First(env, "SELECT * FROM directory_media_assets WHERE id = ?1", cleanText(mediaAssetId, { required: true, max: 180, field: "mediaAssetId" }));
+  if (!asset || asset.lifecycle_status === "deleted") throw new DirectoryServiceError("not_found", "Directory media was not found.", 404);
+  const auth = await resolveOwnerAuthority(env, context, { ownerType: asset.owner_type, ownerId: asset.owner_id, visibility });
+  const timestamp = nowMs();
+  await runAtomic(env, [
+    {
+      sql: "UPDATE directory_media_assets SET visibility = ?, publication_eligible = ?, updated_at = ? WHERE id = ?",
+      params: [auth.visibility, auth.publicationEligible ? 1 : 0, timestamp, asset.id]
+    },
+    auditStatement({
+      action: "directory.media.visibility_changed",
+      actor: actorFromContext(context, auth.parishId),
+      parishId: auth.parishId,
+      targetType: "directory_media_asset",
+      targetId: asset.id,
+      before: { visibility: asset.visibility, publicationEligible: Number(asset.publication_eligible || 0) === 1 },
+      after: { visibility: auth.visibility, publicationEligible: auth.publicationEligible },
+      correlationId
+    })
+  ]);
+  return getDirectoryMediaAsset(env, { context, mediaAssetId: asset.id });
+}
+
 export async function submitDirectoryMediaForReview(env, { context, mediaAssetId, correlationId = "" }) {
   const asset = await d1First(env, "SELECT * FROM directory_media_assets WHERE id = ?1", cleanText(mediaAssetId, { required: true, max: 180, field: "mediaAssetId" }));
   if (!asset) throw new DirectoryServiceError("not_found", "Directory media was not found.", 404);

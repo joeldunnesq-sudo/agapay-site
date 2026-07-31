@@ -15,7 +15,8 @@ assert.match(page, /\.directory-modal \{ position:fixed; inset:0; z-index:120;/)
 assert.match(page, /id="memberEditForm"[\s\S]*name="saintName"[\s\S]*name="feastMonth"[\s\S]*name="feastDay"/);
 assert.match(page, /Save Member &amp; Nameday/);
 assert.match(page, /feastMonthDay: `\$\{feastMonth\}-\$\{feastDay\.padStart\(2, "0"\)\}`/);
-assert.match(page, /id="householdDetailsForm"[\s\S]*name="city"[\s\S]*name="region"[\s\S]*name="locationVisibility"/);
+assert.match(page, /id="householdDetailsForm"[\s\S]*name="city"[\s\S]*name="region"/);
+assert.doesNotMatch(page, /id="householdDetailsForm"(?:(?!<\/form>)[\s\S])*name="locationVisibility"/);
 assert.match(page, /class="household-hub-identity" data-wizard-step="2"[\s\S]*Family name<input name="displayName"/);
 assert.doesNotMatch(page, /class="household-hub-identity" data-wizard-step="0"/);
 assert.match(page, /self\/addresses`, \{[\s\S]*city,[\s\S]*region,[\s\S]*visibility: locationVisibility/);
@@ -81,7 +82,7 @@ assert.match(page, /Remember to keep your household information and namedays cur
 assert.match(page, /settings\.scrollTop = 0;/);
 assert.match(page, /id="submitDirectoryListing"/);
 assert.match(page, /Publish Chosen Details/);
-assert.match(page, /id="contactForm"[\s\S]*name="shareName"[\s\S]*name="shareEmail"[\s\S]*name="sharePhone"[\s\S]*name="shareLocation"[\s\S]*name="shareChildren"[\s\S]*name="shareNameday"/);
+assert.match(page, /id="contactForm"[\s\S]*name="shareNameVisibility"[\s\S]*name="shareEmailVisibility"[\s\S]*name="sharePhoneVisibility"[\s\S]*name="shareLocationVisibility"[\s\S]*name="sharePhotoVisibility"[\s\S]*name="shareChildren"[\s\S]*id="namedaySharingRows"/);
 assert.match(page, /function setDirectoryChildrenSharing\(enabled\)/);
 assert.match(page, /requestedFields: \["preferred_name", "relationship_label"\]/);
 assert.match(page, /householdNamedays\.forEach\(\(nameday\) => jobs\.push/);
