@@ -2359,6 +2359,12 @@ export async function handleParishSubscriptionPortal(request, env, parishId) {
     return unauthorized();
   }
 
+  const body = await request.json().catch(() => ({}));
+  const flow = String(body.flow || "manage").trim().toLowerCase();
+  if (!["manage", "cancel"].includes(flow)) {
+    return json({ error: "Invalid subscription portal flow" }, { status: 400 });
+  }
+
   const customerId = found.registration.stripeCustomerId || "";
   if (!customerId) {
     return json(
@@ -2372,6 +2378,22 @@ export async function handleParishSubscriptionPortal(request, env, parishId) {
     customer: customerId,
     return_url: `${appUrl}/parish/dashboard?parish=${encodeURIComponent(parishId)}`
   });
+  if (flow === "cancel") {
+    const subscriptionId = found.registration.stripeSubscriptionId || "";
+    if (!subscriptionId) {
+      return json(
+        { error: "No active subscription found", detail: "Refresh billing status before cancelling AGAPAY Give." },
+        { status: 422 }
+      );
+    }
+    form.set("flow_data[type]", "subscription_cancel");
+    form.set("flow_data[subscription_cancel][subscription]", subscriptionId);
+    form.set("flow_data[after_completion][type]", "redirect");
+    form.set(
+      "flow_data[after_completion][redirect][return_url]",
+      `${appUrl}/parish/dashboard?parish=${encodeURIComponent(parishId)}&subscription_cancelled=1`
+    );
+  }
   if (env.AGAPAY_STRIPE_BILLING_PORTAL_CONFIGURATION) {
     form.set("configuration", env.AGAPAY_STRIPE_BILLING_PORTAL_CONFIGURATION);
   }
@@ -2493,9 +2515,12 @@ export function parishDashboardPayload(parishId, registration) {
     givingStatus: registration.givingStatus || "active",
     stripeAccountId: registration.stripeAccountId || "",
     stripeAccountStatus: registration.stripeAccountStatus || "not_started",
+    stripeChargesEnabled: Boolean(registration.stripeChargesEnabled),
     subscriptionTier: registration.subscriptionTier || defaultSubscriptionTier(registration),
     subscriptionTierLabel: currentTier?.label || registration.subscriptionTierLabel || "",
     subscriptionStatus: registration.subscriptionStatus || "not_started",
+    stripeCustomerId: registration.stripeCustomerId || "",
+    stripeSubscriptionId: registration.stripeSubscriptionId || "",
     // Display the current published tier price. Stored amounts describe an
     // earlier checkout and must not leave the dashboard advertising a stale
     // plan price after the catalog changes.

@@ -53,6 +53,11 @@ assert.ok(
 );
 assert.ok(backendSources.includes('"admin-money-actions"'), "admin Stripe/billing actions should be rate-limited");
 assert.ok(backendSources.includes('"parish-money-actions"'), "parish Stripe/billing actions should be rate-limited");
+assert.ok(
+  parishHandler.includes('form.set("flow_data[type]", "subscription_cancel")')
+    && parishHandler.includes('form.set("flow_data[subscription_cancel][subscription]", subscriptionId)'),
+  "parish subscription cancellation should use Stripe's hosted confirmation flow"
+);
 assert.ok(backendSources.includes("claimStripeEvent(env, event)") && backendSources.includes("finishStripeEvent(env, event.id"), "Stripe webhooks should claim and finish events for idempotency");
 assert.ok(backendSources.includes("checkout.session.expired"), "Stripe webhooks should handle expired checkout sessions");
 assert.ok(backendSources.includes("checkout.session.async_payment_succeeded"), "Stripe webhooks should handle delayed successful checkout payments");
@@ -453,6 +458,17 @@ assert.ok(
     && parishDashboardApp.includes("Upgrade to Giving Plus")
     && parishDashboardApp.includes("givingFeatures?.branding"),
   "Starter dashboard should preview locked Giving Plus features with an upgrade paywall"
+);
+assert.ok(
+  parishDashboardApp.includes('class="btn btn-gold" href="https://dashboard.stripe.com"')
+    && parishDashboardApp.includes('onclick="openSubscriptionCancellation(this)"')
+    && parishDashboardApp.includes("body: JSON.stringify({ flow: 'cancel' })"),
+  "parish settings should show a visible gold Stripe button and a working AGAPAY Give cancellation action"
+);
+assert.ok(
+  parishHandler.includes("stripeChargesEnabled: Boolean(registration.stripeChargesEnabled)")
+    && parishHandler.includes('stripeSubscriptionId: registration.stripeSubscriptionId || ""'),
+  "the authenticated parish payload should expose the Stripe state needed for billing controls"
 );
 assert.ok(
   parishHandlers.includes('Parish logo branding is available with Giving Plus.')

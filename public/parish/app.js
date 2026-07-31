@@ -8004,6 +8004,10 @@
     const demoActive = subscriptionDemoActive(p);
     const demoEligible = Boolean(p.subscriptionIntroDemoEligible);
     const demoEndLabel = subscriptionDemoDateLabel(p);
+    const canCancelSubscription = Boolean(p.stripeSubscriptionId && ['active', 'trialing'].includes(String(p.subscriptionStatus || '').toLowerCase()));
+    const cancelSubscriptionButton = canCancelSubscription
+      ? '<button class="btn btn-danger" onclick="openSubscriptionCancellation(this)">Cancel AGAPAY Give</button>'
+      : '';
     const tierOptions = tierOptionsMarkup(p.subscriptionTier);
     document.getElementById('settingsPane').innerHTML = `
       <div class="form-grid">
@@ -8095,9 +8099,9 @@
         ${p.parishId === 'st-fiacre'
           ? '<button class="btn btn-gold" onclick="changeDemoTier(this)">Apply demo tier</button>'
           : demoActive
-          ? '<button class="btn btn-gold" onclick="startSubscriptionCheckout(this, \'subscriptionTierUpgrade\')">Apply demo tier change</button><button class="btn btn-ghost" onclick="openSubscriptionPortal(this)">Add billing details or cancel</button>'
+          ? '<button class="btn btn-gold" onclick="startSubscriptionCheckout(this, \'subscriptionTierUpgrade\')">Apply demo tier change</button><button class="btn btn-ghost" onclick="openSubscriptionPortal(this)">Add billing details</button>' + cancelSubscriptionButton
           : billingActive
-          ? '<button class="btn btn-gold" onclick="startSubscriptionCheckout(this, \'subscriptionTierUpgrade\')">Apply tier change</button><button class="btn btn-ghost" onclick="openSubscriptionPortal(this)">Manage payment details or cancel</button>'
+          ? '<button class="btn btn-gold" onclick="startSubscriptionCheckout(this, \'subscriptionTierUpgrade\')">Apply tier change</button><button class="btn btn-ghost" onclick="openSubscriptionPortal(this)">Manage payment details</button>' + cancelSubscriptionButton
           : `<button class="btn btn-gold" onclick="startSubscriptionCheckout(this, 'subscriptionTierUpgrade')">${demoEligible?'Start free 30-day demo':'Start tier checkout'}</button>`}
       </div>
       <div class="setup-link-box" id="subscriptionUpgradeLinkBox"><a id="subscriptionUpgradeLink" href="#" target="_blank" rel="noopener">Open billing checkout</a><p id="subscriptionUpgradeHelp"></p></div>
@@ -8105,7 +8109,7 @@
       <p class="section-note">Manage your parish Stripe account — update bank account details, payout schedule, business information, and view your full transaction history directly in Stripe.</p>
       <div class="btn-row">
         ${p.stripeAccountId && p.stripeChargesEnabled
-          ? `<a class="btn btn-ghost" href="https://dashboard.stripe.com" target="_blank" rel="noopener">Manage Stripe account ↗</a>`
+          ? `<a class="btn btn-gold" href="https://dashboard.stripe.com" target="_blank" rel="noopener">Manage Stripe account ↗</a>`
           : `<button class="btn btn-ghost" disabled title="Complete Stripe onboarding to access your Stripe account">Stripe account not yet active</button>`}
       </div>
       <div class="section-divider"><span>Feature toggles</span></div>
@@ -9608,6 +9612,25 @@
       const data = await res.json(); if (!res.ok) throw new Error(data.detail||data.error||'Unable to open subscription management');
       if (win) win.location.href = data.portalUrl;
       setStatus(win?'Subscription management opened in a new tab.':'Subscription management link created.','success');
+    } catch(err){if(win)win.close();setStatus(err.message,'error');}
+    finally{if(btn){btn.classList.remove('loading');btn.disabled=false;}}
+  }
+
+  async function openSubscriptionCancellation(btn) {
+    if (!currentParish) return;
+    if (!window.confirm('Cancel AGAPAY Give? Stripe will show the cancellation date and ask you to confirm before anything changes.')) return;
+    const win = window.open('', '_blank'); if (win) win.opener = null;
+    if (btn){btn.classList.add('loading');btn.disabled=true;}
+    try {
+      await refreshSubscriptionStatus({ quiet: true });
+      const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/subscription-portal', {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ flow: 'cancel' })
+      });
+      const data = await res.json(); if (!res.ok) throw new Error(data.detail||data.error||'Unable to open subscription cancellation');
+      if (win) win.location.href = data.portalUrl;
+      setStatus(win?'Subscription cancellation opened in a new tab. Confirm the change in Stripe.':'Subscription cancellation link created.','success');
     } catch(err){if(win)win.close();setStatus(err.message,'error');}
     finally{if(btn){btn.classList.remove('loading');btn.disabled=false;}}
   }
