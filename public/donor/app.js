@@ -4346,11 +4346,13 @@ function renderBookstoreProducts(products = []) {
 
     const cardsHtml = items.map(product => {
       const cartItem = bookstoreCart.find(ci => ci.productId === product.id && ci.variantId === (product.variantId || ""));
+      const available = product.trackInventory === false || Number(product.stockQuantity || 0) > 0;
       const qtyBadge = cartItem ? `<span class="bookstore-product-card-qty">${Number(cartItem.quantity || 1)}</span>` : "";
       const initial = escapeHtml((product.categoryLabel || product.name || "?").trim().charAt(0).toUpperCase() || "?");
       return `
-      <button type="button" class="bookstore-product-card" onclick="addBookstoreProductToCart('${escapeHtml(product.id)}','${escapeHtml(product.variantId || "")}')">
+      <button type="button" class="bookstore-product-card" onclick="addBookstoreProductToCart('${escapeHtml(product.id)}','${escapeHtml(product.variantId || "")}')" ${available ? "" : "disabled"}>
         ${qtyBadge}
+        ${available ? "" : '<span class="bookstore-product-stock-out">Out of stock</span>'}
         <span class="bookstore-product-badge" aria-hidden="true">${initial}</span>
         <strong>${escapeHtml(product.name)}</strong>
         <small>${escapeHtml(product.description || product.categoryLabel || "Bookstore item")}</small>
@@ -4403,6 +4405,10 @@ function renderBookstoreCart() {
 function addBookstoreProductToCart(productId, variantId = "") {
   const product = bookstoreProductById(productId, variantId);
   if (!product) return;
+  if (product.trackInventory !== false && Number(product.stockQuantity || 0) <= 0) {
+    setDonorStatus(`${product.name} is currently out of stock.`, "info");
+    return;
+  }
   const existing = bookstoreCart.find(item => item.productId === product.id && item.variantId === product.variantId);
   if (existing) existing.quantity = Math.min(50, Number(existing.quantity || 1) + 1);
   else bookstoreCart.push({

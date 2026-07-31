@@ -48,6 +48,7 @@ function renderProducts() {
     const available = productAvailable(product);
     return `<button class="product${line ? " in-cart" : ""}" type="button" onclick="addCatalogItem(${index})" ${available ? "" : "disabled"}>
       ${line ? `<span class="selected-badge">${line.quantity}</span>` : ""}
+      ${available ? "" : '<span class="sold-out-badge">Out of stock</span>'}
       <span class="product-art">${categoryArt(product.category)}<small>${escapeHtml(product.categoryLabel || "Parish item")}</small></span>
       <small>${escapeHtml(product.categoryLabel || "Bookstore item")}</small>
       <strong>${escapeHtml(product.name)}</strong>
