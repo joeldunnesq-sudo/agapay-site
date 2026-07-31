@@ -1272,7 +1272,7 @@ export async function handleDonorBookstoreRequestFeature(request, env) {
   return json({ ok: true, alreadySent: false });
 }
 
-async function normalizeBookstoreCartItems(env, parishId, items) {
+export async function normalizeBookstoreCartItems(env, parishId, items) {
   const normalized = [];
   for (const raw of items) {
     const productId = String(raw.productId || "").trim();
@@ -1294,8 +1294,10 @@ async function normalizeBookstoreCartItems(env, parishId, items) {
       `, parishId, productId, productId, variantId, variantId);
       if (!row) throw new Error("One of the selected products is no longer available.");
       const product = normalizeBookstoreProduct(row);
-      if (product.trackInventory && product.stockQuantity > 0 && quantity > product.stockQuantity) {
-        throw new Error(`${product.name} only has ${product.stockQuantity} available.`);
+      if (product.trackInventory && quantity > product.stockQuantity) {
+        throw new Error(product.stockQuantity <= 0
+          ? `${product.name} is currently out of stock.`
+          : `${product.name} only has ${product.stockQuantity} available.`);
       }
       normalized.push({
         source: "catalog",

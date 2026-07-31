@@ -31,6 +31,7 @@ import {
   clampListLimit,
   createPasswordRecord,
   d1All,
+  d1Batch,
   d1First,
   d1GetSetting,
   d1Run,
@@ -83,6 +84,7 @@ import { ensureBenevolenceFundInRegistration, mergeStewardshipFundsIntoRegistrat
 
 export {
   d1All,
+  d1Batch,
   d1First,
   d1Run,
   generateSecret,

@@ -10,12 +10,12 @@ sqlite.exec(`
     total_charged_cents INTEGER, stripe_fee_cents INTEGER, agapay_fee_cents INTEGER,
     parish_net_cents INTEGER, cover_fees INTEGER, payment_status TEXT, status TEXT,
     checkout_session_id TEXT, stripe_payment_intent_id TEXT, stripe_charge_id TEXT,
-    stripe_customer_id TEXT, fulfillment_status TEXT, completed_at TEXT, updated_at TEXT
+    stripe_customer_id TEXT, fulfillment_status TEXT, parish_notes TEXT, completed_at TEXT, updated_at TEXT
   );
   CREATE TABLE commerce_order_items (
     id TEXT PRIMARY KEY, order_id TEXT, parish_id TEXT, commerce_module TEXT,
     product_id TEXT, variant_id TEXT, sku TEXT, barcode TEXT, item_category TEXT,
-    item_name TEXT, item_description TEXT, unit_price_cents INTEGER, tax_code TEXT,
+    item_name TEXT, item_description TEXT, quantity INTEGER, unit_price_cents INTEGER, tax_code TEXT,
     snapshot_json TEXT, fulfillment_type TEXT, created_at TEXT, updated_at TEXT
   );
   CREATE TABLE commerce_products (
@@ -61,9 +61,9 @@ function addScannedOrder(id, sessionId, barcode, title) {
   sqlite.prepare(`
     INSERT INTO commerce_order_items
       (id, order_id, parish_id, commerce_module, product_id, variant_id, sku, barcode,
-       item_category, item_name, item_description, unit_price_cents, tax_code,
+       item_category, item_name, item_description, quantity, unit_price_cents, tax_code,
        snapshot_json, fulfillment_type, created_at, updated_at)
-    VALUES (?, ?, 'parish_1', 'bookstore', '', '', ?, ?, 'book', ?, ?, 2495, '',
+    VALUES (?, ?, 'parish_1', 'bookstore', '', '', ?, ?, 'book', ?, ?, 1, 2495, '',
             '{"specifics":{"isbn":"9780884651751"}}', 'physical_pickup',
             '2026-07-31T12:00:00.000Z', '2026-07-31T12:00:00.000Z')
   `).run(`item_${id}`, id, barcode, barcode, title, title);

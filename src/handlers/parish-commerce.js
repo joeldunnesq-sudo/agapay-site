@@ -23,6 +23,7 @@ import {
   bookstoreEnabledFor,
   centsFromBody,
   d1All,
+  d1Batch,
   d1First,
   d1Run,
   findRegistrationByParishId,
@@ -42,6 +43,12 @@ import {
 } from "./parish.js";
 
 const commerceDatabase = (env) => env.AGAPAY_DB || env.DB || null;
+const BOOKSTORE_INVENTORY_MARKER_PREFIX = "[inventory-applied:";
+const BOOKSTORE_INVENTORY_ATTENTION = "Inventory attention: paid order exceeded available storefront stock. Review for a refund, backorder, or stock correction.";
+
+function changedRows(result) {
+  return Number(result?.meta?.changes ?? result?.changes ?? 0);
+}
 
 const BOOKSTORE_STARTER_CATALOG = [
   {
@@ -167,6 +174,68 @@ async function promotePaidScannedBooksToCatalog(env, order, now) {
       UPDATE commerce_orders SET product_id = ?, variant_id = ?, updated_at = ? WHERE id = ?
     `, firstCatalogItem.id, firstCatalogItem.variant_id, now, order.id);
   }
+}
+
+export async function applyBookstoreInventoryAtCompletion(env, order, now = new Date().toISOString()) {
+  if (!order?.id || !order?.parish_id || !commerceDatabase(env)) return { applied: false, oversold: false };
+  const trackedItems = await d1All(env, `
+    SELECT i.variant_id, SUM(i.quantity) AS quantity
+    FROM commerce_order_items i
+    JOIN commerce_product_variants v
+      ON v.id = i.variant_id AND v.parish_id = i.parish_id AND v.commerce_module = 'bookstore'
+    WHERE i.order_id = ? AND i.parish_id = ? AND i.commerce_module = 'bookstore'
+      AND i.variant_id IS NOT NULL AND i.variant_id <> '' AND v.track_inventory = 1
+    GROUP BY i.variant_id
+  `, order.id, order.parish_id);
+  if (!trackedItems.length) return { applied: false, oversold: false };
+
+  const marker = `${BOOKSTORE_INVENTORY_MARKER_PREFIX}${generateSecret("claim")}]`;
+  const markerLike = `%${marker}%`;
+  const statements = [
+    {
+      sql: `UPDATE commerce_orders
+            SET parish_notes = trim(COALESCE(parish_notes, '') || CASE WHEN COALESCE(parish_notes, '') = '' THEN '' ELSE char(10) END || ?),
+                updated_at = ?
+            WHERE id = ? AND parish_id = ? AND commerce_module = 'bookstore'
+              AND COALESCE(parish_notes, '') NOT LIKE ?`,
+      params: [marker, now, order.id, order.parish_id, `%${BOOKSTORE_INVENTORY_MARKER_PREFIX}%`]
+    },
+    {
+      sql: `UPDATE commerce_orders
+            SET parish_notes = trim(COALESCE(parish_notes, '') || char(10) || ?),
+                fulfillment_status = 'pending', updated_at = ?
+            WHERE id = ? AND parish_id = ? AND commerce_module = 'bookstore'
+              AND parish_notes LIKE ?
+              AND EXISTS (
+                SELECT 1
+                FROM commerce_order_items i
+                JOIN commerce_product_variants v
+                  ON v.id = i.variant_id AND v.parish_id = i.parish_id AND v.commerce_module = 'bookstore'
+                WHERE i.order_id = commerce_orders.id AND i.parish_id = commerce_orders.parish_id
+                  AND i.commerce_module = 'bookstore' AND v.track_inventory = 1
+                GROUP BY v.id
+                HAVING SUM(i.quantity) > MAX(v.stock_quantity)
+              )`,
+      params: [BOOKSTORE_INVENTORY_ATTENTION, now, order.id, order.parish_id, markerLike]
+    },
+    ...trackedItems.map(item => ({
+      sql: `UPDATE commerce_product_variants
+            SET stock_quantity = stock_quantity - ?, updated_at = ?
+            WHERE id = ? AND parish_id = ? AND commerce_module = 'bookstore'
+              AND track_inventory = 1 AND stock_quantity >= ?
+              AND EXISTS (
+                SELECT 1 FROM commerce_orders o
+                WHERE o.id = ? AND o.parish_id = ? AND o.parish_notes LIKE ?
+              )`,
+      params: [Number(item.quantity || 0), now, item.variant_id, order.parish_id,
+        Number(item.quantity || 0), order.id, order.parish_id, markerLike]
+    }))
+  ];
+
+  const results = await d1Batch(env, statements);
+  const applied = changedRows(results?.[0]) === 1;
+  const oversold = applied && changedRows(results?.[1]) === 1;
+  return { applied, oversold };
 }
 
 export async function handleParishBookstore(request, env, parishId, subpath = "") {
@@ -344,7 +413,7 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
       `SELECT o.id, o.order_number, o.donor_email, o.donor_name, o.item_description,
               o.quantity, o.total_charged_cents, o.parish_net_cents, o.tax_cents,
               o.agapay_fee_cents, o.stripe_fee_cents,
-              o.payment_status, o.fulfillment_status, o.source, o.created_at, o.completed_at,
+              o.payment_status, o.fulfillment_status, o.parish_notes, o.source, o.created_at, o.completed_at,
               o.settlement_profile_id, sp.name AS settlement_profile_name,
               CASE WHEN d.email IS NOT NULL THEN 1 ELSE 0 END AS is_myagapay,
               CASE WHEN d.default_parish_id = o.parish_id THEN 1 ELSE 0 END AS is_home_parish
@@ -404,6 +473,7 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
       settlementProfileName: r.settlement_profile_name || null,
       paymentStatus: r.payment_status,
       fulfillmentStatus: r.fulfillment_status,
+      inventoryAttention: String(r.parish_notes || "").includes(BOOKSTORE_INVENTORY_ATTENTION),
       source: r.source,
       createdAt: r.created_at,
       completedAt: r.completed_at || null,
@@ -844,7 +914,11 @@ export async function completeCommerceOrderFromStripe(env, object = {}, kind = "
          tax_cents = ?, total_charged_cents = ?, stripe_fee_cents = ?, agapay_fee_cents = ?,
          parish_net_cents = ?, stripe_payment_intent_id = ?, stripe_charge_id = ?,
          stripe_customer_id = COALESCE(NULLIF(?, ''), stripe_customer_id),
-         fulfillment_status = CASE WHEN fulfillment_status = 'pending' THEN 'ready' ELSE fulfillment_status END,
+          fulfillment_status = CASE
+            WHEN COALESCE(parish_notes, '') LIKE '%Inventory attention:%' THEN fulfillment_status
+            WHEN fulfillment_status = 'pending' THEN 'ready'
+            ELSE fulfillment_status
+          END,
          completed_at = ?, updated_at = ?
      WHERE id = ?`,
     paymentStatus, status, taxCents, totalCents, stripeFeeCents, agapayFeeCents, netCents,
@@ -855,6 +929,7 @@ export async function completeCommerceOrderFromStripe(env, object = {}, kind = "
   );
 
   await promotePaidScannedBooksToCatalog(env, order, now);
+  await applyBookstoreInventoryAtCompletion(env, order, now);
 
   return { ...order, payment_status: paymentStatus, status, tax_cents: taxCents,
     total_charged_cents: totalCents, stripe_fee_cents: stripeFeeCents,

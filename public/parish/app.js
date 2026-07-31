@@ -5044,25 +5044,27 @@
       const items = (o.items || []).map(it =>
         `<li><span>${escapeHtml(it.name)}${it.quantity > 1 ? ` <em>×${it.quantity}</em>` : ''}</span><span>${moneyFull(it.totalCents)}</span></li>`).join('');
       const refunded = o.paymentStatus === 'refunded' || o.paymentStatus === 'partially_refunded';
+      const inventoryAttention = Boolean(o.inventoryAttention);
       return `
-        <div class="bk-order${refunded ? ' is-refunded' : ''}">
+        <div class="bk-order${refunded ? ' is-refunded' : ''}${inventoryAttention ? ' needs-inventory-attention' : ''}">
           <button class="bk-order-head" type="button" onclick="this.closest('.bk-order').classList.toggle('is-open')">
             <div class="bk-order-buyer">
               <div class="bk-order-avatar">${escapeHtml(bkInitials(o.donorName))}</div>
               <div>
-                <strong>${escapeHtml(o.donorName)}${o.isMyAgapay ? '<span class="bk-tag">My AGAPAY</span>' : ''}</strong>
+                <strong>${escapeHtml(o.donorName)}${o.isMyAgapay ? '<span class="bk-tag">My AGAPAY</span>' : ''}${inventoryAttention ? '<span class="bk-tag bk-tag--danger">Stock attention</span>' : ''}</strong>
                 <span class="bk-order-sub">${escapeHtml(o.summary)}${o.quantity > 1 ? ` · ${o.quantity} items` : ''}</span>
               </div>
             </div>
             <div class="bk-order-side">
               <div class="bk-order-amounts"><b>${moneyFull(o.grossCents)}</b><span>net ${moneyFull(o.netCents)}</span></div>
-              <div class="bk-order-tags">${bkPaymentPill(o.paymentStatus)}${bkFulfillPill(o.fulfillmentStatus)}</div>
+              <div class="bk-order-tags">${inventoryAttention ? '<span class="bk-pill bk-pill--danger">Stock attention</span>' : ''}${bkPaymentPill(o.paymentStatus)}${bkFulfillPill(o.fulfillmentStatus)}</div>
               <span class="bk-order-date">${dateLabel}</span>
               <svg class="bk-order-caret" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m3 5 3 3 3-3"/></svg>
             </div>
           </button>
           <div class="bk-order-detail">
             <div class="bk-order-detail-inner">
+              ${inventoryAttention ? `<div class="bk-inventory-alert"><strong>Paid past available stock</strong><span>This order needs treasurer review. Confirm the count, arrange a backorder, or refund the donor as appropriate.</span></div>` : ''}
               <div class="bk-order-detail-meta">
                 <span>${escapeHtml(o.donorEmail)}</span>
                 ${o.orderNumber ? `<span>#${escapeHtml(o.orderNumber)}</span>` : ''}
