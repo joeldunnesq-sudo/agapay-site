@@ -10,6 +10,7 @@ import {
   createContactMethod,
   createHousehold,
   createPerson,
+  DirectoryServiceError,
   linkExternalIdentity,
   resolveMemberDirectoryContext,
   getMemberDirectoryHome,
@@ -18,7 +19,8 @@ import {
   listMemberDirectoryHouseholds,
   listMemberDirectoryPeople,
   searchMemberDirectory,
-  setPersonPrivacyFlags
+  setPersonPrivacyFlags,
+  streamMemberDirectoryMediaVariant
 } from "../src/directory/index.js";
 import { handleDirectoryMember } from "../src/handlers/directory-member.js";
 import { ensurePlatformUser, issuePlatformUserSession, PLATFORM_USER_EMAIL_HEADER } from "../src/lib/identity.js";
@@ -146,6 +148,46 @@ function pref(db, { parishId = "st-fiacre", ownerType, ownerId, fieldKey, visibi
     .run(`pref_${ownerType}_${ownerId}_${fieldKey}`.replace(/[^a-zA-Z0-9_]/g, "_"), parishId, ownerType, ownerId, fieldKey, visibility, eligible);
 }
 
+function seedApprovedPhoto(db, { ownerType, ownerId, visibility = "directory_members" }) {
+  const assetId = `media_${ownerType}_${ownerId}`.replace(/[^a-zA-Z0-9_]/g, "_");
+  const assignmentId = `assignment_${assetId}`;
+  const variantType = ownerType === "household" ? "household_card" : "avatar_medium";
+  const mediaPurpose = ownerType === "household" ? "household_profile_photo" : "person_profile_photo";
+  db.prepare(`INSERT INTO directory_media_assets
+    (id, parish_id, owner_type, owner_id, media_purpose, lifecycle_status, processing_status,
+     visibility, publication_eligible, source_filename, detected_mime_type, original_byte_size,
+     original_width, original_height, decoded_pixel_count, content_hash, source_retained,
+     reupload_required, uploaded_by_user_id, active_assignment_id, processing_attempt_count,
+     pipeline_version, created_at, updated_at)
+    VALUES (?, 'st-fiacre', ?, ?, ?, 'approved', 'securely_transformed', ?, ?, 'family.jpg',
+      'image/jpeg', 128, 800, 600, 480000, 'test-hash', 1, 0, 'seed-admin', ?, 1,
+      'directory-media-v1', 1, 1)`)
+    .run(assetId, ownerType, ownerId, mediaPurpose, visibility, visibility === "directory_members" ? 1 : 0, assignmentId);
+  db.prepare(`INSERT INTO directory_media_assignments
+    (id, parish_id, owner_type, owner_id, media_purpose, media_asset_id, assignment_status,
+     assigned_by_user_id, created_at, updated_at)
+    VALUES (?, 'st-fiacre', ?, ?, ?, ?, 'active', 'seed-admin', 1, 1)`)
+    .run(assignmentId, ownerType, ownerId, mediaPurpose, assetId);
+  db.prepare(`INSERT INTO directory_media_variants
+    (id, media_asset_id, variant_type, width, height, mime_type, byte_size, r2_object_key,
+     content_hash, ready, created_at, secure_transform_status, pipeline_version,
+     metadata_stripped, verified_at)
+    VALUES (?, ?, ?, 512, 512, 'image/jpeg', 128, ?, 'test-hash', 1, 1,
+      'securely_transformed', 'directory-media-v1', 1, 1)`)
+    .run(`variant_${assetId}`, assetId, variantType, `test/${assetId}/${variantType}.jpg`);
+  return { assetId, variantType };
+}
+
+function approveChildPhotoPublication(db, { householdId, childPersonId }) {
+  db.prepare(`INSERT INTO directory_child_publication_requests
+    (id, parish_id, household_id, child_person_id, requester_user_id, status,
+     requested_fields_json, approved_fields_json, requested_photo, approved_photo,
+     policy_revision, created_at, updated_at, approved_at)
+    VALUES (?, 'st-fiacre', ?, ?, 'parent-user', 'approved', '["preferred_name"]',
+      '["preferred_name"]', 1, 1, 'child-publication-v1', 1, 1, 1)`)
+    .run(`child_photo_${childPersonId}`, householdId, childPersonId);
+}
+
 async function requestFor(env, db, user, path) {
   const session = await issuePlatformUserSession(env, user.id);
   grant(db, { userId: user.id, capabilities: [] });
@@ -216,6 +258,53 @@ await test("browse returns only approved visible people and omits private contac
   assert.equal(detail.person.contacts[0].value, "published@example.org");
   assert.equal(detail.person.contacts.some((contact) => String(contact.value || "").includes("555")), false);
   assert.equal(JSON.stringify(detail).includes("Maria Private Legal"), false);
+});
+
+await test("approved person photos are included with the authorized avatar variant", async () => {
+  const { env, db, viewer, visible } = await fixture();
+  const seeded = seedApprovedPhoto(db, { ownerType: "person", ownerId: visible.id });
+  const context = await resolveMemberDirectoryContext(env, { request: await requestFor(env, db, viewer, "/api/directory/member") });
+  const detail = await getMemberDirectoryPerson(env, { context, personId: visible.id });
+  assert.deepEqual(detail.person.photo, {
+    mediaAssetId: seeded.assetId,
+    variantType: "avatar_medium",
+    url: `/api/directory/member/media/${seeded.assetId}/variants/avatar_medium`,
+    alt: "Maria Antioch"
+  });
+});
+
+await test("private photos are omitted from member payloads", async () => {
+  const { env, db, viewer, visible } = await fixture();
+  seedApprovedPhoto(db, { ownerType: "person", ownerId: visible.id, visibility: "private" });
+  const context = await resolveMemberDirectoryContext(env, { request: await requestFor(env, db, viewer, "/api/directory/member") });
+  const detail = await getMemberDirectoryPerson(env, { context, personId: visible.id });
+  assert.equal(detail.person.photo, null);
+});
+
+await test("household photos are omitted from payload and delivery while any child lacks photo authorization", async () => {
+  const { env, db, viewer, household } = await fixture();
+  const seeded = seedApprovedPhoto(db, { ownerType: "household", ownerId: household.id });
+  const context = await resolveMemberDirectoryContext(env, { request: await requestFor(env, db, viewer, "/api/directory/member") });
+  const detail = await getMemberDirectoryHousehold(env, { context, householdId: household.id });
+  assert.equal(detail.household.photo, null, "an unauthorized child must prevent the family-photo reference from reaching the browser");
+  await assert.rejects(
+    () => streamMemberDirectoryMediaVariant(env, { context, mediaAssetId: seeded.assetId, variantType: seeded.variantType }),
+    (error) => error instanceof DirectoryServiceError && error.code === "not_found"
+  );
+});
+
+await test("household photos use the household-card variant after every child has explicit photo authorization", async () => {
+  const { env, db, viewer, household, child } = await fixture();
+  const seeded = seedApprovedPhoto(db, { ownerType: "household", ownerId: household.id });
+  approveChildPhotoPublication(db, { householdId: household.id, childPersonId: child.id });
+  const context = await resolveMemberDirectoryContext(env, { request: await requestFor(env, db, viewer, "/api/directory/member") });
+  const detail = await getMemberDirectoryHousehold(env, { context, householdId: household.id });
+  assert.deepEqual(detail.household.photo, {
+    mediaAssetId: seeded.assetId,
+    variantType: "household_card",
+    url: `/api/directory/member/media/${seeded.assetId}/variants/household_card`,
+    alt: "Antioch Household"
+  });
 });
 
 await test("household detail includes each adult's shared contacts and name day without another profile request", async () => {

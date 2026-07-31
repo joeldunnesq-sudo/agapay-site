@@ -284,7 +284,37 @@ async function publishedCity(env, context, ownerType, ownerId) {
   return cityDto(row);
 }
 
+async function householdPhotoChildAuthorizationSatisfied(env, context, householdId) {
+  const unauthorizedChild = await d1First(
+    env,
+    `SELECT hm.person_id
+       FROM directory_household_members hm
+       JOIN directory_people p ON p.id = hm.person_id AND p.active = 1
+       LEFT JOIN directory_person_privacy_flags f
+         ON f.parish_id = ?2 AND f.person_id = p.id AND f.active = 1
+      WHERE hm.household_id = ?1 AND hm.active = 1
+        AND (hm.relationship = 'child' OR COALESCE(f.is_child, 0) = 1)
+        AND (
+          COALESCE(f.protected_person, 0) = 1
+          OR NOT EXISTS (
+            SELECT 1
+              FROM directory_child_publication_requests cpr
+             WHERE cpr.parish_id = ?2
+               AND cpr.household_id = ?1
+               AND cpr.child_person_id = p.id
+               AND cpr.status = 'approved'
+               AND cpr.approved_photo = 1
+          )
+        )
+      LIMIT 1`,
+    householdId,
+    context.parishId
+  );
+  return !unauthorizedChild;
+}
+
 async function publishedPhoto(env, context, ownerType, ownerId) {
+  if (ownerType === "household" && !await householdPhotoChildAuthorizationSatisfied(env, context, ownerId)) return null;
   const row = await d1First(
     env,
     `SELECT a.id
@@ -662,6 +692,9 @@ export async function streamMemberDirectoryMediaVariant(env, { context, mediaAss
     ? (await peopleBaseRows(env, context)).some((person) => person.id === row.owner_id)
     : (await householdBaseRows(env, context)).some((household) => household.id === row.owner_id);
   if (!ownerVisible) throw new DirectoryServiceError("not_found", SAFE_NOT_FOUND, 404);
+  if (row.owner_type === "household" && !await householdPhotoChildAuthorizationSatisfied(env, context, row.owner_id)) {
+    throw new DirectoryServiceError("not_found", SAFE_NOT_FOUND, 404);
+  }
   const bucket = env?.DIRECTORY_MEDIA;
   if (!bucket) throw new DirectoryServiceError("storage_unavailable", "Directory media storage is not configured.", 503);
   const object = await bucket.get(row.r2_object_key);

@@ -651,6 +651,7 @@
       .family-detail { padding:0; border:0; background:transparent; box-shadow:none; }
       .family-detail-hero { display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px 0 16px; text-align:center; }
       .family-detail-avatar { display:grid; place-items:center; width:96px; height:96px; border-radius:50%; background:#efe7d8; color:#6f4f16; font-family:"Cormorant Garamond",Georgia,serif; font-size:36px; font-weight:600; }
+      img.family-detail-avatar { display:block; object-fit:cover; }
       .family-detail-hero h2 { margin:4px 0 0; font-family:"Cormorant Garamond",Georgia,serif; font-size:26px; font-weight:600; }
       .family-detail-hero p { margin:0; color:#70695d; font-size:13px; line-height:1.45; }
       .family-detail-section { padding:16px 0; border-top:1px solid rgba(6,21,34,.12); }
@@ -1339,13 +1340,22 @@
       return `${parts[0]?.charAt(0) || ""}${parts.length > 1 ? parts.at(-1).charAt(0) : ""}`.toUpperCase() || "AG";
     }
     function photoHtml(item, className = "member-photo") {
-      return `<span class="${className}" aria-hidden="true">${esc(directoryInitials(item.displayName, item.type))}</span>`;
+      const ownerType = item?.type === "household" ? "household" : "person";
+      const initials = directoryInitials(item?.displayName, item?.type);
+      const url = mediaPreviewUrl(item?.photo, ownerType);
+      return url
+        ? `<img class="${className}" data-auth-src="${esc(url)}" data-photo-fallback="${esc(initials)}" alt="${esc(item?.photo?.alt || item?.displayName || "Directory photo")}" loading="lazy" />`
+        : `<span class="${className}" aria-hidden="true">${esc(initials)}</span>`;
     }
     function mediaVariantFor(ownerType) {
       return ownerType === "household" ? "household_card" : "avatar_medium";
     }
     function mediaPreviewUrl(asset, ownerType = "person") {
-      return asset?.id ? `/api/directory/media/${encodeURIComponent(asset.id)}/variants/${encodeURIComponent(mediaVariantFor(ownerType))}` : "";
+      if (asset?.url) return asset.url;
+      const assetId = asset?.id || asset?.mediaAssetId || "";
+      if (!assetId) return "";
+      const variant = asset?.variantType || mediaVariantFor(ownerType);
+      return `/api/directory/media/${encodeURIComponent(assetId)}/variants/${encodeURIComponent(variant)}`;
     }
     function mediaStatusCopy(asset, ownerType = "person") {
       if (!asset) {
@@ -1420,8 +1430,17 @@
           img.dataset.objectUrl = objectUrl;
           img.src = objectUrl;
         } catch {
-          img.removeAttribute("src");
-          img.alt = img.alt || "Photo preview unavailable";
+          const initials = img.dataset.photoFallback || "";
+          if (initials) {
+            const fallback = document.createElement("span");
+            fallback.className = img.className;
+            fallback.setAttribute("aria-hidden", "true");
+            fallback.textContent = initials;
+            img.replaceWith(fallback);
+          } else {
+            img.removeAttribute("src");
+            img.alt = img.alt || "Photo preview unavailable";
+          }
         }
       }));
     }
@@ -1825,7 +1844,7 @@
         pane.innerHTML = `
         <article class="family-detail">
           <div class="family-detail-hero">
-            <span class="family-detail-avatar" aria-hidden="true">${esc(directoryInitials(profile.displayName, "household"))}</span>
+            ${photoHtml(profile, "family-detail-avatar")}
             <h2>${esc(profile.displayName)}</h2>
             <p>${[profile.parishName, profile.city].filter(Boolean).map(esc).join("<br>")}</p>
           </div>
@@ -1846,7 +1865,7 @@
       } else {
         pane.innerHTML = `
         <article class="mini-card">
-          <div class="profile-head">${type === "household" ? "" : photoHtml(profile)}<div><h2>${esc(profile.displayName)}</h2><div class="profile-meta">${[profile.city, profile.household?.displayName].filter(Boolean).map((value) => `<span>${esc(value)}</span>`).join("")}</div></div></div>
+          <div class="profile-head">${photoHtml(profile)}<div><h2>${esc(profile.displayName)}</h2><div class="profile-meta">${[profile.city, profile.household?.displayName].filter(Boolean).map((value) => `<span>${esc(value)}</span>`).join("")}</div></div></div>
           <div class="actions">${householdLink}<button class="btn secondary" type="button" id="closeMemberProfile">Back to Browse</button></div>
           ${contacts ? `<button class="directory-contact-reveal" type="button" data-reveal-directory-contact>Reveal contact info</button><div class="actions" data-directory-contacts hidden>${contacts}</div>` : ""}
           ${members}
