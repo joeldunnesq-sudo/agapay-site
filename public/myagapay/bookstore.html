@@ -14,7 +14,7 @@
   <script src="/security.js"></script>
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260729b" defer></script>
-  <script src="/donor/app.js?v=20260712a" defer></script>
+  <script src="/donor/app.js?v=20260731bookscan1" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -45,6 +45,17 @@
       display: inline-flex; align-items: center; gap: 6px;
       font-size: 13px; margin-bottom: 10px;
     }
+    .bookstore-scan-feature {
+      display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; align-items: center; gap: 14px;
+      padding: 16px; margin: 0 0 18px; border: 1px solid rgba(196,156,80,0.42); border-radius: 12px;
+      background: linear-gradient(135deg, rgba(196,156,80,0.13), rgba(255,255,255,0.92));
+      box-shadow: 0 10px 24px rgba(6,21,34,0.06);
+    }
+    .bookstore-scan-feature-icon { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 12px; background: #061522; color: #E1C47E; }
+    .bookstore-scan-feature-icon svg { width: 27px; height: 27px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+    .bookstore-scan-feature strong { display: block; color: #061522; font-family: var(--serif, serif); font-size: 18px; }
+    .bookstore-scan-feature p { margin: 3px 0 0; color: #6F6A60; font-size: 12.5px; line-height: 1.5; }
+    .bookstore-scan-feature button { white-space: nowrap; }
 
     .bookstore-shop-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.75fr); gap: 20px; align-items: start; }
     .bookstore-catalog-label { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
@@ -136,6 +147,10 @@
       .bookstore-shop-grid { grid-template-columns: 1fr; }
       .bookstore-cart-card { position: static; order: -1; }
     }
+    @media (max-width: 620px) {
+      .bookstore-scan-feature { grid-template-columns: 48px 1fr; }
+      .bookstore-scan-feature button { grid-column: 1 / -1; width: 100%; justify-content: center; }
+    }
   </style>
 </head>
 <body class="donor-mobile-page donor-bookstore-page">
@@ -162,6 +177,11 @@
               <div class="notice" id="bookstoreUnavailableNotice" style="display:none;"></div>
               <form id="bookstoreForm" onsubmit="submitBookstoreOrder(event)">
                 <div class="form-group full"><label class="form-label">My Parish</label><div class="form-input" id="commemorationParishDisplay" aria-live="polite">Loading your parish...</div><input id="bookstoreParishId" type="hidden" /></div>
+                <div class="bookstore-scan-feature">
+                  <span class="bookstore-scan-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M7 9v6M10 8v8M14 8v8M17 9v6"/></svg></span>
+                  <div><strong>Scan the book in your hand</strong><p>We’ll identify it from the barcode. After you pay, it becomes selectable inventory for other parishioners.</p></div>
+                  <button class="btn btn-gold bookstore-scan-btn" type="button" onclick="startBookstoreBookScan()">Scan book barcode</button>
+                </div>
                 <div class="bookstore-shop-grid">
                   <div>
                     <div class="bookstore-catalog-label">

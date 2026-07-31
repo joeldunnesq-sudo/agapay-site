@@ -16,13 +16,13 @@ assert.match(donorHandler, /updated\.pledgeCadence === "monthly" \? 12 : 1/);
 assert.match(worker, /\/api\/public\/bookstore\//);
 assert.match(worker, /\/bookstore\/index\.html/);
 assert.ok(worker.includes('^\\/[^/]+\\/bookstore\\/?$'), "the public storefront should resolve /[parish]/bookstore");
-assert.match(donorHandler, /Guest checkout is limited to items in the parish catalog/);
+assert.match(donorHandler, /Buyer-added guest items must be books with a valid ISBN barcode/);
 assert.ok(donorHandler.includes('`/${encodeURIComponent(resolved.parishId)}/bookstore`'));
 assert.match(parishHtml, /bookstoreGuestCheckoutQr/);
 assert.match(parishApp, /qrcode\(0, 'H'\)/);
 assert.match(parishApp, /brandQrSvg\(rawSvg, logoHref\)/);
 assert.ok(parishApp.includes("'/' + encodeURIComponent(currentParish.parishId) + '/bookstore'"));
-assert.match(publicStore, /No My AGAPAY login is required/);
+assert.match(publicStore, /No account required/);
 assert.match(publicStoreApp, /bookstorePathSegments\[1\] === "bookstore"/);
 
 assert.match(googleCalendar, /KV_PREFIX = "__agapay_sacraments_google_calendar:"/);

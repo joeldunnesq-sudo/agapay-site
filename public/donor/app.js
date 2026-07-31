@@ -4498,6 +4498,16 @@ let bookstoreScannerStream = null;
 let bookstoreScannerRAF = null;
 let bookstoreZXingReader = null;
 
+async function startBookstoreBookScan() {
+  await loadBookstoreItemFieldsSchema();
+  const category = document.getElementById("bookstoreCategory");
+  if (category) category.value = "book";
+  renderBookstoreItemFields();
+  const manualPanel = document.querySelector("details.bookstore-manual-panel");
+  if (manualPanel) manualPanel.open = true;
+  await openBookstoreScanner();
+}
+
 async function openBookstoreScanner() {
   const overlay = document.getElementById("bookstoreScannerOverlay");
   const video = document.getElementById("bookstoreScannerVideo");

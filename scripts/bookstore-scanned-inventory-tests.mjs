@@ -1,6 +1,15 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { completeCommerceOrderFromStripe } from "../src/handlers/parish-commerce.js";
+import { bookstoreOrderSource, guestBookstoreItemError } from "../src/handlers/donor.js";
+
+const guestScan = { source: "scan_and_go", itemCategory: "book", specifics: { isbn: "9780884651751", title: "The Orthodox Way" } };
+assert.equal(guestBookstoreItemError([guestScan]), "", "a guest may add a valid scanned book");
+assert.match(guestBookstoreItemError([{ source: "manual_entry", itemCategory: "other", specifics: { description: "misc" } }]), /valid ISBN barcode/,
+  "guest-added inventory stays constrained to ISBN books");
+assert.equal(bookstoreOrderSource([{ source: "catalog" }, guestScan], true), "scan_and_go",
+  "a guest scan must retain the source that promotes a paid book into inventory");
 
 const sqlite = new DatabaseSync(":memory:");
 sqlite.exec(`
@@ -115,5 +124,14 @@ product = sqlite.prepare(`
 `).get(isbn);
 assert.deepEqual({ ...product }, { status: "active", variant_status: "active" }, "a new paid scan should restore a matching archived book to the selectable catalog");
 assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM commerce_products").get().count, 1, "the same ISBN must not create a duplicate product");
+
+const publicStore = readFileSync(new URL("../public/bookstore/index.html", import.meta.url), "utf8");
+const publicStoreApp = readFileSync(new URL("../public/bookstore/app.js", import.meta.url), "utf8");
+const myAgapayStore = readFileSync(new URL("../public/myagapay/bookstore.html", import.meta.url), "utf8");
+assert.match(publicStore, /Scan a book now/);
+assert.match(publicStore, /id="addBookPanel" open/);
+assert.match(publicStoreApp, /source: "scan_and_go"/);
+assert.match(publicStoreApp, /joins catalog after payment/);
+assert.match(myAgapayStore, /onclick="startBookstoreBookScan\(\)"/);
 
 console.log("PASS - paid barcode scans populate the shared parish bookstore catalog idempotently");

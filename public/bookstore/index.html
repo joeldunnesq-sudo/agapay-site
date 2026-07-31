@@ -3,35 +3,94 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#071a2b" />
-  <title>Parish Bookstore Checkout | AGAPAY</title>
+  <meta name="theme-color" content="#061522" />
+  <title>Parish Bookstore | AGAPAY</title>
   <link rel="icon" href="/favicon.ico" />
-  <style>
-    :root{--navy:#071a2b;--gold:#b79043;--cream:#f7f2e8;--ink:#171715;--stone:#6f6a60;--line:#ddd3c1}
-    *{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,sans-serif}
-    header{background:var(--navy);color:#fff;padding:22px clamp(18px,5vw,64px);display:flex;align-items:center;gap:14px}header img{width:38px;height:38px}header b{font-family:Georgia,serif;font-size:20px;letter-spacing:.03em}header span{display:block;color:#d9caa9;font-size:12px;text-transform:uppercase;letter-spacing:.09em}
-    main{max-width:1120px;margin:0 auto;padding:clamp(24px,5vw,54px) 18px 64px}.hero{margin-bottom:24px}.hero span{color:#876c36;text-transform:uppercase;letter-spacing:.1em;font-size:12px;font-weight:800}.hero h1{font:700 clamp(30px,5vw,48px)/1.05 Georgia,serif;color:var(--navy);margin:8px 0}.hero p{color:var(--stone);font-size:17px;max-width:680px}
-    .notice{padding:12px 14px;border-radius:10px;background:#fff;border:1px solid var(--line);margin:0 0 18px}.notice.error{border-color:#b55454;color:#7f2424}.notice.success{border-color:#4c8b68;color:#235e3e;background:#f3fbf6}
-    .shop{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(290px,.7fr);gap:22px;align-items:start}.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 8px 24px rgba(7,26,43,.05)}.panel h2{font:700 23px Georgia,serif;color:var(--navy);margin:0 0 4px}.muted{color:var(--stone);margin:0 0 16px}.products{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:11px}.product{appearance:none;text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;min-height:148px;display:flex;flex-direction:column;gap:7px;cursor:pointer;color:inherit}.product:hover,.product:focus-visible{border-color:var(--gold);box-shadow:0 4px 14px rgba(183,144,67,.14)}.product i{font-style:normal;color:#876c36;font-size:11px;text-transform:uppercase;letter-spacing:.07em}.product strong{font-size:15px}.product small{color:var(--stone);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.product b{margin-top:auto;color:var(--navy);font:700 17px Georgia,serif}
-    .cart{position:sticky;top:18px}.cart-row{padding:11px 0;border-bottom:1px solid #eee5d7;display:grid;grid-template-columns:1fr auto;gap:8px}.cart-row small{color:var(--stone)}.qty{display:flex;gap:7px;align-items:center}.qty button{width:30px;height:30px;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer}.remove{border:0;background:none;color:#8a3e38;cursor:pointer;padding:0}.total{display:flex;justify-content:space-between;font-size:17px;font-weight:800;padding:16px 0}.field{margin:12px 0}.field label{display:block;font-weight:700;font-size:13px;margin-bottom:5px}.field input,.field textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:9px;font:inherit}.field textarea{resize:vertical}.checkout{width:100%;border:0;border-radius:9px;background:var(--gold);color:#fff;padding:13px 16px;font-weight:800;font-size:15px;cursor:pointer}.checkout:disabled{opacity:.5;cursor:not-allowed}.seller{font-size:11px;color:var(--stone);margin:12px 0 0;text-align:center}.empty{color:var(--stone);padding:18px 0;text-align:center}
-    @media(max-width:760px){.shop{grid-template-columns:1fr}.cart{position:static;order:-1}.products{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:430px){.products{grid-template-columns:1fr}}
-  </style>
-  <script src="/bookstore/app.js?v=20260731parishroute1" defer></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/bookstore/style.css?v=20260731storefront1" />
+  <style>.store-main .add-book-card{order:-1}.hero-actions{display:flex;align-items:center;gap:14px;margin-top:25px}.hero-actions button{border:0;background:linear-gradient(135deg,#d1ad61,#aa8034);color:#fff;border-radius:11px;padding:12px 17px;font-weight:700;display:flex;align-items:center;gap:9px;cursor:pointer;box-shadow:0 10px 25px rgba(0,0,0,.2)}.hero-actions button svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8}.hero-actions a{color:#eee3ca;font-size:12px;font-weight:700;text-underline-offset:4px}@media(max-width:440px){.hero-actions{align-items:flex-start;flex-direction:column}.hero-actions button{width:100%;justify-content:center}}</style>
+  <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js" defer></script>
+  <script src="/bookstore/app.js?v=20260731storefront1" defer></script>
 </head>
 <body>
-  <header><img src="/mark.png" alt="" /><div><span>Secure parish commerce</span><b>AGAPAY Bookstore</b></div></header>
+  <header class="store-header">
+    <a class="store-brand" href="/" aria-label="AGAPAY home"><img src="/mark.png" alt="" /><span><b>AGAPAY</b><small>Parish Bookstore</small></span></a>
+    <div class="secure-note"><span aria-hidden="true">●</span> Secure checkout by Stripe</div>
+  </header>
+
   <main>
-    <div class="hero"><span>Guest checkout</span><h1 id="parishName">Parish bookstore</h1><p>Select the items you are purchasing, then check out securely through the parish’s Stripe account. No My AGAPAY login is required.</p></div>
-    <div id="status" class="notice" hidden role="status"></div>
-    <div class="shop">
-      <section class="panel"><h2>Available items</h2><p class="muted">Tap an item to add it to your cart.</p><div id="products" class="products"><p class="empty">Loading bookstore…</p></div></section>
-      <form class="panel cart" id="checkoutForm"><h2>Your cart</h2><div id="cart"><p class="empty">Your cart is empty.</p></div><div class="total"><span>Subtotal</span><span id="total">$0.00</span></div>
-        <div class="field"><label for="guestName">Name</label><input id="guestName" autocomplete="name" required /></div>
-        <div class="field"><label for="guestEmail">Email for receipt</label><input id="guestEmail" type="email" autocomplete="email" required /></div>
-        <div class="field"><label for="pickupNote">Note to the bookstore <span style="font-weight:400">(optional)</span></label><textarea id="pickupNote" rows="2" maxlength="240"></textarea></div>
-        <button class="checkout" id="checkoutButton" type="submit" disabled>Continue to secure checkout</button><p class="seller" id="sellerDisclosure"></p>
-      </form>
+    <section class="store-hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Welcome to the parish bookstore</span>
+        <h1 id="parishName">Parish bookstore</h1>
+        <p>Books and sacred goods offered by your parish community. Choose an item below—or scan a book from the shelf and help build the shared catalog for the next parishioner.</p>
+        <div class="hero-actions"><button type="button" onclick="openBookScanner()"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M7 9v6M10 8v8M14 8v8M17 9v6"/></svg>Scan a book now</button><a href="#products">Browse the shelves</a></div>
+        <div class="hero-assurances"><span>Parish pickup</span><span>No account required</span><span>Receipt by email</span></div>
+      </div>
+      <div class="hero-ornament" aria-hidden="true"><img src="/mark.png" alt="" /></div>
+    </section>
+
+    <div id="status" class="notice" hidden role="status" aria-live="polite"></div>
+
+    <div class="store-layout">
+      <div class="store-main">
+        <section class="section-card catalog-card">
+          <div class="section-heading"><div><span class="eyebrow">Curated by your parish</span><h2>Browse the shelves</h2><p>Tap any available item to add it to your basket.</p></div><span id="catalogCount" class="count-pill">0 items</span></div>
+          <div id="products" class="products"><div class="loading-state"><span></span><p>Opening the bookstore…</p></div></div>
+        </section>
+
+        <details class="add-book-card" id="addBookPanel" open>
+          <summary>
+            <span class="scan-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M7 9v6M10 8v8M14 8v8M17 9v6"/></svg></span>
+            <span><b>Don’t see the book you’re holding?</b><small>Scan its barcode or enter the ISBN. Once paid, it joins the parish catalog for everyone.</small></span>
+            <em>Scan or add <span aria-hidden="true">→</span></em>
+          </summary>
+          <div class="add-book-body">
+            <div class="add-book-intro"><span>Community-powered inventory</span><h3>Add a book from the shelf</h3><p>We’ll look up the title from its ISBN. Confirm the shelf price, and it will be added to your basket and—after payment—to this parish’s bookstore list.</p></div>
+            <div class="scan-row">
+              <button class="scan-button" type="button" onclick="openBookScanner()"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M7 9v6M10 8v8M14 8v8M17 9v6"/></svg>Scan barcode</button>
+              <span>or</span>
+              <label class="isbn-field"><span>ISBN / barcode</span><div><input id="newBookIsbn" inputmode="numeric" maxlength="17" placeholder="978…" /><button type="button" onclick="lookupEnteredIsbn(this)">Look up</button></div></label>
+            </div>
+            <div id="bookLookupStatus" class="lookup-status" aria-live="polite"></div>
+            <div class="book-fields">
+              <label><span>Book title</span><input id="newBookTitle" maxlength="180" placeholder="Title from the cover" /></label>
+              <label><span>Author <small>(optional)</small></span><input id="newBookAuthor" maxlength="120" placeholder="Author’s name" /></label>
+              <label><span>Shelf price</span><div class="money-input"><i>$</i><input id="newBookPrice" type="number" min="0.01" step="0.01" placeholder="0.00" /></div></label>
+              <label><span>Quantity</span><input id="newBookQuantity" type="number" min="1" max="50" step="1" value="1" /></label>
+            </div>
+            <button class="add-book-button" type="button" onclick="addBuyerBook()">Add this book to my basket</button>
+          </div>
+        </details>
+      </div>
+
+      <aside class="cart-card">
+        <div class="cart-heading"><div><span class="eyebrow">Your purchase</span><h2>Basket</h2></div><span id="cartCount" class="cart-count">0</span></div>
+        <div id="cart" class="cart"><div class="empty-cart"><span aria-hidden="true">✦</span><b>Your basket is empty</b><p>Choose something from the shelves or scan a book.</p></div></div>
+        <div class="total"><span>Subtotal</span><strong id="total">$0.00</strong></div>
+        <form id="checkoutForm">
+          <label class="checkout-field"><span>Name</span><input id="guestName" autocomplete="name" required /></label>
+          <label class="checkout-field"><span>Email for receipt</span><input id="guestEmail" type="email" autocomplete="email" required /></label>
+          <label class="checkout-field"><span>Pickup note <small>(optional)</small></span><textarea id="pickupNote" rows="2" maxlength="240" placeholder="For example: picking up after Liturgy"></textarea></label>
+          <label class="cover-fees"><input id="coverFees" type="checkbox" checked /><span><b>Help cover processing</b><small>So more of your purchase supports the parish.</small></span></label>
+          <button class="checkout" id="checkoutButton" type="submit" disabled>Continue to secure checkout <span>→</span></button>
+        </form>
+        <p class="seller" id="sellerDisclosure">Your parish is the seller and merchant of record. AGAPAY provides the software.</p>
+      </aside>
     </div>
   </main>
+
+  <footer><img src="/mark.png" alt="" /><p><b>Parish commerce, made simple.</b><br />A secure bookstore experience from AGAPAY.</p></footer>
+
+  <div class="scanner-overlay" id="bookScannerOverlay" hidden>
+    <div class="scanner-panel" role="dialog" aria-modal="true" aria-labelledby="scannerTitle">
+      <div class="scanner-head"><div><span class="eyebrow">Camera scanner</span><h2 id="scannerTitle">Scan the book barcode</h2></div><button type="button" onclick="closeBookScanner()" aria-label="Close scanner">×</button></div>
+      <div class="video-frame"><video id="bookScannerVideo" playsinline muted></video><div class="scan-guide" aria-hidden="true"></div></div>
+      <p id="bookScannerStatus">Point your camera at the ISBN barcode on the back cover.</p>
+      <button class="scanner-cancel" type="button" onclick="closeBookScanner()">Enter the ISBN instead</button>
+    </div>
+  </div>
 </body>
 </html>
