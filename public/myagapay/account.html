@@ -12,10 +12,18 @@
   <link rel="stylesheet" href="/donor/style.css?v=20260704c" />
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260729b" defer></script>
-  <script src="/donor/app.js?v=20260712a" defer></script>
+  <script src="/donor/app.js?v=20260731pledge1" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
+  <style>
+    .pledge-cadence-toggle{display:inline-grid;grid-template-columns:1fr 1fr;padding:3px;border:1px solid rgba(166,159,145,.4);border-radius:10px;background:#f7f2e8;gap:3px}
+    .pledge-cadence-toggle label{position:relative;cursor:pointer;margin:0}
+    .pledge-cadence-toggle input{position:absolute;opacity:0;pointer-events:none}
+    .pledge-cadence-toggle span{display:block;padding:8px 18px;border-radius:7px;color:var(--stone);font-size:.86rem;font-weight:700;text-align:center}
+    .pledge-cadence-toggle input:checked + span{background:var(--navy);color:#fff;box-shadow:0 2px 7px rgba(6,21,34,.18)}
+    .pledge-cadence-toggle input:focus-visible + span{outline:2px solid var(--gold);outline-offset:2px}
+  </style>
   <meta name="theme-color" content="#061522" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -76,14 +84,21 @@
                 <div class="form-group"><label class="form-label" for="settingsPostalCode">ZIP Code</label><input class="form-input" id="settingsPostalCode" autocomplete="postal-code" placeholder="10001" /></div>
                 <div class="form-group"><label class="form-label" for="settingsCountry">Country</label><input class="form-input" id="settingsCountry" autocomplete="country" placeholder="US" maxlength="2" /></div>
               </div>
-              <div class="section-divider"><span>Annual Pledge</span></div>
-              <div class="form-group" style="max-width:280px;">
-                <label class="form-label" for="pledgeAmount">Pledge amount</label>
+              <div class="section-divider" id="pledge"><span>Stewardship Pledge</span></div>
+              <div class="form-group" style="max-width:420px;">
+                <fieldset style="border:0;padding:0;margin:0 0 12px;">
+                  <legend class="form-label">Track my pledge</legend>
+                  <div class="pledge-cadence-toggle" role="radiogroup" aria-label="Pledge period">
+                    <label><input type="radio" name="pledgeCadence" value="annual" checked onchange="updatePledgeCadenceHelp()" /><span>Annual</span></label>
+                    <label><input type="radio" name="pledgeCadence" value="monthly" onchange="updatePledgeCadenceHelp()" /><span>Monthly</span></label>
+                  </div>
+                </fieldset>
+                <label class="form-label" for="pledgeAmount" id="pledgeAmountLabel">Annual pledge amount</label>
                 <div style="position:relative;">
                   <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--stone);font-size:0.9rem;pointer-events:none;">$</span>
                   <input class="form-input" id="pledgeAmount" type="number" min="0" step="50" placeholder="e.g. 2400" style="padding-left:1.75rem;" />
                 </div>
-                <p class="form-help" style="margin-top:6px;">Your annual stewardship pledge in dollars. Only you can see this — it drives the progress bar on your dashboard home screen.</p>
+                <p class="form-help" id="pledgeCadenceHelp" style="margin-top:6px;">Your annual stewardship pledge in dollars. Only you can see this — it drives the progress bar on your dashboard home screen.</p>
               </div>
 
               <div class="section-divider"><span>Password</span></div>

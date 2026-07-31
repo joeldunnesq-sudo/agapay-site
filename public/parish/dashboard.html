@@ -1448,6 +1448,22 @@
 
           <div id="bookstoreTaxReminder" class="notice" style="margin-bottom:16px;" hidden></div>
 
+          <section class="sac-admin-panel" id="bookstoreGuestCheckoutCard" style="margin-bottom:16px;">
+            <div class="sac-admin-panel-head">
+              <div><span>Guest checkout</span><h2>Bookstore checkout QR code</h2></div>
+              <a class="btn btn-gold btn-sm" id="bookstoreGuestCheckoutLink" href="#" target="_blank" rel="noopener">Open guest checkout</a>
+            </div>
+            <p class="sac-admin-muted">Print or display this code in the bookstore. Visitors can scan it, shop the parish catalog, and pay through your connected Stripe account without a My AGAPAY login.</p>
+            <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
+              <div id="bookstoreGuestCheckoutQr" style="width:168px;min-height:168px;padding:10px;background:#fff;border:1px solid rgba(166,159,145,.35);border-radius:12px;display:grid;place-items:center;"></div>
+              <div style="min-width:240px;flex:1;">
+                <label class="form-label" for="bookstoreGuestCheckoutUrl">Public bookstore link</label>
+                <input class="form-input" id="bookstoreGuestCheckoutUrl" readonly />
+                <button class="btn btn-ghost btn-sm" style="margin-top:8px;" type="button" onclick="copyBookstoreGuestCheckoutLink()">Copy link</button>
+              </div>
+            </div>
+          </section>
+
           <section class="bk-sales" id="bookstoreSalesPanel" aria-live="polite">
             <div class="bk-sales-head">
               <div class="bk-sales-head-copy">
@@ -1742,6 +1758,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
-  <script src="/parish/app.js?v=20260731inventoryphase4"></script>
+  <script src="/parish/app.js?v=20260731churchrequests2"></script>
 </body>
 </html>

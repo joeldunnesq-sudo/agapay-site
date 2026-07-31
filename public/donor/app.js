@@ -2100,6 +2100,10 @@ async function loadDonorSettingsPage() {
     setValue("defaultParishId", donor.defaultParishId);
     const pledgeEl = document.getElementById("pledgeAmount");
     if (pledgeEl) pledgeEl.value = donor.pledgeAmountCents ? (donor.pledgeAmountCents / 100).toFixed(0) : "";
+    const pledgeCadence = donor.pledgeCadence === "monthly" ? "monthly" : "annual";
+    const pledgeCadenceEl = document.querySelector(`input[name="pledgeCadence"][value="${pledgeCadence}"]`);
+    if (pledgeCadenceEl) pledgeCadenceEl.checked = true;
+    updatePledgeCadenceHelp();
     setValue("settingsAddressLine1", donor.addressLine1);
     setValue("settingsAddressLine2", donor.addressLine2);
     setValue("settingsCity", donor.city);
@@ -2182,6 +2186,7 @@ async function saveDonorSettings(event) {
     contactPhone: document.getElementById("settingsPhone")?.value.trim(),
     defaultParishId: document.getElementById("defaultParishId")?.value,
     pledgeAmountCents: Math.round((parseFloat(document.getElementById("pledgeAmount")?.value || "0") || 0) * 100),
+    pledgeCadence: document.querySelector('input[name="pledgeCadence"]:checked')?.value === "monthly" ? "monthly" : "annual",
     pledgeYear: String(new Date().getFullYear()),
     addressLine1: document.getElementById("settingsAddressLine1")?.value.trim() || "",
     addressLine2: document.getElementById("settingsAddressLine2")?.value.trim() || "",
@@ -2215,6 +2220,14 @@ async function saveDonorSettings(event) {
   } catch (err) {
     setDonorStatus(err.message, "error");
   }
+}
+
+function updatePledgeCadenceHelp() {
+  const cadence = document.querySelector('input[name="pledgeCadence"]:checked')?.value === "monthly" ? "monthly" : "annual";
+  setText("pledgeAmountLabel", cadence === "monthly" ? "Monthly pledge amount" : "Annual pledge amount");
+  setText("pledgeCadenceHelp", cadence === "monthly"
+    ? "Your monthly stewardship pledge in dollars. Your dashboard compares it with this month's stewardship giving."
+    : "Your annual stewardship pledge in dollars. Your dashboard compares it with this year's stewardship giving.");
 }
 
 function offeringRows(offerings) {
@@ -3160,10 +3173,15 @@ function renderPledgeTracker(donor, summary, parish) {
   if (!donor) return;
   const trackerEnabled = parish?.pledgeTrackerEnabled === true;
   const pledgeCents = Number(donor.pledgeAmountCents || 0);
+  const cadence = donor.pledgeCadence === "monthly" ? "monthly" : "annual";
   const pledgeYear  = String(new Date().getFullYear());
   // Pledge progress counts parish offerings (tithe/stewardship) only — not designated
   // funds, campaigns, candles, or commemorations. See donorSummaryFromOfferings.
   const ytdCents    = Number(summary?.stewardshipYtdCents || 0);
+  const trackedCents = cadence === "monthly" ? Number(summary?.stewardshipMonthCents || 0) : ytdCents;
+  const periodTitle = cadence === "monthly"
+    ? new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" }) + " Pledge"
+    : pledgeYear + " Annual Pledge";
 
   // Mobile tracker
   const mobileCard = document.getElementById("pledgeTrackerCard");
@@ -3183,15 +3201,15 @@ function renderPledgeTracker(donor, summary, parish) {
     } else {
       if (activeState) activeState.hidden = false;
       if (emptyState) emptyState.hidden = true;
-      const pct  = Math.min(100, Math.round((ytdCents / pledgeCents) * 100));
+      const pct  = Math.min(100, Math.round((trackedCents / pledgeCents) * 100));
       const fill = document.getElementById("pledgeBarFill");
       const track = document.getElementById("pledgeBarTrack");
       if (fill)  { setTimeout(() => { fill.style.width = pct + "%"; }, 120); fill.classList.toggle("pledge-complete", pct >= 100); }
       if (track) track.setAttribute("aria-valuenow", pct);
       const label = document.getElementById("pledgeTrackerLabel");
-      if (label) label.textContent = pledgeYear + " Annual Pledge";
+      if (label) label.textContent = periodTitle;
       const raised = document.getElementById("pledgeRaised");
-      if (raised) raised.textContent = money(ytdCents) + " given";
+      if (raised) raised.textContent = money(trackedCents) + " given";
       const pctEl = document.getElementById("pledgePct");
       if (pctEl)  pctEl.textContent = pct + "%";
       const goal = document.getElementById("pledgeGoal");
@@ -3219,15 +3237,15 @@ function renderPledgeTracker(donor, summary, parish) {
     } else {
       if (activeState) activeState.hidden = false;
       if (emptyState) emptyState.hidden = true;
-      const pct  = Math.min(100, Math.round((ytdCents / pledgeCents) * 100));
+      const pct  = Math.min(100, Math.round((trackedCents / pledgeCents) * 100));
       const fill = document.getElementById("desktopPledgeBarFill");
       const track = document.getElementById("desktopPledgeBarTrack");
       if (fill)  { setTimeout(() => { fill.style.width = pct + "%"; }, 120); fill.classList.toggle("pledge-complete", pct >= 100); }
       if (track) track.setAttribute("aria-valuenow", pct);
       const title = document.getElementById("desktopPledgeTitle");
-      if (title) title.textContent = pledgeYear + " Annual Pledge";
+      if (title) title.textContent = periodTitle;
       const raised = document.getElementById("desktopPledgeRaised");
-      if (raised) raised.textContent = money(ytdCents) + " given";
+      if (raised) raised.textContent = money(trackedCents) + " given";
       const pctEl = document.getElementById("desktopPledgePct");
       if (pctEl)  pctEl.textContent = pct + "%";
       const goal = document.getElementById("desktopPledgeGoal");

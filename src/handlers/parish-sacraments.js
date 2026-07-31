@@ -36,6 +36,7 @@ import {
   loadCommemorationEntries,
   weekWindow,
 } from "./parish-commemorations.js";
+import { syncSacramentRequestToGoogleCalendar } from "../sacraments/google-calendar.js";
 
 // POST /api/admin/sacraments/enabled
 // Body: { parishId: string, enabled: boolean }
@@ -289,6 +290,10 @@ export async function handleParishSacramentUpdate(request, env, parishId, reques
 
   const updated = await d1First(env, "SELECT * FROM sacrament_requests WHERE id = ?", requestId);
 
+  // Calendar sync is intentionally best-effort: the parish request save is
+  // authoritative and must succeed even if Google is temporarily unavailable.
+  const calendarSync = await syncSacramentRequestToGoogleCalendar(env, found.registration, updated, existing);
+
   // Notify the donor of a meaningful status change — best-effort, never blocks the save.
   if (nextStatus !== existing.status) {
     try {
@@ -296,7 +301,7 @@ export async function handleParishSacramentUpdate(request, env, parishId, reques
     } catch { /* notification failure never blocks the update */ }
   }
 
-  return json({ ok: true, request: await attachSacramentDetailsForParish(env, updated) });
+  return json({ ok: true, request: await attachSacramentDetailsForParish(env, updated), calendarSync });
 }
 
 async function notifyDonorOfSacramentStatusChange(env, registration, row) {

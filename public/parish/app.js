@@ -4847,6 +4847,7 @@
       status.className = 'sw-suite-status-label ' + (currentParish.bookstoreEnabled ? 'sw-suite-status--active' : 'sw-suite-status--upsell');
     }
     renderBookstoreTaxReminder();
+    renderBookstoreGuestCheckout();
     setTimeout(() => loadBookstoreSalesPanel(force), 250);
 
     if (bookstoreCatalogState.loaded && !force) {
@@ -4888,6 +4889,41 @@
     } catch (err) {
       if (itemsPane) itemsPane.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
       if (starterPane) starterPane.innerHTML = '';
+    }
+  }
+
+  function bookstoreGuestCheckoutUrl() {
+    if (!currentParish?.parishId) return '';
+    return window.location.origin + '/bookstore/' + encodeURIComponent(currentParish.parishId);
+  }
+
+  function renderBookstoreGuestCheckout() {
+    const url = bookstoreGuestCheckoutUrl();
+    const input = document.getElementById('bookstoreGuestCheckoutUrl');
+    const link = document.getElementById('bookstoreGuestCheckoutLink');
+    const target = document.getElementById('bookstoreGuestCheckoutQr');
+    if (input) input.value = url;
+    if (link) link.href = url || '#';
+    if (!target || !url || typeof qrcode === 'undefined') return;
+    const qr = qrcode(0, 'H');
+    qr.addData(url);
+    qr.make();
+    target.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+    const svg = target.querySelector('svg');
+    if (svg) { svg.style.width = '148px'; svg.style.height = '148px'; }
+  }
+
+  async function copyBookstoreGuestCheckoutLink() {
+    const url = bookstoreGuestCheckoutUrl();
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      setStatus('Guest bookstore link copied.', 'success');
+    } catch {
+      const input = document.getElementById('bookstoreGuestCheckoutUrl');
+      input?.select();
+      document.execCommand('copy');
+      setStatus('Guest bookstore link copied.', 'success');
     }
   }
 
@@ -5607,6 +5643,7 @@
   // decide whether to show the upsell or the actual request list, so
   // switching to this tab never needs a second status round-trip.
   let sacramentsState = { loaded: false, requests: [] };
+  let sacramentsGoogleState = { loaded: false, loading: false, configured: false, connections: [] };
   let sacramentsDashboardTab = 'rules';
   let sacramentsPriestIndex = 0;
 
@@ -5640,6 +5677,7 @@
     if (['blackouts', 'rules', 'calendar'].includes(sacramentsDashboardTab) && !sacramentsAvailabilityState.loaded) {
       loadSacramentsAvailability();
     }
+    if (sacramentsDashboardTab === 'calendar' && !sacramentsGoogleState.loaded) loadSacramentsGoogleStatus();
     renderSacramentsPanel();
   }
 
@@ -5727,6 +5765,7 @@
       sacramentsState = { loaded: true, requests: data.requests || [] };
       renderSacramentsPanel();
       setTimeout(() => loadSacramentsAvailability(), 250);
+      setTimeout(() => loadSacramentsGoogleStatus(), 350);
     } catch (err) {
       pane.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
     }
@@ -5789,6 +5828,86 @@
       sacramentsAvailabilityState = { ...sacramentsAvailabilityState, loaded: true, loading: false, error: err.message || 'Unable to load availability.' };
       renderSacramentsPanel();
     }
+  }
+
+  async function loadSacramentsGoogleStatus(force = false) {
+    if (!currentParish || (sacramentsGoogleState.loaded && !force) || sacramentsGoogleState.loading) return;
+    sacramentsGoogleState = { ...sacramentsGoogleState, loading: true };
+    renderSacramentsPanel();
+    try {
+      const res = await fetch(sacramentsApi('/google-calendar/status'), { headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to load Google Calendar status.');
+      sacramentsGoogleState = { loaded: true, loading: false, configured: Boolean(data.configured), connections: data.connections || [], error: '' };
+    } catch (err) {
+      sacramentsGoogleState = { ...sacramentsGoogleState, loaded: true, loading: false, error: err.message || 'Unable to load Google Calendar status.' };
+    }
+    renderSacramentsPanel();
+  }
+
+  function selectedSacramentsGoogleConnection() {
+    const email = String(selectedSacramentPriest().email || '').toLowerCase();
+    return (sacramentsGoogleState.connections || []).find(row => String(row.email || '').toLowerCase() === email) || null;
+  }
+
+  function renderSacramentsGoogleCalendarCard() {
+    const priest = selectedSacramentPriest();
+    const state = sacramentsGoogleState;
+    const connection = selectedSacramentsGoogleConnection();
+    if (state.loading || !state.loaded) return renderSacramentsLoadingPanel('Checking Google Calendar connection...');
+    if (state.error) return renderSacramentsErrorPanel(state.error, 'loadSacramentsGoogleStatus(true)');
+    const connected = Boolean(connection?.connected);
+    const lastSync = connection?.lastSyncedAt ? new Date(connection.lastSyncedAt).toLocaleString() : '';
+    return `<section class="sac-admin-panel">
+      <div class="sac-admin-panel-head">
+        <div><span>Google Calendar</span><h2>${connected ? 'Calendar connected' : 'Connect ' + escapeHtml(priest.name)}</h2></div>
+        ${connected
+          ? `<button class="sac-admin-small-btn" type="button" onclick="disconnectSacramentsGoogleCalendar()">Disconnect</button>`
+          : `<button class="btn btn-gold btn-sm" type="button" onclick="connectSacramentsGoogleCalendar(this)" ${!priest.email || !state.configured ? 'disabled' : ''}>Connect Google Calendar</button>`}
+      </div>
+      <p class="sac-admin-muted">${connected
+        ? `Scheduled requests assigned to ${escapeHtml(priest.name)} automatically create or update events in <strong>${escapeHtml(connection.calendarName || 'AGAPAY Sacraments')}</strong>.${lastSync ? ` Last synced ${escapeHtml(lastSync)}.` : ''}`
+        : !priest.email
+          ? 'Add this priest’s email in Settings before connecting a calendar.'
+          : !state.configured
+            ? 'Google Calendar credentials have not been configured for this AGAPAY environment.'
+            : `Connect ${escapeHtml(priest.email)}. AGAPAY will create a dedicated Sacraments calendar and keep assigned, scheduled requests synchronized.`}</p>
+      ${connection?.lastError ? `<div class="notice error">Last sync issue: ${escapeHtml(connection.lastError)}</div>` : ''}
+    </section>`;
+  }
+
+  async function connectSacramentsGoogleCalendar(button) {
+    const priest = selectedSacramentPriest();
+    if (!priest.email) { setStatus('Add this priest’s email in Settings first.', 'error'); return; }
+    if (button) button.disabled = true;
+    try {
+      const res = await fetch(sacramentsApi('/google-calendar/connect'), {
+        method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priestEmail: priest.email })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.authUrl) throw new Error(data.error || 'Unable to begin Google Calendar connection.');
+      window.location.href = data.authUrl;
+    } catch (err) {
+      if (button) button.disabled = false;
+      setStatus(err.message, 'error');
+    }
+  }
+
+  async function disconnectSacramentsGoogleCalendar() {
+    const priest = selectedSacramentPriest();
+    if (!window.confirm(`Disconnect Google Calendar for ${priest.name}? Existing Google events will remain, but AGAPAY will stop updating them.`)) return;
+    try {
+      const res = await fetch(sacramentsApi('/google-calendar/disconnect'), {
+        method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priestEmail: priest.email })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to disconnect Google Calendar.');
+      sacramentsGoogleState.loaded = false;
+      await loadSacramentsGoogleStatus(true);
+      setStatus(`Google Calendar disconnected for ${priest.name}.`, 'success');
+    } catch (err) { setStatus(err.message, 'error'); }
   }
 
   function renderSacramentsFeatureToggle() {
@@ -6347,6 +6466,9 @@
       confirmed || requested || formatSacramentDisplayDate(row.createdAt),
       row.clergyAssigned
     ].filter(Boolean).join(' · ');
+    const clergyOptions = ['<option value="">Choose priest...</option>', ...sacramentPriests().map(priest =>
+      `<option value="${escapeAttr(priest.name)}" ${priest.name === row.clergyAssigned ? 'selected' : ''}>${escapeHtml(priest.name)}</option>`
+    )].join('');
     return `
       <article class="sac-admin-request${overdue ? ' overdue' : ''}" id="sacrow-${row.id}">
         <div class="sac-admin-request-main">
@@ -6369,7 +6491,7 @@
             <label><span>Status</span><select id="sacstatus-${row.id}" onchange="onSacramentStatusChange('${row.id}')">${statusOptions}</select></label>
             <label><span>Confirmed date</span><input type="date" id="sacdate-${row.id}" value="${escapeAttr(row.confirmedDate || '')}" /></label>
             <label><span>Confirmed time</span><input type="text" id="sactime-${row.id}" value="${escapeAttr(row.confirmedTime || '')}" placeholder="10:00 AM" /></label>
-            <label><span>Clergy assigned</span><input type="text" id="sacclergy-${row.id}" value="${escapeAttr(row.clergyAssigned || '')}" /></label>
+            <label><span>Clergy assigned</span><select id="sacclergy-${row.id}">${clergyOptions}</select></label>
           </div>
           <div class="sac-admin-request-fields" id="sacfields-${row.id}" style="${row.status === 'scheduled' ? '' : 'display:none;'}"></div>
           <label class="sac-admin-wide-field" id="sacdecline-${row.id}" style="${row.status === 'declined' ? '' : 'display:none;'}"><span>Reason shown to the parishioner</span><input type="text" id="sacreason-${row.id}" value="${escapeAttr(row.declineReason || '')}" /></label>
@@ -6527,6 +6649,7 @@
     const selected = Number(document.getElementById('sacramentsCalendarSelectedDay')?.value || firstBookedDay);
     const selectedItems = byDay[selected] || [];
     return `
+      ${renderSacramentsGoogleCalendarCard()}
       <div class="sac-admin-calendar-layout">
         <input type="hidden" id="sacramentsCalendarSelectedDay" value="${selected}" />
         <section class="sac-admin-panel">
@@ -6594,7 +6717,12 @@
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) throw new Error(data.error || 'Unable to save.');
-      setStatus('Request updated.', 'success');
+      const sync = data.calendarSync || {};
+      setStatus(sync.status === 'created' || sync.status === 'updated'
+        ? `Request updated and ${sync.status === 'created' ? 'added to' : 'updated in'} Google Calendar.`
+        : sync.status === 'error'
+          ? `Request updated. Google Calendar needs attention: ${sync.error || 'sync failed.'}`
+          : 'Request updated.', sync.status === 'error' ? 'error' : 'success');
       sacramentsState.loaded = false;
       await loadSacramentsPanel(true);
     } catch (err) {
@@ -7898,6 +8026,16 @@
       renderDashboard();
       syncBookstoreLowStockNavigation();
       setTimeout(() => loadBookstoreLowStockBadge(), 150);
+      const googleCalendarResult = new URLSearchParams(window.location.search).get('googleCalendar');
+      if (googleCalendarResult) {
+        switchTab('sacraments');
+        setSacramentsDashboardTab('calendar');
+        setStatus(googleCalendarResult === 'connected'
+          ? 'Google Calendar connected. Scheduled requests for this priest will now sync automatically.'
+          : new URLSearchParams(window.location.search).get('message') || 'Google Calendar could not be connected.',
+        googleCalendarResult === 'connected' ? 'success' : 'error');
+        window.history.replaceState({}, '', '/parish/dashboard');
+      }
       showParishFeatureRequestPopup(data.featureRequests || []);
       updateStewardshipBadges(isParishPlusActive(), { renderPanel: false });
       setTimeout(() => loadGivingSummary(), 250);

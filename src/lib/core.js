@@ -924,6 +924,7 @@ export function publicDonor(donor) {
     contactPhone: donor.contactPhone || "",
     defaultParishId: donor.defaultParishId || "",
     pledgeAmountCents: Number(donor.pledgeAmountCents || 0),
+    pledgeCadence: donor.pledgeCadence === "monthly" ? "monthly" : "annual",
     pledgeYear: donor.pledgeYear || "",
     addressLine1: donor.addressLine1 || "",
     addressLine2: donor.addressLine2 || "",

@@ -93,6 +93,7 @@ import {
 import { storeCommemorationEntry } from "./parish-commemorations.js";
 import { enrichParishGivingOptions } from "./parish-giving-catalog.js";
 import { sacramentTypeLabel } from "./parish-sacraments.js";
+import { syncSacramentRequestToGoogleCalendar } from "../sacraments/google-calendar.js";
 
 // src/handlers/donor.js
 // Donor session, dashboard, offerings, commemorations, and password handlers.
@@ -825,6 +826,9 @@ export async function handleDonorDashboard(request, env) {
       pledgeAmountCents: Number.isFinite(Number(body.pledgeAmountCents))
         ? Math.max(0, Math.round(Number(body.pledgeAmountCents)))
         : Number(donor.pledgeAmountCents || 0),
+      pledgeCadence: body.pledgeCadence === "monthly"
+        ? "monthly"
+        : (body.pledgeCadence === "annual" ? "annual" : (donor.pledgeCadence === "monthly" ? "monthly" : "annual")),
       pledgeYear: body.pledgeYear ?? donor.pledgeYear ?? "",
       addressLine1: body.addressLine1 ?? donor.addressLine1 ?? "",
       addressLine2: body.addressLine2 ?? donor.addressLine2 ?? "",
@@ -874,7 +878,10 @@ export async function handleDonorDashboard(request, env) {
     // Runs whenever the donor saves settings — harmless no-op if D1 isn't available
     // or if the donor hasn't set a home parish yet.
     const pledgeSyncParish = updated.defaultParishId || "";
-    const pledgeSyncAmount = Number(updated.pledgeAmountCents || 0);
+    // Parish stewardship reports remain annual. A monthly donor pledge is
+    // annualized here while My AGAPAY retains the donor's chosen cadence.
+    const pledgeSyncAmount = Number(updated.pledgeAmountCents || 0)
+      * (updated.pledgeCadence === "monthly" ? 12 : 1);
     if (d1(env) && pledgeSyncParish.trim()) {
       const pledgeSyncYear = parseInt(updated.pledgeYear || new Date().getFullYear(), 10);
       await env.AGAPAY_DB.prepare(`
@@ -1218,6 +1225,18 @@ async function resolveDonorBookstoreParish(request, env, donor, explicitParishId
   return { parishId, registration, available: true };
 }
 
+async function resolvePublicBookstoreParish(env, parishId = "") {
+  const cleanParishId = String(parishId || "").trim();
+  if (!cleanParishId) return { error: json({ error: "Parish not found." }, { status: 404 }) };
+  const found = await findRegistrationByParishId(env, cleanParishId);
+  if (!found?.registration) return { error: json({ error: "Parish not found." }, { status: 404 }) };
+  return {
+    parishId: cleanParishId,
+    registration: found.registration,
+    available: bookstoreEnabledFor(found.registration)
+  };
+}
+
 export async function handleDonorBookstoreItemFields(request, env) {
   if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
   return json({ categories: BOOKSTORE_ITEM_FIELD_CATEGORIES });
@@ -1355,24 +1374,27 @@ export async function handleParishBookstoreReadiness(request, env, parishId) {
   return json(bookstoreReadinessSummary(found.registration));
 }
 
-export async function handleDonorBookstore(request, env) {
+export async function handleDonorBookstore(request, env, publicParishId = "") {
   if (!["GET", "POST"].includes(request.method)) return json({ error: "Method not allowed" }, { status: 405 });
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const limited = await rateLimit(request, env, "donor-bookstore", { limit: 40, windowSeconds: 300 });
   if (limited) return limited;
 
-  const donor = await requireDonor(request, env);
-  if (!donor?.email) return unauthorized();
+  const isGuestCheckout = Boolean(publicParishId);
+  const donor = isGuestCheckout ? null : await requireDonor(request, env);
+  if (!isGuestCheckout && !donor?.email) return unauthorized();
 
   if (request.method === "GET") {
-    const resolved = await resolveDonorBookstoreParish(request, env, donor);
+    const resolved = isGuestCheckout
+      ? await resolvePublicBookstoreParish(env, publicParishId)
+      : await resolveDonorBookstoreParish(request, env, donor);
     if (resolved.error) return resolved.error;
     return json({
       available: Boolean(resolved.available),
       parish: { id: resolved.parishId, name: resolved.registration?.name || "" },
       sellerDisclosure: resolved.registration ? bookstoreSellerDisclosure(resolved.registration.commerceSellerDisplayName || resolved.registration.name || resolved.registration.parishName) : "",
       products: resolved.available ? await loadDonorBookstoreProducts(env, resolved.parishId) : [],
-      orders: await loadDonorBookstoreOrders(env, resolved.parishId, normalizeEmail(donor.email))
+      orders: isGuestCheckout ? [] : await loadDonorBookstoreOrders(env, resolved.parishId, normalizeEmail(donor.email))
     });
   }
 
@@ -1383,7 +1405,9 @@ export async function handleDonorBookstore(request, env) {
     return json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const resolved = await resolveDonorBookstoreParish(request, env, donor, body.parishId);
+  const resolved = isGuestCheckout
+    ? await resolvePublicBookstoreParish(env, publicParishId)
+    : await resolveDonorBookstoreParish(request, env, donor, body.parishId);
   if (resolved.error) return resolved.error;
   if (!resolved.available) return json({ error: "Your parish hasn't turned on Bookstore Payments yet." }, { status: 409 });
   if (!resolved.registration?.stripeAccountId) {
@@ -1391,20 +1415,32 @@ export async function handleDonorBookstore(request, env) {
   }
   if (!d1(env)) return missingProductionStoreResponse();
 
+  const submittedItems = Array.isArray(body.items) && body.items.length ? body.items : [body];
+  if (isGuestCheckout && submittedItems.some((item) => !String(item?.productId || "").trim() && !String(item?.variantId || "").trim())) {
+    return json({ error: "Guest checkout is limited to items in the parish catalog." }, { status: 422 });
+  }
+
   let items;
   try {
-    items = await normalizeBookstoreCartItems(env, resolved.parishId, Array.isArray(body.items) && body.items.length ? body.items : [body]);
+    items = await normalizeBookstoreCartItems(env, resolved.parishId, submittedItems);
   } catch (err) {
     return json({ error: err.message || "Check your cart and try again." }, { status: 422 });
   }
 
   const subtotalCents = items.reduce((sum, item) => sum + (item.unitPriceCents * item.quantity), 0);
-  const donorEmail = normalizeEmail(donor.email || body.email);
-  const normalizedDonorName = donorName({
-    firstName: donor.firstName || "",
-    lastName: donor.lastName || "",
-    householdName: donor.householdName || donor.donorName || ""
-  }) || donor.householdName || donor.donorName || donorEmail;
+  const donorEmail = normalizeEmail(donor?.email || body.email);
+  if (!donorEmail || !donorEmail.includes("@")) {
+    return json({ error: "Enter a valid email address for your receipt." }, { status: 422 });
+  }
+  const guestName = String(body.name || "").trim().replace(/\s+/g, " ").slice(0, 160);
+  if (isGuestCheckout && !guestName) {
+    return json({ error: "Enter your name before checkout." }, { status: 422 });
+  }
+  const normalizedDonorName = isGuestCheckout ? guestName : (donorName({
+    firstName: donor?.firstName || "",
+    lastName: donor?.lastName || "",
+    householdName: donor?.householdName || donor?.donorName || ""
+  }) || donor?.householdName || donor?.donorName || donorEmail);
   const pickupNote = String(body.pickupNote || "").trim().slice(0, 240);
   const orderId = `bookstore_${generateSecret(18)}`;
   const checkoutLocalId = `checkout_${generateSecret(18)}`;
@@ -1424,10 +1460,15 @@ export async function handleDonorBookstore(request, env) {
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   const sellerDisplayName = resolved.registration.commerceSellerDisplayName || resolved.registration.name || resolved.registration.parishName || "";
   const sellerDisclosure = bookstoreSellerDisclosure(sellerDisplayName);
+  const publicStorePath = `/bookstore/${encodeURIComponent(resolved.parishId)}`;
   const form = new URLSearchParams({
     mode: "payment",
-    success_url: `${appUrl}/myagapay/bookstore?order_success=1&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appUrl}/myagapay/bookstore?order_canceled=1`,
+    success_url: isGuestCheckout
+      ? `${appUrl}${publicStorePath}?order_success=1&session_id={CHECKOUT_SESSION_ID}`
+      : `${appUrl}/myagapay/bookstore?order_success=1&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: isGuestCheckout
+      ? `${appUrl}${publicStorePath}?order_canceled=1`
+      : `${appUrl}/myagapay/bookstore?order_canceled=1`,
     customer: customer.body.id,
     "automatic_tax[enabled]": "true",
     "customer_update[address]": "auto",
@@ -1497,7 +1538,7 @@ export async function handleDonorBookstore(request, env) {
             'checkout_created', 'pending', ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
   `,
     orderId,
-    items.some(item => item.source === "scan_and_go") ? "scan_and_go" : items.some(item => item.source === "catalog") ? "catalog" : "manual_entry",
+    isGuestCheckout ? "guest_checkout" : (items.some(item => item.source === "scan_and_go") ? "scan_and_go" : items.some(item => item.source === "catalog") ? "catalog" : "manual_entry"),
     resolved.parishId,
     donorEmail,
     normalizedDonorName,
@@ -2057,7 +2098,8 @@ export async function handleDonorSacramentBook(request, env) {
   } catch { /* notification failure never blocks the booking */ }
 
   const row = await d1First(env, "SELECT * FROM sacrament_requests WHERE id = ?", id);
-  return json({ ok: true, request: await attachSacramentDetails(env, row) });
+  const calendarSync = await syncSacramentRequestToGoogleCalendar(env, found.registration, row);
+  return json({ ok: true, request: await attachSacramentDetails(env, row), calendarSync });
 }
 
 // POST /api/donor/sacraments/:id/cancel — donor withdraws their own pending request
@@ -2080,7 +2122,11 @@ export async function handleDonorSacramentCancel(request, env, requestId) {
   const now = new Date().toISOString();
   await d1Run(env, "UPDATE sacrament_requests SET status = 'cancelled', updated_at = ? WHERE id = ?", now, requestId);
   const updated = await d1First(env, "SELECT * FROM sacrament_requests WHERE id = ?", requestId);
-  return json({ ok: true, request: await attachSacramentDetails(env, updated) });
+  const found = await findRegistrationByParishId(env, row.parish_id);
+  const calendarSync = found?.registration
+    ? await syncSacramentRequestToGoogleCalendar(env, found.registration, updated, row)
+    : { status: "parish_not_found" };
+  return json({ ok: true, request: await attachSacramentDetails(env, updated), calendarSync });
 }
 
 export async function handleDonorCommemorations(request, env) {

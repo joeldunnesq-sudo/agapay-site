@@ -167,6 +167,12 @@ import {
   handleParishSacraments,
   sacramentTypeLabel,
 } from "./handlers/parish-sacraments.js";
+import {
+  handleSacramentsGoogleCallback,
+  handleSacramentsGoogleConnect,
+  handleSacramentsGoogleDisconnect,
+  handleSacramentsGoogleStatus,
+} from "./sacraments/google-calendar.js";
 
 import {
   handleDonorClaimCheckout,
@@ -777,6 +783,10 @@ function cleanAssetRequest(request) {
   }
   if (url.pathname === "/give/find-parish") {
     url.pathname = "/give/find-parish.html";
+    return new Request(url, request);
+  }
+  if (/^\/bookstore\/[^/]+\/?$/.test(url.pathname)) {
+    url.pathname = "/bookstore/index.html";
     return new Request(url, request);
   }
   if (/^\/give\/[^/]+\/[^/]+-campaign\/?$/.test(url.pathname)) {
@@ -2977,6 +2987,9 @@ export default {
       return handleLearnGoogleCalendarConnect(request, env);
     }
     if (url.pathname === "/api/learn/google-calendar/callback") {
+      if (String(url.searchParams.get("state") || "").startsWith("sac.")) {
+        return handleSacramentsGoogleCallback(request, env);
+      }
       return handleLearnGoogleCalendarCallback(request, env);
     }
     if (url.pathname === "/api/learn/google-calendar/preview") {
@@ -3074,6 +3087,10 @@ export default {
     if (url.pathname === "/api/donor/bookstore") {
       return handleDonorBookstore(request, env);
     }
+    if (url.pathname.startsWith("/api/public/bookstore/")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/public/bookstore/", "").replace(/\/+$/, ""));
+      return handleDonorBookstore(request, env, parishId);
+    }
     if (url.pathname === "/api/donor/commemorations") {
       return handleDonorCommemorations(request, env);
     }
@@ -3086,6 +3103,9 @@ export default {
     }
     if (url.pathname === "/api/donor/sacraments") {
       return handleDonorSacraments(request, env);
+    }
+    if (url.pathname === "/api/parish/sacraments/google-calendar/callback") {
+      return handleSacramentsGoogleCallback(request, env);
     }
     if (url.pathname === "/api/donor/sacraments/availability") {
       return handleDonorSacramentAvailability(request, env);
@@ -3521,6 +3541,18 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments", ""));
       return handleParishSacraments(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments/google-calendar/status")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments/google-calendar/status", ""));
+      return handleSacramentsGoogleStatus(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments/google-calendar/connect")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments/google-calendar/connect", ""));
+      return handleSacramentsGoogleConnect(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments/google-calendar/disconnect")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments/google-calendar/disconnect", ""));
+      return handleSacramentsGoogleDisconnect(request, env, parishId);
     }
     // ── Native availability booking (must be matched before the generic
     // /sacraments/:requestId catch-all below, since "availability" would
