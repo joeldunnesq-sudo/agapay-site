@@ -4650,9 +4650,34 @@ async function loadDonorBookstorePage() {
     return;
   }
 
-  const donor = donorProfile();
-  const parishId = donor?.defaultParishId || "";
-  const parishName = donor?.defaultParish?.name || donor?.defaultParishName || "";
+  let donor = donorProfile();
+  let dashboardParish = null;
+  try {
+    const dashboard = await donorApi("/api/donor/dashboard");
+    dashboardParish = dashboard.parish || null;
+    donor = { ...donor, ...(dashboard.donor || {}), defaultParish: dashboardParish || donor.defaultParish || null };
+    setDonorProfile(donor);
+  } catch {
+    // The bookstore can still use the last saved profile while offline.
+  }
+
+  let parishId = dashboardParish?.id || donor?.defaultParishId || "";
+  let parishName = dashboardParish?.name || donor?.defaultParish?.name || donor?.defaultParishName || "";
+  if (parishId && !dashboardParish) {
+    try {
+      const parishes = window.agapayPublicParishes?.length ? window.agapayPublicParishes : await fetchPublicParishes();
+      const parishSlug = value => String(value || "").toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      const configuredSlug = parishSlug(parishId);
+      const canonicalParish = parishes.find(parish => parish.id === parishId)
+        || parishes.find(parish => parishSlug(parish.id) === configuredSlug || parishSlug(parish.name) === configuredSlug);
+      if (canonicalParish) {
+        parishId = canonicalParish.id;
+        parishName = canonicalParish.name || parishName;
+      }
+    } catch {
+      // Keep the configured parish id if the public directory is unavailable.
+    }
+  }
   const bookstoreLabel = parishName ? `the ${parishName}` : "your parish";
   setText("bookstoreHeroTitle", `Pay for your items at ${bookstoreLabel} bookstore.`);
   setText("bookstoreHeroDescription", "Shop at your parish bookstore, then use your phone to pay for the items you enter below.");

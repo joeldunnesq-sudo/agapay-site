@@ -299,18 +299,19 @@ async function findBookstoreCatalogItemByCode(env, parishId, code) {
 }
 
 async function promotePaidScannedBooksToCatalog(env, order, now) {
-  if (!order?.id || order.source !== "scan_and_go") return;
+  if (!order?.id || !["scan_and_go", "shopper_added"].includes(order.source)) return;
   const items = await d1All(env, `
     SELECT * FROM commerce_order_items
     WHERE order_id = ? AND parish_id = ? AND commerce_module = 'bookstore'
-      AND item_category = 'book' AND barcode IS NOT NULL AND barcode <> ''
       AND (product_id IS NULL OR product_id = '')
     ORDER BY created_at, id
   `, order.id, order.parish_id);
 
   let firstCatalogItem = null;
   for (const item of items) {
-    const code = String(item.barcode || item.sku || "").trim().slice(0, 80);
+    const category = String(item.item_category || "other").trim().slice(0, 40) || "other";
+    const generatedCode = `shopper-${category}-${String(item.item_name || "item").toLowerCase().replace(/&/g, "-and-").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48)}`;
+    const code = String(item.barcode || item.sku || generatedCode).trim().slice(0, 80);
     if (!code) continue;
     let catalogItem = await findBookstoreCatalogItemByCode(env, order.parish_id, code);
 
@@ -322,9 +323,9 @@ async function promotePaidScannedBooksToCatalog(env, order, now) {
           INSERT INTO commerce_products
             (id, parish_id, commerce_module, name, description, item_category, default_sku,
              default_tax_code, fulfillment_type, status, image_url, created_at, updated_at)
-          VALUES (?, ?, 'bookstore', ?, ?, 'book', ?, ?, ?, 'active', '', ?, ?)
-        `, productId, order.parish_id, String(item.item_name || "Book").slice(0, 180),
-          String(item.item_description || item.item_name || "").slice(0, 600), code,
+          VALUES (?, ?, 'bookstore', ?, ?, ?, ?, ?, ?, 'active', '', ?, ?)
+        `, productId, order.parish_id, String(item.item_name || "Bookstore item").slice(0, 180),
+          String(item.item_description || item.item_name || "").slice(0, 600), category, code,
           item.tax_code || "", item.fulfillment_type || "physical_pickup", now, now);
         await d1Run(env, `
           INSERT INTO commerce_product_variants

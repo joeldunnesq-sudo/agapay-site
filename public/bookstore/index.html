@@ -10,9 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/bookstore/style.css?v=20260731storefront1" />
-  <style>.store-main .add-book-card{order:-1}.sold-out-badge{position:absolute;z-index:2;top:11px;right:11px;padding:5px 9px;border-radius:999px;background:#9d4a46;color:#fff;font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 4px 10px rgba(85,24,22,.2)}.product:disabled{opacity:1;background:#f5f2ec}.product:disabled .product-art,.product:disabled strong,.product:disabled p{opacity:.58}.product:disabled .product-art{filter:grayscale(.65)}@media(min-width:721px){.store-hero{min-height:260px;padding-top:48px;padding-bottom:48px}.store-hero h1{font-size:clamp(40px,4.8vw,60px)}.hero-ornament{width:145px;height:145px}.hero-ornament img{width:68px}}</style>
+  <style>.store-main .add-book-card{order:-1}.sold-out-badge{position:absolute;z-index:2;top:11px;right:11px;padding:5px 9px;border-radius:999px;background:#9d4a46;color:#fff;font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 4px 10px rgba(85,24,22,.2)}.product:disabled{opacity:1;background:#f5f2ec}.product:disabled .product-art,.product:disabled strong,.product:disabled p{opacity:.58}.product:disabled .product-art{filter:grayscale(.65)}.category-filters{display:flex;flex-wrap:wrap;gap:8px;padding:0 26px 18px}.category-filter{border:1px solid #d9cebd;border-radius:999px;background:#fff;color:#5d574d;padding:8px 13px;font-size:11px;font-weight:700;cursor:pointer}.category-filter:hover,.category-filter.active{border-color:var(--gold);background:var(--navy);color:#fff}.popular-shelf{margin:0 18px 22px;padding:20px 8px 4px;border-top:1px solid #e7ddcf}.popular-shelf[hidden]{display:none}.popular-heading{display:flex;align-items:end;justify-content:space-between;gap:16px;margin:0 8px 14px}.popular-heading h3{font:600 25px/1.05 var(--serif);color:var(--navy);margin:0}.popular-heading p{color:var(--stone);font-size:11px;margin:4px 0 0}.popular-products{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.popular-products .product{min-height:170px}.popular-rank{position:absolute;left:10px;top:10px;z-index:2;width:25px;height:25px;display:grid;place-items:center;border-radius:50%;background:var(--gold);color:#fff;font-size:10px;font-weight:800}.item-type-row{max-width:340px;margin-bottom:16px}.item-type-row select{width:100%;border:1px solid #dcd2c2;background:#fff;border-radius:9px;padding:11px 12px;color:var(--ink)}@media(min-width:721px){.store-hero{min-height:190px;padding-top:30px;padding-bottom:30px}.store-hero h1{font-size:clamp(36px,4vw,50px);margin-bottom:10px}.store-hero p{font-size:15px}.hero-assurances{margin-top:15px}.hero-ornament{width:110px;height:110px}.hero-ornament img{width:54px}}@media(max-width:720px){.category-filters{padding:0 18px 15px}.popular-products{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:440px){.popular-products{grid-template-columns:1fr}}</style>
   <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js" defer></script>
-  <script src="/bookstore/app.js?v=20260731storefront2" defer></script>
+  <script src="/bookstore/app.js?v=20260731storefront3" defer></script>
 </head>
 <body>
   <header class="store-header">
@@ -37,30 +37,33 @@
       <div class="store-main">
         <section class="section-card catalog-card">
           <div class="section-heading"><div><span class="eyebrow">Curated by your parish</span><h2>Browse the shelves</h2><p>Tap any available item to add it to your basket.</p></div><span id="catalogCount" class="count-pill">0 items</span></div>
+          <div id="categoryFilters" class="category-filters" aria-label="Shop by category"></div>
+          <section id="popularShelf" class="popular-shelf" hidden aria-labelledby="popularTitle"><div class="popular-heading"><div><span class="eyebrow">Parish favorites</span><h3 id="popularTitle">Most popular</h3><p>The items shoppers choose most often.</p></div></div><div id="popularProducts" class="popular-products"></div></section>
           <div id="products" class="products"><div class="loading-state"><span></span><p>Opening the bookstore…</p></div></div>
         </section>
 
         <details class="add-book-card" id="addBookPanel" open>
           <summary>
             <span class="scan-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M7 9v6M10 8v8M14 8v8M17 9v6"/></svg></span>
-            <span><b>Don’t see the book you’re holding?</b><small>Scan its barcode or enter the ISBN. Once paid, it joins the parish catalog for everyone.</small></span>
-            <em>Scan or add <span aria-hidden="true">→</span></em>
+            <span><b>Don’t see the item you’re holding?</b><small>Add any unlisted parish item. Once paid, it joins the shared catalog for everyone.</small></span>
+            <em>Add unlisted item <span aria-hidden="true">→</span></em>
           </summary>
           <div class="add-book-body">
-            <div class="add-book-intro"><span>Community-powered inventory</span><h3>Add a book from the shelf</h3><p>We’ll look up the title from its ISBN. Confirm the shelf price, and it will be added to your basket and—after payment—to this parish’s bookstore list.</p></div>
-            <div class="scan-row">
+            <div class="add-book-intro"><span>Community-powered inventory</span><h3>Add an unlisted item</h3><p>Choose the item type and enter what’s on the shelf. Books can be scanned by barcode. After successful payment, the item becomes selectable for the next shopper.</p></div>
+            <label class="item-type-row"><span>Item type</span><select id="newItemCategory" onchange="updateUnlistedItemFields()"><option value="book">Book</option><option value="prayer_rope">Prayer Rope</option><option value="icon">Icon</option><option value="candle">Candle</option><option value="jewelry">Jewelry / Cross</option><option value="incense">Incense</option><option value="cd_dvd">CD / DVD</option><option value="other">Other item</option></select></label>
+            <div class="scan-row" id="bookIdentifierFields">
               <button class="scan-button" type="button" onclick="openBookScanner()"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M7 9v6M10 8v8M14 8v8M17 9v6"/></svg>Scan barcode</button>
               <span>or</span>
               <label class="isbn-field"><span>ISBN / barcode</span><div><input id="newBookIsbn" inputmode="numeric" maxlength="17" placeholder="978…" /><button type="button" onclick="lookupEnteredIsbn(this)">Look up</button></div></label>
             </div>
             <div id="bookLookupStatus" class="lookup-status" aria-live="polite"></div>
             <div class="book-fields">
-              <label><span>Book title</span><input id="newBookTitle" maxlength="180" placeholder="Title from the cover" /></label>
-              <label><span>Author <small>(optional)</small></span><input id="newBookAuthor" maxlength="120" placeholder="Author’s name" /></label>
+              <label><span id="newItemNameLabel">Book title</span><input id="newBookTitle" maxlength="180" placeholder="Title or description from the item" /></label>
+              <label id="bookAuthorField"><span>Author <small>(optional)</small></span><input id="newBookAuthor" maxlength="120" placeholder="Author’s name" /></label>
               <label><span>Shelf price</span><div class="money-input"><i>$</i><input id="newBookPrice" type="number" min="0.01" step="0.01" placeholder="0.00" /></div></label>
               <label><span>Quantity</span><input id="newBookQuantity" type="number" min="1" max="50" step="1" value="1" /></label>
             </div>
-            <button class="add-book-button" type="button" onclick="addBuyerBook()">Add this book to my basket</button>
+            <button class="add-book-button" id="addUnlistedItemButton" type="button" onclick="addBuyerBook()">Add this item to my basket</button>
           </div>
         </details>
       </div>

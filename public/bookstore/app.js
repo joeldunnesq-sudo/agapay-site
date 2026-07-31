@@ -2,6 +2,7 @@ const bookstorePathSegments = location.pathname.split("/").filter(Boolean);
 const parishId = decodeURIComponent(bookstorePathSegments[0] === "bookstore" ? (bookstorePathSegments[1] || "") : (bookstorePathSegments[1] === "bookstore" ? bookstorePathSegments[0] : ""));
 let products = [];
 let cart = [];
+let activeCategory = "all";
 let scannerStream = null;
 let scannerFrame = null;
 let zxingReader = null;
@@ -9,6 +10,7 @@ let zxingReader = null;
 const money = cents => (Number(cents || 0) / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
 const normalizeIsbn = value => String(value || "").replace(/[^0-9Xx]/g, "");
+const categoryLabels = { book: "Book", prayer_rope: "Prayer Rope", icon: "Icon", candle: "Candle", jewelry: "Jewelry / Cross", incense: "Incense", cd_dvd: "CD / DVD", other: "Other item" };
 
 function status(message, tone = "") {
   const el = document.getElementById("status");
@@ -36,6 +38,26 @@ function productAvailable(product) {
   return product.trackInventory === false || Number(product.stockQuantity || 0) > 0;
 }
 
+function productCard(product, index, rank = 0) {
+  const line = cart.find(item => item.variantId && item.variantId === product.variantId);
+  const available = productAvailable(product);
+  return `<button class="product${line ? " in-cart" : ""}" type="button" onclick="addCatalogItem(${index})" ${available ? "" : "disabled"}>
+    ${rank ? `<span class="popular-rank">${rank}</span>` : ""}
+    ${line ? `<span class="selected-badge">${line.quantity}</span>` : ""}
+    ${available ? "" : '<span class="sold-out-badge">Out of stock</span>'}
+    <span class="product-art">${categoryArt(product.category)}<small>${escapeHtml(product.categoryLabel || "Parish item")}</small></span>
+    <small>${escapeHtml(product.categoryLabel || "Bookstore item")}</small>
+    <strong>${escapeHtml(product.name)}</strong>
+    <p>${escapeHtml(product.description || "Available for parish pickup")}</p>
+    <span class="product-foot"><b>${money(product.priceCents)}</b><span class="availability${available ? "" : " out"}">${available ? "Available" : "Out of stock"}</span></span>
+  </button>`;
+}
+
+function selectCategory(category) {
+  activeCategory = category || "all";
+  renderProducts();
+}
+
 function renderProducts() {
   const root = document.getElementById("products");
   document.getElementById("catalogCount").textContent = `${products.length} item${products.length === 1 ? "" : "s"}`;
@@ -43,19 +65,23 @@ function renderProducts() {
     root.innerHTML = '<div class="empty-products"><span class="eyebrow">The shelves are ready</span><h3>No catalog items yet</h3><p>Scan the first book below. After your purchase, it will appear here for the next parishioner.</p></div>';
     return;
   }
-  root.innerHTML = products.map((product, index) => {
-    const line = cart.find(item => item.variantId && item.variantId === product.variantId);
-    const available = productAvailable(product);
-    return `<button class="product${line ? " in-cart" : ""}" type="button" onclick="addCatalogItem(${index})" ${available ? "" : "disabled"}>
-      ${line ? `<span class="selected-badge">${line.quantity}</span>` : ""}
-      ${available ? "" : '<span class="sold-out-badge">Out of stock</span>'}
-      <span class="product-art">${categoryArt(product.category)}<small>${escapeHtml(product.categoryLabel || "Parish item")}</small></span>
-      <small>${escapeHtml(product.categoryLabel || "Bookstore item")}</small>
-      <strong>${escapeHtml(product.name)}</strong>
-      <p>${escapeHtml(product.description || "Available for parish pickup")}</p>
-      <span class="product-foot"><b>${money(product.priceCents)}</b><span class="availability${available ? "" : " out"}">${available ? "Available" : "Out of stock"}</span></span>
-    </button>`;
-  }).join("");
+  const categories = Array.from(new Map(products.map(product => [product.category || "other", product.categoryLabel || "Other"]))).sort((a, b) => a[1].localeCompare(b[1]));
+  if (activeCategory !== "all" && !categories.some(([category]) => category === activeCategory)) activeCategory = "all";
+  document.getElementById("categoryFilters").innerHTML = [["all", "All items"], ...categories]
+    .map(([category, label]) => `<button class="category-filter${activeCategory === category ? " active" : ""}" type="button" onclick="selectCategory('${escapeHtml(category)}')" aria-pressed="${activeCategory === category}">${escapeHtml(label)}</button>`).join("");
+
+  const popular = products.map((product, index) => ({ product, index }))
+    .filter(({ product }) => Number(product.unitsSold || 0) > 0)
+    .sort((a, b) => Number(b.product.unitsSold || 0) - Number(a.product.unitsSold || 0) || a.product.name.localeCompare(b.product.name))
+    .slice(0, 3);
+  const popularShelf = document.getElementById("popularShelf");
+  popularShelf.hidden = !popular.length || activeCategory !== "all";
+  document.getElementById("popularProducts").innerHTML = popular.map(({ product, index }, rank) => productCard(product, index, rank + 1)).join("");
+
+  const visibleProducts = activeCategory === "all" ? products : products.filter(product => (product.category || "other") === activeCategory);
+  root.innerHTML = visibleProducts.length
+    ? visibleProducts.map(product => productCard(product, products.indexOf(product))).join("")
+    : '<div class="empty-products"><h3>No items in this category yet</h3><p>Choose another category or scan a book from the shelf.</p></div>';
 }
 
 function renderCart() {
@@ -70,7 +96,7 @@ function renderCart() {
     root.innerHTML = '<div class="empty-cart"><span aria-hidden="true">✦</span><b>Your basket is empty</b><p>Choose something from the shelves or scan a book.</p></div>';
     return;
   }
-  root.innerHTML = cart.map((row, index) => `<div class="cart-row"><div class="cart-row-top"><div><strong>${escapeHtml(row.name)}</strong><br><small>${row.buyerAdded ? "New book · joins catalog after payment" : escapeHtml(row.categoryLabel || "Parish item")}</small></div><button class="remove" type="button" onclick="removeItem(${index})">Remove</button></div><div class="qty"><button type="button" onclick="changeQuantity(${index},-1)" aria-label="Remove one">−</button><span>${row.quantity}</span><button type="button" onclick="changeQuantity(${index},1)" aria-label="Add one">+</button><b>${money(row.priceCents * row.quantity)}</b></div></div>`).join("");
+  root.innerHTML = cart.map((row, index) => `<div class="cart-row"><div class="cart-row-top"><div><strong>${escapeHtml(row.name)}</strong><br><small>${row.buyerAdded ? "New item · joins catalog after payment" : escapeHtml(row.categoryLabel || "Parish item")}</small></div><button class="remove" type="button" onclick="removeItem(${index})">Remove</button></div><div class="qty"><button type="button" onclick="changeQuantity(${index},-1)" aria-label="Remove one">−</button><span>${row.quantity}</span><button type="button" onclick="changeQuantity(${index},1)" aria-label="Add one">+</button><b>${money(row.priceCents * row.quantity)}</b></div></div>`).join("");
 }
 
 function addCatalogItem(index) {
@@ -128,27 +154,43 @@ async function lookupEnteredIsbn(button) {
 }
 
 function addBuyerBook() {
+  const category = document.getElementById("newItemCategory").value || "other";
   const isbn = normalizeIsbn(document.getElementById("newBookIsbn").value);
   const title = document.getElementById("newBookTitle").value.trim();
   const author = document.getElementById("newBookAuthor").value.trim();
   const price = Number(document.getElementById("newBookPrice").value);
   const quantity = Math.max(1, Math.min(50, Number(document.getElementById("newBookQuantity").value) || 1));
   const lookupStatus = document.getElementById("bookLookupStatus");
-  if (![10, 13].includes(isbn.length) || !title || !Number.isFinite(price) || price <= 0) {
+  if (!title || !Number.isFinite(price) || price <= 0 || (category === "book" && isbn && ![10, 13].includes(isbn.length))) {
     lookupStatus.className = "lookup-status error";
-    lookupStatus.textContent = "Enter a valid ISBN, title, and shelf price before adding this book.";
+    lookupStatus.textContent = "Enter a description and shelf price. If you enter an ISBN, use a valid 10- or 13-digit code.";
     return;
   }
-  const name = [title, author ? `by ${author}` : ""].filter(Boolean).join(" ");
-  cart.push({ buyerAdded: true, source: "scan_and_go", itemCategory: "book", specifics: { title, author, isbn }, name, categoryLabel: "New book", priceCents: Math.round(price * 100), quantity });
+  const name = [title, category === "book" && author ? `by ${author}` : ""].filter(Boolean).join(" ");
+  const specifics = category === "book"
+    ? { title, author, isbn }
+    : category === "icon" ? { saint_or_feast: title } : category === "cd_dvd" ? { title } : { description: title };
+  cart.push({ buyerAdded: true, source: category === "book" && isbn ? "scan_and_go" : "shopper_added", itemCategory: category, specifics, name, categoryLabel: `New ${categoryLabels[category] || "item"}`, priceCents: Math.round(price * 100), quantity });
   document.getElementById("newBookIsbn").value = "";
   document.getElementById("newBookTitle").value = "";
   document.getElementById("newBookAuthor").value = "";
   document.getElementById("newBookPrice").value = "";
   document.getElementById("newBookQuantity").value = "1";
   lookupStatus.className = "lookup-status";
-  lookupStatus.textContent = "Book added. It will join the parish catalog after payment succeeds.";
+  lookupStatus.textContent = "Item added. It will join the parish catalog after payment succeeds.";
   renderCart();
+}
+
+function updateUnlistedItemFields() {
+  const category = document.getElementById("newItemCategory")?.value || "book";
+  const isBook = category === "book";
+  document.getElementById("bookIdentifierFields").hidden = !isBook;
+  document.getElementById("bookAuthorField").hidden = !isBook;
+  document.getElementById("newItemNameLabel").textContent = isBook ? "Book title" : category === "icon" ? "Saint or feast" : "Item description";
+  document.getElementById("addUnlistedItemButton").textContent = "Add this item to my basket";
+  const lookupStatus = document.getElementById("bookLookupStatus");
+  lookupStatus.textContent = isBook ? "Scan or enter an ISBN for automatic title lookup, or type the title yourself." : "Describe the item as it appears on the shelf.";
+  lookupStatus.className = "lookup-status";
 }
 
 async function openBookScanner() {
@@ -232,4 +274,5 @@ document.getElementById("checkoutForm")?.addEventListener("submit", async event 
   } catch (error) { status(error.message, "error"); button.disabled = false; button.innerHTML = 'Continue to secure checkout <span>→</span>'; }
 });
 
+updateUnlistedItemFields();
 loadStore();

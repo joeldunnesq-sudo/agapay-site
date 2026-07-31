@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { completeCommerceOrderFromStripe } from "../src/handlers/parish-commerce.js";
-import { bookstoreOrderSource, guestBookstoreItemError } from "../src/handlers/donor.js";
+import { bookstoreOrderSource, guestBookstoreItemError, loadDonorBookstoreProducts } from "../src/handlers/donor.js";
 
 const guestScan = { source: "scan_and_go", itemCategory: "book", specifics: { isbn: "9780884651751", title: "The Orthodox Way" } };
 assert.equal(guestBookstoreItemError([guestScan]), "", "a guest may add a valid scanned book");
-assert.match(guestBookstoreItemError([{ source: "manual_entry", itemCategory: "other", specifics: { description: "misc" } }]), /valid ISBN barcode/,
-  "guest-added inventory stays constrained to ISBN books");
+const shopperAddedIcon = { source: "shopper_added", itemCategory: "icon", specifics: { saint_or_feast: "St. Fiacre icon" } };
+assert.equal(guestBookstoreItemError([shopperAddedIcon]), "", "a shopper may add a described unlisted parish item");
+assert.match(guestBookstoreItemError([{ source: "shopper_added", itemCategory: "other", specifics: {} }]), /Describe every shopper-added item/,
+  "shopper-added inventory requires a real description");
 assert.equal(bookstoreOrderSource([{ source: "catalog" }, guestScan], true), "scan_and_go",
   "a guest scan must retain the source that promotes a paid book into inventory");
 
@@ -78,6 +80,25 @@ function addScannedOrder(id, sessionId, barcode, title) {
   `).run(`item_${id}`, id, barcode, barcode, title, title);
 }
 
+function addShopperItemOrder(id, sessionId, category, title) {
+  sqlite.prepare(`
+    INSERT INTO commerce_orders
+      (id, commerce_module, source, parish_id, subtotal_cents, tax_cents,
+       total_charged_cents, stripe_fee_cents, agapay_fee_cents, parish_net_cents,
+       cover_fees, payment_status, status, checkout_session_id, fulfillment_status, updated_at)
+    VALUES (?, 'bookstore', 'shopper_added', 'parish_1', 1800, 0, 1800, 0, 0, 1800,
+            0, 'pending', 'checkout_created', ?, 'pending', '2026-07-31T12:00:00.000Z')
+  `).run(id, sessionId);
+  sqlite.prepare(`
+    INSERT INTO commerce_order_items
+      (id, order_id, parish_id, commerce_module, product_id, variant_id, sku, barcode,
+       item_category, item_name, item_description, quantity, unit_price_cents, tax_code,
+       snapshot_json, fulfillment_type, created_at, updated_at)
+    VALUES (?, ?, 'parish_1', 'bookstore', '', '', '', '', ?, ?, ?, 1, 1800, '',
+            '{}', 'physical_pickup', '2026-07-31T12:00:00.000Z', '2026-07-31T12:00:00.000Z')
+  `).run(`item_${id}`, id, category, title, title);
+}
+
 async function complete(id, sessionId) {
   return completeCommerceOrderFromStripe(env, {
     id: sessionId,
@@ -104,6 +125,10 @@ assert.equal(product.barcode, isbn);
 assert.equal(product.unit_price_cents, 2495);
 assert.equal(product.track_inventory, 0, "donor-added catalog books remain selectable without a false zero-stock limit");
 
+const popularProducts = await loadDonorBookstoreProducts(env, "parish_1");
+assert.equal(popularProducts.length, 1);
+assert.equal(popularProducts[0].unitsSold, 1, "completed sales should feed the public popular shelf");
+
 let orderItem = sqlite.prepare("SELECT product_id, variant_id, snapshot_json FROM commerce_order_items WHERE order_id = 'order_1'").get();
 assert.equal(orderItem.product_id, product.id);
 assert.equal(orderItem.variant_id, product.variant_id);
@@ -125,16 +150,38 @@ product = sqlite.prepare(`
 assert.deepEqual({ ...product }, { status: "active", variant_status: "active" }, "a new paid scan should restore a matching archived book to the selectable catalog");
 assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM commerce_products").get().count, 1, "the same ISBN must not create a duplicate product");
 
+addShopperItemOrder("order_3", "cs_3", "icon", "St. Fiacre icon");
+await complete("order_3", "cs_3");
+const shopperCatalogItem = sqlite.prepare(`
+  SELECT p.item_category, p.name, v.track_inventory
+  FROM commerce_products p JOIN commerce_product_variants v ON v.product_id = p.id
+  WHERE p.parish_id = 'parish_1' AND p.item_category = 'icon'
+`).get();
+assert.deepEqual({ ...shopperCatalogItem }, { item_category: "icon", name: "St. Fiacre icon", track_inventory: 0 },
+  "a paid shopper-added item should join the shared selectable catalog");
+
 const publicStore = readFileSync(new URL("../public/bookstore/index.html", import.meta.url), "utf8");
 const publicStoreApp = readFileSync(new URL("../public/bookstore/app.js", import.meta.url), "utf8");
 const myAgapayStore = readFileSync(new URL("../public/myagapay/bookstore.html", import.meta.url), "utf8");
+const donorApp = readFileSync(new URL("../public/donor/app.js", import.meta.url), "utf8");
+const myAgapayShell = readFileSync(new URL("../public/myagapay-shell.js", import.meta.url), "utf8");
 assert.doesNotMatch(publicStore, /class="hero-actions"/, "the hero stays visually quiet without duplicate bookstore actions");
-assert.match(publicStore, /\.store-hero\{min-height:260px/, "the desktop storefront hero stays compact");
+assert.match(publicStore, /\.store-hero\{min-height:190px/, "the desktop storefront hero stays compact");
 assert.match(publicStore, /id="addBookPanel" open/);
-assert.match(publicStoreApp, /source: "scan_and_go"/);
+assert.match(publicStoreApp, /"scan_and_go"/);
 assert.match(publicStoreApp, /joins catalog after payment/);
 assert.match(publicStoreApp, /sold-out-badge/);
+assert.match(publicStore, /id="categoryFilters"/);
+assert.match(publicStore, /id="popularShelf"/);
+assert.match(publicStore, /Add an unlisted item/);
+assert.match(publicStoreApp, /activeCategory/);
+assert.match(publicStoreApp, /unitsSold/);
+assert.match(publicStoreApp, /source: category === "book" && isbn \? "scan_and_go" : "shopper_added"/);
 assert.match(myAgapayStore, /onclick="startBookstoreBookScan\(\)"/);
 assert.match(myAgapayStore, /bookstore-product-stock-out/);
+assert.match(myAgapayStore, /class="mobile-tabbar"/);
+assert.match(donorApp, /await donorApi\("\/api\/donor\/dashboard"\)/, "the bookstore refreshes the saved parish before loading");
+assert.match(donorApp, /canonicalParish/, "the bookstore canonicalizes a saved parish against the directory");
+assert.match(myAgapayShell, /item\.id === activeProduct\(\)/, "the active bookstore stays in navigation during capability loading");
 
 console.log("PASS - paid barcode scans populate the shared parish bookstore catalog idempotently");
