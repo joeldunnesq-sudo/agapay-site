@@ -165,6 +165,7 @@ const publicStoreApp = readFileSync(new URL("../public/bookstore/app.js", import
 const myAgapayStore = readFileSync(new URL("../public/myagapay/bookstore.html", import.meta.url), "utf8");
 const donorApp = readFileSync(new URL("../public/donor/app.js", import.meta.url), "utf8");
 const myAgapayShell = readFileSync(new URL("../public/myagapay-shell.js", import.meta.url), "utf8");
+const workerSource = readFileSync(new URL("../src/worker.js", import.meta.url), "utf8");
 assert.doesNotMatch(publicStore, /class="hero-actions"/, "the hero stays visually quiet without duplicate bookstore actions");
 assert.match(publicStore, /\.store-hero\{min-height:190px/, "the desktop storefront hero stays compact");
 assert.match(publicStore, /id="addBookPanel" open/);
@@ -184,5 +185,7 @@ assert.match(myAgapayStore, /class="mobile-tabbar"/);
 assert.match(donorApp, /await donorApi\("\/api\/donor\/dashboard"\)/, "the bookstore refreshes the saved parish before loading");
 assert.match(donorApp, /canonicalParish/, "the bookstore canonicalizes a saved parish against the directory");
 assert.match(myAgapayShell, /item\.id === activeProduct\(\)/, "the active bookstore stays in navigation during capability loading");
+assert.match(workerSource, /\["\/myagapay\/bookstore", "\/myagapay\/bookstore\.html"\]/,
+  "the authenticated bookstore route must resolve before the public parish storefront pattern");
 
 console.log("PASS - paid barcode scans populate the shared parish bookstore catalog idempotently");
