@@ -29,7 +29,7 @@
   function products() {
     const items = [
       { id: "giving", href: "/myagapay/dashboard", label: "Give", short: "Giving dashboard", icon: icons.give },
-      { id: "feed", href: "/myagapay/feed", label: "Feed", short: "Parish announcements", icon: icons.feed, parishFeature: "communicationsEnabled" },
+      { id: "feed", href: "/myagapay/feed", label: "Feed", short: "Parish announcements", icon: icons.feed },
       { id: "groups", href: "/myagapay/groups", label: "Groups", short: "Your ministry messages", icon: icons.groups },
       { id: "commemorations", href: "/myagapay/sacraments", label: "Sacraments & Services", short: "Requests and prayer", icon: icons.sacraments, parishFeature: "sacramentsEnabled" },
       { id: "history", href: "/myagapay/giving/history", label: "History", short: "Giving history", icon: icons.history, mobileFallbackFor: "sacramentsEnabled", desktopHidden: true },
@@ -50,6 +50,7 @@
   };
 
   let feedUnreadCount = 0;
+  let groupsUnreadCount = 0;
 
   function visibleProducts() {
     return products().filter((item) => {
@@ -300,8 +301,13 @@
     const productLinks = navProducts.map((item) => {
       const current = item.id === active || (item.id === "settings" && active === "account");
       const activeClass = current ? (isLearnNav ? "is-active" : "active") : "";
-      const badge = item.id === "feed" && feedUnreadCount > 0
-        ? `<em class="unified-nav-badge" data-feed-unread-count>${feedUnreadCount > 99 ? "99+" : feedUnreadCount}</em>`
+      const unreadCount = item.id === "feed"
+        ? feedUnreadCount
+        : item.id === "groups"
+          ? groupsUnreadCount
+          : 0;
+      const badge = unreadCount > 0
+        ? `<em class="unified-nav-badge" data-${item.id}-unread-count aria-label="${unreadCount} unread">${unreadCount > 99 ? "99+" : unreadCount}</em>`
         : "";
       const label = isDesktopSideNav ? `<span><strong>${item.label}</strong><small>${item.short}</small></span>${badge}` : `<span>${item.label}</span>${badge}`;
       return `<a class="${activeClass}" href="${item.href}"${current ? ' aria-current="page"' : ""}>${item.icon}${label}</a>`;
@@ -314,7 +320,7 @@
 
   function normalizeProductNavs(root = document) {
     const active = activeProduct();
-    root.querySelectorAll(".my-agapay-tabbar, .mobile-tabbar, .learn-product-tabbar, .unified-product-nav").forEach((nav) => {
+    root.querySelectorAll(".my-agapay-tabbar:not([data-static-nav]), .mobile-tabbar, .learn-product-tabbar, .unified-product-nav").forEach((nav) => {
       const className = nav.classList.contains("learn-product-tabbar")
         ? "learn-product-tabbar"
         : nav.classList.contains("unified-product-nav")
@@ -358,7 +364,10 @@
       if (!response.ok) throw new Error("Unable to load parish features");
       const payload = await response.json();
       setParishCapabilities(payload.parish || null);
-      if (parishCapabilities.communicationsEnabled) await loadFeedUnreadCount();
+      await Promise.all([
+        parishCapabilities.communicationsEnabled ? loadFeedUnreadCount() : Promise.resolve(),
+        loadGroupsUnreadCount(),
+      ]);
     } catch {
       setParishCapabilities(null);
     }
@@ -369,12 +378,29 @@
     normalizeProductNavs();
   }
 
+  function setGroupsUnreadCount(count) {
+    groupsUnreadCount = Math.max(0, Number(count) || 0);
+    normalizeProductNavs();
+  }
+
   async function loadFeedUnreadCount() {
     try {
       const response = await fetch("/api/donor/feed", { headers: authHeaders(), cache: "no-store" });
       if (!response.ok) return;
       const payload = await response.json();
       setFeedUnreadCount(payload.unreadCount);
+    } catch {
+      // The navigation remains usable when the count cannot be refreshed.
+    }
+  }
+
+  async function loadGroupsUnreadCount() {
+    try {
+      const response = await fetch("/api/donor/groups", { headers: authHeaders(), cache: "no-store" });
+      if (!response.ok) return;
+      const payload = await response.json();
+      const total = (payload.groups || []).reduce((sum, group) => sum + Math.max(0, Number(group.unreadCount) || 0), 0);
+      setGroupsUnreadCount(total);
     } catch {
       // The navigation remains usable when the count cannot be refreshed.
     }
@@ -445,6 +471,7 @@
     productNav,
     setParishCapabilities,
     setFeedUnreadCount,
+    setGroupsUnreadCount,
     redirectToLogin,
     session,
     syncAuthVisibility,

@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=20260729startergiving1" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260731communicationsnav1" />
   <script src="/liturgical-calendar.js"></script>
 <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <script src="/pwa-register.js" defer></script>
@@ -42,6 +42,8 @@
         </div>
         <nav class="nav unified-product-nav" hx-boost="false">
           <a class="active" href="/myagapay/dashboard"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg> Give</a>
+          <a href="/myagapay/feed"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg> Feed</a>
+          <a href="/myagapay/groups"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c.5-4 2.8-6 5.5-6s5 2 5.5 6"/><path d="M14 15c3.5.2 5.8 1.9 6.5 5"/></svg> Groups</a>
           <a href="/myagapay/learn"><svg viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg> Learn</a>
           <a href="/myagapay/directory"><svg viewBox="0 0 24 24"><path d="M12 3l8 6v12H4V9z"/><path d="M9 21v-7h6v7"/><path d="M8 10h8"/><path d="M12 6v8"/></svg> Directory</a>
           <span class="unified-nav-divider" aria-hidden="true"></span>
@@ -278,6 +280,24 @@
           <img class="summary-watermark" src="/mark.png" alt="" />
         </section>
 
+        <section class="mobile-section" data-mobile-communications-nav aria-labelledby="mobileCommunicationsHeading">
+          <div class="mobile-section-head">
+            <h2 id="mobileCommunicationsHeading">Parish communications</h2>
+          </div>
+          <div class="mobile-products-grid">
+            <a class="mobile-product-card live" href="/myagapay/feed">
+              <span>Parish life</span><em class="unified-nav-badge hub-unread-badge" data-hub-unread="feed" hidden></em>
+              <strong>Feed</strong>
+              <p>Read announcements and timely updates from your parish.</p>
+            </a>
+            <a class="mobile-product-card" href="/myagapay/groups">
+              <span>Your ministries</span><em class="unified-nav-badge hub-unread-badge" data-hub-unread="groups" hidden></em>
+              <strong>Groups</strong>
+              <p>Catch up on private messages from groups you belong to.</p>
+            </a>
+          </div>
+        </section>
+
         <section class="mobile-section">
           <div class="mobile-section-head">
             <h2>Quick Give</h2>
@@ -363,7 +383,7 @@
           </div>
         </section>
 
-        <nav class="my-agapay-tabbar" aria-label="My AGAPAY navigation">
+        <nav class="my-agapay-tabbar" data-static-nav aria-label="My AGAPAY navigation">
           <a href="/myagapay/dashboard"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg><span>My AGAPAY</span></a>
           <a class="active" href="/myagapay/giving"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg><span>Giving</span></a>
           <a href="/myagapay/bookstore"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Bookstore</span></a>
@@ -374,6 +394,30 @@
   </div>
 
   <script>
+    function setHubUnreadBadge(kind, count) {
+      const badge = document.querySelector(`[data-hub-unread="${kind}"]`);
+      if (!badge) return;
+      const unreadCount = Math.max(0, Number(count) || 0);
+      badge.hidden = unreadCount === 0;
+      badge.textContent = unreadCount === 0 ? "" : (unreadCount > 99 ? "99+" : String(unreadCount));
+      badge.setAttribute("aria-label", `${unreadCount} unread`);
+    }
+
+    async function loadHubCommunicationsUnread() {
+      const headers = window.MyAgapayShell?.authHeaders() || {};
+      const [feedResult, groupsResult] = await Promise.allSettled([
+        fetch("/api/donor/feed", { headers, cache: "no-store" }).then(async response => response.ok ? response.json() : {}),
+        fetch("/api/donor/groups", { headers, cache: "no-store" }).then(async response => response.ok ? response.json() : {}),
+      ]);
+      const feed = feedResult.status === "fulfilled" ? feedResult.value : {};
+      const groups = groupsResult.status === "fulfilled" ? groupsResult.value : {};
+      const groupsUnread = (groups.groups || []).reduce((sum, group) => sum + Math.max(0, Number(group.unreadCount) || 0), 0);
+      setHubUnreadBadge("feed", feed.unreadCount);
+      setHubUnreadBadge("groups", groupsUnread);
+      window.MyAgapayShell?.setFeedUnreadCount(feed.unreadCount);
+      window.MyAgapayShell?.setGroupsUnreadCount(groupsUnread);
+    }
+
     document.addEventListener("DOMContentLoaded", async () => {
       // Pre-fill greeting from cached profile if we have a name — never show "Faithful Member" pre-emptively
       const cached = donorProfile();
@@ -385,7 +429,7 @@
         if (g2) g2.textContent = `Welcome, ${cachedName}`;
       }
       await handleDonorCheckoutReturn();
-      await loadDonorDashboardPage();
+      await Promise.all([loadDonorDashboardPage(), loadHubCommunicationsUnread()]);
     });
   </script>
 

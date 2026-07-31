@@ -2741,6 +2741,7 @@ body.donor-home {
 }
 
 .mobile-product-card {
+  position: relative;
   display: block;
   border: 1px solid rgba(111, 106, 96, 0.2);
   border-radius: 12px;
@@ -2748,6 +2749,16 @@ body.donor-home {
   text-decoration: none;
   background: rgba(255, 255, 255, 0.84);
   color: var(--ink);
+}
+
+.mobile-product-card .hub-unread-badge {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.85rem;
+  margin-left: 0;
+  background: var(--gold);
+  color: var(--navy);
+  font-style: normal;
 }
 
 .mobile-product-card.live {
