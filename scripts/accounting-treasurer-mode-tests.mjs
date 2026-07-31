@@ -3,7 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { initializeLedger, recordSimpleDeposit, recordSplitDeposit } from "../src/accounting/index.js";
+import { initializeLedger, recordInKindGift, recordSimpleDeposit, recordSplitDeposit, statementOfActivities } from "../src/accounting/index.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => readFileSync(path.join(root, file), "utf8");
@@ -45,6 +45,20 @@ const actor = {
 };
 const today = new Date().toISOString().slice(0, 10);
 await initializeLedger(db, { actor, date:new Date() });
+assert.deepEqual({ ...db.sqlite.prepare("SELECT account_number,name,account_type_id,normal_balance,is_posting_account,requires_fund FROM accounting_accounts WHERE id='acct_4200'").get() }, {
+  account_number:"4200",
+  name:"In-Kind Contributions",
+  account_type_id:"type_revenue",
+  normal_balance:"credit",
+  is_posting_account:1,
+  requires_fund:1
+});
+const inKindMigration = read("accounting-migrations/0025_in_kind_contributions_account.sql");
+db.sqlite.prepare("DELETE FROM accounting_accounts WHERE id='acct_4200'").run();
+db.sqlite.exec(inKindMigration);
+assert.equal(db.sqlite.prepare("SELECT name FROM accounting_accounts WHERE id='acct_4200'").get().name, "In-Kind Contributions");
+console.log("PASS - acct_4200 is present through both fresh-ledger seeding and migration backfill");
+
 const posted = await recordSimpleDeposit(db, {
   actor,
   entryDate:today,
@@ -107,12 +121,58 @@ await assert.rejects(() => recordSplitDeposit(db, {
 assert.equal(db.sqlite.prepare("SELECT COUNT(*) count FROM accounting_journal_entries").get().count, entriesBeforeRejectedSplit);
 console.log("PASS - a mismatched split is rejected before a journal draft is created");
 
+db.sqlite.prepare("INSERT INTO accounting_accounts(id,account_number,name,account_type_id,normal_balance,is_posting_account,is_system,requires_fund,cash_flow_classification) VALUES('acct_1500','1500','Equipment','type_asset','debit',1,0,1,'investing')").run();
+const expenseGift = await recordInKindGift(db, {
+  actor,
+  entryDate:today,
+  itemDescription:"Liturgical vestments",
+  donorName:"Anonymous parishioner",
+  valuationBasis:"Comparable retail listing",
+  debitAccountId:"acct_5100",
+  fundId:"fund_general",
+  amount:75000,
+  correlationId:"in-kind-expense-test"
+});
+assert.equal(expenseGift.status, "posted");
+assert.equal(expenseGift.totalDebits, 75000);
+assert.equal(expenseGift.totalCredits, 75000);
+assert.deepEqual(db.sqlite.prepare("SELECT account_id,fund_id,description,debit_amount,credit_amount FROM accounting_journal_lines WHERE journal_entry_id=? ORDER BY line_number").all(expenseGift.id).map((line) => ({ ...line })), [
+  { account_id:"acct_5100", fund_id:"fund_general", description:"Liturgical vestments", debit_amount:75000, credit_amount:0 },
+  { account_id:"acct_4200", fund_id:"fund_general", description:"Comparable retail listing", debit_amount:0, credit_amount:75000 }
+]);
+const assetGift = await recordInKindGift(db, {
+  actor,
+  entryDate:today,
+  itemDescription:"Donated organ",
+  donorName:"",
+  valuationBasis:"Independent appraisal",
+  debitAccountId:"acct_1500",
+  fundId:"fund_general",
+  amount:200000,
+  correlationId:"in-kind-asset-test"
+});
+assert.equal(db.sqlite.prepare("SELECT debit_amount FROM accounting_journal_lines WHERE journal_entry_id=? AND account_id='acct_1500'").get(assetGift.id).debit_amount, 200000);
+const inKindActivities = await statementOfActivities(db, { actor, startDate:today, endDate:today });
+assert.equal(inKindActivities.rows.find((row) => row.accountId === "acct_4200").amount, 275000);
+assert.equal(inKindActivities.rows.find((row) => row.accountId === "acct_5100").amount, 75000);
+assert.equal(inKindActivities.totals.changeInNetAssets, 247000);
+console.log("PASS - expense and asset in-kind gifts post balanced entries and report separately on the Statement of Activities");
+
+const entriesBeforeInvalidGift = db.sqlite.prepare("SELECT COUNT(*) count FROM accounting_journal_entries").get().count;
+await assert.rejects(() => recordInKindGift(db, { actor, entryDate:today, itemDescription:"", valuationBasis:"Appraisal", debitAccountId:"acct_5100", fundId:"fund_general", amount:1000 }), /description of what was received/);
+await assert.rejects(() => recordInKindGift(db, { actor, entryDate:today, itemDescription:"Materials", valuationBasis:"", debitAccountId:"acct_5100", fundId:"fund_general", amount:1000 }), /value was determined/);
+await assert.rejects(() => recordInKindGift(db, { actor, entryDate:today, itemDescription:"Cash-like gift", valuationBasis:"Face value", debitAccountId:"acct_1010", fundId:"fund_general", amount:1000 }), /cannot be posted to a cash or bank account/);
+assert.equal(db.sqlite.prepare("SELECT COUNT(*) count FROM accounting_journal_entries").get().count, entriesBeforeInvalidGift);
+console.log("PASS - required compliance fields and the non-cash account boundary are enforced before draft creation");
+
 const handler = read("src/handlers/accounting-ledger.js");
 assert.match(handler, /path==="\/simple\/deposits"/);
 assert.match(handler, /path==="\/simple\/split-deposits"/);
+assert.match(handler, /path==="\/simple\/in-kind-gifts"/);
 assert.match(handler, /let capability=request\.method==="GET"\?"accounting\.view":"accounting\.journals\.create"/);
 assert.match(handler, /recordSimpleDeposit\(ctx\.db,\{actor:ctx\.actor,\.\.\.data\}\)/);
 assert.match(handler, /recordSplitDeposit\(ctx\.db,\{actor:ctx\.actor,\.\.\.data\}\)/);
+assert.match(handler, /recordInKindGift\(ctx\.db,\{actor:ctx\.actor,\.\.\.data\}\)/);
 assert.doesNotMatch(handler, /accounting\.simple/);
 console.log("PASS - the simple and split-deposit routes reuse accounting.journals.create");
 
@@ -159,6 +219,15 @@ assert.match(app, /function updateAccountingSplitDepositBalance/);
 assert.match(app, /form\.querySelector\('\[data-income-submit\]'\)\.disabled = !balanced/);
 assert.doesNotMatch(app, /Switch to Accountant view and enter a custom journal entry/);
 console.log("PASS - Treasurer income entry supports balanced multi-fund allocations without changing the single-deposit endpoint");
+
+assert.match(app, />Record a Non-Cash Gift</);
+assert.match(app, /function accountingInKindGiftForm/);
+assert.match(app, /name="itemDescription"[^>]*required/);
+assert.match(app, /name="valuationBasis"[^>]*required/);
+assert.match(app, /accountingApi\('\/simple\/in-kind-gifts'\)/);
+assert.match(app, /\['asset','expense'\]\.includes\(account\.category\)/);
+assert.doesNotMatch(app.slice(app.indexOf("function accountingInKindGiftForm"), app.indexOf("function accountingOverviewHero")), /depositAccountId|bankAccounts/);
+console.log("PASS - Treasurer view exposes a separate non-cash gift form with required description and valuation fields");
 
 const simpleFlow = app.slice(app.indexOf("function accountingSimpleIncomeForm"), app.indexOf("function accountingSimpleActivityFeed"));
 const billFlow = app.slice(app.indexOf("function showAccountingBillForm"), app.indexOf("async function createAccountingBill"));

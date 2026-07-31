@@ -977,6 +977,8 @@
   let accountingMigration = { active:false, session:null, sessions:[], step:'source', previews:{}, advanced:false };
   let accountingExperienceMode = 'treasurer';
   let accountingSimpleIncomeMessage = '';
+  let accountingSimpleEntryMode = 'income';
+  let accountingInKindGiftMessage = '';
   try { if (sessionStorage.getItem('agapay.accountingExperienceMode') === 'accountant') accountingExperienceMode = 'accountant'; } catch {}
   const ACCOUNTING_SIMPLE_REVENUE_LABELS = Object.freeze({
     acct_4000:'Stewardship & Tithes',
@@ -1299,10 +1301,24 @@
     const entries = accountingData.journals.filter((entry) => ['posted','reversed'].includes(entry.status)).slice(0, 8);
     return `<section class="acct-simple-feed"><div class="acct-suite-section-head"><div><span class="acct-kicker">Recent activity</span><h2>What has been recorded</h2></div></div>${entries.map((entry) => `<article><i>✓</i><p>You recorded <strong>${accountingMoney(entry.totalDebits ?? entry.total_debits ?? 0)}</strong> for ${escapeHtml(entry.description || 'parish activity')} on ${accountingDate(entry.postingDate || entry.entryDate)}.</p></article>`).join('') || accountingEmpty('No activity yet', 'Recorded income and posted parish activity will appear here.')}</section>`;
   }
+  function accountingInKindDebitOptions() {
+    const cashIds = new Set(['acct_1000','acct_1010','acct_1100']);
+    return accountingData.accounts
+      .filter((account) => ['asset','expense'].includes(account.category) && account.isActive !== false && !account.archivedAt)
+      .filter((account) => !cashIds.has(account.id) && !(account.category === 'asset' && /cash|bank|checking|savings|undeposited/i.test(`${account.accountNumber || ''} ${account.name || ''}`)))
+      .sort((left, right) => String(left.accountNumber || '').localeCompare(String(right.accountNumber || ''), undefined, { numeric:true }))
+      .map((account) => `<option value="${escapeAttr(account.id)}">${escapeHtml(account.accountNumber)} · ${escapeHtml(account.name)} (${account.category === 'asset' ? 'Asset' : 'Expense'})</option>`)
+      .join('');
+  }
+  function accountingInKindGiftForm() {
+    const defaultFund = accountingData.funds.find((fund) => Number(fund.isDefault)) || accountingData.funds[0];
+    const debitOptions = accountingInKindDebitOptions();
+    return `<section class="acct-simple-income acct-in-kind-gift"><div class="acct-simple-income-head"><div><span class="acct-kicker">Record a Non-Cash Gift</span><h2>Put a donated item on the books</h2><p>No money moved. AGAPAY will debit the account receiving the value and credit In-Kind Contributions.</p></div><button type="button" class="acct-link" onclick="openAccountingSimpleIncome()">Record cash income instead</button></div><form onsubmit="submitAccountingInKindGift(event)"><div class="acct-simple-income-grid"><label>What was received?<input name="itemDescription" maxlength="240" required placeholder="Organ, vehicle, building materials, or donated services"></label><label>Who gave it? <small>Optional</small><input name="donorName" maxlength="160" placeholder="Donor name for parish records"></label><label>Amount<input name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="Fair value"></label><label class="wide">How was the value determined?<textarea name="valuationBasis" maxlength="500" rows="3" required placeholder="Independent appraisal, comparable retail listing, or donor's stated value"></textarea></label><label>Which account should reflect it?<select name="debitAccountId" required><option value="">Choose an asset or expense account</option>${debitOptions}</select></label><label>Which fund?<select name="fundId" required>${accountingSimpleFundOptions(defaultFund?.id || '')}</select></label><label>Date<input name="entryDate" type="date" required value="${new Date().toISOString().slice(0,10)}"></label></div>${debitOptions ? '' : '<p class="acct-form-status">Add an eligible expense or non-cash asset account before recording this gift.</p>'}<div class="acct-simple-income-foot"><span class="acct-form-status">${escapeHtml(accountingInKindGiftMessage)}</span><button class="acct-primary" ${debitOptions ? '' : 'disabled'}>Post non-cash gift</button></div></form></section>`;
+  }
   function accountingOverviewHero() {
     if (accountingExperienceMode === 'treasurer') return `<section class="acct-command-hero">
       <div><span class="acct-kicker">Treasurer view</span><h2>Clarity for every parish dollar.</h2><p>Weekly parish bookkeeping in plain language, backed by the same audited accounting records.</p></div>
-      <div class="acct-command-actions"><button onclick="openAccountingSimpleIncome()"><b>＋</b><span>Record Income<small>Cash, checks, and deposits</small></span></button><button onclick="openAccountingSimpleBill()"><b>◇</b><span>Pay a Bill<small>Enter a vendor expense</small></span></button></div>
+      <div class="acct-command-actions acct-command-actions-treasurer"><button onclick="openAccountingSimpleIncome()"><b>＋</b><span>Record Income<small>Cash, checks, and deposits</small></span></button><button onclick="openAccountingSimpleBill()"><b>◇</b><span>Pay a Bill<small>Enter a vendor expense</small></span></button><button onclick="openAccountingInKindGift()"><b>◆</b><span>Record a Non-Cash Gift<small>Donated goods, equipment, or services</small></span></button></div>
     </section>`;
     return `<section class="acct-command-hero">
       <div><span class="acct-kicker">Financial command center</span><h2>Clarity for every parish dollar.</h2><p>Fund accounting, giving, commerce, payables, and bank activity—one balanced set of books.</p></div>
@@ -1433,7 +1449,7 @@
     if (accountingView === 'close') { renderAccountingClose(pane); return; }
     if (accountingView === 'governance') { renderAccountingGovernance(pane); return; }
     if (accountingExperienceMode === 'treasurer' && accountingView === 'ledger') {
-      pane.innerHTML = `${accountingSimpleIncomeForm()}${accountingSimpleActivityFeed()}`;
+      pane.innerHTML = `${accountingSimpleEntryMode === 'in-kind' ? accountingInKindGiftForm() : accountingSimpleIncomeForm()}${accountingSimpleActivityFeed()}`;
       return;
     }
     if (accountingJournalEditor) { renderAccountingJournalEditor(pane); return; }
@@ -1578,6 +1594,13 @@
   }
   function openAccountingSimpleIncome() {
     accountingSimpleIncomeMessage = '';
+    accountingSimpleEntryMode = 'income';
+    accountingView = 'ledger';
+    renderAccountingPane();
+  }
+  function openAccountingInKindGift() {
+    accountingInKindGiftMessage = '';
+    accountingSimpleEntryMode = 'in-kind';
     accountingView = 'ledger';
     renderAccountingPane();
   }
@@ -1618,6 +1641,42 @@
     }
     accountingSimpleIncomeMessage = `${accountingMoney(amount)} was recorded successfully.`;
     await loadAccountingTab(true);
+    accountingView = 'ledger';
+    renderAccountingPane();
+  }
+  async function submitAccountingInKindGift(event) {
+    event.preventDefault();
+    const form = event.currentTarget, status = form.querySelector('.acct-simple-income-foot .acct-form-status'), button = form.querySelector('button.acct-primary');
+    const raw = Object.fromEntries(new FormData(form)), amount = Math.round(Number(raw.amount) * 100);
+    if (!String(raw.itemDescription || '').trim() || !String(raw.valuationBasis || '').trim() || !raw.debitAccountId || !raw.fundId || !raw.entryDate || !Number.isSafeInteger(amount) || amount <= 0) {
+      status.textContent = 'Describe the gift, explain its valuation, and complete every required field.';
+      return;
+    }
+    button.disabled = true;
+    status.textContent = 'Posting non-cash gift…';
+    const response = await fetch(accountingApi('/simple/in-kind-gifts'), {
+      method:'POST',
+      headers:{ ...authHeaders(), 'Content-Type':'application/json' },
+      body:JSON.stringify({
+        entryDate:raw.entryDate,
+        itemDescription:String(raw.itemDescription).trim(),
+        donorName:String(raw.donorName || '').trim(),
+        valuationBasis:String(raw.valuationBasis).trim(),
+        debitAccountId:raw.debitAccountId,
+        fundId:raw.fundId,
+        amount,
+        correlationId:`in-kind-gift-ui-${Date.now()}`
+      })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      status.textContent = payload.message || payload.error || 'Unable to record this non-cash gift.';
+      button.disabled = false;
+      return;
+    }
+    accountingInKindGiftMessage = `${accountingMoney(amount)} for ${String(raw.itemDescription).trim()} posted as a balanced non-cash gift.`;
+    await loadAccountingTab(true);
+    accountingSimpleEntryMode = 'in-kind';
     accountingView = 'ledger';
     renderAccountingPane();
   }

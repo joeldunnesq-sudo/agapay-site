@@ -14,7 +14,8 @@ const DEFAULT_ACCOUNTS = Object.freeze([
   ["acct_3000","3000","Net Assets Without Donor Restrictions","type_net_asset",1,1],["acct_3100","3100","Net Assets With Donor Restrictions","type_net_asset",1,0],
   ["acct_3990","3990","Opening Balance Net Assets","type_net_asset",1,1],["acct_4000","4000","Stewardship and Tithes","type_revenue",1,0],
   ["acct_4010","4010","General Donations","type_revenue",1,0],["acct_4030","4030","Candle Donations","type_revenue",1,0],
-  ["acct_4040","4040","Commemoration Donations","type_revenue",1,0],["acct_4300","4300","Bookstore Revenue","type_revenue",1,0],
+  ["acct_4040","4040","Commemoration Donations","type_revenue",1,0],["acct_4200","4200","In-Kind Contributions","type_revenue",1,0],
+  ["acct_4300","4300","Bookstore Revenue","type_revenue",1,0],
   ["acct_5000","5000","Clergy Compensation","type_expense",1,0],["acct_5100","5100","Liturgical Supplies","type_expense",1,0],
   ["acct_5200","5200","Building and Property","type_expense",1,0],["acct_5300","5300","Diocesan Assessments","type_expense",1,0],
   ["acct_5400","5400","Missions and Charitable Giving","type_expense",1,0],["acct_5500","5500","Education and Church School","type_expense",1,0],
@@ -163,6 +164,40 @@ export async function recordSimpleDeposit(db, { actor, entryDate, description, d
     depositAccountId,
     amount,
     splits: [{ revenueAccountId, fundId, amount, description: null }],
+    correlationId
+  });
+}
+
+export async function recordInKindGift(db, { actor, entryDate, itemDescription, donorName, valuationBasis, debitAccountId, fundId, amount, correlationId = "" }) {
+  requireCapability(actor, "accounting.journals.create");
+  const item = String(itemDescription || "").trim();
+  const donor = String(donorName || "").trim();
+  const valuation = String(valuationBasis || "").trim();
+  const value = Number(amount);
+  if (!item) throw new ValidationError("A description of what was received is required.");
+  if (!valuation) throw new ValidationError("How the value was determined is required for a non-cash gift.");
+  if (!Number.isSafeInteger(value) || value <= 0) throw new ValidationError("A positive whole-cent fair value is required.");
+  const debitAccount = await first(db, `SELECT a.id,a.account_number,a.name,t.category FROM accounting_accounts a JOIN accounting_account_types t ON t.id=a.account_type_id WHERE a.id=? AND a.is_posting_account=1 AND a.is_active=1 AND a.archived_at IS NULL`, debitAccountId);
+  if (!debitAccount || !["asset","expense"].includes(debitAccount.category)) throw new ValidationError("Choose an active asset or expense account for the non-cash gift.");
+  if (debitAccount.category === "asset" && (["acct_1000","acct_1010","acct_1100"].includes(debitAccount.id) || /cash|bank|checking|savings|undeposited/i.test(`${debitAccount.account_number} ${debitAccount.name}`))) throw new ValidationError("A non-cash gift cannot be posted to a cash or bank account.");
+  const description = `In-kind gift: ${item}${donor ? ` from ${donor}` : ""} (${valuation})`;
+  const draft = await createJournalDraft(db, {
+    actor,
+    entryDate,
+    description,
+    sourceType: "manual",
+    lines: [
+      { accountId: debitAccountId, fundId, debitAmount: value, description: item },
+      { accountId: "acct_4200", fundId, creditAmount: value, description: valuation }
+    ],
+    correlationId
+  });
+  return postJournalEntry(db, {
+    actor,
+    journalEntryId: draft.id,
+    idempotencyKey: `in_kind_gift:${draft.id}`,
+    requestHash: await hash({ entryDate, itemDescription: item, donorName: donor, valuationBasis: valuation, debitAccountId, fundId, amount: value }),
+    expectedVersion: 1,
     correlationId
   });
 }

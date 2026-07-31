@@ -766,7 +766,8 @@
 .acct-simple-income-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
 .acct-simple-income-grid label { display:grid; gap:6px; color:var(--stone); font:700 10px var(--sans); }
 .acct-simple-income-grid label.wide { grid-column:span 2; }
-.acct-simple-income-grid input,.acct-simple-income-grid select { width:100%; box-sizing:border-box; border:1px solid var(--line); border-radius:7px; padding:11px; background:#fff; color:var(--ink); }
+.acct-simple-income-grid input,.acct-simple-income-grid select,.acct-simple-income-grid textarea { width:100%; box-sizing:border-box; border:1px solid var(--line); border-radius:7px; padding:11px; background:#fff; color:var(--ink); font:500 12px var(--sans); }
+.acct-simple-income-grid textarea { resize:vertical; }
 .acct-simple-income-details { margin-bottom:14px; }
 .acct-income-splits { display:grid; gap:10px; }
 .acct-income-split-row { display:grid; grid-template-columns:minmax(180px,1.25fr) minmax(170px,1fr) minmax(120px,.65fr) minmax(180px,1fr) 32px; gap:10px; align-items:end; padding:12px; border:1px solid rgba(6,21,34,.08); border-radius:9px; background:#fff; }
@@ -2080,6 +2081,7 @@
 }
 .acct-command-hero p { max-width:590px; margin:0; color:rgba(246,241,232,.66); font-size:12px; line-height:1.6; }
 .acct-command-actions { position:relative; z-index:1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.acct-command-actions-treasurer { grid-template-columns:repeat(3,minmax(0,1fr)); }
 .acct-command-actions button {
   display:flex;
   align-items:center;
@@ -2137,6 +2139,7 @@
   .acct-suite-rail nav { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .acct-command-hero { padding:22px 18px; }
   .acct-command-actions { grid-template-columns:1fr 1fr; }
+  .acct-command-actions-treasurer { grid-template-columns:1fr; }
   .acct-suite-stats { grid-template-columns:1fr; }
   .acct-suite-stat,.acct-suite-stat:nth-child(3) { border-left:0; border-top:1px solid var(--line); }
   .acct-suite-stat:first-child { border-top:0; }
