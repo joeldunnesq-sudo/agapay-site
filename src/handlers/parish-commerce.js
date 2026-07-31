@@ -89,10 +89,185 @@ function normalizeBookstoreProduct(row) {
     costBasisCents: Number(row.cost_basis_cents || 0),
     stockQuantity: Number(row.stock_quantity || 0),
     reorderThreshold: Number(row.reorder_threshold || 0),
+    trackInventory: Number(row.track_inventory ?? 1) === 1,
     status: row.status || "active",
     imageUrl: row.image_url || "",
     updatedAt: row.updated_at || ""
   };
+}
+
+function normalizeBookstoreCountSession(row) {
+  let items = [];
+  try { items = JSON.parse(row.items_json || "[]"); } catch { items = []; }
+  return {
+    id: row.id,
+    status: row.status || "draft",
+    startedAt: row.started_at || "",
+    completedAt: row.completed_at || "",
+    createdBy: row.created_by || "",
+    items: Array.isArray(items) ? items : []
+  };
+}
+
+export async function listBookstoreCountSessions(env, parishId) {
+  const rows = await d1All(env, `
+    SELECT id, status, items_json, started_at, completed_at, created_by
+    FROM commerce_inventory_count_sessions
+    WHERE parish_id = ?
+    ORDER BY started_at DESC, id DESC
+    LIMIT 50
+  `, parishId);
+  return rows.map(normalizeBookstoreCountSession);
+}
+
+export async function getBookstoreCountSession(env, parishId, sessionId) {
+  const row = await d1First(env, `
+    SELECT id, status, items_json, started_at, completed_at, created_by
+    FROM commerce_inventory_count_sessions
+    WHERE id = ? AND parish_id = ?
+  `, sessionId, parishId);
+  if (!row) return null;
+  const session = normalizeBookstoreCountSession(row);
+  const movements = await d1All(env, `
+    SELECT m.product_id, m.variant_id, m.movement_type, m.quantity_delta, m.note, m.created_at,
+           p.name
+    FROM commerce_inventory_movements m
+    LEFT JOIN commerce_products p ON p.id = m.product_id AND p.parish_id = m.parish_id
+    WHERE m.parish_id = ? AND m.commerce_module = 'bookstore' AND m.count_session_id = ?
+    ORDER BY p.name COLLATE NOCASE ASC, m.id ASC
+  `, parishId, sessionId);
+  return {
+    ...session,
+    movements: movements.map(row => ({
+      productId: row.product_id || "",
+      variantId: row.variant_id || "",
+      name: row.name || "Bookstore item",
+      movementType: row.movement_type,
+      quantityDelta: Number(row.quantity_delta || 0),
+      note: row.note || "",
+      countSessionId: sessionId,
+      createdAt: row.created_at || ""
+    }))
+  };
+}
+
+export async function startBookstoreCountSession(env, parishId, createdBy = "parish_dashboard", now = new Date().toISOString()) {
+  const open = await d1First(env, `
+    SELECT id, status, items_json, started_at, completed_at, created_by
+    FROM commerce_inventory_count_sessions
+    WHERE parish_id = ? AND status = 'draft'
+  `, parishId);
+  if (open) {
+    return json({ error: "Finish the open bookstore count before starting another.", session: normalizeBookstoreCountSession(open) }, { status: 409 });
+  }
+  const id = generateSecret("inventory_count");
+  await d1Run(env, `
+    INSERT INTO commerce_inventory_count_sessions
+      (id, parish_id, status, items_json, started_at, created_by)
+    VALUES (?, ?, 'draft', '[]', ?, ?)
+  `, id, parishId, now, createdBy);
+  return json({ ok: true, session: { id, status: "draft", startedAt: now, completedAt: "", createdBy, items: [] } }, { status: 201 });
+}
+
+export async function closeBookstoreCountSession(env, parishId, sessionId, body = {}, now = new Date().toISOString()) {
+  const session = await d1First(env, `
+    SELECT id, status FROM commerce_inventory_count_sessions WHERE id = ? AND parish_id = ?
+  `, sessionId, parishId);
+  if (!session) return json({ error: "Bookstore count session not found." }, { status: 404 });
+  if (session.status !== "draft") return json({ error: "This bookstore count is already completed." }, { status: 409 });
+
+  const submitted = Array.isArray(body.items) ? body.items : [];
+  if (!submitted.length) return json({ error: "Count at least one bookstore item before closing." }, { status: 400 });
+  if (submitted.length > 250) return json({ error: "Close this count in sections of 250 items or fewer." }, { status: 400 });
+  const variantIds = submitted.map(item => String(item.variantId || "").trim());
+  if (variantIds.some(id => !id) || new Set(variantIds).size !== variantIds.length) {
+    return json({ error: "Each counted bookstore item must be included exactly once." }, { status: 400 });
+  }
+  for (const item of submitted) {
+    if (!Number.isInteger(Number(item.countedQuantity)) || Number(item.countedQuantity) < 0) {
+      return json({ error: "Every counted quantity must be a non-negative whole number." }, { status: 400 });
+    }
+  }
+
+  const placeholders = variantIds.map(() => "?").join(",");
+  const variants = await d1All(env, `
+    SELECT v.id AS variant_id, v.product_id, v.sku, v.stock_quantity, p.name
+    FROM commerce_product_variants v
+    JOIN commerce_products p ON p.id = v.product_id AND p.parish_id = v.parish_id
+    WHERE v.parish_id = ? AND v.commerce_module = 'bookstore' AND v.status = 'active'
+      AND v.track_inventory = 1 AND p.commerce_module = 'bookstore' AND p.status <> 'archived'
+      AND v.id IN (${placeholders})
+  `, parishId, ...variantIds);
+  if (variants.length !== variantIds.length) {
+    return json({ error: "One or more counted bookstore items are unavailable or no longer tracked." }, { status: 409 });
+  }
+  const byVariant = new Map(variants.map(row => [row.variant_id, row]));
+  const items = submitted.map(item => {
+    const variant = byVariant.get(String(item.variantId));
+    const expectedQuantity = Number(variant.stock_quantity || 0);
+    const countedQuantity = Number(item.countedQuantity);
+    return {
+      productId: variant.product_id,
+      variantId: variant.variant_id,
+      name: variant.name || "Bookstore item",
+      sku: variant.sku || "",
+      expectedQuantity,
+      countedQuantity,
+      difference: countedQuantity - expectedQuantity,
+      note: String(item.note || "").trim().slice(0, 500)
+    };
+  });
+  for (const item of items) {
+    if (item.difference !== 0 && !item.note) {
+      return json({ error: `Add a note explaining the difference for ${item.name} before closing this count.` }, { status: 400 });
+    }
+  }
+
+  const unchangedConditions = items.map(() => `EXISTS (
+    SELECT 1 FROM commerce_product_variants
+    WHERE id = ? AND parish_id = ? AND commerce_module = 'bookstore' AND track_inventory = 1 AND stock_quantity = ?
+  )`).join(" AND ");
+  const unchangedParams = items.flatMap(item => [item.variantId, parishId, item.expectedQuantity]);
+  const statements = [{
+    sql: `UPDATE commerce_inventory_count_sessions
+          SET status = 'completed', items_json = ?, completed_at = ?
+          WHERE id = ? AND parish_id = ? AND status = 'draft' AND ${unchangedConditions}`,
+    params: [JSON.stringify(items), now, sessionId, parishId, ...unchangedParams]
+  }];
+  for (const item of items.filter(item => item.difference !== 0)) {
+    statements.push({
+      sql: `INSERT INTO commerce_inventory_movements
+              (id, parish_id, commerce_module, product_id, variant_id, sku, movement_type,
+               quantity_delta, note, count_session_id, created_by, created_at)
+            SELECT ?, ?, 'bookstore', ?, id, sku, 'physical_count', ?, ?, ?, 'parish_dashboard', ?
+            FROM commerce_product_variants
+            WHERE id = ? AND parish_id = ? AND commerce_module = 'bookstore'
+              AND stock_quantity = ?
+              AND EXISTS (
+                SELECT 1 FROM commerce_inventory_count_sessions
+                WHERE id = ? AND parish_id = ? AND status = 'completed' AND completed_at = ?
+              )`,
+      params: [generateSecret("inventory_movement"), parishId, item.productId, item.difference,
+        item.note, sessionId, now, item.variantId, parishId, item.expectedQuantity,
+        sessionId, parishId, now]
+    });
+    statements.push({
+      sql: `UPDATE commerce_product_variants
+            SET stock_quantity = ?, updated_at = ?
+            WHERE id = ? AND parish_id = ? AND commerce_module = 'bookstore' AND stock_quantity = ?
+              AND EXISTS (
+                SELECT 1 FROM commerce_inventory_count_sessions
+                WHERE id = ? AND parish_id = ? AND status = 'completed' AND completed_at = ?
+              )`,
+      params: [item.countedQuantity, now, item.variantId, parishId, item.expectedQuantity,
+        sessionId, parishId, now]
+    });
+  }
+  const results = await d1Batch(env, statements);
+  if (changedRows(results?.[0]) !== 1) {
+    return json({ error: "Bookstore stock changed during this count. Review the current quantities and try closing again." }, { status: 409 });
+  }
+  return json({ ok: true, session: await getBookstoreCountSession(env, parishId, sessionId) });
 }
 
 export async function listBookstoreLowStock(env, parishId) {
@@ -832,7 +1007,7 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
   if (segments[0] === "products" && request.method === "GET" && segments.length === 1) {
     const rows = await d1All(env,
       `SELECT p.*, v.id AS variant_id, v.sku, v.unit_price_cents, v.cost_basis_cents,
-              v.stock_quantity, v.reorder_threshold
+              v.stock_quantity, v.reorder_threshold, v.track_inventory
        FROM commerce_products p
        LEFT JOIN commerce_product_variants v
          ON v.product_id = p.id AND v.status = 'active'
@@ -841,6 +1016,25 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
       parishId
     );
     return json({ products: rows.map(normalizeBookstoreProduct) });
+  }
+
+  if (segments[0] === "count-sessions" && segments.length === 1 && request.method === "GET") {
+    return json({ sessions: await listBookstoreCountSessions(env, parishId) });
+  }
+
+  if (segments[0] === "count-sessions" && segments.length === 1 && request.method === "POST") {
+    return startBookstoreCountSession(env, parishId, "parish_dashboard", now);
+  }
+
+  if (segments[0] === "count-sessions" && segments[1] && segments.length === 2 && request.method === "GET") {
+    const session = await getBookstoreCountSession(env, parishId, decodeURIComponent(segments[1]));
+    return session ? json({ session }) : json({ error: "Bookstore count session not found." }, { status: 404 });
+  }
+
+  if (segments[0] === "count-sessions" && segments[1] && segments[2] === "close" && segments.length === 3 && request.method === "POST") {
+    let body = {};
+    try { body = await request.json(); } catch { return json({ error: "Invalid JSON body" }, { status: 400 }); }
+    return closeBookstoreCountSession(env, parishId, decodeURIComponent(segments[1]), body, now);
   }
 
   if (segments[0] === "products" && segments[1] === "low-stock" && request.method === "GET" && segments.length === 2) {
@@ -886,7 +1080,7 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
 
     if (request.method === "GET" && segments[2] === "movements" && segments.length === 3) {
       const rows = await d1All(env,
-        `SELECT m.movement_type, m.quantity_delta, m.note, m.order_id, m.created_at,
+        `SELECT m.movement_type, m.quantity_delta, m.note, m.order_id, m.count_session_id, m.created_at,
                 o.order_number
          FROM commerce_inventory_movements m
          LEFT JOIN commerce_orders o ON o.id = m.order_id AND o.parish_id = m.parish_id
@@ -900,6 +1094,7 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
         note: row.note || "",
         orderId: row.order_id || null,
         orderNumber: row.order_number || null,
+        countSessionId: row.count_session_id || null,
         createdAt: row.created_at
       })) });
     }

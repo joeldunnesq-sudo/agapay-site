@@ -2466,6 +2466,11 @@
     .bookstore-card .section-body {
       overflow: visible;
     }
+    .bookstore-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
     .bookstore-form {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2479,6 +2484,45 @@
       display: grid;
       gap: 0.65rem;
     }
+    .bookstore-count-sessions {
+      display: grid;
+      gap: 0.45rem;
+      margin-top: 1rem;
+      padding-top: 0.9rem;
+      border-top: 1px solid rgba(111,106,96,0.14);
+    }
+    .bookstore-count-session-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      align-items: end;
+      margin-bottom: 0.15rem;
+    }
+    .bookstore-count-session-head strong { color: var(--deep); font-size: 12px; }
+    .bookstore-count-session-head small { color: var(--stone); font-size: 10.5px; }
+    .bookstore-count-session-list { display: grid; gap: 0.35rem; }
+    .bookstore-count-session-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      border: 1px solid rgba(111,106,96,0.14);
+      border-radius: 9px;
+      background: rgba(255,255,255,0.7);
+      color: var(--deep);
+      padding: 0.6rem 0.7rem;
+      text-align: left;
+      cursor: pointer;
+    }
+    .bookstore-count-session-row:hover { border-color: rgba(184,144,47,0.38); background: white; }
+    .bookstore-count-session-row.is-draft { border-color: rgba(184,144,47,0.34); background: rgba(255,248,226,0.78); }
+    .bookstore-count-session-row span { min-width: 0; }
+    .bookstore-count-session-row strong,
+    .bookstore-count-session-row small { display: block; }
+    .bookstore-count-session-row strong { font-size: 12px; }
+    .bookstore-count-session-row small { margin-top: 0.15rem; color: var(--stone); font-size: 10.5px; }
+    .bookstore-count-session-row em { color: #8a6517; font-size: 10.5px; font-style: normal; font-weight: 800; white-space: nowrap; }
     .bookstore-inventory-filter {
       display: inline-flex;
       gap: 0.25rem;
@@ -2598,6 +2642,115 @@
       background: var(--paper);
       box-shadow: var(--shadow);
       padding: 1.2rem;
+    }
+    .bookstore-count-modal { width: min(980px, 100%); }
+    .bookstore-count-intro {
+      margin: 0 0 1rem;
+      color: var(--stone);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .bookstore-count-form { display: grid; gap: 0.5rem; }
+    .bookstore-count-table-head,
+    .bookstore-count-row {
+      display: grid;
+      grid-template-columns: minmax(180px, 1.3fr) 72px 95px minmax(220px, 1.2fr);
+      gap: 0.75rem;
+      align-items: center;
+    }
+    .bookstore-count-table-head {
+      padding: 0 0.7rem 0.25rem;
+      color: var(--stone);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .bookstore-count-row {
+      border: 1px solid rgba(111,106,96,0.14);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.76);
+      padding: 0.7rem;
+    }
+    .bookstore-count-row > div:first-child strong,
+    .bookstore-count-row > div:first-child small { display: block; }
+    .bookstore-count-row > div:first-child strong { color: var(--deep); font-size: 12.5px; }
+    .bookstore-count-row > div:first-child small { margin-top: 0.16rem; color: var(--stone); font-size: 10.5px; }
+    .bookstore-count-row > b { color: var(--deep); font-size: 15px; }
+    .bookstore-count-row input,
+    .bookstore-count-row textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: white;
+      color: var(--deep);
+      padding: 0.48rem 0.55rem;
+      font: 650 12px var(--sans);
+    }
+    .bookstore-count-row input { max-width: 82px; }
+    .bookstore-count-difference > strong { color: var(--stone); font-size: 11px; }
+    .bookstore-count-difference > strong.is-match,
+    .bookstore-count-completed-list .is-match b { color: #2e6b4a; }
+    .bookstore-count-difference > strong.is-difference,
+    .bookstore-count-completed-list .is-difference b { color: #9a5620; }
+    .bookstore-count-difference label {
+      display: block;
+      margin-top: 0.35rem;
+      color: var(--stone);
+      font-size: 10px;
+      font-weight: 750;
+    }
+    .bookstore-count-difference label[hidden] { display: none; }
+    .bookstore-count-difference textarea { display: block; margin-top: 0.2rem; resize: vertical; }
+    .bookstore-count-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 0.7rem;
+    }
+    .bookstore-count-summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.8rem;
+      border-radius: 10px;
+      background: rgba(46,107,74,0.09);
+      padding: 0.75rem;
+    }
+    .bookstore-count-summary strong,
+    .bookstore-count-summary small { display: block; }
+    .bookstore-count-summary strong { color: var(--deep); font-size: 13px; }
+    .bookstore-count-summary small { margin-top: 0.14rem; color: var(--stone); font-size: 10.5px; }
+    .bookstore-count-summary em { border-radius: 999px; background: rgba(46,107,74,0.14); color: #2e6b4a; padding: 0.28rem 0.55rem; font-size: 9px; font-style: normal; font-weight: 850; letter-spacing: 0.07em; text-transform: uppercase; }
+    .bookstore-count-completed-list { display: grid; gap: 0.45rem; }
+    .bookstore-count-completed-list article {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) repeat(3, 72px) minmax(180px, 1.2fr);
+      gap: 0.7rem;
+      align-items: center;
+      border: 1px solid rgba(111,106,96,0.14);
+      border-radius: 9px;
+      background: rgba(255,255,255,0.74);
+      padding: 0.7rem;
+    }
+    .bookstore-count-completed-list article > div strong,
+    .bookstore-count-completed-list article > div small,
+    .bookstore-count-completed-list article > span small,
+    .bookstore-count-completed-list article > span b { display: block; }
+    .bookstore-count-completed-list article > div strong { color: var(--deep); font-size: 12px; }
+    .bookstore-count-completed-list article small { color: var(--stone); font-size: 9.5px; }
+    .bookstore-count-completed-list article > span b { margin-top: 0.12rem; color: var(--deep); font-size: 13px; }
+    .bookstore-count-completed-list article p { margin: 0; color: var(--stone); font-size: 11px; line-height: 1.4; }
+    .bookstore-count-completed-list article p button {
+      display: block;
+      margin-top: 0.3rem;
+      border: 0;
+      background: transparent;
+      color: #8a6517;
+      padding: 0;
+      font: 800 10px var(--sans);
+      cursor: pointer;
     }
     .bookstore-modal-head {
       display: flex;
@@ -2888,6 +3041,16 @@
         justify-content: flex-start;
         flex-wrap: wrap;
       }
+      .bookstore-header-actions { align-items: stretch; flex-direction: column; }
+      .bookstore-count-session-head { align-items: flex-start; flex-direction: column; }
+      .bookstore-count-table-head { display: none; }
+      .bookstore-count-row,
+      .bookstore-count-completed-list article { grid-template-columns: 1fr 1fr; }
+      .bookstore-count-row > div:first-child,
+      .bookstore-count-difference,
+      .bookstore-count-completed-list article > div,
+      .bookstore-count-completed-list article p { grid-column: 1 / -1; }
+      .bookstore-count-actions { align-items: stretch; flex-direction: column-reverse; }
       .bookstore-starter-row {
         grid-template-columns: auto minmax(0, 1fr);
       }
