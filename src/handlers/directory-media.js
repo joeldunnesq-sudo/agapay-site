@@ -7,7 +7,8 @@ import {
   getCurrentDirectoryMediaForOwner,
   removeDirectoryMedia,
   streamDirectoryMediaVariant,
-  submitDirectoryMediaForReview
+  submitDirectoryMediaForReview,
+  updateDirectoryMediaVisibility
 } from "../directory/media.js";
 
 async function errorResponse(error) {
@@ -93,6 +94,18 @@ export async function handleDirectoryMedia(request, env) {
     const submitMatch = path.match(/^\/api\/directory\/media\/([^/]+)\/submit$/);
     if (request.method === "POST" && submitMatch) {
       const asset = await submitDirectoryMediaForReview(env, { context, mediaAssetId: decodeURIComponent(submitMatch[1]), correlationId });
+      return json({ ok: true, asset });
+    }
+
+    const visibilityMatch = path.match(/^\/api\/directory\/media\/([^/]+)\/visibility$/);
+    if (request.method === "PATCH" && visibilityMatch) {
+      const body = await parseJson(request);
+      const asset = await updateDirectoryMediaVisibility(env, {
+        context,
+        mediaAssetId: decodeURIComponent(visibilityMatch[1]),
+        visibility: body.visibility || "private",
+        correlationId
+      });
       return json({ ok: true, asset });
     }
 

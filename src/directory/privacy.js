@@ -103,7 +103,8 @@ export async function setFieldPrivacyPreference(env, { actor: actorInput, parish
     ownerId: owner.ownerId,
     fieldKey: cleanedField,
     requestedVisibility: requested,
-    publicationEligible
+    publicationEligible,
+    ignoreStoredPreference: true
   });
   if (effective.visibility !== requested || effective.publicationEligible !== Boolean(publicationEligible)) {
     throw new DirectoryServiceError("privacy_policy_denied", "Requested visibility is weaker than parish or safety policy permits.", 403);
@@ -143,7 +144,7 @@ export async function setFieldPrivacyPreference(env, { actor: actorInput, parish
   return { fieldKey: cleanedField, visibility: requested, publicationEligible: Boolean(publicationEligible) };
 }
 
-export async function evaluateFieldPolicy(env, { parishId, ownerType, ownerId, fieldKey, requestedVisibility = "", publicationEligible = false, protectedAddress = false }) {
+export async function evaluateFieldPolicy(env, { parishId, ownerType, ownerId, fieldKey, requestedVisibility = "", publicationEligible = false, protectedAddress = false, ignoreStoredPreference = false }) {
   const settings = await getDirectorySettings(env, parishId);
   const defaults = defaultPrivacyForField(fieldKey);
   const preference = await d1First(
@@ -152,7 +153,8 @@ export async function evaluateFieldPolicy(env, { parishId, ownerType, ownerId, f
     parishId, ownerType, ownerId, fieldKey
   );
   const requested = requestedVisibility ? assertVisibility(requestedVisibility) : null;
-  const baseVisibility = preference?.visibility || requested || defaults.visibility;
+  const effectivePreference = ignoreStoredPreference ? null : preference;
+  const baseVisibility = effectivePreference?.visibility || requested || defaults.visibility;
   let maxVisibility = "directory_members";
   // City/state is the coarse location shown in the member directory. Keep the
   // parish's stricter address cap for street/full-address fields without
@@ -162,7 +164,7 @@ export async function evaluateFieldPolicy(env, { parishId, ownerType, ownerId, f
   let visibility = mostRestrictive(baseVisibility, maxVisibility);
 
   const explicitOptInEligible = ["adult_email", "adult_phone", "city_state", "household_display_name", "adult_preferred_name", "person_photo", "household_photo"].includes(fieldKey);
-  let eligible = preference ? Number(preference.publication_eligible || 0) === 1 : Boolean(publicationEligible && (defaults.eligible || explicitOptInEligible));
+  let eligible = effectivePreference ? Number(effectivePreference.publication_eligible || 0) === 1 : Boolean(publicationEligible && (defaults.eligible || explicitOptInEligible));
   if (ownerType === "person") {
     const flags = await getPersonPrivacyFlags(env, { parishId, personId: ownerId });
     if (flags.isChild || flags.protectedPerson) {

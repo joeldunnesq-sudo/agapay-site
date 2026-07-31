@@ -20,6 +20,7 @@ import {
   setPersonPrivacyFlags,
   streamDirectoryMediaVariant,
   submitDirectoryMediaForReview,
+  updateDirectoryMediaVisibility,
   validateCrop,
   validateDirectoryImageUpload
 } from "../src/directory/index.js";
@@ -209,6 +210,19 @@ await test("household admin can upload household photo; ordinary spouse person p
   const asset = await completeDirectoryMediaUpload(env, { context, sessionId: session.id, file: file(), arrayBuffer: png1x1() });
   assert.equal(asset.ownerType, "household");
   assert.equal(asset.variants.some((variant) => variant.type === "household_card"), true);
+});
+
+await test("household photo visibility preserves the private, staff, and directory-member states", async () => {
+  const { env, db, context, household } = await fixture();
+  const session = await createDirectoryMediaUploadSession(env, { context, ownerType: "household", ownerId: household.id });
+  const asset = await completeDirectoryMediaUpload(env, { context, sessionId: session.id, file: file(), arrayBuffer: png1x1() });
+  const staffOnly = await updateDirectoryMediaVisibility(env, { context, mediaAssetId: asset.id, visibility: "staff" });
+  assert.equal(staffOnly.visibility, "staff");
+  assert.equal(staffOnly.publicationEligible, false);
+  const shared = await updateDirectoryMediaVisibility(env, { context, mediaAssetId: asset.id, visibility: "directory_members" });
+  assert.equal(shared.visibility, "directory_members");
+  assert.equal(shared.publicationEligible, true);
+  assert.equal(auditCount(db, "directory.media.visibility_changed"), 2);
 });
 
 await test("child photo uploads are denied and publication approval is separate", async () => {

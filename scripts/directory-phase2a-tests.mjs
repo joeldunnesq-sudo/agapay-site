@@ -408,6 +408,23 @@ await test("household address and privacy controls reuse Phase 1B policy and fai
     visibility: "directory_members",
     publicationEligible: true
   });
+  const staffOnlyLocation = await setSelfServicePrivacyPreference(env, {
+    context,
+    ownerType: "household",
+    ownerId: household.id,
+    fieldKey: "city_state",
+    visibility: "staff",
+    publicationEligible: false
+  });
+  assert.equal(staffOnlyLocation.visibility, "staff", "an existing directory-member preference must remain editable to staff only");
+  await setSelfServicePrivacyPreference(env, {
+    context,
+    ownerType: "household",
+    ownerId: household.id,
+    fieldKey: "city_state",
+    visibility: "directory_members",
+    publicationEligible: true
+  });
   const sharedLocation = await createSelfServiceAddress(env, {
     context,
     householdId: household.id,
