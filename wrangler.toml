@@ -16,6 +16,7 @@ ACCOUNTING_ALERT_EMAIL = "joeldunnesq@gmail.com"
 NONPROFIT_PRICING_ALERT_EMAIL = "joeldunnesq@gmail.com"
 TURNSTILE_SITE_KEY = "0x4AAAAAADgGWu1JfBKOSH_g"
 CAMPAIGN_ASSETS_URL = "https://pub-a8aecb95751f49ac9b078c3e3ed378b8.r2.dev"
+ANNOUNCEMENT_ASSETS_URL = "https://pub-b0974d02d1bf41288b3082849e87f676.r2.dev"
 AGAPAY_ENABLED_PRODUCTS = "give,learn,listen"
 # --- Phase 3B feature flags (all default OFF/false; see src/lib/tax-codes.js,
 # src/learn/billing.js, src/lib/commerce-readiness.js for what each gates) ---
@@ -87,6 +88,10 @@ database_id = "0b55d572-7dbc-4f6d-97a5-826841f4bbb8"
 [[r2_buckets]]
 binding = "CAMPAIGN_ASSETS"
 bucket_name = "agapay-campaign-assets"
+
+[[r2_buckets]]
+binding = "ANNOUNCEMENT_ASSETS"
+bucket_name = "agapay-announcement-assets"
 
 # Private bucket for sales-tax exemption documents. Unlike CAMPAIGN_ASSETS,
 # this bucket must NEVER have a public r2.dev URL enabled -- all access goes

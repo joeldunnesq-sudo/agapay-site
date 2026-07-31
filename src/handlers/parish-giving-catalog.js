@@ -28,6 +28,13 @@ import {
   verifyParishDashboardBearer,
 } from "./parish.js";
 
+export const PARISH_EDITORIAL_IMAGE_TYPES = new Map([
+  ["image/jpeg", "jpg"],
+  ["image/png", "png"],
+  ["image/webp", "webp"]
+]);
+export const PARISH_EDITORIAL_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+
 export function normalizedOptionKeys(option = {}) {
   return [option.id, option.feastId, option.name, option.campaignName, option.title]
     .filter(Boolean)
@@ -291,17 +298,12 @@ export async function handleParishCampaignUpload(request, env, parishId) {
   }
 
   const contentType = String(request.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
-  const allowed = new Map([
-    ["image/jpeg", "jpg"],
-    ["image/png", "png"],
-    ["image/webp", "webp"]
-  ]);
-  const ext = allowed.get(contentType);
+  const ext = PARISH_EDITORIAL_IMAGE_TYPES.get(contentType);
   if (!ext) {
     return json({ error: "Campaign photos must be JPG, PNG, or WebP images." }, { status: 415 });
   }
 
-  const maxBytes = 10 * 1024 * 1024;
+  const maxBytes = PARISH_EDITORIAL_IMAGE_MAX_BYTES;
   const contentLength = Number(request.headers.get("content-length") || 0);
   if (contentLength && contentLength > maxBytes) {
     return json({ error: "Campaign photo must be 10MB or smaller." }, { status: 413 });

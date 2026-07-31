@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parish Feed | My AGAPAY</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260731communications2" />
+  <script src="/pwa-register.js" defer></script>
+  <script src="/myagapay-shell.js?v=20260731communications1" defer></script>
+  <script src="/myagapay/feed.js?v=20260731communications2" defer></script>
+  <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
+  <meta name="theme-color" content="#061522" />
+</head>
+<body class="donor-mobile-page donor-feed-page">
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-scroll">
+        <div class="brand"><div class="brand-row"><a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home"><img src="/mark.png" alt="AGAPAY" /></a><span class="brand-name">AGAPAY</span><span class="dashboard-home-cue">Home</span></div><span class="pill">Donor Dashboard</span></div>
+        <div class="profile-panel"><div class="profile-name" id="profileName">My AGAPAY Account</div><div class="profile-meta" id="feedParishName">Your parish announcements</div></div>
+        <nav class="nav unified-product-nav"></nav>
+        <div class="sidebar-card"><h3>Parish updates</h3><div class="mini-item"><strong>Stay connected</strong><span>Published notices from your parish appear here.</span></div><div class="mini-item"><strong>Unread count</strong><span>Opening a notice marks it as read for your account.</span></div></div>
+      </div>
+      <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/dashboard">Back to giving</a></div>
+    </aside>
+    <main class="content donor-mobile-content">
+      <div class="topbar"><div class="topbar-title">Parish Feed</div></div>
+      <div class="page feed-page-shell">
+        <section class="feed-hero" aria-labelledby="feedHeading">
+          <div><span class="eyebrow">Parish life</span><h1 id="feedHeading">News from your church.</h1><p>Announcements, reminders, and timely parish updates in one quiet place.</p></div>
+          <span class="feed-unread-summary" id="feedUnreadSummary" hidden></span>
+        </section>
+        <div class="notice" id="feedStatus">Loading parish announcements...</div>
+        <section class="feed-list" id="feedList" aria-live="polite"></section>
+      </div>
+      <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
+    </main>
+  </div>
+</body>
+</html>

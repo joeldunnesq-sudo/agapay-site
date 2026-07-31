@@ -13,6 +13,8 @@
     give: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg>',
     history: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>',
     bookstore: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+    feed: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>',
+    groups: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c.5-4 2.8-6 5.5-6s5 2 5.5 6"/><path d="M14 15c3.5.2 5.8 1.9 6.5 5"/></svg>',
     calendar: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/></svg>',
     today: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/><circle cx="12" cy="15.5" r="1.7"/></svg>',
     commemorations: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20"/><path d="M5 7h14"/><path d="M7 12h10"/><path d="M9 22h6"/></svg>',
@@ -27,6 +29,8 @@
   function products() {
     const items = [
       { id: "giving", href: "/myagapay/dashboard", label: "Give", short: "Giving dashboard", icon: icons.give },
+      { id: "feed", href: "/myagapay/feed", label: "Feed", short: "Parish announcements", icon: icons.feed, parishFeature: "communicationsEnabled" },
+      { id: "groups", href: "/myagapay/groups", label: "Groups", short: "Your ministry messages", icon: icons.groups },
       { id: "commemorations", href: "/myagapay/sacraments", label: "Sacraments & Services", short: "Requests and prayer", icon: icons.sacraments, parishFeature: "sacramentsEnabled" },
       { id: "history", href: "/myagapay/giving/history", label: "History", short: "Giving history", icon: icons.history, mobileFallbackFor: "sacramentsEnabled", desktopHidden: true },
       { id: "today", href: "/myagapay/giving/calendar", label: "Today", short: "Feast day and readings", icon: icons.today },
@@ -41,8 +45,11 @@
   let parishCapabilities = {
     sacramentsEnabled: false,
     directoryEnabled: false,
-    bookstoreEnabled: false
+    bookstoreEnabled: false,
+    communicationsEnabled: false
   };
+
+  let feedUnreadCount = 0;
 
   function visibleProducts() {
     return products().filter((item) => {
@@ -66,6 +73,8 @@
     if (pathname.startsWith("/myagapay/learn")) return "learn";
     if (pathname === "/myagapay" || pathname === "/myagapay/" || pathname === "/myagapay/dashboard") return "giving";
     if (pathname.startsWith("/myagapay/bookstore")) return "bookstore";
+    if (pathname.startsWith("/myagapay/feed")) return "feed";
+    if (pathname.startsWith("/myagapay/groups")) return "groups";
     if (pathname.startsWith("/myagapay/sacraments") || pathname.startsWith("/myagapay/giving/commemorations") || pathname.startsWith("/myagapay/giving/names")) return "commemorations";
     if (pathname.startsWith("/myagapay/giving/calendar")) return "today";
     if (pathname.startsWith("/myagapay/directory")) return "directory";
@@ -291,7 +300,10 @@
     const productLinks = navProducts.map((item) => {
       const current = item.id === active || (item.id === "settings" && active === "account");
       const activeClass = current ? (isLearnNav ? "is-active" : "active") : "";
-      const label = isDesktopSideNav ? `<span><strong>${item.label}</strong><small>${item.short}</small></span>` : `<span>${item.label}</span>`;
+      const badge = item.id === "feed" && feedUnreadCount > 0
+        ? `<em class="unified-nav-badge" data-feed-unread-count>${feedUnreadCount > 99 ? "99+" : feedUnreadCount}</em>`
+        : "";
+      const label = isDesktopSideNav ? `<span><strong>${item.label}</strong><small>${item.short}</small></span>${badge}` : `<span>${item.label}</span>${badge}`;
       return `<a class="${activeClass}" href="${item.href}"${current ? ' aria-current="page"' : ""}>${item.icon}${label}</a>`;
     }).join("");
     const accountLink = isDesktopSideNav
@@ -318,7 +330,8 @@
     parishCapabilities = {
       sacramentsEnabled: Boolean(parish?.sacramentsEnabled),
       directoryEnabled: Boolean(parish?.directoryEnabled),
-      bookstoreEnabled: Boolean(parish?.bookstoreEnabled)
+      bookstoreEnabled: Boolean(parish?.bookstoreEnabled),
+      communicationsEnabled: Boolean(parish?.communicationsEnabled)
     };
     normalizeProductNavs();
     if (activeProduct() === "directory" && !parishCapabilities.directoryEnabled) {
@@ -345,8 +358,25 @@
       if (!response.ok) throw new Error("Unable to load parish features");
       const payload = await response.json();
       setParishCapabilities(payload.parish || null);
+      if (parishCapabilities.communicationsEnabled) await loadFeedUnreadCount();
     } catch {
       setParishCapabilities(null);
+    }
+  }
+
+  function setFeedUnreadCount(count) {
+    feedUnreadCount = Math.max(0, Number(count) || 0);
+    normalizeProductNavs();
+  }
+
+  async function loadFeedUnreadCount() {
+    try {
+      const response = await fetch("/api/donor/feed", { headers: authHeaders(), cache: "no-store" });
+      if (!response.ok) return;
+      const payload = await response.json();
+      setFeedUnreadCount(payload.unreadCount);
+    } catch {
+      // The navigation remains usable when the count cannot be refreshed.
     }
   }
 
@@ -414,6 +444,7 @@
     normalizeProductNavs,
     productNav,
     setParishCapabilities,
+    setFeedUnreadCount,
     redirectToLogin,
     session,
     syncAuthVisibility,

@@ -94,6 +94,11 @@
           <span class="nav-label">Directory</span>
           <span class="nav-module-status" id="directoryNavStatus" hidden>Off</span>
         </div>
+        <div class="sidebar-nav-item" onclick="switchTab('communications')" id="nav-communications">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>
+          <span class="nav-label">Communications</span>
+          <span class="nav-upgrade-badge" id="communicationsNavBadge" hidden>Upgrade</span>
+        </div>
         <div class="sidebar-nav-item" onclick="switchTab('text')" id="nav-text">
           <svg viewBox="0 0 24 24"><path d="M22 16.92V19a2 2 0 0 1-2.18 2A19.86 19.86 0 0 1 3 4.18 2 2 0 0 1 5 2h2.09a2 2 0 0 1 2 1.72c.13 1 .37 1.96.71 2.89a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.93.34 1.9.58 2.89.71A2 2 0 0 1 22 16.92z"/></svg>
           <span class="nav-label">Text-to-Give</span>
@@ -1330,6 +1335,37 @@
         </div>
       </div>
 
+      <!-- ── COMMUNICATIONS TAB ────────────────────── -->
+      <div class="tab-panel" id="tab-communications">
+        <div class="communications-admin-shell">
+          <header class="communications-admin-header">
+            <div><span class="eyebrow">Parish communications</span><h1>Announcement feed</h1><p>Compose updates for everyone connected to your parish in My AGAPAY.</p></div>
+            <a class="btn btn-ghost" href="/myagapay/feed" target="_blank" rel="noopener">Preview donor feed</a>
+          </header>
+          <div id="communicationsPaywall" class="communications-paywall" hidden><strong>Communications is included with Parish.</strong><p>Review your plan to publish announcements in My AGAPAY.</p><button class="btn btn-gold" type="button" onclick="switchTab('settings')">Review Parish tier</button></div>
+          <div id="communicationsWorkspace" class="communications-grid">
+            <form class="communications-compose" onsubmit="createAnnouncementDraft(event)">
+              <span class="eyebrow">Compose</span><h2>New announcement</h2>
+              <label>Title<input id="announcementTitle" maxlength="180" required placeholder="Parish picnic this Sunday" /></label>
+              <label>Message
+                <span class="communications-format-toolbar" aria-label="Announcement formatting">
+                  <button type="button" onclick="insertAnnouncementFormatting('bold')"><strong>B</strong><span>Bold</span></button>
+                  <button type="button" onclick="insertAnnouncementFormatting('italic')"><em>I</em><span>Italic</span></button>
+                  <button type="button" onclick="insertAnnouncementFormatting('link')">↗<span>Link</span></button>
+                  <button type="button" onclick="insertAnnouncementFormatting('list')">•<span>List</span></button>
+                </span>
+                <textarea id="announcementBody" maxlength="12000" rows="8" required placeholder="Share the details with your parish. Use **bold**, *italic*, [link text](https://example.org), or - list items."></textarea>
+                <small class="communications-format-help">Formatting stays simple and safe: bold, italic, links, and bulleted lists.</small>
+              </label>
+              <label>Hero image <input id="announcementHeroImage" type="file" accept="image/jpeg,image/png,image/webp" /><small>Optional JPG, PNG, or WebP image, up to 10MB.</small></label>
+              <label class="communications-pin"><input id="announcementPinned" type="checkbox" /> Pin this announcement above newer updates</label>
+              <button class="btn btn-gold" type="submit">Save draft</button>
+            </form>
+            <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">All announcements</span><h2>Drafts and published updates</h2></div><button class="btn btn-ghost btn-sm" type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="communicationsList"><p class="sw-tool-loading">Loading...</p></div></section>
+          </div>
+        </div>
+      </div>
+
       <!-- ── ACCOUNTING TAB ────────────────────── -->
       <div class="tab-panel" id="tab-accounting">
         <div class="acct-suite-shell">
@@ -1708,6 +1744,10 @@
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M6 6h16v16H6z"/><path d="M10 11h8"/><path d="M10 16h5"/></svg>
     <span>Directory</span>
     <em class="mobile-module-status" hidden>Off</em>
+  </button>
+  <button class="mobile-tab-link" type="button" data-nav-tab="communications" onclick="switchTab('communications')">
+    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 5h18v18H5z"/><path d="M9 10h10"/><path d="M9 14h10"/><path d="M9 18h6"/></svg>
+    <span>Feed</span>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="bookstore" onclick="switchTab('commerce')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M6 10h16l1 15H5L6 10z"/><path d="M10 10V7a4 4 0 0 1 8 0v3"/><path d="M9 16h10"/></svg>

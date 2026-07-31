@@ -724,6 +724,38 @@
     .btn-ghost.loading::after { border: 2px solid rgba(6,21,34,0.1); border-top-color: var(--deep); }
     .btn-danger.loading::after { border: 2px solid rgba(138,41,41,0.15); border-top-color: #8a2929; }
     .btn-gold.loading::after { border-color: rgba(6,21,34,0.15); border-top-color: var(--deep); }
+
+    .communications-admin-shell { display:grid; gap:20px; }
+    .communications-admin-header { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; border:1px solid var(--line); border-radius:18px; padding:22px; background:linear-gradient(135deg,#fff,#f7f1e5); }
+    .communications-admin-header h1, .communications-compose h2, .communications-list-head h2 { margin:4px 0 6px; font-family:Georgia,serif; color:var(--deep); }
+    .communications-admin-header p { margin:0; color:var(--muted); }
+    .communications-grid { display:grid; grid-template-columns:minmax(280px,.72fr) minmax(420px,1.28fr); gap:18px; align-items:start; }
+    .communications-compose, .communications-list-panel, .communications-paywall { border:1px solid var(--line); border-radius:16px; padding:20px; background:#fff; }
+    .communications-compose { display:grid; gap:13px; }
+    .communications-compose label { display:grid; gap:6px; color:var(--deep); font-size:12px; font-weight:800; }
+    .communications-compose input:not([type="checkbox"]), .communications-compose textarea { width:100%; border:1px solid var(--line); border-radius:9px; padding:10px 11px; font:inherit; font-weight:500; resize:vertical; }
+    .communications-compose small { color:var(--muted); font-size:11px; font-weight:500; line-height:1.45; }
+    .communications-format-toolbar { display:flex; flex-wrap:wrap; gap:6px; }
+    .communications-format-toolbar button { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); border-radius:8px; padding:6px 9px; background:#faf8f3; color:var(--deep); font:inherit; font-size:11px; cursor:pointer; }
+    .communications-format-toolbar button:hover { border-color:var(--gold); background:#fffaf0; }
+    .communications-compose .communications-pin { display:flex; align-items:flex-start; gap:8px; font-weight:600; }
+    .communications-list-head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:14px; }
+    .communications-row { display:flex; justify-content:space-between; gap:15px; border-top:1px solid var(--line); padding:16px 0; }
+    .communications-row:first-child { border-top:0; }
+    .communications-row.is-pinned { margin:0 -10px; border-radius:12px; padding:16px 10px; background:#fcf7eb; }
+    .communications-row-copy { min-width:0; }
+    .communications-row-image { width:92px; height:72px; flex:0 0 auto; border-radius:10px; object-fit:cover; }
+    .communications-row-copy h3 { margin:7px 0 5px; color:var(--deep); }
+    .communications-row-copy p { display:-webkit-box; overflow:hidden; margin:0; color:var(--muted); font-size:13px; line-height:1.5; white-space:pre-wrap; -webkit-box-orient:vertical; -webkit-line-clamp:3; }
+    .communications-row-meta { display:flex; flex-wrap:wrap; gap:6px; color:var(--muted); font-size:10px; font-weight:800; text-transform:uppercase; }
+    .communications-status { border-radius:999px; padding:2px 6px; background:#edf0f1; }
+    .communications-status.is-published { background:#e4f2e9; color:#26623c; }
+    .communications-status.is-archived { background:#f0ece8; color:#766b62; }
+    .communications-row-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; flex:0 0 auto; }
+    .communications-empty { border:1px dashed var(--line); border-radius:12px; padding:26px; text-align:center; color:var(--muted); }
+    .communications-empty strong { display:block; color:var(--deep); font-family:Georgia,serif; font-size:20px; }
+    .communications-paywall { text-align:center; }
+    @media (max-width:900px) { .communications-grid { grid-template-columns:1fr; } .communications-admin-header { align-items:flex-start; flex-direction:column; } .communications-row { flex-direction:column; } .communications-row-actions { justify-content:flex-start; } }
     .btn-row, .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
     .btn-danger-sm, .icon-button { background: rgba(150,40,40,0.06); color: #8a2929; border: 1px solid rgba(150,40,40,0.18); border-radius: 7px; width: 28px; height: 28px; display: inline-grid; place-items: center; padding: 0; font-size: 13px; cursor: pointer; box-shadow: none; }
     /* Link boxes */

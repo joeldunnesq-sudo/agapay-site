@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   bookstoreEnabledFor,
   commerceSuiteEnabledFor,
+  communicationsEnabledFor,
   accountingEnabledFor,
   accountingTierFor,
   directoryEnabledFor,
@@ -190,6 +191,14 @@ await test("the full Commerce suite is Parish-only while Stewardship retains Boo
   assert.equal(parish.modules.commerceSuite.included, true);
   assert.equal(commerceSuiteEnabledFor({ subscriptionTier: "diocese" }), true);
   assert.equal(commerceSuiteEnabledFor({ subscriptionTier: "giving" }), false);
+});
+
+await test("communications is available only on current Parish-level tiers", async () => {
+  assert.equal(communicationsEnabledFor({ subscriptionTier: "parish" }), true);
+  assert.equal(communicationsEnabledFor({ subscriptionTier: "diocese" }), true);
+  assert.equal(communicationsEnabledFor({ subscriptionTier: "stewardship" }), false);
+  assert.equal(communicationsEnabledFor({ subscriptionTier: "mission", stewardshipStatus: "active" }), false);
+  assert.equal(entitlementsSummary({ subscriptionTier: "parish" }).modules.communications.source, "tier");
 });
 
 await test("directoryEnabledFor requires the tier and both parish member-directory switches", async () => {

@@ -164,7 +164,7 @@
     document.querySelector('.content')?.classList.toggle('sacraments-tab-active', tab === 'sacraments');
     if (tab === 'accounting') window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     activeTab = tab;
-    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship Health', accounting:'Accounting', sacraments:'Sacraments & Services', directory:'Parish Directory', bookstore:'Commerce', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship Health', accounting:'Accounting', sacraments:'Sacraments & Services', directory:'Parish Directory', communications:'Communications', bookstore:'Commerce', qr:'QR Code & Giving Link' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     syncTopbarTabIcon(tab);
@@ -176,6 +176,7 @@
     if (tab === 'stewardship') loadStewardshipPanel();
     if (tab === 'sacraments') loadSacramentsTab();
     if (tab === 'directory' && moduleIncluded('directory')) loadDirectoryAdminTab();
+    if (tab === 'communications') loadCommunicationsTab();
     if (tab === 'accounting') loadAccountingTab();
     if (tab === 'bookstore') {
       switchCommerceProduct(moduleIncluded('commerceSuite') ? 'overview' : 'bookstore', false);
@@ -10110,6 +10111,146 @@
       setStatus(win?'Subscription cancellation opened in a new tab. Confirm the change in Stripe.':'Subscription cancellation link created.','success');
     } catch(err){if(win)win.close();setStatus(err.message,'error');}
     finally{if(btn){btn.classList.remove('loading');btn.disabled=false;}}
+  }
+
+  // ── COMMUNICATIONS ────────────────────────────────────────
+  let communicationsState = { loaded: false, announcements: [] };
+
+  function communicationsApi(path = '') {
+    return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/communications' + path;
+  }
+
+  function announcementStatusLabel(status) {
+    return status === 'published' ? 'Published' : status === 'archived' ? 'Archived' : 'Draft';
+  }
+
+  function renderCommunicationsList() {
+    const list = document.getElementById('communicationsList');
+    if (!list) return;
+    const rows = communicationsState.announcements || [];
+    if (!rows.length) {
+      list.innerHTML = '<div class="communications-empty"><strong>No announcements yet</strong><p>Save your first draft to begin.</p></div>';
+      return;
+    }
+    list.innerHTML = rows.map(item => `
+      <article class="communications-row${item.pinned ? ' is-pinned' : ''}">
+        ${item.heroImageUrl ? `<img class="communications-row-image" src="${escapeAttr(item.heroImageUrl)}" alt="" loading="lazy" />` : ''}
+        <div class="communications-row-copy"><div class="communications-row-meta"><span class="communications-status is-${escapeAttr(item.status)}">${announcementStatusLabel(item.status)}</span>${item.pinned ? '<span>📌 Pinned</span>' : ''}<span>${escapeHtml(shortDate(item.publishedAt || item.updatedAt || item.createdAt))}</span></div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p></div>
+        <div class="communications-row-actions">
+          ${item.status !== 'archived' ? `<button class="btn btn-ghost btn-sm" type="button" onclick="editAnnouncement('${escapeAttr(item.id)}')">Edit</button>` : ''}
+          ${item.status === 'draft' ? `<button class="btn btn-gold btn-sm" type="button" onclick="publishAnnouncement('${escapeAttr(item.id)}',this)">Publish</button>` : ''}
+          ${item.status !== 'archived' ? `<button class="btn btn-danger btn-sm" type="button" onclick="archiveAnnouncement('${escapeAttr(item.id)}',this)">Archive</button>` : ''}
+        </div>
+      </article>
+    `).join('');
+  }
+
+  function insertAnnouncementFormatting(kind) {
+    const textarea = document.getElementById('announcementBody');
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = textarea.value.slice(start, end);
+    const examples = { bold:'important words', italic:'emphasized words', link:'parish website', list:'first item\nsecond item' };
+    const value = selected || examples[kind] || '';
+    let replacement = value;
+    if (kind === 'bold') replacement = `**${value}**`;
+    if (kind === 'italic') replacement = `*${value}*`;
+    if (kind === 'link') replacement = `[${value}](https://)`;
+    if (kind === 'list') replacement = value.split(/\r?\n/).map(line => `- ${line.replace(/^\s*-\s*/, '')}`).join('\n');
+    textarea.setRangeText(replacement, start, end, 'select');
+    textarea.focus();
+  }
+
+  async function uploadAnnouncementHero(announcementId, file) {
+    const response = await fetch(communicationsApi('/' + encodeURIComponent(announcementId) + '/hero-image'), {
+      method:'POST',
+      headers:{ ...authHeaders(), 'Content-Type':file.type },
+      body:file
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Unable to upload the announcement image.');
+    return data.announcement;
+  }
+
+  async function loadCommunicationsTab(force = false) {
+    if (!currentParish) return;
+    const included = moduleIncluded('communications');
+    const workspace = document.getElementById('communicationsWorkspace');
+    const paywall = document.getElementById('communicationsPaywall');
+    const badge = document.getElementById('communicationsNavBadge');
+    if (workspace) workspace.hidden = !included;
+    if (paywall) paywall.hidden = included;
+    if (badge) badge.hidden = included;
+    if (!included || (communicationsState.loaded && !force)) return;
+    const response = await fetch(communicationsApi(), { headers: authHeaders(), cache: 'no-store' });
+    const data = await response.json();
+    if (!response.ok) { setStatus(data.error || 'Unable to load announcements.','error'); return; }
+    communicationsState = { loaded: true, announcements: data.announcements || [] };
+    renderCommunicationsList();
+  }
+
+  async function createAnnouncementDraft(event) {
+    event.preventDefault();
+    const heroImage = document.getElementById('announcementHeroImage')?.files?.[0] || null;
+    const button = event.currentTarget.querySelector('button[type="submit"]');
+    if (button) { button.disabled = true; button.classList.add('loading'); }
+    try {
+      const response = await fetch(communicationsApi(), {
+        method: 'POST', headers: { ...authHeaders(), 'Content-Type':'application/json' },
+        body: JSON.stringify({ title: document.getElementById('announcementTitle').value, body: document.getElementById('announcementBody').value, pinned: document.getElementById('announcementPinned').checked })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to save announcement.');
+      if (heroImage) await uploadAnnouncementHero(data.announcement.id, heroImage);
+      event.currentTarget.reset();
+      await loadCommunicationsTab(true);
+      setStatus(heroImage ? 'Announcement and hero image saved as a draft.' : 'Announcement saved as a draft.','success');
+    } catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
+  }
+
+  async function patchAnnouncement(id, changes) {
+    const response = await fetch(communicationsApi('/' + encodeURIComponent(id)), {
+      method: 'PATCH', headers: { ...authHeaders(), 'Content-Type':'application/json' }, body: JSON.stringify(changes)
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Unable to update announcement.');
+    await loadCommunicationsTab(true);
+    return data.announcement;
+  }
+
+  async function editAnnouncement(id) {
+    const item = communicationsState.announcements.find(row => row.id === id);
+    if (!item) return;
+    const title = prompt('Announcement title', item.title);
+    if (title === null) return;
+    const body = prompt('Announcement message', item.body);
+    if (body === null) return;
+    const pinned = confirm('Pin this announcement above newer updates?');
+    try { await patchAnnouncement(id, { title, body, pinned }); setStatus('Announcement updated.','success'); }
+    catch (error) { setStatus(error.message,'error'); }
+  }
+
+  async function publishAnnouncement(id, button) {
+    if (!confirm('Publish this announcement to every parishioner in My AGAPAY?')) return;
+    if (button) { button.disabled = true; button.classList.add('loading'); }
+    try { await patchAnnouncement(id, { status:'published' }); setStatus('Announcement published.','success'); }
+    catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
+  }
+
+  async function archiveAnnouncement(id, button) {
+    if (!confirm('Archive this announcement? It will leave the donor feed but remain in this list.')) return;
+    if (button) { button.disabled = true; button.classList.add('loading'); }
+    try {
+      const response = await fetch(communicationsApi('/' + encodeURIComponent(id) + '/archive'), { method:'POST', headers:authHeaders() });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to archive announcement.');
+      await loadCommunicationsTab(true);
+      setStatus('Announcement archived.','success');
+    } catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
   }
 
   // ── COMMEMORATIONS ────────────────────────────────────────

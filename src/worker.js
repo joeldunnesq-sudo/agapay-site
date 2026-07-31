@@ -203,6 +203,12 @@ import {
 } from "./handlers/donor.js";
 
 import {
+  handleDonorFeed,
+  handleParishCommunications,
+} from "./handlers/parish-communications.js";
+import { handleDonorGroups } from "./handlers/donor-groups.js";
+
+import {
   loadAllRegistrations,
 } from "./lib/registrations.js";
 
@@ -658,6 +664,10 @@ const MYAGAPAY_ASSET_ROUTES = new Map([
   ["/myagapay/directory/", "/myagapay/directory.html"],
   ["/myagapay/bookstore", "/myagapay/bookstore.html"],
   ["/myagapay/bookstore/", "/myagapay/bookstore.html"],
+  ["/myagapay/feed", "/myagapay/feed.html"],
+  ["/myagapay/feed/", "/myagapay/feed.html"],
+  ["/myagapay/groups", "/myagapay/groups.html"],
+  ["/myagapay/groups/", "/myagapay/groups.html"],
   ["/myagapay/learn", "/learn/dashboard"],
   ["/myagapay/learn/", "/learn/dashboard"],
   ["/myagapay/learn/dashboard", "/learn/dashboard"],
@@ -3065,6 +3075,16 @@ export default {
     if (url.pathname === "/api/donor/dashboard") {
       return handleDonorDashboard(request, env);
     }
+    if (url.pathname === "/api/donor/feed") {
+      return handleDonorFeed(request, env);
+    }
+    if (url.pathname.startsWith("/api/donor/feed/") && url.pathname.endsWith("/read")) {
+      const announcementId = decodeURIComponent(url.pathname.replace("/api/donor/feed/", "").replace("/read", ""));
+      return handleDonorFeed(request, env, announcementId);
+    }
+    if (url.pathname === "/api/donor/groups" || url.pathname.startsWith("/api/donor/groups/")) {
+      return handleDonorGroups(request, env);
+    }
     if (url.pathname === "/api/donor/stewardship-feature-request") {
       return handleDonorStewardshipFeatureRequest(request, env);
     }
@@ -3539,6 +3559,12 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/commemorations")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/commemorations", ""));
       return handleParishCommemorations(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/communications")) {
+      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/communications");
+      const parishId = decodeURIComponent(parts[0].replace(/\/+$/, ""));
+      const subpath = parts.slice(1).join("/communications") || "";
+      return handleParishCommunications(request, env, parishId, subpath);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments", ""));
