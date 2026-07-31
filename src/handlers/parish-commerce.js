@@ -88,6 +88,87 @@ function normalizeBookstoreProduct(row) {
   };
 }
 
+async function findBookstoreCatalogItemByCode(env, parishId, code) {
+  if (!code) return null;
+  return d1First(env, `
+    SELECT p.id, v.id AS variant_id
+    FROM commerce_product_variants v
+    JOIN commerce_products p ON p.id = v.product_id
+    WHERE p.parish_id = ? AND p.commerce_module = 'bookstore'
+      AND (v.sku = ? OR v.barcode = ? OR p.default_sku = ?)
+    LIMIT 1
+  `, parishId, code, code, code);
+}
+
+async function promotePaidScannedBooksToCatalog(env, order, now) {
+  if (!order?.id || order.source !== "scan_and_go") return;
+  const items = await d1All(env, `
+    SELECT * FROM commerce_order_items
+    WHERE order_id = ? AND parish_id = ? AND commerce_module = 'bookstore'
+      AND item_category = 'book' AND barcode IS NOT NULL AND barcode <> ''
+    ORDER BY created_at, id
+  `, order.id, order.parish_id);
+
+  let firstCatalogItem = null;
+  for (const item of items) {
+    const code = String(item.barcode || item.sku || "").trim().slice(0, 80);
+    if (!code) continue;
+    let catalogItem = await findBookstoreCatalogItemByCode(env, order.parish_id, code);
+
+    if (!catalogItem) {
+      const productId = generateSecret("commerce_product");
+      const variantId = generateSecret("commerce_variant");
+      try {
+        await d1Run(env, `
+          INSERT INTO commerce_products
+            (id, parish_id, commerce_module, name, description, item_category, default_sku,
+             default_tax_code, fulfillment_type, status, image_url, created_at, updated_at)
+          VALUES (?, ?, 'bookstore', ?, ?, 'book', ?, ?, ?, 'active', '', ?, ?)
+        `, productId, order.parish_id, String(item.item_name || "Book").slice(0, 180),
+          String(item.item_description || item.item_name || "").slice(0, 600), code,
+          item.tax_code || "", item.fulfillment_type || "physical_pickup", now, now);
+        await d1Run(env, `
+          INSERT INTO commerce_product_variants
+            (id, product_id, parish_id, commerce_module, sku, barcode, variant_name,
+             unit_price_cents, cost_basis_cents, tax_code, fulfillment_type, stock_quantity,
+             reorder_threshold, track_inventory, status, created_at, updated_at)
+          VALUES (?, ?, ?, 'bookstore', ?, ?, '', ?, 0, ?, ?, 0, 0, 0, 'active', ?, ?)
+        `, variantId, productId, order.parish_id, code, code, Number(item.unit_price_cents || 0),
+          item.tax_code || "", item.fulfillment_type || "physical_pickup", now, now);
+        catalogItem = { id: productId, variant_id: variantId };
+      } catch (error) {
+        // A concurrent webhook may have inserted this ISBN first. Reuse it.
+        catalogItem = await findBookstoreCatalogItemByCode(env, order.parish_id, code);
+        if (!catalogItem) throw error;
+      }
+    }
+
+    // A fresh paid sale makes an archived matching ISBN available again.
+    await d1Run(env, "UPDATE commerce_products SET status = 'active', updated_at = ? WHERE id = ? AND parish_id = ?",
+      now, catalogItem.id, order.parish_id);
+    await d1Run(env, "UPDATE commerce_product_variants SET status = 'active', updated_at = ? WHERE id = ? AND parish_id = ?",
+      now, catalogItem.variant_id, order.parish_id);
+
+    let snapshot = {};
+    try { snapshot = JSON.parse(item.snapshot_json || "{}"); } catch { snapshot = {}; }
+    snapshot.catalogProductId = catalogItem.id;
+    snapshot.catalogVariantId = catalogItem.variant_id;
+    snapshot.donorSuggested = true;
+    await d1Run(env, `
+      UPDATE commerce_order_items
+      SET product_id = ?, variant_id = ?, snapshot_json = ?, updated_at = ?
+      WHERE id = ? AND order_id = ?
+    `, catalogItem.id, catalogItem.variant_id, JSON.stringify(snapshot).slice(0, 4000), now, item.id, order.id);
+    if (!firstCatalogItem) firstCatalogItem = catalogItem;
+  }
+
+  if (firstCatalogItem) {
+    await d1Run(env, `
+      UPDATE commerce_orders SET product_id = ?, variant_id = ?, updated_at = ? WHERE id = ?
+    `, firstCatalogItem.id, firstCatalogItem.variant_id, now, order.id);
+  }
+}
+
 export async function handleParishBookstore(request, env, parishId, subpath = "") {
   const limited = await rateLimit(request, env, "parish-bookstore", { limit: 80, windowSeconds: 300 });
   if (limited) return limited;
@@ -727,6 +808,7 @@ export async function completeCommerceOrderFromStripe(env, object = {}, kind = "
   // be processed before a delayed payment/session completion event, so never
   // let completion regress one of those later lifecycle states back to paid.
   if (["paid", "partially_refunded", "refunded", "disputed", "dispute_closed"].includes(order.payment_status)) {
+    await promotePaidScannedBooksToCatalog(env, order, new Date().toISOString());
     return order; // accounting wiring can still replay safely
   }
 
@@ -771,6 +853,8 @@ export async function completeCommerceOrderFromStripe(env, object = {}, kind = "
     object.customer || order.stripe_customer_id || "",
     completedAt, now, order.id
   );
+
+  await promotePaidScannedBooksToCatalog(env, order, now);
 
   return { ...order, payment_status: paymentStatus, status, tax_cents: taxCents,
     total_charged_cents: totalCents, stripe_fee_cents: stripeFeeCents,

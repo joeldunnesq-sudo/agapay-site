@@ -4303,7 +4303,7 @@ function renderBookstoreProducts(products = []) {
   const container = document.getElementById("bookstoreProductCatalog");
   if (!container) return;
   if (!products.length) {
-    container.innerHTML = '<div class="notice">No parish products yet. Enter or scan an item below and it will be added to the parish catalog after checkout starts.</div>';
+    container.innerHTML = '<div class="notice">No parish products yet. Scan a book below and, after purchase, it will be added to the parish catalog for other parishioners.</div>';
     return;
   }
 
