@@ -179,7 +179,8 @@ async function promotePaidScannedBooksToCatalog(env, order, now) {
 export async function applyBookstoreInventoryAtCompletion(env, order, now = new Date().toISOString()) {
   if (!order?.id || !order?.parish_id || !commerceDatabase(env)) return { applied: false, oversold: false };
   const trackedItems = await d1All(env, `
-    SELECT i.variant_id, SUM(i.quantity) AS quantity
+    SELECT i.product_id, i.variant_id, MAX(COALESCE(i.sku, v.sku, '')) AS sku,
+           SUM(i.quantity) AS quantity
     FROM commerce_order_items i
     JOIN commerce_product_variants v
       ON v.id = i.variant_id AND v.parish_id = i.parish_id AND v.commerce_module = 'bookstore'
@@ -218,24 +219,131 @@ export async function applyBookstoreInventoryAtCompletion(env, order, now = new 
               )`,
       params: [BOOKSTORE_INVENTORY_ATTENTION, now, order.id, order.parish_id, markerLike]
     },
-    ...trackedItems.map(item => ({
-      sql: `UPDATE commerce_product_variants
-            SET stock_quantity = stock_quantity - ?, updated_at = ?
-            WHERE id = ? AND parish_id = ? AND commerce_module = 'bookstore'
-              AND track_inventory = 1 AND stock_quantity >= ?
-              AND EXISTS (
-                SELECT 1 FROM commerce_orders o
-                WHERE o.id = ? AND o.parish_id = ? AND o.parish_notes LIKE ?
-              )`,
-      params: [Number(item.quantity || 0), now, item.variant_id, order.parish_id,
-        Number(item.quantity || 0), order.id, order.parish_id, markerLike]
-    }))
+    ...trackedItems.flatMap(item => {
+      const quantity = Number(item.quantity || 0);
+      return [
+        {
+          sql: `INSERT INTO commerce_inventory_movements
+                  (id, parish_id, commerce_module, product_id, variant_id, sku,
+                   movement_type, quantity_delta, order_id, created_at)
+                SELECT ?, ?, 'bookstore', ?, ?, ?, 'sale', ?, ?, ?
+                WHERE EXISTS (
+                  SELECT 1 FROM commerce_product_variants v
+                  JOIN commerce_orders o ON o.id = ? AND o.parish_id = ?
+                  WHERE v.id = ? AND v.parish_id = ? AND v.commerce_module = 'bookstore'
+                    AND v.track_inventory = 1 AND v.stock_quantity >= ?
+                    AND o.parish_notes LIKE ?
+                ) AND NOT EXISTS (
+                  SELECT 1 FROM commerce_inventory_movements m
+                  WHERE m.parish_id = ? AND m.commerce_module = 'bookstore'
+                    AND m.variant_id = ? AND m.order_id = ? AND m.movement_type = 'sale'
+                )`,
+          params: [generateSecret("inventory_movement"), order.parish_id, item.product_id,
+            item.variant_id, item.sku || null, -quantity, order.id, now,
+            order.id, order.parish_id, item.variant_id, order.parish_id, quantity, markerLike,
+            order.parish_id, item.variant_id, order.id]
+        },
+        {
+          sql: `UPDATE commerce_product_variants
+                SET stock_quantity = stock_quantity - ?, updated_at = ?
+                WHERE id = ? AND parish_id = ? AND commerce_module = 'bookstore'
+                  AND track_inventory = 1 AND stock_quantity >= ?
+                  AND EXISTS (
+                    SELECT 1 FROM commerce_orders o
+                    WHERE o.id = ? AND o.parish_id = ? AND o.parish_notes LIKE ?
+                  )`,
+          params: [quantity, now, item.variant_id, order.parish_id,
+            quantity, order.id, order.parish_id, markerLike]
+        }
+      ];
+    })
   ];
 
   const results = await d1Batch(env, statements);
   const applied = changedRows(results?.[0]) === 1;
   const oversold = applied && changedRows(results?.[1]) === 1;
   return { applied, oversold };
+}
+
+export async function patchBookstoreProduct(env, parishId, productId, body = {}, now = new Date().toISOString()) {
+  const product = await d1First(env,
+    `SELECT p.id, v.id AS variant_id, v.stock_quantity
+     FROM commerce_products p
+     LEFT JOIN commerce_product_variants v ON v.product_id = p.id AND v.status = 'active'
+     WHERE p.id = ? AND p.parish_id = ? AND p.commerce_module = 'bookstore'`,
+    productId, parishId
+  );
+  if (!product) return json({ error: "Bookstore item not found." }, { status: 404 });
+
+  const item = normalizeBookstoreBody(body);
+  if (!item.name) return json({ error: "Item name is required." }, { status: 422 });
+  if (item.priceCents < 1) return json({ error: "Price must be greater than zero." }, { status: 422 });
+
+  const stockSubmitted = Object.prototype.hasOwnProperty.call(body, "stockQuantity");
+  const oldStock = Number(product.stock_quantity || 0);
+  const newStock = stockSubmitted ? item.stockQuantity : oldStock;
+  const stockChanged = newStock !== oldStock;
+  const stockAdjustmentReason = String(body.stockAdjustmentReason || "").trim().slice(0, 500);
+  if (stockChanged && !stockAdjustmentReason) {
+    return json({ error: "Explain the stock difference before saving this adjustment." }, { status: 422 });
+  }
+
+  const statements = [
+    {
+      sql: `UPDATE commerce_products
+            SET name = ?, description = ?, item_category = ?, default_sku = ?, image_url = ?, updated_at = ?
+            WHERE id = ? AND parish_id = ?`,
+      params: [item.name, item.description, item.category, item.sku || null, item.imageUrl, now, productId, parishId]
+    }
+  ];
+
+  if (product.variant_id) {
+    if (stockChanged) {
+      statements.push({
+        sql: `INSERT INTO commerce_inventory_movements
+                (id, parish_id, commerce_module, product_id, variant_id, sku,
+                 movement_type, quantity_delta, note, created_at)
+              SELECT ?, ?, 'bookstore', ?, id, ?, 'manual_adjustment', ?, ?, ?
+              FROM commerce_product_variants
+              WHERE id = ? AND parish_id = ? AND commerce_module = 'bookstore' AND stock_quantity = ?`,
+        params: [generateSecret("inventory_movement"), parishId, productId, item.sku || null,
+          newStock - oldStock, stockAdjustmentReason, now, product.variant_id, parishId, oldStock]
+      });
+    }
+    statements.push({
+      sql: `UPDATE commerce_product_variants
+            SET sku = ?, unit_price_cents = ?, stock_quantity = ?, cost_basis_cents = ?, reorder_threshold = ?, updated_at = ?
+            WHERE id = ? AND parish_id = ?${stockChanged ? " AND stock_quantity = ?" : ""}`,
+      params: [item.sku || null, item.priceCents, newStock, item.costBasisCents, item.reorderThreshold,
+        now, product.variant_id, parishId, ...(stockChanged ? [oldStock] : [])]
+    });
+  } else {
+    const variantId = generateSecret("commerce_variant");
+    statements.push({
+      sql: `INSERT INTO commerce_product_variants
+              (id, product_id, parish_id, commerce_module, sku, variant_name, unit_price_cents,
+               cost_basis_cents, stock_quantity, reorder_threshold, status, created_at, updated_at)
+            VALUES (?, ?, ?, 'bookstore', ?, '', ?, ?, ?, ?, 'active', ?, ?)`,
+      params: [variantId, productId, parishId, item.sku || null, item.priceCents, item.costBasisCents,
+        newStock, item.reorderThreshold, now, now]
+    });
+    if (stockChanged) {
+      statements.push({
+        sql: `INSERT INTO commerce_inventory_movements
+                (id, parish_id, commerce_module, product_id, variant_id, sku,
+                 movement_type, quantity_delta, note, created_at)
+              VALUES (?, ?, 'bookstore', ?, ?, ?, 'manual_adjustment', ?, ?, ?)`,
+        params: [generateSecret("inventory_movement"), parishId, productId, variantId,
+          item.sku || null, newStock, stockAdjustmentReason, now]
+      });
+    }
+  }
+
+  const results = await d1Batch(env, statements);
+  if (product.variant_id && stockChanged && changedRows(results?.[results.length - 1]) !== 1) {
+    return json({ error: "Stock changed while this item was open. Reload it and try again." }, { status: 409 });
+  }
+  return json({ ok: true });
 }
 
 export async function handleParishBookstore(request, env, parishId, subpath = "") {
@@ -665,36 +773,30 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
     );
     if (!product) return json({ error: "Bookstore item not found." }, { status: 404 });
 
-    if (request.method === "PATCH") {
+    if (request.method === "GET" && segments[2] === "movements" && segments.length === 3) {
+      const rows = await d1All(env,
+        `SELECT m.movement_type, m.quantity_delta, m.note, m.order_id, m.created_at,
+                o.order_number
+         FROM commerce_inventory_movements m
+         LEFT JOIN commerce_orders o ON o.id = m.order_id AND o.parish_id = m.parish_id
+         WHERE m.parish_id = ? AND m.commerce_module = 'bookstore' AND m.product_id = ?
+         ORDER BY m.created_at DESC, m.id DESC`,
+        parishId, productId
+      );
+      return json({ movements: rows.map(row => ({
+        movementType: row.movement_type,
+        quantityDelta: Number(row.quantity_delta || 0),
+        note: row.note || "",
+        orderId: row.order_id || null,
+        orderNumber: row.order_number || null,
+        createdAt: row.created_at
+      })) });
+    }
+
+    if (request.method === "PATCH" && segments.length === 2) {
       let body = {};
       try { body = await request.json(); } catch { return json({ error: "Invalid JSON body" }, { status: 400 }); }
-      const item = normalizeBookstoreBody(body);
-      if (!item.name) return json({ error: "Item name is required." }, { status: 422 });
-      if (item.priceCents < 1) return json({ error: "Price must be greater than zero." }, { status: 422 });
-      await d1Run(env,
-        `UPDATE commerce_products
-         SET name = ?, description = ?, item_category = ?, default_sku = ?, image_url = ?, updated_at = ?
-         WHERE id = ? AND parish_id = ?`,
-        item.name, item.description, item.category, item.sku || null, item.imageUrl, now, productId, parishId
-      );
-      if (product.variant_id) {
-        await d1Run(env,
-          `UPDATE commerce_product_variants
-           SET sku = ?, unit_price_cents = ?, stock_quantity = ?, cost_basis_cents = ?, reorder_threshold = ?, updated_at = ?
-           WHERE id = ? AND parish_id = ?`,
-          item.sku || null, item.priceCents, item.stockQuantity, item.costBasisCents, item.reorderThreshold, now, product.variant_id, parishId
-        );
-      } else {
-        await d1Run(env,
-          `INSERT INTO commerce_product_variants
-            (id, product_id, parish_id, commerce_module, sku, variant_name, unit_price_cents,
-             cost_basis_cents, stock_quantity, reorder_threshold, status, created_at, updated_at)
-           VALUES (?, ?, ?, 'bookstore', ?, '', ?, ?, ?, ?, 'active', ?, ?)`,
-          generateSecret("commerce_variant"), productId, parishId, item.sku || null, item.priceCents, item.costBasisCents,
-          item.stockQuantity, item.reorderThreshold, now, now
-        );
-      }
-      return json({ ok: true });
+      return patchBookstoreProduct(env, parishId, productId, body, now);
     }
 
     if (request.method === "DELETE") {

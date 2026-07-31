@@ -4499,6 +4499,7 @@
       </div>`;
   }
   let bookstoreEditingProductId = null;
+  let bookstoreEditingOriginalStock = 0;
 
   function bookstoreApi(path = '') {
     if (!currentParish?.parishId) throw new Error('Load a parish first.');
@@ -5149,6 +5150,7 @@
             </div>
             <div class="bookstore-current-metrics">
               <b>${moneyFull(Number(p.priceCents || 0))}</b>
+              <span>${Number(p.stockQuantity || 0)} in stock</span>
               <em class="bookstore-status-pill">${escapeHtml(p.status || 'active')}</em>
             </div>
             <div class="bookstore-row-actions">
@@ -5182,9 +5184,18 @@
           <label>Category<select id="bookstoreModalCategory">${bookstoreCategoryOptions('other')}</select></label>
           <label class="full">Description<textarea id="bookstoreModalDescription" rows="3"></textarea></label>
           <label>Price<input id="bookstoreModalPrice" type="number" min="0.01" step="0.01" required /></label>
-          <input id="bookstoreModalStock" type="hidden" value="0" />
+          <label>Stock on hand<input id="bookstoreModalStock" type="number" min="0" step="1" value="0" oninput="syncBookstoreStockReason()" required /></label>
           <label>SKU / barcode<input id="bookstoreModalSku" /></label>
           <label class="full">Image URL<input id="bookstoreModalImage" placeholder="https://..." /></label>
+          <label class="full bookstore-stock-reason" id="bookstoreStockReasonField" hidden>
+            Explain the stock difference
+            <textarea id="bookstoreModalStockReason" rows="2" maxlength="500" placeholder="Example: Received 12 books and counted them by hand"></textarea>
+            <small>A reason is required whenever stock on hand changes.</small>
+          </label>
+          <section class="bookstore-movement-panel full" aria-labelledby="bookstoreMovementTitle">
+            <div><span>Inventory audit trail</span><h3 id="bookstoreMovementTitle">Stock history</h3></div>
+            <div id="bookstoreMovementHistory" class="bookstore-movement-list"><p>Loading stock history…</p></div>
+          </section>
           <div class="bookstore-modal-actions">
             <button class="btn btn-ghost" type="button" onclick="closeBookstoreItemModal()">Cancel</button>
             <button class="btn btn-gold" type="submit">Save item</button>
@@ -5206,9 +5217,13 @@
     document.getElementById('bookstoreModalCategory').innerHTML = bookstoreCategoryOptions(product.category || 'other');
     document.getElementById('bookstoreModalDescription').value = product.description || '';
     document.getElementById('bookstoreModalPrice').value = (Number(product.priceCents || 0) / 100).toFixed(2);
-    document.getElementById('bookstoreModalStock').value = Number(product.stockQuantity || 0);
+    bookstoreEditingOriginalStock = Number(product.stockQuantity || 0);
+    document.getElementById('bookstoreModalStock').value = bookstoreEditingOriginalStock;
+    document.getElementById('bookstoreModalStockReason').value = '';
     document.getElementById('bookstoreModalSku').value = product.sku || '';
     document.getElementById('bookstoreModalImage').value = product.imageUrl || '';
+    syncBookstoreStockReason();
+    loadBookstoreMovementHistory(productId);
     modal.hidden = false;
     document.body.classList.add('bookstore-modal-open');
     setTimeout(() => document.getElementById('bookstoreModalName')?.focus(), 0);
@@ -5219,6 +5234,51 @@
     if (modal) modal.hidden = true;
     document.body.classList.remove('bookstore-modal-open');
     bookstoreEditingProductId = null;
+  }
+
+  function syncBookstoreStockReason() {
+    const changed = Number(document.getElementById('bookstoreModalStock')?.value || 0) !== bookstoreEditingOriginalStock;
+    const field = document.getElementById('bookstoreStockReasonField');
+    const input = document.getElementById('bookstoreModalStockReason');
+    if (field) field.hidden = !changed;
+    if (input) input.required = changed;
+  }
+
+  function bookstoreMovementDate(value) {
+    const date = new Date(value || '');
+    return Number.isNaN(date.getTime()) ? 'Date unavailable' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function renderBookstoreMovementHistory(movements) {
+    const pane = document.getElementById('bookstoreMovementHistory');
+    if (!pane) return;
+    if (!movements.length) {
+      pane.innerHTML = '<p>No stock changes recorded yet.</p>';
+      return;
+    }
+    pane.innerHTML = movements.map(movement => {
+      const delta = Number(movement.quantityDelta || 0);
+      const deltaLabel = delta > 0 ? `+${delta}` : String(delta).replace('-', '−');
+      const type = movement.movementType === 'sale' ? 'Sale' : 'Manual adjustment';
+      const order = movement.orderNumber || movement.orderId;
+      return `<article class="bookstore-movement-row">
+        <strong class="${delta < 0 ? 'is-negative' : 'is-positive'}">${escapeHtml(deltaLabel)}</strong>
+        <div><b>${escapeHtml(type)}${order ? ` · Order ${escapeHtml(order)}` : ''}</b><span>${escapeHtml(bookstoreMovementDate(movement.createdAt))}</span>${movement.note ? `<q>${escapeHtml(movement.note)}</q>` : ''}</div>
+      </article>`;
+    }).join('');
+  }
+
+  async function loadBookstoreMovementHistory(productId) {
+    const pane = document.getElementById('bookstoreMovementHistory');
+    if (pane) pane.innerHTML = '<p>Loading stock history…</p>';
+    try {
+      const res = await fetch(bookstoreApi('/products/' + encodeURIComponent(productId) + '/movements'), { headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to load stock history.');
+      if (bookstoreEditingProductId === productId) renderBookstoreMovementHistory(data.movements || []);
+    } catch (err) {
+      if (pane && bookstoreEditingProductId === productId) pane.innerHTML = `<p class="bookstore-movement-error">${escapeHtml(err.message)}</p>`;
+    }
   }
 
   function renderBookstoreStarterCatalogUI(catalog) {
@@ -5339,7 +5399,8 @@
       sku: document.getElementById('bookstoreModalSku')?.value || '',
       imageUrl: document.getElementById('bookstoreModalImage')?.value || '',
       priceCents: Math.round(Number(document.getElementById('bookstoreModalPrice')?.value || 0) * 100),
-      stockQuantity: Number(document.getElementById('bookstoreModalStock')?.value || 0)
+      stockQuantity: Number(document.getElementById('bookstoreModalStock')?.value || 0),
+      stockAdjustmentReason: document.getElementById('bookstoreModalStockReason')?.value || ''
     };
     if (!productId) return;
     if (!String(body.name || '').trim()) {
@@ -5348,6 +5409,11 @@
     }
     if (body.priceCents < 1) {
       setStatus('Price must be greater than zero.', 'error');
+      return;
+    }
+    if (body.stockQuantity !== bookstoreEditingOriginalStock && !String(body.stockAdjustmentReason || '').trim()) {
+      setStatus('Explain the stock difference before saving this adjustment.', 'error');
+      document.getElementById('bookstoreModalStockReason')?.focus();
       return;
     }
     if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }

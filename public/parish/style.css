@@ -2580,6 +2580,64 @@
       font-size: 13px;
       line-height: 1.45;
     }
+    .bookstore-stock-reason textarea {
+      min-height: 68px;
+    }
+    .bookstore-stock-reason small {
+      color: var(--stone);
+      font-size: 11.5px;
+    }
+    .bookstore-movement-panel {
+      margin-top: 0.2rem;
+      border-top: 1px solid rgba(111,106,96,0.18);
+      padding-top: 1rem;
+    }
+    .bookstore-movement-panel > div:first-child span {
+      color: var(--gold-dark);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .bookstore-movement-panel h3 {
+      margin: 0.15rem 0 0.7rem;
+      color: var(--deep);
+      font: 600 1.05rem var(--serif);
+    }
+    .bookstore-movement-list {
+      display: grid;
+      gap: 0.45rem;
+    }
+    .bookstore-movement-list > p {
+      margin: 0;
+      color: var(--stone);
+      font-size: 12px;
+    }
+    .bookstore-movement-row {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr);
+      gap: 0.7rem;
+      align-items: start;
+      border-radius: 9px;
+      background: rgba(255,255,255,0.68);
+      padding: 0.65rem 0.75rem;
+    }
+    .bookstore-movement-row > strong {
+      font-size: 15px;
+      text-align: right;
+    }
+    .bookstore-movement-row > strong.is-negative { color: #8a2929; }
+    .bookstore-movement-row > strong.is-positive { color: #2e6b4a; }
+    .bookstore-movement-row b,
+    .bookstore-movement-row span,
+    .bookstore-movement-row q {
+      display: block;
+      line-height: 1.4;
+    }
+    .bookstore-movement-row b { color: var(--deep); font-size: 12.5px; }
+    .bookstore-movement-row span { color: var(--stone); font-size: 11.5px; }
+    .bookstore-movement-row q { margin-top: 0.2rem; color: var(--ink); font-size: 12px; }
+    .bookstore-movement-error { color: #8a2929 !important; }
     .bookstore-starter-fields input,
     .bookstore-starter-fields select {
       width: 100%;
