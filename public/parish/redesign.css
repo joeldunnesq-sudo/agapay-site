@@ -2199,6 +2199,7 @@
 .acct-expense-insights .acct-card { padding:22px; }
 .acct-expense-insights .acct-card > strong { display:block; margin:9px 0 6px; color:var(--deep); font:500 30px var(--serif); }
 .acct-expense-insights .agapay-fee { border-color:rgba(200,162,74,.35); background:linear-gradient(145deg,rgba(255,255,255,.75),rgba(246,236,210,.62)); }
+.acct-expense-insights .agapay-fee > strong small { margin-left:4px; color:var(--stone); font:600 11px var(--sans); letter-spacing:.04em; text-transform:uppercase; }
 @media(max-width:900px) {
   .acct-expense-layout,.acct-expense-chart-card { grid-template-columns:1fr; }
   .acct-expense-chart-card { min-height:0; }
