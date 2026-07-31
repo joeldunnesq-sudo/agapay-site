@@ -290,6 +290,18 @@
       background: rgba(70,164,106,0.16);
       color: #75d59a;
     }
+    .bookstore-low-stock-nav {
+      display: block;
+      margin-top: 0.18rem;
+      color: #f0bd67;
+      font-size: 9px;
+      font-weight: 750;
+      letter-spacing: 0;
+      line-height: 1.15;
+      text-transform: none;
+      white-space: normal;
+    }
+    .bookstore-low-stock-nav[hidden] { display: none; }
     .sidebar-links { padding: 1rem 1.25rem; margin-top: auto; }
     .sidebar-link { display: flex; align-items: center; gap: 8px; color: rgba(166,159,145,0.62); font-size: 12px; text-decoration: none; margin-bottom: 0.5rem; transition: color 0.15s ease; }
     .sidebar-link:hover { color: var(--cream); }
@@ -2467,6 +2479,39 @@
       display: grid;
       gap: 0.65rem;
     }
+    .bookstore-inventory-filter {
+      display: inline-flex;
+      gap: 0.25rem;
+      margin-bottom: 0.8rem;
+      padding: 0.22rem;
+      border: 1px solid rgba(111,106,96,0.16);
+      border-radius: 999px;
+      background: rgba(111,106,96,0.06);
+    }
+    .bookstore-inventory-filter button {
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--stone);
+      padding: 0.42rem 0.7rem;
+      font: 750 12px var(--sans);
+      cursor: pointer;
+    }
+    .bookstore-inventory-filter button.is-active {
+      background: white;
+      color: var(--deep);
+      box-shadow: 0 1px 4px rgba(6,21,34,0.12);
+    }
+    .bookstore-inventory-filter button span {
+      display: inline-flex;
+      min-width: 20px;
+      justify-content: center;
+      margin-left: 0.25rem;
+      border-radius: 999px;
+      background: rgba(184,144,47,0.14);
+      color: #8a6517;
+      padding: 0.08rem 0.35rem;
+    }
     .bookstore-current-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(110px, auto) auto;
@@ -2476,6 +2521,10 @@
       border-radius: 10px;
       background: rgba(255,255,255,0.74);
       padding: 0.75rem;
+    }
+    .bookstore-current-row.is-low-stock {
+      border-color: rgba(184,112,47,0.38);
+      background: rgba(255,248,235,0.82);
     }
     .bookstore-current-main {
       min-width: 0;
@@ -2500,6 +2549,19 @@
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+    }
+    .bookstore-low-stock-pill {
+      display: inline-flex;
+      margin-top: 0.42rem;
+      border-radius: 999px;
+      background: rgba(184,112,47,0.14);
+      color: #93591e;
+      padding: 0.2rem 0.48rem;
+      font-size: 10px;
+      font-style: normal;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
     }
     .bookstore-current-metrics {
       text-align: right;
@@ -2698,7 +2760,33 @@
       display: flex;
       gap: 0.35rem;
       justify-content: flex-end;
-      white-space: nowrap;
+      flex-wrap: wrap;
+      max-width: 270px;
+    }
+    .bookstore-threshold-edit {
+      display: flex;
+      flex: 1 0 100%;
+      align-items: end;
+      justify-content: flex-end;
+      gap: 0.35rem;
+      margin-bottom: 0.15rem;
+    }
+    .bookstore-threshold-edit label {
+      color: var(--stone);
+      font-size: 10px;
+      font-weight: 750;
+      text-align: left;
+    }
+    .bookstore-threshold-edit input {
+      display: block;
+      width: 76px;
+      margin-top: 0.18rem;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: white;
+      color: var(--deep);
+      padding: 0.42rem 0.5rem;
+      font: 700 12px var(--sans);
     }
     .bookstore-row-actions .danger {
       color: #8a2929;

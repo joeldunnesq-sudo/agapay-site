@@ -95,6 +95,22 @@ function normalizeBookstoreProduct(row) {
   };
 }
 
+export async function listBookstoreLowStock(env, parishId) {
+  const rows = await d1All(env, `
+    SELECT p.*, v.id AS variant_id, v.sku, v.unit_price_cents, v.cost_basis_cents,
+           v.stock_quantity, v.reorder_threshold
+    FROM commerce_product_variants v
+    JOIN commerce_products p ON p.id = v.product_id AND p.parish_id = v.parish_id
+    WHERE v.parish_id = ? AND v.commerce_module = 'bookstore'
+      AND p.commerce_module = 'bookstore' AND p.status <> 'archived'
+      AND v.status = 'active' AND v.track_inventory = 1
+      AND v.reorder_threshold > 0 AND v.stock_quantity <= v.reorder_threshold
+    ORDER BY (v.reorder_threshold - v.stock_quantity) DESC,
+             v.stock_quantity ASC, p.name COLLATE NOCASE ASC, v.id ASC
+  `, parishId);
+  return rows.map(normalizeBookstoreProduct);
+}
+
 async function findBookstoreCatalogItemByCode(env, parishId, code) {
   if (!code) return null;
   return d1First(env, `
@@ -347,6 +363,33 @@ export async function patchBookstoreProduct(env, parishId, productId, body = {},
     return json({ error: "Stock changed while this item was open. Reload it and try again." }, { status: 409 });
   }
   return json({ ok: true });
+}
+
+export async function patchBookstoreReorderThreshold(env, parishId, productId, body = {}, now = new Date().toISOString()) {
+  const rawThreshold = body.reorderThreshold;
+  const reorderThreshold = Number(rawThreshold);
+  if (rawThreshold === null || rawThreshold === "" || !Number.isInteger(reorderThreshold) || reorderThreshold < 0) {
+    return json({ error: "Reorder threshold must be a non-negative whole number." }, { status: 422 });
+  }
+  const product = await d1First(env,
+    `SELECT p.id, v.id AS variant_id
+     FROM commerce_products p
+     JOIN commerce_product_variants v ON v.product_id = p.id AND v.status = 'active'
+     WHERE p.id = ? AND p.parish_id = ? AND p.commerce_module = 'bookstore'
+       AND v.parish_id = ? AND v.commerce_module = 'bookstore'`,
+    productId, parishId, parishId
+  );
+  if (!product) return json({ error: "Bookstore item not found." }, { status: 404 });
+
+  const result = await d1Run(env, `
+    UPDATE commerce_product_variants
+    SET reorder_threshold = ?, updated_at = ?
+    WHERE id = ? AND parish_id = ? AND commerce_module = 'bookstore' AND status = 'active'
+  `, reorderThreshold, now, product.variant_id, parishId);
+  if (changedRows(result) !== 1) {
+    return json({ error: "Unable to update the reorder threshold." }, { status: 409 });
+  }
+  return json({ ok: true, productId, variantId: product.variant_id, reorderThreshold });
 }
 
 export async function receiveBookstoreStock(env, parishId, productId, body = {}, now = new Date().toISOString()) {
@@ -800,6 +843,11 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
     return json({ products: rows.map(normalizeBookstoreProduct) });
   }
 
+  if (segments[0] === "products" && segments[1] === "low-stock" && request.method === "GET" && segments.length === 2) {
+    const products = await listBookstoreLowStock(env, parishId);
+    return json({ products, count: products.length });
+  }
+
   if (segments[0] === "products" && request.method === "POST" && segments.length === 1) {
     let body = {};
     try { body = await request.json(); } catch { return json({ error: "Invalid JSON body" }, { status: 400 }); }
@@ -865,6 +913,10 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
     if (request.method === "PATCH" && segments.length === 2) {
       let body = {};
       try { body = await request.json(); } catch { return json({ error: "Invalid JSON body" }, { status: 400 }); }
+      const submittedFields = Object.keys(body);
+      if (submittedFields.length === 1 && submittedFields[0] === "reorderThreshold") {
+        return patchBookstoreReorderThreshold(env, parishId, productId, body, now);
+      }
       return patchBookstoreProduct(env, parishId, productId, body, now);
     }
 
