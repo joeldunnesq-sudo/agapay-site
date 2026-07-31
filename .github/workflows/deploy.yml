@@ -97,14 +97,14 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
-          command: d1 migrations apply ACCOUNTING_DB_ST_FIACRE --remote
+          command: d1 execute ACCOUNTING_DB_ST_FIACRE --remote --file accounting-migrations/0024_recurring_vendor_bills.sql
 
       - name: Apply accounting canary migrations
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
-          command: d1 migrations apply ACCOUNTING_DB_PHASE_G_CANARY --remote
+          command: d1 execute ACCOUNTING_DB_PHASE_G_CANARY --remote --file accounting-migrations/0024_recurring_vendor_bills.sql
 
       - name: Deploy with Wrangler
         uses: cloudflare/wrangler-action@v3
