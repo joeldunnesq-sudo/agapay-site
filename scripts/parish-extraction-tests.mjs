@@ -108,6 +108,7 @@ const parishSacraments = await readFile(new URL("../src/handlers/parish-sacramen
 const parishCommerce = await readFile(new URL("../src/handlers/parish-commerce.js", import.meta.url), "utf8");
 const parishReconciliation = await readFile(new URL("../src/handlers/parish-reconciliation.js", import.meta.url), "utf8");
 const parishGivingCatalog = await readFile(new URL("../src/handlers/parish-giving-catalog.js", import.meta.url), "utf8");
+const parishGivingReports = await readFile(new URL("../src/handlers/parish-giving-reports.js", import.meta.url), "utf8");
 const stripe = await readFile(new URL("../src/handlers/stripe.js", import.meta.url), "utf8");
 const donor = await readFile(new URL("../src/handlers/donor.js", import.meta.url), "utf8");
 const admin = await readFile(new URL("../src/handlers/admin.js", import.meta.url), "utf8");
@@ -133,6 +134,63 @@ assert.ok(parish.split(/\r?\n/).length <= 4620, "parish.js should retain the com
 assert.ok(parish.split(/\r?\n/).length <= 3830, "parish.js should retain the reconciliation extraction size reduction");
 assert.ok(parish.split(/\r?\n/).length <= 3380, "parish.js should retain the giving catalog extraction size reduction");
 assert.ok(parish.split(/\r?\n/).length <= 3220, "parish.js should retain the commemorations data-layer extraction size reduction");
+assert.ok(parish.split(/\r?\n/).length <= 3000, "parish.js should retain the giving-report extraction size reduction");
+const givingReportPublicFunctions = [
+  "summarizeStoredParishGifts",
+  "handleParishGivingSummary",
+  "handleParishStripeVolume",
+  "handleParishGivingHistory",
+  "handleParishRecurringHealth",
+];
+for (const name of givingReportPublicFunctions) {
+  assert.doesNotMatch(parish, new RegExp(`(?:async\\s+)?function\\s+${name}\\b`), `${name} should move out of parish.js`);
+  assert.match(
+    parishGivingReports,
+    new RegExp(`export\\s+(?:async\\s+)?function\\s+${name}\\b`),
+    `${name} should be exported by parish-giving-reports.js`,
+  );
+}
+assertImports(parishGivingReports, "./parish.js", [
+  "findRegistrationByParishId",
+  "getBearerToken",
+  "givingFeatureAccess",
+  "hasProductionStore",
+  "json",
+  "loadParishPaidOfferings",
+  "loadParishRecurringOfferings",
+  "missingProductionStoreResponse",
+  "parishDashboardPayload",
+  "rateLimit",
+  "summarizeCharges",
+  "summarizeParishRecurringHealth",
+  "unauthorized",
+  "verifyParishDashboardBearer",
+]);
+assert.doesNotMatch(
+  parishGivingReports,
+  /(?:async\s+)?function\s+summarizeCharges\b/,
+  "parish-giving-reports should import the deliberately divergent summarizeCharges instead of redefining it",
+);
+assertImports(parishGivingReports, "../lib/stripe-connect.js", [
+  "listYtdStripeCharges",
+  "numericCents",
+]);
+assert.ok(
+  !importedNames(parishGivingReports, "../lib/stripe-connect.js").has("summarizeCharges"),
+  "parish-giving-reports must not silently substitute stripe-connect's divergent summarizeCharges",
+);
+assertImports(parishGivingReports, "../lib/stripe-volume.js", [
+  "refreshStripeVolume",
+  "summarizeStoredStripeVolume",
+]);
+assertImports(parishGivingReports, "../lib/core.js", ["d1"]);
+assertImports(parishGivingReports, "../lib/format.js", ["monthLabel"]);
+assertImports(worker, "./handlers/parish-giving-reports.js", givingReportPublicFunctions.slice(1));
+const givingReportParishWorkerImports = importedNames(worker, "./handlers/parish.js");
+for (const name of givingReportPublicFunctions) {
+  assert.ok(!givingReportParishWorkerImports.has(name), `worker should no longer import ${name} from parish.js`);
+}
+assert.match(parish, /export function summarizeCharges\b/, "the deliberately divergent summarizeCharges should remain in parish.js");
 const sacramentPublicFunctions = [
   "handleAdminSetSacramentsEnabled",
   "sacramentTypeLabel",
@@ -507,7 +565,6 @@ assert.match(
 assertImports(parish, "../lib/stripe-connect.js", [
   "booleanFromStripeMetadata",
   "checkoutPaymentIntentId",
-  "listYtdStripeCharges",
   "normalizedCheckoutPaymentStatus",
   "numericCents",
   "stripeAccountStatus",

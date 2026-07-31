@@ -116,10 +116,6 @@ import {
   handleParishDemoTier,
   handleParishSubscriptionRefresh,
   handleParishSubscriptionPortal,
-  handleParishGivingSummary,
-  handleParishStripeVolume,
-  handleParishGivingHistory,
-  handleParishRecurringHealth,
   handleParishDashboard,
   handleParishFeatureRequestDismiss,
   handleParishSession,
@@ -130,6 +126,12 @@ import {
   handleParishPasswordResetConfirm,
   requireDonor,
 } from "./handlers/parish.js";
+import {
+  handleParishGivingHistory,
+  handleParishGivingSummary,
+  handleParishRecurringHealth,
+  handleParishStripeVolume,
+} from "./handlers/parish-giving-reports.js";
 import {
   loadCommemorationEntries,
   weekWindow,
