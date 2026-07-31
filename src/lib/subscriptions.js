@@ -66,6 +66,19 @@ export const subscriptionTiers = [
   }
 ];
 
+export const PARISH_INTRO_DEMO_DAYS = 30;
+
+// The public offer is available once to each verified canonical community.
+// Pending or abandoned Checkout Sessions do not consume it; activation is
+// recorded only after Stripe creates the subscription.
+export function parishIntroDemoEligible(registration = {}) {
+  return !registration.stripeSubscriptionId
+    && !registration.subscriptionActivatedAt
+    && !registration.subscriptionTrialStartedAt
+    && !registration.subscriptionTrialEndsAt
+    && !registration.subscriptionIntroDemoRedeemedAt;
+}
+
 export function publicSubscriptionTiers() {
   return subscriptionTiers.map(({ stripePriceEnv, ...tier }) => tier);
 }

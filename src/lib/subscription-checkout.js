@@ -38,6 +38,7 @@ export async function createSubscriptionCheckoutForRegistration({
   body = {},
   returnPath = "/admin",
   allowTrial = false,
+  introductoryTrialDays = 0,
   saveRegistrationRecord
 }) {
   const tierId = body.subscriptionTier || registration.subscriptionTier || defaultSubscriptionTier(registration);
@@ -69,7 +70,12 @@ export async function createSubscriptionCheckoutForRegistration({
   if (!gate.ok) return json(gate.body, { status: gate.status });
 
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-  const requestedTrialDays = allowTrial ? Math.trunc(Number(body.trialDays || 0)) : 0;
+  // introductoryTrialDays comes from a trusted server route. Browser-provided
+  // trialDays stays ignored unless an authenticated admin opts into allowTrial.
+  const trustedIntroDays = Math.trunc(Number(introductoryTrialDays || 0));
+  const requestedTrialDays = trustedIntroDays > 0
+    ? trustedIntroDays
+    : allowTrial ? Math.trunc(Number(body.trialDays || 0)) : 0;
   const trialDays = requestedTrialDays >= 1 && requestedTrialDays <= 90 ? requestedTrialDays : 0;
 
   // An active parish already has a Stripe subscription. Change its existing

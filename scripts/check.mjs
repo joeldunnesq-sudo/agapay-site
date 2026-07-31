@@ -271,6 +271,13 @@ assert.ok(
   "My AGAPAY should combine one-time and recurring giving under Tithes and offer both commemoration types"
 );
 assert.ok(
+  myAgapayGivePage.includes('data-gift-frequency-mode="once"')
+    && myAgapayGivePage.includes('data-gift-frequency-mode="recurring"')
+    && !myAgapayGivePage.includes('<select class="form-select" id="frequency"')
+    && donorApp.includes("function setDonorGiftFrequency"),
+  "My AGAPAY giving should use side-by-side one-time and recurring pills while preserving recurring cadence"
+);
+assert.ok(
   donorApp.includes("function parishHasGivingPlus")
     && donorApp.includes("function updateGivingTierTiles")
     && donorApp.includes("function openGivingPlusPaywall")
@@ -665,7 +672,8 @@ assert.ok(taxReadinessLib.includes("export function withTaxReadinessDefaults"), 
 assert.ok(subscriptionCheckoutLib.includes("taxReadinessCheckoutGate(registration)"), "subscription-checkout.js should call the tax readiness gate");
 assert.ok(subscriptionCheckoutLib.includes('"subscription_data[trial_settings][end_behavior][missing_payment_method]", "cancel"'), "demo checkout should cancel at trial end when no payment method was added");
 assert.ok(stripeHandler.includes("allowTrial: true"), "the authenticated admin checkout route should be authorized to create demos");
-assert.ok(!parishHandler.includes("allowTrial: true"), "the parish checkout route must not be able to grant its own free trial");
+assert.ok(parishHandler.includes("introductoryTrialDays: parishIntroDemoEligible(found.registration) ? PARISH_INTRO_DEMO_DAYS : 0"), "the parish route should grant the server-controlled introductory demo only when eligible");
+assert.ok(parishAppJs.includes("Start free 30-day demo") && parishAppJs.includes("No card is required"), "the parish dashboard should explain the no-card 30-day demo");
 assert.ok(
   subscriptionCheckoutLib.indexOf("tier.monthlyCents === 0") < subscriptionCheckoutLib.indexOf("taxReadinessCheckoutGate(registration)"),
   "the free-tier early return must come BEFORE the tax readiness gate, so free/non-billable tiers bypass it entirely"
