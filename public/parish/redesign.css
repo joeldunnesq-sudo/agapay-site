@@ -2254,3 +2254,64 @@ textarea {
     font-size:13px;
   }
 }
+
+/* The Overview activity table lives in the narrow main column. Fit it to
+   that card instead of inheriting the scrollable 760px table minimum. */
+.acct-overview-activity-table {
+  overflow-x:hidden;
+}
+
+.acct-overview-activity-table .acct-table {
+  width:100%;
+  min-width:0;
+  table-layout:fixed;
+}
+
+.acct-overview-activity-table col.date { width:18%; }
+.acct-overview-activity-table col.entry { width:23%; }
+.acct-overview-activity-table col.memo { width:39%; }
+.acct-overview-activity-table col.amount { width:20%; }
+.acct-overview-activity-table th,
+.acct-overview-activity-table td {
+  overflow-wrap:anywhere;
+}
+.acct-overview-activity-table th:last-child,
+.acct-overview-activity-table td:last-child {
+  text-align:right;
+}
+
+@media(max-width:600px) {
+  .acct-overview-activity-table .acct-table,
+  .acct-overview-activity-table tbody {
+    display:block;
+  }
+
+  .acct-overview-activity-table thead,
+  .acct-overview-activity-table colgroup {
+    display:none;
+  }
+
+  .acct-overview-activity-table tr {
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr) auto;
+    grid-template-areas:"date entry amount" "memo memo memo";
+    gap:4px 10px;
+    padding:11px 12px;
+    border-bottom:1px solid rgba(6,21,34,.07);
+  }
+
+  .acct-overview-activity-table tr:last-child {
+    border-bottom:0;
+  }
+
+  .acct-overview-activity-table td {
+    padding:0;
+    border:0;
+  }
+
+  .acct-overview-activity-table td:nth-child(1) { grid-area:date; }
+  .acct-overview-activity-table td:nth-child(2) { grid-area:entry; }
+  .acct-overview-activity-table td:nth-child(3) { grid-area:memo; color:var(--stone); }
+  .acct-overview-activity-table td:nth-child(4) { grid-area:amount; white-space:nowrap; }
+  .acct-overview-activity-table td[colspan] { grid-column:1/-1; }
+}

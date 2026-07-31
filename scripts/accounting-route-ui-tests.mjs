@@ -74,6 +74,9 @@ assert.match(css, /purpose-built top bar/, "Accounting module navigation should 
 assert.match(css, /grid-template-columns:repeat\(10,minmax\(0,1fr\)\)/, "desktop Accounting navigation should fit without a slider");
 assert.match(css, /@media\(min-width:761px\)\s*\{\s*\.acct-suite-rail nav\s*\{\s*grid-template-columns:repeat\(11,minmax\(0,1fr\)\)/s, "both Accounting views should keep all eleven tabs on one desktop row");
 assert.match(css, /flex:0 0 auto/, "Accounting navigation must retain its full height above the cream workspace");
+assert.match(app, /acct-table-wrap acct-overview-activity-table/, "Overview activity needs its own non-scrolling table treatment");
+assert.match(css, /\.acct-overview-activity-table\s*\{[^}]*overflow-x:hidden/s);
+assert.match(css, /\.acct-overview-activity-table \.acct-table\s*\{[^}]*min-width:0;[^}]*table-layout:fixed/s);
 for (const staffAction of ["renderAccountingAccess", "bootstrapAccountingStaff", "verifyAccountingStaff", "addAccountingStaff", "changeAccountingPin", "lockAccountingWorkspace"]) assert.match(app, new RegExp(`function ${staffAction}\\b`), `missing Accounting staff action ${staffAction}`);
 assert.match(app, /initializeAccounting/);
 assert.match(app, /saveAccountingSettings/);
