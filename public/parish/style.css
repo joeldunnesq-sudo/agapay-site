@@ -752,6 +752,12 @@
     .communications-status.is-published { background:#e4f2e9; color:#26623c; }
     .communications-status.is-archived { background:#f0ece8; color:#766b62; }
     .communications-row-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; flex:0 0 auto; }
+    .communications-readers { flex:1 0 100%; border-radius:12px; padding:13px; background:#f7f4ed; color:var(--muted); }
+    .communications-readers > strong { color:var(--deep); font-family:Georgia,serif; }
+    .communications-readers p { margin:5px 0 0; font-size:12px; }
+    .communications-readers ul { display:grid; gap:7px; margin:10px 0 0; padding:0; list-style:none; }
+    .communications-readers li { display:flex; justify-content:space-between; gap:12px; border-top:1px solid var(--line); padding-top:7px; color:var(--deep); font-size:12px; }
+    .communications-readers time { color:var(--muted); font-size:11px; }
     .communications-empty { border:1px dashed var(--line); border-radius:12px; padding:26px; text-align:center; color:var(--muted); }
     .communications-empty strong { display:block; color:var(--deep); font-family:Georgia,serif; font-size:20px; }
     .communications-paywall { text-align:center; }
