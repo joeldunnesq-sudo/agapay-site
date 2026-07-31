@@ -518,10 +518,10 @@ function updateGivingTierTiles(parish) {
 
 const donorGiftTypeCopy = {
   stewardship: {
-    eyebrow: "Quick Parish Offering",
-    title: "Give to your parish.",
-    detailsTitle: "Parish Offering",
-    intro: "Tithe, steward, or make a general parish offering in one clean flow.",
+    eyebrow: "Quick Tithes",
+    title: "Give your tithes.",
+    detailsTitle: "Tithes",
+    intro: "Make a one-time tithe or establish a recurring rhythm of parish support in one clean flow.",
     context: "Your gift will be prepared as a parish offering. Use Designated Fund if this should go to a specific parish fund."
   },
   fund: {
@@ -630,16 +630,12 @@ function syncSacramentsEntry(parish) {
 }
 
 function updateQuickGiveLinks(parish) {
-  const oneTimeLink = document.getElementById("quickGiveOneTime");
-  const recurringLink = document.getElementById("quickGiveRecurring");
+  const tithesLink = document.getElementById("quickGiveTithes");
   const parishIcon = document.getElementById("quickGiveParishIcon");
   const desktopParishIcon = document.getElementById("desktopParishIcon");
-  const desktopOneTimeLink = document.getElementById("desktopQuickOneTime");
-  const desktopRecurringLink = document.getElementById("desktopQuickRecurring");
-  if (oneTimeLink) oneTimeLink.href = quickDonorGiftUrl("stewardship", parish, { frequency: "once" });
-  if (recurringLink) recurringLink.href = quickDonorGiftUrl("stewardship", parish, { frequency: "monthly" });
-  if (desktopOneTimeLink) desktopOneTimeLink.href = quickDonorGiftUrl("stewardship", parish, { frequency: "once" });
-  if (desktopRecurringLink) desktopRecurringLink.href = quickDonorGiftUrl("stewardship", parish, { frequency: "monthly" });
+  const desktopTithesLink = document.getElementById("desktopQuickTithes");
+  if (tithesLink) tithesLink.href = quickDonorGiftUrl("stewardship", parish);
+  if (desktopTithesLink) desktopTithesLink.href = quickDonorGiftUrl("stewardship", parish);
   if (parishIcon) parishIcon.innerHTML = communityIconSvg(parish?.type);
   if (desktopParishIcon) desktopParishIcon.innerHTML = communityIconSvg(parish?.type);
   updateGivingTierTiles(parish);
@@ -2866,6 +2862,7 @@ async function submitCommemoration(event) {
   const departed = linesFromField("commemorationDepartedNames");
   const parishId = document.getElementById("commemorationParishId")?.value || donorProfile()?.defaultParishId || "";
   const amount = document.getElementById("amount")?.value || "5";
+  const commemorationKind = document.querySelector('input[name="commemorationServiceKind"]:checked')?.value || "proskomedia_liturgy";
   if (!living.length && !departed.length) {
     setDonorStatus("Add at least one living or departed name.", "error");
     return;
@@ -2895,6 +2892,7 @@ async function submitCommemoration(event) {
           parishId,
           namesLiving: living.join("\n"),
           namesDeparted: departed.join("\n"),
+          commemorationKind,
           note
         })
       });
@@ -2921,6 +2919,7 @@ async function submitCommemoration(event) {
         email: session.email,
         namesLiving: living.join("\n"),
         namesDeparted: departed.join("\n"),
+        commemorationKind,
         inMemoriam: note,
         paymentMethod: selectedDonorPaymentMethod("once"),
         coverFees: document.getElementById("coverFees")?.checked !== false,
@@ -2976,6 +2975,9 @@ async function startDonorCheckout(event) {
     : normalizedGiftType === "commemoration"
       ? document.getElementById("commemorationIntentionNote")?.value || ""
       : "";
+  const commemorationKind = normalizedGiftType === "commemoration"
+    ? document.querySelector('input[name="commemorationKind"]:checked')?.value || "proskomedia_liturgy"
+    : "";
   // Same "give anonymously" + "message of encouragement" opportunity the
   // public campaign slug page offers, so a My AGAPAY gift surfaces on that
   // page the same way a public-page gift would.
@@ -3006,6 +3008,7 @@ async function startDonorCheckout(event) {
         campaignDescription: ["campaign", "feast"].includes(normalizedGiftType) ? campaign?.description || "" : "",
         namesLiving: livingNames,
         namesDeparted: departedNames,
+        commemorationKind,
         inMemoriam: intentionNote,
         publicAnonymous,
         publicComment,
@@ -3737,6 +3740,10 @@ async function requestParishStewardshipUpgrade(clickedButton) {
 
 function renderCommemorationsCard() {
   return `<form class="sac-card-form" id="commemorationForm" onsubmit="submitCommemoration(event)">
+    <div class="donor-commemoration-kind-options" role="radiogroup" aria-label="Type of commemoration">
+      <label><input type="radio" name="commemorationServiceKind" value="proskomedia_liturgy" checked /><span><strong>Liturgical commemoration</strong><small>At the Proskomedia and Divine Liturgy</small></span></label>
+      <label><input type="radio" name="commemorationServiceKind" value="molieben_panikhida" /><span><strong>Molieben (Paraklesis) &amp; Panikhida (Parastas)</strong><small>Prayer service for the living or memorial service for the departed</small></span></label>
+    </div>
     <div class="form-grid">
       <div class="form-group full"><label class="form-label">My Parish</label><div class="form-input" id="commemorationParishDisplay" aria-live="polite">Loading your parish...</div><input id="commemorationParishId" type="hidden" /></div>
       <div class="form-group"><label class="form-label" for="commemorationLivingNames">Living names</label><textarea class="form-textarea" id="commemorationLivingNames" placeholder="One name per line"></textarea></div>

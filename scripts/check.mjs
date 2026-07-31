@@ -257,12 +257,17 @@ assert.ok(donorHome.includes("/myagapay/account"), "donor home avatar should lin
 assert.ok(donorHome.includes("Active Funds") && donorHome.includes("desktopActiveFunds") && donorHome.includes("activeFunds"), "Give dashboard should show active parish funds on desktop and mobile");
 assert.ok(donorHome.includes("Next Feast Offering"), "Give dashboard should use a giving-oriented feast card heading");
 assert.ok(
-  myAgapayGiveHome.includes('id="quickGiveOneTime"')
-    && myAgapayGiveHome.includes('id="quickGiveRecurring"')
+  myAgapayGiveHome.includes('id="quickGiveTithes"')
+    && !myAgapayGiveHome.includes('id="quickGiveOneTime"')
+    && !myAgapayGiveHome.includes('id="quickGiveRecurring"')
     && myAgapayGiveHome.includes('data-giving-plus-gift="candles"')
-    && myAgapayGivePage.includes("<h3>One-time Gift</h3>")
-    && myAgapayGivePage.includes("<h3>Recurring Gift</h3>"),
-  "My AGAPAY should present Starter donors with one-time and recurring giving while marking specialty tiles for Giving Plus"
+    && myAgapayGivePage.includes("<h3>Tithes</h3>")
+    && !myAgapayGivePage.includes("<h3>One-time Gift</h3>")
+    && !myAgapayGivePage.includes("<h3>Recurring Gift</h3>")
+    && myAgapayGivePage.includes('value="proskomedia_liturgy"')
+    && myAgapayGivePage.includes('value="molieben_panikhida"')
+    && myAgapayGivePage.includes("Molieben (Paraklesis) &amp; Panikhida (Parastas)"),
+  "My AGAPAY should combine one-time and recurring giving under Tithes and offer both commemoration types"
 );
 assert.ok(
   donorApp.includes("function parishHasGivingPlus")
@@ -341,6 +346,12 @@ assert.ok(!learnDashboardShell.includes("Back to Give"), "Learn account menu sho
 assert.ok(learnDashboardShell.includes("myagapay-menu-trigger") && !learnDashboardShell.includes("learn-account-utility-avatar"), "Learn should replace account-holder initials with the shared hamburger menu");
 
 const giveHtml = await readFile("public/give/form.html", "utf8");
+assert.ok(
+  giveHtml.includes('gift-type-name">Tithes</span>')
+    && !giveHtml.includes("Weekly Stewardship")
+    && giveHtml.includes("Molieben (Paraklesis) &amp; Panikhida (Parastas)"),
+  "public parish giving should label stewardship as Tithes and include Greek commemoration terminology"
+);
 const givePricingHtml = await readFile("public/give/pricing.html", "utf8");
 const subscriptionCatalog = await readFile("src/lib/subscriptions.js", "utf8");
 const starterPricingCard = givePricingHtml.slice(

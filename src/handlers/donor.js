@@ -2186,6 +2186,9 @@ export async function handleDonorCommemorations(request, env) {
   const parishId = String(body.parishId || donor.defaultParishId || "").trim();
   const namesLiving = String(body.namesLiving || body.living || "").trim();
   const namesDeparted = String(body.namesDeparted || body.departed || "").trim();
+  const commemorationKind = String(body.commemorationKind || "") === "molieben_panikhida"
+    ? "molieben_panikhida"
+    : "proskomedia_liturgy";
   const note = String(body.note || body.inMemoriam || "").trim().slice(0, 2000);
   if (!parishId) {
     return json({ error: "Choose a parish before submitting commemorations.", detail: "Set a home parish in Settings, or include parishId." }, { status: 400 });
@@ -2222,6 +2225,7 @@ export async function handleDonorCommemorations(request, env) {
       amountCents: 0,
       namesLiving,
       namesDeparted,
+      commemorationKind,
       note,
       createdAt: new Date().toISOString()
     }

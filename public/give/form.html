@@ -430,7 +430,7 @@ body {
               <circle cx="8" cy="17" r="1.5" fill="#C8A24A" stroke="none"/><path d="M12 17h8"/>
             </svg>
           </div>
-          <span class="gift-type-name">Weekly Stewardship</span>
+          <span class="gift-type-name">Tithes</span>
         </button>
 
         <button class="gift-type-card" data-type="candle" data-needs-names="false" data-needs-frequency="false" data-needs-feast="false" data-needs-funds="false" data-needs-candles="true" onclick="selectGiftType(this)">
@@ -673,8 +673,8 @@ body {
         </label>
         <label class="commemoration-kind-option" onclick="selectCommemorationKind(this)">
           <input type="radio" name="commemorationKind" value="molieben_panikhida">
-          <span class="commemoration-kind-name">Molieben &amp; Panikhida</span>
-          <span class="commemoration-kind-copy">A Molieben for the living or Panikhida for the departed</span>
+          <span class="commemoration-kind-name">Molieben (Paraklesis) &amp; Panikhida (Parastas)</span>
+          <span class="commemoration-kind-copy">Prayer service for the living or memorial service for the departed</span>
         </label>
       </div>
       <p class="names-intro" id="commemorationKindIntro">These names will be <strong>transmitted directly to the priest</strong> for commemoration at the Proskomedia and Divine Liturgy. Enter one name per line.</p>
@@ -750,7 +750,7 @@ body {
     <div class="summary-section reveal reveal-delay-3">
       <div class="summary-inner">
         <div class="summary-row">
-          <span class="summary-label" id="summaryType">Weekly Stewardship</span>
+          <span class="summary-label" id="summaryType">Tithes</span>
           <span class="summary-value" id="summaryFreq">One-time</span>
         </div>
         <div class="summary-row" id="summaryDetailRow" style="display:none;">
@@ -933,7 +933,7 @@ body {
       if (input) input.checked = true;
       const isService = input?.value === 'molieben_panikhida';
       document.getElementById('commemorationKindIntro').innerHTML = isService
-        ? 'These names will be <strong>transmitted directly to the priest</strong> for a Molieben for the living or a Panikhida for the departed. Enter one name per line.'
+        ? 'These names will be <strong>transmitted directly to the priest</strong> for a Molieben (Paraklesis) for the living or a Panikhida (Parastas) for the departed. Enter one name per line.'
         : 'These names will be <strong>transmitted directly to the priest</strong> for commemoration at the Proskomedia and Divine Liturgy. Enter one name per line.';
     }
 
@@ -1286,7 +1286,7 @@ body {
       const feeCopy = document.querySelector('.fee-text p');
 
       const typeLabels = {
-        stewardship: 'Weekly Stewardship',
+        stewardship: 'Tithes',
         candle: 'Candles',
         feast: 'Festal Alms',
         funds: 'Designated Fund',
