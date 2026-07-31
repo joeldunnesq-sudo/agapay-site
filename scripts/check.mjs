@@ -99,6 +99,7 @@ await assert.rejects(access("public/donor/verify.html"), undefined, "static dono
 
 const registerHtml = await readFile("public/register.html", "utf8");
 const parishOnboardingGuide = await readFile("public/docs/AGAPAY-Stripe-Setup-Guide.pdf");
+const accountingSuiteGuide = await readFile("public/docs/AGAPAY-Accounting-Suite-Guide-Comprehensive.pdf");
 assert.ok(!registerHtml.includes("WEB3FORMS_KEY"), "registration should not expose Web3Forms key");
 assert.ok(registerHtml.includes("/api/registrations"), "registration should post to AgaPay API");
 assert.ok(registerHtml.includes("startDonorRegistration"), "registration should begin with a donor/family entry point");
@@ -112,6 +113,8 @@ assert.ok(parishHandler.includes('requiredFields') && parishHandler.includes('"s
 assert.ok(parishNotifications.includes("loadParishOnboardingGuideAttachment") && parishNotifications.includes("currentGuideAttachment"), "new-parish email should attach the same current guide served by the dashboard");
 assert.equal(parishOnboardingGuide.subarray(0, 4).toString(), "%PDF", "parish onboarding guide should be a real PDF");
 assert.ok(parishOnboardingGuide.length > 10000, "parish onboarding guide should contain the complete current setup guide");
+assert.equal(accountingSuiteGuide.subarray(0, 4).toString(), "%PDF", "accounting suite guide should be a real PDF");
+assert.ok(accountingSuiteGuide.length > 100000, "accounting suite guide should contain the complete comprehensive guide");
 
 const onboardingPage = await readFile("public/onboarding.html", "utf8");
 assert.ok(onboardingPage.includes("Register your Orthodox parish.") && onboardingPage.includes("Register Parish"), "onboarding page should present parish registration only for now");

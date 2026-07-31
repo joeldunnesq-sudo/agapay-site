@@ -77,6 +77,13 @@ assert.match(css, /flex:0 0 auto/, "Accounting navigation must retain its full h
 assert.match(app, /acct-table-wrap acct-overview-activity-table/, "Overview activity needs its own non-scrolling table treatment");
 assert.match(css, /\.acct-overview-activity-table\s*\{[^}]*overflow-x:hidden/s);
 assert.match(css, /\.acct-overview-activity-table \.acct-table\s*\{[^}]*min-width:0;[^}]*table-layout:fixed/s);
+assert.match(app, /fetch\(accountingApi\('\/reports\/fund-activity'\)/, "Accounting overview must load canonical fund balances");
+assert.match(app, /reports:\s*\{[^}]*fundActivity:\s*fundActivity\.report/s, "Accounting state must retain the canonical fund-activity report");
+assert.match(app, /fundActivity\.find\(\(row\) => row\.fundId === fund\.id \|\| row\.code === fund\.code\)\?\.endingBalance/, "Overview and Funds must render the report's ending fund balance");
+assert.doesNotMatch(app, /const fundBalance = \(fund\) => accountingData\.ledger/, "Overview must not total balanced debit and credit lines as a fund balance");
+assert.match(app, /Accounting Suite Guide/, "Accounting Settings must surface the comprehensive guide");
+assert.match(app, /\/docs\/AGAPAY-Accounting-Suite-Guide-Comprehensive\.pdf/g, "Accounting Settings must open and download the guide");
+assert.match(css, /\.acct-guide-card\s*\{[^}]*grid-column:1\/-1/s, "Accounting guide should be prominent across the Settings grid");
 for (const staffAction of ["renderAccountingAccess", "bootstrapAccountingStaff", "verifyAccountingStaff", "addAccountingStaff", "changeAccountingPin", "lockAccountingWorkspace"]) assert.match(app, new RegExp(`function ${staffAction}\\b`), `missing Accounting staff action ${staffAction}`);
 assert.match(app, /initializeAccounting/);
 assert.match(app, /saveAccountingSettings/);

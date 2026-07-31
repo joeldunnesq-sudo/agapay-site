@@ -224,6 +224,8 @@ assert.match(app, />Record a Non-Cash Gift</);
 assert.match(app, /function accountingInKindGiftForm/);
 assert.match(app, /name="itemDescription"[^>]*required/);
 assert.match(app, /name="valuationBasis"[^>]*required/);
+assert.match(app, /Processional cross, vehicle, building materials, or donated services/);
+assert.doesNotMatch(app, /placeholder="Organ,/);
 assert.match(app, /accountingApi\('\/simple\/in-kind-gifts'\)/);
 assert.match(app, /\['asset','expense'\]\.includes\(account\.category\)/);
 assert.doesNotMatch(app.slice(app.indexOf("function accountingInKindGiftForm"), app.indexOf("function accountingOverviewHero")), /depositAccountId|bankAccounts/);

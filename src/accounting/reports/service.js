@@ -280,11 +280,13 @@ export async function fundActivity(db, { actor, startDate, endDate, fundId = "",
       netChange: 0,
       endingBalance: 0,
     };
+    const beginning = money(r.beginning_raw);
     const period = money(r.period_raw);
     if (r.category === "revenue") item.revenue += -period;
     else if (r.category === "expense") item.expenses += period;
-    else item.otherActivity += period;
-    item.beginningBalance += money(r.beginning_raw);
+    else if (r.category === "net_asset") item.otherActivity += -period;
+    if (["revenue", "expense", "net_asset"].includes(r.category))
+      item.beginningBalance += -beginning;
     item.netChange = item.revenue - item.expenses + item.otherActivity;
     item.endingBalance = item.beginningBalance + item.netChange;
     funds.set(r.id, item);
