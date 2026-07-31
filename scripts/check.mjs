@@ -181,6 +181,7 @@ assert.ok(rootPage.includes('/manifest.webmanifest') && rootPage.includes('/pwa-
 assert.ok(rootManifest.includes('"start_url": "/?source=pwa"') && rootManifest.includes('"scope": "/"'), "root PWA manifest should launch and scope the public AGAPAY app at the site root");
 assert.ok(rootManifest.includes('"orientation": "portrait-primary"'), "root PWA manifest should prefer the phone-first portrait orientation");
 assert.ok(givingOverviewPage.includes('/pwa-register.js') && givingOverviewPage.includes('id="heroInstallBtn"'), "Give homepage should register the service worker and route the hero Get the App button through install logic");
+assert.ok(/class="hero-actions"[\s\S]{0,500}href="\/give\/pricing"[\s\S]{0,80}>View Pricing<\/a>/.test(givingOverviewPage), "Give homepage hero should link directly to pricing");
 assert.ok(givingOverviewPage.includes("const isAndroid") && givingOverviewPage.includes("triggerAndroidInstall()") && givingOverviewPage.includes('scrollToInstall(isIOS ? "apple" : "android")'), "Give homepage hero install button should prompt Android users and scroll other users to app instructions");
 assert.ok(adminHtml.includes('/admin/manifest.webmanifest') && adminLoginHtml.includes('/admin/manifest.webmanifest'), "admin console should install with the dedicated AGAPAY Admin manifest");
 assert.ok(adminHtml.includes('/images/app/agapay-admin.png') && adminLoginHtml.includes('/images/app/agapay-admin.png') && adminManifest.includes('/images/app/agapay-admin.png'), "admin PWA should use the dedicated admin app icon");

@@ -136,6 +136,7 @@ assert.ok(app.includes('data-default-fund='), "journal account choices should ca
 assert.ok(app.includes("fundSelect.value = defaultFundId"), "selecting an expense account should automatically select its default fund");
 assert.ok(routes.includes('path.match(/^\\/accounts'), "accounting setup handler should expose account creation and editing");
 for (const reportName of ["Balance Sheet", "Income Statement", "Comparative Income Statement Periods", "Budget to Actual", "Income Statement by Fund", "Balance Sheet by Fund", "Income Statement by Month", "Comparative Income Statement", "Comparative Budget to Actual", "Budget by Fund"]) assert.ok(app.includes(`title:'${reportName}'`), `missing report library option ${reportName}`);
+assert.ok(app.includes(`<button onclick="openAccountingReport('expenses')">Expense Report</button>`), "Reports quick access should include Expense Report");
 for (const reportAction of ["renderAccountingReportLibrary", "filterAccountingReportLibrary", "openAccountingReport", "loadAccountingBudgetLibraryReport", "renderAccountingReports"]) assert.match(app, new RegExp(`function ${reportAction}\\b`), `missing report library action ${reportAction}`);
 assert.ok(app.includes("accountingCustomReport"), "custom comparative and fund reports should support screen, print, and CSV output");
 for (const recurringFeature of ["Recurring expenses", "Schedule expense", "Due transactions post automatically each morning", "Every two weeks"]) assert.ok(app.includes(recurringFeature), `missing recurring transaction feature ${recurringFeature}`);
