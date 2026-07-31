@@ -1210,7 +1210,7 @@
     try { sessionStorage.setItem('agapay.accountingExperienceMode', accountingExperienceMode); } catch {}
     renderAccountingPane();
   }
-  function accountingSimpleRevenueOptions() {
+  function accountingSimpleRevenueOptions(selectedId = '') {
     const order = Object.keys(ACCOUNTING_SIMPLE_REVENUE_LABELS);
     return accountingData.accounts
       .filter((account) => account.category === 'revenue' && account.isActive !== false && !account.archivedAt)
@@ -1219,14 +1219,81 @@
         if (leftIndex >= 0 || rightIndex >= 0) return (leftIndex < 0 ? order.length : leftIndex) - (rightIndex < 0 ? order.length : rightIndex);
         return String(left.name || '').localeCompare(String(right.name || ''));
       })
-      .map((account) => `<option value="${escapeAttr(account.id)}">${escapeHtml(ACCOUNTING_SIMPLE_REVENUE_LABELS[account.id] || account.name)}</option>`)
+      .map((account) => `<option value="${escapeAttr(account.id)}" ${account.id === selectedId ? 'selected' : ''}>${escapeHtml(ACCOUNTING_SIMPLE_REVENUE_LABELS[account.id] || account.name)}</option>`)
       .join('');
+  }
+  function accountingSimpleFundOptions(selectedId = '') {
+    return accountingData.funds.map((fund) => `<option value="${escapeAttr(fund.id)}" ${fund.id === selectedId ? 'selected' : ''}>${escapeHtml(fund.code)} · ${escapeHtml(fund.name)}</option>`).join('');
   }
   function accountingSimpleIncomeForm() {
     const defaultFund = accountingData.funds.find((fund) => Number(fund.isDefault)) || accountingData.funds[0];
     const banks = accountingData.bankAccounts || [];
     if (!banks.length) return `<section class="acct-simple-income"><div><span class="acct-kicker">Record Income</span><h2>Add a bank account first</h2><p>A deposit needs a destination account. Open Reconciliation to add the parish checking or savings account.</p></div><button class="acct-primary" onclick="setAccountingView('banking')">Open bank accounts</button></section>`;
-    return `<section class="acct-simple-income"><div class="acct-simple-income-head"><div><span class="acct-kicker">Record Income</span><h2>Record a deposit</h2><p>Tell AGAPAY what happened. The complete ledger entry is created and posted for you.</p></div><small>Need to split one deposit across several funds or income categories? Switch to Accountant view and enter a custom journal entry.</small></div><form onsubmit="submitAccountingSimpleIncome(event)"><div class="acct-simple-income-grid"><label>Where did the money go?<select name="depositAccountId" required>${banks.map((bank) => `<option value="${escapeAttr(bank.ledgerAccountId)}">${escapeHtml(bank.name)}${bank.maskedLast4 ? ` · •••• ${escapeHtml(bank.maskedLast4)}` : ''}</option>`).join('')}</select></label><label>What kind of income was this?<select name="revenueAccountId" required><option value="">Choose income type</option>${accountingSimpleRevenueOptions()}</select></label><label>Which fund?<select name="fundId" required>${accountingData.funds.map((fund) => `<option value="${escapeAttr(fund.id)}" ${fund.id === defaultFund?.id ? 'selected' : ''}>${escapeHtml(fund.code)} · ${escapeHtml(fund.name)}</option>`).join('')}</select></label><label>Amount<input name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="0.00"></label><label>Date<input name="entryDate" type="date" required value="${new Date().toISOString().slice(0,10)}"></label><label class="wide">Description<input name="description" maxlength="240" required placeholder="Sunday offering, fundraiser deposit, or other detail"></label></div><div class="acct-simple-income-foot"><span class="acct-form-status">${escapeHtml(accountingSimpleIncomeMessage)}</span><button class="acct-primary">Record income</button></div></form></section>`;
+    return `<section class="acct-simple-income"><div class="acct-simple-income-head"><div><span class="acct-kicker">Record Income</span><h2>Record a deposit</h2><p>Tell AGAPAY what happened. The complete ledger entry is created and posted for you.</p></div><button type="button" class="acct-link" data-enable-income-splits onclick="enableAccountingIncomeSplits(this)">Split this deposit across funds</button></div><form onsubmit="submitAccountingSimpleIncome(event)"><div class="acct-simple-income-grid acct-simple-income-details"><label>Where did the money go?<select name="depositAccountId" required>${banks.map((bank) => `<option value="${escapeAttr(bank.ledgerAccountId)}">${escapeHtml(bank.name)}${bank.maskedLast4 ? ` · •••• ${escapeHtml(bank.maskedLast4)}` : ''}</option>`).join('')}</select></label><label>Date<input name="entryDate" type="date" required value="${new Date().toISOString().slice(0,10)}"></label><label class="wide">Description<input name="description" maxlength="240" required placeholder="Sunday offering, fundraiser deposit, or other detail"></label></div><div class="acct-income-split-total" hidden><label>Total deposit amount<input data-income-total type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" oninput="updateAccountingSplitDepositBalance(this.form)"></label><small>This must equal all allocations below.</small></div><div class="acct-income-splits" data-income-splits>${accountingIncomeSplitRow({ fundId:defaultFund?.id || '' }, false)}</div><div class="acct-income-split-actions" hidden><button type="button" class="acct-add-line" onclick="addAccountingIncomeSplit(this)">+ Add another allocation</button><button type="button" class="acct-link" onclick="disableAccountingIncomeSplits(this)">Use one allocation</button></div><div class="acct-balance acct-income-split-balance" hidden></div><div class="acct-simple-income-foot"><span class="acct-form-status">${escapeHtml(accountingSimpleIncomeMessage)}</span><button class="acct-primary" data-income-submit>Record income</button></div></form></section>`;
+  }
+  function accountingIncomeSplitRow(split = {}, removable = true) {
+    const defaultFund = accountingData.funds.find((fund) => Number(fund.isDefault)) || accountingData.funds[0];
+    return `<div class="acct-income-split-row" data-income-split-row><label>What kind of income was this?<select data-income-revenue required onchange="updateAccountingSplitDepositBalance(this.form)"><option value="">Choose income type</option>${accountingSimpleRevenueOptions(split.revenueAccountId || '')}</select></label><label>Which fund?<select data-income-fund required onchange="updateAccountingSplitDepositBalance(this.form)">${accountingSimpleFundOptions(split.fundId || defaultFund?.id || '')}</select></label><label><span data-split-amount-label>Amount</span><input data-income-amount type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="0.00" value="${split.amount ? escapeAttr(split.amount) : ''}" oninput="updateAccountingSplitDepositBalance(this.form)"></label><label class="acct-income-line-memo">Line memo <small>Optional</small><input data-income-memo maxlength="240" placeholder="Envelope batch or collection detail" value="${escapeAttr(split.description || '')}"></label>${removable ? '<button type="button" class="acct-remove-line" onclick="removeAccountingIncomeSplit(this)" aria-label="Remove split">×</button>' : ''}</div>`;
+  }
+  function enableAccountingIncomeSplits(button) {
+    const form = button.closest('.acct-simple-income').querySelector('form');
+    if (!form || form.dataset.splitEnabled === '1') return;
+    form.dataset.splitEnabled = '1';
+    button.hidden = true;
+    form.querySelector('.acct-income-split-total').hidden = false;
+    form.querySelector('.acct-income-split-actions').hidden = false;
+    form.querySelector('.acct-income-split-balance').hidden = false;
+    const firstAmount = form.querySelector('[data-income-amount]');
+    form.querySelector('[data-income-total]').value = firstAmount.value;
+    form.querySelectorAll('[data-split-amount-label]').forEach((label) => { label.textContent = 'Allocation amount'; });
+    addAccountingIncomeSplit(form.querySelector('.acct-add-line'));
+  }
+  function disableAccountingIncomeSplits(button) {
+    const form = button.closest('form');
+    if (!form) return;
+    form.dataset.splitEnabled = '0';
+    Array.from(form.querySelectorAll('[data-income-split-row]')).slice(1).forEach((row) => row.remove());
+    form.querySelector('.acct-income-split-total').hidden = true;
+    form.querySelector('.acct-income-split-actions').hidden = true;
+    form.querySelector('.acct-income-split-balance').hidden = true;
+    form.closest('.acct-simple-income').querySelector('[data-enable-income-splits]').hidden = false;
+    form.querySelectorAll('[data-split-amount-label]').forEach((label) => { label.textContent = 'Amount'; });
+    form.querySelector('[data-income-submit]').disabled = false;
+  }
+  function addAccountingIncomeSplit(button) {
+    const form = button.closest('form');
+    const holder = form?.querySelector('[data-income-splits]');
+    if (!holder) return;
+    holder.insertAdjacentHTML('beforeend', accountingIncomeSplitRow());
+    updateAccountingSplitDepositBalance(form);
+  }
+  function removeAccountingIncomeSplit(button) {
+    const form = button.closest('form');
+    if (form?.querySelectorAll('[data-income-split-row]').length <= 2) return;
+    button.closest('[data-income-split-row]')?.remove();
+    updateAccountingSplitDepositBalance(form);
+  }
+  function collectAccountingIncomeSplits(form) {
+    const cents = (value) => Math.round(Number(value || 0) * 100);
+    return Array.from(form.querySelectorAll('[data-income-split-row]')).map((row) => ({
+      revenueAccountId:row.querySelector('[data-income-revenue]').value,
+      fundId:row.querySelector('[data-income-fund]').value,
+      amount:cents(row.querySelector('[data-income-amount]').value),
+      description:row.querySelector('[data-income-memo]').value.trim()
+    }));
+  }
+  function updateAccountingSplitDepositBalance(form) {
+    if (!form || form.dataset.splitEnabled !== '1') return;
+    const cents = (value) => Math.round(Number(value || 0) * 100);
+    const total = cents(form.querySelector('[data-income-total]').value);
+    const splits = collectAccountingIncomeSplits(form);
+    const allocated = splits.reduce((sum, split) => sum + split.amount, 0);
+    const complete = splits.every((split) => split.revenueAccountId && split.fundId && Number.isSafeInteger(split.amount) && split.amount > 0);
+    const balanced = total > 0 && allocated === total && complete;
+    const balance = form.querySelector('.acct-income-split-balance');
+    balance.classList.toggle('balanced', balanced);
+    balance.innerHTML = `<span>Deposit <strong>${accountingMoney(total)}</strong></span><span>Allocated <strong>${accountingMoney(allocated)}</strong></span><span>${balanced ? 'Balanced ✓' : complete ? `Difference ${accountingMoney(Math.abs(total - allocated))}` : 'Complete every allocation'}</span>`;
+    form.querySelector('[data-income-submit]').disabled = !balanced;
   }
   function accountingSimpleActivityFeed() {
     const entries = accountingData.journals.filter((entry) => ['posted','reversed'].includes(entry.status)).slice(0, 8);
@@ -1524,17 +1591,24 @@
   async function submitAccountingSimpleIncome(event) {
     event.preventDefault();
     const form = event.currentTarget, status = form.querySelector('.acct-form-status'), button = form.querySelector('button[type="submit"],button.acct-primary');
-    const raw = Object.fromEntries(new FormData(form)), amount = Math.round(Number(raw.amount) * 100);
-    if (!raw.depositAccountId || !raw.revenueAccountId || !raw.fundId || !raw.entryDate || !raw.description.trim() || !Number.isSafeInteger(amount) || amount <= 0) {
+    const raw = Object.fromEntries(new FormData(form)), splitEnabled = form.dataset.splitEnabled === '1';
+    const splits = collectAccountingIncomeSplits(form);
+    const amount = splitEnabled ? Math.round(Number(form.querySelector('[data-income-total]').value) * 100) : splits[0]?.amount;
+    const allocated = splits.reduce((sum, split) => sum + split.amount, 0);
+    if (!raw.depositAccountId || !raw.entryDate || !String(raw.description || '').trim() || !Number.isSafeInteger(amount) || amount <= 0 || splits.some((split) => !split.revenueAccountId || !split.fundId || !Number.isSafeInteger(split.amount) || split.amount <= 0) || (splitEnabled && allocated !== amount)) {
       status.textContent = 'Complete every field and enter an amount greater than zero.';
       return;
     }
     button.disabled = true;
     status.textContent = 'Recording income…';
-    const response = await fetch(accountingApi('/simple/deposits'), {
+    const endpoint = splitEnabled && splits.length > 1 ? '/simple/split-deposits' : '/simple/deposits';
+    const body = endpoint === '/simple/split-deposits'
+      ? { entryDate:raw.entryDate, description:String(raw.description).trim(), depositAccountId:raw.depositAccountId, amount, splits, correlationId:`split-income-ui-${Date.now()}` }
+      : { entryDate:raw.entryDate, description:String(raw.description).trim(), depositAccountId:raw.depositAccountId, revenueAccountId:splits[0].revenueAccountId, fundId:splits[0].fundId, amount, correlationId:`simple-income-ui-${Date.now()}` };
+    const response = await fetch(accountingApi(endpoint), {
       method:'POST',
       headers:{ ...authHeaders(), 'Content-Type':'application/json' },
-      body:JSON.stringify({ entryDate:raw.entryDate, description:raw.description.trim(), depositAccountId:raw.depositAccountId, revenueAccountId:raw.revenueAccountId, fundId:raw.fundId, amount, correlationId:`simple-income-ui-${Date.now()}` })
+      body:JSON.stringify(body)
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {

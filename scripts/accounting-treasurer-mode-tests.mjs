@@ -3,7 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { initializeLedger, recordSimpleDeposit } from "../src/accounting/index.js";
+import { initializeLedger, recordSimpleDeposit, recordSplitDeposit } from "../src/accounting/index.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => readFileSync(path.join(root, file), "utf8");
@@ -65,12 +65,56 @@ assert.deepEqual(lines, [
 ]);
 console.log("PASS - recordSimpleDeposit creates and posts one balanced two-line entry");
 
+db.sqlite.prepare("INSERT INTO accounting_funds(id,code,name,restriction_type,is_default,is_active,is_system) VALUES(?,?,?,?,0,1,0)").run("fund_building","BUILDING","Building Fund","board_designated");
+db.sqlite.prepare("INSERT INTO accounting_funds(id,code,name,restriction_type,is_default,is_active,is_system) VALUES(?,?,?,?,0,1,0)").run("fund_candles","CANDLES","Candle Fund","unrestricted");
+const splitPosted = await recordSplitDeposit(db, {
+  actor,
+  entryDate:today,
+  description:"Sunday collection",
+  depositAccountId:"acct_1010",
+  amount:27000,
+  splits:[
+    { revenueAccountId:"acct_4000", fundId:"fund_general", amount:20000, description:"General envelopes" },
+    { revenueAccountId:"acct_4010", fundId:"fund_building", amount:5000, description:"Building envelopes" },
+    { revenueAccountId:"acct_4030", fundId:"fund_candles", amount:2000, description:"Candle box" }
+  ],
+  correlationId:"treasurer-split-test"
+});
+assert.equal(splitPosted.status, "posted");
+assert.equal(splitPosted.totalDebits, 27000);
+assert.equal(splitPosted.totalCredits, 27000);
+const splitLines = db.sqlite.prepare("SELECT account_id,fund_id,description,debit_amount,credit_amount FROM accounting_journal_lines WHERE journal_entry_id=? ORDER BY line_number").all(splitPosted.id).map((line) => ({ ...line }));
+assert.deepEqual(splitLines, [
+  { account_id:"acct_1010", fund_id:"fund_general", description:null, debit_amount:27000, credit_amount:0 },
+  { account_id:"acct_4000", fund_id:"fund_general", description:"General envelopes", debit_amount:0, credit_amount:20000 },
+  { account_id:"acct_4010", fund_id:"fund_building", description:"Building envelopes", debit_amount:0, credit_amount:5000 },
+  { account_id:"acct_4030", fund_id:"fund_candles", description:"Candle box", debit_amount:0, credit_amount:2000 }
+]);
+console.log("PASS - recordSplitDeposit posts one cash debit and three fund-specific revenue credits");
+
+const entriesBeforeRejectedSplit = db.sqlite.prepare("SELECT COUNT(*) count FROM accounting_journal_entries").get().count;
+await assert.rejects(() => recordSplitDeposit(db, {
+  actor,
+  entryDate:today,
+  description:"Mismatched collection",
+  depositAccountId:"acct_1010",
+  amount:10000,
+  splits:[
+    { revenueAccountId:"acct_4000", fundId:"fund_general", amount:6000 },
+    { revenueAccountId:"acct_4010", fundId:"fund_building", amount:3000 }
+  ]
+}), /must equal the total deposit amount/);
+assert.equal(db.sqlite.prepare("SELECT COUNT(*) count FROM accounting_journal_entries").get().count, entriesBeforeRejectedSplit);
+console.log("PASS - a mismatched split is rejected before a journal draft is created");
+
 const handler = read("src/handlers/accounting-ledger.js");
 assert.match(handler, /path==="\/simple\/deposits"/);
+assert.match(handler, /path==="\/simple\/split-deposits"/);
 assert.match(handler, /let capability=request\.method==="GET"\?"accounting\.view":"accounting\.journals\.create"/);
 assert.match(handler, /recordSimpleDeposit\(ctx\.db,\{actor:ctx\.actor,\.\.\.data\}\)/);
+assert.match(handler, /recordSplitDeposit\(ctx\.db,\{actor:ctx\.actor,\.\.\.data\}\)/);
 assert.doesNotMatch(handler, /accounting\.simple/);
-console.log("PASS - the simple-deposit route reuses accounting.journals.create");
+console.log("PASS - the simple and split-deposit routes reuse accounting.journals.create");
 
 const app = read("public/parish/app.js");
 const dashboard = read("public/parish/dashboard.html");
@@ -107,6 +151,14 @@ for (const [accountId, label] of Object.entries(expectedLabels)) {
 }
 assert.match(app, /ACCOUNTING_SIMPLE_REVENUE_LABELS\[account\.id\] \|\| account\.name/);
 console.log("PASS - seeded and custom revenue accounts have the required plain-language labels");
+
+assert.match(app, />Split this deposit across funds<\/button>/);
+assert.match(app, /accountingApi\(endpoint\)/);
+assert.match(app, /'\/simple\/split-deposits'/);
+assert.match(app, /function updateAccountingSplitDepositBalance/);
+assert.match(app, /form\.querySelector\('\[data-income-submit\]'\)\.disabled = !balanced/);
+assert.doesNotMatch(app, /Switch to Accountant view and enter a custom journal entry/);
+console.log("PASS - Treasurer income entry supports balanced multi-fund allocations without changing the single-deposit endpoint");
 
 const simpleFlow = app.slice(app.indexOf("function accountingSimpleIncomeForm"), app.indexOf("function accountingSimpleActivityFeed"));
 const billFlow = app.slice(app.indexOf("function showAccountingBillForm"), app.indexOf("async function createAccountingBill"));

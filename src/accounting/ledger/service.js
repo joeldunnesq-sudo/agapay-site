@@ -135,18 +135,34 @@ export async function postJournalEntry(db,{actor,journalEntryId,idempotencyKey,r
   return safeEntry(await first(db,"SELECT * FROM accounting_journal_entries WHERE id=?",journalEntryId));
 }
 
-export async function recordSimpleDeposit(db, { actor, entryDate, description, depositAccountId, revenueAccountId, fundId, amount, correlationId = "" }) {
+export async function recordSplitDeposit(db, { actor, entryDate, description, depositAccountId, amount, splits, correlationId = "" }) {
+  if (!Array.isArray(splits) || splits.length === 0) throw new ValidationError("At least one deposit split is required.");
+  if (splits.some((split) => !Number.isSafeInteger(Number(split.amount)) || Number(split.amount) <= 0)) throw new ValidationError("Every deposit split must have a positive whole-cent amount.");
+  const total = splits.reduce((sum, split) => sum + Number(split.amount), 0);
+  if (!Number.isSafeInteger(Number(amount)) || Number(amount) <= 0 || Number(amount) !== total) throw new ValidationError("Deposit split amounts must equal the total deposit amount.");
   const lines = [
-    { accountId: depositAccountId, fundId, debitAmount: amount },
-    { accountId: revenueAccountId, fundId, creditAmount: amount }
+    { accountId: depositAccountId, fundId: splits[0].fundId, debitAmount: total, description: null },
+    ...splits.map((split) => ({ accountId: split.revenueAccountId, fundId: split.fundId, creditAmount: Number(split.amount), description: split.description || null }))
   ];
   const draft = await createJournalDraft(db, { actor, entryDate, description, sourceType: "manual", lines, correlationId });
   return postJournalEntry(db, {
     actor,
     journalEntryId: draft.id,
-    idempotencyKey: `simple_deposit:${draft.id}`,
-    requestHash: await hash({ entryDate, depositAccountId, revenueAccountId, fundId, amount }),
+    idempotencyKey: `split_deposit:${draft.id}`,
+    requestHash: await hash({ entryDate, depositAccountId, amount: total, splits, description }),
     expectedVersion: 1,
+    correlationId
+  });
+}
+
+export async function recordSimpleDeposit(db, { actor, entryDate, description, depositAccountId, revenueAccountId, fundId, amount, correlationId = "" }) {
+  return recordSplitDeposit(db, {
+    actor,
+    entryDate,
+    description,
+    depositAccountId,
+    amount,
+    splits: [{ revenueAccountId, fundId, amount, description: null }],
     correlationId
   });
 }

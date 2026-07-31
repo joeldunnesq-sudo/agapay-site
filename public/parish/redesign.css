@@ -767,10 +767,26 @@
 .acct-simple-income-grid label { display:grid; gap:6px; color:var(--stone); font:700 10px var(--sans); }
 .acct-simple-income-grid label.wide { grid-column:span 2; }
 .acct-simple-income-grid input,.acct-simple-income-grid select { width:100%; box-sizing:border-box; border:1px solid var(--line); border-radius:7px; padding:11px; background:#fff; color:var(--ink); }
+.acct-simple-income-details { margin-bottom:14px; }
+.acct-income-splits { display:grid; gap:10px; }
+.acct-income-split-row { display:grid; grid-template-columns:minmax(180px,1.25fr) minmax(170px,1fr) minmax(120px,.65fr) minmax(180px,1fr) 32px; gap:10px; align-items:end; padding:12px; border:1px solid rgba(6,21,34,.08); border-radius:9px; background:#fff; }
+.acct-income-split-row label,.acct-income-split-total label { display:grid; gap:6px; color:var(--stone); font:700 10px var(--sans); }
+.acct-income-split-row label small { font-weight:500; }
+.acct-income-split-row input,.acct-income-split-row select,.acct-income-split-total input { width:100%; box-sizing:border-box; border:1px solid var(--line); border-radius:7px; padding:11px; background:#fff; color:var(--ink); }
+.acct-income-split-row:first-child .acct-remove-line { visibility:hidden; }
+.acct-simple-income form:not([data-split-enabled="1"]) .acct-income-line-memo,.acct-simple-income form:not([data-split-enabled="1"]) .acct-income-split-row .acct-remove-line { display:none; }
+.acct-simple-income form:not([data-split-enabled="1"]) .acct-income-split-row { grid-template-columns:repeat(3,minmax(0,1fr)); padding:0; border:0; background:transparent; }
+.acct-income-split-total { display:flex; align-items:end; gap:12px; margin:0 0 12px; padding:13px; border-radius:9px; background:#f5f1e9; }
+.acct-income-split-total[hidden],.acct-income-split-actions[hidden],.acct-income-split-balance[hidden] { display:none; }
+.acct-income-split-total label { width:min(260px,100%); }
+.acct-income-split-total small { padding-bottom:11px; color:var(--stone); }
+.acct-income-split-actions { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.acct-income-split-balance { margin-top:12px; }
 .acct-simple-income-foot { display:flex; align-items:center; justify-content:space-between; gap:15px; margin-top:18px; padding-top:16px; border-top:1px solid var(--line); }
 @media(max-width:900px) {
   .acct-simple-hero,.acct-simple-overview { grid-template-columns:1fr; }
   .acct-simple-income-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .acct-income-split-row { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 @media(max-width:760px) {
   .acct-experience-toggle { order:3; width:100%; margin:7px 0 0; }
@@ -779,6 +795,8 @@
   .acct-simple-actions,.acct-simple-income-grid { grid-template-columns:1fr; }
   .acct-simple-income-head,.acct-simple-income-foot { align-items:stretch; flex-direction:column; }
   .acct-simple-income-grid label.wide { grid-column:auto; }
+  .acct-income-split-row,.acct-simple-income form:not([data-split-enabled="1"]) .acct-income-split-row { grid-template-columns:1fr; }
+  .acct-income-split-actions,.acct-income-split-total { align-items:stretch; flex-direction:column; }
 }
 .acct-workspace { box-sizing:border-box; width:100%; max-width:1220px; min-height:calc(100vh - 68px); margin:0 auto; padding:27px; }
 .acct-refresh { border:1px solid var(--line); border-radius:5px; padding:7px 11px; background:transparent; color:var(--ink); font:600 11px var(--serif); cursor:pointer; }
