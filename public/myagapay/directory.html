@@ -2181,10 +2181,14 @@
           <div><strong>${esc(member.preferredName)}</strong><small>${isSelf ? "You" : esc(relationshipLabel(member.relationship))}</small><small>${esc(namedaySummary)}</small></div>
           <div class="actions">
             <button class="btn secondary" type="button" data-edit-household-member="${esc(member.personId)}">Edit</button>
+            ${isSelf || member.child || member.accountLinked ? "" : `
+            <button class="btn secondary" type="button" data-share-household-member="${esc(member.personId)}">Share with ${esc(member.preferredName)}</button>
+            `}
             ${isSelf ? "" : `
             <button class="btn warn" type="button" data-delete-household-member="${esc(member.personId)}">Delete</button>
             `}
           </div>
+          <div class="notice" data-household-share-result="${esc(member.personId)}" hidden></div>
         </div>`;
       }).join("") : '<div class="empty"><strong>No family members found.</strong>Add an adult or child below.</div>';
     }
@@ -2996,8 +3000,59 @@
     document.getElementById("householdMemberList").addEventListener("click", async (event) => {
       const editButton = event.target.closest("[data-edit-household-member]");
       const deleteButton = event.target.closest("[data-delete-household-member]");
+      const shareButton = event.target.closest("[data-share-household-member]");
+      const copyButton = event.target.closest("[data-copy-household-share]");
       const household = firstHousehold();
       if (!household) return;
+      if (copyButton) {
+        const input = document.getElementById(copyButton.dataset.copyHouseholdShare);
+        if (!input) return;
+        try {
+          await navigator.clipboard.writeText(input.value);
+          showNotice("Household review link copied.");
+        } catch {
+          input.focus();
+          input.select();
+          showNotice("Select and copy the household review link shown below.");
+        }
+        return;
+      }
+      if (shareButton) {
+        const member = (householdDetailState?.members || []).find((item) => item.personId === shareButton.dataset.shareHouseholdMember);
+        if (!member) return;
+        const result = document.querySelector(`[data-household-share-result="${CSS.escape(member.personId)}"]`);
+        try {
+          shareButton.disabled = true;
+          shareButton.textContent = "Creating link…";
+          const payload = await api(`/api/directory/households/${encodeURIComponent(household.id)}/self/members/${encodeURIComponent(member.personId)}/share-link`, {
+            method: "POST",
+            body: "{}"
+          });
+          const shareUrl = new URL(payload.invitation.sharePath, window.location.origin).href;
+          const inputId = `householdShare${member.personId.replace(/[^a-z0-9_-]/gi, "")}`;
+          result.hidden = false;
+          result.innerHTML = `<strong>Send this private link to ${esc(member.preferredName)}.</strong>
+            <span>It expires in 14 days. Signing in and using it submits a parish review request; it does not connect the account automatically.</span>
+            <div class="actions"><input id="${esc(inputId)}" value="${esc(shareUrl)}" readonly aria-label="Household review link for ${esc(member.preferredName)}" />
+            <button class="btn secondary" type="button" data-copy-household-share="${esc(inputId)}">Copy link</button></div>`;
+          try {
+            await navigator.clipboard.writeText(shareUrl);
+            showNotice(`Review link for ${member.preferredName} copied.`);
+          } catch {
+            showNotice(`Review link for ${member.preferredName} is ready below.`);
+          }
+        } catch (error) {
+          if (result) {
+            result.hidden = false;
+            result.textContent = error.message || "Unable to create that household link.";
+            result.className = "notice error";
+          }
+        } finally {
+          shareButton.disabled = false;
+          shareButton.textContent = `Share with ${member.preferredName}`;
+        }
+        return;
+      }
       if (editButton) {
         const member = (householdDetailState?.members || []).find((item) => item.personId === editButton.dataset.editHouseholdMember);
         if (!member) {

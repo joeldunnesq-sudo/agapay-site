@@ -50,6 +50,11 @@ import {
   saveMySkillListing
 } from "../directory/skills-service.js";
 import { listMyDirectoryReviewRequests, respondToDirectoryReviewRequest } from "../directory/review-correspondence.js";
+import {
+  claimHouseholdShareInvitation,
+  createHouseholdShareInvitation,
+  inspectHouseholdShareInvitation
+} from "../directory/household-share-invitations.js";
 
 async function body(request) {
   return request.json().catch(() => ({}));
@@ -78,6 +83,20 @@ export async function handleDirectorySelfService(request, env) {
   try {
     const context = await withContext(request, env);
     if (!context) return unauthorized();
+
+    const householdShareTokenMatch = path.match(/^\/api\/directory\/household-share\/([^/]+)(?:\/(claim))?$/);
+    if (householdShareTokenMatch) {
+      const limited = await rateLimit(request, env, "directory-household-share-recipient", { limit: 20, windowSeconds: 300 });
+      if (limited) return limited;
+      const token = decodeURIComponent(householdShareTokenMatch[1]);
+      const action = householdShareTokenMatch[2] || "";
+      if (request.method === "GET" && !action) {
+        return json({ ok: true, invitation: await inspectHouseholdShareInvitation(env, { token }) });
+      }
+      if (request.method === "POST" && action === "claim") {
+        return json({ ok: true, result: await claimHouseholdShareInvitation(env, { context, token, correlationId }) }, { status: 201 });
+      }
+    }
 
     const invitationMatch = path.match(/^\/api\/directory\/invitations\/([^/]+)(?:\/(accept))?$/);
     if (invitationMatch) {
@@ -185,14 +204,20 @@ export async function handleDirectorySelfService(request, env) {
         })
       });
     }
-    const memberMatch = path.match(/^\/api\/directory\/households\/([^/]+)\/self\/members\/([^/]+)$/);
+    const memberMatch = path.match(/^\/api\/directory\/households\/([^/]+)\/self\/members\/([^/]+)(?:\/(share-link))?$/);
     if (memberMatch) {
       const householdId = decodeURIComponent(memberMatch[1]);
       const personId = decodeURIComponent(memberMatch[2]);
-      if (request.method === "PATCH") {
+      const action = memberMatch[3] || "";
+      if (request.method === "POST" && action === "share-link") {
+        const limited = await rateLimit(request, env, "directory-household-share-create", { limit: 10, windowSeconds: 300 });
+        if (limited) return limited;
+        return json({ ok: true, invitation: await createHouseholdShareInvitation(env, { context, householdId, personId, correlationId }) }, { status: 201 });
+      }
+      if (request.method === "PATCH" && !action) {
         return json({ ok: true, member: await updateHouseholdMember(env, { context, householdId, personId, data: await body(request), correlationId }) });
       }
-      if (request.method === "DELETE") {
+      if (request.method === "DELETE" && !action) {
         return json({ ok: true, member: await deleteHouseholdMember(env, { context, householdId, personId, correlationId }) });
       }
     }

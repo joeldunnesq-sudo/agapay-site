@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Join your household | My AGAPAY</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { --deep:#061522; --forest:#0b2130; --gold:#c8a24a; --cream:#f6f1e8; --muted:#6f6a60; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; display:grid; place-items:center; padding:24px; color:var(--deep); background:radial-gradient(circle at top, #fff 0, var(--cream) 58%); font-family:"DM Sans",sans-serif; }
+    main { width:min(100%,620px); background:#fff; border:1px solid rgba(111,106,96,.22); border-radius:22px; padding:clamp(26px,6vw,48px); box-shadow:0 22px 60px rgba(6,21,34,.12); }
+    .brand { display:flex; align-items:center; gap:10px; color:var(--deep); text-decoration:none; font-family:"Cormorant Garamond",serif; font-size:26px; }
+    .brand img { width:44px; height:44px; border-radius:9px; background:var(--deep); }
+    .eyebrow { margin-top:34px; color:#8b6a20; text-transform:uppercase; letter-spacing:.12em; font-size:11px; font-weight:600; }
+    h1 { margin:8px 0 12px; font:600 clamp(34px,7vw,52px)/.98 "Cormorant Garamond",serif; }
+    p { color:var(--muted); line-height:1.65; }
+    .notice { margin:24px 0; padding:16px; border-radius:12px; background:#f8f4eb; border:1px solid rgba(200,162,74,.3); line-height:1.55; }
+    .notice.error { color:#7a1d1d; background:#fff4f4; border-color:#e2aaaa; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:22px; }
+    button,a.button { appearance:none; border:0; border-radius:10px; padding:13px 18px; cursor:pointer; font:600 14px "DM Sans",sans-serif; text-decoration:none; text-align:center; background:var(--deep); color:#fff; }
+    a.button.secondary { color:var(--deep); background:#fff; border:1px solid rgba(6,21,34,.22); }
+    button:disabled { opacity:.55; cursor:wait; }
+    .fine { font-size:12px; }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="brand" href="/"><img src="/mark.png" alt="" /> AGAPAY</a>
+    <div class="eyebrow">Household connection request</div>
+    <h1 id="title">Review your household invitation.</h1>
+    <p id="summary">Sign in to inspect the private link and submit it to your parish.</p>
+    <div class="notice" id="status">Loading invitation…</div>
+    <div class="actions" id="actions" hidden>
+      <button id="claim" type="button">Submit for parish review</button>
+    </div>
+    <div class="actions" id="authActions" hidden>
+      <a class="button" id="login" href="/myagapay/login">Sign in</a>
+      <a class="button secondary" id="signup" href="/myagapay/signup">Create an account</a>
+    </div>
+    <p class="fine">Using this link never connects an account automatically and never verifies a household. Parish staff must review and approve the proposal first.</p>
+  </main>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const shareToken = params.get("token") || "";
+    const authToken = localStorage.getItem("agapayDonorToken") || localStorage.getItem("agapayUserToken") || localStorage.getItem("agapayPlatformToken") || "";
+    const email = localStorage.getItem("agapayDonorEmail") || localStorage.getItem("agapayUserEmail") || localStorage.getItem("agapayPlatformEmail") || "";
+    const status = document.getElementById("status");
+    const actions = document.getElementById("actions");
+    const authActions = document.getElementById("authActions");
+    const nextPath = location.pathname + location.search;
+    document.getElementById("login").href = "/myagapay/login?next=" + encodeURIComponent(nextPath);
+    document.getElementById("signup").href = "/myagapay/signup?next=" + encodeURIComponent(nextPath);
+
+    function show(message, error = false) {
+      status.textContent = message;
+      status.className = "notice" + (error ? " error" : "");
+    }
+    async function api(path, options = {}) {
+      const response = await fetch(path, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": authToken ? "Bearer " + authToken : "",
+          "X-AGAPAY-User-Email": email,
+          "X-AGAPAY-Donor-Email": email,
+          ...(options.headers || {})
+        }
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload.ok === false) {
+        const error = new Error(payload.message || payload.error || "Unable to use this household link.");
+        error.status = response.status;
+        throw error;
+      }
+      return payload;
+    }
+    async function load() {
+      if (!shareToken) {
+        show("This household link is missing its secure token.", true);
+        return;
+      }
+      if (!authToken) {
+        show("Sign in or create a My AGAPAY account to inspect this private household link.");
+        authActions.hidden = false;
+        return;
+      }
+      try {
+        const payload = await api("/api/directory/household-share/" + encodeURIComponent(shareToken));
+        const invitation = payload.invitation;
+        document.getElementById("title").textContent = `Connect as ${invitation.personName}?`;
+        document.getElementById("summary").textContent = `This link proposes connecting your account to ${invitation.personName} in ${invitation.householdName}.`;
+        show(`The link expires ${new Date(invitation.expiresAt).toLocaleString()}. Submitting it creates a parish review request only.`);
+        actions.hidden = false;
+      } catch (error) {
+        if (error.status === 401) {
+          show("Your sign-in has expired. Sign in again to continue.");
+          authActions.hidden = false;
+        } else {
+          show(error.message, true);
+        }
+      }
+    }
+    document.getElementById("claim").addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      button.textContent = "Submitting…";
+      try {
+        const payload = await api("/api/directory/household-share/" + encodeURIComponent(shareToken) + "/claim", { method:"POST", body:"{}" });
+        show(payload.result.message);
+        actions.hidden = true;
+        document.getElementById("summary").textContent = payload.result.conflictFlagged
+          ? "Submitted with an identity conflict flag for parish staff to resolve."
+          : "Submitted. Your parish will review the proposed connection.";
+      } catch (error) {
+        show(error.message, true);
+        button.disabled = false;
+        button.textContent = "Submit for parish review";
+      }
+    });
+    load();
+  </script>
+</body>
+</html>
