@@ -1,5 +1,6 @@
 import { communicationsEnabledFor, hasModuleAccess } from "../lib/entitlements.js";
 import { getBearerToken, hasProductionStore, json, missingProductionStoreResponse, normalizeEmail, rateLimitByKey, unauthorized } from "../lib/core.js";
+import { validateSafeExternalUrl } from "../lib/safe-external-url.js";
 import { findRegistrationByParishId, requireDonor, verifyParishDashboardBearer } from "./parish.js";
 
 const BLOG_FEED_MAX_BYTES = 1024 * 1024;
@@ -15,34 +16,12 @@ function database(env) {
   return env.AGAPAY_DB || env.DB || null;
 }
 
-function isUnsafeHostname(hostname) {
-  const host = String(hostname || "").toLowerCase().replace(/^\[|\]$/g, "");
-  if (!host || host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") || host.endsWith(".internal")) return true;
-  if (host.includes(":")) return true;
-  if (!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(host)) return false;
-  const parts = host.split(".").map(Number);
-  return parts.some((part) => part > 255)
-    || parts[0] === 10
-    || parts[0] === 127
-    || parts[0] === 0
-    || (parts[0] === 169 && parts[1] === 254)
-    || (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31)
-    || (parts[0] === 192 && parts[1] === 168)
-    || parts[0] >= 224;
-}
-
 export function validateParishBlogUrl(value, base = undefined) {
-  let parsed;
-  try {
-    parsed = new URL(String(value || "").trim(), base);
-  } catch {
-    throw new Error("Enter a valid HTTPS blog or RSS address.");
-  }
-  if (parsed.protocol !== "https:" || parsed.username || parsed.password || isUnsafeHostname(parsed.hostname)) {
-    throw new Error("The blog must use a public HTTPS address.");
-  }
-  parsed.hash = "";
-  return parsed.toString();
+  return validateSafeExternalUrl(value, {
+    base,
+    invalidMessage: "Enter a valid HTTPS blog or RSS address.",
+    unsafeMessage: "The blog must use a public HTTPS address.",
+  });
 }
 
 function decodeXml(value) {

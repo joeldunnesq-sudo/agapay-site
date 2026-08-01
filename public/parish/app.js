@@ -10425,7 +10425,7 @@
     try {
       const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId), { method:'PATCH', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ koinoniaCalendarUrl:value }) });
       const payload = await response.json().catch(() => ({})); if (!response.ok) throw new Error(payload.error || 'Unable to save this calendar link.');
-      currentParish.koinoniaCalendarUrl = payload.parish?.koinoniaCalendarUrl || value; if (status) status.textContent = currentParish.koinoniaCalendarUrl ? 'Google Calendar sync link saved.' : 'Calendar sync link removed.'; setStatus('Koinonia calendar connection saved.', 'success');
+      currentParish.koinoniaCalendarUrl = payload.parish?.koinoniaCalendarUrl || value; if (status) status.textContent = currentParish.koinoniaCalendarUrl ? 'Public calendar link saved.' : 'Calendar sync link removed.'; setStatus('Koinonia calendar connection saved.', 'success');
     } catch (error) { if (status) status.textContent = error.message; setStatus(error.message, 'error'); } finally { button.disabled = false; }
   }
 
@@ -10463,7 +10463,7 @@
     const calendarInput = document.getElementById('koinoniaCalendarUrl');
     const calendarStatus = document.getElementById('koinoniaCalendarStatus');
     if (calendarInput && document.activeElement !== calendarInput) calendarInput.value = currentParish?.koinoniaCalendarUrl || '';
-    if (calendarStatus) calendarStatus.textContent = currentParish?.koinoniaCalendarUrl ? 'Google Calendar sync link saved.' : 'No calendar sync link saved.';
+    if (calendarStatus) calendarStatus.textContent = currentParish?.koinoniaCalendarUrl ? 'Public calendar link saved.' : 'No calendar sync link saved.';
 
     const recent = [
       ...announcements.map(item => ({ ...item, kind:'Announcement', icon:'▤', view:'announcements' })),

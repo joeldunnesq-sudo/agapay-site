@@ -1321,10 +1321,10 @@
               </div>
               <section class="koinonia-calendar-connect" aria-labelledby="koinoniaCalendarHeading">
                 <div class="koinonia-calendar-connect-mark" aria-hidden="true">▦</div>
-                <div><span class="eyebrow">Calendar connection</span><h3 id="koinoniaCalendarHeading">Bring your parish Google Calendar into Koinonia</h3><p>Paste the public iCal sync link from Google Calendar. Parishioners’ calendar experience will use this as the parish’s calendar source.</p></div>
+                <div><span class="eyebrow">Calendar connection</span><h3 id="koinoniaCalendarHeading">Bring your parish calendar into Koinonia</h3><p>Paste a public ICS or iCal feed link. This works with Google Calendar, Squarespace, Wix, and most calendar platforms that offer a public calendar export.</p></div>
                 <form onsubmit="saveKoinoniaCalendar(event)">
-                  <label for="koinoniaCalendarUrl">Google Calendar public iCal link</label>
-                  <div><input id="koinoniaCalendarUrl" type="url" inputmode="url" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics" /><button class="btn btn-gold" type="submit">Save calendar</button></div>
+                  <label for="koinoniaCalendarUrl">Public calendar (iCal/ICS) link</label>
+                  <div><input id="koinoniaCalendarUrl" type="url" inputmode="url" placeholder="https://calendar.example.org/public-feed" /><button class="btn btn-gold" type="submit">Save calendar</button></div>
                   <small id="koinoniaCalendarStatus" role="status">No calendar sync link saved.</small>
                 </form>
               </section>
