@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/parish/style.css?v=20260801communicationstoggle1" />
+  <link rel="stylesheet" href="/parish/style.css?v=20260801teaching1" />
   <link rel="stylesheet" href="/parish/redesign.css?v=20260729nooverflow1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="stylesheet" href="/styles/stewardship.css?v=20260731healthgrid1" />
@@ -1352,19 +1352,22 @@
       <div class="tab-panel" id="tab-communications">
         <div class="communications-admin-shell">
           <header class="communications-admin-header">
-            <div><span class="eyebrow">Parish communications</span><h1>Announcement feed</h1><p>Compose updates for everyone connected to your parish in My AGAPAY.</p></div>
+            <div><span class="eyebrow">Parish Life publishing</span><h1>Announcements and teaching</h1><p>Share timely updates, written reflections, and audio recordings with your parish.</p></div>
             <div class="communications-admin-actions">
               <label class="sac-admin-switch agapay-feature-switch" title="Show or hide the parish announcement feed in My AGAPAY">
                 <input id="communicationsEnabledSwitch" type="checkbox" aria-label="Show parish announcement feed in My AGAPAY" onchange="toggleCommunicationsFeature(this)" />
                 <span aria-hidden="true"></span><em>Off</em>
               </label>
-              <a class="btn btn-ghost" href="/myagapay/feed" target="_blank" rel="noopener">Preview donor feed</a>
+              <a class="btn btn-ghost" href="/myagapay/parish-life" target="_blank" rel="noopener">Preview Parish Life</a>
             </div>
           </header>
           <div id="communicationsPaywall" class="communications-paywall" hidden><strong>Communications is included with Parish.</strong><p>Review your plan to publish announcements in My AGAPAY.</p><button class="btn btn-gold" type="button" onclick="switchTab('settings')">Review Parish tier</button></div>
           <div id="communicationsDisabledNotice" class="communications-paywall" hidden><strong>Announcement feed is off.</strong><p>Parishioners cannot see announcements and will not receive announcement digests or push notifications. Existing drafts and published posts remain available to parish staff.</p></div>
-          <div id="communicationsWorkspace" class="communications-grid">
-            <form class="communications-compose" onsubmit="createAnnouncementDraft(event)">
+          <div id="communicationsWorkspace" class="communications-workspace-stack">
+            <section class="communications-content-section" aria-labelledby="announcementsAdminHeading">
+              <div class="communications-section-heading"><span class="eyebrow">Parish news</span><h2 id="announcementsAdminHeading">Announcements</h2><p>Notices, reminders, and time-sensitive parish updates.</p></div>
+              <div class="communications-grid">
+              <form class="communications-compose" onsubmit="createAnnouncementDraft(event)">
               <span class="eyebrow">Compose</span><h2>New announcement</h2>
               <label>Title<input id="announcementTitle" maxlength="180" required placeholder="Parish picnic this Sunday" /></label>
               <label>Message
@@ -1380,8 +1383,32 @@
               <label>Hero image <input id="announcementHeroImage" type="file" accept="image/jpeg,image/png,image/webp" /><small>Optional JPG, PNG, or WebP image, up to 10MB.</small></label>
               <label class="communications-pin"><input id="announcementPinned" type="checkbox" /> Pin this announcement above newer updates</label>
               <button class="btn btn-gold" type="submit">Save draft</button>
-            </form>
-            <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">All announcements</span><h2>Drafts and published updates</h2></div><button class="btn btn-ghost btn-sm" type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="communicationsList"><p class="sw-tool-loading">Loading...</p></div></section>
+              </form>
+              <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">All announcements</span><h2>Drafts and published updates</h2></div><button class="btn btn-ghost btn-sm" type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="communicationsList"><p class="sw-tool-loading">Loading...</p></div></section>
+              </div>
+            </section>
+            <section class="communications-content-section teaching-admin-section" aria-labelledby="teachingAdminHeading">
+              <div class="communications-section-heading"><span class="eyebrow">Formation</span><h2 id="teachingAdminHeading">Teaching</h2><p>Publish text reflections with an optional audio homily or talk.</p></div>
+              <div class="communications-grid">
+                <form class="communications-compose" onsubmit="createTeachingDraft(event)">
+                  <span class="eyebrow">Compose</span><h2>New teaching post</h2>
+                  <label>Title<input id="teachingTitle" maxlength="180" required placeholder="Reflection for the Sunday of the Cross" /></label>
+                  <label>Reflection
+                    <span class="communications-format-toolbar" aria-label="Teaching formatting">
+                      <button type="button" onclick="insertTeachingFormatting('bold')"><strong>B</strong><span>Bold</span></button>
+                      <button type="button" onclick="insertTeachingFormatting('italic')"><em>I</em><span>Italic</span></button>
+                      <button type="button" onclick="insertTeachingFormatting('link')">↗<span>Link</span></button>
+                      <button type="button" onclick="insertTeachingFormatting('list')">•<span>List</span></button>
+                    </span>
+                    <textarea id="teachingBody" maxlength="20000" rows="10" required placeholder="Share the reflection. Use **bold**, *italic*, [link text](https://example.org), or - list items."></textarea>
+                    <small class="communications-format-help">Formatting is bounded to bold, italic, links, and bulleted lists.</small>
+                  </label>
+                  <label>Audio recording <input id="teachingAudio" type="file" accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav,audio/ogg,audio/webm" /><small>Optional MP3, M4A, WAV, OGG, or WebM file, up to 50MB.</small></label>
+                  <button class="btn btn-gold" type="submit">Save teaching draft</button>
+                </form>
+                <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">All teaching</span><h2>Drafts and published posts</h2></div><button class="btn btn-ghost btn-sm" type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="teachingAdminList"><p class="sw-tool-loading">Loading...</p></div></section>
+              </div>
+            </section>
           </div>
         </div>
       </div>
@@ -1823,6 +1850,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
-  <script src="/parish/app.js?v=20260801communicationstoggle1"></script>
+  <script src="/parish/app.js?v=20260801teaching1"></script>
 </body>
 </html>

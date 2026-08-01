@@ -20,7 +20,7 @@ function setParishLifeBadge(element, count, label) {
   element.setAttribute("aria-label", `${unread} unread ${label}`);
 }
 
-function renderParishLifeActivity(feed, groups) {
+function renderParishLifeActivity(feed, groups, teaching) {
   const list = document.getElementById("parishLifeActivityList");
   if (!list) return;
   const announcements = (feed.announcements || []).map((item) => ({
@@ -41,11 +41,20 @@ function renderParishLifeActivity(feed, groups) {
     href: `/myagapay/groups?group=${encodeURIComponent(item.ministryId || "")}`,
     read: Boolean(item.read),
   }));
-  const activity = [...announcements, ...messages]
+  const teachings = (teaching.posts || []).map((item) => ({
+    id: item.id,
+    type: "Teaching",
+    title: item.title,
+    detail: item.body,
+    at: item.publishedAt || item.createdAt,
+    href: `/myagapay/teaching#${encodeURIComponent(item.id)}`,
+    read: Boolean(item.read),
+  }));
+  const activity = [...announcements, ...messages, ...teachings]
     .sort((left, right) => new Date(right.at || 0) - new Date(left.at || 0))
     .slice(0, 10);
   if (!activity.length) {
-    list.innerHTML = '<div class="feed-empty"><strong>No recent activity</strong><p>Parish announcements and group messages will appear here.</p></div>';
+    list.innerHTML = '<div class="feed-empty"><strong>No recent activity</strong><p>Parish announcements, group messages, and teaching will appear here.</p></div>';
     return;
   }
   list.innerHTML = activity.map((item) => `
@@ -61,21 +70,26 @@ async function loadParishLife() {
   const status = document.getElementById("parishLifeStatus");
   const headers = window.MyAgapayShell?.authHeaders() || {};
   try {
-    const [feedResponse, groupsResponse] = await Promise.all([
+    const [feedResponse, groupsResponse, teachingResponse] = await Promise.all([
       fetch("/api/donor/feed", { headers, cache: "no-store" }),
       fetch("/api/donor/groups/activity", { headers, cache: "no-store" }),
+      fetch("/api/donor/teaching", { headers, cache: "no-store" }),
     ]);
-    if (window.MyAgapayShell?.handleUnauthorized(feedResponse) || window.MyAgapayShell?.handleUnauthorized(groupsResponse)) return;
-    const [feed, groups] = await Promise.all([
+    const responses = [feedResponse, groupsResponse, teachingResponse];
+    if (responses.some((response) => window.MyAgapayShell?.handleUnauthorized(response))) return;
+    const [feed, groups, teaching] = await Promise.all([
       feedResponse.json().catch(() => ({})),
       groupsResponse.json().catch(() => ({})),
+      teachingResponse.json().catch(() => ({})),
     ]);
     if (!feedResponse.ok) throw new Error(feed.error || "Unable to load parish announcements.");
     if (!groupsResponse.ok) throw new Error(groups.error || "Unable to load ministry activity.");
+    if (!teachingResponse.ok) throw new Error(teaching.error || "Unable to load parish teaching.");
 
     const feedUnread = Math.max(0, Number(feed.unreadCount) || 0);
     const groupsUnread = Math.max(0, Number(groups.unreadCount) || 0);
-    const totalUnread = feedUnread + groupsUnread;
+    const teachingUnread = Math.max(0, Number(teaching.unreadCount) || 0);
+    const totalUnread = feedUnread + groupsUnread + teachingUnread;
     const parishName = feed.parish?.name || "Your parish";
     document.getElementById("parishLifeHeading").textContent = parishName;
     document.getElementById("parishLifeDescription").textContent = "Announcements, ministry conversations, teaching, and media from your church community.";
@@ -85,9 +99,11 @@ async function loadParishLife() {
     summary.textContent = `${totalUnread} unread`;
     setParishLifeBadge(document.getElementById("parishLifeAnnouncementsUnread"), feedUnread, "announcements");
     setParishLifeBadge(document.getElementById("parishLifeGroupsUnread"), groupsUnread, "group messages");
+    setParishLifeBadge(document.getElementById("parishLifeTeachingUnread"), teachingUnread, "teaching posts");
     window.MyAgapayShell?.setFeedUnreadCount(feedUnread);
     window.MyAgapayShell?.setGroupsUnreadCount(groupsUnread);
-    renderParishLifeActivity(feed, groups);
+    window.MyAgapayShell?.setTeachingUnreadCount(teachingUnread);
+    renderParishLifeActivity(feed, groups, teaching);
     status.hidden = true;
   } catch (error) {
     status.hidden = false;

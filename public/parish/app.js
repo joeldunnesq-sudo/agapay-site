@@ -10218,7 +10218,7 @@
   }
 
   // ── COMMUNICATIONS ────────────────────────────────────────
-  let communicationsState = { loaded: false, announcements: [], readers: {} };
+  let communicationsState = { loaded: false, announcements: [], teaching: [], readers: {} };
 
   function communicationsApi(path = '') {
     return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/communications' + path;
@@ -10251,6 +10251,27 @@
     `).join('');
   }
 
+  function renderTeachingAdminList() {
+    const list = document.getElementById('teachingAdminList');
+    if (!list) return;
+    const rows = communicationsState.teaching || [];
+    if (!rows.length) {
+      list.innerHTML = '<div class="communications-empty"><strong>No teaching posts yet</strong><p>Save a reflection or audio teaching as a draft to begin.</p></div>';
+      return;
+    }
+    list.innerHTML = rows.map(item => `
+      <article class="communications-row">
+        <div class="communications-row-copy"><div class="communications-row-meta"><span class="communications-status is-${escapeAttr(item.status)}">${announcementStatusLabel(item.status)}</span>${item.audioUrl ? '<span class="communications-audio-label">▶ Audio</span>' : '<span>Text</span>'}<span>${escapeHtml(shortDate(item.publishedAt || item.updatedAt || item.createdAt))}</span></div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p></div>
+        <div class="communications-row-actions">
+          ${item.status === 'published' ? `<span class="btn btn-ghost btn-sm" aria-label="${Number(item.readCount || 0)} readers">${Number(item.readCount || 0)} read</span>` : ''}
+          ${item.status !== 'archived' ? `<button class="btn btn-ghost btn-sm" type="button" onclick="editTeachingPost('${escapeAttr(item.id)}')">Edit</button>` : ''}
+          ${item.status === 'draft' ? `<button class="btn btn-gold btn-sm" type="button" onclick="publishTeachingPost('${escapeAttr(item.id)}',this)">Publish</button>` : ''}
+          ${item.status !== 'archived' ? `<button class="btn btn-danger btn-sm" type="button" onclick="archiveTeachingPost('${escapeAttr(item.id)}',this)">Archive</button>` : ''}
+        </div>
+      </article>
+    `).join('');
+  }
+
   async function toggleAnnouncementReaders(id, button) {
     const panel = document.getElementById('communicationsReaders-' + id);
     if (!panel) return;
@@ -10278,6 +10299,23 @@
 
   function insertAnnouncementFormatting(kind) {
     const textarea = document.getElementById('announcementBody');
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = textarea.value.slice(start, end);
+    const examples = { bold:'important words', italic:'emphasized words', link:'parish website', list:'first item\nsecond item' };
+    const value = selected || examples[kind] || '';
+    let replacement = value;
+    if (kind === 'bold') replacement = `**${value}**`;
+    if (kind === 'italic') replacement = `*${value}*`;
+    if (kind === 'link') replacement = `[${value}](https://)`;
+    if (kind === 'list') replacement = value.split(/\r?\n/).map(line => `- ${line.replace(/^\s*-\s*/, '')}`).join('\n');
+    textarea.setRangeText(replacement, start, end, 'select');
+    textarea.focus();
+  }
+
+  function insertTeachingFormatting(kind) {
+    const textarea = document.getElementById('teachingBody');
     if (!textarea) return;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
@@ -10326,11 +10364,16 @@
     }
     syncModuleStatusNavigation('communications', included, enabled);
     if (!included || (communicationsState.loaded && !force)) return;
-    const response = await fetch(communicationsApi(), { headers: authHeaders(), cache: 'no-store' });
-    const data = await response.json();
-    if (!response.ok) { setStatus(data.error || 'Unable to load announcements.','error'); return; }
-    communicationsState = { loaded: true, announcements: data.announcements || [], readers: communicationsState.readers || {} };
+    const [announcementResponse, teachingResponse] = await Promise.all([
+      fetch(communicationsApi(), { headers: authHeaders(), cache: 'no-store' }),
+      fetch(communicationsApi('/teaching'), { headers: authHeaders(), cache: 'no-store' })
+    ]);
+    const [data, teachingData] = await Promise.all([announcementResponse.json(), teachingResponse.json()]);
+    if (!announcementResponse.ok) { setStatus(data.error || 'Unable to load announcements.','error'); return; }
+    if (!teachingResponse.ok) { setStatus(teachingData.error || 'Unable to load teaching posts.','error'); return; }
+    communicationsState = { loaded: true, announcements: data.announcements || [], teaching: teachingData.posts || [], readers: communicationsState.readers || {} };
     renderCommunicationsList();
+    renderTeachingAdminList();
   }
 
   async function toggleCommunicationsFeature(input) {
@@ -10420,6 +10463,79 @@
       if (!response.ok) throw new Error(data.error || 'Unable to archive announcement.');
       await loadCommunicationsTab(true);
       setStatus('Announcement archived.','success');
+    } catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
+  }
+
+  async function uploadTeachingAudio(teachingId, file) {
+    if (file.size > 50 * 1024 * 1024) throw new Error('Teaching audio must be 50MB or smaller.');
+    const response = await fetch(communicationsApi('/teaching/' + encodeURIComponent(teachingId) + '/audio'), {
+      method:'POST', headers:{ ...authHeaders(), 'Content-Type':file.type }, body:file
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Unable to upload the teaching audio.');
+    return data.post;
+  }
+
+  async function createTeachingDraft(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const audio = document.getElementById('teachingAudio')?.files?.[0] || null;
+    const button = form.querySelector('button[type="submit"]');
+    if (button) { button.disabled = true; button.classList.add('loading'); }
+    try {
+      const response = await fetch(communicationsApi('/teaching'), {
+        method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' },
+        body:JSON.stringify({ title:document.getElementById('teachingTitle').value, body:document.getElementById('teachingBody').value })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to save teaching post.');
+      if (audio) await uploadTeachingAudio(data.post.id, audio);
+      form.reset();
+      await loadCommunicationsTab(true);
+      setStatus(audio ? 'Teaching post and audio saved as a draft.' : 'Teaching post saved as a draft.','success');
+    } catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
+  }
+
+  async function patchTeachingPost(id, changes) {
+    const response = await fetch(communicationsApi('/teaching/' + encodeURIComponent(id)), {
+      method:'PATCH', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify(changes)
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Unable to update teaching post.');
+    await loadCommunicationsTab(true);
+    return data.post;
+  }
+
+  async function editTeachingPost(id) {
+    const item = communicationsState.teaching.find(row => row.id === id);
+    if (!item) return;
+    const title = prompt('Teaching title', item.title);
+    if (title === null) return;
+    const body = prompt('Teaching reflection', item.body);
+    if (body === null) return;
+    try { await patchTeachingPost(id, { title, body }); setStatus('Teaching post updated.','success'); }
+    catch (error) { setStatus(error.message,'error'); }
+  }
+
+  async function publishTeachingPost(id, button) {
+    if (!confirm('Publish this teaching post to every parishioner in My AGAPAY?')) return;
+    if (button) { button.disabled = true; button.classList.add('loading'); }
+    try { await patchTeachingPost(id, { status:'published' }); setStatus('Teaching post published.','success'); }
+    catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
+  }
+
+  async function archiveTeachingPost(id, button) {
+    if (!confirm('Archive this teaching post? It will leave Parish Life but remain in this list.')) return;
+    if (button) { button.disabled = true; button.classList.add('loading'); }
+    try {
+      const response = await fetch(communicationsApi('/teaching/' + encodeURIComponent(id) + '/archive'), { method:'POST', headers:authHeaders() });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to archive teaching post.');
+      await loadCommunicationsTab(true);
+      setStatus('Teaching post archived.','success');
     } catch (error) { setStatus(error.message,'error'); }
     finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
   }

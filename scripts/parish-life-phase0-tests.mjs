@@ -56,13 +56,13 @@ const [hub, hubScript, shell, parishDashboard, parishApp, groupHandler, workerSo
   readFile(new URL("../src/worker.js", import.meta.url), "utf8"),
 ]);
 assert.match(hub, /class="feed-hero"/);
-assert.equal((hub.match(/class="mobile-product-card live"/g) || []).length, 2, "Announcements and Groups should be live cards");
-assert.equal((hub.match(/class="mobile-product-card coming-soon"/g) || []).length, 2, "Teaching and Media should be placeholders");
+assert.equal((hub.match(/class="mobile-product-card live"/g) || []).length, 3, "Announcements, Groups, and Teaching should be live cards");
+assert.equal((hub.match(/class="mobile-product-card coming-soon"/g) || []).length, 1, "Media should remain a placeholder");
 assert.match(hub, />Teaching</);
 assert.match(hub, />Media</);
 assert.match(hubScript, /fetch\("\/api\/donor\/feed"/);
 assert.match(hubScript, /fetch\("\/api\/donor\/groups\/activity"/);
-assert.match(hubScript, /\[\.\.\.announcements, \.\.\.messages\][\s\S]*\.sort/);
+assert.match(hubScript, /\[\.\.\.announcements, \.\.\.messages, \.\.\.teachings\][\s\S]*\.sort/);
 assert.match(groupHandler, /export async function listGroupActivity[\s\S]*getReadContentIds[\s\S]*messages\.slice\(0, 10\)/);
 assert.match(shell, /parishLifeAvailable/);
 assert.match(parishDashboard, /id="nav-communications" hidden/);

@@ -2872,6 +2872,10 @@ body.donor-home {
 .parish-life-activity-copy small { margin-top: .2rem; color: #68757b; }
 .parish-life-activity-row time { color: #68757b; font-size: .72rem; white-space: nowrap; }
 @media (max-width: 700px) { .parish-life-sections { grid-template-columns: 1fr; } .parish-life-activity-row { grid-template-columns: auto minmax(0,1fr); } .parish-life-activity-row time { grid-column: 2; } }
+.teaching-list { display:grid; gap:14px; }
+.teaching-card-icon { display:grid; width:46px; height:46px; flex:0 0 auto; place-items:center; border-radius:50%; background:#efe7d6; color:#765a1d; font-weight:800; }
+.teaching-card-detail audio { width:100%; margin:0 0 18px; accent-color:#8a6a25; }
+.teaching-card-detail .feed-card-body { font-size:1rem; line-height:1.75; }
 
 
 /* ── PLEDGE TRACKER ─────────────────────────────────────────── */
