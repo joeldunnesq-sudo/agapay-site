@@ -7,6 +7,7 @@ import {
   deliverPushNotifications,
   listGroupPushSubscriptions,
   listParishPushSubscriptions,
+  sendTeachingPush,
 } from "../src/lib/push-notifications.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -84,6 +85,38 @@ const parishSubscriptions = await listParishPushSubscriptions(env, "parish-one")
 assert.equal(parishSubscriptions.length, 4, "announcement pushes must select only subscriptions from the publishing parish");
 assert.ok(parishSubscriptions.every(row => row.parish_id === "parish-one"));
 
+const teachingPayloads = [];
+const teachingDependencies = {
+  buildPayload: async ({ data }) => {
+    teachingPayloads.push(JSON.parse(data));
+    return { method: "POST", headers: new Headers(), body: "encrypted" };
+  },
+  fetchImpl: async () => new Response(null, { status: 201 }),
+};
+const teaching = { id: "teaching-one", title: "**Sunday reflection**", body: "Listen with the heart." };
+const firstTeachingSummary = await sendTeachingPush(env, {
+  parishId: "parish-one",
+  parishName: "St. Fiacre Orthodox Church",
+  teaching,
+}, teachingDependencies);
+assert.deepEqual(firstTeachingSummary, { attempted: 4, sent: 4, expired: 0, failed: 0 });
+assert.equal(teachingPayloads.length, 4, "a published teaching must notify every subscribed donor in its parish");
+assert.deepEqual(teachingPayloads[0], {
+  title: "New teaching from St. Fiacre Orthodox Church",
+  body: "Sunday reflection",
+  url: "/myagapay/teaching",
+  tag: "teaching-teaching-one",
+});
+await sendTeachingPush(env, {
+  parishId: "parish-one",
+  parishName: "St. Fiacre Orthodox Church",
+  teaching,
+}, teachingDependencies);
+assert.ok(
+  teachingPayloads.every(payload => payload.tag === "teaching-teaching-one"),
+  "repeated delivery of the same teaching must preserve its notification tag for browser-level deduplication",
+);
+
 const groupSubscriptions = await listGroupPushSubscriptions(env, {
   parishId: "parish-one",
   ministryId: "ministry-one",
@@ -128,4 +161,4 @@ assert.match(groupsHtml, /Add to Home Screen/);
 assert.match(feedHtml, /data-push-enable>Enable notifications/);
 assert.match(groupsHtml, /data-push-enable>Enable notifications/);
 
-console.log("PASS - push delivery is parish-scoped, excludes group authors, prunes expired endpoints, and requires explicit opt-in");
+console.log("PASS - push delivery covers teaching, is parish-scoped, excludes group authors, prunes expired endpoints, and requires explicit opt-in");

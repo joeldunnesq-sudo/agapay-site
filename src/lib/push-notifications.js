@@ -210,6 +210,16 @@ export async function sendAnnouncementPush(env, { parishId, parishName, announce
   }, dependencies);
 }
 
+export async function sendTeachingPush(env, { parishId, parishName, teaching }, dependencies = {}) {
+  const subscriptions = await listParishPushSubscriptions(env, parishId);
+  return deliverPushNotifications(env, subscriptions, {
+    title: `New teaching from ${String(parishName || "your parish").trim()}`,
+    body: notificationExcerpt(teaching.title || teaching.body) || "New teaching is available.",
+    url: "/myagapay/teaching",
+    tag: `teaching-${teaching.id}`,
+  }, dependencies);
+}
+
 export async function sendGroupMessagePush(env, {
   parishId,
   ministryId,

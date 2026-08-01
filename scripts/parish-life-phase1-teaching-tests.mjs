@@ -44,11 +44,32 @@ assert.doesNotMatch(formatted, /<script|<img|onerror/i);
 const draft = await createParishTeachingPost(db, {
   parishId: "parish-one", createdBy: "staff@example.test", input: { title: "Sunday reflection", body: "Listen with the heart." },
 });
+let publishedCallbacks = 0;
+await updateParishTeachingPost(db, {
+  parishId: "parish-one",
+  teachingId: draft.id,
+  input: { title: "Sunday reflection, revised" },
+  onPublished: () => { publishedCallbacks += 1; },
+});
+assert.equal(publishedCallbacks, 0, "editing a draft without publishing must not trigger a push callback");
 let donorFeed = await getDonorTeachingFeed(db, { parishId: "parish-one", donorId: "donor@example.test" });
 assert.deepEqual(donorFeed.posts, [], "draft teaching must stay off the hub and donor feed");
 assert.equal(donorFeed.unreadCount, 0);
-const published = await updateParishTeachingPost(db, { parishId: "parish-one", teachingId: draft.id, input: { status: "published" } });
+const published = await updateParishTeachingPost(db, {
+  parishId: "parish-one",
+  teachingId: draft.id,
+  input: { status: "published" },
+  onPublished: () => { publishedCallbacks += 1; },
+});
 assert.equal(published.status, "published");
+assert.equal(publishedCallbacks, 1, "the draft-to-published transition must trigger exactly one push callback");
+await updateParishTeachingPost(db, {
+  parishId: "parish-one",
+  teachingId: draft.id,
+  input: { body: "Listen with the heart, always." },
+  onPublished: () => { publishedCallbacks += 1; },
+});
+assert.equal(publishedCallbacks, 1, "editing an already-published teaching must not trigger another push callback");
 donorFeed = await getDonorTeachingFeed(db, { parishId: "parish-one", donorId: "donor@example.test" });
 assert.deepEqual(donorFeed.posts.map(({ id }) => id), [draft.id]);
 assert.equal(donorFeed.unreadCount, 1, "a newly published teaching must count as unread");
@@ -105,6 +126,8 @@ const implementationCount = [...sources["src/lib/rich-text.js"].matchAll(/functi
 assert.equal(implementationCount, 1, "stripAuthoredHtml must have exactly one implementation");
 assert.match(sources["src/handlers/parish-communications.js"], /import \{ renderBoundedRichText \} from "\.\.\/lib\/rich-text\.js"/);
 assert.match(sources["src/handlers/parish-teaching.js"], /import \{ renderBoundedRichText \} from "\.\.\/lib\/rich-text\.js"/);
+assert.match(sources["src/handlers/parish-teaching.js"], /sendTeachingPush\(env, \{/);
+assert.match(sources["src/worker.js"], /handleParishTeaching\(request, env, parishId,[\s\S]*, ctx\)/);
 assert.match(sources["public/myagapay/parish-life.html"], /class="mobile-product-card live" href="\/myagapay\/teaching"/);
 assert.match(sources["public/myagapay/parish-life.js"], /\.\.\.announcements, \.\.\.messages, \.\.\.teachings/);
 assert.match(sources["public/myagapay/parish-life.js"], /feedUnread \+ groupsUnread \+ teachingUnread/);
