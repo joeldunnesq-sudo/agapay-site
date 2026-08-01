@@ -127,6 +127,7 @@ function renderParishFeed() {
         <span class="feed-card-copy">
         <span class="feed-card-flags"><em>${feedEscape(ANNOUNCEMENT_FILTERS.find(({ value }) => value === (announcement.category || "general"))?.label || "General")}</em>${announcement.pinned ? '<em>📌 Pinned</em>' : ""}${announcement.read ? "" : '<em class="feed-new">New</em>'}</span>
         <strong>${feedEscape(announcement.title)}</strong>
+        <span class="feed-card-preview">${feedEscape(String(announcement.body || "").slice(0, 220))}</span>
         <small>${feedEscape(feedDate(announcement.publishedAt))}</small>
         </span>
       </button>

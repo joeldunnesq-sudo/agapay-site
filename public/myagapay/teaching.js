@@ -51,7 +51,7 @@ function renderTeaching() {
   window.MyAgapayShell?.setTeachingUnreadCount(unread);
   renderTeachingCategoryFilters();
   if (!teachingState.posts.length) {
-    list.innerHTML = '<div class="feed-empty"><strong>No teaching posts yet</strong><p>Your parish’s published reflections and recordings will appear here.</p></div>';
+    list.innerHTML = '<div class="feed-empty"><strong>No recordings yet</strong><p>Your parish’s published audio and reflections will appear here.</p></div>';
     return;
   }
   const visiblePosts = teachingPostsForFilter(teachingState.filter);

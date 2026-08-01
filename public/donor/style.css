@@ -7888,3 +7888,470 @@ textarea {
   .donor-parish-life-page .parish-life-sections .mobile-product-card,
   :is(.donor-feed-page, .donor-teaching-page) .feed-card { transition: none; }
 }
+
+/* Koinonia reference alignment — the supplied prototype is the source for
+   density, type, color, borders, and component proportions. The established
+   calendar hero intentionally keeps its own visual system. */
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page) {
+  --k-bg: #f0ede4;
+  --k-surface: #fff;
+  --k-surface-2: #f5f2eb;
+  --k-offset: #eae7dc;
+  --k-divider: #e0ddd3;
+  --k-border: #d4d1c6;
+  --k-text: #111827;
+  --k-muted: #6b7280;
+  --k-faint: #9ca3af;
+  --k-gold: #b88f42;
+  --k-gold-hover: #a37e36;
+  --k-gold-soft: #f3e8d7;
+  --k-navy: #0d1722;
+  background: var(--k-bg);
+  color: var(--k-text);
+  font-family: "Inter", Arial, sans-serif;
+}
+
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page) :is(button, input, textarea, select) {
+  font-family: inherit;
+}
+
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page) :is(.app, .content, .media-app, .media-content, .page) {
+  background: var(--k-bg);
+  color: var(--k-text);
+}
+
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page) .topbar {
+  min-height: 58px;
+  border-bottom: 1px solid var(--k-divider);
+  background: rgba(240, 237, 228, 0.94);
+  color: var(--k-text);
+  backdrop-filter: blur(14px);
+}
+
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page) .topbar-title {
+  color: var(--k-text);
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page) .topbar-title::before { display: none; }
+
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page) .sidebar {
+  border-right-color: rgba(184, 143, 66, 0.2);
+  background: linear-gradient(180deg, #14202b, var(--k-navy));
+  box-shadow: none;
+}
+
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page) .sidebar-card { display: none; }
+
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page) .page {
+  width: min(100%, 760px);
+  padding: 24px 20px 90px;
+}
+
+.koinonia-screen-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 18px;
+  padding: 2px 0 0;
+}
+
+.koinonia-screen-head h1 {
+  margin: 0;
+  color: var(--k-text);
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.koinonia-screen-head p {
+  margin: 3px 0 0;
+  color: var(--k-muted);
+  font-size: 12px;
+}
+
+.feed-unread-summary {
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: var(--k-gold);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Home */
+.donor-parish-life-page .parish-life-page-shell {
+  gap: 0;
+  max-width: 760px;
+}
+
+.donor-parish-life-page .parish-life-liturgical-hero {
+  --cal-deep: #061522;
+  --cal-deep-2: #0b2130;
+  --cal-cream: #f6f1e8;
+  --cal-gold: #c8a24a;
+  --cal-gold-bright: #e8c879;
+  --cal-gold-glow: rgba(216, 176, 88, 0.28);
+  --cal-serif: "Cormorant Garamond", Georgia, serif;
+  --cal-shadow-lg: 0 24px 60px rgba(6, 21, 34, 0.14);
+  margin: 0 0 14px;
+  /* no visual overrides: this is the pre-existing calendar hero */
+}
+
+.donor-parish-life-page .parish-life-saint-card {
+  margin: 0 0 6px;
+  border: 1px solid var(--k-border);
+  border-radius: 14px;
+  background: var(--k-surface);
+  box-shadow: none;
+}
+
+.donor-parish-life-page .parish-life-saint-card .cal-saint-strip {
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+}
+
+.donor-parish-life-page .parish-life-saint-card :is(.cal-saint-name, .cal-saint-note) { color: var(--k-text); }
+.donor-parish-life-page .parish-life-saint-card .cal-saint-note { color: var(--k-muted); }
+.donor-parish-life-page .parish-life-saint-card .cal-saint-icon { background: var(--k-gold-soft); color: var(--k-gold); }
+.donor-parish-life-page .parish-life-saint-card .cal-saint-arrow { color: var(--k-faint); }
+
+.parish-life-home-section { display: grid; gap: 0; }
+.parish-life-section-head {
+  align-items: baseline;
+  margin: 20px 0 10px;
+  padding: 0;
+}
+
+.parish-life-section-head h2 {
+  color: var(--k-text);
+  font-family: "Inter", Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.parish-life-section-head a {
+  color: var(--k-gold);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.parish-life-section-head a::after { content: ""; }
+.parish-life-section-head a:hover { color: var(--k-gold-hover); }
+
+.parish-life-services-state,
+.parish-life-empty-state {
+  border: 1px solid var(--k-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--k-surface);
+  box-shadow: none;
+}
+.parish-life-services-state strong,
+.parish-life-empty-state strong {
+  color: var(--k-text);
+  font-family: "Inter", Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+}
+.parish-life-services-state p,
+.parish-life-empty-state p { color: var(--k-muted); font-size: 11px; line-height: 1.5; }
+
+#parishLifeTierSections { gap: 0; }
+.parish-life-announcement-list { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.parish-life-announcement-card {
+  display: grid;
+  gap: 7px;
+  min-height: 0;
+  border: 1px solid var(--k-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--k-surface);
+  box-shadow: none;
+  transition: border-color 0.15s ease;
+}
+.parish-life-announcement-card:hover { transform: none; border-color: var(--k-faint); box-shadow: none; }
+.parish-life-announcement-card.is-unread { border-left: 3px solid var(--k-gold); }
+.parish-life-card-flags { gap: 6px; }
+.parish-life-card-flags em,
+.parish-life-card-flags em:first-child {
+  border-radius: 6px;
+  padding: 3px 7px;
+  background: var(--k-gold-soft);
+  color: var(--k-gold-hover);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+.parish-life-card-flags em:first-child { background: #f7ecd8; color: #976e2d; }
+.parish-life-announcement-card > strong {
+  color: var(--k-text);
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 16px;
+  line-height: 1.3;
+}
+.parish-life-announcement-card p { color: var(--k-muted); font-size: 12px; line-height: 1.55; }
+.parish-life-announcement-card time { color: var(--k-faint); font-size: 10px; font-weight: 500; }
+
+.parish-life-recording-list {
+  border: 1px solid var(--k-border);
+  border-radius: 14px;
+  background: var(--k-surface);
+  box-shadow: none;
+}
+.parish-life-recording-row {
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 12px;
+  min-height: 64px;
+  border-top-color: var(--k-divider);
+  padding: 11px 14px;
+}
+.parish-life-recording-row:hover { background: var(--k-surface-2); }
+.parish-life-audio-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--k-gold-soft);
+  color: var(--k-gold);
+}
+.parish-life-recording-row strong { color: var(--k-text); font-family: "Inter", Arial, sans-serif; font-size: 13px; }
+.parish-life-recording-row small { color: var(--k-muted); font-size: 10px; }
+.parish-life-recording-row em { color: var(--k-faint); font-size: 10px; font-weight: 500; text-transform: none; }
+
+.parish-life-ministry-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.parish-life-ministry-tile {
+  min-height: 94px;
+  gap: 6px;
+  border: 1px solid var(--k-border);
+  border-radius: 10px;
+  padding: 12px 8px;
+  background: var(--k-surface);
+  color: var(--k-text);
+  box-shadow: none;
+}
+.parish-life-ministry-tile:hover { transform: none; border-color: var(--k-gold); background: var(--k-surface-2); }
+.parish-life-ministry-mark { width: 28px; height: 28px; border: 0; color: var(--k-navy); }
+.parish-life-ministry-tile strong { color: var(--k-text); font-family: "Inter", Arial, sans-serif; font-size: 11px; line-height: 1.2; }
+.parish-life-ministry-tile small { color: var(--k-faint); font-size: 9px; }
+
+/* Filter chips */
+.content-filter-chips {
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0 0 3px;
+  scrollbar-width: none;
+}
+.content-filter-chips::-webkit-scrollbar { display: none; }
+.content-filter-chips button {
+  gap: 5px;
+  min-height: 31px;
+  border: 1px solid var(--k-border);
+  padding: 6px 13px;
+  background: var(--k-surface);
+  color: var(--k-muted);
+  font: 600 11px/1 "Inter", Arial, sans-serif;
+  letter-spacing: 0;
+}
+.content-filter-chips button:hover { border-color: var(--k-gold); color: var(--k-gold); }
+.content-filter-chips button.is-active { border-color: var(--k-gold); background: var(--k-gold); color: #fff; }
+.content-filter-chips button strong {
+  display: inline;
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  background: none;
+  font-size: 9px;
+  font-weight: 600;
+  opacity: 0.72;
+}
+.content-filter-chips button.is-active strong { background: none; }
+
+/* Announcements and audio */
+.donor-feed-page .feed-page-shell,
+.donor-teaching-page .feed-page-shell { max-width: 760px; }
+.feed-list, .teaching-list { gap: 10px; }
+:is(.donor-feed-page, .donor-teaching-page) .feed-card {
+  border: 1px solid var(--k-border);
+  border-radius: 14px;
+  background: var(--k-surface);
+  box-shadow: none;
+  transition: border-color 0.15s ease;
+}
+:is(.donor-feed-page, .donor-teaching-page) .feed-card:hover { transform: none; border-color: var(--k-faint); box-shadow: none; }
+:is(.donor-feed-page, .donor-teaching-page) .feed-card.is-unread { border-left: 3px solid var(--k-gold); }
+:is(.donor-feed-page, .donor-teaching-page) .feed-card.is-pinned { background: var(--k-surface); }
+:is(.donor-feed-page, .donor-teaching-page) .feed-card-summary {
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 0;
+  padding: 14px 16px;
+}
+.feed-card-copy { display: grid; gap: 6px; }
+:is(.donor-feed-page, .donor-teaching-page) .feed-card-summary strong {
+  margin: 0;
+  color: var(--k-text);
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 16px;
+  line-height: 1.3;
+}
+.feed-card-preview {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--k-muted);
+  font-size: 12px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.feed-card-summary small { color: var(--k-faint); font-size: 10px; }
+.feed-card-flags { gap: 6px; flex-wrap: wrap; }
+.feed-card-flags em {
+  border-radius: 6px;
+  padding: 3px 7px;
+  background: var(--k-gold-soft);
+  color: var(--k-gold-hover);
+  font-size: 9px;
+  letter-spacing: 0.05em;
+}
+.feed-card-flags .feed-new { background: var(--k-navy); color: #fff; }
+.feed-card-thumbnail { width: 82px; height: 68px; border-radius: 10px; }
+.feed-card-detail { border-top-color: var(--k-divider); padding: 14px 16px 16px; }
+.feed-card-body { color: var(--k-muted); font-size: 13px; line-height: 1.65; }
+.feed-empty { border-color: var(--k-border); border-radius: 14px; color: var(--k-muted); background: rgba(255,255,255,.35); }
+.feed-empty strong { color: var(--k-text); font-family: "Playfair Display", Georgia, serif; font-size: 18px; }
+
+.teaching-card-icon {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--k-gold-soft);
+  color: var(--k-gold);
+  font-size: 11px;
+}
+
+.push-notification-card,
+.feed-digest-card {
+  margin-bottom: 12px;
+  border: 1px solid var(--k-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--k-surface);
+  box-shadow: none;
+}
+.push-notification-card h2, .feed-digest-card h2 { margin: 2px 0 4px; color: var(--k-text); font-family: "Playfair Display", Georgia, serif; font-size: 17px; }
+.push-notification-card p, .feed-digest-card p { color: var(--k-muted); font-size: 11px; line-height: 1.5; }
+.push-notification-actions .btn { min-width: 0; min-height: 34px; padding: 7px 11px; font-size: 10px; }
+
+/* Groups */
+.donor-groups-page .groups-page-shell { width: min(100%, 980px); max-width: 980px; }
+.groups-layout { grid-template-columns: minmax(230px, .65fr) minmax(390px, 1.35fr); gap: 12px; }
+.groups-list-panel, .group-thread-panel {
+  border: 1px solid var(--k-border);
+  border-radius: 14px;
+  background: var(--k-surface);
+  box-shadow: none;
+}
+.groups-panel-head, .group-thread-head { padding: 14px 16px; border-bottom-color: var(--k-divider); }
+.groups-panel-head h2, .group-thread-head h2 { color: var(--k-text); font-family: "Playfair Display", Georgia, serif; font-size: 18px; }
+.group-thread-head p { color: var(--k-muted); font-size: 11px; }
+.group-list-item { min-height: 64px; border-bottom-color: var(--k-divider); padding: 12px 14px; background: var(--k-surface); color: var(--k-text); }
+.group-list-item:hover, .group-list-item.is-active { background: var(--k-gold-soft); }
+.group-list-item strong { font-size: 13px; }
+.group-list-item small { color: var(--k-muted); font-size: 10px; }
+.group-list-item em { background: var(--k-gold); font-size: 9px; }
+.groups-refresh { border-color: var(--k-border); background: var(--k-surface); color: var(--k-muted); font-size: 10px; }
+.group-message-list { gap: 8px; padding: 12px; background: var(--k-surface-2); }
+.group-message { border-color: var(--k-divider); border-radius: 12px; background: var(--k-surface); box-shadow: none; }
+.group-message.is-outgoing { border-color: var(--k-navy); background: var(--k-navy); }
+.group-compose { border-top-color: var(--k-divider); padding: 12px; }
+.group-compose textarea { border-color: var(--k-border); border-radius: 10px; }
+.group-compose button { background: var(--k-gold); color: #fff; }
+
+/* Media keeps video thumbnails, but uses the reference's light library cards. */
+.donor-media-page .media-page-shell { width: min(100%, 980px); max-width: 980px; padding-bottom: 90px; }
+.donor-media-page .media-heading { max-width: none; padding: 2px 0 0; }
+.donor-media-page .media-heading h1 { margin: 0; color: var(--k-text); font-size: 24px; line-height: 1.2; }
+.donor-media-page .media-heading p { margin: 3px 0 0; color: var(--k-muted); font-size: 12px; line-height: 1.4; }
+.donor-media-page .media-status { border-color: var(--k-border); border-radius: 14px; background: var(--k-surface); color: var(--k-muted); }
+.media-feature {
+  grid-template-columns: minmax(0, 1.35fr) minmax(230px, .65fr);
+  margin: 0 0 28px;
+  border-color: var(--k-border);
+  border-radius: 16px;
+  background: var(--k-surface);
+  color: var(--k-text);
+  box-shadow: none;
+}
+.media-feature .media-thumbnail { min-height: 320px; }
+.media-feature .media-card-copy { padding: 24px; }
+.media-card-copy small { color: var(--k-gold); }
+.media-card-copy strong, .donor-media-page .media-feature .media-card-copy strong { color: var(--k-text); font-family: "Playfair Display", Georgia, serif; font-size: 26px; }
+.media-feature .media-card-copy strong { font-size: 30px; }
+.media-card-copy span, .media-card-copy p { color: var(--k-muted); }
+.media-section-head { margin-bottom: 12px; }
+.donor-media-page .media-section-head h2 { margin-top: 2px; color: var(--k-text); font-family: "Playfair Display", Georgia, serif; font-size: 20px; }
+.media-private-pill, .youtube-public-pill { border-color: var(--k-border); color: var(--k-muted); }
+.media-grid { gap: 12px; }
+.media-card { border-color: var(--k-border); border-radius: 14px; background: var(--k-surface); color: var(--k-text); box-shadow: none; }
+.media-card:hover { transform: none; border-color: var(--k-gold); }
+.media-card .media-card-copy { padding: 13px 14px 15px; }
+.media-card .media-card-copy strong { color: var(--k-text); font-family: "Playfair Display", Georgia, serif; font-size: 17px; }
+.youtube-media-section { margin-top: 34px; border-top-color: var(--k-divider); padding-top: 26px; }
+.donor-media-page .youtube-media-section { border-color: var(--k-divider); background: transparent; }
+
+/* The full calendar gets the same canvas and card language; its hero remains. */
+.donor-calendar-page .cal-page { width: min(100%, 1120px); padding: 24px 20px 90px; }
+.donor-calendar-page .cal-card,
+.donor-calendar-page .cal-metrics {
+  border-color: var(--k-border);
+  background: var(--k-surface);
+  box-shadow: none;
+}
+.donor-calendar-page .cal-card { border-radius: 14px; }
+
+@media (max-width: 900px) {
+  :is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page) .page {
+    padding: 16px 16px 92px;
+  }
+  .groups-layout { grid-template-columns: 1fr; }
+  .media-feature { grid-template-columns: 1fr; }
+  .media-feature .media-thumbnail { min-height: 0; }
+}
+
+@media (max-width: 620px) {
+  .koinonia-screen-head h1 { font-size: 22px; }
+  .donor-parish-life-page .parish-life-page-shell { gap: 0; }
+  .parish-life-recording-row { grid-template-columns: 40px minmax(0, 1fr) auto; }
+  .parish-life-recording-row > em { grid-column: auto; }
+  .parish-life-ministry-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .parish-life-ministry-tile { min-height: 90px; }
+  .media-page-shell, .media-watch-shell { padding: 16px 16px 92px; }
+  .media-grid { grid-template-columns: 1fr; }
+  .media-feature { margin-bottom: 26px; border-radius: 14px; }
+  .media-feature .media-card-copy { padding: 18px; }
+  .media-feature .media-card-copy strong { font-size: 23px; }
+  .push-notification-card,
+  .feed-digest-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+    padding: 12px 14px;
+  }
+  .push-notification-card > div:first-child > :is(.eyebrow, p),
+  .feed-digest-card > div:first-child > :is(.eyebrow, p) { display: none; }
+  .push-notification-card h2,
+  .feed-digest-card h2 { margin: 0; font-size: 15px; }
+  .push-notification-actions { align-self: center; }
+  .push-notification-actions .btn { width: auto; min-width: 118px; }
+  .push-notification-status,
+  .feed-digest-status { grid-column: 1 / -1; margin: 0 !important; font-size: 10px !important; }
+  .feed-digest-toggle { align-self: center; }
+}
