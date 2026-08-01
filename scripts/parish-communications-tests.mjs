@@ -49,10 +49,12 @@ const db = {
 };
 
 assert.equal(communicationsEnabledFor({ subscriptionTier: "parish" }), true);
+assert.equal(communicationsEnabledFor({ subscriptionTier: "parish", communicationsEnabled: false }), false);
 assert.equal(communicationsEnabledFor({ subscriptionTier: "diocese" }), true);
 assert.equal(communicationsEnabledFor({ subscriptionTier: "stewardship" }), false);
 assert.equal(communicationsEnabledFor({ subscriptionTier: "mission", stewardshipStatus: "active" }), false);
 assert.equal(entitlementsSummary({ subscriptionTier: "parish" }).modules.communications.included, true);
+assert.equal(entitlementsSummary({ subscriptionTier: "parish", communicationsEnabled: false }).modules.communications.parishHasEnabled, false);
 
 assert.deepEqual(ANNOUNCEMENT_ALLOWED_TAGS, ["strong", "em", "a", "ul", "li", "br"]);
 const formattedSource = [
@@ -173,7 +175,17 @@ assert.doesNotMatch(handlerSource, /directory\/media\.js/, "announcement images 
 assert.match(handlerSource, /rateLimit\(request, env, "parish-communications-upload"/);
 assert.match(handlerSource, /PARISH_EDITORIAL_IMAGE_MAX_BYTES/);
 const adminUiSource = readFileSync(path.join(root, "public", "parish", "app.js"), "utf8");
+const dashboardSource = readFileSync(path.join(root, "public", "parish", "dashboard.html"), "utf8");
 assert.match(adminUiSource, /toggleAnnouncementReaders/);
 assert.match(adminUiSource, /\/readers/);
+assert.match(adminUiSource, /async function toggleCommunicationsFeature\(input\)/);
+assert.match(adminUiSource, /body: JSON\.stringify\(\{ communicationsEnabled: enabled \}\)/);
+assert.match(dashboardSource, /id="communicationsEnabledSwitch"[\s\S]*?onchange="toggleCommunicationsFeature\(this\)"/);
+const desktopOrder = [...dashboardSource.matchAll(/class="sidebar-nav-item"[^>]*id="(nav-[^"]+)"/g)].map((match) => match[1]);
+assert.deepEqual(
+  desktopOrder.slice(desktopOrder.indexOf("nav-stewardship"), desktopOrder.indexOf("nav-text") + 1),
+  ["nav-stewardship", "nav-communications", "nav-bookstore", "nav-sacraments", "nav-directory", "nav-text"],
+  "Communications must sit directly above Commerce without moving the surrounding desktop items",
+);
 
 console.log("PASS - parish announcements expose accurate admin-only reader counts and names alongside safe authoring");

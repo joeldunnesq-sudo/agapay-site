@@ -114,6 +114,13 @@ assert.equal(sent[0].options.parishId, registration.parishId, "digest sends must
 assert.equal(sent[0].options.parishFrom, "St. Test Parish <announcements@st-test.example>");
 
 results = await sendWeeklyAnnouncementDigestEmails(env, "2026-07-19T12:00:00.000Z", {}, {
+  registrations: [{ ...registration, communicationsEnabled: false }],
+  sendEmail: captureEmail,
+});
+assert.deepEqual(results, [], "turning Communications off must suppress announcement digests");
+assert.equal(sent.length, 1);
+
+results = await sendWeeklyAnnouncementDigestEmails(env, "2026-07-19T12:00:00.000Z", {}, {
   registrations: [registration],
   sendEmail: captureEmail,
 });

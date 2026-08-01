@@ -23,6 +23,19 @@ import {
   statementOfActivities,
   submitBill,
 } from "../src/accounting/index.js";
+
+// Keep this fixture in its July 2026 accounting period even when the suite runs later.
+const SystemDate = Date;
+globalThis.Date = class extends SystemDate {
+  constructor(...args) {
+    super(...(args.length ? args : ["2026-07-20T12:00:00.000Z"]));
+  }
+
+  static now() {
+    return SystemDate.parse("2026-07-20T12:00:00.000Z");
+  }
+};
+
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), ".."),
   s = new DatabaseSync(":memory:");
 for (const f of [

@@ -28,7 +28,7 @@
 
   function products() {
     const items = [
-      { id: "giving", href: "/myagapay/dashboard", label: "Give", short: "Giving dashboard", icon: icons.give },
+      { id: "giving", href: "/myagapay/dashboard", label: "Give", mobileLabel: "Home", short: "Giving dashboard", icon: icons.give },
       { id: "feed", href: "/myagapay/feed", label: "Feed", short: "Parish announcements", icon: icons.feed },
       { id: "groups", href: "/myagapay/groups", label: "Groups", short: "Your ministry messages", icon: icons.groups },
       { id: "commemorations", href: "/myagapay/sacraments", label: "Sacraments & Services", short: "Requests and prayer", icon: icons.sacraments, parishFeature: "sacramentsEnabled" },
@@ -60,14 +60,21 @@
   }
 
   function mobileProducts() {
-    return products().filter((item) => {
-      if (item.parishFeature) return parishCapabilities[item.parishFeature] === true || item.id === activeProduct();
-      if (item.mobileFallbackFor) {
-        const featureProduct = products().find(product => product.parishFeature === item.mobileFallbackFor);
-        return parishCapabilities[item.mobileFallbackFor] !== true && featureProduct?.id !== activeProduct();
-      }
-      return true;
-    });
+    const byId = new Map(products().map((item) => [item.id, item]));
+    const active = activeProduct();
+    const featureOrFallback = (featureId, fallbackId) => {
+      const feature = byId.get(featureId);
+      return parishCapabilities[feature?.parishFeature] === true || active === featureId
+        ? feature
+        : byId.get(fallbackId);
+    };
+    return [
+      byId.get("giving"),
+      featureOrFallback("bookstore", "settings"),
+      byId.get("today"),
+      featureOrFallback("directory", "learn"),
+      featureOrFallback("commemorations", "history"),
+    ].filter(Boolean);
   }
 
   function activeProduct(pathname = window.location.pathname) {
@@ -273,6 +280,8 @@
         ${icons.menu}
       </button>
       <div class="donor-home-account-dropdown" role="menu" hidden>
+        <a href="/myagapay/feed" role="menuitem">Parish Feed</a>
+        <a href="/myagapay/groups" role="menuitem">Groups</a>
         <a href="/myagapay/giving/history" role="menuitem">History</a>
         <a href="/myagapay/account" role="menuitem">Account Settings</a>
         <button type="button" data-donor-logout role="menuitem">Log out</button>
@@ -309,7 +318,7 @@
       const badge = unreadCount > 0
         ? `<em class="unified-nav-badge" data-${item.id}-unread-count aria-label="${unreadCount} unread">${unreadCount > 99 ? "99+" : unreadCount}</em>`
         : "";
-      const label = isDesktopSideNav ? `<span><strong>${item.label}</strong><small>${item.short}</small></span>${badge}` : `<span>${item.label}</span>${badge}`;
+      const label = isDesktopSideNav ? `<span><strong>${item.label}</strong><small>${item.short}</small></span>${badge}` : `<span>${item.mobileLabel || item.label}</span>${badge}`;
       return `<a class="${activeClass}" href="${item.href}"${current ? ' aria-current="page"' : ""}>${item.icon}${label}</a>`;
     }).join("");
     const accountLink = isDesktopSideNav

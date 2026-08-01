@@ -103,7 +103,7 @@ export {
   sacramentsEnabledFor,
 };
 
-import { bookstoreEnabledFor, directoryEnabledFor, entitlementsSummary, givingFeatureAccess, hasParishPlusAccess, sacramentsEnabledFor, stewardshipToolAccess, tierIncludesModule, tierIncludesParishPlus } from "../lib/entitlements.js";
+import { bookstoreEnabledFor, communicationsEnabledFor, directoryEnabledFor, entitlementsSummary, givingFeatureAccess, hasParishPlusAccess, sacramentsEnabledFor, stewardshipToolAccess, tierIncludesModule, tierIncludesParishPlus } from "../lib/entitlements.js";
 import { getDirectorySettings } from "../directory/settings.js";
 
 import {
@@ -2544,6 +2544,7 @@ export function parishDashboardPayload(parishId, registration) {
     candlesEnabled: registration.candlesEnabled ?? true,
     commemorationsEnabled: registration.commemorationsEnabled ?? true,
     bookstoreEnabled: bookstoreEnabledFor(registration),
+    communicationsEnabled: communicationsEnabledFor(registration),
     stewardshipActive: stewardshipToolAccess(registration),
     parishPlusIncludedInTier: tierIncludesParishPlus(registration),
     entitlements: entitlementsSummary(registration),
@@ -2753,6 +2754,7 @@ export async function handleParishDashboard(request, env, parishId) {
       recurringGivingEnabled: Boolean(body.recurringGivingEnabled ?? current.recurringGivingEnabled ?? true),
       candlesEnabled: Boolean(body.candlesEnabled ?? current.candlesEnabled ?? true),
       commemorationsEnabled: Boolean(body.commemorationsEnabled ?? current.commemorationsEnabled ?? true),
+      communicationsEnabled: Boolean(body.communicationsEnabled ?? current.communicationsEnabled ?? true),
       sacramentsEnabled: Boolean(body.sacramentsEnabled ?? current.sacramentsEnabled ?? false) && hasParishPlusAccess(current),
       sacramentPriests: body.sacramentPriests !== undefined ? sanitizeSacramentPriests(body.sacramentPriests, current) : normalizeSacramentPriests(current),
       bookstoreEnabled: Boolean(body.bookstoreEnabled ?? current.bookstoreEnabled ?? false),

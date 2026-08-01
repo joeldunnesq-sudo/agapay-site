@@ -1,5 +1,5 @@
 import { getReadContentIds, getReadReceipts, markContentRead } from "../lib/content-reads.js";
-import { communicationsEnabledFor } from "../lib/entitlements.js";
+import { communicationsEnabledFor, hasModuleAccess } from "../lib/entitlements.js";
 import { agapayEmailHtml, resendSendingDomainFromWebsite, sendEmail } from "../lib/email.js";
 import { loadAllRegistrations } from "../lib/registrations.js";
 import { sendAnnouncementPush } from "../lib/push-notifications.js";
@@ -636,7 +636,7 @@ async function requireCommunicationsAdmin(request, env, parishId) {
   if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) {
     return { error: unauthorized() };
   }
-  if (!communicationsEnabledFor(found.registration)) {
+  if (!hasModuleAccess(found.registration, "communications")) {
     return { error: json({ error: "Communications requires the Parish tier." }, { status: 403 }) };
   }
   return { found };
@@ -672,6 +672,7 @@ export async function handleParishCommunications(request, env, parishId, subpath
         input: await request.json(),
         onPublished: (publishedAnnouncement) => {
           if (!ctx?.waitUntil) return;
+          if (!communicationsEnabledFor(auth.found.registration)) return;
           const delivery = sendAnnouncementPush(env, {
             parishId,
             parishName: auth.found.registration.parishName || "your parish",

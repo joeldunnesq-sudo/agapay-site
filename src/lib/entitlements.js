@@ -108,7 +108,7 @@ export function bookstoreEnabledFor(registration) {
 }
 
 export function communicationsEnabledFor(registration) {
-  return hasModuleAccess(registration, "communications");
+  return registration?.communicationsEnabled !== false && hasModuleAccess(registration, "communications");
 }
 
 export function commerceSuiteEnabledFor(registration) {
@@ -170,8 +170,9 @@ export function entitlementsSummary(registration) {
         source: commerceSuiteEnabledFor(registration) ? "tier" : "none"
       },
       communications: {
-        included: communicationsEnabledFor(registration),
-        source: communicationsEnabledFor(registration) ? "tier" : "none"
+        included: hasModuleAccess(registration, "communications"),
+        parishHasEnabled: registration?.communicationsEnabled !== false,
+        source: tierIncludesModule(registration, "communications") ? "tier" : "none"
       },
       directory: {
         included: hasModuleAccess(registration, "directory"),
