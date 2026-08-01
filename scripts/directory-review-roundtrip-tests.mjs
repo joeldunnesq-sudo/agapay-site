@@ -23,10 +23,10 @@ assert.match(selfHandler, /\/api\/directory\/self\/review-requests/);
 assert.match(parishApp, /fetch\(directoryAdminApi\('\/queue'\)/);
 assert.match(parishApp, /Confirm submission[\s\S]*Ask for information[\s\S]*Decline/);
 assert.doesNotMatch(parishApp, /directoryMaintenanceActions\(maintenance\.actions \|\| \{\}\)/);
-assert.match(parishApp, /directoryManagementQueue\(queue, maintenance\.actions \|\| \{\}\)/,
-  "the one queue must include maintenance actions that affect directory health");
-assert.match(parishApp, /queueKind: 'followup'[\s\S]*openDirectoryPerson[\s\S]*openDirectoryHousehold/,
-  "health follow-up rows must open an actionable person or household record");
+assert.match(parishApp, /queue\.map\(\(item\) => \(\{ \.\.\.item, queueKind: 'submission' \}\)\)/,
+  "the parish queue must be derived only from submitted review items");
+assert.doesNotMatch(parishApp, /queueKind: 'followup'|Account links needed|Adult account link needed/,
+  "unlinked donors and unfinished profiles must not become parish follow-up work");
 assert.match(parishCss, /pdx-dir-health-ring[\s\S]*conic-gradient/);
 assert.match(memberUi, /directoryReviewRequests[\s\S]*Send response and resubmit/);
 assert.match(memberUi, /Confirm household is current[\s\S]*verification\/complete/);

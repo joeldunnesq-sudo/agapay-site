@@ -607,14 +607,6 @@ export async function getDirectoryMaintenanceDashboard(env, { context }) {
     actions: {
       overdueHouseholds: due.filter((row) => Number(row.verification_due_at || 0) < now).slice(0, 20).map((row) => ({ id: row.id, displayName: row.display_name, dueAt: Number(row.verification_due_at || 0) })),
       dueHouseholds: due.filter((row) => Number(row.verification_due_at || 0) >= now).slice(0, 20).map((row) => ({ id: row.id, displayName: row.display_name, dueAt: Number(row.verification_due_at || 0) })),
-      notStartedHouseholds: notStarted.slice(0, 20).map((row) => ({ id: row.id, displayName: row.display_name })),
-      householdsNeedingAccountAccess: unmanagedHouseholds.slice(0, 20).map((row) => ({ id: row.id, displayName: row.display_name })),
-      unclaimedPeople: unclaimedRecords.map((row) => ({
-        id: row.id,
-        displayName: row.preferred_name,
-        householdId: row.household_id || "",
-        householdName: row.household_name || ""
-      })),
       staleSkillConsents: staleSkillRecords.map((row) => ({ id: row.id, personId: row.person_id, displayName: row.preferred_name, skillName: row.skill_name, consentRecordedAt: Number(row.consent_recorded_at || 0) }))
     }
   };

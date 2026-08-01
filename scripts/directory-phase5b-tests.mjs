@@ -295,7 +295,7 @@ await test("admin catalog, moderation, exports, print data, and maintenance dash
   const maintenance = await getDirectoryMaintenanceDashboard(fx.env, { context: fx.adminContext });
   assert.equal(typeof maintenance.unclaimedPeople, "number");
   assert.ok(maintenance.actions && Array.isArray(maintenance.actions.overdueHouseholds));
-  assert.ok(Array.isArray(maintenance.actions.unclaimedPeople));
+  assert.equal("unclaimedPeople" in maintenance.actions, false, "unlinked adults are informational counts, not staff actions");
 });
 
 await test("maintenance is household-centered, includes never-confirmed families, and never flags children as unclaimed", async () => {
@@ -310,8 +310,8 @@ await test("maintenance is household-centered, includes never-confirmed families
   assert.equal(maintenance.householdsNotStarted, 1);
   assert.equal(maintenance.accountManagedHouseholds, 1);
   assert.equal(maintenance.householdsNeedingAccountAccess, 0);
-  assert.ok(maintenance.actions.notStartedHouseholds.some((item) => item.id === fx.household.id));
-  assert.ok(!maintenance.actions.unclaimedPeople.some((item) => item.id === child.id), "an unlinked child must not enter the account-invitation worklist");
+  assert.equal("notStartedHouseholds" in maintenance.actions, false, "an unfinished household profile must not enter the parish review queue");
+  assert.equal("unclaimedPeople" in maintenance.actions, false, "unlinked adults and children must not enter an account-invitation worklist");
 });
 
 await test("household verification records member confirmation and next due date", async () => {
