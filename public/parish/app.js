@@ -10441,7 +10441,14 @@
   }
 
   // ── COMMUNICATIONS ────────────────────────────────────────
+  const KOINONIA_NATIVE_VIDEO_UPLOADS_VISIBLE = false;
   let communicationsState = { loaded: false, announcements: [], teaching: [], videos: [], youtube: [], blog: null, readers: {} };
+
+  function syncKoinoniaVideoAdminAvailability() {
+    document.querySelectorAll('[data-native-video-admin]').forEach(element => {
+      element.hidden = !KOINONIA_NATIVE_VIDEO_UPLOADS_VISIBLE;
+    });
+  }
   let koinoniaMinistriesState = { loaded: false, ministries: [], selectedId: '', people: [] };
   const koinoniaMinistryImageUrls = new Map();
   let koinoniaStudioView = 'overview';
@@ -10706,14 +10713,13 @@
     const publishedAudio = audio.filter(item => item.status === 'published').length;
     const audioDrafts = audio.filter(item => item.status === 'draft').length;
     const publishedVideo = videos.filter(item => item.status === 'published').length + youtube.length;
-    const videoDrafts = videos.filter(item => item.status === 'draft').length;
     const setText = (id, value) => { const element = document.getElementById(id); if (element) element.textContent = value; };
     setText('koinoniaPublishedAnnouncements', String(publishedAnnouncements));
     setText('koinoniaAnnouncementDrafts', `${announcementDrafts} draft${announcementDrafts === 1 ? '' : 's'}`);
     setText('koinoniaPublishedAudio', String(publishedAudio));
     setText('koinoniaAudioDrafts', `${audioDrafts} draft${audioDrafts === 1 ? '' : 's'}`);
     setText('koinoniaPublishedVideo', String(publishedVideo));
-    setText('koinoniaVideoDrafts', `${videoDrafts} draft${videoDrafts === 1 ? '' : 's'} · ${youtube.length} YouTube`);
+    setText('koinoniaVideoDrafts', `${youtube.length} YouTube video${youtube.length === 1 ? '' : 's'}`);
     setText('koinoniaBlogStatus', communicationsState.blog?.enabled ? 'Connected' : 'Not connected');
     setText('koinoniaBlogDetail', communicationsState.blog?.feedUrl ? 'Feed validated' : 'Optional news source');
     const calendarInput = document.getElementById('koinoniaCalendarUrl');
@@ -10812,7 +10818,7 @@
     const list = document.getElementById('youtubeAdminList');
     if (!list) return;
     const rows = communicationsState.youtube || [];
-    list.innerHTML = rows.length ? rows.map(item => `<article class="communications-row"><img class="communications-row-image" src="${escapeAttr(item.thumbnailUrl)}" alt="" loading="lazy" /><div class="communications-row-copy"><div class="communications-row-meta"><span>Public on YouTube</span></div><h3>${escapeHtml(item.title)}</h3></div><div class="communications-row-actions"><button class="btn btn-danger btn-sm" type="button" onclick="removeYouTubeVideo('${escapeAttr(item.id)}',this)">Remove</button></div></article>`).join('') : '<div class="communications-empty"><strong>No YouTube links yet</strong><p>Paste a real video URL; AGAPAY validates it before saving.</p></div>';
+    list.innerHTML = rows.length ? rows.map(item => `<article class="communications-row"><img class="communications-row-image" src="${escapeAttr(item.thumbnailUrl)}" alt="" loading="lazy" /><div class="communications-row-copy"><div class="communications-row-meta"><span>Hosted on YouTube</span></div><h3>${escapeHtml(item.title)}</h3></div><div class="communications-row-actions"><button class="btn btn-danger btn-sm" type="button" onclick="removeYouTubeVideo('${escapeAttr(item.id)}',this)">Remove</button></div></article>`).join('') : '<div class="communications-empty"><strong>No YouTube links yet</strong><p>Paste a real video URL; AGAPAY validates it before saving.</p></div>';
   }
 
   async function toggleAnnouncementReaders(id, button) {
@@ -10886,6 +10892,7 @@
   }
 
   async function loadCommunicationsTab(force = false) {
+    syncKoinoniaVideoAdminAvailability();
     if (!currentParish) return;
     if (!currentParish.parishLifeAvailable) return;
     const included = moduleIncluded('communications');
@@ -11215,7 +11222,7 @@
     try {
       const response = await fetch(communicationsApi('/video/youtube'), { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ youtubeUrl:document.getElementById('youtubeVideoUrl').value }) });
       const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Unable to validate that YouTube video.');
-      form.reset(); await loadCommunicationsTab(true); setStatus('Public YouTube video added to its separate Media section.','success');
+      form.reset(); await loadCommunicationsTab(true); setStatus('YouTube video added to Media.','success');
     } catch (error) { setStatus(error.message,'error'); }
     finally { if (button) button.disabled = false; }
   }

@@ -62,7 +62,15 @@ assert.equal(sqlite.prepare("SELECT COUNT(*) count FROM parish_content_reads").g
 const sources = Object.fromEntries(["src/handlers/parish-video.js","src/worker.js","public/parish/dashboard.html","public/parish/app.js","public/myagapay/parish-life.html","public/myagapay/parish-life.js","public/myagapay/media.html","public/myagapay/media.js","public/myagapay/watch.html","public/myagapay/watch.js","public/donor/style.css"].map(file=>[file,readFileSync(path.join(root,file),"utf8")]));
 assert.match(sources["src/handlers/parish-video.js"], /requireSignedURLs:\s*true/);
 assert.match(sources["src/handlers/parish-video.js"], /WHERE id = \? AND parish_id = \? AND status = 'published'/);
+for (const functionName of ["createStreamUpload", "createVideoDraft", "privateStreamAssets", "updateVideoPost"]) {
+  assert.match(sources["src/handlers/parish-video.js"], new RegExp(`export async function ${functionName}\\b`), `${functionName} must remain available while the UI is paused`);
+}
+assert.match(sources["src/handlers/parish-video.js"], /parts\[0\] === "upload-url"/, "the direct Stream upload route must remain callable");
 assert.match(sources["public/parish/app.js"], /uploadVideoDirectly\(data\.uploadUrl, file/);
+assert.match(sources["public/parish/app.js"], /KOINONIA_NATIVE_VIDEO_UPLOADS_VISIBLE\s*=\s*false/, "native upload UI must stay behind the dormant product flag");
+assert.match(sources["public/parish/dashboard.html"], /data-native-video-admin hidden[\s\S]*createVideoUpload\(event\)/, "native Stream controls must be unreachable in the rendered admin UI");
+assert.match(sources["public/parish/dashboard.html"], /Choose the YouTube privacy setting intentionally[\s\S]*Public:[\s\S]*searchable[\s\S]*Unlisted:[\s\S]*anyone with the link can watch[\s\S]*does not require a login[\s\S]*Private:[\s\S]*explicitly invited Google accounts[\s\S]*every viewer needs a Google account and an individual invitation/i);
+assert.match(sources["public/parish/dashboard.html"], /Announcements, Groups, and Teaching[\s\S]*verified-household gate[\s\S]*YouTube-hosted video—even Unlisted—does not carry that same guarantee[\s\S]*AGAPAY cannot control YouTube access[\s\S]*youtubeVideoUrl[\s\S]*Validate and add/i, "privacy guidance must be permanent and appear before submission controls");
 assert.match(sources["public/myagapay/media.html"], /href="\/myagapay\/parish-life"[^>]*>← Back</);
 assert.match(sources["public/myagapay/watch.html"], /href="\/myagapay\/parish-life"[^>]*>← Back</);
 assert.match(sources["public/myagapay/parish-life.js"], />Recent Videos<[\s\S]*href="\/myagapay\/media">All Media/);

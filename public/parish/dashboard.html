@@ -1321,7 +1321,7 @@
               <div class="koinonia-metric-grid" aria-label="Create Koinonia content">
                 <button class="koinonia-metric-card" type="button" onclick="openKoinoniaComposer('announcements')" aria-label="Create a new announcement"><span class="koinonia-metric-icon is-gold">▤</span><div><small>New announcement</small><strong id="koinoniaPublishedAnnouncements">—</strong><em id="koinoniaAnnouncementDrafts">Loading drafts</em></div></button>
                 <button class="koinonia-metric-card" type="button" onclick="openKoinoniaComposer('audio')" aria-label="Add a new audio file"><span class="koinonia-metric-icon">♪</span><div><small>New audio file</small><strong id="koinoniaPublishedAudio">—</strong><em id="koinoniaAudioDrafts">Loading drafts</em></div></button>
-                <button class="koinonia-metric-card" type="button" onclick="openKoinoniaComposer('video')" aria-label="Add a new video file"><span class="koinonia-metric-icon is-rust">▶</span><div><small>New video file</small><strong id="koinoniaPublishedVideo">—</strong><em id="koinoniaVideoDrafts">Loading drafts</em></div></button>
+                <button class="koinonia-metric-card" type="button" onclick="openKoinoniaComposer('video')" aria-label="Add a YouTube video"><span class="koinonia-metric-icon is-rust">▶</span><div><small>Add YouTube video</small><strong id="koinoniaPublishedVideo">—</strong><em id="koinoniaVideoDrafts">Loading media</em></div></button>
                 <button class="koinonia-metric-card" type="button" onclick="openKoinoniaComposer('news')" aria-label="Connect the priest's blog RSS feed"><span class="koinonia-metric-icon is-green">↗</span><div><small>Priest’s blog RSS</small><strong id="koinoniaBlogStatus">—</strong><em id="koinoniaBlogDetail">Checking feed</em></div></button>
               </div>
               <div class="koinonia-overview-grid">
@@ -1329,7 +1329,7 @@
                 <section class="koinonia-overview-panel koinonia-channel-panel"><div class="koinonia-panel-head"><div><span class="eyebrow">Channels</span><h3>What parishioners see</h3></div></div>
                   <button type="button" onclick="setKoinoniaStudioView('announcements')"><span class="koinonia-channel-icon">▤</span><span><strong>Announcements</strong><small>Pinned updates and parish notices</small></span><em>Manage →</em></button>
                   <button type="button" onclick="setKoinoniaStudioView('audio')"><span class="koinonia-channel-icon">♪</span><span><strong>Recent Audio</strong><small>Homilies, catechism, choir, and events</small></span><em>Manage →</em></button>
-                  <button type="button" onclick="setKoinoniaStudioView('video')"><span class="koinonia-channel-icon">▶</span><span><strong>Recent Videos</strong><small>Private recordings and YouTube links</small></span><em>Manage →</em></button>
+                  <button type="button" onclick="setKoinoniaStudioView('video')"><span class="koinonia-channel-icon">▶</span><span><strong>Recent Videos</strong><small>YouTube videos curated by your parish</small></span><em>Manage →</em></button>
                   <button type="button" onclick="setKoinoniaStudioView('news')"><span class="koinonia-channel-icon">↗</span><span><strong>News feeds</strong><small>Priest’s blog and Orthodox news sources</small></span><em>Manage →</em></button>
                 </section>
               </div>
@@ -1427,8 +1427,9 @@
               </div>
             </section>
             <section class="communications-content-section koinonia-studio-view video-admin-section" data-koinonia-panel="video" aria-labelledby="videoAdminHeading" hidden>
-              <div class="communications-section-heading"><span class="eyebrow">Private media</span><h2 id="videoAdminHeading">Video</h2><p>Upload recorded video directly to Cloudflare Stream, wait for private processing, then publish it to parishioners.</p></div>
-              <div class="communications-grid">
+              <div class="communications-section-heading"><span class="eyebrow">YouTube-hosted media</span><h2 id="videoAdminHeading">Video</h2><p>Add YouTube videos to the parish Media library. Native Stream uploads are paused for now.</p></div>
+              <!-- Cloudflare Stream upload and management remain implemented but are intentionally hidden while Koinonia is YouTube-only. -->
+              <div class="communications-grid" data-native-video-admin hidden>
                 <form class="communications-compose" onsubmit="createVideoUpload(event)">
                   <span class="eyebrow">Upload</span><h2>New private video</h2>
                   <label>Title<input id="videoTitle" maxlength="180" required placeholder="Sunday homily · July 27" /></label>
@@ -1440,13 +1441,22 @@
                 </form>
                 <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">Native video</span><h2>Processing and published</h2></div><button class="btn btn-ghost btn-sm" type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="videoAdminList"><p class="sw-tool-loading">Loading...</p></div></section>
               </div>
-              <div class="communications-grid youtube-admin-grid">
+              <div class="communications-grid youtube-admin-grid is-primary">
                 <form class="communications-compose" onsubmit="addYouTubeVideo(event)">
-                  <span class="eyebrow">Public external media</span><h2>Add a YouTube video</h2><p class="section-note">YouTube videos are public and stay on YouTube. They are presented separately from private parish video.</p>
+                  <span class="eyebrow">YouTube media</span><h2>Add a YouTube video</h2><p class="section-note">The video stays on YouTube. AGAPAY validates the link before adding it to Media.</p>
+                  <aside class="youtube-privacy-guidance" aria-labelledby="youtubePrivacyGuidanceHeading">
+                    <strong id="youtubePrivacyGuidanceHeading">Choose the YouTube privacy setting intentionally</strong>
+                    <ul>
+                      <li><b>Public:</b> Searchable on YouTube, and anyone can watch.</li>
+                      <li><b>Unlisted:</b> Not searchable or listed on the channel, but anyone with the link can watch. YouTube does not require a login or perform a viewer check.</li>
+                      <li><b>Private:</b> Only explicitly invited Google accounts can watch. This is real access control: every viewer needs a Google account and an individual invitation.</li>
+                    </ul>
+                    <p><strong>Koinonia access:</strong> Announcements, Groups, and Teaching are restricted by AGAPAY’s verified-household gate. YouTube-hosted video—even Unlisted—does not carry that same guarantee because AGAPAY cannot control YouTube access.</p>
+                  </aside>
                   <label>YouTube video URL<input id="youtubeVideoUrl" type="url" required placeholder="https://www.youtube.com/watch?v=…" /></label>
                   <button class="btn btn-ghost" type="submit">Validate and add</button>
                 </form>
-                <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">YouTube</span><h2>Curated public links</h2></div></div><div id="youtubeAdminList"><p class="sw-tool-loading">Loading...</p></div></section>
+                <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">YouTube</span><h2>Curated videos</h2></div></div><div id="youtubeAdminList"><p class="sw-tool-loading">Loading...</p></div></section>
               </div>
             </section>
           </div>

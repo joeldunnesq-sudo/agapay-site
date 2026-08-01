@@ -806,6 +806,12 @@
     .video-admin-section .communications-section-heading h2, .video-admin-section .communications-section-heading p { color:#fff; }
     .video-admin-section .communications-section-heading p { color:#b7c3c9; }
     .youtube-admin-grid { margin-top:18px; padding-top:18px; border-top:1px solid #294354; }
+    .youtube-admin-grid.is-primary { margin-top:0; padding-top:0; border-top:0; }
+    .youtube-privacy-guidance { border:1px solid #d7c58f; border-radius:13px; padding:15px 16px; background:#fff8e7; color:#4b4539; }
+    .youtube-privacy-guidance > strong { display:block; color:var(--deep); font-family:Georgia,serif; font-size:17px; }
+    .youtube-privacy-guidance ul { display:grid; gap:7px; margin:11px 0; padding-left:19px; }
+    .youtube-privacy-guidance li, .youtube-privacy-guidance p { font-size:12px; line-height:1.55; }
+    .youtube-privacy-guidance p { margin:0; border-top:1px solid #dfd0a7; padding-top:11px; }
     .video-upload-progress { display:grid; gap:7px; }
     .video-upload-progress > span { overflow:hidden; height:8px; border-radius:999px; background:#dfe5e8; }
     .video-upload-progress i { display:block; width:0; height:100%; border-radius:inherit; background:var(--gold); transition:width .2s ease; }
