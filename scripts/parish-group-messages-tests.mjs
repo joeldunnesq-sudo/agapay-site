@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   GROUP_MESSAGE_ATTACHMENT_MAX_BYTES,
   GROUP_MESSAGE_IMAGE_TYPES,
-  GROUP_MESSAGE_RETENTION_DAYS,
+  GROUP_MESSAGE_ATTACHMENT_RETENTION_DAYS,
   GROUP_MESSAGE_VOICE_TYPES,
   GroupMessageAccessError,
   getLatestGroupMessageCatchUp,
@@ -331,16 +331,22 @@ assert.equal(groupMessagePushExcerpt({ messageType: "voice", body: "" }), "🎤 
 assert.equal(groupMessagePushExcerpt({ messageType: "image", body: "" }), "📷 Photo");
 assert.equal(groupMessagePushExcerpt({ messageType: "image", body: "Festival setup" }), "Festival setup");
 
-assert.equal(GROUP_MESSAGE_RETENTION_DAYS, 30);
+assert.equal(GROUP_MESSAGE_ATTACHMENT_RETENTION_DAYS, 30);
 sqlite.exec(`
+  UPDATE parish_group_messages
+  SET body = 'Listen before Sunday', created_at = '2026-06-30 23:59:58'
+  WHERE id = 'voice-one';
   INSERT INTO parish_group_messages
-    (id, parish_id, ministry_id, author_person_id, body, message_type, attachment_url, created_at)
+    (id, parish_id, ministry_id, author_person_id, body, message_type, attachment_url, attachment_duration_seconds, created_at)
   VALUES
-    ('expired-text', 'parish-one', 'ministry-council', 'person-leader', 'Old update', 'text', NULL, '2026-06-01 00:00:00'),
-    ('expired-photo', 'parish-one', 'ministry-council', 'person-leader', NULL, 'image', '/api/donor/groups/ministry-council/messages/expired-photo/attachment', '2026-06-30 23:59:59'),
-    ('retained-photo', 'parish-one', 'ministry-council', 'person-leader', NULL, 'image', '/api/donor/groups/ministry-council/messages/retained-photo/attachment', '2026-07-02 00:00:00');
+    ('expired-text', 'parish-one', 'ministry-council', 'person-leader', 'Old update', 'text', NULL, NULL, '2026-06-01 00:00:00'),
+    ('expired-photo', 'parish-one', 'ministry-council', 'person-participant', 'Festival setup', 'image', '/api/donor/groups/ministry-council/messages/expired-photo/attachment', NULL, '2026-06-30 23:59:59'),
+    ('retained-photo', 'parish-one', 'ministry-council', 'person-leader', NULL, 'image', '/api/donor/groups/ministry-council/messages/retained-photo/attachment', NULL, '2026-07-02 00:00:00');
   INSERT INTO parish_content_reads (parish_id, content_type, content_id, donor_id, read_at)
-  VALUES ('parish-one', 'group_message', 'expired-text', 'leader@example.test', '2026-06-01 00:01:00');
+  VALUES
+    ('parish-one', 'group_message', 'expired-text', 'leader@example.test', '2026-06-01 00:01:00'),
+    ('parish-one', 'group_message', 'voice-one', 'leader@example.test', '2026-06-30 23:59:59'),
+    ('parish-one', 'group_message', 'expired-photo', 'participant@example.test', '2026-07-01 00:00:00');
 `);
 const retentionDeletes = [];
 const retention = await purgeExpiredGroupMessages({
@@ -350,16 +356,63 @@ const retention = await purgeExpiredGroupMessages({
   },
 }, "2026-08-01T00:00:00Z");
 assert.deepEqual(retention, {
-  messagesDeleted: 2,
-  attachmentsDeleted: 1,
+  attachmentsPurged: 2,
   batches: 1,
   complete: true,
   cutoff: "2026-07-02 00:00:00",
 });
-assert.deepEqual(retentionDeletes, ["group-messages/parish-one/ministry-council/expired-photo"]);
-assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM parish_group_messages WHERE id LIKE 'expired-%'").get().count, 0, "messages older than 30 days must be deleted");
-assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM parish_content_reads WHERE content_id = 'expired-text'").get().count, 0, "expired-message read receipts must be deleted");
+assert.deepEqual(retentionDeletes, [
+  "group-messages/parish-one/ministry-council/voice-one",
+  "group-messages/parish-one/ministry-council/expired-photo",
+]);
+const expiredRows = sqlite.prepare(`
+  SELECT id, author_person_id, body, message_type, attachment_url, attachment_duration_seconds, created_at
+  FROM parish_group_messages WHERE id IN ('expired-photo', 'expired-text', 'voice-one') ORDER BY id
+`).all().map((row) => ({ ...row }));
+assert.deepEqual(expiredRows, [
+  {
+    id: "expired-photo", author_person_id: "person-participant", body: "Photo (no longer available)",
+    message_type: "image", attachment_url: null, attachment_duration_seconds: null, created_at: "2026-06-30 23:59:59",
+  },
+  {
+    id: "expired-text", author_person_id: "person-leader", body: "Old update",
+    message_type: "text", attachment_url: null, attachment_duration_seconds: null, created_at: "2026-06-01 00:00:00",
+  },
+  {
+    id: "voice-one", author_person_id: "person-leader", body: "Voice message (no longer available)",
+    message_type: "voice", attachment_url: null, attachment_duration_seconds: null, created_at: "2026-06-30 23:59:58",
+  },
+], "the sweep must preserve text, sender, timestamp, and attachment message rows while replacing expired media");
+assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM parish_content_reads WHERE content_id IN ('expired-text', 'expired-photo', 'voice-one')").get().count, 3, "attachment expiry must not alter read receipts");
 assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM parish_group_messages WHERE id = 'retained-photo'").get().count, 1, "a message exactly 30 days old must be retained until it becomes older than the cutoff");
+const retainedThread = await listGroupMessages(env, {
+  parishId: "parish-one", ministryId: "ministry-council", personId: "person-leader", donorId: "leader@example.test",
+});
+const expiredVoiceInThread = retainedThread.messages.find(({ id }) => id === "voice-one");
+assert.deepEqual({
+  body: expiredVoiceInThread.body,
+  attachmentUrl: expiredVoiceInThread.attachmentUrl,
+  attachmentDurationSeconds: expiredVoiceInThread.attachmentDurationSeconds,
+  authorName: expiredVoiceInThread.authorName,
+  createdAt: expiredVoiceInThread.createdAt,
+  read: expiredVoiceInThread.read,
+}, {
+  body: "Voice message (no longer available)",
+  attachmentUrl: "",
+  attachmentDurationSeconds: null,
+  authorName: "Maria Leader",
+  createdAt: "2026-06-30 23:59:58",
+  read: true,
+}, "the conversation API must preserve the expired voice message and its read state");
+const secondRetention = await purgeExpiredGroupMessages({
+  AGAPAY_DB: db,
+  GROUP_MESSAGE_ASSETS: {
+    async delete(keys) { retentionDeletes.push(...(Array.isArray(keys) ? keys : [keys])); },
+  },
+}, "2026-08-01T00:00:00Z");
+assert.equal(secondRetention.attachmentsPurged, 0, "a second sweep must be a no-op once attachment URLs are cleared");
+assert.equal(secondRetention.batches, 0);
+assert.equal(retentionDeletes.length, 2, "a second sweep must not retry already-purged R2 objects");
 
 for (const personId of ["person-withdrawn", "person-outsider"]) {
   await assert.rejects(
@@ -390,7 +443,7 @@ assert.match(handlerSource, /if \(!donor\?\.email\) return null;[\s\S]*donor acc
   "a valid donor without a platform identity must be forbidden without being treated as signed out");
 assert.match(handlerSource, /isActivityRequest[\s\S]*available: false, activity: \[\], unreadCount: 0/,
   "the Parish Life activity rollup must tolerate accounts that do not have Groups access");
-assert.equal((handlerSource.match(/parish_content_reads/g) || []).length, 1, "group messages should touch shared read receipts only when purging an expired message");
+assert.equal((handlerSource.match(/parish_content_reads/g) || []).length, 0, "attachment retention must never alter shared read receipts");
 assert.match(handlerSource, /parts\.length === 2 && parts\[1\] === "image"/, "ministry images must have a member-authenticated delivery route");
 const groupsUiSource = readFileSync(path.join(root, "public", "myagapay", "groups.js"), "utf8");
 assert.match(groupsUiSource, /ministryGroupAvatar\(group/, "group images must surface beside ministry names in the chat list and header");
@@ -405,6 +458,8 @@ assert.match(groupsUiSource, /navigator\.mediaDevices\?\.getUserMedia/);
 assert.match(groupsUiSource, /new MediaRecorder/);
 assert.match(groupsUiSource, /decodeAudioData/);
 assert.match(groupsUiSource, /data-group-photo/);
+assert.match(groupsUiSource, /group-attachment-expired/, "expired attachments must render as text instead of broken media controls");
+assert.match(groupsUiSource, /Conversation history remains available/, "the UI must describe attachment-only retention accurately");
 assert.match(groupsUiSource, /is-outgoing/);
 assert.match(groupsUiSource, /X-AGAPAY-Attachment-Duration-Seconds/);
 assert.match(groupsUiSource, /X-AGAPAY-Attachment-Bytes/, "the browser must declare the Blob size for fixed-length R2 streaming");
@@ -415,6 +470,6 @@ const wranglerSource = readFileSync(path.join(root, "wrangler.toml"), "utf8");
 assert.match(wranglerSource, /binding = "GROUP_MESSAGE_ASSETS"[\s\S]*?bucket_name = "agapay-group-message-assets"/);
 assert.doesNotMatch(wranglerSource, /GROUP_MESSAGE_ASSETS_URL/, "the private group bucket must not expose an r2.dev URL");
 const workerSource = readFileSync(path.join(root, "src", "worker.js"), "utf8");
-assert.match(workerSource, /purgeExpiredGroupMessages\(env, event\.scheduledTime\)/, "the daily Worker cron must enforce 30-day message retention");
+assert.match(workerSource, /purgeExpiredGroupMessages\(env, event\.scheduledTime\)/, "the daily Worker cron must enforce 30-day attachment retention");
 
 console.log("PASS - group messages keep individual catch-up visibility leader-only and use shared read receipts");

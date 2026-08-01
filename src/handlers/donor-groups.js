@@ -16,9 +16,9 @@ import {
 import { requireDonor } from "./parish.js";
 
 const CONTENT_TYPE = "group_message";
-export const GROUP_MESSAGE_RETENTION_DAYS = 30;
-const GROUP_MESSAGE_RETENTION_BATCH_SIZE = 100;
-const GROUP_MESSAGE_RETENTION_MAX_BATCHES = 100;
+export const GROUP_MESSAGE_ATTACHMENT_RETENTION_DAYS = 30;
+const GROUP_MESSAGE_ATTACHMENT_RETENTION_BATCH_SIZE = 100;
+const GROUP_MESSAGE_ATTACHMENT_RETENTION_MAX_BATCHES = 100;
 export const GROUP_MESSAGE_ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
 export const GROUP_MESSAGE_VOICE_TYPES = new Map([
   ["audio/mpeg", "mp3"],
@@ -89,53 +89,44 @@ function sqliteDateTime(value) {
 }
 
 export async function purgeExpiredGroupMessages(env, asOf = Date.now()) {
-  if (!database(env)) return { messagesDeleted: 0, attachmentsDeleted: 0, batches: 0, complete: true };
-  const cutoff = sqliteDateTime(new Date(new Date(asOf).getTime() - GROUP_MESSAGE_RETENTION_DAYS * 86400000));
-  let messagesDeleted = 0;
-  let attachmentsDeleted = 0;
+  if (!database(env)) return { attachmentsPurged: 0, batches: 0, complete: true };
+  const cutoff = sqliteDateTime(new Date(new Date(asOf).getTime() - GROUP_MESSAGE_ATTACHMENT_RETENTION_DAYS * 86400000));
+  let attachmentsPurged = 0;
   let batches = 0;
 
-  while (batches < GROUP_MESSAGE_RETENTION_MAX_BATCHES) {
+  while (batches < GROUP_MESSAGE_ATTACHMENT_RETENTION_MAX_BATCHES) {
     const expired = await d1All(env, `
       SELECT id, parish_id, ministry_id, message_type, attachment_url
       FROM parish_group_messages
-      WHERE created_at < ?
+      WHERE created_at < ? AND attachment_url IS NOT NULL
       ORDER BY created_at ASC, id ASC
       LIMIT ?
-    `, cutoff, GROUP_MESSAGE_RETENTION_BATCH_SIZE);
-    if (!expired.length) return { messagesDeleted, attachmentsDeleted, batches, complete: true, cutoff };
+    `, cutoff, GROUP_MESSAGE_ATTACHMENT_RETENTION_BATCH_SIZE);
+    if (!expired.length) return { attachmentsPurged, batches, complete: true, cutoff };
 
-    const attachmentRows = expired.filter((row) => row.attachment_url && ["voice", "image"].includes(row.message_type));
-    if (attachmentRows.length) {
-      if (!env.GROUP_MESSAGE_ASSETS) throw new Error("GROUP_MESSAGE_ASSETS_REQUIRED_FOR_RETENTION");
-      const keys = attachmentRows.map((row) => groupAttachmentStorageKey({
-        parishId: row.parish_id,
-        ministryId: row.ministry_id,
-        messageId: row.id,
-      }));
-      await env.GROUP_MESSAGE_ASSETS.delete(keys);
-      attachmentsDeleted += keys.length;
-    }
+    if (!env.GROUP_MESSAGE_ASSETS) throw new Error("GROUP_MESSAGE_ASSETS_REQUIRED_FOR_RETENTION");
+    const keys = expired.map((row) => groupAttachmentStorageKey({
+      parishId: row.parish_id,
+      ministryId: row.ministry_id,
+      messageId: row.id,
+    }));
+    await env.GROUP_MESSAGE_ASSETS.delete(keys);
 
-    const ids = expired.map(({ id }) => id);
-    const placeholders = ids.map(() => "?").join(", ");
-    await d1Batch(env, [
-      {
-        sql: `DELETE FROM parish_content_reads WHERE content_type = ? AND content_id IN (${placeholders})`,
-        params: [CONTENT_TYPE, ...ids],
-      },
-      {
-        sql: `DELETE FROM parish_group_messages WHERE id IN (${placeholders}) AND created_at < ?`,
-        params: [...ids, cutoff],
-      },
-    ]);
-    messagesDeleted += ids.length;
+    await d1Batch(env, expired.map((row) => ({
+      sql: `UPDATE parish_group_messages
+        SET attachment_url = NULL,
+            attachment_duration_seconds = NULL,
+            body = ?
+        WHERE id = ? AND created_at < ? AND attachment_url IS NOT NULL`,
+      params: [row.message_type === "voice" ? "Voice message (no longer available)" : "Photo (no longer available)", row.id, cutoff],
+    })));
+    attachmentsPurged += expired.length;
     batches += 1;
-    if (expired.length < GROUP_MESSAGE_RETENTION_BATCH_SIZE) {
-      return { messagesDeleted, attachmentsDeleted, batches, complete: true, cutoff };
+    if (expired.length < GROUP_MESSAGE_ATTACHMENT_RETENTION_BATCH_SIZE) {
+      return { attachmentsPurged, batches, complete: true, cutoff };
     }
   }
-  return { messagesDeleted, attachmentsDeleted, batches, complete: false, cutoff };
+  return { attachmentsPurged, batches, complete: false, cutoff };
 }
 
 function ministryImageDeliveryUrl(ministryId) {
