@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/donor/style.css?v=20260801koinoniaref1" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260801koinoniaref7" />
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260801koinoniaref1" defer></script>
-  <script src="/myagapay/teaching.js?v=20260801categories1" defer></script>
+  <script src="/myagapay/teaching.js?v=20260801podcasts1" defer></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -31,12 +31,32 @@
       <div class="topbar"><div class="topbar-title">Audio</div></div>
       <div class="page feed-page-shell teaching-page-shell">
         <header class="koinonia-screen-head" aria-labelledby="teachingHeading">
-          <div><h1 id="teachingHeading">Audio Library</h1><p>Recordings and reflections from your parish</p></div>
+          <div><h1 id="teachingHeading">Audio Library</h1><p>Your parish recordings and Orthodox podcasts in one listening hub</p></div>
           <span class="feed-unread-summary" id="teachingUnreadSummary" hidden></span>
         </header>
-        <nav class="content-filter-chips" id="teachingCategoryFilters" aria-label="Filter teaching by category"></nav>
-        <div class="notice" id="teachingStatus">Loading parish teaching...</div>
-        <section class="feed-list teaching-list" id="teachingList" aria-live="polite"></section>
+        <nav class="audio-library-mode-tabs" aria-label="Choose audio library">
+          <button type="button" class="is-active" data-audio-library-mode="parish" onclick="setAudioLibraryMode('parish')" aria-pressed="true"><span>♪</span><strong>Parish Audio</strong><small>Homilies and recordings</small></button>
+          <button type="button" data-audio-library-mode="podcasts" onclick="setAudioLibraryMode('podcasts')" aria-pressed="false"><span>◉</span><strong>Orthodox Podcasts</strong><small>Search, follow, and listen</small></button>
+        </nav>
+        <section id="parishAudioPane" data-audio-library-pane="parish">
+          <nav class="content-filter-chips" id="teachingCategoryFilters" aria-label="Filter teaching by category"></nav>
+          <div class="notice" id="teachingStatus">Loading parish teaching...</div>
+          <section class="feed-list teaching-list" id="teachingList" aria-live="polite"></section>
+        </section>
+        <section class="audio-podcast-pane" id="podcastAudioPane" data-audio-library-pane="podcasts" hidden>
+          <div class="audio-podcast-intro"><div><span class="eyebrow">Orthodox podcast directory</span><h2>Discover something worth hearing.</h2><p>Search the same podcast directory that powers AGAPAY Listen, presented in Koinonia’s own listening experience.</p></div></div>
+          <form class="koinonia-podcast-search" onsubmit="searchKoinoniaPodcasts(event)">
+            <span aria-hidden="true">⌕</span><input id="koinoniaPodcastQuery" type="search" required placeholder="Search Orthodox podcasts, teachers, or topics…" /><button type="submit">Search</button>
+          </form>
+          <p class="section-note koinonia-podcast-status" id="koinoniaPodcastStatus">Search the worldwide podcast directory to begin.</p>
+          <section class="koinonia-podcast-results" id="koinoniaPodcastResults" aria-live="polite"></section>
+          <section class="koinonia-podcast-show" id="koinoniaPodcastShow" hidden></section>
+          <section class="koinonia-podcast-player" id="koinoniaPodcastPlayer" hidden>
+            <span class="koinonia-podcast-player-art"><img id="koinoniaPodcastPlayerImage" alt="" /></span>
+            <span><small id="koinoniaPodcastPlayerShow">Orthodox Podcast</small><strong id="koinoniaPodcastPlayerTitle">Choose an episode</strong></span>
+            <audio id="koinoniaPodcastAudio" controls preload="metadata"></audio>
+          </section>
+        </section>
       </div>
       <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
     </main>

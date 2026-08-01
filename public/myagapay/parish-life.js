@@ -88,6 +88,10 @@ function parishLifeTierSectionsHtml(communicationsEnabled) {
       <div class="parish-life-section-head"><h2 id="pinnedAnnouncementsHeading">Pinned Announcements</h2><a href="/myagapay/feed">All Announcements</a></div>
       <div class="parish-life-announcement-list" id="parishLifePinnedAnnouncements"></div>
     </section>
+    <section class="parish-life-home-section" aria-labelledby="yourMinistriesHeading">
+      <div class="parish-life-section-head"><h2 id="yourMinistriesHeading">Your Ministries</h2><a href="/myagapay/groups">All Groups</a></div>
+      <div class="parish-life-ministry-grid" id="parishLifeMinistries"></div>
+    </section>
     <section class="parish-life-home-section" aria-labelledby="recentAudioHeading">
       <div class="parish-life-section-head"><h2 id="recentAudioHeading">Recent Audio</h2><a href="/myagapay/teaching">Audio Library</a></div>
       <div class="parish-life-recording-list" id="parishLifeRecordings"></div>
@@ -95,10 +99,6 @@ function parishLifeTierSectionsHtml(communicationsEnabled) {
     <section class="parish-life-home-section" aria-labelledby="recentVideosHeading">
       <div class="parish-life-section-head"><h2 id="recentVideosHeading">Recent Videos</h2><a href="/myagapay/media">All Media</a></div>
       <div class="parish-life-video-grid" id="parishLifeVideos"></div>
-    </section>
-    <section class="parish-life-home-section" aria-labelledby="yourMinistriesHeading">
-      <div class="parish-life-section-head"><h2 id="yourMinistriesHeading">Your Ministries</h2><a href="/myagapay/groups">All Groups</a></div>
-      <div class="parish-life-ministry-grid" id="parishLifeMinistries"></div>
     </section>
     <div id="parishLifeNewsMount"></div>`;
 }
@@ -160,16 +160,22 @@ function renderRecentVideos(media = {}) {
     </a>`).join("");
 }
 
-function renderRecentNews(blog = {}, ocaNews = {}, externalFeed = {}) {
+function renderRecentNews(sources = []) {
   const mount = document.getElementById("parishLifeNewsMount");
   if (!mount) return;
-  const articles = [
-    ...(blog.enabled ? (blog.posts || []).map((post) => ({ ...post, source: "Priest’s Blog" })) : []),
-    ...(ocaNews.enabled ? (ocaNews.posts || []).map((post) => ({ ...post, source: "OCA News" })) : []),
-    ...(externalFeed.subscribed ? (externalFeed.posts || []).map((post) => ({ ...post, source: "OrthoChristian" })) : []),
-  ].sort((left, right) => new Date(right.publishedAt || 0) - new Date(left.publishedAt || 0)).slice(0, 3);
+  const articles = sources.flatMap((source) => source?.subscribed
+    ? (source.posts || []).map((post) => ({ ...post, source: source.sourceLabel || "News" }))
+    : []).sort((left, right) => new Date(right.publishedAt || 0) - new Date(left.publishedAt || 0)).slice(0, 3);
   if (!articles.length) {
-    mount.innerHTML = "";
+    mount.innerHTML = `
+      <section class="parish-life-home-section" aria-labelledby="recentNewsHeading">
+        <div class="parish-life-section-head"><h2 id="recentNewsHeading">Recent News</h2><a href="/myagapay/news">All News</a></div>
+        <a class="parish-life-news-invitation" href="/myagapay/news">
+          <span class="parish-life-news-invitation-mark" aria-hidden="true">↗</span>
+          <span><strong>Choose your news sources</strong><small>Nothing appears until you follow the sources you want.</small></span>
+          <em>Choose sources</em>
+        </a>
+      </section>`;
     return;
   }
   mount.innerHTML = `
@@ -262,20 +268,23 @@ async function loadParishLife() {
       return;
     }
 
-    const isOcaParish = /(?:^|\b)oca(?:\b|$)|orthodox church in america/i.test(String(parish?.jurisdiction || ""));
-    const [feed, groups, teaching, media, blog, ocaNews, externalFeed] = await Promise.all([
+    const [feed, groups, teaching, media, customNews, ...newsSources] = await Promise.all([
       parishLifeFetch("/api/donor/feed", headers),
       parishLifeFetch("/api/donor/groups", headers),
       parishLifeFetch("/api/donor/teaching", headers),
       parishLifeFetch("/api/donor/videos", headers),
-      parishLifeFetch("/api/donor/blog", headers),
-      isOcaParish ? parishLifeFetch("/api/donor/oca-news", headers) : Promise.resolve({ enabled: false, posts: [] }),
+      parishLifeFetch("/api/donor/custom-news-feeds", headers),
+      parishLifeFetch("/api/donor/external-feeds/parish_blog", headers),
+      parishLifeFetch("/api/donor/external-feeds/oca", headers),
       parishLifeFetch("/api/donor/external-feeds/orthochristian", headers),
+      parishLifeFetch("/api/donor/external-feeds/spzh", headers),
+      parishLifeFetch("/api/donor/external-feeds/orthodoxtimes", headers),
+      parishLifeFetch("/api/donor/external-feeds/orthodoxethos", headers),
     ]);
     renderPinnedAnnouncements(feed || {});
     renderRecentRecordings(teaching || {});
     renderRecentVideos(media || {});
-    renderRecentNews(blog || {}, ocaNews || {}, externalFeed || {});
+    renderRecentNews([...newsSources.filter(Boolean), ...(customNews?.feeds || [])]);
     renderMinistries(groups || {});
     const feedUnread = Math.max(0, Number(feed?.unreadCount) || 0);
     const groupsUnread = (groups?.groups || []).reduce((sum, group) => sum + Math.max(0, Number(group.unreadCount) || 0), 0);

@@ -1,11 +1,15 @@
 import { communicationsEnabledFor, hasModuleAccess } from "../lib/entitlements.js";
-import { getBearerToken, hasProductionStore, json, missingProductionStoreResponse, normalizeEmail, unauthorized } from "../lib/core.js";
+import { getBearerToken, hasProductionStore, json, missingProductionStoreResponse, normalizeEmail, rateLimitByKey, unauthorized } from "../lib/core.js";
 import { findRegistrationByParishId, requireDonor, verifyParishDashboardBearer } from "./parish.js";
 
 const BLOG_FEED_MAX_BYTES = 1024 * 1024;
 const BLOG_POST_LIMIT = 5;
 const OCA_NEWS_FEED_URL = "https://www.oca.org/news/feed";
 const ORTHOCHRISTIAN_FEED_URL = "https://orthochristian.com/xml/rss.xml";
+const SPZH_FEED_URL = "https://spzh.eu/en/rss";
+const ORTHODOX_TIMES_FEED_URL = "https://orthodoxtimes.com/feed/";
+const ORTHODOX_ETHOS_FEED_URL = "https://www.orthodoxethos.com/blog-feed.xml";
+const NEWS_SOURCE_KEYS = new Set(["parish_blog", "oca", "orthochristian", "spzh", "orthodoxtimes", "orthodoxethos"]);
 
 function database(env) {
   return env.AGAPAY_DB || env.DB || null;
@@ -199,25 +203,7 @@ export async function handleParishBlog(request, env, parishId) {
 }
 
 export async function handleDonorBlog(request, env) {
-  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
-  if (!hasProductionStore(env)) return missingProductionStoreResponse();
-  const db = database(env);
-  if (!db) return missingProductionStoreResponse();
-  const donor = await requireDonor(request, env);
-  if (!donor?.email) return unauthorized();
-  const parishId = String(donor.defaultParishId || "").trim();
-  if (!parishId) return json({ error: "Choose your home parish to view its blog." }, { status: 422 });
-  const found = await findRegistrationByParishId(env, parishId);
-  if (!found || !communicationsEnabledFor(found.registration)) return json({ enabled: false, posts: [] });
-  const settings = await readBlogSettings(db, parishId);
-  if (!settings.enabled || !settings.feedUrl) return json({ enabled: false, posts: [] });
-  try {
-    const resolved = await resolveParishBlogFeed(settings.feedUrl);
-    return json({ enabled: true, sourceUrl: settings.sourceUrl, posts: resolved.posts });
-  } catch (error) {
-    console.warn("parish_blog_feed_unavailable", JSON.stringify({ parishId, message: error.message || String(error) }));
-    return json({ enabled: true, sourceUrl: settings.sourceUrl, posts: [] });
-  }
+  return handleDonorExternalFeed(request, env, "parish_blog");
 }
 
 export function isOcaJurisdiction(value) {
@@ -226,54 +212,152 @@ export function isOcaJurisdiction(value) {
 }
 
 export async function handleDonorOcaNews(request, env) {
-  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
-  if (!hasProductionStore(env)) return missingProductionStoreResponse();
-  const donor = await requireDonor(request, env);
-  if (!donor?.email) return unauthorized();
-  const parishId = String(donor.defaultParishId || "").trim();
-  const found = parishId ? await findRegistrationByParishId(env, parishId) : null;
-  if (!found || !communicationsEnabledFor(found.registration) || !isOcaJurisdiction(found.registration.jurisdiction)) {
-    return json({ enabled: false, posts: [] });
-  }
-  try {
-    const resolved = await resolveParishBlogFeed(OCA_NEWS_FEED_URL);
-    return json({ enabled: true, sourceUrl: "https://www.oca.org/news", posts: resolved.posts });
-  } catch (error) {
-    console.warn("oca_news_feed_unavailable", JSON.stringify({ parishId, message: error.message || String(error) }));
-    return json({ enabled: true, sourceUrl: "https://www.oca.org/news", posts: [] });
-  }
+  return handleDonorExternalFeed(request, env, "oca");
 }
 
 export async function handleDonorExternalFeed(request, env, feedKey) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const db = database(env);
   if (!db) return missingProductionStoreResponse();
-  if (feedKey !== "orthochristian") return json({ error: "External feed not found" }, { status: 404 });
+  if (!NEWS_SOURCE_KEYS.has(feedKey)) return json({ error: "News source not found" }, { status: 404 });
   const donor = await requireDonor(request, env);
   if (!donor?.email) return unauthorized();
   const parishId = String(donor.defaultParishId || "").trim();
   const found = parishId ? await findRegistrationByParishId(env, parishId) : null;
   if (!found || !communicationsEnabledFor(found.registration)) return json({ available: false, subscribed: false, posts: [] });
   const donorId = normalizeEmail(donor.email);
+  const settings = feedKey === "parish_blog" ? await readBlogSettings(db, parishId) : null;
+  const sources = {
+    parish_blog: {
+      available: Boolean(settings?.enabled && settings?.feedUrl),
+      sourceLabel: "Priest’s Blog",
+      sourceUrl: settings?.sourceUrl || "",
+      feedUrl: settings?.feedUrl || "",
+    },
+    oca: {
+      available: isOcaJurisdiction(found.registration.jurisdiction),
+      sourceLabel: "OCA News",
+      sourceUrl: "https://www.oca.org/news",
+      feedUrl: OCA_NEWS_FEED_URL,
+    },
+    orthochristian: {
+      available: true,
+      sourceLabel: "OrthoChristian",
+      sourceUrl: "https://orthochristian.com",
+      feedUrl: ORTHOCHRISTIAN_FEED_URL,
+    },
+    spzh: {
+      available: true,
+      sourceLabel: "SPZH",
+      sourceUrl: "https://spzh.eu/en",
+      feedUrl: SPZH_FEED_URL,
+    },
+    orthodoxtimes: {
+      available: true,
+      sourceLabel: "Orthodox Times",
+      sourceUrl: "https://orthodoxtimes.com",
+      feedUrl: ORTHODOX_TIMES_FEED_URL,
+    },
+    orthodoxethos: {
+      available: true,
+      sourceLabel: "Orthodox Ethos",
+      sourceUrl: "https://orthodoxethos.com",
+      feedUrl: ORTHODOX_ETHOS_FEED_URL,
+    },
+  };
+  const source = sources[feedKey];
   if (request.method === "PATCH") {
     const input = await request.json().catch(() => ({}));
     const subscribed = Boolean(input.subscribed);
+    if (subscribed && !source.available) return json({ error: "This news source is not available for your parish." }, { status: 422 });
     await db.prepare(`
-      INSERT INTO donor_external_feed_subscriptions (donor_id, feed_key, subscribed, updated_at)
+      INSERT INTO donor_news_source_subscriptions (donor_id, source_key, subscribed, updated_at)
       VALUES (?, ?, ?, datetime('now'))
-      ON CONFLICT(donor_id, feed_key) DO UPDATE SET subscribed = excluded.subscribed, updated_at = datetime('now')
+      ON CONFLICT(donor_id, source_key) DO UPDATE SET subscribed = excluded.subscribed, updated_at = datetime('now')
     `).bind(donorId, feedKey, subscribed ? 1 : 0).run();
-    return json({ ok: true, available: true, subscribed });
+    return json({ ok: true, sourceKey: feedKey, sourceLabel: source.sourceLabel, available: source.available, subscribed });
   }
   if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
-  const row = await db.prepare("SELECT subscribed FROM donor_external_feed_subscriptions WHERE donor_id = ? AND feed_key = ?").bind(donorId, feedKey).first();
-  const subscribed = Boolean(row?.subscribed);
-  if (!subscribed) return json({ available: true, subscribed: false, sourceUrl: "https://orthochristian.com", posts: [] });
+  const row = await db.prepare("SELECT subscribed FROM donor_news_source_subscriptions WHERE donor_id = ? AND source_key = ?").bind(donorId, feedKey).first();
+  const subscribed = source.available && Boolean(row?.subscribed);
+  const basePayload = {
+    sourceKey: feedKey,
+    sourceLabel: source.sourceLabel,
+    available: source.available,
+    enabled: source.available,
+    subscribed,
+    sourceUrl: source.sourceUrl,
+  };
+  if (!subscribed) return json({ ...basePayload, posts: [] });
   try {
-    const resolved = await resolveParishBlogFeed(ORTHOCHRISTIAN_FEED_URL);
-    return json({ available: true, subscribed: true, sourceUrl: "https://orthochristian.com", posts: resolved.posts });
+    const resolved = await resolveParishBlogFeed(source.feedUrl);
+    return json({ ...basePayload, posts: resolved.posts });
   } catch (error) {
     console.warn("external_feed_unavailable", JSON.stringify({ feedKey, message: error.message || String(error) }));
-    return json({ available: true, subscribed: true, sourceUrl: "https://orthochristian.com", posts: [] });
+    return json({ ...basePayload, posts: [] });
   }
+}
+
+export async function handleDonorCustomNewsFeeds(request, env, feedId = "") {
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const db = database(env);
+  if (!db) return missingProductionStoreResponse();
+  const donor = await requireDonor(request, env);
+  if (!donor?.email) return unauthorized();
+  const parishId = String(donor.defaultParishId || "").trim();
+  const found = parishId ? await findRegistrationByParishId(env, parishId) : null;
+  if (!found || !communicationsEnabledFor(found.registration)) return json({ error: "Koinonia news is unavailable for this parish." }, { status: 403 });
+  const donorId = normalizeEmail(donor.email);
+
+  if (feedId) {
+    if (request.method !== "DELETE") return json({ error: "Method not allowed" }, { status: 405 });
+    const result = await db.prepare("DELETE FROM donor_custom_news_feeds WHERE id = ? AND donor_id = ?").bind(feedId, donorId).run();
+    if (!Number(result.meta?.changes || 0)) return json({ error: "Custom news source not found" }, { status: 404 });
+    return json({ ok: true });
+  }
+
+  if (request.method === "POST") {
+    const limited = await rateLimitByKey(request, env, "donor-custom-news-feed", donorId, { limit: 10, windowSeconds: 3600 });
+    if (limited) return limited;
+    try {
+      const input = await request.json().catch(() => ({}));
+      const sourceUrl = validateParishBlogUrl(input.url);
+      const countRow = await db.prepare("SELECT COUNT(*) AS count FROM donor_custom_news_feeds WHERE donor_id = ?").bind(donorId).first();
+      if (Number(countRow?.count || 0) >= 10) return json({ error: "You can follow up to 10 custom RSS feeds." }, { status: 422 });
+      const resolved = await resolveParishBlogFeed(sourceUrl);
+      const hostname = new URL(resolved.sourceUrl).hostname.replace(/^www\./i, "");
+      const id = `news_${crypto.randomUUID().replaceAll("-", "")}`;
+      await db.prepare(`
+        INSERT INTO donor_custom_news_feeds (id, donor_id, source_url, feed_url, source_label, created_at)
+        VALUES (?, ?, ?, ?, ?, datetime('now'))
+        ON CONFLICT(donor_id, feed_url) DO UPDATE SET source_url = excluded.source_url, source_label = excluded.source_label
+      `).bind(id, donorId, resolved.sourceUrl, resolved.feedUrl, hostname).run();
+      return json({ ok: true, sourceLabel: hostname }, { status: 201 });
+    } catch (error) {
+      return json({ error: error.message || "Unable to add this RSS feed." }, { status: 422 });
+    }
+  }
+
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  const result = await db.prepare("SELECT id, source_url, feed_url, source_label, created_at FROM donor_custom_news_feeds WHERE donor_id = ? ORDER BY created_at DESC").bind(donorId).all();
+  const feeds = await Promise.all((result.results || []).map(async (row) => {
+    const base = {
+      id: row.id,
+      sourceKey: `custom:${row.id}`,
+      sourceLabel: row.source_label,
+      sourceUrl: row.source_url,
+      available: true,
+      subscribed: true,
+      custom: true,
+      posts: [],
+    };
+    try {
+      const resolved = await resolveParishBlogFeed(row.feed_url);
+      return { ...base, posts: resolved.posts };
+    } catch (error) {
+      console.warn("custom_news_feed_unavailable", JSON.stringify({ feedId: row.id, message: error.message || String(error) }));
+      return base;
+    }
+  }));
+  return json({ feeds });
 }

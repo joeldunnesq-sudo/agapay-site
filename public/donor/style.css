@@ -2898,6 +2898,58 @@ body.donor-home {
 .teaching-card-icon { display:grid; width:46px; height:46px; flex:0 0 auto; place-items:center; border-radius:50%; background:#efe7d6; color:#765a1d; font-weight:800; }
 .teaching-card-detail audio { width:100%; margin:0 0 18px; accent-color:#8a6a25; }
 .teaching-card-detail .feed-card-body { font-size:1rem; line-height:1.75; }
+.audio-library-mode-tabs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin-bottom:16px; border:1px solid var(--k-border); border-radius:16px; padding:7px; background:var(--k-surface-2); }
+.audio-library-mode-tabs button { display:grid; grid-template-columns:36px minmax(0,1fr); gap:2px 10px; align-items:center; border:0; border-radius:12px; padding:11px 13px; background:transparent; color:var(--k-text); text-align:left; cursor:pointer; }
+.audio-library-mode-tabs button > span { display:grid; grid-row:1 / 3; place-items:center; width:36px; height:36px; border-radius:11px; background:var(--k-surface); color:var(--k-gold); font-size:16px; }
+.audio-library-mode-tabs button strong { font-family:"Playfair Display",Georgia,serif; font-size:14px; }
+.audio-library-mode-tabs button small { color:var(--k-muted); font-size:9px; }
+.audio-library-mode-tabs button.is-active { background:#0d1722; color:#fff; box-shadow:0 6px 16px rgba(13,23,34,.15); }
+.audio-library-mode-tabs button.is-active > span { background:rgba(184,143,66,.17); color:#d7b86f; }
+.audio-library-mode-tabs button.is-active small { color:#aeb9c1; }
+[data-audio-library-pane][hidden] { display:none !important; }
+.audio-podcast-pane { display:grid; gap:13px; }
+.audio-podcast-intro { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; overflow:hidden; border:1px solid #253b49; border-radius:18px; padding:21px; background:linear-gradient(135deg,#0d1722,#183244); color:#fff; }
+.audio-podcast-intro .eyebrow { color:#d2ad5f; }
+.audio-podcast-intro h2 { margin:4px 0 6px; color:#fff; font-family:"Playfair Display",Georgia,serif; font-size:25px; }
+.audio-podcast-intro p { max-width:600px; margin:0; color:#b7c1c8; font-size:10px; line-height:1.55; }
+.koinonia-podcast-search { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:9px; border:1px solid var(--k-border); border-radius:14px; padding:6px 7px 6px 14px; background:var(--k-surface); box-shadow:0 4px 14px rgba(13,23,34,.04); }
+.koinonia-podcast-search > span { color:var(--k-gold); font-size:20px; }
+.koinonia-podcast-search input { min-width:0; border:0; outline:0; padding:10px 2px; background:transparent; color:var(--k-text); font:inherit; font-size:12px; }
+.koinonia-podcast-search button { border:0; border-radius:10px; padding:10px 17px; background:#0d1722; color:#fff; font-size:10px; font-weight:800; cursor:pointer; }
+.koinonia-podcast-search button:disabled { opacity:.55; }
+.koinonia-podcast-status { min-height:15px; margin:0 3px !important; }
+.koinonia-podcast-results { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.koinonia-podcast-result { display:grid; grid-template-columns:48px minmax(0,1fr) auto; align-items:center; gap:11px; border:1px solid var(--k-border); border-radius:14px; padding:11px; background:var(--k-surface); color:var(--k-text); text-align:left; cursor:pointer; }
+.koinonia-podcast-result:hover { border-color:var(--k-gold); background:var(--k-surface-2); }
+.koinonia-podcast-cover { display:grid; place-items:center; width:48px; height:48px; overflow:hidden; border-radius:12px; background:#0d1722; color:#d7b86f; font-size:18px; }
+.koinonia-podcast-cover img { width:100%; height:100%; object-fit:cover; }
+.koinonia-podcast-result > span:nth-child(2) { display:grid; gap:4px; min-width:0; }
+.koinonia-podcast-result strong { overflow:hidden; font-family:"Playfair Display",Georgia,serif; font-size:13px; text-overflow:ellipsis; white-space:nowrap; }
+.koinonia-podcast-result small { overflow:hidden; color:var(--k-muted); font-size:9px; text-overflow:ellipsis; white-space:nowrap; }
+.koinonia-podcast-result em { color:var(--k-gold-hover); font-size:9px; font-style:normal; font-weight:700; }
+.koinonia-podcast-show { overflow:hidden; border:1px solid var(--k-border); border-radius:17px; background:var(--k-surface); }
+.koinonia-podcast-show > header { display:flex; align-items:center; gap:14px; padding:17px; background:var(--k-surface-2); }
+.koinonia-podcast-cover.is-large { width:64px; height:64px; flex:0 0 auto; border-radius:15px; }
+.koinonia-podcast-show header small { color:var(--k-gold); font-size:9px; font-weight:800; text-transform:uppercase; }
+.koinonia-podcast-show h3 { margin:3px 0; color:var(--k-text); font-family:"Playfair Display",Georgia,serif; font-size:20px; }
+.koinonia-podcast-show header p { margin:0; color:var(--k-muted); font-size:9px; }
+.koinonia-podcast-episode { display:grid; grid-template-columns:32px minmax(0,1fr) auto; align-items:center; gap:10px; width:100%; border:0; border-top:1px solid var(--k-divider); padding:12px 15px; background:transparent; color:var(--k-text); text-align:left; cursor:pointer; }
+.koinonia-podcast-episode:hover { background:var(--k-surface-2); }
+.koinonia-podcast-episode > span:first-child { display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:#eee7d9; color:#8a6826; font-size:9px; }
+.koinonia-podcast-episode > span:nth-child(2) { display:grid; gap:3px; min-width:0; }
+.koinonia-podcast-episode strong { overflow:hidden; font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
+.koinonia-podcast-episode small { color:var(--k-muted); font-size:8px; }
+.koinonia-podcast-episode em { color:var(--k-gold-hover); font-size:9px; font-style:normal; font-weight:700; }
+.koinonia-podcast-player { position:sticky; z-index:12; bottom:74px; display:grid; grid-template-columns:48px minmax(0,1fr) minmax(190px,.65fr); align-items:center; gap:12px; border:1px solid rgba(216,183,109,.38); border-radius:16px; padding:10px 12px; background:rgba(13,23,34,.97); color:#fff; box-shadow:0 15px 35px rgba(6,21,34,.28); backdrop-filter:blur(12px); }
+.koinonia-podcast-player[hidden] { display:none !important; }
+.koinonia-podcast-player-art { width:48px; height:48px; overflow:hidden; border-radius:11px; background:#233541; }
+.koinonia-podcast-player-art img { width:100%; height:100%; object-fit:cover; }
+.koinonia-podcast-player > span:nth-child(2) { display:grid; gap:3px; min-width:0; }
+.koinonia-podcast-player small { color:#d2ad5f; font-size:8px; font-weight:800; text-transform:uppercase; }
+.koinonia-podcast-player strong { overflow:hidden; font-family:"Playfair Display",Georgia,serif; font-size:13px; text-overflow:ellipsis; white-space:nowrap; }
+.koinonia-podcast-player audio { width:100%; height:36px; accent-color:#b88f42; }
+@media (max-width:700px) { .koinonia-podcast-results { grid-template-columns:1fr; } .koinonia-podcast-player { grid-template-columns:42px minmax(0,1fr); bottom:68px; } .koinonia-podcast-player audio { grid-column:1 / -1; } }
+@media (max-width:520px) { .audio-library-mode-tabs { grid-template-columns:1fr; } .koinonia-podcast-result em { display:none; } }
 
 /* Parish Life private Media deliberately enters a cinematic AGAPAY mode. */
 .donor-media-page { --media-navy:#061522; --media-panel:#0b2030; --media-panel-2:#102b3e; --media-gold:#c9a85b; background:var(--media-navy); color:#f8f3e8; }
@@ -8227,8 +8279,31 @@ textarea {
 .parish-life-blog-card strong { color: var(--k-text); font-family: "Playfair Display", Georgia, serif; font-size: 15px; line-height: 1.3; }
 .parish-life-blog-card p { grid-column: 1 / -1; margin: 0; color: var(--k-muted); font-size: 11px; line-height: 1.5; }
 .parish-life-blog-card em { align-self: center; color: var(--k-gold); font-size: 9px; font-style: normal; font-weight: 600; white-space: nowrap; }
+.parish-life-news-invitation { display:flex; align-items:center; gap:13px; border:1px solid var(--k-border); border-radius:15px; padding:15px; background:linear-gradient(135deg,var(--k-surface),var(--k-surface-2)); color:var(--k-text); text-decoration:none; }
+.parish-life-news-invitation:hover { border-color:var(--k-gold); transform:translateY(-1px); box-shadow:0 8px 20px rgba(13,23,34,.08); }
+.parish-life-news-invitation-mark { display:grid; place-items:center; width:40px; height:40px; flex:0 0 auto; border-radius:12px; background:#0d1722; color:#d7b86f; font-size:17px; }
+.parish-life-news-invitation > span:nth-child(2) { display:grid; flex:1; gap:3px; min-width:0; }
+.parish-life-news-invitation strong { font-family:"Playfair Display",Georgia,serif; font-size:15px; }
+.parish-life-news-invitation small { color:var(--k-muted); font-size:10px; line-height:1.45; }
+.parish-life-news-invitation em { flex:0 0 auto; color:var(--k-gold-hover); font-size:9px; font-style:normal; font-weight:700; text-transform:uppercase; }
 
 .news-page-shell { width: min(820px, 100%); margin-inline: auto; }
+.news-source-section { display:grid; gap:13px; margin-bottom:17px; border:1px solid var(--k-border); border-radius:17px; padding:17px; background:var(--k-surface-2); }
+.news-source-heading { display:flex; align-items:end; justify-content:space-between; gap:16px; }
+.news-source-heading h2 { margin:3px 0 0; color:var(--k-text); font-family:"Playfair Display",Georgia,serif; font-size:22px; }
+.news-source-heading p { max-width:360px; margin:0; color:var(--k-muted); font-size:10px; line-height:1.5; text-align:right; }
+.news-source-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+.news-source-card { display:grid; grid-template-columns:40px minmax(0,1fr) auto; align-items:center; gap:11px; border:1px solid var(--k-border); border-radius:14px; padding:13px; background:var(--k-surface); }
+.news-source-card.is-following { border-color:color-mix(in srgb,var(--k-gold) 52%,var(--k-border)); background:color-mix(in srgb,var(--k-gold) 5%,var(--k-surface)); }
+.news-source-mark { display:grid; place-items:center; width:40px; height:40px; border-radius:12px; background:#0d1722; color:#d7b86f; font:700 10px "Playfair Display",Georgia,serif; }
+.news-source-card h3 { margin:0; color:var(--k-text); font-family:"Playfair Display",Georgia,serif; font-size:15px; }
+.news-source-card p { margin:3px 0 0; color:var(--k-muted); font-size:9px; line-height:1.4; }
+.news-custom-feed-form { display:grid; grid-template-columns:minmax(0,1fr) minmax(300px,.8fr); align-items:end; gap:14px; border-top:1px solid var(--k-divider); padding-top:14px; }
+.news-custom-feed-form > div { display:grid; gap:4px; }
+.news-custom-feed-form label { color:var(--k-text); font-family:"Playfair Display",Georgia,serif; font-size:15px; font-weight:600; }
+.news-custom-feed-form small { color:var(--k-muted); font-size:9px; line-height:1.45; }
+.news-custom-feed-form > span { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:7px; }
+.news-custom-feed-form input { min-width:0; border:1px solid var(--k-border); border-radius:10px; padding:9px 10px; background:var(--k-surface); color:var(--k-text); font:inherit; font-size:11px; }
 .news-follow-card { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 16px; border: 1px solid var(--k-border); border-radius: 16px; padding: 16px 18px; background: var(--k-surface); }
 .news-follow-card h2 { margin: 3px 0 5px; color: var(--k-text); font-family: "Playfair Display", Georgia, serif; font-size: 20px; }
 .news-follow-card p { margin: 0; color: var(--k-muted); font-size: 11px; line-height: 1.5; }
@@ -8240,7 +8315,8 @@ textarea {
 .news-article-card p { margin: 0; color: var(--k-muted); font-size: 11px; line-height: 1.55; }
 .news-article-card small { display: flex; justify-content: space-between; gap: 12px; color: var(--k-faint); font-size: 9px; }
 .news-article-card small em { color: var(--k-gold-hover); font-style: normal; font-weight: 700; }
-@media (max-width: 600px) { .news-follow-card { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 600px) { .news-follow-card,.news-source-heading { align-items:flex-start; flex-direction:column; } .news-source-heading p { text-align:left; } .news-source-grid,.news-custom-feed-form { grid-template-columns:1fr; } }
+@media (max-width: 520px) { .parish-life-news-invitation { align-items:flex-start; } .parish-life-news-invitation em { display:none; } }
 .parish-life-feed-toggle {
   border: 1px solid var(--k-gold);
   border-radius: 999px;

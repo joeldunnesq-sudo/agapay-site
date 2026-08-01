@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/donor/style.css?v=20260801koinoniaref6" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260801koinoniaref7" />
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260801news1" defer></script>
-  <script src="/myagapay/news.js?v=20260801news1" defer></script>
+  <script src="/myagapay/news.js?v=20260801news2" defer></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -31,9 +31,13 @@
       <div class="topbar"><div class="topbar-title">News</div></div>
       <div class="page news-page-shell">
         <header class="koinonia-screen-head" aria-labelledby="newsHeading"><div><h1 id="newsHeading">News Feeds</h1><p>Parish writing and Orthodox news, gathered in one place</p></div></header>
-        <section class="news-follow-card" id="orthoChristianPreference" hidden>
-          <div><span class="eyebrow">Optional source</span><h2>OrthoChristian</h2><p>Choose whether OrthoChristian’s newest articles appear in your personal news feed.</p></div>
-          <button type="button" class="parish-life-feed-toggle" id="orthoChristianToggle" onclick="toggleNewsExternalFeed(this)">Follow feed</button>
+        <section class="news-source-section" aria-labelledby="newsSourcesHeading">
+          <div class="news-source-heading"><div><span class="eyebrow">Your choice</span><h2 id="newsSourcesHeading">Choose your sources</h2></div><p>Nothing appears until you follow a source. You can change these choices at any time.</p></div>
+          <div class="news-source-grid" id="newsSourcePreferences"><p class="sw-tool-loading">Loading available sources…</p></div>
+          <form class="news-custom-feed-form" onsubmit="addCustomNewsSource(event)">
+            <div><label for="customNewsFeedUrl">Follow another RSS feed</label><small>Paste a public HTTPS website, RSS, or Atom URL. Only you will see articles from this source.</small></div>
+            <span><input id="customNewsFeedUrl" type="url" inputmode="url" required placeholder="https://example.org/feed.xml" /><button class="btn btn-gold" type="submit">Add feed</button></span>
+          </form>
         </section>
         <nav class="content-filter-chips" id="newsSourceFilters" aria-label="Filter news by source"></nav>
         <div class="notice" id="newsStatus">Loading news feeds…</div>

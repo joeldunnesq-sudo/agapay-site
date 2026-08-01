@@ -156,6 +156,11 @@ assert.match(sources["public/parish/app.js"], /createTeachingDraft/);
 assert.match(sources["public/parish/app.js"], /category:document\.getElementById\('teachingCategory'\)\.value/);
 assert.match(sources["public/myagapay/teaching.js"], /All[\s\S]*Homilies[\s\S]*Catechism[\s\S]*Liturgical[\s\S]*Choir[\s\S]*Special Events/);
 assert.match(sources["public/myagapay/teaching.js"], /teachingPostsForFilter\(value\)\.length/);
+assert.match(sources["public/myagapay/teaching.html"], /Parish Audio[\s\S]*Orthodox Podcasts[\s\S]*koinoniaPodcastQuery[\s\S]*koinoniaPodcastPlayer/);
+assert.doesNotMatch(sources["public/myagapay/teaching.html"], /<iframe/, "the podcast hub must use Koinonia-native UI instead of embedding AGAPAY Listen");
+assert.match(sources["public/myagapay/teaching.js"], /searchKoinoniaPodcasts[\s\S]*\/api\/listen\/search/);
+assert.match(sources["public/myagapay/teaching.js"], /openKoinoniaPodcast[\s\S]*\/api\/listen\/rss/);
+assert.match(sources["public/myagapay/teaching.js"], /playKoinoniaPodcastEpisode[\s\S]*koinoniaPodcastAudio/);
 
 const context = { waitUntil() {} };
 for (const pathname of ["/api/donor/teaching", "/api/donor/teaching/post-one/read"]) {

@@ -64,6 +64,7 @@ assert.match(parishTierMarkup, /Pinned Announcements/);
 assert.match(parishTierMarkup, /Recent Audio/);
 assert.match(parishTierMarkup, /Recent Videos/);
 assert.match(parishTierMarkup, /Your Ministries/);
+assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf("Recent Audio"), "ministries should appear before recent audio and video");
 assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf("parishLifeNewsMount"), "the combined news preview should follow parish-specific ministries");
 assert.match(landingScript, /Get involved/);
 assert.match(landingScript, /\/api\/donor\/ministry-service-interest/);
