@@ -8079,6 +8079,36 @@ textarea {
 .parish-life-services-state p,
 .parish-life-empty-state p { color: var(--k-muted); font-size: 11px; line-height: 1.5; }
 
+.parish-life-services-state:has(.parish-life-liturgical-fallback) { padding: 0; overflow: hidden; }
+.parish-life-liturgical-fallback {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  color: inherit;
+  text-decoration: none;
+}
+.parish-life-liturgical-fallback:hover { background: var(--k-surface-2); }
+.parish-life-fallback-date { display: grid; justify-items: center; gap: 2px; }
+.parish-life-fallback-date strong {
+  color: var(--k-gold);
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 20px;
+  line-height: 1;
+}
+.parish-life-fallback-date small {
+  color: var(--k-muted);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.parish-life-fallback-copy { display: grid; gap: 3px; min-width: 0; }
+.parish-life-fallback-copy strong { color: var(--k-text); font-size: 13px; line-height: 1.3; }
+.parish-life-fallback-copy small { color: var(--k-muted); font-size: 10px; line-height: 1.4; }
+.parish-life-fallback-arrow { color: var(--k-faint); font-size: 22px; }
+
 #parishLifeTierSections { gap: 0; }
 .parish-life-announcement-list { display: grid; grid-template-columns: 1fr; gap: 10px; }
 .parish-life-announcement-card {
@@ -8138,6 +8168,45 @@ textarea {
 .parish-life-recording-row strong { color: var(--k-text); font-family: "Inter", Arial, sans-serif; font-size: 13px; }
 .parish-life-recording-row small { color: var(--k-muted); font-size: 10px; }
 .parish-life-recording-row em { color: var(--k-faint); font-size: 10px; font-weight: 500; text-transform: none; }
+
+.parish-life-video-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.parish-life-video-grid > .parish-life-empty-state { grid-column: 1 / -1; }
+.parish-life-video-card {
+  overflow: hidden;
+  border: 1px solid var(--k-border);
+  border-radius: 12px;
+  background: var(--k-surface);
+  color: inherit;
+  text-decoration: none;
+}
+.parish-life-video-card:hover { border-color: var(--k-gold); }
+.parish-life-video-thumb {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(135deg, #172533, #0d1722);
+}
+.parish-life-video-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.parish-life-video-thumb i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--k-gold);
+  color: var(--k-navy);
+  font-size: 10px;
+  font-style: normal;
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.24);
+}
+.parish-life-video-copy { display: grid; gap: 3px; padding: 9px 10px 11px; }
+.parish-life-video-copy strong { color: var(--k-text); font-size: 11px; line-height: 1.3; }
+.parish-life-video-copy small { color: var(--k-faint); font-size: 9px; }
 
 .parish-life-ministry-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .parish-life-ministry-tile {
@@ -8346,6 +8415,8 @@ textarea {
   .parish-life-recording-row { grid-template-columns: 40px minmax(0, 1fr) auto; }
   .parish-life-recording-row > em { grid-column: auto; }
   .parish-life-ministry-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .parish-life-video-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .parish-life-video-card:last-child:nth-child(odd) { display: none; }
   .parish-life-ministry-tile { min-height: 90px; }
   .media-page-shell, .media-watch-shell { padding: 16px 16px 92px; }
   .media-grid { grid-template-columns: 1fr; }

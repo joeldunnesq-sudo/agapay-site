@@ -147,7 +147,7 @@ assert.match(sources["src/handlers/parish-communications.js"], /import \{ render
 assert.match(sources["src/handlers/parish-teaching.js"], /import \{ renderBoundedRichText \} from "\.\.\/lib\/rich-text\.js"/);
 assert.match(sources["src/handlers/parish-teaching.js"], /sendTeachingPush\(env, \{/);
 assert.match(sources["src/worker.js"], /handleParishTeaching\(request, env, parishId,[\s\S]*, ctx\)/);
-assert.match(sources["public/myagapay/parish-life.js"], />Recent Recordings<[\s\S]*href="\/myagapay\/teaching">Audio Library/);
+assert.match(sources["public/myagapay/parish-life.js"], />Recent Audio<[\s\S]*href="\/myagapay\/teaching">Audio Library/);
 assert.match(sources["public/myagapay/parish-life.js"], /post\.status === "published" && Boolean\(post\.audioUrl\)/);
 assert.match(sources["public/myagapay/parish-life.js"], /setTeachingUnreadCount\(teachingUnread\)/);
 assert.match(sources["public/parish/dashboard.html"], /id="teachingAudio"/);

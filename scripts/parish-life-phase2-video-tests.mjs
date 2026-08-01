@@ -59,12 +59,14 @@ const resolved = await resolveYouTubeVideo("https://youtu.be/dQw4w9WgXcQ", async
 await addYouTubeLink(db, { parishId:"parish-one", addedBy:"staff@example.test", value:resolved.youtubeUrl, fetchImpl:async()=>Response.json({provider_name:"YouTube",title:"Parish channel video",thumbnail_url:"https://i.ytimg.com/vi/test/hqdefault.jpg"}) });
 assert.equal(sqlite.prepare("SELECT COUNT(*) count FROM parish_content_reads").get().count, beforeYouTubeReads, "YouTube curation must never create read tracking");
 
-const sources = Object.fromEntries(["src/handlers/parish-video.js","src/worker.js","public/parish/dashboard.html","public/parish/app.js","public/myagapay/parish-life.html","public/myagapay/media.html","public/myagapay/media.js","public/myagapay/watch.html","public/myagapay/watch.js","public/donor/style.css"].map(file=>[file,readFileSync(path.join(root,file),"utf8")]));
+const sources = Object.fromEntries(["src/handlers/parish-video.js","src/worker.js","public/parish/dashboard.html","public/parish/app.js","public/myagapay/parish-life.html","public/myagapay/parish-life.js","public/myagapay/media.html","public/myagapay/media.js","public/myagapay/watch.html","public/myagapay/watch.js","public/donor/style.css"].map(file=>[file,readFileSync(path.join(root,file),"utf8")]));
 assert.match(sources["src/handlers/parish-video.js"], /requireSignedURLs:\s*true/);
 assert.match(sources["src/handlers/parish-video.js"], /WHERE id = \? AND parish_id = \? AND status = 'published'/);
 assert.match(sources["public/parish/app.js"], /uploadVideoDirectly\(data\.uploadUrl, file/);
 assert.match(sources["public/myagapay/media.html"], /href="\/myagapay\/parish-life"[^>]*>← Back</);
 assert.match(sources["public/myagapay/watch.html"], /href="\/myagapay\/parish-life"[^>]*>← Back</);
+assert.match(sources["public/myagapay/parish-life.js"], />Recent Videos<[\s\S]*href="\/myagapay\/media">All Media/);
+assert.match(sources["public/myagapay/parish-life.js"], /parishLifeFetch\("\/api\/donor\/videos"/);
 assert.match(sources["public/myagapay/watch.html"], /<video id="streamVideo" playsinline preload="metadata"><\/video>/, "custom watch page must not use Stream iframe or native controls");
 assert.doesNotMatch(sources["public/myagapay/watch.html"], /<iframe|<video[^>]+controls/);
 assert.match(sources["public/myagapay/watch.js"], /new Hls/);

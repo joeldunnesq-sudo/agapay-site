@@ -31,21 +31,36 @@ assert.match(landing, /id="todayChips"/);
 assert.match(landing, />Make a festal offering</);
 assert.match(landing, /id="saintPreviewCard"/);
 assert.match(landing, /id="donorSaintModal"[\s\S]*Orthocal\.info/);
-assert.match(landing, />Upcoming Services<[\s\S]*Parish service calendar not yet configured/);
+assert.match(landing, />Upcoming Services<[\s\S]*Loading the next liturgical observance/);
 assert.match(landing, /href="\/myagapay\/calendar">Full Calendar</);
 assert.doesNotMatch(landing, />Community</, "the product must not be renamed Community in the rendered landing");
 
 const sandbox = { window: {}, document: { addEventListener() {} }, console };
 vm.runInNewContext(landingScript, sandbox);
+const fixtureEvents = [
+  { name: "Minor commemoration", date: "2026-08-02", rank: "season" },
+  { name: "Dormition Fast Ends", date: "2026-08-03", rank: "fast" },
+  { name: "Transfiguration", date: "2026-08-06", rank: "great" },
+  { name: "Dormition Fast Begins", date: "2026-08-01", rank: "fast" },
+];
+sandbox.window.AGAPAYLiturgicalCalendar = { liturgicalFeastsForYear: () => fixtureEvents };
+assert.equal(
+  sandbox.window.parishLifeNextLiturgicalEvent("julian", new Date(2026, 7, 1)).name,
+  "Dormition Fast Begins",
+  "the landing should fall back to the next major feast or beginning of a fasting period"
+);
 const lowerTierMarkup = sandbox.window.parishLifeTierSectionsHtml(false);
 assert.equal(lowerTierMarkup, "", "lower tiers must receive no communications section DOM");
 assert.doesNotMatch(lowerTierMarkup, /Announcements|Recordings|Ministries/);
 const parishTierMarkup = sandbox.window.parishLifeTierSectionsHtml(true);
 assert.match(parishTierMarkup, /Pinned Announcements/);
-assert.match(parishTierMarkup, /Recent Recordings/);
+assert.match(parishTierMarkup, /Recent Audio/);
+assert.match(parishTierMarkup, /Recent Videos/);
 assert.match(parishTierMarkup, /Your Ministries/);
 assert.match(landingScript, /item\.status === "published" && item\.pinned === true/);
 assert.match(landingScript, /post\.status === "published" && Boolean\(post\.audioUrl\)/);
+assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/videos"/);
+assert.match(landingScript, /href="\/myagapay\/media\/watch\?video=/);
 assert.match(landingScript, /if \(!experience\.communicationsEnabled\)[\s\S]*return;[\s\S]*parishLifeFetch\("\/api\/donor\/feed"/);
 
 for (const [name, source] of Object.entries({ calendar, feed, groups, teaching, media, watch })) {

@@ -17,6 +17,40 @@ function parishLifeCategory(value, fallback) {
   return normalized ? normalized.replace(/\b\w/g, (letter) => letter.toUpperCase()) : "";
 }
 
+function parishLifeNextLiturgicalEvent(calendar, fromDate = new Date()) {
+  const api = window.AGAPAYLiturgicalCalendar;
+  if (!api?.liturgicalFeastsForYear) return null;
+  const year = fromDate.getFullYear();
+  const today = `${year}-${String(fromDate.getMonth() + 1).padStart(2, "0")}-${String(fromDate.getDate()).padStart(2, "0")}`;
+  return [year, year + 1]
+    .flatMap((feastYear) => api.liturgicalFeastsForYear(feastYear, calendar || "julian"))
+    .filter((event) => event.date >= today)
+    .filter((event) => ["great", "major"].includes(event.rank) || (event.rank === "fast" && !/ends/i.test(event.name)))
+    .sort((left, right) => left.date.localeCompare(right.date) || left.name.localeCompare(right.name))[0] || null;
+}
+
+function renderParishLifeServicesFallback(parish, fromDate = new Date()) {
+  const target = document.getElementById("parishLifeServices");
+  if (!target) return;
+  const calendar = parish?.liturgicalCalendar || "julian";
+  const event = parishLifeNextLiturgicalEvent(calendar, fromDate);
+  if (!event) {
+    target.innerHTML = '<strong>Liturgical calendar unavailable</strong><p>Open the full calendar to see upcoming feasts and fasting periods.</p>';
+    return;
+  }
+  const date = new Date(`${event.date}T12:00:00`);
+  const day = date.toLocaleDateString(undefined, { day: "numeric" });
+  const weekday = date.toLocaleDateString(undefined, { weekday: "short" });
+  const eventType = event.rank === "fast" ? "Fasting period begins" : event.rank === "great" ? "Great feast" : "Major feast";
+  const calendarLabel = window.AGAPAYLiturgicalCalendar?.calendarLabel?.(calendar) || "Church calendar";
+  target.innerHTML = `
+    <a class="parish-life-liturgical-fallback" href="/myagapay/calendar">
+      <span class="parish-life-fallback-date"><strong>${parishLifeEscape(day)}</strong><small>${parishLifeEscape(weekday)}</small></span>
+      <span class="parish-life-fallback-copy"><strong>${parishLifeEscape(event.name)}</strong><small>${parishLifeEscape(event.displayDate)} · ${parishLifeEscape(eventType)} · ${parishLifeEscape(calendarLabel)}</small></span>
+      <span class="parish-life-fallback-arrow" aria-hidden="true">›</span>
+    </a>`;
+}
+
 function parishLifeTierSectionsHtml(communicationsEnabled) {
   if (!communicationsEnabled) return "";
   return `
@@ -24,9 +58,13 @@ function parishLifeTierSectionsHtml(communicationsEnabled) {
       <div class="parish-life-section-head"><h2 id="pinnedAnnouncementsHeading">Pinned Announcements</h2><a href="/myagapay/feed">All Announcements</a></div>
       <div class="parish-life-announcement-list" id="parishLifePinnedAnnouncements"></div>
     </section>
-    <section class="parish-life-home-section" aria-labelledby="recentRecordingsHeading">
-      <div class="parish-life-section-head"><h2 id="recentRecordingsHeading">Recent Recordings</h2><a href="/myagapay/teaching">Audio Library</a></div>
+    <section class="parish-life-home-section" aria-labelledby="recentAudioHeading">
+      <div class="parish-life-section-head"><h2 id="recentAudioHeading">Recent Audio</h2><a href="/myagapay/teaching">Audio Library</a></div>
       <div class="parish-life-recording-list" id="parishLifeRecordings"></div>
+    </section>
+    <section class="parish-life-home-section" aria-labelledby="recentVideosHeading">
+      <div class="parish-life-section-head"><h2 id="recentVideosHeading">Recent Videos</h2><a href="/myagapay/media">All Media</a></div>
+      <div class="parish-life-video-grid" id="parishLifeVideos"></div>
     </section>
     <section class="parish-life-home-section" aria-labelledby="yourMinistriesHeading">
       <div class="parish-life-section-head"><h2 id="yourMinistriesHeading">Your Ministries</h2><a href="/myagapay/groups">All Groups</a></div>
@@ -70,6 +108,24 @@ function renderRecentRecordings(teaching = {}) {
       <span class="parish-life-audio-icon" aria-hidden="true">▶</span>
       <span><strong>${parishLifeEscape(post.title)}</strong><small>${parishLifeEscape(parishLifeCategory(post.category, "homilies"))} · ${parishLifeEscape(parishLifeDate(post.publishedAt || post.createdAt))}</small></span>
       <em>${post.read ? "Listen" : "New"}</em>
+    </a>`).join("");
+}
+
+function renderRecentVideos(media = {}) {
+  const target = document.getElementById("parishLifeVideos");
+  if (!target) return;
+  const videos = (media.videos || [])
+    .filter((video) => !video.status || video.status === "published")
+    .sort((left, right) => new Date(right.publishedAt || right.createdAt || 0) - new Date(left.publishedAt || left.createdAt || 0))
+    .slice(0, 3);
+  if (!videos.length) {
+    target.innerHTML = '<div class="parish-life-empty-state"><strong>No videos yet</strong><p>Published parish video will appear here.</p></div>';
+    return;
+  }
+  target.innerHTML = videos.map((video) => `
+    <a class="parish-life-video-card" href="/myagapay/media/watch?video=${encodeURIComponent(video.id)}">
+      <span class="parish-life-video-thumb">${video.thumbnailUrl ? `<img src="${parishLifeEscape(video.thumbnailUrl)}" alt="" loading="lazy" />` : ""}<i aria-hidden="true">▶</i></span>
+      <span class="parish-life-video-copy"><strong>${parishLifeEscape(video.title)}</strong><small>${parishLifeEscape(parishLifeDate(video.publishedAt || video.createdAt))}</small></span>
     </a>`).join("");
 }
 
@@ -118,19 +174,22 @@ async function loadParishLife() {
     const experience = window.MyAgapayShell.parishLifeExperience(parish);
     applyParishLifeExperience(experience, parish);
     if (typeof loadDonorLiturgicalDay === "function") await loadDonorLiturgicalDay(parish);
+    renderParishLifeServicesFallback(parish);
 
     if (!experience.communicationsEnabled) {
       status.hidden = true;
       return;
     }
 
-    const [feed, groups, teaching] = await Promise.all([
+    const [feed, groups, teaching, media] = await Promise.all([
       parishLifeFetch("/api/donor/feed", headers),
       parishLifeFetch("/api/donor/groups", headers),
       parishLifeFetch("/api/donor/teaching", headers),
+      parishLifeFetch("/api/donor/videos", headers),
     ]);
     renderPinnedAnnouncements(feed || {});
     renderRecentRecordings(teaching || {});
+    renderRecentVideos(media || {});
     renderMinistries(groups || {});
     const feedUnread = Math.max(0, Number(feed?.unreadCount) || 0);
     const groupsUnread = (groups?.groups || []).reduce((sum, group) => sum + Math.max(0, Number(group.unreadCount) || 0), 0);
@@ -147,4 +206,5 @@ async function loadParishLife() {
 }
 
 window.parishLifeTierSectionsHtml = parishLifeTierSectionsHtml;
+window.parishLifeNextLiturgicalEvent = parishLifeNextLiturgicalEvent;
 document.addEventListener("DOMContentLoaded", loadParishLife);
