@@ -9804,24 +9804,48 @@
     const nameEl = document.getElementById('bulletinParishName');
     const urlEl  = document.getElementById('bulletinUrl');
     if (nameEl && currentParish) nameEl.textContent = currentParish.parishName || 'Parish Name';
-    if (urlEl  && currentParish) urlEl.textContent  = dedicatedGivingUrl() || 'agapay.app/give/parish-name-city';
+    if (urlEl  && currentParish) urlEl.textContent  = bulletinDisplayUrl();
     // QR is rendered by renderQrCode which writes to bulletinQrCode too
     if (currentQrSvg) { const bqr = document.getElementById('bulletinQrCode'); if (bqr) bqr.innerHTML = currentQrSvg; }
   }
 
+  function bulletinDisplayUrl() {
+    return (dedicatedGivingUrl() || 'agapay.app/give/parish-name-city').replace(/^https?:\/\//i, '');
+  }
+
+  function positionBulletinQr(svg, x, y, size) {
+    if (!svg) return `<rect x="${x}" y="${y}" width="${size}" height="${size}" rx="4" fill="#FFFFFF" stroke="#DDD6C9"/><text x="${x + size / 2}" y="${y + size / 2}" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="10" fill="#6F6A60">QR code</text>`;
+    const opening = svg.match(/<svg\b[^>]*>/i)?.[0];
+    if (!opening) return svg;
+    const positioned = opening
+      .replace(/\s(?:x|y|width|height)="[^"]*"/gi, '')
+      .replace('<svg', `<svg x="${x}" y="${y}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"`);
+    return svg.replace(opening, positioned);
+  }
+
   function buildBulletinSvg() {
     const parishName = escapeHtml(currentParish?.parishName || 'Parish Name');
-    const url        = dedicatedGivingUrl() || 'agapay.app/give/parish-name-city';
-    const qrInner    = currentQrSvg || '<text x="75" y="75" text-anchor="middle" font-size="10" fill="#6F6A60">QR code</text>';
+    const url        = escapeHtml(bulletinDisplayUrl());
+    const parishSize = parishName.length > 46 ? 15 : parishName.length > 34 ? 17 : 19;
+    const urlSize    = url.length > 54 ? 7 : url.length > 42 ? 8 : 9;
+    const qrInner    = positionBulletinQr(currentQrSvg, 289, 94, 96);
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 280" width="840" height="560">
-      <rect width="420" height="280" fill="#FFFDF9"/>
-      <rect x="12" y="12" width="396" height="256" rx="8" fill="none" stroke="#B8902F" stroke-width="2"/>
-      <rect x="18" y="18" width="384" height="244" rx="6" fill="none" stroke="#B8902F" stroke-width="0.5" stroke-dasharray="4,3"/>
-      <text x="210" y="50" text-anchor="middle" font-family="Georgia,serif" font-size="20" font-weight="bold" fill="#061522">${parishName}</text>
-      <text x="210" y="70" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#6F6A60">Give online — simple, secure, and Orthodox.</text>
-      <g transform="translate(145,82) scale(0.43)">${qrInner}</g>
-      <text x="210" y="225" text-anchor="middle" font-family="monospace" font-size="9" fill="#6F6A60">${escapeHtml(url)}</text>
-      <text x="210" y="256" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#9A9488">Powered by AGAPAY · agapay.app</text>
+      <rect width="420" height="280" fill="#FBF7EE"/>
+      <rect width="420" height="68" fill="#061522"/>
+      <rect y="66" width="420" height="2" fill="#C8A24A"/>
+      <text x="24" y="30" font-family="Georgia,serif" font-size="${parishSize}" font-weight="bold" fill="#F6F1E8">${parishName}</text>
+      <text x="396" y="43" text-anchor="end" font-family="Arial,sans-serif" font-size="7.5" font-weight="bold" letter-spacing="1.6" fill="#E8C879">ONLINE GIVING</text>
+      <text x="24" y="116" font-family="Georgia,serif" font-size="29" font-weight="bold" fill="#061522">Give with gratitude.</text>
+      <text x="24" y="141" font-family="Arial,sans-serif" font-size="10" fill="#6F6A60">Support the life and ministries of our parish through</text>
+      <text x="24" y="156" font-family="Arial,sans-serif" font-size="10" fill="#6F6A60">simple, secure online giving.</text>
+      <rect x="24" y="182" width="230" height="32" rx="16" fill="#FFFFFF" stroke="#D8C38F"/>
+      <text x="139" y="202" text-anchor="middle" font-family="Arial,sans-serif" font-size="${urlSize}" font-weight="bold" fill="#061522">${url}</text>
+      <rect x="278" y="84" width="118" height="144" rx="10" fill="#FFFFFF" stroke="#C8A24A"/>
+      ${qrInner}
+      <text x="337" y="211" text-anchor="middle" font-family="Arial,sans-serif" font-size="7.5" font-weight="bold" letter-spacing="1.3" fill="#8B681D">SCAN TO GIVE</text>
+      <line x1="24" y1="246" x2="396" y2="246" stroke="#DDD6C9"/>
+      <circle cx="28" cy="261" r="3.5" fill="#C8A24A"/>
+      <text x="37" y="264" font-family="Arial,sans-serif" font-size="7.5" font-weight="bold" letter-spacing=".7" fill="#8F887C">POWERED BY AGAPAY</text>
     </svg>`;
   }
 

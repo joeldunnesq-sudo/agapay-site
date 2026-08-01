@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/parish/style.css?v=20260801video1" />
-  <link rel="stylesheet" href="/parish/redesign.css?v=20260801givingaccess1" />
+  <link rel="stylesheet" href="/parish/redesign.css?v=20260801bulletin2" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="stylesheet" href="/styles/stewardship.css?v=20260731healthgrid1" />
   <link rel="manifest" href="/manifest.webmanifest" />
@@ -202,15 +202,26 @@
           </div>
           <div class="bulletin-preview pdx-bulletin-preview">
             <div class="bulletin-preview-inner" id="bulletinPreview">
-              <div class="bulletin-parish-name" id="bulletinParishName">Parish Name</div>
-              <div class="bulletin-tagline">Give online — it's simple, secure, and Orthodox.</div>
-              <div class="bulletin-qr-wrap">
-                <div class="qr-code" id="bulletinQrCode" style="width:130px;height:130px;">
-                  <span style="font-size:11px;color:var(--stone);text-align:center;line-height:1.5;">Load dashboard<br>to generate QR</span>
+              <header class="bulletin-preview-header">
+                <div class="bulletin-parish-name" id="bulletinParishName">Parish Name</div>
+                <div class="bulletin-kicker">Online giving</div>
+              </header>
+              <div class="bulletin-preview-content">
+                <div class="bulletin-message">
+                  <div class="bulletin-title">Give with gratitude.</div>
+                  <div class="bulletin-tagline">Support the life and ministries of our parish through simple, secure online giving.</div>
+                  <div class="bulletin-url" id="bulletinUrl">agapay.app/give/parish-name-city</div>
+                </div>
+                <div class="bulletin-qr-panel">
+                  <div class="bulletin-qr-wrap">
+                    <div class="qr-code" id="bulletinQrCode">
+                      <span style="font-size:11px;color:var(--stone);text-align:center;line-height:1.5;">Load dashboard<br>to generate QR</span>
+                    </div>
+                  </div>
+                  <div class="bulletin-scan-label">Scan to give</div>
                 </div>
               </div>
-              <div class="bulletin-url" id="bulletinUrl">agapay.app/give/parish-name-city</div>
-              <div class="bulletin-footer">Powered by AGAPAY · agapay.app</div>
+              <footer class="bulletin-footer"><span aria-hidden="true"></span>Powered by AGAPAY</footer>
             </div>
           </div>
         </section>
