@@ -361,6 +361,7 @@ import {
 } from "./handlers/parish-interest.js";
 
 import {
+  handleListenProgress,
   handleListenSearch,
   handleListenRss,
 } from "./handlers/listen.js";
@@ -2854,6 +2855,7 @@ export default {
 
     if (request.method === "GET" && url.pathname === "/api/listen/search") return handleListenSearch(request, env);
     if (request.method === "GET" && url.pathname === "/api/listen/rss")    return handleListenRss(request, env);
+    if (url.pathname === "/api/listen/progress") return handleListenProgress(request, env);
     if (request.method === "GET" && url.pathname === "/api/parishes") { const r = await handleParishes(request, env); return addCorsHeaders(r, env); }
     if (request.method === "GET" && url.pathname === "/api/campaign") { const r = await handlePublicCampaign(request, env); return addCorsHeaders(r, env); }
     if (request.method === "GET" && url.pathname === "/api/platform/summary") { const r = await handlePublicPlatformSummary(env); return addCorsHeaders(r, env); }
