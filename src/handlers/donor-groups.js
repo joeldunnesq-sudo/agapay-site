@@ -182,6 +182,42 @@ export async function listGroupMessages(env, { parishId, ministryId, personId, d
   };
 }
 
+export async function listGroupActivity(env, { parishId, personId, donorId }) {
+  const rows = await d1All(env, `
+    SELECT gm.*, p.preferred_name AS author_name, m.display_name AS ministry_name
+    FROM parish_group_messages gm
+    JOIN directory_people p ON p.id = gm.author_person_id
+    JOIN directory_ministries m ON m.id = gm.ministry_id AND m.parish_id = gm.parish_id
+    WHERE gm.parish_id = ? AND m.status = 'active'
+      AND (
+        EXISTS (
+          SELECT 1 FROM directory_ministry_participants mp
+          WHERE mp.parish_id = gm.parish_id AND mp.ministry_id = gm.ministry_id
+            AND mp.person_id = ? AND mp.status = 'active'
+        )
+        OR EXISTS (
+          SELECT 1 FROM directory_ministry_leaders ml
+          WHERE ml.parish_id = gm.parish_id AND ml.ministry_id = gm.ministry_id
+            AND ml.person_id = ? AND ml.active = 1
+        )
+      )
+    ORDER BY gm.created_at DESC, gm.id DESC
+  `, parishId, personId, personId);
+  const messages = rows.map(messageFromRow);
+  const contentIds = messages.map(({ id }) => id);
+  const readIds = await getReadContentIds(database(env), {
+    parishId,
+    contentType: CONTENT_TYPE,
+    donorId,
+    contentIds,
+  });
+  const readSet = new Set(readIds);
+  return {
+    activity: messages.slice(0, 10).map((message) => ({ ...message, read: readSet.has(message.id) })),
+    unreadCount: contentIds.length - readIds.length,
+  };
+}
+
 export async function postGroupMessage(env, { parishId, ministryId, personId, body }) {
   await requireActiveMinistryMember(env, { parishId, personId }, ministryId);
   const cleanedBody = String(body || "").trim().slice(0, 8000);
@@ -308,6 +344,10 @@ export async function handleDonorGroups(request, env, ctx = null) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/^\/api\/donor\/groups\/?/, "");
     const parts = path ? path.split("/").map(decodeURIComponent) : [];
+
+    if (parts.length === 1 && parts[0] === "activity" && request.method === "GET") {
+      return privateJson(await listGroupActivity(env, context));
+    }
 
     if (!parts.length && request.method === "GET") {
       return privateJson({ groups: await listActiveMinistryGroups(env, context) });

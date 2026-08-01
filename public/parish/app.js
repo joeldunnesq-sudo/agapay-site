@@ -4442,6 +4442,11 @@
     const stewardshipActive = !isStarterTier() && moduleIncluded('stewardshipHealth');
     const bookstoreActive = moduleIncluded('bookstore');
     const sacramentsActive = moduleIncluded('sacraments');
+    const parishLifeAvailable = Boolean(currentParish?.parishLifeAvailable);
+    const communicationsNav = document.getElementById('nav-communications');
+    const mobileCommunicationsNav = document.querySelector('.mobile-tab-link[data-nav-tab="communications"]');
+    if (communicationsNav) communicationsNav.hidden = !parishLifeAvailable;
+    if (mobileCommunicationsNav) mobileCommunicationsNav.hidden = !parishLifeAvailable;
     syncTierRequirementNavigation('stewardship', 'Stewardship', stewardshipActive);
     const bookstoreBadge = document.getElementById('bookstoreNavBadge');
     const mobileBookstoreBadge = document.getElementById('mobileBookstoreBadge');
@@ -10301,6 +10306,7 @@
 
   async function loadCommunicationsTab(force = false) {
     if (!currentParish) return;
+    if (!currentParish.parishLifeAvailable) return;
     const included = moduleIncluded('communications');
     const workspace = document.getElementById('communicationsWorkspace');
     const paywall = document.getElementById('communicationsPaywall');

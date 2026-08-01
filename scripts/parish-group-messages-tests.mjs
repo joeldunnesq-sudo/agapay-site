@@ -9,6 +9,7 @@ import {
   isActiveMinistryMember,
   isActiveMinistryLeader,
   listActiveMinistryGroups,
+  listGroupActivity,
   listGroupMessages,
   markGroupMessageRead,
   postGroupMessage,
@@ -141,6 +142,13 @@ let thread = await listGroupMessages(env, {
 });
 assert.deepEqual(thread.messages.map(({ id }) => id), [posted.id], "a leader should be able to read their group");
 assert.equal(thread.unreadCount, 1);
+const activity = await listGroupActivity(env, {
+  parishId: "parish-one", personId: "person-leader", donorId: "leader@example.test",
+});
+assert.equal(activity.unreadCount, 1);
+assert.deepEqual(activity.activity.map(({ id, ministryName }) => ({ id, ministryName })), [
+  { id: posted.id, ministryName: "Parish Council" },
+]);
 
 await markGroupMessageRead(env, {
   parishId: "parish-one",
