@@ -214,6 +214,7 @@ import { handleParishEmailCredentials } from "./handlers/parish-email-credential
 import { handleDonorGroups } from "./handlers/donor-groups.js";
 import { handleDonorTeaching, handleParishTeaching } from "./handlers/parish-teaching.js";
 import { handleDonorVideo, handleParishVideo } from "./handlers/parish-video.js";
+import { handleDonorBlog, handleDonorExternalFeed, handleDonorOcaNews, handleParishBlog } from "./handlers/parish-blog.js";
 import { handleDonorPush } from "./lib/push-notifications.js";
 
 import {
@@ -3149,6 +3150,15 @@ export default {
     if (url.pathname === "/api/donor/videos") {
       return handleDonorVideo(request, env);
     }
+    if (url.pathname === "/api/donor/blog") {
+      return handleDonorBlog(request, env);
+    }
+    if (url.pathname === "/api/donor/oca-news") {
+      return handleDonorOcaNews(request, env);
+    }
+    if (url.pathname.startsWith("/api/donor/external-feeds/")) {
+      return handleDonorExternalFeed(request, env, decodeURIComponent(url.pathname.replace("/api/donor/external-feeds/", "").replace(/\/+$/, "")));
+    }
     if (url.pathname === "/api/donor/digest/subscription") {
       return handleDonorDigestSubscription(request, env);
     }
@@ -3662,6 +3672,9 @@ export default {
       }
       if (normalizedSubpath === "video" || normalizedSubpath.startsWith("video/")) {
         return handleParishVideo(request, env, parishId, normalizedSubpath.replace(/^video\/?/, ""));
+      }
+      if (normalizedSubpath === "blog") {
+        return handleParishBlog(request, env, parishId);
       }
       return handleParishCommunications(request, env, parishId, subpath, ctx);
     }

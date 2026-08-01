@@ -1284,6 +1284,15 @@
           <div id="communicationsPaywall" class="communications-paywall" hidden><strong>Communications is included with Parish.</strong><p>Review your plan to publish announcements in My AGAPAY.</p><button class="btn btn-gold" type="button" onclick="switchTab('settings')">Review Parish tier</button></div>
           <div id="communicationsDisabledNotice" class="communications-paywall" hidden><strong>Announcement feed is off.</strong><p>Parishioners cannot see announcements and will not receive announcement digests or push notifications. Existing drafts and published posts remain available to parish staff.</p></div>
           <div id="communicationsWorkspace" class="communications-workspace-stack">
+            <section class="communications-content-section blog-admin-section" aria-labelledby="blogAdminHeading">
+              <div class="communications-section-heading"><span class="eyebrow">External writing</span><h2 id="blogAdminHeading">Priest’s Blog</h2><p>Surface the newest posts from a priest’s public blog in Koinonia through RSS or Atom.</p></div>
+              <form class="communications-compose" onsubmit="saveParishBlogSettings(event)">
+                <label class="communications-pin"><input id="parishBlogEnabled" type="checkbox" /> Show new blog posts in Koinonia</label>
+                <label>Blog homepage or RSS feed URL<input id="parishBlogSourceUrl" type="url" inputmode="url" placeholder="https://father.example.org/blog" /><small>Paste the public blog homepage or its HTTPS RSS/Atom address. AGAPAY will discover and validate the feed.</small></label>
+                <p class="section-note" id="parishBlogFeedStatus">No blog feed configured.</p>
+                <button class="btn btn-gold" type="submit">Save blog feed</button>
+              </form>
+            </section>
             <section class="communications-content-section" aria-labelledby="announcementsAdminHeading">
               <div class="communications-section-heading"><span class="eyebrow">Parish news</span><h2 id="announcementsAdminHeading">Announcements</h2><p>Notices, reminders, and time-sensitive parish updates.</p></div>
               <div class="communications-grid">
@@ -1791,6 +1800,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
-  <script src="/parish/app.js?v=20260801categories1"></script>
+  <script src="/parish/app.js?v=20260801blogfeeds1"></script>
 </body>
 </html>

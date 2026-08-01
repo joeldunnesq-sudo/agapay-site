@@ -8208,6 +8208,45 @@ textarea {
 .parish-life-video-copy strong { color: var(--k-text); font-size: 11px; line-height: 1.3; }
 .parish-life-video-copy small { color: var(--k-faint); font-size: 9px; }
 
+.parish-life-blog-list { display: grid; gap: 8px; }
+.parish-life-blog-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px 14px;
+  border: 1px solid var(--k-border);
+  border-radius: 14px;
+  padding: 13px 15px;
+  background: var(--k-surface);
+  color: inherit;
+  text-decoration: none;
+}
+.parish-life-blog-card:hover { border-color: var(--k-gold); background: var(--k-surface-2); }
+.parish-life-blog-card > span { display: grid; gap: 4px; }
+.parish-life-blog-card small { color: var(--k-gold); font-size: 9px; font-weight: 600; text-transform: uppercase; }
+.parish-life-blog-card strong { color: var(--k-text); font-family: "Playfair Display", Georgia, serif; font-size: 15px; line-height: 1.3; }
+.parish-life-blog-card p { grid-column: 1 / -1; margin: 0; color: var(--k-muted); font-size: 11px; line-height: 1.5; }
+.parish-life-blog-card em { align-self: center; color: var(--k-gold); font-size: 9px; font-style: normal; font-weight: 600; white-space: nowrap; }
+.parish-life-feed-toggle {
+  border: 1px solid var(--k-gold);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: var(--k-gold);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.parish-life-feed-toggle.is-subscribed { background: var(--k-surface); color: var(--k-gold-hover); }
+.parish-life-feed-toggle:disabled { opacity: 0.6; cursor: wait; }
+.parish-life-feed-invitation {
+  border: 1px solid var(--k-border);
+  border-radius: 14px;
+  padding: 13px 15px;
+  background: var(--k-surface);
+}
+.parish-life-feed-invitation strong { color: var(--k-text); font-size: 13px; }
+.parish-life-feed-invitation p { margin: 4px 0 0; color: var(--k-muted); font-size: 11px; line-height: 1.5; }
+
 .parish-life-ministry-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .parish-life-ministry-tile {
   min-height: 94px;

@@ -10241,7 +10241,7 @@
   }
 
   // ── COMMUNICATIONS ────────────────────────────────────────
-  let communicationsState = { loaded: false, announcements: [], teaching: [], videos: [], youtube: [], readers: {} };
+  let communicationsState = { loaded: false, announcements: [], teaching: [], videos: [], youtube: [], blog: null, readers: {} };
 
   function communicationsApi(path = '') {
     return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/communications' + path;
@@ -10426,20 +10426,55 @@
     }
     syncModuleStatusNavigation('communications', included, enabled);
     if (!included || (communicationsState.loaded && !force)) return;
-    const [announcementResponse, teachingResponse, videoResponse] = await Promise.all([
+    const [announcementResponse, teachingResponse, videoResponse, blogResponse] = await Promise.all([
       fetch(communicationsApi(), { headers: authHeaders(), cache: 'no-store' }),
       fetch(communicationsApi('/teaching'), { headers: authHeaders(), cache: 'no-store' }),
-      fetch(communicationsApi('/video'), { headers: authHeaders(), cache: 'no-store' })
+      fetch(communicationsApi('/video'), { headers: authHeaders(), cache: 'no-store' }),
+      fetch(communicationsApi('/blog'), { headers: authHeaders(), cache: 'no-store' })
     ]);
-    const [data, teachingData, videoData] = await Promise.all([announcementResponse.json(), teachingResponse.json(), videoResponse.json()]);
+    const [data, teachingData, videoData, blogData] = await Promise.all([announcementResponse.json(), teachingResponse.json(), videoResponse.json(), blogResponse.json()]);
     if (!announcementResponse.ok) { setStatus(data.error || 'Unable to load announcements.','error'); return; }
     if (!teachingResponse.ok) { setStatus(teachingData.error || 'Unable to load teaching posts.','error'); return; }
     if (!videoResponse.ok) { setStatus(videoData.error || 'Unable to load video posts.','error'); return; }
-    communicationsState = { loaded: true, announcements: data.announcements || [], teaching: teachingData.posts || [], videos: videoData.videos || [], youtube: videoData.youtube || [], readers: communicationsState.readers || {} };
+    if (!blogResponse.ok) { setStatus(blogData.error || 'Unable to load the priest’s blog settings.','error'); return; }
+    communicationsState = { loaded: true, announcements: data.announcements || [], teaching: teachingData.posts || [], videos: videoData.videos || [], youtube: videoData.youtube || [], blog: blogData.blog || null, readers: communicationsState.readers || {} };
+    const blogEnabled = document.getElementById('parishBlogEnabled');
+    const blogSourceUrl = document.getElementById('parishBlogSourceUrl');
+    const blogFeedStatus = document.getElementById('parishBlogFeedStatus');
+    if (blogEnabled) blogEnabled.checked = Boolean(communicationsState.blog?.enabled);
+    if (blogSourceUrl) blogSourceUrl.value = communicationsState.blog?.sourceUrl || '';
+    if (blogFeedStatus) blogFeedStatus.textContent = communicationsState.blog?.feedUrl ? `Validated feed: ${communicationsState.blog.feedUrl}` : 'No blog feed configured.';
     renderCommunicationsList();
     renderTeachingAdminList();
     renderVideoAdminList();
     renderYouTubeAdminList();
+  }
+
+  async function saveParishBlogSettings(event) {
+    event.preventDefault();
+    if (!currentParish || !moduleIncluded('communications')) return;
+    const form = event.currentTarget;
+    const button = form.querySelector('button[type="submit"]');
+    if (button) { button.disabled = true; button.classList.add('loading'); }
+    try {
+      const response = await fetch(communicationsApi('/blog'), {
+        method: 'PATCH',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enabled: Boolean(document.getElementById('parishBlogEnabled')?.checked),
+          sourceUrl: document.getElementById('parishBlogSourceUrl')?.value.trim() || ''
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Unable to save the priest’s blog.');
+      communicationsState.loaded = false;
+      await loadCommunicationsTab(true);
+      setStatus(data.blog?.enabled ? 'The priest’s newest blog posts will appear in Koinonia.' : 'The priest’s blog is hidden from Koinonia.', 'success');
+    } catch (error) {
+      setStatus(error.message || 'Unable to save the priest’s blog.', 'error');
+    } finally {
+      if (button) { button.disabled = false; button.classList.remove('loading'); }
+    }
   }
 
   async function toggleCommunicationsFeature(input) {
