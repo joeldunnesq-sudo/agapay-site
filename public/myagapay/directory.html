@@ -320,8 +320,56 @@
     @media (max-width: 640px) {
       .household-hub-identity { grid-template-columns:1fr; }
     }
-    .directory-mobile-header, .directory-mobile-nav { display:none; }
+    .directory-mobile-header { display:none; }
     .mobile-directory-home { display:none; }
+    .directory-view-switcher {
+      position:sticky;
+      top:12px;
+      z-index:24;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:4px;
+      width:min(430px,100%);
+      margin:0 auto 18px;
+      padding:4px;
+      border:1px solid rgba(21,58,91,.12);
+      border-radius:14px;
+      background:rgba(255,255,255,.94);
+      box-shadow:0 8px 22px rgba(6,21,34,.08);
+      backdrop-filter:blur(14px);
+    }
+    .directory-view-switcher button {
+      min-height:42px;
+      border:0;
+      border-radius:10px;
+      padding:9px 12px;
+      background:transparent;
+      color:var(--muted);
+      font:800 13px/1.2 var(--font-body);
+      cursor:pointer;
+    }
+    .directory-view-switcher button[aria-selected="true"] {
+      background:var(--navy);
+      color:#fff;
+      box-shadow:0 5px 14px rgba(6,21,34,.18);
+    }
+    body[data-directory-view="family"] .directory-command,
+    body[data-directory-view="family"] .directory-guide,
+    body[data-directory-view="family"] .member-directory { display:none; }
+    body[data-directory-view="family"] .personal-settings[open] {
+      position:static;
+      inset:auto;
+      z-index:auto;
+      margin:0;
+      padding:0;
+      background:transparent;
+      overflow:visible;
+      backdrop-filter:none;
+    }
+    body[data-directory-view="family"] .personal-settings > summary { display:none; }
+    body[data-directory-view="family"] .personal-settings > .edit-wizard-head,
+    body[data-directory-view="family"] .personal-settings > .directory-grid,
+    body[data-directory-view="family"] .personal-settings > .edit-wizard-footer { width:100%; }
     @media (max-width: 860px) {
       body.donor-directory-page {
         background:#f7f3ec;
@@ -349,6 +397,12 @@
         background:linear-gradient(160deg,#061522 0%,#0b2130 100%);
         color:#f6f1e8;
         box-shadow:0 9px 28px rgba(6,21,34,.2);
+      }
+      .directory-view-switcher {
+        top:82px;
+        width:100%;
+        margin:0 0 12px;
+        border-radius:13px;
       }
       .directory-mobile-brand { display:flex; align-items:center; gap:10px; }
       .directory-mobile-logo { width:34px; height:34px; object-fit:contain; }
@@ -572,43 +626,12 @@
       body.directory-profile-open #memberResults,
       body.directory-profile-open #memberLoadMore,
       body.directory-profile-open .member-directory-intro { display:none; }
-      .directory-mobile-nav {
-        position:fixed;
-        z-index:45;
-        left:0;
-        right:0;
-        bottom:0;
-        display:grid;
-        grid-template-columns:repeat(3,1fr);
-        border-top:1px solid rgba(16,24,32,.1);
-        background:rgba(255,255,255,.97);
-        box-shadow:0 -10px 28px rgba(6,21,34,.1);
-        backdrop-filter:blur(15px);
-      }
-      .directory-mobile-nav button {
-        appearance:none;
-        display:flex;
-        min-height:62px;
-        flex-direction:column;
-        align-items:center;
-        justify-content:center;
-        gap:3px;
-        border:0;
-        background:transparent;
-        color:#697681;
-        font:700 10px/1.1 "DM Sans",Arial,sans-serif;
-      }
-      .directory-mobile-nav svg { width:20px; height:20px; }
-      .directory-mobile-nav button[aria-current="page"] { color:#153a5b; }
-      .directory-mobile-nav button[aria-current="page"] svg { color:#b88a3d; }
-      .directory-nav-avatar { display:grid; place-items:center; width:22px; height:22px; overflow:hidden; border:1px solid rgba(21,58,91,.18); border-radius:50%; background:#edf2f0; color:#153a5b; font:800 8px "DM Sans",Arial,sans-serif; }
-      .directory-nav-avatar img { width:100%; height:100%; object-fit:cover; }
       .directory-modal { align-items:end; padding:0; }
       .directory-modal-card { width:100%; max-height:88vh; border-radius:24px 24px 0 0; padding:18px 14px calc(18px + env(safe-area-inset-bottom)); }
       /* Canonical Church Directory mobile language from the supplied reference. */
       body.donor-directory-page { background:#e9e5dc; }
       .donor-directory-page .directory-shell { width:min(430px,100%); min-height:100vh; margin:0 auto; background:#fffdf8; box-shadow:0 20px 60px rgba(6,21,34,.18); }
-      .directory-main { min-height:100vh; padding:0 16px calc(82px + env(safe-area-inset-bottom)); background:#fffdf8; }
+      .directory-main { min-height:100vh; padding:0 16px calc(24px + env(safe-area-inset-bottom)); background:#fffdf8; }
       .directory-mobile-header {
         margin:0 -16px 16px;
         padding:16px 16px 13px;
@@ -664,9 +687,6 @@
       .family-detail-skills span { border:1px solid rgba(169,124,37,.28); border-radius:999px; background:#f8f1e2; color:#6f4f16; padding:4px 8px; font-size:11px; }
       .family-detail-empty { margin:0; color:#70695d; font-size:13px; }
       .family-detail .actions { margin-top:8px; }
-      .directory-mobile-nav { left:50%; right:auto; width:min(430px,100%); transform:translateX(-50%); border-top:1px solid rgba(6,21,34,.12); background:#fffdf8; box-shadow:none; }
-      .directory-mobile-nav button { color:#70695d; }
-      .directory-mobile-nav button[aria-current="page"] { color:#a97c25; }
       .profile-pane .mini-card { padding-top:0; }
       .household-member-detail { border-radius:7px; box-shadow:none; }
     }
@@ -818,7 +838,7 @@
     }
   </style>
 </head>
-<body class="donor-mobile-page donor-directory-page" data-mobile-view="browse">
+<body class="donor-mobile-page donor-directory-page" data-mobile-view="browse" data-directory-view="directory">
   <div class="app directory-shell">
     <aside class="sidebar directory-side">
       <div class="sidebar-scroll">
@@ -833,6 +853,10 @@
         <div class="directory-mobile-brand"><img class="directory-mobile-logo" src="/mark.png" alt="" aria-hidden="true" /><span class="directory-mobile-wordmark" id="mobileDirectoryTitle">Parish Directory</span></div>
         <p><span id="mobileDirectoryLocation">City, State</span> · <span id="mobileDirectoryCount">Directory</span></p>
       </header>
+      <nav class="directory-view-switcher" aria-label="Directory sections" role="tablist">
+        <button id="directoryViewTab" type="button" role="tab" aria-selected="true" aria-controls="memberDirectory" data-directory-view-target="directory">Directory</button>
+        <button id="familyInformationTab" type="button" role="tab" aria-selected="false" aria-controls="personalDirectorySettings" data-directory-view-target="family" tabindex="-1">Family Information</button>
+      </nav>
       <section class="directory-top cal-hero myagapay-page-hero" aria-labelledby="directoryHeroTitle">
         <div class="cal-hero-inner">
           <div class="cal-hero-eyebrow">Parish life in one place</div>
@@ -1066,7 +1090,7 @@
 
       <section class="panel own-directory-preview" id="ownDirectoryPreview" hidden aria-live="polite"></section>
 
-      <section class="panel member-directory" aria-labelledby="memberDirectoryHeading" data-mobile-section="browse">
+      <section class="panel member-directory" id="memberDirectory" aria-labelledby="memberDirectoryHeading" data-mobile-section="browse">
         <div class="member-directory-intro directory-title">
           <div class="panel-kicker">Our parish family</div>
           <div class="member-directory-heading-row">
@@ -1137,11 +1161,6 @@
       </div>
 
     </main>
-    <nav class="directory-mobile-nav" aria-label="Directory navigation">
-      <button type="button" id="mobileGiveNav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-4.4-7-11a4 4 0 0 1 7-2.7A4 4 0 0 1 19 10c0 6.6-7 11-7 11Z"/></svg><span>Give</span></button>
-      <button type="button" data-mobile-target="browse" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16"/></svg><span>Directory</span></button>
-      <button type="button" id="mobileFamilyNav" data-mobile-target="household"><span class="directory-nav-avatar" id="mobileHouseholdAvatar" aria-hidden="true">+</span><span id="mobileFamilyNavLabel">Add Family</span></button>
-    </nav>
     <nav class="mobile-tabbar" aria-label="My AGAPAY navigation"></nav>
   </div>
 
@@ -1160,12 +1179,6 @@
     function goBackFromDirectory() {
       if (window.history.length > 1) window.history.back();
       else window.location.href = "/myagapay";
-    }
-    function updateMobileHouseholdAvatar(household, asset = null) {
-      const avatar = document.getElementById("mobileHouseholdAvatar");
-      if (!avatar) return;
-      avatar.textContent = household ? directoryInitials(household.displayName || "Family", "household") : "+";
-      document.getElementById("mobileFamilyNavLabel").textContent = household ? "My Family" : "Add Family";
     }
     let skillCatalog = [];
     const PHOTO_UPLOAD_TIMEOUT_MS = 90000;
@@ -1569,11 +1582,26 @@
       renderDirectoryIdentity();
       document.querySelectorAll("[data-mobile-target]").forEach((button) => {
         if (button.classList.contains("mobile-action")) button.setAttribute("aria-current", button.dataset.mobileTarget === next ? "true" : "false");
-        if (button.closest(".directory-mobile-nav")) button.setAttribute("aria-current", button.dataset.mobileTarget === next ? "page" : "false");
       });
       if (next !== "home") {
         document.querySelector(".directory-main")?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
+    }
+    function setDirectoryView(view = "directory", { scroll = true } = {}) {
+      const next = view === "family" ? "family" : "directory";
+      const settings = document.getElementById("personalDirectorySettings");
+      document.body.dataset.directoryView = next;
+      document.body.classList.remove("directory-profile-open");
+      document.getElementById("memberProfile").hidden = true;
+      settings.open = next === "family";
+      document.body.style.overflow = "";
+      document.querySelectorAll("[data-directory-view-target]").forEach((button) => {
+        const selected = button.dataset.directoryViewTarget === next;
+        button.setAttribute("aria-selected", selected ? "true" : "false");
+        button.tabIndex = selected ? 0 : -1;
+      });
+      renderDirectoryIdentity();
+      if (scroll) document.querySelector(".directory-view-switcher")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     function setChildModal(open) {
       const modal = document.getElementById("childAddModal");
@@ -2084,7 +2112,6 @@
       const households = profileState.manageableHouseholds || [];
       const memberOnly = (profileState.memberHouseholds || []).filter((member) => !households.some((household) => household.id === member.id));
       const navHousehold = households[0] || memberOnly[0] || null;
-      updateMobileHouseholdAvatar(navHousehold);
       const form = document.getElementById("householdDetailsForm");
       document.getElementById("householdList").innerHTML = [
         ...households.map((household) => `<div class="mini-card"><strong>${esc(household.displayName)}</strong><small>Your editable family.</small></div>`),
@@ -2172,7 +2199,6 @@
       const payload = await api(`/api/directory/media/current?ownerType=household&ownerId=${encodeURIComponent(household.id)}`).catch(() => ({ assets: [] }));
       const asset = (payload.assets || [])[0];
       window.currentDirectoryHouseholdPhoto = asset || null;
-      updateMobileHouseholdAvatar(household, asset);
       document.getElementById("householdPhotoSummary").innerHTML = renderMediaSummary(asset, "household");
       document.getElementById("removeHouseholdPhoto").hidden = !asset;
       hydrateAuthorizedImages(document.getElementById("householdPhotoSummary"));
@@ -2454,12 +2480,10 @@
       settings.scrollTop = 0;
     }
     function openPersonalDirectorySettings() {
-      const settings = document.getElementById("personalDirectorySettings");
       setWizardStep(1);
       showWizardStatus("");
-      settings.open = true;
-      settings.scrollTop = 0;
-      document.body.style.overflow = "hidden";
+      setDirectoryView("family");
+      document.getElementById("personalDirectorySettings").scrollTop = 0;
     }
     document.getElementById("editWizardBack").addEventListener("click", () => {
       setWizardStep(editWizardStep - 1);
@@ -2473,10 +2497,11 @@
       if (button) setWizardStep(button.dataset.goToStep);
     });
     document.getElementById("editWizardDone").addEventListener("click", () => {
-      document.getElementById("personalDirectorySettings").open = false;
+      setDirectoryView("directory");
     });
     document.getElementById("personalDirectorySettings").addEventListener("toggle", (event) => {
-      document.body.style.overflow = event.currentTarget.open ? "hidden" : "";
+      document.body.style.overflow = "";
+      if (!event.currentTarget.open && document.body.dataset.directoryView === "family") setDirectoryView("directory", { scroll: false });
     });
     document.getElementById("personalDirectorySettings").addEventListener("input", (event) => {
       const form = event.target.closest("form");
@@ -3146,15 +3171,13 @@
       showNotice("Family photo removed.");
       await loadDirectory();
     });
-    document.getElementById("mobileGiveNav").addEventListener("click", () => {
-      window.location.href = "/myagapay/dashboard";
-    });
-    document.getElementById("mobileFamilyNav").addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      openPersonalDirectorySettings();
-    });
     document.addEventListener("click", (event) => {
+      const viewTab = event.target.closest("[data-directory-view-target]");
+      if (viewTab) {
+        event.preventDefault();
+        setDirectoryView(viewTab.dataset.directoryViewTarget);
+        return;
+      }
       const target = event.target.closest("[data-mobile-target]");
       if (!target) return;
       event.preventDefault();
