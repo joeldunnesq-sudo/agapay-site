@@ -72,8 +72,8 @@ assert.match(hubScript, /if \(!experience\.communicationsEnabled\)[\s\S]*return;
 assert.match(groupHandler, /export async function listGroupActivity[\s\S]*getReadContentIds[\s\S]*messages\.slice\(0, 10\)/);
 assert.match(shell, /parishLifeAvailable/);
 assert.match(parishDashboard, /id="nav-communications" hidden/);
-assert.match(parishDashboard, /id="nav-bookstore"[\s\S]*id="nav-tier-parish"[\s\S]*id="nav-sacraments"[\s\S]*id="nav-communications"[\s\S]*id="nav-directory"[\s\S]*id="nav-text"[\s\S]*id="nav-accounting"/, "Koinonia must sit directly above Directory with the Parish-tier tools");
-assert.match(parishApp, /const parishOrder = \['sacraments', 'communications', 'directory', 'text', 'accounting'\]/, "runtime navigation ordering must keep Koinonia immediately above Directory");
+assert.match(parishDashboard, /id="nav-bookstore"[\s\S]*id="nav-tier-parish"[\s\S]*id="nav-sacraments"[\s\S]*id="nav-directory"[\s\S]*id="nav-text"[\s\S]*id="nav-accounting"[\s\S]*id="nav-communications"/, "Koinonia must close the Parish-tier tools at the bottom");
+assert.match(parishApp, /const parishOrder = \['sacraments', 'directory', 'accounting', 'text', 'communications'\]/, "runtime navigation ordering must keep Koinonia last in the Parish tier");
 assert.match(parishApp, /communicationsNav\.hidden = !parishLifeAvailable/);
 assert.match(workerSource, /parishLifeApiRoute[\s\S]*status: 404/);
 

@@ -87,12 +87,6 @@
           <span class="nav-module-status" id="sacramentsNavStatus" hidden>Off</span>
           <span class="nav-upgrade-badge" id="sacramentsNavBadge" hidden>Upgrade</span>
         </div>
-        <div class="sidebar-nav-item" onclick="switchTab('communications')" id="nav-communications" hidden>
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg>
-          <span class="nav-label">Koinonia</span>
-          <span class="nav-module-status" id="communicationsNavStatus" hidden>Off</span>
-          <span class="nav-upgrade-badge" id="communicationsNavBadge" hidden>Upgrade</span>
-        </div>
         <div class="sidebar-nav-item" onclick="switchTab('directory')" id="nav-directory">
           <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8"/><path d="M8 13h5"/><circle cx="17" cy="13" r="1"/></svg>
           <span class="nav-label">Directory</span>
@@ -107,6 +101,12 @@
           <svg viewBox="0 0 24 24"><path d="M4 3h16v18H4z"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h3"/><path d="M15 14v4"/><path d="M13 16h4"/></svg>
           <span class="nav-label">Accounting</span>
           <span class="nav-soon-badge" id="accountingNavSoonBadge">Beta testing</span>
+        </div>
+        <div class="sidebar-nav-item" onclick="switchTab('communications')" id="nav-communications" hidden>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg>
+          <span class="nav-label">Koinonia</span>
+          <span class="nav-module-status" id="communicationsNavStatus" hidden>Off</span>
+          <span class="nav-upgrade-badge" id="communicationsNavBadge" hidden>Upgrade</span>
         </div>
         </div>
         <div class="sidebar-nav-item" onclick="switchTab('settings')" id="nav-settings">
@@ -1814,11 +1814,6 @@
     <span>Sacraments</span>
     <em class="mobile-module-status" hidden>Off</em>
   </button>
-  <button class="mobile-tab-link" type="button" data-nav-tab="communications" onclick="switchTab('communications')" hidden>
-    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg>
-    <span>Koinonia</span>
-    <em class="mobile-module-status" hidden>Off</em>
-  </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="directory" onclick="switchTab('directory')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M6 6h16v16H6z"/><path d="M10 11h8"/><path d="M10 16h5"/></svg>
     <span>Directory</span>
@@ -1833,6 +1828,11 @@
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 5h18v18H5z"/><path d="M9 9h10v4H9z"/><path d="M9 17h2"/><path d="M13 17h2"/><path d="M17 17h2"/><path d="M9 20h2"/><path d="M13 20h2"/><path d="M17 20h2"/></svg>
     <span>Accounting</span>
     <em class="mobile-soon-badge">Beta testing</em>
+  </button>
+  <button class="mobile-tab-link" type="button" data-nav-tab="communications" onclick="switchTab('communications')" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg>
+    <span>Koinonia</span>
+    <em class="mobile-module-status" hidden>Off</em>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="settings" onclick="switchTab('settings')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="3"/><path d="M14 5v3"/><path d="M14 20v3"/><path d="M5 14h3"/><path d="M20 14h3"/><path d="m7.6 7.6 2.1 2.1"/><path d="m18.3 18.3 2.1 2.1"/><path d="m20.4 7.6-2.1 2.1"/><path d="m9.7 18.3-2.1 2.1"/></svg>

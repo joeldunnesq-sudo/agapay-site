@@ -207,12 +207,12 @@ assert.match(feedUiSource, /announcementsForFilter\(value\)\.length/);
 assert.match(dashboardSource, /id="communicationsEnabledSwitch"[\s\S]*?onchange="toggleCommunicationsFeature\(this\)"/);
 const desktopOrder = [...dashboardSource.matchAll(/class="sidebar-nav-item"[^>]*id="(nav-[^"]+)"/g)].map((match) => match[1]);
 assert.deepEqual(
-  desktopOrder.slice(desktopOrder.indexOf("nav-stewardship"), desktopOrder.indexOf("nav-accounting") + 1),
-  ["nav-stewardship", "nav-bookstore", "nav-sacraments", "nav-communications", "nav-directory", "nav-text", "nav-accounting"],
-  "Koinonia and every Parish-only tool must follow the Stewardship tier tools",
+  desktopOrder.slice(desktopOrder.indexOf("nav-stewardship"), desktopOrder.indexOf("nav-communications") + 1),
+  ["nav-stewardship", "nav-bookstore", "nav-sacraments", "nav-directory", "nav-text", "nav-accounting", "nav-communications"],
+  "Koinonia must close the Parish tier block after every lower-tier and Parish-only tool",
 );
-assert.match(dashboardSource, /nav-bookstore[\s\S]*id="nav-tier-parish"[\s\S]*nav-sacraments[\s\S]*nav-communications[\s\S]*nav-directory[\s\S]*nav-text[\s\S]*nav-accounting/);
-assert.match(adminUiSource, /const parishOrder = \['sacraments', 'communications', 'directory', 'text', 'accounting'\]/);
+assert.match(dashboardSource, /nav-bookstore[\s\S]*id="nav-tier-parish"[\s\S]*nav-sacraments[\s\S]*nav-directory[\s\S]*nav-text[\s\S]*nav-accounting[\s\S]*nav-communications/);
+assert.match(adminUiSource, /const parishOrder = \['sacraments', 'directory', 'accounting', 'text', 'communications'\]/);
 assert.match(adminUiSource, /parishGroup\.appendChild\(item\)/, "runtime ordering must preserve the Parish tier container");
 
 console.log("PASS - parish announcements expose accurate admin-only reader counts and names alongside safe authoring");
