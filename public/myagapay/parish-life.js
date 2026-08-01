@@ -89,9 +89,37 @@ function renderParishLifeCalendarEvents(calendar = {}, parish) {
     const date = new Date(event.startsAt);
     const day = date.toLocaleDateString(undefined, { day:"numeric" });
     const weekday = date.toLocaleDateString(undefined, { weekday:"short" });
-    const time = event.allDay ? "All day" : date.toLocaleTimeString(undefined, { hour:"numeric", minute:"2-digit" });
+    const time = event.personal ? event.timeLabel : event.allDay ? "All day" : date.toLocaleTimeString(undefined, { hour:"numeric", minute:"2-digit" });
     return `<article class="parish-life-liturgical-fallback parish-life-synced-event"><span class="parish-life-fallback-date"><strong>${parishLifeEscape(day)}</strong><small>${parishLifeEscape(weekday)}</small></span><span class="parish-life-fallback-copy"><strong>${parishLifeEscape(event.title)}</strong><small>${parishLifeEscape(time)}${event.location ? ` · ${parishLifeEscape(event.location)}` : ""}</small></span><span class="parish-life-fallback-arrow" aria-hidden="true">›</span></article>`;
   }).join("");
+}
+
+const PARISH_LIFE_SACRAMENT_LABELS = {
+  house_blessing:"House Blessing", baptism:"Baptism", chrismation:"Chrismation", wedding:"Wedding",
+  funeral:"Funeral", memorial_service:"Memorial Service", confession:"Confession", home_visit:"Home Visit",
+  office_visit:"Office Visit", anointing:"Holy Unction", counseling:"Pastoral Counseling", other:"Parish Service"
+};
+
+function parishLifeApprovedServiceEvents(payload = {}) {
+  const today = new Date().toISOString().slice(0,10);
+  return (payload.requests || []).filter(request => request.status === "scheduled" && (request.confirmedDate || request.requestedDate) >= today).map(request => {
+    const date = request.confirmedDate || request.requestedDate;
+    const time = request.confirmedTime || request.requestedTimeWindow || "";
+    const timeMatch = String(time).match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    let hour = timeMatch ? Number(timeMatch[1]) : 12;
+    if (timeMatch?.[3]?.toUpperCase() === "PM" && hour < 12) hour += 12;
+    if (timeMatch?.[3]?.toUpperCase() === "AM" && hour === 12) hour = 0;
+    const minute = timeMatch ? Number(timeMatch[2]) : 0;
+    const startsAt = new Date(`${date}T${String(hour).padStart(2,"0")}:${String(minute).padStart(2,"0")}:00`);
+    return {
+      id:`sacrament-${request.id}`,
+      title:request.otherTypeLabel || PARISH_LIFE_SACRAMENT_LABELS[request.sacramentType] || "Parish Service",
+      location:request.locationAddress || "",
+      startsAt:Number.isNaN(startsAt.getTime()) ? `${date}T12:00:00` : startsAt.toISOString(),
+      timeLabel:time || "Time to be confirmed",
+      personal:true
+    };
+  });
 }
 
 function parishLifeTierSectionsHtml(communicationsEnabled) {
@@ -274,8 +302,13 @@ async function loadParishLife() {
     const experience = window.MyAgapayShell.parishLifeExperience(parish);
     applyParishLifeExperience(experience, parish);
     if (typeof loadDonorLiturgicalDay === "function") await loadDonorLiturgicalDay(parish);
-    const parishCalendar = await parishLifeFetch("/api/donor/parish-calendar", headers);
-    renderParishLifeCalendarEvents(parishCalendar || {}, parish);
+    const [parishCalendar, sacramentRequests] = await Promise.all([
+      parishLifeFetch("/api/donor/parish-calendar", headers),
+      parishLifeFetch("/api/donor/sacraments", headers)
+    ]);
+    const personalServices = parishLifeApprovedServiceEvents(sacramentRequests || {});
+    const parishEvents = parishCalendar?.events || [];
+    renderParishLifeCalendarEvents({ events:[...personalServices, ...parishEvents].sort((a,b) => String(a.startsAt).localeCompare(String(b.startsAt))) }, parish);
 
     if (!experience.communicationsEnabled) {
       status.hidden = true;

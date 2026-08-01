@@ -9,11 +9,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=20260801koinoniaref8" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260801personalsvcs1" />
   <script src="/liturgical-calendar.js"></script>
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260801backnav2" defer></script>
-  <script src="/donor/app.js?v=20260728saintsync1" defer></script>
+  <script src="/donor/app.js?v=20260801personalsvcs1" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -80,6 +80,11 @@
                 <div class="cal-metric-note" id="calendarFullName">Parish preference</div>
               </div>
             </div>
+
+            <section class="cal-card cal-personal-services" id="personalUpcomingServicesCard" hidden>
+              <div class="cal-card-head"><div class="cal-card-title"><div class="cal-card-title-icon"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="m9 12 2 2 4-4"/></svg></div>Your Upcoming Services</div><a href="/myagapay/services">View requests</a></div>
+              <div class="cal-personal-event-list" id="personalUpcomingServices"></div>
+            </section>
 
             <!-- FEAST HIGHLIGHTS TIMELINE -->
             <section class="cal-card">

@@ -1391,6 +1391,29 @@ function renderDonorCalendarPrompts(parish) {
   `).join("");
 }
 
+function donorApprovedSacramentEvents(payload = {}) {
+  const labels = typeof sacramentTypeLabels === "object" ? sacramentTypeLabels : {};
+  const today = new Date().toISOString().slice(0,10);
+  return (payload.requests || []).filter(request => request.status === "scheduled" && (request.confirmedDate || request.requestedDate) >= today).map(request => ({
+    ...request,
+    date:request.confirmedDate || request.requestedDate,
+    time:request.confirmedTime || request.requestedTimeWindow || "Time to be confirmed",
+    title:request.otherTypeLabel || labels[request.sacramentType] || String(request.sacramentType || "Parish service").replaceAll("_", " ").replace(/\b\w/g, letter => letter.toUpperCase())
+  })).sort((left, right) => left.date.localeCompare(right.date));
+}
+
+function renderDonorPersonalCalendar(payload = {}) {
+  const section = document.getElementById("personalUpcomingServicesCard");
+  const target = document.getElementById("personalUpcomingServices");
+  if (!section || !target) return;
+  const events = donorApprovedSacramentEvents(payload);
+  section.hidden = !events.length;
+  target.innerHTML = events.map(event => {
+    const date = new Date(`${event.date}T12:00:00`);
+    return `<a class="cal-personal-event" href="/myagapay/services"><span class="cal-personal-date"><strong>${escapeHtml(date.toLocaleDateString(undefined,{day:"numeric"}))}</strong><small>${escapeHtml(date.toLocaleDateString(undefined,{month:"short"}))}</small></span><span><em>Approved by your parish</em><strong>${escapeHtml(event.title)}</strong><small>${escapeHtml(event.time)}${event.clergyAssigned ? ` · ${escapeHtml(event.clergyAssigned)}` : ""}</small></span><i aria-hidden="true">›</i></a>`;
+  }).join("");
+}
+
 async function loadDonorCalendarPage() {
   const session = donorSession();
   if (!session.email || !session.token) {
@@ -1400,10 +1423,14 @@ async function loadDonorCalendarPage() {
     return;
   }
   try {
-    const data = await donorApi("/api/donor/dashboard");
+    const [data, sacramentPayload] = await Promise.all([
+      donorApi("/api/donor/dashboard"),
+      donorApi("/api/donor/sacraments").catch(() => ({ requests:[] }))
+    ]);
     setDonorProfile(data.donor);
     renderDonorCalendarFeasts(data.parish || null);
     renderDonorCalendarPrompts(data.parish || null);
+    renderDonorPersonalCalendar(sacramentPayload);
     loadDonorLiturgicalDay(data.parish || null);
   } catch (err) {
     if (isDonorUnauthorized(err)) {

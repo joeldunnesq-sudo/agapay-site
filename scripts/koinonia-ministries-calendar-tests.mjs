@@ -27,6 +27,8 @@ const dashboard = await readFile(new URL("../public/parish/dashboard.html", impo
 const app = await readFile(new URL("../public/parish/app.js", import.meta.url), "utf8");
 const parish = await readFile(new URL("../src/handlers/parish.js", import.meta.url), "utf8");
 const life = await readFile(new URL("../public/myagapay/parish-life.js", import.meta.url), "utf8");
+const donorApp = await readFile(new URL("../public/donor/app.js", import.meta.url), "utf8");
+const donorCalendar = await readFile(new URL("../public/myagapay/giving/calendar.html", import.meta.url), "utf8");
 
 assert.match(dashboard, /data-koinonia-view="ministries"/);
 assert.match(app, /Invite a My AGAPAY parishioner/);
@@ -35,5 +37,9 @@ assert.match(app, /\/ministries\/' \+ encodeURIComponent\(ministryId\) \+ '\/par
 assert.match(app, /reviews\/ministry_interest/);
 assert.match(parish, /Paste a public Google Calendar iCal link ending in \.ics\./);
 assert.match(life, /\/api\/donor\/parish-calendar/);
+assert.match(life, /request\.status === "scheduled"/);
+assert.match(life, /\/api\/donor\/sacraments/);
+assert.match(donorApp, /function donorApprovedSacramentEvents/);
+assert.match(donorCalendar, /Your Upcoming Services/);
 
 console.log("PASS - Koinonia ministries management and Google Calendar sync are wired end to end");

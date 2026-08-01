@@ -6803,6 +6803,18 @@ body.donor-home {
 /* ── SECTION CARD ── */
 .cal-card { background: var(--cal-paper); border: 1px solid var(--cal-line); border-radius: 16px; padding: 20px 22px; margin-bottom: 16px; box-shadow: var(--cal-shadow-sm); opacity: 0; transform: translateY(12px); animation: cal-fade-up 0.5s ease-out 0.3s forwards; }
 .cal-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.cal-card-head>a { color:var(--cal-gold); font-size:11px; font-weight:800; text-decoration:none; }
+.cal-personal-event-list { display:grid; gap:8px; }
+.cal-personal-event { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:12px; border:1px solid rgba(184,143,66,.3); border-radius:12px; padding:11px 13px; background:linear-gradient(110deg,#fff9ec,#fff); color:var(--cal-ink); text-decoration:none; }
+.cal-personal-date { width:44px; height:48px; display:grid; place-items:center; align-content:center; border-radius:10px; background:var(--cal-ink); color:#fff; }
+.cal-personal-date strong,.cal-personal-date small { display:block; line-height:1; }
+.cal-personal-date strong { font:600 22px/1 var(--cal-serif); }
+.cal-personal-date small { margin-top:3px; color:#d6b56e; font-size:9px; font-weight:800; text-transform:uppercase; }
+.cal-personal-event>span:nth-child(2)>em,.cal-personal-event>span:nth-child(2)>strong,.cal-personal-event>span:nth-child(2)>small { display:block; }
+.cal-personal-event>span:nth-child(2)>em { color:var(--cal-gold); font-size:9px; font-style:normal; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+.cal-personal-event>span:nth-child(2)>strong { margin:2px 0; font:600 17px/1.1 var(--cal-serif); }
+.cal-personal-event>span:nth-child(2)>small { color:var(--cal-muted); font-size:10px; }
+.cal-personal-event>i { color:var(--cal-gold); font-size:22px; font-style:normal; }
 .cal-card-title { display: flex; align-items: center; gap: 9px; font-family: var(--cal-serif); font-size: 19px; font-weight: 600; color: var(--cal-ink); }
 .cal-card-title-icon { width: 30px; height: 30px; border-radius: 8px; background: var(--cal-gold-soft); display: flex; align-items: center; justify-content: center; color: var(--cal-gold); flex-shrink: 0; }
 .cal-card-title-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
