@@ -817,7 +817,8 @@
     const pane = document.getElementById('directoryAdminPane');
     if (!pane) return;
     const sortedHouseholds = [...households].sort((a, b) => directoryHouseholdSortKey(a.displayName).localeCompare(directoryHouseholdSortKey(b.displayName)));
-    directoryLastData = { dashboard, queue, people, households: sortedHouseholds, skills, maintenance, print, settings };
+    const managementQueue = directoryManagementQueue(queue, maintenance.actions || {});
+    directoryLastData = { dashboard, queue: managementQueue, people, households: sortedHouseholds, skills, maintenance, print, settings };
     const parishName = currentParish?.parishName || currentParish?.name || 'Your parish';
     const publishedMembers = Array.isArray(print?.households) ? print.households : [];
     const publishedMemberCount = publishedMembers.length || people.length;
@@ -844,7 +845,7 @@
         </button>
         <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="tools" aria-selected="false" onclick="switchDirectoryAdminTab('tools')">
           <span class="pdx-dir-tab-mark" aria-hidden="true">2</span>
-          <span><strong>Directory Management</strong><small>${queue.length} submission${queue.length === 1 ? '' : 's'} awaiting review</small></span>
+          <span><strong>Directory Management</strong><small>${managementQueue.length} action${managementQueue.length === 1 ? '' : 's'} need attention</small></span>
         </button>
       </div>
       <div class="pdx-dir-tab-panel" data-dir-panel="directory">
@@ -875,21 +876,21 @@
       <div class="pdx-dir-tab-panel" data-dir-panel="tools" hidden>
         <section class="pdx-dir-management-intro">
           <span>Directory Management</span>
-          <h2>One queue for every directory submission</h2>
-          <p>Confirm a submission, decline it, or ask the parishioner for specific information. Returned submissions leave the queue until the member responds, then come back here automatically.</p>
+          <h2>One queue for every directory action</h2>
+          <p>Review submissions, reconnect household accounts, and follow up on directory confirmations from one actionable list.</p>
         </section>
-        ${directoryHealthOverview(dashboard.metrics || {}, maintenance)}
+        ${directoryHealthOverview(dashboard.metrics || {}, maintenance, managementQueue.length)}
         <section class="pdx-panel pdx-dir-review-queue-panel">
           <div class="pdx-panel-header">
-            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>Review Queue</div>
+            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>Action Queue</div>
             <button class="pdx-link-btn" type="button" onclick="loadDirectoryAdminTab(true)">Refresh</button>
           </div>
           <div class="pdx-dir-queue-filters" role="group" aria-label="Filter review queue">
-            ${directoryQueueFilterButton('all', 'All', queue.length)}
-            ${directoryQueueFilterButton('publication', 'Directory sharing', queue.filter((item) => item.reviewType?.startsWith('publication')).length)}
-            ${directoryQueueFilterButton('household', 'Household changes', queue.filter((item) => !item.reviewType?.startsWith('publication')).length)}
+            ${directoryQueueFilterButton('all', 'All', managementQueue.length)}
+            ${directoryQueueFilterButton('submission', 'Submissions', managementQueue.filter((item) => item.queueKind === 'submission').length)}
+            ${directoryQueueFilterButton('followup', 'Follow-up', managementQueue.filter((item) => item.queueKind === 'followup').length)}
           </div>
-          <div class="pdx-dir-review-queue" id="directoryReviewQueue">${directoryReviewQueueRows(queue)}</div>
+          <div class="pdx-dir-review-queue" id="directoryReviewQueue">${directoryReviewQueueRows(managementQueue)}</div>
         </section>
         <div id="directoryManagementDetail" class="pdx-dir-review-detail pdx-dir-queue-detail" aria-live="polite"></div>
         <details class="pdx-dir-utilities">
@@ -3324,25 +3325,24 @@
     </div>`;
   }
 
-  function directoryHealthOverview(metrics = {}, maintenance = {}) {
+  function directoryHealthOverview(metrics = {}, maintenance = {}, actionCount = 0) {
     const current = Number(maintenance.householdsCurrent || 0);
     const due = Number(maintenance.householdsDue || 0);
     const overdue = Number(maintenance.householdsOverdue || 0);
     const notStarted = Number(maintenance.householdsNotStarted || 0);
     const total = Math.max(1, current + due + overdue + notStarted);
     const percent = Math.round((current / total) * 100);
-    const accountIssues = Number(maintenance.householdsNeedingAccountAccess || 0) + Number(maintenance.unclaimedPeople || 0);
-    const required = Number(metrics.totalPending || 0) + overdue + accountIssues;
+    const required = Number(actionCount || 0);
     return `<section class="pdx-dir-health" aria-label="Directory health">
       <div class="pdx-dir-health-summary">
         <div class="pdx-dir-health-ring" style="--health-pct:${percent}%"><span><strong>${percent}%</strong><small>current</small></span></div>
-        <div><span class="pdx-dir-health-kicker">Directory health</span><h3>${required ? `${required} action${required === 1 ? '' : 's'} need attention` : 'Everything is in good shape'}</h3><p>${current} of ${total} households have current confirmation. New member submissions appear only in the review queue below.</p></div>
+        <div><span class="pdx-dir-health-kicker">Directory health</span><h3>${required ? `${required} action${required === 1 ? '' : 's'} need attention` : 'Everything is in good shape'}</h3><p>${current} of ${total} households have current confirmation. Every staff action affecting this summary appears in the queue below.</p></div>
       </div>
       <div class="pdx-dir-health-grid">
         ${directoryHealthTile('Awaiting review', metrics.totalPending || 0, 'Confirm, decline, or request information', Number(metrics.totalPending || 0) ? 'urgent' : 'good')}
         ${directoryHealthTile('Current households', current, 'Confirmed and ready for self-service', 'good')}
         ${directoryHealthTile('Parishioner follow-up', due + overdue + notStarted, `${overdue} overdue · ${notStarted} not yet started`, overdue ? 'urgent' : 'watch')}
-        ${directoryHealthTile('Account links needed', accountIssues, 'Households or adults without My AGAPAY access', accountIssues ? 'watch' : 'good')}
+        ${directoryHealthTile('Account links needed', Number(maintenance.householdsNeedingAccountAccess || 0) + Number(maintenance.unclaimedPeople || 0), 'Households or adults without My AGAPAY access', Number(maintenance.householdsNeedingAccountAccess || 0) + Number(maintenance.unclaimedPeople || 0) ? 'watch' : 'good')}
       </div>
     </section>`;
   }
@@ -3369,15 +3369,46 @@
     return labels[type] || String(type || 'Directory submission').replace(/_/g, ' ');
   }
 
+  function directoryManagementQueue(submissions = [], actions = {}) {
+    const followups = new Map();
+    const addFollowup = (item, targetType, reason, priority = 'normal') => {
+      const targetId = targetType === 'person' ? (item.personId || item.id) : item.id;
+      if (!targetId) return;
+      const key = `${targetType}:${targetId}`;
+      const existing = followups.get(key) || {
+        queueKind: 'followup', sourceType: targetType, sourceId: targetId, targetType, targetId,
+        targetLabel: item.displayName || 'Directory record', priority: 'normal', maintenanceReasons: []
+      };
+      if (!existing.maintenanceReasons.includes(reason)) existing.maintenanceReasons.push(reason);
+      if (priority === 'urgent' || (priority === 'elevated' && existing.priority !== 'urgent')) existing.priority = priority;
+      followups.set(key, existing);
+    };
+    (actions.overdueHouseholds || []).forEach((item) => addFollowup(item, 'household', 'Confirmation overdue', 'urgent'));
+    (actions.dueHouseholds || []).forEach((item) => addFollowup(item, 'household', 'Confirmation due soon', 'elevated'));
+    (actions.notStartedHouseholds || []).forEach((item) => addFollowup(item, 'household', 'Confirmation not started', 'elevated'));
+    (actions.householdsNeedingAccountAccess || []).forEach((item) => addFollowup(item, 'household', 'My AGAPAY household access needed', 'urgent'));
+    (actions.unclaimedPeople || []).forEach((item) => addFollowup(item, 'person', 'Adult account link needed', 'elevated'));
+    (actions.staleSkillConsents || []).forEach((item) => addFollowup(item, 'person', `Renew ${item.skillName || 'skill'} consent`, 'elevated'));
+    return [
+      ...submissions.map((item) => ({ ...item, queueKind: 'submission' })),
+      ...[...followups.values()].map((item) => ({ ...item, summary: item.maintenanceReasons.join(' · ') }))
+    ];
+  }
+
   function directoryReviewQueueRows(items = []) {
-    const filtered = items.filter((item) => directoryQueueFilter === 'all'
-      || (directoryQueueFilter === 'publication' ? item.reviewType?.startsWith('publication') : !item.reviewType?.startsWith('publication')));
-    if (!filtered.length) return `<div class="pdx-dir-queue-empty"><span>✓</span><strong>No submissions in this view</strong><small>New and resubmitted directory requests will appear here.</small></div>`;
-    return filtered.map((item) => `<article class="pdx-dir-queue-row">
+    const filtered = items.filter((item) => directoryQueueFilter === 'all' || item.queueKind === directoryQueueFilter);
+    if (!filtered.length) return `<div class="pdx-dir-queue-empty"><span>✓</span><strong>No actions in this view</strong><small>New submissions and directory follow-up will appear here.</small></div>`;
+    return filtered.map((item) => {
+      const followup = item.queueKind === 'followup';
+      const openAction = followup
+        ? `${item.targetType === 'person' ? 'openDirectoryPerson' : 'openDirectoryHousehold'}('${escapeAttr(item.targetId)}')`
+        : `openDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}')`;
+      return `<article class="pdx-dir-queue-row${followup ? ' is-followup' : ''}">
       <div class="pdx-dir-queue-priority is-${escapeAttr(item.priority || 'normal')}" aria-label="${escapeAttr(item.priority || 'normal')} priority"></div>
-      <div class="pdx-dir-queue-copy"><span>${escapeHtml(directoryReviewTypeLabel(item.reviewType))}</span><strong>${escapeHtml(item.targetLabel || 'Directory record')}</strong><small>${escapeHtml(item.summary || 'Directory review')} · ${item.ageDays ? `${escapeHtml(item.ageDays)} day${item.ageDays === 1 ? '' : 's'} waiting` : 'New'}</small></div>
-      <div class="pdx-dir-queue-state"><span>${escapeHtml((item.queueStatus || 'pending_review').replace(/_/g, ' '))}</span><button type="button" onclick="openDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}')">Review</button></div>
-    </article>`).join('');
+      <div class="pdx-dir-queue-copy"><span>${followup ? 'Directory follow-up' : escapeHtml(directoryReviewTypeLabel(item.reviewType))}</span><strong>${escapeHtml(item.targetLabel || 'Directory record')}</strong><small>${escapeHtml(item.summary || 'Directory review')}${!followup ? ` · ${item.ageDays ? `${escapeHtml(item.ageDays)} day${item.ageDays === 1 ? '' : 's'} waiting` : 'New'}` : ''}</small></div>
+      <div class="pdx-dir-queue-state"><span>${followup ? 'follow up' : escapeHtml((item.queueStatus || 'pending_review').replace(/_/g, ' '))}</span><button type="button" onclick="${openAction}">${followup ? 'Open record' : 'Review'}</button></div>
+    </article>`;
+    }).join('');
   }
 
   function filterDirectoryReviewQueue(filter) {
@@ -3393,19 +3424,6 @@
     return `<div class="pdx-dir-review-conversation"><h4>Question and response</h4>${messages.map((message) => `<div class="is-${escapeAttr(message.direction)}"><span>${message.direction === 'staff_to_member' ? 'Parish office' : 'Parishioner'}</span><p>${escapeHtml(message.body)}</p></div>`).join('')}</div>`;
   }
 
-
-  function directoryMaintenanceActions(actions = {}) {
-    const groups = [
-      ['Overdue households', actions.overdueHouseholds || [], 'household'],
-      ['Confirm soon', actions.dueHouseholds || [], 'household'],
-      ['Confirmation not started', actions.notStartedHouseholds || [], 'household'],
-      ['Households needing account access', actions.householdsNeedingAccountAccess || [], 'household'],
-      ['Adults without their own account link', actions.unclaimedPeople || [], 'person'],
-      ['Renew skill consent', actions.staleSkillConsents || [], 'person']
-    ].filter(([, items]) => items.length);
-    if (!groups.length) return '<div class="pdx-dir-maintenance-clear"><strong>Nothing needs attention</strong><span>The directory has no overdue confirmations, stale consents, or unlinked adult accounts.</span></div>';
-    return `<div class="pdx-dir-maintenance-worklists">${groups.map(([title, items, type]) => `<section><h4>${escapeHtml(title)}</h4>${items.map((item) => `<button type="button" onclick="${type === 'household' ? 'openDirectoryHousehold' : 'openDirectoryPerson'}('${escapeAttr(type === 'person' ? (item.personId || item.id) : item.id)}')"><span><strong>${escapeHtml(item.displayName || 'Directory record')}</strong><small>${item.skillName ? escapeHtml(item.skillName) : item.dueAt ? 'Due ' + escapeHtml(new Date(item.dueAt).toLocaleDateString()) : 'Open record'}</small></span><b>Open →</b></button>`).join('')}</section>`).join('')}</div>`;
-  }
 
   function directorySkillsAdminRows(listings) {
     if (!listings.length) return directoryEmptyState('Nothing to review', 'No Skills & Service listings are active or awaiting review.');
