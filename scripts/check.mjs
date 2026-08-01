@@ -411,6 +411,13 @@ assert.ok(
     && givePricingHtml.includes("Stewardship's Bookstore access"),
   "Parish pricing should inherit Stewardship without duplicating its benefits and should distinguish the full Commerce suite from Stewardship Bookstore"
 );
+assert.ok(
+  parishPricingCard.includes("Koinonia parish feed, announcements, and ministry groups")
+    && parishPricingCard.includes("Parish audio library, video, and news hub")
+    && parishPricingCard.includes("Orthodox podcast discovery, subscriptions, RSS imports, and saved listening progress")
+    && !stewardshipPricingCard.includes("Koinonia parish feed"),
+  "Koinonia community, media, and podcast features should be included in the Parish tier"
+);
 assert.equal(
   givePricingHtml.match(/Enhanced giving, (?:donor, fund|fund, donor), and pledge reports/g)?.length,
   1,
