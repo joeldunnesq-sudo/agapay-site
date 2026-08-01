@@ -72,7 +72,8 @@ assert.match(hubScript, /if \(!experience\.communicationsEnabled\)[\s\S]*return;
 assert.match(groupHandler, /export async function listGroupActivity[\s\S]*getReadContentIds[\s\S]*messages\.slice\(0, 10\)/);
 assert.match(shell, /parishLifeAvailable/);
 assert.match(parishDashboard, /id="nav-communications" hidden/);
-assert.match(parishDashboard, /class="sidebar-nav-tier-group"[\s\S]*id="nav-bookstore"[\s\S]*id="nav-sacraments"[\s\S]*id="nav-directory"[\s\S]*id="nav-communications"/, "Koinonia must be nested with the other Parish tier tools");
+assert.match(parishDashboard, /id="nav-tier-parish"[\s\S]*id="nav-sacraments"[\s\S]*id="nav-directory"[\s\S]*id="nav-text"[\s\S]*id="nav-accounting"[\s\S]*id="nav-communications"[\s\S]*<\/div>\s*<div class="sidebar-nav-item"[^>]*id="nav-settings"/, "Koinonia must be nested at the bottom with every other Parish tier tool");
+assert.match(parishApp, /preParishOrder[\s\S]*parishGroup[\s\S]*\['sacraments', 'directory', 'accounting', 'text', 'communications'\][\s\S]*sidebar\.appendChild\(parishGroup\)/, "runtime ordering must preserve the Parish tier group");
 assert.match(parishApp, /communicationsNav\.hidden = !parishLifeAvailable/);
 assert.match(workerSource, /parishLifeApiRoute[\s\S]*status: 404/);
 
