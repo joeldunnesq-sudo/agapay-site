@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import worker from "../src/worker.js";
 import { LEARN_FREE_PRINT_LIMIT } from "../src/learn/billing.js";
-import { corsHeaders } from "../src/lib/core.js";
+import { corsHeaders, createPasswordRecord } from "../src/lib/core.js";
+
+const TEST_ADMIN_PASSWORD = "root-admin-token-for-tests";
+const TEST_ADMIN_PASSWORD_RECORD = JSON.stringify(await createPasswordRecord(TEST_ADMIN_PASSWORD));
 
 class MemoryKV {
   constructor() {
@@ -30,9 +33,10 @@ class MemoryKV {
 }
 
 function env() {
+  const registrations = new MemoryKV();
+  registrations.store.set("__agapay_admin_password", TEST_ADMIN_PASSWORD_RECORD);
   return {
-    AGAPAY_REGISTRATIONS: new MemoryKV(),
-    AGAPAY_ADMIN_TOKEN: "root-admin-token-for-tests",
+    AGAPAY_REGISTRATIONS: registrations,
     AGAPAY_APP_URL: "https://agapay.test",
     AGAPAY_ENABLED_PRODUCTS: "give,learn",
     AGAPAY_TEST_MODE: "1",
@@ -58,7 +62,7 @@ async function json(response) {
   return response.json();
 }
 
-async function adminSession(testEnv, password = "root-admin-token-for-tests") {
+async function adminSession(testEnv, password = TEST_ADMIN_PASSWORD) {
   const response = await worker.fetch(request("/api/admin/session", {
     method: "POST",
     body: { password, actor: "Test Admin" }
@@ -152,6 +156,26 @@ async function withMockFetch(handler, run) {
   } finally {
     globalThis.fetch = originalFetch;
   }
+}
+
+{
+  const hashedEnv = env();
+  const hashedLogin = await worker.fetch(request("/api/admin/session", {
+    method: "POST",
+    body: { password: TEST_ADMIN_PASSWORD }
+  }), hashedEnv);
+  assert.equal(hashedLogin.status, 200, "a structured admin password record should authenticate");
+  assert.ok((await json(hashedLogin)).token, "hashed admin authentication should issue a session");
+
+  const legacyEnv = env();
+  await legacyEnv.AGAPAY_REGISTRATIONS.put("__agapay_admin_password", "legacy-plaintext-password");
+  legacyEnv.AGAPAY_ADMIN_TOKEN = "legacy-plaintext-password";
+  legacyEnv.AGAPAY_ADMIN_PASSWORD = "legacy-plaintext-password";
+  const legacyLogin = await worker.fetch(request("/api/admin/session", {
+    method: "POST",
+    body: { password: "legacy-plaintext-password" }
+  }), legacyEnv);
+  assert.equal(legacyLogin.status, 401, "plaintext admin credentials should be rejected regardless of storage or env fallback");
 }
 
 {
