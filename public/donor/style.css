@@ -8006,23 +8006,36 @@ textarea {
 }
 
 .donor-parish-life-page .parish-life-saint-card {
+  --cal-cream: #f6f1e8;
+  --cal-gold: #c8a24a;
+  --cal-gold-bright: #e8c879;
+  --cal-serif: "Cormorant Garamond", Georgia, serif;
   margin: 0 0 6px;
-  border: 1px solid var(--k-border);
-  border-radius: 14px;
-  background: var(--k-surface);
-  box-shadow: none;
+  border: 1px solid rgba(226, 190, 116, 0.24);
+  border-radius: 16px;
+  background: linear-gradient(145deg, #0d2032, #071522);
+  color: var(--cal-cream);
+  box-shadow: 0 14px 34px rgba(7, 21, 34, 0.16);
 }
 
 .donor-parish-life-page .parish-life-saint-card .cal-saint-strip {
   border: 0;
   border-radius: inherit;
   background: transparent;
+  color: var(--cal-cream);
 }
 
-.donor-parish-life-page .parish-life-saint-card :is(.cal-saint-name, .cal-saint-note) { color: var(--k-text); }
-.donor-parish-life-page .parish-life-saint-card .cal-saint-note { color: var(--k-muted); }
-.donor-parish-life-page .parish-life-saint-card .cal-saint-icon { background: var(--k-gold-soft); color: var(--k-gold); }
-.donor-parish-life-page .parish-life-saint-card .cal-saint-arrow { color: var(--k-faint); }
+.donor-parish-life-page .parish-life-saint-card .cal-saint-name { color: var(--cal-cream); }
+.donor-parish-life-page .parish-life-saint-card .cal-saint-note { color: rgba(246, 241, 232, 0.6); }
+.donor-parish-life-page .parish-life-saint-card .cal-saint-icon {
+  border-color: rgba(200, 162, 74, 0.3);
+  background: linear-gradient(135deg, rgba(200, 162, 74, 0.3), rgba(200, 162, 74, 0.08));
+  color: var(--cal-gold-bright);
+}
+.donor-parish-life-page .parish-life-saint-card .cal-saint-arrow {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--cal-gold-bright);
+}
 
 .parish-life-home-section { display: grid; gap: 0; }
 .parish-life-section-head {
