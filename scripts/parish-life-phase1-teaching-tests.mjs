@@ -1,0 +1,125 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import worker from "../src/worker.js";
+import {
+  archiveParishTeachingPost,
+  createParishTeachingPost,
+  getDonorTeachingFeed,
+  markTeachingRead,
+  renderTeachingBody,
+  storeTeachingAudio,
+  TEACHING_ALLOWED_TAGS,
+  TEACHING_AUDIO_MAX_BYTES,
+  updateParishTeachingPost,
+  validateTeachingAudioMetadata,
+} from "../src/handlers/parish-teaching.js";
+
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+const sqlite = new DatabaseSync(":memory:");
+sqlite.exec(readFileSync(path.join(root, "migrations", "0064_parish_content_reads.sql"), "utf8"));
+sqlite.exec(readFileSync(path.join(root, "migrations", "0070_parish_content_read_receipts_index.sql"), "utf8"));
+sqlite.exec(readFileSync(path.join(root, "migrations", "0072_parish_teaching_posts.sql"), "utf8"));
+const db = {
+  prepare(sql) {
+    return {
+      parameters: [],
+      bind(...parameters) { this.parameters = parameters; return this; },
+      async first() { return sqlite.prepare(sql).get(...this.parameters) || null; },
+      async all() { return { results: sqlite.prepare(sql).all(...this.parameters) }; },
+      async run() { const result = sqlite.prepare(sql).run(...this.parameters); return { success: true, meta: { changes: result.changes } }; },
+    };
+  },
+};
+
+assert.deepEqual(TEACHING_ALLOWED_TAGS, ["strong", "em", "a", "ul", "li", "br"]);
+const formatted = renderTeachingBody('A **strong** word, *emphasis*, and [link](https://example.test).\n- One\n- Two\n<script>alert(1)</script><img onerror="bad">');
+assert.match(formatted, /<strong>strong<\/strong>/);
+assert.match(formatted, /<em>emphasis<\/em>/);
+assert.match(formatted, /<ul><li>One<\/li><li>Two<\/li><\/ul>/);
+assert.doesNotMatch(formatted, /<script|<img|onerror/i);
+
+const draft = await createParishTeachingPost(db, {
+  parishId: "parish-one", createdBy: "staff@example.test", input: { title: "Sunday reflection", body: "Listen with the heart." },
+});
+let donorFeed = await getDonorTeachingFeed(db, { parishId: "parish-one", donorId: "donor@example.test" });
+assert.deepEqual(donorFeed.posts, [], "draft teaching must stay off the hub and donor feed");
+assert.equal(donorFeed.unreadCount, 0);
+const published = await updateParishTeachingPost(db, { parishId: "parish-one", teachingId: draft.id, input: { status: "published" } });
+assert.equal(published.status, "published");
+donorFeed = await getDonorTeachingFeed(db, { parishId: "parish-one", donorId: "donor@example.test" });
+assert.deepEqual(donorFeed.posts.map(({ id }) => id), [draft.id]);
+assert.equal(donorFeed.unreadCount, 1, "a newly published teaching must count as unread");
+assert.equal(await markTeachingRead(db, { parishId: "parish-one", teachingId: draft.id, donorId: "donor@example.test" }), true);
+donorFeed = await getDonorTeachingFeed(db, { parishId: "parish-one", donorId: "donor@example.test" });
+assert.equal(donorFeed.unreadCount, 0);
+assert.equal(donorFeed.posts[0].read, true);
+await archiveParishTeachingPost(db, { parishId: "parish-one", teachingId: draft.id });
+donorFeed = await getDonorTeachingFeed(db, { parishId: "parish-one", donorId: "donor@example.test" });
+assert.deepEqual(donorFeed.posts, []);
+
+const nearLimit = validateTeachingAudioMetadata(new Request("https://agapay.test/audio", {
+  method: "POST", headers: { "Content-Type": "audio/mpeg", "Content-Length": String(TEACHING_AUDIO_MAX_BYTES) }, body: new Uint8Array([1]),
+}));
+assert.equal(nearLimit.error, undefined);
+const aboveLimit = validateTeachingAudioMetadata(new Request("https://agapay.test/audio", {
+  method: "POST", headers: { "Content-Type": "audio/mpeg", "Content-Length": String(TEACHING_AUDIO_MAX_BYTES + 1) }, body: new Uint8Array([1]),
+}));
+assert.equal(aboveLimit.status, 413);
+
+function chunkedAudio(chunkCount) {
+  const chunk = new Uint8Array(1024 * 1024);
+  let sent = 0;
+  return new ReadableStream({ pull(controller) { if (sent >= chunkCount) controller.close(); else { sent += 1; controller.enqueue(chunk); } } });
+}
+const storedKeys = new Set();
+const deletedKeys = [];
+const bucket = {
+  async put(key, stream) {
+    const reader = stream.getReader();
+    let size = 0;
+    while (true) { const { done, value } = await reader.read(); if (done) break; size += value.byteLength; }
+    storedKeys.add(key);
+    return { size };
+  },
+  async delete(key) { storedKeys.delete(key); deletedKeys.push(key); },
+};
+const nearStored = await storeTeachingAudio(bucket, { key: "near.mp3", source: chunkedAudio(50), contentType: "audio/mpeg" });
+assert.equal(nearStored.size, TEACHING_AUDIO_MAX_BYTES, "a realistic 50 MiB upload must stream successfully");
+assert.equal(storedKeys.has("near.mp3"), true);
+await assert.rejects(() => storeTeachingAudio(bucket, { key: "over.mp3", source: chunkedAudio(51), contentType: "audio/mpeg" }), /TEACHING_AUDIO_TOO_LARGE/);
+assert.equal(storedKeys.has("over.mp3"), false, "an over-limit stream must not leave an R2 object");
+assert.deepEqual(deletedKeys, ["over.mp3"]);
+
+const sourceFiles = await Promise.all([
+  "src/lib/rich-text.js", "src/handlers/parish-communications.js", "src/handlers/parish-teaching.js",
+  "public/myagapay/parish-life.html", "public/myagapay/parish-life.js", "public/myagapay/teaching.html", "public/myagapay/teaching.js",
+  "public/parish/dashboard.html", "public/parish/app.js", "src/worker.js",
+].map(async (relative) => [relative, readFileSync(path.join(root, relative), "utf8")]));
+const sources = Object.fromEntries(sourceFiles);
+const implementationCount = [...sources["src/lib/rich-text.js"].matchAll(/function\s+stripAuthoredHtml\s*\(/g)].length
+  + [...sources["src/handlers/parish-communications.js"].matchAll(/function\s+stripAuthoredHtml\s*\(/g)].length
+  + [...sources["src/handlers/parish-teaching.js"].matchAll(/function\s+stripAuthoredHtml\s*\(/g)].length;
+assert.equal(implementationCount, 1, "stripAuthoredHtml must have exactly one implementation");
+assert.match(sources["src/handlers/parish-communications.js"], /import \{ renderBoundedRichText \} from "\.\.\/lib\/rich-text\.js"/);
+assert.match(sources["src/handlers/parish-teaching.js"], /import \{ renderBoundedRichText \} from "\.\.\/lib\/rich-text\.js"/);
+assert.match(sources["public/myagapay/parish-life.html"], /class="mobile-product-card live" href="\/myagapay\/teaching"/);
+assert.match(sources["public/myagapay/parish-life.js"], /\.\.\.announcements, \.\.\.messages, \.\.\.teachings/);
+assert.match(sources["public/myagapay/parish-life.js"], /feedUnread \+ groupsUnread \+ teachingUnread/);
+assert.match(sources["public/parish/dashboard.html"], /id="teachingAudio"/);
+assert.match(sources["public/parish/app.js"], /createTeachingDraft/);
+
+const context = { waitUntil() {} };
+for (const pathname of ["/api/donor/teaching", "/api/donor/teaching/post-one/read"]) {
+  const production = await worker.fetch(new Request(`https://agapay.test${pathname}`), { AGAPAY_ENVIRONMENT: "production" }, context);
+  assert.equal(production.status, 404, `${pathname} must fail closed in production`);
+  const staging = await worker.fetch(new Request(`https://agapay.test${pathname}`), { AGAPAY_ENVIRONMENT: "staging" }, context);
+  assert.notEqual(staging.status, 404, `${pathname} must pass the staging gate`);
+}
+const assetEnv = { AGAPAY_ENVIRONMENT: "staging", ASSETS: { fetch: async () => new Response("teaching") } };
+assert.equal((await worker.fetch(new Request("https://agapay.test/myagapay/teaching"), { AGAPAY_ENVIRONMENT: "production" }, context)).status, 404);
+assert.equal((await worker.fetch(new Request("https://agapay.test/myagapay/teaching"), assetEnv, context)).status, 200);
+
+console.log("PASS - Parish Life teaching lifecycle, shared sanitizer, streaming audio limit, hub integration, and staging gate");

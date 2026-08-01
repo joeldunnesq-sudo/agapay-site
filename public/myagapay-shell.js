@@ -30,7 +30,7 @@
   function products() {
     const items = [
       { id: "giving", href: "/myagapay/dashboard", label: "Give", mobileLabel: "Home", short: "Giving dashboard", icon: icons.give },
-      { id: "parish-life", href: "/myagapay/parish-life", label: "Parish Life", short: "Announcements and groups", icon: icons.parishLife, parishFeature: "parishLifeAvailable" },
+      { id: "parish-life", href: "/myagapay/parish-life", label: "Parish Life", short: "News, groups, and teaching", icon: icons.parishLife, parishFeature: "parishLifeAvailable" },
       { id: "commemorations", href: "/myagapay/sacraments", label: "Sacraments & Services", short: "Requests and prayer", icon: icons.sacraments, parishFeature: "sacramentsEnabled" },
       { id: "history", href: "/myagapay/giving/history", label: "History", short: "Giving history", icon: icons.history, mobileFallbackFor: "sacramentsEnabled", desktopHidden: true },
       { id: "today", href: "/myagapay/giving/calendar", label: "Today", short: "Feast day and readings", icon: icons.today },
@@ -52,6 +52,7 @@
 
   let feedUnreadCount = 0;
   let groupsUnreadCount = 0;
+  let teachingUnreadCount = 0;
 
   function visibleProducts() {
     return products().filter((item) => {
@@ -82,7 +83,7 @@
     if (pathname.startsWith("/myagapay/learn")) return "learn";
     if (pathname === "/myagapay" || pathname === "/myagapay/" || pathname === "/myagapay/dashboard") return "giving";
     if (pathname.startsWith("/myagapay/bookstore")) return "bookstore";
-    if (pathname.startsWith("/myagapay/parish-life") || pathname.startsWith("/myagapay/feed") || pathname.startsWith("/myagapay/groups")) return "parish-life";
+    if (pathname.startsWith("/myagapay/parish-life") || pathname.startsWith("/myagapay/feed") || pathname.startsWith("/myagapay/groups") || pathname.startsWith("/myagapay/teaching")) return "parish-life";
     if (pathname.startsWith("/myagapay/sacraments") || pathname.startsWith("/myagapay/giving/commemorations") || pathname.startsWith("/myagapay/giving/names")) return "commemorations";
     if (pathname.startsWith("/myagapay/giving/calendar")) return "today";
     if (pathname.startsWith("/myagapay/directory")) return "directory";
@@ -309,7 +310,7 @@
     const productLinks = navProducts.map((item) => {
       const current = item.id === active || (item.id === "settings" && active === "account");
       const activeClass = current ? (isLearnNav ? "is-active" : "active") : "";
-      const unreadCount = item.id === "parish-life" ? feedUnreadCount + groupsUnreadCount : 0;
+      const unreadCount = item.id === "parish-life" ? feedUnreadCount + groupsUnreadCount + teachingUnreadCount : 0;
       const badge = unreadCount > 0
         ? `<em class="unified-nav-badge" data-${item.id}-unread-count aria-label="${unreadCount} unread">${unreadCount > 99 ? "99+" : unreadCount}</em>`
         : "";
@@ -380,6 +381,7 @@
         await Promise.all([
           parishCapabilities.communicationsEnabled ? loadFeedUnreadCount() : Promise.resolve(setFeedUnreadCount(0)),
           loadGroupsUnreadCount(),
+          parishCapabilities.communicationsEnabled ? loadTeachingUnreadCount() : Promise.resolve(setTeachingUnreadCount(0)),
         ]);
       }
     } catch {
@@ -399,8 +401,14 @@
     normalizeProductNavs();
   }
 
+  function setTeachingUnreadCount(count) {
+    teachingUnreadCount = Math.max(0, Number(count) || 0);
+    syncParishLifeUnreadSummary();
+    normalizeProductNavs();
+  }
+
   function syncParishLifeUnreadSummary() {
-    const total = feedUnreadCount + groupsUnreadCount;
+    const total = feedUnreadCount + groupsUnreadCount + teachingUnreadCount;
     document.querySelectorAll("[data-parish-life-unread]").forEach((badge) => {
       badge.hidden = total === 0;
       badge.textContent = total > 99 ? "99+" : String(total);
@@ -425,6 +433,17 @@
       if (!response.ok) return;
       const payload = await response.json();
       setGroupsUnreadCount(payload.unreadCount);
+    } catch {
+      // The navigation remains usable when the count cannot be refreshed.
+    }
+  }
+
+  async function loadTeachingUnreadCount() {
+    try {
+      const response = await fetch("/api/donor/teaching", { headers: authHeaders(), cache: "no-store" });
+      if (!response.ok) return;
+      const payload = await response.json();
+      setTeachingUnreadCount(payload.unreadCount);
     } catch {
       // The navigation remains usable when the count cannot be refreshed.
     }
@@ -496,6 +515,7 @@
     setParishCapabilities,
     setFeedUnreadCount,
     setGroupsUnreadCount,
+    setTeachingUnreadCount,
     redirectToLogin,
     session,
     syncAuthVisibility,

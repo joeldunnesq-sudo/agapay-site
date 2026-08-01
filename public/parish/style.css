@@ -746,6 +746,12 @@
     .communications-admin-header h1, .communications-compose h2, .communications-list-head h2 { margin:4px 0 6px; font-family:Georgia,serif; color:var(--deep); }
     .communications-admin-header p { margin:0; color:var(--muted); }
     .communications-grid { display:grid; grid-template-columns:minmax(280px,.72fr) minmax(420px,1.28fr); gap:18px; align-items:start; }
+    .communications-workspace-stack { display:grid; gap:24px; }
+    .communications-content-section { display:grid; gap:14px; border:1px solid var(--line); border-radius:18px; padding:20px; background:#faf8f3; }
+    .communications-section-heading h2 { margin:4px 0 5px; font-family:Georgia,serif; color:var(--deep); font-size:27px; }
+    .communications-section-heading p { margin:0; color:var(--muted); }
+    .teaching-admin-section { background:linear-gradient(145deg,#f7f1e5,#fff); }
+    .communications-audio-label { display:inline-flex; align-items:center; gap:5px; color:#765a1d; font-weight:800; }
     .communications-compose, .communications-list-panel, .communications-paywall { border:1px solid var(--line); border-radius:16px; padding:20px; background:#fff; }
     .communications-compose { display:grid; gap:13px; }
     .communications-compose label { display:grid; gap:6px; color:var(--deep); font-size:12px; font-weight:800; }
