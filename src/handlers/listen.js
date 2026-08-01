@@ -5,7 +5,132 @@
  * Provides two endpoints:
  *   GET /api/listen/search?q=...   → Podcast Index search (HMAC auth)
  *   GET /api/listen/rss?url=...    → RSS feed proxy (CORS bypass)
+ *   GET/POST /api/listen/progress → private donor playback memory
  */
+
+import { json, missingProductionStoreResponse, normalizeEmail, unauthorized } from '../lib/core.js';
+import { requireDonor } from './parish.js';
+
+const PODCAST_PROGRESS_LIMIT = 50;
+const PODCAST_COMPLETE_WINDOW_SECONDS = 5;
+const PODCAST_PLAYBACK_RATES = new Set([1, 1.25, 1.5, 1.75, 2]);
+
+function podcastDatabase(env) {
+  return env.AGAPAY_DB || env.DB || null;
+}
+
+function boundedText(value, maxLength) {
+  return String(value || '').trim().slice(0, maxLength);
+}
+
+function podcastUrl(value) {
+  const raw = boundedText(value, 4096);
+  try {
+    const parsed = new URL(raw);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.toString() : '';
+  } catch {
+    return '';
+  }
+}
+
+function playbackRate(value) {
+  const parsed = Number(value);
+  return PODCAST_PLAYBACK_RATES.has(parsed) ? parsed : null;
+}
+
+function progressRow(row) {
+  return {
+    episodeKey: row.episode_key,
+    feedUrl: row.feed_url,
+    showTitle: row.show_title || '',
+    episodeTitle: row.episode_title || '',
+    positionSeconds: Math.max(0, Number(row.position_seconds) || 0),
+    durationSeconds: row.duration_seconds === null || row.duration_seconds === undefined
+      ? null
+      : Math.max(0, Number(row.duration_seconds) || 0),
+    updatedAt: row.updated_at,
+  };
+}
+
+export async function handleListenProgress(request, env, dependencies = {}) {
+  const db = podcastDatabase(env);
+  if (!db) return missingProductionStoreResponse();
+  const authenticate = dependencies.requireDonor || requireDonor;
+  const donor = await authenticate(request, env);
+  if (!donor?.email) return unauthorized();
+  const donorId = normalizeEmail(donor.email);
+
+  if (request.method === 'GET') {
+    const [progressResult, preference] = await Promise.all([
+      db.prepare(`
+        SELECT episode_key, feed_url, show_title, episode_title, position_seconds, duration_seconds, updated_at
+        FROM donor_podcast_progress
+        WHERE donor_id = ?
+        ORDER BY updated_at DESC
+        LIMIT ?
+      `).bind(donorId, PODCAST_PROGRESS_LIMIT).all(),
+      db.prepare('SELECT playback_rate FROM donor_podcast_preferences WHERE donor_id = ?').bind(donorId).first(),
+    ]);
+    return json({
+      items: (progressResult.results || []).map(progressRow),
+      playbackRate: playbackRate(preference?.playback_rate) || 1,
+    });
+  }
+
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
+  const input = await request.json().catch(() => ({}));
+  const rate = playbackRate(input.playbackRate);
+  if (input.preferenceOnly) {
+    if (!rate) return json({ error: 'A supported playbackRate is required' }, { status: 400 });
+    await db.prepare(`
+      INSERT INTO donor_podcast_preferences (donor_id, playback_rate, updated_at)
+      VALUES (?, ?, datetime('now'))
+      ON CONFLICT(donor_id) DO UPDATE SET playback_rate = excluded.playback_rate, updated_at = datetime('now')
+    `).bind(donorId, rate).run();
+    return json({ ok: true, playbackRate: rate });
+  }
+  const episodeKey = boundedText(input.episodeKey, 2048);
+  const feedUrl = podcastUrl(input.feedUrl);
+  const showTitle = boundedText(input.showTitle, 300);
+  const episodeTitle = boundedText(input.episodeTitle, 500);
+  const positionSeconds = Math.max(0, Math.min(2678400, Math.round(Number(input.positionSeconds) || 0)));
+  const rawDuration = Number(input.durationSeconds);
+  const durationSeconds = Number.isFinite(rawDuration) && rawDuration > 0
+    ? Math.min(2678400, Math.round(rawDuration))
+    : null;
+  const completed = Boolean(input.completed)
+    || Boolean(durationSeconds && positionSeconds >= Math.max(0, durationSeconds - PODCAST_COMPLETE_WINDOW_SECONDS));
+
+  if (!episodeKey || !feedUrl) return json({ error: 'episodeKey and a valid feedUrl are required' }, { status: 400 });
+
+  if (rate) {
+    await db.prepare(`
+      INSERT INTO donor_podcast_preferences (donor_id, playback_rate, updated_at)
+      VALUES (?, ?, datetime('now'))
+      ON CONFLICT(donor_id) DO UPDATE SET playback_rate = excluded.playback_rate, updated_at = datetime('now')
+    `).bind(donorId, rate).run();
+  }
+
+  if (completed) {
+    await db.prepare('DELETE FROM donor_podcast_progress WHERE donor_id = ? AND episode_key = ?').bind(donorId, episodeKey).run();
+    return json({ ok: true, completed: true });
+  }
+
+  await db.prepare(`
+    INSERT INTO donor_podcast_progress (
+      donor_id, episode_key, feed_url, show_title, episode_title,
+      position_seconds, duration_seconds, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    ON CONFLICT(donor_id, episode_key) DO UPDATE SET
+      feed_url = excluded.feed_url,
+      show_title = excluded.show_title,
+      episode_title = excluded.episode_title,
+      position_seconds = excluded.position_seconds,
+      duration_seconds = excluded.duration_seconds,
+      updated_at = datetime('now')
+  `).bind(donorId, episodeKey, feedUrl, showTitle, episodeTitle, positionSeconds, durationSeconds).run();
+  return json({ ok: true, completed: false });
+}
 
 // ─── /api/listen/search ───────────────────────────────────────────────────────
 /**

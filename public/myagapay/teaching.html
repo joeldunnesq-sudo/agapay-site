@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/donor/style.css?v=20260801koinoniaref8" />
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260801backnav2" defer></script>
-  <script src="/myagapay/teaching.js?v=20260801podcasts2" defer></script>
+  <script src="/myagapay/teaching.js?v=20260801podcastmemory1" defer></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -45,17 +45,29 @@
         </section>
         <section class="audio-podcast-pane" id="podcastAudioPane" data-audio-library-pane="podcasts" hidden>
           <div class="audio-podcast-intro"><div><span class="eyebrow">Orthodox podcast directory</span><h2>Discover something worth hearing.</h2><p>Search the same podcast directory that powers AGAPAY Listen, presented in Koinonia’s own listening experience.</p></div></div>
+          <section class="koinonia-continue-listening" id="koinoniaContinueListening" aria-labelledby="koinoniaContinueHeading" hidden>
+            <header><div><span class="eyebrow">Pick up where you left off</span><h2 id="koinoniaContinueHeading">Continue Listening</h2></div></header>
+            <div id="koinoniaContinueList"></div>
+          </section>
           <form class="koinonia-podcast-search" onsubmit="searchKoinoniaPodcasts(event)">
             <span aria-hidden="true">⌕</span><input id="koinoniaPodcastQuery" type="search" required placeholder="Search Orthodox podcasts, teachers, or topics…" /><button type="submit">Search</button>
           </form>
           <p class="section-note koinonia-podcast-status" id="koinoniaPodcastStatus" role="status" aria-live="polite">Loading Orthodox podcasts…</p>
           <section class="koinonia-podcast-results" id="koinoniaPodcastResults" aria-live="polite"></section>
           <section class="koinonia-podcast-show" id="koinoniaPodcastShow" hidden></section>
-          <section class="koinonia-podcast-player" id="koinoniaPodcastPlayer" hidden>
-            <span class="koinonia-podcast-player-art"><img id="koinoniaPodcastPlayerImage" alt="" /></span>
-            <span><small id="koinoniaPodcastPlayerShow">Orthodox Podcast</small><strong id="koinoniaPodcastPlayerTitle">Choose an episode</strong></span>
-            <audio id="koinoniaPodcastAudio" controls preload="metadata"></audio>
-          </section>
+        </section>
+        <section class="koinonia-podcast-player" id="koinoniaPodcastPlayer" aria-label="Now playing" hidden>
+          <audio id="koinoniaPodcastAudio" preload="metadata"></audio>
+          <span class="koinonia-podcast-player-art"><img id="koinoniaPodcastPlayerImage" alt="" /></span>
+          <span class="koinonia-podcast-player-copy"><small id="koinoniaPodcastPlayerShow">Orthodox Podcast</small><strong id="koinoniaPodcastPlayerTitle">Choose an episode</strong></span>
+          <div class="koinonia-podcast-player-controls">
+            <button type="button" onclick="skipKoinoniaPodcast(-15)" aria-label="Skip back 15 seconds">↶<small>15</small></button>
+            <button class="is-primary" id="koinoniaPodcastPlayToggle" type="button" onclick="toggleKoinoniaPodcastPlayback()" aria-label="Play">▶</button>
+            <button type="button" onclick="skipKoinoniaPodcast(30)" aria-label="Skip forward 30 seconds">↷<small>30</small></button>
+            <span class="koinonia-podcast-progress-control"><input id="koinoniaPodcastProgress" type="range" min="0" max="1000" value="0" aria-label="Episode progress" /><small id="koinoniaPodcastTime">0:00 / 0:00</small></span>
+            <label class="koinonia-podcast-speed"><span>Speed</span><select id="koinoniaPodcastSpeed" aria-label="Playback speed"><option value="1">1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="1.75">1.75x</option><option value="2">2x</option></select></label>
+          </div>
+          <span class="koinonia-podcast-queue-count" id="koinoniaPodcastQueueCount" hidden></span>
         </section>
       </div>
       <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
