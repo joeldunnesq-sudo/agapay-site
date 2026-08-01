@@ -77,6 +77,7 @@ import {
 import { loadGivingCatalogFromAccounting, synchronizeGivingCatalogWithAccounting } from "../accounting/source-wiring.js";
 import { accountingAvailableForParish } from "../lib/accounting-demo-access.js";
 import { parishLifeAvailableFor } from "../lib/parish-life-access.js";
+import { validateSafeExternalUrl } from "../lib/safe-external-url.js";
 import { ensureBenevolenceFundInRegistration, mergeStewardshipFundsIntoRegistration } from "../lib/stewardship-funds.js";
 
 export {
@@ -2686,14 +2687,12 @@ export async function handleParishDashboard(request, env, parishId) {
         normalizedKoinoniaCalendarUrl = "";
       } else {
         try {
-          const parsed = new URL(value);
-          const host = parsed.hostname.toLowerCase();
-          if (parsed.protocol !== "https:" || host !== "calendar.google.com" || !parsed.pathname.toLowerCase().endsWith(".ics")) {
-            return json({ error: "Paste a public Google Calendar iCal link ending in .ics." }, { status: 422 });
-          }
-          normalizedKoinoniaCalendarUrl = parsed.toString().slice(0, 2000);
+          normalizedKoinoniaCalendarUrl = validateSafeExternalUrl(value, {
+            invalidMessage: "Paste a valid public calendar iCal/ICS link.",
+            unsafeMessage: "The calendar must use a public HTTPS address.",
+          }).slice(0, 2000);
         } catch {
-          return json({ error: "Paste a valid public Google Calendar iCal link." }, { status: 422 });
+          return json({ error: "Paste a valid public HTTPS calendar iCal/ICS link." }, { status: 422 });
         }
       }
     }
