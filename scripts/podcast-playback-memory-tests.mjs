@@ -160,12 +160,13 @@ response = await handleListenSubscriptions(subscriptionRequest("GET", "one@examp
 payload = await response.json();
 assert.deepEqual(payload.subscriptions, []);
 
-const [migration, subscriptionMigration, worker, teaching, teachingHtml] = await Promise.all([
+const [migration, subscriptionMigration, worker, teaching, teachingHtml, donorStyles] = await Promise.all([
   readFile(new URL("../migrations/0078_donor_podcast_progress.sql", import.meta.url), "utf8"),
   readFile(new URL("../migrations/0080_donor_podcast_subscriptions.sql", import.meta.url), "utf8"),
   readFile(new URL("../src/worker.js", import.meta.url), "utf8"),
   readFile(new URL("../public/myagapay/teaching.js", import.meta.url), "utf8"),
   readFile(new URL("../public/myagapay/teaching.html", import.meta.url), "utf8"),
+  readFile(new URL("../public/donor/style.css", import.meta.url), "utf8"),
 ]);
 
 assert.match(migration, /PRIMARY KEY \(donor_id, episode_key\)/);
@@ -195,6 +196,12 @@ assert.match(teachingHtml, /id="koinoniaPodcastSpeed"[\s\S]*1\.25x[\s\S]*2x/);
 assert.match(teachingHtml, /skipKoinoniaPodcast\(-15\)[\s\S]*skipKoinoniaPodcast\(30\)/);
 assert.match(teachingHtml, /data-podcast-library-view="latest"[\s\S]*data-podcast-library-view="subscriptions"[\s\S]*data-podcast-library-view="discover"/);
 assert.match(teachingHtml, /id="koinoniaPodcastExpand"[\s\S]*id="koinoniaPodcastSleepTimer"[\s\S]*id="koinoniaPodcastQueueList"/);
+assert.match(teachingHtml, /koinonia-podcast-player-shell[\s\S]*id="koinoniaPodcastShare"[\s\S]*Share episode/,
+  "the expanded player must use its structured shell and expose the share action");
+assert.match(donorStyles, /\.koinonia-podcast-player\.is-expanded \{[^}]*inset:0 !important/,
+  "the expanded player must cover the viewport at every responsive breakpoint");
+assert.match(donorStyles, /grid-template-areas:"now" "transport" "timeline" "options" "details"/,
+  "expanded controls must occupy explicit rows instead of overlapping through implicit grid placement");
 assert.match(teaching, /loadKoinoniaPodcastLatest[\s\S]*Promise\.allSettled[\s\S]*latestEpisodes/);
 assert.match(teaching, /toggleKoinoniaPodcastPlayerExpanded[\s\S]*podcast-player-expanded/);
 

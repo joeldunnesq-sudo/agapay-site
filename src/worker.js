@@ -213,7 +213,7 @@ import {
   sendWeeklyAnnouncementDigestEmails,
 } from "./handlers/parish-communications.js";
 import { handleParishEmailCredentials } from "./handlers/parish-email-credentials.js";
-import { handleDonorGroups } from "./handlers/donor-groups.js";
+import { handleDonorGroups, purgeExpiredGroupMessages } from "./handlers/donor-groups.js";
 import { handleDonorTeaching, handleParishTeaching } from "./handlers/parish-teaching.js";
 import { handleDonorVideo, handleParishVideo } from "./handlers/parish-video.js";
 import { handleDonorBlog, handleDonorCustomNewsFeeds, handleDonorExternalFeed, handleDonorOcaNews, handleParishBlog } from "./handlers/parish-blog.js";
@@ -2725,6 +2725,9 @@ export default {
     ctx.waitUntil(sendNonprofitThresholdAlerts(env)
       .then((results) => console.log("nonprofit_pricing_threshold_alerts", JSON.stringify(results)))
       .catch((error) => console.error("nonprofit_pricing_threshold_alerts_failed", error?.message || String(error))));
+    ctx.waitUntil(purgeExpiredGroupMessages(env, event.scheduledTime)
+      .then((results) => console.log("group_message_retention_sweep", JSON.stringify(results)))
+      .catch((error) => console.error("group_message_retention_sweep_failed", error?.message || String(error))));
     if (event.cron === "0 8 * * *") return;
     ctx.waitUntil(runScheduledAccountingIntegrity(env, event.scheduledTime)
       .then((results) => console.log("scheduled_accounting_integrity", JSON.stringify(results)))

@@ -200,19 +200,20 @@ function renderGroupThread(group, messages) {
   const panel = document.getElementById("groupThreadPanel");
   if (!panel) return;
   panel.innerHTML = `
-    <div class="group-thread-head"><div class="group-thread-identity">${ministryGroupAvatar(group, "header")}<div><span class="eyebrow">Private group</span><h2>${groupsEscape(group.name)}</h2><p>${groupsEscape(group.description || "Messages for current ministry members and leaders.")}</p></div></div><div class="group-thread-actions">${group.role === "leader" ? `<button type="button" class="groups-refresh" onclick="toggleGroupCatchUp('${groupsEscape(group.id)}',this)" aria-expanded="false">Who’s caught up</button>` : ""}<button type="button" class="groups-refresh" onclick="openMinistryGroup('${groupsEscape(group.id)}')">Refresh messages</button></div></div>
+    <div class="group-thread-head"><button type="button" class="group-thread-back" onclick="closeMinistryGroup()" aria-label="Back to ministry groups"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Groups</span></button><div class="group-thread-identity">${ministryGroupAvatar(group, "header")}<div><span class="eyebrow">Private group</span><h2>${groupsEscape(group.name)}</h2><p>${groupsEscape(group.description || "Messages for current ministry members and leaders.")}</p></div></div><div class="group-thread-actions">${group.role === "leader" ? `<button type="button" class="groups-refresh" onclick="toggleGroupCatchUp('${groupsEscape(group.id)}',this)" aria-expanded="false">Who’s caught up</button>` : ""}<button type="button" class="groups-refresh" onclick="openMinistryGroup('${groupsEscape(group.id)}')">Refresh messages</button></div></div>
     <div class="group-message-list" id="groupMessageList">${messages.length ? messages.map(message => `
       <article class="group-message ${message.mine ? "is-outgoing" : "is-incoming"} is-${groupsEscape(message.messageType || "text")}${message.read ? "" : " is-unread"}"><div><strong>${message.mine ? "You" : groupsEscape(message.authorName)}</strong><time>${groupsEscape(groupMessageTime(message.createdAt))}</time></div>${renderGroupMessageContent(message)}</article>
     `).join("") : '<div class="group-thread-empty"><strong>No messages yet</strong><p>Start the conversation for your ministry.</p></div>'}</div>
     ${group.role === "leader" ? `<section class="group-catch-up" id="groupCatchUp-${groupsEscape(group.id)}" hidden></section>` : ""}
     <form class="group-compose" onsubmit="postMinistryGroupMessage(event)">
       <label for="groupMessageBody">Post a message</label>
-      <textarea id="groupMessageBody" maxlength="8000" rows="4" required placeholder="Write a message to your group..."></textarea>
+      <textarea id="groupMessageBody" maxlength="8000" rows="2" required placeholder="Write a message to your group..."></textarea>
       <div class="group-attachment-preview" id="groupAttachmentPreview" hidden></div>
       <div class="group-compose-actions">
         <div><button type="button" class="group-attach-button" onclick="toggleGroupVoiceRecording(this)" aria-label="Record a voice message">🎤 <span>Voice</span></button><button type="button" class="group-attach-button" onclick="chooseGroupPhoto()" aria-label="Attach a photo">📷 <span>Photo</span></button><input id="groupPhotoInput" type="file" accept="image/jpeg,image/png,image/webp" onchange="selectGroupPhoto(event)" hidden /></div>
         <button type="submit" id="groupMessageSubmit">Post message</button>
       </div>
+      <small class="group-thread-retention">Messages and attachments are automatically deleted after 30 days.</small>
     </form>
   `;
   renderGroupAttachmentPreview();
@@ -220,6 +221,29 @@ function renderGroupThread(group, messages) {
   void hydrateMinistryGroupImages();
   const messageList = document.getElementById("groupMessageList");
   if (messageList) messageList.scrollTop = messageList.scrollHeight;
+}
+
+function setGroupThreadMode(open) {
+  document.body.classList.toggle("is-group-thread-open", Boolean(open));
+}
+
+function syncGroupThreadUrl(groupId = "") {
+  const url = new URL(window.location.href);
+  if (groupId) url.searchParams.set("group", groupId);
+  else url.searchParams.delete("group");
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function closeMinistryGroup() {
+  clearGroupAttachment();
+  releaseGroupAttachmentUrls();
+  ministryGroupsState.activeGroupId = "";
+  ministryGroupsState.messages = [];
+  setGroupThreadMode(false);
+  syncGroupThreadUrl();
+  renderGroupsList();
+  const panel = document.getElementById("groupThreadPanel");
+  if (panel) panel.innerHTML = '<div class="group-thread-empty"><strong>Select a group</strong><p>Choose one of your ministries to read and post messages.</p></div>';
 }
 
 function renderGroupCatchUp(panel, data) {
@@ -430,6 +454,8 @@ async function loadGroups() {
     }
     if (ministryGroupsState.activeGroupId && !ministryGroupsState.groups.some(({ id }) => id === ministryGroupsState.activeGroupId)) {
       ministryGroupsState.activeGroupId = "";
+      setGroupThreadMode(false);
+      syncGroupThreadUrl();
       document.getElementById("groupThreadPanel").innerHTML = '<div class="group-thread-empty"><strong>Group unavailable</strong><p>Your active ministry memberships changed.</p></div>';
     }
   } catch (error) {
@@ -447,6 +473,8 @@ async function openMinistryGroup(groupId) {
     releaseGroupAttachmentUrls();
     ministryGroupsState.activeGroupId = groupId;
     ministryGroupsState.messages = data.messages || [];
+    setGroupThreadMode(true);
+    syncGroupThreadUrl(groupId);
     renderGroupsList();
     const membership = ministryGroupsState.groups.find(({ id }) => id === groupId);
     renderGroupThread({ ...data.group, role: membership?.role || "participant" }, ministryGroupsState.messages);
@@ -469,8 +497,13 @@ async function uploadGroupMessageAttachment(attachment, body) {
   if (attachment.blob.size > 10 * 1024 * 1024) throw new Error(`${attachment.type === "voice" ? "Voice messages" : "Group photos"} must be 10MB or smaller.`);
   const headers = window.MyAgapayShell?.authHeaders({
     "Content-Type": attachment.blob.type,
+    "X-AGAPAY-Attachment-Bytes": String(attachment.blob.size),
     "X-AGAPAY-Message-Body-B64": attachmentBodyHeader(body),
-  }) || { "Content-Type": attachment.blob.type, "X-AGAPAY-Message-Body-B64": attachmentBodyHeader(body) };
+  }) || {
+    "Content-Type": attachment.blob.type,
+    "X-AGAPAY-Attachment-Bytes": String(attachment.blob.size),
+    "X-AGAPAY-Message-Body-B64": attachmentBodyHeader(body),
+  };
   if (attachment.type === "voice") headers["X-AGAPAY-Attachment-Duration-Seconds"] = String(Math.max(1, Math.round(attachment.durationSeconds || 0)));
   const response = await fetch(`/api/donor/groups/${encodeURIComponent(ministryGroupsState.activeGroupId)}/messages/attachment?type=${encodeURIComponent(attachment.type)}`, {
     method: "POST",

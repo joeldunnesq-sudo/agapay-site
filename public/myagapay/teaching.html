@@ -74,22 +74,31 @@
         </section>
         <section class="koinonia-podcast-player" id="koinoniaPodcastPlayer" aria-label="Now playing" hidden>
           <audio id="koinoniaPodcastAudio" preload="metadata"></audio>
-          <span class="koinonia-podcast-player-art"><img id="koinoniaPodcastPlayerImage" alt="" /></span>
-          <span class="koinonia-podcast-player-copy"><small id="koinoniaPodcastPlayerShow">Orthodox Podcast</small><strong id="koinoniaPodcastPlayerTitle">Choose an episode</strong></span>
-          <div class="koinonia-podcast-player-controls">
-            <button type="button" onclick="skipKoinoniaPodcast(-15)" aria-label="Skip back 15 seconds">↶<small>15</small></button>
-            <button class="is-primary" id="koinoniaPodcastPlayToggle" type="button" onclick="toggleKoinoniaPodcastPlayback()" aria-label="Play">▶</button>
-            <button type="button" onclick="skipKoinoniaPodcast(30)" aria-label="Skip forward 30 seconds">↷<small>30</small></button>
+          <div class="koinonia-podcast-player-shell">
+            <div class="koinonia-podcast-player-now">
+              <span class="koinonia-podcast-player-art"><img id="koinoniaPodcastPlayerImage" alt="" /></span>
+              <span class="koinonia-podcast-player-copy"><small id="koinoniaPodcastPlayerShow">Orthodox Podcast</small><strong id="koinoniaPodcastPlayerTitle">Choose an episode</strong></span>
+            </div>
+            <div class="koinonia-podcast-player-controls" aria-label="Playback controls">
+              <button type="button" onclick="skipKoinoniaPodcast(-15)" aria-label="Skip back 15 seconds">↶<small>15</small></button>
+              <button class="is-primary" id="koinoniaPodcastPlayToggle" type="button" onclick="toggleKoinoniaPodcastPlayback()" aria-label="Play">▶</button>
+              <button type="button" onclick="skipKoinoniaPodcast(30)" aria-label="Skip forward 30 seconds">↷<small>30</small></button>
+            </div>
             <span class="koinonia-podcast-progress-control"><input id="koinoniaPodcastProgress" type="range" min="0" max="1000" value="0" aria-label="Episode progress" /><small id="koinoniaPodcastTime">0:00 / 0:00</small></span>
-            <label class="koinonia-podcast-speed"><span>Speed</span><select id="koinoniaPodcastSpeed" aria-label="Playback speed"><option value="1">1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="1.75">1.75x</option><option value="2">2x</option></select></label>
+            <div class="koinonia-podcast-player-options">
+              <label class="koinonia-podcast-speed"><span>Speed</span><select id="koinoniaPodcastSpeed" aria-label="Playback speed"><option value="1">1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="1.75">1.75x</option><option value="2">2x</option></select></label>
+              <span class="koinonia-podcast-queue-count" id="koinoniaPodcastQueueCount" hidden></span>
+            </div>
+            <button class="koinonia-podcast-expand" id="koinoniaPodcastExpand" type="button" onclick="toggleKoinoniaPodcastPlayerExpanded()" aria-label="Open expanded player">⛶</button>
+            <section class="koinonia-podcast-expanded-details">
+              <div class="koinonia-podcast-expanded-copy"><small>Now playing</small><p id="koinoniaPodcastPlayerDescription">Episode details will appear here.</p></div>
+              <div class="koinonia-podcast-expanded-actions">
+                <button class="koinonia-podcast-share" id="koinoniaPodcastShare" type="button" onclick="shareKoinoniaPodcastEpisode()"><span aria-hidden="true">↗</span> Share episode</button>
+                <label>Sleep timer<select id="koinoniaPodcastSleepTimer" onchange="setKoinoniaPodcastSleepTimer(this.value)"><option value="0">Off</option><option value="10">10 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="end">End of episode</option></select></label>
+              </div>
+              <div class="koinonia-podcast-up-next"><header><strong>Up Next</strong><button type="button" onclick="clearKoinoniaPodcastQueue()">Clear</button></header><div id="koinoniaPodcastQueueList"><span>Your queue is empty.</span></div></div>
+            </section>
           </div>
-          <span class="koinonia-podcast-queue-count" id="koinoniaPodcastQueueCount" hidden></span>
-          <button class="koinonia-podcast-expand" id="koinoniaPodcastExpand" type="button" onclick="toggleKoinoniaPodcastPlayerExpanded()" aria-label="Open expanded player">⛶</button>
-          <section class="koinonia-podcast-expanded-details">
-            <p id="koinoniaPodcastPlayerDescription">Episode details will appear here.</p>
-            <div class="koinonia-podcast-expanded-actions"><button type="button" onclick="shareKoinoniaPodcastEpisode()">Share episode</button><label>Sleep timer<select id="koinoniaPodcastSleepTimer" onchange="setKoinoniaPodcastSleepTimer(this.value)"><option value="0">Off</option><option value="10">10 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="end">End of episode</option></select></label></div>
-            <div class="koinonia-podcast-up-next"><header><strong>Up Next</strong><button type="button" onclick="clearKoinoniaPodcastQueue()">Clear</button></header><div id="koinoniaPodcastQueueList"><span>Your queue is empty.</span></div></div>
-          </section>
         </section>
       </div>
       <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>

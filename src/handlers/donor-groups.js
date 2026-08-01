@@ -3,6 +3,7 @@ import { getReadContentIds, getReadReceipts, markContentRead } from "../lib/cont
 import { sendGroupMessagePush } from "../lib/push-notifications.js";
 import {
   d1All,
+  d1Batch,
   d1First,
   generateSecret,
   hasProductionStore,
@@ -15,6 +16,9 @@ import {
 import { requireDonor } from "./parish.js";
 
 const CONTENT_TYPE = "group_message";
+export const GROUP_MESSAGE_RETENTION_DAYS = 30;
+const GROUP_MESSAGE_RETENTION_BATCH_SIZE = 100;
+const GROUP_MESSAGE_RETENTION_MAX_BATCHES = 100;
 export const GROUP_MESSAGE_ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
 export const GROUP_MESSAGE_VOICE_TYPES = new Map([
   ["audio/mpeg", "mp3"],
@@ -78,6 +82,62 @@ function groupAttachmentDeliveryUrl(ministryId, messageId) {
   return `/api/donor/groups/${encodeURIComponent(ministryId)}/messages/${encodeURIComponent(messageId)}/attachment`;
 }
 
+function sqliteDateTime(value) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) throw new Error("GROUP_MESSAGE_RETENTION_INVALID_DATE");
+  return date.toISOString().slice(0, 19).replace("T", " ");
+}
+
+export async function purgeExpiredGroupMessages(env, asOf = Date.now()) {
+  if (!database(env)) return { messagesDeleted: 0, attachmentsDeleted: 0, batches: 0, complete: true };
+  const cutoff = sqliteDateTime(new Date(new Date(asOf).getTime() - GROUP_MESSAGE_RETENTION_DAYS * 86400000));
+  let messagesDeleted = 0;
+  let attachmentsDeleted = 0;
+  let batches = 0;
+
+  while (batches < GROUP_MESSAGE_RETENTION_MAX_BATCHES) {
+    const expired = await d1All(env, `
+      SELECT id, parish_id, ministry_id, message_type, attachment_url
+      FROM parish_group_messages
+      WHERE created_at < ?
+      ORDER BY created_at ASC, id ASC
+      LIMIT ?
+    `, cutoff, GROUP_MESSAGE_RETENTION_BATCH_SIZE);
+    if (!expired.length) return { messagesDeleted, attachmentsDeleted, batches, complete: true, cutoff };
+
+    const attachmentRows = expired.filter((row) => row.attachment_url && ["voice", "image"].includes(row.message_type));
+    if (attachmentRows.length) {
+      if (!env.GROUP_MESSAGE_ASSETS) throw new Error("GROUP_MESSAGE_ASSETS_REQUIRED_FOR_RETENTION");
+      const keys = attachmentRows.map((row) => groupAttachmentStorageKey({
+        parishId: row.parish_id,
+        ministryId: row.ministry_id,
+        messageId: row.id,
+      }));
+      await env.GROUP_MESSAGE_ASSETS.delete(keys);
+      attachmentsDeleted += keys.length;
+    }
+
+    const ids = expired.map(({ id }) => id);
+    const placeholders = ids.map(() => "?").join(", ");
+    await d1Batch(env, [
+      {
+        sql: `DELETE FROM parish_content_reads WHERE content_type = ? AND content_id IN (${placeholders})`,
+        params: [CONTENT_TYPE, ...ids],
+      },
+      {
+        sql: `DELETE FROM parish_group_messages WHERE id IN (${placeholders}) AND created_at < ?`,
+        params: [...ids, cutoff],
+      },
+    ]);
+    messagesDeleted += ids.length;
+    batches += 1;
+    if (expired.length < GROUP_MESSAGE_RETENTION_BATCH_SIZE) {
+      return { messagesDeleted, attachmentsDeleted, batches, complete: true, cutoff };
+    }
+  }
+  return { messagesDeleted, attachmentsDeleted, batches, complete: false, cutoff };
+}
+
 function ministryImageDeliveryUrl(ministryId) {
   return `/api/donor/groups/${encodeURIComponent(ministryId)}/image`;
 }
@@ -96,9 +156,14 @@ export function validateGroupMessageAttachmentMetadata(request, messageType) {
       status: 415,
     };
   }
-  const rawLength = String(request.headers.get("content-length") || "").trim();
+  // Browsers do not allow application code to set Content-Length. Keep the
+  // browser-declared Blob size as a same-origin fallback so R2 always receives
+  // a fixed-length stream, while still preferring the runtime's authoritative
+  // Content-Length header when it is available.
+  const rawLength = String(request.headers.get("content-length") || request.headers.get("x-agapay-attachment-bytes") || "").trim();
   const contentLength = rawLength ? Number(rawLength) : 0;
-  if (rawLength && (!Number.isFinite(contentLength) || contentLength < 1)) {
+  if (!rawLength) return { error: "Attachment size is required.", status: 411 };
+  if (!Number.isInteger(contentLength) || contentLength < 1) {
     return { error: "The attachment is empty.", status: 422 };
   }
   if (contentLength > GROUP_MESSAGE_ATTACHMENT_MAX_BYTES) {
@@ -127,13 +192,24 @@ export function limitGroupMessageAttachmentStream(source, maxBytes = GROUP_MESSA
   return { stream: source.pipeThrough(limiter), bytesRead: () => bytesRead };
 }
 
-export async function storeGroupMessageAttachment(bucket, { key, source, contentType, maxBytes = GROUP_MESSAGE_ATTACHMENT_MAX_BYTES }) {
+export async function storeGroupMessageAttachment(bucket, { key, source, contentType, contentLength, maxBytes = GROUP_MESSAGE_ATTACHMENT_MAX_BYTES }) {
+  if (!Number.isInteger(contentLength) || contentLength < 1) throw new Error("GROUP_MESSAGE_ATTACHMENT_LENGTH_REQUIRED");
+  if (contentLength > maxBytes) throw new Error("GROUP_MESSAGE_ATTACHMENT_TOO_LARGE");
   const bounded = limitGroupMessageAttachmentStream(source, maxBytes);
+  // TransformStream output has no intrinsic length, which R2 rejects for a
+  // single-part put. FixedLengthStream preserves streaming and gives R2 the
+  // exact size without buffering voice notes in Worker memory.
+  const fixed = new FixedLengthStream(contentLength);
   try {
-    const object = await bucket.put(key, bounded.stream, {
-      httpMetadata: { contentType, cacheControl: "private, no-store" },
-    });
-    return { object, size: Number(object?.size ?? bounded.bytesRead()) };
+    const [object] = await Promise.all([
+      bucket.put(key, fixed.readable, {
+        httpMetadata: { contentType, cacheControl: "private, no-store" },
+      }),
+      bounded.stream.pipeTo(fixed.writable),
+    ]);
+    const size = Number(object?.size ?? bounded.bytesRead());
+    if (size !== contentLength) throw new Error("GROUP_MESSAGE_ATTACHMENT_LENGTH_MISMATCH");
+    return { object, size };
   } catch (error) {
     await bucket.delete(key).catch(() => {});
     throw error;
@@ -402,12 +478,24 @@ async function postGroupMessageAttachment(request, env, context, ministryId, mes
       key,
       source: request.body,
       contentType: metadata.contentType,
+      contentLength: metadata.contentLength,
     });
   } catch (error) {
     if (error?.message === "GROUP_MESSAGE_ATTACHMENT_TOO_LARGE") {
       throw new GroupMessageAccessError(`${metadata.messageType === "voice" ? "Voice messages" : "Group photos"} must be 10MB or smaller.`, 413);
     }
-    throw error;
+    if (["GROUP_MESSAGE_ATTACHMENT_LENGTH_REQUIRED", "GROUP_MESSAGE_ATTACHMENT_LENGTH_MISMATCH"].includes(error?.message)) {
+      throw new GroupMessageAccessError("The attachment size did not match the recorded file. Please record it again.", 422);
+    }
+    console.error("group_message_attachment_store_failed", JSON.stringify({
+      parishId: context.parishId,
+      ministryId,
+      messageType: metadata.messageType,
+      contentType: metadata.contentType,
+      contentLength: metadata.contentLength,
+      error: error?.message || String(error),
+    }));
+    throw new GroupMessageAccessError("Unable to store this attachment. Please try again.", 503);
   }
   if (!stored.size) {
     await env.GROUP_MESSAGE_ASSETS.delete(key).catch(() => {});

@@ -441,9 +441,17 @@ function setKoinoniaPodcastSleepTimer(value) {
 async function shareKoinoniaPodcastEpisode() {
   const episode = koinoniaPodcastState.currentEpisode;
   if (!episode) return;
+  const button = document.getElementById("koinoniaPodcastShare");
   const data = { title: episode.title, text: `${episode.title} — ${episode.show || "Orthodox Podcast"}`, url: episode.link || episode.audioUrl };
-  if (navigator.share) { await navigator.share(data).catch(() => {}); return; }
-  await navigator.clipboard?.writeText(data.url).catch(() => {});
+  if (navigator.share) {
+    await navigator.share(data).catch(() => {});
+    return;
+  }
+  const copied = await navigator.clipboard?.writeText(data.url).then(() => true).catch(() => false);
+  if (copied && button) {
+    button.textContent = "Link copied";
+    window.setTimeout(() => { button.innerHTML = '<span aria-hidden="true">↗</span> Share episode'; }, 1600);
+  }
 }
 
 async function resumeKoinoniaPodcastProgress(index) {
