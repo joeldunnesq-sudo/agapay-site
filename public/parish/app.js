@@ -164,7 +164,7 @@
     document.querySelector('.content')?.classList.toggle('sacraments-tab-active', tab === 'sacraments');
     if (tab === 'accounting') window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     activeTab = tab;
-    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship Health', accounting:'Accounting', sacraments:'Sacraments & Services', directory:'Parish Directory', communications:'Communications', bookstore:'Commerce', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship Health', accounting:'Accounting', sacraments:'Sacraments & Services', directory:'Parish Directory', communications:'Communications', bookstore:'Commerce' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     syncTopbarTabIcon(tab);
@@ -172,7 +172,6 @@
     if (tab === 'givers' && allGifts.length) renderGiversPanel();
     if (tab === 'options' && currentParish) renderGivingOptionsEditor();
     if (tab === 'campaigns' && currentParish) renderCampaignList(currentParish);
-    if (tab === 'qr') { renderQrCode(); renderBulletinPreview(); }
     if (tab === 'stewardship') loadStewardshipPanel();
     if (tab === 'sacraments') loadSacramentsTab();
     if (tab === 'directory' && moduleIncluded('directory')) loadDirectoryAdminTab();
@@ -8333,7 +8332,7 @@
       updateStewardshipBadges(isParishPlusActive(), { renderPanel: false });
       setTimeout(() => loadGivingSummary(), 250);
       setTimeout(() => loadRecurringHealth(), 500);
-      setTimeout(() => renderQrCode(), 750);
+      setTimeout(async () => { await renderQrCode(); renderBulletinPreview(); }, 750);
       setTimeout(() => loadCommemorations(), 1000);
       if (['history', 'givers', 'options'].includes(activeTab)) {
         loadGivingHistory();
@@ -8733,7 +8732,7 @@
     accountingCatalogBaseline = accountingCatalogSnapshot();
     if (activeTab === 'options') renderGivingOptionsEditor();
     if (activeTab === 'campaigns') renderCampaignList(p);
-    if (activeTab === 'qr') renderBulletinPreview();
+    renderBulletinPreview();
   }
 
   // ── GIVING OPTIONS EDITOR ─────────────────────────────────

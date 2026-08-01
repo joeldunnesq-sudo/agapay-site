@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/parish/style.css?v=20260801video1" />
-  <link rel="stylesheet" href="/parish/redesign.css?v=20260729nooverflow1" />
+  <link rel="stylesheet" href="/parish/redesign.css?v=20260801givingaccess1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="stylesheet" href="/styles/stewardship.css?v=20260731healthgrid1" />
   <link rel="manifest" href="/manifest.webmanifest" />
@@ -57,10 +57,6 @@
         <div class="sidebar-nav-item" onclick="switchTab('campaigns')" id="nav-campaigns">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           Campaigns
-        </div>
-        <div class="sidebar-nav-item" onclick="switchTab('qr')" id="nav-qr">
-          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="19" y="14" width="2" height="2"/><rect x="14" y="19" width="2" height="2"/><rect x="18" y="18" width="3" height="3"/></svg>
-          QR Code &amp; Link
         </div>
         <div class="sidebar-nav-item" onclick="switchTab('history')" id="nav-history">
           <svg viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
@@ -172,7 +168,7 @@
               <div class="pdx-hero-qr-body">
                 <span class="pdx-hero-qr-label">Giving link</span>
                 <input class="pdx-hero-qr-link" id="givingUrlHeroInput" value="" placeholder="Loading..." readonly style="background:transparent;border:0;padding:0;color:var(--cream);width:100%;" />
-                <span class="pdx-hero-qr-hint"><a href="#" onclick="copyGivingLink(); return false;">Copy</a> · <a href="#" onclick="downloadQrPng(); return false;">PNG</a> · <a href="#" onclick="switchTab('qr'); return false;">Tools</a></span>
+                <span class="pdx-hero-qr-hint"><a href="#" onclick="copyGivingLink(); return false;">Copy link</a> · <a href="#" onclick="downloadQrPng(); return false;">Download PNG</a> · <a href="#" onclick="downloadQrSvg(); return false;">Download SVG</a></span>
               </div>
             </div>
           </div>
@@ -187,6 +183,34 @@
             </div>
             <div class="pdx-hero-spark">
               <svg id="pdxHeroSpark" viewBox="0 0 600 130" preserveAspectRatio="none"></svg>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card pdx-bulletin-card" aria-labelledby="bulletinInsertTitle">
+          <div class="pdx-bulletin-copy">
+            <div class="section-title">
+              <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+              <span id="bulletinInsertTitle">Bulletin Insert</span>
+            </div>
+            <h2>Put online giving in this Sunday&rsquo;s bulletin.</h2>
+            <p>A ready-to-print half-page insert with your parish name, giving link, and branded QR code.</p>
+            <div class="pdx-bulletin-actions">
+              <button class="btn btn-gold" onclick="downloadBulletinPng()">Download bulletin PNG</button>
+              <button class="btn btn-ghost" onclick="downloadBulletinSvg()">Download print SVG</button>
+            </div>
+          </div>
+          <div class="bulletin-preview pdx-bulletin-preview">
+            <div class="bulletin-preview-inner" id="bulletinPreview">
+              <div class="bulletin-parish-name" id="bulletinParishName">Parish Name</div>
+              <div class="bulletin-tagline">Give online — it's simple, secure, and Orthodox.</div>
+              <div class="bulletin-qr-wrap">
+                <div class="qr-code" id="bulletinQrCode" style="width:130px;height:130px;">
+                  <span style="font-size:11px;color:var(--stone);text-align:center;line-height:1.5;">Load dashboard<br>to generate QR</span>
+                </div>
+              </div>
+              <div class="bulletin-url" id="bulletinUrl">agapay.app/give/parish-name-city</div>
+              <div class="bulletin-footer">Powered by AGAPAY · agapay.app</div>
             </div>
           </div>
         </section>
@@ -964,121 +988,6 @@
       </div>
       <!-- / CAMPAIGNS TAB -->
 
-      <!-- ── QR CODE & LINK TAB ──────────────────────────────── -->
-      <div class="tab-panel" id="tab-qr">
-        <div class="qr-tools-hero">
-          <div class="qr-tools-copy">
-            <div class="qr-tools-eyebrow">Parish Giving Access</div>
-            <h1>QR Code &amp; Giving Link</h1>
-            <p>Share a branded AGAPAY QR code in bulletins, welcome cards, emails, and narthex signage so parishioners can reach your giving page in seconds.</p>
-            <div class="qr-tools-actions">
-              <button class="btn btn-gold" onclick="copyGivingLink()">Copy giving link</button>
-              <button class="btn btn-ghost" onclick="downloadQrPng()">Download QR PNG</button>
-              <button class="btn btn-ghost" onclick="downloadQrSvg()">Download QR SVG</button>
-            </div>
-          </div>
-          <div class="qr-tools-preview-card">
-            <div class="qr-tools-code-frame">
-              <div class="qr-code qr-code-branded" id="qrCodeHeroPreview" aria-label="Giving page QR code preview">
-                <span style="font-size:11px;color:var(--stone);text-align:center;line-height:1.5;">Load dashboard<br>to generate QR</span>
-              </div>
-            </div>
-            <div class="qr-tools-preview-note">Centered AGAPAY branding uses high-error-correction QR generation.</div>
-          </div>
-        </div>
-
-        <div class="qr-tools-link-card">
-          <div>
-            <span>Direct giving URL</span>
-            <strong>Use anywhere your parish communicates</strong>
-          </div>
-          <div class="qr-copy-row">
-            <input id="qrGivingUrlInput" value="" placeholder="Load dashboard to generate" readonly />
-            <button class="btn btn-ghost" onclick="copyGivingLink()">Copy</button>
-          </div>
-        </div>
-
-        <div class="qr-tools-grid">
-          <div class="qr-tools-use-card">
-            <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></div>
-            <h3>Sunday Bulletin</h3>
-            <p>Add the QR insert to weekly bulletins, welcome packets, table cards, and printed announcements.</p>
-          </div>
-          <div class="qr-tools-use-card">
-            <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></div>
-            <h3>Narthex Signage</h3>
-            <p>Place the branded QR code near candles, donation boxes, feast-day tables, and campaign displays.</p>
-          </div>
-          <div class="qr-tools-use-card">
-            <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg></div>
-            <h3>Email &amp; Social</h3>
-            <p>Copy the direct giving link into newsletters, parish emails, and campaign updates.</p>
-          </div>
-        </div>
-
-        <div class="section-card">
-          <div class="section-header">
-            <div class="section-title">
-              <div class="section-title-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
-              Parish QR Code &amp; Giving Link
-            </div>
-            <button class="btn btn-ghost btn-sm" onclick="copyGivingLink()">Copy link</button>
-          </div>
-          <div class="section-body">
-            <div class="qr-layout">
-              <div class="qr-code" id="qrCode" aria-label="Giving page QR code">
-                <span style="font-size:11px;color:var(--stone);text-align:center;line-height:1.5;">Load dashboard<br>to generate QR</span>
-              </div>
-              <div>
-                <p class="section-note">Use this QR code on Sunday bulletins, welcome cards, and church signage. It points directly to this parish's AGAPAY giving page.</p>
-                <div class="qr-copy-row">
-                  <div class="form-group">
-                    <label class="form-label">Direct giving URL</label>
-                    <input id="givingUrlInput" value="" placeholder="Load dashboard to generate" readonly style="background:var(--paper);" />
-                  </div>
-                  <div style="align-self:flex-end;">
-                    <button class="btn btn-ghost" onclick="copyGivingLink()">Copy</button>
-                  </div>
-                </div>
-                <div class="btn-row">
-                  <button class="btn btn-ghost" onclick="downloadQrSvg()">Download SVG</button>
-                  <button class="btn btn-ghost" onclick="downloadQrPng()">Download PNG</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="section-card">
-          <div class="section-header">
-            <div class="section-title">
-              <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-              Bulletin Insert
-            </div>
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-ghost btn-sm" onclick="downloadBulletinPng()">Download PNG</button>
-              <button class="btn btn-gold btn-sm" onclick="downloadBulletinSvg()">Download SVG</button>
-            </div>
-          </div>
-          <div class="section-body">
-            <p class="section-note">A ready-to-print half-page insert with the QR code, giving URL, and your parish name. Drop it straight into the Sunday bulletin.</p>
-            <div class="bulletin-preview">
-              <div class="bulletin-preview-inner" id="bulletinPreview">
-                <div class="bulletin-parish-name" id="bulletinParishName">Parish Name</div>
-                <div class="bulletin-tagline">Give online — it's simple, secure, and Orthodox.</div>
-                <div class="bulletin-qr-wrap">
-                  <div class="qr-code" id="bulletinQrCode" style="width:130px;height:130px;">
-                    <span style="font-size:11px;color:var(--stone);text-align:center;line-height:1.5;">Load dashboard<br>to generate QR</span>
-                  </div>
-                </div>
-                <div class="bulletin-url" id="bulletinUrl">agapay.app/give/parish-name-city</div>
-                <div class="bulletin-footer">Powered by AGAPAY · agapay.app</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- ── STEWARDSHIP TAB ──────────────────────────── -->
       <div class="tab-panel" id="tab-stewardship">
 
@@ -1788,10 +1697,6 @@
   <button class="mobile-tab-link" type="button" data-nav-tab="campaigns" onclick="switchTab('campaigns')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 25s9-4.8 9-11.2V6.5L14 3 5 6.5v7.3C5 20.2 14 25 14 25z"/></svg>
     <span>Campaigns</span>
-  </button>
-  <button class="mobile-tab-link" type="button" data-nav-tab="qr" onclick="switchTab('qr')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><rect x="5" y="5" width="6" height="6"/><rect x="17" y="5" width="6" height="6"/><rect x="5" y="17" width="6" height="6"/><path d="M17 17h2v2h-2zM21 17h2v2h-2zM17 21h2v2h-2zM21 21h2v2h-2z"/></svg>
-    <span>QR</span>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="text" onclick="switchTab('text')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M23 19.8v2.4a1.8 1.8 0 0 1-2 1.8A17.8 17.8 0 0 1 5 8a1.8 1.8 0 0 1 1.8-2h2.4a1.8 1.8 0 0 1 1.8 1.55c.12.9.34 1.78.65 2.6a1.8 1.8 0 0 1-.4 1.9l-1.1 1.1a14.4 14.4 0 0 0 5.4 5.4l1.1-1.1a1.8 1.8 0 0 1 1.9-.4c.82.31 1.7.53 2.6.65A1.8 1.8 0 0 1 23 19.8Z"/></svg>
