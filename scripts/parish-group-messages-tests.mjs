@@ -69,7 +69,7 @@ sqlite.exec(`
     status TEXT NOT NULL
   );
 `);
-for (const migration of ["0064_parish_content_reads.sql", "0066_parish_group_messages.sql", "0075_group_message_attachments.sql", "0078_ministry_group_images.sql"]) {
+for (const migration of ["0064_parish_content_reads.sql", "0066_parish_group_messages.sql", "0075_group_message_attachments.sql", "0079_ministry_group_images.sql"]) {
   sqlite.exec(readFileSync(path.join(root, "migrations", migration), "utf8"));
 }
 
