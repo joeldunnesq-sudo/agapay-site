@@ -822,7 +822,8 @@ body {
     let selectedFreq = 'once';
     let selectedPaymentMethod = 'card';
     let feeCovered = true;
-    let selectedFund = 'Building & Renovation Fund';
+    let selectedFund = '';
+    let selectedFundId = '';
     let selectedCampaign = 'Disaster Relief';
     let selectedFestalCampaign = null;
     let pendingClaimSessionId = '';
@@ -963,6 +964,7 @@ body {
       document.querySelectorAll('.fund-option').forEach(f => f.classList.remove('selected'));
       label.classList.add('selected');
       selectedFund = label.querySelector('.fund-name').textContent;
+      selectedFundId = label.querySelector('input[name="fund"]')?.value || selectedFund;
       updateSummary();
     }
 
@@ -1024,12 +1026,34 @@ body {
       return result.parish || null;
     }
 
+    function isGeneralPublicFund(fund = {}) {
+      return [fund.id, fund.code, fund.reportCode, fund.name]
+        .filter(Boolean)
+        .map((value) => String(value).trim().toLowerCase())
+        .some((value) => ['general', 'stewardship', 'general operating fund', 'general stewardship'].includes(value));
+    }
+
+    function isCandlePublicFund(fund = {}) {
+      return [fund.id, fund.code, fund.reportCode, fund.name]
+        .filter(Boolean)
+        .map((value) => String(value).trim().toLowerCase())
+        .some((value) => ['candle', 'candles', 'candles / vigil lights', 'candle fund'].includes(value));
+    }
+
     function renderFunds(funds) {
       const fundOptions = document.querySelector('#fundsSection .fund-options');
-      if (!fundOptions || !funds || !funds.length) return;
+      if (!fundOptions) return;
+      const designatedFunds = (Array.isArray(funds) ? funds : []).filter((fund) => fund && !isGeneralPublicFund(fund) && !isCandlePublicFund(fund) && fund.enabled !== false && fund.active !== false);
+      if (!designatedFunds.length) {
+        selectedFund = '';
+        selectedFundId = '';
+        fundOptions.innerHTML = '<div class="fund-option selected"><div class="fund-info"><div class="fund-name">No designated fund is active</div><div class="fund-desc">This parish can configure one designated fund on Starter.</div></div></div>';
+        return;
+      }
 
-      selectedFund = funds[0].name;
-      fundOptions.innerHTML = funds.map((fund, index) => `
+      selectedFund = designatedFunds[0].name;
+      selectedFundId = designatedFunds[0].id || designatedFunds[0].code || designatedFunds[0].name;
+      fundOptions.innerHTML = designatedFunds.map((fund, index) => `
         <label class="fund-option ${index === 0 ? 'selected' : ''}" onclick="selectFund(this)">
           <input type="radio" name="fund" value="${fund.id}" ${index === 0 ? 'checked' : ''} />
           <div class="fund-radio"><div class="fund-radio-dot"></div></div>
@@ -1143,6 +1167,15 @@ body {
           selectCampaign(campaignLabelEl);
         }
       }
+      const requestedFund = params.get('fund');
+      if (requestedFund) {
+        const fundRadio = Array.from(document.querySelectorAll('#fundsSection input[name="fund"]')).find((radio) => radio.value === requestedFund);
+        const fundLabelEl = fundRadio?.closest('.fund-option');
+        if (fundLabelEl) {
+          fundRadio.checked = true;
+          selectFund(fundLabelEl);
+        }
+      }
     }
 
     async function loadCurrentParish() {
@@ -1185,11 +1218,13 @@ body {
         if (feeText) feeText.textContent = `When you cover the fees, ${parish.name} receives your full gift — nothing deducted.`;
         const successText = document.querySelector('.success-parish');
         if (successText) successText.innerHTML = `Your gift to <strong>${parish.name}</strong> has been received.<br>A confirmation will be sent to your email.`;
-        if (!parish.givingPlusEnabled) {
-          document.querySelectorAll('.gift-type-card').forEach(card => {
-            card.hidden = card.dataset.type !== 'stewardship';
-          });
-        }
+        document.querySelectorAll('.gift-type-card').forEach(card => {
+          const type = card.dataset.type;
+          card.hidden = type === 'candle' ? !parish.candlesEnabled
+            : type === 'funds' ? !parish.designatedFundsEnabled
+            : ['love', 'campaign', 'feast'].includes(type) ? !parish.givingPlusEnabled
+            : false;
+        });
         renderFunds(parish.funds);
         renderCampaigns(activeCampaigns(parish));
         renderCurrentFestalCampaign(parish);
@@ -1515,7 +1550,7 @@ body {
             amount: selectedAmount,
             frequency: selectedFreq,
             fund: selectedType === 'feast' ? (festalDestination?.name || 'Benevolence Fund') : selectedType === 'funds' ? selectedFund : '',
-            fundId: selectedType === 'feast' ? (festalDestination?.id || festalDestination?.code || 'benevolence-fund') : '',
+            fundId: selectedType === 'feast' ? (festalDestination?.id || festalDestination?.code || 'benevolence-fund') : selectedType === 'funds' ? selectedFundId : '',
             feastDescription: document.getElementById('feastDescription').value.trim(),
             inMemoriam: document.getElementById('inMemoriam').value.trim(),
             campaign: selectedType === 'campaign' ? selectedCampaign : selectedType === 'feast' ? campaignLabel(selectedFestalCampaign) : '',

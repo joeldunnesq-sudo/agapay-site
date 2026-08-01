@@ -20,7 +20,7 @@ export const STEWARDSHIP_FUND_DEFAULTS = Object.freeze([
   {
     id: "candle",
     name: "Candles / Vigil Lights",
-    restrictionType: "donor_restricted_temporary",
+    restrictionType: "unrestricted",
     description: "Offerings designated for candles and vigil lights.",
     sortOrder: 1
   },

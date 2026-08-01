@@ -50,8 +50,12 @@ await test("Starter provides core giving without Giving Plus features", async ()
     assert.equal(givingFeatureAccess({ subscriptionTier: "giving" }, feature), true);
   }
   assert.equal(givingFeatureAccess(reg, "basicGiving"), true);
+  assert.equal(givingFeatureAccess(reg, "candles"), true);
+  assert.equal(givingFeatureAccess(reg, "starterDesignatedFund"), true);
   assert.equal(givingFeatureAccess(reg, "qrToolkit"), true);
   assert.equal(entitlementsSummary(reg).givingFeatures.branding, false);
+  assert.equal(entitlementsSummary(reg).givingFeatures.candles, true);
+  assert.equal(entitlementsSummary(reg).givingFeatures.starterDesignatedFund, true);
 });
 
 await test("Accounting remains unavailable outside the private Parish demo", async () => {

@@ -14,7 +14,7 @@ export const subscriptionTiers = [
     monthlyCents: 900,
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_STARTER_MONTHLY",
-    description: "Simple online and recurring giving for Orthodox churches.",
+    description: "Mission-ready giving with General Operating, one designated fund, and candles.",
     modules: { givingPlus: false, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
   },
   {

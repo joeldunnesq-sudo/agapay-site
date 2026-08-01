@@ -426,6 +426,31 @@ function parishHasGivingPlus(parish) {
   return Boolean(parish?.givingPlusEnabled);
 }
 
+function isGeneralDonorFund(fund = {}) {
+  return [fund.id, fund.code, fund.reportCode, fund.name]
+    .filter(Boolean)
+    .map((value) => String(value).trim().toLowerCase())
+    .some((value) => ["general", "stewardship", "general operating fund", "general stewardship"].includes(value));
+}
+
+function isCandleDonorFund(fund = {}) {
+  return [fund.id, fund.code, fund.reportCode, fund.name]
+    .filter(Boolean)
+    .map((value) => String(value).trim().toLowerCase())
+    .some((value) => ["candle", "candles", "candles / vigil lights", "candle fund"].includes(value));
+}
+
+function parishCanUseGiftType(parish, value) {
+  const giftType = normalizeDonorGiftType(value);
+  if (giftType === "stewardship") return true;
+  if (giftType === "candles") return Boolean(parish?.candlesEnabled);
+  if (giftType === "fund") {
+    return Boolean(parish?.designatedFundsEnabled)
+      && (parish?.funds || []).some((fund) => fund && !isGeneralDonorFund(fund) && !isCandleDonorFund(fund));
+  }
+  return parishHasGivingPlus(parish) && ["commemoration", "campaign", "feast"].includes(giftType);
+}
+
 function ensureGivingPlusPaywall() {
   let dialog = document.getElementById("givingPlusPaywall");
   if (dialog) return dialog;
@@ -437,7 +462,7 @@ function ensureGivingPlusPaywall() {
       <button class="giving-plus-paywall-close" type="button" aria-label="Close" onclick="closeGivingPlusPaywall()">×</button>
       <span class="giving-plus-paywall-badge">Giving Plus feature</span>
       <h2 id="givingPlusPaywallTitle">Help your parish offer more ways to give</h2>
-      <p id="givingPlusPaywallCopy">Your parish's Starter plan includes one-time and recurring gifts to its General Operating Fund. Giving Plus unlocks designated funds, candles, commemorations, campaigns, and festal alms.</p>
+      <p id="givingPlusPaywallCopy">Starter includes a General Operating Fund, one designated fund, and candles. Giving Plus unlocks unlimited funds, campaigns, commemorations, and festal alms.</p>
       <div class="giving-plus-paywall-actions">
         <button class="btn btn-ghost" type="button" onclick="closeGivingPlusPaywall()">Not now</button>
         <button class="btn btn-gold" id="givingPlusEncourageButton" type="button" onclick="requestParishGivingPlusUpgrade(this)">Encourage my parish</button>
@@ -468,7 +493,10 @@ function openGivingPlusPaywall(event, parish, giftType = "") {
   const label = donorGiftTypeCopy[normalizeDonorGiftType(giftType)]?.detailsTitle || "This giving option";
   const copy = document.getElementById("givingPlusPaywallCopy");
   if (copy) {
-    copy.textContent = `${label} is available with Giving Plus. ${selectedParish?.name || "This parish"} currently offers Starter giving: one-time or recurring gifts to one General Operating Fund.`;
+    const starterOption = ["fund", "candles"].includes(normalizeDonorGiftType(giftType));
+    copy.textContent = starterOption
+      ? `${selectedParish?.name || "This parish"} can offer ${label.toLowerCase()} on Starter, but this option has not been configured or is currently paused.`
+      : `${label} is available with Giving Plus. Starter includes General Operating, one designated fund, and candle giving.`;
   }
   if (status) status.textContent = selectedParish
     ? "You can privately let parish leadership know that you want more giving options."
@@ -504,15 +532,15 @@ async function requestParishGivingPlusUpgrade(button) {
 
 function updateGivingTierTiles(parish) {
   if (parish) window.agapaySelectedGivingParish = parish;
-  const givingPlus = parishHasGivingPlus(parish);
   document.querySelectorAll("[data-giving-plus-gift]").forEach((tile) => {
     const giftType = tile.getAttribute("data-giving-plus-gift") || "";
-    tile.classList.toggle("giving-tier-locked", !givingPlus);
-    tile.setAttribute("aria-label", !givingPlus
-      ? `${tile.textContent.trim()} — requires Giving Plus`
+    const allowed = parishCanUseGiftType(parish, giftType);
+    tile.classList.toggle("giving-tier-locked", !allowed);
+    tile.setAttribute("aria-label", !allowed
+      ? `${tile.textContent.trim()} — not currently available`
       : tile.textContent.trim());
-    tile.href = givingPlus ? quickDonorGiftUrl(giftType, parish) : "#giving-plus";
-    tile.onclick = givingPlus ? null : (event) => openGivingPlusPaywall(event, parish, giftType);
+    tile.href = allowed ? quickDonorGiftUrl(giftType, parish) : "#giving-plus";
+    tile.onclick = allowed ? null : (event) => openGivingPlusPaywall(event, parish, giftType);
   });
 }
 
@@ -869,26 +897,29 @@ function renderActiveFunds(parish) {
   const targets = [document.getElementById("activeFunds"), document.getElementById("desktopActiveFunds")].filter(Boolean);
   if (!targets.length) return;
   if (parish && !parishHasGivingPlus(parish)) {
-    const starterFund = Array.isArray(parish.funds) && parish.funds[0]
-      ? parish.funds[0]
-      : { name: "General Operating Fund", description: "Support your parish's day-to-day mission." };
-    const html = `
+    const starterFunds = Array.isArray(parish.funds) && parish.funds.length
+      ? parish.funds.slice(0, 2)
+      : [{ name: "General Operating Fund", description: "Support your parish's day-to-day mission." }];
+    const html = starterFunds.map((starterFund) => {
+      const general = isGeneralDonorFund(starterFund);
+      return `
       <article class="active-funds-card">
         <div>
-          <span class="campaign-pill">Starter fund</span>
+          <span class="campaign-pill">${general ? "General fund" : "Designated fund"}</span>
           <h3>${escapeHtml(fundLabel(starterFund))}</h3>
           <p>${escapeHtml(starterFund.description || "Support your parish's day-to-day mission.")}</p>
         </div>
         <div class="starter-fund-actions">
-          <a href="${escapeHtml(quickDonorGiftUrl("stewardship", parish, { frequency: "once" }))}">One-time</a>
-          <a href="${escapeHtml(quickDonorGiftUrl("stewardship", parish, { frequency: "monthly" }))}">Recurring</a>
+          <a href="${escapeHtml(quickDonorGiftUrl(general ? "stewardship" : "fund", parish, general ? { frequency: "once" } : { fund: starterFund.id || starterFund.name }))}">${general ? "One-time" : "Give"}</a>
+          ${general ? `<a href="${escapeHtml(quickDonorGiftUrl("stewardship", parish, { frequency: "monthly" }))}">Recurring</a>` : ""}
         </div>
       </article>`;
+    }).join("");
     targets.forEach((target) => { target.innerHTML = html; });
     return;
   }
   const funds = (Array.isArray(parish?.funds) ? parish.funds : [])
-    .filter((fund) => fund && fund.active !== false && String(fund.status || "active").toLowerCase() !== "archived")
+    .filter((fund) => fund && !isCandleDonorFund(fund) && fund.active !== false && String(fund.status || "active").toLowerCase() !== "archived")
     .slice(0, 4);
   if (!funds.length) {
     const empty = `
@@ -1523,10 +1554,10 @@ function toggleGiftDetailFields() {
   updateGivingTierTiles(parish);
   if (giftTypeSelect) {
     Array.from(giftTypeSelect.options).forEach((option) => {
-      option.disabled = !parishHasGivingPlus(parish) && isGivingPlusGiftType(option.value);
+      option.disabled = isGivingPlusGiftType(option.value) && !parishCanUseGiftType(parish, option.value);
     });
   }
-  if (!parishHasGivingPlus(parish) && isGivingPlusGiftType(giftType)) {
+  if (isGivingPlusGiftType(giftType) && !parishCanUseGiftType(parish, giftType)) {
     const lockedGiftType = giftType;
     giftType = "stewardship";
     if (giftTypeSelect) giftTypeSelect.value = giftType;

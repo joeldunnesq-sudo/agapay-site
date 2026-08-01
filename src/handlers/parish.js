@@ -930,6 +930,18 @@ export function parishFromRegistration(registration) {
   if (registration.givingStatus && registration.givingStatus !== "active") return null;
   const type = normalizeCommunityType(registration.communityType);
   const givingPlus = givingFeatureAccess(registration, "branding");
+  const starterDesignatedFund = givingFeatureAccess(registration, "starterDesignatedFund");
+  const candleGiving = givingFeatureAccess(registration, "candles");
+  const configuredFunds = Array.isArray(registration.funds) ? registration.funds.filter((fund) => fund && fund.enabled !== false && fund.active !== false) : [];
+  const generalFund = configuredFunds.find(isGeneralGivingFund) || {
+    id: "general",
+    name: "General Operating Fund",
+    description: "Utilities, supplies, ministries, and day-to-day parish needs."
+  };
+  const designatedFunds = configuredFunds.filter((fund) => !isGeneralGivingFund(fund) && !isCandleGivingFund(fund));
+  const publicFunds = givingPlus
+    ? (configuredFunds.length ? configuredFunds : [generalFund])
+    : [generalFund, ...(starterDesignatedFund ? designatedFunds.slice(0, 1) : [])];
 
   return {
     id,
@@ -954,21 +966,37 @@ export function parishFromRegistration(registration) {
     patronalFeastDate: registration.patronalFeastDate || registration.parishPatronalFeastDate || "",
     recurringGivingEnabled: registration.recurringGivingEnabled ?? true,
     givingPlusEnabled: givingPlus,
-    candlesEnabled: givingPlus && (registration.candlesEnabled ?? true),
+    designatedFundsEnabled: starterDesignatedFund && publicFunds.some((fund) => !isGeneralGivingFund(fund)),
+    candlesEnabled: candleGiving && (registration.candlesEnabled ?? true),
     commemorationsEnabled: givingPlus && (registration.commemorationsEnabled ?? true),
     sacramentsEnabled: sacramentsEnabledFor(registration),
     bookstoreEnabled: bookstoreEnabledFor(registration),
     processingFeeSchedules: publicPaymentFeeSchedules(),
-    funds: givingPlus && Array.isArray(registration.funds) && registration.funds.length ? registration.funds : [
-      {
-        id: "general",
-        name: "General Operating Fund",
-        description: "Utilities, supplies, ministries, and day-to-day parish needs."
-      }
-    ],
+    funds: publicFunds,
     campaigns: givingPlus && Array.isArray(registration.campaigns) ? registration.campaigns : [],
     feastCampaigns: givingPlus && Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : []
   };
+}
+
+export function isGeneralGivingFund(fund = {}) {
+  const keys = [fund.id, fund.code, fund.reportCode, fund.name].filter(Boolean).map((value) => String(value).trim().toLowerCase());
+  return keys.some((value) => ["general", "stewardship", "general operating fund", "general stewardship"].includes(value));
+}
+
+export function isCandleGivingFund(fund = {}) {
+  const keys = [fund.id, fund.code, fund.reportCode, fund.name].filter(Boolean).map((value) => String(value).trim().toLowerCase());
+  return keys.some((value) => ["candle", "candles", "candles / vigil lights", "candle fund"].includes(value));
+}
+
+export function starterFundCatalogError(funds = []) {
+  const active = (Array.isArray(funds) ? funds : []).filter((fund) => fund && fund.enabled !== false && fund.active !== false);
+  const generalCount = active.filter(isGeneralGivingFund).length;
+  const designatedCount = active.filter((fund) => !isGeneralGivingFund(fund) && !isCandleGivingFund(fund)).length;
+  const candleCount = active.filter(isCandleGivingFund).length;
+  if (generalCount !== 1) return "Starter must keep exactly one active General Operating Fund.";
+  if (candleCount > 1) return "Starter can keep only one active Candle Fund.";
+  if (designatedCount > 1) return "Starter includes one active designated fund. Upgrade to Giving Plus for additional funds.";
+  return "";
 }
 
 export function normalizeCommunityType(value) {
@@ -1759,9 +1787,26 @@ export async function handleCheckout(request, env) {
 
   const parish = await findCheckoutParish(env, body.parishId);
   if (!parish || parish.status !== "verified") return json({ error: "Verified parish not found" }, { status: 404 });
-  const requestedGiftType = String(body.giftType || "").trim().toLowerCase();
-  if (!parish.givingPlusEnabled && !["stewardship", "general"].includes(requestedGiftType)) {
+  const giftTypeAliases = { candle: "candles", funds: "fund", love: "commemoration", alms: "feast" };
+  const rawGiftType = String(body.giftType || "").trim().toLowerCase();
+  const requestedGiftType = giftTypeAliases[rawGiftType] || rawGiftType;
+  const permittedGiftType = ["stewardship", "general"].includes(requestedGiftType)
+    || (requestedGiftType === "fund" && parish.designatedFundsEnabled)
+    || (requestedGiftType === "candles" && parish.candlesEnabled)
+    || (parish.givingPlusEnabled && ["commemoration", "campaign", "feast"].includes(requestedGiftType));
+  if (!permittedGiftType) {
     return json({ error: "This offering type is available with Giving Plus." }, { status: 403 });
+  }
+
+  const requestedFundKey = String(body.fundId || body.fund || "").trim();
+  const requestedFund = requestedGiftType === "fund"
+    ? (Array.isArray(parish.funds) ? parish.funds : []).find((fund) =>
+      !isGeneralGivingFund(fund) && !isCandleGivingFund(fund)
+      && [fund?.id, fund?.code, fund?.name].filter(Boolean).map(String).includes(requestedFundKey)
+    )
+    : null;
+  if (requestedGiftType === "fund" && !requestedFund) {
+    return json({ error: "Choose the active designated fund offered by this parish." }, { status: 422 });
   }
 
   if (!env.STRIPE_SECRET_KEY) {
@@ -1782,8 +1827,8 @@ export async function handleCheckout(request, env) {
   const recurring = body.frequency && body.frequency !== "once";
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   const normalizedDonorEmail = normalizeEmail(body.email);
-  const normalizedGiftType = String(body.giftType || "").toLowerCase();
-  const checkoutGiftType = normalizedGiftType === "love" ? "commemoration" : normalizedGiftType;
+  const normalizedGiftType = requestedGiftType;
+  const checkoutGiftType = requestedGiftType;
   const commemorationKind = checkoutGiftType === "commemoration"
     && String(body.commemorationKind || "") === "molieben_panikhida"
     ? "molieben_panikhida"
@@ -1806,12 +1851,15 @@ export async function handleCheckout(request, env) {
       [fund?.id, fund?.code, fund?.name].filter(Boolean).map(String).includes(destinationFundId)
     )
     : null;
+  const candleFund = requestedGiftType === "candles"
+    ? (Array.isArray(parish.funds) ? parish.funds : []).find(isCandleGivingFund)
+    : null;
   const checkoutFund = isFestalAlms
     ? destinationFund?.name || "Benevolence Fund"
-    : isGeneralStewardship ? "General Operating Fund" : body.fund || "";
+    : isGeneralStewardship ? "General Operating Fund" : requestedGiftType === "candles" ? candleFund?.name || "Candles / Vigil Lights" : requestedFund?.name || "";
   const checkoutFundId = isFestalAlms
     ? destinationFund?.id || destinationFund?.code || "benevolence-fund"
-    : isGeneralStewardship ? "general" : body.fundId || "";
+    : isGeneralStewardship ? "general" : requestedGiftType === "candles" ? candleFund?.id || candleFund?.code || "candle" : requestedFund?.id || requestedFund?.code || "";
   const checkoutCampaign = isFestalAlms
     ? feastCampaign?.campaignName || feastCampaign?.name || body.campaign || ""
     : body.campaign || "";
@@ -2658,8 +2706,16 @@ export async function handleParishDashboard(request, env, parishId) {
 
     const current = found.registration;
     const givingPlus = givingFeatureAccess(current, "customFunds");
-    if (!givingPlus && (body.funds !== undefined || body.campaigns !== undefined || body.feastCampaigns !== undefined)) {
-      return json({ error: "Custom funds and campaigns are available with Giving Plus." }, { status: 403 });
+    const starterDesignatedFund = givingFeatureAccess(current, "starterDesignatedFund");
+    if (!starterDesignatedFund && body.funds !== undefined) {
+      return json({ error: "Designated funds are not available on this plan." }, { status: 403 });
+    }
+    if (!givingPlus && (body.campaigns !== undefined || body.feastCampaigns !== undefined)) {
+      return json({ error: "Campaigns and festal alms are available with Giving Plus." }, { status: 403 });
+    }
+    if (!givingPlus && body.funds !== undefined) {
+      const limitError = starterFundCatalogError(body.funds);
+      if (limitError) return json({ error: limitError }, { status: 422 });
     }
     const requestedPassword = body.newDashboardPassword !== undefined
       ? String(body.newDashboardPassword || "").trim()

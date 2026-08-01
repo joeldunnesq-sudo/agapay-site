@@ -422,10 +422,13 @@ assert.ok(
 );
 assert.ok(
   starterPricingCard.includes("Direct parish giving links and QR codes")
+    && starterPricingCard.includes("General Operating Fund")
+    && starterPricingCard.includes("One custom designated fund")
+    && starterPricingCard.includes("Built-in candle giving")
     && !starterPricingCard.includes("Parish logo across giving pages and church search")
-    && !starterPricingCard.includes("Multiple funds and restricted funds")
+    && !starterPricingCard.includes("Unlimited custom and restricted funds")
     && givingPlusPricingCard.includes("Parish logo across giving pages and church search")
-    && givingPlusPricingCard.includes("Multiple funds and restricted funds")
+    && givingPlusPricingCard.includes("Unlimited custom and restricted funds")
     && givingPlusPricingCard.includes("</svg></span>Campaign Giving</li>")
     && givingPlusPricingCard.includes("Liturgical calendar integration")
     && !givingPlusPricingCard.includes("Liturgical calendar timing")
@@ -433,7 +436,7 @@ assert.ok(
     && !givePricingHtml.includes("Campaigns, direct parish links, and QR codes")
     && !givePricingHtml.includes("Parish logo, public page, and church search listing")
     && !givePricingHtml.includes("</svg></span>Campaigns</li>"),
-  "Starter should own direct parish links and QR codes while Giving Plus owns parish-logo branding and Campaign Giving"
+  "Starter should include its three-fund mission package and direct links while Giving Plus owns unlimited funds, parish branding, and Campaign Giving"
 );
 assert.equal(
   givePricingHtml.match(/Parish council and annual-meeting-ready stewardship insights/g)?.length,
@@ -484,7 +487,8 @@ for (const enforcement of [
   "Commemorations are available with Giving Plus.",
   "Monthly reconciliation is available with Giving Plus.",
   "Recurring-gift insights are available with Giving Plus.",
-  "Custom funds and campaigns are available with Giving Plus."
+  "Campaigns and festal alms are available with Giving Plus.",
+  "Starter includes one active designated fund. Upgrade to Giving Plus for additional funds."
 ]) {
   assert.ok(parishHandlers.includes(enforcement), `backend should enforce tier access: ${enforcement}`);
 }

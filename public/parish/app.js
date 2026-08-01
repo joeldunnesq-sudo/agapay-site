@@ -952,12 +952,35 @@
     return String(currentParish?.subscriptionTier || '').toLowerCase() !== 'starter';
   }
 
+  function hasStarterDesignatedFundAccess() {
+    if (currentParish?.entitlements) return Boolean(currentParish.entitlements.givingFeatures?.starterDesignatedFund);
+    return true;
+  }
+
+  function hasFundManagementAccess() {
+    return hasGivingPlusAccess() || hasStarterDesignatedFundAccess();
+  }
+
+  function isGeneralDashboardFund(fund = {}) {
+    return [fund.id, fund.code, fund.reportCode, fund.name]
+      .filter(Boolean)
+      .map((value) => String(value).trim().toLowerCase())
+      .some((value) => ['general', 'stewardship', 'general operating fund', 'general stewardship'].includes(value));
+  }
+
+  function isCandleDashboardFund(fund = {}) {
+    return [fund.id, fund.code, fund.reportCode, fund.name]
+      .filter(Boolean)
+      .map((value) => String(value).trim().toLowerCase())
+      .some((value) => ['candle', 'candles', 'candles / vigil lights', 'candle fund'].includes(value));
+  }
+
   const starterLockedFeatures = {
     options: ['Custom funds & alms', 'Create and name custom funds, organize designated giving, and manage standing alms with Giving Plus.'],
     campaigns: ['Campaign pages', 'Create goal-based, shareable campaigns with Giving Plus.'],
     givers: ['Giver insights', 'See donor-level history and deeper giving reports with Giving Plus.'],
     reconcile: ['Monthly reconciliation', 'Match gifts, fees, refunds, and Stripe deposits with Giving Plus.'],
-    commemorations: ['Commemorations', 'Candles, liturgical commemorations, Moliebens, Panikhidas, and the priest queue are included with Giving Plus.'],
+    commemorations: ['Commemorations', 'Starter includes candle giving. Liturgical commemorations, Moliebens, Panikhidas, and the priest queue are included with Giving Plus.'],
     statements: ['Annual giving statements', 'Generate and email annual donor statements with Giving Plus.'],
     stewardship: ['Stewardship Health', 'Track pledges, understand giving health, prepare stewardship reports, and keep annual records with the Stewardship tier.'],
     bookstore: ['Parish Commerce', 'Manage bookstore sales now and add more parish commerce products as they become available in the Stewardship tier.'],
@@ -1048,7 +1071,6 @@
   function updateStarterPaywalls() {
     const givingPlusLocked = !hasGivingPlusAccess();
     const givingPlusTargets = {
-      options: document.getElementById('tab-options'),
       campaigns: document.getElementById('tab-campaigns'),
       givers: document.getElementById('tab-givers'),
       reconcile: document.getElementById('tab-reconcile'),
@@ -1057,8 +1079,11 @@
     };
     Object.entries(givingPlusTargets).forEach(([key, element]) => {
       syncDashboardPaywall(element, key, 'Giving Plus', givingPlusLocked);
-      if (['options', 'campaigns', 'givers', 'reconcile'].includes(key)) syncTierRequirementNavigation(key, 'Giving Plus', !givingPlusLocked);
+      if (['campaigns', 'givers', 'reconcile'].includes(key)) syncTierRequirementNavigation(key, 'Giving Plus', !givingPlusLocked);
     });
+    const optionsIncluded = hasFundManagementAccess();
+    syncDashboardPaywall(document.getElementById('tab-options'), 'options', 'Giving Plus', !optionsIncluded);
+    syncTierRequirementNavigation('options', 'Giving Plus', optionsIncluded);
 
     const stewardshipTargets = {
       stewardship: document.getElementById('tab-stewardship'),
@@ -7901,14 +7926,21 @@
   }
 
   function renderOptionsProgressSummary() {
+    const activeFunds = editableFunds.filter((fund) => fund && fund.enabled !== false && fund.active !== false);
+    const activeDesignatedFunds = activeFunds.filter((fund) => !isGeneralDashboardFund(fund) && !isCandleDashboardFund(fund));
+    const starterLimitReached = !hasGivingPlusAccess() && activeDesignatedFunds.length >= 1;
+    const summaryFunds = editableFunds.map((item, index) => ({ item, index }));
+    if (!summaryFunds.some((row) => isCandleDashboardFund(row.item))) {
+      summaryFunds.push({ item: { id: 'candle', name: 'Candles / Vigil Lights', description: 'Built-in candle offerings and prayer intentions.', restrictionType: 'unrestricted', starterBuiltin: true }, index: null });
+    }
     const rows = [
-      ...editableFunds.map((item, index) => ({ kind: 'fund', label: 'Fund', item, index })),
-      ...editableCampaigns.map(item => ({ kind: 'campaign', label: 'Campaign', item })),
-      ...editableFeastCampaigns.filter(item => item.enabled !== false).map(item => ({ kind: 'campaign', label: 'Feast campaign', item }))
+      ...summaryFunds.map(({ item, index }) => ({ kind: 'fund', label: isGeneralDashboardFund(item) ? 'General fund' : isCandleDashboardFund(item) ? 'Candle fund' : 'Designated fund', item, index })).filter((row) => row.item?.enabled !== false && row.item?.active !== false),
+      ...(hasGivingPlusAccess() ? editableCampaigns.map(item => ({ kind: 'campaign', label: 'Campaign', item })) : []),
+      ...(hasGivingPlusAccess() ? editableFeastCampaigns.filter(item => item.enabled !== false).map(item => ({ kind: 'campaign', label: 'Feast campaign', item })) : [])
     ];
     return `<div class="options-summary-card"><div class="options-summary-head"><span>Active giving options</span><small>Based on paid gifts in AGAPAY</small></div><div class="options-progress-table">${rows.length ? rows.map(row => {
       const progress = optionProgress(row.item, row.kind);
-      const isEditableFund = row.kind === 'fund' && Number.isInteger(row.index);
+      const isEditableFund = row.kind === 'fund' && Number.isInteger(row.index) && !isCandleDashboardFund(row.item);
       const isEditing = isEditableFund && editingGivingOption?.kind === 'fund' && editingGivingOption?.index === row.index;
       const restrictionType = row.item.restrictionType || (row.kind === 'campaign' ? 'donor_restricted_temporary' : 'unrestricted');
       return `<div class="options-progress-row">
@@ -7946,9 +7978,9 @@
       </div>`;
     }).join('') : '<div class="option-empty options-summary-empty">No giving options configured yet.</div>'}</div>
       <div class="option-builder options-summary-builder">
-        <div class="option-builder-title">Add a fund</div>
-        <p class="section-note">Funds shown above are the source of truth for donor choices and the Accounting suite. Saving creates or updates the matching accounting funds automatically.</p>
-        <div class="builder-grid"><select id="fundPreset" onchange="fillGivingPreset('fund')"><option value="custom" selected>Custom fund — name it yourself</option><optgroup label="Start from a preset">${presetOptions(fundPresets)}</optgroup></select><input id="fundAccountNumber" maxlength="24" placeholder="Fund account number (optional), e.g. 2100" /><input id="fundName" maxlength="120" placeholder="Custom fund name, e.g. New Iconostasis Fund" /><select id="fundRestriction"><option value="unrestricted">Unrestricted</option><option value="board_designated">Board designated</option><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option></select><textarea id="fundDescription" maxlength="500" placeholder="Describe what this parish-created fund supports."></textarea><button class="btn btn-gold" onclick="addGivingOption('fund')">Add custom fund</button></div>
+        <div class="option-builder-title">${hasGivingPlusAccess() ? 'Add a fund' : 'Your Starter designated fund'}</div>
+        <p class="section-note">${hasGivingPlusAccess() ? 'Funds shown above are the source of truth for donor choices and the Accounting suite. Saving creates or updates the matching accounting funds automatically.' : 'Starter includes General Operating, one active designated fund, and candle giving. Edit the designated fund above or upgrade for additional funds.'}</p>
+        ${starterLimitReached ? '<div class="option-empty">Your one Starter designated fund is active. Edit it above, or upgrade to Giving Plus to add more.</div>' : `<div class="builder-grid"><select id="fundPreset" onchange="fillGivingPreset('fund')"><option value="custom" selected>Custom fund — name it yourself</option><optgroup label="Start from a preset">${presetOptions(fundPresets)}</optgroup></select><input id="fundAccountNumber" maxlength="24" placeholder="Fund account number (optional), e.g. 2100" /><input id="fundName" maxlength="120" placeholder="Custom fund name, e.g. Mission Development Fund" /><select id="fundRestriction"><option value="unrestricted">Unrestricted</option><option value="board_designated">Board designated</option><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option></select><textarea id="fundDescription" maxlength="500" placeholder="Describe what this parish-created fund supports."></textarea><button class="btn btn-gold" onclick="addGivingOption('fund')">Add designated fund</button></div>`}
       </div>
     </div>`;
   }
@@ -8263,7 +8295,30 @@
     `).join('')}</div>`;
   }
 
-  function addGivingOption(kind) { const prefix=kind==='fund'?'fund':'campaign'; const nameEl=document.getElementById(`${prefix}Name`); const descEl=document.getElementById(`${prefix}Description`); const name=nameEl?.value.trim(); if(!name){setStatus(`Enter a ${kind} name.`,'error');return;} const id=slugifyLocal(name); const target=kind==='fund'?editableFunds:editableCampaigns; if(target.some((item)=>item.id===id||String(item.name||'').trim().toLowerCase()===name.toLowerCase())){setStatus(`A ${kind} with that name already exists.`,'error');return;} const item={id,name,description:descEl?.value.trim()||(kind==='fund'?'Designated support for this parish.':'Parish-approved alms for this need.'),accountNumber:document.getElementById(`${prefix}AccountNumber`)?.value.trim()||'',restrictionType:document.getElementById(`${prefix}Restriction`)?.value||(kind==='campaign'?'donor_restricted_temporary':'unrestricted'),...(kind==='fund'?{fundType:document.getElementById('fundPreset')?.value==='custom'?'custom':'preset'}:{})}; if(kind==='campaign'){const goalCents=parseDollarsToCents(document.getElementById('campaignGoal')?.value); if(goalCents>0) item.goalCents=goalCents;} target.push(item); nameEl.value=''; descEl.value=''; const goalEl=document.getElementById(`${prefix}Goal`); if(goalEl) goalEl.value=''; renderGivingOptionsEditor(); setStatus(`${kind==='fund'?'Fund':'Campaign'} added. Save when ready.`,'success'); }
+  function addGivingOption(kind) {
+    if (kind === 'campaign' && !hasGivingPlusAccess()) { setStatus('Campaigns require Giving Plus.', 'error'); return; }
+    if (kind === 'fund' && !hasGivingPlusAccess() && editableFunds.some((fund) => fund && !isGeneralDashboardFund(fund) && !isCandleDashboardFund(fund) && fund.enabled !== false && fund.active !== false)) {
+      setStatus('Starter includes one active designated fund. Edit the current fund or upgrade to add more.', 'error');
+      return;
+    }
+    const prefix = kind === 'fund' ? 'fund' : 'campaign';
+    const nameEl = document.getElementById(`${prefix}Name`);
+    const descEl = document.getElementById(`${prefix}Description`);
+    const name = nameEl?.value.trim();
+    if (!name) { setStatus(`Enter a ${kind} name.`, 'error'); return; }
+    const id = slugifyLocal(name);
+    const target = kind === 'fund' ? editableFunds : editableCampaigns;
+    if (target.some((item) => item.id === id || String(item.name || '').trim().toLowerCase() === name.toLowerCase())) { setStatus(`A ${kind} with that name already exists.`, 'error'); return; }
+    const item = { id, name, description: descEl?.value.trim() || (kind === 'fund' ? 'Designated support for this parish.' : 'Parish-approved alms for this need.'), accountNumber: document.getElementById(`${prefix}AccountNumber`)?.value.trim() || '', restrictionType: document.getElementById(`${prefix}Restriction`)?.value || (kind === 'campaign' ? 'donor_restricted_temporary' : 'unrestricted'), ...(kind === 'fund' ? { fundType: document.getElementById('fundPreset')?.value === 'custom' ? 'custom' : 'preset' } : {}) };
+    if (kind === 'campaign') { const goalCents = parseDollarsToCents(document.getElementById('campaignGoal')?.value); if (goalCents > 0) item.goalCents = goalCents; }
+    target.push(item);
+    nameEl.value = '';
+    descEl.value = '';
+    const goalEl = document.getElementById(`${prefix}Goal`);
+    if (goalEl) goalEl.value = '';
+    renderGivingOptionsEditor();
+    setStatus(`${kind === 'fund' ? 'Fund' : 'Campaign'} added. Save when ready.`, 'success');
+  }
   function editGivingOption(kind, i) {
     editingGivingOption = editingGivingOption?.kind === kind && editingGivingOption?.index === i ? null : { kind, index: i };
     renderGivingOptionsEditor();
@@ -8902,6 +8957,14 @@
     syncPatronalFeastOptionsFromSettings();
 
     editableFunds          = fallbackFundsArray(p.funds);
+    if (!hasGivingPlusAccess()) {
+      let activeDesignatedSeen = false;
+      editableFunds = editableFunds.map((fund) => {
+        if (!fund || isGeneralDashboardFund(fund) || isCandleDashboardFund(fund) || fund.enabled === false || fund.active === false) return fund;
+        if (!activeDesignatedSeen) { activeDesignatedSeen = true; return fund; }
+        return { ...fund, enabled: false };
+      });
+    }
     editableCampaigns      = fallbackCampaignsArray(p.campaigns);
     editableFeastCampaigns = Array.isArray(p.feastCampaigns)
       ? p.feastCampaigns.map((campaign) => ({ ...campaign, destinationFundId: campaign.destinationFundId || 'benevolence-fund' }))
@@ -8926,9 +8989,8 @@
     const pane = document.getElementById('editorPane'); if (!pane) return;
     pane.innerHTML = `
       ${renderOptionsProgressSummary()}
-      <div class="giving-options-intro">These are the choices donors see after selecting <strong>Designated Fund</strong> or <strong>Alms Campaign</strong>. Add presets or write your own.</div>
-      <div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Alms campaigns</h3><span class="option-group-count">${editableCampaigns.length} shown</span></div><div class="option-list">${optionCards(editableCampaigns,'campaign','No alms campaigns configured yet.')}</div><div class="option-builder"><div class="option-builder-title">Add an alms campaign</div><div class="builder-grid"><select id="campaignPreset" onchange="fillGivingPreset('campaign')"><option value="">Choose a preset...</option>${presetOptions(campaignPresets)}</select><input id="campaignAccountNumber" maxlength="24" placeholder="Account number, e.g. 2200" /><input id="campaignName" placeholder="Campaign name, e.g. Support for the Petrov Family" /><select id="campaignRestriction"><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option><option value="board_designated">Board designated</option><option value="unrestricted">Unrestricted</option></select><textarea id="campaignDescription" placeholder="Describe the need in plain language."></textarea><input id="campaignGoal" type="number" min="0" step="1" placeholder="Goal amount, e.g. 45000" /><button class="btn btn-ghost" onclick="addGivingOption('campaign')">Add campaign</button></div></div></div>
-      ${renderFeastCampaignSetup()}
+      <div class="giving-options-intro">${hasGivingPlusAccess() ? 'These are the choices donors see after selecting <strong>Designated Fund</strong> or <strong>Alms Campaign</strong>. Add presets or write your own.' : 'Starter gives your mission three clear destinations: <strong>General Operating</strong>, <strong>one designated fund</strong>, and <strong>Candles</strong>.'}</div>
+      ${hasGivingPlusAccess() ? `<div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Alms campaigns</h3><span class="option-group-count">${editableCampaigns.length} shown</span></div><div class="option-list">${optionCards(editableCampaigns,'campaign','No alms campaigns configured yet.')}</div><div class="option-builder"><div class="option-builder-title">Add an alms campaign</div><div class="builder-grid"><select id="campaignPreset" onchange="fillGivingPreset('campaign')"><option value="">Choose a preset...</option>${presetOptions(campaignPresets)}</select><input id="campaignAccountNumber" maxlength="24" placeholder="Account number, e.g. 2200" /><input id="campaignName" placeholder="Campaign name, e.g. Support for the Petrov Family" /><select id="campaignRestriction"><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option><option value="board_designated">Board designated</option><option value="unrestricted">Unrestricted</option></select><textarea id="campaignDescription" placeholder="Describe the need in plain language."></textarea><input id="campaignGoal" type="number" min="0" step="1" placeholder="Goal amount, e.g. 45000" /><button class="btn btn-ghost" onclick="addGivingOption('campaign')">Add campaign</button></div></div></div>${renderFeastCampaignSetup()}` : '<div class="starter-tier-paywall"><span class="starter-tier-paywall-badge">Giving Plus</span><strong>Need more giving destinations?</strong><p>Upgrade for unlimited funds, campaigns, commemorations, festal alms, branding, statements, and enhanced reporting.</p><button class="btn btn-gold" type="button" onclick="switchTab(\'settings\')">Upgrade to Giving Plus</button></div>'}
       <div class="btn-row"><button class="btn btn-gold" onclick="saveDashboard(this)">Save giving options</button><button class="btn btn-ghost" onclick="loadDashboard()">Discard changes</button></div>`;
   }
 
@@ -9859,12 +9921,14 @@
       commemorationsEnabled:  document.getElementById('commemorationsEnabled')?.checked,
       bookstoreEnabled:       document.getElementById('bookstoreEnabled')?.checked,
       sacramentPriests:       parseSacramentPriestsFromSettings(),
-      ...(hasGivingPlusAccess() ? {
+      ...(hasFundManagementAccess() ? {
         funds: editableFunds,
-        campaigns: editableCampaigns,
-        feastCampaigns: editableFeastCampaigns,
         givingCatalogChanged: givingCatalogSnapshot() !== givingCatalogBaseline,
-        accountingCatalogChanged: accountingCatalogSnapshot() !== accountingCatalogBaseline
+        accountingCatalogChanged: accountingCatalogSnapshot() !== accountingCatalogBaseline,
+        ...(hasGivingPlusAccess() ? {
+          campaigns: editableCampaigns,
+          feastCampaigns: editableFeastCampaigns
+        } : {})
       } : {}),
     };
     if (newPw) body.newDashboardPassword = newPw;
