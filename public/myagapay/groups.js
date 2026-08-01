@@ -39,6 +39,9 @@ function groupStatus(message) {
 
 function renderGroupMessageContent(message) {
   const caption = message.body ? `<p>${groupsEscape(message.body)}</p>` : "";
+  if (["voice", "image"].includes(message.messageType) && !message.attachmentUrl) {
+    return `<p class="group-attachment-expired">${groupsEscape(message.body || (message.messageType === "voice" ? "Voice message (no longer available)" : "Photo (no longer available)"))}</p>`;
+  }
   if (message.messageType === "voice") {
     const bars = Array.from({ length: 36 }, () => "<span></span>").join("");
     return `<div class="group-voice-note" data-voice-message="${groupsEscape(message.id)}">
@@ -213,7 +216,7 @@ function renderGroupThread(group, messages) {
         <div><button type="button" class="group-attach-button" onclick="toggleGroupVoiceRecording(this)" aria-label="Record a voice message">🎤 <span>Voice</span></button><button type="button" class="group-attach-button" onclick="chooseGroupPhoto()" aria-label="Attach a photo">📷 <span>Photo</span></button><input id="groupPhotoInput" type="file" accept="image/jpeg,image/png,image/webp" onchange="selectGroupPhoto(event)" hidden /></div>
         <button type="submit" id="groupMessageSubmit">Post message</button>
       </div>
-      <small class="group-thread-retention">Messages and attachments are automatically deleted after 30 days.</small>
+      <small class="group-thread-retention">Voice notes and photos are removed after 30 days. Conversation history remains available.</small>
     </form>
   `;
   renderGroupAttachmentPreview();
