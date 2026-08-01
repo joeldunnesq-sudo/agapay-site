@@ -20,12 +20,13 @@ const legacy = await worker.fetch(new Request("https://agapay.test/myagapay/givi
 assert.equal(legacy.status, 301);
 assert.equal(legacy.headers.get("location"), "https://agapay.test/myagapay/parish-life?from=bookmark");
 
-const [landing, landingScript, shell, calendar, feed, groups, teaching, media, watch] = await Promise.all([
-  "parish-life.html", "parish-life.js", "../myagapay-shell.js", "giving/calendar.html", "feed.html", "groups.html", "teaching.html", "media.html", "watch.html",
+const [landing, landingScript, shell, donorApp, calendar, feed, groups, teaching, media, watch] = await Promise.all([
+  "parish-life.html", "parish-life.js", "../myagapay-shell.js", "../donor/app.js", "giving/calendar.html", "feed.html", "groups.html", "teaching.html", "media.html", "watch.html",
 ].map((file) => readFile(new URL(`../public/myagapay/${file}`, import.meta.url), "utf8")));
 
 assert.match(landing, /class="cal-hero parish-life-liturgical-hero"/);
 assert.match(landing, /class="cal-date-badge"/);
+assert.match(landing, /id="todayCivilDateEyebrow"/);
 assert.match(landing, /id="todayFeastNote"/);
 assert.match(landing, /id="todayChips"/);
 assert.match(landing, />Make a festal offering</);
@@ -79,5 +80,7 @@ for (const [name, source] of Object.entries({ calendar, feed, groups, teaching, 
 }
 assert.match(shell, /function ensureParishLifeBackLink[\s\S]*feed\|news\|groups\|teaching\|media/);
 assert.match(shell, /link\.href = "\/myagapay\/parish-life"/);
+assert.match(shell, /className = "parish-life-back-link koinonia-page-back"[\s\S]*page\.prepend\(link\)/, "each Koinonia subpage must put its back arrow at the top-left of page content");
+assert.match(donorApp, /churchCalendarDate\(date, calendar\)[\s\S]*todayCivilDateEyebrow[\s\S]*churchParts\.dayNum[\s\S]*churchParts\.monthYear/, "the eyebrow must show the civil date while the badge uses the parish calendar date");
 
 console.log("PASS - tier-aware Today/Koinonia landing, structural gating, redirects, and subpage back navigation");

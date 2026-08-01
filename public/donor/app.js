@@ -1025,6 +1025,22 @@ function longDateParts(value) {
   };
 }
 
+function churchCalendarDate(civilIso, calendar) {
+  if (String(calendar || "").toLowerCase().includes("gregorian")) return civilIso;
+  const values = String(civilIso || "").split("-").map(Number);
+  const api = window.AGAPAYLiturgicalCalendar;
+  if (values.length !== 3 || values.some((value) => !Number.isFinite(value)) || !api?.gregorianToJdn) return civilIso;
+  const julianDay = api.gregorianToJdn(values[0], values[1], values[2]);
+  const c = julianDay + 32082;
+  const d = Math.floor((4 * c + 3) / 1461);
+  const e = c - Math.floor((1461 * d) / 4);
+  const m = Math.floor((5 * e + 2) / 153);
+  const day = e - Math.floor((153 * m + 2) / 5) + 1;
+  const month = m + 3 - 12 * Math.floor(m / 10);
+  const year = d - 4800 + Math.floor(m / 10);
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
 function liturgicalRankLabel(rank = "") {
   const key = String(rank || "").toLowerCase();
   if (key.includes("great")) return "Great Feast";
@@ -1078,10 +1094,11 @@ function saintStoryModalHtml(saints = [], unavailableMessage = "") {
 function renderDonorTodayInChurch(parish, payload) {
   const calendar = parish?.liturgicalCalendar || donorProfile()?.defaultParish?.liturgicalCalendar || donorProfile()?.liturgicalCalendar || "julian";
   const date = payload?.date || todayIsoLocal();
-  const parts = longDateParts(date);
+  const civilParts = longDateParts(date);
+  const churchParts = longDateParts(churchCalendarDate(date, calendar));
   const today = payload?.today || {};
   const feast = payload?.feast || null;
-  const feastTitle = today.primarySaintTitle || today.feastTitle || feast?.name || (parts.weekday === "Sunday" ? "The Lord's Day" : "Today in the Church");
+  const feastTitle = today.primarySaintTitle || today.feastTitle || feast?.name || (civilParts.weekday === "Sunday" ? "The Lord's Day" : "Today in the Church");
   const fastingRule = today.fastingRule || (feast?.rank === "fast" ? "Fast" : "No Fast");
   const saintTitle = saintDisplayTitle(today);
   const stories = Array.isArray(today.saintStories) ? today.saintStories : [];
@@ -1097,10 +1114,11 @@ function renderDonorTodayInChurch(parish, payload) {
   donorCalendarState.calendar = calendar;
   donorCalendarState.date = date;
 
-  setText("todayWeekday", parts.weekday.slice(0, 3));
-  setText("todayMonthDay", parts.dayNum);
-  setText("todayYear", parts.monthYear);
-  setText("todayCalendarLabel", `${calendarLabel(calendar)} calendar`);
+  setText("todayCivilDateEyebrow", `${civilParts.weekday}, ${civilParts.monthDay}, ${civilParts.year}`);
+  setText("todayWeekday", civilParts.weekday.slice(0, 3));
+  setText("todayMonthDay", churchParts.dayNum);
+  setText("todayYear", churchParts.monthYear);
+  setText("todayCalendarLabel", `${calendarLabel(calendar)} calendar date`);
   setText("todayFeastTitle", feastTitle);
   setText("todayFeastNote", today.sourceConnected === false
     ? "Daily readings and saint lives are temporarily unavailable, but feast highlights still follow your Church calendar."

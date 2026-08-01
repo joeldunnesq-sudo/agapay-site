@@ -46,7 +46,7 @@ assert.equal(isOcaJurisdiction("OCA"), true);
 assert.equal(isOcaJurisdiction("Orthodox Church in America · Diocese of the South"), true);
 assert.equal(isOcaJurisdiction("Antiochian Orthodox Christian Archdiocese"), false);
 
-const [migration, preferencesMigration, worker, dashboard, parishApp, landing, newsPage, newsScript, blogHandler] = await Promise.all([
+const [migration, preferencesMigration, worker, dashboard, parishApp, landing, newsPage, newsScript, blogHandler, donorStyle] = await Promise.all([
   readFile(new URL("../migrations/0076_parish_blog_feeds.sql", import.meta.url), "utf8"),
   readFile(new URL("../migrations/0077_donor_news_source_subscriptions.sql", import.meta.url), "utf8"),
   readFile(new URL("../src/worker.js", import.meta.url), "utf8"),
@@ -56,6 +56,7 @@ const [migration, preferencesMigration, worker, dashboard, parishApp, landing, n
   readFile(new URL("../public/myagapay/news.html", import.meta.url), "utf8"),
   readFile(new URL("../public/myagapay/news.js", import.meta.url), "utf8"),
   readFile(new URL("../src/handlers/parish-blog.js", import.meta.url), "utf8"),
+  readFile(new URL("../public/donor/style.css", import.meta.url), "utf8"),
 ]);
 assert.match(migration, /CREATE TABLE IF NOT EXISTS parish_blog_feeds/);
 assert.match(migration, /CREATE TABLE IF NOT EXISTS donor_external_feed_subscriptions/);
@@ -89,6 +90,7 @@ assert.match(newsScript, /Priest’s Blog[\s\S]*OCA News[\s\S]*OrthoChristian[\s
 assert.match(newsScript, /toggleNewsSource[\s\S]*\/api\/donor\/external-feeds\//);
 assert.match(newsScript, /addCustomNewsSource[\s\S]*\/api\/donor\/custom-news-feeds/);
 assert.match(newsScript, /Your news feed is empty[\s\S]*will not add news without your choice/);
+assert.match(donorStyle, /donor-calendar-page, \.donor-news-page[\s\S]*--k-gold:[\s\S]*\.parish-life-feed-toggle[\s\S]*background: #b88f42/, "News must inherit Koinonia theme variables and render a visible Follow button");
 assert.match(blogHandler, /SPZH_FEED_URL = "https:\/\/spzh\.eu\/en\/rss"/);
 assert.match(blogHandler, /ORTHODOX_TIMES_FEED_URL = "https:\/\/orthodoxtimes\.com\/feed\/"/);
 assert.match(blogHandler, /ORTHODOX_ETHOS_FEED_URL = "https:\/\/www\.orthodoxethos\.com\/blog-feed\.xml"/);

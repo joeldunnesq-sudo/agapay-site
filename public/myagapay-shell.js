@@ -105,15 +105,15 @@
   function ensureParishLifeBackLink(pathname = window.location.pathname) {
     const isSubpage = /^\/myagapay\/(?:feed|news|groups|teaching|media(?:\/watch)?|calendar)(?:\.html)?\/?$/.test(pathname);
     if (!isSubpage || document.querySelector("[data-parish-life-back]")) return;
-    const topbar = document.querySelector(".topbar");
-    if (!topbar) return;
+    const page = document.querySelector(".page");
+    if (!page) return;
     const link = document.createElement("a");
-    link.className = "parish-life-back-link";
+    link.className = "parish-life-back-link koinonia-page-back";
     link.href = "/myagapay/parish-life";
     link.setAttribute("data-parish-life-back", "");
-    link.setAttribute("aria-label", "Back to parish landing");
-    link.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Back</span>';
-    topbar.prepend(link);
+    link.setAttribute("aria-label", "Back to Koinonia");
+    link.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Back to Koinonia</span>';
+    page.prepend(link);
   }
 
   function isAppleTouchDevice() {

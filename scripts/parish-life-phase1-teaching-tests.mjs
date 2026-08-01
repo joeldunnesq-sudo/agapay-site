@@ -4,6 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import worker from "../src/worker.js";
+import { handleListenSearch } from "../src/handlers/listen.js";
 import {
   archiveParishTeachingPost,
   createParishTeachingPost,
@@ -158,9 +159,12 @@ assert.match(sources["public/myagapay/teaching.js"], /All[\s\S]*Homilies[\s\S]*C
 assert.match(sources["public/myagapay/teaching.js"], /teachingPostsForFilter\(value\)\.length/);
 assert.match(sources["public/myagapay/teaching.html"], /Parish Audio[\s\S]*Orthodox Podcasts[\s\S]*koinoniaPodcastQuery[\s\S]*koinoniaPodcastPlayer/);
 assert.doesNotMatch(sources["public/myagapay/teaching.html"], /<iframe/, "the podcast hub must use Koinonia-native UI instead of embedding AGAPAY Listen");
-assert.match(sources["public/myagapay/teaching.js"], /searchKoinoniaPodcasts[\s\S]*\/api\/listen\/search/);
+assert.match(sources["public/myagapay/teaching.js"], /runKoinoniaPodcastSearch[\s\S]*\/api\/listen\/search/);
+assert.match(sources["public/myagapay/teaching.js"], /runKoinoniaPodcastSearch\("Orthodox"\)[\s\S]*AbortController[\s\S]*data\.error/, "podcast discovery must load automatically and surface API failures");
 assert.match(sources["public/myagapay/teaching.js"], /openKoinoniaPodcast[\s\S]*\/api\/listen\/rss/);
 assert.match(sources["public/myagapay/teaching.js"], /playKoinoniaPodcastEpisode[\s\S]*koinoniaPodcastAudio/);
+const unconfiguredPodcastSearch = await handleListenSearch(new Request("https://agapay.test/api/listen/search?q=Orthodox"), {});
+assert.equal(unconfiguredPodcastSearch.status, 503, "podcast search must report missing service credentials instead of silently returning no results");
 
 const context = { waitUntil() {} };
 for (const pathname of ["/api/donor/teaching", "/api/donor/teaching/post-one/read"]) {

@@ -70,7 +70,10 @@ assert.match(sources["public/myagapay/parish-life.js"], /parishLifeFetch\("\/api
 assert.match(sources["public/myagapay/watch.html"], /<video id="streamVideo" playsinline preload="metadata"><\/video>/, "custom watch page must not use Stream iframe or native controls");
 assert.doesNotMatch(sources["public/myagapay/watch.html"], /<iframe|<video[^>]+controls/);
 assert.match(sources["public/myagapay/watch.js"], /new Hls/);
-assert.match(sources["public/myagapay/media.html"], /Public, external media[\s\S]*public on YouTube/i);
+assert.match(sources["public/myagapay/media.html"], /Public parish channel[\s\S]*public YouTube media/i);
+assert.match(sources["public/myagapay/media.html"], /id="youtubePlayerModal"[\s\S]*youtubePlayerFrame/);
+assert.match(sources["public/myagapay/media.js"], /youtube-nocookie\.com\/embed\/[\s\S]*openYouTubeMedia/);
+assert.doesNotMatch(sources["public/myagapay/media.js"], /target="_blank"/, "YouTube videos must play inside the Koinonia Media page");
 assert.match(sources["public/donor/style.css"], /--media-navy:#061522[\s\S]*--media-gold/);
 
 const context = { waitUntil() {} };

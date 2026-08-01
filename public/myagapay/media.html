@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/donor/style.css?v=20260801koinoniaref1" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260801koinoniaref8" />
   <script src="/pwa-register.js" defer></script>
-  <script src="/myagapay-shell.js?v=20260801koinoniaref1" defer></script>
-  <script src="/myagapay/media.js?v=20260801video1" defer></script>
+  <script src="/myagapay-shell.js?v=20260801backnav2" defer></script>
+  <script src="/myagapay/media.js?v=20260801video2" defer></script>
   <meta name="theme-color" content="#061522" />
 </head>
 <body class="donor-mobile-page donor-media-page">
@@ -24,7 +24,13 @@
         <div class="media-status" id="mediaStatus">Loading private parish video…</div>
         <section id="mediaSkeleton" aria-label="Loading videos"><div class="media-feature-skeleton media-skeleton"></div><div class="media-grid"><i class="media-card-skeleton media-skeleton"></i><i class="media-card-skeleton media-skeleton"></i><i class="media-card-skeleton media-skeleton"></i></div></section>
         <section id="nativeMediaSection" hidden><div id="mediaFeatured"></div><div class="media-section-head"><div><span class="eyebrow">Parish library</span><h2>More to watch</h2></div><span class="media-private-pill">Private · Parish members</span></div><div class="media-grid" id="mediaGrid"></div></section>
-        <section class="youtube-media-section" id="youtubeMediaSection" hidden aria-labelledby="youtubeMediaHeading"><div class="youtube-section-mark" aria-hidden="true">▶</div><div class="media-section-head"><div><span class="eyebrow">Public, external media</span><h2 id="youtubeMediaHeading">From our parish on YouTube</h2><p>These videos are public on YouTube and do not carry AGAPAY’s parish-only privacy protection.</p></div><span class="youtube-public-pill">Opens on YouTube ↗</span></div><div class="media-grid youtube-grid" id="youtubeMediaGrid"></div></section>
+        <section class="youtube-media-section" id="youtubeMediaSection" hidden aria-labelledby="youtubeMediaHeading"><div class="youtube-section-mark" aria-hidden="true">▶</div><div class="media-section-head"><div><span class="eyebrow">Public parish channel</span><h2 id="youtubeMediaHeading">From our parish on YouTube</h2><p>Videos and channel-feed entries play here inside Koinonia. They remain public YouTube media and do not carry AGAPAY’s parish-only privacy protection.</p></div><span class="youtube-public-pill">Plays in Koinonia</span></div><div class="media-grid youtube-grid" id="youtubeMediaGrid"></div></section>
+      </div>
+      <div class="youtube-player-modal" id="youtubePlayerModal" hidden onclick="if(event.target===this) closeYouTubeMedia()">
+        <section class="youtube-player-dialog" role="dialog" aria-modal="true" aria-labelledby="youtubePlayerTitle">
+          <header><div><span class="eyebrow">YouTube · Public video</span><h2 id="youtubePlayerTitle">Parish video</h2></div><button class="youtube-player-close" type="button" onclick="closeYouTubeMedia()" aria-label="Close video">×</button></header>
+          <div class="youtube-player-frame"><iframe id="youtubePlayerFrame" title="Parish YouTube video" src="about:blank" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+        </section>
       </div>
       <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
     </main>

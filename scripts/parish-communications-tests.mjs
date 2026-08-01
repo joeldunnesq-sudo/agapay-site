@@ -208,8 +208,9 @@ assert.match(dashboardSource, /id="communicationsEnabledSwitch"[\s\S]*?onchange=
 const desktopOrder = [...dashboardSource.matchAll(/class="sidebar-nav-item"[^>]*id="(nav-[^"]+)"/g)].map((match) => match[1]);
 assert.deepEqual(
   desktopOrder.slice(desktopOrder.indexOf("nav-stewardship"), desktopOrder.indexOf("nav-text") + 1),
-  ["nav-stewardship", "nav-communications", "nav-bookstore", "nav-sacraments", "nav-directory", "nav-text"],
-  "Communications must sit directly above Commerce without moving the surrounding desktop items",
+  ["nav-stewardship", "nav-bookstore", "nav-sacraments", "nav-directory", "nav-communications", "nav-text"],
+  "Koinonia must sit inside the Parish tier group after the other donor-facing Parish tools",
 );
+assert.match(dashboardSource, /sidebar-nav-tier-group[\s\S]*nav-bookstore[\s\S]*nav-sacraments[\s\S]*nav-directory[\s\S]*nav-communications/);
 
 console.log("PASS - parish announcements expose accurate admin-only reader counts and names alongside safe authoring");

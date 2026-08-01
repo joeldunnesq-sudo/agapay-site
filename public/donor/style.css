@@ -2918,6 +2918,10 @@ body.donor-home {
 .koinonia-podcast-search button { border:0; border-radius:10px; padding:10px 17px; background:#0d1722; color:#fff; font-size:10px; font-weight:800; cursor:pointer; }
 .koinonia-podcast-search button:disabled { opacity:.55; }
 .koinonia-podcast-status { min-height:15px; margin:0 3px !important; }
+.koinonia-podcast-status[data-tone="loading"] { color:var(--k-gold-hover); }
+.koinonia-podcast-status[data-tone="success"] { color:#2f6846; font-weight:700; }
+.koinonia-podcast-status[data-tone="error"] { border-left:3px solid #a74444; padding-left:9px; color:#8c3030; font-weight:700; }
+.koinonia-podcast-results[aria-busy="true"] { min-height:80px; opacity:.55; }
 .koinonia-podcast-results { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
 .koinonia-podcast-result { display:grid; grid-template-columns:48px minmax(0,1fr) auto; align-items:center; gap:11px; border:1px solid var(--k-border); border-radius:14px; padding:11px; background:var(--k-surface); color:var(--k-text); text-align:left; cursor:pointer; }
 .koinonia-podcast-result:hover { border-color:var(--k-gold); background:var(--k-surface-2); }
@@ -2997,6 +3001,16 @@ body.donor-home {
 .youtube-public-pill { border-color:#693342; color:#ffbccb; }
 .youtube-card { border-color:#47303a; background:#171c24; }
 .youtube-card .media-thumbnail i.youtube-play { border:0; border-radius:12px; background:#f03; color:#fff; }
+.youtube-grid .youtube-card { width:100%; padding:0; font:inherit; text-align:left; cursor:pointer; }
+.youtube-player-modal { position:fixed; inset:0; z-index:1200; display:grid; place-items:center; padding:24px; background:rgba(5,15,23,.82); backdrop-filter:blur(8px); }
+.youtube-player-modal[hidden] { display:none; }
+.youtube-player-dialog { width:min(980px,100%); overflow:hidden; border:1px solid rgba(215,184,111,.45); border-radius:20px; background:#0d1722; box-shadow:0 28px 80px rgba(0,0,0,.45); }
+.youtube-player-dialog > header { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:17px 19px; color:#fff; }
+.youtube-player-dialog h2 { margin:3px 0 0; color:#fff; font-family:"Playfair Display",Georgia,serif; font-size:clamp(18px,3vw,27px); }
+.youtube-player-close { display:grid; width:38px; height:38px; flex:0 0 auto; place-items:center; border:1px solid rgba(255,255,255,.2); border-radius:999px; background:rgba(255,255,255,.08); color:#fff; font-size:25px; cursor:pointer; }
+.youtube-player-frame { aspect-ratio:16/9; background:#000; }
+.youtube-player-frame iframe { display:block; width:100%; height:100%; border:0; }
+.has-koinonia-media-modal { overflow:hidden; }
 .media-empty { color:#92a5af; }
 .agapay-player { position:relative; overflow:hidden; width:100%; margin-top:18px; border:1px solid #294354; border-radius:22px; aspect-ratio:16/9; background:#000; box-shadow:0 30px 80px rgba(0,0,0,.42); }
 .agapay-player video { width:100%; height:100%; object-fit:contain; }
@@ -3018,6 +3032,7 @@ body.donor-home {
 .watch-description ul { padding-left:22px; }
 @media (max-width:960px) { .media-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.media-feature{grid-template-columns:1fr;}.media-feature .media-thumbnail{min-height:0;}.media-feature .media-card-copy{padding:26px;} }
 @media (max-width:620px) { .media-page-shell,.media-watch-shell{padding:0 14px 90px}.media-heading{padding-top:22px}.media-heading h1{font-size:42px}.media-grid{grid-template-columns:1fr}.media-section-head{align-items:flex-start;flex-direction:column}.media-feature{margin-bottom:34px;border-radius:18px}.media-feature .media-card-copy{padding:21px}.agapay-player{margin-top:12px;border-radius:12px}.player-center-button{width:62px;height:62px}.player-control-row input{display:none}.youtube-section-mark{top:36px}.youtube-media-section .media-section-head{padding-right:0}.youtube-public-pill{display:none} }
+@media (max-width:620px) { .youtube-player-modal{padding:10px}.youtube-player-dialog{border-radius:14px}.youtube-player-dialog>header{padding:13px}.youtube-player-close{width:34px;height:34px} }
 
 
 /* ── PLEDGE TRACKER ─────────────────────────────────────────── */
@@ -7770,6 +7785,7 @@ textarea {
 .parish-life-back-link:hover { border-color: rgba(182, 130, 53, 0.5); background: #fffaf0; }
 .parish-life-back-link svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .parish-life-back-link + .topbar-title { margin-left: 0.3rem; }
+.koinonia-page-back { justify-self:start; margin:0 0 14px; background:rgba(255,255,255,.62); }
 
 @media (max-width: 700px) {
   .parish-life-announcement-list,
@@ -7944,7 +7960,7 @@ textarea {
 /* Koinonia reference alignment — the supplied prototype is the source for
    density, type, color, borders, and component proportions. The established
    calendar hero intentionally keeps its own visual system. */
-:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page) {
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page, .donor-news-page) {
   --k-bg: #f0ede4;
   --k-surface: #fff;
   --k-surface-2: #f5f2eb;
@@ -7963,16 +7979,16 @@ textarea {
   font-family: "Inter", Arial, sans-serif;
 }
 
-:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page) :is(button, input, textarea, select) {
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page, .donor-news-page) :is(button, input, textarea, select) {
   font-family: inherit;
 }
 
-:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page) :is(.app, .content, .media-app, .media-content, .page) {
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page, .donor-news-page) :is(.app, .content, .media-app, .media-content, .page) {
   background: var(--k-bg);
   color: var(--k-text);
 }
 
-:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page) .topbar {
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page, .donor-news-page) .topbar {
   min-height: 58px;
   border-bottom: 1px solid var(--k-divider);
   background: rgba(240, 237, 228, 0.94);
@@ -7980,7 +7996,7 @@ textarea {
   backdrop-filter: blur(14px);
 }
 
-:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page) .topbar-title {
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page, .donor-news-page) .topbar-title {
   color: var(--k-text);
   font-family: "Playfair Display", Georgia, serif;
   font-size: 18px;
@@ -7988,15 +8004,15 @@ textarea {
   letter-spacing: -0.01em;
 }
 
-:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page) .topbar-title::before { display: none; }
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page, .donor-news-page) .topbar-title::before { display: none; }
 
-:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page) .sidebar {
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page, .donor-news-page) .sidebar {
   border-right-color: rgba(184, 143, 66, 0.2);
   background: linear-gradient(180deg, #14202b, var(--k-navy));
   box-shadow: none;
 }
 
-:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page) .sidebar-card { display: none; }
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page, .donor-news-page) .sidebar-card { display: none; }
 
 :is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page) .page {
   width: min(100%, 760px);
@@ -8321,10 +8337,11 @@ textarea {
   border: 1px solid var(--k-gold);
   border-radius: 999px;
   padding: 6px 10px;
-  background: var(--k-gold);
-  color: #fff;
+  min-width: 62px;
+  background: #b88f42;
+  color: #0d1722;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 800;
   cursor: pointer;
 }
 .parish-life-feed-toggle.is-subscribed { background: var(--k-surface); color: var(--k-gold-hover); }

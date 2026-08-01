@@ -286,7 +286,7 @@ export const SECURITY_HEADERS = {
     "img-src 'self' data: https:; " +
     "connect-src 'self' https://challenges.cloudflare.com https://*.cloudflarestream.com; " +
     "media-src 'self' https://*.cloudflarestream.com; " +
-    "frame-src https://challenges.cloudflare.com; " +
+    "frame-src https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com; " +
     "object-src 'none'; " +
     "base-uri 'self'; " +
     "form-action 'self'"

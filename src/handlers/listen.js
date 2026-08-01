@@ -27,6 +27,12 @@ export async function handleListenSearch(request, env) {
   // Podcast Index requires HMAC-SHA1: SHA1(apiKey + apiSecret + unixTime)
   const apiKey    = env.PODCAST_INDEX_KEY    || '';
   const apiSecret = env.PODCAST_INDEX_SECRET || '';
+  if (!apiKey || !apiSecret) {
+    return new Response(JSON.stringify({ feeds: [], error: 'Podcast search is not configured.' }), {
+      status: 503,
+      headers: corsJson(),
+    });
+  }
   const ts        = Math.floor(Date.now() / 1000).toString();
 
   // Web Crypto HMAC-SHA1
@@ -49,7 +55,8 @@ export async function handleListenSearch(request, env) {
     });
 
     if (!resp.ok) {
-      return new Response(JSON.stringify({ feeds: [] }), { headers: corsJson() });
+      console.error('Podcast Index search failed:', resp.status);
+      return new Response(JSON.stringify({ feeds: [], error: 'Podcast search is temporarily unavailable.' }), { status: 502, headers: corsJson() });
     }
 
     const data  = await resp.json();

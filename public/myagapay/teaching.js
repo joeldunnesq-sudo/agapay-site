@@ -8,7 +8,7 @@ const TEACHING_FILTERS = Object.freeze([
 ]);
 
 let teachingState = { posts: [], unreadCount: 0, filter: "all" };
-let koinoniaPodcastState = { results: [], show: null, episodes: [] };
+let koinoniaPodcastState = { results: [], show: null, episodes: [], hasSearched: false, requestId: 0 };
 
 function setAudioLibraryMode(mode = "parish") {
   const selected = mode === "podcasts" ? "podcasts" : "parish";
@@ -18,6 +18,7 @@ function setAudioLibraryMode(mode = "parish") {
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", String(active));
   });
+  if (selected === "podcasts" && !koinoniaPodcastState.hasSearched) void runKoinoniaPodcastSearch("Orthodox");
 }
 
 function podcastText(node, selector) {
@@ -56,27 +57,46 @@ function renderKoinoniaPodcastResults() {
     </button>`).join("") : "";
 }
 
-async function searchKoinoniaPodcasts(event) {
-  event.preventDefault();
-  const query = document.getElementById("koinoniaPodcastQuery")?.value.trim() || "";
+async function runKoinoniaPodcastSearch(query, button = null) {
   const status = document.getElementById("koinoniaPodcastStatus");
-  const button = event.currentTarget.querySelector('button[type="submit"]');
-  if (!query) return;
+  const target = document.getElementById("koinoniaPodcastResults");
+  if (!query || !status || !target) return;
+  const requestId = ++koinoniaPodcastState.requestId;
+  koinoniaPodcastState.hasSearched = true;
   if (button) button.disabled = true;
+  status.dataset.tone = "loading";
   status.textContent = "Searching the podcast directory…";
+  target.setAttribute("aria-busy", "true");
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 12000);
   try {
-    const response = await fetch(`/api/listen/search?q=${encodeURIComponent(query)}`, { cache: "no-store" });
+    const response = await fetch(`/api/listen/search?q=${encodeURIComponent(query)}`, { cache: "no-store", signal: controller.signal });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "Podcast search is temporarily unavailable.");
+    if (!response.ok || data.error) throw new Error(data.error || "Podcast search is temporarily unavailable.");
+    if (requestId !== koinoniaPodcastState.requestId) return;
     koinoniaPodcastState.results = data.feeds || [];
+    status.dataset.tone = koinoniaPodcastState.results.length ? "success" : "empty";
     status.textContent = koinoniaPodcastState.results.length ? `${koinoniaPodcastState.results.length} podcasts found` : "No podcasts matched that search.";
     document.getElementById("koinoniaPodcastShow").hidden = true;
     renderKoinoniaPodcastResults();
   } catch (error) {
-    status.textContent = error.message || "Podcast search is temporarily unavailable.";
+    if (requestId !== koinoniaPodcastState.requestId) return;
+    koinoniaPodcastState.results = [];
+    renderKoinoniaPodcastResults();
+    status.dataset.tone = "error";
+    status.textContent = error.name === "AbortError" ? "Podcast search took too long. Please try again." : (error.message || "Podcast search is temporarily unavailable.");
   } finally {
+    window.clearTimeout(timeout);
+    target.setAttribute("aria-busy", "false");
     if (button) button.disabled = false;
   }
+}
+
+async function searchKoinoniaPodcasts(event) {
+  event.preventDefault();
+  const query = document.getElementById("koinoniaPodcastQuery")?.value.trim() || "";
+  const button = event.currentTarget.querySelector('button[type="submit"]');
+  await runKoinoniaPodcastSearch(query, button);
 }
 
 async function openKoinoniaPodcast(index) {
