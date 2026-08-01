@@ -4470,6 +4470,7 @@
     }
     syncModuleStatusNavigation('sacraments', sacramentsActive, sacIsOn);
     syncModuleStatusNavigation('directory', moduleIncluded('directory'), Boolean(currentParish?.directoryEnabled));
+    syncModuleStatusNavigation('communications', moduleIncluded('communications'), Boolean(currentParish?.communicationsEnabled));
   }
 
   // ── BOOKSTORE ───────────────────────────────────────────────
@@ -10303,16 +10304,54 @@
     const included = moduleIncluded('communications');
     const workspace = document.getElementById('communicationsWorkspace');
     const paywall = document.getElementById('communicationsPaywall');
+    const disabledNotice = document.getElementById('communicationsDisabledNotice');
     const badge = document.getElementById('communicationsNavBadge');
+    const toggle = document.getElementById('communicationsEnabledSwitch');
+    const enabled = Boolean(currentParish.communicationsEnabled);
     if (workspace) workspace.hidden = !included;
     if (paywall) paywall.hidden = included;
+    if (disabledNotice) disabledNotice.hidden = !included || enabled;
     if (badge) badge.hidden = included;
+    if (toggle) {
+      toggle.checked = enabled;
+      toggle.disabled = !included;
+      const label = toggle.closest('label')?.querySelector('em');
+      if (label) label.textContent = enabled ? 'On' : 'Off';
+    }
+    syncModuleStatusNavigation('communications', included, enabled);
     if (!included || (communicationsState.loaded && !force)) return;
     const response = await fetch(communicationsApi(), { headers: authHeaders(), cache: 'no-store' });
     const data = await response.json();
     if (!response.ok) { setStatus(data.error || 'Unable to load announcements.','error'); return; }
     communicationsState = { loaded: true, announcements: data.announcements || [], readers: communicationsState.readers || {} };
     renderCommunicationsList();
+  }
+
+  async function toggleCommunicationsFeature(input) {
+    if (!currentParish || !moduleIncluded('communications')) return;
+    const enabled = Boolean(input?.checked);
+    const previous = Boolean(currentParish.communicationsEnabled);
+    if (input) input.disabled = true;
+    try {
+      const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId), {
+        method: 'PATCH',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ communicationsEnabled: enabled })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || payload.detail || 'Unable to update Communications.');
+      currentParish.communicationsEnabled = Boolean(payload.parish?.communicationsEnabled ?? enabled);
+      communicationsState.loaded = false;
+      setStatus(currentParish.communicationsEnabled ? 'Communications is on for parishioners.' : 'Communications is off for parishioners.', 'success');
+      await loadCommunicationsTab(true);
+    } catch (error) {
+      currentParish.communicationsEnabled = previous;
+      if (input) input.checked = previous;
+      setStatus(error.message, 'error');
+      await loadCommunicationsTab();
+    } finally {
+      if (input) input.disabled = false;
+    }
   }
 
   async function createAnnouncementDraft(event) {

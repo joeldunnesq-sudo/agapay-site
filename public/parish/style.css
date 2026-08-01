@@ -742,6 +742,7 @@
 
     .communications-admin-shell { display:grid; gap:20px; }
     .communications-admin-header { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; border:1px solid var(--line); border-radius:18px; padding:22px; background:linear-gradient(135deg,#fff,#f7f1e5); }
+    .communications-admin-actions { display:flex; align-items:center; justify-content:flex-end; gap:12px; flex-wrap:wrap; }
     .communications-admin-header h1, .communications-compose h2, .communications-list-head h2 { margin:4px 0 6px; font-family:Georgia,serif; color:var(--deep); }
     .communications-admin-header p { margin:0; color:var(--muted); }
     .communications-grid { display:grid; grid-template-columns:minmax(280px,.72fr) minmax(420px,1.28fr); gap:18px; align-items:start; }
@@ -776,7 +777,7 @@
     .communications-empty { border:1px dashed var(--line); border-radius:12px; padding:26px; text-align:center; color:var(--muted); }
     .communications-empty strong { display:block; color:var(--deep); font-family:Georgia,serif; font-size:20px; }
     .communications-paywall { text-align:center; }
-    @media (max-width:900px) { .communications-grid { grid-template-columns:1fr; } .communications-admin-header { align-items:flex-start; flex-direction:column; } .communications-row { flex-direction:column; } .communications-row-actions { justify-content:flex-start; } }
+    @media (max-width:900px) { .communications-grid { grid-template-columns:1fr; } .communications-admin-header { align-items:flex-start; flex-direction:column; } .communications-admin-actions { justify-content:flex-start; width:100%; } .communications-row { flex-direction:column; } .communications-row-actions { justify-content:flex-start; } }
     .btn-row, .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
     .btn-danger-sm, .icon-button { background: rgba(150,40,40,0.06); color: #8a2929; border: 1px solid rgba(150,40,40,0.18); border-radius: 7px; width: 28px; height: 28px; display: inline-grid; place-items: center; padding: 0; font-size: 13px; cursor: pointer; box-shadow: none; }
     /* Link boxes */

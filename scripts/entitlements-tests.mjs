@@ -193,12 +193,16 @@ await test("the full Commerce suite is Parish-only while Stewardship retains Boo
   assert.equal(commerceSuiteEnabledFor({ subscriptionTier: "giving" }), false);
 });
 
-await test("communications is available only on current Parish-level tiers", async () => {
+await test("communications requires a current Parish-level tier and honors the parish on/off choice", async () => {
   assert.equal(communicationsEnabledFor({ subscriptionTier: "parish" }), true);
+  assert.equal(communicationsEnabledFor({ subscriptionTier: "parish", communicationsEnabled: false }), false);
   assert.equal(communicationsEnabledFor({ subscriptionTier: "diocese" }), true);
   assert.equal(communicationsEnabledFor({ subscriptionTier: "stewardship" }), false);
   assert.equal(communicationsEnabledFor({ subscriptionTier: "mission", stewardshipStatus: "active" }), false);
-  assert.equal(entitlementsSummary({ subscriptionTier: "parish" }).modules.communications.source, "tier");
+  const disabled = entitlementsSummary({ subscriptionTier: "parish", communicationsEnabled: false }).modules.communications;
+  assert.equal(disabled.included, true, "turning Communications off must not remove the staff workspace entitlement");
+  assert.equal(disabled.parishHasEnabled, false);
+  assert.equal(disabled.source, "tier");
 });
 
 await test("directoryEnabledFor requires the tier and both parish member-directory switches", async () => {
