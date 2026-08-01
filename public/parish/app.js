@@ -69,6 +69,30 @@
     } catch {}
   }
 
+  function setDashboardBootMessage(title, message) {
+    const titleEl = document.getElementById('dashboardBootTitle');
+    const messageEl = document.getElementById('dashboardBootMessage');
+    if (titleEl && title) titleEl.textContent = title;
+    if (messageEl && message) messageEl.textContent = message;
+  }
+
+  function finishDashboardBoot() {
+    document.body.classList.remove('dashboard-booting', 'dashboard-load-failed');
+    document.body.classList.add('dashboard-ready');
+    document.querySelector('.app')?.setAttribute('aria-busy', 'false');
+  }
+
+  function failDashboardBoot(message) {
+    setDashboardBootMessage('We could not open the dashboard', message || 'Please sign in again and retry.');
+    document.body.classList.add('dashboard-load-failed');
+    document.getElementById('dashboardBootRecovery')?.removeAttribute('hidden');
+  }
+
+  function setDashboardRefreshing(refreshing) {
+    document.body.classList.toggle('dashboard-refreshing', refreshing);
+    document.querySelector('.app')?.setAttribute('aria-busy', refreshing ? 'true' : 'false');
+  }
+
   function logoutParish() {
     try {
       sessionStorage.removeItem('agapay_parish_id');
@@ -8349,7 +8373,18 @@
 
   async function loadDashboardInner(btn) {
     const parishId = document.getElementById('parishId').value.trim();
-    if (!parishId || !document.getElementById('parishToken').value.trim()) { setStatus('Enter the parish ID and password.','error'); return; }
+    const initialLoad = !currentParish;
+    if (!parishId || !document.getElementById('parishToken').value.trim()) {
+      if (initialLoad) failDashboardBoot('Your parish session has expired. Please sign in again.');
+      setStatus('Enter the parish ID and password.','error');
+      return;
+    }
+    if (initialLoad) {
+      setDashboardBootMessage('Preparing your parish workspace', 'Loading your parish, plan, and available tools.');
+      document.querySelector('.app')?.setAttribute('aria-busy', 'true');
+    } else {
+      setDashboardRefreshing(true);
+    }
     if (btn) { btn.classList.add('loading'); btn.disabled = true; }
     const loadBtn = document.getElementById('loadBtn');
     if (loadBtn) { loadBtn.classList.add('loading'); loadBtn.disabled = true; }
@@ -8358,12 +8393,15 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Unable to load dashboard');
       currentParish = data.parish;
-      await refreshSubscriptionStatus({ quiet: true });
-      await refreshStripeStatus({ quiet: true });
+      await Promise.all([
+        refreshSubscriptionStatus({ quiet: true }),
+        refreshStripeStatus({ quiet: true })
+      ]);
       bookstoreCatalogState = { loaded: false, products: [], lowStockProducts: [], countSessions: [], starterCatalog: [] };
       bookstoreLowStockOnly = false;
       saveSession();
       renderDashboard();
+      if (initialLoad) finishDashboardBoot();
       syncBookstoreLowStockNavigation();
       setTimeout(() => loadBookstoreLowStockBadge(), 150);
       const googleCalendarResult = new URLSearchParams(window.location.search).get('googleCalendar');
@@ -8391,8 +8429,12 @@
       stewardshipState.loaded = false;
       if (activeTab === 'stewardship') loadStewardshipPanel(true);
       if (activeTab === 'reconcile') loadReconciliation();
-    } catch (err) { setStatus(err.message,'error'); }
+    } catch (err) {
+      if (initialLoad) failDashboardBoot(err.message);
+      setStatus(err.message,'error');
+    }
     finally {
+      if (!initialLoad) setDashboardRefreshing(false);
       if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
       if (loadBtn) { loadBtn.classList.remove('loading'); loadBtn.disabled = false; }
     }

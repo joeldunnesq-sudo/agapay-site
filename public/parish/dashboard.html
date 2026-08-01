@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/parish/style.css?v=20260801ministries1" />
+  <link rel="stylesheet" href="/parish/style.css?v=20260801tierload1" />
   <link rel="stylesheet" href="/parish/redesign.css?v=20260801bulletin4" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="stylesheet" href="/styles/stewardship.css?v=20260731healthgrid1" />
@@ -22,7 +22,17 @@
   <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 </head>
-<body>
+<body class="dashboard-booting">
+<div class="dashboard-boot-screen" id="dashboardBootScreen" role="status" aria-live="polite" aria-label="Loading parish dashboard">
+  <div class="dashboard-boot-card">
+    <img src="/mark.png" alt="" aria-hidden="true" />
+    <span class="dashboard-boot-eyebrow">AGAPAY Parish</span>
+    <h1 id="dashboardBootTitle">Preparing your parish workspace</h1>
+    <p id="dashboardBootMessage">Loading your parish, plan, and available tools.</p>
+    <div class="dashboard-boot-progress" aria-hidden="true"><span></span></div>
+    <a class="dashboard-boot-recovery" id="dashboardBootRecovery" href="/give/login" hidden>Return to parish login</a>
+  </div>
+</div>
 <div class="app">
   <aside class="sidebar">
     <div class="sidebar-header">
@@ -1881,6 +1891,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
-  <script src="/parish/app.js?v=20260801bulletin4"></script>
+  <script src="/parish/app.js?v=20260801tierload1"></script>
 </body>
 </html>
