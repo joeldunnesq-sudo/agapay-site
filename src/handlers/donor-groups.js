@@ -313,8 +313,12 @@ export async function getLatestGroupMessageCatchUp(env, { parishId, ministryId, 
 }
 
 async function resolveGroupContext(request, env) {
-  const [donor, user] = await Promise.all([requireDonor(request, env), currentUser(request, env)]);
-  if (!donor?.email || !user?.id) return null;
+  const donor = await requireDonor(request, env);
+  if (!donor?.email) return null;
+  const user = await currentUser(request, env);
+  if (!user?.id) {
+    throw new GroupMessageAccessError("Your donor account is not linked to a parish member profile.", 403);
+  }
   const parishId = String(donor.defaultParishId || "").trim();
   if (!parishId) throw new GroupMessageAccessError("Choose your home parish to view your groups.", 422);
   const person = await d1First(env, `
@@ -338,14 +342,15 @@ function errorResponse(error) {
 export async function handleDonorGroups(request, env, ctx = null) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   if (!database(env)) return missingProductionStoreResponse();
+  const url = new URL(request.url);
+  const path = url.pathname.replace(/^\/api\/donor\/groups\/?/, "");
+  const parts = path ? path.split("/").map(decodeURIComponent) : [];
+  const isActivityRequest = parts.length === 1 && parts[0] === "activity" && request.method === "GET";
   try {
     const context = await resolveGroupContext(request, env);
     if (!context) return unauthorized();
-    const url = new URL(request.url);
-    const path = url.pathname.replace(/^\/api\/donor\/groups\/?/, "");
-    const parts = path ? path.split("/").map(decodeURIComponent) : [];
 
-    if (parts.length === 1 && parts[0] === "activity" && request.method === "GET") {
+    if (isActivityRequest) {
       return privateJson(await listGroupActivity(env, context));
     }
 
@@ -381,6 +386,9 @@ export async function handleDonorGroups(request, env, ctx = null) {
     }
     return privateJson({ error: "Method not allowed" }, { status: 405 });
   } catch (error) {
+    if (isActivityRequest && error instanceof GroupMessageAccessError && error.status === 403) {
+      return privateJson({ available: false, activity: [], unreadCount: 0 });
+    }
     return errorResponse(error);
   }
 }

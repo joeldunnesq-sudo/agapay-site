@@ -217,6 +217,10 @@ assert.match(handlerSource, /const CONTENT_TYPE = "group_message"/);
 assert.match(handlerSource, /mp\.status = 'active'/);
 assert.match(handlerSource, /ml\.active = 1/);
 assert.match(handlerSource, /Only active ministry leaders can view member read status/);
+assert.match(handlerSource, /if \(!donor\?\.email\) return null;[\s\S]*donor account is not linked to a parish member profile/,
+  "a valid donor without a platform identity must be forbidden without being treated as signed out");
+assert.match(handlerSource, /isActivityRequest[\s\S]*available: false, activity: \[\], unreadCount: 0/,
+  "the Parish Life activity rollup must tolerate accounts that do not have Groups access");
 assert.doesNotMatch(handlerSource, /parish_content_reads/, "group messages must not implement parallel read-tracking SQL");
 const groupsUiSource = readFileSync(path.join(root, "public", "myagapay", "groups.js"), "utf8");
 assert.match(groupsUiSource, /group\.role === "leader" \? `<button[^`]+Who’s caught up/);
