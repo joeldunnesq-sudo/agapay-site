@@ -39,11 +39,11 @@ breaking anything):
   pages (clickjacking defense). `SAMEORIGIN` rather than `DENY` in case
   AGAPAY ever needs to frame itself; nothing today intentionally embeds
   AGAPAY pages in a third-party iframe.
-- `Strict-Transport-Security: max-age=15552000` (180 days) — deliberately
-  **without** `includeSubDomains` or `preload`. Add those later once
-  you're confident every subdomain (if any exist beyond `agapay.app`
-  itself) is HTTPS-only; `preload` in particular is slow to undo once
-  submitted to browser preload lists.
+- `Strict-Transport-Security: max-age=2592000; includeSubDomains` (30 days)
+  — rollout stage 1. This intentionally omits `preload` and uses a
+  moderate lifetime while the effect across the verified DNS inventory
+  is monitored. Do not increase the lifetime until this stage has run
+  cleanly for its full 30-day `max-age`.
 - `Permissions-Policy: geolocation=(), microphone=(), camera=(self),
   payment=(self)` — camera is deliberately allowed same-origin only
   (`self`), not blocked entirely, because the bookstore barcode scanner
@@ -108,3 +108,37 @@ calling out, not the browser — so they're irrelevant to a browser CSP.
    enforcing header name.
 5. Longer-term, consider removing `'unsafe-inline'` from `script-src` via
    nonces or hashes — a bigger project, not part of this pass.
+
+## HSTS rollout toward preload readiness
+
+Inventory checked on 2026-07-31 (America/Chicago):
+
+| DNS name | Record/use | HTTPS status |
+|---|---|---|
+| `agapay.app` | Proxied Worker plus apex mail/TXT records | HTTPS returns 200 with a valid certificate; HTTP redirects to the same host over HTTPS |
+| `send.agapay.app` | SES MX and SPF TXT only | No A, AAAA, CNAME, or HTTP service; HSTS does not affect its mail transport |
+| `cf2024-1._domainkey.agapay.app` | Cloudflare DKIM TXT only | No web service |
+| `google._domainkey.agapay.app` | Google DKIM TXT only | No web service |
+| `resend._domainkey.agapay.app` | Resend DKIM TXT only | No web service |
+| `_dmarc.agapay.app` | DMARC TXT only | No web service |
+| `www.agapay.app` | No DNS record | Does not resolve; Cloudflare also reports it as absent |
+| `staging.agapay.app` | Referenced only as an accounting profile fallback | No DNS record. Deployed staging uses `agapay-site-staging.joeldunnesq.workers.dev`, which is outside `agapay.app` and unaffected by the parent policy |
+
+The Cloudflare DNS dashboard showed all 11 public records in the zone. The
+repository's `wrangler.toml` declares no `agapay.app` routes; Cloudflare's
+zone shows the production Worker attached only to the apex. This inventory
+cannot prove that no private or split-horizon DNS names exist outside the
+public Cloudflare zone, so that limitation must remain explicit in every
+later rollout decision.
+
+Rollout stages:
+
+1. **Current:** `max-age=2592000; includeSubDomains`. Run for the full 30
+   days and monitor for failed requests or subdomain breakage.
+2. After stage 1 is confirmed clean, change both header locations to
+   `max-age=63072000; includeSubDomains` and monitor again.
+3. Only after the full-duration policy is stable, add `preload` to both
+   header locations. Adding the directive merely makes the domain eligible
+   for submission.
+4. Submission at `hstspreload.org` is a separate, deliberate human action.
+   No preload-list submission was made as part of stage 1.
