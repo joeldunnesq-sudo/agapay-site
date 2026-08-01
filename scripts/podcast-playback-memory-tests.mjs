@@ -195,6 +195,10 @@ assert.match(teachingHtml, /id="koinoniaContinueListening"[\s\S]*Continue Listen
 assert.match(teachingHtml, /id="koinoniaPodcastSpeed"[\s\S]*1\.25x[\s\S]*2x/);
 assert.match(teachingHtml, /skipKoinoniaPodcast\(-15\)[\s\S]*skipKoinoniaPodcast\(30\)/);
 assert.match(teachingHtml, /data-podcast-library-view="latest"[\s\S]*data-podcast-library-view="subscriptions"[\s\S]*data-podcast-library-view="discover"/);
+assert.match(teachingHtml, /data-podcast-library-pane="discover"[\s\S]*id="koinoniaPodcastRssUrl"[\s\S]*Add RSS/,
+  "Discover must expose direct RSS feed import");
+assert.match(teaching, /function importKoinoniaPodcastFeed[\s\S]*\/api\/listen\/rss[\s\S]*\/api\/listen\/subscriptions/,
+  "RSS import must validate the feed before saving a subscription");
 assert.match(teachingHtml, /id="koinoniaPodcastExpand"[\s\S]*id="koinoniaPodcastSleepTimer"[\s\S]*id="koinoniaPodcastQueueList"/);
 assert.match(teachingHtml, /koinonia-podcast-player-shell[\s\S]*id="koinoniaPodcastShare"[\s\S]*Share episode/,
   "the expanded player must use its structured shell and expose the share action");
@@ -202,6 +206,12 @@ assert.match(donorStyles, /\.koinonia-podcast-player\.is-expanded \{[^}]*inset:0
   "the expanded player must cover the viewport at every responsive breakpoint");
 assert.match(donorStyles, /\.koinonia-podcast-player\.is-expanded \{[^}]*height:100dvh[^}]*overflow:hidden/,
   "the expanded player must fit the viewport without requiring page-level scrolling");
+assert.match(donorStyles, /\.koinonia-podcast-player \{ position:static;/,
+  "the mini player must consume its own bottom row instead of covering page controls");
+assert.match(donorStyles, /\.donor-teaching-page \.teaching-page-shell \{[^}]*overflow-y:auto/,
+  "the audio library must scroll independently above the docked player");
+assert.match(donorStyles, /\.koinonia-podcast-player\.is-expanded \.koinonia-podcast-full-player \{[^}]*display:flex/,
+  "expanded playback must use the Listen-style full-screen surface");
 assert.match(donorStyles, /#koinoniaPodcastQueueList \{[^}]*overflow:auto/,
   "only a long Up Next queue should scroll inside the fitted player");
 assert.match(donorStyles, /grid-template-areas:"now" "transport" "timeline" "options" "details"/,
