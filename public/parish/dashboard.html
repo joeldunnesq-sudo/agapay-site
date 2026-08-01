@@ -74,7 +74,7 @@
           <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           <span class="nav-label">Stewardship Health</span>
         </div>
-        <div class="sidebar-nav-item" onclick="switchTab('communications')" id="nav-communications">
+        <div class="sidebar-nav-item" onclick="switchTab('communications')" id="nav-communications" hidden>
           <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>
           <span class="nav-label">Communications</span>
           <span class="nav-module-status" id="communicationsNavStatus" hidden>Off</span>
@@ -1765,7 +1765,7 @@
     <span>Directory</span>
     <em class="mobile-module-status" hidden>Off</em>
   </button>
-  <button class="mobile-tab-link" type="button" data-nav-tab="communications" onclick="switchTab('communications')">
+  <button class="mobile-tab-link" type="button" data-nav-tab="communications" onclick="switchTab('communications')" hidden>
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 5h18v18H5z"/><path d="M9 10h10"/><path d="M9 14h10"/><path d="M9 18h6"/></svg>
     <span>Feed</span>
     <em class="mobile-module-status" hidden>Off</em>

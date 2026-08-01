@@ -2857,6 +2857,22 @@ body.donor-home {
   text-decoration: none;
 }
 
+.parish-life-page-shell { max-width: 960px; margin: 0 auto; }
+.parish-life-sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
+.parish-life-sections .mobile-product-card { min-height: 150px; }
+.parish-life-sections .mobile-product-card[aria-disabled="true"] { cursor: default; }
+.parish-life-activity { margin-top: 1.6rem; }
+.parish-life-activity-list { overflow: hidden; border: 1px solid #ded6c6; border-radius: 17px; background: #fff; box-shadow: 0 10px 26px rgba(6,21,34,.05); }
+.parish-life-activity-row { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: .85rem; border-top: 1px solid #ebe5d9; padding: .9rem 1rem; color: #061522; text-decoration: none; }
+.parish-life-activity-row:first-child { border-top: 0; }
+.parish-life-activity-row.is-unread { background: #fffaf0; }
+.parish-life-activity-tag { border-radius: 999px; padding: .28rem .48rem; background: #efe7d6; color: #765a1d; font-size: .63rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.parish-life-activity-copy { min-width: 0; }
+.parish-life-activity-copy strong, .parish-life-activity-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.parish-life-activity-copy small { margin-top: .2rem; color: #68757b; }
+.parish-life-activity-row time { color: #68757b; font-size: .72rem; white-space: nowrap; }
+@media (max-width: 700px) { .parish-life-sections { grid-template-columns: 1fr; } .parish-life-activity-row { grid-template-columns: auto minmax(0,1fr); } .parish-life-activity-row time { grid-column: 2; } }
+
 
 /* ── PLEDGE TRACKER ─────────────────────────────────────────── */
 .pledge-tracker-card {

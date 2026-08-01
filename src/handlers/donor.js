@@ -40,6 +40,7 @@ import {
 } from "../lib/subscriptions.js";
 
 import { bookstoreEnabledFor, communicationsEnabledFor, directoryEnabledFor, givingFeatureAccess, hasParishPlusAccess, sacramentsEnabledFor, stewardshipToolAccess } from "../lib/entitlements.js";
+import { parishLifeAvailableFor } from "../lib/parish-life-access.js";
 import { recordParishFeatureRequest } from "../lib/parish-feature-requests.js";
 import { getDirectorySettings } from "../directory/settings.js";
 import { resolveDirectorySelfServiceContext, syncSelfServiceContactsFromDonor } from "../directory/self-service.js";
@@ -911,6 +912,7 @@ export async function handleDonorDashboard(request, env) {
         const directorySettings = await getDirectorySettings(env, parish.id);
         parish.directoryEnabled = directoryEnabledFor(found.registration, directorySettings);
         parish.communicationsEnabled = communicationsEnabledFor(found.registration);
+        parish.parishLifeAvailable = parishLifeAvailableFor(env);
         parish.pledgeTrackerEnabled = stewardshipToolAccess(found.registration);
       }
     }

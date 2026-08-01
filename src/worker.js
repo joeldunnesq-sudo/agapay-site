@@ -89,6 +89,7 @@ import {
 
 import { bookstoreEnabledFor, sacramentsEnabledFor } from "./lib/entitlements.js";
 import { accountingAvailableForParish } from "./lib/accounting-demo-access.js";
+import { parishLifeAvailableFor } from "./lib/parish-life-access.js";
 import { runScheduledAccountingIntegrity } from "./accounting/integrity/scheduler.js";
 import { synchronizeGivingCatalogWithAccounting } from "./accounting/source-wiring.js";
 import {
@@ -669,6 +670,8 @@ const MYAGAPAY_ASSET_ROUTES = new Map([
   ["/myagapay/directory/", "/myagapay/directory.html"],
   ["/myagapay/bookstore", "/myagapay/bookstore.html"],
   ["/myagapay/bookstore/", "/myagapay/bookstore.html"],
+  ["/myagapay/parish-life", "/myagapay/parish-life.html"],
+  ["/myagapay/parish-life/", "/myagapay/parish-life.html"],
   ["/myagapay/feed", "/myagapay/feed.html"],
   ["/myagapay/feed/", "/myagapay/feed.html"],
   ["/myagapay/groups", "/myagapay/groups.html"],
@@ -2720,14 +2723,36 @@ export default {
     ctx.waitUntil(sendWeeklySacramentDigestEmails(env, event.scheduledTime)
       .then((results) => console.log("weekly_sacrament_digest", JSON.stringify(results)))
       .catch((error) => console.error("weekly_sacrament_digest_failed", error?.message || String(error))));
-    ctx.waitUntil(sendWeeklyAnnouncementDigestEmails(env, event.scheduledTime)
-      .then((results) => console.log("weekly_announcement_digest", JSON.stringify(results)))
-      .catch((error) => console.error("weekly_announcement_digest_failed", error?.message || String(error))));
+    if (parishLifeAvailableFor(env)) {
+      ctx.waitUntil(sendWeeklyAnnouncementDigestEmails(env, event.scheduledTime)
+        .then((results) => console.log("weekly_announcement_digest", JSON.stringify(results)))
+        .catch((error) => console.error("weekly_announcement_digest_failed", error?.message || String(error))));
+    }
   },
 
   async fetch(request, env, ctx) {
     if (env && !env.DB && env.AGAPAY_DB) env.DB = env.AGAPAY_DB;
     const url = new URL(request.url);
+
+    const parishLifeAvailable = parishLifeAvailableFor(env);
+    const parishLifeApiRoute =
+      url.pathname === "/api/donor/feed" || url.pathname.startsWith("/api/donor/feed/")
+      || url.pathname === "/api/donor/groups" || url.pathname.startsWith("/api/donor/groups/")
+      || url.pathname === "/api/donor/digest/subscription"
+      || url.pathname === "/api/donor/digest/unsubscribe"
+      || url.pathname === "/api/admin/communications/send-weekly-digest"
+      || (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/communications"));
+    if (parishLifeApiRoute && !parishLifeAvailable) {
+      return json({ error: "Not found" }, { status: 404 });
+    }
+
+    const parishLifePageRoute = /^\/myagapay\/(?:parish-life|feed|groups)(?:\.html)?\/?$/.test(url.pathname);
+    if (parishLifePageRoute && !parishLifeAvailable) {
+      return new Response("Not found", {
+        status: 404,
+        headers: { "Cache-Control": "no-store", "Content-Type": "text/plain; charset=utf-8", "X-Robots-Tag": "noindex, nofollow" },
+      });
+    }
 
     // OPTIONS preflight for public API endpoints called cross-origin
     if (request.method === "OPTIONS" && url.pathname.startsWith("/api/")) {

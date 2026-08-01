@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parish Life | My AGAPAY</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260801parishlife0" />
+  <script src="/pwa-register.js" defer></script>
+  <script src="/myagapay-shell.js?v=20260801parishlife0" defer></script>
+  <script src="/myagapay/parish-life.js?v=20260801parishlife0" defer></script>
+  <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
+  <meta name="theme-color" content="#061522" />
+</head>
+<body class="donor-mobile-page donor-parish-life-page">
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-scroll">
+        <div class="brand"><div class="brand-row"><a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home"><img src="/mark.png" alt="AGAPAY" /></a><span class="brand-name">AGAPAY</span><span class="dashboard-home-cue">Home</span></div><span class="pill">Donor Dashboard</span></div>
+        <div class="profile-panel"><div class="profile-name">Parish Life</div><div class="profile-meta" id="parishLifeSidebarName">Your church community</div></div>
+        <nav class="nav unified-product-nav"></nav>
+        <div class="sidebar-card"><h3>One parish home</h3><div class="mini-item"><strong>Stay connected</strong><span>News and ministry conversations come together here.</span></div><div class="mini-item"><strong>Your unread total</strong><span>Counts reflect only content available to your account.</span></div></div>
+      </div>
+      <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/dashboard">Back to giving</a></div>
+    </aside>
+    <main class="content donor-mobile-content">
+      <div class="topbar"><div class="topbar-title">Parish Life</div></div>
+      <div class="page parish-life-page-shell">
+        <section class="feed-hero" aria-labelledby="parishLifeHeading">
+          <div><span class="eyebrow">Parish life</span><h1 id="parishLifeHeading">Your church, gathered here.</h1><p id="parishLifeDescription">Announcements, ministry conversations, teaching, and media from your parish.</p></div>
+          <span class="feed-unread-summary" id="parishLifeUnreadSummary" hidden></span>
+        </section>
+
+        <section class="parish-life-sections" aria-label="Parish Life sections">
+          <a class="mobile-product-card live" href="/myagapay/feed">
+            <span>Parish news</span><em class="unified-nav-badge hub-unread-badge" id="parishLifeAnnouncementsUnread" hidden></em>
+            <strong>Announcements</strong><p>Read notices, reminders, and timely parish updates.</p>
+          </a>
+          <a class="mobile-product-card live" href="/myagapay/groups">
+            <span>Your ministries</span><em class="unified-nav-badge hub-unread-badge" id="parishLifeGroupsUnread" hidden></em>
+            <strong>Groups</strong><p>Catch up on private conversations from ministries you belong to.</p>
+          </a>
+          <article class="mobile-product-card coming-soon" aria-disabled="true">
+            <span>Coming soon</span><strong>Teaching</strong><p>Formation and parish teaching will have a home here.</p>
+          </article>
+          <article class="mobile-product-card coming-soon" aria-disabled="true">
+            <span>Coming soon</span><strong>Media</strong><p>Parish audio, video, and shared resources will appear here.</p>
+          </article>
+        </section>
+
+        <section class="parish-life-activity" aria-labelledby="parishLifeActivityHeading">
+          <div class="mobile-section-head"><h2 id="parishLifeActivityHeading">Recent activity</h2></div>
+          <div class="notice" id="parishLifeStatus">Loading parish activity...</div>
+          <div class="parish-life-activity-list" id="parishLifeActivityList" aria-live="polite"></div>
+        </section>
+      </div>
+      <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
+    </main>
+  </div>
+</body>
+</html>
