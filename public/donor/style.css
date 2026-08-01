@@ -7624,6 +7624,113 @@ textarea {
 .parish-life-activity-row.is-unread { background: #fff9ec; }
 .parish-life-activity-tag { background: #efe4cc; color: #765719; letter-spacing: 0.1em; }
 
+/* Single Today/Koinonia landing. The same calendar hero is shared with the
+   full calendar; Communications-only sections are inserted by JavaScript. */
+.donor-parish-life-page .parish-life-page-shell {
+  display: grid;
+  gap: 1.3rem;
+  max-width: 980px;
+}
+
+.donor-parish-life-page .parish-life-liturgical-hero {
+  margin: 0;
+  border-color: rgba(226, 190, 116, 0.28);
+  box-shadow: 0 18px 48px rgba(7, 21, 34, 0.2);
+}
+
+.donor-parish-life-page .parish-life-saint-card {
+  margin: 0;
+  border: 1px solid rgba(226, 190, 116, 0.24);
+  border-radius: 16px;
+  background: linear-gradient(145deg, #0d2032, #071522);
+  box-shadow: 0 14px 34px rgba(7, 21, 34, 0.16);
+}
+
+.donor-parish-life-page .parish-life-saint-card .cal-saint-strip {
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+}
+
+.parish-life-home-section { display: grid; gap: 0.8rem; }
+.parish-life-section-head { display: flex; align-items: end; justify-content: space-between; gap: 1rem; padding: 0 0.15rem; }
+.parish-life-section-head h2 { margin: 0; color: var(--pl-ink); font-family: var(--serif); font-size: clamp(1.65rem, 4vw, 2.2rem); font-weight: 600; letter-spacing: -0.02em; }
+.parish-life-section-head a { color: #8a6427; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.04em; text-decoration: none; }
+.parish-life-section-head a::after { content: "  →"; }
+.parish-life-section-head a:hover { color: var(--pl-ink); }
+
+.parish-life-services-state,
+.parish-life-empty-state {
+  border: 1px solid var(--pl-line);
+  border-radius: 16px;
+  padding: 1.2rem 1.3rem;
+  background: rgba(255, 253, 248, 0.92);
+  box-shadow: 0 12px 30px rgba(10, 26, 41, 0.06);
+}
+.parish-life-services-state strong,
+.parish-life-empty-state strong { display: block; color: var(--pl-ink); font-family: var(--serif); font-size: 1.18rem; font-weight: 600; }
+.parish-life-services-state p,
+.parish-life-empty-state p { margin: 0.25rem 0 0; color: var(--pl-muted); font-size: 0.84rem; line-height: 1.55; }
+
+#parishLifeTierSections { display: grid; gap: 1.65rem; }
+.parish-life-announcement-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
+.parish-life-announcement-card {
+  display: grid;
+  align-content: start;
+  gap: 0.65rem;
+  min-height: 210px;
+  border: 1px solid var(--pl-line);
+  border-radius: 16px;
+  padding: 1.2rem;
+  background: var(--pl-paper);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 12px 30px rgba(10, 26, 41, 0.07);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.parish-life-announcement-card:hover { transform: translateY(-2px); box-shadow: 0 18px 38px rgba(10, 26, 41, 0.11); }
+.parish-life-announcement-card.is-unread { border-color: rgba(182, 130, 53, 0.42); }
+.parish-life-card-flags { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.parish-life-card-flags em { border-radius: 999px; padding: 0.3rem 0.55rem; background: #efe4cc; color: #765719; font-size: 0.62rem; font-style: normal; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.parish-life-card-flags em:first-child { background: var(--pl-ink); color: var(--pl-gold-light); }
+.parish-life-announcement-card > strong { color: var(--pl-ink); font-family: var(--serif); font-size: 1.35rem; font-weight: 600; line-height: 1.14; }
+.parish-life-announcement-card p { margin: 0; color: var(--pl-muted); font-size: 0.8rem; line-height: 1.55; }
+.parish-life-announcement-card time { align-self: end; color: #8a744d; font-size: 0.68rem; font-weight: 700; }
+
+.parish-life-recording-list { overflow: hidden; border: 1px solid var(--pl-line); border-radius: 16px; background: var(--pl-paper); box-shadow: 0 12px 30px rgba(10, 26, 41, 0.06); }
+.parish-life-recording-row { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 0.85rem; min-height: 72px; border-top: 1px solid var(--pl-line); padding: 0.8rem 1rem; color: inherit; text-decoration: none; }
+.parish-life-recording-row:first-child { border-top: 0; }
+.parish-life-recording-row:hover { background: #f8f1e4; }
+.parish-life-audio-icon { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 50%; background: var(--pl-ink); color: var(--pl-gold-light); font-size: 0.72rem; }
+.parish-life-recording-row > span:nth-child(2) { display: grid; gap: 0.2rem; }
+.parish-life-recording-row strong { color: var(--pl-ink); font-family: var(--serif); font-size: 1.08rem; font-weight: 600; }
+.parish-life-recording-row small { color: var(--pl-muted); font-size: 0.7rem; }
+.parish-life-recording-row em { color: #8a6427; font-size: 0.68rem; font-style: normal; font-weight: 800; text-transform: uppercase; }
+
+.parish-life-ministry-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; }
+.parish-life-ministry-tile { display: grid; min-height: 145px; align-content: center; justify-items: center; gap: 0.45rem; border: 1px solid var(--pl-gold-line); border-radius: 16px; padding: 1rem; background: linear-gradient(150deg, #0d2133, #081726); color: #f8f1e3; text-align: center; text-decoration: none; box-shadow: 0 12px 30px rgba(7, 18, 30, 0.18); }
+.parish-life-ministry-tile:hover { border-color: rgba(226, 190, 116, 0.55); transform: translateY(-2px); }
+.parish-life-ministry-mark { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid rgba(226, 190, 116, 0.25); border-radius: 50%; color: var(--pl-gold-light); }
+.parish-life-ministry-tile strong { font-family: var(--serif); font-size: 1.18rem; font-weight: 600; }
+.parish-life-ministry-tile small { color: rgba(236, 226, 207, 0.66); font-size: 0.7rem; font-weight: 700; }
+
+.parish-life-back-link { display: inline-flex; align-items: center; gap: 0.25rem; min-height: 36px; border: 1px solid rgba(10, 26, 41, 0.14); border-radius: 999px; padding: 0 0.7rem 0 0.5rem; color: #19323e; font-size: 0.75rem; font-weight: 800; text-decoration: none; }
+.parish-life-back-link:hover { border-color: rgba(182, 130, 53, 0.5); background: #fffaf0; }
+.parish-life-back-link svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.parish-life-back-link + .topbar-title { margin-left: 0.3rem; }
+
+@media (max-width: 700px) {
+  .parish-life-announcement-list,
+  .parish-life-ministry-grid { grid-template-columns: 1fr; }
+  .parish-life-announcement-card { min-height: 0; }
+  .parish-life-section-head { align-items: center; }
+  .parish-life-recording-row { grid-template-columns: 38px minmax(0, 1fr); }
+  .parish-life-recording-row > em { grid-column: 2; }
+  .parish-life-ministry-tile { min-height: 120px; }
+  .parish-life-back-link span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .parish-life-back-link { width: 36px; justify-content: center; padding: 0; }
+}
+
 /* Inner-page cards and controls. */
 .donor-feed-page .feed-page-shell,
 .donor-teaching-page .feed-page-shell { max-width: 980px; }

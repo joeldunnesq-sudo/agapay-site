@@ -63,7 +63,8 @@ const sources = Object.fromEntries(["src/handlers/parish-video.js","src/worker.j
 assert.match(sources["src/handlers/parish-video.js"], /requireSignedURLs:\s*true/);
 assert.match(sources["src/handlers/parish-video.js"], /WHERE id = \? AND parish_id = \? AND status = 'published'/);
 assert.match(sources["public/parish/app.js"], /uploadVideoDirectly\(data\.uploadUrl, file/);
-assert.match(sources["public/myagapay/parish-life.html"], /class="mobile-product-card live" href="\/myagapay\/media"/);
+assert.match(sources["public/myagapay/media.html"], /href="\/myagapay\/parish-life"[^>]*>← Back</);
+assert.match(sources["public/myagapay/watch.html"], /href="\/myagapay\/parish-life"[^>]*>← Back</);
 assert.match(sources["public/myagapay/watch.html"], /<video id="streamVideo" playsinline preload="metadata"><\/video>/, "custom watch page must not use Stream iframe or native controls");
 assert.doesNotMatch(sources["public/myagapay/watch.html"], /<iframe|<video[^>]+controls/);
 assert.match(sources["public/myagapay/watch.js"], /new Hls/);

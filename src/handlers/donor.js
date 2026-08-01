@@ -39,8 +39,9 @@ import {
   subscriptionTier,
 } from "../lib/subscriptions.js";
 
-import { bookstoreEnabledFor, communicationsEnabledFor, directoryEnabledFor, givingFeatureAccess, hasParishPlusAccess, sacramentsEnabledFor, stewardshipToolAccess } from "../lib/entitlements.js";
+import { bookstoreEnabledFor, directoryEnabledFor, givingFeatureAccess, hasParishPlusAccess, sacramentsEnabledFor, stewardshipToolAccess } from "../lib/entitlements.js";
 import { parishLifeAvailableFor } from "../lib/parish-life-access.js";
+import { parishLifeExperienceFor } from "../lib/parish-life-experience.js";
 import { recordParishFeatureRequest } from "../lib/parish-feature-requests.js";
 import { getDirectorySettings } from "../directory/settings.js";
 import { resolveDirectorySelfServiceContext, syncSelfServiceContactsFromDonor } from "../directory/self-service.js";
@@ -911,7 +912,9 @@ export async function handleDonorDashboard(request, env) {
       if (parish) {
         const directorySettings = await getDirectorySettings(env, parish.id);
         parish.directoryEnabled = directoryEnabledFor(found.registration, directorySettings);
-        parish.communicationsEnabled = communicationsEnabledFor(found.registration);
+        const parishLifeExperience = parishLifeExperienceFor(found.registration);
+        parish.communicationsEnabled = parishLifeExperience.communicationsEnabled;
+        parish.parishLifeLabel = parishLifeExperience.label;
         parish.parishLifeAvailable = parishLifeAvailableFor(env);
         parish.pledgeTrackerEnabled = stewardshipToolAccess(found.registration);
       }

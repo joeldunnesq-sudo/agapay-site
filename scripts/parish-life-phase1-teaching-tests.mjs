@@ -147,9 +147,9 @@ assert.match(sources["src/handlers/parish-communications.js"], /import \{ render
 assert.match(sources["src/handlers/parish-teaching.js"], /import \{ renderBoundedRichText \} from "\.\.\/lib\/rich-text\.js"/);
 assert.match(sources["src/handlers/parish-teaching.js"], /sendTeachingPush\(env, \{/);
 assert.match(sources["src/worker.js"], /handleParishTeaching\(request, env, parishId,[\s\S]*, ctx\)/);
-assert.match(sources["public/myagapay/parish-life.html"], /class="mobile-product-card live" href="\/myagapay\/teaching"/);
-assert.match(sources["public/myagapay/parish-life.js"], /\.\.\.announcements, \.\.\.messages, \.\.\.teachings/);
-assert.match(sources["public/myagapay/parish-life.js"], /feedUnread \+ groupsUnread \+ teachingUnread/);
+assert.match(sources["public/myagapay/parish-life.js"], />Recent Recordings<[\s\S]*href="\/myagapay\/teaching">Audio Library/);
+assert.match(sources["public/myagapay/parish-life.js"], /post\.status === "published" && Boolean\(post\.audioUrl\)/);
+assert.match(sources["public/myagapay/parish-life.js"], /setTeachingUnreadCount\(teachingUnread\)/);
 assert.match(sources["public/parish/dashboard.html"], /id="teachingAudio"/);
 assert.match(sources["public/parish/dashboard.html"], /id="teachingCategory"[\s\S]*?value="homilies"[\s\S]*?value="special_events"/);
 assert.match(sources["public/parish/app.js"], /createTeachingDraft/);

@@ -35,14 +35,16 @@ for (const pathname of ["/api/donor/feed", "/api/donor/groups", "/api/donor/grou
   assert.notEqual(response.status, 404, `${pathname} must pass the environment gate on staging`);
 }
 
-const assetEnv = {
-  AGAPAY_ENVIRONMENT: "staging",
+const assetEnv = (environment) => ({
+  AGAPAY_ENVIRONMENT: environment,
   ASSETS: { fetch: async () => new Response("<!doctype html><title>Parish Life</title>", { headers: { "Content-Type": "text/html" } }) },
-};
-for (const pathname of ["/myagapay/parish-life", "/myagapay/feed", "/myagapay/groups"]) {
-  const production = await worker.fetch(new Request(`https://agapay.test${pathname}`), { AGAPAY_ENVIRONMENT: "production" }, executionContext);
-  assert.equal(production.status, 404, `${pathname} must not render on production`);
-  const staging = await worker.fetch(new Request(`https://agapay.test${pathname}`), assetEnv, executionContext);
+});
+const productionLanding = await worker.fetch(new Request("https://agapay.test/myagapay/parish-life"), assetEnv("production"), executionContext);
+assert.equal(productionLanding.status, 200, "the shared Today/Koinonia landing must remain reachable in production");
+for (const pathname of ["/myagapay/feed", "/myagapay/groups"]) {
+  const production = await worker.fetch(new Request(`https://agapay.test${pathname}`), assetEnv("production"), executionContext);
+  assert.equal(production.status, 404, `${pathname} must remain unavailable in production`);
+  const staging = await worker.fetch(new Request(`https://agapay.test${pathname}`), assetEnv("staging"), executionContext);
   assert.equal(staging.status, 200, `${pathname} must remain reachable on staging`);
 }
 
@@ -55,18 +57,16 @@ const [hub, hubScript, shell, parishDashboard, parishApp, groupHandler, workerSo
   readFile(new URL("../src/handlers/donor-groups.js", import.meta.url), "utf8"),
   readFile(new URL("../src/worker.js", import.meta.url), "utf8"),
 ]);
-assert.match(hub, /class="feed-hero"/);
-assert.equal((hub.match(/class="mobile-product-card live"/g) || []).length, 4, "Announcements, Groups, Teaching, and Media should be live cards after Phase 2");
-assert.equal((hub.match(/class="mobile-product-card coming-soon"/g) || []).length, 0, "Phase 2 should remove the final Media placeholder");
-assert.match(hub, />Teaching</);
-assert.match(hub, />Media</);
-assert.match(hubScript, /fetch\("\/api\/donor\/feed"/);
-assert.match(hubScript, /fetch\("\/api\/donor\/groups\/activity"/);
-assert.match(hubScript, /\[\.\.\.announcements, \.\.\.messages, \.\.\.teachings\][\s\S]*\.sort/);
+assert.match(hub, /class="cal-hero parish-life-liturgical-hero"/);
+assert.match(hub, />Upcoming Services</);
+assert.match(hub, /id="parishLifeTierSections"><\/div>/, "communications content must not be present in the initial DOM");
+assert.match(hubScript, /parishLifeFetch\("\/api\/donor\/feed"/);
+assert.match(hubScript, /parishLifeFetch\("\/api\/donor\/groups"/);
+assert.match(hubScript, /if \(!experience\.communicationsEnabled\)[\s\S]*return;/);
 assert.match(groupHandler, /export async function listGroupActivity[\s\S]*getReadContentIds[\s\S]*messages\.slice\(0, 10\)/);
 assert.match(shell, /parishLifeAvailable/);
 assert.match(parishDashboard, /id="nav-communications" hidden/);
 assert.match(parishApp, /communicationsNav\.hidden = !parishLifeAvailable/);
 assert.match(workerSource, /parishLifeApiRoute[\s\S]*status: 404/);
 
-console.log("PASS - Parish Life hub and fail-closed staging gate cover pages, APIs, and both navigation surfaces");
+console.log("PASS - Parish Life landing stays universal while communications APIs and spokes fail closed");
