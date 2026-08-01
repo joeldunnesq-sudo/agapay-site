@@ -878,7 +878,7 @@ export async function handleAdminReleaseStatus(request, env) {
       turnstileConfigured: Boolean(env.TURNSTILE_SITE_KEY && env.TURNSTILE_SECRET_KEY),
       nonprofitPricingDocsConfigured: Boolean(env.NONPROFIT_PRICING_DOCS),
       nonprofitPricingAlertEmailConfigured: Boolean(env.NONPROFIT_PRICING_ALERT_EMAIL),
-      adminPasswordConfigured: Boolean(storedAdminPassword || env.AGAPAY_ADMIN_TOKEN),
+      adminPasswordConfigured: Boolean(storedAdminPassword),
       registrationCount,
       verifiedCount,
       stripeReadyCount,
@@ -949,17 +949,12 @@ export async function handleAdminSession(request, env) {
   const accountLimited = await rateLimitByKey(request, env, "admin-auth-account", "admin", { limit: 20, windowSeconds: 300 });
   if (accountLimited) return accountLimited;
 
-  let valid = false;
-  if (hasProductionStore(env)) {
-    const stored = d1(env)
+  const stored = hasProductionStore(env)
+    ? d1(env)
       ? await d1GetSetting(env, ADMIN_PASSWORD_KV_KEY)
-      : await env.AGAPAY_REGISTRATIONS?.get(ADMIN_PASSWORD_KV_KEY);
-    const parsed = parsePasswordRecord(stored);
-    if (parsed) valid = await verifyPasswordRecord(password, parsed);
-  }
-  if (!valid && env.AGAPAY_ADMIN_TOKEN && password === env.AGAPAY_ADMIN_TOKEN) valid = true;
-  if (!valid && env.AGAPAY_ADMIN_PASSWORD && password === env.AGAPAY_ADMIN_PASSWORD) valid = true;
-  if (!valid) return unauthorized();
+      : await env.AGAPAY_REGISTRATIONS?.get(ADMIN_PASSWORD_KV_KEY)
+    : "";
+  if (!(await verifyPasswordRecord(password, stored))) return unauthorized();
 
   const session = await issueAdminSession(env, "Admin");
   return json({ ok: true, ...session });

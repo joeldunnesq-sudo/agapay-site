@@ -16,7 +16,6 @@ import {
 import { submitParishSupportTicket } from "../lib/parish-support-tickets.js";
 import { dismissParishFeatureRequest, loadPendingParishFeatureRequests } from "../lib/parish-feature-requests.js";
 import {
-  ADMIN_PASSWORD_KV_KEY,
   COMMEMORATION_KEY_PREFIX,
   DONOR_OFFERING_KEY_PREFIX,
   PARISH_ID_INDEX_PREFIX,
@@ -33,7 +32,6 @@ import {
   d1All,
   d1Batch,
   d1First,
-  d1GetSetting,
   d1Run,
   d1SetSetting,
   decodeListCursor,
@@ -48,7 +46,6 @@ import {
   hasProductionStore,
   hashSessionToken,
   isSystemKvKey,
-  issueAdminSession,
   issueParishDashboardSession,
   json,
   listKvKeys,
@@ -58,7 +55,6 @@ import {
   normalizeEmail,
   parishIdIndexKey,
   parseJsonRow,
-  parsePasswordRecord,
   publicDonor,
   rateLimit,
   rateLimitByKey,
@@ -309,22 +305,6 @@ export async function requireDonor(request, env) {
   return donor;
 }
 
-export async function verifyAdminPassword(env, submitted) {
-  if (!submitted) return false;
-  const storedPassword = d1(env)
-    ? await d1GetSetting(env, ADMIN_PASSWORD_KV_KEY)
-    : env.AGAPAY_REGISTRATIONS
-      ? await env.AGAPAY_REGISTRATIONS.get(ADMIN_PASSWORD_KV_KEY)
-      : "";
-  const fallbackPassword = !storedPassword && d1(env) && env.AGAPAY_REGISTRATIONS
-    ? await env.AGAPAY_REGISTRATIONS.get(ADMIN_PASSWORD_KV_KEY)
-    : "";
-  const passwordToCheck = storedPassword || fallbackPassword;
-  if (passwordToCheck && await verifyPasswordRecord(submitted, passwordToCheck)) return true;
-  if (passwordToCheck && !parsePasswordRecord(passwordToCheck) && secureCompare(submitted, passwordToCheck)) return true;
-  return Boolean(env.AGAPAY_ADMIN_TOKEN && secureCompare(submitted, env.AGAPAY_ADMIN_TOKEN));
-}
-
 export async function requireAdminContext(request, env) {
   const submitted = getAdminToken(request);
   if (!submitted) return null;
@@ -340,32 +320,6 @@ export async function requireAdminContext(request, env) {
 
 export async function requireAdmin(request, env) {
   return Boolean(await requireAdminContext(request, env));
-}
-
-export async function handleAdminSession(request, env) {
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  const limited = await rateLimit(request, env, "admin-auth", { limit: 20, windowSeconds: 300 });
-  if (limited) return limited;
-  if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
-  let body = {};
-  try {
-    body = await request.json();
-  } catch {
-    body = {};
-  }
-
-  const password = String(body.password || "").trim();
-  if (!(await verifyAdminPassword(env, password))) return unauthorized();
-
-  const actor = normalizeAdminActor(body.actor || "Admin");
-  const session = await issueAdminSession(env, actor);
-  return json({
-    ok: true,
-    token: session.token,
-    actor: session.actor,
-    expiresAt: session.expiresAt
-  });
 }
 
 export function requireFields(body, fields) {
