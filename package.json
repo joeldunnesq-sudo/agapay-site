@@ -31,7 +31,7 @@
     "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
-    "playwright": "^1.61.1",
+    "playwright": "^1.62.0",
     "wrangler": "^4.118.0"
   }
 }
