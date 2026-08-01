@@ -16,9 +16,9 @@ import {
 } from "../lib/core.js";
 import {
   findRegistrationByParishId,
-  requireDonor,
   verifyParishDashboardBearer,
 } from "./parish.js";
+import { verifiedHouseholdAccess } from "./koinonia-access.js";
 import {
   PARISH_EDITORIAL_IMAGE_MAX_BYTES,
   PARISH_EDITORIAL_IMAGE_TYPES,
@@ -459,10 +459,9 @@ export async function handleDonorDigestSubscription(request, env) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const db = database(env);
   if (!db) return missingProductionStoreResponse();
-  const donor = await requireDonor(request, env);
-  if (!donor?.email) return unauthorized();
-  const parishId = String(donor.defaultParishId || "").trim();
-  if (!parishId) return json({ error: "Choose your home parish before subscribing." }, { status: 422 });
+  const access = await verifiedHouseholdAccess(request, env);
+  if (access.response) return access.response;
+  const { donor, parishId } = access.context;
   if (request.method === "GET") {
     const subscription = await getAnnouncementDigestSubscription(db, { parishId, donorId: donor.email });
     return json({ subscribed: subscription.subscribed, subscribedAt: subscription.subscribedAt });
@@ -651,10 +650,9 @@ export async function handleDonorFeed(request, env, announcementId = "") {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const db = database(env);
   if (!db) return missingProductionStoreResponse();
-  const donor = await requireDonor(request, env);
-  if (!donor?.email) return unauthorized();
-  const parishId = String(donor.defaultParishId || "").trim();
-  if (!parishId) return json({ error: "Choose your home parish to view its feed." }, { status: 422 });
+  const access = await verifiedHouseholdAccess(request, env);
+  if (access.response) return access.response;
+  const { donor, parishId } = access.context;
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Your selected parish could not be found." }, { status: 404 });
   if (!communicationsEnabledFor(found.registration)) {

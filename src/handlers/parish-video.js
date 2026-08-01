@@ -1,8 +1,9 @@
 import { getReadContentIds, getReadReceipts, markContentRead } from "../lib/content-reads.js";
 import { communicationsEnabledFor } from "../lib/entitlements.js";
-import { generateSecret, hasProductionStore, json, missingProductionStoreResponse, normalizeEmail, rateLimit, unauthorized } from "../lib/core.js";
+import { generateSecret, hasProductionStore, json, missingProductionStoreResponse, normalizeEmail, rateLimit } from "../lib/core.js";
 import { renderBoundedRichText } from "../lib/rich-text.js";
-import { findRegistrationByParishId, requireDonor } from "./parish.js";
+import { findRegistrationByParishId } from "./parish.js";
+import { verifiedHouseholdAccess } from "./koinonia-access.js";
 import { requireCommunicationsAdmin } from "./parish-communications.js";
 
 const CONTENT_TYPE = "video";
@@ -240,14 +241,13 @@ export async function listYouTubeLinks(db, parishId) {
 }
 
 async function donorVideoContext(request, env) {
-  const donor = await requireDonor(request, env);
-  if (!donor?.email) return { error: unauthorized() };
-  const parishId = String(donor.defaultParishId || "").trim();
-  if (!parishId) return { error: json({ error: "Choose your home parish to view Media." }, { status: 422 }) };
+  const access = await verifiedHouseholdAccess(request, env);
+  if (access.response) return { error: access.response };
+  const { donor, donorId, parishId } = access.context;
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return { error: json({ error: "Your selected parish could not be found." }, { status: 404 }) };
   if (!communicationsEnabledFor(found.registration)) return { disabled: true, parishId, found, donor };
-  return { parishId, found, donor, donorId: normalizeEmail(donor.email) };
+  return { parishId, found, donor, donorId };
 }
 
 export async function handleDonorVideo(request, env, videoId = "", action = "") {

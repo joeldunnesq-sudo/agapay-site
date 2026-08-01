@@ -1,4 +1,3 @@
-import { currentUser } from "../lib/authorization.js";
 import { getReadContentIds, getReadReceipts, markContentRead } from "../lib/content-reads.js";
 import { sendGroupMessagePush } from "../lib/push-notifications.js";
 import {
@@ -11,9 +10,8 @@ import {
   missingProductionStoreResponse,
   normalizeEmail,
   rateLimit,
-  unauthorized,
 } from "../lib/core.js";
-import { requireDonor } from "./parish.js";
+import { verifiedHouseholdAccess } from "./koinonia-access.js";
 
 const CONTENT_TYPE = "group_message";
 export const GROUP_MESSAGE_ATTACHMENT_RETENTION_DAYS = 30;
@@ -603,26 +601,6 @@ export async function getLatestGroupMessageCatchUp(env, { parishId, ministryId, 
   };
 }
 
-async function resolveGroupContext(request, env) {
-  const donor = await requireDonor(request, env);
-  if (!donor?.email) return null;
-  const user = await currentUser(request, env);
-  if (!user?.id) {
-    throw new GroupMessageAccessError("Your donor account is not linked to a parish member profile.", 403);
-  }
-  const parishId = String(donor.defaultParishId || "").trim();
-  if (!parishId) throw new GroupMessageAccessError("Choose your home parish to view your groups.", 422);
-  const person = await d1First(env, `
-    SELECT p.id
-    FROM directory_person_links l
-    JOIN directory_people p ON p.id = l.person_id AND p.active = 1
-    WHERE l.link_type = 'platform_user' AND l.external_id = ? AND l.active = 1
-    ORDER BY l.created_at ASC LIMIT 1
-  `, user.id);
-  if (!person?.id) throw new GroupMessageAccessError("Your account is not linked to an active parish member.", 403);
-  return { parishId, personId: person.id, donorId: normalizeEmail(donor.email) };
-}
-
 function errorResponse(error) {
   if (error instanceof GroupMessageAccessError) {
     return privateJson({ error: error.message }, { status: error.status });
@@ -652,8 +630,9 @@ export async function handleDonorGroups(request, env, ctx = null) {
   const parts = path ? path.split("/").map(decodeURIComponent) : [];
   const isActivityRequest = parts.length === 1 && parts[0] === "activity" && request.method === "GET";
   try {
-    const context = await resolveGroupContext(request, env);
-    if (!context) return unauthorized();
+    const access = await verifiedHouseholdAccess(request, env);
+    if (access.response) return access.response;
+    const context = access.context;
 
     if (isActivityRequest) {
       return privateJson(await listGroupActivity(env, context));

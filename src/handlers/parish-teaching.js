@@ -3,7 +3,8 @@ import { communicationsEnabledFor } from "../lib/entitlements.js";
 import { generateSecret, hasProductionStore, json, missingProductionStoreResponse, normalizeEmail, rateLimit, unauthorized } from "../lib/core.js";
 import { sendTeachingPush } from "../lib/push-notifications.js";
 import { renderBoundedRichText } from "../lib/rich-text.js";
-import { findRegistrationByParishId, requireDonor } from "./parish.js";
+import { findRegistrationByParishId } from "./parish.js";
+import { verifiedHouseholdAccess } from "./koinonia-access.js";
 import { requireCommunicationsAdmin } from "./parish-communications.js";
 
 const CONTENT_TYPE = "teaching";
@@ -307,16 +308,14 @@ export async function handleParishTeaching(request, env, parishId, subpath = "",
 export async function handleDonorTeaching(request, env, teachingId = "", action = "") {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const db = env.AGAPAY_DB || env.DB;
-  const donor = await requireDonor(request, env);
-  if (!donor?.email) return unauthorized();
-  const parishId = String(donor.defaultParishId || "").trim();
-  if (!parishId) return json({ error: "Choose your home parish to view teaching." }, { status: 422 });
+  const access = await verifiedHouseholdAccess(request, env);
+  if (access.response) return access.response;
+  const { donorId, parishId } = access.context;
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Your selected parish could not be found." }, { status: 404 });
   if (!communicationsEnabledFor(found.registration)) {
     return json({ available: false, parish: { id: parishId, name: found.registration.parishName || "" }, posts: [], unreadCount: 0 });
   }
-  const donorId = normalizeEmail(donor.email);
   if (!teachingId && request.method === "GET") {
     try {
       return json({

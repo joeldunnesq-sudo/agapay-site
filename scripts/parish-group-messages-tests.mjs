@@ -434,12 +434,14 @@ for (const personId of ["person-withdrawn", "person-outsider"]) {
 const ministryMigration = readFileSync(path.join(root, "migrations", "0031_directory_ministries_phase5a.sql"), "utf8");
 assert.match(ministryMigration, /CHECK \(child_participation_policy = 'excluded'\)/, "ministry child participation must remain excluded by schema");
 const handlerSource = readFileSync(path.join(root, "src", "handlers", "donor-groups.js"), "utf8");
+const koinoniaAccessSource = readFileSync(path.join(root, "src", "handlers", "koinonia-access.js"), "utf8");
 assert.match(handlerSource, /import \{ getReadContentIds, getReadReceipts, markContentRead \} from "\.\.\/lib\/content-reads\.js"/);
 assert.match(handlerSource, /const CONTENT_TYPE = "group_message"/);
 assert.match(handlerSource, /mp\.status = 'active'/);
 assert.match(handlerSource, /ml\.active = 1/);
 assert.match(handlerSource, /Only active ministry leaders can view member read status/);
-assert.match(handlerSource, /if \(!donor\?\.email\) return null;[\s\S]*donor account is not linked to a parish member profile/,
+assert.match(handlerSource, /verifiedHouseholdAccess\(request, env\)/);
+assert.match(koinoniaAccessSource, /if \(!donor\?\.email\)[\s\S]*authentication_required[\s\S]*if \(!user\?\.id\)[\s\S]*donor account is not linked to a parish member profile/,
   "a valid donor without a platform identity must be forbidden without being treated as signed out");
 assert.match(handlerSource, /isActivityRequest[\s\S]*available: false, activity: \[\], unreadCount: 0/,
   "the Parish Life activity rollup must tolerate accounts that do not have Groups access");

@@ -301,6 +301,21 @@ async function loadParishLife() {
     const parish = dashboard.parish || null;
     const experience = window.MyAgapayShell.parishLifeExperience(parish);
     applyParishLifeExperience(experience, parish);
+    if (experience.communicationsEnabled) {
+      const accessResponse = await fetch("/api/donor/koinonia-access", { headers, cache: "no-store" });
+      if (window.MyAgapayShell?.handleUnauthorized(accessResponse)) return;
+      const access = await accessResponse.json().catch(() => ({}));
+      if (!accessResponse.ok) {
+        if (accessResponse.status === 403 && access.code === "household_verification_required") {
+          document.querySelectorAll(".parish-life-page-shell > :not(#parishLifeStatus)").forEach((element) => { element.hidden = true; });
+          status.dataset.state = "household-verification-required";
+          status.hidden = false;
+          status.textContent = access.error;
+          return;
+        }
+        throw new Error(access.error || "Unable to confirm Koinonia access.");
+      }
+    }
     if (typeof loadDonorLiturgicalDay === "function") await loadDonorLiturgicalDay(parish);
     const [parishCalendar, sacramentRequests] = await Promise.all([
       parishLifeFetch("/api/donor/parish-calendar", headers),

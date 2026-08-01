@@ -1,4 +1,5 @@
 import { d1All, d1First, generateSecret } from "../lib/core.js";
+import { householdVerificationStatus } from "../lib/household-verification.js";
 import { DirectoryServiceError } from "./foundation.js";
 import { getDirectorySettings } from "./settings.js";
 import { getPersonPrivacyFlags } from "./privacy.js";
@@ -499,8 +500,9 @@ export async function getHouseholdVerificationStatus(env, { context, householdId
   if (!household) throw new DirectoryServiceError("forbidden", "You cannot verify this household.", 403);
   const settings = await featureSettings(env, household.parishId);
   const row = await d1First(env, "SELECT * FROM directory_household_verifications WHERE household_id = ?1 AND parish_id = ?2", householdId, household.parishId);
-  const dueAt = row?.verification_due_at || nowMs();
-  const status = row ? (dueAt < nowMs() && row.verification_status === "current" ? "overdue" : row.verification_status) : "due";
+  const timestamp = nowMs();
+  const dueAt = row?.verification_due_at || timestamp;
+  const status = householdVerificationStatus(row, timestamp);
   return { householdId, parishId: household.parishId, status, dueAt: Number(dueAt), lastVerifiedAt: Number(row?.last_verified_at || 0), policyVersion: row?.verification_policy_version || SKILL_POLICY_VERSION, intervalDays: settings.householdVerificationIntervalDays };
 }
 
