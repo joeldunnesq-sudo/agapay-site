@@ -623,14 +623,16 @@ assert.ok(registerHtml.includes("agapaySecurityPayload"), "registration should s
 // integrity check: assert both the Worker-side and static-asset-side
 // mechanisms exist and stay in sync, not just that one of them does.
 const securityHeadersFile = await readFile("public/_headers", "utf8");
+const expectedHstsPolicy = "max-age=2592000; includeSubDomains";
 assert.ok(core.includes("export const SECURITY_HEADERS"), "core.js should export a shared SECURITY_HEADERS constant");
 assert.ok(core.includes('"X-Content-Type-Options": "nosniff"'), "SECURITY_HEADERS should set X-Content-Type-Options");
 assert.ok(core.includes('"X-Frame-Options": "SAMEORIGIN"'), "SECURITY_HEADERS should set X-Frame-Options");
-assert.ok(core.includes("Strict-Transport-Security"), "SECURITY_HEADERS should set HSTS");
+assert.ok(core.includes(`"Strict-Transport-Security": "${expectedHstsPolicy}"`), "SECURITY_HEADERS should set the staged HSTS policy");
 assert.ok(core.includes("Content-Security-Policy-Report-Only"), "CSP should ship Report-Only, not enforcing, until violations have been reviewed (see docs/SECURITY_HEADERS.md)");
 assert.ok(!core.includes('"Content-Security-Policy":'), "CSP should not be flipped to enforcing without reading docs/SECURITY_HEADERS.md first");
 assert.ok(core.includes("...SECURITY_HEADERS"), "json()/corsJson() should apply SECURITY_HEADERS to Worker-generated API responses");
 assert.ok(securityHeadersFile.includes("X-Content-Type-Options: nosniff"), "public/_headers should set X-Content-Type-Options for static assets");
+assert.ok(securityHeadersFile.includes(`Strict-Transport-Security: ${expectedHstsPolicy}`), "public/_headers should match the staged Worker HSTS policy");
 assert.ok(securityHeadersFile.includes("Content-Security-Policy-Report-Only:"), "public/_headers should ship CSP Report-Only, matching core.js");
 assert.ok(securityHeadersFile.includes("camera=(self)"), "Permissions-Policy should allow same-origin camera for the bookstore barcode scanner");
 

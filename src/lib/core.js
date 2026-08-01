@@ -276,7 +276,7 @@ export const SECURITY_HEADERS = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "X-Frame-Options": "SAMEORIGIN",
-  "Strict-Transport-Security": "max-age=15552000",
+  "Strict-Transport-Security": "max-age=2592000; includeSubDomains",
   "Permissions-Policy": "geolocation=(), microphone=(), camera=(self), payment=(self)",
   "Content-Security-Policy-Report-Only":
     "default-src 'self'; " +
