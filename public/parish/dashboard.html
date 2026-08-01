@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/parish/style.css?v=20260801koinoniastudio2" />
+  <link rel="stylesheet" href="/parish/style.css?v=20260801ministries1" />
   <link rel="stylesheet" href="/parish/redesign.css?v=20260801bulletin2" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="stylesheet" href="/styles/stewardship.css?v=20260731healthgrid1" />
@@ -1281,7 +1281,6 @@
                 <input id="communicationsEnabledSwitch" type="checkbox" aria-label="Show parish-published Koinonia content in My AGAPAY" onchange="toggleCommunicationsFeature(this)" />
                 <span aria-hidden="true"></span><em>Off</em>
               </label>
-              <a class="btn btn-ghost koinonia-preview-button" href="/myagapay/parish-life" target="_blank" rel="noopener">Preview Koinonia ↗</a>
             </div>
           </header>
           <div id="communicationsPaywall" class="communications-paywall" hidden><strong>Koinonia is included with Parish.</strong><p>Review your plan to publish parish life in My AGAPAY.</p><button class="btn btn-gold" type="button" onclick="switchTab('settings')">Review Parish tier</button></div>
@@ -1292,6 +1291,7 @@
               <button type="button" data-koinonia-view="announcements" onclick="setKoinoniaStudioView('announcements')"><span>▤</span>Announcements</button>
               <button type="button" data-koinonia-view="audio" onclick="setKoinoniaStudioView('audio')"><span>♪</span>Audio</button>
               <button type="button" data-koinonia-view="video" onclick="setKoinoniaStudioView('video')"><span>▶</span>Video</button>
+              <button type="button" data-koinonia-view="ministries" onclick="setKoinoniaStudioView('ministries')"><span>✦</span>Ministries</button>
               <button type="button" data-koinonia-view="news" onclick="setKoinoniaStudioView('news')"><span>↗</span>News feeds</button>
             </nav>
 
@@ -1318,6 +1318,43 @@
                   <button type="button" onclick="setKoinoniaStudioView('video')"><span class="koinonia-channel-icon">▶</span><span><strong>Recent Videos</strong><small>Private recordings and YouTube links</small></span><em>Manage →</em></button>
                   <button type="button" onclick="setKoinoniaStudioView('news')"><span class="koinonia-channel-icon">↗</span><span><strong>News feeds</strong><small>Priest’s blog and Orthodox news sources</small></span><em>Manage →</em></button>
                 </section>
+              </div>
+              <section class="koinonia-calendar-connect" aria-labelledby="koinoniaCalendarHeading">
+                <div class="koinonia-calendar-connect-mark" aria-hidden="true">▦</div>
+                <div><span class="eyebrow">Calendar connection</span><h3 id="koinoniaCalendarHeading">Bring your parish Google Calendar into Koinonia</h3><p>Paste the public iCal sync link from Google Calendar. Parishioners’ calendar experience will use this as the parish’s calendar source.</p></div>
+                <form onsubmit="saveKoinoniaCalendar(event)">
+                  <label for="koinoniaCalendarUrl">Google Calendar public iCal link</label>
+                  <div><input id="koinoniaCalendarUrl" type="url" inputmode="url" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics" /><button class="btn btn-gold" type="submit">Save calendar</button></div>
+                  <small id="koinoniaCalendarStatus" role="status">No calendar sync link saved.</small>
+                </form>
+              </section>
+            </section>
+
+            <section class="koinonia-studio-view koinonia-ministries-workspace" data-koinonia-panel="ministries" aria-labelledby="koinoniaMinistriesHeading" hidden>
+              <div class="koinonia-ministries-head">
+                <div><span class="eyebrow">People serving together</span><h2 id="koinoniaMinistriesHeading">Ministries</h2><p>Create ministry groups, welcome parishioners onto teams, and respond to requests to serve.</p></div>
+                <button class="btn btn-gold" type="button" onclick="toggleKoinoniaMinistryComposer(true)">＋ Create ministry</button>
+              </div>
+              <div class="koinonia-ministry-metrics">
+                <article><span>Active teams</span><strong id="koinoniaActiveMinistries">—</strong><small>Visible in My AGAPAY</small></article>
+                <article><span>Team members</span><strong id="koinoniaMinistryMembers">—</strong><small>Across every ministry</small></article>
+                <article class="is-interest"><span>Waiting for a response</span><strong id="koinoniaMinistryRequests">—</strong><small>Specific and general interest</small></article>
+              </div>
+              <div id="koinoniaGeneralInterest" class="koinonia-general-interest" hidden></div>
+              <form id="koinoniaMinistryComposer" class="koinonia-ministry-composer" onsubmit="createKoinoniaMinistry(event)" hidden>
+                <div class="koinonia-ministry-composer-head"><div><span class="eyebrow">New team</span><h3>Create a ministry</h3></div><button type="button" aria-label="Close" onclick="toggleKoinoniaMinistryComposer(false)">×</button></div>
+                <div class="koinonia-ministry-form-grid">
+                  <label>Ministry name<input name="displayName" maxlength="160" required placeholder="Sunday School" /></label>
+                  <label>Category<select name="category"><option value="liturgical">Liturgical</option><option value="educational">Educational</option><option value="charitable">Charitable</option><option value="hospitality">Hospitality</option><option value="youth">Youth</option><option value="fellowship">Fellowship</option><option value="outreach">Outreach</option><option value="administrative">Administrative</option><option value="maintenance">Maintenance</option><option value="bookstore">Bookstore</option><option value="committee">Committee</option><option value="other">Other</option></select></label>
+                  <label class="is-wide">Short description<textarea name="shortDescription" maxlength="300" rows="3" placeholder="What this ministry does and who it serves."></textarea></label>
+                  <label>Status<select name="status"><option value="active">Active and visible</option><option value="draft">Draft</option></select></label>
+                  <label>Join requests<select name="requestPolicy"><option value="request_interest">Welcome requests</option><option value="closed">Closed for now</option><option value="administrator_assignment_only">Invitation only</option></select></label>
+                </div>
+                <div class="koinonia-ministry-form-actions"><button class="btn btn-ghost" type="button" onclick="toggleKoinoniaMinistryComposer(false)">Cancel</button><button class="btn btn-gold" type="submit">Create ministry</button></div>
+              </form>
+              <div class="koinonia-ministry-layout">
+                <section class="koinonia-ministry-list-panel"><div class="koinonia-panel-head"><div><span class="eyebrow">Your teams</span><h3>Ministry groups</h3></div><button type="button" onclick="loadKoinoniaMinistries(true)">Refresh</button></div><div id="koinoniaMinistryList"><p class="sw-tool-loading">Loading ministries…</p></div></section>
+                <section class="koinonia-ministry-detail" id="koinoniaMinistryDetail"><div class="koinonia-ministry-empty"><span>✦</span><strong>Select a ministry</strong><p>Choose a team to see its members, add a parishioner, and review requests.</p></div></section>
               </div>
             </section>
 
@@ -1844,6 +1881,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
-  <script src="/parish/app.js?v=20260801koinoniastudio1"></script>
+  <script src="/parish/app.js?v=20260801ministries1"></script>
 </body>
 </html>

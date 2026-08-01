@@ -131,6 +131,7 @@ function requestDto(row) {
     personId: row.person_id,
     requesterUserId: row.requester_user_id,
     requesterPersonId: row.requester_person_id,
+    displayName: row.preferred_name || "Parishioner",
     interestType: row.interest_type,
     memberNote: row.member_note || "",
     reviewerNote: row.reviewer_note || "",
@@ -345,7 +346,7 @@ export async function getMinistryAdmin(env, { context, ministryId }) {
   const [leaders, participants, requests] = await Promise.all([
     d1All(env, `SELECT ml.*, p.preferred_name FROM directory_ministry_leaders ml JOIN directory_people p ON p.id = ml.person_id WHERE ml.parish_id = ?1 AND ml.ministry_id = ?2 AND ml.active = 1 ORDER BY p.preferred_name`, parishId, ministryId),
     d1All(env, `SELECT mp.*, p.preferred_name FROM directory_ministry_participants mp JOIN directory_people p ON p.id = mp.person_id WHERE mp.parish_id = ?1 AND mp.ministry_id = ?2 AND mp.status IN ('active','paused') ORDER BY p.preferred_name`, parishId, ministryId),
-    d1All(env, `SELECT r.*, m.display_name FROM directory_ministry_interest_requests r JOIN directory_ministries m ON m.id = r.ministry_id WHERE r.parish_id = ?1 AND r.ministry_id = ?2 ORDER BY r.created_at DESC LIMIT 25`, parishId, ministryId)
+    d1All(env, `SELECT r.*, m.display_name, p.preferred_name FROM directory_ministry_interest_requests r JOIN directory_ministries m ON m.id = r.ministry_id LEFT JOIN directory_people p ON p.id = r.person_id WHERE r.parish_id = ?1 AND r.ministry_id = ?2 ORDER BY r.created_at DESC LIMIT 25`, parishId, ministryId)
   ]);
   return { ministry: ministryDto(row), leaders: leaders.map(leaderDto), participants: participants.map(participantDto), requests: requests.map(requestDto) };
 }

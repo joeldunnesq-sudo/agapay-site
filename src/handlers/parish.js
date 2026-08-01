@@ -947,6 +947,7 @@ export function parishFromRegistration(registration) {
       ? `${registration.parishName || "Orthodox community"} logo`
       : registration.imageAlt || communitySketchAlt(type),
     liturgicalCalendar: registration.liturgicalCalendar || "julian",
+    koinoniaCalendarUrl: registration.koinoniaCalendarUrl || "",
     patronalFeast: registration.patronalFeast || "",
     patronalFeastName: registration.patronalFeastName || registration.parishPatronalFeastName || "",
     patronalFeastDate: registration.patronalFeastDate || registration.parishPatronalFeastDate || "",
@@ -2463,6 +2464,7 @@ export function parishDashboardPayload(parishId, registration) {
     taxEin: registration.taxEin || "",
     timezone: registration.timezone || "",
     liturgicalCalendar: registration.liturgicalCalendar || "julian",
+    koinoniaCalendarUrl: registration.koinoniaCalendarUrl || "",
     patronalFeast: registration.patronalFeast || "",
     patronalFeastName: registration.patronalFeastName || registration.parishPatronalFeastName || "",
     patronalFeastDate: registration.patronalFeastDate || registration.parishPatronalFeastDate || "",
@@ -2677,6 +2679,24 @@ export async function handleParishDashboard(request, env, parishId) {
       body.givingCatalogChanged === true
       || (body.givingCatalogChanged === undefined && givingCatalogChanged(submittedCatalog, current))
     );
+    let normalizedKoinoniaCalendarUrl = current.koinoniaCalendarUrl || "";
+    if (body.koinoniaCalendarUrl !== undefined) {
+      const value = String(body.koinoniaCalendarUrl || "").trim();
+      if (!value) {
+        normalizedKoinoniaCalendarUrl = "";
+      } else {
+        try {
+          const parsed = new URL(value);
+          const host = parsed.hostname.toLowerCase();
+          if (parsed.protocol !== "https:" || host !== "calendar.google.com" || !parsed.pathname.toLowerCase().endsWith(".ics")) {
+            return json({ error: "Paste a public Google Calendar iCal link ending in .ics." }, { status: 422 });
+          }
+          normalizedKoinoniaCalendarUrl = parsed.toString().slice(0, 2000);
+        } catch {
+          return json({ error: "Paste a valid public Google Calendar iCal link." }, { status: 422 });
+        }
+      }
+    }
 
     let updated = {
       ...current,
@@ -2701,6 +2721,7 @@ export async function handleParishDashboard(request, env, parishId) {
         }
       })(),
       liturgicalCalendar: body.liturgicalCalendar || current.liturgicalCalendar || "julian",
+      koinoniaCalendarUrl: normalizedKoinoniaCalendarUrl,
       patronalFeast: String(body.patronalFeast ?? current.patronalFeast ?? "").trim(),
       patronalFeastName: String(body.patronalFeastName ?? current.patronalFeastName ?? current.parishPatronalFeastName ?? "").trim().slice(0, 160),
       patronalFeastDate: (() => {

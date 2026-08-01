@@ -185,6 +185,7 @@ import {
   handleDonorVerify,
   handleDonorVerifyPage,
   handleDonorDashboard,
+  handleDonorParishCalendar,
   handleDonorGivingPlusFeatureRequest,
   handleDonorMinistryServiceInterest,
   handleDonorStewardshipFeatureRequest,
@@ -3193,6 +3194,9 @@ export default {
     }
     if (url.pathname === "/api/donor/ministry-service-interest") {
       return handleDonorMinistryServiceInterest(request, env);
+    }
+    if (url.pathname === "/api/donor/parish-calendar") {
+      return handleDonorParishCalendar(request, env);
     }
     if (url.pathname === "/api/donor/offerings") {
       return handleDonorOfferings(request, env);

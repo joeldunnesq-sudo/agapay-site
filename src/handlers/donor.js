@@ -1008,6 +1008,105 @@ export async function handleDonorGivingPlusFeatureRequest(request, env) {
   }, { status: result.duplicate ? 200 : 201 });
 }
 
+function unescapeIcsText(value = "") {
+  return String(value).replace(/\\n/gi, " ").replace(/\\,/g, ",").replace(/\\;/g, ";").replace(/\\\\/g, "\\").trim();
+}
+
+function icsDate(value = "") {
+  const raw = String(value).trim();
+  const match = raw.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?Z?)?/);
+  if (!match) return null;
+  const [, year, month, day, hour = "00", minute = "00", second = "00"] = match;
+  const iso = `${year}-${month}-${day}T${hour}:${minute}:${second}${raw.endsWith("Z") ? "Z" : ""}`;
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function icsRule(value = "") {
+  return Object.fromEntries(String(value).split(";").map(part => part.split("=")).filter(pair => pair.length === 2));
+}
+
+const ICS_WEEKDAYS = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+
+function expandIcsEvent(event, now, horizon) {
+  const start = icsDate(event.dtstart);
+  if (!start) return [];
+  const end = icsDate(event.dtend);
+  const duration = end ? Math.max(0, end.getTime() - start.getTime()) : 0;
+  if (!event.rrule) return start <= horizon && (end || start) >= now ? [{ start, end, duration }] : [];
+  const rule = icsRule(event.rrule);
+  const frequency = rule.FREQ;
+  if (!frequency || !["DAILY", "WEEKLY", "MONTHLY"].includes(frequency)) return [];
+  const interval = Math.max(1, Number(rule.INTERVAL || 1));
+  const until = icsDate(rule.UNTIL) || horizon;
+  const byDays = new Set(String(rule.BYDAY || ICS_WEEKDAYS[start.getDay()]).split(",").map(day => day.slice(-2)));
+  const results = [];
+  const cursor = new Date(Math.max(start.getTime(), new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()));
+  cursor.setHours(start.getHours(), start.getMinutes(), start.getSeconds(), 0);
+  for (let guard = 0; guard < 400 && cursor <= horizon && cursor <= until && results.length < 30; guard += 1) {
+    const dayDelta = Math.floor((cursor - start) / 86400000);
+    const weekDelta = Math.floor(dayDelta / 7);
+    const monthDelta = (cursor.getFullYear() - start.getFullYear()) * 12 + cursor.getMonth() - start.getMonth();
+    const matches = cursor >= start && (
+      (frequency === "DAILY" && dayDelta % interval === 0)
+      || (frequency === "WEEKLY" && weekDelta % interval === 0 && byDays.has(ICS_WEEKDAYS[cursor.getDay()]))
+      || (frequency === "MONTHLY" && monthDelta % interval === 0 && cursor.getDate() === start.getDate())
+    );
+    if (matches && cursor >= now) results.push({ start:new Date(cursor), end:duration ? new Date(cursor.getTime() + duration) : null, duration });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return results;
+}
+
+export function parseKoinoniaCalendarIcs(text, fromDate = new Date()) {
+  const unfolded = String(text || "").replace(/\r?\n[ \t]/g, "");
+  const blocks = unfolded.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g) || [];
+  const now = new Date(fromDate);
+  const horizon = new Date(now.getTime() + 180 * 86400000);
+  return blocks.flatMap((block) => {
+    const event = {};
+    block.split(/\r?\n/).forEach(line => {
+      const separator = line.indexOf(":");
+      if (separator < 0) return;
+      const key = line.slice(0, separator).split(";")[0].toLowerCase();
+      if (["summary", "location", "description", "dtstart", "dtend", "rrule", "uid"].includes(key)) event[key] = line.slice(separator + 1);
+    });
+    return expandIcsEvent(event, now, horizon).map(instance => ({
+      id: String(event.uid || `${event.summary || "event"}-${instance.start.toISOString()}`).slice(0, 240),
+      title: unescapeIcsText(event.summary) || "Parish event",
+      location: unescapeIcsText(event.location),
+      description: unescapeIcsText(event.description).slice(0, 500),
+      startsAt: instance.start.toISOString(),
+      endsAt: instance.end?.toISOString() || "",
+      allDay: !String(event.dtstart || "").includes("T")
+    }));
+  }).sort((left, right) => left.startsAt.localeCompare(right.startsAt)).slice(0, 20);
+}
+
+export async function handleDonorParishCalendar(request, env) {
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  const donor = await requireDonor(request, env);
+  if (!donor) return unauthorized();
+  if (!donor.defaultParishId) return json({ connected:false, events:[] });
+  const found = await findRegistrationByParishId(env, donor.defaultParishId);
+  const sourceUrl = String(found?.registration?.koinoniaCalendarUrl || "").trim();
+  if (!sourceUrl) return json({ connected:false, events:[] });
+  let parsed;
+  try { parsed = new URL(sourceUrl); } catch { return json({ connected:false, events:[] }); }
+  if (parsed.protocol !== "https:" || parsed.hostname !== "calendar.google.com" || !parsed.pathname.toLowerCase().endsWith(".ics")) return json({ connected:false, events:[] });
+  try {
+    const response = await fetch(sourceUrl, { headers:{ Accept:"text/calendar" }, signal:AbortSignal.timeout(8000) });
+    if (!response.ok) throw new Error("Calendar unavailable");
+    const length = Number(response.headers.get("Content-Length") || 0);
+    if (length > 2_000_000) throw new Error("Calendar too large");
+    const text = await response.text();
+    if (text.length > 2_000_000) throw new Error("Calendar too large");
+    return json({ connected:true, events:parseKoinoniaCalendarIcs(text), syncedAt:new Date().toISOString() }, { headers:{ "Cache-Control":"private, max-age=300" } });
+  } catch {
+    return json({ connected:true, events:[], unavailable:true }, { status:502, headers:{ "Cache-Control":"private, no-store" } });
+  }
+}
+
 export async function handleDonorMinistryServiceInterest(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   const donor = await requireDonor(request, env);

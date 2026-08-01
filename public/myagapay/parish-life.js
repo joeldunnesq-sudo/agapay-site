@@ -81,6 +81,19 @@ function renderParishLifeServicesFallback(parish, fromDate = new Date()) {
   }).join("");
 }
 
+function renderParishLifeCalendarEvents(calendar = {}, parish) {
+  const target = document.getElementById("parishLifeServices");
+  const events = calendar?.events || [];
+  if (!target || !events.length) { renderParishLifeServicesFallback(parish); return; }
+  target.innerHTML = events.slice(0, 4).map((event) => {
+    const date = new Date(event.startsAt);
+    const day = date.toLocaleDateString(undefined, { day:"numeric" });
+    const weekday = date.toLocaleDateString(undefined, { weekday:"short" });
+    const time = event.allDay ? "All day" : date.toLocaleTimeString(undefined, { hour:"numeric", minute:"2-digit" });
+    return `<article class="parish-life-liturgical-fallback parish-life-synced-event"><span class="parish-life-fallback-date"><strong>${parishLifeEscape(day)}</strong><small>${parishLifeEscape(weekday)}</small></span><span class="parish-life-fallback-copy"><strong>${parishLifeEscape(event.title)}</strong><small>${parishLifeEscape(time)}${event.location ? ` · ${parishLifeEscape(event.location)}` : ""}</small></span><span class="parish-life-fallback-arrow" aria-hidden="true">›</span></article>`;
+  }).join("");
+}
+
 function parishLifeTierSectionsHtml(communicationsEnabled) {
   if (!communicationsEnabled) return "";
   return `
@@ -261,7 +274,8 @@ async function loadParishLife() {
     const experience = window.MyAgapayShell.parishLifeExperience(parish);
     applyParishLifeExperience(experience, parish);
     if (typeof loadDonorLiturgicalDay === "function") await loadDonorLiturgicalDay(parish);
-    renderParishLifeServicesFallback(parish);
+    const parishCalendar = await parishLifeFetch("/api/donor/parish-calendar", headers);
+    renderParishLifeCalendarEvents(parishCalendar || {}, parish);
 
     if (!experience.communicationsEnabled) {
       status.hidden = true;

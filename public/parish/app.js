@@ -18,6 +18,7 @@
   let stewardshipState   = { loaded: false, stewardship: null, meetings: [], selectedMeeting: null };
   let dashboardLoadPromise = null;
   let activeParishFeatureRequest = null;
+  let parishFeatureRequests = [];
   const parishSessionStorageKey = 'agapay_parish_session_token';
   const legacyParishTokenStorageKey = 'agapay_parish_token';
 
@@ -8337,6 +8338,7 @@
         googleCalendarResult === 'connected' ? 'success' : 'error');
         window.history.replaceState({}, '', '/parish/dashboard');
       }
+      parishFeatureRequests = data.featureRequests || [];
       showParishFeatureRequestPopup(data.featureRequests || []);
       updateStewardshipBadges(isParishPlusActive(), { renderPanel: false });
       setTimeout(() => loadGivingSummary(), 250);
@@ -10251,6 +10253,7 @@
 
   // ── COMMUNICATIONS ────────────────────────────────────────
   let communicationsState = { loaded: false, announcements: [], teaching: [], videos: [], youtube: [], blog: null, readers: {} };
+  let koinoniaMinistriesState = { loaded: false, ministries: [], selectedId: '', people: [] };
   let koinoniaStudioView = 'overview';
 
   function communicationsApi(path = '') {
@@ -10266,7 +10269,7 @@
   }
 
   function setKoinoniaStudioView(view = 'overview') {
-    const allowed = new Set(['overview', 'announcements', 'audio', 'video', 'news']);
+    const allowed = new Set(['overview', 'announcements', 'audio', 'video', 'ministries', 'news']);
     koinoniaStudioView = allowed.has(view) ? view : 'overview';
     document.querySelectorAll('[data-koinonia-panel]').forEach(panel => {
       panel.hidden = panel.dataset.koinoniaPanel !== koinoniaStudioView;
@@ -10277,6 +10280,153 @@
       button.setAttribute('aria-current', active ? 'page' : 'false');
     });
     if (koinoniaStudioView === 'overview') renderKoinoniaOverview();
+    if (koinoniaStudioView === 'ministries') loadKoinoniaMinistries();
+  }
+
+  function toggleKoinoniaMinistryComposer(show) {
+    const form = document.getElementById('koinoniaMinistryComposer');
+    if (!form) return;
+    form.hidden = !show;
+    if (show) requestAnimationFrame(() => form.elements.displayName?.focus());
+  }
+
+  function koinoniaGeneralInterestRequest() {
+    return parishFeatureRequests.find(item => item?.featureId === 'ministry-service') || null;
+  }
+
+  function renderKoinoniaMinistries() {
+    const state = koinoniaMinistriesState;
+    const active = state.ministries.filter(item => item.ministry?.status === 'active');
+    const memberCount = state.ministries.reduce((sum, item) => sum + (item.participants?.length || 0), 0);
+    const pendingCount = state.ministries.reduce((sum, item) => sum + (item.requests || []).filter(request => ['submitted','under_review','returned'].includes(request.status)).length, 0);
+    const general = koinoniaGeneralInterestRequest();
+    const generalCount = Math.max(0, Number(general?.count || 0));
+    const setText = (id, value) => { const node = document.getElementById(id); if (node) node.textContent = String(value); };
+    setText('koinoniaActiveMinistries', active.length);
+    setText('koinoniaMinistryMembers', memberCount);
+    setText('koinoniaMinistryRequests', pendingCount + generalCount);
+    const generalTarget = document.getElementById('koinoniaGeneralInterest');
+    if (generalTarget) {
+      generalTarget.hidden = !generalCount;
+      generalTarget.innerHTML = generalCount ? `<span class="koinonia-general-interest-mark">✦</span><div><strong>${generalCount} parishioner${generalCount === 1 ? '' : 's'} ${generalCount === 1 ? 'is' : 'are'} ready to serve</strong><p>This private Koinonia signal is not tied to a specific ministry. Publish opportunities or follow up with the parish after services.</p></div><button type="button" onclick="acknowledgeKoinoniaGeneralInterest()">Acknowledge</button>` : '';
+    }
+    const list = document.getElementById('koinoniaMinistryList');
+    if (list) list.innerHTML = state.ministries.length ? state.ministries.map(item => {
+      const ministry = item.ministry || item;
+      const requests = (item.requests || []).filter(request => ['submitted','under_review','returned'].includes(request.status)).length;
+      const selected = ministry.id === state.selectedId;
+      return `<button type="button" class="koinonia-ministry-list-item${selected ? ' is-selected' : ''}" onclick="selectKoinoniaMinistry('${escapeAttr(ministry.id)}')"><span class="koinonia-ministry-list-mark">${escapeHtml((ministry.displayName || 'M').slice(0,1))}</span><span><strong>${escapeHtml(ministry.displayName)}</strong><small>${escapeHtml(contentCategoryLabel(ministry.category))} · ${(item.participants || []).length} member${(item.participants || []).length === 1 ? '' : 's'}</small></span>${requests ? `<em>${requests} new</em>` : `<i>${escapeHtml(contentCategoryLabel(ministry.status))}</i>`}</button>`;
+    }).join('') : '<div class="communications-empty"><strong>Create your first ministry</strong><p>Build teams for worship, formation, hospitality, outreach, and parish life.</p><button class="btn btn-gold" type="button" onclick="toggleKoinoniaMinistryComposer(true)">Create ministry</button></div>';
+    renderKoinoniaMinistryDetail();
+  }
+
+  function renderKoinoniaMinistryDetail() {
+    const target = document.getElementById('koinoniaMinistryDetail');
+    if (!target) return;
+    const detail = koinoniaMinistriesState.ministries.find(item => (item.ministry || item).id === koinoniaMinistriesState.selectedId);
+    if (!detail) { target.innerHTML = '<div class="koinonia-ministry-empty"><span>✦</span><strong>Select a ministry</strong><p>Choose a team to see its members, add a parishioner, and review requests.</p></div>'; return; }
+    const ministry = detail.ministry;
+    const requests = (detail.requests || []).filter(request => ['submitted','under_review','returned'].includes(request.status));
+    const participants = detail.participants || [];
+    target.innerHTML = `
+      <header class="koinonia-ministry-detail-head"><div><span>${escapeHtml(contentCategoryLabel(ministry.category))}</span><h3>${escapeHtml(ministry.displayName)}</h3><p>${escapeHtml(ministry.shortDescription || 'A parish ministry team.')}</p></div><em class="is-${escapeAttr(ministry.status)}">${escapeHtml(contentCategoryLabel(ministry.status))}</em></header>
+      <section class="koinonia-ministry-detail-section"><div class="koinonia-panel-head"><div><span class="eyebrow">Team roster</span><h4>${participants.length} member${participants.length === 1 ? '' : 's'}</h4></div></div>
+        <form class="koinonia-member-search" onsubmit="searchKoinoniaMinistryPeople(event,'${escapeAttr(ministry.id)}')"><label for="koinoniaMemberSearch">Invite a My AGAPAY parishioner into this group</label><div><input id="koinoniaMemberSearch" name="query" required minlength="2" placeholder="Search by name" /><button type="submit">Search</button></div><div id="koinoniaMemberSearchResults"></div></form>
+        <div class="koinonia-ministry-roster">${participants.length ? participants.map(person => `<article><span>${escapeHtml((person.displayName || 'P').slice(0,1))}</span><div><strong>${escapeHtml(person.displayName)}</strong><small>${escapeHtml(contentCategoryLabel(person.participationType))}</small></div><button type="button" onclick="removeKoinoniaMinistryMember('${escapeAttr(ministry.id)}','${escapeAttr(person.id)}')">Remove</button></article>`).join('') : '<p>No parishioners have been added yet.</p>'}</div>
+      </section>
+      <section class="koinonia-ministry-detail-section"><div class="koinonia-panel-head"><div><span class="eyebrow">Incoming interest</span><h4>${requests.length ? `${requests.length} waiting` : 'All caught up'}</h4></div></div><div class="koinonia-ministry-request-list">${requests.length ? requests.map(request => `<article><span>✦</span><div><strong>${escapeHtml(request.displayName || 'Parishioner')}</strong><small>Wants to join as ${escapeHtml(contentCategoryLabel(request.interestType))}</small>${request.memberNote ? `<p>${escapeHtml(request.memberNote)}</p>` : ''}</div><div><button type="button" onclick="reviewKoinoniaMinistryRequest('${escapeAttr(request.id)}','approve')">Approve</button><button class="is-secondary" type="button" onclick="reviewKoinoniaMinistryRequest('${escapeAttr(request.id)}','deny')">Decline</button></div></article>`).join('') : '<div class="koinonia-ministry-caught-up"><span>✓</span><p>No ministry-specific requests need a response.</p></div>'}</div></section>`;
+  }
+
+  async function loadKoinoniaMinistries(force = false) {
+    if (!currentParish?.parishId || (koinoniaMinistriesState.loaded && !force)) { if (koinoniaMinistriesState.loaded) renderKoinoniaMinistries(); return; }
+    const list = document.getElementById('koinoniaMinistryList');
+    if (list) list.innerHTML = '<p class="sw-tool-loading">Loading ministries…</p>';
+    try {
+      const response = await fetch(directoryAdminApi('/ministries'), { headers: authHeaders(), cache:'no-store' });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.message || payload.error || 'Unable to load ministries.');
+      const details = await Promise.all((payload.ministries || []).map(async ministry => {
+        const detailResponse = await fetch(directoryAdminApi('/ministries/' + encodeURIComponent(ministry.id)), { headers: authHeaders(), cache:'no-store' });
+        const detailPayload = await detailResponse.json().catch(() => ({}));
+        return detailResponse.ok ? detailPayload.ministry : { ministry, participants:[], leaders:[], requests:[] };
+      }));
+      koinoniaMinistriesState = { ...koinoniaMinistriesState, loaded:true, ministries:details, selectedId:koinoniaMinistriesState.selectedId || details[0]?.ministry?.id || '' };
+      renderKoinoniaMinistries();
+    } catch (error) {
+      if (list) list.innerHTML = `<div class="communications-empty"><strong>Ministries are unavailable</strong><p>${escapeHtml(error.message)}</p><button class="btn btn-gold" type="button" onclick="loadKoinoniaMinistries(true)">Try again</button></div>`;
+    }
+  }
+
+  function selectKoinoniaMinistry(id) { koinoniaMinistriesState.selectedId = id; renderKoinoniaMinistries(); }
+
+  async function createKoinoniaMinistry(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector('button[type="submit"]');
+    button.disabled = true;
+    try {
+      const raw = Object.fromEntries(new FormData(form));
+      const response = await fetch(directoryAdminApi('/ministries'), { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify(raw) });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.message || payload.error || 'Unable to create this ministry.');
+      form.reset(); toggleKoinoniaMinistryComposer(false); koinoniaMinistriesState.loaded = false; koinoniaMinistriesState.selectedId = payload.ministry?.ministry?.id || '';
+      await loadKoinoniaMinistries(true); setStatus('Ministry created and ready for its team.', 'success');
+    } catch (error) { setStatus(error.message, 'error'); } finally { button.disabled = false; }
+  }
+
+  async function searchKoinoniaMinistryPeople(event, ministryId) {
+    event.preventDefault();
+    const form = event.currentTarget; const target = form.querySelector('#koinoniaMemberSearchResults'); const query = form.elements.query.value.trim();
+    target.innerHTML = '<p class="sw-tool-loading">Finding parishioners…</p>';
+    try {
+      const response = await fetch(directoryAdminApi('/people?q=' + encodeURIComponent(query) + '&limit=12'), { headers:authHeaders(), cache:'no-store' });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.message || payload.error || 'Unable to search parishioners.');
+      const existing = new Set((koinoniaMinistriesState.ministries.find(item => item.ministry.id === ministryId)?.participants || []).map(item => item.personId));
+      const people = (payload.people || []).filter(person => !existing.has(person.id));
+      target.innerHTML = people.length ? people.map(person => `<button type="button" onclick="addKoinoniaMinistryMember('${escapeAttr(ministryId)}','${escapeAttr(person.id)}')"><span>${escapeHtml((person.displayName || person.preferredName || 'P').slice(0,1))}</span><span><strong>${escapeHtml(person.displayName || person.preferredName || 'Parishioner')}</strong><small>Add to this ministry group</small></span><em>Invite ＋</em></button>`).join('') : '<p class="koinonia-search-empty">No available parishioners match that name.</p>';
+    } catch (error) { target.innerHTML = `<p class="koinonia-search-empty">${escapeHtml(error.message)}</p>`; }
+  }
+
+  async function addKoinoniaMinistryMember(ministryId, personId) {
+    try {
+      const response = await fetch(directoryAdminApi('/ministries/' + encodeURIComponent(ministryId) + '/participants'), { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ personId, participationType:'member' }) });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.message || payload.error || 'Unable to add this parishioner.');
+      koinoniaMinistriesState.loaded = false; await loadKoinoniaMinistries(true); setStatus('Parishioner added to the ministry group.', 'success');
+    } catch (error) { setStatus(error.message, 'error'); }
+  }
+
+  async function removeKoinoniaMinistryMember(ministryId, participantId) {
+    if (!window.confirm('Remove this parishioner from the ministry group?')) return;
+    try {
+      const response = await fetch(directoryAdminApi('/ministries/' + encodeURIComponent(ministryId) + '/participants-remove/' + encodeURIComponent(participantId)), { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ reasonCode:'parish_admin_removed' }) });
+      const payload = await response.json().catch(() => ({})); if (!response.ok) throw new Error(payload.message || payload.error || 'Unable to remove this parishioner.');
+      koinoniaMinistriesState.loaded = false; await loadKoinoniaMinistries(true); setStatus('Parishioner removed from the ministry group.', 'success');
+    } catch (error) { setStatus(error.message, 'error'); }
+  }
+
+  async function reviewKoinoniaMinistryRequest(requestId, decision) {
+    try {
+      const response = await fetch(directoryAdminApi('/reviews/ministry_interest/' + encodeURIComponent(requestId) + '/decision'), { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ decision, reviewerNote:decision === 'approve' ? 'Welcomed through Koinonia Ministries.' : 'Reviewed through Koinonia Ministries.' }) });
+      const payload = await response.json().catch(() => ({})); if (!response.ok) throw new Error(payload.message || payload.error || 'Unable to review this request.');
+      koinoniaMinistriesState.loaded = false; await loadKoinoniaMinistries(true); setStatus(decision === 'approve' ? 'Parishioner welcomed to the ministry.' : 'Request reviewed.', 'success');
+    } catch (error) { setStatus(error.message, 'error'); }
+  }
+
+  async function acknowledgeKoinoniaGeneralInterest() {
+    const request = koinoniaGeneralInterestRequest(); if (!request) return;
+    activeParishFeatureRequest = request; await dismissParishFeatureRequest(false); parishFeatureRequests = parishFeatureRequests.filter(item => item.featureId !== 'ministry-service'); renderKoinoniaMinistries();
+  }
+
+  async function saveKoinoniaCalendar(event) {
+    event.preventDefault(); const form = event.currentTarget; const button = form.querySelector('button[type="submit"]'); const status = document.getElementById('koinoniaCalendarStatus'); const value = document.getElementById('koinoniaCalendarUrl')?.value.trim() || '';
+    button.disabled = true; if (status) status.textContent = 'Checking and saving…';
+    try {
+      const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId), { method:'PATCH', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ koinoniaCalendarUrl:value }) });
+      const payload = await response.json().catch(() => ({})); if (!response.ok) throw new Error(payload.error || 'Unable to save this calendar link.');
+      currentParish.koinoniaCalendarUrl = payload.parish?.koinoniaCalendarUrl || value; if (status) status.textContent = currentParish.koinoniaCalendarUrl ? 'Google Calendar sync link saved.' : 'Calendar sync link removed.'; setStatus('Koinonia calendar connection saved.', 'success');
+    } catch (error) { if (status) status.textContent = error.message; setStatus(error.message, 'error'); } finally { button.disabled = false; }
   }
 
   function openKoinoniaComposer(view) {
@@ -10310,6 +10460,10 @@
     setText('koinoniaVideoDrafts', `${videoDrafts} draft${videoDrafts === 1 ? '' : 's'} · ${youtube.length} YouTube`);
     setText('koinoniaBlogStatus', communicationsState.blog?.enabled ? 'Connected' : 'Not connected');
     setText('koinoniaBlogDetail', communicationsState.blog?.feedUrl ? 'Feed validated' : 'Optional news source');
+    const calendarInput = document.getElementById('koinoniaCalendarUrl');
+    const calendarStatus = document.getElementById('koinoniaCalendarStatus');
+    if (calendarInput && document.activeElement !== calendarInput) calendarInput.value = currentParish?.koinoniaCalendarUrl || '';
+    if (calendarStatus) calendarStatus.textContent = currentParish?.koinoniaCalendarUrl ? 'Google Calendar sync link saved.' : 'No calendar sync link saved.';
 
     const recent = [
       ...announcements.map(item => ({ ...item, kind:'Announcement', icon:'▤', view:'announcements' })),
@@ -10520,6 +10674,7 @@
     renderVideoAdminList();
     renderYouTubeAdminList();
     renderKoinoniaOverview();
+    if (koinoniaStudioView === 'ministries') loadKoinoniaMinistries(true);
     setKoinoniaStudioView(koinoniaStudioView);
   }
 
