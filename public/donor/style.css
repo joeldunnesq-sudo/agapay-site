@@ -2324,9 +2324,21 @@ body.donor-home {
 .group-message-list { max-height:470px; overflow:auto; display:grid; gap:.7rem; padding:1rem; background:#faf8f3; }
 .group-message { border:1px solid #e6e0d4; border-radius:14px; padding:.8rem .9rem; background:#fff; }
 .group-message.is-unread { border-left:4px solid #c9a25b; }
-.group-message > div { display:flex; justify-content:space-between; gap:.6rem; color:#19323e; font-size:.76rem; }
+.group-message > div:first-child { display:flex; justify-content:space-between; gap:.6rem; color:#19323e; font-size:.76rem; }
 .group-message time { color:#849096; font-size:.65rem; }
 .group-message p { margin:.45rem 0 0; color:#344b55; line-height:1.55; white-space:pre-wrap; }
+.group-message.is-incoming { justify-self:start; max-width:86%; }
+.group-message.is-outgoing { justify-self:end; max-width:86%; border-color:#173441; background:#173441; }
+.group-message.is-outgoing > div:first-child, .group-message.is-outgoing p, .group-message.is-outgoing time { color:#f8f2e7; }
+.group-voice-note { display:flex; align-items:center; gap:.65rem; min-width:min(330px,70vw); margin-top:.65rem; }
+.group-voice-toggle { display:grid; flex:0 0 auto; width:40px; height:40px; place-items:center; border:0; border-radius:50%; background:#c9a25b; color:#061522; cursor:pointer; font-weight:900; }
+.group-voice-waveform { --voice-progress:0%; position:relative; display:flex; flex:1; height:38px; align-items:center; gap:2px; overflow:hidden; }
+.group-voice-waveform span { width:3px; height:100%; min-height:5px; border-radius:999px; background:#9d7b37; transform:scaleY(var(--wave-peak,.3)); transform-origin:center; }
+.group-message.is-outgoing .group-voice-waveform span { background:#ead6a9; }
+.group-voice-duration { min-width:32px; font-variant-numeric:tabular-nums; }
+.group-photo-message { position:relative; min-width:min(330px,70vw); min-height:120px; margin-top:.65rem; overflow:hidden; border-radius:12px; background:#e9e2d5; }
+.group-photo-message img { display:block; width:100%; max-height:340px; object-fit:cover; }
+.group-photo-message > span { display:grid; min-height:120px; place-items:center; color:#68777d; font-size:.75rem; }
 .group-catch-up { border-top:1px solid #e3ded2; padding:1rem; background:#fffdf8; }
 .group-catch-up > p { margin:.35rem 0 0; color:#6c787e; font-size:.78rem; }
 .group-catch-up-head { display:flex; align-items:flex-end; justify-content:space-between; gap:.7rem; }
@@ -2344,6 +2356,16 @@ body.donor-home {
 .group-compose textarea { border:1px solid #dcd4c3; border-radius:12px; padding:.75rem; font:inherit; resize:vertical; }
 .group-compose button { justify-self:end; border:0; border-radius:999px; padding:.65rem 1rem; background:#c9a25b; color:#061522; font-weight:900; cursor:pointer; }
 .group-compose button:disabled { opacity:.55; }
+.group-compose-actions { display:flex; align-items:center; justify-content:space-between; gap:.75rem; }
+.group-compose-actions > div { display:flex; gap:.45rem; }
+.group-compose .group-attach-button { display:inline-flex; align-items:center; gap:.35rem; border:1px solid #d8cfbd; padding:.55rem .7rem; background:#fff; color:#27404b; }
+.group-compose .group-attach-button.is-recording { border-color:#9f3838; background:#fff0ee; color:#8b2626; }
+.group-attachment-preview { display:flex; align-items:center; gap:.7rem; border:1px solid #dfd5c3; border-radius:12px; padding:.6rem; background:#f8f3e9; }
+.group-attachment-preview img { width:64px; height:54px; border-radius:8px; object-fit:cover; }
+.group-attachment-preview > span:nth-child(2) { display:grid; gap:.15rem; flex:1; }
+.group-attachment-preview small { color:#738087; }
+.group-attachment-preview > button { justify-self:auto; width:32px; height:32px; padding:0; background:#e7dfd0; color:#485a62; font-size:1.2rem; }
+.group-recording-ready { display:grid; width:48px; height:48px; place-items:center; border-radius:50%; background:#eadbbd; font-size:1.25rem; }
 @media (max-width:800px) { .groups-layout { grid-template-columns:1fr; } .group-message-list { max-height:none; } }
 
 .unified-nav-divider {

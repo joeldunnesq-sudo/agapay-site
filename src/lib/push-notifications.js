@@ -229,13 +229,18 @@ export async function sendGroupMessagePush(env, {
   message,
 }, dependencies = {}) {
   const subscriptions = await listGroupPushSubscriptions(env, { parishId, ministryId, authorPersonId });
-  const excerpt = notificationExcerpt(message.body);
+  const excerpt = groupMessagePushExcerpt(message);
   return deliverPushNotifications(env, subscriptions, {
     title: `New message in ${String(ministryName || "your group").trim()}`,
-    body: `${String(authorName || "A parish member").trim()}: ${excerpt || "New message"}`,
+    body: `${String(authorName || "A parish member").trim()}: ${excerpt}`,
     url: `/myagapay/groups?group=${encodeURIComponent(ministryId)}`,
     tag: `group-${ministryId}`,
   }, dependencies);
+}
+
+export function groupMessagePushExcerpt(message = {}) {
+  return notificationExcerpt(message.body)
+    || (message.messageType === "voice" ? "🎤 Voice message" : message.messageType === "image" ? "📷 Photo" : "New message");
 }
 
 export async function handleDonorPush(request, env, action = "") {

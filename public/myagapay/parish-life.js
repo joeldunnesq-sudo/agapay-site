@@ -36,7 +36,7 @@ function renderParishLifeActivity(feed, groups, teaching, media) {
     id: item.id,
     type: "Group",
     title: item.ministryName || "Ministry group",
-    detail: item.body,
+    detail: item.body || (item.messageType === "voice" ? "🎤 Voice message" : item.messageType === "image" ? "📷 Photo" : "Group message"),
     at: item.createdAt,
     href: `/myagapay/groups?group=${encodeURIComponent(item.ministryId || "")}`,
     read: Boolean(item.read),

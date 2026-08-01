@@ -100,6 +100,12 @@ bucket_name = "agapay-announcement-assets"
 binding = "TEACHING_ASSETS"
 bucket_name = "agapay-teaching-assets"
 
+# Private voice notes and photos for ministry group messages. Never enable a
+# public r2.dev URL; authenticated group routes re-check active membership.
+[[r2_buckets]]
+binding = "GROUP_MESSAGE_ASSETS"
+bucket_name = "agapay-group-message-assets"
+
 # Private bucket for sales-tax exemption documents. Unlike CAMPAIGN_ASSETS,
 # this bucket must NEVER have a public r2.dev URL enabled -- all access goes
 # through authenticated Worker routes (src/handlers/tax-exemption.js) that
@@ -206,3 +212,7 @@ bucket_name = "agapay-campaign-assets-staging"
 [[env.staging.r2_buckets]]
 binding = "TEACHING_ASSETS"
 bucket_name = "agapay-teaching-assets-staging"
+
+[[env.staging.r2_buckets]]
+binding = "GROUP_MESSAGE_ASSETS"
+bucket_name = "agapay-group-message-assets-staging"
