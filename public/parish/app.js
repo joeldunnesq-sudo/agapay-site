@@ -9838,7 +9838,11 @@
     const opening = svg.match(/<svg\b[^>]*>/i)?.[0];
     if (!opening) return svg;
     const positioned = opening
-      .replace(/\s(?:x|y|width|height)="[^"]*"/gi, '')
+      // qrcode-generator already sets preserveAspectRatio on its root SVG.
+      // Remove every positioning attribute before adding the bulletin-specific
+      // values so the nested SVG remains valid XML (duplicate attributes make
+      // browsers reject the download and prevent PNG rasterization).
+      .replace(/\s(?:x|y|width|height|preserveAspectRatio)=(?:"[^"]*"|'[^']*')/gi, '')
       .replace('<svg', `<svg x="${x}" y="${y}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"`);
     return svg.replace(opening, positioned);
   }

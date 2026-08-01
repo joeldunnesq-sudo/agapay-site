@@ -22,6 +22,20 @@ assert.match(parishHtml, /bookstoreGuestCheckoutQr/);
 assert.match(parishApp, /qrcode\(0, 'H'\)/);
 assert.match(parishApp, /brandQrSvg\(rawSvg, logoHref\)/);
 assert.ok(parishApp.includes("'/' + encodeURIComponent(currentParish.parishId) + '/bookstore'"));
+
+const bulletinPositionStart = parishApp.indexOf("function positionBulletinQr");
+const bulletinPositionEnd = parishApp.indexOf("function buildBulletinSvg", bulletinPositionStart);
+assert.ok(bulletinPositionStart >= 0 && bulletinPositionEnd > bulletinPositionStart, "bulletin QR positioning helper should exist");
+const positionBulletinQr = new Function(`${parishApp.slice(bulletinPositionStart, bulletinPositionEnd)}; return positionBulletinQr;`)();
+const positionedBulletinQr = positionBulletinQr(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="211px" height="211px" viewBox="0 0 211 211" preserveAspectRatio="xMinYMin meet"><path d="M0 0h1v1z"/></svg>',
+  289,
+  94,
+  96
+);
+const positionedBulletinQrRoot = positionedBulletinQr.match(/^<svg\b[^>]*>/)?.[0] || "";
+assert.equal((positionedBulletinQrRoot.match(/\spreserveAspectRatio=/g) || []).length, 1, "bulletin QR SVG must not contain duplicate preserveAspectRatio attributes");
+assert.match(positionedBulletinQrRoot, /x="289" y="94" width="96" height="96" preserveAspectRatio="xMidYMid meet"/);
 assert.match(publicStore, /No account required/);
 assert.match(publicStoreApp, /bookstorePathSegments\[1\] === "bookstore"/);
 
