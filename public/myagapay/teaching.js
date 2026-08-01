@@ -1,4 +1,13 @@
-let teachingState = { posts: [], unreadCount: 0 };
+const TEACHING_FILTERS = Object.freeze([
+  { value: "all", label: "All" },
+  { value: "homilies", label: "Homilies" },
+  { value: "catechism", label: "Catechism" },
+  { value: "liturgical", label: "Liturgical" },
+  { value: "choir", label: "Choir" },
+  { value: "special_events", label: "Special Events" },
+]);
+
+let teachingState = { posts: [], unreadCount: 0, filter: "all" };
 
 function teachingEscape(value) {
   return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
@@ -13,6 +22,26 @@ function teachingHeaders() {
   return window.MyAgapayShell?.authHeaders({ "Content-Type": "application/json" }) || {};
 }
 
+function teachingPostsForFilter(filter) {
+  if (filter === "all") return teachingState.posts;
+  return teachingState.posts.filter((post) => (post.category || "homilies") === filter);
+}
+
+function renderTeachingCategoryFilters() {
+  const filters = document.getElementById("teachingCategoryFilters");
+  if (!filters) return;
+  filters.innerHTML = TEACHING_FILTERS.map(({ value, label }) => {
+    const active = teachingState.filter === value;
+    return `<button type="button" class="${active ? "is-active" : ""}" aria-pressed="${active}" onclick="setTeachingCategoryFilter('${value}')"><span>${teachingEscape(label)}</span><strong>${teachingPostsForFilter(value).length}</strong></button>`;
+  }).join("");
+}
+
+function setTeachingCategoryFilter(filter) {
+  if (!TEACHING_FILTERS.some(({ value }) => value === filter)) return;
+  teachingState.filter = filter;
+  renderTeaching();
+}
+
 function renderTeaching() {
   const list = document.getElementById("teachingList");
   const summary = document.getElementById("teachingUnreadSummary");
@@ -20,15 +49,22 @@ function renderTeaching() {
   summary.hidden = unread === 0;
   summary.textContent = `${unread} unread`;
   window.MyAgapayShell?.setTeachingUnreadCount(unread);
+  renderTeachingCategoryFilters();
   if (!teachingState.posts.length) {
     list.innerHTML = '<div class="feed-empty"><strong>No teaching posts yet</strong><p>Your parish’s published reflections and recordings will appear here.</p></div>';
     return;
   }
-  list.innerHTML = teachingState.posts.map((post) => `
+  const visiblePosts = teachingPostsForFilter(teachingState.filter);
+  if (!visiblePosts.length) {
+    const selected = TEACHING_FILTERS.find(({ value }) => value === teachingState.filter)?.label || "selected";
+    list.innerHTML = `<div class="feed-empty"><strong>No ${teachingEscape(selected.toLowerCase())} posts</strong><p>Published teaching in this category will appear here.</p></div>`;
+    return;
+  }
+  list.innerHTML = visiblePosts.map((post) => `
     <article class="feed-card teaching-card${post.read ? "" : " is-unread"}" id="${teachingEscape(post.id)}" data-teaching-id="${teachingEscape(post.id)}">
       <button class="feed-card-summary" type="button" onclick="openTeachingPost('${teachingEscape(post.id)}')" aria-expanded="false">
         <span class="teaching-card-icon" aria-hidden="true">${post.audioUrl ? "▶" : "✦"}</span>
-        <span class="feed-card-copy"><span class="feed-card-flags">${post.audioUrl ? "<em>Audio</em>" : "<em>Reflection</em>"}${post.read ? "" : '<em class="feed-new">New</em>'}</span><strong>${teachingEscape(post.title)}</strong><small>${teachingEscape(teachingDate(post.publishedAt))}</small></span>
+        <span class="feed-card-copy"><span class="feed-card-flags"><em>${teachingEscape(TEACHING_FILTERS.find(({ value }) => value === (post.category || "homilies"))?.label || "Homilies")}</em>${post.audioUrl ? "<em>Audio</em>" : "<em>Reflection</em>"}${post.read ? "" : '<em class="feed-new">New</em>'}</span><strong>${teachingEscape(post.title)}</strong><small>${teachingEscape(teachingDate(post.publishedAt))}</small></span>
       </button>
       <div class="feed-card-detail teaching-card-detail" hidden>
         ${post.audioUrl ? `<audio controls preload="metadata" src="${teachingEscape(post.audioUrl)}">Your browser does not support audio playback.</audio>` : ""}
@@ -67,7 +103,7 @@ async function loadTeaching() {
     if (window.MyAgapayShell?.handleUnauthorized(response)) return;
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || "Unable to load parish teaching.");
-    teachingState = { posts: data.posts || [], unreadCount: Number(data.unreadCount || 0) };
+    teachingState = { posts: data.posts || [], unreadCount: Number(data.unreadCount || 0), filter: teachingState.filter || "all" };
     if (data.parish?.name) document.getElementById("teachingParishName").textContent = data.parish.name;
     status.hidden = true;
     renderTeaching();

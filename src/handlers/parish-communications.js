@@ -26,6 +26,13 @@ import {
 
 const CONTENT_TYPE = "announcement";
 export const ANNOUNCEMENT_ALLOWED_TAGS = Object.freeze(["strong", "em", "a", "ul", "li", "br"]);
+export const ANNOUNCEMENT_CATEGORIES = Object.freeze(["services", "events", "youth", "outreach", "education", "general"]);
+
+function announcementCategory(value, fallback = "general") {
+  const category = String(value ?? fallback).trim().toLowerCase();
+  if (!ANNOUNCEMENT_CATEGORIES.includes(category)) throw new Error("Invalid announcement category.");
+  return category;
+}
 
 function escapeAnnouncementHtml(value) {
   return String(value ?? "")
@@ -48,6 +55,7 @@ function announcementFromRow(row = {}) {
     body: row.body || "",
     bodyHtml: renderAnnouncementBody(row.body || ""),
     heroImageUrl: row.hero_image_url || "",
+    category: row.category || "general",
     status: row.status || "draft",
     pinned: Boolean(row.pinned),
     publishedAt: row.published_at || "",
@@ -69,6 +77,9 @@ function validateAnnouncementInput(input = {}, { partial = false } = {}) {
   }
   if (!partial || Object.prototype.hasOwnProperty.call(input, "pinned")) {
     result.pinned = input.pinned === true || input.pinned === 1 ? 1 : 0;
+  }
+  if (!partial || Object.prototype.hasOwnProperty.call(input, "category")) {
+    result.category = announcementCategory(input.category);
   }
   return result;
 }
@@ -143,9 +154,9 @@ export async function createParishAnnouncement(db, { parishId, createdBy, input 
   const id = generateSecret("announcement");
   await db.prepare(`
     INSERT INTO parish_announcements
-      (id, parish_id, title, body, status, pinned, created_by)
-    VALUES (?, ?, ?, ?, 'draft', ?, ?)
-  `).bind(id, parishId, fields.title, fields.body, fields.pinned, createdBy).run();
+      (id, parish_id, title, body, category, status, pinned, created_by)
+    VALUES (?, ?, ?, ?, ?, 'draft', ?, ?)
+  `).bind(id, parishId, fields.title, fields.body, fields.category, fields.pinned, createdBy).run();
   return announcementFromRow(await db.prepare("SELECT * FROM parish_announcements WHERE id = ?").bind(id).first());
 }
 
@@ -167,15 +178,16 @@ export async function updateParishAnnouncement(db, { parishId, announcementId, i
 
   const title = fields.title ?? current.title;
   const body = fields.body ?? current.body;
+  const category = fields.category ?? current.category ?? "general";
   const pinned = fields.pinned ?? current.pinned;
   const publishedAt = requestedStatus === "published"
     ? (current.published_at || new Date().toISOString())
     : null;
   await db.prepare(`
     UPDATE parish_announcements
-    SET title = ?, body = ?, pinned = ?, status = ?, published_at = ?, updated_at = datetime('now')
+    SET title = ?, body = ?, category = ?, pinned = ?, status = ?, published_at = ?, updated_at = datetime('now')
     WHERE id = ? AND parish_id = ?
-  `).bind(title, body, pinned, requestedStatus, publishedAt, announcementId, parishId).run();
+  `).bind(title, body, category, pinned, requestedStatus, publishedAt, announcementId, parishId).run();
   const announcement = announcementFromRow(await db.prepare("SELECT * FROM parish_announcements WHERE id = ?").bind(announcementId).first());
   if (current.status !== "published" && requestedStatus === "published" && typeof onPublished === "function") {
     onPublished(announcement);
@@ -195,12 +207,13 @@ export async function archiveParishAnnouncement(db, { parishId, announcementId }
   return row ? announcementFromRow(row) : null;
 }
 
-export async function getDonorAnnouncementFeed(db, { parishId, donorId }) {
+export async function getDonorAnnouncementFeed(db, { parishId, donorId, category = "" }) {
+  const selectedCategory = category ? announcementCategory(category, "") : "";
   const result = await db.prepare(`
     SELECT * FROM parish_announcements
-    WHERE parish_id = ? AND status = 'published'
+    WHERE parish_id = ? AND status = 'published'${selectedCategory ? " AND category = ?" : ""}
     ORDER BY pinned DESC, published_at DESC, created_at DESC
-  `).bind(parishId).all();
+  `).bind(...(selectedCategory ? [parishId, selectedCategory] : [parishId])).all();
   const announcements = (result.results || []).map(announcementFromRow);
   const contentIds = announcements.map(({ id }) => id);
   const readIds = await getReadContentIds(db, {
@@ -650,7 +663,16 @@ export async function handleDonorFeed(request, env, announcementId = "") {
 
   const donorId = normalizeEmail(donor.email);
   if (!announcementId && request.method === "GET") {
-    const feed = await getDonorAnnouncementFeed(db, { parishId, donorId });
+    let feed;
+    try {
+      feed = await getDonorAnnouncementFeed(db, {
+        parishId,
+        donorId,
+        category: new URL(request.url).searchParams.get("category") || "",
+      });
+    } catch (error) {
+      return json({ error: error.message }, { status: 422 });
+    }
     return json({
       available: true,
       parish: { id: parishId, name: found.registration.parishName || "" },

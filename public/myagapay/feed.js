@@ -1,4 +1,15 @@
-let parishFeedState = { announcements: [], unreadCount: 0 };
+const ANNOUNCEMENT_FILTERS = Object.freeze([
+  { value: "all", label: "All" },
+  { value: "pinned", label: "Pinned" },
+  { value: "services", label: "Services" },
+  { value: "events", label: "Events" },
+  { value: "youth", label: "Youth" },
+  { value: "outreach", label: "Outreach" },
+  { value: "education", label: "Education" },
+  { value: "general", label: "General" },
+]);
+
+let parishFeedState = { announcements: [], unreadCount: 0, filter: "all" };
 
 function feedEscape(value) {
   return String(value ?? "")
@@ -17,6 +28,27 @@ function feedDate(value) {
 
 function feedHeaders() {
   return window.MyAgapayShell?.authHeaders({ "Content-Type": "application/json" }) || {};
+}
+
+function announcementsForFilter(filter) {
+  if (filter === "all") return parishFeedState.announcements;
+  if (filter === "pinned") return parishFeedState.announcements.filter((announcement) => announcement.pinned);
+  return parishFeedState.announcements.filter((announcement) => (announcement.category || "general") === filter);
+}
+
+function renderFeedCategoryFilters() {
+  const filters = document.getElementById("feedCategoryFilters");
+  if (!filters) return;
+  filters.innerHTML = ANNOUNCEMENT_FILTERS.map(({ value, label }) => {
+    const active = parishFeedState.filter === value;
+    return `<button type="button" class="${active ? "is-active" : ""}" aria-pressed="${active}" onclick="setFeedCategoryFilter('${value}')"><span>${feedEscape(label)}</span><strong>${announcementsForFilter(value).length}</strong></button>`;
+  }).join("");
+}
+
+function setFeedCategoryFilter(filter) {
+  if (!ANNOUNCEMENT_FILTERS.some(({ value }) => value === filter)) return;
+  parishFeedState.filter = filter;
+  renderParishFeed();
 }
 
 function setDigestPreferenceUi(subscribed, message = "") {
@@ -76,17 +108,24 @@ function renderParishFeed() {
   summary.hidden = unreadCount === 0;
   summary.textContent = `${unreadCount} unread`;
   window.MyAgapayShell?.setFeedUnreadCount(unreadCount);
+  renderFeedCategoryFilters();
 
   if (!parishFeedState.announcements.length) {
     list.innerHTML = '<div class="feed-empty"><strong>No announcements yet</strong><p>Your parish’s published updates will appear here.</p></div>';
     return;
   }
-  list.innerHTML = parishFeedState.announcements.map((announcement) => `
+  const visibleAnnouncements = announcementsForFilter(parishFeedState.filter);
+  if (!visibleAnnouncements.length) {
+    const selected = ANNOUNCEMENT_FILTERS.find(({ value }) => value === parishFeedState.filter)?.label || "selected";
+    list.innerHTML = `<div class="feed-empty"><strong>No ${feedEscape(selected.toLowerCase())} announcements</strong><p>Published announcements in this category will appear here.</p></div>`;
+    return;
+  }
+  list.innerHTML = visibleAnnouncements.map((announcement) => `
     <article class="feed-card${announcement.read ? "" : " is-unread"}${announcement.pinned ? " is-pinned" : ""}" data-feed-id="${feedEscape(announcement.id)}">
       <button class="feed-card-summary" type="button" onclick="openFeedAnnouncement('${feedEscape(announcement.id)}')" aria-expanded="false">
         ${announcement.heroImageUrl ? `<img class="feed-card-thumbnail" src="${feedEscape(announcement.heroImageUrl)}" alt="" loading="lazy" />` : ""}
         <span class="feed-card-copy">
-        <span class="feed-card-flags">${announcement.pinned ? '<em>📌 Pinned</em>' : ""}${announcement.read ? "" : '<em class="feed-new">New</em>'}</span>
+        <span class="feed-card-flags"><em>${feedEscape(ANNOUNCEMENT_FILTERS.find(({ value }) => value === (announcement.category || "general"))?.label || "General")}</em>${announcement.pinned ? '<em>📌 Pinned</em>' : ""}${announcement.read ? "" : '<em class="feed-new">New</em>'}</span>
         <strong>${feedEscape(announcement.title)}</strong>
         <small>${feedEscape(feedDate(announcement.publishedAt))}</small>
         </span>
@@ -132,7 +171,7 @@ async function loadParishFeed() {
     if (window.MyAgapayShell?.handleUnauthorized(response)) return;
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || "Unable to load parish announcements.");
-    parishFeedState = { announcements: data.announcements || [], unreadCount: Number(data.unreadCount || 0) };
+    parishFeedState = { announcements: data.announcements || [], unreadCount: Number(data.unreadCount || 0), filter: parishFeedState.filter || "all" };
     const parishName = document.getElementById("feedParishName");
     if (parishName && data.parish?.name) parishName.textContent = data.parish.name;
     status.hidden = true;

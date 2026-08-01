@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   archiveParishAnnouncement,
   ANNOUNCEMENT_ALLOWED_TAGS,
+  ANNOUNCEMENT_CATEGORIES,
   createParishAnnouncement,
   getAnnouncementReadVisibility,
   getDonorAnnouncementFeed,
@@ -29,7 +30,7 @@ sqlite.exec(`
     data TEXT NOT NULL
   );
 `);
-for (const migration of ["0064_parish_content_reads.sql", "0065_parish_announcements.sql", "0067_parish_announcement_hero_images.sql"]) {
+for (const migration of ["0064_parish_content_reads.sql", "0065_parish_announcements.sql", "0067_parish_announcement_hero_images.sql", "0072_parish_teaching_posts.sql", "0074_parish_content_categories.sql"]) {
   sqlite.exec(readFileSync(path.join(root, "migrations", migration), "utf8"));
 }
 
@@ -57,6 +58,7 @@ assert.equal(entitlementsSummary({ subscriptionTier: "parish" }).modules.communi
 assert.equal(entitlementsSummary({ subscriptionTier: "parish", communicationsEnabled: false }).modules.communications.parishHasEnabled, false);
 
 assert.deepEqual(ANNOUNCEMENT_ALLOWED_TAGS, ["strong", "em", "a", "ul", "li", "br"]);
+assert.deepEqual(ANNOUNCEMENT_CATEGORIES, ["services", "events", "youth", "outreach", "education", "general"]);
 const formattedSource = [
   "Welcome **friends** and *neighbors*.",
   "Visit [our parish](https://example.test/parish).",
@@ -92,8 +94,10 @@ const draft = await createParishAnnouncement(db, {
   createdBy: "treasurer@example.test",
   input: { title: "Sunday schedule", body: "Matins begins at 8:30.", pinned: false },
 });
-const storedDraft = sqlite.prepare("SELECT body FROM parish_announcements WHERE id = ?").get(draft.id);
+const storedDraft = sqlite.prepare("SELECT body, category FROM parish_announcements WHERE id = ?").get(draft.id);
 assert.equal(storedDraft.body, "Matins begins at 8:30.", "rendering must not replace the editable source stored in body");
+assert.equal(storedDraft.category, "general", "the schema must supply general when no announcement category is provided");
+assert.equal(draft.category, "general");
 assert.equal(draft.body, storedDraft.body);
 assert.equal(draft.bodyHtml, renderAnnouncementBody(storedDraft.body));
 let feed = await getDonorAnnouncementFeed(db, { parishId: "parish-one", donorId: "donor@example.test" });
@@ -165,6 +169,21 @@ assert.deepEqual(feed.announcements.map(({ id }) => id), [pinnedDraft.id], "arch
 const adminAnnouncements = await listParishAnnouncements(db, "parish-one");
 assert.equal(adminAnnouncements.find(({ id }) => id === draft.id).status, "archived", "archiving should retain the announcement in the admin list");
 
+const eventsDraft = await createParishAnnouncement(db, {
+  parishId: "parish-one",
+  createdBy: "treasurer@example.test",
+  input: { title: "Parish festival", body: "Join us after Liturgy.", category: "events", pinned: false },
+});
+feed = await getDonorAnnouncementFeed(db, { parishId: "parish-one", donorId: "donor@example.test", category: "events" });
+assert.deepEqual(feed.announcements, [], "category filtering must not expose matching drafts");
+await updateParishAnnouncement(db, { parishId: "parish-one", announcementId: eventsDraft.id, input: { status: "published" } });
+feed = await getDonorAnnouncementFeed(db, { parishId: "parish-one", donorId: "donor@example.test", category: "events" });
+assert.deepEqual(feed.announcements.map(({ id }) => id), [eventsDraft.id], "category filtering must return only matching published announcements");
+assert.throws(() => sqlite.prepare(`
+  INSERT INTO parish_announcements (id, parish_id, title, body, category, created_by)
+  VALUES ('invalid-category', 'parish-one', 'Invalid', 'Invalid', 'fundraiser', 'staff@example.test')
+`).run(), /CHECK constraint failed/, "the announcement schema must reject categories outside its taxonomy");
+
 const handlerSource = readFileSync(path.join(root, "src", "handlers", "parish-communications.js"), "utf8");
 assert.match(handlerSource, /import \{ getReadContentIds, getReadReceipts, markContentRead \} from "\.\.\/lib\/content-reads\.js"/);
 assert.match(handlerSource, /const CONTENT_TYPE = "announcement"/);
@@ -180,6 +199,11 @@ assert.match(adminUiSource, /toggleAnnouncementReaders/);
 assert.match(adminUiSource, /\/readers/);
 assert.match(adminUiSource, /async function toggleCommunicationsFeature\(input\)/);
 assert.match(adminUiSource, /body: JSON\.stringify\(\{ communicationsEnabled: enabled \}\)/);
+assert.match(adminUiSource, /category: document\.getElementById\('announcementCategory'\)\.value/);
+assert.match(dashboardSource, /id="announcementCategory"[\s\S]*?value="general"[\s\S]*?value="services"[\s\S]*?value="education"/);
+const feedUiSource = readFileSync(path.join(root, "public", "myagapay", "feed.js"), "utf8");
+assert.match(feedUiSource, /All[\s\S]*Pinned[\s\S]*Services[\s\S]*Events[\s\S]*Youth[\s\S]*Outreach[\s\S]*Education[\s\S]*General/);
+assert.match(feedUiSource, /announcementsForFilter\(value\)\.length/);
 assert.match(dashboardSource, /id="communicationsEnabledSwitch"[\s\S]*?onchange="toggleCommunicationsFeature\(this\)"/);
 const desktopOrder = [...dashboardSource.matchAll(/class="sidebar-nav-item"[^>]*id="(nav-[^"]+)"/g)].map((match) => match[1]);
 assert.deepEqual(
