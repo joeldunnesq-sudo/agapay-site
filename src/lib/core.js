@@ -304,16 +304,20 @@ export function json(body, init = {}) {
 }
 
 // CORS headers for public-facing API endpoints that may be called cross-origin.
-// Use AGAPAY_CORS_ORIGIN env var to restrict (e.g. "https://agapay.app").
-// Falls back to "*" when not set, which is fine for read-only public endpoints.
+// Production must opt into a specific origin; a missing production binding
+// deliberately omits Access-Control-Allow-Origin rather than failing open.
+// Non-production environments retain the wildcard default for local/staging use.
 export function corsHeaders(env) {
-  const origin = (env && env.AGAPAY_CORS_ORIGIN) ? env.AGAPAY_CORS_ORIGIN : "*";
-  return {
-    "Access-Control-Allow-Origin": origin,
+  const configuredOrigin = String(env?.AGAPAY_CORS_ORIGIN || "").trim();
+  const environment = String(env?.AGAPAY_ENVIRONMENT || "").trim().toLowerCase();
+  const origin = configuredOrigin || (environment === "production" ? "" : "*");
+  const headers = {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, X-AGAPAY-Donor-Email",
     "Access-Control-Max-Age": "86400"
   };
+  if (origin) headers["Access-Control-Allow-Origin"] = origin;
+  return headers;
 }
 
 export function corsJson(body, env, init = {}) {

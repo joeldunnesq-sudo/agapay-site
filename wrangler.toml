@@ -10,6 +10,7 @@ AGAPAY_REGISTRATION_NOTIFY_EMAIL = "hello@agapay.app"
 AGAPAY_APP_URL = "https://agapay.app"
 AGAPAY_PUBLIC_URL = "https://agapay.app"
 AGAPAY_ENVIRONMENT = "production"
+AGAPAY_CORS_ORIGIN = "https://agapay.app"
 CLOUDFLARE_ACCOUNT_ID = "9198ae5ea8adc59e5dedd1b09c9478b9"
 ACCOUNTING_DATABASE_BINDINGS = '{"agapay-acct-production-4ab22bac06dca8b80e70":"ACCOUNTING_DB_ST_FIACRE","agapay-acct-production-e4601e1d985ec8dcb9fe":"ACCOUNTING_DB_PHASE_G_CANARY"}'
 ACCOUNTING_CANARY_PARISH_ID = "agapay-phase-g-canary"

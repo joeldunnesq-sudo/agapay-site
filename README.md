@@ -25,3 +25,6 @@ AGAPAY website files.
 See `docs/SOFT_LAUNCH_READINESS.md` for the full soft-launch hardening
 tracker and `docs/launch-incident-runbook.md` for what to check first
 during an incident.
+
+Security vulnerabilities should be reported privately according to our
+[security policy](SECURITY.md).

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import worker from "../src/worker.js";
 import { LEARN_FREE_PRINT_LIMIT } from "../src/learn/billing.js";
+import { corsHeaders } from "../src/lib/core.js";
 
 class MemoryKV {
   constructor() {
@@ -151,6 +152,24 @@ async function withMockFetch(handler, run) {
   } finally {
     globalThis.fetch = originalFetch;
   }
+}
+
+{
+  assert.equal(
+    corsHeaders({ AGAPAY_ENVIRONMENT: "production", AGAPAY_CORS_ORIGIN: "https://agapay.app" })["Access-Control-Allow-Origin"],
+    "https://agapay.app",
+    "production should allow only its configured CORS origin"
+  );
+  assert.equal(
+    corsHeaders({ AGAPAY_ENVIRONMENT: "production" })["Access-Control-Allow-Origin"],
+    undefined,
+    "production should fail closed when AGAPAY_CORS_ORIGIN is missing"
+  );
+  assert.equal(
+    corsHeaders({ AGAPAY_ENVIRONMENT: "staging" })["Access-Control-Allow-Origin"],
+    "*",
+    "non-production should retain the wildcard fallback"
+  );
 }
 
 {
