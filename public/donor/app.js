@@ -646,7 +646,7 @@ function syncSacramentsEntry(parish) {
   });
 }
 
-function updateQuickGiveLinks(parish) {
+function updateQuickGiveLinks(parish, { syncGivingTier = true } = {}) {
   const tithesLink = document.getElementById("quickGiveTithes");
   const parishIcon = document.getElementById("quickGiveParishIcon");
   const desktopParishIcon = document.getElementById("desktopParishIcon");
@@ -655,7 +655,7 @@ function updateQuickGiveLinks(parish) {
   if (desktopTithesLink) desktopTithesLink.href = quickDonorGiftUrl("stewardship", parish);
   if (parishIcon) parishIcon.innerHTML = communityIconSvg(parish?.type);
   if (desktopParishIcon) desktopParishIcon.innerHTML = communityIconSvg(parish?.type);
-  updateGivingTierTiles(parish);
+  if (syncGivingTier) updateGivingTierTiles(parish);
   syncSacramentsEntry(parish);
 }
 
@@ -2037,7 +2037,7 @@ function renderMyAgapayDashboard(data) {
   `).join("");
 }
 
-function renderDonorDashboardPayload(data, { renderPledge = true } = {}) {
+function renderDonorDashboardPayload(data, { renderPledge = true, syncGivingTier = true } = {}) {
   if (!data) return;
   setDonorProfile(data.donor);
   const summary = data.summary || {};
@@ -2059,7 +2059,7 @@ function renderDonorDashboardPayload(data, { renderPledge = true } = {}) {
   renderRecurringHomeCard(summary);
 
   if (renderPledge) renderPledgeTracker(data.donor, summary, parish);
-  updateQuickGiveLinks(parish);
+  updateQuickGiveLinks(parish, { syncGivingTier });
   renderActiveCampaigns(parish);
   renderNextFeast(parish);
   renderActiveFunds(parish);
@@ -2102,7 +2102,12 @@ async function loadDonorDashboardPage() {
   const cachedDashboard = readDonorCache("dashboard");
   // Cached content can paint the nonfinancial shell instantly, but pledge
   // progress must always wait for current giving data from the API.
-  if (cachedDashboard) renderDonorDashboardPayload(cachedDashboard, { renderPledge: false });
+  if (cachedDashboard) {
+    renderDonorDashboardPayload(cachedDashboard, {
+      renderPledge: false,
+      syncGivingTier: false
+    });
+  }
   try {
     const data = await donorApi("/api/donor/dashboard");
     cacheDonorDashboardPayload(data);
@@ -2116,6 +2121,7 @@ async function loadDonorDashboardPage() {
       return;
     }
     clearDonorCache("dashboard");
+    if (cachedDashboard) updateGivingTierTiles(cachedDashboard.parish || null);
     ["pledgeTrackerCard", "desktopPledgeTracker"].forEach((id) => {
       const card = document.getElementById(id);
       if (card) card.hidden = true;

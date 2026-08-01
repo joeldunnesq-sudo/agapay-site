@@ -276,7 +276,8 @@ assert.match(worker, /mergeStewardshipFundsIntoRegistration/, "manual activation
 assert.match(stewardship, /mergeStewardshipFundsIntoRegistration/, "Stripe activation must update Funds & Alms");
 assert.match(stewardship, /giftType'\), 'stewardship'\)\) IN \('stewardship','general'\)/, "pledge nudges must count stewardship/general gifts only");
 assert.match(parish, /\["stewardship", "general"\]\.includes/, "My AGAPAY must use the same stewardship/general gift types");
-assert.match(donorApp, /renderDonorDashboardPayload\(cachedDashboard, \{ renderPledge: false \}\)/, "cached dashboards must not paint stale pledge progress");
+assert.match(donorApp, /renderDonorDashboardPayload\(cachedDashboard, \{[\s\S]*renderPledge: false,[\s\S]*syncGivingTier: false[\s\S]*\}\)/, "cached dashboards must not paint stale pledge progress or Giving Plus entitlements");
+assert.match(donorApp, /function updateQuickGiveLinks\(parish, \{ syncGivingTier = true \} = \{\}\)[\s\S]*if \(syncGivingTier\) updateGivingTierTiles\(parish\)/, "Quick Give must wait for current dashboard data before painting upgrade state");
 assert.match(donorApp, /clearDonorCache\("dashboard"\)/, "failed dashboard refreshes must discard stale financial cache");
 assert.match(worker, /f\.reportCode \|\| f\.id/, "reporting aliases must not create duplicate accounting funds");
 assert.match(worker, /IN \('stewardship','general','general stewardship','general operating fund'\)[\s\S]*THEN 'general'/, "legacy and new stewardship reporting must aggregate into General Operating");
