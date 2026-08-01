@@ -8412,6 +8412,18 @@ textarea {
 .parish-life-fallback-arrow { color: var(--k-faint); font-size: 22px; }
 
 #parishLifeTierSections { gap: 0; }
+.parish-life-structure-loading,
+.parish-life-section-loading {
+  margin: 0;
+  color: var(--k-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.parish-life-structure-loading { padding: 18px 0; }
+.parish-life-announcement-list > .parish-life-section-loading,
+.parish-life-ministry-grid > .parish-life-section-loading,
+.parish-life-video-grid > .parish-life-section-loading { grid-column: 1 / -1; }
+.parish-life-recording-list > .parish-life-section-loading { padding: 14px 16px; }
 .parish-life-announcement-list { display: grid; grid-template-columns: 1fr; gap: 10px; }
 .parish-life-announcement-card {
   display: grid;

@@ -150,7 +150,7 @@ assert.match(sources["src/handlers/parish-teaching.js"], /sendTeachingPush\(env,
 assert.match(sources["src/worker.js"], /handleParishTeaching\(request, env, parishId,[\s\S]*, ctx\)/);
 assert.match(sources["public/myagapay/parish-life.js"], />Recent Audio<[\s\S]*href="\/myagapay\/teaching">Audio Library/);
 assert.match(sources["public/myagapay/parish-life.js"], /post\.status === "published" && Boolean\(post\.audioUrl\)/);
-assert.match(sources["public/myagapay/parish-life.js"], /setTeachingUnreadCount\(teachingUnread\)/);
+assert.match(sources["public/myagapay/parish-life.js"], /parishLifeFetch\("\/api\/donor\/teaching"[\s\S]*\.then\(\(teaching\)[\s\S]*renderRecentRecordings[\s\S]*setTeachingUnreadCount\(Math\.max\(0, Number\(teaching\?\.unreadCount\) \|\| 0\)\)/, "the teaching request must fill Recent Audio and update unread state independently");
 assert.match(sources["public/parish/dashboard.html"], /id="teachingAudio"/);
 assert.match(sources["public/parish/dashboard.html"], /id="teachingCategory"[\s\S]*?value="homilies"[\s\S]*?value="special_events"/);
 assert.match(sources["public/parish/app.js"], /createTeachingDraft/);

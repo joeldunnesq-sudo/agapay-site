@@ -127,21 +127,26 @@ function parishLifeTierSectionsHtml(communicationsEnabled) {
   return `
     <section class="parish-life-home-section" aria-labelledby="pinnedAnnouncementsHeading">
       <div class="parish-life-section-head"><h2 id="pinnedAnnouncementsHeading">Pinned Announcements</h2><a href="/myagapay/feed">All Announcements</a></div>
-      <div class="parish-life-announcement-list" id="parishLifePinnedAnnouncements"></div>
+      <div class="parish-life-announcement-list" id="parishLifePinnedAnnouncements"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading announcements…</p></div>
     </section>
     <section class="parish-life-home-section" aria-labelledby="yourMinistriesHeading">
       <div class="parish-life-section-head"><h2 id="yourMinistriesHeading">Your Ministries</h2><a href="/myagapay/groups">All Groups</a></div>
-      <div class="parish-life-ministry-grid" id="parishLifeMinistries"></div>
+      <div class="parish-life-ministry-grid" id="parishLifeMinistries"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading ministries…</p></div>
     </section>
     <section class="parish-life-home-section" aria-labelledby="recentAudioHeading">
       <div class="parish-life-section-head"><h2 id="recentAudioHeading">Recent Audio</h2><a href="/myagapay/teaching">Audio Library</a></div>
-      <div class="parish-life-recording-list" id="parishLifeRecordings"></div>
+      <div class="parish-life-recording-list" id="parishLifeRecordings"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading recordings…</p></div>
     </section>
     <section class="parish-life-home-section" aria-labelledby="recentVideosHeading">
       <div class="parish-life-section-head"><h2 id="recentVideosHeading">Recent Videos</h2><a href="/myagapay/media">All Media</a></div>
-      <div class="parish-life-video-grid" id="parishLifeVideos"></div>
+      <div class="parish-life-video-grid" id="parishLifeVideos"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading videos…</p></div>
     </section>
-    <div id="parishLifeNewsMount"></div>`;
+    <div id="parishLifeNewsMount">
+      <section class="parish-life-home-section" aria-labelledby="recentNewsHeading">
+        <div class="parish-life-section-head"><h2 id="recentNewsHeading">Recent News</h2><a href="/myagapay/news">All News</a></div>
+        <p class="sw-tool-loading parish-life-section-loading" role="status">Loading news…</p>
+      </section>
+    </div>`;
 }
 
 function renderPinnedAnnouncements(feed = {}) {
@@ -290,9 +295,23 @@ function applyParishLifeExperience(experience, parish) {
   document.getElementById("parishLifeTierSections").innerHTML = parishLifeTierSectionsHtml(experience.communicationsEnabled);
 }
 
+function initializeParishLifeStructure() {
+  const shell = window.MyAgapayShell;
+  if (!shell?.capabilitiesLoaded?.()) {
+    document.getElementById("parishLifeTierSections").innerHTML = '<p class="sw-tool-loading parish-life-structure-loading" data-parish-life-structure-loading role="status">Loading parish sections…</p>';
+    return null;
+  }
+  const cachedExperience = shell.parishLifeExperience();
+  applyParishLifeExperience(cachedExperience, null);
+  return cachedExperience;
+}
+
 async function loadParishLife() {
   const status = document.getElementById("parishLifeStatus");
   const headers = window.MyAgapayShell?.authHeaders() || {};
+  // The cached capability decides display structure only. Fresh dashboard and
+  // Koinonia access requests below remain authoritative for data and access.
+  initializeParishLifeStructure();
   try {
     const dashboardResponse = await fetch("/api/donor/dashboard", { headers, cache: "no-store" });
     if (window.MyAgapayShell?.handleUnauthorized(dashboardResponse)) return;
@@ -330,11 +349,21 @@ async function loadParishLife() {
       return;
     }
 
-    const [feed, groups, teaching, media, customNews, ...newsSources] = await Promise.all([
-      parishLifeFetch("/api/donor/feed", headers),
-      parishLifeFetch("/api/donor/groups", headers),
-      parishLifeFetch("/api/donor/teaching", headers),
-      parishLifeFetch("/api/donor/videos", headers),
+    const feedPromise = parishLifeFetch("/api/donor/feed", headers).then((feed) => {
+      renderPinnedAnnouncements(feed || {});
+      window.MyAgapayShell?.setFeedUnreadCount(Math.max(0, Number(feed?.unreadCount) || 0));
+    });
+    const groupsPromise = parishLifeFetch("/api/donor/groups", headers).then((groups) => {
+      renderMinistries(groups || {});
+      const unread = (groups?.groups || []).reduce((sum, group) => sum + Math.max(0, Number(group.unreadCount) || 0), 0);
+      window.MyAgapayShell?.setGroupsUnreadCount(unread);
+    });
+    const teachingPromise = parishLifeFetch("/api/donor/teaching", headers).then((teaching) => {
+      renderRecentRecordings(teaching || {});
+      window.MyAgapayShell?.setTeachingUnreadCount(Math.max(0, Number(teaching?.unreadCount) || 0));
+    });
+    const mediaPromise = parishLifeFetch("/api/donor/videos", headers).then((media) => renderRecentVideos(media || {}));
+    const newsPromise = Promise.all([
       parishLifeFetch("/api/donor/custom-news-feeds", headers),
       parishLifeFetch("/api/donor/external-feeds/parish_blog", headers),
       parishLifeFetch("/api/donor/external-feeds/oca", headers),
@@ -342,18 +371,10 @@ async function loadParishLife() {
       parishLifeFetch("/api/donor/external-feeds/spzh", headers),
       parishLifeFetch("/api/donor/external-feeds/orthodoxtimes", headers),
       parishLifeFetch("/api/donor/external-feeds/orthodoxethos", headers),
-    ]);
-    renderPinnedAnnouncements(feed || {});
-    renderRecentRecordings(teaching || {});
-    renderRecentVideos(media || {});
-    renderRecentNews([...newsSources.filter(Boolean), ...(customNews?.feeds || [])]);
-    renderMinistries(groups || {});
-    const feedUnread = Math.max(0, Number(feed?.unreadCount) || 0);
-    const groupsUnread = (groups?.groups || []).reduce((sum, group) => sum + Math.max(0, Number(group.unreadCount) || 0), 0);
-    const teachingUnread = Math.max(0, Number(teaching?.unreadCount) || 0);
-    window.MyAgapayShell?.setFeedUnreadCount(feedUnread);
-    window.MyAgapayShell?.setGroupsUnreadCount(groupsUnread);
-    window.MyAgapayShell?.setTeachingUnreadCount(teachingUnread);
+    ]).then(([customNews, ...newsSources]) => {
+      renderRecentNews([...newsSources.filter(Boolean), ...(customNews?.feeds || [])]);
+    });
+    await Promise.all([feedPromise, groupsPromise, teachingPromise, mediaPromise, newsPromise]);
     status.hidden = true;
   } catch (error) {
     if (typeof loadDonorLiturgicalDay === "function") await loadDonorLiturgicalDay(null);
@@ -363,6 +384,7 @@ async function loadParishLife() {
 }
 
 window.parishLifeTierSectionsHtml = parishLifeTierSectionsHtml;
+window.initializeParishLifeStructure = initializeParishLifeStructure;
 window.parishLifeNextLiturgicalEvent = parishLifeNextLiturgicalEvent;
 window.parishLifeUpcomingLiturgicalEvents = parishLifeUpcomingLiturgicalEvents;
 window.requestParishServiceInterest = requestParishServiceInterest;

@@ -68,6 +68,10 @@ assert.match(parishTierMarkup, /Pinned Announcements/);
 assert.match(parishTierMarkup, /Recent Audio/);
 assert.match(parishTierMarkup, /Recent Videos/);
 assert.match(parishTierMarkup, /Your Ministries/);
+for (const loadingLabel of ["announcements", "ministries", "recordings", "videos", "news"]) {
+  assert.match(parishTierMarkup, new RegExp(`class="sw-tool-loading parish-life-section-loading"[^>]*>Loading ${loadingLabel}…<`), `the ${loadingLabel} section needs its own honest loading state`);
+}
+assert.equal((parishTierMarkup.match(/parish-life-section-loading/g) || []).length, 5, "each fresh-content section must own one loading placeholder");
 assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf("Recent Audio"), "ministries should appear before recent audio and video");
 assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf("parishLifeNewsMount"), "the combined news preview should follow parish-specific ministries");
 assert.match(landingScript, /Get involved/);
@@ -77,6 +81,41 @@ assert.match(landingScript, /post\.status === "published" && Boolean\(post\.audi
 assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/videos"/);
 assert.match(landingScript, /href="\/myagapay\/media\/watch\?video=/);
 assert.match(landingScript, /if \(!experience\.communicationsEnabled\)[\s\S]*return;[\s\S]*parishLifeFetch\("\/api\/donor\/feed"/);
+assert.match(landingScript, /fetch\(path, \{ headers, cache: "no-store" \}\)/, "landing content requests must remain uncached");
+assert.match(landingScript, /initializeParishLifeStructure\(\);[\s\S]*fetch\("\/api\/donor\/dashboard"/, "cached structure must render before the landing dashboard request resolves");
+assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/feed"[\s\S]*\.then\(\(feed\)[\s\S]*renderPinnedAnnouncements/, "announcements should replace their own placeholder when their request resolves");
+assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/groups"[\s\S]*\.then\(\(groups\)[\s\S]*renderMinistries/, "ministries should replace their own placeholder when their request resolves");
+assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/teaching"[\s\S]*\.then\(\(teaching\)[\s\S]*renderRecentRecordings/, "recordings should replace their own placeholder when their request resolves");
+
+const tierMount = { innerHTML: "" };
+const sidebarName = { textContent: "" };
+const sidebarCommunications = { hidden: true };
+const tierLabel = { textContent: "Today" };
+sandbox.document.title = "Today | My AGAPAY";
+sandbox.document.documentElement = { dataset: {} };
+sandbox.document.getElementById = (id) => ({
+  parishLifeTierSections: tierMount,
+  parishLifeSidebarName: sidebarName,
+  parishLifeSidebarCommunications: sidebarCommunications,
+})[id] || null;
+sandbox.document.querySelectorAll = (selector) => selector === "[data-parish-life-label]" ? [tierLabel] : [];
+sandbox.window.MyAgapayShell = {
+  capabilitiesLoaded: () => true,
+  parishLifeExperience: () => ({ communicationsEnabled: true, label: "Koinonia" })
+};
+const cachedTierExperience = sandbox.window.initializeParishLifeStructure();
+assert.equal(cachedTierExperience.communicationsEnabled, true);
+assert.match(tierMount.innerHTML, /Pinned Announcements[\s\S]*Loading announcements…/, "a cached Koinonia decision must synchronously render section shells before any fetch");
+assert.equal(tierLabel.textContent, "Koinonia");
+
+sandbox.window.MyAgapayShell.parishLifeExperience = () => ({ communicationsEnabled: false, label: "Today" });
+sandbox.window.initializeParishLifeStructure();
+assert.equal(tierMount.innerHTML, "", "a cached lower-tier decision must never render Koinonia section shells");
+
+sandbox.window.MyAgapayShell.capabilitiesLoaded = () => false;
+sandbox.window.initializeParishLifeStructure();
+assert.match(tierMount.innerHTML, /data-parish-life-structure-loading[\s\S]*Loading parish sections…/);
+assert.doesNotMatch(tierMount.innerHTML, /Pinned Announcements|Your Ministries|Recent Audio/, "an unresolved tier must show loading without guessing the page structure");
 
 for (const [name, source] of Object.entries({ calendar, feed, groups, teaching, media, watch })) {
   assert.match(source, /href="\/myagapay\/parish-life"/, `${name} must return directly to the shared landing`);
