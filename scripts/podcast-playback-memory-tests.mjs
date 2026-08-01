@@ -200,6 +200,10 @@ assert.match(teachingHtml, /koinonia-podcast-player-shell[\s\S]*id="koinoniaPodc
   "the expanded player must use its structured shell and expose the share action");
 assert.match(donorStyles, /\.koinonia-podcast-player\.is-expanded \{[^}]*inset:0 !important/,
   "the expanded player must cover the viewport at every responsive breakpoint");
+assert.match(donorStyles, /\.koinonia-podcast-player\.is-expanded \{[^}]*height:100dvh[^}]*overflow:hidden/,
+  "the expanded player must fit the viewport without requiring page-level scrolling");
+assert.match(donorStyles, /#koinoniaPodcastQueueList \{[^}]*overflow:auto/,
+  "only a long Up Next queue should scroll inside the fitted player");
 assert.match(donorStyles, /grid-template-areas:"now" "transport" "timeline" "options" "details"/,
   "expanded controls must occupy explicit rows instead of overlapping through implicit grid placement");
 assert.match(teaching, /loadKoinoniaPodcastLatest[\s\S]*Promise\.allSettled[\s\S]*latestEpisodes/);
