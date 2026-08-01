@@ -16,12 +16,12 @@ const parishItems = [...parishGroupSource.matchAll(/class="sidebar-nav-item"[^>]
 assert.deepEqual(parishItems, [
   "nav-sacraments",
   "nav-directory",
-  "nav-text",
-  "nav-accounting",
   "nav-communications",
-], "Koinonia must be the last item in the desktop Parish tier group");
+  "nav-accounting",
+  "nav-text",
+], "Koinonia must sit directly after Directory and before Accounting");
 
-assert.match(app, /const parishOrder = \['sacraments', 'directory', 'accounting', 'text', 'communications'\]/, "runtime ordering must always place Koinonia last");
+assert.match(app, /const parishOrder = \['sacraments', 'directory', 'communications', 'accounting', 'text'\]/, "runtime ordering must place Koinonia after Directory and before Accounting");
 assert.match(app, /parishOrder\.forEach[\s\S]*parishGroup\.appendChild\(item\)[\s\S]*sidebar\.appendChild\(parishGroup\)/, "runtime ordering must keep all Parish items inside the labeled group");
 
-console.log("PASS - Koinonia remains last inside the bottom Parish tier navigation group");
+console.log("PASS - Koinonia remains after Directory and before Accounting in the Parish tier group");
