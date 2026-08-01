@@ -14,7 +14,8 @@ assert.match(shell, /byId\.get\("parish-life"\)/);
 assert.match(shell, /pathname\.startsWith\("\/myagapay\/calendar"\)[\s\S]*return "parish-life"/);
 assert.match(shell, /function ensureParishLifeBackLink[\s\S]*href = "\/myagapay\/parish-life"/);
 assert.doesNotMatch(shell.match(/function products\(\) \{[\s\S]*?return items;/)?.[0] || "", /id: "(?:feed|groups)"/);
-assert.match(html, /data-parish-life-section[\s\S]*href="\/myagapay\/parish-life"/);
-assert.doesNotMatch(html, /data-parish-life-section[^]*?href="\/myagapay\/(?:feed|groups)"/);
+assert.doesNotMatch(html, /data-parish-life-section/, "the My AGAPAY homepage must not repeat Koinonia as a content card");
+assert.match(shell, /id: "giving"[^\n]*icon: icons\.home/, "the Home bottom-nav item must use the house icon");
+assert.match(shell, /parishLife: '[^']*<circle cx="12" cy="7" r="3"\/>[^']*<circle cx="5\.5" cy="9" r="2\.2"\/>[^']*<circle cx="18\.5" cy="9" r="2\.2"\/>/, "the Koinonia bottom-nav item must depict three people");
 
 console.log("My AGAPAY tier-aware single parish landing navigation tests: PASS");

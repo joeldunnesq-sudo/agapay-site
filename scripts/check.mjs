@@ -511,10 +511,10 @@ assert.ok(parishDashboardApp.includes("campaignPublicUrl") && parishDashboardApp
 assert.ok(
   parishDashboardApp.includes("function orderTierNavigation()")
     && parishDashboardApp.includes("'stewardship', 'bookstore'")
-    && parishDashboardApp.includes("'sacraments', 'directory'")
-    && parishDashboardApp.includes("'accounting', 'text'")
-    && parishDashboardApp.includes("'settings'"),
-  "parish dashboard tabs should follow Giving, Stewardship, Parish, and upcoming-module tier order"
+    && parishDashboardApp.includes("const parishOrder = ['sacraments', 'communications', 'directory', 'text', 'accounting']")
+    && parishDashboardApp.includes("parishGroup.appendChild(item)")
+    && parishDashboardApp.includes("sidebar.appendChild(parishGroup)"),
+  "parish dashboard tabs should follow the tier ladder while keeping Parish-only tools grouped"
 );
 assert.ok(
   parishDashboardApp.includes("nav-label-stack")

@@ -9,6 +9,7 @@ import {
   addParishAffiliation,
   assignMinistryLeader,
   assignMinistryParticipant,
+  assignMinistryParticipantCandidate,
   createHousehold,
   createMinistry,
   createPerson,
@@ -25,6 +26,7 @@ import {
   resolveDirectoryAdminContext,
   resolveDirectorySelfServiceContext,
   resolveMemberDirectoryContext,
+  searchMinistryParticipantCandidates,
   setMinistryParticipationPublication,
   setPersonPrivacyFlags,
   submitMinistryInterest,
@@ -33,6 +35,7 @@ import {
 } from "../src/directory/index.js";
 import { ensurePlatformUser, issuePlatformUserSession, PLATFORM_USER_EMAIL_HEADER } from "../src/lib/identity.js";
 import { resolveAuthorizationContext } from "../src/lib/authorization.js";
+import { saveDonor } from "../src/lib/core.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(__dirname, "..");
@@ -46,6 +49,7 @@ function makeD1Env() {
   const db = new DatabaseSync(":memory:");
   db.exec("PRAGMA foreign_keys = ON;");
   for (const name of [
+    "0001_production_records.sql",
     "0014_audit_log.sql",
     "0020_platform_identity.sql",
     "0022_directory_canonical_foundation.sql",
@@ -320,6 +324,40 @@ await test("participant publication is separate and then appears on profile and 
   assert.equal(profile.person.ministries[0].displayName, "Hospitality");
   const filtered = await listMemberDirectoryPeople(env, { context: memberDirectoryContext, ministryId: ministry.id });
   assert.equal(filtered.items.some((item) => item.id === member.id), true);
+});
+
+await test("ministry search finds a home-parish My AGAPAY profile and links it when assigned", async () => {
+  const { env, db, adminContext } = await fixture();
+  await saveDonor(env, {
+    email: "stephanie@dunncrew.com",
+    donorName: "Stephanie Dunn",
+    defaultParishId: "st-fiacre",
+    emailVerifiedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
+  const candidates = await searchMinistryParticipantCandidates(env, { context: adminContext, query: "dunncrew" });
+  assert.equal(candidates.length, 1);
+  assert.equal(candidates[0].displayName, "Stephanie Dunn");
+  assert.equal(candidates[0].source, "parish_profile");
+
+  const ministry = await createActiveMinistry(env, adminContext);
+  await assignMinistryParticipantCandidate(env, {
+    context: adminContext,
+    ministryId: ministry.id,
+    candidateId: candidates[0].candidateId,
+    participationType: "member"
+  });
+  const linked = db.prepare(`SELECT p.id, p.preferred_name, c.visibility
+    FROM platform_users u
+    JOIN directory_person_links l ON l.external_id = u.id AND l.link_type = 'platform_user' AND l.active = 1
+    JOIN directory_people p ON p.id = l.person_id AND p.active = 1
+    LEFT JOIN directory_contact_methods c ON c.owner_id = p.id AND c.contact_type = 'email' AND c.active = 1
+    WHERE u.email = ?`).get("stephanie@dunncrew.com");
+  assert.equal(linked.preferred_name, "Stephanie Dunn");
+  assert.equal(linked.visibility, "private");
+  assert.ok(db.prepare("SELECT id FROM directory_parish_affiliations WHERE person_id = ? AND parish_id = 'st-fiacre' AND active = 1").get(linked.id));
+  assert.ok(db.prepare("SELECT id FROM directory_ministry_participants WHERE person_id = ? AND ministry_id = ? AND status = 'active'").get(linked.id, ministry.id));
 });
 
 await test("published leadership is display-only and grants no platform capabilities", async () => {

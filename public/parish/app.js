@@ -8530,13 +8530,14 @@
       'giving', 'qr', 'history', 'options', 'campaigns', 'givers', 'reconcile',
       'stewardship', 'bookstore'
     ];
+    const parishOrder = ['sacraments', 'communications', 'directory', 'text', 'accounting'];
     const sidebar = document.querySelector('.sidebar-nav');
     preParishOrder.forEach((tab) => {
       const item = document.getElementById(`nav-${tab}`);
       if (sidebar && item) sidebar.appendChild(item);
     });
     const parishGroup = document.getElementById('nav-tier-parish');
-    ['sacraments', 'directory', 'accounting', 'text', 'communications'].forEach((tab) => {
+    parishOrder.forEach((tab) => {
       const item = document.getElementById(`nav-${tab}`);
       if (parishGroup && item) parishGroup.appendChild(item);
     });
@@ -8544,13 +8545,8 @@
     const settings = document.getElementById('nav-settings');
     if (sidebar && settings) sidebar.appendChild(settings);
 
-    const mobileOrder = [
-      ...preParishOrder,
-      'sacraments', 'directory', 'accounting', 'text', 'communications',
-      'settings'
-    ];
     const mobile = document.querySelector('.mobile-tabbar');
-    mobileOrder.forEach((tab) => {
+    [...preParishOrder, ...parishOrder, 'settings'].forEach((tab) => {
       const item = document.querySelector(`.mobile-tab-link[data-nav-tab="${tab}"]`);
       if (mobile && item) mobile.appendChild(item);
     });
@@ -10367,7 +10363,7 @@
       <header class="koinonia-ministry-detail-head"><div class="koinonia-ministry-detail-identity">${koinoniaMinistryAvatar(ministry, 'is-large')}<div><span>${escapeHtml(contentCategoryLabel(ministry.category))}</span><h3>${escapeHtml(ministry.displayName)}</h3><p>${escapeHtml(ministry.shortDescription || 'A parish ministry team.')}</p></div></div><em class="is-${escapeAttr(ministry.status)}">${escapeHtml(contentCategoryLabel(ministry.status))}</em></header>
       <section class="koinonia-ministry-image-tools"><div><strong>Group image</strong><p>Shown beside this ministry name in Koinonia chats.</p></div><label class="btn btn-gold">${ministry.hasImage ? 'Replace image' : 'Choose image'}<input type="file" accept="image/jpeg,image/png,image/webp" onchange="uploadKoinoniaMinistryImage(event,'${escapeAttr(ministry.id)}')" hidden /></label>${ministry.hasImage ? `<button type="button" class="btn btn-ghost" onclick="removeKoinoniaMinistryImage('${escapeAttr(ministry.id)}')">Remove image</button>` : ''}</section>
       <section class="koinonia-ministry-detail-section"><div class="koinonia-panel-head"><div><span class="eyebrow">Team roster</span><h4>${participants.length} member${participants.length === 1 ? '' : 's'}</h4></div></div>
-        <form class="koinonia-member-search" onsubmit="searchKoinoniaMinistryPeople(event,'${escapeAttr(ministry.id)}')"><label for="koinoniaMemberSearch">Invite a My AGAPAY parishioner into this group</label><div><input id="koinoniaMemberSearch" name="query" required minlength="2" placeholder="Search by name" /><button type="submit">Search</button></div><div id="koinoniaMemberSearchResults"></div></form>
+        <form class="koinonia-member-search" onsubmit="searchKoinoniaMinistryPeople(event,'${escapeAttr(ministry.id)}')"><label for="koinoniaMemberSearch">Invite a My AGAPAY parishioner into this group</label><div><input id="koinoniaMemberSearch" name="query" required minlength="2" placeholder="Search by name or email" /><button type="submit">Search</button></div><div id="koinoniaMemberSearchResults"></div></form>
         <div class="koinonia-ministry-roster">${participants.length ? participants.map(person => `<article><span>${escapeHtml((person.displayName || 'P').slice(0,1))}</span><div><strong>${escapeHtml(person.displayName)}</strong><small>${escapeHtml(contentCategoryLabel(person.participationType))}</small></div><button type="button" onclick="removeKoinoniaMinistryMember('${escapeAttr(ministry.id)}','${escapeAttr(person.id)}')">Remove</button></article>`).join('') : '<p>No parishioners have been added yet.</p>'}</div>
       </section>
       <section class="koinonia-ministry-detail-section"><div class="koinonia-panel-head"><div><span class="eyebrow">Incoming interest</span><h4>${requests.length ? `${requests.length} waiting` : 'All caught up'}</h4></div></div><div class="koinonia-ministry-request-list">${requests.length ? requests.map(request => `<article><span>✦</span><div><strong>${escapeHtml(request.displayName || 'Parishioner')}</strong><small>Wants to join as ${escapeHtml(contentCategoryLabel(request.interestType))}</small>${request.memberNote ? `<p>${escapeHtml(request.memberNote)}</p>` : ''}</div><div><button type="button" onclick="reviewKoinoniaMinistryRequest('${escapeAttr(request.id)}','approve')">Approve</button><button class="is-secondary" type="button" onclick="reviewKoinoniaMinistryRequest('${escapeAttr(request.id)}','deny')">Decline</button></div></article>`).join('') : '<div class="koinonia-ministry-caught-up"><span>✓</span><p>No ministry-specific requests need a response.</p></div>'}</div></section>
@@ -10449,18 +10445,18 @@
     const form = event.currentTarget; const target = form.querySelector('#koinoniaMemberSearchResults'); const query = form.elements.query.value.trim();
     target.innerHTML = '<p class="sw-tool-loading">Finding parishioners…</p>';
     try {
-      const response = await fetch(directoryAdminApi('/people?q=' + encodeURIComponent(query) + '&limit=12'), { headers:authHeaders(), cache:'no-store' });
+      const response = await fetch(directoryAdminApi('/ministry-people?q=' + encodeURIComponent(query) + '&limit=12'), { headers:authHeaders(), cache:'no-store' });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.message || payload.error || 'Unable to search parishioners.');
       const existing = new Set((koinoniaMinistriesState.ministries.find(item => item.ministry.id === ministryId)?.participants || []).map(item => item.personId));
-      const people = (payload.people || []).filter(person => !existing.has(person.id));
-      target.innerHTML = people.length ? people.map(person => `<button type="button" onclick="addKoinoniaMinistryMember('${escapeAttr(ministryId)}','${escapeAttr(person.id)}')"><span>${escapeHtml((person.displayName || person.preferredName || 'P').slice(0,1))}</span><span><strong>${escapeHtml(person.displayName || person.preferredName || 'Parishioner')}</strong><small>Add to this ministry group</small></span><em>Invite ＋</em></button>`).join('') : '<p class="koinonia-search-empty">No available parishioners match that name.</p>';
+      const people = (payload.people || []).filter(person => !person.personId || !existing.has(person.personId));
+      target.innerHTML = people.length ? people.map(person => `<button type="button" onclick="addKoinoniaMinistryMember('${escapeAttr(ministryId)}','${escapeAttr(person.candidateId || person.personId)}')"><span>${escapeHtml((person.displayName || 'P').slice(0,1))}</span><span><strong>${escapeHtml(person.displayName || 'Parishioner')}</strong><small>${person.email ? escapeHtml(person.email) : 'Add to this ministry group'}</small></span><em>Invite ＋</em></button>`).join('') : '<p class="koinonia-search-empty">No available parishioners match that name or email.</p>';
     } catch (error) { target.innerHTML = `<p class="koinonia-search-empty">${escapeHtml(error.message)}</p>`; }
   }
 
-  async function addKoinoniaMinistryMember(ministryId, personId) {
+  async function addKoinoniaMinistryMember(ministryId, candidateId) {
     try {
-      const response = await fetch(directoryAdminApi('/ministries/' + encodeURIComponent(ministryId) + '/participants'), { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ personId, participationType:'member' }) });
+      const response = await fetch(directoryAdminApi('/ministries/' + encodeURIComponent(ministryId) + '/participants'), { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ candidateId, participationType:'member' }) });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.message || payload.error || 'Unable to add this parishioner.');
       koinoniaMinistriesState.loaded = false; await loadKoinoniaMinistries(true); setStatus('Parishioner added to the ministry group.', 'success');

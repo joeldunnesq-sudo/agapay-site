@@ -13,7 +13,7 @@
   <script src="/liturgical-calendar.js"></script>
 <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <script src="/pwa-register.js" defer></script>
-  <script src="/myagapay-shell.js?v=20260801parishlife0" defer></script>
+  <script src="/myagapay-shell.js?v=20260801navicons1" defer></script>
   <script src="/donor/app.js?v=20260731pledge1" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -280,19 +280,6 @@
           <img class="summary-watermark" src="/mark.png" alt="" />
         </section>
 
-        <section class="mobile-section" data-parish-life-section aria-labelledby="mobileParishLifeHeading">
-          <div class="mobile-section-head">
-            <h2 id="mobileParishLifeHeading" data-parish-life-label>Today</h2>
-          </div>
-          <div class="mobile-products-grid">
-            <a class="mobile-product-card live" href="/myagapay/parish-life">
-              <span>Your church</span><em class="unified-nav-badge hub-unread-badge" data-parish-life-unread hidden></em>
-              <strong>Today in the Church</strong>
-              <p>Open the shared landing for the liturgical day, services, and available parish updates.</p>
-            </a>
-          </div>
-        </section>
-
         <section class="mobile-section">
           <div class="mobile-section-head">
             <h2>Quick Give</h2>
@@ -379,9 +366,9 @@
         </section>
 
         <nav class="my-agapay-tabbar" aria-label="My AGAPAY navigation">
-          <a class="active" href="/myagapay/dashboard"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg><span>Home</span></a>
+          <a class="active" href="/myagapay/dashboard"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg><span>Home</span></a>
           <a href="/myagapay/bookstore"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Bookstore</span></a>
-          <a href="/myagapay/parish-life"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/><circle cx="12" cy="15.5" r="1.7"/></svg><span data-parish-life-label>Today</span></a>
+          <a href="/myagapay/parish-life"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg><span data-parish-life-label>Today</span></a>
           <a href="/myagapay/directory"><svg viewBox="0 0 24 24"><path d="M12 3l8 6v12H4V9z"/><path d="M9 21v-7h6v7"/><path d="M8 10h8"/><path d="M12 6v8"/></svg><span>Directory</span></a>
           <a href="/myagapay/sacraments"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/></svg><span>Sacraments &amp; Services</span></a>
         </nav>

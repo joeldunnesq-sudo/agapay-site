@@ -37,12 +37,13 @@ import {
 } from "../directory/admin.js";
 import {
   assignMinistryLeader,
-  assignMinistryParticipant,
+  assignMinistryParticipantCandidate,
   createMinistry,
   deleteMinistry,
   endMinistryLeader,
   getMinistryAdmin,
   listMinistriesAdmin,
+  searchMinistryParticipantCandidates,
   removeMinistryParticipant,
   setMinistryParticipationPublication,
   setMinistryImage,
@@ -396,6 +397,9 @@ export async function handleDirectoryAdmin(request, env, parishId) {
     if (request.method === "GET" && path === "/ministries") {
       return privateJson({ ok: true, ministries: await listMinistriesAdmin(env, { context, status: url.searchParams.get("status") || "", query: url.searchParams.get("q") || "", limit: url.searchParams.get("limit") || 100 }) });
     }
+    if (request.method === "GET" && path === "/ministry-people") {
+      return privateJson({ ok: true, people: await searchMinistryParticipantCandidates(env, { context, query: url.searchParams.get("q") || "", limit: url.searchParams.get("limit") || 20 }) });
+    }
     if (request.method === "POST" && path === "/ministries") {
       return privateJson({ ok: true, ministry: await createMinistry(env, { context, data: await body(request), correlationId }) }, { status: 201 });
     }
@@ -424,7 +428,7 @@ export async function handleDirectoryAdmin(request, env, parishId) {
         return privateJson({ ok: true, ministry: await assignMinistryLeader(env, { context, ministryId, ...await body(request), correlationId }) }, { status: 201 });
       }
       if (request.method === "POST" && collection === "participants") {
-        return privateJson({ ok: true, ministry: await assignMinistryParticipant(env, { context, ministryId, ...await body(request), correlationId }) }, { status: 201 });
+        return privateJson({ ok: true, ministry: await assignMinistryParticipantCandidate(env, { context, ministryId, ...await body(request), correlationId }) }, { status: 201 });
       }
       if (request.method === "POST" && collection === "leaders-end") {
         return privateJson({ ok: true, result: await endMinistryLeader(env, { context, leaderId: itemIdOrAction || ministryId, correlationId }) });

@@ -74,6 +74,8 @@ const donorCalendar = await readFile(new URL("../public/myagapay/giving/calendar
 
 assert.match(dashboard, /data-koinonia-view="ministries"/);
 assert.match(app, /Invite a My AGAPAY parishioner/);
+assert.match(app, /ministry-people\?q=/);
+assert.match(app, /Search by name or email/);
 assert.doesNotMatch(dashboard, /Preview Koinonia/);
 assert.match(app, /\/ministries\/' \+ encodeURIComponent\(ministryId\) \+ '\/participants'/);
 assert.match(app, /reviews\/ministry_interest/);
