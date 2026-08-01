@@ -8524,22 +8524,33 @@
   }
 
   function orderTierNavigation() {
-    // Navigation follows the subscription ladder: Giving, Stewardship,
-    // Parish, announced future modules, then account settings.
-    const tierOrder = [
+    // Navigation follows the subscription ladder. Parish-only tools stay
+    // inside their labeled group instead of being pulled into the root nav.
+    const preParishOrder = [
       'giving', 'qr', 'history', 'options', 'campaigns', 'givers', 'reconcile',
-      'stewardship', 'bookstore',
-      'sacraments', 'directory',
-      'accounting', 'text',
-      'settings'
+      'stewardship', 'bookstore'
     ];
     const sidebar = document.querySelector('.sidebar-nav');
-    tierOrder.forEach((tab) => {
+    preParishOrder.forEach((tab) => {
       const item = document.getElementById(`nav-${tab}`);
       if (sidebar && item) sidebar.appendChild(item);
     });
+    const parishGroup = document.getElementById('nav-tier-parish');
+    ['sacraments', 'directory', 'accounting', 'text', 'communications'].forEach((tab) => {
+      const item = document.getElementById(`nav-${tab}`);
+      if (parishGroup && item) parishGroup.appendChild(item);
+    });
+    if (sidebar && parishGroup) sidebar.appendChild(parishGroup);
+    const settings = document.getElementById('nav-settings');
+    if (sidebar && settings) sidebar.appendChild(settings);
+
+    const mobileOrder = [
+      ...preParishOrder,
+      'sacraments', 'directory', 'accounting', 'text', 'communications',
+      'settings'
+    ];
     const mobile = document.querySelector('.mobile-tabbar');
-    tierOrder.forEach((tab) => {
+    mobileOrder.forEach((tab) => {
       const item = document.querySelector(`.mobile-tab-link[data-nav-tab="${tab}"]`);
       if (mobile && item) mobile.appendChild(item);
     });
