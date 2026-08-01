@@ -697,9 +697,10 @@
     pane.innerHTML = '<p class="sw-tool-loading">Loading directory operations...</p>';
     const headers = authHeaders();
     try {
-      const [settingsRes, dashboardRes, peopleRes, householdsRes, skillsRes, maintenanceRes, printRes] = await Promise.all([
+      const [settingsRes, dashboardRes, queueRes, peopleRes, householdsRes, skillsRes, maintenanceRes, printRes] = await Promise.all([
         fetch(directoryAdminApi('/settings'), { headers }),
         fetch(directoryAdminApi('/dashboard'), { headers }),
+        fetch(directoryAdminApi('/queue'), { headers }),
         fetch(directoryAdminApi('/people?limit=8'), { headers }),
         fetch(directoryAdminApi('/households?limit=100'), { headers }),
         fetch(directoryAdminApi('/skills/listings?limit=8'), { headers }),
@@ -714,12 +715,13 @@
       }
       const settings = await settingsRes.json().catch(() => ({ settings: {} }));
       const dashboard = await dashboardRes.json();
+      const queue = await queueRes.json().catch(() => ({ items: [] }));
       const people = await peopleRes.json();
       const households = await householdsRes.json();
       const skills = await skillsRes.json().catch(() => ({ skills: { listings: [] } }));
       const maintenance = await maintenanceRes.json().catch(() => ({ maintenance: {} }));
       const print = await printRes.json().catch(() => ({ print: {} }));
-      renderDirectoryAdminPanel(dashboard.dashboard || {}, people.people || [], households.households || [], skills.skills || {}, maintenance.maintenance || {}, print.print || {}, settings.settings || {});
+      renderDirectoryAdminPanel(dashboard.dashboard || {}, queue.items || [], people.people || [], households.households || [], skills.skills || {}, maintenance.maintenance || {}, print.print || {}, settings.settings || {});
       pane.dataset.loaded = 'true';
     } catch (err) {
       pane.innerHTML = renderDirectoryAdminGenericError();
@@ -729,6 +731,7 @@
   let directoryAdminTab = 'directory';
   let directoryBrowseType = 'household';
   let directoryLastData = null;
+  let directoryQueueFilter = 'all';
 
   function switchDirectoryAdminTab(tab) {
     directoryAdminTab = tab;
@@ -786,11 +789,11 @@
     }
   }
 
-  function renderDirectoryAdminPanel(dashboard, people, households, skills, maintenance, print, settings = {}) {
+  function renderDirectoryAdminPanel(dashboard, queue, people, households, skills, maintenance, print, settings = {}) {
     const pane = document.getElementById('directoryAdminPane');
     if (!pane) return;
     const sortedHouseholds = [...households].sort((a, b) => directoryHouseholdSortKey(a.displayName).localeCompare(directoryHouseholdSortKey(b.displayName)));
-    directoryLastData = { people, households: sortedHouseholds, skills, maintenance, print, settings };
+    directoryLastData = { dashboard, queue, people, households: sortedHouseholds, skills, maintenance, print, settings };
     const parishName = currentParish?.parishName || currentParish?.name || 'Your parish';
     const publishedMembers = Array.isArray(print?.households) ? print.households : [];
     const publishedMemberCount = publishedMembers.length || people.length;
@@ -817,7 +820,7 @@
         </button>
         <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="tools" aria-selected="false" onclick="switchDirectoryAdminTab('tools')">
           <span class="pdx-dir-tab-mark" aria-hidden="true">2</span>
-          <span><strong>Directory Management</strong><small>Skills, exports, and records needing attention</small></span>
+          <span><strong>Directory Management</strong><small>${queue.length} submission${queue.length === 1 ? '' : 's'} awaiting review</small></span>
         </button>
       </div>
       <div class="pdx-dir-tab-panel" data-dir-panel="directory">
@@ -848,43 +851,35 @@
       <div class="pdx-dir-tab-panel" data-dir-panel="tools" hidden>
         <section class="pdx-dir-management-intro">
           <span>Directory Management</span>
-          <h2>Keep parish information useful and current</h2>
-          <p>Review parishioner skills, export office lists, and follow up on records that need confirmation. Nothing in this area changes what parishioners can see unless you explicitly approve a publication request.</p>
+          <h2>One queue for every directory submission</h2>
+          <p>Confirm a submission, decline it, or ask the parishioner for specific information. Returned submissions leave the queue until the member responds, then come back here automatically.</p>
         </section>
-        <section class="pdx-panel pdx-dir-panel-skills">
+        ${directoryHealthOverview(dashboard.metrics || {}, maintenance)}
+        <section class="pdx-panel pdx-dir-review-queue-panel">
           <div class="pdx-panel-header">
-            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3 6.5 7 1-5 5 1.5 7L12 18l-6.5 3.5L7 14.5l-5-5 7-1z"/></svg></div>Parishioner Skills &amp; Service</div>
+            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>Review Queue</div>
             <button class="pdx-link-btn" type="button" onclick="loadDirectoryAdminTab(true)">Refresh</button>
           </div>
-          <p class="section-note">See the skills parishioners have volunteered to share, such as cooking, repairs, teaching, transportation, or event help.</p>
-          <div class="pdx-dir-row-list">
-            ${directorySkillsAdminRows(skills.listings || [])}
+          <div class="pdx-dir-queue-filters" role="group" aria-label="Filter review queue">
+            ${directoryQueueFilterButton('all', 'All', queue.length)}
+            ${directoryQueueFilterButton('publication', 'Directory sharing', queue.filter((item) => item.reviewType?.startsWith('publication')).length)}
+            ${directoryQueueFilterButton('household', 'Household changes', queue.filter((item) => !item.reviewType?.startsWith('publication')).length)}
           </div>
-          <div class="pdx-dir-actions">
-            <button class="pdx-dir-action-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/skills.csv')">Skills CSV</button>
-            <button class="pdx-dir-action-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/published-adults.csv')">Published Adults CSV</button>
-            <button class="pdx-dir-action-btn" type="button" onclick="previewDirectoryAdminPrint('/print/skills')">Print Skills</button>
-            <button class="pdx-dir-action-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/directory.pdf')">Download Directory PDF</button>
-          </div>
+          <div class="pdx-dir-review-queue" id="directoryReviewQueue">${directoryReviewQueueRows(queue)}</div>
         </section>
-        <section class="pdx-panel">
-          <div class="pdx-panel-header">
-            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg></div>Directory Health</div>
+        <div id="directoryManagementDetail" class="pdx-dir-review-detail pdx-dir-queue-detail" aria-live="polite"></div>
+        <details class="pdx-dir-utilities">
+          <summary><span><strong>Skills and exports</strong><small>Open these less-frequent management tools</small></span><b>Show tools</b></summary>
+          <div class="pdx-dir-utilities-body">
+            <div class="pdx-dir-row-list">${directorySkillsAdminRows(skills.listings || [])}</div>
+            <div class="pdx-dir-actions">
+              <button class="pdx-dir-action-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/skills.csv')">Skills CSV</button>
+              <button class="pdx-dir-action-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/published-adults.csv')">Published Adults CSV</button>
+              <button class="pdx-dir-action-btn" type="button" onclick="previewDirectoryAdminPrint('/print/skills')">Print Skills</button>
+              <button class="pdx-dir-action-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/directory.pdf')">Directory PDF</button>
+            </div>
           </div>
-          <p class="section-note">These lists identify records that may need parish-office follow-up. Select an item to open the relevant record.</p>
-          <div class="pdx-dir-row-list">
-            ${directoryMaintenanceRow('Households current', maintenance.householdsCurrent, false, 'Verified recently and ready for member self-service.')}
-            ${directoryMaintenanceRow('Households due', maintenance.householdsDue, false, 'Need annual confirmation soon.')}
-            ${directoryMaintenanceRow('Overdue households', maintenance.householdsOverdue, true, 'Need staff follow-up now.')}
-            ${directoryMaintenanceRow('Households not yet confirmed', maintenance.householdsNotStarted, true, 'These families were missing before because no confirmation record existed.')}
-            ${directoryMaintenanceRow('Families with at least one linked adult', maintenance.accountManagedHouseholds, false, 'These households have an adult who can maintain shared family information.')}
-            ${directoryMaintenanceRow('Families needing a first linked adult', maintenance.householdsNeedingAccountAccess, true, 'No adult account can maintain this household yet.')}
-            ${directoryMaintenanceRow('Skill consents to review', maintenance.staleSkillConsents, false, 'Skill listings that need renewed consent.')}
-            ${directoryMaintenanceRow('Adults without their own account link', maintenance.unclaimedPeople, true, 'Link each adult identity so Koinonia ministries and groups resolve the correct person.')}
-          </div>
-          ${directoryMaintenanceActions(maintenance.actions || {})}
-        </section>
-        <div id="directoryManagementDetail" class="pdx-dir-review-detail" aria-live="polite"></div>
+        </details>
       </div>
       </div>`;
     switchDirectoryAdminTab(directoryAdminTab);
@@ -3109,7 +3104,7 @@
   }
 
   async function openDirectoryReview(sourceType, sourceId) {
-    const detail = document.getElementById('directoryReviewDetail');
+    const detail = document.getElementById('directoryManagementDetail');
     if (!detail || !sourceType || !sourceId) return;
     detail.innerHTML = '<p class="sw-tool-loading">Opening review item...</p>';
     try {
@@ -3132,7 +3127,7 @@
             </div>
             <div class="pdx-dir-review-top-actions">
               ${['person', 'household'].includes(item.targetType) && item.targetId ? `<button class="pdx-dir-action-btn" type="button" onclick="${item.targetType === 'household' ? 'openDirectoryHousehold' : 'openDirectoryPerson'}('${escapeAttr(item.targetId)}')">View full record</button>` : ''}
-              <button class="pdx-dir-close-btn" type="button" onclick="document.getElementById('directoryReviewDetail').innerHTML=''">Close</button>
+              <button class="pdx-dir-close-btn" type="button" onclick="document.getElementById('directoryManagementDetail').innerHTML=''">Close</button>
             </div>
           </div>
           ${directoryReviewPrefs(proposed.publicationPreferences)}
@@ -3142,12 +3137,13 @@
                 <section class="pdx-dir-review-column"><h4>Current record</h4>${directoryReviewObjectRows(review.current || {})}</section>
                 <section class="pdx-dir-review-column pdx-dir-review-column-new"><h4>Submitted changes</h4>${directoryReviewObjectRows(proposed)}</section>
               </div>`}
-          ${actions.includes('approve') ? `
-            <label class="pdx-dir-review-note"><span>Reviewer note</span><textarea id="directoryReviewNote" rows="2" placeholder="Optional note"></textarea></label>
+          ${directoryReviewConversation(review.conversation || [])}
+          ${actions.some(action => ['approve','return','deny'].includes(action)) ? `
+            <label class="pdx-dir-review-note"><span>Message to parishioner</span><textarea id="directoryReviewNote" rows="2" placeholder="Required when asking for information; optional otherwise"></textarea></label>
             <div class="pdx-dir-review-actions">
-              <button class="pdx-dir-action-btn pdx-dir-action-primary" type="button" data-review-decision="approve" onclick="decideDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}','approve', this)">Approve</button>
-              <button class="pdx-dir-action-btn" type="button" data-review-decision="return" onclick="decideDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}','return', this)">Return for Changes</button>
-              <button class="pdx-dir-action-btn pdx-dir-action-danger" type="button" data-review-decision="deny" onclick="decideDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}','deny', this)">Deny</button>
+              ${actions.includes('approve') ? `<button class="pdx-dir-action-btn pdx-dir-action-primary" type="button" data-review-decision="approve" onclick="decideDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}','approve', this, '${escapeAttr(item.version || '')}')">Confirm submission</button>` : ''}
+              ${actions.includes('return') ? `<button class="pdx-dir-action-btn" type="button" data-review-decision="return" onclick="decideDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}','return', this, '${escapeAttr(item.version || '')}')">Ask for information</button>` : ''}
+              ${actions.includes('deny') ? `<button class="pdx-dir-action-btn pdx-dir-action-danger" type="button" data-review-decision="deny" onclick="decideDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}','deny', this, '${escapeAttr(item.version || '')}')">Decline</button>` : ''}
             </div>` : `<p class="section-note">This account can view the item, but it cannot approve it. Use a parish dashboard session or another staff reviewer with directory review permissions.</p>`}
         </article>`;
       detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3158,8 +3154,10 @@
     }
   }
 
-  async function decideDirectoryReview(sourceType, sourceId, decision, button) {
-    const note = document.getElementById('directoryReviewNote')?.value || '';
+  async function decideDirectoryReview(sourceType, sourceId, decision, button, version = '') {
+    const note = document.getElementById('directoryReviewNote')?.value.trim() || '';
+    if (decision === 'return' && !note) { setStatus('Tell the parishioner exactly what information is needed.', 'error'); return; }
+    if (decision === 'deny' && !confirm('Decline this directory submission?')) return;
     const buttons = Array.from(document.querySelectorAll('[data-review-decision]'));
     buttons.forEach(btn => btn.disabled = true);
     const originalText = button?.textContent;
@@ -3168,12 +3166,12 @@
       const res = await fetch(directoryAdminApi('/reviews/' + encodeURIComponent(sourceType) + '/' + encodeURIComponent(sourceId) + '/decision'), {
         method: 'POST',
         headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ decision, reviewerNote: note })
+        body: JSON.stringify({ decision, reviewerNote: note, requesterNote: note, expectedVersion: version })
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Review decision failed.');
       setStatus(decision === 'approve' ? 'Directory item approved.' : 'Directory item updated.', 'success');
-      const detail = document.getElementById('directoryReviewDetail');
+      const detail = document.getElementById('directoryManagementDetail');
       if (detail) detail.innerHTML = '';
       await loadDirectoryAdminTab(true);
     } catch (err) {
@@ -3301,6 +3299,76 @@
       <div class="pdx-dir-row-side"><span class="pdx-dir-badge ${alertIfPositive && numeric > 0 ? 'urgent' : 'count'}">${escapeHtml(numeric)}</span></div>
     </div>`;
   }
+
+  function directoryHealthOverview(metrics = {}, maintenance = {}) {
+    const current = Number(maintenance.householdsCurrent || 0);
+    const due = Number(maintenance.householdsDue || 0);
+    const overdue = Number(maintenance.householdsOverdue || 0);
+    const notStarted = Number(maintenance.householdsNotStarted || 0);
+    const total = Math.max(1, current + due + overdue + notStarted);
+    const percent = Math.round((current / total) * 100);
+    const accountIssues = Number(maintenance.householdsNeedingAccountAccess || 0) + Number(maintenance.unclaimedPeople || 0);
+    const required = Number(metrics.totalPending || 0) + overdue + accountIssues;
+    return `<section class="pdx-dir-health" aria-label="Directory health">
+      <div class="pdx-dir-health-summary">
+        <div class="pdx-dir-health-ring" style="--health-pct:${percent}%"><span><strong>${percent}%</strong><small>current</small></span></div>
+        <div><span class="pdx-dir-health-kicker">Directory health</span><h3>${required ? `${required} action${required === 1 ? '' : 's'} need attention` : 'Everything is in good shape'}</h3><p>${current} of ${total} households have current confirmation. New member submissions appear only in the review queue below.</p></div>
+      </div>
+      <div class="pdx-dir-health-grid">
+        ${directoryHealthTile('Awaiting review', metrics.totalPending || 0, 'Confirm, decline, or request information', Number(metrics.totalPending || 0) ? 'urgent' : 'good')}
+        ${directoryHealthTile('Current households', current, 'Confirmed and ready for self-service', 'good')}
+        ${directoryHealthTile('Parishioner follow-up', due + overdue + notStarted, `${overdue} overdue · ${notStarted} not yet started`, overdue ? 'urgent' : 'watch')}
+        ${directoryHealthTile('Account links needed', accountIssues, 'Households or adults without My AGAPAY access', accountIssues ? 'watch' : 'good')}
+      </div>
+    </section>`;
+  }
+
+  function directoryHealthTile(label, value, copy, tone) {
+    return `<div class="pdx-dir-health-tile is-${tone}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(copy)}</small></div>`;
+  }
+
+  function directoryQueueFilterButton(filter, label, count) {
+    return `<button type="button" class="${directoryQueueFilter === filter ? 'active' : ''}" data-directory-queue-filter="${escapeAttr(filter)}" onclick="filterDirectoryReviewQueue('${escapeAttr(filter)}')"><span>${escapeHtml(label)}</span><b>${escapeHtml(count)}</b></button>`;
+  }
+
+  function directoryReviewTypeLabel(type = '') {
+    const labels = {
+      publication_person: 'Member directory submission',
+      publication_household: 'Household directory submission',
+      membership_add_adult: 'Add adult to household',
+      membership_remove: 'Remove household member',
+      household_relationship_change: 'Household relationship change',
+      child_publication_review: 'Child sharing request',
+      publication_media: 'Photo sharing request',
+      person_canonical_correction: 'Member record correction'
+    };
+    return labels[type] || String(type || 'Directory submission').replace(/_/g, ' ');
+  }
+
+  function directoryReviewQueueRows(items = []) {
+    const filtered = items.filter((item) => directoryQueueFilter === 'all'
+      || (directoryQueueFilter === 'publication' ? item.reviewType?.startsWith('publication') : !item.reviewType?.startsWith('publication')));
+    if (!filtered.length) return `<div class="pdx-dir-queue-empty"><span>✓</span><strong>No submissions in this view</strong><small>New and resubmitted directory requests will appear here.</small></div>`;
+    return filtered.map((item) => `<article class="pdx-dir-queue-row">
+      <div class="pdx-dir-queue-priority is-${escapeAttr(item.priority || 'normal')}" aria-label="${escapeAttr(item.priority || 'normal')} priority"></div>
+      <div class="pdx-dir-queue-copy"><span>${escapeHtml(directoryReviewTypeLabel(item.reviewType))}</span><strong>${escapeHtml(item.targetLabel || 'Directory record')}</strong><small>${escapeHtml(item.summary || 'Directory review')} · ${item.ageDays ? `${escapeHtml(item.ageDays)} day${item.ageDays === 1 ? '' : 's'} waiting` : 'New'}</small></div>
+      <div class="pdx-dir-queue-state"><span>${escapeHtml((item.queueStatus || 'pending_review').replace(/_/g, ' '))}</span><button type="button" onclick="openDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}')">Review</button></div>
+    </article>`).join('');
+  }
+
+  function filterDirectoryReviewQueue(filter) {
+    directoryQueueFilter = filter;
+    const pane = document.getElementById('directoryAdminPane');
+    pane?.querySelectorAll('[data-directory-queue-filter]').forEach((button) => button.classList.toggle('active', button.dataset.directoryQueueFilter === filter));
+    const queue = document.getElementById('directoryReviewQueue');
+    if (queue) queue.innerHTML = directoryReviewQueueRows(directoryLastData?.queue || []);
+  }
+
+  function directoryReviewConversation(messages = []) {
+    if (!messages.length) return '';
+    return `<div class="pdx-dir-review-conversation"><h4>Question and response</h4>${messages.map((message) => `<div class="is-${escapeAttr(message.direction)}"><span>${message.direction === 'staff_to_member' ? 'Parish office' : 'Parishioner'}</span><p>${escapeHtml(message.body)}</p></div>`).join('')}</div>`;
+  }
+
 
   function directoryMaintenanceActions(actions = {}) {
     const groups = [
