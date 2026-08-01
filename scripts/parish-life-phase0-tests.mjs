@@ -5,6 +5,7 @@ import { parishLifeAvailableFor } from "../src/lib/parish-life-access.js";
 
 assert.equal(parishLifeAvailableFor(), false, "an unset environment must fail closed");
 assert.equal(parishLifeAvailableFor({ AGAPAY_ENVIRONMENT: "production" }), false);
+assert.equal(parishLifeAvailableFor({ AGAPAY_ENVIRONMENT: "production", AGAPAY_PARISH_LIFE_ENABLED: "true" }), true, "production must support an explicit Koinonia release flag");
 for (const environment of ["development", "test", "staging", "preview", " STAGING "]) {
   assert.equal(parishLifeAvailableFor({ AGAPAY_ENVIRONMENT: environment }), true, `${environment} should enable Parish Life`);
 }
@@ -46,6 +47,11 @@ for (const pathname of ["/myagapay/feed", "/myagapay/groups"]) {
   assert.equal(production.status, 404, `${pathname} must remain unavailable in production`);
   const staging = await worker.fetch(new Request(`https://agapay.test${pathname}`), assetEnv("staging"), executionContext);
   assert.equal(staging.status, 200, `${pathname} must remain reachable on staging`);
+}
+const enabledProductionAssetEnv = { ...assetEnv("production"), AGAPAY_PARISH_LIFE_ENABLED: "true" };
+for (const pathname of ["/myagapay/feed", "/myagapay/groups", "/myagapay/teaching", "/myagapay/media"]) {
+  const production = await worker.fetch(new Request(`https://agapay.test${pathname}`), enabledProductionAssetEnv, executionContext);
+  assert.equal(production.status, 200, `${pathname} must be reachable when Koinonia is released in production`);
 }
 
 const [hub, hubScript, shell, parishDashboard, parishApp, groupHandler, workerSource] = await Promise.all([
