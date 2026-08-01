@@ -53,7 +53,7 @@ assert.match(app, /Unlock the Accounting Suite/);
 assert.match(app, /Financial command center/);
 assert.match(app, /const accountingIncluded = moduleIncluded\('accounting'\)/);
 assert.match(app, /syncTierRequirementNavigation\('accounting', 'Parish', accountingIncluded\)/);
-assert.match(app, /accountingBadge\.hidden = !accountingIncluded/);
+assert.match(app, /syncModuleStatusNavigation\('accounting', accountingIncluded, accountingIncluded\)/);
 for (const route of ["/setup", "/setup/initialize", "/settings", "/workspace-reference", "/reports/trial-balance", "/reports/statement-of-activities", "/reports/statement-of-financial-position", "/reports/fund-activity"]) assert.ok(routes.includes(route), `missing Accounting route ${route}`);
 assert.match(routes, /accounting\.view/);
 assert.match(routes, /accounting\.configure/);

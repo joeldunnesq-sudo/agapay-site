@@ -382,6 +382,10 @@ const stewardshipPricingCard = givePricingHtml.slice(
   givePricingHtml.indexOf('<h2 class="tier-title">Stewardship</h2>'),
   givePricingHtml.indexOf('<h2 class="tier-title">Parish</h2>')
 );
+const parishPricingCard = givePricingHtml.slice(
+  givePricingHtml.indexOf('<h2 class="tier-title">Parish</h2>'),
+  givePricingHtml.indexOf('<h2 class="tier-title">Diocese</h2>')
+);
 assert.ok(
   subscriptionCatalog.includes('id: "starter"')
     && subscriptionCatalog.includes("monthlyCents: 900")
@@ -416,7 +420,8 @@ assert.ok(
   givePricingHtml.includes('class="tier-coming-soon"')
     && givePricingHtml.includes('class="tier-coming-soon-badge">Coming soon</span>')
     && givePricingHtml.includes("<strong>Text-to-Give</strong>")
-    && givePricingHtml.includes("<strong>Parish Accounting</strong>")
+    && !givePricingHtml.includes("<strong>Parish Accounting</strong>")
+    && parishPricingCard.includes("</svg></span>Accounting Suite</li>")
     && givePricingHtml.indexOf('class="tier-coming-soon"') > givePricingHtml.indexOf("Priority email support"),
   "Parish pricing should group polished coming-soon features at the bottom of the card"
 );
@@ -556,10 +561,11 @@ assert.ok(
   "donor Stewardship requests should surface as dismissible parish-dashboard login popups"
 );
 assert.ok(
-  parishDashboardHtml.includes('id="accountingNavSoonBadge">Beta testing</span>')
+  parishDashboardHtml.includes('class="nav-module-status" id="accountingNavStatus" hidden>Off</span>')
+    && parishDashboardHtml.includes('<em class="mobile-module-status" hidden>Off</em>')
     && parishDashboardApp.includes("const accountingIncluded = moduleIncluded('accounting')")
-    && parishDashboardApp.includes("if (accountingBadge) accountingBadge.hidden = !accountingIncluded"),
-  "Accounting should show the Beta testing pill only when the parish tier includes Accounting"
+    && parishDashboardApp.includes("syncModuleStatusNavigation('accounting', accountingIncluded, accountingIncluded)"),
+  "Accounting should use the standard desktop and mobile On/Off status pills when included"
 );
 assert.ok(
   parishDashboardHtml.includes('class="sac-paywall" id="sacramentsComingSoonBanner"')

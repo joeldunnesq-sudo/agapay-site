@@ -8720,7 +8720,6 @@
     const directoryActive = moduleIncluded('directory');
     const accountingIncluded = moduleIncluded('accounting');
     const accountingNav = document.getElementById('nav-accounting');
-    const accountingBadge = document.getElementById('accountingNavSoonBadge');
     const stewardshipNav = document.getElementById('nav-stewardship');
     stewardshipNav?.removeAttribute('hidden');
     syncTierRequirementNavigation('stewardship', 'Stewardship', stewardshipIncluded);
@@ -8731,12 +8730,8 @@
     });
     syncTierRequirementNavigation('directory', 'Parish', directoryActive);
     syncTierRequirementNavigation('accounting', 'Parish', accountingIncluded);
+    syncModuleStatusNavigation('accounting', accountingIncluded, accountingIncluded);
     if (accountingNav) accountingNav.title = accountingIncluded ? 'Accounting workspace' : 'Requires Parish';
-    if (accountingBadge) accountingBadge.hidden = !accountingIncluded;
-    document.querySelectorAll('.mobile-tab-link[data-nav-tab="accounting"]').forEach((el) => {
-      const badge = el.querySelector('.mobile-soon-badge');
-      if (badge) badge.hidden = !accountingIncluded;
-    });
     document.querySelectorAll('.mobile-tab-link[data-nav-tab="stewardship"]').forEach((el) => {
       el.hidden = false;
       el.classList.toggle('mobile-tab-link--gated', !stewardshipIncluded);
