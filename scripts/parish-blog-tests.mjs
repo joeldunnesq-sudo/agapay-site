@@ -45,12 +45,14 @@ assert.equal(isOcaJurisdiction("OCA"), true);
 assert.equal(isOcaJurisdiction("Orthodox Church in America · Diocese of the South"), true);
 assert.equal(isOcaJurisdiction("Antiochian Orthodox Christian Archdiocese"), false);
 
-const [migration, worker, dashboard, parishApp, landing] = await Promise.all([
+const [migration, worker, dashboard, parishApp, landing, newsPage, newsScript] = await Promise.all([
   readFile(new URL("../migrations/0076_parish_blog_feeds.sql", import.meta.url), "utf8"),
   readFile(new URL("../src/worker.js", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/dashboard.html", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/app.js", import.meta.url), "utf8"),
   readFile(new URL("../public/myagapay/parish-life.js", import.meta.url), "utf8"),
+  readFile(new URL("../public/myagapay/news.html", import.meta.url), "utf8"),
+  readFile(new URL("../public/myagapay/news.js", import.meta.url), "utf8"),
 ]);
 assert.match(migration, /CREATE TABLE IF NOT EXISTS parish_blog_feeds/);
 assert.match(migration, /CREATE TABLE IF NOT EXISTS donor_external_feed_subscriptions/);
@@ -59,9 +61,12 @@ assert.match(worker, /"\/api\/donor\/oca-news"[\s\S]*handleDonorOcaNews/);
 assert.match(worker, /"\/api\/donor\/external-feeds\/"[\s\S]*handleDonorExternalFeed/);
 assert.match(dashboard, /id="parishBlogEnabled"[\s\S]*id="parishBlogSourceUrl"/);
 assert.match(parishApp, /saveParishBlogSettings[\s\S]*communicationsApi\('\/blog'\)/);
-assert.match(landing, /From the Priest’s Blog/);
-assert.match(landing, /OCA News/);
+assert.match(landing, /Recent News/);
+assert.match(landing, /\.slice\(0, 3\)/, "Koinonia home should show only the three newest combined articles");
 assert.match(landing, /isOcaParish \? parishLifeFetch\("\/api\/donor\/oca-news"/);
-assert.match(landing, /Follow feed[\s\S]*\/api\/donor\/external-feeds\/orthochristian/);
+assert.match(newsPage, /News Feeds[\s\S]*orthoChristianPreference/);
+assert.match(newsScript, /Priest’s Blog[\s\S]*OCA News[\s\S]*OrthoChristian/);
+assert.match(newsScript, /toggleNewsExternalFeed[\s\S]*\/api\/donor\/external-feeds\/orthochristian/);
+assert.match(worker, /"\/myagapay\/news", "\/myagapay\/news\.html"/);
 
-console.log("PASS - parish blog RSS discovery, sanitization, admin controls, Koinonia rendering, and OCA news gating");
+console.log("PASS - parish blog RSS discovery, sanitization, dedicated News page, three-article Koinonia preview, and OCA gating");

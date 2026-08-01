@@ -64,6 +64,9 @@ assert.match(parishTierMarkup, /Pinned Announcements/);
 assert.match(parishTierMarkup, /Recent Audio/);
 assert.match(parishTierMarkup, /Recent Videos/);
 assert.match(parishTierMarkup, /Your Ministries/);
+assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf("parishLifeNewsMount"), "the combined news preview should follow parish-specific ministries");
+assert.match(landingScript, /Get involved/);
+assert.match(landingScript, /\/api\/donor\/ministry-service-interest/);
 assert.match(landingScript, /item\.status === "published" && item\.pinned === true/);
 assert.match(landingScript, /post\.status === "published" && Boolean\(post\.audioUrl\)/);
 assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/videos"/);
@@ -73,7 +76,7 @@ assert.match(landingScript, /if \(!experience\.communicationsEnabled\)[\s\S]*ret
 for (const [name, source] of Object.entries({ calendar, feed, groups, teaching, media, watch })) {
   assert.match(source, /href="\/myagapay\/parish-life"/, `${name} must return directly to the shared landing`);
 }
-assert.match(shell, /function ensureParishLifeBackLink[\s\S]*feed\|groups\|teaching\|media/);
+assert.match(shell, /function ensureParishLifeBackLink[\s\S]*feed\|news\|groups\|teaching\|media/);
 assert.match(shell, /link\.href = "\/myagapay\/parish-life"/);
 
 console.log("PASS - tier-aware Today/Koinonia landing, structural gating, redirects, and subpage back navigation");

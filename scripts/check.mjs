@@ -224,6 +224,8 @@ assert.ok(!myAgapayShell.includes('data-myagapay-launch-gated') && !myAgapayShel
 assert.ok(myAgapayShell.includes('parishFeature: "sacramentsEnabled"'), "shared My AGAPAY shell should gate Sacraments & Services on the parish capability");
 assert.ok(myAgapayShell.includes('parishFeature: "directoryEnabled"'), "shared My AGAPAY shell should gate Directory on the parish capability");
 assert.ok(worker.includes("sacramentsEnabled: true") && worker.includes("ordinary_member_access_enabled = 1"), "the full St. Fiacre demo reseed should keep Sacraments and Directory visible to donors");
+assert.ok(donorHandler.includes("handleDonorMinistryServiceInterest") && worker.includes('/api/donor/ministry-service-interest'), "Koinonia should persist donor service interest through an authenticated endpoint");
+assert.ok(parishDashboardApp.includes("ministry-service") && parishDashboardApp.includes("ready to serve"), "the parish dashboard should notify leaders about donor service interest");
 assert.ok(myAgapayShell.includes('mobileFallbackFor: "sacramentsEnabled"') && myAgapayShell.includes('label: "History"'), "Giving History should replace unavailable Sacraments & Services in the bottom nav");
 assert.ok(myAgapayShell.includes('mobileFallbackFor: "directoryEnabled"') && myAgapayShell.includes('label: "Learn"'), "Learn should replace unavailable Directory in the bottom nav");
 assert.ok(myAgapayShell.includes('fetch("/api/donor/dashboard"'), "shared My AGAPAY shell should load the donor home parish capabilities");
@@ -294,7 +296,7 @@ assert.ok(
   donorHandler.includes('featureId: "giving-plus"')
     && worker.includes('url.pathname === "/api/donor/giving-plus-feature-request"')
     && parishDashboardApp.includes("item?.featureId === 'giving-plus'")
-    && parishHandler.includes('["pledge-tracker", "giving-plus"].includes(featureId)'),
+    && parishHandler.includes('["pledge-tracker", "giving-plus", "ministry-service"].includes(featureId)'),
   "Giving Plus donor requests should be stored, surfaced in the parish dashboard, and dismissible"
 );
 const myAgapayHistory = await readFile("public/myagapay/giving/history.html", "utf8");

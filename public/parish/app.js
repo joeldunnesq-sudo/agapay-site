@@ -318,26 +318,35 @@
   }
 
   function showParishFeatureRequestPopup(featureRequests = []) {
-    const request = featureRequests.find((item) => item?.featureId === 'giving-plus')
+    const request = featureRequests.find((item) => item?.featureId === 'ministry-service')
+      || featureRequests.find((item) => item?.featureId === 'giving-plus')
       || featureRequests.find((item) => item?.featureId === 'pledge-tracker');
     const dialog = document.getElementById('parishFeatureRequestDialog');
     if (!request || !dialog) return;
     activeParishFeatureRequest = request;
     const count = Math.max(1, Number(request.count || 1));
     const copy = document.getElementById('parishFeatureRequestCopy');
+    const heading = document.getElementById('parishFeatureRequestHeading');
     const featureTitle = document.getElementById('parishFeatureRequestTitle');
     const featureDescription = document.getElementById('parishFeatureRequestDescription');
     const action = document.getElementById('parishFeatureRequestAction');
     const status = document.getElementById('parishFeatureRequestStatus');
     const givingPlus = request.featureId === 'giving-plus';
+    const ministryService = request.featureId === 'ministry-service';
+    if (heading) heading.textContent = ministryService ? 'A parishioner wants to serve' : 'Your donors want more AGAPAY features';
     if (copy) copy.textContent = count === 1
-      ? `A parishioner asked your church to add ${givingPlus ? 'more giving options through Giving Plus' : 'pledge tracking and the Stewardship features that support it'}.`
-      : `${count} parishioners asked your church to add ${givingPlus ? 'more giving options through Giving Plus' : 'pledge tracking and the Stewardship features that support it'}.`;
-    if (featureTitle) featureTitle.textContent = givingPlus ? 'More ways to give' : 'Annual pledge progress';
-    if (featureDescription) featureDescription.textContent = givingPlus
+      ? (ministryService ? 'A parishioner let you know they are ready to serve.' : `A parishioner asked your church to add ${givingPlus ? 'more giving options through Giving Plus' : 'pledge tracking and the Stewardship features that support it'}.`)
+      : (ministryService ? `${count} parishioners let you know they are ready to serve.` : `${count} parishioners asked your church to add ${givingPlus ? 'more giving options through Giving Plus' : 'pledge tracking and the Stewardship features that support it'}.`);
+    if (featureTitle) featureTitle.textContent = ministryService ? 'Ready to get involved' : givingPlus ? 'More ways to give' : 'Annual pledge progress';
+    if (featureDescription) featureDescription.textContent = ministryService
+      ? 'Consider publishing ministry opportunities or inviting parishioners to speak with a ministry leader after services.'
+      : givingPlus
       ? 'Giving Plus unlocks designated funds, candles, commemorations, campaigns, festal alms, and other donor giving choices.'
       : 'The Stewardship tier gives parishioners a live pledge tracker and gives parish leaders pledge, giving-health, and annual-meeting insights.';
-    if (action) action.textContent = givingPlus ? 'View Giving Plus tier' : 'View Stewardship tier';
+    if (action) {
+      action.textContent = ministryService ? 'Acknowledge' : givingPlus ? 'View Giving Plus tier' : 'View Stewardship tier';
+      action.setAttribute('onclick', ministryService ? 'dismissParishFeatureRequest(false)' : 'dismissParishFeatureRequest(true)');
+    }
     if (status) status.textContent = 'Requests are counted privately; donor identities are not shown.';
     if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open', '');
   }

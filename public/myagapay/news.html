@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>News | My AGAPAY</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260801koinoniaref6" />
+  <script src="/pwa-register.js" defer></script>
+  <script src="/myagapay-shell.js?v=20260801news1" defer></script>
+  <script src="/myagapay/news.js?v=20260801news1" defer></script>
+  <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
+  <meta name="theme-color" content="#061522" />
+</head>
+<body class="donor-mobile-page donor-news-page">
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-scroll">
+        <div class="brand"><div class="brand-row"><a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home"><img src="/mark.png" alt="AGAPAY" /></a><span class="brand-name">AGAPAY</span><span class="dashboard-home-cue">Home</span></div><span class="pill">Donor Dashboard</span></div>
+        <div class="profile-panel"><div class="profile-name">My AGAPAY Account</div><div class="profile-meta" id="newsParishName">Your Orthodox news feeds</div></div>
+        <nav class="nav unified-product-nav"></nav>
+        <div class="sidebar-card"><h3>Your news</h3><div class="mini-item"><strong>Parish first</strong><span>Your priest’s blog appears when your parish connects it.</span></div><div class="mini-item"><strong>Your choice</strong><span>Follow or unfollow OrthoChristian at any time.</span></div></div>
+      </div>
+      <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/parish-life">← Back to Koinonia</a></div>
+    </aside>
+    <main class="content donor-mobile-content">
+      <div class="topbar"><div class="topbar-title">News</div></div>
+      <div class="page news-page-shell">
+        <header class="koinonia-screen-head" aria-labelledby="newsHeading"><div><h1 id="newsHeading">News Feeds</h1><p>Parish writing and Orthodox news, gathered in one place</p></div></header>
+        <section class="news-follow-card" id="orthoChristianPreference" hidden>
+          <div><span class="eyebrow">Optional source</span><h2>OrthoChristian</h2><p>Choose whether OrthoChristian’s newest articles appear in your personal news feed.</p></div>
+          <button type="button" class="parish-life-feed-toggle" id="orthoChristianToggle" onclick="toggleNewsExternalFeed(this)">Follow feed</button>
+        </section>
+        <nav class="content-filter-chips" id="newsSourceFilters" aria-label="Filter news by source"></nav>
+        <div class="notice" id="newsStatus">Loading news feeds…</div>
+        <section class="news-article-list" id="newsArticleList" aria-live="polite"></section>
+      </div>
+      <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
+    </main>
+  </div>
+</body>
+</html>

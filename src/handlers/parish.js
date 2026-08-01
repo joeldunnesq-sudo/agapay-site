@@ -2623,7 +2623,8 @@ export async function handleParishDashboard(request, env, parishId) {
       loadPendingParishFeatureRequests(env, parishId)
     ]);
     const featureRequests = pendingFeatureRequests.filter((item) =>
-      (item.featureId === "pledge-tracker" && !stewardshipToolAccess(registration))
+      item.featureId === "ministry-service"
+      || (item.featureId === "pledge-tracker" && !stewardshipToolAccess(registration))
       || (item.featureId === "giving-plus" && !givingFeatureAccess(registration, "customFunds"))
     );
     const dashboardParish = await enrichParishGivingOptions(env, {
@@ -2776,7 +2777,7 @@ export async function handleParishFeatureRequestDismiss(request, env, parishId, 
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
   if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) return unauthorized();
-  if (!["pledge-tracker", "giving-plus"].includes(featureId)) return json({ error: "Unknown feature request" }, { status: 404 });
+  if (!["pledge-tracker", "giving-plus", "ministry-service"].includes(featureId)) return json({ error: "Unknown feature request" }, { status: 404 });
   await dismissParishFeatureRequest(env, parishId, featureId);
   return json({ ok: true });
 }

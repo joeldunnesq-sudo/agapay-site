@@ -1008,6 +1008,40 @@ export async function handleDonorGivingPlusFeatureRequest(request, env) {
   }, { status: result.duplicate ? 200 : 201 });
 }
 
+export async function handleDonorMinistryServiceInterest(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const donor = await requireDonor(request, env);
+  if (!donor) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  if (!donor.defaultParishId) {
+    return json({ error: "Choose your home parish before sending this request." }, { status: 422 });
+  }
+
+  const limited = await rateLimitByKey(
+    request,
+    env,
+    "donor-ministry-service-interest",
+    `${donor.email}:${donor.defaultParishId}`,
+    { limit: 3, windowSeconds: 86400 }
+  );
+  if (limited) return limited;
+
+  const found = await findRegistrationByParishId(env, donor.defaultParishId);
+  if (!found) return json({ error: "Your selected parish could not be found." }, { status: 404 });
+  const result = await recordParishFeatureRequest(env, {
+    parishId: donor.defaultParishId,
+    featureId: "ministry-service",
+    donorEmail: donor.email
+  });
+  return json({
+    ok: true,
+    duplicate: result.duplicate,
+    message: result.duplicate
+      ? "Your parish has already received your interest."
+      : "Thank you. Your parish dashboard has been notified that a parishioner wants to serve."
+  }, { status: result.duplicate ? 200 : 201 });
+}
+
 export async function handleDonorOfferings(request, env) {
   if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
   const donor = await requireDonor(request, env);

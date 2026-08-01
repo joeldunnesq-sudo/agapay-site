@@ -88,9 +88,6 @@ function parishLifeTierSectionsHtml(communicationsEnabled) {
       <div class="parish-life-section-head"><h2 id="pinnedAnnouncementsHeading">Pinned Announcements</h2><a href="/myagapay/feed">All Announcements</a></div>
       <div class="parish-life-announcement-list" id="parishLifePinnedAnnouncements"></div>
     </section>
-    <div id="parishLifeBlogMount"></div>
-    <div id="parishLifeOcaNewsMount"></div>
-    <div id="parishLifeExternalFeedMount"></div>
     <section class="parish-life-home-section" aria-labelledby="recentAudioHeading">
       <div class="parish-life-section-head"><h2 id="recentAudioHeading">Recent Audio</h2><a href="/myagapay/teaching">Audio Library</a></div>
       <div class="parish-life-recording-list" id="parishLifeRecordings"></div>
@@ -102,7 +99,8 @@ function parishLifeTierSectionsHtml(communicationsEnabled) {
     <section class="parish-life-home-section" aria-labelledby="yourMinistriesHeading">
       <div class="parish-life-section-head"><h2 id="yourMinistriesHeading">Your Ministries</h2><a href="/myagapay/groups">All Groups</a></div>
       <div class="parish-life-ministry-grid" id="parishLifeMinistries"></div>
-    </section>`;
+    </section>
+    <div id="parishLifeNewsMount"></div>`;
 }
 
 function renderPinnedAnnouncements(feed = {}) {
@@ -162,85 +160,28 @@ function renderRecentVideos(media = {}) {
     </a>`).join("");
 }
 
-function renderParishBlog(blog = {}) {
-  const mount = document.getElementById("parishLifeBlogMount");
+function renderRecentNews(blog = {}, ocaNews = {}, externalFeed = {}) {
+  const mount = document.getElementById("parishLifeNewsMount");
   if (!mount) return;
-  const posts = blog.enabled ? (blog.posts || []).slice(0, 3) : [];
-  if (!posts.length) {
+  const articles = [
+    ...(blog.enabled ? (blog.posts || []).map((post) => ({ ...post, source: "Priest’s Blog" })) : []),
+    ...(ocaNews.enabled ? (ocaNews.posts || []).map((post) => ({ ...post, source: "OCA News" })) : []),
+    ...(externalFeed.subscribed ? (externalFeed.posts || []).map((post) => ({ ...post, source: "OrthoChristian" })) : []),
+  ].sort((left, right) => new Date(right.publishedAt || 0) - new Date(left.publishedAt || 0)).slice(0, 3);
+  if (!articles.length) {
     mount.innerHTML = "";
     return;
   }
   mount.innerHTML = `
-    <section class="parish-life-home-section" aria-labelledby="parishBlogHeading">
-      <div class="parish-life-section-head"><h2 id="parishBlogHeading">From the Priest’s Blog</h2>${blog.sourceUrl ? `<a href="${parishLifeEscape(blog.sourceUrl)}" target="_blank" rel="noopener noreferrer">Visit Blog</a>` : ""}</div>
-      <div class="parish-life-blog-list">${posts.map((post) => `
+    <section class="parish-life-home-section" aria-labelledby="recentNewsHeading">
+      <div class="parish-life-section-head"><h2 id="recentNewsHeading">Recent News</h2><a href="/myagapay/news">All News</a></div>
+      <div class="parish-life-blog-list">${articles.map((post) => `
         <a class="parish-life-blog-card" href="${parishLifeEscape(post.url)}" target="_blank" rel="noopener noreferrer">
-          <span><small>${parishLifeEscape(parishLifeDate(post.publishedAt))}</small><strong>${parishLifeEscape(post.title)}</strong></span>
+          <span><small>${parishLifeEscape(post.source)} · ${parishLifeEscape(parishLifeDate(post.publishedAt))}</small><strong>${parishLifeEscape(post.title)}</strong></span>
           ${post.excerpt ? `<p>${parishLifeEscape(post.excerpt)}</p>` : ""}
-          <em>Read on the blog ↗</em>
+          <em>Read article ↗</em>
         </a>`).join("")}</div>
     </section>`;
-}
-
-function renderOcaNews(news = {}) {
-  const mount = document.getElementById("parishLifeOcaNewsMount");
-  if (!mount) return;
-  const posts = news.enabled ? (news.posts || []).slice(0, 3) : [];
-  if (!posts.length) {
-    mount.innerHTML = "";
-    return;
-  }
-  mount.innerHTML = `
-    <section class="parish-life-home-section" aria-labelledby="ocaNewsHeading">
-      <div class="parish-life-section-head"><h2 id="ocaNewsHeading">OCA News</h2><a href="https://www.oca.org/news" target="_blank" rel="noopener noreferrer">All OCA News</a></div>
-      <div class="parish-life-blog-list parish-life-oca-news-list">${posts.map((post) => `
-        <a class="parish-life-blog-card" href="${parishLifeEscape(post.url)}" target="_blank" rel="noopener noreferrer">
-          <span><small>${parishLifeEscape(parishLifeDate(post.publishedAt))}</small><strong>${parishLifeEscape(post.title)}</strong></span>
-          ${post.excerpt ? `<p>${parishLifeEscape(post.excerpt)}</p>` : ""}
-          <em>Read at OCA.org ↗</em>
-        </a>`).join("")}</div>
-    </section>`;
-}
-
-function renderExternalFeed(feed = {}) {
-  const mount = document.getElementById("parishLifeExternalFeedMount");
-  if (!mount) return;
-  if (feed.available !== true) {
-    mount.innerHTML = "";
-    return;
-  }
-  const posts = feed.subscribed ? (feed.posts || []).slice(0, 3) : [];
-  mount.innerHTML = `
-    <section class="parish-life-home-section parish-life-external-feed" aria-labelledby="orthoChristianHeading">
-      <div class="parish-life-section-head"><h2 id="orthoChristianHeading">OrthoChristian</h2><button type="button" class="parish-life-feed-toggle${feed.subscribed ? " is-subscribed" : ""}" onclick="toggleParishExternalFeed(${feed.subscribed ? "false" : "true"}, this)">${feed.subscribed ? "Following" : "Follow feed"}</button></div>
-      ${feed.subscribed ? (posts.length ? `<div class="parish-life-blog-list">${posts.map((post) => `
-        <a class="parish-life-blog-card" href="${parishLifeEscape(post.url)}" target="_blank" rel="noopener noreferrer">
-          <span><small>${parishLifeEscape(parishLifeDate(post.publishedAt))}</small><strong>${parishLifeEscape(post.title)}</strong></span>
-          ${post.excerpt ? `<p>${parishLifeEscape(post.excerpt)}</p>` : ""}
-          <em>Read at OrthoChristian ↗</em>
-        </a>`).join("")}</div>` : '<div class="parish-life-empty-state"><strong>Feed temporarily unavailable</strong><p>Your subscription is saved. New posts will return here when the feed is available.</p></div>') : '<div class="parish-life-feed-invitation"><strong>Orthodox news and reflections</strong><p>Choose to receive the latest OrthoChristian posts here in Koinonia.</p></div>'}
-    </section>`;
-}
-
-async function toggleParishExternalFeed(subscribed, button) {
-  if (button) button.disabled = true;
-  try {
-    const response = await fetch("/api/donor/external-feeds/orthochristian", {
-      method: "PATCH",
-      headers: window.MyAgapayShell?.authHeaders({ "Content-Type": "application/json" }) || { "Content-Type": "application/json" },
-      body: JSON.stringify({ subscribed }),
-    });
-    if (window.MyAgapayShell?.handleUnauthorized(response)) return;
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "Unable to update this feed preference.");
-    const refreshed = await parishLifeFetch("/api/donor/external-feeds/orthochristian", window.MyAgapayShell?.authHeaders() || {});
-    renderExternalFeed(refreshed || data);
-  } catch (error) {
-    const status = document.getElementById("parishLifeStatus");
-    if (status) { status.hidden = false; status.textContent = error.message || "Unable to update this feed preference."; }
-  } finally {
-    if (button?.isConnected) button.disabled = false;
-  }
 }
 
 function renderMinistries(groups = {}) {
@@ -248,7 +189,12 @@ function renderMinistries(groups = {}) {
   if (!target) return;
   const ministries = groups.groups || [];
   if (!ministries.length) {
-    target.innerHTML = '<div class="parish-life-empty-state"><strong>No active ministries</strong><p>Ministry spaces appear here when you become an active participant or leader.</p></div>';
+    target.innerHTML = `
+      <button type="button" class="parish-life-get-involved-card" onclick="requestParishServiceInterest(this)">
+        <span class="parish-life-get-involved-mark" aria-hidden="true">✦</span>
+        <span><strong>Get involved</strong><small>Tell your parish you’re ready to serve. Interest is counted privately.</small></span>
+        <em>Let them know</em>
+      </button>`;
     return;
   }
   target.innerHTML = ministries.slice(0, 6).map((group) => `
@@ -257,6 +203,27 @@ function renderMinistries(groups = {}) {
       <strong>${parishLifeEscape(group.name)}</strong>
       <small>${group.unreadCount ? `${Number(group.unreadCount)} new` : group.role === "leader" ? "Leader" : "Caught up"}</small>
     </a>`).join("");
+}
+
+async function requestParishServiceInterest(button) {
+  if (button) button.disabled = true;
+  try {
+    const response = await fetch("/api/donor/ministry-service-interest", {
+      method: "POST",
+      headers: window.MyAgapayShell?.authHeaders() || {},
+    });
+    if (window.MyAgapayShell?.handleUnauthorized(response)) return;
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Unable to notify your parish.");
+    if (button?.isConnected) {
+      button.classList.add("is-sent");
+      button.innerHTML = '<span class="parish-life-get-involved-mark" aria-hidden="true">✓</span><span><strong>Interest sent</strong><small>Your parish dashboard has been notified that you want to serve.</small></span><em>Thank you</em>';
+    }
+  } catch (error) {
+    const status = document.getElementById("parishLifeStatus");
+    if (status) { status.hidden = false; status.textContent = error.message || "Unable to notify your parish."; }
+    if (button?.isConnected) button.disabled = false;
+  }
 }
 
 async function parishLifeFetch(path, headers) {
@@ -308,9 +275,7 @@ async function loadParishLife() {
     renderPinnedAnnouncements(feed || {});
     renderRecentRecordings(teaching || {});
     renderRecentVideos(media || {});
-    renderParishBlog(blog || {});
-    renderOcaNews(ocaNews || {});
-    renderExternalFeed(externalFeed || {});
+    renderRecentNews(blog || {}, ocaNews || {}, externalFeed || {});
     renderMinistries(groups || {});
     const feedUnread = Math.max(0, Number(feed?.unreadCount) || 0);
     const groupsUnread = (groups?.groups || []).reduce((sum, group) => sum + Math.max(0, Number(group.unreadCount) || 0), 0);
@@ -329,5 +294,5 @@ async function loadParishLife() {
 window.parishLifeTierSectionsHtml = parishLifeTierSectionsHtml;
 window.parishLifeNextLiturgicalEvent = parishLifeNextLiturgicalEvent;
 window.parishLifeUpcomingLiturgicalEvents = parishLifeUpcomingLiturgicalEvents;
-window.toggleParishExternalFeed = toggleParishExternalFeed;
+window.requestParishServiceInterest = requestParishServiceInterest;
 document.addEventListener("DOMContentLoaded", loadParishLife);

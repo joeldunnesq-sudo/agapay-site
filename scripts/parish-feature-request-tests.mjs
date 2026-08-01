@@ -63,6 +63,16 @@ pending = await loadPendingParishFeatureRequests(env, "st-fiacre");
 assert.equal(pending.find((item) => item.featureId === "giving-plus")?.count, 1);
 assert.equal(pending.find((item) => item.featureId === "pledge-tracker")?.count, 3);
 
+const ministryService = await recordParishFeatureRequest(env, {
+  parishId: "st-fiacre",
+  featureId: "ministry-service",
+  donorEmail: "helper@example.org"
+});
+assert.equal(ministryService.duplicate, false);
+pending = await loadPendingParishFeatureRequests(env, "st-fiacre");
+assert.equal(pending.find((item) => item.featureId === "ministry-service")?.count, 1);
+assert.equal("requestors" in pending.find((item) => item.featureId === "ministry-service"), false, "service interest should notify the parish without exposing donor account details");
+
 console.log("Parish feature request tests passed.");
 
 const db = new DatabaseSync(":memory:");
@@ -126,5 +136,12 @@ await recordParishFeatureRequest(d1Env, {
 d1Pending = await loadPendingParishFeatureRequests(d1Env, "holy-cross");
 assert.equal(d1Pending.find((item) => item.featureId === "giving-plus")?.count, 1);
 assert.equal(d1Pending.find((item) => item.featureId === "pledge-tracker")?.count, 3);
+await recordParishFeatureRequest(d1Env, {
+  parishId: "holy-cross",
+  featureId: "ministry-service",
+  donorEmail: "helper@example.org"
+});
+d1Pending = await loadPendingParishFeatureRequests(d1Env, "holy-cross");
+assert.equal(d1Pending.find((item) => item.featureId === "ministry-service")?.count, 1);
 
 console.log("Parish feature request D1 tests passed.");

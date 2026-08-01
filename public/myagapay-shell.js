@@ -92,7 +92,7 @@
     if (pathname.startsWith("/myagapay/learn")) return "learn";
     if (pathname === "/myagapay" || pathname === "/myagapay/" || pathname === "/myagapay/dashboard") return "giving";
     if (pathname.startsWith("/myagapay/bookstore")) return "bookstore";
-    if (pathname.startsWith("/myagapay/parish-life") || pathname.startsWith("/myagapay/feed") || pathname.startsWith("/myagapay/groups") || pathname.startsWith("/myagapay/teaching") || pathname.startsWith("/myagapay/media") || pathname.startsWith("/myagapay/calendar")) return "parish-life";
+    if (pathname.startsWith("/myagapay/parish-life") || pathname.startsWith("/myagapay/feed") || pathname.startsWith("/myagapay/news") || pathname.startsWith("/myagapay/groups") || pathname.startsWith("/myagapay/teaching") || pathname.startsWith("/myagapay/media") || pathname.startsWith("/myagapay/calendar")) return "parish-life";
     if (pathname.startsWith("/myagapay/sacraments") || pathname.startsWith("/myagapay/giving/commemorations") || pathname.startsWith("/myagapay/giving/names")) return "commemorations";
     if (pathname.startsWith("/myagapay/directory")) return "directory";
     if (pathname.startsWith("/myagapay/giving/history") || pathname.startsWith("/myagapay/giving/offerings")) return "history";
@@ -103,7 +103,7 @@
   }
 
   function ensureParishLifeBackLink(pathname = window.location.pathname) {
-    const isSubpage = /^\/myagapay\/(?:feed|groups|teaching|media(?:\/watch)?|calendar)(?:\.html)?\/?$/.test(pathname);
+    const isSubpage = /^\/myagapay\/(?:feed|news|groups|teaching|media(?:\/watch)?|calendar)(?:\.html)?\/?$/.test(pathname);
     if (!isSubpage || document.querySelector("[data-parish-life-back]")) return;
     const topbar = document.querySelector(".topbar");
     if (!topbar) return;

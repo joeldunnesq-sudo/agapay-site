@@ -186,6 +186,7 @@ import {
   handleDonorVerifyPage,
   handleDonorDashboard,
   handleDonorGivingPlusFeatureRequest,
+  handleDonorMinistryServiceInterest,
   handleDonorStewardshipFeatureRequest,
   handleDonorOfferings,
   handleDonorSubscriptionPortal,
@@ -679,6 +680,8 @@ const MYAGAPAY_ASSET_ROUTES = new Map([
   ["/myagapay/calendar/", "/myagapay/giving/calendar.html"],
   ["/myagapay/feed", "/myagapay/feed.html"],
   ["/myagapay/feed/", "/myagapay/feed.html"],
+  ["/myagapay/news", "/myagapay/news.html"],
+  ["/myagapay/news/", "/myagapay/news.html"],
   ["/myagapay/groups", "/myagapay/groups.html"],
   ["/myagapay/groups/", "/myagapay/groups.html"],
   ["/myagapay/teaching", "/myagapay/teaching.html"],
@@ -3181,6 +3184,9 @@ export default {
     }
     if (url.pathname === "/api/donor/giving-plus-feature-request") {
       return handleDonorGivingPlusFeatureRequest(request, env);
+    }
+    if (url.pathname === "/api/donor/ministry-service-interest") {
+      return handleDonorMinistryServiceInterest(request, env);
     }
     if (url.pathname === "/api/donor/offerings") {
       return handleDonorOfferings(request, env);
