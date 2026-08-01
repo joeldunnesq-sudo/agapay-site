@@ -3362,6 +3362,10 @@ export default {
         givingStatus:           "active",
         subscriptionTier:       "parish",
         subscriptionStatus:     "active",
+        sacramentsEnabled:      true,
+        directoryEnabled:       true,
+        bookstoreEnabled:       true,
+        communicationsEnabled:  true,
         dashboardInviteEmailStatus: "sent",
         adminNotificationEmailStatus: "sent",
         receivedAt:             "2024-09-22T09:00:00.000Z",
@@ -3388,6 +3392,10 @@ export default {
         subscriptionTierLabel: "Parish",
         subscriptionMonthlyCents: 14900,
         subscriptionStatus: baseRegistration.subscriptionStatus || "active",
+        sacramentsEnabled: true,
+        directoryEnabled: true,
+        bookstoreEnabled: true,
+        communicationsEnabled: true,
         givingFunds: demoFunds,
         campaigns: demoCampaigns,
         feastCampaigns: [],
@@ -3410,6 +3418,22 @@ export default {
           `).bind(DEMO_PARISH_ID, f.name, f.code, f.isDefault ? 1 : 0, f.sortOrder)
         );
         await env.AGAPAY_DB.batch(fundStmts);
+      } catch (e) {}
+
+      // St. Fiacre is the full Parish-tier staging demo. Keep every donor-facing
+      // module visible after a reseed while retaining the directory's safe
+      // publication, child-data, and address-visibility defaults.
+      try {
+        const timestamp = Date.now();
+        await env.AGAPAY_DB.prepare(`
+          INSERT INTO directory_parish_settings (
+            parish_id, directory_enabled, ordinary_member_access_enabled, created_at, updated_at
+          ) VALUES (?, 1, 1, ?, ?)
+          ON CONFLICT(parish_id) DO UPDATE SET
+            directory_enabled = 1,
+            ordinary_member_access_enabled = 1,
+            updated_at = excluded.updated_at
+        `).bind(DEMO_PARISH_ID, timestamp, timestamp).run();
       } catch (e) {}
 
       // Seed realistic donation history in D1

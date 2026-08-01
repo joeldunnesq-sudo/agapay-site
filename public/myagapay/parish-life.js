@@ -17,38 +17,68 @@ function parishLifeCategory(value, fallback) {
   return normalized ? normalized.replace(/\b\w/g, (letter) => letter.toUpperCase()) : "";
 }
 
-function parishLifeNextLiturgicalEvent(calendar, fromDate = new Date()) {
+const PARISH_LIFE_FAST_FEASTS = {
+  "clean-monday": "pascha",
+  "apostles-fast-start": "apostles-peter-paul",
+  "dormition-fast-begins": "dormition",
+  "nativity-fast-begins": "nativity-christ",
+};
+
+function parishLifeUpcomingLiturgicalEvents(calendar, fromDate = new Date()) {
   const api = window.AGAPAYLiturgicalCalendar;
-  if (!api?.liturgicalFeastsForYear) return null;
+  if (!api?.liturgicalFeastsForYear) return [];
   const year = fromDate.getFullYear();
   const today = `${year}-${String(fromDate.getMonth() + 1).padStart(2, "0")}-${String(fromDate.getDate()).padStart(2, "0")}`;
-  return [year, year + 1]
+  const seen = new Set();
+  const events = [year, year + 1]
     .flatMap((feastYear) => api.liturgicalFeastsForYear(feastYear, calendar || "julian"))
     .filter((event) => event.date >= today)
     .filter((event) => ["great", "major"].includes(event.rank) || (event.rank === "fast" && !/ends/i.test(event.name)))
-    .sort((left, right) => left.date.localeCompare(right.date) || left.name.localeCompare(right.name))[0] || null;
+    .sort((left, right) => left.date.localeCompare(right.date) || left.name.localeCompare(right.name))
+    .filter((event) => {
+      const key = `${event.id || event.name}|${event.date}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  const next = events[0];
+  if (!next) return [];
+  const associatedFeastId = next.rank === "fast" ? PARISH_LIFE_FAST_FEASTS[next.id] : "";
+  const associatedFeast = associatedFeastId
+    ? events.find((event) => event.id === associatedFeastId && event.date >= next.date)
+    : null;
+  return associatedFeast ? [next, associatedFeast] : [next];
+}
+
+function parishLifeNextLiturgicalEvent(calendar, fromDate = new Date()) {
+  return parishLifeUpcomingLiturgicalEvents(calendar, fromDate)[0] || null;
 }
 
 function renderParishLifeServicesFallback(parish, fromDate = new Date()) {
   const target = document.getElementById("parishLifeServices");
   if (!target) return;
   const calendar = parish?.liturgicalCalendar || "julian";
-  const event = parishLifeNextLiturgicalEvent(calendar, fromDate);
-  if (!event) {
+  const events = parishLifeUpcomingLiturgicalEvents(calendar, fromDate);
+  if (!events.length) {
     target.innerHTML = '<strong>Liturgical calendar unavailable</strong><p>Open the full calendar to see upcoming feasts and fasting periods.</p>';
     return;
   }
-  const date = new Date(`${event.date}T12:00:00`);
-  const day = date.toLocaleDateString(undefined, { day: "numeric" });
-  const weekday = date.toLocaleDateString(undefined, { weekday: "short" });
-  const eventType = event.rank === "fast" ? "Fasting period begins" : event.rank === "great" ? "Great feast" : "Major feast";
   const calendarLabel = window.AGAPAYLiturgicalCalendar?.calendarLabel?.(calendar) || "Church calendar";
-  target.innerHTML = `
-    <a class="parish-life-liturgical-fallback" href="/myagapay/calendar">
-      <span class="parish-life-fallback-date"><strong>${parishLifeEscape(day)}</strong><small>${parishLifeEscape(weekday)}</small></span>
-      <span class="parish-life-fallback-copy"><strong>${parishLifeEscape(event.name)}</strong><small>${parishLifeEscape(event.displayDate)} · ${parishLifeEscape(eventType)} · ${parishLifeEscape(calendarLabel)}</small></span>
-      <span class="parish-life-fallback-arrow" aria-hidden="true">›</span>
-    </a>`;
+  target.innerHTML = events.map((event, index) => {
+    const date = new Date(`${event.date}T12:00:00`);
+    const day = date.toLocaleDateString(undefined, { day: "numeric" });
+    const weekday = date.toLocaleDateString(undefined, { weekday: "short" });
+    const associatedWithFast = index > 0 && events[0]?.rank === "fast";
+    const eventType = associatedWithFast
+      ? "Feast associated with this fast"
+      : event.rank === "fast" ? "Fasting period begins" : event.rank === "great" ? "Great feast" : "Major feast";
+    return `
+      <a class="parish-life-liturgical-fallback" href="/myagapay/calendar">
+        <span class="parish-life-fallback-date"><strong>${parishLifeEscape(day)}</strong><small>${parishLifeEscape(weekday)}</small></span>
+        <span class="parish-life-fallback-copy"><strong>${parishLifeEscape(event.name)}</strong><small>${parishLifeEscape(event.displayDate)} · ${parishLifeEscape(eventType)} · ${parishLifeEscape(calendarLabel)}</small></span>
+        <span class="parish-life-fallback-arrow" aria-hidden="true">›</span>
+      </a>`;
+  }).join("");
 }
 
 function parishLifeTierSectionsHtml(communicationsEnabled) {
@@ -298,5 +328,6 @@ async function loadParishLife() {
 
 window.parishLifeTierSectionsHtml = parishLifeTierSectionsHtml;
 window.parishLifeNextLiturgicalEvent = parishLifeNextLiturgicalEvent;
+window.parishLifeUpcomingLiturgicalEvents = parishLifeUpcomingLiturgicalEvents;
 window.toggleParishExternalFeed = toggleParishExternalFeed;
 document.addEventListener("DOMContentLoaded", loadParishLife);

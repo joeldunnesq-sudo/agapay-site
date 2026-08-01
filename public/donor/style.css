@@ -8090,6 +8090,7 @@ textarea {
   text-decoration: none;
 }
 .parish-life-liturgical-fallback:hover { background: var(--k-surface-2); }
+.parish-life-liturgical-fallback + .parish-life-liturgical-fallback { border-top: 1px solid var(--k-border); }
 .parish-life-fallback-date { display: grid; justify-items: center; gap: 2px; }
 .parish-life-fallback-date strong {
   color: var(--k-gold);

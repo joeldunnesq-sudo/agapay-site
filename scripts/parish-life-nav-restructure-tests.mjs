@@ -39,9 +39,10 @@ const sandbox = { window: {}, document: { addEventListener() {} }, console };
 vm.runInNewContext(landingScript, sandbox);
 const fixtureEvents = [
   { name: "Minor commemoration", date: "2026-08-02", rank: "season" },
-  { name: "Dormition Fast Ends", date: "2026-08-03", rank: "fast" },
-  { name: "Transfiguration", date: "2026-08-06", rank: "great" },
-  { name: "Dormition Fast Begins", date: "2026-08-01", rank: "fast" },
+  { id: "dormition-fast-ends", name: "Dormition Fast Ends", date: "2026-08-14", rank: "fast" },
+  { id: "transfiguration", name: "Transfiguration", date: "2026-08-06", rank: "great" },
+  { id: "dormition-fast-begins", name: "Dormition Fast Begins", date: "2026-08-01", rank: "fast" },
+  { id: "dormition", name: "Dormition of the Theotokos", date: "2026-08-15", rank: "great" },
 ];
 sandbox.window.AGAPAYLiturgicalCalendar = { liturgicalFeastsForYear: () => fixtureEvents };
 assert.equal(
@@ -49,6 +50,12 @@ assert.equal(
   "Dormition Fast Begins",
   "the landing should fall back to the next major feast or beginning of a fasting period"
 );
+assert.deepEqual(
+  Array.from(sandbox.window.parishLifeUpcomingLiturgicalEvents("julian", new Date(2026, 7, 1)), (event) => event.id),
+  ["dormition-fast-begins", "dormition"],
+  "a fasting-period fallback should also surface the feast associated with that fast"
+);
+assert.match(landingScript, /Feast associated with this fast/);
 const lowerTierMarkup = sandbox.window.parishLifeTierSectionsHtml(false);
 assert.equal(lowerTierMarkup, "", "lower tiers must receive no communications section DOM");
 assert.doesNotMatch(lowerTierMarkup, /Announcements|Recordings|Ministries/);

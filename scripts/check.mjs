@@ -223,6 +223,7 @@ assert.ok(myAgapayShell.includes('pathname.startsWith("/myagapay/directory")') &
 assert.ok(!myAgapayShell.includes('data-myagapay-launch-gated') && !myAgapayShell.includes('release-flags'), "shared My AGAPAY shell should not gate Marketplace or Directory behind launch controls");
 assert.ok(myAgapayShell.includes('parishFeature: "sacramentsEnabled"'), "shared My AGAPAY shell should gate Sacraments & Services on the parish capability");
 assert.ok(myAgapayShell.includes('parishFeature: "directoryEnabled"'), "shared My AGAPAY shell should gate Directory on the parish capability");
+assert.ok(worker.includes("sacramentsEnabled: true") && worker.includes("ordinary_member_access_enabled = 1"), "the full St. Fiacre demo reseed should keep Sacraments and Directory visible to donors");
 assert.ok(myAgapayShell.includes('mobileFallbackFor: "sacramentsEnabled"') && myAgapayShell.includes('label: "History"'), "Giving History should replace unavailable Sacraments & Services in the bottom nav");
 assert.ok(myAgapayShell.includes('mobileFallbackFor: "directoryEnabled"') && myAgapayShell.includes('label: "Learn"'), "Learn should replace unavailable Directory in the bottom nav");
 assert.ok(myAgapayShell.includes('fetch("/api/donor/dashboard"'), "shared My AGAPAY shell should load the donor home parish capabilities");
