@@ -4,6 +4,9 @@ import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  GROUP_MESSAGE_ATTACHMENT_MAX_BYTES,
+  GROUP_MESSAGE_IMAGE_TYPES,
+  GROUP_MESSAGE_VOICE_TYPES,
   GroupMessageAccessError,
   getLatestGroupMessageCatchUp,
   isActiveMinistryMember,
@@ -13,7 +16,10 @@ import {
   listGroupMessages,
   markGroupMessageRead,
   postGroupMessage,
+  storeGroupMessageAttachment,
+  validateGroupMessageAttachmentMetadata,
 } from "../src/handlers/donor-groups.js";
+import { groupMessagePushExcerpt } from "../src/lib/push-notifications.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sqlite = new DatabaseSync(":memory:");
@@ -63,7 +69,7 @@ sqlite.exec(`
     status TEXT NOT NULL
   );
 `);
-for (const migration of ["0064_parish_content_reads.sql", "0066_parish_group_messages.sql"]) {
+for (const migration of ["0064_parish_content_reads.sql", "0066_parish_group_messages.sql", "0075_group_message_attachments.sql"]) {
   sqlite.exec(readFileSync(path.join(root, "migrations", migration), "utf8"));
 }
 
@@ -192,6 +198,93 @@ await assert.rejects(
   "a regular active participant must be forbidden from individual read visibility"
 );
 
+await assert.rejects(
+  () => postGroupMessage(env, {
+    parishId: "parish-one", ministryId: "ministry-council", personId: "person-leader", body: "   ",
+  }),
+  (error) => error instanceof GroupMessageAccessError && error.status === 422 && /body is required/i.test(error.message),
+  "plain text messages must still require a non-empty body"
+);
+
+const voiceMessage = await postGroupMessage(env, {
+  parishId: "parish-one",
+  ministryId: "ministry-council",
+  personId: "person-leader",
+  body: "",
+  messageType: "voice",
+  attachmentUrl: "/api/donor/groups/ministry-council/messages/voice-one/attachment",
+  attachmentDurationSeconds: 24,
+  messageId: "voice-one",
+});
+assert.equal(voiceMessage.body, "", "a voice message may stand alone without text");
+assert.equal(voiceMessage.messageType, "voice");
+assert.equal(voiceMessage.attachmentDurationSeconds, 24);
+const storedVoice = sqlite.prepare("SELECT body, message_type, attachment_duration_seconds FROM parish_group_messages WHERE id = 'voice-one'").get();
+assert.equal(storedVoice.body, null, "the rebuilt schema must allow a null attachment-message body");
+assert.equal(storedVoice.message_type, "voice");
+assert.throws(
+  () => sqlite.prepare(`
+    INSERT INTO parish_group_messages (id, parish_id, ministry_id, author_person_id, body, message_type)
+    VALUES ('invalid-message-type', 'parish-one', 'ministry-council', 'person-leader', 'Nope', 'video')
+  `).run(),
+  /CHECK constraint failed/,
+  "the schema must reject message types outside text, voice, and image",
+);
+
+const imageMessage = await postGroupMessage(env, {
+  parishId: "parish-one",
+  ministryId: "ministry-council",
+  personId: "person-participant",
+  body: "Setup for the parish festival",
+  messageType: "image",
+  attachmentUrl: "/api/donor/groups/ministry-council/messages/image-one/attachment",
+  messageId: "image-one",
+});
+assert.equal(imageMessage.body, "Setup for the parish festival");
+assert.equal(imageMessage.messageType, "image");
+
+assert.equal(GROUP_MESSAGE_ATTACHMENT_MAX_BYTES, 10 * 1024 * 1024);
+assert.deepEqual([...GROUP_MESSAGE_VOICE_TYPES.keys()], ["audio/mpeg", "audio/mp4", "audio/x-m4a", "audio/ogg", "audio/webm"]);
+assert.deepEqual([...GROUP_MESSAGE_IMAGE_TYPES.keys()], ["image/jpeg", "image/png", "image/webp"]);
+for (const [messageType, contentType] of [["voice", "audio/webm"], ["image", "image/jpeg"]]) {
+  const headers = { "Content-Type": contentType, "Content-Length": String(GROUP_MESSAGE_ATTACHMENT_MAX_BYTES + 1) };
+  if (messageType === "voice") headers["X-AGAPAY-Attachment-Duration-Seconds"] = "24";
+  const metadata = validateGroupMessageAttachmentMetadata(new Request("https://agapay.test/upload", {
+    method: "POST", headers, body: new Uint8Array([1]),
+  }), messageType);
+  assert.equal(metadata.status, 413, `oversized ${messageType} attachments must fail the Content-Length pre-check`);
+}
+
+function chunkedAttachment(chunkCount) {
+  const chunk = new Uint8Array(1024 * 1024);
+  let sent = 0;
+  return new ReadableStream({ pull(controller) { if (sent >= chunkCount) controller.close(); else { sent += 1; controller.enqueue(chunk); } } });
+}
+const storedAttachmentKeys = new Set();
+const deletedAttachmentKeys = [];
+const attachmentBucket = {
+  async put(key, stream) {
+    const reader = stream.getReader();
+    let size = 0;
+    while (true) { const { done, value } = await reader.read(); if (done) break; size += value.byteLength; }
+    storedAttachmentKeys.add(key);
+    return { size };
+  },
+  async delete(key) { storedAttachmentKeys.delete(key); deletedAttachmentKeys.push(key); },
+};
+await assert.rejects(
+  () => storeGroupMessageAttachment(attachmentBucket, {
+    key: "oversized-voice", source: chunkedAttachment(3), contentType: "audio/webm", maxBytes: 2 * 1024 * 1024,
+  }),
+  /GROUP_MESSAGE_ATTACHMENT_TOO_LARGE/
+);
+assert.equal(storedAttachmentKeys.has("oversized-voice"), false, "a rejected mid-stream upload must not leave an R2 object");
+assert.deepEqual(deletedAttachmentKeys, ["oversized-voice"]);
+
+assert.equal(groupMessagePushExcerpt({ messageType: "voice", body: "" }), "🎤 Voice message");
+assert.equal(groupMessagePushExcerpt({ messageType: "image", body: "" }), "📷 Photo");
+assert.equal(groupMessagePushExcerpt({ messageType: "image", body: "Festival setup" }), "Festival setup");
+
 for (const personId of ["person-withdrawn", "person-outsider"]) {
   await assert.rejects(
     () => listGroupMessages(env, {
@@ -225,5 +318,14 @@ assert.doesNotMatch(handlerSource, /parish_content_reads/, "group messages must 
 const groupsUiSource = readFileSync(path.join(root, "public", "myagapay", "groups.js"), "utf8");
 assert.match(groupsUiSource, /group\.role === "leader" \? `<button[^`]+Who’s caught up/);
 assert.match(groupsUiSource, /\/caught-up`/);
+assert.match(groupsUiSource, /navigator\.mediaDevices\?\.getUserMedia/);
+assert.match(groupsUiSource, /new MediaRecorder/);
+assert.match(groupsUiSource, /decodeAudioData/);
+assert.match(groupsUiSource, /data-group-photo/);
+assert.match(groupsUiSource, /is-outgoing/);
+assert.match(groupsUiSource, /X-AGAPAY-Attachment-Duration-Seconds/);
+const wranglerSource = readFileSync(path.join(root, "wrangler.toml"), "utf8");
+assert.match(wranglerSource, /binding = "GROUP_MESSAGE_ASSETS"[\s\S]*?bucket_name = "agapay-group-message-assets"/);
+assert.doesNotMatch(wranglerSource, /GROUP_MESSAGE_ASSETS_URL/, "the private group bucket must not expose an r2.dev URL");
 
 console.log("PASS - group messages keep individual catch-up visibility leader-only and use shared read receipts");

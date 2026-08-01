@@ -27,13 +27,22 @@
     menu: '<span class="myagapay-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span>'
   };
 
+  function parishLifeExperience(source = parishCapabilities) {
+    const communicationsEnabled = Boolean(source?.communicationsEnabled);
+    return {
+      communicationsEnabled,
+      label: String(source?.parishLifeLabel || (communicationsEnabled ? "Koinonia" : "Today")),
+      short: communicationsEnabled ? "Parish news and ministries" : "Feast day and services"
+    };
+  }
+
   function products() {
+    const parishLife = parishLifeExperience();
     const items = [
       { id: "giving", href: "/myagapay/dashboard", label: "Give", mobileLabel: "Home", short: "Giving dashboard", icon: icons.give },
-      { id: "parish-life", href: "/myagapay/parish-life", label: "Parish Life", short: "News, groups, teaching, and media", icon: icons.parishLife, parishFeature: "parishLifeAvailable" },
+      { id: "parish-life", href: "/myagapay/parish-life", label: parishLife.label, short: parishLife.short, icon: icons.parishLife },
       { id: "commemorations", href: "/myagapay/sacraments", label: "Sacraments & Services", short: "Requests and prayer", icon: icons.sacraments, parishFeature: "sacramentsEnabled" },
       { id: "history", href: "/myagapay/giving/history", label: "History", short: "Giving history", icon: icons.history, mobileFallbackFor: "sacramentsEnabled", desktopHidden: true },
-      { id: "today", href: "/myagapay/giving/calendar", label: "Today", short: "Feast day and readings", icon: icons.today },
       { id: "directory", href: "/myagapay/directory", label: "Directory", short: "Parish member directory", icon: icons.directory, parishFeature: "directoryEnabled" },
       { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore, parishFeature: "bookstoreEnabled" },
       { id: "settings", href: "/myagapay/account", label: "Settings", short: "Account settings", icon: icons.account, mobileFallbackFor: "bookstoreEnabled", desktopHidden: true },
@@ -73,7 +82,7 @@
     return [
       byId.get("giving"),
       featureOrFallback("bookstore", "settings"),
-      byId.get("today"),
+      byId.get("parish-life"),
       featureOrFallback("directory", "learn"),
       featureOrFallback("commemorations", "history"),
     ].filter(Boolean);
@@ -83,15 +92,28 @@
     if (pathname.startsWith("/myagapay/learn")) return "learn";
     if (pathname === "/myagapay" || pathname === "/myagapay/" || pathname === "/myagapay/dashboard") return "giving";
     if (pathname.startsWith("/myagapay/bookstore")) return "bookstore";
-    if (pathname.startsWith("/myagapay/parish-life") || pathname.startsWith("/myagapay/feed") || pathname.startsWith("/myagapay/groups") || pathname.startsWith("/myagapay/teaching")) return "parish-life";
+    if (pathname.startsWith("/myagapay/parish-life") || pathname.startsWith("/myagapay/feed") || pathname.startsWith("/myagapay/groups") || pathname.startsWith("/myagapay/teaching") || pathname.startsWith("/myagapay/media") || pathname.startsWith("/myagapay/calendar")) return "parish-life";
     if (pathname.startsWith("/myagapay/sacraments") || pathname.startsWith("/myagapay/giving/commemorations") || pathname.startsWith("/myagapay/giving/names")) return "commemorations";
-    if (pathname.startsWith("/myagapay/giving/calendar")) return "today";
     if (pathname.startsWith("/myagapay/directory")) return "directory";
     if (pathname.startsWith("/myagapay/giving/history") || pathname.startsWith("/myagapay/giving/offerings")) return "history";
     if (pathname.startsWith("/myagapay/giving")) return "giving";
     if (pathname.startsWith("/myagapay/account")) return "account";
     if (pathname.startsWith("/marketplace")) return "market";
     return "home";
+  }
+
+  function ensureParishLifeBackLink(pathname = window.location.pathname) {
+    const isSubpage = /^\/myagapay\/(?:feed|groups|teaching|media(?:\/watch)?|calendar)(?:\.html)?\/?$/.test(pathname);
+    if (!isSubpage || document.querySelector("[data-parish-life-back]")) return;
+    const topbar = document.querySelector(".topbar");
+    if (!topbar) return;
+    const link = document.createElement("a");
+    link.className = "parish-life-back-link";
+    link.href = "/myagapay/parish-life";
+    link.setAttribute("data-parish-life-back", "");
+    link.setAttribute("aria-label", "Back to parish landing");
+    link.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Back</span>';
+    topbar.prepend(link);
   }
 
   function isAppleTouchDevice() {
@@ -281,7 +303,7 @@
         ${icons.menu}
       </button>
       <div class="donor-home-account-dropdown" role="menu" hidden>
-        <a href="/myagapay/parish-life" role="menuitem" data-parish-life-link hidden>Parish Life</a>
+        <a href="/myagapay/parish-life" role="menuitem" data-parish-life-link data-parish-life-label>Today</a>
         <a href="/myagapay/giving/history" role="menuitem">History</a>
         <a href="/myagapay/account" role="menuitem">Account Settings</a>
         <button type="button" data-donor-logout role="menuitem">Log out</button>
@@ -343,17 +365,19 @@
       directoryEnabled: Boolean(parish?.directoryEnabled),
       bookstoreEnabled: Boolean(parish?.bookstoreEnabled),
       communicationsEnabled: Boolean(parish?.communicationsEnabled),
+      parishLifeLabel: String(parish?.parishLifeLabel || ""),
       parishLifeAvailable: Boolean(parish?.parishLifeAvailable)
     };
+    const parishLife = parishLifeExperience(parishCapabilities);
+    document.documentElement.dataset.parishLifeExperience = parishLife.communicationsEnabled ? "koinonia" : "today";
     normalizeProductNavs();
     document.querySelectorAll("[data-parish-life-link], [data-parish-life-section]").forEach((element) => {
-      element.hidden = !parishCapabilities.parishLifeAvailable;
+      element.hidden = false;
+    });
+    document.querySelectorAll("[data-parish-life-label]").forEach((element) => {
+      element.textContent = parishLife.label;
     });
     if (activeProduct() === "directory" && !parishCapabilities.directoryEnabled) {
-      window.location.replace("/myagapay/dashboard");
-      return;
-    }
-    if (activeProduct() === "parish-life" && !parishCapabilities.parishLifeAvailable) {
       window.location.replace("/myagapay/dashboard");
       return;
     }
@@ -508,9 +532,11 @@
     authHeaders,
     clearSession,
     handleUnauthorized,
+    ensureParishLifeBackLink,
     icons,
     isProtectedPath,
     normalizeProductNavs,
+    parishLifeExperience,
     productNav,
     setParishCapabilities,
     setFeedUnreadCount,
@@ -557,6 +583,7 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     normalizeProductNavs();
+    ensureParishLifeBackLink();
     ensureIosBackButton();
     ensureCanonicalHeader();
     syncAuthVisibility();

@@ -2324,9 +2324,21 @@ body.donor-home {
 .group-message-list { max-height:470px; overflow:auto; display:grid; gap:.7rem; padding:1rem; background:#faf8f3; }
 .group-message { border:1px solid #e6e0d4; border-radius:14px; padding:.8rem .9rem; background:#fff; }
 .group-message.is-unread { border-left:4px solid #c9a25b; }
-.group-message > div { display:flex; justify-content:space-between; gap:.6rem; color:#19323e; font-size:.76rem; }
+.group-message > div:first-child { display:flex; justify-content:space-between; gap:.6rem; color:#19323e; font-size:.76rem; }
 .group-message time { color:#849096; font-size:.65rem; }
 .group-message p { margin:.45rem 0 0; color:#344b55; line-height:1.55; white-space:pre-wrap; }
+.group-message.is-incoming { justify-self:start; max-width:86%; }
+.group-message.is-outgoing { justify-self:end; max-width:86%; border-color:#173441; background:#173441; }
+.group-message.is-outgoing > div:first-child, .group-message.is-outgoing p, .group-message.is-outgoing time { color:#f8f2e7; }
+.group-voice-note { display:flex; align-items:center; gap:.65rem; min-width:min(330px,70vw); margin-top:.65rem; }
+.group-voice-toggle { display:grid; flex:0 0 auto; width:40px; height:40px; place-items:center; border:0; border-radius:50%; background:#c9a25b; color:#061522; cursor:pointer; font-weight:900; }
+.group-voice-waveform { --voice-progress:0%; position:relative; display:flex; flex:1; height:38px; align-items:center; gap:2px; overflow:hidden; }
+.group-voice-waveform span { width:3px; height:100%; min-height:5px; border-radius:999px; background:#9d7b37; transform:scaleY(var(--wave-peak,.3)); transform-origin:center; }
+.group-message.is-outgoing .group-voice-waveform span { background:#ead6a9; }
+.group-voice-duration { min-width:32px; font-variant-numeric:tabular-nums; }
+.group-photo-message { position:relative; min-width:min(330px,70vw); min-height:120px; margin-top:.65rem; overflow:hidden; border-radius:12px; background:#e9e2d5; }
+.group-photo-message img { display:block; width:100%; max-height:340px; object-fit:cover; }
+.group-photo-message > span { display:grid; min-height:120px; place-items:center; color:#68777d; font-size:.75rem; }
 .group-catch-up { border-top:1px solid #e3ded2; padding:1rem; background:#fffdf8; }
 .group-catch-up > p { margin:.35rem 0 0; color:#6c787e; font-size:.78rem; }
 .group-catch-up-head { display:flex; align-items:flex-end; justify-content:space-between; gap:.7rem; }
@@ -2344,6 +2356,16 @@ body.donor-home {
 .group-compose textarea { border:1px solid #dcd4c3; border-radius:12px; padding:.75rem; font:inherit; resize:vertical; }
 .group-compose button { justify-self:end; border:0; border-radius:999px; padding:.65rem 1rem; background:#c9a25b; color:#061522; font-weight:900; cursor:pointer; }
 .group-compose button:disabled { opacity:.55; }
+.group-compose-actions { display:flex; align-items:center; justify-content:space-between; gap:.75rem; }
+.group-compose-actions > div { display:flex; gap:.45rem; }
+.group-compose .group-attach-button { display:inline-flex; align-items:center; gap:.35rem; border:1px solid #d8cfbd; padding:.55rem .7rem; background:#fff; color:#27404b; }
+.group-compose .group-attach-button.is-recording { border-color:#9f3838; background:#fff0ee; color:#8b2626; }
+.group-attachment-preview { display:flex; align-items:center; gap:.7rem; border:1px solid #dfd5c3; border-radius:12px; padding:.6rem; background:#f8f3e9; }
+.group-attachment-preview img { width:64px; height:54px; border-radius:8px; object-fit:cover; }
+.group-attachment-preview > span:nth-child(2) { display:grid; gap:.15rem; flex:1; }
+.group-attachment-preview small { color:#738087; }
+.group-attachment-preview > button { justify-self:auto; width:32px; height:32px; padding:0; background:#e7dfd0; color:#485a62; font-size:1.2rem; }
+.group-recording-ready { display:grid; width:48px; height:48px; place-items:center; border-radius:50%; background:#eadbbd; font-size:1.25rem; }
 @media (max-width:800px) { .groups-layout { grid-template-columns:1fr; } .group-message-list { max-height:none; } }
 
 .unified-nav-divider {
@@ -7602,10 +7624,168 @@ textarea {
 .parish-life-activity-row.is-unread { background: #fff9ec; }
 .parish-life-activity-tag { background: #efe4cc; color: #765719; letter-spacing: 0.1em; }
 
+/* Single Today/Koinonia landing. The same calendar hero is shared with the
+   full calendar; Communications-only sections are inserted by JavaScript. */
+.donor-parish-life-page .parish-life-page-shell {
+  display: grid;
+  gap: 1.3rem;
+  max-width: 980px;
+}
+
+.donor-parish-life-page .parish-life-liturgical-hero {
+  margin: 0;
+  border-color: rgba(226, 190, 116, 0.28);
+  box-shadow: 0 18px 48px rgba(7, 21, 34, 0.2);
+}
+
+.donor-parish-life-page .parish-life-saint-card {
+  margin: 0;
+  border: 1px solid rgba(226, 190, 116, 0.24);
+  border-radius: 16px;
+  background: linear-gradient(145deg, #0d2032, #071522);
+  box-shadow: 0 14px 34px rgba(7, 21, 34, 0.16);
+}
+
+.donor-parish-life-page .parish-life-saint-card .cal-saint-strip {
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+}
+
+.parish-life-home-section { display: grid; gap: 0.8rem; }
+.parish-life-section-head { display: flex; align-items: end; justify-content: space-between; gap: 1rem; padding: 0 0.15rem; }
+.parish-life-section-head h2 { margin: 0; color: var(--pl-ink); font-family: var(--serif); font-size: clamp(1.65rem, 4vw, 2.2rem); font-weight: 600; letter-spacing: -0.02em; }
+.parish-life-section-head a { color: #8a6427; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.04em; text-decoration: none; }
+.parish-life-section-head a::after { content: "  →"; }
+.parish-life-section-head a:hover { color: var(--pl-ink); }
+
+.parish-life-services-state,
+.parish-life-empty-state {
+  border: 1px solid var(--pl-line);
+  border-radius: 16px;
+  padding: 1.2rem 1.3rem;
+  background: rgba(255, 253, 248, 0.92);
+  box-shadow: 0 12px 30px rgba(10, 26, 41, 0.06);
+}
+.parish-life-services-state strong,
+.parish-life-empty-state strong { display: block; color: var(--pl-ink); font-family: var(--serif); font-size: 1.18rem; font-weight: 600; }
+.parish-life-services-state p,
+.parish-life-empty-state p { margin: 0.25rem 0 0; color: var(--pl-muted); font-size: 0.84rem; line-height: 1.55; }
+
+#parishLifeTierSections { display: grid; gap: 1.65rem; }
+.parish-life-announcement-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
+.parish-life-announcement-card {
+  display: grid;
+  align-content: start;
+  gap: 0.65rem;
+  min-height: 210px;
+  border: 1px solid var(--pl-line);
+  border-radius: 16px;
+  padding: 1.2rem;
+  background: var(--pl-paper);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 12px 30px rgba(10, 26, 41, 0.07);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.parish-life-announcement-card:hover { transform: translateY(-2px); box-shadow: 0 18px 38px rgba(10, 26, 41, 0.11); }
+.parish-life-announcement-card.is-unread { border-color: rgba(182, 130, 53, 0.42); }
+.parish-life-card-flags { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.parish-life-card-flags em { border-radius: 999px; padding: 0.3rem 0.55rem; background: #efe4cc; color: #765719; font-size: 0.62rem; font-style: normal; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.parish-life-card-flags em:first-child { background: var(--pl-ink); color: var(--pl-gold-light); }
+.parish-life-announcement-card > strong { color: var(--pl-ink); font-family: var(--serif); font-size: 1.35rem; font-weight: 600; line-height: 1.14; }
+.parish-life-announcement-card p { margin: 0; color: var(--pl-muted); font-size: 0.8rem; line-height: 1.55; }
+.parish-life-announcement-card time { align-self: end; color: #8a744d; font-size: 0.68rem; font-weight: 700; }
+
+.parish-life-recording-list { overflow: hidden; border: 1px solid var(--pl-line); border-radius: 16px; background: var(--pl-paper); box-shadow: 0 12px 30px rgba(10, 26, 41, 0.06); }
+.parish-life-recording-row { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 0.85rem; min-height: 72px; border-top: 1px solid var(--pl-line); padding: 0.8rem 1rem; color: inherit; text-decoration: none; }
+.parish-life-recording-row:first-child { border-top: 0; }
+.parish-life-recording-row:hover { background: #f8f1e4; }
+.parish-life-audio-icon { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 50%; background: var(--pl-ink); color: var(--pl-gold-light); font-size: 0.72rem; }
+.parish-life-recording-row > span:nth-child(2) { display: grid; gap: 0.2rem; }
+.parish-life-recording-row strong { color: var(--pl-ink); font-family: var(--serif); font-size: 1.08rem; font-weight: 600; }
+.parish-life-recording-row small { color: var(--pl-muted); font-size: 0.7rem; }
+.parish-life-recording-row em { color: #8a6427; font-size: 0.68rem; font-style: normal; font-weight: 800; text-transform: uppercase; }
+
+.parish-life-ministry-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; }
+.parish-life-ministry-tile { display: grid; min-height: 145px; align-content: center; justify-items: center; gap: 0.45rem; border: 1px solid var(--pl-gold-line); border-radius: 16px; padding: 1rem; background: linear-gradient(150deg, #0d2133, #081726); color: #f8f1e3; text-align: center; text-decoration: none; box-shadow: 0 12px 30px rgba(7, 18, 30, 0.18); }
+.parish-life-ministry-tile:hover { border-color: rgba(226, 190, 116, 0.55); transform: translateY(-2px); }
+.parish-life-ministry-mark { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid rgba(226, 190, 116, 0.25); border-radius: 50%; color: var(--pl-gold-light); }
+.parish-life-ministry-tile strong { font-family: var(--serif); font-size: 1.18rem; font-weight: 600; }
+.parish-life-ministry-tile small { color: rgba(236, 226, 207, 0.66); font-size: 0.7rem; font-weight: 700; }
+
+.parish-life-back-link { display: inline-flex; align-items: center; gap: 0.25rem; min-height: 36px; border: 1px solid rgba(10, 26, 41, 0.14); border-radius: 999px; padding: 0 0.7rem 0 0.5rem; color: #19323e; font-size: 0.75rem; font-weight: 800; text-decoration: none; }
+.parish-life-back-link:hover { border-color: rgba(182, 130, 53, 0.5); background: #fffaf0; }
+.parish-life-back-link svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.parish-life-back-link + .topbar-title { margin-left: 0.3rem; }
+
+@media (max-width: 700px) {
+  .parish-life-announcement-list,
+  .parish-life-ministry-grid { grid-template-columns: 1fr; }
+  .parish-life-announcement-card { min-height: 0; }
+  .parish-life-section-head { align-items: center; }
+  .parish-life-recording-row { grid-template-columns: 38px minmax(0, 1fr); }
+  .parish-life-recording-row > em { grid-column: 2; }
+  .parish-life-ministry-tile { min-height: 120px; }
+  .parish-life-back-link span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .parish-life-back-link { width: 36px; justify-content: center; padding: 0; }
+}
+
 /* Inner-page cards and controls. */
 .donor-feed-page .feed-page-shell,
 .donor-teaching-page .feed-page-shell { max-width: 980px; }
 .donor-groups-page .groups-page-shell { max-width: 1220px; }
+
+.content-filter-chips {
+  display: flex;
+  gap: 0.55rem;
+  margin: 0 0 1.15rem;
+  padding: 0.15rem 0 0.45rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.content-filter-chips button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 40px;
+  border: 1px solid rgba(10, 26, 41, 0.14);
+  border-radius: 999px;
+  padding: 0.45rem 0.55rem 0.45rem 0.85rem;
+  background: rgba(255, 253, 248, 0.88);
+  color: var(--pl-muted);
+  font: 700 0.76rem/1 "DM Sans", sans-serif;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+}
+
+.content-filter-chips button:hover {
+  border-color: rgba(182, 130, 53, 0.5);
+  color: var(--pl-ink);
+}
+
+.content-filter-chips button.is-active {
+  border-color: var(--pl-ink);
+  background: var(--pl-ink);
+  color: #fffaf0;
+}
+
+.content-filter-chips button strong {
+  display: grid;
+  min-width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: 999px;
+  padding: 0 0.35rem;
+  background: rgba(10, 26, 41, 0.08);
+  color: inherit;
+  font-size: 0.7rem;
+}
+
+.content-filter-chips button.is-active strong { background: rgba(255, 255, 255, 0.16); }
 
 :is(.donor-feed-page, .donor-teaching-page) .feed-card,
 .feed-digest-card,

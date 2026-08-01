@@ -674,6 +674,8 @@ const MYAGAPAY_ASSET_ROUTES = new Map([
   ["/myagapay/bookstore/", "/myagapay/bookstore.html"],
   ["/myagapay/parish-life", "/myagapay/parish-life.html"],
   ["/myagapay/parish-life/", "/myagapay/parish-life.html"],
+  ["/myagapay/calendar", "/myagapay/giving/calendar.html"],
+  ["/myagapay/calendar/", "/myagapay/giving/calendar.html"],
   ["/myagapay/feed", "/myagapay/feed.html"],
   ["/myagapay/feed/", "/myagapay/feed.html"],
   ["/myagapay/groups", "/myagapay/groups.html"],
@@ -745,7 +747,7 @@ const DASHBOARD_LEGACY_REDIRECTS = new Map([
   ["/myagapay/giving/commemorations/", "/myagapay/sacraments"],
   ["/myagapay/giving/commemorations.html", "/myagapay/sacraments"],
   ["/myagapay/giving/names", "/myagapay/sacraments"],
-  ["/my-agapay/calendar", "/myagapay/giving/calendar"],
+  ["/my-agapay/calendar", "/myagapay/parish-life"],
   ["/my-agapay/settings", "/myagapay/account"],
   ["/donor", "/myagapay"],
   ["/donor/", "/myagapay"],
@@ -758,7 +760,10 @@ const DASHBOARD_LEGACY_REDIRECTS = new Map([
   ["/donor/offerings", "/myagapay/giving/history"],
   ["/donor/commemorations", "/myagapay/sacraments"],
   ["/donor/sacraments", "/myagapay/sacraments"],
-  ["/donor/calendar", "/myagapay/giving/calendar"],
+  ["/donor/calendar", "/myagapay/parish-life"],
+  ["/myagapay/giving/calendar", "/myagapay/parish-life"],
+  ["/myagapay/giving/calendar/", "/myagapay/parish-life"],
+  ["/myagapay/giving/calendar.html", "/myagapay/parish-life"],
   ["/donor/bookstore", "/myagapay/bookstore"],
   ["/donor/settings", "/myagapay/account"],
   ["/parish/login", "/give/login"],
@@ -2756,7 +2761,7 @@ export default {
       return json({ error: "Not found" }, { status: 404 });
     }
 
-    const parishLifePageRoute = /^\/myagapay\/(?:parish-life|feed|groups|teaching|media|media\/watch)(?:\.html)?\/?$/.test(url.pathname);
+    const parishLifePageRoute = /^\/myagapay\/(?:feed|groups|teaching|media|media\/watch)(?:\.html)?\/?$/.test(url.pathname);
     if (parishLifePageRoute && !parishLifeAvailable) {
       return new Response("Not found", {
         status: 404,

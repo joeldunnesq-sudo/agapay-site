@@ -3,15 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Parish Life | My AGAPAY</title>
+  <title>Today | My AGAPAY</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/donor/style.css?v=20260801parishredesign1" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260801koinonia1" />
+  <script src="/liturgical-calendar.js"></script>
   <script src="/pwa-register.js" defer></script>
-  <script src="/myagapay-shell.js?v=20260801video2" defer></script>
-  <script src="/myagapay/parish-life.js?v=20260801video1" defer></script>
+  <script src="/myagapay-shell.js?v=20260801koinonia1" defer></script>
+  <script src="/donor/app.js?v=20260728saintsync1" defer></script>
+  <script src="/myagapay/parish-life.js?v=20260801koinonia1" defer></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -21,44 +23,58 @@
     <aside class="sidebar">
       <div class="sidebar-scroll">
         <div class="brand"><div class="brand-row"><a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home"><img src="/mark.png" alt="AGAPAY" /></a><span class="brand-name">AGAPAY</span><span class="dashboard-home-cue">Home</span></div><span class="pill">Donor Dashboard</span></div>
-        <div class="profile-panel"><div class="profile-name">Parish Life</div><div class="profile-meta" id="parishLifeSidebarName">Your church community</div></div>
+        <div class="profile-panel"><div class="profile-name" data-parish-life-label>Today</div><div class="profile-meta" id="parishLifeSidebarName">Your church calendar</div></div>
         <nav class="nav unified-product-nav"></nav>
-        <div class="sidebar-card"><h3>One parish home</h3><div class="mini-item"><strong>Stay connected</strong><span>News and ministry conversations come together here.</span></div><div class="mini-item"><strong>Your unread total</strong><span>Counts reflect only content available to your account.</span></div></div>
+        <div class="sidebar-card"><h3>One parish landing</h3><div class="mini-item"><strong>Today in the Church</strong><span>The liturgical day and upcoming services begin here.</span></div><div class="mini-item" id="parishLifeSidebarCommunications" hidden><strong>Stay connected</strong><span>Parish news, recordings, and ministries follow below.</span></div></div>
       </div>
       <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/dashboard">Back to giving</a></div>
     </aside>
     <main class="content donor-mobile-content">
-      <div class="topbar"><div class="topbar-title">Parish Life</div></div>
+      <div class="topbar"><div class="topbar-title" data-parish-life-label>Today</div></div>
       <div class="page parish-life-page-shell">
-        <section class="feed-hero" aria-labelledby="parishLifeHeading">
-          <div><span class="eyebrow">Parish life</span><h1 id="parishLifeHeading">Your church, gathered here.</h1><p id="parishLifeDescription">Announcements, ministry conversations, teaching, and media from your parish.</p></div>
-          <span class="feed-unread-summary" id="parishLifeUnreadSummary" hidden></span>
+        <section class="cal-hero parish-life-liturgical-hero" aria-label="Today in the Church">
+          <div class="cal-hero-inner">
+            <div class="cal-hero-eyebrow">Today in the Church</div>
+            <div class="cal-today-row">
+              <div class="cal-date-badge">
+                <div class="cal-date-weekday" id="todayWeekday">Today</div>
+                <div class="cal-date-day" id="todayMonthDay">--</div>
+                <div class="cal-date-my" id="todayYear">--</div>
+              </div>
+              <div class="cal-today-main">
+                <div class="cal-today-kicker" id="todayCalendarLabel">Church calendar</div>
+                <h1 class="cal-today-title" id="todayFeastTitle">Loading today in the Church…</h1>
+                <p class="cal-today-note" id="todayFeastNote">AGAPAY is preparing today's feast and fasting context.</p>
+                <div class="cal-chip-row" id="todayChips"></div>
+                <div class="cal-hero-actions"><a class="cal-btn cal-btn-gold" id="todayGiveLink" href="/myagapay/giving/give?giftType=feast">Make a festal offering</a></div>
+              </div>
+            </div>
+          </div>
         </section>
 
-        <section class="parish-life-sections" aria-label="Parish Life sections">
-          <a class="mobile-product-card live" href="/myagapay/feed">
-            <span>Parish news</span><em class="unified-nav-badge hub-unread-badge" id="parishLifeAnnouncementsUnread" hidden></em>
-            <strong>Announcements</strong><p>Read notices, reminders, and timely parish updates.</p>
-          </a>
-          <a class="mobile-product-card live" href="/myagapay/groups">
-            <span>Your ministries</span><em class="unified-nav-badge hub-unread-badge" id="parishLifeGroupsUnread" hidden></em>
-            <strong>Groups</strong><p>Catch up on private conversations from ministries you belong to.</p>
-          </a>
-          <a class="mobile-product-card live" href="/myagapay/teaching">
-            <span>Reflections and homilies</span><em class="unified-nav-badge hub-unread-badge" id="parishLifeTeachingUnread" hidden></em>
-            <strong>Teaching</strong><p>Read and listen to formation shared by your parish.</p>
-          </a>
-          <a class="mobile-product-card live" href="/myagapay/media">
-            <span>Private parish video</span><em class="unified-nav-badge hub-unread-badge" id="parishLifeVideoUnread" hidden></em>
-            <strong>Media</strong><p>Watch homilies, talks, and parish stories in a private video library.</p>
-          </a>
+        <section class="cal-hero parish-life-saint-card" aria-label="Saint of the Day">
+          <button class="cal-saint-strip" id="saintPreviewCard" type="button" onclick="openDonorSaintOfDay(this)" data-date="" data-calendar="" data-saint-title="" aria-label="Open saint of the day">
+            <span class="cal-saint-icon" id="saintPreviewIcon">✥</span>
+            <span class="cal-saint-body"><span class="cal-saint-kicker">Saint of the Day</span><span class="cal-saint-name" id="saintPreviewName">Lives of the Saints</span><span class="cal-saint-note" id="saintPreviewNote">Open the life of today's saint once the calendar loads.</span></span>
+            <span class="cal-saint-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+          </button>
         </section>
 
-        <section class="parish-life-activity" aria-labelledby="parishLifeActivityHeading">
-          <div class="mobile-section-head"><h2 id="parishLifeActivityHeading">Recent activity</h2></div>
-          <div class="notice" id="parishLifeStatus">Loading parish activity...</div>
-          <div class="parish-life-activity-list" id="parishLifeActivityList" aria-live="polite"></div>
+        <section class="parish-life-home-section" aria-labelledby="upcomingServicesHeading">
+          <div class="parish-life-section-head"><h2 id="upcomingServicesHeading">Upcoming Services</h2><a href="/myagapay/calendar">Full Calendar</a></div>
+          <div class="parish-life-services-state" id="parishLifeServices"><strong>Parish service calendar not yet configured</strong><p>When your parish connects its website calendar, upcoming services will appear here automatically.</p></div>
         </section>
+
+        <div id="parishLifeTierSections"></div>
+        <div class="notice" id="parishLifeStatus" hidden></div>
+      </div>
+
+      <div class="donor-saint-modal" id="donorSaintModal" hidden>
+        <div class="donor-saint-modal-card" role="dialog" aria-modal="true" aria-labelledby="donorSaintModalTitle">
+          <div class="donor-saint-modal-head"><div><span class="calendar-panel-kicker" id="donorSaintModalKicker">Saint of the Day</span><h2 id="donorSaintModalTitle">Saint of the Day</h2><p id="donorSaintModalSubtitle">Today's commemoration</p></div><button type="button" class="donor-saint-close" onclick="closeDonorSaintModal()" aria-label="Close saint life">×</button></div>
+          <div class="donor-saint-modal-body" id="donorSaintModalBody"></div>
+          <div class="donor-saint-modal-foot"><span>Lives of the Saints courtesy of Orthocal.info</span><button type="button" class="btn btn-ghost btn-sm" onclick="closeDonorSaintModal()">Close</button></div>
+        </div>
       </div>
       <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
     </main>

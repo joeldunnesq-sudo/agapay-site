@@ -9,11 +9,25 @@ import {
   json,
   missingProductionStoreResponse,
   normalizeEmail,
+  rateLimit,
   unauthorized,
 } from "../lib/core.js";
 import { requireDonor } from "./parish.js";
 
 const CONTENT_TYPE = "group_message";
+export const GROUP_MESSAGE_ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
+export const GROUP_MESSAGE_VOICE_TYPES = new Map([
+  ["audio/mpeg", "mp3"],
+  ["audio/mp4", "m4a"],
+  ["audio/x-m4a", "m4a"],
+  ["audio/ogg", "ogg"],
+  ["audio/webm", "webm"],
+]);
+export const GROUP_MESSAGE_IMAGE_TYPES = new Map([
+  ["image/jpeg", "jpg"],
+  ["image/png", "png"],
+  ["image/webp", "webp"],
+]);
 const PRIVATE_HEADERS = {
   "Cache-Control": "private, no-store",
   "X-Robots-Tag": "noindex, nofollow",
@@ -45,8 +59,97 @@ function messageFromRow(row = {}) {
     authorName: row.author_name || "Parish member",
     ministryName: row.ministry_name || "Ministry",
     body: row.body || "",
+    messageType: row.message_type || "text",
+    attachmentUrl: row.attachment_url || "",
+    attachmentDurationSeconds: row.attachment_duration_seconds == null ? null : Number(row.attachment_duration_seconds),
     createdAt: row.created_at || "",
   };
+}
+
+function safeStorageSegment(value, fallback) {
+  return String(value || fallback).toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 120) || fallback;
+}
+
+function groupAttachmentStorageKey({ parishId, ministryId, messageId }) {
+  return ["group-messages", safeStorageSegment(parishId, "parish"), safeStorageSegment(ministryId, "ministry"), safeStorageSegment(messageId, "message")].join("/");
+}
+
+function groupAttachmentDeliveryUrl(ministryId, messageId) {
+  return `/api/donor/groups/${encodeURIComponent(ministryId)}/messages/${encodeURIComponent(messageId)}/attachment`;
+}
+
+export function validateGroupMessageAttachmentMetadata(request, messageType) {
+  const normalizedType = String(messageType || "").trim().toLowerCase();
+  const allowedTypes = normalizedType === "voice" ? GROUP_MESSAGE_VOICE_TYPES : normalizedType === "image" ? GROUP_MESSAGE_IMAGE_TYPES : null;
+  if (!allowedTypes) return { error: "Attachment type must be voice or image.", status: 422 };
+  const contentType = String(request.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+  const ext = allowedTypes.get(contentType);
+  if (!ext) {
+    return {
+      error: normalizedType === "voice"
+        ? "Voice messages must be MP3, M4A, OGG, or WebM audio."
+        : "Group photos must be JPG, PNG, or WebP images.",
+      status: 415,
+    };
+  }
+  const rawLength = String(request.headers.get("content-length") || "").trim();
+  const contentLength = rawLength ? Number(rawLength) : 0;
+  if (rawLength && (!Number.isFinite(contentLength) || contentLength < 1)) {
+    return { error: "The attachment is empty.", status: 422 };
+  }
+  if (contentLength > GROUP_MESSAGE_ATTACHMENT_MAX_BYTES) {
+    return { error: `${normalizedType === "voice" ? "Voice messages" : "Group photos"} must be 10MB or smaller.`, status: 413 };
+  }
+  let durationSeconds = null;
+  if (normalizedType === "voice") {
+    durationSeconds = Number(request.headers.get("x-agapay-attachment-duration-seconds") || 0);
+    if (!Number.isInteger(durationSeconds) || durationSeconds < 1 || durationSeconds > 3600) {
+      return { error: "Voice message duration is required.", status: 422 };
+    }
+  }
+  return { messageType: normalizedType, contentType, contentLength, durationSeconds, ext };
+}
+
+export function limitGroupMessageAttachmentStream(source, maxBytes = GROUP_MESSAGE_ATTACHMENT_MAX_BYTES) {
+  let bytesRead = 0;
+  const limiter = new TransformStream({
+    transform(chunk, controller) {
+      const bytes = chunk?.byteLength ?? chunk?.length ?? 0;
+      bytesRead += bytes;
+      if (bytesRead > maxBytes) throw new Error("GROUP_MESSAGE_ATTACHMENT_TOO_LARGE");
+      controller.enqueue(chunk);
+    },
+  });
+  return { stream: source.pipeThrough(limiter), bytesRead: () => bytesRead };
+}
+
+export async function storeGroupMessageAttachment(bucket, { key, source, contentType, maxBytes = GROUP_MESSAGE_ATTACHMENT_MAX_BYTES }) {
+  const bounded = limitGroupMessageAttachmentStream(source, maxBytes);
+  try {
+    const object = await bucket.put(key, bounded.stream, {
+      httpMetadata: { contentType, cacheControl: "private, no-store" },
+    });
+    return { object, size: Number(object?.size ?? bounded.bytesRead()) };
+  } catch (error) {
+    await bucket.delete(key).catch(() => {});
+    throw error;
+  }
+}
+
+function decodeAttachmentBody(request) {
+  const encoded = String(request.headers.get("x-agapay-message-body-b64") || "").trim();
+  if (!encoded) return "";
+  if (encoded.length > 12000 || !/^[A-Za-z0-9_-]+$/.test(encoded)) {
+    throw new GroupMessageAccessError("Invalid attachment caption.", 422);
+  }
+  try {
+    const normalized = encoded.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(encoded.length / 4) * 4, "=");
+    const binary = atob(normalized);
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  } catch {
+    throw new GroupMessageAccessError("Invalid attachment caption.", 422);
+  }
 }
 
 export async function isActiveMinistryMember(env, { parishId, ministryId, personId }) {
@@ -177,7 +280,7 @@ export async function listGroupMessages(env, { parishId, ministryId, personId, d
       category: ministry.category || "other",
       description: ministry.short_description || "",
     },
-    messages: messages.map((message) => ({ ...message, read: readSet.has(message.id) })),
+    messages: messages.map((message) => ({ ...message, read: readSet.has(message.id), mine: message.authorPersonId === personId })),
     unreadCount: contentIds.length - readIds.length,
   };
 }
@@ -218,15 +321,32 @@ export async function listGroupActivity(env, { parishId, personId, donorId }) {
   };
 }
 
-export async function postGroupMessage(env, { parishId, ministryId, personId, body }) {
+export async function postGroupMessage(env, {
+  parishId,
+  ministryId,
+  personId,
+  body,
+  messageType = "text",
+  attachmentUrl = null,
+  attachmentDurationSeconds = null,
+  messageId = "",
+}) {
   await requireActiveMinistryMember(env, { parishId, personId }, ministryId);
   const cleanedBody = String(body || "").trim().slice(0, 8000);
-  if (!cleanedBody) throw new GroupMessageAccessError("Message body is required.", 422);
-  const id = generateSecret("group_message");
+  const normalizedType = String(messageType || "text").trim().toLowerCase();
+  if (!["text", "voice", "image"].includes(normalizedType)) throw new GroupMessageAccessError("Invalid message type.", 422);
+  if (normalizedType === "text" && !cleanedBody) throw new GroupMessageAccessError("Message body is required.", 422);
+  if (normalizedType !== "text" && !attachmentUrl) throw new GroupMessageAccessError("Attachment is required.", 422);
+  const durationSeconds = normalizedType === "voice" ? Number(attachmentDurationSeconds || 0) : null;
+  if (normalizedType === "voice" && (!Number.isInteger(durationSeconds) || durationSeconds < 1)) {
+    throw new GroupMessageAccessError("Voice message duration is required.", 422);
+  }
+  const id = messageId || generateSecret("group_message");
   await database(env).prepare(`
-    INSERT INTO parish_group_messages (id, parish_id, ministry_id, author_person_id, body)
-    VALUES (?, ?, ?, ?, ?)
-  `).bind(id, parishId, ministryId, personId, cleanedBody).run();
+    INSERT INTO parish_group_messages
+      (id, parish_id, ministry_id, author_person_id, body, message_type, attachment_url, attachment_duration_seconds)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, parishId, ministryId, personId, cleanedBody || null, normalizedType, attachmentUrl, durationSeconds).run();
   const row = await d1First(env, `
     SELECT gm.*, p.preferred_name AS author_name, m.display_name AS ministry_name
     FROM parish_group_messages gm
@@ -235,6 +355,70 @@ export async function postGroupMessage(env, { parishId, ministryId, personId, bo
     WHERE gm.id = ? AND gm.parish_id = ? AND gm.ministry_id = ?
   `, id, parishId, ministryId);
   return messageFromRow(row);
+}
+
+async function postGroupMessageAttachment(request, env, context, ministryId, messageType) {
+  if (!env.GROUP_MESSAGE_ASSETS) {
+    throw new GroupMessageAccessError("Group message attachment storage is not configured.", 503);
+  }
+  await requireActiveMinistryMember(env, context, ministryId);
+  const metadata = validateGroupMessageAttachmentMetadata(request, messageType);
+  if (metadata.error) throw new GroupMessageAccessError(metadata.error, metadata.status);
+  if (!request.body) throw new GroupMessageAccessError("The attachment is empty.", 422);
+  const body = decodeAttachmentBody(request);
+  const messageId = generateSecret("group_message");
+  const key = groupAttachmentStorageKey({ parishId: context.parishId, ministryId, messageId });
+  let stored;
+  try {
+    stored = await storeGroupMessageAttachment(env.GROUP_MESSAGE_ASSETS, {
+      key,
+      source: request.body,
+      contentType: metadata.contentType,
+    });
+  } catch (error) {
+    if (error?.message === "GROUP_MESSAGE_ATTACHMENT_TOO_LARGE") {
+      throw new GroupMessageAccessError(`${metadata.messageType === "voice" ? "Voice messages" : "Group photos"} must be 10MB or smaller.`, 413);
+    }
+    throw error;
+  }
+  if (!stored.size) {
+    await env.GROUP_MESSAGE_ASSETS.delete(key).catch(() => {});
+    throw new GroupMessageAccessError("The attachment is empty.", 422);
+  }
+  try {
+    return await postGroupMessage(env, {
+      ...context,
+      ministryId,
+      body,
+      messageType: metadata.messageType,
+      attachmentUrl: groupAttachmentDeliveryUrl(ministryId, messageId),
+      attachmentDurationSeconds: metadata.durationSeconds,
+      messageId,
+    });
+  } catch (error) {
+    await env.GROUP_MESSAGE_ASSETS.delete(key).catch(() => {});
+    throw error;
+  }
+}
+
+async function deliverGroupMessageAttachment(request, env, context, ministryId, messageId) {
+  if (request.method !== "GET") throw new GroupMessageAccessError("Method not allowed", 405);
+  if (!env.GROUP_MESSAGE_ASSETS) throw new GroupMessageAccessError("Group message attachment storage is not configured.", 503);
+  await requireActiveMinistryMember(env, context, ministryId);
+  const message = await d1First(env, `
+    SELECT id FROM parish_group_messages
+    WHERE id = ? AND parish_id = ? AND ministry_id = ?
+      AND message_type IN ('voice', 'image') AND attachment_url IS NOT NULL
+  `, messageId, context.parishId, ministryId);
+  if (!message) throw new GroupMessageAccessError("Attachment was not found.", 404);
+  const object = await env.GROUP_MESSAGE_ASSETS.get(groupAttachmentStorageKey({ parishId: context.parishId, ministryId, messageId }));
+  if (!object?.body) throw new GroupMessageAccessError("Attachment was not found.", 404);
+  const headers = new Headers(PRIVATE_HEADERS);
+  object.writeHttpMetadata?.(headers);
+  headers.set("Cache-Control", "private, no-store");
+  headers.set("Content-Disposition", "inline");
+  if (Number(object.size || 0) > 0) headers.set("Content-Length", String(object.size));
+  return new Response(object.body, { headers });
 }
 
 export async function markGroupMessageRead(env, { parishId, ministryId, messageId, personId, donorId }) {
@@ -339,6 +523,20 @@ function errorResponse(error) {
   throw error;
 }
 
+function scheduleGroupMessagePush(env, ctx, context, ministryId, message) {
+  if (!ctx?.waitUntil) return;
+  const delivery = sendGroupMessagePush(env, {
+    parishId: context.parishId,
+    ministryId,
+    ministryName: message.ministryName,
+    authorPersonId: context.personId,
+    authorName: message.authorName,
+    message,
+  }).then((summary) => console.log("group_push_delivery", JSON.stringify({ parishId: context.parishId, ministryId, messageId: message.id, ...summary })))
+    .catch((error) => console.error("group_push_delivery_failed", error?.message || String(error)));
+  ctx.waitUntil(delivery);
+}
+
 export async function handleDonorGroups(request, env, ctx = null) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   if (!database(env)) return missingProductionStoreResponse();
@@ -363,19 +561,18 @@ export async function handleDonorGroups(request, env, ctx = null) {
     if (parts.length === 2 && parts[1] === "messages" && request.method === "POST") {
       const input = await request.json().catch(() => ({}));
       const message = await postGroupMessage(env, { ...context, ministryId: parts[0], body: input.body });
-      if (ctx?.waitUntil) {
-        const delivery = sendGroupMessagePush(env, {
-          parishId: context.parishId,
-          ministryId: parts[0],
-          ministryName: message.ministryName,
-          authorPersonId: context.personId,
-          authorName: message.authorName,
-          message,
-        }).then((summary) => console.log("group_push_delivery", JSON.stringify({ parishId: context.parishId, ministryId: parts[0], messageId: message.id, ...summary })))
-          .catch((error) => console.error("group_push_delivery_failed", error?.message || String(error)));
-        ctx.waitUntil(delivery);
-      }
+      scheduleGroupMessagePush(env, ctx, context, parts[0], message);
       return privateJson({ ok: true, message }, { status: 201 });
+    }
+    if (parts.length === 3 && parts[1] === "messages" && parts[2] === "attachment" && request.method === "POST") {
+      const limited = await rateLimit(request, env, "group-message-attachment-upload", { limit: 20, windowSeconds: 300 });
+      if (limited) return limited;
+      const message = await postGroupMessageAttachment(request, env, context, parts[0], url.searchParams.get("type"));
+      scheduleGroupMessagePush(env, ctx, context, parts[0], message);
+      return privateJson({ ok: true, message }, { status: 201 });
+    }
+    if (parts.length === 4 && parts[1] === "messages" && parts[3] === "attachment") {
+      return deliverGroupMessageAttachment(request, env, context, parts[0], parts[2]);
     }
     if (parts.length === 2 && parts[1] === "caught-up" && request.method === "GET") {
       return privateJson(await getLatestGroupMessageCatchUp(env, { ...context, ministryId: parts[0] }));
