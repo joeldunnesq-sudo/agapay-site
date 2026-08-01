@@ -9,11 +9,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=20260731communicationsnav1" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260801navflash2" />
   <script src="/liturgical-calendar.js"></script>
 <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <script src="/pwa-register.js" defer></script>
-  <script src="/myagapay-shell.js?v=20260801navflash1" defer></script>
+  <script src="/myagapay-shell.js?v=20260801navflash2" defer></script>
   <script src="/donor/app.js?v=20260731pledge1" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -42,7 +42,7 @@
         </div>
         <nav class="nav unified-product-nav" hx-boost="false">
           <a class="active" href="/myagapay/dashboard"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg> Give</a>
-          <a href="/myagapay/parish-life" data-parish-life-link><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg> <span data-parish-life-label>Today</span></a>
+          <a href="/myagapay/parish-life" class="sw-tool-loading" data-parish-life-link aria-busy="true" aria-disabled="true"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg> <span data-parish-life-label>Loading…</span></a>
           <a href="/myagapay/learn"><svg viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg> Learn</a>
           <a href="/myagapay/directory"><svg viewBox="0 0 24 24"><path d="M12 3l8 6v12H4V9z"/><path d="M9 21v-7h6v7"/><path d="M8 10h8"/><path d="M12 6v8"/></svg> Directory</a>
           <span class="unified-nav-divider" aria-hidden="true"></span>
@@ -75,7 +75,7 @@
               <span class="myagapay-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span>
             </button>
             <div class="donor-home-account-dropdown" role="menu" hidden>
-              <a href="/myagapay/parish-life" role="menuitem" data-parish-life-link data-parish-life-label>Today</a>
+              <a href="/myagapay/parish-life" class="sw-tool-loading" role="menuitem" data-parish-life-link data-parish-life-label aria-busy="true" aria-disabled="true">Loading…</a>
               <a href="/myagapay/giving/history" role="menuitem">History</a>
               <a href="/myagapay/account" role="menuitem">Account Settings</a>
               <button type="button" data-donor-logout role="menuitem">Log out</button>

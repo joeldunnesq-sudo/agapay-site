@@ -5,8 +5,15 @@
     email: "agapayDonorEmail",
     token: "agapayDonorToken",
     profile: "agapayDonorProfile",
-    learnPlan: "agapay.learn.plan"
+    learnPlan: "agapay.learn.plan",
+    // UX cache only: this makes the shared navigation render consistently
+    // across full-page loads. It must never be used as an authorization or
+    // content-access decision; the Worker remains the security boundary.
+    parishCapabilities: "agapay.parishCapabilities.v1",
+    navigationTransition: "agapay.navigationTransition.v1"
   };
+  const PARISH_CAPABILITIES_CACHE_MAX_AGE_MS = 5 * 60 * 1000;
+  const NAVIGATION_TRANSITION_MAX_AGE_MS = 15 * 1000;
 
   const icons = {
     home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>',
@@ -32,8 +39,8 @@
     const communicationsEnabled = Boolean(source?.communicationsEnabled);
     return {
       communicationsEnabled,
-      label: resolved ? String(source?.parishLifeLabel || (communicationsEnabled ? "Koinonia" : "Today")) : "",
-      short: resolved ? (communicationsEnabled ? "Parish news and ministries" : "Feast day and services") : ""
+      label: resolved ? String(source?.parishLifeLabel || (communicationsEnabled ? "Koinonia" : "Today")) : "Loading…",
+      short: resolved ? (communicationsEnabled ? "Parish news and ministries" : "Feast day and services") : "Loading parish features"
     };
   }
 
@@ -68,7 +75,6 @@
   function visibleProducts() {
     return products().filter((item) => {
       if (item.desktopHidden) return false;
-      if (item.deferUntilCapabilitiesLoaded && !capabilitiesLoaded) return false;
       return !item.parishFeature || parishCapabilities[item.parishFeature] === true || item.id === activeProduct();
     });
   }
@@ -85,7 +91,7 @@
     return [
       byId.get("giving"),
       featureOrFallback("bookstore", "settings"),
-      capabilitiesLoaded ? byId.get("parish-life") : null,
+      byId.get("parish-life"),
       featureOrFallback("directory", "learn"),
       featureOrFallback("commemorations", "history"),
     ].filter(Boolean);
@@ -306,7 +312,7 @@
         ${icons.menu}
       </button>
       <div class="donor-home-account-dropdown" role="menu" hidden>
-        <a href="/myagapay/parish-life" role="menuitem" data-parish-life-link data-parish-life-label>Today</a>
+        <a href="/myagapay/parish-life" role="menuitem" data-parish-life-link data-parish-life-label${capabilitiesLoaded ? "" : ' class="sw-tool-loading" aria-busy="true" aria-disabled="true"'}>${parishLifeExperience().label}</a>
         <a href="/myagapay/giving/history" role="menuitem">History</a>
         <a href="/myagapay/account" role="menuitem">Account Settings</a>
         <button type="button" data-donor-logout role="menuitem">Log out</button>
@@ -335,6 +341,12 @@
     const productLinks = navProducts.map((item) => {
       const current = item.id === active || (item.id === "settings" && active === "account");
       const activeClass = current ? (isLearnNav ? "is-active" : "active") : "";
+      if (item.deferUntilCapabilitiesLoaded && !capabilitiesLoaded) {
+        const loadingLabel = isDesktopSideNav
+          ? `<span><strong>Loading…</strong><small>Loading parish features</small></span>`
+          : "<span>Loading…</span>";
+        return `<span class="sw-tool-loading myagapay-nav-loading" data-parish-life-loading aria-busy="true">${item.icon}${loadingLabel}</span>`;
+      }
       const unreadCount = item.id === "parish-life" ? feedUnreadCount + groupsUnreadCount + teachingUnreadCount : 0;
       const badge = unreadCount > 0
         ? `<em class="unified-nav-badge" data-${item.id}-unread-count aria-label="${unreadCount} unread">${unreadCount > 99 ? "99+" : unreadCount}</em>`
@@ -362,8 +374,8 @@
     });
   }
 
-  function setParishCapabilities(parish = null) {
-    parishCapabilities = {
+  function normalizeParishCapabilities(parish = null) {
+    return {
       sacramentsEnabled: Boolean(parish?.sacramentsEnabled),
       directoryEnabled: Boolean(parish?.directoryEnabled),
       bookstoreEnabled: Boolean(parish?.bookstoreEnabled),
@@ -371,6 +383,40 @@
       parishLifeLabel: String(parish?.parishLifeLabel || ""),
       parishLifeAvailable: Boolean(parish?.parishLifeAvailable)
     };
+  }
+
+  function readCachedParishCapabilities() {
+    const current = session();
+    if (!current.email || !current.token) return null;
+    try {
+      const cached = JSON.parse(localStorage.getItem(storageKeys.parishCapabilities) || "null");
+      const cachedAt = Number(cached?.cachedAt || 0);
+      if (!cached?.parish || cached.email !== current.email || !cachedAt || Date.now() - cachedAt > PARISH_CAPABILITIES_CACHE_MAX_AGE_MS) {
+        return null;
+      }
+      return normalizeParishCapabilities(cached.parish);
+    } catch {
+      return null;
+    }
+  }
+
+  function cacheParishCapabilities(parish) {
+    const current = session();
+    if (!current.email || !current.token) return;
+    try {
+      localStorage.setItem(storageKeys.parishCapabilities, JSON.stringify({
+        email: current.email,
+        cachedAt: Date.now(),
+        parish: normalizeParishCapabilities(parish)
+      }));
+    } catch {
+      // Navigation still resolves from the network when storage is unavailable.
+    }
+  }
+
+  function setParishCapabilities(parish = null, { persist = false, authoritative = true } = {}) {
+    parishCapabilities = normalizeParishCapabilities(parish);
+    if (persist) cacheParishCapabilities(parishCapabilities);
     capabilitiesLoaded = true;
     const parishLife = parishLifeExperience(parishCapabilities);
     document.documentElement.dataset.parishCapabilitiesLoaded = "true";
@@ -378,16 +424,20 @@
     normalizeProductNavs();
     document.querySelectorAll("[data-parish-life-link], [data-parish-life-section]").forEach((element) => {
       element.hidden = false;
+      element.classList?.remove("sw-tool-loading");
+      element.removeAttribute?.("aria-busy");
+      element.removeAttribute?.("aria-disabled");
     });
     document.querySelectorAll("[data-parish-life-label]").forEach((element) => {
       element.textContent = parishLife.label;
+      element.classList?.remove("sw-tool-loading");
     });
-    if (activeProduct() === "directory" && !parishCapabilities.directoryEnabled) {
+    if (authoritative && activeProduct() === "directory" && !parishCapabilities.directoryEnabled) {
       window.location.replace("/myagapay/dashboard");
       return;
     }
     window.dispatchEvent(new CustomEvent("myagapay:parish-capabilities", {
-      detail: { ...parishCapabilities }
+      detail: { ...parishCapabilities, source: authoritative ? "network" : "cache" }
     }));
   }
 
@@ -395,10 +445,14 @@
     if (capabilitiesLoaded) return;
     document.documentElement.dataset.parishCapabilitiesLoaded = "false";
     document.querySelectorAll("[data-parish-life-link], [data-parish-life-section]").forEach((element) => {
-      element.hidden = true;
+      element.hidden = false;
+      element.classList?.add("sw-tool-loading");
+      element.setAttribute?.("aria-busy", "true");
+      element.setAttribute?.("aria-disabled", "true");
     });
     document.querySelectorAll("[data-parish-life-label]").forEach((element) => {
-      element.textContent = "";
+      element.textContent = "Loading…";
+      element.classList?.add("sw-tool-loading");
     });
   }
 
@@ -416,7 +470,7 @@
       if (handleUnauthorized(response)) return;
       if (!response.ok) throw new Error("Unable to load parish features");
       const payload = await response.json();
-      setParishCapabilities(payload.parish || null);
+      setParishCapabilities(payload.parish || null, { persist: true, authoritative: true });
       if (parishCapabilities.parishLifeAvailable && !window.location.pathname.startsWith("/myagapay/parish-life")) {
         await Promise.all([
           parishCapabilities.communicationsEnabled ? loadFeedUnreadCount() : Promise.resolve(setFeedUnreadCount(0)),
@@ -425,7 +479,9 @@
         ]);
       }
     } catch {
-      setParishCapabilities(null);
+      // Keep a fresh cached display if one was available. On a true cold start,
+      // retain the honest loading state instead of guessing Today or Koinonia.
+      if (!capabilitiesLoaded) deferParishLifeIdentity();
     }
   }
 
@@ -508,6 +564,75 @@
     Object.values(storageKeys).forEach((key) => localStorage.removeItem(key));
   }
 
+  // This marker only continues the parish dashboard's cosmetic progress pattern
+  // across real browser navigations. It does not intercept links or create a router.
+  function markInternalNavigation(destination) {
+    try {
+      localStorage.setItem(storageKeys.navigationTransition, JSON.stringify({
+        fromPath: window.location.pathname,
+        destinationPath: destination.pathname,
+        startedAt: Date.now()
+      }));
+    } catch {
+      // Navigation must proceed normally when storage is unavailable.
+    }
+    document.body?.style?.setProperty("--myagapay-navigation-delay", "0ms");
+    document.body?.classList.add("myagapay-navigating");
+  }
+
+  function isMyAgapayPath(pathname) {
+    return pathname === "/myagapay" || pathname.startsWith("/myagapay/");
+  }
+
+  function consumeInternalNavigation() {
+    let marker = null;
+    try {
+      marker = JSON.parse(localStorage.getItem(storageKeys.navigationTransition) || "null");
+      localStorage.removeItem(storageKeys.navigationTransition);
+    } catch {
+      return null;
+    }
+    if (!marker?.startedAt || Date.now() - marker.startedAt > NAVIGATION_TRANSITION_MAX_AGE_MS) return null;
+    try {
+      const referrer = new URL(document.referrer);
+      if (referrer.origin !== window.location.origin || !isMyAgapayPath(referrer.pathname)) return null;
+      if (marker.fromPath !== referrer.pathname || marker.destinationPath !== window.location.pathname) return null;
+      return marker;
+    } catch {
+      return null;
+    }
+  }
+
+  function beginInternalNavigationProgress(marker) {
+    if (!marker) return;
+    const elapsed = Math.max(0, Date.now() - Number(marker.startedAt));
+    document.body?.style?.setProperty("--myagapay-navigation-delay", `-${elapsed}ms`);
+    document.body?.classList.add("myagapay-navigating");
+  }
+
+  function finishInternalNavigationProgress() {
+    if (!internalNavigationMarker) return;
+    const finish = () => document.body?.classList.remove("myagapay-navigating");
+    if (window.requestAnimationFrame) window.requestAnimationFrame(() => window.requestAnimationFrame(finish));
+    else finish();
+  }
+
+  function handleInternalNavigationClick(event) {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const link = event.target?.closest?.("a[href]");
+    if (!link || link.target && link.target !== "_self" || link.hasAttribute("download")) return;
+    let destination;
+    try {
+      destination = new URL(link.href, window.location.href);
+    } catch {
+      return;
+    }
+    if (destination.origin !== window.location.origin || !isMyAgapayPath(destination.pathname)) return;
+    if (destination.pathname === window.location.pathname && destination.search === window.location.search) return;
+    markInternalNavigation(destination);
+    // Deliberately do not preventDefault: this remains an ordinary full-page navigation.
+  }
+
   function syncAuthVisibility(root = document) {
     const current = session();
     const signedIn = Boolean(current.email && current.token);
@@ -568,6 +693,14 @@
   const DESKTOP_BREAKPOINT = "(min-width: 901px)";
   let viewportQuery = null;
 
+  const internalNavigationMarker = consumeInternalNavigation();
+  beginInternalNavigationProgress(internalNavigationMarker);
+
+  const cachedParishCapabilities = isProtectedPath() ? readCachedParishCapabilities() : null;
+  if (cachedParishCapabilities) {
+    setParishCapabilities(cachedParishCapabilities, { persist: false, authoritative: false });
+  }
+
   function isLikelyMobileBrowser() {
     const ua = window.navigator.userAgent || "";
     const mobileUa = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(ua);
@@ -607,11 +740,15 @@
     deferParishLifeIdentity();
     syncAuthVisibility();
     initViewportAwareness();
+    document.addEventListener("click", handleInternalNavigationClick);
     if (isProtectedPath()) {
       const current = session();
       if (!current.email || !current.token) redirectToLogin("sign-in-required");
       else loadParishCapabilities();
     }
+    // At this point the destination has rendered either its fresh cached identity
+    // or the deliberate Loading… state. The real background refresh remains active.
+    finishInternalNavigationProgress();
   });
 
   window.addEventListener("resize", ensureIosBackButton);

@@ -32,6 +32,27 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+body.myagapay-navigating::before {
+  content: "";
+  position: fixed;
+  inset: 0 auto auto 0;
+  z-index: 10001;
+  width: 36%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  animation: dashboard-refresh-slide 1s ease-in-out infinite;
+  animation-delay: var(--myagapay-navigation-delay, 0ms);
+}
+
+@keyframes dashboard-refresh-slide {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(380%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.myagapay-navigating::before { animation-duration: 2.4s; }
+}
+
 a { color: inherit; }
 button, input, select, textarea { font: inherit; }
 [hidden] { display: none !important; }
@@ -8917,8 +8938,16 @@ textarea {
   .feed-digest-status { grid-column: 1 / -1; margin: 0 !important; font-size: 10px !important; }
   .feed-digest-toggle { align-self: center; }
 }
-html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-link],
-html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-section],
-html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-label] {
+html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-section] {
   visibility: hidden;
+}
+html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-link],
+html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-label],
+.myagapay-nav-loading {
+  color: var(--muted, #6f6a60);
+  font-size: 12px;
+}
+html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-link],
+.myagapay-nav-loading {
+  pointer-events: none;
 }
