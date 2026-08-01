@@ -2877,6 +2877,74 @@ body.donor-home {
 .teaching-card-detail audio { width:100%; margin:0 0 18px; accent-color:#8a6a25; }
 .teaching-card-detail .feed-card-body { font-size:1rem; line-height:1.75; }
 
+/* Parish Life private Media deliberately enters a cinematic AGAPAY mode. */
+.donor-media-page { --media-navy:#061522; --media-panel:#0b2030; --media-panel-2:#102b3e; --media-gold:#c9a85b; background:var(--media-navy); color:#f8f3e8; }
+.donor-media-page .media-app, .donor-media-page .media-content { min-height:100vh; background:var(--media-navy); }
+.donor-media-page .media-sidebar { border-color:#1e394b; background:#081b29; }
+.donor-media-page .media-sidebar .brand-name, .donor-media-page .media-sidebar .profile-name, .donor-media-page .media-sidebar .sidebar-card h3 { color:#fff; }
+.donor-media-page .media-sidebar .profile-meta, .donor-media-page .media-sidebar .mini-item span { color:#9fb0b9; }
+.donor-media-page .media-sidebar .profile-panel, .donor-media-page .media-sidebar .sidebar-card { border-color:#294354; background:#0b2333; }
+.donor-media-page .media-topbar { border-color:#1e394b; background:rgba(6,21,34,.94); color:#fff; backdrop-filter:blur(14px); }
+.media-page-shell, .media-watch-shell { width:min(1180px,100%); margin:0 auto; padding-bottom:72px; }
+.media-heading { max-width:760px; padding:30px 0 26px; }
+.media-heading h1 { margin:8px 0 10px; color:#fff; font-family:"Cormorant Garamond",Georgia,serif; font-size:clamp(40px,6vw,66px); font-weight:500; line-height:.98; letter-spacing:-.025em; }
+.media-heading p { margin:0; color:#aebdc4; font-size:16px; line-height:1.7; }
+.media-heading .eyebrow, .donor-media-page .eyebrow { color:var(--media-gold); }
+.media-status { border:1px solid #294354; border-radius:14px; padding:16px; background:#0b2030; color:#b7c3c9; }
+.media-skeleton { position:relative; overflow:hidden; border-radius:18px; background:#102a3c; }
+.media-skeleton::after { position:absolute; inset:0; content:""; transform:translateX(-100%); background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent); animation:media-shimmer 1.5s infinite; }
+@keyframes media-shimmer { to { transform:translateX(100%); } }
+.media-feature-skeleton { height:min(52vw,540px); margin-bottom:28px; }
+.media-card-skeleton { display:block; aspect-ratio:16/10; }
+.media-feature { display:grid; overflow:hidden; grid-template-columns:minmax(0,1.55fr) minmax(270px,.75fr); margin:6px 0 42px; border:1px solid #294354; border-radius:24px; background:linear-gradient(135deg,#102b3e,#091c2a); color:#fff; text-decoration:none; box-shadow:0 28px 70px rgba(0,0,0,.3); }
+.media-feature .media-thumbnail { min-height:430px; }
+.media-thumbnail { position:relative; display:block; overflow:hidden; aspect-ratio:16/9; background:#0d2739; }
+.media-thumbnail img { width:100%; height:100%; object-fit:cover; transition:transform .35s ease,opacity .25s ease; }
+.media-card:hover img, .media-feature:hover img { transform:scale(1.025); opacity:.88; }
+.media-thumbnail em { position:absolute; right:10px; bottom:10px; border-radius:7px; padding:4px 7px; background:rgba(3,12,19,.88); color:#fff; font-size:11px; font-style:normal; font-weight:800; }
+.media-thumbnail i { position:absolute; top:50%; left:50%; display:grid; width:58px; height:58px; place-items:center; transform:translate(-50%,-50%); border:1px solid rgba(255,255,255,.35); border-radius:50%; background:var(--media-gold); color:#061522; font-size:19px; font-style:normal; box-shadow:0 10px 25px rgba(0,0,0,.28); }
+.media-feature .media-card-copy { display:flex; flex-direction:column; justify-content:center; padding:34px; }
+.media-card-copy small { margin-bottom:9px; color:var(--media-gold); font-size:10px; font-weight:800; letter-spacing:.11em; text-transform:uppercase; }
+.media-card-copy strong { display:block; color:#fff; font-family:"Cormorant Garamond",Georgia,serif; font-size:26px; font-weight:600; line-height:1.08; }
+.media-feature .media-card-copy strong { font-size:clamp(31px,4vw,46px); }
+.media-card-copy span { display:block; margin-top:8px; color:#93a6b0; font-size:12px; }
+.media-card-copy p { display:-webkit-box; overflow:hidden; margin:20px 0 0; color:#c0cbd0; line-height:1.65; -webkit-box-orient:vertical; -webkit-line-clamp:4; }
+.media-section-head { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; margin:0 0 17px; }
+.media-section-head h2 { margin:4px 0 0; color:#fff; font-family:"Cormorant Garamond",Georgia,serif; font-size:34px; font-weight:600; }
+.media-section-head p { max-width:680px; margin:8px 0 0; color:#9eafb7; line-height:1.55; }
+.media-private-pill, .youtube-public-pill { flex:0 0 auto; border:1px solid #3d5868; border-radius:999px; padding:7px 10px; color:#c5d0d5; font-size:10px; font-weight:800; letter-spacing:.04em; }
+.media-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; }
+.media-card { overflow:hidden; border:1px solid #244052; border-radius:17px; background:#0b2030; color:#fff; text-decoration:none; box-shadow:0 15px 34px rgba(0,0,0,.18); transition:transform .2s ease,border-color .2s ease; }
+.media-card:hover { transform:translateY(-3px); border-color:#806d3d; }
+.media-card .media-card-copy { display:block; padding:16px 17px 18px; }
+.youtube-media-section { position:relative; margin-top:56px; border-top:1px solid #294354; padding-top:38px; }
+.youtube-section-mark { position:absolute; top:33px; right:0; display:grid; width:45px; height:32px; place-items:center; border-radius:9px; background:#f03; color:white; font-size:13px; }
+.youtube-media-section .media-section-head { padding-right:65px; }
+.youtube-public-pill { border-color:#693342; color:#ffbccb; }
+.youtube-card { border-color:#47303a; background:#171c24; }
+.youtube-card .media-thumbnail i.youtube-play { border:0; border-radius:12px; background:#f03; color:#fff; }
+.media-empty { color:#92a5af; }
+.agapay-player { position:relative; overflow:hidden; width:100%; margin-top:18px; border:1px solid #294354; border-radius:22px; aspect-ratio:16/9; background:#000; box-shadow:0 30px 80px rgba(0,0,0,.42); }
+.agapay-player video { width:100%; height:100%; object-fit:contain; }
+.player-center-button { position:absolute; top:50%; left:50%; display:grid; width:78px; height:78px; place-items:center; transform:translate(-50%,-50%); border:0; border-radius:50%; background:var(--media-gold); color:#061522; font-size:25px; cursor:pointer; box-shadow:0 14px 32px rgba(0,0,0,.4); }
+.player-center-button[hidden] { display:none; }
+.player-controls { position:absolute; right:0; bottom:0; left:0; padding:32px 17px 14px; background:linear-gradient(transparent,rgba(0,0,0,.9)); }
+.player-seek { width:100%; accent-color:var(--media-gold); cursor:pointer; }
+.player-control-row { display:flex; align-items:center; gap:12px; margin-top:6px; }
+.player-control-row button { border:0; padding:5px; background:transparent; color:#fff; font-size:17px; cursor:pointer; }
+.player-control-row span { color:#fff; font-size:11px; font-weight:700; }
+.player-control-row input { width:84px; accent-color:var(--media-gold); }
+.player-spacer { flex:1; }
+.watch-copy { max-width:840px; padding:28px 3px; }
+.watch-copy h1 { margin:16px 0 8px; color:#fff; font-family:"Cormorant Garamond",Georgia,serif; font-size:clamp(36px,5vw,54px); font-weight:600; line-height:1.05; }
+.watch-meta { display:flex; gap:10px; color:#8fa3ad; font-size:12px; }
+.watch-meta span::before { content:"·"; margin-right:10px; }
+.watch-description { margin-top:24px; color:#c0cbd0; font-size:16px; line-height:1.8; }
+.watch-description a { color:#e0c77f; }
+.watch-description ul { padding-left:22px; }
+@media (max-width:960px) { .media-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.media-feature{grid-template-columns:1fr;}.media-feature .media-thumbnail{min-height:0;}.media-feature .media-card-copy{padding:26px;} }
+@media (max-width:620px) { .media-page-shell,.media-watch-shell{padding:0 14px 90px}.media-heading{padding-top:22px}.media-heading h1{font-size:42px}.media-grid{grid-template-columns:1fr}.media-section-head{align-items:flex-start;flex-direction:column}.media-feature{margin-bottom:34px;border-radius:18px}.media-feature .media-card-copy{padding:21px}.agapay-player{margin-top:12px;border-radius:12px}.player-center-button{width:62px;height:62px}.player-control-row input{display:none}.youtube-section-mark{top:36px}.youtube-media-section .media-section-head{padding-right:0}.youtube-public-pill{display:none} }
+
 
 /* ── PLEDGE TRACKER ─────────────────────────────────────────── */
 .pledge-tracker-card {
@@ -7321,4 +7389,12 @@ textarea {
   .push-notification-card { grid-template-columns: 1fr; padding: 1.1rem; }
   .push-notification-actions { justify-content: stretch; }
   .push-notification-actions .btn { flex: 1 1 100%; }
+}
+
+.donor-mobile-page.donor-media-page,
+.donor-mobile-page.donor-media-page .content,
+.donor-mobile-page.donor-media-page .media-content,
+.donor-mobile-page.donor-media-page .page {
+  background:#061522;
+  color:#f8f3e8;
 }

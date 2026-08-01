@@ -10218,7 +10218,7 @@
   }
 
   // ── COMMUNICATIONS ────────────────────────────────────────
-  let communicationsState = { loaded: false, announcements: [], teaching: [], readers: {} };
+  let communicationsState = { loaded: false, announcements: [], teaching: [], videos: [], youtube: [], readers: {} };
 
   function communicationsApi(path = '') {
     return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/communications' + path;
@@ -10270,6 +10270,41 @@
         </div>
       </article>
     `).join('');
+  }
+
+  function formatVideoDuration(seconds) {
+    const total = Math.max(0, Math.round(Number(seconds) || 0));
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    const secs = total % 60;
+    return hours ? `${hours}:${String(minutes).padStart(2,'0')}:${String(secs).padStart(2,'0')}` : `${minutes}:${String(secs).padStart(2,'0')}`;
+  }
+
+  function renderVideoAdminList() {
+    const list = document.getElementById('videoAdminList');
+    if (!list) return;
+    const rows = communicationsState.videos || [];
+    list.innerHTML = rows.length ? rows.map(item => `
+      <article class="communications-row${item.pinned ? ' is-pinned' : ''}">
+        <div class="communications-row-copy"><div class="communications-row-meta"><span class="communications-status is-${escapeAttr(item.status)}">${announcementStatusLabel(item.status)}</span>${item.pinned ? '<span>📌 Featured</span>' : ''}<span class="video-processing-state">${item.readyToStream ? `Ready · ${formatVideoDuration(item.durationSeconds)}` : `Stream: ${escapeHtml(item.streamState || 'processing')}`}</span></div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.description || 'No description')}</p></div>
+        <div class="communications-row-actions">
+          ${item.status === 'published' ? `<span class="btn btn-ghost btn-sm">${Number(item.watchCount || 0)} watched</span>` : ''}
+          ${item.status !== 'archived' ? `<button class="btn btn-ghost btn-sm" type="button" onclick="editVideoPost('${escapeAttr(item.id)}')">Edit</button>` : ''}
+          ${item.status === 'draft' ? `<button class="btn btn-gold btn-sm" type="button" ${item.readyToStream ? '' : 'disabled'} onclick="publishVideoPost('${escapeAttr(item.id)}',this)">${item.readyToStream ? 'Publish' : 'Processing…'}</button>` : ''}
+          ${item.status !== 'archived' ? `<button class="btn btn-danger btn-sm" type="button" onclick="archiveVideo('${escapeAttr(item.id)}',this)">Archive</button>` : ''}
+        </div>
+      </article>`).join('') : '<div class="communications-empty"><strong>No native videos yet</strong><p>Upload a recording to begin private Stream processing.</p></div>';
+    if (rows.some(item => item.status === 'draft' && !item.readyToStream && item.streamState !== 'error')) {
+      window.clearTimeout(renderVideoAdminList.pollTimer);
+      renderVideoAdminList.pollTimer = window.setTimeout(() => loadCommunicationsTab(true), 8000);
+    }
+  }
+
+  function renderYouTubeAdminList() {
+    const list = document.getElementById('youtubeAdminList');
+    if (!list) return;
+    const rows = communicationsState.youtube || [];
+    list.innerHTML = rows.length ? rows.map(item => `<article class="communications-row"><img class="communications-row-image" src="${escapeAttr(item.thumbnailUrl)}" alt="" loading="lazy" /><div class="communications-row-copy"><div class="communications-row-meta"><span>Public on YouTube</span></div><h3>${escapeHtml(item.title)}</h3></div><div class="communications-row-actions"><button class="btn btn-danger btn-sm" type="button" onclick="removeYouTubeVideo('${escapeAttr(item.id)}',this)">Remove</button></div></article>`).join('') : '<div class="communications-empty"><strong>No YouTube links yet</strong><p>Paste a real video URL; AGAPAY validates it before saving.</p></div>';
   }
 
   async function toggleAnnouncementReaders(id, button) {
@@ -10364,16 +10399,20 @@
     }
     syncModuleStatusNavigation('communications', included, enabled);
     if (!included || (communicationsState.loaded && !force)) return;
-    const [announcementResponse, teachingResponse] = await Promise.all([
+    const [announcementResponse, teachingResponse, videoResponse] = await Promise.all([
       fetch(communicationsApi(), { headers: authHeaders(), cache: 'no-store' }),
-      fetch(communicationsApi('/teaching'), { headers: authHeaders(), cache: 'no-store' })
+      fetch(communicationsApi('/teaching'), { headers: authHeaders(), cache: 'no-store' }),
+      fetch(communicationsApi('/video'), { headers: authHeaders(), cache: 'no-store' })
     ]);
-    const [data, teachingData] = await Promise.all([announcementResponse.json(), teachingResponse.json()]);
+    const [data, teachingData, videoData] = await Promise.all([announcementResponse.json(), teachingResponse.json(), videoResponse.json()]);
     if (!announcementResponse.ok) { setStatus(data.error || 'Unable to load announcements.','error'); return; }
     if (!teachingResponse.ok) { setStatus(teachingData.error || 'Unable to load teaching posts.','error'); return; }
-    communicationsState = { loaded: true, announcements: data.announcements || [], teaching: teachingData.posts || [], readers: communicationsState.readers || {} };
+    if (!videoResponse.ok) { setStatus(videoData.error || 'Unable to load video posts.','error'); return; }
+    communicationsState = { loaded: true, announcements: data.announcements || [], teaching: teachingData.posts || [], videos: videoData.videos || [], youtube: videoData.youtube || [], readers: communicationsState.readers || {} };
     renderCommunicationsList();
     renderTeachingAdminList();
+    renderVideoAdminList();
+    renderYouTubeAdminList();
   }
 
   async function toggleCommunicationsFeature(input) {
@@ -10538,6 +10577,112 @@
       setStatus('Teaching post archived.','success');
     } catch (error) { setStatus(error.message,'error'); }
     finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
+  }
+
+  function uploadVideoDirectly(uploadUrl, file, onProgress) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', uploadUrl);
+      xhr.upload.addEventListener('progress', event => {
+        if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
+      });
+      xhr.addEventListener('load', () => xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error('Stream rejected the video upload.')));
+      xhr.addEventListener('error', () => reject(new Error('The video upload was interrupted.')));
+      const form = new FormData();
+      form.append('file', file, file.name);
+      xhr.send(form);
+    });
+  }
+
+  async function createVideoUpload(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const file = document.getElementById('videoFile')?.files?.[0];
+    const button = form.querySelector('button[type="submit"]');
+    const progress = document.getElementById('videoUploadProgress');
+    const fill = document.getElementById('videoUploadProgressFill');
+    const label = document.getElementById('videoUploadProgressLabel');
+    if (!file) return setStatus('Choose a recorded video first.','error');
+    if (file.size > 200 * 1024 * 1024) return setStatus('This uploader accepts videos up to 200MB.','error');
+    if (button) { button.disabled = true; button.classList.add('loading'); }
+    if (progress) progress.hidden = false;
+    try {
+      const response = await fetch(communicationsApi('/video/upload-url'), {
+        method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' },
+        body:JSON.stringify({ title:document.getElementById('videoTitle').value, description:document.getElementById('videoDescription').value, pinned:document.getElementById('videoPinned').checked })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to prepare the private upload.');
+      await uploadVideoDirectly(data.uploadUrl, file, percent => {
+        if (fill) fill.style.width = `${percent}%`;
+        if (label) label.textContent = `Uploading directly to Stream · ${percent}%`;
+      });
+      if (label) label.textContent = 'Upload complete · Stream is processing adaptive quality versions';
+      form.reset();
+      await loadCommunicationsTab(true);
+      setStatus('Video uploaded privately. Publish becomes available when Stream processing is ready.','success');
+    } catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
+  }
+
+  async function patchVideoPost(id, changes) {
+    const response = await fetch(communicationsApi('/video/' + encodeURIComponent(id)), { method:'PATCH', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify(changes) });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Unable to update the video.');
+    await loadCommunicationsTab(true);
+    return data.post;
+  }
+
+  async function editVideoPost(id) {
+    const item = communicationsState.videos.find(row => row.id === id);
+    if (!item) return;
+    const title = prompt('Video title', item.title); if (title === null) return;
+    const description = prompt('Video description', item.description || ''); if (description === null) return;
+    const pinned = confirm('Feature this video above newer uploads?');
+    try { await patchVideoPost(id, { title, description, pinned }); setStatus('Video details updated.','success'); }
+    catch (error) { setStatus(error.message,'error'); }
+  }
+
+  async function publishVideoPost(id, button) {
+    if (!confirm('Publish this private video to parishioners in My AGAPAY?')) return;
+    if (button) button.disabled = true;
+    try { await patchVideoPost(id, { status:'published' }); setStatus('Private video published.','success'); }
+    catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) button.disabled = false; }
+  }
+
+  async function archiveVideo(id, button) {
+    if (!confirm('Archive this video? It will no longer be playable in My AGAPAY.')) return;
+    if (button) button.disabled = true;
+    try {
+      const response = await fetch(communicationsApi('/video/' + encodeURIComponent(id) + '/archive'), { method:'POST', headers:authHeaders() });
+      const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Unable to archive video.');
+      await loadCommunicationsTab(true); setStatus('Video archived.','success');
+    } catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) button.disabled = false; }
+  }
+
+  async function addYouTubeVideo(event) {
+    event.preventDefault();
+    const form = event.currentTarget; const button = form.querySelector('button[type="submit"]');
+    if (button) button.disabled = true;
+    try {
+      const response = await fetch(communicationsApi('/video/youtube'), { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ youtubeUrl:document.getElementById('youtubeVideoUrl').value }) });
+      const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Unable to validate that YouTube video.');
+      form.reset(); await loadCommunicationsTab(true); setStatus('Public YouTube video added to its separate Media section.','success');
+    } catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) button.disabled = false; }
+  }
+
+  async function removeYouTubeVideo(id, button) {
+    if (!confirm('Remove this YouTube link from Media?')) return;
+    if (button) button.disabled = true;
+    try {
+      const response = await fetch(communicationsApi('/video/youtube/' + encodeURIComponent(id)), { method:'DELETE', headers:authHeaders() });
+      const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Unable to remove YouTube video.');
+      await loadCommunicationsTab(true); setStatus('YouTube link removed.','success');
+    } catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) button.disabled = false; }
   }
 
   // ── COMMEMORATIONS ────────────────────────────────────────
