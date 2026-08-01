@@ -1,6 +1,7 @@
 import { getReadContentIds, getReadReceipts, markContentRead } from "../lib/content-reads.js";
 import { communicationsEnabledFor } from "../lib/entitlements.js";
 import { generateSecret, hasProductionStore, json, missingProductionStoreResponse, normalizeEmail, rateLimit, unauthorized } from "../lib/core.js";
+import { sendTeachingPush } from "../lib/push-notifications.js";
 import { renderBoundedRichText } from "../lib/rich-text.js";
 import { findRegistrationByParishId, requireDonor } from "./parish.js";
 import { requireCommunicationsAdmin } from "./parish-communications.js";
@@ -61,7 +62,7 @@ export async function createParishTeachingPost(db, { parishId, createdBy, input 
   return teachingFromRow(await db.prepare("SELECT * FROM parish_teaching_posts WHERE id = ?").bind(id).first());
 }
 
-export async function updateParishTeachingPost(db, { parishId, teachingId, input }) {
+export async function updateParishTeachingPost(db, { parishId, teachingId, input, onPublished }) {
   const current = await db.prepare(
     "SELECT * FROM parish_teaching_posts WHERE id = ? AND parish_id = ?"
   ).bind(teachingId, parishId).first();
@@ -81,7 +82,11 @@ export async function updateParishTeachingPost(db, { parishId, teachingId, input
     SET title = ?, body = ?, status = ?, published_at = ?, updated_at = datetime('now')
     WHERE id = ? AND parish_id = ?
   `).bind(fields.title ?? current.title, fields.body ?? current.body, requestedStatus, publishedAt, teachingId, parishId).run();
-  return teachingFromRow(await db.prepare("SELECT * FROM parish_teaching_posts WHERE id = ?").bind(teachingId).first());
+  const teaching = teachingFromRow(await db.prepare("SELECT * FROM parish_teaching_posts WHERE id = ?").bind(teachingId).first());
+  if (current.status !== "published" && requestedStatus === "published" && typeof onPublished === "function") {
+    onPublished(teaching);
+  }
+  return teaching;
 }
 
 export async function archiveParishTeachingPost(db, { parishId, teachingId }) {
@@ -233,7 +238,7 @@ export async function handleParishTeachingAudioUpload(request, env, parishId, te
   return json({ ok: true, key, url: audioUrl, contentType: metadata.contentType, size, post });
 }
 
-export async function handleParishTeaching(request, env, parishId, subpath = "") {
+export async function handleParishTeaching(request, env, parishId, subpath = "", ctx = null) {
   const normalized = String(subpath || "").replace(/^\/+|\/+$/g, "");
   const parts = normalized ? normalized.split("/") : [];
   if (parts.length === 2 && parts[1] === "audio") {
@@ -251,7 +256,22 @@ export async function handleParishTeaching(request, env, parishId, subpath = "")
       return json({ ok: true, post }, { status: 201 });
     }
     if (parts.length === 1 && request.method === "PATCH") {
-      const post = await updateParishTeachingPost(db, { parishId, teachingId: decodeURIComponent(parts[0]), input: await request.json() });
+      const post = await updateParishTeachingPost(db, {
+        parishId,
+        teachingId: decodeURIComponent(parts[0]),
+        input: await request.json(),
+        onPublished: (publishedTeaching) => {
+          if (!ctx?.waitUntil) return;
+          if (!communicationsEnabledFor(auth.found.registration)) return;
+          const delivery = sendTeachingPush(env, {
+            parishId,
+            parishName: auth.found.registration.parishName || "your parish",
+            teaching: publishedTeaching,
+          }).then((summary) => console.log("teaching_push_delivery", JSON.stringify({ parishId, teachingId: publishedTeaching.id, ...summary })))
+            .catch((error) => console.error("teaching_push_delivery_failed", error?.message || String(error)));
+          ctx.waitUntil(delivery);
+        },
+      });
       return post ? json({ ok: true, post }) : json({ error: "Teaching post not found" }, { status: 404 });
     }
     if (parts.length === 2 && parts[1] === "readers" && request.method === "GET") {

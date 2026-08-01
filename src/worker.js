@@ -3640,7 +3640,7 @@ export default {
       const subpath = parts.slice(1).join("/communications") || "";
       const normalizedSubpath = subpath.replace(/^\/+/, "");
       if (normalizedSubpath === "teaching" || normalizedSubpath.startsWith("teaching/")) {
-        return handleParishTeaching(request, env, parishId, normalizedSubpath.replace(/^teaching\/?/, ""));
+        return handleParishTeaching(request, env, parishId, normalizedSubpath.replace(/^teaching\/?/, ""), ctx);
       }
       return handleParishCommunications(request, env, parishId, subpath, ctx);
     }
