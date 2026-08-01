@@ -136,7 +136,7 @@ assert.match(page, /await savePersonNameday\(household, nameday, (adultResult|ch
 assert.match(page, /householdAdminPublish: true/);
 assert.match(page, /function accountDirectoryDefaults\(\)/);
 assert.match(page, /directory\.households\?\.items/);
-assert.match(page, /void Promise\.allSettled\(\[loadMemberHome\(\), loadMySkills\(\), householdData\]\)/);
+assert.match(page, /void Promise\.allSettled\(\[loadMemberHome\(\), loadMySkills\(\), loadDirectoryReviewRequests\(\), householdData\.then\(loadHouseholdVerification\)\]\)/);
 assert.match(page, /function renderFamilyContact\(member, contact\)/);
 assert.match(page, /const memberContacts = \(profile\.members \|\| \[\]\)\.flatMap/);
 assert.match(page, /const familyContacts = contacts \+ memberContacts/);

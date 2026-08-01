@@ -7,10 +7,6 @@ const stewardshipCss = fs.readFileSync(new URL('../public/styles/stewardship.css
 const adminService = fs.readFileSync(new URL('../src/directory/admin.js', import.meta.url), 'utf8');
 const adminHandler = fs.readFileSync(new URL('../src/handlers/directory-admin.js', import.meta.url), 'utf8');
 
-if (app.includes("fetch(directoryAdminApi('/queue')")) {
-  throw new Error('Parish Directory must not fetch a review queue');
-}
-
 const checks = [
   ['the legacy Directory Operations hero is removed', !dashboard.includes('Directory Operations')],
   ['the live Directory API remains wired', app.includes("directoryAdminApi('/households?limit=100')") && app.includes("directoryAdminApi('/print/directory')")],
@@ -31,7 +27,10 @@ const checks = [
   ['staff always sees complete contacts while eyes report donor-side sharing', app.includes('Authorized parish staff always see the complete contact record') && app.includes('The eye reports the family’s sharing choice') && app.includes('staffContact.email?.visibility') && app.includes('private from parishioners')],
   ['street address is explicitly staff-only while city and state may be shared', app.includes('A street address is never shown to parishioners') && app.includes('city/state visible in My AGAPAY; street private') && app.includes('Full street addresses are never published')],
   ['prototype nameday and skills filters are present', app.includes('All namedays') && app.includes('All skills') && app.includes('filterCanonicalDirectoryRows')],
-  ['parish directory keeps clearly labeled management tools without a review queue', !app.includes('data-dir-tab="queue"') && app.includes('Directory Health') && app.includes('Parishioner Skills &amp; Service')],
+  ['directory management uses one review queue instead of maintenance worklists', app.includes("fetch(directoryAdminApi('/queue')") && app.includes('Review Queue') && app.includes('directoryReviewQueueRows') && !app.includes("directoryMaintenanceActions(maintenance.actions || {})")],
+  ['review queue exposes confirm, decline, and request-information actions', app.includes('Confirm submission') && app.includes('Ask for information') && app.includes('Decline') && app.includes('requesterNote: note')],
+  ['directory health is visual and action-oriented', app.includes('pdx-dir-health-ring') && app.includes('Directory health') && app.includes('Awaiting review') && css.includes('conic-gradient')],
+  ['skills and exports are secondary disclosure tools rather than competing lists', app.includes('<details class="pdx-dir-utilities">') && app.includes('Skills and exports')],
   ['each adult can link a separate My AGAPAY identity inside one shared household', app.includes('Adult accounts &amp; Koinonia access') && app.includes('Each adult signs in separately while sharing this household') && app.includes('sendDirectoryHouseholdInvitation')],
   ['children remain safely managed without separate accounts', app.includes('managed by household adults') && app.includes('Children remain under household management and do not receive separate accounts')],
   ['household account states distinguish linked, invited, and unlinked adults', app.includes('Koinonia ready') && app.includes('Invitation pending') && app.includes('Send secure invitation')],

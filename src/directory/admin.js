@@ -23,6 +23,7 @@ import {
 import { checkChildEligibility, sanitizeChildFields, POLICY_REVISION as CHILD_POLICY_REVISION } from "./child-publication.js";
 import { approveMinistryInterestReview, closeMinistryInterestReview } from "./ministries.js";
 import { getDirectorySettings } from "./settings.js";
+import { directoryReviewMessageStatement, listDirectoryReviewConversation } from "./review-correspondence.js";
 import {
   assertParishActor,
   auditStatement,
@@ -578,7 +579,8 @@ export async function getDirectoryReviewItem(env, { context, sourceType, sourceI
     current: row.source_type === "media_asset" ? null : await currentSnapshot(env, row, context),
     proposed: sanitizePayload(payload, context),
     media,
-    notes
+    notes,
+    conversation: await listDirectoryReviewConversation(env, { parishId: context.parishId, sourceType: row.source_type, sourceId: row.source_id })
   };
 }
 
@@ -838,6 +840,9 @@ export async function decideDirectoryReviewItem(env, { context, sourceType, sour
   requireAny(actor, context.parishId, reviewDefinition(row).capabilities);
   const cleanedDecision = cleanText(decision, { required: true, max: 40, field: "decision" });
   if (!DECISIONS.has(cleanedDecision)) throw new DirectoryServiceError("validation_failed", "Review decision is not supported.");
+  if (cleanedDecision === "return" && !cleanText(requesterNote, { max: 1200 })) {
+    throw new DirectoryServiceError("validation_failed", "Tell the member what information is needed before returning the submission.");
+  }
   if (expectedVersion && expectedVersion !== metadataDto(row).version) throw new DirectoryServiceError("stale_review_item", "Review item changed. Refresh before deciding.", 409);
   if (row.requester_user_id && row.requester_user_id === context.user.id && cleanedDecision === "approve") {
     throw new DirectoryServiceError("self_approval_denied", "Reviewers cannot approve their own directory request.", 403);
@@ -898,6 +903,7 @@ async function closeReviewItem(env, { context, row, decision, reasonCode, review
   }
   await runAtomic(env, [
     ...sourceUpdates,
+    ...(decision === "return" ? [directoryReviewMessageStatement({ parishId: context.parishId, sourceType: row.source_type, sourceId: row.source_id, direction: "staff_to_member", body: requesterNote, userId: context.user.id, timestamp })] : []),
     { sql: "UPDATE directory_review_metadata SET queue_status = ?, returned_at = ?, completed_at = ?, updated_at = ? WHERE id = ?", params: [decision === "return" ? "returned" : decision === "cancel" ? "cancelled" : "denied", decision === "return" ? timestamp : null, decision === "return" ? null : timestamp, timestamp, id] },
     auditStatement({ action: `directory.review_item.${decision}ed`, actor, parishId: context.parishId, targetType: "directory_review_item", targetId: id, metadata: { reasonCode, reviewerNote: cleanText(reviewerNote, { max: 500 }), requesterNote: cleanText(requesterNote, { max: 500 }) }, correlationId }),
     notificationStatement({ context, row, eventType: `directory.review.${decision}`, safeMessage: reviewNotification(decision) })
@@ -909,6 +915,23 @@ async function approveReviewItem(env, { context, row, reasonCode, reviewerNote, 
   if (row.source_type === "publication_profile") {
     const profile = await d1First(env, "SELECT * FROM directory_publication_profiles WHERE id = ?1 AND parish_id = ?2", row.source_id, context.parishId);
     await transitionPublicationProfile(env, { actor: actorDto(context), parishId: context.parishId, ownerType: profile.owner_type, ownerId: profile.owner_id, status: "approved", correlationId });
+    if (profile.owner_type === "household") {
+      const timestamp = nowMs();
+      const settings = await getDirectorySettings(env, context.parishId);
+      const intervalDays = Math.max(30, Math.min(1095, Number(settings.householdVerificationIntervalDays || settings.reconfirmationIntervalDays || 365)));
+      await runAtomic(env, [{
+        sql: `INSERT INTO directory_household_verifications
+                (household_id, parish_id, verification_status, verification_due_at, last_verified_at,
+                 verification_started_at, verified_by_user_id, verification_policy_version, created_at, updated_at)
+              VALUES (?, ?, 'current', ?, ?, ?, ?, 'first-publication-review-v1', ?, ?)
+              ON CONFLICT(household_id) DO UPDATE SET
+                verification_status = 'current', verification_due_at = excluded.verification_due_at,
+                last_verified_at = excluded.last_verified_at, verified_by_user_id = excluded.verified_by_user_id,
+                verification_policy_version = excluded.verification_policy_version, updated_at = excluded.updated_at,
+                verification_version = verification_version + 1`,
+        params: [profile.owner_id, context.parishId, timestamp + intervalDays * 86400000, timestamp, timestamp, context.user.id, timestamp, timestamp]
+      }]);
+    }
     return markApproved(env, { context, row, reasonCode, reviewerNote, requesterNote, correlationId });
   }
   if (row.source_type === "media_asset") {

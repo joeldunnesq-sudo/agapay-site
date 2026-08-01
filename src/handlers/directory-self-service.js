@@ -49,6 +49,7 @@ import {
   pauseAllMySkillListings,
   saveMySkillListing
 } from "../directory/skills-service.js";
+import { listMyDirectoryReviewRequests, respondToDirectoryReviewRequest } from "../directory/review-correspondence.js";
 
 async function body(request) {
   return request.json().catch(() => ({}));
@@ -103,6 +104,19 @@ export async function handleDirectorySelfService(request, env) {
     }
     if (request.method === "GET" && path === "/api/directory/self/profile") {
       return json({ ok: true, profile: await getSelfServiceProfile(env, { context }) });
+    }
+    if (request.method === "GET" && path === "/api/directory/self/review-requests") {
+      return json({ ok: true, requests: await listMyDirectoryReviewRequests(env, { context }) });
+    }
+    const reviewResponseMatch = path.match(/^\/api\/directory\/self\/review-requests\/([^/]+)\/([^/]+)\/respond$/);
+    if (request.method === "POST" && reviewResponseMatch) {
+      return json({ ok: true, result: await respondToDirectoryReviewRequest(env, {
+        context,
+        sourceType: decodeURIComponent(reviewResponseMatch[1]),
+        sourceId: decodeURIComponent(reviewResponseMatch[2]),
+        message: (await body(request)).message,
+        correlationId
+      }) });
     }
     if (request.method === "POST" && path === "/api/directory/self/start-profile") {
       return json({ ok: true, profile: await startSelfServiceProfile(env, { context, data: await body(request), correlationId }) }, { status: 201 });

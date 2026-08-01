@@ -683,6 +683,19 @@
     .own-preview-item strong { display:block; overflow-wrap:anywhere; color:var(--navy); font-size:14px; }
     .publication-explainer { margin:0 0 14px; padding:12px 14px; border:1px solid #cde1ec; border-radius:10px; background:var(--blue-tint); color:#17384a; font-size:13px; line-height:1.5; }
     .publication-explainer strong { display:block; margin-bottom:3px; }
+    .directory-review-requests,.household-verification-card { display:grid; gap:10px; margin:0 0 14px; border:1px solid #dbc47f; border-radius:12px; padding:13px; background:#fff9e8; }
+    .directory-review-requests[hidden],.household-verification-card[hidden] { display:none; }
+    .directory-review-requests > strong,.household-verification-card > strong { color:var(--navy); font:700 17px/1.15 var(--serif); }
+    .directory-review-requests > p,.household-verification-card > p { margin:0; color:var(--muted); font-size:12px; line-height:1.45; }
+    .directory-review-thread { display:grid; gap:7px; }
+    .directory-review-message { max-width:88%; border-radius:10px; padding:9px 11px; background:#edf2f4; }
+    .directory-review-message.is-member_to_staff { justify-self:end; background:#efe4c5; }
+    .directory-review-message span { color:var(--gold-dark); font-size:9px; font-weight:800; text-transform:uppercase; }
+    .directory-review-message p { margin:3px 0 0; color:var(--navy); font-size:12px; line-height:1.4; }
+    .directory-review-response { display:grid; gap:8px; }
+    .directory-review-response textarea { min-height:80px; border:1px solid #cdbf9c; border-radius:9px; padding:9px; font:13px/1.4 var(--sans); resize:vertical; }
+    .directory-review-response button,.household-verification-card button { justify-self:start; border:0; border-radius:9px; padding:10px 13px; background:var(--navy); color:#fff; font-size:11px; font-weight:800; cursor:pointer; }
+    .household-verification-card.is-current { border-color:#bcd6c3; background:#f1f8f3; }
     .review-submit-panel { border:1px solid rgba(200,162,74,.38); background:linear-gradient(150deg,var(--gold-tint-2),#fff); }
     .review-submit-panel .btn.primary { width:100%; }
     @media (max-width: 860px) {
@@ -956,6 +969,8 @@
           <article class="panel" data-wizard-step="0" data-mobile-section="household setup privacy">
             <div class="panel-header"><div class="panel-header-row"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><div><div class="panel-kicker">Privacy</div><h2>Directory Sharing</h2><p class="panel-intro">Choose when this entry is ready to share. Private fields always remain private.</p></div></div></div>
             <div class="publication-explainer"><strong>Saving is not the same as publishing.</strong>Your saved information appears in your private preview immediately. The parish verifies the household the first time only; afterward your family controls its own updates.</div>
+            <div class="directory-review-requests" id="directoryReviewRequests" hidden></div>
+            <div class="household-verification-card" id="householdVerificationCard" hidden></div>
             <div class="summary-list" id="publicationSummary"></div>
             <div class="actions" id="publicationActions" hidden>
               <button class="btn primary" type="button" data-publication="pending_approval">Share in Directory</button>
@@ -2320,7 +2335,77 @@
       const householdData = profileState?.claimed
         ? renderHouseholdDetails().then(() => Promise.allSettled([loadNamedays(), loadChildrenPanel()]))
         : Promise.resolve();
-      void Promise.allSettled([loadMemberHome(), loadMySkills(), householdData]);
+      void Promise.allSettled([loadMemberHome(), loadMySkills(), loadDirectoryReviewRequests(), householdData.then(loadHouseholdVerification)]);
+    }
+    async function loadDirectoryReviewRequests() {
+      const container = document.getElementById("directoryReviewRequests");
+      if (!container || !profileState?.claimed) return;
+      try {
+        const payload = await api("/api/directory/self/review-requests");
+        const requests = payload.requests || [];
+        container.hidden = !requests.length;
+        container.innerHTML = requests.map((request) => `<section>
+          <strong>The parish needs more information about ${esc(request.targetLabel || "your directory submission")}</strong>
+          <p>Reply below. Your submission will return to the parish review queue automatically.</p>
+          <div class="directory-review-thread">${(request.conversation || []).map((message) => `<div class="directory-review-message is-${esc(message.direction)}"><span>${message.direction === "staff_to_member" ? "Parish office" : "You"}</span><p>${esc(message.body)}</p></div>`).join("")}</div>
+          <form class="directory-review-response" onsubmit="respondToDirectoryReviewRequest(event,'${esc(request.sourceType)}','${esc(request.sourceId)}')"><textarea name="message" maxlength="1200" required placeholder="Provide the information the parish requested…"></textarea><button type="submit">Send response and resubmit</button></form>
+        </section>`).join("");
+      } catch (error) {
+        container.hidden = true;
+      }
+    }
+    async function respondToDirectoryReviewRequest(event, sourceType, sourceId) {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const button = form.querySelector('button[type="submit"]');
+      const message = String(new FormData(form).get("message") || "").trim();
+      if (!message) return;
+      try {
+        button.disabled = true;
+        button.textContent = "Sending…";
+        await api(`/api/directory/self/review-requests/${encodeURIComponent(sourceType)}/${encodeURIComponent(sourceId)}/respond`, { method:"POST", body:JSON.stringify({ message }) });
+        showNotice("Your response was sent and the submission is back in the parish review queue.");
+        await loadDirectory();
+      } catch (error) {
+        showNotice(error.message || "Unable to send your response.", true);
+      } finally {
+        button.disabled = false;
+        button.textContent = "Send response and resubmit";
+      }
+    }
+    async function loadHouseholdVerification() {
+      const container = document.getElementById("householdVerificationCard");
+      const household = firstHousehold();
+      if (!container || !household) { if (container) container.hidden = true; return; }
+      const publication = householdDetailState?.publication || {};
+      container.hidden = false;
+      if (publication.approvalStatus !== "approved") {
+        container.className = "household-verification-card";
+        container.innerHTML = `<strong>First-time household confirmation</strong><p>${publication.status === "pending_approval" ? "Your family submission is in the parish review queue." : "Submit your family when it is ready. The parish will complete the first confirmation from its review queue."}</p>`;
+        return;
+      }
+      try {
+        const payload = await api(`/api/directory/households/${encodeURIComponent(household.id)}/verification`);
+        const verification = payload.verification || {};
+        const current = verification.status === "current";
+        container.className = `household-verification-card${current ? " is-current" : ""}`;
+        container.innerHTML = current
+          ? `<strong>Household information is current</strong><p>Next confirmation is due ${new Date(verification.dueAt).toLocaleDateString()}.</p>`
+          : `<strong>${verification.status === "overdue" ? "Household confirmation is overdue" : "Please confirm your household"}</strong><p>Review the family information above, then confirm that it is current.</p><button type="button" onclick="completeHouseholdVerification()">Confirm household is current</button>`;
+      } catch (error) {
+        container.hidden = true;
+      }
+    }
+    async function completeHouseholdVerification() {
+      const household = firstHousehold();
+      if (!household) return;
+      try {
+        await api(`/api/directory/households/${encodeURIComponent(household.id)}/verification/complete`, { method:"POST", body:JSON.stringify({ reconfirmSkills:true }) });
+        showNotice("Your household confirmation is complete.");
+        await loadHouseholdVerification();
+      } catch (error) {
+        showNotice(error.message || "Unable to confirm your household.", true);
+      }
     }
     document.getElementById("skillSearchButton").addEventListener("click", loadSkillSearch);
     const EDIT_WIZARD_TITLES = ["About You", "Members & Namedays", "Directory Sharing", "Skills"];
