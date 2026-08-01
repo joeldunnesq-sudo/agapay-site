@@ -44,6 +44,14 @@ without checking current usage in `src/lib/core.js`.
   URL.
 - Name files with a UTC date stamp (`agapay-production-20260705.sql`) so
   retention and restore drills aren't ambiguous.
+- Objects stored in the private `ACCOUNTING_BACKUPS` bucket are subject to
+  an age-based Worker sweep. The default window is 365 days and is adjustable
+  through `ACCOUNTING_BACKUP_RETENTION_DAYS`. Age is determined from R2's
+  upload timestamp, not the human-chosen filename. When every object is older
+  than the window, the sweep always preserves the single most recently
+  uploaded backup so disaster recovery is never left with zero copies.
+- This sweep does not create backups. The export and upload steps in this
+  runbook remain manual and should still be performed before risky changes.
 
 ## 3. How often to back up
 
