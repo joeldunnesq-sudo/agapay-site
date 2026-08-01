@@ -511,7 +511,7 @@ assert.ok(parishDashboardApp.includes("campaignPublicUrl") && parishDashboardApp
 assert.ok(
   parishDashboardApp.includes("function orderTierNavigation()")
     && parishDashboardApp.includes("'stewardship', 'bookstore'")
-    && parishDashboardApp.includes("const parishOrder = ['sacraments', 'communications', 'directory', 'text', 'accounting']")
+    && parishDashboardApp.includes("const parishOrder = ['sacraments', 'directory', 'accounting', 'text', 'communications']")
     && parishDashboardApp.includes("parishGroup.appendChild(item)")
     && parishDashboardApp.includes("sidebar.appendChild(parishGroup)"),
   "parish dashboard tabs should follow the tier ladder while keeping Parish-only tools grouped"
