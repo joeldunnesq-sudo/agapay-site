@@ -10733,7 +10733,15 @@
 
   function openKoinoniaComposer(view) {
     setKoinoniaStudioView(view);
-    const targetId = view === 'announcements' ? 'announcementTitle' : view === 'audio' ? 'teachingTitle' : view === 'video' ? 'videoTitle' : '';
+    const targetId = view === 'announcements'
+      ? 'announcementTitle'
+      : view === 'audio'
+        ? 'teachingTitle'
+        : view === 'video'
+          ? 'videoTitle'
+          : view === 'news'
+            ? 'parishBlogSourceUrl'
+            : '';
     if (!targetId) return;
     requestAnimationFrame(() => {
       const target = document.getElementById(targetId);

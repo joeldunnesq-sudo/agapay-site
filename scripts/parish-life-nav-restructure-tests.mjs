@@ -23,6 +23,9 @@ assert.equal(legacy.headers.get("location"), "https://agapay.test/myagapay/paris
 const [landing, landingScript, shell, donorApp, calendar, feed, groups, teaching, media, watch] = await Promise.all([
   "parish-life.html", "parish-life.js", "../myagapay-shell.js", "../donor/app.js", "giving/calendar.html", "feed.html", "groups.html", "teaching.html", "media.html", "watch.html",
 ].map((file) => readFile(new URL(`../public/myagapay/${file}`, import.meta.url), "utf8")));
+const [parishDashboard, parishDashboardApp, parishDashboardStyles] = await Promise.all([
+  "dashboard.html", "app.js", "style.css",
+].map((file) => readFile(new URL(`../public/parish/${file}`, import.meta.url), "utf8")));
 
 assert.match(landing, /class="cal-hero parish-life-liturgical-hero"/);
 assert.match(landing, /class="cal-date-badge"/);
@@ -82,5 +85,13 @@ assert.match(shell, /function ensureParishLifeBackLink[\s\S]*feed\|news\|groups\
 assert.match(shell, /link\.href = "\/myagapay\/parish-life"/);
 assert.match(shell, /className = "parish-life-back-link koinonia-page-back"[\s\S]*page\.prepend\(link\)/, "each Koinonia subpage must put its back arrow at the top-left of page content");
 assert.match(donorApp, /churchCalendarDate\(date, calendar\)[\s\S]*todayCivilDateEyebrow[\s\S]*churchParts\.dayNum[\s\S]*churchParts\.monthYear/, "the eyebrow must show the civil date while the badge uses the parish calendar date");
+
+assert.doesNotMatch(parishDashboard, /class="koinonia-quick-publish"/, "At a glance should no longer duplicate announcement, audio, and video actions");
+assert.match(parishDashboard, /koinonia-overview-welcome[\s\S]*koinonia-calendar-connect is-compact[\s\S]*id="koinoniaCalendarUrl"/, "At a glance should contain the calendar connection card");
+for (const view of ["announcements", "audio", "video", "news"]) {
+  assert.match(parishDashboard, new RegExp(`class="koinonia-metric-card"[^>]+openKoinoniaComposer\\('${view}'\\)`), `the ${view} metric card should initiate its composer`);
+}
+assert.match(parishDashboardApp, /view === 'news'[\s\S]*\? 'parishBlogSourceUrl'/, "the priest blog action should focus the RSS input");
+assert.match(parishDashboardStyles, /\.koinonia-metric-card:hover[\s\S]*\.koinonia-metric-card:focus-visible/, "the clickable action cards should expose hover and keyboard focus feedback");
 
 console.log("PASS - tier-aware Today/Koinonia landing, structural gating, redirects, and subpage back navigation");

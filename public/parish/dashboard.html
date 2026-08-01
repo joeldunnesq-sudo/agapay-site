@@ -1308,17 +1308,21 @@
             <section class="koinonia-studio-view" data-koinonia-panel="overview" aria-labelledby="koinoniaOverviewHeading">
               <div class="koinonia-overview-welcome">
                 <div><span class="eyebrow">At a glance</span><h2 id="koinoniaOverviewHeading">Your parish, beautifully connected.</h2><p>Publish what matters and see the health of your Koinonia library from one calm workspace.</p></div>
-                <div class="koinonia-quick-publish" aria-label="Quick publishing actions">
-                  <button type="button" onclick="openKoinoniaComposer('announcements')"><span>＋</span><strong>Announcement</strong><small>Share parish news</small></button>
-                  <button type="button" onclick="openKoinoniaComposer('audio')"><span>♪</span><strong>Audio</strong><small>Add a homily or talk</small></button>
-                  <button type="button" onclick="openKoinoniaComposer('video')"><span>▶</span><strong>Video</strong><small>Publish a recording</small></button>
-                </div>
+                <section class="koinonia-calendar-connect is-compact" aria-labelledby="koinoniaCalendarHeading">
+                  <div class="koinonia-calendar-connect-mark" aria-hidden="true">▦</div>
+                  <div><span class="eyebrow">Calendar connection</span><h3 id="koinoniaCalendarHeading">Bring your parish calendar into Koinonia</h3><p>Connect a public ICS or iCal feed from Google Calendar, Squarespace, Wix, and most calendar platforms.</p></div>
+                  <form onsubmit="saveKoinoniaCalendar(event)">
+                    <label for="koinoniaCalendarUrl">Public calendar (iCal/ICS) link</label>
+                    <div><input id="koinoniaCalendarUrl" type="url" inputmode="url" placeholder="https://calendar.example.org/public-feed" /><button class="btn btn-gold" type="submit">Save calendar</button></div>
+                    <small id="koinoniaCalendarStatus" role="status">No calendar sync link saved.</small>
+                  </form>
+                </section>
               </div>
-              <div class="koinonia-metric-grid">
-                <article><span class="koinonia-metric-icon is-gold">▤</span><div><small>Published announcements</small><strong id="koinoniaPublishedAnnouncements">—</strong><em id="koinoniaAnnouncementDrafts">Loading drafts</em></div></article>
-                <article><span class="koinonia-metric-icon">♪</span><div><small>Audio library</small><strong id="koinoniaPublishedAudio">—</strong><em id="koinoniaAudioDrafts">Loading drafts</em></div></article>
-                <article><span class="koinonia-metric-icon is-rust">▶</span><div><small>Video library</small><strong id="koinoniaPublishedVideo">—</strong><em id="koinoniaVideoDrafts">Loading drafts</em></div></article>
-                <article><span class="koinonia-metric-icon is-green">↗</span><div><small>Priest’s blog</small><strong id="koinoniaBlogStatus">—</strong><em id="koinoniaBlogDetail">Checking feed</em></div></article>
+              <div class="koinonia-metric-grid" aria-label="Create Koinonia content">
+                <button class="koinonia-metric-card" type="button" onclick="openKoinoniaComposer('announcements')" aria-label="Create a new announcement"><span class="koinonia-metric-icon is-gold">▤</span><div><small>New announcement</small><strong id="koinoniaPublishedAnnouncements">—</strong><em id="koinoniaAnnouncementDrafts">Loading drafts</em></div></button>
+                <button class="koinonia-metric-card" type="button" onclick="openKoinoniaComposer('audio')" aria-label="Add a new audio file"><span class="koinonia-metric-icon">♪</span><div><small>New audio file</small><strong id="koinoniaPublishedAudio">—</strong><em id="koinoniaAudioDrafts">Loading drafts</em></div></button>
+                <button class="koinonia-metric-card" type="button" onclick="openKoinoniaComposer('video')" aria-label="Add a new video file"><span class="koinonia-metric-icon is-rust">▶</span><div><small>New video file</small><strong id="koinoniaPublishedVideo">—</strong><em id="koinoniaVideoDrafts">Loading drafts</em></div></button>
+                <button class="koinonia-metric-card" type="button" onclick="openKoinoniaComposer('news')" aria-label="Connect the priest's blog RSS feed"><span class="koinonia-metric-icon is-green">↗</span><div><small>Priest’s blog RSS</small><strong id="koinoniaBlogStatus">—</strong><em id="koinoniaBlogDetail">Checking feed</em></div></button>
               </div>
               <div class="koinonia-overview-grid">
                 <section class="koinonia-overview-panel"><div class="koinonia-panel-head"><div><span class="eyebrow">Recently updated</span><h3>Content activity</h3></div><button type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="koinoniaRecentContent" class="koinonia-recent-list"><p class="sw-tool-loading">Loading Koinonia…</p></div></section>
@@ -1329,15 +1333,6 @@
                   <button type="button" onclick="setKoinoniaStudioView('news')"><span class="koinonia-channel-icon">↗</span><span><strong>News feeds</strong><small>Priest’s blog and Orthodox news sources</small></span><em>Manage →</em></button>
                 </section>
               </div>
-              <section class="koinonia-calendar-connect" aria-labelledby="koinoniaCalendarHeading">
-                <div class="koinonia-calendar-connect-mark" aria-hidden="true">▦</div>
-                <div><span class="eyebrow">Calendar connection</span><h3 id="koinoniaCalendarHeading">Bring your parish calendar into Koinonia</h3><p>Paste a public ICS or iCal feed link. This works with Google Calendar, Squarespace, Wix, and most calendar platforms that offer a public calendar export.</p></div>
-                <form onsubmit="saveKoinoniaCalendar(event)">
-                  <label for="koinoniaCalendarUrl">Public calendar (iCal/ICS) link</label>
-                  <div><input id="koinoniaCalendarUrl" type="url" inputmode="url" placeholder="https://calendar.example.org/public-feed" /><button class="btn btn-gold" type="submit">Save calendar</button></div>
-                  <small id="koinoniaCalendarStatus" role="status">No calendar sync link saved.</small>
-                </form>
-              </section>
             </section>
 
             <section class="koinonia-studio-view koinonia-ministries-workspace" data-koinonia-panel="ministries" aria-labelledby="koinoniaMinistriesHeading" hidden>

@@ -872,19 +872,15 @@
     .koinonia-overview-welcome { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(420px,.95fr); gap:28px; align-items:center; overflow:hidden; border:1px solid #d7d2c7; border-radius:22px; padding:28px; background:linear-gradient(135deg,#fff 0%,#f8f4ea 100%); box-shadow:0 10px 30px rgba(13,23,34,.06); }
     .koinonia-overview-welcome h2 { max-width:620px; margin:5px 0 8px; color:#0d1722; font:600 clamp(27px,3vw,40px)/1.1 Georgia,serif; letter-spacing:-.025em; }
     .koinonia-overview-welcome p { max-width:620px; margin:0; color:#6b7280; font-size:14px; line-height:1.65; }
-    .koinonia-quick-publish { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-    .koinonia-quick-publish button { display:grid; justify-items:start; gap:5px; min-height:132px; border:1px solid #d8d3c8; border-radius:16px; padding:17px; background:#fff; color:#0d1722; text-align:left; cursor:pointer; box-shadow:0 3px 10px rgba(13,23,34,.04); }
-    .koinonia-quick-publish button:hover { transform:translateY(-2px); border-color:#b88f42; box-shadow:0 10px 22px rgba(13,23,34,.09); }
-    .koinonia-quick-publish button > span { display:grid; place-items:center; width:32px; height:32px; border-radius:10px; background:#eee8dc; color:#98752f; font-size:18px; }
-    .koinonia-quick-publish strong { margin-top:5px; font:600 16px Georgia,serif; }
-    .koinonia-quick-publish small { color:#7b838a; font-size:10px; line-height:1.35; }
     .koinonia-metric-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:13px; margin-top:16px; }
-    .koinonia-metric-grid article { display:flex; align-items:center; gap:13px; min-height:106px; border:1px solid #d9d5cc; border-radius:17px; padding:17px; background:#fff; box-shadow:0 4px 14px rgba(13,23,34,.04); }
+    .koinonia-metric-card { display:flex; align-items:center; gap:13px; min-height:106px; width:100%; border:1px solid #d9d5cc; border-radius:17px; padding:17px; background:#fff; color:#0d1722; text-align:left; cursor:pointer; box-shadow:0 4px 14px rgba(13,23,34,.04); transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease; }
+    .koinonia-metric-card:hover { transform:translateY(-2px); border-color:#b88f42; box-shadow:0 10px 24px rgba(13,23,34,.1); }
+    .koinonia-metric-card:focus-visible { outline:3px solid rgba(184,143,66,.32); outline-offset:3px; border-color:#9a732b; }
     .koinonia-metric-icon { display:grid; place-items:center; width:42px; height:42px; flex:0 0 auto; border-radius:13px; background:#e8edf0; color:#284859; font-size:18px; }
     .koinonia-metric-icon.is-gold { background:#f3e8d7; color:#9a732b; }
     .koinonia-metric-icon.is-rust { background:#f4e6df; color:#964219; }
     .koinonia-metric-icon.is-green { background:#e7efe2; color:#437a22; }
-    .koinonia-metric-grid article div { display:grid; gap:2px; min-width:0; }
+    .koinonia-metric-grid .koinonia-metric-card div { display:grid; gap:2px; min-width:0; }
     .koinonia-metric-grid small { overflow:hidden; color:#737b83; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.055em; text-overflow:ellipsis; white-space:nowrap; }
     .koinonia-metric-grid strong { color:#0d1722; font:600 27px/1.1 Georgia,serif; }
     .koinonia-metric-grid em { color:#81878d; font-size:10px; font-style:normal; }
@@ -899,6 +895,8 @@
     .koinonia-calendar-connect form>div { display:flex; gap:8px; }
     .koinonia-calendar-connect input { min-width:0; width:100%; border:1px solid #d8d1c2; border-radius:10px; padding:11px 12px; background:#fff; color:#17212a; font:500 12px/1.2 Inter,Arial,sans-serif; }
     .koinonia-calendar-connect small { color:#7b746a; font-size:11px; }
+    .koinonia-calendar-connect.is-compact { grid-template-columns:auto 1fr; align-self:stretch; margin:0; padding:18px; }
+    .koinonia-calendar-connect.is-compact form { grid-column:1/-1; }
     .koinonia-ministries-workspace { display:grid; gap:16px; padding:26px; border:1px solid #d5d1c7; border-radius:22px; background:linear-gradient(145deg,#f8f5ee,#f2eee5); box-shadow:0 8px 24px rgba(13,23,34,.055); }
     .koinonia-ministries-head { display:flex; align-items:center; justify-content:space-between; gap:20px; }
     .koinonia-ministries-head h2 { margin:4px 0 6px; color:#0d1722; font:600 36px/1 Georgia,serif; }
@@ -1019,7 +1017,7 @@
     @media (max-width:1120px) { .koinonia-overview-welcome { grid-template-columns:1fr; } .koinonia-metric-grid { grid-template-columns:repeat(2,1fr); } .koinonia-calendar-connect { grid-template-columns:auto 1fr; } .koinonia-calendar-connect form { grid-column:1/-1; } }
     @media (max-width:820px) { .koinonia-studio-hero { padding:24px; } .koinonia-studio-identity { align-items:flex-start; } .koinonia-studio-nav { display:flex; overflow-x:auto; } .koinonia-studio-nav button { flex:0 0 auto; padding:0 16px; } .koinonia-overview-grid { grid-template-columns:1fr; } }
     @media (max-width:900px) { .koinonia-ministry-layout { grid-template-columns:1fr; } .koinonia-ministry-list-panel { max-height:390px; overflow:auto; } }
-    @media (max-width:600px) { #tab-communications { background:transparent; } .koinonia-studio-hero { border-radius:18px; } .koinonia-studio-mark { width:52px; height:52px; border-radius:16px; font-size:29px; } .koinonia-quick-publish { grid-template-columns:1fr; } .koinonia-quick-publish button { grid-template-columns:auto 1fr; align-items:center; min-height:auto; } .koinonia-quick-publish button > span { grid-row:1 / 3; } .koinonia-quick-publish strong { margin:0; } .koinonia-metric-grid,.koinonia-news-sources,.koinonia-ministry-metrics,.koinonia-ministry-form-grid { grid-template-columns:1fr; } .koinonia-overview-welcome,.koinonia-overview-panel,.koinonia-studio .communications-content-section,.koinonia-ministries-workspace { padding:18px; } .koinonia-news-sources article { align-items:flex-start; } .koinonia-news-sources em { display:none; } .koinonia-ministries-head { align-items:flex-start; flex-direction:column; } .koinonia-calendar-connect { grid-template-columns:1fr; padding:18px; } .koinonia-calendar-connect form { grid-column:auto; }.koinonia-calendar-connect form>div { flex-direction:column; } .koinonia-general-interest { align-items:flex-start; flex-wrap:wrap; } .koinonia-general-interest button { margin-left:56px; } .koinonia-ministry-form-grid label.is-wide { grid-column:auto; } .koinonia-ministry-request-list article { grid-template-columns:auto 1fr; }.koinonia-ministry-request-list article>div:last-child { grid-column:2; } }
+    @media (max-width:600px) { #tab-communications { background:transparent; } .koinonia-studio-hero { border-radius:18px; } .koinonia-studio-mark { width:52px; height:52px; border-radius:16px; font-size:29px; } .koinonia-metric-grid,.koinonia-news-sources,.koinonia-ministry-metrics,.koinonia-ministry-form-grid { grid-template-columns:1fr; } .koinonia-overview-welcome,.koinonia-overview-panel,.koinonia-studio .communications-content-section,.koinonia-ministries-workspace { padding:18px; } .koinonia-news-sources article { align-items:flex-start; } .koinonia-news-sources em { display:none; } .koinonia-ministries-head { align-items:flex-start; flex-direction:column; } .koinonia-calendar-connect { grid-template-columns:1fr; padding:18px; } .koinonia-calendar-connect form { grid-column:auto; }.koinonia-calendar-connect form>div { flex-direction:column; } .koinonia-general-interest { align-items:flex-start; flex-wrap:wrap; } .koinonia-general-interest button { margin-left:56px; } .koinonia-ministry-form-grid label.is-wide { grid-column:auto; } .koinonia-ministry-request-list article { grid-template-columns:auto 1fr; }.koinonia-ministry-request-list article>div:last-child { grid-column:2; } }
     .btn-row, .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
     .btn-danger-sm, .icon-button { background: rgba(150,40,40,0.06); color: #8a2929; border: 1px solid rgba(150,40,40,0.18); border-radius: 7px; width: 28px; height: 28px; display: inline-grid; place-items: center; padding: 0; font-size: 13px; cursor: pointer; box-shadow: none; }
     /* Link boxes */
