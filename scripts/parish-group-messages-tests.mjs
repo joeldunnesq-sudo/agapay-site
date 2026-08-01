@@ -217,9 +217,18 @@ assert.match(handlerSource, /const CONTENT_TYPE = "group_message"/);
 assert.match(handlerSource, /mp\.status = 'active'/);
 assert.match(handlerSource, /ml\.active = 1/);
 assert.match(handlerSource, /Only active ministry leaders can view member read status/);
+assert.match(
+  handlerSource,
+  /if \(!donor\?\.email\) return null;[\s\S]*if \(!user\?\.id\) \{[\s\S]*GroupMessageAccessError\("Your account is not linked to an active parish member\.", 403\)/,
+  "a valid donor without a linked platform user must receive forbidden, not an auth-expiring 401"
+);
 assert.doesNotMatch(handlerSource, /parish_content_reads/, "group messages must not implement parallel read-tracking SQL");
 const groupsUiSource = readFileSync(path.join(root, "public", "myagapay", "groups.js"), "utf8");
 assert.match(groupsUiSource, /group\.role === "leader" \? `<button[^`]+Who’s caught up/);
 assert.match(groupsUiSource, /\/caught-up`/);
+const parishLifeUiSource = readFileSync(path.join(root, "public", "myagapay", "parish-life.js"), "utf8");
+assert.match(parishLifeUiSource, /groupsResponse\.status === 403/);
+assert.match(parishLifeUiSource, /activity: \[\], unreadCount: 0, available: false/);
+assert.match(parishLifeUiSource, /!groupsResponse\.ok && !groupsUnavailable/);
 
 console.log("PASS - group messages keep individual catch-up visibility leader-only and use shared read receipts");

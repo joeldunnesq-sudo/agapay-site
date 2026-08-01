@@ -83,14 +83,15 @@ async function loadParishLife() {
     ]);
     const responses = [feedResponse, groupsResponse, teachingResponse, mediaResponse];
     if (responses.some((response) => window.MyAgapayShell?.handleUnauthorized(response))) return;
+    const groupsUnavailable = groupsResponse.status === 403;
     const [feed, groups, teaching, media] = await Promise.all([
       feedResponse.json().catch(() => ({})),
-      groupsResponse.json().catch(() => ({})),
+      groupsUnavailable ? Promise.resolve({ activity: [], unreadCount: 0, available: false }) : groupsResponse.json().catch(() => ({})),
       teachingResponse.json().catch(() => ({})),
       mediaResponse.json().catch(() => ({})),
     ]);
     if (!feedResponse.ok) throw new Error(feed.error || "Unable to load parish announcements.");
-    if (!groupsResponse.ok) throw new Error(groups.error || "Unable to load ministry activity.");
+    if (!groupsResponse.ok && !groupsUnavailable) throw new Error(groups.error || "Unable to load ministry activity.");
     if (!teachingResponse.ok) throw new Error(teaching.error || "Unable to load parish teaching.");
     if (!mediaResponse.ok) throw new Error(media.error || "Unable to load parish video.");
 

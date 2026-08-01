@@ -314,7 +314,10 @@ export async function getLatestGroupMessageCatchUp(env, { parishId, ministryId, 
 
 async function resolveGroupContext(request, env) {
   const [donor, user] = await Promise.all([requireDonor(request, env), currentUser(request, env)]);
-  if (!donor?.email || !user?.id) return null;
+  if (!donor?.email) return null;
+  if (!user?.id) {
+    throw new GroupMessageAccessError("Your account is not linked to an active parish member.", 403);
+  }
   const parishId = String(donor.defaultParishId || "").trim();
   if (!parishId) throw new GroupMessageAccessError("Choose your home parish to view your groups.", 422);
   const person = await d1First(env, `
