@@ -28,11 +28,12 @@
   };
 
   function parishLifeExperience(source = parishCapabilities) {
+    const resolved = source !== parishCapabilities || capabilitiesLoaded;
     const communicationsEnabled = Boolean(source?.communicationsEnabled);
     return {
       communicationsEnabled,
-      label: String(source?.parishLifeLabel || (communicationsEnabled ? "Koinonia" : "Today")),
-      short: communicationsEnabled ? "Parish news and ministries" : "Feast day and services"
+      label: resolved ? String(source?.parishLifeLabel || (communicationsEnabled ? "Koinonia" : "Today")) : "",
+      short: resolved ? (communicationsEnabled ? "Parish news and ministries" : "Feast day and services") : ""
     };
   }
 
@@ -40,7 +41,7 @@
     const parishLife = parishLifeExperience();
     const items = [
       { id: "giving", href: "/myagapay/dashboard", label: "Give", mobileLabel: "Home", short: "Giving dashboard", icon: icons.home },
-      { id: "parish-life", href: "/myagapay/parish-life", label: parishLife.label, short: parishLife.short, icon: icons.parishLife },
+      { id: "parish-life", href: "/myagapay/parish-life", label: parishLife.label, short: parishLife.short, icon: icons.parishLife, deferUntilCapabilitiesLoaded: true },
       { id: "commemorations", href: "/myagapay/sacraments", label: "Sacraments & Services", short: "Requests and prayer", icon: icons.sacraments, parishFeature: "sacramentsEnabled" },
       { id: "history", href: "/myagapay/giving/history", label: "History", short: "Giving history", icon: icons.history, mobileFallbackFor: "sacramentsEnabled", desktopHidden: true },
       { id: "directory", href: "/myagapay/directory", label: "Directory", short: "Parish member directory", icon: icons.directory, parishFeature: "directoryEnabled" },
@@ -58,6 +59,7 @@
     communicationsEnabled: false,
     parishLifeAvailable: false
   };
+  let capabilitiesLoaded = false;
 
   let feedUnreadCount = 0;
   let groupsUnreadCount = 0;
@@ -66,6 +68,7 @@
   function visibleProducts() {
     return products().filter((item) => {
       if (item.desktopHidden) return false;
+      if (item.deferUntilCapabilitiesLoaded && !capabilitiesLoaded) return false;
       return !item.parishFeature || parishCapabilities[item.parishFeature] === true || item.id === activeProduct();
     });
   }
@@ -82,7 +85,7 @@
     return [
       byId.get("giving"),
       featureOrFallback("bookstore", "settings"),
-      byId.get("parish-life"),
+      capabilitiesLoaded ? byId.get("parish-life") : null,
       featureOrFallback("directory", "learn"),
       featureOrFallback("commemorations", "history"),
     ].filter(Boolean);
@@ -368,7 +371,9 @@
       parishLifeLabel: String(parish?.parishLifeLabel || ""),
       parishLifeAvailable: Boolean(parish?.parishLifeAvailable)
     };
+    capabilitiesLoaded = true;
     const parishLife = parishLifeExperience(parishCapabilities);
+    document.documentElement.dataset.parishCapabilitiesLoaded = "true";
     document.documentElement.dataset.parishLifeExperience = parishLife.communicationsEnabled ? "koinonia" : "today";
     normalizeProductNavs();
     document.querySelectorAll("[data-parish-life-link], [data-parish-life-section]").forEach((element) => {
@@ -384,6 +389,17 @@
     window.dispatchEvent(new CustomEvent("myagapay:parish-capabilities", {
       detail: { ...parishCapabilities }
     }));
+  }
+
+  function deferParishLifeIdentity() {
+    if (capabilitiesLoaded) return;
+    document.documentElement.dataset.parishCapabilitiesLoaded = "false";
+    document.querySelectorAll("[data-parish-life-link], [data-parish-life-section]").forEach((element) => {
+      element.hidden = true;
+    });
+    document.querySelectorAll("[data-parish-life-label]").forEach((element) => {
+      element.textContent = "";
+    });
   }
 
   async function loadParishCapabilities() {
@@ -545,6 +561,7 @@
     redirectToLogin,
     session,
     syncAuthVisibility,
+    capabilitiesLoaded: () => capabilitiesLoaded,
     viewport: currentViewport
   };
 
@@ -582,10 +599,12 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
+    deferParishLifeIdentity();
     normalizeProductNavs();
     ensureParishLifeBackLink();
     ensureIosBackButton();
     ensureCanonicalHeader();
+    deferParishLifeIdentity();
     syncAuthVisibility();
     initViewportAwareness();
     if (isProtectedPath()) {

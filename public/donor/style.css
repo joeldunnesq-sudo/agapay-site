@@ -8917,3 +8917,8 @@ textarea {
   .feed-digest-status { grid-column: 1 / -1; margin: 0 !important; font-size: 10px !important; }
   .feed-digest-toggle { align-self: center; }
 }
+html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-link],
+html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-section],
+html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-label] {
+  visibility: hidden;
+}
