@@ -5705,6 +5705,31 @@ body.donor-mobile-page {
   text-transform: uppercase;
 }
 
+.giving-tier-pending [data-giving-plus-gift],
+.giving-tier-loading {
+  position: relative;
+  border-color: rgba(111, 106, 96, 0.24) !important;
+  background: linear-gradient(145deg, rgba(246, 244, 239, 0.92), rgba(235, 232, 225, 0.88)) !important;
+  color: rgba(6, 21, 34, 0.62) !important;
+  cursor: wait !important;
+  pointer-events: none;
+}
+
+.giving-tier-pending [data-giving-plus-gift]::after,
+.giving-tier-loading::after {
+  content: "Loading";
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  padding: 0.2rem 0.48rem;
+  border-radius: 999px;
+  background: rgba(111, 106, 96, 0.14);
+  color: #6f6a60;
+  font: 800 0.62rem/1 "DM Sans", system-ui, sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 .giving-plus-paywall {
   width: min(560px, calc(100% - 28px));
   max-width: 560px;

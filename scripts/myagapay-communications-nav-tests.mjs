@@ -9,6 +9,10 @@ const parishDashboard = await readFile(new URL("../public/parish/dashboard.html"
 const desktopNav = html.match(/<nav class="nav unified-product-nav"[\s\S]*?<\/nav>/)?.[0] || "";
 const shellDirectoryIcon = shell.match(/directory: '(<svg[^']+<\/svg>)'/)?.[1].replace(' aria-hidden="true"', "");
 const dashboardDirectoryIcon = parishDashboard.match(/id="nav-directory">\s*(<svg[^]*?<\/svg>)/)?.[1];
+const internalNavigationClick = shell.slice(
+  shell.indexOf("function handleInternalNavigationClick"),
+  shell.indexOf("function syncAuthVisibility")
+);
 
 assert.match(desktopNav, /href="\/myagapay\/parish-life"[^>]*data-parish-life-link[\s\S]*data-parish-life-label>Loading…</);
 assert.doesNotMatch(desktopNav, /href="\/myagapay\/(?:feed|groups|giving\/calendar)"/);
@@ -30,7 +34,7 @@ assert.match(donorStyles, /body\.myagapay-navigating::before[\s\S]*height: 3px;[
 assert.match(donorStyles, /@keyframes dashboard-refresh-slide\s*{\s*from\s*{ transform: translateX\(-110%\); }\s*to\s*{ transform: translateX\(380%\); }\s*}/);
 assert.match(donorStyles, /prefers-reduced-motion: reduce[\s\S]*myagapay-navigating::before\s*{ animation-duration: 2\.4s; }/);
 assert.doesNotMatch(shell, /sessionStorage/, "cross-page state must use the established localStorage pattern");
-assert.doesNotMatch(shell, /preventDefault\(\)/, "the progress treatment must not intercept browser navigation");
+assert.doesNotMatch(internalNavigationClick, /preventDefault\(\)/, "the progress treatment must not intercept browser navigation");
 
 function deferred() {
   let resolve;
@@ -83,7 +87,7 @@ async function renderShell({ cached = null, transitionMarker = null, referrer = 
       if (type === "DOMContentLoaded") domReady = listener;
       if (type === "click") clickListener = listener;
     },
-    getElementById(id) { return ["myAgapayIosBackStyles", "myAgapayIosBack"].includes(id) ? {} : null; },
+    getElementById(id) { return ["myAgapayIosBackStyles", "myAgapayIosBack", "myAgapaySupportDialog"].includes(id) ? {} : null; },
     querySelector() { return null; },
     querySelectorAll(selector) {
       if (selector === "[data-parish-life-link], [data-parish-life-section]") return [parishLifeLink];

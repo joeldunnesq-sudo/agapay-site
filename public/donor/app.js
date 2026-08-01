@@ -6,7 +6,8 @@ const donorStore = {
   shellVersion: "agapayDonorShellVersion"
 };
 
-const DONOR_SHELL_VERSION = "2026-07-29-starter-giving-gate";
+const DONOR_SHELL_VERSION = "2026-08-01-quick-give-loading-state";
+const DONOR_DASHBOARD_UI_CACHE_MAX_AGE_MS = 5 * 60 * 1000;
 
 async function refreshStaleDashboardShell() {
   if (!("serviceWorker" in navigator) || !("caches" in window)) return;
@@ -130,15 +131,24 @@ function donorCacheKey(name) {
   return `${donorStore.cachePrefix}:${donorCacheEmail()}:${name}`;
 }
 
-function readDonorCache(name) {
+function readDonorCache(name, { maxAgeMs = 0 } = {}) {
   const email = donorCacheEmail();
   if (!email) return null;
   try {
     const cached = JSON.parse(localStorage.getItem(donorCacheKey(name)) || "null");
-    return cached?.email === email ? cached.data : null;
+    if (cached?.email !== email) return null;
+    if (maxAgeMs > 0) {
+      const savedAt = new Date(cached.savedAt || 0).getTime();
+      if (!Number.isFinite(savedAt) || Date.now() - savedAt > maxAgeMs) return null;
+    }
+    return cached.data;
   } catch {
     return null;
   }
+}
+
+function readRecentDonorDashboardCache() {
+  return readDonorCache("dashboard", { maxAgeMs: DONOR_DASHBOARD_UI_CACHE_MAX_AGE_MS });
 }
 
 function writeDonorCache(name, data) {
@@ -530,12 +540,32 @@ async function requestParishGivingPlusUpgrade(button) {
   }
 }
 
+function setGivingTierTilesLoading() {
+  document.body.classList.add("giving-tier-pending");
+  document.querySelectorAll("[data-giving-tier-region]").forEach((region) => region.setAttribute("aria-busy", "true"));
+  document.querySelectorAll("[data-giving-plus-gift]").forEach((tile) => {
+    tile.classList.remove("giving-tier-locked");
+    tile.classList.add("giving-tier-loading");
+    tile.setAttribute("aria-busy", "true");
+    tile.setAttribute("aria-disabled", "true");
+    tile.setAttribute("tabindex", "-1");
+    tile.setAttribute("aria-label", `${tile.textContent.trim()} — checking availability`);
+    tile.onclick = (event) => event.preventDefault();
+  });
+}
+
 function updateGivingTierTiles(parish) {
   if (parish) window.agapaySelectedGivingParish = parish;
+  document.body.classList.remove("giving-tier-pending");
+  document.querySelectorAll("[data-giving-tier-region]").forEach((region) => region.removeAttribute("aria-busy"));
   document.querySelectorAll("[data-giving-plus-gift]").forEach((tile) => {
     const giftType = tile.getAttribute("data-giving-plus-gift") || "";
     const allowed = parishCanUseGiftType(parish, giftType);
+    tile.classList.remove("giving-tier-loading");
     tile.classList.toggle("giving-tier-locked", !allowed);
+    tile.removeAttribute("aria-busy");
+    tile.removeAttribute("aria-disabled");
+    tile.removeAttribute("tabindex");
     tile.setAttribute("aria-label", !allowed
       ? `${tile.textContent.trim()} — not currently available`
       : tile.textContent.trim());
@@ -983,6 +1013,26 @@ function renderNextFeast(parish) {
       ? `${shortDate(feast.date)} for ${parish.name || "your church"}`
       : `Based on ${calendarLabel(parish.liturgicalCalendar)}`;
     if (target.link) target.link.href = donorGiftUrl("feast", parish, { feast: feast?.name });
+  });
+}
+
+function renderHomeParishWidgetsLoading() {
+  const campaignLoading = '<article class="campaign-card campaign-empty sw-tool-loading"><span class="campaign-pill">Campaigns</span><h3>Loading parish campaigns…</h3><p>Checking the giving opportunities available through your parish.</p></article>';
+  [document.getElementById("activeCampaigns"), document.getElementById("desktopActiveCampaigns")]
+    .filter(Boolean)
+    .forEach((target) => { target.innerHTML = campaignLoading; });
+
+  const fundsLoading = '<article class="active-funds-card active-funds-empty sw-tool-loading"><span class="campaign-pill">Funds</span><h3>Loading parish funds…</h3><p>Checking the funds available through your parish.</p></article>';
+  [document.getElementById("activeFunds"), document.getElementById("desktopActiveFunds")]
+    .filter(Boolean)
+    .forEach((target) => { target.innerHTML = fundsLoading; });
+
+  [
+    [document.getElementById("nextFeastName"), document.getElementById("nextFeastDate")],
+    [document.getElementById("desktopNextFeastName"), document.getElementById("desktopNextFeastDate")]
+  ].forEach(([name, date]) => {
+    if (name) name.textContent = "Loading parish feast…";
+    if (date) date.textContent = "Checking your parish calendar.";
   });
 }
 
@@ -2123,6 +2173,23 @@ function renderRecurringHomeCard(summary = {}) {
   });
 }
 
+let donorDashboardInitialCachePainted = false;
+
+function primeDonorDashboardParishUi() {
+  if (!document.body.classList.contains("showing-giving-dashboard")) return;
+  const cachedDashboard = readRecentDonorDashboardCache();
+  if (cachedDashboard) {
+    renderDonorDashboardPayload(cachedDashboard, {
+      renderPledge: false,
+      syncGivingTier: true
+    });
+    donorDashboardInitialCachePainted = true;
+    return;
+  }
+  setGivingTierTilesLoading();
+  renderHomeParishWidgetsLoading();
+}
+
 async function loadDonorDashboardPage() {
   const session = donorSession();
   if (!session.email || !session.token) {
@@ -2131,12 +2198,14 @@ async function loadDonorDashboardPage() {
     return;
   }
   const cachedDashboard = readDonorCache("dashboard");
+  const recentCachedDashboard = readRecentDonorDashboardCache();
   // Cached content can paint the nonfinancial shell instantly, but pledge
-  // progress must always wait for current giving data from the API.
-  if (cachedDashboard) {
+  // progress must always wait for current giving data from the API. A recent
+  // cached parish is safe for immediate UI continuity, but never authorization.
+  if (cachedDashboard && !donorDashboardInitialCachePainted) {
     renderDonorDashboardPayload(cachedDashboard, {
       renderPledge: false,
-      syncGivingTier: false
+      syncGivingTier: Boolean(recentCachedDashboard)
     });
   }
   try {
@@ -2152,7 +2221,7 @@ async function loadDonorDashboardPage() {
       return;
     }
     clearDonorCache("dashboard");
-    if (cachedDashboard) updateGivingTierTiles(cachedDashboard.parish || null);
+    if (recentCachedDashboard) updateGivingTierTiles(recentCachedDashboard.parish || null);
     ["pledgeTrackerCard", "desktopPledgeTracker"].forEach((id) => {
       const card = document.getElementById(id);
       if (card) card.hidden = true;
@@ -3239,9 +3308,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (greeting) greeting.textContent = "Welcome, Faithful Member";
     if (desktopGreeting) desktopGreeting.textContent = "Welcome, Faithful Member";
   }
-  renderActiveCampaigns(null);
-  renderNextFeast(null);
-  updateQuickGiveLinks(null);
+  primeDonorDashboardParishUi();
   updateDonorAuthState();
   checkDonorNotifications();
   const emailInput = document.getElementById("donorEmail");

@@ -44,6 +44,7 @@
   function renderButtons(card, subscription) {
     const enable = card.querySelector("[data-push-enable]");
     const disable = card.querySelector("[data-push-disable]");
+    card.querySelector(".push-notification-actions")?.removeAttribute("aria-busy");
     if (enable) enable.hidden = Boolean(subscription);
     if (disable) disable.hidden = !subscription;
   }
@@ -59,6 +60,7 @@
     const guidance = card.querySelector("[data-push-ios-guidance]");
 
     if (isIosDevice() && !isStandalone()) {
+      card.querySelector(".push-notification-actions")?.removeAttribute("aria-busy");
       if (guidance) guidance.hidden = false;
       if (enable) enable.hidden = true;
       if (disable) disable.hidden = true;
@@ -67,6 +69,7 @@
     }
 
     if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+      card.querySelector(".push-notification-actions")?.removeAttribute("aria-busy");
       if (enable) enable.hidden = true;
       setStatus(card, "Push notifications are not supported by this browser.", "muted");
       return;
@@ -99,6 +102,7 @@
         setStatus(card, "Notifications stay off until you choose to enable them.");
       }
     } catch (error) {
+      card.querySelector(".push-notification-actions")?.removeAttribute("aria-busy");
       if (enable) enable.disabled = true;
       setStatus(card, error.message || "Push notifications are temporarily unavailable.", "error");
       return;

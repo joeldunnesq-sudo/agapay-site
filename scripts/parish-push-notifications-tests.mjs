@@ -158,7 +158,13 @@ assert.match(pushUi, /enable\?\.addEventListener\("click", async \(\) => \{[\s\S
 assert.match(pushUi, /isIosDevice\(\) && !isStandalone\(\)/);
 assert.match(feedHtml, /Add to Home Screen/);
 assert.match(groupsHtml, /Add to Home Screen/);
-assert.match(feedHtml, /data-push-enable>Enable notifications/);
-assert.match(groupsHtml, /data-push-enable>Enable notifications/);
+for (const [name, html] of [["feed", feedHtml], ["groups", groupsHtml]]) {
+  assert.match(html, /class="push-notification-actions" aria-busy="true"/,
+    `${name} push actions must honestly report that device state is still loading`);
+  assert.match(html, /data-push-enable hidden>Enable notifications/,
+    `${name} must not show Enable before the subscription check resolves`);
+  assert.match(html, /data-push-disable hidden>Disable notifications/,
+    `${name} must not show Disable before the subscription check resolves`);
+}
 
 console.log("PASS - push delivery covers teaching, is parish-scoped, excludes group authors, prunes expired endpoints, and requires explicit opt-in");
