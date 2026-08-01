@@ -78,6 +78,10 @@ function groupAttachmentDeliveryUrl(ministryId, messageId) {
   return `/api/donor/groups/${encodeURIComponent(ministryId)}/messages/${encodeURIComponent(messageId)}/attachment`;
 }
 
+function ministryImageDeliveryUrl(ministryId) {
+  return `/api/donor/groups/${encodeURIComponent(ministryId)}/image`;
+}
+
 export function validateGroupMessageAttachmentMetadata(request, messageType) {
   const normalizedType = String(messageType || "").trim().toLowerCase();
   const allowedTypes = normalizedType === "voice" ? GROUP_MESSAGE_VOICE_TYPES : normalizedType === "image" ? GROUP_MESSAGE_IMAGE_TYPES : null;
@@ -202,7 +206,7 @@ async function requireActiveMinistryLeader(env, context, ministryId) {
 
 export async function listActiveMinistryGroups(env, { parishId, personId, donorId }) {
   const rows = await d1All(env, `
-    SELECT m.id, m.display_name, m.slug, m.category, m.short_description,
+    SELECT m.id, m.display_name, m.slug, m.category, m.short_description, m.image_storage_key, m.image_updated_at,
            EXISTS (
              SELECT 1 FROM directory_ministry_leaders ml
              WHERE ml.parish_id = m.parish_id AND ml.ministry_id = m.id
@@ -243,6 +247,9 @@ export async function listActiveMinistryGroups(env, { parishId, personId, donorI
       slug: row.slug || "",
       category: row.category || "other",
       description: row.short_description || "",
+      hasImage: Boolean(row.image_storage_key),
+      imageUrl: row.image_storage_key ? ministryImageDeliveryUrl(row.id) : "",
+      imageUpdatedAt: Number(row.image_updated_at || 0),
       role: Number(row.is_leader || 0) === 1 ? "leader" : "participant",
       messageCount: contentIds.length,
       unreadCount: contentIds.length - readIds.length,
@@ -253,7 +260,7 @@ export async function listActiveMinistryGroups(env, { parishId, personId, donorI
 export async function listGroupMessages(env, { parishId, ministryId, personId, donorId }) {
   await requireActiveMinistryMember(env, { parishId, personId }, ministryId);
   const ministry = await d1First(env, `
-    SELECT id, display_name, slug, category, short_description
+    SELECT id, display_name, slug, category, short_description, image_storage_key, image_updated_at
     FROM directory_ministries WHERE id = ? AND parish_id = ?
   `, ministryId, parishId);
   const rows = await d1All(env, `
@@ -279,10 +286,31 @@ export async function listGroupMessages(env, { parishId, ministryId, personId, d
       slug: ministry.slug || "",
       category: ministry.category || "other",
       description: ministry.short_description || "",
+      hasImage: Boolean(ministry.image_storage_key),
+      imageUrl: ministry.image_storage_key ? ministryImageDeliveryUrl(ministry.id) : "",
+      imageUpdatedAt: Number(ministry.image_updated_at || 0),
     },
     messages: messages.map((message) => ({ ...message, read: readSet.has(message.id), mine: message.authorPersonId === personId })),
     unreadCount: contentIds.length - readIds.length,
   };
+}
+
+async function deliverMinistryImage(request, env, context, ministryId) {
+  if (request.method !== "GET") throw new GroupMessageAccessError("Method not allowed", 405);
+  if (!env.GROUP_MESSAGE_ASSETS) throw new GroupMessageAccessError("Ministry image storage is not configured.", 503);
+  await requireActiveMinistryMember(env, context, ministryId);
+  const ministry = await d1First(env, `
+    SELECT image_storage_key FROM directory_ministries
+    WHERE id = ? AND parish_id = ? AND status = 'active'
+  `, ministryId, context.parishId);
+  if (!ministry?.image_storage_key) throw new GroupMessageAccessError("Ministry image was not found.", 404);
+  const object = await env.GROUP_MESSAGE_ASSETS.get(ministry.image_storage_key);
+  if (!object?.body) throw new GroupMessageAccessError("Ministry image was not found.", 404);
+  const headers = new Headers(PRIVATE_HEADERS);
+  object.writeHttpMetadata?.(headers);
+  headers.set("Cache-Control", "private, no-store");
+  headers.set("Content-Disposition", "inline");
+  return new Response(object.body, { headers });
 }
 
 export async function listGroupActivity(env, { parishId, personId, donorId }) {
@@ -563,6 +591,9 @@ export async function handleDonorGroups(request, env, ctx = null) {
       const message = await postGroupMessage(env, { ...context, ministryId: parts[0], body: input.body });
       scheduleGroupMessagePush(env, ctx, context, parts[0], message);
       return privateJson({ ok: true, message }, { status: 201 });
+    }
+    if (parts.length === 2 && parts[1] === "image") {
+      return deliverMinistryImage(request, env, context, parts[0]);
     }
     if (parts.length === 3 && parts[1] === "messages" && parts[2] === "attachment" && request.method === "POST") {
       const limited = await rateLimit(request, env, "group-message-attachment-upload", { limit: 20, windowSeconds: 300 });

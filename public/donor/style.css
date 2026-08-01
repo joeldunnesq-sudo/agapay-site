@@ -2319,6 +2319,14 @@ body.donor-home {
 .group-list-item span { display:grid; gap:.16rem; }
 .group-list-item small { color:#77838a; }
 .group-list-item em { border-radius:999px; padding:.24rem .45rem; background:#061522; color:#fff; font-size:.62rem; font-style:normal; font-weight:800; }
+.ministry-group-avatar { position:relative; flex:0 0 auto; display:grid!important; place-items:center; width:40px; height:40px; overflow:hidden; border-radius:12px; background:#142636; color:#d7b665; font:700 18px/1 Georgia,serif; }
+.ministry-group-avatar.is-header { width:54px; height:54px; border-radius:16px; }
+.ministry-group-avatar img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; }
+.ministry-group-avatar.has-image img { opacity:1; }
+.ministry-group-avatar.has-image b { opacity:0; }
+.ministry-group-avatar b { font:inherit; }
+.group-list-copy { flex:1; min-width:0; }
+.group-thread-identity { display:flex; align-items:center; gap:12px; min-width:0; }
 .groups-empty, .group-thread-empty { padding:2rem 1.2rem; text-align:center; color:#768289; }
 .groups-empty strong, .group-thread-empty strong { display:block; color:#061522; font-family:"Cormorant Garamond",Georgia,serif; font-size:1.45rem; }
 .group-message-list { max-height:470px; overflow:auto; display:grid; gap:.7rem; padding:1rem; background:#faf8f3; }

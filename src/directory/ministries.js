@@ -89,9 +89,47 @@ function ministryDto(row, extras = {}) {
     displayOrder: Number(row.display_order || 100),
     active: row.status === "active",
     acceptingInterest: row.status === "active" && row.request_policy === "request_interest",
+    hasImage: Boolean(row.image_storage_key),
+    imageUrl: row.image_storage_key ? `/api/donor/groups/${encodeURIComponent(row.id)}/image` : "",
+    imageUpdatedAt: Number(row.image_updated_at || 0),
     version: `${row.updated_at || ""}:${row.revision || 1}`,
     ...extras
   };
+}
+
+export async function setMinistryImage(env, { context, ministryId, storageKey, contentType, correlationId = "" }) {
+  const actor = requireManage(context);
+  const parishId = parishIdFor(context);
+  const row = await loadMinistry(env, { parishId, ministryId });
+  const timestamp = nowMs();
+  await runAtomic(env, [
+    {
+      sql: `UPDATE directory_ministries
+               SET image_storage_key = ?, image_content_type = ?, image_updated_at = ?,
+                   updated_by_user_id = ?, updated_at = ?, revision = revision + 1
+             WHERE id = ? AND parish_id = ?`,
+      params: [storageKey || null, contentType || null, storageKey ? timestamp : null, actor.userId, timestamp, ministryId, parishId]
+    },
+    auditStatement({ action: storageKey ? "directory.ministry.image_updated" : "directory.ministry.image_removed", actor, parishId, targetType: "directory_ministry", targetId: ministryId, metadata: { hadImage: Boolean(row.image_storage_key) }, correlationId })
+  ]);
+  return getMinistryAdmin(env, { context, ministryId });
+}
+
+export async function deleteMinistry(env, { context, ministryId, correlationId = "" }) {
+  const actor = requireManage(context);
+  const parishId = parishIdFor(context);
+  const row = await loadMinistry(env, { parishId, ministryId });
+  const messages = await d1All(env, "SELECT id FROM parish_group_messages WHERE parish_id = ?1 AND ministry_id = ?2", parishId, ministryId);
+  const requests = await d1All(env, "SELECT id FROM directory_ministry_interest_requests WHERE parish_id = ?1 AND ministry_id = ?2", parishId, ministryId);
+  const statements = [
+    { sql: "DELETE FROM directory_review_metadata WHERE parish_id = ?1 AND source_type = 'ministry_interest' AND source_id IN (SELECT id FROM directory_ministry_interest_requests WHERE parish_id = ?1 AND ministry_id = ?2)", params: [parishId, ministryId] },
+    { sql: "DELETE FROM parish_content_reads WHERE parish_id = ?1 AND content_type = 'group_message' AND content_id IN (SELECT id FROM parish_group_messages WHERE parish_id = ?1 AND ministry_id = ?2)", params: [parishId, ministryId] },
+    { sql: "DELETE FROM parish_group_messages WHERE parish_id = ?1 AND ministry_id = ?2", params: [parishId, ministryId] },
+    { sql: "DELETE FROM directory_ministries WHERE parish_id = ?1 AND id = ?2", params: [parishId, ministryId] },
+    auditStatement({ action: "directory.ministry.deleted", actor, parishId, targetType: "directory_ministry", targetId: ministryId, before: ministryDto(row), metadata: { messageCount: messages.length, requestCount: requests.length }, correlationId })
+  ];
+  await runAtomic(env, statements);
+  return { ok: true, ministryId, imageStorageKey: row.image_storage_key || "", messageCount: messages.length };
 }
 
 function leaderDto(row) {

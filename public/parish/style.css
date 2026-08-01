@@ -887,6 +887,12 @@
     .koinonia-ministry-list-item:hover { background:#f7f4ed; }
     .koinonia-ministry-list-item.is-selected { border-color:#c7aa68; background:#fff8e9; }
     .koinonia-ministry-list-mark { width:36px; height:36px; display:grid; place-items:center; border-radius:10px; background:#142636; color:#d7b665; font:600 18px/1 Georgia,serif; }
+    .koinonia-ministry-list-mark { position:relative; overflow:hidden; flex:0 0 auto; }
+    .koinonia-ministry-list-mark img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; }
+    .koinonia-ministry-list-mark.has-image img { opacity:1; }
+    .koinonia-ministry-list-mark.has-image b { opacity:0; }
+    .koinonia-ministry-list-mark b { font:inherit; }
+    .koinonia-ministry-list-mark.is-large { width:58px; height:58px; border-radius:16px; }
     .koinonia-ministry-list-item strong,.koinonia-ministry-list-item small { display:block; }
     .koinonia-ministry-list-item strong { font-size:13px; }
     .koinonia-ministry-list-item small { margin-top:3px; color:#77808a; font-size:10px; }
@@ -902,6 +908,12 @@
     .koinonia-ministry-detail-head h3 { margin:5px 0; font:600 29px/1 Georgia,serif; }
     .koinonia-ministry-detail-head p { margin:0; color:#bdc8ce; font-size:12px; }
     .koinonia-ministry-detail-head>em { align-self:start; border:1px solid rgba(255,255,255,.25); border-radius:99px; padding:5px 8px; color:#e3e8eb; font:700 9px/1 Inter,sans-serif; text-transform:uppercase; }
+    .koinonia-ministry-detail-identity,.koinonia-ministry-image-tools,.koinonia-ministry-danger { display:flex; align-items:center; gap:14px; }
+    .koinonia-ministry-image-tools,.koinonia-ministry-danger { padding:16px 22px; border-bottom:1px solid #e6e0d5; }
+    .koinonia-ministry-image-tools>div,.koinonia-ministry-danger>div { flex:1; }
+    .koinonia-ministry-image-tools p,.koinonia-ministry-danger p { margin:3px 0 0; color:#6c777d; font-size:11px; }
+    .koinonia-ministry-danger { margin-top:10px; border-top:1px solid #ead5d2; background:#fff8f7; }
+    .koinonia-ministry-danger button { border:1px solid #a7463e; border-radius:8px; padding:9px 12px; background:#fff; color:#8e3029; font-weight:800; cursor:pointer; }
     .koinonia-ministry-detail-section { padding:20px 22px; border-top:1px solid #ebe7de; }
     .koinonia-ministry-detail-section h4 { margin:3px 0 0; color:#17212a; font:600 20px/1 Georgia,serif; }
     .koinonia-member-search { display:grid; gap:7px; margin:14px 0; padding:13px; border-radius:12px; background:#f7f4ed; }

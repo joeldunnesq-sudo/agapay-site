@@ -83,6 +83,28 @@ async function hydrateGroupPhotos() {
   }));
 }
 
+async function hydrateMinistryGroupImages() {
+  const images = [...document.querySelectorAll("[data-ministry-group-image]")];
+  await Promise.all(images.map(async (image) => {
+    try {
+      const blob = await fetchPrivateGroupAttachment(image.dataset.imageUrl);
+      if (!blob || !image.isConnected) return;
+      const objectUrl = URL.createObjectURL(blob);
+      const key = `ministry:${image.dataset.ministryGroupImage}:${Math.random()}`;
+      groupAttachmentObjectUrls.set(key, objectUrl);
+      image.src = objectUrl;
+      image.closest(".ministry-group-avatar")?.classList.add("has-image");
+    } catch { /* Keep the ministry initial fallback. */ }
+  }));
+}
+
+function ministryGroupAvatar(group, size = "list") {
+  const image = group.hasImage && group.imageUrl
+    ? `<img data-ministry-group-image="${groupsEscape(group.id)}" data-image-url="${groupsEscape(group.imageUrl)}" alt="" />`
+    : "";
+  return `<span class="ministry-group-avatar is-${groupsEscape(size)}">${image}<b>${groupsEscape((group.name || "M").slice(0, 1))}</b></span>`;
+}
+
 function renderDecodedWaveform(messageId, audioBuffer) {
   const container = document.querySelector(`[data-voice-message="${CSS.escape(messageId)}"] .group-voice-waveform`);
   if (!container) return;
@@ -167,17 +189,18 @@ function renderGroupsList() {
   }
   list.innerHTML = ministryGroupsState.groups.map((group) => `
     <button type="button" class="group-list-item${group.id === ministryGroupsState.activeGroupId ? " is-active" : ""}" data-group-id="${groupsEscape(group.id)}" onclick="openMinistryGroup('${groupsEscape(group.id)}')">
-      <span><strong>${groupsEscape(group.name)}</strong><small>${group.role === "leader" ? "Leader" : "Member"}${group.messageCount ? ` · ${group.messageCount} messages` : ""}</small></span>
+      ${ministryGroupAvatar(group)}<span class="group-list-copy"><strong>${groupsEscape(group.name)}</strong><small>${group.role === "leader" ? "Leader" : "Member"}${group.messageCount ? ` · ${group.messageCount} messages` : ""}</small></span>
       ${group.unreadCount ? `<em>${Number(group.unreadCount)} new</em>` : ""}
     </button>
   `).join("");
+  void hydrateMinistryGroupImages();
 }
 
 function renderGroupThread(group, messages) {
   const panel = document.getElementById("groupThreadPanel");
   if (!panel) return;
   panel.innerHTML = `
-    <div class="group-thread-head"><div><span class="eyebrow">Private group</span><h2>${groupsEscape(group.name)}</h2><p>${groupsEscape(group.description || "Messages for current ministry members and leaders.")}</p></div><div class="group-thread-actions">${group.role === "leader" ? `<button type="button" class="groups-refresh" onclick="toggleGroupCatchUp('${groupsEscape(group.id)}',this)" aria-expanded="false">Who’s caught up</button>` : ""}<button type="button" class="groups-refresh" onclick="openMinistryGroup('${groupsEscape(group.id)}')">Refresh messages</button></div></div>
+    <div class="group-thread-head"><div class="group-thread-identity">${ministryGroupAvatar(group, "header")}<div><span class="eyebrow">Private group</span><h2>${groupsEscape(group.name)}</h2><p>${groupsEscape(group.description || "Messages for current ministry members and leaders.")}</p></div></div><div class="group-thread-actions">${group.role === "leader" ? `<button type="button" class="groups-refresh" onclick="toggleGroupCatchUp('${groupsEscape(group.id)}',this)" aria-expanded="false">Who’s caught up</button>` : ""}<button type="button" class="groups-refresh" onclick="openMinistryGroup('${groupsEscape(group.id)}')">Refresh messages</button></div></div>
     <div class="group-message-list" id="groupMessageList">${messages.length ? messages.map(message => `
       <article class="group-message ${message.mine ? "is-outgoing" : "is-incoming"} is-${groupsEscape(message.messageType || "text")}${message.read ? "" : " is-unread"}"><div><strong>${message.mine ? "You" : groupsEscape(message.authorName)}</strong><time>${groupsEscape(groupMessageTime(message.createdAt))}</time></div>${renderGroupMessageContent(message)}</article>
     `).join("") : '<div class="group-thread-empty"><strong>No messages yet</strong><p>Start the conversation for your ministry.</p></div>'}</div>
@@ -194,6 +217,7 @@ function renderGroupThread(group, messages) {
   `;
   renderGroupAttachmentPreview();
   void hydrateGroupPhotos();
+  void hydrateMinistryGroupImages();
   const messageList = document.getElementById("groupMessageList");
   if (messageList) messageList.scrollTop = messageList.scrollHeight;
 }

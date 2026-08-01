@@ -39,13 +39,16 @@ import {
   assignMinistryLeader,
   assignMinistryParticipant,
   createMinistry,
+  deleteMinistry,
   endMinistryLeader,
   getMinistryAdmin,
   listMinistriesAdmin,
   removeMinistryParticipant,
   setMinistryParticipationPublication,
+  setMinistryImage,
   updateMinistry
 } from "../directory/ministries.js";
+import { GROUP_MESSAGE_IMAGE_TYPES, storeGroupMessageAttachment } from "./donor-groups.js";
 import {
   createParishSkill,
   exportPublishedAdultsCsv,
@@ -181,6 +184,64 @@ function reviewPath(path, parishId) {
 function invitationUrl(request, env, rawToken) {
   const base = String(env.AGAPAY_APP_URL || new URL(request.url).origin).replace(/\/+$/, "");
   return `${base}/myagapay/directory?invite=${encodeURIComponent(rawToken)}`;
+}
+
+const MINISTRY_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+
+function safeMinistryStorageSegment(value, fallback) {
+  return String(value || fallback).toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 120) || fallback;
+}
+
+function ministryImageStorageKey(parishId, ministryId) {
+  return `ministry-images/${safeMinistryStorageSegment(parishId, "parish")}/${safeMinistryStorageSegment(ministryId, "ministry")}`;
+}
+
+async function purgeMinistryAssets(env, parishId, ministryId, imageStorageKey = "") {
+  if (!env.GROUP_MESSAGE_ASSETS) return;
+  const prefix = `group-messages/${safeMinistryStorageSegment(parishId, "parish")}/${safeMinistryStorageSegment(ministryId, "ministry")}/`;
+  let cursor;
+  do {
+    const page = await env.GROUP_MESSAGE_ASSETS.list({ prefix, cursor });
+    const keys = (page.objects || []).map(({ key }) => key);
+    if (keys.length) await env.GROUP_MESSAGE_ASSETS.delete(keys);
+    cursor = page.truncated ? page.cursor : undefined;
+  } while (cursor);
+  if (imageStorageKey) await env.GROUP_MESSAGE_ASSETS.delete(imageStorageKey);
+}
+
+async function uploadMinistryImage(request, env, context, ministryId, correlationId) {
+  if (!env.GROUP_MESSAGE_ASSETS) throw new DirectoryServiceError("storage_unavailable", "Ministry image storage is not configured.", 503);
+  await getMinistryAdmin(env, { context, ministryId });
+  const contentType = String(request.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+  if (!GROUP_MESSAGE_IMAGE_TYPES.has(contentType)) throw new DirectoryServiceError("validation_failed", "Ministry images must be JPG, PNG, or WebP.", 415);
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (contentLength > MINISTRY_IMAGE_MAX_BYTES) throw new DirectoryServiceError("image_too_large", "Ministry images must be 5MB or smaller.", 413);
+  if (!request.body) throw new DirectoryServiceError("validation_failed", "Choose an image to upload.", 422);
+  const key = ministryImageStorageKey(context.parishId, ministryId);
+  let stored;
+  try {
+    stored = await storeGroupMessageAttachment(env.GROUP_MESSAGE_ASSETS, { key, source: request.body, contentType, maxBytes: MINISTRY_IMAGE_MAX_BYTES });
+  } catch (error) {
+    if (error?.message === "GROUP_MESSAGE_ATTACHMENT_TOO_LARGE") throw new DirectoryServiceError("image_too_large", "Ministry images must be 5MB or smaller.", 413);
+    throw error;
+  }
+  if (!stored.size) {
+    await env.GROUP_MESSAGE_ASSETS.delete(key).catch(() => {});
+    throw new DirectoryServiceError("validation_failed", "The ministry image was empty.", 422);
+  }
+  return setMinistryImage(env, { context, ministryId, storageKey: key, contentType, correlationId });
+}
+
+async function deliverMinistryImage(env, context, ministryId) {
+  if (!env.GROUP_MESSAGE_ASSETS) throw new DirectoryServiceError("storage_unavailable", "Ministry image storage is not configured.", 503);
+  const result = await getMinistryAdmin(env, { context, ministryId });
+  const key = ministryImageStorageKey(context.parishId, ministryId);
+  if (!result.ministry.hasImage) throw new DirectoryServiceError("not_found", "Ministry image was not found.", 404);
+  const object = await env.GROUP_MESSAGE_ASSETS.get(key);
+  if (!object?.body) throw new DirectoryServiceError("not_found", "Ministry image was not found.", 404);
+  const headers = new Headers({ "Cache-Control": "private, no-store", "Content-Disposition": "inline", "X-Robots-Tag": "noindex, nofollow" });
+  object.writeHttpMetadata?.(headers);
+  return new Response(object.body, { headers });
 }
 
 async function deliverDirectoryInvitation(env, { email, personName, householdName, url }) {
@@ -345,6 +406,20 @@ export async function handleDirectoryAdmin(request, env, parishId) {
       const itemIdOrAction = ministryMatch[3] ? decodeURIComponent(ministryMatch[3]) : "";
       if (request.method === "GET" && !collection) return privateJson({ ok: true, ministry: await getMinistryAdmin(env, { context, ministryId }) });
       if (request.method === "PATCH" && !collection) return privateJson({ ok: true, ministry: await updateMinistry(env, { context, ministryId, patch: await body(request), correlationId }) });
+      if (request.method === "DELETE" && !collection) {
+        const result = await deleteMinistry(env, { context, ministryId, correlationId });
+        await purgeMinistryAssets(env, parishId, ministryId, result.imageStorageKey);
+        return privateJson({ ok: true, result });
+      }
+      if (request.method === "GET" && collection === "image") return deliverMinistryImage(env, context, ministryId);
+      if (request.method === "POST" && collection === "image") return privateJson({ ok: true, ministry: await uploadMinistryImage(request, env, context, ministryId, correlationId) });
+      if (request.method === "DELETE" && collection === "image") {
+        const existing = await getMinistryAdmin(env, { context, ministryId });
+        const key = ministryImageStorageKey(parishId, ministryId);
+        const ministry = await setMinistryImage(env, { context, ministryId, storageKey: "", contentType: "", correlationId });
+        if (existing.ministry.hasImage && env.GROUP_MESSAGE_ASSETS) await env.GROUP_MESSAGE_ASSETS.delete(key);
+        return privateJson({ ok: true, ministry });
+      }
       if (request.method === "POST" && collection === "leaders") {
         return privateJson({ ok: true, ministry: await assignMinistryLeader(env, { context, ministryId, ...await body(request), correlationId }) }, { status: 201 });
       }

@@ -69,7 +69,7 @@ sqlite.exec(`
     status TEXT NOT NULL
   );
 `);
-for (const migration of ["0064_parish_content_reads.sql", "0066_parish_group_messages.sql", "0075_group_message_attachments.sql"]) {
+for (const migration of ["0064_parish_content_reads.sql", "0066_parish_group_messages.sql", "0075_group_message_attachments.sql", "0078_ministry_group_images.sql"]) {
   sqlite.exec(readFileSync(path.join(root, "migrations", migration), "utf8"));
 }
 
@@ -315,7 +315,14 @@ assert.match(handlerSource, /if \(!donor\?\.email\) return null;[\s\S]*donor acc
 assert.match(handlerSource, /isActivityRequest[\s\S]*available: false, activity: \[\], unreadCount: 0/,
   "the Parish Life activity rollup must tolerate accounts that do not have Groups access");
 assert.doesNotMatch(handlerSource, /parish_content_reads/, "group messages must not implement parallel read-tracking SQL");
+assert.match(handlerSource, /parts\.length === 2 && parts\[1\] === "image"/, "ministry images must have a member-authenticated delivery route");
 const groupsUiSource = readFileSync(path.join(root, "public", "myagapay", "groups.js"), "utf8");
+assert.match(groupsUiSource, /ministryGroupAvatar\(group/, "group images must surface beside ministry names in the chat list and header");
+const ministryServiceSource = readFileSync(path.join(root, "src", "directory", "ministries.js"), "utf8");
+assert.match(ministryServiceSource, /DELETE FROM parish_content_reads[\s\S]*DELETE FROM parish_group_messages[\s\S]*DELETE FROM directory_ministries/, "ministry deletion must erase read receipts and messages before the group record");
+const directoryAdminSource = readFileSync(path.join(root, "src", "handlers", "directory-admin.js"), "utf8");
+assert.match(directoryAdminSource, /purgeMinistryAssets[\s\S]*GROUP_MESSAGE_ASSETS\.list\(\{ prefix, cursor \}\)/, "ministry deletion must purge every stored group attachment under its private prefix");
+assert.match(directoryAdminSource, /request\.method === "DELETE" && !collection[\s\S]*deleteMinistry[\s\S]*purgeMinistryAssets/, "the parish API must expose authenticated permanent ministry deletion");
 assert.match(groupsUiSource, /group\.role === "leader" \? `<button[^`]+Who’s caught up/);
 assert.match(groupsUiSource, /\/caught-up`/);
 assert.match(groupsUiSource, /navigator\.mediaDevices\?\.getUserMedia/);
