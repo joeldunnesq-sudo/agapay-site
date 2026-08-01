@@ -58,7 +58,7 @@ assert.ok(css.includes("grid-template-columns: minmax(190px, 0.32fr) minmax(0, 1
 assert.ok(css.includes(".stewardship-resolution-text textarea"));
 assert.ok(css.includes("min-height: 13rem"));
 assert.ok(app.includes('data-field="resolvedText" rows="8"'));
-assert.ok(dashboard.includes("/parish/style.css?v=20260801ministries1"));
+assert.ok(dashboard.includes("/parish/style.css?v=20260801tierload1"));
 assert.ok(/\/parish\/app\.js\?v=\d{8}[a-z0-9]+/.test(dashboard));
 
 console.log("PASS - Annual meeting packet editor labels, printable line controls, and expanded resolution workspace");

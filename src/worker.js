@@ -91,6 +91,7 @@ import { bookstoreEnabledFor, sacramentsEnabledFor } from "./lib/entitlements.js
 import { accountingAvailableForParish } from "./lib/accounting-demo-access.js";
 import { parishLifeAvailableFor } from "./lib/parish-life-access.js";
 import { runScheduledAccountingIntegrity } from "./accounting/integrity/scheduler.js";
+import { sweepAccountingBackupRetention } from "./accounting/backup-retention.js";
 import { synchronizeGivingCatalogWithAccounting } from "./accounting/source-wiring.js";
 import {
   STEWARDSHIP_FUND_DEFAULTS,
@@ -2728,7 +2729,12 @@ export default {
     ctx.waitUntil(purgeExpiredGroupMessages(env, event.scheduledTime)
       .then((results) => console.log("group_message_retention_sweep", JSON.stringify(results)))
       .catch((error) => console.error("group_message_retention_sweep_failed", error?.message || String(error))));
-    if (event.cron === "0 8 * * *") return;
+    if (event.cron === "0 8 * * *") {
+      ctx.waitUntil(sweepAccountingBackupRetention(env, event.scheduledTime)
+        .then((results) => console.log("accounting_backup_retention_sweep", JSON.stringify(results)))
+        .catch((error) => console.error("accounting_backup_retention_sweep_failed", error?.message || String(error))));
+      return;
+    }
     ctx.waitUntil(runScheduledAccountingIntegrity(env, event.scheduledTime)
       .then((results) => console.log("scheduled_accounting_integrity", JSON.stringify(results)))
       .catch((error) => console.error("scheduled_accounting_integrity_failed", error?.message || String(error))));
