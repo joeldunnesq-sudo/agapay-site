@@ -10251,6 +10251,7 @@
 
   // ── COMMUNICATIONS ────────────────────────────────────────
   let communicationsState = { loaded: false, announcements: [], teaching: [], videos: [], youtube: [], blog: null, readers: {} };
+  let koinoniaStudioView = 'overview';
 
   function communicationsApi(path = '') {
     return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/communications' + path;
@@ -10262,6 +10263,67 @@
 
   function contentCategoryLabel(category) {
     return String(category || '').replaceAll('_', ' ').replace(/\b\w/g, character => character.toUpperCase());
+  }
+
+  function setKoinoniaStudioView(view = 'overview') {
+    const allowed = new Set(['overview', 'announcements', 'audio', 'video', 'news']);
+    koinoniaStudioView = allowed.has(view) ? view : 'overview';
+    document.querySelectorAll('[data-koinonia-panel]').forEach(panel => {
+      panel.hidden = panel.dataset.koinoniaPanel !== koinoniaStudioView;
+    });
+    document.querySelectorAll('[data-koinonia-view]').forEach(button => {
+      const active = button.dataset.koinoniaView === koinoniaStudioView;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-current', active ? 'page' : 'false');
+    });
+    if (koinoniaStudioView === 'overview') renderKoinoniaOverview();
+  }
+
+  function openKoinoniaComposer(view) {
+    setKoinoniaStudioView(view);
+    const targetId = view === 'announcements' ? 'announcementTitle' : view === 'audio' ? 'teachingTitle' : view === 'video' ? 'videoTitle' : '';
+    if (!targetId) return;
+    requestAnimationFrame(() => {
+      const target = document.getElementById(targetId);
+      target?.scrollIntoView({ behavior:'smooth', block:'center' });
+      target?.focus({ preventScroll:true });
+    });
+  }
+
+  function renderKoinoniaOverview() {
+    const announcements = communicationsState.announcements || [];
+    const audio = communicationsState.teaching || [];
+    const videos = communicationsState.videos || [];
+    const youtube = communicationsState.youtube || [];
+    const publishedAnnouncements = announcements.filter(item => item.status === 'published').length;
+    const announcementDrafts = announcements.filter(item => item.status === 'draft').length;
+    const publishedAudio = audio.filter(item => item.status === 'published').length;
+    const audioDrafts = audio.filter(item => item.status === 'draft').length;
+    const publishedVideo = videos.filter(item => item.status === 'published').length + youtube.length;
+    const videoDrafts = videos.filter(item => item.status === 'draft').length;
+    const setText = (id, value) => { const element = document.getElementById(id); if (element) element.textContent = value; };
+    setText('koinoniaPublishedAnnouncements', String(publishedAnnouncements));
+    setText('koinoniaAnnouncementDrafts', `${announcementDrafts} draft${announcementDrafts === 1 ? '' : 's'}`);
+    setText('koinoniaPublishedAudio', String(publishedAudio));
+    setText('koinoniaAudioDrafts', `${audioDrafts} draft${audioDrafts === 1 ? '' : 's'}`);
+    setText('koinoniaPublishedVideo', String(publishedVideo));
+    setText('koinoniaVideoDrafts', `${videoDrafts} draft${videoDrafts === 1 ? '' : 's'} · ${youtube.length} YouTube`);
+    setText('koinoniaBlogStatus', communicationsState.blog?.enabled ? 'Connected' : 'Not connected');
+    setText('koinoniaBlogDetail', communicationsState.blog?.feedUrl ? 'Feed validated' : 'Optional news source');
+
+    const recent = [
+      ...announcements.map(item => ({ ...item, kind:'Announcement', icon:'▤', view:'announcements' })),
+      ...audio.map(item => ({ ...item, kind:'Audio', icon:'♪', view:'audio' })),
+      ...videos.map(item => ({ ...item, kind:'Video', icon:'▶', view:'video' })),
+    ].sort((left, right) => new Date(right.updatedAt || right.publishedAt || right.createdAt || 0) - new Date(left.updatedAt || left.publishedAt || left.createdAt || 0)).slice(0, 6);
+    const target = document.getElementById('koinoniaRecentContent');
+    if (!target) return;
+    target.innerHTML = recent.length ? recent.map(item => `
+      <button type="button" onclick="setKoinoniaStudioView('${escapeAttr(item.view)}')">
+        <span class="koinonia-recent-icon">${item.icon}</span>
+        <span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.kind)} · ${escapeHtml(announcementStatusLabel(item.status))} · ${escapeHtml(shortDate(item.updatedAt || item.publishedAt || item.createdAt))}</small></span>
+        <em>Open →</em>
+      </button>`).join('') : '<div class="communications-empty"><strong>Your studio is ready</strong><p>Publish the first announcement, audio post, or video for your parish.</p></div>';
   }
 
   function renderCommunicationsList() {
@@ -10457,6 +10519,8 @@
     renderTeachingAdminList();
     renderVideoAdminList();
     renderYouTubeAdminList();
+    renderKoinoniaOverview();
+    setKoinoniaStudioView(koinoniaStudioView);
   }
 
   async function saveParishBlogSettings(event) {
@@ -10498,10 +10562,10 @@
         body: JSON.stringify({ communicationsEnabled: enabled })
       });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || payload.detail || 'Unable to update Communications.');
+      if (!response.ok) throw new Error(payload.error || payload.detail || 'Unable to update Koinonia.');
       currentParish.communicationsEnabled = Boolean(payload.parish?.communicationsEnabled ?? enabled);
       communicationsState.loaded = false;
-      setStatus(currentParish.communicationsEnabled ? 'Communications is on for parishioners.' : 'Communications is off for parishioners.', 'success');
+      setStatus(currentParish.communicationsEnabled ? 'Parish publishing is live in Koinonia.' : 'Parish publishing is hidden; the Koinonia calendar remains available.', 'success');
       await loadCommunicationsTab(true);
     } catch (error) {
       currentParish.communicationsEnabled = previous;
