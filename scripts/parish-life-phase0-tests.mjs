@@ -56,8 +56,8 @@ const [hub, hubScript, shell, parishDashboard, parishApp, groupHandler, workerSo
   readFile(new URL("../src/worker.js", import.meta.url), "utf8"),
 ]);
 assert.match(hub, /class="feed-hero"/);
-assert.equal((hub.match(/class="mobile-product-card live"/g) || []).length, 3, "Announcements, Groups, and Teaching should be live cards");
-assert.equal((hub.match(/class="mobile-product-card coming-soon"/g) || []).length, 1, "Media should remain a placeholder");
+assert.equal((hub.match(/class="mobile-product-card live"/g) || []).length, 4, "Announcements, Groups, Teaching, and Media should be live cards after Phase 2");
+assert.equal((hub.match(/class="mobile-product-card coming-soon"/g) || []).length, 0, "Phase 2 should remove the final Media placeholder");
 assert.match(hub, />Teaching</);
 assert.match(hub, />Media</);
 assert.match(hubScript, /fetch\("\/api\/donor\/feed"/);

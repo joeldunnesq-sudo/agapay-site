@@ -213,6 +213,7 @@ import {
 import { handleParishEmailCredentials } from "./handlers/parish-email-credentials.js";
 import { handleDonorGroups } from "./handlers/donor-groups.js";
 import { handleDonorTeaching, handleParishTeaching } from "./handlers/parish-teaching.js";
+import { handleDonorVideo, handleParishVideo } from "./handlers/parish-video.js";
 import { handleDonorPush } from "./lib/push-notifications.js";
 
 import {
@@ -679,6 +680,10 @@ const MYAGAPAY_ASSET_ROUTES = new Map([
   ["/myagapay/groups/", "/myagapay/groups.html"],
   ["/myagapay/teaching", "/myagapay/teaching.html"],
   ["/myagapay/teaching/", "/myagapay/teaching.html"],
+  ["/myagapay/media", "/myagapay/media.html"],
+  ["/myagapay/media/", "/myagapay/media.html"],
+  ["/myagapay/media/watch", "/myagapay/watch.html"],
+  ["/myagapay/media/watch/", "/myagapay/watch.html"],
   ["/myagapay/learn", "/learn/dashboard"],
   ["/myagapay/learn/", "/learn/dashboard"],
   ["/myagapay/learn/dashboard", "/learn/dashboard"],
@@ -2742,6 +2747,7 @@ export default {
       url.pathname === "/api/donor/feed" || url.pathname.startsWith("/api/donor/feed/")
       || url.pathname === "/api/donor/groups" || url.pathname.startsWith("/api/donor/groups/")
       || url.pathname === "/api/donor/teaching" || url.pathname.startsWith("/api/donor/teaching/")
+      || url.pathname === "/api/donor/videos" || url.pathname.startsWith("/api/donor/videos/")
       || url.pathname === "/api/donor/digest/subscription"
       || url.pathname === "/api/donor/digest/unsubscribe"
       || url.pathname === "/api/admin/communications/send-weekly-digest"
@@ -2750,7 +2756,7 @@ export default {
       return json({ error: "Not found" }, { status: 404 });
     }
 
-    const parishLifePageRoute = /^\/myagapay\/(?:parish-life|feed|groups|teaching)(?:\.html)?\/?$/.test(url.pathname);
+    const parishLifePageRoute = /^\/myagapay\/(?:parish-life|feed|groups|teaching|media|media\/watch)(?:\.html)?\/?$/.test(url.pathname);
     if (parishLifePageRoute && !parishLifeAvailable) {
       return new Response("Not found", {
         status: 404,
@@ -3135,6 +3141,9 @@ export default {
     if (url.pathname === "/api/donor/teaching") {
       return handleDonorTeaching(request, env);
     }
+    if (url.pathname === "/api/donor/videos") {
+      return handleDonorVideo(request, env);
+    }
     if (url.pathname === "/api/donor/digest/subscription") {
       return handleDonorDigestSubscription(request, env);
     }
@@ -3256,6 +3265,10 @@ export default {
     if (url.pathname.startsWith("/api/donor/teaching/") && url.pathname.endsWith("/read")) {
       const teachingId = decodeURIComponent(url.pathname.replace("/api/donor/teaching/", "").replace("/read", ""));
       return handleDonorTeaching(request, env, teachingId, "read");
+    }
+    if (url.pathname.startsWith("/api/donor/videos/")) {
+      const parts = url.pathname.replace("/api/donor/videos/", "").split("/").filter(Boolean).map(decodeURIComponent);
+      return handleDonorVideo(request, env, parts[0] || "", parts[1] || "");
     }
     if (url.pathname === "/api/admin/communications/send-weekly-digest") {
       return handleAdminWeeklyAnnouncementDigest(request, env);
@@ -3641,6 +3654,9 @@ export default {
       const normalizedSubpath = subpath.replace(/^\/+/, "");
       if (normalizedSubpath === "teaching" || normalizedSubpath.startsWith("teaching/")) {
         return handleParishTeaching(request, env, parishId, normalizedSubpath.replace(/^teaching\/?/, ""));
+      }
+      if (normalizedSubpath === "video" || normalizedSubpath.startsWith("video/")) {
+        return handleParishVideo(request, env, parishId, normalizedSubpath.replace(/^video\/?/, ""));
       }
       return handleParishCommunications(request, env, parishId, subpath, ctx);
     }

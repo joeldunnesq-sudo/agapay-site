@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/parish/style.css?v=20260801teaching1" />
+  <link rel="stylesheet" href="/parish/style.css?v=20260801video1" />
   <link rel="stylesheet" href="/parish/redesign.css?v=20260729nooverflow1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="stylesheet" href="/styles/stewardship.css?v=20260731healthgrid1" />
@@ -1409,6 +1409,29 @@
                 <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">All teaching</span><h2>Drafts and published posts</h2></div><button class="btn btn-ghost btn-sm" type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="teachingAdminList"><p class="sw-tool-loading">Loading...</p></div></section>
               </div>
             </section>
+            <section class="communications-content-section video-admin-section" aria-labelledby="videoAdminHeading">
+              <div class="communications-section-heading"><span class="eyebrow">Private media</span><h2 id="videoAdminHeading">Video</h2><p>Upload recorded video directly to Cloudflare Stream, wait for private processing, then publish it to parishioners.</p></div>
+              <div class="communications-grid">
+                <form class="communications-compose" onsubmit="createVideoUpload(event)">
+                  <span class="eyebrow">Upload</span><h2>New private video</h2>
+                  <label>Title<input id="videoTitle" maxlength="180" required placeholder="Sunday homily · July 27" /></label>
+                  <label>Description<textarea id="videoDescription" maxlength="20000" rows="7" placeholder="Add context for parishioners. **Bold**, *italic*, links, and lists are supported."></textarea></label>
+                  <label>Video file<input id="videoFile" type="file" accept="video/*" required /><small>Recorded video up to 200MB. The file uploads directly to Stream; AGAPAY never proxies the video bytes.</small></label>
+                  <label class="communications-pin"><input id="videoPinned" type="checkbox" /> Feature this video at the top of Media</label>
+                  <div class="video-upload-progress" id="videoUploadProgress" hidden><span><i id="videoUploadProgressFill"></i></span><strong id="videoUploadProgressLabel">Preparing secure upload…</strong></div>
+                  <button class="btn btn-gold" type="submit">Upload private video</button>
+                </form>
+                <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">Native video</span><h2>Processing and published</h2></div><button class="btn btn-ghost btn-sm" type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="videoAdminList"><p class="sw-tool-loading">Loading...</p></div></section>
+              </div>
+              <div class="communications-grid youtube-admin-grid">
+                <form class="communications-compose" onsubmit="addYouTubeVideo(event)">
+                  <span class="eyebrow">Public external media</span><h2>Add a YouTube video</h2><p class="section-note">YouTube videos are public and stay on YouTube. They are presented separately from private parish video.</p>
+                  <label>YouTube video URL<input id="youtubeVideoUrl" type="url" required placeholder="https://www.youtube.com/watch?v=…" /></label>
+                  <button class="btn btn-ghost" type="submit">Validate and add</button>
+                </form>
+                <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">YouTube</span><h2>Curated public links</h2></div></div><div id="youtubeAdminList"><p class="sw-tool-loading">Loading...</p></div></section>
+              </div>
+            </section>
           </div>
         </div>
       </div>
@@ -1850,6 +1873,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
-  <script src="/parish/app.js?v=20260801teaching1"></script>
+  <script src="/parish/app.js?v=20260801video1"></script>
 </body>
 </html>
