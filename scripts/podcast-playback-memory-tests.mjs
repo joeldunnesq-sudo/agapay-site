@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { handleListenProgress } from "../src/handlers/listen.js";
+import { handleListenProgress, handleListenSubscriptions } from "../src/handlers/listen.js";
 
 class PodcastProgressDb {
   constructor() {
@@ -109,8 +109,60 @@ response = await handleListenProgress(request("GET", "two@example.org"), env, de
 payload = await response.json();
 assert.equal(payload.items.length, 1, "completing an episode for one donor must not remove another donor's progress");
 
-const [migration, worker, teaching, teachingHtml] = await Promise.all([
+class PodcastSubscriptionDb {
+  constructor() { this.subscriptions = new Map(); }
+  prepare(sql) {
+    const db = this;
+    return {
+      params: [],
+      bind(...params) { this.params = params; return this; },
+      async run() {
+        const normalized = sql.replace(/\s+/g, " ").trim();
+        if (normalized.startsWith("INSERT INTO donor_podcast_subscriptions")) {
+          const [donorId, feedUrl, title, artwork, website, author] = this.params;
+          const existing = db.subscriptions.get(`${donorId}|${feedUrl}`);
+          db.subscriptions.set(`${donorId}|${feedUrl}`, { donor_id: donorId, feed_url: feedUrl, show_title: title, artwork_url: artwork, website_url: website, author, subscribed_at: existing?.subscribed_at || "2026-08-01 00:00:00", updated_at: "2026-08-01 00:00:01" });
+          return { success: true };
+        }
+        if (normalized.startsWith("DELETE FROM donor_podcast_subscriptions")) {
+          db.subscriptions.delete(`${this.params[0]}|${this.params[1]}`);
+          return { success: true };
+        }
+        throw new Error(`Unexpected subscription run: ${normalized}`);
+      },
+      async all() { return { results: [...db.subscriptions.values()].filter((row) => row.donor_id === this.params[0]) }; },
+      async first() { return db.subscriptions.get(`${this.params[0]}|${this.params[1]}`) || null; },
+    };
+  }
+}
+
+const subscriptionDb = new PodcastSubscriptionDb();
+const subscriptionEnv = { AGAPAY_DB: subscriptionDb };
+function subscriptionRequest(method, donor, body, feedUrl = "") {
+  return new Request(`https://agapay.app/api/listen/subscriptions${feedUrl ? `?url=${encodeURIComponent(feedUrl)}` : ""}`, {
+    method,
+    headers: { "X-Test-Donor": donor, ...(body ? { "Content-Type": "application/json" } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+}
+const subscription = { feedUrl: "https://example.org/orthodox.xml", title: "Orthodox Talks", artwork: "https://example.org/art.jpg", website: "https://example.org", author: "AGAPAY Test" };
+response = await handleListenSubscriptions(subscriptionRequest("POST", "one@example.org", subscription), subscriptionEnv, dependencies);
+assert.equal(response.status, 201);
+response = await handleListenSubscriptions(subscriptionRequest("GET", "one@example.org"), subscriptionEnv, dependencies);
+payload = await response.json();
+assert.equal(payload.subscriptions.length, 1);
+assert.equal(payload.subscriptions[0].feedUrl, subscription.feedUrl);
+response = await handleListenSubscriptions(subscriptionRequest("GET", "two@example.org"), subscriptionEnv, dependencies);
+payload = await response.json();
+assert.deepEqual(payload.subscriptions, [], "podcast subscriptions must be private to each My AGAPAY account");
+await handleListenSubscriptions(subscriptionRequest("DELETE", "one@example.org", null, subscription.feedUrl), subscriptionEnv, dependencies);
+response = await handleListenSubscriptions(subscriptionRequest("GET", "one@example.org"), subscriptionEnv, dependencies);
+payload = await response.json();
+assert.deepEqual(payload.subscriptions, []);
+
+const [migration, subscriptionMigration, worker, teaching, teachingHtml] = await Promise.all([
   readFile(new URL("../migrations/0078_donor_podcast_progress.sql", import.meta.url), "utf8"),
+  readFile(new URL("../migrations/0080_donor_podcast_subscriptions.sql", import.meta.url), "utf8"),
   readFile(new URL("../src/worker.js", import.meta.url), "utf8"),
   readFile(new URL("../public/myagapay/teaching.js", import.meta.url), "utf8"),
   readFile(new URL("../public/myagapay/teaching.html", import.meta.url), "utf8"),
@@ -118,7 +170,10 @@ const [migration, worker, teaching, teachingHtml] = await Promise.all([
 
 assert.match(migration, /PRIMARY KEY \(donor_id, episode_key\)/);
 assert.match(migration, /idx_donor_podcast_progress_recent[\s\S]*donor_id, updated_at DESC/);
+assert.match(subscriptionMigration, /PRIMARY KEY \(donor_id, feed_url\)/);
+assert.match(subscriptionMigration, /idx_donor_podcast_subscriptions_recent[\s\S]*donor_id, updated_at DESC/);
 assert.match(worker, /url\.pathname === "\/api\/listen\/progress"[\s\S]*handleListenProgress/);
+assert.match(worker, /url\.pathname === "\/api\/listen\/subscriptions"[\s\S]*handleListenSubscriptions/);
 assert.match(teaching, /function podcastEpisodeKey\(guid, audioUrl\)[\s\S]*trim\(\) \|\| String\(audioUrl/,
   "RSS guid must be preferred with audio URL only as fallback");
 const episodeKeyFunction = teaching.match(/function podcastEpisodeKey\(guid, audioUrl\) \{[\s\S]*?\n\}/)?.[0];
@@ -138,5 +193,9 @@ assert.doesNotMatch(teaching, /localStorage|sessionStorage|indexedDB/, "Up Next 
 assert.match(teachingHtml, /id="koinoniaContinueListening"[\s\S]*Continue Listening/);
 assert.match(teachingHtml, /id="koinoniaPodcastSpeed"[\s\S]*1\.25x[\s\S]*2x/);
 assert.match(teachingHtml, /skipKoinoniaPodcast\(-15\)[\s\S]*skipKoinoniaPodcast\(30\)/);
+assert.match(teachingHtml, /data-podcast-library-view="latest"[\s\S]*data-podcast-library-view="subscriptions"[\s\S]*data-podcast-library-view="discover"/);
+assert.match(teachingHtml, /id="koinoniaPodcastExpand"[\s\S]*id="koinoniaPodcastSleepTimer"[\s\S]*id="koinoniaPodcastQueueList"/);
+assert.match(teaching, /loadKoinoniaPodcastLatest[\s\S]*Promise\.allSettled[\s\S]*latestEpisodes/);
+assert.match(teaching, /toggleKoinoniaPodcastPlayerExpanded[\s\S]*podcast-player-expanded/);
 
 console.log("PASS - podcast playback memory is private, resumable, completion-aware, and session-scoped where required");

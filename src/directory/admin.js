@@ -1369,7 +1369,21 @@ export async function listDirectoryHouseholdsAdmin(env, { context, query = "", l
         AND photo_asn.media_purpose = 'household_profile_photo' AND photo_asn.assignment_status IN ('active','candidate')
        LEFT JOIN directory_media_assets photo ON photo.id = photo_asn.media_asset_id
         AND photo.lifecycle_status NOT IN ('deleted','replaced','failed')
-      WHERE h.parish_id = ?1 AND (?2 = '%%' OR h.display_name LIKE ?2)
+      WHERE h.parish_id = ?1 AND (
+        ?2 = '%%' OR h.display_name LIKE ?2 OR EXISTS (
+          SELECT 1
+            FROM directory_household_members search_hm
+            JOIN directory_people search_person ON search_person.id = search_hm.person_id
+            LEFT JOIN directory_contact_methods search_contact
+              ON search_contact.parish_id = h.parish_id
+             AND search_contact.owner_type = 'person'
+             AND search_contact.owner_id = search_person.id
+             AND search_contact.contact_type = 'email'
+             AND search_contact.active = 1
+           WHERE search_hm.household_id = h.id AND search_hm.active = 1
+             AND (search_person.preferred_name LIKE ?2 OR search_person.legal_name LIKE ?2 OR search_contact.value LIKE ?2)
+        )
+      )
       GROUP BY h.id
       ORDER BY h.display_name
       LIMIT ?3`,
@@ -1425,7 +1439,27 @@ export async function getDirectoryHouseholdAdmin(env, { context, householdId }) 
       env,
       `SELECT p.id, p.preferred_name, hm.relationship,
               MAX(COALESCE(f.is_child, 0)) AS is_child,
-              CASE WHEN COUNT(DISTINCT l.id) > 0 THEN 1 ELSE 0 END AS account_linked
+              CASE WHEN COUNT(DISTINCT l.id) > 0 THEN 1 ELSE 0 END AS account_linked,
+              (SELECT c.value FROM directory_contact_methods c
+                WHERE c.parish_id = ?2 AND c.owner_type = 'person' AND c.owner_id = p.id
+                  AND c.contact_type = 'email' AND c.active = 1
+                ORDER BY c.is_primary DESC, c.created_at ASC LIMIT 1) AS email,
+              (SELECT i.id FROM directory_invitations i
+                WHERE i.parish_id = ?2 AND i.intended_person_id = p.id
+                  AND i.status IN ('pending','sent','opened','accepted')
+                ORDER BY i.created_at DESC LIMIT 1) AS invitation_id,
+              (SELECT i.status FROM directory_invitations i
+                WHERE i.parish_id = ?2 AND i.intended_person_id = p.id
+                  AND i.status IN ('pending','sent','opened','accepted')
+                ORDER BY i.created_at DESC LIMIT 1) AS invitation_status,
+              (SELECT i.recipient_email FROM directory_invitations i
+                WHERE i.parish_id = ?2 AND i.intended_person_id = p.id
+                  AND i.status IN ('pending','sent','opened','accepted')
+                ORDER BY i.created_at DESC LIMIT 1) AS invitation_email,
+              (SELECT i.expires_at FROM directory_invitations i
+                WHERE i.parish_id = ?2 AND i.intended_person_id = p.id
+                  AND i.status IN ('pending','sent','opened','accepted')
+                ORDER BY i.created_at DESC LIMIT 1) AS invitation_expires_at
          FROM directory_household_members hm
          JOIN directory_people p ON p.id = hm.person_id
          LEFT JOIN directory_person_privacy_flags f
@@ -1481,7 +1515,14 @@ export async function getDirectoryHouseholdAdmin(env, { context, householdId }) 
     members: members.map((member) => ({
       ...member,
       child: Number(member.is_child || 0) === 1,
-      accountLinked: Number(member.account_linked || 0) === 1
+      accountLinked: Number(member.account_linked || 0) === 1,
+      email: member.email || "",
+      invitation: member.invitation_id ? {
+        id: member.invitation_id,
+        status: member.invitation_status,
+        recipientEmail: member.invitation_email || "",
+        expiresAt: Number(member.invitation_expires_at || 0)
+      } : null
     })),
     administrators: admins.map((admin) => ({ ...admin, accountLinked: Number(admin.account_linked || 0) === 1 })),
     accountManaged: admins.some((admin) => Number(admin.account_linked || 0) === 1),

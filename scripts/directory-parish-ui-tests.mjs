@@ -4,6 +4,8 @@ const dashboard = fs.readFileSync(new URL('../public/parish/dashboard.html', imp
 const app = fs.readFileSync(new URL('../public/parish/app.js', import.meta.url), 'utf8');
 const css = fs.readFileSync(new URL('../public/parish/redesign.css', import.meta.url), 'utf8');
 const stewardshipCss = fs.readFileSync(new URL('../public/styles/stewardship.css', import.meta.url), 'utf8');
+const adminService = fs.readFileSync(new URL('../src/directory/admin.js', import.meta.url), 'utf8');
+const adminHandler = fs.readFileSync(new URL('../src/handlers/directory-admin.js', import.meta.url), 'utf8');
 
 if (app.includes("fetch(directoryAdminApi('/queue')")) {
   throw new Error('Parish Directory must not fetch a review queue');
@@ -22,7 +24,7 @@ const checks = [
   ['directory views appear directly beneath the page header with plain-language labels', app.indexOf('pdx-dir-view-switcher') < app.indexOf('data-dir-panel="directory"') && app.includes('Families &amp; Members') && app.includes('Directory Management')],
   ['CSV and designed PDF directory downloads remain wired', app.includes("downloadDirectoryAdminExport('/exports/published-adults.csv')") && app.includes("downloadDirectoryAdminExport('/exports/directory.pdf')") && app.includes('Download PDF')],
   ['households lead with prototype initials and members', app.includes('pdx-dir-table-avatar') && app.includes('pdx-dir-table-members')],
-  ['family rows no longer expand into an unhelpful record card', !app.includes(`data-skills="\${escapeAttr(householdSkills.join(' '))}" onclick="openDirectoryHousehold`) && !app.includes('id="directoryRecordDetail"')],
+  ['family rows expose a focused account-management action without making the whole row ambiguous', !app.includes(`data-skills="\${escapeAttr(householdSkills.join(' '))}" onclick="openDirectoryHousehold`) && app.includes('class="pdx-dir-table-manage"') && app.includes('id="directoryRecordDetail"')],
   ['household initials use surname plus H', app.includes('function directoryHouseholdInitials(name)') && app.includes("${directoryHouseholdLastName(name).charAt(0)}H")],
   ['households are ordered by normalized family surname', app.includes('function directoryHouseholdSortKey(name)') && app.includes('const sortedHouseholds = [...households].sort')],
   ['duplicate parish-admin masthead is absent', !app.includes('My AGAPAY — Parish Admin') && !css.includes('.pdx-dir-admin-nav')],
@@ -30,8 +32,11 @@ const checks = [
   ['street address is explicitly staff-only while city and state may be shared', app.includes('A street address is never shown to parishioners') && app.includes('city/state visible in My AGAPAY; street private') && app.includes('Full street addresses are never published')],
   ['prototype nameday and skills filters are present', app.includes('All namedays') && app.includes('All skills') && app.includes('filterCanonicalDirectoryRows')],
   ['parish directory keeps clearly labeled management tools without a review queue', !app.includes('data-dir-tab="queue"') && app.includes('Directory Health') && app.includes('Parishioner Skills &amp; Service')],
-  ['one family account manages spouses and children', app.includes('Managed through the family account') && app.includes('does not need a separate My AGAPAY login or invitation')],
-  ['the dashboard does not label household-managed adults as needing invitations', !app.includes('adult needs invitation') && !app.includes('Adults needing an account invitation')],
+  ['each adult can link a separate My AGAPAY identity inside one shared household', app.includes('Adult accounts &amp; Koinonia access') && app.includes('Each adult signs in separately while sharing this household') && app.includes('sendDirectoryHouseholdInvitation')],
+  ['children remain safely managed without separate accounts', app.includes('managed by household adults') && app.includes('Children remain under household management and do not receive separate accounts')],
+  ['household account states distinguish linked, invited, and unlinked adults', app.includes('Koinonia ready') && app.includes('Invitation pending') && app.includes('Send secure invitation')],
+  ['member-name and email searches resolve the containing household', adminService.includes('search_person.preferred_name LIKE ?2') && adminService.includes('search_contact.value LIKE ?2')],
+  ['one linked spouse no longer blocks another adult invitation', !adminHandler.includes('household_already_managed') && adminHandler.includes('link_and_grant_household_admin')],
   ['the uploaded four-column parish table is preserved', app.includes('Members &amp; Namedays') && app.includes('Contact &amp; Parishioner Visibility') && app.includes('Skills to Serve')],
   ['the Directory bypasses the stale empty dashboard wrapper', app.includes("classList.toggle('directory-tab-active'") && css.includes('.content.directory-tab-active > .detail-wrap { display: none; }') && css.includes('.app.directory-tab-active > .sidebar { display: none; }')],
   ['AGAPAY navy and gold style the actions', css.includes('background:#061522') && css.includes('var(--gold)')],

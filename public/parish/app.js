@@ -841,6 +841,7 @@
             <tbody id="directoryBrowseList">${sortedHouseholds.length ? sortedHouseholds.map((household) => directoryCanonicalHouseholdRow(household, publishedMembers, skills.listings || [])).join('') : `<tr><td colspan="4">${directoryEmptyState('No households yet', 'Households appear here after families join the parish directory.')}</td></tr>`}</tbody>
           </table>
         </div>
+        <div id="directoryRecordDetail" class="pdx-dir-review-detail pdx-dir-inline-detail" aria-live="polite"></div>
         <p class="pdx-dir-canonical-note"><strong>Where do these records come from?</strong> Families enter and maintain their information in My AGAPAY. Parish staff can review the information here without changing a family’s privacy choices.</p>
       </div>
 
@@ -876,10 +877,10 @@
             ${directoryMaintenanceRow('Households due', maintenance.householdsDue, false, 'Need annual confirmation soon.')}
             ${directoryMaintenanceRow('Overdue households', maintenance.householdsOverdue, true, 'Need staff follow-up now.')}
             ${directoryMaintenanceRow('Households not yet confirmed', maintenance.householdsNotStarted, true, 'These families were missing before because no confirmation record existed.')}
-            ${directoryMaintenanceRow('Families with a My AGAPAY manager', maintenance.accountManagedHouseholds, false, 'One linked household account maintains the family directory entry and tax documents.')}
-            ${directoryMaintenanceRow('Families needing account access', maintenance.householdsNeedingAccountAccess, true, 'No linked family account can maintain this household yet.')}
+            ${directoryMaintenanceRow('Families with at least one linked adult', maintenance.accountManagedHouseholds, false, 'These households have an adult who can maintain shared family information.')}
+            ${directoryMaintenanceRow('Families needing a first linked adult', maintenance.householdsNeedingAccountAccess, true, 'No adult account can maintain this household yet.')}
             ${directoryMaintenanceRow('Skill consents to review', maintenance.staleSkillConsents, false, 'Skill listings that need renewed consent.')}
-            ${directoryMaintenanceRow('People not connected to a family account', maintenance.unclaimedPeople, true, 'Spouses and other adults are covered when their household already has a My AGAPAY manager.')}
+            ${directoryMaintenanceRow('Adults without their own account link', maintenance.unclaimedPeople, true, 'Link each adult identity so Koinonia ministries and groups resolve the correct person.')}
           </div>
           ${directoryMaintenanceActions(maintenance.actions || {})}
         </section>
@@ -2794,7 +2795,7 @@
       return new Intl.DateTimeFormat(undefined, { month:'long', timeZone:'UTC' }).format(new Date(Date.UTC(2024, Number(feast.slice(0,2)) - 1, 1)));
     }).join(' ');
     return `<tr class="pdx-dir-table-row" data-namedays="${escapeAttr(namedaySearch)}" data-skills="${escapeAttr(householdSkills.join(' '))}">
-      <td><div class="pdx-dir-table-household"><span class="pdx-dir-table-avatar">${escapeHtml(initials)}</span><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(city || `${count} member${count === 1 ? '' : 's'}`)}</span></div></div></td>
+      <td><div class="pdx-dir-table-household"><span class="pdx-dir-table-avatar">${escapeHtml(initials)}</span><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(city || `${count} member${count === 1 ? '' : 's'}`)}</span><button class="pdx-dir-table-manage" type="button" onclick="openDirectoryHousehold('${escapeAttr(household.id)}')">Manage accounts</button></div></div></td>
       <td><div class="pdx-dir-table-members">${memberMarkup}</div></td>
       <td><div class="pdx-dir-table-contacts">${contactField('Email', email, staffContact.email?.visibility)}${contactField('Phone', phone, staffContact.phone?.visibility)}${contactField('Address', fullAddress || city, address.visibility, true)}</div></td>
       <td><div class="pdx-dir-table-skills">${householdSkills.length ? householdSkills.slice(0, 3).map((skill) => `<span>${escapeHtml(skill)}</span>`).join('') : '<small>No published skills</small>'}</div></td>
@@ -2934,16 +2935,14 @@
       const accessPanel = access.child
         ? `<div class="pdx-dir-empty"><strong>Managed through the family account</strong><span>Children do not need a separate My AGAPAY account.</span></div>`
         : access.linked
-          ? `<div class="pdx-dir-empty"><strong>Family account manager</strong><span>This adult’s My AGAPAY account manages the household directory entry and family tax documents.</span></div>`
-          : access.householdManaged
-            ? `<div class="pdx-dir-empty"><strong>Managed through the family account</strong><span>This adult does not need a separate My AGAPAY login or invitation. The linked family account manages this household.</span></div>${invitation ? `<div class="pdx-dir-actions"><button class="pdx-dir-action-btn" type="button" onclick="revokeDirectoryAccountInvitation('${escapeAttr(invitation.id)}','${escapeAttr(person.id)}')">Revoke old invitation</button></div>` : ''}`
+          ? `<div class="pdx-dir-empty"><strong>My AGAPAY account linked</strong><span>This adult has their own identity inside the shared household and can be recognized for Koinonia ministries and groups.</span></div>`
           : invitation
             ? `<div class="pdx-dir-detail-chip"><strong>Invitation ${escapeHtml(invitation.status)}</strong><span>${escapeHtml(invitation.recipientEmail || '')} · expires ${escapeHtml(new Date(invitation.expiresAt).toLocaleDateString())}</span></div>
                <div class="pdx-dir-actions"><button class="pdx-dir-action-btn" type="button" onclick="resendDirectoryAccountInvitation('${escapeAttr(invitation.id)}','${escapeAttr(person.id)}')">Resend invitation</button><button class="pdx-dir-action-btn" type="button" onclick="revokeDirectoryAccountInvitation('${escapeAttr(invitation.id)}','${escapeAttr(person.id)}')">Revoke</button></div>`
             : `<form class="pdx-dir-actions" onsubmit="sendDirectoryAccountInvitation(event,'${escapeAttr(person.id)}','${escapeAttr(household.id || '')}')">
                  <label style="flex:1;min-width:220px">Adult email<input name="email" type="email" autocomplete="email" required placeholder="name@example.com" /></label>
                  <button class="pdx-dir-action-btn" type="submit">Send My AGAPAY invitation</button>
-               </form><p class="section-note">The secure link connects this adult to their directory record${household.id ? ' and makes them a household administrator' : ''}.</p>`;
+               </form><p class="section-note">The secure link connects this adult’s own My AGAPAY account to their person record${household.id ? ' and shared household' : ''}. Other linked adults keep their own sign-in.</p>`;
       detail.innerHTML = directoryRecordDetailShell('Person record', person.preferredName || person.legalName || 'Directory person', 'Use this detail view to understand why a member may or may not be able to manage their Directory information.', `
         <div class="pdx-dir-review-grid">
           <section class="pdx-dir-review-column"><h4>Status</h4>
@@ -2974,6 +2973,21 @@
     }
   }
 
+  function directoryHouseholdAccountRow(member, householdId) {
+    const name = member.preferred_name || member.preferredName || member.id;
+    const relationship = String(member.relationship || 'adult').replace(/_/g, ' ');
+    if (member.child) {
+      return `<div class="pdx-dir-account-row is-child"><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(relationship)} · managed by household adults</span></div><em>Child profile</em></div>`;
+    }
+    if (member.accountLinked) {
+      return `<div class="pdx-dir-account-row is-linked"><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(relationship)} · personal My AGAPAY identity connected</span></div><em>✓ Koinonia ready</em></div>`;
+    }
+    if (member.invitation) {
+      return `<div class="pdx-dir-account-row is-pending"><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(relationship)} · invitation ${escapeHtml(member.invitation.status)} to ${escapeHtml(member.invitation.recipientEmail || member.email || '')}</span></div><div class="pdx-dir-account-actions"><em>Invitation pending</em><button type="button" onclick="resendDirectoryAccountInvitation('${escapeAttr(member.invitation.id)}','${escapeAttr(member.id)}','${escapeAttr(householdId)}')">Resend</button><button type="button" onclick="revokeDirectoryAccountInvitation('${escapeAttr(member.invitation.id)}','${escapeAttr(member.id)}','${escapeAttr(householdId)}')">Revoke</button></div></div>`;
+    }
+    return `<form class="pdx-dir-account-row is-needed" onsubmit="sendDirectoryHouseholdInvitation(event,'${escapeAttr(member.id)}','${escapeAttr(householdId)}')"><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(relationship)} · link this adult’s own account</span></div><label><span class="sr-only">Email for ${escapeHtml(name)}</span><input name="email" type="email" autocomplete="email" required value="${escapeAttr(member.email || '')}" placeholder="adult@example.com" /></label><button type="submit">Send secure invitation</button></form>`;
+  }
+
   async function openDirectoryHousehold(householdId) {
     const detail = directoryDetailTarget();
     if (!detail || !householdId) return;
@@ -2984,6 +2998,9 @@
       if (!res.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Unable to open household record.');
       const record = payload.household || {};
       const household = record.household || {};
+      const adultMembers = (record.members || []).filter((item) => !item.child);
+      const linkedAdults = adultMembers.filter((item) => item.accountLinked).length;
+      const pendingAdults = adultMembers.filter((item) => !item.accountLinked && item.invitation).length;
       const contactRows = (record.contacts || []).map((item) => {
         const shared = item.visibility === 'directory_members';
         return `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.personName || 'Household')} · ${escapeHtml(item.label || item.contactType || 'Contact')}</strong><span>${escapeHtml(item.value || '')} · ${shared ? 'visible in My AGAPAY directory' : 'private from parishioners'}</span></div>`;
@@ -3007,8 +3024,15 @@
           </section>
         </div>
         <div class="pdx-dir-review-grid">
+          <section class="pdx-dir-review-column pdx-dir-household-access"><h4>Adult accounts &amp; Koinonia access</h4>
+            <div class="pdx-dir-access-summary"><strong>${linkedAdults} of ${adultMembers.length} adult account${adultMembers.length === 1 ? '' : 's'} linked</strong><span>${pendingAdults ? `${pendingAdults} invitation${pendingAdults === 1 ? '' : 's'} waiting for acceptance. ` : ''}Each adult signs in separately while sharing this household.</span></div>
+            <div class="pdx-dir-account-list">${(record.members || []).map((item) => directoryHouseholdAccountRow(item, household.id)).join('') || directoryEmptyState('No household members', 'Add people to this household before linking accounts.')}</div>
+            <p class="section-note">A linked adult can be found reliably when parish staff add people to Koinonia ministries and groups. Children remain under household management and do not receive separate accounts.</p>
+          </section>
+        </div>
+        <div class="pdx-dir-review-grid">
           <section class="pdx-dir-review-column pdx-dir-review-column-new"><h4>Household admins</h4>
-            ${directoryDetailList(record.administrators, 'No household admin', 'One adult should manage the family through the household’s My AGAPAY account.', (item) => `<button type="button" class="pdx-dir-detail-chip" onclick="openDirectoryPerson('${escapeAttr(item.id)}')"><strong>${escapeHtml(item.preferred_name || item.preferredName || item.id)}</strong><span>${item.accountLinked ? 'Family account manager' : record.accountManaged ? 'Managed through family account' : 'Household admin · account not linked'}</span></button>`)}
+            ${directoryDetailList(record.administrators, 'No household admin', 'Invite an adult above to connect their account and grant household management.', (item) => `<button type="button" class="pdx-dir-detail-chip" onclick="openDirectoryPerson('${escapeAttr(item.id)}')"><strong>${escapeHtml(item.preferred_name || item.preferredName || item.id)}</strong><span>${item.accountLinked ? 'Linked adult · household manager' : 'Household admin · account not linked'}</span></button>`)}
           </section>
         </div>
         <div class="pdx-dir-review-grid">
@@ -3017,7 +3041,7 @@
             <p class="pdx-dir-staff-contact-note">Staff-only view. Full street addresses are never published in the donor-side directory.</p>
           </section>
           <section class="pdx-dir-review-column"><h4>Members</h4>
-            ${directoryDetailList(record.members, 'No members', 'Add household members before children, family photos, or household publication makes sense.', (item) => `<button type="button" class="pdx-dir-detail-chip" onclick="openDirectoryPerson('${escapeAttr(item.id)}')"><strong>${escapeHtml(item.preferred_name || item.preferredName || item.id)}</strong><span>${escapeHtml(item.relationship || 'member')} · ${item.accountLinked ? 'family account manager' : record.accountManaged ? 'managed through family account' : item.child ? 'managed through household' : 'family needs an account manager'}</span></button>`)}
+            ${directoryDetailList(record.members, 'No members', 'Add household members before children, family photos, or household publication makes sense.', (item) => `<button type="button" class="pdx-dir-detail-chip" onclick="openDirectoryPerson('${escapeAttr(item.id)}')"><strong>${escapeHtml(item.preferred_name || item.preferredName || item.id)}</strong><span>${escapeHtml(item.relationship || 'member')} · ${item.child ? 'child profile' : item.accountLinked ? 'personal account linked' : item.invitation ? 'invitation pending' : 'adult account not linked'}</span></button>`)}
           </section>
           <section class="pdx-dir-review-column"><h4>Notes</h4>
             ${directoryDetailList(record.notes, 'No notes', 'No internal notes are attached to this household.', (item) => `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.title || item.noteType || 'Note')}</strong><span>${escapeHtml(item.body || item.note || item.summary || '')}</span></div>`)}
@@ -3188,6 +3212,22 @@
     }
   }
 
+  async function sendDirectoryHouseholdInvitation(event, personId, householdId) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector('button[type="submit"]');
+    const email = String(new FormData(form).get('email') || '').trim();
+    if (button) { button.disabled = true; button.textContent = 'Sending…'; }
+    try {
+      const payload = await directoryInvitationMutation('/invitations', { personId, householdId, email });
+      setStatus(payload.delivery === 'sent' ? 'Adult account invitation sent.' : 'Invitation created; the secure link is ready to copy from the person record.', 'success');
+      await openDirectoryHousehold(householdId);
+    } catch (error) {
+      setStatus(error.message || 'Unable to send invitation.', 'error');
+      if (button) { button.disabled = false; button.textContent = 'Send secure invitation'; }
+    }
+  }
+
   async function copyDirectoryInvitationLink(button) {
     const url = button?.dataset?.invitationUrl || '';
     if (!url) return;
@@ -3195,25 +3235,25 @@
     setStatus('Secure invitation link copied.', 'success');
   }
 
-  async function resendDirectoryAccountInvitation(invitationId, personId) {
+  async function resendDirectoryAccountInvitation(invitationId, personId, householdId = '') {
     try {
       const payload = await directoryInvitationMutation('/invitations/' + encodeURIComponent(invitationId) + '/resend');
       if (payload.delivery !== 'sent' && payload.invitationUrl) {
         await navigator.clipboard.writeText(payload.invitationUrl).catch(() => {});
       }
       setStatus(payload.delivery === 'sent' ? 'Invitation resent.' : 'New secure link copied.', 'success');
-      await openDirectoryPerson(personId);
+      if (householdId) await openDirectoryHousehold(householdId); else await openDirectoryPerson(personId);
     } catch (error) {
       setStatus(error.message || 'Unable to resend invitation.', 'error');
     }
   }
 
-  async function revokeDirectoryAccountInvitation(invitationId, personId) {
+  async function revokeDirectoryAccountInvitation(invitationId, personId, householdId = '') {
     if (!confirm('Revoke this directory invitation? Its secure link will stop working.')) return;
     try {
       await directoryInvitationMutation('/invitations/' + encodeURIComponent(invitationId) + '/revoke');
       setStatus('Invitation revoked.', 'success');
-      await openDirectoryPerson(personId);
+      if (householdId) await openDirectoryHousehold(householdId); else await openDirectoryPerson(personId);
     } catch (error) {
       setStatus(error.message || 'Unable to revoke invitation.', 'error');
     }
@@ -3225,9 +3265,7 @@
       ? 'Managed through family account'
       : person.claimed
         ? 'Family account manager'
-        : person.householdManaged
-          ? 'Managed through family account'
-          : 'Family needs a My AGAPAY manager';
+        : 'Adult account not linked';
     return `<div class="pdx-dir-row pdx-dir-record-row" onclick="openDirectoryPerson('${escapeAttr(person.id)}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDirectoryPerson('${escapeAttr(person.id)}');}">
       <div class="pdx-dir-row-media">
         ${directoryAdminPhotoImg(person.photo, 'pdx-dir-thumb pdx-dir-thumb-round', 'Photo of ' + (person.displayName || 'person'))}
@@ -3270,10 +3308,10 @@
       ['Confirm soon', actions.dueHouseholds || [], 'household'],
       ['Confirmation not started', actions.notStartedHouseholds || [], 'household'],
       ['Households needing account access', actions.householdsNeedingAccountAccess || [], 'household'],
-      ['People not connected to a family account', actions.unclaimedPeople || [], 'person'],
+      ['Adults without their own account link', actions.unclaimedPeople || [], 'person'],
       ['Renew skill consent', actions.staleSkillConsents || [], 'person']
     ].filter(([, items]) => items.length);
-    if (!groups.length) return '<div class="pdx-dir-maintenance-clear"><strong>Nothing needs attention</strong><span>The directory has no overdue confirmations, stale consents, or adults needing account access.</span></div>';
+    if (!groups.length) return '<div class="pdx-dir-maintenance-clear"><strong>Nothing needs attention</strong><span>The directory has no overdue confirmations, stale consents, or unlinked adult accounts.</span></div>';
     return `<div class="pdx-dir-maintenance-worklists">${groups.map(([title, items, type]) => `<section><h4>${escapeHtml(title)}</h4>${items.map((item) => `<button type="button" onclick="${type === 'household' ? 'openDirectoryHousehold' : 'openDirectoryPerson'}('${escapeAttr(type === 'person' ? (item.personId || item.id) : item.id)}')"><span><strong>${escapeHtml(item.displayName || 'Directory record')}</strong><small>${item.skillName ? escapeHtml(item.skillName) : item.dueAt ? 'Due ' + escapeHtml(new Date(item.dueAt).toLocaleDateString()) : 'Open record'}</small></span><b>Open →</b></button>`).join('')}</section>`).join('')}</div>`;
   }
 

@@ -303,13 +303,6 @@ export async function handleDirectoryAdmin(request, env, parishId) {
       if (personRecord.accountAccess?.linked) {
         throw new DirectoryServiceError("conflict", "This person already has a linked My AGAPAY account.", 409);
       }
-      if (personRecord.accountAccess?.householdManaged) {
-        throw new DirectoryServiceError(
-          "household_already_managed",
-          "This adult is already managed through the family's My AGAPAY account and does not need a separate invitation.",
-          409
-        );
-      }
       const householdId = String(data.householdId || personRecord.households?.[0]?.id || "").trim();
       const created = await createDirectoryInvitation(env, {
         actor: context,

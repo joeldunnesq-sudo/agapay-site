@@ -15,6 +15,8 @@ let koinoniaPodcastState = {
   results: [], show: null, episodes: [], hasSearched: false, requestId: 0,
   progressItems: [], progressByKey: new Map(), progressLoaded: false, progressPromise: null,
   playbackRate: 1, currentEpisode: null, queue: [], saveTimer: null, switchingEpisode: false,
+  subscriptions: [], subscriptionsLoaded: false, subscriptionsPromise: null, latestEpisodes: [],
+  libraryView: "latest", expanded: false, sleepTimer: null, sleepAtEnd: false,
 };
 
 function setAudioLibraryMode(mode = "parish") {
@@ -25,7 +27,10 @@ function setAudioLibraryMode(mode = "parish") {
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", String(active));
   });
-  if (selected === "podcasts" && !koinoniaPodcastState.hasSearched) void runKoinoniaPodcastSearch("Orthodox");
+  if (selected === "podcasts") {
+    void loadKoinoniaPodcastSubscriptions().then(() => loadKoinoniaPodcastLatest());
+    if (!koinoniaPodcastState.hasSearched) void runKoinoniaPodcastSearch("Orthodox");
+  }
 }
 
 function podcastText(node, selector) {
@@ -65,6 +70,7 @@ function parseKoinoniaPodcastFeed(xml, xmlUrl) {
       duration,
       durationSeconds: podcastDurationSeconds(duration),
       description: podcastText(item, "description").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 280),
+      link: podcastText(item, "link"),
       image: item.querySelector("image[href]")?.getAttribute("href") || image,
       xmlUrl,
     };
@@ -122,6 +128,121 @@ async function loadKoinoniaPodcastProgress(force = false) {
   return request;
 }
 
+function setKoinoniaPodcastLibraryView(view = "latest") {
+  const selected = ["latest", "subscriptions", "discover"].includes(view) ? view : "latest";
+  koinoniaPodcastState.libraryView = selected;
+  document.querySelectorAll("[data-podcast-library-pane]").forEach((pane) => { pane.hidden = pane.dataset.podcastLibraryPane !== selected; });
+  document.querySelectorAll("[data-podcast-library-view]").forEach((button) => button.classList.toggle("is-active", button.dataset.podcastLibraryView === selected));
+  if (selected === "latest") void loadKoinoniaPodcastLatest();
+  if (selected === "subscriptions") void loadKoinoniaPodcastSubscriptions().then(renderKoinoniaPodcastSubscriptions);
+  if (selected === "discover" && !koinoniaPodcastState.hasSearched) void runKoinoniaPodcastSearch("Orthodox");
+}
+
+function koinoniaPodcastIsSubscribed(feedUrl) {
+  return koinoniaPodcastState.subscriptions.some((item) => item.feedUrl === feedUrl);
+}
+
+function renderKoinoniaPodcastSubscriptions() {
+  const target = document.getElementById("koinoniaPodcastSubscriptions");
+  if (!target) return;
+  if (!koinoniaPodcastState.subscriptions.length) {
+    target.innerHTML = '<div class="feed-empty"><strong>No subscriptions yet</strong><p>Discover an Orthodox podcast and choose Subscribe. Its newest episodes will then appear together under Latest.</p><button type="button" onclick="setKoinoniaPodcastLibraryView(\'discover\')">Discover podcasts</button></div>';
+    return;
+  }
+  target.innerHTML = koinoniaPodcastState.subscriptions.map((podcast, index) => `<article class="koinonia-podcast-subscription">
+    <button type="button" onclick="openKoinoniaSubscribedPodcast(${index})"><span class="koinonia-podcast-cover">${podcast.artwork ? `<img src="${teachingEscape(podcast.artwork)}" alt="" loading="lazy" />` : "♪"}</span><span><strong>${teachingEscape(podcast.title)}</strong><small>${teachingEscape(podcast.author || "Subscribed podcast")}</small></span></button>
+    <button type="button" class="is-remove" onclick="unsubscribeKoinoniaPodcastByIndex(${index})">Unsubscribe</button>
+  </article>`).join("");
+}
+
+async function loadKoinoniaPodcastSubscriptions(force = false) {
+  if (koinoniaPodcastState.subscriptionsLoaded && !force) return koinoniaPodcastState.subscriptions;
+  if (koinoniaPodcastState.subscriptionsPromise && !force) return koinoniaPodcastState.subscriptionsPromise;
+  const request = fetch("/api/listen/subscriptions", { headers: teachingHeaders(), cache: "no-store" }).then(async (response) => {
+    if (response.status === 401) return { subscriptions: [] };
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Unable to load podcast subscriptions.");
+    return data;
+  }).then((data) => {
+    koinoniaPodcastState.subscriptions = Array.isArray(data.subscriptions) ? data.subscriptions : [];
+    koinoniaPodcastState.subscriptionsLoaded = true;
+    renderKoinoniaPodcastSubscriptions();
+    renderKoinoniaPodcastResults();
+    return koinoniaPodcastState.subscriptions;
+  }).catch(() => {
+    koinoniaPodcastState.subscriptionsLoaded = true;
+    renderKoinoniaPodcastSubscriptions();
+    return [];
+  }).finally(() => { koinoniaPodcastState.subscriptionsPromise = null; });
+  koinoniaPodcastState.subscriptionsPromise = request;
+  return request;
+}
+
+function renderKoinoniaPodcastLatest() {
+  const target = document.getElementById("koinoniaPodcastLatest");
+  const status = document.getElementById("koinoniaPodcastLatestStatus");
+  if (!target || !status) return;
+  if (!koinoniaPodcastState.subscriptions.length) {
+    status.textContent = "Subscribe to a podcast to build your latest-episode feed.";
+    target.innerHTML = '<div class="feed-empty"><strong>Your newest episodes will live here</strong><p>No more checking each show separately.</p><button type="button" onclick="setKoinoniaPodcastLibraryView(\'discover\')">Find podcasts</button></div>';
+    return;
+  }
+  status.textContent = koinoniaPodcastState.latestEpisodes.length ? `${koinoniaPodcastState.latestEpisodes.length} recent episodes from ${koinoniaPodcastState.subscriptions.length} subscription${koinoniaPodcastState.subscriptions.length === 1 ? "" : "s"}` : "No playable recent episodes were found.";
+  target.innerHTML = koinoniaPodcastState.latestEpisodes.map((episode, index) => `<div class="koinonia-podcast-latest-row">
+    <button type="button" onclick="playKoinoniaPodcastLatestEpisode(${index})"><span class="koinonia-podcast-cover">${episode.image ? `<img src="${teachingEscape(episode.image)}" alt="" loading="lazy" />` : "♪"}</span><span><small>${teachingEscape(episode.show)}</small><strong>${teachingEscape(episode.title)}</strong><em>${teachingEscape(teachingDate(episode.date))}${episode.duration ? ` · ${teachingEscape(episode.duration)}` : ""}</em></span><b>▶</b></button>
+    <button type="button" onclick="queueKoinoniaPodcastLatestEpisode(${index})">＋ Up Next</button>
+  </div>`).join("");
+}
+
+async function loadKoinoniaPodcastLatest(force = false) {
+  const status = document.getElementById("koinoniaPodcastLatestStatus");
+  await loadKoinoniaPodcastSubscriptions(force);
+  if (!koinoniaPodcastState.subscriptions.length) { koinoniaPodcastState.latestEpisodes = []; renderKoinoniaPodcastLatest(); return []; }
+  if (!force && koinoniaPodcastState.latestEpisodes.length) { renderKoinoniaPodcastLatest(); return koinoniaPodcastState.latestEpisodes; }
+  if (status) status.textContent = "Checking your subscriptions for new episodes…";
+  const results = await Promise.allSettled(koinoniaPodcastState.subscriptions.slice(0, 30).map(async (subscription) => {
+    const response = await fetch(`/api/listen/rss?url=${encodeURIComponent(subscription.feedUrl)}`, { cache: "no-store" });
+    if (!response.ok) throw new Error("Feed unavailable");
+    const parsed = parseKoinoniaPodcastFeed(await response.text(), subscription.feedUrl);
+    return parsed.episodes.slice(0, 8).map((episode) => ({ ...episode, image: episode.image || subscription.artwork }));
+  }));
+  koinoniaPodcastState.latestEpisodes = results.flatMap((result) => result.status === "fulfilled" ? result.value : []).sort((a, b) => (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0)).slice(0, 60);
+  renderKoinoniaPodcastLatest();
+  return koinoniaPodcastState.latestEpisodes;
+}
+
+function playKoinoniaPodcastLatestEpisode(index) { return playKoinoniaPodcast(koinoniaPodcastState.latestEpisodes[index]); }
+function queueKoinoniaPodcastLatestEpisode(index) { return queueKoinoniaPodcast(koinoniaPodcastState.latestEpisodes[index]); }
+
+async function subscribeKoinoniaPodcast() {
+  const show = koinoniaPodcastState.show;
+  if (!show?.url) return;
+  const response = await fetch("/api/listen/subscriptions", { method: "POST", headers: teachingHeaders(), body: JSON.stringify({ feedUrl: show.url, title: show.title, artwork: show.image || show.artwork, website: show.link, author: show.author }) });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) { alert(data.error || "Unable to subscribe to this podcast."); return; }
+  koinoniaPodcastState.subscriptions = [data.subscription, ...koinoniaPodcastState.subscriptions.filter((item) => item.feedUrl !== data.subscription.feedUrl)];
+  koinoniaPodcastState.latestEpisodes = [];
+  renderKoinoniaPodcastSubscriptions();
+  renderKoinoniaPodcastShow();
+  void loadKoinoniaPodcastLatest(true);
+}
+
+async function unsubscribeKoinoniaPodcast(feedUrl = "") {
+  if (!feedUrl) return;
+  const response = await fetch(`/api/listen/subscriptions?url=${encodeURIComponent(feedUrl)}`, { method: "DELETE", headers: teachingHeaders() });
+  if (!response.ok) return;
+  koinoniaPodcastState.subscriptions = koinoniaPodcastState.subscriptions.filter((item) => item.feedUrl !== feedUrl);
+  koinoniaPodcastState.latestEpisodes = [];
+  renderKoinoniaPodcastSubscriptions();
+  renderKoinoniaPodcastShow();
+  void loadKoinoniaPodcastLatest(true);
+}
+
+function unsubscribeKoinoniaPodcastByIndex(index) {
+  const podcast = koinoniaPodcastState.subscriptions[index];
+  if (podcast) void unsubscribeKoinoniaPodcast(podcast.feedUrl);
+}
+
 function renderKoinoniaPodcastResults() {
   const target = document.getElementById("koinoniaPodcastResults");
   if (!target) return;
@@ -175,8 +296,23 @@ async function searchKoinoniaPodcasts(event) {
   await runKoinoniaPodcastSearch(query, button);
 }
 
-async function openKoinoniaPodcast(index) {
-  const podcast = koinoniaPodcastState.results[index];
+function renderKoinoniaPodcastShow() {
+  const podcast = koinoniaPodcastState.show;
+  const show = document.getElementById("koinoniaPodcastShow");
+  if (!show || !podcast) return;
+  const subscribed = koinoniaPodcastIsSubscribed(podcast.url);
+  show.hidden = false;
+  show.innerHTML = `<header><span class="koinonia-podcast-cover is-large">${podcast.image || podcast.artwork ? `<img src="${teachingEscape(podcast.image || podcast.artwork)}" alt="" />` : "♪"}</span><span><small>Podcast</small><h3>${teachingEscape(podcast.title)}</h3><p>${podcast.episodes.length} recent episodes</p></span><button type="button" class="koinonia-podcast-subscribe${subscribed ? " is-subscribed" : ""}" onclick="${subscribed ? `unsubscribeKoinoniaPodcastByFeed()` : `subscribeKoinoniaPodcast()`}">${subscribed ? "✓ Subscribed" : "+ Subscribe"}</button></header><div>${podcast.episodes.map((episode, episodeIndex) => `
+    <div class="koinonia-podcast-episode-row"><button type="button" class="koinonia-podcast-episode" onclick="playKoinoniaPodcastEpisode(${episodeIndex})">
+      <span aria-hidden="true">▶</span><span><strong>${teachingEscape(episode.title)}</strong><small>${teachingEscape(teachingDate(episode.date))}${episode.duration ? ` · ${teachingEscape(episode.duration)}` : ""}</small></span><em>Play</em>
+    </button><button type="button" class="koinonia-podcast-queue" onclick="queueKoinoniaPodcastEpisode(${episodeIndex})" aria-label="Add ${teachingEscape(episode.title)} to Up Next">＋ Up Next</button></div>`).join("") || '<div class="feed-empty"><strong>No playable episodes</strong><p>This feed did not provide audio enclosures.</p></div>'}</div>`;
+}
+
+function unsubscribeKoinoniaPodcastByFeed() {
+  if (koinoniaPodcastState.show?.url) void unsubscribeKoinoniaPodcast(koinoniaPodcastState.show.url);
+}
+
+async function loadKoinoniaPodcastShow(podcast) {
   const status = document.getElementById("koinoniaPodcastStatus");
   if (!podcast?.url) return;
   status.textContent = `Loading ${podcast.title || "podcast"}…`;
@@ -184,19 +320,23 @@ async function openKoinoniaPodcast(index) {
     const response = await fetch(`/api/listen/rss?url=${encodeURIComponent(podcast.url)}`, { cache: "no-store" });
     if (!response.ok) throw new Error("This podcast feed is temporarily unavailable.");
     const parsed = parseKoinoniaPodcastFeed(await response.text(), podcast.url);
-    koinoniaPodcastState.show = { ...podcast, ...parsed };
+    koinoniaPodcastState.show = { ...podcast, ...parsed, url: podcast.url };
     koinoniaPodcastState.episodes = parsed.episodes;
-    const show = document.getElementById("koinoniaPodcastShow");
-    show.hidden = false;
-    show.innerHTML = `<header><span class="koinonia-podcast-cover is-large">${parsed.image || podcast.artwork ? `<img src="${teachingEscape(parsed.image || podcast.artwork)}" alt="" />` : "♪"}</span><span><small>Podcast</small><h3>${teachingEscape(parsed.title || podcast.title)}</h3><p>${parsed.episodes.length} recent episodes</p></span></header><div>${parsed.episodes.map((episode, episodeIndex) => `
-      <div class="koinonia-podcast-episode-row"><button type="button" class="koinonia-podcast-episode" onclick="playKoinoniaPodcastEpisode(${episodeIndex})">
-        <span aria-hidden="true">▶</span><span><strong>${teachingEscape(episode.title)}</strong><small>${teachingEscape(teachingDate(episode.date))}${episode.duration ? ` · ${teachingEscape(episode.duration)}` : ""}</small></span><em>Play</em>
-      </button><button type="button" class="koinonia-podcast-queue" onclick="queueKoinoniaPodcastEpisode(${episodeIndex})" aria-label="Add ${teachingEscape(episode.title)} to Up Next">＋ Up Next</button></div>`).join("") || '<div class="feed-empty"><strong>No playable episodes</strong><p>This feed did not provide audio enclosures.</p></div>'}</div>`;
+    renderKoinoniaPodcastShow();
     status.textContent = "";
-    show.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.getElementById("koinoniaPodcastShow")?.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
     status.textContent = error.message || "This podcast feed is temporarily unavailable.";
   }
+}
+
+async function openKoinoniaPodcast(index) { return loadKoinoniaPodcastShow(koinoniaPodcastState.results[index]); }
+
+async function openKoinoniaSubscribedPodcast(index) {
+  const podcast = koinoniaPodcastState.subscriptions[index];
+  if (!podcast) return;
+  setKoinoniaPodcastLibraryView("discover");
+  return loadKoinoniaPodcastShow({ ...podcast, url: podcast.feedUrl, link: podcast.website });
 }
 
 function waitForPodcastMetadata(audio) {
@@ -220,6 +360,7 @@ async function playKoinoniaPodcast(episode) {
   koinoniaPodcastState.currentEpisode = episode;
   document.getElementById("koinoniaPodcastPlayerTitle").textContent = episode.title;
   document.getElementById("koinoniaPodcastPlayerShow").textContent = episode.show || "Orthodox Podcast";
+  document.getElementById("koinoniaPodcastPlayerDescription").textContent = episode.description || "Listen now, save your place automatically, or add another episode to Up Next.";
   const image = document.getElementById("koinoniaPodcastPlayerImage");
   image.src = episode.image || "/listen/images/app/icon-192.png";
   image.alt = episode.show ? `${episode.show} artwork` : "Podcast artwork";
@@ -247,17 +388,62 @@ async function playKoinoniaPodcastEpisode(index) {
 
 function renderKoinoniaPodcastQueue() {
   const count = document.getElementById("koinoniaPodcastQueueCount");
-  if (!count) return;
-  count.hidden = !koinoniaPodcastState.queue.length;
-  count.textContent = `${koinoniaPodcastState.queue.length} Up Next`;
+  const list = document.getElementById("koinoniaPodcastQueueList");
+  if (count) {
+    count.hidden = !koinoniaPodcastState.queue.length;
+    count.textContent = `${koinoniaPodcastState.queue.length} Up Next`;
+  }
+  if (list) list.innerHTML = koinoniaPodcastState.queue.length ? koinoniaPodcastState.queue.map((episode, index) => `<div><button type="button" onclick="playQueuedKoinoniaPodcast(${index})"><small>${teachingEscape(episode.show || "Podcast")}</small><strong>${teachingEscape(episode.title)}</strong></button><button type="button" onclick="removeQueuedKoinoniaPodcast(${index})" aria-label="Remove from Up Next">×</button></div>`).join("") : "<span>Your queue is empty.</span>";
 }
 
-function queueKoinoniaPodcastEpisode(index) {
-  const episode = koinoniaPodcastState.episodes[index];
+function queueKoinoniaPodcast(episode) {
   if (!episode || koinoniaPodcastState.queue.some((item) => item.episodeKey === episode.episodeKey)) return;
   koinoniaPodcastState.queue.push(episode);
-  if (koinoniaPodcastState.queue.length > 5) koinoniaPodcastState.queue.shift();
+  if (koinoniaPodcastState.queue.length > 25) koinoniaPodcastState.queue.shift();
   renderKoinoniaPodcastQueue();
+}
+
+function queueKoinoniaPodcastEpisode(index) { return queueKoinoniaPodcast(koinoniaPodcastState.episodes[index]); }
+function removeQueuedKoinoniaPodcast(index) { koinoniaPodcastState.queue.splice(index, 1); renderKoinoniaPodcastQueue(); }
+function clearKoinoniaPodcastQueue() { koinoniaPodcastState.queue = []; renderKoinoniaPodcastQueue(); }
+function playQueuedKoinoniaPodcast(index) {
+  const episode = koinoniaPodcastState.queue.splice(index, 1)[0];
+  renderKoinoniaPodcastQueue();
+  if (episode) void playKoinoniaPodcast(episode);
+}
+
+function toggleKoinoniaPodcastPlayerExpanded(force) {
+  const player = document.getElementById("koinoniaPodcastPlayer");
+  if (!player || player.hidden) return;
+  const expanded = typeof force === "boolean" ? force : !player.classList.contains("is-expanded");
+  player.classList.toggle("is-expanded", expanded);
+  document.body.classList.toggle("podcast-player-expanded", expanded);
+  koinoniaPodcastState.expanded = expanded;
+  const button = document.getElementById("koinoniaPodcastExpand");
+  if (button) { button.textContent = expanded ? "×" : "⛶"; button.setAttribute("aria-label", expanded ? "Close expanded player" : "Open expanded player"); }
+}
+
+function setKoinoniaPodcastSleepTimer(value) {
+  window.clearTimeout(koinoniaPodcastState.sleepTimer);
+  koinoniaPodcastState.sleepTimer = null;
+  koinoniaPodcastState.sleepAtEnd = value === "end";
+  const minutes = Number(value);
+  if (Number.isFinite(minutes) && minutes > 0) {
+    koinoniaPodcastState.sleepTimer = window.setTimeout(() => {
+      document.getElementById("koinoniaPodcastAudio")?.pause();
+      koinoniaPodcastState.sleepTimer = null;
+      const select = document.getElementById("koinoniaPodcastSleepTimer");
+      if (select) select.value = "0";
+    }, minutes * 60 * 1000);
+  }
+}
+
+async function shareKoinoniaPodcastEpisode() {
+  const episode = koinoniaPodcastState.currentEpisode;
+  if (!episode) return;
+  const data = { title: episode.title, text: `${episode.title} — ${episode.show || "Orthodox Podcast"}`, url: episode.link || episode.audioUrl };
+  if (navigator.share) { await navigator.share(data).catch(() => {}); return; }
+  await navigator.clipboard?.writeText(data.url).catch(() => {});
 }
 
 async function resumeKoinoniaPodcastProgress(index) {
@@ -378,6 +564,12 @@ function bindKoinoniaPodcastPlayer() {
   audio.addEventListener("ended", async () => {
     stopKoinoniaPodcastSaveTimer();
     await saveKoinoniaPodcastProgress({ completed: true });
+    if (koinoniaPodcastState.sleepAtEnd) {
+      koinoniaPodcastState.sleepAtEnd = false;
+      const sleep = document.getElementById("koinoniaPodcastSleepTimer");
+      if (sleep) sleep.value = "0";
+      return;
+    }
     const next = koinoniaPodcastState.queue.shift();
     renderKoinoniaPodcastQueue();
     if (next) await playKoinoniaPodcast(next);
@@ -404,6 +596,9 @@ function bindKoinoniaPodcastPlayer() {
   window.addEventListener("beforeunload", () => {
     void saveKoinoniaPodcastProgress({ keepalive: true });
     koinoniaPodcastState.queue = [];
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && koinoniaPodcastState.expanded) toggleKoinoniaPodcastPlayerExpanded(false);
   });
   if ("mediaSession" in navigator) {
     try {
@@ -526,13 +721,28 @@ window.searchKoinoniaPodcasts = searchKoinoniaPodcasts;
 window.openKoinoniaPodcast = openKoinoniaPodcast;
 window.playKoinoniaPodcastEpisode = playKoinoniaPodcastEpisode;
 window.queueKoinoniaPodcastEpisode = queueKoinoniaPodcastEpisode;
+window.queueKoinoniaPodcastLatestEpisode = queueKoinoniaPodcastLatestEpisode;
+window.playKoinoniaPodcastLatestEpisode = playKoinoniaPodcastLatestEpisode;
+window.openKoinoniaSubscribedPodcast = openKoinoniaSubscribedPodcast;
+window.setKoinoniaPodcastLibraryView = setKoinoniaPodcastLibraryView;
+window.loadKoinoniaPodcastLatest = loadKoinoniaPodcastLatest;
+window.subscribeKoinoniaPodcast = subscribeKoinoniaPodcast;
+window.unsubscribeKoinoniaPodcastByIndex = unsubscribeKoinoniaPodcastByIndex;
+window.unsubscribeKoinoniaPodcastByFeed = unsubscribeKoinoniaPodcastByFeed;
 window.resumeKoinoniaPodcastProgress = resumeKoinoniaPodcastProgress;
 window.toggleKoinoniaPodcastPlayback = toggleKoinoniaPodcastPlayback;
 window.skipKoinoniaPodcast = skipKoinoniaPodcast;
+window.toggleKoinoniaPodcastPlayerExpanded = toggleKoinoniaPodcastPlayerExpanded;
+window.setKoinoniaPodcastSleepTimer = setKoinoniaPodcastSleepTimer;
+window.shareKoinoniaPodcastEpisode = shareKoinoniaPodcastEpisode;
+window.clearKoinoniaPodcastQueue = clearKoinoniaPodcastQueue;
+window.removeQueuedKoinoniaPodcast = removeQueuedKoinoniaPodcast;
+window.playQueuedKoinoniaPodcast = playQueuedKoinoniaPodcast;
 document.addEventListener("DOMContentLoaded", () => {
   const requestedMode = new URLSearchParams(window.location.search).get("mode");
   bindKoinoniaPodcastPlayer();
   void loadKoinoniaPodcastProgress();
+  setKoinoniaPodcastLibraryView("latest");
   setAudioLibraryMode(requestedMode === "podcasts" ? "podcasts" : "parish");
   void loadTeaching();
 });

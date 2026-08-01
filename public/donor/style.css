@@ -2933,6 +2933,33 @@ body.donor-home {
 .koinonia-continue-item em { color:var(--k-muted); font-size:8px; font-style:normal; white-space:nowrap; }
 .koinonia-continue-progress { align-self:center; height:4px; overflow:hidden; border-radius:999px; background:#e4ddd0; }
 .koinonia-continue-progress i { display:block; height:100%; border-radius:inherit; background:var(--k-gold); }
+.koinonia-podcast-library-tabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; padding:6px; border:1px solid var(--k-border); border-radius:15px; background:var(--k-surface-2); }
+.koinonia-podcast-library-tabs button { display:grid; gap:3px; border:0; border-radius:10px; padding:10px 12px; background:transparent; color:var(--k-text); text-align:left; cursor:pointer; }
+.koinonia-podcast-library-tabs button strong { font-family:"Playfair Display",Georgia,serif; font-size:13px; }
+.koinonia-podcast-library-tabs button small { color:var(--k-muted); font-size:8px; }
+.koinonia-podcast-library-tabs button.is-active { background:#fff; box-shadow:0 3px 12px rgba(13,23,34,.08); color:#765a1d; }
+[data-podcast-library-pane][hidden] { display:none !important; }
+.koinonia-podcast-library-pane { display:grid; gap:11px; }
+.koinonia-podcast-section-head { display:flex; justify-content:space-between; align-items:end; gap:12px; padding:5px 3px 0; }
+.koinonia-podcast-section-head h3 { margin:3px 0 0; color:var(--k-text); font-family:"Playfair Display",Georgia,serif; font-size:20px; }
+.koinonia-podcast-section-head > button,.koinonia-podcast-library-pane .feed-empty button { border:1px solid var(--k-border); border-radius:9px; padding:8px 11px; background:#fff; color:var(--k-gold-hover); font-size:9px; font-weight:800; cursor:pointer; }
+.koinonia-podcast-latest { display:grid; gap:7px; }
+.koinonia-podcast-latest-row { display:grid; grid-template-columns:minmax(0,1fr) auto; overflow:hidden; border:1px solid var(--k-border); border-radius:14px; background:#fff; }
+.koinonia-podcast-latest-row > button:first-child { display:grid; grid-template-columns:48px minmax(0,1fr) auto; align-items:center; gap:11px; min-width:0; border:0; padding:10px 12px; background:transparent; color:var(--k-text); text-align:left; cursor:pointer; }
+.koinonia-podcast-latest-row > button:first-child > span:nth-child(2) { display:grid; gap:2px; min-width:0; }
+.koinonia-podcast-latest-row small { overflow:hidden; color:var(--k-gold-hover); font-size:8px; font-weight:800; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
+.koinonia-podcast-latest-row strong { overflow:hidden; font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
+.koinonia-podcast-latest-row em { color:var(--k-muted); font-size:8px; font-style:normal; }
+.koinonia-podcast-latest-row b { display:grid; width:30px; height:30px; place-items:center; border-radius:50%; background:#0d1722; color:#d7b86f; font-size:8px; }
+.koinonia-podcast-latest-row > button:last-child { border:0; border-left:1px solid var(--k-divider); padding:0 13px; background:transparent; color:var(--k-gold-hover); font-size:8px; font-weight:800; cursor:pointer; }
+.koinonia-podcast-subscriptions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.koinonia-podcast-subscription { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; overflow:hidden; border:1px solid var(--k-border); border-radius:14px; background:#fff; }
+.koinonia-podcast-subscription > button:first-child { display:grid; grid-template-columns:48px minmax(0,1fr); align-items:center; gap:10px; min-width:0; border:0; padding:10px; background:transparent; color:var(--k-text); text-align:left; cursor:pointer; }
+.koinonia-podcast-subscription > button:first-child > span:last-child { display:grid; gap:3px; min-width:0; }
+.koinonia-podcast-subscription strong,.koinonia-podcast-subscription small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.koinonia-podcast-subscription strong { font-family:"Playfair Display",Georgia,serif; font-size:12px; }
+.koinonia-podcast-subscription small { color:var(--k-muted); font-size:8px; }
+.koinonia-podcast-subscription .is-remove { align-self:stretch; border:0; border-left:1px solid var(--k-divider); padding:0 11px; background:transparent; color:#8c4a43; font-size:8px; font-weight:800; cursor:pointer; }
 .koinonia-podcast-search { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:9px; border:1px solid var(--k-border); border-radius:14px; padding:6px 7px 6px 14px; background:var(--k-surface); box-shadow:0 4px 14px rgba(13,23,34,.04); }
 .koinonia-podcast-search > span { color:var(--k-gold); font-size:20px; }
 .koinonia-podcast-search input { min-width:0; border:0; outline:0; padding:10px 2px; background:transparent; color:var(--k-text); font:inherit; font-size:12px; }
@@ -2954,6 +2981,9 @@ body.donor-home {
 .koinonia-podcast-result em { color:var(--k-gold-hover); font-size:9px; font-style:normal; font-weight:700; }
 .koinonia-podcast-show { overflow:hidden; border:1px solid var(--k-border); border-radius:17px; background:var(--k-surface); }
 .koinonia-podcast-show > header { display:flex; align-items:center; gap:14px; padding:17px; background:var(--k-surface-2); }
+.koinonia-podcast-show > header > span:nth-child(2) { min-width:0; flex:1; }
+.koinonia-podcast-subscribe { margin-left:auto; border:1px solid #0d1722; border-radius:10px; padding:9px 13px; background:#0d1722; color:#fff; font-size:9px; font-weight:800; cursor:pointer; white-space:nowrap; }
+.koinonia-podcast-subscribe.is-subscribed { border-color:rgba(42,89,54,.25); background:rgba(42,89,54,.1); color:#2f6846; }
 .koinonia-podcast-cover.is-large { width:64px; height:64px; flex:0 0 auto; border-radius:15px; }
 .koinonia-podcast-show header small { color:var(--k-gold); font-size:9px; font-weight:800; text-transform:uppercase; }
 .koinonia-podcast-show h3 { margin:3px 0; color:var(--k-text); font-family:"Playfair Display",Georgia,serif; font-size:20px; }
@@ -2968,7 +2998,7 @@ body.donor-home {
 .koinonia-podcast-episode em { color:var(--k-gold-hover); font-size:9px; font-style:normal; font-weight:700; }
 .koinonia-podcast-queue { align-self:stretch; border:0; border-left:1px solid var(--k-divider); padding:0 13px; background:transparent; color:var(--k-gold-hover); font-size:8px; font-weight:800; cursor:pointer; }
 .koinonia-podcast-queue:hover { background:#f5efe3; }
-.koinonia-podcast-player { position:fixed; z-index:120; right:20px; bottom:20px; left:312px; display:grid; grid-template-columns:48px minmax(120px,.6fr) minmax(320px,1.4fr) auto; align-items:center; gap:12px; border:1px solid rgba(216,183,109,.38); border-radius:16px; padding:10px 12px; background:rgba(13,23,34,.97); color:#fff; box-shadow:0 15px 35px rgba(6,21,34,.28); backdrop-filter:blur(12px); }
+.koinonia-podcast-player { position:fixed; z-index:120; right:20px; bottom:20px; left:312px; display:grid; grid-template-columns:48px minmax(120px,.6fr) minmax(320px,1.4fr) auto auto; align-items:center; gap:12px; border:1px solid rgba(216,183,109,.38); border-radius:16px; padding:10px 12px; background:rgba(13,23,34,.97); color:#fff; box-shadow:0 15px 35px rgba(6,21,34,.28); backdrop-filter:blur(12px); }
 .koinonia-podcast-player[hidden] { display:none !important; }
 .koinonia-podcast-player audio { display:none; }
 .koinonia-podcast-player-art { width:48px; height:48px; overflow:hidden; border-radius:11px; background:#233541; }
@@ -2986,10 +3016,39 @@ body.donor-home {
 .koinonia-podcast-speed { display:grid; gap:2px; color:#aeb9c1; font-size:7px; font-weight:800; text-transform:uppercase; }
 .koinonia-podcast-speed select { border:1px solid rgba(255,255,255,.18); border-radius:7px; padding:5px 7px; background:#21313d; color:#fff; font-size:9px; }
 .koinonia-podcast-queue-count { border-radius:999px; padding:5px 8px; background:rgba(210,173,95,.15); color:#d2ad5f; font-size:7px !important; white-space:nowrap; }
+.koinonia-podcast-expand { display:grid; width:32px; height:32px; place-items:center; border:1px solid rgba(255,255,255,.16); border-radius:9px; background:rgba(255,255,255,.06); color:#fff; font-size:15px; cursor:pointer; }
+.koinonia-podcast-expanded-details { display:none; }
+.podcast-player-expanded { overflow:hidden; }
+.koinonia-podcast-player.is-expanded { z-index:500; inset:0; grid-template-columns:minmax(140px,220px) minmax(0,620px) auto; grid-template-rows:auto auto minmax(0,1fr); align-content:center; justify-content:center; gap:22px 28px; overflow:auto; border:0; border-radius:0; padding:clamp(28px,6vw,90px); background:radial-gradient(circle at 22% 20%,#244253 0,#0d1722 42%,#071019 100%); }
+.koinonia-podcast-player.is-expanded .koinonia-podcast-player-art { width:min(22vw,220px); height:min(22vw,220px); border-radius:24px; box-shadow:0 25px 60px rgba(0,0,0,.35); }
+.koinonia-podcast-player.is-expanded .koinonia-podcast-player-copy small { font-size:11px; }
+.koinonia-podcast-player.is-expanded .koinonia-podcast-player-copy strong { font-size:clamp(25px,4vw,44px); line-height:1.08; white-space:normal; }
+.koinonia-podcast-player.is-expanded .koinonia-podcast-player-controls { grid-column:1 / -1; grid-template-columns:48px 56px 48px minmax(220px,640px) auto; justify-content:center; }
+.koinonia-podcast-player.is-expanded .koinonia-podcast-player-controls > button { width:48px; height:48px; }
+.koinonia-podcast-player.is-expanded .koinonia-podcast-player-controls > button.is-primary { width:56px; height:56px; }
+.koinonia-podcast-player.is-expanded .koinonia-podcast-queue-count { position:static; align-self:start; }
+.koinonia-podcast-player.is-expanded .koinonia-podcast-expand { position:absolute; top:24px; right:26px; width:42px; height:42px; font-size:24px; }
+.koinonia-podcast-player.is-expanded .koinonia-podcast-expanded-details { display:grid; grid-column:1 / -1; grid-template-columns:minmax(0,1fr) minmax(260px,.7fr); gap:20px; min-height:0; }
+.koinonia-podcast-expanded-details > p { margin:0; color:#b9c4ca; font-size:14px; line-height:1.65; }
+.koinonia-podcast-expanded-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.koinonia-podcast-expanded-actions button,.koinonia-podcast-expanded-actions select,.koinonia-podcast-up-next header button { border:1px solid rgba(255,255,255,.16); border-radius:9px; padding:9px 11px; background:#21313d; color:#fff; font:inherit; font-size:10px; cursor:pointer; }
+.koinonia-podcast-expanded-actions label { display:grid; gap:4px; color:#aeb9c1; font-size:8px; font-weight:800; text-transform:uppercase; }
+.koinonia-podcast-up-next { grid-column:1 / -1; overflow:hidden; border:1px solid rgba(255,255,255,.12); border-radius:14px; background:rgba(255,255,255,.045); }
+.koinonia-podcast-up-next header { display:flex; justify-content:space-between; align-items:center; padding:11px 13px; border-bottom:1px solid rgba(255,255,255,.1); }
+.koinonia-podcast-up-next header strong { font-size:13px; }
+#koinoniaPodcastQueueList { display:grid; max-height:190px; overflow:auto; }
+#koinoniaPodcastQueueList > span { padding:16px; color:#93a1aa; font-size:11px; }
+#koinoniaPodcastQueueList > div { display:grid; grid-template-columns:minmax(0,1fr) auto; border-top:1px solid rgba(255,255,255,.08); }
+#koinoniaPodcastQueueList > div:first-child { border-top:0; }
+#koinoniaPodcastQueueList > div button { border:0; padding:10px 13px; background:transparent; color:#fff; text-align:left; cursor:pointer; }
+#koinoniaPodcastQueueList > div button:first-child { display:grid; gap:2px; }
+#koinoniaPodcastQueueList > div button:last-child { font-size:18px; }
+#koinoniaPodcastQueueList small { color:#d2ad5f; }
+#koinoniaPodcastQueueList strong { font-family:inherit; font-size:11px; white-space:normal; }
 @media (max-width:900px) { .koinonia-podcast-player { right:8px; bottom:84px; left:8px; grid-template-columns:42px minmax(0,1fr); } .koinonia-podcast-player-art { width:42px; height:42px; } .koinonia-podcast-player-controls { grid-column:1 / -1; grid-template-columns:32px 36px 32px minmax(100px,1fr) auto; } .koinonia-podcast-queue-count { position:absolute; top:8px; right:9px; } }
-@media (max-width:700px) { .koinonia-podcast-results { grid-template-columns:1fr; } .koinonia-podcast-episode-row { grid-template-columns:1fr; } .koinonia-podcast-queue { min-height:34px; border-top:1px solid var(--k-divider); border-left:0; } }
+@media (max-width:700px) { .koinonia-podcast-results,.koinonia-podcast-subscriptions { grid-template-columns:1fr; } .koinonia-podcast-episode-row,.koinonia-podcast-latest-row { grid-template-columns:1fr; } .koinonia-podcast-queue,.koinonia-podcast-latest-row > button:last-child { min-height:34px; border-top:1px solid var(--k-divider); border-left:0; } .koinonia-podcast-player.is-expanded { grid-template-columns:1fr; grid-template-rows:auto; align-content:start; padding:70px 20px 28px; } .koinonia-podcast-player.is-expanded .koinonia-podcast-player-art { justify-self:center; width:min(58vw,240px); height:min(58vw,240px); } .koinonia-podcast-player.is-expanded .koinonia-podcast-player-copy { text-align:center; } .koinonia-podcast-player.is-expanded .koinonia-podcast-player-controls { grid-template-columns:42px 50px 42px minmax(100px,1fr); } .koinonia-podcast-player.is-expanded .koinonia-podcast-speed { grid-column:1 / -1; } .koinonia-podcast-player.is-expanded .koinonia-podcast-expanded-details { grid-template-columns:1fr; } }
 @media (max-width:520px) { .koinonia-podcast-player-controls { grid-template-columns:30px 34px 30px minmax(90px,1fr); } .koinonia-podcast-speed { grid-column:1 / -1; grid-template-columns:auto 1fr; align-items:center; } .koinonia-podcast-speed select { width:100%; } .koinonia-podcast-progress-control small { display:none; } }
-@media (max-width:520px) { .audio-library-mode-tabs { grid-template-columns:1fr; } .koinonia-podcast-result em { display:none; } }
+@media (max-width:520px) { .audio-library-mode-tabs { grid-template-columns:1fr; } .koinonia-podcast-library-tabs { grid-template-columns:1fr; } .koinonia-podcast-result em { display:none; } .koinonia-podcast-show > header { align-items:flex-start; flex-wrap:wrap; } .koinonia-podcast-subscribe { width:100%; } }
 
 /* Parish Life private Media deliberately enters a cinematic AGAPAY mode. */
 .donor-media-page { --media-navy:#061522; --media-panel:#0b2030; --media-panel-2:#102b3e; --media-gold:#c9a85b; background:var(--media-navy); color:#f8f3e8; }

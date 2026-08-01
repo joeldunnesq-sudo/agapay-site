@@ -490,8 +490,8 @@ await test("parish household records expose complete staff contact data with sep
   assert.equal("line1" in detail.addresses[0], true, "staff detail retains the full address");
 });
 
-await test("parish staff cannot invite a spouse already covered by the family account", async () => {
-  const { env, reviewerUser, spouse, household } = await fixture();
+await test("parish staff can link each adult spouse to a separate account in the shared household", async () => {
+  const { env, reviewerUser, reviewerContext, spouse, household } = await fixture();
   const session = await issuePlatformUserSession(env, reviewerUser.id);
   const response = await handleDirectoryAdmin(requestWithSession(
     "https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/invitations",
@@ -503,9 +503,13 @@ await test("parish staff cannot invite a spouse already covered by the family ac
       body: JSON.stringify({ personId: spouse.id, householdId: household.id, email: "spouse@example.org" })
     }
   ), env, "st-fiacre");
-  assert.equal(response.status, 409);
+  assert.equal(response.status, 201);
   const payload = await response.json();
-  assert.match(payload.message || payload.error, /managed through the family's My AGAPAY account/i);
+  assert.equal(payload.invitation.intendedPersonId, spouse.id);
+  assert.equal(payload.invitation.intendedHouseholdId, household.id);
+  const spouseRecord = await getDirectoryPersonAdmin(env, { context: reviewerContext, personId: spouse.id });
+  assert.equal(spouseRecord.accountAccess.linked, false, "sending an invitation must not link the wrong account early");
+  assert.equal(spouseRecord.accountAccess.activeInvitation.id, payload.invitation.id);
 });
 
 await test("authorized parish staff can download a private PDF directory", async () => {

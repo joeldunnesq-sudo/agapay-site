@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/donor/style.css?v=20260801koinoniaref8" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260801podcasthub1" />
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260801navicons1" defer></script>
-  <script src="/myagapay/teaching.js?v=20260801podcastmemory1" defer></script>
+  <script src="/myagapay/teaching.js?v=20260801podcasthub1" defer></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -44,17 +44,33 @@
           <section class="feed-list teaching-list" id="teachingList" aria-live="polite"></section>
         </section>
         <section class="audio-podcast-pane" id="podcastAudioPane" data-audio-library-pane="podcasts" hidden>
-          <div class="audio-podcast-intro"><div><span class="eyebrow">Orthodox podcast directory</span><h2>Discover something worth hearing.</h2><p>Search the same podcast directory that powers AGAPAY Listen, presented in Koinonia’s own listening experience.</p></div></div>
+          <div class="audio-podcast-intro"><div><span class="eyebrow">Your Orthodox listening library</span><h2>Follow the voices that help you grow.</h2><p>Subscribe once, see every new episode together, and keep your place across My AGAPAY.</p></div></div>
           <section class="koinonia-continue-listening" id="koinoniaContinueListening" aria-labelledby="koinoniaContinueHeading" hidden>
             <header><div><span class="eyebrow">Pick up where you left off</span><h2 id="koinoniaContinueHeading">Continue Listening</h2></div></header>
             <div id="koinoniaContinueList"></div>
           </section>
-          <form class="koinonia-podcast-search" onsubmit="searchKoinoniaPodcasts(event)">
-            <span aria-hidden="true">⌕</span><input id="koinoniaPodcastQuery" type="search" required placeholder="Search Orthodox podcasts, teachers, or topics…" /><button type="submit">Search</button>
-          </form>
-          <p class="section-note koinonia-podcast-status" id="koinoniaPodcastStatus" role="status" aria-live="polite">Loading Orthodox podcasts…</p>
-          <section class="koinonia-podcast-results" id="koinoniaPodcastResults" aria-live="polite"></section>
-          <section class="koinonia-podcast-show" id="koinoniaPodcastShow" hidden></section>
+          <nav class="koinonia-podcast-library-tabs" aria-label="Podcast library views">
+            <button type="button" class="is-active" data-podcast-library-view="latest" onclick="setKoinoniaPodcastLibraryView('latest')"><strong>Latest</strong><small>New from your subscriptions</small></button>
+            <button type="button" data-podcast-library-view="subscriptions" onclick="setKoinoniaPodcastLibraryView('subscriptions')"><strong>Subscriptions</strong><small>Shows you follow</small></button>
+            <button type="button" data-podcast-library-view="discover" onclick="setKoinoniaPodcastLibraryView('discover')"><strong>Discover</strong><small>Find Orthodox podcasts</small></button>
+          </nav>
+          <section class="koinonia-podcast-library-pane" data-podcast-library-pane="latest">
+            <div class="koinonia-podcast-section-head"><div><span class="eyebrow">One listening queue</span><h3>Newest episodes</h3></div><button type="button" onclick="loadKoinoniaPodcastLatest(true)">Refresh</button></div>
+            <p class="section-note koinonia-podcast-status" id="koinoniaPodcastLatestStatus" role="status" aria-live="polite">Loading your subscriptions…</p>
+            <div class="koinonia-podcast-latest" id="koinoniaPodcastLatest"></div>
+          </section>
+          <section class="koinonia-podcast-library-pane" data-podcast-library-pane="subscriptions" hidden>
+            <div class="koinonia-podcast-section-head"><div><span class="eyebrow">Your library</span><h3>Subscribed podcasts</h3></div><button type="button" onclick="setKoinoniaPodcastLibraryView('discover')">＋ Find a podcast</button></div>
+            <div class="koinonia-podcast-subscriptions" id="koinoniaPodcastSubscriptions"></div>
+          </section>
+          <section class="koinonia-podcast-library-pane" data-podcast-library-pane="discover" hidden>
+            <form class="koinonia-podcast-search" onsubmit="searchKoinoniaPodcasts(event)">
+              <span aria-hidden="true">⌕</span><input id="koinoniaPodcastQuery" type="search" required placeholder="Search Orthodox podcasts, teachers, or topics…" /><button type="submit">Search</button>
+            </form>
+            <p class="section-note koinonia-podcast-status" id="koinoniaPodcastStatus" role="status" aria-live="polite">Search the Orthodox podcast directory.</p>
+            <section class="koinonia-podcast-results" id="koinoniaPodcastResults" aria-live="polite"></section>
+            <section class="koinonia-podcast-show" id="koinoniaPodcastShow" hidden></section>
+          </section>
         </section>
         <section class="koinonia-podcast-player" id="koinoniaPodcastPlayer" aria-label="Now playing" hidden>
           <audio id="koinoniaPodcastAudio" preload="metadata"></audio>
@@ -68,6 +84,12 @@
             <label class="koinonia-podcast-speed"><span>Speed</span><select id="koinoniaPodcastSpeed" aria-label="Playback speed"><option value="1">1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="1.75">1.75x</option><option value="2">2x</option></select></label>
           </div>
           <span class="koinonia-podcast-queue-count" id="koinoniaPodcastQueueCount" hidden></span>
+          <button class="koinonia-podcast-expand" id="koinoniaPodcastExpand" type="button" onclick="toggleKoinoniaPodcastPlayerExpanded()" aria-label="Open expanded player">⛶</button>
+          <section class="koinonia-podcast-expanded-details">
+            <p id="koinoniaPodcastPlayerDescription">Episode details will appear here.</p>
+            <div class="koinonia-podcast-expanded-actions"><button type="button" onclick="shareKoinoniaPodcastEpisode()">Share episode</button><label>Sleep timer<select id="koinoniaPodcastSleepTimer" onchange="setKoinoniaPodcastSleepTimer(this.value)"><option value="0">Off</option><option value="10">10 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="end">End of episode</option></select></label></div>
+            <div class="koinonia-podcast-up-next"><header><strong>Up Next</strong><button type="button" onclick="clearKoinoniaPodcastQueue()">Clear</button></header><div id="koinoniaPodcastQueueList"><span>Your queue is empty.</span></div></div>
+          </section>
         </section>
       </div>
       <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>

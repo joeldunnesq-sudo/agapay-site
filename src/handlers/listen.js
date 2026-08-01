@@ -52,6 +52,73 @@ function progressRow(row) {
   };
 }
 
+function subscriptionRow(row) {
+  return {
+    feedUrl: row.feed_url,
+    title: row.show_title,
+    artwork: row.artwork_url || '',
+    website: row.website_url || '',
+    author: row.author || '',
+    subscribedAt: row.subscribed_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export async function handleListenSubscriptions(request, env, dependencies = {}) {
+  const db = podcastDatabase(env);
+  if (!db) return missingProductionStoreResponse();
+  const authenticate = dependencies.requireDonor || requireDonor;
+  const donor = await authenticate(request, env);
+  if (!donor?.email) return unauthorized();
+  const donorId = normalizeEmail(donor.email);
+
+  if (request.method === 'GET') {
+    const result = await db.prepare(`
+      SELECT feed_url, show_title, artwork_url, website_url, author, subscribed_at, updated_at
+      FROM donor_podcast_subscriptions
+      WHERE donor_id = ?
+      ORDER BY updated_at DESC
+      LIMIT 100
+    `).bind(donorId).all();
+    return json({ subscriptions: (result.results || []).map(subscriptionRow) });
+  }
+
+  if (request.method === 'POST') {
+    const input = await request.json().catch(() => ({}));
+    const feedUrl = podcastUrl(input.feedUrl);
+    const title = boundedText(input.title, 300);
+    if (!feedUrl || !title) return json({ error: 'A valid feedUrl and podcast title are required' }, { status: 400 });
+    const artwork = podcastUrl(input.artwork);
+    const website = podcastUrl(input.website);
+    const author = boundedText(input.author, 300);
+    await db.prepare(`
+      INSERT INTO donor_podcast_subscriptions (
+        donor_id, feed_url, show_title, artwork_url, website_url, author, subscribed_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      ON CONFLICT(donor_id, feed_url) DO UPDATE SET
+        show_title = excluded.show_title,
+        artwork_url = excluded.artwork_url,
+        website_url = excluded.website_url,
+        author = excluded.author,
+        updated_at = datetime('now')
+    `).bind(donorId, feedUrl, title, artwork || null, website || null, author || null).run();
+    const row = await db.prepare(`
+      SELECT feed_url, show_title, artwork_url, website_url, author, subscribed_at, updated_at
+      FROM donor_podcast_subscriptions WHERE donor_id = ? AND feed_url = ?
+    `).bind(donorId, feedUrl).first();
+    return json({ ok: true, subscription: subscriptionRow(row) }, { status: 201 });
+  }
+
+  if (request.method === 'DELETE') {
+    const feedUrl = podcastUrl(new URL(request.url).searchParams.get('url'));
+    if (!feedUrl) return json({ error: 'A valid podcast feed URL is required' }, { status: 400 });
+    await db.prepare('DELETE FROM donor_podcast_subscriptions WHERE donor_id = ? AND feed_url = ?').bind(donorId, feedUrl).run();
+    return json({ ok: true });
+  }
+
+  return json({ error: 'Method not allowed' }, { status: 405 });
+}
+
 export async function handleListenProgress(request, env, dependencies = {}) {
   const db = podcastDatabase(env);
   if (!db) return missingProductionStoreResponse();

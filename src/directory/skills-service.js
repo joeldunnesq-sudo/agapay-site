@@ -573,16 +573,6 @@ export async function getDirectoryMaintenanceDashboard(env, { context }) {
       WHERE p.created_by_parish_id = ?1 AND p.active = 1
         AND COALESCE(f.is_child, 0) = 0
         AND NOT EXISTS (SELECT 1 FROM directory_person_links l WHERE l.person_id = p.id AND l.link_type = 'platform_user' AND l.active = 1)
-        AND NOT EXISTS (
-          SELECT 1
-            FROM directory_household_members person_hm
-            JOIN directory_household_admins linked_admin
-              ON linked_admin.household_id = person_hm.household_id AND linked_admin.active = 1
-            JOIN directory_person_links admin_link
-              ON admin_link.person_id = linked_admin.person_id
-             AND admin_link.link_type = 'platform_user' AND admin_link.active = 1
-           WHERE person_hm.person_id = p.id AND person_hm.active = 1
-        )
       GROUP BY p.id, hm.household_id, h.display_name
       ORDER BY p.preferred_name ASC
       LIMIT 20`,
