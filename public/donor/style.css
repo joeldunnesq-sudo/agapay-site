@@ -7398,3 +7398,313 @@ textarea {
   background:#061522;
   color:#f8f3e8;
 }
+
+/* Parish Life redesign: one classical visual language across the hub and every
+   destination reached from it. The selectors stay page-scoped so the broader
+   donor dashboard keeps its existing presentation. */
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page) {
+  --pl-ink: #0a1a29;
+  --pl-ink-high: #0d2032;
+  --pl-ink-low: #071522;
+  --pl-gold: #b68235;
+  --pl-gold-light: #e2be74;
+  --pl-cream: #f6f1e8;
+  --pl-paper: #fffdf8;
+  --pl-muted: #65727a;
+  --pl-line: rgba(10, 26, 41, 0.12);
+  --pl-gold-line: rgba(226, 190, 116, 0.28);
+  background: var(--pl-cream);
+  color: var(--pl-ink);
+}
+
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page) .app,
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page) .content,
+.donor-mobile-page.donor-media-page .media-app,
+.donor-mobile-page.donor-media-page .media-content,
+.donor-mobile-page.donor-media-page .page {
+  background: var(--pl-cream);
+  color: var(--pl-ink);
+}
+
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page) .sidebar {
+  background: linear-gradient(180deg, var(--pl-ink-high) 0%, var(--pl-ink) 48%, var(--pl-ink-low) 100%);
+  border-right-color: rgba(226, 190, 116, 0.18);
+  box-shadow: 8px 0 30px rgba(7, 21, 34, 0.18);
+}
+
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page) .topbar {
+  min-height: 64px;
+  border-bottom-color: var(--pl-line);
+  background: rgba(246, 241, 232, 0.88);
+  backdrop-filter: blur(14px);
+}
+
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page) .topbar-title {
+  color: var(--pl-ink);
+  font-size: 21px;
+  letter-spacing: -0.01em;
+}
+
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page) .topbar-title::before {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 10px 3px 0;
+  border-radius: 50%;
+  background: var(--pl-gold);
+  content: "";
+}
+
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page) .page {
+  width: min(1220px, 100%);
+  padding: 2rem 2.5rem 4.5rem;
+}
+
+:is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page) .eyebrow {
+  color: var(--pl-gold);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+
+/* Editorial hero treatment shared by announcements, groups, and teaching. */
+:is(.donor-parish-life-page, .donor-feed-page, .donor-teaching-page) .feed-hero,
+.donor-groups-page .groups-hero {
+  position: relative;
+  overflow: hidden;
+  align-items: center;
+  margin-bottom: 1.35rem;
+  border: 1px solid rgba(182, 130, 53, 0.24);
+  border-radius: 22px;
+  padding: clamp(1.65rem, 4vw, 2.8rem);
+  background: linear-gradient(135deg, var(--pl-paper) 0%, #f2e9d8 100%);
+  box-shadow: 0 18px 48px rgba(10, 26, 41, 0.09);
+}
+
+:is(.donor-parish-life-page, .donor-feed-page, .donor-teaching-page) .feed-hero::before,
+.donor-groups-page .groups-hero::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--pl-gold), var(--pl-gold-light), transparent);
+  content: "";
+}
+
+:is(.donor-parish-life-page, .donor-feed-page, .donor-teaching-page) .feed-hero h1,
+.donor-groups-page .groups-hero h1 {
+  margin: 0.45rem 0 0.55rem;
+  color: var(--pl-ink);
+  font-size: clamp(2.6rem, 5vw, 4.4rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 0.98;
+}
+
+:is(.donor-parish-life-page, .donor-feed-page, .donor-teaching-page) .feed-hero p,
+.donor-groups-page .groups-hero p {
+  max-width: 720px;
+  color: var(--pl-muted);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.feed-unread-summary {
+  border: 1px solid var(--pl-gold-line);
+  background: rgba(182, 130, 53, 0.1);
+  color: #765719;
+  letter-spacing: 0.04em;
+}
+
+/* Parish Life hub. */
+.donor-parish-life-page .parish-life-page-shell { max-width: 1220px; }
+.donor-parish-life-page .parish-life-sections { gap: 18px; }
+.donor-parish-life-page .parish-life-sections .mobile-product-card {
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  border: 1px solid var(--pl-gold-line);
+  border-radius: 16px;
+  padding: 1.45rem 1.5rem;
+  background: linear-gradient(158deg, #0d2133 0%, #081726 100%);
+  box-shadow: 0 14px 34px rgba(7, 18, 30, 0.2);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.donor-parish-life-page .parish-life-sections .mobile-product-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(226, 190, 116, 0.52);
+  box-shadow: 0 22px 45px rgba(7, 18, 30, 0.28);
+}
+
+.donor-parish-life-page .parish-life-sections .mobile-product-card:focus-visible {
+  outline: 3px solid rgba(182, 130, 53, 0.38);
+  outline-offset: 3px;
+}
+
+.donor-parish-life-page .mobile-product-card span {
+  align-self: flex-start;
+  border: 1px solid rgba(226, 190, 116, 0.16);
+  background: rgba(226, 190, 116, 0.12);
+  color: var(--pl-gold-light);
+  letter-spacing: 0.12em;
+}
+
+.donor-parish-life-page .mobile-product-card strong {
+  margin-top: 0.75rem;
+  color: #f8f1e3;
+  font-family: var(--serif);
+  font-size: 27px;
+  font-weight: 600;
+}
+
+.donor-parish-life-page .mobile-product-card p {
+  max-width: 46ch;
+  margin-top: 0.45rem;
+  color: rgba(236, 226, 207, 0.68);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.donor-parish-life-page .mobile-product-card::after {
+  margin-top: auto;
+  padding-top: 1rem;
+  color: var(--pl-gold-light);
+  content: "Open  →";
+  font-family: var(--serif);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.donor-parish-life-page .parish-life-activity { margin-top: 2rem; }
+.donor-parish-life-page .mobile-section-head h2 {
+  color: var(--pl-ink);
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: 600;
+}
+
+.parish-life-activity-list {
+  border-color: var(--pl-line);
+  border-radius: 16px;
+  background: rgba(255, 253, 248, 0.92);
+  box-shadow: 0 14px 34px rgba(10, 26, 41, 0.06);
+}
+
+.parish-life-activity-row {
+  min-height: 72px;
+  border-top-color: rgba(10, 26, 41, 0.08);
+  padding: 1rem 1.2rem;
+  transition: background 0.16s ease;
+}
+
+.parish-life-activity-row:hover { background: #f8f1e4; }
+.parish-life-activity-row.is-unread { background: #fff9ec; }
+.parish-life-activity-tag { background: #efe4cc; color: #765719; letter-spacing: 0.1em; }
+
+/* Inner-page cards and controls. */
+.donor-feed-page .feed-page-shell,
+.donor-teaching-page .feed-page-shell { max-width: 980px; }
+.donor-groups-page .groups-page-shell { max-width: 1220px; }
+
+:is(.donor-feed-page, .donor-teaching-page) .feed-card,
+.feed-digest-card,
+.push-notification-card,
+.groups-list-panel,
+.group-thread-panel {
+  border-color: var(--pl-line);
+  border-radius: 16px;
+  background: rgba(255, 253, 248, 0.94);
+  box-shadow: 0 14px 34px rgba(10, 26, 41, 0.07);
+}
+
+:is(.donor-feed-page, .donor-teaching-page) .feed-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+:is(.donor-feed-page, .donor-teaching-page) .feed-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 42px rgba(10, 26, 41, 0.1);
+}
+
+:is(.donor-feed-page, .donor-teaching-page) .feed-card-summary {
+  min-height: 98px;
+  padding: 1.2rem 1.3rem;
+}
+
+:is(.donor-feed-page, .donor-teaching-page) .feed-card-summary strong,
+.groups-panel-head h2,
+.group-thread-head h2 {
+  color: var(--pl-ink);
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.teaching-card-icon {
+  border: 1px solid rgba(182, 130, 53, 0.18);
+  background: #f0e5ce;
+  color: #765719;
+}
+
+.push-notification-card,
+.feed-digest-card {
+  background: linear-gradient(135deg, rgba(255, 253, 248, 0.98), rgba(243, 235, 220, 0.9));
+}
+
+.groups-layout { gap: 18px; }
+.groups-panel-head, .group-thread-head { padding: 1.2rem; border-bottom-color: var(--pl-line); }
+.group-list-item { min-height: 68px; background: var(--pl-paper); }
+.group-list-item:hover, .group-list-item.is-active { background: #f1e7d4; }
+.group-message-list { background: #f2ebdf; }
+.group-message { border-color: var(--pl-line); background: var(--pl-paper); }
+.groups-refresh { border-color: rgba(182, 130, 53, 0.3); background: var(--pl-paper); color: var(--pl-ink); }
+.group-compose button { background: var(--pl-ink); color: var(--pl-gold-light); }
+
+/* Media retains cinematic cards while returning to the shared cream canvas. */
+.donor-media-page .media-topbar {
+  border-color: var(--pl-line);
+  background: rgba(246, 241, 232, 0.9);
+  color: var(--pl-ink);
+}
+
+.donor-media-page .media-heading { max-width: 830px; padding: 22px 0 30px; }
+.donor-media-page .media-heading h1 {
+  color: var(--pl-ink);
+  font-size: clamp(2.8rem, 6vw, 4.5rem);
+  font-weight: 600;
+}
+.donor-media-page .media-heading p { color: var(--pl-muted); }
+.donor-media-page .media-section-head h2 { color: var(--pl-ink); }
+.donor-media-page .media-section-head p { color: var(--pl-muted); }
+.donor-media-page .media-status { border-color: var(--pl-line); background: var(--pl-paper); color: var(--pl-muted); }
+.donor-media-page .youtube-media-section { border-color: var(--pl-line); background: rgba(255, 253, 248, 0.7); }
+
+.donor-media-page .media-watch-shell { padding-top: 1.5rem; }
+.donor-media-page .watch-copy h1 { color: var(--pl-ink); }
+.donor-media-page .watch-meta { color: var(--pl-muted); }
+.donor-media-page .watch-description { color: #334650; }
+.donor-media-page .watch-description a { color: #765719; }
+
+@media (max-width: 900px) {
+  :is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page) .page {
+    padding: 1.4rem 1.25rem 6rem;
+  }
+  .donor-parish-life-page .parish-life-sections .mobile-product-card { min-height: 170px; }
+}
+
+@media (max-width: 700px) {
+  :is(.donor-parish-life-page, .donor-feed-page, .donor-teaching-page) .feed-hero,
+  .donor-groups-page .groups-hero { border-radius: 16px; }
+  :is(.donor-parish-life-page, .donor-feed-page, .donor-teaching-page) .feed-hero h1,
+  .donor-groups-page .groups-hero h1 { font-size: clamp(2.35rem, 12vw, 3.4rem); }
+  .donor-parish-life-page .parish-life-sections { grid-template-columns: 1fr; }
+  .donor-parish-life-page .parish-life-sections .mobile-product-card { min-height: 155px; }
+  .parish-life-activity-row { grid-template-columns: 1fr; gap: 0.45rem; }
+  .parish-life-activity-row time { grid-column: 1; }
+  .parish-life-activity-tag { justify-self: start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .donor-parish-life-page .parish-life-sections .mobile-product-card,
+  :is(.donor-feed-page, .donor-teaching-page) .feed-card { transition: none; }
+}
