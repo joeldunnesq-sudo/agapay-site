@@ -142,6 +142,42 @@ export async function inspectHouseholdShareInvitation(env, { token }) {
   };
 }
 
+export function householdShareApprovalStatement({ parishId, householdId, personId, invitationId, claimantUserId, timestamp }) {
+  return {
+    sql: `INSERT INTO directory_person_links
+            (id, person_id, link_type, external_id, active, source, claim_id, created_at, updated_at)
+          VALUES (
+            ?1,
+            (
+              SELECT i.person_id
+                FROM directory_household_invitations i
+               WHERE i.id = ?2 AND i.parish_id = ?3 AND i.household_id = ?4 AND i.person_id = ?5
+                 AND i.status = 'claimed' AND i.claimed_by_user_id = ?6
+                 AND NOT EXISTS (
+                   SELECT 1 FROM directory_person_links l
+                    WHERE l.link_type = 'platform_user' AND l.active = 1
+                      AND l.external_id = ?6 AND l.person_id <> ?5
+                 )
+                 AND NOT EXISTS (
+                   SELECT 1 FROM directory_person_links l
+                    WHERE l.link_type = 'platform_user' AND l.active = 1
+                      AND l.person_id = ?5 AND l.external_id <> ?6
+                 )
+            ),
+            'platform_user', ?6, 1, 'household_share_review', ?2, ?7, ?7
+          )`,
+    params: [
+      `dir_household_share_${invitationId}`,
+      invitationId,
+      parishId,
+      householdId,
+      personId,
+      claimantUserId,
+      timestamp
+    ]
+  };
+}
+
 export async function claimHouseholdShareInvitation(env, { context, token, correlationId = "" }) {
   if (!context.user?.id) throw new DirectoryServiceError("unauthorized", "Sign in before using this household link.", 401);
   const row = await loadInvitationByToken(env, token);
@@ -181,6 +217,14 @@ export async function claimHouseholdShareInvitation(env, { context, token, corre
     : `Review account link for ${row.person_name} in ${row.household_name}; submitted from a household share link.`;
   const requestId = generateSecret("dir_req");
   const timestamp = Date.now();
+  const requester = await d1First(
+    env,
+    "SELECT person_id FROM directory_person_links WHERE link_type = 'platform_user' AND external_id = ?1 AND active = 1 LIMIT 1",
+    row.created_by_user_id
+  );
+  if (!requester?.person_id) {
+    throw new DirectoryServiceError("inviter_no_longer_authorized", "The person who shared this link is no longer connected. Ask parish staff for help.", 409);
+  }
   const payload = {
     personId: row.person_id,
     relationship: row.relationship || "other",
@@ -197,15 +241,25 @@ export async function claimHouseholdShareInvitation(env, { context, token, corre
       sql: `INSERT INTO directory_change_requests
               (id, parish_id, requester_user_id, requester_person_id, target_type, target_id,
                household_id, request_type, status, summary, requested_payload_json, created_at, updated_at)
-            SELECT ?, ?, i.created_by_user_id, creator.person_id, 'household', i.household_id,
-                   i.household_id, 'household_membership_add', 'pending', ?, ?, ?, ?
-              FROM directory_household_invitations i
-              JOIN directory_person_links creator
-                ON creator.link_type = 'platform_user'
-               AND creator.external_id = i.created_by_user_id
-               AND creator.active = 1
-             WHERE i.id = ? AND i.status = 'pending' AND i.expires_at > datetime('now')`,
-      params: [requestId, row.parish_id, summary.slice(0, 240), safeJson(payload) || "{}", timestamp, timestamp, row.id]
+            VALUES (
+              ?1,
+              (SELECT parish_id FROM directory_household_invitations
+                WHERE id = ?2 AND parish_id = ?3 AND household_id = ?4 AND person_id = ?5
+                  AND status = 'pending' AND expires_at > datetime('now')),
+              ?6, ?7, 'household', ?4, ?4, 'household_membership_add', 'pending', ?8, ?9, ?10, ?10
+            )`,
+      params: [
+        requestId,
+        row.id,
+        row.parish_id,
+        row.household_id,
+        row.person_id,
+        row.created_by_user_id,
+        requester.person_id,
+        summary.slice(0, 240),
+        safeJson(payload) || "{}",
+        timestamp
+      ]
     },
     {
       sql: `UPDATE directory_household_invitations

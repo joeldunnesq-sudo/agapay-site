@@ -24,6 +24,7 @@ import { checkChildEligibility, sanitizeChildFields, POLICY_REVISION as CHILD_PO
 import { approveMinistryInterestReview, closeMinistryInterestReview } from "./ministries.js";
 import { getDirectorySettings } from "./settings.js";
 import { directoryReviewMessageStatement, listDirectoryReviewConversation } from "./review-correspondence.js";
+import { householdShareApprovalStatement } from "./household-share-invitations.js";
 import {
   assertParishActor,
   auditStatement,
@@ -994,6 +995,25 @@ async function approveReviewItem(env, { context, row, reasonCode, reviewerNote, 
     await applyPersonPublicationPreferences(env, { context, personId: request.target_id, preferences: payload.publicationPreferences, correlationId });
   } else if (request.request_type === "household_membership_add") {
     await addHouseholdMember(env, { actor: actorDto(context), parishId: context.parishId, householdId: request.household_id || request.target_id, personId: payload.personId, relationship: payload.relationship || "other" });
+    const share = payload.shareToLink;
+    if (share?.invitationId && share?.claimantUserId) {
+      return markApproved(env, {
+        context,
+        row,
+        reasonCode,
+        reviewerNote,
+        requesterNote,
+        correlationId,
+        additionalStatements: [householdShareApprovalStatement({
+          parishId: context.parishId,
+          householdId: request.household_id || request.target_id,
+          personId: payload.personId,
+          invitationId: share.invitationId,
+          claimantUserId: share.claimantUserId,
+          timestamp: nowMs()
+        })]
+      });
+    }
   } else if (request.request_type === "household_membership_remove") {
     await removeHouseholdMember(env, { actor: actorDto(context), parishId: context.parishId, householdId: request.household_id || request.target_id, personId: payload.personId });
   } else if (request.request_type === "household_admin_add") {
@@ -1137,7 +1157,7 @@ export async function revokeChildPublicationApproval(env, { context, requestId, 
   return { ok: true, id: row.id };
 }
 
-async function markApproved(env, { context, row, reasonCode, reviewerNote, requesterNote, correlationId }) {
+async function markApproved(env, { context, row, reasonCode, reviewerNote, requesterNote, correlationId, additionalStatements = [] }) {
   const actor = actorDto(context);
   const id = await ensureMetadata(env, { actor, row });
   const timestamp = nowMs();
@@ -1145,6 +1165,7 @@ async function markApproved(env, { context, row, reasonCode, reviewerNote, reque
     ? { sql: "UPDATE directory_change_requests SET status = 'completed', decision_reason_code = ?, reviewed_by_user_id = ?, reviewed_at = ?, completed_at = ?, updated_at = ? WHERE id = ?", params: [cleanText(reasonCode, { max: 80 }) || null, context.user.id, timestamp, timestamp, timestamp, row.source_id] }
     : null;
   await runAtomic(env, [
+    ...additionalStatements,
     ...(sourceUpdate ? [sourceUpdate] : []),
     { sql: "UPDATE directory_review_metadata SET queue_status = 'completed', completed_at = ?, updated_at = ? WHERE id = ?", params: [timestamp, timestamp, id] },
     auditStatement({ action: "directory.review_item.approved", actor, parishId: context.parishId, targetType: "directory_review_item", targetId: id, metadata: { sourceType: row.source_type, sourceId: row.source_id, reasonCode, reviewerNote: cleanText(reviewerNote, { max: 500 }), requesterNote: cleanText(requesterNote, { max: 500 }) }, correlationId }),

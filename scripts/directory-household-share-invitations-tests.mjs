@@ -100,6 +100,16 @@ function seed() {
   return { env, db, inviterContext, claimantContext };
 }
 
+function staffReviewerContext() {
+  return {
+    user: { id: "user_staff" },
+    parishId: "parish_1",
+    personId: "",
+    capabilities: ["directory.manage"],
+    permissions: { canAssign: false, canManageProtected: false }
+  };
+}
+
 async function invitationFixture() {
   const fixture = seed();
   const invitation = await createHouseholdShareInvitation(fixture.env, {
@@ -209,7 +219,15 @@ await test("different-household claimant is distinctly flagged and cannot silent
   assert.match(request.summary, /^CONFLICT:/);
   assert.equal(payload.shareToLink.existingHouseholdConflict, true);
   assert.match(payload.shareToLink.conflictMessage, /staff must resolve identity/i);
-  assert.throws(() => db.prepare("UPDATE directory_change_requests SET status = 'completed' WHERE id = ?").run(result.requestId), /already linked to another directory person/);
+  await assert.rejects(
+    decideDirectoryReviewItem(env, {
+      context: staffReviewerContext(),
+      sourceType: "change_request",
+      sourceId: result.requestId,
+      decision: "approve"
+    }),
+    /NOT NULL constraint failed: directory_person_links.person_id/
+  );
   assert.equal(db.prepare("SELECT status FROM directory_change_requests WHERE id = ?").get(result.requestId).status, "pending");
 });
 
@@ -217,10 +235,16 @@ await test("approved proposal projects the identity link only after review compl
   const { env, db, claimantContext, token } = await invitationFixture();
   const result = await claimHouseholdShareInvitation(env, { context: claimantContext, token });
   assert.equal(db.prepare("SELECT COUNT(*) count FROM directory_person_links WHERE external_id = 'user_claimant'").get().count, 0);
-  db.prepare("UPDATE directory_change_requests SET status = 'completed' WHERE id = ?").run(result.requestId);
+  await decideDirectoryReviewItem(env, {
+    context: staffReviewerContext(),
+    sourceType: "change_request",
+    sourceId: result.requestId,
+    decision: "approve"
+  });
   const link = db.prepare("SELECT * FROM directory_person_links WHERE external_id = 'user_claimant'").get();
   assert.equal(link.person_id, "person_target");
   assert.equal(link.source, "household_share_review");
+  assert.equal(db.prepare("SELECT status FROM directory_change_requests WHERE id = ?").get(result.requestId).status, "completed");
 });
 
 await test("donor and recipient UI explain proposal-only behavior and expose the exact route", async () => {
