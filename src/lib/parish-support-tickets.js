@@ -46,11 +46,13 @@ export async function listParishSupportTickets(env, { limit = 200 } = {}) {
 export async function submitParishSupportTicket(env, request, parish = {}, body = {}) {
   const message = clean(body.message, 2400);
   if (message.length < 8) return { ok: false, status: 400, error: "Please include a little more detail so we can help." };
-  const type = ["question", "issue", "help"].includes(clean(body.type, 30).toLowerCase()) ? clean(body.type, 30).toLowerCase() : "help";
+  const type = ["question", "issue", "help", "feature"].includes(clean(body.type, 30).toLowerCase()) ? clean(body.type, 30).toLowerCase() : "help";
+  const source = clean(body.source, 30).toLowerCase() === "myagapay" ? "myagapay" : "parish_dashboard";
+  const sourceLabel = source === "myagapay" ? "My AGAPAY" : "Parish dashboard";
   const now = new Date().toISOString();
   const ticket = {
-    id: generateSecret("parish_support"), status: "new", type,
-    subject: clean(body.subject, 160) || `${type === "issue" ? "Issue" : type === "question" ? "Question" : "Help request"} from ${clean(parish.parishName, 160) || "a parish"}`,
+    id: generateSecret("parish_support"), status: "new", type, source,
+    subject: clean(body.subject, 160) || `${type === "issue" ? "Issue" : type === "question" ? "Question" : type === "feature" ? "Feature request" : "Help request"} from ${clean(parish.parishName, 160) || "My AGAPAY"}`,
     message, parishId: clean(parish.parishId, 160), parishName: clean(parish.parishName, 160),
     submittedBy: clean(body.submittedBy || parish.priestEmail || parish.email, 180),
     page: clean(body.page, 80), path: clean(body.path, 240), userAgent: clean(request.headers.get("user-agent"), 240),
@@ -61,9 +63,9 @@ export async function submitParishSupportTicket(env, request, parish = {}, body 
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   const email = await sendEmail(env, {
     from: env.AGAPAY_FROM_EMAIL || "AGAPAY <hello@agapay.app>", to: [recipient], reply_to: ticket.submittedBy || env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
-    subject: `[Parish ${type}] ${ticket.parishName || ticket.parishId}: ${ticket.subject}`,
-    html: agapayEmailHtml(appUrl, "New parish dashboard support ticket", `<p><strong>${htmlEscape(ticket.parishName || ticket.parishId)}</strong> submitted a ${htmlEscape(type)}.</p><p><strong>Subject:</strong> ${htmlEscape(ticket.subject)}</p><p><strong>Dashboard area:</strong> ${htmlEscape(ticket.page || "Not specified")}</p><p style="white-space:pre-wrap">${htmlEscape(ticket.message)}</p><p><strong>Reply to:</strong> ${htmlEscape(ticket.submittedBy || "Not provided")}</p>`),
-    text: `New parish dashboard ${type}\n\nParish: ${ticket.parishName || ticket.parishId}\nSubject: ${ticket.subject}\nArea: ${ticket.page || "Not specified"}\nReply to: ${ticket.submittedBy || "Not provided"}\n\n${ticket.message}`
+    subject: `[${sourceLabel} ${type}] ${ticket.parishName || ticket.parishId}: ${ticket.subject}`,
+    html: agapayEmailHtml(appUrl, `New ${sourceLabel} support ticket`, `<p><strong>${htmlEscape(ticket.parishName || ticket.parishId)}</strong> submitted a ${htmlEscape(type)} from ${htmlEscape(sourceLabel)}.</p><p><strong>Subject:</strong> ${htmlEscape(ticket.subject)}</p><p><strong>App area:</strong> ${htmlEscape(ticket.page || "Not specified")}</p><p style="white-space:pre-wrap">${htmlEscape(ticket.message)}</p><p><strong>Reply to:</strong> ${htmlEscape(ticket.submittedBy || "Not provided")}</p>`),
+    text: `New ${sourceLabel} ${type}\n\nParish: ${ticket.parishName || ticket.parishId}\nSubject: ${ticket.subject}\nArea: ${ticket.page || "Not specified"}\nReply to: ${ticket.submittedBy || "Not provided"}\n\n${ticket.message}`
   });
   ticket.email = { status: email.status || "unknown", sentAt: email.status === "sent" ? now : "" };
   await save(env, ticket);

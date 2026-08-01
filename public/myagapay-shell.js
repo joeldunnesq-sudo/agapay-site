@@ -233,6 +233,34 @@
         color: #061522;
         background: rgba(255, 255, 255, 0.72);
       }
+      .myagapay-support-dialog {
+        width: min(560px, calc(100% - 28px));
+        max-height: min(760px, calc(100dvh - 28px));
+        border: 0;
+        border-radius: 18px;
+        padding: 0;
+        background: #fffdf8;
+        color: #182028;
+        box-shadow: 0 26px 80px rgba(6, 21, 34, 0.34);
+      }
+      .myagapay-support-dialog::backdrop { background: rgba(6, 21, 34, 0.62); backdrop-filter: blur(3px); }
+      .myagapay-support-form { display: grid; gap: 15px; padding: 24px; font-family: "DM Sans", system-ui, sans-serif; }
+      .myagapay-support-head { display: flex; align-items: start; justify-content: space-between; gap: 18px; }
+      .myagapay-support-kicker { color: #8a651f; font-size: 0.68rem; font-weight: 900; letter-spacing: 0.11em; text-transform: uppercase; }
+      .myagapay-support-head h2 { margin: 4px 0 5px; color: #061522; font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.75rem; line-height: 1.05; }
+      .myagapay-support-head p { margin: 0; color: #657081; font-size: 0.82rem; line-height: 1.5; }
+      .myagapay-support-close { border: 1px solid #ded8cb; border-radius: 999px; padding: 8px 12px; background: #fff; color: #52606c; font: 800 0.75rem/1 "DM Sans", system-ui, sans-serif; cursor: pointer; }
+      .myagapay-support-form label { display: grid; gap: 6px; color: #243746; font-size: 0.8rem; font-weight: 800; }
+      .myagapay-support-form input, .myagapay-support-form select, .myagapay-support-form textarea { width: 100%; border: 1px solid #d8d4ca; border-radius: 10px; padding: 11px 12px; background: #fff; color: #182028; font: 500 1rem/1.4 "DM Sans", system-ui, sans-serif; }
+      .myagapay-support-form textarea { min-height: 145px; resize: vertical; }
+      .myagapay-support-status { min-height: 1.3em; margin: 0; color: #657081; font-size: 0.8rem; line-height: 1.4; }
+      .myagapay-support-status.is-error { color: #8b2f26; }
+      .myagapay-support-status.is-success { color: #23613d; font-weight: 800; }
+      .myagapay-support-actions { display: flex; justify-content: flex-end; gap: 10px; }
+      .myagapay-support-actions button { min-height: 42px; border-radius: 9px; padding: 0 16px; font: 800 0.8rem/1 "DM Sans", system-ui, sans-serif; cursor: pointer; }
+      .myagapay-support-cancel { border: 1px solid #d8d4ca; background: #fff; color: #52606c; }
+      .myagapay-support-send { border: 1px solid #b88a3d; background: linear-gradient(155deg, #d8b66a, #c8a24a); color: #241a04; }
+      .myagapay-support-send:disabled { cursor: wait; opacity: 0.62; }
       @media (min-width: 761px) {
         body.has-myagapay-ios-back .myagapay-ios-back { display: none; }
       }
@@ -325,6 +353,97 @@
     guestLink.setAttribute("data-auth-guest", "");
     guestLink.textContent = "Login";
     actions.appendChild(guestLink);
+  }
+
+  function closeAccountMenus() {
+    document.querySelectorAll("[data-donor-account-toggle], [data-learn-account-toggle]").forEach((button) => button.setAttribute("aria-expanded", "false"));
+    document.querySelectorAll(".donor-home-account-dropdown, .learn-account-dropdown").forEach((panel) => { panel.hidden = true; });
+  }
+
+  function openSupportDialog() {
+    closeAccountMenus();
+    const dialog = document.getElementById("myAgapaySupportDialog");
+    if (!dialog) return;
+    const status = dialog.querySelector("[data-myagapay-support-status]");
+    if (status) { status.textContent = ""; status.className = "myagapay-support-status"; }
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
+    dialog.querySelector("select")?.focus();
+  }
+
+  function closeSupportDialog() {
+    const dialog = document.getElementById("myAgapaySupportDialog");
+    if (typeof dialog?.close === "function") dialog.close();
+    else dialog?.removeAttribute("open");
+  }
+
+  async function submitSupportRequest(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const status = form.querySelector("[data-myagapay-support-status]");
+    const button = form.querySelector("[data-myagapay-support-send]");
+    const fields = Object.fromEntries(new FormData(form));
+    const message = String(fields.message || "").trim();
+    if (message.length < 8) {
+      status.textContent = "Please include a little more detail so we can help.";
+      status.className = "myagapay-support-status is-error";
+      return;
+    }
+    button.disabled = true;
+    status.textContent = "Sending your request…";
+    status.className = "myagapay-support-status";
+    try {
+      const response = await fetch("/api/donor/support-tickets", {
+        method: "POST",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ ...fields, message, page: activeProduct(), path: `${window.location.pathname}${window.location.search}` })
+      });
+      if (handleUnauthorized(response)) return;
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.ok) throw new Error(result.error || "Unable to send your request.");
+      status.textContent = fields.type === "feature" ? "Your feature request was sent. Thank you for helping improve AGAPAY." : "Your report was sent to the AGAPAY team.";
+      status.className = "myagapay-support-status is-success";
+      form.reset();
+      window.setTimeout(closeSupportDialog, 1200);
+    } catch (error) {
+      status.textContent = error.message || "Unable to send your request.";
+      status.className = "myagapay-support-status is-error";
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  function ensureSupportFeedback() {
+    injectBackButtonStyles();
+    document.querySelectorAll(".donor-home-account-dropdown, .learn-account-dropdown").forEach((dropdown) => {
+      if (dropdown.querySelector("[data-myagapay-support-open]")) return;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.setAttribute("role", "menuitem");
+      button.setAttribute("data-myagapay-support-open", "");
+      button.textContent = "Report a problem / Request a feature";
+      button.addEventListener("click", openSupportDialog);
+      const logout = dropdown.querySelector("[data-donor-logout], [data-learn-logout]");
+      dropdown.insertBefore(button, logout || null);
+    });
+    if (document.getElementById("myAgapaySupportDialog")) return;
+    const dialog = document.createElement("dialog");
+    dialog.id = "myAgapaySupportDialog";
+    dialog.className = "myagapay-support-dialog";
+    dialog.setAttribute("aria-labelledby", "myAgapaySupportTitle");
+    dialog.innerHTML = `
+      <form class="myagapay-support-form">
+        <div class="myagapay-support-head"><div><div class="myagapay-support-kicker">AGAPAY Support</div><h2 id="myAgapaySupportTitle">Help us improve My AGAPAY</h2><p>Report something that is not working or tell us what would make the app better.</p></div><button class="myagapay-support-close" type="button" data-myagapay-support-close aria-label="Close support form">Close</button></div>
+        <label>What would you like to do?<select name="type"><option value="issue">Report a problem</option><option value="feature">Request a feature</option><option value="help">Get help using My AGAPAY</option><option value="question">Ask a question</option></select></label>
+        <label>Subject<input name="subject" maxlength="160" required placeholder="Briefly describe your request" /></label>
+        <label>Details<textarea name="message" maxlength="2400" required placeholder="Tell us what happened, what you expected, or how the feature would help."></textarea></label>
+        <p class="myagapay-support-status" data-myagapay-support-status role="status" aria-live="polite"></p>
+        <div class="myagapay-support-actions"><button class="myagapay-support-cancel" type="button" data-myagapay-support-close>Cancel</button><button class="myagapay-support-send" type="submit" data-myagapay-support-send>Send to AGAPAY</button></div>
+      </form>`;
+    dialog.querySelector("form").addEventListener("submit", submitSupportRequest);
+    dialog.querySelectorAll("[data-myagapay-support-close]").forEach((button) => button.addEventListener("click", closeSupportDialog));
+    dialog.addEventListener("click", (event) => { if (event.target === dialog) closeSupportDialog(); });
+    document.body.appendChild(dialog);
   }
 
   function productNav(active = activeProduct(), className = "my-agapay-tabbar") {
@@ -737,6 +856,7 @@
     ensureParishLifeBackLink();
     ensureIosBackButton();
     ensureCanonicalHeader();
+    ensureSupportFeedback();
     deferParishLifeIdentity();
     syncAuthVisibility();
     initViewportAwareness();

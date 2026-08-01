@@ -43,6 +43,7 @@ import { bookstoreEnabledFor, directoryEnabledFor, givingFeatureAccess, hasParis
 import { parishLifeAvailableFor } from "../lib/parish-life-access.js";
 import { parishLifeExperienceFor } from "../lib/parish-life-experience.js";
 import { recordParishFeatureRequest } from "../lib/parish-feature-requests.js";
+import { submitParishSupportTicket } from "../lib/parish-support-tickets.js";
 import { validateSafeExternalUrl } from "../lib/safe-external-url.js";
 import { getDirectorySettings } from "../directory/settings.js";
 import { resolveDirectorySelfServiceContext, syncSelfServiceContactsFromDonor } from "../directory/self-service.js";
@@ -931,6 +932,32 @@ export async function handleDonorDashboard(request, env) {
     recentOfferings: publicOfferings.slice(0, 5),
     recentCommemorations: commemorations.slice(0, 5)
   });
+}
+
+export async function handleDonorSupportTicket(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const donor = await requireDonor(request, env);
+  if (!donor) return unauthorized();
+  const limited = await rateLimit(request, env, "donor-support-ticket", { limit: 8, windowSeconds: 300 });
+  if (limited) return limited;
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object") return json({ error: "Support request was invalid." }, { status: 400 });
+
+  const parishId = String(donor.defaultParishId || "").trim();
+  const found = parishId ? await findRegistrationByParishId(env, parishId) : null;
+  const registration = found?.registration || {};
+  const result = await submitParishSupportTicket(env, request, {
+    parishId,
+    parishName: registration.parishName || registration.name || "My AGAPAY",
+    email: donor.email
+  }, {
+    ...body,
+    source: "myagapay",
+    submittedBy: donor.email,
+    page: String(body.page || "myagapay").slice(0, 80),
+    path: String(body.path || new URL(request.url).pathname).slice(0, 240)
+  });
+  return json(result, { status: result.ok ? 201 : result.status || 500 });
 }
 
 export async function handleDonorStewardshipFeatureRequest(request, env) {

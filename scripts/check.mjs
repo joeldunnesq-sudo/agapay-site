@@ -7,6 +7,7 @@ const core = await readFile("src/lib/core.js", "utf8");
 const stripeConnect = await readFile("src/lib/stripe-connect.js", "utf8");
 const adminHandler = await readFile("src/handlers/admin.js", "utf8");
 const donorHandler = await readFile("src/handlers/donor.js", "utf8");
+const parishSupportTickets = await readFile("src/lib/parish-support-tickets.js", "utf8");
 const parishHandler = await readFile("src/handlers/parish.js", "utf8");
 const parishCommemorationsHandler = await readFile("src/handlers/parish-commemorations.js", "utf8");
 const parishGivingCatalogHandler = await readFile("src/handlers/parish-giving-catalog.js", "utf8");
@@ -239,6 +240,21 @@ assert.ok(myAgapayShell.includes("isLikelyMobileBrowser") && myAgapayShell.inclu
 assert.ok(myAgapayShell.includes("ensureIosBackButton") && myAgapayShell.includes("myagapay-ios-back"), "shared shell should provide an in-app Back button for iPhone My AGAPAY screens");
 assert.ok(myAgapayShell.includes("ensureCanonicalHeader") && myAgapayShell.includes("content.prepend(topbar)") && myAgapayShell.includes("myagapay-settings-chip"), "shared shell should add canonical account/settings access and a fallback topbar to My AGAPAY product headers");
 assert.ok(myAgapayShell.includes("myagapay-menu-trigger") && myAgapayShell.includes("myagapay-menu-icon") && myAgapayShell.includes("Open My AGAPAY menu"), "shared My AGAPAY headers should use an obvious hamburger menu trigger");
+assert.ok(
+  myAgapayShell.includes("Report a problem / Request a feature")
+    && myAgapayShell.includes('id = "myAgapaySupportDialog"')
+    && myAgapayShell.includes('fetch("/api/donor/support-tickets"'),
+  "the shared My AGAPAY hamburger menu should open a working problem and feature request form"
+);
+assert.ok(
+  worker.includes('url.pathname === "/api/donor/support-tickets"')
+    && donorHandler.includes("export async function handleDonorSupportTicket")
+    && donorHandler.includes('rateLimit(request, env, "donor-support-ticket"')
+    && donorHandler.includes('source: "myagapay"')
+    && parishSupportTickets.includes('"feature"')
+    && parishSupportTickets.includes('source === "myagapay" ? "My AGAPAY"'),
+  "My AGAPAY support requests should use an authenticated, rate-limited endpoint and the shared support queue"
+);
 assert.ok(myAgapayShell.includes("handleUnauthorized") && myAgapayShell.includes("redirectToLogin"), "shared shell should enforce one expired-session response across My AGAPAY products");
 assert.ok(donorApp.includes('nav.setAttribute("hx-boost", "false")'), "donor shell should not htmx-boost dashboard navigation");
 assert.ok(donorApp.includes("function updateDonorAuthState()"), "donor shell should update guest/authenticated controls from localStorage session");

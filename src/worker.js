@@ -186,6 +186,7 @@ import {
   handleDonorVerify,
   handleDonorVerifyPage,
   handleDonorDashboard,
+  handleDonorSupportTicket,
   handleDonorParishCalendar,
   handleDonorGivingPlusFeatureRequest,
   handleDonorMinistryServiceInterest,
@@ -3160,6 +3161,9 @@ export default {
     }
     if (url.pathname === "/api/donor/dashboard") {
       return handleDonorDashboard(request, env);
+    }
+    if (url.pathname === "/api/donor/support-tickets") {
+      return handleDonorSupportTicket(request, env);
     }
     if (url.pathname === "/api/donor/koinonia-access") {
       return handleKoinoniaAccess(request, env);
