@@ -8530,9 +8530,9 @@
       'giving', 'qr', 'history', 'options', 'campaigns', 'givers', 'reconcile',
       'stewardship', 'bookstore'
     ];
-    // Product requirement: Koinonia closes the Parish tier block. Keep it
-    // after every other Parish-only tool so it can never return to the top.
-    const parishOrder = ['sacraments', 'directory', 'accounting', 'text', 'communications'];
+    // Product requirement: Koinonia sits directly after Directory and before
+    // Accounting in the bottom Parish tier block.
+    const parishOrder = ['sacraments', 'directory', 'communications', 'accounting', 'text'];
     const sidebar = document.querySelector('.sidebar-nav');
     preParishOrder.forEach((tab) => {
       const item = document.getElementById(`nav-${tab}`);
