@@ -10228,6 +10228,10 @@
     return status === 'published' ? 'Published' : status === 'archived' ? 'Archived' : 'Draft';
   }
 
+  function contentCategoryLabel(category) {
+    return String(category || '').replaceAll('_', ' ').replace(/\b\w/g, character => character.toUpperCase());
+  }
+
   function renderCommunicationsList() {
     const list = document.getElementById('communicationsList');
     if (!list) return;
@@ -10239,7 +10243,7 @@
     list.innerHTML = rows.map(item => `
       <article class="communications-row${item.pinned ? ' is-pinned' : ''}">
         ${item.heroImageUrl ? `<img class="communications-row-image" src="${escapeAttr(item.heroImageUrl)}" alt="" loading="lazy" />` : ''}
-        <div class="communications-row-copy"><div class="communications-row-meta"><span class="communications-status is-${escapeAttr(item.status)}">${announcementStatusLabel(item.status)}</span>${item.pinned ? '<span>📌 Pinned</span>' : ''}<span>${escapeHtml(shortDate(item.publishedAt || item.updatedAt || item.createdAt))}</span></div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p></div>
+        <div class="communications-row-copy"><div class="communications-row-meta"><span class="communications-status is-${escapeAttr(item.status)}">${announcementStatusLabel(item.status)}</span><span>${escapeHtml(contentCategoryLabel(item.category || 'general'))}</span>${item.pinned ? '<span>📌 Pinned</span>' : ''}<span>${escapeHtml(shortDate(item.publishedAt || item.updatedAt || item.createdAt))}</span></div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p></div>
         <div class="communications-row-actions">
           ${item.status === 'published' ? `<button class="btn btn-ghost btn-sm" type="button" onclick="toggleAnnouncementReaders('${escapeAttr(item.id)}',this)">${Number(item.readCount || 0)} read</button>` : ''}
           ${item.status !== 'archived' ? `<button class="btn btn-ghost btn-sm" type="button" onclick="editAnnouncement('${escapeAttr(item.id)}')">Edit</button>` : ''}
@@ -10261,7 +10265,7 @@
     }
     list.innerHTML = rows.map(item => `
       <article class="communications-row">
-        <div class="communications-row-copy"><div class="communications-row-meta"><span class="communications-status is-${escapeAttr(item.status)}">${announcementStatusLabel(item.status)}</span>${item.audioUrl ? '<span class="communications-audio-label">▶ Audio</span>' : '<span>Text</span>'}<span>${escapeHtml(shortDate(item.publishedAt || item.updatedAt || item.createdAt))}</span></div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p></div>
+        <div class="communications-row-copy"><div class="communications-row-meta"><span class="communications-status is-${escapeAttr(item.status)}">${announcementStatusLabel(item.status)}</span><span>${escapeHtml(contentCategoryLabel(item.category || 'homilies'))}</span>${item.audioUrl ? '<span class="communications-audio-label">▶ Audio</span>' : '<span>Text</span>'}<span>${escapeHtml(shortDate(item.publishedAt || item.updatedAt || item.createdAt))}</span></div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p></div>
         <div class="communications-row-actions">
           ${item.status === 'published' ? `<span class="btn btn-ghost btn-sm" aria-label="${Number(item.readCount || 0)} readers">${Number(item.readCount || 0)} read</span>` : ''}
           ${item.status !== 'archived' ? `<button class="btn btn-ghost btn-sm" type="button" onclick="editTeachingPost('${escapeAttr(item.id)}')">Edit</button>` : ''}
@@ -10451,7 +10455,7 @@
     try {
       const response = await fetch(communicationsApi(), {
         method: 'POST', headers: { ...authHeaders(), 'Content-Type':'application/json' },
-        body: JSON.stringify({ title: document.getElementById('announcementTitle').value, body: document.getElementById('announcementBody').value, pinned: document.getElementById('announcementPinned').checked })
+        body: JSON.stringify({ title: document.getElementById('announcementTitle').value, body: document.getElementById('announcementBody').value, category: document.getElementById('announcementCategory').value, pinned: document.getElementById('announcementPinned').checked })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Unable to save announcement.');
@@ -10525,7 +10529,7 @@
     try {
       const response = await fetch(communicationsApi('/teaching'), {
         method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' },
-        body:JSON.stringify({ title:document.getElementById('teachingTitle').value, body:document.getElementById('teachingBody').value })
+        body:JSON.stringify({ title:document.getElementById('teachingTitle').value, body:document.getElementById('teachingBody').value, category:document.getElementById('teachingCategory').value })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Unable to save teaching post.');

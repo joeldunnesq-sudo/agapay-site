@@ -1370,6 +1370,7 @@
               <form class="communications-compose" onsubmit="createAnnouncementDraft(event)">
               <span class="eyebrow">Compose</span><h2>New announcement</h2>
               <label>Title<input id="announcementTitle" maxlength="180" required placeholder="Parish picnic this Sunday" /></label>
+              <label>Category<select id="announcementCategory" required><option value="general">General</option><option value="services">Services</option><option value="events">Events</option><option value="youth">Youth</option><option value="outreach">Outreach</option><option value="education">Education</option></select></label>
               <label>Message
                 <span class="communications-format-toolbar" aria-label="Announcement formatting">
                   <button type="button" onclick="insertAnnouncementFormatting('bold')"><strong>B</strong><span>Bold</span></button>
@@ -1393,6 +1394,7 @@
                 <form class="communications-compose" onsubmit="createTeachingDraft(event)">
                   <span class="eyebrow">Compose</span><h2>New teaching post</h2>
                   <label>Title<input id="teachingTitle" maxlength="180" required placeholder="Reflection for the Sunday of the Cross" /></label>
+                  <label>Category<select id="teachingCategory" required><option value="homilies">Homilies</option><option value="catechism">Catechism</option><option value="liturgical">Liturgical</option><option value="choir">Choir</option><option value="special_events">Special Events</option></select></label>
                   <label>Reflection
                     <span class="communications-format-toolbar" aria-label="Teaching formatting">
                       <button type="button" onclick="insertTeachingFormatting('bold')"><strong>B</strong><span>Bold</span></button>
@@ -1873,6 +1875,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
-  <script src="/parish/app.js?v=20260801video1"></script>
+  <script src="/parish/app.js?v=20260801categories1"></script>
 </body>
 </html>

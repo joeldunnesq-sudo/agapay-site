@@ -12,6 +12,7 @@ import {
   renderTeachingBody,
   storeTeachingAudio,
   TEACHING_ALLOWED_TAGS,
+  TEACHING_CATEGORIES,
   TEACHING_AUDIO_MAX_BYTES,
   updateParishTeachingPost,
   validateTeachingAudioMetadata,
@@ -21,7 +22,9 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sqlite = new DatabaseSync(":memory:");
 sqlite.exec(readFileSync(path.join(root, "migrations", "0064_parish_content_reads.sql"), "utf8"));
 sqlite.exec(readFileSync(path.join(root, "migrations", "0070_parish_content_read_receipts_index.sql"), "utf8"));
+sqlite.exec(readFileSync(path.join(root, "migrations", "0065_parish_announcements.sql"), "utf8"));
 sqlite.exec(readFileSync(path.join(root, "migrations", "0072_parish_teaching_posts.sql"), "utf8"));
+sqlite.exec(readFileSync(path.join(root, "migrations", "0074_parish_content_categories.sql"), "utf8"));
 const db = {
   prepare(sql) {
     return {
@@ -35,6 +38,7 @@ const db = {
 };
 
 assert.deepEqual(TEACHING_ALLOWED_TAGS, ["strong", "em", "a", "ul", "li", "br"]);
+assert.deepEqual(TEACHING_CATEGORIES, ["homilies", "catechism", "liturgical", "choir", "special_events"]);
 const formatted = renderTeachingBody('A **strong** word, *emphasis*, and [link](https://example.test).\n- One\n- Two\n<script>alert(1)</script><img onerror="bad">');
 assert.match(formatted, /<strong>strong<\/strong>/);
 assert.match(formatted, /<em>emphasis<\/em>/);
@@ -44,6 +48,8 @@ assert.doesNotMatch(formatted, /<script|<img|onerror/i);
 const draft = await createParishTeachingPost(db, {
   parishId: "parish-one", createdBy: "staff@example.test", input: { title: "Sunday reflection", body: "Listen with the heart." },
 });
+assert.equal(draft.category, "homilies");
+assert.equal(sqlite.prepare("SELECT category FROM parish_teaching_posts WHERE id = ?").get(draft.id).category, "homilies", "the schema must supply homilies when no teaching category is provided");
 let publishedCallbacks = 0;
 await updateParishTeachingPost(db, {
   parishId: "parish-one",
@@ -80,6 +86,19 @@ assert.equal(donorFeed.posts[0].read, true);
 await archiveParishTeachingPost(db, { parishId: "parish-one", teachingId: draft.id });
 donorFeed = await getDonorTeachingFeed(db, { parishId: "parish-one", donorId: "donor@example.test" });
 assert.deepEqual(donorFeed.posts, []);
+
+const catechismDraft = await createParishTeachingPost(db, {
+  parishId: "parish-one", createdBy: "staff@example.test", input: { title: "Creed study", body: "A parish catechism session.", category: "catechism" },
+});
+donorFeed = await getDonorTeachingFeed(db, { parishId: "parish-one", donorId: "donor@example.test", category: "catechism" });
+assert.deepEqual(donorFeed.posts, [], "category filtering must not expose matching teaching drafts");
+await updateParishTeachingPost(db, { parishId: "parish-one", teachingId: catechismDraft.id, input: { status: "published" } });
+donorFeed = await getDonorTeachingFeed(db, { parishId: "parish-one", donorId: "donor@example.test", category: "catechism" });
+assert.deepEqual(donorFeed.posts.map(({ id }) => id), [catechismDraft.id], "category filtering must return only matching published teaching posts");
+assert.throws(() => sqlite.prepare(`
+  INSERT INTO parish_teaching_posts (id, parish_id, title, body, category, created_by)
+  VALUES ('invalid-category', 'parish-one', 'Invalid', 'Invalid', 'podcast', 'staff@example.test')
+`).run(), /CHECK constraint failed/, "the teaching schema must reject categories outside its taxonomy");
 
 const nearLimit = validateTeachingAudioMetadata(new Request("https://agapay.test/audio", {
   method: "POST", headers: { "Content-Type": "audio/mpeg", "Content-Length": String(TEACHING_AUDIO_MAX_BYTES) }, body: new Uint8Array([1]),
@@ -132,7 +151,11 @@ assert.match(sources["public/myagapay/parish-life.html"], /class="mobile-product
 assert.match(sources["public/myagapay/parish-life.js"], /\.\.\.announcements, \.\.\.messages, \.\.\.teachings/);
 assert.match(sources["public/myagapay/parish-life.js"], /feedUnread \+ groupsUnread \+ teachingUnread/);
 assert.match(sources["public/parish/dashboard.html"], /id="teachingAudio"/);
+assert.match(sources["public/parish/dashboard.html"], /id="teachingCategory"[\s\S]*?value="homilies"[\s\S]*?value="special_events"/);
 assert.match(sources["public/parish/app.js"], /createTeachingDraft/);
+assert.match(sources["public/parish/app.js"], /category:document\.getElementById\('teachingCategory'\)\.value/);
+assert.match(sources["public/myagapay/teaching.js"], /All[\s\S]*Homilies[\s\S]*Catechism[\s\S]*Liturgical[\s\S]*Choir[\s\S]*Special Events/);
+assert.match(sources["public/myagapay/teaching.js"], /teachingPostsForFilter\(value\)\.length/);
 
 const context = { waitUntil() {} };
 for (const pathname of ["/api/donor/teaching", "/api/donor/teaching/post-one/read"]) {

@@ -7607,6 +7607,57 @@ textarea {
 .donor-teaching-page .feed-page-shell { max-width: 980px; }
 .donor-groups-page .groups-page-shell { max-width: 1220px; }
 
+.content-filter-chips {
+  display: flex;
+  gap: 0.55rem;
+  margin: 0 0 1.15rem;
+  padding: 0.15rem 0 0.45rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.content-filter-chips button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 40px;
+  border: 1px solid rgba(10, 26, 41, 0.14);
+  border-radius: 999px;
+  padding: 0.45rem 0.55rem 0.45rem 0.85rem;
+  background: rgba(255, 253, 248, 0.88);
+  color: var(--pl-muted);
+  font: 700 0.76rem/1 "DM Sans", sans-serif;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+}
+
+.content-filter-chips button:hover {
+  border-color: rgba(182, 130, 53, 0.5);
+  color: var(--pl-ink);
+}
+
+.content-filter-chips button.is-active {
+  border-color: var(--pl-ink);
+  background: var(--pl-ink);
+  color: #fffaf0;
+}
+
+.content-filter-chips button strong {
+  display: grid;
+  min-width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: 999px;
+  padding: 0 0.35rem;
+  background: rgba(10, 26, 41, 0.08);
+  color: inherit;
+  font-size: 0.7rem;
+}
+
+.content-filter-chips button.is-active strong { background: rgba(255, 255, 255, 0.16); }
+
 :is(.donor-feed-page, .donor-teaching-page) .feed-card,
 .feed-digest-card,
 .push-notification-card,

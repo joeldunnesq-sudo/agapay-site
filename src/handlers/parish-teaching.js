@@ -8,6 +8,7 @@ import { requireCommunicationsAdmin } from "./parish-communications.js";
 
 const CONTENT_TYPE = "teaching";
 export const TEACHING_ALLOWED_TAGS = Object.freeze(["strong", "em", "a", "ul", "li", "br"]);
+export const TEACHING_CATEGORIES = Object.freeze(["homilies", "catechism", "liturgical", "choir", "special_events"]);
 export const TEACHING_AUDIO_MAX_BYTES = 50 * 1024 * 1024;
 export const TEACHING_AUDIO_TYPES = new Map([
   ["audio/mpeg", "mp3"],
@@ -23,6 +24,12 @@ export function renderTeachingBody(value) {
   return renderBoundedRichText(value, TEACHING_ALLOWED_TAGS);
 }
 
+function teachingCategory(value, fallback = "homilies") {
+  const category = String(value ?? fallback).trim().toLowerCase();
+  if (!TEACHING_CATEGORIES.includes(category)) throw new Error("Invalid teaching category.");
+  return category;
+}
+
 function teachingFromRow(row = {}) {
   return {
     id: row.id || "",
@@ -31,6 +38,7 @@ function teachingFromRow(row = {}) {
     body: row.body || "",
     bodyHtml: renderTeachingBody(row.body || ""),
     audioUrl: row.audio_url || "",
+    category: row.category || "homilies",
     status: row.status || "draft",
     publishedAt: row.published_at || "",
     createdBy: row.created_by || "",
@@ -49,6 +57,9 @@ function validateTeachingInput(input = {}, { partial = false } = {}) {
     result.body = String(input.body || "").trim().slice(0, 20000);
     if (!result.body) throw new Error("Teaching body is required.");
   }
+  if (!partial || Object.prototype.hasOwnProperty.call(input, "category")) {
+    result.category = teachingCategory(input.category);
+  }
   return result;
 }
 
@@ -56,9 +67,9 @@ export async function createParishTeachingPost(db, { parishId, createdBy, input 
   const fields = validateTeachingInput(input);
   const id = generateSecret("teaching");
   await db.prepare(`
-    INSERT INTO parish_teaching_posts (id, parish_id, title, body, status, created_by)
-    VALUES (?, ?, ?, ?, 'draft', ?)
-  `).bind(id, parishId, fields.title, fields.body, createdBy).run();
+    INSERT INTO parish_teaching_posts (id, parish_id, title, body, category, status, created_by)
+    VALUES (?, ?, ?, ?, ?, 'draft', ?)
+  `).bind(id, parishId, fields.title, fields.body, fields.category, createdBy).run();
   return teachingFromRow(await db.prepare("SELECT * FROM parish_teaching_posts WHERE id = ?").bind(id).first());
 }
 
@@ -77,11 +88,12 @@ export async function updateParishTeachingPost(db, { parishId, teachingId, input
     throw new Error("Published teaching posts cannot return to draft.");
   }
   const publishedAt = requestedStatus === "published" ? (current.published_at || new Date().toISOString()) : null;
+  const category = fields.category ?? current.category ?? "homilies";
   await db.prepare(`
     UPDATE parish_teaching_posts
-    SET title = ?, body = ?, status = ?, published_at = ?, updated_at = datetime('now')
+    SET title = ?, body = ?, category = ?, status = ?, published_at = ?, updated_at = datetime('now')
     WHERE id = ? AND parish_id = ?
-  `).bind(fields.title ?? current.title, fields.body ?? current.body, requestedStatus, publishedAt, teachingId, parishId).run();
+  `).bind(fields.title ?? current.title, fields.body ?? current.body, category, requestedStatus, publishedAt, teachingId, parishId).run();
   const teaching = teachingFromRow(await db.prepare("SELECT * FROM parish_teaching_posts WHERE id = ?").bind(teachingId).first());
   if (current.status !== "published" && requestedStatus === "published" && typeof onPublished === "function") {
     onPublished(teaching);
@@ -113,12 +125,13 @@ export async function listParishTeachingPosts(db, parishId) {
   }));
 }
 
-export async function getDonorTeachingFeed(db, { parishId, donorId }) {
+export async function getDonorTeachingFeed(db, { parishId, donorId, category = "" }) {
+  const selectedCategory = category ? teachingCategory(category, "") : "";
   const result = await db.prepare(`
     SELECT * FROM parish_teaching_posts
-    WHERE parish_id = ? AND status = 'published'
+    WHERE parish_id = ? AND status = 'published'${selectedCategory ? " AND category = ?" : ""}
     ORDER BY published_at DESC, created_at DESC
-  `).bind(parishId).all();
+  `).bind(...(selectedCategory ? [parishId, selectedCategory] : [parishId])).all();
   const posts = (result.results || []).map(teachingFromRow);
   const contentIds = posts.map(({ id }) => id);
   const readIds = await getReadContentIds(db, { parishId, contentType: CONTENT_TYPE, donorId, contentIds });
@@ -305,7 +318,19 @@ export async function handleDonorTeaching(request, env, teachingId = "", action 
   }
   const donorId = normalizeEmail(donor.email);
   if (!teachingId && request.method === "GET") {
-    return json({ available: true, parish: { id: parishId, name: found.registration.parishName || "" }, ...(await getDonorTeachingFeed(db, { parishId, donorId })) });
+    try {
+      return json({
+        available: true,
+        parish: { id: parishId, name: found.registration.parishName || "" },
+        ...(await getDonorTeachingFeed(db, {
+          parishId,
+          donorId,
+          category: new URL(request.url).searchParams.get("category") || "",
+        })),
+      });
+    } catch (error) {
+      return json({ error: error.message }, { status: 422 });
+    }
   }
   if (teachingId && action === "read" && request.method === "POST") {
     const marked = await markTeachingRead(db, { parishId, teachingId, donorId });
