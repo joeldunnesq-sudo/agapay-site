@@ -9897,7 +9897,7 @@
       <rect y="66" width="420" height="2" fill="#C8A24A"/>
       <text x="24" y="30" font-family="Georgia,serif" font-size="${parishSize}" font-weight="bold" fill="#F6F1E8">${parishName}</text>
       <text x="396" y="43" text-anchor="end" font-family="Arial,sans-serif" font-size="7.5" font-weight="bold" letter-spacing="1.6" fill="#E8C879">ONLINE GIVING</text>
-      <text x="24" y="116" font-family="Georgia,serif" font-size="29" font-weight="bold" fill="#061522">Give with gratitude.</text>
+      <text x="24" y="116" font-family="Georgia,serif" font-size="24" font-weight="bold" letter-spacing="-.2" fill="#061522">Give with gratitude.</text>
       <text x="24" y="141" font-family="Arial,sans-serif" font-size="10" fill="#6F6A60">Support the life and ministries of our parish through</text>
       <text x="24" y="156" font-family="Arial,sans-serif" font-size="10" fill="#6F6A60">simple, secure online giving.</text>
       <rect x="24" y="182" width="230" height="32" rx="16" fill="#FFFFFF" stroke="#D8C38F"/>

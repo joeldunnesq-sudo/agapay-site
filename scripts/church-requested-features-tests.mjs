@@ -36,6 +36,7 @@ const positionedBulletinQr = positionBulletinQr(
 const positionedBulletinQrRoot = positionedBulletinQr.match(/^<svg\b[^>]*>/)?.[0] || "";
 assert.equal((positionedBulletinQrRoot.match(/\spreserveAspectRatio=/g) || []).length, 1, "bulletin QR SVG must not contain duplicate preserveAspectRatio attributes");
 assert.match(positionedBulletinQrRoot, /x="289" y="94" width="96" height="96" preserveAspectRatio="xMidYMid meet"/);
+assert.match(parishApp, /font-size="24"[^>]*>Give with gratitude\.<\/text>/, "bulletin headline should remain inside the copy column beside the QR panel");
 assert.match(publicStore, /No account required/);
 assert.match(publicStoreApp, /bookstorePathSegments\[1\] === "bookstore"/);
 
