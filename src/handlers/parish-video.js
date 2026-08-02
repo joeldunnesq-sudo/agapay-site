@@ -45,6 +45,19 @@ function youtubeFromRow(row = {}) {
   };
 }
 
+function youtubeChannelFromRow(row = {}) {
+  const channelId = String(row.channel_id || "");
+  return {
+    channelId,
+    channelUrl: row.channel_url || "",
+    channelTitle: row.channel_title || "",
+    uploadsPlaylistId: channelId.startsWith("UC") ? `UU${channelId.slice(2)}` : "",
+    addedBy: row.added_by || "",
+    addedAt: row.added_at || "",
+    updatedAt: row.updated_at || "",
+  };
+}
+
 function validateVideoInput(input = {}, { partial = false } = {}) {
   const result = {};
   if (!partial || Object.prototype.hasOwnProperty.call(input, "title")) {
@@ -250,6 +263,65 @@ async function donorVideoContext(request, env) {
   return { parishId, found, donor, donorId };
 }
 
+function decodeYouTubeHtml(value = "") {
+  return String(value)
+    .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'")
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([\da-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)));
+}
+
+export async function resolveYouTubeChannel(value, fetchImpl = fetch) {
+  const raw = String(value || "").trim();
+  let channelId = /^UC[A-Za-z0-9_-]{20,40}$/.test(raw) ? raw : "";
+  let pageUrl = channelId ? `https://www.youtube.com/channel/${channelId}` : "";
+  if (!channelId) {
+    let parsed;
+    try { parsed = new URL(raw); } catch { throw new Error("Enter a valid YouTube channel URL or channel ID."); }
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
+    if (!["youtube.com", "m.youtube.com"].includes(host)) throw new Error("Enter a YouTube channel URL.");
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    if (parts[0] === "channel" && /^UC[A-Za-z0-9_-]{20,40}$/.test(parts[1] || "")) channelId = parts[1];
+    if (!channelId && !/^@[A-Za-z0-9._-]{3,100}$/.test(parts[0] || "") && !["c", "user"].includes(parts[0])) {
+      throw new Error("Enter a YouTube channel URL, such as youtube.com/@yourparish.");
+    }
+    pageUrl = channelId ? `https://www.youtube.com/channel/${channelId}` : `https://www.youtube.com/${parts.slice(0, 2).join("/")}`;
+  }
+  const response = await fetchImpl(pageUrl, { headers: { Accept: "text/html", "User-Agent": "Mozilla/5.0 (compatible; AGAPAY/1.0)" } });
+  if (!response.ok) throw new Error("YouTube could not resolve that channel.");
+  const html = (await response.text()).slice(0, 2_000_000);
+  const resolvedId = channelId
+    || html.match(/"channelId"\s*:\s*"(UC[A-Za-z0-9_-]{20,40})"/)?.[1]
+    || html.match(/itemprop=["']channelId["'][^>]+content=["'](UC[A-Za-z0-9_-]{20,40})["']/i)?.[1]
+    || html.match(/youtube\.com\/channel\/(UC[A-Za-z0-9_-]{20,40})/)?.[1]
+    || "";
+  if (!resolvedId) throw new Error("YouTube could not find a channel ID at that address.");
+  const title = decodeYouTubeHtml(
+    html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)?.[1]
+      || html.match(/<title>([^<]+)<\/title>/i)?.[1]
+      || "YouTube channel"
+  ).replace(/\s+-\s+YouTube\s*$/i, "").trim().slice(0, 240);
+  return { channelId: resolvedId, channelUrl: `https://www.youtube.com/channel/${resolvedId}`, channelTitle: title || "YouTube channel", uploadsPlaylistId: `UU${resolvedId.slice(2)}` };
+}
+
+export async function saveYouTubeChannel(db, { parishId, addedBy, value, fetchImpl = fetch }) {
+  const channel = await resolveYouTubeChannel(value, fetchImpl);
+  await db.prepare(`
+    INSERT INTO parish_youtube_channels (parish_id, channel_id, channel_url, channel_title, added_by)
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(parish_id) DO UPDATE SET
+      channel_id = excluded.channel_id, channel_url = excluded.channel_url,
+      channel_title = excluded.channel_title, added_by = excluded.added_by,
+      updated_at = datetime('now')
+  `).bind(parishId, channel.channelId, channel.channelUrl, channel.channelTitle, addedBy).run();
+  return youtubeChannelFromRow(await db.prepare("SELECT * FROM parish_youtube_channels WHERE parish_id = ?").bind(parishId).first());
+}
+
+export async function getYouTubeChannel(db, parishId) {
+  const row = await db.prepare("SELECT * FROM parish_youtube_channels WHERE parish_id = ?").bind(parishId).first();
+  return row ? youtubeChannelFromRow(row) : null;
+}
+
 export async function handleDonorVideo(request, env, videoId = "", action = "") {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const db = env.AGAPAY_DB || env.DB;
@@ -259,11 +331,11 @@ export async function handleDonorVideo(request, env, videoId = "", action = "") 
   if (context.disabled) return json({ available: false, parish, videos: [], youtube: [] });
   try {
     if (!videoId && request.method === "GET") {
-      const [posts, youtube] = await Promise.all([getDonorVideoFeed(db, context), listYouTubeLinks(db, context.parishId)]);
+      const [posts, youtube, youtubeChannel] = await Promise.all([getDonorVideoFeed(db, context), listYouTubeLinks(db, context.parishId), getYouTubeChannel(db, context.parishId)]);
       const videos = (await Promise.all(posts.map(async (post) => {
         try { return { ...post, ...(await privateStreamAssets(env, post.streamVideoId)) }; } catch { return null; }
       }))).filter(Boolean).map(({ hlsUrl, ...post }) => post);
-      return json({ available: true, parish, videos, youtube });
+      return json({ available: true, parish, videos, youtube, youtubeChannel });
     }
     const post = await db.prepare("SELECT * FROM parish_video_posts WHERE id = ? AND parish_id = ? AND status = 'published'").bind(videoId, context.parishId).first();
     if (!post) return json({ error: "Published video not found" }, { status: 404 });
@@ -299,7 +371,8 @@ export async function handleParishVideo(request, env, parishId, subpath = "") {
           return { ...post, streamState: details.status?.state || "pending", readyToStream: streamIsReady(details), durationSeconds: Number(details.duration) || 0 };
         } catch (error) { return { ...post, streamState: "unavailable", readyToStream: false, streamError: error.message }; }
       }));
-      return json({ videos, youtube: await listYouTubeLinks(db, parishId) });
+      const [youtube, youtubeChannel] = await Promise.all([listYouTubeLinks(db, parishId), getYouTubeChannel(db, parishId)]);
+      return json({ videos, youtube, youtubeChannel });
     }
     if (parts[0] === "upload-url" && parts.length === 1 && request.method === "POST") {
       const input = await request.json();
@@ -313,6 +386,14 @@ export async function handleParishVideo(request, env, parishId, subpath = "") {
     }
     if (parts[0] === "youtube" && parts.length === 2 && request.method === "DELETE") {
       await db.prepare("DELETE FROM parish_youtube_links WHERE id = ? AND parish_id = ?").bind(decodeURIComponent(parts[1]), parishId).run();
+      return json({ ok: true });
+    }
+    if (parts[0] === "youtube-channel" && parts.length === 1 && request.method === "POST") {
+      const input = await request.json();
+      return json({ ok: true, channel: await saveYouTubeChannel(db, { parishId, addedBy: createdBy, value: input.channelUrl }) });
+    }
+    if (parts[0] === "youtube-channel" && parts.length === 1 && request.method === "DELETE") {
+      await db.prepare("DELETE FROM parish_youtube_channels WHERE parish_id = ?").bind(parishId).run();
       return json({ ok: true });
     }
     if (parts.length === 1 && request.method === "PATCH") {

@@ -69,19 +69,29 @@ async function loadMedia() {
     document.getElementById("mediaParishName").textContent = data.parish?.name || "Your parish";
     const videos = data.videos || [];
     const youtube = data.youtube || [];
+    const youtubeChannel = data.youtubeChannel || null;
     document.getElementById("mediaSkeleton").hidden = true;
     status.hidden = true;
     if (videos.length) {
       document.getElementById("nativeMediaSection").hidden = false;
       document.getElementById("mediaFeatured").innerHTML = nativeCard(videos[0], true);
       document.getElementById("mediaGrid").innerHTML = videos.slice(1).map((item) => nativeCard(item)).join("") || '<p class="media-empty">More parish video will appear here.</p>';
-    } else {
+    } else if (!youtube.length && !youtubeChannel) {
       status.hidden = false;
       status.textContent = "No private parish videos have been published yet.";
     }
-    if (youtube.length) {
+    if (youtube.length || youtubeChannel) {
       document.getElementById("youtubeMediaSection").hidden = false;
       document.getElementById("youtubeMediaGrid").innerHTML = youtube.map(youtubeCard).filter(Boolean).join("");
+      const playlistId = String(youtubeChannel?.uploadsPlaylistId || "");
+      if (/^UU[A-Za-z0-9_-]{20,40}$/.test(playlistId)) {
+        const embed = document.getElementById("youtubeChannelEmbed");
+        const frame = document.getElementById("youtubeChannelFrame");
+        embed.hidden = false;
+        frame.title = `${youtubeChannel.channelTitle || "Parish"} YouTube videos`;
+        frame.src = `https://www.youtube-nocookie.com/embed/videoseries?list=${encodeURIComponent(playlistId)}&rel=0&playsinline=1`;
+        document.getElementById("youtubeMediaHeading").textContent = youtubeChannel.channelTitle || "From our parish on YouTube";
+      }
     }
   } catch (error) {
     document.getElementById("mediaSkeleton").hidden = true;

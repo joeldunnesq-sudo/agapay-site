@@ -3212,9 +3212,9 @@ body.donor-home {
   .koinonia-full-controls { padding-bottom:10px; }
 }
 
-/* Parish Life private Media deliberately enters a cinematic AGAPAY mode. */
-.donor-media-page { --media-navy:#061522; --media-panel:#0b2030; --media-panel-2:#102b3e; --media-gold:#c9a85b; background:var(--media-navy); color:#f8f3e8; }
-.donor-media-page .media-app, .donor-media-page .media-content { min-height:100vh; background:var(--media-navy); }
+/* Koinonia Media shares the light canvas; only playback surfaces stay cinematic. */
+.donor-media-page { --media-navy:#061522; --media-panel:#0b2030; --media-panel-2:#102b3e; --media-gold:#c9a85b; background:#f0ede4; color:#111827; }
+.donor-media-page .media-app, .donor-media-page .media-content { min-height:100vh; background:#f0ede4; }
 .donor-media-page .media-sidebar { border-color:#1e394b; background:#081b29; }
 .donor-media-page .media-sidebar .brand-name, .donor-media-page .media-sidebar .profile-name, .donor-media-page .media-sidebar .sidebar-card h3 { color:#fff; }
 .donor-media-page .media-sidebar .profile-meta, .donor-media-page .media-sidebar .mini-item span { color:#9fb0b9; }
@@ -3226,14 +3226,14 @@ body.donor-home {
 .media-heading p { margin:0; color:#aebdc4; font-size:16px; line-height:1.7; }
 .media-heading .eyebrow, .donor-media-page .eyebrow { color:var(--media-gold); }
 .media-status { border:1px solid #294354; border-radius:14px; padding:16px; background:#0b2030; color:#b7c3c9; }
-.media-skeleton { position:relative; overflow:hidden; border-radius:18px; background:#102a3c; }
-.media-skeleton::after { position:absolute; inset:0; content:""; transform:translateX(-100%); background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent); animation:media-shimmer 1.5s infinite; }
+.media-skeleton { position:relative; overflow:hidden; border-radius:18px; background:var(--k-offset,#eae7dc); }
+.media-skeleton::after { position:absolute; inset:0; content:""; transform:translateX(-100%); background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent); animation:media-shimmer 1.5s infinite; }
 @keyframes media-shimmer { to { transform:translateX(100%); } }
 .media-feature-skeleton { height:min(52vw,540px); margin-bottom:28px; }
 .media-card-skeleton { display:block; aspect-ratio:16/10; }
 .media-feature { display:grid; overflow:hidden; grid-template-columns:minmax(0,1.55fr) minmax(270px,.75fr); margin:6px 0 42px; border:1px solid #294354; border-radius:24px; background:linear-gradient(135deg,#102b3e,#091c2a); color:#fff; text-decoration:none; box-shadow:0 28px 70px rgba(0,0,0,.3); }
 .media-feature .media-thumbnail { min-height:430px; }
-.media-thumbnail { position:relative; display:block; overflow:hidden; aspect-ratio:16/9; background:#0d2739; }
+.media-thumbnail { position:relative; display:block; overflow:hidden; aspect-ratio:16/9; background:var(--k-offset,#eae7dc); }
 .media-thumbnail img { width:100%; height:100%; object-fit:cover; transition:transform .35s ease,opacity .25s ease; }
 .media-card:hover img, .media-feature:hover img { transform:scale(1.025); opacity:.88; }
 .media-thumbnail em { position:absolute; right:10px; bottom:10px; border-radius:7px; padding:4px 7px; background:rgba(3,12,19,.88); color:#fff; font-size:11px; font-style:normal; font-weight:800; }
@@ -3259,6 +3259,8 @@ body.donor-home {
 .youtube-card { border-color:#47303a; background:#171c24; }
 .youtube-card .media-thumbnail i.youtube-play { border:0; border-radius:12px; background:#f03; color:#fff; }
 .youtube-grid .youtube-card { width:100%; padding:0; font:inherit; text-align:left; cursor:pointer; }
+.youtube-channel-embed { width:100%; aspect-ratio:16/9; overflow:hidden; margin:4px 0 24px; border:1px solid rgba(215,184,111,.32); border-radius:18px; background:#000; box-shadow:0 20px 50px rgba(5,15,23,.22); }
+.youtube-channel-embed iframe { display:block; width:100%; height:100%; border:0; }
 .youtube-player-modal { position:fixed; inset:0; z-index:1200; display:grid; place-items:center; padding:24px; background:rgba(5,15,23,.82); backdrop-filter:blur(8px); }
 .youtube-player-modal[hidden] { display:none; }
 .youtube-player-dialog { width:min(980px,100%); overflow:hidden; border:1px solid rgba(215,184,111,.45); border-radius:20px; background:#0d1722; box-shadow:0 28px 80px rgba(0,0,0,.45); }
@@ -7778,8 +7780,8 @@ textarea {
 .donor-mobile-page.donor-media-page .content,
 .donor-mobile-page.donor-media-page .media-content,
 .donor-mobile-page.donor-media-page .page {
-  background:#061522;
-  color:#f8f3e8;
+  background:var(--pl-cream,#f6f1e8);
+  color:var(--pl-ink,#0a1a29);
 }
 
 /* Parish Life redesign: one classical visual language across the hub and every

@@ -10481,7 +10481,7 @@
 
   // ── COMMUNICATIONS ────────────────────────────────────────
   const KOINONIA_NATIVE_VIDEO_UPLOADS_VISIBLE = false;
-  let communicationsState = { loaded: false, announcements: [], teaching: [], videos: [], youtube: [], blog: null, readers: {} };
+  let communicationsState = { loaded: false, announcements: [], teaching: [], videos: [], youtube: [], youtubeChannel: null, blog: null, readers: {} };
 
   function syncKoinoniaVideoAdminAvailability() {
     document.querySelectorAll('[data-native-video-admin]').forEach(element => {
@@ -10857,7 +10857,10 @@
     const list = document.getElementById('youtubeAdminList');
     if (!list) return;
     const rows = communicationsState.youtube || [];
-    list.innerHTML = rows.length ? rows.map(item => `<article class="communications-row"><img class="communications-row-image" src="${escapeAttr(item.thumbnailUrl)}" alt="" loading="lazy" /><div class="communications-row-copy"><div class="communications-row-meta"><span>Hosted on YouTube</span></div><h3>${escapeHtml(item.title)}</h3></div><div class="communications-row-actions"><button class="btn btn-danger btn-sm" type="button" onclick="removeYouTubeVideo('${escapeAttr(item.id)}',this)">Remove</button></div></article>`).join('') : '<div class="communications-empty"><strong>No YouTube links yet</strong><p>Paste a real video URL; AGAPAY validates it before saving.</p></div>';
+    const channel = communicationsState.youtubeChannel;
+    const channelRow = channel ? `<article class="communications-row is-pinned"><div class="communications-row-copy"><div class="communications-row-meta"><span>Automatically synced channel</span></div><h3>${escapeHtml(channel.channelTitle || 'YouTube channel')}</h3><p>Every public upload is available through the embedded channel playlist in Koinonia.</p></div><div class="communications-row-actions"><a class="btn btn-ghost btn-sm" href="${escapeAttr(channel.channelUrl)}" target="_blank" rel="noopener">View channel</a><button class="btn btn-danger btn-sm" type="button" onclick="removeYouTubeChannel(this)">Disconnect</button></div></article>` : '';
+    const curatedRows = rows.map(item => `<article class="communications-row"><img class="communications-row-image" src="${escapeAttr(item.thumbnailUrl)}" alt="" loading="lazy" /><div class="communications-row-copy"><div class="communications-row-meta"><span>Individually curated</span></div><h3>${escapeHtml(item.title)}</h3></div><div class="communications-row-actions"><button class="btn btn-danger btn-sm" type="button" onclick="removeYouTubeVideo('${escapeAttr(item.id)}',this)">Remove</button></div></article>`).join('');
+    list.innerHTML = channelRow + curatedRows || '<div class="communications-empty"><strong>No YouTube channel connected</strong><p>Connect the parish channel once to keep Koinonia video up to date automatically.</p></div>';
   }
 
   async function toggleAnnouncementReaders(id, button) {
@@ -10964,7 +10967,9 @@
     if (!teachingResponse.ok) { setStatus(teachingData.error || 'Unable to load teaching posts.','error'); return; }
     if (!videoResponse.ok) { setStatus(videoData.error || 'Unable to load video posts.','error'); return; }
     if (!blogResponse.ok) { setStatus(blogData.error || 'Unable to load the priest’s blog settings.','error'); return; }
-    communicationsState = { loaded: true, announcements: data.announcements || [], teaching: teachingData.posts || [], videos: videoData.videos || [], youtube: videoData.youtube || [], blog: blogData.blog || null, readers: communicationsState.readers || {} };
+    communicationsState = { loaded: true, announcements: data.announcements || [], teaching: teachingData.posts || [], videos: videoData.videos || [], youtube: videoData.youtube || [], youtubeChannel: videoData.youtubeChannel || null, blog: blogData.blog || null, readers: communicationsState.readers || {} };
+    const youtubeChannelUrl = document.getElementById('youtubeChannelUrl');
+    if (youtubeChannelUrl) youtubeChannelUrl.value = communicationsState.youtubeChannel?.channelUrl || '';
     const blogEnabled = document.getElementById('parishBlogEnabled');
     const blogSourceUrl = document.getElementById('parishBlogSourceUrl');
     const blogFeedStatus = document.getElementById('parishBlogFeedStatus');
@@ -11262,6 +11267,29 @@
       const response = await fetch(communicationsApi('/video/youtube'), { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ youtubeUrl:document.getElementById('youtubeVideoUrl').value }) });
       const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Unable to validate that YouTube video.');
       form.reset(); await loadCommunicationsTab(true); setStatus('YouTube video added to Media.','success');
+    } catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) button.disabled = false; }
+  }
+
+  async function saveYouTubeChannel(event) {
+    event.preventDefault();
+    const form = event.currentTarget; const button = form.querySelector('button[type="submit"]');
+    if (button) button.disabled = true;
+    try {
+      const response = await fetch(communicationsApi('/video/youtube-channel'), { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ channelUrl:document.getElementById('youtubeChannelUrl').value }) });
+      const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Unable to connect that YouTube channel.');
+      await loadCommunicationsTab(true); setStatus('YouTube channel connected. New public uploads will appear automatically.','success');
+    } catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) button.disabled = false; }
+  }
+
+  async function removeYouTubeChannel(button) {
+    if (!confirm('Disconnect this YouTube channel? Individually curated videos will remain.')) return;
+    if (button) button.disabled = true;
+    try {
+      const response = await fetch(communicationsApi('/video/youtube-channel'), { method:'DELETE', headers:authHeaders() });
+      const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Unable to disconnect the YouTube channel.');
+      await loadCommunicationsTab(true); setStatus('YouTube channel disconnected.','success');
     } catch (error) { setStatus(error.message,'error'); }
     finally { if (button) button.disabled = false; }
   }

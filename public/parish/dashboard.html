@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/parish/style.css?v=20260801tierload1" />
-  <link rel="stylesheet" href="/parish/redesign.css?v=20260801heroassets2" />
+  <link rel="stylesheet" href="/parish/style.css?v=20260801youtubechannel1" />
+  <link rel="stylesheet" href="/parish/redesign.css?v=20260801youtubechannel1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="stylesheet" href="/styles/stewardship.css?v=20260731healthgrid1" />
   <link rel="manifest" href="/manifest.webmanifest" />
@@ -1404,8 +1404,8 @@
                 <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">Native video</span><h2>Processing and published</h2></div><button class="btn btn-ghost btn-sm" type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="videoAdminList"><p class="sw-tool-loading">Loading...</p></div></section>
               </div>
               <div class="communications-grid youtube-admin-grid is-primary">
-                <form class="communications-compose" onsubmit="addYouTubeVideo(event)">
-                  <span class="eyebrow">YouTube media</span><h2>Add a YouTube video</h2><p class="section-note">The video stays on YouTube. AGAPAY validates the link before adding it to Media.</p>
+                <form class="communications-compose" onsubmit="saveYouTubeChannel(event)">
+                  <span class="eyebrow">Automatic YouTube media</span><h2>Connect your YouTube channel</h2><p class="section-note">Connect once and Koinonia will embed the channel’s complete uploads playlist. New public videos appear automatically—no manual adding required.</p>
                   <aside class="youtube-privacy-guidance" aria-labelledby="youtubePrivacyGuidanceHeading">
                     <strong id="youtubePrivacyGuidanceHeading">Choose the YouTube privacy setting intentionally</strong>
                     <ul>
@@ -1415,11 +1415,16 @@
                     </ul>
                     <p><strong>Koinonia access:</strong> Announcements, Groups, and Teaching are restricted by AGAPAY’s verified-household gate. YouTube-hosted video—even Unlisted—does not carry that same guarantee because AGAPAY cannot control YouTube access.</p>
                   </aside>
-                  <label>YouTube video URL<input id="youtubeVideoUrl" type="url" required placeholder="https://www.youtube.com/watch?v=…" /></label>
-                  <button class="btn btn-ghost" type="submit">Validate and add</button>
+                  <label>YouTube channel URL or ID<input id="youtubeChannelUrl" required placeholder="https://www.youtube.com/@yourparish" /></label>
+                  <button class="btn btn-gold" type="submit">Connect channel</button>
                 </form>
-                <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">YouTube</span><h2>Curated videos</h2></div></div><div id="youtubeAdminList"><p class="sw-tool-loading">Loading...</p></div></section>
+                <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">YouTube</span><h2>Channel connection</h2></div></div><div id="youtubeAdminList"><p class="sw-tool-loading">Loading...</p></div></section>
               </div>
+              <form class="communications-compose youtube-curated-form" onsubmit="addYouTubeVideo(event)">
+                <span class="eyebrow">Optional curation</span><h2>Add an individual YouTube video</h2><p class="section-note">Use this only for a video outside the connected parish channel.</p>
+                <label>YouTube video URL<input id="youtubeVideoUrl" type="url" required placeholder="https://www.youtube.com/watch?v=…" /></label>
+                <button class="btn btn-ghost" type="submit">Validate and add</button>
+              </form>
             </section>
           </div>
         </div>
@@ -1852,6 +1857,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
-  <script src="/parish/app.js?v=20260801heroassets1"></script>
+  <script src="/parish/app.js?v=20260801youtubechannel1"></script>
 </body>
 </html>

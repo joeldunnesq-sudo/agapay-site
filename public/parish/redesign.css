@@ -84,6 +84,7 @@
 .bookstore-hero-tools { display: grid; justify-items: end; gap: 10px; min-width: min(100%, 430px); }
 .bookstore-hero-tools .agapay-feature-actions { width: 100%; }
 .bookstore-hero-qr { width: min(430px, 100%); box-sizing: border-box; }
+.youtube-curated-form { margin-top: 16px; }
 
 .pdx-hero-figure { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; position: relative; z-index: 2; }
 .pdx-hero-total-block { flex: 0 0 auto; }

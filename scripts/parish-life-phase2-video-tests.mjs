@@ -12,14 +12,16 @@ import {
   markVideoWatched,
   privateStreamAssets,
   renderVideoDescription,
+  resolveYouTubeChannel,
   resolveYouTubeVideo,
+  saveYouTubeChannel,
   streamIsReady,
   updateVideoPost,
 } from "../src/handlers/parish-video.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sqlite = new DatabaseSync(":memory:");
-for (const migration of ["0064_parish_content_reads.sql", "0070_parish_content_read_receipts_index.sql", "0072_parish_teaching_posts.sql", "0073_parish_private_video.sql"]) {
+for (const migration of ["0064_parish_content_reads.sql", "0070_parish_content_read_receipts_index.sql", "0072_parish_teaching_posts.sql", "0073_parish_private_video.sql", "0085_parish_youtube_channels.sql"]) {
   sqlite.exec(readFileSync(path.join(root, "migrations", migration), "utf8"));
 }
 const db = { prepare(sql) { return { parameters: [], bind(...parameters) { this.parameters = parameters; return this; }, async first() { return sqlite.prepare(sql).get(...this.parameters) || null; }, async all() { return { results: sqlite.prepare(sql).all(...this.parameters) }; }, async run() { const result = sqlite.prepare(sql).run(...this.parameters); return { success: true, meta: { changes: result.changes } }; } }; } };
@@ -59,6 +61,18 @@ const resolved = await resolveYouTubeVideo("https://youtu.be/dQw4w9WgXcQ", async
 await addYouTubeLink(db, { parishId:"parish-one", addedBy:"staff@example.test", value:resolved.youtubeUrl, fetchImpl:async()=>Response.json({provider_name:"YouTube",title:"Parish channel video",thumbnail_url:"https://i.ytimg.com/vi/test/hqdefault.jpg"}) });
 assert.equal(sqlite.prepare("SELECT COUNT(*) count FROM parish_content_reads").get().count, beforeYouTubeReads, "YouTube curation must never create read tracking");
 
+const channelId = "UC1234567890123456789012";
+const channelHtml = `<html><head><meta property="og:title" content="Saint Fiacre Orthodox Church"><meta itemprop="channelId" content="${channelId}"></head></html>`;
+const resolvedChannel = await resolveYouTubeChannel("https://www.youtube.com/@saintfiacre", async (url) => {
+  assert.equal(String(url), "https://www.youtube.com/@saintfiacre");
+  return new Response(channelHtml, { headers:{ "content-type":"text/html" } });
+});
+assert.equal(resolvedChannel.channelId, channelId);
+assert.equal(resolvedChannel.uploadsPlaylistId, "UU1234567890123456789012");
+const savedChannel = await saveYouTubeChannel(db, { parishId:"parish-one", addedBy:"staff@example.test", value:channelId, fetchImpl:async()=>new Response(channelHtml) });
+assert.equal(savedChannel.channelTitle, "Saint Fiacre Orthodox Church");
+assert.equal(sqlite.prepare("SELECT channel_id FROM parish_youtube_channels WHERE parish_id = ?").get("parish-one").channel_id, channelId);
+
 const sources = Object.fromEntries(["src/handlers/parish-video.js","src/worker.js","public/parish/dashboard.html","public/parish/app.js","public/myagapay/parish-life.html","public/myagapay/parish-life.js","public/myagapay/media.html","public/myagapay/media.js","public/myagapay/watch.html","public/myagapay/watch.js","public/donor/style.css"].map(file=>[file,readFileSync(path.join(root,file),"utf8")]));
 assert.match(sources["src/handlers/parish-video.js"], /requireSignedURLs:\s*true/);
 assert.match(sources["src/handlers/parish-video.js"], /WHERE id = \? AND parish_id = \? AND status = 'published'/);
@@ -81,8 +95,12 @@ assert.match(sources["public/myagapay/watch.js"], /new Hls/);
 assert.match(sources["public/myagapay/media.html"], /Public parish channel[\s\S]*public YouTube media/i);
 assert.match(sources["public/myagapay/media.html"], /id="youtubePlayerModal"[\s\S]*youtubePlayerFrame/);
 assert.match(sources["public/myagapay/media.js"], /youtube-nocookie\.com\/embed\/[\s\S]*openYouTubeMedia/);
+assert.match(sources["public/myagapay/media.js"], /youtube-nocookie\.com\/embed\/videoseries\?list=/, "the connected channel must render its auto-updating uploads playlist inside Koinonia");
+assert.match(sources["public/parish/dashboard.html"], /Connect your YouTube channel[\s\S]*New public videos appear automatically/);
+assert.match(sources["src/handlers/parish-video.js"], /youtube-channel[\s\S]*saveYouTubeChannel/);
 assert.doesNotMatch(sources["public/myagapay/media.js"], /target="_blank"/, "YouTube videos must play inside the Koinonia Media page");
 assert.match(sources["public/donor/style.css"], /--media-navy:#061522[\s\S]*--media-gold/);
+assert.match(sources["public/donor/style.css"], /Koinonia Media shares the light canvas[\s\S]*\.donor-media-page[^}]*background:#f0ede4/, "Koinonia Media must use the same light canvas as the other tabs");
 
 const context = { waitUntil() {} };
 for (const pathname of ["/api/donor/videos", `/api/donor/videos/${draft.id}/playback`, "/myagapay/media", "/myagapay/media/watch"]) {
