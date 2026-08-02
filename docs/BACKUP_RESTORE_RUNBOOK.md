@@ -12,9 +12,13 @@ manual and never target production directly — see "Guardrails" below.
 The automated export prepends `PRAGMA foreign_keys=OFF;` because D1 can emit
 child-table rows before a referenced parent table. This setting applies only
 to the restore import session and makes the artifact directly restorable into
-a blank verification database. The August 2, 2026 recovery drill confirmed
-171 application tables, 3 registrations, and 17 donors after import, then
-deleted the temporary verification database.
+a blank verification database. The August 2, 2026 recovery drill used the
+exact private R2 artifact from workflow run `30729418052`; its SHA-256
+(`98c21d0b4b2ab4fee66365ec2b9893443c054669ca2d24cac4e2099dc82b0497`)
+matched, and the unmodified artifact restored 1,491 queries into a blank
+remote D1 database. Post-restore checks found 170 application tables, 3
+registrations, and 17 donors. The temporary database and local verification
+copies were deleted after the drill.
 
 ## 1. Exporting the production D1 database
 
