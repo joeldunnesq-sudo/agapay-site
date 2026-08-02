@@ -78,6 +78,8 @@
 .pdx-hero-qr-hint { font-size: 12px; color: rgba(246,241,232,0.5); }
 .pdx-hero-qr-hint a { color: rgba(246,241,232,0.7); text-decoration: none; }
 .pdx-hero-qr-hint a:hover { color: var(--pdx-gold-bright); }
+.pdx-hero-qr-actions, .pdx-hero-bulletin-actions { display: block; white-space: nowrap; }
+.pdx-hero-bulletin-actions { padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.1); }
 
 .bookstore-hero-tools { display: grid; justify-items: end; gap: 10px; min-width: min(100%, 430px); }
 .bookstore-hero-tools .agapay-feature-actions { width: 100%; }
