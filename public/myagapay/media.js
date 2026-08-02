@@ -54,9 +54,25 @@ function openYouTubeMedia(button) {
 function closeYouTubeMedia() {
   const modal = document.getElementById("youtubePlayerModal");
   const frame = document.getElementById("youtubePlayerFrame");
+  document.querySelector(".youtube-player-dialog")?.classList.remove("is-browser-fullscreen");
   if (frame) frame.src = "about:blank";
   if (modal) modal.hidden = true;
   document.body.classList.remove("has-koinonia-media-modal");
+}
+
+async function openYouTubeMediaFullscreen() {
+  const frame = document.getElementById("youtubePlayerFrame");
+  const dialog = document.querySelector(".youtube-player-dialog");
+  if (!frame || !dialog) return;
+  const requestFullscreen = frame.requestFullscreen || frame.webkitRequestFullscreen;
+  if (requestFullscreen) {
+    try {
+      await requestFullscreen.call(frame, { navigationUI:"hide" });
+      await screen.orientation?.lock?.("landscape").catch(() => {});
+      return;
+    } catch { /* Fall through to an edge-to-edge in-app player. */ }
+  }
+  dialog.classList.add("is-browser-fullscreen");
 }
 
 async function loadMedia() {
@@ -107,6 +123,15 @@ async function loadMedia() {
 }
 
 window.openYouTubeMedia = openYouTubeMedia;
+window.openYouTubeMediaFullscreen = openYouTubeMediaFullscreen;
 window.closeYouTubeMedia = closeYouTubeMedia;
-document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeYouTubeMedia(); });
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement) screen.orientation?.unlock?.();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  const dialog = document.querySelector(".youtube-player-dialog");
+  if (dialog?.classList.contains("is-browser-fullscreen")) dialog.classList.remove("is-browser-fullscreen");
+  else closeYouTubeMedia();
+});
 document.addEventListener("DOMContentLoaded", loadMedia);

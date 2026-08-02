@@ -277,7 +277,7 @@ export const SECURITY_HEADERS = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "X-Frame-Options": "SAMEORIGIN",
   "Strict-Transport-Security": "max-age=2592000; includeSubDomains",
-  "Permissions-Policy": "geolocation=(), microphone=(), camera=(self), payment=(self)",
+  "Permissions-Policy": "geolocation=(), microphone=(), camera=(self), payment=(self), fullscreen=(self \"https://www.youtube.com\" \"https://www.youtube-nocookie.com\")",
   "Content-Security-Policy-Report-Only":
     "default-src 'self'; " +
     "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://static.cloudflareinsights.com; " +

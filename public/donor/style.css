@@ -3266,10 +3266,17 @@ body.donor-home {
 .youtube-player-dialog { width:min(980px,100%); overflow:hidden; border:1px solid rgba(215,184,111,.45); border-radius:20px; background:#0d1722; box-shadow:0 28px 80px rgba(0,0,0,.45); }
 .youtube-player-dialog > header { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:17px 19px; color:#fff; }
 .youtube-player-dialog h2 { margin:3px 0 0; color:#fff; font-family:"Playfair Display",Georgia,serif; font-size:clamp(18px,3vw,27px); }
+.youtube-player-actions { display:flex; align-items:center; gap:9px; }
+.youtube-player-fullscreen { display:flex; min-height:38px; align-items:center; gap:7px; border:1px solid rgba(255,255,255,.2); border-radius:999px; padding:0 13px; background:rgba(255,255,255,.08); color:#fff; font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
 .youtube-player-close { display:grid; width:38px; height:38px; flex:0 0 auto; place-items:center; border:1px solid rgba(255,255,255,.2); border-radius:999px; background:rgba(255,255,255,.08); color:#fff; font-size:25px; cursor:pointer; }
 .youtube-player-frame { aspect-ratio:16/9; background:#000; }
 .youtube-player-frame iframe { display:block; width:100%; height:100%; border:0; }
+.youtube-player-frame iframe:fullscreen { width:100vw; max-width:none; height:100vh; background:#000; }
+.youtube-player-frame iframe:-webkit-full-screen { width:100vw; max-width:none; height:100vh; background:#000; }
+.youtube-player-dialog.is-browser-fullscreen { position:fixed; inset:0; z-index:1300; display:flex; width:100vw; max-width:none; height:100dvh; flex-direction:column; border:0; border-radius:0; }
+.youtube-player-dialog.is-browser-fullscreen .youtube-player-frame { flex:1; min-height:0; aspect-ratio:auto; }
 .has-koinonia-media-modal { overflow:hidden; }
+@media (max-width:560px) { .youtube-player-fullscreen span { display:none; } }
 .media-empty { color:#92a5af; }
 .agapay-player { position:relative; overflow:hidden; width:100%; margin-top:18px; border:1px solid #294354; border-radius:22px; aspect-ratio:16/9; background:#000; box-shadow:0 30px 80px rgba(0,0,0,.42); }
 .agapay-player video { width:100%; height:100%; object-fit:contain; }

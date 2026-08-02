@@ -8,6 +8,7 @@ import {
   addYouTubeLink,
   createStreamUpload,
   createVideoDraft,
+  deleteVideoPost,
   getDonorVideoFeed,
   markVideoWatched,
   fetchLatestYouTubeChannelVideo,
@@ -57,6 +58,16 @@ assert.match(assets.hlsUrl, /signed-token\/manifest\/video\.m3u8$/);
 assert.doesNotMatch(assets.hlsUrl, /stream-one/, "playback response must never expose a default UID manifest");
 await assert.rejects(() => privateStreamAssets(streamEnv, "stream-one", async (url) => String(url).endsWith("/token") ? Response.json({success:true,result:{token:"x"}}) : Response.json({success:true,result:{readyToStream:false,requireSignedURLs:true,status:{state:"inprogress"},playback:{hls:"https://customer-code.cloudflarestream.com/id/manifest/video.m3u8"}}})), /still processing/);
 
+const deletableDraft = await createVideoDraft(db, { parishId:"parish-one", createdBy:"staff@example.test", streamVideoId:"stream-delete", input:{ title:"Delete this draft" } });
+let deletedStreamRequest = null;
+await deleteVideoPost(db, streamEnv, { parishId:"parish-one", videoId:deletableDraft.id }, async (url, init) => {
+  deletedStreamRequest = { url:String(url), method:init.method };
+  return Response.json({ success:true, result:null });
+});
+assert.match(deletedStreamRequest.url, /\/stream-delete$/, "deleting a draft must target its hosted Stream asset");
+assert.equal(deletedStreamRequest.method, "DELETE");
+assert.equal(sqlite.prepare("SELECT id FROM parish_video_posts WHERE id = ?").get(deletableDraft.id), undefined);
+
 const beforeYouTubeReads = sqlite.prepare("SELECT COUNT(*) count FROM parish_content_reads").get().count;
 await assert.rejects(() => addYouTubeLink(db, { parishId:"parish-one", addedBy:"staff@example.test", value:"https://www.youtube.com/watch?v=broken1", fetchImpl:async()=>new Response("not found",{status:404}) }), /could not resolve/);
 assert.equal(sqlite.prepare("SELECT COUNT(*) count FROM parish_youtube_links").get().count, 0, "broken oEmbed links must not be stored");
@@ -100,7 +111,8 @@ for (const functionName of ["createStreamUpload", "createVideoDraft", "privateSt
 assert.match(sources["src/handlers/parish-video.js"], /parts\[0\] === "upload-url"/, "the direct Stream upload route must remain callable");
 assert.match(sources["public/parish/app.js"], /uploadVideoDirectly\(data\.uploadUrl, file/);
 assert.match(sources["public/parish/app.js"], /KOINONIA_NATIVE_VIDEO_UPLOADS_VISIBLE\s*=\s*false/, "native upload UI must stay behind the dormant product flag");
-assert.match(sources["public/parish/dashboard.html"], /data-native-video-admin hidden[\s\S]*createVideoUpload\(event\)/, "native Stream controls must be unreachable in the rendered admin UI");
+assert.match(sources["public/parish/dashboard.html"], /data-native-video-management hidden[\s\S]*data-native-video-upload[\s\S]*createVideoUpload\(event\)/, "native Stream uploads must remain hidden while existing records can still be managed");
+assert.match(sources["public/parish/app.js"], /deleteVideo[\s\S]*method:'DELETE'[\s\S]*Video permanently deleted/, "native videos of every status must offer permanent deletion");
 assert.match(sources["public/parish/dashboard.html"], /Choose the YouTube privacy setting intentionally[\s\S]*Public:[\s\S]*searchable[\s\S]*Unlisted:[\s\S]*anyone with the link can watch[\s\S]*does not require a login[\s\S]*Private:[\s\S]*explicitly invited Google accounts[\s\S]*every viewer needs a Google account and an individual invitation/i);
 assert.match(sources["public/parish/dashboard.html"], /Announcements, Groups, and Teaching[\s\S]*verified-household gate[\s\S]*YouTube-hosted video—even Unlisted—does not carry that same guarantee[\s\S]*AGAPAY cannot control YouTube access[\s\S]*youtubeVideoUrl[\s\S]*Validate and add/i, "privacy guidance must be permanent and appear before submission controls");
 assert.match(sources["public/myagapay/media.html"], /href="\/myagapay\/parish-life"[^>]*>← Back</);
@@ -114,6 +126,8 @@ assert.match(sources["public/myagapay/watch.js"], /new Hls/);
 assert.match(sources["public/myagapay/media.html"], /Public parish channel[\s\S]*public YouTube media/i);
 assert.match(sources["public/myagapay/media.html"], /id="youtubePlayerModal"[\s\S]*youtubePlayerFrame/);
 assert.match(sources["public/myagapay/media.js"], /youtube-nocookie\.com\/embed\/[\s\S]*openYouTubeMedia/);
+assert.match(sources["public/myagapay/media.js"], /openYouTubeMediaFullscreen[\s\S]*requestFullscreen[\s\S]*orientation\?\.lock\?\.\("landscape"\)/, "YouTube playback must offer native fullscreen with a landscape request");
+assert.match(sources["public/myagapay/media.html"], /youtube-player-fullscreen[\s\S]*allowfullscreen/, "the YouTube player must expose a visible fullscreen control and grant iframe fullscreen permission");
 assert.match(sources["public/myagapay/media.js"], /youtube-nocookie\.com\/embed\/videoseries\?list=/, "the connected channel must render its auto-updating uploads playlist inside Koinonia");
 assert.match(sources["public/parish/dashboard.html"], /Connect your YouTube channel[\s\S]*New public videos appear automatically/);
 assert.match(sources["src/handlers/parish-video.js"], /youtube-channel[\s\S]*saveYouTubeChannel/);

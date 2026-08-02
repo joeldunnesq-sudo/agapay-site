@@ -184,7 +184,7 @@ function renderRecentRecordings(teaching = {}) {
     <a class="parish-life-recording-row" href="/myagapay/teaching#${encodeURIComponent(post.id)}">
       <span class="parish-life-audio-icon" aria-hidden="true">▶</span>
       <span><strong>${parishLifeEscape(post.title)}</strong><small>${post.pinned ? "Pinned · " : ""}${parishLifeEscape(parishLifeCategory(post.category, "homilies"))} · ${parishLifeEscape(parishLifeDate(post.publishedAt || post.createdAt))}</small></span>
-      <em>${post.read ? "Listen" : "New"}</em>
+      <em>Play</em>
     </a>`).join("");
 }
 

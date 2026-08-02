@@ -548,7 +548,7 @@ async function resumeKoinoniaPodcastProgress(index) {
 function podcastProgressPayload(completed = false) {
   const audio = document.getElementById("koinoniaPodcastAudio");
   const episode = koinoniaPodcastState.currentEpisode;
-  if (!audio || !episode) return null;
+  if (!audio || !episode || episode.trackProgress === false) return null;
   const duration = Number.isFinite(audio.duration) ? audio.duration : Number(episode.durationSeconds || 0);
   return {
     episodeKey: episode.episodeKey,
@@ -766,16 +766,37 @@ function renderTeaching() {
   }
   list.innerHTML = visiblePosts.map((post) => `
     <article class="feed-card teaching-card${post.read ? "" : " is-unread"}" id="${teachingEscape(post.id)}" data-teaching-id="${teachingEscape(post.id)}">
-      <button class="feed-card-summary" type="button" onclick="openTeachingPost('${teachingEscape(post.id)}')" aria-expanded="false">
+      <button class="feed-card-summary" type="button" onclick="${post.audioUrl ? "playParishTeachingAudio" : "openTeachingPost"}('${teachingEscape(post.id)}')" aria-expanded="false"${post.audioUrl ? ` aria-label="Play ${teachingEscape(post.title)} in the Koinonia player"` : ""}>
         <span class="teaching-card-icon" aria-hidden="true">${post.audioUrl ? "▶" : "✦"}</span>
-        <span class="feed-card-copy"><span class="feed-card-flags">${post.pinned ? '<em class="feed-pinned">Pinned</em>' : ''}<em>${teachingEscape(TEACHING_FILTERS.find(({ value }) => value === (post.category || "homilies"))?.label || "Homilies")}</em>${post.audioUrl ? `<em>${post.audioSource === "external" ? "Linked audio" : "Audio"}</em>` : "<em>Reflection</em>"}${post.read ? "" : '<em class="feed-new">New</em>'}</span><strong>${teachingEscape(post.title)}</strong><small>${teachingEscape(teachingDate(post.publishedAt))}</small></span>
+        <span class="feed-card-copy"><span class="feed-card-flags">${post.pinned ? '<em class="feed-pinned">Pinned</em>' : ''}<em>${teachingEscape(TEACHING_FILTERS.find(({ value }) => value === (post.category || "homilies"))?.label || "Homilies")}</em>${post.audioUrl ? `<em>${post.audioSource === "external" ? "Linked audio" : "Audio"}</em>` : "<em>Reflection</em>"}${post.read ? "" : '<em class="feed-new">New</em>'}</span><strong>${teachingEscape(post.title)}</strong><small>${post.audioUrl ? "Play in Koinonia · " : ""}${teachingEscape(teachingDate(post.publishedAt))}</small></span>
       </button>
       <div class="feed-card-detail teaching-card-detail" hidden>
-        ${post.audioUrl ? `<audio controls preload="metadata" src="${teachingEscape(post.audioUrl)}">Your browser does not support audio playback.</audio>` : ""}
         <div class="feed-card-body">${post.bodyHtml || teachingEscape(post.body)}</div>
       </div>
     </article>
   `).join("");
+}
+
+async function playParishTeachingAudio(teachingId) {
+  const post = teachingState.posts.find((item) => item.id === teachingId);
+  if (!post?.audioUrl) return;
+  const parishName = document.getElementById("teachingParishName")?.textContent?.trim() || "Your parish";
+  await playKoinoniaPodcast({
+    title:post.title,
+    show:parishName,
+    episodeKey:`parish-audio:${post.id}`,
+    audioUrl:post.audioUrl,
+    description:post.body || "A recording shared by your parish.",
+    link:post.audioUrl,
+    image:"/mark.png",
+    trackProgress:false,
+  });
+  if (post.read) return;
+  const response = await fetch(`/api/donor/teaching/${encodeURIComponent(teachingId)}/read`, { method:"POST", headers:teachingHeaders() });
+  if (!response.ok) return;
+  post.read = true;
+  teachingState.unreadCount = Math.max(0, teachingState.unreadCount - 1);
+  renderTeaching();
 }
 
 async function openTeachingPost(teachingId) {
@@ -812,7 +833,8 @@ async function loadTeaching() {
     status.hidden = true;
     renderTeaching();
     const targetId = decodeURIComponent(window.location.hash.slice(1));
-    if (targetId && teachingState.posts.some(({ id }) => id === targetId)) void openTeachingPost(targetId);
+    const targetPost = teachingState.posts.find(({ id }) => id === targetId);
+    if (targetPost) void (targetPost.audioUrl ? playParishTeachingAudio(targetId) : openTeachingPost(targetId));
   } catch (error) {
     status.hidden = false;
     status.textContent = error.message || "Unable to load parish teaching.";
@@ -820,6 +842,7 @@ async function loadTeaching() {
 }
 
 window.setAudioLibraryMode = setAudioLibraryMode;
+window.playParishTeachingAudio = playParishTeachingAudio;
 window.searchKoinoniaPodcasts = searchKoinoniaPodcasts;
 window.importKoinoniaPodcastFeed = importKoinoniaPodcastFeed;
 window.openKoinoniaPodcast = openKoinoniaPodcast;

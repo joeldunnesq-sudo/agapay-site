@@ -141,6 +141,20 @@ export async function archiveParishTeachingPost(db, { parishId, teachingId }) {
   return row ? teachingFromRow(row) : null;
 }
 
+export async function deleteParishTeachingPost(db, env, { parishId, teachingId }) {
+  const current = await db.prepare("SELECT * FROM parish_teaching_posts WHERE id = ? AND parish_id = ?").bind(teachingId, parishId).first();
+  if (!current) return null;
+  const publicBase = String(env.TEACHING_ASSETS_URL || "").replace(/\/+$/, "");
+  const audioUrl = String(current.audio_url || "");
+  if ((current.audio_source || "upload") === "upload" && publicBase && audioUrl.startsWith(`${publicBase}/`)) {
+    if (!env.TEACHING_ASSETS) throw new Error("Teaching audio storage is not configured.");
+    await env.TEACHING_ASSETS.delete(audioUrl.slice(publicBase.length + 1));
+  }
+  await db.prepare("DELETE FROM parish_content_reads WHERE parish_id = ? AND content_type = ? AND content_id = ?").bind(parishId, CONTENT_TYPE, teachingId).run();
+  await db.prepare("DELETE FROM parish_teaching_posts WHERE id = ? AND parish_id = ?").bind(teachingId, parishId).run();
+  return teachingFromRow(current);
+}
+
 export async function listParishTeachingPosts(db, parishId) {
   const result = await db.prepare(`
     SELECT * FROM parish_teaching_posts WHERE parish_id = ?
@@ -209,13 +223,16 @@ export function limitTeachingAudioStream(source, maxBytes = TEACHING_AUDIO_MAX_B
   return { stream: source.pipeThrough(limiter), bytesRead: () => bytesRead };
 }
 
-export async function storeTeachingAudio(bucket, { key, source, contentType, maxBytes = TEACHING_AUDIO_MAX_BYTES }) {
-  const bounded = limitTeachingAudioStream(source, maxBytes);
+export async function storeTeachingAudio(bucket, { key, source, contentType, contentLength = 0, maxBytes = TEACHING_AUDIO_MAX_BYTES }) {
+  const knownLength = Math.max(0, Number(contentLength) || 0);
+  if (knownLength > maxBytes) throw new Error("TEACHING_AUDIO_TOO_LARGE");
+  const bounded = knownLength ? null : limitTeachingAudioStream(source, maxBytes);
+  const uploadSource = bounded ? bounded.stream : source;
   try {
-    const object = await bucket.put(key, bounded.stream, {
+    const object = await bucket.put(key, uploadSource, {
       httpMetadata: { contentType, cacheControl: "public, max-age=31536000, immutable" },
     });
-    return { object, size: Number(object?.size ?? bounded.bytesRead()) };
+    return { object, size: Number(object?.size ?? (knownLength || bounded?.bytesRead() || 0)) };
   } catch (error) {
     await bucket.delete(key).catch(() => {});
     throw error;
@@ -249,12 +266,13 @@ export async function handleParishTeachingAudioUpload(request, env, parishId, te
   const key = ["teaching", safeSegment(parishId, "parish"), safeSegment(teachingId, "post"), `${Date.now()}-${crypto.randomUUID()}.${metadata.ext}`].join("/");
   let stored;
   try {
-    stored = await storeTeachingAudio(env.TEACHING_ASSETS, { key, source: request.body, contentType: metadata.contentType });
+    stored = await storeTeachingAudio(env.TEACHING_ASSETS, { key, source: request.body, contentType: metadata.contentType, contentLength: metadata.contentLength });
   } catch (error) {
     if (error?.message === "TEACHING_AUDIO_TOO_LARGE") {
       return json({ error: "Teaching audio must be 50MB or smaller." }, { status: 413 });
     }
-    throw error;
+    console.error("teaching_audio_storage_failed", JSON.stringify({ parishId, teachingId, contentType: metadata.contentType, contentLength: metadata.contentLength, error: error?.message || String(error) }));
+    return json({ error: "Audio storage could not accept this upload. Your draft was saved; please try the audio upload again." }, { status: 502 });
   }
   const size = stored.size;
   if (!size) {
@@ -314,6 +332,10 @@ export async function handleParishTeaching(request, env, parishId, subpath = "",
           ctx.waitUntil(delivery);
         },
       });
+      return post ? json({ ok: true, post }) : json({ error: "Teaching post not found" }, { status: 404 });
+    }
+    if (parts.length === 1 && request.method === "DELETE") {
+      const post = await deleteParishTeachingPost(db, env, { parishId, teachingId: decodeURIComponent(parts[0]) });
       return post ? json({ ok: true, post }) : json({ error: "Teaching post not found" }, { status: 404 });
     }
     if (parts.length === 2 && parts[1] === "readers" && request.method === "GET") {

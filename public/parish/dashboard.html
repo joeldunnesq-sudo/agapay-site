@@ -1396,9 +1396,9 @@
             </section>
             <section class="communications-content-section koinonia-studio-view video-admin-section" data-koinonia-panel="video" aria-labelledby="videoAdminHeading" hidden>
               <div class="communications-section-heading"><span class="eyebrow">YouTube-hosted media</span><h2 id="videoAdminHeading">Video</h2><p>Add YouTube videos to the parish Media library. Native Stream uploads are paused for now.</p></div>
-              <!-- Cloudflare Stream upload and management remain implemented but are intentionally hidden while Koinonia is YouTube-only. -->
-              <div class="communications-grid" data-native-video-admin hidden>
-                <form class="communications-compose" onsubmit="createVideoUpload(event)">
+              <!-- New Cloudflare Stream uploads remain paused; existing records stay manageable and permanently deletable. -->
+              <div class="communications-grid" data-native-video-management hidden>
+                <form class="communications-compose" data-native-video-upload onsubmit="createVideoUpload(event)">
                   <span class="eyebrow">Upload</span><h2>New private video</h2>
                   <label>Title<input id="videoTitle" maxlength="180" required placeholder="Sunday homily · July 27" /></label>
                   <label>Description<textarea id="videoDescription" maxlength="20000" rows="7" placeholder="Add context for parishioners. **Bold**, *italic*, links, and lists are supported."></textarea></label>

@@ -8,6 +8,7 @@ import { handleListenSearch } from "../src/handlers/listen.js";
 import {
   archiveParishTeachingPost,
   createParishTeachingPost,
+  deleteParishTeachingPost,
   getDonorTeachingFeed,
   markTeachingRead,
   renderTeachingBody,
@@ -118,6 +119,26 @@ assert.equal(sqlite.prepare("SELECT pinned FROM parish_teaching_posts WHERE id =
 donorFeed = await getDonorTeachingFeed(db, { parishId:"parish-one", donorId:"donor@example.test" });
 assert.equal(donorFeed.posts[0].id, catechismDraft.id, "the pinned recording must lead the donor audio feed");
 
+let deletedTeachingObject = "";
+const uploadedAudioDraft = await createParishTeachingPost(db, {
+  parishId:"parish-one", createdBy:"staff@example.test", input:{ title:"Uploaded draft", body:"A draft with hosted audio." },
+});
+sqlite.prepare("UPDATE parish_teaching_posts SET audio_url = ?, audio_source = 'upload' WHERE id = ?")
+  .run("https://audio.agapay.test/parish-one/uploaded-draft.mp3", uploadedAudioDraft.id);
+await deleteParishTeachingPost(db, {
+  TEACHING_ASSETS_URL:"https://audio.agapay.test",
+  TEACHING_ASSETS:{ async delete(key) { deletedTeachingObject = key; } },
+}, { parishId:"parish-one", teachingId:uploadedAudioDraft.id });
+assert.equal(deletedTeachingObject, "parish-one/uploaded-draft.mp3", "deleting an uploaded draft must remove its R2 object");
+assert.equal(sqlite.prepare("SELECT id FROM parish_teaching_posts WHERE id = ?").get(uploadedAudioDraft.id), undefined);
+let externalDeleteCalled = false;
+await deleteParishTeachingPost(db, {
+  TEACHING_ASSETS_URL:"https://audio.agapay.test",
+  TEACHING_ASSETS:{ async delete() { externalDeleteCalled = true; } },
+}, { parishId:"parish-one", teachingId:linkedAudio.id });
+assert.equal(externalDeleteCalled, false, "deleting linked audio must not attempt to delete an external asset");
+assert.equal(sqlite.prepare("SELECT id FROM parish_teaching_posts WHERE id = ?").get(linkedAudio.id), undefined);
+
 const nearLimit = validateTeachingAudioMetadata(new Request("https://agapay.test/audio", {
   method: "POST", headers: { "Content-Type": "audio/mpeg", "Content-Length": String(TEACHING_AUDIO_MAX_BYTES) }, body: new Uint8Array([1]),
 }));
@@ -150,6 +171,14 @@ assert.equal(storedKeys.has("near.mp3"), true);
 await assert.rejects(() => storeTeachingAudio(bucket, { key: "over.mp3", source: chunkedAudio(51), contentType: "audio/mpeg" }), /TEACHING_AUDIO_TOO_LARGE/);
 assert.equal(storedKeys.has("over.mp3"), false, "an over-limit stream must not leave an R2 object");
 assert.deepEqual(deletedKeys, ["over.mp3"]);
+const fixedSource = chunkedAudio(10);
+let receivedFixedSource = null;
+const fixedStored = await storeTeachingAudio({
+  async put(_key, source) { receivedFixedSource = source; return { size:10 * 1024 * 1024 }; },
+  async delete() {},
+}, { key:"fixed.mp3", source:fixedSource, contentType:"audio/mpeg", contentLength:10 * 1024 * 1024 });
+assert.equal(receivedFixedSource, fixedSource, "a browser upload with Content-Length must preserve the request's fixed-length stream for R2");
+assert.equal(fixedStored.size, 10 * 1024 * 1024);
 
 const sourceFiles = await Promise.all([
   "src/lib/rich-text.js", "src/handlers/parish-communications.js", "src/handlers/parish-teaching.js",
@@ -164,6 +193,7 @@ assert.equal(implementationCount, 1, "stripAuthoredHtml must have exactly one im
 assert.match(sources["src/handlers/parish-communications.js"], /import \{ renderBoundedRichText \} from "\.\.\/lib\/rich-text\.js"/);
 assert.match(sources["src/handlers/parish-teaching.js"], /import \{ renderBoundedRichText \} from "\.\.\/lib\/rich-text\.js"/);
 assert.match(sources["src/handlers/parish-teaching.js"], /sendTeachingPush\(env, \{/);
+assert.match(sources["src/handlers/parish-teaching.js"], /contentLength: metadata\.contentLength[\s\S]*teaching_audio_storage_failed/, "R2 uploads must preserve known-length request streams and return an actionable storage error");
 assert.match(sources["src/worker.js"], /handleParishTeaching\(request, env, parishId,[\s\S]*, ctx\)/);
 assert.match(sources["public/myagapay/parish-life.js"], />Recent Audio<[\s\S]*href="\/myagapay\/teaching">Audio Library/);
 assert.match(sources["public/myagapay/parish-life.js"], /post\.status === "published" && Boolean\(post\.audioUrl\)/);
@@ -174,8 +204,12 @@ assert.match(sources["public/parish/dashboard.html"], /id="teachingCategory"[\s\
 assert.match(sources["public/parish/app.js"], /createTeachingDraft/);
 assert.match(sources["public/parish/app.js"], /category:document\.getElementById\('teachingCategory'\)\.value/);
 assert.match(sources["public/parish/app.js"], /audioUrl[\s\S]*toggleTeachingPin/);
+assert.match(sources["public/parish/app.js"], /chooseTeachingAudioUpload[\s\S]*Replace audio file[\s\S]*uploadTeachingAudio/, "a saved draft must offer a direct retry after an upload failure");
+assert.match(sources["public/parish/app.js"], /deleteTeachingPost[\s\S]*method:'DELETE'[\s\S]*Teaching post permanently deleted/, "audio posts of every status must offer permanent deletion");
 assert.match(sources["public/myagapay/parish-life.js"], /Boolean\(right\.pinned\)[\s\S]*Pinned ·/);
 assert.match(sources["public/myagapay/teaching.js"], /post\.pinned[\s\S]*Linked audio/);
+assert.match(sources["public/myagapay/teaching.js"], /playParishTeachingAudio[\s\S]*playKoinoniaPodcast\(\{[\s\S]*trackProgress:false/, "parish recordings must launch the shared Koinonia mini and full-screen player");
+assert.doesNotMatch(sources["public/myagapay/teaching.js"], /<audio controls preload="metadata"/, "parish recordings must not fall back to a bare browser audio control");
 assert.match(sources["public/myagapay/teaching.js"], /All[\s\S]*Homilies[\s\S]*Catechism[\s\S]*Liturgical[\s\S]*Choir[\s\S]*Special Events/);
 assert.match(sources["public/myagapay/teaching.js"], /teachingPostsForFilter\(value\)\.length/);
 assert.match(sources["public/myagapay/teaching.html"], /Parish Audio[\s\S]*Orthodox Podcasts[\s\S]*koinoniaPodcastQuery[\s\S]*koinoniaPodcastPlayer/);

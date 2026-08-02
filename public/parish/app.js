@@ -10484,9 +10484,14 @@
   let communicationsState = { loaded: false, announcements: [], teaching: [], videos: [], youtube: [], youtubeChannel: null, blog: null, readers: {} };
 
   function syncKoinoniaVideoAdminAvailability() {
-    document.querySelectorAll('[data-native-video-admin]').forEach(element => {
+    document.querySelectorAll('[data-native-video-upload]').forEach(element => {
       element.hidden = !KOINONIA_NATIVE_VIDEO_UPLOADS_VISIBLE;
     });
+    const management = document.querySelector('[data-native-video-management]');
+    if (management) {
+      management.hidden = !KOINONIA_NATIVE_VIDEO_UPLOADS_VISIBLE && !(communicationsState.videos || []).length;
+      management.classList.toggle('is-list-only', !KOINONIA_NATIVE_VIDEO_UPLOADS_VISIBLE);
+    }
   }
   let koinoniaMinistriesState = { loaded: false, ministries: [], selectedId: '', people: [] };
   const koinoniaMinistryImageUrls = new Map();
@@ -10817,10 +10822,12 @@
         <div class="communications-row-copy"><div class="communications-row-meta"><span class="communications-status is-${escapeAttr(item.status)}">${announcementStatusLabel(item.status)}</span><span>${escapeHtml(contentCategoryLabel(item.category || 'homilies'))}</span>${item.audioUrl ? `<span class="communications-audio-label">▶ ${item.audioSource === 'external' ? 'Linked audio' : 'Audio'}</span>` : '<span>Text</span>'}${item.pinned ? '<span>Pinned for parishioners</span>' : ''}<span>${escapeHtml(shortDate(item.publishedAt || item.updatedAt || item.createdAt))}</span></div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p></div>
         <div class="communications-row-actions">
           ${item.status === 'published' ? `<span class="btn btn-ghost btn-sm" aria-label="${Number(item.readCount || 0)} readers">${Number(item.readCount || 0)} read</span>` : ''}
+          ${item.status !== 'archived' ? `<button class="btn btn-ghost btn-sm" type="button" onclick="chooseTeachingAudioUpload('${escapeAttr(item.id)}',this)">${item.audioUrl ? 'Replace audio file' : 'Upload audio file'}</button>` : ''}
           ${item.status !== 'archived' ? `<button class="btn btn-ghost btn-sm" type="button" onclick="toggleTeachingPin('${escapeAttr(item.id)}',${item.pinned ? 'false' : 'true'},this)">${item.pinned ? 'Unpin' : 'Pin in My AGAPAY'}</button>` : ''}
           ${item.status !== 'archived' ? `<button class="btn btn-ghost btn-sm" type="button" onclick="editTeachingPost('${escapeAttr(item.id)}')">Edit</button>` : ''}
           ${item.status === 'draft' ? `<button class="btn btn-gold btn-sm" type="button" onclick="publishTeachingPost('${escapeAttr(item.id)}',this)">Publish</button>` : ''}
           ${item.status !== 'archived' ? `<button class="btn btn-danger btn-sm" type="button" onclick="archiveTeachingPost('${escapeAttr(item.id)}',this)">Archive</button>` : ''}
+          <button class="btn btn-danger btn-sm" type="button" onclick="deleteTeachingPost('${escapeAttr(item.id)}',this)">Delete permanently</button>
         </div>
       </article>
     `).join('');
@@ -10846,6 +10853,7 @@
           ${item.status !== 'archived' ? `<button class="btn btn-ghost btn-sm" type="button" onclick="editVideoPost('${escapeAttr(item.id)}')">Edit</button>` : ''}
           ${item.status === 'draft' ? `<button class="btn btn-gold btn-sm" type="button" ${item.readyToStream ? '' : 'disabled'} onclick="publishVideoPost('${escapeAttr(item.id)}',this)">${item.readyToStream ? 'Publish' : 'Processing…'}</button>` : ''}
           ${item.status !== 'archived' ? `<button class="btn btn-danger btn-sm" type="button" onclick="archiveVideo('${escapeAttr(item.id)}',this)">Archive</button>` : ''}
+          <button class="btn btn-danger btn-sm" type="button" onclick="deleteVideo('${escapeAttr(item.id)}',this)">Delete permanently</button>
         </div>
       </article>`).join('') : '<div class="communications-empty"><strong>No native videos yet</strong><p>Upload a recording to begin private Stream processing.</p></div>';
     if (rows.some(item => item.status === 'draft' && !item.readyToStream && item.streamState !== 'error')) {
@@ -10969,6 +10977,7 @@
     if (!videoResponse.ok) { setStatus(videoData.error || 'Unable to load video posts.','error'); return; }
     if (!blogResponse.ok) { setStatus(blogData.error || 'Unable to load the priest’s blog settings.','error'); return; }
     communicationsState = { loaded: true, announcements: data.announcements || [], teaching: teachingData.posts || [], videos: videoData.videos || [], youtube: videoData.youtube || [], youtubeChannel: videoData.youtubeChannel || null, blog: blogData.blog || null, readers: communicationsState.readers || {} };
+    syncKoinoniaVideoAdminAvailability();
     const youtubeChannelUrl = document.getElementById('youtubeChannelUrl');
     if (youtubeChannelUrl) youtubeChannelUrl.value = communicationsState.youtubeChannel?.channelUrl || '';
     const blogEnabled = document.getElementById('parishBlogEnabled');
@@ -11109,9 +11118,24 @@
     const response = await fetch(communicationsApi('/teaching/' + encodeURIComponent(teachingId) + '/audio'), {
       method:'POST', headers:{ ...authHeaders(), 'Content-Type':file.type }, body:file
     });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Unable to upload the teaching audio.');
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || `Unable to upload the teaching audio (HTTP ${response.status}).`);
     return data.post;
+  }
+
+  function chooseTeachingAudioUpload(teachingId, button) {
+    const picker = document.createElement('input');
+    picker.type = 'file';
+    picker.accept = 'audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav,audio/ogg,audio/webm';
+    picker.addEventListener('change', async () => {
+      const file = picker.files?.[0];
+      if (!file) return;
+      if (button) { button.disabled = true; button.classList.add('loading'); }
+      try { await uploadTeachingAudio(teachingId, file); await loadCommunicationsTab(true); setStatus('Teaching audio uploaded.','success'); }
+      catch (error) { setStatus(error.message,'error'); }
+      finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
+    }, { once:true });
+    picker.click();
   }
 
   async function createTeachingDraft(event) {
@@ -11129,7 +11153,10 @@
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Unable to save teaching post.');
-      if (audio) await uploadTeachingAudio(data.post.id, audio);
+      if (audio) {
+        try { await uploadTeachingAudio(data.post.id, audio); }
+        catch (error) { form.reset(); await loadCommunicationsTab(true); throw error; }
+      }
       form.reset();
       await loadCommunicationsTab(true);
       setStatus(audio ? 'Teaching post and audio saved as a draft.' : audioUrl ? 'Teaching post and audio link saved as a draft.' : 'Teaching post saved as a draft.','success');
@@ -11175,6 +11202,21 @@
       if (!response.ok) throw new Error(data.error || 'Unable to archive teaching post.');
       await loadCommunicationsTab(true);
       setStatus('Teaching post archived.','success');
+    } catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
+  }
+
+  async function deleteTeachingPost(id, button) {
+    const item = communicationsState.teaching.find(row => row.id === id);
+    const hostedNotice = item?.audioSource === 'upload' ? ' The uploaded audio file will also be removed.' : '';
+    if (!confirm(`Permanently delete “${item?.title || 'this teaching post'}”?${hostedNotice} This cannot be undone.`)) return;
+    if (button) { button.disabled = true; button.classList.add('loading'); }
+    try {
+      const response = await fetch(communicationsApi('/teaching/' + encodeURIComponent(id)), { method:'DELETE', headers:authHeaders() });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Unable to delete teaching post.');
+      await loadCommunicationsTab(true);
+      setStatus('Teaching post permanently deleted.','success');
     } catch (error) { setStatus(error.message,'error'); }
     finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
   }
@@ -11260,6 +11302,20 @@
       await loadCommunicationsTab(true); setStatus('Video archived.','success');
     } catch (error) { setStatus(error.message,'error'); }
     finally { if (button) button.disabled = false; }
+  }
+
+  async function deleteVideo(id, button) {
+    const item = communicationsState.videos.find(row => row.id === id);
+    if (!confirm(`Permanently delete “${item?.title || 'this video'}”? Its hosted video and watch history will also be removed. This cannot be undone.`)) return;
+    if (button) { button.disabled = true; button.classList.add('loading'); }
+    try {
+      const response = await fetch(communicationsApi('/video/' + encodeURIComponent(id)), { method:'DELETE', headers:authHeaders() });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Unable to delete video.');
+      await loadCommunicationsTab(true);
+      setStatus('Video permanently deleted.','success');
+    } catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
   }
 
   async function addYouTubeVideo(event) {

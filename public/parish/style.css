@@ -797,6 +797,7 @@
     .communications-admin-header h1, .communications-compose h2, .communications-list-head h2 { margin:4px 0 6px; font-family:var(--serif); color:var(--deep); }
     .communications-admin-header p { margin:0; color:var(--muted); }
     .communications-grid { display:grid; grid-template-columns:minmax(280px,.72fr) minmax(420px,1.28fr); gap:18px; align-items:start; }
+    .communications-grid.is-list-only { grid-template-columns:1fr; }
     .communications-workspace-stack { display:grid; gap:24px; }
     .communications-content-section { display:grid; gap:14px; border:1px solid var(--line); border-radius:18px; padding:20px; background:#faf8f3; }
     .communications-section-heading h2 { margin:4px 0 5px; font-family:var(--serif); color:var(--deep); font-size:27px; }

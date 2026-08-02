@@ -265,6 +265,16 @@ async function donorVideoContext(request, env) {
   return { parishId, found, donor, donorId };
 }
 
+export async function deleteVideoPost(db, env, { parishId, videoId }, fetchImpl = fetch) {
+  const current = await db.prepare("SELECT * FROM parish_video_posts WHERE id = ? AND parish_id = ?").bind(videoId, parishId).first();
+  if (!current) return null;
+  try { await callStreamApi(env, `/${encodeURIComponent(current.stream_video_id)}`, { method: "DELETE" }, fetchImpl); }
+  catch (error) { if (error?.status !== 404) throw error; }
+  await db.prepare("DELETE FROM parish_content_reads WHERE parish_id = ? AND content_type = ? AND content_id = ?").bind(parishId, CONTENT_TYPE, videoId).run();
+  await db.prepare("DELETE FROM parish_video_posts WHERE id = ? AND parish_id = ?").bind(videoId, parishId).run();
+  return videoFromRow(current);
+}
+
 export async function setYouTubeLinkPinned(db, { parishId, linkId, pinned }) {
   const current = await db.prepare("SELECT id FROM parish_youtube_links WHERE id = ? AND parish_id = ?").bind(linkId, parishId).first();
   if (!current) return null;
@@ -453,6 +463,10 @@ export async function handleParishVideo(request, env, parishId, subpath = "") {
       const input = await request.json();
       const details = input.status === "published" ? await callStreamApi(env, `/${encodeURIComponent(current.stream_video_id)}`) : null;
       return json({ ok: true, post: await updateVideoPost(db, { parishId, videoId: id, input, streamDetails: details }) });
+    }
+    if (parts.length === 1 && request.method === "DELETE") {
+      const post = await deleteVideoPost(db, env, { parishId, videoId: decodeURIComponent(parts[0]) });
+      return post ? json({ ok: true, post }) : json({ error: "Video not found" }, { status: 404 });
     }
     if (parts.length === 2 && parts[1] === "status" && request.method === "GET") {
       const post = await db.prepare("SELECT * FROM parish_video_posts WHERE id = ? AND parish_id = ?").bind(decodeURIComponent(parts[0]), parishId).first();
