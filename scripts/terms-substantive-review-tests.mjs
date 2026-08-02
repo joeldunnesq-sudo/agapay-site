@@ -14,6 +14,7 @@ const expectedSections = [
 
 assert.equal(REGISTRATION_TERMS_VERSION, "2026-08-01", "registration must record the reviewed Terms version");
 assert.match(terms, /Last updated: August 1, 2026[\s\S]*Effective for existing Users: August 31, 2026/);
+assert.match(terms, /AGAPAY, a Texas sole proprietorship operating under the AGAPAY name/);
 
 const tocIds = [...terms.matchAll(/<li><a href="#([^"]+)"><span class="num">\d{2}<\/span>/g)].map((match) => match[1]);
 const sectionIds = [...terms.matchAll(/<section class="section" id="([^"]+)">/g)].map((match) => match[1]);
@@ -33,6 +34,10 @@ assert.match(terms, /software, not professional accounting, legal, tax, audit, p
 assert.match(terms, /AAA Consumer Arbitration Rules[\s\S]*AAA Commercial Arbitration Rules/);
 assert.match(terms, /Small claims and urgent relief/);
 assert.match(terms, /Thirty-day opt-out[\s\S]*ARBITRATION OPT OUT/);
+assert.match(terms, /Service by email accepted/);
+assert.match(terms, /SERVICE OF PROCESS/);
+assert.match(terms, /Delivery is deemed accepted when AGAPAY sends that written acknowledgment/);
+assert.match(terms, /court requires a signed waiver, court order, sworn filing, personal service, or another formality/);
 assert.match(privacy, /governed by Section 24 of the[\s\S]*Terms of Service/);
 assert.doesNotMatch(privacy, /under the Commercial Arbitration Rules of the American Arbitration Association/);
 
