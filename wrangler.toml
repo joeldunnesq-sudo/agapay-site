@@ -10,6 +10,8 @@ head_sampling_rate = 1
 [vars]
 AGAPAY_FROM_EMAIL = "AGAPAY <onboarding@agapay.app>"
 AGAPAY_REPLY_TO_EMAIL = "support@agapay.app"
+AGAPAY_OPS_ALERT_EMAIL = "joeldunnesq@gmail.com"
+AGAPAY_SCHEDULED_ALERT_DEDUPE_SECONDS = "3600"
 AGAPAY_REGISTRATION_NOTIFY_EMAIL = "hello@agapay.app"
 AGAPAY_APP_URL = "https://agapay.app"
 AGAPAY_PUBLIC_URL = "https://agapay.app"
