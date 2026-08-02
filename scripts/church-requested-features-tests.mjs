@@ -19,9 +19,18 @@ assert.ok(worker.includes('^\\/[^/]+\\/bookstore\\/?$'), "the public storefront 
 assert.match(donorHandler, /Describe every shopper-added item and choose a valid category/);
 assert.ok(donorHandler.includes('`/${encodeURIComponent(resolved.parishId)}/bookstore`'));
 assert.match(parishHtml, /bookstoreGuestCheckoutQr/);
+assert.match(parishHtml, /class="pdx-hero-qr bookstore-hero-qr"/);
+assert.doesNotMatch(parishHtml, /id="bookstoreGuestCheckoutCard"/);
 assert.match(parishApp, /qrcode\(0, 'H'\)/);
 assert.match(parishApp, /brandQrSvg\(rawSvg, logoHref\)/);
+assert.match(parishApp, /function downloadBookstoreGuestCheckoutQrPng\(\)/);
+assert.match(parishApp, /function downloadBookstoreGuestCheckoutQrSvg\(\)/);
+assert.match(parishApp, /bookstore-checkout-qr\.\$\{extension\}/);
 assert.ok(parishApp.includes("'/' + encodeURIComponent(currentParish.parishId) + '/bookstore'"));
+
+assert.match(parishHtml, /downloadBulletinPng\(\); return false;">Download bulletin PNG/);
+assert.match(parishHtml, /downloadBulletinSvg\(\); return false;">Download bulletin SVG/);
+assert.doesNotMatch(parishHtml, /id="bulletinInsertTitle"/);
 
 const bulletinPositionStart = parishApp.indexOf("function positionBulletinQr");
 const bulletinPositionEnd = parishApp.indexOf("function buildBulletinSvg", bulletinPositionStart);

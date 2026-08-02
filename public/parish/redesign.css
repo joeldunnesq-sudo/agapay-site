@@ -79,28 +79,9 @@
 .pdx-hero-qr-hint a { color: rgba(246,241,232,0.7); text-decoration: none; }
 .pdx-hero-qr-hint a:hover { color: var(--pdx-gold-bright); }
 
-.pdx-bulletin-card { display: grid; grid-template-columns: minmax(250px, 1fr) minmax(400px, 540px); gap: 22px; align-items: center; margin-bottom: 18px; padding: 20px; overflow: hidden; }
-.pdx-bulletin-copy { max-width: 430px; padding: 3px; }
-.pdx-bulletin-copy h2 { margin: 12px 0 7px; color: var(--deep); font-family: var(--serif); font-size: clamp(1.55rem, 2.6vw, 2.05rem); line-height: 1.05; }
-.pdx-bulletin-copy > p { margin: 0; color: var(--stone); font-size: 13px; line-height: 1.6; }
-.pdx-bulletin-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 16px; }
-.pdx-bulletin-preview { margin: 0; padding: 12px; background: #e8e2d6; }
-.pdx-bulletin-preview .bulletin-preview-inner { box-sizing: border-box; display: grid; grid-template-rows: auto 1fr auto; width: 100%; max-width: 520px; aspect-ratio: 3 / 2; overflow: hidden; border: 0; border-radius: 4px; margin: 0 auto; padding: 0; background: #fbf7ee; box-shadow: 0 11px 24px rgba(6,21,34,.15); text-align: left; }
-.bulletin-preview-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 60px; padding: 0 22px; background: var(--deep); }
-.pdx-bulletin-preview .bulletin-parish-name { min-width: 0; overflow: hidden; margin: 0; color: var(--cream); font: 600 clamp(16px,1.9vw,21px)/1.1 var(--serif); text-overflow: ellipsis; white-space: nowrap; }
-.bulletin-kicker { flex: none; color: var(--pdx-gold-bright); font: 700 9px/1 var(--sans); letter-spacing: .16em; text-transform: uppercase; }
-.bulletin-preview-content { display: grid; grid-template-columns: minmax(0,1fr) 112px; gap: 18px; align-items: center; padding: 16px 22px 11px; }
-.bulletin-message { min-width: 0; }
-.bulletin-title { color: var(--deep); font: 600 clamp(24px,2.8vw,32px)/.96 var(--serif); letter-spacing: -.02em; }
-.pdx-bulletin-preview .bulletin-tagline { max-width: 265px; margin: 8px 0 0; color: var(--stone); font: 500 11px/1.45 var(--sans); }
-.pdx-bulletin-preview .bulletin-url { box-sizing: border-box; width: 100%; margin-top: 12px; border: 1px solid rgba(184,144,47,.32); border-radius: 999px; padding: 8px 10px; background: #fff; color: var(--deep); font: 700 10.5px/1.2 var(--sans); text-align: center; }
-.bulletin-qr-panel { box-sizing: border-box; display: grid; align-content: center; justify-items: center; width: 112px; min-height: 132px; border: 1px solid rgba(184,144,47,.45); border-radius: 9px; padding: 8px; background: #fff; box-shadow: 0 5px 14px rgba(6,21,34,.08); }
-.pdx-bulletin-preview .bulletin-qr-wrap { display: grid; place-items: center; width: 94px; height: 94px; margin: 0; }
-.pdx-bulletin-preview .bulletin-qr-wrap .qr-code { box-sizing: border-box; display: grid; place-items: center; width: 94px; height: 94px; border: 0; border-radius: 0; padding: 4px; background: #fff; box-shadow: none; }
-.pdx-bulletin-preview .bulletin-qr-wrap .qr-code svg { display: block; width: 100%; height: 100%; }
-.bulletin-scan-label { margin-top: 6px; color: var(--gold-dark); font: 800 8px/1 var(--sans); letter-spacing: .15em; text-align: center; text-transform: uppercase; }
-.pdx-bulletin-preview .bulletin-footer { display: flex; align-items: center; gap: 6px; min-height: 26px; margin: 0 22px; border-top: 1px solid rgba(111,106,96,.18); color: #8f887c; font: 600 7.5px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; }
-.pdx-bulletin-preview .bulletin-footer span { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); }
+.bookstore-hero-tools { display: grid; justify-items: end; gap: 10px; min-width: min(100%, 430px); }
+.bookstore-hero-tools .agapay-feature-actions { width: 100%; }
+.bookstore-hero-qr { width: min(430px, 100%); box-sizing: border-box; }
 
 .pdx-hero-figure { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; position: relative; z-index: 2; }
 .pdx-hero-total-block { flex: 0 0 auto; }
@@ -1669,7 +1650,7 @@
   .pdx-hero-qr { width: 100%; box-sizing: border-box; }
   .pdx-hero-qr-body { flex: 1; }
   .pdx-hero-qr-link { max-width: none; }
-  .pdx-bulletin-card { grid-template-columns: 1fr; }
+  .bookstore-hero-tools { width: 100%; justify-items: stretch; }
   .pdx-hero-figure, .pdx-rc-hero-figure { flex-direction: column; align-items: stretch; gap: 20px; }
   .pdx-hero-total { font-size: 44px; }
   .pdx-rc-total { font-size: 44px; }
@@ -1683,22 +1664,6 @@
   .pdx-rc-payout-amount, .pdx-rc-payout-status-chip { grid-column: 2; text-align: left; }
   .pdx-rc-controls { align-items: stretch; }
 }
-@media (max-width: 560px) {
-  .pdx-bulletin-preview { padding: 8px; }
-  .pdx-bulletin-preview .bulletin-preview-inner { min-height: 240px; aspect-ratio: auto; }
-  .bulletin-preview-header { min-height: 52px; padding: 0 14px; }
-  .bulletin-kicker { display: none; }
-  .bulletin-preview-content { grid-template-columns: minmax(0,1fr) 102px; gap: 10px; padding: 12px 14px 8px; }
-  .bulletin-title { font-size: 21px; }
-  .pdx-bulletin-preview .bulletin-tagline { max-width: none; }
-  .bulletin-qr-panel { justify-self: center; width: 102px; min-height: 120px; grid-template-columns: 1fr; gap: 0; padding: 7px; }
-  .pdx-bulletin-preview .bulletin-qr-wrap,
-  .pdx-bulletin-preview .bulletin-qr-wrap .qr-code { width: 84px; height: 84px; }
-  .pdx-bulletin-preview .bulletin-url { font-size: 9.5px; }
-  .bulletin-scan-label { margin-top: 5px; font-size: 7.5px; }
-  .pdx-bulletin-preview .bulletin-footer { margin: 0 14px; }
-}
-
 /* ════════════════════════════════════════════════════════════
    PARISH + HUB REDESIGN (status-tile dashboard)
    ════════════════════════════════════════════════════════════ */
