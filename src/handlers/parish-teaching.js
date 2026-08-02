@@ -39,6 +39,8 @@ function teachingFromRow(row = {}) {
     body: row.body || "",
     bodyHtml: renderTeachingBody(row.body || ""),
     audioUrl: row.audio_url || "",
+    audioSource: row.audio_source || "upload",
+    pinned: Boolean(row.pinned),
     category: row.category || "homilies",
     status: row.status || "draft",
     publishedAt: row.published_at || "",
@@ -61,16 +63,38 @@ function validateTeachingInput(input = {}, { partial = false } = {}) {
   if (!partial || Object.prototype.hasOwnProperty.call(input, "category")) {
     result.category = teachingCategory(input.category);
   }
+  if (Object.prototype.hasOwnProperty.call(input, "audioUrl")) {
+    result.audioUrl = validateExternalTeachingAudioUrl(input.audioUrl);
+  }
+  if (!partial || Object.prototype.hasOwnProperty.call(input, "pinned")) {
+    result.pinned = input.pinned ? 1 : 0;
+  }
   return result;
+}
+
+export function validateExternalTeachingAudioUrl(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  let parsed;
+  try { parsed = new URL(raw); } catch { throw new Error("Enter a valid audio link."); }
+  if (parsed.protocol !== "https:" || parsed.username || parsed.password || !parsed.hostname) {
+    throw new Error("Audio links must use a public HTTPS address.");
+  }
+  const host = parsed.hostname.toLowerCase();
+  if (host === "localhost" || host.endsWith(".localhost") || host === "0.0.0.0" || host === "127.0.0.1" || host === "::1") {
+    throw new Error("Audio links must use a public HTTPS address.");
+  }
+  return parsed.toString().slice(0, 2000);
 }
 
 export async function createParishTeachingPost(db, { parishId, createdBy, input }) {
   const fields = validateTeachingInput(input);
   const id = generateSecret("teaching");
+  if (fields.pinned) await db.prepare("UPDATE parish_teaching_posts SET pinned = 0 WHERE parish_id = ?").bind(parishId).run();
   await db.prepare(`
-    INSERT INTO parish_teaching_posts (id, parish_id, title, body, category, status, created_by)
-    VALUES (?, ?, ?, ?, ?, 'draft', ?)
-  `).bind(id, parishId, fields.title, fields.body, fields.category, createdBy).run();
+    INSERT INTO parish_teaching_posts (id, parish_id, title, body, audio_url, audio_source, pinned, category, status, created_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?)
+  `).bind(id, parishId, fields.title, fields.body, fields.audioUrl || null, fields.audioUrl ? "external" : "upload", fields.pinned, fields.category, createdBy).run();
   return teachingFromRow(await db.prepare("SELECT * FROM parish_teaching_posts WHERE id = ?").bind(id).first());
 }
 
@@ -90,11 +114,15 @@ export async function updateParishTeachingPost(db, { parishId, teachingId, input
   }
   const publishedAt = requestedStatus === "published" ? (current.published_at || new Date().toISOString()) : null;
   const category = fields.category ?? current.category ?? "homilies";
+  const audioUrl = fields.audioUrl !== undefined ? (fields.audioUrl || null) : current.audio_url;
+  const audioSource = fields.audioUrl !== undefined ? (fields.audioUrl ? "external" : "upload") : (current.audio_source || "upload");
+  const pinned = fields.pinned ?? Number(current.pinned || 0);
+  if (pinned && !Number(current.pinned || 0)) await db.prepare("UPDATE parish_teaching_posts SET pinned = 0 WHERE parish_id = ?").bind(parishId).run();
   await db.prepare(`
     UPDATE parish_teaching_posts
-    SET title = ?, body = ?, category = ?, status = ?, published_at = ?, updated_at = datetime('now')
+    SET title = ?, body = ?, audio_url = ?, audio_source = ?, pinned = ?, category = ?, status = ?, published_at = ?, updated_at = datetime('now')
     WHERE id = ? AND parish_id = ?
-  `).bind(fields.title ?? current.title, fields.body ?? current.body, category, requestedStatus, publishedAt, teachingId, parishId).run();
+  `).bind(fields.title ?? current.title, fields.body ?? current.body, audioUrl, audioSource, pinned, category, requestedStatus, publishedAt, teachingId, parishId).run();
   const teaching = teachingFromRow(await db.prepare("SELECT * FROM parish_teaching_posts WHERE id = ?").bind(teachingId).first());
   if (current.status !== "published" && requestedStatus === "published" && typeof onPublished === "function") {
     onPublished(teaching);
@@ -131,7 +159,7 @@ export async function getDonorTeachingFeed(db, { parishId, donorId, category = "
   const result = await db.prepare(`
     SELECT * FROM parish_teaching_posts
     WHERE parish_id = ? AND status = 'published'${selectedCategory ? " AND category = ?" : ""}
-    ORDER BY published_at DESC, created_at DESC
+    ORDER BY pinned DESC, published_at DESC, created_at DESC
   `).bind(...(selectedCategory ? [parishId, selectedCategory] : [parishId])).all();
   const posts = (result.results || []).map(teachingFromRow);
   const contentIds = posts.map(({ id }) => id);
@@ -237,7 +265,7 @@ export async function handleParishTeachingAudioUpload(request, env, parishId, te
   const audioUrl = `${publicBase}/${key}`;
   try {
     await db.prepare(`
-      UPDATE parish_teaching_posts SET audio_url = ?, updated_at = datetime('now')
+      UPDATE parish_teaching_posts SET audio_url = ?, audio_source = 'upload', updated_at = datetime('now')
       WHERE id = ? AND parish_id = ?
     `).bind(audioUrl, teachingId, parishId).run();
   } catch (error) {

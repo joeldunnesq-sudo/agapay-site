@@ -174,7 +174,7 @@ function renderRecentRecordings(teaching = {}) {
   if (!target) return;
   const recordings = (teaching.posts || [])
     .filter((post) => post.status === "published" && Boolean(post.audioUrl))
-    .sort((left, right) => new Date(right.publishedAt || right.createdAt || 0) - new Date(left.publishedAt || left.createdAt || 0))
+    .sort((left, right) => Number(Boolean(right.pinned)) - Number(Boolean(left.pinned)) || new Date(right.publishedAt || right.createdAt || 0) - new Date(left.publishedAt || left.createdAt || 0))
     .slice(0, 4);
   if (!recordings.length) {
     target.innerHTML = '<div class="parish-life-empty-state"><strong>No recordings yet</strong><p>Published parish audio will appear here.</p></div>';
@@ -183,7 +183,7 @@ function renderRecentRecordings(teaching = {}) {
   target.innerHTML = recordings.map((post) => `
     <a class="parish-life-recording-row" href="/myagapay/teaching#${encodeURIComponent(post.id)}">
       <span class="parish-life-audio-icon" aria-hidden="true">▶</span>
-      <span><strong>${parishLifeEscape(post.title)}</strong><small>${parishLifeEscape(parishLifeCategory(post.category, "homilies"))} · ${parishLifeEscape(parishLifeDate(post.publishedAt || post.createdAt))}</small></span>
+      <span><strong>${parishLifeEscape(post.title)}</strong><small>${post.pinned ? "Pinned · " : ""}${parishLifeEscape(parishLifeCategory(post.category, "homilies"))} · ${parishLifeEscape(parishLifeDate(post.publishedAt || post.createdAt))}</small></span>
       <em>${post.read ? "Listen" : "New"}</em>
     </a>`).join("");
 }

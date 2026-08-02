@@ -815,6 +815,8 @@
     .communications-compose .youtube-pin-option strong { color:var(--deep); font-size:12px; line-height:1.35; }
     .communications-compose .youtube-pin-option small { color:var(--muted); font-size:11px; font-weight:500; line-height:1.4; }
     .communications-compose .youtube-pin-option:has(input:checked) { border-color:#c4a45f; background:#fff8e7; box-shadow:0 0 0 2px rgba(184,143,66,.1); }
+    .communications-input-divider { display:flex; align-items:center; gap:9px; color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+    .communications-input-divider::before,.communications-input-divider::after { content:""; height:1px; flex:1; background:var(--line); }
     .video-upload-progress { display:grid; gap:7px; }
     .video-upload-progress > span { overflow:hidden; height:8px; border-radius:999px; background:#dfe5e8; }
     .video-upload-progress i { display:block; width:0; height:100%; border-radius:inherit; background:var(--gold); transition:width .2s ease; }

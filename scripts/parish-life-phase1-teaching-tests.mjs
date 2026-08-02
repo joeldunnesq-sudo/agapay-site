@@ -16,6 +16,7 @@ import {
   TEACHING_CATEGORIES,
   TEACHING_AUDIO_MAX_BYTES,
   updateParishTeachingPost,
+  validateExternalTeachingAudioUrl,
   validateTeachingAudioMetadata,
 } from "../src/handlers/parish-teaching.js";
 
@@ -26,6 +27,7 @@ sqlite.exec(readFileSync(path.join(root, "migrations", "0070_parish_content_read
 sqlite.exec(readFileSync(path.join(root, "migrations", "0065_parish_announcements.sql"), "utf8"));
 sqlite.exec(readFileSync(path.join(root, "migrations", "0072_parish_teaching_posts.sql"), "utf8"));
 sqlite.exec(readFileSync(path.join(root, "migrations", "0074_parish_content_categories.sql"), "utf8"));
+sqlite.exec(readFileSync(path.join(root, "migrations", "0087_parish_teaching_audio_links_and_pins.sql"), "utf8"));
 const db = {
   prepare(sql) {
     return {
@@ -101,6 +103,21 @@ assert.throws(() => sqlite.prepare(`
   VALUES ('invalid-category', 'parish-one', 'Invalid', 'Invalid', 'podcast', 'staff@example.test')
 `).run(), /CHECK constraint failed/, "the teaching schema must reject categories outside its taxonomy");
 
+assert.equal(validateExternalTeachingAudioUrl("https://media.example.test/homily.mp3"), "https://media.example.test/homily.mp3");
+assert.throws(() => validateExternalTeachingAudioUrl("http://media.example.test/homily.mp3"), /public HTTPS/);
+assert.throws(() => validateExternalTeachingAudioUrl("https://localhost/homily.mp3"), /public HTTPS/);
+const linkedAudio = await createParishTeachingPost(db, {
+  parishId:"parish-one", createdBy:"staff@example.test",
+  input:{ title:"Linked homily", body:"Listen to this recording.", category:"homilies", audioUrl:"https://media.example.test/homily.mp3", pinned:true },
+});
+assert.equal(linkedAudio.audioSource, "external");
+assert.equal(linkedAudio.pinned, true);
+await updateParishTeachingPost(db, { parishId:"parish-one", teachingId:linkedAudio.id, input:{ status:"published" } });
+await updateParishTeachingPost(db, { parishId:"parish-one", teachingId:catechismDraft.id, input:{ pinned:true } });
+assert.equal(sqlite.prepare("SELECT pinned FROM parish_teaching_posts WHERE id = ?").get(linkedAudio.id).pinned, 0, "pinning another recording must clear the previous parish audio pin");
+donorFeed = await getDonorTeachingFeed(db, { parishId:"parish-one", donorId:"donor@example.test" });
+assert.equal(donorFeed.posts[0].id, catechismDraft.id, "the pinned recording must lead the donor audio feed");
+
 const nearLimit = validateTeachingAudioMetadata(new Request("https://agapay.test/audio", {
   method: "POST", headers: { "Content-Type": "audio/mpeg", "Content-Length": String(TEACHING_AUDIO_MAX_BYTES) }, body: new Uint8Array([1]),
 }));
@@ -152,9 +169,13 @@ assert.match(sources["public/myagapay/parish-life.js"], />Recent Audio<[\s\S]*hr
 assert.match(sources["public/myagapay/parish-life.js"], /post\.status === "published" && Boolean\(post\.audioUrl\)/);
 assert.match(sources["public/myagapay/parish-life.js"], /parishLifeFetch\("\/api\/donor\/teaching"[\s\S]*\.then\(\(teaching\)[\s\S]*renderRecentRecordings[\s\S]*setTeachingUnreadCount\(Math\.max\(0, Number\(teaching\?\.unreadCount\) \|\| 0\)\)/, "the teaching request must fill Recent Audio and update unread state independently");
 assert.match(sources["public/parish/dashboard.html"], /id="teachingAudio"/);
+assert.match(sources["public/parish/dashboard.html"], /id="teachingAudioUrl"[\s\S]*id="teachingPinned"[\s\S]*Pin in Recent Audio/);
 assert.match(sources["public/parish/dashboard.html"], /id="teachingCategory"[\s\S]*?value="homilies"[\s\S]*?value="special_events"/);
 assert.match(sources["public/parish/app.js"], /createTeachingDraft/);
 assert.match(sources["public/parish/app.js"], /category:document\.getElementById\('teachingCategory'\)\.value/);
+assert.match(sources["public/parish/app.js"], /audioUrl[\s\S]*toggleTeachingPin/);
+assert.match(sources["public/myagapay/parish-life.js"], /Boolean\(right\.pinned\)[\s\S]*Pinned ·/);
+assert.match(sources["public/myagapay/teaching.js"], /post\.pinned[\s\S]*Linked audio/);
 assert.match(sources["public/myagapay/teaching.js"], /All[\s\S]*Homilies[\s\S]*Catechism[\s\S]*Liturgical[\s\S]*Choir[\s\S]*Special Events/);
 assert.match(sources["public/myagapay/teaching.js"], /teachingPostsForFilter\(value\)\.length/);
 assert.match(sources["public/myagapay/teaching.html"], /Parish Audio[\s\S]*Orthodox Podcasts[\s\S]*koinoniaPodcastQuery[\s\S]*koinoniaPodcastPlayer/);

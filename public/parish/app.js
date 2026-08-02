@@ -10813,10 +10813,11 @@
       return;
     }
     list.innerHTML = rows.map(item => `
-      <article class="communications-row">
-        <div class="communications-row-copy"><div class="communications-row-meta"><span class="communications-status is-${escapeAttr(item.status)}">${announcementStatusLabel(item.status)}</span><span>${escapeHtml(contentCategoryLabel(item.category || 'homilies'))}</span>${item.audioUrl ? '<span class="communications-audio-label">▶ Audio</span>' : '<span>Text</span>'}<span>${escapeHtml(shortDate(item.publishedAt || item.updatedAt || item.createdAt))}</span></div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p></div>
+      <article class="communications-row${item.pinned ? ' is-pinned' : ''}">
+        <div class="communications-row-copy"><div class="communications-row-meta"><span class="communications-status is-${escapeAttr(item.status)}">${announcementStatusLabel(item.status)}</span><span>${escapeHtml(contentCategoryLabel(item.category || 'homilies'))}</span>${item.audioUrl ? `<span class="communications-audio-label">▶ ${item.audioSource === 'external' ? 'Linked audio' : 'Audio'}</span>` : '<span>Text</span>'}${item.pinned ? '<span>Pinned for parishioners</span>' : ''}<span>${escapeHtml(shortDate(item.publishedAt || item.updatedAt || item.createdAt))}</span></div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p></div>
         <div class="communications-row-actions">
           ${item.status === 'published' ? `<span class="btn btn-ghost btn-sm" aria-label="${Number(item.readCount || 0)} readers">${Number(item.readCount || 0)} read</span>` : ''}
+          ${item.status !== 'archived' ? `<button class="btn btn-ghost btn-sm" type="button" onclick="toggleTeachingPin('${escapeAttr(item.id)}',${item.pinned ? 'false' : 'true'},this)">${item.pinned ? 'Unpin' : 'Pin in My AGAPAY'}</button>` : ''}
           ${item.status !== 'archived' ? `<button class="btn btn-ghost btn-sm" type="button" onclick="editTeachingPost('${escapeAttr(item.id)}')">Edit</button>` : ''}
           ${item.status === 'draft' ? `<button class="btn btn-gold btn-sm" type="button" onclick="publishTeachingPost('${escapeAttr(item.id)}',this)">Publish</button>` : ''}
           ${item.status !== 'archived' ? `<button class="btn btn-danger btn-sm" type="button" onclick="archiveTeachingPost('${escapeAttr(item.id)}',this)">Archive</button>` : ''}
@@ -11117,19 +11118,21 @@
     event.preventDefault();
     const form = event.currentTarget;
     const audio = document.getElementById('teachingAudio')?.files?.[0] || null;
+    const audioUrl = document.getElementById('teachingAudioUrl')?.value.trim() || '';
     const button = form.querySelector('button[type="submit"]');
     if (button) { button.disabled = true; button.classList.add('loading'); }
     try {
+      if (audio && audioUrl) throw new Error('Choose either an audio file or an audio link, not both.');
       const response = await fetch(communicationsApi('/teaching'), {
         method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' },
-        body:JSON.stringify({ title:document.getElementById('teachingTitle').value, body:document.getElementById('teachingBody').value, category:document.getElementById('teachingCategory').value })
+        body:JSON.stringify({ title:document.getElementById('teachingTitle').value, body:document.getElementById('teachingBody').value, category:document.getElementById('teachingCategory').value, audioUrl, pinned:Boolean(document.getElementById('teachingPinned')?.checked) })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Unable to save teaching post.');
       if (audio) await uploadTeachingAudio(data.post.id, audio);
       form.reset();
       await loadCommunicationsTab(true);
-      setStatus(audio ? 'Teaching post and audio saved as a draft.' : 'Teaching post saved as a draft.','success');
+      setStatus(audio ? 'Teaching post and audio saved as a draft.' : audioUrl ? 'Teaching post and audio link saved as a draft.' : 'Teaching post saved as a draft.','success');
     } catch (error) { setStatus(error.message,'error'); }
     finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
   }
@@ -11268,6 +11271,13 @@
       const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Unable to validate that YouTube video.');
       form.reset(); await loadCommunicationsTab(true); setStatus('YouTube video added to Media.','success');
     } catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) button.disabled = false; }
+  }
+
+  async function toggleTeachingPin(id, pinned, button) {
+    if (button) button.disabled = true;
+    try { await patchTeachingPost(id, { pinned }); setStatus(pinned ? 'Audio pinned in My AGAPAY.' : 'Audio unpinned.','success'); }
+    catch (error) { setStatus(error.message,'error'); }
     finally { if (button) button.disabled = false; }
   }
 

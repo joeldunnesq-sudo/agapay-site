@@ -1366,7 +1366,7 @@
               </div>
             </section>
             <section class="communications-content-section koinonia-studio-view teaching-admin-section" data-koinonia-panel="audio" aria-labelledby="teachingAdminHeading" hidden>
-              <div class="communications-section-heading"><span class="eyebrow">Formation and sound</span><h2 id="teachingAdminHeading">Audio</h2><p>Publish homilies, catechism, liturgical recordings, choir, and special events—with an optional written reflection.</p></div>
+              <div class="communications-section-heading"><span class="eyebrow">Formation and sound</span><h2 id="teachingAdminHeading">Audio</h2><p>Publish homilies, catechism, liturgical recordings, choir, and special events by uploading audio or linking to a recording.</p></div>
               <div class="communications-grid">
                 <form class="communications-compose" onsubmit="createTeachingDraft(event)">
                   <span class="eyebrow">Compose</span><h2>New audio post</h2>
@@ -1383,6 +1383,12 @@
                     <small class="communications-format-help">Formatting is bounded to bold, italic, links, and bulleted lists.</small>
                   </label>
                   <label>Audio recording <input id="teachingAudio" type="file" accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav,audio/ogg,audio/webm" /><small>Optional MP3, M4A, WAV, OGG, or WebM file, up to 50MB.</small></label>
+                  <div class="communications-input-divider"><span>or</span></div>
+                  <label>Link to audio<input id="teachingAudioUrl" type="url" inputmode="url" placeholder="https://media.example.org/sunday-homily.mp3" /><small>Use a public HTTPS link that plays the recording directly. Choose either a file or a link.</small></label>
+                  <label class="youtube-pin-option teaching-pin-option">
+                    <input id="teachingPinned" type="checkbox" />
+                    <span><strong>Pin in Recent Audio</strong><small>Place this recording at the top of Koinonia for parishioners.</small></span>
+                  </label>
                   <button class="btn btn-gold" type="submit">Save audio draft</button>
                 </form>
                 <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">Audio library</span><h2>Drafts and published posts</h2></div><button class="btn btn-ghost btn-sm" type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="teachingAdminList"><p class="sw-tool-loading">Loading...</p></div></section>
