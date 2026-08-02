@@ -8846,6 +8846,14 @@ textarea {
 .push-notification-actions .btn { min-width: 0; min-height: 34px; padding: 7px 11px; font-size: 10px; }
 
 /* Groups */
+.donor-groups-page {
+  font-family: var(--sans);
+}
+
+.donor-groups-page :is(.topbar-title, .koinonia-screen-head h1, .groups-panel-head h2, .group-thread-head h2, .groups-empty strong, .group-thread-empty strong, .group-catch-up-head strong) {
+  font-family: var(--serif);
+}
+
 .donor-groups-page .groups-page-shell { width: min(100%, 980px); max-width: 980px; }
 .group-thread-retention { display: block; margin-top: 6px; color: var(--k-muted); font-size: 10px; line-height: 1.35; }
 .group-thread-back {
@@ -8858,10 +8866,50 @@ textarea {
   padding: 7px 10px 7px 7px;
   background: var(--k-surface);
   color: var(--k-text);
-  font: 700 11px/1 Inter, sans-serif;
+  font: 700 11px/1 var(--sans);
   cursor: pointer;
 }
 .group-thread-back svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+.donor-groups-page .group-compose .group-attach-button {
+  gap: 7px;
+  border-color: var(--k-border);
+  background: var(--k-surface);
+  color: var(--k-text);
+}
+
+.donor-groups-page .group-attach-button svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.donor-groups-page .group-recording-ready svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.donor-groups-page .group-attach-button:hover {
+  border-color: var(--k-gold);
+  background: var(--k-gold-soft);
+  color: var(--k-gold-hover);
+}
+
+.donor-groups-page .group-compose .group-attach-button.is-recording {
+  border-color: #9f3838;
+  background: #fff0ee;
+  color: #8b2626;
+}
 
 /* A selected ministry becomes a focused, app-like conversation screen. */
 .donor-groups-page.is-group-thread-open { overflow: hidden; }

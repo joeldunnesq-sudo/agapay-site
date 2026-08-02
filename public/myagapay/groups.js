@@ -6,6 +6,15 @@ let groupRecordingStartedAt = 0;
 let groupRecordingCancelled = false;
 const groupAttachmentObjectUrls = new Map();
 const groupVoicePlayers = new Map();
+const groupComposerIcons = Object.freeze({
+  voice: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>',
+  photo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></svg>',
+  stop: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1"/></svg>'
+});
+
+function groupComposerButton(icon, label) {
+  return `${groupComposerIcons[icon]}<span>${label}</span>`;
+}
 
 function groupsEscape(value) {
   return String(value ?? "")
@@ -213,7 +222,7 @@ function renderGroupThread(group, messages) {
       <textarea id="groupMessageBody" maxlength="8000" rows="2" required placeholder="Write a message to your group..."></textarea>
       <div class="group-attachment-preview" id="groupAttachmentPreview" hidden></div>
       <div class="group-compose-actions">
-        <div><button type="button" class="group-attach-button" onclick="toggleGroupVoiceRecording(this)" aria-label="Record a voice message">🎤 <span>Voice</span></button><button type="button" class="group-attach-button" onclick="chooseGroupPhoto()" aria-label="Attach a photo">📷 <span>Photo</span></button><input id="groupPhotoInput" type="file" accept="image/jpeg,image/png,image/webp" onchange="selectGroupPhoto(event)" hidden /></div>
+        <div><button type="button" class="group-attach-button" onclick="toggleGroupVoiceRecording(this)" aria-label="Record a voice message">${groupComposerButton("voice", "Voice")}</button><button type="button" class="group-attach-button" onclick="chooseGroupPhoto()" aria-label="Attach a photo">${groupComposerButton("photo", "Photo")}</button><input id="groupPhotoInput" type="file" accept="image/jpeg,image/png,image/webp" onchange="selectGroupPhoto(event)" hidden /></div>
         <button type="submit" id="groupMessageSubmit">Post message</button>
       </div>
       <small class="group-thread-retention">Voice notes and photos are removed after 30 days. Conversation history remains available.</small>
@@ -338,7 +347,7 @@ function renderGroupAttachmentPreview() {
   } else {
     textarea.placeholder = "Add optional text to this voice message...";
     submit.textContent = "Send voice note";
-    preview.innerHTML = `<span class="group-recording-ready">🎤</span><span><strong>Voice note ready</strong><small>${groupsEscape(groupDuration(pending.durationSeconds))}</small></span><button type="button" onclick="clearGroupAttachment()" aria-label="Remove voice note">×</button>`;
+    preview.innerHTML = `<span class="group-recording-ready">${groupComposerIcons.voice}</span><span><strong>Voice note ready</strong><small>${groupsEscape(groupDuration(pending.durationSeconds))}</small></span><button type="button" onclick="clearGroupAttachment()" aria-label="Remove voice note">×</button>`;
   }
 }
 
@@ -414,7 +423,7 @@ async function toggleGroupVoiceRecording(button) {
       const blob = new Blob(chunks, { type: contentType });
       stopGroupRecordingStream();
       button.disabled = false;
-      button.innerHTML = "🎤 <span>Voice</span>";
+      button.innerHTML = groupComposerButton("voice", "Voice");
       button.classList.remove("is-recording");
       if (groupRecordingCancelled) { groupRecordingCancelled = false; return; }
       if (!blob.size) {
@@ -428,7 +437,7 @@ async function toggleGroupVoiceRecording(button) {
       groupStatus("");
     }, { once: true });
     groupMediaRecorder.start(250);
-    button.textContent = "■ Stop";
+    button.innerHTML = groupComposerButton("stop", "Stop");
     button.classList.add("is-recording");
     groupStatus("Recording voice note… tap Stop when finished.");
   } catch (error) {
