@@ -10827,6 +10827,7 @@
         <div class="communications-row-actions">
           ${item.status === 'published' ? `<span class="btn btn-ghost btn-sm" aria-label="${Number(item.readCount || 0)} readers">${Number(item.readCount || 0)} read</span>` : ''}
           ${item.status !== 'archived' ? `<button class="btn btn-ghost btn-sm" type="button" onclick="chooseTeachingAudioUpload('${escapeAttr(item.id)}',this)">${item.audioUrl ? 'Replace audio file' : 'Upload audio file'}</button>` : ''}
+          ${item.status !== 'archived' && (!item.audioUrl || item.audioSource === 'external') ? `<button class="btn btn-ghost btn-sm" type="button" onclick="setTeachingAudioLink('${escapeAttr(item.id)}',this)">${item.audioUrl ? 'Replace audio link' : 'Add audio link'}</button>` : ''}
           ${item.status === 'published' ? `<button class="btn btn-ghost btn-sm" type="button" onclick="toggleTeachingPin('${escapeAttr(item.id)}',${item.pinned ? 'false' : 'true'},this)">${item.pinned ? 'Unpin' : 'Pin in My AGAPAY'}</button>` : ''}
           ${item.status !== 'archived' ? `<button class="btn btn-ghost btn-sm" type="button" onclick="editTeachingPost('${escapeAttr(item.id)}')">Edit</button>` : ''}
           ${item.status === 'draft' ? `<button class="btn btn-gold btn-sm" type="button" onclick="publishTeachingPost('${escapeAttr(item.id)}',this)">${item.pinned ? 'Publish pinned audio' : 'Publish'}</button>` : ''}
@@ -11140,6 +11141,21 @@
       finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
     }, { once:true });
     picker.click();
+  }
+
+  async function setTeachingAudioLink(teachingId, button) {
+    const item = communicationsState.teaching.find(row => row.id === teachingId);
+    if (!item) return;
+    const currentLink = item.audioSource === 'external' ? item.audioUrl : '';
+    const audioUrl = prompt('Public HTTPS audio link', currentLink || '');
+    if (audioUrl === null) return;
+    if (!audioUrl.trim()) { setStatus('Enter the direct HTTPS link to the audio recording.','error'); return; }
+    if (button) { button.disabled = true; button.classList.add('loading'); }
+    try {
+      await patchTeachingPost(teachingId, { audioUrl:audioUrl.trim() });
+      setStatus('Audio link saved. Parishioners can now play this post in My AGAPAY.','success');
+    } catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
   }
 
   async function createTeachingDraft(event) {

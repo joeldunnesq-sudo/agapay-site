@@ -209,12 +209,14 @@ assert.match(sources["public/parish/app.js"], /category:document\.getElementById
 assert.match(sources["public/parish/app.js"], /audioUrl[\s\S]*toggleTeachingPin/);
 assert.match(sources["public/parish/app.js"], /Will pin when published[\s\S]*Publish pinned audio/, "the parish dashboard must distinguish draft pin intent from a visible published pin");
 assert.match(sources["public/parish/app.js"], /chooseTeachingAudioUpload[\s\S]*Replace audio file[\s\S]*uploadTeachingAudio/, "a saved draft must offer a direct retry after an upload failure");
+assert.match(sources["public/parish/app.js"], /Add audio link[\s\S]*setTeachingAudioLink[\s\S]*audioUrl:audioUrl\.trim\(\)[\s\S]*Parishioners can now play this post in My AGAPAY/, "a text-only post must be repairable with a direct audio link from the parish library");
 assert.match(sources["public/parish/app.js"], /deleteTeachingPost[\s\S]*method:'DELETE'[\s\S]*Teaching post permanently deleted/, "audio posts of every status must offer permanent deletion");
 assert.match(sources["public/myagapay/parish-life.js"], /Boolean\(right\.pinned\)[\s\S]*Pinned ·/);
 assert.match(sources["public/myagapay/parish-life.js"], /Recent Podcast Episodes[\s\S]*\/api\/listen\/subscriptions[\s\S]*Promise\.allSettled[\s\S]*slice\(0, 4\)/, "subscribers must receive recent podcast episodes on the Koinonia landing page");
 assert.match(sources["public/myagapay/parish-life.js"], /mode=podcasts&feed=\$\{encodeURIComponent\(episode\.feedUrl\)\}&episode=\$\{encodeURIComponent\(episode\.episodeKey\)\}/, "landing-page podcast episodes must deep-link to the selected playable episode");
 assert.match(sources["public/myagapay/teaching.js"], /post\.pinned[\s\S]*Linked audio/);
 assert.match(sources["public/myagapay/teaching.js"], /playParishTeachingAudio[\s\S]*playKoinoniaPodcast\(\{[\s\S]*trackProgress:false/, "parish recordings must launch the shared Koinonia mini and full-screen player");
+assert.match(sources["public/myagapay/teaching.js"], /post\.audioUrl \? "playParishTeachingAudio" : "openTeachingPost"[\s\S]*Play in Koinonia/, "a donor post with stored audio must expose the shared player rather than render as text-only");
 assert.match(sources["public/myagapay/teaching.js"], /artist: "AGAPAY Audio"[\s\S]*album: episode\.show \|\| "Koinonia Audio Library"/, "Bluetooth media metadata must identify every Koinonia source as AGAPAY Audio");
 assert.match(sources["public/myagapay/teaching.js"], /openRequestedKoinoniaPodcastEpisode[\s\S]*parameters\.get\("feed"\)[\s\S]*parameters\.get\("episode"\)[\s\S]*playKoinoniaPodcast\(episode\)/, "podcast landing links must open the selected episode in the shared player");
 assert.doesNotMatch(sources["public/myagapay/teaching.js"], /<audio controls preload="metadata"/, "parish recordings must not fall back to a bare browser audio control");
