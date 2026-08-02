@@ -13,12 +13,25 @@ export function importOpml(text) {
   const outlines = [...doc.querySelectorAll('outline[type="rss"], outline[xmlUrl]')];
   return outlines
     .map(el => ({
-      title:       el.getAttribute('title') || el.getAttribute('text') || 'Untitled',
-      xmlUrl:      el.getAttribute('xmlUrl') || '',
-      htmlUrl:     el.getAttribute('htmlUrl') || '',
-      description: el.getAttribute('description') || '',
+      title:       boundedText(el.getAttribute('title') || el.getAttribute('text') || 'Untitled', 240),
+      xmlUrl:      safeWebUrl(el.getAttribute('xmlUrl')),
+      htmlUrl:     safeWebUrl(el.getAttribute('htmlUrl')),
+      description: boundedText(el.getAttribute('description'), 1200),
     }))
     .filter(f => f.xmlUrl);
+}
+
+function boundedText(value, limit) {
+  return String(value || '').replace(/[<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, limit);
+}
+
+function safeWebUrl(value) {
+  try {
+    const url = new URL(String(value || '').trim());
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : '';
+  } catch {
+    return '';
+  }
 }
 
 /**

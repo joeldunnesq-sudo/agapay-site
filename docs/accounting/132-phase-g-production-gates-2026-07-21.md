@@ -1,5 +1,7 @@
 # Phase G production-gate evidence — 2026-07-21
 
+> Historical gate snapshot. Gates 1–3 were subsequently automated and passed, and the owner accepted Accounting for controlled church onboarding on August 1, 2026. See [the current release-gate sign-off](accounting-release-gates-signoff.md). The open findings below accurately describe this July 21 run and are retained as audit history.
+
 ## Outcome
 
 Phase G is partially complete. The production control-plane canary, scheduled integrity scan, received alert, protective-state recovery, representative-volume query plans, backup, restore, and most authenticated responsive/keyboard UI checks now have direct evidence. Authenticated check-print output, service-worker offline behavior, and a two-credential cross-tenant browser test remain open; Accounting 1.0 is not production-ready.

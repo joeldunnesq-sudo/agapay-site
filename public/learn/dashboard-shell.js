@@ -141,6 +141,15 @@ function html(value) {
     .replaceAll('"', "&quot;");
 }
 
+function safeExternalUrl(value) {
+  try {
+    const url = new URL(String(value || "").trim());
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
 function cssVars() {
   return [
     "--ink:#1b2c45",
@@ -7931,10 +7940,10 @@ function wireCommunityLegacy() {
   });
   root.querySelector("[data-community-submit]")?.addEventListener("click", () => {
     const title = root.querySelector('[name="community.title"]')?.value?.trim();
-    const url = root.querySelector('[name="community.url"]')?.value?.trim();
+    const url = safeExternalUrl(root.querySelector('[name="community.url"]')?.value);
     const category = root.querySelector('[name="community.category"]')?.value?.trim() || "Community";
     if (!title || !url) {
-      showLearnDialog("Resource needs a title and link", "Add a title and a URL before sharing this resource.");
+      showLearnDialog("Resource needs a title and link", "Add a title and a valid http or https URL before sharing this resource.");
       return;
     }
     showLearnDialog("Resource Shared", `${title} has been added to this community view for review.`);

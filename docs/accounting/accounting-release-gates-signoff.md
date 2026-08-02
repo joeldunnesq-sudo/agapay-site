@@ -1,5 +1,11 @@
 # Accounting release-gate sign-off
 
+## Current release decision — 2026-08-01
+
+The product owner has accepted Accounting as ready for controlled onboarding of real churches. Automated Gates 1–3 passed in the authenticated non-production run linked below, including the complete 356-direction tenant-isolation matrix. This decision supersedes the pre-completion release conclusions in reports 132 and 133 without altering their historical evidence.
+
+Physical check-stock alignment and an authenticated production Gate 4 artifact remain explicit operational follow-ups. They do not block initial controlled onboarding, but check printing must not be represented as physically stock-validated until the physical row below is signed, and broad production reliance on authenticated Accounting workflows still requires Gate 4 credentials and a passing post-deploy artifact.
+
 This record separates automated evidence from the physical and credential-provisioning work that cannot be inferred from a green unit-test run.
 
 ## Automated evidence
@@ -63,5 +69,6 @@ Do not paste credentials into this document, workflow YAML, issue comments, or b
 | Gate 3 isolation matrix reviewed | Codex automated verification | 2026-07-30 | [Run 30586144326](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/30586144326) | Passed — 356/356 denied |
 | Gate 4 production credentials configured |  |  |  | Pending |
 | Gate 4 post-deploy artifact passed |  |  |  | Pending |
+| Controlled church-onboarding release decision | Joel Dunne, product owner | 2026-08-01 | Owner confirmation | Accepted |
 
-The Accounting release gates are **not complete** while any required row above remains pending.
+Accounting is accepted for controlled church onboarding. Pending rows remain visible requirements for the narrower operational capabilities stated above and must not be silently treated as completed evidence.

@@ -162,8 +162,7 @@
 
           if (billingData.plan === "family") {
             localStorage.setItem("agapay.learn.plan", "family");
-            const next = new URLSearchParams(window.location.search).get("next") || "/learn/odyssey/dashboard";
-            window.location.replace(next);
+            window.location.replace("/learn/odyssey/dashboard");
           } else {
             // Signed in but no active Learn plan — send to activate
             showStatus("Your account doesn't have an active AGAPAY Learn subscription. Please activate your TEFA plan.", "error");

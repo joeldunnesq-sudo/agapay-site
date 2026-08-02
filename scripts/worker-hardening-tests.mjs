@@ -1358,7 +1358,8 @@ async function withMockFetch(handler, run) {
       treasurerFirst: "Jane",
       treasurerLast: "Treasurer",
       treasurerEmail: "treasurer@example.com",
-      subscriptionTier: "parish"
+      subscriptionTier: "parish",
+      canonicalAgreement: true
     }
   }), testEnv);
   assert.equal(parishMissingJurisdiction.status, 422);
@@ -1381,7 +1382,8 @@ async function withMockFetch(handler, run) {
       treasurerFirst: "Frank",
       treasurerLast: "Finance",
       treasurerEmail: "finance@example.com",
-      subscriptionTier: "parish"
+      subscriptionTier: "parish",
+      canonicalAgreement: true
     }
   }), testEnv);
   assert.equal(businessMissingReviewFields.status, 422);

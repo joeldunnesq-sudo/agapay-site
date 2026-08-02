@@ -5,8 +5,9 @@ Production D1 database: `agapay-production`
 Production KV namespace: `AGAPAY_REGISTRATIONS`
 (`c0c630d2699a4d42a72db927c6341707`).
 
-This runbook is manual-first by design. Nothing here automates a restore
-into production — see "Guardrails" below.
+The central production D1 export is automated daily by
+`.github/workflows/production-d1-backup.yml`. Restores remain deliberately
+manual and never target production directly — see "Guardrails" below.
 
 ## 1. Exporting the production D1 database
 
@@ -50,14 +51,17 @@ without checking current usage in `src/lib/core.js`.
   upload timestamp, not the human-chosen filename. When every object is older
   than the window, the sweep always preserves the single most recently
   uploaded backup so disaster recovery is never left with zero copies.
-- This sweep does not create backups. The export and upload steps in this
-  runbook remain manual and should still be performed before risky changes.
+- The daily workflow stores central D1 exports and SHA-256 checksum files
+  under `platform-d1/` in this private bucket. The retention sweep applies
+  to them as well. Manual exports should still be performed immediately
+  before and after unusually risky changes rather than relying only on the
+  daily recovery point.
 
 ## 3. How often to back up
 
-- **Minimum for soft launch**: a manual export before and after any
-  migration you run, plus once daily during the first month of real parish
-  onboarding.
+- **Minimum for soft launch**: confirm the daily workflow succeeds, retain
+  its private R2 object and checksum, and take an additional manual export
+  before and after any unusually risky migration.
 - Cloudflare D1 does have built-in **time travel** (point-in-time restore
   within a retention window, typically 30 days on paid plans) as a safety
   net independent of manual exports — check your current D1 plan's

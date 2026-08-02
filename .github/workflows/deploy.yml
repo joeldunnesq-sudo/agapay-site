@@ -106,11 +106,16 @@ jobs:
           wranglerVersion: '4'
           command: d1 execute ACCOUNTING_DB_PHASE_G_CANARY --remote --file accounting-migrations/0025_in_kind_contributions_account.sql
 
+      - name: Record deployment timestamp
+        shell: bash
+        run: echo "AGAPAY_DEPLOYED_AT=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+
       - name: Deploy with Wrangler
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
+          command: deploy --var AGAPAY_BUILD_SHA:${{ github.sha }} --var AGAPAY_DEPLOYED_AT:${{ env.AGAPAY_DEPLOYED_AT }}
 
   post-deploy-accounting-smoke:
     name: Post-deploy accounting smoke
@@ -127,6 +132,11 @@ jobs:
 
       - run: npm ci
       - run: npx playwright install chromium --with-deps
+
+      - name: Run production route and health smoke
+        run: npm run prelaunch
+        env:
+          AGAPAY_BASE_URL: https://agapay.app
 
       - name: Run public and authenticated accounting smoke
         run: node scripts/accounting-smoke-live.mjs https://agapay.app --allow-unconfigured

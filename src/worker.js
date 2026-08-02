@@ -2720,45 +2720,36 @@ async function handleHealth(env) {
   }, { status: ok ? 200 : 503 });
 }
 
+export function observeScheduledTask(name, task) {
+  return Promise.resolve(task)
+    .then((results) => {
+      console.log(name, JSON.stringify(results));
+      return results;
+    })
+    .catch((error) => {
+      console.error(`${name}_failed`, error?.message || String(error));
+      throw error;
+    });
+}
+
 export default {
   async scheduled(event, env, ctx) {
     if (env && !env.DB && env.AGAPAY_DB) env.DB = env.AGAPAY_DB;
-    ctx.waitUntil(runScheduledRecurringTransactions(env, event.scheduledTime)
-      .then((results) => console.log("scheduled_accounting_recurring", JSON.stringify(results)))
-      .catch((error) => console.error("scheduled_accounting_recurring_failed", error?.message || String(error))));
-    ctx.waitUntil(sendNonprofitThresholdAlerts(env)
-      .then((results) => console.log("nonprofit_pricing_threshold_alerts", JSON.stringify(results)))
-      .catch((error) => console.error("nonprofit_pricing_threshold_alerts_failed", error?.message || String(error))));
-    ctx.waitUntil(purgeExpiredGroupMessages(env, event.scheduledTime)
-      .then((results) => console.log("group_message_retention_sweep", JSON.stringify(results)))
-      .catch((error) => console.error("group_message_retention_sweep_failed", error?.message || String(error))));
+    ctx.waitUntil(observeScheduledTask("scheduled_accounting_recurring", runScheduledRecurringTransactions(env, event.scheduledTime)));
+    ctx.waitUntil(observeScheduledTask("nonprofit_pricing_threshold_alerts", sendNonprofitThresholdAlerts(env)));
+    ctx.waitUntil(observeScheduledTask("group_message_retention_sweep", purgeExpiredGroupMessages(env, event.scheduledTime)));
     if (event.cron === "0 8 * * *") {
-      ctx.waitUntil(sweepAccountingBackupRetention(env, event.scheduledTime)
-        .then((results) => console.log("accounting_backup_retention_sweep", JSON.stringify(results)))
-        .catch((error) => console.error("accounting_backup_retention_sweep_failed", error?.message || String(error))));
+      ctx.waitUntil(observeScheduledTask("accounting_backup_retention_sweep", sweepAccountingBackupRetention(env, event.scheduledTime)));
       return;
     }
-    ctx.waitUntil(runScheduledAccountingIntegrity(env, event.scheduledTime)
-      .then((results) => console.log("scheduled_accounting_integrity", JSON.stringify(results)))
-      .catch((error) => console.error("scheduled_accounting_integrity_failed", error?.message || String(error))));
-    ctx.waitUntil(sendWeeklyCommemorationEmails(env, event.scheduledTime)
-      .then((results) => console.log("weekly_commemoration_emails", JSON.stringify(results)))
-      .catch((error) => console.error("weekly_commemoration_emails_failed", error?.message || String(error))));
-    ctx.waitUntil(sendWeeklyTreasurerCommerceEmails(env, event.scheduledTime)
-      .then((results) => console.log("weekly_treasurer_commerce_emails", JSON.stringify(results)))
-      .catch((error) => console.error("weekly_treasurer_commerce_emails_failed", error?.message || String(error))));
-    ctx.waitUntil(sendStewardshipCompExpiryReminders(env)
-      .catch((error) => console.error("stewardship_comp_reminders_failed", error?.message || String(error))));
-    ctx.waitUntil(processExpiredTaxExemptions(env)
-      .then((results) => console.log("tax_exemption_expiration_sweep", JSON.stringify(results)))
-      .catch((error) => console.error("tax_exemption_expiration_sweep_failed", error?.message || String(error))));
-    ctx.waitUntil(sendWeeklySacramentDigestEmails(env, event.scheduledTime)
-      .then((results) => console.log("weekly_sacrament_digest", JSON.stringify(results)))
-      .catch((error) => console.error("weekly_sacrament_digest_failed", error?.message || String(error))));
+    ctx.waitUntil(observeScheduledTask("scheduled_accounting_integrity", runScheduledAccountingIntegrity(env, event.scheduledTime)));
+    ctx.waitUntil(observeScheduledTask("weekly_commemoration_emails", sendWeeklyCommemorationEmails(env, event.scheduledTime)));
+    ctx.waitUntil(observeScheduledTask("weekly_treasurer_commerce_emails", sendWeeklyTreasurerCommerceEmails(env, event.scheduledTime)));
+    ctx.waitUntil(observeScheduledTask("stewardship_comp_reminders", sendStewardshipCompExpiryReminders(env)));
+    ctx.waitUntil(observeScheduledTask("tax_exemption_expiration_sweep", processExpiredTaxExemptions(env)));
+    ctx.waitUntil(observeScheduledTask("weekly_sacrament_digest", sendWeeklySacramentDigestEmails(env, event.scheduledTime)));
     if (parishLifeAvailableFor(env)) {
-      ctx.waitUntil(sendWeeklyAnnouncementDigestEmails(env, event.scheduledTime)
-        .then((results) => console.log("weekly_announcement_digest", JSON.stringify(results)))
-        .catch((error) => console.error("weekly_announcement_digest_failed", error?.message || String(error))));
+      ctx.waitUntil(observeScheduledTask("weekly_announcement_digest", sendWeeklyAnnouncementDigestEmails(env, event.scheduledTime)));
     }
   },
 

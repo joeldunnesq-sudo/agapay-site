@@ -43,11 +43,33 @@ function decodeXml(value) {
     .replace(/&apos;/gi, "'");
 }
 
+function markupToText(value) {
+  const source = String(value || "");
+  let result = "";
+  let cursor = 0;
+  let suppressedTag = "";
+  while (cursor < source.length) {
+    if (source[cursor] !== "<") {
+      if (!suppressedTag) result += source[cursor];
+      cursor += 1;
+      continue;
+    }
+    const close = source.indexOf(">", cursor + 1);
+    if (close < 0) {
+      if (!suppressedTag) result += " ";
+      break;
+    }
+    const tag = source.slice(cursor + 1, close).trim().toLowerCase();
+    if (tag.startsWith("script") || tag.startsWith("style")) suppressedTag = tag.startsWith("script") ? "script" : "style";
+    if (suppressedTag && tag.startsWith(`/${suppressedTag}`)) suppressedTag = "";
+    result += " ";
+    cursor = close + 1;
+  }
+  return result;
+}
+
 function plainText(value, limit = 1200) {
-  return decodeXml(value)
-    .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
+  return markupToText(decodeXml(value))
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, limit);

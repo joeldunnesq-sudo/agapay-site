@@ -24,11 +24,13 @@ Companion execution guide:
 
 ## 3) Payments and webhook lifecycle (must pass)
 
-- [ ] Donation success updates offering status correctly
-- [ ] Donation failed/canceled updates status correctly
-- [ ] Subscription checkout completion updates billing state
-- [ ] Webhook retry/idempotency does not duplicate writes
-- [ ] Refund/dispute events update status safely
+Owner-confirmed completed with Stripe test-mode keys on August 1, 2026. Detailed event IDs or screenshots should remain with the private launch evidence rather than this public repository.
+
+- [x] Donation success updates offering status correctly
+- [x] Donation failed/canceled updates status correctly
+- [x] Subscription checkout completion updates billing state
+- [x] Webhook retry/idempotency does not duplicate writes
+- [x] Refund/dispute events update status safely
 
 ## 4) Security and abuse controls
 

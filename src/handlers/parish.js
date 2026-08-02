@@ -128,6 +128,8 @@ import {
 } from "../lib/settlement-profiles.js";
 
 import { recordAuditEvent } from "../lib/audit-log.js";
+import { registrationAgreementEvidence, registrationRequiresJurisdiction, registrationRequiresValuesReview, registrationRequiresWebsite, sanitizePublicRegistrationInput } from "../lib/registration-intake.js";
+export { registrationRequiresJurisdiction };
 import {
   publicPaymentFeeSchedules,
 } from "../lib/payment-fees.js";
@@ -1574,18 +1576,6 @@ export function summarizeParishRecurringHealth(records = []) {
   };
 }
 
-export function registrationRequiresJurisdiction(type) {
-  return ["Mission", "Parish", "Cathedral", "Monastery / Skete"].includes(String(type || ""));
-}
-
-export function registrationRequiresValuesReview(type) {
-  return ["Business", "Ministry / Nonprofit", "School / Academy", "Other Orthodox Organization"].includes(String(type || ""));
-}
-
-export function registrationRequiresWebsite(type) {
-  return String(type || "") === "Business";
-}
-
 export async function handleRegistrations(request, env) {
   const limited = await rateLimit(request, env, "registrations", { limit: 6, windowSeconds: 600 });
   if (limited) return limited;
@@ -1599,6 +1589,9 @@ export async function handleRegistrations(request, env) {
 
   const turnstile = await verifyTurnstileIfConfigured(request, env, body.turnstileToken || body.cfTurnstileToken);
   if (turnstile) return turnstile;
+
+  body = sanitizePublicRegistrationInput(body);
+  if (body.canonicalAgreement !== true) return json({ error: "Authorization and agreement to the Terms of Service are required." }, { status: 422 });
 
   const requiredFields = [
     "communityType",
@@ -1638,7 +1631,7 @@ export async function handleRegistrations(request, env) {
     return json({ error: "Choose a valid starting tier for this community type." }, { status: 422 });
   }
 
-  const reference = `AGP-REG-${Date.now().toString(36).toUpperCase()}`;
+  const reference = `AGP-REG-${Date.now().toString(36).toUpperCase()}`, receivedAt = new Date().toISOString();
   const subscriptionTierId = requestedTier;
   const tier = subscriptionTier(subscriptionTierId) || subscriptionTier(defaultSubscriptionTier(body));
   const baseParishId = parishSlug(body.parishName, body.city);
@@ -1657,16 +1650,17 @@ export async function handleRegistrations(request, env) {
   }
   const parishDashboardToken = generateDashboardToken();
   const registrationWithTier = {
+    ...body,
     reference,
     status: "pending",
-    receivedAt: new Date().toISOString(),
+    receivedAt,
     canonicalVerification: "pending_review",
-    ...body,
     parishId,
     parishUsername: parishId,
     parishDashboardToken,
     parishDashboardTokenTemporary: true,
-    parishDashboardTokenCreatedAt: new Date().toISOString(),
+    parishDashboardTokenCreatedAt: receivedAt,
+    ...registrationAgreementEvidence(receivedAt),
     subscriptionTier: tier?.id || "parish",
     subscriptionStatus: tier?.monthlyCents === 0 ? "free_forever" : "not_started",
     subscriptionMonthlyCents: tier?.monthlyCents ?? null,
@@ -1731,7 +1725,7 @@ export async function handleRegistrations(request, env) {
           expirationDate: exemptionInput.expirationDate || "",
           authorizedRepresentativeName: repName,
           authorizedRepresentativeTitle: repTitle,
-          actorUserId: treasurerEmail || priestEmail || "",
+          actorUserId: body.treasurerEmail || body.priestEmail || "",
           internalReviewStatus: jurisdiction === "OTHER" ? "needs_manual_review" : null
         });
         if (d1(env)) {

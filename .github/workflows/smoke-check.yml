@@ -8,6 +8,9 @@ on:
         required: true
         default: 'http://localhost:3000'
 
+permissions:
+  contents: read
+
 jobs:
   run-checks:
     runs-on: ubuntu-latest

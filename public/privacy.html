@@ -625,7 +625,7 @@
  <div class="hero-inner">
  <p class="hero-eyebrow">AGAPAY Privacy</p>
  <h1>Privacy Policy</h1>
- <p class="hero-sub">Last updated: June 18, 2026. Effective: June 18, 2026.</p>
+ <p class="hero-sub">Last updated: August 1, 2026. Effective: August 1, 2026.</p>
  </div>
 </div>
 <main class="page-body">
@@ -746,10 +746,30 @@
  <td>Emails, support messages, and parish outreach requests</td>
  <td>Provided by you through support or public interest forms</td>
  </tr>
+ <tr>
+ <td>Household &amp; Directory Data</td>
+ <td>Household relationships, preferred or legal names, contact details, birth dates, biological sex when supplied, photos, parish affiliation, directory notes, and publication preferences</td>
+ <td>Provided by adult account holders or authorized parish personnel and reviewed through Directory workflows</td>
+ </tr>
+ <tr>
+ <td>Child &amp; Education Data</td>
+ <td>A child's first name, age, grade or form, courses, assignments, attendance, scores, grades, parent notes, report cards, transcripts, and household plans</td>
+ <td>Entered and managed by a parent or legal guardian through AGAPAY Learn</td>
+ </tr>
+ <tr>
+ <td>Organization Operations Data</td>
+ <td>Accounting records, vendors, bills, supporting documents, inventory, ministry records, and tax-exemption information</td>
+ <td>Entered by authorized Organization personnel or generated while they use Organization services</td>
+ </tr>
+ <tr>
+ <td>Connected-Service Data</td>
+ <td>Google authorization tokens and the calendar events selected or created for optional calendar synchronization</td>
+ <td>Received when an authorized user chooses to connect Google Calendar</td>
+ </tr>
  </tbody>
  </table>
  <div class="callout callout-affirm">
- <strong>We do not collect:</strong> Social Security numbers, government ID numbers, full payment card numbers, sensitive demographic data (race, religion, national origin), or any data beyond what is listed above.
+ <strong>We do not request or store:</strong> Social Security numbers, government identification numbers, or full payment card or bank-account credentials. Stripe receives payment instrument information directly. Use of an Orthodox parish and faith-formation platform can itself reveal religious affiliation, so we protect that information as personal data rather than claiming it is not collected.
  </div>
  </section>
 
@@ -799,13 +819,14 @@
  <span class="section-num">Section 5</span>
  <h2>Cookies &amp; Tracking Technologies</h2>
  </div>
- <p>AGAPAY uses a minimal, purposeful set of cookies and similar technologies to operate the platform. We do not use cookies for cross-site behavioral advertising or third-party ad targeting.</p>
+ <p>AGAPAY uses limited browser storage and provider-hosted security or payment technologies to operate the platform. We do not use them for cross-site behavioral advertising or third-party ad targeting.</p>
  <ul>
- <li><strong>Essential cookies.</strong> Required for the platform to function - session management, authentication tokens, CSRF protection, and security-related state. These cannot be disabled without impairing platform functionality. They are first-party only and expire at session end or within 30 days.</li>
+ <li><strong>Essential browser storage.</strong> AGAPAY uses first-party local storage for donor sign-in state and selected preferences, and session storage for parish and administrator sign-in state. Donor server sessions expire after 14 days; parish and administrator server sessions expire after 12 hours. Browser values may remain on a device until logout, browser-data deletion, or application cleanup, but an expired server session cannot authorize access.</li>
+ <li><strong>Provider-hosted technologies.</strong> Cloudflare Turnstile and Stripe-hosted checkout may use cookies or similar technologies on their own widgets or pages for fraud prevention, security, and payment processing under their respective privacy notices.</li>
  <li><strong>Analytics.</strong> We use Cloudflare Web Analytics, a privacy-preserving tool that does not use cookies, fingerprinting, or cross-site tracking to collect personally identifiable data. Analytics data is aggregate and anonymized. No user-level behavioral profiles are created.</li>
  <li><strong>No advertising cookies.</strong> AGAPAY does not serve advertisements and does not place or permit third-party advertising, retargeting, or behavioral tracking cookies on our platform. We do not use Google Analytics, Meta Pixel, or comparable advertising tools.</li>
  </ul>
- <p>You may configure your browser to refuse or delete cookies. Essential platform functionality (login, checkout, session persistence) may not operate correctly if essential cookies are disabled.</p>
+ <p>You may configure your browser to refuse cookies or clear cookies and site data. Login, checkout, security checks, and session persistence may not operate correctly when required browser storage or provider technologies are blocked.</p>
  <p>We do not currently respond to browser Do Not Track (DNT) signals, as no uniform standard for DNT has been established. We do not engage in cross-site tracking regardless of DNT status.</p>
  </section>
 
@@ -830,24 +851,24 @@
  <div class="provider-icon">CF</div>
  <div class="provider-info">
  <div class="provider-name">Cloudflare, Inc.</div>
- <div class="provider-desc">DNS resolution, content delivery network (CDN), DDoS protection, and privacy-preserving web analytics. Cloudflare processes IP addresses and technical request metadata as traffic passes through its network infrastructure. Cloudflare Web Analytics does not use cookies or fingerprinting. Data shared: IP addresses, request metadata (automatically, as part of network routing).</div>
+ <div class="provider-desc">Application hosting through Cloudflare Workers, static asset delivery, D1, KV and R2 storage, DNS, DDoS protection, Turnstile security checks, and privacy-preserving web analytics. Cloudflare processes stored application data and technical request metadata as needed to provide these services. Data shared: application data stored for the service, IP addresses, and request metadata.</div>
  <a class="provider-link" href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">cloudflare.com/privacypolicy -></a>
  </div>
  </div>
  <div class="provider-item">
- <div class="provider-icon">ML</div>
+ <div class="provider-icon">R</div>
  <div class="provider-info">
- <div class="provider-name">MailerLite</div>
- <div class="provider-desc">Email list management for parishes and prospective users who voluntarily subscribe to AGAPAY communications. MailerLite processes name and email address for this purpose only. Transactional emails (receipts, notifications) may be sent via this infrastructure. Data shared: name, email address (subscribers only).</div>
- <a class="provider-link" href="https://www.mailerlite.com/legal/privacy-policy" target="_blank" rel="noopener">mailerlite.com/legal/privacy-policy -></a>
+ <div class="provider-name">Resend</div>
+ <div class="provider-desc">Delivery of transactional and Organization-authorized email, including verification, registration, receipt, invitation, notification, and parish communications. Data shared: recipient name and email address, message content, and delivery metadata.</div>
+ <a class="provider-link" href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener">resend.com/legal/privacy-policy -></a>
  </div>
  </div>
  <div class="provider-item">
- <div class="provider-icon">GH</div>
+ <div class="provider-icon">G</div>
  <div class="provider-info">
- <div class="provider-name">GitHub Pages</div>
- <div class="provider-desc">Static frontend hosting for the AGAPAY web application. GitHub Pages may log IP addresses and request metadata as part of standard web server operation. No personal data beyond standard request logs is shared with GitHub for this purpose.</div>
- <a class="provider-link" href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub Privacy Statement -></a>
+ <div class="provider-name">Google</div>
+ <div class="provider-desc">Optional Google Calendar synchronization for a parent or authorized parish user who chooses to connect an account. Data shared: authorization information and the event details needed to create, update, or reconcile the selected calendar events. Calendar connection is optional.</div>
+ <a class="provider-link" href="https://policies.google.com/privacy" target="_blank" rel="noopener">policies.google.com/privacy -></a>
  </div>
  </div>
  </div>
@@ -904,6 +925,14 @@
  <span class="retention-period">Duration of registration + 7 years</span>
  </div>
  <div class="retention-row">
+ <span class="retention-label">AGAPAY Learn child and education records</span>
+ <span class="retention-period">While maintained by the parent or guardian account, subject to deletion requests and legal obligations</span>
+ </div>
+ <div class="retention-row">
+ <span class="retention-label">Directory household, person, and publication records</span>
+ <span class="retention-period">While maintained by the household or Organization, plus records needed for safety, audit, or legal obligations</span>
+ </div>
+ <div class="retention-row">
  <span class="retention-label">Technical usage logs and server logs</span>
  <span class="retention-period">90 days (unless active security investigation)</span>
  </div>
@@ -926,7 +955,7 @@
  <div class="security-grid">
  <div class="security-item">
  <span class="security-item-title">Encryption at Rest</span>
- AES-256 encryption for all stored personal data in Cloudflare D1 and KV data stores.
+ Encryption at rest provided by Cloudflare-managed D1, KV, and private R2 storage used by the platform.
  </div>
  <div class="security-item">
  <span class="security-item-title">Encryption in Transit</span>
@@ -938,7 +967,7 @@
  </div>
  <div class="security-item">
  <span class="security-item-title">Access Controls</span>
- Personal data access limited to authorized AGAPAY personnel with a need-to-know basis. Role-based permissions enforced at the infrastructure level.
+ Personal data access is limited through application authorization checks, tenant scoping, and role or capability checks appropriate to the feature.
  </div>
  <div class="security-item">
  <span class="security-item-title">DDoS &amp; Threat Protection</span>
@@ -1031,9 +1060,10 @@
  <span class="section-num">Section 12</span>
  <h2>Children's Privacy (COPPA)</h2>
  </div>
- <p>AGAPAY is not directed to children under the age of 13, and we do not knowingly collect personal information from children under 13 in violation of the Children's Online Privacy Protection Act (COPPA). Our platform is intended for use by adults - parish administrators, clergy, and adult donors - on behalf of their communities.</p>
- <p>If you believe we have inadvertently collected personal information from a child under 13, please contact us immediately at <a href="mailto:hello@agapay.app">hello@agapay.app</a>. We will promptly investigate and delete such information from our records.</p>
- <p>If you are between the ages of 13 and 17, you must obtain verifiable parental or guardian consent before submitting any personal information through this platform. By submitting information, you represent that you have obtained such consent.</p>
+ <p>AGAPAY's accounts and administrative tools are intended for adults. Children are not permitted to create their own AGAPAY account or independently submit personal information to the platform.</p>
+ <p>AGAPAY Learn is a parent-managed homeschool service. A parent or legal guardian may enter information about a child, including the child's first name, age, grade or form, learning plans, attendance, academic work, scores, grades, notes, report cards, and transcripts. Parish Directory households and authorized parish personnel may also maintain limited information about minors, including household relationships, contact or profile information, photos, and carefully controlled publication settings. These features are operated by adults on behalf of their children or communities.</p>
+ <p>By entering information about a minor, the adult represents that they are the child's parent or legal guardian, or are otherwise authorized by the parent or legal guardian and the Organization to provide and manage that information. AGAPAY does not use child data for advertising or sell it. A parent or guardian may contact <a href="mailto:hello@agapay.app">hello@agapay.app</a> to request access, correction, or deletion, subject to identity verification, Organization responsibilities, and lawful retention requirements.</p>
+ <p>If you believe a child has used AGAPAY independently, or that child information was entered without appropriate authority, contact us immediately at <a href="mailto:hello@agapay.app">hello@agapay.app</a>. We will investigate and take appropriate action, which may include restricting access or deleting information that is not required to be retained.</p>
  <p>Memorial names submitted for liturgical commemoration may include the names of minors; this data is treated with the same protections as all personal data under this policy, and is transmitted only to the designated clergy of the recipient Organization.</p>
  </section>
 
@@ -1047,8 +1077,8 @@
  <p>We may update this Privacy Policy from time to time to reflect changes in our data practices, applicable law, or platform features. When we make material changes, we will:</p>
  <ul>
  <li>Post the updated policy on this page with a revised "Last Updated" date.</li>
- <li>Send email notification to parish and monastery Administrators registered on the platform at least <strong>30 days</strong> before material changes take effect.</li>
- <li>Display a prominent notice on the AGAPAY platform for at least 30 days following any material update.</li>
+ <li>Provide notice to affected account holders before or when material changes take effect when required by law or reasonably practicable.</li>
+ <li>Display an in-product notice or send email when a change materially affects how account data is handled.</li>
  </ul>
  <p>Non-material changes - such as typographical corrections, clarifications that do not change our practices, or updated contact information - may be made without advance notice and will be effective upon posting.</p>
  <p>Your continued use of the AGAPAY platform following notice of material changes constitutes your acceptance of the updated policy. If you do not agree, you may terminate your account before the effective date by contacting <a href="mailto:hello@agapay.app">hello@agapay.app</a>.</p>

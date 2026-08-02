@@ -3,6 +3,10 @@ main = "src/worker.js"
 compatibility_date = "2026-05-25"
 compatibility_flags = ["nodejs_compat"]
 
+[observability]
+enabled = true
+head_sampling_rate = 1
+
 [vars]
 AGAPAY_FROM_EMAIL = "AGAPAY <onboarding@agapay.app>"
 AGAPAY_REPLY_TO_EMAIL = "support@agapay.app"
@@ -141,9 +145,10 @@ bucket_name = "agapay-giving-statements"
 binding = "DIRECTORY_MEDIA"
 bucket_name = "agapay-directory-media"
 
-# Private operational backups for per-parish accounting databases. Objects
-# are written and restored only by the accounting backup runbook; never
-# expose this bucket through r2.dev or an unauthenticated route.
+# Private operational backups for per-parish accounting databases and the
+# central production D1 export under platform-d1/. Objects are written and
+# restored only by backup workflows/runbooks; never expose this bucket
+# through r2.dev or an unauthenticated route.
 [[r2_buckets]]
 binding = "ACCOUNTING_BACKUPS"
 bucket_name = "agapay-accounting-backups"
@@ -166,6 +171,10 @@ binding = "BROWSER"
 # buckets or Browser Rendering here.
 [env.staging]
 name = "agapay-site-staging"
+
+[env.staging.observability]
+enabled = true
+head_sampling_rate = 1
 
 [env.staging.vars]
 AGAPAY_APP_URL = "https://agapay-site-staging.joeldunnesq.workers.dev"

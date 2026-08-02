@@ -370,7 +370,7 @@ async function fetchFeed(xmlUrl) {
       duration: item.querySelector('duration')?.textContent?.trim() || '',
       date:    item.querySelector('pubDate')?.textContent?.trim() || '',
       image:   item.querySelector('image[href]')?.getAttribute('href') || channelImage,
-      description: (item.querySelector('description')?.textContent || '').replace(/<[^>]+>/g, '').trim().slice(0, 1200),
+      description: (item.querySelector('description')?.textContent || '').replace(/[<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 1200),
       categories: [...new Set([...channelCategories, ...[...item.querySelectorAll('category')].map(n => n.textContent?.trim()).filter(Boolean)])],
     };
   });

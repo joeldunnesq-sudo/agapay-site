@@ -306,10 +306,10 @@ export async function handleParishSacramentUpdate(request, env, parishId, reques
 async function notifyDonorOfSacramentStatusChange(env, registration, row) {
   const typeLabel = row.other_type_label || sacramentTypeLabel(row.sacrament_type);
   const statusCopy = {
-    acknowledged: `${htmlEscape(registration.parishName || "Your parish")} has received your request for ${htmlEscape(typeLabel)} and will be in touch to schedule.`,
-    scheduled: `Your ${htmlEscape(typeLabel)} has been scheduled${row.confirmed_date ? ` for ${htmlEscape(row.confirmed_date)}` : ""}${row.confirmed_time ? ` at ${htmlEscape(row.confirmed_time)}` : ""}.`,
-    completed: `Your ${htmlEscape(typeLabel)} request has been marked complete.`,
-    declined: `${htmlEscape(registration.parishName || "The parish")} was unable to fulfill your request for ${htmlEscape(typeLabel)}${row.decline_reason ? `: ${htmlEscape(row.decline_reason)}` : "."}`,
+    acknowledged: `${registration.parishName || "Your parish"} has received your request for ${typeLabel} and will be in touch to schedule.`,
+    scheduled: `Your ${typeLabel} has been scheduled${row.confirmed_date ? ` for ${row.confirmed_date}` : ""}${row.confirmed_time ? ` at ${row.confirmed_time}` : ""}.`,
+    completed: `Your ${typeLabel} request has been marked complete.`,
+    declined: `${registration.parishName || "The parish"} was unable to fulfill your request for ${typeLabel}${row.decline_reason ? `: ${row.decline_reason}` : "."}`,
   }[row.status];
   if (!statusCopy) return;
 
@@ -333,10 +333,10 @@ async function notifyDonorOfSacramentStatusChange(env, registration, row) {
     reply_to: registration.priestEmail || registration.email || env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
     subject: `Update on your ${typeLabel} request`,
     html: agapayEmailHtml(appUrl, "Sacrament Request Update", `
-      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">${statusCopy}</p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">${htmlEscape(statusCopy)}</p>
       <p style="margin:0;font-size:13px;color:#6F6A60;">View this request any time from your My AGAPAY dashboard.</p>
     `),
-    text: statusCopy.replace(/<[^>]+>/g, "")
+    text: statusCopy
   });
 }
 

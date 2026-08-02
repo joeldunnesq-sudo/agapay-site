@@ -1,5 +1,7 @@
 # Phase G follow-up evidence — 2026-07-21
 
+> Historical follow-up snapshot. Gates 1–3 were subsequently automated and passed, and the owner accepted Accounting for controlled church onboarding on August 1, 2026. See [the current release-gate sign-off](accounting-release-gates-signoff.md). The open findings below accurately describe this July 21 run and are retained as audit history.
+
 ## Release decision
 
 **Not ready for Accounting 1.0 production designation.** Integrity/alerting, representative volume, query plans, and Phase H implementation are closed. Authenticated check-print output, service-worker offline/update behavior, and a two-credential cross-tenant browser test remain open.
