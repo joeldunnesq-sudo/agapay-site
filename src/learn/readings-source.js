@@ -1,4 +1,5 @@
 import { json } from "../lib/core.js";
+import { plainTextFromMarkup } from "../lib/xml-text.js";
 import { normalizeCalendarType } from "./liturgical-source.js";
 
 const ORTHOCAL_BASE_URL = "https://orthocal.info/api";
@@ -29,20 +30,7 @@ function firstReadingText(day = {}, source) {
 }
 
 function stripHtml(value = "") {
-  return String(value || "")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>/gi, "\n\n")
-    .replace(/<[^>]*>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, "\"")
-    .replace(/&#39;/g, "'")
-    .replace(/&ldquo;/g, "“")
-    .replace(/&rdquo;/g, "”")
-    .replace(/&lsquo;/g, "‘")
-    .replace(/&rsquo;/g, "’")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  return plainTextFromMarkup(value, { limit: 12000, preserveLines: true });
 }
 
 function reposeCenturyLabel(value = "") {

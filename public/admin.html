@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/admin/style.css" />
+  <link rel="stylesheet" href="/admin/style.css?v=20260802-usability" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/admin/manifest.webmanifest" />
   <meta name="theme-color" content="#061522" />
@@ -36,55 +36,60 @@
       </div>
 
       <div class="sidebar-body">
-        <nav class="sidebar-nav">
-          <div class="sidebar-nav-item active" onclick="switchTab('overview')" id="nav-overview">
+        <nav class="sidebar-nav" aria-label="Admin workspace">
+          <div class="sidebar-nav-group-label">Today</div>
+          <button class="sidebar-nav-item active" type="button" onclick="switchTab('overview')" id="nav-overview">
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            Overview
-          </div>
-          <div class="sidebar-nav-item" onclick="switchTab('giving')" id="nav-giving">
+            <span>Overview</span>
+          </button>
+          <button class="sidebar-nav-item" type="button" onclick="switchTab('giving')" id="nav-giving">
             <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            AGAPAY Give
-          </div>
-          <div class="sidebar-nav-item" onclick="switchTab('learn')" id="nav-learn">
+            <span>Parish onboarding</span><span class="nav-count" id="navOnboardingCount" hidden>0</span>
+          </button>
+          <div class="sidebar-nav-group-label">Products</div>
+          <button class="sidebar-nav-item" type="button" onclick="switchTab('learn')" id="nav-learn">
             <svg viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg>
-            AGAPAY Learn
-          </div>
-          <div class="sidebar-nav-item" onclick="switchTab('marketplace')" id="nav-marketplace">
+            <span>Learn</span>
+          </button>
+          <button class="sidebar-nav-item" type="button" onclick="switchTab('marketplace')" id="nav-marketplace">
             <svg viewBox="0 0 24 24"><path d="M6 7h12l1 14H5z"/><path d="M9 7a3 3 0 0 1 6 0"/><path d="M8 11h8"/></svg>
-            Marketplace
-          </div>
-          <div class="sidebar-nav-item" onclick="switchTab('directory')" id="nav-directory">
+            <span>Marketplace</span>
+          </button>
+          <button class="sidebar-nav-item" type="button" onclick="switchTab('directory')" id="nav-directory">
             <svg viewBox="0 0 24 24"><path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-            Directory
-          </div>
-          <div class="sidebar-nav-item" onclick="switchTab('support')" id="nav-support">
+            <span>Directory</span>
+          </button>
+          <div class="sidebar-nav-group-label">Work queues</div>
+          <button class="sidebar-nav-item" type="button" onclick="switchTab('support')" id="nav-support">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4.3 1.7c-.9.9-1.8 1.3-1.8 2.8"/><path d="M12 17h.01"/></svg>
-            Support Tickets
-          </div>
-          <div class="sidebar-nav-item" onclick="switchTab('taxexemptions')" id="nav-taxexemptions">
+            <span>Support inbox</span>
+          </button>
+          <button class="sidebar-nav-item" type="button" onclick="switchTab('taxexemptions')" id="nav-taxexemptions">
             <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.5 0 2.9.37 4.14 1.02"/></svg>
-            Tax Exemptions
-          </div>
-          <div class="sidebar-nav-item" onclick="switchTab('nonprofitpricing')" id="nav-nonprofitpricing">
+            <span>Tax exemption review</span>
+          </button>
+          <div class="sidebar-nav-group-label">Operations</div>
+          <button class="sidebar-nav-item" type="button" onclick="switchTab('nonprofitpricing')" id="nav-nonprofitpricing">
             <svg viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M5 7h14"/><path d="M7 17h10"/><circle cx="12" cy="12" r="9"/></svg>
-            Nonprofit Pricing
-          </div>
-          <div class="sidebar-nav-item" onclick="switchTab('auditlog')" id="nav-auditlog">
+            <span>Nonprofit pricing</span>
+          </button>
+          <button class="sidebar-nav-item" type="button" onclick="switchTab('auditlog')" id="nav-auditlog">
             <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>
-            Audit Log
-          </div>
-          <div class="sidebar-nav-item" onclick="switchTab('accountingops')" id="nav-accountingops">
+            <span>Audit log</span>
+          </button>
+          <button class="sidebar-nav-item" type="button" onclick="switchTab('accountingops')" id="nav-accountingops">
             <svg viewBox="0 0 24 24"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l3-3 3 2 5-6"/></svg>
-            Accounting Ops
-          </div>
-          <div class="sidebar-nav-item" onclick="switchTab('settings')" id="nav-settings">
+            <span>Accounting health</span>
+          </button>
+          <div class="sidebar-nav-group-label">System</div>
+          <button class="sidebar-nav-item" type="button" onclick="switchTab('settings')" id="nav-settings">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            Settings
-          </div>
-          <div class="sidebar-nav-item" onclick="switchTab('developer')" id="nav-developer">
+            <span>Settings</span>
+          </button>
+          <button class="sidebar-nav-item" type="button" onclick="switchTab('developer')" id="nav-developer">
             <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-            Developer
-          </div>
+            <span>Developer tools</span>
+          </button>
         </nav>
 
         <div class="sidebar-metrics">
@@ -129,7 +134,10 @@
 
     <div class="content">
       <div class="topbar">
-        <div class="topbar-title" id="topbarTitle">Overview</div>
+        <div class="topbar-heading">
+          <div class="topbar-title" id="topbarTitle">Overview</div>
+          <div class="topbar-description" id="topbarDescription">What needs your attention today.</div>
+        </div>
         <div style="display:flex;gap:8px;align-items:center;">
           <div class="topbar-meta">
             <span class="topbar-ref" id="dataAsOf">Data as of —</span>
@@ -149,14 +157,26 @@
         <div class="tab-panel active" id="tab-overview">
           <section class="admin-command-hero">
             <div>
-              <div class="admin-kicker">Global Admin Dashboard</div>
-              <h1>AGAPAY Platform Overview</h1>
-              <p>One command center for product health, growth, revenue, onboarding, and launch readiness across AGAPAY Give, Learn, Marketplace, and Directory.</p>
+              <div class="admin-kicker">Today</div>
+              <h1>Here’s what needs your attention.</h1>
+              <p>Start with parish onboarding and support. Platform health, product activity, and operational tools remain available below when you need them.</p>
             </div>
             <div class="admin-command-status">
               <strong id="overviewHealthScore">—</strong>
               <span>Platform health</span>
               <small id="overviewHealthNote">Load platform data to calculate current status.</small>
+            </div>
+          </section>
+
+          <section class="admin-start-here" aria-labelledby="adminStartHereTitle">
+            <div class="admin-start-here-head">
+              <div><div class="admin-kicker">Recommended workflow</div><h2 id="adminStartHereTitle">Start here</h2></div>
+              <span>Three steps</span>
+            </div>
+            <div class="admin-workflow-grid">
+              <button type="button" class="admin-workflow-step" onclick="switchTab('giving')"><strong><span>1</span> Review new parishes</strong><small>Verify the church, send access, and follow Stripe readiness.</small><em>Open onboarding →</em></button>
+              <button type="button" class="admin-workflow-step" onclick="switchTab('support')"><strong><span>2</span> Answer support</strong><small>See parish and household questions that still need a response.</small><em>Open support →</em></button>
+              <button type="button" class="admin-workflow-step" onclick="switchTab('accountingops')"><strong><span>3</span> Confirm platform health</strong><small>Review accounting integrity and recovery evidence.</small><em>Open operations →</em></button>
             </div>
           </section>
 
@@ -284,8 +304,8 @@
           <section class="product-admin-hero product-admin-hero-giving">
             <div>
               <div class="admin-kicker">Product Operations</div>
-              <h2>AGAPAY Give</h2>
-              <p>Manage parish registrations, Stripe Connect readiness, dashboard invites, subscription billing, and giving revenue.</p>
+              <h2>Parish Onboarding</h2>
+              <p>Move each church through one clear sequence: verify, invite, connect Stripe, and confirm billing.</p>
             </div>
             <button class="gold" onclick="loadRegistrations()">Refresh Giving</button>
           </section>
@@ -971,41 +991,36 @@
     </button>
     <button class="mobile-tab-link" type="button" data-nav-tab="giving" onclick="switchTab('giving')">
       <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7.5 5.5h13v17h-13z"/><path d="M10.5 10h7"/><path d="M10.5 14h7"/><path d="M10.5 18h5"/><path d="M19 3.5v4h4"/></svg>
-      <span>Giving</span>
+      <span>Onboard</span>
     </button>
-    <button class="mobile-tab-link" type="button" data-nav-tab="learn" onclick="switchTab('learn')">
-      <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M6 5a4 4 0 0 1 4-4h12v21H10a4 4 0 0 0-4 4z"/><path d="M6 5v21"/><path d="M10 7h8"/><path d="M10 11h7"/></svg>
-      <span>Learn</span>
+    <button class="mobile-tab-link" type="button" data-nav-tab="support" onclick="switchTab('support')">
+      <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="10"/><path d="M11 11a3 3 0 1 1 5 2c-1 1-2 1.5-2 3.5"/><path d="M14 21h.01"/></svg>
+      <span>Support</span>
     </button>
-    <button class="mobile-tab-link" type="button" data-nav-tab="marketplace" onclick="switchTab('marketplace')">
-      <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7 8h14l1 16H6z"/><path d="M10 8a4 4 0 0 1 8 0"/></svg>
-      <span>Market</span>
+    <button class="mobile-tab-link" type="button" data-nav-tab="accountingops" onclick="switchTab('accountingops')">
+      <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 23V6"/><path d="M5 23h18"/><path d="m9 18 4-5 4 2 6-8"/></svg>
+      <span>Health</span>
     </button>
-    <button class="mobile-tab-link" type="button" data-nav-tab="directory" onclick="switchTab('directory')">
-      <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 25s8-5 8-13a8 8 0 1 0-16 0c0 8 8 13 8 13z"/><circle cx="14" cy="12" r="3"/></svg>
-      <span>Directory</span>
-    </button>
-    <button class="mobile-tab-link" type="button" data-nav-tab="taxexemptions" onclick="switchTab('taxexemptions')">
-      <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="10"/><path d="M10 14l2.5 2.5L19 10"/></svg>
-      <span>Tax</span>
-    </button>
-    <button class="mobile-tab-link" type="button" data-nav-tab="nonprofitpricing" onclick="switchTab('nonprofitpricing')">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg>
-      <span>Pricing</span>
-    </button>
-    <button class="mobile-tab-link" type="button" data-nav-tab="settings" onclick="switchTab('settings')">
-      <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="3"/><path d="M14 5v3"/><path d="M14 20v3"/><path d="M5 14h3"/><path d="M20 14h3"/><path d="m7.6 7.6 2.1 2.1"/><path d="m18.3 18.3 2.1 2.1"/><path d="m20.4 7.6-2.1 2.1"/><path d="m9.7 18.3-2.1 2.1"/></svg>
-      <span>Settings</span>
-    </button>
-    <button class="mobile-tab-link" type="button" data-nav-tab="developer" onclick="switchTab('developer')">
-      <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M17 5.5 20.5 9 9 20.5 5.5 21 6 17.5 17 5.5Z"/><path d="M15.5 7 19 10.5"/></svg>
-      <span>Dev</span>
+    <button class="mobile-tab-link" type="button" id="mobileMoreButton" aria-expanded="false" aria-controls="mobileMoreMenu" onclick="toggleMobileMore()">
+      <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="7" cy="14" r="1.5"/><circle cx="14" cy="14" r="1.5"/><circle cx="21" cy="14" r="1.5"/></svg>
+      <span>More</span>
     </button>
   </nav>
 
+  <div class="mobile-more-menu" id="mobileMoreMenu" hidden>
+    <button type="button" onclick="switchTab('learn')">Learn</button>
+    <button type="button" onclick="switchTab('marketplace')">Marketplace</button>
+    <button type="button" onclick="switchTab('directory')">Directory</button>
+    <button type="button" onclick="switchTab('taxexemptions')">Tax exemptions</button>
+    <button type="button" onclick="switchTab('nonprofitpricing')">Nonprofit pricing</button>
+    <button type="button" onclick="switchTab('auditlog')">Audit log</button>
+    <button type="button" onclick="switchTab('settings')">Settings</button>
+    <button type="button" onclick="switchTab('developer')">Developer tools</button>
+  </div>
+
   <div class="toast-container" id="toastContainer"></div>
 
-  <script src="/admin/app.js?v=20260730-accounting-target"></script>
+  <script src="/admin/app.js?v=20260802-usability"></script>
   <script src="/admin/pwa.js"></script>
 </body>
 </html>

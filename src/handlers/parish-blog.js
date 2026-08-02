@@ -1,6 +1,7 @@
 import { communicationsEnabledFor, hasModuleAccess } from "../lib/entitlements.js";
 import { getBearerToken, hasProductionStore, json, missingProductionStoreResponse, normalizeEmail, rateLimitByKey, unauthorized } from "../lib/core.js";
 import { validateSafeExternalUrl } from "../lib/safe-external-url.js";
+import { decodeXmlEntities, plainTextFromMarkup } from "../lib/xml-text.js";
 import { findRegistrationByParishId, requireDonor, verifyParishDashboardBearer } from "./parish.js";
 
 const BLOG_FEED_MAX_BYTES = 1024 * 1024;
@@ -24,55 +25,8 @@ export function validateParishBlogUrl(value, base = undefined) {
   });
 }
 
-function decodeXml(value) {
-  const decodeCodePoint = (code, radix) => {
-    const point = parseInt(code, radix);
-    return Number.isInteger(point) && point >= 0 && point <= 0x10ffff && !(point >= 0xd800 && point <= 0xdfff)
-      ? String.fromCodePoint(point)
-      : "";
-  };
-  return String(value || "")
-    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/gi, "$1")
-    .replace(/&#(\d+);/g, (_, code) => decodeCodePoint(code, 10))
-    .replace(/&#x([\da-f]+);/gi, (_, code) => decodeCodePoint(code, 16))
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, '"')
-    .replace(/&apos;/gi, "'");
-}
-
-function markupToText(value) {
-  const source = String(value || "");
-  let result = "";
-  let cursor = 0;
-  let suppressedTag = "";
-  while (cursor < source.length) {
-    if (source[cursor] !== "<") {
-      if (!suppressedTag) result += source[cursor];
-      cursor += 1;
-      continue;
-    }
-    const close = source.indexOf(">", cursor + 1);
-    if (close < 0) {
-      if (!suppressedTag) result += " ";
-      break;
-    }
-    const tag = source.slice(cursor + 1, close).trim().toLowerCase();
-    if (tag.startsWith("script") || tag.startsWith("style")) suppressedTag = tag.startsWith("script") ? "script" : "style";
-    if (suppressedTag && tag.startsWith(`/${suppressedTag}`)) suppressedTag = "";
-    result += " ";
-    cursor = close + 1;
-  }
-  return result;
-}
-
 function plainText(value, limit = 1200) {
-  return markupToText(decodeXml(value))
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, limit);
+  return plainTextFromMarkup(value, { limit });
 }
 
 function tagValue(block, names) {
@@ -90,7 +44,7 @@ function entryLink(block, feedUrl) {
     if (/\brel\s*=\s*["'](?:self|enclosure)["']/i.test(attrs)) continue;
     const href = attrs.match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1];
     if (href) {
-      try { return validateParishBlogUrl(decodeXml(href), feedUrl); } catch { /* Try the next link. */ }
+      try { return validateParishBlogUrl(decodeXmlEntities(href), feedUrl); } catch { /* Try the next link. */ }
     }
   }
   const rssLink = plainText(tagValue(block, ["link"]), 2000);
@@ -121,7 +75,7 @@ function discoveredFeedUrl(html, sourceUrl) {
     if (!/\brel\s*=\s*["'][^"']*alternate/i.test(attrs)) continue;
     if (!/\btype\s*=\s*["']application\/(?:rss|atom)\+xml["']/i.test(attrs)) continue;
     const href = attrs.match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1];
-    if (href) return validateParishBlogUrl(decodeXml(href), sourceUrl);
+    if (href) return validateParishBlogUrl(decodeXmlEntities(href), sourceUrl);
   }
   return "";
 }

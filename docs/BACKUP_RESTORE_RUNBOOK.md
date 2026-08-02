@@ -9,6 +9,13 @@ The central production D1 export is automated daily by
 `.github/workflows/production-d1-backup.yml`. Restores remain deliberately
 manual and never target production directly — see "Guardrails" below.
 
+The automated export prepends `PRAGMA foreign_keys=OFF;` because D1 can emit
+child-table rows before a referenced parent table. This setting applies only
+to the restore import session and makes the artifact directly restorable into
+a blank verification database. The August 2, 2026 recovery drill confirmed
+171 application tables, 3 registrations, and 17 donors after import, then
+deleted the temporary verification database.
+
 ## 1. Exporting the production D1 database
 
 ```

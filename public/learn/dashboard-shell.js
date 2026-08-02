@@ -399,11 +399,27 @@ function showLearnDialog(title, message, rows = [], options = {}) {
   dialog.dataset.learnDialog = "true";
   dialog.style.cssText = "position:fixed;inset:0;z-index:80;background:rgba(10,20,40,.54);display:flex;align-items:center;justify-content:center;padding:clamp(10px,3vw,24px);";
   const contentHtml = options.contentHtml || "";
-  const width = options.width || "520px";
-  const upgradeButton = options.upgrade
-    ? `<button type="button" data-dialog-checkout style="border:1px solid #b5942f;background:#14294a;color:#f3ead4;border-radius:9px;padding:10px 16px;font-family:inherit;">Upgrade</button>`
-    : "";
-  dialog.innerHTML = `<div style="width:min(${width},100%);max-height:min(760px,92vh);overflow:auto;background:#f3ead4;border:1px solid #b5942f;border-radius:16px;box-shadow:0 20px 60px rgba(10,20,40,.35);padding:clamp(16px,4vw,24px);color:#14294a;"><div style="display:flex;justify-content:space-between;gap:12px;align-items:start;position:sticky;top:-24px;background:#f3ead4;padding-top:2px;padding-bottom:12px;z-index:2;"><div><h2 style="font-family:'Cormorant Garamond',serif;font-size:clamp(25px,7vw,31px);line-height:1.02;margin:0;color:#14294a;">${html(title)}</h2><p style="color:#33405a;line-height:1.45;margin:8px 0 0;">${html(message)}</p></div><button type="button" data-dialog-close aria-label="Close dialog" style="border:1px solid rgba(20,41,74,.18);background:#fffaf0;color:#14294a;border-radius:999px;width:44px;height:44px;display:grid;place-items:center;font-size:24px;line-height:1;cursor:pointer;flex:none;">×</button></div>${contentHtml}${rows.map((row) => `<div style="border-top:1px solid rgba(181,148,47,.28);padding:9px 0;"><small style="color:#9b7420;letter-spacing:.12em;text-transform:uppercase;">${html(row.label)}</small><strong style="display:block;">${html(row.value)}</strong></div>`).join("")}<div style="position:sticky;bottom:-24px;background:#f3ead4;display:flex;justify-content:flex-end;gap:10px;margin-top:16px;padding-top:12px;padding-bottom:2px;"><button type="button" data-dialog-close style="border:1px solid rgba(20,41,74,.22);background:#fffaf0;border-radius:10px;padding:12px 18px;min-height:44px;font-family:inherit;color:#14294a;font-weight:700;">Close</button>${upgradeButton}</div></div>`;
+  const width = ["520px", "620px", "760px"].includes(options.width) ? options.width : "520px";
+  dialog.innerHTML = `<div data-dialog-card style="width:100%;max-height:min(760px,92vh);overflow:auto;background:#f3ead4;border:1px solid #b5942f;border-radius:16px;box-shadow:0 20px 60px rgba(10,20,40,.35);padding:clamp(16px,4vw,24px);color:#14294a;"><div style="display:flex;justify-content:space-between;gap:12px;align-items:start;position:sticky;top:-24px;background:#f3ead4;padding-top:2px;padding-bottom:12px;z-index:2;"><div><h2 data-dialog-title style="font-family:'Cormorant Garamond',serif;font-size:clamp(25px,7vw,31px);line-height:1.02;margin:0;color:#14294a;"></h2><p data-dialog-message style="color:#33405a;line-height:1.45;margin:8px 0 0;"></p></div><button type="button" data-dialog-close aria-label="Close dialog" style="border:1px solid rgba(20,41,74,.18);background:#fffaf0;color:#14294a;border-radius:999px;width:44px;height:44px;display:grid;place-items:center;font-size:24px;line-height:1;cursor:pointer;flex:none;">×</button></div><div data-dialog-content></div><div data-dialog-rows></div><div style="position:sticky;bottom:-24px;background:#f3ead4;display:flex;justify-content:flex-end;gap:10px;margin-top:16px;padding-top:12px;padding-bottom:2px;"><button type="button" data-dialog-close style="border:1px solid rgba(20,41,74,.22);background:#fffaf0;border-radius:10px;padding:12px 18px;min-height:44px;font-family:inherit;color:#14294a;font-weight:700;">Close</button><button type="button" data-dialog-checkout style="border:1px solid #b5942f;background:#14294a;color:#f3ead4;border-radius:9px;padding:10px 16px;font-family:inherit;" hidden>Upgrade</button></div></div>`;
+  dialog.querySelector("[data-dialog-card]").style.maxWidth = width;
+  dialog.querySelector("[data-dialog-title]").textContent = String(title || "");
+  dialog.querySelector("[data-dialog-message]").textContent = String(message || "");
+  const content = dialog.querySelector("[data-dialog-content]");
+  if (contentHtml) content.innerHTML = contentHtml;
+  const rowContainer = dialog.querySelector("[data-dialog-rows]");
+  rows.forEach((row) => {
+    const item = document.createElement("div");
+    item.style.cssText = "border-top:1px solid rgba(181,148,47,.28);padding:9px 0;";
+    const label = document.createElement("small");
+    label.style.cssText = "color:#9b7420;letter-spacing:.12em;text-transform:uppercase;";
+    label.textContent = String(row.label || "");
+    const value = document.createElement("strong");
+    value.style.display = "block";
+    value.textContent = String(row.value || "");
+    item.append(label, value);
+    rowContainer.append(item);
+  });
+  dialog.querySelector("[data-dialog-checkout]").hidden = !options.upgrade;
   dialog.addEventListener("click", (event) => {
     if (event.target === dialog || event.target.closest("[data-dialog-close]")) dialog.remove();
     if (event.target.closest("[data-dialog-checkout]")) openLearnCheckout();
@@ -7954,7 +7970,28 @@ function wireCommunityLegacy() {
     const grid = root.querySelector("[data-community-grid]");
     if (grid) {
       const searchText = `${title} ${category}`.toLowerCase();
-      grid.insertAdjacentHTML("afterbegin", `<article data-community-card data-category="${html(category)}" data-search="${html(searchText)}" style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:11px;"><div style="height:92px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(135deg,#f6edd6,var(--paper2));display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:36px;">✥</div><strong style="font-family:'Cormorant Garamond',serif;font-size:20px;">${html(title)}</strong><p style="font-size:13px;color:#3a4256;line-height:1.4;margin:0;">Newly shared by this household.</p><a href="${html(url)}" target="_blank" rel="noreferrer" style="color:var(--gold);text-decoration:none;">Open resource ↗</a></article>`);
+      const card = document.createElement("article");
+      card.dataset.communityCard = "";
+      card.dataset.category = category;
+      card.dataset.search = searchText;
+      card.style.cssText = "background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:11px;";
+      const art = document.createElement("div");
+      art.style.cssText = "height:92px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(135deg,#f6edd6,var(--paper2));display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:36px;";
+      art.textContent = "✥";
+      const heading = document.createElement("strong");
+      heading.style.cssText = "font-family:'Cormorant Garamond',serif;font-size:20px;";
+      heading.textContent = title;
+      const description = document.createElement("p");
+      description.style.cssText = "font-size:13px;color:#3a4256;line-height:1.4;margin:0;";
+      description.textContent = "Newly shared by this household.";
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noreferrer";
+      link.style.cssText = "color:var(--gold);text-decoration:none;";
+      link.textContent = "Open resource ↗";
+      card.append(art, heading, description, link);
+      grid.prepend(card);
     }
   });
 }
@@ -8600,7 +8637,15 @@ async function mount() {
 }
 
 mount().catch((error) => {
-  root.innerHTML = `<section style="padding:32px;font-family:Georgia,serif;color:#6e2f2a;"><strong>Unable to load AGAPAY Learn</strong><p>${html(error.message)}</p></section>`;
+  root.replaceChildren();
+  const section = document.createElement("section");
+  section.style.cssText = "padding:32px;font-family:Georgia,serif;color:#6e2f2a;";
+  const heading = document.createElement("strong");
+  heading.textContent = "Unable to load AGAPAY Learn";
+  const message = document.createElement("p");
+  message.textContent = error.message || "Please refresh and try again.";
+  section.append(heading, message);
+  root.append(section);
 });
 
 document.addEventListener("click", async (event) => {

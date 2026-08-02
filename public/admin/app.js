@@ -1605,10 +1605,16 @@ let selectedReference = '';
     }
 
     function renderMetrics(registrations) {
+      const attentionCount = registrations.filter(item => nextActionPriority(item).priority < 99).length;
       document.getElementById('metricTotal').textContent = registrations.length;
       document.getElementById('metricPending').textContent = registrations.filter(item => item.status === 'pending').length;
       document.getElementById('metricVerified').textContent = registrations.filter(item => item.status === 'verified').length;
       document.getElementById('metricStripeReady').textContent = registrations.filter(item => ['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus)).length;
+      const navCount = document.getElementById('navOnboardingCount');
+      if (navCount) {
+        navCount.textContent = String(attentionCount);
+        navCount.hidden = attentionCount === 0;
+      }
       renderCommunitySnapshot(registrations);
       renderNextActionQueue(registrations);
       renderOnboardingHealth(registrations);
@@ -2791,6 +2797,16 @@ let selectedReference = '';
     // ── TAB NAVIGATION ────────────────────────────────────────────────────
     let activeTab = 'overview';
 
+    function toggleMobileMore(force) {
+      const menu = document.getElementById('mobileMoreMenu');
+      const button = document.getElementById('mobileMoreButton');
+      if (!menu || !button) return;
+      const shouldOpen = typeof force === 'boolean' ? force : menu.hidden;
+      menu.hidden = !shouldOpen;
+      button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+      button.classList.toggle('active', shouldOpen);
+    }
+
     function switchTab(tab) {
       if (tab === 'queue') tab = 'giving';
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -2803,21 +2819,38 @@ let selectedReference = '';
       if (mobileNav) mobileNav.classList.add('active');
       activeTab = tab;
       const titles = {
-        overview: 'Platform Overview',
-        giving: 'AGAPAY Give',
+        overview: 'Overview',
+        giving: 'Parish Onboarding',
         learn: 'AGAPAY Learn',
         marketplace: 'AGAPAY Marketplace',
         directory: 'AGAPAY Directory',
-        support: 'Support Tickets',
-        taxexemptions: 'Sales Tax Exemptions',
+        support: 'Support Inbox',
+        taxexemptions: 'Tax Exemption Review',
         nonprofitpricing: 'Stripe Nonprofit Pricing',
         auditlog: 'Audit Log',
-        accountingops: 'Accounting Integrity Operations',
+        accountingops: 'Accounting Health',
         settings: 'Settings',
         developer: 'Developer Tools'
       };
+      const descriptions = {
+        overview: 'What needs your attention today.',
+        giving: 'Verify, invite, connect Stripe, and confirm billing.',
+        learn: 'Subscriptions, scholarships, feedback, and community review.',
+        marketplace: 'Marketplace readiness and seller activity.',
+        directory: 'Directory participation and publication health.',
+        support: 'Questions and requests waiting for a response.',
+        taxexemptions: 'Review documentation and Stripe tax synchronization.',
+        nonprofitpricing: 'Monitor nonprofit rate applications and thresholds.',
+        auditlog: 'Trace sensitive administrative changes.',
+        accountingops: 'Integrity, protective state, and recovery controls.',
+        settings: 'Security and platform configuration.',
+        developer: 'Low-frequency maintenance and manual tools.'
+      };
       const titleEl = document.getElementById('topbarTitle');
       if (titleEl) titleEl.textContent = titles[tab] || 'Admin Console';
+      const descriptionEl = document.getElementById('topbarDescription');
+      if (descriptionEl) descriptionEl.textContent = descriptions[tab] || '';
+      toggleMobileMore(false);
       document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
       if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
       if (tab === 'learn') loadLearnAdmin();

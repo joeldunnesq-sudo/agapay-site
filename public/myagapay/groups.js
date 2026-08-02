@@ -278,7 +278,10 @@ async function toggleGroupCatchUp(groupId, button) {
     ministryGroupsState.catchUp[groupId] = data;
     renderGroupCatchUp(panel, data);
   } catch (error) {
-    panel.innerHTML = `<p>${groupsEscape(error.message || 'Unable to load member read status.')}</p>`;
+    panel.replaceChildren();
+    const message = document.createElement('p');
+    message.textContent = error.message || 'Unable to load member read status.';
+    panel.append(message);
   }
 }
 

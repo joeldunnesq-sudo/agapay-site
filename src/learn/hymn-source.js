@@ -1,4 +1,5 @@
 import { json } from "../lib/core.js";
+import { plainXmlAttribute } from "../lib/xml-text.js";
 
 const PONOMAR_RAW_BASE_URL = "https://raw.githubusercontent.com/typiconman/ponomar/master/Ponomar/languages/en/xml/Services/CommonPrayers";
 const PONOMAR_REPO_URL = "https://github.com/typiconman/ponomar";
@@ -19,16 +20,7 @@ function hymnUrl(baseUrl, kind, prefix, tone) {
 }
 
 function decodeXmlAttribute(value = "") {
-  return String(value)
-    .replace(/&#(\d+);/g, (_match, code) => String.fromCharCode(Number(code)))
-    .replace(/&#x([0-9a-f]+);/gi, (_match, code) => String.fromCharCode(parseInt(code, 16)))
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/\s+/g, " ")
-    .trim();
+  return plainXmlAttribute(value);
 }
 
 function textValue(xml, tagName) {

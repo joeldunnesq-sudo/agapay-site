@@ -21,6 +21,7 @@ assert.match(deploy, /AGAPAY_DEPLOYED_AT:\$\{\{ env\.AGAPAY_DEPLOYED_AT \}\}/);
 assert.match(deploy, /AGAPAY_BASE_URL: https:\/\/agapay\.app/);
 
 assert.match(backup, /d1 export agapay-production --remote --skip-confirmation/);
+assert.match(backup, /PRAGMA foreign_keys=OFF/);
 assert.match(backup, /sha256sum/);
 assert.match(backup, /agapay-accounting-backups\/platform-d1/);
 assert.match(backup, /r2 object put[^\n]+--remote --force/);
