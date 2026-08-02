@@ -39,6 +39,7 @@ function youtubeFromRow(row = {}) {
     youtubeUrl: row.youtube_url || "",
     title: row.title || "",
     thumbnailUrl: row.thumbnail_url || "",
+    pinned: Boolean(row.pinned),
     addedBy: row.added_by || "",
     addedAt: row.added_at || "",
     external: true,
@@ -240,16 +241,17 @@ export async function resolveYouTubeVideo(value, fetchImpl = fetch) {
   return { youtubeUrl, title: String(payload.title).slice(0, 240), thumbnailUrl: String(payload.thumbnail_url).slice(0, 1000) };
 }
 
-export async function addYouTubeLink(db, { parishId, addedBy, value, fetchImpl = fetch }) {
+export async function addYouTubeLink(db, { parishId, addedBy, value, pinned = false, fetchImpl = fetch }) {
   const resolved = await resolveYouTubeVideo(value, fetchImpl);
   const id = generateSecret("youtube");
-  await db.prepare(`INSERT INTO parish_youtube_links (id, parish_id, youtube_url, title, thumbnail_url, added_by) VALUES (?, ?, ?, ?, ?, ?)`)
-    .bind(id, parishId, resolved.youtubeUrl, resolved.title, resolved.thumbnailUrl, addedBy).run();
+  if (pinned) await db.prepare("UPDATE parish_youtube_links SET pinned = 0 WHERE parish_id = ?").bind(parishId).run();
+  await db.prepare(`INSERT INTO parish_youtube_links (id, parish_id, youtube_url, title, thumbnail_url, pinned, added_by) VALUES (?, ?, ?, ?, ?, ?, ?)`)
+    .bind(id, parishId, resolved.youtubeUrl, resolved.title, resolved.thumbnailUrl, pinned ? 1 : 0, addedBy).run();
   return youtubeFromRow(await db.prepare("SELECT * FROM parish_youtube_links WHERE id = ?").bind(id).first());
 }
 
 export async function listYouTubeLinks(db, parishId) {
-  const result = await db.prepare("SELECT * FROM parish_youtube_links WHERE parish_id = ? ORDER BY added_at DESC").bind(parishId).all();
+  const result = await db.prepare("SELECT * FROM parish_youtube_links WHERE parish_id = ? ORDER BY pinned DESC, added_at DESC").bind(parishId).all();
   return (result.results || []).map(youtubeFromRow);
 }
 
@@ -263,12 +265,50 @@ async function donorVideoContext(request, env) {
   return { parishId, found, donor, donorId };
 }
 
+export async function setYouTubeLinkPinned(db, { parishId, linkId, pinned }) {
+  const current = await db.prepare("SELECT id FROM parish_youtube_links WHERE id = ? AND parish_id = ?").bind(linkId, parishId).first();
+  if (!current) return null;
+  if (pinned) await db.prepare("UPDATE parish_youtube_links SET pinned = 0 WHERE parish_id = ?").bind(parishId).run();
+  await db.prepare("UPDATE parish_youtube_links SET pinned = ? WHERE id = ? AND parish_id = ?").bind(pinned ? 1 : 0, linkId, parishId).run();
+  return youtubeFromRow(await db.prepare("SELECT * FROM parish_youtube_links WHERE id = ? AND parish_id = ?").bind(linkId, parishId).first());
+}
+
 function decodeYouTubeHtml(value = "") {
   return String(value)
     .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'")
     .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")
     .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
     .replace(/&#x([\da-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)));
+}
+
+function youtubeFeedValue(xml, tag) {
+  return decodeYouTubeHtml(xml.match(new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tag}>`, "i"))?.[1] || "").trim();
+}
+
+export function parseLatestYouTubeChannelVideo(xml = "") {
+  const entry = String(xml).match(/<entry(?:\s[^>]*)?>[\s\S]*?<\/entry>/i)?.[0] || "";
+  const videoId = youtubeFeedValue(entry, "yt:videoId");
+  if (!/^[A-Za-z0-9_-]{6,20}$/.test(videoId)) return null;
+  return {
+    id: `youtube-channel-${videoId}`,
+    youtubeUrl: `https://www.youtube.com/watch?v=${videoId}`,
+    title: youtubeFeedValue(entry, "title") || "Latest parish video",
+    thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+    publishedAt: youtubeFeedValue(entry, "published"),
+    external: true,
+    channelUpload: true,
+  };
+}
+
+export async function fetchLatestYouTubeChannelVideo(channel, fetchImpl = fetch) {
+  const channelId = String(channel?.channelId || "");
+  if (!/^UC[A-Za-z0-9_-]{20,40}$/.test(channelId)) return null;
+  const response = await fetchImpl(`https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`, {
+    headers: { Accept: "application/atom+xml, application/xml;q=0.9, text/xml;q=0.8" },
+    cf: { cacheEverything: true, cacheTtl: 900 },
+  });
+  if (!response.ok) throw new Error("YouTube's channel feed is temporarily unavailable.");
+  return parseLatestYouTubeChannelVideo((await response.text()).slice(0, 1_000_000));
 }
 
 export async function resolveYouTubeChannel(value, fetchImpl = fetch) {
@@ -328,14 +368,19 @@ export async function handleDonorVideo(request, env, videoId = "", action = "") 
   const context = await donorVideoContext(request, env);
   if (context.error) return context.error;
   const parish = { id: context.parishId, name: context.found.registration.parishName || "" };
-  if (context.disabled) return json({ available: false, parish, videos: [], youtube: [] });
+  if (context.disabled) return json({ available: false, parish, videos: [], youtube: [], youtubeChannel: null, youtubeLatest: null });
   try {
     if (!videoId && request.method === "GET") {
       const [posts, youtube, youtubeChannel] = await Promise.all([getDonorVideoFeed(db, context), listYouTubeLinks(db, context.parishId), getYouTubeChannel(db, context.parishId)]);
+      let youtubeLatest = null;
+      if (youtubeChannel) {
+        try { youtubeLatest = await fetchLatestYouTubeChannelVideo(youtubeChannel); }
+        catch (error) { console.warn("[koinonia-video] Unable to refresh latest YouTube upload", { parishId: context.parishId, error: error.message }); }
+      }
       const videos = (await Promise.all(posts.map(async (post) => {
         try { return { ...post, ...(await privateStreamAssets(env, post.streamVideoId)) }; } catch { return null; }
       }))).filter(Boolean).map(({ hlsUrl, ...post }) => post);
-      return json({ available: true, parish, videos, youtube, youtubeChannel });
+      return json({ available: true, parish, videos, youtube, youtubeChannel, youtubeLatest });
     }
     const post = await db.prepare("SELECT * FROM parish_video_posts WHERE id = ? AND parish_id = ? AND status = 'published'").bind(videoId, context.parishId).first();
     if (!post) return json({ error: "Published video not found" }, { status: 404 });
@@ -382,11 +427,16 @@ export async function handleParishVideo(request, env, parishId, subpath = "") {
     }
     if (parts[0] === "youtube" && parts.length === 1 && request.method === "POST") {
       const input = await request.json();
-      return json({ ok: true, link: await addYouTubeLink(db, { parishId, addedBy: createdBy, value: input.youtubeUrl }) }, { status: 201 });
+      return json({ ok: true, link: await addYouTubeLink(db, { parishId, addedBy: createdBy, value: input.youtubeUrl, pinned: Boolean(input.pinned) }) }, { status: 201 });
     }
     if (parts[0] === "youtube" && parts.length === 2 && request.method === "DELETE") {
       await db.prepare("DELETE FROM parish_youtube_links WHERE id = ? AND parish_id = ?").bind(decodeURIComponent(parts[1]), parishId).run();
       return json({ ok: true });
+    }
+    if (parts[0] === "youtube" && parts.length === 3 && parts[2] === "pin" && request.method === "PATCH") {
+      const input = await request.json();
+      const link = await setYouTubeLinkPinned(db, { parishId, linkId: decodeURIComponent(parts[1]), pinned: Boolean(input.pinned) });
+      return link ? json({ ok: true, link }) : json({ error: "YouTube video not found" }, { status: 404 });
     }
     if (parts[0] === "youtube-channel" && parts.length === 1 && request.method === "POST") {
       const input = await request.json();

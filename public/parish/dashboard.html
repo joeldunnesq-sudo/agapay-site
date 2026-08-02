@@ -1421,8 +1421,9 @@
                 <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">YouTube</span><h2>Channel connection</h2></div></div><div id="youtubeAdminList"><p class="sw-tool-loading">Loading...</p></div></section>
               </div>
               <form class="communications-compose youtube-curated-form" onsubmit="addYouTubeVideo(event)">
-                <span class="eyebrow">Optional curation</span><h2>Add an individual YouTube video</h2><p class="section-note">Use this only for a video outside the connected parish channel.</p>
+                <span class="eyebrow">Optional curation</span><h2>Add or pin a specific YouTube video</h2><p class="section-note">Paste any video URL—including one from the connected channel—to spotlight it for parishioners.</p>
                 <label>YouTube video URL<input id="youtubeVideoUrl" type="url" required placeholder="https://www.youtube.com/watch?v=…" /></label>
+                <label class="communications-pin"><input id="youtubeVideoPinned" type="checkbox" /> Pin this video in Recent Videos for parishioners</label>
                 <button class="btn btn-ghost" type="submit">Validate and add</button>
               </form>
             </section>

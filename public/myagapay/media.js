@@ -70,6 +70,7 @@ async function loadMedia() {
     const videos = data.videos || [];
     const youtube = data.youtube || [];
     const youtubeChannel = data.youtubeChannel || null;
+    const youtubeLatest = data.youtubeLatest || null;
     document.getElementById("mediaSkeleton").hidden = true;
     status.hidden = true;
     if (videos.length) {
@@ -92,6 +93,11 @@ async function loadMedia() {
         frame.src = `https://www.youtube-nocookie.com/embed/videoseries?list=${encodeURIComponent(playlistId)}&rel=0&playsinline=1`;
         document.getElementById("youtubeMediaHeading").textContent = youtubeChannel.channelTitle || "From our parish on YouTube";
       }
+    }
+    const requestedYouTubeId = new URLSearchParams(window.location.search).get("youtube") || "";
+    if (/^[A-Za-z0-9_-]{6,20}$/.test(requestedYouTubeId)) {
+      const requested = [youtubeLatest, ...youtube].find((item) => youtubeVideoId(item?.youtubeUrl) === requestedYouTubeId);
+      if (requested) openYouTubeMedia({ dataset: { youtubeVideoId: requestedYouTubeId, youtubeTitle: requested.title || "YouTube video" } });
     }
   } catch (error) {
     document.getElementById("mediaSkeleton").hidden = true;

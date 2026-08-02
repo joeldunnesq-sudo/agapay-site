@@ -191,19 +191,31 @@ function renderRecentRecordings(teaching = {}) {
 function renderRecentVideos(media = {}) {
   const target = document.getElementById("parishLifeVideos");
   if (!target) return;
-  const videos = (media.videos || [])
-    .filter((video) => !video.status || video.status === "published")
-    .sort((left, right) => new Date(right.publishedAt || right.createdAt || 0) - new Date(left.publishedAt || left.createdAt || 0))
+  const nativeVideos = (media.videos || []).filter((video) => !video.status || video.status === "published");
+  const curatedYouTube = (media.youtube || []).map((video) => ({ ...video, youtubeVideo: true }));
+  const latestYouTube = media.youtubeLatest ? { ...media.youtubeLatest, youtubeVideo: true } : null;
+  const byDate = (left, right) => new Date(right.publishedAt || right.createdAt || right.addedAt || 0) - new Date(left.publishedAt || left.createdAt || left.addedAt || 0);
+  const pinned = [...nativeVideos, ...curatedYouTube].filter((video) => video.pinned).sort(byDate);
+  const remainder = [...nativeVideos, ...curatedYouTube].filter((video) => !video.pinned).sort(byDate);
+  const videos = [...pinned, ...(latestYouTube ? [latestYouTube] : []), ...remainder]
+    .filter((video, index, all) => all.findIndex((candidate) => (candidate.youtubeUrl || candidate.id) === (video.youtubeUrl || video.id)) === index)
     .slice(0, 3);
   if (!videos.length) {
     target.innerHTML = '<div class="parish-life-empty-state"><strong>No videos yet</strong><p>Published parish video will appear here.</p></div>';
     return;
   }
-  target.innerHTML = videos.map((video) => `
-    <a class="parish-life-video-card" href="/myagapay/media/watch?video=${encodeURIComponent(video.id)}">
+  target.innerHTML = videos.map((video) => {
+    const youtubeId = video.youtubeVideo ? String(video.youtubeUrl || "").match(/[?&]v=([A-Za-z0-9_-]{6,20})/)?.[1] || "" : "";
+    const hrefAttribute = youtubeId
+      ? `href="/myagapay/media?youtube=${encodeURIComponent(youtubeId)}"`
+      : `href="/myagapay/media/watch?video=${encodeURIComponent(video.id)}"`;
+    const label = video.pinned ? "Pinned · " : (video.channelUpload ? "Latest from YouTube · " : (video.youtubeVideo ? "YouTube · " : ""));
+    return `
+    <a class="parish-life-video-card" ${hrefAttribute}>
       <span class="parish-life-video-thumb">${video.thumbnailUrl ? `<img src="${parishLifeEscape(video.thumbnailUrl)}" alt="" loading="lazy" />` : ""}<i aria-hidden="true">▶</i></span>
-      <span class="parish-life-video-copy"><strong>${parishLifeEscape(video.title)}</strong><small>${parishLifeEscape(parishLifeDate(video.publishedAt || video.createdAt))}</small></span>
-    </a>`).join("");
+      <span class="parish-life-video-copy"><strong>${parishLifeEscape(video.title)}</strong><small>${parishLifeEscape(label + parishLifeDate(video.publishedAt || video.createdAt || video.addedAt))}</small></span>
+    </a>`;
+  }).join("");
 }
 
 function renderRecentNews(sources = []) {

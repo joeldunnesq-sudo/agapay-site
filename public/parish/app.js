@@ -10859,7 +10859,7 @@
     const rows = communicationsState.youtube || [];
     const channel = communicationsState.youtubeChannel;
     const channelRow = channel ? `<article class="communications-row is-pinned"><div class="communications-row-copy"><div class="communications-row-meta"><span>Automatically synced channel</span></div><h3>${escapeHtml(channel.channelTitle || 'YouTube channel')}</h3><p>Every public upload is available through the embedded channel playlist in Koinonia.</p></div><div class="communications-row-actions"><a class="btn btn-ghost btn-sm" href="${escapeAttr(channel.channelUrl)}" target="_blank" rel="noopener">View channel</a><button class="btn btn-danger btn-sm" type="button" onclick="removeYouTubeChannel(this)">Disconnect</button></div></article>` : '';
-    const curatedRows = rows.map(item => `<article class="communications-row"><img class="communications-row-image" src="${escapeAttr(item.thumbnailUrl)}" alt="" loading="lazy" /><div class="communications-row-copy"><div class="communications-row-meta"><span>Individually curated</span></div><h3>${escapeHtml(item.title)}</h3></div><div class="communications-row-actions"><button class="btn btn-danger btn-sm" type="button" onclick="removeYouTubeVideo('${escapeAttr(item.id)}',this)">Remove</button></div></article>`).join('');
+    const curatedRows = rows.map(item => `<article class="communications-row${item.pinned ? ' is-pinned' : ''}"><img class="communications-row-image" src="${escapeAttr(item.thumbnailUrl)}" alt="" loading="lazy" /><div class="communications-row-copy"><div class="communications-row-meta"><span>${item.pinned ? 'Pinned for parishioners' : 'Individually curated'}</span></div><h3>${escapeHtml(item.title)}</h3></div><div class="communications-row-actions"><button class="btn btn-ghost btn-sm" type="button" onclick="toggleYouTubeVideoPin('${escapeAttr(item.id)}',${item.pinned ? 'false' : 'true'},this)">${item.pinned ? 'Unpin' : 'Pin in My AGAPAY'}</button><button class="btn btn-danger btn-sm" type="button" onclick="removeYouTubeVideo('${escapeAttr(item.id)}',this)">Remove</button></div></article>`).join('');
     list.innerHTML = channelRow + curatedRows || '<div class="communications-empty"><strong>No YouTube channel connected</strong><p>Connect the parish channel once to keep Koinonia video up to date automatically.</p></div>';
   }
 
@@ -11264,7 +11264,7 @@
     const form = event.currentTarget; const button = form.querySelector('button[type="submit"]');
     if (button) button.disabled = true;
     try {
-      const response = await fetch(communicationsApi('/video/youtube'), { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ youtubeUrl:document.getElementById('youtubeVideoUrl').value }) });
+      const response = await fetch(communicationsApi('/video/youtube'), { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ youtubeUrl:document.getElementById('youtubeVideoUrl').value, pinned:Boolean(document.getElementById('youtubeVideoPinned')?.checked) }) });
       const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Unable to validate that YouTube video.');
       form.reset(); await loadCommunicationsTab(true); setStatus('YouTube video added to Media.','success');
     } catch (error) { setStatus(error.message,'error'); }
@@ -11301,6 +11301,16 @@
       const response = await fetch(communicationsApi('/video/youtube/' + encodeURIComponent(id)), { method:'DELETE', headers:authHeaders() });
       const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Unable to remove YouTube video.');
       await loadCommunicationsTab(true); setStatus('YouTube link removed.','success');
+    } catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) button.disabled = false; }
+  }
+
+  async function toggleYouTubeVideoPin(id, pinned, button) {
+    if (button) button.disabled = true;
+    try {
+      const response = await fetch(communicationsApi('/video/youtube/' + encodeURIComponent(id) + '/pin'), { method:'PATCH', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ pinned }) });
+      const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Unable to update the pinned video.');
+      await loadCommunicationsTab(true); setStatus(pinned ? 'Video pinned in My AGAPAY.' : 'Video unpinned.','success');
     } catch (error) { setStatus(error.message,'error'); }
     finally { if (button) button.disabled = false; }
   }
