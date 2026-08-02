@@ -38,7 +38,7 @@ const protectedPages = [
 for (const file of protectedPages) {
   const html = read(file);
   assert.match(html, /<html[^>]*data-myagapay-hydrate/, `${file} must opt into the pre-paint hydration shield`);
-  assert.match(html, /\/donor\/style\.css\?v=20260802appicon2/, `${file} must load the current atomic-paint CSS version`);
+  assert.match(html, /\/donor\/style\.css\?v=20260802playerredesign1/, `${file} must load the current atomic-paint CSS version`);
   assert.match(html, /<script src="\/myagapay-shell\.js\?v=20260801atomicpaint1"><\/script>/, `${file} must install the tracker before page-level scripts`);
   assert.doesNotMatch(html, /myagapay-shell\.js\?v=20260801atomicpaint1" defer/, `${file} must not defer initial request tracking`);
 }

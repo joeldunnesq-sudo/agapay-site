@@ -633,8 +633,10 @@ function updateKoinoniaPodcastPlayer() {
   const fullProgress = document.getElementById("koinoniaPodcastFullProgress");
   if (!audio || !progress || !time || !toggle) return;
   const duration = Number.isFinite(audio.duration) ? audio.duration : 0;
-  const progressValue = duration ? String(Math.round((audio.currentTime / duration) * 1000)) : "0";
+  const progressPercent = duration ? Math.min(100, Math.max(0, (audio.currentTime / duration) * 100)) : 0;
+  const progressValue = String(Math.round(progressPercent * 10));
   progress.value = progressValue;
+  progress.style.setProperty("--podcast-progress", `${progressPercent}%`);
   if (fullProgress) fullProgress.value = progressValue;
   time.textContent = `${podcastTime(audio.currentTime)} / ${podcastTime(duration)}`;
   toggle.textContent = audio.paused ? "▶" : "❚❚";

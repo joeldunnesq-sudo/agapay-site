@@ -208,8 +208,14 @@ assert.match(donorStyles, /\.koinonia-podcast-player\.is-expanded \{[^}]*height:
   "the expanded player must fit the viewport without requiring page-level scrolling");
 assert.match(donorStyles, /\.koinonia-podcast-player \{ position:static;/,
   "the mini player must consume its own bottom row instead of covering page controls");
-assert.match(donorStyles, /@media \(max-width:520px\)[\s\S]*koinonia-podcast-player:not\(\.is-expanded\) \{ padding:6px 10px; \}[\s\S]*grid-template-areas:"now expand" "transport timeline"/,
-  "the mobile mini player must stay compact without an empty third row");
+assert.match(donorStyles, /\.koinonia-podcast-mini-player \.koinonia-podcast-player-shell \{[^}]*grid-template-areas:"now expand" "timeline timeline" "transport transport"/,
+  "the mini player must stack track, progress, and transport instead of squeezing controls beside the timeline");
+assert.match(donorStyles, /\.koinonia-podcast-mini-player \.koinonia-podcast-player-controls > button\.is-primary \{[^}]*width:46px;[^}]*height:46px;/,
+  "the redesigned primary play control must remain a comfortable touch target");
+assert.match(teachingHtml, /koinoniaPodcastPlayToggle[\s\S]*aria-label="Skip forward 30 seconds"><svg/,
+  "the mini player must use structured playback icons rather than cramped text glyphs");
+assert.match(teaching, /progress\.style\.setProperty\("--podcast-progress", `\$\{progressPercent\}%`\)/,
+  "the mini player's custom progress track must visibly fill as playback advances");
 assert.match(donorStyles, /\.donor-teaching-page \.teaching-page-shell \{[^}]*overflow-y:auto/,
   "the audio library must scroll independently above the docked player");
 assert.match(donorStyles, /\.koinonia-podcast-player\.is-expanded \.koinonia-podcast-full-player \{[^}]*display:flex/,
