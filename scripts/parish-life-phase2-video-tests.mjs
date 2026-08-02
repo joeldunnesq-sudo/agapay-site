@@ -121,6 +121,10 @@ assert.match(sources["src/handlers/parish-video.js"], /feeds\/videos\.xml\?chann
 assert.match(sources["public/parish/app.js"], /toggleYouTubeVideoPin[\s\S]*\/pin/);
 assert.match(sources["public/parish/dashboard.html"], /youtube-pin-option[\s\S]*Pin in Recent Videos[\s\S]*Place this video at the top of Koinonia for parishioners/);
 assert.match(sources["public/parish/style.css"], /\.youtube-pin-option\s*\{[^}]*grid-template-columns:18px minmax\(0,1fr\)[^}]*gap:10px/, "the pin control must keep its checkbox directly beside its text");
+assert.match(sources["public/parish/style.css"], /\.koinonia-studio\s*\{\s*font-family:var\(--sans\)/, "Koinonia body typography must inherit the dashboard's sans family");
+assert.match(sources["public/parish/style.css"], /\.communications-admin-header\.koinonia-studio-hero h1[^}]*var\(--serif\)/, "Koinonia headings must use the dashboard's serif family");
+assert.doesNotMatch(sources["public/parish/style.css"].slice(sources["public/parish/style.css"].indexOf(".koinonia-studio-hero"), sources["public/parish/style.css"].indexOf("@media (max-width:1120px)")), /Georgia|Inter|Arial/, "Koinonia must not hardcode typography outside the shared site tokens");
+assert.match(sources["public/parish/dashboard.html"], /id="nav-communications"[\s\S]*?<svg viewBox="0 0 24 24">([\s\S]*?)<\/svg>[\s\S]*?koinonia-studio-mark[\s\S]*?<svg viewBox="0 0 24 24">\1<\/svg>/, "the Koinonia hero must reuse its sidebar navigation icon");
 assert.doesNotMatch(sources["public/parish/style.css"], /\.video-admin-section\s*\{[^}]*background\s*:\s*linear-gradient/i, "the Video subpage must use the same light Koinonia surface as its siblings");
 assert.doesNotMatch(sources["public/myagapay/media.js"], /target="_blank"/, "YouTube videos must play inside the Koinonia Media page");
 assert.match(sources["public/donor/style.css"], /--media-navy:#061522[\s\S]*--media-gold/);
