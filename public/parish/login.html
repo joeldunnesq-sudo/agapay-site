@@ -45,6 +45,23 @@
           <label class="form-label" for="parishToken">Password</label>
           <input id="parishToken" type="password" autocomplete="new-password" placeholder="Your parish password" />
         </div>
+        <div class="form-group">
+          <p style="font-size:12px;line-height:1.5;color:var(--muted);margin-bottom:12px;">If this organization has not accepted the August 2 Terms, complete the identity fields and checkbox once. They are optional on later logins.</p>
+          <label class="form-label" for="acceptingName">Your full name</label>
+          <input id="acceptingName" autocomplete="name" maxlength="200" placeholder="Person signing in" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="acceptingEmail">Your email</label>
+          <input id="acceptingEmail" type="email" autocomplete="email" maxlength="320" placeholder="you@example.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="acceptingRole">Your role or title</label>
+          <input id="acceptingRole" autocomplete="organization-title" maxlength="200" placeholder="Rector, treasurer, administrator…" />
+        </div>
+        <label style="display:flex;align-items:flex-start;gap:10px;font-size:12px;line-height:1.55;color:var(--muted);margin:1rem 0;">
+          <input id="parishAgreeTerms" type="checkbox" style="margin-top:3px;" />
+          <span>I agree to the <a href="/terms#arbitration" target="_blank" rel="noopener noreferrer" style="color:var(--gold);text-decoration:underline;">Terms of Service</a>, including the 30-day informal-resolution process, small-claims option, and court provisions in Section 24. I acknowledge the <a href="/privacy" target="_blank" rel="noopener noreferrer" style="color:var(--gold);text-decoration:underline;">Privacy Policy</a> and confirm I am authorized to act for this organization.</span>
+        </label>
         <div class="parish-auth-actions">
           <button class="btn btn-gold" type="submit">Log in</button>
           <a class="btn btn-ghost" href="/register.html">Register parish</a>

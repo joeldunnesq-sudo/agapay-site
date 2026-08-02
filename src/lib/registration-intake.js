@@ -1,5 +1,5 @@
-export const REGISTRATION_TERMS_VERSION = "2026-08-01";
-export const REGISTRATION_PRIVACY_NOTICE_VERSION = "2026-08-01";
+export const REGISTRATION_TERMS_VERSION = "2026-08-02";
+export const REGISTRATION_PRIVACY_NOTICE_VERSION = "2026-08-02";
 
 const PUBLIC_REGISTRATION_STRING_LIMITS = Object.freeze({
   communityType: 80,
@@ -23,6 +23,9 @@ const PUBLIC_REGISTRATION_STRING_LIMITS = Object.freeze({
   treasurerLast: 120,
   treasurerEmail: 320,
   notes: 4000,
+  acceptingName: 200,
+  acceptingEmail: 320,
+  acceptingRole: 200,
 });
 
 const PUBLIC_TAX_EXEMPTION_STRING_LIMITS = Object.freeze({

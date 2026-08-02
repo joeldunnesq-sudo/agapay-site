@@ -55,6 +55,9 @@ function registrationBody(overrides = {}) {
     priestPhone: "210-555-0100",
     treasurerFirst: "Jordan",
     treasurerEmail: "treasurer@example.test",
+    acceptingName: "Jordan Test",
+    acceptingEmail: "jordan@example.test",
+    acceptingRole: "Treasurer",
     canonicalAgreement: true,
     ...overrides,
   };
@@ -132,6 +135,18 @@ assert.equal(stored.privacyNoticeVersion, REGISTRATION_PRIVACY_NOTICE_VERSION);
 assert.equal(stored.termsAcceptedAt, stored.receivedAt);
 assert.equal(stored.privacyNoticeAcknowledgedAt, stored.receivedAt);
 assert.equal(stored.agreementSource, "church_registration");
+const legalAcceptanceKey = [...routeEnv.AGAPAY_REGISTRATIONS.store.keys()]
+  .find((key) => key.startsWith("legal_acceptance:"));
+assert.ok(legalAcceptanceKey, "registration must preserve a separate legal acceptance record");
+const legalAcceptance = JSON.parse(await routeEnv.AGAPAY_REGISTRATIONS.get(legalAcceptanceKey));
+assert.equal(legalAcceptance.organizationId, stored.parishId);
+assert.equal(legalAcceptance.actorName, "Jordan Test");
+assert.equal(legalAcceptance.actorEmail, "jordan@example.test");
+assert.equal(legalAcceptance.actorRole, "Treasurer");
+assert.equal(legalAcceptance.acceptanceSource, "church_registration");
+assert.equal(legalAcceptance.transactionReference, stored.reference);
+assert.equal(legalAcceptance.ipAddress, "203.0.113.77");
+assert.match(legalAcceptance.termsSha256, /^[a-f0-9]{64}$/);
 for (const protectedField of [
   "reviewedAt",
   "stripeAccountId",

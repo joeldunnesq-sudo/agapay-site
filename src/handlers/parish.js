@@ -126,9 +126,9 @@ import {
 import {
   resolveSettlementProfileId,
 } from "../lib/settlement-profiles.js";
-
 import { recordAuditEvent } from "../lib/audit-log.js";
 import { registrationAgreementEvidence, registrationRequiresJurisdiction, registrationRequiresValuesReview, registrationRequiresWebsite, sanitizePublicRegistrationInput } from "../lib/registration-intake.js";
+import { ensureParishCurrentTermsAcceptance, recordOrganizationRegistrationAcceptance } from "../lib/legal-acceptance.js";
 export { registrationRequiresJurisdiction };
 import {
   publicPaymentFeeSchedules,
@@ -1605,7 +1605,8 @@ export async function handleRegistrations(request, env) {
     "priestEmail",
     "priestPhone",
     "treasurerFirst",
-    "treasurerEmail"
+    "treasurerEmail",
+    "acceptingName", "acceptingEmail", "acceptingRole"
   ];
 
   if (registrationRequiresJurisdiction(body.communityType)) requiredFields.push("jurisdiction");
@@ -1615,7 +1616,7 @@ export async function handleRegistrations(request, env) {
   const missing = requireFields(body, requiredFields);
   if (missing.length) return json({ error: "Missing required fields", fields: missing }, { status: 422 });
 
-  if (!String(body.priestEmail).includes("@") || !String(body.treasurerEmail).includes("@")) {
+  if (!String(body.priestEmail).includes("@") || !String(body.treasurerEmail).includes("@") || !String(body.acceptingEmail).includes("@")) {
     return json({ error: "A valid primary contact and finance contact email are required" }, { status: 422 });
   }
 
@@ -1669,6 +1670,8 @@ export async function handleRegistrations(request, env) {
   const registration = tier?.modules?.givingPlus
     ? ensureBenevolenceFundInRegistration(registrationWithTier).registration
     : registrationWithTier;
+
+  await recordOrganizationRegistrationAcceptance(env, request, { body, parishId, reference });
 
   let taxExemptionResult = null;
   if (env.AGAPAY_REGISTRATIONS) {
@@ -2874,6 +2877,9 @@ export async function handleParishSession(request, env, parishId) {
   if (!(await verifyParishDashboardPassword(found.registration, password))) {
     return unauthorized();
   }
+
+  const termsAcceptanceError = await ensureParishCurrentTermsAcceptance(env, request, parishId, body);
+  if (termsAcceptanceError) return json(termsAcceptanceError, { status: 428 });
 
   const session = await issueParishDashboardSession(found.registration);
   await saveRegistrationRecord(env, found.key, session.registration, found.registration);

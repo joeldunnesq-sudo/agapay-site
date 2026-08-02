@@ -1814,8 +1814,13 @@ async function signupFromPage(event) {
   const email = document.getElementById("donorEmail")?.value.trim();
   const password = document.getElementById("donorPassword")?.value;
   const parishId = document.getElementById("parish")?.value || "";
+  const termsAccepted = document.getElementById("agreeTerms")?.checked === true;
   if (!donorName || !email || !password) {
     setDonorStatus("Enter your name, email, and password.", "error");
+    return;
+  }
+  if (!termsAccepted) {
+    setDonorStatus("Agree to the Terms of Service before creating your account.", "error");
     return;
   }
   setDonorStatus("Creating your donor account...");
@@ -1835,6 +1840,7 @@ async function signupFromPage(event) {
         state: document.getElementById("state")?.value.trim() || "",
         postalCode: document.getElementById("postalCode")?.value.trim() || "",
         country: document.getElementById("country")?.value.trim() || "US",
+        termsAccepted,
         ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {})
       })
     });

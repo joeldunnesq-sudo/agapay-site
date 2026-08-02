@@ -74,7 +74,13 @@ async function adminSession(testEnv, password = TEST_ADMIN_PASSWORD) {
 async function parishSession(testEnv, parishId, password) {
   const response = await worker.fetch(request(`/api/parish/dashboard/${parishId}/session`, {
     method: "POST",
-    body: { password }
+    body: {
+      password,
+      acceptingName: "Test Parish Administrator",
+      acceptingEmail: `admin-${parishId}@example.test`,
+      acceptingRole: "Parish administrator",
+      termsAccepted: true
+    }
   }), testEnv);
   assert.equal(response.status, 200);
   return json(response);
@@ -120,7 +126,8 @@ async function verifiedDonorSession(testEnv, email, password = "correct-horse-ba
       donorName: `Test ${email}`,
       email,
       password,
-      parishId: "st-test"
+      parishId: "st-test",
+      termsAccepted: true
     }
   }), testEnv);
   assert.equal(signup.status, 201);
@@ -204,7 +211,8 @@ async function withMockFetch(handler, run) {
       donorName: "Faithful Member",
       email: "faithful@example.com",
       password: "correct-horse-battery",
-      parishId: "st-test"
+      parishId: "st-test",
+      termsAccepted: true
     }
   }), testEnv);
   assert.equal(signup.status, 201);
@@ -671,7 +679,8 @@ async function withMockFetch(handler, run) {
       donorName: "Rate Limited Donor",
       email: "rate-limited-donor@example.com",
       password: "correct-horse-battery",
-      parishId: "st-test"
+      parishId: "st-test",
+      termsAccepted: true
     }
   }), testEnv);
   assert.equal(signup.status, 201);
@@ -717,7 +726,8 @@ async function withMockFetch(handler, run) {
       donorName: "Reset Member",
       email: "reset-member@example.com",
       password: "original-password",
-      parishId: "st-test"
+      parishId: "st-test",
+      termsAccepted: true
     }
   }), testEnv);
   assert.equal(signup.status, 201);

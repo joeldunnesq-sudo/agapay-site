@@ -647,17 +647,31 @@
           <div class="review-rows" id="reviewContact"></div>
         </div>
 
+        <div class="form-group">
+          <label for="acceptingName">Your full name <span class="required">*</span></label>
+          <input type="text" id="acceptingName" autocomplete="name" maxlength="200" required />
+          <span class="form-hint">The person who is submitting and accepting the Terms for the organization.</span>
+        </div>
+        <div class="form-group">
+          <label for="acceptingEmail">Your email <span class="required">*</span></label>
+          <input type="email" id="acceptingEmail" autocomplete="email" maxlength="320" required />
+        </div>
+        <div class="form-group">
+          <label for="acceptingRole">Your organizational role or title <span class="required">*</span></label>
+          <input type="text" id="acceptingRole" autocomplete="organization-title" maxlength="200" placeholder="Rector, treasurer, parish administrator…" required />
+        </div>
+
         <div class="agreement-wrap">
           <input type="checkbox" id="agreeTerms" />
           <label for="agreeTerms" id="agreementText">
-            I confirm that <strong id="reviewParishName">this organization</strong> is authorized to register with AGAPAY, and that the information above is accurate. I have read and agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.
+            I confirm that I am authorized to bind the organization named above and that the information above is accurate. I agree to the <a href="/terms#arbitration" target="_blank" rel="noopener noreferrer">Terms of Service</a>, including the 30-day informal-resolution process, small-claims option, and court provisions in Section 24. I acknowledge the <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
           </label>
         </div>
         <div data-agapay-turnstile style="margin-top:1rem;"></div>
 
         <div class="form-nav" style="margin-top:1.5rem;">
           <button class="btn-back" onclick="goToStep(2)">← Back</button>
-          <button class="btn-submit" id="submitBtn" onclick="handleSubmit()">Submit registration →</button>
+          <button class="btn-submit" id="submitBtn" onclick="handleSubmit()" disabled>Submit registration →</button>
         </div>
       </div>
     </div>
@@ -1082,6 +1096,14 @@
         return;
       }
 
+      const acceptingName = document.getElementById('acceptingName').value.trim();
+      const acceptingEmail = document.getElementById('acceptingEmail').value.trim();
+      const acceptingRole = document.getElementById('acceptingRole').value.trim();
+      if (!acceptingName || !acceptingEmail || !acceptingRole) {
+        alert('Enter your name, email, and organizational role before accepting the Terms.');
+        return;
+      }
+
       let taxExemption = null;
       try {
         taxExemption = buildTaxExemptionPayload();
@@ -1128,6 +1150,9 @@
         treasurerEmail,
         notes,
         canonicalAgreement: true,
+        acceptingName,
+        acceptingEmail,
+        acceptingRole,
         ...(taxExemption ? { taxExemption } : {}),
         ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {})
       };
@@ -1203,6 +1228,10 @@
 
     updateDynamicForm();
     showOrganizationFlow('Parish');
+    document.getElementById('agreeTerms')?.addEventListener('change', (event) => {
+      const submit = document.getElementById('submitBtn');
+      if (submit) submit.disabled = !event.currentTarget.checked;
+    });
   </script>
 
 </body>
