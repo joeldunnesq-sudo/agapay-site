@@ -47,7 +47,7 @@ html[data-myagapay-hydrate]:not([data-myagapay-page-ready="true"]) body::after {
   justify-content: center;
   padding: 144px 24px 24px;
   background:
-    url("/mark.png") center calc(50% - 46px) / 80px 80px no-repeat,
+    url("/images/app/icon-512.png") center calc(50% - 46px) / 80px 80px no-repeat,
     radial-gradient(circle at 50% 42%, rgba(200, 162, 74, 0.14), transparent 260px),
     var(--cream);
   color: var(--deep-hero);

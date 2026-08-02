@@ -809,7 +809,7 @@ async function playParishTeachingAudio(teachingId) {
     audioUrl:post.audioUrl,
     description:post.body || "A recording shared by your parish.",
     link:post.audioUrl,
-    image:"/mark.png",
+    image:"/images/app/listen-icon-192.png",
     trackProgress:false,
   });
   if (post.read) return;
