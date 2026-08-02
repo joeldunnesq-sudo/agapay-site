@@ -79,28 +79,28 @@ jobs:
           node-version: '24'
 
       - name: Validate Cloudflare authentication
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
           command: whoami
 
       - name: Apply D1 migrations
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
           command: d1 migrations apply agapay-production --remote
 
       - name: Apply St. Fiacre accounting migrations
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
           command: d1 execute ACCOUNTING_DB_ST_FIACRE --remote --file accounting-migrations/0025_in_kind_contributions_account.sql
 
       - name: Apply accounting canary migrations
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
@@ -111,7 +111,7 @@ jobs:
         run: echo "AGAPAY_DEPLOYED_AT=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
 
       - name: Deploy with Wrangler
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'

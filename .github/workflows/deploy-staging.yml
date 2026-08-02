@@ -46,35 +46,35 @@ jobs:
           node-version: '24'
 
       - name: Validate Cloudflare authentication
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
           command: whoami
 
       - name: Apply central staging migrations
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
           command: d1 migrations apply AGAPAY_DB --env staging --remote
 
       - name: Apply Parish A accounting migrations
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
           command: d1 migrations apply ACCOUNTING_DB_ST_FIACRE --env staging --remote
 
       - name: Apply Parish B accounting migrations
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
           command: d1 migrations apply ACCOUNTING_DB_RELEASE_GATE_B --env staging --remote
 
       - name: Deploy staging Worker
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
