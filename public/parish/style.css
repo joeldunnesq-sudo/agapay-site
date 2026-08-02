@@ -29,9 +29,7 @@
       display: grid;
       place-items: center;
       padding: 1.5rem;
-      background:
-        radial-gradient(circle at 50% 18%, rgba(200,162,74,0.2), transparent 24rem),
-        linear-gradient(145deg, #061522, #0b2130 68%, #102d3d);
+      background: #0B2130;
       color: var(--cream);
       opacity: 1;
       visibility: visible;

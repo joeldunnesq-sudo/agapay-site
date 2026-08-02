@@ -11,6 +11,7 @@ const donorApp = read("public/donor/app.js");
 const directory = read("public/myagapay/directory.html");
 const teaching = read("public/myagapay/teaching.js");
 const parishDashboard = read("public/parish/dashboard.html");
+const parishStyles = read("public/parish/style.css");
 const householdRenderer = directory.slice(
   directory.indexOf("async function renderHouseholdDetails"),
   directory.indexOf("function relationshipLabel")
@@ -37,21 +38,23 @@ const protectedPages = [
 for (const file of protectedPages) {
   const html = read(file);
   assert.match(html, /<html[^>]*data-myagapay-hydrate/, `${file} must opt into the pre-paint hydration shield`);
-  assert.match(html, /\/donor\/style\.css\?v=20260802appicon1/, `${file} must load the current atomic-paint CSS version`);
+  assert.match(html, /\/donor\/style\.css\?v=20260802appicon2/, `${file} must load the current atomic-paint CSS version`);
   assert.match(html, /<script src="\/myagapay-shell\.js\?v=20260801atomicpaint1"><\/script>/, `${file} must install the tracker before page-level scripts`);
   assert.doesNotMatch(html, /myagapay-shell\.js\?v=20260801atomicpaint1" defer/, `${file} must not defer initial request tracking`);
 }
 
 assert.match(
   styles,
-  /url\("\/images\/app\/icon-512\.png"\) center calc\(50% - 46px\) \/ 80px 80px no-repeat/,
-  "the atomic loading shield must downscale the high-resolution AGAPAY app icon",
+  /url\("\/images\/app\/icon-512\.png"\) center calc\(50% - 46px\) \/ 80px 80px no-repeat,[\s\S]*?#0B2130/,
+  "the atomic loading shield must downscale the app icon against its exact navy background",
 );
 
 assert.match(parishDashboard, /dashboard-boot-card[\s\S]*?<img src="\/images\/app\/icon-512\.png"/,
   "the parish dashboard loading screen must use the high-resolution AGAPAY app icon");
-assert.match(teaching, /image:"\/images\/app\/listen-icon-192\.png"/,
-  "parish audio playback must use the high-resolution AGAPAY Listen app icon");
+assert.match(parishStyles, /\.dashboard-boot-screen \{[\s\S]*?background: #0B2130;/,
+  "the parish loading screen must match the app icon's exact navy background");
+assert.match(teaching, /image:"\/images\/app\/icon-512\.png"/,
+  "parish audio playback must use the high-resolution regular AGAPAY app icon");
 
 assert.match(styles, /html\[data-myagapay-hydrate\]:not\(\[data-myagapay-page-ready="true"\]\) body::after[\s\S]*Loading your My AGAPAY page/,
   "the neutral shield must exist in render-blocking CSS before scripts run");
