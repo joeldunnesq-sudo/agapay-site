@@ -90,7 +90,6 @@ export function validateExternalTeachingAudioUrl(value = "") {
 export async function createParishTeachingPost(db, { parishId, createdBy, input }) {
   const fields = validateTeachingInput(input);
   const id = generateSecret("teaching");
-  if (fields.pinned) await db.prepare("UPDATE parish_teaching_posts SET pinned = 0 WHERE parish_id = ?").bind(parishId).run();
   await db.prepare(`
     INSERT INTO parish_teaching_posts (id, parish_id, title, body, audio_url, audio_source, pinned, category, status, created_by)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?)
@@ -117,7 +116,11 @@ export async function updateParishTeachingPost(db, { parishId, teachingId, input
   const audioUrl = fields.audioUrl !== undefined ? (fields.audioUrl || null) : current.audio_url;
   const audioSource = fields.audioUrl !== undefined ? (fields.audioUrl ? "external" : "upload") : (current.audio_source || "upload");
   const pinned = fields.pinned ?? Number(current.pinned || 0);
-  if (pinned && !Number(current.pinned || 0)) await db.prepare("UPDATE parish_teaching_posts SET pinned = 0 WHERE parish_id = ?").bind(parishId).run();
+  // Draft pin intent must not displace the recording parishioners currently see.
+  // Enforce the single visible pin only when this post is actually published.
+  if (pinned && requestedStatus === "published" && (current.status !== "published" || !Number(current.pinned || 0))) {
+    await db.prepare("UPDATE parish_teaching_posts SET pinned = 0 WHERE parish_id = ? AND status = 'published' AND id <> ?").bind(parishId, teachingId).run();
+  }
   await db.prepare(`
     UPDATE parish_teaching_posts
     SET title = ?, body = ?, audio_url = ?, audio_source = ?, pinned = ?, category = ?, status = ?, published_at = ?, updated_at = datetime('now')

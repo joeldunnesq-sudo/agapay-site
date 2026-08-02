@@ -3276,6 +3276,18 @@ body.donor-home {
 .youtube-player-dialog.is-browser-fullscreen { position:fixed; inset:0; z-index:1300; display:flex; width:100vw; max-width:none; height:100dvh; flex-direction:column; border:0; border-radius:0; }
 .youtube-player-dialog.is-browser-fullscreen .youtube-player-frame { flex:1; min-height:0; aspect-ratio:auto; }
 .has-koinonia-media-modal { overflow:hidden; }
+@media (orientation:portrait) {
+  .youtube-player-dialog.is-browser-fullscreen.is-landscape-fallback {
+    position:fixed;
+    top:50%;
+    left:50%;
+    inset:auto;
+    width:100vh;
+    height:100vw;
+    transform:translate(-50%,-50%) rotate(90deg);
+    transform-origin:center;
+  }
+}
 @media (max-width:560px) { .youtube-player-fullscreen span { display:none; } }
 .media-empty { color:#92a5af; }
 .agapay-player { position:relative; overflow:hidden; width:100%; margin-top:18px; border:1px solid #294354; border-radius:22px; aspect-ratio:16/9; background:#000; box-shadow:0 30px 80px rgba(0,0,0,.42); }
@@ -8701,14 +8713,15 @@ textarea {
   border: 1px solid var(--k-border);
   border-radius: 10px;
   padding: 12px 8px;
-  background: var(--k-surface);
-  color: var(--k-text);
-  box-shadow: none;
+  background: linear-gradient(145deg, #174968, #0b304b);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(11, 48, 75, .16);
 }
-.parish-life-ministry-tile:hover { transform: none; border-color: var(--k-gold); background: var(--k-surface-2); }
-.parish-life-ministry-mark { width: 28px; height: 28px; border: 0; color: var(--k-navy); }
-.parish-life-ministry-tile strong { color: var(--k-text); font-family: "Inter", Arial, sans-serif; font-size: 11px; line-height: 1.2; }
-.parish-life-ministry-tile small { color: var(--k-faint); font-size: 9px; }
+.parish-life-ministry-tile:hover { transform:translateY(-1px); border-color:var(--k-gold); background:linear-gradient(145deg,#1b5578,#0d3755); }
+.parish-life-ministry-mark { width: 30px; height: 30px; border: 0; color: var(--k-gold-soft); }
+.parish-life-ministry-mark svg { width:28px; height:28px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+.parish-life-ministry-tile strong { color: #fff; font-family: "Inter", Arial, sans-serif; font-size: 11px; line-height: 1.2; }
+.parish-life-ministry-tile small { color: rgba(255,255,255,.7); font-size: 9px; }
 
 /* Filter chips */
 .content-filter-chips {

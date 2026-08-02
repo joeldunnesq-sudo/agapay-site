@@ -137,6 +137,10 @@ function parishLifeTierSectionsHtml(communicationsEnabled) {
       <div class="parish-life-section-head"><h2 id="recentAudioHeading">Recent Audio</h2><a href="/myagapay/teaching">Audio Library</a></div>
       <div class="parish-life-recording-list" id="parishLifeRecordings"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading recordings…</p></div>
     </section>
+    <section class="parish-life-home-section" id="parishLifeRecentPodcastsSection" aria-labelledby="recentPodcastEpisodesHeading" hidden>
+      <div class="parish-life-section-head"><h2 id="recentPodcastEpisodesHeading">Recent Podcast Episodes</h2><a href="/myagapay/teaching?mode=podcasts">All Podcasts</a></div>
+      <div class="parish-life-recording-list" id="parishLifePodcastEpisodes"><p class="sw-tool-loading parish-life-section-loading" role="status">Checking your subscriptions…</p></div>
+    </section>
     <section class="parish-life-home-section" aria-labelledby="recentVideosHeading">
       <div class="parish-life-section-head"><h2 id="recentVideosHeading">Recent Videos</h2><a href="/myagapay/media">All Media</a></div>
       <div class="parish-life-video-grid" id="parishLifeVideos"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading videos…</p></div>
@@ -218,6 +222,78 @@ function renderRecentVideos(media = {}) {
   }).join("");
 }
 
+function parishLifePodcastText(node, selector) {
+  return node.querySelector(selector)?.textContent?.trim() || "";
+}
+
+function parishLifePodcastEpisodes(xml, feedUrl, fallbackArtwork = "") {
+  const documentNode = new DOMParser().parseFromString(xml, "application/xml");
+  if (documentNode.querySelector("parsererror")) throw new Error("Podcast feed could not be read.");
+  const show = parishLifePodcastText(documentNode, "channel > title") || "Podcast";
+  const showArtwork = documentNode.querySelector("channel image[href]")?.getAttribute("href") || parishLifePodcastText(documentNode, "channel > image > url") || fallbackArtwork;
+  return [...documentNode.querySelectorAll("item")].map((item) => {
+    const audioUrl = item.querySelector("enclosure")?.getAttribute("url") || "";
+    const guid = parishLifePodcastText(item, "guid");
+    return {
+      title: parishLifePodcastText(item, "title") || "Untitled episode",
+      show,
+      date: parishLifePodcastText(item, "pubDate"),
+      episodeKey: guid || audioUrl,
+      audioUrl,
+      image: item.querySelector("image[href]")?.getAttribute("href") || showArtwork,
+      feedUrl,
+    };
+  }).filter((episode) => episode.audioUrl).slice(0, 8);
+}
+
+function renderRecentPodcastEpisodes(subscriptions = [], episodes = []) {
+  const section = document.getElementById("parishLifeRecentPodcastsSection");
+  const target = document.getElementById("parishLifePodcastEpisodes");
+  if (!section || !target) return;
+  section.hidden = !subscriptions.length;
+  if (!subscriptions.length) return;
+  if (!episodes.length) {
+    target.innerHTML = '<div class="parish-life-empty-state"><strong>No recent episodes available</strong><p>Your subscriptions are saved. Open Podcasts to browse each show.</p></div>';
+    return;
+  }
+  target.innerHTML = episodes.map((episode) => {
+    const href = `/myagapay/teaching?mode=podcasts&feed=${encodeURIComponent(episode.feedUrl)}&episode=${encodeURIComponent(episode.episodeKey)}`;
+    return `<a class="parish-life-recording-row" href="${href}">
+      <span class="parish-life-audio-icon" aria-hidden="true">▶</span>
+      <span><strong>${parishLifeEscape(episode.title)}</strong><small>${parishLifeEscape(episode.show)} · ${parishLifeEscape(parishLifeDate(episode.date))}</small></span>
+      <em>Listen</em>
+    </a>`;
+  }).join("");
+}
+
+async function loadRecentPodcastEpisodes(headers) {
+  const section = document.getElementById("parishLifeRecentPodcastsSection");
+  const target = document.getElementById("parishLifePodcastEpisodes");
+  if (!section || !target) return;
+  try {
+    const response = await fetch("/api/listen/subscriptions", { headers, cache: "no-store" });
+    if (window.MyAgapayShell?.handleUnauthorized(response)) return;
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Unable to load podcast subscriptions.");
+    const subscriptions = Array.isArray(data.subscriptions) ? data.subscriptions : [];
+    if (!subscriptions.length) { renderRecentPodcastEpisodes([], []); return; }
+    section.hidden = false;
+    const results = await Promise.allSettled(subscriptions.slice(0, 12).map(async (subscription) => {
+      const feedResponse = await fetch(`/api/listen/rss?url=${encodeURIComponent(subscription.feedUrl)}`, { cache: "no-store" });
+      if (!feedResponse.ok) throw new Error("Feed unavailable");
+      return parishLifePodcastEpisodes(await feedResponse.text(), subscription.feedUrl, subscription.artwork);
+    }));
+    const episodes = results
+      .flatMap((result) => result.status === "fulfilled" ? result.value : [])
+      .sort((left, right) => (new Date(right.date).getTime() || 0) - (new Date(left.date).getTime() || 0))
+      .slice(0, 4);
+    renderRecentPodcastEpisodes(subscriptions, episodes);
+  } catch {
+    // Podcast availability must not block the rest of the Koinonia landing page.
+    section.hidden = true;
+  }
+}
+
 function renderRecentNews(sources = []) {
   const mount = document.getElementById("parishLifeNewsMount");
   if (!mount) return;
@@ -263,7 +339,7 @@ function renderMinistries(groups = {}) {
   }
   target.innerHTML = ministries.slice(0, 6).map((group) => `
     <a class="parish-life-ministry-tile" href="/myagapay/groups?group=${encodeURIComponent(group.id)}">
-      <span class="parish-life-ministry-mark" aria-hidden="true">✦</span>
+      <span class="parish-life-ministry-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg></span>
       <strong>${parishLifeEscape(group.name)}</strong>
       <small>${group.unreadCount ? `${Number(group.unreadCount)} new` : group.role === "leader" ? "Leader" : "Caught up"}</small>
     </a>`).join("");
@@ -374,6 +450,7 @@ async function loadParishLife() {
       renderRecentRecordings(teaching || {});
       window.MyAgapayShell?.setTeachingUnreadCount(Math.max(0, Number(teaching?.unreadCount) || 0));
     });
+    const podcastsPromise = loadRecentPodcastEpisodes(headers);
     const mediaPromise = parishLifeFetch("/api/donor/videos", headers).then((media) => renderRecentVideos(media || {}));
     const newsPromise = Promise.all([
       parishLifeFetch("/api/donor/custom-news-feeds", headers),
@@ -386,7 +463,7 @@ async function loadParishLife() {
     ]).then(([customNews, ...newsSources]) => {
       renderRecentNews([...newsSources.filter(Boolean), ...(customNews?.feeds || [])]);
     });
-    await Promise.all([feedPromise, groupsPromise, teachingPromise, mediaPromise, newsPromise]);
+    await Promise.all([feedPromise, groupsPromise, teachingPromise, podcastsPromise, mediaPromise, newsPromise]);
     status.hidden = true;
   } catch (error) {
     if (typeof loadDonorLiturgicalDay === "function") await loadDonorLiturgicalDay(null);

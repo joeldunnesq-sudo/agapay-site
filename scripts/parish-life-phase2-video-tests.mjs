@@ -127,6 +127,8 @@ assert.match(sources["public/myagapay/media.html"], /Public parish channel[\s\S]
 assert.match(sources["public/myagapay/media.html"], /id="youtubePlayerModal"[\s\S]*youtubePlayerFrame/);
 assert.match(sources["public/myagapay/media.js"], /youtube-nocookie\.com\/embed\/[\s\S]*openYouTubeMedia/);
 assert.match(sources["public/myagapay/media.js"], /openYouTubeMediaFullscreen[\s\S]*requestFullscreen[\s\S]*orientation\?\.lock\?\.\("landscape"\)/, "YouTube playback must offer native fullscreen with a landscape request");
+assert.match(sources["public/myagapay/media.js"], /dialog\.requestFullscreen \|\| dialog\.webkitRequestFullscreen/, "Android fullscreen must target the same-origin player shell rather than the cross-origin YouTube iframe");
+assert.match(sources["public/donor/style.css"], /@media \(orientation:portrait\)[\s\S]*is-landscape-fallback[\s\S]*rotate\(90deg\)/, "mobile browsers that reject orientation locking must receive a landscape player fallback");
 assert.match(sources["public/myagapay/media.html"], /youtube-player-fullscreen[\s\S]*allowfullscreen/, "the YouTube player must expose a visible fullscreen control and grant iframe fullscreen permission");
 assert.match(sources["public/myagapay/media.js"], /youtube-nocookie\.com\/embed\/videoseries\?list=/, "the connected channel must render its auto-updating uploads playlist inside Koinonia");
 assert.match(sources["public/parish/dashboard.html"], /Connect your YouTube channel[\s\S]*New public videos appear automatically/);

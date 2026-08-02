@@ -66,12 +66,14 @@ assert.doesNotMatch(lowerTierMarkup, /Announcements|Recordings|Ministries/);
 const parishTierMarkup = sandbox.window.parishLifeTierSectionsHtml(true);
 assert.match(parishTierMarkup, /Pinned Announcements/);
 assert.match(parishTierMarkup, /Recent Audio/);
+assert.match(parishTierMarkup, /Recent Podcast Episodes/);
 assert.match(parishTierMarkup, /Recent Videos/);
 assert.match(parishTierMarkup, /Your Ministries/);
 for (const loadingLabel of ["announcements", "ministries", "recordings", "videos", "news"]) {
   assert.match(parishTierMarkup, new RegExp(`class="sw-tool-loading parish-life-section-loading"[^>]*>Loading ${loadingLabel}…<`), `the ${loadingLabel} section needs its own honest loading state`);
 }
-assert.equal((parishTierMarkup.match(/parish-life-section-loading/g) || []).length, 5, "each fresh-content section must own one loading placeholder");
+assert.match(parishTierMarkup, /id="parishLifeRecentPodcastsSection"[\s\S]*hidden[\s\S]*Checking your subscriptions…/, "podcasts must stay absent until a subscription is confirmed");
+assert.equal((parishTierMarkup.match(/parish-life-section-loading/g) || []).length, 6, "each fresh-content section must own one loading placeholder");
 assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf("Recent Audio"), "ministries should appear before recent audio and video");
 assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf("parishLifeNewsMount"), "the combined news preview should follow parish-specific ministries");
 assert.match(landingScript, /Get involved/);

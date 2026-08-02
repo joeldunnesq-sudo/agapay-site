@@ -54,25 +54,31 @@ function openYouTubeMedia(button) {
 function closeYouTubeMedia() {
   const modal = document.getElementById("youtubePlayerModal");
   const frame = document.getElementById("youtubePlayerFrame");
-  document.querySelector(".youtube-player-dialog")?.classList.remove("is-browser-fullscreen");
+  const dialog = document.querySelector(".youtube-player-dialog");
+  if (document.fullscreenElement || document.webkitFullscreenElement) {
+    const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen;
+    try { exitFullscreen?.call(document); } catch { /* Closing the modal remains authoritative. */ }
+  }
+  dialog?.classList.remove("is-browser-fullscreen", "is-landscape-fallback");
   if (frame) frame.src = "about:blank";
   if (modal) modal.hidden = true;
   document.body.classList.remove("has-koinonia-media-modal");
 }
 
 async function openYouTubeMediaFullscreen() {
-  const frame = document.getElementById("youtubePlayerFrame");
   const dialog = document.querySelector(".youtube-player-dialog");
-  if (!frame || !dialog) return;
-  const requestFullscreen = frame.requestFullscreen || frame.webkitRequestFullscreen;
+  if (!dialog) return;
+  // Fullscreen the same-origin player shell, not the cross-origin YouTube
+  // iframe. Android browsers are much more consistent about granting this.
+  dialog.classList.add("is-browser-fullscreen", "is-landscape-fallback");
+  const requestFullscreen = dialog.requestFullscreen || dialog.webkitRequestFullscreen;
   if (requestFullscreen) {
     try {
-      await requestFullscreen.call(frame, { navigationUI:"hide" });
+      await requestFullscreen.call(dialog, { navigationUI:"hide" });
       await screen.orientation?.lock?.("landscape").catch(() => {});
       return;
-    } catch { /* Fall through to an edge-to-edge in-app player. */ }
+    } catch { /* Keep the edge-to-edge landscape fallback below. */ }
   }
-  dialog.classList.add("is-browser-fullscreen");
 }
 
 async function loadMedia() {
@@ -125,13 +131,21 @@ async function loadMedia() {
 window.openYouTubeMedia = openYouTubeMedia;
 window.openYouTubeMediaFullscreen = openYouTubeMediaFullscreen;
 window.closeYouTubeMedia = closeYouTubeMedia;
-document.addEventListener("fullscreenchange", () => {
-  if (!document.fullscreenElement) screen.orientation?.unlock?.();
-});
+function handleYouTubeFullscreenChange() {
+  if (document.fullscreenElement || document.webkitFullscreenElement) return;
+  screen.orientation?.unlock?.();
+  document.querySelector(".youtube-player-dialog")?.classList.remove("is-browser-fullscreen", "is-landscape-fallback");
+}
+document.addEventListener("fullscreenchange", handleYouTubeFullscreenChange);
+document.addEventListener("webkitfullscreenchange", handleYouTubeFullscreenChange);
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
   const dialog = document.querySelector(".youtube-player-dialog");
-  if (dialog?.classList.contains("is-browser-fullscreen")) dialog.classList.remove("is-browser-fullscreen");
+  if (dialog?.classList.contains("is-browser-fullscreen")) {
+    const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen;
+    if (document.fullscreenElement || document.webkitFullscreenElement) exitFullscreen?.call(document);
+    dialog.classList.remove("is-browser-fullscreen", "is-landscape-fallback");
+  }
   else closeYouTubeMedia();
 });
 document.addEventListener("DOMContentLoaded", loadMedia);

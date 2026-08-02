@@ -78,6 +78,27 @@ function parseKoinoniaPodcastFeed(xml, xmlUrl) {
   return { title, image, episodes };
 }
 
+async function openRequestedKoinoniaPodcastEpisode() {
+  const parameters = new URLSearchParams(window.location.search);
+  const feedUrl = parameters.get("feed") || "";
+  const episodeKey = parameters.get("episode") || "";
+  if (!feedUrl || !episodeKey) return false;
+  const status = document.getElementById("koinoniaPodcastLatestStatus");
+  if (status) status.textContent = "Opening your selected episode…";
+  try {
+    const response = await fetch(`/api/listen/rss?url=${encodeURIComponent(feedUrl)}`, { cache: "no-store" });
+    if (!response.ok) throw new Error("That podcast feed is unavailable right now.");
+    const parsed = parseKoinoniaPodcastFeed(await response.text(), feedUrl);
+    const episode = parsed.episodes.find((item) => item.episodeKey === episodeKey);
+    if (!episode) throw new Error("That episode is no longer present in the podcast feed.");
+    await playKoinoniaPodcast(episode);
+    return true;
+  } catch (error) {
+    if (status) status.textContent = error.message || "Unable to open that episode.";
+    return false;
+  }
+}
+
 function podcastTime(value) {
   const seconds = Math.max(0, Math.floor(Number(value) || 0));
   const hours = Math.floor(seconds / 3600);
@@ -427,7 +448,7 @@ async function playKoinoniaPodcast(episode) {
   koinoniaPodcastState.switchingEpisode = false;
   try { await audio.play(); } catch { /* Browser may require a second explicit play gesture. */ }
   if ("mediaSession" in navigator) {
-    try { navigator.mediaSession.metadata = new MediaMetadata({ title: episode.title, artist: episode.show || "Orthodox Podcast", album: "Koinonia Audio Library", artwork: [{ src: image.src, sizes: "192x192" }] }); } catch { /* Metadata is optional. */ }
+    try { navigator.mediaSession.metadata = new MediaMetadata({ title: episode.title, artist: "AGAPAY Audio", album: episode.show || "Koinonia Audio Library", artwork: [{ src: image.src, sizes: "192x192" }] }); } catch { /* Metadata is optional. */ }
   }
   updateKoinoniaPodcastPlayer();
 }
@@ -873,5 +894,6 @@ document.addEventListener("DOMContentLoaded", () => {
   void loadKoinoniaPodcastProgress();
   setKoinoniaPodcastLibraryView("latest");
   setAudioLibraryMode(requestedMode === "podcasts" ? "podcasts" : "parish");
+  if (requestedMode === "podcasts") void openRequestedKoinoniaPodcastEpisode();
   void loadTeaching();
 });

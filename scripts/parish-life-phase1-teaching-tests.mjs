@@ -107,13 +107,16 @@ assert.throws(() => sqlite.prepare(`
 assert.equal(validateExternalTeachingAudioUrl("https://media.example.test/homily.mp3"), "https://media.example.test/homily.mp3");
 assert.throws(() => validateExternalTeachingAudioUrl("http://media.example.test/homily.mp3"), /public HTTPS/);
 assert.throws(() => validateExternalTeachingAudioUrl("https://localhost/homily.mp3"), /public HTTPS/);
+await updateParishTeachingPost(db, { parishId:"parish-one", teachingId:catechismDraft.id, input:{ pinned:true } });
 const linkedAudio = await createParishTeachingPost(db, {
   parishId:"parish-one", createdBy:"staff@example.test",
   input:{ title:"Linked homily", body:"Listen to this recording.", category:"homilies", audioUrl:"https://media.example.test/homily.mp3", pinned:true },
 });
 assert.equal(linkedAudio.audioSource, "external");
 assert.equal(linkedAudio.pinned, true);
+assert.equal(sqlite.prepare("SELECT pinned FROM parish_teaching_posts WHERE id = ?").get(catechismDraft.id).pinned, 1, "pin intent on an unpublished draft must not displace the visible published pin");
 await updateParishTeachingPost(db, { parishId:"parish-one", teachingId:linkedAudio.id, input:{ status:"published" } });
+assert.equal(sqlite.prepare("SELECT pinned FROM parish_teaching_posts WHERE id = ?").get(catechismDraft.id).pinned, 0, "publishing a pre-pinned draft must replace the previous visible pin");
 await updateParishTeachingPost(db, { parishId:"parish-one", teachingId:catechismDraft.id, input:{ pinned:true } });
 assert.equal(sqlite.prepare("SELECT pinned FROM parish_teaching_posts WHERE id = ?").get(linkedAudio.id).pinned, 0, "pinning another recording must clear the previous parish audio pin");
 donorFeed = await getDonorTeachingFeed(db, { parishId:"parish-one", donorId:"donor@example.test" });
@@ -199,16 +202,21 @@ assert.match(sources["public/myagapay/parish-life.js"], />Recent Audio<[\s\S]*hr
 assert.match(sources["public/myagapay/parish-life.js"], /post\.status === "published" && Boolean\(post\.audioUrl\)/);
 assert.match(sources["public/myagapay/parish-life.js"], /parishLifeFetch\("\/api\/donor\/teaching"[\s\S]*\.then\(\(teaching\)[\s\S]*renderRecentRecordings[\s\S]*setTeachingUnreadCount\(Math\.max\(0, Number\(teaching\?\.unreadCount\) \|\| 0\)\)/, "the teaching request must fill Recent Audio and update unread state independently");
 assert.match(sources["public/parish/dashboard.html"], /id="teachingAudio"/);
-assert.match(sources["public/parish/dashboard.html"], /id="teachingAudioUrl"[\s\S]*id="teachingPinned"[\s\S]*Pin in Recent Audio/);
+assert.match(sources["public/parish/dashboard.html"], /id="teachingAudioUrl"[\s\S]*id="teachingPinned"[\s\S]*Pin when published/);
 assert.match(sources["public/parish/dashboard.html"], /id="teachingCategory"[\s\S]*?value="homilies"[\s\S]*?value="special_events"/);
 assert.match(sources["public/parish/app.js"], /createTeachingDraft/);
 assert.match(sources["public/parish/app.js"], /category:document\.getElementById\('teachingCategory'\)\.value/);
 assert.match(sources["public/parish/app.js"], /audioUrl[\s\S]*toggleTeachingPin/);
+assert.match(sources["public/parish/app.js"], /Will pin when published[\s\S]*Publish pinned audio/, "the parish dashboard must distinguish draft pin intent from a visible published pin");
 assert.match(sources["public/parish/app.js"], /chooseTeachingAudioUpload[\s\S]*Replace audio file[\s\S]*uploadTeachingAudio/, "a saved draft must offer a direct retry after an upload failure");
 assert.match(sources["public/parish/app.js"], /deleteTeachingPost[\s\S]*method:'DELETE'[\s\S]*Teaching post permanently deleted/, "audio posts of every status must offer permanent deletion");
 assert.match(sources["public/myagapay/parish-life.js"], /Boolean\(right\.pinned\)[\s\S]*Pinned ·/);
+assert.match(sources["public/myagapay/parish-life.js"], /Recent Podcast Episodes[\s\S]*\/api\/listen\/subscriptions[\s\S]*Promise\.allSettled[\s\S]*slice\(0, 4\)/, "subscribers must receive recent podcast episodes on the Koinonia landing page");
+assert.match(sources["public/myagapay/parish-life.js"], /mode=podcasts&feed=\$\{encodeURIComponent\(episode\.feedUrl\)\}&episode=\$\{encodeURIComponent\(episode\.episodeKey\)\}/, "landing-page podcast episodes must deep-link to the selected playable episode");
 assert.match(sources["public/myagapay/teaching.js"], /post\.pinned[\s\S]*Linked audio/);
 assert.match(sources["public/myagapay/teaching.js"], /playParishTeachingAudio[\s\S]*playKoinoniaPodcast\(\{[\s\S]*trackProgress:false/, "parish recordings must launch the shared Koinonia mini and full-screen player");
+assert.match(sources["public/myagapay/teaching.js"], /artist: "AGAPAY Audio"[\s\S]*album: episode\.show \|\| "Koinonia Audio Library"/, "Bluetooth media metadata must identify every Koinonia source as AGAPAY Audio");
+assert.match(sources["public/myagapay/teaching.js"], /openRequestedKoinoniaPodcastEpisode[\s\S]*parameters\.get\("feed"\)[\s\S]*parameters\.get\("episode"\)[\s\S]*playKoinoniaPodcast\(episode\)/, "podcast landing links must open the selected episode in the shared player");
 assert.doesNotMatch(sources["public/myagapay/teaching.js"], /<audio controls preload="metadata"/, "parish recordings must not fall back to a bare browser audio control");
 assert.match(sources["public/myagapay/teaching.js"], /All[\s\S]*Homilies[\s\S]*Catechism[\s\S]*Liturgical[\s\S]*Choir[\s\S]*Special Events/);
 assert.match(sources["public/myagapay/teaching.js"], /teachingPostsForFilter\(value\)\.length/);
