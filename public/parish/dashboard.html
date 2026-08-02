@@ -1423,7 +1423,10 @@
               <form class="communications-compose youtube-curated-form" onsubmit="addYouTubeVideo(event)">
                 <span class="eyebrow">Optional curation</span><h2>Add or pin a specific YouTube video</h2><p class="section-note">Paste any video URL—including one from the connected channel—to spotlight it for parishioners.</p>
                 <label>YouTube video URL<input id="youtubeVideoUrl" type="url" required placeholder="https://www.youtube.com/watch?v=…" /></label>
-                <label class="communications-pin"><input id="youtubeVideoPinned" type="checkbox" /> Pin this video in Recent Videos for parishioners</label>
+                <label class="youtube-pin-option">
+                  <input id="youtubeVideoPinned" type="checkbox" />
+                  <span><strong>Pin in Recent Videos</strong><small>Place this video at the top of Koinonia for parishioners.</small></span>
+                </label>
                 <button class="btn btn-ghost" type="submit">Validate and add</button>
               </form>
             </section>

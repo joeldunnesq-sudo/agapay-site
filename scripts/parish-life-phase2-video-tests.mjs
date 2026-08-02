@@ -119,7 +119,8 @@ assert.match(sources["public/parish/dashboard.html"], /Connect your YouTube chan
 assert.match(sources["src/handlers/parish-video.js"], /youtube-channel[\s\S]*saveYouTubeChannel/);
 assert.match(sources["src/handlers/parish-video.js"], /feeds\/videos\.xml\?channel_id=[\s\S]*youtubeLatest/);
 assert.match(sources["public/parish/app.js"], /toggleYouTubeVideoPin[\s\S]*\/pin/);
-assert.match(sources["public/parish/dashboard.html"], /Pin this video in Recent Videos for parishioners/);
+assert.match(sources["public/parish/dashboard.html"], /youtube-pin-option[\s\S]*Pin in Recent Videos[\s\S]*Place this video at the top of Koinonia for parishioners/);
+assert.match(sources["public/parish/style.css"], /\.youtube-pin-option\s*\{[^}]*grid-template-columns:18px minmax\(0,1fr\)[^}]*gap:10px/, "the pin control must keep its checkbox directly beside its text");
 assert.doesNotMatch(sources["public/parish/style.css"], /\.video-admin-section\s*\{[^}]*background\s*:\s*linear-gradient/i, "the Video subpage must use the same light Koinonia surface as its siblings");
 assert.doesNotMatch(sources["public/myagapay/media.js"], /target="_blank"/, "YouTube videos must play inside the Koinonia Media page");
 assert.match(sources["public/donor/style.css"], /--media-navy:#061522[\s\S]*--media-gold/);

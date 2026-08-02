@@ -809,6 +809,12 @@
     .youtube-privacy-guidance ul { display:grid; gap:7px; margin:11px 0; padding-left:19px; }
     .youtube-privacy-guidance li, .youtube-privacy-guidance p { font-size:12px; line-height:1.55; }
     .youtube-privacy-guidance p { margin:0; border-top:1px solid #dfd0a7; padding-top:11px; }
+    .communications-compose .youtube-pin-option { display:grid; grid-template-columns:18px minmax(0,1fr); align-items:start; gap:10px; border:1px solid #d9d5cc; border-radius:12px; padding:12px 13px; background:#faf8f3; cursor:pointer; }
+    .communications-compose .youtube-pin-option input { width:16px; height:16px; margin:2px 0 0; accent-color:#9a7428; cursor:pointer; }
+    .communications-compose .youtube-pin-option span { display:grid; gap:3px; min-width:0; }
+    .communications-compose .youtube-pin-option strong { color:var(--deep); font-size:12px; line-height:1.35; }
+    .communications-compose .youtube-pin-option small { color:var(--muted); font-size:11px; font-weight:500; line-height:1.4; }
+    .communications-compose .youtube-pin-option:has(input:checked) { border-color:#c4a45f; background:#fff8e7; box-shadow:0 0 0 2px rgba(184,143,66,.1); }
     .video-upload-progress { display:grid; gap:7px; }
     .video-upload-progress > span { overflow:hidden; height:8px; border-radius:999px; background:#dfe5e8; }
     .video-upload-progress i { display:block; width:0; height:100%; border-radius:inherit; background:var(--gold); transition:width .2s ease; }
