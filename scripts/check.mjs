@@ -240,6 +240,8 @@ assert.ok(myAgapayShell.includes("isLikelyMobileBrowser") && myAgapayShell.inclu
 assert.ok(myAgapayShell.includes("ensureIosBackButton") && myAgapayShell.includes("myagapay-ios-back"), "shared shell should provide an in-app Back button for iPhone My AGAPAY screens");
 assert.ok(myAgapayShell.includes("ensureCanonicalHeader") && myAgapayShell.includes("content.prepend(topbar)") && myAgapayShell.includes("myagapay-settings-chip"), "shared shell should add canonical account/settings access and a fallback topbar to My AGAPAY product headers");
 assert.ok(myAgapayShell.includes("myagapay-menu-trigger") && myAgapayShell.includes("myagapay-menu-icon") && myAgapayShell.includes("Open My AGAPAY menu"), "shared My AGAPAY headers should use an obvious hamburger menu trigger");
+const sharedHamburgerMenu = myAgapayShell.match(/menu\.innerHTML = `([\s\S]*?)`;/)?.[1] || "";
+assert.ok(!sharedHamburgerMenu.includes("/myagapay/parish-life"), "the shared My AGAPAY hamburger menu should not duplicate Koinonia navigation");
 assert.ok(
   myAgapayShell.includes("Report a problem / Request a feature")
     && myAgapayShell.includes('id = "myAgapaySupportDialog"')

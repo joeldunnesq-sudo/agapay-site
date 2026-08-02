@@ -409,7 +409,6 @@
         ${icons.menu}
       </button>
       <div class="donor-home-account-dropdown" role="menu" hidden>
-        <a href="/myagapay/parish-life" role="menuitem" data-parish-life-link data-parish-life-label${capabilitiesLoaded ? "" : ' class="sw-tool-loading" aria-busy="true" aria-disabled="true"'}>${parishLifeExperience().label}</a>
         <a href="/myagapay/giving/history" role="menuitem">History</a>
         <a href="/myagapay/account" role="menuitem">Account Settings</a>
         <button type="button" data-donor-logout role="menuitem">Log out</button>
