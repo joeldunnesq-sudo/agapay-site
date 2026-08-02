@@ -35,10 +35,16 @@ const protectedPages = [
 for (const file of protectedPages) {
   const html = read(file);
   assert.match(html, /<html[^>]*data-myagapay-hydrate/, `${file} must opt into the pre-paint hydration shield`);
-  assert.match(html, /\/donor\/style\.css\?v=20260801atomicpaint1/, `${file} must load the atomic-paint CSS version`);
+  assert.match(html, /\/donor\/style\.css\?v=20260801loadinglogo1/, `${file} must load the current atomic-paint CSS version`);
   assert.match(html, /<script src="\/myagapay-shell\.js\?v=20260801atomicpaint1"><\/script>/, `${file} must install the tracker before page-level scripts`);
   assert.doesNotMatch(html, /myagapay-shell\.js\?v=20260801atomicpaint1" defer/, `${file} must not defer initial request tracking`);
 }
+
+assert.match(
+  styles,
+  /url\("\/mark\.png"\) center calc\(50% - 46px\) \/ 80px 80px no-repeat/,
+  "the atomic loading shield must display the transparent AGAPAY mark",
+);
 
 assert.match(styles, /html\[data-myagapay-hydrate\]:not\(\[data-myagapay-page-ready="true"\]\) body::after[\s\S]*Loading your My AGAPAY page/,
   "the neutral shield must exist in render-blocking CSS before scripts run");

@@ -42,10 +42,12 @@ html[data-myagapay-hydrate]:not([data-myagapay-page-ready="true"]) body::after {
   position: fixed;
   inset: 0;
   z-index: 10000;
-  display: grid;
-  place-items: center;
-  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 144px 24px 24px;
   background:
+    url("/mark.png") center calc(50% - 46px) / 80px 80px no-repeat,
     radial-gradient(circle at 50% 42%, rgba(200, 162, 74, 0.14), transparent 260px),
     var(--cream);
   color: var(--deep-hero);
