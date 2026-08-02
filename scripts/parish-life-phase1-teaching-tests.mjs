@@ -214,6 +214,7 @@ assert.match(sources["public/parish/app.js"], /deleteTeachingPost[\s\S]*method:'
 assert.match(sources["public/myagapay/parish-life.js"], /Boolean\(right\.pinned\)[\s\S]*Pinned ·/);
 assert.match(sources["public/myagapay/parish-life.js"], /Recent Podcast Episodes[\s\S]*\/api\/listen\/subscriptions[\s\S]*Promise\.allSettled[\s\S]*slice\(0, 4\)/, "subscribers must receive recent podcast episodes on the Koinonia landing page");
 assert.match(sources["public/myagapay/parish-life.js"], /mode=podcasts&feed=\$\{encodeURIComponent\(episode\.feedUrl\)\}&episode=\$\{encodeURIComponent\(episode\.episodeKey\)\}/, "landing-page podcast episodes must deep-link to the selected playable episode");
+assert.match(sources["public/myagapay/parish-life.js"], /episode\.image \? `<img src="\$\{parishLifeEscape\(episode\.image\)\}"[^`]*` : "▶"/, "recent podcast episodes must show feed artwork and reserve the generic play icon as a fallback");
 assert.match(sources["public/myagapay/teaching.js"], /post\.pinned[\s\S]*Linked audio/);
 assert.match(sources["public/myagapay/teaching.js"], /playParishTeachingAudio[\s\S]*playKoinoniaPodcast\(\{[\s\S]*trackProgress:false/, "parish recordings must launch the shared Koinonia mini and full-screen player");
 assert.match(sources["public/myagapay/teaching.js"], /post\.audioUrl \? "playParishTeachingAudio" : "openTeachingPost"[\s\S]*Play in Koinonia/, "a donor post with stored audio must expose the shared player rather than render as text-only");

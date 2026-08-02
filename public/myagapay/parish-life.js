@@ -259,7 +259,7 @@ function renderRecentPodcastEpisodes(subscriptions = [], episodes = []) {
   target.innerHTML = episodes.map((episode) => {
     const href = `/myagapay/teaching?mode=podcasts&feed=${encodeURIComponent(episode.feedUrl)}&episode=${encodeURIComponent(episode.episodeKey)}`;
     return `<a class="parish-life-recording-row" href="${href}">
-      <span class="parish-life-audio-icon" aria-hidden="true">▶</span>
+      <span class="parish-life-audio-icon${episode.image ? " is-podcast-artwork" : ""}" aria-hidden="true">${episode.image ? `<img src="${parishLifeEscape(episode.image)}" alt="" loading="lazy" />` : "▶"}</span>
       <span><strong>${parishLifeEscape(episode.title)}</strong><small>${parishLifeEscape(episode.show)} · ${parishLifeEscape(parishLifeDate(episode.date))}</small></span>
       <em>Listen</em>
     </a>`;

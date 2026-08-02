@@ -3200,7 +3200,15 @@ body.donor-home {
 @media (max-width:520px) {
   .audio-library-mode-tabs { grid-template-columns:repeat(2,max-content); }
   .koinonia-podcast-library-tabs { grid-template-columns:repeat(3,minmax(0,1fr)); }
-  .koinonia-podcast-mini-player .koinonia-podcast-player-shell { grid-template-areas:"now expand" "timeline timeline" "transport transport"; }
+  .koinonia-podcast-player:not(.is-expanded) { padding:6px 10px; }
+  .koinonia-podcast-mini-player .koinonia-podcast-player-shell { grid-template-areas:"now expand" "transport timeline"; gap:5px 8px; }
+  .koinonia-podcast-mini-player .koinonia-podcast-player-now { grid-template-columns:36px minmax(0,1fr); gap:8px; }
+  .koinonia-podcast-mini-player .koinonia-podcast-player-art { width:36px; height:36px; border-radius:8px; }
+  .koinonia-podcast-mini-player .koinonia-podcast-player-controls { grid-template-columns:28px 32px 28px; gap:4px; }
+  .koinonia-podcast-mini-player .koinonia-podcast-player-controls > button { width:28px; height:28px; }
+  .koinonia-podcast-mini-player .koinonia-podcast-player-controls > button.is-primary { width:32px; height:32px; }
+  .koinonia-podcast-mini-player .koinonia-podcast-progress-control { grid-template-columns:minmax(70px,1fr); gap:0; }
+  .koinonia-podcast-mini-player .koinonia-podcast-progress-control small { display:none; }
   .koinonia-podcast-full-player > header { padding-top:2px; }
   .koinonia-full-art { width:min(68vw,260px); height:min(68vw,260px); margin-bottom:12px; }
   .koinonia-full-copy h2 { display:-webkit-box; overflow:hidden; font-size:21px; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
@@ -8084,6 +8092,8 @@ textarea {
 .parish-life-recording-row:first-child { border-top: 0; }
 .parish-life-recording-row:hover { background: #f8f1e4; }
 .parish-life-audio-icon { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 50%; background: var(--pl-ink); color: var(--pl-gold-light); font-size: 0.72rem; }
+.parish-life-audio-icon.is-podcast-artwork { overflow:hidden; border-radius:9px; background:#e8e2d6; }
+.parish-life-audio-icon.is-podcast-artwork img { display:block; width:100%; height:100%; object-fit:cover; }
 .parish-life-recording-row > span:nth-child(2) { display: grid; gap: 0.2rem; }
 .parish-life-recording-row strong { color: var(--pl-ink); font-family: var(--serif); font-size: 1.08rem; font-weight: 600; }
 .parish-life-recording-row small { color: var(--pl-muted); font-size: 0.7rem; }
