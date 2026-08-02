@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-myagapay-hydrate>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/donor/style.css?v=20260801navflash2" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260801atomicpaint1" />
   <script src="/pwa-register.js" defer></script>
-  <script src="/myagapay-shell.js?v=20260801navflash2" defer></script>
+  <script src="/myagapay-shell.js?v=20260801atomicpaint1"></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -1170,6 +1170,8 @@
     const donorEmail = localStorage.getItem("agapayDonorEmail") || email;
     let profileState = null;
     let householdDetailState = null;
+    let householdDetailLoaded = false;
+    let householdDetailError = "";
     let householdNamedays = [];
     let directoryChildSharing = [];
     let memberState = { view: "households", letter: "", cursor: "", query: "", sort: "az", namedayMonth: "", skill: "", items: [], loading: false };
@@ -1919,6 +1921,9 @@
     }
     function renderProfile(data) {
       profileState = data || {};
+      householdDetailState = null;
+      householdDetailLoaded = false;
+      householdDetailError = "";
       const person = profileState.profile?.person || profileState.currentPerson || profileState.person;
       const publication = profileState.profile?.publication || {};
       const startForm = document.getElementById("startProfileForm");
@@ -2056,8 +2061,33 @@
     }
     function renderOwnDirectoryPreview() {
       const preview = document.getElementById("ownDirectoryPreview");
-      if (!preview || !profileState?.claimed) {
-        if (preview) preview.hidden = true;
+      if (!preview) return;
+      if (profileState === null || (profileState?.claimed && firstHousehold() && !householdDetailLoaded)) {
+        preview.hidden = false;
+        preview.innerHTML = `
+          <div class="own-directory-preview-head">
+            <div>
+              <div class="panel-kicker">Your saved listing</div>
+              <h2 class="sw-tool-loading">Loading listing status…</h2>
+              <p>Checking your personal and family publication records together.</p>
+            </div>
+          </div>`;
+        return;
+      }
+      if (!profileState?.claimed) {
+        preview.hidden = true;
+        return;
+      }
+      if (householdDetailError) {
+        preview.hidden = false;
+        preview.innerHTML = `
+          <div class="own-directory-preview-head">
+            <div>
+              <div class="panel-kicker">Your saved listing</div>
+              <h2>Listing status unavailable</h2>
+              <p>${esc(householdDetailError)}</p>
+            </div>
+          </div>`;
         return;
       }
       const household = firstHousehold() || {};
@@ -2089,6 +2119,18 @@
       const summary = document.getElementById("combinedPublicationSummary");
       const button = document.getElementById("submitDirectoryListing");
       if (!summary || !button) return;
+      if (profileState === null || (profileState?.claimed && firstHousehold() && !householdDetailLoaded)) {
+        summary.innerHTML = '<div class="summary-row sw-tool-loading"><span>Publication status</span><strong>Loading…</strong></div>';
+        button.disabled = true;
+        button.textContent = "Loading Listing Status…";
+        return;
+      }
+      if (householdDetailError) {
+        summary.innerHTML = '<div class="summary-row"><span>Publication status</span><strong>Unavailable</strong></div>';
+        button.disabled = true;
+        button.textContent = "Listing Status Unavailable";
+        return;
+      }
       const personPublication = profileState?.profile?.publication || {};
       const household = firstHousehold();
       const householdPublication = householdDetailState?.publication || {};
@@ -2120,6 +2162,8 @@
       document.getElementById("adultAddSection").hidden = true;
       if (!households.length) {
         householdDetailState = null;
+        householdDetailLoaded = true;
+        householdDetailError = "";
         document.getElementById("householdMemberList").innerHTML = "";
         form.hidden = true;
         document.getElementById("householdPublicationActions").hidden = true;
@@ -2131,7 +2175,20 @@
       form.hidden = false;
       form.elements.householdId.value = household.id;
       form.elements.displayName.value = household.displayName || donorProfile().householdName || "";
-      const detail = await api(`/api/directory/households/${encodeURIComponent(household.id)}/self`).catch(() => null);
+      let detail;
+      try {
+        detail = await api(`/api/directory/households/${encodeURIComponent(household.id)}/self`);
+        householdDetailError = "";
+      } catch (error) {
+        householdDetailState = null;
+        householdDetailLoaded = true;
+        householdDetailError = error.message || "Your family listing status could not be loaded.";
+        document.getElementById("householdPublicationSummary").innerHTML = '<div class="summary-row"><span>Family directory status</span><strong>Unavailable</strong></div>';
+        document.getElementById("householdPublicationActions").hidden = true;
+        renderOwnDirectoryPreview();
+        renderCombinedPublicationSummary();
+        return;
+      }
       const current = detail?.household?.household || detail?.household || null;
       const publication = detail?.household?.publication || detail?.publication || null;
       if (current) {
@@ -2142,6 +2199,7 @@
         || (detail?.household?.addresses || detail?.addresses || [])[0];
       const members = detail?.household?.members || detail?.members || [];
       householdDetailState = { household: current || household, publication, primaryAddress: primaryAddress || null, members };
+      householdDetailLoaded = true;
       renderHouseholdMemberManager(members);
       syncAdultAddSection(members);
       form.elements.city.value = primaryAddress?.city || "";

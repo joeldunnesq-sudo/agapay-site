@@ -17,8 +17,11 @@ assert.match(home, /<body class="[^"]*giving-tier-pending[^"]*">/, "the first HT
 assert.match(home, /class="quick-give-grid" data-giving-tier-region aria-busy="true"/, "mobile Quick Give must expose its neutral loading state");
 assert.match(home, /class="desktop-quick-grid" data-giving-tier-region aria-busy="true"/, "desktop Quick Give must expose its neutral loading state");
 assert.match(donorStyle, /\.giving-tier-pending \[data-giving-plus-gift\][\s\S]*content: "Loading"/, "pending controls must look like loading, never an upgrade lock");
-assert.match(donorApp, /DONOR_DASHBOARD_UI_CACHE_MAX_AGE_MS\s*=\s*5 \* 60 \* 1000/);
-assert.match(donorApp, /function primeDonorDashboardParishUi\(\)[\s\S]*readRecentDonorDashboardCache\(\)[\s\S]*syncGivingTier: true[\s\S]*setGivingTierTilesLoading\(\)/, "home must use a recent cache before falling back to neutral loading");
+assert.match(donorApp, /function primeDonorDashboardParishUi\(\)[\s\S]*setGivingTierTilesLoading\(\)[\s\S]*renderHomeParishWidgetsLoading\(\)/, "home must start from neutral parish UI");
+assert.doesNotMatch(donorApp.match(/async function loadDonorDashboardPage\(\)[\s\S]*?\n}/)?.[0] || "", /readDonorCache\("dashboard"\)|renderDonorDashboardPayload\(cached/, "home must not visibly paint cached personalized data before the live dashboard");
+assert.match(donorApp, /function renderActiveCampaigns\(parish, \{ confirmed = false \} = \{\}\)[\s\S]*if \(!confirmed\) return/);
+assert.match(donorApp, /function renderNextFeast\(parish, \{ confirmed = false \} = \{\}\)[\s\S]*if \(!confirmed\) return/);
+assert.match(donorApp, /function renderActiveFunds\(parish, \{ confirmed = false \} = \{\}\)[\s\S]*if \(!confirmed\) return/);
 assert.doesNotMatch(home, /<h3>No Active (?:Campaigns|Funds)<\/h3>/, "unknown home widgets must not claim that parish content is absent");
 assert.match(home, /Loading parish campaigns…[\s\S]*Loading parish feast…[\s\S]*Loading parish funds…/);
 assert.match(legacyHome, /data-giving-plus-gift="candles"[\s\S]*data-giving-plus-gift="commemoration"[\s\S]*data-giving-plus-gift="feast"[\s\S]*data-giving-plus-gift="campaign"/, "legacy donor home must use the same tier-state contract");
@@ -98,13 +101,13 @@ for (const tile of tiles) {
   assert.equal(tile.attribute("aria-busy"), undefined);
 }
 
-// Cached arrival: the server-rendered pending state resolves immediately from a
-// recent cached parish, again without passing through a locked frame.
+// A live arrival resolves the server-rendered pending state directly without
+// passing through a locked frame.
 bodyClassList.add("giving-tier-pending");
 tiles.forEach((tile) => tile.classList.remove("giving-tier-locked", "giving-tier-loading"));
 context.updateGivingTierTiles(givingPlusParish);
 assert.equal(bodyClassList.contains("giving-tier-pending"), false);
-assert.ok(tiles.every((tile) => !tile.classList.contains("giving-tier-locked")), "recent cached permissions must resolve directly to allowed");
+assert.ok(tiles.every((tile) => !tile.classList.contains("giving-tier-locked")), "live permissions must resolve directly to allowed");
 
 // A real locked answer is still rendered after authoritative parish data says
 // the feature is unavailable; neutral loading is not a permanent bypass.
@@ -112,4 +115,4 @@ context.setGivingTierTilesLoading();
 context.updateGivingTierTiles({ id: "starter-parish", givingPlusEnabled: false, candlesEnabled: false });
 assert.ok(tiles.every((tile) => tile.classList.contains("giving-tier-locked")));
 
-console.log("PASS - Quick Give is neutral without tier data and never locks cached or freshly permitted gift types");
+console.log("PASS - Quick Give is neutral without tier data and never locks freshly permitted gift types");

@@ -6,8 +6,7 @@ const donorStore = {
   shellVersion: "agapayDonorShellVersion"
 };
 
-const DONOR_SHELL_VERSION = "2026-08-01-quick-give-loading-state";
-const DONOR_DASHBOARD_UI_CACHE_MAX_AGE_MS = 5 * 60 * 1000;
+const DONOR_SHELL_VERSION = "2026-08-01-atomic-page-hydration";
 
 async function refreshStaleDashboardShell() {
   if (!("serviceWorker" in navigator) || !("caches" in window)) return;
@@ -145,10 +144,6 @@ function readDonorCache(name, { maxAgeMs = 0 } = {}) {
   } catch {
     return null;
   }
-}
-
-function readRecentDonorDashboardCache() {
-  return readDonorCache("dashboard", { maxAgeMs: DONOR_DASHBOARD_UI_CACHE_MAX_AGE_MS });
 }
 
 function writeDonorCache(name, data) {
@@ -328,8 +323,9 @@ function showGuestDonorDashboard() {
       </div>
     `;
   }
-  renderActiveCampaigns(null);
-  renderNextFeast(null);
+  renderActiveCampaigns(null, { confirmed: true });
+  renderNextFeast(null, { confirmed: true });
+  renderActiveFunds(null, { confirmed: true });
   updateQuickGiveLinks(null);
   updateDonorAuthState();
 }
@@ -861,11 +857,12 @@ async function shareCampaign(event, btn) {
   }
 }
 
-function renderActiveCampaigns(parish) {
+function renderActiveCampaigns(parish, { confirmed = false } = {}) {
   const targets = [document.getElementById("activeCampaigns"), document.getElementById("desktopActiveCampaigns")].filter(Boolean);
   if (!targets.length) return;
   const campaign = activeParishCampaigns(parish)[0];
   if (!campaign) {
+    if (!confirmed) return;
     const empty = `
       <article class="campaign-card campaign-empty">
         <span class="campaign-pill">Campaigns</span>
@@ -923,7 +920,7 @@ function fundLabel(fund) {
   return fund?.name || fund?.label || fund?.id || "Designated fund";
 }
 
-function renderActiveFunds(parish) {
+function renderActiveFunds(parish, { confirmed = false } = {}) {
   const targets = [document.getElementById("activeFunds"), document.getElementById("desktopActiveFunds")].filter(Boolean);
   if (!targets.length) return;
   if (parish && !parishHasGivingPlus(parish)) {
@@ -952,6 +949,7 @@ function renderActiveFunds(parish) {
     .filter((fund) => fund && !isCandleDonorFund(fund) && fund.active !== false && String(fund.status || "active").toLowerCase() !== "archived")
     .slice(0, 4);
   if (!funds.length) {
+    if (!confirmed) return;
     const empty = `
       <article class="active-funds-card active-funds-empty">
         <span class="campaign-pill">Funds</span>
@@ -980,7 +978,7 @@ function renderActiveFunds(parish) {
   targets.forEach((target) => { target.innerHTML = html; });
 }
 
-function renderNextFeast(parish) {
+function renderNextFeast(parish, { confirmed = false } = {}) {
   const targets = [
     {
       name: document.getElementById("nextFeastName"),
@@ -997,6 +995,7 @@ function renderNextFeast(parish) {
   ].filter((target) => target.name && target.date && target.calendar);
   if (!targets.length) return;
   if (!parish) {
+    if (!confirmed) return;
     targets.forEach((target) => {
       target.calendar.textContent = "Next Feast Day:";
       target.name.textContent = "Next feast day";
@@ -2141,9 +2140,9 @@ function renderDonorDashboardPayload(data, { renderPledge = true, syncGivingTier
 
   if (renderPledge) renderPledgeTracker(data.donor, summary, parish);
   updateQuickGiveLinks(parish, { syncGivingTier });
-  renderActiveCampaigns(parish);
-  renderNextFeast(parish);
-  renderActiveFunds(parish);
+  renderActiveCampaigns(parish, { confirmed: true });
+  renderNextFeast(parish, { confirmed: true });
+  renderActiveFunds(parish, { confirmed: true });
 
   const recent = document.getElementById("recentOfferings");
   if (recent) recent.innerHTML = offeringRows(recentOfferings);
@@ -2173,19 +2172,13 @@ function renderRecurringHomeCard(summary = {}) {
   });
 }
 
-let donorDashboardInitialCachePainted = false;
-
 function primeDonorDashboardParishUi() {
   if (!document.body.classList.contains("showing-giving-dashboard")) return;
-  const cachedDashboard = readRecentDonorDashboardCache();
-  if (cachedDashboard) {
-    renderDonorDashboardPayload(cachedDashboard, {
-      renderPledge: false,
-      syncGivingTier: true
-    });
-    donorDashboardInitialCachePainted = true;
-    return;
-  }
+  // Do not paint personalized dashboard cache on navigation. Even a recent,
+  // correctly keyed cache can become wrong immediately after a parish,
+  // pledge, campaign, fund, or publication change. The page-level hydration
+  // shield keeps this honest loading state visible until the live snapshot is
+  // rendered atomically.
   setGivingTierTilesLoading();
   renderHomeParishWidgetsLoading();
 }
@@ -2196,17 +2189,6 @@ async function loadDonorDashboardPage() {
     if (redirectToMyAgapayLogin("signin-required")) return;
     showGuestDonorDashboard();
     return;
-  }
-  const cachedDashboard = readDonorCache("dashboard");
-  const recentCachedDashboard = readRecentDonorDashboardCache();
-  // Cached content can paint the nonfinancial shell instantly, but pledge
-  // progress must always wait for current giving data from the API. A recent
-  // cached parish is safe for immediate UI continuity, but never authorization.
-  if (cachedDashboard && !donorDashboardInitialCachePainted) {
-    renderDonorDashboardPayload(cachedDashboard, {
-      renderPledge: false,
-      syncGivingTier: Boolean(recentCachedDashboard)
-    });
   }
   try {
     const data = await donorApi("/api/donor/dashboard");
@@ -2221,7 +2203,6 @@ async function loadDonorDashboardPage() {
       return;
     }
     clearDonorCache("dashboard");
-    if (recentCachedDashboard) updateGivingTierTiles(recentCachedDashboard.parish || null);
     ["pledgeTrackerCard", "desktopPledgeTracker"].forEach((id) => {
       const card = document.getElementById(id);
       if (card) card.hidden = true;

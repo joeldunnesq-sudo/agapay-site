@@ -276,7 +276,7 @@ assert.match(worker, /mergeStewardshipFundsIntoRegistration/, "manual activation
 assert.match(stewardship, /mergeStewardshipFundsIntoRegistration/, "Stripe activation must update Funds & Alms");
 assert.match(stewardship, /giftType'\), 'stewardship'\)\) IN \('stewardship','general'\)/, "pledge nudges must count stewardship/general gifts only");
 assert.match(parish, /\["stewardship", "general"\]\.includes/, "My AGAPAY must use the same stewardship/general gift types");
-assert.match(donorApp, /readRecentDonorDashboardCache\(\)[\s\S]*renderDonorDashboardPayload\(cachedDashboard, \{[\s\S]*renderPledge: false,[\s\S]*syncGivingTier: Boolean\(recentCachedDashboard\)[\s\S]*\}\)/, "only recent cached dashboards may paint Giving Plus entitlements, while pledge progress still waits for live data");
+assert.doesNotMatch(donorApp.match(/async function loadDonorDashboardPage\(\)[\s\S]*?\n}/)?.[0] || "", /readDonorCache\("dashboard"\)|renderDonorDashboardPayload\(cached/, "personalized dashboard and Giving Plus entitlements must wait for live data");
 assert.match(donorApp, /function updateQuickGiveLinks\(parish, \{ syncGivingTier = true \} = \{\}\)[\s\S]*if \(syncGivingTier\) updateGivingTierTiles\(parish\)/, "Quick Give must wait for current dashboard data before painting upgrade state");
 assert.match(donorApp, /clearDonorCache\("dashboard"\)/, "failed dashboard refreshes must discard stale financial cache");
 assert.match(worker, /f\.reportCode \|\| f\.id/, "reporting aliases must not create duplicate accounting funds");

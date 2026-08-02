@@ -32,6 +32,40 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Protected My AGAPAY pages declare data-myagapay-hydrate in their source.
+   The opaque shield therefore exists on the very first CSS paint—before any
+   script or API response can expose placeholder, cached, or partly hydrated
+   account data. The shared shell removes it only after initial API and DOM
+   activity has settled. */
+html[data-myagapay-hydrate]:not([data-myagapay-page-ready="true"]) body::after {
+  content: "Loading your My AGAPAY page…";
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(200, 162, 74, 0.14), transparent 260px),
+    var(--cream);
+  color: var(--deep-hero);
+  font: 700 0.9rem/1.4 var(--sans);
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+html[data-myagapay-hydrate]:not([data-myagapay-page-ready="true"]) body::before {
+  content: "";
+  position: fixed;
+  inset: 0 auto auto 0;
+  z-index: 10001;
+  width: 36%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  animation: dashboard-refresh-slide 1s ease-in-out infinite;
+  animation-delay: var(--myagapay-navigation-delay, 0ms);
+}
+
 body.myagapay-navigating::before {
   content: "";
   position: fixed;

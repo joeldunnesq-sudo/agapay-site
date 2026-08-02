@@ -70,14 +70,17 @@ function testElement(textContent = "Today") {
   };
 }
 
-async function renderShell({ cached = null, transitionMarker = null, referrer = "", pathname = "/myagapay/index.html" } = {}) {
+async function renderShell({ cached = null, transitionMarker = null, referrer = "", pathname = "/myagapay/index.html", hydrate = false } = {}) {
   const dashboard = deferred();
   const parishLifeLabel = testElement("Today");
   const parishLifeLink = testElement("Today");
   let domReady;
   let clickListener;
   let fetchCalls = 0;
-  const documentElement = { dataset: {} };
+  const documentElement = {
+    dataset: {},
+    hasAttribute(name) { return name === "data-myagapay-hydrate" && hydrate; }
+  };
   const body = testElement("");
   const document = {
     body,
@@ -120,17 +123,26 @@ async function renderShell({ cached = null, transitionMarker = null, referrer = 
     navigator: { userAgent: "test", platform: "Win32", maxTouchPoints: 0 },
     matchMedia: () => ({ matches: true, addEventListener() {} }),
     requestAnimationFrame(callback) { callback(); },
+    setTimeout,
+    clearTimeout,
     addEventListener() {},
     dispatchEvent() {},
   };
+  window.fetch = () => { fetchCalls += 1; return dashboard.promise; };
   const sandbox = {
     console,
     CustomEvent: class CustomEvent { constructor(type, init) { this.type = type; this.detail = init?.detail; } },
     URL,
     document,
-    fetch: () => { fetchCalls += 1; return dashboard.promise; },
+    fetch: (...args) => window.fetch(...args),
     localStorage: storage,
     navigator: window.navigator,
+    MutationObserver: class MutationObserver {
+      observe() {}
+      disconnect() {}
+    },
+    setTimeout,
+    clearTimeout,
     window,
   };
   vm.runInNewContext(shell, sandbox);
@@ -161,6 +173,15 @@ assert.equal(coldStart.link.getAttribute("aria-busy"), null);
 assert.doesNotMatch(coldStart.shell.productNav(), /data-parish-life-loading|Loading…/, "resolved nav replaces the loading item in one render");
 assert.match(coldStart.shell.productNav(), />Koinonia</);
 assert.equal(JSON.parse(coldStart.values.get("agapay.parishCapabilities.v1")).parish.parishLifeLabel, "Koinonia");
+
+const atomicPaint = await renderShell({ hydrate: true });
+assert.equal(atomicPaint.documentElement.dataset.myagapayPageReady, "false", "protected pages must remain shielded while initial API data is pending");
+assert.equal(atomicPaint.body.getAttribute("aria-busy"), "true");
+await resolveDashboard(atomicPaint, { communicationsEnabled: true, parishLifeLabel: "Koinonia", parishLifeAvailable: true });
+assert.equal(atomicPaint.documentElement.dataset.myagapayPageReady, "false", "a response must not reveal the page before its render quiet window");
+await new Promise((resolve) => setTimeout(resolve, 220));
+assert.equal(atomicPaint.documentElement.dataset.myagapayPageReady, "true", "the first visible page state must follow resolved requests and rendering");
+assert.equal(atomicPaint.body.getAttribute("aria-busy"), null);
 
 const staleCache = await renderShell({ cached: {
   email: "member@example.test",
