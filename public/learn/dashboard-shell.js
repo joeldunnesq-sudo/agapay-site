@@ -64,6 +64,19 @@ function isFaithSpecific(value = "") {
   return ODYSSEY_FAITH_SPECIFIC.test(String(value || ""));
 }
 
+function secularPrintText(value = "") {
+  const text = String(value || "")
+    .replace(/school rhythm with feast and fast markers\.?/gi, "School rhythm with lesson and event markers.")
+    .replace(/appointments, field trips, activities, name days, feast days, and fasting notes for the household\.?/gi, "Appointments, field trips, activities, and household notes.")
+    .replace(/a month-at-a-glance planner with form lessons, feast markers, fast days, and household rhythm notes\.?/gi, "A month-at-a-glance planner with Form lessons, school days, and household rhythm notes.")
+    .replace(/breakfast, lunch, dinner, feast-day notes, and fasting guidance for the week\.?/gi, "Breakfast, lunch, dinner, and weekly menu notes.")
+    .replace(/a printable month of meals with fast days and feast days clearly marked\.?/gi, "A printable month of meals with school days and household events clearly marked.")
+    .replace(/a printable collection of saved recipes with fasting notes and ingredients\.?/gi, "A printable collection of saved recipes with notes and ingredients.")
+    .replace(/liturgical school calendar/gi, "Flexible school-year calendar")
+    .replace(/meal plans with feast and fast markers/gi, "Meal plans with family schedule notes");
+  return text;
+}
+
 function itemIsFaithSpecific(item = {}) {
   return [item.title, item.label, item.sub, item.subtitle, item.detail, item.note, item.type, item.category, item.description]
     .some(isFaithSpecific);
@@ -262,11 +275,18 @@ function prepareOdysseyViewModel(vm) {
       .filter((item) => !isFaithSpecific(item.title))
       .map((item) => ({
         ...item,
-        description: String(item.description || "")
-          .replace(/feast notes?/gi, "calendar notes")
-          .replace(/feast days? and fast days?/gi, "school days and household events")
-          .replace(/liturgical/gi, "school-year")
+        description: secularPrintText(item.description)
       }));
+    if (next.reports?.stats) {
+      next.reports.stats = next.reports.stats.map((stat) => isFaithSpecific(stat.label) || isFaithSpecific(stat.sub)
+        ? { ...stat, label: "Upcoming Events", sub: "Field trips & activities" }
+        : stat);
+    }
+    if (next.outputs) {
+      next.outputs.household = (next.outputs.household || []).map(secularPrintText);
+      next.outputs.child = (next.outputs.child || []).map(secularPrintText);
+      next.outputs.planner = (next.outputs.planner || []).map(secularPrintText);
+    }
     if (marketing) next.templates = (next.templates || []).map((template, index) => ({ ...template, child: template.audience === "child" ? MARKETING_LEARNERS[index % MARKETING_LEARNERS.length].name : template.child }));
   }
 
