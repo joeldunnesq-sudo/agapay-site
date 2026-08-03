@@ -104,6 +104,7 @@ await assert.rejects(access("public/_routes.json"), undefined, "Wrangler Worker 
 await assert.rejects(access("public/donor/verify.html"), undefined, "static donor verify HTML should not shadow the Worker route");
 
 const registerHtml = await readFile("public/register.html", "utf8");
+const myAgapaySignupPage = await readFile("public/myagapay/signup.html", "utf8");
 const parishOnboardingGuide = await readFile("public/docs/AGAPAY-Stripe-Setup-Guide.pdf");
 const accountingSuiteGuide = await readFile("public/docs/AGAPAY-Accounting-Suite-Guide-Comprehensive.pdf");
 assert.ok(!registerHtml.includes("WEB3FORMS_KEY"), "registration should not expose Web3Forms key");
@@ -159,6 +160,9 @@ const givingOverviewPage = await readFile("public/give/index.html", "utf8");
 const rootPage = await readFile("public/index.html", "utf8");
 const rootManifest = await readFile("public/manifest.webmanifest", "utf8");
 const myAgapayLoginPage = await readFile("public/myagapay/login.html", "utf8");
+assert.ok(myAgapaySignupPage.includes('I agree to the current <a href="/terms#arbitration"') && myAgapaySignupPage.includes('acknowledge the <a href="/privacy"'), "My AGAPAY signup should use the concise account agreement");
+assert.ok(registerHtml.includes('I agree to the <a href="/terms#arbitration"') && registerHtml.includes('confirm I am authorized to act for this organization.'), "parish registration should use the concise organization agreement");
+assert.ok(!registerHtml.includes('including the 30-day informal-resolution process') && !myAgapaySignupPage.includes('including the 30-day informal-resolution process'), "signup and registration should not repeat detailed dispute copy beside the checkbox");
 assert.ok(manifest.includes("/images/app/apple-touch-icon-blue.png"), "PWA manifest should use the blue AGAPAY iOS home screen icon");
 assert.ok(manifest.includes('"scope": "/myagapay"') && !manifest.includes('"scope": "/"'), "My AGAPAY PWA should cover /myagapay and /myagapay/learn without claiming /admin");
 assert.ok(manifest.includes('"orientation": "portrait-primary"'), "My AGAPAY PWA manifest should prefer the phone-first portrait orientation");

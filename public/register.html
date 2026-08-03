@@ -664,7 +664,7 @@
         <div class="agreement-wrap">
           <input type="checkbox" id="agreeTerms" />
           <label for="agreeTerms" id="agreementText">
-            I confirm that I am authorized to bind the organization named above and that the information above is accurate. I agree to the <a href="/terms#arbitration" target="_blank" rel="noopener noreferrer">Terms of Service</a>, including the 30-day informal-resolution process, small-claims option, and court provisions in Section 24. I acknowledge the <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+            I agree to the <a href="/terms#arbitration" target="_blank" rel="noopener noreferrer">Terms of Service</a>, acknowledge the <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and confirm I am authorized to act for this organization.
           </label>
         </div>
         <div data-agapay-turnstile style="margin-top:1rem;"></div>
@@ -906,7 +906,7 @@
         tierNote.textContent = 'Your selection will be included with your canonical-standing review. Billing does not begin until approval and checkout.';
       }
 
-      document.getElementById('agreementText').innerHTML = `${config.agreement} I have read and agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.`;
+      document.getElementById('agreementText').innerHTML = 'I agree to the <a href="/terms#arbitration" target="_blank" rel="noopener noreferrer">Terms of Service</a>, acknowledge the <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and confirm I am authorized to act for this organization.';
     }
 
     // ─── STEP NAVIGATION ─────────────────────────────────────

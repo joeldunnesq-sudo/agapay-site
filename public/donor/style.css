@@ -3207,6 +3207,9 @@ body.donor-home {
 .koinonia-full-drawer p { color:#d1cbc0; font-size:13px; line-height:1.65; }
 .koinonia-full-drawer > header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
 .koinonia-full-drawer > header button { border:1px solid rgba(255,255,255,.12); border-radius:8px; padding:6px 9px; background:transparent; color:#f6f1e8; cursor:pointer; }
+.koinonia-full-drawer-actions { display:flex; align-items:center; gap:7px; }
+.koinonia-full-drawer-actions button:last-child { display:inline-flex; align-items:center; gap:5px; border-color:rgba(200,162,74,.35); color:#d8bb78; }
+.koinonia-full-drawer-actions button:last-child span { font-size:16px; line-height:.7; }
 
 @media (max-width:900px) {
   .donor-teaching-page .content { height:100dvh; padding-bottom:76px; }

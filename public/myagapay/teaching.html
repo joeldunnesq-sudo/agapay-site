@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/donor/style.css?v=20260802playerredesign1" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260802queuemin1" />
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260802perf1"></script>
-  <script src="/myagapay/teaching.js?v=20260802playerredesign1" defer></script>
+  <script src="/myagapay/teaching.js?v=20260802queuemin1" defer></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -126,7 +126,7 @@
             <button class="koinonia-podcast-share" id="koinoniaPodcastShare" type="button" onclick="shareKoinoniaPodcastEpisode()"><span>↗</span><span class="koinonia-visually-hidden">Share episode</span><b>Share</b></button>
           </div>
           <section class="koinonia-full-drawer" id="koinoniaPodcastDetailsDrawer" hidden><button type="button" onclick="toggleKoinoniaPodcastDetails(false)" aria-label="Close details">×</button><h3 id="koinoniaPodcastDetailsTitle">Episode details</h3><p id="koinoniaPodcastPlayerDescription">Episode details will appear here.</p></section>
-          <section class="koinonia-full-drawer" id="koinoniaPodcastQueueDrawer" hidden><header><strong>Up Next</strong><button type="button" onclick="clearKoinoniaPodcastQueue()">Clear</button></header><div id="koinoniaPodcastQueueList"><span>Your queue is empty.</span></div></section>
+          <section class="koinonia-full-drawer" id="koinoniaPodcastQueueDrawer" hidden><header><strong>Up Next</strong><span class="koinonia-full-drawer-actions"><button type="button" onclick="clearKoinoniaPodcastQueue()">Clear</button><button type="button" onclick="toggleKoinoniaPodcastQueue(false)" aria-label="Minimize Up Next">Minimize <span aria-hidden="true">⌄</span></button></span></header><div id="koinoniaPodcastQueueList"><span>Your queue is empty.</span></div></section>
         </div>
       </section>
       <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>

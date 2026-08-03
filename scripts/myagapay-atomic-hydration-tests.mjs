@@ -41,7 +41,9 @@ for (const file of protectedPages) {
   const html = read(file);
   const expectedStylesheetVersion = file === "public/myagapay/groups.html"
     ? "20260802groupscss1"
-    : "20260802playerredesign1";
+    : file === "public/myagapay/teaching.html"
+      ? "20260802queuemin1"
+      : "20260802playerredesign1";
   assert.match(html, /<html[^>]*data-myagapay-hydrate/, `${file} must opt into the pre-paint hydration shield`);
   assert.match(html, new RegExp(`/donor/style\\.css\\?v=${expectedStylesheetVersion}`), `${file} must load the current atomic-paint CSS version`);
   assert.match(html, /<script src="\/myagapay-shell\.js\?v=20260802perf1"><\/script>/, `${file} must install the tracker before page-level scripts`);

@@ -200,6 +200,10 @@ assert.match(teachingHtml, /data-podcast-library-pane="discover"[\s\S]*id="koino
 assert.match(teaching, /function importKoinoniaPodcastFeed[\s\S]*\/api\/listen\/rss[\s\S]*\/api\/listen\/subscriptions/,
   "RSS import must validate the feed before saving a subscription");
 assert.match(teachingHtml, /id="koinoniaPodcastExpand"[\s\S]*id="koinoniaPodcastSleepTimer"[\s\S]*id="koinoniaPodcastQueueList"/);
+assert.match(teachingHtml, /id="koinoniaPodcastQueueDrawer"[\s\S]*toggleKoinoniaPodcastQueue\(false\)[\s\S]*aria-label="Minimize Up Next"/,
+  "Up Next must provide an explicit minimize control without closing the podcast player");
+assert.match(donorStyles, /\.koinonia-full-drawer-actions \{[^}]*display:flex/,
+  "the Up Next minimize and clear actions must remain usable together");
 assert.match(teachingHtml, /koinonia-podcast-player-shell[\s\S]*id="koinoniaPodcastShare"[\s\S]*Share episode/,
   "the expanded player must use its structured shell and expose the share action");
 assert.match(donorStyles, /\.koinonia-podcast-player\.is-expanded \{[^}]*inset:0 !important/,
