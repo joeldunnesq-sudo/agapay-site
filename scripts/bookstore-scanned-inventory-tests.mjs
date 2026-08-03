@@ -172,6 +172,14 @@ assert.match(publicStore, /id="addBookPanel" open/);
 assert.match(publicStoreApp, /"scan_and_go"/);
 assert.match(publicStoreApp, /joins catalog after payment/);
 assert.match(publicStoreApp, /sold-out-badge/);
+assert.match(publicStore, /bookstore\/app\.js\?v=20260803productphotos1/,
+  "the public parish bookstore must load the photo-aware renderer with a fresh immutable URL");
+assert.match(publicStoreApp, /function productImageUrl[\s\S]*?searchParams\.get\("imgurl"\)/,
+  "the public parish bookstore must accept direct images and unwrap Google Images result links");
+assert.match(publicStoreApp, /product-art\$\{imageUrl \? " has-image" : ""\}[\s\S]*?<img src="\$\{escapeHtml\(imageUrl\)\}"/,
+  "saved product images must be surfaced inside dedicated bookstore cards");
+assert.match(publicStore, /\.product-art\.has-image\{[^}]*height:96px[^}]*overflow:hidden\}[\s\S]*?object-fit:contain/,
+  "dedicated storefront photos must stay contained without obscuring item details");
 assert.match(publicStore, /id="categoryFilters"/);
 assert.match(publicStore, /id="popularShelf"/);
 assert.match(publicStore, /Add an unlisted item/);

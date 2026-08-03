@@ -38,15 +38,31 @@ function productAvailable(product) {
   return product.trackInventory === false || Number(product.stockQuantity || 0) > 0;
 }
 
+function productImageUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  try {
+    const url = new URL(raw, location.origin);
+    if (!["http:", "https:"].includes(url.protocol)) return "";
+    if (/(^|\.)google\.[a-z.]+$/i.test(url.hostname) && url.pathname === "/imgres") {
+      const embedded = new URL(url.searchParams.get("imgurl") || "");
+      return ["http:", "https:"].includes(embedded.protocol) ? embedded.href : "";
+    }
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
 function productCard(product, index, rank = 0) {
   const line = cart.find(item => item.variantId && item.variantId === product.variantId);
   const available = productAvailable(product);
+  const imageUrl = productImageUrl(product.imageUrl);
   return `<button class="product${line ? " in-cart" : ""}" type="button" onclick="addCatalogItem(${index})" ${available ? "" : "disabled"}>
     ${rank ? `<span class="popular-rank">${rank}</span>` : ""}
     ${line ? `<span class="selected-badge">${line.quantity}</span>` : ""}
     ${available ? "" : '<span class="sold-out-badge">Out of stock</span>'}
-    <span class="product-art">${categoryArt(product.category)}<small>${escapeHtml(product.categoryLabel || "Parish item")}</small></span>
-    <small>${escapeHtml(product.categoryLabel || "Bookstore item")}</small>
+    <span class="product-art${imageUrl ? " has-image" : ""}">${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentElement.classList.remove('has-image');this.remove()" />` : ""}${categoryArt(product.category)}<small>${escapeHtml(product.categoryLabel || "Parish item")}</small></span>
     <strong>${escapeHtml(product.name)}</strong>
     <p>${escapeHtml(product.description || "Available for parish pickup")}</p>
     <span class="product-foot"><b>${money(product.priceCents)}</b><span class="availability${available ? "" : " out"}">${available ? "Available" : "Out of stock"}</span></span>
