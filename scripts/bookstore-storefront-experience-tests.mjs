@@ -39,9 +39,13 @@ assert.match(html, /\.bookstore-shop-grid \{ display:flex; flex-direction:column
 assert.match(app, /classList\.toggle\("has-cart", itemCount > 0\)/,
   "the storefront width must respond to actual cart state");
 
-assert.match(html, /donor\/style\.css\?v=20260803storefront2/,
+assert.match(html, /donor\/style\.css\?v=20260803storefront3/,
   "the bookstore must load the updated storefront styles with a fresh immutable URL");
-assert.match(html, /donor\/app\.js\?v=20260803storefront3/,
+assert.match(html, /donor\/app\.js\?v=20260803storefront4/,
   "the bookstore must load the updated storefront behavior with a fresh immutable URL");
+assert.match(html, /bookstore-scan-feature-icon[\s\S]*?barcode-lines/,
+  "the primary scanner card must feature a real barcode illustration");
+assert.match(app, /category === "book"[\s\S]*?bookstore-category-scan[\s\S]*?startBookstoreBookScan\(\)/,
+  "the Books category must expose the same scanner without requiring a scroll to the primary card");
 
 console.log("PASS - bookstore parish switching, popular items, collapsed shelves, and category icons are wired");

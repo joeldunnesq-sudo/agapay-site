@@ -4473,6 +4473,10 @@ function bookstoreCategoryIcon(category = "other") {
   return icons[category] || icons.other;
 }
 
+function bookstoreBarcodeIcon() {
+  return '<svg viewBox="0 0 40 32" aria-hidden="true"><path class="scan-corners" d="M3 10V4h6M31 4h6v6M37 22v6h-6M9 28H3v-6"/><path class="barcode-lines" d="M9 9v14M12 9v14M16 9v14M19 9v14M24 9v14M27 9v14M31 9v14"/></svg>';
+}
+
 function bookstoreProductCard(product, { popular = false } = {}) {
   const cartItem = bookstoreCart.find(ci => ci.productId === product.id && ci.variantId === (product.variantId || ""));
   const available = product.trackInventory === false || Number(product.stockQuantity || 0) > 0;
@@ -4553,6 +4557,13 @@ function renderBookstoreProducts(products = []) {
       ? `<span class="bookstore-category-count">${cartQtyInCategory} in cart</span>`
       : `<span class="bookstore-category-tally">${items.length} item${items.length === 1 ? "" : "s"}</span>`;
     const cardsHtml = items.map(product => bookstoreProductCard(product)).join("");
+    const categoryTools = category === "book"
+      ? `<div class="bookstore-category-scan">
+          <span class="bookstore-category-scan-icon">${bookstoreBarcodeIcon()}</span>
+          <span><strong>Have the book in your hand?</strong><small>Scan its barcode and we’ll identify it for you.</small></span>
+          <button type="button" onclick="startBookstoreBookScan()">Scan barcode</button>
+        </div>`
+      : "";
 
     return `
       <details class="bookstore-category-group" data-category="${escapeHtml(category)}"${isOpen ? " open" : ""}>
@@ -4561,6 +4572,7 @@ function renderBookstoreProducts(products = []) {
           <span class="bookstore-category-name">${escapeHtml(label)}</span>
           ${badge}
         </summary>
+        ${categoryTools}
         <div class="bookstore-product-grid">${cardsHtml}</div>
       </details>
     `;
