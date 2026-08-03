@@ -8361,6 +8361,11 @@ textarea {
   letter-spacing: -0.01em;
 }
 
+.donor-parish-life-page .topbar-title[data-parish-life-label] {
+  font-family: var(--serif);
+  font-size: 22px;
+}
+
 :is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page, .donor-news-page) .topbar-title::before { display: none; }
 
 :is(.donor-parish-life-page, .donor-feed-page, .donor-groups-page, .donor-teaching-page, .donor-media-page, .donor-calendar-page, .donor-news-page) .sidebar {

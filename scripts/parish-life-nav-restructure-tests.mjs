@@ -26,6 +26,7 @@ const [landing, landingScript, shell, donorApp, calendar, feed, groups, teaching
 const [parishDashboard, parishDashboardApp, parishDashboardStyles] = await Promise.all([
   "dashboard.html", "app.js", "style.css",
 ].map((file) => readFile(new URL(`../public/parish/${file}`, import.meta.url), "utf8")));
+const donorStyles = await readFile(new URL("../public/donor/style.css", import.meta.url), "utf8");
 
 assert.match(landing, /class="cal-hero parish-life-liturgical-hero"/);
 assert.match(landing, /class="cal-date-badge"/);
@@ -38,6 +39,11 @@ assert.match(landing, /id="donorSaintModal"[\s\S]*Orthocal\.info/);
 assert.match(landing, />Upcoming Services<[\s\S]*Loading the next liturgical observance/);
 assert.match(landing, /href="\/myagapay\/calendar">Full Calendar</);
 assert.doesNotMatch(landing, />Community</, "the product must not be renamed Community in the rendered landing");
+assert.match(
+  donorStyles,
+  /\.donor-parish-life-page \.topbar-title\[data-parish-life-label\] \{[\s\S]*?font-family: var\(--serif\);/,
+  "the Koinonia landing header should use the same Cormorant serif family as the My AGAPAY home header"
+);
 
 const sandbox = { window: {}, document: { addEventListener() {} }, console };
 vm.runInNewContext(landingScript, sandbox);

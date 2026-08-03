@@ -21,11 +21,10 @@ assert.match(page, /class="household-hub-identity" data-wizard-step="2"[\s\S]*Fa
 assert.doesNotMatch(page, /class="household-hub-identity" data-wizard-step="0"/);
 assert.match(page, /self\/addresses`, \{[\s\S]*city,[\s\S]*region,[\s\S]*visibility: locationVisibility/);
 assert.match(page, /class="topbar"[\s\S]*class="directory-nav-identity"/);
-assert.match(page, /class="directory-nav-identity"[\s\S]*id="mobileDirectoryLocation"/);
 assert.doesNotMatch(page, /class="directory-mobile-cross"/);
-assert.match(page, /class="topbar-title"[^>]*id="mobileDirectoryTitle"[^>]*>Parish Directory</);
-assert.match(page, /id="directoryHeroLocation">City, State</);
-assert.match(page, /function directoryHomeTitle\(\) \{[\s\S]*directoryParish\.name[\s\S]*Directory/);
+assert.match(page, /class="topbar-title">Parish Directory</);
+assert.doesNotMatch(page, /mobileDirectory(?:Title|Location|Count)|directoryHeroLocation/);
+assert.match(page, /function directoryHomeTitle\(\) \{[\s\S]*return "Parish Directory";/);
 assert.match(page, /directoryParish = \{[\s\S]*name: parish\.name[\s\S]*city: parish\.city[\s\S]*state: parish\.state/);
 assert.match(page, /data-mobile-target="browse"/);
 assert.doesNotMatch(page, /class="directory-mobile-nav"/);
@@ -42,7 +41,7 @@ assert.match(donorApp, /directorySettingsCard\.hidden = data\.parish\?\.director
 assert.match(myAgapayShell, /activeProduct\(\) === "directory" && !parishCapabilities\.directoryEnabled/);
 assert.doesNotMatch(page, /id="mobileFamilyNav"/);
 assert.doesNotMatch(page, /id="mobileHouseholdAvatar"/);
-assert.match(page, /type === "household" \? "Family" : "Parish Member"/);
+assert.doesNotMatch(page, /mobileDirectoryTitle[\s\S]*type === "household" \? "Family" : "Parish Member"/);
 assert.match(page, /class="household-hub-photo" hidden/);
 assert.match(page, /function photoHtml\(item, className = "member-photo"\)[\s\S]*data-auth-src=[\s\S]*data-photo-fallback=[\s\S]*loading="lazy"/);
 assert.match(page, /function directoryLastName\(name, type = "person"\)/);

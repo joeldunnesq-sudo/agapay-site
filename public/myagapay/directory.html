@@ -322,7 +322,6 @@
     }
     .directory-nav-identity { min-width:0; display:grid; gap:2px; }
     .directory-nav-identity .topbar-title { display:block; }
-    .directory-nav-identity small { overflow:hidden; color:rgba(246,241,232,.72); font-size:11px; line-height:1.2; text-overflow:ellipsis; white-space:nowrap; }
     .mobile-directory-home { display:none; }
     .directory-view-switcher {
       position:sticky;
@@ -829,7 +828,7 @@
     </aside>
     <main class="directory-main">
       <div class="topbar">
-        <div class="directory-nav-identity"><strong class="topbar-title" id="mobileDirectoryTitle">Parish Directory</strong><small><span id="mobileDirectoryLocation">City, State</span> · <span id="mobileDirectoryCount">Directory</span></small></div>
+        <div class="directory-nav-identity"><strong class="topbar-title">Parish Directory</strong></div>
       </div>
       <nav class="directory-view-switcher" aria-label="Directory sections" role="tablist">
         <button id="directoryViewTab" type="button" role="tab" aria-selected="true" aria-controls="memberDirectory" data-directory-view-target="directory">Directory</button>
@@ -841,7 +840,6 @@
           <div class="directory-title cal-today-main">
             <div class="cal-today-kicker">Parish Directory</div>
             <h1 id="directoryHeroTitle">Parish Directory</h1>
-            <p id="directoryHeroLocation">City, State</p>
           </div>
           <span class="status-pill" id="directoryStatus">Loading</span>
         </div>
@@ -1202,18 +1200,11 @@
       if (document.getElementById("personalDirectorySettings")?.open) showWizardStatus(message, isError);
     }
     function directoryHomeTitle() {
-      return `${directoryParish.name || "Parish"} Directory`;
-    }
-    function directoryParishLocation() {
-      return [directoryParish.city, directoryParish.state].filter(Boolean).join(", ") || "Location not listed";
+      return "Parish Directory";
     }
     function renderDirectoryIdentity() {
       const title = directoryHomeTitle();
-      const location = directoryParishLocation();
       document.getElementById("directoryHeroTitle").textContent = title;
-      document.getElementById("directoryHeroLocation").textContent = location;
-      document.getElementById("mobileDirectoryTitle").textContent = title;
-      document.getElementById("mobileDirectoryLocation").textContent = location;
       document.title = `${title} | My AGAPAY`;
     }
     function donorProfile() {
@@ -1673,7 +1664,6 @@
       renderMemberCards(items);
       const activeFilters = [memberState.namedayMonth, memberState.skill].filter(Boolean).length;
       const label = `${items.length} ${items.length === 1 ? "family" : "families"}`;
-      document.getElementById("mobileDirectoryCount").textContent = label;
       document.getElementById("directoryBrowseNote").textContent = activeFilters
         ? `Showing ${label} matching your ${activeFilters === 2 ? "nameday and skill filters" : "filter"}.`
         : memberState.query
@@ -1856,7 +1846,6 @@
       const pane = document.getElementById("memberProfile");
       pane.hidden = false;
       document.body.classList.add("directory-profile-open");
-      document.getElementById("mobileDirectoryTitle").textContent = type === "household" ? "Family" : "Parish Member";
       document.querySelector(".mobile-back").textContent = "‹ Back to Directory";
       if (type === "household") {
         const skills = (profile.skillsPreview || profile.skills || []).slice(0, 8);
