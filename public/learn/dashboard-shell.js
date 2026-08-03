@@ -73,7 +73,12 @@ function secularPrintText(value = "") {
     .replace(/a printable month of meals with fast days and feast days clearly marked\.?/gi, "A printable month of meals with school days and household events clearly marked.")
     .replace(/a printable collection of saved recipes with fasting notes and ingredients\.?/gi, "A printable collection of saved recipes with notes and ingredients.")
     .replace(/liturgical school calendar/gi, "Flexible school-year calendar")
-    .replace(/meal plans with feast and fast markers/gi, "Meal plans with family schedule notes");
+    .replace(/meal plans with feast and fast markers/gi, "Meal plans with family schedule notes")
+    .replace(/feast[- ]day notes?/gi, "calendar notes")
+    .replace(/feast notes?/gi, "calendar notes")
+    .replace(/fasting (guidance|notes?)/gi, "menu notes")
+    .replace(/fast days?/gi, "school days")
+    .replace(/feast days?/gi, "household events");
   return text;
 }
 
