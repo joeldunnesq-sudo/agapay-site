@@ -41,11 +41,17 @@ assert.match(app, /classList\.toggle\("has-cart", itemCount > 0\)/,
 
 assert.match(html, /donor\/style\.css\?v=20260803storefront3/,
   "the bookstore must load the updated storefront styles with a fresh immutable URL");
-assert.match(html, /donor\/app\.js\?v=20260803storefront4/,
+assert.match(html, /donor\/app\.js\?v=20260803storefront5/,
   "the bookstore must load the updated storefront behavior with a fresh immutable URL");
 assert.match(html, /bookstore-scan-feature-icon[\s\S]*?barcode-lines/,
   "the primary scanner card must feature a real barcode illustration");
 assert.match(app, /category === "book"[\s\S]*?bookstore-category-scan[\s\S]*?startBookstoreBookScan\(\)/,
   "the Books category must expose the same scanner without requiring a scroll to the primary card");
+assert.match(html, /\.bookstore-product-media \{[^}]*flex:0 0 118px[^}]*overflow:hidden/,
+  "product photos must stay inside a fixed-height media frame instead of overtaking the card");
+assert.match(html, /\.bookstore-product-media img \{[^}]*object-fit:contain/,
+  "product photos must preserve their full artwork while leaving title and price visible");
+assert.match(app, /const description = String\(product\.description \|\| ""\)\.trim\(\);[\s\S]*?\$\{description \? `<small>/,
+  "cards without descriptions must not repeat the category label beneath the title");
 
 console.log("PASS - bookstore parish switching, popular items, collapsed shelves, and category icons are wired");

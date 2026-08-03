@@ -3,6 +3,7 @@ import fs from 'node:fs';
 const dashboard = fs.readFileSync(new URL('../public/parish/dashboard.html', import.meta.url), 'utf8');
 const app = fs.readFileSync(new URL('../public/parish/app.js', import.meta.url), 'utf8');
 const css = fs.readFileSync(new URL('../public/styles/stewardship.css', import.meta.url), 'utf8');
+const parishCss = fs.readFileSync(new URL('../public/parish/style.css', import.meta.url), 'utf8');
 
 const productKeys = ['overview', 'bookstore', 'events', 'meals', 'retreats', 'camp', 'tuition'];
 const checks = [
@@ -22,7 +23,8 @@ const checks = [
   ['Candles remain outside the Commerce product navigation', !dashboard.includes('data-commerce-product="candles"')],
   ['Commerce product tabs are horizontally scrollable on narrow screens', css.includes('.commerce-product-tabs {') && css.includes('overflow-x: auto') && css.includes('scroll-snap-type: x proximity')],
   ['Commerce overview is responsive and uses dashboard cards', css.includes('.commerce-overview-kpis {') && css.includes('.commerce-overview-grid {') && css.includes('@media (max-width: 430px)')],
-  ['Bookstore keeps the shared AGAPAY feature hero and switch', dashboard.includes('sw-suite-hero bookstore-hero') && app.includes('Show Bookstore in My AGAPAY')]
+  ['Bookstore keeps the shared AGAPAY feature hero and switch', dashboard.includes('sw-suite-hero bookstore-hero') && app.includes('Show Bookstore in My AGAPAY')],
+  ['Bookstore current items surface saved photos beside item details', app.includes('class="bookstore-current-image"') && app.includes('src="${escapeAttr(p.imageUrl)}"') && app.includes('class="bookstore-current-copy"') && parishCss.includes('.bookstore-current-image {') && parishCss.includes('object-fit: cover')]
 ];
 
 const failures = checks.filter(([, passed]) => !passed);

@@ -5524,10 +5524,13 @@
           return `
           <article class="bookstore-current-row ${isLow ? 'is-low-stock' : ''}">
             <div class="bookstore-current-main">
-              <strong>${escapeHtml(p.name || 'Bookstore item')}</strong>
-              <span>${escapeHtml(BOOKSTORE_CATEGORY_LABELS[p.category] || p.category || 'Other')}${p.sku ? ` · ${escapeHtml(p.sku)}` : ''}</span>
-              ${p.description ? `<small>${escapeHtml(p.description)}</small>` : ''}
-              ${isLow ? `<em class="bookstore-low-stock-pill">Low stock</em>` : ''}
+              ${p.imageUrl ? `<img class="bookstore-current-image" src="${escapeAttr(p.imageUrl)}" alt="${escapeAttr(p.name || 'Bookstore item')}" loading="lazy" decoding="async" referrerpolicy="no-referrer" />` : ''}
+              <div class="bookstore-current-copy">
+                <strong>${escapeHtml(p.name || 'Bookstore item')}</strong>
+                <span>${escapeHtml(BOOKSTORE_CATEGORY_LABELS[p.category] || p.category || 'Other')}${p.sku ? ` · ${escapeHtml(p.sku)}` : ''}</span>
+                ${p.description ? `<small>${escapeHtml(p.description)}</small>` : ''}
+                ${isLow ? `<em class="bookstore-low-stock-pill">Low stock</em>` : ''}
+              </div>
             </div>
             <div class="bookstore-current-metrics">
               <b>${moneyFull(Number(p.priceCents || 0))}</b>

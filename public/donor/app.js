@@ -4481,8 +4481,9 @@ function bookstoreProductCard(product, { popular = false } = {}) {
   const cartItem = bookstoreCart.find(ci => ci.productId === product.id && ci.variantId === (product.variantId || ""));
   const available = product.trackInventory === false || Number(product.stockQuantity || 0) > 0;
   const qtyBadge = cartItem ? `<span class="bookstore-product-card-qty">${Number(cartItem.quantity || 1)}</span>` : "";
+  const description = String(product.description || "").trim();
   const productMedia = product.imageUrl
-    ? `<span class="bookstore-product-media"><img src="${escapeHtml(product.imageUrl)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;"></span>`
+    ? `<span class="bookstore-product-media"><img src="${escapeHtml(product.imageUrl)}" alt="" loading="lazy" decoding="async"></span>`
     : `<span class="bookstore-product-media" aria-hidden="true">${bookstoreCategoryIcon(product.category)}</span>`;
   const popularity = popular
     ? `<span class="bookstore-popular-rank">${Number(product.unitsSold || 0) > 0 ? `${Number(product.unitsSold)} sold` : "Parish favorite"}</span>`
@@ -4494,7 +4495,7 @@ function bookstoreProductCard(product, { popular = false } = {}) {
       ${productMedia}
       ${popularity}
       <strong>${escapeHtml(product.name)}</strong>
-      <small>${escapeHtml(product.description || product.categoryLabel || "Bookstore item")}</small>
+      ${description ? `<small>${escapeHtml(description)}</small>` : ""}
       <span class="bookstore-product-meta"><span class="bookstore-category-pill">${escapeHtml(product.categoryLabel || "Item")}</span><span class="bookstore-price">${formatCentsAsDollars(product.priceCents)}</span></span>
       <span class="bookstore-product-add">${available ? "Add to cart" : "Currently unavailable"}</span>
     </button>`;
