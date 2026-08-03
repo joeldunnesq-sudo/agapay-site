@@ -4538,9 +4538,14 @@ function renderBookstoreCart() {
   const list = document.getElementById("bookstoreCartList");
   const total = document.getElementById("bookstoreCartTotal");
   const count = document.getElementById("bookstoreCartCount");
+  const mobileTotal = document.getElementById("bookstoreMobileCartTotal");
+  const mobileCount = document.getElementById("bookstoreMobileCartCount");
   const subtotal = bookstoreCart.reduce((sum, item) => sum + (Number(item.unitPriceCents || 0) * Number(item.quantity || 1)), 0);
+  const itemCount = bookstoreCart.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
   if (total) total.textContent = formatCentsAsDollars(subtotal);
-  if (count) count.textContent = String(bookstoreCart.reduce((sum, item) => sum + Number(item.quantity || 1), 0));
+  if (count) count.textContent = String(itemCount);
+  if (mobileTotal) mobileTotal.textContent = formatCentsAsDollars(subtotal);
+  if (mobileCount) mobileCount.textContent = String(itemCount);
   if (bookstoreProducts.length) renderBookstoreProducts(bookstoreProducts);
   if (!list) return;
   if (!bookstoreCart.length) {
@@ -4561,6 +4566,17 @@ function renderBookstoreCart() {
       </div>
     </div>
   `).join("");
+}
+
+function toggleBookstoreMobileCart() {
+  const panel = document.getElementById("bookstoreCartPanel");
+  const trigger = document.getElementById("bookstoreMobileCartBar");
+  const action = document.getElementById("bookstoreMobileCartAction");
+  if (!panel || !trigger) return;
+  const isOpen = panel.classList.toggle("is-mobile-open");
+  trigger.setAttribute("aria-expanded", String(isOpen));
+  if (action) action.textContent = isOpen ? "Close" : "View";
+  if (isOpen) panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 function addBookstoreProductToCart(productId, variantId = "") {

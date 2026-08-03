@@ -251,9 +251,11 @@ assert.ok(myAgapayShell.includes("ensureCanonicalHeader") && myAgapayShell.inclu
 assert.ok(
   myAgapayShell.includes("function isMyAgapayMainPage")
     && myAgapayShell.includes('"/myagapay/parish-life"')
+    && myAgapayShell.includes('"/myagapay/giving/give"')
     && myAgapayShell.includes('"/myagapay/bookstore"')
-    && myAgapayShell.includes("if (!isMyAgapayMainPage()) return;"),
-  "shared shell should add the hamburger banner to primary My AGAPAY pages without promoting Koinonia subpages into primary screens"
+    && myAgapayShell.includes("document.body.classList.add(\"myagapay-main-page\")")
+    && myAgapayShell.includes(".donor-mobile-page.myagapay-main-page .topbar"),
+  "shared shell should visibly add the hamburger banner to primary My AGAPAY pages without promoting Koinonia subpages into primary screens"
 );
 assert.ok(myAgapayShell.includes("myagapay-menu-trigger") && myAgapayShell.includes("myagapay-menu-icon") && myAgapayShell.includes("Open My AGAPAY menu"), "shared My AGAPAY headers should use an obvious hamburger menu trigger");
 const sharedHamburgerMenu = myAgapayShell.match(/menu\.innerHTML = `([\s\S]*?)`;/)?.[1] || "";
@@ -386,11 +388,12 @@ assert.ok(
   myAgapayBookstore.includes("bookstore-store-hero")
     && myAgapayBookstore.includes("Shop the shelves")
     && myAgapayBookstore.includes('id="bookstoreProductSearch"')
+    && myAgapayBookstore.includes('id="bookstoreMobileCartBar"')
     && myAgapayBookstore.includes('id="bookstoreCartList"')
     && myAgapayBookstore.includes('id="bookstoreOrderList"'),
   "My AGAPAY Bookstore should present a traditional storefront while retaining catalog, cart, and order history surfaces"
 );
-assert.ok(donorApp.includes("function setBookstoreCatalogQuery") && donorApp.includes("bookstore-product-media") && donorApp.includes("Add to cart"), "Bookstore catalog should support familiar search and product-card shopping controls");
+assert.ok(donorApp.includes("function setBookstoreCatalogQuery") && donorApp.includes("function toggleBookstoreMobileCart") && donorApp.includes("bookstore-product-media") && donorApp.includes("Add to cart"), "Bookstore catalog should support familiar search, collapsible mobile cart, and product-card shopping controls");
 const donorSecurity = await readFile("public/security.js", "utf8");
 assert.ok(donorSecurity.includes("/api/security/config"), "security helper should load Turnstile config from the Worker");
 assert.ok(donorSecurity.includes("agapaySecurityPayload"), "security helper should expose Turnstile payloads to public forms");

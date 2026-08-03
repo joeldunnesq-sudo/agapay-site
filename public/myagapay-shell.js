@@ -308,6 +308,47 @@
         color: #061522;
         background: rgba(255, 255, 255, 0.72);
       }
+      @media (max-width: 900px) {
+        .donor-mobile-page.myagapay-main-page .topbar {
+          position: sticky;
+          top: 0;
+          z-index: 80;
+          display: flex;
+          width: 100%;
+          min-height: 58px;
+          flex-direction: row;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.65rem;
+          border-bottom: 1px solid rgba(201, 162, 91, 0.28);
+          padding: calc(0.42rem + env(safe-area-inset-top)) 0.85rem 0.42rem;
+          background: rgba(255, 252, 246, 0.96);
+          box-shadow: 0 8px 24px rgba(6, 21, 34, 0.09);
+          backdrop-filter: blur(16px);
+        }
+        .donor-mobile-page.myagapay-main-page .topbar-title {
+          min-width: 0;
+          overflow: hidden;
+          font-size: 1.15rem;
+          line-height: 1.1;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .donor-mobile-page.myagapay-main-page .topbar-actions {
+          margin-left: auto;
+          flex: 0 0 auto;
+          flex-direction: row;
+          flex-wrap: nowrap;
+        }
+        .donor-mobile-page.myagapay-main-page .myagapay-menu-trigger {
+          width: 42px;
+          min-width: 42px;
+          height: 42px;
+          min-height: 42px;
+          border-radius: 11px;
+          box-shadow: none;
+        }
+      }
       .myagapay-support-dialog {
         width: min(560px, calc(100% - 28px));
         max-height: min(760px, calc(100dvh - 28px));
@@ -387,6 +428,7 @@
       "/myagapay",
       "/myagapay/index",
       "/myagapay/dashboard",
+      "/myagapay/giving/give",
       "/myagapay/parish-life",
       "/myagapay/sacraments",
       "/myagapay/directory",
@@ -397,6 +439,7 @@
   function ensureCanonicalHeader() {
     if (!document.body.classList.contains("donor-mobile-page")) return;
     if (!isMyAgapayMainPage()) return;
+    document.body.classList.add("myagapay-main-page");
     if (document.querySelector(".donor-home-account-menu") || document.querySelector(".learn-account-utility")) return;
     const content = document.querySelector(".content, main");
     if (!content) return;
