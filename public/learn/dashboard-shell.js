@@ -1182,8 +1182,15 @@ function readWeekAssignmentState(vm, explicitWeekKey = "") {
 
 function designedAssignmentsForDate(vm, date) {
   if (!date) return [];
-  const state = readWeekAssignmentState(vm);
   const items = vm.week?.weeklyAssignmentItems || [];
+  if (marketingPreviewActive()) {
+    const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
+    return items
+      .filter((item) => ["planned", "reduced", "completed"].includes(item.statuses?.[weekday]))
+      .slice(0, 6)
+      .map((item) => ({ ...item, note: item.sub || "", sub: item.sub || "" }));
+  }
+  const state = readWeekAssignmentState(vm);
   return items.map((item) => {
     const saved = state[item.id];
     return saved?.zone === date ? {
