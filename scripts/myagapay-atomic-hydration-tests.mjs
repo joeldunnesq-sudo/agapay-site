@@ -46,8 +46,8 @@ for (const file of protectedPages) {
       : "20260802playerredesign1";
   assert.match(html, /<html[^>]*data-myagapay-hydrate/, `${file} must opt into the pre-paint hydration shield`);
   assert.match(html, new RegExp(`/donor/style\\.css\\?v=${expectedStylesheetVersion}`), `${file} must load the current atomic-paint CSS version`);
-  assert.match(html, /<script src="\/myagapay-shell\.js\?v=20260803give1"><\/script>/, `${file} must install the tracker before page-level scripts`);
-  assert.doesNotMatch(html, /myagapay-shell\.js\?v=20260803give1" defer/, `${file} must not defer initial shell setup`);
+  assert.match(html, /<script src="\/myagapay-shell\.js\?v=20260803gate1"><\/script>/, `${file} must install the tracker before page-level scripts`);
+  assert.doesNotMatch(html, /myagapay-shell\.js\?v=20260803gate1" defer/, `${file} must not defer initial shell setup`);
 }
 
 assert.match(
@@ -65,10 +65,12 @@ assert.match(teaching, /image:"\/images\/app\/icon-512\.png"/,
 
 assert.match(styles, /html\[data-myagapay-hydrate\]:not\(\[data-myagapay-page-ready="true"\]\) body::after[\s\S]*Loading your My AGAPAY page/,
   "the neutral shield must exist in render-blocking CSS before scripts run");
-assert.doesNotMatch(shell, /window\.fetch = async|pendingRequests|new MutationObserver/,
-  "background API and DOM activity must not hold the full-page navigation shield");
-assert.match(shell, /pageHydration\.domReady[\s\S]*window\.requestAnimationFrame\(finishMyAgapayPageHydration\)[\s\S]*window\.requestAnimationFrame\(reveal\)/,
-  "the shell must reveal after DOM initialization and two paint frames");
+assert.match(shell, /url\.pathname === "\/api\/donor\/dashboard"[\s\S]*pendingEntitlementRequests \+= 1[\s\S]*pendingEntitlementRequests = Math\.max\(0, pageHydration\.pendingEntitlementRequests - 1\)/,
+  "the shield must hold through authoritative dashboard entitlement requests");
+assert.doesNotMatch(shell, /url\.pathname\.startsWith\("\/api\/"\)|new MutationObserver/,
+  "unrelated background API and DOM activity must not hold the full-page navigation shield");
+assert.match(shell, /pageHydration\.pendingEntitlementRequests > 0[\s\S]*window\.setTimeout\([\s\S]*window\.requestAnimationFrame\(finishMyAgapayPageHydration\)[\s\S]*window\.requestAnimationFrame\(reveal\)[\s\S]*}, 80\)/,
+  "the shell must reveal after entitlement rendering settles across two paint frames");
 assert.match(shell, /dataset\.myagapayPageReady = "true"[\s\S]*finishInternalNavigationProgress\(\)/,
   "navigation progress and page reveal must finish together");
 assert.match(serviceWorker, /isVersionedStaticAsset\(request, url\)[\s\S]*caches\.match\(request\)[\s\S]*if \(shouldBypassCache\(request\)\) return/,

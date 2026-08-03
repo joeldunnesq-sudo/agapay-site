@@ -155,6 +155,7 @@ async function resolveDashboard(rendered, parish) {
   rendered.dashboard.resolve({ ok: true, status: 200, json: async () => ({ parish }) });
   await new Promise((resolve) => setImmediate(resolve));
   await new Promise((resolve) => setImmediate(resolve));
+  await new Promise((resolve) => setTimeout(resolve, 100));
 }
 
 const coldStart = await renderShell();
@@ -175,10 +176,10 @@ assert.match(coldStart.shell.productNav(), />Koinonia</);
 assert.equal(JSON.parse(coldStart.values.get("agapay.parishCapabilities.v1")).parish.parishLifeLabel, "Koinonia");
 
 const atomicPaint = await renderShell({ hydrate: true });
-assert.equal(atomicPaint.documentElement.dataset.myagapayPageReady, "true", "protected pages must reveal their initialized shell without waiting for background API data");
-assert.equal(atomicPaint.body.getAttribute("aria-busy"), null);
+assert.equal(atomicPaint.documentElement.dataset.myagapayPageReady, "false", "the loading shield must remain until authoritative gates are ready");
+assert.equal(atomicPaint.body.getAttribute("aria-busy"), "true");
 await resolveDashboard(atomicPaint, { communicationsEnabled: true, parishLifeLabel: "Koinonia", parishLifeAvailable: true });
-assert.equal(atomicPaint.documentElement.dataset.myagapayPageReady, "true", "background capability hydration must update the visible shell in place");
+assert.equal(atomicPaint.documentElement.dataset.myagapayPageReady, "true", "the initialized shell must reveal immediately after entitlement hydration settles");
 assert.equal(atomicPaint.body.getAttribute("aria-busy"), null);
 
 const staleCache = await renderShell({ cached: {

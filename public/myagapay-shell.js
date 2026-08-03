@@ -7,13 +7,28 @@
   const pageHydration = {
     active: document.documentElement.hasAttribute("data-myagapay-hydrate"),
     domReady: false,
+    pendingEntitlementRequests: 0,
+    settleTimer: 0,
     revealFrame: 0
   };
+  const nativeFetch = window.fetch.bind(window);
+
+  function isEntitlementHydrationRequest(input) {
+    try {
+      const raw = typeof input === "string" ? input : input?.url;
+      const url = new URL(raw || "", window.location.href);
+      return url.origin === window.location.origin && url.pathname === "/api/donor/dashboard";
+    } catch {
+      return false;
+    }
+  }
 
   function finishMyAgapayPageHydration() {
     if (!pageHydration.active) return;
     pageHydration.active = false;
+    if (pageHydration.settleTimer) window.clearTimeout(pageHydration.settleTimer);
     if (pageHydration.revealFrame) window.cancelAnimationFrame?.(pageHydration.revealFrame);
+    window.fetch = nativeFetch;
     document.documentElement.dataset.myagapayPageReady = "true";
     document.body?.removeAttribute("aria-busy");
     finishInternalNavigationProgress();
@@ -21,24 +36,45 @@
   }
 
   function scheduleMyAgapayPageHydrationFinish() {
-    if (!pageHydration.active || !pageHydration.domReady) return;
-    // Keep the privacy shield through parsing and synchronous initialization,
-    // then reveal the page shell. API-backed sections already render neutral
-    // loading states and hydrate independently, so a slow background request
-    // must never block the entire app navigation.
-    const reveal = () => {
+    if (!pageHydration.active || !pageHydration.domReady || pageHydration.pendingEntitlementRequests > 0) return;
+    if (pageHydration.settleTimer) window.clearTimeout(pageHydration.settleTimer);
+    // The entitlement response controls which gates and products are visible.
+    // Give its synchronous render a brief quiet window, then reveal across two
+    // frames. Unrelated feed, count, and page-data requests continue behind the
+    // initialized shell and never hold the full-screen shield.
+    pageHydration.settleTimer = window.setTimeout(() => {
+      if (pageHydration.pendingEntitlementRequests > 0) return;
+      const reveal = () => {
+        pageHydration.revealFrame = window.requestAnimationFrame
+          ? window.requestAnimationFrame(finishMyAgapayPageHydration)
+          : 0;
+        if (!window.requestAnimationFrame) finishMyAgapayPageHydration();
+      };
       pageHydration.revealFrame = window.requestAnimationFrame
-        ? window.requestAnimationFrame(finishMyAgapayPageHydration)
+        ? window.requestAnimationFrame(reveal)
         : 0;
-      if (!window.requestAnimationFrame) finishMyAgapayPageHydration();
-    };
-    pageHydration.revealFrame = window.requestAnimationFrame
-      ? window.requestAnimationFrame(reveal)
-      : 0;
-    if (!window.requestAnimationFrame) reveal();
+      if (!window.requestAnimationFrame) reveal();
+    }, 80);
   }
 
-  if (pageHydration.active) document.documentElement.dataset.myagapayPageReady = "false";
+  if (pageHydration.active) {
+    document.documentElement.dataset.myagapayPageReady = "false";
+    window.fetch = async (...args) => {
+      const tracked = pageHydration.active && isEntitlementHydrationRequest(args[0]);
+      if (tracked) {
+        if (pageHydration.settleTimer) window.clearTimeout(pageHydration.settleTimer);
+        pageHydration.pendingEntitlementRequests += 1;
+      }
+      try {
+        return await nativeFetch(...args);
+      } finally {
+        if (tracked) {
+          pageHydration.pendingEntitlementRequests = Math.max(0, pageHydration.pendingEntitlementRequests - 1);
+          scheduleMyAgapayPageHydrationFinish();
+        }
+      }
+    };
+  }
 
   const storageKeys = {
     email: "agapayDonorEmail",
