@@ -53,5 +53,9 @@ assert.match(html, /\.bookstore-product-media img \{[^}]*object-fit:contain/,
   "product photos must preserve their full artwork while leaving title and price visible");
 assert.match(app, /const description = String\(product\.description \|\| ""\)\.trim\(\);[\s\S]*?\$\{description \? `<small>/,
   "cards without descriptions must not repeat the category label beneath the title");
+assert.match(html, /\.donor-bookstore-page \.my-agapay-tabbar,[\s\S]*?z-index:220;[\s\S]*?background:#fffcf6;[\s\S]*?backdrop-filter:none;/,
+  "the mobile bookstore nav must remain opaque and above sticky storefront controls");
+assert.match(html, /padding:10px 10px calc\(106px \+ env\(safe-area-inset-bottom\)\)/,
+  "the mobile bookstore must reserve scroll clearance for the bottom nav and iOS safe area");
 
 console.log("PASS - bookstore parish switching, popular items, collapsed shelves, and category icons are wired");

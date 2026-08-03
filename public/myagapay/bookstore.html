@@ -269,7 +269,19 @@
     .bookstore-orders-card .list { margin:0; }
     @media (max-width:1000px) { .bookstore-store-hero { grid-template-columns:1fr; } .bookstore-store-promises { grid-template-columns:repeat(3,1fr); } }
     @media (max-width:700px) {
-      .donor-bookstore-page .page { padding:10px 10px 94px; background:#f5f3ee; }
+      .donor-bookstore-page { overflow-x:clip; }
+      .donor-bookstore-page .page { padding:10px 10px calc(106px + env(safe-area-inset-bottom)); background:#f5f3ee; }
+      .donor-bookstore-page .my-agapay-tabbar,
+      .donor-bookstore-page .mobile-tabbar {
+        z-index:220;
+        isolation:isolate;
+        overflow:hidden;
+        background:#fffcf6;
+        -webkit-backdrop-filter:none;
+        backdrop-filter:none;
+        box-shadow:0 -12px 30px rgba(6,21,34,.18);
+        backface-visibility:hidden;
+      }
       .bookstore-store-hero { display:block; min-height:0; margin-bottom:10px; border-radius:12px; padding:15px 16px; box-shadow:0 8px 22px rgba(6,21,34,.13); }
       .bookstore-store-hero::after,.bookstore-store-promises { display:none; }
       .bookstore-store-eyebrow { font-size:9px; }
