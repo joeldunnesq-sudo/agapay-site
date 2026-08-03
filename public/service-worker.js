@@ -1,4 +1,4 @@
-const AGAPAY_CACHE = "agapay-static-v27";
+const AGAPAY_CACHE = "agapay-static-v28";
 
 const STATIC_ASSETS = [
   "/myagapay/login",
@@ -81,9 +81,32 @@ function isStaticShellAsset(pathname) {
     || pathname === "/mark.png";
 }
 
+function isVersionedStaticAsset(request, url) {
+  if (request.method !== "GET" || url.origin !== self.location.origin || !url.searchParams.has("v")) return false;
+  return url.pathname === "/donor/style.css"
+    || url.pathname === "/donor/app.js"
+    || url.pathname === "/myagapay-shell.js"
+    || url.pathname === "/liturgical-calendar.js"
+    || url.pathname.startsWith("/myagapay/");
+}
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
+
+  // Versioned app assets are immutable by URL. Serve them cache-first so every
+  // full-page My AGAPAY navigation reuses the shared 500+ KB shell instantly.
+  if (isVersionedStaticAsset(request, url)) {
+    event.respondWith(
+      caches.match(request).then((cached) => cached || fetch(request).then((response) => {
+        const clone = response.clone();
+        caches.open(AGAPAY_CACHE).then((cache) => cache.put(request, clone));
+        return response;
+      }))
+    );
+    return;
+  }
+
   if (shouldBypassCache(request)) return;
 
   if (request.mode === "navigate" && (url.pathname === "/myagapay/login" || url.pathname === "/donor/login" || url.pathname === "/donor/login.html" || url.pathname === "/listen" || url.pathname === "/listen.html")) {

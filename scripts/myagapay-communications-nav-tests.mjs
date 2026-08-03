@@ -175,12 +175,10 @@ assert.match(coldStart.shell.productNav(), />Koinonia</);
 assert.equal(JSON.parse(coldStart.values.get("agapay.parishCapabilities.v1")).parish.parishLifeLabel, "Koinonia");
 
 const atomicPaint = await renderShell({ hydrate: true });
-assert.equal(atomicPaint.documentElement.dataset.myagapayPageReady, "false", "protected pages must remain shielded while initial API data is pending");
-assert.equal(atomicPaint.body.getAttribute("aria-busy"), "true");
+assert.equal(atomicPaint.documentElement.dataset.myagapayPageReady, "true", "protected pages must reveal their initialized shell without waiting for background API data");
+assert.equal(atomicPaint.body.getAttribute("aria-busy"), null);
 await resolveDashboard(atomicPaint, { communicationsEnabled: true, parishLifeLabel: "Koinonia", parishLifeAvailable: true });
-assert.equal(atomicPaint.documentElement.dataset.myagapayPageReady, "false", "a response must not reveal the page before its render quiet window");
-await new Promise((resolve) => setTimeout(resolve, 220));
-assert.equal(atomicPaint.documentElement.dataset.myagapayPageReady, "true", "the first visible page state must follow resolved requests and rendering");
+assert.equal(atomicPaint.documentElement.dataset.myagapayPageReady, "true", "background capability hydration must update the visible shell in place");
 assert.equal(atomicPaint.body.getAttribute("aria-busy"), null);
 
 const staleCache = await renderShell({ cached: {

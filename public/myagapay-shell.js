@@ -7,28 +7,13 @@
   const pageHydration = {
     active: document.documentElement.hasAttribute("data-myagapay-hydrate"),
     domReady: false,
-    pendingRequests: 0,
-    settleTimer: 0,
-    observer: null
+    revealFrame: 0
   };
-  const nativeFetch = window.fetch.bind(window);
-
-  function isInitialMyAgapayApiRequest(input) {
-    try {
-      const raw = typeof input === "string" ? input : input?.url;
-      const url = new URL(raw || "", window.location.href);
-      return url.origin === window.location.origin && url.pathname.startsWith("/api/");
-    } catch {
-      return false;
-    }
-  }
 
   function finishMyAgapayPageHydration() {
     if (!pageHydration.active) return;
     pageHydration.active = false;
-    if (pageHydration.settleTimer) window.clearTimeout(pageHydration.settleTimer);
-    pageHydration.observer?.disconnect();
-    window.fetch = nativeFetch;
+    if (pageHydration.revealFrame) window.cancelAnimationFrame?.(pageHydration.revealFrame);
     document.documentElement.dataset.myagapayPageReady = "true";
     document.body?.removeAttribute("aria-busy");
     finishInternalNavigationProgress();
@@ -36,39 +21,24 @@
   }
 
   function scheduleMyAgapayPageHydrationFinish() {
-    if (!pageHydration.active || !pageHydration.domReady || pageHydration.pendingRequests > 0) return;
-    if (pageHydration.settleTimer) window.clearTimeout(pageHydration.settleTimer);
-    // Covers response.json(), synchronous rendering, and immediately chained
-    // requests without exposing any of those intermediate answers.
-    pageHydration.settleTimer = window.setTimeout(() => {
-      if (pageHydration.pendingRequests === 0) finishMyAgapayPageHydration();
-    }, 180);
-  }
-
-  function noteMyAgapayHydrationActivity() {
-    if (!pageHydration.active) return;
-    if (pageHydration.settleTimer) window.clearTimeout(pageHydration.settleTimer);
-    pageHydration.settleTimer = 0;
-  }
-
-  if (pageHydration.active) {
-    document.documentElement.dataset.myagapayPageReady = "false";
-    window.fetch = async (...args) => {
-      const tracked = pageHydration.active && isInitialMyAgapayApiRequest(args[0]);
-      if (tracked) {
-        noteMyAgapayHydrationActivity();
-        pageHydration.pendingRequests += 1;
-      }
-      try {
-        return await nativeFetch(...args);
-      } finally {
-        if (tracked) {
-          pageHydration.pendingRequests = Math.max(0, pageHydration.pendingRequests - 1);
-          scheduleMyAgapayPageHydrationFinish();
-        }
-      }
+    if (!pageHydration.active || !pageHydration.domReady) return;
+    // Keep the privacy shield through parsing and synchronous initialization,
+    // then reveal the page shell. API-backed sections already render neutral
+    // loading states and hydrate independently, so a slow background request
+    // must never block the entire app navigation.
+    const reveal = () => {
+      pageHydration.revealFrame = window.requestAnimationFrame
+        ? window.requestAnimationFrame(finishMyAgapayPageHydration)
+        : 0;
+      if (!window.requestAnimationFrame) finishMyAgapayPageHydration();
     };
+    pageHydration.revealFrame = window.requestAnimationFrame
+      ? window.requestAnimationFrame(reveal)
+      : 0;
+    if (!window.requestAnimationFrame) reveal();
   }
+
+  if (pageHydration.active) document.documentElement.dataset.myagapayPageReady = "false";
 
   const storageKeys = {
     email: "agapayDonorEmail",
@@ -922,16 +892,6 @@
   document.addEventListener("DOMContentLoaded", () => {
     if (pageHydration.active) {
       document.body?.setAttribute("aria-busy", "true");
-      pageHydration.observer = new MutationObserver(() => {
-        noteMyAgapayHydrationActivity();
-        scheduleMyAgapayPageHydrationFinish();
-      });
-      pageHydration.observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-        characterData: true,
-        attributes: true
-      });
     }
     deferParishLifeIdentity();
     normalizeProductNavs();

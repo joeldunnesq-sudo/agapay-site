@@ -12,6 +12,8 @@ const directory = read("public/myagapay/directory.html");
 const teaching = read("public/myagapay/teaching.js");
 const parishDashboard = read("public/parish/dashboard.html");
 const parishStyles = read("public/parish/style.css");
+const serviceWorker = read("public/service-worker.js");
+const staticHeaders = read("public/_headers");
 const householdRenderer = directory.slice(
   directory.indexOf("async function renderHouseholdDetails"),
   directory.indexOf("function relationshipLabel")
@@ -42,8 +44,8 @@ for (const file of protectedPages) {
     : "20260802playerredesign1";
   assert.match(html, /<html[^>]*data-myagapay-hydrate/, `${file} must opt into the pre-paint hydration shield`);
   assert.match(html, new RegExp(`/donor/style\\.css\\?v=${expectedStylesheetVersion}`), `${file} must load the current atomic-paint CSS version`);
-  assert.match(html, /<script src="\/myagapay-shell\.js\?v=20260801atomicpaint1"><\/script>/, `${file} must install the tracker before page-level scripts`);
-  assert.doesNotMatch(html, /myagapay-shell\.js\?v=20260801atomicpaint1" defer/, `${file} must not defer initial request tracking`);
+  assert.match(html, /<script src="\/myagapay-shell\.js\?v=20260802perf1"><\/script>/, `${file} must install the tracker before page-level scripts`);
+  assert.doesNotMatch(html, /myagapay-shell\.js\?v=20260802perf1" defer/, `${file} must not defer initial shell setup`);
 }
 
 assert.match(
@@ -61,14 +63,20 @@ assert.match(teaching, /image:"\/images\/app\/icon-512\.png"/,
 
 assert.match(styles, /html\[data-myagapay-hydrate\]:not\(\[data-myagapay-page-ready="true"\]\) body::after[\s\S]*Loading your My AGAPAY page/,
   "the neutral shield must exist in render-blocking CSS before scripts run");
-assert.match(shell, /window\.fetch = async \(\.\.\.args\)[\s\S]*pendingRequests \+= 1[\s\S]*pendingRequests = Math\.max\(0, pageHydration\.pendingRequests - 1\)/,
-  "the shell must hold the first paint across every initial API request");
-assert.match(shell, /pageHydration\.settleTimer = window\.setTimeout\([\s\S]*}, 180\)/,
-  "the shield must wait for a quiet window after network completion");
-assert.match(shell, /new MutationObserver[\s\S]*noteMyAgapayHydrationActivity\(\)[\s\S]*scheduleMyAgapayPageHydrationFinish\(\)/,
-  "DOM activity must restart the page reveal quiet window");
+assert.doesNotMatch(shell, /window\.fetch = async|pendingRequests|new MutationObserver/,
+  "background API and DOM activity must not hold the full-page navigation shield");
+assert.match(shell, /pageHydration\.domReady[\s\S]*window\.requestAnimationFrame\(finishMyAgapayPageHydration\)[\s\S]*window\.requestAnimationFrame\(reveal\)/,
+  "the shell must reveal after DOM initialization and two paint frames");
 assert.match(shell, /dataset\.myagapayPageReady = "true"[\s\S]*finishInternalNavigationProgress\(\)/,
   "navigation progress and page reveal must finish together");
+assert.match(serviceWorker, /isVersionedStaticAsset\(request, url\)[\s\S]*caches\.match\(request\)[\s\S]*if \(shouldBypassCache\(request\)\) return/,
+  "the PWA must serve versioned My AGAPAY shell assets cache-first before the private-route bypass");
+for (const asset of ["/donor/style.css", "/donor/app.js", "/myagapay-shell.js"]) {
+  assert.match(staticHeaders, new RegExp(`${asset.replace(/[./]/g, "\\$&")}\\n  Cache-Control: public, max-age=31536000, immutable`),
+    `${asset} must be immutable because every app reference carries a release version`);
+}
+assert.doesNotMatch(staticHeaders, /\/donor\/\*\s+Cache-Control: no-store/,
+  "the shared donor JS and CSS must not inherit no-store on every navigation");
 
 const dashboardLoader = donorApp.match(/async function loadDonorDashboardPage\(\)[\s\S]*?\n}/)?.[0] || "";
 assert.doesNotMatch(dashboardLoader, /readDonorCache\("dashboard"\)|renderDonorDashboardPayload\(cached/,
@@ -87,4 +95,4 @@ assert.match(directory, /if \(householdDetailError\)[\s\S]*<h2>Listing status un
 assert.doesNotMatch(householdRenderer, /api\(`\/api\/directory\/households\/\$\{encodeURIComponent\(household\.id\)\}\/self`\)\.catch\(\(\) => null\)/,
   "Directory must not collapse a failed household request into valid empty data");
 
-console.log(`PASS - ${protectedPages.length} protected My AGAPAY pages reveal only after atomic initial hydration`);
+console.log(`PASS - ${protectedPages.length} protected My AGAPAY pages reveal an initialized shell without waiting for background APIs`);

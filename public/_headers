@@ -28,7 +28,15 @@
 # proxy, CDN edge) is tempted to reuse an old page after a deploy.
 /myagapay/*
   Cache-Control: no-store
-/donor/*
-  Cache-Control: no-store
 /parish/*
   Cache-Control: no-store
+
+# These shared files are referenced with explicit ?v= release identifiers on
+# every My AGAPAY page. Their URLs change whenever their contents change, so
+# repeat navigations can safely reuse them without revalidation.
+/donor/style.css
+  Cache-Control: public, max-age=31536000, immutable
+/donor/app.js
+  Cache-Control: public, max-age=31536000, immutable
+/myagapay-shell.js
+  Cache-Control: public, max-age=31536000, immutable
