@@ -1242,7 +1242,7 @@ function renderDesignedLessonList(assignments, emptyMessage) {
 function renderDashboardDesignedLessons(vm) {
   const date = vm.todayInChurch?.civilDate || "";
   const assignments = designedAssignmentsForDate(vm, date);
-  const dayHref = `/myagapay/learn/planner?view=day&date=${encodeURIComponent(date)}`;
+  const dayHref = learnSectionHref("planner", `view=day&date=${encodeURIComponent(date)}`);
   return `
     <div class="learn-card">
       <div class="learn-section-head">
