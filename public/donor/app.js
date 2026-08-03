@@ -4400,6 +4400,7 @@ let bookstoreItemFieldsSchema = null;
 let bookstoreProducts = [];
 let bookstoreCart = [];
 let bookstoreCatalogQuery = "";
+let bookstoreParishes = [];
 
 async function loadBookstoreItemFieldsSchema() {
   if (bookstoreItemFieldsSchema) return bookstoreItemFieldsSchema;
@@ -4459,15 +4460,65 @@ function setBookstoreCatalogQuery(value = "") {
   renderBookstoreProducts(bookstoreProducts);
 }
 
+function bookstoreCategoryIcon(category = "other") {
+  const icons = {
+    book: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 5.5h14.5A3.5 3.5 0 0 1 25 9v17H10.5A3.5 3.5 0 0 1 7 22.5v-17Z"/><path d="M10.5 19H25M12 10h8M12 14h6"/></svg>',
+    icon: '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="6" y="4" width="20" height="24" rx="2"/><circle cx="16" cy="12" r="4"/><path d="M10.5 23c1.2-4 3-6 5.5-6s4.3 2 5.5 6M16 8V5.5M13.5 6.5h5"/></svg>',
+    candle: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M12 27h8V14h-8zM10 27h12M16 4c3 3.1 3.1 5.8 0 8-3.1-2.2-3-4.9 0-8Z"/><path d="M16 14v-2"/></svg>',
+    jewelry: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M8 7c0 8 2.5 14 8 18 5.5-4 8-10 8-18M16 5v13M11.5 10h9"/><path d="M13 20h6"/></svg>',
+    incense: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M8 23h16l-2 5H10l-2-5ZM11 20h10M10 23c0-5 2.2-8 6-8s6 3 6 8"/><path d="M13 13c-2-2 1-3 0-6M18 13c-2-2 2-3 1-7"/></svg>',
+    cd_dvd: '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11"/><circle cx="16" cy="16" r="3"/><path d="m18 13 5-5M9 23l5-5"/></svg>',
+    other: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 11h20v16H6zM10 11V8a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v3M6 17h20M14 15h4v4h-4z"/></svg>'
+  };
+  return icons[category] || icons.other;
+}
+
+function bookstoreProductCard(product, { popular = false } = {}) {
+  const cartItem = bookstoreCart.find(ci => ci.productId === product.id && ci.variantId === (product.variantId || ""));
+  const available = product.trackInventory === false || Number(product.stockQuantity || 0) > 0;
+  const qtyBadge = cartItem ? `<span class="bookstore-product-card-qty">${Number(cartItem.quantity || 1)}</span>` : "";
+  const productMedia = product.imageUrl
+    ? `<span class="bookstore-product-media"><img src="${escapeHtml(product.imageUrl)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;"></span>`
+    : `<span class="bookstore-product-media" aria-hidden="true">${bookstoreCategoryIcon(product.category)}</span>`;
+  const popularity = popular
+    ? `<span class="bookstore-popular-rank">${Number(product.unitsSold || 0) > 0 ? `${Number(product.unitsSold)} sold` : "Parish favorite"}</span>`
+    : "";
+  return `
+    <button type="button" class="bookstore-product-card${popular ? " bookstore-popular-card" : ""}" onclick="addBookstoreProductToCart('${escapeHtml(product.id)}','${escapeHtml(product.variantId || "")}')" ${available ? "" : "disabled"}>
+      ${qtyBadge}
+      ${available ? "" : '<span class="bookstore-product-stock-out">Out of stock</span>'}
+      ${productMedia}
+      ${popularity}
+      <strong>${escapeHtml(product.name)}</strong>
+      <small>${escapeHtml(product.description || product.categoryLabel || "Bookstore item")}</small>
+      <span class="bookstore-product-meta"><span class="bookstore-category-pill">${escapeHtml(product.categoryLabel || "Item")}</span><span class="bookstore-price">${formatCentsAsDollars(product.priceCents)}</span></span>
+      <span class="bookstore-product-add">${available ? "Add to cart" : "Currently unavailable"}</span>
+    </button>`;
+}
+
+function renderBookstorePopularItems(products = []) {
+  const section = document.getElementById("bookstorePopularItems");
+  const grid = document.getElementById("bookstorePopularGrid");
+  if (!section || !grid) return;
+  const popular = [...products]
+    .sort((a, b) => Number(b.unitsSold || 0) - Number(a.unitsSold || 0) || String(a.name || "").localeCompare(String(b.name || "")))
+    .slice(0, 2);
+  section.hidden = popular.length === 0;
+  grid.innerHTML = popular.map(product => bookstoreProductCard(product, { popular: true })).join("");
+}
+
 function renderBookstoreProducts(products = []) {
   const container = document.getElementById("bookstoreProductCatalog");
   if (!container) return;
   const count = document.getElementById("bookstoreCatalogCount");
   if (!products.length) {
     if (count) count.textContent = "No catalog items yet";
+    renderBookstorePopularItems([]);
     container.innerHTML = '<div class="notice">No parish products yet. Scan a book below and, after purchase, it will be added to the parish catalog for other parishioners.</div>';
     return;
   }
+
+  renderBookstorePopularItems(products);
 
   const visibleProducts = bookstoreCatalogQuery
     ? products.filter(product => [product.name, product.description, product.categoryLabel]
@@ -4486,45 +4537,27 @@ function renderBookstoreProducts(products = []) {
   const groups = new Map();
   visibleProducts.forEach(product => {
     const label = product.categoryLabel || "Other items";
-    if (!groups.has(label)) groups.set(label, []);
-    groups.get(label).push(product);
+    const key = product.category || "other";
+    if (!groups.has(key)) groups.set(key, { label, items: [] });
+    groups.get(key).items.push(product);
   });
 
-  container.innerHTML = Array.from(groups.entries()).map(([label, items], idx) => {
+  container.innerHTML = Array.from(groups.entries()).map(([category, group]) => {
+    const { label, items } = group;
     const cartQtyInCategory = items.reduce((sum, product) => {
       const cartItem = bookstoreCart.find(ci => ci.productId === product.id && ci.variantId === (product.variantId || ""));
       return sum + (cartItem ? Number(cartItem.quantity || 1) : 0);
     }, 0);
-    const isOpen = openLabels.has(label) || cartQtyInCategory > 0 || (openLabels.size === 0 && idx === 0);
+    const isOpen = openLabels.has(category);
     const badge = cartQtyInCategory
       ? `<span class="bookstore-category-count">${cartQtyInCategory} in cart</span>`
       : `<span class="bookstore-category-tally">${items.length} item${items.length === 1 ? "" : "s"}</span>`;
-
-    const cardsHtml = items.map(product => {
-      const cartItem = bookstoreCart.find(ci => ci.productId === product.id && ci.variantId === (product.variantId || ""));
-      const available = product.trackInventory === false || Number(product.stockQuantity || 0) > 0;
-      const qtyBadge = cartItem ? `<span class="bookstore-product-card-qty">${Number(cartItem.quantity || 1)}</span>` : "";
-      const initial = escapeHtml((product.categoryLabel || product.name || "?").trim().charAt(0).toUpperCase() || "?");
-      const productMedia = product.imageUrl
-        ? `<span class="bookstore-product-media"><img src="${escapeHtml(product.imageUrl)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;"></span>`
-        : `<span class="bookstore-product-media" aria-hidden="true"><svg viewBox="0 0 64 64"><path d="M13 11h34a4 4 0 0 1 4 4v39H18a7 7 0 0 1-7-7V15a4 4 0 0 1 2-4Z"/><path d="M18 11v43M25 21h17M25 29h14"/></svg></span>`;
-      return `
-      <button type="button" class="bookstore-product-card" onclick="addBookstoreProductToCart('${escapeHtml(product.id)}','${escapeHtml(product.variantId || "")}')" ${available ? "" : "disabled"}>
-        ${qtyBadge}
-        ${available ? "" : '<span class="bookstore-product-stock-out">Out of stock</span>'}
-        ${productMedia}
-        <span class="bookstore-product-badge" aria-hidden="true">${initial}</span>
-        <strong>${escapeHtml(product.name)}</strong>
-        <small>${escapeHtml(product.description || product.categoryLabel || "Bookstore item")}</small>
-        <span class="bookstore-product-meta"><span class="bookstore-category-pill">${escapeHtml(product.categoryLabel || "Item")}</span><span class="bookstore-price">${formatCentsAsDollars(product.priceCents)}</span></span>
-        <span class="bookstore-product-add">${available ? "Add to cart" : "Currently unavailable"}</span>
-      </button>
-    `;
-    }).join("");
+    const cardsHtml = items.map(product => bookstoreProductCard(product)).join("");
 
     return `
-      <details class="bookstore-category-group" data-category="${escapeHtml(label)}"${isOpen ? " open" : ""}>
+      <details class="bookstore-category-group" data-category="${escapeHtml(category)}"${isOpen ? " open" : ""}>
         <summary class="bookstore-category-summary">
+          <span class="bookstore-category-icon">${bookstoreCategoryIcon(category)}</span>
           <span class="bookstore-category-name">${escapeHtml(label)}</span>
           ${badge}
         </summary>
@@ -4546,6 +4579,7 @@ function renderBookstoreCart() {
   if (count) count.textContent = String(itemCount);
   if (mobileTotal) mobileTotal.textContent = formatCentsAsDollars(subtotal);
   if (mobileCount) mobileCount.textContent = String(itemCount);
+  document.getElementById("bookstoreShopGrid")?.classList.toggle("has-cart", itemCount > 0);
   if (bookstoreProducts.length) renderBookstoreProducts(bookstoreProducts);
   if (!list) return;
   if (!bookstoreCart.length) {
@@ -4815,6 +4849,112 @@ function closeBookstoreScanner() {
   if (video) video.srcObject = null;
 }
 
+function renderBookstoreParishContext(parish = null) {
+  const parishId = parish?.id || "";
+  const parishName = parish?.name || "";
+  const place = [parish?.city, parish?.state].filter(Boolean).join(", ");
+  const display = document.getElementById("commemorationParishDisplay");
+  const parishInput = document.getElementById("bookstoreParishId");
+  if (display) display.textContent = parishName ? [parishName, place].filter(Boolean).join(" · ") : "Choose a church";
+  if (parishInput) parishInput.value = parishId;
+  const bookstoreLabel = parishName ? `the ${parishName}` : "your parish";
+  setText("bookstoreHeroTitle", `Shop the shelves at ${bookstoreLabel} bookstore.`);
+  setText("bookstoreHeroDescription", parishName
+    ? "Browse books and parish goods, add what you need, and check out securely from your phone."
+    : "Choose a church below to browse its bookstore without leaving this page.");
+}
+
+function renderBookstoreParishOptions(query = "") {
+  const list = document.getElementById("bookstoreParishOptions");
+  if (!list) return;
+  const selectedId = document.getElementById("bookstoreParishId")?.value || donorProfile()?.defaultParishId || "";
+  const normalizedQuery = String(query || "").trim().toLowerCase();
+  const matches = bookstoreParishes.filter(parish => [parish.name, parish.city, parish.state, parish.jurisdictionLabel, parish.jurisdiction]
+    .filter(Boolean).join(" ").toLowerCase().includes(normalizedQuery));
+  list.innerHTML = matches.length
+    ? matches.map(parish => {
+        const place = [parish.city, parish.state].filter(Boolean).join(", ");
+        const selected = parish.id === selectedId;
+        return `<button type="button" class="bookstore-parish-option${selected ? " is-current" : ""}" role="option" aria-selected="${selected}" onclick="selectBookstoreParish('${escapeHtml(parish.id)}')"><span><strong>${escapeHtml(parish.name || "Parish")}</strong>${place ? `<small>${escapeHtml(place)}</small>` : ""}</span>${selected ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>' : ""}</button>`;
+      }).join("")
+    : '<div class="bookstore-parish-empty">No churches match that search.</div>';
+}
+
+async function loadBookstoreParishOptions() {
+  const list = document.getElementById("bookstoreParishOptions");
+  if (list) list.innerHTML = '<div class="bookstore-parish-empty">Loading churches…</div>';
+  try {
+    bookstoreParishes = window.agapayPublicParishes?.length ? window.agapayPublicParishes : await fetchPublicParishes();
+    window.agapayPublicParishes = bookstoreParishes;
+    renderBookstoreParishOptions(document.getElementById("bookstoreParishSearch")?.value || "");
+  } catch {
+    if (list) list.innerHTML = '<div class="bookstore-parish-empty">Churches could not be loaded. Please try again.</div>';
+  }
+}
+
+function closeBookstoreParishMenu({ restoreFocus = false } = {}) {
+  const menu = document.getElementById("bookstoreParishMenu");
+  const trigger = document.getElementById("bookstoreParishTrigger");
+  if (!menu || !trigger) return;
+  menu.hidden = true;
+  trigger.setAttribute("aria-expanded", "false");
+  if (restoreFocus) trigger.focus();
+}
+
+function toggleBookstoreParishMenu(event) {
+  event?.stopPropagation();
+  const menu = document.getElementById("bookstoreParishMenu");
+  const trigger = document.getElementById("bookstoreParishTrigger");
+  if (!menu || !trigger) return;
+  const opening = menu.hidden;
+  menu.hidden = !opening;
+  trigger.setAttribute("aria-expanded", String(opening));
+  if (opening) {
+    loadBookstoreParishOptions();
+    requestAnimationFrame(() => document.getElementById("bookstoreParishSearch")?.focus());
+  }
+}
+
+async function selectBookstoreParish(parishId) {
+  const parish = bookstoreParishes.find(entry => entry.id === parishId);
+  if (!parish) return;
+  const currentParishId = document.getElementById("bookstoreParishId")?.value || "";
+  if (parishId === currentParishId) {
+    closeBookstoreParishMenu({ restoreFocus: true });
+    return;
+  }
+  closeBookstoreParishMenu();
+  setDonorStatus(`Opening ${parish.name || "the parish"} bookstore…`, "info");
+  try {
+    const data = await donorApi("/api/donor/dashboard", {
+      method: "PATCH",
+      body: JSON.stringify({ defaultParishId: parishId })
+    });
+    setDonorProfile({ ...(donorProfile() || {}), ...(data.donor || {}), defaultParish: parish });
+    bookstoreCart = [];
+    bookstoreCatalogQuery = "";
+    const search = document.getElementById("bookstoreProductSearch");
+    if (search) search.value = "";
+    renderBookstoreParishContext(parish);
+    renderBookstoreCart();
+    const payload = await donorApi("/api/donor/bookstore", {
+      headers: donorAuthHeaders({ "X-AGAPAY-Parish-Id": parishId })
+    });
+    writeDonorCache("bookstore", payload);
+    renderBookstorePayload(payload);
+    setDonorStatus(`You’re now shopping at ${parish.name || "this parish"}.`, "success");
+  } catch (err) {
+    setDonorStatus(err.message || "That bookstore could not be opened.", "error");
+  }
+}
+
+document.addEventListener("click", event => {
+  if (!event.target.closest(".bookstore-parish-switcher")) closeBookstoreParishMenu();
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && !document.getElementById("bookstoreParishMenu")?.hidden) closeBookstoreParishMenu({ restoreFocus: true });
+});
+
 async function loadDonorBookstorePage() {
   const session = donorSession();
   const list = document.getElementById("bookstoreOrderList");
@@ -4843,6 +4983,8 @@ async function loadDonorBookstorePage() {
   if (parishId && !dashboardParish) {
     try {
       const parishes = window.agapayPublicParishes?.length ? window.agapayPublicParishes : await fetchPublicParishes();
+      bookstoreParishes = parishes;
+      window.agapayPublicParishes = parishes;
       const parishSlug = value => String(value || "").toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
       const configuredSlug = parishSlug(parishId);
       const canonicalParish = parishes.find(parish => parish.id === parishId)
@@ -4855,16 +4997,12 @@ async function loadDonorBookstorePage() {
       // Keep the configured parish id if the public directory is unavailable.
     }
   }
-  const bookstoreLabel = parishName ? `the ${parishName}` : "your parish";
-  setText("bookstoreHeroTitle", `Shop the shelves at ${bookstoreLabel} bookstore.`);
-  setText("bookstoreHeroDescription", "Browse books and parish goods, add what you need, and check out securely from your phone.");
-  const parishInput = document.getElementById("bookstoreParishId");
-  if (parishInput) parishInput.value = parishId;
+  const selectedParish = dashboardParish || bookstoreParishes.find(parish => parish.id === parishId) || { id: parishId, name: parishName };
+  renderBookstoreParishContext(selectedParish);
 
   if (!parishId) {
-    const formCard = document.getElementById("bookstoreFormCard");
-    if (formCard) formCard.style.display = "none";
-    if (list) list.innerHTML = '<div class="notice">Choose your parish in Settings before ordering from the bookstore.</div>';
+    renderBookstoreProducts([]);
+    if (list) list.innerHTML = '<div class="notice">Choose a church above to open its bookstore.</div>';
     return;
   }
 

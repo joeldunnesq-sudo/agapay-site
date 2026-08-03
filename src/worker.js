@@ -842,7 +842,7 @@ function cleanAssetRequest(request) {
     url.pathname = "/give/parish-giving/index.html";
     return new Request(url, request);
   }
-  const staticGivePages = new Set(["features", "how-it-works", "pricing", "why", "parish-giving", "recurring-donations", "fundraising", "event-payments"]);
+  const staticGivePages = new Set(["features", "how-it-works", "pricing", "parish-giving", "recurring-donations", "fundraising", "event-payments"]);
   const givePage = url.pathname.match(/^\/give\/([^/]+)\/?$/)?.[1] || "";
   if (staticGivePages.has(givePage)) {
     url.pathname = `/give/${givePage}.html`;
@@ -881,9 +881,9 @@ const LEGACY_GIVING_PAGE_REDIRECTS = new Map([
   ["/pricing", "/give/pricing"],
   ["/pricing.html", "/give/pricing"],
   ["/pricing/", "/give/pricing"],
-  ["/why", "/give/why"],
-  ["/why.html", "/give/why"],
-  ["/why/", "/give/why"]
+  ["/why", "/give/#why"],
+  ["/why.html", "/give/#why"],
+  ["/why/", "/give/#why"]
 ]);
 
 function canonicalCampaignPathFromLegacy(url) {
@@ -2862,6 +2862,11 @@ export default {
         url.pathname = "/give/find-parish";
         return Response.redirect(url.toString(), 301);
       }
+      if (["/give/why", "/give/why.html", "/give/why/"].includes(url.pathname.toLowerCase())) {
+        url.pathname = "/give/";
+        url.hash = "why";
+        return Response.redirect(url.toString(), 301);
+      }
       const legacyParishId = String(url.searchParams.get("parish") || "").trim();
       if ((url.pathname === "/give/form" || url.pathname === "/give/form.html") && legacyParishId) {
         url.pathname = `/give/${encodeURIComponent(legacyParishId)}`;
@@ -2876,7 +2881,9 @@ export default {
       }
       const canonicalGivingPath = LEGACY_GIVING_PAGE_REDIRECTS.get(url.pathname.toLowerCase());
       if (canonicalGivingPath) {
-        url.pathname = canonicalGivingPath;
+        const [canonicalPathname, canonicalHash = ""] = canonicalGivingPath.split("#");
+        url.pathname = canonicalPathname;
+        url.hash = canonicalHash;
         return Response.redirect(url.toString(), 301);
       }
     }

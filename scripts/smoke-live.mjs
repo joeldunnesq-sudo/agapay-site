@@ -11,7 +11,7 @@ const checks = [
   { name: "Give features page", method: "GET", path: "/give/features", ok: [200] },
   { name: "Give how it works page", method: "GET", path: "/give/how-it-works", ok: [200] },
   { name: "Give pricing page", method: "GET", path: "/give/pricing", ok: [200] },
-  { name: "Give why page", method: "GET", path: "/give/why", ok: [200] },
+  { name: "Give council why section", method: "GET", path: "/give/#why", ok: [200] },
   { name: "parish giving shell", method: "GET", path: "/give/smoke-test", ok: [200] },
   { name: "find church giving page", method: "GET", path: "/give/find-parish", ok: [200] },
   { name: "campaign share shell", method: "GET", path: "/give/smoke-test/smoke-test-campaign", ok: [200] },

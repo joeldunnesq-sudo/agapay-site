@@ -4,7 +4,7 @@
 
   const PRIMARY_LINKS = [
     { href: "/vision", label: "Vision", key: "vision" },
-    { href: "/why", label: "Why AGAPAY", key: "why" },
+    { href: "/give/#why", label: "Why AGAPAY", key: "why" },
     { href: "/give", label: "AGAPAY Give", key: "give" },
     { href: "/learn", label: "AGAPAY Learn", key: "learn" },
     { href: "/design", label: "AGAPAY Design", key: "design" },
@@ -18,7 +18,7 @@
   ];
 
   function activeKeyFromPath() {
-    if (path === "/why" || path === "/give/why" || path.endsWith("/give/why.html")) return "why";
+    if (path === "/why") return "why";
     if (path === "/vision" || path.endsWith("/vision.html")) return "vision";
     if (path === "/give/features" || path.endsWith("/give/features.html")) return "give";
     if (path === "/give/pricing" || path.endsWith("/give/pricing.html")) return "give";
@@ -141,7 +141,7 @@
               <a href="/give/features">Features</a>
               <a href="/give/how-it-works">How It Works</a>
               <a href="/give/pricing">Pricing</a>
-              <a href="/give/why">Why AGAPAY Give</a>
+              <a href="/give/#why">Why AGAPAY Give</a>
             </nav>
             <nav class="footer-col" aria-label="AGAPAY Learn">
               <h4>Learn</h4>
@@ -313,6 +313,22 @@
     });
   }
 
+  function restoreInitialAnchorAfterChrome() {
+    const initialHash = window.location.hash;
+    if (!initialHash || initialHash.length < 2) return;
+    let anchorId = initialHash.slice(1);
+    try { anchorId = decodeURIComponent(anchorId); } catch {}
+    const target = document.getElementById(anchorId);
+    if (!target) return;
+    const align = function () {
+      if (window.location.hash === initialHash) target.scrollIntoView({ block: "start" });
+    };
+    window.requestAnimationFrame(function () {
+      window.requestAnimationFrame(align);
+    });
+    if (document.fonts?.ready) document.fonts.ready.then(align).catch(function () {});
+  }
+
   function initSiteChrome() {
     if (document.body && document.body.dataset.noSiteChrome === "true") return;
 
@@ -342,6 +358,7 @@
     initPageReveal(activeKey);
     initFlipTaglines();
     bindInteractions();
+    restoreInitialAnchorAfterChrome();
   }
 
   if (document.readyState === "loading") {

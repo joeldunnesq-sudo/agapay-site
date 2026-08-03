@@ -22,7 +22,7 @@ const wrangler = await readFile("wrangler.toml", "utf8");
 const d1Migration = await readFile("migrations/0001_production_records.sql", "utf8");
 const parishFeatureRequestMigration = await readFile("migrations/0059_parish_feature_requests.sql", "utf8");
 const siteChrome = await readFile("public/site-chrome.js", "utf8");
-assert.ok(siteChrome.includes('{ href: "/why", label: "Why AGAPAY", key: "why" }'), "canonical static-site navigation should include Why AGAPAY");
+assert.ok(siteChrome.includes('{ href: "/give/#why", label: "Why AGAPAY", key: "why" }'), "canonical static-site navigation should link Why AGAPAY to the consolidated council overview");
 assert.ok(!/btn-donate[\s\S]{0,180}shellIcon\("giving-hand"\)/.test(siteChrome), "canonical Start for free button should not include an unrelated giving-hand icon");
 assert.ok(!/drawer-join[\s\S]{0,120}shellIcon\("giving-hand"\)/.test(siteChrome), "mobile Start for free button should not include an unrelated giving-hand icon");
 const backendSources = worker + core + stripeConnect + adminHandler + donorHandler + parishHandler + parishCommemorationsHandler + parishGivingCatalogHandler + parishGivingReportsHandler + parishSacramentsHandler + parishReconciliationHandler + parishNotifications + stripeFees + stripeHandler + parishInterestHandler;
@@ -85,9 +85,10 @@ assert.ok(worker.includes('["/parish/login", "/give/login"]'), "legacy parish lo
 assert.ok(worker.includes('url.pathname === "/give/login"'), "worker should serve the Give login URL from the parish login shell");
 assert.ok(worker.includes('url.pathname.startsWith("/give/")') && worker.includes('url.pathname = "/give/form.html"'), "worker should serve parish giving pages at /give/:parish");
 assert.ok(worker.includes('url.pathname.startsWith("/giving/")'), "worker should permanently redirect legacy /giving URLs");
-for (const givingPage of ["features", "how-it-works", "pricing", "why"]) {
+for (const givingPage of ["features", "how-it-works", "pricing"]) {
   assert.ok(worker.includes(`["/${givingPage}", "/give/${givingPage}"]`), `worker should redirect /${givingPage} to /give/${givingPage}`);
 }
+assert.ok(worker.includes('["/why", "/give/#why"]'), "worker should redirect /why to the consolidated council overview anchor");
 assert.ok(backendSources.includes("checkoutFinancials("), "worker should centralize donation fee calculations");
 assert.ok(!backendSources.includes("subscription_data[application_fee_percent]"), "worker should not apply an AGAPAY application fee to recurring donor gifts");
 assert.ok(!backendSources.includes("payment_intent_data[application_fee_amount]"), "worker should not apply an AGAPAY application fee to one-time donor gifts");
@@ -690,11 +691,12 @@ assert.ok(visionPage.includes("repeat(6,minmax(0,1fr))") && visionPage.includes(
 const sitemap = await readFile("public/sitemap.xml", "utf8");
 assert.ok(sitemap.includes("https://agapay.app/give"), "sitemap should include the canonical Give overview URL");
 assert.ok(sitemap.includes("https://agapay.app/design"), "sitemap should include the canonical AGAPAY Design URL");
-for (const givingPage of ["features", "how-it-works", "pricing", "why"]) {
+for (const givingPage of ["features", "how-it-works", "pricing"]) {
   const html = await readFile(`public/give/${givingPage}.html`, "utf8");
   assert.ok(html.includes(`https://agapay.app/give/${givingPage}`), `Give ${givingPage} page should use its nested canonical URL`);
   assert.ok(sitemap.includes(`https://agapay.app/give/${givingPage}`), `sitemap should include /give/${givingPage}`);
 }
+assert.ok(!sitemap.includes("https://agapay.app/give/why"), "sitemap should retire the consolidated Give Why page");
 assert.ok(sitemap.includes("https://agapay.app/give/find-parish"), "sitemap should include the canonical parish finder URL");
 assert.ok(!sitemap.includes("<loc>https://agapay.app/features</loc>"), "sitemap should not list the legacy root features URL");
 assert.ok(!sitemap.includes("<loc>https://agapay.app/how-it-works</loc>"), "sitemap should not list the legacy root how-it-works URL");

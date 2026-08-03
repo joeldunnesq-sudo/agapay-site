@@ -301,7 +301,7 @@ async function resolveStaticPath(urlPath) {
     pathname = "/give/find-parish.html";
   } else if (/^\/give\/[^/]+\/[^/]+-campaign\/?$/.test(pathname)) {
     pathname = "/give/parish-giving/index.html";
-  } else if (["/give/features", "/give/how-it-works", "/give/pricing", "/give/why", "/give/parish-giving", "/give/recurring-donations", "/give/fundraising", "/give/event-payments"].includes(pathname)) {
+  } else if (["/give/features", "/give/how-it-works", "/give/pricing", "/give/parish-giving", "/give/recurring-donations", "/give/fundraising", "/give/event-payments"].includes(pathname)) {
     pathname = `${pathname}.html`;
   } else if (/^\/give\/[^/]+\/?$/.test(pathname)) {
     pathname = "/give/form.html";
@@ -324,6 +324,13 @@ export const server = http.createServer(async (req, res) => {
       }
       if (["/give/find-church", "/give/find-church.html", "/give/find_parish", "/give/parish-list"].includes(requestUrl.pathname)) {
         requestUrl.pathname = "/give/find-parish";
+        res.writeHead(301, { Location: requestUrl.toString() });
+        res.end();
+        return;
+      }
+      if (["/give/why", "/give/why.html", "/give/why/"].includes(requestUrl.pathname.toLowerCase())) {
+        requestUrl.pathname = "/give/";
+        requestUrl.hash = "why";
         res.writeHead(301, { Location: requestUrl.toString() });
         res.end();
         return;
@@ -357,14 +364,16 @@ export const server = http.createServer(async (req, res) => {
       ["/pricing", "/give/pricing"],
       ["/pricing.html", "/give/pricing"],
       ["/pricing/", "/give/pricing"],
-      ["/why", "/give/why"],
-      ["/why.html", "/give/why"],
-      ["/why/", "/give/why"]
+      ["/why", "/give/#why"],
+      ["/why.html", "/give/#why"],
+      ["/why/", "/give/#why"]
     ]);
     if (req.method === "GET" || req.method === "HEAD") {
       const canonicalGivingPath = legacyGivingRedirects.get(requestUrl.pathname.toLowerCase());
       if (canonicalGivingPath) {
-        requestUrl.pathname = canonicalGivingPath;
+        const [canonicalPathname, canonicalHash = ""] = canonicalGivingPath.split("#");
+        requestUrl.pathname = canonicalPathname;
+        requestUrl.hash = canonicalHash;
         res.writeHead(301, { Location: requestUrl.toString() });
         res.end();
         return;

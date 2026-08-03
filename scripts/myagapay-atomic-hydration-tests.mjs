@@ -44,7 +44,9 @@ for (const file of protectedPages) {
     "public/myagapay/bookstore.html",
     "public/myagapay/giving/give.html"
   ].includes(file)
-    ? "20260803storefront1"
+    ? file === "public/myagapay/bookstore.html"
+      ? "20260803storefront2"
+      : "20260803storefront1"
     : file === "public/myagapay/groups.html"
     ? "20260802groupscss1"
     : file === "public/myagapay/teaching.html"
