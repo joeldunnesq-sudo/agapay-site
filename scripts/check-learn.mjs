@@ -157,6 +157,13 @@ assert(!learnShell.includes('apiGet("/api/learn/reports")'), "The Learn shell sh
 assert(learnShell.includes("data-community-category") && learnShell.includes("data-community-resource-type") && learnShell.includes("data-community-media-type"), "Community Resources should filter by subject, resource type, and media type.");
 assert(learnShell.includes("data-community-suggest-form") && learnShell.includes("data-community-flag"), "Community Resources should support moderated submissions and member flags.");
 assert(learnShell.includes("Free plan: up to 2 children"), "Learn setup wizard should clearly disclose the free child limit.");
+assert(learnShell.includes('data-wizard-add-children="3"') && learnShell.includes('data-setup-add-children="3"'), "Family-plan setup should support adding several children at once in Quick and Advanced Setup.");
+assert(learnShell.includes('collapsibleSetupPanel("enrichment"') && learnShell.includes('collapsibleSetupPanel("subjects"'), "Advanced Setup should keep the two largest curriculum sections collapsible.");
+assert(!learnShell.includes('panel("Co-op"'), "Advanced Setup should not crowd the launch-critical flow with the future Co-op panel.");
+assert(learnShell.includes("data-week-auto-fill") && learnShell.includes("Fill from Setup") && learnShell.includes("data-week-reset-form"), "Week planning should support filling and resetting one family/Form group from Setup.");
+assert(learnShell.includes('class="learn-form-plan-summary"'), "Generated Form-plan review should be available without permanently expanding a duplicate summary.");
+assert(learnShell.includes("const starterChurchRhythms = isOdysseyLearnContext() ? []"), "Odyssey starter setup should not seed Orthodox Church rhythms into the secular marketplace edition.");
+assert(learnShell.includes("Your TEFA homeschool planner") && !learnShell.includes("Your TEFA-funded Orthodox homeschool planner"), "Odyssey/TEFA presentation copy should stay secular while classic AGAPAY Learn remains Orthodox.");
 assert(learnShell.includes('learnSectionHref("onboarding", "simple=1")') && learnShell.includes(">Quick Setup"), "Learn utility bar should open the simple setup wizard, resolved per-context (My AGAPAY vs. Odyssey/TEFA) via learnSectionHref.");
 assert(learnShell.includes('class="learn-setup-savebar"'), "Advanced Setup should use a dedicated reachable save bar.");
 assert(learnShell.includes("data-day-choice") && learnShell.includes('name="scheduledDays"'), "Enrichment and Form subjects should support exact weekday scheduling.");

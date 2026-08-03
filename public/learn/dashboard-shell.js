@@ -1500,10 +1500,14 @@ function renderWeeklyAssignmentBoard(vm) {
           </span>
           <span class="learn-family-view-toggle-state" data-family-view-state>in its own lane</span>
         </label>
+        <div class="learn-week-bulk-actions">
+          <button type="button" data-week-auto-fill>Fill from Setup</button>
+          <button type="button" data-week-reset-form>Reset group</button>
+        </div>
       </div>` : ""}
       <div class="learn-week-assignment-layout">
         <div class="learn-week-assignment-pool">
-          <strong data-pool-heading>Available subjects</strong>
+          <div class="learn-week-pool-heading"><strong data-pool-heading>Available subjects</strong><span data-pool-count></span></div>
           <div class="learn-week-assignment-dropzone" data-week-assignment-zone="pool">${items.length ? items.map(card).join("") : emptyState("No setup subjects are active this week.")}</div>
           <div class="learn-week-family-lane" data-family-lane hidden>
             <strong>Family — Everyone</strong>
@@ -1603,14 +1607,11 @@ function renderTermAtAGlance(vm) {
 
 function renderPlannerWeek(vm) {
   return `
-    ${renderTermAtAGlance(vm)}
     ${renderWeeklyAssignmentBoard(vm)}
-    <div style="display:flex;gap:14px;flex-wrap:wrap;">
-      <div style="flex:1 1 620px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;">
-        <div class="learn-eyebrow">FORM PLANS</div>
-        ${vm.week.formRows.length ? vm.week.formRows.map((form) => `<div style="display:grid;grid-template-columns:42px 150px 1fr;gap:12px;align-items:start;border-top:1px solid var(--line);padding:12px 0;"><span style="width:38px;height:38px;border-radius:50%;background:${form.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(form.initials.slice(0, 2).join(""))}</span><span><strong style="display:block;">${html(form.formLabel)}</strong><small class="learn-muted">${html(form.childNames.join(", "))}</small></span><span style="color:var(--muted);display:grid;gap:5px;">${form.items.slice(0, 4).map((item) => `<span>${html(item.title)}${item.sub ? ` · ${html(item.sub)}` : ""}</span>`).join("")}${form.items.length > 4 ? `<small style="color:var(--gold);">+ ${form.items.length - 4} more lessons</small>` : ""}</span></div>`).join("") : emptyState("Add children and subjects in Setup to generate Form plans.")}
-      </div>
-    </div>
+    <details class="learn-form-plan-summary">
+      <summary><span><small>FORM PLANS</small><strong>Review generated group plans</strong></span><em>${vm.week.formRows.length} ${vm.week.formRows.length === 1 ? "group" : "groups"}</em></summary>
+      <div>${vm.week.formRows.length ? vm.week.formRows.map((form) => `<article><span style="background:${form.color};">${html(form.initials.slice(0, 2).join(""))}</span><div><strong>${html(form.formLabel)}</strong><small>${html(form.childNames.join(", "))}</small></div><p>${form.items.slice(0, 4).map((item) => `<span>${html(item.title)}${item.sub ? ` · ${html(item.sub)}` : ""}</span>`).join("")}${form.items.length > 4 ? `<small>+ ${form.items.length - 4} more lessons</small>` : ""}</p></article>`).join("") : emptyState("Add children and subjects in Setup to generate group plans.")}</div>
+    </details>
   `;
 }
 
@@ -5117,8 +5118,8 @@ function renderSetup(vm) {
   const rhythmSetupSummary = productExperience.tefaActive ? "Optional household practices, readings, memory work, and calendar notes" : "Daily prayers, readings, saints, feasts, and fasting rhythm";
   const adaptivePanels = {
     church: `<span id="learnSetupChurchRhythm" class="learn-setup-anchor"></span>${collapsibleSetupPanel("churchRhythm", rhythmSetupTitle, churchRhythmSetupPanel(vm), { icon: "☩", summary: rhythmSetupSummary, defaultCollapsed: collapseDefault })}`,
-    enrichment: `<span id="learnSetupFormation" class="learn-setup-anchor"></span>${collapsibleSetupPanel("enrichment", "Enrichment", formationSetupPanel(vm), { icon: "✥", summary: "Shared books, recitation, music, art, and beauty subjects", defaultCollapsed: collapseDefault })}`,
-    subjects: `<span id="learnSetupSubjects" class="learn-setup-anchor"></span>${collapsibleSetupPanel("subjects", experience.subjectTitle, formSubjectsSetupPanel(vm, currentTermId), { icon: "✎", summary: "Curriculum and recurring work by planning group", defaultCollapsed: collapseDefault })}`
+    enrichment: `<span id="learnSetupFormation" class="learn-setup-anchor"></span>${collapsibleSetupPanel("enrichment", "Enrichment", formationSetupPanel(vm), { icon: "✥", summary: "Shared books, recitation, music, art, and beauty subjects", defaultCollapsed: true })}`,
+    subjects: `<span id="learnSetupSubjects" class="learn-setup-anchor"></span>${collapsibleSetupPanel("subjects", experience.subjectTitle, formSubjectsSetupPanel(vm, currentTermId), { icon: "✎", summary: "Curriculum and recurring work by planning group", defaultCollapsed: true })}`
   };
   const orthodoxHouseholdFields = productExperience.tefaActive ? "" : `${setupInput("Parish", "household.parishName", vm.household.parish)}${setupInput("Parish patronal feast", "household.parishPatronalFeastName", vm.household.parishPatronalFeastName || "")}${setupInput("Patronal feast date", "household.parishPatronalFeastDate", vm.household.parishPatronalFeastDate || "", { type: "date" })}${setupInput("Patron Saint of your homeschool", "household.patronSaintName", vm.household.patronSaintName || "", { placeholder: "e.g. St. Xenia of St. Petersburg" })}${setupInput("Patron Saint feast date", "household.patronSaintFeastDate", vm.household.patronSaintFeastDate || "", { type: "date" })}`;
   const orthodoxHouseholdNote = productExperience.tefaActive ? "" : `<p style="margin:10px 0 0;color:var(--muted);font-size:13px;line-height:1.4;">The patronal feast repeats annually on the Family Planner calendar so it can be honored alongside name days, fasts, and major feasts. If your homeschool has its own patron saint, that name day appears there too, and both names print on report cards and transcripts.</p>`;
@@ -6695,6 +6696,8 @@ function wireWeeklyAssignmentBoard(vm) {
   const familyLaneZone = board.querySelector('[data-week-assignment-zone="pool-family"]');
   const familyToggle = board.querySelector("[data-family-view-toggle]");
   const familyToggleState = board.querySelector("[data-family-view-state]");
+  const autoFillButton = board.querySelector("[data-week-auto-fill]");
+  const resetFormButton = board.querySelector("[data-week-reset-form]");
   const cardFormLabels = (card) => (card.dataset.weekFormLabels || "").split("|").map((label) => label.trim()).filter(Boolean);
   const isFamilyCard = (card) => {
     const labels = cardFormLabels(card);
@@ -6790,6 +6793,12 @@ function wireWeeklyAssignmentBoard(vm) {
       }
     });
     applyFamilyViewMode();
+    const groupLabel = activeFormLabel === "__family" ? "Family" : activeFormLabel || "week";
+    if (autoFillButton) autoFillButton.textContent = `Fill ${groupLabel} from Setup`;
+    if (resetFormButton) resetFormButton.textContent = `Reset ${groupLabel}`;
+    const visiblePoolCards = [...board.querySelectorAll('[data-week-assignment-zone="pool"] > [data-week-assignment-card]')].filter((card) => !card.hidden && card.style.display !== "none");
+    const poolCount = board.querySelector("[data-pool-count]");
+    if (poolCount) poolCount.textContent = `${visiblePoolCards.length} unplaced`;
   };
   const readState = () => {
     try {
@@ -6806,7 +6815,9 @@ function wireWeeklyAssignmentBoard(vm) {
       const itemId = card.dataset.itemId;
       const sourceId = card.dataset.sourceItemId || itemId;
       const note = card.querySelector("[data-week-assignment-note]")?.value || "";
-      if (card.dataset.autoPlaced) {
+      if (card.dataset.autoOriginal) {
+        state[itemId] = { zone: "auto", autoPlaced: true };
+      } else if (card.dataset.autoPlaced) {
         // Auto-placed clones: key by sourceId__zone so each day slot is independent
         state[`${sourceId}__auto__${zoneKey}`] = { zone: zoneKey, note, autoPlaced: true, sourceId };
         // Also mark the source item as auto-distributed so restore knows
@@ -6833,11 +6844,42 @@ function wireWeeklyAssignmentBoard(vm) {
     });
     card.querySelector("[data-week-assignment-note]")?.addEventListener("input", writeState);
   };
+  // Day zones in DOM order (Sun=index 0, Mon=1 … Sat=6 matching statuses array).
+  const dayZones = [...board.querySelectorAll("[data-week-assignment-zone]:not([data-week-assignment-zone='pool']):not([data-week-assignment-zone='pool-family'])")];
+  const autoPlaceCard = (card, state = readState()) => {
+    const id = card.dataset.sourceItemId || card.dataset.itemId;
+    const statuses = (card.dataset.statuses || "").split(",");
+    const activeDayIndexes = statuses.map((status, index) => status === "planned" ? index : -1).filter((index) => index >= 0);
+    if (!id || !activeDayIndexes.length) return 0;
+    card.style.display = "none";
+    card.dataset.autoOriginal = "true";
+    let placed = 0;
+    activeDayIndexes.forEach((dayIndex) => {
+      const zone = dayZones[dayIndex];
+      if (!zone || zone.querySelector(`[data-source-item-id="${CSS.escape(id)}"]`)) return;
+      const autoKey = `${id}__auto__${zone.dataset.weekAssignmentZone}`;
+      const savedClone = state[autoKey];
+      const clone = card.cloneNode(true);
+      clone.dataset.itemId = autoKey;
+      clone.dataset.sourceItemId = id;
+      clone.dataset.autoPlaced = "true";
+      delete clone.dataset.autoOriginal;
+      clone.style.display = "";
+      const cloneNote = clone.querySelector("[data-week-assignment-note]");
+      if (cloneNote) {
+        cloneNote.value = savedClone?.note || "";
+        cloneNote.placeholder = "Specify chapters, pages, lessons, or notes for this day";
+      }
+      const targetZoneKey = savedClone?.zone && savedClone.zone !== zone.dataset.weekAssignmentZone ? savedClone.zone : zone.dataset.weekAssignmentZone;
+      const targetZone = board.querySelector(`[data-week-assignment-zone="${CSS.escape(targetZoneKey)}"]`) || zone;
+      targetZone.appendChild(clone);
+      wireCard(clone);
+      placed += 1;
+    });
+    return placed;
+  };
   const restore = () => {
     const state = readState();
-    // Day zones in DOM order (Sun=index 0, Mon=1 … Sat=6 matching statuses array)
-    // Exclude both pool zones — pool (form-filtered) and pool-family (the family lane)
-    const dayZones = [...board.querySelectorAll("[data-week-assignment-zone]:not([data-week-assignment-zone='pool']):not([data-week-assignment-zone='pool-family'])")];
     board.querySelectorAll("[data-week-assignment-card]").forEach((card) => {
       const id = card.dataset.itemId;
       const saved = state[id];
@@ -6849,41 +6891,9 @@ function wireWeeklyAssignmentBoard(vm) {
         if (note && saved.note) note.value = saved.note;
         return;
       }
-      // Determine auto-placement eligibility from statuses
-      // Disable auto-placement when form tabs exist — each form manages its own pool
       const statuses = (card.dataset.statuses || "").split(",");
-      const activeDayIndexes = statuses
-        .map((s, i) => s === "planned" ? i : -1)
-        .filter((i) => i >= 0);
-      const isAutoEligible = activeDayIndexes.length >= 2 && availableForms.length === 0;
-      if (!isAutoEligible) return; // form tabs present, or single-day — leave in pool for drag
-      // Auto-place: hide the pool original, clone into each active day zone
-      card.style.display = "none";
-      card.dataset.autoOriginal = "true";
-      activeDayIndexes.forEach((dayIndex) => {
-        // dayZones[0] = Sunday, [1] = Mon … match statuses array positions
-        const zone = dayZones[dayIndex];
-        if (!zone) return;
-        const autoKey = `${id}__auto__${zone.dataset.weekAssignmentZone}`;
-        const savedClone = state[autoKey];
-        const clone = card.cloneNode(true);
-        clone.dataset.itemId = autoKey;
-        clone.dataset.sourceItemId = id;
-        clone.dataset.autoPlaced = "true";
-        clone.style.display = ""; // visible
-        const cloneNote = clone.querySelector("[data-week-assignment-note]");
-        if (cloneNote) {
-          cloneNote.value = savedClone?.note || "";
-          cloneNote.placeholder = "Specify chapters, pages, lessons, or notes for this day";
-        }
-        // If a saved clone was moved to a different zone, honour that
-        const targetZoneKey = savedClone?.zone && savedClone.zone !== zone.dataset.weekAssignmentZone
-          ? savedClone.zone
-          : zone.dataset.weekAssignmentZone;
-        const targetZone = board.querySelector(`[data-week-assignment-zone="${CSS.escape(targetZoneKey)}"]`) || zone;
-        targetZone.appendChild(clone);
-        wireCard(clone);
-      });
+      const isAutoEligible = statuses.includes("planned") && availableForms.length === 0;
+      if (isAutoEligible) autoPlaceCard(card, state);
     });
   };
   restore();
@@ -6984,6 +6994,36 @@ function wireWeeklyAssignmentBoard(vm) {
   });
   // ── end modal wiring ──────────────────────────────────────
 
+  autoFillButton?.addEventListener("click", () => {
+    const state = readState();
+    const poolCards = [...board.querySelectorAll('[data-week-assignment-zone="pool"] > [data-week-assignment-card], [data-week-assignment-zone="pool-family"] > [data-week-assignment-card]')]
+      .filter((card) => !card.dataset.autoPlaced && cardVisibleForForm(card, activeFormLabel));
+    const placements = poolCards.reduce((total, card) => total + autoPlaceCard(card, state), 0);
+    writeState();
+    applyFormFilter(activeFormLabel);
+    const original = autoFillButton.textContent;
+    autoFillButton.textContent = placements ? `Placed ${placements} lessons` : "Nothing new to place";
+    window.setTimeout(() => { autoFillButton.textContent = original; }, 1600);
+  });
+
+  resetFormButton?.addEventListener("click", () => {
+    const mainPool = board.querySelector('[data-week-assignment-zone="pool"]');
+    if (!mainPool) return;
+    const matchesActiveGroup = (card) => cardVisibleForForm(card, activeFormLabel);
+    [...board.querySelectorAll("[data-week-assignment-card][data-auto-original]")].filter(matchesActiveGroup).forEach((source) => {
+      const sourceId = source.dataset.itemId || "";
+      board.querySelectorAll(`[data-week-assignment-card][data-source-item-id="${CSS.escape(sourceId)}"]`).forEach((clone) => clone.remove());
+      delete source.dataset.autoOriginal;
+      source.style.display = "";
+      mainPool.appendChild(source);
+    });
+    dayZones.forEach((zone) => {
+      [...zone.querySelectorAll(":scope > [data-week-assignment-card]:not([data-auto-placed])")].filter(matchesActiveGroup).forEach((card) => mainPool.appendChild(card));
+    });
+    writeState();
+    applyFormFilter(activeFormLabel);
+  });
+
   formButtons.forEach((button) => {
     button.addEventListener("click", () => {
       activeFormLabel = button.dataset.weekFormFilter || "";
@@ -7067,6 +7107,7 @@ function wireWeeklyAssignmentBoard(vm) {
       if (card) {
         zone.appendChild(card);
         writeState();
+        applyFormFilter(activeFormLabel);
       }
     });
   });
