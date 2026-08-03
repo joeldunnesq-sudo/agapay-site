@@ -86,7 +86,7 @@
   function products() {
     const parishLife = parishLifeExperience();
     const items = [
-      { id: "giving", href: "/myagapay/dashboard", label: "Give", mobileLabel: "Home", short: "Giving dashboard", icon: icons.home },
+      { id: "giving", href: "/myagapay/dashboard", label: "Give", mobileLabel: "Give", short: "Giving dashboard", icon: icons.home },
       { id: "parish-life", href: "/myagapay/parish-life", label: parishLife.label, short: parishLife.short, icon: icons.parishLife, deferUntilCapabilitiesLoaded: true },
       { id: "commemorations", href: "/myagapay/sacraments", label: "Sacraments & Services", short: "Requests and prayer", icon: icons.sacraments, parishFeature: "sacramentsEnabled" },
       { id: "history", href: "/myagapay/giving/history", label: "History", short: "Giving history", icon: icons.history, mobileFallbackFor: "sacramentsEnabled", desktopHidden: true },
