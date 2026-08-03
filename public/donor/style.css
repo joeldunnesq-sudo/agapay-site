@@ -3188,12 +3188,12 @@ body.donor-home {
 .koinonia-player-actions-menu b { display:grid; gap:2px; font-size:11px; font-weight:700; }
 .koinonia-player-actions-menu small { color:#9ea9af; font-size:8px; font-weight:500; line-height:1.35; }
 .koinonia-player-actions-menu button:disabled { cursor:wait; opacity:.58; }
-.koinonia-full-art { position:relative; flex:0 0 auto; width:min(72vw,280px); height:min(72vw,280px); margin:8px auto 18px; overflow:hidden; border:2px solid rgba(200,162,74,.3); border-radius:20px; background:#18374a; box-shadow:0 20px 48px rgba(0,0,0,.55),0 0 40px rgba(200,162,74,.06); }
+.koinonia-full-art { position:relative; flex:0 0 auto; width:min(72vw,280px); height:min(72vw,280px); margin:8px auto 0; overflow:hidden; border:2px solid rgba(200,162,74,.3); border-radius:20px; background:#18374a; box-shadow:0 20px 48px rgba(0,0,0,.55),0 0 40px rgba(200,162,74,.06); }
 .koinonia-full-art img { width:100%; height:100%; object-fit:cover; }
-.koinonia-full-copy { padding:0 32px; text-align:center; }
-.koinonia-full-copy h2 { margin:0 0 8px; color:#f6f1e8; font-family:"Cormorant Garamond","Playfair Display",Georgia,serif; font-size:23px; font-weight:500; line-height:1.25; }
-.koinonia-full-copy p { margin:0; color:#c8a24a; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
-.koinonia-full-timeline { width:100%; margin-top:auto; padding:24px 32px 14px; }
+.koinonia-full-copy { margin:auto 0; padding:clamp(16px,2.5vh,26px) 32px; text-align:center; }
+.koinonia-full-copy h2 { margin:0 0 10px; color:#f6f1e8; font-family:"Cormorant Garamond","Playfair Display",Georgia,serif; font-size:clamp(27px,6vw,34px); font-weight:500; line-height:1.18; }
+.koinonia-full-copy p { margin:0; color:#c8a24a; font-size:13px; font-weight:700; letter-spacing:.08em; line-height:1.35; text-transform:uppercase; }
+.koinonia-full-timeline { width:100%; margin-top:0; padding:18px 32px 14px; }
 .koinonia-full-timeline input { width:100%; height:24px; margin:0; accent-color:#c8a24a; cursor:pointer; }
 .koinonia-full-timeline > span { display:flex; justify-content:space-between; padding:0 2px; color:#a69f91; font:10px monospace; }
 .koinonia-full-controls { display:grid; grid-template-columns:46px 52px 68px 52px 46px; align-items:center; justify-content:space-between; padding:0 22px 20px; }
@@ -3243,13 +3243,16 @@ body.donor-home {
   .koinonia-podcast-mini-player .koinonia-podcast-player-controls > button { width:38px; height:38px; }
   .koinonia-podcast-mini-player .koinonia-podcast-player-controls > button.is-primary { width:44px; height:44px; }
   .koinonia-podcast-full-player > header { padding-top:2px; }
-  .koinonia-full-art { width:min(68vw,260px); height:min(68vw,260px); margin-bottom:12px; }
-  .koinonia-full-copy h2 { display:-webkit-box; overflow:hidden; font-size:21px; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+  .koinonia-full-art { width:min(68vw,260px); height:min(68vw,260px); }
+  .koinonia-full-copy { padding:clamp(15px,2.2vh,22px) 26px; }
+  .koinonia-full-copy h2 { display:-webkit-box; overflow:hidden; font-size:clamp(25px,7vw,31px); -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+  .koinonia-full-copy p { font-size:12px; }
 }
 @media (max-height:700px) {
   .koinonia-full-art { width:min(48vw,25vh,175px); height:min(48vw,25vh,175px); }
-  .koinonia-full-copy h2 { font-size:19px; }
-  .koinonia-full-timeline { padding-top:12px; }
+  .koinonia-full-copy { padding-top:12px; padding-bottom:12px; }
+  .koinonia-full-copy h2 { font-size:23px; }
+  .koinonia-full-timeline { padding-top:10px; }
   .koinonia-full-controls { padding-bottom:10px; }
 }
 
