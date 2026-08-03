@@ -585,6 +585,12 @@ export async function handleDonorLogin(request, env) {
     });
     return unauthorized();
   }
+  if (donor.accountDeletionRequestedAt) {
+    return json({
+      error: "This account is scheduled for deletion. Contact support@agapay.app if you need help.",
+      code: "account_deletion_pending"
+    }, { status: 423 });
+  }
   if (!donor.emailVerifiedAt) {
     return json({ error: "Please verify your email before logging in.", code: "email_unverified" }, { status: 403 });
   }
@@ -994,6 +1000,71 @@ export async function handleDonorSupportTicket(request, env) {
     path: String(body.path || new URL(request.url).pathname).slice(0, 240)
   });
   return json(result, { status: result.ok ? 201 : result.status || 500 });
+}
+
+export async function handleDonorAccountDeletion(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const donor = await requireDonor(request, env);
+  if (!donor) return unauthorized();
+  const limited = await rateLimitByKey(request, env, "donor-account-deletion", donor.email, { limit: 3, windowSeconds: 86400 });
+  if (limited) return limited;
+
+  const body = await request.json().catch(() => null);
+  if (!body || body.confirmation !== "DELETE") {
+    return json({ error: "Type DELETE to confirm the account deletion request." }, { status: 422 });
+  }
+  if (!(await verifyDonorPassword(donor, String(body.currentPassword || "")))) {
+    return json({ error: "Your current password was not accepted." }, { status: 403 });
+  }
+
+  const requestedAt = new Date().toISOString();
+  const requestId = `account_delete_${crypto.randomUUID()}`;
+  if (d1(env)) {
+    await d1Run(
+      env,
+      `INSERT INTO account_deletion_requests
+       (id, donor_email, status, source, requested_at, updated_at)
+       VALUES (?1, ?2, 'pending', ?3, ?4, ?4)`,
+      requestId,
+      donor.email,
+      String(body.source || "myagapay-account-settings").slice(0, 80),
+      requestedAt
+    );
+  } else if (env.AGAPAY_REGISTRATIONS) {
+    await env.AGAPAY_REGISTRATIONS.put(`account-deletion-request:${requestId}`, JSON.stringify({
+      id: requestId,
+      donorEmail: donor.email,
+      status: "pending",
+      source: String(body.source || "myagapay-account-settings").slice(0, 80),
+      requestedAt,
+      updatedAt: requestedAt
+    }));
+  }
+
+  await saveDonor(env, {
+    ...donor,
+    accountDeletionRequestId: requestId,
+    accountDeletionRequestedAt: requestedAt,
+    sessionSalt: "",
+    sessionTokenHash: "",
+    sessionExpiresAt: "",
+    updatedAt: requestedAt
+  });
+  await logEvent(env, {
+    eventType: "donor.account_deletion.requested",
+    severity: "info",
+    route: "/api/donor/account-deletion",
+    method: "POST",
+    retryable: false,
+    metadata: { requestId, emailHash: await sha256Hex(donor.email) }
+  });
+
+  return json({
+    ok: true,
+    requestId,
+    requestedAt,
+    message: "Your account deletion request has been received. AGAPAY will complete it within 30 days and retain only records required by law."
+  }, { status: 202 });
 }
 
 export async function handleDonorStewardshipFeatureRequest(request, env) {

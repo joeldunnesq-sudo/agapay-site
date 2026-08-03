@@ -187,6 +187,7 @@ import {
   handleDonorVerifyPage,
   handleDonorDashboard,
   handleDonorSupportTicket,
+  handleDonorAccountDeletion,
   handleDonorParishCalendar,
   handleDonorGivingPlusFeatureRequest,
   handleDonorMinistryServiceInterest,
@@ -2735,6 +2736,47 @@ function scheduledAlertKey(name) {
   return `${SCHEDULED_ALERT_KEY_PREFIX}${encodeURIComponent(String(name || "unknown"))}`;
 }
 
+function storeAssociationResponse(request, payload) {
+  return new Response(request.method === "HEAD" ? null : JSON.stringify(payload), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "public, max-age=3600",
+      "X-Content-Type-Options": "nosniff"
+    }
+  });
+}
+
+function androidAssetLinks(request, env) {
+  const fingerprints = String(env.ANDROID_APP_SIGNING_SHA256 || "")
+    .split(",")
+    .map((value) => value.trim().toUpperCase())
+    .filter((value) => /^(?:[0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(value));
+  if (!fingerprints.length) return storeAssociationResponse(request, []);
+  return storeAssociationResponse(request, [{
+    relation: ["delegate_permission/common.handle_all_urls"],
+    target: {
+      namespace: "android_app",
+      package_name: env.ANDROID_APP_PACKAGE_ID || "app.agapay.myagapay",
+      sha256_cert_fingerprints: fingerprints
+    }
+  }]);
+}
+
+function appleAppSiteAssociation(request, env) {
+  const teamId = String(env.APPLE_DEVELOPER_TEAM_ID || "").trim().toUpperCase();
+  const bundleId = String(env.APPLE_APP_BUNDLE_ID || "app.agapay.myagapay").trim();
+  const details = /^[A-Z0-9]{10}$/.test(teamId) ? [{
+    appIDs: [`${teamId}.${bundleId}`],
+    components: [
+      { "/": "/myagapay/*", comment: "Open My AGAPAY routes in the app." },
+      { "/": "/account-deletion", comment: "Open account privacy controls in the app." },
+      { "/": "/learn/pricing*", exclude: true, comment: "Keep Learn purchases on the public website." }
+    ]
+  }] : [];
+  return storeAssociationResponse(request, { applinks: { details } });
+}
+
 async function sendScheduledJobFailureAlert(env, name, error, failedAt) {
   const recipient = String(env?.AGAPAY_OPS_ALERT_EMAIL || "").trim();
   if (!recipient) return { status: "disabled" };
@@ -2824,6 +2866,15 @@ export default {
   async fetch(request, env, ctx) {
     if (env && !env.DB && env.AGAPAY_DB) env.DB = env.AGAPAY_DB;
     const url = new URL(request.url);
+
+    if (["GET", "HEAD"].includes(request.method) && url.pathname === "/.well-known/assetlinks.json") {
+      return androidAssetLinks(request, env);
+    }
+    if (["GET", "HEAD"].includes(request.method) && (
+      url.pathname === "/.well-known/apple-app-site-association" || url.pathname === "/apple-app-site-association"
+    )) {
+      return appleAppSiteAssociation(request, env);
+    }
 
     const parishLifeAvailable = parishLifeAvailableFor(env);
     const parishLifeApiRoute =
@@ -3231,6 +3282,9 @@ export default {
     }
     if (url.pathname === "/api/donor/support-tickets") {
       return handleDonorSupportTicket(request, env);
+    }
+    if (url.pathname === "/api/donor/account-deletion") {
+      return handleDonorAccountDeletion(request, env);
     }
     if (url.pathname === "/api/donor/koinonia-access") {
       return handleKoinoniaAccess(request, env);

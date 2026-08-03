@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delete Your My AGAPAY Account | AGAPAY</title>
+  <meta name="description" content="Request deletion of your My AGAPAY account and associated personal data." />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root{--navy:#061522;--gold:#c7a24a;--cream:#f7f2e8;--ink:#182736;--muted:#625f58}
+    *{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#061522,#102f43 48%,#173d4c);color:var(--ink);font-family:"DM Sans",sans-serif;min-height:100vh;padding:24px}
+    main{width:min(720px,100%);margin:5vh auto;background:#fffdf7;border:1px solid rgba(199,162,74,.5);border-radius:24px;box-shadow:0 24px 70px rgba(0,0,0,.28);overflow:hidden}
+    header{padding:30px clamp(24px,6vw,54px);background:var(--navy);color:#fff}header img{width:58px;height:58px;object-fit:contain}h1{font:600 clamp(34px,7vw,50px)/1 "Cormorant Garamond",serif;margin:16px 0 8px}header p{margin:0;color:#dce4e8}
+    section{padding:clamp(24px,6vw,54px)}h2{font:600 27px/1.1 "Cormorant Garamond",serif;margin:0 0 12px}p,li{line-height:1.65}.notice{display:none;padding:14px 16px;border-radius:12px;background:#e8f5ec;color:#205d37;margin-bottom:20px}.notice.show{display:block}
+    .actions{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}.button{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:11px 18px;border-radius:10px;text-decoration:none;font-weight:700}.primary{background:var(--navy);color:#fff}.secondary{border:1px solid rgba(6,21,34,.22);color:var(--navy);background:#fff}
+    small{display:block;color:var(--muted);line-height:1.55}footer{padding:20px clamp(24px,6vw,54px);background:var(--cream);font-size:13px;color:var(--muted)}footer a{color:var(--navy)}
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <img src="/mark.png" alt="AGAPAY" />
+      <h1>Delete your My AGAPAY account</h1>
+      <p>A direct privacy control for My AGAPAY on the web, Android, and iOS.</p>
+    </header>
+    <section>
+      <div class="notice" id="requestedNotice" role="status">Your deletion request was received. You have been signed out.</div>
+      <h2>What happens when you request deletion</h2>
+      <ul>
+        <li>Your account is locked and you are signed out immediately.</li>
+        <li>AGAPAY removes account, profile, household, directory, and Learn data that it is not legally required to retain.</li>
+        <li>Financial, tax, security, fraud-prevention, and legal records may be retained for the periods explained in the Privacy Policy.</li>
+        <li>The request is completed within 30 days.</li>
+      </ul>
+      <div class="actions">
+        <a class="button primary" id="deletionAction" href="/myagapay/login?next=%2Fmyagapay%2Faccount%23delete-account">Sign in to request deletion</a>
+        <a class="button secondary" href="/privacy">Read the Privacy Policy</a>
+      </div>
+      <small>If you cannot access your account, contact <a href="mailto:support@agapay.app?subject=My%20AGAPAY%20account%20deletion">support@agapay.app</a> for identity-recovery assistance. Email is not required when you can sign in.</small>
+    </section>
+    <footer>My AGAPAY · AGAPAY · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></footer>
+  </main>
+  <script>
+    const signedIn = Boolean(localStorage.getItem("agapayDonorEmail") && localStorage.getItem("agapayDonorToken"));
+    const action = document.getElementById("deletionAction");
+    if (signedIn) {
+      action.href = "/myagapay/account#delete-account";
+      action.textContent = "Open account deletion controls";
+    }
+    if (new URLSearchParams(location.search).get("requested") === "1") {
+      document.getElementById("requestedNotice").classList.add("show");
+      action.hidden = true;
+    }
+  </script>
+</body>
+</html>

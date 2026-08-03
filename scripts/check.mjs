@@ -165,8 +165,8 @@ assert.ok(myAgapaySignupPage.includes('I agree to the current <a href="/terms#ar
 assert.ok(registerHtml.includes('I agree to the <a href="/terms#arbitration"') && registerHtml.includes('confirm I am authorized to act for this organization.'), "parish registration should use the concise organization agreement");
 assert.ok(!registerHtml.includes('including the 30-day informal-resolution process') && !myAgapaySignupPage.includes('including the 30-day informal-resolution process'), "signup and registration should not repeat detailed dispute copy beside the checkbox");
 assert.ok(manifest.includes("/images/app/apple-touch-icon-blue.png"), "PWA manifest should use the blue AGAPAY iOS home screen icon");
-assert.ok(manifest.includes('"scope": "/myagapay"') && !manifest.includes('"scope": "/"'), "My AGAPAY PWA should cover /myagapay and /myagapay/learn without claiming /admin");
-assert.ok(manifest.includes('"orientation": "portrait-primary"'), "My AGAPAY PWA manifest should prefer the phone-first portrait orientation");
+assert.ok(manifest.includes('"scope": "/myagapay/"') && !manifest.includes('"scope": "/"'), "My AGAPAY PWA should use an exact /myagapay/ scope without claiming /admin");
+assert.ok(!manifest.includes('"orientation"'), "My AGAPAY PWA should support natural phone, tablet, and Chromebook orientation");
 assert.ok(manifest.includes('"lang": "en-US"') && manifest.includes('"dir": "ltr"'), "My AGAPAY PWA manifest should declare its language and text direction");
 for (const category of ["finance", "lifestyle", "education"]) {
   assert.ok(manifest.includes(`"${category}"`), `My AGAPAY PWA manifest should include the ${category} category`);

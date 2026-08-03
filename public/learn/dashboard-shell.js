@@ -687,6 +687,15 @@ async function openLearnCheckout() {
     button.textContent = "Opening Stripe...";
   });
   try {
+    if (window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator.standalone === true) {
+      window.open("https://agapay.app/learn/pricing?source=myagapay-app", "_blank", "noopener,noreferrer");
+      learnCheckoutOpening = false;
+      document.querySelectorAll("[data-dialog-checkout], [data-print-upgrade]").forEach((button) => {
+        button.disabled = false;
+        button.textContent = button.dataset.previousText || "Upgrade";
+      });
+      return;
+    }
     const payload = await apiPost("/api/learn/billing/checkout", { plan: "family", interval: "year" });
     if (payload.url) {
       window.location.href = payload.url;

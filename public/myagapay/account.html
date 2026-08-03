@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="/donor/style.css?v=20260802playerredesign1" />
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260803mainnav4"></script>
-  <script src="/donor/app.js?v=20260731pledge1" defer></script>
+  <script src="/donor/app.js?v=20260803storecompliance1" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -154,9 +154,30 @@
             <p class="form-help" id="learnBillingHelp">Manage the Learn subscription tied to this My AGAPAY account.</p>
             <div class="btn-row section-gap">
               <a class="btn btn-ghost" href="/myagapay/learn">Open Learn</a>
-              <a class="btn btn-gold" id="learnBillingUpgradeLink" href="/learn/pricing">View Learn pricing</a>
+              <a class="btn btn-gold" id="learnBillingUpgradeLink" href="https://agapay.app/learn/pricing?source=myagapay-app" target="_blank" rel="external noopener noreferrer">Continue on AGAPAY website</a>
               <button class="btn btn-ghost" id="learnCancelSubscriptionButton" type="button" onclick="cancelLearnSubscription(this)" hidden>Cancel Learn subscription</button>
             </div>
+          </div>
+        </section>
+        <section class="card section-gap" id="delete-account">
+          <div class="card-header">
+            <div class="card-title">Privacy &amp; account deletion</div>
+          </div>
+          <div class="card-body">
+            <p class="form-help">You can request deletion of your entire My AGAPAY account and associated personal data. Financial, tax, fraud-prevention, and legal records may be retained when required by law. Requests are completed within 30 days.</p>
+            <p class="form-help"><a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a> · <a href="/account-deletion" target="_blank" rel="noopener">Account deletion information</a></p>
+            <details>
+              <summary class="btn btn-ghost" style="display:inline-flex;cursor:pointer;">Delete My AGAPAY account</summary>
+              <form class="section-gap" onsubmit="requestDonorAccountDeletion(event)">
+                <div class="form-grid">
+                  <div class="form-group"><label class="form-label" for="deletionCurrentPassword">Current password</label><input class="form-input" id="deletionCurrentPassword" type="password" autocomplete="current-password" required /></div>
+                  <div class="form-group"><label class="form-label" for="deletionConfirmation">Type DELETE to confirm</label><input class="form-input" id="deletionConfirmation" autocomplete="off" pattern="DELETE" required /></div>
+                </div>
+                <p class="form-help">This signs you out immediately and schedules deletion of the account, profile, household, directory, and Learn data that AGAPAY is not legally required to retain.</p>
+                <button class="btn btn-ghost" id="deleteAccountButton" type="submit">Request account deletion</button>
+                <p class="form-help" id="deleteAccountStatus" role="status" aria-live="polite"></p>
+              </form>
+            </details>
           </div>
         </section>
       </div>

@@ -29,6 +29,8 @@ CAMPAIGN_ASSETS_URL = "https://pub-a8aecb95751f49ac9b078c3e3ed378b8.r2.dev"
 ANNOUNCEMENT_ASSETS_URL = "https://pub-b0974d02d1bf41288b3082849e87f676.r2.dev"
 TEACHING_ASSETS_URL = "https://pub-b6fa9c48d8be43bebaacef7f7ba448e4.r2.dev"
 AGAPAY_ENABLED_PRODUCTS = "give,learn,listen"
+ANDROID_APP_PACKAGE_ID = "app.agapay.myagapay"
+APPLE_APP_BUNDLE_ID = "app.agapay.myagapay"
 # --- Phase 3B feature flags (all default OFF/false; see src/lib/tax-codes.js,
 # src/learn/billing.js, src/lib/commerce-readiness.js for what each gates) ---
 SUBSCRIPTION_TAX_CODES_ENABLED = "false"
@@ -48,6 +50,9 @@ crons = ["0 8 * * *", "0 14 * * 6"]
 directory = "./public"
 binding = "ASSETS"
 run_worker_first = [
+  "/.well-known/assetlinks.json",
+  "/.well-known/apple-app-site-association",
+  "/apple-app-site-association",
   "/**.html",
   "/design",
   "/images/design/*",

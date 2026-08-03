@@ -2044,6 +2044,10 @@ async function openMyAgapayLearnCheckout(button) {
     button.textContent = "Opening...";
   }
   try {
+    if (window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator.standalone === true) {
+      window.open("https://agapay.app/learn/pricing?source=myagapay-app", "_blank", "noopener,noreferrer");
+      return;
+    }
     const data = await donorApi("/api/learn/billing/checkout", {
       method: "POST",
       body: JSON.stringify({ plan: "family" })
@@ -2176,6 +2180,32 @@ function renderRecurringHomeCard(summary = {}) {
       copy.textContent = "Set up a dependable monthly offering to support your parish.";
     }
   });
+}
+
+async function requestDonorAccountDeletion(event) {
+  event.preventDefault();
+  const button = document.getElementById("deleteAccountButton");
+  const status = document.getElementById("deleteAccountStatus");
+  const confirmation = document.getElementById("deletionConfirmation")?.value || "";
+  const currentPassword = document.getElementById("deletionCurrentPassword")?.value || "";
+  if (confirmation !== "DELETE") {
+    if (status) status.textContent = "Type DELETE exactly to continue.";
+    return;
+  }
+  if (!confirm("Request permanent deletion of your My AGAPAY account and associated personal data?")) return;
+  if (button) { button.disabled = true; button.textContent = "Submitting request…"; }
+  try {
+    const data = await donorApi("/api/donor/account-deletion", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, confirmation, source: "myagapay-account-settings" })
+    });
+    if (status) status.textContent = data.message || "Your account deletion request was received.";
+    clearDonorSession();
+    window.setTimeout(() => { window.location.href = "/account-deletion?requested=1"; }, 900);
+  } catch (err) {
+    if (status) status.textContent = err.message || "Unable to submit the deletion request.";
+    if (button) { button.disabled = false; button.textContent = "Request account deletion"; }
+  }
 }
 
 function primeDonorDashboardParishUi() {

@@ -1,0 +1,29 @@
+name: MyAGAPAY
+options:
+  bundleIdPrefix: app.agapay
+  deploymentTarget:
+    iOS: "16.0"
+settings:
+  base:
+    MARKETING_VERSION: 1.0.0
+    CURRENT_PROJECT_VERSION: 1
+    SWIFT_VERSION: 5.0
+targets:
+  MyAGAPAY:
+    type: application
+    platform: iOS
+    sources:
+      - path: MyAGAPAY
+    resources:
+      - path: PrivacyInfo.xcprivacy
+      - path: Assets.xcassets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.agapay.myagapay
+        PRODUCT_NAME: My AGAPAY
+        INFOPLIST_FILE: MyAGAPAY/Info.plist
+        CODE_SIGN_ENTITLEMENTS: MyAGAPAY/MyAGAPAY.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "1,2"
+    scheme:
+      testTargets: []
