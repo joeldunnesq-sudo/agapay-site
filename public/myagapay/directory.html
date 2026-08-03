@@ -231,8 +231,25 @@
     .edit-directory-profile { flex:0 0 auto; }
     .member-directory-intro h2 { margin:4px 0 6px; font-family:var(--font-display); font-size:34px; font-weight:600; line-height:1; color:var(--navy); }
     .member-directory-intro .panel-kicker { color:var(--gold-deep); }
+    .directory-filter-card { margin:18px 26px 14px; overflow:hidden; border:1px solid rgba(200,162,74,.32); border-radius:16px; background:linear-gradient(145deg,#fffdf8,#faf5e9); box-shadow:0 8px 22px rgba(6,21,34,.06); }
+    .directory-filter-card > summary { display:flex; align-items:center; gap:12px; min-height:68px; padding:12px 14px; cursor:pointer; list-style:none; user-select:none; }
+    .directory-filter-card > summary::-webkit-details-marker { display:none; }
+    .directory-filter-icon { width:42px; height:42px; flex:0 0 42px; display:grid; place-items:center; border-radius:12px; background:var(--navy); color:#e3c67f; box-shadow:0 7px 16px rgba(6,21,34,.14); }
+    .directory-filter-icon svg { width:21px; height:21px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    .directory-filter-copy { min-width:0; flex:1; }
+    .directory-filter-copy strong,.directory-filter-copy small { display:block; }
+    .directory-filter-copy strong { color:var(--navy); font:600 18px/1.15 var(--font-display); }
+    .directory-filter-copy small { margin-top:3px; overflow:hidden; color:var(--muted); font-size:11.5px; font-weight:600; text-overflow:ellipsis; white-space:nowrap; }
+    .directory-filter-chevron { width:30px; height:30px; flex:0 0 30px; display:grid; place-items:center; border-radius:50%; background:#fff; color:var(--gold-deep); box-shadow:inset 0 0 0 1px rgba(200,162,74,.28); transition:transform .18s ease; }
+    .directory-filter-chevron svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:2; }
+    .directory-filter-card[open] > summary { border-bottom:1px solid rgba(200,162,74,.22); background:rgba(255,255,255,.56); }
+    .directory-filter-card[open] .directory-filter-chevron { transform:rotate(180deg); }
+    .directory-filter-body { padding:16px; }
     .directory-tools { display:grid; grid-template-columns:minmax(220px, 1fr) auto auto; gap:10px; align-items:end; padding:20px 26px 0; }
+    .directory-filter-card .directory-tools { padding:0; }
     .directory-browse-note { margin:0; color:var(--muted); font-size:13px; align-self:center; }
+    .directory-filter-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:11px; }
+    .directory-filter-clear { flex:0 0 auto; border:0; border-radius:999px; padding:7px 11px; background:var(--navy); color:#fff; font:800 10.5px/1 var(--font-body); cursor:pointer; }
     .directory-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:16px 26px 0; }
     .directory-tab { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:9px 14px; font-weight:700; cursor:pointer; font-size:13px; }
     .directory-tab[aria-selected="true"] { background:var(--gold); color:#241a04; border-color:var(--gold); }
@@ -557,6 +574,7 @@
       .member-directory-intro .panel-kicker { display:none; }
       .member-directory-intro h2 { margin:0; font-size:25px; }
       .member-directory-intro .privacy-reminder { margin:9px 0 0; border-radius:12px; font-size:11px; }
+      .directory-filter-card { margin:0 0 12px; border-radius:16px; }
       .directory-tools { grid-template-columns:1fr; padding:16px 16px 0; }
       .directory-tools { display:grid; grid-template-columns:minmax(0,1fr) 92px; gap:8px; padding:0 0 10px; }
       .directory-tools label:first-child { grid-column:1/-1; }
@@ -604,7 +622,7 @@
       .profile-pane .profile-meta { justify-content:center; font-size:12px; }
       .profile-pane .member-grid { margin-top:16px; }
       .directory-contact-reveal { width:100%; margin-top:14px; border:1px solid rgba(21,58,91,.18); border-radius:12px; padding:12px; background:#eef4f7; color:#153a5b; font:inherit; font-weight:700; }
-      body.directory-profile-open .directory-tools,
+      body.directory-profile-open .directory-filter-card,
       body.directory-profile-open .directory-browse-note,
       body.directory-profile-open .directory-tabs,
       body.directory-profile-open .alphabet,
@@ -671,14 +689,6 @@
     .directory-invitation-card { border: 2px solid rgba(15,94,146,.3); background: linear-gradient(135deg,#fff 0%,#eef7fc 100%); margin-bottom: 20px; }
     .directory-invitation-card .invitation-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:16px; }
     .directory-invitation-card .invitation-actions button { border:0; border-radius:9px; padding:11px 16px; background:#0a4b78; color:#fff; font:700 14px/1 inherit; cursor:pointer; }
-    .own-directory-preview { margin-bottom:20px; overflow:hidden; border-color:rgba(200,162,74,.4); background:linear-gradient(145deg,#fffdf8,#f8f1e2); }
-    .own-directory-preview-head { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:14px; }
-    .own-directory-preview h2 { margin:3px 0 4px; font-size:23px; }
-    .own-directory-preview p { margin:0; color:var(--muted); font-size:13px; line-height:1.5; }
-    .own-preview-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
-    .own-preview-item { min-width:0; border:1px solid rgba(6,21,34,.08); border-radius:10px; padding:11px; background:rgba(255,255,255,.72); }
-    .own-preview-item span { display:block; margin-bottom:3px; color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
-    .own-preview-item strong { display:block; overflow-wrap:anywhere; color:var(--navy); font-size:14px; }
     .publication-explainer { margin:0 0 14px; padding:12px 14px; border:1px solid #cde1ec; border-radius:10px; background:var(--blue-tint); color:#17384a; font-size:13px; line-height:1.5; }
     .publication-explainer strong { display:block; margin-bottom:3px; }
     .directory-review-requests,.household-verification-card { display:grid; gap:10px; margin:0 0 14px; border:1px solid #dbc47f; border-radius:12px; padding:13px; background:#fff9e8; }
@@ -753,8 +763,7 @@
         width:100%;
         max-width:100%;
       }
-      .donor-directory-page .edit-wizard-steps,
-      .donor-directory-page .own-preview-grid {
+      .donor-directory-page .edit-wizard-steps {
         grid-template-columns:minmax(0,1fr);
       }
       .donor-directory-page .about-you-form,
@@ -777,12 +786,6 @@
         display:inline;
         margin:0;
       }
-      .donor-directory-page .own-directory-preview-head {
-        display:block;
-      }
-      .donor-directory-page .own-directory-preview-head .status-tag {
-        margin-top:10px;
-      }
     }
     @media (max-width: 430px) {
       .donor-directory-page .sharing-row {
@@ -801,6 +804,10 @@
       }
       .donor-directory-page .directory-tools label:first-child {
         grid-column:auto;
+      }
+      .donor-directory-page .directory-filter-footer {
+        align-items:flex-start;
+        flex-direction:column;
       }
       .donor-directory-page .directory-tabs {
         grid-template-columns:minmax(0,1fr);
@@ -1064,8 +1071,6 @@
       </footer>
       </details>
 
-      <section class="panel own-directory-preview" id="ownDirectoryPreview" hidden aria-live="polite"></section>
-
       <section class="panel member-directory" id="memberDirectory" aria-labelledby="memberDirectoryHeading" data-mobile-section="browse">
         <div class="member-directory-intro directory-title">
           <div class="panel-kicker">Our parish family</div>
@@ -1075,12 +1080,24 @@
           </div>
           <p id="memberDirectoryPrivacy" class="privacy-reminder">This directory is private to authorized members of your parish. Please use contact information respectfully and do not copy or distribute it outside the parish.</p>
         </div>
-        <div class="directory-tools">
-          <label>Search families<input id="memberSearch" type="search" autocomplete="off" placeholder="Search by family or member name" /></label>
-          <label>Nameday<select id="memberNamedayFilter"><option value="">All namedays</option><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></label>
-          <label>Skills<select id="memberSkillFilter"><option value="">All skills</option></select></label>
-        </div>
-        <p class="directory-browse-note" id="directoryBrowseNote" style="padding:10px 22px 0;">Search by family or member, then narrow by nameday or skill.</p>
+        <details class="directory-filter-card" id="directoryFilters">
+          <summary>
+            <span class="directory-filter-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5M4 5h3M15 5h5M4 16h5M17 16h3"/></svg></span>
+            <span class="directory-filter-copy"><strong>Search &amp; filters</strong><small id="directoryFilterSummary">Find by family, nameday, or skill</small></span>
+            <span class="directory-filter-chevron" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m5 7.5 5 5 5-5"/></svg></span>
+          </summary>
+          <div class="directory-filter-body">
+            <div class="directory-tools">
+              <label>Search directory<input id="memberSearch" type="search" autocomplete="off" placeholder="Family or member name" /></label>
+              <label>Nameday<select id="memberNamedayFilter"><option value="">All namedays</option><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></label>
+              <label>Skills<select id="memberSkillFilter"><option value="">All skills</option></select></label>
+            </div>
+            <div class="directory-filter-footer">
+              <p class="directory-browse-note" id="directoryBrowseNote">Search by family or member, then narrow by nameday or skill.</p>
+              <button class="directory-filter-clear" id="clearDirectoryFilters" type="button" hidden>Clear filters</button>
+            </div>
+          </div>
+        </details>
         <div class="alphabet" id="memberAlphabet" aria-label="Alphabetical navigation"></div>
         <div class="member-grid" id="memberResults" aria-live="polite"></div>
         <div class="actions"><button class="btn secondary" type="button" id="memberLoadMore" hidden>Load More</button></div>
@@ -1662,13 +1679,15 @@
         && (!memberState.skill || memberSkills(item).includes(memberState.skill))
       );
       renderMemberCards(items);
-      const activeFilters = [memberState.namedayMonth, memberState.skill].filter(Boolean).length;
+      const activeFilters = [memberState.query, memberState.namedayMonth, memberState.skill].filter(Boolean).length;
       const label = `${items.length} ${items.length === 1 ? "family" : "families"}`;
       document.getElementById("directoryBrowseNote").textContent = activeFilters
-        ? `Showing ${label} matching your ${activeFilters === 2 ? "nameday and skill filters" : "filter"}.`
-        : memberState.query
-          ? `Showing approved families matching “${memberState.query}”.`
-          : "Search by family or member, then narrow by nameday or skill.";
+        ? `Showing ${label} with ${activeFilters} active ${activeFilters === 1 ? "filter" : "filters"}.`
+        : "Search by family or member, then narrow by nameday or skill.";
+      document.getElementById("directoryFilterSummary").textContent = activeFilters
+        ? `${activeFilters} active ${activeFilters === 1 ? "filter" : "filters"} · ${label}`
+        : "Find by family, nameday, or skill";
+      document.getElementById("clearDirectoryFilters").hidden = activeFilters === 0;
     }
     async function loadMemberDirectory({ append = false } = {}) {
       if (!token || !email || memberState.loading) return;
@@ -2540,11 +2559,6 @@
       const form = event.target.closest("form");
       if (form) form.dataset.dirty = "true";
     });
-    document.getElementById("ownDirectoryPreview").addEventListener("click", (event) => {
-      if (!event.target.closest("[data-open-directory-review]")) return;
-      openPersonalDirectorySettings();
-      setWizardStep(3);
-    });
     document.getElementById("submitDirectoryListing").addEventListener("click", async (event) => {
       const button = event.currentTarget;
       const person = profileState?.profile?.person || profileState?.currentPerson;
@@ -3394,6 +3408,17 @@
     document.getElementById("memberSkillFilter").addEventListener("change", (event) => {
       memberState.skill = event.target.value || "";
       refreshMemberCards();
+    });
+    document.getElementById("clearDirectoryFilters").addEventListener("click", async () => {
+      clearTimeout(memberSearchTimer);
+      memberState.query = "";
+      memberState.namedayMonth = "";
+      memberState.skill = "";
+      memberState.cursor = "";
+      document.getElementById("memberSearch").value = "";
+      document.getElementById("memberNamedayFilter").value = "";
+      document.getElementById("memberSkillFilter").value = "";
+      await loadMemberDirectory();
     });
     document.getElementById("memberLoadMore").addEventListener("click", () => loadMemberDirectory({ append: true }));
     document.getElementById("memberResults").addEventListener("click", async (event) => {

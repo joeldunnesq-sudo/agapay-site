@@ -19,6 +19,9 @@ assert.match(app, /bookstoreCart = \[\][\s\S]*?renderBookstoreParishContext\(par
 
 assert.match(html, /id="bookstorePopularItems"[\s\S]*?<h2 id="bookstorePopularHeading">Popular items<\/h2>[\s\S]*?id="bookstorePopularGrid"/,
   "the storefront must render a two-item Popular items section above the shelves");
+assert.ok(html.indexOf('id="bookstorePopularItems"') < html.indexOf('class="bookstore-scan-feature"')
+  && html.indexOf('class="bookstore-scan-feature"') < html.indexOf('class="bookstore-catalog-heading"'),
+  "the primary scanner card must sit between Popular items and Shop the shelves");
 assert.match(app, /Number\(b\.unitsSold \|\| 0\) - Number\(a\.unitsSold \|\| 0\)[\s\S]*?\.slice\(0, 2\)/,
   "Popular items must be ranked by completed sales and limited to two cards");
 assert.match(app, /function bookstoreCategoryIcon[\s\S]*?book:[\s\S]*?icon:[\s\S]*?candle:[\s\S]*?jewelry:[\s\S]*?incense:[\s\S]*?cd_dvd:/,
