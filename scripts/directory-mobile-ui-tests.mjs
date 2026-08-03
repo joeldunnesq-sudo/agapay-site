@@ -59,6 +59,7 @@ assert.match(page, /grid-template-columns:56px minmax\(0,1fr\)/);
 assert.match(page, /directory-profile-open/);
 assert.match(page, /data-reveal-directory-contact/);
 assert.match(page, /body\.donor-directory-page \.mobile-tabbar \{ display:none !important; \}/);
+assert.match(page, /body\.donor-directory-page\.myagapay-main-page \.directory-main > \.topbar \{[\s\S]*?width:100vw;[\s\S]*?margin-left:calc\(50% - 50vw\);/);
 assert.match(page, /body\.donor-directory-page \{[\s\S]*?overflow-x:hidden;/);
 assert.match(page, /\.donor-directory-page fieldset\.field-group,[\s\S]*?grid-template-columns:minmax\(0,1fr\);/);
 assert.match(page, /\.donor-directory-page input,[\s\S]*?max-width:100%;/);
