@@ -308,6 +308,28 @@
         color: #061522;
         background: rgba(255, 255, 255, 0.72);
       }
+      .donor-mobile-page.myagapay-main-page .topbar {
+        border-bottom-color: rgba(201, 162, 91, 0.38);
+        background:
+          radial-gradient(circle at 84% 0%, rgba(201, 162, 91, 0.2), transparent 22rem),
+          linear-gradient(135deg, #061522 0%, #0a2035 62%, #101d22 100%);
+        box-shadow: 0 10px 28px rgba(6, 21, 34, 0.16);
+        color: #fffdf8;
+      }
+      .donor-mobile-page.myagapay-main-page .topbar-title {
+        color: #fffdf8;
+      }
+      .donor-mobile-page.myagapay-main-page .topbar .myagapay-menu-trigger,
+      .donor-mobile-page.myagapay-main-page .topbar .myagapay-settings-chip {
+        border-color: rgba(201, 162, 91, 0.42);
+        background: rgba(255, 255, 255, 0.08);
+        color: #fffdf8;
+      }
+      .donor-mobile-page.myagapay-main-page .topbar .status-pill {
+        border-color: rgba(201, 162, 91, 0.34);
+        background: rgba(255, 255, 255, 0.08);
+        color: #fffdf8;
+      }
       @media (max-width: 900px) {
         .donor-mobile-page.myagapay-main-page .topbar {
           position: sticky;
@@ -320,10 +342,12 @@
           align-items: center;
           justify-content: space-between;
           gap: 0.65rem;
-          border-bottom: 1px solid rgba(201, 162, 91, 0.28);
+          border-bottom: 1px solid rgba(201, 162, 91, 0.38);
           padding: calc(0.42rem + env(safe-area-inset-top)) 0.85rem 0.42rem;
-          background: rgba(255, 252, 246, 0.96);
-          box-shadow: 0 8px 24px rgba(6, 21, 34, 0.09);
+          background:
+            radial-gradient(circle at 84% 0%, rgba(201, 162, 91, 0.2), transparent 22rem),
+            linear-gradient(135deg, #061522 0%, #0a2035 62%, #101d22 100%);
+          box-shadow: 0 10px 28px rgba(6, 21, 34, 0.16);
           backdrop-filter: blur(16px);
         }
         .donor-mobile-page.myagapay-main-page .topbar-title {

@@ -254,8 +254,9 @@ assert.ok(
     && myAgapayShell.includes('"/myagapay/giving/give"')
     && myAgapayShell.includes('"/myagapay/bookstore"')
     && myAgapayShell.includes("document.body.classList.add(\"myagapay-main-page\")")
-    && myAgapayShell.includes(".donor-mobile-page.myagapay-main-page .topbar"),
-  "shared shell should visibly add the hamburger banner to primary My AGAPAY pages without promoting Koinonia subpages into primary screens"
+    && myAgapayShell.includes(".donor-mobile-page.myagapay-main-page .topbar")
+    && myAgapayShell.includes("linear-gradient(135deg, #061522 0%, #0a2035 62%, #101d22 100%)"),
+  "shared shell should visibly add the homepage-gradient hamburger banner to primary My AGAPAY pages without promoting Koinonia subpages into primary screens"
 );
 assert.ok(myAgapayShell.includes("myagapay-menu-trigger") && myAgapayShell.includes("myagapay-menu-icon") && myAgapayShell.includes("Open My AGAPAY menu"), "shared My AGAPAY headers should use an obvious hamburger menu trigger");
 const sharedHamburgerMenu = myAgapayShell.match(/menu\.innerHTML = `([\s\S]*?)`;/)?.[1] || "";
