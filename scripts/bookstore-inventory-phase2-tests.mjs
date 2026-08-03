@@ -12,7 +12,7 @@ sqlite.exec(`
   );
   CREATE TABLE commerce_product_variants (
     id TEXT PRIMARY KEY, product_id TEXT, parish_id TEXT, commerce_module TEXT,
-    sku TEXT, barcode TEXT, variant_name TEXT, unit_price_cents INTEGER,
+    sku TEXT, barcode TEXT, variant_name TEXT, unit_price_cents INTEGER, sale_price_cents INTEGER,
     cost_basis_cents INTEGER DEFAULT 0, tax_code TEXT, fulfillment_type TEXT,
     stock_quantity INTEGER, reorder_threshold INTEGER DEFAULT 0,
     track_inventory INTEGER DEFAULT 1, status TEXT, created_at TEXT, updated_at TEXT
@@ -131,10 +131,23 @@ assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM commerce_inventory_mo
   "an edit that omits stock should preserve it and write no movement");
 assert.equal(sqlite.prepare("SELECT stock_quantity FROM commerce_product_variants WHERE id = 'variant_1'").get().stock_quantity, 7);
 
+const invalidSale = await patchBookstoreProduct(env, "parish_1", "product_1", {
+  ...sharedBody, salePriceCents: 2495
+}, now);
+assert.equal(invalidSale.status, 422, "sale price must be lower than the regular price");
+
+const saleUpdate = await patchBookstoreProduct(env, "parish_1", "product_1", {
+  ...sharedBody, salePriceCents: 1795
+}, now);
+assert.equal(saleUpdate.status, 200);
+assert.equal(sqlite.prepare("SELECT sale_price_cents FROM commerce_product_variants WHERE id = 'variant_1'").get().sale_price_cents, 1795);
+
 const app = await readFile(new URL("../public/parish/app.js", import.meta.url), "utf8");
 assert.match(app, /Inventory audit trail/);
 assert.match(app, /Explain the stock difference/);
 assert.match(app, /\/movements/);
+assert.match(app, /Put on sale/);
+assert.match(app, /Sale price must be greater than zero and lower than the regular price/);
 
 const handler = await readFile(new URL("../src/handlers/parish-commerce.js", import.meta.url), "utf8");
 const refundBody = handler.slice(handler.indexOf("export async function refundCommerceOrderFromStripe"), handler.indexOf("export async function disputeCommerceOrderFromStripe"));

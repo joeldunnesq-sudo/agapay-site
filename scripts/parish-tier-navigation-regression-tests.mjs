@@ -26,7 +26,7 @@ assert.match(app, /const parishOrder = \['sacraments', 'directory', 'communicati
 assert.match(app, /parishOrder\.forEach[\s\S]*parishGroup\.appendChild\(item\)[\s\S]*sidebar\.appendChild\(parishGroup\)/, "runtime ordering must keep all Parish items inside the labeled group");
 
 assert.match(dashboard, /<body class="dashboard-booting">[\s\S]*id="dashboardBootScreen"[\s\S]*<div class="app">/, "the gated dashboard must start behind a dedicated loading screen");
-assert.ok(dashboard.includes('/parish/style.css?v=20260803bookstoreitemphoto1') && dashboard.includes('/parish/app.js?v=20260803bookstoreitemphoto1'), "the loading-state assets must use the current cache versions");
+assert.ok(dashboard.includes('/parish/style.css?v=20260803bookstoresales1') && dashboard.includes('/parish/app.js?v=20260803bookstoresales1'), "the loading-state assets must use the current cache versions");
 assert.match(style, /body\.dashboard-booting \.app \{ visibility: hidden; \}/, "the dashboard shell must stay hidden until parish entitlements are rendered");
 assert.match(style, /body\.dashboard-refreshing::before/, "an in-place refresh must use a progress indicator without hiding the loaded dashboard");
 assert.match(app, /const initialLoad = !currentParish/, "dashboard loading must distinguish first load from refresh");

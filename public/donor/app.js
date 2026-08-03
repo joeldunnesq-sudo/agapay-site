@@ -4492,6 +4492,7 @@ function setBookstoreCatalogQuery(value = "") {
 
 function bookstoreCategoryIcon(category = "other") {
   const icons = {
+    sale: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 7v8.5L16.5 27 27 16.5 15.5 5H7a2 2 0 0 0-2 2Z"/><circle cx="11" cy="11" r="2"/><path d="m12 21 8-8M13 14h.01M20 21h.01"/></svg>',
     book: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 5.5h14.5A3.5 3.5 0 0 1 25 9v17H10.5A3.5 3.5 0 0 1 7 22.5v-17Z"/><path d="M10.5 19H25M12 10h8M12 14h6"/></svg>',
     icon: '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="6" y="4" width="20" height="24" rx="2"/><circle cx="16" cy="12" r="4"/><path d="M10.5 23c1.2-4 3-6 5.5-6s4.3 2 5.5 6M16 8V5.5M13.5 6.5h5"/></svg>',
     candle: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M12 27h8V14h-8zM10 27h12M16 4c3 3.1 3.1 5.8 0 8-3.1-2.2-3-4.9 0-8Z"/><path d="M16 14v-2"/></svg>',
@@ -4518,15 +4519,20 @@ function bookstoreProductCard(product, { popular = false } = {}) {
   const popularity = popular
     ? `<span class="bookstore-popular-rank">${Number(product.unitsSold || 0) > 0 ? `${Number(product.unitsSold)} sold` : "Parish favorite"}</span>`
     : "";
+  const saleBadge = product.onSale ? `<span class="bookstore-sale-ribbon">Sale · ${Number(product.savingsPercent || 0)}% off</span>` : "";
+  const price = product.onSale
+    ? `<span class="bookstore-price bookstore-price-sale"><del>${formatCentsAsDollars(product.regularPriceCents)}</del><strong>${formatCentsAsDollars(product.priceCents)}</strong></span>`
+    : `<span class="bookstore-price">${formatCentsAsDollars(product.priceCents)}</span>`;
   return `
-    <button type="button" class="bookstore-product-card${popular ? " bookstore-popular-card" : ""}" onclick="addBookstoreProductToCart('${escapeHtml(product.id)}','${escapeHtml(product.variantId || "")}')" ${available ? "" : "disabled"}>
+    <button type="button" class="bookstore-product-card${popular ? " bookstore-popular-card" : ""}${product.onSale ? " bookstore-product-on-sale" : ""}" onclick="addBookstoreProductToCart('${escapeHtml(product.id)}','${escapeHtml(product.variantId || "")}')" ${available ? "" : "disabled"}>
       ${qtyBadge}
       ${available ? "" : '<span class="bookstore-product-stock-out">Out of stock</span>'}
+      ${saleBadge}
       ${productMedia}
       ${popularity}
       <strong>${escapeHtml(product.name)}</strong>
       ${description ? `<small>${escapeHtml(description)}</small>` : ""}
-      <span class="bookstore-product-meta"><span class="bookstore-category-pill">${escapeHtml(product.categoryLabel || "Item")}</span><span class="bookstore-price">${formatCentsAsDollars(product.priceCents)}</span></span>
+      <span class="bookstore-product-meta"><span class="bookstore-category-pill">${escapeHtml(product.onSale ? "Sale" : (product.categoryLabel || "Item"))}</span>${price}</span>
       <span class="bookstore-product-add">${available ? "Add to cart" : "Currently unavailable"}</span>
     </button>`;
 }
@@ -4571,13 +4577,15 @@ function renderBookstoreProducts(products = []) {
 
   const groups = new Map();
   visibleProducts.forEach(product => {
-    const label = product.categoryLabel || "Other items";
-    const key = product.category || "other";
+    const label = product.onSale ? "Sale" : (product.categoryLabel || "Other items");
+    const key = product.onSale ? "sale" : (product.category || "other");
     if (!groups.has(key)) groups.set(key, { label, items: [] });
     groups.get(key).items.push(product);
   });
 
-  container.innerHTML = Array.from(groups.entries()).map(([category, group]) => {
+  container.innerHTML = Array.from(groups.entries())
+    .sort(([a], [b]) => a === "sale" ? -1 : b === "sale" ? 1 : 0)
+    .map(([category, group]) => {
     const { label, items } = group;
     const cartQtyInCategory = items.reduce((sum, product) => {
       const cartItem = bookstoreCart.find(ci => ci.productId === product.id && ci.variantId === (product.variantId || ""));

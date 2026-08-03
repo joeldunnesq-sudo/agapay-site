@@ -2881,6 +2881,11 @@
       border-color: rgba(184,112,47,0.38);
       background: rgba(255,248,235,0.82);
     }
+    .bookstore-current-row.is-on-sale {
+      border-color: rgba(159,55,48,0.34);
+      background: linear-gradient(100deg, rgba(255,247,242,0.96), rgba(255,255,255,0.8));
+      box-shadow: inset 4px 0 0 #b64b43;
+    }
     .bookstore-current-main {
       display: flex;
       align-items: flex-start;
@@ -2935,6 +2940,19 @@
       letter-spacing: 0.06em;
       text-transform: uppercase;
     }
+    .bookstore-sale-pill {
+      display: inline-flex;
+      margin: 0.42rem 0 0 0.35rem;
+      border-radius: 999px;
+      background: #a83f38;
+      color: white;
+      padding: 0.2rem 0.52rem;
+      font-size: 10px;
+      font-style: normal;
+      font-weight: 850;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
     .bookstore-current-metrics {
       text-align: right;
     }
@@ -2943,6 +2961,16 @@
       color: var(--deep);
       font-size: 14px;
     }
+    .bookstore-current-metrics .bookstore-regular-price { color: #8a8378; text-decoration: line-through; }
+    .bookstore-current-metrics .bookstore-sale-price { color: #a83f38; font-size: 16px; }
+    .bookstore-sale-action { border-color: rgba(168,63,56,0.34) !important; color: #9b3933 !important; background: #fff8f5 !important; }
+    .bookstore-sale-action:hover { background: #a83f38 !important; color: white !important; }
+    .bookstore-sale-editor { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(160px,.7fr); gap:0.75rem; align-items:end; border:1px solid rgba(168,63,56,0.2); border-radius:12px; padding:0.85rem; background:linear-gradient(135deg,#fff8f4,#fffdf9); }
+    .bookstore-sale-toggle { display:flex !important; align-items:flex-start; gap:0.65rem; cursor:pointer; }
+    .bookstore-sale-toggle input { width:18px !important; height:18px; flex:0 0 18px; margin-top:2px; accent-color:#a83f38; }
+    .bookstore-sale-toggle strong,.bookstore-sale-toggle small { display:block; }
+    .bookstore-sale-toggle strong { color:var(--deep); font-size:13px; }
+    .bookstore-sale-toggle small,.bookstore-sale-editor label > small { margin-top:0.2rem; color:var(--stone); font-size:10.5px; line-height:1.4; }
     .bookstore-current-metrics .bookstore-status-pill {
       margin-top: 0.35rem !important;
       justify-content: center;
@@ -3357,6 +3385,7 @@
       .bookstore-modal-form {
         grid-template-columns: 1fr;
       }
+      .bookstore-sale-editor { grid-template-columns: 1fr; }
       .bookstore-receive-head { align-items: start; flex-direction: column; }
       .bookstore-receive-head p { text-align: left; }
       .bookstore-receive-fields { grid-template-columns: 1fr; }

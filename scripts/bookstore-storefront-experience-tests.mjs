@@ -44,7 +44,7 @@ assert.match(app, /classList\.toggle\("has-cart", itemCount > 0\)/,
 
 assert.match(html, /donor\/style\.css\?v=20260803storefront3/,
   "the bookstore must load the updated storefront styles with a fresh immutable URL");
-assert.match(html, /donor\/app\.js\?v=20260803storefront5/,
+assert.match(html, /donor\/app\.js\?v=20260803sales1/,
   "the bookstore must load the updated storefront behavior with a fresh immutable URL");
 assert.match(html, /bookstore-scan-feature-icon[\s\S]*?barcode-lines/,
   "the primary scanner card must feature a real barcode illustration");
@@ -60,5 +60,10 @@ assert.match(html, /\.donor-bookstore-page \.my-agapay-tabbar,[\s\S]*?z-index:22
   "the mobile bookstore nav must remain opaque and above sticky storefront controls");
 assert.match(html, /padding:10px 10px calc\(106px \+ env\(safe-area-inset-bottom\)\)/,
   "the mobile bookstore must reserve scroll clearance for the bottom nav and iOS safe area");
+assert.match(app, /const key = product\.onSale \? "sale"/,
+  "sale items must move into a dedicated Sale shelf");
+assert.match(app, /bookstore-sale-ribbon/);
+assert.match(app, /<del>\$\{formatCentsAsDollars\(product\.regularPriceCents\)\}<\/del>/,
+  "sale cards must show the crossed-out regular price");
 
 console.log("PASS - bookstore parish switching, popular items, collapsed shelves, and category icons are wired");

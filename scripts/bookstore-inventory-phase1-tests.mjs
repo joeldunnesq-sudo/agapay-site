@@ -12,7 +12,7 @@ sqlite.exec(`
   );
   CREATE TABLE commerce_product_variants (
     id TEXT PRIMARY KEY, product_id TEXT, parish_id TEXT, commerce_module TEXT,
-    sku TEXT, barcode TEXT, variant_name TEXT, unit_price_cents INTEGER,
+    sku TEXT, barcode TEXT, variant_name TEXT, unit_price_cents INTEGER, sale_price_cents INTEGER,
     cost_basis_cents INTEGER DEFAULT 0, tax_code TEXT, fulfillment_type TEXT,
     stock_quantity INTEGER, reorder_threshold INTEGER DEFAULT 0,
     track_inventory INTEGER, status TEXT, created_at TEXT, updated_at TEXT
@@ -99,6 +99,12 @@ await assert.rejects(
 );
 
 sqlite.prepare("UPDATE commerce_product_variants SET stock_quantity = 1 WHERE id = 'variant_last'").run();
+
+sqlite.prepare("UPDATE commerce_product_variants SET sale_price_cents = 1795 WHERE id = 'variant_last'").run();
+const saleCart = await normalizeBookstoreCartItems(env, "parish_1", [{ productId: "product_last", variantId: "variant_last", quantity: 1 }]);
+assert.equal(saleCart[0].unitPriceCents, 1795, "checkout must use the server-side sale price");
+assert.equal(saleCart[0].snapshot.regularPriceCents, 2495);
+assert.equal(saleCart[0].snapshot.onSale, true);
 
 function addPendingOrder(id, sessionId) {
   sqlite.prepare(`

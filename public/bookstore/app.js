@@ -58,14 +58,19 @@ function productCard(product, index, rank = 0) {
   const line = cart.find(item => item.variantId && item.variantId === product.variantId);
   const available = productAvailable(product);
   const imageUrl = productImageUrl(product.imageUrl);
-  return `<button class="product${line ? " in-cart" : ""}" type="button" onclick="addCatalogItem(${index})" ${available ? "" : "disabled"}>
+  const saleBadge = product.onSale ? `<span class="sale-ribbon">Sale · ${Number(product.savingsPercent || 0)}% off</span>` : "";
+  const price = product.onSale
+    ? `<span class="sale-price"><del>${money(product.regularPriceCents)}</del><b>${money(product.priceCents)}</b></span>`
+    : `<b>${money(product.priceCents)}</b>`;
+  return `<button class="product${line ? " in-cart" : ""}${product.onSale ? " on-sale" : ""}" type="button" onclick="addCatalogItem(${index})" ${available ? "" : "disabled"}>
     ${rank ? `<span class="popular-rank">${rank}</span>` : ""}
     ${line ? `<span class="selected-badge">${line.quantity}</span>` : ""}
     ${available ? "" : '<span class="sold-out-badge">Out of stock</span>'}
+    ${saleBadge}
     <span class="product-art${imageUrl ? " has-image" : ""}">${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentElement.classList.remove('has-image');this.remove()" />` : ""}${categoryArt(product.category)}<small>${escapeHtml(product.categoryLabel || "Parish item")}</small></span>
     <strong>${escapeHtml(product.name)}</strong>
     <p>${escapeHtml(product.description || "Available for parish pickup")}</p>
-    <span class="product-foot"><b>${money(product.priceCents)}</b><span class="availability${available ? "" : " out"}">${available ? "Available" : "Out of stock"}</span></span>
+    <span class="product-foot">${price}<span class="availability${available ? "" : " out"}">${available ? "Available" : "Out of stock"}</span></span>
   </button>`;
 }
 
@@ -81,7 +86,10 @@ function renderProducts() {
     root.innerHTML = '<div class="empty-products"><span class="eyebrow">The shelves are ready</span><h3>No catalog items yet</h3><p>Scan the first book below. After your purchase, it will appear here for the next parishioner.</p></div>';
     return;
   }
-  const categories = Array.from(new Map(products.map(product => [product.category || "other", product.categoryLabel || "Other"]))).sort((a, b) => a[1].localeCompare(b[1]));
+  const categories = Array.from(new Map(products.map(product => product.onSale
+    ? ["sale", "Sale"]
+    : [product.category || "other", product.categoryLabel || "Other"])))
+    .sort((a, b) => a[0] === "sale" ? -1 : b[0] === "sale" ? 1 : a[1].localeCompare(b[1]));
   if (activeCategory !== "all" && !categories.some(([category]) => category === activeCategory)) activeCategory = "all";
   document.getElementById("categoryFilters").innerHTML = [["all", "All items"], ...categories]
     .map(([category, label]) => `<button class="category-filter${activeCategory === category ? " active" : ""}" type="button" onclick="selectCategory('${escapeHtml(category)}')" aria-pressed="${activeCategory === category}">${escapeHtml(label)}</button>`).join("");
@@ -94,7 +102,7 @@ function renderProducts() {
   popularShelf.hidden = !popular.length || activeCategory !== "all";
   document.getElementById("popularProducts").innerHTML = popular.map(({ product, index }, rank) => productCard(product, index, rank + 1)).join("");
 
-  const visibleProducts = activeCategory === "all" ? products : products.filter(product => (product.category || "other") === activeCategory);
+  const visibleProducts = activeCategory === "all" ? products : products.filter(product => activeCategory === "sale" ? product.onSale : !product.onSale && (product.category || "other") === activeCategory);
   root.innerHTML = visibleProducts.length
     ? visibleProducts.map(product => productCard(product, products.indexOf(product))).join("")
     : '<div class="empty-products"><h3>No items in this category yet</h3><p>Choose another category or scan a book from the shelf.</p></div>';

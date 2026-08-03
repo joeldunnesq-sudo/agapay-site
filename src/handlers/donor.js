@@ -1436,7 +1436,10 @@ function describeManualBookstoreItem(category, specifics = {}) {
 }
 
 function normalizeBookstoreProduct(row = {}) {
-  const priceCents = Number(row.unit_price_cents || 0);
+  const regularPriceCents = Number(row.unit_price_cents || 0);
+  const submittedSalePriceCents = Number(row.sale_price_cents || 0);
+  const onSale = submittedSalePriceCents > 0 && submittedSalePriceCents < regularPriceCents;
+  const priceCents = onSale ? submittedSalePriceCents : regularPriceCents;
   return {
     id: row.id || "",
     variantId: row.variant_id || "",
@@ -1450,6 +1453,10 @@ function normalizeBookstoreProduct(row = {}) {
     fulfillmentType: row.variant_fulfillment_type || row.fulfillment_type || "physical_pickup",
     priceCents,
     priceLabel: `$${(priceCents / 100).toFixed(2)}`,
+    regularPriceCents,
+    salePriceCents: onSale ? submittedSalePriceCents : 0,
+    onSale,
+    savingsPercent: onSale ? Math.round((1 - (submittedSalePriceCents / regularPriceCents)) * 100) : 0,
     stockQuantity: Number(row.stock_quantity || 0),
     trackInventory: Number(row.track_inventory ?? 1) !== 0,
     unitsSold: Number(row.units_sold || 0),
@@ -1462,7 +1469,7 @@ export async function loadDonorBookstoreProducts(env, parishId) {
   const rows = await d1All(env, `
     SELECT p.id, p.name, p.description, p.item_category, p.default_sku, p.default_tax_code,
            p.fulfillment_type, p.image_url,
-           v.id AS variant_id, v.sku, v.barcode, v.variant_name, v.unit_price_cents,
+           v.id AS variant_id, v.sku, v.barcode, v.variant_name, v.unit_price_cents, v.sale_price_cents,
            v.tax_code, v.fulfillment_type AS variant_fulfillment_type,
            v.stock_quantity, v.track_inventory, COALESCE(sales.units_sold, 0) AS units_sold
     FROM commerce_products p
@@ -1583,7 +1590,7 @@ export async function handleDonorBookstoreIsbnLookup(request, env) {
     const row = await d1First(env, `
       SELECT p.id, p.name, p.description, p.item_category, p.default_sku, p.default_tax_code,
              p.fulfillment_type, p.image_url,
-             v.id AS variant_id, v.sku, v.barcode, v.unit_price_cents, v.tax_code,
+             v.id AS variant_id, v.sku, v.barcode, v.unit_price_cents, v.sale_price_cents, v.tax_code,
              v.fulfillment_type AS variant_fulfillment_type, v.stock_quantity, v.track_inventory
       FROM commerce_product_variants v
       JOIN commerce_products p ON p.id = v.product_id
@@ -1630,7 +1637,7 @@ export async function normalizeBookstoreCartItems(env, parishId, items) {
       const row = await d1First(env, `
         SELECT p.id, p.name, p.description, p.item_category, p.default_sku, p.default_tax_code,
                p.fulfillment_type, p.image_url,
-               v.id AS variant_id, v.sku, v.barcode, v.unit_price_cents, v.tax_code,
+               v.id AS variant_id, v.sku, v.barcode, v.unit_price_cents, v.sale_price_cents, v.tax_code,
                v.fulfillment_type AS variant_fulfillment_type, v.stock_quantity, v.track_inventory
         FROM commerce_product_variants v
         JOIN commerce_products p ON p.id = v.product_id

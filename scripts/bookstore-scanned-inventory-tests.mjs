@@ -38,7 +38,7 @@ sqlite.exec(`
     WHERE default_sku IS NOT NULL AND default_sku <> '';
   CREATE TABLE commerce_product_variants (
     id TEXT PRIMARY KEY, product_id TEXT, parish_id TEXT, commerce_module TEXT,
-    sku TEXT, barcode TEXT, variant_name TEXT, unit_price_cents INTEGER,
+    sku TEXT, barcode TEXT, variant_name TEXT, unit_price_cents INTEGER, sale_price_cents INTEGER,
     cost_basis_cents INTEGER, tax_code TEXT, fulfillment_type TEXT,
     stock_quantity INTEGER, reorder_threshold INTEGER, track_inventory INTEGER,
     status TEXT, created_at TEXT, updated_at TEXT
@@ -172,7 +172,7 @@ assert.match(publicStore, /id="addBookPanel" open/);
 assert.match(publicStoreApp, /"scan_and_go"/);
 assert.match(publicStoreApp, /joins catalog after payment/);
 assert.match(publicStoreApp, /sold-out-badge/);
-assert.match(publicStore, /bookstore\/app\.js\?v=20260803productphotos1/,
+assert.match(publicStore, /bookstore\/app\.js\?v=20260803sales1/,
   "the public parish bookstore must load the photo-aware renderer with a fresh immutable URL");
 assert.match(publicStoreApp, /function productImageUrl[\s\S]*?searchParams\.get\("imgurl"\)/,
   "the public parish bookstore must accept direct images and unwrap Google Images result links");

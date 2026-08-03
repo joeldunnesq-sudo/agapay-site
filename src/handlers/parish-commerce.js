@@ -86,6 +86,8 @@ function normalizeBookstoreProduct(row) {
     category: row.item_category || "other",
     sku: row.sku || row.default_sku || "",
     priceCents: Number(row.unit_price_cents || 0),
+    salePriceCents: Number(row.sale_price_cents || 0),
+    onSale: Number(row.sale_price_cents || 0) > 0 && Number(row.sale_price_cents || 0) < Number(row.unit_price_cents || 0),
     costBasisCents: Number(row.cost_basis_cents || 0),
     stockQuantity: Number(row.stock_quantity || 0),
     reorderThreshold: Number(row.reorder_threshold || 0),
@@ -469,8 +471,14 @@ export async function patchBookstoreProduct(env, parishId, productId, body = {},
   if (!product) return json({ error: "Bookstore item not found." }, { status: 404 });
 
   const item = normalizeBookstoreBody(body);
+  const salePriceCents = body.salePriceCents === null || body.salePriceCents === ""
+    ? 0
+    : centsFromBody(body.salePriceCents, 0);
   if (!item.name) return json({ error: "Item name is required." }, { status: 422 });
   if (item.priceCents < 1) return json({ error: "Price must be greater than zero." }, { status: 422 });
+  if (salePriceCents > 0 && salePriceCents >= item.priceCents) {
+    return json({ error: "Sale price must be lower than the regular price." }, { status: 422 });
+  }
 
   const stockSubmitted = Object.prototype.hasOwnProperty.call(body, "stockQuantity");
   const costSubmitted = Object.prototype.hasOwnProperty.call(body, "costBasisCents");
@@ -508,19 +516,19 @@ export async function patchBookstoreProduct(env, parishId, productId, body = {},
     }
     statements.push({
       sql: `UPDATE commerce_product_variants
-            SET sku = ?, unit_price_cents = ?, stock_quantity = ?, cost_basis_cents = ?, reorder_threshold = ?, updated_at = ?
+            SET sku = ?, unit_price_cents = ?, sale_price_cents = ?, stock_quantity = ?, cost_basis_cents = ?, reorder_threshold = ?, updated_at = ?
             WHERE id = ? AND parish_id = ?${stockChanged ? " AND stock_quantity = ?" : ""}`,
-      params: [item.sku || null, item.priceCents, newStock, newCost, item.reorderThreshold,
+      params: [item.sku || null, item.priceCents, salePriceCents || null, newStock, newCost, item.reorderThreshold,
         now, product.variant_id, parishId, ...(stockChanged ? [oldStock] : [])]
     });
   } else {
     const variantId = generateSecret("commerce_variant");
     statements.push({
       sql: `INSERT INTO commerce_product_variants
-              (id, product_id, parish_id, commerce_module, sku, variant_name, unit_price_cents,
+              (id, product_id, parish_id, commerce_module, sku, variant_name, unit_price_cents, sale_price_cents,
                cost_basis_cents, stock_quantity, reorder_threshold, status, created_at, updated_at)
-            VALUES (?, ?, ?, 'bookstore', ?, '', ?, ?, ?, ?, 'active', ?, ?)`,
-      params: [variantId, productId, parishId, item.sku || null, item.priceCents, item.costBasisCents,
+            VALUES (?, ?, ?, 'bookstore', ?, '', ?, ?, ?, ?, ?, 'active', ?, ?)`,
+      params: [variantId, productId, parishId, item.sku || null, item.priceCents, salePriceCents || null, item.costBasisCents,
         newStock, item.reorderThreshold, now, now]
     });
     if (stockChanged) {
@@ -1008,7 +1016,7 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
 
   if (segments[0] === "products" && request.method === "GET" && segments.length === 1) {
     const rows = await d1All(env,
-      `SELECT p.*, v.id AS variant_id, v.sku, v.unit_price_cents, v.cost_basis_cents,
+      `SELECT p.*, v.id AS variant_id, v.sku, v.unit_price_cents, v.sale_price_cents, v.cost_basis_cents,
               v.stock_quantity, v.reorder_threshold, v.track_inventory
        FROM commerce_products p
        LEFT JOIN commerce_product_variants v

@@ -5522,7 +5522,7 @@
         ${visibleProducts.map(p => {
           const isLow = lowStockIds.has(p.variantId || p.id);
           return `
-          <article class="bookstore-current-row ${isLow ? 'is-low-stock' : ''}">
+          <article class="bookstore-current-row ${isLow ? 'is-low-stock' : ''} ${p.onSale ? 'is-on-sale' : ''}">
             <div class="bookstore-current-main">
               ${p.imageUrl ? `<img class="bookstore-current-image" src="${escapeAttr(p.imageUrl)}" alt="${escapeAttr(p.name || 'Bookstore item')}" loading="lazy" decoding="async" referrerpolicy="no-referrer" />` : ''}
               <div class="bookstore-current-copy">
@@ -5530,10 +5530,11 @@
                 <span>${escapeHtml(BOOKSTORE_CATEGORY_LABELS[p.category] || p.category || 'Other')}${p.sku ? ` · ${escapeHtml(p.sku)}` : ''}</span>
                 ${p.description ? `<small>${escapeHtml(p.description)}</small>` : ''}
                 ${isLow ? `<em class="bookstore-low-stock-pill">Low stock</em>` : ''}
+                ${p.onSale ? `<em class="bookstore-sale-pill">On sale · save ${Math.max(1, Math.round((1 - (Number(p.salePriceCents) / Number(p.priceCents))) * 100))}%</em>` : ''}
               </div>
             </div>
             <div class="bookstore-current-metrics">
-              <b>${moneyFull(Number(p.priceCents || 0))}</b>
+              ${p.onSale ? `<span class="bookstore-regular-price">${moneyFull(Number(p.priceCents || 0))}</span><b class="bookstore-sale-price">${moneyFull(Number(p.salePriceCents || 0))}</b>` : `<b>${moneyFull(Number(p.priceCents || 0))}</b>`}
               <span>${Number(p.stockQuantity || 0)} in stock${Number(p.reorderThreshold || 0) > 0 ? ` · reorder at ${Number(p.reorderThreshold)}` : ''}</span>
               <em class="bookstore-status-pill">${escapeHtml(p.status || 'active')}</em>
             </div>
@@ -5543,6 +5544,7 @@
                 <button class="sw-action-btn" type="submit">Save threshold</button>
               </form>` : ''}
               <button class="sw-action-btn" type="button" onclick="openBookstoreItemModal('${escapeAttr(p.id)}')">Edit</button>
+              <button class="sw-action-btn bookstore-sale-action" type="button" onclick="openBookstoreItemModal('${escapeAttr(p.id)}', 'sale')">${p.onSale ? 'Change sale' : 'Put on sale'}</button>
               <button class="sw-action-btn" type="button" onclick="openBookstoreItemModal('${escapeAttr(p.id)}', 'receive')">Receive stock</button>
               <button class="sw-action-btn danger" type="button" onclick="archiveBookstoreItem('${escapeAttr(p.id)}', this)">Archive</button>
             </div>
@@ -5784,6 +5786,10 @@
           <label class="full">Description<textarea id="bookstoreModalDescription" rows="3"></textarea></label>
           <label>Price<input id="bookstoreModalPrice" type="number" min="0.01" step="0.01" required /></label>
           <label>Stock on hand<input id="bookstoreModalStock" type="number" min="0" step="1" value="0" oninput="syncBookstoreStockReason()" required /></label>
+          <section class="bookstore-sale-editor full" id="bookstoreSaleEditor">
+            <label class="bookstore-sale-toggle"><input id="bookstoreModalOnSale" type="checkbox" onchange="syncBookstoreSaleEditor()" /><span><strong>Put this item on sale</strong><small>Shoppers will see the regular price crossed out and a highlighted sale price.</small></span></label>
+            <label id="bookstoreSalePriceField" hidden>Sale price<input id="bookstoreModalSalePrice" type="number" min="0.01" step="0.01" placeholder="0.00" /><small>Must be lower than the regular price.</small></label>
+          </section>
           <label>SKU / barcode<input id="bookstoreModalSku" /></label>
           <label class="full">Image URL<input id="bookstoreModalImage" placeholder="https://..." /></label>
           <label class="full bookstore-stock-reason" id="bookstoreStockReasonField" hidden>
@@ -5828,6 +5834,9 @@
     document.getElementById('bookstoreModalCategory').innerHTML = bookstoreCategoryOptions(product.category || 'other');
     document.getElementById('bookstoreModalDescription').value = product.description || '';
     document.getElementById('bookstoreModalPrice').value = (Number(product.priceCents || 0) / 100).toFixed(2);
+    document.getElementById('bookstoreModalOnSale').checked = Boolean(product.onSale) || focusSection === 'sale';
+    document.getElementById('bookstoreModalSalePrice').value = product.onSale ? (Number(product.salePriceCents || 0) / 100).toFixed(2) : '';
+    syncBookstoreSaleEditor();
     bookstoreEditingOriginalStock = Number(product.stockQuantity || 0);
     document.getElementById('bookstoreModalStock').value = bookstoreEditingOriginalStock;
     document.getElementById('bookstoreModalStockReason').value = '';
@@ -5842,7 +5851,7 @@
     loadBookstoreMovementHistory(productId);
     modal.hidden = false;
     document.body.classList.add('bookstore-modal-open');
-    setTimeout(() => document.getElementById(focusSection === 'receive' ? 'bookstoreReceiveQuantity' : 'bookstoreModalName')?.focus(), 0);
+    setTimeout(() => document.getElementById(focusSection === 'receive' ? 'bookstoreReceiveQuantity' : focusSection === 'sale' ? 'bookstoreModalSalePrice' : 'bookstoreModalName')?.focus(), 0);
   }
 
   function closeBookstoreItemModal() {
@@ -5858,6 +5867,14 @@
     const input = document.getElementById('bookstoreModalStockReason');
     if (field) field.hidden = !changed;
     if (input) input.required = changed;
+  }
+
+  function syncBookstoreSaleEditor() {
+    const enabled = Boolean(document.getElementById('bookstoreModalOnSale')?.checked);
+    const field = document.getElementById('bookstoreSalePriceField');
+    const input = document.getElementById('bookstoreModalSalePrice');
+    if (field) field.hidden = !enabled;
+    if (input) input.required = enabled;
   }
 
   function bookstoreMovementDate(value) {
@@ -6064,6 +6081,9 @@
       sku: document.getElementById('bookstoreModalSku')?.value || '',
       imageUrl: document.getElementById('bookstoreModalImage')?.value || '',
       priceCents: Math.round(Number(document.getElementById('bookstoreModalPrice')?.value || 0) * 100),
+      salePriceCents: document.getElementById('bookstoreModalOnSale')?.checked
+        ? Math.round(Number(document.getElementById('bookstoreModalSalePrice')?.value || 0) * 100)
+        : null,
       stockQuantity: Number(document.getElementById('bookstoreModalStock')?.value || 0),
       stockAdjustmentReason: document.getElementById('bookstoreModalStockReason')?.value || ''
     };
@@ -6074,6 +6094,11 @@
     }
     if (body.priceCents < 1) {
       setStatus('Price must be greater than zero.', 'error');
+      return;
+    }
+    if (body.salePriceCents !== null && (body.salePriceCents < 1 || body.salePriceCents >= body.priceCents)) {
+      setStatus('Sale price must be greater than zero and lower than the regular price.', 'error');
+      document.getElementById('bookstoreModalSalePrice')?.focus();
       return;
     }
     if (body.stockQuantity !== bookstoreEditingOriginalStock && !String(body.stockAdjustmentReason || '').trim()) {

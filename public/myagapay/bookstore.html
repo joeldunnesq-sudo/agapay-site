@@ -14,7 +14,7 @@
   <script src="/security.js"></script>
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260803mainnav4"></script>
-  <script src="/donor/app.js?v=20260803storefront5" defer></script>
+  <script src="/donor/app.js?v=20260803sales1" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -175,6 +175,12 @@
       .bookstore-category-scan { grid-template-columns:38px minmax(0,1fr); }
       .bookstore-category-scan button { grid-column:1 / -1; width:100%; }
     }
+    .bookstore-product-on-sale { border-color:rgba(168,63,56,.48); background:linear-gradient(155deg,#fff 55%,#fff2ed); box-shadow:0 8px 22px rgba(133,48,42,.12); }
+    .bookstore-sale-ribbon { position:absolute; z-index:3; top:10px; left:0; border-radius:0 999px 999px 0; padding:6px 10px; background:linear-gradient(90deg,#9e332e,#c95c4d); color:#fff; font:800 9px/1 var(--sans,sans-serif); letter-spacing:.07em; text-transform:uppercase; box-shadow:0 5px 12px rgba(120,35,30,.24); }
+    .bookstore-product-on-sale .bookstore-popular-rank { top:42px; }
+    .bookstore-price-sale { display:flex; align-items:baseline; gap:6px; }
+    .bookstore-price-sale del { color:#8f887c; font:600 11px var(--sans,sans-serif); }
+    .bookstore-price-sale strong { color:#a83f38; font:800 17px var(--serif,serif); }
 
     /* Storefront treatment: familiar retail hierarchy without changing any
        inventory, scanning, cart, checkout, or order-history behavior. */
