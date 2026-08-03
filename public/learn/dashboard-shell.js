@@ -38,6 +38,285 @@ function isOdysseyLearnContext() {
   return document.body.dataset.learnContext === "odyssey";
 }
 
+function marketingPreviewActive() {
+  return isOdysseyLearnContext() && new URLSearchParams(window.location.search).get("marketing") === "1";
+}
+
+const ODYSSEY_FAITH_SPECIFIC = /\b(orthodox|church|parish|saint|saints|catechesis|catechism|prayer|scripture|gospel|epistle|troparion|kontakion|hymn|feast|fasting|fast day|liturgical|creed|beatitudes|pascha|dormition|transfiguration|theology)\b/i;
+const MARKETING_LEARNERS = [
+  { id: "demo_avery", name: "Avery", age: "15", formLabel: "Form IV", gradeLabel: "Grade 10", color: "#34507a" },
+  { id: "demo_jordan", name: "Jordan", age: "13", formLabel: "Form III", gradeLabel: "Grade 8", color: "#6e2f2a" },
+  { id: "demo_riley", name: "Riley", age: "11", formLabel: "Form II", gradeLabel: "Grade 6", color: "#4a5a31" },
+  { id: "demo_morgan", name: "Morgan", age: "10", formLabel: "Form II", gradeLabel: "Grade 5", color: "#8a6b2f" },
+  { id: "demo_casey", name: "Casey", age: "8", formLabel: "Form I", gradeLabel: "Grade 3", color: "#7b5b78" },
+  { id: "demo_quinn", name: "Quinn", age: "6", formLabel: "Form I", gradeLabel: "Grade 1", color: "#537a7a" }
+];
+
+function cloneLearnViewModel(vm) {
+  try {
+    return structuredClone(vm);
+  } catch {
+    return JSON.parse(JSON.stringify(vm));
+  }
+}
+
+function isFaithSpecific(value = "") {
+  return ODYSSEY_FAITH_SPECIFIC.test(String(value || ""));
+}
+
+function itemIsFaithSpecific(item = {}) {
+  return [item.title, item.label, item.sub, item.subtitle, item.detail, item.note, item.type, item.category, item.description]
+    .some(isFaithSpecific);
+}
+
+function secularPlannerDay(day = {}) {
+  return {
+    ...day,
+    isFastDay: false,
+    feast: "",
+    feastRank: "",
+    fasting: "",
+    fastingType: "",
+    tone: "",
+    epistle: "",
+    gospel: "",
+    oldStyleDateLabel: "",
+    nameDays: []
+  };
+}
+
+function demoPlannerItems() {
+  const planned = ["empty", "planned", "planned", "planned", "planned", "planned", "empty"];
+  return [
+    { id: "demo_family_readaloud", kind: "household", title: "Family Read-Aloud", sub: "The Wind in the Willows", minutes: 25, statuses: planned, color: "#34507a", formLabels: ["__family"], gracePriority: "keep" },
+    { id: "demo_nature", kind: "household", title: "Nature Study", sub: "Backyard birds and field notes", minutes: 30, statuses: ["empty", "empty", "planned", "empty", "planned", "empty", "empty"], color: "#4a5a31", formLabels: ["__family"], gracePriority: "reduce first" },
+    { id: "demo_art", kind: "household", title: "Art & Music", sub: "Artist study and listening", minutes: 25, statuses: ["empty", "planned", "empty", "empty", "planned", "empty", "empty"], color: "#8a6b2f", formLabels: ["__family"], gracePriority: "reduce first" },
+    { id: "demo_form4_math", kind: "form", title: "Algebra II", sub: "Form IV · Lessons 18–21", minutes: 45, statuses: planned, color: "#34507a", formLabels: ["Form IV"], gracePriority: "keep" },
+    { id: "demo_form4_lit", kind: "form", title: "American Literature", sub: "Form IV · Chapters 7–9", minutes: 35, statuses: planned, color: "#7b5b78", formLabels: ["Form IV"], gracePriority: "keep" },
+    { id: "demo_form3_math", kind: "form", title: "Pre-Algebra", sub: "Form III · Lessons 24–27", minutes: 40, statuses: planned, color: "#6e2f2a", formLabels: ["Form III"], gracePriority: "keep" },
+    { id: "demo_form3_science", kind: "form", title: "Earth Science", sub: "Form III · Weather systems", minutes: 35, statuses: planned, color: "#537a7a", formLabels: ["Form III"], gracePriority: "keep" },
+    { id: "demo_form2_math", kind: "form", title: "Mathematics", sub: "Form II · Fractions and decimals", minutes: 30, statuses: planned, color: "#4a5a31", formLabels: ["Form II"], gracePriority: "keep" },
+    { id: "demo_form2_history", kind: "form", title: "World History", sub: "Form II · Ancient Greece", minutes: 30, statuses: planned, color: "#8a6b2f", formLabels: ["Form II"], gracePriority: "keep" },
+    { id: "demo_form1_math", kind: "form", title: "Number Sense", sub: "Form I · Lesson 12", minutes: 20, statuses: planned, color: "#537a7a", formLabels: ["Form I"], gracePriority: "keep" },
+    { id: "demo_form1_reading", kind: "form", title: "Reading & Phonics", sub: "Form I · Short vowels", minutes: 20, statuses: planned, color: "#7b5b78", formLabels: ["Form I"], gracePriority: "keep" }
+  ];
+}
+
+function demoBooks() {
+  return {
+    readAlouds: [
+      { title: "The Wind in the Willows", author: "Kenneth Grahame", assignment: "Family Read-Aloud", progress: 62, stream: "Household" },
+      { title: "The Burgess Bird Book", author: "Thornton W. Burgess", assignment: "Nature Study", progress: 38, stream: "Household" },
+      { title: "A Child's History of the World", author: "V. M. Hillyer", assignment: "World History", progress: 47, stream: "Forms I–II" }
+    ],
+    library: [
+      { title: "The Wind in the Willows", author: "Kenneth Grahame", category: "Literature", ages: "8+", assignment: "Family Read-Aloud", progress: 62 },
+      { title: "The Burgess Bird Book", author: "Thornton W. Burgess", category: "Nature Study", ages: "7–12", assignment: "Term 1", progress: 38 },
+      { title: "A Child's History of the World", author: "V. M. Hillyer", category: "History", ages: "8–13", assignment: "Term 1", progress: 47 },
+      { title: "The Story of Science", author: "Joy Hakim", category: "Science", ages: "11+", assignment: "Form III", progress: 24 }
+    ],
+    copywork: [
+      { title: "Selected Poems", detail: "Robert Louis Stevenson and Christina Rossetti" },
+      { title: "Nature Journal Captions", detail: "Student-selected observations from weekly field notes" }
+    ],
+    suggestions: [
+      { title: "Living Books for American History", subtitle: "Narrative history and primary-source selections", color: "#34507a" },
+      { title: "Family Nature Study", subtitle: "Field guides, seasonal journals, and observation prompts", color: "#4a5a31" }
+    ]
+  };
+}
+
+function prepareOdysseyViewModel(vm) {
+  if (!isOdysseyLearnContext()) return vm;
+  const next = cloneLearnViewModel(vm);
+  const marketing = marketingPreviewActive();
+  const secularPageMeta = {
+    dashboard: ["Today", "Lessons, household plans, and the day’s essentials in one calm view."],
+    planner: ["Family Planner", "Plan lessons, meals, chores, and events across the whole household."],
+    formation: ["Formation & Enrichment", "Memory work, nature study, art, music, and optional household practices."],
+    books: ["Books & Curriculum", "Track read-alouds, curriculum resources, pacing, and the household library."],
+    grades: ["Grades & Attendance", "Record grades, credits, attendance, and transcript-ready academic history."],
+    community: ["Homeschool Resources", "A curated library of practical tools for teaching and home education."],
+    "print-center": ["Print Center", "Create weekly plans, student sheets, records, and household print packs."],
+    onboarding: ["Set Up", "Configure learners, terms, subjects, planning groups, and household defaults."]
+  };
+  if (secularPageMeta[next.page?.id]) {
+    next.page.title = secularPageMeta[next.page.id][0];
+    next.page.subtitle = secularPageMeta[next.page.id][1];
+  }
+  if (next.shell) {
+    next.shell.nav = (next.shell.nav || []).map((item) => ({ ...item, href: learnSectionHref(item.id) }));
+    if (marketing) {
+      next.shell.familyName = "The Harper Family";
+      next.shell.familyMeta = "6 Learners • Flexible Homeschool";
+    }
+  }
+
+  if (next.page?.id === "dashboard") {
+    next.churchRhythms = [];
+    next.householdStream = (next.householdStream || []).filter((item) => !itemIsFaithSpecific(item));
+    next.week.days = (next.week?.days || []).map(secularPlannerDay);
+    next.week.weeklyAssignmentItems = (next.week?.weeklyAssignmentItems || []).filter((item) => !itemIsFaithSpecific(item));
+    next.childColumns = (next.childColumns || []).map((column) => ({ ...column, tasks: (column.tasks || []).filter((item) => !itemIsFaithSpecific(item)) }));
+    if (next.thisWeek?.[2]) next.thisWeek[2] = { icon: "◷", color: "#4a5a31", big: "5", label: "School Days Planned", sub: "This Week" };
+    if (marketing) {
+      const date = next.todayInChurch?.civilDate || new Date().toISOString().slice(0, 10);
+      next.householdStream = [
+        { id: "demo_morning", title: "Morning Basket", sub: "Poetry, map work, and read-aloud", group: "Everyone Together", href: learnSectionHref("planner"), time: "30m", complete: true, icon: "☰" },
+        { id: "demo_nature", title: "Nature Study", sub: "Backyard birds and field notes", group: "Everyone Together", href: learnSectionHref("planner"), time: "30m", complete: false, icon: "✦" },
+        { id: "demo_art", title: "Art & Music", sub: "Artist study and listening", group: "Everyone Together", href: learnSectionHref("planner"), time: "25m", complete: false, icon: "♫" }
+      ];
+      next.childColumns = MARKETING_LEARNERS.map((learner, index) => ({
+        tag: learner.formLabel.toUpperCase(), name: learner.name, age: learner.age, initial: learner.name[0], color: learner.color,
+        tasks: [
+          { id: `demo_${index}_math`, title: index < 2 ? "Mathematics" : "Number Sense", sub: `Lesson ${18 + index}`, time: index < 2 ? "40m" : "25m", complete: index % 2 === 0 },
+          { id: `demo_${index}_language`, title: index < 2 ? "Literature & Composition" : "Reading & Narration", sub: index < 2 ? "Chapters 7–9" : "Daily reading", time: "30m", complete: index < 3 }
+        ]
+      }));
+      next.week.weeklyAssignmentItems = demoPlannerItems();
+      next.familyPlanning = {
+        ...(next.familyPlanning || {}),
+        events: [{ id: "demo_library", title: "Library visit", date, startTime: "14:00", location: "Central Library" }],
+        meals: [{ date, breakfast: "Oatmeal & berries", lunch: "Soup and bread", dinner: "Sheet-pan chicken" }],
+        chores: [{ id: "demo_dishes", title: "Unload dishwasher", assignee: "Jordan", daysOfWeek: [new Date(`${date}T12:00:00Z`).getUTCDay()] }]
+      };
+      next.thisWeek = [
+        { icon: "✓", color: "#34507a", big: "24 / 31", label: "Lessons Completed", sub: "77%" },
+        { icon: "✒", color: "#6e2f2a", big: "8", label: "Narrations Logged", sub: "This Week" },
+        { icon: "◷", color: "#4a5a31", big: "5", label: "School Days Planned", sub: "This Week" },
+        { icon: "☰", color: "#8a6b2f", big: "62%", label: "Read-Aloud Progress", sub: "The Wind in the Willows" }
+      ];
+    }
+  }
+
+  if (next.page?.id === "planner") {
+    next.week.days = (next.week?.days || []).map(secularPlannerDay);
+    next.month.days = (next.month?.days || []).map(secularPlannerDay);
+    next.month.fastDays = 0;
+    next.month.feastDays = 0;
+    next.year.upcomingFeasts = [];
+    next.week.householdRows = (next.week.householdRows || []).filter((item) => !itemIsFaithSpecific(item));
+    next.week.childRows = (next.week.childRows || []).map((row) => ({ ...row, blocks: (row.blocks || []).filter((item) => !itemIsFaithSpecific(item)) })).filter((item) => !itemIsFaithSpecific(item));
+    next.week.weeklyAssignmentItems = (next.week.weeklyAssignmentItems || []).filter((item) => !itemIsFaithSpecific(item));
+    next.day.householdBlocks = (next.day.householdBlocks || []).filter((item) => !itemIsFaithSpecific(item));
+    next.day.childBlocks = (next.day.childBlocks || []).filter((item) => !itemIsFaithSpecific(item));
+    next.day.formBlocks = (next.day.formBlocks || []).filter((item) => !itemIsFaithSpecific(item));
+    next.term.setupCards = (next.term.setupCards || []).filter((item) => !itemIsFaithSpecific(item));
+    next.year.topics = (next.year.topics || []).filter((item) => !itemIsFaithSpecific(item));
+    if (marketing) {
+      next.week.weeklyAssignmentItems = demoPlannerItems();
+      next.week.formRows = [
+        { formLabel: "Form IV", childNames: ["Avery"], initials: ["A"], color: "#34507a", items: [{ title: "Algebra II" }, { title: "American Literature" }] },
+        { formLabel: "Form III", childNames: ["Jordan"], initials: ["J"], color: "#6e2f2a", items: [{ title: "Pre-Algebra" }, { title: "Earth Science" }] },
+        { formLabel: "Form II", childNames: ["Riley", "Morgan"], initials: ["R", "M"], color: "#4a5a31", items: [{ title: "Mathematics" }, { title: "World History" }] },
+        { formLabel: "Form I", childNames: ["Casey", "Quinn"], initials: ["C", "Q"], color: "#537a7a", items: [{ title: "Number Sense" }, { title: "Reading & Phonics" }] }
+      ];
+      next.familyPlanning.children = MARKETING_LEARNERS.map((learner) => ({ ...learner, initial: learner.name[0], nameDay: "" }));
+      next.familyPlanning.household = { motherName: "", fatherName: "", parishPatronalFeastName: "", parishPatronalFeastDate: "" };
+      next.familyPlanning.meals = (next.week.days || []).map((day, index) => ({ date: day.date, breakfast: ["Oatmeal & berries", "Eggs & toast", "Yogurt & granola"][index % 3], lunch: ["Soup and bread", "Picnic lunch", "Pasta salad"][index % 3], dinner: ["Sheet-pan chicken", "Taco bowls", "Vegetable curry"][index % 3] }));
+      next.familyPlanning.chores = MARKETING_LEARNERS.map((learner, index) => ({ id: `demo_chore_${index}`, title: ["Kitchen reset", "Laundry", "Pet care", "Sweep entry", "Set the table", "Toy pickup"][index], assignee: learner.name, childId: learner.id, daysOfWeek: [1, 3, 5] }));
+    }
+  }
+
+  if (next.page?.id === "formation") {
+    next.rhythms = (next.rhythms || []).filter((item) => !itemIsFaithSpecific(item));
+    next.recitation = (next.recitation || []).filter((item) => !itemIsFaithSpecific(item));
+    next.hymns = [];
+    next.feasts = [];
+    next.enrichment = (next.enrichment || []).filter((item) => !itemIsFaithSpecific(item));
+    if (marketing) {
+      next.rhythms = [{ title: "Morning Check-In", note: "Review the day together", complete: true }, { title: "Independent Reading", note: "Quiet reading block", complete: false }];
+      next.recitation = [{ title: "The Swing — Robert Louis Stevenson", status: "memorizing", progress: 70 }, { title: "Gettysburg Address", status: "reviewing", progress: 45 }];
+      next.enrichment = [{ title: "Georgia O'Keeffe", type: "Art Study", minutes: "25m" }, { title: "Aaron Copland", type: "Composer Study", minutes: "20m" }, { title: "Backyard Birds", type: "Nature Study", minutes: "30m" }];
+      next.nature = [{ title: "Northern Cardinal", location: "Backyard feeder", notes: "Compared the male and female plumage and added both to the field journal." }];
+    }
+  }
+
+  if (next.page?.id === "books") {
+    next.library = (next.library || []).filter((item) => !itemIsFaithSpecific(item)).map((item) => ({ ...item, orthodox: false }));
+    next.readAlouds = (next.readAlouds || []).filter((item) => !itemIsFaithSpecific(item));
+    next.copywork = (next.copywork || []).filter((item) => !itemIsFaithSpecific(item));
+    next.suggestions = (next.suggestions || []).filter((item) => !itemIsFaithSpecific(item));
+    if (marketing) Object.assign(next, demoBooks());
+  }
+
+  if (next.page?.id === "grades") {
+    next.subjectCategories = (next.subjectCategories || []).filter((item) => !isFaithSpecific(item));
+    if (marketing) {
+      next.children = MARKETING_LEARNERS.map((learner, index) => ({ id: learner.id, name: learner.name, firstName: learner.name, gradeLabel: learner.formLabel, gradeLevel: 10 - index, initial: learner.name[0], color: learner.color }));
+      next.selectedChildId = next.children[0].id;
+      next.selectedChild = next.children[0];
+      next.courses = [
+        { id: "demo_course_math", childId: next.selectedChildId, courseTitle: "Algebra II", subjectCategory: "Math", gradeLevel: 10, creditHours: 1, color: "#34507a", grades: [{ termIndex: 1, numericScore: 94, letterGrade: "A", attendanceDays: 42, teacherNotes: "Strong mastery and consistent work." }, { termIndex: 2, numericScore: 92, letterGrade: "A-", attendanceDays: 0, teacherNotes: "" }, { termIndex: 3, numericScore: "", letterGrade: "", attendanceDays: "", teacherNotes: "" }] },
+        { id: "demo_course_lit", childId: next.selectedChildId, courseTitle: "American Literature", subjectCategory: "English", gradeLevel: 10, creditHours: 1, color: "#7b5b78", grades: [{ termIndex: 1, numericScore: 96, letterGrade: "A", attendanceDays: 42, teacherNotes: "Thoughtful narration and analysis." }, { termIndex: 2, numericScore: 95, letterGrade: "A", attendanceDays: 0, teacherNotes: "" }, { termIndex: 3, numericScore: "", letterGrade: "", attendanceDays: "", teacherNotes: "" }] },
+        { id: "demo_course_science", childId: next.selectedChildId, courseTitle: "Biology with Lab", subjectCategory: "Science", gradeLevel: 10, creditHours: 1, color: "#4a5a31", grades: [{ termIndex: 1, numericScore: 91, letterGrade: "A-", attendanceDays: 42, teacherNotes: "Complete lab notebook." }, { termIndex: 2, numericScore: 93, letterGrade: "A", attendanceDays: 0, teacherNotes: "" }, { termIndex: 3, numericScore: "", letterGrade: "", attendanceDays: "", teacherNotes: "" }] }
+      ];
+      next.childCourses = next.courses;
+      next.summary = { totalCredits: "3.0", cumulativeGpa: "3.90", missingGrades: 3, courseCount: 3, attendanceDays: 42 };
+      next.attendance.summary.instructionalDays = 42;
+    }
+  }
+
+  if (next.page?.id === "print-center") {
+    next.templates = (next.templates || [])
+      .filter((item) => !isFaithSpecific(item.title))
+      .map((item) => ({
+        ...item,
+        description: String(item.description || "")
+          .replace(/feast notes?/gi, "calendar notes")
+          .replace(/feast days? and fast days?/gi, "school days and household events")
+          .replace(/liturgical/gi, "school-year")
+      }));
+    if (marketing) next.templates = (next.templates || []).map((template, index) => ({ ...template, child: template.audience === "child" ? MARKETING_LEARNERS[index % MARKETING_LEARNERS.length].name : template.child }));
+  }
+
+  if (next.page?.id === "community") {
+    next.resources = (next.resources || []).filter((item) => !itemIsFaithSpecific(item));
+    next.categories = ["All", ...new Set(next.resources.map((item) => item.category).filter(Boolean))];
+    if (marketing || !next.resources.length) {
+      next.comingSoon = false;
+      next.title = "Practical resources, thoughtfully curated.";
+      next.subtitle = "Find useful tools for planning, teaching, records, and family learning.";
+      next.resources = [
+        { id: "demo_resource_teks", title: "TEKS Resource Library", category: "Texas Standards", resourceType: "Reference", mediaType: "Website", ageRange: "K–12", subtitle: "Official standards and supporting materials", desc: "Browse Texas Essential Knowledge and Skills by subject and grade.", url: "https://tea.texas.gov/academics/curriculum-standards/teks", sharedBy: "AGAPAY", poster: "AGAPAY", posterInitial: "A", tags: ["TEKS", "Planning", "K–12"], votes: 0, pinned: true, vetted: true, flagCount: 0, color: "#34507a", icon: "↗", posterColor: "#34507a" },
+        { id: "demo_resource_library", title: "Library of Congress Education", category: "Primary Sources", resourceType: "Resource Library", mediaType: "Mixed Media", ageRange: "All Ages", subtitle: "Primary sources and classroom collections", desc: "Explore maps, photographs, recordings, and curated historical collections.", url: "https://www.loc.gov/programs/teachers/", sharedBy: "AGAPAY", poster: "AGAPAY", posterInitial: "A", tags: ["History", "Primary Sources"], votes: 0, pinned: true, vetted: true, flagCount: 0, color: "#4a5a31", icon: "⌕", posterColor: "#4a5a31" },
+        { id: "demo_resource_nasa", title: "NASA STEM Resources", category: "Science", resourceType: "Lesson Collection", mediaType: "Mixed Media", ageRange: "K–12", subtitle: "Science activities and exploration", desc: "Hands-on STEM activities, images, missions, and learning collections.", url: "https://www.nasa.gov/learning-resources/", sharedBy: "AGAPAY", poster: "AGAPAY", posterInitial: "A", tags: ["Science", "STEM", "K–12"], votes: 0, pinned: true, vetted: true, flagCount: 0, color: "#6e2f2a", icon: "✦", posterColor: "#6e2f2a" }
+      ];
+      next.categories = ["All", "Texas Standards", "Primary Sources", "Science"];
+      next.resourceTypes = ["All", "Reference", "Resource Library", "Lesson Collection"];
+      next.mediaTypes = ["All", "Website", "Mixed Media"];
+    }
+  }
+
+  if (next.page?.id === "onboarding") {
+    next.children = (next.children || []).map((child) => ({ ...child }));
+    next.subjects = (next.subjects || []).filter((item) => !itemIsFaithSpecific(item));
+    next.books = (next.books || []).filter((item) => !itemIsFaithSpecific(item));
+    if (next.formationSetup) {
+      next.formationSetup.churchRhythms = (next.formationSetup.churchRhythms || []).filter((item) => !itemIsFaithSpecific(item));
+      next.formationSetup.recitationTracks = (next.formationSetup.recitationTracks || []).filter((item) => !itemIsFaithSpecific(item));
+      next.formationSetup.hymnStudies = [];
+      next.formationSetup.enrichmentBlocks = (next.formationSetup.enrichmentBlocks || []).filter((item) => !itemIsFaithSpecific(item));
+      next.formationSetup.feasts = [];
+    }
+    if (marketing) {
+      next.household.name = "The Harper Family";
+      next.household.parentName = "Taylor Harper";
+      next.household.homeschoolName = "Harper Home Academy";
+      next.household.method = "Eclectic";
+      next.household.parish = "";
+      next.household.parishName = "";
+      next.household.patronSaintName = "";
+      next.household.patronSaintFeastDate = "";
+      next.household.parishPatronalFeastName = "";
+      next.household.parishPatronalFeastDate = "";
+      next.children = MARKETING_LEARNERS.map((learner) => ({ id: learner.id, name: learner.name, firstName: learner.name, age: learner.age, ageYears: learner.age, grade: learner.gradeLabel, gradeLabel: learner.gradeLabel, form: learner.formLabel, formLabel: learner.formLabel, color: learner.color }));
+    }
+  }
+
+  return next;
+}
+
 // Single source of truth for how the shared Learn dashboard should present
 // itself differently for TEFA/Odyssey marketplace families vs. ordinary
 // AGAPAY Learn households. This is intentionally config-driven — it changes
@@ -47,15 +326,11 @@ const LEARN_VIEW_MODE_KEY = "agapay.learn.viewMode";
 
 function learnViewMode() {
   if (!isOdysseyLearnContext()) return "classic";
-  try {
-    const stored = localStorage.getItem(LEARN_VIEW_MODE_KEY);
-    return stored === "classic" ? "classic" : "tefa";
-  } catch {
-    return "tefa";
-  }
+  return "tefa";
 }
 
 function setLearnViewMode(mode) {
+  if (isOdysseyLearnContext()) return;
   try {
     localStorage.setItem(LEARN_VIEW_MODE_KEY, mode === "classic" ? "classic" : "tefa");
   } catch {
@@ -89,11 +364,11 @@ function learnExperience() {
           dashboard: "Today's Lessons",
           planner: "Planner",
           onboarding: "Setup & TEKS Subjects",
-          formation: "Formation (Optional)",
+          formation: "Formation & Enrichment",
           books: "Books & Curriculum",
           grades: "Attendance, Grades & Reports",
           "print-center": "Print Center",
-          community: "Community",
+          community: "Homeschool Resources",
           "co-op": "Co-op"
         }
       : {},
@@ -130,7 +405,9 @@ function learnSectionHref(section = "dashboard", query = "") {
     onboarding: "/learn/odyssey/dashboard/setup"
   };
   const base = (isOdysseyLearnContext() ? odyssey : regular)[section] || (isOdysseyLearnContext() ? odyssey.dashboard : regular.dashboard);
-  return query ? `${base}?${query}` : base;
+  const params = new URLSearchParams(query);
+  if (marketingPreviewActive()) params.set("marketing", "1");
+  return params.size ? `${base}?${params.toString()}` : base;
 }
 
 function html(value) {
@@ -293,9 +570,14 @@ function pageIntro(vm) {
   const meta = pageIntroMeta(vm.page.id);
   const experience = learnExperience();
   const tefaMeta = {
+    dashboard: { kicker: "TEFA HOMESCHOOL PLANNER", description: "Lessons, household plans, and the day’s essentials in one calm view.", quote: "A well-planned day makes room for attention.", ref: "AGAPAY Learn" },
     planner: { kicker: "HOUSEHOLD PLANNING", description: "Plan by family group, Form, or grade without repeating the same work for every child.", quote: "A clear week leaves more room for teaching.", ref: "AGAPAY Learn" },
     onboarding: { kicker: "SETUP", description: "Set up learners, planning groups, school dates, subjects, and optional household rhythms.", quote: "Start with the essentials. Add detail only when it helps.", ref: "AGAPAY Learn" },
-    formation: { kicker: "OPTIONAL FORMATION", description: "Add household practices, readings, memory work, and enrichment when they serve your family.", quote: "Keep what is useful; leave what is not.", ref: "AGAPAY Learn" }
+    formation: { kicker: "FORMATION & ENRICHMENT", description: "Add memory work, nature study, art, music, and household practices when they serve your family.", quote: "Keep what is useful; leave what is not.", ref: "AGAPAY Learn" },
+    books: { kicker: "BOOKS & CURRICULUM", description: "Track read-alouds, curriculum resources, pacing, and the household library.", quote: "Books turn lessons into lasting conversations.", ref: "AGAPAY Learn" },
+    grades: { kicker: "ACADEMIC RECORDS", description: "Record grades, credits, attendance, and transcript-ready academic history.", quote: "Records should make progress easy to see.", ref: "AGAPAY Learn" },
+    "print-center": { kicker: "PRINT CENTER", description: "Create weekly plans, student sheets, records, and household print packs.", quote: "Plan once. Use it wherever the week happens.", ref: "AGAPAY Learn" },
+    community: { kicker: "HOMESCHOOL RESOURCES", description: "A curated library of practical tools for teaching and home education.", quote: "Useful resources are better when families can find them quickly.", ref: "AGAPAY Learn" }
   };
   const activeMeta = experience.tefaActive && tefaMeta[vm.page.id] ? { ...meta, ...tefaMeta[vm.page.id] } : meta;
   const kicker = experience.odyssey && vm.page.id === "dashboard" ? experience.dashboardKicker : activeMeta.kicker;
@@ -628,6 +910,7 @@ function sidebar(vm) {
           <strong>${html(vm.shell.familyName || "Faithful Household")}</strong>
           <span>${html(vm.shell.familyMeta || "AGAPAY Learn")}</span>
           ${experience.activationBadge ? `<small class="learn-odyssey-badge" style="display:inline-block;margin-top:6px;border:1px solid var(--gold);border-radius:999px;padding:2px 9px;font-size:10.5px;letter-spacing:.06em;color:var(--gold);">${html(experience.activationBadge)}</small>` : ""}
+          ${marketingPreviewActive() ? `<small class="learn-odyssey-badge" style="display:inline-block;margin:6px 0 0 5px;border:1px solid rgba(255,250,240,.45);border-radius:999px;padding:2px 9px;font-size:10.5px;letter-spacing:.06em;color:#f7e8bd;">Marketing preview</small>` : ""}
         </div>
         <div class="learn-product-label">AGAPAY Learn</div>
         <nav class="learn-product-nav" aria-label="AGAPAY Learn">
@@ -688,7 +971,7 @@ function globalProductNav(activeProduct = "learn") {
         <svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg>
         <span>Giving</span>
       </a>
-      <a class="${activeProduct === "learn" ? "is-active" : ""}" href="/myagapay/learn">
+      <a class="${activeProduct === "learn" ? "is-active" : ""}" href="${html(learnSectionHref("dashboard"))}">
         <svg viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg>
         <span>Learn</span>
       </a>
@@ -1012,6 +1295,17 @@ function renderDashboardFamilyCards(vm) {
 
 function renderTefaViewToggleBanner(experience) {
   const tefa = experience.viewMode === "tefa";
+  if (tefa) {
+    return `
+      <div data-tefa-view-toggle-row style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:linear-gradient(135deg,#fffaf0 0%,#f7edd6 100%);border:1px solid rgba(181,148,47,.34);border-radius:14px;padding:14px 18px;">
+        <div style="min-width:0;">
+          <div style="color:var(--gold);font-size:10.5px;letter-spacing:.14em;font-weight:800;text-transform:uppercase;">Odyssey marketplace edition</div>
+          <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:21px;line-height:1.1;color:var(--ink);">Built for flexible Texas homeschool planning</strong>
+          <span style="display:block;font-size:12.5px;color:var(--muted);margin-top:2px;">Lessons, attendance, grades, household planning, and printable records in one calm workspace.</span>
+        </div>
+        <span style="display:inline-flex;align-items:center;border:1px solid var(--gold);background:var(--paper2);border-radius:999px;padding:7px 12px;font-size:12px;font-weight:800;color:var(--navy);">TEFA Edition</span>
+      </div>`;
+  }
   return `
     <div data-tefa-view-toggle-row style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:${tefa ? "linear-gradient(135deg,#fffaf0 0%,#f7edd6 100%)" : "var(--paper)"};border:1px solid ${tefa ? "rgba(181,148,47,.34)" : "var(--line)"};border-radius:14px;padding:14px 18px;">
       <div style="min-width:0;">
@@ -1129,7 +1423,7 @@ function renderDashboard(vm) {
             <span style="display:block;font-size:11px;color:var(--gold);font-weight:600;">${html(w.sub)}</span>
           </div>
         </div>`).join("")}
-      <a href="/myagapay/learn/planner" style="background:var(--navy);border:1px solid var(--gold);border-radius:12px;padding:14px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;color:#fffaf0;font-weight:700;text-decoration:none;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+      <a href="${html(learnSectionHref("planner"))}" style="background:var(--navy);border:1px solid var(--gold);border-radius:12px;padding:14px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;color:#fffaf0;font-weight:700;text-decoration:none;box-shadow:0 1px 3px rgba(20,40,70,.04);">
         Open Planner <span style="color:var(--gold);">→</span>
       </a>
     </div>`;
@@ -1148,7 +1442,7 @@ function renderDashboard(vm) {
           <div style="display:flex;flex-direction:column;gap:8px;">
             ${col.tasks.map((t) => `
               <div style="display:flex;align-items:center;gap:9px;background:var(--paper2);border:1px solid var(--line);border-radius:9px;padding:9px 10px;">
-                <a href="/myagapay/learn/planner" style="flex:1;min-width:0;line-height:1.15;text-decoration:none;color:inherit;">
+                <a href="${html(learnSectionHref("planner"))}" style="flex:1;min-width:0;line-height:1.15;text-decoration:none;color:inherit;">
                   <span style="display:block;font-weight:600;font-size:14px;color:var(--ink);">${html(t.title)}</span>
                   <span style="display:block;font-size:11.5px;color:var(--muted);">${html(t.sub)}</span>
                 </a>
@@ -1161,7 +1455,7 @@ function renderDashboard(vm) {
          <div style="color:var(--gold);font-size:28px;margin-bottom:10px;">◎</div>
          <strong style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);display:block;margin-bottom:6px;">No children in the planner yet</strong>
          <p style="color:var(--muted);margin:0 0 16px;line-height:1.5;">Add children in Setup to see their individual work here each week.</p>
-         <a href="/myagapay/learn/setup" style="display:inline-flex;align-items:center;gap:8px;background:var(--navy);color:#fff;border:1px solid var(--gold);border-radius:10px;padding:10px 18px;text-decoration:none;font-weight:700;font-size:14px;">Go to Setup →</a>
+         <a href="${html(learnSectionHref("onboarding"))}" style="display:inline-flex;align-items:center;gap:8px;background:var(--navy);color:#fff;border:1px solid var(--gold);border-radius:10px;padding:10px 18px;text-decoration:none;font-weight:700;font-size:14px;">Go to Setup →</a>
        </div>`;
 
   const experience = learnExperience();
@@ -1215,7 +1509,9 @@ function renderDashboard(vm) {
   // minimized by default (see index.html's first-visit default), expandable,
   // and the choice persists via localStorage. Non-Odyssey users always see
   // it expanded, as before.
-  const churchSectionHtml = experience.odyssey
+  const churchSectionHtml = experience.tefaActive
+    ? ""
+    : experience.odyssey
     ? `
       <div data-church-section style="display:flex;flex-direction:column;gap:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
@@ -1277,7 +1573,7 @@ function renderDashboard(vm) {
 }
 
 function renderPlanner(vm) {
-  seedFamilyPrototypeState(vm);
+  if (!marketingPreviewActive()) seedFamilyPrototypeState(vm);
   const query = new URLSearchParams(window.location.search);
   const activeScope = plannerScopeFromQuery();
   const mealTool = mealToolFromQuery();
@@ -1631,7 +1927,7 @@ function moveUnfinishedWorkControl(scope, rowId, weekday, status) {
 function renderPlannerDay(vm) {
   const day = vm.day.selected || {};
   const dayWeekday = Number.isInteger(vm.day.selectedIndex) ? vm.day.selectedIndex : 0;
-  const dayLinks = vm.week.days.map((item) => `<a href="/myagapay/learn/planner?view=day&date=${encodeURIComponent(item.date)}&term=${encodeURIComponent(vm.term.activeTerm)}&termId=${encodeURIComponent(vm.term.activeTermId)}" style="text-decoration:none;color:var(--ink);border:1px solid ${item.date === day.date ? "var(--gold)" : "var(--line)"};background:${item.date === day.date ? "#fbf2dd" : "var(--paper)"};border-radius:10px;padding:10px;text-align:center;min-width:92px;"><strong style="display:block;color:${item.isSunday ? "var(--burgundy)" : "var(--gold)"};">${html(item.weekday)}</strong><small>${html(item.shortDate)}</small></a>`).join("");
+  const dayLinks = vm.week.days.map((item) => `<a href="${html(learnSectionHref("planner", `view=day&date=${encodeURIComponent(item.date)}&term=${encodeURIComponent(vm.term.activeTerm)}&termId=${encodeURIComponent(vm.term.activeTermId)}`))}" style="text-decoration:none;color:var(--ink);border:1px solid ${item.date === day.date ? "var(--gold)" : "var(--line)"};background:${item.date === day.date ? "#fbf2dd" : "var(--paper)"};border-radius:10px;padding:10px;text-align:center;min-width:92px;"><strong style="display:block;color:${item.isSunday ? "var(--burgundy)" : "var(--gold)"};">${html(item.weekday)}</strong><small>${html(item.shortDate)}</small></a>`).join("");
   const designedAssignments = designedAssignmentsForDate(vm, day.date);
   const household = designedAssignments.length
     ? renderDesignedLessonList(designedAssignments, "")
@@ -1789,13 +2085,14 @@ function choreSetupRow(chore = {}, index = 0, planning = {}) {
 }
 
 function renderFamilyPlannerIntro(vm, scope) {
+  const tefa = learnExperience().tefaActive;
   const intros = {
     lessons: ["Family Planner", "Lessons & Forms", "Your school day, arranged by family work and Form work.", "▦"],
-    meals: ["Meal Planning", "Fast-aware weekly meals", "Plan breakfast, lunch, and dinner beside the Church calendar so fasting days and feast days shape the week naturally.", "♨"],
-    chores: ["Household Chores", "Practical life for every child", "Keep a visible weekly rotation with lighter expectations on Sundays and feast days.", "✓"],
-    events: ["Family Calendar", "Appointments, field trips, and name days", "Keep the household’s real life beside lessons, feasts, and meals.", "◷"],
-    calendar: ["Family Calendar", "Appointments, field trips, and name days", "Keep the household’s real life beside lessons, feasts, and meals.", "◷"],
-    recipes: ["Recipe Library", "Your fast-aware family recipe box", "Save recipes once, mark fasting fit, and use them as the source for meal planning.", "☰"],
+    meals: tefa ? ["Meal Planning", "A practical weekly menu", "Plan breakfast, lunch, and dinner beside lessons and family activities.", "♨"] : ["Meal Planning", "Fast-aware weekly meals", "Plan breakfast, lunch, and dinner beside the Church calendar so fasting days and feast days shape the week naturally.", "♨"],
+    chores: tefa ? ["Household Chores", "Practical life for every child", "Keep a visible weekly rotation with age-appropriate responsibilities.", "✓"] : ["Household Chores", "Practical life for every child", "Keep a visible weekly rotation with lighter expectations on Sundays and feast days.", "✓"],
+    events: tefa ? ["Family Calendar", "Appointments, field trips, and activities", "Keep the household’s real life beside lessons and meals.", "◷"] : ["Family Calendar", "Appointments, field trips, and name days", "Keep the household’s real life beside lessons, feasts, and meals.", "◷"],
+    calendar: tefa ? ["Family Calendar", "Appointments, field trips, and activities", "Keep the household’s real life beside lessons and meals.", "◷"] : ["Family Calendar", "Appointments, field trips, and name days", "Keep the household’s real life beside lessons, feasts, and meals.", "◷"],
+    recipes: tefa ? ["Recipe Library", "Your family recipe box", "Save recipes once and use them as the source for weekly meal planning.", "☰"] : ["Recipe Library", "Your fast-aware family recipe box", "Save recipes once, mark fasting fit, and use them as the source for meal planning.", "☰"],
     groceries: ["Grocery List", "From the menu to the store", "Group shopping by aisle and keep pantry staples from cluttering the list.", "▤"],
     pantry: ["Pantry", "Staples, leftovers, and things already on hand", "Track what the household already has so the weekly grocery list stays practical and lean.", "☖"]
   };
@@ -1918,6 +2215,7 @@ function familyPlannerModel(vm) {
 }
 
 function renderFeastsPanel(model, mode = "week") {
+  if (learnExperience().tefaActive) return "";
   const days = (mode === "month" ? model.monthDays : model.weekDays)
     .filter((day) => day.inMonth !== false && isImportantPlannerFeast(day))
     .slice(0, mode === "month" ? 8 : 5);
@@ -1950,6 +2248,9 @@ function renderFeastsPanel(model, mode = "week") {
 }
 
 function renderFastingLegend() {
+  if (learnExperience().tefaActive) {
+    return `<div class="learn-family-fasting-legend" aria-label="Planner legend"><span><i class="is-today"></i> Today</span><span><i class="is-ordinary"></i> Planned day</span></div>`;
+  }
   return `<div class="learn-family-fasting-legend" aria-label="Fasting legend">
     <span><i class="is-strict"></i> Fast day</span>
     <span><i class="is-feast"></i> Feast or Sunday</span>
@@ -2840,9 +3141,9 @@ function renderPlannerMonth(vm) {
             <h2 style="font-family:'Cormorant Garamond',serif;font-size:34px;line-height:1;margin:5px 0 0;color:var(--ink);">${html(month.label)}</h2>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <a href="/myagapay/learn/planner?view=month&month=${encodeURIComponent(adjacentMonthKey(month.key, -1))}&term=${encodeURIComponent(vm.term.activeTerm)}&termId=${encodeURIComponent(vm.term.activeTermId)}" style="border:1px solid var(--line);border-radius:9px;padding:9px 12px;color:var(--ink);text-decoration:none;background:var(--paper2);">← Previous</a>
+            <a href="${html(learnSectionHref("planner", `view=month&month=${encodeURIComponent(adjacentMonthKey(month.key, -1))}&term=${encodeURIComponent(vm.term.activeTerm)}&termId=${encodeURIComponent(vm.term.activeTermId)}`))}" style="border:1px solid var(--line);border-radius:9px;padding:9px 12px;color:var(--ink);text-decoration:none;background:var(--paper2);">← Previous</a>
             <button type="button" data-planner-month-print="${html(month.key)}" style="border:1px solid var(--gold);background:var(--navy);color:#fff;border-radius:9px;padding:9px 14px;font-family:inherit;font-weight:700;cursor:pointer;">Print Month</button>
-            <a href="/myagapay/learn/planner?view=month&month=${encodeURIComponent(adjacentMonthKey(month.key, 1))}&term=${encodeURIComponent(vm.term.activeTerm)}&termId=${encodeURIComponent(vm.term.activeTermId)}" style="border:1px solid var(--line);border-radius:9px;padding:9px 12px;color:var(--ink);text-decoration:none;background:var(--paper2);">Next →</a>
+            <a href="${html(learnSectionHref("planner", `view=month&month=${encodeURIComponent(adjacentMonthKey(month.key, 1))}&term=${encodeURIComponent(vm.term.activeTerm)}&termId=${encodeURIComponent(vm.term.activeTermId)}`))}" style="border:1px solid var(--line);border-radius:9px;padding:9px 12px;color:var(--ink);text-decoration:none;background:var(--paper2);">Next →</a>
           </div>
         </div>
         <!-- 7-column day header -->
@@ -2986,7 +3287,32 @@ function renderPlannerYear(vm) {
   `;
 }
 
+function renderTefaFormation(vm) {
+  const rhythmContent = vm.rhythms?.length
+    ? vm.rhythms.map((item) => `<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line);">${check(item.complete)}<span><strong style="display:block;font-size:14px;">${html(item.title)}</strong>${item.note ? `<small class="learn-muted">${html(item.note)}</small>` : ""}</span></div>`).join("")
+    : emptyState("Add an optional household routine in Setup.");
+  const memoryContent = vm.recitation?.length
+    ? vm.recitation.map((item) => `<div style="padding:11px 0;border-top:1px solid var(--line);"><div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:7px;"><strong>${html(item.title)}</strong><small class="learn-muted">${html(item.status)}</small></div>${bar(item.progress, "var(--navy)")}<small class="learn-muted">${html(item.progress)}% complete</small></div>`).join("")
+    : emptyState("Add poems, speeches, vocabulary, or other memory work in Setup.");
+  const enrichmentContent = vm.enrichment?.length
+    ? vm.enrichment.map((item) => `<div style="display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid var(--line);"><span><strong style="display:block;">${html(item.title)}</strong><small class="learn-muted">${html(item.type)}</small></span><small class="learn-muted">${html(item.minutes)}</small></div>`).join("")
+    : emptyState("Add art, music, nature study, and other enrichment in Setup.");
+  const natureContent = vm.nature?.length
+    ? vm.nature.map((entry) => `<article style="padding:12px 0;border-top:1px solid var(--line);"><strong style="font-family:'Cormorant Garamond',serif;font-size:20px;">${html(entry.title)}</strong>${entry.location ? `<small style="display:block;color:var(--gold);margin-top:2px;">${html(entry.location)}</small>` : ""}${entry.notes ? `<p style="margin:7px 0 0;color:var(--muted);line-height:1.45;">${html(entry.notes)}</p>` : ""}</article>`).join("")
+    : emptyState("Nature journal entries appear here as you add them.");
+  const body = `<section data-screen-label="Formation & Enrichment" class="learn-stack">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:16px;align-items:start;">
+      ${panel("Household Rhythms", rhythmContent, { icon: "◷" })}
+      ${panel("Memory & Recitation", memoryContent, { icon: "☰" })}
+      ${panel("Art, Music & Enrichment", enrichmentContent, { icon: "✣" })}
+      ${panel("Nature Journal", natureContent, { icon: "✦" })}
+    </div>
+  </section>`;
+  return shell(vm, body);
+}
+
 function renderFormation(vm) {
+  if (learnExperience().tefaActive) return renderTefaFormation(vm);
   // ── Today panel — liturgical day, readings, saint, fasting all in one place ─
   const fastBadge = vm.today.fasting && !/no fast/i.test(vm.today.fasting)
     ? `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(110,47,42,.10);color:var(--burgundy);border:1px solid rgba(110,47,42,.22);border-radius:999px;padding:4px 11px;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;">✦ ${html(vm.today.fasting)}</span>`
@@ -3138,6 +3464,8 @@ function bookCover(book = {}, icon = "☰") {
 }
 
 function renderBooks(vm) {
+  const tefaActive = learnExperience().tefaActive;
+  const libraryColumns = tefaActive ? "2fr 1.1fr 1fr .6fr 1fr" : "2fr 1.1fr 1fr .6fr .7fr 1fr";
   // ── Read-aloud cards ──────────────────────────────────────────────────────────
   const readAloudCards = vm.readAlouds.length
     ? vm.readAlouds.map((book) => `
@@ -3158,7 +3486,7 @@ function renderBooks(vm) {
   // ── Library table — fixed overflow ────────────────────────────────────────────
   const libraryRows = vm.library.length
     ? vm.library.map((book, i) => `
-        <div style="display:grid;grid-template-columns:2fr 1.1fr 1fr .6fr .7fr 1fr;gap:10px;align-items:center;padding:10px 4px;border-top:1px solid var(--line);font-size:13px;background:${i % 2 ? "var(--paper2)" : "transparent"};">
+        <div style="display:grid;grid-template-columns:${libraryColumns};gap:10px;align-items:center;padding:10px 4px;border-top:1px solid var(--line);font-size:13px;background:${i % 2 ? "var(--paper2)" : "transparent"};">
           <span style="display:flex;align-items:center;gap:9px;min-width:0;">
             ${bookCover(book, "☰")}
             <span style="min-width:0;">
@@ -3169,14 +3497,14 @@ function renderBooks(vm) {
           <span style="color:var(--ink);">${html(book.author)}</span>
           <span class="learn-muted">${html(book.category)}</span>
           <span class="learn-muted">${html(book.ages || "—")}</span>
-          <span style="${book.orthodox ? "color:var(--gold);font-weight:700;" : "color:var(--muted);"}">${book.orthodox ? "Orthodox" : "—"}</span>
+          ${tefaActive ? "" : `<span style="${book.orthodox ? "color:var(--gold);font-weight:700;" : "color:var(--muted);"}">${book.orthodox ? "Orthodox" : "—"}</span>`}
           <span>${bar(book.progress)}<small style="color:var(--gold);font-weight:700;">${html(book.progress)}%</small></span>
         </div>`).join("")
     : `<div style="padding:18px 4px;color:var(--muted);font-style:italic;">Add books in Setup to build the household library.</div>`;
 
   const libraryHeader = `
-    <div style="display:grid;grid-template-columns:2fr 1.1fr 1fr .6fr .7fr 1fr;gap:10px;padding:0 4px 10px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.1em;color:var(--muted);font-weight:700;text-transform:uppercase;">
-      <span>Title</span><span>Author</span><span>Category</span><span>Ages</span><span>Orthodox</span><span>Progress</span>
+    <div style="display:grid;grid-template-columns:${libraryColumns};gap:10px;padding:0 4px 10px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.1em;color:var(--muted);font-weight:700;text-transform:uppercase;">
+      <span>Title</span><span>Author</span><span>Category</span><span>Ages</span>${tefaActive ? "" : "<span>Orthodox</span>"}<span>Progress</span>
     </div>`;
 
   // ── Book pacing ───────────────────────────────────────────────────────────────
@@ -3240,7 +3568,7 @@ function renderBooks(vm) {
             : ""}
 
           ${vm.suggestions.length
-            ? panel("Suggested Orthodox Books", suggestionsContent, { icon: "✥" })
+            ? panel(tefaActive ? "Suggested Living Books" : "Suggested Orthodox Books", suggestionsContent, { icon: "✥" })
             : ""}
 
         </aside>
@@ -4055,6 +4383,9 @@ function formationRecitationSetupRow(track = {}, children = [], groupingMode = "
 }
 
 function formationEnrichmentSetupRow(block = {}, children = [], terms = [], currentTermId = "", groupingMode = "forms", tileMinutes = "") {
+  const blockTypeOptions = learnExperience().tefaActive
+    ? ["Recitation & Memory Work", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"]
+    : ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"];
   const minutes = block.minutesPlanned || block.minutes || tileMinutes || "20";
   const resourceEntries = Array.isArray(block.resources) && block.resources.length
     ? block.resources
@@ -4070,20 +4401,21 @@ function formationEnrichmentSetupRow(block = {}, children = [], terms = [], curr
           childIds: block.childIds || (block.childId ? [block.childId] : [])
         }]
       : []);
-  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main"><div class="learn-setup-row-identity">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupSelect("Schedule type", "weeklyFrequency", block.weeklyFrequency === "1x" ? "weekly" : block.weeklyFrequency || block.cadenceLabel || block.cadence || "weekly", simpleScheduleOptions)}${setupRemoveButton()}</div>${setupResourceList(resourceEntries, children, groupingMode, block)}<input type="hidden" name="minutesPlanned" value="${html(minutes)}" /><input type="hidden" name="instructionMode" value="${html(block.instructionMode || "shared")}" /><input type="hidden" name="resourceType" value="${html(block.resourceType || block.sourceType || (resourceEntries.length ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(block.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(block.priorityLevel || "enrichment")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("If missed", "missedLessonBehavior", block.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupGraceModeBehavior(block.gracePriority || "medium")}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main"><div class="learn-setup-row-identity">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", blockTypeOptions)}${setupSelect("Schedule type", "weeklyFrequency", block.weeklyFrequency === "1x" ? "weekly" : block.weeklyFrequency || block.cadenceLabel || block.cadence || "weekly", simpleScheduleOptions)}${setupRemoveButton()}</div>${setupResourceList(resourceEntries, children, groupingMode, block)}<input type="hidden" name="minutesPlanned" value="${html(minutes)}" /><input type="hidden" name="instructionMode" value="${html(block.instructionMode || "shared")}" /><input type="hidden" name="resourceType" value="${html(block.resourceType || block.sourceType || (resourceEntries.length ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(block.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(block.priorityLevel || "enrichment")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("If missed", "missedLessonBehavior", block.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupGraceModeBehavior(block.gracePriority || "medium")}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function churchRhythmSetupPanel(vm) {
   const formation = vm.formationSetup || {};
+  const tefa = learnExperience().tefaActive;
   const sectionStyle = "border:1px solid var(--line);border-radius:13px;background:rgba(255,252,245,.64);padding:14px;display:grid;gap:12px;";
   const sectionTitle = (title, subtitle = "") => `<div><strong style="display:block;font-family:var(--sans);font-size:15px;color:var(--ink);">${html(title)}</strong>${subtitle ? `<small style="display:block;color:var(--muted);line-height:1.35;margin-top:2px;">${html(subtitle)}</small>` : ""}</div>`;
   return `
     <div style="display:grid;gap:14px;">
-      <p style="margin:0;color:var(--muted);line-height:1.45;">This is the household's daily Church anchor. It lives above school subjects because it shapes the day before lesson planning begins.</p>
+      <p style="margin:0;color:var(--muted);line-height:1.45;">${tefa ? "Build a simple household opening routine that helps everyone begin the school day together." : "This is the household's daily Church anchor. It lives above school subjects because it shapes the day before lesson planning begins."}</p>
       <div style="${sectionStyle}">
-        ${sectionTitle("Daily rhythm items", "Prayer, Gospel, Epistle, saints, feasts, and fasting notes.")}
+        ${sectionTitle("Daily rhythm items", tefa ? "Morning meeting, read-aloud, movement, planning, and other shared anchors." : "Prayer, Gospel, Epistle, saints, feasts, and fasting notes.")}
         <div data-setup-list="formationRhythms" style="display:grid;gap:10px;">${(formation.churchRhythms?.length ? formation.churchRhythms : [{}]).map((rhythm) => formationRhythmSetupRow(rhythm)).join("")}</div>
-        <button type="button" data-setup-add-row="formationRhythms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Church Rhythm</button>
+        <button type="button" data-setup-add-row="formationRhythms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add ${tefa ? "Household Rhythm" : "Church Rhythm"}</button>
       </div>
     </div>`;
 }
@@ -4113,6 +4445,7 @@ function setupSectionPanel({ group, panel: panelId, title, detail = "", minutes 
 }
 
 function formationSetupPanel(vm) {
+  const tefa = learnExperience().tefaActive;
   const formation = vm.formationSetup || {};
   const currentTermId = vm.schoolYear.currentTermId || vm.term.id;
   const enrichmentBlocks = formation.enrichmentBlocks || [];
@@ -4128,7 +4461,7 @@ function formationSetupPanel(vm) {
     {
       panel: "recitation",
       title: "Recitation",
-      detail: "Creeds, prayers, psalms, Scripture, poems, and speeches.",
+      detail: tefa ? "Poems, speeches, vocabulary, facts, and memory work." : "Creeds, prayers, psalms, Scripture, poems, and speeches.",
       icon: "✦",
       type: "Recitation & Memory Work",
       rows: formation.recitationTracks || [],
@@ -4144,11 +4477,11 @@ function formationSetupPanel(vm) {
     { panel: "icons", title: "Icons", detail: "Icon study, sacred art observation, and copywork prompts.", icon: "▣", type: "Icon Study" },
     { panel: "hymns", title: "Hymns", detail: "Troparia, kontakia, hymn study, and singing practice.", icon: "♪", type: "Hymn Study" },
     { panel: "artists", title: "Artists", detail: "Artist study, picture study, and visual narration.", icon: "◎", type: "Art Study" },
-    { panel: "composers", title: "Composers", detail: "Composer study, sacred music, and attentive listening.", icon: "♫", type: "Music Study" },
+    { panel: "composers", title: "Composers", detail: tefa ? "Composer study, music history, and attentive listening." : "Composer study, sacred music, and attentive listening.", icon: "♫", type: "Music Study" },
     { panel: "folk-songs", title: "Folk Songs", detail: "Folk songs, seasonal songs, and family singing.", icon: "♬", type: "Folk Songs" },
     { panel: "poetry", title: "Poetry", detail: "Poet study, recitation, copywork, and beautiful language.", icon: "✒", type: "Poetry" },
     { panel: "shakespeare", title: "Shakespeare", detail: "Plays, scenes, narration, and performance notes.", icon: "♜", type: "Shakespeare" }
-  ].map((section) => setupTileValue(vm, "formation", section.panel, section));
+  ].filter((section) => !tefa || !["catechesis", "saints", "icons", "hymns"].includes(section.panel)).map((section) => setupTileValue(vm, "formation", section.panel, section));
   const sectionRows = (section) => section.rowKind === "recitation"
     ? (section.rows.length ? section.rows : [{}]).map((track) => formationRecitationSetupRow(track, vm.children, vm.preferences.groupingMode)).join("")
     : (enrichmentBlocks.filter((block) => String(block.blockType || block.type || "").toLowerCase() === section.type.toLowerCase()).length
@@ -4504,13 +4837,9 @@ function simpleSetupField(label, name, value = "", options = {}) {
 
 function simpleSetupStepBody(draft) {
   if (draft.step === 0) {
-    // TEFA/Odyssey households see the Church calendar preference framed as
-    // optional, since not every family using this entry point is Orthodox.
-    const churchCalendarLabel = isOdysseyLearnContext() ? "Optional Church calendar preference" : "Church calendar";
-    const churchCalendarHelp = isOdysseyLearnContext()
-      ? `<small class="learn-wizard-field-help">Orthodox families may choose Julian or Revised-Julian. Other families can leave the default and adjust later.</small>`
-      : "";
-    return `<div class="learn-wizard-step-copy"><span>Begin with the people, not the paperwork.</span><h2>Tell us about your household.</h2><p>This is enough to personalize Learn. You can add parish, terms, books, and detailed subjects later.</p></div><div class="learn-wizard-fields">${simpleSetupField("Household name", "wizard.householdName", draft.householdName, { placeholder: "The Dunn Family" })}${simpleSetupField("Your name", "wizard.parentName", draft.parentName, { placeholder: "Stephanie" })}<label class="learn-wizard-field"><span>${html(churchCalendarLabel)}</span><select name="wizard.calendarType"><option value="julian" ${draft.calendarType === "julian" ? "selected" : ""}>Julian</option><option value="revised-julian" ${draft.calendarType === "revised-julian" ? "selected" : ""}>Revised-Julian</option></select>${churchCalendarHelp}</label></div>`;
+    const churchCalendarField = isOdysseyLearnContext() ? "" : `<label class="learn-wizard-field"><span>Church calendar</span><select name="wizard.calendarType"><option value="julian" ${draft.calendarType === "julian" ? "selected" : ""}>Julian</option><option value="revised-julian" ${draft.calendarType === "revised-julian" ? "selected" : ""}>Revised-Julian</option></select></label>`;
+    const laterCopy = isOdysseyLearnContext() ? "You can add terms, books, and detailed subjects later." : "You can add parish, terms, books, and detailed subjects later.";
+    return `<div class="learn-wizard-step-copy"><span>Begin with the people, not the paperwork.</span><h2>Tell us about your household.</h2><p>This is enough to personalize Learn. ${laterCopy}</p></div><div class="learn-wizard-fields">${simpleSetupField("Household name", "wizard.householdName", draft.householdName, { placeholder: "The Harper Family" })}${simpleSetupField("Your name", "wizard.parentName", draft.parentName, { placeholder: "Taylor" })}${churchCalendarField}</div>`;
   }
   if (draft.step === 1) {
     const methods = [
@@ -4552,15 +4881,37 @@ function simpleSetupStepBody(draft) {
 
 function renderSimpleSetupWizard(vm, draft) {
   const body = `<section class="learn-wizard" data-simple-setup-wizard data-wizard-step="${draft.step}">
-    <div class="learn-wizard-topline"><div><span>Simple Setup</span><strong>Step ${draft.step + 1} of ${SIMPLE_SETUP_STEPS.length}</strong></div><a href="/myagapay/learn/setup?advanced=1" data-wizard-advanced>Advanced Setup</a></div>
+    <div class="learn-wizard-topline"><div><span>Simple Setup</span><strong>Step ${draft.step + 1} of ${SIMPLE_SETUP_STEPS.length}</strong></div><a href="${html(learnSectionHref("onboarding", "advanced=1"))}" data-wizard-advanced>Advanced Setup</a></div>
     <div class="learn-wizard-progress" aria-label="Setup progress">${SIMPLE_SETUP_STEPS.map((label, index) => `<span class="${index < draft.step ? "is-complete" : index === draft.step ? "is-current" : ""}"><i>${index < draft.step ? "✓" : index + 1}</i><em>${html(label)}</em></span>`).join("")}</div>
-    <form class="learn-wizard-card">${simpleSetupStepBody(draft)}<p class="learn-wizard-status" data-wizard-status aria-live="polite"></p><div class="learn-wizard-actions">${draft.step ? `<button type="button" class="learn-wizard-secondary" data-wizard-back>Back</button>` : `<a class="learn-wizard-secondary" href="/myagapay/learn/setup?advanced=1" data-wizard-advanced>Skip to full setup</a>`}<button type="submit" class="learn-wizard-primary" ${draft.step === SIMPLE_SETUP_STEPS.length - 1 ? "data-wizard-finish" : "data-wizard-next"}>${draft.step === SIMPLE_SETUP_STEPS.length - 1 ? "Save & open Today" : "Continue"}</button></div></form>
+    <form class="learn-wizard-card">${simpleSetupStepBody(draft)}<p class="learn-wizard-status" data-wizard-status aria-live="polite"></p><div class="learn-wizard-actions">${draft.step ? `<button type="button" class="learn-wizard-secondary" data-wizard-back>Back</button>` : `<a class="learn-wizard-secondary" href="${html(learnSectionHref("onboarding", "advanced=1"))}" data-wizard-advanced>Skip to full setup</a>`}<button type="submit" class="learn-wizard-primary" ${draft.step === SIMPLE_SETUP_STEPS.length - 1 ? "data-wizard-finish" : "data-wizard-next"}>${draft.step === SIMPLE_SETUP_STEPS.length - 1 ? "Save & open Today" : "Continue"}</button></div></form>
     <p class="learn-wizard-draft-note">Your progress is saved on this device until setup is complete.</p>
   </section>`;
   return shell(vm, body);
 }
 
+function renderTefaCommunity(vm) {
+  const resources = vm.resources?.length
+    ? vm.resources.map((resource) => `<article style="background:var(--paper);border:1px solid var(--line);border-top:3px solid ${html(resource.color || "var(--gold)")};border-radius:13px;padding:16px;display:grid;gap:9px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><small style="color:var(--gold);font-weight:800;letter-spacing:.11em;text-transform:uppercase;">${html(resource.category)}</small>${resource.vetted ? '<span style="font-size:10px;color:#365f3b;border:1px solid #c2d9c4;background:#edf6ef;border-radius:999px;padding:3px 8px;">AGAPAY CURATED</span>' : ""}</div>
+        <strong style="font-family:'Cormorant Garamond',serif;font-size:23px;line-height:1.05;color:var(--ink);">${html(resource.title)}</strong>
+        <p style="margin:0;color:var(--muted);line-height:1.45;">${html(resource.desc || resource.subtitle)}</p>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">${(resource.tags || []).slice(0, 4).map((tag) => `<span style="border:1px solid var(--line);border-radius:999px;padding:3px 8px;font-size:10px;color:var(--muted);">${html(tag)}</span>`).join("")}</div>
+        <a href="${html(safeExternalUrl(resource.url) || "#")}" target="_blank" rel="noopener noreferrer" style="margin-top:4px;color:var(--navy);font-weight:800;text-decoration:none;">Open resource →</a>
+      </article>`).join("")
+    : emptyState("Curated homeschool resources are being prepared for TEFA Edition.");
+  const body = `<section data-screen-label="Homeschool Resources" class="learn-stack">
+    <div style="background:linear-gradient(135deg,var(--navy),#16385e);border:1px solid var(--gold);border-radius:16px;padding:26px 30px;color:#fffaf0;">
+      <div class="learn-eyebrow" style="color:#f0d783;">CURATED FOR HOME EDUCATION</div>
+      <h2 style="font-family:'Cormorant Garamond',serif;font-size:clamp(32px,5vw,48px);line-height:1;margin:7px 0 8px;">Practical resources, thoughtfully curated.</h2>
+      <p style="margin:0;color:rgba(255,250,240,.78);max-width:760px;line-height:1.5;">Find useful tools for planning, teaching, Texas standards, primary sources, and family learning.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:14px;">${resources}</div>
+  </section>`;
+  return shell(vm, body);
+}
+
 function renderCommunity(vm) {
+  if (learnExperience().tefaActive) return renderTefaCommunity(vm);
   const filterOptions = (values) => values.map((value) => `<option value="${html(value)}">${html(value)}</option>`).join("");
 
   // ── Facebook / community CTA ──────────────────────────────────────────────────
@@ -4768,7 +5119,7 @@ function renderReportsComingSoon(vm) {
         <span>Transcript-ready academic exports</span>
         <span>Printable state-reporting support</span>
       </div>
-      <a href="/myagapay/learn" class="learn-coming-soon-action">Back to Today</a>
+      <a href="${html(learnSectionHref("dashboard"))}" class="learn-coming-soon-action">Back to Today</a>
     </section>`);
 }
 
@@ -4965,7 +5316,7 @@ function wireSimpleSetupWizard(vm, draft, existingSnapshot = null) {
         await apiPost("/api/learn/setup", simpleSetupPayload(draft, existingSnapshot));
         localStorage.setItem("agapay.learn.calendar", draft.calendarType || "julian");
         localStorage.removeItem(simpleSetupDraftKey());
-        window.location.href = "/myagapay/learn";
+        window.location.href = learnSectionHref("dashboard");
       } catch (error) {
         status.textContent = error.message;
         submit.disabled = false;
@@ -5123,7 +5474,8 @@ function renderSetup(vm) {
   };
   const orthodoxHouseholdFields = productExperience.tefaActive ? "" : `${setupInput("Parish", "household.parishName", vm.household.parish)}${setupInput("Parish patronal feast", "household.parishPatronalFeastName", vm.household.parishPatronalFeastName || "")}${setupInput("Patronal feast date", "household.parishPatronalFeastDate", vm.household.parishPatronalFeastDate || "", { type: "date" })}${setupInput("Patron Saint of your homeschool", "household.patronSaintName", vm.household.patronSaintName || "", { placeholder: "e.g. St. Xenia of St. Petersburg" })}${setupInput("Patron Saint feast date", "household.patronSaintFeastDate", vm.household.patronSaintFeastDate || "", { type: "date" })}`;
   const orthodoxHouseholdNote = productExperience.tefaActive ? "" : `<p style="margin:10px 0 0;color:var(--muted);font-size:13px;line-height:1.4;">The patronal feast repeats annually on the Family Planner calendar so it can be honored alongside name days, fasts, and major feasts. If your homeschool has its own patron saint, that name day appears there too, and both names print on report cards and transcripts.</p>`;
-  const householdContent = `<div class="learn-setup-method-note"><small>Organized for ${html(vm.household.method || "your household")}</small><strong>${html(experience.note)}</strong></div><div class="learn-setup-household-grid">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parent name", "household.parentName", vm.household.parentName)}${setupSelect("Method", "household.primaryMethod", vm.household.method || "Unsure", homeschoolMethodOptions)}${setupInput("Homeschool name", "household.homeschoolName", vm.household.homeschoolName || "", { placeholder: productExperience.tefaActive ? "e.g. Dunn Family Homeschool" : "e.g. St. Xenia Homeschool" })}${orthodoxHouseholdFields}${setupSelect("Planning groups", "preferences.groupingMode", groupingMode, [{ value: "forms", label: "Forms" }, { value: "grades", label: "Traditional grades / levels" }])}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${setupSelect(productExperience.tefaActive ? "Optional Church calendar" : "Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}${`<details class="learn-day-picker"><summary><span>Default school days</span><strong data-day-summary>${html(setupWeekdays.filter((day) => (vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).includes(day.value)).map((day) => day.label).join(" · "))}</strong></summary><div class="learn-day-picker-menu">${setupWeekdays.map((day) => `<label><input type="checkbox" data-day-choice value="${day.value}" ${(vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).includes(day.value) ? "checked" : ""}>${day.label}</label>`).join("")}</div><input type="hidden" name="preferences.defaultSchoolDays" value="${html((vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).join(","))}"></details>`}${setupSelect("Default missed lesson", "preferences.defaultMissedLessonBehavior", vm.preferences.defaultMissedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Default max minutes / child", "preferences.defaultMaxDailyMinutes", vm.preferences.defaultMaxDailyMinutes || "240", { type: "number" })}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /></div>${orthodoxHouseholdNote}`;
+  const calendarField = productExperience.tefaActive ? "" : setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions);
+  const householdContent = `<div class="learn-setup-method-note"><small>Organized for ${html(vm.household.method || "your household")}</small><strong>${html(experience.note)}</strong></div><div class="learn-setup-household-grid">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parent name", "household.parentName", vm.household.parentName)}${setupSelect("Method", "household.primaryMethod", vm.household.method || "Unsure", homeschoolMethodOptions)}${setupInput("Homeschool name", "household.homeschoolName", vm.household.homeschoolName || "", { placeholder: productExperience.tefaActive ? "e.g. Harper Family Homeschool" : "e.g. St. Xenia Homeschool" })}${orthodoxHouseholdFields}${setupSelect("Planning groups", "preferences.groupingMode", groupingMode, [{ value: "forms", label: "Forms" }, { value: "grades", label: "Traditional grades / levels" }])}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${calendarField}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}${`<details class="learn-day-picker"><summary><span>Default school days</span><strong data-day-summary>${html(setupWeekdays.filter((day) => (vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).includes(day.value)).map((day) => day.label).join(" · "))}</strong></summary><div class="learn-day-picker-menu">${setupWeekdays.map((day) => `<label><input type="checkbox" data-day-choice value="${day.value}" ${(vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).includes(day.value) ? "checked" : ""}>${day.label}</label>`).join("")}</div><input type="hidden" name="preferences.defaultSchoolDays" value="${html((vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).join(","))}"></details>`}${setupSelect("Default missed lesson", "preferences.defaultMissedLessonBehavior", vm.preferences.defaultMissedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Default max minutes / child", "preferences.defaultMaxDailyMinutes", vm.preferences.defaultMaxDailyMinutes || "240", { type: "number" })}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /></div>${orthodoxHouseholdNote}`;
   const childrenContent = `<p style="margin:0 0 12px;color:var(--muted);">${html(groupingCopy)}</p><div data-setup-list="children" style="display:grid;gap:8px;">${(vm.children.length ? vm.children : [{}]).map((child) => childSetupRow(child, groupingMode)).join("")}</div><div class="learn-setup-add-actions"><button type="button" data-setup-add-row="children">Add one child</button>${isLearnFamilyPlan() ? `<button type="button" data-setup-add-children="3">Add 3 children</button>` : ""}</div>`;
   const termsContent = `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Term 4 / Summer is available for year-round homeschoolers. Assign subjects, books, and formation materials to the term where they belong.</p><div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button type="button" data-setup-add-row="terms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Term</button></div><div data-setup-list="terms" style="display:grid;gap:10px;">${(vm.terms?.length ? vm.terms : [vm.term]).map((term, index) => termSetupRow(term, index)).join("")}</div>`;
   const body = `
@@ -5143,6 +5495,7 @@ function renderSetup(vm) {
 }
 
 function renderPrintCenter(vm) {
+  const tefaActive = learnExperience().tefaActive;
   const householdTemplates = vm.templates.filter((t) => t.audience === "mom" || t.audience === "household");
   const childTemplates     = vm.templates.filter((t) => t.audience === "child");
   const freePlan  = !isLearnFamilyPlan();
@@ -5189,7 +5542,7 @@ function renderPrintCenter(vm) {
       id: "month",
       label: "Month & Calendar",
       icon: "▣",
-      desc: "Monthly household plans with feast days and fast days clearly marked.",
+      desc: tefaActive ? "Monthly household plans with school days and household events clearly marked." : "Monthly household plans with feast days and fast days clearly marked.",
       premium: false,
       ids: ["print_mom_month", "planner_events_month"]
     },
@@ -5787,7 +6140,7 @@ function wireDashboard() {
           completed,
           civilDate: localIsoDate()
         });
-        root.innerHTML = renderDashboard(toDashboardViewModel(saved));
+        root.innerHTML = renderDashboard(prepareOdysseyViewModel(toDashboardViewModel(saved)));
         wireDashboard();
       } catch (error) {
         button.disabled = false;
@@ -5815,7 +6168,7 @@ function wireDashboard() {
           mode,
           active: mode !== "full"
         });
-        root.innerHTML = renderDashboard(toDashboardViewModel(saved));
+        root.innerHTML = renderDashboard(prepareOdysseyViewModel(toDashboardViewModel(saved)));
         wireDashboard();
         const nextStatus = root.querySelector("[data-grace-mode-status]");
         if (nextStatus) nextStatus.textContent = "Rhythm saved.";
@@ -7917,8 +8270,9 @@ function wirePlanner(vm) {
         const updatedVm = toPlannerViewModel({ ok: true, planner: saved.planner });
         const scope = params.get("scope") || updatedVm.activeScope || "lessons";
         const displayView = params.get("view") || updatedVm.activeView || "week";
-        root.innerHTML = renderPlanner(updatedVm);
-        wirePlanner(updatedVm);
+        const preparedVm = prepareOdysseyViewModel(updatedVm);
+        root.innerHTML = renderPlanner(preparedVm);
+        wirePlanner(preparedVm);
       }
     } catch (error) {
       status.textContent = error.message;
@@ -7962,8 +8316,9 @@ function wirePlanner(vm) {
         await syncLearnGoogleCalendar();
         if (saved.planner) {
           const updatedVm = toPlannerViewModel({ ok: true, planner: saved.planner });
-          root.innerHTML = renderPlanner(updatedVm);
-          wirePlanner(updatedVm);
+          const preparedVm = prepareOdysseyViewModel(updatedVm);
+          root.innerHTML = renderPlanner(preparedVm);
+          wirePlanner(preparedVm);
         }
       } catch (error) {
         showLearnDialog("Reschedule Could Not Be Saved", error.message || "Please try again.", []);
@@ -8650,12 +9005,12 @@ async function mount() {
   root.innerHTML = `<div style="padding:32px;font-family:Georgia,serif;color:#1b2c45;">Loading AGAPAY Learn...</div>`;
   if (pageKey === "dashboard") {
     const raw = await apiGet(learnApiUrl("/api/learn/dashboard", { calendar }));
-    if (raw.setupCompleted === false) {
+    if (raw.setupCompleted === false && !marketingPreviewActive()) {
       window.location.replace(learnSectionHref("onboarding"));
       return;
     }
-    root.innerHTML = renderDashboard(toDashboardViewModel(raw));
-    wireDashboard();
+    root.innerHTML = renderDashboard(prepareOdysseyViewModel(toDashboardViewModel(raw)));
+    if (!marketingPreviewActive()) wireDashboard();
     return;
   }
   if (pageKey === "planner") {
@@ -8664,20 +9019,20 @@ async function mount() {
     const termId = params.get("termId") || "";
     const date = params.get("date") || "";
     const raw = await apiGet(learnApiUrl("/api/learn/planner", { calendar, view, month, termId, date }));
-    const vm = toPlannerViewModel(raw);
+    const vm = prepareOdysseyViewModel(toPlannerViewModel(raw));
     root.innerHTML = renderPlanner(vm);
-    wirePlanner(vm);
+    if (!marketingPreviewActive()) wirePlanner(vm);
     return;
   }
   if (pageKey === "formation") {
     const raw = await apiGet(learnApiUrl("/api/learn/formation", { calendar }));
-    root.innerHTML = renderFormation(toFormationViewModel(raw));
-    wireFormation();
+    root.innerHTML = renderFormation(prepareOdysseyViewModel(toFormationViewModel(raw)));
+    if (!marketingPreviewActive()) wireFormation();
     return;
   }
   if (pageKey === "books") {
     const raw = await apiGet("/api/learn/books");
-    root.innerHTML = renderBooks(toBooksViewModel(raw));
+    root.innerHTML = renderBooks(prepareOdysseyViewModel(toBooksViewModel(raw)));
     return;
   }
   if (pageKey === "grades") {
@@ -8685,12 +9040,14 @@ async function mount() {
     const academicYear = params.get("academicYear") || "";
     const childId = params.get("childId") || "";
     const raw = await apiGet(`/api/learn/grades${academicYear ? `?academicYear=${encodeURIComponent(academicYear)}` : ""}`);
-    const vm = toGradesViewModel(raw, { childId });
+    const vm = prepareOdysseyViewModel(toGradesViewModel(raw, { childId }));
     const testScoresRaw = await apiGet("/api/learn/test-scores").catch(() => null);
     vm.testScores = (testScoresRaw?.testScores?.scores || []).filter((row) => row.childId === vm.selectedChildId);
     root.innerHTML = renderGrades(vm);
-    wireGrades(vm);
-    wireTestScores(vm);
+    if (!marketingPreviewActive()) {
+      wireGrades(vm);
+      wireTestScores(vm);
+    }
     return;
   }
   if (pageKey === "reports") {
@@ -8702,15 +9059,15 @@ async function mount() {
   }
   if (pageKey === "print-center") {
     const raw = await apiGet(learnApiUrl("/api/learn/print-center", { calendar }));
-    const vm = toPrintCenterViewModel({ ...raw, printLimit: resolvedPrintLimit });
+    const vm = prepareOdysseyViewModel(toPrintCenterViewModel({ ...raw, printLimit: resolvedPrintLimit }));
     root.innerHTML = renderPrintCenter(vm);
-    wirePrintCenter(vm);
+    if (!marketingPreviewActive()) wirePrintCenter(vm);
     return;
   }
   if (pageKey === "community") {
     const raw = await apiGet("/api/learn/community");
-    root.innerHTML = renderCommunity(toCommunityViewModel(raw));
-    wireCommunity();
+    root.innerHTML = renderCommunity(prepareOdysseyViewModel(toCommunityViewModel(raw)));
+    if (!learnExperience().tefaActive && !marketingPreviewActive()) wireCommunity();
     return;
   }
   if (pageKey === "co-op") {
@@ -8720,7 +9077,7 @@ async function mount() {
   }
   if (pageKey === "onboarding") {
     const raw = await apiGet("/api/learn/setup");
-    const vm = toSetupViewModel(raw, { calendar });
+    const vm = prepareOdysseyViewModel(toSetupViewModel(raw, { calendar }));
     const draft = loadSimpleSetupDraft(vm);
     const setupParams = new URLSearchParams(window.location.search);
     const advanced = setupParams.get("advanced") === "1";
@@ -8728,12 +9085,12 @@ async function mount() {
     if ((!vm.setupCompleted && !advanced) || simple) {
       document.body.classList.add("learn-simple-setup");
       root.innerHTML = renderSimpleSetupWizard(vm, draft);
-      wireSimpleSetupWizard(vm, draft, raw.onboarding?.setupSnapshot || null);
+      if (!marketingPreviewActive()) wireSimpleSetupWizard(vm, draft, raw.onboarding?.setupSnapshot || null);
       return;
     }
     document.body.classList.remove("learn-simple-setup");
     root.innerHTML = renderSetup(!vm.setupCompleted ? applySimpleDraftToSetupVm(vm, draft) : vm);
-    wireSetupPage();
+    if (!marketingPreviewActive()) wireSetupPage();
     if (window.location.hash) {
       window.requestAnimationFrame(() => document.querySelector(window.location.hash)?.scrollIntoView({ block: "start" }));
     }

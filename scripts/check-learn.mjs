@@ -118,6 +118,16 @@ const learnMobileGate = readFileSync(new URL("../public/learn/mobile-gate.js", i
 const learnBilling = readFileSync(new URL("../src/learn/billing.js", import.meta.url), "utf8");
 const learnHandlers = readFileSync(new URL("../src/learn/handlers.js", import.meta.url), "utf8");
 const learnGoogleCalendar = readFileSync(new URL("../src/learn/google-calendar.js", import.meta.url), "utf8");
+
+// Odyssey is a separate secular storefront experience, and marketing captures
+// must never expose the signed-in household's real records.
+assert(learnShell.includes("function marketingPreviewActive()"), "Odyssey should provide an explicit marketing-preview mode.");
+assert(learnShell.includes("function prepareOdysseyViewModel(vm)"), "Odyssey should sanitize and reshape view models at a single presentation boundary.");
+assert(learnShell.includes('if (!isOdysseyLearnContext()) return "classic";\n  return "tefa";'), "Odyssey should stay locked to its secular TEFA presentation.");
+assert(learnShell.includes('const churchSectionHtml = experience.tefaActive\n    ? ""'), "The TEFA dashboard should omit the Church Rhythm section entirely.");
+assert(learnShell.includes("renderTefaFormation") && learnShell.includes("renderTefaCommunity"), "Odyssey should provide secular Formation and Community renderers.");
+assert(learnShell.includes("The Harper Family") && learnShell.includes("MARKETING_LEARNERS"), "Marketing preview should render an obviously fictitious household and learner roster.");
+assert(learnShell.includes("if (!marketingPreviewActive()) wirePlanner(vm)") && learnShell.includes("if (!marketingPreviewActive()) wireSetupPage()"), "Marketing preview should not wire planner or setup mutations.");
 const learnRepository = readFileSync(new URL("../src/learn/repository.js", import.meta.url), "utf8");
 const learnSetupPersistence = readFileSync(new URL("../src/learn/setup-persistence.js", import.meta.url), "utf8");
 const learnDashboardHtml = readFileSync(new URL("../public/learn/dashboard.html", import.meta.url), "utf8");
