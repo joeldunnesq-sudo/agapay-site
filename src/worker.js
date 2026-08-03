@@ -368,6 +368,7 @@ import {
   handleListenSubscriptions,
   handleListenSearch,
   handleListenRss,
+  handleListenAudio,
 } from "./handlers/listen.js";
 
 import {
@@ -2927,6 +2928,7 @@ export default {
 
     if (request.method === "GET" && url.pathname === "/api/listen/search") return handleListenSearch(request, env);
     if (request.method === "GET" && url.pathname === "/api/listen/rss")    return handleListenRss(request, env);
+    if (request.method === "GET" && url.pathname === "/api/listen/audio")  return handleListenAudio(request, env);
     if (url.pathname === "/api/listen/progress") return handleListenProgress(request, env);
     if (url.pathname === "/api/listen/subscriptions") return handleListenSubscriptions(request, env);
     if (request.method === "GET" && url.pathname === "/api/parishes") { const r = await handleParishes(request, env); return addCorsHeaders(r, env); }

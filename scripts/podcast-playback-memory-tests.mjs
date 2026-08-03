@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { handleListenProgress, handleListenSubscriptions } from "../src/handlers/listen.js";
+import { handleListenAudio, handleListenProgress, handleListenSubscriptions } from "../src/handlers/listen.js";
 
 class PodcastProgressDb {
   constructor() {
@@ -160,6 +160,22 @@ response = await handleListenSubscriptions(subscriptionRequest("GET", "one@examp
 payload = await response.json();
 assert.deepEqual(payload.subscriptions, []);
 
+const originalFetch = globalThis.fetch;
+try {
+  globalThis.fetch = async (url) => new Response(new Uint8Array([1, 2, 3, 4]), {
+    status: 200,
+    headers: { "Content-Type": "audio/mpeg", "Content-Length": "4" },
+  });
+  response = await handleListenAudio(new Request("https://agapay.app/api/listen/audio?url=https%3A%2F%2Fmedia.example.org%2Fepisode.mp3", { headers: { "X-Test-Donor": "one@example.org" } }), {}, dependencies);
+  assert.equal(response.status, 200, "an authenticated donor should be able to download public podcast audio");
+  assert.equal(response.headers.get("Content-Type"), "audio/mpeg");
+  assert.deepEqual([...new Uint8Array(await response.arrayBuffer())], [1, 2, 3, 4]);
+  response = await handleListenAudio(new Request("https://agapay.app/api/listen/audio?url=http%3A%2F%2F127.0.0.1%2Fprivate.mp3", { headers: { "X-Test-Donor": "one@example.org" } }), {}, dependencies);
+  assert.equal(response.status, 400, "offline downloads must reject private-network media URLs");
+} finally {
+  globalThis.fetch = originalFetch;
+}
+
 const [migration, subscriptionMigration, worker, teaching, teachingHtml, donorStyles] = await Promise.all([
   readFile(new URL("../migrations/0078_donor_podcast_progress.sql", import.meta.url), "utf8"),
   readFile(new URL("../migrations/0080_donor_podcast_subscriptions.sql", import.meta.url), "utf8"),
@@ -175,6 +191,7 @@ assert.match(subscriptionMigration, /PRIMARY KEY \(donor_id, feed_url\)/);
 assert.match(subscriptionMigration, /idx_donor_podcast_subscriptions_recent[\s\S]*donor_id, updated_at DESC/);
 assert.match(worker, /url\.pathname === "\/api\/listen\/progress"[\s\S]*handleListenProgress/);
 assert.match(worker, /url\.pathname === "\/api\/listen\/subscriptions"[\s\S]*handleListenSubscriptions/);
+assert.match(worker, /url\.pathname === "\/api\/listen\/audio"[\s\S]*handleListenAudio/);
 assert.match(teaching, /function podcastEpisodeKey\(guid, audioUrl\)[\s\S]*trim\(\) \|\| String\(audioUrl/,
   "RSS guid must be preferred with audio URL only as fallback");
 const episodeKeyFunction = teaching.match(/function podcastEpisodeKey\(guid, audioUrl\) \{[\s\S]*?\n\}/)?.[0];
@@ -200,10 +217,18 @@ assert.match(teachingHtml, /data-podcast-library-pane="discover"[\s\S]*id="koino
 assert.match(teaching, /function importKoinoniaPodcastFeed[\s\S]*\/api\/listen\/rss[\s\S]*\/api\/listen\/subscriptions/,
   "RSS import must validate the feed before saving a subscription");
 assert.match(teachingHtml, /id="koinoniaPodcastExpand"[\s\S]*id="koinoniaPodcastSleepTimer"[\s\S]*id="koinoniaPodcastQueueList"/);
-assert.match(teachingHtml, /id="koinoniaPodcastQueueDrawer"[\s\S]*toggleKoinoniaPodcastQueue\(false\)[\s\S]*aria-label="Minimize Up Next"/,
-  "Up Next must provide an explicit minimize control without closing the podcast player");
-assert.match(donorStyles, /\.koinonia-full-drawer-actions \{[^}]*display:flex/,
-  "the Up Next minimize and clear actions must remain usable together");
+assert.match(teachingHtml, /id="koinoniaPodcastQueueDrawer"[\s\S]*class="koinonia-drawer-close"[\s\S]*aria-label="Close Up Next"[\s\S]*>×<\/button>/,
+  "Up Next must use the same explicit X close control as episode details");
+assert.match(donorStyles, /\.koinonia-full-drawer > \.koinonia-drawer-close \{[^}]*border-radius:50%/,
+  "episode details and Up Next must share one mobile-friendly close-button design");
+assert.match(teachingHtml, /id="koinoniaPodcastActionsToggle"[\s\S]*id="koinoniaPodcastActionsMenu"[\s\S]*Download episode[\s\S]*Restart episode[\s\S]*Copy episode link[\s\S]*Share episode/,
+  "the full-player three-dot menu must expose useful episode actions");
+assert.match(teachingHtml, /data-podcast-library-view="downloads"[\s\S]*id="koinoniaPodcastDownloads"/,
+  "the podcast library must expose downloaded episodes for offline relaunch");
+assert.match(teaching, /PODCAST_DOWNLOAD_CACHE[\s\S]*cache\.put[\s\S]*playDownloadedKoinoniaPodcast/,
+  "downloads must persist episode media in device Cache Storage and remain playable");
+assert.match(teaching, /navigator\.storage\?\.persist/,
+  "mobile browsers should be asked to retain downloaded media when supported");
 assert.match(teachingHtml, /koinonia-podcast-player-shell[\s\S]*id="koinoniaPodcastShare"[\s\S]*Share episode/,
   "the expanded player must use its structured shell and expose the share action");
 assert.match(donorStyles, /\.koinonia-podcast-player\.is-expanded \{[^}]*inset:0 !important/,

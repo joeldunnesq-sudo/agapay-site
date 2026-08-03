@@ -201,7 +201,12 @@ assert.ok(adminApp.includes('requestedTab') && adminApp.includes('queue-mobile-s
 assert.ok(adminHtml.includes("weeklyCommemorationParishId") && adminApp.includes("runWeeklyCommemorationEmail") && adminApp.includes("/api/admin/commemorations/send-weekly"), "admin dashboard should expose a weekly commemoration email preview/send control");
 assert.ok(adminHtml.includes("weeklyTreasurerParishId") && adminApp.includes("runWeeklyTreasurerEmail") && adminApp.includes("/api/admin/commerce/send-weekly-treasurer"), "admin dashboard should expose a weekly treasurer commerce email preview/send control");
 assert.ok(adminCss.includes('admin-mobile-command') && adminCss.includes('mobile-review-bar') && adminCss.includes('product-admin-hero-giving { display: none; }'), "admin dashboard should include dedicated mobile verification layout styles");
-assert.ok(serviceWorker.includes('agapay-static-v28'), "service worker cache version should advance when PWA shell caching behavior changes");
+assert.ok(serviceWorker.includes('agapay-static-v29'), "service worker cache version should advance when PWA shell caching behavior changes");
+assert.ok(
+  serviceWorker.includes('"/myagapay/teaching.html"')
+    && serviceWorker.includes('url.pathname.startsWith("/myagapay/teaching") ? caches.match("/myagapay/teaching.html")'),
+  "the Koinonia podcast shell should reopen offline on Android and iOS PWAs"
+);
 assert.ok(serviceWorker.includes('url.pathname.startsWith("/api/") return true') || serviceWorker.includes('url.pathname.startsWith("/api/")) return true'), "service worker should bypass API responses, including private Directory JSON");
 assert.ok(parishDashboardApp.includes("fetch(directoryAdminApi('/dashboard'), { headers })"), "Parish Dashboard Directory should use the parish dashboard auth headers");
 assert.ok(!parishDashboardApp.includes("directoryAdminHeaders") && !parishDashboardApp.includes("handleDirectoryStaffLogin"), "Parish Dashboard Directory should not require a second My AGAPAY staff login");
@@ -629,12 +634,20 @@ assert.ok(sacramentPriestsMigration.includes("priest_name") && sacramentPriestsM
 assert.ok(donorApp.includes("priestName: slot.priestName") && backendSources.includes("priestName = String(body.priestName") && backendSources.includes("isSlotStillOpen(env, { parishId, date, time, priestName })"), "donor Sacraments booking should carry the selected priest through to the scheduled request");
 assert.ok(donorApp.includes("handleDonorCheckoutReturn"), "donor dashboard should confirm returned Stripe checkout sessions");
 const givingOverview = await readFile("public/give/index.html", "utf8");
+const givingHowItWorks = await readFile("public/give/how-it-works.html", "utf8");
 assert.ok(givingOverview.includes("Orthodox Giving App &amp; Tithing Software") || givingOverview.includes("Orthodox Giving App & Tithing Software"), "Giving overview should target Orthodox giving and tithing search intent");
 assert.ok(givingOverview.includes('"@type": "SoftwareApplication"') && givingOverview.includes('"@type": "FAQPage"'), "Giving overview should include software and FAQ structured data");
 assert.ok(givingOverview.includes("Giving and parish life, connected in one Orthodox platform"), "Giving overview should describe currently available tools");
 assert.ok(givingOverview.includes("Parish operations") && givingOverview.indexOf("Parish operations") < givingOverview.indexOf("giving-roadmap"), "Giving overview should list Parish operations as available now");
 assert.ok(givingOverview.includes("Text-to-Give") && givingOverview.includes("Coming Soon"), "Giving overview should clearly identify remaining coming-soon products");
 assert.ok(givingOverview.includes("processed and protected by Stripe") && givingOverview.includes("AGAPAY never holds donated funds") && givingOverview.includes("No Donation Middleman"), "Giving overview should emphasize Stripe protection and no donation middleman custody");
+assert.ok(
+  givingHowItWorks.includes('id="koinonia-community-title"')
+    && givingHowItWorks.includes("Participate in ministry")
+    && givingHowItWorks.includes("Learn and listen together")
+    && givingHowItWorks.includes("create My AGAPAY → connect with your parish and household"),
+  "How It Works should explain how a person participates in parish community through Koinonia"
+);
 const platformHome = await readFile("public/index.html", "utf8");
 assert.ok(platformHome.indexOf('href="/vision"') < platformHome.indexOf('href="/give"'), "platform homepage should lead its navigation with Vision");
 assert.ok((platformHome.match(/data-flip-word/g) || []).length >= 2, "platform homepage should animate its header and hero taglines");

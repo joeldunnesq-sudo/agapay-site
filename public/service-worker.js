@@ -1,4 +1,4 @@
-const AGAPAY_CACHE = "agapay-static-v28";
+const AGAPAY_CACHE = "agapay-static-v29";
 
 const STATIC_ASSETS = [
   "/myagapay/login",
@@ -12,6 +12,9 @@ const STATIC_ASSETS = [
   "/pwa-register.js",
   "/myagapay/login.html",
   "/myagapay/index.html",
+  "/myagapay/teaching",
+  "/myagapay/teaching.html",
+  "/myagapay/teaching.js",
   "/favicons/favicon-32x32.png",
   "/images/app/apple-touch-icon-blue.png",
   "/images/app/icon-192.png",
@@ -51,12 +54,13 @@ self.addEventListener("activate", (event) => {
 
 function shouldBypassCache(request) {
   const url = new URL(request.url);
+  const isOfflinePodcastShell = url.pathname === "/myagapay/teaching" || url.pathname === "/myagapay/teaching.html";
   if (request.method !== "GET") return true;
   if (url.origin !== self.location.origin) return true;
   if (url.pathname.startsWith("/api/")) return true;
   if (url.pathname.startsWith("/admin")) return true;
   if (url.pathname.startsWith("/parish")) return true;
-  if (url.pathname.startsWith("/myagapay") && url.pathname !== "/myagapay/login") return true;
+  if (url.pathname.startsWith("/myagapay") && url.pathname !== "/myagapay/login" && !isOfflinePodcastShell) return true;
 
   // Donor dashboard pages and API-backed pages are intentionally network-only.
   // The PWA only caches the unauthenticated login shell and static assets so no
@@ -109,7 +113,7 @@ self.addEventListener("fetch", (event) => {
 
   if (shouldBypassCache(request)) return;
 
-  if (request.mode === "navigate" && (url.pathname === "/myagapay/login" || url.pathname === "/donor/login" || url.pathname === "/donor/login.html" || url.pathname === "/listen" || url.pathname === "/listen.html")) {
+  if (request.mode === "navigate" && (url.pathname === "/myagapay/login" || url.pathname === "/donor/login" || url.pathname === "/donor/login.html" || url.pathname === "/listen" || url.pathname === "/listen.html" || url.pathname === "/myagapay/teaching" || url.pathname === "/myagapay/teaching.html")) {
     event.respondWith(
       fetch(request)
         .then((response) => {
@@ -117,7 +121,7 @@ self.addEventListener("fetch", (event) => {
           caches.open(AGAPAY_CACHE).then((cache) => cache.put(request, clone));
           return response;
         })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match("/donor/login.html")))
+        .catch(() => caches.match(request).then((cached) => cached || (url.pathname.startsWith("/myagapay/teaching") ? caches.match("/myagapay/teaching.html") : caches.match("/donor/login.html"))))
     );
     return;
   }

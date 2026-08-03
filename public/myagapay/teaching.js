@@ -11,12 +11,14 @@ let teachingState = { posts: [], unreadCount: 0, filter: "all" };
 const PODCAST_SAVE_INTERVAL_MS = 15000;
 const PODCAST_COMPLETE_WINDOW_SECONDS = 5;
 const PODCAST_PLAYBACK_RATES = new Set([1, 1.25, 1.5, 1.75, 2]);
+const PODCAST_DOWNLOAD_CACHE = "agapay-podcast-downloads-v1";
 let koinoniaPodcastState = {
   results: [], show: null, episodes: [], hasSearched: false, requestId: 0,
   progressItems: [], progressByKey: new Map(), progressLoaded: false, progressPromise: null,
   playbackRate: 1, currentEpisode: null, queue: [], saveTimer: null, switchingEpisode: false,
   subscriptions: [], subscriptionsLoaded: false, subscriptionsPromise: null, latestEpisodes: [],
   libraryView: "latest", expanded: false, sleepTimer: null, sleepAtEnd: false,
+  downloads: [], offlineObjectUrl: "",
 };
 
 function setAudioLibraryMode(mode = "parish") {
@@ -152,13 +154,85 @@ async function loadKoinoniaPodcastProgress(force = false) {
 }
 
 function setKoinoniaPodcastLibraryView(view = "latest") {
-  const selected = ["latest", "subscriptions", "discover"].includes(view) ? view : "latest";
+  const selected = ["latest", "subscriptions", "discover", "downloads"].includes(view) ? view : "latest";
   koinoniaPodcastState.libraryView = selected;
   document.querySelectorAll("[data-podcast-library-pane]").forEach((pane) => { pane.hidden = pane.dataset.podcastLibraryPane !== selected; });
   document.querySelectorAll("[data-podcast-library-view]").forEach((button) => button.classList.toggle("is-active", button.dataset.podcastLibraryView === selected));
   if (selected === "latest") void loadKoinoniaPodcastLatest();
   if (selected === "subscriptions") void loadKoinoniaPodcastSubscriptions().then(renderKoinoniaPodcastSubscriptions);
   if (selected === "discover" && !koinoniaPodcastState.hasSearched) void runKoinoniaPodcastSearch("Orthodox");
+  if (selected === "downloads") void renderKoinoniaPodcastDownloads();
+}
+
+function podcastOfflineRequest(episode) {
+  const key = podcastEpisodeKey(episode?.episodeKey, episode?.audioUrl);
+  return new Request(`${window.location.origin}/myagapay/offline-podcast?episode=${encodeURIComponent(key)}`);
+}
+
+function encodePodcastDownloadHeader(value, maxLength = 2000) {
+  return encodeURIComponent(String(value || "").slice(0, maxLength));
+}
+
+function decodePodcastDownloadHeader(value) {
+  try { return decodeURIComponent(String(value || "")); } catch { return ""; }
+}
+
+async function cachedKoinoniaPodcast(episode) {
+  if (!("caches" in window) || !episode) return null;
+  const cache = await caches.open(PODCAST_DOWNLOAD_CACHE);
+  return cache.match(podcastOfflineRequest(episode));
+}
+
+function downloadedKoinoniaEpisode(response, request) {
+  const read = (name) => decodePodcastDownloadHeader(response.headers.get(name));
+  return {
+    episodeKey: read("X-AGAPAY-Episode-Key") || new URL(request.url).searchParams.get("episode"),
+    title: read("X-AGAPAY-Episode-Title") || "Downloaded episode",
+    show: read("X-AGAPAY-Show-Title") || "Orthodox Podcast",
+    audioUrl: read("X-AGAPAY-Audio-URL"),
+    link: read("X-AGAPAY-Episode-Link"),
+    image: read("X-AGAPAY-Episode-Image"),
+    xmlUrl: read("X-AGAPAY-Feed-URL"),
+    description: read("X-AGAPAY-Description") || "Downloaded for offline listening.",
+    downloadedAt: response.headers.get("X-AGAPAY-Downloaded-At") || "",
+  };
+}
+
+async function loadKoinoniaPodcastDownloads() {
+  if (!("caches" in window)) return [];
+  const cache = await caches.open(PODCAST_DOWNLOAD_CACHE);
+  const requests = await cache.keys();
+  const items = await Promise.all(requests.map(async (request) => {
+    const response = await cache.match(request);
+    return response ? downloadedKoinoniaEpisode(response, request) : null;
+  }));
+  koinoniaPodcastState.downloads = items.filter(Boolean).sort((a, b) => b.downloadedAt.localeCompare(a.downloadedAt));
+  return koinoniaPodcastState.downloads;
+}
+
+async function renderKoinoniaPodcastDownloads() {
+  const list = document.getElementById("koinoniaPodcastDownloads");
+  if (!list) return;
+  const downloads = await loadKoinoniaPodcastDownloads().catch(() => []);
+  list.innerHTML = downloads.length ? downloads.map((episode, index) => `
+    <div class="koinonia-podcast-latest-row">
+      <button type="button" onclick="playDownloadedKoinoniaPodcast(${index})"><span class="koinonia-podcast-result-art">${episode.image ? `<img src="${teachingEscape(episode.image)}" alt="" loading="lazy" />` : "♪"}</span><span><small>${teachingEscape(episode.show)}</small><strong>${teachingEscape(episode.title)}</strong><em>Available offline</em></span><span aria-hidden="true">▶</span></button>
+      <button type="button" onclick="removeDownloadedKoinoniaPodcast(${index})" aria-label="Remove ${teachingEscape(episode.title)} download">Remove</button>
+    </div>`).join("") : '<div class="feed-empty"><strong>No downloads yet</strong><span>Open an episode, tap the three dots, and choose Download episode.</span></div>';
+}
+
+async function playDownloadedKoinoniaPodcast(index) {
+  const episode = koinoniaPodcastState.downloads[index];
+  if (episode) await playKoinoniaPodcast(episode);
+}
+
+async function removeDownloadedKoinoniaPodcast(index) {
+  const episode = koinoniaPodcastState.downloads[index];
+  if (!episode || !("caches" in window)) return;
+  const cache = await caches.open(PODCAST_DOWNLOAD_CACHE);
+  await cache.delete(podcastOfflineRequest(episode));
+  await renderKoinoniaPodcastDownloads();
+  await updateKoinoniaPodcastDownloadAction();
 }
 
 function koinoniaPodcastIsSubscribed(feedUrl) {
@@ -436,7 +510,17 @@ async function playKoinoniaPodcast(episode) {
   fullImage.src = image.src;
   fullImage.alt = image.alt;
   player.hidden = false;
-  audio.src = episode.audioUrl;
+  if (koinoniaPodcastState.offlineObjectUrl) {
+    URL.revokeObjectURL(koinoniaPodcastState.offlineObjectUrl);
+    koinoniaPodcastState.offlineObjectUrl = "";
+  }
+  const offlineResponse = await cachedKoinoniaPodcast(episode).catch(() => null);
+  if (offlineResponse) {
+    koinoniaPodcastState.offlineObjectUrl = URL.createObjectURL(await offlineResponse.blob());
+    audio.src = koinoniaPodcastState.offlineObjectUrl;
+  } else {
+    audio.src = episode.audioUrl;
+  }
   audio.playbackRate = koinoniaPodcastState.playbackRate;
   audio.load();
   await waitForPodcastMetadata(audio);
@@ -450,6 +534,8 @@ async function playKoinoniaPodcast(episode) {
   if ("mediaSession" in navigator) {
     try { navigator.mediaSession.metadata = new MediaMetadata({ title: episode.title, artist: "AGAPAY Audio", album: episode.show || "Koinonia Audio Library", artwork: [{ src: image.src, sizes: "192x192" }] }); } catch { /* Metadata is optional. */ }
   }
+  await updateKoinoniaPodcastDownloadAction();
+  updateKoinoniaPodcastActions();
   updateKoinoniaPodcastPlayer();
 }
 
@@ -483,6 +569,116 @@ function playQueuedKoinoniaPodcast(index) {
   if (episode) void playKoinoniaPodcast(episode);
 }
 
+function updateKoinoniaPodcastActions() {
+  const episode = koinoniaPodcastState.currentEpisode;
+  const original = document.getElementById("koinoniaPodcastOriginalLink");
+  if (original) {
+    original.hidden = !episode?.link;
+    if (episode?.link) original.href = episode.link;
+    else original.removeAttribute("href");
+  }
+}
+
+function toggleKoinoniaPodcastActions(force) {
+  const menu = document.getElementById("koinoniaPodcastActionsMenu");
+  const toggle = document.getElementById("koinoniaPodcastActionsToggle");
+  if (!menu || !toggle) return;
+  const open = typeof force === "boolean" ? force : menu.hidden;
+  menu.hidden = !open;
+  toggle.setAttribute("aria-expanded", String(open));
+  if (open) {
+    toggleKoinoniaPodcastDetails(false);
+    toggleKoinoniaPodcastQueue(false);
+    void updateKoinoniaPodcastDownloadAction();
+    menu.querySelector('[role="menuitem"]')?.focus();
+  }
+}
+
+function openKoinoniaPodcastDetailsFromMenu() {
+  toggleKoinoniaPodcastActions(false);
+  toggleKoinoniaPodcastDetails(true);
+}
+
+function restartKoinoniaPodcast() {
+  const audio = document.getElementById("koinoniaPodcastAudio");
+  if (!audio?.src) return;
+  audio.currentTime = 0;
+  void audio.play();
+  toggleKoinoniaPodcastActions(false);
+}
+
+async function copyKoinoniaPodcastLink() {
+  const episode = koinoniaPodcastState.currentEpisode;
+  const status = document.getElementById("koinoniaPodcastActionStatus");
+  const link = episode?.link || episode?.audioUrl;
+  if (!link) return;
+  const copied = await navigator.clipboard?.writeText(link).then(() => true).catch(() => false);
+  if (status) status.textContent = copied ? "Link copied to clipboard" : "Your browser could not copy the link";
+}
+
+async function shareKoinoniaPodcastFromMenu() {
+  await shareKoinoniaPodcastEpisode();
+  toggleKoinoniaPodcastActions(false);
+}
+
+async function updateKoinoniaPodcastDownloadAction() {
+  const button = document.getElementById("koinoniaPodcastDownloadAction");
+  const episode = koinoniaPodcastState.currentEpisode;
+  if (!button || !episode) return;
+  const downloaded = Boolean(await cachedKoinoniaPodcast(episode).catch(() => null));
+  button.dataset.downloaded = String(downloaded);
+  const copy = button.querySelector("b");
+  if (copy) copy.innerHTML = downloaded
+    ? "Remove download<small>Free storage on this device</small>"
+    : "Download episode<small>Play it offline on this device</small>";
+}
+
+async function toggleKoinoniaPodcastDownload() {
+  const episode = koinoniaPodcastState.currentEpisode;
+  const button = document.getElementById("koinoniaPodcastDownloadAction");
+  const status = document.getElementById("koinoniaPodcastActionStatus");
+  if (!episode || !button || !("caches" in window)) {
+    if (status) status.textContent = "Offline downloads are unavailable in this browser";
+    return;
+  }
+  button.disabled = true;
+  const cache = await caches.open(PODCAST_DOWNLOAD_CACHE);
+  const request = podcastOfflineRequest(episode);
+  try {
+    if (await cache.match(request)) {
+      await cache.delete(request);
+      if (status) status.textContent = "Download removed from this device";
+    } else {
+      if (!navigator.onLine) throw new Error("Connect to the internet before downloading an episode.");
+      if (status) status.textContent = "Downloading… keep My AGAPAY open";
+      const response = await fetch(`/api/listen/audio?url=${encodeURIComponent(episode.audioUrl)}`, { headers: teachingHeaders(), cache: "no-store" });
+      if (!response.ok || !response.body) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || "Unable to download this episode.");
+      }
+      const headers = new Headers(response.headers);
+      headers.set("X-AGAPAY-Episode-Key", encodePodcastDownloadHeader(episode.episodeKey));
+      headers.set("X-AGAPAY-Episode-Title", encodePodcastDownloadHeader(episode.title, 500));
+      headers.set("X-AGAPAY-Show-Title", encodePodcastDownloadHeader(episode.show, 300));
+      headers.set("X-AGAPAY-Audio-URL", encodePodcastDownloadHeader(episode.audioUrl));
+      headers.set("X-AGAPAY-Episode-Link", encodePodcastDownloadHeader(episode.link));
+      headers.set("X-AGAPAY-Episode-Image", encodePodcastDownloadHeader(episode.image));
+      headers.set("X-AGAPAY-Feed-URL", encodePodcastDownloadHeader(episode.xmlUrl));
+      headers.set("X-AGAPAY-Description", encodePodcastDownloadHeader(episode.description, 1800));
+      headers.set("X-AGAPAY-Downloaded-At", new Date().toISOString());
+      await cache.put(request, new Response(response.body, { status: 200, headers }));
+      if (navigator.storage?.persist) void navigator.storage.persist().catch(() => false);
+      if (status) status.textContent = "Downloaded — ready to play offline";
+    }
+    await renderKoinoniaPodcastDownloads();
+    await updateKoinoniaPodcastDownloadAction();
+  } catch (error) {
+    if (status) status.textContent = error.message || "Unable to save this episode for offline listening.";
+  } finally {
+    button.disabled = false;
+  }
+}
+
 function toggleKoinoniaPodcastPlayerExpanded(force) {
   const player = document.getElementById("koinoniaPodcastPlayer");
   if (!player || player.hidden) return;
@@ -494,6 +690,7 @@ function toggleKoinoniaPodcastPlayerExpanded(force) {
   const button = document.getElementById("koinoniaPodcastExpand");
   if (button) button.setAttribute("aria-label", expanded ? "Close expanded player" : "Open expanded player");
   if (!expanded) {
+    toggleKoinoniaPodcastActions(false);
     toggleKoinoniaPodcastDetails(false);
     toggleKoinoniaPodcastQueue(false);
   }
@@ -505,7 +702,10 @@ function toggleKoinoniaPodcastDetails(force) {
   if (!drawer) return;
   const open = typeof force === "boolean" ? force : drawer.hidden;
   drawer.hidden = !open;
-  if (open && queue) queue.hidden = true;
+  if (open) {
+    if (queue) queue.hidden = true;
+    toggleKoinoniaPodcastActions(false);
+  }
 }
 
 function toggleKoinoniaPodcastQueue(force) {
@@ -514,7 +714,10 @@ function toggleKoinoniaPodcastQueue(force) {
   if (!drawer) return;
   const open = typeof force === "boolean" ? force : drawer.hidden;
   drawer.hidden = !open;
-  if (open && details) details.hidden = true;
+  if (open) {
+    if (details) details.hidden = true;
+    toggleKoinoniaPodcastActions(false);
+  }
 }
 
 function setKoinoniaPodcastSleepTimer(value) {
@@ -723,8 +926,19 @@ function bindKoinoniaPodcastPlayer() {
     void saveKoinoniaPodcastProgress({ keepalive: true });
     koinoniaPodcastState.queue = [];
   });
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest(".koinonia-player-actions")) toggleKoinoniaPodcastActions(false);
+  });
+  document.getElementById("koinoniaPodcastOriginalLink")?.addEventListener("click", () => toggleKoinoniaPodcastActions(false));
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && koinoniaPodcastState.expanded) toggleKoinoniaPodcastPlayerExpanded(false);
+    if (event.key !== "Escape" || !koinoniaPodcastState.expanded) return;
+    const actions = document.getElementById("koinoniaPodcastActionsMenu");
+    const details = document.getElementById("koinoniaPodcastDetailsDrawer");
+    const queue = document.getElementById("koinoniaPodcastQueueDrawer");
+    if (actions && !actions.hidden) toggleKoinoniaPodcastActions(false);
+    else if (details && !details.hidden) toggleKoinoniaPodcastDetails(false);
+    else if (queue && !queue.hidden) toggleKoinoniaPodcastQueue(false);
+    else toggleKoinoniaPodcastPlayerExpanded(false);
   });
   if ("mediaSession" in navigator) {
     try {
@@ -885,6 +1099,14 @@ window.skipKoinoniaPodcast = skipKoinoniaPodcast;
 window.toggleKoinoniaPodcastPlayerExpanded = toggleKoinoniaPodcastPlayerExpanded;
 window.toggleKoinoniaPodcastDetails = toggleKoinoniaPodcastDetails;
 window.toggleKoinoniaPodcastQueue = toggleKoinoniaPodcastQueue;
+window.toggleKoinoniaPodcastActions = toggleKoinoniaPodcastActions;
+window.openKoinoniaPodcastDetailsFromMenu = openKoinoniaPodcastDetailsFromMenu;
+window.restartKoinoniaPodcast = restartKoinoniaPodcast;
+window.copyKoinoniaPodcastLink = copyKoinoniaPodcastLink;
+window.shareKoinoniaPodcastFromMenu = shareKoinoniaPodcastFromMenu;
+window.toggleKoinoniaPodcastDownload = toggleKoinoniaPodcastDownload;
+window.playDownloadedKoinoniaPodcast = playDownloadedKoinoniaPodcast;
+window.removeDownloadedKoinoniaPodcast = removeDownloadedKoinoniaPodcast;
 window.setKoinoniaPodcastSleepTimer = setKoinoniaPodcastSleepTimer;
 window.shareKoinoniaPodcastEpisode = shareKoinoniaPodcastEpisode;
 window.clearKoinoniaPodcastQueue = clearKoinoniaPodcastQueue;

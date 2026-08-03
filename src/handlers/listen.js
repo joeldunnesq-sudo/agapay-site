@@ -5,6 +5,7 @@
  * Provides two endpoints:
  *   GET /api/listen/search?q=...   → Podcast Index search (HMAC auth)
  *   GET /api/listen/rss?url=...    → RSS feed proxy (CORS bypass)
+ *   GET /api/listen/audio?url=...  → authenticated episode download proxy
  *   GET/POST /api/listen/progress → private donor playback memory
  */
 
@@ -14,6 +15,7 @@ import { requireDonor } from './parish.js';
 const PODCAST_PROGRESS_LIMIT = 50;
 const PODCAST_COMPLETE_WINDOW_SECONDS = 5;
 const PODCAST_PLAYBACK_RATES = new Set([1, 1.25, 1.5, 1.75, 2]);
+const PODCAST_MEDIA_LIMIT_BYTES = 250 * 1024 * 1024;
 
 function podcastDatabase(env) {
   return env.AGAPAY_DB || env.DB || null;
@@ -31,6 +33,78 @@ function podcastUrl(value) {
   } catch {
     return '';
   }
+}
+
+function isPrivatePodcastHost(hostname) {
+  const host = String(hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
+  if (!host || host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.internal') || host === '::1') return true;
+  const parts = host.split('.').map(Number);
+  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) {
+    return host.startsWith('fc') || host.startsWith('fd') || host.startsWith('fe8') || host.startsWith('fe9') || host.startsWith('fea') || host.startsWith('feb');
+  }
+  const [a, b] = parts;
+  return a === 0 || a === 10 || a === 127 || a >= 224
+    || (a === 100 && b >= 64 && b <= 127)
+    || (a === 169 && b === 254)
+    || (a === 172 && b >= 16 && b <= 31)
+    || (a === 192 && b === 168);
+}
+
+function downloadablePodcastUrl(value) {
+  const normalized = podcastUrl(value);
+  if (!normalized) return '';
+  const parsed = new URL(normalized);
+  if (isPrivatePodcastHost(parsed.hostname) || !['', '80', '443'].includes(parsed.port)) return '';
+  return parsed.toString();
+}
+
+export async function handleListenAudio(request, env, dependencies = {}) {
+  const authenticate = dependencies.requireDonor || requireDonor;
+  const donor = await authenticate(request, env);
+  if (!donor?.email) return unauthorized();
+  const mediaUrl = downloadablePodcastUrl(new URL(request.url).searchParams.get('url'));
+  if (!mediaUrl) return json({ error: 'A valid public podcast audio URL is required' }, { status: 400 });
+
+  let remote;
+  try {
+    remote = await fetch(mediaUrl, {
+      headers: { 'User-Agent': 'AGAPAYListen/1.0 (+https://agapay.app)', Accept: 'audio/*, application/octet-stream;q=0.8' },
+      redirect: 'follow',
+    });
+  } catch {
+    return json({ error: 'Episode download is temporarily unavailable' }, { status: 502 });
+  }
+  if (!remote.ok || !remote.body || !downloadablePodcastUrl(remote.url || mediaUrl)) {
+    return json({ error: 'Episode download failed' }, { status: 502 });
+  }
+  const declaredSize = Number(remote.headers.get('Content-Length'));
+  if (Number.isFinite(declaredSize) && declaredSize > PODCAST_MEDIA_LIMIT_BYTES) {
+    return json({ error: 'This episode is too large to download' }, { status: 413 });
+  }
+  const reader = remote.body.getReader();
+  let received = 0;
+  const body = new ReadableStream({
+    async pull(controller) {
+      const chunk = await reader.read();
+      if (chunk.done) return controller.close();
+      received += chunk.value.byteLength;
+      if (received > PODCAST_MEDIA_LIMIT_BYTES) {
+        await reader.cancel('Podcast media limit exceeded');
+        return controller.error(new Error('Podcast media limit exceeded'));
+      }
+      controller.enqueue(chunk.value);
+    },
+    cancel(reason) { return reader.cancel(reason); },
+  });
+  const contentType = remote.headers.get('Content-Type') || 'audio/mpeg';
+  return new Response(body, {
+    headers: {
+      'Content-Type': contentType,
+      ...(Number.isFinite(declaredSize) && declaredSize >= 0 ? { 'Content-Length': String(declaredSize) } : {}),
+      'Cache-Control': 'private, no-store',
+      'X-Content-Type-Options': 'nosniff',
+    },
+  });
 }
 
 function playbackRate(value) {

@@ -10,7 +10,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-chrome-192x192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/favicons/android-chrome-512x512.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
-  <meta name="description" content="See how AGAPAY makes Orthodox giving simple, meaningful, and connected to the life of the Church." />
+  <meta name="description" content="See how AGAPAY connects Orthodox giving with parish fellowship through Koinonia announcements, ministries, teaching, media, and community participation." />
   <link rel="canonical" href="https://agapay.app/give/how-it-works" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="AGAPAY" />
@@ -182,6 +182,25 @@
     .check-dot { width:24px; height:24px; border-radius:50%; flex-shrink:0; border:1px solid rgba(200,162,74,.55); background:rgba(200,162,74,.12); display:grid; place-items:center; font-family:var(--sans); font-size:.68rem; font-weight:800; color:var(--gold); margin-top:.1rem; }
     .check-item p { font-family:var(--serif); font-size:1.15rem; color:var(--cream); line-height:1.35; }
 
+    /* KOINONIA COMMUNITY */
+    .koinonia-community { position:relative; padding:clamp(3.5rem,7vw,6rem) clamp(1.25rem,5vw,4.5rem); overflow:hidden; background:linear-gradient(145deg,#071724,#0d2a3d); color:var(--cream); }
+    .koinonia-community::before { content:""; position:absolute; inset:0; background:radial-gradient(circle at 84% 18%,rgba(200,162,74,.16),transparent 25rem),radial-gradient(circle at 8% 95%,rgba(200,162,74,.08),transparent 24rem); pointer-events:none; }
+    .koinonia-inner { position:relative; z-index:1; width:min(1120px,100%); margin:0 auto; }
+    .koinonia-intro { display:grid; grid-template-columns:minmax(0,.82fr) minmax(300px,.6fr); gap:clamp(2rem,6vw,5rem); align-items:end; margin-bottom:2.2rem; }
+    .koinonia-intro h2 { max-width:680px; color:var(--cream); font-family:var(--serif); font-size:clamp(2.4rem,5vw,4.3rem); font-weight:400; line-height:.98; }
+    .koinonia-intro h2 em { color:#D6AF5B; font-weight:500; }
+    .koinonia-intro p { color:rgba(246,241,232,.68); font-size:1rem; line-height:1.75; }
+    .koinonia-intro strong { color:#efd28b; }
+    .koinonia-community-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1px; overflow:hidden; border:1px solid rgba(200,162,74,.24); border-radius:18px; background:rgba(200,162,74,.2); box-shadow:0 28px 70px rgba(0,0,0,.22); }
+    .koinonia-community-card { min-height:210px; padding:clamp(1.4rem,3vw,2rem); background:linear-gradient(145deg,rgba(10,31,46,.98),rgba(5,20,31,.98)); }
+    .koinonia-community-card svg { width:28px; height:28px; margin-bottom:1.1rem; fill:none; stroke:#D6AF5B; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+    .koinonia-community-card h3 { color:var(--cream); font-family:var(--serif); font-size:1.55rem; font-weight:500; margin-bottom:.55rem; }
+    .koinonia-community-card p { color:rgba(246,241,232,.6); font-size:.93rem; line-height:1.65; }
+    .koinonia-path { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-top:1.4rem; border:1px solid rgba(200,162,74,.2); border-radius:14px; padding:1.1rem 1.25rem; background:rgba(255,255,255,.035); }
+    .koinonia-path p { color:rgba(246,241,232,.68); line-height:1.55; }
+    .koinonia-path strong { color:#efd28b; }
+    .koinonia-path a { flex:0 0 auto; border:1px solid rgba(200,162,74,.45); border-radius:9px; padding:.8rem 1rem; color:#efd28b; font-size:.78rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+
     /* FINAL CTA */
     .final-cta { position:relative; margin:1.5rem; padding:clamp(2.5rem,5vw,4rem) clamp(1.5rem,4vw,3rem); border-radius:16px; border:1px solid rgba(200,162,74,.28); overflow:hidden; text-align:center; background:linear-gradient(135deg,#071724 0%,#0C2739 100%); }
     .final-cta::before { content:""; position:absolute; inset:0; background:radial-gradient(ellipse 80% 70% at 50% 110%,rgba(200,162,74,.15) 0%,transparent 65%),radial-gradient(ellipse 40% 40% at 8% 0%,rgba(200,162,74,.07) 0%,transparent 55%); pointer-events:none; }
@@ -233,6 +252,7 @@
       .offering-grid { grid-template-columns:1fr; }
       .final-cta { margin:1rem; }
       .pi-steps { display:none; }
+      .koinonia-intro { grid-template-columns:1fr; }
     }
     @media (max-width:760px) {
       .site-header { padding:.8rem .9rem; }
@@ -241,6 +261,8 @@
       .page { width:min(1320px,calc(100% - 1rem)); }
       .footer-grid { grid-template-columns:1fr; }
       .footer-bottom { display:grid; }
+      .koinonia-community-grid { grid-template-columns:1fr; }
+      .koinonia-path { align-items:flex-start; flex-direction:column; }
     }
 
     /* ── PWA INSTALL ──────────────────────────────────────── */
@@ -505,6 +527,44 @@
       </article>
 
     </div><!-- end steps-body -->
+
+    <section class="koinonia-community reveal" aria-labelledby="koinonia-community-title">
+      <div class="koinonia-inner">
+        <div class="koinonia-intro">
+          <div>
+            <div class="eyebrow">After the offering</div>
+            <h2 id="koinonia-community-title">Belong to parish life through <em>Koinonia.</em></h2>
+          </div>
+          <p><strong>Koinonia</strong> (κοινωνία) means fellowship, communion, and shared participation. Once your parish enables it, My AGAPAY becomes a doorway into the community—not another public social network. Your parish chooses what to share, and verified households participate within the life of their own church.</p>
+        </div>
+        <div class="koinonia-community-grid">
+          <article class="koinonia-community-card">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v11H8l-3 3z"/><path d="M8 9h8M8 12h5"/></svg>
+            <h3>Stay connected</h3>
+            <p>See parish announcements, feast-day reminders, service updates, clergy reflections, and trusted Orthodox news in one calm, parish-centered feed.</p>
+          </article>
+          <article class="koinonia-community-card">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6M1.5 20c.3-3 1.8-4.7 4-4.7M22.5 20c-.3-3-1.8-4.7-4-4.7"/></svg>
+            <h3>Participate in ministry</h3>
+            <p>Discover parish groups, respond when a ministry needs help, follow community calendars, and take the next step from hearing about parish life to serving in it.</p>
+          </article>
+          <article class="koinonia-community-card">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z"/><path d="m10 9 5 3-5 3z"/><path d="M7 3v3M17 3v3"/></svg>
+            <h3>Learn and listen together</h3>
+            <p>Hear parish homilies and teaching, watch shared video, follow Orthodox podcasts, build an Up Next queue, and return exactly where you stopped.</p>
+          </article>
+          <article class="koinonia-community-card">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M7 8h10M8 13h8"/><path d="M5 21h14"/></svg>
+            <h3>Keep fellowship rooted in the Church</h3>
+            <p>Koinonia gathers communication, formation, service, and shared attention beneath your parish—not algorithms, advertising, or an endless global feed.</p>
+          </article>
+        </div>
+        <div class="koinonia-path">
+          <p><strong>Your path:</strong> create My AGAPAY → connect with your parish and household → open Koinonia → read, listen, respond, and serve.</p>
+          <a href="/myagapay/signup">Create My AGAPAY</a>
+        </div>
+      </div>
+    </section>
 
     <!-- PWA INSTALL -->
     <section class="install reveal" id="install">

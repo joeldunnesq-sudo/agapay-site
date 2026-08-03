@@ -81,7 +81,7 @@ function learnExperience() {
     activationBadge: odyssey ? "Activated through Odyssey / TEFA" : null,
     dashboardKicker: tefaActive ? "TEFA HOMESCHOOL PLANNER" : "AGAPAY LEARN",
     dashboardDescription: tefaActive
-      ? "Your TEFA-funded Orthodox homeschool planner — today's lessons, planner, attendance, grades, and printable records in one place."
+      ? "Your TEFA homeschool planner — today's lessons, planner, attendance, grades, and printable records in one place."
       : null,
     // Relabels existing shared nav items (same hrefs/ids) for the TEFA audience.
     navLabels: tefaActive
@@ -89,7 +89,7 @@ function learnExperience() {
           dashboard: "Today's Lessons",
           planner: "Planner",
           onboarding: "Setup & TEKS Subjects",
-          formation: "Formation (Church Rhythm)",
+          formation: "Formation (Optional)",
           books: "Books & Curriculum",
           grades: "Attendance, Grades & Reports",
           "print-center": "Print Center",
@@ -292,10 +292,16 @@ function pageIntroMeta(id) {
 function pageIntro(vm) {
   const meta = pageIntroMeta(vm.page.id);
   const experience = learnExperience();
-  const kicker = experience.odyssey && vm.page.id === "dashboard" ? experience.dashboardKicker : meta.kicker;
+  const tefaMeta = {
+    planner: { kicker: "HOUSEHOLD PLANNING", description: "Plan by family group, Form, or grade without repeating the same work for every child.", quote: "A clear week leaves more room for teaching.", ref: "AGAPAY Learn" },
+    onboarding: { kicker: "SETUP", description: "Set up learners, planning groups, school dates, subjects, and optional household rhythms.", quote: "Start with the essentials. Add detail only when it helps.", ref: "AGAPAY Learn" },
+    formation: { kicker: "OPTIONAL FORMATION", description: "Add household practices, readings, memory work, and enrichment when they serve your family.", quote: "Keep what is useful; leave what is not.", ref: "AGAPAY Learn" }
+  };
+  const activeMeta = experience.tefaActive && tefaMeta[vm.page.id] ? { ...meta, ...tefaMeta[vm.page.id] } : meta;
+  const kicker = experience.odyssey && vm.page.id === "dashboard" ? experience.dashboardKicker : activeMeta.kicker;
   const description = experience.odyssey && vm.page.id === "dashboard" && experience.dashboardDescription
     ? experience.dashboardDescription
-    : meta.description;
+    : activeMeta.description;
   const subtitle = vm.page.subtitle ? vm.page.subtitle : description;
   const currentMode = vm.graceMode?.active ? vm.graceMode.mode || "light" : "full";
   return `
@@ -310,7 +316,7 @@ function pageIntro(vm) {
       <p class="learn-page-intro-description">${html(subtitle)}</p>
       <div class="learn-page-intro-quote">
         <span aria-hidden="true">“</span>
-        <p>${html(meta.quote)} <strong>${html(meta.ref)}</strong></p>
+        <p>${html(activeMeta.quote)} <strong>${html(activeMeta.ref)}</strong></p>
       </div>
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(181,148,47,.2);">
         <button type="button" data-grace-mode="full" style="border:1px solid ${currentMode === 'full' ? 'var(--gold)' : 'rgba(181,148,47,.3)'};border-radius:9px;background:${currentMode === 'full' ? 'rgba(6,21,34,.06)' : 'transparent'};color:${currentMode === 'full' ? 'var(--gold)' : 'var(--muted)'};padding:7px 14px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:${currentMode === 'full' ? '700' : '400'};">
@@ -734,7 +740,7 @@ function topbar(vm) {
 
 function shell(vm, body) {
   return `
-    <div class="learn-product-shell" style="${cssVars()};">
+    <div class="learn-product-shell learn-screen-${html(vm.page.id)}" style="${cssVars()};">
       ${sidebar(vm)}
       <div class="learn-sidebar-scrim" data-learn-sidebar-scrim></div>
       <main class="learn-product-main scroll">
@@ -4003,6 +4009,11 @@ function setupColorSelect(label, name, value = colorChoices[0]) {
   return `<label class="learn-color-field" style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">${html(label)}<span style="display:flex;gap:8px;align-items:center;"><input name="${html(name)}" type="color" value="${html(resolved)}" list="learnColorChoices" style="width:44px;height:40px;flex:0 0 auto;border:1px solid var(--line);border-radius:9px;padding:3px;background:var(--paper2);"><input name="${html(name)}Hex" type="text" value="${html(resolved)}" pattern="#[0-9A-Fa-f]{6}" style="min-width:0;flex:1;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);"><span data-color-preview style="width:34px;height:34px;border-radius:50%;background:${html(resolved)};border:1px solid var(--goldsoft);"></span></span><datalist id="learnColorChoices">${colorChoices.map((color) => `<option value="${html(color)}"></option>`).join("")}</datalist></label>`;
 }
 
+function setupChildColor(value = colorChoices[0]) {
+  const resolved = /^#[0-9a-f]{6}$/i.test(String(value || "")) ? value : colorChoices[0];
+  return `<label class="learn-child-color-field"><span>Color</span><input name="color" type="color" value="${html(resolved)}" list="learnColorChoices" aria-label="Planner color"><datalist id="learnColorChoices">${colorChoices.map((color) => `<option value="${html(color)}"></option>`).join("")}</datalist></label>`;
+}
+
 function setupMultiChildPicker(children = [], selectedIds = []) {
   // Normalise: selectedIds may be a comma-joined string or an array
   const selected = Array.isArray(selectedIds)
@@ -4018,7 +4029,7 @@ function childSetupRow(child = {}, groupingMode = "forms") {
   const groupingField = groupingMode === "forms"
     ? setupSelect("Form", "formLabel", child.formLabel || child.form || "", formOptions)
     : `<input type="hidden" name="formLabel" value="${html(child.formLabel || child.form || "")}" />`;
-  return `<div data-setup-row="children" data-id="${html(child.id || "")}" class="learn-family-row learn-child-row"><span class="learn-child-monogram" style="background:${html(child.color || colorChoices[0])};">${html((child.firstName || child.name || "C").charAt(0))}</span>${setupInput("Child name", "firstName", child.firstName || child.name || "")}${setupInput("Age", "ageYears", child.age || "", { type: "number" })}${setupInput("Grade / level", "gradeLabel", child.gradeLabel || child.grade || "")}${groupingField}${setupColorSelect("Color", "color", child.color || colorChoices[0])}${setupRemoveButton()}</div>`;
+  return `<div data-setup-row="children" data-id="${html(child.id || "")}" class="learn-family-row learn-child-row"><span class="learn-child-monogram" style="background:${html(child.color || colorChoices[0])};">${html((child.firstName || child.name || "C").charAt(0))}</span>${setupInput("Child name", "firstName", child.firstName || child.name || "")}${setupInput("Age", "ageYears", child.age || "", { type: "number" })}${setupInput("Grade / level", "gradeLabel", child.gradeLabel || child.grade || "")}${groupingField}${setupChildColor(child.color || colorChoices[0])}${setupRemoveButton()}</div>`;
 }
 
 function subjectSetupRow(subject = {}, children = [], terms = [], currentTermId = "", groupingMode = "forms", tileMinutes = "") {
@@ -4514,20 +4525,34 @@ function simpleSetupStepBody(draft) {
     return `<div class="learn-wizard-step-copy"><span>Choose your planning structure</span><h2>Would you rather use Forms or familiar grades?</h2><p>A Form is a flexible group of children learning at a similar stage. Forms make shared work easier; grades keep the familiar structure many families already use.</p></div><label class="learn-wizard-choice-toggle"><input type="checkbox" name="wizard.useForms" ${draft.useForms ? "checked" : ""}><span><strong>Plan with Forms</strong><small>After you add your children, Learn will suggest a Form from each age or grade. You can adjust every suggestion.</small></span></label>${draft.useForms ? `<div class="learn-wizard-gentle-note"><strong>Forms selected.</strong><span>Next, add each child. Learn will suggest Little Ones, Form I, Form II, and beyond based on the information you enter.</span></div>` : `<div class="learn-wizard-gentle-note"><strong>Use familiar grades instead.</strong><span>Learn will organize children and assignments by grade or level. You can switch to Forms later without losing saved assignments.</span></div>`}`;
   }
   if (draft.step === 3) {
-    return `<div class="learn-wizard-step-copy"><span>Your learners</span><h2>Add the children learning at home.</h2><p>First name plus either age or grade is enough.${draft.useForms ? " Learn will suggest a Form for each child as you enter them." : " Learn will use the grade or level you enter."}</p></div><div class="learn-wizard-plan-note"><strong>Free plan: up to 2 children</strong><span>Family plans include unlimited children, Forms, child sheets, and full household planning.</span></div><div class="learn-wizard-children">${draft.children.map((child, index) => { const suggested = child.formLabel || suggestedFormForChild(child); const formField = draft.useForms ? `<label class="learn-wizard-field"><span>Suggested Form</span><select name="formLabel">${formOptions.map((option) => `<option value="${html(option)}" ${option === suggested ? "selected" : ""}>${html(option)}</option>`).join("")}</select></label>` : ""; return `<div class="learn-wizard-child${draft.useForms ? " uses-forms" : ""}" data-wizard-child="${index}" data-client-id="${html(child.clientId)}"><span class="learn-wizard-child-number">${index + 1}</span>${simpleSetupField("First name", "firstName", child.firstName, { placeholder: "Maria" })}${simpleSetupField("Age", "ageYears", child.ageYears, { type: "number", min: 0, max: 21 })}${simpleSetupField("Grade or level", "gradeLabel", child.gradeLabel, { placeholder: "Grade 3 or Kindergarten" })}${formField}${draft.children.length > 1 ? `<button type="button" class="learn-wizard-icon-button" data-wizard-remove-child="${index}" aria-label="Remove ${html(child.firstName || `child ${index + 1}`)}">×</button>` : ""}</div>`; }).join("")}</div><button type="button" class="learn-wizard-add" data-wizard-add-child>${!isLearnFamilyPlan() && draft.children.length >= 2 ? "Upgrade to add another child" : "+ Add another child"}</button>`;
+    const familyPlan = isLearnFamilyPlan();
+    const planNote = familyPlan
+      ? `<div class="learn-wizard-plan-note"><strong>Family plan · unlimited children</strong><span>Add everyone now, then plan once for each shared Form or grade group.</span></div>`
+      : `<div class="learn-wizard-plan-note"><strong>Free plan: up to 2 children</strong><span>Family plans include unlimited children, Forms, child sheets, and full household planning.</span></div>`;
+    const childRows = draft.children.map((child, index) => {
+      const suggested = child.formLabel || suggestedFormForChild(child);
+      const formField = draft.useForms ? `<label class="learn-wizard-field"><span>Suggested Form</span><select name="formLabel" data-wizard-form-select>${formOptions.map((option) => `<option value="${html(option)}" ${option === suggested ? "selected" : ""}>${html(option)}</option>`).join("")}</select></label>` : "";
+      return `<div class="learn-wizard-child${draft.useForms ? " uses-forms" : ""}" data-wizard-child="${index}" data-client-id="${html(child.clientId)}"><span class="learn-wizard-child-number">${index + 1}</span>${simpleSetupField("First name", "firstName", child.firstName, { placeholder: "Maria" })}${simpleSetupField("Age", "ageYears", child.ageYears, { type: "number", min: 0, max: 21 })}${simpleSetupField("Grade or level", "gradeLabel", child.gradeLabel, { placeholder: "Grade 3 or Kindergarten" })}${formField}${draft.children.length > 1 ? `<button type="button" class="learn-wizard-icon-button" data-wizard-remove-child="${index}" aria-label="Remove ${html(child.firstName || `child ${index + 1}`)}">×</button>` : ""}</div>`;
+    }).join("");
+    const addLabel = !familyPlan && draft.children.length >= 2 ? "Upgrade to add another child" : "+ Add one child";
+    return `<div class="learn-wizard-step-copy"><span>Your learners</span><h2>Add the children learning at home.</h2><p>First name plus either age or grade is enough.${draft.useForms ? " Learn suggests a Form automatically; change it only when you need to." : " Learn will use the grade or level you enter."}</p></div>${planNote}<div class="learn-wizard-roster-head"><span>${draft.children.length} ${draft.children.length === 1 ? "learner" : "learners"}</span><small>${draft.useForms ? "Forms keep sibling work shared" : "Grouped by grade or level"}</small></div><div class="learn-wizard-children">${childRows}</div><div class="learn-wizard-add-actions"><button type="button" class="learn-wizard-add" data-wizard-add-child>${addLabel}</button>${familyPlan ? `<button type="button" class="learn-wizard-add" data-wizard-add-children="3">+ Add 3 children</button>` : ""}</div>`;
   }
   if (draft.step === 4) {
     return `<div class="learn-wizard-step-copy"><span>A gentler way through real life</span><h2>Meet Grace Mode.</h2><p>Your plan should serve your family, not punish it. Grace Mode lets you choose Full, Medium, or Light without deleting work or pretending the plan never existed.</p></div><aside class="learn-wizard-grace-explainer"><div><small>Built for real family life</small><h3>Grace Mode changes the day according to each subject’s priority rank.</h3><p>Use it for illness, a new baby, travel, feast days, difficult mornings, or any season when the full plan is too much. Deferred work stays in your plan and can return when the household is ready.</p></div><div class="learn-wizard-grace-levels"><span><strong>Full</strong><small>Every scheduled item runs at its normal time.</small></span><span><strong>Medium</strong><small>Each child keeps up to 4 ranked subjects. Household enrichment keeps up to 3 blocks.</small></span><span><strong>Light</strong><small>Each child keeps up to 2 top-ranked subjects as short touchpoints. Household enrichment keeps 1 block.</small></span></div><p class="learn-wizard-grace-tip"><strong>How to use it:</strong> choose today’s mode on the Learn Dashboard. In Advanced Setup, rank each subject as Core, High, Medium, or Low so Mom knows exactly what survives first when the day gets lighter.</p></aside><div class="learn-wizard-gentle-note"><strong>No permanent choice is required.</strong><span>You can change Grace Mode from day to day as family life changes.</span></div>`;
   }
-  return `<div class="learn-wizard-step-copy"><span>Ready for Today</span><h2>Would you like a simple starter week?</h2><p>AGAPAY will save a real editable first term, Daily Church Rhythms, family read-aloud, nature walk, and starter subject plan organized by ${draft.useForms ? "Form" : "grade or level"}. Nothing is sample-only or locked.</p></div><label class="learn-wizard-starter"><input type="checkbox" name="wizard.starterWeek" ${draft.starterWeek ? "checked" : ""}><span><strong>Create a gentle starter week</strong><small>Creates Morning Prayers, Daily Readings, Saint of the Day, family read-aloud, nature walk, plus editable Language Arts, Mathematics, History, Geography, Literature, and Science subjects for every ${draft.useForms ? "Form" : "grade or level"}.</small></span></label><div class="learn-wizard-summary"><div><small>Household</small><strong>${html(draft.householdName || "Your household")}</strong></div><div><small>Children</small><strong>${draft.children.filter((child) => child.firstName).length}</strong></div><div><small>Planning</small><strong>${draft.useForms ? "Family + Forms" : "Family + grades"}</strong></div><div><small>Style</small><strong>${html(draft.method === "Orthodox Classical" ? "Classical" : draft.method)}</strong></div></div>`;
+  const starterRhythm = isOdysseyLearnContext()
+    ? "a family read-aloud, nature walk, and a starter subject plan"
+    : "Daily Church Rhythms, a family read-aloud, nature walk, and a starter subject plan";
+  const starterDetails = isOdysseyLearnContext()
+    ? "Creates family read-aloud and nature walk blocks, plus editable Language Arts, Mathematics, History, Geography, Literature, and Science subjects"
+    : "Creates Morning Prayers, Daily Readings, Saint of the Day, family read-aloud, nature walk, plus editable Language Arts, Mathematics, History, Geography, Literature, and Science subjects";
+  return `<div class="learn-wizard-step-copy"><span>Ready for Today</span><h2>Would you like a simple starter week?</h2><p>AGAPAY will save a real editable first term, ${starterRhythm} organized by ${draft.useForms ? "Form" : "grade or level"}. Nothing is sample-only or locked.</p></div><label class="learn-wizard-starter"><input type="checkbox" name="wizard.starterWeek" ${draft.starterWeek ? "checked" : ""}><span><strong>Create a gentle starter week</strong><small>${starterDetails} for every ${draft.useForms ? "Form" : "grade or level"}.</small></span></label><div class="learn-wizard-summary"><div><small>Household</small><strong>${html(draft.householdName || "Your household")}</strong></div><div><small>Children</small><strong>${draft.children.filter((child) => child.firstName).length}</strong></div><div><small>Planning</small><strong>${draft.useForms ? "Family + Forms" : "Family + grades"}</strong></div><div><small>Style</small><strong>${html(draft.method === "Orthodox Classical" ? "Classical" : draft.method)}</strong></div></div>`;
 }
 
 function renderSimpleSetupWizard(vm, draft) {
-  const tileNote = `<aside class="learn-wizard-tile-note"><strong>How setup tiles work</strong><span>Tiles are planning baskets. Quick Setup creates a gentle starter set, and Advanced Setup lets you open each tile to add or adjust the subjects, books, enrichment, Forms, weeks, and Grace Mode behavior behind your planner.</span></aside>`;
   const body = `<section class="learn-wizard" data-simple-setup-wizard data-wizard-step="${draft.step}">
     <div class="learn-wizard-topline"><div><span>Simple Setup</span><strong>Step ${draft.step + 1} of ${SIMPLE_SETUP_STEPS.length}</strong></div><a href="/myagapay/learn/setup?advanced=1" data-wizard-advanced>Advanced Setup</a></div>
     <div class="learn-wizard-progress" aria-label="Setup progress">${SIMPLE_SETUP_STEPS.map((label, index) => `<span class="${index < draft.step ? "is-complete" : index === draft.step ? "is-current" : ""}"><i>${index < draft.step ? "✓" : index + 1}</i><em>${html(label)}</em></span>`).join("")}</div>
-    ${tileNote}
     <form class="learn-wizard-card">${simpleSetupStepBody(draft)}<p class="learn-wizard-status" data-wizard-status aria-live="polite"></p><div class="learn-wizard-actions">${draft.step ? `<button type="button" class="learn-wizard-secondary" data-wizard-back>Back</button>` : `<a class="learn-wizard-secondary" href="/myagapay/learn/setup?advanced=1" data-wizard-advanced>Skip to full setup</a>`}<button type="submit" class="learn-wizard-primary" ${draft.step === SIMPLE_SETUP_STEPS.length - 1 ? "data-wizard-finish" : "data-wizard-next"}>${draft.step === SIMPLE_SETUP_STEPS.length - 1 ? "Save & open Today" : "Continue"}</button></div></form>
     <p class="learn-wizard-draft-note">Your progress is saved on this device until setup is complete.</p>
   </section>`;
@@ -4850,12 +4875,13 @@ function simpleSetupPayload(draft, existingSnapshot = null) {
     color: colors[(groupIndex + subjectIndex) % colors.length]
   }))) : [];
   const starterTerm = { id: "term_1", label: "Starter Term", startDate: dates.termStart, endDate: dates.termEnd, paceMode: "steady" };
+  const starterChurchRhythms = isOdysseyLearnContext() ? [] : [
+    { title: "Morning Prayers", note: "Begin together", weeklyFrequency: "daily", daysOfWeek: subjectDays.daily, minutes: 10 },
+    { title: "Daily Readings", note: "Epistle and Gospel", weeklyFrequency: "daily", daysOfWeek: subjectDays.daily, minutes: 10 },
+    { title: "Saint of the Day", note: "Read and discuss", weeklyFrequency: "daily", daysOfWeek: subjectDays.daily, minutes: 10 }
+  ];
   const starterFormation = {
-    churchRhythms: [
-      { title: "Morning Prayers", note: "Begin together", weeklyFrequency: "daily", daysOfWeek: subjectDays.daily, minutes: 10 },
-      { title: "Daily Readings", note: "Epistle and Gospel", weeklyFrequency: "daily", daysOfWeek: subjectDays.daily, minutes: 10 },
-      { title: "Saint of the Day", note: "Read and discuss", weeklyFrequency: "daily", daysOfWeek: subjectDays.daily, minutes: 10 }
-    ],
+    churchRhythms: starterChurchRhythms,
     recitationTracks: [], hymnStudies: [], feasts: [],
     enrichmentBlocks: [
       { blockType: "Literature", title: "Family Read-Aloud", planningMode: "family", weeklyFrequency: "daily", daysOfWeek: subjectDays.daily, minutesPlanned: 20, termId: "term_1", gracePriority: "high" },
@@ -4906,8 +4932,21 @@ function wireSimpleSetupWizard(vm, draft, existingSnapshot = null) {
     wireSimpleSetupWizard(vm, draft, existingSnapshot);
     root.querySelector(".learn-wizard")?.scrollIntoView({ block: "start" });
   };
-  form.addEventListener("input", () => captureSimpleSetupStep(form, draft));
+  form.addEventListener("input", (event) => {
+    const childRow = event.target.closest("[data-wizard-child]");
+    if (childRow && draft.useForms && ["ageYears", "gradeLabel"].includes(event.target.name) && childRow.dataset.formManual !== "true") {
+      const formSelect = childRow.querySelector("[data-wizard-form-select]");
+      if (formSelect) {
+        formSelect.value = suggestedFormForChild({
+          ageYears: childRow.querySelector('[name="ageYears"]')?.value || "",
+          gradeLabel: childRow.querySelector('[name="gradeLabel"]')?.value || ""
+        });
+      }
+    }
+    captureSimpleSetupStep(form, draft);
+  });
   form.addEventListener("change", (event) => {
+    if (event.target.matches("[data-wizard-form-select]")) event.target.closest("[data-wizard-child]").dataset.formManual = "true";
     captureSimpleSetupStep(form, draft);
     if (event.target.name === "wizard.useForms") rerender();
   });
@@ -4950,6 +4989,19 @@ function wireSimpleSetupWizard(vm, draft, existingSnapshot = null) {
         return;
       }
       draft.children.push({ id: "", clientId: `child_${Date.now()}`, firstName: "", ageYears: "", gradeLabel: "", formLabel: "" });
+      saveSimpleSetupDraft(draft);
+      rerender();
+      return;
+    }
+    const addChildren = event.target.closest("[data-wizard-add-children]");
+    if (addChildren) {
+      captureSimpleSetupStep(form, draft);
+      if (!isLearnFamilyPlan()) return;
+      const count = Math.max(1, Math.min(5, Number(addChildren.dataset.wizardAddChildren) || 3));
+      const stamp = Date.now();
+      for (let index = 0; index < count; index += 1) {
+        draft.children.push({ id: "", clientId: `child_${stamp}_${index}`, firstName: "", ageYears: "", gradeLabel: "", formLabel: "" });
+      }
       saveSimpleSetupDraft(draft);
       rerender();
       return;
@@ -5060,15 +5112,18 @@ function renderSetup(vm) {
     ? "Keep each child's familiar grade or level. Forms stay out of the way, and Planner and Print organize assignments by grade or individual child."
     : "Assign each child a Form and color. Forms let siblings at similar stages share work without duplicating the plan.";
   const collapseDefault = Boolean(vm.setupCompleted);
-  const rhythmSetupTitle = learnExperience().tefaActive ? "Daily Rhythm" : "Church Rhythm";
-  const rhythmSetupSummary = learnExperience().tefaActive ? "Daily prayers, readings, saints, feasts, and fasting notes" : "Daily prayers, readings, saints, feasts, and fasting rhythm";
+  const productExperience = learnExperience();
+  const rhythmSetupTitle = productExperience.tefaActive ? "Optional Formation & Rhythm" : "Church Rhythm";
+  const rhythmSetupSummary = productExperience.tefaActive ? "Optional household practices, readings, memory work, and calendar notes" : "Daily prayers, readings, saints, feasts, and fasting rhythm";
   const adaptivePanels = {
     church: `<span id="learnSetupChurchRhythm" class="learn-setup-anchor"></span>${collapsibleSetupPanel("churchRhythm", rhythmSetupTitle, churchRhythmSetupPanel(vm), { icon: "☩", summary: rhythmSetupSummary, defaultCollapsed: collapseDefault })}`,
-    enrichment: `<span id="learnSetupFormation" class="learn-setup-anchor"></span>${panel("Enrichment", formationSetupPanel(vm), { icon: "✥", largeTitle: true })}`,
-    subjects: `<span id="learnSetupSubjects" class="learn-setup-anchor"></span>${panel(experience.subjectTitle, formSubjectsSetupPanel(vm, currentTermId), { icon: "✎", largeTitle: true })}`
+    enrichment: `<span id="learnSetupFormation" class="learn-setup-anchor"></span>${collapsibleSetupPanel("enrichment", "Enrichment", formationSetupPanel(vm), { icon: "✥", summary: "Shared books, recitation, music, art, and beauty subjects", defaultCollapsed: collapseDefault })}`,
+    subjects: `<span id="learnSetupSubjects" class="learn-setup-anchor"></span>${collapsibleSetupPanel("subjects", experience.subjectTitle, formSubjectsSetupPanel(vm, currentTermId), { icon: "✎", summary: "Curriculum and recurring work by planning group", defaultCollapsed: collapseDefault })}`
   };
-  const householdContent = `<div class="learn-setup-method-note"><small>Organized for ${html(vm.household.method || "your household")}</small><strong>${html(experience.note)}</strong></div><div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parent name", "household.parentName", vm.household.parentName)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupInput("Parish patronal feast", "household.parishPatronalFeastName", vm.household.parishPatronalFeastName || "")}${setupInput("Patronal feast date", "household.parishPatronalFeastDate", vm.household.parishPatronalFeastDate || "", { type: "date" })}${setupSelect("Method", "household.primaryMethod", vm.household.method || "Unsure", homeschoolMethodOptions)}${setupInput("Homeschool name", "household.homeschoolName", vm.household.homeschoolName || "", { placeholder: "e.g. St. Xenia Homeschool" })}${setupInput("Patron Saint of your homeschool", "household.patronSaintName", vm.household.patronSaintName || "", { placeholder: "e.g. St. Xenia of St. Petersburg" })}${setupInput("Patron Saint feast date", "household.patronSaintFeastDate", vm.household.patronSaintFeastDate || "", { type: "date" })}${setupSelect("Planning groups", "preferences.groupingMode", groupingMode, [{ value: "forms", label: "Forms" }, { value: "grades", label: "Traditional grades / levels" }])}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}${`<details class="learn-day-picker"><summary><span>Default school days</span><strong data-day-summary>${html(setupWeekdays.filter((day) => (vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).includes(day.value)).map((day) => day.label).join(" · "))}</strong></summary><div class="learn-day-picker-menu">${setupWeekdays.map((day) => `<label><input type="checkbox" data-day-choice value="${day.value}" ${(vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).includes(day.value) ? "checked" : ""}>${day.label}</label>`).join("")}</div><input type="hidden" name="preferences.defaultSchoolDays" value="${html((vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).join(","))}"></details>`}${setupSelect("Default missed lesson", "preferences.defaultMissedLessonBehavior", vm.preferences.defaultMissedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Default max minutes / child", "preferences.defaultMaxDailyMinutes", vm.preferences.defaultMaxDailyMinutes || "240", { type: "number" })}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /></div><p style="margin:10px 0 0;color:var(--muted);font-size:13px;line-height:1.4;">The patronal feast repeats annually on the Family Planner calendar so it can be honored alongside name days, fasts, and major feasts. If your homeschool has its own patron saint, that name day appears there too, and both names print on report cards and transcripts.</p>`;
-  const childrenContent = `<p style="margin:0 0 12px;color:var(--muted);">${html(groupingCopy)}</p><div data-setup-list="children" style="display:grid;gap:10px;">${(vm.children.length ? vm.children : [{}]).map((child) => childSetupRow(child, groupingMode)).join("")}</div><button type="button" data-setup-add-row="children" style="margin-top:12px;width:100%;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px;font-family:inherit;">Add Child</button>`;
+  const orthodoxHouseholdFields = productExperience.tefaActive ? "" : `${setupInput("Parish", "household.parishName", vm.household.parish)}${setupInput("Parish patronal feast", "household.parishPatronalFeastName", vm.household.parishPatronalFeastName || "")}${setupInput("Patronal feast date", "household.parishPatronalFeastDate", vm.household.parishPatronalFeastDate || "", { type: "date" })}${setupInput("Patron Saint of your homeschool", "household.patronSaintName", vm.household.patronSaintName || "", { placeholder: "e.g. St. Xenia of St. Petersburg" })}${setupInput("Patron Saint feast date", "household.patronSaintFeastDate", vm.household.patronSaintFeastDate || "", { type: "date" })}`;
+  const orthodoxHouseholdNote = productExperience.tefaActive ? "" : `<p style="margin:10px 0 0;color:var(--muted);font-size:13px;line-height:1.4;">The patronal feast repeats annually on the Family Planner calendar so it can be honored alongside name days, fasts, and major feasts. If your homeschool has its own patron saint, that name day appears there too, and both names print on report cards and transcripts.</p>`;
+  const householdContent = `<div class="learn-setup-method-note"><small>Organized for ${html(vm.household.method || "your household")}</small><strong>${html(experience.note)}</strong></div><div class="learn-setup-household-grid">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parent name", "household.parentName", vm.household.parentName)}${setupSelect("Method", "household.primaryMethod", vm.household.method || "Unsure", homeschoolMethodOptions)}${setupInput("Homeschool name", "household.homeschoolName", vm.household.homeschoolName || "", { placeholder: productExperience.tefaActive ? "e.g. Dunn Family Homeschool" : "e.g. St. Xenia Homeschool" })}${orthodoxHouseholdFields}${setupSelect("Planning groups", "preferences.groupingMode", groupingMode, [{ value: "forms", label: "Forms" }, { value: "grades", label: "Traditional grades / levels" }])}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${setupSelect(productExperience.tefaActive ? "Optional Church calendar" : "Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}${`<details class="learn-day-picker"><summary><span>Default school days</span><strong data-day-summary>${html(setupWeekdays.filter((day) => (vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).includes(day.value)).map((day) => day.label).join(" · "))}</strong></summary><div class="learn-day-picker-menu">${setupWeekdays.map((day) => `<label><input type="checkbox" data-day-choice value="${day.value}" ${(vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).includes(day.value) ? "checked" : ""}>${day.label}</label>`).join("")}</div><input type="hidden" name="preferences.defaultSchoolDays" value="${html((vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).join(","))}"></details>`}${setupSelect("Default missed lesson", "preferences.defaultMissedLessonBehavior", vm.preferences.defaultMissedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Default max minutes / child", "preferences.defaultMaxDailyMinutes", vm.preferences.defaultMaxDailyMinutes || "240", { type: "number" })}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /></div>${orthodoxHouseholdNote}`;
+  const childrenContent = `<p style="margin:0 0 12px;color:var(--muted);">${html(groupingCopy)}</p><div data-setup-list="children" style="display:grid;gap:8px;">${(vm.children.length ? vm.children : [{}]).map((child) => childSetupRow(child, groupingMode)).join("")}</div><div class="learn-setup-add-actions"><button type="button" data-setup-add-row="children">Add one child</button>${isLearnFamilyPlan() ? `<button type="button" data-setup-add-children="3">Add 3 children</button>` : ""}</div>`;
   const termsContent = `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Term 4 / Summer is available for year-round homeschoolers. Assign subjects, books, and formation materials to the term where they belong.</p><div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button type="button" data-setup-add-row="terms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Term</button></div><div data-setup-list="terms" style="display:grid;gap:10px;">${(vm.terms?.length ? vm.terms : [vm.term]).map((term, index) => termSetupRow(term, index)).join("")}</div>`;
   const body = `
     <form data-setup-form data-screen-label="Set Up" class="learn-stack">
@@ -5078,7 +5133,6 @@ function renderSetup(vm) {
       ${collapsibleSetupPanel("children", groupingTitle, childrenContent, { icon: "◎", summary: `${vm.children.length || 0} ${vm.children.length === 1 ? "child" : "children"} configured`, defaultCollapsed: collapseDefault })}
       ${collapsibleSetupPanel("terms", "Terms", termsContent, { icon: "◷", summary: `${(vm.terms?.length || 1)} term${(vm.terms?.length || 1) === 1 ? "" : "s"} in this school year`, defaultCollapsed: collapseDefault })}
       ${experience.order.map((key) => adaptivePanels[key]).join("")}
-      ${panel("Co-op", `<div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;"><div><strong style="font-family:'Cormorant Garamond',serif;font-size:24px;">Coming Soon</strong><p style="margin:4px 0 0;color:var(--muted);line-height:1.4;">Co-op tools are deferred while Learn focuses on setup, Today, planning, formation, books, Grace Mode, and printable household plans.</p></div><span style="border:1px solid var(--gold);border-radius:999px;color:var(--gold);padding:7px 12px;white-space:nowrap;">Future add-on</span></div>`, { icon: "◎" })}
       <div class="learn-setup-savebar">
         <span data-setup-status class="learn-muted">Setup saves to the household profile and D1-backed Learn records.</span>
         <button type="submit" style="border:none;background:var(--navy);color:#fff;border-radius:10px;padding:12px 20px;font-family:inherit;font-weight:700;">Save Setup</button>
@@ -6523,6 +6577,17 @@ function wireSetupPage() {
       })();
       return;
     }
+    const addChildrenButton = event.target.closest("[data-setup-add-children]");
+    if (addChildrenButton) {
+      const list = form.querySelector('[data-setup-list="children"]');
+      const count = Math.max(1, Math.min(5, Number(addChildrenButton.dataset.setupAddChildren) || 3));
+      if (list) {
+        for (let index = 0; index < count; index += 1) list.insertAdjacentHTML("beforeend", setupBlankRow("children", form, {}));
+        syncSetupChildLimit(form);
+        scheduleSetupAutosave(250);
+      }
+      return;
+    }
     const removeButton = event.target.closest("[data-setup-remove-row]");
     if (removeButton) {
       const row = removeButton.closest("[data-setup-row]");
@@ -6571,7 +6636,7 @@ function wireSetupPage() {
     }
   });
   form.addEventListener("click", (event) => {
-    const autosaveTrigger = event.target.closest("[data-add-resource], [data-edit-resource], [data-resource-modal-close], [data-resource-modal-save], [data-remove-resource], [data-term-weeks-all], [data-term-weeks-odd], [data-term-weeks-even], [data-setup-remove-row], [data-setup-add-row]");
+    const autosaveTrigger = event.target.closest("[data-add-resource], [data-edit-resource], [data-resource-modal-close], [data-resource-modal-save], [data-remove-resource], [data-term-weeks-all], [data-term-weeks-odd], [data-term-weeks-even], [data-setup-remove-row], [data-setup-add-row], [data-setup-add-children]");
     if (!autosaveTrigger || event.target.closest("[data-close-term]")) return;
     scheduleSetupAutosave(250);
   });

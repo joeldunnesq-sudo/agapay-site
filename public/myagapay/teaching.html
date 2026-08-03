@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/donor/style.css?v=20260802queuemin1" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260803offline1" />
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260802perf1"></script>
-  <script src="/myagapay/teaching.js?v=20260802queuemin1" defer></script>
+  <script src="/myagapay/teaching.js?v=20260803offline1" defer></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -52,6 +52,7 @@
             <button type="button" class="is-active" data-podcast-library-view="latest" onclick="setKoinoniaPodcastLibraryView('latest')"><strong>Latest</strong><small>New from your subscriptions</small></button>
             <button type="button" data-podcast-library-view="subscriptions" onclick="setKoinoniaPodcastLibraryView('subscriptions')"><strong>Subscriptions</strong><small>Shows you follow</small></button>
             <button type="button" data-podcast-library-view="discover" onclick="setKoinoniaPodcastLibraryView('discover')"><strong>Discover</strong><small>Find Orthodox podcasts</small></button>
+            <button type="button" data-podcast-library-view="downloads" onclick="setKoinoniaPodcastLibraryView('downloads')"><strong>Downloads</strong><small>Listen without a connection</small></button>
           </nav>
           <section class="koinonia-podcast-library-pane" data-podcast-library-pane="latest">
             <div class="koinonia-podcast-section-head"><div><span class="eyebrow">One listening queue</span><h3>Newest episodes</h3></div><button type="button" onclick="loadKoinoniaPodcastLatest(true)">Refresh</button></div>
@@ -76,6 +77,11 @@
             <p class="section-note koinonia-podcast-status" id="koinoniaPodcastStatus" role="status" aria-live="polite">Search the Orthodox podcast directory.</p>
             <section class="koinonia-podcast-results" id="koinoniaPodcastResults" aria-live="polite"></section>
             <section class="koinonia-podcast-show" id="koinoniaPodcastShow" hidden></section>
+          </section>
+          <section class="koinonia-podcast-library-pane" data-podcast-library-pane="downloads" hidden>
+            <div class="koinonia-podcast-section-head"><div><span class="eyebrow">Saved on this device</span><h3>Offline episodes</h3></div></div>
+            <p class="section-note">Downloads stay on this phone and are available from the installed My AGAPAY app without Wi-Fi or cellular service.</p>
+            <div class="koinonia-podcast-downloads" id="koinoniaPodcastDownloads" aria-live="polite"><span>Loading downloads…</span></div>
           </section>
         </section>
       </div>
@@ -104,7 +110,17 @@
           <header>
             <button type="button" onclick="toggleKoinoniaPodcastPlayerExpanded(false)" aria-label="Close full-screen player"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
             <strong>Now Playing</strong>
-            <span aria-hidden="true"><i></i><i></i><i></i></span>
+            <div class="koinonia-player-actions">
+              <button id="koinoniaPodcastActionsToggle" type="button" onclick="toggleKoinoniaPodcastActions()" aria-label="More episode actions" aria-haspopup="menu" aria-expanded="false"><i></i><i></i><i></i></button>
+              <div class="koinonia-player-actions-menu" id="koinoniaPodcastActionsMenu" role="menu" hidden>
+                <button type="button" role="menuitem" onclick="openKoinoniaPodcastDetailsFromMenu()"><span aria-hidden="true">▤</span><b>Episode details<small>Read the show notes</small></b></button>
+                <button id="koinoniaPodcastDownloadAction" type="button" role="menuitem" onclick="toggleKoinoniaPodcastDownload()"><span aria-hidden="true">↓</span><b>Download episode<small>Play it offline on this device</small></b></button>
+                <button type="button" role="menuitem" onclick="restartKoinoniaPodcast()"><span aria-hidden="true">↺</span><b>Restart episode<small>Play again from the beginning</small></b></button>
+                <button type="button" role="menuitem" onclick="copyKoinoniaPodcastLink()"><span aria-hidden="true">⧉</span><b>Copy episode link<small id="koinoniaPodcastActionStatus">Ready to share</small></b></button>
+                <button type="button" role="menuitem" onclick="shareKoinoniaPodcastFromMenu()"><span aria-hidden="true">↗</span><b>Share episode<small>Use your phone's share sheet</small></b></button>
+                <a id="koinoniaPodcastOriginalLink" role="menuitem" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">↗</span><b>Open original page<small>Visit the publisher's website</small></b></a>
+              </div>
+            </div>
           </header>
           <div class="koinonia-full-art"><img id="koinoniaPodcastFullImage" alt="" /></div>
           <div class="koinonia-full-copy"><h2 id="koinoniaPodcastFullTitle">Choose an episode</h2><p id="koinoniaPodcastFullShow">Orthodox Podcast</p></div>
@@ -125,8 +141,8 @@
             <button type="button" onclick="toggleKoinoniaPodcastDetails()"><span>▤</span> Details</button>
             <button class="koinonia-podcast-share" id="koinoniaPodcastShare" type="button" onclick="shareKoinoniaPodcastEpisode()"><span>↗</span><span class="koinonia-visually-hidden">Share episode</span><b>Share</b></button>
           </div>
-          <section class="koinonia-full-drawer" id="koinoniaPodcastDetailsDrawer" hidden><button type="button" onclick="toggleKoinoniaPodcastDetails(false)" aria-label="Close details">×</button><h3 id="koinoniaPodcastDetailsTitle">Episode details</h3><p id="koinoniaPodcastPlayerDescription">Episode details will appear here.</p></section>
-          <section class="koinonia-full-drawer" id="koinoniaPodcastQueueDrawer" hidden><header><strong>Up Next</strong><span class="koinonia-full-drawer-actions"><button type="button" onclick="clearKoinoniaPodcastQueue()">Clear</button><button type="button" onclick="toggleKoinoniaPodcastQueue(false)" aria-label="Minimize Up Next">Minimize <span aria-hidden="true">⌄</span></button></span></header><div id="koinoniaPodcastQueueList"><span>Your queue is empty.</span></div></section>
+          <section class="koinonia-full-drawer" id="koinoniaPodcastDetailsDrawer" hidden><button class="koinonia-drawer-close" type="button" onclick="toggleKoinoniaPodcastDetails(false)" aria-label="Close details">×</button><h3 id="koinoniaPodcastDetailsTitle">Episode details</h3><p id="koinoniaPodcastPlayerDescription">Episode details will appear here.</p></section>
+          <section class="koinonia-full-drawer" id="koinoniaPodcastQueueDrawer" hidden><button class="koinonia-drawer-close" type="button" onclick="toggleKoinoniaPodcastQueue(false)" aria-label="Close Up Next">×</button><header><strong>Up Next</strong><button type="button" onclick="clearKoinoniaPodcastQueue()">Clear</button></header><div id="koinoniaPodcastQueueList"><span>Your queue is empty.</span></div></section>
         </div>
       </section>
       <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
