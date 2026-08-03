@@ -320,7 +320,9 @@
     @media (max-width: 640px) {
       .household-hub-identity { grid-template-columns:1fr; }
     }
-    .directory-mobile-header { display:none; }
+    .directory-nav-identity { min-width:0; display:grid; gap:2px; }
+    .directory-nav-identity .topbar-title { display:block; }
+    .directory-nav-identity small { overflow:hidden; color:rgba(246,241,232,.72); font-size:11px; line-height:1.2; text-overflow:ellipsis; white-space:nowrap; }
     .mobile-directory-home { display:none; }
     .directory-view-switcher {
       position:sticky;
@@ -386,28 +388,12 @@
         background:#f7f3ec;
         box-shadow:none;
       }
-      .directory-mobile-header {
-        position:sticky;
-        top:0;
-        z-index:25;
-        display:block;
-        margin:0 -14px 12px;
-        padding:15px 18px 13px;
-        border-bottom:1px solid rgba(246,241,232,.12);
-        background:linear-gradient(160deg,#061522 0%,#0b2130 100%);
-        color:#f6f1e8;
-        box-shadow:0 9px 28px rgba(6,21,34,.2);
-      }
       .directory-view-switcher {
         top:82px;
         width:100%;
         margin:0 0 12px;
         border-radius:13px;
       }
-      .directory-mobile-brand { display:flex; align-items:center; gap:10px; }
-      .directory-mobile-logo { width:34px; height:34px; object-fit:contain; }
-      .directory-mobile-wordmark { color:#f6f1e8; font-family:"Cormorant Garamond",Georgia,serif; font-size:27px; font-weight:600; letter-spacing:.04em; line-height:1; }
-      .directory-mobile-header p { margin:6px 0 0 44px; color:rgba(246,241,232,.72); font-size:12px; line-height:1.35; }
       .directory-top.myagapay-page-hero { display:none !important; }
       body.donor-directory-page .mobile-tabbar { display:none !important; }
       .donor-directory-page .directory-shell {
@@ -637,18 +623,6 @@
         max-width:none;
         margin-left:calc(50% - 50vw);
       }
-      .directory-mobile-header {
-        margin:0 -16px 16px;
-        padding:16px 16px 13px;
-        border-bottom:1px solid rgba(6,21,34,.12);
-        background:#fffdf8;
-        color:#061522;
-        box-shadow:none;
-      }
-      .directory-mobile-brand { align-items:baseline; gap:8px; }
-      .directory-mobile-logo { display:block; width:26px; height:26px; }
-      .directory-mobile-wordmark { color:#061522; font-family:"Cormorant Garamond",Georgia,serif; font-size:27px; font-weight:600; letter-spacing:0; }
-      .directory-mobile-header p { margin:4px 0 0; color:#70695d; font-size:12px; }
       .member-directory-intro { display:none; }
       .directory-tools { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:0 0 12px; }
       .directory-tools label:first-child { grid-column:1/-1; }
@@ -854,10 +828,9 @@
       <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg> Account settings</a></div>
     </aside>
     <main class="directory-main">
-      <header class="directory-mobile-header">
-        <div class="directory-mobile-brand"><img class="directory-mobile-logo" src="/mark.png" alt="" aria-hidden="true" /><span class="directory-mobile-wordmark" id="mobileDirectoryTitle">Parish Directory</span></div>
-        <p><span id="mobileDirectoryLocation">City, State</span> · <span id="mobileDirectoryCount">Directory</span></p>
-      </header>
+      <div class="topbar">
+        <div class="directory-nav-identity"><strong class="topbar-title" id="mobileDirectoryTitle">Parish Directory</strong><small><span id="mobileDirectoryLocation">City, State</span> · <span id="mobileDirectoryCount">Directory</span></small></div>
+      </div>
       <nav class="directory-view-switcher" aria-label="Directory sections" role="tablist">
         <button id="directoryViewTab" type="button" role="tab" aria-selected="true" aria-controls="memberDirectory" data-directory-view-target="directory">Directory</button>
         <button id="familyInformationTab" type="button" role="tab" aria-selected="false" aria-controls="personalDirectorySettings" data-directory-view-target="family" tabindex="-1">Family Information</button>

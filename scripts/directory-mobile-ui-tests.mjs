@@ -20,10 +20,10 @@ assert.doesNotMatch(page, /id="householdDetailsForm"(?:(?!<\/form>)[\s\S])*name=
 assert.match(page, /class="household-hub-identity" data-wizard-step="2"[\s\S]*Family name<input name="displayName"/);
 assert.doesNotMatch(page, /class="household-hub-identity" data-wizard-step="0"/);
 assert.match(page, /self\/addresses`, \{[\s\S]*city,[\s\S]*region,[\s\S]*visibility: locationVisibility/);
-assert.match(page, /class="directory-mobile-header"/);
-assert.match(page, /class="directory-mobile-logo" src="\/mark\.png"/);
+assert.match(page, /class="topbar"[\s\S]*class="directory-nav-identity"/);
+assert.match(page, /class="directory-nav-identity"[\s\S]*id="mobileDirectoryLocation"/);
 assert.doesNotMatch(page, /class="directory-mobile-cross"/);
-assert.match(page, /class="directory-mobile-wordmark"[^>]*>Parish Directory</);
+assert.match(page, /class="topbar-title"[^>]*id="mobileDirectoryTitle"[^>]*>Parish Directory</);
 assert.match(page, /id="directoryHeroLocation">City, State</);
 assert.match(page, /function directoryHomeTitle\(\) \{[\s\S]*directoryParish\.name[\s\S]*Directory/);
 assert.match(page, /directoryParish = \{[\s\S]*name: parish\.name[\s\S]*city: parish\.city[\s\S]*state: parish\.state/);
@@ -65,7 +65,7 @@ assert.match(page, /\.donor-directory-page fieldset\.field-group,[\s\S]*?grid-te
 assert.match(page, /\.donor-directory-page input,[\s\S]*?max-width:100%;/);
 assert.match(page, /@media \(max-width: 430px\) \{[\s\S]*?\.donor-directory-page \.directory-tools \{[\s\S]*?grid-template-columns:minmax\(0,1fr\);/);
 assert.match(page, /font-family:"Cormorant Garamond"/);
-assert.match(page, /background:linear-gradient\(160deg,#061522 0%,#0b2130 100%\)/);
+assert.match(myAgapayShell, /linear-gradient\(135deg, #061522 0%, #0a2035 62%, #101d22 100%\)/);
 assert.match(page, /\.btn\.primary \{ background:linear-gradient\(155deg, #d8b66a, var\(--gold\)\); color:#241a04;/);
 assert.match(page, /\.directory-tab\[aria-selected="true"\] \{ background:var\(--gold\); color:#241a04; border-color:var\(--gold\); \}/);
 assert.match(page, /class="edit-wizard-progress"/);
