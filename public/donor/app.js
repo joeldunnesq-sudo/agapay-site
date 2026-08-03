@@ -4399,6 +4399,7 @@ function formatCentsAsDollars(cents) {
 let bookstoreItemFieldsSchema = null;
 let bookstoreProducts = [];
 let bookstoreCart = [];
+let bookstoreCatalogQuery = "";
 
 async function loadBookstoreItemFieldsSchema() {
   if (bookstoreItemFieldsSchema) return bookstoreItemFieldsSchema;
@@ -4453,18 +4454,37 @@ function bookstoreProductById(productId, variantId = "") {
     || null;
 }
 
+function setBookstoreCatalogQuery(value = "") {
+  bookstoreCatalogQuery = String(value || "").trim().toLowerCase();
+  renderBookstoreProducts(bookstoreProducts);
+}
+
 function renderBookstoreProducts(products = []) {
   const container = document.getElementById("bookstoreProductCatalog");
   if (!container) return;
+  const count = document.getElementById("bookstoreCatalogCount");
   if (!products.length) {
+    if (count) count.textContent = "No catalog items yet";
     container.innerHTML = '<div class="notice">No parish products yet. Scan a book below and, after purchase, it will be added to the parish catalog for other parishioners.</div>';
+    return;
+  }
+
+  const visibleProducts = bookstoreCatalogQuery
+    ? products.filter(product => [product.name, product.description, product.categoryLabel]
+        .some(value => String(value || "").toLowerCase().includes(bookstoreCatalogQuery)))
+    : products;
+  if (count) count.textContent = bookstoreCatalogQuery
+    ? `${visibleProducts.length} of ${products.length} items`
+    : `${products.length} item${products.length === 1 ? "" : "s"} available`;
+  if (!visibleProducts.length) {
+    container.innerHTML = '<div class="notice">No items match that search. Try a title, author, or category.</div>';
     return;
   }
 
   const openLabels = new Set(Array.from(container.querySelectorAll("details.bookstore-category-group[open]")).map(el => el.dataset.category));
 
   const groups = new Map();
-  products.forEach(product => {
+  visibleProducts.forEach(product => {
     const label = product.categoryLabel || "Other items";
     if (!groups.has(label)) groups.set(label, []);
     groups.get(label).push(product);
@@ -4485,14 +4505,19 @@ function renderBookstoreProducts(products = []) {
       const available = product.trackInventory === false || Number(product.stockQuantity || 0) > 0;
       const qtyBadge = cartItem ? `<span class="bookstore-product-card-qty">${Number(cartItem.quantity || 1)}</span>` : "";
       const initial = escapeHtml((product.categoryLabel || product.name || "?").trim().charAt(0).toUpperCase() || "?");
+      const productMedia = product.imageUrl
+        ? `<span class="bookstore-product-media"><img src="${escapeHtml(product.imageUrl)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;"></span>`
+        : `<span class="bookstore-product-media" aria-hidden="true"><svg viewBox="0 0 64 64"><path d="M13 11h34a4 4 0 0 1 4 4v39H18a7 7 0 0 1-7-7V15a4 4 0 0 1 2-4Z"/><path d="M18 11v43M25 21h17M25 29h14"/></svg></span>`;
       return `
       <button type="button" class="bookstore-product-card" onclick="addBookstoreProductToCart('${escapeHtml(product.id)}','${escapeHtml(product.variantId || "")}')" ${available ? "" : "disabled"}>
         ${qtyBadge}
         ${available ? "" : '<span class="bookstore-product-stock-out">Out of stock</span>'}
+        ${productMedia}
         <span class="bookstore-product-badge" aria-hidden="true">${initial}</span>
         <strong>${escapeHtml(product.name)}</strong>
         <small>${escapeHtml(product.description || product.categoryLabel || "Bookstore item")}</small>
         <span class="bookstore-product-meta"><span class="bookstore-category-pill">${escapeHtml(product.categoryLabel || "Item")}</span><span class="bookstore-price">${formatCentsAsDollars(product.priceCents)}</span></span>
+        <span class="bookstore-product-add">${available ? "Add to cart" : "Currently unavailable"}</span>
       </button>
     `;
     }).join("");
@@ -4815,8 +4840,8 @@ async function loadDonorBookstorePage() {
     }
   }
   const bookstoreLabel = parishName ? `the ${parishName}` : "your parish";
-  setText("bookstoreHeroTitle", `Pay for your items at ${bookstoreLabel} bookstore.`);
-  setText("bookstoreHeroDescription", "Shop at your parish bookstore, then use your phone to pay for the items you enter below.");
+  setText("bookstoreHeroTitle", `Shop the shelves at ${bookstoreLabel} bookstore.`);
+  setText("bookstoreHeroDescription", "Browse books and parish goods, add what you need, and check out securely from your phone.");
   const parishInput = document.getElementById("bookstoreParishId");
   if (parishInput) parishInput.value = parishId;
 

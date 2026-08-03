@@ -10,11 +10,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js" defer></script>
-  <link rel="stylesheet" href="/donor/style.css?v=20260802playerredesign1" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260803storefront1" />
   <script src="/security.js"></script>
   <script src="/pwa-register.js" defer></script>
-  <script src="/myagapay-shell.js?v=20260803gate1"></script>
-  <script src="/donor/app.js?v=20260731bookparish1" defer></script>
+  <script src="/myagapay-shell.js?v=20260803mainnav2"></script>
+  <script src="/donor/app.js?v=20260803storefront1" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -157,6 +157,76 @@
       .bookstore-scan-feature { grid-template-columns: 48px 1fr; }
       .bookstore-scan-feature button { grid-column: 1 / -1; width: 100%; justify-content: center; }
     }
+
+    /* Storefront treatment: familiar retail hierarchy without changing any
+       inventory, scanning, cart, checkout, or order-history behavior. */
+    .donor-bookstore-page { background: #f4f1ea; }
+    .donor-bookstore-page .page { max-width: 1500px; }
+    .bookstore-store-hero {
+      position: relative; overflow: hidden; display: grid; grid-template-columns:minmax(0,1.4fr) minmax(280px,.6fr);
+      align-items: center; gap: 28px; min-height: 230px; margin-bottom: 18px; border-radius: 18px; padding: 34px 38px;
+      color: #f8f3e8; background: linear-gradient(120deg,#071827 0%,#102d3b 62%,#244a4c 100%);
+      box-shadow: 0 18px 42px rgba(6,21,34,.18);
+    }
+    .bookstore-store-hero::after { content:""; position:absolute; right:-70px; bottom:-130px; width:360px; height:360px; border:1px solid rgba(225,196,126,.18); border-radius:50%; box-shadow:0 0 0 55px rgba(225,196,126,.05),0 0 0 110px rgba(225,196,126,.035); }
+    .bookstore-store-hero-copy { position:relative; z-index:1; }
+    .bookstore-store-eyebrow { color:#e1c47e; font-size:11px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
+    .bookstore-store-hero h1 { max-width:820px; margin:7px 0 9px; font-family:var(--serif,serif); font-size:clamp(34px,4.2vw,58px); font-weight:500; line-height:.98; }
+    .bookstore-store-hero p { max-width:680px; margin:0; color:rgba(248,243,232,.76); font-size:15px; line-height:1.55; }
+    .bookstore-store-promises { position:relative; z-index:1; display:grid; gap:9px; padding:18px; border:1px solid rgba(225,196,126,.3); border-radius:14px; background:rgba(4,16,25,.34); backdrop-filter:blur(8px); }
+    .bookstore-store-promises span { display:flex; align-items:center; gap:9px; color:#f6f1e8; font-size:12.5px; font-weight:700; }
+    .bookstore-store-promises i { width:23px; height:23px; display:grid; place-items:center; border-radius:50%; background:rgba(225,196,126,.16); color:#e1c47e; font-style:normal; }
+    .bookstore-storefront-layout { display:grid; gap:18px; }
+    .bookstore-storefront-card { overflow:hidden; border:1px solid rgba(134,124,107,.24); border-radius:16px; background:#fffdf9; box-shadow:0 10px 30px rgba(6,21,34,.07); }
+    .bookstore-storefront-card > .card-header { padding:18px 22px; border-bottom:1px solid rgba(134,124,107,.18); background:#fff; }
+    .bookstore-storefront-card > .card-body { padding:22px; }
+    .bookstore-store-context { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; padding:12px 15px; border:1px solid rgba(196,156,80,.28); border-radius:11px; background:#faf6ec; }
+    .bookstore-store-context .form-label { margin:0; color:#8a651f; font-size:10px; letter-spacing:.12em; text-transform:uppercase; }
+    .bookstore-store-context .form-input { min-height:auto; border:0; padding:2px 0 0; background:transparent; color:#061522; font-weight:700; }
+    .bookstore-catalog-pane { min-width:0; }
+    .bookstore-catalog-heading { display:flex; align-items:end; justify-content:space-between; gap:18px; margin-bottom:13px; }
+    .bookstore-catalog-heading h2 { margin:2px 0 0; color:#061522; font-family:var(--serif,serif); font-size:28px; font-weight:600; }
+    .bookstore-catalog-heading small { display:block; color:#8a8374; font-size:12px; }
+    .bookstore-search { position:relative; width:min(330px,100%); }
+    .bookstore-search svg { position:absolute; left:12px; top:50%; width:17px; height:17px; transform:translateY(-50%); fill:none; stroke:#8a8374; stroke-width:2; pointer-events:none; }
+    .bookstore-search input { width:100%; min-height:42px; border:1px solid rgba(134,124,107,.34); border-radius:999px; padding:0 15px 0 39px; background:#fff; color:#171715; font:500 13px var(--sans,sans-serif); }
+    .bookstore-search input:focus { outline:2px solid rgba(196,156,80,.28); border-color:#b28a3c; }
+    .bookstore-category-list { gap:18px; }
+    .bookstore-category-group { border:0; border-radius:0; background:transparent; overflow:visible; }
+    .bookstore-category-summary { border-bottom:1px solid rgba(134,124,107,.22); padding:10px 2px; font-size:19px; }
+    .bookstore-category-group[open] .bookstore-category-summary { border-bottom:1px solid rgba(134,124,107,.22); }
+    .bookstore-category-group .bookstore-product-grid { padding:14px 0 0; }
+    .bookstore-product-grid { grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:14px; }
+    .bookstore-product-card { min-height:245px; overflow:hidden; border-color:rgba(134,124,107,.24); border-radius:13px; padding:0 14px 14px; gap:7px; box-shadow:0 5px 16px rgba(6,21,34,.045); }
+    .bookstore-product-card:hover,.bookstore-product-card:focus-visible { transform:translateY(-3px); box-shadow:0 14px 28px rgba(6,21,34,.12); }
+    .bookstore-product-media { height:118px; margin:0 -14px 7px; display:grid; place-items:center; background:linear-gradient(145deg,#f4ead4,#e4d3ad); color:#8a651f; }
+    .bookstore-product-media svg { width:52px; height:52px; fill:none; stroke:currentColor; stroke-width:1.35; }
+    .bookstore-product-badge { display:none; }
+    .bookstore-product-card strong { font-family:var(--serif,serif); font-size:17px; }
+    .bookstore-product-meta { width:100%; align-items:end; }
+    .bookstore-price { font-size:17px !important; }
+    .bookstore-product-add { display:block; margin-top:4px; border-radius:8px; padding:8px 10px; background:#061522; color:#fffdf8; font-size:11px; font-weight:800; text-align:center; }
+    .bookstore-cart-card { top:18px; border:1px solid rgba(196,156,80,.36); border-radius:14px; padding:18px; background:#fff; box-shadow:0 12px 28px rgba(6,21,34,.1); }
+    .bookstore-cart-header .form-label { color:#061522; font-family:var(--serif,serif); font-size:24px; text-transform:none; letter-spacing:0; }
+    .bookstore-cart-list > .notice { border:1px dashed rgba(134,124,107,.32); background:#faf8f3; text-align:center; }
+    .bookstore-cart-card .btn[type="submit"] { width:100%; min-height:48px; font-size:14px; }
+    .bookstore-manual-panel { margin-top:22px !important; border:1px solid rgba(134,124,107,.24) !important; border-radius:12px; padding:0 !important; background:#faf8f3; }
+    .bookstore-manual-panel summary { padding:14px 16px !important; }
+    .bookstore-manual-body { padding:0 16px 16px !important; }
+    .bookstore-orders-card .card-body { padding:0; }
+    .bookstore-orders-card .list { margin:0; }
+    @media (max-width:1000px) { .bookstore-store-hero { grid-template-columns:1fr; } .bookstore-store-promises { grid-template-columns:repeat(3,1fr); } }
+    @media (max-width:700px) {
+      .bookstore-store-hero { min-height:auto; padding:27px 22px; }
+      .bookstore-store-promises { grid-template-columns:1fr; }
+      .bookstore-storefront-card > .card-body { padding:15px; }
+      .bookstore-catalog-heading { align-items:stretch; flex-direction:column; }
+      .bookstore-search { width:100%; }
+      .bookstore-product-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+      .bookstore-product-card { min-height:224px; padding:0 11px 11px; }
+      .bookstore-product-media { height:100px; margin:0 -11px 6px; }
+    }
+    @media (max-width:420px) { .bookstore-product-grid { grid-template-columns:1fr; } }
   </style>
 </head>
 <body class="donor-mobile-page donor-bookstore-page">
@@ -171,28 +241,31 @@
       <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/giving/give"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg> Add offering</a></div>
     </aside>
     <main class="content donor-mobile-content">
-      <div class="topbar"><div class="topbar-title">Bookstore Payments</div></div>
+      <div class="topbar"><div class="topbar-title">Parish Bookstore</div></div>
       <div class="page">
         <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
-        <section class="cal-hero myagapay-page-hero" aria-labelledby="bookstoreHeroTitle"><div class="cal-hero-inner"><div class="cal-hero-eyebrow">Pay for your items</div><div class="cal-today-main"><div class="cal-today-kicker">Parish Bookstore</div><h1 class="cal-today-title" id="bookstoreHeroTitle">Pay for your items at your parish bookstore.</h1><p class="cal-today-note" id="bookstoreHeroDescription">Shop at your parish bookstore, then use your phone to pay for the items you enter below.</p></div></div></section>
+        <section class="bookstore-store-hero" aria-labelledby="bookstoreHeroTitle">
+          <div class="bookstore-store-hero-copy"><div class="bookstore-store-eyebrow">Your parish bookstore</div><h1 id="bookstoreHeroTitle">Books and parish goods, ready for pickup.</h1><p id="bookstoreHeroDescription">Browse the parish shelves, add what you need, and check out securely from your phone.</p></div>
+          <div class="bookstore-store-promises" aria-label="Bookstore benefits"><span><i>✓</i> Secure Stripe checkout</span><span><i>⌂</i> Parish pickup</span><span><i>◎</i> Scan unlisted books</span></div>
+        </section>
 
-        <section class="layout-main">
-          <div class="card" id="bookstoreFormCard">
+        <section class="bookstore-storefront-layout">
+          <div class="bookstore-storefront-card" id="bookstoreFormCard">
             <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 28 28"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span> Bookstore Cart</div></div>
             <div class="card-body">
               <div class="notice" id="bookstoreUnavailableNotice" style="display:none;"></div>
               <form id="bookstoreForm" onsubmit="submitBookstoreOrder(event)">
-                <div class="form-group full"><label class="form-label">My Parish</label><div class="form-input" id="commemorationParishDisplay" aria-live="polite">Loading your parish...</div><input id="bookstoreParishId" type="hidden" /></div>
+                <div class="bookstore-store-context"><div><label class="form-label">Shopping at</label><div class="form-input" id="commemorationParishDisplay" aria-live="polite">Loading your parish...</div></div><span class="bookstore-catalog-hint">Pickup details appear at checkout</span><input id="bookstoreParishId" type="hidden" /></div>
                 <div class="bookstore-scan-feature">
                   <span class="bookstore-scan-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M7 9v6M10 8v8M14 8v8M17 9v6"/></svg></span>
                   <div><strong>Scan the book in your hand</strong><p>We’ll identify it from the barcode. After you pay, it becomes selectable inventory for other parishioners.</p></div>
                   <button class="btn btn-gold bookstore-scan-btn" type="button" onclick="startBookstoreBookScan()">Scan book barcode</button>
                 </div>
                 <div class="bookstore-shop-grid">
-                  <div>
-                    <div class="bookstore-catalog-label">
-                      <label class="form-label">Parish products</label>
-                      <span class="bookstore-catalog-hint">Tap an item to add it</span>
+                  <div class="bookstore-catalog-pane">
+                    <div class="bookstore-catalog-heading">
+                      <div><small id="bookstoreCatalogCount">Available from your parish</small><h2>Shop the shelves</h2></div>
+                      <label class="bookstore-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="bookstoreProductSearch" type="search" placeholder="Search books and items" aria-label="Search parish bookstore" oninput="setBookstoreCatalogQuery(this.value)" /></label>
                     </div>
                     <div id="bookstoreProductCatalog" class="bookstore-category-list"><div class="notice">Loading products...</div></div>
 
@@ -239,12 +312,12 @@
             </div>
           </div>
 
-          <aside class="card">
+          <section class="card bookstore-orders-card">
             <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/></svg></span> Your Orders</div></div>
             <div class="card-body">
               <div class="list" id="bookstoreOrderList"></div>
             </div>
-          </aside>
+          </section>
         </section>
       </div>
       <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>

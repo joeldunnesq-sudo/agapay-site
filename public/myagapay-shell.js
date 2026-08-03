@@ -378,11 +378,25 @@
   // from the dashboard home). Inject the SAME dropdown -- same markup,
   // ids, and data-attributes the existing event delegation in donor/app.js
   // already handles (data-donor-account-menu/-toggle/-logout, #donorHomeTopbarName,
-  // .donor-home-account-dropdown) -- everywhere else too, just with a
-  // trigger styled for the light .topbar background instead of the dark
-  // home hero.
+  // .donor-home-account-dropdown) -- on primary product destinations too,
+  // with a trigger styled for the light .topbar background instead of the
+  // dark home hero. Koinonia spokes intentionally retain their local header.
+  function isMyAgapayMainPage(pathname = window.location.pathname) {
+    const normalized = pathname.replace(/\.html$/, "").replace(/\/$/, "") || "/myagapay";
+    return new Set([
+      "/myagapay",
+      "/myagapay/index",
+      "/myagapay/dashboard",
+      "/myagapay/parish-life",
+      "/myagapay/sacraments",
+      "/myagapay/directory",
+      "/myagapay/bookstore"
+    ]).has(normalized);
+  }
+
   function ensureCanonicalHeader() {
     if (!document.body.classList.contains("donor-mobile-page")) return;
+    if (!isMyAgapayMainPage()) return;
     if (document.querySelector(".donor-home-account-menu") || document.querySelector(".learn-account-utility")) return;
     const content = document.querySelector(".content, main");
     if (!content) return;
@@ -415,6 +429,7 @@
         ${icons.menu}
       </button>
       <div class="donor-home-account-dropdown" role="menu" hidden>
+        <a href="/myagapay/learn" role="menuitem">Learn <small>Best on desktop</small></a>
         <a href="/myagapay/giving/history" role="menuitem">History</a>
         <a href="/myagapay/account" role="menuitem">Account Settings</a>
         <button type="button" data-donor-logout role="menuitem">Log out</button>
@@ -867,6 +882,7 @@
     clearSession,
     handleUnauthorized,
     ensureParishLifeBackLink,
+    isMyAgapayMainPage,
     icons,
     isProtectedPath,
     normalizeProductNavs,

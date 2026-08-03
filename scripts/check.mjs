@@ -248,9 +248,17 @@ assert.ok(myAgapayShell.includes(".unified-product-nav") && myAgapayShell.includ
 assert.ok(myAgapayShell.includes("isLikelyMobileBrowser") && myAgapayShell.includes("pointer: coarse"), "shared shell should use browser capability signals before choosing the mobile My AGAPAY viewport");
 assert.ok(myAgapayShell.includes("ensureIosBackButton") && myAgapayShell.includes("myagapay-ios-back"), "shared shell should provide an in-app Back button for iPhone My AGAPAY screens");
 assert.ok(myAgapayShell.includes("ensureCanonicalHeader") && myAgapayShell.includes("content.prepend(topbar)") && myAgapayShell.includes("myagapay-settings-chip"), "shared shell should add canonical account/settings access and a fallback topbar to My AGAPAY product headers");
+assert.ok(
+  myAgapayShell.includes("function isMyAgapayMainPage")
+    && myAgapayShell.includes('"/myagapay/parish-life"')
+    && myAgapayShell.includes('"/myagapay/bookstore"')
+    && myAgapayShell.includes("if (!isMyAgapayMainPage()) return;"),
+  "shared shell should add the hamburger banner to primary My AGAPAY pages without promoting Koinonia subpages into primary screens"
+);
 assert.ok(myAgapayShell.includes("myagapay-menu-trigger") && myAgapayShell.includes("myagapay-menu-icon") && myAgapayShell.includes("Open My AGAPAY menu"), "shared My AGAPAY headers should use an obvious hamburger menu trigger");
 const sharedHamburgerMenu = myAgapayShell.match(/menu\.innerHTML = `([\s\S]*?)`;/)?.[1] || "";
 assert.ok(!sharedHamburgerMenu.includes("/myagapay/parish-life"), "the shared My AGAPAY hamburger menu should not duplicate Koinonia navigation");
+assert.ok(sharedHamburgerMenu.includes('/myagapay/learn') && sharedHamburgerMenu.includes("Best on desktop"), "the shared My AGAPAY hamburger menu should make Learn discoverable while setting a desktop expectation");
 assert.ok(
   myAgapayShell.includes("Report a problem / Request a feature")
     && myAgapayShell.includes('id = "myAgapaySupportDialog"')
@@ -279,6 +287,7 @@ assert.ok(donorHome.includes("donor-phone"), "donor home should use the mobile-f
 assert.ok(donorHome.includes("unified-product-nav"), "donor home should expose a desktop My AGAPAY sidebar for shared shell normalization");
 assert.ok(!donorHome.includes("Back to Give"), "donor account menu should not include a Back to Give action");
 assert.ok(donorHome.includes("myagapay-menu-trigger") && !donorHome.includes("donor-home-mini-avatar"), "donor home should replace account-holder initials with the shared hamburger menu");
+assert.ok(donorHome.includes('/myagapay/learn') && myAgapayGiveHome.includes('/myagapay/learn'), "hardcoded My AGAPAY hamburger menus should make Learn discoverable too");
 const myAgapayHomeHamburger = myAgapayGiveHome.match(/<div class="donor-home-account-dropdown"[\s\S]*?<\/div>/)?.[0] || "";
 assert.ok(!myAgapayHomeHamburger.includes("/myagapay/parish-life"), "the My AGAPAY dashboard hamburger should not duplicate Koinonia navigation");
 assert.ok(
@@ -371,7 +380,17 @@ assert.ok(donorCalendar.includes('class="patronal"') && donorCalendarCss.include
 assert.ok(donorCalendarCss.includes("@media (max-width: 719px)") && donorCalendarCss.includes('aria-label="Saint of the Day"'), "Today mobile layout should lift Saint of the Day above lower cards without changing desktop columns");
 const donorBookstore = await readFile("public/donor/bookstore.html", "utf8");
 assert.ok(donorBookstore.includes("bookstoreHeroTitle") && donorBookstore.includes("PAY FOR YOUR ITEMS AT YOUR PARISH BOOKSTORE"), "Bookstore hero should support parish-specific payment copy");
-assert.ok(donorApp.includes("Pay for your items at ${bookstoreLabel} bookstore.") && donorApp.includes("AGAPAY Parish+") && donorApp.includes("Request this feature for my parish"), "Bookstore page should preserve sentence-case parish payment copy, Parish+ unavailable messaging, and feature request flow");
+assert.ok(donorApp.includes("Shop the shelves at ${bookstoreLabel} bookstore.") && donorApp.includes("AGAPAY Parish+") && donorApp.includes("Request this feature for my parish"), "Bookstore page should preserve parish-specific storefront copy, Parish+ unavailable messaging, and feature request flow");
+const myAgapayBookstore = await readFile("public/myagapay/bookstore.html", "utf8");
+assert.ok(
+  myAgapayBookstore.includes("bookstore-store-hero")
+    && myAgapayBookstore.includes("Shop the shelves")
+    && myAgapayBookstore.includes('id="bookstoreProductSearch"')
+    && myAgapayBookstore.includes('id="bookstoreCartList"')
+    && myAgapayBookstore.includes('id="bookstoreOrderList"'),
+  "My AGAPAY Bookstore should present a traditional storefront while retaining catalog, cart, and order history surfaces"
+);
+assert.ok(donorApp.includes("function setBookstoreCatalogQuery") && donorApp.includes("bookstore-product-media") && donorApp.includes("Add to cart"), "Bookstore catalog should support familiar search and product-card shopping controls");
 const donorSecurity = await readFile("public/security.js", "utf8");
 assert.ok(donorSecurity.includes("/api/security/config"), "security helper should load Turnstile config from the Worker");
 assert.ok(donorSecurity.includes("agapaySecurityPayload"), "security helper should expose Turnstile payloads to public forms");

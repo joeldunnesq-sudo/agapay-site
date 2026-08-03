@@ -2668,6 +2668,14 @@ body.donor-home {
   background: rgba(201, 162, 91, 0.14);
 }
 
+.donor-home-account-dropdown a small {
+  display: block;
+  margin-top: 0.2rem;
+  color: #8a8374;
+  font-size: 0.66rem;
+  font-weight: 600;
+}
+
 .donor-phone-stage {
   min-height: 100vh;
   display: grid;
