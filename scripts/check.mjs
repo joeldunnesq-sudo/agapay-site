@@ -268,11 +268,18 @@ assert.ok(donorApp.includes('link.closest("[data-myagapay-global-nav]")'), "dono
 const donorHome = await readFile("public/donor/index.html", "utf8");
 const myAgapayGiveHome = await readFile("public/myagapay/index.html", "utf8");
 const myAgapayGivePage = await readFile("public/myagapay/giving/give.html", "utf8");
+const publicGivePage = await readFile("public/give/index.html", "utf8");
 assert.ok(donorHome.includes("data-auth-guest"), "donor home should mark guest-only controls so signed-in donors do not see login prompts");
 assert.ok(donorHome.includes("donor-phone"), "donor home should use the mobile-first app shell");
 assert.ok(donorHome.includes("unified-product-nav"), "donor home should expose a desktop My AGAPAY sidebar for shared shell normalization");
 assert.ok(!donorHome.includes("Back to Give"), "donor account menu should not include a Back to Give action");
 assert.ok(donorHome.includes("myagapay-menu-trigger") && !donorHome.includes("donor-home-mini-avatar"), "donor home should replace account-holder initials with the shared hamburger menu");
+const myAgapayHomeHamburger = myAgapayGiveHome.match(/<div class="donor-home-account-dropdown"[\s\S]*?<\/div>/)?.[0] || "";
+assert.ok(!myAgapayHomeHamburger.includes("/myagapay/parish-life"), "the My AGAPAY dashboard hamburger should not duplicate Koinonia navigation");
+assert.ok(
+  ["Accounting", "Directory", "Commerce", "Koinonia", "Acts 2:42", "κοινωνία"].every((feature) => publicGivePage.includes(feature)),
+  "the /give page should present the new parish platform features and explain Koinonia with Acts 2:42"
+);
 assert.ok(donorHome.includes('showing-giving-dashboard') && !donorHome.includes('my-agapay-live-grid') && !donorHome.includes('my-agapay-coming-grid'), "My AGAPAY root should open the Give dashboard directly without a product picker");
 assert.ok(donorHome.includes("metricMonth"), "donor home should show month-to-date giving");
 assert.ok(!donorHome.includes("Counts parish offerings (tithes) only"), "mobile Annual Pledge tracker should not include the tracking explanation copy");
@@ -624,7 +631,7 @@ assert.ok(donorApp.includes("handleDonorCheckoutReturn"), "donor dashboard shoul
 const givingOverview = await readFile("public/give/index.html", "utf8");
 assert.ok(givingOverview.includes("Orthodox Giving App &amp; Tithing Software") || givingOverview.includes("Orthodox Giving App & Tithing Software"), "Giving overview should target Orthodox giving and tithing search intent");
 assert.ok(givingOverview.includes('"@type": "SoftwareApplication"') && givingOverview.includes('"@type": "FAQPage"'), "Giving overview should include software and FAQ structured data");
-assert.ok(givingOverview.includes("Orthodox giving and tithing tools ready for parish life"), "Giving overview should describe currently available tools");
+assert.ok(givingOverview.includes("Giving and parish life, connected in one Orthodox platform"), "Giving overview should describe currently available tools");
 assert.ok(givingOverview.includes("Parish operations") && givingOverview.indexOf("Parish operations") < givingOverview.indexOf("giving-roadmap"), "Giving overview should list Parish operations as available now");
 assert.ok(givingOverview.includes("Text-to-Give") && givingOverview.includes("Coming Soon"), "Giving overview should clearly identify remaining coming-soon products");
 assert.ok(givingOverview.includes("processed and protected by Stripe") && givingOverview.includes("AGAPAY never holds donated funds") && givingOverview.includes("No Donation Middleman"), "Giving overview should emphasize Stripe protection and no donation middleman custody");
