@@ -3,6 +3,7 @@ import { access, readFile } from "node:fs/promises";
 import { parishSlug } from "../src/lib/format.js";
 
 const worker = await readFile("src/worker.js", "utf8");
+const localServerSource = await readFile("server.mjs", "utf8");
 const core = await readFile("src/lib/core.js", "utf8");
 const stripeConnect = await readFile("src/lib/stripe-connect.js", "utf8");
 const adminHandler = await readFile("src/handlers/admin.js", "utf8");
@@ -674,24 +675,29 @@ assert.ok(
   "How It Works should explain how a person participates in parish community through Koinonia"
 );
 const platformHome = await readFile("public/index.html", "utf8");
-assert.ok(platformHome.indexOf('href="/vision"') < platformHome.indexOf('href="/give"'), "platform homepage should lead its navigation with Vision");
 assert.ok((platformHome.match(/data-flip-word/g) || []).length >= 2, "platform homepage should animate its header and hero taglines");
 assert.ok(platformHome.includes('footer class="site-footer" data-shell="canonical"'), "platform homepage should use the canonical footer");
 assert.ok(platformHome.includes('property="og:image" content="https://agapay.app/images/app-phone-mockup.png"') && platformHome.includes('name="twitter:image" content="https://agapay.app/images/app-phone-mockup.png"'), "platform homepage share image should use the AGAPAY phone app mockup");
 assert.ok(platformHome.includes("Giving transactions are processed and protected by Stripe") && platformHome.includes("AGAPAY never holds donated funds"), "platform homepage should carry the Stripe protection and no-custody trust message");
 const canonicalChrome = await readFile("public/site-chrome.js", "utf8");
-assert.ok(canonicalChrome.indexOf('{ href: "/vision"') < canonicalChrome.indexOf('{ href: "/give"'), "canonical navigation should lead with Vision");
 assert.ok(canonicalChrome.includes('{ href: "/design", label: "AGAPAY Design"') && canonicalChrome.includes('return "design"'), "canonical navigation should include AGAPAY Design with an active route");
 assert.ok(canonicalChrome.includes('href="/register"') && canonicalChrome.includes("Start for free"), "canonical marketing navigation should offer the free registration CTA");
 assert.ok(registerHtml.includes("free 30-day AGAPAY demo") && registerHtml.includes("No card is required"), "parish registration should explain the free demo terms");
 const designPage = await readFile("public/design.html", "utf8");
 assert.ok(designPage.includes("AGAPAY Design") && designPage.includes("site-chrome.js") && designPage.includes("Straightforward packages"), "AGAPAY Design should render as a canonical public product page");
 assert.ok(designPage.includes("/videos/design/chariot-concepts.webm") && designPage.includes("work-video-frame"), "AGAPAY Design should show the Chariot Concepts video preview");
-const visionPage = await readFile("public/vision.html", "utf8");
-assert.ok(visionPage.includes("repeat(6,minmax(0,1fr))") && visionPage.includes("grid-column:span 3"), "Vision phases should use a balanced two-plus-three desktop grid");
+await assert.rejects(access("public/vision.html"), undefined, "the retired Vision page must stay unpublished");
+assert.match(worker, /\["\/vision", "\/vision\/", "\/vision\.html"\][\s\S]*?url\.pathname = "\/about";[\s\S]*?Response\.redirect\(url\.toString\(\), 301\)/, "the production worker must permanently redirect every retired Vision route");
+assert.match(localServerSource, /\["\/vision", "\/vision\/", "\/vision\.html"\][\s\S]*?requestUrl\.pathname = "\/about";[\s\S]*?writeHead\(301/, "the local server must mirror the retired Vision redirects");
+const siteMobileNav = await readFile("public/site-mobile-nav.js", "utf8");
+const learnOverview = await readFile("public/learn/index.html", "utf8");
+for (const [label, source] of [["homepage", platformHome], ["canonical chrome", canonicalChrome], ["mobile navigation", siteMobileNav], ["registration", registerHtml], ["Directory intake", directoryPage], ["Learn overview", learnOverview]]) {
+  assert.ok(!source.includes('href="/vision"') && !source.includes('{ href: "/vision"'), `${label} must not link to the retired Vision page`);
+}
 const sitemap = await readFile("public/sitemap.xml", "utf8");
 assert.ok(sitemap.includes("https://agapay.app/give"), "sitemap should include the canonical Give overview URL");
 assert.ok(sitemap.includes("https://agapay.app/design"), "sitemap should include the canonical AGAPAY Design URL");
+assert.ok(!sitemap.includes("https://agapay.app/vision"), "sitemap must not publish the retired Vision URL");
 for (const givingPage of ["features", "how-it-works", "pricing"]) {
   const html = await readFile(`public/give/${givingPage}.html`, "utf8");
   assert.ok(html.includes(`https://agapay.app/give/${givingPage}`), `Give ${givingPage} page should use its nested canonical URL`);

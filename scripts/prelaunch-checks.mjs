@@ -12,7 +12,6 @@ const publicRoutes = [
   "public/give/index.html",
   "public/marketplace.html",
   "public/directory.html",
-  "public/vision.html",
   "public/register.html",
   "public/donor/login.html",
   "public/parish/login.html",
@@ -81,7 +80,7 @@ assert.ok(backendSources.includes("Do not add any AGAPAY platform/application fe
 
 if (process.env.AGAPAY_BASE_URL) {
   const baseUrl = process.env.AGAPAY_BASE_URL.replace(/\/+$/, "");
-  const routes = ["/", "/give", "/marketplace", "/directory", "/vision", "/onboarding", "/register"];
+  const routes = ["/", "/give", "/marketplace", "/directory", "/onboarding", "/register"];
   for (const route of routes) {
     const response = await fetch(`${baseUrl}${route}`);
     assert.equal(response.status, 200, `${route} should return HTTP 200`);

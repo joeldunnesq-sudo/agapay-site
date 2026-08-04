@@ -32,7 +32,6 @@ const checks = [
   { name: "Odyssey dashboard activate (trailing slash)", method: "GET", path: "/learn/odyssey/dashboard/activate/", ok: [200, 404] },
   { name: "marketplace page", method: "GET", path: "/marketplace", ok: [200] },
   { name: "directory page", method: "GET", path: "/directory", ok: [200] },
-  { name: "vision page", method: "GET", path: "/vision", ok: [200] },
   { name: "register page (bare path)", method: "GET", path: "/register", ok: [200] },
   { name: "admin login page", method: "GET", path: "/admin/login", ok: [200] },
   { name: "health endpoint", method: "GET", path: "/api/health", ok: [200] },

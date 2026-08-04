@@ -3,7 +3,6 @@
   if (/^\/(?:admin|parish|donor|myagapay)(?:\/|$)/.test(path)) return;
 
   const PRIMARY_LINKS = [
-    { href: "/vision", label: "Vision", key: "vision" },
     { href: "/give/#why", label: "Why AGAPAY", key: "why" },
     { href: "/give", label: "AGAPAY Give", key: "give" },
     { href: "/learn", label: "AGAPAY Learn", key: "learn" },
@@ -19,7 +18,6 @@
 
   function activeKeyFromPath() {
     if (path === "/why") return "why";
-    if (path === "/vision" || path.endsWith("/vision.html")) return "vision";
     if (path === "/give/features" || path.endsWith("/give/features.html")) return "give";
     if (path === "/give/pricing" || path.endsWith("/give/pricing.html")) return "give";
     if (path === "/give/how-it-works" || path.endsWith("/give/how-it-works.html")) return "give";
@@ -151,7 +149,6 @@
             <nav class="footer-col" aria-label="Company">
               <h4>Company</h4>
               <a href="/about">About</a>
-              <a href="/vision">Vision</a>
               <a href="/contact">Contact</a>
             </nav>
             <nav class="footer-col" aria-label="Account">

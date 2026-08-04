@@ -316,6 +316,12 @@ export const server = http.createServer(async (req, res) => {
 
     const requestUrl = new URL(req.url, `http://${req.headers.host}`);
     if (req.method === "GET" || req.method === "HEAD") {
+      if (["/vision", "/vision/", "/vision.html"].includes(requestUrl.pathname.toLowerCase())) {
+        requestUrl.pathname = "/about";
+        res.writeHead(301, { Location: requestUrl.toString() });
+        res.end();
+        return;
+      }
       if (requestUrl.pathname === "/giving" || requestUrl.pathname === "/giving/" || requestUrl.pathname.startsWith("/giving/")) {
         requestUrl.pathname = requestUrl.pathname.replace(/^\/giving/, "/give");
         res.writeHead(301, { Location: requestUrl.toString() });

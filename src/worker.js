@@ -2905,6 +2905,10 @@ export default {
     }
 
     if (request.method === "GET" || request.method === "HEAD") {
+      if (["/vision", "/vision/", "/vision.html"].includes(url.pathname.toLowerCase())) {
+        url.pathname = "/about";
+        return Response.redirect(url.toString(), 301);
+      }
       if (url.pathname === "/giving" || url.pathname === "/giving/" || url.pathname.startsWith("/giving/")) {
         url.pathname = url.pathname.replace(/^\/giving/, "/give");
         return Response.redirect(url.toString(), 301);
