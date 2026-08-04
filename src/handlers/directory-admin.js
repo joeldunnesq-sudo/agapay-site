@@ -8,6 +8,7 @@ import { DirectoryServiceError } from "../directory/foundation.js";
 import {
   applyHouseholdDirectCorrection,
   applyPersonDirectCorrection,
+  removeDirectoryPersonFromParish,
   archiveDirectoryNote,
   assignDirectoryReviewItem,
   beginDirectoryReview,
@@ -374,11 +375,13 @@ export async function handleDirectoryAdmin(request, env, parishId) {
       if (request.method === "POST" && action === "decision") return privateJson({ ok: true, result: await decideDirectoryReviewItem(env, { context, sourceType, sourceId, ...await body(request), correlationId }) });
     }
     if (request.method === "GET" && path === "/people") return privateJson({ ok: true, people: await listDirectoryPeopleAdmin(env, { context, query: url.searchParams.get("q") || "", limit: url.searchParams.get("limit") || 50 }) });
-    const personMatch = path.match(/^\/people\/([^/]+)(?:\/correction)?$/);
+    const personMatch = path.match(/^\/people\/([^/]+)(?:\/(correction|remove-from-parish))?$/);
     if (personMatch) {
       const personId = decodeURIComponent(personMatch[1]);
-      if (request.method === "GET") return privateJson({ ok: true, person: await getDirectoryPersonAdmin(env, { context, personId }) });
-      if (request.method === "PATCH" && path.endsWith("/correction")) return privateJson({ ok: true, person: await applyPersonDirectCorrection(env, { context, personId, ...await body(request), correlationId }) });
+      const action = personMatch[2] || "";
+      if (request.method === "GET" && !action) return privateJson({ ok: true, person: await getDirectoryPersonAdmin(env, { context, personId }) });
+      if (request.method === "PATCH" && action === "correction") return privateJson({ ok: true, person: await applyPersonDirectCorrection(env, { context, personId, ...await body(request), correlationId }) });
+      if (request.method === "POST" && action === "remove-from-parish") return privateJson({ ok: true, person: await removeDirectoryPersonFromParish(env, { context, personId, ...await body(request), correlationId }) });
     }
     if (request.method === "GET" && path === "/households") return privateJson({ ok: true, households: await listDirectoryHouseholdsAdmin(env, { context, query: url.searchParams.get("q") || "", limit: url.searchParams.get("limit") || 50 }) });
     const householdMatch = path.match(/^\/households\/([^/]+)(?:\/correction)?$/);

@@ -1,6 +1,7 @@
 import { currentUser, resolveAuthorizationContext } from "../lib/authorization.js";
 import { d1All, d1First, generateSecret, getBearerToken, resolveParishDashboardSession } from "../lib/core.js";
 import { findRegistrationByParishId } from "../handlers/parish.js";
+import { householdVerificationStatus } from "../lib/household-verification.js";
 import {
   addHouseholdAdmin,
   addHouseholdMember,
@@ -1334,11 +1335,25 @@ export async function getDirectoryPersonAdmin(env, { context, personId }) {
       id
     )
   ]);
+  const primaryHouseholdId = households[0]?.id || "";
+  const verification = primaryHouseholdId ? await d1First(
+    env,
+    "SELECT verification_status, verification_due_at, last_verified_at, verification_policy_version FROM directory_household_verifications WHERE household_id = ?1 AND parish_id = ?2",
+    primaryHouseholdId,
+    context.parishId
+  ) : null;
   return {
     person: { id: row.id, preferredName: row.preferred_name, legalName: context.permissions.canManagePeople ? row.legal_name || "" : maskValue(row.legal_name), active: Number(row.active || 0) === 1, version: row.updated_at },
     households,
     affiliations,
+    parishConnected: affiliations.length === 0 || affiliations.some((affiliation) => Number(affiliation.active || 0) === 1 && affiliation.status !== "former_member"),
     publication: publication || null,
+    householdVerification: {
+      status: householdVerificationStatus(verification),
+      dueAt: Number(verification?.verification_due_at || 0),
+      lastVerifiedAt: Number(verification?.last_verified_at || 0),
+      policyVersion: verification?.verification_policy_version || ""
+    },
     contacts: contacts.map((contact) => ({ ...contact, value: context.permissions.canViewPrivateContact ? contact.value : maskValue(contact.value, contact.contact_type) })),
     notes,
     accountAccess: {
@@ -1370,6 +1385,82 @@ export async function applyPersonDirectCorrection(env, { context, personId, patc
     auditAction: "directory.admin.person_direct_correction",
     correlationId
   });
+}
+
+export async function removeDirectoryPersonFromParish(env, { context, personId, expectedVersion = "", reasonCode = "parish_directory_removed", correlationId = "" }) {
+  requireAny(actorDto(context), context.parishId, [DIRECTORY_CAPABILITIES.peopleManage, DIRECTORY_CAPABILITIES.manage]);
+  const id = cleanText(personId, { required: true, max: 180, field: "personId" });
+  const row = await d1First(
+    env,
+    `SELECT p.*,
+            EXISTS (
+              SELECT 1 FROM directory_parish_affiliations affiliation
+               WHERE affiliation.person_id = p.id AND affiliation.parish_id = ?2
+                 AND affiliation.active = 1 AND affiliation.status != 'former_member'
+            ) AS parish_connected
+       FROM directory_people p
+      WHERE p.id = ?1 AND (
+        p.created_by_parish_id = ?2
+        OR EXISTS (
+          SELECT 1 FROM directory_household_members membership
+          JOIN directory_households household ON household.id = membership.household_id
+          WHERE membership.person_id = p.id AND household.parish_id = ?2
+        )
+        OR EXISTS (
+          SELECT 1 FROM directory_parish_affiliations affiliation
+          WHERE affiliation.person_id = p.id AND affiliation.parish_id = ?2
+        )
+      )`,
+    id,
+    context.parishId
+  );
+  if (!row) throw new DirectoryServiceError("not_found", "Directory person was not found for this parish.", 404);
+  if (expectedVersion && String(expectedVersion) !== String(row.updated_at || "")) {
+    throw new DirectoryServiceError("stale_record", "Person changed. Refresh before removing parish access.", 409);
+  }
+
+  const timestamp = nowMs();
+  const leftDate = new Date(timestamp).toISOString().slice(0, 10);
+  const reason = cleanText(reasonCode, { max: 120, field: "reasonCode" }) || "parish_directory_removed";
+  await runAtomic(env, [
+    {
+      sql: `UPDATE directory_parish_affiliations
+               SET active = 0, left_date = COALESCE(left_date, ?1), updated_at = ?2
+             WHERE person_id = ?3 AND parish_id = ?4 AND active = 1`,
+      params: [leftDate, timestamp, id, context.parishId]
+    },
+    {
+      sql: `UPDATE directory_publication_profiles
+               SET status = 'paused', updated_at = ?1
+             WHERE parish_id = ?2 AND owner_type = 'person' AND owner_id = ?3
+               AND active = 1 AND status NOT IN ('paused', 'archived')`,
+      params: [timestamp, context.parishId, id]
+    },
+    {
+      sql: `UPDATE directory_person_skill_listings
+               SET status = 'withdrawn', consent_withdrawn_at = COALESCE(consent_withdrawn_at, ?1),
+                   updated_at = ?1, version = version + 1
+             WHERE parish_id = ?2 AND person_id = ?3
+               AND status IN ('draft', 'active', 'paused', 'hidden_by_parish')`,
+      params: [timestamp, context.parishId, id]
+    },
+    {
+      sql: "UPDATE directory_people SET updated_at = ?1 WHERE id = ?2",
+      params: [timestamp, id]
+    },
+    auditStatement({
+      action: "directory.person.removed_from_parish",
+      actor: actorDto(context),
+      parishId: context.parishId,
+      targetType: "directory_person",
+      targetId: id,
+      before: { parishConnected: Number(row.parish_connected || 0) === 1 },
+      after: { parishConnected: false, directoryPublication: "paused", koinoniaAccess: "blocked" },
+      metadata: { reasonCode: reason, accountAndGivingHistoryPreserved: true },
+      correlationId
+    })
+  ]);
+  return getDirectoryPersonAdmin(env, { context, personId: id });
 }
 
 export async function listDirectoryHouseholdsAdmin(env, { context, query = "", limit = 50 }) {
@@ -1511,12 +1602,20 @@ export async function getDirectoryHouseholdAdmin(env, { context, householdId }) 
   const id = cleanText(householdId, { required: true, max: 180, field: "householdId" });
   const household = await d1First(env, "SELECT * FROM directory_households WHERE id = ?1 AND parish_id = ?2", id, context.parishId);
   if (!household) throw new DirectoryServiceError("not_found", "Directory household was not found.", 404);
-  const [members, admins, publication, photo, notes, contacts, addresses] = await Promise.all([
+  const [members, admins, publication, verification, photo, notes, contacts, addresses] = await Promise.all([
     d1All(
       env,
-      `SELECT p.id, p.preferred_name, hm.relationship,
+      `SELECT p.id, p.preferred_name, p.updated_at AS person_version, hm.relationship,
               MAX(COALESCE(f.is_child, 0)) AS is_child,
               CASE WHEN COUNT(DISTINCT l.id) > 0 THEN 1 ELSE 0 END AS account_linked,
+              CASE WHEN NOT EXISTS (
+                SELECT 1 FROM directory_parish_affiliations affiliation
+                 WHERE affiliation.person_id = p.id AND affiliation.parish_id = ?2
+              ) OR EXISTS (
+                SELECT 1 FROM directory_parish_affiliations affiliation
+                 WHERE affiliation.person_id = p.id AND affiliation.parish_id = ?2
+                   AND affiliation.active = 1 AND affiliation.status != 'former_member'
+              ) THEN 1 ELSE 0 END AS parish_connected,
               (SELECT c.value FROM directory_contact_methods c
                 WHERE c.parish_id = ?2 AND c.owner_type = 'person' AND c.owner_id = p.id
                   AND c.contact_type = 'email' AND c.active = 1
@@ -1563,6 +1662,7 @@ export async function getDirectoryHouseholdAdmin(env, { context, householdId }) 
       id
     ),
     d1First(env, "SELECT status, approval_status FROM directory_publication_profiles WHERE parish_id = ?1 AND owner_type = 'household' AND owner_id = ?2 AND active = 1", context.parishId, id),
+    d1First(env, "SELECT verification_status, verification_due_at, last_verified_at, verification_policy_version FROM directory_household_verifications WHERE household_id = ?1 AND parish_id = ?2", id, context.parishId),
     currentAdminMediaForOwner(env, { parishId: context.parishId, ownerType: "household", ownerId: id }),
     context.permissions.canViewNotes ? listDirectoryNotes(env, { context, targetType: "household", targetId: id }) : [],
     context.permissions.canViewPrivateContact ? d1All(
@@ -1593,6 +1693,8 @@ export async function getDirectoryHouseholdAdmin(env, { context, householdId }) 
       ...member,
       child: Number(member.is_child || 0) === 1,
       accountLinked: Number(member.account_linked || 0) === 1,
+      parishConnected: Number(member.parish_connected || 0) === 1,
+      personVersion: Number(member.person_version || 0),
       email: member.email || "",
       invitation: member.invitation_id ? {
         id: member.invitation_id,
@@ -1604,6 +1706,12 @@ export async function getDirectoryHouseholdAdmin(env, { context, householdId }) 
     administrators: admins.map((admin) => ({ ...admin, accountLinked: Number(admin.account_linked || 0) === 1 })),
     accountManaged: admins.some((admin) => Number(admin.account_linked || 0) === 1),
     publication: publication || null,
+    verification: {
+      status: householdVerificationStatus(verification),
+      dueAt: Number(verification?.verification_due_at || 0),
+      lastVerifiedAt: Number(verification?.last_verified_at || 0),
+      policyVersion: verification?.verification_policy_version || ""
+    },
     photo,
     notes,
     contacts: contacts.map((contact) => ({

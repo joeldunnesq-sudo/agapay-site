@@ -31,6 +31,7 @@ import {
   listDirectoryHouseholdsAdmin,
   listDirectoryPeopleAdmin,
   listDirectoryReviewQueue,
+  removeDirectoryPersonFromParish,
   resolveDirectoryAdminContext,
   resolveDirectorySelfServiceContext,
   transitionSelfServicePublication
@@ -482,6 +483,32 @@ await test("people, household, direct corrections, and notes are scoped and cont
   assert.equal(householdDetail.household.displayName, "Dunne Household");
   const note = await createDirectoryNote(env, { context: reviewerContext, targetType: "household", targetId: household.id, category: "verification", body: "Name spelling confirmed." });
   assert.equal(note.category, "verification");
+});
+
+await test("removing a person from the parish revokes directory and Koinonia eligibility without deleting their account or household", async () => {
+  const { env, db, reviewerContext, adult, household } = await fixture();
+  const timestamp = Date.now();
+  db.prepare(`INSERT INTO directory_publication_profiles
+    (id, parish_id, owner_type, owner_id, status, approval_status, approved_by_user_id, approved_at, active, created_at, updated_at)
+    VALUES ('publication_remove_test', 'st-fiacre', 'person', ?, 'approved', 'approved', 'reviewer', ?, 1, ?, ?)`)
+    .run(adult.id, timestamp, timestamp, timestamp);
+
+  const before = await getDirectoryPersonAdmin(env, { context: reviewerContext, personId: adult.id });
+  assert.equal(before.parishConnected, true);
+  assert.equal(before.accountAccess.linked, true);
+  const removed = await removeDirectoryPersonFromParish(env, {
+    context: reviewerContext,
+    personId: adult.id,
+    expectedVersion: before.person.version,
+  });
+
+  assert.equal(removed.parishConnected, false, "the staff detail must clearly report that parish access was removed");
+  assert.equal(removed.publication.status, "paused", "person publication must be hidden immediately");
+  assert.equal(removed.accountAccess.linked, true, "the My AGAPAY identity link must be preserved");
+  assert.equal(db.prepare("SELECT COUNT(*) AS count FROM directory_parish_affiliations WHERE person_id = ? AND parish_id = 'st-fiacre' AND active = 1").get(adult.id).count, 0);
+  assert.equal(db.prepare("SELECT active FROM directory_person_links WHERE person_id = ? AND link_type = 'platform_user'").get(adult.id).active, 1);
+  assert.equal(db.prepare("SELECT active FROM directory_household_members WHERE household_id = ? AND person_id = ?").get(household.id, adult.id).active, 1);
+  assert.equal(db.prepare("SELECT active FROM directory_people WHERE id = ?").get(adult.id).active, 1);
 });
 
 await test("parish household records expose complete staff contact data with separate donor visibility", async () => {

@@ -1555,8 +1555,23 @@
 .pdx-dir-access-summary { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:11px; padding:11px 12px; border-radius:11px; background:rgba(255,255,255,.74); }
 .pdx-dir-access-summary strong { color:var(--ink); font-family:var(--serif); font-size:16px; }
 .pdx-dir-access-summary span { max-width:520px; color:var(--stone); font-size:12px; line-height:1.45; text-align:right; }
+.pdx-dir-status-list { display:grid; gap:8px; }
+.pdx-dir-status-row { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:11px 12px; border:1px solid rgba(6,21,34,.08); border-radius:11px; background:rgba(255,255,255,.82); }
+.pdx-dir-status-row > div { display:grid; gap:3px; }
+.pdx-dir-status-row strong { color:var(--ink); font-size:13px; }
+.pdx-dir-status-row span { color:var(--stone); font-size:11px; line-height:1.4; }
+.pdx-dir-status-row em { flex:0 0 auto; border-radius:999px; padding:4px 8px; background:rgba(6,21,34,.07); color:var(--stone); font-size:10px; font-style:normal; font-weight:850; white-space:nowrap; }
+.pdx-dir-status-row.is-good em { background:rgba(35,125,92,.12); color:#216c53; }
+.pdx-dir-status-row.is-warn em { background:rgba(200,162,74,.17); color:#7d5c12; }
+.pdx-dir-status-row.is-blocked em { background:rgba(162,61,52,.12); color:#913c34; }
+.pdx-dir-danger-zone { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-top:14px; padding:16px 18px; border:1px solid rgba(162,61,52,.25); border-radius:13px; background:rgba(162,61,52,.055); }
+.pdx-dir-danger-zone div { display:grid; gap:4px; }
+.pdx-dir-danger-zone strong { color:#7c302b; font-family:var(--serif); font-size:17px; }
+.pdx-dir-danger-zone p { margin:0; color:var(--stone); font-size:12px; line-height:1.45; }
+.pdx-dir-danger-zone button,.pdx-dir-account-row button.is-danger { border-color:rgba(162,61,52,.38); background:#fff8f7; color:#8f3933; }
+.pdx-dir-danger-zone button { flex:0 0 auto; border-style:solid; border-width:1px; border-radius:9px; padding:9px 12px; font:inherit; font-size:11px; font-weight:850; cursor:pointer; }
 .pdx-dir-account-list { display:grid; gap:8px; }
-.pdx-dir-account-row { display:grid; grid-template-columns:minmax(180px,1fr) minmax(210px,.8fr) auto; align-items:center; gap:10px; border:1px solid rgba(6,21,34,.09); border-radius:11px; padding:10px 11px; background:rgba(255,255,255,.84); }
+.pdx-dir-account-row { display:grid; grid-template-columns:minmax(180px,1fr) minmax(210px,.8fr) auto auto; align-items:center; gap:10px; border:1px solid rgba(6,21,34,.09); border-radius:11px; padding:10px 11px; background:rgba(255,255,255,.84); }
 .pdx-dir-account-row > div:first-child { display:grid; gap:3px; min-width:0; }
 .pdx-dir-account-row strong { color:var(--ink); font-size:13px; }
 .pdx-dir-account-row span { color:var(--stone); font-size:11px; line-height:1.35; }
@@ -1564,6 +1579,8 @@
 .pdx-dir-account-row.is-pending em { color:#946c17; }
 .pdx-dir-account-row.is-child { grid-template-columns:minmax(180px,1fr) auto; background:rgba(6,21,34,.035); }
 .pdx-dir-account-row.is-child em { color:var(--stone); }
+.pdx-dir-account-row.is-removed { grid-template-columns:minmax(180px,1fr) auto; background:rgba(162,61,52,.045); }
+.pdx-dir-account-row.is-removed em { color:#913c34; }
 .pdx-dir-account-row label { min-width:0; }
 .pdx-dir-account-row input { width:100%; border:1px solid rgba(6,21,34,.14); border-radius:9px; padding:9px 10px; background:#fff; color:var(--ink); font:inherit; font-size:12px; }
 .pdx-dir-account-row button { border:1px solid rgba(200,162,74,.38); border-radius:9px; padding:8px 10px; background:var(--pdx-gold-soft); color:#72571d; font:inherit; font-size:11px; font-weight:800; cursor:pointer; white-space:nowrap; }
@@ -1602,6 +1619,7 @@
   .pdx-dir-access-summary { display:grid; }
   .pdx-dir-access-summary span { text-align:left; }
   .pdx-dir-account-row,.pdx-dir-account-row.is-child { grid-template-columns:1fr; }
+  .pdx-dir-status-row,.pdx-dir-danger-zone { display:grid; }
   .pdx-dir-account-actions { justify-content:flex-start; }
   .pdx-dir-tabs { flex-wrap:wrap; overflow-x: visible; }
 }

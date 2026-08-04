@@ -84,6 +84,8 @@ async function seedMember({ sqlite, env, suffix, approved = true }) {
     .run(`member_${suffix}`, householdId, personId, timestamp, timestamp);
   sqlite.prepare("INSERT INTO directory_person_links (id, person_id, link_type, external_id, created_at, updated_at) VALUES (?, ?, 'platform_user', ?, ?, ?)")
     .run(`link_${suffix}`, personId, user.id, timestamp, timestamp);
+  sqlite.prepare("INSERT INTO directory_parish_affiliations (id, person_id, parish_id, status, active, created_at, updated_at) VALUES (?, ?, ?, 'member', 1, ?, ?)")
+    .run(`affiliation_${suffix}`, personId, parishId, timestamp, timestamp);
   if (approved) {
     sqlite.prepare(`INSERT INTO directory_publication_profiles
       (id, parish_id, owner_type, owner_id, status, approval_status, approved_by_user_id, approved_at, active, created_at, updated_at)
@@ -161,6 +163,14 @@ setVerification(sqlite, legacy.householdId, { status: "current", dueAt: Date.now
 const future = await verifiedHouseholdAccess(legacy.request("/api/donor/koinonia-access"), env);
 assert.equal(future.response, null, "a current future-due verification must be allowed");
 assert.equal(future.context.householdId, legacy.householdId);
+
+sqlite.prepare("UPDATE directory_parish_affiliations SET active = 0 WHERE person_id = ? AND parish_id = ?")
+  .run(legacy.personId, legacy.parishId);
+const removedAccess = await handleKoinoniaAccess(legacy.request("/api/donor/koinonia-access"), env);
+assert.equal(removedAccess.status, 403, "removing the active parish affiliation must immediately block Koinonia");
+assert.equal((await removedAccess.json()).code, "parish_profile_required");
+sqlite.prepare("UPDATE directory_parish_affiliations SET active = 1 WHERE person_id = ? AND parish_id = ?")
+  .run(legacy.personId, legacy.parishId);
 
 setVerification(sqlite, legacy.householdId, { status: "current", dueAt: Date.now() - DAY_MS });
 for (const [label, response] of [

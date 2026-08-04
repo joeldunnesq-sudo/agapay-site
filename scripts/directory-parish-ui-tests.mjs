@@ -6,6 +6,7 @@ const css = fs.readFileSync(new URL('../public/parish/redesign.css', import.meta
 const stewardshipCss = fs.readFileSync(new URL('../public/styles/stewardship.css', import.meta.url), 'utf8');
 const adminService = fs.readFileSync(new URL('../src/directory/admin.js', import.meta.url), 'utf8');
 const adminHandler = fs.readFileSync(new URL('../src/handlers/directory-admin.js', import.meta.url), 'utf8');
+const koinoniaAccess = fs.readFileSync(new URL('../src/handlers/koinonia-access.js', import.meta.url), 'utf8');
 const openReviewStart = app.indexOf('async function openDirectoryReview');
 const openReviewEnd = app.indexOf('async function decideDirectoryReview', openReviewStart);
 const openReviewSource = app.slice(openReviewStart, openReviewEnd);
@@ -41,6 +42,10 @@ const checks = [
   ['each adult can link a separate My AGAPAY identity inside one shared household', app.includes('Adult accounts &amp; Koinonia access') && app.includes('Each adult signs in separately while sharing this household') && app.includes('sendDirectoryHouseholdInvitation')],
   ['children remain safely managed without separate accounts', app.includes('managed by household adults') && app.includes('Children remain under household management and do not receive separate accounts')],
   ['household account states distinguish linked, invited, and unlinked adults', app.includes('Koinonia ready') && app.includes('Invitation pending') && app.includes('Send secure invitation')],
+  ['status cards explain access and visibility in parish language', app.includes('Access &amp; visibility') && app.includes('Parish connection') && app.includes('Parishioner directory') && app.includes('Household confirmation')],
+  ['staff can remove an adult from the parish without deleting identity or giving history', app.includes('Remove from parish') && app.includes('giving history will not be deleted') && adminHandler.includes('remove-from-parish') && adminService.includes('directory.person.removed_from_parish')],
+  ['Koinonia requires a live parish affiliation after removal', koinoniaAccess.includes('JOIN directory_parish_affiliations affiliation') && koinoniaAccess.includes("affiliation.status != 'former_member'")],
+  ['linked accounts are only called Koinonia-ready when household confirmation is current', app.includes("const ready = verificationStatus === 'current'") && app.includes('Household confirmation required')],
   ['member-name and email searches resolve the containing household', adminService.includes('search_person.preferred_name LIKE ?2') && adminService.includes('search_contact.value LIKE ?2')],
   ['one linked spouse no longer blocks another adult invitation', !adminHandler.includes('household_already_managed') && adminHandler.includes('link_and_grant_household_admin')],
   ['the uploaded four-column parish table is preserved', app.includes('Members &amp; Namedays') && app.includes('Contact &amp; Parishioner Visibility') && app.includes('Skills to Serve')],

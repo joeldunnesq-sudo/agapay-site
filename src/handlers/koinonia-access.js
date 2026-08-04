@@ -48,18 +48,23 @@ export async function resolveDonorHouseholdContext(request, env) {
     JOIN directory_people p
       ON p.id = link.person_id
      AND p.active = 1
+    JOIN directory_parish_affiliations affiliation
+      ON affiliation.person_id = p.id
+     AND affiliation.parish_id = ?1
+     AND affiliation.active = 1
+     AND affiliation.status != 'former_member'
     LEFT JOIN directory_household_members membership
       ON membership.person_id = p.id
      AND membership.active = 1
     LEFT JOIN directory_households h
       ON h.id = membership.household_id
-     AND h.parish_id = ?
+     AND h.parish_id = ?1
      AND h.active = 1
     LEFT JOIN directory_household_verifications verification
       ON verification.household_id = h.id
      AND verification.parish_id = h.parish_id
     WHERE link.link_type = 'platform_user'
-      AND link.external_id = ?
+      AND link.external_id = ?2
       AND link.active = 1
     ORDER BY CASE WHEN h.id IS NULL THEN 1 ELSE 0 END,
       CASE membership.relationship

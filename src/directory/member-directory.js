@@ -381,6 +381,17 @@ async function householdMembers(env, context, householdId, { detail = false } = 
        LEFT JOIN directory_person_privacy_flags f ON f.parish_id = ?2 AND f.person_id = p.id AND f.active = 1
       WHERE hm.household_id = ?1 AND hm.active = 1 AND p.active = 1
         AND h.parish_id = ?2
+        AND (
+          NOT EXISTS (
+            SELECT 1 FROM directory_parish_affiliations affiliation
+             WHERE affiliation.person_id = p.id AND affiliation.parish_id = ?2
+          )
+          OR EXISTS (
+            SELECT 1 FROM directory_parish_affiliations affiliation
+             WHERE affiliation.person_id = p.id AND affiliation.parish_id = ?2
+               AND affiliation.active = 1 AND affiliation.status != 'former_member'
+          )
+        )
       ORDER BY p.preferred_name ASC, p.id ASC`,
     householdId, context.parishId
   );
