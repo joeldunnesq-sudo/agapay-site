@@ -23,6 +23,7 @@ import { ensurePlatformUser } from "../src/lib/identity.js";
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const migration = (name) => readFileSync(path.join(repoRoot, "migrations", name), "utf8");
 const BACKFILL_MIGRATION = "0083_koinonia_household_verification_backfill.sql";
+const ONBOARDING_BACKFILL_MIGRATION = "0091_directory_onboarding_household_verification_backfill.sql";
 const DAY_MS = 86400000;
 
 function makeEnvironment() {
@@ -33,6 +34,7 @@ function makeEnvironment() {
     "0020_platform_identity.sql",
     "0022_directory_canonical_foundation.sql",
     "0023_directory_contact_privacy_publication.sql",
+    "0025_directory_self_service_phase2a.sql",
     "0032_directory_phase5b_skills_completion.sql",
   ]) sqlite.exec(migration(name));
 
@@ -104,7 +106,7 @@ async function seedMember({ sqlite, env, suffix, approved = true }) {
       "X-AGAPAY-Donor-Email": email,
     },
   });
-  return { parishId, householdId, personId, request };
+  return { parishId, householdId, personId, userId: user.id, request };
 }
 
 function setVerification(sqlite, householdId, { status = "current", dueAt = Date.now() + DAY_MS } = {}) {
@@ -174,6 +176,36 @@ await assertVerificationDenial(
   await handleKoinoniaAccess(missing.request("/api/donor/koinonia-access"), env),
   "A genuine post-backfill missing row",
 );
+
+const completedAt = Date.now();
+sqlite.prepare(`INSERT INTO directory_change_requests
+  (id, parish_id, requester_user_id, requester_person_id, target_type, target_id,
+   household_id, request_type, status, summary, requested_payload_json,
+   reviewed_by_user_id, reviewed_at, completed_at, created_at, updated_at)
+  VALUES (?, ?, ?, ?, 'person', ?, NULL, 'person_profile_review', 'completed', ?, ?,
+          'parish-reviewer', ?, ?, ?, ?)`)
+  .run("request_post_backfill", missing.parishId, missing.userId, missing.personId, missing.personId,
+    "Approved first-time My AGAPAY directory profile",
+    JSON.stringify({ source: "myagapay_directory_onboarding" }),
+    completedAt, completedAt, completedAt, completedAt);
+sqlite.prepare(`INSERT INTO directory_publication_profiles
+  (id, parish_id, owner_type, owner_id, status, approval_status, approved_by_user_id,
+   approved_at, active, created_at, updated_at)
+  VALUES (?, ?, 'person', ?, 'approved', 'approved', 'parish-reviewer', ?, 1, ?, ?)`)
+  .run("publication_post_backfill_person", missing.parishId, missing.personId, completedAt, completedAt, completedAt);
+sqlite.prepare(`INSERT INTO directory_household_admins
+  (id, household_id, person_id, active, created_at, updated_at)
+  VALUES (?, ?, ?, 1, ?, ?)`)
+  .run("admin_post_backfill", missing.householdId, missing.personId, completedAt, completedAt);
+sqlite.exec(migration(ONBOARDING_BACKFILL_MIGRATION));
+const repaired = sqlite.prepare("SELECT * FROM directory_household_verifications WHERE household_id = ?").get(missing.householdId);
+assert.equal(repaired.verification_status, "current", "completed first-time onboarding must repair its missing household verification");
+assert.equal(repaired.verification_policy_version, "first-profile-review-backfill-v1");
+assert.equal((await handleKoinoniaAccess(missing.request("/api/donor/koinonia-access"), env)).status, 200,
+  "the repaired connected household must receive Koinonia access");
+sqlite.exec(migration(ONBOARDING_BACKFILL_MIGRATION));
+assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM directory_household_verifications WHERE household_id = ?").get(missing.householdId).count, 1,
+  "the onboarding repair must be idempotent");
 
 setVerification(sqlite, missing.householdId, { status: "due", dueAt: Date.now() + DAY_MS });
 await assertVerificationDenial(
