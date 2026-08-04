@@ -10,6 +10,7 @@
   "scope": "/myagapay/",
   "display": "standalone",
   "display_override": ["standalone"],
+  "orientation": "portrait-primary",
   "background_color": "#061522",
   "theme_color": "#061522",
   "icons": [

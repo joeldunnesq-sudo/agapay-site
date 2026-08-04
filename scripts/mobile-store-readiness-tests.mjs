@@ -14,7 +14,7 @@ const privacyManifest = read("store/ios/PrivacyInfo.xcprivacy");
 const iosProject = read("store/ios/project.yml");
 
 assert.equal(manifest.scope, "/myagapay/", "PWA scope must have an exact directory boundary");
-assert.equal(manifest.orientation, undefined, "My AGAPAY must not force portrait on tablets");
+assert.equal(manifest.orientation, "portrait-primary", "My AGAPAY must prefer portrait orientation");
 assert.ok(manifest.icons.some((icon) => icon.sizes === "512x512" && icon.purpose === "maskable"), "maskable icon is required");
 
 assert.equal(androidManifest.packageId, "app.agapay.myagapay");
