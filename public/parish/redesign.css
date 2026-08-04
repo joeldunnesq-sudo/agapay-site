@@ -667,6 +667,7 @@
 .acct-card { padding:22px; border:1px solid var(--line); border-radius:14px; background:#fff; box-shadow:var(--pdx-shadow-sm); }
 .acct-card h2 { margin:5px 0 8px; color:var(--ink); font:600 25px/1.08 var(--serif); }.acct-card p { margin:0 0 16px; color:var(--stone); font-size:13px; line-height:1.55; }
 .acct-migration-main { min-width:0; }
+.acct-migration-source-guides { display:grid; gap:14px; }
 .acct-migration-main>.acct-migration-guide { margin-bottom:14px; }
 .acct-migration-guide { margin-top:14px; padding:0; overflow:hidden; }
 .acct-migration-guide summary { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:18px 20px; color:var(--ink); background:rgba(200,162,74,.08); cursor:pointer; list-style:none; }
