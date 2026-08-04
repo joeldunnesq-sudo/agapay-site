@@ -11,6 +11,7 @@ import {
   applyHouseholdDirectCorrection,
   applyPersonDirectCorrection,
   assignDirectoryReviewItem,
+  beginDirectoryReview,
   completeDirectoryMediaUpload,
   createDirectoryChangeRequest,
   createDirectoryMediaUploadSession,
@@ -357,6 +358,30 @@ await test("assignment, detail, approval, notification, and audit are transactio
   assert.equal(db.prepare("SELECT COUNT(*) AS count FROM directory_notification_events WHERE event_type = 'directory.review.approved'").get().count, 1);
   const audit = await listDirectoryAuditHistory(env, { context: reviewerContext });
   assert.equal(audit.some((event) => event.action === "directory.review_item.approved"), true);
+});
+
+await test("begin review returns the refreshed version required by the decision", async () => {
+  const { env, reviewerContext, selfContext, adult } = await fixture();
+  const change = await createDirectoryChangeRequest(env, {
+    context: selfContext,
+    parishId: "st-fiacre",
+    targetType: "person",
+    targetId: adult.id,
+    requestType: "person_profile_review",
+    summary: "First-time profile review",
+    payload: { legalName: "Anna Dunne" }
+  });
+  const opened = await getDirectoryReviewItem(env, { context: reviewerContext, sourceType: "change_request", sourceId: change.id });
+  const begun = await beginDirectoryReview(env, { context: reviewerContext, sourceType: "change_request", sourceId: change.id });
+  assert.notEqual(begun.item.version, opened.item.version, "beginning review should advance the optimistic-concurrency version");
+  const result = await decideDirectoryReviewItem(env, {
+    context: reviewerContext,
+    sourceType: "change_request",
+    sourceId: change.id,
+    decision: "approve",
+    expectedVersion: begun.item.version
+  });
+  assert.equal(result.decision, "approve");
 });
 
 await test("approving self-service profile setup approves requested contact publication preferences", async () => {

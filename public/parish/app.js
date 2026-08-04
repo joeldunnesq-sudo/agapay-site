@@ -3159,7 +3159,12 @@
       const res = await fetch(directoryAdminApi('/reviews/' + encodeURIComponent(sourceType) + '/' + encodeURIComponent(sourceId)), { headers: authHeaders() });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Unable to open review item.');
-      const review = payload.review || {};
+      let review = payload.review || {};
+      const beginRes = await fetch(directoryAdminApi('/reviews/' + encodeURIComponent(sourceType) + '/' + encodeURIComponent(sourceId) + '/begin'), { method: 'POST', headers: authHeaders() }).catch(() => null);
+      if (beginRes?.ok) {
+        const beginPayload = await beginRes.json().catch(() => ({}));
+        if (beginPayload.ok !== false && beginPayload.review) review = beginPayload.review;
+      }
       const item = review.item || {};
       const proposed = review.proposed || {};
       const submittedPhoto = review.media || proposed.photo || null;
@@ -3196,7 +3201,6 @@
         </article>`;
       detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
       hydrateDirectoryAdminImages(detail);
-      await fetch(directoryAdminApi('/reviews/' + encodeURIComponent(sourceType) + '/' + encodeURIComponent(sourceId) + '/begin'), { method: 'POST', headers: authHeaders() }).catch(() => null);
     } catch (err) {
       detail.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to open this review item.')}</p>`;
     }

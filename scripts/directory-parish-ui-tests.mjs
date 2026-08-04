@@ -6,6 +6,9 @@ const css = fs.readFileSync(new URL('../public/parish/redesign.css', import.meta
 const stewardshipCss = fs.readFileSync(new URL('../public/styles/stewardship.css', import.meta.url), 'utf8');
 const adminService = fs.readFileSync(new URL('../src/directory/admin.js', import.meta.url), 'utf8');
 const adminHandler = fs.readFileSync(new URL('../src/handlers/directory-admin.js', import.meta.url), 'utf8');
+const openReviewStart = app.indexOf('async function openDirectoryReview');
+const openReviewEnd = app.indexOf('async function decideDirectoryReview', openReviewStart);
+const openReviewSource = app.slice(openReviewStart, openReviewEnd);
 
 const checks = [
   ['the legacy Directory Operations hero is removed', !dashboard.includes('Directory Operations')],
@@ -31,6 +34,7 @@ const checks = [
   ['health headline count matches the actionable rows rendered below it', app.includes('directoryHealthOverview(dashboard.metrics || {}, maintenance, managementQueue.length)') && app.includes('const required = Number(actionCount || 0)')],
   ['guest donors and unfinished profiles are explicitly excluded from parish follow-up', app.includes('Guest donors and unfinished profiles do not create parish follow-up') && !app.includes('Account links needed') && !app.includes('Adult account link needed')],
   ['review queue exposes confirm, decline, and request-information actions', app.includes('Confirm submission') && app.includes('Ask for information') && app.includes('Decline') && app.includes('requesterNote: note')],
+  ['opening a review uses the post-begin version for decisions', openReviewSource.indexOf("'/begin'") < openReviewSource.indexOf('const item = review.item') && openReviewSource.includes('review = beginPayload.review')],
   ['directory health is visual and action-oriented', app.includes('pdx-dir-health-ring') && app.includes('Directory health') && app.includes('Awaiting review') && css.includes('conic-gradient')],
   ['skills and exports are secondary disclosure tools rather than competing lists', app.includes('<details class="pdx-dir-utilities">') && app.includes('Skills and exports')],
   ['each adult can link a separate My AGAPAY identity inside one shared household', app.includes('Adult accounts &amp; Koinonia access') && app.includes('Each adult signs in separately while sharing this household') && app.includes('sendDirectoryHouseholdInvitation')],
