@@ -232,6 +232,7 @@ const wiring = read("src/accounting/source-wiring.js");
 const parish = read("src/handlers/parish.js");
 const accountingRoutes = read("src/handlers/accounting-setup-reports.js");
 const app = read("public/parish/app.js");
+const dashboard = read("public/parish/dashboard.html");
 
 assert.match(wiring, /giving_source_type/);
 assert.match(wiring, /let id = text\(accountingFundId\)/, "catalog publishing must preserve an existing ledger fund ID");
@@ -318,5 +319,10 @@ assert.match(read("migrations/0061_giving_plus_benevolence_fund.sql"), /Campaign
 assert.match(app, /function fallbackCampaigns\(v\) \{ return JSON\.stringify\(Array\.isArray\(v\) \? v : \[\]/, "an empty campaign catalog must remain empty until the parish creates a campaign");
 assert.doesNotMatch(adminApp, /jsonForTextarea\(reg\.campaigns,\s*\[\{\s*id:\s*['"]campaign['"]/, "admin verification must not create a placeholder parish campaign");
 assert.doesNotMatch(app, /Advanced edit \(JSON\)|fundsJson|campaignsJson/, "Funds & Alms must not expose an internal JSON editor");
+const fundsPanel = dashboard.slice(dashboard.indexOf('id="tab-options"'), dashboard.indexOf('id="tab-campaigns"'));
+const settingsPanel = dashboard.slice(dashboard.indexOf('id="tab-settings"'), dashboard.indexOf('id="tab-options"'));
+assert.match(fundsPanel, /Advanced payment routing[\s\S]*settlementProfilesBody/, "payment routing must live under Funds & Alms");
+assert.doesNotMatch(settingsPanel, /settlementProfilesBody|Revenue Streams/, "Parish Settings must not duplicate payment routing");
+assert.match(app, /tab === 'options'[\s\S]*loadSettlementProfilesPanel\(\)/, "Funds & Alms must load payment routes on demand");
 
 console.log("PASS - Funds & Alms accounting catalog, restrictions, metadata, failure safety, and account numbers");

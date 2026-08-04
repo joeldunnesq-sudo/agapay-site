@@ -16,7 +16,8 @@
 import { d1, d1First, d1All, d1Run } from "./core.js";
 
 // Internal category keys. The parish-facing name for this whole feature is
-// "Revenue Streams" (see public/parish/dashboard.html + app.js) — these
+// "Advanced payment routing" in Funds & Alms (see public/parish/dashboard.html
+// + app.js) — these
 // values and this constant name stay as "settlement profile" internally,
 // per product decision to keep the backend naming stable independent of
 // what the UI calls it.

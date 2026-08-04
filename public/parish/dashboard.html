@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/parish/style.css?v=20260803bookstoresales1" />
-  <link rel="stylesheet" href="/parish/redesign.css?v=20260801youtubechannel1" />
+  <link rel="stylesheet" href="/parish/redesign.css?v=20260804paymentrouting1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="stylesheet" href="/styles/stewardship.css?v=20260731healthgrid1" />
   <link rel="manifest" href="/manifest.webmanifest" />
@@ -755,19 +755,6 @@
         <div class="section-card">
           <div class="section-header">
             <div class="section-title">
-              <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M12 2l9 4.5v9L12 20l-9-4.5v-9z"/><path d="M12 11v9"/><path d="M3 6.5l9 4.5 9-4.5"/></svg></div>
-              Revenue Streams
-            </div>
-          </div>
-          <div class="section-body">
-            <p class="notice" style="margin-bottom:16px;">Revenue Streams help your parish separate giving, bookstore, and other parish commerce activity for reporting and accounting. Most parishes use one Stripe account and one bank account. Larger parishes may use separate revenue streams for more detailed tracking.</p>
-            <div id="settlementProfilesBody"><p class="sw-tool-loading">Loading revenue streams&hellip;</p></div>
-          </div>
-        </div>
-
-        <div class="section-card">
-          <div class="section-header">
-            <div class="section-title">
               <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M4 7l8 6 8-6"/></svg></div>
               Parish Email Sending
             </div>
@@ -815,6 +802,7 @@
             </div>
           </div>
         </div>
+
       </div>
 
       <!-- ── FUNDS TAB ───────────────────────────── -->
@@ -866,6 +854,18 @@
             </div>
           </div>
         </div>
+
+        <details class="section-card sp-routing-card">
+          <summary class="sp-routing-summary">
+            <span class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 18h16"/><path d="M8 3v6"/><path d="M16 15v6"/></svg></span>
+            <span><strong>Advanced payment routing</strong><small>Optional &middot; Most parishes can leave this alone</small></span>
+            <b aria-hidden="true">&#8964;</b>
+          </summary>
+          <div class="section-body sp-routing-body">
+            <p class="sp-routing-note"><strong>Funds above remain the accounting source of truth.</strong> Payment routes only decide how Giving and Bookstore activity are separated for Stripe reporting and payouts. Use more than one route only when your parish needs that separation.</p>
+            <div id="settlementProfilesBody"><p class="sw-tool-loading">Loading payment routes&hellip;</p></div>
+          </div>
+        </details>
       </div>
 
       <!-- ═══════════════════════════════════════════ CAMPAIGNS TAB ══ -->
@@ -1867,6 +1867,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
-  <script src="/parish/app.js?v=20260803bookstoresales1"></script>
+  <script src="/parish/app.js?v=20260804paymentrouting1"></script>
 </body>
 </html>

@@ -195,7 +195,10 @@
     syncTopbarTabIcon(tab);
     if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length) loadGivingHistory();
     if (tab === 'givers' && allGifts.length) renderGiversPanel();
-    if (tab === 'options' && currentParish) renderGivingOptionsEditor();
+    if (tab === 'options' && currentParish) {
+      renderGivingOptionsEditor();
+      loadSettlementProfilesPanel();
+    }
     if (tab === 'campaigns' && currentParish) renderCampaignList(currentParish);
     if (tab === 'stewardship') loadStewardshipPanel();
     if (tab === 'sacraments') loadSacramentsTab();
@@ -208,7 +211,6 @@
     }
     if (tab === 'reconcile' && currentParish) loadReconciliation();
     if (tab === 'settings' && currentParish) {
-      loadSettlementProfilesPanel();
       loadParishEmailCredentials();
     }
     document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -4852,7 +4854,7 @@
     return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/settlement-profiles' + path;
   }
 
-  // ── Settlement Profiles (Settings tab) ──────────────────────────────────
+  // ── Payment routes (Funds & Alms) ────────────────────────────────────────
   let settlementProfilesState = { loaded: false, loading: false, profiles: [], profileTypes: [], stewardshipActive: false };
 
   const SETTLEMENT_MODULE_LABELS = { giving: 'Giving (donations)', bookstore: 'Bookstore Payments' };
@@ -4874,11 +4876,11 @@
     if (settlementProfilesState.loaded && !force) { renderSettlementProfilesPanel(); return; }
     if (settlementProfilesState.loading) return;
     settlementProfilesState.loading = true;
-    if (!settlementProfilesState.loaded) body.innerHTML = '<p class="sw-tool-loading">Loading revenue streams&hellip;</p>';
+    if (!settlementProfilesState.loaded) body.innerHTML = '<p class="sw-tool-loading">Loading payment routes&hellip;</p>';
     try {
       const res = await fetch(settlementProfilesApi(), { headers: authHeaders() });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Unable to load revenue streams.');
+      if (!res.ok) throw new Error(data.error || 'Unable to load payment routes.');
       settlementProfilesState.profiles = data.profiles || [];
       settlementProfilesState.profileTypes = data.profileTypes || [];
       settlementProfilesState.stewardshipActive = Boolean(data.stewardshipActive);
@@ -4898,8 +4900,8 @@
 
     const rows = profiles.map(p => {
       const badges = [
-        p.isDefaultGiving ? '<span class="sp-badge sp-badge--giving">Default giving</span>' : '',
-        p.isDefaultCommerce ? '<span class="sp-badge sp-badge--commerce">Default commerce</span>' : '',
+        p.isDefaultGiving ? '<span class="sp-badge sp-badge--giving">Giving default</span>' : '',
+        p.isDefaultCommerce ? '<span class="sp-badge sp-badge--commerce">Bookstore default</span>' : '',
         !p.isActive ? '<span class="sp-badge sp-badge--inactive">Inactive</span>' : ''
       ].filter(Boolean).join('');
       const moduleLabels = (p.modules || []).map(m => SETTLEMENT_MODULE_LABELS[m] || m).join(', ');
@@ -4913,11 +4915,11 @@
             ${badges}
           </div>
           <div class="sp-row-meta">${moduleLabels ? `Used by: ${escapeHtml(moduleLabels)}` : '<em>Not assigned to any module yet</em>'}</div>
-          <div class="sp-row-actions">
-            ${!p.isDefaultGiving ? `<button class="btn btn-ghost btn-sm" type="button" onclick="setDefaultGivingProfile('${escapeAttr(p.id)}')">Make default giving</button>` : ''}
-            ${!p.isDefaultCommerce ? `<button class="btn btn-ghost btn-sm" type="button" onclick="setDefaultCommerceProfile('${escapeAttr(p.id)}')">Make default commerce</button>` : ''}
+          <details class="sp-row-menu"><summary>Manage route</summary><div class="sp-row-actions">
+            ${!p.isDefaultGiving ? `<button class="btn btn-ghost btn-sm" type="button" onclick="setDefaultGivingProfile('${escapeAttr(p.id)}')">Use for Giving</button>` : ''}
+            ${!p.isDefaultCommerce ? `<button class="btn btn-ghost btn-sm" type="button" onclick="setDefaultCommerceProfile('${escapeAttr(p.id)}')">Use for Bookstore</button>` : ''}
             <button class="btn btn-ghost btn-sm" type="button" onclick="toggleSettlementProfileActive('${escapeAttr(p.id)}', ${p.isActive ? 'false' : 'true'})">${p.isActive ? 'Deactivate' : 'Activate'}</button>
-          </div>
+          </div></details>
         </div>`;
     }).join('');
 
@@ -4930,37 +4932,36 @@
           `<option value="${escapeAttr(p.id)}" ${current?.id === p.id ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('');
         return `
           <div class="sp-module-row">
-            <span class="sp-module-label">${escapeHtml(SETTLEMENT_MODULE_LABELS[key])}</span>
+            <span class="sp-module-label">${escapeHtml(SETTLEMENT_MODULE_LABELS[key])} activity</span>
             <select class="form-select" onchange="assignSettlementModule('${key}', this.value)">${options}</select>
           </div>`;
       }).join('');
 
     body.innerHTML = `
-      <div class="sp-list">${rows || '<p class="bk-panel-empty">No revenue streams yet.</p>'}</div>
-
       <div class="sp-modules">
-        <h4 class="sp-subhead">Module assignments</h4>
+        <h4 class="sp-subhead">Send each activity to</h4>
         ${moduleAssignmentRows}
       </div>
 
-      <form class="sp-new-form" onsubmit="createSettlementProfile(event)">
-        <h4 class="sp-subhead">Add a revenue stream</h4>
+      <details class="sp-route-list"><summary>${profiles.length} payment route${profiles.length === 1 ? '' : 's'}</summary><div class="sp-list">${rows || '<p class="bk-panel-empty">No payment routes yet.</p>'}</div></details>
+
+      <details class="sp-new-route"><summary>Add another payment route</summary><form class="sp-new-form" onsubmit="createSettlementProfile(event)">
         <div class="sp-new-fields">
-          <input class="form-input" id="spNewName" type="text" placeholder="Revenue stream name (e.g. Festival Fund)" maxlength="80" required />
+          <input class="form-input" id="spNewName" type="text" placeholder="Route name (e.g. Festival payments)" maxlength="80" required />
           <select class="form-select" id="spNewType">
             ${(settlementProfilesState.profileTypes.length ? settlementProfilesState.profileTypes : ['general_giving']).map(t =>
               `<option value="${escapeAttr(t)}">${escapeHtml(SETTLEMENT_TYPE_LABELS[t] || t)}</option>`).join('')}
           </select>
-          <button class="btn btn-primary btn-sm" type="submit">Add revenue stream</button>
+          <button class="btn btn-primary btn-sm" type="submit">Add route</button>
         </div>
-      </form>`;
+      </form></details>`;
   }
 
   async function createSettlementProfile(event) {
     event.preventDefault();
     const name = document.getElementById('spNewName')?.value.trim();
     const profileType = document.getElementById('spNewType')?.value;
-    if (!name) { setStatus('Enter a revenue stream name.', 'error'); return; }
+    if (!name) { setStatus('Enter a payment route name.', 'error'); return; }
     try {
       const res = await fetch(settlementProfilesApi(), {
         method: 'POST',
@@ -4968,7 +4969,7 @@
         body: JSON.stringify({ name, profileType })
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Unable to create revenue stream.');
+      if (!res.ok) throw new Error(data.error || 'Unable to create payment route.');
       setStatus(`"${name}" created.`, 'success');
       await loadSettlementProfilesPanel(true);
     } catch (err) {
@@ -4978,7 +4979,7 @@
 
   async function renameSettlementProfile(profileId, name) {
     const clean = String(name || '').trim();
-    if (!clean) { setStatus('Revenue stream name cannot be empty.', 'error'); await loadSettlementProfilesPanel(true); return; }
+    if (!clean) { setStatus('Payment route name cannot be empty.', 'error'); await loadSettlementProfilesPanel(true); return; }
     try {
       const res = await fetch(settlementProfilesApi('/' + encodeURIComponent(profileId)), {
         method: 'PATCH',
@@ -4986,8 +4987,8 @@
         body: JSON.stringify({ name: clean })
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Unable to rename revenue stream.');
-      setStatus('Revenue stream renamed.', 'success');
+      if (!res.ok) throw new Error(data.error || 'Unable to rename payment route.');
+      setStatus('Payment route renamed.', 'success');
       await loadSettlementProfilesPanel(true);
     } catch (err) {
       setStatus(err.message, 'error');
@@ -5003,8 +5004,8 @@
         body: JSON.stringify({ isActive: makeActive })
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Unable to update revenue stream.');
-      setStatus(makeActive ? 'Revenue stream activated.' : 'Revenue stream deactivated.', 'success');
+      if (!res.ok) throw new Error(data.error || 'Unable to update payment route.');
+      setStatus(makeActive ? 'Payment route activated.' : 'Payment route deactivated.', 'success');
       await loadSettlementProfilesPanel(true);
     } catch (err) {
       setStatus(err.message, 'error');
@@ -5015,8 +5016,8 @@
     try {
       const res = await fetch(settlementProfilesApi('/' + encodeURIComponent(profileId) + '/default-giving'), { method: 'POST', headers: authHeaders() });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Unable to set default giving revenue stream.');
-      setStatus('Default giving revenue stream updated.', 'success');
+      if (!res.ok) throw new Error(data.error || 'Unable to set the Giving payment route.');
+      setStatus('Giving payment route updated.', 'success');
       await loadSettlementProfilesPanel(true);
     } catch (err) {
       setStatus(err.message, 'error');
@@ -5027,8 +5028,8 @@
     try {
       const res = await fetch(settlementProfilesApi('/' + encodeURIComponent(profileId) + '/default-commerce'), { method: 'POST', headers: authHeaders() });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Unable to set default commerce revenue stream.');
-      setStatus('Default commerce revenue stream updated.', 'success');
+      if (!res.ok) throw new Error(data.error || 'Unable to set the Bookstore payment route.');
+      setStatus('Bookstore payment route updated.', 'success');
       await loadSettlementProfilesPanel(true);
     } catch (err) {
       setStatus(err.message, 'error');
