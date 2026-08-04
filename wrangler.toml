@@ -50,7 +50,6 @@ crons = ["0 8 * * *", "0 14 * * 6"]
 directory = "./public"
 binding = "ASSETS"
 run_worker_first = [
-  "/.well-known/assetlinks.json",
   "/.well-known/apple-app-site-association",
   "/apple-app-site-association",
   "/**.html",
