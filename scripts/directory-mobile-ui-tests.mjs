@@ -30,6 +30,7 @@ assert.match(page, /data-mobile-target="browse"/);
 assert.doesNotMatch(page, /class="directory-mobile-nav"/);
 assert.doesNotMatch(page, /id="mobileGiveNav"/);
 assert.match(page, /class="directory-view-switcher"[^>]*role="tablist"/);
+assert.match(page, /\.directory-view-switcher \{[\s\S]*?top:calc\(58px \+ env\(safe-area-inset-top\)\);[\s\S]*?margin:0 0 20px;/);
 assert.match(page, /id="directoryViewTab"[^>]*aria-selected="true"[^>]*data-directory-view-target="directory"[^>]*>Directory</);
 assert.match(page, /id="familyInformationTab"[^>]*aria-selected="false"[^>]*data-directory-view-target="family"[^>]*>Family Information</);
 assert.match(page, /function setDirectoryView\(view = "directory"/);
