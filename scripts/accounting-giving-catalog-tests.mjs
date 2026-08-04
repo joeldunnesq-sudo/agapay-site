@@ -321,7 +321,8 @@ assert.doesNotMatch(adminApp, /jsonForTextarea\(reg\.campaigns,\s*\[\{\s*id:\s*[
 assert.doesNotMatch(app, /Advanced edit \(JSON\)|fundsJson|campaignsJson/, "Funds & Alms must not expose an internal JSON editor");
 const fundsPanel = dashboard.slice(dashboard.indexOf('id="tab-options"'), dashboard.indexOf('id="tab-campaigns"'));
 const settingsPanel = dashboard.slice(dashboard.indexOf('id="tab-settings"'), dashboard.indexOf('id="tab-options"'));
-assert.match(fundsPanel, /Advanced payment routing[\s\S]*settlementProfilesBody/, "payment routing must live under Funds & Alms");
+assert.match(fundsPanel, /<details class="section-card sp-routing-card">[\s\S]*Advanced payment routing[\s\S]*settlementProfilesBody[\s\S]*<div class="section-card">[\s\S]*Funds &amp; Alms/, "collapsed payment routing must sit above the Funds & Alms card");
+assert.doesNotMatch(fundsPanel, /<details class="section-card sp-routing-card"\s+open/, "Advanced payment routing must remain collapsed until opened");
 assert.doesNotMatch(settingsPanel, /settlementProfilesBody|Revenue Streams/, "Parish Settings must not duplicate payment routing");
 assert.match(app, /tab === 'options'[\s\S]*loadSettlementProfilesPanel\(\)/, "Funds & Alms must load payment routes on demand");
 
