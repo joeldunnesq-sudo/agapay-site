@@ -51,7 +51,7 @@
     .directory-title p { margin:6px 0 0; color:var(--muted); max-width:740px; line-height:1.5; }
     .status-pill { border:1px solid var(--line); background:#fff; padding:8px 14px; border-radius:999px; font-size:12px; font-weight:700; letter-spacing:.02em; text-transform:uppercase; color:var(--gold-deep); box-shadow:var(--shadow-sm); }
     .directory-top.myagapay-page-hero { display:block; margin-bottom:26px; border-radius:var(--r-xl); overflow:hidden; background:linear-gradient(155deg, var(--navy) 0%, var(--navy-2) 62%, #10344a 100%); box-shadow:var(--shadow-lg); }
-    .cal-hero-inner { padding:30px 34px; position:relative; }
+    .cal-hero-inner { padding:24px 28px; position:relative; }
     .cal-hero-inner::after { content:""; position:absolute; inset:0; pointer-events:none; background:radial-gradient(520px 220px at 88% -10%, rgba(200,162,74,.18), transparent 70%); }
     .cal-hero-eyebrow { position:relative; color:var(--gold); font-size:11px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; margin-bottom:10px; }
     .cal-today-kicker { display:none; }
@@ -410,7 +410,6 @@
         margin:0 0 20px;
         border-radius:13px;
       }
-      .directory-top.myagapay-page-hero { display:none !important; }
       body.donor-directory-page .mobile-tabbar { display:none !important; }
       .donor-directory-page .directory-shell {
         min-height:100vh;
@@ -426,10 +425,12 @@
         background:#fff;
         box-shadow:0 8px 20px rgba(16,24,32,.06);
       }
-      .directory-top.myagapay-page-hero { display:block; padding:0; border:0; border-radius:22px; background:linear-gradient(160deg, #061522 0%, #0B2130 100%); box-shadow:0 24px 60px rgba(6,21,34,.14); }
-      .directory-top.myagapay-page-hero .directory-title h1 { font-family:"Cormorant Garamond", Georgia, serif; font-size:27px; font-weight:600; }
-      .directory-top.myagapay-page-hero .directory-title p { display:block; }
-      .directory-top.myagapay-page-hero .status-pill { justify-self:auto; }
+      .directory-top.myagapay-page-hero { display:block; margin-bottom:18px; padding:0; border:0; border-radius:18px; background:linear-gradient(160deg, #061522 0%, #0B2130 100%); box-shadow:0 16px 36px rgba(6,21,34,.14); }
+      .directory-top.myagapay-page-hero .cal-hero-inner { padding:18px; }
+      .directory-top.myagapay-page-hero .cal-hero-eyebrow { margin-bottom:7px; padding-right:88px; font-size:9.5px; }
+      .directory-top.myagapay-page-hero .directory-title h1 { margin-bottom:6px; font-family:"Cormorant Garamond", Georgia, serif; font-size:27px; font-weight:600; }
+      .directory-top.myagapay-page-hero .directory-title p { display:block; max-width:310px; font-size:13px; line-height:1.42; }
+      .directory-top.myagapay-page-hero .status-pill { position:absolute; top:14px; right:14px; margin:0; padding:6px 9px; font-size:9px; }
       .directory-title h1 { font-family:"DM Sans", Arial, sans-serif; font-size:25px; line-height:1.08; font-weight:800; }
       .directory-title p { display:none; }
       .status-pill { justify-self:start; padding:7px 10px; border-radius:999px; background:#eef3f0; color:var(--green); }
@@ -847,6 +848,7 @@
           <div class="directory-title cal-today-main">
             <div class="cal-today-kicker">Parish Directory</div>
             <h1 id="directoryHeroTitle">Parish Directory</h1>
+            <p>Find parish families, namedays, and ways to serve—all in one private, member-only place.</p>
           </div>
           <span class="status-pill" id="directoryStatus">Loading</span>
         </div>
