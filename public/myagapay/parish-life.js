@@ -137,6 +137,10 @@ function parishLifeTierSectionsHtml(communicationsEnabled) {
       <div class="parish-life-section-head"><h2 id="recentAudioHeading">Recent Audio</h2><a href="/myagapay/teaching">Audio Library</a></div>
       <div class="parish-life-recording-list" id="parishLifeRecordings"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading recordings…</p></div>
     </section>
+    <section class="parish-life-home-section" id="parishLifeContinueListeningSection" aria-labelledby="continueListeningHeading" hidden>
+      <div class="parish-life-section-head"><h2 id="continueListeningHeading">Continue listening</h2></div>
+      <div id="parishLifeContinueListening"></div>
+    </section>
     <section class="parish-life-home-section" id="parishLifeRecentPodcastsSection" aria-labelledby="recentPodcastEpisodesHeading" hidden>
       <div class="parish-life-section-head"><h2 id="recentPodcastEpisodesHeading">Recent Podcast Episodes</h2><a href="/myagapay/teaching?mode=podcasts">All Podcasts</a></div>
       <div class="parish-life-recording-list" id="parishLifePodcastEpisodes"><p class="sw-tool-loading parish-life-section-loading" role="status">Checking your subscriptions…</p></div>
@@ -266,6 +270,52 @@ function renderRecentPodcastEpisodes(subscriptions = [], episodes = []) {
   }).join("");
 }
 
+function parishLifePodcastTime(value) {
+  const seconds = Math.max(0, Math.floor(Number(value) || 0));
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainder = seconds % 60;
+  return hours
+    ? `${hours}:${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`
+    : `${minutes}:${String(remainder).padStart(2, "0")}`;
+}
+
+function renderParishLifeContinueListening(item = null) {
+  const section = document.getElementById("parishLifeContinueListeningSection");
+  const target = document.getElementById("parishLifeContinueListening");
+  if (!section || !target) return;
+  section.hidden = !item;
+  if (!item) { target.innerHTML = ""; return; }
+  const duration = Math.max(0, Number(item.durationSeconds) || 0);
+  const position = Math.max(0, Number(item.positionSeconds) || 0);
+  const percent = duration ? Math.min(100, Math.round((position / duration) * 100)) : 0;
+  const href = `/myagapay/teaching?mode=podcasts&feed=${encodeURIComponent(item.feedUrl)}&episode=${encodeURIComponent(item.episodeKey)}`;
+  target.innerHTML = `<a class="parish-life-continue-card" href="${href}">
+    <span class="parish-life-continue-play" aria-hidden="true">▶</span>
+    <span class="parish-life-continue-copy">
+      <small>${parishLifeEscape(item.showTitle || "Orthodox Podcast")}</small>
+      <strong>${parishLifeEscape(item.episodeTitle || "Untitled episode")}</strong>
+      <span class="parish-life-continue-progress" aria-hidden="true"><i style="width:${percent}%"></i></span>
+      <em>${parishLifeEscape(parishLifePodcastTime(position))}${duration ? ` of ${parishLifeEscape(parishLifePodcastTime(duration))}` : " listened"}</em>
+    </span>
+    <span class="parish-life-continue-action">Resume</span>
+  </a>`;
+}
+
+async function loadParishLifeContinueListening(headers) {
+  try {
+    const response = await fetch("/api/listen/progress", { headers, cache: "no-store" });
+    if (window.MyAgapayShell?.handleUnauthorized(response)) return;
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Unable to load podcast progress.");
+    const activeEpisode = Array.isArray(data.items) ? data.items[0] : null;
+    renderParishLifeContinueListening(activeEpisode || null);
+  } catch {
+    // Listening progress must not block the rest of the Koinonia landing page.
+    renderParishLifeContinueListening(null);
+  }
+}
+
 async function loadRecentPodcastEpisodes(headers) {
   const section = document.getElementById("parishLifeRecentPodcastsSection");
   const target = document.getElementById("parishLifePodcastEpisodes");
@@ -286,7 +336,7 @@ async function loadRecentPodcastEpisodes(headers) {
     const episodes = results
       .flatMap((result) => result.status === "fulfilled" ? result.value : [])
       .sort((left, right) => (new Date(right.date).getTime() || 0) - (new Date(left.date).getTime() || 0))
-      .slice(0, 4);
+      .slice(0, 3);
     renderRecentPodcastEpisodes(subscriptions, episodes);
   } catch {
     // Podcast availability must not block the rest of the Koinonia landing page.
@@ -450,6 +500,7 @@ async function loadParishLife() {
       renderRecentRecordings(teaching || {});
       window.MyAgapayShell?.setTeachingUnreadCount(Math.max(0, Number(teaching?.unreadCount) || 0));
     });
+    const podcastProgressPromise = loadParishLifeContinueListening(headers);
     const podcastsPromise = loadRecentPodcastEpisodes(headers);
     const mediaPromise = parishLifeFetch("/api/donor/videos", headers).then((media) => renderRecentVideos(media || {}));
     const newsPromise = Promise.all([
@@ -463,7 +514,7 @@ async function loadParishLife() {
     ]).then(([customNews, ...newsSources]) => {
       renderRecentNews([...newsSources.filter(Boolean), ...(customNews?.feeds || [])]);
     });
-    await Promise.all([feedPromise, groupsPromise, teachingPromise, podcastsPromise, mediaPromise, newsPromise]);
+    await Promise.all([feedPromise, groupsPromise, teachingPromise, podcastProgressPromise, podcastsPromise, mediaPromise, newsPromise]);
     status.hidden = true;
   } catch (error) {
     if (typeof loadDonorLiturgicalDay === "function") await loadDonorLiturgicalDay(null);

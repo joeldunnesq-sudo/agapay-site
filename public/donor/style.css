@@ -8624,6 +8624,45 @@ textarea {
 .parish-life-recording-row small { color: var(--k-muted); font-size: 10px; }
 .parish-life-recording-row em { color: var(--k-faint); font-size: 10px; font-weight: 500; text-transform: none; }
 
+.parish-life-continue-card {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 76px;
+  border: 1px solid rgba(184, 143, 66, 0.32);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: linear-gradient(145deg, #fffdf8, #f7f1e5);
+  color: inherit;
+  text-decoration: none;
+}
+.parish-life-continue-card:hover { border-color: var(--k-gold); }
+.parish-life-continue-play {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--k-navy);
+  color: var(--k-gold);
+  font-size: 11px;
+}
+.parish-life-continue-copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  min-width: 0;
+}
+.parish-life-continue-copy small,
+.parish-life-continue-copy strong { grid-column: 1 / -1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.parish-life-continue-copy small { color: var(--k-gold-hover); font-size: 9px; font-weight: 700; }
+.parish-life-continue-copy strong { color: var(--k-text); font-size: 13px; }
+.parish-life-continue-copy em { color: var(--k-muted); font-size: 9px; font-style: normal; white-space: nowrap; }
+.parish-life-continue-progress { align-self: center; height: 4px; overflow: hidden; border-radius: 999px; background: #e4ddd0; }
+.parish-life-continue-progress i { display: block; height: 100%; border-radius: inherit; background: var(--k-gold); }
+.parish-life-continue-action { color: var(--k-gold-hover); font-size: 10px; font-weight: 700; }
+
 .parish-life-video-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .parish-life-video-grid > .parish-life-empty-state { grid-column: 1 / -1; }
 .parish-life-video-card {
