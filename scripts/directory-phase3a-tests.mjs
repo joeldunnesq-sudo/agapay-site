@@ -80,7 +80,9 @@ function makeD1Env() {
   db.exec(migration("0027_directory_admin_phase3a.sql"));
   db.exec(migration("0028_directory_media_secure_transformation.sql"));
   db.exec(migration("0030_directory_child_publication_phase4b.sql"));
+  db.exec(migration("0032_directory_phase5b_skills_completion.sql"));
   db.exec(migration("0033_directory_household_namedays.sql"));
+  db.exec(migration("0082_directory_review_correspondence.sql"));
 
   function wrap(sql) {
     return {
@@ -360,8 +362,8 @@ await test("assignment, detail, approval, notification, and audit are transactio
   assert.equal(audit.some((event) => event.action === "directory.review_item.approved"), true);
 });
 
-await test("begin review returns the refreshed version required by the decision", async () => {
-  const { env, reviewerContext, selfContext, adult } = await fixture();
+await test("begin review is idempotent and an approval message survives metadata-only version changes", async () => {
+  const { env, db, reviewerContext, selfContext, adult } = await fixture();
   const change = await createDirectoryChangeRequest(env, {
     context: selfContext,
     parishId: "st-fiacre",
@@ -374,18 +376,24 @@ await test("begin review returns the refreshed version required by the decision"
   const opened = await getDirectoryReviewItem(env, { context: reviewerContext, sourceType: "change_request", sourceId: change.id });
   const begun = await beginDirectoryReview(env, { context: reviewerContext, sourceType: "change_request", sourceId: change.id });
   assert.notEqual(begun.item.version, opened.item.version, "beginning review should advance the optimistic-concurrency version");
+  const reopened = await beginDirectoryReview(env, { context: reviewerContext, sourceType: "change_request", sourceId: change.id });
+  assert.equal(reopened.item.version, begun.item.version, "reopening an in-progress review must not advance its version again");
   const result = await decideDirectoryReviewItem(env, {
     context: reviewerContext,
     sourceType: "change_request",
     sourceId: change.id,
     decision: "approve",
-    expectedVersion: begun.item.version
+    expectedVersion: opened.item.version,
+    requesterNote: "Welcome to the parish directory."
   });
   assert.equal(result.decision, "approve");
+  const message = db.prepare("SELECT direction, body FROM directory_review_correspondence WHERE source_type = 'change_request' AND source_id = ?").get(change.id);
+  assert.equal(message.direction, "staff_to_member");
+  assert.equal(message.body, "Welcome to the parish directory.");
 });
 
 await test("approving self-service profile setup approves requested contact publication preferences", async () => {
-  const { env, db, reviewerContext, selfContext, adult } = await fixture();
+  const { env, db, reviewerContext, selfContext, adult, household } = await fixture();
   const change = await createDirectoryChangeRequest(env, {
     context: selfContext,
     parishId: "st-fiacre",
@@ -401,7 +409,8 @@ await test("approving self-service profile setup approves requested contact publ
         adultPreferredName: { visibility: "directory_members", publicationEligible: true },
         adultEmail: { visibility: "directory_members", publicationEligible: true },
         adultPhone: { visibility: "directory_members", publicationEligible: true }
-      }
+      },
+      source: "myagapay_directory_onboarding"
     }
   });
   const detail = await getDirectoryReviewItem(env, { context: reviewerContext, sourceType: "change_request", sourceId: change.id });
@@ -422,6 +431,10 @@ await test("approving self-service profile setup approves requested contact publ
     ["adult_phone", "directory_members", 1],
     ["adult_preferred_name", "directory_members", 1]
   ]);
+  const verification = db.prepare("SELECT verification_status, verification_due_at, verification_policy_version FROM directory_household_verifications WHERE household_id = ?").get(household.id);
+  assert.equal(verification.verification_status, "current");
+  assert.ok(Number(verification.verification_due_at) > Date.now());
+  assert.equal(verification.verification_policy_version, "first-profile-review-v1");
 });
 
 await test("self approval and stale approval are denied", async () => {

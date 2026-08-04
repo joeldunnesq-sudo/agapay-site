@@ -30,6 +30,16 @@ const withCapabilities = (actor, ...capabilities) => ({
   capabilities: [...new Set([...(actor?.capabilities || []), ...capabilities])]
 });
 
+function columnIndexWithAliases(normalizedHeaders, configuredHeader, aliases) {
+  const configuredIndex = normalizedHeaders.indexOf(normalize(configuredHeader));
+  if (configuredIndex >= 0) return configuredIndex;
+  for (const alias of aliases) {
+    const index = normalizedHeaders.indexOf(normalize(alias));
+    if (index >= 0) return index;
+  }
+  return -1;
+}
+
 function requireMigration(actor, entitlementTier) {
   if (!actor?.id || !actor.capabilities?.includes("accounting.migration.import")) {
     throw new AccountingDatabaseError("Accounting migration import capability is required.", { details: { capability: "accounting.migration.import" } });
@@ -190,8 +200,13 @@ export async function previewVendorCsv(db, { actor, entitlementTier, filename, c
     displayName: "vendor name", legalName: "legal name", email: "email", phone: "phone",
     taxIdLast4: "tax id last 4", taxClassification: "tax classification"
   });
+  indexes.displayName = columnIndexWithAliases(
+    table.normalizedHeaders,
+    columnMap?.displayName || "vendor name",
+    ["vendor name", "vendor"]
+  );
   const existing = await all(db, "SELECT id,display_name FROM accounting_vendors");
-  const rows = [], errors = [];
+  const rows = [], errors = [], importedVendorNames = new Set();
   for (let index = 0; index < table.rows.length; index++) {
     const raw = table.rows[index], rowNumber = index + 2;
     const displayName = indexes.displayName >= 0 ? text(raw[indexes.displayName]) : "";
@@ -200,7 +215,9 @@ export async function previewVendorCsv(db, { actor, entitlementTier, filename, c
       errors.push({ rowNumber, code: !displayName ? "missing_vendor_name" : "invalid_tax_id_last_four" });
       continue;
     }
-    const duplicate = existing.find((vendor) => normalize(vendor.display_name) === normalize(displayName));
+    const normalizedDisplayName = normalize(displayName);
+    const duplicate = existing.find((vendor) => normalize(vendor.display_name) === normalizedDisplayName);
+    const duplicateInFile = importedVendorNames.has(normalizedDisplayName);
     rows.push({
       rowNumber, displayName,
       legalName: indexes.legalName >= 0 ? text(raw[indexes.legalName]) : "",
@@ -208,9 +225,10 @@ export async function previewVendorCsv(db, { actor, entitlementTier, filename, c
       phone: indexes.phone >= 0 ? text(raw[indexes.phone]) : "",
       taxIdLast4,
       taxClassification: indexes.taxClassification >= 0 ? text(raw[indexes.taxClassification]) : "",
-      action: duplicate ? "willSkip" : "willCreate",
+      action: duplicate || duplicateInFile ? "willSkip" : "willCreate",
       existingVendorId: duplicate?.id || ""
     });
+    importedVendorNames.add(normalizedDisplayName);
   }
   return Object.freeze({ filename, fileHash: await digest(csv), rowCount: table.rows.length, validRows: rows.length, invalidRows: errors.length, rows: Object.freeze(rows), errors: Object.freeze(errors) });
 }

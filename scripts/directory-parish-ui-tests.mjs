@@ -34,6 +34,7 @@ const checks = [
   ['health headline count matches the actionable rows rendered below it', app.includes('directoryHealthOverview(dashboard.metrics || {}, maintenance, managementQueue.length)') && app.includes('const required = Number(actionCount || 0)')],
   ['guest donors and unfinished profiles are explicitly excluded from parish follow-up', app.includes('Guest donors and unfinished profiles do not create parish follow-up') && !app.includes('Account links needed') && !app.includes('Adult account link needed')],
   ['review queue exposes confirm, decline, and request-information actions', app.includes('Confirm submission') && app.includes('Ask for information') && app.includes('Decline') && app.includes('requesterNote: note')],
+  ['review form identifies its note as a parishioner-visible message', app.includes('<span>Message to parishioner</span>')],
   ['opening a review uses the post-begin version for decisions', openReviewSource.indexOf("'/begin'") < openReviewSource.indexOf('const item = review.item') && openReviewSource.includes('review = beginPayload.review')],
   ['directory health is visual and action-oriented', app.includes('pdx-dir-health-ring') && app.includes('Directory health') && app.includes('Awaiting review') && css.includes('conic-gradient')],
   ['skills and exports are secondary disclosure tools rather than competing lists', app.includes('<details class="pdx-dir-utilities">') && app.includes('Skills and exports')],

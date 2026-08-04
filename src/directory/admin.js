@@ -826,6 +826,7 @@ export async function beginDirectoryReview(env, { context, sourceType, sourceId,
   const actor = actorDto(context);
   requireAny(actor, context.parishId, reviewDefinition(row).capabilities);
   if (row.assigned_to_user_id && row.assigned_to_user_id !== context.user.id) throw new DirectoryServiceError("assigned_elsewhere", "This item is assigned to another reviewer.", 409);
+  if (row.queue_status === "in_review") return getDirectoryReviewItem(env, { context, sourceType, sourceId });
   const id = await ensureMetadata(env, { actor, row });
   const timestamp = nowMs();
   await runAtomic(env, [{
@@ -844,7 +845,11 @@ export async function decideDirectoryReviewItem(env, { context, sourceType, sour
   if (cleanedDecision === "return" && !cleanText(requesterNote, { max: 1200 })) {
     throw new DirectoryServiceError("validation_failed", "Tell the member what information is needed before returning the submission.");
   }
-  if (expectedVersion && expectedVersion !== metadataDto(row).version) throw new DirectoryServiceError("stale_review_item", "Review item changed. Refresh before deciding.", 409);
+  const currentVersion = metadataDto(row).version;
+  const currentSourceVersion = String(row.source_updated_at || row.updated_at || "");
+  if (expectedVersion && expectedVersion !== currentVersion && !String(expectedVersion).startsWith(`${currentSourceVersion}:`)) {
+    throw new DirectoryServiceError("stale_review_item", "Review item changed. Refresh before deciding.", 409);
+  }
   if (row.requester_user_id && row.requester_user_id === context.user.id && cleanedDecision === "approve") {
     throw new DirectoryServiceError("self_approval_denied", "Reviewers cannot approve their own directory request.", 403);
   }
@@ -917,21 +922,11 @@ async function approveReviewItem(env, { context, row, reasonCode, reviewerNote, 
     const profile = await d1First(env, "SELECT * FROM directory_publication_profiles WHERE id = ?1 AND parish_id = ?2", row.source_id, context.parishId);
     await transitionPublicationProfile(env, { actor: actorDto(context), parishId: context.parishId, ownerType: profile.owner_type, ownerId: profile.owner_id, status: "approved", correlationId });
     if (profile.owner_type === "household") {
-      const timestamp = nowMs();
-      const settings = await getDirectorySettings(env, context.parishId);
-      const intervalDays = Math.max(30, Math.min(1095, Number(settings.householdVerificationIntervalDays || settings.reconfirmationIntervalDays || 365)));
-      await runAtomic(env, [{
-        sql: `INSERT INTO directory_household_verifications
-                (household_id, parish_id, verification_status, verification_due_at, last_verified_at,
-                 verification_started_at, verified_by_user_id, verification_policy_version, created_at, updated_at)
-              VALUES (?, ?, 'current', ?, ?, ?, ?, 'first-publication-review-v1', ?, ?)
-              ON CONFLICT(household_id) DO UPDATE SET
-                verification_status = 'current', verification_due_at = excluded.verification_due_at,
-                last_verified_at = excluded.last_verified_at, verified_by_user_id = excluded.verified_by_user_id,
-                verification_policy_version = excluded.verification_policy_version, updated_at = excluded.updated_at,
-                verification_version = verification_version + 1`,
-        params: [profile.owner_id, context.parishId, timestamp + intervalDays * 86400000, timestamp, timestamp, context.user.id, timestamp, timestamp]
-      }]);
+      await runAtomic(env, [await householdVerificationStatement(env, {
+        context,
+        householdId: profile.owner_id,
+        policyVersion: "first-publication-review-v1"
+      })]);
     }
     return markApproved(env, { context, row, reasonCode, reviewerNote, requesterNote, correlationId });
   }
@@ -983,6 +978,7 @@ async function approveReviewItem(env, { context, row, reasonCode, reviewerNote, 
   const request = await d1First(env, "SELECT * FROM directory_change_requests WHERE id = ?1 AND parish_id = ?2 AND status = 'pending'", row.source_id, context.parishId);
   if (!request) throw new DirectoryServiceError("invalid_transition", "Only pending requests can be approved.", 409);
   const payload = JSON.parse(request.requested_payload_json || "{}");
+  const additionalStatements = [];
   if (request.request_type === "person_profile_review") {
     await applyPersonAdminFields(env, {
       context,
@@ -993,6 +989,24 @@ async function approveReviewItem(env, { context, row, reasonCode, reviewerNote, 
       correlationId
     });
     await applyPersonPublicationPreferences(env, { context, personId: request.target_id, preferences: payload.publicationPreferences, correlationId });
+    if (payload.source === "myagapay_directory_onboarding") {
+      const household = await d1First(env, `
+        SELECT h.id
+          FROM directory_households h
+          JOIN directory_household_members hm ON hm.household_id = h.id AND hm.person_id = ?1 AND hm.active = 1
+          JOIN directory_household_admins ha ON ha.household_id = h.id AND ha.person_id = ?1 AND ha.active = 1
+          JOIN directory_person_links link ON link.person_id = ?1 AND link.link_type = 'platform_user'
+            AND link.external_id = ?2 AND link.active = 1
+         WHERE h.parish_id = ?3 AND h.active = 1
+         ORDER BY hm.created_at ASC
+         LIMIT 1`,
+      request.target_id, request.requester_user_id, context.parishId);
+      if (household?.id) additionalStatements.push(await householdVerificationStatement(env, {
+        context,
+        householdId: household.id,
+        policyVersion: "first-profile-review-v1"
+      }));
+    }
   } else if (request.request_type === "household_membership_add") {
     await addHouseholdMember(env, { actor: actorDto(context), parishId: context.parishId, householdId: request.household_id || request.target_id, personId: payload.personId, relationship: payload.relationship || "other" });
     const share = payload.shareToLink;
@@ -1023,7 +1037,25 @@ async function approveReviewItem(env, { context, row, reasonCode, reviewerNote, 
   } else {
     throw new DirectoryServiceError("manual_review_required", "This request type can be triaged but is not auto-mutated in Phase 3A.", 422);
   }
-  return markApproved(env, { context, row, reasonCode, reviewerNote, requesterNote, correlationId });
+  return markApproved(env, { context, row, reasonCode, reviewerNote, requesterNote, correlationId, additionalStatements });
+}
+
+async function householdVerificationStatement(env, { context, householdId, policyVersion }) {
+  const timestamp = nowMs();
+  const settings = await getDirectorySettings(env, context.parishId);
+  const intervalDays = Math.max(30, Math.min(1095, Number(settings.householdVerificationIntervalDays || settings.reconfirmationIntervalDays || 365)));
+  return {
+    sql: `INSERT INTO directory_household_verifications
+            (household_id, parish_id, verification_status, verification_due_at, last_verified_at,
+             verification_started_at, verified_by_user_id, verification_policy_version, created_at, updated_at)
+          VALUES (?, ?, 'current', ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(household_id) DO UPDATE SET
+            verification_status = 'current', verification_due_at = excluded.verification_due_at,
+            last_verified_at = excluded.last_verified_at, verified_by_user_id = excluded.verified_by_user_id,
+            verification_policy_version = excluded.verification_policy_version, updated_at = excluded.updated_at,
+            verification_version = verification_version + 1`,
+    params: [householdId, context.parishId, timestamp + intervalDays * 86400000, timestamp, timestamp, context.user.id, policyVersion, timestamp, timestamp]
+  };
 }
 
 // Phase 4B Approval Hard Gate for child publication (Part 11). Every
@@ -1167,6 +1199,7 @@ async function markApproved(env, { context, row, reasonCode, reviewerNote, reque
   await runAtomic(env, [
     ...additionalStatements,
     ...(sourceUpdate ? [sourceUpdate] : []),
+    ...(cleanText(requesterNote, { max: 1200 }) ? [directoryReviewMessageStatement({ parishId: context.parishId, sourceType: row.source_type, sourceId: row.source_id, direction: "staff_to_member", body: requesterNote, userId: context.user.id, timestamp })] : []),
     { sql: "UPDATE directory_review_metadata SET queue_status = 'completed', completed_at = ?, updated_at = ? WHERE id = ?", params: [timestamp, timestamp, id] },
     auditStatement({ action: "directory.review_item.approved", actor, parishId: context.parishId, targetType: "directory_review_item", targetId: id, metadata: { sourceType: row.source_type, sourceId: row.source_id, reasonCode, reviewerNote: cleanText(reviewerNote, { max: 500 }), requesterNote: cleanText(requesterNote, { max: 500 }) }, correlationId }),
     notificationStatement({ context, row, eventType: "directory.review.approved", safeMessage: "Your directory request was approved." })

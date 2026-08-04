@@ -17,6 +17,8 @@ assert.match(admin, /cleanedDecision === "return"[\s\S]*Tell the member what inf
 assert.match(admin, /directoryReviewMessageStatement\([\s\S]*staff_to_member/);
 assert.match(admin, /owner_type === "household"[\s\S]*directory_household_verifications/,
   "approving a first household submission must complete its initial confirmation");
+assert.match(admin, /myagapay_directory_onboarding[\s\S]*directory_household_verifications/,
+  "approving first-time My AGAPAY onboarding must confirm its connected household for Koinonia");
 assert.match(service, /member_to_staff[\s\S]*status = 'pending_approval'[\s\S]*queue_status = 'pending_review'/,
   "a member response must place the same source back into the review queue");
 assert.match(selfHandler, /\/api\/directory\/self\/review-requests/);

@@ -7,7 +7,8 @@ import {
   commitChartOfAccountsImport, commitFundMapping,
   commitOpeningBalanceImport, commitTransactionHistoryImport, createJournalDraft,
   createMigrationSession, initializeLedger, postJournalEntry, postOpeningBalanceBatch,
-  previewChartOfAccountsCsv, previewOpeningBalanceCsv, previewTransactionHistoryCsv
+  previewChartOfAccountsCsv, previewOpeningBalanceCsv, previewTransactionHistoryCsv,
+  previewVendorCsv
 } from "../src/accounting/index.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -121,6 +122,23 @@ assert.deepEqual(chartResult, { created:1, linked:1, mapped:2 });
 assert.equal(db.sqlite.prepare("SELECT agapay_account_id FROM accounting_migration_account_map WHERE migration_session_id=? AND source_account_ref='QB-BANK'").get(session.id).agapay_account_id, "acct_1010");
 assert.equal(db.sqlite.prepare("SELECT COUNT(*) count FROM accounting_accounts WHERE account_number='6200'").get().count, 1);
 console.log("PASS - chart import rejects an unconfirmed source type, links an existing account, and creates the new account");
+
+{
+  const quickBooksInvoiceCsv = [
+    "Vendor,Invoice Date,Due Date,Invoice No,Account,Description,Quantity,Unit Price,Amount",
+    "ACME Supplies,7/21/2026,8/8/2026,INV-10020203,Cost of Goods Sold,book,2,50,100",
+    "ACME Supplies,7/21/2026,8/8/2026,INV-10020203,Cost of Goods Sold,cross,1,36,36"
+  ].join("\n");
+  const vendorPreview = await previewVendorCsv(db, {
+    actor, entitlementTier:"parish", filename:"quickbooks-invoices.csv", csv:quickBooksInvoiceCsv,
+    columnMap:{ displayName:"Vendor Name" }
+  });
+  assert.equal(vendorPreview.invalidRows, 0);
+  assert.equal(vendorPreview.validRows, 2);
+  assert.deepEqual(vendorPreview.rows.map((row) => row.displayName), ["ACME Supplies", "ACME Supplies"]);
+  assert.deepEqual(vendorPreview.rows.map((row) => row.action), ["willCreate", "willSkip"]);
+  console.log("PASS - QuickBooks invoice rows accept Vendor as the display name and flag repeated vendors for skipping");
+}
 
 {
   let patchOperation = null;

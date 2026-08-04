@@ -666,6 +666,22 @@
 .acct-setup-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
 .acct-card { padding:22px; border:1px solid var(--line); border-radius:14px; background:#fff; box-shadow:var(--pdx-shadow-sm); }
 .acct-card h2 { margin:5px 0 8px; color:var(--ink); font:600 25px/1.08 var(--serif); }.acct-card p { margin:0 0 16px; color:var(--stone); font-size:13px; line-height:1.55; }
+.acct-migration-main { min-width:0; }
+.acct-migration-main>.acct-migration-guide { margin-bottom:14px; }
+.acct-migration-guide { margin-top:14px; padding:0; overflow:hidden; }
+.acct-migration-guide summary { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:18px 20px; color:var(--ink); background:rgba(200,162,74,.08); cursor:pointer; list-style:none; }
+.acct-migration-guide summary::-webkit-details-marker { display:none; }
+.acct-migration-guide summary span,.acct-migration-guide summary strong,.acct-migration-guide summary small { display:block; }
+.acct-migration-guide summary small { margin-bottom:4px; color:var(--gold); font-size:9px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+.acct-migration-guide summary strong { font:600 19px/1.2 var(--serif); }
+.acct-migration-guide summary i { color:var(--gold); font:700 20px/1 var(--sans); transition:transform .2s ease; }
+.acct-migration-guide[open] summary i { transform:rotate(180deg); }
+.acct-migration-guide-body { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px; padding:20px; border-top:1px solid var(--line); }
+.acct-migration-guide-body section { min-width:0; }
+.acct-migration-guide-body h3 { margin:0 0 10px; color:var(--deep); font:600 17px/1.2 var(--serif); }
+.acct-migration-guide-body ol { margin:0; padding-left:20px; color:var(--stone); font-size:12px; line-height:1.55; }
+.acct-migration-guide-body li+li { margin-top:7px; }
+.acct-migration-guide-import { grid-column:1/-1; padding-top:18px; border-top:1px solid var(--line); }
 .acct-kicker { color:var(--gold); font-size:10px; font-weight:800; letter-spacing:.11em; text-transform:uppercase; }
 .acct-primary:disabled { opacity:.45; cursor:not-allowed; }
 .acct-checklist { display:grid; gap:9px; margin-top:13px; }.acct-checklist div { display:flex; align-items:center; gap:9px; color:var(--stone); font-size:12px; }.acct-checklist div.complete { color:var(--forest); }.acct-checklist i { display:grid; place-items:center; width:20px; height:20px; border-radius:50%; background:rgba(6,21,34,.06); font-style:normal; font-weight:800; }.acct-checklist .complete i { background:rgba(42,89,54,.12); }
@@ -725,7 +741,7 @@
 .acct-phase-form { margin:0 0 18px; padding:20px; border:1px solid rgba(200,162,74,.35); border-radius:14px; background:#fffdf7; }.acct-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:11px; margin-bottom:14px; }.acct-form-grid label,.acct-budget-line label { display:grid; gap:5px; color:var(--stone); font-size:10px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }.acct-form-grid input,.acct-form-grid select,.acct-budget-line input,.acct-budget-line select { min-width:0; border:1px solid var(--line); border-radius:8px; padding:10px; background:#fff; color:var(--ink); font:500 12px var(--sans); text-transform:none; }.acct-form-status { margin-left:10px; color:#873d31; font-size:11px; font-weight:700; }
 .acct-budget-line { display:grid; grid-template-columns:1.4fr 1fr .7fr 32px; gap:8px; align-items:end; padding:10px 0; border-bottom:1px solid rgba(6,21,34,.07); }.acct-phase-form-foot { display:flex; align-items:center; margin-top:14px; }
 @media(max-width:620px){.acct-hero{padding:21px 18px}.acct-hero h1{font-size:31px}.acct-hero-actions{width:100%}.acct-hero-actions button{flex:1}.acct-toolbar{align-items:stretch;flex-direction:column}.acct-refresh{align-self:flex-end}}
-@media(max-width:760px){.app.accounting-tab-active>.sidebar{display:none}.content.accounting-tab-active>#tab-accounting.active{padding:.85rem .85rem 5.5rem}.acct-setup-grid{grid-template-columns:1fr}.acct-guide-card{align-items:stretch;flex-direction:column}.acct-guide-actions{display:grid;grid-template-columns:1fr}.acct-toolbar{overflow:hidden}.acct-view-switch{box-sizing:border-box;flex-wrap:wrap;width:100%;max-width:100%;min-width:0}.acct-view-switch button{flex:1 0 30%}.acct-hero-actions{width:100%;min-width:0}.acct-facts{grid-template-columns:1fr}.acct-report-head{align-items:stretch;flex-direction:column}.acct-journal-meta{grid-template-columns:1fr}.acct-journal-line{grid-template-columns:1fr 1fr}.acct-journal-line label:nth-child(1),.acct-journal-line label:nth-child(2){grid-column:1/-1}.acct-balance{align-items:flex-end;flex-direction:column;gap:5px}.acct-journal-actions{display:grid}.acct-list-head{align-items:flex-start;flex-direction:column}.acct-kpis,.acct-form-grid{grid-template-columns:1fr}.acct-budget-line{grid-template-columns:1fr 1fr}.acct-budget-line label:first-child{grid-column:1/-1}}
+@media(max-width:760px){.app.accounting-tab-active>.sidebar{display:none}.content.accounting-tab-active>#tab-accounting.active{padding:.85rem .85rem 5.5rem}.acct-setup-grid,.acct-migration-guide-body{grid-template-columns:1fr}.acct-migration-guide-import{grid-column:auto}.acct-guide-card{align-items:stretch;flex-direction:column}.acct-guide-actions{display:grid;grid-template-columns:1fr}.acct-toolbar{overflow:hidden}.acct-view-switch{box-sizing:border-box;flex-wrap:wrap;width:100%;max-width:100%;min-width:0}.acct-view-switch button{flex:1 0 30%}.acct-hero-actions{width:100%;min-width:0}.acct-facts{grid-template-columns:1fr}.acct-report-head{align-items:stretch;flex-direction:column}.acct-journal-meta{grid-template-columns:1fr}.acct-journal-line{grid-template-columns:1fr 1fr}.acct-journal-line label:nth-child(1),.acct-journal-line label:nth-child(2){grid-column:1/-1}.acct-balance{align-items:flex-end;flex-direction:column;gap:5px}.acct-journal-actions{display:grid}.acct-list-head{align-items:flex-start;flex-direction:column}.acct-kpis,.acct-form-grid{grid-template-columns:1fr}.acct-budget-line{grid-template-columns:1fr 1fr}.acct-budget-line label:first-child{grid-column:1/-1}}
 
 /* Accounting Suite — canonical accounting workspace, retuned to AGAPAY. */
 .content.accounting-tab-active>#tab-accounting.active { padding:0; overflow:hidden; background:#f5f1e9; }

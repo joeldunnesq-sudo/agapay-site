@@ -2598,6 +2598,41 @@
   }
   function setAccountingMigrationStep(step) { accountingMigration.step=step; renderAccountingPane(); }
   function migrationStatus(value) { return String(value || 'not_started').replaceAll('_',' '); }
+  function migrationSourceGuide(sourceSystem, expanded = false) {
+    const source=String(sourceSystem || '').toLowerCase();
+    if(!['aplos','quickbooks'].includes(source)) return '';
+    const isAplos=source==='aplos';
+    const sourceName=isAplos?'Aplos':'QuickBooks Desktop';
+    const peopleSteps=isAplos
+      ? [
+          'Navigate to Reports and choose the Contact Details report.',
+          'Click the orange plus sign to add the fields you want to bring over, such as address.',
+          'Under Report Actions, click Export to export the file to Excel.'
+        ]
+      : [
+          'Open the Reports menu and select Customer Contact List.',
+          'Click Customize in the top-left corner.',
+          'Click Change Columns and choose the columns to include in your export.',
+          'Click Run Report.',
+          'Click Export and save the report as an Excel file.'
+        ];
+    const givingSteps=isAplos
+      ? [
+          'Navigate to Donor Management.',
+          'Select Donation Reports, then Donations by Contact.',
+          'Set the date range you want to migrate.',
+          'Under Report Filters, choose Funds and select every fund.',
+          'Select Download to export the report.'
+        ]
+      : [
+          'Open Reports, highlight Sales, and select Sales by Customer Detail.',
+          'Select the date range you want to migrate.',
+          'Click Refresh.',
+          'Click Export or Excel and save the report as an Excel file.'
+        ];
+    const list=(steps)=>`<ol>${steps.map((step)=>`<li>${escapeHtml(step)}</li>`).join('')}</ol>`;
+    return `<details class="acct-card acct-migration-guide" ${expanded?'open':''}><summary><span><small>Source guide</small><strong>Exporting data from ${escapeHtml(sourceName)}</strong></span><i aria-hidden="true">⌄</i></summary><div class="acct-migration-guide-body"><section><h3>Exporting people</h3>${list(peopleSteps)}</section><section><h3>Exporting giving</h3>${list(givingSteps)}</section><section class="acct-migration-guide-import"><h3>Preparing files for AGAPAY</h3><ol><li>Open the matching migration step for the data you are importing.</li><li>Use the exported workbook to populate the requested columns.</li><li>Keep the first row intact because it contains the column headers.</li><li>Save the finished file as a <strong>.CSV</strong> file.</li><li>Upload the CSV in this workspace, review the preview, and commit it when the results are correct.</li></ol></section></div></details>`;
+  }
   function migrationCsvForm(kind, title, columns) {
     return `<form class="acct-phase-form" onsubmit="previewAccountingMigrationCsv(event,'${escapeAttr(kind)}')"><label>${escapeHtml(title)} CSV<input name="file" type="file" accept=".csv,text/csv" required></label><details><summary>Column names</summary><div class="acct-form-grid">${columns.map(([key,label,fallback])=>`<label>${escapeHtml(label)}<input name="column_${escapeAttr(key)}" value="${escapeAttr(fallback)}" required></label>`).join('')}</div></details><button class="acct-primary">Review CSV</button><span class="acct-form-status"></span></form>`;
   }
@@ -2670,7 +2705,7 @@
   function renderAccountingMigrationWizard(pane) {
     const session=accountingMigration.session;
     if(!session){
-      pane.innerHTML=`<div class="acct-list-head"><div><span class="acct-kicker">Accounting setup</span><h2>Move to AGAPAY</h2><p>CSV-based migration keeps the transfer reviewable and avoids creating a permanent live connection to the old system.</p></div><button class="acct-refresh" onclick="closeAccountingMigration()">← Setup</button></div><div class="acct-setup-grid"><section class="acct-card acct-setup-lead"><h2>Choose the source system</h2><form class="acct-phase-form" onsubmit="createAccountingMigrationSession(event)"><label>Source<select name="sourceSystem"><option value="quickbooks">QuickBooks</option><option value="aplos">Aplos</option><option value="other">Other CSV export</option></select></label><button class="acct-primary">Start migration</button><span class="acct-form-status"></span></form></section>${accountingMigration.sessions.length?`<section class="acct-card"><h2>Previous sessions</h2>${accountingMigration.sessions.map((item)=>`<button class="acct-refresh" onclick="resumeAccountingMigration('${escapeAttr(item.id)}')">${escapeHtml(item.sourceSystem)} · ${escapeHtml(migrationStatus(item.status))}</button>`).join('')}</section>`:''}</div>`;
+      pane.innerHTML=`<div class="acct-list-head"><div><span class="acct-kicker">Accounting setup</span><h2>Move to AGAPAY</h2><p>CSV-based migration keeps the transfer reviewable and avoids creating a permanent live connection to the old system.</p></div><button class="acct-refresh" onclick="closeAccountingMigration()">← Setup</button></div><div class="acct-setup-grid"><section class="acct-card acct-setup-lead"><h2>Choose the source system</h2><form class="acct-phase-form" onsubmit="createAccountingMigrationSession(event)"><label>Source<select name="sourceSystem" onchange="document.getElementById('accountingMigrationSourceGuide').innerHTML=migrationSourceGuide(this.value,true)"><option value="quickbooks">QuickBooks</option><option value="aplos">Aplos</option><option value="other">Other CSV export</option></select></label><button class="acct-primary">Start migration</button><span class="acct-form-status"></span></form></section>${accountingMigration.sessions.length?`<section class="acct-card"><h2>Previous sessions</h2>${accountingMigration.sessions.map((item)=>`<button class="acct-refresh" onclick="resumeAccountingMigration('${escapeAttr(item.id)}')">${escapeHtml(item.sourceSystem)} · ${escapeHtml(migrationStatus(item.status))}</button>`).join('')}</section>`:''}</div><div id="accountingMigrationSourceGuide">${migrationSourceGuide('quickbooks',true)}</div>`;
       return;
     }
     const steps=[['chart','Chart of accounts',session.chartOfAccountsStatus],['vendors','Vendors',session.vendorsStatus],['funds','Funds',session.fundMappingStatus],['cutover','Balances & history',session.openingBalanceStatus==='completed'?session.openingBalanceStatus:session.transactionHistoryStatus]];
@@ -2689,7 +2724,7 @@
       const opening=accountingMigration.previews.opening,history=accountingMigration.previews.history;
       content=`<section class="acct-card acct-setup-lead"><span class="acct-kicker">Recommended cutover</span><h2><strong>Start clean with an opening balance</strong></h2><p>Export a trial balance as of the day before AGAPAY begins. An unbalanced file is stopped in preview before anything posts.</p>${opening?`${migrationPreviewErrors(opening)}<div class="acct-facts"><div><strong>${accountingMoney(opening.totalDebits)}</strong><span>Debits</span></div><div><strong>${accountingMoney(opening.totalCredits)}</strong><span>Credits</span></div><div><strong>${opening.balanced?'Balanced':'Not balanced'}</strong><span>Preview status</span></div></div><label>Effective date<input id="migrationOpeningDate" type="date" value="${new Date().toISOString().slice(0,10)}"></label><label><input id="migrationAcknowledgeExisting" type="checkbox"> I acknowledge existing posted ledger activity, if any.</label><button class="acct-primary" onclick="commitAccountingMigrationStep('opening')" ${opening.eligibleToCommit?'':'disabled'}>Post opening balance</button><span data-migration-commit-status></span>`:migrationCsvForm('opening','Trial balance',[['accountRef','Account reference','Account'],['debit','Debit','Debit'],['credit','Credit','Credit'],['fundRef','Optional fund reference','Fund']])}</section><section class="acct-card"><details ${accountingMigration.advanced?'open':''} ontoggle="accountingMigration.advanced=this.open"><summary><strong>Import full transaction history (advanced)</strong></summary><p class="acct-report-disclaimer">This reconstructs general-ledger balances only. It does not reconstruct the accounts-payable subledger, bill aging, or linked bill/payment history. Enter open unpaid bills manually through Payables after cutover.</p>${history?`${migrationPreviewErrors(history)}<p><strong>Grouping:</strong> ${escapeHtml(history.groupingMethod)} — ${escapeHtml(history.groupingExplanation)}</p><p>${history.eligibleGroups} balanced entries are eligible.</p><label><input id="migrationAcknowledgeExisting" type="checkbox"> I understand the AP limitation and acknowledge existing posted activity, if any.</label><button class="acct-primary" onclick="commitAccountingMigrationStep('history')">Post next batch of up to 200</button><span data-migration-commit-status></span>`:migrationCsvForm('history','General ledger detail',[['date','Date','Date'],['accountRef','Account reference','Account'],['debit','Debit','Debit'],['credit','Credit','Credit'],['memo','Memo','Memo'],['description','Description','Description'],['fundRef','Optional fund/class','Fund'],['groupRef','Optional transaction ID','Transaction ID']])}</details></section>`;
     }
-    pane.innerHTML=`<div class="acct-list-head"><div><span class="acct-kicker">${escapeHtml(session.sourceSystem)} migration</span><h2>Migration workspace</h2><p>Session ${escapeHtml(session.id)} · progress is saved after every committed step.</p></div><button class="acct-refresh" onclick="closeAccountingMigration()">← Setup</button></div><div class="acct-setup-grid"><aside class="acct-card">${nav}</aside><div>${content}</div></div>`;
+    pane.innerHTML=`<div class="acct-list-head"><div><span class="acct-kicker">${escapeHtml(session.sourceSystem)} migration</span><h2>Migration workspace</h2><p>Session ${escapeHtml(session.id)} · progress is saved after every committed step.</p></div><button class="acct-refresh" onclick="closeAccountingMigration()">← Setup</button></div><div class="acct-setup-grid"><aside class="acct-card">${nav}</aside><div class="acct-migration-main">${migrationSourceGuide(session.sourceSystem)}${content}</div></div>`;
   }
   async function saveAccountingSettings() {
     const settings = accountingData.setup?.settings;
