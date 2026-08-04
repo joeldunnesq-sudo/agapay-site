@@ -42,7 +42,7 @@ assert.match(html, /\.bookstore-shop-grid \{ display:flex; flex-direction:column
 assert.match(app, /classList\.toggle\("has-cart", itemCount > 0\)/,
   "the storefront width must respond to actual cart state");
 
-assert.match(html, /donor\/style\.css\?v=20260803storefront3/,
+assert.match(html, /donor\/style\.css\?v=20260803iospolish1/,
   "the bookstore must load the updated storefront styles with a fresh immutable URL");
 assert.match(html, /donor\/app\.js\?v=20260803sales1/,
   "the bookstore must load the updated storefront behavior with a fresh immutable URL");
@@ -54,6 +54,10 @@ assert.match(html, /\.bookstore-product-media \{[^}]*flex:0 0 118px[^}]*overflow
   "product photos must stay inside a fixed-height media frame instead of overtaking the card");
 assert.match(html, /\.bookstore-product-media img \{[^}]*object-fit:contain/,
   "product photos must preserve their full artwork while leaving title and price visible");
+assert.match(html, /@supports \(-webkit-touch-callout: none\)[\s\S]*\.bookstore-product-media \{[^}]*height:128px[^}]*flex-basis:128px/,
+  "iPhone storefront cards must reserve a generous, stable image frame");
+assert.match(html, /@supports \(-webkit-touch-callout: none\)[\s\S]*\.bookstore-product-media img \{[^}]*width:100% !important[^}]*height:100% !important/,
+  "iPhone storefront images must fill the same frame used on Android");
 assert.match(app, /const description = String\(product\.description \|\| ""\)\.trim\(\);[\s\S]*?\$\{description \? `<small>/,
   "cards without descriptions must not repeat the category label beneath the title");
 assert.match(html, /\.donor-bookstore-page \.my-agapay-tabbar,[\s\S]*?z-index:220;[\s\S]*?background:#fffcf6;[\s\S]*?backdrop-filter:none;/,

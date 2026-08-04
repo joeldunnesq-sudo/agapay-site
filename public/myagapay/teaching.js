@@ -12,6 +12,12 @@ const PODCAST_SAVE_INTERVAL_MS = 15000;
 const PODCAST_COMPLETE_WINDOW_SECONDS = 5;
 const PODCAST_PLAYBACK_RATES = new Set([1, 1.25, 1.5, 1.75, 2]);
 const PODCAST_DOWNLOAD_CACHE = "agapay-podcast-downloads-v1";
+const KOINONIA_ICONS = Object.freeze({
+  play: '<svg class="koinonia-ui-icon is-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>',
+  pause: '<svg class="koinonia-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>',
+  audio: '<svg class="koinonia-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>'
+});
+function koinoniaIcon(name) { return KOINONIA_ICONS[name] || ""; }
 let koinoniaPodcastState = {
   results: [], show: null, episodes: [], hasSearched: false, requestId: 0,
   progressItems: [], progressByKey: new Map(), progressLoaded: false, progressPromise: null,
@@ -119,7 +125,7 @@ function renderKoinoniaContinueListening() {
     const position = Math.max(0, Number(item.positionSeconds) || 0);
     const percent = duration ? Math.min(100, Math.round((position / duration) * 100)) : 0;
     return `<button type="button" class="koinonia-continue-item" onclick="resumeKoinoniaPodcastProgress(${index})">
-      <span class="koinonia-continue-play" aria-hidden="true">▶</span>
+      <span class="koinonia-continue-play" aria-hidden="true">${koinoniaIcon("play")}</span>
       <span><small>${teachingEscape(item.showTitle || "Orthodox Podcast")}</small><strong>${teachingEscape(item.episodeTitle || "Untitled episode")}</strong><span class="koinonia-continue-progress"><i style="width:${percent}%"></i></span><em>${podcastTime(position)}${duration ? ` of ${podcastTime(duration)}` : " listened"}</em></span>
     </button>`;
   }).join("");
@@ -216,7 +222,7 @@ async function renderKoinoniaPodcastDownloads() {
   const downloads = await loadKoinoniaPodcastDownloads().catch(() => []);
   list.innerHTML = downloads.length ? downloads.map((episode, index) => `
     <div class="koinonia-podcast-latest-row">
-      <button type="button" onclick="playDownloadedKoinoniaPodcast(${index})"><span class="koinonia-podcast-result-art">${episode.image ? `<img src="${teachingEscape(episode.image)}" alt="" loading="lazy" />` : "♪"}</span><span><small>${teachingEscape(episode.show)}</small><strong>${teachingEscape(episode.title)}</strong><em>Available offline</em></span><span aria-hidden="true">▶</span></button>
+      <button type="button" onclick="playDownloadedKoinoniaPodcast(${index})"><span class="koinonia-podcast-result-art">${episode.image ? `<img src="${teachingEscape(episode.image)}" alt="" loading="lazy" />` : koinoniaIcon("audio")}</span><span><small>${teachingEscape(episode.show)}</small><strong>${teachingEscape(episode.title)}</strong><em>Available offline</em></span><span aria-hidden="true">${koinoniaIcon("play")}</span></button>
       <button type="button" onclick="removeDownloadedKoinoniaPodcast(${index})" aria-label="Remove ${teachingEscape(episode.title)} download">Remove</button>
     </div>`).join("") : '<div class="feed-empty"><strong>No downloads yet</strong><span>Open an episode, tap the three dots, and choose Download episode.</span></div>';
 }
@@ -286,8 +292,8 @@ function renderKoinoniaPodcastLatest() {
   }
   status.textContent = koinoniaPodcastState.latestEpisodes.length ? `${koinoniaPodcastState.latestEpisodes.length} recent episodes from ${koinoniaPodcastState.subscriptions.length} subscription${koinoniaPodcastState.subscriptions.length === 1 ? "" : "s"}` : "No playable recent episodes were found.";
   target.innerHTML = koinoniaPodcastState.latestEpisodes.map((episode, index) => `<div class="koinonia-podcast-latest-row">
-    <button type="button" onclick="playKoinoniaPodcastLatestEpisode(${index})"><span class="koinonia-podcast-cover">${episode.image ? `<img src="${teachingEscape(episode.image)}" alt="" loading="lazy" />` : "♪"}</span><span><small>${teachingEscape(episode.show)}</small><strong>${teachingEscape(episode.title)}</strong><em>${teachingEscape(teachingDate(episode.date))}${episode.duration ? ` · ${teachingEscape(episode.duration)}` : ""}</em></span><b>▶</b></button>
-    <button type="button" onclick="queueKoinoniaPodcastLatestEpisode(${index})">＋ Up Next</button>
+    <button type="button" onclick="playKoinoniaPodcastLatestEpisode(${index})"><span class="koinonia-podcast-cover">${episode.image ? `<img src="${teachingEscape(episode.image)}" alt="" loading="lazy" />` : koinoniaIcon("audio")}</span><span><small>${teachingEscape(episode.show)}</small><strong>${teachingEscape(episode.title)}</strong><em>${teachingEscape(teachingDate(episode.date))}${episode.duration ? ` · ${teachingEscape(episode.duration)}` : ""}</em></span><b>${koinoniaIcon("play")}</b></button>
+    <button type="button" onclick="queueKoinoniaPodcastLatestEpisode(${index})">Up Next</button>
   </div>`).join("");
 }
 
@@ -441,10 +447,10 @@ function renderKoinoniaPodcastShow() {
   if (!show || !podcast) return;
   const subscribed = koinoniaPodcastIsSubscribed(podcast.url);
   show.hidden = false;
-  show.innerHTML = `<header><span class="koinonia-podcast-cover is-large">${podcast.image || podcast.artwork ? `<img src="${teachingEscape(podcast.image || podcast.artwork)}" alt="" />` : "♪"}</span><span><small>Podcast</small><h3>${teachingEscape(podcast.title)}</h3><p>${podcast.episodes.length} recent episodes</p></span><button type="button" class="koinonia-podcast-subscribe${subscribed ? " is-subscribed" : ""}" onclick="${subscribed ? `unsubscribeKoinoniaPodcastByFeed()` : `subscribeKoinoniaPodcast()`}">${subscribed ? "✓ Subscribed" : "+ Subscribe"}</button></header><div>${podcast.episodes.map((episode, episodeIndex) => `
+  show.innerHTML = `<header><span class="koinonia-podcast-cover is-large">${podcast.image || podcast.artwork ? `<img src="${teachingEscape(podcast.image || podcast.artwork)}" alt="" />` : koinoniaIcon("audio")}</span><span><small>Podcast</small><h3>${teachingEscape(podcast.title)}</h3><p>${podcast.episodes.length} recent episodes</p></span><button type="button" class="koinonia-podcast-subscribe${subscribed ? " is-subscribed" : ""}" onclick="${subscribed ? `unsubscribeKoinoniaPodcastByFeed()` : `subscribeKoinoniaPodcast()`}">${subscribed ? "Subscribed" : "Subscribe"}</button></header><div>${podcast.episodes.map((episode, episodeIndex) => `
     <div class="koinonia-podcast-episode-row"><button type="button" class="koinonia-podcast-episode" onclick="playKoinoniaPodcastEpisode(${episodeIndex})">
-      <span aria-hidden="true">▶</span><span><strong>${teachingEscape(episode.title)}</strong><small>${teachingEscape(teachingDate(episode.date))}${episode.duration ? ` · ${teachingEscape(episode.duration)}` : ""}</small></span><em>Play</em>
-    </button><button type="button" class="koinonia-podcast-queue" onclick="queueKoinoniaPodcastEpisode(${episodeIndex})" aria-label="Add ${teachingEscape(episode.title)} to Up Next">＋ Up Next</button></div>`).join("") || '<div class="feed-empty"><strong>No playable episodes</strong><p>This feed did not provide audio enclosures.</p></div>'}</div>`;
+      <span aria-hidden="true">${koinoniaIcon("play")}</span><span><strong>${teachingEscape(episode.title)}</strong><small>${teachingEscape(teachingDate(episode.date))}${episode.duration ? ` · ${teachingEscape(episode.duration)}` : ""}</small></span><em>Play</em>
+    </button><button type="button" class="koinonia-podcast-queue" onclick="queueKoinoniaPodcastEpisode(${episodeIndex})" aria-label="Add ${teachingEscape(episode.title)} to Up Next">Up Next</button></div>`).join("") || '<div class="feed-empty"><strong>No playable episodes</strong><p>This feed did not provide audio enclosures.</p></div>'}</div>`;
 }
 
 function unsubscribeKoinoniaPodcastByFeed() {
@@ -842,10 +848,10 @@ function updateKoinoniaPodcastPlayer() {
   progress.style.setProperty("--podcast-progress", `${progressPercent}%`);
   if (fullProgress) fullProgress.value = progressValue;
   time.textContent = `${podcastTime(audio.currentTime)} / ${podcastTime(duration)}`;
-  toggle.textContent = audio.paused ? "▶" : "❚❚";
+  toggle.innerHTML = koinoniaIcon(audio.paused ? "play" : "pause");
   toggle.setAttribute("aria-label", audio.paused ? "Play" : "Pause");
   if (fullToggle) {
-    fullToggle.textContent = audio.paused ? "▶" : "❚❚";
+    fullToggle.innerHTML = koinoniaIcon(audio.paused ? "play" : "pause");
     fullToggle.setAttribute("aria-label", audio.paused ? "Play" : "Pause");
   }
   const elapsed = document.getElementById("koinoniaPodcastElapsed");
@@ -1004,7 +1010,7 @@ function renderTeaching() {
   list.innerHTML = visiblePosts.map((post) => `
     <article class="feed-card teaching-card${post.read ? "" : " is-unread"}" id="${teachingEscape(post.id)}" data-teaching-id="${teachingEscape(post.id)}">
       <button class="feed-card-summary" type="button" onclick="${post.audioUrl ? "playParishTeachingAudio" : "openTeachingPost"}('${teachingEscape(post.id)}')" aria-expanded="false"${post.audioUrl ? ` aria-label="Play ${teachingEscape(post.title)} in the Koinonia player"` : ""}>
-        <span class="teaching-card-icon" aria-hidden="true">${post.audioUrl ? "▶" : "✦"}</span>
+        <span class="teaching-card-icon" aria-hidden="true">${post.audioUrl ? koinoniaIcon("play") : koinoniaIcon("audio")}</span>
         <span class="feed-card-copy"><span class="feed-card-flags">${post.pinned ? '<em class="feed-pinned">Pinned</em>' : ''}<em>${teachingEscape(TEACHING_FILTERS.find(({ value }) => value === (post.category || "homilies"))?.label || "Homilies")}</em>${post.audioUrl ? `<em>${post.audioSource === "external" ? "Linked audio" : "Audio"}</em>` : "<em>Reflection</em>"}${post.read ? "" : '<em class="feed-new">New</em>'}</span><strong>${teachingEscape(post.title)}</strong><small>${post.audioUrl ? "Play in Koinonia · " : ""}${teachingEscape(teachingDate(post.publishedAt))}</small></span>
       </button>
       <div class="feed-card-detail teaching-card-detail" hidden>

@@ -2395,6 +2395,8 @@ body.donor-home {
 .group-message.is-outgoing > div:first-child, .group-message.is-outgoing p, .group-message.is-outgoing time { color:#f8f2e7; }
 .group-voice-note { display:flex; align-items:center; gap:.65rem; min-width:min(330px,70vw); margin-top:.65rem; }
 .group-voice-toggle { display:grid; flex:0 0 auto; width:40px; height:40px; place-items:center; border:0; border-radius:50%; background:var(--k-gold); color:#fff; cursor:pointer; font-weight:900; }
+.group-voice-toggle svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+.group-voice-toggle svg path[d="M8 5v14l11-7z"] { fill:currentColor; stroke:none; }
 .group-voice-waveform { --voice-progress:0%; position:relative; display:flex; flex:1; height:38px; align-items:center; gap:2px; overflow:hidden; }
 .group-voice-waveform span { width:3px; height:100%; min-height:5px; border-radius:999px; background:var(--k-gold-hover); transform:scaleY(var(--wave-peak,.3)); transform-origin:center; }
 .group-message.is-outgoing .group-voice-waveform span { background:#ead6a9; }
@@ -2967,6 +2969,13 @@ body.donor-home {
 @media (max-width: 700px) { .parish-life-sections { grid-template-columns: 1fr; } .parish-life-activity-row { grid-template-columns: auto minmax(0,1fr); } .parish-life-activity-row time { grid-column: 2; } }
 .teaching-list { display:grid; gap:14px; }
 .teaching-card-icon { display:grid; width:46px; height:46px; flex:0 0 auto; place-items:center; border-radius:50%; background:#efe7d6; color:#765a1d; font-weight:800; }
+.koinonia-ui-icon { width:1.15em; height:1.15em; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.koinonia-ui-icon.is-play { fill:currentColor; stroke:none; }
+.audio-library-mode-tabs .koinonia-ui-icon { width:19px; height:19px; }
+.koinonia-podcast-cover > .koinonia-ui-icon,
+.koinonia-podcast-result-art > .koinonia-ui-icon { width:23px; height:23px; }
+.koinonia-podcast-player-controls .koinonia-ui-icon,
+.koinonia-full-controls .koinonia-ui-icon { width:22px; height:22px; }
 .teaching-card-detail audio { width:100%; margin:0 0 18px; accent-color:#8a6a25; }
 .teaching-card-detail .feed-card-body { font-size:1rem; line-height:1.75; }
 .audio-library-mode-tabs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin-bottom:16px; border:1px solid var(--k-border); border-radius:16px; padding:7px; background:var(--k-surface-2); }
@@ -3296,6 +3305,9 @@ body.donor-home {
 .media-card:hover img, .media-feature:hover img { transform:scale(1.025); opacity:.88; }
 .media-thumbnail em { position:absolute; right:10px; bottom:10px; border-radius:7px; padding:4px 7px; background:rgba(3,12,19,.88); color:#fff; font-size:11px; font-style:normal; font-weight:800; }
 .media-thumbnail i { position:absolute; top:50%; left:50%; display:grid; width:58px; height:58px; place-items:center; transform:translate(-50%,-50%); border:1px solid rgba(255,255,255,.35); border-radius:50%; background:var(--media-gold); color:#061522; font-size:19px; font-style:normal; box-shadow:0 10px 25px rgba(0,0,0,.28); }
+.media-play-icon,.media-control-icon { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.media-play-icon,.media-control-icon.is-play { fill:currentColor; stroke:none; }
+.player-center-button .media-control-icon { width:34px; height:34px; }
 .media-feature .media-card-copy { display:flex; flex-direction:column; justify-content:center; padding:34px; }
 .media-card-copy small { margin-bottom:9px; color:var(--media-gold); font-size:10px; font-weight:800; letter-spacing:.11em; text-transform:uppercase; }
 .media-card-copy strong { display:block; color:#fff; font-family:"Cormorant Garamond",Georgia,serif; font-size:26px; font-weight:600; line-height:1.08; }

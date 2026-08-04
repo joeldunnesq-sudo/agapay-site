@@ -10,10 +10,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js" defer></script>
-  <link rel="stylesheet" href="/donor/style.css?v=20260803storefront3" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260803iospolish1" />
   <script src="/security.js"></script>
   <script src="/pwa-register.js" defer></script>
-  <script src="/myagapay-shell.js?v=20260803mainnav4"></script>
+  <script src="/myagapay-shell.js?v=20260803iospolish1"></script>
   <script src="/donor/app.js?v=20260803sales1" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
@@ -334,12 +334,18 @@
       .bookstore-category-summary { font-family:var(--sans,sans-serif); font-size:14px; }
       .bookstore-product-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
       .bookstore-product-card { min-height:218px; border-radius:10px; padding:0 10px 10px; }
-      .bookstore-product-media { width:calc(100% + 20px); height:104px; flex-basis:104px; margin:0 -10px 5px; }
-      .bookstore-product-media img { padding:6px; }
+      .bookstore-product-media { width:calc(100% + 20px); height:120px; min-height:120px; max-height:120px; flex:0 0 120px; margin:0 -10px 5px; }
+      .bookstore-product-media img { min-width:100%; min-height:100%; padding:4px; }
       .bookstore-product-card strong { font-family:var(--sans,sans-serif); font-size:13px; }
       .bookstore-product-card small { font-size:11px; -webkit-line-clamp:1; }
       .bookstore-product-add { padding:7px 8px; }
       .bookstore-orders-card { margin-top:12px; }
+    }
+    @supports (-webkit-touch-callout: none) {
+      @media (max-width:700px) {
+        .bookstore-product-media { height:128px; min-height:128px; max-height:128px; flex-basis:128px; }
+        .bookstore-product-media img { width:100% !important; height:100% !important; max-height:none; padding:4px; }
+      }
     }
     @media (max-width:420px) { .bookstore-product-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; } }
   </style>

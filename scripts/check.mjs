@@ -166,7 +166,7 @@ assert.ok(registerHtml.includes('I agree to the <a href="/terms#arbitration"') &
 assert.ok(!registerHtml.includes('including the 30-day informal-resolution process') && !myAgapaySignupPage.includes('including the 30-day informal-resolution process'), "signup and registration should not repeat detailed dispute copy beside the checkbox");
 assert.ok(manifest.includes("/images/app/apple-touch-icon-blue.png"), "PWA manifest should use the blue AGAPAY iOS home screen icon");
 assert.ok(manifest.includes('"scope": "/myagapay/"') && !manifest.includes('"scope": "/"'), "My AGAPAY PWA should use an exact /myagapay/ scope without claiming /admin");
-assert.ok(!manifest.includes('"orientation"'), "My AGAPAY PWA should support natural phone, tablet, and Chromebook orientation");
+assert.ok(manifest.includes('"orientation": "portrait-primary"'), "My AGAPAY PWA should preserve the phone-first portrait orientation");
 assert.ok(manifest.includes('"lang": "en-US"') && manifest.includes('"dir": "ltr"'), "My AGAPAY PWA manifest should declare its language and text direction");
 for (const category of ["finance", "lifestyle", "education"]) {
   assert.ok(manifest.includes(`"${category}"`), `My AGAPAY PWA manifest should include the ${category} category`);
@@ -247,7 +247,8 @@ assert.ok(parishDashboardApp.includes("sidebarStatusChip") && parishDashboardApp
 assert.ok(myAgapayShell.includes('data-myagapay-global-nav') && myAgapayShell.includes("normalizeProductNavs"), "shared shell should normalize mobile product navigation across dashboards");
 assert.ok(myAgapayShell.includes(".unified-product-nav") && myAgapayShell.includes("Bookstore") && myAgapayShell.includes("Feast day and services"), "shared shell should normalize the desktop My AGAPAY sidebar from the same product tabs");
 assert.ok(myAgapayShell.includes("isLikelyMobileBrowser") && myAgapayShell.includes("pointer: coarse"), "shared shell should use browser capability signals before choosing the mobile My AGAPAY viewport");
-assert.ok(myAgapayShell.includes("ensureIosBackButton") && myAgapayShell.includes("myagapay-ios-back"), "shared shell should provide an in-app Back button for iPhone My AGAPAY screens");
+assert.ok(!myAgapayShell.includes("ensureIosBackButton") && !myAgapayShell.includes("myagapay-ios-back"), "shared shell must not overlay an extra Back button on iPhone headers");
+assert.ok(myAgapayShell.includes("-webkit-touch-callout") && myAgapayShell.includes("font-size: 16px !important"), "shared shell should prevent iOS focus zoom without disabling user scaling");
 assert.ok(myAgapayShell.includes("ensureCanonicalHeader") && myAgapayShell.includes("content.prepend(topbar)") && myAgapayShell.includes("myagapay-settings-chip"), "shared shell should add canonical account/settings access and a fallback topbar to My AGAPAY product headers");
 assert.ok(
   myAgapayShell.includes("function isMyAgapayMainPage")

@@ -1,3 +1,5 @@
+const MEDIA_PLAY_ICON = '<svg class="media-play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+
 function mediaEscape(value) {
   return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
 }
@@ -27,13 +29,13 @@ function youtubeVideoId(value) {
 
 function nativeCard(item, featured = false) {
   const href = `/myagapay/media/watch?video=${encodeURIComponent(item.id)}`;
-  return `<a class="${featured ? "media-feature" : "media-card"}" href="${href}"><span class="media-thumbnail"><img src="${mediaEscape(item.thumbnailUrl)}" alt="" loading="${featured ? "eager" : "lazy"}" /><em>${mediaDuration(item.durationSeconds)}</em><i aria-hidden="true">▶</i></span><span class="media-card-copy">${featured ? "<small>Featured parish video</small>" : ""}<strong>${mediaEscape(item.title)}</strong><span>${mediaEscape(mediaDate(item.publishedAt))} · ${Number(item.watchCount || 0)} parishioner${Number(item.watchCount || 0) === 1 ? "" : "s"} watched</span>${featured ? `<p>${mediaEscape(item.description || "")}</p>` : ""}</span></a>`;
+  return `<a class="${featured ? "media-feature" : "media-card"}" href="${href}"><span class="media-thumbnail"><img src="${mediaEscape(item.thumbnailUrl)}" alt="" loading="${featured ? "eager" : "lazy"}" /><em>${mediaDuration(item.durationSeconds)}</em><i aria-hidden="true">${MEDIA_PLAY_ICON}</i></span><span class="media-card-copy">${featured ? "<small>Featured parish video</small>" : ""}<strong>${mediaEscape(item.title)}</strong><span>${mediaEscape(mediaDate(item.publishedAt))} · ${Number(item.watchCount || 0)} parishioner${Number(item.watchCount || 0) === 1 ? "" : "s"} watched</span>${featured ? `<p>${mediaEscape(item.description || "")}</p>` : ""}</span></a>`;
 }
 
 function youtubeCard(item) {
   const videoId = youtubeVideoId(item.youtubeUrl);
   if (!/^[A-Za-z0-9_-]{6,20}$/.test(videoId)) return "";
-  return `<button class="media-card youtube-card" type="button" data-youtube-video-id="${mediaEscape(videoId)}" data-youtube-title="${mediaEscape(item.title)}" onclick="openYouTubeMedia(this)"><span class="media-thumbnail"><img src="${mediaEscape(item.thumbnailUrl)}" alt="" loading="lazy" /><i class="youtube-play" aria-hidden="true">▶</i></span><span class="media-card-copy"><small>Watch here · YouTube</small><strong>${mediaEscape(item.title)}</strong><span>Plays inside Koinonia · Public video</span></span></button>`;
+  return `<button class="media-card youtube-card" type="button" data-youtube-video-id="${mediaEscape(videoId)}" data-youtube-title="${mediaEscape(item.title)}" onclick="openYouTubeMedia(this)"><span class="media-thumbnail"><img src="${mediaEscape(item.thumbnailUrl)}" alt="" loading="lazy" /><i class="youtube-play" aria-hidden="true">${MEDIA_PLAY_ICON}</i></span><span class="media-card-copy"><small>Watch here · YouTube</small><strong>${mediaEscape(item.title)}</strong><span>Plays inside Koinonia · Public video</span></span></button>`;
 }
 
 function openYouTubeMedia(button) {

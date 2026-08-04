@@ -205,44 +205,17 @@
     return /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   }
 
-  function isStandaloneDisplay() {
-    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-  }
-
   function injectBackButtonStyles() {
     if (document.getElementById("myAgapayIosBackStyles")) return;
     const style = document.createElement("style");
     style.id = "myAgapayIosBackStyles";
     style.textContent = `
-      .myagapay-ios-back {
-        position: fixed;
-        top: calc(10px + env(safe-area-inset-top));
-        left: calc(10px + env(safe-area-inset-left));
-        z-index: 120;
-        display: none;
-        align-items: center;
-        gap: 0.35rem;
-        min-height: 36px;
-        border: 1px solid rgba(201, 162, 91, 0.35);
-        border-radius: 999px;
-        padding: 0 0.78rem;
-        background: rgba(255, 252, 246, 0.94);
-        color: #061522;
-        box-shadow: 0 10px 28px rgba(6, 21, 34, 0.18);
-        backdrop-filter: blur(16px);
-        font: 800 0.78rem/1 "DM Sans", system-ui, sans-serif;
-      }
-      .myagapay-ios-back svg {
-        width: 1rem;
-        height: 1rem;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 2.2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-      }
-      body.has-myagapay-ios-back .myagapay-ios-back {
-        display: inline-flex;
+      @supports (-webkit-touch-callout: none) {
+        @media (max-width: 900px) {
+          input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+          textarea,
+          select { font-size: 16px !important; }
+        }
       }
       .myagapay-settings-chip {
         -webkit-appearance: none;
@@ -401,38 +374,8 @@
       .myagapay-support-cancel { border: 1px solid #d8d4ca; background: #fff; color: #52606c; }
       .myagapay-support-send { border: 1px solid #b88a3d; background: linear-gradient(155deg, #d8b66a, #c8a24a); color: #241a04; }
       .myagapay-support-send:disabled { cursor: wait; opacity: 0.62; }
-      @media (min-width: 761px) {
-        body.has-myagapay-ios-back .myagapay-ios-back { display: none; }
-      }
     `;
     document.head.appendChild(style);
-  }
-
-  function shouldShowIosBackButton(pathname = window.location.pathname) {
-    if (!isAppleTouchDevice()) return false;
-    if (!pathname.startsWith("/myagapay")) return false;
-    if (["/myagapay", "/myagapay/"].includes(pathname)) return false;
-    if (pathname.startsWith("/myagapay/login") || pathname.startsWith("/myagapay/signup")) return false;
-    return isStandaloneDisplay() || window.innerWidth <= 760;
-  }
-
-  function ensureIosBackButton() {
-    injectBackButtonStyles();
-    let button = document.getElementById("myAgapayIosBack");
-    if (!button) {
-      button = document.createElement("button");
-      button.id = "myAgapayIosBack";
-      button.className = "myagapay-ios-back";
-      button.type = "button";
-      button.setAttribute("aria-label", "Go back");
-      button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>Back</span>';
-      button.addEventListener("click", () => {
-        if (window.history.length > 1) window.history.back();
-        else window.location.href = "/myagapay/dashboard";
-      });
-      document.body.appendChild(button);
-    }
-    document.body.classList.toggle("has-myagapay-ios-back", shouldShowIosBackButton());
   }
 
   // The dashboard home pages (myagapay/index.html, donor/index.html) have a
@@ -1015,7 +958,6 @@
     deferParishLifeIdentity();
     normalizeProductNavs();
     ensureParishLifeBackLink();
-    ensureIosBackButton();
     ensureCanonicalHeader();
     ensureSupportFeedback();
     deferParishLifeIdentity();
@@ -1032,7 +974,5 @@
     else finishInternalNavigationProgress();
   });
 
-  window.addEventListener("resize", ensureIosBackButton);
-  window.addEventListener("pageshow", ensureIosBackButton);
   window.addEventListener("storage", () => syncAuthVisibility());
 })();

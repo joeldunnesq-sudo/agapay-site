@@ -9,7 +9,9 @@ const groupVoicePlayers = new Map();
 const groupComposerIcons = Object.freeze({
   voice: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>',
   photo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></svg>',
-  stop: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1"/></svg>'
+  stop: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1"/></svg>',
+  play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>'
 });
 
 function groupComposerButton(icon, label) {
@@ -54,7 +56,7 @@ function renderGroupMessageContent(message) {
   if (message.messageType === "voice") {
     const bars = Array.from({ length: 36 }, () => "<span></span>").join("");
     return `<div class="group-voice-note" data-voice-message="${groupsEscape(message.id)}">
-      <button type="button" class="group-voice-toggle" onclick="toggleGroupVoiceMessage('${groupsEscape(message.id)}')" aria-label="Play voice message">▶</button>
+      <button type="button" class="group-voice-toggle" onclick="toggleGroupVoiceMessage('${groupsEscape(message.id)}')" aria-label="Play voice message">${groupComposerIcons.play}</button>
       <div class="group-voice-waveform" role="img" aria-label="Voice message waveform">${bars}</div>
       <time class="group-voice-duration">${groupsEscape(groupDuration(message.attachmentDurationSeconds))}</time>
     </div>${caption}`;
@@ -157,7 +159,7 @@ async function loadGroupVoicePlayer(message) {
   });
   audio.addEventListener("ended", () => {
     const button = document.querySelector(`[data-voice-message="${CSS.escape(message.id)}"] .group-voice-toggle`);
-    if (button) { button.textContent = "▶"; button.setAttribute("aria-label", "Play voice message"); }
+    if (button) { button.innerHTML = groupComposerIcons.play; button.setAttribute("aria-label", "Play voice message"); }
   });
   return player;
 }
@@ -174,15 +176,15 @@ async function toggleGroupVoiceMessage(messageId) {
       if (id === messageId) return;
       audio.pause();
       const otherButton = document.querySelector(`[data-voice-message="${CSS.escape(id)}"] .group-voice-toggle`);
-      if (otherButton) { otherButton.textContent = "▶"; otherButton.setAttribute("aria-label", "Play voice message"); }
+      if (otherButton) { otherButton.innerHTML = groupComposerIcons.play; otherButton.setAttribute("aria-label", "Play voice message"); }
     });
     if (player.audio.paused) {
       await player.audio.play();
-      button.textContent = "❚❚";
+      button.innerHTML = groupComposerIcons.pause;
       button.setAttribute("aria-label", "Pause voice message");
     } else {
       player.audio.pause();
-      button.textContent = "▶";
+      button.innerHTML = groupComposerIcons.play;
       button.setAttribute("aria-label", "Play voice message");
     }
   } catch (error) {
