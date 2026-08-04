@@ -5,11 +5,15 @@ const app = fs.readFileSync(new URL('../public/parish/app.js', import.meta.url),
 const css = fs.readFileSync(new URL('../public/parish/redesign.css', import.meta.url), 'utf8');
 const stewardshipCss = fs.readFileSync(new URL('../public/styles/stewardship.css', import.meta.url), 'utf8');
 const adminService = fs.readFileSync(new URL('../src/directory/admin.js', import.meta.url), 'utf8');
+const memberService = fs.readFileSync(new URL('../src/directory/member-directory.js', import.meta.url), 'utf8');
 const adminHandler = fs.readFileSync(new URL('../src/handlers/directory-admin.js', import.meta.url), 'utf8');
 const koinoniaAccess = fs.readFileSync(new URL('../src/handlers/koinonia-access.js', import.meta.url), 'utf8');
 const openReviewStart = app.indexOf('async function openDirectoryReview');
 const openReviewEnd = app.indexOf('async function decideDirectoryReview', openReviewStart);
 const openReviewSource = app.slice(openReviewStart, openReviewEnd);
+const openHouseholdStart = app.indexOf('async function openDirectoryHousehold');
+const openHouseholdEnd = app.indexOf('function directoryReviewValue', openHouseholdStart);
+const openHouseholdSource = app.slice(openHouseholdStart, openHouseholdEnd);
 
 const checks = [
   ['the legacy Directory Operations hero is removed', !dashboard.includes('Directory Operations')],
@@ -39,13 +43,15 @@ const checks = [
   ['opening a review uses the post-begin version for decisions', openReviewSource.indexOf("'/begin'") < openReviewSource.indexOf('const item = review.item') && openReviewSource.includes('review = beginPayload.review')],
   ['directory health is visual and action-oriented', app.includes('pdx-dir-health-ring') && app.includes('Directory health') && app.includes('Awaiting review') && css.includes('conic-gradient')],
   ['skills and exports are secondary disclosure tools rather than competing lists', app.includes('<details class="pdx-dir-utilities">') && app.includes('Skills and exports')],
-  ['each adult can link a separate My AGAPAY identity inside one shared household', app.includes('Adult accounts &amp; Koinonia access') && app.includes('Each adult signs in separately while sharing this household') && app.includes('sendDirectoryHouseholdInvitation')],
-  ['children remain safely managed without separate accounts', app.includes('managed by household adults') && app.includes('Children remain under household management and do not receive separate accounts')],
-  ['household account states distinguish linked, invited, and unlinked adults', app.includes('Koinonia ready') && app.includes('Invitation pending') && app.includes('Send secure invitation')],
+  ['each adult can link a separate My AGAPAY identity inside one shared household', app.includes('People &amp; access') && app.includes('Each adult uses a separate My AGAPAY sign-in') && app.includes('sendDirectoryHouseholdInvitation')],
+  ['children remain safely managed without separate accounts', app.includes('managed by household adults') && app.includes('Children stay under household management')],
+  ['household account states distinguish linked, invited, and unlinked adults', app.includes('Account connected') && app.includes('Invitation pending') && app.includes('Send invitation')],
+  ['household management avoids duplicate admin and member sections', app.includes('At a glance') && app.includes('Family directory information') && !openHouseholdSource.includes('<h4>Household admins</h4>') && !openHouseholdSource.includes('<h4>Members</h4>')],
   ['status cards explain access and visibility in parish language', app.includes('Access &amp; visibility') && app.includes('Parish connection') && app.includes('Parishioner directory') && app.includes('Household confirmation')],
   ['staff can remove an adult from the parish without deleting identity or giving history', app.includes('Remove from parish') && app.includes('giving history will not be deleted') && adminHandler.includes('remove-from-parish') && adminService.includes('directory.person.removed_from_parish')],
   ['Koinonia requires a live parish affiliation after removal', koinoniaAccess.includes('JOIN directory_parish_affiliations affiliation') && koinoniaAccess.includes("affiliation.status != 'former_member'")],
-  ['linked accounts are only called Koinonia-ready when household confirmation is current', app.includes("const ready = verificationStatus === 'current'") && app.includes('Household confirmation required')],
+  ['linked accounts are only allowed into Koinonia when household confirmation is current', app.includes("const ready = verificationStatus === 'current'") && app.includes('Koinonia blocked · household confirmation required')],
+  ['member and family cards receive only consented member-visible skill previews', memberService.includes("listing.status = 'active' AND listing.visibility = 'directory_members'") && memberService.includes('listing.consent_withdrawn_at IS NULL') && memberService.includes('skillsPreview')],
   ['member-name and email searches resolve the containing household', adminService.includes('search_person.preferred_name LIKE ?2') && adminService.includes('search_contact.value LIKE ?2')],
   ['one linked spouse no longer blocks another adult invitation', !adminHandler.includes('household_already_managed') && adminHandler.includes('link_and_grant_household_admin')],
   ['the uploaded four-column parish table is preserved', app.includes('Members &amp; Namedays') && app.includes('Contact &amp; Parishioner Visibility') && app.includes('Skills to Serve')],

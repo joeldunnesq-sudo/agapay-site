@@ -73,6 +73,88 @@ function cityDto(row) {
   return [row.city, row.region].filter(Boolean).join(", ");
 }
 
+function skillPreviewDto(row) {
+  return {
+    id: row.id,
+    displayLabel: row.custom_display_label || row.name,
+    skill: {
+      id: row.skill_id,
+      name: row.name,
+      category: row.category
+    }
+  };
+}
+
+function memberSkillsEnabled(context) {
+  const settings = context.settings || {};
+  return settings.skillsDirectoryEnabled !== false
+    && settings.skillsMemberSearchEnabled !== false
+    && !settings.skillsStaffOnlyMode;
+}
+
+function missingSkillsSchema(error) {
+  return String(error?.message || error || "").includes("no such table: directory_person_skill_listings");
+}
+
+async function publishedSkillPreviewsForPerson(env, context, personId) {
+  if (!memberSkillsEnabled(context)) return [];
+  let rows;
+  try {
+    rows = await d1All(
+      env,
+      `SELECT listing.id, listing.skill_id, listing.custom_display_label,
+            skill.name, skill.category
+       FROM directory_person_skill_listings listing
+       JOIN directory_skill_catalog skill ON skill.id = listing.skill_id AND skill.is_active = 1
+      WHERE listing.parish_id = ?1 AND listing.person_id = ?2
+        AND listing.status = 'active' AND listing.visibility = 'directory_members'
+        AND listing.consent_recorded_at IS NOT NULL
+        AND listing.consent_withdrawn_at IS NULL
+      ORDER BY skill.name ASC, listing.id ASC
+      LIMIT 8`,
+      context.parishId,
+      personId
+    );
+  } catch (error) {
+    if (missingSkillsSchema(error)) return [];
+    throw error;
+  }
+  return rows.map(skillPreviewDto);
+}
+
+async function publishedSkillPreviewsForHousehold(env, context, householdId) {
+  const grouped = new Map();
+  if (!memberSkillsEnabled(context)) return grouped;
+  let rows;
+  try {
+    rows = await d1All(
+      env,
+      `SELECT membership.person_id, listing.id, listing.skill_id, listing.custom_display_label,
+            skill.name, skill.category
+       FROM directory_household_members membership
+       JOIN directory_person_skill_listings listing
+         ON listing.person_id = membership.person_id AND listing.parish_id = ?2
+       JOIN directory_skill_catalog skill ON skill.id = listing.skill_id AND skill.is_active = 1
+      WHERE membership.household_id = ?1 AND membership.active = 1
+        AND listing.status = 'active' AND listing.visibility = 'directory_members'
+        AND listing.consent_recorded_at IS NOT NULL
+        AND listing.consent_withdrawn_at IS NULL
+      ORDER BY skill.name ASC, listing.id ASC`,
+      householdId,
+      context.parishId
+    );
+  } catch (error) {
+    if (missingSkillsSchema(error)) return grouped;
+    throw error;
+  }
+  for (const row of rows) {
+    const previews = grouped.get(row.person_id) || [];
+    if (previews.length < 8) previews.push(skillPreviewDto(row));
+    grouped.set(row.person_id, previews);
+  }
+  return grouped;
+}
+
 async function parishDirectoryIdentity(env, parishId) {
   let row = null;
   try {
@@ -337,15 +419,14 @@ async function publishedPhoto(env, context, ownerType, ownerId) {
   return photoDto(row, ownerType === "person" ? "avatar_medium" : "household_card");
 }
 
-async function personDto(env, context, row, { detail = false } = {}) {
-  const [contacts, namedays, city, photo] = detail
-    ? await Promise.all([
-      publishedContacts(env, context, "person", row.id),
-      publishedNamedaysForPerson(env, context, row.id),
-      publishedCity(env, context, "person", row.id),
-      publishedPhoto(env, context, "person", row.id)
-    ])
-    : [[], await publishedNamedaysForPerson(env, context, row.id), await publishedCity(env, context, "person", row.id), await publishedPhoto(env, context, "person", row.id)];
+async function personDto(env, context, row, { detail = false, skillsPreview = null } = {}) {
+  const [contacts, namedays, city, photo, publishedSkills] = await Promise.all([
+    detail ? publishedContacts(env, context, "person", row.id) : Promise.resolve([]),
+    publishedNamedaysForPerson(env, context, row.id),
+    publishedCity(env, context, "person", row.id),
+    publishedPhoto(env, context, "person", row.id),
+    Array.isArray(skillsPreview) ? Promise.resolve(skillsPreview) : publishedSkillPreviewsForPerson(env, context, row.id)
+  ]);
   const ministries = detail ? await publishedMinistryAffiliationsForPerson(env, { context, personId: row.id }).catch(() => []) : [];
   const displayName = row.preferred_name || "Parish member";
   if (photo) photo.alt = displayName;
@@ -362,6 +443,7 @@ async function personDto(env, context, row, { detail = false } = {}) {
     contacts,
     namedays,
     ministries,
+    skillsPreview: publishedSkills,
     photo,
     profileUrl: `/myagapay/directory?view=person&id=${encodeURIComponent(row.id)}`,
     version: String(row.updated_at || "")
@@ -369,9 +451,10 @@ async function personDto(env, context, row, { detail = false } = {}) {
 }
 
 async function householdMembers(env, context, householdId, { detail = false } = {}) {
-  const rows = await d1All(
-    env,
-    `SELECT p.id, p.preferred_name, p.suffix, p.updated_at, hm.relationship,
+  const [rows, skillsByPerson] = await Promise.all([
+    d1All(
+      env,
+      `SELECT p.id, p.preferred_name, p.suffix, p.updated_at, hm.relationship,
             h.id AS household_id, h.display_name AS household_name,
             COALESCE(f.is_child, 0) AS is_child,
             COALESCE(f.protected_person, 0) AS protected_person
@@ -393,11 +476,13 @@ async function householdMembers(env, context, householdId, { detail = false } = 
           )
         )
       ORDER BY p.preferred_name ASC, p.id ASC`,
-    householdId, context.parishId
-  );
+      householdId, context.parishId
+    ),
+    publishedSkillPreviewsForHousehold(env, context, householdId)
+  ]);
   const adults = await Promise.all(
     rows.filter((row) => Number(row.protected_person || 0) !== 1 && Number(row.is_child || 0) !== 1)
-      .map((row) => personDto(env, context, row, { detail }))
+      .map((row) => personDto(env, context, row, { detail, skillsPreview: skillsByPerson.get(row.id) || [] }))
   );
   const children = await householdChildren(env, context, householdId);
   return [...adults, ...children];
@@ -477,6 +562,13 @@ async function householdDto(env, context, row, { detail = false } = {}) {
     publishedPhoto(env, context, "household", row.id)
   ]);
   const displayName = row.display_name || "Parish household";
+  const seenSkills = new Set();
+  const skillsPreview = members.flatMap((member) => member.skillsPreview || []).filter((skill) => {
+    const key = skill.id || skill.displayLabel;
+    if (!key || seenSkills.has(key)) return false;
+    seenSkills.add(key);
+    return true;
+  }).slice(0, 8);
   if (photo) photo.alt = displayName;
   return {
     id: row.id,
@@ -487,6 +579,7 @@ async function householdDto(env, context, row, { detail = false } = {}) {
     city,
     members,
     publishedMemberCount: members.length,
+    skillsPreview,
     contacts,
     photo,
     profileUrl: `/myagapay/directory?view=household&id=${encodeURIComponent(row.id)}`,

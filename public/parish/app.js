@@ -3003,6 +3003,10 @@
     return `<div class="pdx-dir-status-row is-${escapeAttr(tone)}"><div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(description)}</span></div><em>${escapeHtml(value)}</em></div>`;
   }
 
+  function directoryHouseholdSummaryCard(label, value, description, tone = 'neutral') {
+    return `<div class="pdx-dir-household-summary-card is-${escapeAttr(tone)}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(description)}</small></div>`;
+  }
+
   async function removeDirectoryPersonFromParish(personId, displayName, expectedVersion, householdId = '') {
     const name = displayName || 'this person';
     if (!confirm(`Remove ${name} from this parish?\n\nThis immediately hides them from the parishioner directory and blocks Koinonia. Their My AGAPAY account and giving history will not be deleted.`)) return;
@@ -3080,9 +3084,10 @@
     }
   }
 
-  function directoryHouseholdAccountRow(member, householdId, verificationStatus) {
+  function directoryHouseholdAccountRow(member, householdId, verificationStatus, managerIds = new Set()) {
     const name = member.preferred_name || member.preferredName || member.id;
     const relationship = String(member.relationship || 'adult').replace(/_/g, ' ');
+    const manager = managerIds.has(String(member.id));
     if (member.child) {
       return `<div class="pdx-dir-account-row is-child"><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(relationship)} · managed by household adults</span></div><em>Child profile</em></div>`;
     }
@@ -3092,12 +3097,12 @@
     }
     if (member.accountLinked) {
       const ready = verificationStatus === 'current';
-      return `<div class="pdx-dir-account-row is-linked"><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(relationship)} · personal My AGAPAY identity connected</span></div><em>${ready ? '✓ Koinonia ready' : 'Household confirmation required'}</em>${removal}</div>`;
+      return `<div class="pdx-dir-account-row is-linked"><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(relationship)}${manager ? ' · household manager' : ''}</span></div><div class="pdx-dir-account-state"><em>Account connected</em><span>${ready ? 'Koinonia allowed' : 'Koinonia blocked · household confirmation required'}</span></div>${removal}</div>`;
     }
     if (member.invitation) {
-      return `<div class="pdx-dir-account-row is-pending"><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(relationship)} · invitation ${escapeHtml(member.invitation.status)} to ${escapeHtml(member.invitation.recipientEmail || member.email || '')}</span></div><div class="pdx-dir-account-actions"><em>Invitation pending</em><button type="button" onclick="resendDirectoryAccountInvitation('${escapeAttr(member.invitation.id)}','${escapeAttr(member.id)}','${escapeAttr(householdId)}')">Resend</button><button type="button" onclick="revokeDirectoryAccountInvitation('${escapeAttr(member.invitation.id)}','${escapeAttr(member.id)}','${escapeAttr(householdId)}')">Revoke</button></div>${removal}</div>`;
+      return `<div class="pdx-dir-account-row is-pending"><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(relationship)}${manager ? ' · household manager' : ''}</span></div><div class="pdx-dir-account-state"><em>Invitation pending</em><span>${escapeHtml(member.invitation.recipientEmail || member.email || '')}</span></div><div class="pdx-dir-account-actions"><button type="button" onclick="resendDirectoryAccountInvitation('${escapeAttr(member.invitation.id)}','${escapeAttr(member.id)}','${escapeAttr(householdId)}')">Resend</button><button type="button" onclick="revokeDirectoryAccountInvitation('${escapeAttr(member.invitation.id)}','${escapeAttr(member.id)}','${escapeAttr(householdId)}')">Revoke</button></div>${removal}</div>`;
     }
-    return `<form class="pdx-dir-account-row is-needed" onsubmit="sendDirectoryHouseholdInvitation(event,'${escapeAttr(member.id)}','${escapeAttr(householdId)}')"><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(relationship)} · link this adult’s own account</span></div><label><span class="sr-only">Email for ${escapeHtml(name)}</span><input name="email" type="email" autocomplete="email" required value="${escapeAttr(member.email || '')}" placeholder="adult@example.com" /></label><button type="submit">Send secure invitation</button>${removal}</form>`;
+    return `<form class="pdx-dir-account-row is-needed" onsubmit="sendDirectoryHouseholdInvitation(event,'${escapeAttr(member.id)}','${escapeAttr(householdId)}')"><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(relationship)}${manager ? ' · household manager' : ''} · no account connected</span></div><label><span class="sr-only">Email for ${escapeHtml(name)}</span><input name="email" type="email" autocomplete="email" required value="${escapeAttr(member.email || '')}" placeholder="adult@example.com" /></label><button type="submit">Send invitation</button>${removal}</form>`;
   }
 
   async function openDirectoryHousehold(householdId) {
@@ -3117,6 +3122,7 @@
       const verificationStatus = record.verification?.status || 'due';
       const publicationVisible = record.publication?.status === 'approved' && record.publication?.approval_status === 'approved';
       const koinoniaReadyAdults = adultMembers.filter((item) => item.accountLinked && item.parishConnected).length;
+      const managerIds = new Set((record.administrators || []).map((item) => String(item.id)));
       const contactRows = (record.contacts || []).map((item) => {
         const shared = item.visibility === 'directory_members';
         return `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.personName || 'Household')} · ${escapeHtml(item.label || item.contactType || 'Contact')}</strong><span>${escapeHtml(item.value || '')} · ${shared ? 'visible in My AGAPAY directory' : 'private from parishioners'}</span></div>`;
@@ -3126,43 +3132,26 @@
         const shared = item.visibility === 'directory_members';
         return `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.primary ? 'Primary household address' : item.addressType || 'Household address')}</strong><span>${escapeHtml(fullAddress || 'Not entered')} · ${shared ? 'city/state visible in My AGAPAY; street private' : 'private from parishioners'}</span></div>`;
       });
-      detail.innerHTML = directoryRecordDetailShell('Household record', household.displayName || 'Directory household', 'This is the family container parishioners expect to edit from My AGAPAY.', `
-        <div class="pdx-dir-review-grid">
+      detail.innerHTML = directoryRecordDetailShell('Household access', household.displayName || 'Directory household', 'Manage who belongs to this parish, who can enter Koinonia, and what the family shares.', `
+        <section class="pdx-dir-household-overview"><h4>At a glance</h4><div class="pdx-dir-household-summary">
+          ${directoryHouseholdSummaryCard('Parishioner directory', publicationVisible ? 'Visible' : 'Hidden', publicationVisible ? 'Parishioners can find this family.' : 'This family is not published.', publicationVisible ? 'good' : 'neutral')}
+          ${directoryHouseholdSummaryCard('Koinonia', verificationStatus === 'current' && koinoniaReadyAdults ? `${koinoniaReadyAdults} allowed` : 'Blocked', verificationStatus !== 'current' ? 'Household confirmation is required.' : koinoniaReadyAdults ? 'Connected adults may enter.' : 'No connected adult has access.', verificationStatus === 'current' && koinoniaReadyAdults ? 'good' : 'blocked')}
+          ${directoryHouseholdSummaryCard('Household confirmation', verificationStatus === 'current' ? 'Current' : verificationStatus === 'overdue' ? 'Overdue' : 'Required', verificationStatus === 'current' ? 'Family information is current.' : 'Reconfirm before allowing Koinonia.', verificationStatus === 'current' ? 'good' : 'warn')}
+        </div></section>
+        <section class="pdx-dir-review-column pdx-dir-household-access"><div class="pdx-dir-section-heading"><div><h4>People &amp; access</h4><p>${connectedAdults} of ${adultMembers.length} adults connected to the parish · ${linkedAdults} My AGAPAY account${linkedAdults === 1 ? '' : 's'} linked${pendingAdults ? ` · ${pendingAdults} invitation${pendingAdults === 1 ? '' : 's'} pending` : ''}</p></div></div>
+          <div class="pdx-dir-account-list">${(record.members || []).map((item) => directoryHouseholdAccountRow(item, household.id, verificationStatus, managerIds)).join('') || directoryEmptyState('No household members', 'Add people to this household before linking accounts.')}</div>
+          <p class="section-note">Each adult uses a separate My AGAPAY sign-in. Children stay under household management.</p>
+        </section>
+        <details class="pdx-dir-household-details"><summary><span>Family directory information</span><small>Photo, contact information, and address</small></summary><div class="pdx-dir-review-grid">
           ${directoryHouseholdPhotoCard(record.photo)}
-          <section class="pdx-dir-review-column"><h4>Access &amp; visibility</h4>
-            <div class="pdx-dir-status-list">
-              ${directoryAccessStatusRow('Parish connections', `${connectedAdults} of ${adultMembers.length} active`, 'Only active adults can use this parish’s directory and Koinonia.', connectedAdults === adultMembers.length ? 'good' : 'warn')}
-              ${directoryAccessStatusRow('My AGAPAY management', record.accountManaged ? 'Connected' : 'Not connected', record.accountManaged ? 'At least one linked adult can manage this household.' : 'A linked adult must be made a household manager.', record.accountManaged ? 'good' : 'warn')}
-              ${directoryAccessStatusRow('Parishioner directory', publicationVisible ? 'Visible' : 'Hidden', publicationVisible ? 'Approved parishioners can find this household.' : 'This household is not shown to parishioners.', publicationVisible ? 'good' : 'neutral')}
-              ${directoryAccessStatusRow('Household confirmation', verificationStatus === 'current' ? 'Current' : verificationStatus === 'overdue' ? 'Overdue' : 'Required', verificationStatus === 'current' ? 'The household information is confirmed and current.' : 'Koinonia stays blocked until the parish confirms this household.', verificationStatus === 'current' ? 'good' : 'blocked')}
-              ${directoryAccessStatusRow('Koinonia', verificationStatus === 'current' && koinoniaReadyAdults ? `${koinoniaReadyAdults} adult${koinoniaReadyAdults === 1 ? '' : 's'} allowed` : 'Blocked', verificationStatus === 'current' && koinoniaReadyAdults ? 'Only linked adults with an active parish connection can enter.' : 'No adult currently meets every access requirement.', verificationStatus === 'current' && koinoniaReadyAdults ? 'good' : 'blocked')}
-            </div>
-          </section>
-        </div>
-        <div class="pdx-dir-review-grid">
-          <section class="pdx-dir-review-column pdx-dir-household-access"><h4>Adult accounts &amp; Koinonia access</h4>
-            <div class="pdx-dir-access-summary"><strong>${linkedAdults} of ${adultMembers.length} adult account${adultMembers.length === 1 ? '' : 's'} linked</strong><span>${pendingAdults ? `${pendingAdults} invitation${pendingAdults === 1 ? '' : 's'} waiting for acceptance. ` : ''}Each adult signs in separately while sharing this household.</span></div>
-            <div class="pdx-dir-account-list">${(record.members || []).map((item) => directoryHouseholdAccountRow(item, household.id, verificationStatus)).join('') || directoryEmptyState('No household members', 'Add people to this household before linking accounts.')}</div>
-            <p class="section-note">A linked adult can be found reliably when parish staff add people to Koinonia ministries and groups. Children remain under household management and do not receive separate accounts.</p>
-          </section>
-        </div>
-        <div class="pdx-dir-review-grid">
-          <section class="pdx-dir-review-column pdx-dir-review-column-new"><h4>Household admins</h4>
-            ${directoryDetailList(record.administrators, 'No household admin', 'Invite an adult above to connect their account and grant household management.', (item) => `<button type="button" class="pdx-dir-detail-chip" onclick="openDirectoryPerson('${escapeAttr(item.id)}')"><strong>${escapeHtml(item.preferred_name || item.preferredName || item.id)}</strong><span>${item.accountLinked ? 'Linked adult · household manager' : 'Household admin · account not linked'}</span></button>`)}
-          </section>
-        </div>
-        <div class="pdx-dir-review-grid">
-          <section class="pdx-dir-review-column"><h4>Complete contact information</h4>
+          <section class="pdx-dir-review-column"><h4>Contact &amp; address</h4>
             ${directoryDetailList([...contactRows, ...addressRows], 'No contact information', 'Phone, email, and address will populate from the family account settings.', (item) => item)}
             <p class="pdx-dir-staff-contact-note">Staff-only view. Full street addresses are never published in the donor-side directory.</p>
           </section>
-          <section class="pdx-dir-review-column"><h4>Members</h4>
-            ${directoryDetailList(record.members, 'No members', 'Add household members before children, family photos, or household publication makes sense.', (item) => `<button type="button" class="pdx-dir-detail-chip" onclick="openDirectoryPerson('${escapeAttr(item.id)}')"><strong>${escapeHtml(item.preferred_name || item.preferredName || item.id)}</strong><span>${escapeHtml(item.relationship || 'member')} · ${item.child ? 'child profile' : item.accountLinked ? 'personal account linked' : item.invitation ? 'invitation pending' : 'adult account not linked'}</span></button>`)}
-          </section>
-          <section class="pdx-dir-review-column"><h4>Notes</h4>
-            ${directoryDetailList(record.notes, 'No notes', 'No internal notes are attached to this household.', (item) => `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.title || item.noteType || 'Note')}</strong><span>${escapeHtml(item.body || item.note || item.summary || '')}</span></div>`)}
-          </section>
-        </div>`, detail.id);
+        </div></details>
+        <details class="pdx-dir-household-details"><summary><span>Internal notes</span><small>${(record.notes || []).length ? `${record.notes.length} note${record.notes.length === 1 ? '' : 's'}` : 'No notes'}</small></summary><section class="pdx-dir-review-column">
+          ${directoryDetailList(record.notes, 'No notes', 'No internal notes are attached to this household.', (item) => `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.title || item.noteType || 'Note')}</strong><span>${escapeHtml(item.body || item.note || item.summary || '')}</span></div>`)}
+        </section></details>`, detail.id);
       hydrateDirectoryAdminImages(detail);
       detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (err) {

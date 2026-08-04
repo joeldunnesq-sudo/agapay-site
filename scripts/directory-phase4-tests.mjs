@@ -65,6 +65,8 @@ function makeD1Env() {
     "0028_directory_media_secure_transformation.sql",
     "0029_directory_duplicates_phase3b.sql",
     "0030_directory_child_publication_phase4b.sql",
+    "0031_directory_ministries_phase5a.sql",
+    "0032_directory_phase5b_skills_completion.sql",
     "0033_directory_household_namedays.sql"
   ]) db.exec(migration(name));
 
@@ -322,6 +324,32 @@ await test("household detail includes each adult's shared contacts and name day 
   assert.equal(detail.household.members.length, 1);
   assert.equal(detail.household.members[0].contacts[0].value, "published@example.org");
   assert.deepEqual(detail.household.members[0].namedays, [{ saintName: "St. Maria", feastMonthDay: "07-22" }]);
+});
+
+await test("active member-shared skills appear on person and family cards while private skills stay hidden", async () => {
+  const { env, db, viewer, household, visible } = await fixture();
+  db.prepare(`INSERT INTO directory_skill_catalog
+    (id, code, name, category, is_platform_default, is_active, created_at, updated_at)
+    VALUES ('skill_woodworking', 'woodworking', 'Woodworking', 'home_and_repairs', 1, 1, 1, 1),
+           ('skill_accounting', 'accounting', 'Accounting', 'professional_knowledge', 1, 1, 1, 1)`)
+    .run();
+  db.prepare(`INSERT INTO directory_person_skill_listings
+    (id, parish_id, person_id, skill_id, visibility, status, consent_recorded_at,
+     consent_policy_version, consent_source, created_by_user_id, created_at, updated_at)
+    VALUES ('listing_shared', 'st-fiacre', ?, 'skill_woodworking', 'directory_members', 'active', 1,
+            'phase5b-v1', 'member_self_service', ?, 1, 1),
+           ('listing_private', 'st-fiacre', ?, 'skill_accounting', 'private', 'active', 1,
+            'phase5b-v1', 'member_self_service', ?, 1, 1)`)
+    .run(visible.id, viewer.id, visible.id, viewer.id);
+  const context = await resolveMemberDirectoryContext(env, { request: await requestFor(env, db, viewer, "/api/directory/member") });
+
+  const person = await getMemberDirectoryPerson(env, { context, personId: visible.id });
+  assert.deepEqual(person.person.skillsPreview.map((skill) => skill.displayLabel), ["Woodworking"]);
+  const family = await getMemberDirectoryHousehold(env, { context, householdId: household.id });
+  assert.deepEqual(family.household.skillsPreview.map((skill) => skill.displayLabel), ["Woodworking"]);
+  assert.deepEqual(family.household.members[0].skillsPreview.map((skill) => skill.displayLabel), ["Woodworking"]);
+  const browse = await listMemberDirectoryHouseholds(env, { context });
+  assert.deepEqual(browse.items[0].skillsPreview.map((skill) => skill.displayLabel), ["Woodworking"]);
 });
 
 await test("an approved household includes active non-protected adults without separate person publication", async () => {
