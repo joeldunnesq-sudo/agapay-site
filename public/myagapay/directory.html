@@ -838,10 +838,6 @@
       <div class="topbar">
         <div class="directory-nav-identity"><strong class="topbar-title">Parish Directory</strong></div>
       </div>
-      <nav class="directory-view-switcher" aria-label="Directory sections" role="tablist">
-        <button id="directoryViewTab" type="button" role="tab" aria-selected="true" aria-controls="memberDirectory" data-directory-view-target="directory">Directory</button>
-        <button id="familyInformationTab" type="button" role="tab" aria-selected="false" aria-controls="personalDirectorySettings" data-directory-view-target="family" tabindex="-1">Family Information</button>
-      </nav>
       <section class="directory-top cal-hero myagapay-page-hero" aria-labelledby="directoryHeroTitle">
         <div class="cal-hero-inner">
           <div class="cal-hero-eyebrow">Parish life in one place</div>
@@ -853,6 +849,11 @@
           <span class="status-pill" id="directoryStatus">Loading</span>
         </div>
       </section>
+
+      <nav class="directory-view-switcher" aria-label="Directory sections" role="tablist">
+        <button id="directoryViewTab" type="button" role="tab" aria-selected="true" aria-controls="memberDirectory" data-directory-view-target="directory">Directory</button>
+        <button id="familyInformationTab" type="button" role="tab" aria-selected="false" aria-controls="personalDirectorySettings" data-directory-view-target="family" tabindex="-1">Family Information</button>
+      </nav>
 
       <div id="directoryNotice" class="notice" hidden></div>
       <section id="directoryInvitationCard" class="panel directory-invitation-card" hidden aria-live="polite">
@@ -1084,7 +1085,7 @@
         </div>
         <details class="directory-filter-card" id="directoryFilters">
           <summary>
-            <span class="directory-filter-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5M4 5h3M15 5h5M4 16h5M17 16h3"/></svg></span>
+            <span class="directory-filter-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></span>
             <span class="directory-filter-copy"><strong>Search &amp; filters</strong><small id="directoryFilterSummary">Find by family, nameday, or skill</small></span>
             <span class="directory-filter-chevron" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m5 7.5 5 5 5-5"/></svg></span>
           </summary>
