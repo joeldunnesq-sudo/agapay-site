@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.agapay.myagapay",
+        "sha256_cert_fingerprints": ["0D:D8:02:58:2C:7A:0A:84:C4:36:77:9A:99:4E:92:A9:2A:4C:4A:5C:35:B0:33:03:83:B5:84:22:5A:DC:D9:0E"]
+      }
+    }]
