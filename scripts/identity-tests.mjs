@@ -220,6 +220,27 @@ await test("current My AGAPAY donor session can resolve matching platform user",
   assert.equal(wrongEmail, null, "expected a donor session to reject mismatched email");
 });
 
+await test("new My AGAPAY donor session provisions its missing platform user", async () => {
+  const { env } = makeD1Env();
+  const donor = {
+    email: "new-parishioner@example.org",
+    donorName: "New Parishioner",
+    defaultParishId: "st-fiacre",
+    emailVerifiedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  await saveDonor(env, donor);
+  const session = await issueDonorSession(env, donor);
+
+  assert.equal(await findPlatformUserByEmail(env, donor.email), null, "signup should begin without a legacy platform identity");
+  const resolved = await requirePlatformUser(donorAuthenticatedRequest({ email: donor.email, token: session.token }), env);
+  assert.ok(resolved, "expected the verified donor session to bootstrap directory identity");
+  assert.equal(resolved.email, donor.email);
+  assert.equal(resolved.displayName, donor.donorName);
+  assert.equal((await findPlatformUserByEmail(env, donor.email))?.id, resolved.id);
+});
+
 // ── Invitation + membership lifecycle ───────────────────────────────────
 
 await test("invitation acceptance creates an active membership with role-template capabilities", async () => {

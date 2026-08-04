@@ -37,6 +37,8 @@ import {
 } from "../src/directory/index.js";
 import { handleDirectorySelfService } from "../src/handlers/directory-self-service.js";
 import { ensurePlatformUser, issuePlatformUserSession, PLATFORM_USER_EMAIL_HEADER } from "../src/lib/identity.js";
+import { issueDonorSession } from "../src/handlers/donor.js";
+import { saveDonor } from "../src/lib/core.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(__dirname, "..");
@@ -55,6 +57,16 @@ function makeD1Env() {
   db.exec(migration("0024_directory_invitations_claims.sql"));
   db.exec(migration("0025_directory_self_service_phase2a.sql"));
   db.exec(migration("0033_directory_household_namedays.sql"));
+  db.exec(`
+    CREATE TABLE donors (
+      email TEXT PRIMARY KEY,
+      default_parish_id TEXT,
+      email_verified_at TEXT,
+      created_at TEXT,
+      updated_at TEXT NOT NULL,
+      data TEXT NOT NULL
+    );
+  `);
 
   function wrap(sql) {
     return {
@@ -253,6 +265,53 @@ await test("unlinked My AGAPAY user can start a private draft directory profile"
   assert.equal(privacy.visibility, "directory_members");
   assert.equal(privacy.publication_eligible, 1);
   assert.equal(auditCount(db, "directory.self_service.profile_started"), 1);
+});
+
+await test("new My AGAPAY parish signup can open directory onboarding and submit its profile for review", async () => {
+  const { env, db } = makeD1Env();
+  const donor = {
+    email: "first-visit@example.org",
+    donorName: "First Visit",
+    householdName: "First Visit Household",
+    defaultParishId: "st-fiacre",
+    emailVerifiedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  await saveDonor(env, donor);
+  const session = await issueDonorSession(env, donor);
+  const authHeaders = {
+    Authorization: `Bearer ${session.token}`,
+    "X-AGAPAY-User-Email": donor.email,
+    "X-AGAPAY-Donor-Email": donor.email
+  };
+
+  const firstVisit = await handleDirectorySelfService(new Request("https://agapay.test/api/directory/self/profile", {
+    headers: authHeaders
+  }), env);
+  assert.equal(firstVisit.status, 200, "first directory visit should load onboarding instead of Unauthorized");
+  const firstPayload = await firstVisit.json();
+  assert.equal(firstPayload.profile.claimed, false);
+
+  const submitted = await handleDirectorySelfService(new Request("https://agapay.test/api/directory/self/start-profile", {
+    method: "POST",
+    headers: { ...authHeaders, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      parishId: donor.defaultParishId,
+      preferredName: donor.donorName,
+      householdName: donor.householdName,
+      email: donor.email,
+      profileVisibility: "directory_members",
+      emailVisibility: "staff"
+    })
+  }), env);
+  assert.equal(submitted.status, 201);
+  const submittedPayload = await submitted.json();
+  assert.equal(submittedPayload.profile.claimed, true);
+  assert.equal(submittedPayload.profile.activeParishContexts[0].parishId, "st-fiacre");
+  const review = db.prepare("SELECT request_type, status FROM directory_change_requests WHERE requester_user_id = ?").get(submittedPayload.profile.user.id);
+  assert.equal(review.request_type, "person_profile_review");
+  assert.equal(review.status, "pending");
 });
 
 await test("household admin can save household name days with privacy", async () => {

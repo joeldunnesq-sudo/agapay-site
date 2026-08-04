@@ -176,7 +176,15 @@ export async function requirePlatformUser(request, env) {
   if (donor.sessionExpiresAt && new Date(donor.sessionExpiresAt).getTime() < Date.now()) return null;
   const submittedDonorHash = await hashSessionToken(token, donor.sessionSalt);
   if (!secureCompare(submittedDonorHash, donor.sessionTokenHash)) return null;
-  const row = await findPlatformUserByEmail(env, donorEmail);
+  // My AGAPAY account creation predates the platform_users identity layer.
+  // Provision the matching platform identity only after the verified donor
+  // session has been authenticated so first-time directory users can reach
+  // the private self-service onboarding flow. This also repairs existing
+  // donor accounts that were created before platform identities existed.
+  const row = await findPlatformUserByEmail(env, donorEmail) || await ensurePlatformUser(env, {
+    email: donorEmail,
+    displayName: donor.donorName || donor.householdName || ""
+  });
   if (!row || row.status !== "active") return null;
   return rowToPlatformUser(row);
 }
