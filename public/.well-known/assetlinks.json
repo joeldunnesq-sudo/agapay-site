@@ -1,9 +1,12 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "app.agapay.myagapay",
-        "sha256_cert_fingerprints": ["0D:D8:02:58:2C:7A:0A:84:C4:36:77:9A:99:4E:92:A9:2A:4C:4A:5C:35:B0:33:03:83:B5:84:22:5A:DC:D9:0E",
-        "EA:BF:66:56:67:3C:B2:BF:68:22:0D:EF:45:72:FA:A4:18:DF:A2:A5:9A:CA:D9:94:0F:D5:CB:C2:B9:04:5E:BE"]
-      }
-    }]
+
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.agapay.myagapay",
+      "sha256_cert_fingerprints":
+        ["5E:AE:99:44:54:EE:1D:D0:F9:F7:51:73:CD:20:1F:9E:8E:7A:7D:1C:3C:9F:AA:7A:E7:C9:A7:61:15:88:FD:D1"]
+    }
+  }
+]
