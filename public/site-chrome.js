@@ -3,11 +3,11 @@
   if (/^\/(?:admin|parish|donor|myagapay)(?:\/|$)/.test(path)) return;
 
   const PRIMARY_LINKS = [
-    { href: "/give/request-demo", label: "Request Demo", key: "demo" },
     { href: "/give", label: "AGAPAY Give", key: "give" },
     { href: "/learn", label: "AGAPAY Learn", key: "learn" },
     { href: "/design", label: "AGAPAY Design", key: "design" },
-    { href: "/about", label: "About", key: "about" }
+    { href: "/about", label: "About", key: "about" },
+    { href: "/contact", label: "Contact", key: "contact" }
   ];
 
   const SIGN_IN_LINKS = [
@@ -22,7 +22,8 @@
     if (path === "/give/features" || path.endsWith("/give/features.html")) return "give";
     if (path === "/give/pricing" || path.endsWith("/give/pricing.html")) return "give";
     if (path === "/give/how-it-works" || path.endsWith("/give/how-it-works.html")) return "give";
-    if (path === "/about" || path.endsWith("/about.html") || path === "/contact" || path.endsWith("/contact.html")) return "about";
+    if (path === "/contact" || path.endsWith("/contact.html")) return "contact";
+    if (path === "/about" || path.endsWith("/about.html")) return "about";
     if (path === "/give" || path.endsWith("/give/index.html") || path.startsWith("/give/")) return "give";
     if (path === "/learn" || path === "/learn/" || path.startsWith("/learn/")) return "learn";
     if (path === "/design" || path.endsWith("/design.html")) return "design";
@@ -68,6 +69,9 @@
           </div>
 
           <div class="nav-actions">
+            <a class="btn-demo${activeKey === "demo" ? " active" : ""}" href="/give/request-demo"${activeKey === "demo" ? ' aria-current="page"' : ""}>
+              Request a Demo
+            </a>
             <a class="btn-donate" href="/register">
               Start for free
             </a>
@@ -100,9 +104,10 @@
           <nav class="drawer-links" aria-label="Drawer navigation">
             ${PRIMARY_LINKS.map((item) => navLink(item, activeKey)).join("")}
           </nav>
-          <a class="drawer-join" href="/register">
-            Start for free
-          </a>
+          <div class="drawer-actions">
+            <a class="drawer-demo" href="/give/request-demo">Request a Demo</a>
+            <a class="drawer-join" href="/register">Start for free</a>
+          </div>
           <div class="drawer-divider"></div>
           <nav class="drawer-links" aria-label="Sign in options">
             ${SIGN_IN_LINKS.map((item) => `<a href="${item.href}">${item.label}</a>`).join("")}

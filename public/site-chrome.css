@@ -184,7 +184,8 @@ body:not(.agp-shell-ready):not([data-no-site-chrome="true"])::before {
   gap: 0.85rem;
 }
 
-.site-header[data-shell="canonical"] .btn-donate {
+.site-header[data-shell="canonical"] .btn-donate,
+.site-header[data-shell="canonical"] .btn-demo {
   min-height: 44px;
   padding: 0 1.4rem;
   border-radius: 8px;
@@ -200,12 +201,25 @@ body:not(.agp-shell-ready):not([data-no-site-chrome="true"])::before {
   transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
 
+.site-header[data-shell="canonical"] .btn-demo {
+  color: var(--agp-cream);
+  background: rgba(255, 255, 255, 0.035);
+}
+
 .site-header[data-shell="canonical"] .btn-donate:hover,
 .site-header[data-shell="canonical"] .btn-donate.active {
   transform: translateY(-1px);
   background: linear-gradient(135deg, #E5C56D, #C89538);
   border-color: rgba(214, 175, 91, 0.82);
   color: #061522;
+}
+
+.site-header[data-shell="canonical"] .btn-demo:hover,
+.site-header[data-shell="canonical"] .btn-demo.active {
+  transform: translateY(-1px);
+  border-color: rgba(214, 175, 91, 0.82);
+  color: #FFE4A4;
+  background: rgba(200, 162, 74, 0.14);
 }
 
 .site-header[data-shell="canonical"] .btn-donate svg {
@@ -422,6 +436,28 @@ body.drawer-open .mobile-drawer[data-shell="canonical"] {
   text-decoration: none;
 }
 
+.mobile-drawer[data-shell="canonical"] .drawer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.mobile-drawer[data-shell="canonical"] .drawer-demo {
+  min-height: 42px;
+  min-width: 132px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.1rem;
+  border: 1px solid rgba(200, 162, 74, 0.58);
+  border-radius: 8px;
+  color: #FFE7B6;
+  background: rgba(200, 162, 74, 0.08);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
 .mobile-drawer[data-shell="canonical"] .drawer-divider {
   height: 1px;
   background: rgba(200, 162, 74, 0.16);
@@ -620,6 +656,12 @@ body.drawer-open {
     padding: 0.65rem 0.9rem;
     font-size: 0.88rem;
     gap: 0.4rem;
+  }
+
+  .mobile-drawer[data-shell="canonical"] .drawer-demo {
+    min-height: 38px;
+    padding: 0.65rem 0.9rem;
+    font-size: 0.88rem;
   }
 
   .mobile-drawer[data-shell="canonical"] .drawer-join svg {
