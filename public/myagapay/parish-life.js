@@ -133,17 +133,16 @@ function parishLifeTierSectionsHtml(communicationsEnabled) {
       <div class="parish-life-section-head"><h2 id="yourMinistriesHeading">Your Ministries</h2><a href="/myagapay/groups">All Groups</a></div>
       <div class="parish-life-ministry-grid" id="parishLifeMinistries"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading ministries…</p></div>
     </section>
-    <section class="parish-life-home-section" aria-labelledby="recentAudioHeading">
-      <div class="parish-life-section-head"><h2 id="recentAudioHeading">Recent Audio</h2><a href="/myagapay/teaching">Audio Library</a></div>
-      <div class="parish-life-recording-list" id="parishLifeRecordings"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading recordings…</p></div>
-    </section>
-    <section class="parish-life-home-section" id="parishLifeContinueListeningSection" aria-labelledby="continueListeningHeading" hidden>
-      <div class="parish-life-section-head"><h2 id="continueListeningHeading">Continue listening</h2></div>
-      <div id="parishLifeContinueListening"></div>
-    </section>
-    <section class="parish-life-home-section" id="parishLifeRecentPodcastsSection" aria-labelledby="recentPodcastEpisodesHeading" hidden>
-      <div class="parish-life-section-head"><h2 id="recentPodcastEpisodesHeading">Recent Podcast Episodes</h2><a href="/myagapay/teaching?mode=podcasts">All Podcasts</a></div>
-      <div class="parish-life-recording-list" id="parishLifePodcastEpisodes"><p class="sw-tool-loading parish-life-section-loading" role="status">Checking your subscriptions…</p></div>
+    <section class="parish-life-home-section parish-life-listen-section" aria-labelledby="listenHeading">
+      <div class="parish-life-section-head"><h2 id="listenHeading">Listen</h2><a href="/myagapay/teaching">Open Library</a></div>
+      <section class="parish-life-listen-resume" id="parishLifeContinueListeningSection" aria-labelledby="continueListeningHeading" hidden>
+        <div class="parish-life-listen-subhead"><h3 id="continueListeningHeading">Continue listening</h3></div>
+        <div id="parishLifeContinueListening"></div>
+      </section>
+      <section class="parish-life-listen-latest" aria-labelledby="latestAudioHeading">
+        <div class="parish-life-listen-subhead"><h3 id="latestAudioHeading">Latest audio</h3></div>
+        <div class="parish-life-recording-list" id="parishLifeListenItems"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading audio…</p></div>
+      </section>
     </section>
     <section class="parish-life-home-section" aria-labelledby="recentVideosHeading">
       <div class="parish-life-section-head"><h2 id="recentVideosHeading">Recent Videos</h2><a href="/myagapay/media">All Media</a></div>
@@ -156,6 +155,11 @@ function parishLifeTierSectionsHtml(communicationsEnabled) {
       </section>
     </div>`;
 }
+
+const parishLifeListenSources = {
+  parish: null,
+  podcasts: null,
+};
 
 function renderPinnedAnnouncements(feed = {}) {
   const target = document.getElementById("parishLifePinnedAnnouncements");
@@ -178,22 +182,72 @@ function renderPinnedAnnouncements(feed = {}) {
 }
 
 function renderRecentRecordings(teaching = {}) {
-  const target = document.getElementById("parishLifeRecordings");
-  if (!target) return;
   const recordings = (teaching.posts || [])
     .filter((post) => post.status === "published" && Boolean(post.audioUrl))
     .sort((left, right) => Number(Boolean(right.pinned)) - Number(Boolean(left.pinned)) || new Date(right.publishedAt || right.createdAt || 0) - new Date(left.publishedAt || left.createdAt || 0))
-    .slice(0, 4);
-  if (!recordings.length) {
-    target.innerHTML = '<div class="parish-life-empty-state"><strong>No recordings yet</strong><p>Published parish audio will appear here.</p></div>';
+    .slice(0, 8)
+    .map((post) => ({
+      kind: "parish",
+      key: `parish-${post.id}`,
+      title: post.title,
+      source: parishLifeCategory(post.category, "homilies"),
+      publishedAt: post.publishedAt || post.createdAt || "",
+      pinned: Boolean(post.pinned),
+      image: "",
+      href: `/myagapay/teaching#${encodeURIComponent(post.id)}`,
+    }));
+  parishLifeListenSources.parish = recordings;
+  renderParishLifeListenItems();
+}
+
+function parishLifeBalancedListenItems(parishItems = [], podcastItems = [], limit = 5) {
+  const maximum = Math.max(0, Number(limit) || 0);
+  if (!maximum) return [];
+  const parish = [...parishItems];
+  const podcasts = [...podcastItems];
+  const selected = [];
+  const selectedKeys = new Set();
+  const add = (item) => {
+    if (!item || selected.length >= maximum || selectedKeys.has(item.key)) return;
+    selected.push(item);
+    selectedKeys.add(item.key);
+  };
+  const podcastReserve = parish.length && podcasts.length ? 1 : 0;
+  const parishReserve = Math.min(parish.length, 2, Math.max(0, maximum - podcastReserve));
+  parish.slice(0, parishReserve).forEach(add);
+  if (podcastReserve) add(podcasts[0]);
+  [...parish, ...podcasts]
+    .filter((item) => !selectedKeys.has(item.key))
+    .sort((left, right) => new Date(right.publishedAt || 0) - new Date(left.publishedAt || 0))
+    .forEach(add);
+  return selected.sort((left, right) => Number(Boolean(right.pinned)) - Number(Boolean(left.pinned)) || new Date(right.publishedAt || 0) - new Date(left.publishedAt || 0));
+}
+
+function renderParishLifeListenItems() {
+  const target = document.getElementById("parishLifeListenItems");
+  if (!target) return;
+  const parishItems = parishLifeListenSources.parish || [];
+  const podcastItems = parishLifeListenSources.podcasts || [];
+  const items = parishLifeBalancedListenItems(parishItems, podcastItems, 5);
+  if (!items.length && (parishLifeListenSources.parish === null || parishLifeListenSources.podcasts === null)) {
+    target.innerHTML = '<p class="sw-tool-loading parish-life-section-loading" role="status">Loading audio…</p>';
     return;
   }
-  target.innerHTML = recordings.map((post) => `
-    <a class="parish-life-recording-row" href="/myagapay/teaching#${encodeURIComponent(post.id)}">
-      <span class="parish-life-audio-icon" aria-hidden="true">▶</span>
-      <span><strong>${parishLifeEscape(post.title)}</strong><small>${post.pinned ? "Pinned · " : ""}${parishLifeEscape(parishLifeCategory(post.category, "homilies"))} · ${parishLifeEscape(parishLifeDate(post.publishedAt || post.createdAt))}</small></span>
-      <em>Play</em>
-    </a>`).join("");
+  if (!items.length) {
+    target.innerHTML = '<div class="parish-life-empty-state"><strong>No audio yet</strong><p>New parish recordings and episodes from your podcast subscriptions will appear here.</p></div>';
+    return;
+  }
+  target.innerHTML = items.map((item) => {
+    const isPodcast = item.kind === "podcast";
+    const label = isPodcast
+      ? `Podcast · ${item.source}`
+      : `${item.pinned ? "Pinned · " : ""}Parish audio · ${item.source}`;
+    return `<a class="parish-life-recording-row" href="${parishLifeEscape(item.href)}">
+      <span class="parish-life-audio-icon${item.image ? " is-podcast-artwork" : ""}" aria-hidden="true">${item.image ? `<img src="${parishLifeEscape(item.image)}" alt="" loading="lazy" />` : "▶"}</span>
+      <span><strong>${parishLifeEscape(item.title)}</strong><small>${parishLifeEscape(label)} · ${parishLifeEscape(parishLifeDate(item.publishedAt))}</small></span>
+      <em>${isPodcast ? "Listen" : "Play"}</em>
+    </a>`;
+  }).join("");
 }
 
 function renderRecentVideos(media = {}) {
@@ -251,23 +305,20 @@ function parishLifePodcastEpisodes(xml, feedUrl, fallbackArtwork = "") {
 }
 
 function renderRecentPodcastEpisodes(subscriptions = [], episodes = []) {
-  const section = document.getElementById("parishLifeRecentPodcastsSection");
-  const target = document.getElementById("parishLifePodcastEpisodes");
-  if (!section || !target) return;
-  section.hidden = !subscriptions.length;
-  if (!subscriptions.length) return;
-  if (!episodes.length) {
-    target.innerHTML = '<div class="parish-life-empty-state"><strong>No recent episodes available</strong><p>Your subscriptions are saved. Open Podcasts to browse each show.</p></div>';
-    return;
-  }
-  target.innerHTML = episodes.map((episode) => {
+  parishLifeListenSources.podcasts = subscriptions.length ? episodes.map((episode) => {
     const href = `/myagapay/teaching?mode=podcasts&feed=${encodeURIComponent(episode.feedUrl)}&episode=${encodeURIComponent(episode.episodeKey)}`;
-    return `<a class="parish-life-recording-row" href="${href}">
-      <span class="parish-life-audio-icon${episode.image ? " is-podcast-artwork" : ""}" aria-hidden="true">${episode.image ? `<img src="${parishLifeEscape(episode.image)}" alt="" loading="lazy" />` : "▶"}</span>
-      <span><strong>${parishLifeEscape(episode.title)}</strong><small>${parishLifeEscape(episode.show)} · ${parishLifeEscape(parishLifeDate(episode.date))}</small></span>
-      <em>Listen</em>
-    </a>`;
-  }).join("");
+    return {
+      kind: "podcast",
+      key: `podcast-${episode.feedUrl}-${episode.episodeKey}`,
+      title: episode.title,
+      source: episode.show,
+      publishedAt: episode.date,
+      pinned: false,
+      image: episode.image,
+      href,
+    };
+  }) : [];
+  renderParishLifeListenItems();
 }
 
 function parishLifePodcastTime(value) {
@@ -293,7 +344,7 @@ function renderParishLifeContinueListening(item = null) {
   target.innerHTML = `<a class="parish-life-continue-card" href="${href}">
     <span class="parish-life-continue-play" aria-hidden="true">▶</span>
     <span class="parish-life-continue-copy">
-      <small>${parishLifeEscape(item.showTitle || "Orthodox Podcast")}</small>
+      <small>Podcast · ${parishLifeEscape(item.showTitle || "Orthodox Podcast")}</small>
       <strong>${parishLifeEscape(item.episodeTitle || "Untitled episode")}</strong>
       <span class="parish-life-continue-progress" aria-hidden="true"><i style="width:${percent}%"></i></span>
       <em>${parishLifeEscape(parishLifePodcastTime(position))}${duration ? ` of ${parishLifeEscape(parishLifePodcastTime(duration))}` : " listened"}</em>
@@ -317,9 +368,8 @@ async function loadParishLifeContinueListening(headers) {
 }
 
 async function loadRecentPodcastEpisodes(headers) {
-  const section = document.getElementById("parishLifeRecentPodcastsSection");
-  const target = document.getElementById("parishLifePodcastEpisodes");
-  if (!section || !target) return;
+  const target = document.getElementById("parishLifeListenItems");
+  if (!target) return;
   try {
     const response = await fetch("/api/listen/subscriptions", { headers, cache: "no-store" });
     if (window.MyAgapayShell?.handleUnauthorized(response)) return;
@@ -327,7 +377,6 @@ async function loadRecentPodcastEpisodes(headers) {
     if (!response.ok) throw new Error(data.error || "Unable to load podcast subscriptions.");
     const subscriptions = Array.isArray(data.subscriptions) ? data.subscriptions : [];
     if (!subscriptions.length) { renderRecentPodcastEpisodes([], []); return; }
-    section.hidden = false;
     const results = await Promise.allSettled(subscriptions.slice(0, 12).map(async (subscription) => {
       const feedResponse = await fetch(`/api/listen/rss?url=${encodeURIComponent(subscription.feedUrl)}`, { cache: "no-store" });
       if (!feedResponse.ok) throw new Error("Feed unavailable");
@@ -336,11 +385,12 @@ async function loadRecentPodcastEpisodes(headers) {
     const episodes = results
       .flatMap((result) => result.status === "fulfilled" ? result.value : [])
       .sort((left, right) => (new Date(right.date).getTime() || 0) - (new Date(left.date).getTime() || 0))
-      .slice(0, 3);
+      .slice(0, 5);
     renderRecentPodcastEpisodes(subscriptions, episodes);
   } catch {
     // Podcast availability must not block the rest of the Koinonia landing page.
-    section.hidden = true;
+    parishLifeListenSources.podcasts = [];
+    renderParishLifeListenItems();
   }
 }
 
@@ -527,5 +577,6 @@ window.parishLifeTierSectionsHtml = parishLifeTierSectionsHtml;
 window.initializeParishLifeStructure = initializeParishLifeStructure;
 window.parishLifeNextLiturgicalEvent = parishLifeNextLiturgicalEvent;
 window.parishLifeUpcomingLiturgicalEvents = parishLifeUpcomingLiturgicalEvents;
+window.parishLifeBalancedListenItems = parishLifeBalancedListenItems;
 window.requestParishServiceInterest = requestParishServiceInterest;
 document.addEventListener("DOMContentLoaded", loadParishLife);

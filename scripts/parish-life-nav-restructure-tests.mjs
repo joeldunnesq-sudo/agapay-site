@@ -65,22 +65,40 @@ assert.deepEqual(
   ["dormition-fast-begins", "dormition"],
   "a fasting-period fallback should also surface the feast associated with that fast"
 );
+const balancedListening = Array.from(sandbox.window.parishLifeBalancedListenItems(
+  [
+    { key:"parish-1", kind:"parish", publishedAt:"2026-08-01" },
+    { key:"parish-2", kind:"parish", publishedAt:"2026-07-20" },
+    { key:"parish-3", kind:"parish", publishedAt:"2026-07-10" },
+  ],
+  [
+    { key:"podcast-1", kind:"podcast", publishedAt:"2026-08-05" },
+    { key:"podcast-2", kind:"podcast", publishedAt:"2026-08-04" },
+    { key:"podcast-3", kind:"podcast", publishedAt:"2026-08-03" },
+    { key:"podcast-4", kind:"podcast", publishedAt:"2026-08-02" },
+  ],
+  5
+));
+assert.equal(balancedListening.length, 5, "the combined listening preview should stay compact");
+assert.ok(balancedListening.filter((item) => item.kind === "parish").length >= 2, "frequent podcasts must not crowd parish audio out of the combined preview");
+assert.ok(balancedListening.some((item) => item.kind === "podcast"), "the combined preview should include a subscribed podcast when one is available");
 assert.match(landingScript, /Feast associated with this fast/);
 const lowerTierMarkup = sandbox.window.parishLifeTierSectionsHtml(false);
 assert.equal(lowerTierMarkup, "", "lower tiers must receive no communications section DOM");
 assert.doesNotMatch(lowerTierMarkup, /Announcements|Recordings|Ministries/);
 const parishTierMarkup = sandbox.window.parishLifeTierSectionsHtml(true);
 assert.match(parishTierMarkup, /Pinned Announcements/);
-assert.match(parishTierMarkup, /Recent Audio/);
-assert.match(parishTierMarkup, /Recent Podcast Episodes/);
+assert.match(parishTierMarkup, /id="listenHeading">Listen</);
+assert.match(parishTierMarkup, /Continue listening/);
+assert.match(parishTierMarkup, /Latest audio/);
 assert.match(parishTierMarkup, /Recent Videos/);
 assert.match(parishTierMarkup, /Your Ministries/);
-for (const loadingLabel of ["announcements", "ministries", "recordings", "videos", "news"]) {
+for (const loadingLabel of ["announcements", "ministries", "audio", "videos", "news"]) {
   assert.match(parishTierMarkup, new RegExp(`class="sw-tool-loading parish-life-section-loading"[^>]*>Loading ${loadingLabel}…<`), `the ${loadingLabel} section needs its own honest loading state`);
 }
-assert.match(parishTierMarkup, /id="parishLifeRecentPodcastsSection"[\s\S]*hidden[\s\S]*Checking your subscriptions…/, "podcasts must stay absent until a subscription is confirmed");
-assert.equal((parishTierMarkup.match(/parish-life-section-loading/g) || []).length, 6, "each fresh-content section must own one loading placeholder");
-assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf("Recent Audio"), "ministries should appear before recent audio and video");
+assert.match(parishTierMarkup, /id="parishLifeContinueListeningSection"[\s\S]*hidden[\s\S]*id="parishLifeListenItems"/, "Continue listening must be conditional and appear above the combined latest-audio list");
+assert.equal((parishTierMarkup.match(/parish-life-section-loading/g) || []).length, 5, "each fresh-content section must own one loading placeholder");
+assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf('id="listenHeading"'), "ministries should appear before the unified listening section and video");
 assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf("parishLifeNewsMount"), "the combined news preview should follow parish-specific ministries");
 assert.match(landingScript, /Get involved/);
 assert.match(landingScript, /\/api\/donor\/ministry-service-interest/);

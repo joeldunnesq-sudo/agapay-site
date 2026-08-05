@@ -8503,6 +8503,21 @@ textarea {
 .parish-life-section-head a::after { content: ""; }
 .parish-life-section-head a:hover { color: var(--k-gold-hover); }
 
+.parish-life-listen-section { gap: 0; }
+.parish-life-listen-resume,
+.parish-life-listen-latest { display: grid; gap: 7px; }
+.parish-life-listen-resume { margin-bottom: 12px; }
+.parish-life-listen-resume[hidden] { display: none; }
+.parish-life-listen-subhead { display: flex; align-items: center; justify-content: space-between; min-height: 18px; padding: 0 2px; }
+.parish-life-listen-subhead h3 {
+  margin: 0;
+  color: var(--k-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
 .parish-life-services-state,
 .parish-life-empty-state {
   border: 1px solid var(--k-border);

@@ -84,7 +84,7 @@ assert.match(parishApp, /renderKoinoniaOverview\(\);[\s\S]*setKoinoniaStudioView
 assert.match(landing, /Recent News/);
 assert.match(landing, /\.slice\(0, 3\)/, "Koinonia home should show only the three newest combined articles");
 assert.match(landing, /Choose your news sources[\s\S]*Nothing appears until you follow/);
-assert.ok(landing.indexOf("Your Ministries") < landing.indexOf("Recent Audio"), "ministries should appear above audio and video on Koinonia home");
+assert.ok(landing.indexOf("Your Ministries") < landing.indexOf('id="listenHeading"'), "ministries should appear above the unified listening section and video on Koinonia home");
 assert.match(newsPage, /News Feeds[\s\S]*Choose your sources[\s\S]*Follow another RSS feed/);
 assert.match(newsScript, /Priest’s Blog[\s\S]*OCA News[\s\S]*OrthoChristian[\s\S]*SPZH[\s\S]*Orthodox Times[\s\S]*Orthodox Ethos/);
 assert.match(newsScript, /toggleNewsSource[\s\S]*\/api\/donor\/external-feeds\//);

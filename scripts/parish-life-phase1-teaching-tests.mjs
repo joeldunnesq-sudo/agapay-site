@@ -198,9 +198,9 @@ assert.match(sources["src/handlers/parish-teaching.js"], /import \{ renderBounde
 assert.match(sources["src/handlers/parish-teaching.js"], /sendTeachingPush\(env, \{/);
 assert.match(sources["src/handlers/parish-teaching.js"], /contentLength: metadata\.contentLength[\s\S]*teaching_audio_storage_failed/, "R2 uploads must preserve known-length request streams and return an actionable storage error");
 assert.match(sources["src/worker.js"], /handleParishTeaching\(request, env, parishId,[\s\S]*, ctx\)/);
-assert.match(sources["public/myagapay/parish-life.js"], />Recent Audio<[\s\S]*href="\/myagapay\/teaching">Audio Library/);
+assert.match(sources["public/myagapay/parish-life.js"], />Listen<[\s\S]*href="\/myagapay\/teaching">Open Library/);
 assert.match(sources["public/myagapay/parish-life.js"], /post\.status === "published" && Boolean\(post\.audioUrl\)/);
-assert.match(sources["public/myagapay/parish-life.js"], /parishLifeFetch\("\/api\/donor\/teaching"[\s\S]*\.then\(\(teaching\)[\s\S]*renderRecentRecordings[\s\S]*setTeachingUnreadCount\(Math\.max\(0, Number\(teaching\?\.unreadCount\) \|\| 0\)\)/, "the teaching request must fill Recent Audio and update unread state independently");
+assert.match(sources["public/myagapay/parish-life.js"], /parishLifeFetch\("\/api\/donor\/teaching"[\s\S]*\.then\(\(teaching\)[\s\S]*renderRecentRecordings[\s\S]*setTeachingUnreadCount\(Math\.max\(0, Number\(teaching\?\.unreadCount\) \|\| 0\)\)/, "the teaching request must fill the unified Listen section and update unread state independently");
 assert.match(sources["public/parish/dashboard.html"], /id="teachingAudio"/);
 assert.match(sources["public/parish/dashboard.html"], /id="teachingAudioUrl"[\s\S]*id="teachingPinned"[\s\S]*Pin when published/);
 assert.match(sources["public/parish/dashboard.html"], /id="teachingCategory"[\s\S]*?value="homilies"[\s\S]*?value="special_events"/);
@@ -212,11 +212,13 @@ assert.match(sources["public/parish/app.js"], /chooseTeachingAudioUpload[\s\S]*R
 assert.match(sources["public/parish/app.js"], /Add audio link[\s\S]*setTeachingAudioLink[\s\S]*audioUrl:audioUrl\.trim\(\)[\s\S]*Parishioners can now play this post in My AGAPAY/, "a text-only post must be repairable with a direct audio link from the parish library");
 assert.match(sources["public/parish/app.js"], /deleteTeachingPost[\s\S]*method:'DELETE'[\s\S]*Teaching post permanently deleted/, "audio posts of every status must offer permanent deletion");
 assert.match(sources["public/myagapay/parish-life.js"], /Boolean\(right\.pinned\)[\s\S]*Pinned ·/);
-assert.match(sources["public/myagapay/parish-life.js"], /Continue listening[\s\S]*Recent Podcast Episodes/, "unfinished podcast listening must appear above recent episodes on the Koinonia landing page");
+assert.match(sources["public/myagapay/parish-life.js"], /Continue listening[\s\S]*Latest audio/, "unfinished podcast listening must appear above the combined latest-audio list on the Koinonia landing page");
+assert.match(sources["public/myagapay/parish-life.js"], /function parishLifeBalancedListenItems[\s\S]*podcastReserve[\s\S]*parishReserve[\s\S]*Math\.min\(parish\.length, 2/, "the combined list must reserve space for parish audio without excluding subscribed podcasts");
+assert.match(sources["public/myagapay/parish-life.js"], /Parish audio ·[\s\S]*Podcast ·/, "combined-list rows must identify parish and podcast sources");
 assert.match(sources["public/myagapay/parish-life.js"], /loadParishLifeContinueListening[\s\S]*\/api\/listen\/progress[\s\S]*data\.items\[0\][\s\S]*renderParishLifeContinueListening/, "the landing page must surface only the account's most recently active podcast episode");
-assert.match(sources["public/myagapay/parish-life.js"], /Recent Podcast Episodes[\s\S]*\/api\/listen\/subscriptions[\s\S]*Promise\.allSettled[\s\S]*slice\(0, 3\)/, "subscribers must receive only the three most recent podcast episodes on the Koinonia landing page");
+assert.match(sources["public/myagapay/parish-life.js"], /Latest audio[\s\S]*\/api\/listen\/subscriptions[\s\S]*Promise\.allSettled[\s\S]*slice\(0, 5\)/, "the unified list may draw from the five most recent subscribed podcast episodes");
 assert.match(sources["public/myagapay/parish-life.js"], /mode=podcasts&feed=\$\{encodeURIComponent\(episode\.feedUrl\)\}&episode=\$\{encodeURIComponent\(episode\.episodeKey\)\}/, "landing-page podcast episodes must deep-link to the selected playable episode");
-assert.match(sources["public/myagapay/parish-life.js"], /episode\.image \? `<img src="\$\{parishLifeEscape\(episode\.image\)\}"[^`]*` : "▶"/, "recent podcast episodes must show feed artwork and reserve the generic play icon as a fallback");
+assert.match(sources["public/myagapay/parish-life.js"], /item\.image \? `<img src="\$\{parishLifeEscape\(item\.image\)\}"[^`]*` : "▶"/, "podcast items in the combined list must show feed artwork and reserve the generic play icon as a fallback");
 assert.match(sources["public/myagapay/teaching.js"], /post\.pinned[\s\S]*Linked audio/);
 assert.match(sources["public/myagapay/teaching.js"], /playParishTeachingAudio[\s\S]*playKoinoniaPodcast\(\{[\s\S]*trackProgress:false/, "parish recordings must launch the shared Koinonia mini and full-screen player");
 assert.match(sources["public/myagapay/teaching.js"], /post\.audioUrl \? "playParishTeachingAudio" : "openTeachingPost"[\s\S]*Play in Koinonia/, "a donor post with stored audio must expose the shared player rather than render as text-only");
