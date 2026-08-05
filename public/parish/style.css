@@ -236,6 +236,28 @@
       font-weight: 600;
       line-height: 1;
     }
+    .parish-auth-acceptance {
+      display: grid;
+      gap: 0.8rem;
+      margin-top: 0.15rem;
+      border: 1px solid rgba(184,144,47,0.3);
+      border-radius: 13px;
+      padding: 1rem;
+      background: rgba(184,144,47,0.07);
+    }
+    .parish-auth-acceptance[hidden] { display: none; }
+    .parish-auth-acceptance-kicker {
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .parish-auth-acceptance h3 { margin: -0.35rem 0 0; color: var(--deep); font: 600 21px/1.2 var(--serif); }
+    .parish-auth-acceptance > p { margin: -0.25rem 0 0.15rem; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .parish-auth-acceptance-check { display: flex; align-items: flex-start; gap: 10px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .parish-auth-acceptance-check input { margin-top: 3px; }
+    .parish-auth-acceptance-check a { color: var(--gold); text-decoration: underline; }
     .parish-auth-actions {
       display: grid;
       grid-template-columns: 1fr 1fr;

@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/parish/style.css" />
-  <script src="/parish/app.js" defer></script>
+  <link rel="stylesheet" href="/parish/style.css?v=20260804parishlogin1" />
+  <script src="/parish/app.js?v=20260804aploslogin1" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -38,30 +38,34 @@
       <form class="parish-auth-card" id="parishLoginForm" onsubmit="loginFromParishPage(event)">
         <h2>Login</h2>
         <div class="form-group">
-          <label class="form-label" for="parishId">Parish username</label>
-          <input id="parishId" autocomplete="off" placeholder="st-seraphim-mission" />
+          <label class="form-label" for="parishId">Parish name or username</label>
+          <input id="parishId" autocomplete="username" placeholder="st-seraphim-mission" oninput="clearParishTermsAcceptanceRequirement()" />
         </div>
         <div class="form-group">
           <label class="form-label" for="parishToken">Password</label>
-          <input id="parishToken" type="password" autocomplete="new-password" placeholder="Your parish password" />
+          <input id="parishToken" type="password" autocomplete="current-password" placeholder="Your parish password" />
         </div>
-        <div class="form-group">
-          <p style="font-size:12px;line-height:1.5;color:var(--muted);margin-bottom:12px;">If this organization has not accepted the August 2 Terms, complete the identity fields and checkbox once. They are optional on later logins.</p>
-          <label class="form-label" for="acceptingName">Your full name</label>
-          <input id="acceptingName" autocomplete="name" maxlength="200" placeholder="Person signing in" />
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="acceptingEmail">Your email</label>
-          <input id="acceptingEmail" type="email" autocomplete="email" maxlength="320" placeholder="you@example.com" />
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="acceptingRole">Your role or title</label>
-          <input id="acceptingRole" autocomplete="organization-title" maxlength="200" placeholder="Rector, treasurer, administrator…" />
-        </div>
-        <label style="display:flex;align-items:flex-start;gap:10px;font-size:12px;line-height:1.55;color:var(--muted);margin:1rem 0;">
-          <input id="parishAgreeTerms" type="checkbox" style="margin-top:3px;" />
-          <span>I agree to the <a href="/terms#arbitration" target="_blank" rel="noopener noreferrer" style="color:var(--gold);text-decoration:underline;">Terms of Service</a>, acknowledge the <a href="/privacy" target="_blank" rel="noopener noreferrer" style="color:var(--gold);text-decoration:underline;">Privacy Policy</a> and confirm I am authorized to act for this organization.</span>
-        </label>
+        <section class="parish-auth-acceptance" id="parishTermsAcceptance" aria-labelledby="parishTermsAcceptanceTitle" hidden>
+          <span class="parish-auth-acceptance-kicker">One-time step</span>
+          <h3 id="parishTermsAcceptanceTitle">Accept the current Terms</h3>
+          <p>This parish has not yet accepted the current Terms and Privacy Policy. An authorized representative only needs to complete this once.</p>
+          <div class="form-group">
+            <label class="form-label" for="acceptingName">Your full name</label>
+            <input id="acceptingName" autocomplete="name" maxlength="200" placeholder="Person signing in" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="acceptingEmail">Your email</label>
+            <input id="acceptingEmail" type="email" autocomplete="email" maxlength="320" placeholder="you@example.com" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="acceptingRole">Your role or title</label>
+            <input id="acceptingRole" autocomplete="organization-title" maxlength="200" placeholder="Rector, treasurer, administrator…" />
+          </div>
+          <label class="parish-auth-acceptance-check">
+            <input id="parishAgreeTerms" type="checkbox" />
+            <span>I agree to the <a href="/terms#arbitration" target="_blank" rel="noopener noreferrer">Terms of Service</a>, acknowledge the <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and confirm I am authorized to act for this organization.</span>
+          </label>
+        </section>
         <div class="parish-auth-actions">
           <button class="btn btn-gold" type="submit">Log in</button>
           <a class="btn btn-ghost" href="/register.html">Register parish</a>

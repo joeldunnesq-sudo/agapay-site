@@ -251,7 +251,8 @@ console.log("PASS - chart import rejects an unconfirmed source type, links an ex
   for (const copy of ["Move from QuickBooks or Aplos", "Start clean with an opening balance", "Import full transaction history (advanced)", "does not reconstruct the accounts-payable subledger"]) {
     assert.match(uiSource, new RegExp(copy.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
   }
-  assert.match(uiSource, /migrationSourceGuide\('quickbooks'\)\}\$\{migrationSourceGuide\('aplos'\)\}/, "source selection must display both export guides");
+  assert.match(uiSource, /migrationSourceGuide\('aplos',true\)\}\$\{migrationSourceGuide\('quickbooks'\)\}/, "source selection must visibly lead with the expanded Aplos guide while retaining QuickBooks");
+  assert.match(uiSource, /const sourceGuides=`[\s\S]*migrationSourceGuide\('aplos',session\.sourceSystem==='aplos'\)[\s\S]*migrationSourceGuide\('quickbooks',session\.sourceSystem==='quickbooks'\)/, "active migration sessions must keep both source guides available");
   console.log("PASS - routes, treasurer-only capability, handler ordering, real PATCH dispatch, and both UI paths are present");
 }
 

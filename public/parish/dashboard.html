@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/parish/style.css?v=20260803bookstoresales1" />
   <link rel="stylesheet" href="/parish/redesign.css?v=20260804paymentrouting1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
-  <link rel="stylesheet" href="/styles/stewardship.css?v=20260731healthgrid1" />
+  <link rel="stylesheet" href="/styles/stewardship.css?v=20260804parishtierwidth1" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -1137,7 +1137,7 @@
            parishes (currently just st-fiacre, for internal testing) —
            see SACRAMENTS_ROLLOUT_PARISH_IDS in app.js. Everyone else sees
            the coming-soon banner. -->
-      <div class="tab-panel" id="tab-sacraments">
+      <div class="tab-panel parish-tier-panel" id="tab-sacraments">
 
         <div class="sac-paywall" id="sacramentsComingSoonBanner">
           <div class="text-give-header sw-suite-hero sac-paywall-hero">
@@ -1214,9 +1214,6 @@
               </div>
               <div class="sac-admin-status sw-suite-hero-status agapay-feature-actions">
                 <div id="sacramentsFeatureToggle"></div>
-                <button class="sac-admin-icon-btn sw-suite-refresh-btn" type="button" onclick="loadSacramentsPanel(true)" title="Refresh Sacraments &amp; Services" aria-label="Refresh Sacraments &amp; Services">
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/><polyline points="10 1 10 4 13 4"/></svg>
-                </button>
               </div>
             </div>
             <div class="sac-admin-context-bar">
@@ -1238,14 +1235,14 @@
       </div>
 
       <!-- ── DIRECTORY ADMIN TAB ────────────────────── -->
-      <div class="tab-panel" id="tab-directory">
+      <div class="tab-panel parish-tier-panel" id="tab-directory">
         <div id="directoryAdminPane" class="pdx-dir-workspace">
           <p class="sw-tool-loading">Loading...</p>
         </div>
       </div>
 
       <!-- ── KOINONIA STUDIO TAB ────────────────────── -->
-      <div class="tab-panel" id="tab-communications">
+      <div class="tab-panel parish-tier-panel" id="tab-communications">
         <div class="communications-admin-shell koinonia-studio">
           <header class="communications-admin-header koinonia-studio-hero">
             <div class="koinonia-studio-identity"><span class="koinonia-studio-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg></span><div><span class="eyebrow">Parish publishing studio</span><h1>Koinonia</h1><p>Shape the digital life of your parish with news, teaching, audio, and video.</p></div></div>
@@ -1442,7 +1439,7 @@
       </div>
 
       <!-- ── ACCOUNTING TAB ────────────────────── -->
-      <div class="tab-panel" id="tab-accounting">
+      <div class="tab-panel parish-tier-panel" id="tab-accounting">
         <div class="acct-suite-shell">
           <header class="acct-suite-rail" aria-label="Accounting suite navigation">
             <div class="acct-suite-brand"><strong>AGAPAY</strong><span>Accounting Suite</span></div>
@@ -1649,7 +1646,7 @@
       </div>
 
       <!-- ── TEXT-TO-GIVE TAB ─────────────────────────────── -->
-      <div class="tab-panel" id="tab-text">
+      <div class="tab-panel parish-tier-panel" id="tab-text">
         <div class="text-give-header">
           <div>
             <div class="text-give-eyebrow">Parish Dashboard</div>
@@ -1868,6 +1865,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
-  <script src="/parish/app.js?v=20260804paymentrouting1"></script>
+  <script src="/parish/app.js?v=20260804aploslogin1"></script>
 </body>
 </html>

@@ -486,6 +486,31 @@
       .replace(/\b[a-z]/g, c => c.toUpperCase());
   }
 
+  function clearParishTermsAcceptanceRequirement() {
+    const panel = document.getElementById('parishTermsAcceptance');
+    if (!panel || panel.hidden) return;
+    panel.hidden = true;
+    panel.removeAttribute('data-parish-id');
+    ['acceptingName', 'acceptingEmail', 'acceptingRole', 'parishAgreeTerms'].forEach((id) => {
+      const field = document.getElementById(id);
+      if (field) field.required = false;
+    });
+  }
+
+  function requireParishTermsAcceptance(parishId, termsVersion = '') {
+    const panel = document.getElementById('parishTermsAcceptance');
+    if (!panel) return;
+    panel.hidden = false;
+    panel.dataset.parishId = parishId;
+    ['acceptingName', 'acceptingEmail', 'acceptingRole', 'parishAgreeTerms'].forEach((id) => {
+      const field = document.getElementById(id);
+      if (field) field.required = true;
+    });
+    const versionLabel = termsVersion ? ` (${termsVersion})` : '';
+    setStatus(`One-time acceptance of the current Terms${versionLabel} is required for this parish. Complete the highlighted section and log in again.`, 'error');
+    document.getElementById('acceptingName')?.focus();
+  }
+
   async function loginFromParishPage(event) {
     event.preventDefault();
     const parishId = document.getElementById('parishId')?.value.trim();
@@ -504,6 +529,10 @@
         body: JSON.stringify({ password, acceptingName, acceptingEmail, acceptingRole, termsAccepted })
       });
       const data = await res.json().catch(() => ({}));
+      if (res.status === 428 && data.code === 'terms_acceptance_required') {
+        requireParishTermsAcceptance(parishId, data.termsVersion);
+        return;
+      }
       if (!res.ok) throw new Error(data.error || 'Unable to log in');
       if (!data.token) throw new Error('Login succeeded but no session token was returned.');
       sessionStorage.setItem('agapay_parish_id', parishId);
@@ -2707,7 +2736,7 @@
   function renderAccountingMigrationWizard(pane) {
     const session=accountingMigration.session;
     if(!session){
-      pane.innerHTML=`<div class="acct-list-head"><div><span class="acct-kicker">Accounting setup</span><h2>Move to AGAPAY</h2><p>CSV-based migration keeps the transfer reviewable and avoids creating a permanent live connection to the old system.</p></div><button class="acct-refresh" onclick="closeAccountingMigration()">← Setup</button></div><div class="acct-setup-grid"><section class="acct-card acct-setup-lead"><h2>Choose the source system</h2><form class="acct-phase-form" onsubmit="createAccountingMigrationSession(event)"><label>Source<select name="sourceSystem"><option value="quickbooks">QuickBooks</option><option value="aplos">Aplos</option><option value="other">Other CSV export</option></select></label><button class="acct-primary">Start migration</button><span class="acct-form-status"></span></form></section>${accountingMigration.sessions.length?`<section class="acct-card"><h2>Previous sessions</h2>${accountingMigration.sessions.map((item)=>`<button class="acct-refresh" onclick="resumeAccountingMigration('${escapeAttr(item.id)}')">${escapeHtml(item.sourceSystem)} · ${escapeHtml(migrationStatus(item.status))}</button>`).join('')}</section>`:''}</div><div class="acct-migration-source-guides">${migrationSourceGuide('quickbooks')}${migrationSourceGuide('aplos')}</div>`;
+      pane.innerHTML=`<div class="acct-list-head"><div><span class="acct-kicker">Accounting setup</span><h2>Move to AGAPAY</h2><p>CSV-based migration keeps the transfer reviewable and avoids creating a permanent live connection to the old system.</p></div><button class="acct-refresh" onclick="closeAccountingMigration()">← Setup</button></div><div class="acct-setup-grid"><section class="acct-card acct-setup-lead"><h2>Choose the source system</h2><form class="acct-phase-form" onsubmit="createAccountingMigrationSession(event)"><label>Source<select name="sourceSystem"><option value="quickbooks">QuickBooks</option><option value="aplos">Aplos</option><option value="other">Other CSV export</option></select></label><button class="acct-primary">Start migration</button><span class="acct-form-status"></span></form></section>${accountingMigration.sessions.length?`<section class="acct-card"><h2>Previous sessions</h2>${accountingMigration.sessions.map((item)=>`<button class="acct-refresh" onclick="resumeAccountingMigration('${escapeAttr(item.id)}')">${escapeHtml(item.sourceSystem)} · ${escapeHtml(migrationStatus(item.status))}</button>`).join('')}</section>`:''}</div><div class="acct-migration-source-guides">${migrationSourceGuide('aplos',true)}${migrationSourceGuide('quickbooks')}</div>`;
       return;
     }
     const steps=[['chart','Chart of accounts',session.chartOfAccountsStatus],['vendors','Vendors',session.vendorsStatus],['funds','Funds',session.fundMappingStatus],['cutover','Balances & history',session.openingBalanceStatus==='completed'?session.openingBalanceStatus:session.transactionHistoryStatus]];
@@ -2726,7 +2755,8 @@
       const opening=accountingMigration.previews.opening,history=accountingMigration.previews.history;
       content=`<section class="acct-card acct-setup-lead"><span class="acct-kicker">Recommended cutover</span><h2><strong>Start clean with an opening balance</strong></h2><p>Export a trial balance as of the day before AGAPAY begins. An unbalanced file is stopped in preview before anything posts.</p>${opening?`${migrationPreviewErrors(opening)}<div class="acct-facts"><div><strong>${accountingMoney(opening.totalDebits)}</strong><span>Debits</span></div><div><strong>${accountingMoney(opening.totalCredits)}</strong><span>Credits</span></div><div><strong>${opening.balanced?'Balanced':'Not balanced'}</strong><span>Preview status</span></div></div><label>Effective date<input id="migrationOpeningDate" type="date" value="${new Date().toISOString().slice(0,10)}"></label><label><input id="migrationAcknowledgeExisting" type="checkbox"> I acknowledge existing posted ledger activity, if any.</label><button class="acct-primary" onclick="commitAccountingMigrationStep('opening')" ${opening.eligibleToCommit?'':'disabled'}>Post opening balance</button><span data-migration-commit-status></span>`:migrationCsvForm('opening','Trial balance',[['accountRef','Account reference','Account'],['debit','Debit','Debit'],['credit','Credit','Credit'],['fundRef','Optional fund reference','Fund']])}</section><section class="acct-card"><details ${accountingMigration.advanced?'open':''} ontoggle="accountingMigration.advanced=this.open"><summary><strong>Import full transaction history (advanced)</strong></summary><p class="acct-report-disclaimer">This reconstructs general-ledger balances only. It does not reconstruct the accounts-payable subledger, bill aging, or linked bill/payment history. Enter open unpaid bills manually through Payables after cutover.</p>${history?`${migrationPreviewErrors(history)}<p><strong>Grouping:</strong> ${escapeHtml(history.groupingMethod)} — ${escapeHtml(history.groupingExplanation)}</p><p>${history.eligibleGroups} balanced entries are eligible.</p><label><input id="migrationAcknowledgeExisting" type="checkbox"> I understand the AP limitation and acknowledge existing posted activity, if any.</label><button class="acct-primary" onclick="commitAccountingMigrationStep('history')">Post next batch of up to 200</button><span data-migration-commit-status></span>`:migrationCsvForm('history','General ledger detail',[['date','Date','Date'],['accountRef','Account reference','Account'],['debit','Debit','Debit'],['credit','Credit','Credit'],['memo','Memo','Memo'],['description','Description','Description'],['fundRef','Optional fund/class','Fund'],['groupRef','Optional transaction ID','Transaction ID']])}</details></section>`;
     }
-    pane.innerHTML=`<div class="acct-list-head"><div><span class="acct-kicker">${escapeHtml(session.sourceSystem)} migration</span><h2>Migration workspace</h2><p>Session ${escapeHtml(session.id)} · progress is saved after every committed step.</p></div><button class="acct-refresh" onclick="closeAccountingMigration()">← Setup</button></div><div class="acct-setup-grid"><aside class="acct-card">${nav}</aside><div class="acct-migration-main">${migrationSourceGuide(session.sourceSystem)}${content}</div></div>`;
+    const sourceGuides=`<div class="acct-migration-source-guides">${migrationSourceGuide('aplos',session.sourceSystem==='aplos')}${migrationSourceGuide('quickbooks',session.sourceSystem==='quickbooks')}</div>`;
+    pane.innerHTML=`<div class="acct-list-head"><div><span class="acct-kicker">${escapeHtml(session.sourceSystem)} migration</span><h2>Migration workspace</h2><p>Session ${escapeHtml(session.id)} · progress is saved after every committed step.</p></div><button class="acct-refresh" onclick="closeAccountingMigration()">← Setup</button></div><div class="acct-setup-grid"><aside class="acct-card">${nav}</aside><div class="acct-migration-main">${sourceGuides}${content}</div></div>`;
   }
   async function saveAccountingSettings() {
     const settings = accountingData.setup?.settings;

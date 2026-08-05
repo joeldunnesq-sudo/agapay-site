@@ -843,7 +843,7 @@ function cleanAssetRequest(request) {
     url.pathname = "/give/parish-giving/index.html";
     return new Request(url, request);
   }
-  const staticGivePages = new Set(["features", "how-it-works", "pricing", "parish-giving", "recurring-donations", "fundraising", "event-payments"]);
+  const staticGivePages = new Set(["features", "how-it-works", "pricing", "request-demo", "get-agapay", "parish-giving", "recurring-donations", "fundraising", "event-payments"]);
   const givePage = url.pathname.match(/^\/give\/([^/]+)\/?$/)?.[1] || "";
   if (staticGivePages.has(givePage)) {
     url.pathname = `/give/${givePage}.html`;
@@ -2905,6 +2905,10 @@ export default {
     }
 
     if (request.method === "GET" || request.method === "HEAD") {
+      if (["/give/share", "/give/share/", "/give/share.html"].includes(url.pathname.toLowerCase())) {
+        url.pathname = "/give/get-agapay";
+        return Response.redirect(url.toString(), 301);
+      }
       if (["/vision", "/vision/", "/vision.html"].includes(url.pathname.toLowerCase())) {
         url.pathname = "/about";
         return Response.redirect(url.toString(), 301);
@@ -2962,7 +2966,7 @@ export default {
       url.pathname = "/give/find-parish";
       return Response.redirect(url.toString(), 301);
     }
-    const cleanGivePage = url.pathname.match(/^\/give\/(features|how-it-works|pricing|why|parish-giving|recurring-donations|fundraising|event-payments)\.html$/)?.[1];
+    const cleanGivePage = url.pathname.match(/^\/give\/(features|how-it-works|pricing|request-demo|get-agapay|why|parish-giving|recurring-donations|fundraising|event-payments)\.html$/)?.[1];
     if (request.method === "GET" && cleanGivePage) {
       url.pathname = `/give/${cleanGivePage}`;
       return Response.redirect(url.toString(), 301);

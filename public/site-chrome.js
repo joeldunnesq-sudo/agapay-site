@@ -3,7 +3,7 @@
   if (/^\/(?:admin|parish|donor|myagapay)(?:\/|$)/.test(path)) return;
 
   const PRIMARY_LINKS = [
-    { href: "/give/#why", label: "Why AGAPAY", key: "why" },
+    { href: "/give/request-demo", label: "Request Demo", key: "demo" },
     { href: "/give", label: "AGAPAY Give", key: "give" },
     { href: "/learn", label: "AGAPAY Learn", key: "learn" },
     { href: "/design", label: "AGAPAY Design", key: "design" },
@@ -18,6 +18,7 @@
 
   function activeKeyFromPath() {
     if (path === "/why") return "why";
+    if (path === "/give/request-demo" || path.endsWith("/give/request-demo.html")) return "demo";
     if (path === "/give/features" || path.endsWith("/give/features.html")) return "give";
     if (path === "/give/pricing" || path.endsWith("/give/pricing.html")) return "give";
     if (path === "/give/how-it-works" || path.endsWith("/give/how-it-works.html")) return "give";

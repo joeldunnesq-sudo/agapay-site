@@ -89,6 +89,7 @@ const mimeTypes = {
   ".webm": "video/webm",
   ".svg": "image/svg+xml; charset=utf-8",
   ".ico": "image/x-icon",
+  ".pdf": "application/pdf",
   ".xml": "application/xml; charset=utf-8"
 };
 
@@ -301,7 +302,7 @@ async function resolveStaticPath(urlPath) {
     pathname = "/give/find-parish.html";
   } else if (/^\/give\/[^/]+\/[^/]+-campaign\/?$/.test(pathname)) {
     pathname = "/give/parish-giving/index.html";
-  } else if (["/give/features", "/give/how-it-works", "/give/pricing", "/give/parish-giving", "/give/recurring-donations", "/give/fundraising", "/give/event-payments"].includes(pathname)) {
+  } else if (["/give/features", "/give/how-it-works", "/give/pricing", "/give/request-demo", "/give/get-agapay", "/give/parish-giving", "/give/recurring-donations", "/give/fundraising", "/give/event-payments"].includes(pathname)) {
     pathname = `${pathname}.html`;
   } else if (/^\/give\/[^/]+\/?$/.test(pathname)) {
     pathname = "/give/form.html";
@@ -316,6 +317,12 @@ export const server = http.createServer(async (req, res) => {
 
     const requestUrl = new URL(req.url, `http://${req.headers.host}`);
     if (req.method === "GET" || req.method === "HEAD") {
+      if (["/give/share", "/give/share/", "/give/share.html"].includes(requestUrl.pathname.toLowerCase())) {
+        requestUrl.pathname = "/give/get-agapay";
+        res.writeHead(301, { Location: requestUrl.toString() });
+        res.end();
+        return;
+      }
       if (["/vision", "/vision/", "/vision.html"].includes(requestUrl.pathname.toLowerCase())) {
         requestUrl.pathname = "/about";
         res.writeHead(301, { Location: requestUrl.toString() });
