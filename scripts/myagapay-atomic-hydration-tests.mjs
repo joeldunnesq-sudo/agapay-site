@@ -53,7 +53,7 @@ for (const file of protectedPages) {
   ].includes(file)
     ? "20260803storefront1"
     : file === "public/myagapay/parish-life.html"
-        ? "20260805listenmerge1"
+        ? "20260805listenmerge2"
       : "20260802playerredesign1";
   assert.match(html, /<html[^>]*data-myagapay-hydrate/, `${file} must opt into the pre-paint hydration shield`);
   assert.match(html, new RegExp(`/donor/style\\.css\\?v=${expectedStylesheetVersion}`), `${file} must load the current atomic-paint CSS version`);
