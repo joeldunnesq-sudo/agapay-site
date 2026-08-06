@@ -8,13 +8,13 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
   <link rel="manifest" href="/manifest.webmanifest" />
-  <title>AGAPAY | The Orthodox Platform for Giving, Learning, and Community</title>
-  <meta name="description" content="AGAPAY unites AGAPAY Give, the Orthodox giving and tithing app, with AGAPAY Learn homeschool planning and future Orthodox marketplace and directory tools." />
+  <title>AGAPAY | Give to Your Parish. Grow Your Household.</title>
+  <meta name="description" content="AGAPAY Give and AGAPAY Learn help Orthodox Christians support their parishes and plan homeschool life around the rhythm of the Church." />
   <link rel="canonical" href="https://agapay.app/" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="AGAPAY" />
-  <meta property="og:title" content="AGAPAY | The Orthodox Platform for Giving, Learning, and Community" />
-  <meta property="og:description" content="One Orthodox platform for Orthodox parish donations and tithing, homeschool planning, and future marketplace and directory tools." />
+  <meta property="og:title" content="AGAPAY | Give to Your Parish. Grow Your Household." />
+  <meta property="og:description" content="Two focused products for Orthodox parish giving and homeschool planning, together in one trusted platform." />
   <meta property="og:url" content="https://agapay.app/" />
   <meta property="og:image" content="https://agapay.app/images/app-phone-mockup.png" />
   <meta property="og:image:width" content="1122" />
@@ -761,18 +761,30 @@
 
     .pillar-grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 1.25rem;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.5rem;
+      max-width: 66rem;
+      margin-inline: auto;
     }
 
     .pillar {
       min-height: 100%;
       display: flex;
       flex-direction: column;
-      padding: 1.65rem;
+      padding: clamp(1.7rem, 4vw, 2.35rem);
       border: 1px solid rgba(200, 162, 74, 0.28);
       border-radius: 6px;
       background: linear-gradient(180deg, #0a1b29, #08161f);
+    }
+
+    .pillar-kicker {
+      display: block;
+      margin-bottom: 0.55rem;
+      color: var(--gold);
+      font-size: 0.76rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
     }
 
     .pillar.is-muted {
@@ -1086,16 +1098,16 @@
       <section class="hero" aria-labelledby="heroTitle">
         <div class="hero-copy">
           <img class="hero-mark" src="/mark.png" alt="" width="112" height="112" />
-          <p class="eyebrow">Orthodox First · One Platform</p>
+          <p class="eyebrow">Orthodox First · Parish and Household</p>
           <h1 id="heroTitle">Give to your parish.<br />Grow your household.<br /><em>Gather the faithful.</em></h1>
           <p class="tagline">
             Love how you
             <span class="flip-word" data-flip-word aria-live="polite">GIVE</span>
           </p>
-          <p class="hero-text">AGAPAY unites Orthodox giving, family learning, marketplace tools, and community life into one trusted home built for the Church, the household, and everything between. Giving transactions are processed and protected by Stripe, and AGAPAY never holds donated funds.</p>
+          <p class="hero-text">Two focused products, one shared purpose: make parish stewardship simpler and help Orthodox households learn in the rhythm of the Church. Giving transactions are processed and protected by Stripe, and AGAPAY never holds donated funds.</p>
           <div class="hero-actions">
-            <a class="gold-btn" href="/give">Start Giving</a>
-            <a class="outline-btn" href="/about">About AGAPAY</a>
+            <a class="gold-btn" href="/give">Explore AGAPAY Give</a>
+            <a class="outline-btn" href="/learn">Explore AGAPAY Learn</a>
           </div>
         </div>
       </section>
@@ -1105,6 +1117,44 @@
           <div class="trust-title">Built for every canonical Orthodox jurisdiction</div>
           <div class="jurisdictions" aria-label="Example Orthodox jurisdictions">
             <span>Greek</span><span>Antiochian</span><span>OCA</span><span>ROCOR</span><span>Serbian</span><span>Romanian</span><span>and More</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="platform-section" id="platform" aria-labelledby="choosePathTitle">
+        <div class="section-inner">
+          <div class="center-heading">
+            <p class="eyebrow">Two Products · One Mission</p>
+            <h2 id="choosePathTitle">Start with what you need today.</h2>
+            <p>Choose the path that serves your parish or household. Each product is focused, practical, and built for Orthodox life.</p>
+          </div>
+          <div class="pillar-grid">
+            <article class="pillar">
+              <span class="pillar-icon">☩</span>
+              <span class="pillar-kicker">For parishes and faithful</span>
+              <h3>AGAPAY Give</h3>
+              <p>Make stewardship simple, secure, and worthy of the gift.</p>
+              <ul>
+                <li>One-time and recurring gifts</li>
+                <li>Memorials and commemorations</li>
+                <li>Campaigns and special projects</li>
+                <li>Direct parish fund flow through Stripe</li>
+              </ul>
+              <a class="gold-btn" href="/give">Give to Your Parish</a>
+            </article>
+            <article class="pillar">
+              <span class="pillar-icon">☰</span>
+              <span class="pillar-kicker">For Orthodox households</span>
+              <h3>AGAPAY Learn</h3>
+              <p>Plan homeschool life around your children and the Church year.</p>
+              <ul>
+                <li>Liturgical calendar integration</li>
+                <li>Household and child planning</li>
+                <li>Grace Mode for real life</li>
+                <li>Printables, reports, and transcripts</li>
+              </ul>
+              <a class="gold-btn" href="/learn">Grow Your Household</a>
+            </article>
           </div>
         </div>
       </section>
@@ -1149,65 +1199,6 @@
             </label>
             <a class="widget-submit" href="/give" style="text-decoration:none;display:flex;align-items:center;justify-content:center;">Give with AGAPAY</a>
             <div class="secure-note">Processed and protected by Stripe · AGAPAY never holds donated funds</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="platform-section" id="platform">
-        <div class="section-inner">
-          <div class="center-heading">
-            <p class="eyebrow">Four Parts · One Mission</p>
-            <h2>A platform for the Orthodox way of life</h2>
-            <p>Support your parish, teach your children, find trusted goods, and connect with the wider Church together in one place.</p>
-          </div>
-          <div class="pillar-grid">
-            <article class="pillar">
-              <span class="pillar-icon">☩</span>
-              <h3>AGAPAY Give</h3>
-              <p>Give to your parish, support ministries, and offer with purpose.</p>
-              <ul>
-                <li>One-time and recurring gifts</li>
-                <li>Memorials and commemorations</li>
-                <li>Campaigns and special projects</li>
-                <li>Processed and protected by Stripe</li>
-                <li>AGAPAY never holds donated funds</li>
-              </ul>
-              <a class="gold-btn" href="/give">Give with Faith</a>
-            </article>
-            <article class="pillar">
-              <span class="pillar-icon">☰</span>
-              <h3>AGAPAY Learn</h3>
-              <p>Orthodox homeschool planning shaped by the Church year.</p>
-              <ul>
-                <li>Liturgical calendar integration</li>
-                <li>Household and child planning</li>
-                <li>Grace Mode for real life</li>
-                <li>Printables, reports, and transcripts</li>
-              </ul>
-              <a class="gold-btn" href="/learn">Plan Your Homeschool</a>
-            </article>
-            <article class="pillar is-muted">
-              <span class="pillar-icon">◫</span>
-              <h3>AGAPAY Marketplace</h3>
-              <p>Buy and sell Orthodox goods from trusted artisans and businesses.</p>
-              <ul>
-                <li>Faithful products</li>
-                <li>Support Orthodox makers</li>
-                <li>Built for our community</li>
-              </ul>
-              <a class="ghost-btn" href="/marketplace.html">Join the Waitlist</a>
-            </article>
-            <article class="pillar is-muted">
-              <span class="pillar-icon">⌖</span>
-              <h3>AGAPAY Directory</h3>
-              <p>Find Orthodox parishes, monasteries, schools, and trusted resources.</p>
-              <ul>
-                <li>Search by location</li>
-                <li>Parishes and ministries</li>
-                <li>Businesses and services</li>
-              </ul>
-              <a class="ghost-btn" href="/directory.html">Join the Waitlist</a>
-            </article>
           </div>
         </div>
       </section>
@@ -1274,18 +1265,19 @@
             <article class="trust-card"><span>⌂</span><h3>Real Families</h3><p>Built for large families, hard seasons, and joyful ordinary days.</p></article>
             <article class="trust-card"><span>♡</span><h3>Parishes and Homes</h3><p>Technology that strengthens stewardship and the domestic church.</p></article>
             <article class="trust-card"><span>▣</span><h3>Processed by Stripe</h3><p>Giving transactions use Stripe checkout and the church's connected account. AGAPAY never holds donated funds.</p></article>
-            <article class="trust-card"><span>✥</span><h3>Growing Together</h3><p>More tools are coming to serve the Orthodox community.</p></article>
+            <article class="trust-card"><span>✥</span><h3>Focused on What Matters</h3><p>Two clear products built around real parish and household needs.</p></article>
           </div>
         </div>
       </section>
 
       <section class="final-cta">
         <div class="section-inner">
-          <p class="eyebrow">Together</p>
-          <h2>Ready to get started?</h2>
-          <p>Explore the tools designed to help you give, learn, connect, and build up the Orthodox community.</p>
+          <p class="eyebrow">Choose Your Path</p>
+          <h2>Serve your parish. Strengthen your home.</h2>
+          <p>Begin with secure Orthodox giving or bring clarity and the Church year into your homeschool plan.</p>
           <div class="hero-actions" style="justify-content:center;margin-bottom:0;">
-            <a class="gold-btn" href="/about">About AGAPAY</a>
+            <a class="gold-btn" href="/give">Explore AGAPAY Give</a>
+            <a class="outline-btn" href="/learn">Explore AGAPAY Learn</a>
           </div>
         </div>
       </section>
@@ -1304,8 +1296,6 @@
             <h4>Platform</h4>
             <a href="/give">AGAPAY Give</a>
             <a href="/learn">AGAPAY Learn</a>
-            <a href="/marketplace">Marketplace</a>
-            <a href="/directory">Directory</a>
             <a href="/onboarding">Get Started</a>
           </nav>
           <nav class="footer-col" aria-label="AGAPAY Give">

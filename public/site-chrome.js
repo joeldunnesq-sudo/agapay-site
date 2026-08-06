@@ -1,5 +1,6 @@
 (function () {
   const path = (window.location.pathname || "/").toLowerCase();
+  const isHomepage = path === "/" || path === "/index.html";
   if (/^\/(?:admin|parish|donor|myagapay)(?:\/|$)/.test(path)) return;
 
   const PRIMARY_LINKS = [
@@ -135,8 +136,7 @@
               <a href="/give">AGAPAY Give</a>
               <a href="/learn">AGAPAY Learn</a>
               <a href="/design">AGAPAY Design</a>
-              <a href="/marketplace">Marketplace</a>
-              <a href="/directory">Directory</a>
+              ${isHomepage ? "" : '<a href="/marketplace">Marketplace</a><a href="/directory">Directory</a>'}
               <a href="/register">Start for free</a>
             </nav>
             <nav class="footer-col" aria-label="AGAPAY Give">

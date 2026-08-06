@@ -687,8 +687,12 @@ assert.ok((platformHome.match(/data-flip-word/g) || []).length >= 2, "platform h
 assert.ok(platformHome.includes('footer class="site-footer" data-shell="canonical"'), "platform homepage should use the canonical footer");
 assert.ok(platformHome.includes('property="og:image" content="https://agapay.app/images/app-phone-mockup.png"') && platformHome.includes('name="twitter:image" content="https://agapay.app/images/app-phone-mockup.png"'), "platform homepage share image should use the AGAPAY phone app mockup");
 assert.ok(platformHome.includes("Giving transactions are processed and protected by Stripe") && platformHome.includes("AGAPAY never holds donated funds"), "platform homepage should carry the Stripe protection and no-custody trust message");
+assert.ok(platformHome.includes("Give to your parish.<br />Grow your household.<br /><em>Gather the faithful.</em>"), "platform homepage should preserve the approved three-line tagline");
+assert.ok(platformHome.includes("Two Products · One Mission") && platformHome.includes("Start with what you need today."), "platform homepage should funnel visitors into Give and Learn");
+assert.ok(!/marketplace|directory/i.test(platformHome), "platform homepage should not mention Marketplace or Directory");
 const canonicalChrome = await readFile("public/site-chrome.js", "utf8");
 assert.ok(canonicalChrome.includes('{ href: "/design", label: "AGAPAY Design"') && canonicalChrome.includes('return "design"'), "canonical navigation should include AGAPAY Design with an active route");
+assert.ok(canonicalChrome.includes('const isHomepage = path === "/" || path === "/index.html"') && canonicalChrome.includes('${isHomepage ? "" :'), "canonical footer should hide Marketplace and Directory on the homepage");
 assert.ok(canonicalChrome.includes('href="/register"') && canonicalChrome.includes("Start for free"), "canonical marketing navigation should offer the free registration CTA");
 assert.ok(registerHtml.includes("free 30-day AGAPAY demo") && registerHtml.includes("No card is required"), "parish registration should explain the free demo terms");
 const designPage = await readFile("public/design.html", "utf8");
