@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const [dashboard, app, style] = await Promise.all([
+const [dashboard, app, style, stewardshipCss] = await Promise.all([
   readFile(new URL("../public/parish/dashboard.html", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/app.js", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/style.css", import.meta.url), "utf8"),
+  readFile(new URL("../public/styles/stewardship.css", import.meta.url), "utf8"),
 ]);
 
 const parishGroupStart = dashboard.indexOf('id="nav-tier-parish"');
@@ -26,7 +27,12 @@ assert.match(app, /const parishOrder = \['sacraments', 'directory', 'communicati
 assert.match(app, /parishOrder\.forEach[\s\S]*parishGroup\.appendChild\(item\)[\s\S]*sidebar\.appendChild\(parishGroup\)/, "runtime ordering must keep all Parish items inside the labeled group");
 
 assert.match(dashboard, /<body class="dashboard-booting">[\s\S]*id="dashboardBootScreen"[\s\S]*<div class="app">/, "the gated dashboard must start behind a dedicated loading screen");
-assert.ok(dashboard.includes('/parish/style.css?v=20260803bookstoresales1') && dashboard.includes('/parish/redesign.css?v=20260804paymentrouting1') && dashboard.includes('/parish/app.js?v=20260804aploslogin1'), "the loading-state assets must use the current cache versions");
+assert.ok(dashboard.includes('/parish/style.css?v=20260803bookstoresales1') && dashboard.includes('/parish/redesign.css?v=20260804paymentrouting1') && dashboard.includes('/parish/app.js?v=20260806standalonetabs1') && dashboard.includes('/styles/stewardship.css?v=20260806standalonetabs1'), "the loading-state assets must use the current cache versions");
+assert.ok(
+  app.includes("content?.classList.toggle('standalone-tab-active', panel?.parentElement === content)")
+    && /\.content\.standalone-tab-active > \.detail-wrap\s*\{\s*display:\s*none;\s*\}/.test(stewardshipCss),
+  "direct-child Parish tier panels must remove the empty standard tab spacer before their hero"
+);
 assert.match(style, /body\.dashboard-booting \.app \{ visibility: hidden; \}/, "the dashboard shell must stay hidden until parish entitlements are rendered");
 assert.match(style, /body\.dashboard-refreshing::before/, "an in-place refresh must use a progress indicator without hiding the loaded dashboard");
 assert.match(app, /const initialLoad = !currentParish/, "dashboard loading must distinguish first load from refresh");

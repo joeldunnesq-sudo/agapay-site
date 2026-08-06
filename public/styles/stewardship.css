@@ -2885,6 +2885,10 @@
 
 /* Parish-tier tools keep the same page gutter and usable width as the core
    dashboard tabs, so moving between tiers does not resize the workspace. */
+.content.standalone-tab-active > .detail-wrap {
+  display: none;
+}
+
 .content > #tab-sacraments.parish-tier-panel.active,
 .content > #tab-directory.parish-tier-panel.active,
 .content > #tab-communications.parish-tier-panel.active,

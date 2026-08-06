@@ -176,17 +176,19 @@
     const panel = document.getElementById('tab-' + tab);
     const nav   = document.getElementById('nav-' + tab);
     const mobileNav = document.querySelector(`.mobile-tab-link[data-nav-tab="${tab}"]`);
+    const content = document.querySelector('.content');
     if (panel) panel.classList.add('active');
     if (nav)   nav.classList.add('active');
     if (mobileNav) mobileNav.classList.add('active');
+    content?.classList.toggle('standalone-tab-active', panel?.parentElement === content);
     document.querySelector('.app')?.classList.toggle('directory-tab-active', tab === 'directory');
-    document.querySelector('.content')?.classList.toggle('directory-tab-active', tab === 'directory');
+    content?.classList.toggle('directory-tab-active', tab === 'directory');
     document.querySelector('.app')?.classList.toggle('accounting-tab-active', tab === 'accounting');
-    document.querySelector('.content')?.classList.toggle('accounting-tab-active', tab === 'accounting');
+    content?.classList.toggle('accounting-tab-active', tab === 'accounting');
     document.querySelector('.app')?.classList.toggle('commerce-tab-active', tab === 'bookstore');
-    document.querySelector('.content')?.classList.toggle('commerce-tab-active', tab === 'bookstore');
+    content?.classList.toggle('commerce-tab-active', tab === 'bookstore');
     document.querySelector('.app')?.classList.toggle('sacraments-tab-active', tab === 'sacraments');
-    document.querySelector('.content')?.classList.toggle('sacraments-tab-active', tab === 'sacraments');
+    content?.classList.toggle('sacraments-tab-active', tab === 'sacraments');
     if (tab === 'accounting') window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     activeTab = tab;
     const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship Health', accounting:'Accounting', sacraments:'Sacraments & Services', directory:'Parish Directory', communications:'Communications', bookstore:'Commerce' };
@@ -213,7 +215,7 @@
     if (tab === 'settings' && currentParish) {
       loadParishEmailCredentials();
     }
-    document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
+    content?.scrollTo({ top: 0, behavior: 'smooth' });
     if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
