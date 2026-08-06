@@ -1,1369 +1,1113 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-chrome-192x192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/favicons/android-chrome-512x512.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
-  <link rel="manifest" href="/manifest.webmanifest" />
-  <title>AGAPAY | Give to Your Parish. Grow Your Household.</title>
-  <meta name="description" content="AGAPAY Give and AGAPAY Learn help Orthodox Christians support their parishes and plan homeschool life around the rhythm of the Church." />
+  <title>Orthodox Giving App &amp; Tithing Software | AGAPAY Give</title>
+  <meta name="description" content="AGAPAY Give is the Orthodox giving app for parish tithes, recurring donations, candles, commemorations, memorials, campaigns, and donor records." />
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
   <link rel="canonical" href="https://agapay.app/" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="AGAPAY" />
-  <meta property="og:title" content="AGAPAY | Give to Your Parish. Grow Your Household." />
-  <meta property="og:description" content="Two focused products for Orthodox parish giving and homeschool planning, together in one trusted platform." />
+  <meta property="og:title" content="AGAPAY Give | Orthodox Giving App &amp; Tithing Software" />
+  <meta property="og:description" content="Purpose-built Orthodox tithing and donation software for parishes, monasteries, and faithful donors." />
   <meta property="og:url" content="https://agapay.app/" />
-  <meta property="og:image" content="https://agapay.app/images/app-phone-mockup.png" />
+  <meta property="og:image" content="https://agapay.app/images/AGAPAY_social_share.png" />
+  <meta property="og:image:alt" content="AGAPAY Give mobile dashboard on a phone beside a candle and Orthodox books" />
   <meta property="og:image:width" content="1122" />
   <meta property="og:image:height" content="1402" />
-  <meta property="og:image:alt" content="A phone showing the My AGAPAY app dashboard." />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="AGAPAY | One Orthodox Platform" />
-  <meta name="twitter:description" content="AGAPAY Give and AGAPAY Learn bring Orthodox parish giving, tithing, and homeschool planning into one trusted platform." />
-  <meta name="twitter:image" content="https://agapay.app/images/app-phone-mockup.png" />
+  <meta name="twitter:title" content="AGAPAY Give | Orthodox Giving App &amp; Tithing Software" />
+  <meta name="twitter:description" content="Orthodox tithing and donation software for parishes, monasteries, and faithful donors." />
+  <meta name="twitter:image" content="https://agapay.app/images/AGAPAY_social_share.png" />
   <meta name="theme-color" content="#061522" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="preload" as="image" href="/images/giving/app-phone-mockup.png" type="image/png" fetchpriority="high" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" /></noscript>
 
-  <!-- Non-blocking font load — Google Fonts with display=swap baked in -->
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" media="print" onload="this.media='all'" />
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" /></noscript>
-
-  <!-- Non-blocking site-chrome.css -->
-  <link rel="preload" as="style" href="/site-chrome.css" />
-  <link rel="stylesheet" href="/site-chrome.css" media="print" onload="this.media='all'" />
-  <noscript><link rel="stylesheet" href="/site-chrome.css" /></noscript>
-
+  <link rel="stylesheet" href="/styles/index.css" />
+  <link rel="stylesheet" href="/styles/numbers.css" />
+  <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="stylesheet" href="/site-chrome.css" />
   <script src="/site-chrome.js" defer></script>
   <script src="/pwa-register.js" defer></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://agapay.app/#organization",
+        "name": "AGAPAY",
+        "url": "https://agapay.app/",
+        "logo": "https://agapay.app/mark.png"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://agapay.app/#app",
+        "name": "AGAPAY Give",
+        "alternateName": ["Orthodox Giving App", "Orthodox Tithing App"],
+        "url": "https://agapay.app/",
+        "description": "Purpose-built Orthodox giving and tithing software for parish donations, recurring gifts, candles, commemorations, memorials, campaigns, and donor records.",
+        "applicationCategory": "FinanceApplication",
+        "applicationSubCategory": "Church giving and tithing software",
+        "operatingSystem": "Web",
+        "browserRequirements": "Requires a modern web browser",
+        "image": "https://agapay.app/images/giving/app-phone-mockup.png",
+        "screenshot": "https://agapay.app/images/giving/app-phone-mockup.png",
+        "featureList": [
+          "One-time and recurring parish donations",
+          "Candle offerings",
+          "Memorials and commemorations",
+          "Parish campaigns and designated funds",
+          "Donor giving history and annual pledges",
+          "Parish dashboards and QR codes",
+          "Fund accounting and financial reporting",
+          "Parish directory and member workflows",
+          "Parish commerce and order management",
+          "Koinonia community, fellowship, and media"
+        ],
+        "provider": { "@id": "https://agapay.app/#organization" },
+        "audience": {
+          "@type": "Audience",
+          "audienceType": "Orthodox parishes, monasteries, ministries, and faithful donors"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://agapay.app/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is an Orthodox giving app?",
+            "acceptedAnswer": { "@type": "Answer", "text": "An Orthodox giving app supports parish stewardship in the context of Orthodox life. AGAPAY Give combines online tithes and donations with candles, memorials, commemorations, campaigns, designated funds, and parish administration." }
+          },
+          {
+            "@type": "Question",
+            "name": "Can parishioners make recurring tithes and donations with AGAPAY Give?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. Donors can make one-time or recurring gifts and review their giving history through My AGAPAY." }
+          },
+          {
+            "@type": "Question",
+            "name": "Can donors submit candles, memorials, and names for commemoration?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. AGAPAY Give supports candle offerings, memorial gifts, and names of the living and departed for parish commemoration workflows." }
+          },
+          {
+            "@type": "Question",
+            "name": "Is Text-to-Give available?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Text-to-Give is a coming-soon AGAPAY Give feature. The current platform supports web giving, parish campaigns, recurring gifts, QR codes, candles, memorials, commemorations, and donor records." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    /* Fallback font metrics tuned to match Cormorant Garamond,
-       preventing layout shift when the web font swaps in. */
-    @font-face {
-      font-family: "Cormorant Garamond Fallback";
-      src: local("Georgia");
-      size-adjust: 108%;
-      ascent-override: 88%;
-      descent-override: 22%;
-      line-gap-override: 0%;
-    }
-
-    :root {
-      --night: #061522;
-      --blue: #0b2130;
-      --blue2: #0d2030;
-      --cream: #f6f1e8;
-      --paper: #fffdf8;
-      --parchment: #efe7d7;
-      --ink: #171715;
-      --muted: #5f5a50;
-      --soft: #8c8576;
-      --line: rgba(166, 159, 145, 0.32);
-      --gold: #c8a24a;
-      --gold2: #a97c25;
-      --serif: "Cormorant Garamond", "Cormorant Garamond Fallback", Georgia, serif;
-      --body: "EB Garamond", Georgia, serif;
-    }
-
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      color: var(--ink);
-      background: var(--cream);
-      font-family: var(--body);
-      -webkit-font-smoothing: antialiased;
-    }
-
-    ::selection { background: var(--gold); color: var(--night); }
-    a { color: inherit; }
-    img { max-width: 100%; display: block; }
-
-    .ag-home-shell {
-      width: 100%;
-      overflow-x: clip;
-      background:
-        linear-gradient(90deg, rgba(200, 162, 74, 0.07) 0 1px, transparent 1px) 0 0 / 52px 52px,
-        linear-gradient(180deg, #fbf7ec 0%, var(--cream) 38%, #fffaf0 100%);
-    }
-
-    .gold-btn,
-    .outline-btn,
-    .dark-btn,
-    .ghost-btn {
-      min-height: 46px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0 1.45rem;
-      border-radius: 2px;
-      font-size: 1.02rem;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      text-decoration: none;
-      transition: transform 0.18s ease, box-shadow 0.18s ease;
-    }
-
-    .gold-btn {
-      border: 1px solid rgba(200, 162, 74, 0.8);
-      background: var(--gold);
-      color: #1c1408;
-      box-shadow: 0 8px 24px rgba(200, 162, 74, 0.2);
-    }
-
-    .outline-btn {
-      border: 1px solid rgba(166, 159, 145, 0.62);
-      color: var(--ink);
-      background: transparent;
-    }
-
-    .dark-btn {
-      border: 1px solid rgba(200, 162, 74, 0.42);
-      color: var(--cream);
-      background: var(--night);
-    }
-
-    .ghost-btn {
-      border: 1px solid rgba(200, 162, 74, 0.42);
-      color: var(--cream);
-      background: transparent;
-    }
-
-    .gold-btn:hover,
-    .outline-btn:hover,
-    .dark-btn:hover,
-    .ghost-btn:hover {
-      transform: translateY(-1px);
-    }
-
-    .section-inner {
-      width: min(1180px, calc(100% - 2rem));
-      margin: 0 auto;
-    }
-
-    .hero {
-      position: relative;
-      min-height: calc(100svh - 84px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      padding: clamp(5.3rem, 9vw, 7.2rem) 1.5rem clamp(5.8rem, 10vw, 8rem);
-      text-align: center;
-      background:
-        linear-gradient(90deg, rgba(200, 162, 74, 0.035) 0 1px, transparent 1px) 0 0 / 62px 62px,
-        radial-gradient(120% 90% at 50% -10%, #0b2130 0%, #071a28 42%, #061522 72%);
-    }
-
-    .hero::before {
-      content: "";
-      position: absolute;
-      top: -18rem;
-      left: 50%;
-      width: min(48rem, 110vw);
-      aspect-ratio: 1;
-      border-radius: 999px;
-      background: radial-gradient(circle, rgba(200, 162, 74, 0.24) 0%, rgba(200, 162, 74, 0) 66%);
-      opacity: 0.9;
-      transform: translateX(-50%);
-      animation: sanctuaryGlow 7s ease-in-out infinite;
-    }
-
-    .hero::after {
-      content: "";
-      position: absolute;
-      top: clamp(3.6rem, 8vw, 5rem);
-      left: 50%;
-      width: min(35rem, calc(100% - 2.4rem));
-      height: min(42.5rem, calc(100% - 5rem));
-      border: 1px solid rgba(200, 162, 74, 0.16);
-      border-bottom-color: rgba(200, 162, 74, 0.08);
-      border-radius: 280px 280px 6px 6px;
-      transform: translateX(-50%);
-      pointer-events: none;
-    }
-
-    .eyebrow {
-      margin: 0 0 1.1rem;
-      color: var(--gold2);
-      font-size: 0.84rem;
-      font-weight: 600;
-      letter-spacing: 0.28em;
-      text-transform: uppercase;
-    }
-
-    h1,
-    h2,
-    h3 {
-      font-family: var(--serif);
-      font-weight: 500;
-      letter-spacing: -0.01em;
-    }
-
-    h1 {
-      max-width: 9.7ch;
-      margin: 0 0 1.35rem;
-      color: var(--ink);
-      font-size: clamp(3.35rem, 7.2vw, 6rem);
-      line-height: 0.95;
-    }
-
-    .hero h1 {
-      max-width: none;
-      margin-bottom: 1rem;
-      color: var(--cream);
-      font-size: clamp(3.2rem, 7vw, 5.4rem);
-      line-height: 0.96;
-      text-wrap: balance;
-      /* Reserve vertical space so font-swap doesn't cause CLS */
-      min-height: calc(clamp(3.2rem, 7vw, 5.4rem) * 0.96 * 3);
-    }
-
-    .hero h1 em {
-      color: #e5c873;
-      font-style: italic;
-    }
-
-    .hero-copy {
-      position: relative;
-      z-index: 2;
-      max-width: 58rem;
-      margin: 0 auto;
-    }
-
-    .hero-mark {
-      width: clamp(4rem, 8vw, 6.6rem);
-      height: auto;
-      margin: 0 auto 1.4rem;
-      filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.28));
-    }
-
-    .hero .eyebrow {
-      margin-bottom: 1.2rem;
-      color: var(--gold);
-    }
-
-    .tagline {
-      display: flex;
-      align-items: center;
-      gap: 0.4em;
-      margin: 0 0 1.6rem;
-      color: var(--muted);
-      font-size: clamp(1.25rem, 2.2vw, 1.62rem);
-      line-height: 1.35;
-    }
-
-    .flip-word {
-      min-width: 4.25em;
-      display: inline-block;
-      padding: 0.06em 0.38em 0.12em;
-      border: 1px solid rgba(200, 162, 74, 0.72);
-      border-radius: 3px;
-      color: #ffe7a8;
-      background: linear-gradient(180deg, #092238, #041423);
-      text-align: center;
-      box-shadow: inset 0 0 0 1px rgba(255, 231, 168, 0.08), 0 8px 22px rgba(0, 0, 0, 0.2);
-      transform-origin: 50% 55%;
-      transition: opacity 0.22s ease, transform 0.22s ease;
-    }
-
-    .hero .tagline {
-      justify-content: center;
-      margin-bottom: 1.25rem;
-      color: rgba(246, 241, 232, 0.8);
-    }
-
-    .flip-word.is-flipping {
-      opacity: 0.38;
-      transform: rotateX(88deg);
-    }
-
-    .hero-text {
-      max-width: 43rem;
-      margin: 0 auto 2.2rem;
-      color: rgba(246, 241, 232, 0.78);
-      font-size: clamp(1.18rem, 1.8vw, 1.36rem);
-      line-height: 1.58;
-    }
-
-    .hero-actions {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.85rem;
-      margin-bottom: 2.2rem;
-    }
-
-    .hero .hero-actions {
-      justify-content: center;
-      margin-bottom: 0;
-    }
-
-    .hero .outline-btn {
-      border-color: rgba(246, 241, 232, 0.34);
-      color: var(--cream);
-      background: rgba(255, 255, 255, 0.04);
-    }
-
-    .hero-proof {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 1.25rem;
-      max-width: 40rem;
-      padding-top: 1.3rem;
-      border-top: 1px solid rgba(166, 159, 145, 0.34);
-    }
-
-    .hero-proof strong {
-      display: block;
-      color: var(--ink);
-      font-family: var(--serif);
-      font-size: 1.12rem;
-      font-weight: 600;
-    }
-
-    .hero-proof span {
-      display: block;
-      margin-top: 0.25rem;
-      color: var(--soft);
-      font-size: 0.94rem;
-    }
-
-    .hero-art {
-      position: relative;
-      min-height: 38rem;
-    }
-
-    .hero-arch {
-      position: absolute;
-      inset: 0 0 2.8rem 3rem;
-      overflow: hidden;
-      border: 1px solid rgba(166, 159, 145, 0.34);
-      border-radius: 270px 270px 8px 8px;
-      background: var(--parchment);
-      box-shadow: 0 30px 70px rgba(6, 21, 34, 0.12);
-    }
-
-    .hero-arch picture,
-    .hero-arch img {
-      width: 100%;
-      height: 100%;
-    }
-
-    .hero-arch img {
-      object-fit: cover;
-      object-position: center;
-      filter: sepia(0.24) saturate(0.88) contrast(1.02);
-    }
-
-    .hero-card {
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      width: min(22rem, 70%);
-      padding: 1.25rem;
-      border: 1px solid rgba(200, 162, 74, 0.42);
-      border-radius: 4px;
-      background: rgba(255, 253, 248, 0.96);
-      box-shadow: 0 18px 44px rgba(6, 21, 34, 0.16);
-    }
-
-    .hero-card small {
-      display: block;
-      margin-bottom: 0.4rem;
-      color: var(--gold2);
-      font-size: 0.66rem;
-      font-weight: 600;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-    }
-
-    .hero-card strong {
-      display: block;
-      margin-bottom: 0.95rem;
-      color: var(--ink);
-      font-family: var(--serif);
-      font-size: 1.45rem;
-      font-weight: 500;
-      line-height: 1.08;
-    }
-
-    .learn-sketch-art {
-      min-height: clamp(28rem, 46vw, 38rem);
-    }
-
-    .learn-sketch-art .hero-arch {
-      inset: 0 0 2.8rem 0;
-    }
-
-    .learn-sketch-art .hero-card {
-      width: min(23rem, calc(100% - 1rem));
-    }
-
-    @keyframes sanctuaryGlow {
-      0%, 100% { opacity: 0.66; transform: translateX(-50%) scale(0.96); }
-      50% { opacity: 1; transform: translateX(-50%) scale(1.03); }
-    }
-
-    .trust-strip {
-      padding: 2.1rem 0;
-      color: var(--cream);
-      background: var(--night);
-    }
-
-    .trust-strip .section-inner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1.4rem;
-      flex-wrap: wrap;
-    }
-
-    .trust-title {
-      color: rgba(246, 241, 232, 0.64);
-      font-family: var(--serif);
-      font-size: 1.25rem;
-      font-style: italic;
-      white-space: nowrap;
-    }
-
-    .jurisdictions {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: clamp(1rem, 3vw, 2.35rem);
-      color: rgba(200, 162, 74, 0.86);
-      font-size: 0.88rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-    }
-
-    .split-section {
-      padding: clamp(4.6rem, 8vw, 6.8rem) 0;
-    }
-
-    .split-grid {
-      display: grid;
-      grid-template-columns: 1.02fr 0.98fr;
-      gap: clamp(2rem, 6vw, 4.5rem);
-      align-items: center;
-    }
-
-    h2 {
-      margin: 0 0 1.2rem;
-      color: var(--ink);
-      font-size: clamp(3rem, 5vw, 4.2rem);
-      line-height: 1.02;
-    }
-
-    .section-copy {
-      max-width: 34rem;
-      margin: 0 0 2rem;
-      color: var(--muted);
-      font-size: 1.28rem;
-      line-height: 1.6;
-    }
-
-    .feature-pairs {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1.1rem 2rem;
-      max-width: 34rem;
-      margin-bottom: 2.2rem;
-    }
-
-    .feature-pair {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.8rem;
-    }
-
-    .feature-pair::before {
-      content: "";
-      flex: none;
-      width: 0.5rem;
-      height: 0.5rem;
-      margin-top: 0.6rem;
-      border-radius: 999px;
-      background: var(--gold);
-    }
-
-    .feature-pair strong {
-      display: block;
-      color: var(--ink);
-      font-family: var(--serif);
-      font-size: 1.35rem;
-      font-weight: 500;
-      line-height: 1.12;
-    }
-
-    .feature-pair span {
-      display: block;
-      margin-top: 0.15rem;
-      color: var(--soft);
-      font-size: 0.96rem;
-    }
-
-    .giving-widget {
-      padding: clamp(1.35rem, 3vw, 2.1rem);
-      border: 1px solid rgba(200, 162, 74, 0.4);
-      border-radius: 6px;
-      background: var(--paper);
-      box-shadow: 0 30px 70px rgba(6, 21, 34, 0.14);
-    }
-
-    .widget-head {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1.2rem;
-    }
-
-    .widget-head img {
-      width: 34px;
-      height: 34px;
-      object-fit: contain;
-    }
-
-    .widget-head small {
-      display: block;
-      color: var(--gold2);
-      font-size: 0.64rem;
-      font-weight: 600;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-    }
-
-    .widget-head strong {
-      display: block;
-      color: var(--ink);
-      font-family: var(--serif);
-      font-size: 1.4rem;
-      font-weight: 500;
-      line-height: 1.08;
-    }
-
-    .giving-tabs,
-    .amount-grid {
-      display: grid;
-      gap: 0.6rem;
-    }
-
-    .giving-tabs {
-      grid-template-columns: 1fr 1fr;
-      padding: 0.25rem;
-      border-radius: 3px;
-      background: #f1eadc;
-      margin-bottom: 1.25rem;
-    }
-
-    .giving-tabs button,
-    .amount-grid button,
-    .giving-widget button {
-      font-family: var(--body);
-      cursor: pointer;
-    }
-
-    .giving-tabs button {
-      min-height: 2.55rem;
-      border: 0;
-      border-radius: 2px;
-      background: transparent;
-      color: #5a564d;
-      font-size: 1rem;
-    }
-
-    .giving-tabs button.is-active {
-      background: var(--paper);
-      color: var(--ink);
-      box-shadow: 0 1px 2px rgba(6, 21, 34, 0.08);
-    }
-
-    .amount-grid {
-      grid-template-columns: repeat(4, 1fr);
-      margin: 0.75rem 0 0.85rem;
-    }
-
-    .amount-grid button {
-      min-height: 3rem;
-      border: 1px solid rgba(166, 159, 145, 0.42);
-      border-radius: 3px;
-      color: var(--ink);
-      background: #fff;
-      font-size: 1.1rem;
-    }
-
-    .amount-grid button.is-active {
-      border-color: var(--gold);
-      color: #1c1408;
-      background: rgba(200, 162, 74, 0.18);
-    }
-
-    .amount-field {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 0.85rem;
-      margin-bottom: 1.15rem;
-      border: 1px solid rgba(166, 159, 145, 0.45);
-      border-radius: 3px;
-      background: #fff;
-    }
-
-    .amount-field span {
-      color: var(--muted);
-      font-family: var(--serif);
-      font-size: 1.45rem;
-    }
-
-    .amount-field input {
-      width: 100%;
-      border: 0;
-      outline: 0;
-      color: var(--ink);
-      background: transparent;
-      font: inherit;
-      font-size: 1.1rem;
-    }
-
-    .widget-submit {
-      width: 100%;
-      min-height: 3.25rem;
-      border: 0;
-      border-radius: 3px;
-      color: #1c1408;
-      background: var(--gold);
-      font-size: 1.12rem;
-      font-weight: 600;
-      box-shadow: 0 8px 22px rgba(200, 162, 74, 0.24);
-    }
-
-    .secure-note {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-top: 1rem;
-      color: var(--soft);
-      font-size: 0.86rem;
-      letter-spacing: 0.02em;
-    }
-
-    .secure-note::before {
-      content: "";
-      width: 0.4rem;
-      height: 0.4rem;
-      border-radius: 999px;
-      background: #5b8f6b;
-    }
-
-    .platform-section {
-      padding: clamp(4.6rem, 8vw, 6.6rem) 0;
-      color: var(--cream);
-      background: var(--blue2);
-    }
-
-    .center-heading {
-      max-width: 48rem;
-      margin: 0 auto clamp(2.5rem, 5vw, 3.8rem);
-      text-align: center;
-    }
-
-    .platform-section h2,
-    .scripture-band h2 {
-      color: var(--cream);
-    }
-
-    .center-heading p,
-    .scripture-band p {
-      color: rgba(246, 241, 232, 0.66);
-      font-size: 1.18rem;
-      line-height: 1.58;
-    }
-
-    .home-learn-section {
-      padding: clamp(4.2rem, 8vw, 7rem) 0;
-      background:
-        radial-gradient(circle at 12% 10%, rgba(200, 162, 74, 0.18), transparent 28rem),
-        radial-gradient(circle at 90% 90%, rgba(6, 21, 34, 0.06), transparent 25rem),
-        linear-gradient(180deg, #fffdf8, #f5eddd);
-    }
-
-    .home-learn-grid {
-      display: grid;
-      grid-template-columns: minmax(20rem, 0.92fr) minmax(0, 1.08fr);
-      gap: clamp(2rem, 6vw, 5.5rem);
-      align-items: center;
-    }
-
-    .home-learn-copy h2,
-    .home-learn-calendar h3 {
-      margin: 0;
-      color: var(--night);
-      font-family: var(--serif);
-      line-height: 0.96;
-    }
-
-    .home-learn-copy h2 {
-      max-width: 14ch;
-      font-size: clamp(2.5rem, 5vw, 4.7rem);
-    }
-
-    .home-learn-purpose {
-      max-width: 46rem;
-      margin: 1.25rem 0 0;
-      color: var(--muted);
-      font-size: 1.05rem;
-      line-height: 1.65;
-    }
-
-    .home-learn-features {
-      margin-top: 1.5rem;
-    }
-
-    .home-learn-actions {
-      margin: 1.65rem 0 0;
-    }
-
-    .home-learn-calendar {
-      display: grid;
-      grid-template-columns: minmax(13rem, 0.7fr) minmax(0, 1.5fr) auto;
-      gap: clamp(1.2rem, 4vw, 2.5rem);
-      align-items: center;
-      margin-top: clamp(2.5rem, 6vw, 4.5rem);
-      padding: clamp(1.2rem, 3vw, 1.8rem) 0;
-      border-top: 1px solid rgba(200, 162, 74, 0.42);
-      border-bottom: 1px solid rgba(200, 162, 74, 0.42);
-    }
-
-    .home-learn-calendar .eyebrow {
-      margin-bottom: 0.35rem;
-    }
-
-    .home-learn-calendar h3 {
-      font-size: clamp(1.45rem, 2.7vw, 2.15rem);
-    }
-
-    .home-learn-calendar > p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.94rem;
-      line-height: 1.6;
-    }
-
-    .home-learn-calendar .outline-btn {
-      white-space: nowrap;
-    }
-
-    .pillar-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1.5rem;
-      max-width: 66rem;
-      margin-inline: auto;
-    }
-
-    .pillar {
-      min-height: 100%;
-      display: flex;
-      flex-direction: column;
-      padding: clamp(1.7rem, 4vw, 2.35rem);
-      border: 1px solid rgba(200, 162, 74, 0.28);
-      border-radius: 6px;
-      background: linear-gradient(180deg, #0a1b29, #08161f);
-    }
-
-    .pillar-kicker {
-      display: block;
-      margin-bottom: 0.55rem;
-      color: var(--gold);
-      font-size: 0.76rem;
-      font-weight: 600;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-    }
-
-    .pillar.is-muted {
-      background: rgba(255, 253, 248, 0.04);
-    }
-
-    .pillar-icon {
-      width: 2.9rem;
-      height: 2.9rem;
-      display: grid;
-      place-items: center;
-      margin-bottom: 1.25rem;
-      border: 1.5px solid var(--gold);
-      border-radius: 999px;
-      color: var(--gold);
-      font-size: 1.35rem;
-    }
-
-    .pillar h3 {
-      margin: 0 0 0.65rem;
-      color: var(--cream);
-      font-size: 1.8rem;
-      line-height: 1.05;
-    }
-
-    .pillar p,
-    .pillar li {
-      color: rgba(246, 241, 232, 0.65);
-      font-size: 0.98rem;
-      line-height: 1.5;
-    }
-
-    .pillar ul {
-      display: grid;
-      gap: 0.45rem;
-      margin: 0 0 1.45rem;
-      padding: 0;
-      list-style: none;
-    }
-
-    .pillar li::before {
-      content: "· ";
-      color: var(--gold);
-    }
-
-    .pillar .gold-btn,
-    .pillar .ghost-btn {
-      margin-top: auto;
-      min-height: 2.85rem;
-      width: 100%;
-    }
-
-    .scripture-band {
-      padding: clamp(4.5rem, 8vw, 7.5rem) 0;
-      text-align: center;
-      background: radial-gradient(120% 140% at 50% 0%, #0b2130 0%, var(--night) 70%);
-    }
-
-    .scripture-band blockquote {
-      max-width: 50rem;
-      margin: 0 auto 1rem;
-      color: var(--cream);
-      font-family: var(--serif);
-      font-size: clamp(2rem, 4vw, 3.7rem);
-      font-style: italic;
-      line-height: 1.08;
-    }
-
-    .scripture-band cite {
-      color: var(--gold);
-      font-size: 0.86rem;
-      font-style: normal;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-    }
-
-    .trust-card {
-      border: 1px solid rgba(166, 159, 145, 0.28);
-      border-radius: 5px;
-      background: #f7efe0;
-    }
-
-    .trust-section {
-      padding: clamp(4.4rem, 8vw, 6.5rem) 0;
-      border-block: 1px solid rgba(166, 159, 145, 0.28);
-      background: var(--paper);
-    }
-
-    .trust-grid {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 1rem;
-    }
-
-    .trust-card {
-      min-height: 11rem;
-      padding: 1.25rem;
-      text-align: center;
-      background: rgba(246, 241, 232, 0.72);
-    }
-
-    .trust-card span {
-      display: grid;
-      place-items: center;
-      width: 3rem;
-      height: 3rem;
-      margin: 0 auto 0.85rem;
-      border: 1px solid rgba(200, 162, 74, 0.44);
-      border-radius: 999px;
-      color: var(--gold2);
-      font-size: 1.35rem;
-    }
-
-    .trust-card h3 {
-      margin: 0 0 0.4rem;
-      font-size: 1.2rem;
-      line-height: 1.05;
-    }
-
-    .trust-card p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.94rem;
-      line-height: 1.38;
-    }
-
-    .final-cta {
-      padding: clamp(4.2rem, 8vw, 7rem) 0;
-      text-align: center;
-    }
-
-    .final-cta h2 {
-      max-width: 13ch;
-      margin-inline: auto;
-    }
-
-    .final-cta p {
-      max-width: 35rem;
-      margin: 0 auto 2rem;
-      color: var(--muted);
-      font-size: 1.25rem;
-      line-height: 1.55;
-    }
-
-    .home-footer {
-      padding: 4.5rem 0 2.5rem;
-      color: var(--cream);
-      background: var(--night);
-    }
-
-    .footer-grid {
-      display: grid;
-      grid-template-columns: minmax(220px, 1.2fr) repeat(5, minmax(110px, 0.75fr));
-      gap: 1.4rem;
-      align-items: start;
-    }
-
-    .footer-brand {
-      display: flex;
-      align-items: center;
-      gap: 0.8rem;
-      margin-bottom: 1rem;
-    }
-
-    .footer-brand img {
-      width: 44px;
-      height: 44px;
-    }
-
-    .footer-brand strong {
-      display: block;
-      color: var(--gold);
-      font-family: var(--serif);
-      font-size: 1.75rem;
-      font-weight: 500;
-      letter-spacing: 0.18em;
-    }
-
-    .home-footer p,
-    .home-footer a {
-      color: rgba(246, 241, 232, 0.72);
-    }
-
-    .home-footer a {
-      display: block;
-      margin-top: 0.62rem;
-      text-decoration: none;
-    }
-
-    .home-footer h3 {
-      margin: 0 0 0.8rem;
-      color: var(--gold);
-      font-family: var(--body);
-      font-size: 0.78rem;
-      font-weight: 600;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-    }
-
-    .footer-bottom {
-      display: flex;
-      justify-content: space-between;
-      gap: 1rem;
-      flex-wrap: wrap;
-      margin-top: 3rem;
-      padding-top: 1.4rem;
-      border-top: 1px solid rgba(200, 162, 74, 0.18);
-      color: rgba(246, 241, 232, 0.54);
-      font-size: 0.9rem;
-    }
-
-    @media (max-width: 1060px) {
-      .hero,
-      .split-grid,
-      .home-learn-grid,
-      .home-learn-calendar,
-      .pillar-grid,
-      .trust-grid,
-      .footer-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .hero {
-        min-height: auto;
-      }
-
-      .hero-art {
-        min-height: 32rem;
-      }
-
-      .hero-arch {
-        inset: 0 0 2.4rem 0;
-      }
-
-      .pillar-grid,
-      .trust-grid {
-        max-width: 42rem;
-        margin-inline: auto;
-      }
-    }
-
-    @media (max-width: 720px) {
-      .section-inner {
-        width: min(100% - 1rem, 1180px);
-      }
-
-      h1 {
-        font-size: clamp(3rem, 13vw, 3.8rem);
-      }
-
-      .tagline {
-        flex-wrap: wrap;
-      }
-
-      .hero-proof,
-      .feature-pairs,
-      .amount-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .hero-art {
-        min-height: 27rem;
-      }
-
-      .hero-card {
-        width: min(20rem, calc(100% - 1rem));
-      }
-
-      .trust-title {
-        white-space: normal;
-      }
-
-      .home-learn-copy h2 {
-        font-size: clamp(2.5rem, 12vw, 3.8rem);
-      }
-
-      .home-learn-calendar {
-        gap: 1rem;
-      }
-
-      .home-learn-calendar .outline-btn {
-        justify-self: start;
-      }
-
-      .split-section,
-      .home-learn-section,
-      .platform-section,
-      .trust-section {
-        padding-block: 4rem;
-      }
-
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        scroll-behavior: auto !important;
-        transition: none !important;
-        animation: none !important;
-      }
-    }
+  /* ── PWA Install section ─────────────────────────────────────────────────── */
+  /* Install section — parchment card style matching how-it-works */
+  .install { position: relative; margin: 1.5rem; padding: clamp(2.5rem,5vw,4rem) clamp(1.5rem,4vw,3rem); border-radius: 16px; border: 1px solid rgba(200,162,74,.28); overflow: hidden; background: linear-gradient(180deg, var(--parchment, #fdf8ef) 0%, var(--parchment-2, #f5ede0) 100%); }
+  .install::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 60% at 90% 0%, rgba(200,162,74,.12) 0%, transparent 60%); pointer-events: none; }
+  .install > * { position: relative; z-index: 1; }
+  .install-inner { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 1fr auto; gap: clamp(2rem,5vw,4rem); align-items: center; }
+  @media (max-width: 780px) {
+    .install-inner { grid-template-columns: 1fr; }
+    .install-phone-img { width: 200px; margin: 0 auto; }
+  }
+  .install-eyebrow { display: inline-flex; align-items: center; gap: .5rem; color: var(--gold-dark, #8a6a1a); text-transform: uppercase; letter-spacing: .16em; font-size: .7rem; font-weight: 800; margin-bottom: .85rem; }
+  .install-eyebrow svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .install-head h2 { font-family: 'Cormorant Garamond', serif; color: #0a1524; font-size: clamp(2rem,4vw,3rem); font-weight: 500; line-height: 1.06; margin: 0 0 .6rem; }
+  .install-head p { color: var(--stone, #4a5568); font-size: 1rem; line-height: 1.65; max-width: 480px; margin: 0 0 1.5rem; }
+  /* OS toggle */
+  .os-toggle-wrap { margin-bottom: 1.5rem; }
+  .os-toggle { display: inline-flex; background: rgba(6,21,34,.05); border: 1px solid rgba(6,21,34,.12); border-radius: 12px; padding: 4px; gap: 4px; }
+  .os-btn { display: flex; align-items: center; gap: 8px; padding: 9px 20px; border: none; border-radius: 9px; background: transparent; color: #4a5568; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: background .15s, color .15s; }
+  .os-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .os-btn[aria-selected="true"] { background: rgba(181,148,47,.15); color: var(--gold-dark, #8a6a1a); }
+  .os-btn:hover:not([aria-selected="true"]) { background: rgba(6,21,34,.06); color: #0a1524; }
+  /* Panels */
+  .os-panel { display: none; }
+  .os-panel.is-active { display: block; }
+  /* Steps */
+  .install-steps { display: grid; gap: .75rem; margin-bottom: 1.6rem; }
+  .install-step { display: flex; align-items: flex-start; gap: .85rem; padding: .95rem 1.1rem; border-radius: 12px; border: 1px solid rgba(200,162,74,.25); background: rgba(255,253,248,.72); }
+  .install-step p { color: #2a333b; font-size: .94rem; line-height: 1.5; margin: 0; }
+  .install-step strong { color: #0a1524; font-weight: 700; }
+  .isn { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; font-family: 'Cormorant Garamond', serif; font-size: .95rem; font-weight: 600; border: 1px solid rgba(200,162,74,.5); background: rgba(200,162,74,.1); color: var(--gold-dark, #8a6a1a); }
+  /* Install CTA */
+  .install-cta { margin-top: 4px; }
+  .btn-install { min-height: 50px; min-width: 220px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: .6rem; padding: 0 1.7rem; font-size: .88rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; background: linear-gradient(135deg, #D6AF5B, #B98832); color: #071522; border: none; cursor: pointer; transition: transform .18s ease, opacity .18s ease; }
+  .btn-install:hover { transform: translateY(-2px); }
+  .btn-install:disabled { opacity: .45; cursor: default; }
+  .btn-install svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .install-note { margin: 12px 0 0; font-size: 13px; color: #5a7080; max-width: 400px; line-height: 1.5; }
+  /* iOS callout */
+  .ios-callout { display: flex; align-items: flex-start; gap: 10px; background: rgba(6,21,34,.05); border: 1px solid rgba(6,21,34,.1); border-radius: 12px; padding: 14px 16px; color: #4a5568; font-size: 14px; line-height: 1.5; max-width: 440px; }
+  .ios-callout svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; margin-top: 1px; }
+  .ios-share { display: inline-block; width: 16px; height: 16px; stroke: var(--gold-dark, #8a6a1a); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vertical-align: middle; margin: 0 2px; }
+  /* Phone mockup */
+  .install-phone-img { width: clamp(200px, 28vw, 300px); height: auto; border-radius: 16px; display: block; box-shadow: 0 24px 60px rgba(6,21,34,.28); }
+  .btn-navy { background: #061522; color: #f3ead4; border-color: #061522; }
+  .btn-navy:hover { background: #0d2133; }
+  /* ── end PWA Install ─────────────────────────────────────────────────────── */
   </style>
 </head>
 <body>
-  <div class="ag-home-shell">
-    <header class="site-header" data-shell="canonical">
-      <nav class="nav" aria-label="Primary navigation">
-        <a href="/give">AGAPAY Give</a>
-      </nav>
-    </header>
-    <main>
-      <section class="hero" aria-labelledby="heroTitle">
-        <div class="hero-copy">
-          <img class="hero-mark" src="/mark.png" alt="" width="112" height="112" />
-          <p class="eyebrow">Orthodox First · Parish and Household</p>
-          <h1 id="heroTitle">Give to your parish.<br />Grow your household.<br /><em>Gather the faithful.</em></h1>
-          <p class="tagline">
-            Love how you
-            <span class="flip-word" data-flip-word aria-live="polite">GIVE</span>
-          </p>
-          <p class="hero-text">Two focused products, one shared purpose: make parish stewardship simpler and help Orthodox households learn in the rhythm of the Church. Giving transactions are processed and protected by Stripe, and AGAPAY never holds donated funds.</p>
-          <div class="hero-actions">
-            <a class="gold-btn" href="/give">Explore AGAPAY Give</a>
-            <a class="outline-btn" href="/learn">Explore AGAPAY Learn</a>
-          </div>
-        </div>
-      </section>
-
-      <section class="trust-strip" id="trust">
-        <div class="section-inner">
-          <div class="trust-title">Built for every canonical Orthodox jurisdiction</div>
-          <div class="jurisdictions" aria-label="Example Orthodox jurisdictions">
-            <span>Greek</span><span>Antiochian</span><span>OCA</span><span>ROCOR</span><span>Serbian</span><span>Romanian</span><span>and More</span>
-          </div>
-        </div>
-      </section>
-
-      <section class="platform-section" id="platform" aria-labelledby="choosePathTitle">
-        <div class="section-inner">
-          <div class="center-heading">
-            <p class="eyebrow">Two Products · One Mission</p>
-            <h2 id="choosePathTitle">Start with what you need today.</h2>
-            <p>Choose the path that serves your parish or household. Each product is focused, practical, and built for Orthodox life.</p>
-          </div>
-          <div class="pillar-grid">
-            <article class="pillar">
-              <span class="pillar-icon">☩</span>
-              <span class="pillar-kicker">For parishes and faithful</span>
-              <h3>AGAPAY Give</h3>
-              <p>Make stewardship simple, secure, and worthy of the gift.</p>
-              <ul>
-                <li>One-time and recurring gifts</li>
-                <li>Memorials and commemorations</li>
-                <li>Campaigns and special projects</li>
-                <li>Direct parish fund flow through Stripe</li>
-              </ul>
-              <a class="gold-btn" href="/give">Give to Your Parish</a>
-            </article>
-            <article class="pillar">
-              <span class="pillar-icon">☰</span>
-              <span class="pillar-kicker">For Orthodox households</span>
-              <h3>AGAPAY Learn</h3>
-              <p>Plan homeschool life around your children and the Church year.</p>
-              <ul>
-                <li>Liturgical calendar integration</li>
-                <li>Household and child planning</li>
-                <li>Grace Mode for real life</li>
-                <li>Printables, reports, and transcripts</li>
-              </ul>
-              <a class="gold-btn" href="/learn">Grow Your Household</a>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section class="split-section" id="giving">
-        <div class="section-inner split-grid">
-          <div>
-            <p class="eyebrow">AGAPAY Give</p>
-            <h2>Giving, made worthy of the gift.</h2>
-            <p class="section-copy">Offer to your parish, support ministries, and remember loved ones with the dignity, security, and transparency stewardship deserves. AGAPAY is not a donation middleman: Stripe processes the transaction, and the gift flows to the church's own connected account.</p>
-            <div class="feature-pairs">
-              <div class="feature-pair"><div><strong>One-time and recurring</strong><span>Give once or set a rhythm.</span></div></div>
-              <div class="feature-pair"><div><strong>Memorials and commemorations</strong><span>Offer in someone's name.</span></div></div>
-              <div class="feature-pair"><div><strong>Campaigns and projects</strong><span>Build the temple together.</span></div></div>
-              <div class="feature-pair"><div><strong>Processed by Stripe</strong><span>Protected checkout, clear receipts, direct parish flow.</span></div></div>
+  <main>
+    <section class="hero">
+      <div class="hero-inner">
+        <div class="hero-main">
+          <div class="hero-copy">
+            <div class="eyebrow">AGAPAY Give</div>
+            <h1>The Orthodox Giving App <span>Built for Parish Life</span></h1>
+            <div class="hero-rule" aria-hidden="true"></div>
+            <p>AGAPAY Give is an Orthodox giving and tithing app for parishes, monasteries, and faithful donors - helping communities receive offerings, remember the living and the departed, and steward every gift with clarity. Transactions are processed and protected by Stripe; AGAPAY never holds donated funds.</p>
+            <div class="hero-actions">
+              <a class="btn btn-gold" href="/give/request-demo">Request a Parish Demo</a>
+              <a class="btn btn-outline" href="/register">Start for free</a>
+              <a class="btn btn-outline" href="/give/pricing">View Pricing</a>
+              <a class="btn btn-outline" href="/give/find-parish">Find a Parish</a>
+              <a class="btn btn-outline" href="#why">Why AGAPAY Exists</a>
+              <a class="btn btn-navy" id="heroInstallBtn" href="#install">Get the App</a>
             </div>
-            <a href="/give/how-it-works" class="outline-btn">See how giving works</a>
+            <div class="hero-note">Built for stewardship, commemorations, candles, offerings, and the daily work of sustaining Orthodox life - without placing AGAPAY between the donor and the Church.</div>
           </div>
-
-          <div class="giving-widget" aria-label="Example giving widget">
-            <div class="widget-head">
-              <img src="/mark.png" alt="" width="34" height="34" />
-              <div>
-                <small>AGAPAY Give</small>
-                <strong>St. Andrew Orthodox Church</strong>
-              </div>
-            </div>
-            <div class="giving-tabs" role="tablist" aria-label="Gift frequency">
-              <button class="is-active" type="button" data-frequency="once">One-time</button>
-              <button type="button" data-frequency="monthly">Monthly</button>
-            </div>
-            <div style="color:var(--soft);font-size:0.95rem;">Choose an amount</div>
-            <div class="amount-grid" data-amount-grid>
-              <button type="button">$25</button>
-              <button class="is-active" type="button">$50</button>
-              <button type="button">$100</button>
-              <button type="button">$250</button>
-            </div>
-            <label class="amount-field">
-              <span>$</span>
-              <input inputmode="decimal" type="number" placeholder="Other amount" aria-label="Other donation amount" />
-            </label>
-            <a class="widget-submit" href="/give" style="text-decoration:none;display:flex;align-items:center;justify-content:center;">Give with AGAPAY</a>
-            <div class="secure-note">Processed and protected by Stripe · AGAPAY never holds donated funds</div>
+          <div class="hero-visual" aria-label="AGAPAY Give mobile dashboard shown on a phone beside Orthodox books and candle" role="img">
+            <img src="/images/giving/app-phone-mockup.png" alt="" fetchpriority="high" />
           </div>
         </div>
-      </section>
-
-      <section class="scripture-band" aria-label="Scripture">
-        <div class="section-inner">
-          <blockquote>As each has received a gift, use it to serve one another, as good stewards of God's varied grace.</blockquote>
-          <cite>1 Peter 4:10</cite>
-        </div>
-      </section>
-
-      <section class="home-learn-section" id="learn" aria-labelledby="learnVerificationTitle">
-        <div class="section-inner">
-          <div class="home-learn-grid">
-            <div class="hero-art learn-sketch-art" aria-label="Orthodox family and church illustration">
-              <div class="hero-arch">
-                <picture>
-                  <source media="(max-width: 820px)" srcset="/images/home/platform-family-sketch-960.webp" type="image/webp" />
-                  <img src="/images/home/platform-family-sketch-1440.webp" alt="An Orthodox family reading together near a church and icons" width="1440" height="960" loading="lazy" decoding="async" />
-                </picture>
-              </div>
-              <div class="hero-card">
-                <small>AGAPAY Learn</small>
-                <strong>Plan with peace. Teach with purpose.</strong>
-              </div>
-            </div>
-
-            <div class="home-learn-copy">
-              <p class="eyebrow">AGAPAY Learn</p>
-              <h2 id="learnVerificationTitle">Planning that begins with the family and follows the Church year.</h2>
-              <p class="home-learn-purpose"><strong>AGAPAY Learn is an Orthodox Christian homeschool planning application for parents.</strong> Its purpose is to help families set up children and school terms, plan family-based and Form-based lessons, follow Orthodox feasts and fasts, organize books, track weekly work, use Grace Mode in hard seasons, print household plans, and find moderated homeschool resources.</p>
-              <div class="feature-pairs home-learn-features">
-                <div class="feature-pair"><div><strong>Church calendar</strong><span>Feasts, fasts, readings, saints, and rhythms beside the school plan.</span></div></div>
-                <div class="feature-pair"><div><strong>Family + Forms</strong><span>Plan shared enrichment once and assign core work where it belongs.</span></div></div>
-                <div class="feature-pair"><div><strong>Grace Mode</strong><span>Lighten hard weeks without losing the thread.</span></div></div>
-                <div class="feature-pair"><div><strong>Books + Print Center</strong><span>Connect real curriculum and print useful household and child plans.</span></div></div>
-              </div>
-              <div class="hero-actions home-learn-actions">
-                <a class="gold-btn" href="/learn/">Explore AGAPAY Learn</a>
-                <a class="outline-btn" href="/learn/pricing">View Pricing</a>
-              </div>
-            </div>
+        <div class="hero-trust" aria-label="AGAPAY trust points">
+          <div class="hero-trust-item is-active" data-focus-title="Secure giving" data-focus-copy="Transactions are processed and protected by Stripe, with gifts routed to the church's connected account. AGAPAY never holds donated funds.">
+            <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-5"/></svg>
+            <span><strong>Processed by Stripe</strong><br />Protected giving, direct parish flow.</span>
           </div>
-
-          <div class="home-learn-calendar">
-            <div>
-              <p class="eyebrow">Optional Google Calendar Sync</p>
-              <h3>Send only the homeschool events you choose.</h3>
-            </div>
-            <p>If a signed-in parent connects Google Calendar, AGAPAY Learn requests only the Calendar events permission to create and update selected lesson blocks, term dates, feast days, and reminders in the user's primary calendar. Sync is optional; AGAPAY Learn works without it and does not sell Google user data or use Calendar data for advertising.</p>
-            <a class="outline-btn" href="/privacy.html">Privacy details</a>
+          <div class="hero-trust-item" data-focus-title="Canonical care" data-focus-copy="Communities are reviewed before activation so donors know where their gifts are going.">
+            <svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/><path d="M8 12l3 3 5-6"/></svg>
+            <span><strong>Canonically Minded</strong><br />Communities reviewed before activation.</span>
+          </div>
+          <div class="hero-trust-item" data-focus-title="Human support" data-focus-copy="Real help for onboarding, donor questions, parish workflows, and the practical details of launch.">
+            <svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/><path d="M8 12l3 3 5-6"/></svg>
+            <span><strong>Dedicated Support</strong><br />People who understand the mission.</span>
+          </div>
+          <div class="hero-trust-item" data-focus-title="Orthodox by design" data-focus-copy="Built around offerings, candles, commemorations, stewardship, and the communities that sustain Orthodox life.">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"> <path d="M12 2v20"/> <path d="M9 6h6"/> <path d="M5 10h14"/> <path d="M9 15L15 19"/> </svg>
+            <span><strong>Built by Orthodox Christians</strong><br />For Orthodox Christians.</span>
           </div>
         </div>
-      </section>
-
-      <section class="trust-section">
-        <div class="section-inner">
-          <div class="center-heading">
-            <p class="eyebrow">Why Orthodox Families and Communities Trust AGAPAY</p>
-            <h2>Built with the Church, the home, and real life in view.</h2>
-          </div>
-          <div class="trust-grid">
-            <article class="trust-card"><span>☩</span><h3>Orthodox First</h3><p>Everything starts with Christ and His Church.</p></article>
-            <article class="trust-card"><span>⌂</span><h3>Real Families</h3><p>Built for large families, hard seasons, and joyful ordinary days.</p></article>
-            <article class="trust-card"><span>♡</span><h3>Parishes and Homes</h3><p>Technology that strengthens stewardship and the domestic church.</p></article>
-            <article class="trust-card"><span>▣</span><h3>Processed by Stripe</h3><p>Giving transactions use Stripe checkout and the church's connected account. AGAPAY never holds donated funds.</p></article>
-            <article class="trust-card"><span>✥</span><h3>Focused on What Matters</h3><p>Two clear products built around real parish and household needs.</p></article>
-          </div>
-        </div>
-      </section>
-
-      <section class="final-cta">
-        <div class="section-inner">
-          <p class="eyebrow">Choose Your Path</p>
-          <h2>Serve your parish. Strengthen your home.</h2>
-          <p>Begin with secure Orthodox giving or bring clarity and the Church year into your homeschool plan.</p>
-          <div class="hero-actions" style="justify-content:center;margin-bottom:0;">
-            <a class="gold-btn" href="/give">Explore AGAPAY Give</a>
-            <a class="outline-btn" href="/learn">Explore AGAPAY Learn</a>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer class="site-footer" data-shell="canonical">
-      <div class="footer-inner">
-        <div class="footer-grid">
-          <div class="footer-brand">
-            <div class="footer-lockup">
-              <img src="/mark.png" alt="" />
-              <span class="fl-name"><strong>AGAPAY</strong></span>
-            </div>
-          </div>
-          <nav class="footer-col" aria-label="Platform">
-            <h4>Platform</h4>
-            <a href="/give">AGAPAY Give</a>
-            <a href="/learn">AGAPAY Learn</a>
-            <a href="/onboarding">Get Started</a>
-          </nav>
-          <nav class="footer-col" aria-label="AGAPAY Give">
-            <h4>Give</h4>
-            <a href="/give">Overview</a>
-            <a href="/give/features">Features</a>
-            <a href="/give/how-it-works">How It Works</a>
-            <a href="/give/pricing">Pricing</a>
-            <a href="/give/#why">Why AGAPAY Give</a>
-          </nav>
-          <nav class="footer-col" aria-label="AGAPAY Learn">
-            <h4>Learn</h4>
-            <a href="/learn">Overview</a>
-            <a href="/learn/pricing">Pricing</a>
-          </nav>
-          <nav class="footer-col" aria-label="Company">
-            <h4>Company</h4>
-            <a href="/about">About</a>
-            <a href="/contact">Contact</a>
-          </nav>
-          <nav class="footer-col" aria-label="Account">
-            <h4>Account</h4>
-            <a href="/myagapay/login">My AGAPAY</a>
-            <a href="/give/login">Organization Dashboard</a>
-          </nav>
-          <nav class="footer-col" aria-label="Legal">
-            <h4>Legal</h4>
-            <a href="/privacy">Privacy Policy</a>
-            <a href="/terms">Terms of Service</a>
-          </nav>
-        </div>
-        <div class="footer-bottom">
-          <span>&copy; 2026 AGAPAY. All rights reserved.</span>
-          <span>Built for Orthodox communities.</span>
+        <div class="hero-focus" aria-live="polite">
+          <strong id="heroFocusTitle">Secure giving:</strong>
+          <span id="heroFocusCopy">Transactions are processed and protected by Stripe, with gifts routed to the church's connected account. AGAPAY never holds donated funds.</span>
         </div>
       </div>
-    </footer>
-  </div>
+    </section>
+
+    <nav class="council-jump-nav" aria-label="Parish council guide">
+      <div class="council-jump-inner">
+        <span class="council-jump-label">Council guide</span>
+        <div class="council-jump-links">
+          <a href="#why">Why AGAPAY</a>
+          <a href="#features">Features</a>
+          <a href="#how-it-works">How It Works</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#faq">FAQ</a>
+        </div>
+      </div>
+    </nav>
+
+    <section class="section interactive" aria-labelledby="interactive-title">
+      <div class="section-inner interactive-grid">
+        <div class="interactive-copy">
+          <div class="eyebrow">Premium Giving Experience</div>
+          <h2 id="interactive-title">Let every gift feel clear, intentional, and beautifully received.</h2>
+          <p class="lead">AGAPAY can help a parish show donors the real impact of steady stewardship while keeping the administrative side calm and organized.</p>
+        </div>
+        <div class="amount-playground" aria-label="Interactive giving impact calculator">
+          <div class="playground-head">
+            <div>
+              <span>Impact preview</span>
+              <strong id="impactAmount">$100 monthly gift</strong>
+            </div>
+            <div>
+              <span>Households</span>
+              <strong id="impactFamilies">85</strong>
+            </div>
+          </div>
+          <div class="amount-grid" aria-label="Choose monthly gift amount">
+            <button class="amount-button" type="button" data-amount="50">$50</button>
+            <button class="amount-button" type="button" data-amount="100" aria-pressed="true">$100</button>
+            <button class="amount-button" type="button" data-amount="150">$150</button>
+            <button class="amount-button" type="button" data-amount="250">$250</button>
+          </div>
+          <div class="playground-slider">
+            <label for="households">Participating households <span id="householdLabel">85</span></label>
+            <input id="households" type="range" min="20" max="250" value="85" />
+          </div>
+          <div class="playground-result" aria-live="polite">
+            <div class="result-card">
+              <span>Monthly</span>
+              <strong id="monthlyImpact">$8,500</strong>
+            </div>
+            <div class="result-card">
+              <span>Annual</span>
+              <strong id="annualImpact">$102,000</strong>
+            </div>
+            <div class="result-card">
+              <span>Receipts</span>
+              <strong id="receiptImpact">85</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section problem" id="why">
+      <div class="section-inner problem-grid">
+        <div class="problem-copy">
+          <div class="eyebrow">WHY AGAPAY GIVE</div>
+          <h2>Built for the nave, not adapted from the megachurch.</h2>
+          <p class="lead">General church-giving platforms can process gifts capably. The difference is what the platform was shaped around. AGAPAY began within Orthodox parish life, built by Orthodox Christians for Orthodox Christians—not retrofitted from a generic nonprofit or corporate-style ministry product.</p>
+          <p class="lead">That changes the center of gravity: stewardship, candles, memorials, commemorations, special collections, and feast-aware campaigns belong together because giving is participation in the life of the Church, not merely a checkout and receipt.</p>
+          <strong>Modern capability matters. So do liturgical time, canonical care, prayer, and the human work of parish stewardship.</strong>
+          <p class="council-scope">AGAPAY is in its founding stage, onboarding its first parishes ahead of public launch. It currently serves recognized Orthodox communities across the United States, keeping stewardship funds domestic and within U.S. compliance.</p>
+        </div>
+        <div class="problem-list">
+          <div class="problem-item">
+            <div class="icon-ring"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/><path d="M5 4l2 2M19 4l-2 2"/></svg></div>
+            <div><h3>Liturgical Time, Not Marketing Windows</h3><p>Julian and Revised-Julian calendar support helps campaigns follow Orthodox feasts and fasts rather than generic seasonal calendars.</p></div>
+          </div>
+          <div class="problem-item">
+            <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 13h8"/></svg></div>
+            <div><h3>Prayer in the Workflow</h3><p>Names of the living and departed stay connected to their offering and can be routed toward the priest’s preparation.</p></div>
+          </div>
+          <div class="problem-item">
+            <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/><path d="M9 12l2 2 4-5"/></svg></div>
+            <div><h3>Trust Before Activation</h3><p>Canonical standing is reviewed before a community receives gifts, and AGAPAY never holds donated funds.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section solution">
+      <div class="section-inner">
+        <div class="solution-aura" aria-hidden="true"></div>
+        <div class="solution-head">
+          <div class="eyebrow">THE SOLUTION</div>
+          <h2>Giving built around Orthodox life.</h2>
+          <p>AGAPAY brings offerings, candles, designated funds, campaigns, and commemorations together in one platform - shaped around the parish, the monastery, and the faithful who support them. We reverently facilitate the connection; Stripe processes the gift, and AGAPAY never holds donated funds.</p>
+        </div>
+        <div class="ecosystem" data-active="parishes">
+          <div class="spoke-canvas" aria-hidden="true">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+              <path class="spoke-main spoke-parishes" d="M34 30 H42" />
+              <path class="spoke-main spoke-monasteries" d="M34 70 H42" />
+              <path class="spoke-main spoke-donors" d="M66 30 H58" />
+              <path class="spoke-main spoke-commemorations" d="M66 70 H58" />
+
+              <path class="spoke-angled spoke-parishes" d="M42 30 L47 45" />
+              <path class="spoke-angled spoke-monasteries" d="M42 70 L47 55" />
+              <path class="spoke-angled spoke-donors" d="M58 30 L53 45" />
+              <path class="spoke-angled spoke-commemorations" d="M58 70 L53 55" />
+
+              <circle class="spoke-dot" cx="34" cy="30" r="0.6" />
+              <circle class="spoke-dot" cx="34" cy="70" r="0.6" />
+              <circle class="spoke-dot" cx="66" cy="30" r="0.6" />
+              <circle class="spoke-dot" cx="66" cy="70" r="0.6" />
+            </svg>
+          </div>
+          <div class="ecosystem-side">
+            <div class="ecosystem-item is-active" tabindex="0" data-solution="parishes" data-title="Parishes &amp; Missions" data-copy="One place for stewardship, candles, designated funds, and campaigns, with records that stay clear for parish leaders.">
+              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M4 21h16"/><path d="M6 21V10l6-5 6 5v11"/><path d="M9 21v-6h6v6"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></div>
+              <div><h3>Parishes &amp; Missions</h3><p>Receive stewardship, candle offerings, designated funds, and campaigns through one unified platform.</p></div>
+            </div>
+            <div class="ecosystem-item" tabindex="0" data-solution="monasteries" data-title="Monasteries" data-copy="A simple, trustworthy way for benefactors to sustain sacred hospitality, prayer, building needs, and daily monastery life.">
+              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M5 21h14"/><path d="M7 21V9l5-5 5 5v12"/><path d="M10 21v-5h4v5"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></div>
+              <div><h3>Monasteries</h3><p>Receive donations and support your sacred mission through trusted digital giving tools - with no monthly platform fee, ever, and no AGAPAY donation fee.</p></div>
+            </div>
+          </div>
+
+          <div class="ecosystem-center">
+            <div class="center-medallion">
+              <div>
+                <img src="/mark.png" alt="" />
+                <span>AGAPAY</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="ecosystem-side">
+            <div class="ecosystem-item right" tabindex="0" data-solution="donors" data-title="Faithful Donors" data-copy="A donor experience that feels calm, secure, and intentionally Orthodox, from recurring gifts to giving history.">
+              <div><h3>Faithful Donors</h3><p>Give confidently to your parish or monastery, and submit names of the living and the departed for commemoration.</p></div>
+              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M16 11a4 4 0 1 0-8 0"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/><path d="M19 8a3 3 0 0 1 2 3"/><path d="M3 11a3 3 0 0 1 2-3"/></svg></div>
+            </div>
+            <div class="ecosystem-item right" tabindex="0" data-solution="commemorations" data-title="Commemorations" data-copy="Names offered with gifts can reach the parish each week, keeping generosity tied to prayer and remembrance.">
+              <div><h3>Commemorations</h3><p>Names submitted with a gift reach your priest each week, so the living and the departed are remembered at the altar.</p></div>
+              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 13h8"/></svg></div>
+            </div>
+          </div>
+        </div>
+        <div class="solution-focus" aria-live="polite">
+          <strong id="solutionFocusTitle">Parishes &amp; Missions</strong>
+          <span id="solutionFocusCopy">One place for stewardship, candles, designated funds, and campaigns, with records that stay clear for parish leaders.</span>
+        </div>
+        <p class="solution-foot">Together, we strengthen the institutions that sustain Orthodox life.</p>
+      </div>
+    </section>
+
+    <section class="section giving-capabilities" id="features" aria-labelledby="giving-capabilities-title">
+      <div class="section-inner">
+        <div class="giving-capabilities-head">
+          <div>
+            <div class="eyebrow">Available Now</div>
+            <h2 id="giving-capabilities-title">Giving and parish life, connected in one Orthodox platform.</h2>
+          </div>
+          <p class="lead">From a donor's first offering to a treasurer's year-end records, AGAPAY Give keeps stewardship, prayer, and parish administration connected in one Orthodox giving app.</p>
+        </div>
+
+        <div class="giving-capability-grid">
+          <article class="giving-capability-card">
+            <span class="giving-status is-live">Live</span>
+            <h3>One-time &amp; recurring giving</h3>
+            <p>Receive tithes, stewardship commitments, designated gifts, and recurring parish donations through secure Stripe checkout.</p>
+          </article>
+          <article class="giving-capability-card">
+            <span class="giving-status is-live">Live</span>
+            <h3>Candles &amp; commemorations</h3>
+            <p>Accept candle and memorial offerings with names of the living and departed, organized for parish prayer and follow-up.</p>
+          </article>
+          <article class="giving-capability-card">
+            <span class="giving-status is-live">Live</span>
+            <h3>Campaigns &amp; parish funds</h3>
+            <p>Create shareable campaign pages with photos, goals, progress, descriptions, and updates, or direct gifts to designated funds.</p>
+          </article>
+          <article class="giving-capability-card">
+            <span class="giving-status is-live">Live</span>
+            <h3>Donor records &amp; pledges</h3>
+            <p>Give donors a clear history of offerings, annual pledge progress, commemorations, and recurring commitments in My AGAPAY.</p>
+          </article>
+          <article class="giving-capability-card">
+            <span class="giving-status is-live">Live</span>
+            <h3>Parish administration</h3>
+            <p>Review giving history, funds, candle totals and names, campaigns, commemorations, and connected Stripe status in one dashboard.</p>
+          </article>
+          <article class="giving-capability-card">
+            <span class="giving-status is-live">Live</span>
+            <h3>QR codes &amp; direct parish links</h3>
+            <p>Help parishioners reach the right giving experience from a bulletin, narthex sign, website, email, or shared campaign link.</p>
+          </article>
+          <article class="giving-capability-card">
+            <span class="giving-status is-live">Live</span>
+            <h3>Parish operations</h3>
+            <p>Bring Stewardship Health, parishioner services, staff access, and parish commerce together with guided onboarding and support.</p>
+          </article>
+          <article class="giving-capability-card">
+            <span class="giving-status is-live">New</span>
+            <h3>Accounting</h3>
+            <p>Keep fund accounting, journal entries, payables, reconciliation, budgets, reporting, and year-end records connected to the gifts that created them.</p>
+          </article>
+          <article class="giving-capability-card">
+            <span class="giving-status is-live">New</span>
+            <h3>Directory</h3>
+            <p>Give clergy and authorized parish staff a secure, shared directory for households, member details, communication, and pastoral follow-up.</p>
+          </article>
+          <article class="giving-capability-card">
+            <span class="giving-status is-live">New</span>
+            <h3>Commerce</h3>
+            <p>Manage bookstore goods, parish products, orders, and checkout while keeping purchases clearly separate from donations and stewardship gifts.</p>
+          </article>
+          <article class="giving-capability-card">
+            <span class="giving-status is-live">New</span>
+            <h3>Koinonia</h3>
+            <p><em>Koinonia</em> (κοινωνία) means fellowship, communion, and shared participation. It is the umbrella for parish announcements, ministry groups, teaching, audio, video, news, and Orthodox podcasts because these tools help a community share its life in Christ. Acts 2:42 describes the Church this way: “And they continued stedfastly in the apostles' doctrine and fellowship, and in breaking of bread, and in prayers.”</p>
+          </article>
+        </div>
+
+        <div class="giving-roadmap" aria-labelledby="giving-roadmap-title">
+          <div>
+            <div class="eyebrow">Coming Soon</div>
+            <h3 id="giving-roadmap-title">The next tools in the AGAPAY Give roadmap.</h3>
+          </div>
+          <div class="giving-roadmap-items">
+            <p><strong>Text-to-Give · Parish plan</strong><span>One AGAPAY number with a unique parish keyword and the correct giving link.</span></p>
+          </div>
+        </div>
+
+        <div class="giving-capability-actions">
+          <a class="btn btn-gold" href="/give/features">See all features →</a>
+          <a class="btn btn-outline" href="/give/how-it-works">See How AGAPAY Works</a>
+          <a class="btn btn-outline" href="/give/pricing">See full pricing →</a>
+          <a class="btn btn-outline" href="/give/find-parish">Find an Orthodox Parish</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section council-path" id="how-it-works" aria-labelledby="council-path-title">
+      <div class="section-inner">
+        <div class="council-section-head">
+          <div>
+            <div class="eyebrow">A COUNCIL-SIZED DECISION PATH</div>
+            <h2 id="council-path-title">From first review to parish launch.</h2>
+          </div>
+          <p class="lead">A parish council can evaluate fit, choose the capabilities it needs, and understand the rollout without piecing the decision together across multiple pages.</p>
+        </div>
+        <div class="council-step-grid">
+          <article class="council-step">
+            <span class="council-step-number">01</span>
+            <h3>Confirm the fit</h3>
+            <p>Review the Orthodox-first approach, canonical safeguards, giving flow, and the needs of your priest, treasurer, council, and faithful.</p>
+          </article>
+          <article class="council-step">
+            <span class="council-step-number">02</span>
+            <h3>Choose capabilities</h3>
+            <p>Select by the work your parish needs now—from simple online giving through stewardship insight and complete parish operations.</p>
+          </article>
+          <article class="council-step">
+            <span class="council-step-number">03</span>
+            <h3>Register and connect</h3>
+            <p>Complete parish registration and canonical review, then connect the church’s own Stripe account so AGAPAY never holds donated funds.</p>
+          </article>
+          <article class="council-step">
+            <span class="council-step-number">04</span>
+            <h3>Configure and share</h3>
+            <p>Set up funds, campaigns, branding, direct links, and QR codes with guided onboarding and support for a confident parish launch.</p>
+          </article>
+        </div>
+        <div class="council-path-actions">
+          <a class="btn btn-gold" href="/register">Start for free</a>
+          <a class="btn btn-outline" href="/give/features">See all features →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section council-pricing" id="pricing" aria-labelledby="council-pricing-title">
+      <div class="section-inner">
+        <div class="council-section-head">
+          <div>
+            <div class="eyebrow">PRICING AT A GLANCE</div>
+            <h2 id="council-pricing-title">Choose by capability, not parish size.</h2>
+          </div>
+          <p class="lead">Begin with simple digital giving, add Orthodox giving tools and stewardship insight as needed, or choose Parish for the complete operations platform.</p>
+        </div>
+        <div class="council-plan-grid">
+          <article class="council-plan">
+            <span>Starter</span>
+            <strong>$9 <small>/ mo</small></strong>
+            <p>The essential online-giving foundation for a new Orthodox mission.</p>
+          </article>
+          <article class="council-plan">
+            <span>Giving Plus</span>
+            <strong>$49 <small>/ mo</small></strong>
+            <p>Orthodox giving tools for parishes ready to go beyond the basics.</p>
+          </article>
+          <article class="council-plan">
+            <span>Stewardship</span>
+            <strong>$99 <small>/ mo</small></strong>
+            <p>Giving plus the insight leaders need to cultivate faithful stewardship.</p>
+          </article>
+          <article class="council-plan">
+            <span>Parish</span>
+            <strong>$149 <small>/ mo</small></strong>
+            <p>A complete parish operations platform for established churches that want to cultivate stewardship and serve parishioners well.</p>
+          </article>
+        </div>
+        <p class="council-pricing-note"><strong>Choose by capability, not parish size.</strong> Upgrade, downgrade, or cancel at any time as your church’s needs change.</p>
+        <div class="council-pricing-actions">
+          <a class="btn btn-gold" href="/give/pricing">See full pricing →</a>
+          <a class="btn btn-outline" href="/register">Start for free</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="trust-band">
+      <div class="trust-grid">
+        <div class="trust-copy">
+          <div class="eyebrow">BUILT ON TRUST</div>
+          <h2>Secure. Reliable. Transparent.</h2>
+          <p class="lead">AGAPAY combines modern giving technology with dedicated support and values-aligned service you can trust - designed to support Orthodox communities with clarity, security, and long-term stability. Stewardship without the middleman: all giving transactions are processed and protected by Stripe, and AGAPAY never holds donated funds.</p>
+        </div>
+        <div class="trust-badge"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/></svg><span>Processed by Stripe<br />Modern protected checkout for every online gift.</span></div>
+        <div class="trust-badge"><svg class="dollar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="8"/> <path d="M12 7v10"/> <path d="M15 8h-5a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4h-5"/> </svg><span>No Donation Middleman<br />AGAPAY never holds donated funds.</span></div>
+        <div class="trust-badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6"/><path d="M9 9h.01"/><path d="M15 15h.01"/></svg><span>No AGAPAY Donation Fee<br />Eligible nonprofit donations: cards 2.2% + $0.30; ACH 0.8%, capped at $5.<a class="stripe-nonprofit-rate-link" href="#stripe-nonprofit-fee-disclaimer" aria-label="See Stripe nonprofit pricing eligibility disclaimer">*</a></span></div>
+        <div class="trust-badge"><svg viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><path d="M4 14h4v6H4z"/><path d="M16 14h4v6h-4z"/></svg><span>Dedicated Support<br />Real people who understand Orthodox communities.</span></div>
+        <div class="trust-badge"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Canonical Review<br />Communities are reviewed before they can receive gifts.</span></div>
+      </div>
+    </section>
+
+    <section class="section giving-faq" id="faq" aria-labelledby="giving-faq-title">
+      <div class="section-inner giving-faq-layout">
+        <div class="giving-faq-intro">
+          <div class="eyebrow">Common Questions</div>
+          <h2 id="giving-faq-title">Orthodox giving, made clearer.</h2>
+          <p class="lead">AGAPAY Give is purpose-built for the practical and spiritual rhythms of Orthodox generosity.</p>
+        </div>
+        <div class="giving-faq-list">
+          <details open>
+            <summary>What is an Orthodox giving app?</summary>
+            <p>An Orthodox giving app is online giving software designed around Orthodox parish life. AGAPAY Give supports stewardship, tithes, candles, memorials, commemorations, campaigns, and donor records in one platform.</p>
+          </details>
+          <details>
+            <summary>Can parishioners make recurring tithes and donations?</summary>
+            <p>Yes. Donors can make one-time or recurring gifts to verified Orthodox parishes and monasteries through secure Stripe checkout. AGAPAY never holds donated funds; we bring donors and churches together through a protected giving flow.</p>
+          </details>
+          <details>
+            <summary>Does AGAPAY hold donated funds?</summary>
+            <p>No. Online gifts are processed and protected by Stripe and routed through the church's own connected Stripe account. AGAPAY reverently facilitates giving without becoming the custodian of donated funds.</p>
+          </details>
+          <details>
+            <summary>Can donors submit candles, memorials, and names for commemoration?</summary>
+            <p>Yes. AGAPAY Give supports candle offerings, memorial gifts, and names of the living and departed for parish commemoration workflows.</p>
+          </details>
+          <details>
+            <summary>Is Text-to-Give available?</summary>
+            <p>Text-to-Give is a coming-soon AGAPAY Give feature. The current platform supports web giving, parish campaigns, recurring gifts, QR codes, candles, memorials, commemorations, and donor records.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="mission-band">
+      <div class="mission-copy">
+        <div class="eyebrow">OUR MISSION</div>
+        <h2>Strengthening Orthodox life through faithful stewardship.</h2>
+        <p>AGAPAY exists to help Orthodox communities build durable institutions, support meaningful work, and strengthen the bonds between parishes, monasteries, and the faithful. We believe true stewardship builds a foundation that outlasts our lifetime.</p>
+        <a href="/about">Learn About Our Mission</a>
+      </div>
+      <div class="mission-image" role="img" aria-label="Orthodox faithful gathered inside a parish church">
+        <div class="mission-smoke" aria-hidden="true">
+          <span class="smoke-wisp"></span>
+          <span class="smoke-wisp"></span>
+          <span class="smoke-wisp"></span>
+          <span class="smoke-wisp"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section join">
+      <div class="section-inner">
+        <div class="join-grid">
+          <div>
+            <div class="eyebrow">Join Us</div>
+            <h2>Join the future of Orthodox giving.</h2>
+            <p>Whether you serve a parish, mission, or monastery, AGAPAY is building the giving infrastructure to help Orthodox communities thrive together.</p>
+            <div class="join-actions">
+              <a class="btn btn-gold" href="/register">Start for free</a>
+              <a class="btn btn-outline" href="/how-it-works">See How it Works</a>
+            </div>
+          </div>
+          <div class="join-features">
+            <div class="join-feature">
+              <div class="icon-ring"><svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 4.5h6"/><path d="M9 10l1.5 1.5L13 9"/><path d="M9 14l1.5 1.5L13 13"/><path d="M14.5 10h2.5"/><path d="M14.5 14h2.5"/></svg></div>
+              <div><h3>Easy Onboarding</h3><p>Get set up with personalized guidance.</p></div>
+            </div>
+            <div class="join-feature">
+              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/><path d="M9 12l2 2 4-5"/></svg></div>
+              <div><h3>Dedicated Support</h3><p>Real people who understand your mission.</p></div>
+            </div>
+            <div class="join-feature">
+              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 13h8"/></svg></div>
+              <div><h3>Commemorations</h3><p>Living and departed names reach your priest each week.</p></div>
+            </div>
+            <div class="join-feature">
+              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M5 21h14"/><path d="M7 21V9l5-5 5 5v12"/><path d="M10 21v-5h4v5"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></div>
+              <div><h3>Kingdom Impact</h3><p>Every gift helps strengthen our community.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="install reveal" id="install">
+      <div class="install-inner">
+        <div>
+          <div class="install-head">
+            <div class="install-eyebrow">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>
+              Add AGAPAY to your phone
+            </div>
+            <h2>Your giving, a tap away.</h2>
+            <p>Add our web-based app to your home screen for quick access to your giving, intentions, and commemorations. It opens straight from your browser &mdash; no app store, no download.</p>
+          </div>
+
+          <div class="os-toggle-wrap">
+            <div class="os-toggle" role="tablist" aria-label="Choose your device">
+              <button class="os-btn" id="osAndroidBtn" role="tab" aria-selected="false" aria-controls="panelAndroid">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path class="logo-line" d="M7.2 8.5h9.6c.8 0 1.4.6 1.4 1.4v5.8c0 .8-.6 1.4-1.4 1.4H7.2c-.8 0-1.4-.6-1.4-1.4V9.9c0-.8.6-1.4 1.4-1.4Z"/><path class="logo-line" d="M8.3 8 6.9 5.7M15.7 8l1.4-2.3M9 17.1v2.7M15 17.1v2.7M4.1 10.2v5.3M19.9 10.2v5.3"/><circle cx="9.6" cy="11.4" r=".55"/><circle cx="14.4" cy="11.4" r=".55"/></svg>
+                Android
+              </button>
+              <button class="os-btn" id="osAppleBtn" role="tab" aria-selected="false" aria-controls="panelApple">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.08ZM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25Z"/></svg>
+                iPhone &amp; iPad
+              </button>
+            </div>
+          </div>
+
+          <div class="os-panel" id="panelAndroid" role="tabpanel" aria-labelledby="osAndroidBtn">
+            <div class="install-steps">
+              <div class="install-step">
+                <span class="isn">1</span>
+                <p>Tap <strong>Install AGAPAY</strong> below. Your browser will ask to add our web-based app to your home screen.</p>
+              </div>
+              <div class="install-step">
+                <span class="isn">2</span>
+                <p>Confirm <strong>Install</strong>, and the AGAPAY icon appears with your other apps.</p>
+              </div>
+              <div class="install-step">
+                <span class="isn">3</span>
+                <p>Open it anytime to give, light a candle, or submit names for commemoration.</p>
+              </div>
+            </div>
+            <div class="install-cta">
+              <button class="btn-install" id="androidInstallBtn">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Install AGAPAY
+              </button>
+              <p class="install-note">If your browser doesn&rsquo;t prompt automatically, it will open AGAPAY so you can choose &ldquo;Add to Home screen&rdquo; from the browser menu.</p>
+            </div>
+          </div>
+
+          <div class="os-panel" id="panelApple" role="tabpanel" aria-labelledby="osAppleBtn">
+            <div class="install-steps">
+              <div class="install-step">
+                <span class="isn">1</span>
+                <p>Open AGAPAY in <strong>Safari</strong> (iPhone and iPad can add our web-based app from Safari).</p>
+              </div>
+              <div class="install-step">
+                <span class="isn">2</span>
+                <p>Tap the <strong>Share</strong> button
+                  <svg class="ios-share" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L8 8m4-4 4 4"/><path d="M5 12v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>
+                  at the bottom of the screen.</p>
+              </div>
+              <div class="install-step">
+                <span class="isn">3</span>
+                <p>Scroll down and tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>. The AGAPAY icon appears with your other apps.</p>
+              </div>
+            </div>
+            <div class="install-cta">
+              <span class="ios-callout">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+                On iPhone &amp; iPad, use Safari&rsquo;s Share menu &mdash; Apple doesn&rsquo;t allow a one-tap install button.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <img src="/images/app-phone-mockup.png" alt="AGAPAY donor dashboard on a phone" class="install-phone-img" loading="lazy" width="320" height="693" />
+        </div>
+      </div>
+    </section>
+    <aside class="stripe-fee-disclaimer" id="stripe-nonprofit-fee-disclaimer">
+      <strong>* Stripe nonprofit pricing disclaimer:</strong> Discounted donation transaction fees are subject to Stripe&rsquo;s review, approval, and ongoing determination. AGAPAY cannot guarantee eligibility or that Stripe will apply or maintain these rates.
+    </aside>
+  </main>
+
   <script>
-    const flipWordNodes = Array.from(document.querySelectorAll("[data-flip-word]"));
-    const flipWords = ["GIVE", "LEARN", "LIVE"];
-    let flipIndex = 0;
-    if (flipWordNodes.length && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      window.setInterval(() => {
-        flipWordNodes.forEach((node) => node.classList.add("is-flipping"));
-        window.setTimeout(() => {
-          flipIndex = (flipIndex + 1) % flipWords.length;
-          flipWordNodes.forEach((node) => {
-            node.textContent = flipWords[flipIndex];
-            node.classList.remove("is-flipping");
-          });
-        }, 180);
-      }, 2300);
+    const heroVideo = document.querySelector(".hero-video");
+    if (heroVideo) {
+      heroVideo.addEventListener("canplay", () => {
+        heroVideo.classList.add("is-loaded");
+      }, { once: true });
     }
 
-    document.querySelectorAll("[data-frequency]").forEach((button) => {
+    const currency = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0
+    });
+
+    const heroTrustItems = Array.from(document.querySelectorAll(".hero-trust-item"));
+    const heroFocusTitle = document.querySelector("#heroFocusTitle");
+    const heroFocusCopy = document.querySelector("#heroFocusCopy");
+
+    function setHeroFocus(item) {
+      if (!item || !heroFocusTitle || !heroFocusCopy) return;
+      heroTrustItems.forEach((trustItem) => trustItem.classList.toggle("is-active", trustItem === item));
+      heroFocusTitle.textContent = `${item.dataset.focusTitle}:`;
+      heroFocusCopy.textContent = item.dataset.focusCopy;
+    }
+
+    heroTrustItems.forEach((item) => {
+      item.setAttribute("tabindex", "0");
+      item.addEventListener("mouseenter", () => setHeroFocus(item));
+      item.addEventListener("focus", () => setHeroFocus(item));
+    });
+
+    const ecosystem = document.querySelector(".ecosystem");
+    const ecosystemItems = Array.from(document.querySelectorAll(".ecosystem-item"));
+    const solutionFocusTitle = document.querySelector("#solutionFocusTitle");
+    const solutionFocusCopy = document.querySelector("#solutionFocusCopy");
+
+    function setSolutionFocus(item) {
+      if (!ecosystem || !item || !solutionFocusTitle || !solutionFocusCopy) return;
+      ecosystem.dataset.active = item.dataset.solution;
+      ecosystem.classList.add("has-active");
+      ecosystemItems.forEach((ecosystemItem) => {
+        ecosystemItem.classList.toggle("is-active", ecosystemItem === item);
+      });
+      solutionFocusTitle.textContent = item.dataset.title;
+      solutionFocusCopy.textContent = item.dataset.copy;
+    }
+
+    ecosystemItems.forEach((item) => {
+      item.addEventListener("mouseenter", () => setSolutionFocus(item));
+      item.addEventListener("focus", () => setSolutionFocus(item));
+      item.addEventListener("click", () => setSolutionFocus(item));
+    });
+
+    const amountButtons = Array.from(document.querySelectorAll(".amount-button"));
+    const households = document.querySelector("#households");
+    const impactAmount = document.querySelector("#impactAmount");
+    const impactFamilies = document.querySelector("#impactFamilies");
+    const householdLabel = document.querySelector("#householdLabel");
+    const monthlyImpact = document.querySelector("#monthlyImpact");
+    const annualImpact = document.querySelector("#annualImpact");
+    const receiptImpact = document.querySelector("#receiptImpact");
+    let selectedAmount = 100;
+
+    function updateImpact() {
+      if (!households) return;
+      const familyCount = Number(households.value);
+      impactAmount.textContent = `${currency.format(selectedAmount)} monthly gift`;
+      impactFamilies.textContent = familyCount;
+      householdLabel.textContent = familyCount;
+      monthlyImpact.textContent = currency.format(selectedAmount * familyCount);
+      annualImpact.textContent = currency.format(selectedAmount * familyCount * 12);
+      receiptImpact.textContent = familyCount;
+    }
+
+    amountButtons.forEach((button) => {
       button.addEventListener("click", () => {
-        document.querySelectorAll("[data-frequency]").forEach((item) => item.classList.remove("is-active"));
-        button.classList.add("is-active");
+        selectedAmount = Number(button.dataset.amount);
+        amountButtons.forEach((item) => {
+          item.setAttribute("aria-pressed", String(item === button));
+        });
+        updateImpact();
       });
     });
 
-    document.querySelectorAll("[data-amount-grid] button").forEach((button) => {
-      button.addEventListener("click", () => {
-        document.querySelectorAll("[data-amount-grid] button").forEach((item) => item.classList.remove("is-active"));
-        button.classList.add("is-active");
+    if (households) {
+      households.addEventListener("input", updateImpact);
+      updateImpact();
+    }
+  </script>
+  <script type="module">
+    const canvas = document.querySelector("#sacredCanvas");
+
+    async function startSacredScene() {
+      if (
+        !canvas ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+        window.matchMedia("(max-width: 720px)").matches
+      ) return;
+
+      try {
+        const [{ default: gsap }, THREE] = await Promise.all([
+          import("https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js"),
+          import("https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js")
+        ]);
+
+        const hero = document.querySelector(".hero");
+        const renderer = new THREE.WebGLRenderer({
+          canvas,
+          alpha: true,
+          antialias: true,
+          powerPreference: "high-performance"
+        });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.8));
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(44, 1, 0.1, 100);
+        camera.position.z = 9;
+
+        const mobile = window.matchMedia("(max-width: 720px)").matches;
+        const particleCount = mobile ? 90 : 180;
+        const positions = new Float32Array(particleCount * 3);
+        const colors = new Float32Array(particleCount * 3);
+        const gold = new THREE.Color("#D9B461");
+        const ember = new THREE.Color("#A97C25");
+        const cream = new THREE.Color("#F6F1E8");
+
+        for (let index = 0; index < particleCount; index += 1) {
+          const i = index * 3;
+          positions[i] = (Math.random() - 0.5) * (mobile ? 9 : 13);
+          positions[i + 1] = (Math.random() - 0.52) * 7;
+          positions[i + 2] = (Math.random() - 0.5) * 4;
+
+          const color = index % 5 === 0 ? cream : gold.clone().lerp(ember, Math.random() * 0.65);
+          colors[i] = color.r;
+          colors[i + 1] = color.g;
+          colors[i + 2] = color.b;
+        }
+
+        const particleGeometry = new THREE.BufferGeometry();
+        particleGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+        particleGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+
+        const particleMaterial = new THREE.PointsMaterial({
+          size: mobile ? 0.045 : 0.055,
+          transparent: true,
+          opacity: 0.76,
+          vertexColors: true,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        });
+
+        const particles = new THREE.Points(particleGeometry, particleMaterial);
+        scene.add(particles);
+
+        const ringGroup = new THREE.Group();
+        scene.add(ringGroup);
+
+        const ringMaterial = new THREE.LineBasicMaterial({
+          color: "#C8A24A",
+          transparent: true,
+          opacity: mobile ? 0.16 : 0.26,
+          blending: THREE.AdditiveBlending
+        });
+
+        function addArc(radius, start, length, yOffset) {
+          const points = [];
+          const segments = 72;
+          for (let step = 0; step <= segments; step += 1) {
+            const angle = start + (length * step) / segments;
+            points.push(new THREE.Vector3(
+              Math.cos(angle) * radius,
+              Math.sin(angle) * radius + yOffset,
+              -0.6
+            ));
+          }
+          const geometry = new THREE.BufferGeometry().setFromPoints(points);
+          const line = new THREE.Line(geometry, ringMaterial);
+          ringGroup.add(line);
+        }
+
+        addArc(mobile ? 2.2 : 3.1, 0.2, 1.25, 0.1);
+        addArc(mobile ? 2.7 : 3.75, 2.65, 1.05, -0.18);
+        addArc(mobile ? 1.65 : 2.35, 4.4, 1.2, 0.24);
+        ringGroup.position.x = mobile ? 1.7 : 3.1;
+        ringGroup.position.y = mobile ? 0.7 : 0.2;
+
+        const mouse = { x: 0, y: 0 };
+        window.addEventListener("pointermove", (event) => {
+          mouse.x = (event.clientX / window.innerWidth - 0.5) * 0.5;
+          mouse.y = (event.clientY / window.innerHeight - 0.5) * 0.35;
+        }, { passive: true });
+
+        function resize() {
+          const rect = hero.getBoundingClientRect();
+          renderer.setSize(rect.width, rect.height, false);
+          camera.aspect = rect.width / rect.height;
+          camera.updateProjectionMatrix();
+        }
+
+        window.addEventListener("resize", resize, { passive: true });
+        resize();
+
+        gsap.from(".hero-copy > *", {
+          y: 22,
+          opacity: 0,
+          duration: 1.05,
+          ease: "power3.out",
+          stagger: 0.12
+        });
+        gsap.from(".hero-trust-item", {
+          y: 16,
+          opacity: 0,
+          duration: 0.8,
+          ease: "power2.out",
+          stagger: 0.08,
+          delay: 0.45
+        });
+        gsap.from(".amount-playground", {
+          y: 36,
+          opacity: 0,
+          duration: 0.95,
+          ease: "power3.out",
+          scrollTrigger: undefined
+        });
+        gsap.from(".solution-head, .ecosystem-item, .center-medallion, .solution-focus", {
+          y: 24,
+          opacity: 0,
+          duration: 0.9,
+          ease: "power3.out",
+          stagger: 0.08,
+          delay: 0.2
+        });
+        gsap.to(".solution-aura", {
+          opacity: 0.82,
+          scale: 1.04,
+          duration: 4.8,
+          yoyo: true,
+          repeat: -1,
+          ease: "sine.inOut"
+        });
+
+        const clock = new THREE.Clock();
+        let frameId = 0;
+
+        function animate() {
+          const elapsed = clock.getElapsedTime();
+          const positionAttribute = particleGeometry.getAttribute("position");
+
+          for (let index = 0; index < particleCount; index += 1) {
+            const i = index * 3;
+            const drift = Math.sin(elapsed * 0.35 + index) * 0.0015;
+            positions[i] += drift;
+            positions[i + 1] += 0.0025 + Math.sin(elapsed + index) * 0.0009;
+            if (positions[i + 1] > 3.7) {
+              positions[i + 1] = -3.7;
+              positions[i] = (Math.random() - 0.5) * (mobile ? 9 : 13);
+            }
+          }
+
+          positionAttribute.needsUpdate = true;
+          particles.rotation.y = elapsed * 0.025 + mouse.x;
+          particles.rotation.x = mouse.y;
+          ringGroup.rotation.z = Math.sin(elapsed * 0.22) * 0.045;
+          ringGroup.rotation.y = Math.sin(elapsed * 0.18) * 0.08 + mouse.x * 0.5;
+          particleMaterial.opacity = 0.62 + Math.sin(elapsed * 1.4) * 0.08;
+          renderer.render(scene, camera);
+          frameId = requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        document.addEventListener("visibilitychange", () => {
+          if (document.hidden) {
+            cancelAnimationFrame(frameId);
+            return;
+          }
+          animate();
+        });
+      } catch (error) {
+        canvas.remove();
+      }
+    }
+
+    function scheduleSacredScene() {
+      const start = () => {
+        if ("requestIdleCallback" in window) {
+          window.requestIdleCallback(() => startSacredScene(), { timeout: 2500 });
+        } else {
+          window.setTimeout(() => startSacredScene(), 1200);
+        }
+      };
+
+      if (document.readyState === "complete") {
+        start();
+      } else {
+        window.addEventListener("load", start, { once: true });
+      }
+    }
+
+    scheduleSacredScene();
+  </script>
+
+  <script>
+    (function () {
+      // ── OS auto-detect ─────────────────────────────────────────────────────
+      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      const isAndroid = /android/i.test(navigator.userAgent);
+
+      const androidBtn = document.getElementById("osAndroidBtn");
+      const appleBtn   = document.getElementById("osAppleBtn");
+      const panelAndroid = document.getElementById("panelAndroid");
+      const panelApple   = document.getElementById("panelApple");
+      const installSection = document.getElementById("install");
+      const heroInstallBtn = document.getElementById("heroInstallBtn");
+
+      function selectOS(os) {
+        const isApple = os === "apple";
+        androidBtn.setAttribute("aria-selected", String(!isApple));
+        appleBtn.setAttribute("aria-selected",   String(isApple));
+        panelAndroid.classList.toggle("is-active", !isApple);
+        panelApple.classList.toggle("is-active",    isApple);
+      }
+
+      // Auto-select based on device; default to Android (has install prompt)
+      selectOS(isIOS ? "apple" : "android");
+
+      androidBtn.addEventListener("click", () => selectOS("android"));
+      appleBtn.addEventListener("click",   () => selectOS("apple"));
+
+      // ── beforeinstallprompt capture ────────────────────────────────────────
+      let deferredPrompt = null;
+      const installBtn = document.getElementById("androidInstallBtn");
+
+      function scrollToInstall(os) {
+        selectOS(os);
+        if (installSection) installSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      async function triggerAndroidInstall() {
+        selectOS("android");
+
+        if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone) {
+          window.location.href = "/myagapay/login?source=pwa";
+          return;
+        }
+
+        if (!deferredPrompt) {
+          scrollToInstall("android");
+          return;
+        }
+
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        if (installBtn) installBtn.disabled = true;
+        if (outcome === "accepted") {
+          const cta = panelAndroid.querySelector(".install-cta");
+          if (cta) cta.innerHTML = "<p style=\"color:#5a9a6a;font-weight:600;\">✓ Installing AGAPAY&hellip;</p>";
+        }
+      }
+
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (installBtn) installBtn.disabled = false;
       });
-    });
+
+      // If already installed as PWA, hide the Android panel CTA
+      window.addEventListener("appinstalled", () => {
+        deferredPrompt = null;
+        const cta = panelAndroid && panelAndroid.querySelector(".install-cta");
+        if (cta) cta.innerHTML = "<p style=\"color:#5a9a6a;font-weight:600;\">✓ AGAPAY is installed on this device.</p>";
+      });
+
+      if (installBtn) {
+        // Start disabled; enabled when prompt is ready
+        installBtn.disabled = true;
+
+        installBtn.addEventListener("click", () => {
+          triggerAndroidInstall();
+        });
+      }
+
+      if (heroInstallBtn) {
+        heroInstallBtn.addEventListener("click", (event) => {
+          event.preventDefault();
+          if (isAndroid) {
+            triggerAndroidInstall();
+            return;
+          }
+          scrollToInstall(isIOS ? "apple" : "android");
+        });
+      }
+    })();
   </script>
 </body>
 </html>

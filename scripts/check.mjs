@@ -93,7 +93,8 @@ assert.ok(worker.includes('url.pathname.startsWith("/giving/")'), "worker should
 for (const givingPage of ["features", "how-it-works", "pricing"]) {
   assert.ok(worker.includes(`["/${givingPage}", "/give/${givingPage}"]`), `worker should redirect /${givingPage} to /give/${givingPage}`);
 }
-assert.ok(worker.includes('["/why", "/give/#why"]'), "worker should redirect /why to the consolidated council overview anchor");
+assert.ok(worker.includes('["/why", "/#why"]'), "worker should redirect /why to the homepage council overview anchor");
+assert.ok(worker.includes('["/give", "/give/", "/give.html", "/give/index.html"]') && worker.includes('url.pathname = "/"'), "worker should redirect every Give overview alias to the homepage");
 assert.ok(backendSources.includes("checkoutFinancials("), "worker should centralize donation fee calculations");
 assert.ok(!backendSources.includes("subscription_data[application_fee_percent]"), "worker should not apply an AGAPAY application fee to recurring donor gifts");
 assert.ok(!backendSources.includes("payment_intent_data[application_fee_amount]"), "worker should not apply an AGAPAY application fee to one-time donor gifts");
@@ -683,13 +684,12 @@ assert.ok(
   "How It Works should explain how a person participates in parish community through Koinonia"
 );
 const platformHome = await readFile("public/index.html", "utf8");
-assert.ok((platformHome.match(/data-flip-word/g) || []).length >= 2, "platform homepage should animate its header and hero taglines");
-assert.ok(platformHome.includes('footer class="site-footer" data-shell="canonical"'), "platform homepage should use the canonical footer");
-assert.ok(platformHome.includes('property="og:image" content="https://agapay.app/images/app-phone-mockup.png"') && platformHome.includes('name="twitter:image" content="https://agapay.app/images/app-phone-mockup.png"'), "platform homepage share image should use the AGAPAY phone app mockup");
-assert.ok(platformHome.includes("Giving transactions are processed and protected by Stripe") && platformHome.includes("AGAPAY never holds donated funds"), "platform homepage should carry the Stripe protection and no-custody trust message");
-assert.ok(platformHome.includes("Give to your parish.<br />Grow your household.<br /><em>Gather the faithful.</em>"), "platform homepage should preserve the approved three-line tagline");
-assert.ok(platformHome.includes("Two Products · One Mission") && platformHome.includes("Start with what you need today."), "platform homepage should funnel visitors into Give and Learn");
-assert.ok(!/marketplace|directory/i.test(platformHome), "platform homepage should not mention Marketplace or Directory");
+assert.ok(platformHome.includes('rel="canonical" href="https://agapay.app/"') && platformHome.includes('property="og:url" content="https://agapay.app/"'), "Give-first homepage should publish the site root as its canonical and social URL");
+assert.ok(platformHome.includes("The Orthodox Giving App") && platformHome.includes("Built for Parish Life"), "homepage should lead with the AGAPAY Give product");
+assert.ok(platformHome.includes('property="og:image" content="https://agapay.app/images/AGAPAY_social_share.png"') && platformHome.includes('name="twitter:image" content="https://agapay.app/images/AGAPAY_social_share.png"'), "homepage share cards should use the AGAPAY Give social image");
+assert.ok(platformHome.includes("Transactions are processed and protected by Stripe") && platformHome.includes("AGAPAY never holds donated funds"), "homepage should carry the Stripe protection and no-custody trust message");
+assert.ok(platformHome.includes('id="why"') && platformHome.includes('id="features"') && platformHome.includes('id="pricing"'), "homepage should contain the complete Give overview experience");
+assert.ok(!platformHome.includes("Two Products · One Mission") && !platformHome.includes("Start with what you need today."), "homepage should no longer present a multi-product funnel");
 const canonicalChrome = await readFile("public/site-chrome.js", "utf8");
 assert.ok(canonicalChrome.includes('{ href: "/design", label: "AGAPAY Design"') && canonicalChrome.includes('return "design"'), "canonical navigation should include AGAPAY Design with an active route");
 assert.ok(canonicalChrome.includes('const isHomepage = path === "/" || path === "/index.html"') && canonicalChrome.includes('${isHomepage ? "" :'), "canonical footer should hide Marketplace and Directory on the homepage");
@@ -707,7 +707,8 @@ for (const [label, source] of [["homepage", platformHome], ["canonical chrome", 
   assert.ok(!source.includes('href="/vision"') && !source.includes('{ href: "/vision"'), `${label} must not link to the retired Vision page`);
 }
 const sitemap = await readFile("public/sitemap.xml", "utf8");
-assert.ok(sitemap.includes("https://agapay.app/give"), "sitemap should include the canonical Give overview URL");
+assert.ok(sitemap.includes("<loc>https://agapay.app/</loc>"), "sitemap should include the Give-first homepage URL");
+assert.ok(!sitemap.includes("<loc>https://agapay.app/give</loc>"), "sitemap should not list the redirected Give overview alias");
 assert.ok(sitemap.includes("https://agapay.app/design"), "sitemap should include the canonical AGAPAY Design URL");
 assert.ok(!sitemap.includes("https://agapay.app/vision"), "sitemap must not publish the retired Vision URL");
 for (const givingPage of ["features", "how-it-works", "pricing"]) {

@@ -882,9 +882,9 @@ const LEGACY_GIVING_PAGE_REDIRECTS = new Map([
   ["/pricing", "/give/pricing"],
   ["/pricing.html", "/give/pricing"],
   ["/pricing/", "/give/pricing"],
-  ["/why", "/give/#why"],
-  ["/why.html", "/give/#why"],
-  ["/why/", "/give/#why"]
+  ["/why", "/#why"],
+  ["/why.html", "/#why"],
+  ["/why/", "/#why"]
 ]);
 
 function canonicalCampaignPathFromLegacy(url) {
@@ -2905,6 +2905,10 @@ export default {
     }
 
     if (request.method === "GET" || request.method === "HEAD") {
+      if (["/give", "/give/", "/give.html", "/give/index.html"].includes(url.pathname.toLowerCase())) {
+        url.pathname = "/";
+        return Response.redirect(url.toString(), 301);
+      }
       if (["/give/share", "/give/share/", "/give/share.html"].includes(url.pathname.toLowerCase())) {
         url.pathname = "/give/get-agapay";
         return Response.redirect(url.toString(), 301);
@@ -2922,7 +2926,7 @@ export default {
         return Response.redirect(url.toString(), 301);
       }
       if (["/give/why", "/give/why.html", "/give/why/"].includes(url.pathname.toLowerCase())) {
-        url.pathname = "/give/";
+        url.pathname = "/";
         url.hash = "why";
         return Response.redirect(url.toString(), 301);
       }
@@ -2958,10 +2962,6 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
 
-    if (request.method === "GET" && (url.pathname === "/give.html" || url.pathname === "/give/index.html")) {
-      url.pathname = "/give";
-      return Response.redirect(url.toString(), 301);
-    }
     if (request.method === "GET" && url.pathname === "/give/find-parish.html") {
       url.pathname = "/give/find-parish";
       return Response.redirect(url.toString(), 301);
