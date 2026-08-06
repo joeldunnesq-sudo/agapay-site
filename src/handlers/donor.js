@@ -46,6 +46,7 @@ import { parishLifeExperienceFor } from "../lib/parish-life-experience.js";
 import { recordParishFeatureRequest } from "../lib/parish-feature-requests.js";
 import { submitParishSupportTicket } from "../lib/parish-support-tickets.js";
 import { validateSafeExternalUrl } from "../lib/safe-external-url.js";
+import { fetchKoinoniaCalendarIcs } from "../lib/koinonia-calendar.js";
 import { getDirectorySettings } from "../directory/settings.js";
 import { resolveDirectorySelfServiceContext, syncSelfServiceContactsFromDonor } from "../directory/self-service.js";
 
@@ -1216,36 +1217,6 @@ export function parseKoinoniaCalendarIcs(text, fromDate = new Date()) {
       allDay: !String(event.dtstart || "").includes("T")
     }));
   }).sort((left, right) => left.startsAt.localeCompare(right.startsAt)).slice(0, 20);
-}
-
-function validateKoinoniaCalendarUrl(value, base = undefined) {
-  return validateSafeExternalUrl(value, {
-    base,
-    invalidMessage: "Enter a valid public calendar iCal/ICS link.",
-    unsafeMessage: "The calendar must use a public HTTPS address.",
-  });
-}
-
-export async function fetchKoinoniaCalendarIcs(sourceUrl, fetcher = fetch) {
-  const signal = typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function"
-    ? AbortSignal.timeout(8000)
-    : undefined;
-  const fetchUrl = async (url, redirects = 0) => {
-    const safeUrl = validateKoinoniaCalendarUrl(url);
-    const response = await fetcher(safeUrl, { headers:{ Accept:"text/calendar" }, redirect:"manual", signal });
-    if ([301, 302, 303, 307, 308].includes(response.status) && response.headers.get("location")) {
-      if (redirects >= 3) throw new Error("The calendar redirected too many times.");
-      return fetchUrl(validateKoinoniaCalendarUrl(response.headers.get("location"), safeUrl), redirects + 1);
-    }
-    if (!response.ok) throw new Error("Calendar unavailable");
-    const length = Number(response.headers.get("Content-Length") || 0);
-    if (length > 2_000_000) throw new Error("Calendar too large");
-    const text = await response.text();
-    if (text.length > 2_000_000) throw new Error("Calendar too large");
-    if (!text.includes("BEGIN:VCALENDAR")) throw new Error("The calendar link did not return an ICS calendar.");
-    return text;
-  };
-  return fetchUrl(sourceUrl);
 }
 
 export async function handleDonorParishCalendar(request, env) {

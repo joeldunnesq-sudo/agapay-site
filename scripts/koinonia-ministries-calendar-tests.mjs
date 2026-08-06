@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { fetchKoinoniaCalendarIcs, parseKoinoniaCalendarIcs } from "../src/handlers/donor.js";
+import { parseKoinoniaCalendarIcs } from "../src/handlers/donor.js";
+import { fetchKoinoniaCalendarIcs, normalizeKoinoniaCalendarUrl } from "../src/lib/koinonia-calendar.js";
 import { validateParishBlogUrl } from "../src/handlers/parish-blog.js";
 import { validateSafeExternalUrl } from "../src/lib/safe-external-url.js";
 
@@ -12,6 +13,17 @@ DTSTART:20260802T090000
 SUMMARY:Parish Feast
 END:VEVENT
 END:VCALENDAR`;
+
+const googleShareUrl = "https://calendar.google.com/calendar/u/0/r?cid=l157ukqb5alh2mvfccdosnkvdo@group.calendar.google.com&pli=1";
+const googleIcsUrl = "https://calendar.google.com/calendar/ical/l157ukqb5alh2mvfccdosnkvdo%40group.calendar.google.com/public/basic.ics";
+assert.equal(normalizeKoinoniaCalendarUrl(googleShareUrl), googleIcsUrl, "Google Calendar subscription pages should normalize to their public ICS feed");
+
+let googleRequest;
+assert.equal(await fetchKoinoniaCalendarIcs(googleShareUrl, async (url, options) => {
+  googleRequest = { url, options };
+  return new Response(validIcs, { headers: { "content-type": "text/calendar" } });
+}), validIcs);
+assert.equal(googleRequest.url, googleIcsUrl, "calendar fetches should use the normalized Google ICS URL");
 
 let nonGoogleRequest;
 assert.equal(await fetchKoinoniaCalendarIcs("https://calendar.parish.example/events", async (url, options) => {
@@ -85,7 +97,8 @@ assert.match(app, /method:'PATCH'[\s\S]*Unable to update this ministry/);
 assert.match(app, />Subtitle<textarea name="shortDescription"/);
 assert.match(app, />Full description<textarea name="detailedDescription"/);
 assert.match(app, />Group photo</);
-assert.match(parish, /validateSafeExternalUrl\(value/);
+assert.match(parish, /normalizeKoinoniaCalendarUrl\(value/);
+assert.match(parish, /await fetchKoinoniaCalendarIcs\(normalizedKoinoniaCalendarUrl\)/);
 assert.doesNotMatch(parish, /host !== "calendar\.google\.com"/);
 assert.match(dashboard, /Google Calendar, Squarespace, Wix, and most calendar platforms/);
 assert.match(dashboard, /Public calendar \(iCal\/ICS\) link/);

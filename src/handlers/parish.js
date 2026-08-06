@@ -77,7 +77,7 @@ import {
 import { loadGivingCatalogFromAccounting, synchronizeGivingCatalogWithAccounting } from "../accounting/source-wiring.js";
 import { accountingAvailableForParish } from "../lib/accounting-demo-access.js";
 import { parishLifeAvailableFor } from "../lib/parish-life-access.js";
-import { validateSafeExternalUrl } from "../lib/safe-external-url.js";
+import { fetchKoinoniaCalendarIcs, normalizeKoinoniaCalendarUrl } from "../lib/koinonia-calendar.js";
 import { ensureBenevolenceFundInRegistration, mergeStewardshipFundsIntoRegistration } from "../lib/stewardship-funds.js";
 
 export {
@@ -2740,12 +2740,11 @@ export async function handleParishDashboard(request, env, parishId) {
         normalizedKoinoniaCalendarUrl = "";
       } else {
         try {
-          normalizedKoinoniaCalendarUrl = validateSafeExternalUrl(value, {
-            invalidMessage: "Paste a valid public calendar iCal/ICS link.",
-            unsafeMessage: "The calendar must use a public HTTPS address.",
-          }).slice(0, 2000);
-        } catch {
-          return json({ error: "Paste a valid public HTTPS calendar iCal/ICS link." }, { status: 422 });
+          normalizedKoinoniaCalendarUrl = normalizeKoinoniaCalendarUrl(value).slice(0, 2000);
+          await fetchKoinoniaCalendarIcs(normalizedKoinoniaCalendarUrl);
+        } catch (error) {
+          const message = /public HTTPS|valid/.test(String(error?.message || "")) ? "Paste a valid public HTTPS calendar link. Google Calendar share links and iCal/ICS feeds are supported." : "We could not read a public ICS calendar from that link. Make sure the calendar is public, then try again.";
+          return json({ error: message }, { status: 422 });
         }
       }
     }
