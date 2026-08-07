@@ -54,10 +54,40 @@
         "@id": "https://agapay.app/#organization",
         "name": "AGAPAY",
         "url": "https://agapay.app/",
-        "logo": "https://agapay.app/mark.png"
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://agapay.app/mark.png"
+        },
+        "description": "AGAPAY builds Orthodox-first giving and parish software for churches, monasteries, ministries, and faithful households."
       },
       {
-        "@type": "SoftwareApplication",
+        "@type": "WebSite",
+        "@id": "https://agapay.app/#website",
+        "url": "https://agapay.app/",
+        "name": "AGAPAY Give",
+        "alternateName": ["AGAPAY", "The Orthodox Giving App"],
+        "publisher": { "@id": "https://agapay.app/#organization" },
+        "inLanguage": "en-US"
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://agapay.app/#webpage",
+        "url": "https://agapay.app/",
+        "name": "Orthodox Giving App & Tithing Software | AGAPAY Give",
+        "description": "AGAPAY Give is the Orthodox giving app for parish tithes, recurring donations, candles, commemorations, memorials, campaigns, and donor records.",
+        "isPartOf": { "@id": "https://agapay.app/#website" },
+        "about": { "@id": "https://agapay.app/#app" },
+        "mainEntity": { "@id": "https://agapay.app/#app" },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://agapay.app/images/AGAPAY_social_share.png",
+          "width": 1122,
+          "height": 1402
+        },
+        "inLanguage": "en-US"
+      },
+      {
+        "@type": ["SoftwareApplication", "WebApplication"],
         "@id": "https://agapay.app/#app",
         "name": "AGAPAY Give",
         "alternateName": ["Orthodox Giving App", "Orthodox Tithing App"],
@@ -67,6 +97,8 @@
         "applicationSubCategory": "Church giving and tithing software",
         "operatingSystem": "Web",
         "browserRequirements": "Requires a modern web browser",
+        "isAccessibleForFree": true,
+        "installUrl": "https://agapay.app/#install",
         "image": "https://agapay.app/images/giving/app-phone-mockup.png",
         "screenshot": "https://agapay.app/images/giving/app-phone-mockup.png",
         "featureList": [
@@ -82,6 +114,15 @@
           "Koinonia community, fellowship, and media"
         ],
         "provider": { "@id": "https://agapay.app/#organization" },
+        "mainEntityOfPage": { "@id": "https://agapay.app/#webpage" },
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD",
+          "description": "Donor access is free; parish subscriptions start at $9 per month.",
+          "url": "https://agapay.app/give/pricing",
+          "availability": "https://schema.org/InStock"
+        },
         "audience": {
           "@type": "Audience",
           "audienceType": "Orthodox parishes, monasteries, ministries, and faithful donors"
@@ -450,6 +491,12 @@
           <a class="btn btn-outline" href="/give/pricing">See full pricing →</a>
           <a class="btn btn-outline" href="/give/find-parish">Find an Orthodox Parish</a>
         </div>
+        <nav class="giving-guides" aria-label="Orthodox giving guides">
+          <strong>Explore by need:</strong>
+          <a href="/give/parish-giving">Orthodox parish giving software</a>
+          <a href="/give/recurring-donations">Recurring giving for churches</a>
+          <a href="/give/fundraising">Orthodox church fundraising</a>
+        </nav>
       </div>
     </section>
 
@@ -604,7 +651,7 @@
             <p>Whether you serve a parish, mission, or monastery, AGAPAY is building the giving infrastructure to help Orthodox communities thrive together.</p>
             <div class="join-actions">
               <a class="btn btn-gold" href="/register">Start for free</a>
-              <a class="btn btn-outline" href="/how-it-works">See How it Works</a>
+              <a class="btn btn-outline" href="/give/how-it-works">See How it Works</a>
             </div>
           </div>
           <div class="join-features">

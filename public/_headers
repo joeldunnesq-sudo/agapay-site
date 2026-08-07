@@ -31,6 +31,19 @@
 /parish/*
   Cache-Control: no-store
 
+# Keep authenticated, administrative, and sign-in surfaces out of search.
+# Public Give marketing pages and parish giving URLs remain indexable.
+/admin*
+  X-Robots-Tag: noindex, nofollow
+/myagapay/*
+  X-Robots-Tag: noindex, nofollow
+/donor/*
+  X-Robots-Tag: noindex, nofollow
+/parish/*
+  X-Robots-Tag: noindex, nofollow
+/give/login*
+  X-Robots-Tag: noindex, nofollow
+
 # These shared files are referenced with explicit ?v= release identifiers on
 # every My AGAPAY page. Their URLs change whenever their contents change, so
 # repeat navigations can safely reuse them without revalidation.

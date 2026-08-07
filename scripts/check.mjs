@@ -671,7 +671,8 @@ assert.ok(donorApp.includes("handleDonorCheckoutReturn"), "donor dashboard shoul
 const givingOverview = await readFile("public/give/index.html", "utf8");
 const givingHowItWorks = await readFile("public/give/how-it-works.html", "utf8");
 assert.ok(givingOverview.includes("Orthodox Giving App &amp; Tithing Software") || givingOverview.includes("Orthodox Giving App & Tithing Software"), "Giving overview should target Orthodox giving and tithing search intent");
-assert.ok(givingOverview.includes('"@type": "SoftwareApplication"') && givingOverview.includes('"@type": "FAQPage"'), "Giving overview should include software and FAQ structured data");
+assert.ok(givingOverview.includes('"SoftwareApplication"') && givingOverview.includes('"@type": "FAQPage"'), "Giving overview should include software and FAQ structured data");
+assert.ok(givingOverview.includes('"@type": "WebSite"') && givingOverview.includes('"@type": "WebPage"'), "Giving overview should connect WebSite and WebPage structured data to the app");
 assert.ok(givingOverview.includes("Giving and parish life, connected in one Orthodox platform"), "Giving overview should describe currently available tools");
 assert.ok(givingOverview.includes("Parish operations") && givingOverview.indexOf("Parish operations") < givingOverview.indexOf("giving-roadmap"), "Giving overview should list Parish operations as available now");
 assert.ok(givingOverview.includes("Text-to-Give") && givingOverview.includes("Coming Soon"), "Giving overview should clearly identify remaining coming-soon products");
@@ -689,6 +690,7 @@ assert.ok(platformHome.includes("The Orthodox Giving App") && platformHome.inclu
 assert.ok(platformHome.includes('property="og:image" content="https://agapay.app/images/AGAPAY_social_share.png"') && platformHome.includes('name="twitter:image" content="https://agapay.app/images/AGAPAY_social_share.png"'), "homepage share cards should use the AGAPAY Give social image");
 assert.ok(platformHome.includes("Transactions are processed and protected by Stripe") && platformHome.includes("AGAPAY never holds donated funds"), "homepage should carry the Stripe protection and no-custody trust message");
 assert.ok(platformHome.includes('id="why"') && platformHome.includes('id="features"') && platformHome.includes('id="pricing"'), "homepage should contain the complete Give overview experience");
+assert.ok(platformHome.includes("Orthodox parish giving software") && platformHome.includes("Recurring giving for churches") && platformHome.includes("Orthodox church fundraising"), "homepage should link descriptively to the Orthodox giving topic cluster");
 assert.ok(!platformHome.includes("Two Products · One Mission") && !platformHome.includes("Start with what you need today."), "homepage should no longer present a multi-product funnel");
 const canonicalChrome = await readFile("public/site-chrome.js", "utf8");
 assert.ok(canonicalChrome.includes('{ href: "/design", label: "AGAPAY Design"') && canonicalChrome.includes('return "design"'), "canonical navigation should include AGAPAY Design with an active route");
@@ -718,6 +720,18 @@ for (const givingPage of ["features", "how-it-works", "pricing"]) {
 }
 assert.ok(!sitemap.includes("https://agapay.app/give/why"), "sitemap should retire the consolidated Give Why page");
 assert.ok(sitemap.includes("https://agapay.app/give/find-parish"), "sitemap should include the canonical parish finder URL");
+assert.ok(!sitemap.includes("https://agapay.app/give/event-payments"), "sitemap should exclude the not-yet-indexable event payments roadmap page");
+for (const [page, title] of [
+  ["parish-giving", "Orthodox Parish Giving Software"],
+  ["recurring-donations", "Recurring Giving for Orthodox Churches"],
+  ["fundraising", "Orthodox Church Fundraising Software"],
+]) {
+  const html = await readFile(`public/give/${page}.html`, "utf8");
+  assert.ok(html.includes(`<h1>${title}</h1>`) && html.includes('"@type": "BreadcrumbList"'), `${page} should publish useful, structured Orthodox giving content`);
+  assert.ok(sitemap.includes(`https://agapay.app/give/${page}`), `${page} should remain discoverable in the sitemap`);
+}
+const eventPaymentsPage = await readFile("public/give/event-payments.html", "utf8");
+assert.ok(eventPaymentsPage.includes('name="robots" content="noindex,follow"') && eventPaymentsPage.includes("Coming Soon"), "event payments should remain transparent and noindex until generally available");
 assert.ok(!sitemap.includes("<loc>https://agapay.app/features</loc>"), "sitemap should not list the legacy root features URL");
 assert.ok(!sitemap.includes("<loc>https://agapay.app/how-it-works</loc>"), "sitemap should not list the legacy root how-it-works URL");
 assert.ok(!sitemap.includes("<loc>https://agapay.app/pricing</loc>"), "sitemap should not list the legacy root pricing URL");
