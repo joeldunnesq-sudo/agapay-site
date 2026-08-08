@@ -49,7 +49,8 @@ assert.match(landing, /id="todayCivilDateEyebrow"/);
 assert.match(landing, /id="todayFeastNote"/);
 assert.match(landing, /id="todayChips"/);
 assert.match(landing, />Make a festal offering</);
-assert.match(landing, /id="saintPreviewCard"/);
+assert.doesNotMatch(landing, /class="cal-hero parish-life-saint-card"/, "the Koinonia landing should not duplicate Saint of the Day in a second card");
+assert.match(donorApp, /class=\"cal-saint-chip\" id=\"saintPreviewCard\"[\s\S]*?<b aria-hidden=\"true\">→<\/b>/, "the saints-count pill should open the saint modal and show a directional arrow");
 assert.match(landing, /id="donorSaintModal"[\s\S]*Orthocal\.info/);
 assert.match(landing, />Upcoming Services<[\s\S]*Loading the next liturgical observance/);
 assert.match(landing, /href="\/myagapay\/calendar">Full Calendar</);
@@ -102,13 +103,14 @@ const lowerTierMarkup = sandbox.window.parishLifeTierSectionsHtml(false);
 assert.equal(lowerTierMarkup, "", "lower tiers must receive no communications section DOM");
 assert.doesNotMatch(lowerTierMarkup, /Announcements|Recordings|Ministries/);
 const parishTierMarkup = sandbox.window.parishLifeTierSectionsHtml(true, { signupsEnabled:true, exchangeEnabled:true });
-assert.match(parishTierMarkup, /Pinned Announcements/);
+assert.match(parishTierMarkup, /Community Inbox/);
+assert.match(parishTierMarkup, /Needs You/);
 assert.match(parishTierMarkup, /id="listenHeading">Listen</);
 assert.match(parishTierMarkup, /Continue listening/);
 assert.match(parishTierMarkup, /Latest audio/);
 assert.match(parishTierMarkup, /Recent Videos/);
 assert.match(parishTierMarkup, /Your Ministries/);
-for (const loadingLabel of ["announcements", "ministries", "audio", "videos", "news"]) {
+for (const loadingLabel of ["your Community Inbox", "ministries", "audio", "videos", "news"]) {
   assert.match(parishTierMarkup, new RegExp(`class="sw-tool-loading parish-life-section-loading"[^>]*>Loading ${loadingLabel}…<`), `the ${loadingLabel} section needs its own honest loading state`);
 }
 assert.match(parishTierMarkup, /id="parishLifeContinueListeningSection"[\s\S]*hidden[\s\S]*id="parishLifeListenItems"/, "Continue listening must be conditional and appear above the combined latest-audio list");
@@ -119,14 +121,18 @@ assert.ok(parishTierMarkup.indexOf("Community Tools") < parishTierMarkup.indexOf
 assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf("parishLifeNewsMount"), "the combined news preview should follow parish-specific ministries");
 assert.match(landingScript, /Get involved/);
 assert.match(landingScript, /\/api\/donor\/ministry-service-interest/);
-assert.match(landingScript, /item\.status === "published" && item\.pinned === true/);
+assert.match(landingScript, /item\.status === "published" && item\.pinned === true && !item\.read/);
+assert.match(landingScript, /item\.kind === "coverage" \? "I can cover" : "Claim spot"/);
+assert.match(landingScript, /signups\/coverage\/\$\{encodeURIComponent\(id\)\}\/accept/);
+assert.doesNotMatch(parishTierMarkup, /Pinned Announcements/);
+assert.match(donorStyles, /\.parish-life-blog-list \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/, "Recent News should use a compact 2-by-2 grid");
 assert.match(landingScript, /post\.status === "published" && Boolean\(post\.audioUrl\)/);
 assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/videos"/);
 assert.match(landingScript, /href="\/myagapay\/media\/watch\?video=/);
 assert.match(landingScript, /if \(!experience\.communicationsEnabled\)[\s\S]*return;[\s\S]*parishLifeFetch\("\/api\/donor\/feed"/);
 assert.match(landingScript, /fetch\(path, \{ headers, cache: "no-store" \}\)/, "landing content requests must remain uncached");
 assert.match(landingScript, /initializeParishLifeStructure\(\);[\s\S]*fetch\("\/api\/donor\/dashboard"/, "cached structure must render before the landing dashboard request resolves");
-assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/feed"[\s\S]*\.then\(\(feed\)[\s\S]*renderPinnedAnnouncements/, "announcements should replace their own placeholder when their request resolves");
+assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/feed"[\s\S]*renderCommunityInbox/, "actionable announcements and signup actions should replace the Community Inbox placeholder");
 assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/groups"[\s\S]*\.then\(\(groups\)[\s\S]*renderMinistries/, "ministries should replace their own placeholder when their request resolves");
 assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/teaching"[\s\S]*\.then\(\(teaching\)[\s\S]*renderRecentRecordings/, "recordings should replace their own placeholder when their request resolves");
 
@@ -148,7 +154,7 @@ sandbox.window.MyAgapayShell = {
 };
 const cachedTierExperience = sandbox.window.initializeParishLifeStructure();
 assert.equal(cachedTierExperience.communicationsEnabled, true);
-assert.match(tierMount.innerHTML, /Pinned Announcements[\s\S]*Loading announcements…/, "a cached Koinonia decision must synchronously render section shells before any fetch");
+assert.match(tierMount.innerHTML, /Needs You[\s\S]*Loading your Community Inbox…/, "a cached Koinonia decision must synchronously render the Community Inbox shell before any fetch");
 assert.equal(tierLabel.textContent, "Koinonia");
 
 sandbox.window.MyAgapayShell.parishLifeExperience = () => ({ communicationsEnabled: false, label: "Today" });

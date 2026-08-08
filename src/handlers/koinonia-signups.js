@@ -293,6 +293,55 @@ export async function listUpcomingSignupCommitments(env, context, currentTime = 
   }));
 }
 
+export async function listSignupInboxActions(env, context, currentTime = Date.now()) {
+  const windowEnd = currentTime + (14 * 24 * 60 * 60 * 1000);
+  const [waitlistRows, coverageRows] = await Promise.all([
+    d1All(env, `
+      SELECT waitlist.id AS waitlist_id, slot.id AS slot_id, slot.label, slot.slot_date,
+        sheet.id AS sheet_id, sheet.title AS sheet_title, ministry.display_name AS ministry_name
+      FROM koinonia_signup_waitlist waitlist
+      JOIN koinonia_signup_slots slot ON slot.id = waitlist.slot_id AND slot.parish_id = waitlist.parish_id
+      JOIN koinonia_signup_sheets sheet ON sheet.id = slot.sheet_id AND sheet.parish_id = waitlist.parish_id
+      JOIN directory_ministries ministry ON ministry.id = sheet.ministry_id AND ministry.parish_id = sheet.parish_id
+      WHERE waitlist.parish_id = ?1 AND waitlist.person_id = ?2 AND waitlist.status = 'offered'
+        AND sheet.status = 'open' AND (slot.slot_date IS NULL OR slot.slot_date <= ?3)
+      ORDER BY COALESCE(slot.slot_date, ?4) ASC, waitlist.updated_at ASC
+      LIMIT 6
+    `, context.parishId, context.personId, windowEnd, windowEnd),
+    d1All(env, `
+      SELECT coverage.id AS coverage_request_id, requester.preferred_name AS requester_name,
+        slot.id AS slot_id, slot.label, slot.slot_date, sheet.id AS sheet_id,
+        sheet.title AS sheet_title, ministry.display_name AS ministry_name
+      FROM koinonia_signup_coverage_requests coverage
+      JOIN koinonia_signup_entries entry ON entry.id = coverage.entry_id AND entry.status = 'confirmed'
+      JOIN koinonia_signup_slots slot ON slot.id = entry.slot_id AND slot.parish_id = coverage.parish_id
+      JOIN koinonia_signup_sheets sheet ON sheet.id = slot.sheet_id AND sheet.parish_id = coverage.parish_id
+      JOIN directory_ministries ministry ON ministry.id = sheet.ministry_id AND ministry.parish_id = coverage.parish_id
+      LEFT JOIN directory_people requester ON requester.id = coverage.requester_person_id AND requester.parish_id = coverage.parish_id
+      WHERE coverage.parish_id = ?1 AND coverage.status = 'open' AND coverage.requester_person_id <> ?2
+        AND sheet.status IN ('open', 'closed') AND (slot.slot_date IS NULL OR slot.slot_date <= ?3)
+        AND (
+          EXISTS (SELECT 1 FROM directory_ministry_leaders leader WHERE leader.parish_id = sheet.parish_id AND leader.ministry_id = sheet.ministry_id AND leader.person_id = ?2 AND leader.active = 1)
+          OR EXISTS (SELECT 1 FROM directory_ministry_participants participant WHERE participant.parish_id = sheet.parish_id AND participant.ministry_id = sheet.ministry_id AND participant.person_id = ?2 AND participant.status = 'active')
+        )
+      ORDER BY COALESCE(slot.slot_date, ?4) ASC, coverage.created_at ASC
+      LIMIT 6
+    `, context.parishId, context.personId, windowEnd, windowEnd),
+  ]);
+  return [
+    ...waitlistRows.map((row) => ({
+      id: row.waitlist_id, kind: "waitlist", slotId: row.slot_id, sheetId: row.sheet_id,
+      title: "A waitlist spot opened for you", detail: `${row.sheet_title} · ${row.label}`,
+      ministryName: row.ministry_name || "", slotDate: row.slot_date == null ? null : Number(row.slot_date),
+    })),
+    ...coverageRows.map((row) => ({
+      id: row.coverage_request_id, kind: "coverage", sheetId: row.sheet_id,
+      title: `${row.requester_name || "A ministry member"} needs coverage`, detail: `${row.sheet_title} · ${row.label}`,
+      ministryName: row.ministry_name || "", slotDate: row.slot_date == null ? null : Number(row.slot_date),
+    })),
+  ].sort((left, right) => (left.slotDate ?? windowEnd) - (right.slotDate ?? windowEnd)).slice(0, 6);
+}
+
 async function createSheet(request, env, context) {
   const body = await request.json().catch(() => ({}));
   const ministryId = String(body.ministryId || "").trim();
@@ -462,6 +511,10 @@ export async function claimSignupSlot(request, env, ctx, context, slotId) {
     throw new SignupAccessError("You've already signed up for this slot.", 409);
   }
   if (Number(result?.meta?.changes || 0) !== 1) throw new SignupAccessError("This slot is already full.", 409);
+  await d1Run(env, `
+    UPDATE koinonia_signup_waitlist SET status = 'claimed', updated_at = ?1
+    WHERE parish_id = ?2 AND slot_id = ?3 AND person_id = ?4 AND status IN ('waiting', 'offered')
+  `, now, context.parishId, slotId, context.personId);
   await auditSignup(env,context,{sheetId:slot.sheet_id,slotId,action:"slot_claimed",summary:slot.label});
   if (ctx?.waitUntil) {
     ctx.waitUntil(sendSignupReminderPush(env, {
@@ -573,7 +626,11 @@ export async function handleDonorKoinoniaSignups(request, env, ctx = null) {
     if(parts.length===2&&parts[0]==="templates"&&request.method==="GET") return privateJson(await listSignupTemplates(env,context,parts[1]));
     if(parts.length===3&&parts[0]==="templates"&&parts[2]==="create"&&request.method==="POST") return privateJson(await createFromSignupTemplate(request,env,context,parts[1]),{status:201});
     if (parts.length === 1 && parts[0] === "upcoming" && request.method === "GET") {
-      return privateJson({ ok: true, signups: await listUpcomingSignupCommitments(env, context) });
+      const [signups, actions] = await Promise.all([
+        listUpcomingSignupCommitments(env, context),
+        listSignupInboxActions(env, context),
+      ]);
+      return privateJson({ ok: true, signups, actions });
     }
     if (parts.length === 1 && request.method === "GET") return privateJson({ ok: true, ...(await getSheet(env, context, parts[0])) });
     if (parts.length === 1 && request.method === "PATCH") return privateJson(await updateSheet(request, env, context, parts[0]));

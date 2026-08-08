@@ -12,8 +12,8 @@
   <script src="/liturgical-calendar.js"></script>
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260803iospolish1"></script>
-  <script src="/donor/app.js?v=20260801churchdate1" defer></script>
-  <script src="/myagapay/parish-life.js?v=20260808koinonia2" defer></script>
+  <script src="/donor/app.js?v=20260808saintpill1" defer></script>
+  <script src="/myagapay/parish-life.js?v=20260808communityinbox1" defer></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -30,7 +30,7 @@
       <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/dashboard">Back to giving</a></div>
     </aside>
     <main class="content donor-mobile-content">
-      <div class="topbar"><div class="topbar-title" data-parish-life-label>Today</div></div>
+      <div class="topbar"><div class="topbar-title" data-parish-life-label>Today</div><div class="topbar-actions"><a class="parish-life-notification-bell" href="/myagapay/feed" aria-label="Open Community Inbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span data-parish-life-unread hidden>0</span></a></div></div>
       <div class="page parish-life-page-shell">
         <section class="cal-hero parish-life-liturgical-hero" aria-label="Today in the Church">
           <div class="cal-hero-inner">
@@ -50,14 +50,6 @@
               </div>
             </div>
           </div>
-        </section>
-
-        <section class="cal-hero parish-life-saint-card" aria-label="Saint of the Day">
-          <button class="cal-saint-strip" id="saintPreviewCard" type="button" onclick="openDonorSaintOfDay(this)" data-date="" data-calendar="" data-saint-title="" aria-label="Open saint of the day">
-            <span class="cal-saint-icon" id="saintPreviewIcon">✥</span>
-            <span class="cal-saint-body"><span class="cal-saint-kicker">Saint of the Day</span><span class="cal-saint-name" id="saintPreviewName">Lives of the Saints</span><span class="cal-saint-note" id="saintPreviewNote">Open the life of today's saint once the calendar loads.</span></span>
-            <span class="cal-saint-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-          </button>
         </section>
 
         <section class="parish-life-home-section" aria-labelledby="upcomingServicesHeading">

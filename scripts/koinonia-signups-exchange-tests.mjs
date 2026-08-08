@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { exchangeEnabledFor, signupsEnabledFor } from "../src/lib/entitlements.js";
-import { claimSignupSlot, deleteSheet, deleteSlot, listUpcomingSignupCommitments, SignupAccessError, updateSheet, updateSlot } from "../src/handlers/koinonia-signups.js";
+import { claimSignupSlot, deleteSheet, deleteSlot, listSignupInboxActions, listUpcomingSignupCommitments, SignupAccessError, updateSheet, updateSlot } from "../src/handlers/koinonia-signups.js";
 import { completeExchangeListing, expireKoinoniaExchangeListings } from "../src/handlers/koinonia-exchange.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -58,6 +58,7 @@ sqlite.exec(`
     status TEXT, requested_payload_json TEXT
   );
   CREATE TABLE directory_person_links (person_id TEXT, link_type TEXT, external_id TEXT, active INTEGER);
+  CREATE TABLE directory_people (id TEXT PRIMARY KEY, parish_id TEXT, preferred_name TEXT);
   CREATE TABLE directory_household_members (person_id TEXT, household_id TEXT, active INTEGER);
   CREATE TABLE directory_households (id TEXT, parish_id TEXT, active INTEGER);
   CREATE TABLE directory_household_admins (household_id TEXT, person_id TEXT, active INTEGER);
@@ -121,6 +122,11 @@ sqlite.prepare(`INSERT INTO koinonia_signup_entries
 const upcoming = await listUpcomingSignupCommitments(env, claimContext, 1000);
 assert.deepEqual(upcoming.map((item) => item.entryId), ["entry-upcoming"], "only confirmed commitments within the next seven days should surface");
 assert.equal(upcoming[0].sheetTitle, "Meal train");
+sqlite.prepare("INSERT INTO koinonia_signup_waitlist (id, parish_id, slot_id, person_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, 'offered', ?, ?)")
+  .run("waitlist-offer", "st-fiacre", "slot-upcoming", "person-1", now, now);
+const inboxActions = await listSignupInboxActions(env, claimContext, 1000);
+assert.deepEqual(inboxActions.map((item) => item.kind), ["waitlist"], "only a pertinent offered waitlist spot should surface as an actionable inbox item");
+assert.equal(inboxActions[0].slotId, "slot-upcoming");
 
 sqlite.prepare("INSERT INTO directory_ministry_participants (parish_id, ministry_id, person_id, status) VALUES (?, ?, ?, 'active')")
   .run("st-fiacre", "ministry-meals", "person-2");

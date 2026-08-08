@@ -1203,37 +1203,37 @@ function renderDonorTodayInChurch(parish, payload) {
   setText("todayFeastNote", today.sourceConnected === false
     ? "Daily readings and saint lives are temporarily unavailable, but feast highlights still follow your Church calendar."
     : [today.epistleRef && `Epistle: ${today.epistleRef}`, today.gospelRef && `Gospel: ${today.gospelRef}`, nameDayText].filter(Boolean).join(" · ") || "Daily readings, saints, and fasting notes follow the Orthodox calendar.");
-  setText("saintPreviewName", saintTitle);
-  setText("saintPreviewNote", saintCount > 1
-    ? `${saintCount} commemorations listed for today.`
-    : firstStory.reposeCentury || "Open the life for today's commemoration.");
-
-  const saintIcon = document.getElementById("saintPreviewIcon");
-  if (saintIcon) {
-    if (firstStory.iconUrl) {
-      saintIcon.innerHTML = `<img src="${escapeHtml(firstStory.iconUrl)}" alt="" />`;
-    } else {
-      saintIcon.textContent = "✥";
-    }
+  const existingSaintCard = document.getElementById("saintPreviewCard");
+  const dedicatedSaintCard = existingSaintCard && !existingSaintCard.classList.contains("cal-saint-chip") ? existingSaintCard : null;
+  if (dedicatedSaintCard) {
+    setText("saintPreviewName", saintTitle);
+    setText("saintPreviewNote", saintCount > 1
+      ? `${saintCount} commemorations listed for today.`
+      : firstStory.reposeCentury || "Open the life for today's commemoration.");
+    const saintIcon = document.getElementById("saintPreviewIcon");
+    if (saintIcon) saintIcon.innerHTML = firstStory.iconUrl ? `<img src="${escapeHtml(firstStory.iconUrl)}" alt="" />` : "✥";
   }
   const chips = document.getElementById("todayChips");
   if (chips) {
-    chips.innerHTML = [
+    const standardChips = [
       liturgicalRankLabel(today.feastRank || feast?.rank),
       fastingRule,
       toneOfWeekLabel(today.tone),
-      saintCount ? `${saintCount} saint${saintCount === 1 ? "" : "s"}` : "",
+      dedicatedSaintCard && saintCount ? `${saintCount} saint${saintCount === 1 ? "" : "s"}` : "",
       nameDays.length ? `${nameDays.length} name day${nameDays.length === 1 ? "" : "s"}` : ""
     ].filter(Boolean).map((chip) => `<span class="${isFastRule(chip) ? "is-fast" : ""}">${escapeHtml(chip)}</span>`).join("");
+    const saintChip = saintCount && !dedicatedSaintCard
+      ? `<button class="cal-saint-chip" id="saintPreviewCard" type="button" onclick="openDonorSaintOfDay(this)" data-date="${escapeHtml(date)}" data-calendar="${escapeHtml(calendar)}" data-saint-title="${escapeHtml(saintTitle)}" aria-label="Open ${saintCount} saint${saintCount === 1 ? "" : "s"} commemorated today"><span>${saintCount} saint${saintCount === 1 ? "" : "s"}</span><b aria-hidden="true">→</b></button>`
+      : "";
+    chips.innerHTML = standardChips + saintChip;
   }
   const give = document.getElementById("todayGiveLink");
   if (give) give.href = giveHref;
-  const saintCard = document.getElementById("saintPreviewCard");
-  if (saintCard) {
-    saintCard.dataset.date = date;
-    saintCard.dataset.calendar = calendar;
-    saintCard.dataset.saintTitle = saintTitle;
-    saintCard.disabled = false;
+  if (dedicatedSaintCard) {
+    dedicatedSaintCard.dataset.date = date;
+    dedicatedSaintCard.dataset.calendar = calendar;
+    dedicatedSaintCard.dataset.saintTitle = saintTitle;
+    dedicatedSaintCard.disabled = false;
   }
 }
 
