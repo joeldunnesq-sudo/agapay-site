@@ -1148,14 +1148,53 @@ function unescapeIcsText(value = "") {
   return String(value).replace(/\\n/gi, " ").replace(/\\,/g, ",").replace(/\\;/g, ";").replace(/\\\\/g, "\\").trim();
 }
 
-function icsDate(value = "") {
+function icsDateParts(value = "") {
   const raw = String(value).trim();
-  const match = raw.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?Z?)?/);
+  const match = raw.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?/);
   if (!match) return null;
-  const [, year, month, day, hour = "00", minute = "00", second = "00"] = match;
-  const iso = `${year}-${month}-${day}T${hour}:${minute}:${second}${raw.endsWith("Z") ? "Z" : ""}`;
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? null : date;
+  const [, year, month, day, hour = "00", minute = "00", second = "00", utc = ""] = match;
+  return {
+    year:Number(year), month:Number(month), day:Number(day),
+    hour:Number(hour), minute:Number(minute), second:Number(second),
+    utc:Boolean(utc), allDay:!raw.includes("T")
+  };
+}
+
+function icsZonedDate(parts, timeZone) {
+  let timestamp = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+  try {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hourCycle:"h23",
+      year:"numeric", month:"2-digit", day:"2-digit",
+      hour:"2-digit", minute:"2-digit", second:"2-digit"
+    });
+    for (let pass = 0; pass < 2; pass += 1) {
+      const displayed = Object.fromEntries(formatter.formatToParts(new Date(timestamp)).map(part => [part.type, part.value]));
+      const displayedTimestamp = Date.UTC(
+        Number(displayed.year), Number(displayed.month) - 1, Number(displayed.day),
+        Number(displayed.hour), Number(displayed.minute), Number(displayed.second)
+      );
+      timestamp += Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second) - displayedTimestamp;
+    }
+  } catch {
+    return null;
+  }
+  return new Date(timestamp);
+}
+
+function icsDate(value = "", params = {}) {
+  const parts = icsDateParts(value);
+  if (!parts) return null;
+  let date;
+  if (parts.utc) {
+    date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second));
+  } else if (params.tzid) {
+    date = icsZonedDate(parts, params.tzid);
+  } else {
+    date = new Date(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+  }
+  return !date || Number.isNaN(date.getTime()) ? null : date;
 }
 
 function icsRule(value = "") {
@@ -1164,32 +1203,97 @@ function icsRule(value = "") {
 
 const ICS_WEEKDAYS = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
 
+function icsNaiveDate(parts) {
+  return new Date(Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second));
+}
+
+function icsDateInEventZone(date, event) {
+  if (event.dtstartParams?.tzid) {
+    try {
+      const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone:event.dtstartParams.tzid,
+        hourCycle:"h23",
+        year:"numeric", month:"2-digit", day:"2-digit"
+      });
+      const parts = Object.fromEntries(formatter.formatToParts(date).map(part => [part.type, part.value]));
+      return { year:Number(parts.year), month:Number(parts.month), day:Number(parts.day) };
+    } catch {
+      return null;
+    }
+  }
+  return event.dtstartParams?.utc
+    ? { year:date.getUTCFullYear(), month:date.getUTCMonth() + 1, day:date.getUTCDate() }
+    : { year:date.getFullYear(), month:date.getMonth() + 1, day:date.getDate() };
+}
+
+function icsRecurrenceDate(cursor, event) {
+  const parts = {
+    year:cursor.getUTCFullYear(), month:cursor.getUTCMonth() + 1, day:cursor.getUTCDate(),
+    hour:cursor.getUTCHours(), minute:cursor.getUTCMinutes(), second:cursor.getUTCSeconds()
+  };
+  if (event.dtstartParams?.tzid) return icsZonedDate(parts, event.dtstartParams.tzid);
+  if (event.dtstartParams?.utc) return new Date(Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second));
+  return new Date(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+}
+
+function icsCountLatestPossible(startCursor, frequency, interval, count) {
+  const latest = new Date(startCursor);
+  const span = Math.max(0, count - 1) * interval;
+  if (frequency === "DAILY") latest.setUTCDate(latest.getUTCDate() + span);
+  if (frequency === "WEEKLY") latest.setUTCDate(latest.getUTCDate() + span * 7 + 6);
+  if (frequency === "MONTHLY") latest.setUTCMonth(latest.getUTCMonth() + span);
+  return latest;
+}
+
 function expandIcsEvent(event, now, horizon) {
-  const start = icsDate(event.dtstart);
+  const startParts = icsDateParts(event.dtstart);
+  const start = icsDate(event.dtstart, event.dtstartParams);
   if (!start) return [];
-  const end = icsDate(event.dtend);
+  const end = icsDate(event.dtend, event.dtendParams || event.dtstartParams);
   const duration = end ? Math.max(0, end.getTime() - start.getTime()) : 0;
   if (!event.rrule) return start <= horizon && (end || start) >= now ? [{ start, end, duration }] : [];
   const rule = icsRule(event.rrule);
   const frequency = rule.FREQ;
   if (!frequency || !["DAILY", "WEEKLY", "MONTHLY"].includes(frequency)) return [];
   const interval = Math.max(1, Number(rule.INTERVAL || 1));
-  const until = icsDate(rule.UNTIL) || horizon;
-  const byDays = new Set(String(rule.BYDAY || ICS_WEEKDAYS[start.getDay()]).split(",").map(day => day.slice(-2)));
+  const until = icsDate(rule.UNTIL, event.dtstartParams) || horizon;
+  const count = Math.max(0, Number.parseInt(rule.COUNT || "0", 10) || 0);
   const results = [];
-  const cursor = new Date(Math.max(start.getTime(), new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()));
-  cursor.setHours(start.getHours(), start.getMinutes(), start.getSeconds(), 0);
-  for (let guard = 0; guard < 400 && cursor <= horizon && cursor <= until && results.length < 30; guard += 1) {
-    const dayDelta = Math.floor((cursor - start) / 86400000);
+  const startCursor = icsNaiveDate(startParts);
+  const byDays = new Set(String(rule.BYDAY || ICS_WEEKDAYS[startCursor.getUTCDay()]).split(",").map(day => day.slice(-2)));
+  const excluded = new Set((event.exdates || []).flatMap(entry => String(entry.value || "").split(",").map(value => icsDate(value, { ...event.dtstartParams, ...entry.params })?.getTime())).filter(Number.isFinite));
+  if (count) {
+    const latestPossible = icsRecurrenceDate(icsCountLatestPossible(startCursor, frequency, interval, count), event);
+    if (latestPossible && latestPossible < now) return [];
+  }
+  let cursor = new Date(startCursor);
+  if (!count) {
+    const zonedToday = icsDateInEventZone(now, event);
+    if (zonedToday) {
+      const todayCursor = new Date(Date.UTC(zonedToday.year, zonedToday.month - 1, zonedToday.day, startParts.hour, startParts.minute, startParts.second));
+      if (todayCursor > cursor) cursor = todayCursor;
+    }
+  }
+  let occurrencesSeen = 0;
+  for (let guard = 0; guard < 5000 && results.length < 30; guard += 1) {
+    const instanceStart = icsRecurrenceDate(cursor, event);
+    if (!instanceStart || instanceStart > horizon || instanceStart > until) break;
+    const dayDelta = Math.floor((cursor - startCursor) / 86400000);
     const weekDelta = Math.floor(dayDelta / 7);
-    const monthDelta = (cursor.getFullYear() - start.getFullYear()) * 12 + cursor.getMonth() - start.getMonth();
-    const matches = cursor >= start && (
+    const monthDelta = (cursor.getUTCFullYear() - startCursor.getUTCFullYear()) * 12 + cursor.getUTCMonth() - startCursor.getUTCMonth();
+    const matches = cursor >= startCursor && (
       (frequency === "DAILY" && dayDelta % interval === 0)
-      || (frequency === "WEEKLY" && weekDelta % interval === 0 && byDays.has(ICS_WEEKDAYS[cursor.getDay()]))
-      || (frequency === "MONTHLY" && monthDelta % interval === 0 && cursor.getDate() === start.getDate())
+      || (frequency === "WEEKLY" && weekDelta % interval === 0 && byDays.has(ICS_WEEKDAYS[cursor.getUTCDay()]))
+      || (frequency === "MONTHLY" && monthDelta % interval === 0 && cursor.getUTCDate() === startCursor.getUTCDate())
     );
-    if (matches && cursor >= now) results.push({ start:new Date(cursor), end:duration ? new Date(cursor.getTime() + duration) : null, duration });
-    cursor.setDate(cursor.getDate() + 1);
+    if (matches) {
+      occurrencesSeen += 1;
+      if (instanceStart >= now && !excluded.has(instanceStart.getTime())) {
+        results.push({ start:instanceStart, end:duration ? new Date(instanceStart.getTime() + duration) : null, duration });
+      }
+      if (count && occurrencesSeen >= count) break;
+    }
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
   return results;
 }
@@ -1204,9 +1308,21 @@ export function parseKoinoniaCalendarIcs(text, fromDate = new Date()) {
     block.split(/\r?\n/).forEach(line => {
       const separator = line.indexOf(":");
       if (separator < 0) return;
-      const key = line.slice(0, separator).split(";")[0].toLowerCase();
-      if (["summary", "location", "description", "dtstart", "dtend", "rrule", "uid"].includes(key)) event[key] = line.slice(separator + 1);
+      const [rawKey, ...rawParams] = line.slice(0, separator).split(";");
+      const key = rawKey.toLowerCase();
+      const params = Object.fromEntries(rawParams.map((param) => {
+        const equals = param.indexOf("=");
+        return equals < 0 ? [param.toLowerCase(), ""] : [param.slice(0, equals).toLowerCase(), param.slice(equals + 1).replace(/^"|"$/g, "")];
+      }));
+      const value = line.slice(separator + 1);
+      if (key === "exdate") {
+        (event.exdates ||= []).push({ value, params });
+      } else if (["summary", "location", "description", "dtstart", "dtend", "rrule", "uid", "status"].includes(key)) {
+        event[key] = value;
+        event[`${key}Params`] = { ...params, utc:value.endsWith("Z") };
+      }
     });
+    if (String(event.status || "").toUpperCase() === "CANCELLED") return [];
     return expandIcsEvent(event, now, horizon).map(instance => ({
       id: String(event.uid || `${event.summary || "event"}-${instance.start.toISOString()}`).slice(0, 240),
       title: unescapeIcsText(event.summary) || "Parish event",

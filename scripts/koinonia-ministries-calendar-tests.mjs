@@ -77,6 +77,29 @@ assert.equal(recurring[1].title, "Divine Liturgy");
 assert.equal(recurring[1].location, "Saint Fiacre Church");
 assert.ok(recurring.filter(event => event.title === "Divine Liturgy").length > 4, "weekly calendar events should expand into upcoming instances");
 
+const workerUtcCalendar = parseKoinoniaCalendarIcs(`BEGIN:VCALENDAR
+BEGIN:VEVENT
+UID:weekly-vigil
+DTSTART;TZID=America/Chicago:20230128T170000
+DTEND;TZID=America/Chicago:20230128T190000
+RRULE:FREQ=WEEKLY;WKST=MO
+EXDATE;TZID=America/Chicago:20260815T170000
+SUMMARY:Vigil
+END:VEVENT
+BEGIN:VEVENT
+UID:expired-great-canon
+DTSTART;TZID=America/Chicago:20120227T183000
+DTEND;TZID=America/Chicago:20120227T193000
+RRULE:FREQ=DAILY;COUNT=4;INTERVAL=1
+SUMMARY:Great Canon
+END:VEVENT
+END:VCALENDAR`, new Date("2026-08-08T19:00:00.000Z"));
+
+assert.equal(workerUtcCalendar[0].title, "Vigil", "TZID recurrence times should survive the Worker's UTC runtime until their actual local start time");
+assert.equal(workerUtcCalendar[0].startsAt, "2026-08-08T22:00:00.000Z", "5 PM America/Chicago should serialize as 10 PM UTC in August");
+assert.equal(workerUtcCalendar.some(event => event.title === "Great Canon"), false, "COUNT-limited recurrences must not continue after their final instance");
+assert.equal(workerUtcCalendar.some(event => event.startsAt === "2026-08-15T22:00:00.000Z"), false, "EXDATE should remove excluded recurring instances");
+
 const dashboard = await readFile(new URL("../public/parish/dashboard.html", import.meta.url), "utf8");
 const app = await readFile(new URL("../public/parish/app.js", import.meta.url), "utf8");
 const parish = await readFile(new URL("../src/handlers/parish.js", import.meta.url), "utf8");
