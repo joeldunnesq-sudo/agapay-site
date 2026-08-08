@@ -46,7 +46,7 @@ import { parishLifeExperienceFor } from "../lib/parish-life-experience.js";
 import { recordParishFeatureRequest } from "../lib/parish-feature-requests.js";
 import { submitParishSupportTicket } from "../lib/parish-support-tickets.js";
 import { validateSafeExternalUrl } from "../lib/safe-external-url.js";
-import { fetchKoinoniaCalendarIcs } from "../lib/koinonia-calendar.js";
+import { fetchKoinoniaCalendarIcs, normalizeKoinoniaCalendarUrl } from "../lib/koinonia-calendar.js";
 import { getDirectorySettings } from "../directory/settings.js";
 import { resolveDirectorySelfServiceContext, syncSelfServiceContactsFromDonor } from "../directory/self-service.js";
 
@@ -1216,7 +1216,7 @@ export function parseKoinoniaCalendarIcs(text, fromDate = new Date()) {
       endsAt: instance.end?.toISOString() || "",
       allDay: !String(event.dtstart || "").includes("T")
     }));
-  }).sort((left, right) => left.startsAt.localeCompare(right.startsAt)).slice(0, 20);
+  }).sort((left, right) => left.startsAt.localeCompare(right.startsAt)).slice(0, 180);
 }
 
 export async function handleDonorParishCalendar(request, env) {
@@ -1227,11 +1227,17 @@ export async function handleDonorParishCalendar(request, env) {
   const found = await findRegistrationByParishId(env, donor.defaultParishId);
   const sourceUrl = String(found?.registration?.koinoniaCalendarUrl || "").trim();
   if (!sourceUrl) return json({ connected:false, events:[] });
+  let subscriptionUrl;
   try {
-    const text = await fetchKoinoniaCalendarIcs(sourceUrl);
-    return json({ connected:true, events:parseKoinoniaCalendarIcs(text), syncedAt:new Date().toISOString() }, { headers:{ "Cache-Control":"private, max-age=300" } });
+    subscriptionUrl = normalizeKoinoniaCalendarUrl(sourceUrl);
   } catch {
-    return json({ connected:true, events:[], unavailable:true }, { status:502, headers:{ "Cache-Control":"private, no-store" } });
+    return json({ connected:true, events:[], unavailable:true }, { headers:{ "Cache-Control":"private, no-store" } });
+  }
+  try {
+    const text = await fetchKoinoniaCalendarIcs(subscriptionUrl);
+    return json({ connected:true, subscriptionUrl, events:parseKoinoniaCalendarIcs(text), syncedAt:new Date().toISOString() }, { headers:{ "Cache-Control":"private, max-age=300" } });
+  } catch {
+    return json({ connected:true, subscriptionUrl, events:[], unavailable:true }, { headers:{ "Cache-Control":"private, no-store" } });
   }
 }
 

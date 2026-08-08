@@ -80,7 +80,9 @@ assert.ok(recurring.filter(event => event.title === "Divine Liturgy").length > 4
 const dashboard = await readFile(new URL("../public/parish/dashboard.html", import.meta.url), "utf8");
 const app = await readFile(new URL("../public/parish/app.js", import.meta.url), "utf8");
 const parish = await readFile(new URL("../src/handlers/parish.js", import.meta.url), "utf8");
+const donorHandler = await readFile(new URL("../src/handlers/donor.js", import.meta.url), "utf8");
 const life = await readFile(new URL("../public/myagapay/parish-life.js", import.meta.url), "utf8");
+const lifePage = await readFile(new URL("../public/myagapay/parish-life.html", import.meta.url), "utf8");
 const donorApp = await readFile(new URL("../public/donor/app.js", import.meta.url), "utf8");
 const donorCalendar = await readFile(new URL("../public/myagapay/giving/calendar.html", import.meta.url), "utf8");
 
@@ -105,7 +107,23 @@ assert.match(dashboard, /Public calendar \(iCal\/ICS\) link/);
 assert.match(life, /\/api\/donor\/parish-calendar/);
 assert.match(life, /request\.status === "scheduled"/);
 assert.match(life, /\/api\/donor\/sacraments/);
+assert.match(lifePage, /href="\/myagapay\/giving\/calendar">Full Calendar/);
+assert.match(donorHandler, /normalizeKoinoniaCalendarUrl\(sourceUrl\)/);
+assert.match(donorHandler, /connected:true, subscriptionUrl, events:parseKoinoniaCalendarIcs/);
+assert.match(donorHandler, /connected:true, subscriptionUrl, events:\[\], unavailable:true/);
+assert.match(donorHandler, /\.slice\(0, 180\)/);
 assert.match(donorApp, /function donorApprovedSacramentEvents/);
+assert.match(donorApp, /function renderDonorParishCalendar/);
+assert.match(donorApp, /viewMode:"week"/);
+assert.match(donorApp, /function setDonorParishCalendarView/);
+assert.match(donorApp, /function changeDonorParishCalendarPeriod/);
+assert.match(donorApp, /subscriptionUrl\.replace\(\/\^https:\/i, "webcal:"\)/);
+assert.match(donorApp, /\/api\/donor\/parish-calendar/);
 assert.match(donorCalendar, /Your Upcoming Services/);
+assert.match(donorCalendar, /id="parishCalendarSubscribeButton"/);
+assert.match(donorCalendar, /id="parishCalendarGoogleButton"/);
+assert.match(donorCalendar, /id="parishCalendarCopyButton"/);
+assert.match(donorCalendar, /id="parishCalendarWeekView"/);
+assert.match(donorCalendar, /id="parishCalendarMonthView"/);
 
-console.log("PASS - Koinonia ministries management and universal public ICS calendar sync are wired end to end");
+console.log("PASS - Koinonia ministries management, full parish calendar, and public ICS subscription are wired end to end");

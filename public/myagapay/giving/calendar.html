@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Calendar | AGAPAY Donor Dashboard</title>
+  <title>Church Calendar | My AGAPAY</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=20260802playerredesign1" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260807parishcalendar3" />
   <script src="/liturgical-calendar.js"></script>
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260803iospolish1"></script>
-  <script src="/donor/app.js?v=20260801personalsvcs1" defer></script>
+  <script src="/donor/app.js?v=20260807parishcalendar3" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -84,6 +84,43 @@
             <section class="cal-card cal-personal-services" id="personalUpcomingServicesCard" hidden>
               <div class="cal-card-head"><div class="cal-card-title"><div class="cal-card-title-icon"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="m9 12 2 2 4-4"/></svg></div>Your Upcoming Services</div><a href="/myagapay/services">View requests</a></div>
               <div class="cal-personal-event-list" id="personalUpcomingServices"></div>
+            </section>
+
+            <section class="cal-card cal-parish-calendar" id="parishCalendarCard" aria-labelledby="parishCalendarTitle">
+              <div class="cal-card-head">
+                <div class="cal-card-title">
+                  <div class="cal-card-title-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                  <span id="parishCalendarTitle">Your Church Calendar</span>
+                </div>
+                <span class="cal-parish-calendar-status" id="parishCalendarStatus">Checking connection…</span>
+              </div>
+              <p class="cal-parish-calendar-intro" id="parishCalendarIntro">Loading the calendar connected by your parish.</p>
+              <div class="cal-parish-subscribe" id="parishCalendarSubscribe" hidden>
+                <a class="cal-btn cal-btn-gold" id="parishCalendarSubscribeButton" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M12 14v5M9.5 16.5h5"/></svg>Add to phone calendar</a>
+                <a class="cal-btn cal-btn-outline" id="parishCalendarGoogleButton" href="#" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>Add to Google Calendar</a>
+                <button class="cal-btn cal-btn-outline" id="parishCalendarCopyButton" type="button" onclick="copyDonorParishCalendarUrl(this)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>Copy subscription link</button>
+              </div>
+              <div class="cal-parish-month" id="parishCalendarMonth" hidden>
+                <div class="cal-parish-view-switch" role="group" aria-label="Calendar view">
+                  <button type="button" id="parishCalendarWeekView" class="is-active" onclick="setDonorParishCalendarView('week')" aria-pressed="true">Week</button>
+                  <button type="button" id="parishCalendarMonthView" onclick="setDonorParishCalendarView('month')" aria-pressed="false">Month</button>
+                </div>
+                <div class="cal-parish-month-head">
+                  <button type="button" id="parishCalendarPreviousMonth" onclick="changeDonorParishCalendarPeriod(-1)" aria-label="Show previous period">‹</button>
+                  <strong id="parishCalendarMonthLabel">This week</strong>
+                  <button type="button" id="parishCalendarNextMonth" onclick="changeDonorParishCalendarPeriod(1)" aria-label="Show next period">›</button>
+                </div>
+                <div class="cal-parish-weekdays" aria-hidden="true"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+                <div class="cal-parish-month-grid" id="parishCalendarMonthGrid" role="grid" aria-labelledby="parishCalendarMonthLabel"></div>
+                <div class="cal-parish-month-key"><span><i class="gold"></i>Service</span><span><i class="blue"></i>Parish life</span><span><i class="plum"></i>Other event</span></div>
+              </div>
+              <div class="cal-parish-event-list" id="parishCalendarEventList" aria-live="polite"></div>
+              <details class="cal-parish-subscribe-help" id="parishCalendarSubscribeHelp" hidden>
+                <summary>How calendar subscription works</summary>
+                <p><strong>iPhone or iPad:</strong> Tap “Add to phone calendar,” then confirm the subscription.</p>
+                <p><strong>Google Calendar:</strong> Use “Add to Google Calendar” when shown. Otherwise, copy the link and add it at calendar.google.com on a computer under Other calendars → From URL. It will then sync to the Google Calendar app on your phone.</p>
+                <p>Subscribed events stay updated when your parish changes its calendar.</p>
+              </details>
             </section>
 
             <!-- FEAST HIGHLIGHTS TIMELINE -->

@@ -1494,29 +1494,304 @@ function renderDonorPersonalCalendar(payload = {}) {
   }).join("");
 }
 
+function donorParishCalendarSubscriptionUrl(value = "") {
+  try {
+    const url = new URL(String(value || "").trim());
+    return url.protocol === "https:" ? url.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
+function donorParishCalendarGoogleUrl(value = "") {
+  try {
+    const url = new URL(value);
+    if (url.hostname.toLowerCase() !== "calendar.google.com") return "";
+    const match = url.pathname.match(/^\/calendar\/ical\/([^/]+)\/public\/basic\.ics$/i);
+    if (!match) return "";
+    const calendarId = decodeURIComponent(match[1]);
+    return `https://calendar.google.com/calendar/u/0/r?cid=${encodeURIComponent(calendarId)}`;
+  } catch {
+    return "";
+  }
+}
+
+function donorParishCalendarEventDate(event = {}) {
+  const startsAt = String(event.startsAt || "");
+  if (event.allDay && /^\d{4}-\d{2}-\d{2}/.test(startsAt)) return new Date(`${startsAt.slice(0,10)}T12:00:00`);
+  return new Date(startsAt);
+}
+
+function donorParishCalendarDateKey(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+}
+
+function donorParishCalendarEventDateKey(event = {}) {
+  const startsAt = String(event.startsAt || "");
+  if (event.allDay && /^\d{4}-\d{2}-\d{2}/.test(startsAt)) return startsAt.slice(0,10);
+  return donorParishCalendarDateKey(donorParishCalendarEventDate(event));
+}
+
+function donorParishCalendarEventCategory(event = {}) {
+  const title = String(event.title || "").toLowerCase();
+  if (/liturgy|vespers|matins|orthros|paraklesis|akathist|vigil|service|confession/.test(title)) return "gold";
+  if (/fellowship|youth|class|study|meeting|festival|community|choir|coffee|ministry/.test(title)) return "blue";
+  return "plum";
+}
+
+let donorParishCalendarView = { events:[], viewMode:"week", periodDate:null, selectedDate:"", unavailable:false };
+
+function donorParishCalendarEventsOn(dateKey) {
+  return donorParishCalendarView.events.filter(event => donorParishCalendarEventDateKey(event) === dateKey);
+}
+
+function renderDonorParishCalendarSelectedDate() {
+  const target = document.getElementById("parishCalendarEventList");
+  if (!target) return;
+  const dateKey = donorParishCalendarView.selectedDate;
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(dateKey) ? new Date(`${dateKey}T12:00:00`) : null;
+  if (!date || Number.isNaN(date.getTime())) {
+    target.innerHTML = "";
+    return;
+  }
+  const events = donorParishCalendarEventsOn(dateKey);
+  const heading = escapeHtml(date.toLocaleDateString(undefined, { weekday:"long", month:"long", day:"numeric" }));
+  if (!events.length) {
+    target.innerHTML = `<div class="cal-parish-selected-head"><strong>${heading}</strong></div><div class="cal-parish-calendar-empty">${donorParishCalendarView.unavailable ? "We could not refresh events right now." : "No parish events are scheduled for this day."}</div>`;
+    return;
+  }
+  target.innerHTML = `<div class="cal-parish-selected-head"><strong>${heading}</strong><span>${events.length} event${events.length === 1 ? "" : "s"}</span></div>${events.map((event) => {
+    const eventDate = donorParishCalendarEventDate(event);
+    const time = event.allDay ? "All day" : eventDate.toLocaleTimeString(undefined, { hour:"numeric", minute:"2-digit" });
+    const location = String(event.location || "").trim();
+    const description = String(event.description || "").trim();
+    return `<article class="cal-parish-event ${donorParishCalendarEventCategory(event)}"><span class="cal-parish-event-marker" aria-hidden="true"></span><span class="cal-parish-event-body"><strong>${escapeHtml(event.title || "Parish event")}</strong><small>${escapeHtml(time)}${location ? ` · ${escapeHtml(location)}` : ""}</small>${description ? `<p>${escapeHtml(description)}</p>` : ""}</span></article>`;
+  }).join("")}`;
+}
+
+function donorParishCalendarStartOfWeek(date) {
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  start.setDate(start.getDate() - start.getDay());
+  return start;
+}
+
+function renderDonorParishCalendarMonth() {
+  const label = document.getElementById("parishCalendarMonthLabel");
+  const grid = document.getElementById("parishCalendarMonthGrid");
+  const previous = document.getElementById("parishCalendarPreviousMonth");
+  const next = document.getElementById("parishCalendarNextMonth");
+  const weekViewButton = document.getElementById("parishCalendarWeekView");
+  const monthViewButton = document.getElementById("parishCalendarMonthView");
+  const periodDate = donorParishCalendarView.periodDate;
+  if (!label || !grid || !previous || !next || !weekViewButton || !monthViewButton || !(periodDate instanceof Date)) return;
+
+  const today = new Date();
+  const todayKey = donorParishCalendarDateKey(today);
+  const latestRangeDate = new Date(today.getTime() + 180 * 86400000);
+  const dates = [];
+  const cells = [];
+  const isWeek = donorParishCalendarView.viewMode === "week";
+  weekViewButton.classList.toggle("is-active", isWeek);
+  monthViewButton.classList.toggle("is-active", !isWeek);
+  weekViewButton.setAttribute("aria-pressed", String(isWeek));
+  monthViewButton.setAttribute("aria-pressed", String(!isWeek));
+  grid.classList.toggle("is-week", isWeek);
+
+  if (isWeek) {
+    const weekStart = donorParishCalendarStartOfWeek(periodDate);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    label.textContent = `${weekStart.toLocaleDateString(undefined,{month:"short",day:"numeric"})} – ${weekEnd.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})}`;
+    const earliestWeek = donorParishCalendarStartOfWeek(today);
+    const latestWeek = donorParishCalendarStartOfWeek(latestRangeDate);
+    previous.disabled = weekStart <= earliestWeek;
+    next.disabled = weekStart >= latestWeek;
+    for (let day = 0; day < 7; day += 1) {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + day);
+      dates.push(date);
+    }
+  } else {
+    const firstDay = new Date(periodDate.getFullYear(), periodDate.getMonth(), 1);
+    const daysInMonth = new Date(periodDate.getFullYear(), periodDate.getMonth() + 1, 0).getDate();
+    label.textContent = firstDay.toLocaleDateString(undefined, { month:"long", year:"numeric" });
+    const earliestMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const latestMonth = new Date(latestRangeDate.getFullYear(), latestRangeDate.getMonth(), 1);
+    previous.disabled = firstDay <= earliestMonth;
+    next.disabled = firstDay >= latestMonth;
+    cells.push(...Array.from({ length:firstDay.getDay() }, () => '<span class="cal-parish-day-spacer" aria-hidden="true"></span>'));
+    for (let day = 1; day <= daysInMonth; day += 1) dates.push(new Date(firstDay.getFullYear(), firstDay.getMonth(), day));
+  }
+
+  dates.forEach((date) => {
+    const dateKey = donorParishCalendarDateKey(date);
+    const events = donorParishCalendarEventsOn(dateKey);
+    const markerHtml = events.slice(0,3).map(event => `<i class="${donorParishCalendarEventCategory(event)}"></i>`).join("");
+    const countLabel = events.length ? `, ${events.length} event${events.length === 1 ? "" : "s"}` : ", no events";
+    cells.push(`<button type="button" class="cal-parish-day${events.length ? " has-events" : ""}${dateKey === todayKey ? " is-today" : ""}${dateKey === donorParishCalendarView.selectedDate ? " is-selected" : ""}" onclick="selectDonorParishCalendarDate('${dateKey}')" aria-label="${escapeHtml(date.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"}))}${countLabel}" aria-pressed="${dateKey === donorParishCalendarView.selectedDate}"><span>${date.getDate()}</span>${events.length ? `<span class="cal-parish-day-markers" aria-hidden="true">${markerHtml}${events.length > 3 ? `<b>+${events.length - 3}</b>` : ""}</span>` : ""}</button>`);
+  });
+  grid.innerHTML = cells.join("");
+  renderDonorParishCalendarSelectedDate();
+}
+
+function selectDonorParishCalendarDate(dateKey) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateKey || ""))) return;
+  donorParishCalendarView.selectedDate = dateKey;
+  renderDonorParishCalendarMonth();
+}
+
+function setDonorParishCalendarView(viewMode) {
+  if (!["week","month"].includes(viewMode)) return;
+  const selected = /^\d{4}-\d{2}-\d{2}$/.test(donorParishCalendarView.selectedDate)
+    ? new Date(`${donorParishCalendarView.selectedDate}T12:00:00`)
+    : new Date();
+  donorParishCalendarView.viewMode = viewMode;
+  donorParishCalendarView.periodDate = selected;
+  renderDonorParishCalendarMonth();
+}
+
+function changeDonorParishCalendarPeriod(offset) {
+  const current = donorParishCalendarView.periodDate;
+  if (!(current instanceof Date) || !Number.isInteger(offset)) return;
+  const today = new Date();
+  const rangeEnd = new Date(today.getTime() + 180 * 86400000);
+  let periodStart;
+  let periodEnd;
+  if (donorParishCalendarView.viewMode === "week") {
+    periodStart = donorParishCalendarStartOfWeek(current);
+    periodStart.setDate(periodStart.getDate() + offset * 7);
+    const earliestWeek = donorParishCalendarStartOfWeek(today);
+    const latestWeek = donorParishCalendarStartOfWeek(rangeEnd);
+    if (periodStart < earliestWeek || periodStart > latestWeek) return;
+    periodEnd = new Date(periodStart);
+    periodEnd.setDate(periodEnd.getDate() + 6);
+  } else {
+    periodStart = new Date(current.getFullYear(), current.getMonth() + offset, 1);
+    const earliestMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const latestMonth = new Date(rangeEnd.getFullYear(), rangeEnd.getMonth(), 1);
+    if (periodStart < earliestMonth || periodStart > latestMonth) return;
+    periodEnd = new Date(periodStart.getFullYear(), periodStart.getMonth() + 1, 0);
+  }
+  donorParishCalendarView.periodDate = periodStart;
+  const startKey = donorParishCalendarDateKey(periodStart);
+  const endKey = donorParishCalendarDateKey(periodEnd);
+  donorParishCalendarView.selectedDate = donorParishCalendarView.events.map(donorParishCalendarEventDateKey).find(key => key >= startKey && key <= endKey) || startKey;
+  renderDonorParishCalendarMonth();
+}
+
+function renderDonorParishCalendar(payload = {}, parish = null) {
+  const title = document.getElementById("parishCalendarTitle");
+  const status = document.getElementById("parishCalendarStatus");
+  const intro = document.getElementById("parishCalendarIntro");
+  const subscribe = document.getElementById("parishCalendarSubscribe");
+  const subscribeButton = document.getElementById("parishCalendarSubscribeButton");
+  const googleButton = document.getElementById("parishCalendarGoogleButton");
+  const copyButton = document.getElementById("parishCalendarCopyButton");
+  const help = document.getElementById("parishCalendarSubscribeHelp");
+  const monthView = document.getElementById("parishCalendarMonth");
+  const target = document.getElementById("parishCalendarEventList");
+  if (!title || !status || !intro || !subscribe || !subscribeButton || !googleButton || !copyButton || !help || !monthView || !target) return;
+
+  const parishName = parish?.name || donorProfile()?.defaultParish?.name || "Your Church";
+  const subscriptionUrl = donorParishCalendarSubscriptionUrl(payload.subscriptionUrl);
+  const connected = Boolean(payload.connected && subscriptionUrl);
+  title.textContent = `${parishName} Calendar`;
+  status.classList.toggle("is-connected", connected);
+  subscribe.hidden = !connected;
+  help.hidden = !connected;
+  monthView.hidden = !connected;
+
+  if (!connected) {
+    status.textContent = "Not connected";
+    intro.textContent = parish
+      ? "Your parish has not connected its public calendar yet. Feast highlights are still available below."
+      : "Sign in and choose your home parish to load its connected calendar.";
+    target.innerHTML = "";
+    return;
+  }
+
+  subscribeButton.href = subscriptionUrl.replace(/^https:/i, "webcal:");
+  copyButton.dataset.subscriptionUrl = subscriptionUrl;
+  const googleUrl = donorParishCalendarGoogleUrl(subscriptionUrl);
+  googleButton.hidden = !googleUrl;
+  if (googleUrl) googleButton.href = googleUrl;
+
+  const events = Array.isArray(payload.events) ? payload.events : [];
+  status.textContent = payload.unavailable ? "Connected · preview unavailable" : "Connected";
+  intro.textContent = payload.unavailable
+    ? "The event preview is temporarily unavailable, but you can still subscribe to the parish calendar."
+    : "Upcoming events published by your parish. Subscribe once and changes will stay in sync.";
+
+  const today = new Date();
+  const currentWeek = donorParishCalendarStartOfWeek(today);
+  const weekEnd = new Date(currentWeek);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  const weekStartKey = donorParishCalendarDateKey(currentWeek);
+  const weekEndKey = donorParishCalendarDateKey(weekEnd);
+  donorParishCalendarView = {
+    events,
+    viewMode:"week",
+    periodDate:today,
+    selectedDate:events.map(donorParishCalendarEventDateKey).find(key => key >= weekStartKey && key <= weekEndKey) || donorParishCalendarDateKey(today),
+    unavailable:Boolean(payload.unavailable)
+  };
+  renderDonorParishCalendarMonth();
+}
+
+async function copyDonorParishCalendarUrl(button) {
+  const subscriptionUrl = donorParishCalendarSubscriptionUrl(button?.dataset?.subscriptionUrl);
+  if (!subscriptionUrl) return;
+  const originalContent = button.innerHTML;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(subscriptionUrl);
+    } else {
+      const field = document.createElement("textarea");
+      field.value = subscriptionUrl;
+      field.setAttribute("readonly", "");
+      field.style.position = "fixed";
+      field.style.opacity = "0";
+      document.body.appendChild(field);
+      field.select();
+      document.execCommand("copy");
+      field.remove();
+    }
+    button.textContent = "Link copied";
+  } catch {
+    window.prompt("Copy this calendar subscription link:", subscriptionUrl);
+  } finally {
+    window.setTimeout(() => { button.innerHTML = originalContent; }, 1800);
+  }
+}
+
 async function loadDonorCalendarPage() {
   const session = donorSession();
   if (!session.email || !session.token) {
     renderDonorCalendarFeasts(null);
     renderDonorCalendarPrompts(null);
+    renderDonorParishCalendar({}, null);
     loadDonorLiturgicalDay(null);
     return;
   }
   try {
-    const [data, sacramentPayload] = await Promise.all([
+    const [data, sacramentPayload, parishCalendarPayload] = await Promise.all([
       donorApi("/api/donor/dashboard"),
-      donorApi("/api/donor/sacraments").catch(() => ({ requests:[] }))
+      donorApi("/api/donor/sacraments").catch(() => ({ requests:[] })),
+      donorApi("/api/donor/parish-calendar").catch(() => ({ connected:false, events:[] }))
     ]);
     setDonorProfile(data.donor);
     renderDonorCalendarFeasts(data.parish || null);
     renderDonorCalendarPrompts(data.parish || null);
     renderDonorPersonalCalendar(sacramentPayload);
+    renderDonorParishCalendar(parishCalendarPayload, data.parish || null);
     loadDonorLiturgicalDay(data.parish || null);
   } catch (err) {
     if (isDonorUnauthorized(err)) {
       clearDonorSession();
       renderDonorCalendarFeasts(null);
       renderDonorCalendarPrompts(null);
+      renderDonorParishCalendar({}, null);
       loadDonorLiturgicalDay(null);
       return;
     }

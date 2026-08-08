@@ -7152,6 +7152,7 @@ body.donor-home {
 }
 .cal-btn { border: 0; border-radius: 10px; padding: 10px 16px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
 .cal-btn-gold { background: linear-gradient(135deg, var(--cal-gold), #B08A38); color: var(--cal-deep); box-shadow: 0 4px 14px rgba(200,162,74,0.3); }
+.cal-btn-outline { background: #fff; color: var(--cal-ink); border: 1px solid var(--cal-line); }
 .cal-btn-ghost-light { background: rgba(255,255,255,0.08); color: var(--cal-cream); border: 1px solid rgba(255,255,255,0.16); }
 .cal-saint-strip { position: relative; z-index: 2; display: flex; align-items: center; gap: 14px; padding: 14px 26px; width: 100%; background: rgba(0,0,0,0.18); border: 0; border-top: 1px solid rgba(255,255,255,0.08); cursor: pointer; text-align: left; color: var(--cal-cream); font-family: inherit; }
 .cal-saint-icon { width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px; background: linear-gradient(135deg, rgba(200,162,74,0.3), rgba(200,162,74,0.08)); border: 1px solid rgba(200,162,74,0.3); display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--cal-gold-bright); overflow: hidden; }
@@ -7188,6 +7189,52 @@ body.donor-home {
 .cal-personal-event>span:nth-child(2)>strong { margin:2px 0; font:600 17px/1.1 var(--cal-serif); }
 .cal-personal-event>span:nth-child(2)>small { color:var(--cal-muted); font-size:10px; }
 .cal-personal-event>i { color:var(--cal-gold); font-size:22px; font-style:normal; }
+.cal-parish-calendar-status { color:var(--cal-gold); font-size:10px; font-weight:800; letter-spacing:.04em; text-align:right; text-transform:uppercase; }
+.cal-parish-calendar-intro { margin:-3px 0 14px; color:var(--cal-muted); font-size:12px; line-height:1.55; }
+.cal-parish-subscribe { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+.cal-parish-subscribe[hidden],.cal-parish-subscribe-help[hidden],.cal-parish-month[hidden] { display:none; }
+.cal-parish-month { margin:4px 0 18px; border:1px solid var(--cal-line); border-radius:14px; padding:12px; background:linear-gradient(180deg,#fff,#fcfaf5); }
+.cal-parish-view-switch { display:grid; grid-template-columns:1fr 1fr; gap:3px; margin-bottom:10px; border-radius:9px; padding:3px; background:var(--cal-cream); }
+.cal-parish-view-switch button { min-height:34px; border:0; border-radius:7px; background:transparent; color:var(--cal-muted); font:800 10px/1 Inter,sans-serif; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
+.cal-parish-view-switch button.is-active { background:#fff; color:var(--cal-ink); box-shadow:0 2px 8px rgba(6,21,34,.09); }
+.cal-parish-month-head { display:grid; grid-template-columns:36px minmax(0,1fr) 36px; align-items:center; gap:8px; margin-bottom:8px; }
+.cal-parish-month-head strong { color:var(--cal-ink); font:600 17px/1.1 var(--cal-serif); text-align:center; }
+.cal-parish-month-head button { width:36px; height:36px; border:1px solid var(--cal-line); border-radius:9px; background:#fff; color:var(--cal-gold); font:600 24px/1 var(--cal-serif); cursor:pointer; }
+.cal-parish-month-head button:disabled { cursor:default; opacity:.32; }
+.cal-parish-weekdays,.cal-parish-month-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px; }
+.cal-parish-weekdays { margin-bottom:4px; color:var(--cal-muted); font-size:8px; font-weight:800; letter-spacing:.04em; text-align:center; text-transform:uppercase; }
+.cal-parish-weekdays span { padding:4px 0; }
+.cal-parish-day-spacer { min-height:46px; }
+.cal-parish-day { min-width:0; min-height:46px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; border:1px solid transparent; border-radius:9px; padding:4px 2px; background:transparent; color:var(--cal-ink); font:700 12px/1 Inter,sans-serif; cursor:pointer; }
+.cal-parish-month-grid.is-week .cal-parish-day { min-height:62px; }
+.cal-parish-day:hover,.cal-parish-day:focus-visible { border-color:var(--cal-line); background:#fff; outline:none; }
+.cal-parish-day.is-today>span:first-child { width:25px; height:25px; display:grid; place-items:center; border:1px solid var(--cal-gold); border-radius:50%; }
+.cal-parish-day.is-selected { background:var(--cal-ink); color:#fff; box-shadow:0 4px 12px rgba(6,21,34,.18); }
+.cal-parish-day.is-selected.is-today>span:first-child { border-color:#fff; }
+.cal-parish-day-markers { min-height:7px; display:flex; align-items:center; justify-content:center; gap:2px; }
+.cal-parish-day-markers i,.cal-parish-month-key i { width:6px; height:6px; display:inline-block; border-radius:50%; }
+.cal-parish-day-markers i.gold,.cal-parish-month-key i.gold,.cal-parish-event.gold .cal-parish-event-marker { background:#c69a39; }
+.cal-parish-day-markers i.blue,.cal-parish-month-key i.blue,.cal-parish-event.blue .cal-parish-event-marker { background:#397393; }
+.cal-parish-day-markers i.plum,.cal-parish-month-key i.plum,.cal-parish-event.plum .cal-parish-event-marker { background:#8b5c83; }
+.cal-parish-day-markers b { color:var(--cal-muted); font-size:7px; }
+.cal-parish-day.is-selected .cal-parish-day-markers b { color:#fff; }
+.cal-parish-month-key { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; color:var(--cal-muted); font-size:8px; font-weight:700; }
+.cal-parish-month-key span { display:inline-flex; align-items:center; gap:4px; }
+.cal-parish-event-list { display:grid; gap:8px; }
+.cal-parish-selected-head { display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:2px 2px 3px; }
+.cal-parish-selected-head strong { color:var(--cal-ink); font:600 17px/1.15 var(--cal-serif); }
+.cal-parish-selected-head span { color:var(--cal-gold); font-size:9px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
+.cal-parish-event { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:start; gap:10px; border:1px solid var(--cal-line); border-radius:12px; padding:12px 13px; background:#fff; color:var(--cal-ink); }
+.cal-parish-event-marker { width:9px; height:9px; margin-top:5px; border-radius:50%; }
+.cal-parish-event-body>em,.cal-parish-event-body>strong,.cal-parish-event-body>small { display:block; }
+.cal-parish-event-body>em { color:var(--cal-gold); font-size:9px; font-style:normal; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+.cal-parish-event-body>strong { margin:2px 0; font:600 17px/1.15 var(--cal-serif); }
+.cal-parish-event-body>small { color:var(--cal-muted); font-size:10px; line-height:1.4; }
+.cal-parish-event-body>p { margin:7px 0 0; color:var(--cal-stone); font-size:11px; line-height:1.45; }
+.cal-parish-calendar-empty { border:1px dashed var(--cal-line); border-radius:12px; padding:14px; color:var(--cal-muted); font-size:12px; line-height:1.5; }
+.cal-parish-subscribe-help { margin-top:14px; border-top:1px solid var(--cal-line); padding-top:12px; color:var(--cal-muted); font-size:11px; line-height:1.5; }
+.cal-parish-subscribe-help summary { color:var(--cal-ink); cursor:pointer; font-weight:800; }
+.cal-parish-subscribe-help p { margin:8px 0 0; }
 .cal-card-title { display: flex; align-items: center; gap: 9px; font-family: var(--cal-serif); font-size: 19px; font-weight: 600; color: var(--cal-ink); }
 .cal-card-title-icon { width: 30px; height: 30px; border-radius: 8px; background: var(--cal-gold-soft); display: flex; align-items: center; justify-content: center; color: var(--cal-gold); flex-shrink: 0; }
 .cal-card-title-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -9173,6 +9220,220 @@ textarea {
   .feed-digest-status { grid-column: 1 / -1; margin: 0 !important; font-size: 10px !important; }
   .feed-digest-toggle { align-self: center; }
 }
+
+/* Connected parish calendar — midnight, parchment, and jewel-tone treatment. */
+.donor-calendar-page .cal-parish-calendar {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(180, 137, 48, .42);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 92% 15%, rgba(201, 159, 66, .09), transparent 28%),
+    linear-gradient(180deg, #fffefa 0%, #fbf6eb 100%);
+  box-shadow: 0 18px 48px rgba(5, 23, 38, .13), 0 2px 8px rgba(5, 23, 38, .06);
+}
+.donor-calendar-page .cal-parish-calendar > .cal-card-head {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin: -20px -22px 0;
+  padding: 25px 22px 22px;
+  background:
+    radial-gradient(circle at 88% 15%, rgba(221, 181, 88, .27), transparent 28%),
+    radial-gradient(circle at 12% 120%, rgba(50, 105, 134, .36), transparent 42%),
+    linear-gradient(135deg, #061826 0%, #0a2a3d 58%, #123d52 100%);
+}
+.donor-calendar-page .cal-parish-calendar > .cal-card-head::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  opacity: .26;
+  background-image: linear-gradient(120deg, transparent 0 46%, rgba(255,255,255,.08) 46% 47%, transparent 47% 100%);
+  background-size: 22px 22px;
+  pointer-events: none;
+}
+.donor-calendar-page .cal-parish-calendar > .cal-card-head::after {
+  content: "";
+  position: absolute;
+  right: 22px;
+  bottom: 0;
+  left: 22px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(228, 189, 99, .8), transparent);
+}
+.donor-calendar-page .cal-parish-calendar .cal-card-title { color: #fffaf0; font-size: 22px; line-height: 1.08; }
+.donor-calendar-page .cal-parish-calendar .cal-card-title-icon {
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(237, 203, 124, .4);
+  border-radius: 11px;
+  background: linear-gradient(145deg, rgba(230, 190, 98, .28), rgba(230, 190, 98, .08));
+  color: #edc778;
+  box-shadow: inset 0 1px rgba(255,255,255,.16);
+}
+.donor-calendar-page .cal-parish-calendar .cal-parish-calendar-status {
+  border: 1px solid rgba(238, 203, 123, .38);
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: rgba(235, 194, 97, .11);
+  color: #f0cf86;
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+.donor-calendar-page .cal-parish-calendar .cal-parish-calendar-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  display: inline-block;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: #85939b;
+  box-shadow: 0 0 0 4px rgba(133, 147, 155, .1);
+  vertical-align: 1px;
+}
+.donor-calendar-page .cal-parish-calendar .cal-parish-calendar-status.is-connected::before {
+  background: #e2b754;
+  box-shadow: 0 0 0 4px rgba(226, 183, 84, .12), 0 0 12px rgba(226, 183, 84, .55);
+}
+.donor-calendar-page .cal-parish-calendar .cal-parish-calendar-intro {
+  margin: 0 -22px 18px;
+  border-bottom: 1px solid rgba(183, 143, 61, .18);
+  padding: 14px 22px 15px;
+  background: linear-gradient(90deg, rgba(244, 229, 192, .72), rgba(255, 251, 241, .52));
+  color: #5d5548;
+}
+.donor-calendar-page .cal-parish-subscribe {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin-bottom: 18px;
+}
+.donor-calendar-page .cal-parish-subscribe[hidden] { display: none; }
+.donor-calendar-page .cal-parish-subscribe .cal-btn {
+  min-height: 46px;
+  justify-content: center;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+.donor-calendar-page .cal-parish-subscribe .cal-btn:hover { transform: translateY(-1px); }
+.donor-calendar-page .cal-parish-subscribe .cal-btn svg { width: 17px; height: 17px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.donor-calendar-page .cal-parish-subscribe .cal-btn-gold {
+  border: 1px solid #d2a742;
+  background: linear-gradient(135deg, #f0cf79, #c99a35 70%, #b88428);
+  color: #112636;
+  box-shadow: 0 8px 20px rgba(183, 130, 31, .25), inset 0 1px rgba(255,255,255,.45);
+}
+.donor-calendar-page .cal-parish-subscribe .cal-btn-outline {
+  border: 1px solid rgba(19, 57, 78, .2);
+  background: rgba(255,255,255,.76);
+  color: #15364a;
+  box-shadow: 0 4px 12px rgba(7, 31, 47, .06), inset 0 1px rgba(255,255,255,.8);
+}
+.donor-calendar-page .cal-parish-month {
+  border-color: rgba(173, 130, 44, .28);
+  border-radius: 17px;
+  padding: 14px;
+  background:
+    radial-gradient(circle at 92% 4%, rgba(210, 169, 74, .18), transparent 26%),
+    radial-gradient(circle at 4% 96%, rgba(43, 101, 131, .11), transparent 30%),
+    linear-gradient(160deg, #fffdf7, #f8f0df);
+  box-shadow: inset 0 1px rgba(255,255,255,.9), 0 8px 24px rgba(32, 44, 48, .06);
+}
+.donor-calendar-page .cal-parish-view-switch {
+  gap: 4px;
+  border: 1px solid rgba(15, 48, 67, .12);
+  padding: 4px;
+  background: rgba(8, 36, 53, .07);
+}
+.donor-calendar-page .cal-parish-view-switch button { min-height: 38px; color: #557080; }
+.donor-calendar-page .cal-parish-view-switch button.is-active {
+  background: linear-gradient(135deg, #0a293c, #174c64);
+  color: #f2d690;
+  box-shadow: 0 5px 14px rgba(6, 31, 47, .2), inset 0 1px rgba(255,255,255,.1);
+}
+.donor-calendar-page .cal-parish-month-head { margin: 4px 0 9px; }
+.donor-calendar-page .cal-parish-month-head strong { color: #14364a; font-size: 19px; }
+.donor-calendar-page .cal-parish-month-head button {
+  border-color: rgba(184, 140, 49, .3);
+  border-radius: 50%;
+  background: rgba(255,255,255,.72);
+  color: #b38428;
+  box-shadow: 0 3px 10px rgba(11, 36, 50, .07);
+}
+.donor-calendar-page .cal-parish-weekdays { color: #7f7565; }
+.donor-calendar-page .cal-parish-day { color: #213b4a; }
+.donor-calendar-page .cal-parish-day.has-events { border-color: rgba(190, 151, 68, .13); background: rgba(255,255,255,.58); }
+.donor-calendar-page .cal-parish-day:hover,
+.donor-calendar-page .cal-parish-day:focus-visible { border-color: rgba(180, 137, 48, .38); background: #fff; }
+.donor-calendar-page .cal-parish-day.is-today>span:first-child { border-color: #c79b3f; background: rgba(231, 199, 123, .16); color: #8a641a; }
+.donor-calendar-page .cal-parish-day.is-selected {
+  border-color: #d2ad59;
+  background:
+    radial-gradient(circle at 70% 18%, rgba(226, 188, 97, .28), transparent 34%),
+    linear-gradient(145deg, #071c2b, #123e53);
+  color: #fffaf0;
+  box-shadow: 0 9px 22px rgba(7, 31, 47, .23), inset 0 0 0 1px rgba(240, 207, 130, .18);
+}
+.donor-calendar-page .cal-parish-day-markers i,
+.donor-calendar-page .cal-parish-month-key i { width: 7px; height: 7px; box-shadow: 0 1px 3px rgba(20,25,30,.22); }
+.donor-calendar-page .cal-parish-day-markers i.gold,
+.donor-calendar-page .cal-parish-month-key i.gold,
+.donor-calendar-page .cal-parish-event.gold .cal-parish-event-marker { background: #d9a928; }
+.donor-calendar-page .cal-parish-day-markers i.blue,
+.donor-calendar-page .cal-parish-month-key i.blue,
+.donor-calendar-page .cal-parish-event.blue .cal-parish-event-marker { background: #2782a5; }
+.donor-calendar-page .cal-parish-day-markers i.plum,
+.donor-calendar-page .cal-parish-month-key i.plum,
+.donor-calendar-page .cal-parish-event.plum .cal-parish-event-marker { background: #9b548c; }
+.donor-calendar-page .cal-parish-month-key { gap: 6px; }
+.donor-calendar-page .cal-parish-month-key span {
+  border: 1px solid rgba(20, 55, 74, .09);
+  border-radius: 999px;
+  padding: 5px 7px;
+  background: rgba(255,255,255,.56);
+  color: #6e685d;
+}
+.donor-calendar-page .cal-parish-selected-head { margin-top: 2px; border-bottom: 1px solid rgba(182, 139, 47, .16); padding: 4px 3px 10px; }
+.donor-calendar-page .cal-parish-selected-head strong { color: #123247; font-size: 20px; }
+.donor-calendar-page .cal-parish-selected-head span { color: #a8781d; }
+.donor-calendar-page .cal-parish-event {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(18, 53, 72, .12);
+  border-left-width: 4px;
+  padding: 14px 14px 14px 12px;
+  box-shadow: 0 6px 17px rgba(12, 38, 52, .055);
+}
+.donor-calendar-page .cal-parish-event.gold { border-left-color: #d3a12f; background: linear-gradient(100deg, rgba(244, 220, 160, .28), rgba(255,255,255,.92) 34%); }
+.donor-calendar-page .cal-parish-event.blue { border-left-color: #2c82a3; background: linear-gradient(100deg, rgba(152, 210, 229, .2), rgba(255,255,255,.92) 34%); }
+.donor-calendar-page .cal-parish-event.plum { border-left-color: #985789; background: linear-gradient(100deg, rgba(211, 167, 202, .2), rgba(255,255,255,.92) 34%); }
+.donor-calendar-page .cal-parish-event-marker { width: 10px; height: 10px; box-shadow: 0 0 0 4px rgba(196, 151, 55, .09); }
+.donor-calendar-page .cal-parish-event-body>strong { color: #18384a; font-size: 19px; }
+.donor-calendar-page .cal-parish-event-body>small { color: #7a6d5b; font-weight: 600; }
+.donor-calendar-page .cal-parish-subscribe-help {
+  border-top-color: rgba(179, 135, 44, .2);
+  color: #756b5b;
+}
+.donor-calendar-page .cal-parish-subscribe-help summary { color: #17384b; }
+
+@media (max-width: 620px) {
+  .donor-calendar-page .cal-page { padding-right: 12px; padding-left: 12px; }
+  .donor-calendar-page .cal-parish-calendar { border-radius: 19px; }
+  .donor-calendar-page .cal-parish-calendar > .cal-card-head { align-items: flex-start; margin-right: -22px; margin-left: -22px; padding-top: 23px; }
+  .donor-calendar-page .cal-parish-calendar .cal-card-title { font-size: 20px; }
+  .donor-calendar-page .cal-parish-calendar .cal-parish-calendar-status { margin-top: 2px; padding: 5px 7px; font-size: 8px; }
+  .donor-calendar-page .cal-parish-subscribe { grid-template-columns: 1fr; }
+  .donor-calendar-page .cal-parish-subscribe .cal-btn { justify-content: flex-start; padding-right: 15px; padding-left: 15px; text-align: left; }
+  .donor-calendar-page .cal-parish-month { margin-right: -7px; margin-left: -7px; padding: 12px 10px; }
+  .donor-calendar-page .cal-parish-day { min-height: 48px; }
+  .donor-calendar-page .cal-parish-month-grid.is-week .cal-parish-day { min-height: 66px; }
+}
+
 html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-section] {
   visibility: hidden;
 }
