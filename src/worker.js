@@ -218,6 +218,8 @@ import {
 import { handleParishEmailCredentials } from "./handlers/parish-email-credentials.js";
 import { handleDonorGroups, purgeExpiredGroupMessages } from "./handlers/donor-groups.js";
 import { handleKoinoniaAccess } from "./handlers/koinonia-access.js";
+import { handleDonorKoinoniaSignups, sendScheduledSignupReminders } from "./handlers/koinonia-signups.js";
+import { expireKoinoniaExchangeListings, handleDonorKoinoniaExchange } from "./handlers/koinonia-exchange.js";
 import { handleDonorTeaching, handleParishTeaching } from "./handlers/parish-teaching.js";
 import { handleDonorVideo, handleParishVideo } from "./handlers/parish-video.js";
 import { handleDonorBlog, handleDonorCustomNewsFeeds, handleDonorExternalFeed, handleDonorOcaNews, handleParishBlog } from "./handlers/parish-blog.js";
@@ -693,6 +695,10 @@ const MYAGAPAY_ASSET_ROUTES = new Map([
   ["/myagapay/news/", "/myagapay/news.html"],
   ["/myagapay/groups", "/myagapay/groups.html"],
   ["/myagapay/groups/", "/myagapay/groups.html"],
+  ["/myagapay/signups", "/myagapay/signups.html"],
+  ["/myagapay/signups/", "/myagapay/signups.html"],
+  ["/myagapay/exchange", "/myagapay/exchange.html"],
+  ["/myagapay/exchange/", "/myagapay/exchange.html"],
   ["/myagapay/teaching", "/myagapay/teaching.html"],
   ["/myagapay/teaching/", "/myagapay/teaching.html"],
   ["/myagapay/media", "/myagapay/media.html"],
@@ -2848,6 +2854,8 @@ export default {
     ctx.waitUntil(observeScheduledTask("scheduled_accounting_recurring", runScheduledRecurringTransactions(env, event.scheduledTime), env));
     ctx.waitUntil(observeScheduledTask("nonprofit_pricing_threshold_alerts", sendNonprofitThresholdAlerts(env), env));
     ctx.waitUntil(observeScheduledTask("group_message_retention_sweep", purgeExpiredGroupMessages(env, event.scheduledTime), env));
+    ctx.waitUntil(observeScheduledTask("koinonia_exchange_expiry_sweep", expireKoinoniaExchangeListings(env, event.scheduledTime), env));
+    ctx.waitUntil(observeScheduledTask("koinonia_signup_reminders", sendScheduledSignupReminders(env, event.scheduledTime), env));
     if (event.cron === "0 8 * * *") {
       ctx.waitUntil(observeScheduledTask("accounting_backup_retention_sweep", sweepAccountingBackupRetention(env, event.scheduledTime), env));
       return;
@@ -2879,6 +2887,8 @@ export default {
     const parishLifeAvailable = parishLifeAvailableFor(env);
     const parishLifeApiRoute =
       url.pathname === "/api/donor/koinonia-access"
+      || url.pathname === "/api/donor/koinonia/signups" || url.pathname.startsWith("/api/donor/koinonia/signups/")
+      || url.pathname === "/api/donor/koinonia/exchange" || url.pathname.startsWith("/api/donor/koinonia/exchange/")
       || url.pathname === "/api/donor/feed" || url.pathname.startsWith("/api/donor/feed/")
       || url.pathname === "/api/donor/groups" || url.pathname.startsWith("/api/donor/groups/")
       || url.pathname === "/api/donor/teaching" || url.pathname.startsWith("/api/donor/teaching/")
@@ -2891,7 +2901,7 @@ export default {
       return json({ error: "Not found" }, { status: 404 });
     }
 
-    const parishLifePageRoute = /^\/myagapay\/(?:feed|groups|teaching|media|media\/watch)(?:\.html)?\/?$/.test(url.pathname);
+    const parishLifePageRoute = /^\/myagapay\/(?:feed|groups|signups|exchange|teaching|media|media\/watch)(?:\.html)?\/?$/.test(url.pathname);
     if (parishLifePageRoute && !parishLifeAvailable) {
       return new Response("Not found", {
         status: 404,
@@ -3297,6 +3307,12 @@ export default {
     if (url.pathname === "/api/donor/koinonia-access") {
       return handleKoinoniaAccess(request, env);
     }
+    if (url.pathname === "/api/donor/koinonia/signups" || url.pathname.startsWith("/api/donor/koinonia/signups/")) {
+      return handleDonorKoinoniaSignups(request, env, ctx);
+    }
+    if (url.pathname === "/api/donor/koinonia/exchange" || url.pathname.startsWith("/api/donor/koinonia/exchange/")) {
+      return handleDonorKoinoniaExchange(request, env, ctx);
+    }
     if (url.pathname === "/api/donor/feed") {
       return handleDonorFeed(request, env);
     }
@@ -3534,6 +3550,8 @@ export default {
         directoryEnabled:       true,
         bookstoreEnabled:       true,
         communicationsEnabled:  true,
+        signupsEnabled:         true,
+        exchangeEnabled:        true,
         dashboardInviteEmailStatus: "sent",
         adminNotificationEmailStatus: "sent",
         receivedAt:             "2024-09-22T09:00:00.000Z",
@@ -3564,6 +3582,8 @@ export default {
         directoryEnabled: true,
         bookstoreEnabled: true,
         communicationsEnabled: true,
+        signupsEnabled: true,
+        exchangeEnabled: true,
         givingFunds: demoFunds,
         campaigns: demoCampaigns,
         feastCampaigns: [],

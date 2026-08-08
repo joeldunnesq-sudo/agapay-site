@@ -11131,6 +11131,18 @@
       const label = toggle.closest('label')?.querySelector('em');
       if (label) label.textContent = enabled ? 'On' : 'Off';
     }
+    [
+      ['signupsEnabledSwitch', 'signupsEnabled'],
+      ['exchangeEnabledSwitch', 'exchangeEnabled']
+    ].forEach(([id, field]) => {
+      const input = document.getElementById(id);
+      if (!input) return;
+      const subfeatureEnabled = Boolean(currentParish[field]);
+      input.checked = subfeatureEnabled;
+      input.disabled = !included || !enabled;
+      const label = input.closest('label')?.querySelector('em');
+      if (label) label.textContent = subfeatureEnabled ? 'On' : 'Off';
+    });
     syncModuleStatusNavigation('communications', included, enabled);
     if (!included || (communicationsState.loaded && !force)) return;
     const [announcementResponse, teachingResponse, videoResponse, blogResponse] = await Promise.all([
@@ -11203,6 +11215,7 @@
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || payload.detail || 'Unable to update Koinonia.');
+      currentParish = { ...currentParish, ...(payload.parish || {}) };
       currentParish.communicationsEnabled = Boolean(payload.parish?.communicationsEnabled ?? enabled);
       communicationsState.loaded = false;
       setStatus(currentParish.communicationsEnabled ? 'Parish publishing is live in Koinonia.' : 'Parish publishing is hidden; the Koinonia calendar remains available.', 'success');
@@ -11289,6 +11302,40 @@
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || `Unable to upload the teaching audio (HTTP ${response.status}).`);
     return data.post;
+  }
+
+  async function toggleKoinoniaSubfeature(feature, input) {
+    const fields = { signups: 'signupsEnabled', exchange: 'exchangeEnabled' };
+    const labels = { signups: 'Signups', exchange: 'Exchange' };
+    const field = fields[feature];
+    if (!field || !currentParish || !moduleIncluded('communications')) return;
+    const previous = Boolean(currentParish[field]);
+    if (!currentParish.communicationsEnabled) {
+      if (input) input.checked = previous;
+      setStatus(`Turn on Koinonia before enabling ${labels[feature]}.`, 'error');
+      return;
+    }
+    const enabled = Boolean(input?.checked);
+    if (input) input.disabled = true;
+    try {
+      const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId), {
+        method: 'PATCH',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: enabled })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || payload.detail || `Unable to update ${labels[feature]}.`);
+      currentParish = { ...currentParish, ...(payload.parish || {}), [field]: Boolean(payload.parish?.[field] ?? enabled) };
+      setStatus(`${labels[feature]} ${currentParish[field] ? 'is available' : 'is hidden'} in Koinonia.`, 'success');
+      await loadCommunicationsTab();
+    } catch (error) {
+      currentParish[field] = previous;
+      if (input) input.checked = previous;
+      setStatus(error.message, 'error');
+      await loadCommunicationsTab();
+    } finally {
+      if (input) input.disabled = false;
+    }
   }
 
   function chooseTeachingAudioUpload(teachingId, button) {

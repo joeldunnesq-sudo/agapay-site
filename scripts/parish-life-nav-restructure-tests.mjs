@@ -39,6 +39,9 @@ const [parishDashboard, parishDashboardApp, parishDashboardStyles] = await Promi
   "dashboard.html", "app.js", "style.css",
 ].map((file) => readFile(new URL(`../public/parish/${file}`, import.meta.url), "utf8")));
 const donorStyles = await readFile(new URL("../public/donor/style.css", import.meta.url), "utf8");
+assert.match(donorStyles, /\.parish-life-community-tools \{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/, "Signups and Exchange should sit side-by-side on wider screens");
+assert.match(donorStyles, /\.parish-life-community-tool \{[^}]*min-height:82px/, "Community Tool cards should remain compact");
+assert.doesNotMatch(donorStyles, /@media \(max-width:680px\)[\s\S]{0,160}\.parish-life-community-tools \{[^}]*grid-template-columns:1fr/, "Community Tool cards should stay side-by-side on mobile");
 
 assert.match(landing, /class="cal-hero parish-life-liturgical-hero"/);
 assert.match(landing, /class="cal-date-badge"/);
@@ -98,7 +101,7 @@ assert.match(landingScript, /Feast associated with this fast/);
 const lowerTierMarkup = sandbox.window.parishLifeTierSectionsHtml(false);
 assert.equal(lowerTierMarkup, "", "lower tiers must receive no communications section DOM");
 assert.doesNotMatch(lowerTierMarkup, /Announcements|Recordings|Ministries/);
-const parishTierMarkup = sandbox.window.parishLifeTierSectionsHtml(true);
+const parishTierMarkup = sandbox.window.parishLifeTierSectionsHtml(true, { signupsEnabled:true, exchangeEnabled:true });
 assert.match(parishTierMarkup, /Pinned Announcements/);
 assert.match(parishTierMarkup, /id="listenHeading">Listen</);
 assert.match(parishTierMarkup, /Continue listening/);
@@ -111,6 +114,8 @@ for (const loadingLabel of ["announcements", "ministries", "audio", "videos", "n
 assert.match(parishTierMarkup, /id="parishLifeContinueListeningSection"[\s\S]*hidden[\s\S]*id="parishLifeListenItems"/, "Continue listening must be conditional and appear above the combined latest-audio list");
 assert.equal((parishTierMarkup.match(/parish-life-section-loading/g) || []).length, 5, "each fresh-content section must own one loading placeholder");
 assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf('id="listenHeading"'), "ministries should appear before the unified listening section and video");
+assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf("Community Tools"), "community tools should follow Your Ministries");
+assert.ok(parishTierMarkup.indexOf("Community Tools") < parishTierMarkup.indexOf('id="listenHeading"'), "community tools should appear above the media sections");
 assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf("parishLifeNewsMount"), "the combined news preview should follow parish-specific ministries");
 assert.match(landingScript, /Get involved/);
 assert.match(landingScript, /\/api\/donor\/ministry-service-interest/);

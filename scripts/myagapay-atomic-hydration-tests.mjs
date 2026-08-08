@@ -41,19 +41,20 @@ for (const file of protectedPages) {
   const html = read(file);
   const expectedStylesheetVersion = [
     "public/myagapay/bookstore.html",
-    "public/myagapay/groups.html",
     "public/myagapay/media.html",
     "public/myagapay/teaching.html",
     "public/myagapay/watch.html"
   ].includes(file)
     ? "20260803iospolish1"
+    : file === "public/myagapay/groups.html"
+      ? "20260808ministryworkspace2"
     : [
         "public/myagapay/index.html",
         "public/myagapay/giving/give.html"
     ].includes(file)
       ? "20260803storefront1"
       : file === "public/myagapay/parish-life.html"
-          ? "20260805listenmerge2"
+          ? "20260808koinoniaworkspace1"
         : file === "public/myagapay/giving/calendar.html"
           ? "20260807parishcalendar3"
           : "20260802playerredesign1";

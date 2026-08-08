@@ -136,6 +136,19 @@ export async function listGroupPushSubscriptions(env, { parishId, ministryId, au
   return result.results || [];
 }
 
+export async function listPersonPushSubscriptions(env, { parishId, personId }) {
+  const result = await database(env).prepare(`
+    SELECT DISTINCT ps.id, ps.parish_id, ps.donor_id, ps.endpoint, ps.p256dh, ps.auth
+    FROM push_subscriptions ps
+    JOIN platform_users user
+      ON user.email = ps.donor_id AND user.status = 'active'
+    JOIN directory_person_links link
+      ON link.link_type = 'platform_user' AND link.external_id = user.id AND link.active = 1
+    WHERE ps.parish_id = ? AND link.person_id = ?
+  `).bind(parishId, personId).all();
+  return result.results || [];
+}
+
 export async function sendWebPush(env, subscription, notification, {
   fetchImpl = fetch,
   buildPayload = buildPushPayload,
@@ -241,6 +254,47 @@ export async function sendGroupMessagePush(env, {
 export function groupMessagePushExcerpt(message = {}) {
   return notificationExcerpt(message.body)
     || (message.messageType === "voice" ? "🎤 Voice message" : message.messageType === "image" ? "📷 Photo" : "New message");
+}
+
+export async function sendSignupReminderPush(env, {
+  parishId,
+  personId,
+  sheetId,
+  sheetTitle,
+  slotLabel,
+  slotDate,
+  ministryName,
+  reminderLabel = "",
+}, dependencies = {}) {
+  const subscriptions = await listPersonPushSubscriptions(env, { parishId, personId });
+  const when = slotDate == null
+    ? ""
+    : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(slotDate));
+  const detail = [String(slotLabel || "Your signup").trim(), when].filter(Boolean).join(" · ");
+  return deliverPushNotifications(env, subscriptions, {
+    title: `${reminderLabel ? String(reminderLabel).trim() : "Signup confirmed"}${ministryName ? ` · ${String(ministryName).trim()}` : ""}`,
+    body: `${String(sheetTitle || "Parish signup").trim()}: ${detail}`,
+    url: `/myagapay/signups?sheet=${encodeURIComponent(sheetId)}`,
+    tag: `signup-${sheetId}-${personId}`,
+  }, dependencies);
+}
+
+export async function sendExchangeMessagePush(env, {
+  parishId,
+  recipientPersonId,
+  senderName,
+  listingId,
+  listingTitle,
+  threadId,
+  message,
+}, dependencies = {}) {
+  const subscriptions = await listPersonPushSubscriptions(env, { parishId, personId: recipientPersonId });
+  return deliverPushNotifications(env, subscriptions, {
+    title: `New Exchange message from ${String(senderName || "a parish member").trim()}`,
+    body: `${String(listingTitle || "Exchange listing").trim()}: ${notificationExcerpt(message?.body) || "New message"}`,
+    url: `/myagapay/exchange?listing=${encodeURIComponent(listingId)}&thread=${encodeURIComponent(threadId)}`,
+    tag: `exchange-thread-${threadId}`,
+  }, dependencies);
 }
 
 export async function handleDonorPush(request, env, action = "") {

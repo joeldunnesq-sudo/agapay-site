@@ -101,9 +101,8 @@ export {
   sacramentsEnabledFor,
 };
 
-import { bookstoreEnabledFor, communicationsEnabledFor, directoryEnabledFor, entitlementsSummary, givingFeatureAccess, hasParishPlusAccess, sacramentsEnabledFor, stewardshipToolAccess, tierIncludesModule, tierIncludesParishPlus } from "../lib/entitlements.js";
+import { bookstoreEnabledFor, communicationsEnabledFor, directoryEnabledFor, entitlementsSummary, exchangeEnabledFor, givingFeatureAccess, hasParishPlusAccess, sacramentsEnabledFor, signupsEnabledFor, stewardshipToolAccess, tierIncludesModule, tierIncludesParishPlus } from "../lib/entitlements.js";
 import { getDirectorySettings } from "../directory/settings.js";
-
 import {
   createTaxExemptionClaim,
   issueClaimUploadToken
@@ -2548,6 +2547,7 @@ export function parishDashboardPayload(parishId, registration) {
     commemorationsEnabled: registration.commemorationsEnabled ?? true,
     bookstoreEnabled: bookstoreEnabledFor(registration),
     communicationsEnabled: communicationsEnabledFor(registration),
+    signupsEnabled: signupsEnabledFor(registration), exchangeEnabled: exchangeEnabledFor(registration),
     stewardshipActive: stewardshipToolAccess(registration),
     parishPlusIncludedInTier: tierIncludesParishPlus(registration),
     entitlements: entitlementsSummary(registration),
@@ -2784,6 +2784,7 @@ export async function handleParishDashboard(request, env, parishId) {
       candlesEnabled: Boolean(body.candlesEnabled ?? current.candlesEnabled ?? true),
       commemorationsEnabled: Boolean(body.commemorationsEnabled ?? current.commemorationsEnabled ?? true),
       communicationsEnabled: Boolean(body.communicationsEnabled ?? current.communicationsEnabled ?? true),
+      signupsEnabled: Boolean(body.signupsEnabled ?? current.signupsEnabled ?? true), exchangeEnabled: Boolean(body.exchangeEnabled ?? current.exchangeEnabled ?? true),
       sacramentsEnabled: Boolean(body.sacramentsEnabled ?? current.sacramentsEnabled ?? false) && hasParishPlusAccess(current),
       sacramentPriests: body.sacramentPriests !== undefined ? sanitizeSacramentPriests(body.sacramentPriests, current) : normalizeSacramentPriests(current),
       bookstoreEnabled: Boolean(body.bookstoreEnabled ?? current.bookstoreEnabled ?? false),

@@ -81,16 +81,42 @@ function renderParishLifeServicesFallback(parish, fromDate = new Date()) {
   }).join("");
 }
 
+function parishLifeSignupEvents(payload = {}) {
+  return (payload.signups || []).map((signup) => {
+    const slotDate = Number(signup.slotDate);
+    if (!Number.isFinite(slotDate)) return null;
+    return {
+      id:`signup-${signup.entryId}`,
+      title:signup.sheetTitle || "Your signup",
+      location:signup.ministryName || "",
+      startsAt:new Date(slotDate).toISOString(),
+      timeLabel:`Signup · ${signup.label || "Committed"}`,
+      personal:true,
+      signup:true,
+      href:`/myagapay/signups?sheet=${encodeURIComponent(signup.sheetId || "")}`,
+    };
+  }).filter(Boolean);
+}
+
+function parishLifePrioritizedUpcomingEvents(events = [], limit = 4) {
+  const sorted = [...events].sort((left, right) => String(left.startsAt).localeCompare(String(right.startsAt)));
+  const signups = sorted.filter((event) => event.signup).slice(0, limit);
+  const selected = [...signups, ...sorted.filter((event) => !event.signup).slice(0, Math.max(0, limit - signups.length))];
+  return selected.sort((left, right) => String(left.startsAt).localeCompare(String(right.startsAt)));
+}
+
 function renderParishLifeCalendarEvents(calendar = {}, parish) {
   const target = document.getElementById("parishLifeServices");
   const events = calendar?.events || [];
   if (!target || !events.length) { renderParishLifeServicesFallback(parish); return; }
-  target.innerHTML = events.slice(0, 4).map((event) => {
+  target.innerHTML = parishLifePrioritizedUpcomingEvents(events).map((event) => {
     const date = new Date(event.startsAt);
     const day = date.toLocaleDateString(undefined, { day:"numeric" });
     const weekday = date.toLocaleDateString(undefined, { weekday:"short" });
     const time = event.personal ? event.timeLabel : event.allDay ? "All day" : date.toLocaleTimeString(undefined, { hour:"numeric", minute:"2-digit" });
-    return `<article class="parish-life-liturgical-fallback parish-life-synced-event"><span class="parish-life-fallback-date"><strong>${parishLifeEscape(day)}</strong><small>${parishLifeEscape(weekday)}</small></span><span class="parish-life-fallback-copy"><strong>${parishLifeEscape(event.title)}</strong><small>${parishLifeEscape(time)}${event.location ? ` · ${parishLifeEscape(event.location)}` : ""}</small></span><span class="parish-life-fallback-arrow" aria-hidden="true">›</span></article>`;
+    const tag = event.href ? "a" : "article";
+    const href = event.href ? ` href="${parishLifeEscape(event.href)}"` : "";
+    return `<${tag} class="parish-life-liturgical-fallback parish-life-synced-event${event.signup ? " parish-life-signup-event" : ""}"${href}><span class="parish-life-fallback-date"><strong>${parishLifeEscape(day)}</strong><small>${parishLifeEscape(weekday)}</small></span><span class="parish-life-fallback-copy"><strong>${parishLifeEscape(event.title)}</strong><small>${parishLifeEscape(time)}${event.location ? ` · ${parishLifeEscape(event.location)}` : ""}</small></span><span class="parish-life-fallback-arrow" aria-hidden="true">›</span></${tag}>`;
   }).join("");
 }
 
@@ -122,8 +148,12 @@ function parishLifeApprovedServiceEvents(payload = {}) {
   });
 }
 
-function parishLifeTierSectionsHtml(communicationsEnabled) {
+function parishLifeTierSectionsHtml(communicationsEnabled, capabilities = {}) {
   if (!communicationsEnabled) return "";
+  const communityTools = [
+    capabilities.signupsEnabled ? '<a class="parish-life-community-tool" href="/myagapay/signups"><span aria-hidden="true">✓</span><strong>Signups</strong><small>Meals, cleaning, events, and volunteer needs</small><em>Open →</em></a>' : '',
+    capabilities.exchangeEnabled ? '<a class="parish-life-community-tool" href="/myagapay/exchange"><span aria-hidden="true">⇄</span><strong>Exchange</strong><small>Offer or request items within your parish</small><em>Browse →</em></a>' : ''
+  ].filter(Boolean).join("");
   return `
     <section class="parish-life-home-section" aria-labelledby="pinnedAnnouncementsHeading">
       <div class="parish-life-section-head"><h2 id="pinnedAnnouncementsHeading">Pinned Announcements</h2><a href="/myagapay/feed">All Announcements</a></div>
@@ -133,6 +163,7 @@ function parishLifeTierSectionsHtml(communicationsEnabled) {
       <div class="parish-life-section-head"><h2 id="yourMinistriesHeading">Your Ministries</h2><a href="/myagapay/groups">All Groups</a></div>
       <div class="parish-life-ministry-grid" id="parishLifeMinistries"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading ministries…</p></div>
     </section>
+    ${communityTools ? `<section class="parish-life-home-section" aria-labelledby="communityToolsHeading"><div class="parish-life-section-head"><h2 id="communityToolsHeading">Community Tools</h2></div><div class="parish-life-community-tools">${communityTools}</div></section>` : ""}
     <section class="parish-life-home-section parish-life-listen-section" aria-labelledby="listenHeading">
       <div class="parish-life-section-head"><h2 id="listenHeading">Listen</h2><a href="/myagapay/teaching">Open Library</a></div>
       <section class="parish-life-listen-resume" id="parishLifeContinueListeningSection" aria-labelledby="continueListeningHeading" hidden>
@@ -480,7 +511,7 @@ function applyParishLifeExperience(experience, parish) {
   document.getElementById("parishLifeSidebarName").textContent = parish?.name || "Your church calendar";
   const sidebarCommunications = document.getElementById("parishLifeSidebarCommunications");
   if (sidebarCommunications) sidebarCommunications.hidden = !experience.communicationsEnabled;
-  document.getElementById("parishLifeTierSections").innerHTML = parishLifeTierSectionsHtml(experience.communicationsEnabled);
+  document.getElementById("parishLifeTierSections").innerHTML = parishLifeTierSectionsHtml(experience.communicationsEnabled, parish || {});
 }
 
 function initializeParishLifeStructure() {
@@ -524,13 +555,17 @@ async function loadParishLife() {
       }
     }
     if (typeof loadDonorLiturgicalDay === "function") await loadDonorLiturgicalDay(parish);
-    const [parishCalendar, sacramentRequests] = await Promise.all([
+    const [parishCalendar, sacramentRequests, signupCommitments] = await Promise.all([
       parishLifeFetch("/api/donor/parish-calendar", headers),
-      parishLifeFetch("/api/donor/sacraments", headers)
+      parishLifeFetch("/api/donor/sacraments", headers),
+      experience.communicationsEnabled && parish?.signupsEnabled
+        ? parishLifeFetch("/api/donor/koinonia/signups/upcoming", headers)
+        : Promise.resolve({ signups:[] })
     ]);
     const personalServices = parishLifeApprovedServiceEvents(sacramentRequests || {});
+    const signupEvents = parishLifeSignupEvents(signupCommitments || {});
     const parishEvents = parishCalendar?.events || [];
-    renderParishLifeCalendarEvents({ events:[...personalServices, ...parishEvents].sort((a,b) => String(a.startsAt).localeCompare(String(b.startsAt))) }, parish);
+    renderParishLifeCalendarEvents({ events:[...signupEvents, ...personalServices, ...parishEvents] }, parish);
 
     if (!experience.communicationsEnabled) {
       status.hidden = true;

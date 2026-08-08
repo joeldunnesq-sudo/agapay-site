@@ -113,6 +113,16 @@ export function communicationsEnabledFor(registration) {
   return registration?.communicationsEnabled !== false && hasModuleAccess(registration, "communications");
 }
 
+export function signupsEnabledFor(registration) {
+  return communicationsEnabledFor(registration)
+    && registration?.signupsEnabled !== false;
+}
+
+export function exchangeEnabledFor(registration) {
+  return communicationsEnabledFor(registration)
+    && registration?.exchangeEnabled !== false;
+}
+
 export function commerceSuiteEnabledFor(registration) {
   return tierIncludesModule(registration, "commerceSuite");
 }

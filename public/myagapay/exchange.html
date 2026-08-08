@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" data-myagapay-hydrate>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exchange | My AGAPAY</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260808koinonia1" />
+  <script src="/pwa-register.js" defer></script>
+  <script src="/myagapay-shell.js?v=20260808koinonia1"></script>
+  <script src="/myagapay/push-notifications.js?v=20260731push1" defer></script>
+  <script src="/myagapay/exchange.js?v=20260808koinonia1" defer></script>
+  <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
+  <meta name="theme-color" content="#061522" />
+</head>
+<body class="donor-mobile-page koinonia-feature-page exchange-page">
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-scroll">
+        <div class="brand"><div class="brand-row"><a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home"><img src="/mark.png" alt="AGAPAY" /></a><span class="brand-name">AGAPAY</span><span class="dashboard-home-cue">Home</span></div><span class="pill">Donor Dashboard</span></div>
+        <div class="profile-panel"><div class="profile-name">Exchange</div><div class="profile-meta">Share within your parish</div></div>
+        <nav class="nav unified-product-nav"></nav>
+        <div class="sidebar-card"><h3>Parish-to-parishioner</h3><div class="mini-item"><strong>No AGAPAY checkout</strong><span>Prices are informational. Arrange payment and pickup directly after connecting.</span></div><div class="mini-item"><strong>Contact stays private</strong><span>Messages remain inside My AGAPAY; phone numbers and emails are never revealed.</span></div></div>
+      </div>
+      <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/parish-life">← Back to Koinonia</a></div>
+    </aside>
+    <main class="content donor-mobile-content">
+      <div class="topbar"><div class="topbar-title">Exchange</div></div>
+      <div class="page koinonia-feature-shell">
+        <header class="koinonia-feature-hero"><div><span class="eyebrow">Koinonia</span><h1>Exchange</h1><p>Offer useful items or ask for what you need within your verified parish community.</p></div><button class="btn btn-gold" type="button" onclick="toggleExchangeComposer(true)">Post a listing</button></header>
+        <section class="koinonia-trust-banner"><strong>AGAPAY does not process Exchange payments.</strong><span>Any price is informational. Payment and pickup are arranged privately in the listing conversation.</span></section>
+        <div class="notice" id="exchangeStatus" role="status">Loading Exchange listings…</div>
+        <section class="koinonia-composer-panel" id="exchangeComposer" hidden aria-labelledby="exchangeComposerHeading"><div class="koinonia-composer-head"><div><span class="eyebrow">Parish listing</span><h2 id="exchangeComposerHeading">Post to Exchange</h2></div><button type="button" onclick="toggleExchangeComposer(false)" aria-label="Close">×</button></div><form id="exchangeCreateForm" onsubmit="createExchangeListing(event)"><label>Listing type<select id="exchangeListingType"><option value="offer">I’m offering</option><option value="request">I’m requesting</option></select></label><label>Category<select id="exchangeCategory"><option value="household_goods">Household goods</option><option value="furniture">Furniture</option><option value="clothing">Clothing</option><option value="books">Books</option><option value="children_baby">Children &amp; baby</option><option value="tools">Tools</option><option value="services">Services</option><option value="other">Other</option></select></label><label class="is-wide">Title<input id="exchangeTitle" maxlength="180" required placeholder="Wooden bookshelf in good condition" /></label><label class="is-wide">Description<textarea id="exchangeDescription" maxlength="2000" rows="4" placeholder="Describe the item, condition, approximate size, or what you need"></textarea></label><label>Informational price<input id="exchangePrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Leave blank if free" /></label><label>Expires<input id="exchangeExpires" type="date" required /></label><label class="is-wide">Photos <span>(up to 5)</span><input id="exchangePhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple /></label><div class="koinonia-form-actions is-wide"><button class="btn btn-ghost" type="button" onclick="toggleExchangeComposer(false)">Cancel</button><button class="btn btn-gold" type="submit">Post listing</button></div></form></section>
+        <div class="exchange-filter-bar"><select id="exchangeTypeFilter" onchange="loadExchangeListings()"><option value="">Offers &amp; requests</option><option value="offer">Offers</option><option value="request">Requests</option></select><select id="exchangeCategoryFilter" onchange="loadExchangeListings()"><option value="">All categories</option><option value="household_goods">Household goods</option><option value="furniture">Furniture</option><option value="clothing">Clothing</option><option value="books">Books</option><option value="children_baby">Children &amp; baby</option><option value="tools">Tools</option><option value="services">Services</option><option value="other">Other</option></select><button type="button" id="exchangeMineFilter" aria-pressed="false" onclick="toggleMyExchangeListings(this)">My listings</button><button type="button" onclick="loadExchangeListings()">Refresh</button></div>
+        <div class="exchange-workspace">
+          <section class="exchange-listings-panel" aria-labelledby="exchangeListingsHeading"><div class="koinonia-panel-heading"><div><span class="eyebrow">Parish listings</span><h2 id="exchangeListingsHeading">Browse Exchange</h2></div></div><div class="exchange-listing-grid" id="exchangeListings"></div></section>
+          <section class="exchange-detail-panel" id="exchangeDetail" aria-live="polite"><div class="koinonia-empty-state"><strong>Select a listing</strong><p>Open a listing to see its details and start a private conversation.</p></div></section>
+        </div>
+      </div>
+      <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
+    </main>
+  </div>
+</body>
+</html>
