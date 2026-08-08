@@ -125,5 +125,7 @@ assert.match(donorCalendar, /id="parishCalendarGoogleButton"/);
 assert.match(donorCalendar, /id="parishCalendarCopyButton"/);
 assert.match(donorCalendar, /id="parishCalendarWeekView"/);
 assert.match(donorCalendar, /id="parishCalendarMonthView"/);
+assert.doesNotMatch(donorCalendar, /id="saintPreviewCard"|id="donorSaintModal"/, "the full calendar must not show the Saint of the Day card or modal");
+assert.doesNotMatch(donorCalendar, /class="cal-metrics"|id="nextFeastDate"|id="paschaDate"|id="calendarShortName"/, "the full calendar must not show the Next Feast, Pascha, or Calendar summary cards");
 
 console.log("PASS - Koinonia ministries management, full parish calendar, and public ICS subscription are wired end to end");

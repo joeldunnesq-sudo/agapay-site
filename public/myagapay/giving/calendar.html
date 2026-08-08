@@ -62,25 +62,6 @@
               </div>
             </section>
 
-            <!-- METRIC STRIP -->
-            <div class="cal-metrics">
-              <div class="cal-metric">
-                <div class="cal-metric-label">Next Feast</div>
-                <div class="cal-metric-value" id="nextFeastDate">--</div>
-                <div class="cal-metric-note" id="nextFeastName">Load your parish calendar.</div>
-              </div>
-              <div class="cal-metric">
-                <div class="cal-metric-label">Pascha</div>
-                <div class="cal-metric-value" id="paschaDate">--</div>
-                <div class="cal-metric-note">Shared paschalion</div>
-              </div>
-              <div class="cal-metric">
-                <div class="cal-metric-label">Calendar</div>
-                <div class="cal-metric-value" id="calendarShortName">--</div>
-                <div class="cal-metric-note" id="calendarFullName">Parish preference</div>
-              </div>
-            </div>
-
             <section class="cal-card cal-personal-services" id="personalUpcomingServicesCard" hidden>
               <div class="cal-card-head"><div class="cal-card-title"><div class="cal-card-title-icon"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="m9 12 2 2 4-4"/></svg></div>Your Upcoming Services</div><a href="/myagapay/services">View requests</a></div>
               <div class="cal-personal-event-list" id="personalUpcomingServices"></div>
@@ -142,18 +123,7 @@
             </section>
           </div>
           <aside>
-            <section class="cal-hero" style="margin-bottom:0;" aria-label="Saint of the Day">
-              <button class="cal-saint-strip" id="saintPreviewCard" type="button" onclick="openDonorSaintOfDay(this)" data-date="" data-calendar="" data-saint-title="" aria-label="Open saint of the day" style="border-top:0;">
-                <span class="cal-saint-icon" id="saintPreviewIcon">✥</span>
-                <span class="cal-saint-body">
-                  <span class="cal-saint-kicker">Saint of the Day</span>
-                  <span class="cal-saint-name" id="saintPreviewName">Lives of the Saints</span>
-                  <span class="cal-saint-note" id="saintPreviewNote">Open the life of today's saint once the calendar loads.</span>
-                </span>
-                <span class="cal-saint-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-              </button>
-            </section>
-            <section class="cal-card section-gap">
+            <section class="cal-card">
               <div class="cal-card-head">
                 <div class="cal-card-title">
                   <div class="cal-card-title-icon"><svg viewBox="0 0 24 24"><path d="M12 2s5 5.5 5 10a5 5 0 0 1-10 0c0-4.5 5-10 5-10z"/><path d="M9 21h6"/></svg></div>
@@ -174,23 +144,6 @@
               <div class="cal-note-box">Fixed feasts follow your parish's calendar setting. Pascha, Holy Week, Ascension, Pentecost, and other moveable feasts use the shared Orthodox paschalion — so those dates stay in step across every parish.</div>
             </section>
           </aside>
-        </div>
-      </div>
-      <div class="donor-saint-modal" id="donorSaintModal" hidden>
-        <div class="donor-saint-modal-card" role="dialog" aria-modal="true" aria-labelledby="donorSaintModalTitle">
-          <div class="donor-saint-modal-head">
-            <div>
-              <span class="calendar-panel-kicker" id="donorSaintModalKicker">Saint of the Day</span>
-              <h2 id="donorSaintModalTitle">Saint of the Day</h2>
-              <p id="donorSaintModalSubtitle">Today's commemoration</p>
-            </div>
-            <button type="button" class="donor-saint-close" onclick="closeDonorSaintModal()" aria-label="Close saint life">×</button>
-          </div>
-          <div class="donor-saint-modal-body" id="donorSaintModalBody"></div>
-          <div class="donor-saint-modal-foot">
-            <span>Lives of the Saints courtesy of Orthocal.info</span>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="closeDonorSaintModal()">Close</button>
-          </div>
         </div>
       </div>
       <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
