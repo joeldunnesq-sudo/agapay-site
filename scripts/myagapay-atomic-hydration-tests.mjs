@@ -48,13 +48,15 @@ for (const file of protectedPages) {
   ].includes(file)
     ? "20260803iospolish1"
     : [
-    "public/myagapay/index.html",
-    "public/myagapay/giving/give.html"
-  ].includes(file)
-    ? "20260803storefront1"
-    : file === "public/myagapay/parish-life.html"
-        ? "20260805listenmerge2"
-      : "20260802playerredesign1";
+        "public/myagapay/index.html",
+        "public/myagapay/giving/give.html"
+    ].includes(file)
+      ? "20260803storefront1"
+      : file === "public/myagapay/parish-life.html"
+          ? "20260805listenmerge2"
+        : file === "public/myagapay/giving/calendar.html"
+          ? "20260807parishcalendar3"
+          : "20260802playerredesign1";
   assert.match(html, /<html[^>]*data-myagapay-hydrate/, `${file} must opt into the pre-paint hydration shield`);
   assert.match(html, new RegExp(`/donor/style\\.css\\?v=${expectedStylesheetVersion}`), `${file} must load the current atomic-paint CSS version`);
   assert.match(html, /<script src="\/myagapay-shell\.js\?v=20260803iospolish1"><\/script>/, `${file} must install the tracker before page-level scripts`);
