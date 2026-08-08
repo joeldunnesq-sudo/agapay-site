@@ -20,6 +20,18 @@ const legacy = await worker.fetch(new Request("https://agapay.test/myagapay/givi
 assert.equal(legacy.status, 301);
 assert.equal(legacy.headers.get("location"), "https://agapay.test/myagapay/parish-life?from=bookmark");
 
+let canonicalCalendarAssetPath = "";
+const canonicalCalendar = await worker.fetch(new Request("https://agapay.test/myagapay/calendar"), {
+  ASSETS: {
+    async fetch(request) {
+      canonicalCalendarAssetPath = new URL(request.url).pathname;
+      return new Response("calendar");
+    }
+  }
+}, { waitUntil() {} });
+assert.equal(canonicalCalendar.status, 200);
+assert.equal(canonicalCalendarAssetPath, "/myagapay/giving/calendar.html", "the canonical full-calendar route must serve the calendar page instead of returning to Koinonia");
+
 const [landing, landingScript, shell, donorApp, calendar, feed, groups, teaching, media, watch] = await Promise.all([
   "parish-life.html", "parish-life.js", "../myagapay-shell.js", "../donor/app.js", "giving/calendar.html", "feed.html", "groups.html", "teaching.html", "media.html", "watch.html",
 ].map((file) => readFile(new URL(`../public/myagapay/${file}`, import.meta.url), "utf8")));

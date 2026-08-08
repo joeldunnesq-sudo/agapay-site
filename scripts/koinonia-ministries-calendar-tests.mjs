@@ -107,7 +107,7 @@ assert.match(dashboard, /Public calendar \(iCal\/ICS\) link/);
 assert.match(life, /\/api\/donor\/parish-calendar/);
 assert.match(life, /request\.status === "scheduled"/);
 assert.match(life, /\/api\/donor\/sacraments/);
-assert.match(lifePage, /href="\/myagapay\/giving\/calendar">Full Calendar/);
+assert.match(lifePage, /href="\/myagapay\/calendar">Full Calendar/);
 assert.match(donorHandler, /normalizeKoinoniaCalendarUrl\(sourceUrl\)/);
 assert.match(donorHandler, /connected:true, subscriptionUrl, events:parseKoinoniaCalendarIcs/);
 assert.match(donorHandler, /connected:true, subscriptionUrl, events:\[\], unavailable:true/);

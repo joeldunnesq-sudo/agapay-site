@@ -178,7 +178,7 @@ assert.ok(manifest.includes('"lang": "en-US"') && manifest.includes('"dir": "ltr
 for (const category of ["finance", "lifestyle", "education"]) {
   assert.ok(manifest.includes(`"${category}"`), `My AGAPAY PWA manifest should include the ${category} category`);
 }
-for (const shortcut of ["/myagapay", "/myagapay/giving/calendar", "/myagapay/directory", "/myagapay/bookstore"]) {
+for (const shortcut of ["/myagapay", "/myagapay/calendar", "/myagapay/directory", "/myagapay/bookstore"]) {
   assert.ok(manifest.includes(`"url": "${shortcut}"`), `My AGAPAY PWA manifest should include the ${shortcut} shortcut`);
 }
 const parsedManifest = JSON.parse(manifest);

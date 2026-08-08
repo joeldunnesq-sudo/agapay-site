@@ -80,7 +80,7 @@
       "name": "Today",
       "short_name": "Today",
       "description": "View today's Church calendar, readings, and saints.",
-      "url": "/myagapay/giving/calendar",
+      "url": "/myagapay/calendar",
       "icons": [
         {
           "src": "/images/app/shortcuts/today-v2.png",

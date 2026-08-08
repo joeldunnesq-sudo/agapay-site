@@ -289,6 +289,7 @@ async function resolveStaticPath(urlPath) {
   ) pathname = "/myagapay/index.html";
   if (pathname === "/myagapay/giving/offerings") pathname = "/myagapay/giving/history.html";
   if (pathname === "/myagapay/giving/names") pathname = "/myagapay/giving/commemorations.html";
+  if (pathname === "/myagapay/calendar" || pathname === "/myagapay/calendar/") pathname = "/myagapay/giving/calendar.html";
   if (pathname === "/myagapay/settings") pathname = "/myagapay/account.html";
   if (pathname.startsWith("/my-agapay/") && !path.extname(pathname)) pathname = pathname.replace(/^\/my-agapay/, "/myagapay") + ".html";
   if (pathname.startsWith("/myagapay/") && !path.extname(pathname)) pathname = `${pathname}.html`;
