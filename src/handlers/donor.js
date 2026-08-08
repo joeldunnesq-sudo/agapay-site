@@ -1162,15 +1162,23 @@ function icsDateParts(value = "") {
   };
 }
 
-function icsZonedDate(parts, timeZone) {
+function icsZoneFormatter(timeZone, context) {
+  const cached = context?.formatters?.get(timeZone);
+  if (cached) return cached;
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle:"h23",
+    year:"numeric", month:"2-digit", day:"2-digit",
+    hour:"2-digit", minute:"2-digit", second:"2-digit"
+  });
+  if (context?.formatters && context.formatters.size < 16) context.formatters.set(timeZone, formatter);
+  return formatter;
+}
+
+function icsZonedDate(parts, timeZone, context) {
   let timestamp = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
   try {
-    const formatter = new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      hourCycle:"h23",
-      year:"numeric", month:"2-digit", day:"2-digit",
-      hour:"2-digit", minute:"2-digit", second:"2-digit"
-    });
+    const formatter = icsZoneFormatter(timeZone, context);
     for (let pass = 0; pass < 2; pass += 1) {
       const displayed = Object.fromEntries(formatter.formatToParts(new Date(timestamp)).map(part => [part.type, part.value]));
       const displayedTimestamp = Date.UTC(
@@ -1185,14 +1193,14 @@ function icsZonedDate(parts, timeZone) {
   return new Date(timestamp);
 }
 
-function icsDate(value = "", params = {}) {
+function icsDate(value = "", params = {}, context = undefined) {
   const parts = icsDateParts(value);
   if (!parts) return null;
   let date;
   if (parts.utc) {
     date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second));
   } else if (params.tzid) {
-    date = icsZonedDate(parts, params.tzid);
+    date = icsZonedDate(parts, params.tzid, context);
   } else {
     date = new Date(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
   }
@@ -1209,14 +1217,10 @@ function icsNaiveDate(parts) {
   return new Date(Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second));
 }
 
-function icsDateInEventZone(date, event) {
+function icsDateInEventZone(date, event, context) {
   if (event.dtstartParams?.tzid) {
     try {
-      const formatter = new Intl.DateTimeFormat("en-US", {
-        timeZone:event.dtstartParams.tzid,
-        hourCycle:"h23",
-        year:"numeric", month:"2-digit", day:"2-digit"
-      });
+      const formatter = icsZoneFormatter(event.dtstartParams.tzid, context);
       const parts = Object.fromEntries(formatter.formatToParts(date).map(part => [part.type, part.value]));
       return { year:Number(parts.year), month:Number(parts.month), day:Number(parts.day) };
     } catch {
@@ -1228,12 +1232,12 @@ function icsDateInEventZone(date, event) {
     : { year:date.getFullYear(), month:date.getMonth() + 1, day:date.getDate() };
 }
 
-function icsRecurrenceDate(cursor, event) {
+function icsRecurrenceDate(cursor, event, context) {
   const parts = {
     year:cursor.getUTCFullYear(), month:cursor.getUTCMonth() + 1, day:cursor.getUTCDate(),
     hour:cursor.getUTCHours(), minute:cursor.getUTCMinutes(), second:cursor.getUTCSeconds()
   };
-  if (event.dtstartParams?.tzid) return icsZonedDate(parts, event.dtstartParams.tzid);
+  if (event.dtstartParams?.tzid) return icsZonedDate(parts, event.dtstartParams.tzid, context);
   if (event.dtstartParams?.utc) return new Date(Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second));
   return new Date(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
 }
@@ -1247,30 +1251,57 @@ function icsCountLatestPossible(startCursor, frequency, interval, count) {
   return latest;
 }
 
-function expandIcsEvent(event, now, horizon) {
+const ICS_TIMEZONE_MARGIN_MS = 36 * 60 * 60 * 1000;
+
+function icsBlockMayOverlap(block, now, horizon) {
+  const recurrence = block.match(/(?:^|\r?\n)RRULE:([^\r\n]+)/)?.[1] || "";
+  if (recurrence) return /(?:^|;)FREQ=(?:DAILY|WEEKLY|MONTHLY)(?:;|$)/.test(recurrence);
+  const startValue = block.match(/(?:^|\r?\n)DTSTART[^:]*:([^\r\n]+)/)?.[1] || "";
+  const startParts = icsDateParts(startValue);
+  if (!startParts) return true;
+  const endValue = block.match(/(?:^|\r?\n)DTEND[^:]*:([^\r\n]+)/)?.[1] || "";
+  const endParts = icsDateParts(endValue);
+  const approximateStart = icsNaiveDate(startParts).getTime();
+  const approximateEnd = endParts ? icsNaiveDate(endParts).getTime() : approximateStart;
+  return approximateStart <= horizon.getTime() + ICS_TIMEZONE_MARGIN_MS
+    && approximateEnd >= now.getTime() - ICS_TIMEZONE_MARGIN_MS;
+}
+
+function expandIcsEvent(event, now, horizon, context) {
   const startParts = icsDateParts(event.dtstart);
-  const start = icsDate(event.dtstart, event.dtstartParams);
-  if (!start) return [];
-  const end = icsDate(event.dtend, event.dtendParams || event.dtstartParams);
-  const duration = end ? Math.max(0, end.getTime() - start.getTime()) : 0;
-  if (!event.rrule) return start <= horizon && (end || start) >= now ? [{ start, end, duration }] : [];
-  const rule = icsRule(event.rrule);
-  const frequency = rule.FREQ;
-  if (!frequency || !["DAILY", "WEEKLY", "MONTHLY"].includes(frequency)) return [];
-  const interval = Math.max(1, Number(rule.INTERVAL || 1));
-  const until = icsDate(rule.UNTIL, event.dtstartParams) || horizon;
-  const count = Math.max(0, Number.parseInt(rule.COUNT || "0", 10) || 0);
-  const results = [];
+  if (!startParts) return [];
+  const rule = event.rrule ? icsRule(event.rrule) : null;
+  if (rule && (!rule.FREQ || !["DAILY", "WEEKLY", "MONTHLY"].includes(rule.FREQ))) return [];
   const startCursor = icsNaiveDate(startParts);
-  const byDays = new Set(String(rule.BYDAY || ICS_WEEKDAYS[startCursor.getUTCDay()]).split(",").map(day => day.slice(-2)));
-  const excluded = new Set((event.exdates || []).flatMap(entry => String(entry.value || "").split(",").map(value => icsDate(value, { ...event.dtstartParams, ...entry.params })?.getTime())).filter(Number.isFinite));
-  if (count) {
-    const latestPossible = icsRecurrenceDate(icsCountLatestPossible(startCursor, frequency, interval, count), event);
-    if (latestPossible && latestPossible < now) return [];
+  if (!rule) {
+    const endParts = icsDateParts(event.dtend);
+    const approximateEnd = endParts ? icsNaiveDate(endParts) : startCursor;
+    if (startCursor.getTime() > horizon.getTime() + ICS_TIMEZONE_MARGIN_MS
+      || approximateEnd.getTime() < now.getTime() - ICS_TIMEZONE_MARGIN_MS) return [];
+    const start = icsDate(event.dtstart, event.dtstartParams, context);
+    if (!start) return [];
+    const end = icsDate(event.dtend, event.dtendParams || event.dtstartParams, context);
+    const duration = end ? Math.max(0, end.getTime() - start.getTime()) : 0;
+    return start <= horizon && (end || start) >= now ? [{ start, end, duration }] : [];
   }
+  const frequency = rule.FREQ;
+  const interval = Math.max(1, Number(rule.INTERVAL || 1));
+  const count = Math.max(0, Number.parseInt(rule.COUNT || "0", 10) || 0);
+  if (count) {
+    const latestPossible = icsCountLatestPossible(startCursor, frequency, interval, count);
+    if (latestPossible.getTime() < now.getTime() - ICS_TIMEZONE_MARGIN_MS) return [];
+  }
+  const start = icsDate(event.dtstart, event.dtstartParams, context);
+  if (!start) return [];
+  const end = icsDate(event.dtend, event.dtendParams || event.dtstartParams, context);
+  const duration = end ? Math.max(0, end.getTime() - start.getTime()) : 0;
+  const until = icsDate(rule.UNTIL, event.dtstartParams, context) || horizon;
+  const results = [];
+  const byDays = new Set(String(rule.BYDAY || ICS_WEEKDAYS[startCursor.getUTCDay()]).split(",").map(day => day.slice(-2)));
+  const excluded = new Set((event.exdates || []).flatMap(entry => String(entry.value || "").split(",").map(value => icsDate(value, { ...event.dtstartParams, ...entry.params }, context)?.getTime())).filter(Number.isFinite));
   let cursor = new Date(startCursor);
   if (!count) {
-    const zonedToday = icsDateInEventZone(now, event);
+    const zonedToday = icsDateInEventZone(now, event, context);
     if (zonedToday) {
       const todayCursor = new Date(Date.UTC(zonedToday.year, zonedToday.month - 1, zonedToday.day, startParts.hour, startParts.minute, startParts.second));
       if (todayCursor > cursor) cursor = todayCursor;
@@ -1278,7 +1309,7 @@ function expandIcsEvent(event, now, horizon) {
   }
   let occurrencesSeen = 0;
   for (let guard = 0; guard < 5000 && results.length < 30; guard += 1) {
-    const instanceStart = icsRecurrenceDate(cursor, event);
+    const instanceStart = icsRecurrenceDate(cursor, event, context);
     if (!instanceStart || instanceStart > horizon || instanceStart > until) break;
     const dayDelta = Math.floor((cursor - startCursor) / 86400000);
     const weekDelta = Math.floor(dayDelta / 7);
@@ -1305,7 +1336,9 @@ export function parseKoinoniaCalendarIcs(text, fromDate = new Date()) {
   const blocks = unfolded.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g) || [];
   const now = new Date(fromDate);
   const horizon = new Date(now.getTime() + 180 * 86400000);
+  const context = { formatters:new Map() };
   return blocks.flatMap((block) => {
+    if (!icsBlockMayOverlap(block, now, horizon)) return [];
     const event = {};
     block.split(/\r?\n/).forEach(line => {
       const separator = line.indexOf(":");
@@ -1325,7 +1358,7 @@ export function parseKoinoniaCalendarIcs(text, fromDate = new Date()) {
       }
     });
     if (String(event.status || "").toUpperCase() === "CANCELLED") return [];
-    return expandIcsEvent(event, now, horizon).map(instance => ({
+    return expandIcsEvent(event, now, horizon, context).map(instance => ({
       id: String(event.uid || `${event.summary || "event"}-${instance.start.toISOString()}`).slice(0, 240),
       title: unescapeIcsText(event.summary) || "Parish event",
       location: unescapeIcsText(event.location),

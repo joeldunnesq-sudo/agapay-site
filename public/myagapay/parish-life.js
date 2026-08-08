@@ -554,20 +554,24 @@ async function loadParishLife() {
         throw new Error(access.error || "Unable to confirm Koinonia access.");
       }
     }
-    if (typeof loadDonorLiturgicalDay === "function") await loadDonorLiturgicalDay(parish);
-    const [parishCalendar, sacramentRequests, signupCommitments] = await Promise.all([
+    const liturgicalDayPromise = typeof loadDonorLiturgicalDay === "function"
+      ? loadDonorLiturgicalDay(parish).catch(() => loadDonorLiturgicalDay(null))
+      : Promise.resolve();
+    const calendarPromise = Promise.all([
       parishLifeFetch("/api/donor/parish-calendar", headers),
       parishLifeFetch("/api/donor/sacraments", headers),
       experience.communicationsEnabled && parish?.signupsEnabled
         ? parishLifeFetch("/api/donor/koinonia/signups/upcoming", headers)
         : Promise.resolve({ signups:[] })
-    ]);
-    const personalServices = parishLifeApprovedServiceEvents(sacramentRequests || {});
-    const signupEvents = parishLifeSignupEvents(signupCommitments || {});
-    const parishEvents = parishCalendar?.events || [];
-    renderParishLifeCalendarEvents({ events:[...signupEvents, ...personalServices, ...parishEvents] }, parish);
+    ]).then(([parishCalendar, sacramentRequests, signupCommitments]) => {
+      const personalServices = parishLifeApprovedServiceEvents(sacramentRequests || {});
+      const signupEvents = parishLifeSignupEvents(signupCommitments || {});
+      const parishEvents = parishCalendar?.events || [];
+      renderParishLifeCalendarEvents({ events:[...signupEvents, ...personalServices, ...parishEvents] }, parish);
+    }).catch(() => renderParishLifeCalendarEvents({}, parish));
 
     if (!experience.communicationsEnabled) {
+      await Promise.all([liturgicalDayPromise, calendarPromise]);
       status.hidden = true;
       return;
     }
@@ -599,7 +603,7 @@ async function loadParishLife() {
     ]).then(([customNews, ...newsSources]) => {
       renderRecentNews([...newsSources.filter(Boolean), ...(customNews?.feeds || [])]);
     });
-    await Promise.all([feedPromise, groupsPromise, teachingPromise, podcastProgressPromise, podcastsPromise, mediaPromise, newsPromise]);
+    await Promise.all([liturgicalDayPromise, calendarPromise, feedPromise, groupsPromise, teachingPromise, podcastProgressPromise, podcastsPromise, mediaPromise, newsPromise]);
     status.hidden = true;
   } catch (error) {
     if (typeof loadDonorLiturgicalDay === "function") await loadDonorLiturgicalDay(null);
