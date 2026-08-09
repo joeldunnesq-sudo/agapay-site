@@ -1223,7 +1223,7 @@ function renderDonorTodayInChurch(parish, payload) {
       nameDays.length ? `${nameDays.length} name day${nameDays.length === 1 ? "" : "s"}` : ""
     ].filter(Boolean).map((chip) => `<span class="${isFastRule(chip) ? "is-fast" : ""}">${escapeHtml(chip)}</span>`).join("");
     const saintChip = saintCount && !dedicatedSaintCard
-      ? `<button class="cal-saint-chip" id="saintPreviewCard" type="button" onclick="openDonorSaintOfDay(this)" data-date="${escapeHtml(date)}" data-calendar="${escapeHtml(calendar)}" data-saint-title="${escapeHtml(saintTitle)}" aria-label="Open ${saintCount} saint${saintCount === 1 ? "" : "s"} commemorated today"><span>${saintCount} saint${saintCount === 1 ? "" : "s"}</span><b aria-hidden="true">→</b></button>`
+      ? `<button class="cal-saint-chip" id="saintPreviewCard" type="button" onclick="openDonorSaintOfDay(this)" data-date="${escapeHtml(date)}" data-calendar="${escapeHtml(calendar)}" data-saint-title="${escapeHtml(saintTitle)}" aria-label="Open ${saintCount} saint${saintCount === 1 ? "" : "s"} commemorated today">${saintCount} saint${saintCount === 1 ? "" : "s"}<b aria-hidden="true">→</b></button>`
       : "";
     chips.innerHTML = standardChips + saintChip;
   }

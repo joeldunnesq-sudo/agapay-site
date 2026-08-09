@@ -9385,6 +9385,38 @@ textarea {
   .group-thread-back span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .koinonia-screen-head h1 { font-size: 22px; }
   .donor-parish-life-page .parish-life-page-shell { gap: 0; }
+  .donor-parish-life-page .parish-life-liturgical-hero { margin-bottom: 6px; }
+  .donor-parish-life-page .cal-chip-row { gap: 5px; margin-bottom: 12px; }
+  .donor-parish-life-page .cal-chip-row > span,
+  .donor-parish-life-page .cal-saint-chip { padding: 4px 8px; font-size: 9px; }
+  .donor-parish-life-page .cal-saint-chip { gap: 5px; }
+  .donor-parish-life-page .cal-saint-chip b { font-size: 11px; }
+  .parish-life-community-inbox { margin-top: 14px; border-radius: 14px; box-shadow: none; }
+  .parish-life-inbox-head { grid-template-columns: 30px minmax(0, 1fr) auto; gap: 9px; padding: 11px 12px; }
+  .parish-life-inbox-symbol,
+  .parish-life-inbox-item-icon { width: 30px; height: 30px; font-size: 12px; }
+  .parish-life-inbox-head strong { font-size: 15px; }
+  .parish-life-inbox-head p { font-size: 9px; }
+  .parish-life-inbox-head > a { font-size: 9px; }
+  .parish-life-inbox-item {
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 8px 9px;
+    padding: 11px 12px;
+  }
+  .parish-life-inbox-item-copy strong { font-size: 12px; }
+  .parish-life-inbox-item-copy small { font-size: 9px; white-space: normal; }
+  .parish-life-inbox-action {
+    grid-column: 2;
+    width: max-content;
+    min-height: 34px;
+    padding: 7px 11px;
+    font-size: 9px;
+  }
+  .parish-life-inbox-footer { padding: 9px 12px; }
+  .parish-life-blog-list { gap: 6px; }
+  .parish-life-blog-card { min-height: 68px; gap: 5px; padding: 9px; }
+  .parish-life-blog-card strong { font-size: 12px; line-height: 1.25; }
+  .parish-life-blog-card > span { font-size: 10px; }
   .parish-life-recording-row { grid-template-columns: 40px minmax(0, 1fr) auto; }
   .parish-life-recording-row > em { grid-column: auto; }
   .parish-life-ministry-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }

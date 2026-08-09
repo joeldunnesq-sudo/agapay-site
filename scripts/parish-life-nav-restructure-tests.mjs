@@ -50,7 +50,7 @@ assert.match(landing, /id="todayFeastNote"/);
 assert.match(landing, /id="todayChips"/);
 assert.match(landing, />Make a festal offering</);
 assert.doesNotMatch(landing, /class="cal-hero parish-life-saint-card"/, "the Koinonia landing should not duplicate Saint of the Day in a second card");
-assert.match(donorApp, /class=\"cal-saint-chip\" id=\"saintPreviewCard\"[\s\S]*?<b aria-hidden=\"true\">→<\/b>/, "the saints-count pill should open the saint modal and show a directional arrow");
+assert.match(donorApp, /class=\"cal-saint-chip\" id=\"saintPreviewCard\"[\s\S]*?commemorated today\">\$\{saintCount\} saint[\s\S]*?<b aria-hidden=\"true\">→<\/b>/, "the saints-count pill should open the saint modal and show a directional arrow without nesting another chip inside it");
 assert.match(landing, /id="donorSaintModal"[\s\S]*Orthocal\.info/);
 assert.match(landing, />Upcoming Services<[\s\S]*Loading the next liturgical observance/);
 assert.match(landing, /href="\/myagapay\/calendar">Full Calendar</);
