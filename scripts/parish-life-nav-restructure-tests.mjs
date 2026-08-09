@@ -108,7 +108,7 @@ assert.doesNotMatch(lowerTierMarkup, /Announcements|Recordings|Ministries/);
 const parishTierMarkup = sandbox.window.parishLifeTierSectionsHtml(true, { signupsEnabled:true, exchangeEnabled:true });
 const parishInboxMarkup = sandbox.window.parishLifeInboxShellHtml(true);
 assert.match(parishInboxMarkup, /Community Inbox/);
-assert.match(parishInboxMarkup, /Needs You/);
+assert.match(parishInboxMarkup, /New Updates for You!/);
 assert.equal(sandbox.window.parishLifeInboxShellHtml(false), "");
 assert.match(parishTierMarkup, /id="listenHeading">Listen</);
 assert.match(parishTierMarkup, /Continue listening/);
@@ -161,7 +161,7 @@ sandbox.window.MyAgapayShell = {
 };
 const cachedTierExperience = sandbox.window.initializeParishLifeStructure();
 assert.equal(cachedTierExperience.communicationsEnabled, true);
-assert.match(inboxMount.innerHTML, /Needs You[\s\S]*Loading your Community Inbox…/, "a cached Koinonia decision must synchronously render the Community Inbox shell before any fetch");
+assert.match(inboxMount.innerHTML, /New Updates for You![\s\S]*Loading your Community Inbox…/, "a cached Koinonia decision must synchronously render the Community Inbox shell before any fetch");
 assert.equal(tierLabel.textContent, "Koinonia");
 
 sandbox.window.MyAgapayShell.parishLifeExperience = () => ({ communicationsEnabled: false, label: "Today" });

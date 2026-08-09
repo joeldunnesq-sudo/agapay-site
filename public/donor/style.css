@@ -8567,6 +8567,31 @@ textarea {
 .donor-parish-life-page .parish-life-liturgical-hero .cal-date-my { font-size: 9px; }
 .donor-parish-life-page .parish-life-liturgical-hero .cal-today-main { width: 100%; }
 
+/* The full calendar repeats the same compact, single-column hero treatment. */
+.donor-calendar-page .calendar-liturgical-hero .cal-hero-eyebrow {
+  max-width: calc(100% - 82px);
+  margin-bottom: 14px;
+}
+.donor-calendar-page .calendar-liturgical-hero .cal-today-row { display: block; }
+.donor-calendar-page .calendar-liturgical-hero .cal-date-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 3;
+  width: 70px;
+  border-top: 0;
+  border-right: 0;
+  border-radius: 0 0 0 16px;
+  padding: 9px 5px 10px;
+  background: rgba(255, 255, 255, 0.085);
+  backdrop-filter: blur(10px);
+}
+.donor-calendar-page .calendar-liturgical-hero .cal-date-weekday { font-size: 8.5px; }
+.donor-calendar-page .calendar-liturgical-hero .cal-date-day { margin: 1px 0; font-size: 30px; }
+.donor-calendar-page .calendar-liturgical-hero .cal-date-my { font-size: 9px; }
+.donor-calendar-page .calendar-liturgical-hero .cal-today-title { font-size: 27px; line-height: 1.12; }
+.donor-calendar-page .calendar-liturgical-hero .cal-today-main { width: 100%; }
+
 .donor-parish-life-page .parish-life-saint-card {
   --cal-cream: #f6f1e8;
   --cal-gold: #c8a24a;
@@ -9416,6 +9441,13 @@ textarea {
   .donor-parish-life-page .parish-life-liturgical-hero .cal-date-weekday { font-size: 7.5px; }
   .donor-parish-life-page .parish-life-liturgical-hero .cal-date-day { font-size: 26px; }
   .donor-parish-life-page .parish-life-liturgical-hero .cal-date-my { font-size: 8px; }
+  .donor-calendar-page .calendar-liturgical-hero .cal-hero-inner { padding: 20px 18px 18px; }
+  .donor-calendar-page .calendar-liturgical-hero .cal-hero-eyebrow { max-width: calc(100% - 70px); margin-bottom: 12px; font-size: 8.5px; }
+  .donor-calendar-page .calendar-liturgical-hero .cal-date-badge { width: 62px; padding: 7px 4px 8px; border-radius: 0 0 0 13px; }
+  .donor-calendar-page .calendar-liturgical-hero .cal-date-weekday { font-size: 7.5px; }
+  .donor-calendar-page .calendar-liturgical-hero .cal-date-day { font-size: 26px; }
+  .donor-calendar-page .calendar-liturgical-hero .cal-date-my { font-size: 8px; }
+  .donor-calendar-page .calendar-liturgical-hero .cal-today-title { font-size: 24px; line-height: 1.08; }
   .donor-parish-life-page .cal-chip-row { gap: 5px; margin-bottom: 12px; }
   .donor-parish-life-page .cal-chip-row > span,
   .donor-parish-life-page .cal-saint-chip { padding: 4px 8px; font-size: 9px; }

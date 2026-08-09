@@ -9,11 +9,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=20260807parishcalendar3" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260809calendarandroid1" />
   <script src="/liturgical-calendar.js"></script>
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260803iospolish1"></script>
-  <script src="/donor/app.js?v=20260807parishcalendar3" defer></script>
+  <script src="/donor/app.js?v=20260809calendarandroid1" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -40,9 +40,9 @@
         <div class="layout-main">
           <div>
             <!-- TODAY HERO -->
-            <section class="cal-hero" aria-label="Today in the Church">
+            <section class="cal-hero calendar-liturgical-hero" aria-label="Today in the Church">
               <div class="cal-hero-inner">
-                <div class="cal-hero-eyebrow">Today in the Church</div>
+                <div class="cal-hero-eyebrow" id="todayCivilDateEyebrow">Today’s civil date</div>
                 <div class="cal-today-row">
                   <div class="cal-date-badge">
                     <div class="cal-date-weekday" id="todayWeekday">Today</div>
@@ -77,7 +77,7 @@
               </div>
               <p class="cal-parish-calendar-intro" id="parishCalendarIntro">Loading the calendar connected by your parish.</p>
               <div class="cal-parish-subscribe" id="parishCalendarSubscribe" hidden>
-                <a class="cal-btn cal-btn-gold" id="parishCalendarSubscribeButton" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M12 14v5M9.5 16.5h5"/></svg>Add to phone calendar</a>
+                <a class="cal-btn cal-btn-gold" id="parishCalendarSubscribeButton" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M12 14v5M9.5 16.5h5"/></svg><span data-calendar-subscribe-label>Add to phone calendar</span></a>
                 <a class="cal-btn cal-btn-outline" id="parishCalendarGoogleButton" href="#" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>Add to Google Calendar</a>
                 <button class="cal-btn cal-btn-outline" id="parishCalendarCopyButton" type="button" onclick="copyDonorParishCalendarUrl(this)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>Copy subscription link</button>
               </div>
@@ -99,7 +99,8 @@
               <details class="cal-parish-subscribe-help" id="parishCalendarSubscribeHelp" hidden>
                 <summary>How calendar subscription works</summary>
                 <p><strong>iPhone or iPad:</strong> Tap “Add to phone calendar,” then confirm the subscription.</p>
-                <p><strong>Google Calendar:</strong> Use “Add to Google Calendar” when shown. Otherwise, copy the link and add it at calendar.google.com on a computer under Other calendars → From URL. It will then sync to the Google Calendar app on your phone.</p>
+                <p><strong>Android:</strong> Tap “Add to Google Calendar.” AGAPAY opens Google Calendar outside the app so you can confirm the subscription.</p>
+                <p><strong>Other calendar providers:</strong> Copy the subscription link and add it using your calendar provider’s “From URL” option.</p>
                 <p>Subscribed events stay updated when your parish changes its calendar.</p>
               </details>
             </section>

@@ -108,6 +108,7 @@ const life = await readFile(new URL("../public/myagapay/parish-life.js", import.
 const lifePage = await readFile(new URL("../public/myagapay/parish-life.html", import.meta.url), "utf8");
 const donorApp = await readFile(new URL("../public/donor/app.js", import.meta.url), "utf8");
 const donorCalendar = await readFile(new URL("../public/myagapay/giving/calendar.html", import.meta.url), "utf8");
+const donorStyles = await readFile(new URL("../public/donor/style.css", import.meta.url), "utf8");
 
 assert.match(dashboard, /data-koinonia-view="ministries"/);
 assert.match(app, /Invite a My AGAPAY parishioner/);
@@ -143,15 +144,24 @@ assert.match(donorApp, /function renderDonorParishCalendar/);
 assert.match(donorApp, /viewMode:"week"/);
 assert.match(donorApp, /function setDonorParishCalendarView/);
 assert.match(donorApp, /function changeDonorParishCalendarPeriod/);
-assert.match(donorApp, /subscriptionUrl\.replace\(\/\^https:\/i, "webcal:"\)/);
+assert.match(donorApp, /function donorParishCalendarPlatform\(\)[\s\S]*?\/android\/i/);
+assert.match(donorApp, /isAndroid \? \(googleUrl \|\| subscriptionUrl\) : subscriptionUrl\.replace\(\/\^https:\/i, "webcal:"\)/, "Android must use a supported HTTPS or Google Calendar URL instead of the unsupported webcal protocol");
+assert.match(donorApp, /subscribeButton\.target = isAndroid \? "_blank" : ""/, "the Android flow should leave the installed app to complete calendar subscription");
+assert.match(donorApp, /googleButton\.hidden = isAndroid \|\| !googleUrl/, "Android should not show a duplicate Google Calendar action");
 assert.match(donorApp, /\/api\/donor\/parish-calendar/);
 assert.match(donorCalendar, /Your Upcoming Services/);
 assert.match(donorCalendar, /id="parishCalendarSubscribeButton"/);
+assert.match(donorCalendar, /data-calendar-subscribe-label/);
 assert.match(donorCalendar, /id="parishCalendarGoogleButton"/);
 assert.match(donorCalendar, /id="parishCalendarCopyButton"/);
 assert.match(donorCalendar, /id="parishCalendarWeekView"/);
 assert.match(donorCalendar, /id="parishCalendarMonthView"/);
 assert.doesNotMatch(donorCalendar, /id="saintPreviewCard"|id="donorSaintModal"/, "the full calendar must not show the Saint of the Day card or modal");
 assert.doesNotMatch(donorCalendar, /class="cal-metrics"|id="nextFeastDate"|id="paschaDate"|id="calendarShortName"/, "the full calendar must not show the Next Feast, Pascha, or Calendar summary cards");
+assert.match(donorCalendar, /class="cal-hero calendar-liturgical-hero"/);
+assert.match(donorCalendar, /id="todayCivilDateEyebrow"/);
+assert.match(donorStyles, /\.donor-calendar-page \.calendar-liturgical-hero \.cal-today-row \{ display: block; \}/, "the full calendar hero should use the same single text column as Koinonia");
+assert.match(donorStyles, /\.donor-calendar-page \.calendar-liturgical-hero \.cal-date-badge \{[\s\S]*?position: absolute;[\s\S]*?top: 0;[\s\S]*?right: 0;/, "the full calendar church date should use the compact top-right cutout");
+assert.match(donorStyles, /\.donor-calendar-page \.calendar-liturgical-hero \.cal-today-title \{ font-size: 27px;/, "the full calendar saint title should stay compact even on long commemorations");
 
 console.log("PASS - Koinonia ministries management, full parish calendar, and public ICS subscription are wired end to end");

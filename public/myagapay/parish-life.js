@@ -187,7 +187,7 @@ function parishLifeInboxShellHtml(communicationsEnabled) {
   if (!communicationsEnabled) return "";
   return `<section class="parish-life-home-section" aria-labelledby="communityInboxHeading">
     <div class="parish-life-community-inbox" id="parishLifeCommunityInbox">
-      <div class="parish-life-inbox-loading"><strong id="communityInboxHeading">Needs You</strong><p class="sw-tool-loading parish-life-section-loading" role="status">Loading your Community Inbox…</p></div>
+      <div class="parish-life-inbox-loading"><strong id="communityInboxHeading">New Updates for You!</strong><p class="sw-tool-loading parish-life-section-loading" role="status">Loading your Community Inbox…</p></div>
     </div>
   </section>`;
 }
@@ -232,7 +232,7 @@ function renderCommunityInbox(feed = {}, signupPayload = {}) {
   target.innerHTML = `
     <button class="parish-life-inbox-head" type="button" onclick="toggleParishLifeInbox(this)" aria-expanded="true">
       <span class="parish-life-inbox-symbol" aria-hidden="true">!</span>
-      <span><strong id="communityInboxHeading">Needs You</strong><p><b data-community-action-count>${actionCount}</b> ${actionCount === 1 ? "thing needs" : "things need"} your attention</p></span>
+      <span><strong id="communityInboxHeading">New Updates for You!</strong><p><b data-community-action-count>${actionCount}</b> ${actionCount === 1 ? "thing needs" : "things need"} your attention</p></span>
       <em aria-hidden="true">⌃</em>
     </button>
     <div class="parish-life-inbox-list">${signupRows}${announcementRows}<a class="parish-life-inbox-footer" href="/myagapay/feed">Open Community Inbox <span data-parish-life-unread hidden>0</span> →</a></div>`;

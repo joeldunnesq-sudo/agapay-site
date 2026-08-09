@@ -1516,6 +1516,13 @@ function donorParishCalendarGoogleUrl(value = "") {
   }
 }
 
+function donorParishCalendarPlatform() {
+  const userAgent = String(window.navigator?.userAgent || "");
+  if (/android/i.test(userAgent)) return "android";
+  if (/iphone|ipad|ipod/i.test(userAgent)) return "ios";
+  return "other";
+}
+
 function donorParishCalendarEventDate(event = {}) {
   const startsAt = String(event.startsAt || "");
   if (event.allDay && /^\d{4}-\d{2}-\d{2}/.test(startsAt)) return new Date(`${startsAt.slice(0,10)}T12:00:00`);
@@ -1711,10 +1718,18 @@ function renderDonorParishCalendar(payload = {}, parish = null) {
     return;
   }
 
-  subscribeButton.href = subscriptionUrl.replace(/^https:/i, "webcal:");
   copyButton.dataset.subscriptionUrl = subscriptionUrl;
   const googleUrl = donorParishCalendarGoogleUrl(subscriptionUrl);
-  googleButton.hidden = !googleUrl;
+  const platform = donorParishCalendarPlatform();
+  const isAndroid = platform === "android";
+  const subscribeLabel = subscribeButton.querySelector("[data-calendar-subscribe-label]");
+  subscribeButton.href = isAndroid ? (googleUrl || subscriptionUrl) : subscriptionUrl.replace(/^https:/i, "webcal:");
+  subscribeButton.target = isAndroid ? "_blank" : "";
+  subscribeButton.rel = isAndroid ? "noopener" : "";
+  if (subscribeLabel) subscribeLabel.textContent = isAndroid
+    ? (googleUrl ? "Add to Google Calendar" : "Open calendar subscription")
+    : "Add to phone calendar";
+  googleButton.hidden = isAndroid || !googleUrl;
   if (googleUrl) googleButton.href = googleUrl;
 
   const events = Array.isArray(payload.events) ? payload.events : [];

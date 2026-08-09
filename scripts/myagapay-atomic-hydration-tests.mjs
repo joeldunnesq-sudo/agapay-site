@@ -56,7 +56,7 @@ for (const file of protectedPages) {
       : file === "public/myagapay/parish-life.html"
           ? "20260808koinoniahero2"
         : file === "public/myagapay/giving/calendar.html"
-          ? "20260807parishcalendar3"
+          ? "20260809calendarandroid1"
           : "20260802playerredesign1";
   assert.match(html, /<html[^>]*data-myagapay-hydrate/, `${file} must opt into the pre-paint hydration shield`);
   assert.match(html, new RegExp(`/donor/style\\.css\\?v=${expectedStylesheetVersion}`), `${file} must load the current atomic-paint CSS version`);
