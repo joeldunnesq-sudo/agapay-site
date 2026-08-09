@@ -223,4 +223,11 @@ async function cancelSignupEntry(entryId) {
 async function joinSignupWaitlist(slotId){try{await signupsFetch(`/api/donor/koinonia/signups/slots/${encodeURIComponent(slotId)}/waitlist`,{method:"POST",body:"{}"});signupStatus("You’re on the waitlist. We’ll let you know if space opens.","success");}catch(error){signupStatus(error.message||"Unable to join the waitlist.","error");}}
 async function requestSignupCoverage(entryId,note){try{await signupsFetch(`/api/donor/koinonia/signups/entries/${encodeURIComponent(entryId)}/coverage`,{method:"POST",body:JSON.stringify({note})});await openSignupSheet(signupsState.activeSheetId);signupStatus("Your coverage request was sent to the assigned ministry team.","success");}catch(error){throw new Error(error.message||"Unable to request coverage.");}}
 
-document.addEventListener("DOMContentLoaded", loadSignups);
+async function markSignupsPageOpened() {
+  await signupsFetch("/api/donor/koinonia/community-tools/signups/opened", { method: "POST", body: "{}" }).catch(() => null);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  void markSignupsPageOpened();
+  void loadSignups();
+});

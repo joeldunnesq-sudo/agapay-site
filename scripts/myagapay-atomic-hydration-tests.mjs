@@ -55,7 +55,7 @@ for (const file of protectedPages) {
     ].includes(file)
       ? "20260803storefront1"
       : file === "public/myagapay/parish-life.html"
-          ? "20260809readingscroll2"
+          ? "20260809toolbadges1"
         : file === "public/myagapay/giving/calendar.html"
           ? "20260809readingscroll2"
           : "20260802playerredesign1";

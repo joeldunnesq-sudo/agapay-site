@@ -92,12 +92,19 @@ export async function removePushSubscription(env, { parishId, donorId, endpoint 
   return Number(result?.meta?.changes || 0) > 0;
 }
 
-export async function listParishPushSubscriptions(env, parishId) {
+export async function listParishPushSubscriptions(env, parishId, { excludePersonId = "" } = {}) {
+  const exclusion = excludePersonId ? `
+    AND NOT EXISTS (
+      SELECT 1 FROM platform_users user
+      JOIN directory_person_links link
+        ON link.link_type = 'platform_user' AND link.external_id = user.id AND link.active = 1
+      WHERE user.email = push.donor_id AND user.status = 'active' AND link.person_id = ?
+    )` : "";
   const result = await database(env).prepare(`
-    SELECT id, parish_id, donor_id, endpoint, p256dh, auth
-    FROM push_subscriptions
-    WHERE parish_id = ?
-  `).bind(parishId).all();
+    SELECT push.id, push.parish_id, push.donor_id, push.endpoint, push.p256dh, push.auth
+    FROM push_subscriptions push
+    WHERE push.parish_id = ?${exclusion}
+  `).bind(...(excludePersonId ? [parishId, excludePersonId] : [parishId])).all();
   return result.results || [];
 }
 
@@ -254,6 +261,39 @@ export async function sendGroupMessagePush(env, {
 export function groupMessagePushExcerpt(message = {}) {
   return notificationExcerpt(message.body)
     || (message.messageType === "voice" ? "🎤 Voice message" : message.messageType === "image" ? "📷 Photo" : "New message");
+}
+
+export async function sendSignupPublishedPush(env, {
+  parishId,
+  publishedByPersonId,
+  sheetId,
+  sheetTitle,
+  ministryName,
+}, dependencies = {}) {
+  const subscriptions = await listParishPushSubscriptions(env, parishId, { excludePersonId: publishedByPersonId });
+  return deliverPushNotifications(env, subscriptions, {
+    title: `New signup${ministryName ? ` · ${String(ministryName).trim()}` : ""}`,
+    body: String(sheetTitle || "A new parish signup is ready.").trim(),
+    url: `/myagapay/signups?sheet=${encodeURIComponent(sheetId)}`,
+    tag: `signup-published-${sheetId}`,
+  }, dependencies);
+}
+
+export async function sendExchangeListingPush(env, {
+  parishId,
+  publishedByPersonId,
+  listingId,
+  listingTitle,
+  listingType,
+}, dependencies = {}) {
+  const subscriptions = await listParishPushSubscriptions(env, parishId, { excludePersonId: publishedByPersonId });
+  const action = listingType === "request" ? "requested" : "offered";
+  return deliverPushNotifications(env, subscriptions, {
+    title: `New Exchange ${listingType === "request" ? "request" : "offer"}`,
+    body: `${String(listingTitle || "A parish item").trim()} was ${action}.`,
+    url: `/myagapay/exchange?listing=${encodeURIComponent(listingId)}`,
+    tag: `exchange-listing-${listingId}`,
+  }, dependencies);
 }
 
 export async function sendSignupReminderPush(env, {

@@ -151,8 +151,8 @@ function parishLifeApprovedServiceEvents(payload = {}) {
 function parishLifeTierSectionsHtml(communicationsEnabled, capabilities = {}) {
   if (!communicationsEnabled) return "";
   const communityTools = [
-    capabilities.signupsEnabled ? '<a class="parish-life-community-tool" href="/myagapay/signups"><span aria-hidden="true">✓</span><strong>Signups</strong><small>Meals, cleaning, events, and volunteer needs</small><em>Open →</em></a>' : '',
-    capabilities.exchangeEnabled ? '<a class="parish-life-community-tool" href="/myagapay/exchange"><span aria-hidden="true">⇄</span><strong>Exchange</strong><small>Offer or request items within your parish</small><em>Browse →</em></a>' : ''
+    capabilities.signupsEnabled ? '<a class="parish-life-community-tool" href="/myagapay/signups"><span aria-hidden="true">✓</span><strong>Signups</strong><small>Meals, cleaning, events, and volunteer needs</small><em>Open →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="signups" hidden></b></a>' : '',
+    capabilities.exchangeEnabled ? '<a class="parish-life-community-tool" href="/myagapay/exchange"><span aria-hidden="true">⇄</span><strong>Exchange</strong><small>Offer or request items within your parish</small><em>Browse →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="exchange" hidden></b></a>' : ''
   ].filter(Boolean).join("");
   return `
     <section class="parish-life-home-section" aria-labelledby="yourMinistriesHeading">
@@ -181,6 +181,18 @@ function parishLifeTierSectionsHtml(communicationsEnabled, capabilities = {}) {
         <p class="sw-tool-loading parish-life-section-loading" role="status">Loading news…</p>
       </section>
     </div>`;
+}
+
+function renderCommunityToolBadges(payload = {}) {
+  const counts = payload.counts || {};
+  const labels = { signups: "signup forms", exchange: "Exchange listings" };
+  document.querySelectorAll("[data-community-tool-badge]").forEach((badge) => {
+    const tool = badge.dataset.communityToolBadge;
+    const count = Math.max(0, Number(counts[tool]) || 0);
+    badge.hidden = count === 0;
+    badge.textContent = count > 99 ? "99+" : String(count);
+    badge.setAttribute("aria-label", `${count} new ${labels[tool] || "items"} since you last opened ${tool === "signups" ? "Signups" : "Exchange"}`);
+  });
 }
 
 function parishLifeInboxShellHtml(communicationsEnabled) {
@@ -658,6 +670,9 @@ async function loadParishLife() {
       const unread = (groups?.groups || []).reduce((sum, group) => sum + Math.max(0, Number(group.unreadCount) || 0), 0);
       window.MyAgapayShell?.setGroupsUnreadCount(unread);
     });
+    const communityToolBadgesPromise = parishLifeFetch("/api/donor/koinonia/community-tools/badges", headers)
+      .then((badges) => renderCommunityToolBadges(badges || {}))
+      .catch(() => renderCommunityToolBadges({ counts: {} }));
     const teachingPromise = parishLifeFetch("/api/donor/teaching", headers).then((teaching) => {
       renderRecentRecordings(teaching || {});
       window.MyAgapayShell?.setTeachingUnreadCount(Math.max(0, Number(teaching?.unreadCount) || 0));
@@ -676,7 +691,7 @@ async function loadParishLife() {
     ]).then(([customNews, ...newsSources]) => {
       renderRecentNews([...newsSources.filter(Boolean), ...(customNews?.feeds || [])]);
     });
-    await Promise.all([liturgicalDayPromise, calendarPromise, feedPromise, groupsPromise, teachingPromise, podcastProgressPromise, podcastsPromise, mediaPromise, newsPromise]);
+    await Promise.all([liturgicalDayPromise, calendarPromise, feedPromise, groupsPromise, communityToolBadgesPromise, teachingPromise, podcastProgressPromise, podcastsPromise, mediaPromise, newsPromise]);
     status.hidden = true;
   } catch (error) {
     if (typeof loadDonorLiturgicalDay === "function") await loadDonorLiturgicalDay(null);
@@ -692,6 +707,7 @@ window.parishLifeNextLiturgicalEvent = parishLifeNextLiturgicalEvent;
 window.parishLifeUpcomingLiturgicalEvents = parishLifeUpcomingLiturgicalEvents;
 window.parishLifeBalancedListenItems = parishLifeBalancedListenItems;
 window.renderCommunityInbox = renderCommunityInbox;
+window.renderCommunityToolBadges = renderCommunityToolBadges;
 window.toggleParishLifeInbox = toggleParishLifeInbox;
 window.resolveParishLifeInboxAction = resolveParishLifeInboxAction;
 window.requestParishServiceInterest = requestParishServiceInterest;

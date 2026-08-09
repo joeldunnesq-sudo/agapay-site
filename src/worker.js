@@ -218,6 +218,7 @@ import {
 import { handleParishEmailCredentials } from "./handlers/parish-email-credentials.js";
 import { handleDonorGroups, purgeExpiredGroupMessages } from "./handlers/donor-groups.js";
 import { handleKoinoniaAccess } from "./handlers/koinonia-access.js";
+import { handleDonorKoinoniaCommunityTools } from "./handlers/koinonia-community-tools.js";
 import { handleDonorKoinoniaSignups, sendScheduledSignupReminders } from "./handlers/koinonia-signups.js";
 import { expireKoinoniaExchangeListings, handleDonorKoinoniaExchange } from "./handlers/koinonia-exchange.js";
 import { handleDonorTeaching, handleParishTeaching } from "./handlers/parish-teaching.js";
@@ -2887,6 +2888,7 @@ export default {
     const parishLifeAvailable = parishLifeAvailableFor(env);
     const parishLifeApiRoute =
       url.pathname === "/api/donor/koinonia-access"
+      || url.pathname === "/api/donor/koinonia/community-tools" || url.pathname.startsWith("/api/donor/koinonia/community-tools/")
       || url.pathname === "/api/donor/koinonia/signups" || url.pathname.startsWith("/api/donor/koinonia/signups/")
       || url.pathname === "/api/donor/koinonia/exchange" || url.pathname.startsWith("/api/donor/koinonia/exchange/")
       || url.pathname === "/api/donor/feed" || url.pathname.startsWith("/api/donor/feed/")
@@ -3306,6 +3308,9 @@ export default {
     }
     if (url.pathname === "/api/donor/koinonia-access") {
       return handleKoinoniaAccess(request, env);
+    }
+    if (url.pathname === "/api/donor/koinonia/community-tools" || url.pathname.startsWith("/api/donor/koinonia/community-tools/")) {
+      return handleDonorKoinoniaCommunityTools(request, env);
     }
     if (url.pathname === "/api/donor/koinonia/signups" || url.pathname.startsWith("/api/donor/koinonia/signups/")) {
       return handleDonorKoinoniaSignups(request, env, ctx);

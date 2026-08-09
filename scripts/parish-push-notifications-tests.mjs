@@ -7,6 +7,8 @@ import {
   deliverPushNotifications,
   listGroupPushSubscriptions,
   listParishPushSubscriptions,
+  sendExchangeListingPush,
+  sendSignupPublishedPush,
   sendTeachingPush,
 } from "../src/lib/push-notifications.js";
 
@@ -117,6 +119,42 @@ assert.ok(
   "repeated delivery of the same teaching must preserve its notification tag for browser-level deduplication",
 );
 
+const publicationPayloads = [];
+const publicationDependencies = {
+  buildPayload: async ({ data }) => {
+    publicationPayloads.push(JSON.parse(data));
+    return { method: "POST", headers: new Headers(), body: "encrypted" };
+  },
+  fetchImpl: async () => new Response(null, { status: 201 }),
+};
+await sendSignupPublishedPush(env, {
+  parishId: "parish-one",
+  publishedByPersonId: "person-author",
+  sheetId: "sheet-one",
+  sheetTitle: "Coffee hour helpers",
+  ministryName: "Hospitality",
+}, publicationDependencies);
+await sendExchangeListingPush(env, {
+  parishId: "parish-one",
+  publishedByPersonId: "person-author",
+  listingId: "listing-one",
+  listingTitle: "Dining table",
+  listingType: "offer",
+}, publicationDependencies);
+assert.equal(publicationPayloads.length, 6, "new signup forms and Exchange posts must push to every other subscribed parish device");
+assert.deepEqual(publicationPayloads[0], {
+  title: "New signup · Hospitality",
+  body: "Coffee hour helpers",
+  url: "/myagapay/signups?sheet=sheet-one",
+  tag: "signup-published-sheet-one",
+});
+assert.deepEqual(publicationPayloads[3], {
+  title: "New Exchange offer",
+  body: "Dining table was offered.",
+  url: "/myagapay/exchange?listing=listing-one",
+  tag: "exchange-listing-listing-one",
+});
+
 const groupSubscriptions = await listGroupPushSubscriptions(env, {
   parishId: "parish-one",
   ministryId: "ministry-one",
@@ -167,4 +205,4 @@ for (const [name, html] of [["feed", feedHtml], ["groups", groupsHtml]]) {
     `${name} must not show Disable before the subscription check resolves`);
 }
 
-console.log("PASS - push delivery covers teaching, is parish-scoped, excludes group authors, prunes expired endpoints, and requires explicit opt-in");
+console.log("PASS - push delivery covers published Community Tools and teaching, is parish-scoped, excludes group authors, prunes expired endpoints, and requires explicit opt-in");

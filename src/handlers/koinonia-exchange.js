@@ -11,7 +11,7 @@ import {
   rateLimit,
 } from "../lib/core.js";
 import { exchangeEnabledFor } from "../lib/entitlements.js";
-import { sendExchangeMessagePush } from "../lib/push-notifications.js";
+import { sendExchangeListingPush, sendExchangeMessagePush } from "../lib/push-notifications.js";
 import {
   GROUP_MESSAGE_ATTACHMENT_MAX_BYTES,
   storeGroupMessageAttachment,
@@ -177,7 +177,7 @@ async function listListings(request, env, context) {
   return rows.map((row) => listingFromRow(row, photos.get(row.id) || []));
 }
 
-async function createListing(request, env, context) {
+async function createListing(request, env, ctx, context) {
   const body = await request.json().catch(() => ({}));
   const listingType = body.listingType;
   const title = String(body.title || "").trim().slice(0, 180);
@@ -201,6 +201,15 @@ async function createListing(request, env, context) {
     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'active', ?10, ?11, ?11, 1)
   `, id, context.parishId, context.householdId || null, context.personId, listingType,
     category, title, description, priceCents, expiresAt, now);
+  if (ctx?.waitUntil) {
+    ctx.waitUntil(sendExchangeListingPush(env, {
+      parishId: context.parishId,
+      publishedByPersonId: context.personId,
+      listingId: id,
+      listingTitle: title,
+      listingType,
+    }).catch((error) => console.error("exchange_listing_push_failed", error?.message || String(error))));
+  }
   return { ok: true, listingId: id };
 }
 
@@ -469,7 +478,7 @@ export async function handleDonorKoinoniaExchange(request, env, ctx = null) {
     const parts = path ? path.split("/").map(decodeURIComponent) : [];
 
     if (parts.length === 1 && parts[0] === "listings" && request.method === "GET") return privateJson({ ok: true, listings: await listListings(request, env, context) });
-    if (parts.length === 1 && parts[0] === "listings" && request.method === "POST") return privateJson(await createListing(request, env, context), { status: 201 });
+    if (parts.length === 1 && parts[0] === "listings" && request.method === "POST") return privateJson(await createListing(request, env, ctx, context), { status: 201 });
     if (parts.length === 3 && parts[0] === "listings" && parts[2] === "complete" && request.method === "POST") return privateJson(await completeExchangeListing(env, context, parts[1]));
     if (parts.length === 3 && parts[0] === "listings" && parts[2] === "threads" && request.method === "POST") return privateJson(await startThread(env, context, parts[1]), { status: 201 });
     if (parts.length === 3 && parts[0] === "listings" && parts[2] === "threads" && request.method === "GET") return privateJson({ ok: true, threads: await listThreadsForListing(env, context, parts[1]) });

@@ -11,7 +11,7 @@ import {
   rateLimit,
 } from "../lib/core.js";
 import { signupsEnabledFor } from "../lib/entitlements.js";
-import { sendSignupReminderPush } from "../lib/push-notifications.js";
+import { sendSignupPublishedPush, sendSignupReminderPush } from "../lib/push-notifications.js";
 import { verifiedHouseholdAccess } from "./koinonia-access.js";
 import { findRegistrationByParishId } from "./parish.js";
 
@@ -57,6 +57,7 @@ function sheetFromRow(row = {}) {
     openingCount: Number(row.opening_count || 0),
     unreadSlotCount: Number(row.unread_slot_count || 0),
     createdAt: Number(row.created_at || 0),
+    publishedAt: row.published_at == null ? null : Number(row.published_at),
     updatedAt: Number(row.updated_at || 0),
   };
 }
@@ -366,18 +367,29 @@ async function createSheet(request, env, context) {
   return { ok: true, sheetId: id };
 }
 
-async function updateSheetStatus(request, env, context, sheetId) {
-  await requireSheetManager(env, context, sheetId);
+async function updateSheetStatus(request, env, ctx, context, sheetId) {
+  const current = await requireSheetManager(env, context, sheetId);
   const body = await request.json().catch(() => ({}));
   if (!SHEET_STATUSES.has(body.status)) throw new SignupAccessError("Invalid status.", 422);
   const now = Date.now();
   await d1Run(env, `
     UPDATE koinonia_signup_sheets
     SET status = ?1, archived_at = CASE WHEN ?1 = 'archived' THEN ?2 ELSE NULL END,
+        published_at = CASE WHEN ?1 = 'open' AND published_at IS NULL THEN ?2 ELSE published_at END,
         updated_by_person_id = ?3, updated_at = ?2, revision = revision + 1
     WHERE id = ?4 AND parish_id = ?5
   `, body.status, now, context.personId, sheetId, context.parishId);
   await auditSignup(env, context, { sheetId, action: "status_changed", summary: body.status });
+  if (body.status === "open" && current.published_at == null && ctx?.waitUntil) {
+    const ministry = await d1First(env, "SELECT display_name FROM directory_ministries WHERE id = ?1 AND parish_id = ?2", current.ministry_id, context.parishId);
+    ctx.waitUntil(sendSignupPublishedPush(env, {
+      parishId: context.parishId,
+      publishedByPersonId: context.personId,
+      sheetId,
+      sheetTitle: current.title,
+      ministryName: ministry?.display_name || "",
+    }).catch((error) => console.error("signup_published_push_failed", error?.message || String(error))));
+  }
   return { ok: true, sheetId, status: body.status };
 }
 
@@ -683,7 +695,7 @@ export async function handleDonorKoinoniaSignups(request, env, ctx = null) {
     if (parts.length === 1 && request.method === "GET") return privateJson({ ok: true, ...(await getSheet(env, context, parts[0])) });
     if (parts.length === 1 && request.method === "PATCH") return privateJson(await updateSheet(request, env, context, parts[0]));
     if (parts.length === 1 && request.method === "DELETE") return privateJson(await deleteSheet(env, context, parts[0]));
-    if (parts.length === 2 && parts[1] === "status" && request.method === "PATCH") return privateJson(await updateSheetStatus(request, env, context, parts[0]));
+    if (parts.length === 2 && parts[1] === "status" && request.method === "PATCH") return privateJson(await updateSheetStatus(request, env, ctx, context, parts[0]));
     if (parts.length === 2 && parts[1] === "slots" && request.method === "POST") return privateJson(await addSlot(request, env, context, parts[0]), { status: 201 });
     if(parts.length===2&&parts[1]==="template"&&request.method==="POST") return privateJson(await saveSignupTemplate(request,env,context,parts[0]),{status:201});
     if(parts.length===2&&parts[1]==="history"&&request.method==="GET") return privateJson(await listSignupHistory(env,context,parts[0]));

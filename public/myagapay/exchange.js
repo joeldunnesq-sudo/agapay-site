@@ -331,6 +331,7 @@ function setDefaultExchangeExpiry() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  void exchangeFetch("/api/donor/koinonia/community-tools/exchange/opened", { method: "POST", body: "{}" }).catch(() => null);
   setDefaultExchangeExpiry();
   void loadExchangeListings();
 });
