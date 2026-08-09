@@ -42,10 +42,11 @@ for (const file of protectedPages) {
   const expectedStylesheetVersion = [
     "public/myagapay/bookstore.html",
     "public/myagapay/media.html",
-    "public/myagapay/teaching.html",
     "public/myagapay/watch.html"
   ].includes(file)
     ? "20260803iospolish1"
+    : file === "public/myagapay/teaching.html"
+      ? "20260809readingscroll1"
     : file === "public/myagapay/groups.html"
       ? "20260808ministryworkspace2"
     : [
@@ -54,9 +55,9 @@ for (const file of protectedPages) {
     ].includes(file)
       ? "20260803storefront1"
       : file === "public/myagapay/parish-life.html"
-          ? "20260808koinoniahero2"
+          ? "20260809readingscroll1"
         : file === "public/myagapay/giving/calendar.html"
-          ? "20260809calendarandroid1"
+          ? "20260809readingscroll1"
           : "20260802playerredesign1";
   assert.match(html, /<html[^>]*data-myagapay-hydrate/, `${file} must opt into the pre-paint hydration shield`);
   assert.match(html, new RegExp(`/donor/style\\.css\\?v=${expectedStylesheetVersion}`), `${file} must load the current atomic-paint CSS version`);

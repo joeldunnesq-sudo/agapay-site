@@ -1200,9 +1200,27 @@ function renderDonorTodayInChurch(parish, payload) {
   setText("todayYear", churchParts.monthYear);
   setText("todayCalendarLabel", `${calendarLabel(calendar)} calendar date`);
   setText("todayFeastTitle", feastTitle);
-  setText("todayFeastNote", today.sourceConnected === false
-    ? "Daily readings and saint lives are temporarily unavailable, but feast highlights still follow your Church calendar."
-    : [today.epistleRef && `Epistle: ${today.epistleRef}`, today.gospelRef && `Gospel: ${today.gospelRef}`, nameDayText].filter(Boolean).join(" · ") || "Daily readings, saints, and fasting notes follow the Orthodox calendar.");
+  const feastNote = document.getElementById("todayFeastNote");
+  if (feastNote) {
+    const unavailableNote = "Daily readings and saint lives are temporarily unavailable, but feast highlights still follow your Church calendar.";
+    const readingLines = [
+      today.epistleRef && `Epistle: ${today.epistleRef}`,
+      today.gospelRef && `Gospel: ${today.gospelRef}`,
+      nameDayText,
+    ].filter(Boolean);
+    if (today.sourceConnected === false || !readingLines.length) {
+      feastNote.textContent = today.sourceConnected === false
+        ? unavailableNote
+        : "Daily readings, saints, and fasting notes follow the Orthodox calendar.";
+    } else {
+      feastNote.replaceChildren(...readingLines.map((text) => {
+        const line = document.createElement("span");
+        line.className = "cal-reading-line";
+        line.textContent = text;
+        return line;
+      }));
+    }
+  }
   const existingSaintCard = document.getElementById("saintPreviewCard");
   const dedicatedSaintCard = existingSaintCard && !existingSaintCard.classList.contains("cal-saint-chip") ? existingSaintCard : null;
   if (dedicatedSaintCard) {

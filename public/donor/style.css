@@ -3135,7 +3135,7 @@ body.donor-home {
 
 /* Koinonia podcast hub: docked mini player and Listen-matched full player. */
 .donor-teaching-page .content { height:100vh; min-height:0; overflow:hidden; padding-bottom:0; }
-.donor-teaching-page .teaching-page-shell { flex:1; min-height:0; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; }
+.donor-teaching-page .teaching-page-shell { flex:1 1 0; height:0; min-height:0; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; touch-action:pan-y; }
 .audio-library-mode-tabs { display:inline-grid; grid-template-columns:repeat(2,max-content); align-self:start; gap:3px; width:auto; margin-bottom:14px; border-radius:999px; padding:3px; }
 .audio-library-mode-tabs button { display:flex; grid-template-columns:none; gap:7px; min-height:32px; border-radius:999px; padding:6px 12px; }
 .audio-library-mode-tabs button > span { display:inline; grid-row:auto; width:auto; height:auto; border-radius:0; background:transparent; font-size:12px; }
@@ -3244,7 +3244,7 @@ body.donor-home {
 
 @media (max-width:900px) {
   .donor-teaching-page .content { height:100dvh; padding-bottom:76px; }
-  .donor-teaching-page .teaching-page-shell { min-height:0 !important; padding-bottom:24px !important; }
+  .donor-teaching-page .teaching-page-shell { height:0; min-height:0 !important; padding-bottom:max(48px,calc(28px + env(safe-area-inset-bottom))) !important; scroll-padding-bottom:max(48px,calc(28px + env(safe-area-inset-bottom))); }
   .koinonia-podcast-player { right:auto; bottom:auto; left:auto; }
 }
 @media (max-width:640px) {
@@ -7123,6 +7123,8 @@ body.donor-home {
 .cal-today-kicker { font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(246,241,232,0.55); font-weight: 600; margin-bottom: 5px; }
 .cal-today-title { font-family: var(--cal-serif); font-size: 27px; font-weight: 600; line-height: 1.12; margin: 0 0 8px; color: var(--cal-cream); }
 .cal-today-note { font-size: 13px; line-height: 1.5; color: rgba(246,241,232,0.75); margin: 0 0 12px; }
+.cal-today-note .cal-reading-line { display: block; }
+.cal-today-note .cal-reading-line + .cal-reading-line { margin-top: 2px; }
 .cal-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
 .cal-chip-row span, .cal-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; padding: 4px 11px; border-radius: 999px; background: rgba(200,162,74,0.18); color: var(--cal-gold-bright); }
 .cal-chip-row span::before, .cal-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }

@@ -247,6 +247,10 @@ assert.match(teaching, /progress\.style\.setProperty\("--podcast-progress", `\$\
   "the mini player's custom progress track must visibly fill as playback advances");
 assert.match(donorStyles, /\.donor-teaching-page \.teaching-page-shell \{[^}]*overflow-y:auto/,
   "the audio library must scroll independently above the docked player");
+assert.match(donorStyles, /\.donor-teaching-page \.teaching-page-shell \{[^}]*flex:1 1 0;[^}]*height:0;[^}]*-webkit-overflow-scrolling:touch/,
+  "the audio library must use an Android-safe bounded flex scroller");
+assert.match(donorStyles, /\.donor-teaching-page \.teaching-page-shell \{[^}]*scroll-padding-bottom:max\(48px,calc\(28px \+ env\(safe-area-inset-bottom\)\)\)/,
+  "the mobile audio library must leave enough scroll clearance for its final subscriptions");
 assert.match(donorStyles, /\.koinonia-podcast-player\.is-expanded \.koinonia-podcast-full-player \{[^}]*display:flex/,
   "expanded playback must use the Listen-style full-screen surface");
 assert.match(donorStyles, /#koinoniaPodcastQueueList \{[^}]*overflow:auto/,

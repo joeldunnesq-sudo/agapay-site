@@ -44,5 +44,9 @@ assert.equal(enriched.saintStories[0].name, enriched.feastTitle);
 const donorApp = readFileSync(path.join(repoRoot, "public", "donor", "app.js"), "utf8");
 assert.match(donorApp, /today\.primarySaintTitle \|\| today\.feastTitle/);
 assert.match(donorApp, /stories\.find\(\(story\) => story\?\.primary\) \|\| stories\[0\]/);
+assert.match(donorApp, /today\.epistleRef && `Epistle: \$\{today\.epistleRef\}`[\s\S]*today\.gospelRef && `Gospel: \$\{today\.gospelRef\}`/,
+  "the Today hero must order the Gospel after the Epistle");
+assert.match(donorApp, /feastNote\.replaceChildren[\s\S]*line\.className = "cal-reading-line"/,
+  "each daily reading must render as its own hero line");
 
 console.log("PASS - Today hero, saint card, and first life use the same primary commemoration");
