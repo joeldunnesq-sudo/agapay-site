@@ -1,5 +1,7 @@
 const exchangeState = { listings: [], activeListingId: "", activeThreadId: "", threads: [], messages: [], mineOnly: false };
 const exchangeObjectUrls = new Map();
+let exchangeDraftPhotos = [];
+const exchangeDraftPhotoUrls = new Map();
 let requestedExchangeListingId = new URLSearchParams(window.location.search).get("listing") || "";
 let requestedExchangeThreadId = new URLSearchParams(window.location.search).get("thread") || "";
 
@@ -62,8 +64,9 @@ async function privateExchangePhoto(url) {
 }
 
 async function hydrateExchangePhotos() {
-  const images = [...document.querySelectorAll("[data-exchange-photo]")];
+  const images = [...document.querySelectorAll("[data-exchange-photo]")].filter((image) => image.dataset.exchangePhotoHydrating !== "true");
   await Promise.all(images.map(async (image) => {
+    image.dataset.exchangePhotoHydrating = "true";
     try {
       const blob = await privateExchangePhoto(image.dataset.photoUrl);
       if (!blob || !image.isConnected) return;
@@ -73,13 +76,26 @@ async function hydrateExchangePhotos() {
       image.closest(".exchange-photo-frame")?.classList.add("is-loaded");
     } catch {
       image.closest(".exchange-photo-frame")?.classList.add("is-unavailable");
+    } finally {
+      delete image.dataset.exchangePhotoHydrating;
     }
   }));
 }
 
+function exchangePhotoFrameHtml(listing, photo, size = "card", index = 0) {
+  if (listing.listingType === "request") {
+    return `<span class="exchange-photo-frame is-${size} is-request-art"><img src="/images/app/icon-512.png" alt="AGAPAY request artwork" /></span>`;
+  }
+  return `<span class="exchange-photo-frame is-${size}">${photo ? `<img data-exchange-photo="${exchangeEscape(photo.id)}" data-photo-url="${exchangeEscape(photo.url)}" alt="Photo ${index + 1} of ${exchangeEscape(listing.title)}" />` : '<span aria-hidden="true">⇄</span>'}</span>`;
+}
+
 function exchangePhotoHtml(listing, size = "card") {
-  const photo = listing.photos?.[0];
-  return `<span class="exchange-photo-frame is-${size}">${photo ? `<img data-exchange-photo="${exchangeEscape(photo.id)}" data-photo-url="${exchangeEscape(photo.url)}" alt="Photo for ${exchangeEscape(listing.title)}" />` : '<span aria-hidden="true">⇄</span>'}</span>`;
+  return exchangePhotoFrameHtml(listing, listing.photos?.[0], size, 0);
+}
+
+function exchangeDetailPhotosHtml(listing) {
+  if (listing.listingType === "request" || (listing.photos || []).length < 2) return exchangePhotoHtml(listing, "detail");
+  return `<div class="exchange-detail-photo-gallery">${listing.photos.map((photo, index) => exchangePhotoFrameHtml(listing, photo, "gallery", index)).join("")}</div>`;
 }
 
 function syncExchangeUrl(listingId = "", threadId = "") {
@@ -114,11 +130,12 @@ function exchangeThreadListHtml(threads) {
 function renderExchangeDetail(listing) {
   const target = document.getElementById("exchangeDetail");
   if (!target) return;
+  const canAddPhotos = listing.mine && listing.listingType === "offer" && listing.status === "active" && (listing.photos || []).length < 5;
   const action = listing.mine
-    ? `<div class="exchange-owner-actions">${listing.status === "active" ? `<button class="btn btn-primary" type="button" onclick="completeExchangeListing('${exchangeEscape(listing.id)}')">Mark completed</button><button class="btn btn-ghost" type="button" onclick="loadExchangeThreads('${exchangeEscape(listing.id)}')">View conversations</button>` : ""}</div>`
+    ? `<div class="exchange-owner-actions">${listing.status === "active" ? `<button class="btn btn-primary" type="button" onclick="completeExchangeListing('${exchangeEscape(listing.id)}')">Mark completed</button><button class="btn btn-ghost" type="button" onclick="loadExchangeThreads('${exchangeEscape(listing.id)}')">View conversations</button>${canAddPhotos ? `<label class="btn btn-ghost exchange-add-photo-button" for="exchangeAddPhotos">Add photos</label><input class="exchange-photo-file-input" id="exchangeAddPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple onchange="addPhotosToExchangeListing(this,'${exchangeEscape(listing.id)}',${(listing.photos || []).length})" />` : ""}` : ""}</div>`
     : listing.status === "active" ? `<button class="btn btn-gold exchange-message-poster" type="button" onclick="startExchangeThread('${exchangeEscape(listing.id)}')">Message poster in AGAPAY</button>` : "";
   target.innerHTML = `
-    <div class="exchange-detail-head"><button class="koinonia-detail-back" type="button" onclick="closeExchangeDetail()">← Exchange</button>${exchangePhotoHtml(listing, "detail")}<div class="exchange-detail-flags"><em class="is-${exchangeEscape(listing.listingType)}">${listing.listingType === "offer" ? "Offer" : "Request"}</em><em>${exchangeEscape(exchangeCategoryLabel(listing.category))}</em>${listing.mine ? "<em>Your listing</em>" : ""}</div><h2>${exchangeEscape(listing.title)}</h2><p>${exchangeEscape(listing.description || "No additional description was provided.")}</p><dl><div><dt>Posted by</dt><dd>${listing.mine ? "You" : exchangeEscape(listing.posterName)}</dd></div><div><dt>Price</dt><dd>${exchangeEscape(exchangeMoney(listing.priceCents))}</dd></div>${listing.expiresAt ? `<div><dt>Expires</dt><dd>${exchangeEscape(exchangeDate(listing.expiresAt))}</dd></div>` : ""}</dl>${action}<small class="exchange-safety-note">Keep contact in this in-app conversation. AGAPAY does not reveal phone numbers or email addresses and does not process payment.</small></div>
+    <div class="exchange-detail-head"><button class="koinonia-detail-back" type="button" onclick="closeExchangeDetail()">← Exchange</button>${exchangeDetailPhotosHtml(listing)}<div class="exchange-detail-flags"><em class="is-${exchangeEscape(listing.listingType)}">${listing.listingType === "offer" ? "Offer" : "Request"}</em><em>${exchangeEscape(exchangeCategoryLabel(listing.category))}</em>${listing.mine ? "<em>Your listing</em>" : ""}</div><h2>${exchangeEscape(listing.title)}</h2><p>${exchangeEscape(listing.description || "No additional description was provided.")}</p><dl><div><dt>Posted by</dt><dd>${listing.mine ? "You" : exchangeEscape(listing.posterName)}</dd></div><div><dt>Price</dt><dd>${exchangeEscape(exchangeMoney(listing.priceCents))}</dd></div>${listing.expiresAt ? `<div><dt>Expires</dt><dd>${exchangeEscape(exchangeDate(listing.expiresAt))}</dd></div>` : ""}</dl>${action}<small class="exchange-safety-note">Keep contact in this in-app conversation. AGAPAY does not reveal phone numbers or email addresses and does not process payment.</small></div>
     <section class="exchange-conversation-panel" id="exchangeConversationPanel">${listing.mine ? '<div class="koinonia-empty-state"><strong>Private conversations</strong><p>Select View conversations to see messages about this listing.</p></div>' : '<div class="koinonia-empty-state"><strong>Interested?</strong><p>Message the poster privately without sharing your email or phone number.</p></div>'}</section>
   `;
   void hydrateExchangePhotos();
@@ -141,7 +158,10 @@ function toggleExchangeComposer(open) {
   const panel = document.getElementById("exchangeComposer");
   if (!panel) return;
   panel.hidden = !open;
-  if (open) panel.querySelector("input,select")?.focus();
+  if (open) {
+    syncExchangeListingType();
+    panel.querySelector("input,select")?.focus();
+  }
 }
 
 function toggleMyExchangeListings(button) {
@@ -199,6 +219,73 @@ function closeExchangeDetail() {
   document.getElementById("exchangeDetail").innerHTML = '<div class="koinonia-empty-state"><strong>Select a listing</strong><p>Open a listing to see its details and start a private conversation.</p></div>';
 }
 
+function validExchangePhoto(file) {
+  return file && ["image/jpeg", "image/png", "image/webp"].includes(file.type) && file.size > 0 && file.size <= 10 * 1024 * 1024;
+}
+
+function releaseExchangeDraftPhotoUrls() {
+  exchangeDraftPhotoUrls.forEach((url) => URL.revokeObjectURL(url));
+  exchangeDraftPhotoUrls.clear();
+}
+
+function renderExchangeDraftPhotos() {
+  const target = document.getElementById("exchangeDraftPhotoGrid");
+  if (!target) return;
+  releaseExchangeDraftPhotoUrls();
+  if (!exchangeDraftPhotos.length) {
+    target.innerHTML = "<p>No photos selected yet.</p>";
+    return;
+  }
+  target.innerHTML = exchangeDraftPhotos.map((file, index) => {
+    const url = URL.createObjectURL(file);
+    exchangeDraftPhotoUrls.set(index, url);
+    return `<figure><img src="${exchangeEscape(url)}" alt="Selected item photo ${index + 1}" /><button type="button" onclick="removeExchangeDraftPhoto(${index})" aria-label="Remove photo ${index + 1}">×</button>${index === 0 ? "<figcaption>Cover photo</figcaption>" : ""}</figure>`;
+  }).join("");
+}
+
+function selectExchangePhotos(input) {
+  const incoming = [...(input?.files || [])];
+  if (input) input.value = "";
+  const invalid = incoming.find((file) => !validExchangePhoto(file));
+  if (invalid) {
+    exchangeStatus("Photos must be JPG, PNG, or WebP and 10MB or smaller.", "error");
+    return;
+  }
+  const known = new Set(exchangeDraftPhotos.map((file) => `${file.name}|${file.size}|${file.lastModified}`));
+  const unique = incoming.filter((file) => !known.has(`${file.name}|${file.size}|${file.lastModified}`));
+  if (exchangeDraftPhotos.length + unique.length > 5) {
+    exchangeStatus("Choose up to 5 item photos.", "error");
+    return;
+  }
+  exchangeDraftPhotos = [...exchangeDraftPhotos, ...unique];
+  renderExchangeDraftPhotos();
+  exchangeStatus(exchangeDraftPhotos.length ? `${exchangeDraftPhotos.length} photo${exchangeDraftPhotos.length === 1 ? "" : "s"} ready to upload.` : "", "success");
+}
+
+function removeExchangeDraftPhoto(index) {
+  exchangeDraftPhotos = exchangeDraftPhotos.filter((_, photoIndex) => photoIndex !== index);
+  renderExchangeDraftPhotos();
+}
+
+function clearExchangeDraftPhotos() {
+  exchangeDraftPhotos = [];
+  releaseExchangeDraftPhotoUrls();
+  renderExchangeDraftPhotos();
+  const galleryInput = document.getElementById("exchangePhotos");
+  const cameraInput = document.getElementById("exchangeCameraPhoto");
+  if (galleryInput) galleryInput.value = "";
+  if (cameraInput) cameraInput.value = "";
+}
+
+function syncExchangeListingType() {
+  const isOffer = document.getElementById("exchangeListingType")?.value !== "request";
+  const uploader = document.getElementById("exchangePhotoUploader");
+  const requestArtwork = document.getElementById("exchangeRequestArtwork");
+  if (uploader) uploader.hidden = !isOffer;
+  if (requestArtwork) requestArtwork.hidden = isOffer;
+  if (!isOffer && exchangeDraftPhotos.length) clearExchangeDraftPhotos();
+}
+
 async function uploadExchangePhoto(listingId, file) {
   const response = await fetch(`/api/donor/koinonia/exchange/listings/${encodeURIComponent(listingId)}/photos`, {
     method: "POST",
@@ -211,14 +298,40 @@ async function uploadExchangePhoto(listingId, file) {
   return payload;
 }
 
+async function addPhotosToExchangeListing(input, listingId, existingCount = 0) {
+  const files = [...(input?.files || [])];
+  if (input) input.value = "";
+  if (!files.length) return;
+  if (existingCount + files.length > 5) {
+    exchangeStatus(`This listing can include ${Math.max(0, 5 - existingCount)} more photo${5 - existingCount === 1 ? "" : "s"}.`, "error");
+    return;
+  }
+  if (files.some((file) => !validExchangePhoto(file))) {
+    exchangeStatus("Photos must be JPG, PNG, or WebP and 10MB or smaller.", "error");
+    return;
+  }
+  try {
+    for (let index = 0; index < files.length; index += 1) {
+      exchangeStatus(`Uploading photo ${index + 1} of ${files.length}…`);
+      await uploadExchangePhoto(listingId, files[index]);
+    }
+    await loadExchangeListings();
+    await openExchangeListing(listingId);
+    exchangeStatus(`${files.length} photo${files.length === 1 ? "" : "s"} added to your listing.`, "success");
+  } catch (error) {
+    await loadExchangeListings();
+    await openExchangeListing(listingId);
+    exchangeStatus(error.message || "Unable to add every photo. You can try again from this listing.", "error");
+  }
+}
+
 async function createExchangeListing(event) {
   event.preventDefault();
   const form = event.currentTarget;
   const button = form.querySelector('button[type="submit"]');
-  const files = [...(document.getElementById("exchangePhotos")?.files || [])];
-  if (files.length > 5) { exchangeStatus("Choose up to 5 listing photos.", "error"); return; }
-  const invalid = files.find((file) => !["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 10 * 1024 * 1024);
-  if (invalid) { exchangeStatus("Listing photos must be JPG, PNG, or WebP and 10MB or smaller.", "error"); return; }
+  const listingType = document.getElementById("exchangeListingType").value;
+  const files = listingType === "offer" ? [...exchangeDraftPhotos] : [];
+  let createdListingId = "";
   if (button) button.disabled = true;
   try {
     const price = document.getElementById("exchangePrice").value;
@@ -226,7 +339,7 @@ async function createExchangeListing(event) {
     const data = await exchangeFetch("/api/donor/koinonia/exchange/listings", {
       method: "POST",
       body: JSON.stringify({
-        listingType: document.getElementById("exchangeListingType").value,
+        listingType,
         category: document.getElementById("exchangeCategory").value,
         title: document.getElementById("exchangeTitle").value,
         description: document.getElementById("exchangeDescription").value,
@@ -235,8 +348,14 @@ async function createExchangeListing(event) {
       }),
     });
     if (!data) return;
-    for (const file of files) await uploadExchangePhoto(data.listingId, file);
+    createdListingId = data.listingId;
+    for (let index = 0; index < files.length; index += 1) {
+      exchangeStatus(`Publishing listing · uploading photo ${index + 1} of ${files.length}…`);
+      await uploadExchangePhoto(data.listingId, files[index]);
+    }
     form.reset();
+    clearExchangeDraftPhotos();
+    syncExchangeListingType();
     setDefaultExchangeExpiry();
     toggleExchangeComposer(false);
     exchangeState.mineOnly = false;
@@ -249,7 +368,13 @@ async function createExchangeListing(event) {
     await openExchangeListing(data.listingId);
     exchangeStatus("Your listing is live in the parish Exchange.", "success");
   } catch (error) {
-    exchangeStatus(error.message || "Unable to create this listing.", "error");
+    if (createdListingId) {
+      await loadExchangeListings();
+      await openExchangeListing(createdListingId);
+      exchangeStatus(`${error.message || "A photo could not be uploaded."} Your listing is live; use Add photos to try again.`, "error");
+    } else {
+      exchangeStatus(error.message || "Unable to create this listing.", "error");
+    }
   } finally {
     if (button) button.disabled = false;
   }
@@ -333,7 +458,11 @@ function setDefaultExchangeExpiry() {
 document.addEventListener("DOMContentLoaded", () => {
   void exchangeFetch("/api/donor/koinonia/community-tools/exchange/opened", { method: "POST", body: "{}" }).catch(() => null);
   setDefaultExchangeExpiry();
+  syncExchangeListingType();
   void loadExchangeListings();
 });
 
-window.addEventListener("beforeunload", releaseExchangeObjectUrls);
+window.addEventListener("beforeunload", () => {
+  releaseExchangeObjectUrls();
+  releaseExchangeDraftPhotoUrls();
+});

@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 
 import { exchangeEnabledFor, signupsEnabledFor } from "../src/lib/entitlements.js";
 import { claimSignupSlot, deleteSheet, deleteSlot, listSignupInboxActions, listUpcomingSignupCommitments, requestSignupCoverage, SignupAccessError, updateSheet, updateSlot } from "../src/handlers/koinonia-signups.js";
-import { completeExchangeListing, expireKoinoniaExchangeListings } from "../src/handlers/koinonia-exchange.js";
+import { completeExchangeListing, expireKoinoniaExchangeListings, ExchangeAccessError, uploadListingPhoto } from "../src/handlers/koinonia-exchange.js";
 import { getCommunityToolBadgeCounts, markCommunityToolOpened } from "../src/handlers/koinonia-community-tools.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -203,6 +203,16 @@ assert.equal(sqlite.prepare("SELECT status FROM koinonia_exchange_listings WHERE
 
 sqlite.prepare(`INSERT INTO koinonia_exchange_listings
   (id, parish_id, posted_by_person_id, listing_type, category, title, status, created_at, updated_at)
+  VALUES ('listing-request-art', 'st-fiacre', 'person-1', 'request', 'tools', 'Need a ladder', 'active', 0, 0)`)
+  .run();
+await assert.rejects(
+  uploadListingPhoto(new Request("https://agapay.test/photo", { method:"POST" }), { ...env, GROUP_MESSAGE_ASSETS:{} }, claimContext, "listing-request-art"),
+  (error) => error instanceof ExchangeAccessError && error.status === 422 && /AGAPAY artwork/i.test(error.message),
+  "request listings must use branded artwork and reject item-photo uploads on the server",
+);
+
+sqlite.prepare(`INSERT INTO koinonia_exchange_listings
+  (id, parish_id, posted_by_person_id, listing_type, category, title, status, created_at, updated_at)
   VALUES ('listing-badge', 'st-fiacre', 'poster-1', 'offer', 'books', 'Fresh books', 'active', ?, ?)`)
   .run(now, now);
 assert.deepEqual(
@@ -284,6 +294,12 @@ assert.match(sources.groups, /Delete form/);
 assert.match(read("public/donor/style.css"), /\.group-workspace-tabs button \{[^}]*border:1px solid var\(--k-border\)/, "Messages and Signups must look like actionable buttons");
 assert.doesNotMatch(sources.signupsPage, /New signup sheet|Create a signup sheet/, "leader authoring belongs in ministry Groups, not the parish signup browser");
 assert.match(sources.exchangePage, /AGAPAY does not process Exchange payments/);
+assert.match(sources.exchangePage, /id="exchangePhotos"[\s\S]*id="exchangeCameraPhoto"[\s\S]*capture="environment"/, "offers must expose gallery and Android camera photo choices");
+assert.match(sources.exchangePage, /id="exchangeDraftPhotoGrid"[\s\S]*id="exchangeRequestArtwork"/, "the composer must preview offer photos and explain request artwork");
+assert.match(read("public/myagapay/exchange.js"), /listing\.listingType === "request"[\s\S]*\/images\/app\/icon-512\.png/, "request cards and details must use the same AGAPAY artwork as media players");
+assert.match(read("public/myagapay/exchange.js"), /addPhotosToExchangeListing[\s\S]*Uploading photo/, "offer owners must be able to retry or add photos after publishing");
+assert.match(read("public/donor/style.css"), /\.exchange-draft-photo-grid/, "offer photo previews must have an intentional responsive presentation");
+assert.match(read("public/donor/style.css"), /\.exchange-photo-frame\.is-request-art/, "request artwork must have an intentional responsive presentation");
 assert.doesNotMatch(sources.exchange, /stripe|checkout|payment_intent/i, "Exchange handler must remain separate from payment and marketplace code");
 
 console.log("PASS - Koinonia Signups and Exchange schema, feature gates, atomic claims/completion, expiry, private photos, reads, pushes, routes, and UI are wired");

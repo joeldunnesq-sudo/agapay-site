@@ -382,14 +382,15 @@ async function markMessageRead(env, context, threadId, messageId) {
   return { ok: true };
 }
 
-async function uploadListingPhoto(request, env, context, listingId) {
+export async function uploadListingPhoto(request, env, context, listingId) {
   if (!env.GROUP_MESSAGE_ASSETS) throw new ExchangeAccessError("Exchange photo storage is not configured.", 503);
   const listing = await d1First(env, `
-    SELECT posted_by_person_id, status FROM koinonia_exchange_listings WHERE id = ?1 AND parish_id = ?2
+    SELECT posted_by_person_id, listing_type, status FROM koinonia_exchange_listings WHERE id = ?1 AND parish_id = ?2
   `, listingId, context.parishId);
   if (!listing) throw new ExchangeAccessError("Listing not found.", 404);
   if (listing.posted_by_person_id !== context.personId) throw new ExchangeAccessError("Only the poster can add listing photos.", 403);
   if (listing.status !== "active") throw new ExchangeAccessError("Photos can only be added to active listings.", 409);
+  if (listing.listing_type !== "offer") throw new ExchangeAccessError("Request listings use the AGAPAY artwork instead of item photos.", 422);
   const count = await d1First(env, "SELECT COUNT(*) AS n FROM koinonia_exchange_photos WHERE listing_id = ?1", listingId);
   if (Number(count?.n || 0) >= MAX_LISTING_PHOTOS) throw new ExchangeAccessError(`Listings can include up to ${MAX_LISTING_PHOTOS} photos.`, 409);
   const metadata = validateGroupMessageAttachmentMetadata(request, "image");

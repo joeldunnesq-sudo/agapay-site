@@ -9872,6 +9872,33 @@ html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-link],
 .exchange-photo-frame.is-detail { width:100%; height:260px; margin-bottom:12px; }
 .exchange-photo-frame img { width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .18s ease; }
 .exchange-photo-frame.is-loaded img { opacity:1; }
+.exchange-photo-frame.is-request-art { padding:0; background:#061522; }
+.exchange-photo-frame.is-request-art img { object-fit:cover; opacity:1; }
+.exchange-detail-photo-gallery { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-bottom:12px; }
+.exchange-photo-frame.is-gallery { width:100%; height:170px; }
+.exchange-detail-photo-gallery .exchange-photo-frame:first-child { grid-row:span 2; height:348px; }
+.exchange-photo-uploader { display:grid; gap:13px; border:1px dashed #bca66f; border-radius:16px; padding:16px; background:linear-gradient(145deg,#fffdf7,#f7f0df); }
+.exchange-photo-uploader[hidden],.exchange-request-artwork[hidden] { display:none; }
+.exchange-photo-uploader-head { display:flex; align-items:center; gap:11px; }
+.exchange-photo-uploader-head > div { display:grid; gap:3px; }
+.exchange-photo-uploader-head strong,.exchange-request-artwork strong { color:#102633; font-size:13px; }
+.exchange-photo-uploader-head small,.exchange-request-artwork small { color:#6d7880; font-size:10px; line-height:1.45; }
+.exchange-photo-uploader-icon { display:grid; flex:0 0 auto; place-items:center; width:39px; height:39px; border-radius:11px; background:#061522; color:#dabb70; font-size:20px; }
+.exchange-photo-picker-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.koinonia-composer-panel label.exchange-photo-picker { display:inline-flex; grid-column:auto; align-items:center; justify-content:center; gap:6px; min-height:42px; border:1px solid #ad8d49; border-radius:10px; padding:9px 13px; background:#061522; color:#fff; font:800 11px/1 "DM Sans",sans-serif; cursor:pointer; }
+.koinonia-composer-panel label.exchange-photo-picker.is-camera { background:#fff; color:#755a25; }
+.exchange-photo-picker > span { color:inherit !important; font-size:17px !important; }
+.exchange-photo-file-input { display:none !important; }
+.exchange-draft-photo-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; }
+.exchange-draft-photo-grid > p { grid-column:1 / -1; margin:0; border-radius:10px; padding:11px; background:rgba(255,255,255,.72); color:#7a858c; font-size:10px; text-align:center; }
+.exchange-draft-photo-grid figure { position:relative; overflow:hidden; aspect-ratio:1; margin:0; border:1px solid #ddd4c2; border-radius:11px; background:#e8e5dd; }
+.exchange-draft-photo-grid img { width:100%; height:100%; object-fit:cover; }
+.exchange-draft-photo-grid button { position:absolute; top:5px; right:5px; display:grid; place-items:center; width:25px; height:25px; border:1px solid rgba(255,255,255,.74); border-radius:50%; padding:0; background:rgba(6,21,34,.84); color:#fff; font-size:17px; cursor:pointer; }
+.exchange-draft-photo-grid figcaption { position:absolute; right:5px; bottom:5px; left:5px; border-radius:999px; padding:4px 6px; background:rgba(6,21,34,.82); color:#fff; font-size:8px; font-weight:800; text-align:center; }
+.exchange-request-artwork { display:flex; align-items:center; gap:13px; border:1px solid rgba(196,156,80,.36); border-radius:16px; padding:14px; background:#f8f4e9; }
+.exchange-request-artwork img { width:52px; height:52px; border-radius:13px; }
+.exchange-request-artwork > div { display:grid; gap:3px; }
+.koinonia-composer-panel label.exchange-add-photo-button { display:inline-flex; grid-column:auto; align-items:center; cursor:pointer; }
 .exchange-listing-copy { display:flex; flex-direction:column; min-width:0; }
 .exchange-listing-copy > strong { display:-webkit-box; overflow:hidden; margin-top:8px; font:600 20px/1.1 "Cormorant Garamond",serif; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
 .exchange-listing-copy > small { margin-top:5px; color:#727d85; font-size:10px; line-height:1.4; }
@@ -9939,5 +9966,9 @@ html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-link],
   .exchange-photo-frame.is-card { width:90px; height:108px; }
   .exchange-photo-frame.is-detail { height:210px; }
   .exchange-detail-head dl { grid-template-columns:1fr; }
+  .exchange-detail-photo-gallery { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .exchange-photo-frame.is-gallery,.exchange-detail-photo-gallery .exchange-photo-frame:first-child { grid-row:auto; height:132px; }
+  .exchange-draft-photo-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .exchange-photo-picker-actions { display:grid; grid-template-columns:1fr 1fr; }
   .koinonia-trust-banner { align-items:flex-start; flex-direction:column; }
 }
