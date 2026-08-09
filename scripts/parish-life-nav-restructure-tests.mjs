@@ -52,14 +52,17 @@ assert.match(landing, />Make a festal offering</);
 assert.doesNotMatch(landing, /class="cal-hero parish-life-saint-card"/, "the Koinonia landing should not duplicate Saint of the Day in a second card");
 assert.match(donorApp, /class=\"cal-saint-chip\" id=\"saintPreviewCard\"[\s\S]*?commemorated today\">\$\{saintCount\} saint[\s\S]*?<b aria-hidden=\"true\">→<\/b>/, "the saints-count pill should open the saint modal and show a directional arrow without nesting another chip inside it");
 assert.match(landing, /id="donorSaintModal"[\s\S]*Orthocal\.info/);
-assert.match(landing, />Upcoming Services<[\s\S]*Loading the next liturgical observance/);
+assert.match(landing, />Upcoming Events<[\s\S]*Loading the next liturgical observance/);
 assert.match(landing, /href="\/myagapay\/calendar">Full Calendar</);
+assert.ok(landing.indexOf('id="parishLifeInboxMount"') < landing.indexOf(">Upcoming Events<"), "the actionable announcements card should sit directly below the hero and before Upcoming Events");
 assert.doesNotMatch(landing, />Community</, "the product must not be renamed Community in the rendered landing");
 assert.match(
   donorStyles,
   /\.donor-parish-life-page \.topbar-title\[data-parish-life-label\] \{[\s\S]*?font-family: var\(--serif\);/,
   "the Koinonia landing header should use the same Cormorant serif family as the My AGAPAY home header"
 );
+assert.match(donorStyles, /\.donor-parish-life-page \.parish-life-liturgical-hero \.cal-today-row \{ display: block; \}/, "the Koinonia hero should use one text column");
+assert.match(donorStyles, /\.donor-parish-life-page \.parish-life-liturgical-hero \.cal-date-badge \{[\s\S]*?position: absolute;[\s\S]*?top: 0;[\s\S]*?right: 0;/, "the church date should sit in a compact top-right cutout");
 
 const sandbox = { window: {}, document: { addEventListener() {} }, console };
 vm.runInNewContext(landingScript, sandbox);
@@ -103,18 +106,20 @@ const lowerTierMarkup = sandbox.window.parishLifeTierSectionsHtml(false);
 assert.equal(lowerTierMarkup, "", "lower tiers must receive no communications section DOM");
 assert.doesNotMatch(lowerTierMarkup, /Announcements|Recordings|Ministries/);
 const parishTierMarkup = sandbox.window.parishLifeTierSectionsHtml(true, { signupsEnabled:true, exchangeEnabled:true });
-assert.match(parishTierMarkup, /Community Inbox/);
-assert.match(parishTierMarkup, /Needs You/);
+const parishInboxMarkup = sandbox.window.parishLifeInboxShellHtml(true);
+assert.match(parishInboxMarkup, /Community Inbox/);
+assert.match(parishInboxMarkup, /Needs You/);
+assert.equal(sandbox.window.parishLifeInboxShellHtml(false), "");
 assert.match(parishTierMarkup, /id="listenHeading">Listen</);
 assert.match(parishTierMarkup, /Continue listening/);
 assert.match(parishTierMarkup, /Latest audio/);
 assert.match(parishTierMarkup, /Recent Videos/);
 assert.match(parishTierMarkup, /Your Ministries/);
-for (const loadingLabel of ["your Community Inbox", "ministries", "audio", "videos", "news"]) {
+for (const loadingLabel of ["ministries", "audio", "videos", "news"]) {
   assert.match(parishTierMarkup, new RegExp(`class="sw-tool-loading parish-life-section-loading"[^>]*>Loading ${loadingLabel}…<`), `the ${loadingLabel} section needs its own honest loading state`);
 }
 assert.match(parishTierMarkup, /id="parishLifeContinueListeningSection"[\s\S]*hidden[\s\S]*id="parishLifeListenItems"/, "Continue listening must be conditional and appear above the combined latest-audio list");
-assert.equal((parishTierMarkup.match(/parish-life-section-loading/g) || []).length, 5, "each fresh-content section must own one loading placeholder");
+assert.equal((parishTierMarkup.match(/parish-life-section-loading/g) || []).length, 4, "each fresh-content section must own one loading placeholder");
 assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf('id="listenHeading"'), "ministries should appear before the unified listening section and video");
 assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf("Community Tools"), "community tools should follow Your Ministries");
 assert.ok(parishTierMarkup.indexOf("Community Tools") < parishTierMarkup.indexOf('id="listenHeading"'), "community tools should appear above the media sections");
@@ -137,6 +142,7 @@ assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/groups"[\s\S]*\.the
 assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/teaching"[\s\S]*\.then\(\(teaching\)[\s\S]*renderRecentRecordings/, "recordings should replace their own placeholder when their request resolves");
 
 const tierMount = { innerHTML: "" };
+const inboxMount = { innerHTML: "" };
 const sidebarName = { textContent: "" };
 const sidebarCommunications = { hidden: true };
 const tierLabel = { textContent: "Today" };
@@ -144,6 +150,7 @@ sandbox.document.title = "Today | My AGAPAY";
 sandbox.document.documentElement = { dataset: {} };
 sandbox.document.getElementById = (id) => ({
   parishLifeTierSections: tierMount,
+  parishLifeInboxMount: inboxMount,
   parishLifeSidebarName: sidebarName,
   parishLifeSidebarCommunications: sidebarCommunications,
 })[id] || null;
@@ -154,16 +161,18 @@ sandbox.window.MyAgapayShell = {
 };
 const cachedTierExperience = sandbox.window.initializeParishLifeStructure();
 assert.equal(cachedTierExperience.communicationsEnabled, true);
-assert.match(tierMount.innerHTML, /Needs You[\s\S]*Loading your Community Inbox…/, "a cached Koinonia decision must synchronously render the Community Inbox shell before any fetch");
+assert.match(inboxMount.innerHTML, /Needs You[\s\S]*Loading your Community Inbox…/, "a cached Koinonia decision must synchronously render the Community Inbox shell before any fetch");
 assert.equal(tierLabel.textContent, "Koinonia");
 
 sandbox.window.MyAgapayShell.parishLifeExperience = () => ({ communicationsEnabled: false, label: "Today" });
 sandbox.window.initializeParishLifeStructure();
 assert.equal(tierMount.innerHTML, "", "a cached lower-tier decision must never render Koinonia section shells");
+assert.equal(inboxMount.innerHTML, "", "a cached lower-tier decision must never render the Community Inbox shell");
 
 sandbox.window.MyAgapayShell.capabilitiesLoaded = () => false;
 sandbox.window.initializeParishLifeStructure();
 assert.match(tierMount.innerHTML, /data-parish-life-structure-loading[\s\S]*Loading parish sections…/);
+assert.equal(inboxMount.innerHTML, "", "an unresolved tier must not guess whether the Community Inbox is available");
 assert.doesNotMatch(tierMount.innerHTML, /Pinned Announcements|Your Ministries|Recent Audio/, "an unresolved tier must show loading without guessing the page structure");
 
 for (const [name, source] of Object.entries({ calendar, feed, groups, teaching, media, watch })) {

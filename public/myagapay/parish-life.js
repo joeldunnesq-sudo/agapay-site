@@ -155,11 +155,6 @@ function parishLifeTierSectionsHtml(communicationsEnabled, capabilities = {}) {
     capabilities.exchangeEnabled ? '<a class="parish-life-community-tool" href="/myagapay/exchange"><span aria-hidden="true">⇄</span><strong>Exchange</strong><small>Offer or request items within your parish</small><em>Browse →</em></a>' : ''
   ].filter(Boolean).join("");
   return `
-    <section class="parish-life-home-section" aria-labelledby="communityInboxHeading">
-      <div class="parish-life-community-inbox" id="parishLifeCommunityInbox">
-        <div class="parish-life-inbox-loading"><strong id="communityInboxHeading">Needs You</strong><p class="sw-tool-loading parish-life-section-loading" role="status">Loading your Community Inbox…</p></div>
-      </div>
-    </section>
     <section class="parish-life-home-section" aria-labelledby="yourMinistriesHeading">
       <div class="parish-life-section-head"><h2 id="yourMinistriesHeading">Your Ministries</h2><a href="/myagapay/groups">All Groups</a></div>
       <div class="parish-life-ministry-grid" id="parishLifeMinistries"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading ministries…</p></div>
@@ -186,6 +181,15 @@ function parishLifeTierSectionsHtml(communicationsEnabled, capabilities = {}) {
         <p class="sw-tool-loading parish-life-section-loading" role="status">Loading news…</p>
       </section>
     </div>`;
+}
+
+function parishLifeInboxShellHtml(communicationsEnabled) {
+  if (!communicationsEnabled) return "";
+  return `<section class="parish-life-home-section" aria-labelledby="communityInboxHeading">
+    <div class="parish-life-community-inbox" id="parishLifeCommunityInbox">
+      <div class="parish-life-inbox-loading"><strong id="communityInboxHeading">Needs You</strong><p class="sw-tool-loading parish-life-section-loading" role="status">Loading your Community Inbox…</p></div>
+    </div>
+  </section>`;
 }
 
 const parishLifeListenSources = {
@@ -572,12 +576,16 @@ function applyParishLifeExperience(experience, parish) {
   document.getElementById("parishLifeSidebarName").textContent = parish?.name || "Your church calendar";
   const sidebarCommunications = document.getElementById("parishLifeSidebarCommunications");
   if (sidebarCommunications) sidebarCommunications.hidden = !experience.communicationsEnabled;
+  const inboxMount = document.getElementById("parishLifeInboxMount");
+  if (inboxMount) inboxMount.innerHTML = parishLifeInboxShellHtml(experience.communicationsEnabled);
   document.getElementById("parishLifeTierSections").innerHTML = parishLifeTierSectionsHtml(experience.communicationsEnabled, parish || {});
 }
 
 function initializeParishLifeStructure() {
   const shell = window.MyAgapayShell;
   if (!shell?.capabilitiesLoaded?.()) {
+    const inboxMount = document.getElementById("parishLifeInboxMount");
+    if (inboxMount) inboxMount.innerHTML = "";
     document.getElementById("parishLifeTierSections").innerHTML = '<p class="sw-tool-loading parish-life-structure-loading" data-parish-life-structure-loading role="status">Loading parish sections…</p>';
     return null;
   }
@@ -678,6 +686,7 @@ async function loadParishLife() {
 }
 
 window.parishLifeTierSectionsHtml = parishLifeTierSectionsHtml;
+window.parishLifeInboxShellHtml = parishLifeInboxShellHtml;
 window.initializeParishLifeStructure = initializeParishLifeStructure;
 window.parishLifeNextLiturgicalEvent = parishLifeNextLiturgicalEvent;
 window.parishLifeUpcomingLiturgicalEvents = parishLifeUpcomingLiturgicalEvents;

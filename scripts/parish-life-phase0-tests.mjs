@@ -64,7 +64,7 @@ const [hub, hubScript, shell, parishDashboard, parishApp, groupHandler, workerSo
   readFile(new URL("../src/worker.js", import.meta.url), "utf8"),
 ]);
 assert.match(hub, /class="cal-hero parish-life-liturgical-hero"/);
-assert.match(hub, />Upcoming Services</);
+assert.match(hub, />Upcoming Events</);
 assert.match(hub, /id="parishLifeTierSections">[\s\S]*data-parish-life-structure-loading[\s\S]*Loading parish sections…/, "the initial DOM must show an honest structural loading state instead of a blank gap");
 assert.doesNotMatch(hub.match(/id="parishLifeTierSections">[\s\S]*?<\/div>/)?.[0] || "", /Pinned Announcements|Your Ministries|Recent Audio/, "the initial DOM must not guess tier-gated section shells");
 assert.match(hubScript, /parishLifeFetch\("\/api\/donor\/feed"/);
