@@ -220,7 +220,7 @@ function renderCommunityInbox(feed = {}, signupPayload = {}) {
     const icon = item.kind === "coverage" ? "♡" : "✓";
     return `<article class="parish-life-inbox-item" data-community-action>
       <span class="parish-life-inbox-item-icon" aria-hidden="true">${icon}</span>
-      <span class="parish-life-inbox-item-copy"><strong>${parishLifeEscape(item.title)}</strong><small>${parishLifeEscape(item.detail)}${item.slotDate ? ` · ${parishLifeEscape(parishLifeInboxDate(item.slotDate))}` : ""}</small></span>
+      <span class="parish-life-inbox-item-copy"><strong>${parishLifeEscape(item.title)}</strong><small>${parishLifeEscape(item.detail)}${item.slotDate ? ` · ${parishLifeEscape(parishLifeInboxDate(item.slotDate))}` : ""}</small>${item.reason ? `<small><b>Reason:</b> ${parishLifeEscape(item.reason)}</small>` : ""}</span>
       <button type="button" class="parish-life-inbox-action" data-kind="${parishLifeEscape(item.kind)}" data-id="${parishLifeEscape(item.id)}" data-slot-id="${parishLifeEscape(item.slotId || "")}" onclick="resolveParishLifeInboxAction(this)">${actionLabel}</button>
     </article>`;
   }).join("");

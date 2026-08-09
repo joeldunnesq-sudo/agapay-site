@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { exchangeEnabledFor, signupsEnabledFor } from "../src/lib/entitlements.js";
-import { claimSignupSlot, deleteSheet, deleteSlot, listSignupInboxActions, listUpcomingSignupCommitments, SignupAccessError, updateSheet, updateSlot } from "../src/handlers/koinonia-signups.js";
+import { claimSignupSlot, deleteSheet, deleteSlot, listSignupInboxActions, listUpcomingSignupCommitments, requestSignupCoverage, SignupAccessError, updateSheet, updateSlot } from "../src/handlers/koinonia-signups.js";
 import { completeExchangeListing, expireKoinoniaExchangeListings } from "../src/handlers/koinonia-exchange.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -100,9 +100,10 @@ sqlite.prepare(`INSERT INTO koinonia_signup_slots
   .run("slot-1", "sheet-1", "st-fiacre", "Tuesday supper", now, now);
 
 const claimContext = { parishId: "st-fiacre", householdId: "household-1", personId: "person-1", donorId: "one@example.org" };
-const claimed = await claimSignupSlot(new Request("https://agapay.test/claim", { method: "POST", body: "{}", headers: { "Content-Type": "application/json" } }), env, null, claimContext, "slot-1");
+const claimed = await claimSignupSlot(new Request("https://agapay.test/claim", { method: "POST", body: JSON.stringify({ comment:"Vegetable lasagna" }), headers: { "Content-Type": "application/json" } }), env, null, claimContext, "slot-1");
 assert.equal(claimed.ok, true);
 assert.equal(sqlite.prepare("SELECT COUNT(*) AS n FROM koinonia_signup_entries WHERE slot_id = ? AND status = 'confirmed'").get("slot-1").n, 1);
+assert.equal(sqlite.prepare("SELECT comment FROM koinonia_signup_entries WHERE id = ?").get(claimed.entryId).comment, "Vegetable lasagna", "claim details must reach the ministry signup entry");
 await assert.rejects(
   claimSignupSlot(new Request("https://agapay.test/claim", { method: "POST", body: "{}", headers: { "Content-Type": "application/json" } }), env, null, { ...claimContext, personId: "person-2", donorId: "two@example.org" }, "slot-1"),
   (error) => error instanceof SignupAccessError && error.status === 409 && /full/i.test(error.message),
@@ -131,6 +132,15 @@ assert.equal(inboxActions[0].slotId, "slot-upcoming");
 sqlite.prepare("INSERT INTO directory_ministry_participants (parish_id, ministry_id, person_id, status) VALUES (?, ?, ?, 'active')")
   .run("st-fiacre", "ministry-meals", "person-2");
 const delegatedContext = { ...claimContext, personId:"person-2", donorId:"two@example.org" };
+const coverage = await requestSignupCoverage(new Request("https://agapay.test/coverage", { method:"POST", body:JSON.stringify({ note:"I will be out of town for work." }), headers:{ "Content-Type":"application/json" } }), env, null, claimContext, "entry-upcoming");
+assert.equal(coverage.recipientCount, 1, "the coverage request must target assigned ministry teammates");
+assert.equal(sqlite.prepare("SELECT note FROM koinonia_signup_coverage_requests WHERE id = ?").get(coverage.coverageRequestId).note, "I will be out of town for work.");
+const coverageInbox = await listSignupInboxActions(env, delegatedContext, 1000);
+assert.equal(coverageInbox[0].kind, "coverage");
+assert.equal(coverageInbox[0].reason, "I will be out of town for work.", "the reason must reach the assigned ministry member's actionable inbox");
+const updatedCoverage = await requestSignupCoverage(new Request("https://agapay.test/coverage", { method:"POST", body:JSON.stringify({ note:"Travel plans changed; I am away all weekend." }), headers:{ "Content-Type":"application/json" } }), env, null, claimContext, "entry-upcoming");
+assert.equal(updatedCoverage.coverageRequestId, coverage.coverageRequestId, "re-submitting coverage must update the existing open request instead of duplicating it");
+assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM koinonia_signup_coverage_requests WHERE entry_id = ? AND status = 'open'").get("entry-upcoming").count, 1);
 await updateSheet(new Request("https://agapay.test/sheet", { method:"PATCH", body:JSON.stringify({ title:"Coffee hour helpers", category:"volunteer", description:"Serve together" }), headers:{ "Content-Type":"application/json" } }), env, delegatedContext, "sheet-1");
 assert.deepEqual(
   { ...sqlite.prepare("SELECT title, category, description FROM koinonia_signup_sheets WHERE id = 'sheet-1'").get() },
@@ -198,6 +208,7 @@ const sources = {
   parishDashboard: read("public/parish/dashboard.html"),
   parishApp: read("public/parish/app.js"),
   signupsPage: read("public/myagapay/signups.html"),
+  signupsClient: read("public/myagapay/signups.js"),
   exchangePage: read("public/myagapay/exchange.html"),
   parishLife: read("public/myagapay/parish-life.js"),
   groups: read("public/myagapay/groups.js"),
@@ -216,6 +227,10 @@ assert.match(sources.shell, /parishFeature: "exchangeEnabled"/);
 assert.match(sources.parishDashboard, /id="signupsEnabledSwitch"[\s\S]*id="exchangeEnabledSwitch"/);
 assert.match(sources.parishApp, /JSON\.stringify\(\{ \[field\]: enabled \}\)/);
 assert.match(sources.signupsPage, /Koinonia[\s\S]*Signups/);
+assert.match(sources.signupsPage, /id="signupActionDialog"[\s\S]*id="signupActionText"/, "signup details and coverage reasons must use an accessible modal");
+assert.match(sources.signupsPage, /myagapay-shell\.js\?v=20260809signupmodal1/, "Signups must load the current unified app navigation shell");
+assert.match(sources.signupsClient, /JSON\.stringify\(\{ comment \}\)/, "claim details must be sent to the signup API");
+assert.doesNotMatch(sources.signupsClient, /window\.prompt/, "coverage requests must not use a browser prompt");
 assert.match(sources.parishLife, /\/api\/donor\/koinonia\/signups\/upcoming/);
 assert.match(sources.parishLife, /Signup ·/);
 assert.match(sources.groups, /\["overview","Overview"\]/);

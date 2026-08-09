@@ -1,4 +1,4 @@
-const signupsState = { sheets: [], ministries: [], activeSheetId: "" };
+const signupsState = { sheets: [], ministries: [], activeSheetId: "", pendingAction: null };
 let requestedSignupSheetId = new URLSearchParams(window.location.search).get("sheet") || "";
 
 function signupsEscape(value) {
@@ -69,7 +69,7 @@ function renderSignupSheets() {
 }
 
 function signupEntryHtml(entry) {
-  return `<li><span><strong>${entry.mine ? "You" : signupsEscape(entry.personName)}</strong>${entry.comment ? `<small>${signupsEscape(entry.comment)}</small>` : ""}</span>${entry.mine ? `<span><button type="button" onclick="requestSignupCoverage('${signupsEscape(entry.id)}')">Need coverage</button><button type="button" onclick="cancelSignupEntry('${signupsEscape(entry.id)}')">Cancel</button></span>` : ""}</li>`;
+  return `<li><span class="signup-entry-copy"><strong>${entry.mine ? "You" : signupsEscape(entry.personName)}</strong>${entry.comment ? `<small>${signupsEscape(entry.comment)}</small>` : ""}</span>${entry.mine ? `<span class="signup-entry-actions"><button class="is-coverage${entry.coverageRequested ? " is-requested" : ""}" type="button" data-coverage-note="${signupsEscape(entry.coverageNote || "")}" onclick="openSignupCoverageModal('${signupsEscape(entry.id)}', this.dataset.coverageNote)">${entry.coverageRequested ? "Update request" : "Need coverage"}</button><button class="is-cancel" type="button" onclick="cancelSignupEntry('${signupsEscape(entry.id)}')">Cancel</button></span>` : ""}</li>`;
 }
 
 function renderSignupDetail(sheet, slots) {
@@ -80,7 +80,7 @@ function renderSignupDetail(sheet, slots) {
     <div class="signup-slot-list">${slots.length ? slots.map((slot) => {
       const full = slot.filledCount >= slot.neededCount;
       const mine = slot.entries.some((entry) => entry.mine);
-      return `<article class="signup-slot-card${slot.read ? "" : " is-unread"}"><div class="signup-slot-date"><span>${signupsEscape(signupsDate(slot.slotDate))}</span><em>${Number(slot.filledCount)} of ${Number(slot.neededCount)} filled</em></div><h3>${signupsEscape(slot.label)}</h3>${slot.notes ? `<p>${signupsEscape(slot.notes)}</p>` : ""}<ul>${slot.entries.map(signupEntryHtml).join("")}</ul>${sheet.status === "open" && !mine && !full ? `<button class="btn btn-primary" type="button" onclick="claimSignupSlot('${signupsEscape(slot.id)}')">Claim this slot</button>` : full && !mine ? `<button class="btn btn-ghost" type="button" onclick="joinSignupWaitlist('${signupsEscape(slot.id)}')">Join waitlist</button>` : ""}</article>`;
+      return `<article class="signup-slot-card${slot.read ? "" : " is-unread"}"><div class="signup-slot-date"><span>${signupsEscape(signupsDate(slot.slotDate))}</span><em>${Number(slot.filledCount)} of ${Number(slot.neededCount)} filled</em></div><h3>${signupsEscape(slot.label)}</h3>${slot.notes ? `<p>${signupsEscape(slot.notes)}</p>` : ""}<ul>${slot.entries.map(signupEntryHtml).join("")}</ul>${sheet.status === "open" && !mine && !full ? `<button class="btn btn-primary" type="button" data-slot-label="${signupsEscape(slot.label)}" onclick="openSignupClaimModal('${signupsEscape(slot.id)}', this.dataset.slotLabel)">Claim this slot</button>` : full && !mine ? `<button class="btn btn-ghost" type="button" onclick="joinSignupWaitlist('${signupsEscape(slot.id)}')">Join waitlist</button>` : ""}</article>`;
     }).join("") : '<div class="koinonia-empty-state"><strong>No slots yet</strong><p>A ministry leader can add the first signup slot.</p></div>'}</div>
   `;
 }
@@ -137,14 +137,76 @@ function closeSignupSheet() {
   document.getElementById("signupDetail").innerHTML = '<div class="koinonia-empty-state"><strong>Choose a signup sheet</strong><p>Open a sheet to see available slots and current commitments.</p></div>';
 }
 
-async function claimSignupSlot(slotId) {
+function openSignupActionModal(action) {
+  const dialog = document.getElementById("signupActionDialog");
+  const form = document.getElementById("signupActionForm");
+  const text = document.getElementById("signupActionText");
+  if (!dialog || !form || !text) return;
+  signupsState.pendingAction = action;
+  document.getElementById("signupActionSymbol").textContent = action.kind === "coverage" ? "♡" : "✓";
+  document.getElementById("signupActionEyebrow").textContent = action.kind === "coverage" ? "Ask your ministry team" : "Signup details";
+  document.getElementById("signupActionTitle").textContent = action.kind === "coverage" ? "Request coverage" : `Claim ${action.label || "this slot"}`;
+  document.getElementById("signupActionDescription").textContent = action.kind === "coverage"
+    ? "Tell your ministry teammates why you need help. Your reason will be included with the request."
+    : "Add a detail so the ministry team knows what you plan to bring or do.";
+  document.getElementById("signupActionLabel").textContent = action.kind === "coverage" ? "Why do you need coverage?" : "What are you bringing or helping with?";
+  document.getElementById("signupActionHint").textContent = action.kind === "coverage" ? "Required · shared only with assigned ministry members" : "Optional · for example, “vegetable lasagna.”";
+  document.getElementById("signupActionSubmit").textContent = action.kind === "coverage" ? "Send request" : "Claim this slot";
+  text.required = action.kind === "coverage";
+  text.minLength = action.kind === "coverage" ? 5 : 0;
+  text.placeholder = action.kind === "coverage" ? "For example: I’ll be out of town and need someone to take this shift." : "For example: Vegetable lasagna";
+  text.value = action.currentNote || "";
+  form.onsubmit = submitSignupActionModal;
+  if (typeof dialog.showModal === "function") dialog.showModal();
+  else dialog.setAttribute("open", "");
+  window.setTimeout(() => text.focus(), 50);
+}
+
+function openSignupClaimModal(slotId, label = "") {
+  openSignupActionModal({ kind: "claim", id: slotId, label });
+}
+
+function openSignupCoverageModal(entryId, currentNote = "") {
+  openSignupActionModal({ kind: "coverage", id: entryId, currentNote });
+}
+
+function closeSignupActionModal() {
+  const dialog = document.getElementById("signupActionDialog");
+  signupsState.pendingAction = null;
+  if (!dialog) return;
+  if (typeof dialog.close === "function") dialog.close();
+  else dialog.removeAttribute("open");
+}
+
+async function submitSignupActionModal(event) {
+  event.preventDefault();
+  const action = signupsState.pendingAction;
+  const text = document.getElementById("signupActionText");
+  const submit = document.getElementById("signupActionSubmit");
+  if (!action || !text || !submit || !text.reportValidity()) return;
+  const submitLabel = action.kind === "coverage" ? "Send request" : "Claim this slot";
+  submit.disabled = true;
+  submit.textContent = action.kind === "coverage" ? "Sending…" : "Claiming…";
   try {
-    await signupsFetch(`/api/donor/koinonia/signups/slots/${encodeURIComponent(slotId)}/claim`, { method: "POST", body: "{}" });
+    if (action.kind === "coverage") await requestSignupCoverage(action.id, text.value);
+    else await claimSignupSlot(action.id, text.value);
+    closeSignupActionModal();
+  } catch (error) {
+    signupStatus(error.message || "Unable to complete this signup action.", "error");
+  } finally {
+    submit.disabled = false;
+    submit.textContent = submitLabel;
+  }
+}
+
+async function claimSignupSlot(slotId, comment = "") {
+  try {
+    await signupsFetch(`/api/donor/koinonia/signups/slots/${encodeURIComponent(slotId)}/claim`, { method: "POST", body: JSON.stringify({ comment }) });
     await loadSignups();
     await openSignupSheet(signupsState.activeSheetId);
     signupStatus("You’re signed up. Thank you for helping.", "success");
   } catch (error) {
-    signupStatus(error.message || "Unable to claim this slot.", "error");
+    throw new Error(error.message || "Unable to claim this slot.");
   }
 }
 
@@ -159,6 +221,6 @@ async function cancelSignupEntry(entryId) {
   }
 }
 async function joinSignupWaitlist(slotId){try{await signupsFetch(`/api/donor/koinonia/signups/slots/${encodeURIComponent(slotId)}/waitlist`,{method:"POST",body:"{}"});signupStatus("You’re on the waitlist. We’ll let you know if space opens.","success");}catch(error){signupStatus(error.message||"Unable to join the waitlist.","error");}}
-async function requestSignupCoverage(entryId){const note=window.prompt("Optional note for the ministry coordinator:","");if(note===null)return;try{await signupsFetch(`/api/donor/koinonia/signups/entries/${encodeURIComponent(entryId)}/coverage`,{method:"POST",body:JSON.stringify({note})});signupStatus("Coverage request sent to the ministry.","success");}catch(error){signupStatus(error.message||"Unable to request coverage.","error");}}
+async function requestSignupCoverage(entryId,note){try{await signupsFetch(`/api/donor/koinonia/signups/entries/${encodeURIComponent(entryId)}/coverage`,{method:"POST",body:JSON.stringify({note})});await openSignupSheet(signupsState.activeSheetId);signupStatus("Your coverage request was sent to the assigned ministry team.","success");}catch(error){throw new Error(error.message||"Unable to request coverage.");}}
 
 document.addEventListener("DOMContentLoaded", loadSignups);

@@ -8,11 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/donor/style.css?v=20260808koinonia1" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260809signupmodal1" />
   <script src="/pwa-register.js" defer></script>
-  <script src="/myagapay-shell.js?v=20260808koinonia1"></script>
+  <script src="/myagapay-shell.js?v=20260809signupmodal1"></script>
   <script src="/myagapay/push-notifications.js?v=20260731push1" defer></script>
-  <script src="/myagapay/signups.js?v=20260808koinonia3" defer></script>
+  <script src="/myagapay/signups.js?v=20260809signupmodal1" defer></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <meta name="theme-color" content="#061522" />
 </head>
@@ -41,5 +41,20 @@
       <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
     </main>
   </div>
+  <dialog class="signup-action-dialog" id="signupActionDialog" aria-labelledby="signupActionTitle" aria-describedby="signupActionDescription">
+    <form method="dialog" id="signupActionForm">
+      <button class="signup-action-close" type="button" aria-label="Close" onclick="closeSignupActionModal()">×</button>
+      <span class="signup-action-symbol" id="signupActionSymbol" aria-hidden="true">✓</span>
+      <span class="eyebrow" id="signupActionEyebrow">Signup details</span>
+      <h2 id="signupActionTitle">Confirm your signup</h2>
+      <p id="signupActionDescription">Add a helpful detail for the ministry team.</p>
+      <label for="signupActionText"><strong id="signupActionLabel">What are you bringing?</strong><span id="signupActionHint">Optional — for example, “vegetable lasagna.”</span></label>
+      <textarea id="signupActionText" rows="4" maxlength="300" placeholder="Add a note…"></textarea>
+      <div class="signup-action-footer">
+        <button class="signup-action-secondary" type="button" onclick="closeSignupActionModal()">Not now</button>
+        <button class="signup-action-primary" id="signupActionSubmit" type="submit">Claim this slot</button>
+      </div>
+    </form>
+  </dialog>
 </body>
 </html>

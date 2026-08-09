@@ -9814,7 +9814,33 @@ html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-link],
 .signup-slot-card li { display:flex; align-items:center; justify-content:space-between; gap:10px; border-radius:9px; padding:8px 10px; background:#f6f4ee; font-size:11px; }
 .signup-slot-card li span { display:grid; gap:2px; }
 .signup-slot-card li small { color:#6f7981; }
-.signup-slot-card li button { border:0; background:transparent; color:#8a4541; font:700 10px "DM Sans",sans-serif; cursor:pointer; }
+.signup-slot-card li .signup-entry-actions { display:flex; align-items:center; gap:6px; }
+.signup-slot-card li .signup-entry-actions button { min-height:32px; border:1px solid #b9a675; border-radius:8px; padding:7px 10px; background:#fff; color:#6e5526; font:800 10px/1 "DM Sans",sans-serif; cursor:pointer; white-space:nowrap; }
+.signup-slot-card li .signup-entry-actions button.is-cancel { border-color:#c9aaa7; color:#8a4541; }
+.signup-slot-card li .signup-entry-actions button.is-requested { border-color:#6f9779; background:#eff8f1; color:#2f6841; }
+.signup-slot-card li .signup-entry-actions button:hover { border-color:#80662f; background:#fff9eb; }
+.signup-slot-card li .signup-entry-actions button.is-cancel:hover { border-color:#9b5c57; background:#fff3f1; }
+.signup-action-dialog { width:min(520px,calc(100vw - 28px)); max-width:none; border:0; border-radius:22px; padding:0; background:transparent; color:#061522; box-shadow:0 28px 80px rgba(6,21,34,.32); }
+.signup-action-dialog::backdrop { background:rgba(4,14,23,.68); backdrop-filter:blur(5px); }
+.signup-action-dialog form { position:relative; display:grid; gap:11px; border:1px solid rgba(218,187,112,.48); border-radius:22px; padding:27px; background:linear-gradient(145deg,#fffdf8,#f8f1df); }
+.signup-action-dialog .signup-action-close { position:absolute; top:14px; right:14px; display:grid; place-items:center; width:36px; height:36px; border:1px solid #d8d2c5; border-radius:50%; background:#fff; color:#53616b; font-size:22px; cursor:pointer; }
+.signup-action-symbol { display:grid; place-items:center; width:46px; height:46px; margin-bottom:2px; border-radius:14px; background:#061522; color:#dabb70; font:600 24px/1 "Cormorant Garamond",serif; }
+.signup-action-dialog h2 { margin:0; padding-right:34px; color:#061522; font:600 34px/1.05 "Cormorant Garamond",serif; }
+.signup-action-dialog > form > p { margin:0; color:#64717a; font-size:12px; line-height:1.55; }
+.signup-action-dialog label { display:grid; gap:4px; margin-top:5px; color:#253744; font-size:11px; }
+.signup-action-dialog label strong { font-weight:800; }
+.signup-action-dialog label span { color:#75808a; font-size:10px; font-weight:500; }
+.signup-action-dialog textarea { width:100%; resize:vertical; border:1px solid #cfc6b5; border-radius:12px; padding:12px 13px; background:#fff; color:#061522; font:500 14px/1.5 "DM Sans",sans-serif; outline:none; }
+.signup-action-dialog textarea:focus { border-color:#a47e34; box-shadow:0 0 0 3px rgba(196,156,80,.15); }
+.signup-action-footer { display:flex; justify-content:flex-end; gap:8px; margin-top:5px; }
+.signup-action-footer button { min-height:42px; border-radius:10px; padding:10px 15px; font:800 11px/1 "DM Sans",sans-serif; cursor:pointer; }
+.signup-action-secondary { border:1px solid #cfc6b5; background:#fff; color:#52616c; }
+.signup-action-primary { border:1px solid #061522; background:#061522; color:#fff; }
+.signup-action-primary:disabled { cursor:wait; opacity:.68; }
+@media (max-width:900px) {
+  .signups-page .donor-mobile-content { padding-bottom:calc(96px + env(safe-area-inset-bottom)); }
+  .signups-page .my-agapay-tabbar { width:min(100%,520px); min-height:76px; border-radius:20px 20px 0 0; }
+}
 .signup-slot-full { color:#68737c; font-size:11px; font-weight:700; }
 .signup-slot-form { display:grid; grid-template-columns:2fr .8fr 1.3fr 2fr auto; gap:10px; align-items:end; border-top:1px solid #e4dfd4; padding-top:18px; }
 .signup-slot-form h3 { margin:3px 0 0; color:#061522; font:600 22px/1.1 "Cormorant Garamond",serif; }
@@ -9896,6 +9922,11 @@ html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-link],
   .koinonia-composer-panel .is-wide { grid-column:auto; }
 }
 @media (max-width:560px) {
+  .signup-slot-card li { align-items:flex-start; flex-direction:column; }
+  .signup-slot-card li .signup-entry-actions { width:100%; grid-template-columns:none; }
+  .signup-slot-card li .signup-entry-actions button { flex:1 1 0; }
+  .signup-action-dialog form { padding:24px 19px 20px; }
+  .signup-action-footer { display:grid; grid-template-columns:1fr 1fr; }
   .donor-parish-life-page .parish-life-liturgical-hero .cal-today-title { font-size:24px; line-height:1.08; }
   .donor-parish-life-page .parish-life-saint-card .cal-saint-name { font-size:15.5px; line-height:1.18; }
   .ministry-overview-grid,.ministry-member-grid { grid-template-columns:1fr; }
