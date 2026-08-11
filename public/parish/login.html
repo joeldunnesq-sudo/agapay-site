@@ -39,33 +39,12 @@
         <h2>Login</h2>
         <div class="form-group">
           <label class="form-label" for="parishId">Parish name or username</label>
-          <input id="parishId" autocomplete="username" placeholder="st-seraphim-mission" oninput="clearParishTermsAcceptanceRequirement()" />
+          <input id="parishId" autocomplete="username" placeholder="st-seraphim-mission" />
         </div>
         <div class="form-group">
           <label class="form-label" for="parishToken">Password</label>
           <input id="parishToken" type="password" autocomplete="current-password" placeholder="Your parish password" />
         </div>
-        <section class="parish-auth-acceptance" id="parishTermsAcceptance" aria-labelledby="parishTermsAcceptanceTitle" hidden>
-          <span class="parish-auth-acceptance-kicker">One-time step</span>
-          <h3 id="parishTermsAcceptanceTitle">Accept the current Terms</h3>
-          <p>This parish has not yet accepted the current Terms and Privacy Policy. An authorized representative only needs to complete this once.</p>
-          <div class="form-group">
-            <label class="form-label" for="acceptingName">Your full name</label>
-            <input id="acceptingName" autocomplete="name" maxlength="200" placeholder="Person signing in" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="acceptingEmail">Your email</label>
-            <input id="acceptingEmail" type="email" autocomplete="email" maxlength="320" placeholder="you@example.com" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="acceptingRole">Your role or title</label>
-            <input id="acceptingRole" autocomplete="organization-title" maxlength="200" placeholder="Rector, treasurer, administrator…" />
-          </div>
-          <label class="parish-auth-acceptance-check">
-            <input id="parishAgreeTerms" type="checkbox" />
-            <span>I agree to the <a href="/terms#arbitration" target="_blank" rel="noopener noreferrer">Terms of Service</a>, acknowledge the <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and confirm I am authorized to act for this organization.</span>
-          </label>
-        </section>
         <div class="parish-auth-actions">
           <button class="btn btn-gold" type="submit">Log in</button>
           <a class="btn btn-ghost" href="/register.html">Register parish</a>

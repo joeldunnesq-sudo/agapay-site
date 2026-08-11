@@ -217,9 +217,9 @@ assert.ok(
 );
 assert.ok(serviceWorker.includes('url.pathname.startsWith("/api/") return true') || serviceWorker.includes('url.pathname.startsWith("/api/")) return true'), "service worker should bypass API responses, including private Directory JSON");
 assert.ok(parishDashboardApp.includes("fetch(directoryAdminApi('/dashboard'), { headers })"), "Parish Dashboard Directory should use the parish dashboard auth headers");
-assert.match(parishLoginPage, /id="parishTermsAcceptance"[^>]*hidden/, "parish login must hide one-time legal acceptance fields by default");
-assert.match(parishDashboardApp, /res\.status === 428 && data\.code === 'terms_acceptance_required'[\s\S]*requireParishTermsAcceptance/, "parish login must reveal legal acceptance only when the server says it is required");
-assert.match(parishDashboardApp, /requireParishTermsAcceptance[\s\S]*field\.required = true/, "revealed parish legal acceptance fields must become required");
+assert.doesNotMatch(parishLoginPage, /terms|privacy|acceptingName|parishAgreeTerms/i, "parish login must not request legal acceptance");
+assert.doesNotMatch(parishDashboardApp, /terms_acceptance_required|requireParishTermsAcceptance|parishAgreeTerms/, "parish login logic must submit credentials without a legal-acceptance branch");
+assert.doesNotMatch(myAgapayLoginPage, /donorAgreeTerms|termsAccepted|Terms of Service|Privacy Policy/, "My AGAPAY login must not request or submit legal acceptance");
 assert.ok(!parishDashboardApp.includes("directoryAdminHeaders") && !parishDashboardApp.includes("handleDirectoryStaffLogin"), "Parish Dashboard Directory should not require a second My AGAPAY staff login");
 assert.ok(!parishDashboardApp.includes("agapayPlatformToken") && !parishDashboardApp.includes("agapayUserToken"), "Parish Dashboard Directory should not read My AGAPAY tokens from localStorage");
 assert.ok(listenManifest.includes('"scope": "/listen/"') && listenManifest.includes('"name": "AGAPAY Listen"'), "AGAPAY Listen PWA manifest should exist with its own scope and identity");

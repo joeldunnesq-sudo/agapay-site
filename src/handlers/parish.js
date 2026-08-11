@@ -127,7 +127,7 @@ import {
 } from "../lib/settlement-profiles.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
 import { registrationAgreementEvidence, registrationRequiresJurisdiction, registrationRequiresValuesReview, registrationRequiresWebsite, sanitizePublicRegistrationInput } from "../lib/registration-intake.js";
-import { ensureParishCurrentTermsAcceptance, recordOrganizationRegistrationAcceptance } from "../lib/legal-acceptance.js";
+import { recordOrganizationRegistrationAcceptance } from "../lib/legal-acceptance.js";
 export { registrationRequiresJurisdiction };
 import {
   publicPaymentFeeSchedules,
@@ -2877,9 +2877,6 @@ export async function handleParishSession(request, env, parishId) {
   if (!(await verifyParishDashboardPassword(found.registration, password))) {
     return unauthorized();
   }
-
-  const termsAcceptanceError = await ensureParishCurrentTermsAcceptance(env, request, parishId, body);
-  if (termsAcceptanceError) return json(termsAcceptanceError, { status: 428 });
 
   const session = await issueParishDashboardSession(found.registration);
   await saveRegistrationRecord(env, found.key, session.registration, found.registration);

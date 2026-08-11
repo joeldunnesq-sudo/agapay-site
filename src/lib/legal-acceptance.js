@@ -1,40 +1,16 @@
-import { clientIp, d1, d1First, d1Run, normalizeEmail, sha256Hex } from "./core.js";
+import { clientIp, d1, d1Run, normalizeEmail, sha256Hex } from "./core.js";
 
 export const CURRENT_TERMS_VERSION = "2026-08-02";
 export const CURRENT_TERMS_SHA256 = "11cd64ddb5ad936eb971b313ca8c22237790d3e2febc2bde41954111cdb65c20";
 export const CURRENT_PRIVACY_NOTICE_VERSION = "2026-08-02";
 
 export const ORGANIZATION_ACCEPTANCE_DISCLOSURE = "I confirm that I am authorized to bind the organization named above and that the information above is accurate. I agree to the Terms of Service, including the 30-day informal-resolution process, small-claims option, and court provisions in Section 24. I acknowledge the Privacy Policy.";
-export const PARISH_REACCEPTANCE_DISCLOSURE = "I agree to the current Terms of Service, including the 30-day informal-resolution process, small-claims option, and court provisions in Section 24. I acknowledge the Privacy Policy and confirm I am authorized to act for this organization.";
 export const ACCOUNT_ACCEPTANCE_DISCLOSURE = "I agree to the Terms of Service, including the 30-day informal-resolution process, small-claims option, and court provisions in Section 24. I acknowledge the Privacy Policy.";
-export const ACCOUNT_REACCEPTANCE_DISCLOSURE = "I agree to the current Terms of Service, including the 30-day informal-resolution process, small-claims option, and court provisions in Section 24. I acknowledge the Privacy Policy.";
 
 function requiredText(value, label, maxLength = 5000) {
   const normalized = String(value || "").trim().slice(0, maxLength);
   if (!normalized) throw new Error(`${label} is required to preserve legal acceptance evidence.`);
   return normalized;
-}
-
-export async function hasCurrentLegalAcceptance(env, { subjectUserId = "", organizationId = "" } = {}) {
-  const normalizedUserId = normalizeEmail(subjectUserId);
-  const normalizedOrganizationId = String(organizationId || "").trim();
-  if (d1(env)) {
-    const row = normalizedOrganizationId
-      ? await d1First(env, "SELECT id FROM legal_acceptances WHERE organization_id = ?1 AND terms_version = ?2 LIMIT 1", normalizedOrganizationId, CURRENT_TERMS_VERSION)
-      : await d1First(env, "SELECT id FROM legal_acceptances WHERE subject_user_id = ?1 AND terms_version = ?2 LIMIT 1", normalizedUserId, CURRENT_TERMS_VERSION);
-    return Boolean(row?.id);
-  }
-  if (env.AGAPAY_REGISTRATIONS) {
-    const list = await env.AGAPAY_REGISTRATIONS.list({ prefix: "legal_acceptance:", limit: 1000 });
-    for (const key of list.keys || []) {
-      const stored = await env.AGAPAY_REGISTRATIONS.get(key.name, "json");
-      const record = typeof stored === "string" ? JSON.parse(stored) : stored;
-      if (record?.termsVersion !== CURRENT_TERMS_VERSION) continue;
-      if (normalizedOrganizationId && record.organizationId === normalizedOrganizationId) return true;
-      if (!normalizedOrganizationId && normalizeEmail(record?.subjectUserId) === normalizedUserId) return true;
-    }
-  }
-  return false;
 }
 
 export async function recordLegalAcceptance(env, request, input = {}) {
@@ -101,30 +77,4 @@ export function recordOrganizationRegistrationAcceptance(env, request, { body, p
     acceptanceSource: "church_registration",
     transactionReference: reference,
   });
-}
-
-export async function ensureParishCurrentTermsAcceptance(env, request, parishId, body = {}) {
-  if (await hasCurrentLegalAcceptance(env, { organizationId: parishId })) return null;
-  const acceptingName = String(body.acceptingName || "").trim();
-  const acceptingEmail = normalizeEmail(body.acceptingEmail);
-  const acceptingRole = String(body.acceptingRole || "").trim();
-  if (body.termsAccepted !== true || !acceptingName || !acceptingEmail || !acceptingRole) {
-    return {
-      error: "Affirmative acceptance of the current Terms is required.",
-      code: "terms_acceptance_required",
-      termsVersion: CURRENT_TERMS_VERSION,
-    };
-  }
-  await recordLegalAcceptance(env, request, {
-    actorType: "organization_representative",
-    subjectUserId: acceptingEmail,
-    organizationId: parishId,
-    actorName: acceptingName,
-    actorEmail: acceptingEmail,
-    actorRole: acceptingRole,
-    disclosureText: PARISH_REACCEPTANCE_DISCLOSURE,
-    acceptanceSource: "parish_login_reacceptance",
-    transactionReference: `parish-login:${parishId}:${CURRENT_TERMS_VERSION}`,
-  });
-  return null;
 }

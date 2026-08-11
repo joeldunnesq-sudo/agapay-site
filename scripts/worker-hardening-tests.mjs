@@ -831,19 +831,19 @@ async function withMockFetch(handler, run) {
   assert.equal(rebuild.status, 200);
   assert.equal(await testEnv.AGAPAY_REGISTRATIONS.get("__agapay_index_parish_id__st-test"), "AGP-REG-TEST");
 
-  const termsRequired = await worker.fetch(request("/api/parish/dashboard/st-test/session", {
+  const firstParishLogin = await worker.fetch(request("/api/parish/dashboard/st-test/session", {
     method: "POST",
     body: { password: "temporary-password" }
   }), testEnv);
-  assert.equal(termsRequired.status, 428, "a parish without current acceptance should be prompted only after valid credentials");
-  assert.equal((await json(termsRequired)).code, "terms_acceptance_required");
+  assert.equal(firstParishLogin.status, 200, "parish login should require credentials only, even without a current-version acceptance record");
+  assert.ok((await json(firstParishLogin)).token);
 
   const parishLogin = await parishSession(testEnv, "st-test", "temporary-password");
   const returningParishLogin = await worker.fetch(request("/api/parish/dashboard/st-test/session", {
     method: "POST",
     body: { password: "temporary-password" }
   }), testEnv);
-  assert.equal(returningParishLogin.status, 200, "a parish with current acceptance should log in with only its name and password");
+  assert.equal(returningParishLogin.status, 200, "returning parish login should use only its name and password");
   assert.ok((await json(returningParishLogin)).token);
 
   const parish = await worker.fetch(request("/api/parish/dashboard/st-test", {

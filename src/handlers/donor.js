@@ -1,6 +1,6 @@
 import { bookstoreReadinessSummary, bookstoreSellerDisclosure } from "../lib/commerce-readiness.js";
 import { logEvent } from "../lib/logging.js";
-import { ACCOUNT_ACCEPTANCE_DISCLOSURE, ACCOUNT_REACCEPTANCE_DISCLOSURE, CURRENT_TERMS_VERSION, hasCurrentLegalAcceptance, recordLegalAcceptance } from "../lib/legal-acceptance.js";
+import { ACCOUNT_ACCEPTANCE_DISCLOSURE, CURRENT_TERMS_VERSION, recordLegalAcceptance } from "../lib/legal-acceptance.js";
 import { SCHEDULABLE_SACRAMENT_TYPES, computeAvailableSlots, isSchedulableOfferingKey, isSlotStillOpen } from "../lib/sacrament-availability.js";
 import {
   applyDonorPassword,
@@ -594,27 +594,6 @@ export async function handleDonorLogin(request, env) {
   }
   if (!donor.emailVerifiedAt) {
     return json({ error: "Please verify your email before logging in.", code: "email_unverified" }, { status: 403 });
-  }
-
-  const alreadyAccepted = await hasCurrentLegalAcceptance(env, { subjectUserId: email });
-  if (!alreadyAccepted) {
-    if (body.termsAccepted !== true) {
-      return json({
-        error: "Affirmative acceptance of the current Terms is required.",
-        code: "terms_acceptance_required",
-        termsVersion: CURRENT_TERMS_VERSION,
-      }, { status: 428 });
-    }
-    await recordLegalAcceptance(env, request, {
-      actorType: "adult_account_holder",
-      subjectUserId: email,
-      actorName: donor.donorName || donor.householdName || email,
-      actorEmail: email,
-      actorRole: "adult account holder",
-      disclosureText: ACCOUNT_REACCEPTANCE_DISCLOSURE,
-      acceptanceSource: "myagapay_login_reacceptance",
-      transactionReference: `donor-login:${email}:${CURRENT_TERMS_VERSION}`,
-    });
   }
 
   const migrated = donor.passwordRecord ? donor : await applyDonorPassword(donor, password);

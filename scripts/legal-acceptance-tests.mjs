@@ -63,9 +63,16 @@ assert.throws(() => db.prepare("DELETE FROM legal_terms_versions WHERE version =
 
 const register = readFileSync(path.join(root, "public", "register.html"), "utf8");
 const signup = readFileSync(path.join(root, "public", "myagapay", "signup.html"), "utf8");
+const legacySignup = readFileSync(path.join(root, "public", "donor", "signup.html"), "utf8");
+const accountLogin = readFileSync(path.join(root, "public", "myagapay", "login.html"), "utf8");
+const parishLogin = readFileSync(path.join(root, "public", "parish", "login.html"), "utf8");
 assert.match(register, /id="agreeTerms"[\s\S]*id="submitBtn"[^>]*disabled/);
 assert.match(register, /target="_blank" rel="noopener noreferrer">Terms of Service/);
 assert.match(signup, /id="agreeTerms" type="checkbox" required/);
 assert.match(signup, /id="signupSubmit"[^>]*disabled/);
+assert.match(legacySignup, /id="agreeTerms" type="checkbox" required/);
+assert.match(legacySignup, /id="signupSubmit"[^>]*disabled/);
+assert.doesNotMatch(accountLogin, /donorAgreeTerms|termsAccepted|Terms of Service|Privacy Policy/);
+assert.doesNotMatch(parishLogin, /parishAgreeTerms|termsAccepted|Terms of Service|Privacy Policy/);
 
 console.log("Append-only legal acceptance tests passed.");

@@ -68,10 +68,6 @@
           <label class="form-label" for="donorPassword">Password</label>
           <input class="form-input" id="donorPassword" type="password" autocomplete="current-password" placeholder="Your password" />
         </div>
-        <label style="display:flex;align-items:flex-start;gap:10px;font-size:12px;line-height:1.55;color:var(--muted);margin:1rem 0;">
-          <input id="donorAgreeTerms" type="checkbox" style="margin-top:3px;" />
-          <span>I agree to the current <a href="/terms#arbitration" target="_blank" rel="noopener noreferrer" style="color:var(--gold);text-decoration:underline;">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noopener noreferrer" style="color:var(--gold);text-decoration:underline;">Privacy Policy</a>.</span>
-        </label>
         <div class="donor-auth-actions">
           <button class="btn btn-gold" type="submit">Log in</button>
           <a class="btn btn-ghost" href="/myagapay/signup">Sign up</a>
@@ -169,14 +165,13 @@
         event.preventDefault();
         const email = document.getElementById("donorEmail")?.value.trim();
         const password = document.getElementById("donorPassword")?.value;
-        const termsAccepted = document.getElementById("donorAgreeTerms")?.checked === true;
         if (!email || !password) {
           setStatus("Enter your email and password.", "error");
           return;
         }
         setStatus("Signing you in...");
         try {
-          const data = await postJson("/api/donor/login", { email, password, termsAccepted });
+          const data = await postJson("/api/donor/login", { email, password });
           if (data.token) localStorage.setItem("agapayDonorToken", data.token);
           // Always save the email — use the typed email as fallback if API omits it
           const donorEmail = data.donor?.email || email;

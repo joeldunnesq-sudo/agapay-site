@@ -488,39 +488,10 @@
       .replace(/\b[a-z]/g, c => c.toUpperCase());
   }
 
-  function clearParishTermsAcceptanceRequirement() {
-    const panel = document.getElementById('parishTermsAcceptance');
-    if (!panel || panel.hidden) return;
-    panel.hidden = true;
-    panel.removeAttribute('data-parish-id');
-    ['acceptingName', 'acceptingEmail', 'acceptingRole', 'parishAgreeTerms'].forEach((id) => {
-      const field = document.getElementById(id);
-      if (field) field.required = false;
-    });
-  }
-
-  function requireParishTermsAcceptance(parishId, termsVersion = '') {
-    const panel = document.getElementById('parishTermsAcceptance');
-    if (!panel) return;
-    panel.hidden = false;
-    panel.dataset.parishId = parishId;
-    ['acceptingName', 'acceptingEmail', 'acceptingRole', 'parishAgreeTerms'].forEach((id) => {
-      const field = document.getElementById(id);
-      if (field) field.required = true;
-    });
-    const versionLabel = termsVersion ? ` (${termsVersion})` : '';
-    setStatus(`One-time acceptance of the current Terms${versionLabel} is required for this parish. Complete the highlighted section and log in again.`, 'error');
-    document.getElementById('acceptingName')?.focus();
-  }
-
   async function loginFromParishPage(event) {
     event.preventDefault();
     const parishId = document.getElementById('parishId')?.value.trim();
     const password = document.getElementById('parishToken')?.value.trim();
-    const acceptingName = document.getElementById('acceptingName')?.value.trim();
-    const acceptingEmail = document.getElementById('acceptingEmail')?.value.trim();
-    const acceptingRole = document.getElementById('acceptingRole')?.value.trim();
-    const termsAccepted = document.getElementById('parishAgreeTerms')?.checked === true;
     const submit = event.submitter;
     if (!parishId || !password) { setStatus('Enter the parish ID and password.','error'); return; }
     if (submit) { submit.classList.add('loading'); submit.disabled = true; }
@@ -528,13 +499,9 @@
       const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(parishId) + '/session', {
         method: 'POST',
         headers: { 'Accept':'application/json', 'Content-Type':'application/json' },
-        body: JSON.stringify({ password, acceptingName, acceptingEmail, acceptingRole, termsAccepted })
+        body: JSON.stringify({ password })
       });
       const data = await res.json().catch(() => ({}));
-      if (res.status === 428 && data.code === 'terms_acceptance_required') {
-        requireParishTermsAcceptance(parishId, data.termsVersion);
-        return;
-      }
       if (!res.ok) throw new Error(data.error || 'Unable to log in');
       if (!data.token) throw new Error('Login succeeded but no session token was returned.');
       sessionStorage.setItem('agapay_parish_id', parishId);

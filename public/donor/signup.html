@@ -118,6 +118,9 @@ if ("serviceWorker" in navigator) {
     .notice { padding: 12px; border-radius: var(--r); background: rgba(166,159,145,0.15); color: var(--ink); font-size: 13px; line-height: 1.5; }
     .notice.success { background: rgba(53,94,59,0.05); border: 0.5px solid rgba(53,94,59,0.2); color: var(--forest); }
     .notice a { color: var(--gold); font-weight: 500; }
+    .legal-agreement { display:flex; align-items:flex-start; gap:10px; margin-top:1.5rem; font-size:12px; line-height:1.55; color:var(--stone); }
+    .legal-agreement input { margin-top:3px; flex:0 0 auto; }
+    .legal-agreement a { color:var(--gold); text-decoration:underline; }
 
     @media (max-width: 768px) {
       .form-grid { grid-template-columns: 1fr; }
@@ -221,11 +224,16 @@ if ("serviceWorker" in navigator) {
         </div>
 
         <p class="form-help section-gap">AGAPAY will email you a verification link. Your dashboard opens after your email is verified.</p>
+
+        <label class="legal-agreement" for="agreeTerms">
+          <input id="agreeTerms" type="checkbox" required />
+          <span>I agree to the current <a href="/terms#arbitration" target="_blank" rel="noopener noreferrer">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span>
+        </label>
         
         <div data-agapay-turnstile class="section-gap"></div>
         
         <div class="section-gap">
-          <button class="btn-submit" type="submit">Create account &rarr;</button>
+          <button class="btn-submit" id="signupSubmit" type="submit" disabled>Create account &rarr;</button>
         </div>
       </form>
 
@@ -234,6 +242,11 @@ if ("serviceWorker" in navigator) {
     </div>
   </main>
 
-  <script>document.addEventListener("DOMContentLoaded", () => loadPublicParishes("parish"));</script>
+  <script>document.addEventListener("DOMContentLoaded", () => {
+    loadPublicParishes("parish");
+    const agreement = document.getElementById("agreeTerms");
+    const submit = document.getElementById("signupSubmit");
+    agreement?.addEventListener("change", () => { if (submit) submit.disabled = !agreement.checked; });
+  });</script>
 </body>
 </html>
