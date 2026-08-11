@@ -280,11 +280,11 @@ export const SECURITY_HEADERS = {
   "Permissions-Policy": "geolocation=(), microphone=(), camera=(self), payment=(self), fullscreen=(self \"https://www.youtube.com\" \"https://www.youtube-nocookie.com\")",
   "Content-Security-Policy-Report-Only":
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://static.cloudflareinsights.com; " +
+    "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://static.cloudflareinsights.com https://connect.facebook.net; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src 'self' https://fonts.gstatic.com data:; " +
     "img-src 'self' data: https:; " +
-    "connect-src 'self' https://challenges.cloudflare.com https://*.cloudflarestream.com; " +
+    "connect-src 'self' https://challenges.cloudflare.com https://*.cloudflarestream.com https://www.facebook.com; " +
     "media-src 'self' https://*.cloudflarestream.com; " +
     "frame-src https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com; " +
     "object-src 'none'; " +

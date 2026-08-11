@@ -82,10 +82,12 @@ guessed:
 | `script-src` | `challenges.cloudflare.com` | Turnstile widget, loaded dynamically by `public/security.js` |
 | | `cdn.jsdelivr.net` | QR code generator library |
 | | `unpkg.com` | zxing barcode-scanning library, htmx |
+| | `connect.facebook.net` | Meta Pixel client library on the AGAPAY referral and demo-request pages |
 | `style-src` | `fonts.googleapis.com` | Google Fonts stylesheets |
 | `font-src` | `fonts.gstatic.com` | Google Fonts font files |
 | `frame-src` | `challenges.cloudflare.com` | Turnstile renders its widget in an iframe |
 | `connect-src` | `challenges.cloudflare.com` | Turnstile's own client-side calls |
+| | `www.facebook.com` | Meta Pixel page-view and referral/conversion event delivery |
 
 **Confirmed NOT needed**: `js.stripe.com` / Stripe Elements — AGAPAY uses
 server-created Stripe Checkout Sessions with a full-page redirect, not

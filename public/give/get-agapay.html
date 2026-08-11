@@ -27,6 +27,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+  <script src="/meta-pixel.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -216,6 +217,7 @@
   </style>
 </head>
 <body>
+  <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1065546639329281&amp;ev=PageView&amp;noscript=1" alt="" /></noscript>
   <a class="skip-link" href="#share-actions">Skip to sharing options</a>
 
   <header class="topbar">
@@ -250,7 +252,7 @@
               <span class="action-copy"><strong>Email this to my priest</strong><span>Open a respectful, prewritten message</span></span>
               <span class="action-arrow" aria-hidden="true">→</span>
             </a>
-            <a class="share-action" href="/downloads/agapay-parish-council-overview.pdf" download>
+            <a class="share-action" href="/downloads/agapay-parish-council-overview.pdf" data-council-download download>
               <span class="action-icon"><svg class="icon" aria-hidden="true"><use href="/images/icons/agapay-icons.svg#church"></use></svg></span>
               <span class="action-copy"><strong>Download the parish-council overview</strong><span>A polished one-page council sheet</span></span>
               <span class="action-arrow" aria-hidden="true">↓</span>
@@ -338,7 +340,7 @@
             <div class="overview-point">Questions for evaluating parishioner and staff workflows</div>
             <div class="overview-point">A practical next step if the parish wants a closer look</div>
           </div>
-          <a class="download-button" href="/downloads/agapay-parish-council-overview.pdf" download>
+          <a class="download-button" href="/downloads/agapay-parish-council-overview.pdf" data-council-download download>
             <svg class="icon" aria-hidden="true"><use href="/images/icons/agapay-icons.svg#church"></use></svg>
             Download parish-council overview
           </a>
@@ -364,7 +366,7 @@
             <span class="action-icon"><svg class="icon" aria-hidden="true"><use href="/images/icons/agapay-icons.svg#mail"></use></svg></span>
             <span class="action-copy"><strong>Email this to my priest</strong></span>
           </a>
-          <a class="share-action" href="/downloads/agapay-parish-council-overview.pdf" download>
+          <a class="share-action" href="/downloads/agapay-parish-council-overview.pdf" data-council-download download>
             <span class="action-icon"><svg class="icon" aria-hidden="true"><use href="/images/icons/agapay-icons.svg#church"></use></svg></span>
             <span class="action-copy"><strong>Download the overview</strong></span>
           </a>
@@ -388,7 +390,7 @@
 
   <script>
     (function () {
-      const shareUrl = "https://agapay.app/give/request-demo";
+      const shareUrl = "https://agapay.app/give/request-demo?utm_source=parishioner&utm_medium=referral&utm_campaign=get_agapay";
       const subject = "An Orthodox giving platform for our parish";
       const emailBody = [
         "Father, bless.",
@@ -403,6 +405,22 @@
 
       document.querySelectorAll("[data-email-link]").forEach(function (link) {
         link.setAttribute("href", mailto);
+        link.addEventListener("click", function () {
+          if (typeof window.trackMetaEvent !== "function") return;
+          window.trackMetaEvent("AGAPAYShareEmail", {
+            destination: "request-demo",
+            method: "email"
+          });
+        });
+      });
+
+      document.querySelectorAll("[data-council-download]").forEach(function (link) {
+        link.addEventListener("click", function () {
+          if (typeof window.trackMetaEvent !== "function") return;
+          window.trackMetaEvent("AGAPAYCouncilPDF", {
+            file: "agapay-parish-council-overview.pdf"
+          });
+        });
       });
 
       function showCopied() {
@@ -413,20 +431,34 @@
       }
 
       async function copyShareLink() {
+        let copied = false;
         try {
           await navigator.clipboard.writeText(shareUrl);
+          copied = true;
         } catch (error) {
-          const fallback = document.createElement("textarea");
-          fallback.value = shareUrl;
-          fallback.setAttribute("readonly", "");
-          fallback.style.position = "fixed";
-          fallback.style.opacity = "0";
-          document.body.appendChild(fallback);
-          fallback.select();
-          document.execCommand("copy");
-          fallback.remove();
+          let fallback;
+          try {
+            fallback = document.createElement("textarea");
+            fallback.value = shareUrl;
+            fallback.setAttribute("readonly", "");
+            fallback.style.position = "fixed";
+            fallback.style.opacity = "0";
+            document.body.appendChild(fallback);
+            fallback.select();
+            copied = document.execCommand("copy");
+          } catch (_fallbackError) {
+            copied = false;
+          } finally {
+            if (fallback) fallback.remove();
+          }
         }
         showCopied();
+        if (copied && typeof window.trackMetaEvent === "function") {
+          window.trackMetaEvent("AGAPAYCopyShareLink", {
+            destination: "request-demo",
+            method: "copy"
+          });
+        }
       }
 
       document.querySelectorAll("[data-copy-link]").forEach(function (button) {

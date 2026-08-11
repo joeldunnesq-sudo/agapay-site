@@ -27,6 +27,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+  <script src="/meta-pixel.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -331,6 +332,7 @@
   </style>
 </head>
 <body>
+  <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1065546639329281&amp;ev=PageView&amp;noscript=1" alt="" /></noscript>
   <a class="skip-link" href="#demo-form">Skip to demo request</a>
 
   <main>
@@ -614,6 +616,30 @@
       const status = document.getElementById("form-status");
       const submit = form.querySelector(".submit-btn");
       const submitLabel = submit.querySelector("span");
+      let leadTracked = false;
+
+      try {
+        leadTracked = window.sessionStorage.getItem("agapayMetaDemoLeadTracked") === "1";
+      } catch (_error) {}
+
+      function referralAttributionLines() {
+        const params = new URLSearchParams(window.location.search);
+        const keys = ["utm_source", "utm_medium", "utm_campaign"];
+        const values = keys.map(function (key) {
+          const value = String(params.get(key) || "").replace(/[\r\n]/g, " ").trim().slice(0, 120);
+          return value ? `${key}: ${value}` : "";
+        }).filter(Boolean);
+        return values.length ? ["", "Referral attribution:", ...values] : [];
+      }
+
+      function trackLeadOnce() {
+        if (leadTracked || typeof window.trackMetaStandardEvent !== "function") return;
+        if (!window.trackMetaStandardEvent("Lead", { content_name: "AGAPAY Parish Demo Request" })) return;
+        leadTracked = true;
+        try {
+          window.sessionStorage.setItem("agapayMetaDemoLeadTracked", "1");
+        } catch (_error) {}
+      }
 
       function showStatus(message, isError) {
         status.textContent = message;
@@ -639,7 +665,8 @@
           `Demo priorities: ${interests.length ? interests.join(", ") : "Not specified"}`,
           "",
           "Additional context:",
-          data.get("message") || "None provided"
+          data.get("message") || "None provided",
+          ...referralAttributionLines()
         ].join("\n");
 
         submit.disabled = true;
@@ -660,6 +687,7 @@
           const payload = await response.json().catch(function () { return {}; });
           if (!response.ok || !payload.ok) throw new Error(payload.error || "We could not send your request.");
 
+          trackLeadOnce();
           form.reset();
           showStatus("Thank you. Your parish demo request is on its way, and a real person from AGAPAY will follow up within one business day.", false);
           submitLabel.textContent = "Request received";
