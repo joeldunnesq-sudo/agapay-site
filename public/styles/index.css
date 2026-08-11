@@ -17,6 +17,8 @@
       --sans: "DM Sans", system-ui, sans-serif;
       --r: 10px;
       --shadow: 0 24px 80px rgba(6, 21, 34, 0.18);
+      --page-width: 1480px;
+      --page-gutter: clamp(1.25rem, 4vw, 4.5rem);
     }
 
     html { scroll-behavior: smooth; }
@@ -216,10 +218,10 @@
     .hero-inner {
       position: relative;
       z-index: 3;
-      max-width: 1240px;
+      max-width: calc(var(--page-width) + var(--page-gutter) + var(--page-gutter));
       margin: 0 auto;
       width: 100%;
-      padding: 7.5rem clamp(1.25rem, 5vw, 4.5rem) 3.2rem;
+      padding: 7.5rem var(--page-gutter) 3.2rem;
     }
     .hero-main {
       display: grid;
@@ -403,7 +405,7 @@
     }
 
     .section {
-      padding: clamp(4rem, 8vw, 7rem) clamp(1.25rem, 5vw, 4.5rem);
+      padding: clamp(4rem, 8vw, 7rem) var(--page-gutter);
     }
     #why,
     #features,
@@ -423,7 +425,7 @@
       backdrop-filter: blur(16px);
     }
     .council-jump-inner {
-      width: min(1180px, calc(100% - 2rem));
+      width: min(var(--page-width), calc(100% - 2rem));
       min-height: 58px;
       margin: 0 auto;
       display: flex;
@@ -614,7 +616,7 @@
       contain-intrinsic-size: 1px 760px;
     }
     .section-inner {
-      max-width: 1180px;
+      max-width: var(--page-width);
       margin: 0 auto;
     }
     .eyebrow {
@@ -761,7 +763,7 @@
       margin-left: auto;
       margin-right: auto;
     }
-    .solution .section-inner { max-width: 1240px; }
+    .solution .section-inner { max-width: var(--page-width); }
     .ecosystem {
       position: relative;
       z-index: 2;
@@ -973,10 +975,10 @@
       background: var(--paper);
       border-top: 1px solid var(--line);
       border-bottom: 1px solid var(--line);
-      padding: 3.6rem clamp(1.25rem, 5vw, 4.5rem);
+      padding: 3.6rem var(--page-gutter);
     }
     .trust-grid {
-      max-width: 1180px;
+      max-width: var(--page-width);
       margin: 0 auto;
       display: grid;
       grid-template-columns: minmax(260px, 1.2fr) repeat(4, minmax(130px, 0.72fr));

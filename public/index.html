@@ -163,7 +163,7 @@
   .install { position: relative; margin: 1.5rem; padding: clamp(2.5rem,5vw,4rem) clamp(1.5rem,4vw,3rem); border-radius: 16px; border: 1px solid rgba(200,162,74,.28); overflow: hidden; background: linear-gradient(180deg, var(--parchment, #fdf8ef) 0%, var(--parchment-2, #f5ede0) 100%); }
   .install::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 60% at 90% 0%, rgba(200,162,74,.12) 0%, transparent 60%); pointer-events: none; }
   .install > * { position: relative; z-index: 1; }
-  .install-inner { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 1fr auto; gap: clamp(2rem,5vw,4rem); align-items: center; }
+  .install-inner { max-width: var(--page-width, 1480px); margin: 0 auto; display: grid; grid-template-columns: 1fr auto; gap: clamp(2rem,5vw,4rem); align-items: center; }
   @media (max-width: 780px) {
     .install-inner { grid-template-columns: 1fr; }
     .install-phone-img { width: 200px; margin: 0 auto; }
