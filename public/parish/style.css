@@ -762,6 +762,46 @@
     .setup-link-box { display: none; margin-top: 0.75rem; border: 1px solid rgba(184,144,47,0.25); border-radius: 10px; background: rgba(246,241,232,0.08); padding: 0.75rem; }
     .setup-link-box.visible { display: block; }
     .setup-link-box a { color: var(--cream); font-weight: 700; }
+    .deterministic-onboarding .setup-wizard-body { grid-template-columns: minmax(0, 1fr) 320px; }
+    .onboarding-kicker { color: var(--gold); font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 0.35rem; }
+    .onboarding-progress { height: 7px; overflow: hidden; border-radius: 999px; margin-top: 0.9rem; background: rgba(246,241,232,0.12); }
+    .onboarding-progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--gold), #ecd18a); transition: width .25s ease; }
+    .onboarding-progress-label { display: flex; gap: 0.4rem; align-items: baseline; margin-top: 0.35rem; color: rgba(246,241,232,0.62); font-size: 11px; }
+    .onboarding-progress-label strong { color: var(--cream); font-size: 12px; }
+    .onboarding-step-details { margin-top: 0.8rem; }
+    .onboarding-step-details summary { cursor: pointer; width: max-content; color: var(--gold); font-size: 12px; font-weight: 700; }
+    .onboarding-step-details .setup-steps { max-height: 440px; overflow: auto; padding-right: 4px; }
+    .onboarding-blockers { display: grid; gap: 7px; margin: 0.8rem 0; }
+    .onboarding-blockers > div { display: grid; grid-template-columns: 22px 1fr; gap: 0.45rem; align-items: start; padding: 0.55rem; border-radius: 8px; background: rgba(246,241,232,0.07); }
+    .onboarding-blockers > div > span { display: grid; place-items: center; width: 20px; height: 20px; border: 1px solid rgba(216,176,88,.5); border-radius: 999px; color: var(--gold); font-weight: 800; }
+    .onboarding-blockers p { margin: 0; }
+    .onboarding-blockers b { display: block; color: var(--cream); font-size: 11px; }
+    .onboarding-blockers small { display: block; margin-top: 2px; color: rgba(246,241,232,.58); font-size: 10px; line-height: 1.35; }
+    .onboarding-secondary { margin-top: 0.5rem; border: 0; background: transparent; color: rgba(246,241,232,.76); text-decoration: underline; cursor: pointer; }
+    .onboarding-live-mark { display: grid; place-items: center; width: 48px; height: 48px; margin-bottom: 0.75rem; border: 1px solid rgba(216,176,88,.55); border-radius: 999px; background: rgba(216,176,88,.12); color: var(--gold); font-size: 24px; }
+    .onboarding-link-button { justify-content: center; margin-top: 0.85rem; text-decoration: none; }
+    .treasurer-signoff { position: relative; z-index: 1; margin: 0 1.25rem 1.25rem; padding: 1.1rem; border: 1px solid rgba(216,176,88,.32); border-radius: 12px; background: rgba(246,241,232,.06); }
+    .treasurer-signoff-head { display: flex; justify-content: space-between; gap: 1rem; align-items: start; }
+    .treasurer-signoff-head span:first-child { color: var(--gold); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .treasurer-signoff h3 { margin: .2rem 0; color: var(--cream); font-family: var(--serif); font-size: 1.35rem; font-weight: 500; }
+    .treasurer-signoff-head p { margin: 0; max-width: 680px; color: rgba(246,241,232,.66); font-size: 12px; line-height: 1.5; }
+    .onboarding-snapshot { flex: none; padding: .35rem .5rem; border-radius: 6px; background: rgba(246,241,232,.08); color: rgba(246,241,232,.55) !important; font-family: monospace; font-size: 9px !important; letter-spacing: 0 !important; text-transform: none !important; }
+    .signoff-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; margin-top: 1rem; }
+    .signoff-summary-row { min-width: 0; padding: .65rem; border: 1px solid rgba(246,241,232,.11); border-radius: 8px; background: rgba(11,33,48,.2); }
+    .signoff-summary-row > span { display: block; color: var(--gold); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .signoff-summary-row strong { display: block; overflow-wrap: anywhere; margin-top: .25rem; color: var(--cream); font-size: 12px; }
+    .signoff-summary-row small { display: block; overflow-wrap: anywhere; margin-top: .2rem; color: rgba(246,241,232,.52); font-size: 10px; line-height: 1.35; }
+    .signoff-affirmations { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin-top: 1rem; }
+    .treasurer-signoff .signoff-affirmations > label, .treasurer-signoff > .signoff-authority { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: .6rem; align-items: start; min-width: 0; margin: 0; padding: .7rem .75rem; border: 1px solid rgba(246,241,232,.13); border-radius: 8px; color: rgba(246,241,232,.8); font-size: 11px; font-weight: 500; letter-spacing: normal; line-height: 1.4; text-transform: none; cursor: pointer; }
+    .treasurer-signoff .signoff-affirmations > label > input[type="checkbox"], .treasurer-signoff > .signoff-authority > input[type="checkbox"] { width: 16px; min-width: 16px; height: 16px; margin: 1px 0 0; padding: 0; border: 0; border-radius: 3px; box-shadow: none; accent-color: var(--gold); }
+    .treasurer-signoff .signoff-affirmations > label > span, .treasurer-signoff > .signoff-authority > span { display: block; min-width: 0; overflow-wrap: break-word; white-space: normal; }
+    .signoff-identity { display: grid; grid-template-columns: 1.3fr 1fr 1.5fr; gap: 8px; margin-top: 1rem; }
+    .signoff-identity label { display: block; margin-bottom: .3rem; color: var(--gold); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .signoff-identity input { width: 100%; border: 1px solid rgba(246,241,232,.18); border-radius: 8px; background: rgba(246,241,232,.08); color: var(--cream); padding: .65rem; }
+    .signoff-authority { margin-top: 8px; }
+    .signoff-submit { display: flex; justify-content: flex-end; align-items: center; gap: 1rem; margin-top: .8rem; }
+    .signoff-submit p { flex: 1; margin: 0; color: #f1aa9d; font-size: 11px; }
+    @media (max-width: 900px) { .deterministic-onboarding .setup-wizard-body, .signoff-summary, .signoff-affirmations, .signoff-identity { grid-template-columns: 1fr; } .treasurer-signoff { margin: 0 .75rem .75rem; } .treasurer-signoff-head { flex-direction: column; } }
     /* Forms & toggles */
     .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
     .full { grid-column: 1 / -1; }

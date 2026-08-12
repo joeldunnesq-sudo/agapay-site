@@ -1,6 +1,7 @@
 import {
   ADMIN_PASSWORD_KV_KEY,
   ADMIN_SESSION_STORE_KEY,
+  applyParishDashboardPassword,
   clampListLimit,
   COMMEMORATION_KEY_PREFIX,
   createPasswordRecord,
@@ -104,6 +105,14 @@ import { saveCommemorationEntry } from "./parish-commemorations.js";
 
 import { recordAuditEvent, listAuditEvents } from "../lib/audit-log.js";
 import { TAX_READINESS_STATUSES, withTaxReadinessDefaults } from "../lib/tax-readiness.js";
+import {
+  PARISH_ONBOARDING_WORKFLOW_VERSION,
+  buildParishOnboardingWorkflow,
+  invalidateOnboardingSignoffIfChanged,
+  normalizeOnboardingChecks,
+  onboardingWorkflowEnabled,
+  recommendedOnboardingState,
+} from "../lib/parish-onboarding.js";
 import { accountingEnabledFor, accountingTierFor } from "../lib/entitlements.js";
 import { ensureBenevolenceFundInRegistration } from "../lib/stewardship-funds.js";
 import { accountingHealthOverview, activatePreparedParishAccounting, activateProtectiveState, createBoundD1ProvisioningAdapter, detectAccountingEnvironment, releaseProtectiveState, runIntegrityScan, verifyRecoveryEvidence } from "../accounting/index.js";
@@ -1012,7 +1021,17 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
   if (request.method === "GET") {
     const registration = await loadRegistrationByReference(env, reference);
     if (!registration) return json({ error: "Registration not found" }, { status: 404 });
-    return json({ registration: withTaxReadinessDefaults(registration) });
+    const normalized = withTaxReadinessDefaults(registration);
+    return json({
+      registration: {
+        ...normalized,
+        onboardingWorkflow: await buildParishOnboardingWorkflow(normalized, {
+          appUrl: env.AGAPAY_APP_URL || new URL(request.url).origin,
+          receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app"
+        }),
+        onboardingTestMode: stagingOnboardingTestMode(env)
+      }
+    });
   }
 
   if (request.method === "PATCH") {
@@ -1027,6 +1046,7 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
     }
 
     const nextStatus = body.status || current.status;
+    const enteringVerified = nextStatus === "verified" && current.status !== "verified";
     const reviewedByNext = body.reviewedBy ?? current.reviewedBy ?? "";
     const verificationSourceNext = body.verificationSource ?? current.verificationSource ?? "";
     const bishopOrAuthorityNext = body.bishopOrAuthority ?? current.bishopOrAuthority ?? "";
@@ -1080,7 +1100,11 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
       status: nextStatus,
       parishId,
       parishUsername: current.parishUsername || parishId,
-      givingStatus: body.givingStatus || current.givingStatus || (nextStatus === "verified" ? "active" : "hidden"),
+      givingStatus: enteringVerified
+        ? "hidden"
+        : (onboardingWorkflowEnabled(current) && current.onboardingState !== "LIVE" && body.givingStatus === "active")
+          ? "hidden"
+          : body.givingStatus || current.givingStatus || "hidden",
       stripeAccountStatus: body.stripeAccountStatus || current.stripeAccountStatus || "not_started",
       stripeAccountId: body.stripeAccountId ?? current.stripeAccountId ?? "",
       reviewedBy: reviewedByNext,
@@ -1137,6 +1161,21 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
         ? current.publicProfileCreatedAt || new Date().toISOString()
         : current.publicProfileCreatedAt
     };
+    if (nextStatus === "verified") {
+      updated = {
+        ...updated,
+        onboardingWorkflowVersion: Math.max(
+          Number(current.onboardingWorkflowVersion || 0),
+          PARISH_ONBOARDING_WORKFLOW_VERSION
+        ),
+        onboardingChecks: normalizeOnboardingChecks(
+          body.onboardingChecks,
+          current.onboardingChecks,
+          adminContext.actor
+        )
+      };
+      updated.onboardingState = recommendedOnboardingState(updated, updated.onboardingChecks);
+    }
     if (nextTier?.modules?.givingPlus) {
       updated = ensureBenevolenceFundInRegistration(updated).registration;
     }
@@ -1196,6 +1235,15 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
       });
     }
 
+    if (nextStatus === "verified") {
+      updated.onboardingState = recommendedOnboardingState(updated, updated.onboardingChecks);
+    }
+    updated = await invalidateOnboardingSignoffIfChanged(current, updated, {
+      actor: adminContext.actor,
+      reason: "AGAPAY Admin changed material onboarding configuration.",
+      receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app"
+    });
+
     await saveRegistrationRecord(env, reference, updated, current);
 
     if (nextStatus !== current.status) {
@@ -1224,10 +1272,171 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
       });
     }
 
-    return json({ ok: true, registration: updated, dashboardInvite });
+    return json({
+      ok: true,
+      registration: {
+        ...updated,
+        onboardingWorkflow: await buildParishOnboardingWorkflow(updated, {
+          appUrl: env.AGAPAY_APP_URL || new URL(request.url).origin,
+          receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app"
+        }),
+        onboardingTestMode: stagingOnboardingTestMode(env)
+      },
+      dashboardInvite
+    });
   }
 
   return json({ error: "Method not allowed" }, { status: 405 });
+}
+
+function stagingOnboardingTestMode(env = {}) {
+  return ["development", "local", "preview", "staging", "test"]
+    .includes(String(env.AGAPAY_ENVIRONMENT || "").trim().toLowerCase());
+}
+
+function stagingGeneralFund(funds = []) {
+  const active = (Array.isArray(funds) ? funds : []).filter((fund) => fund && fund.enabled !== false && fund.active !== false);
+  const isGeneral = (fund) => {
+    const values = [fund.id, fund.code, fund.reportCode, fund.name].map((value) => String(value || "").trim().toLowerCase());
+    return values.some((value) => ["general", "stewardship", "general operating fund", "general stewardship"].includes(value));
+  };
+  const general = active.find(isGeneral);
+  if (general) {
+    let keptGeneral = false;
+    return (Array.isArray(funds) ? funds : []).map((fund) => {
+      if (!isGeneral(fund) || fund.enabled === false || fund.active === false) return fund;
+      if (!keptGeneral) {
+        keptGeneral = true;
+        return fund;
+      }
+      return { ...fund, enabled: false, active: false };
+    });
+  }
+  return [{
+    id: "general",
+    name: "General Operating Fund",
+    description: "Unrestricted parish operations",
+    restrictionType: "unrestricted",
+    enabled: true
+  }, ...(Array.isArray(funds) ? funds : [])];
+}
+
+export async function handleAdminOnboardingTest(request, env, reference) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!stagingOnboardingTestMode(env)) {
+    return json({ error: "Onboarding test controls are disabled outside non-production environments." }, { status: 403 });
+  }
+  const limited = await rateLimit(request, env, "admin-onboarding-test", { limit: 30, windowSeconds: 300 });
+  if (limited) return limited;
+  const adminContext = await requireAdminContext(request, env);
+  if (!adminContext) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const current = await loadRegistrationByReference(env, reference);
+  if (!current) return json({ error: "Registration not found" }, { status: 404 });
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  const action = String(body.action || "").trim();
+  if (!["prepare_ready", "simulate_stripe_ready", "pass_manual_gates", "reset_signoff", "reset_workflow"].includes(action)) {
+    return json({ error: "Unknown staging onboarding action." }, { status: 422 });
+  }
+
+  const now = new Date().toISOString();
+  const actor = `${adminContext.actor} (staging test)`;
+  const allPassed = Object.fromEntries([
+    "authorizedRepresentative", "givingConfiguration", "users", "testGift", "receipt", "reportingAccounting", "givingAssets"
+  ].map((key) => [key, { status: "passed", evidence: "staging-simulation", note: "Passed by the staging workflow test control." }]));
+  allPassed.importDecision = { status: "not_applicable", evidence: "staging-simulation", note: "No donor import is required for this staging exercise." };
+  const allReset = Object.fromEntries([
+    "authorizedRepresentative", "givingConfiguration", "users", "importDecision", "testGift", "receipt", "reportingAccounting", "givingAssets"
+  ].map((key) => [key, { status: "not_started", evidence: "", note: "" }]));
+  let updated = {
+    ...current,
+    onboardingWorkflowVersion: PARISH_ONBOARDING_WORKFLOW_VERSION,
+    givingStatus: "hidden",
+    treasurerSignoff: null,
+    goLiveAt: "",
+    goLiveBy: "",
+    parishUpdatedAt: now
+  };
+  let stagingPassword = "";
+
+  if (action === "simulate_stripe_ready" || action === "prepare_ready") {
+    updated = {
+      ...updated,
+      stripeAccountId: `acct_staging_${String(updated.parishId || reference).replace(/[^a-zA-Z0-9]/g, "").slice(0, 24)}`,
+      stripeAccountStatus: "payouts_enabled",
+      stripeChargesEnabled: true,
+      stripePayoutsEnabled: true,
+      stripeDetailsSubmitted: true,
+      stripeDisabledReason: "",
+      stripeRequirementsDue: [],
+      stripeStatusCheckedAt: now
+    };
+  }
+  if (action === "pass_manual_gates" || action === "prepare_ready") {
+    updated.onboardingChecks = normalizeOnboardingChecks(allPassed, updated.onboardingChecks, actor, now);
+  }
+  if (action === "reset_workflow") {
+    updated.onboardingChecks = normalizeOnboardingChecks(allReset, updated.onboardingChecks, actor, now);
+    if (String(updated.stripeAccountId || "").startsWith("acct_staging_")) {
+      updated = {
+        ...updated,
+        stripeAccountId: "",
+        stripeAccountStatus: "not_started",
+        stripeChargesEnabled: false,
+        stripePayoutsEnabled: false,
+        stripeDetailsSubmitted: false,
+        stripeDisabledReason: "",
+        stripeRequirementsDue: [],
+        stripeStatusCheckedAt: ""
+      };
+    }
+  }
+  if (action === "prepare_ready") {
+    if (!normalizeEmail(updated.treasurerEmail) || !normalizeEmail(updated.priestEmail)) {
+      return json({ error: "A priest email and treasurer email are required before preparing the signoff exercise." }, { status: 422 });
+    }
+    const tier = subscriptionTier(updated.subscriptionTier || defaultSubscriptionTier(updated));
+    stagingPassword = generateSecret("Agapay-Staging");
+    updated = await applyParishDashboardPassword({
+      ...updated,
+      status: "verified",
+      parishId: updated.parishId || parishSlug(updated.parishName, updated.city),
+      parishUsername: updated.parishUsername || updated.parishId || parishSlug(updated.parishName, updated.city),
+      reviewedBy: updated.reviewedBy || actor,
+      verificationSource: updated.verificationSource || "Staging canonical directory fixture",
+      bishopOrAuthority: updated.bishopOrAuthority || "Staging diocesan authority",
+      dioceseOrDeanery: updated.dioceseOrDeanery || "Staging deanery",
+      dashboardInviteEmailStatus: "sent",
+      dashboardInviteEmailSentAt: updated.dashboardInviteEmailSentAt || now,
+      subscriptionTier: tier.id,
+      subscriptionTierLabel: tier.label,
+      subscriptionMonthlyCents: tier.monthlyCents,
+      subscriptionStatus: tier.monthlyCents === 0 ? "free_forever" : "active",
+      funds: stagingGeneralFund(updated.funds),
+      onboardingChecks: normalizeOnboardingChecks(allPassed, updated.onboardingChecks, actor, now),
+      parishDashboardSessions: []
+    }, stagingPassword, { temporary: false });
+  }
+
+  updated.onboardingState = recommendedOnboardingState(updated, updated.onboardingChecks);
+  updated = appendAdminAudit(updated, `staging_onboarding_${action}`, actor, { environment: env.AGAPAY_ENVIRONMENT || "non-production" });
+  await saveRegistrationRecord(env, reference, updated, current);
+  const onboardingWorkflow = await buildParishOnboardingWorkflow(updated, {
+    appUrl: env.AGAPAY_APP_URL || new URL(request.url).origin,
+    receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app"
+  });
+  return json({
+    ok: true,
+    action,
+    stagingPassword: stagingPassword || undefined,
+    registration: { ...updated, onboardingWorkflow, onboardingTestMode: true }
+  });
 }
 
 export async function createSubscriptionCheckoutForRegistration(request, env, reference, registration, body = {}, returnPath = "/admin") {

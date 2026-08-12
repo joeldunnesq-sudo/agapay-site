@@ -36,9 +36,12 @@
   display: inline-flex; align-items: center; gap: 5px;
 }
 .sidebar-status-chip::before {
-  content: ""; width: 6px; height: 6px; border-radius: 50%; background: #7FCFA0;
-  box-shadow: 0 0 8px #7FCFA0; animation: pdx-pulse-live 2s ease-in-out infinite;
+  content: ""; width: 6px; height: 6px; border-radius: 50%; background: #8B98A1;
+  box-shadow: 0 0 7px rgba(139,152,161,0.7); animation: pdx-pulse-live 2s ease-in-out infinite;
 }
+.sidebar-status-chip.paused::before { background: var(--pdx-warning); box-shadow: 0 0 7px rgba(196,146,42,0.72); }
+.sidebar-status-chip.is-live { background: rgba(74,124,89,0.24); color: #9DE0B3; }
+.sidebar-status-chip.is-live::before { background: #7FCFA0; box-shadow: 0 0 9px #7FCFA0; }
 
 /* ────────── Giving Overview: hero ────────── */
 .pdx-hero {

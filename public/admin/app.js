@@ -2138,31 +2138,191 @@ let selectedReference = '';
       }).join('');
     }
 
+    const onboardingManualFields = [
+      ['authorizedRepresentative', 'Authorized representative', 'Record the independent authority-verification method.'],
+      ['givingConfiguration', 'Funds and campaigns', 'Confirm the donor-facing catalog and restrictions.'],
+      ['users', 'Priest and treasurer access', 'Confirm both intended users and their parish access.'],
+      ['importDecision', 'Donor and pledge import', 'Choose Passed when reconciled, or Not applicable.'],
+      ['testGift', 'Controlled test gift', 'Record the production payment identifier.'],
+      ['receipt', 'Receipt verification', 'Confirm one correct receipt was delivered.'],
+      ['reportingAccounting', 'Reporting and accounting', 'Reconcile the gift across AGAPAY and Stripe.'],
+      ['givingAssets', 'Giving URL and QR', 'Record the final URL and successful QR scan.']
+    ];
+
+    function onboardingStatusOptions(status, key) {
+      const values = [
+        ['not_started', 'Not started'],
+        ['in_progress', 'In progress'],
+        ['blocked', 'Blocked'],
+        ['passed', 'Passed']
+      ];
+      if (key === 'importDecision') values.push(['not_applicable', 'Not applicable']);
+      return values.map(([value, label]) => `<option value="${value}" ${status === value ? 'selected' : ''}>${label}</option>`).join('');
+    }
+
+    function renderOnboardingProgress(reg) {
+      const workflow = reg.onboardingWorkflow || {};
+      const steps = Array.isArray(workflow.steps) ? workflow.steps : [];
+      const state = workflow.state || (reg.status === 'verified' ? 'VERIFIED_HIDDEN' : 'IDENTITY_REVIEW');
+      const completed = Number(workflow.completedSteps || 0);
+      const total = Number(workflow.totalSteps || steps.length || 17);
+      const percent = total ? Math.round((completed / total) * 100) : 0;
+      const next = (workflow.blockers || [])[0];
+      return `
+        <div class="workflow-card onboarding-workflow-card">
+          <div class="workflow-top">
+            <div>
+              <div class="workflow-title">${escapeHtml(readable(state))}</div>
+              <div class="workflow-sub">${workflow.enabled ? `${completed} of ${total} onboarding gates passed.` : 'The deterministic workflow begins when canonical verification is saved.'}</div>
+            </div>
+            <span class="badge ${state === 'LIVE' ? 'verified' : 'pending'}">${escapeHtml(state === 'LIVE' ? 'Live' : `${percent}%`)}</span>
+          </div>
+          <div class="onboarding-progress-track"><span style="width:${Math.max(0, Math.min(100, percent))}%"></span></div>
+          ${next ? `<div class="onboarding-next-action"><strong>Next:</strong> ${escapeHtml(next.title)} <span>${escapeHtml(next.detail || '')}</span></div>` : ''}
+          <details class="onboarding-gates-disclosure">
+            <summary>View all ${total} onboarding gates</summary>
+            <div class="onboarding-step-grid">
+            ${steps.map((item, index) => `<div class="onboarding-step ${item.passed ? 'done' : 'pending'}"><span>${item.passed ? '✓' : index + 1}</span><div><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.detail || '')}</small></div></div>`).join('')}
+            </div>
+          </details>
+        </div>`;
+    }
+
+    function renderOnboardingCommandHeader(reg) {
+      const workflow = reg.onboardingWorkflow || {};
+      const state = workflow.state || (reg.status === 'verified' ? 'VERIFIED_HIDDEN' : 'IDENTITY_REVIEW');
+      const next = (workflow.blockers || [])[0];
+      const actionTitle = state === 'LIVE'
+        ? 'Launch complete'
+        : workflow.canGoLive
+          ? 'Waiting for treasurer Go-Live signoff'
+          : next?.title || 'Confirm the canonical parish';
+      const actionDetail = state === 'LIVE'
+        ? 'Giving is public and the treasurer-approved snapshot is on record.'
+        : workflow.canGoLive
+          ? 'The configuration is locked. The verified treasurer must review all eight attestations and publish from the parish dashboard.'
+          : next?.detail || 'Review the registration and independently verify the organization and representative.';
+      const location = [reg.communityType, reg.jurisdiction, [reg.city, reg.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+      return `<section class="onboarding-command-header">
+        <div class="onboarding-command-main">
+          <div class="onboarding-command-eyebrow">Onboarding workspace · ${escapeHtml(reg.reference || '')}</div>
+          <h2>${escapeHtml(reg.parishName || 'Unnamed parish')}</h2>
+          <p>${escapeHtml(location || 'Registration details pending')}</p>
+          <div class="onboarding-command-badges">
+            <span class="badge ${escapeAttr(reg.status || 'pending')}">Canonical: ${escapeHtml(readable(reg.status || 'pending'))}</span>
+            <span class="badge ${escapeAttr(reg.stripeAccountStatus || 'not_started')}">Stripe: ${escapeHtml(readable(reg.stripeAccountStatus || 'not_started'))}</span>
+            <span class="badge ${escapeAttr(reg.subscriptionStatus || 'not_started')}">Plan: ${escapeHtml(readable(reg.subscriptionStatus || 'not_started'))}</span>
+            <span class="badge ${state === 'LIVE' ? 'verified' : 'pending'}">Launch: ${escapeHtml(readable(state))}</span>
+          </div>
+        </div>
+        <div class="onboarding-command-next ${state === 'LIVE' ? 'complete' : ''}">
+          <span>${state === 'LIVE' ? 'Current state' : 'Next required action'}</span>
+          <strong>${escapeHtml(actionTitle)}</strong>
+          <p>${escapeHtml(actionDetail)}</p>
+        </div>
+        <div class="onboarding-command-actions">
+          <button class="secondary btn-sm" type="button" onclick="collapseRegistrationDetail()">Back to queue</button>
+          <button class="secondary btn-sm" type="button" onclick="copyRegistrationSummary()">Copy summary</button>
+          <button class="gold btn-sm" type="button" onclick="saveReview('${jsAttr(reg.reference)}', this)">Save progress</button>
+        </div>
+        <nav class="onboarding-phase-nav" aria-label="Onboarding phases">
+          <a href="#onboarding-phase-identity"><span>1</span>Identity</a>
+          <a href="#onboarding-phase-access"><span>2</span>Access &amp; giving</a>
+          <a href="#onboarding-phase-stripe"><span>3</span>Stripe</a>
+          <a href="#onboarding-phase-subscription"><span>4</span>Plan</a>
+          <a href="#onboarding-phase-validation"><span>5</span>Validate &amp; launch</a>
+        </nav>
+      </section>`;
+    }
+
+    function renderOnboardingControls(reg) {
+      const workflow = reg.onboardingWorkflow || {};
+      const checks = workflow.checks || reg.onboardingChecks || {};
+      const signoff = workflow.signoff || {};
+      return `
+        <div class="admin-section onboarding-admin-section onboarding-phase-card" id="onboarding-phase-validation">
+          <div class="onboarding-phase-heading"><span>5</span><div><small>Validate &amp; launch</small><strong>Operational evidence and treasurer handoff</strong></div></div>
+          <p class="onboarding-section-copy">Record the manual evidence below. Stripe, subscription, credential, and canonical gates are calculated by the server and cannot be manually marked ready.</p>
+          <div class="onboarding-signoff-state ${signoff.status === 'signed' ? 'signed' : workflow.canGoLive ? 'ready' : 'waiting'}">
+            <span>${signoff.status === 'signed' ? 'Treasurer signoff recorded' : workflow.canGoLive ? 'Ready for parish signoff' : 'Treasurer signoff locked'}</span>
+            <strong>${signoff.status === 'signed' ? `${escapeHtml(signoff.signerName || 'Treasurer')} · ${escapeHtml(shortDate(signoff.signedAt))}` : workflow.canGoLive ? 'The treasurer can now review the frozen snapshot and click Go Live.' : 'Complete every gate below before the treasurer can publish.'}</strong>
+            <small>Only the verified parish treasurer can activate the giving link. Admin records evidence and resolves blockers.</small>
+          </div>
+          <div class="onboarding-manual-list">
+            ${onboardingManualFields.map(([key, label, help]) => {
+              const check = checks[key] || {};
+              return `<details class="onboarding-manual-row" ${check.status === 'blocked' || check.status === 'in_progress' ? 'open' : ''}>
+                <summary><span class="onboarding-manual-state ${escapeAttr(check.status || 'not_started')}"></span><strong>${escapeHtml(label)}</strong><em>${escapeHtml(readable(check.status || 'not_started'))}</em></summary>
+                <p>${escapeHtml(help)}</p>
+                <div class="form-grid">
+                  <div><label for="onboarding-${key}-status">Status</label><select id="onboarding-${key}-status">${onboardingStatusOptions(check.status || 'not_started', key)}</select></div>
+                  <div><label for="onboarding-${key}-evidence">Evidence reference</label><input id="onboarding-${key}-evidence" value="${escapeAttr(check.evidence || '')}" placeholder="Payment ID, screenshot, ticket, or source link" /></div>
+                  <div class="full"><label for="onboarding-${key}-note">Operator note</label><textarea id="onboarding-${key}-note" rows="2" placeholder="What was checked and by whom?">${escapeHtml(check.note || '')}</textarea></div>
+                </div>
+              </details>`;
+            }).join('')}
+          </div>
+          ${reg.onboardingTestMode ? `<div class="onboarding-staging-tools">
+            <div><span>Staging only</span><strong>Workflow test controls</strong><p>Prepare a safe synthetic Stripe-ready record, exercise gates independently, or reset the signoff for another end-to-end run. The server refuses these actions in production.</p></div>
+            <div class="btn-row">
+              <button class="secondary btn-sm" type="button" onclick="runOnboardingTestAction('${jsAttr(reg.reference)}','reset_workflow',this)">Reset workflow</button>
+              <button class="secondary btn-sm" type="button" onclick="runOnboardingTestAction('${jsAttr(reg.reference)}','simulate_stripe_ready',this)">Simulate Stripe ready</button>
+              <button class="secondary btn-sm" type="button" onclick="runOnboardingTestAction('${jsAttr(reg.reference)}','pass_manual_gates',this)">Pass manual gates</button>
+              <button class="secondary btn-sm" type="button" onclick="runOnboardingTestAction('${jsAttr(reg.reference)}','reset_signoff',this)">Reset signoff</button>
+              <button class="gold btn-sm" type="button" onclick="runOnboardingTestAction('${jsAttr(reg.reference)}','prepare_ready',this)">Prepare Go-Live test</button>
+            </div>
+            <div id="stagingOnboardingResult" class="staging-onboarding-result" aria-live="polite"></div>
+          </div>` : ''}
+          <p class="onboarding-section-copy"><strong>Publication:</strong> AGAPAY Admin cannot activate an enrolled parish. After every gate passes, the verified treasurer reviews the locked snapshot and clicks Go Live from the parish dashboard.</p>
+        </div>`;
+    }
+
+    function readOnboardingChecks() {
+      return Object.fromEntries(onboardingManualFields.map(([key]) => [key, {
+        status: document.getElementById(`onboarding-${key}-status`)?.value || 'not_started',
+        evidence: document.getElementById(`onboarding-${key}-evidence`)?.value.trim() || '',
+        note: document.getElementById(`onboarding-${key}-note`)?.value.trim() || ''
+      }]));
+    }
+
+    async function runOnboardingTestAction(reference, action, button) {
+      if ((action === 'reset_workflow' || action === 'reset_signoff') && !window.confirm('Reset this staging onboarding exercise? The giving page will be hidden until the treasurer signs again.')) return;
+      if (button) { button.disabled = true; button.classList.add('loading'); }
+      try {
+        const response = await fetch(`/api/admin/registrations/${encodeURIComponent(reference)}/onboarding-test`, {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type':'application/json' },
+          body: JSON.stringify({ action })
+        });
+        const result = await response.json();
+        if (handleAuthFailure(response, result)) return;
+        if (!response.ok) throw new Error(result.error || 'Unable to run staging onboarding control');
+        renderDetail(result.registration);
+        renderQueueNext(result.registration);
+        const target = document.getElementById('stagingOnboardingResult');
+        if (target) {
+          const password = result.stagingPassword || '';
+          target.innerHTML = password
+            ? `<strong>Parish test login created.</strong><span>This password is shown once:</span><code>${escapeHtml(password)}</code><button class="secondary btn-sm" type="button" onclick="copyText('${jsAttr(password)}')">Copy password</button>`
+            : `<strong>${escapeHtml(readable(action))} complete.</strong><span>The workflow was recalculated from persisted staging data.</span>`;
+        }
+        setStatus('Staging onboarding state updated.', 'success');
+      } catch (err) {
+        setStatus(err.message, 'error');
+      } finally {
+        if (button?.isConnected) { button.disabled = false; button.classList.remove('loading'); }
+      }
+    }
+
     function renderDetail(reg) {
-      const action = nextAction(reg);
-      const reviewDone = reg.status === 'verified';
-      const inviteDone = reg.dashboardInviteEmailStatus === 'sent';
-      const stripeDone = ['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus);
-      const subscriptionDone = ['active', 'trialing', 'free_forever'].includes(reg.subscriptionStatus);
       const reference = jsAttr(reg.reference);
       const publicParishId = escapeHtml(reg.parishId || '');
       document.getElementById('registrationDetail').innerHTML = `
-        <button class="secondary btn-sm back-to-queue" onclick="collapseRegistrationDetail()">Back to Giving queue</button>
-        <div class="workflow-card">
-          <div class="workflow-top">
-            <div>
-              <div class="workflow-title">${escapeHtml(action.title)}</div>
-              <div class="workflow-sub">${escapeHtml(action.body)}</div>
-            </div>
-            <span class="badge ${escapeAttr(reg.status || 'pending')}">${escapeHtml(readable(reg.status))}</span>
-          </div>
-          <div class="step-track">
-            <div class="step-chip ${reviewDone ? 'done' : 'current'}"><strong>1. Verify</strong><span>${reviewDone ? 'Canonical review complete.' : 'Confirm canonical standing and contacts.'}</span></div>
-            <div class="step-chip ${inviteDone ? 'done' : reviewDone ? 'current' : ''}"><strong>2. Invite</strong><span>${inviteDone ? 'Dashboard invite sent.' : 'Send parish dashboard access.'}</span></div>
-            <div class="step-chip ${stripeDone ? 'done' : inviteDone ? 'current' : ''}"><strong>3. Stripe</strong><span>${stripeDone ? 'Payments are enabled.' : 'Connect the parish Stripe account.'}</span></div>
-            <div class="step-chip ${subscriptionDone ? 'done' : stripeDone ? 'current' : ''}"><strong>4. Subscription</strong><span>${subscriptionDone ? 'AGAPAY billing is set.' : 'Set platform subscription tier/status.'}</span></div>
-          </div>
-        </div>
+        ${renderOnboardingCommandHeader(reg)}
+        ${renderOnboardingProgress(reg)}
+        <details class="onboarding-record-details">
+          <summary>Registration record &amp; supporting data</summary>
+          <div class="onboarding-record-body">
         <div class="admin-section">
           <div class="admin-section-title">Sacraments &amp; Services</div>
           <p class="founding-promo-copy">${reg.sacramentsEnabled ? 'Enabled for this parish.' : 'Not yet enabled for this parish.'}</p>
@@ -2224,9 +2384,12 @@ let selectedReference = '';
             </div>
           </div>
         ` : ''}
-        <div class="actions">
-          <div class="admin-section">
-            <div class="admin-section-title">Review</div>
+          </div>
+        </details>
+        <div class="actions onboarding-actions">
+          ${renderOnboardingControls(reg)}
+          <div class="admin-section onboarding-phase-card" id="onboarding-phase-identity">
+            <div class="onboarding-phase-heading"><span>1</span><div><small>Identity &amp; authority</small><strong>Confirm the canonical parish</strong></div></div>
             <div class="form-grid">
               <div>
                 <label for="statusSelect">Canonical review status</label>
@@ -2257,7 +2420,7 @@ let selectedReference = '';
             </div>
           </div>
 
-          <div class="admin-section">
+          <div class="admin-section onboarding-support-card">
             <div class="admin-section-title">Tax / Billing Readiness</div>
             <p style="margin:0 0 0.85rem;color:var(--stone);font-size:12.5px;line-height:1.6;">
               Separate from canonical verification above. A parish can be verified and still blocked from paid
@@ -2310,15 +2473,15 @@ let selectedReference = '';
             </div>
           </div>
 
-          <div class="admin-section">
-            <div class="admin-section-title">Giving Page</div>
+          <div class="admin-section onboarding-phase-card" id="onboarding-phase-access">
+            <div class="onboarding-phase-heading"><span>2</span><div><small>Dashboard access &amp; giving</small><strong>Invite the parish and configure giving</strong></div></div>
             <div class="form-grid">
               <div>
                 <label for="givingStatus">Giving page status</label>
                 <select id="givingStatus">
-                  <option value="active" ${(reg.givingStatus || 'active') === 'active' ? 'selected' : ''}>Active</option>
+                  <option value="active" ${reg.givingStatus === 'active' ? 'selected' : ''} ${reg.onboardingWorkflow?.enabled && reg.onboardingWorkflow?.state !== 'LIVE' ? 'disabled' : ''}>Active</option>
                   <option value="paused" ${reg.givingStatus === 'paused' ? 'selected' : ''}>Paused</option>
-                  <option value="hidden" ${reg.givingStatus === 'hidden' ? 'selected' : ''}>Hidden</option>
+                  <option value="hidden" ${(reg.givingStatus || 'hidden') === 'hidden' ? 'selected' : ''}>Hidden</option>
                   <option value="cancelled" ${reg.givingStatus === 'cancelled' ? 'selected' : ''}>Cancelled</option>
                 </select>
               </div>
@@ -2347,7 +2510,7 @@ let selectedReference = '';
               Email dashboard invite when saving a verified parish
             </label>
             <p style="margin:0.65rem 0 0; color:var(--stone); font-size: 11px; line-height:1.55;">
-              The invite email goes to the priest and treasurer with the dashboard link, parish ID, and temporary token.
+              The invite email goes to the priest and treasurer with the dashboard link, parish ID, and temporary token. Verified parishes remain hidden until the treasurer completes Go-Live signoff.
             </p>
             <div class="toggle-row" style="margin-top:0.75rem;">
               <label class="check-card"><input id="recurringGivingEnabled" type="checkbox" ${(reg.recurringGivingEnabled ?? true) ? 'checked' : ''} /> Recurring giving</label>
@@ -2366,8 +2529,8 @@ let selectedReference = '';
             </div>
           </div>
 
-          <div class="admin-section">
-            <div class="admin-section-title">AGAPAY Subscription</div>
+          <div class="admin-section onboarding-phase-card" id="onboarding-phase-subscription">
+            <div class="onboarding-phase-heading"><span>4</span><div><small>AGAPAY plan</small><strong>Configure the parish subscription</strong></div></div>
             <div class="form-grid">
               <div>
                 <label for="subscriptionTier">Subscription tier</label>
@@ -2413,8 +2576,8 @@ let selectedReference = '';
             </div>
           </div>
 
-          <div class="admin-section">
-            <div class="admin-section-title">Payments</div>
+          <div class="admin-section onboarding-phase-card" id="onboarding-phase-stripe">
+            <div class="onboarding-phase-heading"><span>3</span><div><small>Stripe Connect</small><strong>Connect payouts and confirm readiness</strong></div></div>
             <div class="form-grid">
               <div>
                 <label for="stripeAccountStatus">Stripe onboarding status</label>
@@ -2504,7 +2667,8 @@ let selectedReference = '';
       
       try {
         const selectedStatus = document.getElementById('statusSelect').value;
-        const shouldRunAutoVerifiedWorkflow = selectedStatus === 'verified' && !options.skipAutoVerifiedWorkflow;
+        const shouldSendVerifiedInvite = selectedStatus === 'verified'
+          && (options.sendDashboardInvite ?? document.getElementById('autoDashboardInvite').checked);
         let funds = [];
         let campaigns = [];
         try {
@@ -2541,8 +2705,9 @@ let selectedReference = '';
             commemorationsEnabled: document.getElementById('commemorationsEnabled').checked,
             funds,
             campaigns,
+            onboardingChecks: readOnboardingChecks(),
             parishDashboardToken: document.getElementById('parishDashboardToken').value.trim(),
-            sendDashboardInvite: shouldRunAutoVerifiedWorkflow ? false : options.sendDashboardInvite ?? document.getElementById('autoDashboardInvite').checked,
+            sendDashboardInvite: shouldSendVerifiedInvite,
             reviewerNotes: document.getElementById('reviewerNotes').value,
             taxReadinessStatus: document.getElementById('taxReadinessStatus').value,
             taxReadinessNotes: document.getElementById('taxReadinessNotes').value,
@@ -2559,13 +2724,7 @@ let selectedReference = '';
         if (handleAuthFailure(response, result)) return;
         if (!response.ok) throw new Error(result.error || 'Unable to save review');
 
-        let finalRegistration = result.registration;
-        let workflowMessage = '';
-        if (shouldRunAutoVerifiedWorkflow) {
-          const workflow = await runAutoVerifiedWorkflow(reference);
-          finalRegistration = workflow.registration || finalRegistration;
-          workflowMessage = workflow.message ? ` ${workflow.message}` : '';
-        }
+        const finalRegistration = result.registration;
 
         // Clear the notes textarea after successful save
         const notesEl = document.getElementById('reviewerNotes');
@@ -2580,37 +2739,15 @@ let selectedReference = '';
         await loadRegistrations();
         const inviteMessage = dashboardInviteMessage(result.dashboardInvite);
         if (finalRegistration.status === 'verified' && finalRegistration.parishId) {
-          setStatus(`Review saved. ${finalRegistration.parishName} is now live.${inviteMessage}${workflowMessage}`, 'success');
+          setStatus(`Review saved. ${finalRegistration.parishName} is verified and hidden while onboarding continues.${inviteMessage}`, 'success');
           return;
         }
-        setStatus(`Review saved.${inviteMessage}${workflowMessage}`, 'success');
+        setStatus(`Review saved.${inviteMessage}`, 'success');
       } catch (err) {
         setStatus(err.message, 'error');
       } finally {
         if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
       }
-    }
-
-    async function runAutoVerifiedWorkflow(reference) {
-      const messages = [];
-      let registration = null;
-
-      const stripeResponse = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/stripe-onboarding', {
-        method: 'POST',
-        headers: authHeaders()
-      });
-      const stripe = await stripeResponse.json();
-      if (handleAuthFailure(stripeResponse, stripe)) {
-        return { registration, message: 'Auto workflow paused: session expired.' };
-      }
-      if (stripeResponse.ok) {
-        registration = stripe.registration || registration;
-        messages.push(stripe.email?.status === 'sent' ? 'Stripe onboarding email sent.' : 'Stripe onboarding link created.');
-      } else {
-        messages.push(`Stripe onboarding skipped: ${stripe.detail || stripe.error || 'unknown error'}.`);
-      }
-
-      return { registration, message: messages.join(' ') };
     }
 
     function generateDashboardToken() {
@@ -2634,7 +2771,7 @@ let selectedReference = '';
         if (handleAuthFailure(response, result)) return;
         if (!response.ok) throw new Error(result.detail || result.error || 'Unable to send dashboard invite');
 
-        renderDetail(result.registration);
+        await loadDetail(reference, { silent: true, noScroll: true });
         await loadRegistrations();
         if (result.email?.status === 'sent') {
           setStatus(`Dashboard invite sent to ${(result.email.recipients || []).join(', ')}.`, 'success');
@@ -2681,7 +2818,7 @@ let selectedReference = '';
         if (handleAuthFailure(response, result)) return;
         if (!response.ok) throw new Error(result.detail || result.error || 'Unable to create subscription checkout');
 
-        renderDetail(result.registration);
+        await loadDetail(reference, { silent: true, noScroll: true });
         renderQueueNext(result.registration);
         await loadRegistrations();
 
@@ -2734,7 +2871,7 @@ let selectedReference = '';
         if (handleAuthFailure(response, result)) return;
         if (!response.ok) throw new Error(result.detail || result.error || 'Unable to create Stripe onboarding link');
 
-        renderDetail(result.registration);
+        await loadDetail(reference, { silent: true, noScroll: true });
         await loadRegistrations();
         const linkBox = document.getElementById('stripeLinkBox');
         const link = document.getElementById('stripeOnboardingLink');
@@ -2784,7 +2921,7 @@ let selectedReference = '';
         if (handleAuthFailure(response, result)) return;
         if (!response.ok) throw new Error(result.detail || result.error || 'Unable to refresh Stripe status');
 
-        renderDetail(result.registration);
+        await loadDetail(reference, { silent: true, noScroll: true });
         await loadRegistrations();
         setPaymentStatus(`Stripe status refreshed: ${result.registration.stripeAccountStatus || 'unknown'}.`, 'success');
       } catch (err) {

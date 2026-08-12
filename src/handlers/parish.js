@@ -79,6 +79,7 @@ import { accountingAvailableForParish } from "../lib/accounting-demo-access.js";
 import { parishLifeAvailableFor } from "../lib/parish-life-access.js";
 import { fetchKoinoniaCalendarIcs, normalizeKoinoniaCalendarUrl } from "../lib/koinonia-calendar.js";
 import { ensureBenevolenceFundInRegistration, mergeStewardshipFundsIntoRegistration } from "../lib/stewardship-funds.js";
+import { buildParishOnboardingWorkflow, invalidateOnboardingSignoffIfChanged, onboardingWorkflowEnabled, recommendedOnboardingState } from "../lib/parish-onboarding.js";
 
 export {
   d1All,
@@ -2110,19 +2111,16 @@ export async function handleParishStripeRefresh(request, env, parishId) {
   const limited = await rateLimit(request, env, "parish-money-actions", { limit: 30, windowSeconds: 300 });
   if (limited) return limited;
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
-
   const token = getBearerToken(request);
   if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
   }
-
   const refreshed = await refreshStripeStatusForRegistration(env, found.key, found.registration);
   if (!refreshed.ok) return json(refreshed.body, { status: refreshed.status });
-
-  return json({ ok: true, parish: parishDashboardPayload(parishId, refreshed.registration), registration: refreshed.registration });
+  const onboarding = await buildParishOnboardingWorkflow(refreshed.registration, { appUrl: env.AGAPAY_APP_URL || new URL(request.url).origin, receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app" });
+  return json({ ok: true, parish: { ...parishDashboardPayload(parishId, refreshed.registration), onboarding }, onboarding, registration: refreshed.registration });
 }
 
 export async function handleDashboardInvite(request, env, reference) {
@@ -2682,15 +2680,9 @@ export async function handleParishDashboard(request, env, parishId) {
       parishLifeAvailable: parishLifeAvailableFor(env),
       directoryEnabled: directoryEnabledFor(registration, directorySettings)
     });
-    return json({
-      // The parish-managed Funds & Alms record is authoritative. Accounting
-      // consumes it on save; accounting must never overwrite this editor.
-      // Campaign progress comes from the same paid offerings that power the
-      // donor dashboard and public campaign pages.
-      parish: dashboardParish,
-      accountingCatalogConnected: catalog.available,
-      featureRequests
-    });
+    dashboardParish.onboarding = await buildParishOnboardingWorkflow(registration, { appUrl: env.AGAPAY_APP_URL || new URL(request.url).origin, receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app" });
+    // The parish-managed Funds & Alms record is authoritative; Accounting consumes it on save and never overwrites this editor.
+    return json({ parish: dashboardParish, accountingCatalogConnected: catalog.available, featureRequests });
   }
 
   if (request.method === "PATCH") {
@@ -2702,6 +2694,11 @@ export async function handleParishDashboard(request, env, parishId) {
     }
 
     const current = found.registration;
+    if (onboardingWorkflowEnabled(current) && current.onboardingState !== "LIVE" && body.givingStatus === "active") {
+      return json({
+        error: "Treasurer Go-Live signoff is required before the giving page can be activated."
+      }, { status: 409 });
+    }
     const givingPlus = givingFeatureAccess(current, "customFunds");
     const starterDesignatedFund = givingFeatureAccess(current, "starterDesignatedFund");
     if (!starterDesignatedFund && body.funds !== undefined) {
@@ -2831,10 +2828,14 @@ export async function handleParishDashboard(request, env, parishId) {
         feastCampaigns: catalogSync.feastCampaigns || []
       };
     }
+    if (onboardingWorkflowEnabled(updated)) updated.onboardingState = recommendedOnboardingState(updated, updated.onboardingChecks);
+    updated = await invalidateOnboardingSignoffIfChanged(current, updated, { actor: current.treasurerEmail || current.priestEmail || "parish", reason: "The parish changed material onboarding configuration.", receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app" });
     await saveRegistrationRecord(env, found.key, updated, current);
+    const responseParish = parishDashboardPayload(parishId, updated);
+    responseParish.onboarding = await buildParishOnboardingWorkflow(updated, { appUrl: env.AGAPAY_APP_URL || new URL(request.url).origin, receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app" });
     return json({
       ok: true,
-      parish: updated,
+      parish: responseParish,
       accountingCatalog: catalogSync,
       token: nextSession?.token || "",
       expiresAt: nextSession?.expiresAt || ""

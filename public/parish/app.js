@@ -8732,6 +8732,8 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || data.error || 'Unable to refresh Stripe status');
       if (data.parish) currentParish = { ...currentParish, ...data.parish };
+      if (data.onboarding) currentParish.onboarding = data.onboarding;
+      if (options?.force) renderSetupWizard();
     } catch (err) {
       if (!options || !options.quiet) setStatus(err.message, 'error');
     }
@@ -8743,8 +8745,107 @@
     if(type==='mission')  return '<svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><line x1="19" y1="2" x2="19" y2="6"/><line x1="16.5" y1="3.5" x2="21.5" y2="3.5"/><line x1="16" y1="5.5" x2="22" y2="5.5"/><path d="M19 6 C10 10 8 17 11 22 C13 26 16 27 19 27 C22 27 25 26 27 22 C30 17 28 10 19 6Z"/><line x1="12" y1="27" x2="26" y2="27"/><line x1="13" y1="29" x2="25" y2="29"/></svg>';
     return '<svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><line x1="19" y1="2" x2="19" y2="5"/><line x1="17" y1="3.5" x2="21" y2="3.5"/><path d="M19 5 C15 7 13 11 14 14 C15 16 17 17 19 17 C21 17 23 16 24 14 C25 11 23 7 19 5Z"/><line x1="10" y1="6" x2="10" y2="8"/><path d="M10 8 C8 9.5 7 12 7.5 14 C8 15.5 9 16 10 16 C11 16 12 15.5 12.5 14 C13 12 12 9.5 10 8Z"/><line x1="28" y1="6" x2="28" y2="8"/><path d="M28 8 C26 9.5 25 12 25.5 14 C26 15.5 27 16 28 16 C29 16 30 15.5 30.5 14 C31 12 30 9.5 28 8Z"/><rect x="4" y="17" width="30" height="14" rx="1"/><path d="M16 31 L16 25 Q19 22 22 25 L22 31"/></svg>';
   }
+  const treasurerAffirmationCopy = {
+    stripeAccount: 'The connected Stripe account belongs to this parish.',
+    payoutBank: 'The payout bank account shown in Stripe is correct.',
+    organizationName: 'The public and legal organization names are correct.',
+    generalFund: 'The General Operating Fund is correct.',
+    designatedFunds: 'The designated funds and campaigns are correct.',
+    recurringGiving: 'Recurring giving is enabled or disabled as intended.',
+    receiptDetails: 'The receipt name and contact details are correct.',
+    agapayPlan: 'The selected AGAPAY plan is correct.'
+  };
+  function onboardingStateLabel(value) {
+    return String(value || 'onboarding').replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+  }
+  function onboardingSignoffMarkup(workflow) {
+    const summary = workflow.summary || {};
+    const org = summary.organization || {};
+    const stripe = summary.stripe || {};
+    const plan = summary.plan || {};
+    const giving = summary.giving || {};
+    const receipt = summary.receipt || {};
+    const stripeCheckedAt = workflow.stripe?.checkedAt ? new Date(workflow.stripe.checkedAt).toLocaleString() : 'not refreshed';
+    const designated = [...(giving.designatedFunds || []), ...(giving.campaigns || []), ...(giving.feastCampaigns || [])];
+    const general = (giving.generalFunds || [])[0];
+    const bankLabel = stripe.payoutBankName
+      ? `${stripe.payoutBankName}${stripe.payoutBankLast4 ? ` ending ${stripe.payoutBankLast4}` : ''}`
+      : 'Confirm the payout bank directly in Stripe';
+    const rows = [
+      ['Organization', org.publicName || 'Not set', org.legalReceiptName && org.legalReceiptName !== org.publicName ? `Receipt name: ${org.legalReceiptName}` : 'Public and receipt names match'],
+      ['Stripe account', stripe.accountId || 'Not connected', `Charges ${stripe.chargesEnabled ? 'enabled' : 'blocked'} · payouts ${stripe.payoutsEnabled ? 'enabled' : 'blocked'} · refreshed ${stripeCheckedAt}`],
+      ['Payout bank', bankLabel, 'Bank details remain visible in Stripe only'],
+      ['General fund', general?.name || 'Not configured', general?.accountNumber ? `Account ${general.accountNumber}` : 'Unrestricted operating fund'],
+      ['Designated giving', `${designated.length} active item${designated.length === 1 ? '' : 's'}`, designated.map(item => item.name).filter(Boolean).join(', ') || 'No designated funds or campaigns'],
+      ['Recurring giving', giving.recurringGivingEnabled ? 'Enabled' : 'Disabled', 'Parish-selected setting'],
+      ['Receipt', receipt.legalName || org.publicName || 'Not set', receipt.contact || 'No contact configured'],
+      ['AGAPAY plan', plan.label || plan.id || 'Not selected', plan.status || 'Status unavailable']
+    ];
+    return `<div class="treasurer-signoff" id="treasurerSignoff">
+      <div class="treasurer-signoff-head"><div><span>Required final approval</span><h3>Treasurer go-live signoff</h3><p>Review the frozen configuration below. All eight affirmations are recorded with the signer and timestamp.</p></div><span class="onboarding-snapshot">Snapshot ${escapeHtml(String(workflow.materialVersion || '').slice(0, 10))}</span></div>
+      <div class="signoff-summary">${rows.map(([label, value, detail]) => `<div class="signoff-summary-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></div>`).join('')}</div>
+      <div class="signoff-affirmations">${Object.entries(treasurerAffirmationCopy).map(([key, label]) => `<label><input class="treasurer-affirmation" type="checkbox" data-key="${key}"><span>${escapeHtml(label)}</span></label>`).join('')}</div>
+      <div class="signoff-identity">
+        <div><label for="goLiveSignerName">Treasurer name</label><input id="goLiveSignerName" autocomplete="name" placeholder="Full legal name"></div>
+        <div><label for="goLiveSignerTitle">Title</label><input id="goLiveSignerTitle" value="Parish Treasurer" autocomplete="organization-title"></div>
+        <div><label for="goLiveSignerEmail">Verified email</label><input id="goLiveSignerEmail" type="email" value="${escapeHtml(summary.treasurerEmail || '')}" autocomplete="email"></div>
+      </div>
+      <label class="signoff-authority"><input id="goLiveAuthority" type="checkbox"><span>I am authorized to approve online giving for this parish.</span></label>
+      <div class="signoff-submit"><p id="goLiveError" role="alert"></p><button class="btn btn-gold" type="button" onclick="submitTreasurerGoLive(this)">Go Live</button></div>
+    </div>`;
+  }
+  function renderDeterministicOnboardingWizard(workflow) {
+    const pane = document.getElementById('setupWizardPane');
+    if (!pane) return;
+    const live = workflow.state === 'LIVE';
+    const givingUrl = workflow.summary?.givingUrl || `/give/${encodeURIComponent(currentParish.parishId || '')}`;
+    const steps = (workflow.steps || []).map((item, index) => `<div class="setup-step ${item.passed ? 'done' : ''}">${setupCheckMarkup()}<div><strong>${index + 1}. ${escapeHtml(item.title)}</strong><span>${escapeHtml(item.detail || '')}</span></div></div>`).join('');
+    const blockers = (workflow.blockers || []).slice(0, 5);
+    const action = live
+      ? `<div class="onboarding-live-mark" aria-hidden="true">✓</div><strong>Giving is live</strong><p class="setup-copy setup-action-copy">Treasurer signoff is recorded and the public giving link is active.</p><a class="btn btn-gold onboarding-link-button" href="${escapeHtml(givingUrl)}" target="_blank" rel="noopener">Open giving page</a>`
+      : workflow.canGoLive
+        ? `<strong>Ready for treasurer review</strong><p class="setup-copy setup-action-copy">Every operational gate has passed. Review the snapshot and complete the required signoff below.</p><button class="btn btn-gold" type="button" onclick="document.getElementById('treasurerSignoff')?.scrollIntoView({behavior:'smooth',block:'start'})">Review and sign</button>`
+        : `<strong>${escapeHtml(blockers.length ? `${blockers.length} blocking item${blockers.length === 1 ? '' : 's'} shown` : 'Onboarding in progress')}</strong><div class="onboarding-blockers">${blockers.map(item => `<div><span>!</span><p><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.detail || '')}</small></p></div>`).join('')}</div>${workflow.stripe?.connected && !workflow.stripe?.ready ? '<button class="btn btn-gold" type="button" onclick="refreshStripeStatus({force:true})">Refresh Stripe readiness</button>' : ''}<button class="onboarding-secondary" type="button" onclick="switchTab('settings')">Open parish settings</button>`;
+    pane.innerHTML = `<div class="setup-wizard-card deterministic-onboarding"><div class="setup-wizard-body"><div><div class="onboarding-kicker">${escapeHtml(onboardingStateLabel(workflow.state))}</div><div class="setup-title">Parish launch checklist</div><p class="setup-copy">${live ? 'Launch is complete. Material changes will pause giving and require a new treasurer signoff.' : 'AGAPAY keeps the giving page hidden until all 17 gates pass and the treasurer approves the exact configuration.'}</p><div class="onboarding-progress"><span style="width:${Math.round((Number(workflow.completedSteps || 0) / Math.max(1, Number(workflow.totalSteps || 17))) * 100)}%"></span></div><div class="onboarding-progress-label"><strong>${workflow.completedSteps || 0} of ${workflow.totalSteps || 17}</strong><span>required gates complete</span></div><details class="onboarding-step-details" ${workflow.canGoLive ? '' : 'open'}><summary>View all onboarding gates</summary><div class="setup-steps">${steps}</div></details></div><div class="setup-action-panel">${action}</div></div>${workflow.canGoLive ? onboardingSignoffMarkup(workflow) : ''}</div>`;
+  }
+  async function submitTreasurerGoLive(button) {
+    const workflow = currentParish?.onboarding;
+    const errorEl = document.getElementById('goLiveError');
+    if (!workflow?.canGoLive) return;
+    const affirmations = {};
+    document.querySelectorAll('.treasurer-affirmation').forEach((input) => { affirmations[input.dataset.key] = input.checked; });
+    const body = {
+      snapshotVersion: workflow.materialVersion,
+      affirmations,
+      signerName: document.getElementById('goLiveSignerName')?.value || '',
+      signerTitle: document.getElementById('goLiveSignerTitle')?.value || '',
+      signerEmail: document.getElementById('goLiveSignerEmail')?.value || '',
+      authorityConfirmed: Boolean(document.getElementById('goLiveAuthority')?.checked)
+    };
+    if (errorEl) errorEl.textContent = '';
+    button.disabled = true;
+    button.textContent = 'Publishing…';
+    try {
+      const res = await fetch(`/api/parish/dashboard/${encodeURIComponent(currentParish.parishId)}/onboarding`, { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify(body) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || data.errors?.[0] || 'Unable to complete go-live signoff');
+      if (data.parish) currentParish = { ...currentParish, ...data.parish };
+      if (data.onboarding) currentParish.onboarding = data.onboarding;
+      renderDashboard();
+      setStatus('Treasurer signoff recorded. The parish giving page is live.', 'success');
+    } catch (err) {
+      if (errorEl) errorEl.textContent = err.message;
+      setStatus(err.message, 'error');
+      button.disabled = false;
+      button.textContent = 'Go Live';
+    }
+  }
   function renderSetupWizard() {
     const pane=document.getElementById('setupWizardPane'); if(!pane||!currentParish) return;
+    if(currentParish.onboarding?.enabled){
+      if(currentParish.onboarding.state==='LIVE'){pane.innerHTML='';return;}
+      renderDeterministicOnboardingWizard(currentParish.onboarding);return;
+    }
     const setup=currentParish.setup||{}; const stripeDone=Boolean(setup.stripeConnected); const billingDone=Boolean(setup.billingActive);
     if(stripeDone&&billingDone){pane.innerHTML='';return;}
     const tierOptions=tierOptionsMarkup(currentParish.subscriptionTier);
@@ -8885,7 +8986,8 @@
     const tierLabel = String(p.subscriptionTierLabel || p.subscriptionTier || 'Unassigned').trim();
     const tierDisplay = /\btier$/i.test(tierLabel) ? tierLabel : `${tierLabel} tier`;
     chip.textContent = `${statusLabel(p.givingStatus || 'active')} · ${tierDisplay}`;
-    chip.className   = 'sidebar-status-chip ' + (p.givingStatus || 'active');
+    const isOnboardingLive = p.onboarding?.state === 'LIVE';
+    chip.className = `sidebar-status-chip ${p.givingStatus || 'active'}${isOnboardingLive ? ' is-live' : ''}`;
     const overviewStatus = document.getElementById('overviewGivingStatus');
     const overviewStatusNote = document.getElementById('overviewGivingStatusNote');
     const overviewStripe = document.getElementById('overviewStripeStatus');
@@ -8981,7 +9083,7 @@
           <p class="section-note">The patronal feast recurs annually, so no year is needed.</p>
         </div>
         `; })()}
-        <div class="form-group"><label class="form-label" for="givingStatus">Giving page status</label><select id="givingStatus"><option value="active" ${p.givingStatus==='active'?'selected':''}>Active</option><option value="paused" ${p.givingStatus==='paused'?'selected':''}>Paused</option><option value="hidden" ${p.givingStatus==='hidden'?'selected':''}>Hidden</option></select></div>
+        <div class="form-group"><label class="form-label" for="givingStatus">Giving page status</label><select id="givingStatus"><option value="active" ${p.givingStatus==='active'?'selected':''} ${p.onboarding?.enabled&&p.onboarding?.state!=='LIVE'?'disabled':''}>Active${p.onboarding?.enabled&&p.onboarding?.state!=='LIVE'?' — requires treasurer signoff':''}</option><option value="paused" ${p.givingStatus==='paused'?'selected':''}>Paused</option><option value="hidden" ${p.givingStatus==='hidden'?'selected':''}>Hidden</option></select>${p.onboarding?.enabled&&p.onboarding?.state!=='LIVE'?'<p class="section-note">AGAPAY activates the page automatically when the treasurer completes Go Live.</p>':''}</div>
         <div class="form-group"><label class="form-label">Stripe onboarding</label><input value="${escapeHtml(p.stripeAccountStatus||'not_started')}" disabled /></div>
       </div>
       <p class="section-note">Changes here affect the parish's public giving page and visibility in the AGAPAY directory. Legal name and EIN are used on annual donor giving statements (Givers tab).</p>

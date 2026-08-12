@@ -128,6 +128,7 @@ import {
   handleParishPasswordResetConfirm,
   requireDonor,
 } from "./handlers/parish.js";
+import { handleParishOnboarding } from "./handlers/parish-onboarding.js";
 import {
   handleParishGivingHistory,
   handleParishGivingSummary,
@@ -248,6 +249,7 @@ import {
   handleAdminRebuildIndexes,
   handleAdminPassword,
   handleAdminRegistrationDetail,
+  handleAdminOnboardingTest,
   handleAdminLearnFeedback,
   handleAdminParishSupportTickets,
   handleAdminAccountingOperations,
@@ -3837,6 +3839,10 @@ export default {
       );
     }
 
+    if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/onboarding-test")) {
+      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/onboarding-test", ""));
+      return handleAdminOnboardingTest(request, env, reference);
+    }
     if (url.pathname.startsWith("/api/admin/registrations/")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", ""));
       return handleAdminRegistrationDetail(request, env, reference);
@@ -3850,6 +3856,10 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/session")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/session", ""));
       return handleParishSession(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/onboarding")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/onboarding", ""));
+      return handleParishOnboarding(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stripe-onboarding")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stripe-onboarding", ""));

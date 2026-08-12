@@ -82,6 +82,16 @@ async function sendDonationReceiptIfNeeded(env, offering = {}) {
   return donorModule.sendDonationReceiptIfNeeded(env, offering);
 }
 
+function stripePayoutBankSummary(account = {}) {
+  const bank = (Array.isArray(account.external_accounts?.data) ? account.external_accounts.data : [])
+    .find((entry) => entry?.object === "bank_account");
+  if (!bank) return {};
+  return {
+    stripePayoutBankName: String(bank.bank_name || "").trim().slice(0, 160),
+    stripePayoutBankLast4: String(bank.last4 || "").trim().slice(-4)
+  };
+}
+
 
 export async function handleSubscriptionCheckout(request, env, reference) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
@@ -779,6 +789,7 @@ export async function processStripeWebhookEvent(env, event) {
     if (found) {
       await saveRegistrationRecord(env, found.key, {
         ...found.registration,
+        ...stripePayoutBankSummary(object),
         stripeAccountStatus: stripeAccountStatus(object),
         stripeChargesEnabled: Boolean(object.charges_enabled),
         stripePayoutsEnabled: Boolean(object.payouts_enabled),
@@ -850,6 +861,7 @@ export async function createStripeOnboardingSession(request, env, reference, reg
 
   const updated = {
     ...registration,
+    ...stripePayoutBankSummary(stripeAccount),
     parishDashboardToken: registration.parishDashboardToken || crypto.randomUUID(),
     stripeAccountId,
     stripeAccountStatus: stripeAccountStatus(stripeAccount),
@@ -923,6 +935,7 @@ export async function refreshStripeStatusForRegistration(env, reference, registr
   const account = retrieved.body;
   const updated = {
     ...registration,
+    ...stripePayoutBankSummary(account),
     stripeAccountStatus: stripeAccountStatus(account),
     stripeChargesEnabled: Boolean(account.charges_enabled),
     stripePayoutsEnabled: Boolean(account.payouts_enabled),
