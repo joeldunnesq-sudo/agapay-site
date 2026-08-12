@@ -63,6 +63,7 @@ export const CAPABILITY_CATALOG = Object.freeze([
   "parish.members.remove",
   "parish.roles.assign",
   "parish.settings.manage",
+  "parish.giving.go_live",
 
   // Accounting (foundation only -- no ledger exists yet; these capability
   // strings are reserved for Phase 1's posting engine and later packages)
@@ -262,7 +263,7 @@ export const ROLE_TEMPLATES = Object.freeze({
     "donations.view", "donations.manage", "donor.statements"
   ],
   treasurer: [
-    "parish.view", "parish.members.invite",
+    "parish.view", "parish.members.invite", "parish.giving.go_live",
     "accounting.view", "accounting.post", "accounting.adjust", "accounting.reverse",
     "accounting.close_period", "accounting.reconcile", "accounting.reports", "accounting.export",
     "accounting.configure", "accounting.accounts.manage", "accounting.funds.manage",

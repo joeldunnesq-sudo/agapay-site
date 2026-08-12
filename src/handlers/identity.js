@@ -144,6 +144,7 @@ export async function handleIdentityInvitationAccept(request, env, token) {
     ok: true,
     token: session?.token || "",
     expiresAt: session?.expiresAt || "",
+    identityEmail: result.email,
     parishId: result.parishId,
     membershipId: result.membershipId,
     parishToken: parishSession?.token || "",

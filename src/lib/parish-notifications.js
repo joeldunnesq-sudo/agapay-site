@@ -114,8 +114,8 @@ export async function sendTreasurerStripeInvite(env, appUrl, registration) {
 export async function sendDashboardInvite(env, appUrl, registration) {
   const parishId = registration.parishId || parishSlug(registration.parishName, registration.city);
   const people = [
-    { key: "priest", email: normalizeEmail(registration.priestEmail), roleTemplate: "rector", label: "priest" },
-    { key: "treasurer", email: normalizeEmail(registration.treasurerEmail), roleTemplate: "treasurer", label: "treasurer" }
+    { key: "treasurer", email: normalizeEmail(registration.treasurerEmail), roleTemplate: "treasurer", label: "treasurer" },
+    { key: "priest", email: normalizeEmail(registration.priestEmail), roleTemplate: "rector", label: "priest" }
   ].filter((person) => person.email);
   const uniquePeople = people.filter((person, index) => people.findIndex((candidate) => candidate.email === person.email) === index);
 

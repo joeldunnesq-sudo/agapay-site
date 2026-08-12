@@ -3,10 +3,13 @@ import {
   hasProductionStore,
   json,
   missingProductionStoreResponse,
+  normalizeEmail,
   rateLimit,
   secureCompare,
   unauthorized,
 } from "../lib/core.js";
+import { requireActiveMembership, requireCapability } from "../lib/authorization.js";
+import { listMembershipsForParish } from "../lib/memberships.js";
 import {
   PARISH_ONBOARDING_WORKFLOW_VERSION,
   TREASURER_AFFIRMATIONS,
@@ -21,6 +24,7 @@ import {
   saveRegistrationRecord,
   verifyParishDashboardBearer,
 } from "./parish.js";
+import { refreshStripeStatusForRegistration } from "./stripe.js";
 
 export async function handleParishOnboarding(request, env, parishId) {
   const limited = await rateLimit(request, env, "parish-onboarding", {
@@ -32,15 +36,44 @@ export async function handleParishOnboarding(request, env, parishId) {
 
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
-  if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) return unauthorized();
 
+  const memberships = await listMembershipsForParish(env, parishId);
   const workflowOptions = {
     appUrl: env.AGAPAY_APP_URL || new URL(request.url).origin,
-    receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app"
+    receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
+    memberships
   };
-  const currentWorkflow = await buildParishOnboardingWorkflow(found.registration, workflowOptions);
-  if (request.method === "GET") return json({ onboarding: currentWorkflow });
+  if (request.method === "GET") {
+    const legacyAuthorized = await verifyParishDashboardBearer(found.registration, getBearerToken(request));
+    const memberAuthorized = legacyAuthorized ? null : await requireActiveMembership(request, env, parishId);
+    if (!legacyAuthorized && !memberAuthorized) return unauthorized();
+    return json({ onboarding: await buildParishOnboardingWorkflow(found.registration, workflowOptions) });
+  }
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+
+  const treasurerContext = await requireCapability(request, env, parishId, "parish.giving.go_live");
+  if (!treasurerContext) {
+    return json({
+      error: "Please sign in with the verified treasurer account to approve launch.",
+      code: "treasurer_auth_required"
+    }, { status: 401 });
+  }
+  const authenticatedEmail = normalizeEmail(treasurerContext.user.email);
+  if (!authenticatedEmail || authenticatedEmail !== normalizeEmail(found.registration.treasurerEmail)) {
+    return json({
+      error: "Please sign in with the verified treasurer account to approve launch.",
+      code: "treasurer_identity_mismatch"
+    }, { status: 403 });
+  }
+  const acceptedTreasurer = found.registration.onboardingAccess?.treasurer;
+  if (acceptedTreasurer?.status !== "accepted"
+    || normalizeEmail(acceptedTreasurer.email) !== authenticatedEmail
+    || acceptedTreasurer.membershipId !== treasurerContext.membership.id) {
+    return json({
+      error: "Accept the treasurer's personal access invitation before approving launch.",
+      code: "treasurer_access_not_accepted"
+    }, { status: 403 });
+  }
 
   let body;
   try {
@@ -52,11 +85,22 @@ export async function handleParishOnboarding(request, env, parishId) {
   if (!onboardingWorkflowEnabled(found.registration)) {
     return json({ error: "This parish has not been enrolled in the deterministic onboarding workflow." }, { status: 409 });
   }
+
+  const persistedWorkflow = await buildParishOnboardingWorkflow(found.registration, workflowOptions);
   if (found.registration.onboardingState === "LIVE"
     && found.registration.treasurerSignoff?.status === "signed"
-    && found.registration.treasurerSignoff?.snapshotVersion === currentWorkflow.materialVersion) {
-    return json({ ok: true, alreadyLive: true, onboarding: currentWorkflow });
+    && persistedWorkflow.signedCurrentSnapshot) {
+    return json({ ok: true, alreadyLive: true, onboarding: persistedWorkflow });
   }
+
+  const refreshed = await refreshStripeStatusForRegistration(env, found.key, found.registration, {
+    actor: authenticatedEmail,
+    reason: "The mandatory Go-Live Stripe refresh changed material connected-account state.",
+    preserveReviewedTimestamp: true
+  });
+  if (!refreshed.ok) return json(refreshed.body, { status: refreshed.status });
+  const currentRegistration = refreshed.registration;
+  const currentWorkflow = await buildParishOnboardingWorkflow(currentRegistration, workflowOptions);
   if (!body.snapshotVersion || !secureCompare(body.snapshotVersion, currentWorkflow.materialVersion)) {
     return json({
       error: "The onboarding configuration changed. Refresh and review the current signoff summary before going live.",
@@ -71,7 +115,7 @@ export async function handleParishOnboarding(request, env, parishId) {
     }, { status: 409 });
   }
 
-  const attestation = validateTreasurerGoLiveInput(body, found.registration);
+  const attestation = validateTreasurerGoLiveInput(body, currentRegistration, treasurerContext.user);
   if (!attestation.ok) {
     return json({
       error: attestation.errors[0] || "Treasurer signoff is incomplete.",
@@ -84,7 +128,7 @@ export async function handleParishOnboarding(request, env, parishId) {
   const requestId = request.headers.get("CF-Ray") || crypto.randomUUID();
   const signedAffirmations = Object.fromEntries(TREASURER_AFFIRMATIONS.map((key) => [key, true]));
   let updated = {
-    ...found.registration,
+    ...currentRegistration,
     onboardingWorkflowVersion: PARISH_ONBOARDING_WORKFLOW_VERSION,
     onboardingState: "LIVE",
     givingStatus: "active",
@@ -92,7 +136,11 @@ export async function handleParishOnboarding(request, env, parishId) {
       status: "signed",
       signerName: attestation.signerName,
       signerTitle: attestation.signerTitle,
-      signerEmail: attestation.signerEmail,
+      signerEmail: authenticatedEmail,
+      verifiedTreasurerEmail: authenticatedEmail,
+      platformUserId: treasurerContext.user.id,
+      membershipId: treasurerContext.membership.id,
+      platformUserDisplayName: treasurerContext.user.displayName || "",
       signedAt: now,
       snapshotVersion: currentWorkflow.materialVersion,
       affirmationVersion: 1,
@@ -100,15 +148,17 @@ export async function handleParishOnboarding(request, env, parishId) {
       requestId
     },
     goLiveAt: now,
-    goLiveBy: attestation.signerEmail,
+    goLiveBy: authenticatedEmail,
     parishUpdatedAt: now
   };
   updated = appendAdminAudit(updated, "parish_go_live", `${attestation.signerName} (${attestation.signerTitle})`, {
-    signerEmail: attestation.signerEmail,
+    signerEmail: authenticatedEmail,
+    platformUserId: treasurerContext.user.id,
+    membershipId: treasurerContext.membership.id,
     snapshotVersion: currentWorkflow.materialVersion,
     requestId
   });
-  await saveRegistrationRecord(env, found.key, updated, found.registration);
+  await saveRegistrationRecord(env, found.key, updated, currentRegistration);
 
   const onboarding = await buildParishOnboardingWorkflow(updated, workflowOptions);
   const parish = parishDashboardPayload(parishId, updated);

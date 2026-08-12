@@ -74,7 +74,7 @@ The record must contain:
 - Treasurer name and email, plus the verified priest/leader's confirmation method and timestamp. The treasurer does not need to appear in a public directory.
 - Dashboard invite delivery status and recipients.
 - Personal invitation status, acceptance timestamp, membership ID, and verified recipient. Never store the new password.
-- Stripe connected account ID, status-check timestamp, and readiness booleans. Never store a full bank account or routing number.
+- Stripe connected account ID, status-check timestamp, last server confirmation timestamp, readiness booleans, and only the bank name/masked last four digits returned by Stripe. Never store a full bank account or routing number.
 - Selected AGAPAY plan and subscription status.
 - General Operating Fund configuration snapshot.
 - Designated fund and campaign configuration snapshot.
@@ -312,6 +312,7 @@ Actions:
 3. AGAPAY activates the membership and opens the parish dashboard automatically.
 4. AGAPAY records acceptance without recording either password.
 5. The access gate completes automatically when the required invitations are accepted.
+6. Confirm the recorded accepted membership IDs still resolve to active memberships for this parish. Email delivery alone is not acceptance.
 
 Evidence:
 
@@ -328,6 +329,8 @@ Block when:
 - A required invitation is expired, revoked, or unaccepted.
 - An invitation was sent to an unverified person.
 - An accepted identity is connected to the wrong parish or role.
+
+Legacy shared parish credentials do not satisfy this gate by default. A migrated record may use shared access only under an explicit, persisted exception containing approval, approver, timestamp, and reason. The exception is compatibility-only and never grants Go-Live authority; Go Live always requires the authenticated treasurer membership.
 
 ### Step 7 — Connect the parish's Stripe account
 
@@ -383,6 +386,7 @@ Actions:
    - `stripeRequirementsDue` is empty.
 4. Record the refresh timestamp and the connected account ID.
 5. If any item is incomplete, return the action to the treasurer and remain in `STRIPE_PENDING`.
+6. Treat this operator refresh as the reviewed snapshot. When the treasurer clicks **Go Live**, the server must retrieve the connected account from Stripe again and compare the current account, readiness, requirements, and payout-bank summary with that reviewed snapshot.
 
 Evidence:
 
@@ -400,6 +404,7 @@ Block when:
 - Only `charges_enabled` is true but payouts are not enabled.
 - The account is `restricted`, `onboarding`, or `invited`.
 - Readiness is based on a stale status check.
+- Stripe cannot be reached during the mandatory Go-Live refresh. Fail closed with a retryable error; never activate from cached booleans.
 
 ### Step 9 — Configure the AGAPAY subscription
 
@@ -460,6 +465,8 @@ Required configuration:
 - Restriction: unrestricted.
 - Default: yes.
 - Enabled: yes.
+- Donor-visible/giving-enabled: yes.
+- Accounting mapping when Accounting is enabled: canonical `fund_general`.
 
 Evidence:
 
@@ -774,6 +781,8 @@ When a risk-based internal check is performed, attach its result to the onboardi
 
 The parish treasurer must affirmatively verify the financial and donor-facing configuration immediately before publication. This is a hard launch gate.
 
+The signer identity is derived only from the authenticated platform-user session and active parish membership. A browser-submitted email, display field, parish dashboard bearer, shared credential, or AGAPAY admin session is never authoritative for Go Live. The authenticated user must hold the dedicated `parish.giving.go_live` capability and their normalized email and membership ID must match the accepted treasurer access record for the same parish.
+
 AGAPAY must show the treasurer a read-only signoff summary generated from the exact configuration snapshot that will go live. The summary must display enough information to identify the connected Stripe account without exposing full bank data.
 
 ### 7.2 Preconditions
@@ -782,22 +791,23 @@ The **Go Live** action must remain disabled unless all of the following are true
 
 - Canonical status is verified.
 - Giving status is hidden.
-- Temporary credential has been changed.
+- Priest and treasurer personal invitations have both been accepted and their recorded membership IDs are active for this parish.
 - Dashboard invite was delivered.
-- Stripe status was freshly retrieved.
+- Stripe status was freshly retrieved for the reviewed snapshot, and the Go-Live command can retrieve it again server-side before activation.
 - `stripeChargesEnabled = true`.
 - `stripePayoutsEnabled = true`.
 - `stripeDetailsSubmitted = true`.
 - No Stripe disabled reason or currently due requirement exists.
 - Subscription tier is selected and subscription status is `active`, `trialing`, or `free_forever`.
-- Exactly one enabled default General Operating Fund exists.
+- Exactly one active General Operating Fund candidate exists; it is unrestricted, default, donor-visible/giving-enabled, and uses stable ID `general` (or an explicit approved legacy-fund exception).
+- When AGAPAY Accounting is enabled, that General Operating Fund maps to canonical accounting fund `fund_general`.
 - Designated funds and campaigns have a locked versioned snapshot.
 - Recurring-giving setting is explicitly selected.
 - Priest and treasurer access is confirmed.
 - Donor/pledge import decision is complete.
-- Test gift, receipt, reporting, and accounting validations passed.
-- Canonical giving URL and QR code passed validation.
 - No P0 or P1 onboarding blocker is open.
+
+Test-gift, receipt, reporting/accounting, direct-URL, and QR checks remain available as risk-based internal diagnostics. They are not standard parish-facing launch gates and are not part of the ten-minute setup path.
 
 ### 7.3 Required affirmations
 
@@ -824,7 +834,7 @@ The treasurer must enter or confirm their name and title and then click **Go Liv
 
 Record:
 
-- Treasurer user/identity.
+- Treasurer platform user ID, active parish membership ID, and server-verified email.
 - Name and title.
 - Timestamp and timezone.
 - IP/request/audit identifier consistent with AGAPAY privacy and logging policy.
@@ -865,18 +875,20 @@ Entry criteria:
 Go-Live transaction:
 
 1. Recheck all hard predicates server-side. Client-side checks are not sufficient.
-2. Recheck that the signoff snapshot hash matches the current material configuration.
-3. Atomically:
+2. Authenticate the platform user, require the dedicated Go-Live capability for this parish, and exactly match the accepted treasurer email and membership ID.
+3. Retrieve the connected account directly from Stripe. Recompute charges, payouts, details, requirements, status, and masked payout-bank summary. If Stripe fails, readiness regresses, or the refreshed material state changes the snapshot, fail closed and require the treasurer to refresh and review again.
+4. Recheck that the signoff snapshot hash matches the current material configuration after the Stripe refresh.
+5. Atomically:
    - Record the treasurer's attestations and audit event.
    - Set onboarding state to `LIVE`.
    - Set giving status to `active`.
    - Record `goLiveAt` and `goLiveBy`.
-4. If any write fails, leave the parish hidden and return a clear error. Do not partially publish.
-5. Confirm the parish appears correctly in public discovery, where applicable.
-6. Open the canonical direct giving URL in a signed-out/private session.
-7. Scan the final QR code once more.
-8. Deliver the approved direct URL and QR assets to the priest and treasurer.
-9. The parish may now place the link or QR code on its website, bulletin, email, signage, and other approved channels.
+6. If any write fails, leave the parish hidden and return a clear error. Do not partially publish.
+7. Confirm the parish appears correctly in public discovery, where applicable.
+8. Open the canonical direct giving URL in a signed-out/private session.
+9. Scan the final QR code once more.
+10. Deliver the approved direct URL and QR assets to the priest and treasurer.
+11. The parish may now place the link or QR code on its website, bulletin, email, signage, and other approved channels.
 
 Launch evidence:
 
@@ -998,19 +1010,21 @@ Conceptually:
 canGoLive =
   canonicalVerified
   AND givingStatus == hidden
-  AND permanentCredentialConfirmed
+  AND priestAndTreasurerPersonalMembershipsAccepted
   AND dashboardInviteDelivered
   AND stripeChargesEnabled
   AND stripePayoutsEnabled
   AND stripeDetailsSubmitted
   AND noStripeDisabledReason
   AND noStripeRequirementsDue
+  AND mandatoryServerSideStripeRefreshSucceeded
   AND subscriptionReady
-  AND exactlyOneDefaultGeneralFund
+  AND canonicalGeneralFundIsUnrestrictedDefaultAndDonorVisible
+  AND (accountingDisabled OR generalFundAccountingId == fund_general)
   AND givingConfigurationLocked
   AND usersConfirmed
   AND importDecisionComplete
-  AND allValidationChecksPassed
+  AND requiredConfigurationChecksPassed
   AND authenticatedTreasurerAttestsCurrentSnapshot
   AND noOpenP0OrP1Blocker
 ```
@@ -1024,6 +1038,7 @@ The treasurer's **Go Live** click must call one server-side command that re-eval
 - Status values derived from Stripe must be read-only; readiness comes only from Stripe refresh/webhooks.
 - The UI must display charges and payouts separately. A generic “Stripe ready” label is insufficient.
 - The signoff page must be read-only except for affirmations, signer name/title, and Go Live.
+- The verified treasurer email must be read-only display data and must not be accepted from the request body as signer authority.
 - The eight P1-3 boxes must start unchecked.
 - The payout-bank display must be masked and sourced from Stripe. If masked data is unavailable, require the treasurer to open Stripe and attest there.
 - The signoff page must show the version/time of the last Stripe refresh.
@@ -1042,12 +1057,12 @@ The treasurer's **Go Live** click must call one server-side command that re-eval
 | Dashboard access | Personal one-use priest and treasurer invitations, individual password creation, and automatic acceptance tracking | Treat required accepted identities as the access gate; do not expose parish IDs or temporary credentials |
 | Stripe Connect/status refresh | Supported with charges, payouts, details, disabled reason, and due requirements | Make fields read-only and require both charges and payouts |
 | Subscription | Supported with tier and status | Require agreement and status match before validation |
-| General/designated funds and campaigns | Supported | Add structured validation, approval snapshot, and one-default rule |
+| General/designated funds and campaigns | Structured General Fund validator and versioned giving snapshot implemented | Require stable ID, unrestricted/default/donor-visible flags, and `fund_general` mapping when Accounting is enabled |
 | Priest/treasurer contacts | Personal role-based identities and memberships are supported | Track delivery and acceptance automatically |
 | Donor/pledge import | Applicability and evidence gate implemented; import remains operator-managed | Record `not_applicable` only when no import was requested; otherwise block until evidence exists |
 | Internal diagnostics | Payment, receipt, reporting, accounting, URL, and QR tooling remain available | Use when risk or defect investigation warrants; not a parish-facing or standard blocking phase |
 | Giving URL and QR | Dashboard generates the canonical URL and QR assets | Provide them automatically after Go Live |
-| Treasurer signoff and Go Live | Server-enforced readiness guard, snapshot hash, eight affirmations, signer identity, audit record, and atomic publication implemented | Required P1-3 control |
+| Treasurer signoff and Go Live | Dedicated treasurer capability, active membership/email match, mandatory fresh Stripe retrieval, snapshot hash, eight affirmations, actor IDs, audit record, and atomic publication implemented | Required P1-3 control; shared parish credentials cannot launch |
 
 ### 12.6 Staging workflow test
 
@@ -1056,14 +1071,14 @@ Use the isolated staging site at `https://agapay-site-staging.joeldunnesq.worker
 For a fast UI and state-machine exercise:
 
 1. Sign in to `/admin` on staging and open a registration with both priest and treasurer email addresses.
-2. Choose **Prepare parish test**.
-3. Copy the one-time parish password. It is shown once and replaces the parish test credential.
+2. Choose **Prepare parish test**. This creates and accepts test priest/treasurer identities through the real membership APIs and activates the verified treasurer session in the current browser.
+3. Copy the one-time parish password. It is shown once and opens the parish dashboard; it does not authorize Go Live.
 4. Open `/parish/dashboard?parish={parishId}` and sign in with that password.
-5. Confirm the parish sees only the three-stage setup, review the locked summary, check all eight treasurer affirmations, enter the registered treasurer identity, confirm authority, and click **Go Live**.
+5. Confirm the parish sees only the three-stage setup, review the locked summary, check all eight treasurer affirmations, enter the treasurer name/title, confirm authority, and click **Go Live**. The server uses the staging treasurer platform session, not a submitted email or shared parish bearer.
 6. Confirm the dashboard reports `LIVE`, the giving status is `active`, and the direct giving URL opens.
 7. Return to Admin and choose **Reset test** to repeat the exercise.
 
-Synthetic Stripe readiness validates the AGAPAY workflow only; it cannot process a real test gift. To test the payment, receipt, and reconciliation paths, connect a Stripe test-mode account instead, refresh real Stripe readiness, run a Stripe test payment, and record its evidence manually. Never use staging simulation as production evidence.
+The synthetic connected-account fixture is persisted server-side, limited to explicitly non-production environments, and consumed by the same Go-Live refresh code path. Production ignores the fixture path and the staging control returns `403`. Synthetic Stripe readiness validates the AGAPAY workflow only; it cannot process a real test gift. To test the payment, receipt, and reconciliation paths, connect a Stripe test-mode account instead. Never use staging simulation as production evidence.
 
 ## 13. Change control
 

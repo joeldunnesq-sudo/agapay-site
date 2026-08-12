@@ -44,6 +44,7 @@ import {
   STEWARDSHIP_FUND_DEFAULTS,
   mergeStewardshipFundsIntoRegistration
 } from "../lib/stewardship-funds.js";
+import { invalidateOnboardingSignoffIfChanged } from "../lib/parish-onboarding.js";
 
 // Auth for stewardship SSR pages.
 // The parish SPA links here with ?parishId=XX&t=TOKEN (token from localStorage).
@@ -3436,11 +3437,12 @@ async function updateStewardshipStatus(env, parishId, data) {
         const merged = mergeStewardshipFundsIntoRegistration(found.registration);
         if (merged.changed) {
           const catalogSync = await synchronizeGivingCatalogWithAccounting(env, parishId, merged.registration);
-          const updated = {
+          const next = {
             ...merged.registration,
             funds: catalogSync.available ? catalogSync.funds : merged.registration.funds,
             parishUpdatedAt: new Date().toISOString()
           };
+          const updated = await invalidateOnboardingSignoffIfChanged(found.registration, next, { actor: "stewardship-webhook", reason: "Stewardship activation changed the giving-fund catalog.", receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app" });
           await saveRegistrationRecord(env, found.key, updated, found.registration);
         }
       }

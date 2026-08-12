@@ -264,6 +264,7 @@ await test("invitation acceptance creates an active membership with role-templat
   const capabilities = await listCapabilitiesForMembership(env, membership.id);
   assert.ok(capabilities.includes("ap.approve"), "expected treasurer template capabilities to be granted");
   assert.ok(capabilities.includes("accounting.post"));
+  assert.ok(capabilities.includes("parish.giving.go_live"), "the treasurer template must hold the dedicated Go Live capability");
   assert.ok(!capabilities.includes("parish.roles.assign"), "treasurer template should not include rector-only capabilities");
 });
 
@@ -672,6 +673,10 @@ await test("capability catalog and role templates only reference known capabilit
 
 await test("role inheritance: expandRoleTemplate returns exactly a role's declared capability set", async () => {
   assert.deepEqual(expandRoleTemplate("volunteer"), ["parish.view"]);
+  assert.ok(expandRoleTemplate("treasurer").includes("parish.giving.go_live"));
+  assert.ok(!expandRoleTemplate("rector").includes("parish.giving.go_live"));
+  assert.ok(!expandRoleTemplate("priest").includes("parish.giving.go_live"));
+  assert.ok(!expandRoleTemplate("administrator").includes("parish.giving.go_live"));
   assert.deepEqual(expandRoleTemplate("not-a-real-role"), [], "expected an unrecognized role template to expand to zero capabilities, not throw");
 });
 

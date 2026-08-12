@@ -69,6 +69,12 @@ import {
   generateDashboardToken,
   sendDashboardInvite,
 } from "../lib/parish-notifications.js";
+import {
+  acceptInvitation,
+  createInvitation,
+  listMembershipsForParish,
+} from "../lib/memberships.js";
+import { issuePlatformUserSession } from "../lib/identity.js";
 
 import {
   createCuratedLearnCommunityResource,
@@ -1310,7 +1316,18 @@ function stagingGeneralFund(funds = []) {
       if (!isGeneral(fund) || fund.enabled === false || fund.active === false) return fund;
       if (!keptGeneral) {
         keptGeneral = true;
-        return fund;
+        return {
+          ...fund,
+          id: "general",
+          code: "general",
+          restrictionType: "unrestricted",
+          isDefault: true,
+          enabled: true,
+          active: true,
+          donorVisible: true,
+          givingEnabled: true,
+          accountingFundId: "fund_general"
+        };
       }
       return { ...fund, enabled: false, active: false };
     });
@@ -1320,7 +1337,12 @@ function stagingGeneralFund(funds = []) {
     name: "General Operating Fund",
     description: "Unrestricted parish operations",
     restrictionType: "unrestricted",
-    enabled: true
+    isDefault: true,
+    enabled: true,
+    active: true,
+    donorVisible: true,
+    givingEnabled: true,
+    accountingFundId: "fund_general"
   }, ...(Array.isArray(funds) ? funds : [])];
 }
 
@@ -1367,18 +1389,35 @@ export async function handleAdminOnboardingTest(request, env, reference) {
     parishUpdatedAt: now
   };
   let stagingPassword = "";
+  let stagingIdentityPassword = "";
+  let stagingIdentityEmail = "";
+  let stagingIdentitySession = null;
+  let memberships = [];
 
   if (action === "simulate_stripe_ready" || action === "prepare_ready") {
+    const stagingAccountId = `acct_staging_${String(updated.parishId || reference).replace(/[^a-zA-Z0-9]/g, "").slice(0, 24)}`;
     updated = {
       ...updated,
-      stripeAccountId: `acct_staging_${String(updated.parishId || reference).replace(/[^a-zA-Z0-9]/g, "").slice(0, 24)}`,
+      stripeAccountId: stagingAccountId,
       stripeAccountStatus: "payouts_enabled",
       stripeChargesEnabled: true,
       stripePayoutsEnabled: true,
       stripeDetailsSubmitted: true,
       stripeDisabledReason: "",
       stripeRequirementsDue: [],
-      stripeStatusCheckedAt: now
+      stripeStatusCheckedAt: now,
+      stripePayoutBankName: "AGAPAY Staging Bank",
+      stripePayoutBankLast4: "4242",
+      onboardingStripeTestFixture: {
+        id: stagingAccountId,
+        charges_enabled: true,
+        payouts_enabled: true,
+        details_submitted: true,
+        requirements: { disabled_reason: null, currently_due: [] },
+        external_accounts: {
+          data: [{ object: "bank_account", bank_name: "AGAPAY Staging Bank", last4: "4242" }]
+        }
+      }
     };
   }
   if (action === "pass_manual_gates" || action === "prepare_ready") {
@@ -1396,13 +1435,19 @@ export async function handleAdminOnboardingTest(request, env, reference) {
         stripeDetailsSubmitted: false,
         stripeDisabledReason: "",
         stripeRequirementsDue: [],
-        stripeStatusCheckedAt: ""
+        stripeStatusCheckedAt: "",
+        stripePayoutBankName: "",
+        stripePayoutBankLast4: "",
+        onboardingStripeTestFixture: null
       };
     }
   }
   if (action === "prepare_ready") {
     if (!normalizeEmail(updated.treasurerEmail) || !normalizeEmail(updated.priestEmail)) {
       return json({ error: "A priest email and treasurer email are required before preparing the signoff exercise." }, { status: 422 });
+    }
+    if (!d1(env)) {
+      return json({ error: "The staging test requires the identity database so it can exercise real treasurer authentication." }, { status: 503 });
     }
     const tier = subscriptionTier(updated.subscriptionTier || defaultSubscriptionTier(updated));
     stagingPassword = generateSecret("Agapay-Staging");
@@ -1425,19 +1470,62 @@ export async function handleAdminOnboardingTest(request, env, reference) {
       onboardingChecks: normalizeOnboardingChecks(allPassed, updated.onboardingChecks, actor, now),
       parishDashboardSessions: []
     }, stagingPassword, { temporary: false });
+
+    stagingIdentityPassword = generateSecret("Agapay-Treasurer");
+    const access = {};
+    for (const person of [
+      { key: "priest", email: normalizeEmail(updated.priestEmail), roleTemplate: "rector", displayName: updated.priestName || "Staging Priest" },
+      { key: "treasurer", email: normalizeEmail(updated.treasurerEmail), roleTemplate: "treasurer", displayName: updated.treasurerName || "Staging Treasurer" }
+    ]) {
+      const invitation = await createInvitation(env, {
+        parishId: updated.parishId,
+        email: person.email,
+        roleTemplate: person.roleTemplate,
+        invitedByLegacyBearer: true,
+        request
+      });
+      if (!invitation.ok) return json({ error: invitation.error || `Unable to create the ${person.key} staging identity.` }, { status: 500 });
+      const accepted = await acceptInvitation(env, {
+        token: invitation.token,
+        password: stagingIdentityPassword,
+        displayName: person.displayName,
+        request
+      });
+      if (!accepted.ok) return json({ error: accepted.error || `Unable to accept the ${person.key} staging identity.` }, { status: 500 });
+      access[person.key] = {
+        status: "accepted",
+        email: person.email,
+        roleTemplate: person.roleTemplate,
+        membershipId: accepted.membershipId,
+        acceptedAt: accepted.acceptedAt
+      };
+      if (person.key === "treasurer") {
+        stagingIdentityEmail = person.email;
+        stagingIdentitySession = await issuePlatformUserSession(env, accepted.userId);
+      }
+    }
+    if (!stagingIdentitySession?.token) return json({ error: "Unable to issue the staging treasurer session." }, { status: 500 });
+    updated.onboardingAccess = access;
+    memberships = await listMembershipsForParish(env, updated.parishId);
   }
 
-  updated.onboardingState = recommendedOnboardingState(updated, updated.onboardingChecks);
+  if (d1(env) && updated.parishId && !memberships.length) {
+    memberships = await listMembershipsForParish(env, updated.parishId);
+  }
+  updated.onboardingState = recommendedOnboardingState(updated, updated.onboardingChecks, { memberships });
   updated = appendAdminAudit(updated, `staging_onboarding_${action}`, actor, { environment: env.AGAPAY_ENVIRONMENT || "non-production" });
   await saveRegistrationRecord(env, reference, updated, current);
   const onboardingWorkflow = await buildParishOnboardingWorkflow(updated, {
     appUrl: env.AGAPAY_APP_URL || new URL(request.url).origin,
-    receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app"
+    receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
+    memberships
   });
   return json({
     ok: true,
     action,
     stagingPassword: stagingPassword || undefined,
+    stagingIdentityToken: stagingIdentitySession?.token || undefined,
+    stagingIdentityEmail: stagingIdentityEmail || undefined,
     registration: { ...updated, onboardingWorkflow, onboardingTestMode: true }
   });
 }

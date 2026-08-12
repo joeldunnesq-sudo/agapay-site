@@ -129,6 +129,7 @@ import {
   requireDonor,
 } from "./handlers/parish.js";
 import { handleParishOnboarding } from "./handlers/parish-onboarding.js";
+import { invalidateOnboardingSignoffIfChanged } from "./lib/parish-onboarding.js";
 import {
   handleParishGivingHistory,
   handleParishGivingSummary,
@@ -1659,11 +1660,12 @@ async function handleStewardshipGivingActivate(request, env, parishId) {
   const merged = mergeStewardshipFundsIntoRegistration(found.registration);
   if (merged.changed) {
     const catalogSync = await synchronizeGivingCatalogWithAccounting(env, parishId, merged.registration);
-    const updated = {
+    const next = {
       ...merged.registration,
       funds: catalogSync.available ? catalogSync.funds : merged.registration.funds,
       parishUpdatedAt: new Date().toISOString()
     };
+    const updated = await invalidateOnboardingSignoffIfChanged(found.registration, next, { actor: found.registration.treasurerEmail || found.registration.priestEmail || "parish", reason: "Stewardship activation changed the giving-fund catalog.", receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app" });
     await saveRegistrationRecord(env, found.key, updated, found.registration);
   }
 
@@ -3573,7 +3575,7 @@ export default {
         "demo2025",
         { temporary: false }
       );
-      const demoRegistration = {
+      let demoRegistration = {
         ...baseRegistration,
         reference: baseRegistration.reference || DEMO_REFERENCE,
         parishId: DEMO_PARISH_ID,
@@ -3597,6 +3599,10 @@ export default {
         updatedAt: now,
         parishUpdatedAt: now
       };
+
+      if (foundRegistration?.registration) {
+        demoRegistration = await invalidateOnboardingSignoffIfChanged(foundRegistration.registration, demoRegistration, { actor: "demo-seed", reason: "The demo seed changed material parish or giving configuration.", receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app" });
+      }
 
       await saveRegistrationRecord(env, DEMO_REFERENCE, demoRegistration, foundRegistration?.registration || null);
       if (env.AGAPAY_REGISTRATIONS) {

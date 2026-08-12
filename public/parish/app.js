@@ -21,6 +21,8 @@
   let parishFeatureRequests = [];
   const parishSessionStorageKey = 'agapay_parish_session_token';
   const legacyParishTokenStorageKey = 'agapay_parish_token';
+  const identitySessionStorageKey = 'agapay_identity_session_token';
+  const identityEmailStorageKey = 'agapay_identity_email';
 
   function givingCatalogSnapshot() {
     return JSON.stringify({
@@ -98,6 +100,8 @@
       sessionStorage.removeItem('agapay_parish_id');
       sessionStorage.removeItem(parishSessionStorageKey);
       sessionStorage.removeItem(legacyParishTokenStorageKey);
+      sessionStorage.removeItem(identitySessionStorageKey);
+      sessionStorage.removeItem(identityEmailStorageKey);
     } catch {}
     window.location.href = '/give/login';
   }
@@ -971,7 +975,8 @@
       if (!data.parishId || !data.parishToken) throw new Error('Your account was created, but the parish dashboard could not be opened. Please contact AGAPAY support.');
       sessionStorage.setItem('agapay_parish_id', data.parishId);
       sessionStorage.setItem(parishSessionStorageKey, data.parishToken);
-      sessionStorage.setItem('agapay_identity_session_token', data.token || '');
+      sessionStorage.setItem(identitySessionStorageKey, data.token || '');
+      sessionStorage.setItem(identityEmailStorageKey, data.identityEmail || '');
       sessionStorage.removeItem(legacyParishTokenStorageKey);
       window.location.href = '/parish/dashboard?parish=' + encodeURIComponent(data.parishId);
     } catch (err) {
@@ -8834,7 +8839,7 @@
       <div class="signoff-identity">
         <div><label for="goLiveSignerName">Treasurer name</label><input id="goLiveSignerName" autocomplete="name" placeholder="Full legal name"></div>
         <div><label for="goLiveSignerTitle">Title</label><input id="goLiveSignerTitle" value="Parish Treasurer" autocomplete="organization-title"></div>
-        <div><label for="goLiveSignerEmail">Verified email</label><input id="goLiveSignerEmail" type="email" value="${escapeHtml(summary.treasurerEmail || '')}" autocomplete="email"></div>
+        <div><label for="goLiveSignerEmail">Verified email</label><input id="goLiveSignerEmail" type="email" value="${escapeHtml(summary.treasurerEmail || '')}" readonly aria-describedby="goLiveSignerEmailNote"><small id="goLiveSignerEmailNote">Verified from your signed-in treasurer account.</small></div>
       </div>
       <label class="signoff-authority"><input id="goLiveAuthority" type="checkbox"><span>I am authorized to approve online giving for this parish.</span></label>
       <div class="signoff-submit"><p id="goLiveError" role="alert"></p><button class="btn btn-gold" type="button" onclick="submitTreasurerGoLive(this)">Go Live</button></div>
@@ -8899,14 +8904,16 @@
       affirmations,
       signerName: document.getElementById('goLiveSignerName')?.value || '',
       signerTitle: document.getElementById('goLiveSignerTitle')?.value || '',
-      signerEmail: document.getElementById('goLiveSignerEmail')?.value || '',
       authorityConfirmed: Boolean(document.getElementById('goLiveAuthority')?.checked)
     };
     if (errorEl) errorEl.textContent = '';
     button.disabled = true;
     button.textContent = 'Publishing…';
     try {
-      const res = await fetch(`/api/parish/dashboard/${encodeURIComponent(currentParish.parishId)}/onboarding`, { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify(body) });
+      const identityToken = sessionStorage.getItem(identitySessionStorageKey) || '';
+      const identityEmail = sessionStorage.getItem(identityEmailStorageKey) || '';
+      if (!identityToken || !identityEmail) throw new Error('Please sign in through your personal treasurer invitation before launching giving.');
+      const res = await fetch(`/api/parish/dashboard/${encodeURIComponent(currentParish.parishId)}/onboarding`, { method:'POST', headers:{ 'Accept':'application/json', 'Authorization':'Bearer ' + identityToken, 'X-AGAPAY-User-Email':identityEmail, 'Content-Type':'application/json' }, body:JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || data.errors?.[0] || 'Unable to complete go-live signoff');
       if (data.parish) currentParish = { ...currentParish, ...data.parish };

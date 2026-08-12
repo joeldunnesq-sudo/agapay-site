@@ -1,13 +1,17 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import worker from "../src/worker.js";
-import { issueAdminSession, issueParishDashboardSession, parishIdIndexKey } from "../src/lib/core.js";
+import { issueParishDashboardSession, parishIdIndexKey } from "../src/lib/core.js";
+import { sanitizePublicRegistrationInput } from "../src/lib/registration-intake.js";
 import {
   PARISH_ONBOARDING_WORKFLOW_VERSION,
   TREASURER_AFFIRMATIONS,
   buildParishOnboardingWorkflow,
   invalidateOnboardingSignoffIfChanged,
+  onboardingMaterialSnapshot,
   onboardingMaterialVersion,
+  requiredPersonalAccessAccepted,
+  validateGeneralOperatingFund,
   validateTreasurerGoLiveInput,
 } from "../src/lib/parish-onboarding.js";
 
@@ -62,6 +66,10 @@ function readyRegistration(overrides = {}) {
     dioceseOrDeanery: "Test Diocese",
     priestEmail: "priest@example.test",
     treasurerEmail: "treasurer@example.test",
+    onboardingAccess: {
+      priest: { status: "accepted", email: "priest@example.test", membershipId: "membership-priest" },
+      treasurer: { status: "accepted", email: "treasurer@example.test", membershipId: "membership-treasurer" }
+    },
     dashboardInviteEmailStatus: "sent",
     parishDashboardTokenTemporary: false,
     parishDashboardPasswordRecord: { version: 1 },
@@ -77,7 +85,7 @@ function readyRegistration(overrides = {}) {
     subscriptionTierLabel: "Giving Plus",
     subscriptionStatus: "active",
     recurringGivingEnabled: true,
-    funds: [{ id: "general", name: "General Operating Fund", restrictionType: "unrestricted", enabled: true }],
+    funds: [{ id: "general", code: "general", name: "General Operating Fund", restrictionType: "unrestricted", isDefault: true, enabled: true, active: true, donorVisible: true, givingEnabled: true }],
     campaigns: [],
     feastCampaigns: [],
     onboardingWorkflowVersion: PARISH_ONBOARDING_WORKFLOW_VERSION,
@@ -123,28 +131,98 @@ assert.equal(staleStripe.canGoLive, false);
 
 const duplicateGeneral = await buildParishOnboardingWorkflow(readyRegistration({
   funds: [
-    { id: "general", name: "General Operating Fund" },
-    { id: "stewardship", name: "General Stewardship" }
+    { id: "general", name: "General Operating Fund", restrictionType: "unrestricted", isDefault: true },
+    { id: "stewardship", name: "General Stewardship", restrictionType: "unrestricted" }
   ]
 }), { now: Date.now() });
 assert.ok(duplicateGeneral.blockers.some((item) => item.key === "generalFund"));
 
+const invalidGeneralCases = [
+  ["missing", []],
+  ["duplicate", [
+    { id: "general", name: "General Operating Fund", restrictionType: "unrestricted", isDefault: true },
+    { id: "stewardship", name: "General Stewardship", restrictionType: "unrestricted" }
+  ]],
+  ["wrong restriction", [{ id: "general", name: "General Operating Fund", restrictionType: "restricted", isDefault: true }]],
+  ["not default", [{ id: "general", name: "General Operating Fund", restrictionType: "unrestricted", isDefault: false }]],
+  ["not donor visible", [{ id: "general", name: "General Operating Fund", restrictionType: "unrestricted", isDefault: true, donorVisible: false }]],
+  ["unstable identifier", [{ id: "operating", name: "General Operating Fund", restrictionType: "unrestricted", isDefault: true }]],
+  ["missing accounting mapping", [{ id: "general", name: "General Operating Fund", restrictionType: "unrestricted", isDefault: true }]]
+];
+for (const [label, funds] of invalidGeneralCases) {
+  const registration = readyRegistration({ funds, ...(label === "missing accounting mapping" ? { subscriptionTier: "parish" } : {}) });
+  assert.equal(validateGeneralOperatingFund(registration).passed, false, `${label} must fail General Fund validation`);
+}
+assert.equal(validateGeneralOperatingFund(readyRegistration({
+  subscriptionTier: "parish",
+  funds: [{ id: "general", name: "General Operating Fund", restrictionType: "unrestricted", isDefault: true, accountingFundId: "fund_general" }]
+})).passed, true, "accounting-enabled parishes must map General Fund to fund_general");
+assert.equal(validateGeneralOperatingFund(readyRegistration({
+  funds: [{ id: "stewardship", name: "General Stewardship", restrictionType: "unrestricted", isDefault: true, enabled: true }],
+  generalFundLegacyException: { approved: true, legacyFundIdentifier: "stewardship", reason: "Imported stable ID", approvedBy: "migration-admin", approvedAt: now }
+})).passed, true, "an auditable approved legacy General Fund identifier may pass");
+assert.equal(validateGeneralOperatingFund(readyRegistration({
+  funds: [
+    { id: "general", name: "General Operating Fund", restrictionType: "unrestricted", isDefault: true },
+    { id: "building", name: "Building Fund", restrictionType: "restricted", isDefault: true }
+  ]
+})).passed, false, "two active default destinations must fail closed");
+
 const versionBefore = await onboardingMaterialVersion(ready);
+assert.equal(onboardingMaterialSnapshot(ready).stripe.statusCheckedAt, ready.stripeStatusCheckedAt, "the attested snapshot must include the Stripe review timestamp");
 const versionAfter = await onboardingMaterialVersion(readyRegistration({ recurringGivingEnabled: false }));
 assert.notEqual(versionBefore, versionAfter, "material giving changes must change the snapshot version");
 
 const invalidEmail = validateTreasurerGoLiveInput(
   signoffBody(ready, versionBefore, { signerEmail: "other@example.test" }),
-  ready
+  ready,
+  { email: "other@example.test" }
 );
 assert.equal(invalidEmail.ok, false);
-assert.match(invalidEmail.errors.join(" "), /verified treasurer email/i);
+assert.match(invalidEmail.errors.join(" "), /verified treasurer account/i);
+const browserEmailIgnored = validateTreasurerGoLiveInput(
+  signoffBody(ready, versionBefore, { signerEmail: "attacker@example.test" }),
+  ready,
+  { email: ready.treasurerEmail }
+);
+assert.equal(browserEmailIgnored.ok, true, "browser-supplied signer email must not be authoritative");
+
+assert.equal(requiredPersonalAccessAccepted(ready), true);
+assert.equal(requiredPersonalAccessAccepted(readyRegistration({ onboardingAccess: {} })), false);
+assert.equal(requiredPersonalAccessAccepted(readyRegistration({
+  onboardingAccess: {},
+  legacySharedAccessAllowed: { approved: true, reason: "migration", approvedBy: "admin", approvedAt: now }
+})), false, "legacy exception is explicit compatibility data, not personal access");
+const legacyWorkflow = await buildParishOnboardingWorkflow(readyRegistration({
+  onboardingAccess: {},
+  legacySharedAccessAllowed: { approved: true, reason: "Pre-membership migration", approvedBy: "migration-admin", approvedAt: now }
+}), { now: Date.now() });
+assert.equal(legacyWorkflow.steps.find((step) => step.key === "credential")?.passed, true, "an explicit audited legacy access exception may satisfy the compatibility gate");
+const sanitizedRegistration = sanitizePublicRegistrationInput({
+  parishName: "Test",
+  legacySharedAccessAllowed: { approved: true, reason: "self-created", approvedBy: "submitter", approvedAt: now },
+  generalFundLegacyException: { approved: true, legacyFundIdentifier: "wrong" }
+});
+assert.equal(sanitizedRegistration.legacySharedAccessAllowed, undefined, "public registration cannot self-create a shared-access exception");
+assert.equal(sanitizedRegistration.generalFundLegacyException, undefined, "public registration cannot self-create a legacy-fund exception");
 
 const signed = readyRegistration({
   givingStatus: "active",
   onboardingState: "LIVE",
   treasurerSignoff: { status: "signed", snapshotVersion: versionBefore }
 });
+const verifiedHidden = await buildParishOnboardingWorkflow(readyRegistration({ givingStatus: "hidden" }), { now: Date.now() });
+assert.equal(verifiedHidden.steps.find((step) => step.key === "verifiedHidden")?.passed, true);
+const verifiedActivePreLive = await buildParishOnboardingWorkflow(readyRegistration({ givingStatus: "active" }), { now: Date.now() });
+assert.equal(verifiedActivePreLive.steps.find((step) => step.key === "verifiedHidden")?.passed, false);
+const verifiedPausedPreLive = await buildParishOnboardingWorkflow(readyRegistration({ givingStatus: "paused" }), { now: Date.now() });
+assert.equal(verifiedPausedPreLive.steps.find((step) => step.key === "verifiedHidden")?.passed, false);
+const liveLifecycle = await buildParishOnboardingWorkflow(signed, { now: Date.now() });
+assert.equal(liveLifecycle.state, "LIVE");
+assert.equal(liveLifecycle.blockers.some((item) => item.key === "verifiedHidden"), false, "LIVE must not show an impossible hidden-state blocker");
+const pausedLifecycle = await buildParishOnboardingWorkflow({ ...signed, onboardingState: "PAUSED", givingStatus: "paused" }, { now: Date.now() });
+assert.equal(pausedLifecycle.state, "PAUSED");
+assert.equal(pausedLifecycle.blockers.some((item) => item.key === "verifiedHidden"), false, "PAUSED must not show an impossible hidden-state blocker");
 const invalidated = await invalidateOnboardingSignoffIfChanged(signed, {
   ...signed,
   recurringGivingEnabled: false
@@ -152,6 +230,27 @@ const invalidated = await invalidateOnboardingSignoffIfChanged(signed, {
 assert.equal(invalidated.treasurerSignoff.status, "invalidated");
 assert.equal(invalidated.onboardingState, "CONFIGURING");
 assert.equal(invalidated.givingStatus, "paused");
+
+const materialMutations = [
+  ["public parish name", { parishName: "Renamed Parish" }],
+  ["legal receipt name", { taxLegalName: "Renamed Legal Parish" }],
+  ["plan", { subscriptionTier: "starter" }],
+  ["billing status", { subscriptionStatus: "past_due" }],
+  ["Stripe account", { stripeAccountId: "acct_changed" }],
+  ["Stripe readiness", { stripePayoutsEnabled: false }],
+  ["payout destination", { stripePayoutBankLast4: "9999" }],
+  ["General Fund default", { funds: [{ ...signed.funds[0], isDefault: false }] }],
+  ["General Fund donor visibility", { funds: [{ ...signed.funds[0], donorVisible: false }] }],
+  ["General Fund accounting mapping", { funds: [{ ...signed.funds[0], accountingFundId: "wrong_fund" }] }],
+  ["designated funds", { funds: [...signed.funds, { id: "building", name: "Building Fund", restrictionType: "restricted", enabled: true }] }],
+  ["campaigns", { campaigns: [{ id: "appeal", name: "Appeal", enabled: true }] }],
+  ["feast campaigns", { feastCampaigns: [{ id: "pascha", name: "Pascha", enabled: true }] }]
+];
+for (const [label, change] of materialMutations) {
+  const result = await invalidateOnboardingSignoffIfChanged(signed, { ...signed, ...change }, { actor: "regression-test" });
+  assert.equal(result.treasurerSignoff.status, "invalidated", `${label} mutation must invalidate the signed snapshot`);
+  assert.equal(result.givingStatus, "paused", `${label} mutation must pause a live parish`);
+}
 
 async function routeFixture(registration = readyRegistration()) {
   const env = {
@@ -166,120 +265,42 @@ async function routeFixture(registration = readyRegistration()) {
   return { env, token: session.token, registration: session.registration };
 }
 
-const fixture = await routeFixture();
-const fixtureWorkflow = await buildParishOnboardingWorkflow(fixture.registration, {
+// The authenticated route is exercised against D1 in parish-onboarding-hardening-tests.mjs.
+// Keep the former shared-bearer integration fixture here only to prove it is rejected.
+const sharedBearerFixture = await routeFixture();
+const sharedBearerWorkflow = await buildParishOnboardingWorkflow(sharedBearerFixture.registration, {
   appUrl: "https://agapay.test",
   receiptContact: "support@agapay.test"
 });
-const goLiveResponse = await worker.fetch(new Request(
+const sharedBearerResponse = await worker.fetch(new Request(
   "https://agapay.test/api/parish/dashboard/st-onboarding/onboarding",
   {
     method: "POST",
-    headers: { Authorization: `Bearer ${fixture.token}`, "Content-Type": "application/json" },
-    body: JSON.stringify(signoffBody(fixture.registration, fixtureWorkflow.materialVersion))
+    headers: { Authorization: `Bearer ${sharedBearerFixture.token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(signoffBody(sharedBearerFixture.registration, sharedBearerWorkflow.materialVersion))
   }
-), fixture.env);
-assert.equal(goLiveResponse.status, 200, JSON.stringify(await goLiveResponse.clone().json()));
-const goLive = await goLiveResponse.json();
-assert.equal(goLive.parish.givingStatus, "active");
-assert.equal(goLive.onboarding.state, "LIVE");
-assert.equal(goLive.onboarding.signoff.status, "signed");
-const storedLive = JSON.parse(await fixture.env.AGAPAY_REGISTRATIONS.get(fixture.registration.reference));
-assert.equal(storedLive.givingStatus, "active");
-assert.equal(storedLive.treasurerSignoff.signerEmail, "treasurer@example.test");
+), sharedBearerFixture.env);
+assert.equal(sharedBearerResponse.status, 401, "a shared parish dashboard bearer must never authorize Go Live");
 
-const replayResponse = await worker.fetch(new Request(
-  "https://agapay.test/api/parish/dashboard/st-onboarding/onboarding",
-  {
-    method: "POST",
-    headers: { Authorization: `Bearer ${fixture.token}`, "Content-Type": "application/json" },
-    body: JSON.stringify(signoffBody(storedLive, storedLive.treasurerSignoff.snapshotVersion))
-  }
-), fixture.env);
-assert.equal(replayResponse.status, 200);
-assert.equal((await replayResponse.json()).alreadyLive, true, "Go Live replay must be idempotent");
-
-const blockedFixture = await routeFixture(readyRegistration({ stripePayoutsEnabled: false }));
-const blockedWorkflow = await buildParishOnboardingWorkflow(blockedFixture.registration, {
-  appUrl: "https://agapay.test",
-  receiptContact: "support@agapay.test"
-});
-const blockedResponse = await worker.fetch(new Request(
-  "https://agapay.test/api/parish/dashboard/st-onboarding/onboarding",
-  {
-    method: "POST",
-    headers: { Authorization: `Bearer ${blockedFixture.token}`, "Content-Type": "application/json" },
-    body: JSON.stringify(signoffBody(blockedFixture.registration, blockedWorkflow.materialVersion))
-  }
-), blockedFixture.env);
-assert.equal(blockedResponse.status, 409);
-assert.equal((await blockedResponse.json()).code, "onboarding_blocked");
-
-const stagingFixture = await routeFixture(readyRegistration({
-  status: "pending",
-  givingStatus: "hidden",
-  reviewedBy: "",
-  verificationSource: "",
-  bishopOrAuthority: "",
-  dioceseOrDeanery: "",
-  dashboardInviteEmailStatus: "",
-  stripeAccountId: "",
-  stripeChargesEnabled: false,
-  stripePayoutsEnabled: false,
-  stripeDetailsSubmitted: false,
-  stripeStatusCheckedAt: "",
-  subscriptionStatus: "not_started",
-  onboardingState: "IDENTITY_REVIEW",
-  onboardingChecks: {}
-}));
-const stagingAdmin = await issueAdminSession(stagingFixture.env, "Workflow Tester");
-const prepareResponse = await worker.fetch(new Request(
-  "https://agapay.test/api/admin/registrations/AGP-REG-ONBOARDING/onboarding-test",
-  {
-    method: "POST",
-    headers: { Authorization: `Bearer ${stagingAdmin.token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "prepare_ready" })
-  }
-), stagingFixture.env);
-assert.equal(prepareResponse.status, 200, JSON.stringify(await prepareResponse.clone().json()));
-const prepared = await prepareResponse.json();
-assert.ok(prepared.stagingPassword, "staging prepare must return a one-time parish login password");
-assert.equal(prepared.registration.onboardingWorkflow.completedSteps, 12);
-assert.equal(prepared.registration.onboardingWorkflow.canGoLive, true);
-assert.match(prepared.registration.stripeAccountId, /^acct_staging_/);
-
-const stagingLoginResponse = await worker.fetch(new Request(
-  "https://agapay.test/api/parish/dashboard/st-onboarding/session",
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ password: prepared.stagingPassword })
-  }
-), stagingFixture.env);
-assert.equal(stagingLoginResponse.status, 200, "the staging password must allow the parish-facing signoff exercise");
-
-const productionEnv = { ...stagingFixture.env, AGAPAY_ENVIRONMENT: "production" };
-const productionTestControlResponse = await worker.fetch(new Request(
-  "https://agapay.test/api/admin/registrations/AGP-REG-ONBOARDING/onboarding-test",
-  {
-    method: "POST",
-    headers: { Authorization: `Bearer ${stagingAdmin.token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "prepare_ready" })
-  }
-), productionEnv);
-assert.equal(productionTestControlResponse.status, 403, "production must refuse staging simulation controls");
-
-const [parishUi, parishStyles, parishRedesign, adminUi, adminStyles] = await Promise.all([
+const [parishUi, parishStyles, parishRedesign, adminUi, adminStyles, stripeHandler, subscriptionCheckout, parishHandler, workerSource, stewardshipHandler] = await Promise.all([
   readFile(new URL("../public/parish/app.js", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/style.css", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/redesign.css", import.meta.url), "utf8"),
   readFile(new URL("../public/admin/app.js", import.meta.url), "utf8"),
-  readFile(new URL("../public/admin/style.css", import.meta.url), "utf8")
+  readFile(new URL("../public/admin/style.css", import.meta.url), "utf8"),
+  readFile(new URL("../src/handlers/stripe.js", import.meta.url), "utf8"),
+  readFile(new URL("../src/lib/subscription-checkout.js", import.meta.url), "utf8"),
+  readFile(new URL("../src/handlers/parish.js", import.meta.url), "utf8"),
+  readFile(new URL("../src/worker.js", import.meta.url), "utf8"),
+  readFile(new URL("../src/handlers/stewardship.js", import.meta.url), "utf8")
 ]);
 for (const key of TREASURER_AFFIRMATIONS) {
   assert.match(parishUi, new RegExp(`${key}:`), `parish UI must render the ${key} affirmation`);
 }
 assert.match(parishUi, /submitTreasurerGoLive/, "parish UI must submit the locked treasurer signoff snapshot");
+assert.match(parishUi, /X-AGAPAY-User-Email':identityEmail/, "Go Live must send the authenticated platform identity context");
+assert.match(parishUi, /Verified from your signed-in treasurer account/, "the signer email must be read-only authenticated identity data");
+assert.doesNotMatch(parishUi, /signerEmail:\s*document\.getElementById\('goLiveSignerEmail'\)/, "the browser email field must not be submitted as signer authority");
 assert.match(parishUi, /onboarding\.state==='LIVE'\)\{pane\.innerHTML='';return;/, "the parish launch checklist must disappear after Go Live");
 assert.match(parishUi, /isOnboardingLive \? ' is-live' : ''/, "the sidebar status must receive an explicit live-state class");
 assert.match(parishStyles, /input\[type="checkbox"\][^}]*width: 16px[^}]*padding: 0/, "treasurer checkboxes must not inherit full-width text-input sizing");
@@ -303,5 +324,12 @@ assert.match(parishUi, /10-minute parish setup/, "the parish UI must present the
 assert.match(parishUi, /Three steps to start giving/, "the parish UI must present three simple stages");
 assert.match(parishUi, /acceptParishAccessInvitation/, "the parish UI must accept a personal access link");
 assert.match(adminUi, /Send personal invitations/, "admin UI must send personal access links instead of shared temporary credentials");
+assert.match(stripeHandler, /invalidateAndSaveMaterialRegistration/, "Stripe material writes must pass through signoff invalidation");
+assert.match(subscriptionCheckout, /persistSubscriptionMaterialChange/, "subscription checkout writes must pass through signoff invalidation");
+assert.match(parishHandler, /The parish subscription tier changed/, "parish-side plan changes must invalidate signoff");
+assert.match(parishHandler, /Stripe subscription status changed/, "parish-side Stripe subscription refresh must invalidate signoff");
+assert.match(workerSource, /Stewardship activation changed the giving-fund catalog/, "Stewardship fund provisioning must invalidate signoff");
+assert.match(workerSource, /The demo seed changed material parish or giving configuration/, "demo record material rewrites must invalidate signoff");
+assert.match(stewardshipHandler, /Stewardship activation changed the giving-fund catalog/, "Stewardship webhook fund provisioning must invalidate signoff");
 
 console.log("Parish onboarding workflow tests passed.");

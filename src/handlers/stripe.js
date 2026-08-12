@@ -45,6 +45,7 @@ import {
 import { upsertStripeChargeVolumeRecord } from "../lib/stripe-volume.js";
 import { donorName } from "../lib/stripe-fees.js";
 import { sendTreasurerStripeInvite } from "../lib/parish-notifications.js";
+import { invalidateOnboardingSignoffIfChanged } from "../lib/parish-onboarding.js";
 
 import {
   appendAdminAudit,
@@ -90,6 +91,55 @@ function stripePayoutBankSummary(account = {}) {
     stripePayoutBankName: String(bank.bank_name || "").trim().slice(0, 160),
     stripePayoutBankLast4: String(bank.last4 || "").trim().slice(-4)
   };
+}
+
+const GO_LIVE_STRIPE_REVIEW_WINDOW_MS = 5 * 60 * 1000;
+const NON_PRODUCTION_ENVIRONMENTS = new Set(["development", "test", "staging", "preview"]);
+
+function stripeAccountMaterialState(account = {}) {
+  return JSON.stringify({
+    id: String(account.id || ""),
+    chargesEnabled: Boolean(account.charges_enabled),
+    payoutsEnabled: Boolean(account.payouts_enabled),
+    detailsSubmitted: Boolean(account.details_submitted),
+    disabledReason: String(account.requirements?.disabled_reason || ""),
+    requirementsDue: [...(Array.isArray(account.requirements?.currently_due) ? account.requirements.currently_due : [])].sort(),
+    ...stripePayoutBankSummary(account)
+  });
+}
+
+function storedStripeMaterialState(registration = {}) {
+  return JSON.stringify({
+    id: String(registration.stripeAccountId || ""),
+    chargesEnabled: registration.stripeChargesEnabled === true,
+    payoutsEnabled: registration.stripePayoutsEnabled === true,
+    detailsSubmitted: registration.stripeDetailsSubmitted === true,
+    disabledReason: String(registration.stripeDisabledReason || ""),
+    requirementsDue: [...(Array.isArray(registration.stripeRequirementsDue) ? registration.stripeRequirementsDue : [])].sort(),
+    stripePayoutBankName: String(registration.stripePayoutBankName || ""),
+    stripePayoutBankLast4: String(registration.stripePayoutBankLast4 || "")
+  });
+}
+
+async function retrieveConnectedAccountForRefresh(env, registration = {}) {
+  const environment = String(env.AGAPAY_ENVIRONMENT || "").trim().toLowerCase();
+  const fixture = registration.onboardingStripeTestFixture;
+  if (NON_PRODUCTION_ENVIRONMENTS.has(environment)
+    && String(registration.stripeAccountId || "").startsWith("acct_staging_")
+    && fixture?.id === registration.stripeAccountId) {
+    return { ok: true, status: 200, body: fixture, simulated: true };
+  }
+  return stripeGetRequest(env, `/v1/accounts/${encodeURIComponent(registration.stripeAccountId)}`);
+}
+
+async function invalidateAndSaveMaterialRegistration(env, reference, previous, next, actor, reason) {
+  const updated = await invalidateOnboardingSignoffIfChanged(previous, next, {
+    actor,
+    reason,
+    receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app"
+  });
+  await saveRegistrationRecord(env, reference, updated, previous);
+  return updated;
 }
 
 
@@ -218,8 +268,14 @@ export async function updateSubscriptionRecord(env, reference, updates) {
     ...updates,
     subscriptionUpdatedAt: new Date().toISOString()
   };
-  await saveRegistrationRecord(env, reference, updated, current);
-  return updated;
+  return invalidateAndSaveMaterialRegistration(
+    env,
+    reference,
+    current,
+    updated,
+    "stripe-webhook",
+    "Stripe changed the AGAPAY subscription configuration."
+  );
 }
 
 export async function handleStripeWebhook(request, env) {
@@ -787,7 +843,7 @@ export async function processStripeWebhookEvent(env, event) {
   if (event.type === "account.updated") {
     const found = await findRegistrationByStripeAccountId(env, object.id);
     if (found) {
-      await saveRegistrationRecord(env, found.key, {
+      const next = {
         ...found.registration,
         ...stripePayoutBankSummary(object),
         stripeAccountStatus: stripeAccountStatus(object),
@@ -797,7 +853,15 @@ export async function processStripeWebhookEvent(env, event) {
         stripeDisabledReason: object.requirements?.disabled_reason || "",
         stripeRequirementsDue: object.requirements?.currently_due || [],
         stripeStatusCheckedAt: new Date().toISOString()
-      }, found.registration);
+      };
+      await invalidateAndSaveMaterialRegistration(
+        env,
+        found.key,
+        found.registration,
+        next,
+        "stripe-webhook",
+        "Stripe changed the connected account readiness or payout destination."
+      );
     }
   }
 }
@@ -859,7 +923,7 @@ export async function createStripeOnboardingSession(request, env, reference, reg
     );
   }
 
-  const updated = {
+  const next = {
     ...registration,
     ...stripePayoutBankSummary(stripeAccount),
     parishDashboardToken: registration.parishDashboardToken || crypto.randomUUID(),
@@ -873,7 +937,14 @@ export async function createStripeOnboardingSession(request, env, reference, reg
     stripeOnboardingLinkCreatedAt: new Date().toISOString(),
     reviewedAt: registration.reviewedAt || new Date().toISOString()
   };
-  await saveRegistrationRecord(env, reference, updated, registration);
+  const updated = await invalidateAndSaveMaterialRegistration(
+    env,
+    reference,
+    registration,
+    next,
+    "stripe-connect",
+    "The connected Stripe account or payout destination changed."
+  );
 
   return { onboardingUrl: link.body.url, registration: updated };
 }
@@ -914,7 +985,7 @@ export async function handleStripeOnboarding(request, env, reference) {
   return json({ ok: true, onboardingUrl: result.onboardingUrl, email, registration: audited });
 }
 
-export async function refreshStripeStatusForRegistration(env, reference, registration) {
+export async function refreshStripeStatusForRegistration(env, reference, registration, options = {}) {
   if (!registration.stripeAccountId) {
     return {
       ok: false,
@@ -923,30 +994,51 @@ export async function refreshStripeStatusForRegistration(env, reference, registr
     };
   }
 
-  const retrieved = await stripeGetRequest(env, `/v1/accounts/${encodeURIComponent(registration.stripeAccountId)}`);
+  const retrieved = await retrieveConnectedAccountForRefresh(env, registration);
   if (!retrieved.ok) {
     return {
       ok: false,
       status: 502,
-      body: { error: "Stripe connected account lookup failed", detail: retrieved.body.error?.message || "Unknown Stripe error" }
+      body: {
+        error: "Stripe could not confirm the connected account. Please retry before going live.",
+        code: "stripe_refresh_failed",
+        retryable: true,
+        detail: retrieved.body.error?.message || "Unknown Stripe error"
+      }
     };
   }
 
   const account = retrieved.body;
-  const updated = {
+  const confirmedAt = new Date().toISOString();
+  const priorCheckedAtMs = new Date(registration.stripeStatusCheckedAt || "").getTime();
+  const unchanged = stripeAccountMaterialState(account) === storedStripeMaterialState(registration);
+  const preserveReviewedTimestamp = options.preserveReviewedTimestamp === true
+    && unchanged
+    && Number.isFinite(priorCheckedAtMs)
+    && Date.now() - priorCheckedAtMs <= GO_LIVE_STRIPE_REVIEW_WINDOW_MS;
+  const next = {
     ...registration,
     ...stripePayoutBankSummary(account),
+    stripeAccountId: String(account.id || registration.stripeAccountId || ""),
     stripeAccountStatus: stripeAccountStatus(account),
     stripeChargesEnabled: Boolean(account.charges_enabled),
     stripePayoutsEnabled: Boolean(account.payouts_enabled),
     stripeDetailsSubmitted: Boolean(account.details_submitted),
     stripeDisabledReason: account.requirements?.disabled_reason || "",
     stripeRequirementsDue: account.requirements?.currently_due || [],
-    stripeStatusCheckedAt: new Date().toISOString()
+    stripeStatusCheckedAt: preserveReviewedTimestamp ? registration.stripeStatusCheckedAt : confirmedAt,
+    stripeLastConfirmedAt: confirmedAt
   };
-  await saveRegistrationRecord(env, reference, updated, registration);
+  const updated = await invalidateAndSaveMaterialRegistration(
+    env,
+    reference,
+    registration,
+    next,
+    options.actor || "stripe-refresh",
+    options.reason || "Stripe changed the connected account readiness or payout destination."
+  );
 
-  return { ok: true, registration: updated, account };
+  return { ok: true, registration: updated, account, confirmedAt, simulated: retrieved.simulated === true };
 }
 
 export async function handleStripeRefresh(request, env, reference) {

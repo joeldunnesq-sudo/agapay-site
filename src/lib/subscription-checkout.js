@@ -6,6 +6,17 @@ import { applySubscriptionTaxCode } from "./tax-codes.js";
 import { applyApprovedExemptionIfExists } from "./tax-exemption.js";
 import { taxReadinessCheckoutGate } from "./tax-readiness.js";
 import { ensureBenevolenceFundInRegistration } from "./stewardship-funds.js";
+import { invalidateOnboardingSignoffIfChanged } from "./parish-onboarding.js";
+
+async function persistSubscriptionMaterialChange(env, reference, registration, updated, saveRegistrationRecord) {
+  const safeUpdate = await invalidateOnboardingSignoffIfChanged(registration, updated, {
+    actor: registration.treasurerEmail || registration.priestEmail || "subscription",
+    reason: "The parish subscription configuration changed.",
+    receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app"
+  });
+  await saveRegistrationRecord(env, reference, safeUpdate, registration);
+  return safeUpdate;
+}
 
 function withTierFundDefaults(registration, tier) {
   return tier?.modules?.givingPlus
@@ -46,7 +57,7 @@ export async function createSubscriptionCheckoutForRegistration({
   if (!tier) return json({ error: "Unknown subscription tier" }, { status: 422 });
 
   if (tier.monthlyCents === 0) {
-    const updated = withTierFundDefaults({
+    let updated = withTierFundDefaults({
       ...registration,
       subscriptionTier: tier.id,
       subscriptionTierLabel: tier.label,
@@ -54,7 +65,7 @@ export async function createSubscriptionCheckoutForRegistration({
       subscriptionStatus: "free_forever",
       subscriptionUpdatedAt: new Date().toISOString()
     }, tier);
-    await saveRegistrationRecord(env, reference, updated, registration);
+    updated = await persistSubscriptionMaterialChange(env, reference, registration, updated, saveRegistrationRecord);
     return json({ ok: true, subscription: updated.subscriptionStatus, registration: updated });
   }
 
@@ -149,7 +160,7 @@ export async function createSubscriptionCheckoutForRegistration({
       );
     }
 
-    const updated = withTierFundDefaults({
+    let updated = withTierFundDefaults({
       ...registration,
       subscriptionTier: tier.id,
       subscriptionTierLabel: tier.label,
@@ -158,7 +169,7 @@ export async function createSubscriptionCheckoutForRegistration({
       stripeSubscriptionId: changed.body.id || registration.stripeSubscriptionId,
       subscriptionUpdatedAt: new Date().toISOString()
     }, tier);
-    await saveRegistrationRecord(env, reference, updated, registration);
+    updated = await persistSubscriptionMaterialChange(env, reference, registration, updated, saveRegistrationRecord);
     return json({ ok: true, subscriptionChanged: true, registration: updated });
   }
 
@@ -255,7 +266,7 @@ export async function createSubscriptionCheckoutForRegistration({
     );
   }
 
-  const updated = withTierFundDefaults({
+  let updated = withTierFundDefaults({
     ...registration,
     subscriptionTier: tier.id,
     subscriptionTierLabel: tier.label,
@@ -267,7 +278,7 @@ export async function createSubscriptionCheckoutForRegistration({
     stripeSubscriptionCheckoutSessionId: session.body.id || "",
     stripeSubscriptionCheckoutCreatedAt: new Date().toISOString()
   }, tier);
-  await saveRegistrationRecord(env, reference, updated, registration);
+  updated = await persistSubscriptionMaterialChange(env, reference, registration, updated, saveRegistrationRecord);
 
   return json({ ok: true, checkoutUrl: session.body.url, registration: updated }, { status: 201 });
 }

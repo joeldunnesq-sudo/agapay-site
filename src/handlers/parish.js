@@ -2260,9 +2260,8 @@ export async function handleParishDemoTier(request, env, parishId) {
     demoTierChangedAt: new Date().toISOString(),
     parishUpdatedAt: new Date().toISOString()
   };
-  const updated = tier.modules?.givingPlus
-    ? ensureBenevolenceFundInRegistration(tierUpdate).registration
-    : tierUpdate;
+  let updated = tier.modules?.givingPlus ? ensureBenevolenceFundInRegistration(tierUpdate).registration : tierUpdate;
+  updated = await invalidateOnboardingSignoffIfChanged(current, updated, { actor: current.treasurerEmail || current.priestEmail || "parish", reason: "The parish subscription tier changed.", receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app" });
   await saveRegistrationRecord(env, found.key, updated, current);
   return json({ ok: true, parish: parishDashboardPayload(parishId, updated) });
 }
@@ -2326,10 +2325,8 @@ export async function handleParishSubscriptionRefresh(request, env, parishId) {
     }
   }
 
-  const updated = {
-    ...registration,
-    ...updates
-  };
+  let updated = { ...registration, ...updates };
+  updated = await invalidateOnboardingSignoffIfChanged(registration, updated, { actor: registration.treasurerEmail || registration.priestEmail || "parish", reason: "Stripe subscription status changed.", receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app" });
   await saveRegistrationRecord(env, found.key, updated, registration);
 
   return json({

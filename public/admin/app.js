@@ -2357,13 +2357,17 @@ let selectedReference = '';
         const result = await response.json();
         if (handleAuthFailure(response, result)) return;
         if (!response.ok) throw new Error(result.error || 'Unable to run staging onboarding control');
+        if (result.stagingIdentityToken && result.stagingIdentityEmail) {
+          sessionStorage.setItem('agapay_identity_session_token', result.stagingIdentityToken);
+          sessionStorage.setItem('agapay_identity_email', result.stagingIdentityEmail);
+        }
         renderDetail(result.registration);
         renderQueueNext(result.registration);
         const target = document.getElementById('stagingOnboardingResult');
         if (target) {
           const password = result.stagingPassword || '';
           target.innerHTML = password
-            ? `<strong>Parish test login created.</strong><span>This password is shown once:</span><code>${escapeHtml(password)}</code><button class="secondary btn-sm" type="button" onclick="copyText('${jsAttr(password)}')">Copy password</button>`
+            ? `<strong>Parish and treasurer test access created.</strong><span>The parish password is shown once. The verified treasurer session is also active in this browser, so Go Live follows the real authenticated path.</span><code>${escapeHtml(password)}</code><button class="secondary btn-sm" type="button" onclick="copyText('${jsAttr(password)}')">Copy parish password</button>`
             : `<strong>${escapeHtml(readable(action))} complete.</strong><span>The workflow was recalculated from persisted staging data.</span>`;
         }
         setStatus('Staging onboarding state updated.', 'success');
