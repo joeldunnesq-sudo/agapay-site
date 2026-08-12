@@ -186,6 +186,7 @@ head_sampling_rate = 1
 AGAPAY_APP_URL = "https://agapay-site-staging.joeldunnesq.workers.dev"
 AGAPAY_PUBLIC_URL = "https://agapay-site-staging.joeldunnesq.workers.dev"
 AGAPAY_ENVIRONMENT = "staging"
+TURNSTILE_SITE_KEY = "1x00000000000000000000AA"
 CLOUDFLARE_ACCOUNT_ID = "9198ae5ea8adc59e5dedd1b09c9478b9"
 CAMPAIGN_ASSETS_URL = "https://pub-7c0fef2b0b954c5b88f1cc3e944e97a7.r2.dev"
 TEACHING_ASSETS_URL = "https://pub-03d1c07bbdb14970a0b0021aeb0961d8.r2.dev"

@@ -737,7 +737,10 @@ assert.ok(!sitemap.includes("<loc>https://agapay.app/how-it-works</loc>"), "site
 assert.ok(!sitemap.includes("<loc>https://agapay.app/pricing</loc>"), "sitemap should not list the legacy root pricing URL");
 assert.ok(!sitemap.includes("<loc>https://agapay.app/why</loc>"), "sitemap should not list the legacy root why URL");
 assert.ok(registerHtml.includes("/security.js") && registerHtml.includes("data-agapay-turnstile"), "registration should render Turnstile when configured");
+assert.ok(registerHtml.includes('data-action="turnstile-spin-v1"'), "registration Turnstile should identify the protected registration action");
 assert.ok(registerHtml.includes("agapaySecurityPayload"), "registration should send Turnstile tokens when configured");
+assert.ok(registerHtml.includes('name="cf-turnstile-response"'), "registration payload should fall back to Cloudflare's standard Turnstile response field");
+assert.ok(donorSecurity.includes("cf-turnstile-response"), "security helper should submit the standard Turnstile response field when callback state is unavailable");
 
 // Security response headers (docs/SECURITY_HEADERS.md) -- guards against
 // the exact kind of silent regression that hit Phase 1's route-map

@@ -8,6 +8,7 @@
       target.dataset.rendered = "true";
       window.turnstile.render(target, {
         sitekey: siteKey,
+        action: target.dataset.action || undefined,
         callback: (token) => { window.agapayTurnstileToken = token || ""; },
         "expired-callback": () => { window.agapayTurnstileToken = ""; },
         "error-callback": () => { window.agapayTurnstileToken = ""; }
@@ -32,7 +33,8 @@
   }
 
   window.agapaySecurityPayload = function () {
-    return { turnstileToken: window.agapayTurnstileToken || "" };
+    const responseField = document.querySelector('[name="cf-turnstile-response"]');
+    return { turnstileToken: window.agapayTurnstileToken || responseField?.value || "" };
   };
 
   if (document.readyState === "loading") {

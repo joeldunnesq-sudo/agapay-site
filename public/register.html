@@ -665,7 +665,7 @@
             I agree to the <a href="/terms#arbitration" target="_blank" rel="noopener noreferrer">Terms of Service</a>, acknowledge the <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and confirm I am authorized to act for this organization.
           </label>
         </div>
-        <div data-agapay-turnstile style="margin-top:1rem;"></div>
+        <div data-agapay-turnstile data-action="turnstile-spin-v1" style="margin-top:1rem;"></div>
 
         <div class="form-nav" style="margin-top:1.5rem;">
           <button class="btn-back" onclick="goToStep(2)">← Back</button>
@@ -697,7 +697,7 @@
     </div>
 
   </main>
-  <script src="/security.js"></script>
+  <script src="/security.js?v=20260812turnstile1"></script>
   <script>
     // ─── STATE ───────────────────────────────────────────────
     let currentStep = 1;
@@ -1152,7 +1152,9 @@
         acceptingEmail,
         acceptingRole,
         ...(taxExemption ? { taxExemption } : {}),
-        ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {})
+        turnstileToken: (window.agapaySecurityPayload ? window.agapaySecurityPayload().turnstileToken : '')
+          || document.querySelector('[name="cf-turnstile-response"]')?.value
+          || ''
       };
 
       try {
