@@ -22,6 +22,7 @@ assert.ok(readFileSync(path.join(root, "docs", "legal", "terms", "terms-2026-08-
 
 const db = new DatabaseSync(":memory:");
 db.exec(readFileSync(path.join(root, "migrations", "0088_legal_acceptances.sql"), "utf8"));
+db.exec(readFileSync(path.join(root, "migrations", "0095_finalized_legal_terms.sql"), "utf8"));
 const env = {
   AGAPAY_DB: {
     prepare(sql) {

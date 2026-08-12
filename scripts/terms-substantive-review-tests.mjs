@@ -12,7 +12,7 @@ const expectedSections = [
   "liability", "indemnification", "updates", "arbitration", "governing", "general", "contact"
 ];
 
-assert.equal(REGISTRATION_TERMS_VERSION, "2026-08-02", "registration must record the reviewed Terms version");
+assert.equal(REGISTRATION_TERMS_VERSION, "2026-08-02-final", "registration must record the signed-off Terms version");
 assert.match(terms, /Last updated: August 2, 2026[\s\S]*Effective for existing Users upon affirmative acceptance, no earlier than September 1, 2026/);
 assert.match(terms, /AGAPAY, a Texas sole proprietorship operating under the AGAPAY name/);
 
