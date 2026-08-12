@@ -292,8 +292,15 @@ assert.match(parishRedesign, /sidebar-status-chip\.is-live::before[^}]*#7FCFA0/,
 assert.match(adminUi, /Prepare Go-Live test/, "admin UI must expose the non-production Go-Live exercise control");
 assert.match(adminUi, /Simulate Stripe ready/, "admin UI must expose independent staging Stripe simulation");
 assert.match(adminUi, /renderOnboardingCommandHeader/, "admin UI must lead with the onboarding command header");
-assert.match(adminUi, /Next required action/, "admin UI must make the next required action explicit");
+assert.match(adminUi, /Do this now/, "admin UI must make the next required action explicit");
 assert.match(adminUi, /Only the verified parish treasurer can activate the giving link/, "admin UI must state the launch authority boundary");
 assert.match(adminStyles, /onboarding-phase-nav/, "admin UI must expose navigable SOP phases");
+assert.match(adminUi, /onboardingCurrentPhase/, "admin UI must derive one working phase from the first server blocker");
+assert.match(adminUi, /Open this step/, "admin UI must provide one direct route to the required work");
+assert.match(adminUi, /Confirm authorized representative/, "admin UI must translate server states into direct operator actions");
+assert.match(adminUi, /renderOnboardingManualChecks\(onboardingChecks, \['authorizedRepresentative'\]\)/, "authority evidence must live in the identity phase");
+assert.match(adminUi, /renderOnboardingManualChecks\(onboardingChecks, \['users'\]\)/, "user-access evidence must live in the access phase");
+assert.match(adminUi, /renderOnboardingManualChecks\(onboardingChecks, \['givingConfiguration', 'importDecision'\]\)/, "giving and import evidence must live in the configuration phase");
+assert.match(adminStyles, /onboarding-phase-card:not\(\.is-current\)[^{]*\{[^}]*padding/, "non-current onboarding phases must collapse to compact rows");
 
 console.log("Parish onboarding workflow tests passed.");

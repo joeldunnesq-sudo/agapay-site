@@ -2160,32 +2160,97 @@ let selectedReference = '';
       return values.map(([value, label]) => `<option value="${value}" ${status === value ? 'selected' : ''}>${label}</option>`).join('');
     }
 
+    function renderOnboardingManualChecks(checks, keys) {
+      return `<div class="onboarding-manual-list">${keys.map((key) => {
+        const definition = onboardingManualFields.find(([fieldKey]) => fieldKey === key);
+        if (!definition) return '';
+        const [, label, help] = definition;
+        const check = checks[key] || {};
+        return `<details class="onboarding-manual-row" ${check.status === 'blocked' || check.status === 'in_progress' || check.status === 'not_started' ? 'open' : ''}>
+          <summary><span class="onboarding-manual-state ${escapeAttr(check.status || 'not_started')}"></span><strong>${escapeHtml(label)}</strong><em>${escapeHtml(readable(check.status || 'not_started'))}</em></summary>
+          <p>${escapeHtml(help)}</p>
+          <div class="form-grid">
+            <div><label for="onboarding-${key}-status">Status</label><select id="onboarding-${key}-status">${onboardingStatusOptions(check.status || 'not_started', key)}</select></div>
+            <div><label for="onboarding-${key}-evidence">Evidence reference</label><input id="onboarding-${key}-evidence" value="${escapeAttr(check.evidence || '')}" placeholder="Payment ID, screenshot, ticket, or source link" /></div>
+            <div class="full"><label for="onboarding-${key}-note">Operator note</label><textarea id="onboarding-${key}-note" rows="2" placeholder="What was checked and by whom?">${escapeHtml(check.note || '')}</textarea></div>
+          </div>
+        </details>`;
+      }).join('')}</div>`;
+    }
+
     function renderOnboardingProgress(reg) {
       const workflow = reg.onboardingWorkflow || {};
       const steps = Array.isArray(workflow.steps) ? workflow.steps : [];
-      const state = workflow.state || (reg.status === 'verified' ? 'VERIFIED_HIDDEN' : 'IDENTITY_REVIEW');
       const completed = Number(workflow.completedSteps || 0);
       const total = Number(workflow.totalSteps || steps.length || 17);
-      const percent = total ? Math.round((completed / total) * 100) : 0;
-      const next = (workflow.blockers || [])[0];
       return `
-        <div class="workflow-card onboarding-workflow-card">
-          <div class="workflow-top">
-            <div>
-              <div class="workflow-title">${escapeHtml(readable(state))}</div>
-              <div class="workflow-sub">${workflow.enabled ? `${completed} of ${total} onboarding gates passed.` : 'The deterministic workflow begins when canonical verification is saved.'}</div>
-            </div>
-            <span class="badge ${state === 'LIVE' ? 'verified' : 'pending'}">${escapeHtml(state === 'LIVE' ? 'Live' : `${percent}%`)}</span>
-          </div>
-          <div class="onboarding-progress-track"><span style="width:${Math.max(0, Math.min(100, percent))}%"></span></div>
-          ${next ? `<div class="onboarding-next-action"><strong>Next:</strong> ${escapeHtml(next.title)} <span>${escapeHtml(next.detail || '')}</span></div>` : ''}
-          <details class="onboarding-gates-disclosure">
-            <summary>View all ${total} onboarding gates</summary>
+        <details class="onboarding-workflow-audit">
+          <summary><span>Audit checklist</span><strong>${completed} of ${total} gates complete</strong><em>View details</em></summary>
+          <div class="onboarding-gates-disclosure">
             <div class="onboarding-step-grid">
             ${steps.map((item, index) => `<div class="onboarding-step ${item.passed ? 'done' : 'pending'}"><span>${item.passed ? '✓' : index + 1}</span><div><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.detail || '')}</small></div></div>`).join('')}
             </div>
-          </details>
-        </div>`;
+          </div>
+        </details>`;
+    }
+
+    const onboardingPhases = [
+      ['identity', 'Verify parish'],
+      ['access', 'Give access'],
+      ['stripe', 'Connect Stripe'],
+      ['subscription', 'Configure giving'],
+      ['validation', 'Validate & hand off']
+    ];
+
+    function onboardingCurrentPhase(reg) {
+      const workflow = reg.onboardingWorkflow || {};
+      if (workflow.state === 'LIVE' || workflow.canGoLive) return 'validation';
+      const key = workflow.blockers?.[0]?.key || 'registration';
+      if (['registration', 'canonical', 'representative', 'verifiedHidden'].includes(key)) return 'identity';
+      if (['invite', 'credential', 'users'].includes(key)) return 'access';
+      if (['stripeConnected', 'stripeReady'].includes(key)) return 'stripe';
+      if (['subscription', 'generalFund', 'givingConfiguration', 'importDecision'].includes(key)) return 'subscription';
+      return 'validation';
+    }
+
+    function onboardingPhaseState(reg, phase) {
+      if (reg.onboardingWorkflow?.state === 'LIVE') return 'done';
+      const currentIndex = onboardingPhases.findIndex(([key]) => key === onboardingCurrentPhase(reg));
+      const index = onboardingPhases.findIndex(([key]) => key === phase);
+      if (index < currentIndex) return 'done';
+      if (index === currentIndex) return 'current';
+      return 'upcoming';
+    }
+
+    function activateOnboardingPhase(phase) {
+      document.querySelectorAll('.onboarding-phase-card').forEach(card => card.classList.remove('is-current'));
+      const target = document.getElementById(`onboarding-phase-${phase}`);
+      if (!target) return;
+      target.classList.add('is-current');
+      target.scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+
+    function onboardingActionTitle(title) {
+      const actions = {
+        'Registration received': 'Review registration',
+        'Canonical parish confirmed': 'Confirm canonical parish',
+        'Authorized representative confirmed': 'Confirm authorized representative',
+        'Organization verified and hidden': 'Verify organization and keep giving hidden',
+        'Dashboard invite delivered': 'Send dashboard invite',
+        'Temporary credential changed': 'Wait for the parish to change its temporary credential',
+        'Stripe connected': 'Connect Stripe',
+        'Stripe charges and payouts ready': 'Confirm Stripe charges and payouts',
+        'Subscription configured': 'Configure the subscription',
+        'General Operating Fund configured': 'Configure the General Operating Fund',
+        'Designated funds and campaigns approved': 'Approve designated funds and campaigns',
+        'Priest and treasurer access confirmed': 'Confirm priest and treasurer access',
+        'Donor and pledge import decided': 'Decide the donor and pledge import',
+        'Controlled test gift passed': 'Run a controlled test gift',
+        'Receipt verified': 'Verify the receipt',
+        'Reporting and accounting verified': 'Verify reporting and accounting',
+        'Giving URL and QR verified': 'Verify the giving URL and QR code'
+      };
+      return actions[title] || title || 'Continue onboarding';
     }
 
     function renderOnboardingCommandHeader(reg) {
@@ -2196,72 +2261,57 @@ let selectedReference = '';
         ? 'Launch complete'
         : workflow.canGoLive
           ? 'Waiting for treasurer Go-Live signoff'
-          : next?.title || 'Confirm the canonical parish';
+          : onboardingActionTitle(next?.title || 'Confirm the canonical parish');
       const actionDetail = state === 'LIVE'
         ? 'Giving is public and the treasurer-approved snapshot is on record.'
         : workflow.canGoLive
           ? 'The configuration is locked. The verified treasurer must review all eight attestations and publish from the parish dashboard.'
           : next?.detail || 'Review the registration and independently verify the organization and representative.';
       const location = [reg.communityType, reg.jurisdiction, [reg.city, reg.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+      const currentPhase = onboardingCurrentPhase(reg);
+      const completed = Number(workflow.completedSteps || 0);
+      const total = Number(workflow.totalSteps || 17);
       return `<section class="onboarding-command-header">
         <div class="onboarding-command-main">
-          <div class="onboarding-command-eyebrow">Onboarding workspace · ${escapeHtml(reg.reference || '')}</div>
+          <button class="onboarding-back-link" type="button" onclick="collapseRegistrationDetail()">← Parish queue</button>
+          <div class="onboarding-command-eyebrow">${escapeHtml(reg.reference || '')}</div>
           <h2>${escapeHtml(reg.parishName || 'Unnamed parish')}</h2>
           <p>${escapeHtml(location || 'Registration details pending')}</p>
-          <div class="onboarding-command-badges">
-            <span class="badge ${escapeAttr(reg.status || 'pending')}">Canonical: ${escapeHtml(readable(reg.status || 'pending'))}</span>
-            <span class="badge ${escapeAttr(reg.stripeAccountStatus || 'not_started')}">Stripe: ${escapeHtml(readable(reg.stripeAccountStatus || 'not_started'))}</span>
-            <span class="badge ${escapeAttr(reg.subscriptionStatus || 'not_started')}">Plan: ${escapeHtml(readable(reg.subscriptionStatus || 'not_started'))}</span>
-            <span class="badge ${state === 'LIVE' ? 'verified' : 'pending'}">Launch: ${escapeHtml(readable(state))}</span>
-          </div>
         </div>
         <div class="onboarding-command-next ${state === 'LIVE' ? 'complete' : ''}">
-          <span>${state === 'LIVE' ? 'Current state' : 'Next required action'}</span>
+          <span>${state === 'LIVE' ? 'Complete' : 'Do this now'}</span>
           <strong>${escapeHtml(actionTitle)}</strong>
           <p>${escapeHtml(actionDetail)}</p>
+          ${state === 'LIVE' ? '' : `<button class="gold btn-sm" type="button" onclick="activateOnboardingPhase('${currentPhase}')">Open this step</button>`}
         </div>
         <div class="onboarding-command-actions">
-          <button class="secondary btn-sm" type="button" onclick="collapseRegistrationDetail()">Back to queue</button>
-          <button class="secondary btn-sm" type="button" onclick="copyRegistrationSummary()">Copy summary</button>
+          <span>${completed} of ${total} required checks complete</span>
+          <button class="secondary btn-sm" type="button" onclick="copyRegistrationSummary()">Copy</button>
           <button class="gold btn-sm" type="button" onclick="saveReview('${jsAttr(reg.reference)}', this)">Save progress</button>
         </div>
         <nav class="onboarding-phase-nav" aria-label="Onboarding phases">
-          <a href="#onboarding-phase-identity"><span>1</span>Identity</a>
-          <a href="#onboarding-phase-access"><span>2</span>Access &amp; giving</a>
-          <a href="#onboarding-phase-stripe"><span>3</span>Stripe</a>
-          <a href="#onboarding-phase-subscription"><span>4</span>Plan</a>
-          <a href="#onboarding-phase-validation"><span>5</span>Validate &amp; launch</a>
+          ${onboardingPhases.map(([key, label], index) => {
+            const phaseState = onboardingPhaseState(reg, key);
+            return `<button class="${phaseState}" type="button" onclick="activateOnboardingPhase('${key}')"><span>${phaseState === 'done' ? '✓' : index + 1}</span><strong>${escapeHtml(label)}</strong><small>${phaseState === 'current' ? 'Current step' : phaseState === 'done' ? 'Complete' : 'Later'}</small></button>`;
+          }).join('')}
         </nav>
       </section>`;
     }
 
-    function renderOnboardingControls(reg) {
+    function renderOnboardingControls(reg, currentPhase) {
       const workflow = reg.onboardingWorkflow || {};
       const checks = workflow.checks || reg.onboardingChecks || {};
       const signoff = workflow.signoff || {};
       return `
-        <div class="admin-section onboarding-admin-section onboarding-phase-card" id="onboarding-phase-validation">
-          <div class="onboarding-phase-heading"><span>5</span><div><small>Validate &amp; launch</small><strong>Operational evidence and treasurer handoff</strong></div></div>
+        <div class="admin-section onboarding-admin-section onboarding-phase-card ${currentPhase === 'validation' ? 'is-current' : ''}" id="onboarding-phase-validation">
+          <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('validation')"><span>5</span><div><small>Validate &amp; hand off</small><strong>Test the complete giving flow</strong></div><em>${currentPhase === 'validation' ? 'Working step' : 'Open'}</em></button>
           <p class="onboarding-section-copy">Record the manual evidence below. Stripe, subscription, credential, and canonical gates are calculated by the server and cannot be manually marked ready.</p>
           <div class="onboarding-signoff-state ${signoff.status === 'signed' ? 'signed' : workflow.canGoLive ? 'ready' : 'waiting'}">
             <span>${signoff.status === 'signed' ? 'Treasurer signoff recorded' : workflow.canGoLive ? 'Ready for parish signoff' : 'Treasurer signoff locked'}</span>
             <strong>${signoff.status === 'signed' ? `${escapeHtml(signoff.signerName || 'Treasurer')} · ${escapeHtml(shortDate(signoff.signedAt))}` : workflow.canGoLive ? 'The treasurer can now review the frozen snapshot and click Go Live.' : 'Complete every gate below before the treasurer can publish.'}</strong>
             <small>Only the verified parish treasurer can activate the giving link. Admin records evidence and resolves blockers.</small>
           </div>
-          <div class="onboarding-manual-list">
-            ${onboardingManualFields.map(([key, label, help]) => {
-              const check = checks[key] || {};
-              return `<details class="onboarding-manual-row" ${check.status === 'blocked' || check.status === 'in_progress' ? 'open' : ''}>
-                <summary><span class="onboarding-manual-state ${escapeAttr(check.status || 'not_started')}"></span><strong>${escapeHtml(label)}</strong><em>${escapeHtml(readable(check.status || 'not_started'))}</em></summary>
-                <p>${escapeHtml(help)}</p>
-                <div class="form-grid">
-                  <div><label for="onboarding-${key}-status">Status</label><select id="onboarding-${key}-status">${onboardingStatusOptions(check.status || 'not_started', key)}</select></div>
-                  <div><label for="onboarding-${key}-evidence">Evidence reference</label><input id="onboarding-${key}-evidence" value="${escapeAttr(check.evidence || '')}" placeholder="Payment ID, screenshot, ticket, or source link" /></div>
-                  <div class="full"><label for="onboarding-${key}-note">Operator note</label><textarea id="onboarding-${key}-note" rows="2" placeholder="What was checked and by whom?">${escapeHtml(check.note || '')}</textarea></div>
-                </div>
-              </details>`;
-            }).join('')}
-          </div>
+          ${renderOnboardingManualChecks(checks, ['testGift', 'receipt', 'reportingAccounting', 'givingAssets'])}
           ${reg.onboardingTestMode ? `<div class="onboarding-staging-tools">
             <div><span>Staging only</span><strong>Workflow test controls</strong><p>Prepare a safe synthetic Stripe-ready record, exercise gates independently, or reset the signoff for another end-to-end run. The server refuses these actions in production.</p></div>
             <div class="btn-row">
@@ -2317,6 +2367,8 @@ let selectedReference = '';
     function renderDetail(reg) {
       const reference = jsAttr(reg.reference);
       const publicParishId = escapeHtml(reg.parishId || '');
+      const currentPhase = onboardingCurrentPhase(reg);
+      const onboardingChecks = reg.onboardingWorkflow?.checks || reg.onboardingChecks || {};
       document.getElementById('registrationDetail').innerHTML = `
         ${renderOnboardingCommandHeader(reg)}
         ${renderOnboardingProgress(reg)}
@@ -2387,9 +2439,9 @@ let selectedReference = '';
           </div>
         </details>
         <div class="actions onboarding-actions">
-          ${renderOnboardingControls(reg)}
-          <div class="admin-section onboarding-phase-card" id="onboarding-phase-identity">
-            <div class="onboarding-phase-heading"><span>1</span><div><small>Identity &amp; authority</small><strong>Confirm the canonical parish</strong></div></div>
+          ${renderOnboardingControls(reg, currentPhase)}
+          <div class="admin-section onboarding-phase-card ${currentPhase === 'identity' ? 'is-current' : ''}" id="onboarding-phase-identity">
+            <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('identity')"><span>1</span><div><small>Verify parish</small><strong>Confirm identity and authority</strong></div><em>${currentPhase === 'identity' ? 'Working step' : 'Open'}</em></button>
             <div class="form-grid">
               <div>
                 <label for="statusSelect">Canonical review status</label>
@@ -2418,10 +2470,12 @@ let selectedReference = '';
                 <input id="dioceseOrDeanery" value="${escapeAttr(reg.dioceseOrDeanery)}" placeholder="Diocese, metropolis, deanery, or vicariate" />
               </div>
             </div>
+            ${renderOnboardingManualChecks(onboardingChecks, ['authorizedRepresentative'])}
           </div>
 
-          <div class="admin-section onboarding-support-card">
-            <div class="admin-section-title">Tax / Billing Readiness</div>
+          <details class="admin-section onboarding-support-card">
+            <summary>Tax and billing readiness <span>${escapeHtml(readable(reg.taxReadinessStatus || 'tax_needs_review'))}</span></summary>
+            <div class="onboarding-support-body">
             <p style="margin:0 0 0.85rem;color:var(--stone);font-size:12.5px;line-height:1.6;">
               Separate from canonical verification above. A parish can be verified and still blocked from paid
               subscription checkout until this is set to "Ready for checkout." See
@@ -2472,31 +2526,12 @@ let selectedReference = '';
               </div>
             </div>
           </div>
+          </details>
 
-          <div class="admin-section onboarding-phase-card" id="onboarding-phase-access">
-            <div class="onboarding-phase-heading"><span>2</span><div><small>Dashboard access &amp; giving</small><strong>Invite the parish and configure giving</strong></div></div>
+          <div class="admin-section onboarding-phase-card ${currentPhase === 'access' ? 'is-current' : ''}" id="onboarding-phase-access">
+            <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('access')"><span>2</span><div><small>Give access</small><strong>Invite the priest and treasurer</strong></div><em>${currentPhase === 'access' ? 'Working step' : 'Open'}</em></button>
             <div class="form-grid">
-              <div>
-                <label for="givingStatus">Giving page status</label>
-                <select id="givingStatus">
-                  <option value="active" ${reg.givingStatus === 'active' ? 'selected' : ''} ${reg.onboardingWorkflow?.enabled && reg.onboardingWorkflow?.state !== 'LIVE' ? 'disabled' : ''}>Active</option>
-                  <option value="paused" ${reg.givingStatus === 'paused' ? 'selected' : ''}>Paused</option>
-                  <option value="hidden" ${(reg.givingStatus || 'hidden') === 'hidden' ? 'selected' : ''}>Hidden</option>
-                  <option value="cancelled" ${reg.givingStatus === 'cancelled' ? 'selected' : ''}>Cancelled</option>
-                </select>
-              </div>
-              <div>
-                <label for="platformFee">Pricing note</label>
-                <input id="platformFee" value="${escapeAttr(reg.platformFee)}" placeholder="Standard subscription tier; negotiated for cathedral/diocese" />
-              </div>
-              <div>
-                <label for="liturgicalCalendar">Liturgical calendar</label>
-                <select id="liturgicalCalendar">
-                  <option value="julian" ${(reg.liturgicalCalendar || 'julian') === 'julian' ? 'selected' : ''}>Julian</option>
-                  <option value="gregorian" ${reg.liturgicalCalendar === 'gregorian' ? 'selected' : ''}>Revised-Julian</option>
-                </select>
-              </div>
-              <div>
+              <div class="full">
                 <label for="parishDashboardToken">Parish dashboard token</label>
                 <input id="parishDashboardToken" value="${escapeAttr(reg.parishDashboardToken)}" placeholder="Give this private token to the parish" />
               </div>
@@ -2512,25 +2547,11 @@ let selectedReference = '';
             <p style="margin:0.65rem 0 0; color:var(--stone); font-size: 11px; line-height:1.55;">
               The invite email goes to the priest and treasurer with the dashboard link, parish ID, and temporary token. Verified parishes remain hidden until the treasurer completes Go-Live signoff.
             </p>
-            <div class="toggle-row" style="margin-top:0.75rem;">
-              <label class="check-card"><input id="recurringGivingEnabled" type="checkbox" ${(reg.recurringGivingEnabled ?? true) ? 'checked' : ''} /> Recurring giving</label>
-              <label class="check-card"><input id="candlesEnabled" type="checkbox" ${(reg.candlesEnabled ?? true) ? 'checked' : ''} /> Candles</label>
-              <label class="check-card"><input id="commemorationsEnabled" type="checkbox" ${(reg.commemorationsEnabled ?? true) ? 'checked' : ''} /> Commemorations</label>
-            </div>
-            <div class="form-grid" style="margin-top:0.75rem;">
-              <div>
-                <label for="fundsJson">Funds JSON</label>
-                <textarea id="fundsJson" spellcheck="false">${jsonForTextarea(reg.funds, [{ id: 'general', name: 'General Operating Fund', description: 'Utilities, supplies, ministries, and day-to-day parish needs.' }])}</textarea>
-              </div>
-              <div>
-                <label for="campaignsJson">Campaigns JSON</label>
-                <textarea id="campaignsJson" spellcheck="false">${jsonForTextarea(reg.campaigns, [])}</textarea>
-              </div>
-            </div>
+            ${renderOnboardingManualChecks(onboardingChecks, ['users'])}
           </div>
 
-          <div class="admin-section onboarding-phase-card" id="onboarding-phase-subscription">
-            <div class="onboarding-phase-heading"><span>4</span><div><small>AGAPAY plan</small><strong>Configure the parish subscription</strong></div></div>
+          <div class="admin-section onboarding-phase-card ${currentPhase === 'subscription' ? 'is-current' : ''}" id="onboarding-phase-subscription">
+            <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('subscription')"><span>4</span><div><small>Configure giving</small><strong>Set the plan, funds, and campaigns</strong></div><em>${currentPhase === 'subscription' ? 'Working step' : 'Open'}</em></button>
             <div class="form-grid">
               <div>
                 <label for="subscriptionTier">Subscription tier</label>
@@ -2574,10 +2595,49 @@ let selectedReference = '';
               <a id="subscriptionCheckoutLink" href="#" target="_blank" rel="noopener">Open subscription checkout</a>
               <p id="subscriptionLinkHelp">Use this link when the parish is ready to start its AGAPAY monthly platform subscription. AGAPAY does not charge a donation fee; cathedral/diocese subscription pricing is negotiated.</p>
             </div>
+            <div class="onboarding-form-divider">Giving configuration</div>
+            <div class="form-grid">
+              <div>
+                <label for="givingStatus">Giving page status</label>
+                <select id="givingStatus">
+                  <option value="active" ${reg.givingStatus === 'active' ? 'selected' : ''} ${reg.onboardingWorkflow?.enabled && reg.onboardingWorkflow?.state !== 'LIVE' ? 'disabled' : ''}>Active</option>
+                  <option value="paused" ${reg.givingStatus === 'paused' ? 'selected' : ''}>Paused</option>
+                  <option value="hidden" ${(reg.givingStatus || 'hidden') === 'hidden' ? 'selected' : ''}>Hidden</option>
+                  <option value="cancelled" ${reg.givingStatus === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                </select>
+              </div>
+              <div>
+                <label for="liturgicalCalendar">Liturgical calendar</label>
+                <select id="liturgicalCalendar">
+                  <option value="julian" ${(reg.liturgicalCalendar || 'julian') === 'julian' ? 'selected' : ''}>Julian</option>
+                  <option value="gregorian" ${reg.liturgicalCalendar === 'gregorian' ? 'selected' : ''}>Revised-Julian</option>
+                </select>
+              </div>
+              <div class="full">
+                <label for="platformFee">Pricing note</label>
+                <input id="platformFee" value="${escapeAttr(reg.platformFee)}" placeholder="Standard subscription tier; negotiated for cathedral/diocese" />
+              </div>
+            </div>
+            <div class="toggle-row" style="margin-top:0.75rem;">
+              <label class="check-card"><input id="recurringGivingEnabled" type="checkbox" ${(reg.recurringGivingEnabled ?? true) ? 'checked' : ''} /> Recurring giving</label>
+              <label class="check-card"><input id="candlesEnabled" type="checkbox" ${(reg.candlesEnabled ?? true) ? 'checked' : ''} /> Candles</label>
+              <label class="check-card"><input id="commemorationsEnabled" type="checkbox" ${(reg.commemorationsEnabled ?? true) ? 'checked' : ''} /> Commemorations</label>
+            </div>
+            <div class="form-grid" style="margin-top:0.75rem;">
+              <div>
+                <label for="fundsJson">Funds JSON</label>
+                <textarea id="fundsJson" spellcheck="false">${jsonForTextarea(reg.funds, [{ id: 'general', name: 'General Operating Fund', description: 'Utilities, supplies, ministries, and day-to-day parish needs.' }])}</textarea>
+              </div>
+              <div>
+                <label for="campaignsJson">Campaigns JSON</label>
+                <textarea id="campaignsJson" spellcheck="false">${jsonForTextarea(reg.campaigns, [])}</textarea>
+              </div>
+            </div>
+            ${renderOnboardingManualChecks(onboardingChecks, ['givingConfiguration', 'importDecision'])}
           </div>
 
-          <div class="admin-section onboarding-phase-card" id="onboarding-phase-stripe">
-            <div class="onboarding-phase-heading"><span>3</span><div><small>Stripe Connect</small><strong>Connect payouts and confirm readiness</strong></div></div>
+          <div class="admin-section onboarding-phase-card ${currentPhase === 'stripe' ? 'is-current' : ''}" id="onboarding-phase-stripe">
+            <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('stripe')"><span>3</span><div><small>Connect Stripe</small><strong>Confirm charges and payouts</strong></div><em>${currentPhase === 'stripe' ? 'Working step' : 'Open'}</em></button>
             <div class="form-grid">
               <div>
                 <label for="stripeAccountStatus">Stripe onboarding status</label>
