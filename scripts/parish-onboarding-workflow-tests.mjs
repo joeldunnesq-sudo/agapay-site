@@ -291,7 +291,11 @@ assert.match(adminUi, /The parish sees only three steps/, "admin UI must explain
 assert.match(adminStyles, /onboarding-phase-nav/, "admin UI must expose navigable SOP phases");
 assert.match(adminUi, /onboardingCurrentPhase/, "admin UI must derive one working phase from the first server blocker");
 assert.match(adminUi, /Open this step/, "admin UI must provide one direct route to the required work");
-assert.match(adminUi, /Confirm authorized representative/, "admin UI must translate server states into direct operator actions");
+assert.match(adminUi, /Record priest confirmation of the treasurer/, "admin UI must translate the authority gate into the actual verification action");
+assert.match(adminUi, /Verify parish and approving priest/, "admin identity phase must focus public-source verification on the parish and priest");
+assert.match(adminUi, /Do not search for a public treasurer listing/, "admin UI must not imply that a treasurer needs a public directory listing");
+assert.match(adminUi, /Official parish \/ priest source/, "admin UI must identify where authoritative verification belongs");
+assert.match(adminUi, /Priest confirms treasurer access/, "admin UI must record the verified leader's confirmation of the treasurer");
 assert.match(adminUi, /renderOnboardingManualChecks\(onboardingChecks, \['authorizedRepresentative'\]\)/, "authority evidence must live in the identity phase");
 assert.match(adminUi, /renderOnboardingManualChecks\(onboardingChecks, \['givingConfiguration', 'importDecision'\]\)/, "giving and import evidence must live in the configuration phase");
 assert.match(adminStyles, /onboarding-phase-card:not\(\.is-current\)[^{]*\{[^}]*padding/, "non-current onboarding phases must collapse to compact rows");

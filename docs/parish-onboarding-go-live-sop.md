@@ -26,7 +26,7 @@ Use this SOP for every parish, mission, cathedral, monastery, skete, or other ch
 This SOP covers:
 
 1. Registration intake.
-2. Canonical and representative verification.
+2. Canonical parish, priest, and treasurer-authorization verification.
 3. AGAPAY Admin activation.
 4. Personal dashboard-access invitations.
 5. Stripe Connect and payout readiness.
@@ -53,8 +53,7 @@ The parish must not be asked to understand manual gates, evidence fields, intern
 | --- | --- | --- |
 | AGAPAY onboarding owner | Owns the record, coordinates the parish, completes configuration, collects evidence, and resolves blockers | Operational steps assigned in this SOP |
 | Canonical reviewer | Confirms the organization and its ecclesial relationship using authoritative sources | Canonical verification |
-| Authorized parish representative | Confirms the registration, organization details, requested configuration, and who may act for the parish | Parish setup decisions within their authority |
-| Parish priest or rector | Confirms parish participation and the treasurer's authority when needed | Parish participation and named administrative contacts |
+| Parish priest, rector, or verified parish leader | Is matched to an authoritative parish source and confirms parish participation and the treasurer's authority | Parish participation and named administrative contacts |
 | Parish treasurer | Controls the parish's financial readiness review and P1-3 signoff | Stripe ownership, payout bank, giving configuration, plan, receipt details, and Go Live |
 | AGAPAY support or engineering | Investigates defects and approved data migrations without weakening gates | Technical remediation only; never treasurer signoff |
 
@@ -71,8 +70,8 @@ The record must contain:
 - Current workflow state and the timestamp of the last transition.
 - Canonical parish name, parish ID, organization type, jurisdiction, diocese/deanery, and bishop/authority.
 - Canonical verification source, reviewer, review timestamp, and notes.
-- Priest/rector and treasurer names, verified email addresses, and verification method.
-- Authorized representative name, role, verification method, and timestamp.
+- Priest/rector name, email, authoritative verification source, reviewer, and timestamp.
+- Treasurer name and email, plus the verified priest/leader's confirmation method and timestamp. The treasurer does not need to appear in a public directory.
 - Dashboard invite delivery status and recipients.
 - Personal invitation status, acceptance timestamp, membership ID, and verified recipient. Never store the new password.
 - Stripe connected account ID, status-check timestamp, and readiness booleans. Never store a full bank account or routing number.
@@ -189,39 +188,42 @@ Block when:
 
 If additional evidence is needed, set `NEEDS_MORE_INFO`. Do not mark the parish verified merely because the registration appears plausible.
 
-### Step 3 — Confirm the authorized representative
+### Step 3 — Verify the approving priest and confirm the treasurer
 
 Owner: AGAPAY onboarding owner
 
 Entry criteria:
 
-- The canonical parish exists and its public or authoritative contact route is known.
+- The canonical parish exists and its public or authoritative priest/contact route is known.
 
 Actions:
 
-1. Identify who submitted the registration and the role they claim.
-2. Verify the representative through a channel not supplied solely by the registration. Examples include a phone number or email published in an authoritative directory, a known clergy contact, or a direct introduction from the rector or diocesan office.
-3. Confirm that the parish priest/rector knows the parish is onboarding to AGAPAY.
-4. Confirm the named treasurer and the treasurer's authority to review Stripe, payout, plan, and fund configuration.
-5. Confirm which contacts may receive dashboard access and financial setup communications.
-6. Record the verification method, verifier, date, and result.
+1. Verify the parish priest, rector, or other approving parish leader through an authoritative source: the diocese/jurisdiction website, the official parish website, or a call to the phone number published by one of those sources.
+2. Confirm through that verified leader that the parish is onboarding to AGAPAY.
+3. Ask that verified leader to confirm the named treasurer's name and email and that the treasurer may review Stripe, payout, plan, fund configuration, and the P1-3 Go-Live signoff.
+4. If the treasurer submitted the registration, obtain the same approval from the verified priest/leader. Do not treat the registration itself as the approval.
+5. Record the authoritative priest source, confirmation channel, verifier, date, and result.
+6. Send personal access invitations only after the confirmation is recorded.
+
+The treasurer is not required to appear on a diocesan or parish website. Public-source verification establishes the parish and approving priest/leader. That verified leader's direct confirmation establishes the treasurer's authority, and invitation acceptance confirms control of the treasurer email address.
 
 Evidence:
 
-- Authorized representative name and role.
-- Independently sourced verification channel.
-- Priest/rector confirmation when the submitter is not the priest/rector.
-- Treasurer confirmation.
+- Authoritative parish and priest/leader source.
+- Verified priest/leader name and role.
+- Confirmation that the verified leader approved the named treasurer and email address.
+- Confirmation channel and timestamp, such as priest email, a call to the published parish number, or a diocesan introduction.
 
 Exit criteria:
 
-- At least one authorized parish representative is verified.
-- A treasurer authorized to perform P1-3 signoff is identified.
+- The parish and approving priest/leader are matched to an authoritative source.
+- That verified leader has confirmed the named treasurer and email address.
+- A treasurer authorized to perform P1-3 signoff is identified and ready to receive a personal invitation.
 
 Block when:
 
-- The submitter's authority cannot be confirmed.
-- The priest/rector disclaims knowledge of the onboarding.
+- The parish or approving priest/leader cannot be matched to an authoritative source.
+- The priest/rector disclaims knowledge of the onboarding or will not confirm the treasurer.
 - There is a dispute over who controls financial configuration.
 
 ### Step 4 — Verify the organization in AGAPAY Admin without publishing it
@@ -297,7 +299,7 @@ Block when:
 
 ### Step 6 — Confirm personal access acceptance
 
-Owner: Authorized parish representative
+Owner: Invited priest and treasurer
 
 Entry criteria:
 
@@ -935,7 +937,8 @@ This checklist is a summary. The detailed exit criteria above control if the sum
 
 - [ ] Registration stored, acknowledged, deduplicated, and assigned.
 - [ ] Canonical parish confirmed from an authoritative source.
-- [ ] Authorized representative, priest/rector, and treasurer confirmed.
+- [ ] Parish and approving priest/leader verified from an authoritative source.
+- [ ] Verified priest/leader confirmed the treasurer's name, email, and authority; confirmation method recorded.
 - [ ] Organization verified in AGAPAY Admin with giving status `hidden`.
 - [ ] Personal invitations delivered to the verified priest and treasurer.
 - [ ] Required personal invitations accepted; individual access recorded automatically.

@@ -2150,7 +2150,7 @@ let selectedReference = '';
     }
 
     const onboardingManualFields = [
-      ['authorizedRepresentative', 'Authorized representative', 'Record the independent authority-verification method.'],
+      ['authorizedRepresentative', 'Priest confirms treasurer access', 'Do not search for a public treasurer listing. Verify the parish and priest from an official source, then have that verified priest or parish leader confirm the treasurer\'s name and email.', 'Confirmation source', 'Priest email, call to published parish number, or diocesan introduction', 'Confirmation note', 'Who confirmed the treasurer, by what channel, and when?'],
       ['givingConfiguration', 'Funds and campaigns', 'Confirm the donor-facing catalog and restrictions.'],
       ['importDecision', 'Donor and pledge import', 'Choose Passed when reconciled, or Not applicable.']
     ];
@@ -2170,15 +2170,15 @@ let selectedReference = '';
       return `<div class="onboarding-manual-list">${keys.map((key) => {
         const definition = onboardingManualFields.find(([fieldKey]) => fieldKey === key);
         if (!definition) return '';
-        const [, label, help] = definition;
+        const [, label, help, evidenceLabel = 'Evidence reference', evidencePlaceholder = 'Payment ID, screenshot, ticket, or source link', noteLabel = 'Operator note', notePlaceholder = 'What was checked and by whom?'] = definition;
         const check = checks[key] || {};
         return `<details class="onboarding-manual-row" ${check.status === 'blocked' || check.status === 'in_progress' || check.status === 'not_started' ? 'open' : ''}>
           <summary><span class="onboarding-manual-state ${escapeAttr(check.status || 'not_started')}"></span><strong>${escapeHtml(label)}</strong><em>${escapeHtml(readable(check.status || 'not_started'))}</em></summary>
           <p>${escapeHtml(help)}</p>
           <div class="form-grid">
             <div><label for="onboarding-${key}-status">Status</label><select id="onboarding-${key}-status">${onboardingStatusOptions(check.status || 'not_started', key)}</select></div>
-            <div><label for="onboarding-${key}-evidence">Evidence reference</label><input id="onboarding-${key}-evidence" value="${escapeAttr(check.evidence || '')}" placeholder="Payment ID, screenshot, ticket, or source link" /></div>
-            <div class="full"><label for="onboarding-${key}-note">Operator note</label><textarea id="onboarding-${key}-note" rows="2" placeholder="What was checked and by whom?">${escapeHtml(check.note || '')}</textarea></div>
+            <div><label for="onboarding-${key}-evidence">${escapeHtml(evidenceLabel)}</label><input id="onboarding-${key}-evidence" value="${escapeAttr(check.evidence || '')}" placeholder="${escapeAttr(evidencePlaceholder)}" /></div>
+            <div class="full"><label for="onboarding-${key}-note">${escapeHtml(noteLabel)}</label><textarea id="onboarding-${key}-note" rows="2" placeholder="${escapeAttr(notePlaceholder)}">${escapeHtml(check.note || '')}</textarea></div>
           </div>
         </details>`;
       }).join('')}</div>`;
@@ -2239,7 +2239,7 @@ let selectedReference = '';
       const actions = {
         'Registration received': 'Review registration',
         'Canonical parish confirmed': 'Confirm canonical parish',
-        'Authorized representative confirmed': 'Confirm authorized representative',
+        'Approving priest confirmed treasurer': 'Record priest confirmation of the treasurer',
         'Organization verified and hidden': 'Verify organization and keep giving hidden',
         'Dashboard invite delivered': 'Send personal invitations',
         'Personal dashboard access accepted': 'Wait for the personal invitations to be accepted',
@@ -2267,7 +2267,7 @@ let selectedReference = '';
         ? 'Giving is public and the treasurer-approved snapshot is on record.'
         : workflow.canGoLive
           ? 'The configuration is locked. The verified treasurer must review all eight attestations and publish from the parish dashboard.'
-          : next?.detail || 'Review the registration and independently verify the organization and representative.';
+          : next?.detail || 'Verify the canonical parish and priest from an official source. The verified priest or parish leader confirms the treasurer.';
       const location = [reg.communityType, reg.jurisdiction, [reg.city, reg.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
       const currentPhase = onboardingCurrentPhase(reg);
       const completed = Number(workflow.completedSteps || 0);
@@ -2451,7 +2451,8 @@ let selectedReference = '';
         <div class="actions onboarding-actions">
           ${renderOnboardingControls(reg, currentPhase)}
           <div class="admin-section onboarding-phase-card ${currentPhase === 'identity' ? 'is-current' : ''}" id="onboarding-phase-identity">
-            <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('identity')"><span>1</span><div><small>Verify parish</small><strong>Confirm identity and authority</strong></div><em>${currentPhase === 'identity' ? 'Current' : 'Open'}</em></button>
+            <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('identity')"><span>1</span><div><small>Verify parish</small><strong>Verify parish and approving priest</strong></div><em>${currentPhase === 'identity' ? 'Current' : 'Open'}</em></button>
+            <div class="onboarding-verification-rule"><strong>Verify the priest, not a public treasurer listing.</strong><p>Confirm the canonical parish and priest through the diocese, jurisdiction, official parish website, or a call to the publicly listed parish number. Then record that verified leader's confirmation of the treasurer's name and email below.</p></div>
             <div class="form-grid">
               <div>
                 <label for="statusSelect">Canonical review status</label>
@@ -2468,8 +2469,8 @@ let selectedReference = '';
                 <input id="reviewedBy" value="${escapeAttr(reg.reviewedBy || adminActor())}" placeholder="Reviewer Name" />
               </div>
               <div>
-                <label for="verificationSource">Verification source</label>
-                <input id="verificationSource" value="${escapeAttr(reg.verificationSource)}" placeholder="Diocesan directory, parish website, clergy confirmation" />
+                <label for="verificationSource">Official parish / priest source</label>
+                <input id="verificationSource" value="${escapeAttr(reg.verificationSource)}" placeholder="Diocesan directory, jurisdiction site, parish website, or published phone number" />
               </div>
               <div>
                 <label for="bishopOrAuthority">Bishop / authority</label>

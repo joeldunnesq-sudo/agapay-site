@@ -1841,6 +1841,9 @@
     .onboarding-gates-disclosure[open] > summary { margin-bottom: .7rem; }
     .onboarding-admin-section { width: 100%; }
     .onboarding-section-copy { margin: 0 0 0.8rem; color: var(--stone); font-size: 12px; line-height: 1.55; }
+    .onboarding-verification-rule { margin: 0 0 .85rem; padding: .75rem .85rem; border: 1px solid rgba(196,150,62,.3); border-radius: 10px; background: rgba(196,150,62,.08); }
+    .onboarding-verification-rule strong { display: block; color: var(--deep); font-size: 12px; }
+    .onboarding-verification-rule p { margin: .3rem 0 0; color: var(--stone); font-size: 11px; line-height: 1.5; }
     .onboarding-manual-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
     .onboarding-manual-row { border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,0.64); padding: 0.7rem; }
     .onboarding-manual-row[open] { grid-column: 1 / -1; background: white; box-shadow: var(--soft-shadow); }
