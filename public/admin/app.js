@@ -1609,7 +1609,10 @@ let selectedReference = '';
     }
 
     function renderMetrics(registrations) {
-      const attentionCount = registrations.filter(item => nextActionPriority(item).priority < 99).length;
+      const attentionCount = registrations.filter(item => {
+        const action = nextActionPriority(item);
+        return action && action.priority < 99;
+      }).length;
       document.getElementById('metricTotal').textContent = registrations.length;
       document.getElementById('metricPending').textContent = registrations.filter(item => item.status === 'pending').length;
       document.getElementById('metricVerified').textContent = registrations.filter(item => item.status === 'verified').length;

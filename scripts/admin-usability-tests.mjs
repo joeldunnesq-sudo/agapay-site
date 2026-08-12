@@ -29,5 +29,10 @@ assert.match(css, /\.admin-workflow-grid/);
 assert.match(app, /function toggleMobileMore\(force\)/);
 assert.match(app, /giving: 'Parish Onboarding'/);
 assert.match(app, /giving: 'Verify, invite, connect Stripe, and confirm billing\.'/);
+assert.match(
+  app,
+  /const action = nextActionPriority\(item\);\s*return action && action\.priority < 99;/,
+  "admin metrics must tolerate registrations that have no remaining next action"
+);
 
 console.log("Admin usability tests passed.");
