@@ -55,9 +55,25 @@ const ALL_BILLING_FIELDS = [
   "billingCountry"
 ];
 
+const BILLING_REGISTRATION_FALLBACKS = Object.freeze({
+  billingLegalName: ["taxLegalName", "parishName"],
+  billingAddressLine1: ["addressLine1"],
+  billingAddressLine2: ["addressLine2"],
+  billingCity: ["city"],
+  billingState: ["state"],
+  billingPostalCode: ["postalCode"],
+  billingCountry: ["country"]
+});
+
+function firstNonBlank(...values) {
+  return values.find((value) => String(value || "").trim().length > 0) || "";
+}
+
 /**
  * Returns a NEW object with safe defaults for any missing tax-readiness /
- * billing fields, without ever overwriting a value that's already set.
+ * billing fields, without ever overwriting a value that's already set. The
+ * church name and address collected at registration are the initial billing
+ * identity. Explicit billing fields continue to take precedence.
  * Never mutates the input and never persists anything -- purely a
  * read/display-time normalization helper. Existing registration data is
  * never deleted or altered by this function.
@@ -71,14 +87,17 @@ export function withTaxReadinessDefaults(registration = {}) {
   next.taxReadinessReviewedBy = next.taxReadinessReviewedBy || "";
   next.taxReadinessNotes = next.taxReadinessNotes || "";
   for (const field of ALL_BILLING_FIELDS) {
-    next[field] = next[field] || "";
+    const fallbacks = (BILLING_REGISTRATION_FALLBACKS[field] || []).map((fallbackField) => next[fallbackField]);
+    next[field] = firstNonBlank(next[field], ...fallbacks);
   }
+  if (!next.billingCountry && next.billingAddressLine1) next.billingCountry = "US";
   return next;
 }
 
 /** True only if every required billing field is present and non-blank. */
 export function hasCompleteBillingAddress(registration = {}) {
-  return REQUIRED_BILLING_FIELDS.every((field) => String(registration[field] || "").trim().length > 0);
+  const normalized = withTaxReadinessDefaults(registration);
+  return REQUIRED_BILLING_FIELDS.every((field) => String(normalized[field] || "").trim().length > 0);
 }
 
 /**

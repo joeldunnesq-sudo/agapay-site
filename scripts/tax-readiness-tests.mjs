@@ -53,9 +53,22 @@ const COMPLETE_ADDRESS = {
   billingCountry: "US"
 };
 
+const REGISTRATION_ADDRESS = {
+  parishName: "St. Nicholas Orthodox Church",
+  addressLine1: "45 Registration Way",
+  addressLine2: "Parish Office",
+  city: "San Antonio",
+  state: "TX",
+  postalCode: "78205",
+  country: "US"
+};
+
 // ── hasCompleteBillingAddress ───────────────────────────────────────────────
 check("hasCompleteBillingAddress: true when all required fields present (line2 optional)", () => {
   assert.equal(hasCompleteBillingAddress(COMPLETE_ADDRESS), true);
+});
+check("hasCompleteBillingAddress: registration name and address provide the initial billing address", () => {
+  assert.equal(hasCompleteBillingAddress(REGISTRATION_ADDRESS), true);
 });
 check("hasCompleteBillingAddress: false when a required field is missing", () => {
   const { billingState, ...withoutState } = COMPLETE_ADDRESS;
@@ -70,7 +83,7 @@ check("withTaxReadinessDefaults: old registration with no tax fields gets safe d
   const oldRegistration = { reference: "abc123", status: "verified", parishName: "Old Parish" };
   const result = withTaxReadinessDefaults(oldRegistration);
   assert.equal(result.taxReadinessStatus, DEFAULT_TAX_READINESS_STATUS);
-  assert.equal(result.billingLegalName, "");
+  assert.equal(result.billingLegalName, "Old Parish");
   assert.equal(result.reference, "abc123"); // existing data preserved
 });
 check("withTaxReadinessDefaults: never mutates the input object", () => {
@@ -79,9 +92,25 @@ check("withTaxReadinessDefaults: never mutates the input object", () => {
   assert.equal(Object.keys(oldRegistration).length, 1); // untouched
 });
 check("withTaxReadinessDefaults: never overwrites an already-set value", () => {
-  const result = withTaxReadinessDefaults({ taxReadinessStatus: "tax_ready_for_checkout", billingCity: "Chicago" });
+  const result = withTaxReadinessDefaults({
+    ...REGISTRATION_ADDRESS,
+    taxReadinessStatus: "tax_ready_for_checkout",
+    billingLegalName: "Separate Billing Entity",
+    billingCity: "Chicago"
+  });
   assert.equal(result.taxReadinessStatus, "tax_ready_for_checkout");
+  assert.equal(result.billingLegalName, "Separate Billing Entity");
   assert.equal(result.billingCity, "Chicago");
+});
+check("withTaxReadinessDefaults: maps every registration address field into billing", () => {
+  const result = withTaxReadinessDefaults(REGISTRATION_ADDRESS);
+  assert.equal(result.billingLegalName, REGISTRATION_ADDRESS.parishName);
+  assert.equal(result.billingAddressLine1, REGISTRATION_ADDRESS.addressLine1);
+  assert.equal(result.billingAddressLine2, REGISTRATION_ADDRESS.addressLine2);
+  assert.equal(result.billingCity, REGISTRATION_ADDRESS.city);
+  assert.equal(result.billingState, REGISTRATION_ADDRESS.state);
+  assert.equal(result.billingPostalCode, REGISTRATION_ADDRESS.postalCode);
+  assert.equal(result.billingCountry, REGISTRATION_ADDRESS.country);
 });
 check("withTaxReadinessDefaults: rejects an invalid/corrupt stored status back to the safe default", () => {
   const result = withTaxReadinessDefaults({ taxReadinessStatus: "some_garbage_value" });
@@ -113,6 +142,10 @@ check("gate: blocks when tax status is explicitly tax_blocked", () => {
 });
 check("gate: passes when verified + address complete + tax_ready_for_checkout", () => {
   const result = taxReadinessCheckoutGate({ status: "verified", ...COMPLETE_ADDRESS, taxReadinessStatus: "tax_ready_for_checkout" });
+  assert.equal(result.ok, true);
+});
+check("gate: passes with the inherited registration address once tax review is ready", () => {
+  const result = taxReadinessCheckoutGate({ status: "verified", ...REGISTRATION_ADDRESS, taxReadinessStatus: "tax_ready_for_checkout" });
   assert.equal(result.ok, true);
 });
 check("subscription readiness: an explicit cancellation overrides an old Stripe subscription ID", () => {
@@ -179,12 +212,14 @@ await checkAsync("checkout: paid tier missing billing address is blocked before 
   }
 });
 
-await checkAsync("checkout: verified + complete address + tax_ready_for_checkout succeeds (Stripe calls mocked)", async () => {
+await checkAsync("checkout: inherited registration address passes and pre-fills the Stripe customer", async () => {
   let calls = [];
+  let customerBody = "";
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = async (url) => {
+  globalThis.fetch = async (url, options = {}) => {
     calls.push(String(url));
     if (String(url).includes("/v1/customers")) {
+      customerBody = String(options.body || "");
       return { ok: true, json: async () => ({ id: "cus_fake123" }) };
     }
     if (String(url).includes("/v1/checkout/sessions")) {
@@ -195,7 +230,7 @@ await checkAsync("checkout: verified + complete address + tax_ready_for_checkout
   try {
     const registration = {
       status: "verified", subscriptionTier: "mission", taxReadinessStatus: "tax_ready_for_checkout",
-      treasurerEmail: "treasurer@example.org", parishName: "St. Fiacre", ...COMPLETE_ADDRESS
+      treasurerEmail: "treasurer@example.org", ...REGISTRATION_ADDRESS
     };
     const response = await createSubscriptionCheckoutForRegistration({
       request: fakeRequest, env: { STRIPE_SECRET_KEY: "sk_test_fake" }, reference: "test-ref", registration, body: {}, saveRegistrationRecord: noopSave
@@ -205,6 +240,15 @@ await checkAsync("checkout: verified + complete address + tax_ready_for_checkout
     assert.equal(payload.ok, true);
     assert.equal(payload.checkoutUrl, "https://checkout.stripe.com/fake");
     assert.equal(calls.length, 2); // customer create + checkout session create
+    const customer = new URLSearchParams(customerBody);
+    assert.equal(customer.get("name"), REGISTRATION_ADDRESS.parishName);
+    assert.equal(customer.get("address[line1]"), REGISTRATION_ADDRESS.addressLine1);
+    assert.equal(customer.get("address[line2]"), REGISTRATION_ADDRESS.addressLine2);
+    assert.equal(customer.get("address[city]"), REGISTRATION_ADDRESS.city);
+    assert.equal(customer.get("address[state]"), REGISTRATION_ADDRESS.state);
+    assert.equal(customer.get("address[postal_code]"), REGISTRATION_ADDRESS.postalCode);
+    assert.equal(customer.get("address[country]"), REGISTRATION_ADDRESS.country);
+    assert.equal(payload.registration.billingAddressLine1, REGISTRATION_ADDRESS.addressLine1);
   } finally {
     globalThis.fetch = originalFetch;
   }

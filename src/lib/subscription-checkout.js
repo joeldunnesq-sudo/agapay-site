@@ -4,7 +4,7 @@ import { defaultSubscriptionTier, subscriptionReady, subscriptionTier } from "./
 import { stripeFormRequest, stripeGetRequest } from "./stripe-connect.js";
 import { applySubscriptionTaxCode } from "./tax-codes.js";
 import { applyApprovedExemptionIfExists } from "./tax-exemption.js";
-import { taxReadinessCheckoutGate } from "./tax-readiness.js";
+import { taxReadinessCheckoutGate, withTaxReadinessDefaults } from "./tax-readiness.js";
 import { ensureBenevolenceFundInRegistration } from "./stewardship-funds.js";
 import { invalidateOnboardingSignoffIfChanged } from "./parish-onboarding.js";
 
@@ -77,7 +77,8 @@ export async function createSubscriptionCheckoutForRegistration({
   // own billing/tax jurisdiction readiness are separate. Free/non-billable
   // tiers already returned above and never reach this check. See
   // src/lib/tax-readiness.js for the full rationale.
-  const gate = taxReadinessCheckoutGate(registration);
+  const billingRegistration = withTaxReadinessDefaults(registration);
+  const gate = taxReadinessCheckoutGate(billingRegistration);
   if (!gate.ok) return json(gate.body, { status: gate.status });
 
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
@@ -161,7 +162,7 @@ export async function createSubscriptionCheckoutForRegistration({
     }
 
     let updated = withTierFundDefaults({
-      ...registration,
+      ...billingRegistration,
       subscriptionTier: tier.id,
       subscriptionTierLabel: tier.label,
       subscriptionMonthlyCents: tier.monthlyCents,
@@ -177,7 +178,13 @@ export async function createSubscriptionCheckoutForRegistration({
   if (!stripeCustomerId) {
     const customerForm = new URLSearchParams({
       email: registration.treasurerEmail || registration.priestEmail || "",
-      name: registration.parishName || "AGAPAY parish",
+      name: billingRegistration.billingLegalName || registration.parishName || "AGAPAY parish",
+      "address[line1]": billingRegistration.billingAddressLine1,
+      "address[line2]": billingRegistration.billingAddressLine2,
+      "address[city]": billingRegistration.billingCity,
+      "address[state]": billingRegistration.billingState,
+      "address[postal_code]": billingRegistration.billingPostalCode,
+      "address[country]": billingRegistration.billingCountry,
       "metadata[agapay_reference]": reference,
       "metadata[agapay_parish_id]": registration.parishId || slugify(registration.parishName),
       "metadata[agapay_subscription_tier]": tier.id
@@ -197,7 +204,7 @@ export async function createSubscriptionCheckoutForRegistration({
     // creating the first taxable Checkout Session -- never silently create
     // a taxable subscription for an already-approved-exempt parish.
     const exemptionApplied = await applyApprovedExemptionIfExists(env, {
-      registration: { ...registration, reference },
+      registration: { ...billingRegistration, reference },
       stripeCustomerId,
       customerRole: "giving_parish_plus"
     });
@@ -267,7 +274,7 @@ export async function createSubscriptionCheckoutForRegistration({
   }
 
   let updated = withTierFundDefaults({
-    ...registration,
+    ...billingRegistration,
     subscriptionTier: tier.id,
     subscriptionTierLabel: tier.label,
     subscriptionMonthlyCents: tier.monthlyCents,

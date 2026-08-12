@@ -832,13 +832,13 @@ const subscriptionCheckoutLib = await readFile("src/lib/subscription-checkout.js
 const learnBillingLib = await readFile("src/learn/billing.js", "utf8");
 assert.ok(taxReadinessLib.includes("export function taxReadinessCheckoutGate"), "tax-readiness.js should export the checkout gate");
 assert.ok(taxReadinessLib.includes("export function withTaxReadinessDefaults"), "tax-readiness.js should export a non-destructive defaults helper");
-assert.ok(subscriptionCheckoutLib.includes("taxReadinessCheckoutGate(registration)"), "subscription-checkout.js should call the tax readiness gate");
+assert.ok(subscriptionCheckoutLib.includes("taxReadinessCheckoutGate(billingRegistration)"), "subscription-checkout.js should call the tax readiness gate with inherited registration billing fields");
 assert.ok(subscriptionCheckoutLib.includes('"subscription_data[trial_settings][end_behavior][missing_payment_method]", "cancel"'), "demo checkout should cancel at trial end when no payment method was added");
 assert.ok(stripeHandler.includes("allowTrial: true"), "the authenticated admin checkout route should be authorized to create demos");
 assert.ok(parishHandler.includes("introductoryTrialDays: parishIntroDemoEligible(found.registration) ? PARISH_INTRO_DEMO_DAYS : 0"), "the parish route should grant the server-controlled introductory demo only when eligible");
 assert.ok(parishAppJs.includes("Start free 30-day demo") && parishAppJs.includes("No card is required"), "the parish dashboard should explain the no-card 30-day demo");
 assert.ok(
-  subscriptionCheckoutLib.indexOf("tier.monthlyCents === 0") < subscriptionCheckoutLib.indexOf("taxReadinessCheckoutGate(registration)"),
+  subscriptionCheckoutLib.indexOf("tier.monthlyCents === 0") < subscriptionCheckoutLib.indexOf("taxReadinessCheckoutGate(billingRegistration)"),
   "the free-tier early return must come BEFORE the tax readiness gate, so free/non-billable tiers bypass it entirely"
 );
 assert.ok(adminHandler.includes("taxReadinessStatus: nextTaxReadinessStatus"), "admin registration PATCH should support updating tax readiness");

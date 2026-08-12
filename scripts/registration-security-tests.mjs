@@ -47,6 +47,7 @@ function registrationBody(overrides = {}) {
     parishName: "St. Boundary Orthodox Church",
     jurisdiction: "Orthodox Church in America",
     addressLine1: "100 Test Avenue",
+    addressLine2: "Parish Office",
     city: "Boundary",
     state: "TX",
     postalCode: "78000",
@@ -79,6 +80,8 @@ const sanitized = sanitizePublicRegistrationInput(registrationBody({
   canonicalVerification: "verified",
   parishDashboardToken: "attacker-chosen",
   stripeAccountId: "acct_attacker",
+  billingLegalName: "Attacker Billing Entity",
+  billingAddressLine1: "999 Attacker Street",
   funds: [{ id: "attacker-fund" }],
   turnstileToken: "transient-security-token",
 }));
@@ -89,6 +92,8 @@ for (const protectedField of [
   "canonicalVerification",
   "parishDashboardToken",
   "stripeAccountId",
+  "billingLegalName",
+  "billingAddressLine1",
   "funds",
   "turnstileToken",
 ]) {
@@ -110,6 +115,8 @@ const response = await worker.fetch(request(registrationBody({
   subscriptionMonthlyCents: 0,
   stripeAccountId: "acct_attacker",
   stripeSubscriptionId: "sub_attacker",
+  billingLegalName: "Attacker Billing Entity",
+  billingAddressLine1: "999 Attacker Street",
   parishDashboardToken: "attacker-chosen",
   parishId: "attacker-parish-id",
   parishUsername: "attacker-user",
@@ -127,6 +134,13 @@ assert.equal(stored.reference, registrationKey);
 assert.equal(stored.status, "pending");
 assert.equal(stored.canonicalVerification, "pending_review");
 assert.equal(stored.subscriptionStatus, "not_started");
+assert.equal(stored.billingLegalName, "St. Boundary Orthodox Church");
+assert.equal(stored.billingAddressLine1, "100 Test Avenue");
+assert.equal(stored.billingAddressLine2, "Parish Office");
+assert.equal(stored.billingCity, "Boundary");
+assert.equal(stored.billingState, "TX");
+assert.equal(stored.billingPostalCode, "78000");
+assert.equal(stored.billingCountry, "US");
 assert.notEqual(stored.parishDashboardToken, "attacker-chosen");
 assert.notEqual(stored.parishId, "attacker-parish-id");
 assert.equal(stored.canonicalAgreement, true);

@@ -128,6 +128,7 @@ import {
 } from "../lib/settlement-profiles.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
 import { registrationAgreementEvidence, registrationRequiresJurisdiction, registrationRequiresValuesReview, registrationRequiresWebsite, sanitizePublicRegistrationInput } from "../lib/registration-intake.js";
+import { withTaxReadinessDefaults } from "../lib/tax-readiness.js";
 import { recordOrganizationRegistrationAcceptance } from "../lib/legal-acceptance.js";
 export { registrationRequiresJurisdiction };
 import {
@@ -1650,7 +1651,7 @@ export async function handleRegistrations(request, env) {
     if (collision) return json({ error: "Unable to create a unique parish ID. Please contact AGAPAY support." }, { status: 409 });
   }
   const parishDashboardToken = generateDashboardToken();
-  const registrationWithTier = {
+  const registrationWithTier = withTaxReadinessDefaults({
     ...body,
     reference,
     status: "pending",
@@ -1666,7 +1667,7 @@ export async function handleRegistrations(request, env) {
     subscriptionStatus: tier?.monthlyCents === 0 ? "free_forever" : "not_started",
     subscriptionMonthlyCents: tier?.monthlyCents ?? null,
     subscriptionTierLabel: tier?.label || ""
-  };
+  });
   const registration = tier?.modules?.givingPlus
     ? ensureBenevolenceFundInRegistration(registrationWithTier).registration
     : registrationWithTier;
