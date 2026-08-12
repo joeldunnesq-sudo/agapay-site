@@ -402,8 +402,12 @@ let selectedReference = '';
 
     function nextAction(reg) {
       if (!reg) return { title: 'No registration selected', body: 'Load registrations, then choose a parish from the list.' };
+      const workflowBlocker = reg.onboardingWorkflow?.blockers?.[0];
+      if (workflowBlocker) return { title: onboardingActionTitle(workflowBlocker.title), body: workflowBlocker.detail || 'Open the parish record to continue.' };
+      if (reg.onboardingWorkflow?.canGoLive) return { title: 'Waiting for treasurer', body: 'The parish has one final action: review the launch summary and click Go Live.' };
+      if (reg.onboardingWorkflow?.state === 'LIVE') return { title: 'Parish is live', body: 'Giving is active and the treasurer signoff is recorded.' };
       if ((reg.status || 'pending') !== 'verified') return { title: 'Review canonical standing', body: 'Confirm jurisdiction, bishop/deanery, website, and contact details before marking verified.' };
-      if (reg.dashboardInviteEmailStatus !== 'sent') return { title: 'Send dashboard invite', body: 'Email the priest and treasurer their parish ID, temporary token, and Stripe onboarding instructions.' };
+      if (reg.dashboardInviteEmailStatus !== 'sent') return { title: 'Send personal invitations', body: 'Email the priest and treasurer secure one-use links so they can create their own passwords.' };
       if (!['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus)) return { title: 'Connect Stripe', body: 'Create onboarding or ask the parish to finish Stripe from the dashboard.' };
       if (!['active', 'trialing', 'free_forever'].includes(reg.subscriptionStatus)) return { title: 'Set up AGAPAY subscription', body: 'Create subscription checkout, start a free demo, or mark a monastery/skete as free forever.' };
       return { title: 'Parish is ready', body: 'Canonical verification, dashboard invite, Stripe, and subscription status are all in place.' };
@@ -1794,6 +1798,10 @@ let selectedReference = '';
     }
 
     function currentWorkflowStep(reg) {
+      const blocker = reg.onboardingWorkflow?.blockers?.[0];
+      if (blocker) return { key: blocker.key, label: onboardingActionTitle(blocker.title).toLowerCase() };
+      if (reg.onboardingWorkflow?.canGoLive) return { key: 'signoff', label: 'treasurer review and launch' };
+      if (reg.onboardingWorkflow?.state === 'LIVE') return { key: 'complete', label: 'completed onboarding' };
       const status = reg.status || 'pending';
       const stripeDone = ['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus);
       const subscriptionDone = ['active', 'trialing', 'free_forever'].includes(reg.subscriptionStatus);
@@ -2141,12 +2149,7 @@ let selectedReference = '';
     const onboardingManualFields = [
       ['authorizedRepresentative', 'Authorized representative', 'Record the independent authority-verification method.'],
       ['givingConfiguration', 'Funds and campaigns', 'Confirm the donor-facing catalog and restrictions.'],
-      ['users', 'Priest and treasurer access', 'Confirm both intended users and their parish access.'],
-      ['importDecision', 'Donor and pledge import', 'Choose Passed when reconciled, or Not applicable.'],
-      ['testGift', 'Controlled test gift', 'Record the production payment identifier.'],
-      ['receipt', 'Receipt verification', 'Confirm one correct receipt was delivered.'],
-      ['reportingAccounting', 'Reporting and accounting', 'Reconcile the gift across AGAPAY and Stripe.'],
-      ['givingAssets', 'Giving URL and QR', 'Record the final URL and successful QR scan.']
+      ['importDecision', 'Donor and pledge import', 'Choose Passed when reconciled, or Not applicable.']
     ];
 
     function onboardingStatusOptions(status, key) {
@@ -2198,19 +2201,18 @@ let selectedReference = '';
       ['identity', 'Verify parish'],
       ['access', 'Give access'],
       ['stripe', 'Connect Stripe'],
-      ['subscription', 'Configure giving'],
-      ['validation', 'Validate & hand off']
+      ['subscription', 'Configure giving']
     ];
 
     function onboardingCurrentPhase(reg) {
       const workflow = reg.onboardingWorkflow || {};
-      if (workflow.state === 'LIVE' || workflow.canGoLive) return 'validation';
+      if (workflow.state === 'LIVE' || workflow.canGoLive) return 'subscription';
       const key = workflow.blockers?.[0]?.key || 'registration';
       if (['registration', 'canonical', 'representative', 'verifiedHidden'].includes(key)) return 'identity';
-      if (['invite', 'credential', 'users'].includes(key)) return 'access';
+      if (['invite', 'credential'].includes(key)) return 'access';
       if (['stripeConnected', 'stripeReady'].includes(key)) return 'stripe';
       if (['subscription', 'generalFund', 'givingConfiguration', 'importDecision'].includes(key)) return 'subscription';
-      return 'validation';
+      return 'subscription';
     }
 
     function onboardingPhaseState(reg, phase) {
@@ -2236,18 +2238,14 @@ let selectedReference = '';
         'Canonical parish confirmed': 'Confirm canonical parish',
         'Authorized representative confirmed': 'Confirm authorized representative',
         'Organization verified and hidden': 'Verify organization and keep giving hidden',
-        'Dashboard invite delivered': 'Send dashboard invite',
-        'Temporary credential changed': 'Wait for the parish to change its temporary credential',
+        'Dashboard invite delivered': 'Send personal invitations',
+        'Personal dashboard access accepted': 'Wait for the personal invitations to be accepted',
         'Stripe connected': 'Connect Stripe',
         'Stripe charges and payouts ready': 'Confirm Stripe charges and payouts',
         'Subscription configured': 'Configure the subscription',
         'General Operating Fund configured': 'Configure the General Operating Fund',
         'Designated funds and campaigns approved': 'Approve designated funds and campaigns',
-        'Priest and treasurer access confirmed': 'Confirm priest and treasurer access',
         'Donor and pledge import decided': 'Decide the donor and pledge import',
-        'Controlled test gift passed': 'Run a controlled test gift',
-        'Receipt verified': 'Verify the receipt',
-        'Reporting and accounting verified': 'Verify reporting and accounting',
         'Giving URL and QR verified': 'Verify the giving URL and QR code'
       };
       return actions[title] || title || 'Continue onboarding';
@@ -2302,6 +2300,15 @@ let selectedReference = '';
       const workflow = reg.onboardingWorkflow || {};
       const checks = workflow.checks || reg.onboardingChecks || {};
       const signoff = workflow.signoff || {};
+      return `<div class="admin-section onboarding-admin-section onboarding-ready-panel">
+        <div class="onboarding-signoff-state ${signoff.status === 'signed' ? 'signed' : workflow.canGoLive ? 'ready' : 'waiting'}">
+          <span>${signoff.status === 'signed' ? 'Launch complete' : workflow.canGoLive ? 'Waiting for treasurer' : 'Launch readiness'}</span>
+          <strong>${signoff.status === 'signed' ? `${escapeHtml(signoff.signerName || 'Treasurer')} approved launch ${escapeHtml(shortDate(signoff.signedAt))}` : workflow.canGoLive ? 'The parish has one final action: review and launch.' : 'Complete the current setup action. AGAPAY handles internal launch checks.'}</strong>
+          <small>The parish sees only three steps: accept access, connect payments, and review and launch.</small>
+        </div>
+        ${reg.onboardingTestMode ? `<div class="onboarding-staging-tools"><div><span>Staging only</span><strong>Test the 10-minute parish setup</strong><p>Prepare a ready parish record, then open the parish dashboard to test the treasurer review and launch.</p></div><div class="btn-row"><button class="secondary btn-sm" type="button" onclick="runOnboardingTestAction('${jsAttr(reg.reference)}','reset_workflow',this)">Reset test</button><button class="gold btn-sm" type="button" onclick="runOnboardingTestAction('${jsAttr(reg.reference)}','prepare_ready',this)">Prepare parish test</button></div><div id="stagingOnboardingResult" class="staging-onboarding-result" aria-live="polite"></div></div>` : ''}
+      </div>`;
+      /* Legacy five-phase renderer retained below for source compatibility; unreachable. */
       return `
         <div class="admin-section onboarding-admin-section onboarding-phase-card ${currentPhase === 'validation' ? 'is-current' : ''}" id="onboarding-phase-validation">
           <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('validation')"><span>5</span><div><small>Validate &amp; hand off</small><strong>Test the complete giving flow</strong></div><em>${currentPhase === 'validation' ? 'Working step' : 'Open'}</em></button>
@@ -2441,7 +2448,7 @@ let selectedReference = '';
         <div class="actions onboarding-actions">
           ${renderOnboardingControls(reg, currentPhase)}
           <div class="admin-section onboarding-phase-card ${currentPhase === 'identity' ? 'is-current' : ''}" id="onboarding-phase-identity">
-            <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('identity')"><span>1</span><div><small>Verify parish</small><strong>Confirm identity and authority</strong></div><em>${currentPhase === 'identity' ? 'Working step' : 'Open'}</em></button>
+            <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('identity')"><span>1</span><div><small>Verify parish</small><strong>Confirm identity and authority</strong></div><em>${currentPhase === 'identity' ? 'Current' : 'Open'}</em></button>
             <div class="form-grid">
               <div>
                 <label for="statusSelect">Canonical review status</label>
@@ -2529,29 +2536,25 @@ let selectedReference = '';
           </details>
 
           <div class="admin-section onboarding-phase-card ${currentPhase === 'access' ? 'is-current' : ''}" id="onboarding-phase-access">
-            <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('access')"><span>2</span><div><small>Give access</small><strong>Invite the priest and treasurer</strong></div><em>${currentPhase === 'access' ? 'Working step' : 'Open'}</em></button>
-            <div class="form-grid">
-              <div class="full">
-                <label for="parishDashboardToken">Parish dashboard token</label>
-                <input id="parishDashboardToken" value="${escapeAttr(reg.parishDashboardToken)}" placeholder="Give this private token to the parish" />
-              </div>
+            <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('access')"><span>2</span><div><small>Give access</small><strong>Send personal access links</strong></div><em>${currentPhase === 'access' ? 'Current' : 'Open'}</em></button>
+            <div class="onboarding-access-summary">
+              <div class="${reg.onboardingAccess?.priest?.status === 'accepted' ? 'accepted' : ''}"><span>Priest</span><strong>${escapeHtml(reg.priestEmail || 'Email required')}</strong><em>${escapeHtml(readable(reg.onboardingAccess?.priest?.status || (reg.dashboardInviteEmailStatus === 'sent' ? 'invited' : 'not sent')))}</em></div>
+              <div class="${reg.onboardingAccess?.treasurer?.status === 'accepted' ? 'accepted' : ''}"><span>Treasurer</span><strong>${escapeHtml(reg.treasurerEmail || 'Email required')}</strong><em>${escapeHtml(readable(reg.onboardingAccess?.treasurer?.status || (reg.dashboardInviteEmailStatus === 'sent' ? 'invited' : 'not sent')))}</em></div>
             </div>
             <div class="button-row" style="margin-top:0.75rem;">
-              <button class="secondary" onclick="generateDashboardToken()">Generate temporary token</button>
-              <button class="gold" onclick="sendDashboardInvite('${reference}', this)">Email dashboard invite</button>
+              <button class="gold" onclick="sendDashboardInvite('${reference}', this)">${reg.dashboardInviteEmailStatus === 'sent' ? 'Resend personal invitations' : 'Send personal invitations'}</button>
             </div>
             <label class="check-card" style="margin-top:0.75rem;">
               <input id="autoDashboardInvite" type="checkbox" ${reg.status === 'verified' && reg.dashboardInviteEmailStatus === 'sent' ? '' : 'checked'} />
-              Email dashboard invite when saving a verified parish
+              Send personal invitations when saving a verified parish
             </label>
             <p style="margin:0.65rem 0 0; color:var(--stone); font-size: 11px; line-height:1.55;">
-              The invite email goes to the priest and treasurer with the dashboard link, parish ID, and temporary token. Verified parishes remain hidden until the treasurer completes Go-Live signoff.
+              Each person receives a private, one-use link and creates their own password. Acceptance is recorded automatically; there is no shared parish ID or temporary password step.
             </p>
-            ${renderOnboardingManualChecks(onboardingChecks, ['users'])}
           </div>
 
           <div class="admin-section onboarding-phase-card ${currentPhase === 'subscription' ? 'is-current' : ''}" id="onboarding-phase-subscription">
-            <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('subscription')"><span>4</span><div><small>Configure giving</small><strong>Set the plan, funds, and campaigns</strong></div><em>${currentPhase === 'subscription' ? 'Working step' : 'Open'}</em></button>
+            <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('subscription')"><span>4</span><div><small>Configure giving</small><strong>Set the plan, funds, and campaigns</strong></div><em>${currentPhase === 'subscription' ? 'Current' : 'Open'}</em></button>
             <div class="form-grid">
               <div>
                 <label for="subscriptionTier">Subscription tier</label>
@@ -2637,7 +2640,7 @@ let selectedReference = '';
           </div>
 
           <div class="admin-section onboarding-phase-card ${currentPhase === 'stripe' ? 'is-current' : ''}" id="onboarding-phase-stripe">
-            <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('stripe')"><span>3</span><div><small>Connect Stripe</small><strong>Confirm charges and payouts</strong></div><em>${currentPhase === 'stripe' ? 'Working step' : 'Open'}</em></button>
+            <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('stripe')"><span>3</span><div><small>Connect Stripe</small><strong>Confirm charges and payouts</strong></div><em>${currentPhase === 'stripe' ? 'Current' : 'Open'}</em></button>
             <div class="form-grid">
               <div>
                 <label for="stripeAccountStatus">Stripe onboarding status</label>
@@ -2766,7 +2769,7 @@ let selectedReference = '';
             funds,
             campaigns,
             onboardingChecks: readOnboardingChecks(),
-            parishDashboardToken: document.getElementById('parishDashboardToken').value.trim(),
+            parishDashboardToken: document.getElementById('parishDashboardToken')?.value.trim() || undefined,
             sendDashboardInvite: shouldSendVerifiedInvite,
             reviewerNotes: document.getElementById('reviewerNotes').value,
             taxReadinessStatus: document.getElementById('taxReadinessStatus').value,

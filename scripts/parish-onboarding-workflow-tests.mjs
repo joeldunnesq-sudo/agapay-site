@@ -44,12 +44,7 @@ class MemoryKV {
 const now = new Date().toISOString();
 const passedChecks = Object.fromEntries([
   "authorizedRepresentative",
-  "givingConfiguration",
-  "users",
-  "testGift",
-  "receipt",
-  "reportingAccounting",
-  "givingAssets"
+  "givingConfiguration"
 ].map((key) => [key, { status: "passed", note: `${key} checked`, evidence: `evidence:${key}` }]));
 passedChecks.importDecision = { status: "not_applicable", note: "No historical import requested." };
 
@@ -111,7 +106,7 @@ const readyWorkflow = await buildParishOnboardingWorkflow(ready, {
   receiptContact: "support@agapay.test"
 });
 assert.equal(readyWorkflow.enabled, true);
-assert.equal(readyWorkflow.completedSteps, 17);
+assert.equal(readyWorkflow.completedSteps, 12);
 assert.equal(readyWorkflow.canGoLive, true);
 assert.deepEqual(readyWorkflow.blockers, []);
 assert.equal(readyWorkflow.summary.givingUrl, "https://agapay.test/give/st-onboarding");
@@ -249,7 +244,7 @@ const prepareResponse = await worker.fetch(new Request(
 assert.equal(prepareResponse.status, 200, JSON.stringify(await prepareResponse.clone().json()));
 const prepared = await prepareResponse.json();
 assert.ok(prepared.stagingPassword, "staging prepare must return a one-time parish login password");
-assert.equal(prepared.registration.onboardingWorkflow.completedSteps, 17);
+assert.equal(prepared.registration.onboardingWorkflow.completedSteps, 12);
 assert.equal(prepared.registration.onboardingWorkflow.canGoLive, true);
 assert.match(prepared.registration.stripeAccountId, /^acct_staging_/);
 
@@ -289,18 +284,20 @@ assert.match(parishUi, /onboarding\.state==='LIVE'\)\{pane\.innerHTML='';return;
 assert.match(parishUi, /isOnboardingLive \? ' is-live' : ''/, "the sidebar status must receive an explicit live-state class");
 assert.match(parishStyles, /input\[type="checkbox"\][^}]*width: 16px[^}]*padding: 0/, "treasurer checkboxes must not inherit full-width text-input sizing");
 assert.match(parishRedesign, /sidebar-status-chip\.is-live::before[^}]*#7FCFA0/, "the sidebar status light must turn green after Go Live");
-assert.match(adminUi, /Prepare Go-Live test/, "admin UI must expose the non-production Go-Live exercise control");
-assert.match(adminUi, /Simulate Stripe ready/, "admin UI must expose independent staging Stripe simulation");
+assert.match(adminUi, /Prepare parish test/, "admin UI must expose one simple non-production parish setup control");
 assert.match(adminUi, /renderOnboardingCommandHeader/, "admin UI must lead with the onboarding command header");
 assert.match(adminUi, /Do this now/, "admin UI must make the next required action explicit");
-assert.match(adminUi, /Only the verified parish treasurer can activate the giving link/, "admin UI must state the launch authority boundary");
+assert.match(adminUi, /The parish sees only three steps/, "admin UI must explain the simplified parish experience");
 assert.match(adminStyles, /onboarding-phase-nav/, "admin UI must expose navigable SOP phases");
 assert.match(adminUi, /onboardingCurrentPhase/, "admin UI must derive one working phase from the first server blocker");
 assert.match(adminUi, /Open this step/, "admin UI must provide one direct route to the required work");
 assert.match(adminUi, /Confirm authorized representative/, "admin UI must translate server states into direct operator actions");
 assert.match(adminUi, /renderOnboardingManualChecks\(onboardingChecks, \['authorizedRepresentative'\]\)/, "authority evidence must live in the identity phase");
-assert.match(adminUi, /renderOnboardingManualChecks\(onboardingChecks, \['users'\]\)/, "user-access evidence must live in the access phase");
 assert.match(adminUi, /renderOnboardingManualChecks\(onboardingChecks, \['givingConfiguration', 'importDecision'\]\)/, "giving and import evidence must live in the configuration phase");
 assert.match(adminStyles, /onboarding-phase-card:not\(\.is-current\)[^{]*\{[^}]*padding/, "non-current onboarding phases must collapse to compact rows");
+assert.match(parishUi, /10-minute parish setup/, "the parish UI must present the setup-time target");
+assert.match(parishUi, /Three steps to start giving/, "the parish UI must present three simple stages");
+assert.match(parishUi, /acceptParishAccessInvitation/, "the parish UI must accept a personal access link");
+assert.match(adminUi, /Send personal invitations/, "admin UI must send personal access links instead of shared temporary credentials");
 
 console.log("Parish onboarding workflow tests passed.");

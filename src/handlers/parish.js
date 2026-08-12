@@ -2138,12 +2138,12 @@ export async function handleDashboardInvite(request, env, reference) {
     return json({ error: "Verify the parish before sending a dashboard invite" }, { status: 422 });
   }
 
-  const parishDashboardToken = registration.parishDashboardToken || generateDashboardToken();
+  const parishDashboardToken = registration.parishDashboardToken || (d1(env) ? "" : generateDashboardToken());
   const withToken = {
     ...registration,
     parishId: registration.parishId || parishSlug(registration.parishName, registration.city),
     parishDashboardToken,
-    parishDashboardTokenTemporary: true,
+    parishDashboardTokenTemporary: d1(env) ? Boolean(registration.parishDashboardTokenTemporary) : true,
     parishDashboardTokenCreatedAt: registration.parishDashboardTokenCreatedAt || new Date().toISOString()
   };
 
@@ -2155,7 +2155,8 @@ export async function handleDashboardInvite(request, env, reference) {
     dashboardInviteEmailId: email.id || "",
     dashboardInviteEmailDetail: email.detail || "",
     dashboardInviteEmailRecipients: email.recipients || [],
-    dashboardInviteEmailSentAt: email.status === "sent" ? new Date().toISOString() : withToken.dashboardInviteEmailSentAt
+    dashboardInviteEmailSentAt: email.status === "sent" ? new Date().toISOString() : withToken.dashboardInviteEmailSentAt,
+    onboardingAccess: email.access ? { ...(withToken.onboardingAccess || {}), ...email.access } : withToken.onboardingAccess
   };
   const audited = appendAdminAudit(updated, "dashboard_invite_requested", adminContext.actor, {
     emailStatus: email.status || "unknown",

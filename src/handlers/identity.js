@@ -17,6 +17,7 @@ import {
   missingProductionStoreResponse,
   hasProductionStore,
   getBearerToken,
+  issueParishDashboardSession,
   normalizeEmail,
   rateLimit
 } from "../lib/core.js";
@@ -37,7 +38,8 @@ import {
   listMembershipsForParish
 } from "../lib/memberships.js";
 import { CAPABILITY_CATALOG, ROLE_TEMPLATES, requireCapability, requireActiveMembership, sanitizeGrantableCapabilities } from "../lib/authorization.js";
-import { findRegistrationByParishId, verifyParishDashboardBearer } from "./parish.js";
+import { findRegistrationByParishId, saveRegistrationRecord, verifyParishDashboardBearer } from "./parish.js";
+import { recommendedOnboardingState } from "../lib/parish-onboarding.js";
 
 export { PLATFORM_USER_EMAIL_HEADER };
 
@@ -112,12 +114,40 @@ export async function handleIdentityInvitationAccept(request, env, token) {
   if (!result.ok) return json({ error: result.error || "Unable to accept invitation." }, { status: 400 });
 
   const session = await issuePlatformUserSession(env, result.userId);
+  let parishSession = null;
+  const found = await findRegistrationByParishId(env, result.parishId);
+  if (found) {
+    const currentAccess = found.registration.onboardingAccess && typeof found.registration.onboardingAccess === "object"
+      ? found.registration.onboardingAccess
+      : {};
+    const acceptedAccess = { ...currentAccess };
+    for (const key of ["priest", "treasurer"]) {
+      if (normalizeEmail(acceptedAccess[key]?.email) === normalizeEmail(result.email)) {
+        acceptedAccess[key] = {
+          ...acceptedAccess[key],
+          status: "accepted",
+          acceptedAt: result.acceptedAt,
+          membershipId: result.membershipId
+        };
+      }
+    }
+    let registration = {
+      ...found.registration,
+      onboardingAccess: acceptedAccess,
+      parishUpdatedAt: result.acceptedAt
+    };
+    registration.onboardingState = recommendedOnboardingState(registration, registration.onboardingChecks);
+    parishSession = await issueParishDashboardSession(registration);
+    await saveRegistrationRecord(env, found.key, parishSession.registration, found.registration);
+  }
   return json({
     ok: true,
     token: session?.token || "",
     expiresAt: session?.expiresAt || "",
     parishId: result.parishId,
-    membershipId: result.membershipId
+    membershipId: result.membershipId,
+    parishToken: parishSession?.token || "",
+    parishTokenExpiresAt: parishSession?.expiresAt || ""
   });
 }
 

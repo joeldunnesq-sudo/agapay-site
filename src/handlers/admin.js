@@ -1087,7 +1087,7 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
     const requestedDashboardToken = body.parishDashboardToken !== undefined
       ? String(body.parishDashboardToken || "").trim()
       : String(current.parishDashboardToken || "").trim();
-    const parishDashboardToken = nextStatus === "verified" && !requestedDashboardToken
+    const parishDashboardToken = nextStatus === "verified" && !requestedDashboardToken && !d1(env)
       ? generateDashboardToken()
       : requestedDashboardToken;
     const nextSubscriptionTierId = body.subscriptionTier || current.subscriptionTier || defaultSubscriptionTier(current);
@@ -1227,7 +1227,10 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
         dashboardInviteEmailRecipients: dashboardInvite.recipients || [],
         dashboardInviteEmailSentAt: dashboardInvite.status === "sent"
           ? new Date().toISOString()
-          : updated.dashboardInviteEmailSentAt
+          : updated.dashboardInviteEmailSentAt,
+        onboardingAccess: dashboardInvite.access
+          ? { ...(updated.onboardingAccess || {}), ...dashboardInvite.access }
+          : updated.onboardingAccess
       };
       updated = appendAdminAudit(updated, "dashboard_invite_requested", adminContext.actor, {
         emailStatus: dashboardInvite.status || "unknown",
@@ -1348,11 +1351,11 @@ export async function handleAdminOnboardingTest(request, env, reference) {
   const now = new Date().toISOString();
   const actor = `${adminContext.actor} (staging test)`;
   const allPassed = Object.fromEntries([
-    "authorizedRepresentative", "givingConfiguration", "users", "testGift", "receipt", "reportingAccounting", "givingAssets"
+    "authorizedRepresentative", "givingConfiguration"
   ].map((key) => [key, { status: "passed", evidence: "staging-simulation", note: "Passed by the staging workflow test control." }]));
   allPassed.importDecision = { status: "not_applicable", evidence: "staging-simulation", note: "No donor import is required for this staging exercise." };
   const allReset = Object.fromEntries([
-    "authorizedRepresentative", "givingConfiguration", "users", "importDecision", "testGift", "receipt", "reportingAccounting", "givingAssets"
+    "authorizedRepresentative", "givingConfiguration", "importDecision"
   ].map((key) => [key, { status: "not_started", evidence: "", note: "" }]));
   let updated = {
     ...current,

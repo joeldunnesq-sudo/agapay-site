@@ -763,6 +763,19 @@
     .setup-link-box.visible { display: block; }
     .setup-link-box a { color: var(--cream); font-weight: 700; }
     .deterministic-onboarding .setup-wizard-body { grid-template-columns: minmax(0, 1fr) 320px; }
+    .parish-setup-stages { display: grid; gap: 8px; margin-top: 1rem; }
+    .parish-setup-stage { display: grid; grid-template-columns: 34px minmax(0,1fr) auto; align-items: center; gap: 10px; border: 1px solid rgba(246,241,232,.14); border-radius: 10px; padding: 10px 12px; background: rgba(246,241,232,.035); }
+    .parish-setup-stage > span { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgba(246,241,232,.28); color: var(--cream); font-weight: 700; }
+    .parish-setup-stage > div { min-width: 0; display: grid; gap: 2px; }
+    .parish-setup-stage strong { color: var(--cream); font-size: 13px; }
+    .parish-setup-stage small { color: rgba(246,241,232,.68); line-height: 1.35; }
+    .parish-setup-stage em { color: rgba(246,241,232,.55); font-size: 10px; font-style: normal; letter-spacing: .08em; text-transform: uppercase; }
+    .parish-setup-stage.done { border-color: rgba(83,177,126,.3); background: rgba(83,177,126,.08); }
+    .parish-setup-stage.done > span { border-color: rgba(127,207,160,.6); background: rgba(83,177,126,.18); color: #9be0b8; }
+    .parish-setup-stage.current { border-color: rgba(201,162,91,.58); background: rgba(201,162,91,.1); }
+    .parish-setup-stage.current > span { background: var(--gold); color: var(--deep); border-color: var(--gold); }
+    .parish-setup-stage.current em { color: var(--gold); font-weight: 700; }
+    .parish-setup-stage.later { opacity: .62; }
     .onboarding-kicker { color: var(--gold); font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 0.35rem; }
     .onboarding-progress { height: 7px; overflow: hidden; border-radius: 999px; margin-top: 0.9rem; background: rgba(246,241,232,0.12); }
     .onboarding-progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--gold), #ecd18a); transition: width .25s ease; }

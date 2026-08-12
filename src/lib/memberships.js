@@ -464,7 +464,15 @@ export async function acceptInvitation(env, { token, password, displayName = "",
     after: { email: invitation.email, roleTemplate: invitation.role_template }
   });
 
-  return { ok: true, userId: user.id, membershipId, parishId: invitation.parish_id };
+  return {
+    ok: true,
+    userId: user.id,
+    membershipId,
+    parishId: invitation.parish_id,
+    email: invitation.email,
+    roleTemplate: invitation.role_template,
+    acceptedAt: timestamp
+  };
 }
 
 export async function revokeInvitation(env, { invitationId, actorUserId = null, request = null } = {}) {

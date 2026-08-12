@@ -517,7 +517,7 @@
 
   // ── HELPERS ──────────────────────────────────────────────
   function showParishAuthForm(formId) {
-    ['parishLoginForm', 'parishResetRequestForm', 'parishResetConfirmForm'].forEach((id) => {
+    ['parishLoginForm', 'parishAccessInviteForm', 'parishResetRequestForm', 'parishResetConfirmForm'].forEach((id) => {
       const form = document.getElementById(id);
       if (form) form.hidden = id !== formId;
     });
@@ -948,6 +948,52 @@
   function hasGivingPlusAccess() {
     if (currentParish?.entitlements) return Boolean(currentParish.entitlements.givingFeatures?.branding);
     return String(currentParish?.subscriptionTier || '').toLowerCase() !== 'starter';
+  }
+
+  async function acceptParishAccessInvitation(event) {
+    event.preventDefault();
+    const token = document.getElementById('parishAccessInviteToken')?.value.trim();
+    const displayName = document.getElementById('parishAccessName')?.value.trim();
+    const password = document.getElementById('parishAccessPassword')?.value || '';
+    const confirmation = document.getElementById('parishAccessPasswordConfirm')?.value || '';
+    const submit = event.submitter;
+    if (!token || !displayName || password.length < 8) { setStatus('Enter your name and a password of at least 8 characters.', 'error'); return; }
+    if (password !== confirmation) { setStatus('Passwords do not match.', 'error'); return; }
+    if (submit) { submit.classList.add('loading'); submit.disabled = true; }
+    try {
+      const res = await fetch('/api/identity/invitations/' + encodeURIComponent(token) + '/accept', {
+        method: 'POST',
+        headers: { 'Accept':'application/json', 'Content-Type':'application/json' },
+        body: JSON.stringify({ password, displayName })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to create your access');
+      if (!data.parishId || !data.parishToken) throw new Error('Your account was created, but the parish dashboard could not be opened. Please contact AGAPAY support.');
+      sessionStorage.setItem('agapay_parish_id', data.parishId);
+      sessionStorage.setItem(parishSessionStorageKey, data.parishToken);
+      sessionStorage.setItem('agapay_identity_session_token', data.token || '');
+      sessionStorage.removeItem(legacyParishTokenStorageKey);
+      window.location.href = '/parish/dashboard?parish=' + encodeURIComponent(data.parishId);
+    } catch (err) {
+      setStatus(err.message, 'error');
+    } finally {
+      if (submit) { submit.classList.remove('loading'); submit.disabled = false; }
+    }
+  }
+
+  function initParishAccessInvitationPage() {
+    const invite = new URLSearchParams(window.location.search).get('invite') || '';
+    if (!invite) return false;
+    const tokenField = document.getElementById('parishAccessInviteToken');
+    if (tokenField) tokenField.value = invite;
+    showParishAuthForm('parishAccessInviteForm');
+    const eyebrow = document.querySelector('.parish-auth-intro .eyebrow');
+    const heading = document.querySelector('.parish-auth-intro h1');
+    const copy = document.querySelector('.parish-auth-intro p');
+    if (eyebrow) eyebrow.textContent = 'You are invited';
+    if (heading) heading.textContent = 'Create your AGAPAY access.';
+    if (copy) copy.textContent = 'One personal password. Then connect payments, review the parish details, and launch.';
+    return true;
   }
 
   function hasStarterDesignatedFundAccess() {
@@ -8794,7 +8840,41 @@
       <div class="signoff-submit"><p id="goLiveError" role="alert"></p><button class="btn btn-gold" type="button" onclick="submitTreasurerGoLive(this)">Go Live</button></div>
     </div>`;
   }
+  function renderSimpleParishSetupWizard(workflow) {
+    const pane = document.getElementById('setupWizardPane');
+    if (!pane) return;
+    const live = workflow.state === 'LIVE';
+    const givingUrl = workflow.summary?.givingUrl || `/give/${encodeURIComponent(currentParish.parishId || '')}`;
+    const stages = workflow.parishStages || [
+      { key:'access', title:'Accept access', detail:'Create your personal password.', passed:true },
+      { key:'payments', title:'Connect payments', detail:'Choose a plan and connect Stripe.', passed:Boolean(workflow.stripe?.ready) },
+      { key:'launch', title:'Review and launch', detail:'Confirm the parish details and approve launch.', passed:live }
+    ];
+    const stageMarkup = stages.map((stage, index) => {
+      const current = !stage.passed && stages.slice(0, index).every((item) => item.passed);
+      return `<div class="parish-setup-stage ${stage.passed ? 'done' : current ? 'current' : 'later'}"><span>${stage.passed ? '&#10003;' : index + 1}</span><div><strong>${escapeHtml(stage.title)}</strong><small>${escapeHtml(stage.detail || '')}</small></div><em>${stage.passed ? 'Complete' : current ? 'Now' : 'Next'}</em></div>`;
+    }).join('');
+    const blockerKeys = new Set((workflow.blockers || []).map((item) => item.key));
+    const needsPlan = blockerKeys.has('subscription');
+    const needsStripe = blockerKeys.has('stripeConnected') || blockerKeys.has('stripeReady');
+    const needsGivingReview = ['generalFund','givingConfiguration','importDecision'].some((key) => blockerKeys.has(key));
+    const action = live
+      ? `<div class="onboarding-live-mark" aria-hidden="true">&#10003;</div><strong>Giving is live</strong><p class="setup-copy setup-action-copy">Your giving page and QR code are ready to share.</p><a class="btn btn-gold onboarding-link-button" href="${escapeHtml(givingUrl)}" target="_blank" rel="noopener">Open giving page</a>`
+      : workflow.canGoLive
+        ? `<strong>Review and launch</strong><p class="setup-copy setup-action-copy">Everything is ready. The treasurer reviews the parish details once and approves giving.</p><button class="btn btn-gold" type="button" onclick="document.getElementById('treasurerSignoff')?.scrollIntoView({behavior:'smooth',block:'start'})">Review and launch</button>`
+        : needsPlan
+          ? `<strong>Choose your AGAPAY plan</strong><p class="setup-copy setup-action-copy">Confirm the plan your parish selected. Stripe opens immediately after billing is ready.</p><button class="btn btn-gold" type="button" onclick="switchTab('settings')">Choose plan</button>`
+          : needsStripe
+            ? `<strong>${workflow.stripe?.connected ? 'Finish connecting Stripe' : 'Connect the parish Stripe account'}</strong><p class="setup-copy setup-action-copy">Stripe securely collects the parish and payout-bank details. AGAPAY never sees the full bank account number.</p>${workflow.stripe?.connected ? '<button class="btn btn-gold" type="button" onclick="refreshStripeStatus({force:true})">Check Stripe status</button>' : '<button class="btn btn-gold" type="button" onclick="startStripeOnboarding(this)">Connect Stripe</button>'}`
+            : needsGivingReview
+              ? `<strong>Review the giving setup</strong><p class="setup-copy setup-action-copy">Confirm the General Operating Fund and any designated giving choices.</p><button class="btn btn-gold" type="button" onclick="switchTab('funds')">Review giving setup</button>`
+              : `<strong>AGAPAY is preparing your setup</strong><p class="setup-copy setup-action-copy">Your onboarding team is finishing an internal verification. There is nothing else for the parish to complete right now.</p>`;
+    pane.innerHTML = `<div class="setup-wizard-card deterministic-onboarding parish-simple-setup"><div class="setup-wizard-body"><div><div class="onboarding-kicker">10-minute parish setup</div><div class="setup-title">Three steps to start giving</div><p class="setup-copy">${live ? 'Launch is complete.' : 'AGAPAY handles the internal checks. Your parish only completes the three steps below.'}</p><div class="parish-setup-stages">${stageMarkup}</div></div><div class="setup-action-panel">${action}</div></div>${workflow.canGoLive ? onboardingSignoffMarkup(workflow) : ''}</div>`;
+  }
+
   function renderDeterministicOnboardingWizard(workflow) {
+    renderSimpleParishSetupWizard(workflow);
+    return;
     const pane = document.getElementById('setupWizardPane');
     if (!pane) return;
     const live = workflow.state === 'LIVE';
@@ -11846,7 +11926,7 @@
   const parishIdField = document.getElementById('parishId');
   if (params.get('parish') && parishIdField) parishIdField.value = params.get('parish');
   initReconciliationMonths();
-  initParishPasswordResetPage();
+  if (!initParishAccessInvitationPage()) initParishPasswordResetPage();
 
 
 // ═══════════════════════════════════════════════════════════════

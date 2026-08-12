@@ -1,5 +1,7 @@
 import { parishSlug } from "./format.js";
 import { agapayEmailHtml, sendEmail } from "./email.js";
+import { d1, normalizeEmail } from "./core.js";
+import { createInvitation, listInvitationsForParish, revokeInvitation } from "./memberships.js";
 import {
   defaultSubscriptionTier,
   publicSubscriptionTiers as sharedPublicSubscriptionTiers,
@@ -110,13 +112,96 @@ export async function sendTreasurerStripeInvite(env, appUrl, registration) {
 }
 
 export async function sendDashboardInvite(env, appUrl, registration) {
+  const parishId = registration.parishId || parishSlug(registration.parishName, registration.city);
+  const people = [
+    { key: "priest", email: normalizeEmail(registration.priestEmail), roleTemplate: "rector", label: "priest" },
+    { key: "treasurer", email: normalizeEmail(registration.treasurerEmail), roleTemplate: "treasurer", label: "treasurer" }
+  ].filter((person) => person.email);
+  const uniquePeople = people.filter((person, index) => people.findIndex((candidate) => candidate.email === person.email) === index);
+
+  if (uniquePeople.length && d1(env)) {
+    const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
+    const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
+    const parishName = htmlEscape(registration.parishName || "your parish");
+    const existing = await listInvitationsForParish(env, parishId);
+    const deliveries = [];
+    const access = {};
+
+    for (const person of uniquePeople) {
+      for (const pending of existing.filter((item) => item.status === "pending" && normalizeEmail(item.email) === person.email)) {
+        await revokeInvitation(env, { invitationId: pending.id });
+      }
+      const invitation = await createInvitation(env, {
+        parishId,
+        email: person.email,
+        roleTemplate: person.roleTemplate,
+        invitedByLegacyBearer: true
+      });
+      if (!invitation.ok) {
+        deliveries.push({ ...person, status: "failed", detail: invitation.error || "Unable to create access invitation." });
+        continue;
+      }
+
+      const accessUrl = `${String(appUrl).replace(/\/+$/, "")}/give/login?invite=${encodeURIComponent(invitation.token)}`;
+      const email = await sendEmail(env, {
+        from,
+        to: [person.email],
+        reply_to: replyTo,
+        subject: `Create your AGAPAY access - ${registration.parishName || "your parish"}`,
+        html: agapayEmailHtml(appUrl, "Create your AGAPAY access", `
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
+          <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;"><strong>${parishName}</strong> invited you to its AGAPAY dashboard as ${htmlEscape(person.label)}.</p>
+          <div style="background:#061522;border:1px solid rgba(201,162,91,0.42);border-radius:12px;padding:18px;margin:0 0 22px;">
+            <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#C9A25B;font-weight:700;">10-minute parish setup</p>
+            <p style="margin:0;font-size:15px;line-height:1.7;color:#F6F1E8;">Open your secure link and create your own password. No parish ID or temporary password is required.</p>
+          </div>
+          <p style="margin:0 0 24px;"><a href="${htmlEscape(accessUrl)}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Create my access</a></p>
+          <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">This personal link expires in 14 days and can be used once.</p>
+        `),
+        text: [
+          "Create your AGAPAY access",
+          "",
+          `${registration.parishName || "Your parish"} invited you to its AGAPAY dashboard as ${person.label}.`,
+          "Open your secure link and create your own password. No parish ID or temporary password is required.",
+          "",
+          accessUrl,
+          "",
+          "This personal link expires in 14 days and can be used once."
+        ].join("\n")
+      });
+      deliveries.push({ ...person, invitationId: invitation.id, expiresAt: invitation.expiresAt, status: email.status, id: email.id || "", detail: email.detail || "" });
+      access[person.key] = {
+        email: person.email,
+        roleTemplate: person.roleTemplate,
+        invitationId: invitation.id,
+        status: "invited",
+        invitedAt: new Date().toISOString(),
+        expiresAt: invitation.expiresAt,
+        emailStatus: email.status
+      };
+    }
+
+    for (const person of people) {
+      if (!access[person.key]) {
+        const shared = Object.values(access).find((entry) => entry.email === person.email);
+        if (shared) access[person.key] = { ...shared, roleTemplate: person.roleTemplate };
+      }
+    }
+    const sent = deliveries.filter((item) => item.status === "sent").length;
+    return {
+      status: sent === deliveries.length && deliveries.length ? "sent" : deliveries.some((item) => item.status === "not_configured") ? "not_configured" : "failed",
+      recipients: uniquePeople.map((person) => person.email),
+      deliveries,
+      access
+    };
+  }
+
   const recipients = Array.from(new Set([
     registration.priestEmail,
     registration.treasurerEmail
   ].filter(Boolean)));
   if (!recipients.length) return { status: "missing_recipient" };
 
-  const parishId = registration.parishId || parishSlug(registration.parishName, registration.city);
   const dashboardUrl = `${appUrl}/give/login?parish=${encodeURIComponent(parishId)}`;
   const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";

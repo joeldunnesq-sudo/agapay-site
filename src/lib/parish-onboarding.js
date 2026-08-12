@@ -7,12 +7,7 @@ export const STRIPE_READINESS_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 export const ONBOARDING_MANUAL_CHECKS = Object.freeze([
   "authorizedRepresentative",
   "givingConfiguration",
-  "users",
-  "importDecision",
-  "testGift",
-  "receipt",
-  "reportingAccounting",
-  "givingAssets"
+  "importDecision"
 ]);
 
 export const TREASURER_AFFIRMATIONS = Object.freeze([
@@ -86,6 +81,23 @@ function step(key, title, passed, detail, owner = "AGAPAY") {
 function manualPassed(checks, key) {
   const status = checks[key]?.status || "not_started";
   return status === "passed" || (key === "importDecision" && status === "not_applicable");
+}
+
+function accessAccepted(registration = {}) {
+  const access = registration.onboardingAccess && typeof registration.onboardingAccess === "object"
+    ? registration.onboardingAccess
+    : {};
+  const required = [
+    ["priest", normalizeEmail(registration.priestEmail)],
+    ["treasurer", normalizeEmail(registration.treasurerEmail)]
+  ].filter(([, email]) => Boolean(email));
+  if (!required.length) return false;
+  if (required.every(([role, email]) => access[role]?.status === "accepted" && normalizeEmail(access[role]?.email) === email)) return true;
+
+  // Existing parishes may predate personal access invitations. Their secured
+  // dashboard credential remains a valid migration path, but all new
+  // onboarding records advance automatically from accepted personal links.
+  return !registration.parishDashboardTokenTemporary && Boolean(registration.parishDashboardPasswordRecord);
 }
 
 function validDate(value) {
@@ -199,7 +211,7 @@ export function recommendedOnboardingState(registration = {}, checksInput = regi
   if (registration.status !== "verified") return "IDENTITY_REVIEW";
   if (registration.givingStatus === "active" && registration.treasurerSignoff?.status === "signed") return "LIVE";
   if (registration.dashboardInviteEmailStatus !== "sent") return "VERIFIED_HIDDEN";
-  if (registration.parishDashboardTokenTemporary || !registration.parishDashboardPasswordRecord) return "INVITED";
+  if (!accessAccepted(registration)) return "INVITED";
   if (!registration.stripeAccountId) return "CREDENTIAL_SECURED";
   const stripe = stripeReadiness(registration);
   if (!stripe.ready) return "STRIPE_PENDING";
@@ -208,12 +220,7 @@ export function recommendedOnboardingState(registration = {}, checksInput = regi
   if (!subscriptionReady(registration)
     || generalCount !== 1
     || !manualPassed(checks, "givingConfiguration")
-    || !manualPassed(checks, "users")
     || !manualPassed(checks, "importDecision")) return "CONFIGURING";
-  if (!manualPassed(checks, "testGift")
-    || !manualPassed(checks, "receipt")
-    || !manualPassed(checks, "reportingAccounting")
-    || !manualPassed(checks, "givingAssets")) return "VALIDATING";
   return "AWAITING_TREASURER_SIGNOFF";
 }
 
@@ -227,26 +234,20 @@ export async function buildParishOnboardingWorkflow(registration = {}, options =
     && Boolean(text(registration.verificationSource))
     && Boolean(text(registration.bishopOrAuthority))
     && Boolean(text(registration.dioceseOrDeanery));
-  const credentialSecured = !registration.parishDashboardTokenTemporary && Boolean(registration.parishDashboardPasswordRecord);
-  const userContactsPresent = Boolean(normalizeEmail(registration.priestEmail)) && Boolean(normalizeEmail(registration.treasurerEmail));
+  const personalAccessAccepted = accessAccepted(registration);
   const workflowSteps = [
     step("registration", "Registration received", Boolean(registration.reference), registration.reference ? `Reference ${registration.reference}` : "Registration reference is missing."),
     step("canonical", "Canonical parish confirmed", canonicalVerified, canonicalVerified ? "Canonical review fields are complete." : "Complete canonical reviewer, source, authority, and diocese/deanery."),
     step("representative", "Authorized representative confirmed", manualPassed(checks, "authorizedRepresentative"), checks.authorizedRepresentative.note || "Record independent authority verification."),
     step("verifiedHidden", "Organization verified and hidden", registration.status === "verified" && ["hidden", "paused", "active"].includes(registration.givingStatus), registration.status === "verified" ? `Giving status: ${registration.givingStatus || "hidden"}.` : "Verify the organization in AGAPAY Admin."),
     step("invite", "Dashboard invite delivered", registration.dashboardInviteEmailStatus === "sent", registration.dashboardInviteEmailStatus === "sent" ? "Invite delivery is confirmed." : "Send the dashboard invite to verified recipients."),
-    step("credential", "Temporary credential changed", credentialSecured, credentialSecured ? "Permanent dashboard credential is active." : "The parish must replace the temporary credential.", "Parish"),
+    step("credential", "Personal dashboard access accepted", personalAccessAccepted, personalAccessAccepted ? "The required parish access invitations have been accepted." : "The priest and treasurer accept their secure email invitations and create their own passwords.", "Parish"),
     step("stripeConnected", "Stripe connected", stripe.connected, stripe.connected ? `Connected account ${registration.stripeAccountId}.` : "Create the parish connected account.", "Treasurer"),
     step("stripeReady", "Stripe charges and payouts ready", stripe.ready, stripe.ready ? "Charges, payouts, details, and requirements passed a fresh refresh." : "Refresh Stripe; charges and payouts must both be enabled with no requirements due.", "Treasurer"),
     step("subscription", "Subscription configured", subscriptionReady(registration), subscriptionReady(registration) ? `Plan ${registration.subscriptionTierLabel || registration.subscriptionTier || "selected"} is ${registration.subscriptionStatus}.` : "Activate the selected AGAPAY plan.", "Treasurer"),
     step("generalFund", "General Operating Fund configured", generalFunds.length === 1, generalFunds.length === 1 ? generalFunds[0].name || "General Operating Fund" : `Expected one active General Operating Fund; found ${generalFunds.length}.`, "Treasurer"),
     step("givingConfiguration", "Designated funds and campaigns approved", manualPassed(checks, "givingConfiguration"), checks.givingConfiguration.note || "Review the donor-facing giving catalog.", "Treasurer"),
-    step("users", "Priest and treasurer access confirmed", userContactsPresent && manualPassed(checks, "users"), !userContactsPresent ? "Verified priest and treasurer emails are required." : checks.users.note || "Confirm both users can access the parish."),
-    step("importDecision", "Donor and pledge import decided", manualPassed(checks, "importDecision"), checks.importDecision.note || "Record not applicable, deferred, or completed import evidence.", "Treasurer"),
-    step("testGift", "Controlled test gift passed", manualPassed(checks, "testGift"), checks.testGift.note || "Record the production test-gift identifier."),
-    step("receipt", "Receipt verified", manualPassed(checks, "receipt"), checks.receipt.note || "Verify delivery and donor-facing details.", "Treasurer"),
-    step("reportingAccounting", "Reporting and accounting verified", manualPassed(checks, "reportingAccounting"), checks.reportingAccounting.note || "Reconcile the gift to Stripe and accounting."),
-    step("givingAssets", "Giving URL and QR verified", manualPassed(checks, "givingAssets"), checks.givingAssets.note || "Scan the canonical giving QR and verify the URL.")
+    step("importDecision", "Donor and pledge import decided", manualPassed(checks, "importDecision"), checks.importDecision.note || "Record not applicable, deferred, or completed import evidence.", "AGAPAY")
   ];
   const materialVersion = await onboardingMaterialVersion(registration, options);
   const signedCurrentSnapshot = registration.treasurerSignoff?.status === "signed"
@@ -275,6 +276,26 @@ export async function buildParishOnboardingWorkflow(registration = {}, options =
     materialVersion,
     checks,
     stripe,
+    parishStages: [
+      {
+        key: "access",
+        title: "Accept access",
+        detail: personalAccessAccepted ? "Your secure parish access is ready." : "Open your email invitation and create your password.",
+        passed: personalAccessAccepted
+      },
+      {
+        key: "payments",
+        title: "Connect payments",
+        detail: stripe.ready && subscriptionReady(registration) ? "Your plan and Stripe account are ready." : "Choose your plan and connect the parish Stripe account.",
+        passed: stripe.ready && subscriptionReady(registration)
+      },
+      {
+        key: "launch",
+        title: "Review and launch",
+        detail: state === "LIVE" ? "Giving is live." : canGoLive ? "Review the parish details and approve launch." : "AGAPAY is preparing your launch review.",
+        passed: state === "LIVE"
+      }
+    ],
     signoff: registration.treasurerSignoff || null,
     summary: {
       ...onboardingMaterialSnapshot(registration, options),

@@ -1931,6 +1931,15 @@
     .onboarding-phase-nav button.current > span { background: var(--deep); color: var(--gold-light); }
     .onboarding-phase-card:not(.is-current) { padding: .65rem .8rem; background: rgba(255,255,255,.62); box-shadow: none; }
     .onboarding-phase-card:not(.is-current) > :not(.onboarding-phase-heading) { display: none; }
+    .onboarding-access-summary { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; margin-top: .75rem; }
+    .onboarding-access-summary > div { display: grid; gap: 3px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px; background: rgba(255,255,255,.025); }
+    .onboarding-access-summary span { color: var(--gold); font-size: 9px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+    .onboarding-access-summary strong { color: var(--cream); font-size: 12px; overflow-wrap: anywhere; }
+    .onboarding-access-summary em { color: var(--stone); font-size: 10px; font-style: normal; text-transform: uppercase; }
+    .onboarding-access-summary > div.accepted { border-color: rgba(75,181,120,.38); background: rgba(75,181,120,.08); }
+    .onboarding-access-summary > div.accepted em { color: #7fcfa0; }
+    .onboarding-ready-panel { padding: 0; border: 0; background: transparent; }
+    @media (max-width: 720px) { .onboarding-access-summary { grid-template-columns: 1fr; } }
     .onboarding-phase-card.is-current { border-color: rgba(196,150,62,.38); box-shadow: 0 14px 34px rgba(5,15,26,.08); }
     .onboarding-phase-heading { width: 100%; overflow: visible; border: 0; border-bottom: 0; border-radius: 0; background: transparent; padding: 0; text-align: left; }
     .onboarding-phase-heading:hover:not(:disabled) { background: transparent; transform: none; box-shadow: none; }
