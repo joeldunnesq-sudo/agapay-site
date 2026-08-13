@@ -453,11 +453,29 @@ export function validateTreasurerGoLiveInput(body = {}, registration = {}) {
 
 export async function invalidateOnboardingSignoffIfChanged(previous = {}, next = {}, options = {}) {
   if (!onboardingWorkflowEnabled(previous) || previous.treasurerSignoff?.status !== "signed") return next;
-  const [previousVersion, nextVersion] = await Promise.all([
+  const [previousVersion, nextVersion, previousWithoutPublicNameVersion, nextWithoutPublicNameVersion] = await Promise.all([
     onboardingMaterialVersion(previous, options),
-    onboardingMaterialVersion(next, options)
+    onboardingMaterialVersion(next, options),
+    onboardingMaterialVersion({ ...previous, parishName: "" }, options),
+    onboardingMaterialVersion({ ...next, parishName: "" }, options)
   ]);
   if (previousVersion === nextVersion) return next;
+  // The dashboard's parish name is public display copy, not the canonical or
+  // legal receipt identity. Keep an existing launch approval valid when that
+  // is the only material-snapshot input that changed. Explicit legal receipt
+  // names, Stripe/bank details, plans, and giving configuration still
+  // invalidate the approval below.
+  if (previousWithoutPublicNameVersion === nextWithoutPublicNameVersion) {
+    return {
+      ...next,
+      treasurerSignoff: {
+        ...previous.treasurerSignoff,
+        snapshotVersion: nextVersion,
+        publicNameUpdatedAt: new Date().toISOString(),
+        publicNameUpdatedBy: text(options.actor || "parish", 160)
+      }
+    };
+  }
   const now = new Date().toISOString();
   return {
     ...next,

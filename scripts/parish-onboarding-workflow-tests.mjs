@@ -248,7 +248,6 @@ assert.equal(invalidated.onboardingState, "CONFIGURING");
 assert.equal(invalidated.givingStatus, "paused");
 
 const materialMutations = [
-  ["public parish name", { parishName: "Renamed Parish" }],
   ["legal receipt name", { taxLegalName: "Renamed Legal Parish" }],
   ["plan", { subscriptionTier: "starter" }],
   ["billing status", { subscriptionStatus: "past_due" }],
@@ -267,6 +266,15 @@ for (const [label, change] of materialMutations) {
   assert.equal(result.treasurerSignoff.status, "invalidated", `${label} mutation must invalidate the signed snapshot`);
   assert.equal(result.givingStatus, "paused", `${label} mutation must pause a live parish`);
 }
+
+const renamedPublicParish = await invalidateOnboardingSignoffIfChanged(signed, {
+  ...signed,
+  parishName: "Renamed Parish"
+}, { actor: "parish-dashboard" });
+assert.equal(renamedPublicParish.treasurerSignoff.status, "signed", "public parish name edits must preserve the existing signoff");
+assert.equal(renamedPublicParish.givingStatus, "active", "public parish name edits must not pause a live giving page");
+assert.equal(renamedPublicParish.onboardingState, "LIVE", "public parish name edits must keep onboarding live");
+assert.notEqual(renamedPublicParish.treasurerSignoff.snapshotVersion, versionBefore, "the preserved signoff must advance to the renamed snapshot");
 
 async function routeFixture(registration = readyRegistration()) {
   const env = {
