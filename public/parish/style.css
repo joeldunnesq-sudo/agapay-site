@@ -4192,6 +4192,28 @@
       line-height: 1.6;
     }
 
+    .starter-tier-upgrade-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.25rem;
+      margin-top: 1rem;
+      border: 1px solid rgba(200,162,74,0.32);
+      border-radius: 14px;
+      padding: 1.15rem 1.25rem;
+      background: linear-gradient(135deg, rgba(255,253,248,0.98), rgba(248,243,232,0.94));
+    }
+    .starter-tier-upgrade-card > div { min-width: 0; }
+    .starter-tier-upgrade-card .starter-tier-paywall-badge { display: inline-block; margin-bottom: 0.45rem; }
+    .starter-tier-upgrade-card strong { display: block; color: var(--deep); font: 600 1.25rem var(--serif); }
+    .starter-tier-upgrade-card p { max-width: 760px; margin: 0.35rem 0 0; color: var(--stone); font-size: 12px; line-height: 1.55; }
+    .starter-tier-upgrade-card .btn { flex: 0 0 auto; }
+
+    @media (max-width: 720px) {
+      .starter-tier-upgrade-card { align-items: stretch; flex-direction: column; }
+      .starter-tier-upgrade-card .btn { width: 100%; }
+    }
+
     .dir-admin-shell {
       background: #fff;
       border: 1px solid rgba(32,31,29,0.12);
