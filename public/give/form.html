@@ -314,6 +314,14 @@
     .donor-claim-wrap .claim-login { margin-top: 10px; font-size: 12px; }
     .donor-claim-wrap .claim-login a { color: var(--deep); text-decoration: underline; background: transparent; padding: 0; border: 0; }
 
+    .giving-unavailable { min-height: 430px; display: grid; place-items: center; align-content: center; gap: .7rem; padding: 3rem 1.5rem; border: 1px solid rgba(166,159,145,.3); border-radius: var(--rlg); background: #fff; text-align: center; box-shadow: 0 18px 55px rgba(6,21,34,.08); }
+    .giving-unavailable > span { width: 54px; height: 54px; display: grid; place-items: center; border: 1px solid rgba(200,162,74,.42); border-radius: 50%; background: rgba(200,162,74,.08); color: var(--gold); font-size: 24px; }
+    .giving-unavailable h2 { max-width: 540px; margin: 0; color: var(--deep); font-family: var(--serif); font-size: clamp(1.75rem,5vw,2.35rem); font-weight: 500; line-height: 1.05; }
+    .giving-unavailable > p:not(.step-label) { max-width: 520px; margin: 0; color: var(--stone); font-size: 13px; line-height: 1.65; }
+    .giving-unavailable > div { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: .45rem; }
+    .giving-unavailable a { border: 1px solid var(--line); border-radius: var(--r); padding: 10px 14px; color: var(--deep); font-size: 12px; font-weight: 700; }
+    .giving-unavailable a:first-child { border-color: var(--gold); background: var(--gold); }
+
     /* SCROLL ANIMATIONS */
     .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease, transform 0.5s ease; }
     .reveal.visible { opacity: 1; transform: translateY(0); }
@@ -395,23 +403,11 @@ body {
   <header class="parish-header">
     <div class="parish-header-inner">
       <div class="parish-avatar-lg">
-        <picture>
-          <source srcset="/images/giving/mission-church-square.webp" type="image/webp" />
-          <img src="/images/giving/mission-church-square.png" alt="Orthodox mission church sketch"
-               width="304" height="304" fetchpriority="high" loading="eager"
-               decoding="async" />
-        </picture>
+        <img src="/mark.png" alt="AGAPAY" width="304" height="304" fetchpriority="high" loading="eager" decoding="async" />
       </div>
-      <h1>St. Seraphim of Sarov Mission</h1>
+      <h1>Loading parish&hellip;</h1>
       <div class="parish-header-meta">
-        <span>ROCOR</span>
-        <span class="dot"></span>
-        <span>Lubbock, TX</span>
-        <span class="dot"></span>
-        <span class="verified-badge">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          Canonically verified
-        </span>
+        <span>Loading verified parish information&hellip;</span>
       </div>
     </div>
   </header>
@@ -746,8 +742,8 @@ body {
       </label>
       <div class="fee-text">
         <strong id="feeCoverageTitle">Cover the processing fees</strong>
-        <p>When you cover the fees, St. Seraphim Mission receives your full gift — nothing deducted.</p>
-        <span class="fee-calc" id="feeCalc">You cover $2.80 · Parish receives $50.00</span>
+        <p>The fee estimate will appear after the parish details load.</p>
+        <span class="fee-calc" id="feeCalc">Calculating&hellip;</span>
       </div>
     </div>
 
@@ -764,15 +760,15 @@ body {
         </div>
         <div class="summary-row">
           <span class="summary-label">Parish receives</span>
-          <span class="summary-value" id="summaryParishReceives">$50.00</span>
+          <span class="summary-value" id="summaryParishReceives">&mdash;</span>
         </div>
         <div class="summary-row" id="summaryFeeRow">
           <span class="summary-label">Fee coverage</span>
-          <span class="summary-value" id="summaryFee">+$1.75</span>
+          <span class="summary-value" id="summaryFee">&mdash;</span>
         </div>
         <div class="summary-row total">
           <span class="summary-label">Your total</span>
-          <span class="summary-value" id="summaryTotal">$51.75</span>
+          <span class="summary-value" id="summaryTotal">&mdash;</span>
         </div>
       </div>
     </div>
@@ -792,7 +788,7 @@ body {
       <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
     <h2>Glory to God.</h2>
-    <p class="success-parish">Your gift to <strong>St. Seraphim of Sarov Mission</strong> has been received.<br>A confirmation will be sent to your email.</p>
+    <p class="success-parish">Your gift has been received.<br>A confirmation will be sent to your email.</p>
     <p class="success-ref" id="successRef">Reference: AGP-2026-00001</p>
     <div class="donor-claim-wrap" id="donorClaimWrap">
       <h3>Save this gift to My AGAPAY</h3>
@@ -827,6 +823,10 @@ body {
     let selectedCampaign = 'Disaster Relief';
     let selectedFestalCampaign = null;
     let pendingClaimSessionId = '';
+    const DEFAULT_PROCESSING_FEE_SCHEDULES = {
+      card: { id:'stripe_standard_card_us', label:'Card', rateBasisPoints:290, fixedFeeCents:30, maxFeeCents:null },
+      ach: { id:'stripe_ach_direct_debit_us', label:'ACH Direct Debit', rateBasisPoints:80, fixedFeeCents:0, maxFeeCents:500 }
+    };
     let currentParish = {
       id: '',
       name: 'AGAPAY Parish',
@@ -834,7 +834,10 @@ body {
       city: '',
       state: '',
       funds: [],
-      processingFeeSchedules: {}
+      // Keep the standard public schedules locally as a fail-safe. The API is
+      // authoritative when it responds, but a missing field must never make a
+      // real gift appear to have $0.00 in processing costs.
+      processingFeeSchedules: DEFAULT_PROCESSING_FEE_SCHEDULES
     };
 
     function cents(value) {
@@ -1021,9 +1024,24 @@ body {
 
     async function fetchParishById(id) {
       const response = await fetch('/api/parishes?id=' + encodeURIComponent(id));
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || 'Unable to load parish');
       return result.parish || null;
+    }
+
+    function showGivingPageUnavailable() {
+      const form = document.getElementById('giving-form');
+      if (!form) return;
+      setText('.parish-header h1', 'Giving unavailable');
+      const meta = document.querySelector('.parish-header-meta');
+      if (meta) meta.innerHTML = '<span>This parish is not live in AGAPAY yet.</span>';
+      form.innerHTML = `<section class="giving-unavailable" role="status">
+        <span aria-hidden="true">&#9671;</span>
+        <p class="step-label">Giving page unavailable</p>
+        <h2>This parish is not accepting online gifts yet.</h2>
+        <p>The parish may still be completing its AGAPAY setup. No payment or Stripe checkout has been started.</p>
+        <div><a href="/give/find-parish">Find another parish</a><a href="/give">Return to AGAPAY Give</a></div>
+      </section>`;
     }
 
     function isGeneralPublicFund(fund = {}) {
@@ -1183,16 +1201,19 @@ body {
         const slug = parishSlugFromPath();
         if (!slug) {
           window.location.href = '/give/find-parish';
-          return;
+          return false;
         }
         const parish = await fetchParishById(slug);
         if (!parish) {
           alert('This parish is not currently active in AGAPAY.');
           window.location.href = '/give/find-parish';
-          return;
+          return false;
         }
 
-        currentParish = parish;
+        currentParish = {
+          ...parish,
+          processingFeeSchedules: { ...DEFAULT_PROCESSING_FEE_SCHEDULES, ...(parish.processingFeeSchedules || {}) }
+        };
         const canonicalUrl = `${window.location.origin}/give/${encodeURIComponent(parish.id)}`;
         document.querySelector('#parishCanonicalUrl')?.setAttribute('href', canonicalUrl);
         document.querySelector('meta[property="og:url"]')?.setAttribute('content', canonicalUrl);
@@ -1230,8 +1251,11 @@ body {
         renderCurrentFestalCampaign(parish);
         applyGiftQueryParams();
         updateSummary();
+        return true;
       } catch (err) {
         console.error('AGAPAY parish load error:', err);
+        showGivingPageUnavailable();
+        return false;
       }
     }
 
@@ -1594,7 +1618,8 @@ body {
     }
 
     async function initGivingPage() {
-      await loadCurrentParish();
+      const loaded = await loadCurrentParish();
+      if (!loaded) return;
       updateSummary();
       await handleCheckoutReturn();
     }

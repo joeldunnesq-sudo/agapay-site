@@ -175,9 +175,14 @@
   function switchTab(tab) {
     if (tab === 'parishplus') tab = 'bookstore';
     if (tab === 'commerce') tab = 'bookstore';
+    if (tab === 'funds') tab = 'options';
+    const panel = document.getElementById('tab-' + tab);
+    if (!panel) {
+      setStatus('That dashboard section is unavailable. Your current page was left open.', 'error');
+      return;
+    }
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.sidebar-nav-item, .mobile-tab-link').forEach(n => n.classList.remove('active'));
-    const panel = document.getElementById('tab-' + tab);
     const nav   = document.getElementById('nav-' + tab);
     const mobileNav = document.querySelector(`.mobile-tab-link[data-nav-tab="${tab}"]`);
     const content = document.querySelector('.content');
@@ -8873,7 +8878,7 @@
           : needsStripe
             ? `<strong>${workflow.stripe?.connected ? 'Finish connecting Stripe' : 'Connect the parish Stripe account'}</strong><p class="setup-copy setup-action-copy">Stripe securely collects the parish and payout-bank details. AGAPAY never sees the full bank account number.</p>${workflow.stripe?.connected ? '<button class="btn btn-gold" type="button" onclick="refreshStripeStatus({force:true})">Check Stripe status</button>' : '<button class="btn btn-gold" type="button" onclick="startStripeOnboarding(this)">Connect Stripe</button>'}`
             : needsGivingReview
-              ? `<strong>Review the giving setup</strong><p class="setup-copy setup-action-copy">Confirm the General Operating Fund and any designated giving choices.</p><button class="btn btn-gold" type="button" onclick="switchTab('funds')">Review giving setup</button>`
+              ? `<strong>Review the giving setup</strong><p class="setup-copy setup-action-copy">A short wizard will show only the giving choices included with ${escapeHtml(currentParish.subscriptionTierLabel || 'your plan')}.</p><button class="btn btn-gold" type="button" onclick="openGivingSetupWizard()">Review giving setup</button>`
               : `<strong>AGAPAY is preparing your setup</strong><p class="setup-copy setup-action-copy">Your onboarding team is finishing an internal verification. There is nothing else for the parish to complete right now.</p>`;
     pane.innerHTML = `<div class="setup-wizard-card deterministic-onboarding parish-simple-setup"><div class="setup-wizard-body"><div><div class="onboarding-kicker">10-minute parish setup</div><div class="setup-title">Three steps to start giving</div><p class="setup-copy">${live ? 'Launch is complete.' : 'AGAPAY handles the internal checks. Your parish only completes the three steps below.'}</p><div class="parish-setup-stages">${stageMarkup}</div></div><div class="setup-action-panel">${action}</div></div>${workflow.canGoLive ? onboardingSignoffMarkup(workflow) : ''}</div>`;
   }
@@ -8893,6 +8898,231 @@
         ? `<strong>Ready for treasurer review</strong><p class="setup-copy setup-action-copy">Every operational gate has passed. Review the snapshot and complete the required signoff below.</p><button class="btn btn-gold" type="button" onclick="document.getElementById('treasurerSignoff')?.scrollIntoView({behavior:'smooth',block:'start'})">Review and sign</button>`
         : `<strong>${escapeHtml(blockers.length ? `${blockers.length} blocking item${blockers.length === 1 ? '' : 's'} shown` : 'Onboarding in progress')}</strong><div class="onboarding-blockers">${blockers.map(item => `<div><span>!</span><p><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.detail || '')}</small></p></div>`).join('')}</div>${workflow.stripe?.connected && !workflow.stripe?.ready ? '<button class="btn btn-gold" type="button" onclick="refreshStripeStatus({force:true})">Refresh Stripe readiness</button>' : ''}<button class="onboarding-secondary" type="button" onclick="switchTab('settings')">Open parish settings</button>`;
     pane.innerHTML = `<div class="setup-wizard-card deterministic-onboarding"><div class="setup-wizard-body"><div><div class="onboarding-kicker">${escapeHtml(onboardingStateLabel(workflow.state))}</div><div class="setup-title">Parish launch checklist</div><p class="setup-copy">${live ? 'Launch is complete. Material changes will pause giving and require a new treasurer signoff.' : 'AGAPAY keeps the giving page hidden until all 17 gates pass and the treasurer approves the exact configuration.'}</p><div class="onboarding-progress"><span style="width:${Math.round((Number(workflow.completedSteps || 0) / Math.max(1, Number(workflow.totalSteps || 17))) * 100)}%"></span></div><div class="onboarding-progress-label"><strong>${workflow.completedSteps || 0} of ${workflow.totalSteps || 17}</strong><span>required gates complete</span></div><details class="onboarding-step-details" ${workflow.canGoLive ? '' : 'open'}><summary>View all onboarding gates</summary><div class="setup-steps">${steps}</div></details></div><div class="setup-action-panel">${action}</div></div>${workflow.canGoLive ? onboardingSignoffMarkup(workflow) : ''}</div>`;
+  }
+
+  let givingSetupWizardStep = 0;
+  let givingSetupDraft = null;
+
+  function givingSetupTierDetails() {
+    const tier = String(currentParish?.subscriptionTier || 'starter').toLowerCase();
+    const label = currentParish?.subscriptionTierLabel || (tier === 'starter' ? 'Starter' : 'Giving Plus');
+    const givingPlus = hasGivingPlusAccess();
+    const featureCopy = tier === 'starter'
+      ? 'General Operating, one designated fund, candles, and recurring giving'
+      : tier === 'stewardship'
+        ? 'Unlimited funds and campaigns, recurring giving, donor tools, and Stewardship Health'
+        : ['parish', 'diocese'].includes(tier)
+          ? 'Unlimited funds and campaigns, recurring giving, stewardship, and the complete parish operations suite'
+          : 'Unlimited funds and campaigns, recurring giving, receipts, and enhanced giving reports';
+    return { tier, label, givingPlus, designatedLimit: givingPlus ? Infinity : 1, featureCopy };
+  }
+
+  function activeGivingSetupItems(items) {
+    return (Array.isArray(items) ? items : []).filter((item) => item && item.enabled !== false && item.active !== false);
+  }
+
+  function buildGivingSetupDraft() {
+    const activeFunds = activeGivingSetupItems(editableFunds.length ? editableFunds : fallbackFundsArray(currentParish?.funds));
+    const savedGeneral = activeFunds.find(isGeneralDashboardFund) || fundPresets.general;
+    return {
+      general: {
+        ...savedGeneral,
+        id: 'general',
+        name: savedGeneral.name || 'General Operating Fund',
+        description: savedGeneral.description || fundPresets.general.description
+      },
+      designatedFunds: activeFunds.filter((fund) => !isGeneralDashboardFund(fund) && !isCandleDashboardFund(fund)).map((fund) => ({ ...fund })),
+      campaigns: activeGivingSetupItems(editableCampaigns.length ? editableCampaigns : currentParish?.campaigns).map((campaign) => ({ ...campaign })),
+      recurringGivingEnabled: currentParish?.recurringGivingEnabled !== false,
+      candlesEnabled: currentParish?.candlesEnabled !== false
+    };
+  }
+
+  function closeGivingSetupWizard() {
+    document.getElementById('givingSetupModal')?.remove();
+    document.body.classList.remove('giving-setup-modal-open');
+    givingSetupDraft = null;
+    givingSetupWizardStep = 0;
+  }
+
+  function captureGivingSetupWizardStep() {
+    if (!givingSetupDraft) return;
+    if (givingSetupWizardStep === 0) {
+      givingSetupDraft.general.name = document.getElementById('givingSetupGeneralName')?.value.trim() || '';
+      givingSetupDraft.general.description = document.getElementById('givingSetupGeneralDescription')?.value.trim() || '';
+      givingSetupDraft.recurringGivingEnabled = Boolean(document.getElementById('givingSetupRecurring')?.checked);
+      givingSetupDraft.candlesEnabled = Boolean(document.getElementById('givingSetupCandles')?.checked);
+    }
+  }
+
+  function givingSetupChoiceRows(items, kind) {
+    const label = kind === 'fund' ? 'designated fund' : 'campaign';
+    if (!items.length) return `<div class="giving-setup-empty">No ${label}s selected. That is okay—you can add them later.</div>`;
+    return `<div class="giving-setup-selected">${items.map((item, index) => `<div class="giving-setup-selected-row"><span><strong>${escapeHtml(item.name || 'Giving option')}</strong><small>${escapeHtml(item.description || (kind === 'fund' ? 'Parish-designated giving destination' : 'Time-limited parish campaign'))}</small></span><button type="button" aria-label="Remove ${escapeHtml(item.name || label)}" onclick="removeGivingSetupChoice('${kind}',${index})">Remove</button></div>`).join('')}</div>`;
+  }
+
+  function givingSetupPresetButtons(kind) {
+    const source = kind === 'fund' ? fundPresets : campaignPresets;
+    const selected = kind === 'fund' ? givingSetupDraft.designatedFunds : givingSetupDraft.campaigns;
+    const entries = Object.entries(source).filter(([key]) => kind !== 'fund' || key !== 'general').slice(0, kind === 'fund' ? 6 : 4);
+    return `<div class="giving-setup-presets">${entries.map(([key, preset]) => {
+      const alreadyAdded = selected.some((item) => item.id === preset.id || String(item.name || '').toLowerCase() === preset.name.toLowerCase());
+      return `<button type="button" class="giving-setup-preset ${alreadyAdded ? 'is-selected' : ''}" ${alreadyAdded ? 'disabled' : ''} onclick="addGivingSetupPreset('${kind}','${key}')"><strong>${alreadyAdded ? '&#10003; ' : '+ '}${escapeHtml(preset.name)}</strong><small>${escapeHtml(preset.description)}</small></button>`;
+    }).join('')}</div>`;
+  }
+
+  function givingSetupBasicsMarkup(tier) {
+    return `<div class="giving-setup-screen">
+      <div class="giving-setup-screen-heading"><span>Step 1 of 3</span><h3>Set the giving basics</h3><p>These are the choices every parish needs before accepting a gift.</p></div>
+      <div class="giving-setup-field"><label for="givingSetupGeneralName">Primary giving destination</label><input id="givingSetupGeneralName" maxlength="120" value="${escapeAttr(givingSetupDraft.general.name)}"><small>AGAPAY keeps the stable General Operating Fund identifier behind the scenes for reports and accounting.</small></div>
+      <div class="giving-setup-field"><label for="givingSetupGeneralDescription">What this fund supports</label><textarea id="givingSetupGeneralDescription" maxlength="500">${escapeHtml(givingSetupDraft.general.description)}</textarea></div>
+      <div class="giving-setup-toggle-grid">
+        <label class="giving-setup-toggle"><input id="givingSetupRecurring" type="checkbox" ${givingSetupDraft.recurringGivingEnabled ? 'checked' : ''}><span><strong>Allow recurring gifts</strong><small>Donors can give weekly, monthly, quarterly, or annually.</small></span></label>
+        <label class="giving-setup-toggle"><input id="givingSetupCandles" type="checkbox" ${givingSetupDraft.candlesEnabled ? 'checked' : ''}><span><strong>Accept candle offerings</strong><small>Keep the built-in candles and vigil lights giving choice.</small></span></label>
+      </div>
+      <div class="giving-setup-plan-note"><strong>${escapeHtml(tier.label)} includes</strong><span>${escapeHtml(tier.featureCopy)}</span></div>
+    </div>`;
+  }
+
+  function givingSetupChoicesMarkup(tier) {
+    const fundLimit = Number.isFinite(tier.designatedLimit) ? `Choose up to ${tier.designatedLimit}` : 'Choose any that apply';
+    return `<div class="giving-setup-screen">
+      <div class="giving-setup-screen-heading"><span>Step 2 of 3</span><h3>Choose giving destinations</h3><p>${escapeHtml(fundLimit)}. Start small—these can always be changed later.</p></div>
+      <section class="giving-setup-choice-section"><div class="giving-setup-choice-head"><div><strong>Designated funds</strong><small>${tier.givingPlus ? 'Your plan supports unlimited active designated funds.' : 'Starter supports one active designated fund.'}</small></div><em>${givingSetupDraft.designatedFunds.length}${Number.isFinite(tier.designatedLimit) ? ` / ${tier.designatedLimit}` : ''} selected</em></div>${givingSetupChoiceRows(givingSetupDraft.designatedFunds, 'fund')}${givingSetupPresetButtons('fund')}<div class="giving-setup-custom"><input id="givingSetupCustomFund" maxlength="120" placeholder="Or name a different fund"><button type="button" onclick="addGivingSetupCustom('fund')">Add fund</button></div></section>
+      ${tier.givingPlus ? `<section class="giving-setup-choice-section"><div class="giving-setup-choice-head"><div><strong>Launch campaigns</strong><small>Optional, time-limited needs. Skip this if there is no current campaign.</small></div><em>${givingSetupDraft.campaigns.length} selected</em></div>${givingSetupChoiceRows(givingSetupDraft.campaigns, 'campaign')}${givingSetupPresetButtons('campaign')}<div class="giving-setup-custom"><input id="givingSetupCustomCampaign" maxlength="120" placeholder="Or name a current campaign"><button type="button" onclick="addGivingSetupCustom('campaign')">Add campaign</button></div></section>` : '<div class="giving-setup-upgrade-note"><strong>Campaigns are not part of Starter.</strong><span>You can launch now with General Operating, one designated fund, and candles. Upgrade later if the parish needs campaigns.</span></div>'}
+    </div>`;
+  }
+
+  function givingSetupReviewMarkup(tier) {
+    const rows = [
+      ['AGAPAY plan', tier.label],
+      ['Primary fund', givingSetupDraft.general.name || 'General Operating Fund'],
+      ['Designated funds', givingSetupDraft.designatedFunds.length ? givingSetupDraft.designatedFunds.map((item) => item.name).join(', ') : 'None for launch'],
+      ...(tier.givingPlus ? [['Campaigns', givingSetupDraft.campaigns.length ? givingSetupDraft.campaigns.map((item) => item.name).join(', ') : 'None for launch']] : []),
+      ['Recurring giving', givingSetupDraft.recurringGivingEnabled ? 'Enabled' : 'Disabled'],
+      ['Candle offerings', givingSetupDraft.candlesEnabled ? 'Enabled' : 'Disabled']
+    ];
+    return `<div class="giving-setup-screen">
+      <div class="giving-setup-screen-heading"><span>Step 3 of 3</span><h3>Review and save</h3><p>This is what donors will see at launch. Saving sends the setup to AGAPAY for the final launch review.</p></div>
+      <div class="giving-setup-review">${rows.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('')}</div>
+      <div class="giving-setup-ready"><span aria-hidden="true">&#10003;</span><div><strong>Ready to save</strong><small>You can reopen this wizard or use Funds &amp; Alms to make changes before launch.</small></div></div>
+    </div>`;
+  }
+
+  function renderGivingSetupWizard() {
+    const modal = document.getElementById('givingSetupModal');
+    if (!modal || !givingSetupDraft) return;
+    const tier = givingSetupTierDetails();
+    const screen = givingSetupWizardStep === 0
+      ? givingSetupBasicsMarkup(tier)
+      : givingSetupWizardStep === 1
+        ? givingSetupChoicesMarkup(tier)
+        : givingSetupReviewMarkup(tier);
+    modal.innerHTML = `<div class="giving-setup-dialog" role="dialog" aria-modal="true" aria-labelledby="givingSetupTitle">
+      <header class="giving-setup-dialog-head"><div><span class="giving-setup-tier">${escapeHtml(tier.label)} setup</span><h2 id="givingSetupTitle">Review giving setup</h2></div><button type="button" class="giving-setup-close" aria-label="Close giving setup" onclick="closeGivingSetupWizard()">&times;</button></header>
+      <div class="giving-setup-progress" aria-label="Giving setup progress">${[0,1,2].map((step) => `<span class="${step < givingSetupWizardStep ? 'done' : step === givingSetupWizardStep ? 'current' : ''}"><i>${step < givingSetupWizardStep ? '&#10003;' : step + 1}</i>${['Basics','Destinations','Review'][step]}</span>`).join('')}</div>
+      <div class="giving-setup-dialog-body">${screen}</div>
+      <footer class="giving-setup-dialog-actions"><button type="button" class="btn btn-ghost" onclick="${givingSetupWizardStep ? 'setGivingSetupWizardStep(' + (givingSetupWizardStep - 1) + ')' : 'closeGivingSetupWizard()'}">${givingSetupWizardStep ? 'Back' : 'Cancel'}</button>${givingSetupWizardStep < 2 ? `<button type="button" class="btn btn-gold" onclick="setGivingSetupWizardStep(${givingSetupWizardStep + 1})">Continue</button>` : '<button type="button" class="btn btn-gold" onclick="saveGivingSetupWizard(this)">Save giving setup</button>'}</footer>
+    </div>`;
+  }
+
+  function openGivingSetupWizard() {
+    document.getElementById('givingSetupModal')?.remove();
+    givingSetupDraft = buildGivingSetupDraft();
+    givingSetupWizardStep = 0;
+    const modal = document.createElement('div');
+    modal.id = 'givingSetupModal';
+    modal.className = 'giving-setup-modal';
+    document.body.appendChild(modal);
+    document.body.classList.add('giving-setup-modal-open');
+    renderGivingSetupWizard();
+    setTimeout(() => document.getElementById('givingSetupGeneralName')?.focus(), 0);
+  }
+
+  function setGivingSetupWizardStep(step) {
+    captureGivingSetupWizardStep();
+    if (!givingSetupDraft.general.name) {
+      setStatus('Enter the primary giving destination before continuing.', 'error');
+      document.getElementById('givingSetupGeneralName')?.focus();
+      return;
+    }
+    givingSetupWizardStep = Math.max(0, Math.min(2, Number(step) || 0));
+    renderGivingSetupWizard();
+  }
+
+  function addGivingSetupPreset(kind, key) {
+    if (!givingSetupDraft) return;
+    const tier = givingSetupTierDetails();
+    const target = kind === 'fund' ? givingSetupDraft.designatedFunds : givingSetupDraft.campaigns;
+    if (kind === 'campaign' && !tier.givingPlus) return;
+    if (kind === 'fund' && target.length >= tier.designatedLimit) {
+      setStatus(`${tier.label} supports one active designated fund. Remove the current choice to select another.`, 'error');
+      return;
+    }
+    const preset = (kind === 'fund' ? fundPresets : campaignPresets)[key];
+    if (!preset || target.some((item) => item.id === preset.id)) return;
+    target.push({ ...preset, enabled:true, active:true, donorVisible:true, givingEnabled:true, restrictionType:preset.restrictionType || (kind === 'campaign' ? 'donor_restricted_temporary' : 'unrestricted') });
+    renderGivingSetupWizard();
+  }
+
+  function addGivingSetupCustom(kind) {
+    if (!givingSetupDraft) return;
+    const tier = givingSetupTierDetails();
+    const input = document.getElementById(kind === 'fund' ? 'givingSetupCustomFund' : 'givingSetupCustomCampaign');
+    const name = input?.value.trim() || '';
+    if (!name) { setStatus(`Enter a ${kind === 'fund' ? 'fund' : 'campaign'} name first.`, 'error'); return; }
+    const target = kind === 'fund' ? givingSetupDraft.designatedFunds : givingSetupDraft.campaigns;
+    if (kind === 'campaign' && !tier.givingPlus) return;
+    if (kind === 'fund' && target.length >= tier.designatedLimit) {
+      setStatus(`${tier.label} supports one active designated fund. Remove the current choice to add another.`, 'error');
+      return;
+    }
+    if (target.some((item) => String(item.name || '').toLowerCase() === name.toLowerCase())) { setStatus('That giving destination is already selected.', 'error'); return; }
+    target.push({ id:slugifyLocal(name), name, description:kind === 'fund' ? 'Designated support for this parish.' : 'Parish-approved alms for this need.', enabled:true, active:true, donorVisible:true, givingEnabled:true, restrictionType:kind === 'campaign' ? 'donor_restricted_temporary' : 'unrestricted' });
+    renderGivingSetupWizard();
+  }
+
+  function removeGivingSetupChoice(kind, index) {
+    if (!givingSetupDraft) return;
+    const target = kind === 'fund' ? givingSetupDraft.designatedFunds : givingSetupDraft.campaigns;
+    target.splice(Number(index), 1);
+    renderGivingSetupWizard();
+  }
+
+  async function saveGivingSetupWizard(button) {
+    if (!currentParish || !givingSetupDraft) return;
+    captureGivingSetupWizardStep();
+    const general = {
+      ...givingSetupDraft.general,
+      id:'general', code:givingSetupDraft.general.code || 'general', reportCode:givingSetupDraft.general.reportCode || 'general',
+      name:givingSetupDraft.general.name || 'General Operating Fund', description:givingSetupDraft.general.description || fundPresets.general.description,
+      restrictionType:'unrestricted', isDefault:true, enabled:true, active:true, donorVisible:true, givingEnabled:true
+    };
+    const selectedFundIds = new Set(givingSetupDraft.designatedFunds.map((fund) => String(fund.id || fund.name || '').toLowerCase()));
+    const selectedCampaignIds = new Set(givingSetupDraft.campaigns.map((campaign) => String(campaign.id || campaign.name || '').toLowerCase()));
+    const inactiveFunds = editableFunds.filter((fund) => fund && !isGeneralDashboardFund(fund) && !isCandleDashboardFund(fund) && (fund.enabled === false || fund.active === false) && !selectedFundIds.has(String(fund.id || fund.name || '').toLowerCase()));
+    const candleFunds = editableFunds.filter(isCandleDashboardFund);
+    const inactiveCampaigns = editableCampaigns.filter((campaign) => campaign && (campaign.enabled === false || campaign.active === false) && !selectedCampaignIds.has(String(campaign.id || campaign.name || '').toLowerCase()));
+    editableFunds = [general, ...givingSetupDraft.designatedFunds, ...candleFunds, ...inactiveFunds];
+    if (hasGivingPlusAccess()) editableCampaigns = [...givingSetupDraft.campaigns, ...inactiveCampaigns];
+    const recurring = document.getElementById('recurringGivingEnabled');
+    const candles = document.getElementById('candlesEnabled');
+    if (recurring) recurring.checked = givingSetupDraft.recurringGivingEnabled;
+    if (candles) candles.checked = givingSetupDraft.candlesEnabled;
+    let body;
+    try { body = payload(); } catch (error) { setStatus(error.message, 'error'); return; }
+    if (button) { button.classList.add('loading'); button.disabled = true; }
+    try {
+      const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId), { method:'PATCH', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify(body) });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || data.message || data.detail || 'Unable to save the giving setup.');
+      closeGivingSetupWizard();
+      await loadDashboard();
+      setStatus('Giving setup saved. AGAPAY can now complete the final launch review.', 'success');
+    } catch (error) {
+      setStatus(error.message, 'error');
+      if (button?.isConnected) { button.classList.remove('loading'); button.disabled = false; }
+    }
   }
   async function submitTreasurerGoLive(button) {
     const workflow = currentParish?.onboarding;

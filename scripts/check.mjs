@@ -431,6 +431,12 @@ assert.ok(!learnDashboardShell.includes("Back to Give"), "Learn account menu sho
 assert.ok(learnDashboardShell.includes("myagapay-menu-trigger") && !learnDashboardShell.includes("learn-account-utility-avatar"), "Learn should replace account-holder initials with the shared hamburger menu");
 
 const giveHtml = await readFile("public/give/form.html", "utf8");
+assert.match(parishGivingCatalogHandler, /if \(!parish \|\| parish\.status !== "verified"\)/, "hidden onboarding parishes must return a normal 404 instead of throwing during public lookup");
+assert.match(giveHtml, /DEFAULT_PROCESSING_FEE_SCHEDULES\s*=\s*\{[\s\S]*rateBasisPoints:290[\s\S]*fixedFeeCents:30/, "the giving form must retain a standard card-fee fallback when parish data is unavailable");
+assert.match(giveHtml, /processingFeeSchedules:\s*\{ \.\.\.DEFAULT_PROCESSING_FEE_SCHEDULES/, "the parish response must merge over, not replace, the safe fee schedules");
+assert.match(giveHtml, /showGivingPageUnavailable\(\)/, "the giving form must fail closed instead of displaying placeholder parish or fee data");
+assert.match(giveHtml, /if \(!loaded\) return;/, "the giving form must stop initialization after an unavailable parish response");
+assert.doesNotMatch(giveHtml, /St\. Seraphim|ROCOR|Lubbock/, "the shared giving form must not flash another parish's identity while dynamic data loads");
 assert.ok(
   giveHtml.includes('gift-type-name">Tithes</span>')
     && !giveHtml.includes("Weekly Stewardship")

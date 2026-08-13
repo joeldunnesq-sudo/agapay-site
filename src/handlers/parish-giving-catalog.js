@@ -215,7 +215,11 @@ export async function handleParishes(request, env) {
     const found = await findRegistrationByParishId(env, singleId);
     if (!found) return json({ error: "Parish not found" }, { status: 404 });
     const parish = parishFromRegistration(found.registration);
-    if (parish.status !== "verified") return json({ error: "Parish not found" }, { status: 404 });
+    // parishFromRegistration intentionally returns null while a verified parish
+    // is still hidden or paused. Treat that as a normal unavailable record,
+    // rather than dereferencing null and turning an onboarding preview into a
+    // Cloudflare 1101 Worker exception.
+    if (!parish || parish.status !== "verified") return json({ error: "Parish not found" }, { status: 404 });
     const enriched = await enrichParishGivingOptions(env, parish);
     return json({ parish: enriched, source: "d1" });
   }

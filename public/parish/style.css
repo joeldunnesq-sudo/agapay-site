@@ -762,6 +762,75 @@
     .setup-link-box { display: none; margin-top: 0.75rem; border: 1px solid rgba(184,144,47,0.25); border-radius: 10px; background: rgba(246,241,232,0.08); padding: 0.75rem; }
     .setup-link-box.visible { display: block; }
     .setup-link-box a { color: var(--cream); font-weight: 700; }
+    body.giving-setup-modal-open { overflow: hidden; }
+    .giving-setup-modal { position: fixed; inset: 0; z-index: 5000; display: grid; place-items: center; padding: 20px; background: rgba(3,14,23,.78); backdrop-filter: blur(8px); }
+    .giving-setup-dialog { width: min(820px, 100%); max-height: min(860px, calc(100vh - 40px)); display: grid; grid-template-rows: auto auto minmax(0,1fr) auto; overflow: hidden; border: 1px solid rgba(200,162,74,.38); border-radius: 20px; background: var(--paper); color: var(--ink); box-shadow: 0 28px 90px rgba(0,0,0,.42); }
+    .giving-setup-dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.25rem 1.35rem 1rem; background: linear-gradient(135deg,var(--deep),#0c2a3d); color: var(--cream); }
+    .giving-setup-dialog-head h2 { margin: .2rem 0 0; color: var(--cream); font-family: var(--serif); font-size: 1.85rem; font-weight: 500; line-height: 1; }
+    .giving-setup-tier { color: var(--gold); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .giving-setup-close { width: 38px; height: 38px; flex: none; display: grid; place-items: center; border: 1px solid rgba(246,241,232,.2); border-radius: 50%; background: rgba(246,241,232,.06); color: var(--cream); cursor: pointer; font-size: 25px; line-height: 1; }
+    .giving-setup-close:hover { border-color: rgba(200,162,74,.7); color: var(--gold); }
+    .giving-setup-progress { display: grid; grid-template-columns: repeat(3,1fr); padding: .8rem 1.35rem; border-bottom: 1px solid var(--line); background: #faf7f0; }
+    .giving-setup-progress span { position: relative; display: flex; align-items: center; gap: 7px; color: var(--stone); font-size: 11px; font-weight: 700; }
+    .giving-setup-progress span:not(:last-child)::after { content: ''; height: 1px; flex: 1; margin: 0 12px; background: var(--line); }
+    .giving-setup-progress i { width: 24px; height: 24px; flex: none; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: #fff; color: var(--stone); font-size: 10px; font-style: normal; }
+    .giving-setup-progress .current { color: var(--deep); }
+    .giving-setup-progress .current i { border-color: var(--gold); background: var(--gold); color: var(--deep); }
+    .giving-setup-progress .done { color: var(--sage); }
+    .giving-setup-progress .done i { border-color: var(--sage); background: var(--sage); color: white; }
+    .giving-setup-dialog-body { overflow: auto; padding: 1.35rem; }
+    .giving-setup-screen { display: grid; gap: 1rem; }
+    .giving-setup-screen-heading > span { color: var(--gold-dark); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .giving-setup-screen-heading h3 { margin: .25rem 0 0; color: var(--deep); font-family: var(--serif); font-size: 1.65rem; font-weight: 600; line-height: 1.05; }
+    .giving-setup-screen-heading p { margin: .4rem 0 0; color: var(--stone); font-size: 13px; line-height: 1.5; }
+    .giving-setup-field { display: grid; gap: 6px; }
+    .giving-setup-field label { color: var(--deep); font-size: 12px; font-weight: 800; }
+    .giving-setup-field input,.giving-setup-field textarea,.giving-setup-custom input { width: 100%; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); padding: 11px 12px; font: 13px/1.45 var(--sans); }
+    .giving-setup-field textarea { min-height: 78px; resize: vertical; }
+    .giving-setup-field input:focus,.giving-setup-field textarea:focus,.giving-setup-custom input:focus { outline: 0; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(185,145,67,.12); }
+    .giving-setup-field small { color: var(--stone); font-size: 10px; line-height: 1.45; }
+    .giving-setup-toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .giving-setup-toggle { display: grid; grid-template-columns: 18px minmax(0,1fr); gap: 10px; align-items: start; margin: 0; padding: .9rem; border: 1px solid var(--line); border-radius: 12px; background: #fff; cursor: pointer; }
+    .giving-setup-toggle input { width: 16px; height: 16px; margin: 2px 0 0; padding: 0; accent-color: var(--gold); }
+    .giving-setup-toggle span { display: grid; gap: 3px; }
+    .giving-setup-toggle strong { color: var(--deep); font-size: 12px; }
+    .giving-setup-toggle small { color: var(--stone); font-size: 10px; line-height: 1.4; }
+    .giving-setup-plan-note,.giving-setup-upgrade-note { display: grid; gap: 3px; padding: .85rem 1rem; border: 1px solid rgba(185,145,67,.26); border-radius: 12px; background: #f6efe2; }
+    .giving-setup-plan-note strong,.giving-setup-upgrade-note strong { color: var(--gold-dark); font-size: 11px; }
+    .giving-setup-plan-note span,.giving-setup-upgrade-note span { color: var(--stone); font-size: 11px; line-height: 1.45; }
+    .giving-setup-choice-section { display: grid; gap: .75rem; padding: 1rem; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+    .giving-setup-choice-head { display: flex; justify-content: space-between; gap: 1rem; align-items: start; }
+    .giving-setup-choice-head > div { display: grid; gap: 2px; }
+    .giving-setup-choice-head strong { color: var(--deep); font-size: 13px; }
+    .giving-setup-choice-head small { color: var(--stone); font-size: 10px; }
+    .giving-setup-choice-head em { flex: none; color: var(--gold-dark); font-size: 10px; font-style: normal; font-weight: 800; }
+    .giving-setup-selected { display: grid; gap: 6px; }
+    .giving-setup-selected-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: .65rem .75rem; border: 1px solid rgba(82,113,95,.2); border-radius: 10px; background: rgba(82,113,95,.06); }
+    .giving-setup-selected-row > span { min-width: 0; display: grid; gap: 2px; }
+    .giving-setup-selected-row strong { color: var(--deep); font-size: 11px; }
+    .giving-setup-selected-row small { overflow: hidden; color: var(--stone); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+    .giving-setup-selected-row button { flex: none; border: 0; background: transparent; color: #8f3f3b; cursor: pointer; font-size: 10px; font-weight: 700; }
+    .giving-setup-empty { padding: .7rem; border: 1px dashed var(--line); border-radius: 9px; color: var(--stone); font-size: 10px; text-align: center; }
+    .giving-setup-presets { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; }
+    .giving-setup-preset { min-width: 0; display: grid; gap: 2px; padding: .7rem; border: 1px solid var(--line); border-radius: 10px; background: #fffdf9; color: inherit; cursor: pointer; text-align: left; }
+    .giving-setup-preset:hover:not(:disabled) { border-color: var(--gold); background: #faf4e8; }
+    .giving-setup-preset.is-selected { border-color: rgba(82,113,95,.32); background: rgba(82,113,95,.06); }
+    .giving-setup-preset:disabled { cursor: default; opacity: .72; }
+    .giving-setup-preset strong { color: var(--deep); font-size: 10px; }
+    .giving-setup-preset small { display: -webkit-box; overflow: hidden; color: var(--stone); font-size: 9px; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+    .giving-setup-custom { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 7px; }
+    .giving-setup-custom button { border: 1px solid var(--gold); border-radius: 9px; background: transparent; color: var(--gold-dark); padding: 0 14px; cursor: pointer; font-size: 11px; font-weight: 800; }
+    .giving-setup-review { display: grid; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #fff; }
+    .giving-setup-review > div { display: grid; grid-template-columns: 150px minmax(0,1fr); gap: 1rem; padding: .8rem 1rem; border-bottom: 1px solid var(--line); }
+    .giving-setup-review > div:last-child { border-bottom: 0; }
+    .giving-setup-review span { color: var(--stone); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+    .giving-setup-review strong { color: var(--deep); font-size: 12px; font-weight: 700; }
+    .giving-setup-ready { display: grid; grid-template-columns: 38px minmax(0,1fr); gap: 10px; align-items: center; padding: .9rem; border: 1px solid rgba(82,113,95,.3); border-radius: 12px; background: rgba(82,113,95,.07); }
+    .giving-setup-ready > span { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--sage); color: #fff; font-weight: 800; }
+    .giving-setup-ready > div { display: grid; gap: 2px; }
+    .giving-setup-ready strong { color: var(--deep); font-size: 12px; }
+    .giving-setup-ready small { color: var(--stone); font-size: 10px; }
+    .giving-setup-dialog-actions { display: flex; justify-content: space-between; gap: 10px; padding: .9rem 1.35rem; border-top: 1px solid var(--line); background: #faf7f0; }
     .deterministic-onboarding .setup-wizard-body { grid-template-columns: minmax(0, 1fr) 320px; }
     .parish-setup-stages { display: grid; gap: 8px; margin-top: 1rem; }
     .parish-setup-stage { display: grid; grid-template-columns: 34px minmax(0,1fr) auto; align-items: center; gap: 10px; border: 1px solid rgba(246,241,232,.14); border-radius: 10px; padding: 10px 12px; background: rgba(246,241,232,.035); }
@@ -1572,6 +1641,14 @@
         grid-template-columns: 1fr;
       }
       .setup-action-panel { width: 100%; }
+      .giving-setup-modal { padding: 0; align-items: end; }
+      .giving-setup-dialog { max-height: 94vh; border-radius: 20px 20px 0 0; }
+      .giving-setup-dialog-head,.giving-setup-dialog-body,.giving-setup-dialog-actions { padding-left: 1rem; padding-right: 1rem; }
+      .giving-setup-progress { padding-left: 1rem; padding-right: 1rem; }
+      .giving-setup-progress span { font-size: 9px; }
+      .giving-setup-progress span:not(:last-child)::after { margin: 0 6px; }
+      .giving-setup-toggle-grid,.giving-setup-presets { grid-template-columns: 1fr; }
+      .giving-setup-review > div { grid-template-columns: 1fr; gap: 3px; }
       .qr-feature-layout {
         gap: 0.85rem;
         padding: 0.95rem;

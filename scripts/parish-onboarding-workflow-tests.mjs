@@ -322,6 +322,12 @@ assert.match(adminUi, /renderOnboardingManualChecks\(onboardingChecks, \['giving
 assert.match(adminStyles, /onboarding-phase-card:not\(\.is-current\)[^{]*\{[^}]*padding/, "non-current onboarding phases must collapse to compact rows");
 assert.match(parishUi, /10-minute parish setup/, "the parish UI must present the setup-time target");
 assert.match(parishUi, /Three steps to start giving/, "the parish UI must present three simple stages");
+assert.match(parishUi, /openGivingSetupWizard\(\)/, "Review giving setup must open the guided modal instead of navigating to a dashboard tab");
+assert.match(parishUi, /givingSetupTierDetails/, "the giving setup modal must derive its choices from the selected AGAPAY tier");
+assert.match(parishUi, /Step 1 of 3[\s\S]*Step 2 of 3[\s\S]*Step 3 of 3/, "the giving setup modal must keep a short three-screen sequence");
+assert.match(parishStyles, /\.giving-setup-modal\s*\{[^}]*position:\s*fixed/, "the giving setup wizard must render as a modal pop-out");
+assert.match(parishUi, /if \(tab === 'funds'\) tab = 'options'/, "legacy Funds navigation targets must resolve to the real Funds & Alms tab");
+assert.match(parishUi, /if \(!panel\) \{[\s\S]*current page was left open/, "unknown dashboard targets must fail safely without blanking the current panel");
 assert.match(parishUi, /acceptParishAccessInvitation/, "the parish UI must accept a personal access link");
 assert.match(adminUi, /Send personal invitations/, "admin UI must send personal access links instead of shared temporary credentials");
 assert.match(stripeHandler, /invalidateAndSaveMaterialRegistration/, "Stripe material writes must pass through signoff invalidation");
