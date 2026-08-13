@@ -210,6 +210,54 @@ globalThis.fetch = async (input, init) => {
 
 try {
   {
+    const { env } = makeD1Env();
+    const registration = baseRegistration();
+    await saveRegistrationRecord(env, registration.reference, registration);
+    const admin = await issueAdminSession(env, "Stale Admin");
+    const response = await worker.fetch(new Request(`https://agapay.test/api/admin/registrations/${registration.reference}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${admin.token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: "verified",
+        stripeAccountId: "",
+        stripeAccountStatus: "not_started"
+      })
+    }), env);
+    assert.equal(response.status, 200, JSON.stringify(await response.clone().json()));
+    const stored = await loadRegistrationByReference(env, registration.reference);
+    assert.equal(stored.stripeAccountId, registration.stripeAccountId, "a stale Admin form must not erase a parish-created Stripe account ID");
+    assert.equal(stored.stripeAccountStatus, registration.stripeAccountStatus, "a stale Admin form must not downgrade server-confirmed Stripe status");
+  }
+
+  {
+    const { env } = makeD1Env();
+    const registration = baseRegistration({
+      stripeAccountId: "",
+      stripeAccountStatus: "not_started",
+      stripeChargesEnabled: false,
+      stripePayoutsEnabled: false,
+      stripeDetailsSubmitted: false,
+      stripeStatusCheckedAt: "",
+      stripeOnboardingLinkCreatedAt: now()
+    });
+    await saveRegistrationRecord(env, registration.reference, registration);
+    const recoveredAccount = stripeAccount({
+      metadata: {
+        agapay_reference: registration.reference,
+        agapay_parish_id: registration.parishId
+      }
+    });
+    nextStripeResponse = { object: "list", data: [recoveredAccount], has_more: false };
+    const refreshed = await refreshStripeStatusForRegistration(env, registration.reference, registration);
+    assert.equal(refreshed.ok, true);
+    assert.equal(refreshed.recovered, true, "refresh must report when it rediscovered an existing Stripe account");
+    assert.equal(refreshed.registration.stripeAccountId, recoveredAccount.id);
+    assert.equal(refreshed.registration.stripeChargesEnabled, true);
+    assert.equal(refreshed.registration.stripePayoutsEnabled, true);
+    nextStripeResponse = stripeAccount();
+  }
+
+  {
     const fixture = await readyFixture();
     const workflow = await buildParishOnboardingWorkflow(fixture.registration, await workflowOptions(fixture));
 

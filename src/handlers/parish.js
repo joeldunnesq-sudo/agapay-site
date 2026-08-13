@@ -2121,7 +2121,7 @@ export async function handleParishStripeRefresh(request, env, parishId) {
   const refreshed = await refreshStripeStatusForRegistration(env, found.key, found.registration);
   if (!refreshed.ok) return json(refreshed.body, { status: refreshed.status });
   const onboarding = await buildParishOnboardingWorkflow(refreshed.registration, { appUrl: env.AGAPAY_APP_URL || new URL(request.url).origin, receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app" });
-  return json({ ok: true, parish: { ...parishDashboardPayload(parishId, refreshed.registration), onboarding }, onboarding, registration: refreshed.registration });
+  return json({ ok: true, recovered: refreshed.recovered === true, parish: { ...parishDashboardPayload(parishId, refreshed.registration), onboarding }, onboarding, registration: refreshed.registration });
 }
 
 export async function handleDashboardInvite(request, env, reference) {

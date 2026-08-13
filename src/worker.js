@@ -260,7 +260,6 @@ import {
 import {
   handleSubscriptionCheckout,
   handleStripeWebhook,
-  handleStripeOnboarding,
   handleStripeRefresh,
 } from "./handlers/stripe.js";
 
@@ -3789,10 +3788,6 @@ export default {
     if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/subscription-checkout")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/subscription-checkout", ""));
       return handleSubscriptionCheckout(request, env, reference);
-    }
-    if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/stripe-onboarding")) {
-      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/stripe-onboarding", ""));
-      return handleStripeOnboarding(request, env, reference);
     }
     if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/stripe-refresh")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/stripe-refresh", ""));

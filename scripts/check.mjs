@@ -845,6 +845,9 @@ assert.ok(
 assert.ok(!adminApp.includes('id="taxReadinessStatus"') && !adminApp.includes("renderTaxReadinessPanel"), "admin onboarding must not require a manual parish tax-readiness review");
 assert.ok(adminApp.includes("Subscription billing address") && adminApp.includes("billingAddressLine1"), "admin subscription setup should retain an editable billing address inherited from registration");
 assert.ok(subscriptionCheckoutLib.includes('"automatic_tax[enabled]": "true"'), "AGAPAY subscription checkout should rely on platform-level Stripe automatic tax");
+assert.ok(!worker.includes('startsWith("/api/admin/registrations/") && url.pathname.endsWith("/stripe-onboarding")'), "Admin must not expose a Stripe onboarding-link route");
+assert.ok(adminHandler.includes('stripeAccountId: current.stripeAccountId || ""'), "Admin saves must preserve parish-created Stripe account IDs");
+assert.ok(adminHandler.includes('stripeAccountStatus: current.stripeAccountStatus || "not_started"'), "Admin saves must preserve server-confirmed Stripe status");
 assert.ok(learnBillingLib.includes('params.set("billing_address_collection", "required")'), "Learn billing checkout should require billing address collection");
 assert.ok(learnBillingLib.includes('params.set("automatic_tax[enabled]", "true")'), "Learn billing checkout should keep Stripe automatic tax enabled");
 assert.ok(learnBillingLib.includes("billingAddressLine1: record.billingAddressLine1"), "Learn household billing record should support storing a billing address");

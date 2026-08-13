@@ -44,7 +44,6 @@ import {
 } from "../lib/stripe-connect.js";
 import { upsertStripeChargeVolumeRecord } from "../lib/stripe-volume.js";
 import { donorName } from "../lib/stripe-fees.js";
-import { sendTreasurerStripeInvite } from "../lib/parish-notifications.js";
 import { invalidateOnboardingSignoffIfChanged } from "../lib/parish-onboarding.js";
 
 import {
@@ -121,7 +120,7 @@ function storedStripeMaterialState(registration = {}) {
   });
 }
 
-async function retrieveConnectedAccountForRefresh(env, registration = {}) {
+async function retrieveConnectedAccountForRefresh(env, registration = {}, referenceHint = "") {
   const environment = String(env.AGAPAY_ENVIRONMENT || "").trim().toLowerCase();
   const fixture = registration.onboardingStripeTestFixture;
   if (NON_PRODUCTION_ENVIRONMENTS.has(environment)
@@ -129,7 +128,49 @@ async function retrieveConnectedAccountForRefresh(env, registration = {}) {
     && fixture?.id === registration.stripeAccountId) {
     return { ok: true, status: 200, body: fixture, simulated: true };
   }
-  return stripeGetRequest(env, `/v1/accounts/${encodeURIComponent(registration.stripeAccountId)}`);
+  if (registration.stripeAccountId) {
+    const retrieved = await stripeGetRequest(env, `/v1/accounts/${encodeURIComponent(registration.stripeAccountId)}`);
+    if (retrieved.ok || retrieved.status !== 404) return retrieved;
+  }
+
+  if (!registration.stripeOnboardingLinkCreatedAt) {
+    return { ok: false, status: 422, body: { error: { message: "This parish has not started Stripe onboarding yet" } } };
+  }
+
+  // An Admin page opened before parish-led onboarding could previously save a
+  // stale blank account ID over the newly connected account. Recover the
+  // account from the immutable AGAPAY metadata written when the parish started
+  // Stripe onboarding. Never guess from name or email.
+  const reference = String(registration.reference || referenceHint || "").trim();
+  const parishId = String(registration.parishId || "").trim();
+  if (!reference && !parishId) {
+    return { ok: false, status: 422, body: { error: { message: "No AGAPAY registration identity is available for Stripe recovery" } } };
+  }
+
+  const matches = [];
+  let startingAfter = "";
+  for (let page = 0; page < 5; page += 1) {
+    const query = new URLSearchParams({ limit: "100" });
+    if (startingAfter) query.set("starting_after", startingAfter);
+    const listed = await stripeGetRequest(env, `/v1/accounts?${query}`);
+    if (!listed.ok) return listed;
+    const accounts = Array.isArray(listed.body?.data) ? listed.body.data : [];
+    matches.push(...accounts.filter((account) => {
+      const metadata = account?.metadata || {};
+      return (reference && metadata.agapay_reference === reference)
+        || (parishId && metadata.agapay_parish_id === parishId);
+    }));
+    if (!listed.body?.has_more || !accounts.length) break;
+    startingAfter = String(accounts.at(-1)?.id || "");
+    if (!startingAfter) break;
+  }
+
+  const unique = [...new Map(matches.map((account) => [account.id, account])).values()];
+  if (unique.length === 1) return { ok: true, status: 200, body: unique[0], recovered: true };
+  if (unique.length > 1) {
+    return { ok: false, status: 409, body: { error: { message: "Multiple Stripe accounts match this parish. AGAPAY support must select the canonical account." } } };
+  }
+  return { ok: false, status: 422, body: { error: { message: "No connected Stripe account was found for this parish" } } };
 }
 
 async function invalidateAndSaveMaterialRegistration(env, reference, previous, next, actor, reason) {
@@ -949,60 +990,16 @@ export async function createStripeOnboardingSession(request, env, reference, reg
   return { onboardingUrl: link.body.url, registration: updated };
 }
 
-export async function handleStripeOnboarding(request, env, reference) {
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  const limited = await rateLimit(request, env, "admin-money-actions", { limit: 20, windowSeconds: 300 });
-  if (limited) return limited;
-  const adminContext = await requireAdminContext(request, env);
-  if (!adminContext) return unauthorized();
-  if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
-  const registration = await loadRegistrationByReference(env, reference);
-  if (!registration) return json({ error: "Registration not found" }, { status: 404 });
-
-  if (registration.status !== "verified") {
-    return json({ error: "Verify the parish before starting Stripe onboarding" }, { status: 422 });
-  }
-
-  const result = await createStripeOnboardingSession(request, env, reference, registration);
-  if (result instanceof Response) return result;
-
-  const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-  const email = await sendTreasurerStripeInvite(env, appUrl, result.registration);
-  const updated = {
-    ...result.registration,
-    stripeOnboardingEmailStatus: email.status,
-    stripeOnboardingEmailId: email.id || "",
-    stripeOnboardingEmailDetail: email.detail || "",
-    stripeOnboardingEmailSentAt: email.status === "sent" ? new Date().toISOString() : result.registration.stripeOnboardingEmailSentAt
-  };
-  const audited = appendAdminAudit(updated, "stripe_onboarding_link_created", adminContext.actor, {
-    stripeAccountId: updated.stripeAccountId || "",
-    emailStatus: email.status || "unknown"
-  });
-  await saveRegistrationRecord(env, reference, audited, result.registration);
-
-  return json({ ok: true, onboardingUrl: result.onboardingUrl, email, registration: audited });
-}
-
 export async function refreshStripeStatusForRegistration(env, reference, registration, options = {}) {
-  if (!registration.stripeAccountId) {
-    return {
-      ok: false,
-      status: 422,
-      body: { error: "This registration does not have a Stripe connected account yet" }
-    };
-  }
-
-  const retrieved = await retrieveConnectedAccountForRefresh(env, registration);
+  const retrieved = await retrieveConnectedAccountForRefresh(env, registration, reference);
   if (!retrieved.ok) {
     return {
       ok: false,
-      status: 502,
+      status: retrieved.status === 409 ? 409 : retrieved.status === 422 ? 422 : 502,
       body: {
-        error: "Stripe could not confirm the connected account. Please retry before going live.",
-        code: "stripe_refresh_failed",
-        retryable: true,
+        error: retrieved.body.error?.message || "Stripe could not confirm the connected account. Please retry before going live.",
+        code: retrieved.status === 409 ? "stripe_account_ambiguous" : retrieved.status === 422 ? "stripe_account_not_found" : "stripe_refresh_failed",
+        retryable: ![409, 422].includes(retrieved.status),
         detail: retrieved.body.error?.message || "Unknown Stripe error"
       }
     };
@@ -1038,7 +1035,7 @@ export async function refreshStripeStatusForRegistration(env, reference, registr
     options.reason || "Stripe changed the connected account readiness or payout destination."
   );
 
-  return { ok: true, registration: updated, account, confirmedAt, simulated: retrieved.simulated === true };
+  return { ok: true, registration: updated, account, confirmedAt, recovered: retrieved.recovered === true, simulated: retrieved.simulated === true };
 }
 
 export async function handleStripeRefresh(request, env, reference) {
@@ -1063,5 +1060,5 @@ export async function handleStripeRefresh(request, env, reference) {
     await saveRegistrationRecord(env, reference, updated, refreshed.registration);
   }
 
-  return json({ ok: true, registration: updated });
+  return json({ ok: true, recovered: refreshed.recovered === true, registration: updated });
 }

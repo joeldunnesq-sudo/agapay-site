@@ -1967,6 +1967,10 @@
     .onboarding-access-summary em { color: var(--stone); font-size: 10px; font-style: normal; text-transform: uppercase; }
     .onboarding-access-summary > div.accepted { border-color: rgba(75,181,120,.38); background: rgba(75,181,120,.08); }
     .onboarding-access-summary > div.accepted em { color: #7fcfa0; }
+    .onboarding-stripe-observer { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; }
+    .onboarding-stripe-observer > div { min-width: 0; border: 1px solid var(--line); border-radius: 9px; background: var(--paper); padding: .62rem .7rem; }
+    .onboarding-stripe-observer span { display: block; color: var(--gold); font-size: 8.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+    .onboarding-stripe-observer strong { display: block; margin-top: .2rem; overflow-wrap: anywhere; color: var(--deep); font-size: 11px; }
     .onboarding-ready-panel { padding: 0; border: 0; background: transparent; }
     @media (max-width: 720px) { .onboarding-access-summary { grid-template-columns: 1fr; } }
     .onboarding-phase-card.is-current { border-color: rgba(196,150,62,.38); box-shadow: 0 14px 34px rgba(5,15,26,.08); }
@@ -1991,6 +1995,7 @@
       .onboarding-record-summary-grid,
       .onboarding-record-technical-grid { grid-template-columns: 1fr; }
       .onboarding-record-technical-grid .full { grid-column: auto; }
+      .onboarding-stripe-observer { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
     /* ─────────────────────────────────────────

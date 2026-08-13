@@ -364,7 +364,7 @@ let selectedReference = '';
       if (reg.onboardingWorkflow?.state === 'LIVE') return { title: 'Parish is live', body: 'Giving is active and the treasurer signoff is recorded.' };
       if ((reg.status || 'pending') !== 'verified') return { title: 'Review canonical standing', body: 'Confirm jurisdiction, bishop/deanery, website, and contact details before marking verified.' };
       if (reg.dashboardInviteEmailStatus !== 'sent') return { title: 'Send personal invitations', body: 'Email the priest and treasurer secure one-use links so they can create their own passwords.' };
-      if (!['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus)) return { title: 'Connect Stripe', body: 'Create onboarding or ask the parish to finish Stripe from the dashboard.' };
+      if (!['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus)) return { title: 'Confirm Stripe', body: 'The parish connects Stripe in its dashboard. Check the saved connection and readiness here.' };
       if (!['active', 'trialing', 'free_forever'].includes(reg.subscriptionStatus)) return { title: 'Set up AGAPAY subscription', body: 'Create subscription checkout, start a free demo, or mark a monastery/skete as free forever.' };
       return { title: 'Parish is ready', body: 'Canonical verification, dashboard invite, Stripe, and subscription status are all in place.' };
     }
@@ -1768,7 +1768,7 @@ let selectedReference = '';
       if (status === 'needs_more_info') return { key: 'follow_up', label: 'follow-up review' };
       if (status !== 'verified') return { key: 'inactive', label: 'inactive status' };
       if (reg.dashboardInviteEmailStatus !== 'sent') return { key: 'invite', label: 'dashboard invite' };
-      if (!stripeDone) return { key: 'stripe', label: 'Stripe onboarding' };
+      if (!stripeDone) return { key: 'stripe', label: 'Stripe connection' };
       if (!subscriptionDone) return { key: 'subscription', label: 'subscription setup' };
       return { key: 'complete', label: 'completed onboarding' };
     }
@@ -2635,35 +2635,19 @@ let selectedReference = '';
           </div>
 
           <div class="admin-section onboarding-phase-card ${currentPhase === 'stripe' ? 'is-current' : ''}" id="onboarding-phase-stripe">
-            <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('stripe')"><span>3</span><div><small>Connect Stripe</small><strong>Confirm charges and payouts</strong></div><em>${currentPhase === 'stripe' ? 'Current' : 'Open'}</em></button>
-            <div class="form-grid">
-              <div>
-                <label for="stripeAccountStatus">Stripe onboarding status</label>
-                <select id="stripeAccountStatus">
-                  <option value="not_started" ${(reg.stripeAccountStatus || 'not_started') === 'not_started' ? 'selected' : ''}>Not started</option>
-                  <option value="invited" ${reg.stripeAccountStatus === 'invited' ? 'selected' : ''}>Invited</option>
-                  <option value="onboarding" ${reg.stripeAccountStatus === 'onboarding' ? 'selected' : ''}>Onboarding</option>
-                  <option value="charges_enabled" ${reg.stripeAccountStatus === 'charges_enabled' ? 'selected' : ''}>Charges enabled</option>
-                  <option value="payouts_enabled" ${reg.stripeAccountStatus === 'payouts_enabled' ? 'selected' : ''}>Payouts enabled</option>
-                  <option value="restricted" ${reg.stripeAccountStatus === 'restricted' ? 'selected' : ''}>Restricted</option>
-                </select>
-              </div>
-              <div>
-                <label for="stripeAccountId">Stripe account ID</label>
-                <input id="stripeAccountId" value="${escapeAttr(reg.stripeAccountId)}" placeholder="acct_..." />
-              </div>
+            <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('stripe')"><span>3</span><div><small>Confirm Stripe</small><strong>Verify the parish connection</strong></div><em>${currentPhase === 'stripe' ? 'Current' : 'Open'}</em></button>
+            <div class="onboarding-stripe-observer">
+              <div><span>Connected account</span><strong>${escapeHtml(reg.stripeAccountId || 'Not detected yet')}</strong></div>
+              <div><span>Stripe status</span><strong>${escapeHtml(readable(reg.stripeAccountStatus || 'not started'))}</strong></div>
+              <div><span>Charges</span><strong>${reg.stripeChargesEnabled ? 'Enabled' : 'Not enabled'}</strong></div>
+              <div><span>Payouts</span><strong>${reg.stripePayoutsEnabled ? 'Enabled' : 'Not enabled'}</strong></div>
             </div>
             <div class="button-row" style="margin-top:0.75rem;">
-              <button class="gold" onclick="startStripeOnboarding('${reference}', this)">Create onboarding link</button>
-              <button class="secondary" onclick="refreshStripeStatus('${reference}', this)">Refresh Stripe status</button>
+              <button class="gold" onclick="refreshStripeStatus('${reference}', this)">Check Stripe connection</button>
             </div>
             <div class="payment-status" id="paymentStatus"></div>
-            <div class="stripe-link-box" id="stripeLinkBox">
-              <a id="stripeOnboardingLink" href="#" target="_blank" rel="noopener">Open Stripe onboarding</a>
-              <p id="stripeLinkHelp">This creates or opens a Standard connected Stripe account for the parish. Send this link to the parish treasurer if they should complete onboarding themselves.</p>
-            </div>
             <p style="margin:0.65rem 0 0; color:var(--stone); font-size: 11px; line-height:1.55;">
-              Onboarding links are single-use. If a link expires or the parish returns later, create a fresh one.
+              The parish connects Stripe from its own dashboard. Admin only checks the saved connection and Stripe readiness; it does not create or send a second onboarding link. If an older Admin save erased the account ID, this check safely rediscovers the account using AGAPAY metadata.
             </p>
           </div>
 
@@ -2746,8 +2730,6 @@ let selectedReference = '';
           body: JSON.stringify({
             status: selectedStatus,
             givingStatus: document.getElementById('givingStatus').value,
-            stripeAccountStatus: document.getElementById('stripeAccountStatus').value,
-            stripeAccountId: document.getElementById('stripeAccountId').value,
             reviewedBy: document.getElementById('reviewedBy').value,
             verificationSource: document.getElementById('verificationSource').value,
             bishopOrAuthority: document.getElementById('bishopOrAuthority').value,
@@ -2915,56 +2897,6 @@ let selectedReference = '';
       }
     }
 
-    async function startStripeOnboarding(reference, btn) {
-      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
-      
-      try {
-        const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/stripe-onboarding', {
-          method: 'POST',
-          headers: authHeaders()
-        });
-        const result = await response.json();
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.detail || result.error || 'Unable to create Stripe onboarding link');
-
-        await loadDetail(reference, { silent: true, noScroll: true });
-        await loadRegistrations();
-        const linkBox = document.getElementById('stripeLinkBox');
-        const link = document.getElementById('stripeOnboardingLink');
-        const help = document.getElementById('stripeLinkHelp');
-        if (linkBox && link) {
-          link.href = result.onboardingUrl;
-          linkBox.classList.add('visible');
-        }
-        let copied = false;
-        try {
-          await navigator.clipboard.writeText(result.onboardingUrl);
-          copied = true;
-        } catch {
-          copied = false;
-        }
-        const emailStatus = result.email?.status || 'unknown';
-        const emailNote = emailStatus === 'sent'
-          ? ' Treasurer invite email sent.'
-          : emailStatus === 'not_configured'
-            ? ' Email not sent because RESEND_API_KEY is not configured.'
-            : emailStatus === 'failed'
-              ? ` Email failed: ${result.email.detail || 'provider rejected the message'}.`
-              : '';
-        const message = copied
-          ? `Stripe onboarding link created and copied. Click Open Stripe onboarding.${emailNote}`
-          : `Stripe onboarding link created. Click Open Stripe onboarding.${emailNote}`;
-        if (help) help.textContent = copied
-          ? 'The link has also been copied to your clipboard. Send it to the parish treasurer if they should complete onboarding themselves.'
-          : 'Clipboard access was blocked, but the Standard account onboarding link is ready here.';
-        setPaymentStatus(message, 'success');
-      } catch (err) {
-        setPaymentStatus(err.message, 'error');
-      } finally {
-        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
-      }
-    }
-
     async function refreshStripeStatus(reference, btn) {
       if (btn) { btn.classList.add('loading'); btn.disabled = true; }
       
@@ -2979,7 +2911,9 @@ let selectedReference = '';
 
         await loadDetail(reference, { silent: true, noScroll: true });
         await loadRegistrations();
-        setPaymentStatus(`Stripe status refreshed: ${result.registration.stripeAccountStatus || 'unknown'}.`, 'success');
+        setPaymentStatus(result.recovered
+          ? `Existing Stripe connection recovered and confirmed: ${result.registration.stripeAccountStatus || 'unknown'}.`
+          : `Stripe connection confirmed: ${result.registration.stripeAccountStatus || 'unknown'}.`, 'success');
       } catch (err) {
         setPaymentStatus(err.message, 'error');
       } finally {

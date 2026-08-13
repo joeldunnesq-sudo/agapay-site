@@ -8775,7 +8775,7 @@
     }
   }
   async function refreshStripeStatus(options) {
-    if (!currentParish || !currentParish.parishId || !currentParish.stripeAccountId) return;
+    if (!currentParish || !currentParish.parishId) return;
     const status = currentParish.stripeAccountStatus || '';
     if (!options?.force && ['charges_enabled','payouts_enabled'].includes(status)) return;
     try {
@@ -8785,6 +8785,7 @@
       if (data.parish) currentParish = { ...currentParish, ...data.parish };
       if (data.onboarding) currentParish.onboarding = data.onboarding;
       if (options?.force) renderSetupWizard();
+      if (options?.force && data.recovered) setStatus('Your existing Stripe connection was found and restored.','success');
     } catch (err) {
       if (!options || !options.quiet) setStatus(err.message, 'error');
     }

@@ -1111,8 +1111,11 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
         : (onboardingWorkflowEnabled(current) && current.onboardingState !== "LIVE" && body.givingStatus === "active")
           ? "hidden"
           : body.givingStatus || current.givingStatus || "hidden",
-      stripeAccountStatus: body.stripeAccountStatus || current.stripeAccountStatus || "not_started",
-      stripeAccountId: body.stripeAccountId ?? current.stripeAccountId ?? "",
+      // Stripe connection state is owned by parish-led Stripe onboarding and
+      // verified server-side. Never accept these fields from an Admin form:
+      // a stale open page could otherwise erase a connection made moments ago.
+      stripeAccountStatus: current.stripeAccountStatus || "not_started",
+      stripeAccountId: current.stripeAccountId || "",
       reviewedBy: reviewedByNext,
       verificationSource: verificationSourceNext,
       bishopOrAuthority: bishopOrAuthorityNext,
@@ -1153,7 +1156,7 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
       statusTimeline: statusTimelineWithNext(current.status, nextStatus, current.statusTimeline),
       stripeStatusHistory: statusTimelineWithNext(
         current.stripeAccountStatus || "not_started",
-        body.stripeAccountStatus || current.stripeAccountStatus || "not_started",
+        current.stripeAccountStatus || "not_started",
         current.stripeStatusHistory
       ),
       subscriptionStatusHistory: statusTimelineWithNext(
@@ -1207,12 +1210,6 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
       updated = appendAdminAudit(updated, "subscription_status_changed", adminContext.actor, {
         from: current.subscriptionStatus || "not_started",
         to: body.subscriptionStatus || current.subscriptionStatus || "not_started"
-      });
-    }
-    if ((body.stripeAccountStatus || current.stripeAccountStatus || "not_started") !== (current.stripeAccountStatus || "not_started")) {
-      updated = appendAdminAudit(updated, "stripe_status_changed", adminContext.actor, {
-        from: current.stripeAccountStatus || "not_started",
-        to: body.stripeAccountStatus || current.stripeAccountStatus || "not_started"
       });
     }
     if (reviewerNote) {

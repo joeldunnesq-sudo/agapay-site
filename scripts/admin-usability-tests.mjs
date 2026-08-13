@@ -38,6 +38,10 @@ assert.match(app, /Giving snapshot &amp; optional parish tools/, "giving totals 
 assert.match(app, /id="registrationGivingSummary"/, "the condensed record must preserve the giving summary loader target");
 assert.match(css, /\.onboarding-record-summary-grid \{ display: grid; grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/);
 assert.match(css, /\.onboarding-record-technical-grid \{ display: grid; grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+assert.match(app, /class="onboarding-stripe-observer"/, "Admin must present Stripe as observed server state");
+assert.match(app, /The parish connects Stripe from its own dashboard/, "Admin must direct Stripe setup to the parish dashboard");
+assert.doesNotMatch(app, /Create onboarding link|function startStripeOnboarding\(reference/, "Admin must not create a second Stripe onboarding link");
+assert.doesNotMatch(app, /id="stripeAccountStatus"|id="stripeAccountId"/, "Admin must not expose editable Stripe connection state");
 assert.match(
   app,
   /const action = nextActionPriority\(item\);\s*return action && action\.priority < 99;/,
