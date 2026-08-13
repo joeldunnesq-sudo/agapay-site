@@ -173,10 +173,8 @@ export function requiredPersonalAccessAccepted(registration = {}, options = {}) 
   const access = registration.onboardingAccess && typeof registration.onboardingAccess === "object"
     ? registration.onboardingAccess
     : {};
-  const required = [
-    ["priest", normalizeEmail(registration.priestEmail)],
-    ["treasurer", normalizeEmail(registration.treasurerEmail)]
-  ].filter(([, email]) => Boolean(email));
+  const required = [["treasurer", normalizeEmail(registration.treasurerEmail)]]
+    .filter(([, email]) => Boolean(email));
   if (!required.length) return false;
   const memberships = Array.isArray(options.memberships) ? options.memberships : null;
   return required.every(([role, email]) => {
@@ -190,8 +188,13 @@ export function requiredPersonalAccessAccepted(registration = {}, options = {}) 
 }
 
 function accessAccepted(registration = {}, options = {}) {
-  if (requiredPersonalAccessAccepted(registration, options)) return true;
-  return legacySharedAccessApproved(registration);
+  const dashboardSecured = registration.dashboardInviteEmailStatus === "sent"
+    && Boolean(registration.parishDashboardPasswordRecord)
+    && registration.parishDashboardTokenTemporary !== true;
+  if (!dashboardSecured) return legacySharedAccessApproved(registration);
+  const paidSubscription = text(registration.subscriptionStatus, 80).toLowerCase() === "active";
+  if (!paidSubscription) return true;
+  return requiredPersonalAccessAccepted(registration, options) || legacySharedAccessApproved(registration);
 }
 
 function validDate(value) {
@@ -353,13 +356,16 @@ export async function buildParishOnboardingWorkflow(registration = {}, options =
     && Boolean(text(registration.bishopOrAuthority))
     && Boolean(text(registration.dioceseOrDeanery));
   const personalAccessAccepted = accessAccepted(registration, options);
+  const paidSubscription = text(registration.subscriptionStatus, 80).toLowerCase() === "active";
   const workflowSteps = [
     step("registration", "Registration received", Boolean(registration.reference), registration.reference ? `Reference ${registration.reference}` : "Registration reference is missing."),
     step("canonical", "Canonical parish confirmed", canonicalVerified, canonicalVerified ? "Canonical review fields are complete." : "Complete canonical reviewer, source, authority, and diocese/deanery."),
     step("representative", "Approving priest confirmed treasurer", manualPassed(checks, "authorizedRepresentative"), checks.authorizedRepresentative.note || "Verify the priest from an official source, then record that leader's confirmation of the treasurer's name and email."),
     step("verifiedHidden", "Organization verified and hidden", registration.status === "verified" && registration.givingStatus === "hidden", registration.status === "verified" ? `Giving status: ${registration.givingStatus || "hidden"}.` : "Verify the organization in AGAPAY Admin."),
     step("invite", "Dashboard invite delivered", registration.dashboardInviteEmailStatus === "sent", registration.dashboardInviteEmailStatus === "sent" ? "Invite delivery is confirmed." : "Send the dashboard invite to verified recipients."),
-    step("credential", "Personal dashboard access accepted", personalAccessAccepted, personalAccessAccepted ? "The required parish access invitations have been accepted." : "The priest and treasurer accept their secure email invitations and create their own passwords.", "Parish"),
+    step("credential", paidSubscription ? "Treasurer dashboard access secured" : "Parish dashboard access secured", personalAccessAccepted, personalAccessAccepted
+      ? paidSubscription ? "The treasurer's individual access is active for the paid subscription." : "One parish dashboard credential is active for the trial."
+      : paidSubscription ? "Ask the treasurer to accept the individual access invitation for the paid subscription." : "Open the dashboard invitation and replace the temporary credential.", "Parish"),
     step("stripeConnected", "Stripe connected", stripe.connected, stripe.connected ? `Connected account ${registration.stripeAccountId}.` : "Create the parish connected account.", "Treasurer"),
     step("stripeReady", "Stripe charges and payouts ready", stripe.ready, stripe.ready ? "Charges, payouts, details, and requirements passed a fresh refresh." : "Refresh Stripe; charges and payouts must both be enabled with no requirements due.", "Treasurer"),
     step("subscription", "Subscription configured", subscriptionReady(registration), subscriptionReady(registration) ? `Plan ${registration.subscriptionTierLabel || registration.subscriptionTier || "selected"} is ${registration.subscriptionStatus}.` : "Activate the selected AGAPAY plan.", "Treasurer"),
@@ -402,8 +408,10 @@ export async function buildParishOnboardingWorkflow(registration = {}, options =
     parishStages: [
       {
         key: "access",
-        title: "Accept access",
-        detail: personalAccessAccepted ? "Your secure parish access is ready." : "Open your email invitation and create your password.",
+        title: paidSubscription ? "Treasurer access" : "Parish access",
+        detail: personalAccessAccepted
+          ? paidSubscription ? "The treasurer's individual account is ready." : "Your single trial credential is ready."
+          : paidSubscription ? "The treasurer accepts an individual invitation after the parish becomes paid." : "Open the parish invitation and create one dashboard password.",
         passed: personalAccessAccepted
       },
       {
@@ -428,18 +436,17 @@ export async function buildParishOnboardingWorkflow(registration = {}, options =
   };
 }
 
-export function validateTreasurerGoLiveInput(body = {}, registration = {}, authenticatedIdentity = null) {
+export function validateTreasurerGoLiveInput(body = {}, registration = {}) {
   const affirmations = body.affirmations && typeof body.affirmations === "object" ? body.affirmations : {};
   const missingAffirmations = TREASURER_AFFIRMATIONS.filter((key) => affirmations[key] !== true);
   const signerName = text(body.signerName, 160);
   const signerTitle = text(body.signerTitle, 160);
-  const signerEmail = normalizeEmail(authenticatedIdentity?.email);
-  const registeredTreasurerEmail = normalizeEmail(registration.treasurerEmail);
+  const signerEmail = normalizeEmail(registration.treasurerEmail);
   const errors = [];
   if (missingAffirmations.length) errors.push("Complete all eight treasurer affirmations.");
   if (!signerName) errors.push("Enter the treasurer name.");
   if (!signerTitle || !/treasurer/i.test(signerTitle)) errors.push("Confirm a treasurer title.");
-  if (!signerEmail || signerEmail !== registeredTreasurerEmail) errors.push("Please sign in with the verified treasurer account to approve launch.");
+  if (!signerEmail) errors.push("Add the verified treasurer email before approving launch.");
   if (body.authorityConfirmed !== true) errors.push("Confirm authority to act for the parish.");
   return { ok: errors.length === 0, errors, missingAffirmations, signerName, signerTitle, signerEmail, affirmations };
 }

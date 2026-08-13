@@ -181,19 +181,19 @@ assert.equal(onboardingMaterialSnapshot(ready).stripe.statusCheckedAt, ready.str
 const versionAfter = await onboardingMaterialVersion(readyRegistration({ recurringGivingEnabled: false }));
 assert.notEqual(versionBefore, versionAfter, "material giving changes must change the snapshot version");
 
-const invalidEmail = validateTreasurerGoLiveInput(
+const browserIdentityIgnored = validateTreasurerGoLiveInput(
   signoffBody(ready, versionBefore, { signerEmail: "other@example.test" }),
   ready,
   { email: "other@example.test" }
 );
-assert.equal(invalidEmail.ok, false);
-assert.match(invalidEmail.errors.join(" "), /verified treasurer account/i);
-const browserEmailIgnored = validateTreasurerGoLiveInput(
-  signoffBody(ready, versionBefore, { signerEmail: "attacker@example.test" }),
-  ready,
-  { email: ready.treasurerEmail }
+assert.equal(browserIdentityIgnored.ok, true, "a second personal login must not be required for the trial signoff");
+assert.equal(browserIdentityIgnored.signerEmail, ready.treasurerEmail, "the registered treasurer email must be the audit authority");
+const missingTreasurerEmail = validateTreasurerGoLiveInput(
+  signoffBody(ready, versionBefore),
+  readyRegistration({ treasurerEmail: "" })
 );
-assert.equal(browserEmailIgnored.ok, true, "browser-supplied signer email must not be authoritative");
+assert.equal(missingTreasurerEmail.ok, false);
+assert.match(missingTreasurerEmail.errors.join(" "), /verified treasurer email/i);
 
 assert.equal(requiredPersonalAccessAccepted(ready), true);
 assert.equal(requiredPersonalAccessAccepted(readyRegistration({ onboardingAccess: {} })), false);
@@ -206,6 +206,14 @@ const legacyWorkflow = await buildParishOnboardingWorkflow(readyRegistration({
   legacySharedAccessAllowed: { approved: true, reason: "Pre-membership migration", approvedBy: "migration-admin", approvedAt: now }
 }), { now: Date.now() });
 assert.equal(legacyWorkflow.steps.find((step) => step.key === "credential")?.passed, true, "an explicit audited legacy access exception may satisfy the compatibility gate");
+const trialWorkflow = await buildParishOnboardingWorkflow(readyRegistration({
+  subscriptionStatus: "trialing",
+  onboardingAccess: {}
+}), { now: Date.now() });
+assert.equal(trialWorkflow.steps.find((step) => step.key === "credential")?.passed, true, "one secured parish credential must be enough during the trial");
+assert.equal(trialWorkflow.canGoLive, true, "the trial must not require a separate treasurer account before Go Live");
+const paidWithoutTreasurer = await buildParishOnboardingWorkflow(readyRegistration({ onboardingAccess: {} }), { now: Date.now() });
+assert.equal(paidWithoutTreasurer.steps.find((step) => step.key === "credential")?.passed, false, "a paid subscription must require individual treasurer access");
 const sanitizedRegistration = sanitizePublicRegistrationInput({
   parishName: "Test",
   legacySharedAccessAllowed: { approved: true, reason: "self-created", approvedBy: "submitter", approvedAt: now },
@@ -273,24 +281,36 @@ async function routeFixture(registration = readyRegistration()) {
   return { env, token: session.token, registration: session.registration };
 }
 
-// The authenticated route is exercised against D1 in parish-onboarding-hardening-tests.mjs.
-// Keep the former shared-bearer integration fixture here only to prove it is rejected.
-const sharedBearerFixture = await routeFixture();
-const sharedBearerWorkflow = await buildParishOnboardingWorkflow(sharedBearerFixture.registration, {
+const dashboardFixture = await routeFixture(readyRegistration({
+  subscriptionStatus: "trialing",
+  onboardingAccess: {},
+  stripeAccountId: "acct_staging_onboarding",
+  stripePayoutBankName: "Test Bank",
+  stripePayoutBankLast4: "4242",
+  onboardingStripeTestFixture: {
+    id: "acct_staging_onboarding",
+    charges_enabled: true,
+    payouts_enabled: true,
+    details_submitted: true,
+    requirements: { disabled_reason: null, currently_due: [] },
+    external_accounts: { data: [{ object: "bank_account", bank_name: "Test Bank", last4: "4242" }] }
+  }
+}));
+const dashboardWorkflow = await buildParishOnboardingWorkflow(dashboardFixture.registration, {
   appUrl: "https://agapay.test",
   receiptContact: "support@agapay.test"
 });
-const sharedBearerResponse = await worker.fetch(new Request(
+const dashboardResponse = await worker.fetch(new Request(
   "https://agapay.test/api/parish/dashboard/st-onboarding/onboarding",
   {
     method: "POST",
-    headers: { Authorization: `Bearer ${sharedBearerFixture.token}`, "Content-Type": "application/json" },
-    body: JSON.stringify(signoffBody(sharedBearerFixture.registration, sharedBearerWorkflow.materialVersion))
+    headers: { Authorization: `Bearer ${dashboardFixture.token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(signoffBody(dashboardFixture.registration, dashboardWorkflow.materialVersion))
   }
-), sharedBearerFixture.env);
-assert.equal(sharedBearerResponse.status, 401, "a shared parish dashboard bearer must never authorize Go Live");
+), dashboardFixture.env);
+assert.equal(dashboardResponse.status, 200, "the authenticated parish dashboard must authorize trial Go Live without a second treasurer login");
 
-const [parishUi, parishStyles, parishRedesign, adminUi, adminStyles, stripeHandler, subscriptionCheckout, parishHandler, workerSource, stewardshipHandler] = await Promise.all([
+const [parishUi, parishStyles, parishRedesign, adminUi, adminStyles, stripeHandler, subscriptionCheckout, parishHandler, parishOnboardingHandler, workerSource, stewardshipHandler] = await Promise.all([
   readFile(new URL("../public/parish/app.js", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/style.css", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/redesign.css", import.meta.url), "utf8"),
@@ -299,6 +319,7 @@ const [parishUi, parishStyles, parishRedesign, adminUi, adminStyles, stripeHandl
   readFile(new URL("../src/handlers/stripe.js", import.meta.url), "utf8"),
   readFile(new URL("../src/lib/subscription-checkout.js", import.meta.url), "utf8"),
   readFile(new URL("../src/handlers/parish.js", import.meta.url), "utf8"),
+  readFile(new URL("../src/handlers/parish-onboarding.js", import.meta.url), "utf8"),
   readFile(new URL("../src/worker.js", import.meta.url), "utf8"),
   readFile(new URL("../src/handlers/stewardship.js", import.meta.url), "utf8")
 ]);
@@ -306,10 +327,15 @@ for (const key of TREASURER_AFFIRMATIONS) {
   assert.match(parishUi, new RegExp(`${key}:`), `parish UI must render the ${key} affirmation`);
 }
 assert.match(parishUi, /submitTreasurerGoLive/, "parish UI must submit the locked treasurer signoff snapshot");
-assert.match(parishUi, /X-AGAPAY-User-Email':identityEmail/, "Go Live must send the authenticated platform identity context");
-assert.match(parishUi, /Verified from your signed-in treasurer account/, "the signer email must be read-only authenticated identity data");
+assert.match(parishUi, /headers:\{ \.\.\.authHeaders\(\), 'Accept':'application\/json'/, "Go Live must use the current parish dashboard session");
+assert.match(parishUi, /No separate treasurer login is required/, "the signoff must explain the one-credential trial model");
+assert.match(parishUi, /Paid account security/, "a live paid parish must receive a clear treasurer-access prompt");
+assert.match(stripeHandler, /becamePaid[\s\S]*sendDashboardInvite/, "the trial-to-paid webhook transition must initiate the treasurer account invitation");
+assert.doesNotMatch(parishUi, /personal treasurer invitation before launching giving/, "Go Live must not require a second treasurer login");
+assert.match(parishOnboardingHandler, /verifyParishDashboardBearer\(found\.registration, getBearerToken\(request\)\)/, "the server must authenticate Go Live with the parish dashboard session");
+assert.doesNotMatch(parishOnboardingHandler, /requireCapability\(request, env, parishId, "parish\.giving\.go_live"\)/, "trial Go Live must not require a treasurer membership capability");
 assert.doesNotMatch(parishUi, /signerEmail:\s*document\.getElementById\('goLiveSignerEmail'\)/, "the browser email field must not be submitted as signer authority");
-assert.match(parishUi, /onboarding\.state==='LIVE'\)\{pane\.innerHTML='';return;/, "the parish launch checklist must disappear after Go Live");
+assert.match(parishUi, /onboarding\.state==='LIVE'[\s\S]*paidTreasurerAccessNeeded[\s\S]*pane\.innerHTML=paidTreasurerAccessNeeded[\s\S]*return;/, "the launch checklist must disappear after Go Live while allowing only the later paid-access prompt");
 assert.match(parishUi, /isOnboardingLive \? ' is-live' : ''/, "the sidebar status must receive an explicit live-state class");
 assert.match(parishStyles, /input\[type="checkbox"\][^}]*width: 16px[^}]*padding: 0/, "treasurer checkboxes must not inherit full-width text-input sizing");
 assert.match(parishRedesign, /sidebar-status-chip\.is-live::before[^}]*#7FCFA0/, "the sidebar status light must turn green after Go Live");
@@ -342,7 +368,8 @@ assert.match(parishStyles, /\.giving-setup-modal\s*\{[^}]*position:\s*fixed/, "t
 assert.match(parishUi, /if \(tab === 'funds'\) tab = 'options'/, "legacy Funds navigation targets must resolve to the real Funds & Alms tab");
 assert.match(parishUi, /if \(!panel\) \{[\s\S]*current page was left open/, "unknown dashboard targets must fail safely without blanking the current panel");
 assert.match(parishUi, /acceptParishAccessInvitation/, "the parish UI must accept a personal access link");
-assert.match(adminUi, /Send personal invitations/, "admin UI must send personal access links instead of shared temporary credentials");
+assert.match(adminUi, /Send one parish dashboard credential/, "admin UI must present one shared credential during the trial");
+assert.match(adminUi, /paid subscription requires the treasurer/, "admin UI must defer individual treasurer access until the paid phase");
 assert.match(stripeHandler, /invalidateAndSaveMaterialRegistration/, "Stripe material writes must pass through signoff invalidation");
 assert.match(subscriptionCheckout, /persistSubscriptionMaterialChange/, "subscription checkout writes must pass through signoff invalidation");
 assert.match(parishHandler, /The parish subscription tier changed/, "parish-side plan changes must invalidate signoff");

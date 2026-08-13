@@ -5,11 +5,12 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 import worker from "../src/worker.js";
-import { issueAdminSession } from "../src/lib/core.js";
+import { issueAdminSession, issueParishDashboardSession } from "../src/lib/core.js";
 import { issuePlatformUserSession } from "../src/lib/identity.js";
 import { acceptInvitation, createInvitation, listMembershipsForParish } from "../src/lib/memberships.js";
 import { saveRegistrationRecord, loadRegistrationByReference } from "../src/handlers/parish.js";
 import { refreshStripeStatusForRegistration } from "../src/handlers/stripe.js";
+import { sendDashboardInvite } from "../src/lib/parish-notifications.js";
 import {
   PARISH_ONBOARDING_WORKFLOW_VERSION,
   TREASURER_AFFIRMATIONS,
@@ -97,6 +98,8 @@ function baseRegistration(overrides = {}) {
     priestEmail: "priest@hardening.test",
     treasurerEmail: "treasurer@hardening.test",
     dashboardInviteEmailStatus: "sent",
+    parishDashboardTokenTemporary: false,
+    parishDashboardPasswordRecord: { version: 1 },
     stripeAccountId: "acct_live_hardening",
     stripeAccountStatus: "payouts_enabled",
     stripeChargesEnabled: true,
@@ -109,7 +112,7 @@ function baseRegistration(overrides = {}) {
     stripeStatusCheckedAt: checkedAt,
     subscriptionTier: "giving",
     subscriptionTierLabel: "Giving Plus",
-    subscriptionStatus: "active",
+    subscriptionStatus: "trialing",
     recurringGivingEnabled: true,
     funds: [{ id: "general", code: "general", name: "General Operating Fund", restrictionType: "unrestricted", isDefault: true, enabled: true, active: true, donorVisible: true, givingEnabled: true }],
     campaigns: [],
@@ -144,8 +147,10 @@ async function readyFixture(overrides = {}) {
       treasurer: { status: "accepted", email: registration.treasurerEmail, membershipId: treasurer.membershipId, acceptedAt: treasurer.acceptedAt }
     }
   };
+  const dashboardSession = await issueParishDashboardSession(registration);
+  registration = dashboardSession.registration;
   await saveRegistrationRecord(env, registration.reference, registration);
-  return { env, db, registration, priest, treasurer };
+  return { env, db, registration, priest, treasurer, dashboardToken: dashboardSession.token };
 }
 
 async function workflowOptions(fixture) {
@@ -174,6 +179,17 @@ function platformRequest(fixture, body, identity = fixture.treasurer) {
     headers: {
       Authorization: `Bearer ${identity.token}`,
       "X-AGAPAY-User-Email": identity.email,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+}
+
+function dashboardRequest(fixture, body) {
+  return new Request(`https://agapay.test/api/parish/dashboard/${fixture.registration.parishId}/onboarding`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${fixture.dashboardToken}`,
       "Content-Type": "application/json"
     },
     body: JSON.stringify(body)
@@ -209,6 +225,15 @@ globalThis.fetch = async (input, init) => {
 };
 
 try {
+  {
+    const { env } = makeD1Env();
+    const trialInvite = await sendDashboardInvite(env, env.AGAPAY_APP_URL, baseRegistration({ subscriptionStatus: "trialing" }));
+    assert.equal(trialInvite.access, undefined, "the trial invite must not create personal priest or treasurer credentials");
+    const paidInvite = await sendDashboardInvite(env, env.AGAPAY_APP_URL, baseRegistration({ subscriptionStatus: "active" }));
+    assert.equal(paidInvite.access?.treasurer?.status, "invited", "the paid phase must create the treasurer's individual invitation");
+    assert.equal(paidInvite.access?.priest, undefined, "the paid phase must not require a second priest account");
+  }
+
   {
     const { env } = makeD1Env();
     const registration = baseRegistration();
@@ -266,26 +291,26 @@ try {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(signoffBody(workflow.materialVersion))
     }), fixture.env);
-    assert.equal(noIdentity.status, 401, "Go Live must require an authenticated platform identity");
+    assert.equal(noIdentity.status, 401, "Go Live must require an authenticated parish dashboard session");
 
     const priestResponse = await worker.fetch(platformRequest(fixture, signoffBody(workflow.materialVersion), { ...fixture.priest, email: fixture.registration.priestEmail }), fixture.env);
-    assert.equal(priestResponse.status, 401, "a priest without the launch capability must not approve Go Live");
+    assert.equal(priestResponse.status, 401, "a personal identity token is not a parish dashboard session");
 
     const other = await acceptRole(fixture.env, "another-parish", "other-treasurer@hardening.test", "treasurer");
     const otherResponse = await worker.fetch(platformRequest(fixture, signoffBody(workflow.materialVersion), { ...other, email: "other-treasurer@hardening.test" }), fixture.env);
-    assert.equal(otherResponse.status, 401, "a treasurer membership for another parish must not authorize this parish");
+    assert.equal(otherResponse.status, 401, "a membership for another parish must not authorize this parish dashboard");
 
     const intruder = await acceptRole(fixture.env, fixture.registration.parishId, "intruder@hardening.test", "treasurer");
     const mismatchResponse = await worker.fetch(platformRequest(fixture, signoffBody(workflow.materialVersion), { ...intruder, email: "intruder@hardening.test" }), fixture.env);
-    assert.equal(mismatchResponse.status, 403, "the authenticated email must exactly match the registration treasurer");
+    assert.equal(mismatchResponse.status, 401, "a personal member token must not replace the parish dashboard session");
 
     const volunteer = await acceptRole(fixture.env, fixture.registration.parishId, "volunteer@hardening.test", "volunteer");
     const volunteerResponse = await worker.fetch(platformRequest(fixture, signoffBody(workflow.materialVersion), { ...volunteer, email: "volunteer@hardening.test" }), fixture.env);
-    assert.equal(volunteerResponse.status, 401, "an ordinary parish member must not approve Go Live");
+    assert.equal(volunteerResponse.status, 401, "an ordinary parish member token must not authorize the parish dashboard");
 
     fixture.db.prepare("UPDATE parish_memberships SET status = 'revoked' WHERE id = ?").run(fixture.treasurer.membershipId);
     const revokedResponse = await worker.fetch(platformRequest(fixture, signoffBody(workflow.materialVersion)), fixture.env);
-    assert.equal(revokedResponse.status, 401, "a recorded but revoked treasurer membership must fail closed");
+    assert.equal(revokedResponse.status, 401, "a revoked member token must not authorize the parish dashboard");
   }
 
   {
@@ -293,18 +318,19 @@ try {
     const workflow = await buildParishOnboardingWorkflow(fixture.registration, await workflowOptions(fixture));
     const beforeCalls = stripeCalls;
     nextStripeResponse = stripeAccount();
-    const response = await worker.fetch(platformRequest(fixture, signoffBody(workflow.materialVersion)), fixture.env);
+    const response = await worker.fetch(dashboardRequest(fixture, signoffBody(workflow.materialVersion)), fixture.env);
     assert.equal(response.status, 200, JSON.stringify(await response.clone().json()));
     assert.equal(stripeCalls, beforeCalls + 1, "Go Live must freshly retrieve the connected account from Stripe");
     const result = await response.json();
     assert.equal(result.onboarding.state, "LIVE");
     const stored = await loadRegistrationByReference(fixture.env, fixture.registration.reference);
     assert.equal(stored.treasurerSignoff.signerEmail, fixture.registration.treasurerEmail, "browser signerEmail must be ignored");
-    assert.equal(stored.treasurerSignoff.platformUserId, fixture.treasurer.userId);
-    assert.equal(stored.treasurerSignoff.membershipId, fixture.treasurer.membershipId);
+    assert.equal(stored.treasurerSignoff.authenticationMethod, "parish_dashboard_session");
+    assert.equal(stored.treasurerSignoff.platformUserId, undefined);
+    assert.equal(stored.treasurerSignoff.membershipId, undefined);
     assert.ok(stored.stripeLastConfirmedAt, "fresh Stripe confirmation time must be persisted");
     const replayCalls = stripeCalls;
-    const replay = await worker.fetch(platformRequest(fixture, signoffBody(workflow.materialVersion)), fixture.env);
+    const replay = await worker.fetch(dashboardRequest(fixture, signoffBody(workflow.materialVersion)), fixture.env);
     assert.equal(replay.status, 200);
     assert.equal((await replay.json()).alreadyLive, true, "Go Live replay must remain idempotent");
     assert.equal(stripeCalls, replayCalls, "an already-complete idempotent replay must not start another publication transaction");
@@ -314,7 +340,7 @@ try {
     const fixture = await readyFixture();
     const snapshot = await onboardingMaterialVersion(fixture.registration, await workflowOptions(fixture));
     nextStripeResponse = stripeAccount({ external_accounts: { data: [{ object: "bank_account", bank_name: "New Verified Bank", last4: "7777" }] } });
-    const response = await worker.fetch(platformRequest(fixture, signoffBody(snapshot)), fixture.env);
+    const response = await worker.fetch(dashboardRequest(fixture, signoffBody(snapshot)), fixture.env);
     assert.equal(response.status, 409);
     assert.equal((await response.json()).code, "onboarding_snapshot_changed");
     const stored = await loadRegistrationByReference(fixture.env, fixture.registration.reference);
@@ -326,7 +352,7 @@ try {
     const fixture = await readyFixture({ stripeChargesEnabled: false, stripeAccountStatus: "restricted" });
     nextStripeResponse = stripeAccount({ charges_enabled: false });
     const snapshot = await onboardingMaterialVersion(fixture.registration, await workflowOptions(fixture));
-    const response = await worker.fetch(platformRequest(fixture, signoffBody(snapshot, { stripeChargesEnabled: true, stripePayoutsEnabled: true })), fixture.env);
+    const response = await worker.fetch(dashboardRequest(fixture, signoffBody(snapshot, { stripeChargesEnabled: true, stripePayoutsEnabled: true })), fixture.env);
     assert.equal(response.status, 409);
     assert.equal((await response.json()).code, "onboarding_blocked", "disabled charges must fail closed after refresh");
   }
@@ -338,7 +364,7 @@ try {
     const fixture = await readyFixture(registrationOverrides);
     nextStripeResponse = stripeAccount(accountOverrides);
     const snapshot = await onboardingMaterialVersion(fixture.registration, await workflowOptions(fixture));
-    const response = await worker.fetch(platformRequest(fixture, signoffBody(snapshot)), fixture.env);
+    const response = await worker.fetch(dashboardRequest(fixture, signoffBody(snapshot)), fixture.env);
     assert.equal(response.status, 409, label);
     assert.equal((await response.json()).code, "onboarding_blocked", `${label} must block launch`);
   }
@@ -347,7 +373,7 @@ try {
     const fixture = await readyFixture({ stripeStatusCheckedAt: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString() });
     nextStripeResponse = stripeAccount();
     const staleSnapshot = await onboardingMaterialVersion(fixture.registration, await workflowOptions(fixture));
-    const response = await worker.fetch(platformRequest(fixture, signoffBody(staleSnapshot)), fixture.env);
+    const response = await worker.fetch(dashboardRequest(fixture, signoffBody(staleSnapshot)), fixture.env);
     assert.equal(response.status, 409);
     assert.equal((await response.json()).code, "onboarding_snapshot_changed", "stale cached readiness must be replaced by a new reviewed timestamp");
   }
@@ -355,7 +381,7 @@ try {
   {
     const fixture = await readyFixture();
     stripeFailure = true;
-    const response = await worker.fetch(platformRequest(fixture, signoffBody(await onboardingMaterialVersion(fixture.registration, await workflowOptions(fixture)))), fixture.env);
+    const response = await worker.fetch(dashboardRequest(fixture, signoffBody(await onboardingMaterialVersion(fixture.registration, await workflowOptions(fixture)))), fixture.env);
     assert.equal(response.status, 502);
     const payload = await response.json();
     assert.equal(payload.code, "stripe_refresh_failed");
@@ -389,14 +415,17 @@ try {
     }), env);
     assert.equal(prepare.status, 200, JSON.stringify(await prepare.clone().json()));
     const prepared = await prepare.json();
-    assert.ok(prepared.stagingIdentityToken);
-    assert.equal(prepared.stagingIdentityEmail, registration.treasurerEmail);
+    assert.equal(prepared.stagingIdentityToken, undefined, "the trial fixture must create only one parish credential");
+    assert.equal(prepared.stagingIdentityEmail, undefined, "the trial fixture must not create a separate treasurer login");
+    assert.equal(prepared.registration.subscriptionStatus, "trialing");
     assert.equal(prepared.registration.onboardingWorkflow.canGoLive, true);
+    const preparedStored = await loadRegistrationByReference(env, registration.reference);
+    const preparedDashboardSession = await issueParishDashboardSession(preparedStored);
+    await saveRegistrationRecord(env, registration.reference, preparedDashboardSession.registration, preparedStored);
     const stagingLaunch = await worker.fetch(new Request(`https://agapay.test/api/parish/dashboard/${registration.parishId}/onboarding`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${prepared.stagingIdentityToken}`,
-        "X-AGAPAY-User-Email": prepared.stagingIdentityEmail,
+        Authorization: `Bearer ${preparedDashboardSession.token}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify(signoffBody(prepared.registration.onboardingWorkflow.materialVersion))

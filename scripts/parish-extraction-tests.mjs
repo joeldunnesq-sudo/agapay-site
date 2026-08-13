@@ -612,7 +612,8 @@ assertImports(admin, "../lib/stripe-connect.js", [
   "stripeReady",
   "summarizeCharges",
 ]);
-assert.doesNotMatch(stripe, /from "\.\.\/lib\/parish-notifications\.js"/, "Stripe status and parish-led onboarding must not retain the retired Admin onboarding-email dependency");
+assert.doesNotMatch(stripe, /sendTreasurerStripeInvite/, "Stripe status must not restore the retired Admin Stripe-onboarding email");
+assert.match(stripe, /sendDashboardInvite[\s\S]*becamePaid/, "Stripe may use the notification module only for the intentional trial-to-paid treasurer invitation");
 assert.match(donor, /from "\.\.\/lib\/stripe-fees\.js"/);
 assert.match(admin, /from "\.\.\/lib\/parish-notifications\.js"/);
 assert.match(

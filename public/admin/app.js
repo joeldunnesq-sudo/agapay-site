@@ -363,7 +363,7 @@ let selectedReference = '';
       if (reg.onboardingWorkflow?.canGoLive) return { title: 'Waiting for treasurer', body: 'The parish has one final action: review the launch summary and click Go Live.' };
       if (reg.onboardingWorkflow?.state === 'LIVE') return { title: 'Parish is live', body: 'Giving is active and the treasurer signoff is recorded.' };
       if ((reg.status || 'pending') !== 'verified') return { title: 'Review canonical standing', body: 'Confirm jurisdiction, bishop/deanery, website, and contact details before marking verified.' };
-      if (reg.dashboardInviteEmailStatus !== 'sent') return { title: 'Send personal invitations', body: 'Email the priest and treasurer secure one-use links so they can create their own passwords.' };
+      if (reg.dashboardInviteEmailStatus !== 'sent') return { title: 'Send parish dashboard access', body: 'The trial uses one parish dashboard credential. Individual treasurer access begins after the subscription becomes paid.' };
       if (!['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus)) return { title: 'Confirm Stripe', body: 'The parish connects Stripe in its dashboard. Check the saved connection and readiness here.' };
       if (!['active', 'trialing', 'free_forever'].includes(reg.subscriptionStatus)) return { title: 'Set up AGAPAY subscription', body: 'Create subscription checkout, start a free demo, or mark a monastery/skete as free forever.' };
       return { title: 'Parish is ready', body: 'Canonical verification, dashboard invite, Stripe, and subscription status are all in place.' };
@@ -2197,8 +2197,9 @@ let selectedReference = '';
         'Canonical parish confirmed': 'Confirm canonical parish',
         'Approving priest confirmed treasurer': 'Record priest confirmation of the treasurer',
         'Organization verified and hidden': 'Verify organization and keep giving hidden',
-        'Dashboard invite delivered': 'Send personal invitations',
-        'Personal dashboard access accepted': 'Wait for the personal invitations to be accepted',
+        'Dashboard invite delivered': 'Send parish dashboard access',
+        'Parish dashboard access secured': 'Wait for the parish credential to be secured',
+        'Treasurer dashboard access secured': 'Send or confirm the paid treasurer account',
         'Stripe connected': 'Connect Stripe',
         'Stripe charges and payouts ready': 'Confirm Stripe charges and payouts',
         'Subscription configured': 'Configure the subscription',
@@ -2313,17 +2314,13 @@ let selectedReference = '';
         const result = await response.json();
         if (handleAuthFailure(response, result)) return;
         if (!response.ok) throw new Error(result.error || 'Unable to run staging onboarding control');
-        if (result.stagingIdentityToken && result.stagingIdentityEmail) {
-          sessionStorage.setItem('agapay_identity_session_token', result.stagingIdentityToken);
-          sessionStorage.setItem('agapay_identity_email', result.stagingIdentityEmail);
-        }
         renderDetail(result.registration);
         renderQueueNext(result.registration);
         const target = document.getElementById('stagingOnboardingResult');
         if (target) {
           const password = result.stagingPassword || '';
           target.innerHTML = password
-            ? `<strong>Parish and treasurer test access created.</strong><span>The parish password is shown once. The verified treasurer session is also active in this browser, so Go Live follows the real authenticated path.</span><code>${escapeHtml(password)}</code><button class="secondary btn-sm" type="button" onclick="copyText('${jsAttr(password)}')">Copy parish password</button>`
+            ? `<strong>Single parish trial access created.</strong><span>The parish password is shown once. Use it to test the complete trial setup and Go Live flow; no separate treasurer login is required.</span><code>${escapeHtml(password)}</code><button class="secondary btn-sm" type="button" onclick="copyText('${jsAttr(password)}')">Copy parish password</button>`
             : `<strong>${escapeHtml(readable(action))} complete.</strong><span>The workflow was recalculated from persisted staging data.</span>`;
         }
         setStatus('Staging onboarding state updated.', 'success');
@@ -2339,6 +2336,7 @@ let selectedReference = '';
       const publicParishId = escapeHtml(reg.parishId || '');
       const currentPhase = onboardingCurrentPhase(reg);
       const onboardingChecks = reg.onboardingWorkflow?.checks || reg.onboardingChecks || {};
+      const paidSubscription = String(reg.subscriptionStatus || '').toLowerCase() === 'active';
       const parishAddress = [
         reg.addressLine1,
         reg.addressLine2,
@@ -2499,20 +2497,21 @@ let selectedReference = '';
           </div>
 
           <div class="admin-section onboarding-phase-card ${currentPhase === 'access' ? 'is-current' : ''}" id="onboarding-phase-access">
-            <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('access')"><span>2</span><div><small>Give access</small><strong>Send personal access links</strong></div><em>${currentPhase === 'access' ? 'Current' : 'Open'}</em></button>
+            <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('access')"><span>2</span><div><small>Give access</small><strong>${paidSubscription ? 'Set up the treasurer account' : 'Send one parish dashboard credential'}</strong></div><em>${currentPhase === 'access' ? 'Current' : 'Open'}</em></button>
             <div class="onboarding-access-summary">
-              <div class="${reg.onboardingAccess?.priest?.status === 'accepted' ? 'accepted' : ''}"><span>Priest</span><strong>${escapeHtml(reg.priestEmail || 'Email required')}</strong><em>${escapeHtml(readable(reg.onboardingAccess?.priest?.status || (reg.dashboardInviteEmailStatus === 'sent' ? 'invited' : 'not sent')))}</em></div>
-              <div class="${reg.onboardingAccess?.treasurer?.status === 'accepted' ? 'accepted' : ''}"><span>Treasurer</span><strong>${escapeHtml(reg.treasurerEmail || 'Email required')}</strong><em>${escapeHtml(readable(reg.onboardingAccess?.treasurer?.status || (reg.dashboardInviteEmailStatus === 'sent' ? 'invited' : 'not sent')))}</em></div>
+              ${paidSubscription
+                ? `<div class="${reg.onboardingAccess?.treasurer?.status === 'accepted' ? 'accepted' : ''}"><span>Paid treasurer account</span><strong>${escapeHtml(reg.treasurerEmail || 'Email required')}</strong><em>${escapeHtml(readable(reg.onboardingAccess?.treasurer?.status || 'not sent'))}</em></div>`
+                : `<div class="${reg.dashboardInviteEmailStatus === 'sent' ? 'accepted' : ''}"><span>Trial parish credential</span><strong>${escapeHtml(reg.parishId || 'Parish ID assigned after verification')}</strong><em>${reg.dashboardInviteEmailStatus === 'sent' ? 'Sent' : 'Not sent'}</em></div>`}
             </div>
             <div class="button-row" style="margin-top:0.75rem;">
-              <button class="gold" onclick="sendDashboardInvite('${reference}', this)">${reg.dashboardInviteEmailStatus === 'sent' ? 'Resend personal invitations' : 'Send personal invitations'}</button>
+              <button class="gold" onclick="sendDashboardInvite('${reference}', this)">${paidSubscription ? (reg.onboardingAccess?.treasurer?.status ? 'Resend treasurer invitation' : 'Send treasurer invitation') : (reg.dashboardInviteEmailStatus === 'sent' ? 'Resend parish dashboard access' : 'Send parish dashboard access')}</button>
             </div>
             <label class="check-card" style="margin-top:0.75rem;">
               <input id="autoDashboardInvite" type="checkbox" ${reg.status === 'verified' && reg.dashboardInviteEmailStatus === 'sent' ? '' : 'checked'} />
-              Send personal invitations when saving a verified parish
+              ${paidSubscription ? 'Send the treasurer invitation when saving' : 'Send the single parish dashboard credential when saving a verified parish'}
             </label>
             <p style="margin:0.65rem 0 0; color:var(--stone); font-size: 11px; line-height:1.55;">
-              Each person receives a private, one-use link and creates their own password. Acceptance is recorded automatically; there is no shared parish ID or temporary password step.
+              ${paidSubscription ? 'A paid subscription requires the treasurer to accept an individual invitation for ongoing financial access.' : 'The 30-day trial uses one parish ID and one dashboard password. No separate priest or treasurer account is required before Go Live.'}
             </p>
           </div>
 

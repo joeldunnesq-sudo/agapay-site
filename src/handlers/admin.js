@@ -69,12 +69,7 @@ import {
   generateDashboardToken,
   sendDashboardInvite,
 } from "../lib/parish-notifications.js";
-import {
-  acceptInvitation,
-  createInvitation,
-  listMembershipsForParish,
-} from "../lib/memberships.js";
-import { issuePlatformUserSession } from "../lib/identity.js";
+import { listMembershipsForParish } from "../lib/memberships.js";
 
 import {
   createCuratedLearnCommunityResource,
@@ -1386,9 +1381,6 @@ export async function handleAdminOnboardingTest(request, env, reference) {
     parishUpdatedAt: now
   };
   let stagingPassword = "";
-  let stagingIdentityPassword = "";
-  let stagingIdentityEmail = "";
-  let stagingIdentitySession = null;
   let memberships = [];
 
   if (action === "simulate_stripe_ready" || action === "prepare_ready") {
@@ -1443,9 +1435,6 @@ export async function handleAdminOnboardingTest(request, env, reference) {
     if (!normalizeEmail(updated.treasurerEmail) || !normalizeEmail(updated.priestEmail)) {
       return json({ error: "A priest email and treasurer email are required before preparing the signoff exercise." }, { status: 422 });
     }
-    if (!d1(env)) {
-      return json({ error: "The staging test requires the identity database so it can exercise real treasurer authentication." }, { status: 503 });
-    }
     const tier = subscriptionTier(updated.subscriptionTier || defaultSubscriptionTier(updated));
     stagingPassword = generateSecret("Agapay-Staging");
     updated = await applyParishDashboardPassword({
@@ -1462,48 +1451,13 @@ export async function handleAdminOnboardingTest(request, env, reference) {
       subscriptionTier: tier.id,
       subscriptionTierLabel: tier.label,
       subscriptionMonthlyCents: tier.monthlyCents,
-      subscriptionStatus: tier.monthlyCents === 0 ? "free_forever" : "active",
+      subscriptionStatus: tier.monthlyCents === 0 ? "free_forever" : "trialing",
       funds: stagingGeneralFund(updated.funds),
       onboardingChecks: normalizeOnboardingChecks(allPassed, updated.onboardingChecks, actor, now),
       parishDashboardSessions: []
     }, stagingPassword, { temporary: false });
 
-    stagingIdentityPassword = generateSecret("Agapay-Treasurer");
-    const access = {};
-    for (const person of [
-      { key: "priest", email: normalizeEmail(updated.priestEmail), roleTemplate: "rector", displayName: updated.priestName || "Staging Priest" },
-      { key: "treasurer", email: normalizeEmail(updated.treasurerEmail), roleTemplate: "treasurer", displayName: updated.treasurerName || "Staging Treasurer" }
-    ]) {
-      const invitation = await createInvitation(env, {
-        parishId: updated.parishId,
-        email: person.email,
-        roleTemplate: person.roleTemplate,
-        invitedByLegacyBearer: true,
-        request
-      });
-      if (!invitation.ok) return json({ error: invitation.error || `Unable to create the ${person.key} staging identity.` }, { status: 500 });
-      const accepted = await acceptInvitation(env, {
-        token: invitation.token,
-        password: stagingIdentityPassword,
-        displayName: person.displayName,
-        request
-      });
-      if (!accepted.ok) return json({ error: accepted.error || `Unable to accept the ${person.key} staging identity.` }, { status: 500 });
-      access[person.key] = {
-        status: "accepted",
-        email: person.email,
-        roleTemplate: person.roleTemplate,
-        membershipId: accepted.membershipId,
-        acceptedAt: accepted.acceptedAt
-      };
-      if (person.key === "treasurer") {
-        stagingIdentityEmail = person.email;
-        stagingIdentitySession = await issuePlatformUserSession(env, accepted.userId);
-      }
-    }
-    if (!stagingIdentitySession?.token) return json({ error: "Unable to issue the staging treasurer session." }, { status: 500 });
-    updated.onboardingAccess = access;
-    memberships = await listMembershipsForParish(env, updated.parishId);
+    updated.onboardingAccess = {};
   }
 
   if (d1(env) && updated.parishId && !memberships.length) {
@@ -1521,8 +1475,6 @@ export async function handleAdminOnboardingTest(request, env, reference) {
     ok: true,
     action,
     stagingPassword: stagingPassword || undefined,
-    stagingIdentityToken: stagingIdentitySession?.token || undefined,
-    stagingIdentityEmail: stagingIdentityEmail || undefined,
     registration: { ...updated, onboardingWorkflow, onboardingTestMode: true }
   });
 }

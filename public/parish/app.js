@@ -8845,7 +8845,7 @@
       <div class="signoff-identity">
         <div><label for="goLiveSignerName">Treasurer name</label><input id="goLiveSignerName" autocomplete="name" placeholder="Full legal name"></div>
         <div><label for="goLiveSignerTitle">Title</label><input id="goLiveSignerTitle" value="Parish Treasurer" autocomplete="organization-title"></div>
-        <div><label for="goLiveSignerEmail">Verified email</label><input id="goLiveSignerEmail" type="email" value="${escapeHtml(summary.treasurerEmail || '')}" readonly aria-describedby="goLiveSignerEmailNote"><small id="goLiveSignerEmailNote">Verified from your signed-in treasurer account.</small></div>
+        <div><label for="goLiveSignerEmail">Treasurer email on file</label><input id="goLiveSignerEmail" type="email" value="${escapeHtml(summary.treasurerEmail || '')}" readonly aria-describedby="goLiveSignerEmailNote"><small id="goLiveSignerEmailNote">This email will be recorded with the signoff. No separate treasurer login is required.</small></div>
       </div>
       <label class="signoff-authority"><input id="goLiveAuthority" type="checkbox"><span>I am authorized to approve online giving for this parish.</span></label>
       <div class="signoff-submit"><p id="goLiveError" role="alert"></p><button class="btn btn-gold" type="button" onclick="submitTreasurerGoLive(this)">Go Live</button></div>
@@ -9159,10 +9159,7 @@
     button.disabled = true;
     button.textContent = 'Publishing…';
     try {
-      const identityToken = sessionStorage.getItem(identitySessionStorageKey) || '';
-      const identityEmail = sessionStorage.getItem(identityEmailStorageKey) || '';
-      if (!identityToken || !identityEmail) throw new Error('Please sign in through your personal treasurer invitation before launching giving.');
-      const res = await fetch(`/api/parish/dashboard/${encodeURIComponent(currentParish.parishId)}/onboarding`, { method:'POST', headers:{ 'Accept':'application/json', 'Authorization':'Bearer ' + identityToken, 'X-AGAPAY-User-Email':identityEmail, 'Content-Type':'application/json' }, body:JSON.stringify(body) });
+      const res = await fetch(`/api/parish/dashboard/${encodeURIComponent(currentParish.parishId)}/onboarding`, { method:'POST', headers:{ ...authHeaders(), 'Accept':'application/json', 'Content-Type':'application/json' }, body:JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || data.errors?.[0] || 'Unable to complete go-live signoff');
       if (data.parish) currentParish = { ...currentParish, ...data.parish };
@@ -9179,7 +9176,12 @@
   function renderSetupWizard() {
     const pane=document.getElementById('setupWizardPane'); if(!pane||!currentParish) return;
     if(currentParish.onboarding?.enabled){
-      if(currentParish.onboarding.state==='LIVE'){pane.innerHTML='';return;}
+      if(currentParish.onboarding.state==='LIVE'){
+        const credentialStep=(currentParish.onboarding.steps||[]).find((step)=>step.key==='credential');
+        const paidTreasurerAccessNeeded=String(currentParish.subscriptionStatus||'').toLowerCase()==='active' && credentialStep && !credentialStep.passed;
+        pane.innerHTML=paidTreasurerAccessNeeded ? `<div class="setup-wizard-card"><div class="setup-wizard-body"><div><div class="onboarding-kicker">Paid account security</div><div class="setup-title">Treasurer access needs one final step</div><p class="setup-copy">Your giving page remains live. We sent the treasurer an individual access link now that the parish subscription is paid.</p></div><div class="setup-action-panel"><strong>Check the treasurer email</strong><p class="setup-copy setup-action-copy">The treasurer creates a personal password once. Trial setup and Go Live never require this second login.</p></div></div></div>` : '';
+        return;
+      }
       renderDeterministicOnboardingWizard(currentParish.onboarding);return;
     }
     const setup=currentParish.setup||{}; const stripeDone=Boolean(setup.stripeConnected); const billingDone=Boolean(setup.billingActive);

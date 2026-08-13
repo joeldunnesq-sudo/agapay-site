@@ -45,6 +45,7 @@ import {
 import { upsertStripeChargeVolumeRecord } from "../lib/stripe-volume.js";
 import { donorName } from "../lib/stripe-fees.js";
 import { invalidateOnboardingSignoffIfChanged } from "../lib/parish-onboarding.js";
+import { sendDashboardInvite } from "../lib/parish-notifications.js";
 
 import {
   appendAdminAudit,
@@ -309,7 +310,7 @@ export async function updateSubscriptionRecord(env, reference, updates) {
     ...updates,
     subscriptionUpdatedAt: new Date().toISOString()
   };
-  return invalidateAndSaveMaterialRegistration(
+  const saved = await invalidateAndSaveMaterialRegistration(
     env,
     reference,
     current,
@@ -317,6 +318,30 @@ export async function updateSubscriptionRecord(env, reference, updates) {
     "stripe-webhook",
     "Stripe changed the AGAPAY subscription configuration."
   );
+  const becamePaid = String(current.subscriptionStatus || "").toLowerCase() !== "active"
+    && String(updates.subscriptionStatus || "").toLowerCase() === "active";
+  const treasurerAccepted = saved.onboardingAccess?.treasurer?.status === "accepted";
+  if (!becamePaid || treasurerAccepted) return saved;
+
+  const invite = await sendDashboardInvite(
+    env,
+    env.AGAPAY_APP_URL || env.AGAPAY_PUBLIC_URL || "https://agapay.app",
+    saved
+  );
+  const withTreasurerInvite = {
+    ...saved,
+    dashboardInviteEmailStatus: invite.status,
+    dashboardInviteEmailId: invite.id || "",
+    dashboardInviteEmailDetail: invite.detail || "",
+    dashboardInviteEmailRecipients: invite.recipients || [],
+    dashboardInviteEmailSentAt: invite.status === "sent" ? new Date().toISOString() : saved.dashboardInviteEmailSentAt,
+    onboardingAccess: invite.access
+      ? { ...(saved.onboardingAccess || {}), ...invite.access }
+      : saved.onboardingAccess,
+    paidTreasurerInviteRequestedAt: new Date().toISOString()
+  };
+  await saveRegistrationRecord(env, reference, withTreasurerInvite, saved);
+  return withTreasurerInvite;
 }
 
 export async function handleStripeWebhook(request, env) {
