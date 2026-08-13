@@ -1,12 +1,13 @@
-// Tax readiness gate -- separates canonical (ministry) verification from
-// AGAPAY's own billing/tax jurisdiction readiness. A parish can be fully
-// canonically verified and still correctly blocked from paid subscription
-// checkout until AGAPAY has manually reviewed whether Stripe Tax is ready
-// for that parish's jurisdiction.
+// Subscription billing normalization. The parish's connected Stripe account
+// owns tax configuration for parish transactions. AGAPAY subscription tax is
+// handled separately on the platform Stripe account through Checkout's
+// automatic-tax configuration, so no per-parish manual tax approval belongs
+// in the subscription checkout gate.
 //
 // This is deliberately NOT a tax engine and makes no jurisdictional legal
-// conclusions on its own -- every status transition here is a manual
-// admin decision (see the admin PATCH handler in src/handlers/admin.js).
+// conclusions. The old tax-readiness fields remain normalized below only so
+// stored registration records and historical audit data stay compatible;
+// they no longer control subscription checkout.
 //
 // Storage note: registrations are stored as a single JSON blob (D1 `data`
 // column / KV value), not as individual structured columns -- see
@@ -70,8 +71,8 @@ function firstNonBlank(...values) {
 }
 
 /**
- * Returns a NEW object with safe defaults for any missing tax-readiness /
- * billing fields, without ever overwriting a value that's already set. The
+ * Returns a NEW object with safe defaults for any legacy tax-readiness and
+ * current billing fields, without overwriting a value that's already set. The
  * church name and address collected at registration are the initial billing
  * identity. Explicit billing fields continue to take precedence.
  * Never mutates the input and never persists anything -- purely a
@@ -109,7 +110,7 @@ export function hasCompleteBillingAddress(registration = {}) {
  * Returns { ok: true } if checkout may proceed, or
  * { ok: false, status, body } with a ready-to-return JSON body if not.
  */
-export function taxReadinessCheckoutGate(registration = {}) {
+export function subscriptionCheckoutReadinessGate(registration = {}) {
   if (registration.status !== "verified") {
     return {
       ok: false,
@@ -128,22 +129,6 @@ export function taxReadinessCheckoutGate(registration = {}) {
       body: {
         error: "Billing address required before subscription checkout.",
         code: "billing_address_required"
-      }
-    };
-  }
-
-  const taxReadinessStatus = TAX_READINESS_STATUSES.includes(registration.taxReadinessStatus)
-    ? registration.taxReadinessStatus
-    : DEFAULT_TAX_READINESS_STATUS;
-
-  if (taxReadinessStatus !== "tax_ready_for_checkout") {
-    return {
-      ok: false,
-      status: 422,
-      body: {
-        error: "Subscription checkout is pending AGAPAY billing/tax review.",
-        code: "tax_readiness_required",
-        taxReadinessStatus
       }
     };
   }

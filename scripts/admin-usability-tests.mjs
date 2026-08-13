@@ -29,9 +29,15 @@ assert.match(css, /\.admin-workflow-grid/);
 assert.match(app, /function toggleMobileMore\(force\)/);
 assert.match(app, /giving: 'Parish Onboarding'/);
 assert.match(app, /giving: 'Verify, invite, connect Stripe, and confirm billing\.'/);
-assert.match(app, /<section class="admin-section onboarding-support-card" id="tax-billing-readiness">/, "tax and billing readiness must be visible without a disclosure click");
-assert.doesNotMatch(app, /<details class="admin-section onboarding-support-card">/, "required tax and billing controls must not be hidden in a details disclosure");
-assert.match(app, /Save tax &amp; billing/, "tax and billing readiness must have a nearby save action");
+assert.doesNotMatch(app, /id="taxReadinessStatus"|renderTaxReadinessPanel/, "parish onboarding must not expose a manual per-parish tax approval gate");
+assert.match(app, /Subscription billing address/, "billing address belongs with subscription setup");
+assert.match(app, /platform-level automatic tax configuration/, "admin UI must explain that Stripe handles AGAPAY subscription tax centrally");
+assert.match(app, /onboarding-record-summary-grid/, "registration support data must open with a compact operational summary");
+assert.match(app, /Technical details &amp; review evidence/, "secondary registration metadata must live in a labeled disclosure");
+assert.match(app, /Giving snapshot &amp; optional parish tools/, "giving totals and optional tools must not dominate the registration record");
+assert.match(app, /id="registrationGivingSummary"/, "the condensed record must preserve the giving summary loader target");
+assert.match(css, /\.onboarding-record-summary-grid \{ display: grid; grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/);
+assert.match(css, /\.onboarding-record-technical-grid \{ display: grid; grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
 assert.match(
   app,
   /const action = nextActionPriority\(item\);\s*return action && action\.priority < 99;/,

@@ -17,7 +17,7 @@ import {
   DEFAULT_TAX_READINESS_STATUS,
   hasCompleteBillingAddress,
   withTaxReadinessDefaults,
-  taxReadinessCheckoutGate
+  subscriptionCheckoutReadinessGate
 } from "../src/lib/tax-readiness.js";
 import { createSubscriptionCheckoutForRegistration } from "../src/lib/subscription-checkout.js";
 import { subscriptionReady } from "../src/lib/subscriptions.js";
@@ -117,35 +117,30 @@ check("withTaxReadinessDefaults: rejects an invalid/corrupt stored status back t
   assert.equal(result.taxReadinessStatus, DEFAULT_TAX_READINESS_STATUS);
 });
 
-// ── taxReadinessCheckoutGate (the actual pre-checkout gate) ─────────────────
+// ── subscriptionCheckoutReadinessGate (verification + billing only) ─────────
 check("gate: blocks when not canonically verified", () => {
-  const result = taxReadinessCheckoutGate({ status: "pending", ...COMPLETE_ADDRESS, taxReadinessStatus: "tax_ready_for_checkout" });
+  const result = subscriptionCheckoutReadinessGate({ status: "pending", ...COMPLETE_ADDRESS, taxReadinessStatus: "tax_ready_for_checkout" });
   assert.equal(result.ok, false);
   assert.equal(result.body.code, "not_verified");
 });
 check("gate: blocks when verified but billing address incomplete, regardless of tax status", () => {
-  const result = taxReadinessCheckoutGate({ status: "verified", taxReadinessStatus: "tax_ready_for_checkout" });
+  const result = subscriptionCheckoutReadinessGate({ status: "verified", taxReadinessStatus: "tax_ready_for_checkout" });
   assert.equal(result.ok, false);
   assert.equal(result.body.code, "billing_address_required");
   assert.equal(result.status, 422);
 });
-check("gate: blocks when verified + address complete but tax readiness not yet cleared (default tax_needs_review)", () => {
-  const result = taxReadinessCheckoutGate({ status: "verified", ...COMPLETE_ADDRESS });
-  assert.equal(result.ok, false);
-  assert.equal(result.body.code, "tax_readiness_required");
-  assert.equal(result.body.taxReadinessStatus, "tax_needs_review");
-});
-check("gate: blocks when tax status is explicitly tax_blocked", () => {
-  const result = taxReadinessCheckoutGate({ status: "verified", ...COMPLETE_ADDRESS, taxReadinessStatus: "tax_blocked" });
-  assert.equal(result.ok, false);
-  assert.equal(result.body.taxReadinessStatus, "tax_blocked");
+check("gate: per-parish tax review status does not block subscription checkout", () => {
+  for (const taxReadinessStatus of ["tax_needs_review", "tax_registration_pending", "tax_not_required_yet", "tax_blocked"]) {
+    const result = subscriptionCheckoutReadinessGate({ status: "verified", ...COMPLETE_ADDRESS, taxReadinessStatus });
+    assert.equal(result.ok, true, `${taxReadinessStatus} must not gate platform Stripe Checkout`);
+  }
 });
 check("gate: passes when verified + address complete + tax_ready_for_checkout", () => {
-  const result = taxReadinessCheckoutGate({ status: "verified", ...COMPLETE_ADDRESS, taxReadinessStatus: "tax_ready_for_checkout" });
+  const result = subscriptionCheckoutReadinessGate({ status: "verified", ...COMPLETE_ADDRESS, taxReadinessStatus: "tax_ready_for_checkout" });
   assert.equal(result.ok, true);
 });
-check("gate: passes with the inherited registration address once tax review is ready", () => {
-  const result = taxReadinessCheckoutGate({ status: "verified", ...REGISTRATION_ADDRESS, taxReadinessStatus: "tax_ready_for_checkout" });
+check("gate: passes with the inherited registration address", () => {
+  const result = subscriptionCheckoutReadinessGate({ status: "verified", ...REGISTRATION_ADDRESS, taxReadinessStatus: "tax_ready_for_checkout" });
   assert.equal(result.ok, true);
 });
 check("subscription readiness: an explicit cancellation overrides an old Stripe subscription ID", () => {
@@ -176,24 +171,6 @@ await checkAsync("checkout: free tier bypasses the gate entirely (no verificatio
   }
 });
 
-await checkAsync("checkout: paid tier + not tax-ready is blocked before any Stripe call is made", async () => {
-  let fetchCallCount = 0;
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = async () => { fetchCallCount++; throw new Error("Should not reach Stripe"); };
-  try {
-    const registration = { status: "verified", subscriptionTier: "mission", ...COMPLETE_ADDRESS }; // verified + address, but no taxReadinessStatus set
-    const response = await createSubscriptionCheckoutForRegistration({
-      request: fakeRequest, env: { STRIPE_SECRET_KEY: "sk_test_fake" }, reference: "test-ref", registration, body: {}, saveRegistrationRecord: noopSave
-    });
-    const payload = await response.json();
-    assert.equal(response.status, 422);
-    assert.equal(payload.code, "tax_readiness_required");
-    assert.equal(fetchCallCount, 0);
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
-});
-
 await checkAsync("checkout: paid tier missing billing address is blocked before any Stripe call, even if marked tax_ready_for_checkout", async () => {
   let fetchCallCount = 0;
   const originalFetch = globalThis.fetch;
@@ -212,7 +189,7 @@ await checkAsync("checkout: paid tier missing billing address is blocked before 
   }
 });
 
-await checkAsync("checkout: inherited registration address passes and pre-fills the Stripe customer", async () => {
+await checkAsync("checkout: Parish paid checkout relies on Stripe automatic tax, not manual parish tax status", async () => {
   let calls = [];
   let customerBody = "";
   const originalFetch = globalThis.fetch;
@@ -229,7 +206,7 @@ await checkAsync("checkout: inherited registration address passes and pre-fills 
   };
   try {
     const registration = {
-      status: "verified", subscriptionTier: "mission", taxReadinessStatus: "tax_ready_for_checkout",
+      status: "verified", subscriptionTier: "parish", taxReadinessStatus: "tax_needs_review",
       treasurerEmail: "treasurer@example.org", ...REGISTRATION_ADDRESS
     };
     const response = await createSubscriptionCheckoutForRegistration({
@@ -376,7 +353,7 @@ await checkAsync("checkout: admin-authorized demo creates a no-card trial that c
   };
   try {
     const registration = {
-      status: "verified", subscriptionTier: "parish", taxReadinessStatus: "tax_ready_for_checkout",
+      status: "verified", subscriptionTier: "parish", taxReadinessStatus: "tax_blocked",
       stripeCustomerId: "cus_existing", parishName: "St. Fiacre", ...COMPLETE_ADDRESS
     };
     const response = await createSubscriptionCheckoutForRegistration({
@@ -415,7 +392,7 @@ await checkAsync("checkout: trusted parish introductory demo creates a 30-day no
   };
   try {
     const registration = {
-      status: "verified", subscriptionTier: "parish", taxReadinessStatus: "tax_ready_for_checkout",
+      status: "verified", subscriptionTier: "parish", taxReadinessStatus: "tax_needs_review",
       stripeCustomerId: "cus_existing", parishName: "St. Nicholas", ...COMPLETE_ADDRESS
     };
     const response = await createSubscriptionCheckoutForRegistration({

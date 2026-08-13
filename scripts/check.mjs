@@ -830,21 +830,21 @@ assert.ok(worker.includes("manualIncomeTotalCents") && worker.includes("contribu
 const taxReadinessLib = await readFile("src/lib/tax-readiness.js", "utf8");
 const subscriptionCheckoutLib = await readFile("src/lib/subscription-checkout.js", "utf8");
 const learnBillingLib = await readFile("src/learn/billing.js", "utf8");
-assert.ok(taxReadinessLib.includes("export function taxReadinessCheckoutGate"), "tax-readiness.js should export the checkout gate");
+assert.ok(taxReadinessLib.includes("export function subscriptionCheckoutReadinessGate"), "tax-readiness.js should export the verification and billing checkout gate");
 assert.ok(taxReadinessLib.includes("export function withTaxReadinessDefaults"), "tax-readiness.js should export a non-destructive defaults helper");
-assert.ok(subscriptionCheckoutLib.includes("taxReadinessCheckoutGate(billingRegistration)"), "subscription-checkout.js should call the tax readiness gate with inherited registration billing fields");
+assert.ok(subscriptionCheckoutLib.includes("subscriptionCheckoutReadinessGate(billingRegistration)"), "subscription-checkout.js should validate inherited registration billing fields");
+assert.ok(!subscriptionCheckoutLib.includes("tax_readiness_required"), "manual per-parish tax status must not block Stripe subscription checkout");
 assert.ok(subscriptionCheckoutLib.includes('"subscription_data[trial_settings][end_behavior][missing_payment_method]", "cancel"'), "demo checkout should cancel at trial end when no payment method was added");
 assert.ok(stripeHandler.includes("allowTrial: true"), "the authenticated admin checkout route should be authorized to create demos");
 assert.ok(parishHandler.includes("introductoryTrialDays: parishIntroDemoEligible(found.registration) ? PARISH_INTRO_DEMO_DAYS : 0"), "the parish route should grant the server-controlled introductory demo only when eligible");
 assert.ok(parishAppJs.includes("Start free 30-day demo") && parishAppJs.includes("No card is required"), "the parish dashboard should explain the no-card 30-day demo");
 assert.ok(
-  subscriptionCheckoutLib.indexOf("tier.monthlyCents === 0") < subscriptionCheckoutLib.indexOf("taxReadinessCheckoutGate(billingRegistration)"),
-  "the free-tier early return must come BEFORE the tax readiness gate, so free/non-billable tiers bypass it entirely"
+  subscriptionCheckoutLib.indexOf("tier.monthlyCents === 0") < subscriptionCheckoutLib.indexOf("subscriptionCheckoutReadinessGate(billingRegistration)"),
+  "the free-tier early return must come before subscription verification and billing checks"
 );
-assert.ok(adminHandler.includes("taxReadinessStatus: nextTaxReadinessStatus"), "admin registration PATCH should support updating tax readiness");
-assert.ok(adminHandler.includes('action: "registration.tax_readiness_changed"'), "tax readiness status changes should record an audit event");
-assert.ok(adminApp.includes("renderTaxReadinessPanel"), "admin app.js should render a tax readiness panel on the registration detail view");
-assert.ok(adminApp.includes("taxReadinessStatus") && adminApp.includes("billingAddressLine1"), "admin app.js should let admins edit tax readiness status and billing address");
+assert.ok(!adminApp.includes('id="taxReadinessStatus"') && !adminApp.includes("renderTaxReadinessPanel"), "admin onboarding must not require a manual parish tax-readiness review");
+assert.ok(adminApp.includes("Subscription billing address") && adminApp.includes("billingAddressLine1"), "admin subscription setup should retain an editable billing address inherited from registration");
+assert.ok(subscriptionCheckoutLib.includes('"automatic_tax[enabled]": "true"'), "AGAPAY subscription checkout should rely on platform-level Stripe automatic tax");
 assert.ok(learnBillingLib.includes('params.set("billing_address_collection", "required")'), "Learn billing checkout should require billing address collection");
 assert.ok(learnBillingLib.includes('params.set("automatic_tax[enabled]", "true")'), "Learn billing checkout should keep Stripe automatic tax enabled");
 assert.ok(learnBillingLib.includes("billingAddressLine1: record.billingAddressLine1"), "Learn household billing record should support storing a billing address");

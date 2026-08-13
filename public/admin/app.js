@@ -284,50 +284,6 @@ let selectedReference = '';
         .replace(/\b\w/g, (char) => char.toUpperCase());
     }
 
-    const TAX_READINESS_LABELS = {
-      tax_needs_review: 'Needs review',
-      tax_registration_pending: 'Registration pending',
-      tax_ready_for_checkout: 'Ready for checkout',
-      tax_not_required_yet: 'Not required yet',
-      tax_blocked: 'Blocked'
-    };
-    const TAX_READINESS_BADGE_CLASS = {
-      tax_needs_review: 'pending',
-      tax_registration_pending: 'pending',
-      tax_ready_for_checkout: 'active',
-      tax_not_required_yet: 'not_configured',
-      tax_blocked: 'rejected'
-    };
-
-    function taxReadinessBadge(status) {
-      const key = status || 'tax_needs_review';
-      const cls = TAX_READINESS_BADGE_CLASS[key] || 'not_configured';
-      const label = TAX_READINESS_LABELS[key] || readable(key);
-      return `<span class="badge ${escapeAttr(cls)}">${escapeHtml(label)}</span>`;
-    }
-
-    function renderTaxReadinessPanel(reg) {
-      const status = reg.taxReadinessStatus || 'tax_needs_review';
-      const addressParts = [reg.billingAddressLine1, reg.billingAddressLine2, [reg.billingCity, reg.billingState, reg.billingPostalCode].filter(Boolean).join(', '), reg.billingCountry].filter(Boolean);
-      const addressText = addressParts.length ? addressParts.join(' · ') : 'Not yet provided';
-      const blockedWarning = (reg.status === 'verified' && status !== 'tax_ready_for_checkout')
-        ? `<p class="requirements-panel-note"><strong>Paid subscription checkout is blocked</strong> until billing/tax review is complete.</p>`
-        : '';
-
-      return `
-        <div class="requirements-panel ${status === 'tax_ready_for_checkout' || reg.status !== 'verified' ? 'clear' : ''}">
-          <div class="requirements-panel-title" style="display:flex;align-items:center;gap:0.5rem;">
-            Tax / Billing Readiness ${taxReadinessBadge(status)}
-          </div>
-          <p class="requirements-panel-copy"><strong>Billing legal name:</strong> ${escapeHtml(reg.billingLegalName || 'Not yet provided')}</p>
-          <p class="requirements-panel-copy"><strong>Billing address:</strong> ${escapeHtml(addressText)}</p>
-          ${reg.taxReadinessNotes ? `<p class="requirements-panel-copy"><strong>Notes:</strong> ${escapeHtml(reg.taxReadinessNotes)}</p>` : ''}
-          <p class="requirements-panel-copy"><strong>Last reviewed:</strong> ${reg.taxReadinessReviewedAt ? escapeHtml(shortDate(reg.taxReadinessReviewedAt)) : 'Never'} ${reg.taxReadinessReviewedBy ? 'by ' + escapeHtml(reg.taxReadinessReviewedBy) : ''}</p>
-          ${blockedWarning}
-        </div>
-      `;
-    }
-
     function renderStripeRequirements(reg) {
       const requirements = Array.isArray(reg.stripeRequirementsDue) ? reg.stripeRequirementsDue.filter(Boolean) : [];
       const disabledReason = reg.stripeDisabledReason || '';
@@ -2383,13 +2339,61 @@ let selectedReference = '';
       const publicParishId = escapeHtml(reg.parishId || '');
       const currentPhase = onboardingCurrentPhase(reg);
       const onboardingChecks = reg.onboardingWorkflow?.checks || reg.onboardingChecks || {};
+      const parishAddress = [
+        reg.addressLine1,
+        reg.addressLine2,
+        [reg.city, reg.state, reg.postalCode].filter(Boolean).join(' '),
+        reg.country && reg.country !== 'US' ? reg.country : ''
+      ].filter(Boolean).join(', ');
+      const priestName = [reg.priestFirst, reg.priestLast].filter(Boolean).join(' ') || 'Not provided';
+      const treasurerName = [reg.treasurerFirst, reg.treasurerLast].filter(Boolean).join(' ') || 'Not provided';
+      const publicGivingPath = reg.status === 'verified' && reg.parishId ? `/give/${reg.parishId}` : '';
       document.getElementById('registrationDetail').innerHTML = `
         ${renderOnboardingCommandHeader(reg)}
         ${renderOnboardingProgress(reg)}
         <details class="onboarding-record-details">
-          <summary>Registration record &amp; supporting data</summary>
+          <summary>
+            <span>Registration record &amp; supporting data</span>
+            <small>${escapeHtml(reg.parishName || 'Unnamed parish')} &middot; ${escapeHtml(readable(reg.status || 'pending'))} &middot; received ${escapeHtml(shortDate(reg.receivedAt))}</small>
+          </summary>
           <div class="onboarding-record-body">
-        <div class="admin-section">
+        <div class="onboarding-record-summary-grid">
+          <section class="onboarding-record-summary-card">
+            <span>Organization</span>
+            <strong>${escapeHtml(reg.parishName || 'Unnamed parish')}</strong>
+            <p>${escapeHtml([reg.communityType, reg.jurisdiction].filter(Boolean).join(' · ') || 'Type and jurisdiction not provided')}</p>
+            <p>${escapeHtml(parishAddress || 'Address not provided')}</p>
+            ${reg.website ? `<p class="onboarding-record-emphasis">${escapeHtml(reg.website)}</p>` : ''}
+          </section>
+          <section class="onboarding-record-summary-card">
+            <span>Parish contacts</span>
+            <strong>${escapeHtml(priestName)}</strong>
+            <p>Priest / administrator &middot; ${escapeHtml(reg.priestEmail || 'email not provided')}</p>
+            <strong>${escapeHtml(treasurerName)}</strong>
+            <p>Treasurer &middot; ${escapeHtml(reg.treasurerEmail || 'email not provided')}</p>
+          </section>
+          <section class="onboarding-record-summary-card">
+            <span>Readiness</span>
+            <div class="onboarding-record-badges">
+              <span class="badge ${escapeAttr(reg.status || 'pending')}">${escapeHtml(readable(reg.status || 'pending'))}</span>
+              <span class="badge ${escapeAttr(reg.stripeAccountStatus || 'not_started')}">Stripe: ${escapeHtml(readable(reg.stripeAccountStatus || 'not started'))}</span>
+              <span class="badge ${escapeAttr(reg.subscriptionStatus || 'not_started')}">Plan: ${escapeHtml(readable(reg.subscriptionStatus || 'not started'))}</span>
+            </div>
+            <p>${escapeHtml(subscriptionTierLabel(reg))} &middot; ${escapeHtml(money(reg.subscriptionMonthlyCents))}</p>
+            <p>Charges ${reg.stripeChargesEnabled ? 'enabled' : 'not enabled'} &middot; payouts ${reg.stripePayoutsEnabled ? 'enabled' : 'not enabled'}</p>
+          </section>
+          <section class="onboarding-record-summary-card">
+            <span>Public giving</span>
+            <strong>${escapeHtml(readable(reg.givingStatus || 'not active'))}</strong>
+            ${publicGivingPath
+              ? `<p class="onboarding-record-url">${escapeHtml(publicGivingPath)}</p><p>Published after every gate passes and the treasurer clicks Go Live.</p>`
+              : '<p>The public giving URL is created after canonical verification and parish ID assignment.</p>'}
+          </section>
+        </div>
+        <details class="onboarding-record-subdetails">
+          <summary><span>Giving snapshot &amp; optional parish tools</span><small>Giving totals and Sacraments &amp; Services</small></summary>
+          <div class="onboarding-record-subdetails-body">
+        <div class="admin-section onboarding-record-tool-row">
           <div class="admin-section-title">Sacraments &amp; Services</div>
           <p class="founding-promo-copy">${reg.sacramentsEnabled ? 'Enabled for this parish.' : 'Not yet enabled for this parish.'}</p>
           <div class="btn-row">
@@ -2397,13 +2401,18 @@ let selectedReference = '';
           </div>
           <span id="detailSacramentsStatus" class="founding-promo-status"></span>
         </div>
-        <div class="admin-section">
+        <div class="admin-section onboarding-record-giving-panel">
           <div class="admin-section-title">Parish Giving Snapshot</div>
           <div class="giving-summary-panel" id="registrationGivingSummary">
             <div class="giving-summary-empty">Loading giving summary…</div>
           </div>
         </div>
-        <div class="grid">
+          </div>
+        </details>
+        <details class="onboarding-record-subdetails onboarding-technical-details">
+          <summary><span>Technical details &amp; review evidence</span><small>IDs, delivery records, timestamps, and reviewer notes</small></summary>
+          <div class="onboarding-record-subdetails-body">
+        <div class="grid onboarding-record-technical-grid">
           ${field('Status', reg.status)}
           ${field('Giving Status', reg.givingStatus)}
           ${field('Stripe Status', reg.stripeAccountStatus)}
@@ -2439,7 +2448,6 @@ let selectedReference = '';
           ${field('Reviewer Notes', reg.reviewerNotes, 'full')}
         </div>
         ${renderStripeRequirements(reg)}
-        ${renderTaxReadinessPanel(reg)}
         ${reg.status === 'verified' && reg.parishId ? `
           <div class="field full">
             <div class="field-key">Public profile</div>
@@ -2450,6 +2458,8 @@ let selectedReference = '';
             </div>
           </div>
         ` : ''}
+          </div>
+        </details>
           </div>
         </details>
         <div class="actions onboarding-actions">
@@ -2487,67 +2497,6 @@ let selectedReference = '';
             </div>
             ${renderOnboardingManualChecks(onboardingChecks, ['authorizedRepresentative'])}
           </div>
-
-          <section class="admin-section onboarding-support-card" id="tax-billing-readiness">
-            <div class="onboarding-support-heading">
-              <div><small>Required for subscription checkout</small><strong>Tax and billing readiness</strong></div>
-              <span>${escapeHtml(readable(reg.taxReadinessStatus || 'tax_needs_review'))}</span>
-            </div>
-            <div class="onboarding-support-body">
-            <p style="margin:0 0 0.85rem;color:var(--stone);font-size:12.5px;line-height:1.6;">
-              Separate from canonical verification above. A parish can be verified and still blocked from paid
-              subscription checkout until this is set to "Ready for checkout." See
-              <code>docs/SOFT_LAUNCH_READINESS.md</code> for the manual review rule.
-            </p>
-            <div class="form-grid">
-              <div>
-                <label for="taxReadinessStatus">Tax readiness status</label>
-                <select id="taxReadinessStatus">
-                  <option value="tax_needs_review" ${(reg.taxReadinessStatus || 'tax_needs_review') === 'tax_needs_review' ? 'selected' : ''}>Needs review</option>
-                  <option value="tax_registration_pending" ${reg.taxReadinessStatus === 'tax_registration_pending' ? 'selected' : ''}>Registration pending</option>
-                  <option value="tax_ready_for_checkout" ${reg.taxReadinessStatus === 'tax_ready_for_checkout' ? 'selected' : ''}>Ready for checkout</option>
-                  <option value="tax_not_required_yet" ${reg.taxReadinessStatus === 'tax_not_required_yet' ? 'selected' : ''}>Not required yet</option>
-                  <option value="tax_blocked" ${reg.taxReadinessStatus === 'tax_blocked' ? 'selected' : ''}>Blocked</option>
-                </select>
-              </div>
-              <div class="full">
-                <label for="taxReadinessNotes">Tax / billing review notes</label>
-                <textarea id="taxReadinessNotes" rows="2" placeholder="e.g. AGAPAY has an active sales tax registration in this state as of 2026.">${escapeHtml(reg.taxReadinessNotes)}</textarea>
-              </div>
-              <div>
-                <label for="billingLegalName">Billing legal name</label>
-                <input id="billingLegalName" value="${escapeAttr(reg.billingLegalName)}" placeholder="Legal/church name for billing" />
-              </div>
-              <div>
-                <label for="billingAddressLine1">Billing address line 1</label>
-                <input id="billingAddressLine1" value="${escapeAttr(reg.billingAddressLine1)}" placeholder="Street address" />
-              </div>
-              <div>
-                <label for="billingAddressLine2">Billing address line 2</label>
-                <input id="billingAddressLine2" value="${escapeAttr(reg.billingAddressLine2)}" placeholder="Suite, unit (optional)" />
-              </div>
-              <div>
-                <label for="billingCity">Billing city</label>
-                <input id="billingCity" value="${escapeAttr(reg.billingCity)}" />
-              </div>
-              <div>
-                <label for="billingState">Billing state / province</label>
-                <input id="billingState" value="${escapeAttr(reg.billingState)}" />
-              </div>
-              <div>
-                <label for="billingPostalCode">Billing postal code</label>
-                <input id="billingPostalCode" value="${escapeAttr(reg.billingPostalCode)}" />
-              </div>
-              <div>
-                <label for="billingCountry">Billing country</label>
-                <input id="billingCountry" value="${escapeAttr(reg.billingCountry || 'US')}" placeholder="US" />
-              </div>
-            </div>
-            <div class="button-row onboarding-support-actions">
-              <button class="gold" type="button" onclick="saveReview('${reference}', this)">Save tax &amp; billing</button>
-            </div>
-          </div>
-          </section>
 
           <div class="admin-section onboarding-phase-card ${currentPhase === 'access' ? 'is-current' : ''}" id="onboarding-phase-access">
             <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('access')"><span>2</span><div><small>Give access</small><strong>Send personal access links</strong></div><em>${currentPhase === 'access' ? 'Current' : 'Open'}</em></button>
@@ -2600,6 +2549,38 @@ let selectedReference = '';
               <div>
                 <label for="stripeSubscriptionId">Stripe subscription ID</label>
                 <input id="stripeSubscriptionId" value="${escapeAttr(reg.stripeSubscriptionId)}" placeholder="sub_..." />
+              </div>
+            </div>
+            <div class="onboarding-form-divider">Subscription billing address</div>
+            <p style="margin:0 0 0.75rem;color:var(--stone);font-size:11px;line-height:1.55;">Inherited from church registration. Stripe Checkout confirms the address and applies AGAPAY's platform-level automatic tax configuration; no parish-by-parish tax approval is required here.</p>
+            <div class="form-grid">
+              <div>
+                <label for="billingLegalName">Billing legal name</label>
+                <input id="billingLegalName" value="${escapeAttr(reg.billingLegalName)}" placeholder="Legal/church name for billing" />
+              </div>
+              <div>
+                <label for="billingAddressLine1">Billing address line 1</label>
+                <input id="billingAddressLine1" value="${escapeAttr(reg.billingAddressLine1)}" placeholder="Street address" />
+              </div>
+              <div>
+                <label for="billingAddressLine2">Billing address line 2</label>
+                <input id="billingAddressLine2" value="${escapeAttr(reg.billingAddressLine2)}" placeholder="Suite, unit (optional)" />
+              </div>
+              <div>
+                <label for="billingCity">Billing city</label>
+                <input id="billingCity" value="${escapeAttr(reg.billingCity)}" />
+              </div>
+              <div>
+                <label for="billingState">Billing state / province</label>
+                <input id="billingState" value="${escapeAttr(reg.billingState)}" />
+              </div>
+              <div>
+                <label for="billingPostalCode">Billing postal code</label>
+                <input id="billingPostalCode" value="${escapeAttr(reg.billingPostalCode)}" />
+              </div>
+              <div>
+                <label for="billingCountry">Billing country</label>
+                <input id="billingCountry" value="${escapeAttr(reg.billingCountry || 'US')}" placeholder="US" />
               </div>
             </div>
             <div class="button-row" style="margin-top:0.75rem;">
@@ -2786,8 +2767,6 @@ let selectedReference = '';
             parishDashboardToken: document.getElementById('parishDashboardToken')?.value.trim() || undefined,
             sendDashboardInvite: shouldSendVerifiedInvite,
             reviewerNotes: document.getElementById('reviewerNotes').value,
-            taxReadinessStatus: document.getElementById('taxReadinessStatus').value,
-            taxReadinessNotes: document.getElementById('taxReadinessNotes').value,
             billingLegalName: document.getElementById('billingLegalName').value,
             billingAddressLine1: document.getElementById('billingAddressLine1').value,
             billingAddressLine2: document.getElementById('billingAddressLine2').value,
@@ -3176,7 +3155,6 @@ let selectedReference = '';
     const AUDIT_ACTION_CATALOG = [
       { group: 'Nonprofit Pricing', value: 'nonprofit_pricing.alert_check_run', label: 'Threshold alert check run', description: 'An admin manually ran the site-wide nonprofit-pricing threshold notification check.' },
       { group: 'Registrations', value: 'registration.status_changed', label: 'Registration status changed', description: "An admin moved a parish's registration through the verification pipeline (e.g. pending → verified)." },
-      { group: 'Registrations', value: 'registration.tax_readiness_changed', label: 'Tax readiness changed', description: "An admin updated a parish's tax-readiness flag, which gates paid-tier checkout." },
       { group: 'Registrations', value: 'admin.index_rebuild', label: 'Registration index rebuilt', description: 'An admin manually rebuilt the parish-ID lookup index — a bulk operation, not tied to one parish.' },
 
       { group: 'Revenue Streams', value: 'settlement_profile.renamed', label: 'Revenue stream renamed', description: 'A settlement profile (how giving/bookstore money gets routed to a bank account) was renamed.' },

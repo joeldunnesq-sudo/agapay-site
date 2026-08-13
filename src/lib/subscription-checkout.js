@@ -4,7 +4,7 @@ import { defaultSubscriptionTier, subscriptionReady, subscriptionTier } from "./
 import { stripeFormRequest, stripeGetRequest } from "./stripe-connect.js";
 import { applySubscriptionTaxCode } from "./tax-codes.js";
 import { applyApprovedExemptionIfExists } from "./tax-exemption.js";
-import { taxReadinessCheckoutGate, withTaxReadinessDefaults } from "./tax-readiness.js";
+import { subscriptionCheckoutReadinessGate, withTaxReadinessDefaults } from "./tax-readiness.js";
 import { ensureBenevolenceFundInRegistration } from "./stewardship-funds.js";
 import { invalidateOnboardingSignoffIfChanged } from "./parish-onboarding.js";
 
@@ -73,12 +73,12 @@ export async function createSubscriptionCheckoutForRegistration({
     return json({ error: "This tier needs a Stripe Price ID or a custom billing setup before checkout can be created" }, { status: 422 });
   }
 
-  // Tax readiness gate -- canonical (ministry) verification and AGAPAY's
-  // own billing/tax jurisdiction readiness are separate. Free/non-billable
-  // tiers already returned above and never reach this check. See
-  // src/lib/tax-readiness.js for the full rationale.
+  // Canonical verification and a usable billing address remain required.
+  // Per-parish tax approval does not: parish transaction tax belongs to the
+  // connected account, while AGAPAY subscription tax is handled by Stripe's
+  // platform-level automatic tax configuration below.
   const billingRegistration = withTaxReadinessDefaults(registration);
-  const gate = taxReadinessCheckoutGate(billingRegistration);
+  const gate = subscriptionCheckoutReadinessGate(billingRegistration);
   if (!gate.ok) return json(gate.body, { status: gate.status });
 
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
