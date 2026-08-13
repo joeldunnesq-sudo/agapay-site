@@ -88,9 +88,13 @@ export async function handleParishOnboarding(request, env, parishId) {
   const currentRegistration = refreshed.registration;
   const currentWorkflow = await buildParishOnboardingWorkflow(currentRegistration, workflowOptions);
   if (!body.snapshotVersion || !secureCompare(body.snapshotVersion, currentWorkflow.materialVersion)) {
+    const parish = parishDashboardPayload(parishId, currentRegistration);
+    parish.onboarding = currentWorkflow;
     return json({
       error: "The onboarding configuration changed. Refresh and review the current signoff summary before going live.",
-      code: "onboarding_snapshot_changed"
+      code: "onboarding_snapshot_changed",
+      parish,
+      onboarding: currentWorkflow
     }, { status: 409 });
   }
   if (!currentWorkflow.canGoLive) {

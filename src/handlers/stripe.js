@@ -44,7 +44,7 @@ import {
 } from "../lib/stripe-connect.js";
 import { upsertStripeChargeVolumeRecord } from "../lib/stripe-volume.js";
 import { donorName } from "../lib/stripe-fees.js";
-import { invalidateOnboardingSignoffIfChanged } from "../lib/parish-onboarding.js";
+import { STRIPE_READINESS_MAX_AGE_MS, invalidateOnboardingSignoffIfChanged } from "../lib/parish-onboarding.js";
 import { sendDashboardInvite } from "../lib/parish-notifications.js";
 
 import {
@@ -93,7 +93,6 @@ function stripePayoutBankSummary(account = {}) {
   };
 }
 
-const GO_LIVE_STRIPE_REVIEW_WINDOW_MS = 5 * 60 * 1000;
 const NON_PRODUCTION_ENVIRONMENTS = new Set(["development", "test", "staging", "preview"]);
 
 function stripeAccountMaterialState(account = {}) {
@@ -1037,7 +1036,7 @@ export async function refreshStripeStatusForRegistration(env, reference, registr
   const preserveReviewedTimestamp = options.preserveReviewedTimestamp === true
     && unchanged
     && Number.isFinite(priorCheckedAtMs)
-    && Date.now() - priorCheckedAtMs <= GO_LIVE_STRIPE_REVIEW_WINDOW_MS;
+    && Date.now() - priorCheckedAtMs <= STRIPE_READINESS_MAX_AGE_MS;
   const next = {
     ...registration,
     ...stripePayoutBankSummary(account),

@@ -1068,6 +1068,7 @@ async function withMockFetch(handler, run) {
     state: "TX",
     givingStatus: "active",
     stripeAccountId: "acct_connected_test",
+    treasurerEmail: "giver@example.com",
     funds: [{ id: "general", name: "General Fund", description: "General support." }]
   };
   await testEnv.AGAPAY_REGISTRATIONS.put(registration.reference, JSON.stringify(registration));
@@ -1104,6 +1105,7 @@ async function withMockFetch(handler, run) {
       assert.equal(form.get("success_url"), "https://agapay.test/give/st-checkout?success=1&session_id={CHECKOUT_SESSION_ID}");
       assert.equal(form.get("cancel_url"), "https://agapay.test/give/st-checkout?canceled=1");
       assert.equal(form.get("payment_intent_data[application_fee_amount]"), null);
+      assert.equal(form.get("payment_intent_data[on_behalf_of]"), null);
       assert.equal(form.get("metadata[parish_id]"), "st-checkout");
       assert.equal(form.get("metadata[donor_email]"), "giver@example.com");
       return new Response(JSON.stringify({
@@ -1244,6 +1246,7 @@ async function withMockFetch(handler, run) {
     state: "TX",
     givingStatus: "active",
     stripeAccountId: "acct_connected_recurring",
+    priestEmail: "subscriber@example.com",
     funds: [{ id: "general", name: "General Fund", description: "General support." }]
   };
   await testEnv.AGAPAY_REGISTRATIONS.put(registration.reference, JSON.stringify(registration));
@@ -1264,6 +1267,7 @@ async function withMockFetch(handler, run) {
       assert.equal(form.get("mode"), "subscription");
       assert.equal(form.get("line_items[0][price_data][unit_amount]"), "2606");
       assert.equal(form.get("subscription_data[application_fee_percent]"), null);
+      assert.equal(form.get("subscription_data[on_behalf_of]"), null);
       assert.equal(form.get("payment_intent_data[application_fee_amount]"), null);
       return new Response(JSON.stringify({
         id: "cs_recurring_test",

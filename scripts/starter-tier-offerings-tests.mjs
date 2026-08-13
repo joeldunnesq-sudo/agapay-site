@@ -27,6 +27,18 @@ assert.equal(parish.designatedFundsEnabled, true);
 assert.deepEqual(parish.funds.map((fund) => fund.id), ["general", "mission-development"]);
 assert.deepEqual(parish.campaigns, []);
 
+const legacyMission = parishFromRegistration({
+  ...starter,
+  parishId: "test-lubbock",
+  parishName: "Test Orthodox Mission",
+  communityType: "parish",
+  imageUrl: "/images/giving/parish-church-square.png",
+  imageAlt: "Orthodox parish church sketch"
+});
+assert.equal(legacyMission.type, "mission");
+assert.equal(legacyMission.imageUrl, "/images/giving/mission-church-square.png");
+assert.equal(legacyMission.imageAlt, "Orthodox mission church sketch");
+
 assert.equal(starterFundCatalogError(starter.funds), "");
 assert.match(starterFundCatalogError([...starter.funds, { id: "second", name: "Second active fund" }]), /one active designated fund/i);
 assert.match(starterFundCatalogError(starter.funds.filter((fund) => fund.id !== "general")), /General Operating Fund/i);

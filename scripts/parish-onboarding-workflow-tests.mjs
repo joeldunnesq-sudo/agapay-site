@@ -329,6 +329,8 @@ for (const key of TREASURER_AFFIRMATIONS) {
 assert.match(parishUi, /submitTreasurerGoLive/, "parish UI must submit the locked treasurer signoff snapshot");
 assert.match(parishUi, /headers:\{ \.\.\.authHeaders\(\), 'Accept':'application\/json'/, "Go Live must use the current parish dashboard session");
 assert.match(parishUi, /No separate treasurer login is required/, "the signoff must explain the one-credential trial model");
+assert.match(parishUi, /data\.code === 'onboarding_snapshot_changed'[\s\S]*currentParish\.onboarding = data\.onboarding[\s\S]*renderDashboard\(\)/, "a snapshot conflict must replace the stale signoff with the refreshed server summary");
+assert.match(parishUi, /Review it, check the confirmations again, and click Go Live/, "the refreshed signoff must tell the parish exactly what to do next");
 assert.match(parishUi, /Paid account security/, "a live paid parish must receive a clear treasurer-access prompt");
 assert.match(stripeHandler, /becamePaid[\s\S]*sendDashboardInvite/, "the trial-to-paid webhook transition must initiate the treasurer account invitation");
 assert.doesNotMatch(parishUi, /personal treasurer invitation before launching giving/, "Go Live must not require a second treasurer login");

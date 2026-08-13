@@ -342,10 +342,15 @@ try {
     nextStripeResponse = stripeAccount({ external_accounts: { data: [{ object: "bank_account", bank_name: "New Verified Bank", last4: "7777" }] } });
     const response = await worker.fetch(dashboardRequest(fixture, signoffBody(snapshot)), fixture.env);
     assert.equal(response.status, 409);
-    assert.equal((await response.json()).code, "onboarding_snapshot_changed");
+    const changedPayload = await response.json();
+    assert.equal(changedPayload.code, "onboarding_snapshot_changed");
+    assert.ok(changedPayload.onboarding?.materialVersion, "the conflict must return the refreshed signoff summary");
+    assert.equal(changedPayload.parish?.onboarding?.materialVersion, changedPayload.onboarding.materialVersion);
     const stored = await loadRegistrationByReference(fixture.env, fixture.registration.reference);
     assert.equal(stored.stripePayoutBankLast4, "7777", "latest Stripe payout destination must be persisted before refusing the stale snapshot");
     assert.notEqual(stored.givingStatus, "active");
+    const reviewedRetry = await worker.fetch(dashboardRequest(fixture, signoffBody(changedPayload.onboarding.materialVersion)), fixture.env);
+    assert.equal(reviewedRetry.status, 200, "the refreshed summary must be launchable after one new review");
   }
 
   {
@@ -370,12 +375,28 @@ try {
   }
 
   {
+    const reviewedAt = new Date(Date.now() - 6 * 60 * 1000).toISOString();
+    const fixture = await readyFixture({ stripeStatusCheckedAt: reviewedAt });
+    nextStripeResponse = stripeAccount();
+    const snapshot = await onboardingMaterialVersion(fixture.registration, await workflowOptions(fixture));
+    const response = await worker.fetch(dashboardRequest(fixture, signoffBody(snapshot)), fixture.env);
+    assert.equal(response.status, 200, "an unchanged, still-current Stripe review must not create a timestamp-only snapshot conflict");
+    const stored = await loadRegistrationByReference(fixture.env, fixture.registration.reference);
+    assert.equal(stored.stripeStatusCheckedAt, reviewedAt, "the reviewed snapshot timestamp must remain stable when Stripe details are unchanged");
+    assert.ok(stored.stripeLastConfirmedAt, "the mandatory fresh Stripe confirmation must still be audited");
+  }
+
+  {
     const fixture = await readyFixture({ stripeStatusCheckedAt: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString() });
     nextStripeResponse = stripeAccount();
     const staleSnapshot = await onboardingMaterialVersion(fixture.registration, await workflowOptions(fixture));
     const response = await worker.fetch(dashboardRequest(fixture, signoffBody(staleSnapshot)), fixture.env);
     assert.equal(response.status, 409);
-    assert.equal((await response.json()).code, "onboarding_snapshot_changed", "stale cached readiness must be replaced by a new reviewed timestamp");
+    const stalePayload = await response.json();
+    assert.equal(stalePayload.code, "onboarding_snapshot_changed", "stale cached readiness must be replaced by a new reviewed timestamp");
+    assert.ok(stalePayload.onboarding?.materialVersion, "an expired review must return the refreshed summary instead of trapping the browser");
+    const reviewedRetry = await worker.fetch(dashboardRequest(fixture, signoffBody(stalePayload.onboarding.materialVersion)), fixture.env);
+    assert.equal(reviewedRetry.status, 200, "the expired Stripe review must need only one refreshed confirmation");
   }
 
   {

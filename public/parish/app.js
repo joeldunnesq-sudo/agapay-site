@@ -9161,6 +9161,21 @@
     try {
       const res = await fetch(`/api/parish/dashboard/${encodeURIComponent(currentParish.parishId)}/onboarding`, { method:'POST', headers:{ ...authHeaders(), 'Accept':'application/json', 'Content-Type':'application/json' }, body:JSON.stringify(body) });
       const data = await res.json();
+      if (!res.ok && data.code === 'onboarding_snapshot_changed' && data.onboarding) {
+        if (data.parish) currentParish = { ...currentParish, ...data.parish };
+        currentParish.onboarding = data.onboarding;
+        renderDashboard();
+        const signerName = document.getElementById('goLiveSignerName');
+        const signerTitle = document.getElementById('goLiveSignerTitle');
+        if (signerName) signerName.value = body.signerName;
+        if (signerTitle) signerTitle.value = body.signerTitle;
+        const refreshedError = document.getElementById('goLiveError');
+        const refreshMessage = 'Stripe was refreshed and the current launch summary is shown below. Review it, check the confirmations again, and click Go Live.';
+        if (refreshedError) refreshedError.textContent = refreshMessage;
+        document.getElementById('treasurerSignoff')?.scrollIntoView({ behavior:'smooth', block:'start' });
+        setStatus(refreshMessage, 'info');
+        return;
+      }
       if (!res.ok) throw new Error(data.error || data.errors?.[0] || 'Unable to complete go-live signoff');
       if (data.parish) currentParish = { ...currentParish, ...data.parish };
       if (data.onboarding) currentParish.onboarding = data.onboarding;

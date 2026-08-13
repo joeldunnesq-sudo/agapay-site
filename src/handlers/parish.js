@@ -925,13 +925,19 @@ export function communitySketchAlt(type) {
   return "Orthodox parish church sketch";
 }
 
+function isCommunitySketchImage(value) {
+  return ["/images/giving/monastery-square.png", "/images/giving/mission-church-square.png", "/images/giving/parish-church-square.png"].includes(String(value || "").trim());
+}
 export function parishFromRegistration(registration) {
   if (!registration) return null;
   registration = mergeStewardshipFundsIntoRegistration(registration).registration;
   const id = registration.parishId || parishSlug(registration.parishName, registration.city);
   if (!id || registration.status !== "verified") return null;
   if (registration.givingStatus && registration.givingStatus !== "active") return null;
-  const type = normalizeCommunityType(registration.communityType);
+  // Older/admin-created records can carry a generic type despite a canonical mission or monastery name.
+  // Match the admin dashboard's classification rule so the public sketch and
+  // label cannot disagree with the organization the parish registered.
+  const type = normalizeCommunityType(`${registration.communityType || ""} ${registration.parishName || ""}`);
   const givingPlus = givingFeatureAccess(registration, "branding");
   const starterDesignatedFund = givingFeatureAccess(registration, "starterDesignatedFund");
   const candleGiving = givingFeatureAccess(registration, "candles");
@@ -946,6 +952,9 @@ export function parishFromRegistration(registration) {
     ? (configuredFunds.length ? configuredFunds : [generalFund])
     : [generalFund, ...(starterDesignatedFund ? designatedFunds.slice(0, 1) : [])];
 
+  const storedImageUrl = registration.imageUrl || registration.photoUrl || "";
+  const customImageUrl = isCommunitySketchImage(storedImageUrl) ? "" : storedImageUrl;
+
   return {
     id,
     name: registration.parishName,
@@ -958,10 +967,12 @@ export function parishFromRegistration(registration) {
     givingStatus: registration.givingStatus || "active",
     source: "registration",
     logoUrl: givingPlus ? registration.logoUrl || "" : "",
-    imageUrl: (givingPlus ? registration.logoUrl : "") || registration.imageUrl || registration.photoUrl || communitySketchImage(type),
+    imageUrl: (givingPlus ? registration.logoUrl : "") || customImageUrl || communitySketchImage(type),
     imageAlt: givingPlus && registration.logoUrl
       ? `${registration.parishName || "Orthodox community"} logo`
-      : registration.imageAlt || communitySketchAlt(type),
+      : customImageUrl
+        ? registration.imageAlt || `${registration.parishName || "Orthodox community"} image`
+        : communitySketchAlt(type),
     liturgicalCalendar: registration.liturgicalCalendar || "julian",
     koinoniaCalendarUrl: registration.koinoniaCalendarUrl || "",
     patronalFeast: registration.patronalFeast || "",
@@ -1955,17 +1966,6 @@ export async function handleCheckout(request, env) {
   // revenue is the parish subscription plan, not a percentage of gifts.
   // Donations flow to the parish's connected Stripe account with only
   // Stripe's own processing cost deducted (see checkoutFinancials above).
-
-  // on_behalf_of ensures card statement descriptors and branding show the
-  // parish's name rather than AGAPAY's. Required for correct Stripe Connect
-  // settlement and dispute ownership on standard connected accounts.
-  if (parish.stripeAccountId) {
-    if (recurring) {
-      form.set("subscription_data[on_behalf_of]", parish.stripeAccountId);
-    } else {
-      form.set("payment_intent_data[on_behalf_of]", parish.stripeAccountId);
-    }
-  }
 
   if (recurring) {
     form.set("line_items[0][price_data][recurring][interval]", body.frequency === "weekly" || body.frequency === "biweekly" ? "week" : "month");
