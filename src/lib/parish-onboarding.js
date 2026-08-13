@@ -254,6 +254,27 @@ export function normalizeOnboardingChecks(input = {}, current = {}, actor = "AGA
   return normalized;
 }
 
+export function recordParishGivingSetupReview(registration = {}, importDecision = "none", actor = "Parish dashboard", now = new Date().toISOString()) {
+  const importRequested = importDecision === "requested";
+  return {
+    ...registration,
+    onboardingChecks: normalizeOnboardingChecks({
+      givingConfiguration: {
+        status: "passed",
+        note: "The parish reviewed and saved its donor-facing giving setup.",
+        evidence: "Parish giving setup wizard"
+      },
+      importDecision: {
+        status: importRequested ? "passed" : "not_applicable",
+        note: importRequested
+          ? "The parish requested help importing existing donor or pledge records."
+          : "The parish chose to launch without importing donor or pledge records.",
+        evidence: "Parish giving setup wizard"
+      }
+    }, registration.onboardingChecks, actor, now)
+  };
+}
+
 export function onboardingMaterialSnapshot(registration = {}, options = {}) {
   const funds = activeItems(registration.funds);
   const generalFunds = funds.filter(isGeneralFundCandidate);

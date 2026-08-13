@@ -10,6 +10,7 @@ import {
   invalidateOnboardingSignoffIfChanged,
   onboardingMaterialSnapshot,
   onboardingMaterialVersion,
+  recordParishGivingSetupReview,
   requiredPersonalAccessAccepted,
   validateGeneralOperatingFund,
   validateTreasurerGoLiveInput,
@@ -122,6 +123,13 @@ assert.equal(readyWorkflow.summary.givingUrl, "https://agapay.test/give/st-onboa
 const payoutsBlocked = await buildParishOnboardingWorkflow(readyRegistration({ stripePayoutsEnabled: false }), { now: Date.now() });
 assert.equal(payoutsBlocked.canGoLive, false);
 assert.ok(payoutsBlocked.blockers.some((item) => item.key === "stripeReady"));
+
+const reviewedWithoutImport = recordParishGivingSetupReview(readyRegistration({ onboardingChecks: {} }), "none", "treasurer@example.test", now);
+assert.equal(reviewedWithoutImport.onboardingChecks.givingConfiguration.status, "passed");
+assert.equal(reviewedWithoutImport.onboardingChecks.importDecision.status, "not_applicable");
+const reviewedWithImport = recordParishGivingSetupReview(readyRegistration({ onboardingChecks: {} }), "requested", "treasurer@example.test", now);
+assert.equal(reviewedWithImport.onboardingChecks.importDecision.status, "passed");
+assert.match(reviewedWithImport.onboardingChecks.importDecision.note, /requested help importing/);
 
 const staleStripe = await buildParishOnboardingWorkflow(readyRegistration({
   stripeStatusCheckedAt: new Date(Date.now() - (25 * 60 * 60 * 1000)).toISOString()
@@ -325,6 +333,11 @@ assert.match(parishUi, /Three steps to start giving/, "the parish UI must presen
 assert.match(parishUi, /openGivingSetupWizard\(\)/, "Review giving setup must open the guided modal instead of navigating to a dashboard tab");
 assert.match(parishUi, /givingSetupTierDetails/, "the giving setup modal must derive its choices from the selected AGAPAY tier");
 assert.match(parishUi, /Step 1 of 3[\s\S]*Step 2 of 3[\s\S]*Step 3 of 3/, "the giving setup modal must keep a short three-screen sequence");
+assert.match(parishUi, /givingSetupReviewed:\s*true/, "saving the giving setup wizard must record the parish review");
+assert.match(parishUi, /importDecision:[\s\S]*requested/, "the giving setup wizard must record the parish import decision");
+assert.doesNotMatch(parishUi.match(/async function saveGivingSetupWizard[\s\S]*?async function submitTreasurerGoLive/)?.[0] || '', /payload\(\)/, "the setup wizard must send a focused payload instead of unrelated dashboard fields");
+assert.match(parishHandler, /body\.givingSetupReviewed === true[\s\S]*recordParishGivingSetupReview/, "the parish save must complete the giving review gate");
+assert.match(parishHandler, /accountingCatalogChanged = catalogChanged && accountingAvailableForParish\(parishId, env\)/, "tiers without live Accounting must save giving setup without requiring an Accounting database");
 assert.match(parishStyles, /\.giving-setup-modal\s*\{[^}]*position:\s*fixed/, "the giving setup wizard must render as a modal pop-out");
 assert.match(parishUi, /if \(tab === 'funds'\) tab = 'options'/, "legacy Funds navigation targets must resolve to the real Funds & Alms tab");
 assert.match(parishUi, /if \(!panel\) \{[\s\S]*current page was left open/, "unknown dashboard targets must fail safely without blanking the current panel");

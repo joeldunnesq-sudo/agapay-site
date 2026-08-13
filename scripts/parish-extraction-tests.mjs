@@ -94,8 +94,27 @@ try {
   assert.equal(emailRequest.url, "https://api.resend.com/emails");
   const email = JSON.parse(emailRequest.init.body);
   assert.deepEqual(email.to, ["pastor@example.test"]);
+  assert.match(email.subject, /Getting started with AGAPAY/);
   assert.match(email.subject, /St\. Test Parish/);
   assert.match(email.html, /https:\/\/example\.test/);
+  assert.equal(email.attachments?.[0]?.filename, "AGAPAY-Parish-Onboarding-Guide.pdf");
+
+  await notifications.sendRegistrationConfirmation(
+    { RESEND_API_KEY: "test-key" },
+    "https://example.test",
+    {
+      reference: "AGP-TEST",
+      parishId: "parish-1",
+      parishName: "St. Test Parish",
+      city: "Testville",
+      priestEmail: "pastor@example.test",
+      parishDashboardToken: "temporary-test-password",
+      subscriptionTier: "starter",
+    },
+  );
+  const welcomeEmail = JSON.parse(emailRequest.init.body);
+  assert.match(welcomeEmail.subject, /Welcome to AGAPAY/);
+  assert.equal(welcomeEmail.attachments, undefined, "the initial welcome email must not attach the onboarding PDF");
 } finally {
   globalThis.fetch = originalFetch;
 }

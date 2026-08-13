@@ -8934,7 +8934,8 @@
       designatedFunds: activeFunds.filter((fund) => !isGeneralDashboardFund(fund) && !isCandleDashboardFund(fund)).map((fund) => ({ ...fund })),
       campaigns: activeGivingSetupItems(editableCampaigns.length ? editableCampaigns : currentParish?.campaigns).map((campaign) => ({ ...campaign })),
       recurringGivingEnabled: currentParish?.recurringGivingEnabled !== false,
-      candlesEnabled: currentParish?.candlesEnabled !== false
+      candlesEnabled: currentParish?.candlesEnabled !== false,
+      importDecision: /requested help importing/i.test(currentParish?.onboarding?.checks?.importDecision?.note || '') ? 'requested' : 'none'
     };
   }
 
@@ -8952,6 +8953,9 @@
       givingSetupDraft.general.description = document.getElementById('givingSetupGeneralDescription')?.value.trim() || '';
       givingSetupDraft.recurringGivingEnabled = Boolean(document.getElementById('givingSetupRecurring')?.checked);
       givingSetupDraft.candlesEnabled = Boolean(document.getElementById('givingSetupCandles')?.checked);
+    }
+    if (givingSetupWizardStep === 2) {
+      givingSetupDraft.importDecision = document.querySelector('input[name="givingSetupImportDecision"]:checked')?.value || 'none';
     }
   }
 
@@ -9000,12 +9004,15 @@
       ['Designated funds', givingSetupDraft.designatedFunds.length ? givingSetupDraft.designatedFunds.map((item) => item.name).join(', ') : 'None for launch'],
       ...(tier.givingPlus ? [['Campaigns', givingSetupDraft.campaigns.length ? givingSetupDraft.campaigns.map((item) => item.name).join(', ') : 'None for launch']] : []),
       ['Recurring giving', givingSetupDraft.recurringGivingEnabled ? 'Enabled' : 'Disabled'],
-      ['Candle offerings', givingSetupDraft.candlesEnabled ? 'Enabled' : 'Disabled']
+      ['Candle offerings', givingSetupDraft.candlesEnabled ? 'Enabled' : 'Disabled'],
+      ['Existing donor records', givingSetupDraft.importDecision === 'requested' ? 'Ask AGAPAY about an import' : 'Launch without an import']
     ];
     return `<div class="giving-setup-screen">
       <div class="giving-setup-screen-heading"><span>Step 3 of 3</span><h3>Review and save</h3><p>This is what donors will see at launch. Saving sends the setup to AGAPAY for the final launch review.</p></div>
       <div class="giving-setup-review">${rows.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('')}</div>
+      <fieldset class="giving-setup-import"><legend>Do you need help importing existing donors or pledges?</legend><label><input type="radio" name="givingSetupImportDecision" value="none" ${givingSetupDraft.importDecision !== 'requested' ? 'checked' : ''}><span><strong>No, launch without an import</strong><small>You can request an import later.</small></span></label><label><input type="radio" name="givingSetupImportDecision" value="requested" ${givingSetupDraft.importDecision === 'requested' ? 'checked' : ''}><span><strong>Yes, contact me about an import</strong><small>This records the request without holding up the ten-minute setup.</small></span></label></fieldset>
       <div class="giving-setup-ready"><span aria-hidden="true">&#10003;</span><div><strong>Ready to save</strong><small>You can reopen this wizard or use Funds &amp; Alms to make changes before launch.</small></div></div>
+      <div class="giving-setup-save-status" id="givingSetupSaveStatus" role="status" aria-live="polite"></div>
     </div>`;
   }
 
@@ -9109,9 +9116,19 @@
     const candles = document.getElementById('candlesEnabled');
     if (recurring) recurring.checked = givingSetupDraft.recurringGivingEnabled;
     if (candles) candles.checked = givingSetupDraft.candlesEnabled;
-    let body;
-    try { body = payload(); } catch (error) { setStatus(error.message, 'error'); return; }
-    if (button) { button.classList.add('loading'); button.disabled = true; }
+    const body = {
+      funds: editableFunds,
+      recurringGivingEnabled: givingSetupDraft.recurringGivingEnabled,
+      candlesEnabled: givingSetupDraft.candlesEnabled,
+      givingCatalogChanged: givingCatalogSnapshot() !== givingCatalogBaseline,
+      accountingCatalogChanged: accountingCatalogSnapshot() !== accountingCatalogBaseline,
+      givingSetupReviewed: true,
+      importDecision: givingSetupDraft.importDecision === 'requested' ? 'requested' : 'none',
+      ...(hasGivingPlusAccess() ? { campaigns: editableCampaigns } : {})
+    };
+    const saveStatus = document.getElementById('givingSetupSaveStatus');
+    if (saveStatus) { saveStatus.className = 'giving-setup-save-status visible'; saveStatus.textContent = 'Saving your giving setup\u2026'; }
+    if (button) { button.classList.add('loading'); button.disabled = true; button.textContent = 'Saving\u2026'; }
     try {
       const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId), { method:'PATCH', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify(body) });
       const data = await response.json().catch(() => ({}));
@@ -9121,7 +9138,8 @@
       setStatus('Giving setup saved. AGAPAY can now complete the final launch review.', 'success');
     } catch (error) {
       setStatus(error.message, 'error');
-      if (button?.isConnected) { button.classList.remove('loading'); button.disabled = false; }
+      if (saveStatus?.isConnected) { saveStatus.className = 'giving-setup-save-status visible error'; saveStatus.textContent = error.message || 'Unable to save the giving setup.'; }
+      if (button?.isConnected) { button.classList.remove('loading'); button.disabled = false; button.textContent = 'Save giving setup'; }
     }
   }
   async function submitTreasurerGoLive(button) {

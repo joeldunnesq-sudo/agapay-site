@@ -118,6 +118,7 @@ export async function sendDashboardInvite(env, appUrl, registration) {
     { key: "priest", email: normalizeEmail(registration.priestEmail), roleTemplate: "rector", label: "priest" }
   ].filter((person) => person.email);
   const uniquePeople = people.filter((person, index) => people.findIndex((candidate) => candidate.email === person.email) === index);
+  const currentGuideAttachment = await loadParishOnboardingGuideAttachment(env, appUrl);
 
   if (uniquePeople.length && d1(env)) {
     const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
@@ -147,8 +148,8 @@ export async function sendDashboardInvite(env, appUrl, registration) {
         from,
         to: [person.email],
         reply_to: replyTo,
-        subject: `Create your AGAPAY access - ${registration.parishName || "your parish"}`,
-        html: agapayEmailHtml(appUrl, "Create your AGAPAY access", `
+        subject: `Getting started with AGAPAY - ${registration.parishName || "your parish"}`,
+        html: agapayEmailHtml(appUrl, "Getting started with AGAPAY", `
           <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
           <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;"><strong>${parishName}</strong> invited you to its AGAPAY dashboard as ${htmlEscape(person.label)}.</p>
           <div style="background:#061522;border:1px solid rgba(201,162,91,0.42);border-radius:12px;padding:18px;margin:0 0 22px;">
@@ -156,7 +157,8 @@ export async function sendDashboardInvite(env, appUrl, registration) {
             <p style="margin:0;font-size:15px;line-height:1.7;color:#F6F1E8;">Open your secure link and create your own password. No parish ID or temporary password is required.</p>
           </div>
           <p style="margin:0 0 24px;"><a href="${htmlEscape(accessUrl)}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Create my access</a></p>
-          <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">This personal link expires in 14 days and can be used once.</p>
+          <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#6F6A60;">This personal link expires in 14 days and can be used once.</p>
+          <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">The Parish Onboarding Guide is attached for reference.</p>
         `),
         text: [
           "Create your AGAPAY access",
@@ -166,8 +168,10 @@ export async function sendDashboardInvite(env, appUrl, registration) {
           "",
           accessUrl,
           "",
-          "This personal link expires in 14 days and can be used once."
-        ].join("\n")
+          "This personal link expires in 14 days and can be used once.",
+          "The Parish Onboarding Guide is attached for reference."
+        ].join("\n"),
+        attachments: currentGuideAttachment ? [currentGuideAttachment] : []
       });
       deliveries.push({ ...person, invitationId: invitation.id, expiresAt: invitation.expiresAt, status: email.status, id: email.id || "", detail: email.detail || "" });
       access[person.key] = {
@@ -243,8 +247,10 @@ export async function sendDashboardInvite(env, appUrl, registration) {
       "",
       "After opening the dashboard, enter the parish ID and temporary password from your welcome email. The setup card will walk you through billing first, then Stripe onboarding.",
       "",
-      "If you cannot find the welcome email, use the Forgot password link on the parish login page or reply to this email."
-    ].join("\n")
+      "If you cannot find the welcome email, use the Forgot password link on the parish login page or reply to this email.",
+      "The Parish Onboarding Guide is attached for reference."
+    ].join("\n"),
+    attachments: currentGuideAttachment ? [currentGuideAttachment] : []
   });
 
   return { ...email, recipients };
@@ -302,8 +308,6 @@ export async function sendRegistrationConfirmation(env, appUrl, registration) {
   const temporaryPassword = htmlEscape(registration.parishDashboardToken || "");
   const tier = subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration));
   const tierLabel = htmlEscape(subscriptionTierSummary(tier));
-  const currentGuideAttachment = await loadParishOnboardingGuideAttachment(env, appUrl);
-
   return sendEmail(env, {
     from,
     to: recipients,
@@ -325,7 +329,7 @@ export async function sendRegistrationConfirmation(env, appUrl, registration) {
         <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Temporary password:</strong> ${temporaryPassword}</p>
       </div>
       <p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#171715;">Please save your reference number. If you have questions about your registration status, email <a href="mailto:onboarding@agapay.app" style="color:#0A365B;">onboarding@agapay.app</a> and include it in your message.</p>
-      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">The current Parish Onboarding Guide is attached so you can prepare while canonical review is underway. Keep the Parish ID and temporary password above; you will use them after verification.</p>
+      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">Keep the Parish ID and temporary password above; you will use them after verification. The setup guide will arrive with your Getting started email after review.</p>
     `),
     text: [
       "Welcome to AGAPAY",
@@ -349,12 +353,9 @@ export async function sendRegistrationConfirmation(env, appUrl, registration) {
       "Please save your reference number. If you have questions about your registration status,",
       "email onboarding@agapay.app and include it in your message.",
       "",
-      "The current Parish Onboarding Guide is attached so you can prepare while canonical review is underway.",
-      "Keep the Parish ID and temporary password above; you will use them after verification."
-    ].join("\n"),
-    attachments: [
-      ...(currentGuideAttachment ? [currentGuideAttachment] : [])
-    ]
+      "Keep the Parish ID and temporary password above; you will use them after verification.",
+      "The setup guide will arrive with your Getting started email after review."
+    ].join("\n")
   });
 }
 

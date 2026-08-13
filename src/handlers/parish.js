@@ -79,7 +79,7 @@ import { accountingAvailableForParish } from "../lib/accounting-demo-access.js";
 import { parishLifeAvailableFor } from "../lib/parish-life-access.js";
 import { fetchKoinoniaCalendarIcs, normalizeKoinoniaCalendarUrl } from "../lib/koinonia-calendar.js";
 import { ensureBenevolenceFundInRegistration, mergeStewardshipFundsIntoRegistration } from "../lib/stewardship-funds.js";
-import { buildParishOnboardingWorkflow, invalidateOnboardingSignoffIfChanged, onboardingWorkflowEnabled, recommendedOnboardingState } from "../lib/parish-onboarding.js";
+import { buildParishOnboardingWorkflow, invalidateOnboardingSignoffIfChanged, onboardingWorkflowEnabled, recommendedOnboardingState, recordParishGivingSetupReview } from "../lib/parish-onboarding.js";
 
 export {
   d1All,
@@ -2801,7 +2801,7 @@ export async function handleParishDashboard(request, env, parishId) {
       updated = nextSession.registration;
     }
 
-    const accountingCatalogChanged = catalogChanged && (
+    const accountingCatalogChanged = catalogChanged && accountingAvailableForParish(parishId, env) && (
       body.accountingCatalogChanged === true
       || (body.accountingCatalogChanged === undefined && givingCatalogChanged({
         funds: updated.funds,
@@ -2826,6 +2826,9 @@ export async function handleParishDashboard(request, env, parishId) {
         campaigns: catalogSync.campaigns,
         feastCampaigns: catalogSync.feastCampaigns || []
       };
+    }
+    if (onboardingWorkflowEnabled(updated) && body.givingSetupReviewed === true) {
+      updated = recordParishGivingSetupReview(updated, body.importDecision, current.treasurerEmail || current.priestEmail || "Parish dashboard");
     }
     if (onboardingWorkflowEnabled(updated)) updated.onboardingState = recommendedOnboardingState(updated, updated.onboardingChecks);
     updated = await invalidateOnboardingSignoffIfChanged(current, updated, { actor: current.treasurerEmail || current.priestEmail || "parish", reason: "The parish changed material onboarding configuration.", receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app" });

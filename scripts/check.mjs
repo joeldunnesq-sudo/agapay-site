@@ -124,7 +124,8 @@ assert.ok(registerHtml.includes("requiresWebsite"), "registration should require
 assert.ok(registerHtml.includes('id="subscriptionTier"') && registerHtml.includes("Starter — $9/month") && registerHtml.includes("Parish — $149/month"), "registration should require a current starting-tier choice");
 assert.ok(registerHtml.includes("subscriptionTier: document.getElementById('subscriptionTier').value"), "registration should submit the selected starting tier");
 assert.ok(parishHandler.includes('requiredFields') && parishHandler.includes('"subscriptionTier"') && parishHandler.includes("validTierForCommunity"), "registration backend should validate the selected tier for the community type");
-assert.ok(parishNotifications.includes("loadParishOnboardingGuideAttachment") && parishNotifications.includes("currentGuideAttachment"), "new-parish email should attach the same current guide served by the dashboard");
+assert.ok(parishNotifications.includes("Getting started with AGAPAY") && parishNotifications.includes("attachments: currentGuideAttachment ? [currentGuideAttachment] : []"), "the Getting started email should attach the current parish guide");
+assert.ok(!parishNotifications.match(/subject: `Welcome to AGAPAY[\s\S]{0,5000}attachments:/), "the initial Welcome email should not attach the parish guide");
 assert.equal(parishOnboardingGuide.subarray(0, 4).toString(), "%PDF", "parish onboarding guide should be a real PDF");
 assert.ok(parishOnboardingGuide.length > 10000, "parish onboarding guide should contain the complete current setup guide");
 assert.equal(accountingSuiteGuide.subarray(0, 4).toString(), "%PDF", "accounting suite guide should be a real PDF");
