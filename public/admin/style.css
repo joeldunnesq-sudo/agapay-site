@@ -1949,9 +1949,12 @@
     .onboarding-phase-card.is-current .onboarding-phase-heading { margin-bottom: .85rem; border-bottom: 1px solid var(--line); padding-bottom: .75rem; }
     .onboarding-phase-heading > em { margin-left: auto; color: var(--gold); font-size: 9px; font-style: normal; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
     .onboarding-support-card { border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.62); }
-    .onboarding-support-card > summary { display: flex; justify-content: space-between; gap: .75rem; padding: .65rem .8rem; color: var(--deep); font-size: 11px; font-weight: 700; cursor: pointer; }
-    .onboarding-support-card > summary span { color: var(--stone); font-size: 9px; font-weight: 600; }
+    .onboarding-support-heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .75rem .85rem; }
+    .onboarding-support-heading small { display: block; color: var(--gold); font-size: 8.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .onboarding-support-heading strong { display: block; margin-top: .14rem; color: var(--deep); font-size: 12px; }
+    .onboarding-support-heading > span { border-radius: 999px; background: var(--paper); color: var(--stone); padding: .28rem .5rem; font-size: 9px; font-weight: 700; }
     .onboarding-support-body { border-top: 1px solid var(--line); padding: .85rem; }
+    .onboarding-support-actions { border-top: 1px solid var(--line); padding: .75rem .85rem; }
     .onboarding-form-divider { display: flex; align-items: center; gap: .6rem; margin: 1rem 0 .75rem; color: var(--gold); font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
     .onboarding-form-divider::after { content: ''; height: 1px; flex: 1; background: var(--line); }
     .check-card input[type="checkbox"] { flex: none; width: 16px; min-width: 16px; height: 16px; margin: 0; padding: 0; box-shadow: none; }

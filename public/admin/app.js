@@ -2488,8 +2488,11 @@ let selectedReference = '';
             ${renderOnboardingManualChecks(onboardingChecks, ['authorizedRepresentative'])}
           </div>
 
-          <details class="admin-section onboarding-support-card">
-            <summary>Tax and billing readiness <span>${escapeHtml(readable(reg.taxReadinessStatus || 'tax_needs_review'))}</span></summary>
+          <section class="admin-section onboarding-support-card" id="tax-billing-readiness">
+            <div class="onboarding-support-heading">
+              <div><small>Required for subscription checkout</small><strong>Tax and billing readiness</strong></div>
+              <span>${escapeHtml(readable(reg.taxReadinessStatus || 'tax_needs_review'))}</span>
+            </div>
             <div class="onboarding-support-body">
             <p style="margin:0 0 0.85rem;color:var(--stone);font-size:12.5px;line-height:1.6;">
               Separate from canonical verification above. A parish can be verified and still blocked from paid
@@ -2540,8 +2543,11 @@ let selectedReference = '';
                 <input id="billingCountry" value="${escapeAttr(reg.billingCountry || 'US')}" placeholder="US" />
               </div>
             </div>
+            <div class="button-row onboarding-support-actions">
+              <button class="gold" type="button" onclick="saveReview('${reference}', this)">Save tax &amp; billing</button>
+            </div>
           </div>
-          </details>
+          </section>
 
           <div class="admin-section onboarding-phase-card ${currentPhase === 'access' ? 'is-current' : ''}" id="onboarding-phase-access">
             <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('access')"><span>2</span><div><small>Give access</small><strong>Send personal access links</strong></div><em>${currentPhase === 'access' ? 'Current' : 'Open'}</em></button>

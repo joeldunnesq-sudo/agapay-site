@@ -29,6 +29,9 @@ assert.match(css, /\.admin-workflow-grid/);
 assert.match(app, /function toggleMobileMore\(force\)/);
 assert.match(app, /giving: 'Parish Onboarding'/);
 assert.match(app, /giving: 'Verify, invite, connect Stripe, and confirm billing\.'/);
+assert.match(app, /<section class="admin-section onboarding-support-card" id="tax-billing-readiness">/, "tax and billing readiness must be visible without a disclosure click");
+assert.doesNotMatch(app, /<details class="admin-section onboarding-support-card">/, "required tax and billing controls must not be hidden in a details disclosure");
+assert.match(app, /Save tax &amp; billing/, "tax and billing readiness must have a nearby save action");
 assert.match(
   app,
   /const action = nextActionPriority\(item\);\s*return action && action\.priority < 99;/,
