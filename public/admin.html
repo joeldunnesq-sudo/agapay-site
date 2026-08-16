@@ -880,6 +880,15 @@
                 <div class="field"><div class="field-key">Payment provider</div><div class="field-val">Stripe Connect onboarding and subscription billing are controlled from each registration review.</div></div>
                 <div class="field"><div class="field-key">Public directory</div><div class="field-val">Verified, active parishes appear in the public giving flow automatically.</div></div>
               </div>
+              <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--line);">
+                <div class="field-key">Launch email diagnostics</div>
+                <p class="muted" style="margin:.35rem 0 .75rem;">Send clearly labeled copies of the real verification, parish invitation, donor receipt, and administrative templates to the configured operations inbox. Optionally includes Resend's controlled bounce address; no donor, parish, registration, payment, or gift record is created.</p>
+                <label style="display:flex;align-items:center;gap:.5rem;margin:0 0 .75rem;"><input id="emailDiagnosticsBounce" type="checkbox" checked /> Include controlled Resend bounce test</label>
+                <div class="btn-row">
+                  <button class="secondary btn-sm" id="emailDiagnosticsBtn" onclick="runEmailDiagnostics(this)">Send diagnostics to operations inbox</button>
+                </div>
+                <p class="muted" id="emailDiagnosticsStatus" role="status" style="margin:.65rem 0 0;">Restricted to configured AGAPAY operations addresses.</p>
+              </div>
             </div>
           </div>
         </div>

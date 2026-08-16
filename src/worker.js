@@ -246,6 +246,7 @@ import {
   handleAdminLearnCommunity,
   handleAdminLearnSummary,
   handleAdminReleaseStatus,
+  handleAdminEmailDiagnostics,
   handleAdminAuditLog,
   handleAdminRebuildIndexes,
   handleAdminPassword,
@@ -256,6 +257,7 @@ import {
   handleAdminAccountingOperations,
   requireAdmin,
 } from "./handlers/admin.js";
+import { handleResendWebhook } from "./handlers/resend-webhook.js";
 
 import {
   handleSubscriptionCheckout,
@@ -2990,6 +2992,9 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/stripe/webhook") {
       return handleStripeWebhook(request, env);
     }
+    if (request.method === "POST" && url.pathname === "/api/resend/webhook") {
+      return handleResendWebhook(request, env);
+    }
 
     // ─── Listen profile SSO — resolves the signed-in donor using the standard
     //     Bearer token + X-AGAPAY-Donor-Email header sent by the donor dashboard.
@@ -3453,6 +3458,9 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/admin/release-status") {
       return handleAdminReleaseStatus(request, env);
+    }
+    if (url.pathname === "/api/admin/email-diagnostics") {
+      return handleAdminEmailDiagnostics(request, env);
     }
     if (request.method === "GET" && url.pathname === "/api/admin/audit-log") {
       return handleAdminAuditLog(request, env);

@@ -1503,6 +1503,35 @@ let selectedReference = '';
       }
     }
 
+    async function runEmailDiagnostics(btn) {
+      const status = document.getElementById('emailDiagnosticsStatus');
+      if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+      if (status) status.textContent = 'Sending real templates and recording provider acceptance...';
+      try {
+        const response = await fetch('/api/admin/email-diagnostics', {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            kinds: ['verification', 'invitation', 'receipt', 'administrative'],
+            includeBounce: document.getElementById('emailDiagnosticsBounce')?.checked === true
+          })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (handleAuthFailure(response, result)) return;
+        if (!response.ok) throw new Error(result.error || 'Unable to send email diagnostics.');
+        const accepted = Object.entries(result.results || {})
+          .map(([kind, delivery]) => `${kind}: ${delivery?.status || 'unknown'}`)
+          .join(' · ');
+        if (status) status.textContent = `Accepted by Resend for ${result.recipient}. ${accepted}`;
+        setStatus('Email diagnostics accepted. Verify the inbox rendering and the Resend webhook alert.', 'success');
+      } catch (error) {
+        if (status) status.textContent = error.message;
+        setStatus(error.message, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+      }
+    }
+
     function emptyDetailMarkup() {
       return `
         <div class="detail-empty">

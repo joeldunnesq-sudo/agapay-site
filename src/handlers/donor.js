@@ -242,13 +242,18 @@ export async function sendDonorVerificationEmail(env, donor, verificationUrl) {
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
   const safeUrl = htmlEscape(verificationUrl);
   const name = htmlEscape(donor.donorName || donor.householdName || "friend");
+  const diagnostic = donor.isDiagnostic === true;
+  const diagnosticBanner = diagnostic
+    ? `<p style="margin:0 0 18px;padding:12px 14px;border:1px solid rgba(201,162,91,0.52);border-radius:10px;background:#FFF8EA;font-size:14px;line-height:1.6;color:#171715;"><strong>Delivery test:</strong> No donor account was created and the verification link is intentionally nonfunctional.</p>`
+    : "";
 
   return sendEmail(env, {
     from,
     to: [donor.email],
     reply_to: replyTo,
-    subject: "Verify your AGAPAY donor account",
+    subject: `${diagnostic ? "[TEST] " : ""}Verify your AGAPAY donor account`,
     html: agapayEmailHtml(appUrl, "Verify your donor account", `
+      ${diagnosticBanner}
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
       <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">Hello ${name}, please verify your email address to finish setting up your AGAPAY donor dashboard.</p>
       <p style="margin:0 0 24px;"><a href="${safeUrl}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Verify email address</a></p>
@@ -412,6 +417,10 @@ export async function sendDonorDonationReceiptEmail(env, offering = {}) {
   const stripeReference = htmlEscape(offering.stripePaymentIntentId || offering.checkoutSessionId || offering.id || "");
   const donatedAt = htmlEscape(new Date(offering.completedAt || offering.createdAt || Date.now()).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }));
   const dashboardUrl = htmlEscape(`${String(appUrl).replace(/\/+$/, "")}/myagapay`);
+  const diagnostic = offering.isDiagnostic === true;
+  const diagnosticBanner = diagnostic
+    ? `<p style="margin:0 0 18px;padding:12px 14px;border:1px solid rgba(201,162,91,0.52);border-radius:10px;background:#FFF8EA;font-size:14px;line-height:1.6;color:#171715;"><strong>Delivery test:</strong> No payment or donation occurred. The values below are template-rendering fixtures only.</p>`
+    : "";
   // AGAPAY does not charge a donation platform fee -- totalFees here is
   // Stripe's own processing cost only. AGAPAY's revenue is the parish
   // subscription plan, not a percentage of this gift.
@@ -428,8 +437,9 @@ export async function sendDonorDonationReceiptEmail(env, offering = {}) {
     from,
     to: [donorEmail],
     reply_to: replyTo,
-    subject: `AGAPAY receipt - ${amount} to ${offering.parishName || "your parish"}`,
+    subject: `${diagnostic ? "[TEST] " : ""}AGAPAY receipt - ${amount} to ${offering.parishName || "your parish"}`,
     html: agapayEmailHtml(appUrl, "Donation receipt", `
+      ${diagnosticBanner}
       <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ, ${donorName}.</p>
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Your gift has been received successfully through AGAPAY.</p>
       <div style="margin:0 0 20px;padding:16px 18px;border:1px solid rgba(201,162,91,0.34);border-radius:12px;background:#FDF9F0;">
