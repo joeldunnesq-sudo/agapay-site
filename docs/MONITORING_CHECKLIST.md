@@ -1,95 +1,70 @@
-# AGAPAY — Launch-Week Monitoring & Alert Configuration Checklist
+# AGAPAY — Launch-Week Monitoring & Alert Checklist
 
-This is a **manual configuration checklist**, not automation. None of the
-items below can be configured from this repository — they require someone
-with Cloudflare, Stripe, and Resend dashboard access (Joel) to click through
-each one. Claude cannot configure Cloudflare dashboard alerts, Stripe
-dashboard alerts, or email-provider alerts from code; those services don't
-expose that as a file in this repo.
+Last verified: 2026-08-16 (America/Chicago)
 
-What Claude *did* build to support this: `src/lib/logging.js`, a structured
-JSON logger wired into the Stripe webhook lifecycle
-(`src/handlers/stripe.js`) and donor login failures
-(`src/handlers/donor.js`) as reference examples. Every log line is JSON with
-an `eventType`, `severity`, and `timestamp` field, which is what makes the
-Cloudflare filters below possible.
+## Current production status
 
-## 1. Cloudflare Worker error alerts
+- Cloudflare Worker logs are enabled, invocation logs are included, dashboard persistence is enabled, and log sampling is 100%.
+- Cloudflare currently offers no native `Workers Errors` or cron-failure notification type in this account. The complete account notification catalog was reviewed on 2026-08-16. Log Explorer scheduled-query alerts require purchasing Log Explorer, so no paid feature was enabled during this review.
+- Scheduled-job failures are covered in the application: `sendScheduledJobFailureAlert()` sends a deduplicated operations email to `AGAPAY_OPS_ALERT_EMAIL`, and `scripts/scheduled-job-observability-tests.mjs` verifies that behavior.
+- Resend delivery monitoring is enabled through the signed production endpoint `POST https://agapay.app/api/resend/webhook` for `email.bounced`, `email.delivery_delayed`, `email.failed`, and `email.complained`.
+- Resend webhook requests are verified with `RESEND_WEBHOOK_SECRET`, duplicate Svix deliveries are suppressed for seven days, and alert-loop protection prevents an operations-alert bounce from recursively sending more alerts.
+- The production Worker has two cron triggers: the accounting/operations job at `0 8 * * *` and the Friday commemoration job at `0 14 * * 6`.
+- Stripe event-destination delivery monitoring was verified separately during the webhook repair work.
 
-1. Cloudflare dashboard → Workers & Pages → `agapay-site` → **Logs** tab.
-   Confirm you can see live `console.log`/`console.error` output (structured
-   JSON lines from `logEvent()`).
-2. Workers & Pages → `agapay-site` → **Settings → Observability** → enable
-   **Logpush** if you want log retention beyond the live tail (Logpush needs
-   an R2 or external destination).
-3. Cloudflare dashboard → **Notifications** → Create → choose
-   **Workers — Errors** (or **Workers Metrics** depending on current
-   Cloudflare naming) for the `agapay-site` Worker. Set a threshold (e.g.
-   >10 5xx responses in 5 minutes) and an email/webhook destination.
-4. If Logpush is enabled, you can also set up a downstream alert (e.g. a
-   scheduled query against the Logpush destination) that greps for
-   `"severity":"error"` — this is what the structured `severity` field is
-   for.
+## 1. Cloudflare Worker and cron monitoring
 
-## 2. Stripe webhook failure alerts
+1. Worker settings → **Observability**:
+   - Logs: enabled
+   - Invocation logs: enabled
+   - Persist logs to the Workers dashboard: enabled
+   - Log sampling: 100%
+2. Worker settings → **Trigger events**:
+   - `0 8 * * *` — next accounting/operations run is shown in the Cloudflare dashboard.
+   - `0 14 * * 6` — Friday commemoration run.
+3. Account **Notifications** contains no native Worker-error or cron-failure rule type for this account. Do not mark a native Cloudflare alert as enabled unless Cloudflare adds that capability later.
+4. Application-level cron failure coverage is the active alert path. Confirm these production variables remain present:
+   - `AGAPAY_OPS_ALERT_EMAIL`
+   - `AGAPAY_SCHEDULED_ALERT_DEDUPE_SECONDS`
+5. Continue reviewing structured Worker logs for `severity: "error"`. If paid Log Explorer is adopted later, add a scheduled query over those structured events.
 
-1. Stripe Dashboard → **Developers → Webhooks** → select the AGAPAY
-   endpoint (both the platform endpoint and the Connect endpoint).
-2. Stripe surfaces failed-delivery counts directly on that page. Stripe
-   also has **Workbench → Event destinations** email notifications for
-   repeated delivery failures — enable those for both endpoints.
-3. On the AGAPAY side, every webhook attempt is already recorded via
-   `claimStripeEvent`/`finishStripeEvent` (existing idempotency store) with
-   a `"processed"` or `"failed"` status, and now also emits a
-   `stripe.webhook.processing_failed` log line (see `src/handlers/stripe.js`)
-   with `retryable: true`. A Cloudflare Logpush filter on
-   `eventType = "stripe.webhook.processing_failed"` is the AGAPAY-side
-   complement to Stripe's own dashboard alerting.
+## 2. Resend delivery monitoring
 
-## 3. Email delivery failure alerts (Resend)
+1. Resend **Webhooks** must show the AGAPAY endpoint as enabled and listening for:
+   - `email.bounced`
+   - `email.delivery_delayed`
+   - `email.failed`
+   - `email.complained`
+2. Cloudflare **Variables and secrets** must contain encrypted `RESEND_WEBHOOK_SECRET`.
+3. An unsigned request to `/api/resend/webhook` must return `400` with `Missing webhook signature`; `503 Resend webhook is not configured` means the signing secret is absent from the active Worker version.
+4. The webhook sends a branded operations alert to `AGAPAY_OPS_ALERT_EMAIL`. It returns a retryable failure if the alert cannot be dispatched.
+5. During launch week, review Resend **Emails** and **Logs** for verification, invitation, receipt, and administrative mail. The admin-only **Launch email diagnostics** control sends those four real templates and can add one deliberate Resend test bounce without creating a donor, donation, payment, or parish registration.
 
-1. Resend dashboard → **Webhooks** → add a webhook for `email.bounced` and
-   `email.delivery_delayed` events if you want push alerts rather than
-   checking the dashboard manually.
-2. Resend dashboard → **Logs** — check periodically during launch week,
-   especially for parish invitation, verification, and Odyssey activation
-   emails, since those block onboarding if they silently fail.
-3. `handleHealth()` (`GET /api/health`, see `src/lib/core.js`) reports
-   `emailConfigured` — this is presence-of-API-key only, not a live send
-   test. It will not catch a Resend outage; only Resend's own dashboard or
-   webhooks will.
+## 3. Stripe webhook monitoring
 
-## 4. Scheduled task (cron) failure alerts
+1. In Stripe Workbench, review both AGAPAY event destinations and their recent deliveries.
+2. Failed Stripe processing emits `stripe.webhook.processing_failed` and is recorded by the idempotency lifecycle (`claimStripeEvent` / `finishStripeEvent`).
+3. During launch week, check both Stripe delivery failures and Cloudflare structured logs after onboarding or donation activity.
 
-1. `wrangler.toml` currently defines one cron trigger
-   (`0 14 * * 6` — Saturday commemoration email job). Cloudflare dashboard →
-   Workers & Pages → `agapay-site` → **Triggers** tab shows recent cron
-   invocation history and success/failure status.
-2. Cloudflare dashboard → **Notifications** → there is a **Workers Cron
-   failure** style alert in some account tiers — check availability under
-   your plan and enable it if present.
-3. Until Phase 13 (background job foundation) exists, cron failures are
-   only visible via the Triggers tab and the Worker's own logs — there is
-   no retry or dead-letter handling yet. Treat this as a known gap, not
-   something already covered.
+## 4. Accounting integrity monitoring
 
-## 5. Launch-week monitoring routine (manual, until the above is fully wired)
+1. The `agapay-phase-g-canary` protective state is `normal`.
+2. The two findings from scan `integrityscan_b94f2942-f3bb-4065-865a-3ae98c4104d8` were resolved at `2026-08-16 20:41:03` UTC:
+   - `ap.bill_lines_mismatch`
+   - `reconciliation.snapshot_missing`
+3. The next scheduled `0 8 * * *` run is responsible for recording the formal post-fix clean scan. Until that scan completes, distinguish “findings resolved” from “clean scan recorded.”
+4. If an authenticated administrator needs earlier evidence, use the narrowly scoped admin integrity-scan control rather than mutating the accounting database directly.
 
-- Check `GET /api/health` a few times a day during launch week
-  (`curl https://agapay.app/api/health`) — should return `"ok": true` and
-  `200`. A `503` means D1 or KV is unreachable.
-- Check Cloudflare Workers **Logs** tab live tail during/after any parish
-  onboarding or real donation, watching for `"severity":"error"` lines.
-- Check the Stripe Dashboard webhook page for both endpoints for delivery
-  failures.
-- Check Resend logs for bounces on verification/invitation/activation
-  emails.
+## 5. Launch-week routine
 
-## What this checklist does NOT claim
+- Check `GET https://agapay.app/api/health`; it should return `200` with `"ok": true`.
+- Review Cloudflare Worker logs after onboarding, donations, cron runs, and email diagnostics.
+- Review Stripe event-destination deliveries for both platform and Connect endpoints.
+- Review Resend delivery status and webhook events, especially for verification and invitation mail.
+- Confirm the next accounting scan records all nine checks passing; investigate immediately if either resolved health code returns.
 
-- It does not claim Cloudflare dashboard alert rules have been created —
-  they have not; step 1.3 and 4.2 above are for Joel to click through.
-- It does not claim a durable, queryable log store exists — logs currently
-  live only in Cloudflare's live tail / optional Logpush destination.
-- It does not cover Phases 5–13 (audit log, webhook inbox, background
-  jobs) — those will each get their own logging surface when built.
+## Evidence boundary
+
+- Dashboard configuration was directly inspected on 2026-08-16.
+- Native Cloudflare Worker/Cron alerts are not claimed as enabled because Cloudflare does not offer those notification types in this account.
+- Email addresses, message bodies, signing secrets, and sensitive provider evidence remain outside the public repository.
