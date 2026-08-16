@@ -38,6 +38,9 @@ async function recordDelivery(env, { parishId, scanId, severity, result, recipie
 
 async function alertForFindings(env, db, { parishId, scan, findings, correlationId }) {
   const actionable = findings.filter((item) => item.severity === "critical" || item.severity === "error");
+  await db.prepare(`UPDATE accounting_operational_alerts
+    SET status='resolved',resolved_at=datetime('now'),version=version+1
+    WHERE source_type='integrity_scan' AND status IN('open','acknowledged')`).run();
   if (!actionable.length) return { status: "not_needed", count: 0, providerMessageId: "" };
   const severity = actionable.some((item) => item.severity === "critical") ? "critical" : "error";
   for (const finding of actionable) {
@@ -53,7 +56,7 @@ async function alertForFindings(env, db, { parishId, scan, findings, correlation
     to: recipient,
     reply_to: env.AGAPAY_REPLY_TO_EMAIL,
     subject: `[${severity.toUpperCase()}] AGAPAY accounting integrity alert — ${parishId}`,
-    html: agapayEmailHtml(env.AGAPAY_APP_URL, "Accounting integrity alert", `<p>The scheduled production integrity scan found ${actionable.length} item(s) requiring attention for <strong>${htmlEscape(parishId)}</strong>.</p><ul>${summaries}</ul><p>New posting has been protectively blocked when a critical finding is present. Scan: <code>${htmlEscape(scan.id)}</code>.</p>`)
+    html: agapayEmailHtml(env.AGAPAY_APP_URL, "Accounting integrity alert", `<p>The scheduled production integrity scan found ${actionable.length} item(s) requiring attention for <strong>${htmlEscape(parishId)}</strong>.</p><ul>${summaries}</ul><p>${scan.criticalFailures > 0 ? "New posting has been protectively blocked because this scan found a critical integrity issue." : "This scan found no critical integrity issue and did not activate a protective posting block."} Scan: <code>${htmlEscape(scan.id)}</code>.</p>`)
   });
   const providerMessageId = await recordDelivery(env, { parishId, scanId: scan.id, severity, result, recipient, correlationId });
   return { status: result.status, count: actionable.length, providerMessageId };

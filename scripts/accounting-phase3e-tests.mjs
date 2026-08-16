@@ -61,6 +61,30 @@ async function ready() {
   assert.equal(released.state, "normal");
 }
 
+{
+  const { sqlite, db } = await ready();
+  sqlite.prepare("INSERT INTO accounting_vendors(id,vendor_number,display_name,status,created_at,updated_at) VALUES('integrity_vendor','INTEGRITY','Integrity fixture','active',datetime('now'),datetime('now'))").run();
+  const bill = sqlite.prepare("INSERT INTO accounting_bills(id,bill_number,vendor_id,bill_date,due_date,description,status,approval_status,payment_status,subtotal_amount,total_amount,amount_due,created_by_actor_type,created_by_actor_id) VALUES(?,?,?,?,?,'Integrity count fixture','draft','pending','unpaid',100,100,100,'test','test')");
+  for (let index = 0; index < 30; index += 1) bill.run(`integrity_bill_${index}`, `INT-${index}`, "integrity_vendor", "2026-07-20", "2026-08-20");
+  const failingScan = await runIntegrityScan(db, { actor, entitlementTier: "parish", scanType: "manual", scope: "modules", correlationId: "phase3e-count" });
+  assert.equal(failingScan.status, "completed_with_warnings");
+  const details = JSON.parse(sqlite.prepare("SELECT details_json FROM accounting_integrity_findings WHERE scan_id=? AND health_code='ap.bill_lines_mismatch'").get(failingScan.id).details_json);
+  assert.equal(details.count, 30); assert.equal(details.samples.length, 25);
+  const line = sqlite.prepare("INSERT INTO accounting_bill_lines(id,bill_id,line_number,description,account_id,fund_id,quantity,unit_amount,line_amount,tax_amount) VALUES(?,?,1,'Integrity count fixture','acct_5000','fund_general',1,100,100,0)");
+  for (let index = 0; index < 30; index += 1) line.run(`integrity_bill_line_${index}`, `integrity_bill_${index}`);
+  const cleanScan = await runIntegrityScan(db, { actor, entitlementTier: "parish", scanType: "manual", scope: "modules", correlationId: "phase3e-resolved" });
+  assert.equal(cleanScan.status, "completed");
+  assert.equal(sqlite.prepare("SELECT COUNT(*) count FROM accounting_integrity_findings WHERE resolved_at IS NULL").get().count, 0);
+  assert.equal(sqlite.prepare("SELECT COUNT(*) count FROM accounting_integrity_findings WHERE scan_id=? AND resolved_at IS NOT NULL").get(failingScan.id).count, 1);
+}
+
+{
+  const phaseGSeed = readFileSync(path.join(root, "scripts", "accounting-phase-g-volume-seed.sql"), "utf8");
+  assert.match(phaseGSeed, /INSERT OR IGNORE INTO accounting_bill_lines/);
+  assert.doesNotMatch(phaseGSeed, /CASE WHEN n<30 THEN 'completed'/);
+  assert.match(phaseGSeed, /AND NOT EXISTS\(SELECT 1 FROM accounting_reconciliation_snapshots/);
+}
+
 const job = createAccountingJobEnvelope({ type: "accounting.integrity.scan", parishId: "parish_fixture", payload: { scanType: "incremental", scope: "ledger" }, correlationId: "phase3e-job" });
 assert.equal(job.primitive, "workflow"); assert.equal(job.maxAttempts, 3);
 assert.equal(classifyIntegritySeverity([{ severity: "warning" }, { severity: "critical" }]), "critical");

@@ -30,6 +30,14 @@ SELECT 'phase_g_bill_'||printf('%04d',n),'PGB-'||printf('%04d',n),'phase_g_vendo
  5000+(n%95000),5000+(n%95000),CASE WHEN n%5=0 THEN 5000+(n%95000) ELSE 0 END,CASE WHEN n%5=0 THEN 0 ELSE 5000+(n%95000) END,'system','phase-g-volume','phase-g-volume-2026-07-21'
 FROM nums;
 
+-- Every synthetic bill must retain the same line-level evidence required of a real bill.
+INSERT OR IGNORE INTO accounting_bill_lines
+  (id,bill_id,line_number,description,account_id,fund_id,quantity,unit_amount,line_amount,tax_amount)
+SELECT 'phase_g_bill_line_'||substr(b.id,length('phase_g_bill_')+1),b.id,1,b.description,
+  'acct_5000','fund_general',1,b.subtotal_amount,b.subtotal_amount,b.tax_amount
+FROM accounting_bills b
+WHERE b.correlation_id='phase-g-volume-2026-07-21' AND b.id LIKE 'phase_g_bill_%';
+
 INSERT OR IGNORE INTO accounting_budgets(id,budget_name,fiscal_year_id,version_number,status,description,created_by)
 VALUES('phase_g_budget','Phase G Representative Annual Budget','fy_2026',1,'approved','Representative-volume canary budget','phase-g-volume');
 
@@ -57,4 +65,14 @@ WITH RECURSIVE nums(n) AS (SELECT 0 UNION ALL SELECT n+1 FROM nums WHERE n<35)
 INSERT OR IGNORE INTO accounting_reconciliation_sessions
   (id,bank_account_id,statement_start_date,statement_end_date,statement_beginning_balance,statement_ending_balance,ledger_beginning_balance,status,calculated_ending_balance,difference,created_by_actor_type,created_by_actor_id,correlation_id)
 SELECT 'phase_g_recon_'||printf('%02d',n),'phase_g_bank',date('2024-01-01','+'||(n*30)||' days'),date('2024-01-31','+'||(n*30)||' days'),1000000+n*10000,1010000+n*10000,1000000+n*10000,
- CASE WHEN n<30 THEN 'completed' ELSE 'draft' END,1010000+n*10000,0,'system','phase-g-volume','phase-g-volume-2026-07-21' FROM nums;
+ 'draft',1010000+n*10000,0,'system','phase-g-volume','phase-g-volume-2026-07-21' FROM nums;
+
+-- Rows created by the original benchmark seed were labeled completed without ever
+-- passing through reconciliation completion or producing immutable evidence.
+-- Restore only those synthetic, evidence-free fixtures to their truthful draft state.
+UPDATE accounting_reconciliation_sessions
+SET status='draft',completed_by_actor_type=NULL,completed_by_actor_id=NULL,completed_at=NULL,
+  updated_at=datetime('now'),version=version+1
+WHERE correlation_id='phase-g-volume-2026-07-21' AND id LIKE 'phase_g_recon_%'
+  AND status='completed'
+  AND NOT EXISTS(SELECT 1 FROM accounting_reconciliation_snapshots s WHERE s.reconciliation_session_id=accounting_reconciliation_sessions.id);

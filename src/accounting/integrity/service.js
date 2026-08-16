@@ -1,7 +1,7 @@
 import { AccountingDatabaseError, ValidationError } from "../errors.js";
 import { trialBalance } from "../reports/service.js";
 
-export const ACCOUNTING_SCANNER_VERSION = "1.0.0";
+export const ACCOUNTING_SCANNER_VERSION = "1.0.1";
 const SCAN_TYPES = new Set(["incremental", "full", "post_migration", "post_restore", "pre_close", "post_close", "manual", "canary"]);
 const SEVERITY_RANK = Object.freeze({ informational: 0, warning: 1, error: 2, critical: 3 });
 function id(prefix) { return `${prefix}_${crypto.randomUUID()}`; }
@@ -18,7 +18,25 @@ function finding(code, scope, module, severity, count, summary, action, referenc
   return { code, scope, module, severity, count: Number(count || 0), status: severity === "critical" ? "blocked" : severity === "error" ? "degraded" : severity === "warning" ? "warning" : "healthy", summary, action, references: references.slice(0, 25) };
 }
 async function countCheck(db, sql, ...parameters) { const row = await first(db, sql, ...parameters); return { count: Number(row?.count || 0), rows: [] }; }
-async function sampleCheck(db, sql, ...parameters) { const rows = await all(db, `${sql} LIMIT 25`, ...parameters); return { count: rows.length, rows }; }
+async function sampleCheck(db, sql, ...parameters) {
+  const rows = await all(db, `${sql} LIMIT 25`, ...parameters);
+  const total = await first(db, `SELECT COUNT(*) count FROM (${sql}) integrity_sample`, ...parameters);
+  return { count: Number(total?.count || 0), rows };
+}
+
+function checkedHealthScopes(scope, entitlementTier) {
+  if (scope === "full") return ["ledger", "integration", "reconciliation", ...(entitlementTier === "parish" ? ["module"] : []), "close", "migration"];
+  if (scope === "modules") return entitlementTier === "parish" ? ["module"] : [];
+  return [{ ledger: "ledger", integration: "integration", reconciliation: "reconciliation", close: "close", schema: "migration" }[scope]].filter(Boolean);
+}
+
+async function resolvePreviousFindings(db, scanId, scopes) {
+  if (!scopes.length) return;
+  const placeholders = scopes.map(() => "?").join(",");
+  await run(db, `UPDATE accounting_integrity_findings
+    SET resolved_at=datetime('now'),last_checked_at=datetime('now'),updated_at=datetime('now')
+    WHERE scan_id<>? AND resolved_at IS NULL AND health_scope IN(${placeholders})`, scanId, ...scopes);
+}
 
 async function ledgerChecks(db, actor) {
   const checks = [];
@@ -132,6 +150,7 @@ export async function runIntegrityScan(db, { actor, entitlementTier, scanType = 
     if (entitlementTier === "parish" && ["full", "modules"].includes(scope)) groups.push(...await parishModuleChecks(db));
     if (["full", "close"].includes(scope)) groups.push(...await closeChecks(db));
     if (["full", "schema"].includes(scope)) groups.push(...await schemaChecks(db));
+    await resolvePreviousFindings(db, scan.id, checkedHealthScopes(scope, entitlementTier));
     for (const item of groups) await persistFinding(db, scan.id, correlationId, item);
     const critical = groups.filter(item => item.severity === "critical").length, warnings = groups.filter(item => item.severity === "warning").length, errors = groups.filter(item => item.severity === "error").length, total = 6 + (entitlementTier === "parish" ? 3 : 0), status = critical || errors || warnings ? "completed_with_warnings" : "completed";
     await run(db, "UPDATE accounting_integrity_scans SET status=?,completed_at=?,last_checkpoint='complete',checks_total=?,checks_passed=?,checks_warned=?,checks_failed=?,critical_failures=?,updated_at=datetime('now') WHERE id=?", status, now(), total, Math.max(0, total - groups.length), warnings, errors + critical, critical, scan.id);
