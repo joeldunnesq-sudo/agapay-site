@@ -45,6 +45,7 @@ assert.doesNotMatch(ledgerHandler, /loadAccountingDatabaseForEntity\(env,entity\
 assert.match(admin, /\/api\/admin\/accounting\/activate-prepared/);
 assert.match(admin, /\/api\/admin\/accounting\/targets/);
 assert.match(admin, /internalCanary/, "the authenticated target list must identify the configured internal canary without exposing database identifiers");
+assert.match(admin, /environment:detectAccountingEnvironment\(env\)/, "the target response must let the UI hide non-production controls in production");
 assert.match(admin, /environment==="production"/, "prepared database activation must fail closed in production");
 assert.match(admin, /ACCOUNTING_PREPARED_PARISH_DATABASES/, "prepared database activation must use a configured parish mapping");
 assert.match(adminHtml, /Activate prepared staging database/);
@@ -54,6 +55,8 @@ assert.match(adminApp, /Internal monitoring fixtures/, "the selector must group 
 assert.match(adminApp, /synthetic operational data, not customer parish data/, "the canary selection must explain that it does not contain customer data");
 assert.match(adminHtml, /aria-describedby="accountingOpsTargetHelp"/, "the accounting target selector must provide concise usage guidance");
 assert.match(adminHtml, /role="status" aria-live="polite"/, "accounting target loading feedback must be announced accessibly");
+assert.match(adminHtml, /id="accountingPreparedActivation" hidden/, "prepared-database activation must be hidden until a non-production environment is confirmed");
+assert.match(adminApp, /activation\.hidden=!adminAccountingEnvironment\|\|adminAccountingEnvironment==='production'/, "production must not present an unusable staging-only action");
 assert.match(app, /function renderAccountingPaywall\(/);
 assert.match(app, /Unlock the Accounting Suite/);
 assert.match(app, /Financial command center/);

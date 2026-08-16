@@ -17,6 +17,7 @@ let selectedReference = '';
     let adminAccountingHealth = null;
     let adminAccountingTargets = [];
     let adminAccountingTargetsLoaded = false;
+    let adminAccountingEnvironment = '';
 
     function token() {
       return document.getElementById('adminToken')?.value.trim() || sessionStorage.getItem(adminSessionKey) || '';
@@ -3145,7 +3146,7 @@ let selectedReference = '';
       if([...select.options].some(option=>option.value===current))select.value=current;
     }
 
-    async function loadAdminAccountingTargets({silent=false}={}){const select=document.getElementById('accountingOpsParish');if(select)select.setAttribute('aria-busy','true');try{const response=await fetch('/api/admin/accounting/targets',{headers:authHeaders()}),payload=await response.json().catch(()=>({}));if(handleAuthFailure(response,payload))return false;if(!response.ok)throw new Error(payload.message||payload.error||'Unable to load provisioned accounting targets.');adminAccountingTargets=Array.isArray(payload.targets)?payload.targets:[];adminAccountingTargetsLoaded=true;populateAdminAccountingParishes();return true;}catch(error){if(select)select.setAttribute('aria-busy','false');if(!silent)setStatus(error.message,'error');return false;}}
+    async function loadAdminAccountingTargets({silent=false}={}){const select=document.getElementById('accountingOpsParish');if(select)select.setAttribute('aria-busy','true');try{const response=await fetch('/api/admin/accounting/targets',{headers:authHeaders()}),payload=await response.json().catch(()=>({}));if(handleAuthFailure(response,payload))return false;if(!response.ok)throw new Error(payload.message||payload.error||'Unable to load provisioned accounting targets.');adminAccountingTargets=Array.isArray(payload.targets)?payload.targets:[];adminAccountingTargetsLoaded=true;adminAccountingEnvironment=String(payload.environment||'').trim().toLowerCase();const activation=document.getElementById('accountingPreparedActivation');if(activation)activation.hidden=!adminAccountingEnvironment||adminAccountingEnvironment==='production';populateAdminAccountingParishes();return true;}catch(error){if(select)select.setAttribute('aria-busy','false');if(!silent)setStatus(error.message,'error');return false;}}
     function selectedAdminAccountingTarget(){const parishId=adminAccountingParish();return adminAccountingTargets.find(target=>target.parishId===parishId)||null;}
     function adminAccountingParish(){return document.getElementById('accountingOpsParish')?.value||'';}
     async function adminAccountingFetch(path,options={}){const parishId=adminAccountingParish();if(!parishId)throw new Error('Select a parish first.');const method=options.method||'GET',url=method==='GET'?`${path}?parishId=${encodeURIComponent(parishId)}`:path,body=method==='GET'?undefined:JSON.stringify({parishId,...(options.body||{})}),response=await fetch(url,{method,headers:authHeaders(body?{'Content-Type':'application/json'}:{}),body}),payload=await response.json().catch(()=>({}));if(handleAuthFailure(response,payload))throw new Error('Admin session expired.');if(!response.ok)throw new Error(payload.message||payload.error||'Accounting operation failed.');return payload;}
