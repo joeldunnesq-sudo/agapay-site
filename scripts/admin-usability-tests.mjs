@@ -42,6 +42,16 @@ assert.match(app, /class="onboarding-stripe-observer"/, "Admin must present Stri
 assert.match(app, /The parish connects Stripe from its own dashboard/, "Admin must direct Stripe setup to the parish dashboard");
 assert.doesNotMatch(app, /Create onboarding link|function startStripeOnboarding\(reference/, "Admin must not create a second Stripe onboarding link");
 assert.doesNotMatch(app, /id="stripeAccountStatus"|id="stripeAccountId"/, "Admin must not expose editable Stripe connection state");
+assert.match(app, /function deploymentCheckOk\(check, legacyValue\)/, "deployment health must normalize current structured checks and legacy values");
+assert.match(app, /deploymentCheckOk\(checks\.d1, checks\.database === 'ok'\)/, "deployment health must read the current D1 check shape");
+assert.match(app, /location\.hostname === 'agapay\.app' \? 'production'/, "production diagnostics must not show an unknown environment when the health endpoint omits the label");
+assert.match(app, /function bindRegistrationAutosave\(reference\)/, "onboarding fields must bind to record-level autosave");
+assert.match(app, /registrationAutosaveTimer = setTimeout\(\(\) => runRegistrationAutosave\(reference\), 900\)/, "autosave must debounce field edits");
+assert.match(app, /sendDashboardInvite: false/, "autosave must never send a parish dashboard invitation");
+assert.match(app, /includeReviewerNotes: false/, "autosave must not append partially typed reviewer notes");
+assert.match(app, /new Set\(\['autoDashboardInvite', 'reviewerNotes', 'parishDashboardToken'\]\)/, "external-action and append-only fields must be excluded from autosave triggers");
+assert.match(app, /loadRegistrations\(\{ silent: true, preserveSelection: true \}\)/, "manual saves must preserve the open church record");
+assert.doesNotMatch(app, /renderQueueNext\(finalRegistration\);\s*await loadRegistrations\(\);/, "saving must not collapse the selected church back to the queue");
 assert.match(
   app,
   /const action = nextActionPriority\(item\);\s*return action && action\.priority < 99;/,

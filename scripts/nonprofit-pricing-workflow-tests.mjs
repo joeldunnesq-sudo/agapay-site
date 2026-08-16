@@ -72,6 +72,7 @@ assert.ok(worker.includes("/api/admin/nonprofit-pricing/alerts/run"));
 assert.ok(handler.includes("Upload Stripe's approval message before recording approval."));
 assert.ok(parishHtml.includes("Apply for Stripe nonprofit pricing"));
 assert.ok(parishApp.includes("saveNonprofitPricingAttestation"));
+assert.match(parishApp, /currentParish\.parishName \|\| currentParish\.name \|\| 'The parish'/, "application statements must always include a real parish name fallback");
 assert.ok(adminHtml.includes("Donation-volume threshold monitor"));
 assert.ok(adminApp.includes("thresholdExposurePercent"));
 

@@ -10828,7 +10828,8 @@
     const documents = (application.documents || []).filter(document => document.isCurrent);
     const statusLabel = String(application.status || 'not_started').replaceAll('_', ' ');
     const measuredPercent = Number(data.volume?.donationPercent || 0).toFixed(2);
-    const applicationStatement = `${currentParish.name} confirms that ${measuredPercent}% of its measured year-to-date Stripe payment volume is from tax-deductible donations. The parish is a registered nonprofit organization and requests review for Stripe nonprofit pricing for connected account ${application.stripeAccountId || ''}. An authorized account owner is submitting this request while logged into the parish Stripe account.`;
+    const applicationParishName = currentParish.parishName || currentParish.name || 'The parish';
+    const applicationStatement = `${applicationParishName} confirms that ${measuredPercent}% of its measured year-to-date Stripe payment volume is from tax-deductible donations. The parish is a registered nonprofit organization and requests review for Stripe nonprofit pricing for connected account ${application.stripeAccountId || ''}. An authorized account owner is submitting this request while logged into the parish Stripe account.`;
     const checks = [
       ['Complete Stripe volume scan', readiness.measurementComplete],
       ['At least 80% measured donation volume', readiness.measuredAtOrAbove80],

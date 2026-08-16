@@ -7,6 +7,10 @@ let selectedReference = '';
     const givingSummaryCache = new Map();
     let autoRefreshTimer = null;
     let isLoadingRegistrations = false;
+    let registrationAutosaveTimer = null;
+    let registrationAutosaveInFlight = false;
+    let registrationAutosaveQueued = false;
+    let registrationAutosavePromise = null;
     let lastDataLoadedAt = null;
     let latestPlatformSummary = null;
     let latestLearnAdmin = null;
@@ -1429,6 +1433,18 @@ let selectedReference = '';
       return `<span class="badge ${cls}">${escapeHtml(label)}</span>`;
     }
 
+    function deploymentCheckOk(check, legacyValue) {
+      if (typeof check === 'boolean') return check;
+      if (typeof check === 'string') return check === 'ok';
+      if (check && typeof check === 'object') {
+        if (typeof check.ok === 'boolean') return check.ok;
+        if (typeof check.configured === 'boolean') return check.configured;
+        const values = Object.values(check);
+        return values.length > 0 && values.every(value => value === true);
+      }
+      return Boolean(legacyValue);
+    }
+
     async function loadDeploymentDiagnostics() {
       const badgeEl = document.getElementById('deploymentStatusBadge');
       const versionEl = document.getElementById('diagVersion');
@@ -1448,16 +1464,22 @@ let selectedReference = '';
         }
         if (versionEl) versionEl.textContent = health.version || 'unknown';
         if (deployedEl) deployedEl.textContent = 'Deployed: ' + (health.deployedAt ? new Date(health.deployedAt).toUTCString().replace(' GMT', ' UTC') : 'unknown');
-        if (envEl) envEl.textContent = health.environment || 'unknown';
+        if (envEl) envEl.textContent = health.environment || (location.hostname === 'agapay.app' ? 'production' : 'unknown');
         if (checksEl && health.checks) {
           const checks = health.checks;
+          const workerOk = deploymentCheckOk(checks.worker);
+          const d1Ok = deploymentCheckOk(checks.d1, checks.database === 'ok');
+          const kvOk = deploymentCheckOk(checks.kv);
+          const stripeOk = deploymentCheckOk(checks.stripe, checks.stripeConfigured);
+          const emailOk = deploymentCheckOk(checks.email, checks.emailConfigured);
+          const r2Ok = deploymentCheckOk(checks.r2, checks.r2Configured);
           checksEl.innerHTML = [
-            diagnosticsBadge('Worker: ' + checks.worker, checks.worker === 'ok'),
-            diagnosticsBadge('D1: ' + checks.database, checks.database === 'ok'),
-            diagnosticsBadge('KV: ' + checks.kv, checks.kv === 'ok'),
-            diagnosticsBadge('Stripe', checks.stripeConfigured, { unknown: !checks.stripeConfigured }),
-            diagnosticsBadge('Email', checks.emailConfigured, { unknown: !checks.emailConfigured }),
-            diagnosticsBadge('R2', checks.r2Configured, { unknown: !checks.r2Configured })
+            diagnosticsBadge(`Worker: ${workerOk ? 'ok' : 'failed'}`, workerOk),
+            diagnosticsBadge(`D1: ${d1Ok ? 'ok' : 'failed'}`, d1Ok),
+            diagnosticsBadge(`KV: ${kvOk ? 'ok' : 'failed'}`, kvOk),
+            diagnosticsBadge('Stripe', stripeOk, { unknown: !stripeOk }),
+            diagnosticsBadge('Email', emailOk, { unknown: !emailOk }),
+            diagnosticsBadge('R2', r2Ok, { unknown: !r2Ok })
           ].join('');
         }
       } catch (err) {
@@ -1496,6 +1518,9 @@ let selectedReference = '';
     }
 
     function collapseRegistrationDetail() {
+      if (registrationAutosaveTimer) clearTimeout(registrationAutosaveTimer);
+      registrationAutosaveTimer = null;
+      registrationAutosaveQueued = false;
       selectedReference = '';
       
       const refEl = document.getElementById('selectedReference');
@@ -1508,6 +1533,68 @@ let selectedReference = '';
       document.getElementById('registrationDetail').innerHTML = '';
       renderFilteredList();
       document.getElementById('registrationQueue')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function setRegistrationAutosaveState(message, state = '') {
+      const indicator = document.getElementById('registrationAutosaveState');
+      if (!indicator) return;
+      indicator.textContent = message;
+      indicator.dataset.state = state;
+    }
+
+    function scheduleRegistrationAutosave(reference) {
+      if (!reference || reference !== selectedReference) return;
+      if (registrationAutosaveTimer) clearTimeout(registrationAutosaveTimer);
+      setRegistrationAutosaveState('Unsaved changes', 'pending');
+      registrationAutosaveTimer = setTimeout(() => runRegistrationAutosave(reference), 900);
+    }
+
+    async function runRegistrationAutosave(reference) {
+      registrationAutosaveTimer = null;
+      if (!reference || reference !== selectedReference) return;
+      if (registrationAutosaveInFlight) {
+        registrationAutosaveQueued = true;
+        return;
+      }
+      registrationAutosaveInFlight = true;
+      setRegistrationAutosaveState('Saving...', 'saving');
+      registrationAutosavePromise = saveReview(reference, null, {
+        autosave: true,
+        sendDashboardInvite: false,
+        includeReviewerNotes: false
+      });
+      try {
+        await registrationAutosavePromise;
+      } finally {
+        registrationAutosavePromise = null;
+        registrationAutosaveInFlight = false;
+        if (registrationAutosaveQueued && reference === selectedReference) {
+          registrationAutosaveQueued = false;
+          registrationAutosaveTimer = setTimeout(() => runRegistrationAutosave(reference), 150);
+        }
+      }
+    }
+
+    function bindRegistrationAutosave(reference) {
+      const detail = document.getElementById('registrationDetail');
+      if (!detail) return;
+      const excluded = new Set(['autoDashboardInvite', 'reviewerNotes', 'parishDashboardToken']);
+      detail.querySelectorAll('input, select, textarea').forEach((control) => {
+        if (!control.id || excluded.has(control.id) || control.disabled || control.readOnly || control.type === 'file') return;
+        const eventName = control.matches('select, input[type="checkbox"], input[type="radio"]')
+          || control.id === 'fundsJson'
+          || control.id === 'campaignsJson'
+          ? 'change'
+          : 'input';
+        control.addEventListener(eventName, () => scheduleRegistrationAutosave(reference));
+      });
+    }
+
+    function upsertRegistrationCache(registration) {
+      if (!registration?.reference) return;
+      const index = registrationsCache.findIndex((item) => item.reference === registration.reference);
+      if (index >= 0) registrationsCache[index] = { ...registrationsCache[index], ...registration };
+      else registrationsCache.push(registration);
     }
 
     async function loadRegistrations(options = {}) {
@@ -2243,7 +2330,7 @@ let selectedReference = '';
           ${state === 'LIVE' ? '' : `<button class="gold btn-sm" type="button" onclick="activateOnboardingPhase('${currentPhase}')">Open this step</button>`}
         </div>
         <div class="onboarding-command-actions">
-          <span>${completed} of ${total} required checks complete</span>
+          <span><b id="registrationAutosaveState" data-state="saved">Changes save automatically</b> &middot; ${completed} of ${total} required checks complete</span>
           <button class="secondary btn-sm" type="button" onclick="copyRegistrationSummary()">Copy</button>
           <button class="gold btn-sm" type="button" onclick="saveReview('${jsAttr(reg.reference)}', this)">Save progress</button>
         </div>
@@ -2678,6 +2765,7 @@ let selectedReference = '';
         </div>
       </div>
       `;
+      bindRegistrationAutosave(reg.reference);
     }
 
     function copyRegistrationSummary() {
@@ -2705,10 +2793,16 @@ let selectedReference = '';
 
     async function saveReview(reference, btn, options = {}) {
       if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+      if (!options.autosave) {
+        if (registrationAutosaveTimer) clearTimeout(registrationAutosaveTimer);
+        registrationAutosaveTimer = null;
+        registrationAutosaveQueued = false;
+        if (registrationAutosavePromise) await registrationAutosavePromise;
+      }
       
       try {
         const selectedStatus = document.getElementById('statusSelect').value;
-        const shouldSendVerifiedInvite = selectedStatus === 'verified'
+        const shouldSendVerifiedInvite = !options.autosave && selectedStatus === 'verified'
           && (options.sendDashboardInvite ?? document.getElementById('autoDashboardInvite').checked);
         let funds = [];
         let campaigns = [];
@@ -2716,8 +2810,9 @@ let selectedReference = '';
           funds = JSON.parse(document.getElementById('fundsJson').value || '[]');
           campaigns = JSON.parse(document.getElementById('campaignsJson').value || '[]');
         } catch {
-          setStatus('Funds or campaigns JSON is invalid.', 'error');
-          return;
+          if (options.autosave) setRegistrationAutosaveState('Fix invalid JSON to save', 'error');
+          else setStatus('Funds or campaigns JSON is invalid.', 'error');
+          return false;
         }
 
         const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference), {
@@ -2747,7 +2842,7 @@ let selectedReference = '';
             onboardingChecks: readOnboardingChecks(),
             parishDashboardToken: document.getElementById('parishDashboardToken')?.value.trim() || undefined,
             sendDashboardInvite: shouldSendVerifiedInvite,
-            reviewerNotes: document.getElementById('reviewerNotes').value,
+            reviewerNotes: options.includeReviewerNotes === false ? '' : document.getElementById('reviewerNotes').value,
             billingLegalName: document.getElementById('billingLegalName').value,
             billingAddressLine1: document.getElementById('billingAddressLine1').value,
             billingAddressLine2: document.getElementById('billingAddressLine2').value,
@@ -2762,26 +2857,38 @@ let selectedReference = '';
         if (!response.ok) throw new Error(result.error || 'Unable to save review');
 
         const finalRegistration = result.registration;
+        upsertRegistrationCache(finalRegistration);
 
         // Clear the notes textarea after successful save
         const notesEl = document.getElementById('reviewerNotes');
-        if (notesEl) notesEl.value = '';
+        if (notesEl && options.includeReviewerNotes !== false) notesEl.value = '';
         const reviewerName = document.getElementById('reviewedBy')?.value.trim();
         if (reviewerName) {
           try { sessionStorage.setItem(adminActorKey, reviewerName); } catch {}
         }
 
-        renderDetail(finalRegistration);
         renderQueueNext(finalRegistration);
-        await loadRegistrations();
+        if (options.autosave) {
+          renderMetrics(registrationsCache);
+          renderFilteredList();
+          setRegistrationAutosaveState(`Saved ${formatClock(new Date())}`, 'saved');
+          return true;
+        }
+
+        const activePhase = document.querySelector('.onboarding-phase-card.is-current')?.id?.replace('onboarding-phase-', '') || '';
+        await loadRegistrations({ silent: true, preserveSelection: true });
+        if (activePhase && selectedReference === reference) activateOnboardingPhase(activePhase);
         const inviteMessage = dashboardInviteMessage(result.dashboardInvite);
         if (finalRegistration.status === 'verified' && finalRegistration.parishId) {
           setStatus(`Review saved. ${finalRegistration.parishName} is verified and hidden while onboarding continues.${inviteMessage}`, 'success');
-          return;
+          return true;
         }
         setStatus(`Review saved.${inviteMessage}`, 'success');
+        return true;
       } catch (err) {
-        setStatus(err.message, 'error');
+        if (options.autosave) setRegistrationAutosaveState('Save failed - use Save progress', 'error');
+        else setStatus(err.message, 'error');
+        return false;
       } finally {
         if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
       }
