@@ -9,6 +9,20 @@ first.
 Full original spec (all 13 phases) is preserved in
 `docs/SOFT_LAUNCH_READINESS_SPEC.md`.
 
+## Current controlled-onboarding decision — 2026-08-16
+
+AGAPAY is approved for controlled onboarding of the first real parish. The product owner completed the remaining production admin and parish walkthroughs with the dedicated Test Lubbock organization on 2026-08-16, closing the three manual rows previously left in `docs/critical-flow-qa-matrix.md`. The earlier donor and Stripe lifecycle exercise was owner-confirmed on 2026-08-01. Production email rendering and controlled-bounce monitoring were owner-validated on 2026-08-16.
+
+Current evidence:
+
+- `docs/reports/test-lubbock-critical-flow-evidence-2026-08-16.md`
+- `docs/reports/email-monitoring-evidence-2026-08-16.md`
+- `docs/critical-flow-qa-matrix.md`
+- `docs/MONITORING_CHECKLIST.md`
+- `docs/accounting/accounting-release-gates-signoff.md`
+
+This decision supersedes older pre-completion language inside this historical tracker when assessing the controlled first-parish launch. It does not convert every older deferred hardening item into a completed item, approve broad unattended rollout, or bypass the real-parish controls in `docs/parish-onboarding-go-live-sop.md`. Each parish must still complete identity and representative verification, personal access acceptance, fresh Stripe readiness, locked configuration review, authenticated treasurer Go-Live signoff, and the 24-hour/72-hour early-life checks.
+
 ## How to read this file
 
 Each phase has a status:

@@ -1,5 +1,11 @@
 # AGAPAY Soft Launch Test Execution Sheet
 
+This file remains the reusable worksheet for future regression runs. The completed owner-run launch evidence is recorded in:
+
+- `docs/reports/test-lubbock-critical-flow-evidence-2026-08-16.md` — Test Lubbock registration, admin, invitation, setup, billing/Stripe, and save-flow walkthroughs
+- `docs/reports/email-monitoring-evidence-2026-08-16.md` — production email delivery, rendering, webhook, and controlled-bounce evidence
+- `docs/critical-flow-qa-matrix.md` — current status of every critical flow
+
 Date: ____________________  
 Tester: ____________________  
 Commit SHA: ____________________  
