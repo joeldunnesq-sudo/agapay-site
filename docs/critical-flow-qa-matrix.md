@@ -1,6 +1,6 @@
 # AGAPAY Critical Flow QA Matrix
 
-Last updated: 2026-08-01 (America/Chicago)
+Last updated: 2026-08-16 (America/Chicago)
 
 ## Legend
 
@@ -24,14 +24,11 @@ Last updated: 2026-08-01 (America/Chicago)
 | Parish first-time setup -> billing -> Stripe onboarding | Parish ops | Manual + Stripe | PENDING-MANUAL | Needs live Stripe onboarding completion |
 | Admin queue management and status save | Admin ops | Manual | PENDING-MANUAL | Needs credentials and UI walkthrough |
 | Refund/dispute lifecycle | Payments | Manual + webhook event replay | PASS-OWNER | Included in the owner-confirmed Stripe test-mode exercise on 2026-08-01 |
-| Email deliverability and branding validation | Donor/parish/admin emails | Manual inbox checks | PENDING-MANUAL | SPF/DKIM/DMARC + inbox render checks |
+| Email deliverability and branding validation | Donor/parish/admin emails | Production Resend + Gmail inbox/render + controlled bounce | PASS-OWNER | `/docs/reports/email-monitoring-evidence-2026-08-16.md` |
 
 ## What this gives us now
 
 We already have a reliable automated quality gate plus production route-level smoke coverage.
 
-What remains before soft launch is mostly experiential and external-system validation:
-
-1. Real email deliverability and inbox rendering
-2. Human-driven role workflows (admin/parish/donor)
+Real email deliverability, inbox rendering, and bounce-alert handling are now owner-validated in production. The remaining soft-launch QA is the human-driven admin, parish, and donor role walkthroughs listed above.
 

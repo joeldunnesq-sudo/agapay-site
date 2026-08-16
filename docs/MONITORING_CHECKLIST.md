@@ -9,6 +9,7 @@ Last verified: 2026-08-16 (America/Chicago)
 - Scheduled-job failures are covered in the application: `sendScheduledJobFailureAlert()` sends a deduplicated operations email to `AGAPAY_OPS_ALERT_EMAIL`, and `scripts/scheduled-job-observability-tests.mjs` verifies that behavior.
 - Resend delivery monitoring is enabled through the signed production endpoint `POST https://agapay.app/api/resend/webhook` for `email.bounced`, `email.delivery_delayed`, `email.failed`, and `email.complained`.
 - Resend webhook requests are verified with `RESEND_WEBHOOK_SECRET`, duplicate Svix deliveries are suppressed for seven days, and alert-loop protection prevents an operations-alert bounce from recursively sending more alerts.
+- The production launch-email diagnostic completed on 2026-08-16: verification, parish invitation, receipt, and administrative templates were delivered and rendered in Gmail; the controlled hard bounce reached the webhook with `200 OK` on its first attempt and produced the operations alert.
 - The production Worker has two cron triggers: the accounting/operations job at `0 8 * * *` and the Friday commemoration job at `0 14 * * 6`.
 - Stripe event-destination delivery monitoring was verified separately during the webhook repair work.
 
@@ -39,6 +40,7 @@ Last verified: 2026-08-16 (America/Chicago)
 3. An unsigned request to `/api/resend/webhook` must return `400` with `Missing webhook signature`; `503 Resend webhook is not configured` means the signing secret is absent from the active Worker version.
 4. The webhook sends a branded operations alert to `AGAPAY_OPS_ALERT_EMAIL`. It returns a retryable failure if the alert cannot be dispatched.
 5. During launch week, review Resend **Emails** and **Logs** for verification, invitation, receipt, and administrative mail. The admin-only **Launch email diagnostics** control sends those four real templates and can add one deliberate Resend test bounce without creating a donor, donation, payment, or parish registration.
+6. Latest owner-run evidence: `/docs/reports/email-monitoring-evidence-2026-08-16.md`.
 
 ## 3. Stripe webhook monitoring
 
