@@ -810,10 +810,10 @@
           <section class="section-card">
             <div class="section-header"><div class="section-title">Parish accounting target</div></div>
             <div class="section-body">
-              <div class="form-grid"><div><label for="accountingOpsParish">Parish</label><select id="accountingOpsParish" onchange="loadAdminAccountingOperations()"><option value="">Select a parish</option></select></div></div>
+              <div class="form-grid"><div><label for="accountingOpsParish">Provisioned accounting target</label><select id="accountingOpsParish" aria-describedby="accountingOpsTargetHelp" onchange="loadAdminAccountingOperations()"><option value="">Select a target</option></select><p class="muted" id="accountingOpsTargetHelp">Choose a ready parish database or an internal monitoring fixture. Internal fixtures are separated and labeled so they cannot be mistaken for customer parishes.</p></div></div>
               <div class="btn-row"><button class="secondary btn-sm" onclick="activateAdminPreparedAccounting(this)">Activate prepared staging database</button></div>
               <p class="muted">Staging only. Activates the database already assigned to this parish in the Worker configuration after validating its schema and integrity.</p>
-              <div id="accountingOpsStatus" class="email-log-empty">Select a parish to load accounting health.</div>
+              <div id="accountingOpsStatus" class="email-log-empty" role="status" aria-live="polite">Select a target to load accounting health.</div>
             </div>
           </section>
           <section class="section-card">

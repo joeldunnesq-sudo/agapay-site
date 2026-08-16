@@ -43,11 +43,17 @@ assert.match(parishHandler, /accountingAvailable:\s*accountingAvailableForParish
 assert.match(ledgerHandler, /detectAccountingEnvironment\(env\)/, "accounting database resolution must use the active environment");
 assert.doesNotMatch(ledgerHandler, /loadAccountingDatabaseForEntity\(env,entity\.id,"production"\)/, "staging must not resolve production registry records");
 assert.match(admin, /\/api\/admin\/accounting\/activate-prepared/);
+assert.match(admin, /\/api\/admin\/accounting\/targets/);
+assert.match(admin, /internalCanary/, "the authenticated target list must identify the configured internal canary without exposing database identifiers");
 assert.match(admin, /environment==="production"/, "prepared database activation must fail closed in production");
 assert.match(admin, /ACCOUNTING_PREPARED_PARISH_DATABASES/, "prepared database activation must use a configured parish mapping");
 assert.match(adminHtml, /Activate prepared staging database/);
 assert.match(adminApp, /function activateAdminPreparedAccounting\b/);
 assert.match(adminApp, /parishId:'st-fiacre'/, "the built-in accounting parish must remain selectable when cached registration summaries omit IDs");
+assert.match(adminApp, /Internal monitoring fixtures/, "the selector must group internal fixtures separately from customer parishes");
+assert.match(adminApp, /synthetic operational data, not customer parish data/, "the canary selection must explain that it does not contain customer data");
+assert.match(adminHtml, /aria-describedby="accountingOpsTargetHelp"/, "the accounting target selector must provide concise usage guidance");
+assert.match(adminHtml, /role="status" aria-live="polite"/, "accounting target loading feedback must be announced accessibly");
 assert.match(app, /function renderAccountingPaywall\(/);
 assert.match(app, /Unlock the Accounting Suite/);
 assert.match(app, /Financial command center/);
