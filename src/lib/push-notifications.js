@@ -272,7 +272,7 @@ export async function sendSignupPublishedPush(env, {
 }, dependencies = {}) {
   const subscriptions = await listParishPushSubscriptions(env, parishId, { excludePersonId: publishedByPersonId });
   return deliverPushNotifications(env, subscriptions, {
-    title: `New signup${ministryName ? ` · ${String(ministryName).trim()}` : ""}`,
+    title: `New in Parish Signups${ministryName ? ` · ${String(ministryName).trim()}` : ""}`,
     body: String(sheetTitle || "A new parish signup is ready.").trim(),
     url: `/myagapay/signups?sheet=${encodeURIComponent(sheetId)}`,
     tag: `signup-published-${sheetId}`,
@@ -289,7 +289,7 @@ export async function sendExchangeListingPush(env, {
   const subscriptions = await listParishPushSubscriptions(env, parishId, { excludePersonId: publishedByPersonId });
   const action = listingType === "request" ? "requested" : "offered";
   return deliverPushNotifications(env, subscriptions, {
-    title: `New Exchange ${listingType === "request" ? "request" : "offer"}`,
+    title: `New ${listingType === "request" ? "request" : "offer"} in Parish Exchange`,
     body: `${String(listingTitle || "A parish item").trim()} was ${action}.`,
     url: `/myagapay/exchange?listing=${encodeURIComponent(listingId)}`,
     tag: `exchange-listing-${listingId}`,
@@ -330,8 +330,8 @@ export async function sendExchangeMessagePush(env, {
 }, dependencies = {}) {
   const subscriptions = await listPersonPushSubscriptions(env, { parishId, personId: recipientPersonId });
   return deliverPushNotifications(env, subscriptions, {
-    title: `New Exchange message from ${String(senderName || "a parish member").trim()}`,
-    body: `${String(listingTitle || "Exchange listing").trim()}: ${notificationExcerpt(message?.body) || "New message"}`,
+    title: `New Parish Exchange message from ${String(senderName || "a parish member").trim()}`,
+    body: `${String(listingTitle || "Parish Exchange listing").trim()}: ${notificationExcerpt(message?.body) || "New message"}`,
     url: `/myagapay/exchange?listing=${encodeURIComponent(listingId)}&thread=${encodeURIComponent(threadId)}`,
     tag: `exchange-thread-${threadId}`,
   }, dependencies);

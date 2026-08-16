@@ -143,13 +143,13 @@ await sendExchangeListingPush(env, {
 }, publicationDependencies);
 assert.equal(publicationPayloads.length, 6, "new signup forms and Exchange posts must push to every other subscribed parish device");
 assert.deepEqual(publicationPayloads[0], {
-  title: "New signup · Hospitality",
+  title: "New in Parish Signups · Hospitality",
   body: "Coffee hour helpers",
   url: "/myagapay/signups?sheet=sheet-one",
   tag: "signup-published-sheet-one",
 });
 assert.deepEqual(publicationPayloads[3], {
-  title: "New Exchange offer",
+  title: "New offer in Parish Exchange",
   body: "Dining table was offered.",
   url: "/myagapay/exchange?listing=listing-one",
   tag: "exchange-listing-listing-one",

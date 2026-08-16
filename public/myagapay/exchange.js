@@ -47,7 +47,7 @@ async function exchangeFetch(path, options = {}) {
   const response = await fetch(path, { ...options, headers: exchangeHeaders(), cache: "no-store" });
   if (window.MyAgapayShell?.handleUnauthorized(response)) return null;
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || "Unable to load Koinonia Exchange.");
+  if (!response.ok) throw new Error(payload.error || "Unable to load Parish Exchange.");
   return payload;
 }
 
@@ -135,7 +135,7 @@ function renderExchangeDetail(listing) {
     ? `<div class="exchange-owner-actions">${listing.status === "active" ? `<button class="btn btn-primary" type="button" onclick="completeExchangeListing('${exchangeEscape(listing.id)}')">Mark completed</button><button class="btn btn-ghost" type="button" onclick="loadExchangeThreads('${exchangeEscape(listing.id)}')">View conversations</button>${canAddPhotos ? `<label class="btn btn-ghost exchange-add-photo-button" for="exchangeAddPhotos">Add photos</label><input class="exchange-photo-file-input" id="exchangeAddPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple onchange="addPhotosToExchangeListing(this,'${exchangeEscape(listing.id)}',${(listing.photos || []).length})" />` : ""}` : ""}</div>`
     : listing.status === "active" ? `<button class="btn btn-gold exchange-message-poster" type="button" onclick="startExchangeThread('${exchangeEscape(listing.id)}')">Message poster in AGAPAY</button>` : "";
   target.innerHTML = `
-    <div class="exchange-detail-head"><button class="koinonia-detail-back" type="button" onclick="closeExchangeDetail()">← Exchange</button>${exchangeDetailPhotosHtml(listing)}<div class="exchange-detail-flags"><em class="is-${exchangeEscape(listing.listingType)}">${listing.listingType === "offer" ? "Offer" : "Request"}</em><em>${exchangeEscape(exchangeCategoryLabel(listing.category))}</em>${listing.mine ? "<em>Your listing</em>" : ""}</div><h2>${exchangeEscape(listing.title)}</h2><p>${exchangeEscape(listing.description || "No additional description was provided.")}</p><dl><div><dt>Posted by</dt><dd>${listing.mine ? "You" : exchangeEscape(listing.posterName)}</dd></div><div><dt>Price</dt><dd>${exchangeEscape(exchangeMoney(listing.priceCents))}</dd></div>${listing.expiresAt ? `<div><dt>Expires</dt><dd>${exchangeEscape(exchangeDate(listing.expiresAt))}</dd></div>` : ""}</dl>${action}<small class="exchange-safety-note">Keep contact in this in-app conversation. AGAPAY does not reveal phone numbers or email addresses and does not process payment.</small></div>
+    <div class="exchange-detail-head"><button class="koinonia-detail-back" type="button" onclick="closeExchangeDetail()">← Parish Exchange</button>${exchangeDetailPhotosHtml(listing)}<div class="exchange-detail-flags"><em class="is-${exchangeEscape(listing.listingType)}">${listing.listingType === "offer" ? "Offer" : "Request"}</em><em>${exchangeEscape(exchangeCategoryLabel(listing.category))}</em>${listing.mine ? "<em>Your listing</em>" : ""}</div><h2>${exchangeEscape(listing.title)}</h2><p>${exchangeEscape(listing.description || "No additional description was provided.")}</p><dl><div><dt>Posted by</dt><dd>${listing.mine ? "You" : exchangeEscape(listing.posterName)}</dd></div><div><dt>Price</dt><dd>${exchangeEscape(exchangeMoney(listing.priceCents))}</dd></div>${listing.expiresAt ? `<div><dt>Expires</dt><dd>${exchangeEscape(exchangeDate(listing.expiresAt))}</dd></div>` : ""}</dl>${action}<small class="exchange-safety-note">Keep contact in this in-app conversation. AGAPAY does not reveal phone numbers or email addresses and does not process payment.</small></div>
     <section class="exchange-conversation-panel" id="exchangeConversationPanel">${listing.mine ? '<div class="koinonia-empty-state"><strong>Private conversations</strong><p>Select View conversations to see messages about this listing.</p></div>' : '<div class="koinonia-empty-state"><strong>Interested?</strong><p>Message the poster privately without sharing your email or phone number.</p></div>'}</section>
   `;
   void hydrateExchangePhotos();
@@ -195,7 +195,7 @@ async function loadExchangeListings() {
       }
     }
   } catch (error) {
-    exchangeStatus(error.message || "Unable to load Exchange listings.", "error");
+    exchangeStatus(error.message || "Unable to load Parish Exchange listings.", "error");
   }
 }
 
@@ -366,7 +366,7 @@ async function createExchangeListing(event) {
     document.getElementById("exchangeCategoryFilter").value = "";
     await loadExchangeListings();
     await openExchangeListing(data.listingId);
-    exchangeStatus("Your listing is live in the parish Exchange.", "success");
+    exchangeStatus("Your listing is live in Parish Exchange.", "success");
   } catch (error) {
     if (createdListingId) {
       await loadExchangeListings();

@@ -54,15 +54,15 @@ for (const file of protectedPages) {
         "public/myagapay/giving/give.html"
     ].includes(file)
       ? "20260803storefront1"
-      : file === "public/myagapay/parish-life.html"
-          ? "20260809toolbadges1"
+    : file === "public/myagapay/parish-life.html"
+          ? "20260816parishtools1"
         : file === "public/myagapay/giving/calendar.html"
           ? "20260809readingscroll2"
           : "20260802playerredesign1";
   assert.match(html, /<html[^>]*data-myagapay-hydrate/, `${file} must opt into the pre-paint hydration shield`);
   assert.match(html, new RegExp(`/donor/style\\.css\\?v=${expectedStylesheetVersion}`), `${file} must load the current atomic-paint CSS version`);
-  assert.match(html, /<script src="\/myagapay-shell\.js\?v=20260803iospolish1"><\/script>/, `${file} must install the tracker before page-level scripts`);
-  assert.doesNotMatch(html, /myagapay-shell\.js\?v=20260803iospolish1" defer/, `${file} must not defer initial shell setup`);
+  assert.match(html, /<script src="\/myagapay-shell\.js\?v=20260816parishtools1"><\/script>/, `${file} must install the tracker before page-level scripts`);
+  assert.doesNotMatch(html, /myagapay-shell\.js\?v=20260816parishtools1" defer/, `${file} must not defer initial shell setup`);
 }
 
 assert.match(
@@ -91,7 +91,7 @@ assert.match(shell, /dataset\.myagapayPageReady = "true"[\s\S]*finishInternalNav
 assert.match(serviceWorker, /isVersionedStaticAsset\(request, url\)[\s\S]*caches\.match\(request\)[\s\S]*if \(shouldBypassCache\(request\)\) return/,
   "the PWA must serve versioned My AGAPAY shell assets cache-first before the private-route bypass");
 for (const asset of ["/donor/style.css", "/donor/app.js", "/myagapay-shell.js"]) {
-  assert.match(staticHeaders, new RegExp(`${asset.replace(/[./]/g, "\\$&")}\\n  Cache-Control: public, max-age=31536000, immutable`),
+  assert.match(staticHeaders, new RegExp(`${asset.replace(/[./]/g, "\\$&")}\\r?\\n  Cache-Control: public, max-age=31536000, immutable`),
     `${asset} must be immutable because every app reference carries a release version`);
 }
 assert.doesNotMatch(staticHeaders, /\/donor\/\*\s+Cache-Control: no-store/,

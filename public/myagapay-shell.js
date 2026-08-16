@@ -129,8 +129,8 @@
       { id: "commemorations", href: "/myagapay/sacraments", label: "Sacraments & Services", short: "Requests and prayer", icon: icons.sacraments, parishFeature: "sacramentsEnabled" },
       { id: "history", href: "/myagapay/giving/history", label: "History", short: "Giving history", icon: icons.history, mobileFallbackFor: "sacramentsEnabled", desktopHidden: true },
       { id: "directory", href: "/myagapay/directory", label: "Directory", short: "Parish member directory", icon: icons.directory, parishFeature: "directoryEnabled" },
-      { id: "signups", href: "/myagapay/signups", label: "Signups", short: "Ministry signup sheets", icon: icons.signups, parishFeature: "signupsEnabled" },
-      { id: "exchange", href: "/myagapay/exchange", label: "Exchange", short: "Parish offers and requests", icon: icons.exchange, parishFeature: "exchangeEnabled" },
+      { id: "signups", href: "/myagapay/signups", label: "Parish Signups", short: "Commit your time, help, or an item", icon: icons.signups, parishFeature: "signupsEnabled" },
+      { id: "exchange", href: "/myagapay/exchange", label: "Parish Exchange", short: "Offer or request useful items", icon: icons.exchange, parishFeature: "exchangeEnabled" },
       { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore, parishFeature: "bookstoreEnabled" },
       { id: "settings", href: "/myagapay/account", label: "Settings", short: "Account settings", icon: icons.account, mobileFallbackFor: "bookstoreEnabled", desktopHidden: true },
       { id: "learn", href: "/myagapay/learn", label: "Learn", short: "Homeschool dashboard", icon: icons.learn, mobileFallbackFor: "directoryEnabled" }

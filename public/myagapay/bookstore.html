@@ -13,8 +13,8 @@
   <link rel="stylesheet" href="/donor/style.css?v=20260803iospolish1" />
   <script src="/security.js"></script>
   <script src="/pwa-register.js" defer></script>
-  <script src="/myagapay-shell.js?v=20260803iospolish1"></script>
-  <script src="/donor/app.js?v=20260803sales1" defer></script>
+  <script src="/myagapay-shell.js?v=20260816parishtools1"></script>
+  <script src="/donor/app.js?v=20260816torch1" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -41,6 +41,10 @@
       font-size: 13.5px; color: #6F6A60; margin: 12px 0;
       min-height: 18px;
     }
+    .bookstore-scanner-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; }
+    .bookstore-scanner-torch[hidden] { display:none; }
+    .bookstore-scanner-torch[aria-pressed="true"] { border-color:#b88b35; background:#f1dfac; color:#5b4215; }
+    .bookstore-scanner-torch:disabled { cursor:wait; opacity:.65; }
     .bookstore-scan-btn {
       display: inline-flex; align-items: center; gap: 6px;
       font-size: 13px; margin-bottom: 10px;
@@ -467,7 +471,10 @@
       <h3 style="margin:0 0 10px;font-family:var(--serif, serif);">Scan a book's barcode</h3>
       <video id="bookstoreScannerVideo" playsinline muted></video>
       <div class="bookstore-scanner-status" id="bookstoreScannerStatus">Point your camera at the barcode on the back of the book.</div>
-      <button type="button" class="btn btn-ghost btn-sm" onclick="closeBookstoreScanner()">Cancel</button>
+      <div class="bookstore-scanner-actions">
+        <button type="button" class="btn btn-ghost btn-sm bookstore-scanner-torch" id="bookstoreScannerTorch" aria-pressed="false" onclick="toggleBookstoreScannerTorch()" hidden><span aria-hidden="true">☀</span> <span data-bookstore-torch-label>Turn on flashlight</span></button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeBookstoreScanner()">Cancel</button>
+      </div>
     </div>
   </div>
   <script>

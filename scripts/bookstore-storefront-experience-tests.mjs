@@ -44,12 +44,18 @@ assert.match(app, /classList\.toggle\("has-cart", itemCount > 0\)/,
 
 assert.match(html, /donor\/style\.css\?v=20260803iospolish1/,
   "the bookstore must load the updated storefront styles with a fresh immutable URL");
-assert.match(html, /donor\/app\.js\?v=20260803sales1/,
+assert.match(html, /donor\/app\.js\?v=20260816torch1/,
   "the bookstore must load the updated storefront behavior with a fresh immutable URL");
 assert.match(html, /bookstore-scan-feature-icon[\s\S]*?barcode-lines/,
   "the primary scanner card must feature a real barcode illustration");
 assert.match(app, /category === "book"[\s\S]*?bookstore-category-scan[\s\S]*?startBookstoreBookScan\(\)/,
   "the Books category must expose the same scanner without requiring a scroll to the primary card");
+assert.match(html, /id="bookstoreScannerTorch"[^>]*aria-pressed="false"[^>]*toggleBookstoreScannerTorch\(\)[^>]*hidden/,
+  "the barcode scanner must include an initially hidden, accessible flashlight control");
+assert.match(app, /getCapabilities\(\)[\s\S]*capabilities\.torch !== true[\s\S]*applyConstraints\(\{ advanced: \[\{ torch: next \}\] \}\)/,
+  "the flashlight control must feature-detect torch support before changing the camera constraint");
+assert.match(app, /function closeBookstoreScanner\(\)[\s\S]*track\.stop\(\)[\s\S]*resetBookstoreScannerTorchControl\(\)/,
+  "closing the scanner must stop the camera and reset the flashlight control");
 assert.match(html, /\.bookstore-product-media \{[^}]*flex:0 0 118px[^}]*overflow:hidden/,
   "product photos must stay inside a fixed-height media frame instead of overtaking the card");
 assert.match(html, /\.bookstore-product-media img \{[^}]*object-fit:contain/,

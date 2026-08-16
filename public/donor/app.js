@@ -5073,6 +5073,51 @@ function addManualBookstoreItem() {
 let bookstoreScannerStream = null;
 let bookstoreScannerRAF = null;
 let bookstoreZXingReader = null;
+let bookstoreScannerTorchOn = false;
+
+function resetBookstoreScannerTorchControl() {
+  const button = document.getElementById("bookstoreScannerTorch");
+  if (!button) return;
+  bookstoreScannerTorchOn = false;
+  button.hidden = true;
+  button.disabled = false;
+  button.setAttribute("aria-pressed", "false");
+  const label = button.querySelector("[data-bookstore-torch-label]");
+  if (label) label.textContent = "Turn on flashlight";
+}
+
+function enableBookstoreScannerTorchControl(track) {
+  const button = document.getElementById("bookstoreScannerTorch");
+  if (!button || !track?.getCapabilities) return;
+  let capabilities = {};
+  try { capabilities = track.getCapabilities() || {}; } catch { return; }
+  if (capabilities.torch !== true) return;
+  button.hidden = false;
+}
+
+async function toggleBookstoreScannerTorch() {
+  const button = document.getElementById("bookstoreScannerTorch");
+  const status = document.getElementById("bookstoreScannerStatus");
+  const track = bookstoreScannerStream?.getVideoTracks?.()[0];
+  if (!button || !track?.applyConstraints) return;
+  const next = !bookstoreScannerTorchOn;
+  button.disabled = true;
+  try {
+    await track.applyConstraints({ advanced: [{ torch: next }] });
+    bookstoreScannerTorchOn = next;
+    button.setAttribute("aria-pressed", String(next));
+    const label = button.querySelector("[data-bookstore-torch-label]");
+    if (label) label.textContent = next ? "Turn off flashlight" : "Turn on flashlight";
+    if (status) status.textContent = next
+      ? "Flashlight on — hold the barcode steady inside the camera view."
+      : "Point your camera at the barcode on the back of the book.";
+  } catch {
+    button.hidden = true;
+    if (status) status.textContent = "The flashlight isn't available with this camera. Try moving the book into brighter light.";
+  } finally {
+    button.disabled = false;
+  }
+}
 
 async function startBookstoreBookScan() {
   await loadBookstoreItemFieldsSchema();
@@ -5089,6 +5134,7 @@ async function openBookstoreScanner() {
   const video = document.getElementById("bookstoreScannerVideo");
   const status = document.getElementById("bookstoreScannerStatus");
   if (!overlay || !video) return;
+  resetBookstoreScannerTorchControl();
   overlay.hidden = false;
   if (status) status.textContent = "Point your camera at the barcode on the back of the book.";
 
@@ -5103,6 +5149,7 @@ async function openBookstoreScanner() {
   }
   video.srcObject = bookstoreScannerStream;
   await video.play().catch(() => {});
+  enableBookstoreScannerTorchControl(bookstoreScannerStream.getVideoTracks()[0]);
 
   if ("BarcodeDetector" in window) {
     try {
@@ -5205,6 +5252,7 @@ function closeBookstoreScanner() {
     bookstoreScannerStream.getTracks().forEach(track => track.stop());
     bookstoreScannerStream = null;
   }
+  resetBookstoreScannerTorchControl();
   if (video) video.srcObject = null;
 }
 

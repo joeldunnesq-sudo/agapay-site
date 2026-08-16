@@ -278,7 +278,7 @@ assert.match(sources.parishDashboard, /id="signupsEnabledSwitch"[\s\S]*id="excha
 assert.match(sources.parishApp, /JSON\.stringify\(\{ \[field\]: enabled \}\)/);
 assert.match(sources.signupsPage, /Koinonia[\s\S]*Signups/);
 assert.match(sources.signupsPage, /id="signupActionDialog"[\s\S]*id="signupActionText"/, "signup details and coverage reasons must use an accessible modal");
-assert.match(sources.signupsPage, /myagapay-shell\.js\?v=20260809signupmodal1/, "Signups must load the current unified app navigation shell");
+assert.match(sources.signupsPage, /myagapay-shell\.js\?v=20260816parishtools1/, "Parish Signups must load the current unified app navigation shell");
 assert.match(sources.signupsClient, /JSON\.stringify\(\{ comment \}\)/, "claim details must be sent to the signup API");
 assert.doesNotMatch(sources.signupsClient, /window\.prompt/, "coverage requests must not use a browser prompt");
 assert.match(sources.parishLife, /\/api\/donor\/koinonia\/signups\/upcoming/);
@@ -293,7 +293,7 @@ assert.match(sources.groups, /Create a signup form/);
 assert.match(sources.groups, /Delete form/);
 assert.match(read("public/donor/style.css"), /\.group-workspace-tabs button \{[^}]*border:1px solid var\(--k-border\)/, "Messages and Signups must look like actionable buttons");
 assert.doesNotMatch(sources.signupsPage, /New signup sheet|Create a signup sheet/, "leader authoring belongs in ministry Groups, not the parish signup browser");
-assert.match(sources.exchangePage, /AGAPAY does not process Exchange payments/);
+assert.match(sources.exchangePage, /AGAPAY does not process payments in Parish Exchange/);
 assert.match(sources.exchangePage, /id="exchangePhotos"[\s\S]*id="exchangeCameraPhoto"[\s\S]*capture="environment"/, "offers must expose gallery and Android camera photo choices");
 assert.match(sources.exchangePage, /id="exchangeDraftPhotoGrid"[\s\S]*id="exchangeRequestArtwork"/, "the composer must preview offer photos and explain request artwork");
 assert.match(read("public/myagapay/exchange.js"), /listing\.listingType === "request"[\s\S]*\/images\/app\/icon-512\.png/, "request cards and details must use the same AGAPAY artwork as media players");

@@ -151,15 +151,15 @@ function parishLifeApprovedServiceEvents(payload = {}) {
 function parishLifeTierSectionsHtml(communicationsEnabled, capabilities = {}) {
   if (!communicationsEnabled) return "";
   const communityTools = [
-    capabilities.signupsEnabled ? '<a class="parish-life-community-tool" href="/myagapay/signups"><span aria-hidden="true">✓</span><strong>Signups</strong><small>Meals, cleaning, events, and volunteer needs</small><em>Open →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="signups" hidden></b></a>' : '',
-    capabilities.exchangeEnabled ? '<a class="parish-life-community-tool" href="/myagapay/exchange"><span aria-hidden="true">⇄</span><strong>Exchange</strong><small>Offer or request items within your parish</small><em>Browse →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="exchange" hidden></b></a>' : ''
+    capabilities.signupsEnabled ? '<a class="parish-life-community-tool" href="/myagapay/signups"><span aria-hidden="true">✓</span><strong>Parish Signups</strong><small>Commit your time, help, or an item</small><em>Open →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="signups" hidden></b></a>' : '',
+    capabilities.exchangeEnabled ? '<a class="parish-life-community-tool" href="/myagapay/exchange"><span aria-hidden="true">⇄</span><strong>Parish Exchange</strong><small>Offer or request useful items</small><em>Browse →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="exchange" hidden></b></a>' : ''
   ].filter(Boolean).join("");
   return `
+    ${communityTools ? `<section class="parish-life-home-section" aria-labelledby="communityToolsHeading"><div class="parish-life-section-head"><h2 id="communityToolsHeading">Community Tools</h2></div><div class="parish-life-community-tools">${communityTools}</div></section>` : ""}
     <section class="parish-life-home-section" aria-labelledby="yourMinistriesHeading">
       <div class="parish-life-section-head"><h2 id="yourMinistriesHeading">Your Ministries</h2><a href="/myagapay/groups">All Groups</a></div>
       <div class="parish-life-ministry-grid" id="parishLifeMinistries"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading ministries…</p></div>
     </section>
-    ${communityTools ? `<section class="parish-life-home-section" aria-labelledby="communityToolsHeading"><div class="parish-life-section-head"><h2 id="communityToolsHeading">Community Tools</h2></div><div class="parish-life-community-tools">${communityTools}</div></section>` : ""}
     <section class="parish-life-home-section parish-life-listen-section" aria-labelledby="listenHeading">
       <div class="parish-life-section-head"><h2 id="listenHeading">Listen</h2><a href="/myagapay/teaching">Open Library</a></div>
       <section class="parish-life-listen-resume" id="parishLifeContinueListeningSection" aria-labelledby="continueListeningHeading" hidden>
@@ -191,7 +191,7 @@ function renderCommunityToolBadges(payload = {}) {
     const count = Math.max(0, Number(counts[tool]) || 0);
     badge.hidden = count === 0;
     badge.textContent = count > 99 ? "99+" : String(count);
-    badge.setAttribute("aria-label", `${count} new ${labels[tool] || "items"} since you last opened ${tool === "signups" ? "Signups" : "Exchange"}`);
+    badge.setAttribute("aria-label", `${count} new ${labels[tool] || "items"} since you last opened ${tool === "signups" ? "Parish Signups" : "Parish Exchange"}`);
   });
 }
 

@@ -100,7 +100,7 @@ async function featureContext(request, env) {
   if (!found?.registration || !signupsEnabledFor(found.registration)) {
     return {
       context: null,
-      response: privateJson({ error: "Koinonia Signups are not available for this parish." }, { status: 403 }),
+      response: privateJson({ error: "Parish Signups are not available for this parish." }, { status: 403 }),
     };
   }
   return access;

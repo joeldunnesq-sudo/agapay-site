@@ -121,8 +121,11 @@ for (const loadingLabel of ["ministries", "audio", "videos", "news"]) {
 assert.match(parishTierMarkup, /id="parishLifeContinueListeningSection"[\s\S]*hidden[\s\S]*id="parishLifeListenItems"/, "Continue listening must be conditional and appear above the combined latest-audio list");
 assert.equal((parishTierMarkup.match(/parish-life-section-loading/g) || []).length, 4, "each fresh-content section must own one loading placeholder");
 assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf('id="listenHeading"'), "ministries should appear before the unified listening section and video");
-assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf("Community Tools"), "community tools should follow Your Ministries");
+assert.ok(parishTierMarkup.indexOf("Community Tools") < parishTierMarkup.indexOf("Your Ministries"), "community tools should appear above Your Ministries");
 assert.ok(parishTierMarkup.indexOf("Community Tools") < parishTierMarkup.indexOf('id="listenHeading"'), "community tools should appear above the media sections");
+assert.match(parishTierMarkup, /Parish Signups[\s\S]*Commit your time, help, or an item/);
+assert.match(parishTierMarkup, /Parish Exchange[\s\S]*Offer or request useful items/);
+assert.match(donorStyles, /\.parish-life-community-tool \{[^}]*background:linear-gradient\(145deg,#f5e8bd,#dec47d\)/, "community tools should use the gold card treatment");
 assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf("parishLifeNewsMount"), "the combined news preview should follow parish-specific ministries");
 assert.match(landingScript, /Get involved/);
 assert.match(landingScript, /\/api\/donor\/ministry-service-interest/);

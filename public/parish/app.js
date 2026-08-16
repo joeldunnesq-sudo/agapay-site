@@ -11729,7 +11729,7 @@
 
   async function toggleKoinoniaSubfeature(feature, input) {
     const fields = { signups: 'signupsEnabled', exchange: 'exchangeEnabled' };
-    const labels = { signups: 'Signups', exchange: 'Exchange' };
+    const labels = { signups: 'Parish Signups', exchange: 'Parish Exchange' };
     const field = fields[feature];
     if (!field || !currentParish || !moduleIncluded('communications')) return;
     const previous = Boolean(currentParish[field]);

@@ -40,7 +40,7 @@ async function signupsFetch(path, options = {}) {
   const response = await fetch(path, { ...options, headers: signupsHeaders(), cache: "no-store" });
   if (window.MyAgapayShell?.handleUnauthorized(response)) return null;
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || "Unable to load Koinonia Signups.");
+  if (!response.ok) throw new Error(payload.error || "Unable to load Parish Signups.");
   return payload;
 }
 
@@ -76,7 +76,7 @@ function renderSignupDetail(sheet, slots) {
   const target = document.getElementById("signupDetail");
   if (!target) return;
   target.innerHTML = `
-    <div class="signup-detail-head"><button class="koinonia-detail-back" type="button" onclick="closeSignupSheet()">← Signups</button><span class="eyebrow">${signupsEscape(sheet.ministryName)}</span><h2>${signupsEscape(sheet.title)}</h2><p>${signupsEscape(sheet.description || "Choose a slot below to help this ministry.")}</p><div class="signup-detail-meta"><span>${signupsEscape(signupCategoryLabel(sheet.category))}</span><span class="is-${signupsEscape(sheet.status)}">${signupsEscape(sheet.status)}</span></div></div>
+    <div class="signup-detail-head"><button class="koinonia-detail-back" type="button" onclick="closeSignupSheet()">← Parish Signups</button><span class="eyebrow">${signupsEscape(sheet.ministryName)}</span><h2>${signupsEscape(sheet.title)}</h2><p>${signupsEscape(sheet.description || "Choose a slot below to help this ministry.")}</p><div class="signup-detail-meta"><span>${signupsEscape(signupCategoryLabel(sheet.category))}</span><span class="is-${signupsEscape(sheet.status)}">${signupsEscape(sheet.status)}</span></div></div>
     <div class="signup-slot-list">${slots.length ? slots.map((slot) => {
       const full = slot.filledCount >= slot.neededCount;
       const mine = slot.entries.some((entry) => entry.mine);

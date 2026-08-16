@@ -129,7 +129,7 @@ async function featureContext(request, env) {
   if (!found?.registration || !exchangeEnabledFor(found.registration)) {
     return {
       context: null,
-      response: privateJson({ error: "Koinonia Exchange is not available for this parish." }, { status: 403 }),
+      response: privateJson({ error: "Parish Exchange is not available for this parish." }, { status: 403 }),
     };
   }
   return access;
@@ -383,7 +383,7 @@ async function markMessageRead(env, context, threadId, messageId) {
 }
 
 export async function uploadListingPhoto(request, env, context, listingId) {
-  if (!env.GROUP_MESSAGE_ASSETS) throw new ExchangeAccessError("Exchange photo storage is not configured.", 503);
+  if (!env.GROUP_MESSAGE_ASSETS) throw new ExchangeAccessError("Parish Exchange photo storage is not configured.", 503);
   const listing = await d1First(env, `
     SELECT posted_by_person_id, listing_type, status FROM koinonia_exchange_listings WHERE id = ?1 AND parish_id = ?2
   `, listingId, context.parishId);
@@ -433,7 +433,7 @@ export async function uploadListingPhoto(request, env, context, listingId) {
 }
 
 async function deliverListingPhoto(env, context, photoId) {
-  if (!env.GROUP_MESSAGE_ASSETS) throw new ExchangeAccessError("Exchange photo storage is not configured.", 503);
+  if (!env.GROUP_MESSAGE_ASSETS) throw new ExchangeAccessError("Parish Exchange photo storage is not configured.", 503);
   const photo = await d1First(env, `
     SELECT photo.storage_key
     FROM koinonia_exchange_photos photo
