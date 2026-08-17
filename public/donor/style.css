@@ -9982,7 +9982,7 @@ html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-link],
 /* Koinonia Prayer Requests */
 .prayer-requests-page,.prayer-requests-page :is(.app,.content,.page) { background:#f7f4ed; }
 .prayer-mobile-appbar { display:none; }
-.prayer-requests-shell { display:grid; gap:0; max-width:780px; margin:0 auto; overflow:hidden; }
+.prayer-requests-shell { display:grid; grid-template-columns:minmax(0,1fr); align-content:start; gap:0; max-width:780px; margin:0 auto; overflow:hidden; }
 .prayer-page-heading { margin:0; border-bottom:1px solid rgba(6,21,34,.09); padding:18px 20px 14px; background:#fffdf8; }
 .prayer-page-back { display:inline-flex; align-items:center; gap:6px; margin:0 0 12px; color:#6f5524; font-size:12px; font-weight:600; text-decoration:none; }
 .prayer-page-back:hover { color:#061522; }

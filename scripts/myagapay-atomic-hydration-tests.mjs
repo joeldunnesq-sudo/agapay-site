@@ -58,7 +58,7 @@ for (const file of protectedPages) {
     : file === "public/myagapay/parish-life.html"
           ? "20260817prayersvg2"
         : file === "public/myagapay/prayer-requests.html"
-          ? "20260817prayermockup3"
+          ? "20260817prayermockup4"
         : file === "public/myagapay/giving/calendar.html"
           ? "20260809readingscroll2"
           : "20260802playerredesign1";
