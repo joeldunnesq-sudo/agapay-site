@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/donor/style.css?v=20260817prayermockup2" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260817prayermockup3" />
   <script src="/pwa-register.js" defer></script>
-  <script src="/myagapay-shell.js?v=20260817prayersvg1"></script>
-  <script src="/myagapay/prayer-requests.js?v=20260817prayermockup2" defer></script>
+  <script src="/myagapay-shell.js?v=20260817prayersvg2"></script>
+  <script src="/myagapay/prayer-requests.js?v=20260817prayermockup3" defer></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <meta name="theme-color" content="#061522" />
 </head>
-<body class="donor-mobile-page koinonia-feature-page prayer-requests-page">
+<body class="donor-mobile-page donor-parish-life-page koinonia-feature-page prayer-requests-page">
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-scroll">
@@ -27,15 +27,22 @@
       <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/parish-life">← Back to Koinonia</a></div>
     </aside>
     <main class="content donor-mobile-content">
+      <header class="prayer-mobile-appbar">
+        <a class="prayer-mobile-brand" href="/myagapay/parish-life" aria-label="Open Parish Life">
+          <span class="prayer-mobile-mark" aria-hidden="true"><img src="/mark.png" alt="" /></span>
+          <span><strong>MY AGAPAY</strong><small>Parish Life</small></span>
+        </a>
+        <a class="prayer-mobile-notifications" href="/myagapay/feed" aria-label="Open Community Inbox"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></a>
+      </header>
       <div class="topbar"><div class="topbar-title">Prayer Requests</div></div>
       <div class="page koinonia-feature-shell prayer-requests-shell">
         <header class="prayer-page-heading">
-          <a class="prayer-page-back" href="/myagapay/parish-life">&larr; Parish Life</a>
+          <a class="prayer-page-back" href="/myagapay/parish-life"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Parish Life</a>
           <div class="prayer-page-title-row">
             <div><h1>Prayer Requests</h1><p>Pray for one another</p></div>
-            <button class="prayer-new-request" type="button" onclick="openPrayerComposer()"><span aria-hidden="true">+</span> New request</button>
+            <button class="prayer-new-request" type="button" onclick="openPrayerComposer()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>New request</span></button>
           </div>
-          <p class="prayer-page-pastoral" id="prayerPastoralNotice">Prayer requests are shared with care.</p>
+          <p id="prayerPastoralNotice" hidden>Prayer requests are shared with care.</p>
         </header>
         <div class="notice" id="prayerStatus" role="status">Loading prayer requests…</div>
         <div class="prayer-filter-bar" aria-label="Filter prayer requests">

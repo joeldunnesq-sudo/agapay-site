@@ -137,8 +137,9 @@ assert.match(sources.parishLife, /Prayer Requests[\s\S]*data-community-tool-badg
 assert.match(sources.parishLife, /href="\/myagapay\/prayer-requests"><span aria-hidden="true"><svg class="prayer-hands-icon"/, "the app Community Tool must use the praying-hands SVG");
 assert.match(sources.shell, /prayers:[^\n]*<svg class="prayer-hands-icon"/, "the unified app navigation must use the praying-hands SVG");
 assert.match(sources.memberPage, /Parish community[\s\S]*Clergy only[\s\S]*Post anonymously/);
-assert.match(sources.memberPage, /class="prayer-page-heading"[\s\S]*&larr; Parish Life[\s\S]*New request/, "the member page must use the compact mockup-style heading");
+assert.match(sources.memberPage, /class="prayer-mobile-appbar"[\s\S]*class="prayer-page-heading"[\s\S]*class="prayer-page-back"[\s\S]*New request/, "the member page must use the mockup's app bar and compact heading");
 assert.doesNotMatch(sources.memberPage, /prayer-requests-hero|prayer-pastoral-notice/, "the oversized hero and pastoral banner must not return");
+assert.match(sources.donorStyles, /\.prayer-requests-shell \{ display:grid; gap:0;/, "the mockup sections must not inherit the generic Koinonia panel spacing");
 assert.match(sources.memberClient, /daysAgo === 0[\s\S]*Today[\s\S]*Yesterday/, "request cards must use the mockup's relative dates");
 assert.match(sources.memberClient, /const PRAYER_HANDS_ICON = '<svg class="prayer-hands-icon"/);
 assert.match(sources.memberClient, /\$\{PRAYER_HANDS_ICON\}<\/span>\$\{request\.prayedByMe/, "the I prayed action must use the praying-hands SVG");

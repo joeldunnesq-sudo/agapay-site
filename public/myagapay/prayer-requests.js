@@ -1,5 +1,6 @@
 const prayerState = { requests: [], settings: null, mineOnly: false, filter: "all", reportRequestId: "" };
-const PRAYER_HANDS_ICON = '<svg class="prayer-hands-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.7 15.8 9.5 4.4a1.4 1.4 0 0 0-2.8.3l.5 6.3-3.5 5.3a2 2 0 0 0 .4 2.6L6.8 21"/><path d="m10.1 12.4-1.9-2.2A1.45 1.45 0 0 0 6 12l2.8 4.2"/><path d="m13.3 15.8 1.2-11.4a1.4 1.4 0 0 1 2.8.3l-.5 6.3 3.5 5.3a2 2 0 0 1-.4 2.6L17.2 21"/><path d="m13.9 12.4 1.9-2.2A1.45 1.45 0 0 1 18 12l-2.8 4.2"/><path d="M12 3v13.6"/></svg>';
+// Font Awesome Free hands-praying icon (CC BY 4.0), adapted for inline currentColor use.
+const PRAYER_HANDS_ICON = '<svg class="prayer-hands-icon" viewBox="0 0 640 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M224 296c0 13.3-10.7 24-24 24s-24-10.7-24-24V183.4l88.2-119.7c13.1-17.8 9.3-42.8-8.5-55.9s-42.8-9.3-55.9 8.5l-93.3 126.6A136.1 136.1 0 0 0 80 223.6v110.7l-58.1 19.4A32 32 0 0 0 0 384v96a32 32 0 0 0 40.8 30.7l154.4-44.1A128 128 0 0 0 288 343.5V224a32 32 0 0 0-64 0v72Zm192 0v-72a32 32 0 0 0-64 0v119.6a128 128 0 0 0 92.8 123.1l154.4 44.1A32 32 0 0 0 640 480v-96a32 32 0 0 0-21.9-30.4L560 334.2V223.5a136.1 136.1 0 0 0-26.5-80.7L440.2 16.3c-13.1-17.8-38.1-21.6-55.9-8.5s-21.6 38.1-8.5 55.9L464 183.4V296c0 13.3-10.7 24-24 24s-24-10.7-24-24Z"/></svg>';
 
 function prayerEscape(value) {
   return String(value ?? "")
