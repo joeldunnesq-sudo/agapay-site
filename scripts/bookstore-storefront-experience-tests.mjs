@@ -39,10 +39,14 @@ assert.match(html, /\.bookstore-shop-grid\.has-cart \{[^}]*grid-template-columns
   "the cart may claim a second column only after an item is added");
 assert.match(html, /\.bookstore-shop-grid \{ display:flex; flex-direction:column; align-items:stretch; \}[\s\S]*?\.bookstore-catalog-pane \{ width:100%; \}/,
   "phone shelves and closed category rows must stretch across the available page width");
+assert.match(html, /\.bookstore-mobile-cart-bar \{[\s\S]*?position:static; z-index:auto;/,
+  "the mobile cart must remain in normal flow instead of covering the shelves while scrolling");
+assert.match(html, /\.bookstore-catalog-heading \{ position:static; z-index:auto;/,
+  "the Shop the shelves heading and search must scroll naturally instead of floating over products");
 assert.match(app, /classList\.toggle\("has-cart", itemCount > 0\)/,
   "the storefront width must respond to actual cart state");
 
-assert.match(html, /donor\/style\.css\?v=20260817navgradient1/,
+assert.match(html, /donor\/style\.css\?v=20260817bookstoreprayer1/,
   "the bookstore must load the updated storefront styles with a fresh immutable URL");
 assert.match(html, /donor\/app\.js\?v=20260816torch1/,
   "the bookstore must load the updated storefront behavior with a fresh immutable URL");

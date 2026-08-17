@@ -37,7 +37,7 @@
   .koinonia-mobile-menu a:hover,.koinonia-mobile-menu a:focus-visible { background:#f3ecdc; outline:none; }
   .koinonia-mobile-menu a[aria-current="page"] { background:#061522; color:#fff; }
   .koinonia-mobile-menu a svg { width:20px; height:20px; flex:0 0 auto; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
-  .koinonia-mobile-menu a .prayer-hands-icon { fill:currentColor; stroke:none; }
+  .koinonia-mobile-menu a .prayer-candle-icon { fill:none; stroke:currentColor; }
   .koinonia-mobile-menu-divider { height:1px; margin:5px 8px; background:rgba(6,21,34,.09); }
   :is(.koinonia-inner-page,.app-inner-page) .koinonia-inner-shell { display:grid; grid-template-columns:minmax(0,1fr); align-content:start; gap:14px; width:min(100%,480px); min-height:calc(100vh - 76px); border-top:0; border-radius:0 0 28px 28px; padding:0 0 92px; background:#f7f4ed; box-shadow:0 18px 50px rgba(6,21,34,.13); }
   .koinonia-inner-shell > :not(.koinonia-page-heading) { margin-left:20px; margin-right:20px; }

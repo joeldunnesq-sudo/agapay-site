@@ -9744,7 +9744,7 @@ html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-link],
 .parish-life-community-tools { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
 .parish-life-community-tool { position:relative; display:grid; grid-template-columns:auto minmax(0,1fr) auto; grid-template-rows:auto auto; column-gap:10px; align-items:center; min-height:82px; border:1px solid rgba(196,156,80,.35); border-radius:14px; padding:12px 13px; background:linear-gradient(145deg,#fff,#faf6eb); color:#061522; text-decoration:none; box-shadow:0 5px 16px rgba(6,21,34,.045); }
 .parish-life-community-tool > span { display:grid; grid-row:1 / 3; place-items:center; width:36px; height:36px; border-radius:10px; background:#061522; color:#dabb70; font:600 20px/1 "Cormorant Garamond",serif; }
-.parish-life-community-tool > span .prayer-hands-icon { width:21px; height:21px; }
+.parish-life-community-tool > span .prayer-candle-icon { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.65; stroke-linecap:round; stroke-linejoin:round; }
 .parish-life-community-tool strong { align-self:end; font:600 18px/1.05 "Cormorant Garamond",serif; }
 .parish-life-community-tool small { align-self:start; margin-top:3px; color:#68727b; font:500 10px/1.35 "DM Sans",sans-serif; }
 .parish-life-community-tool em { grid-column:3; grid-row:1 / 3; color:#8a6a2c; font:700 9px/1 "DM Sans",sans-serif; font-style:normal; }
@@ -10020,13 +10020,13 @@ html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-link],
 .prayer-request-card footer > div { display:flex; align-items:center; justify-content:flex-end; gap:7px; flex-wrap:wrap; }
 .prayer-prayed-button,.prayer-secondary-action,.prayer-report-link { min-height:32px; border-radius:9px; padding:0 10px; font:600 10px/1 "DM Sans",sans-serif; cursor:pointer; }
 .prayer-prayed-button { display:inline-flex; align-items:center; gap:6px; border:1px solid #b58a38; background:transparent; color:#75591f; }
-.prayer-prayed-button .prayer-hands-icon { width:16px; height:13px; }
+.prayer-prayed-button .prayer-candle-icon { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
 .prayer-prayed-button.is-prayed { background:#8a6a2c; color:#fff; }
 .prayer-secondary-action { border:1px solid #d5d0c5; background:#fff; color:#4f5c64; }
 .prayer-report-link { border:0; background:transparent; color:#7a858c; text-decoration:underline; }
 .prayer-empty-state { padding:38px 22px; }
 .prayer-empty-state > span { display:block; margin-bottom:8px; color:#a77f31; font:600 34px/1 "Cormorant Garamond",serif; }
-.prayer-empty-state > span .prayer-hands-icon { width:34px; height:34px; }
+.prayer-empty-state > span .prayer-candle-icon { width:37px; height:37px; fill:none; stroke:currentColor; stroke-width:1.4; stroke-linecap:round; stroke-linejoin:round; }
 .prayer-dialog { width:min(640px,calc(100% - 28px)); max-height:calc(100vh - 28px); border:0; border-radius:20px; padding:0; background:#fffdf8; color:#172934; box-shadow:0 24px 70px rgba(6,21,34,.32); }
 .prayer-dialog::backdrop { background:rgba(6,21,34,.62); backdrop-filter:blur(3px); }
 .prayer-dialog form { position:relative; display:grid; gap:15px; padding:26px; }
