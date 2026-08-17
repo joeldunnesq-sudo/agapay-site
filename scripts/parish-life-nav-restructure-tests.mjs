@@ -39,9 +39,9 @@ const [parishDashboard, parishDashboardApp, parishDashboardStyles] = await Promi
   "dashboard.html", "app.js", "style.css",
 ].map((file) => readFile(new URL(`../public/parish/${file}`, import.meta.url), "utf8")));
 const donorStyles = await readFile(new URL("../public/donor/style.css", import.meta.url), "utf8");
-assert.match(donorStyles, /\.parish-life-community-tools \{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/, "Signups and Exchange should sit side-by-side on wider screens");
+assert.match(donorStyles, /\.parish-life-community-tools \{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, "all three Community Tools should sit in one row on wider screens");
 assert.match(donorStyles, /\.parish-life-community-tool \{[^}]*min-height:82px/, "Community Tool cards should remain compact");
-assert.doesNotMatch(donorStyles, /@media \(max-width:680px\)[\s\S]{0,160}\.parish-life-community-tools \{[^}]*grid-template-columns:1fr/, "Community Tool cards should stay side-by-side on mobile");
+assert.match(donorStyles, /@media \(max-width:680px\)[\s\S]{0,160}\.parish-life-community-tools \{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, "all three Community Tool cards should remain in one row on mobile");
 
 assert.match(landing, /class="cal-hero parish-life-liturgical-hero"/);
 assert.match(landing, /class="cal-date-badge"/);
