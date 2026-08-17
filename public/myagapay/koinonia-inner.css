@@ -3,6 +3,8 @@
 :is(.koinonia-inner-page,.app-inner-page) :is(.app,.content,.page) { background:#f7f4ed; }
 
 .koinonia-mobile-appbar { display:none; }
+.koinonia-mobile-menu { display:none; }
+.koinonia-visually-hidden { position:absolute !important; width:1px !important; height:1px !important; overflow:hidden !important; clip:rect(0 0 0 0) !important; clip-path:inset(50%) !important; white-space:nowrap !important; }
 .koinonia-inner-shell { align-content:start; }
 .koinonia-page-heading { margin:0 0 14px; border:1px solid rgba(6,21,34,.09); border-radius:16px; padding:18px 20px 16px; background:#fffdf8; }
 .koinonia-page-back { display:inline-flex; align-items:center; gap:6px; margin:0 0 12px; color:#6f5524; font:600 12px/1 "DM Sans","Inter",sans-serif; text-decoration:none; }
@@ -17,6 +19,7 @@
 
 @media (max-width:700px) {
   :is(.koinonia-inner-page,.app-inner-page) .donor-mobile-content { align-content:start; padding-top:14px; }
+  .app-main-feature-page .topbar { display:none !important; }
   .koinonia-mobile-appbar { display:flex; align-items:center; justify-content:space-between; gap:12px; width:min(100%,480px); border-radius:28px 28px 0 0; padding:18px 20px 15px; background:#061522; color:#fff; }
   .koinonia-mobile-brand { display:flex; align-items:center; gap:10px; min-width:0; color:inherit; text-decoration:none; }
   .koinonia-mobile-mark { display:grid; place-items:center; width:32px; height:32px; flex:0 0 auto; border:1px solid rgba(255,255,255,.38); border-radius:50%; }
@@ -24,19 +27,31 @@
   .koinonia-mobile-brand > span:last-child { display:grid; gap:2px; min-width:0; }
   .koinonia-mobile-brand strong { color:#fff; font:500 13px/1.1 "Cormorant Garamond","Playfair Display",Georgia,serif; letter-spacing:.14em; }
   .koinonia-mobile-brand small { overflow:hidden; color:rgba(255,255,255,.68); font:400 10px/1.2 "DM Sans","Inter",sans-serif; text-overflow:ellipsis; white-space:nowrap; }
-  .koinonia-mobile-notifications { display:grid; place-items:center; width:36px; height:36px; flex:0 0 auto; border-radius:50%; background:rgba(255,255,255,.1); color:#fff; }
-  .koinonia-mobile-notifications svg { width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .koinonia-mobile-menu-toggle { display:grid; place-items:center; width:36px; height:36px; flex:0 0 auto; border:0; border-radius:50%; padding:0; background:rgba(255,255,255,.1); color:#fff; cursor:pointer; }
+  .koinonia-mobile-menu-toggle:hover,.koinonia-mobile-menu-toggle:focus-visible,.koinonia-mobile-menu-toggle[aria-expanded="true"] { background:rgba(255,255,255,.18); outline:none; }
+  .koinonia-mobile-menu-icon { display:grid; gap:4px; width:17px; }
+  .koinonia-mobile-menu-icon span { display:block; height:1.5px; border-radius:999px; background:currentColor; }
+  .koinonia-mobile-menu { position:absolute; z-index:90; top:70px; right:max(20px,calc((100% - 440px)/2)); display:grid; width:min(286px,calc(100% - 30px)); max-height:min(68vh,520px); overflow-y:auto; border:1px solid rgba(138,106,44,.3); border-radius:14px; padding:7px; background:#fffdf8; box-shadow:0 22px 54px rgba(6,21,34,.26); }
+  .koinonia-mobile-menu[hidden] { display:none; }
+  .koinonia-mobile-menu a { display:flex; align-items:center; gap:10px; min-height:44px; border-radius:10px; padding:8px 10px; color:#253641; font:600 12px/1.2 "DM Sans","Inter",sans-serif; text-decoration:none; }
+  .koinonia-mobile-menu a:hover,.koinonia-mobile-menu a:focus-visible { background:#f3ecdc; outline:none; }
+  .koinonia-mobile-menu a[aria-current="page"] { background:#061522; color:#fff; }
+  .koinonia-mobile-menu a svg { width:20px; height:20px; flex:0 0 auto; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+  .koinonia-mobile-menu a .prayer-hands-icon { fill:currentColor; stroke:none; }
+  .koinonia-mobile-menu-divider { height:1px; margin:5px 8px; background:rgba(6,21,34,.09); }
   :is(.koinonia-inner-page,.app-inner-page) .koinonia-inner-shell { display:grid; grid-template-columns:minmax(0,1fr); align-content:start; gap:14px; width:min(100%,480px); min-height:calc(100vh - 76px); border-top:0; border-radius:0 0 28px 28px; padding:0 0 92px; background:#f7f4ed; box-shadow:0 18px 50px rgba(6,21,34,.13); }
   .koinonia-inner-shell > :not(.koinonia-page-heading) { margin-left:20px; margin-right:20px; }
   .koinonia-page-heading { margin:0; border-width:0 0 1px; border-radius:0; }
+  .app-main-feature-page .koinonia-inner-shell { padding-top:14px; }
   .donor-directory-page .directory-main > .koinonia-mobile-appbar { width:calc(100% + 32px); max-width:none; margin-left:-16px; margin-right:-16px; border-radius:0; }
-  .donor-directory-page .directory-app-heading { margin-left:-16px; margin-right:-16px; border-width:0 0 1px; border-radius:0; }
+  .donor-directory-page.app-main-feature-page .directory-view-switcher { margin-top:14px; }
 }
 
 @media (max-width:430px) {
   :is(.koinonia-inner-page,.app-inner-page) .donor-mobile-content { padding-top:0; }
   .koinonia-mobile-appbar,
   :is(.koinonia-inner-page,.app-inner-page) .koinonia-inner-shell { width:100%; border-radius:0; box-shadow:none; }
+  .koinonia-mobile-menu { top:66px; right:12px; }
   .koinonia-page-heading { padding-left:15px; padding-right:15px; }
   .koinonia-inner-shell > :not(.koinonia-page-heading) { margin-left:15px; margin-right:15px; }
   .koinonia-page-title-row { align-items:flex-start; gap:10px; }

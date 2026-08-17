@@ -10,9 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/donor/style.css?v=20260802playerredesign1" />
-  <link rel="stylesheet" href="/myagapay/koinonia-inner.css?v=20260817compact1" />
+  <link rel="stylesheet" href="/myagapay/koinonia-inner.css?v=20260817appmenu2" />
   <script src="/pwa-register.js" defer></script>
-  <script src="/myagapay-shell.js?v=20260817prayersvg2"></script>
+  <script src="/myagapay-shell.js?v=20260817appmenu2"></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -631,6 +631,12 @@
       body.directory-profile-open #memberResults,
       body.directory-profile-open #memberLoadMore,
       body.directory-profile-open .member-directory-intro { display:none; }
+      body.donor-directory-page.directory-profile-open { height:auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch; }
+      body.donor-directory-page.directory-profile-open .directory-shell,
+      body.donor-directory-page.directory-profile-open .directory-main,
+      body.donor-directory-page.directory-profile-open .member-directory,
+      body.donor-directory-page.directory-profile-open #memberProfile { height:auto; max-height:none; overflow:visible; }
+      body.donor-directory-page.directory-profile-open #memberProfile { padding-bottom:calc(7.75rem + env(safe-area-inset-bottom)); scroll-margin-top:12px; }
       .directory-modal { align-items:end; padding:0; }
       .directory-modal-card { width:100%; max-height:88vh; border-radius:24px 24px 0 0; padding:18px 14px calc(18px + env(safe-area-inset-bottom)); }
       /* Canonical Church Directory mobile language from the supplied reference. */
@@ -825,7 +831,7 @@
     }
   </style>
 </head>
-<body class="donor-mobile-page donor-directory-page app-inner-page" data-mobile-view="browse" data-directory-view="directory">
+<body class="donor-mobile-page donor-directory-page app-inner-page app-main-feature-page" data-mobile-view="browse" data-directory-view="directory">
   <div class="app directory-shell">
     <aside class="sidebar directory-side">
       <div class="sidebar-scroll">
@@ -836,12 +842,11 @@
       <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg> Account settings</a></div>
     </aside>
     <main class="directory-main">
-      <header class="koinonia-mobile-appbar"><a class="koinonia-mobile-brand" href="/myagapay" aria-label="Open My AGAPAY"><span class="koinonia-mobile-mark" aria-hidden="true"><img src="/mark.png" alt="" /></span><span><strong>MY AGAPAY</strong><small>Directory</small></span></a><a class="koinonia-mobile-notifications" href="/myagapay/feed" aria-label="Open Community Inbox"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></a></header>
+      <header class="koinonia-mobile-appbar"><a class="koinonia-mobile-brand" href="/myagapay" aria-label="Open My AGAPAY"><span class="koinonia-mobile-mark" aria-hidden="true"><img src="/mark.png" alt="" /></span><span><strong>MY AGAPAY</strong><small>Directory</small></span></a><button class="koinonia-mobile-menu-toggle" type="button" data-myagapay-app-menu-toggle aria-label="Open My AGAPAY navigation"><span class="koinonia-mobile-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span></button></header>
+      <div class="koinonia-visually-hidden"><h1 id="directoryHeroTitle">Parish Directory</h1><span id="directoryStatus" role="status">Loading</span></div>
       <div class="topbar">
         <div class="directory-nav-identity"><strong class="topbar-title">Parish Directory</strong></div>
       </div>
-      <header class="koinonia-page-heading directory-app-heading" aria-labelledby="directoryHeroTitle"><a class="koinonia-page-back" href="/myagapay" data-parish-life-back><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>My AGAPAY</a><div class="koinonia-page-title-row"><div><h1 id="directoryHeroTitle">Parish Directory</h1><p>Find parish families, namedays, and ways to serve—all in one private, member-only place.</p></div><span class="status-pill" id="directoryStatus">Loading</span></div></header>
-
       <nav class="directory-view-switcher" aria-label="Directory sections" role="tablist">
         <button id="directoryViewTab" type="button" role="tab" aria-selected="true" aria-controls="memberDirectory" data-directory-view-target="directory">Directory</button>
         <button id="familyInformationTab" type="button" role="tab" aria-selected="false" aria-controls="personalDirectorySettings" data-directory-view-target="family" tabindex="-1">Family Information</button>
@@ -1859,6 +1864,7 @@
         : "";
       const pane = document.getElementById("memberProfile");
       pane.hidden = false;
+      document.body.style.overflow = "";
       document.body.classList.add("directory-profile-open");
       document.querySelector(".mobile-back").textContent = "‹ Back to Directory";
       if (type === "household") {

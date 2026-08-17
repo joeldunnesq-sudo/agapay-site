@@ -601,6 +601,61 @@
     });
   }
 
+  function mobileAppMenuLinks() {
+    const active = activeProduct();
+    const links = visibleProducts()
+      .filter((item) => !item.deferUntilCapabilitiesLoaded || capabilitiesLoaded)
+      .map((item) => {
+        const current = item.id === active;
+        return `<a href="${item.href}"${current ? ' aria-current="page"' : ""}>${item.icon}<span>${item.label}</span></a>`;
+      }).join("");
+    return `${links}<span class="koinonia-mobile-menu-divider" aria-hidden="true"></span><a href="/myagapay/giving/history">${icons.history}<span>Giving History</span></a><a href="/myagapay/account"${active === "account" ? ' aria-current="page"' : ""}>${icons.account}<span>Account Settings</span></a>`;
+  }
+
+  function closeMobileAppMenus(except = null) {
+    document.querySelectorAll("[data-myagapay-app-menu]").forEach((menu) => {
+      if (menu === except) return;
+      menu.hidden = true;
+      const button = document.querySelector(`[aria-controls="${menu.id}"]`);
+      button?.setAttribute("aria-expanded", "false");
+    });
+  }
+
+  function normalizeMobileAppMenus(root = document) {
+    root.querySelectorAll("[data-myagapay-app-menu]").forEach((menu) => {
+      menu.innerHTML = mobileAppMenuLinks();
+    });
+  }
+
+  function initializeMobileAppMenus(root = document) {
+    root.querySelectorAll("[data-myagapay-app-menu-toggle]").forEach((button, index) => {
+      const appbar = button.closest(".koinonia-mobile-appbar, .prayer-mobile-appbar");
+      if (!appbar) return;
+      let menu = appbar.nextElementSibling;
+      if (!menu?.matches?.("[data-myagapay-app-menu]")) {
+        menu = document.createElement("nav");
+        menu.className = "koinonia-mobile-menu";
+        menu.setAttribute("data-myagapay-app-menu", "");
+        menu.setAttribute("aria-label", "My AGAPAY menu");
+        menu.hidden = true;
+        appbar.insertAdjacentElement("afterend", menu);
+      }
+      menu.id ||= `myAgapayAppMenu${index + 1}`;
+      button.setAttribute("aria-controls", menu.id);
+      button.setAttribute("aria-expanded", "false");
+      if (button.dataset.myagapayMenuBound === "true") return;
+      button.dataset.myagapayMenuBound = "true";
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const opening = menu.hidden;
+        closeMobileAppMenus(opening ? menu : null);
+        menu.hidden = !opening;
+        button.setAttribute("aria-expanded", opening ? "true" : "false");
+      });
+    });
+    normalizeMobileAppMenus(root);
+  }
+
   function normalizeParishCapabilities(parish = null) {
     return {
       sacramentsEnabled: Boolean(parish?.sacramentsEnabled),
@@ -652,6 +707,7 @@
     document.documentElement.dataset.parishCapabilitiesLoaded = "true";
     document.documentElement.dataset.parishLifeExperience = parishLife.communicationsEnabled ? "koinonia" : "today";
     normalizeProductNavs();
+    normalizeMobileAppMenus();
     document.querySelectorAll("[data-parish-life-link], [data-parish-life-section]").forEach((element) => {
       element.hidden = false;
       element.classList?.remove("sw-tool-loading");
@@ -731,6 +787,7 @@
     feedUnreadCount = Math.max(0, Number(count) || 0);
     syncParishLifeUnreadSummary();
     normalizeProductNavs();
+    normalizeMobileAppMenus();
   }
 
   function setGroupsUnreadCount(count) {
@@ -981,13 +1038,18 @@
     }
     deferParishLifeIdentity();
     normalizeProductNavs();
+    initializeMobileAppMenus();
     ensureParishLifeBackLink();
     ensureCanonicalHeader();
     ensureSupportFeedback();
     deferParishLifeIdentity();
     syncAuthVisibility();
     initViewportAwareness();
-    document.addEventListener("click", handleInternalNavigationClick);
+    document.addEventListener("click", (event) => {
+      handleInternalNavigationClick(event);
+      if (!event.target.closest("[data-myagapay-app-menu], [data-myagapay-app-menu-toggle]")) closeMobileAppMenus();
+    });
+    document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeMobileAppMenus(); });
     if (isProtectedPath()) {
       const current = session();
       if (!current.email || !current.token) redirectToLogin("sign-in-required");

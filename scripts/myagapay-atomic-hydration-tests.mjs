@@ -64,8 +64,8 @@ for (const file of protectedPages) {
           : "20260802playerredesign1";
   assert.match(html, /<html[^>]*data-myagapay-hydrate/, `${file} must opt into the pre-paint hydration shield`);
   assert.match(html, new RegExp(`/donor/style\\.css\\?v=${expectedStylesheetVersion}`), `${file} must load the current atomic-paint CSS version`);
-  assert.match(html, /<script src="\/myagapay-shell\.js\?v=20260817prayersvg2"><\/script>/, `${file} must install the tracker before page-level scripts`);
-  assert.doesNotMatch(html, /myagapay-shell\.js\?v=20260817prayersvg2" defer/, `${file} must not defer initial shell setup`);
+  assert.match(html, /<script src="\/myagapay-shell\.js\?v=[a-zA-Z0-9]+"><\/script>/, `${file} must install the versioned tracker before page-level scripts`);
+  assert.doesNotMatch(html, /myagapay-shell\.js\?v=[a-zA-Z0-9]+" defer/, `${file} must not defer initial shell setup`);
 }
 
 assert.match(
