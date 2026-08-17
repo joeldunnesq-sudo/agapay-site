@@ -151,7 +151,7 @@ function parishLifeApprovedServiceEvents(payload = {}) {
 function parishLifeTierSectionsHtml(communicationsEnabled, capabilities = {}) {
   if (!communicationsEnabled) return "";
   const communityTools = [
-    capabilities.signupsEnabled ? '<a class="parish-life-community-tool" href="/myagapay/signups"><span aria-hidden="true">✓</span><strong>Parish Signups</strong><small>Commit your time, help, or an item</small><em>Open →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="signups" hidden></b></a>' : '',
+    capabilities.signupsEnabled ? '<a class="parish-life-community-tool" href="/myagapay/signups"><span aria-hidden="true">✓</span><strong>Parish Signups</strong><small>Serve the faithful</small><em>Open →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="signups" hidden></b></a>' : '',
     capabilities.exchangeEnabled ? '<a class="parish-life-community-tool" href="/myagapay/exchange"><span aria-hidden="true">⇄</span><strong>Parish Exchange</strong><small>Offer or request useful items</small><em>Browse →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="exchange" hidden></b></a>' : ''
   ].filter(Boolean).join("");
   return `
