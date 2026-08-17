@@ -152,7 +152,8 @@ function parishLifeTierSectionsHtml(communicationsEnabled, capabilities = {}) {
   if (!communicationsEnabled) return "";
   const communityTools = [
     capabilities.signupsEnabled ? '<a class="parish-life-community-tool" href="/myagapay/signups"><span aria-hidden="true">✓</span><strong>Parish Signups</strong><small>Serve the faithful</small><em>Open →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="signups" hidden></b></a>' : '',
-    capabilities.exchangeEnabled ? '<a class="parish-life-community-tool" href="/myagapay/exchange"><span aria-hidden="true">⇄</span><strong>Parish Exchange</strong><small>Offer or request useful items</small><em>Browse →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="exchange" hidden></b></a>' : ''
+    capabilities.exchangeEnabled ? '<a class="parish-life-community-tool" href="/myagapay/exchange"><span aria-hidden="true">⇄</span><strong>Parish Exchange</strong><small>Offer or request useful items</small><em>Browse →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="exchange" hidden></b></a>' : '',
+    capabilities.prayerRequestsEnabled ? '<a class="parish-life-community-tool" href="/myagapay/prayer-requests"><span aria-hidden="true">♡</span><strong>Prayer Requests</strong><small>Pray for one another</small><em>Pray →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="prayers" hidden></b></a>' : ''
   ].filter(Boolean).join("");
   return `
     ${communityTools ? `<section class="parish-life-home-section" aria-labelledby="communityToolsHeading"><div class="parish-life-section-head"><h2 id="communityToolsHeading">Community Tools</h2></div><div class="parish-life-community-tools">${communityTools}</div></section>` : ""}
@@ -185,13 +186,14 @@ function parishLifeTierSectionsHtml(communicationsEnabled, capabilities = {}) {
 
 function renderCommunityToolBadges(payload = {}) {
   const counts = payload.counts || {};
-  const labels = { signups: "signup forms", exchange: "Exchange listings" };
+  const labels = { signups: "signup forms", exchange: "Exchange listings", prayers: "prayer requests" };
+  const toolNames = { signups: "Parish Signups", exchange: "Parish Exchange", prayers: "Prayer Requests" };
   document.querySelectorAll("[data-community-tool-badge]").forEach((badge) => {
     const tool = badge.dataset.communityToolBadge;
     const count = Math.max(0, Number(counts[tool]) || 0);
     badge.hidden = count === 0;
     badge.textContent = count > 99 ? "99+" : String(count);
-    badge.setAttribute("aria-label", `${count} new ${labels[tool] || "items"} since you last opened ${tool === "signups" ? "Parish Signups" : "Parish Exchange"}`);
+    badge.setAttribute("aria-label", `${count} new ${labels[tool] || "items"} since you last opened ${toolNames[tool] || "this Community Tool"}`);
   });
 }
 

@@ -40,7 +40,7 @@ import {
   subscriptionTier,
 } from "../lib/subscriptions.js";
 
-import { bookstoreEnabledFor, directoryEnabledFor, exchangeEnabledFor, givingFeatureAccess, hasParishPlusAccess, sacramentsEnabledFor, signupsEnabledFor, stewardshipToolAccess } from "../lib/entitlements.js";
+import { bookstoreEnabledFor, directoryEnabledFor, exchangeEnabledFor, givingFeatureAccess, hasParishPlusAccess, prayerRequestsEnabledFor, sacramentsEnabledFor, signupsEnabledFor, stewardshipToolAccess } from "../lib/entitlements.js";
 import { parishLifeAvailableFor } from "../lib/parish-life-access.js";
 import { parishLifeExperienceFor } from "../lib/parish-life-experience.js";
 import { recordParishFeatureRequest } from "../lib/parish-feature-requests.js";
@@ -950,6 +950,7 @@ export async function handleDonorDashboard(request, env) {
         parish.communicationsEnabled = parishLifeExperience.communicationsEnabled;
         parish.signupsEnabled = signupsEnabledFor(found.registration);
         parish.exchangeEnabled = exchangeEnabledFor(found.registration);
+        parish.prayerRequestsEnabled = prayerRequestsEnabledFor(found.registration);
         parish.parishLifeLabel = parishLifeExperience.label;
         parish.parishLifeAvailable = parishLifeAvailableFor(env);
         parish.pledgeTrackerEnabled = stewardshipToolAccess(found.registration);

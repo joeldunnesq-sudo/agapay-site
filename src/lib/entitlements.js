@@ -123,6 +123,11 @@ export function exchangeEnabledFor(registration) {
     && registration?.exchangeEnabled !== false;
 }
 
+export function prayerRequestsEnabledFor(registration) {
+  return communicationsEnabledFor(registration)
+    && registration?.prayerRequestsEnabled !== false;
+}
+
 export function commerceSuiteEnabledFor(registration) {
   return tierIncludesModule(registration, "commerceSuite");
 }

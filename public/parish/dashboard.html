@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/parish/style.css?v=20260812starterfunds1" />
+  <link rel="stylesheet" href="/parish/style.css?v=20260817prayers1" />
   <link rel="stylesheet" href="/parish/redesign.css?v=20260812simple10min1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="stylesheet" href="/styles/stewardship.css?v=20260806standalonetabs1" />
@@ -1250,6 +1250,7 @@
               <div class="koinonia-feature-toggle"><span><strong>Koinonia</strong><small>Publishing and parish life</small></span><label class="sac-admin-switch agapay-feature-switch" title="Show or hide parish-published Koinonia content in My AGAPAY"><input id="communicationsEnabledSwitch" type="checkbox" aria-label="Show parish-published Koinonia content in My AGAPAY" onchange="toggleCommunicationsFeature(this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
               <div class="koinonia-feature-toggle"><span><strong>Parish Signups</strong><small>Serve the faithful</small></span><label class="sac-admin-switch agapay-feature-switch" title="Show or hide Parish Signups"><input id="signupsEnabledSwitch" type="checkbox" aria-label="Show Parish Signups to parishioners" onchange="toggleKoinoniaSubfeature('signups', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
               <div class="koinonia-feature-toggle"><span><strong>Parish Exchange</strong><small>Offer or request useful items</small></span><label class="sac-admin-switch agapay-feature-switch" title="Show or hide Parish Exchange"><input id="exchangeEnabledSwitch" type="checkbox" aria-label="Show Parish Exchange to parishioners" onchange="toggleKoinoniaSubfeature('exchange', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
+              <div class="koinonia-feature-toggle"><span><strong>Prayer Requests</strong><small>Pray for one another</small></span><label class="sac-admin-switch agapay-feature-switch" title="Show or hide Prayer Requests"><input id="prayerRequestsEnabledSwitch" type="checkbox" aria-label="Show Prayer Requests to parishioners" onchange="toggleKoinoniaSubfeature('prayers', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
             </div>
           </header>
           <div id="communicationsPaywall" class="communications-paywall" hidden><strong>Koinonia is included with Parish.</strong><p>Review your plan to publish parish life in My AGAPAY.</p><button class="btn btn-gold" type="button" onclick="switchTab('settings')">Review Parish tier</button></div>
@@ -1261,6 +1262,7 @@
               <button type="button" data-koinonia-view="audio" onclick="setKoinoniaStudioView('audio')"><span>♪</span>Audio</button>
               <button type="button" data-koinonia-view="video" onclick="setKoinoniaStudioView('video')"><span>▶</span>Video</button>
               <button type="button" data-koinonia-view="ministries" onclick="setKoinoniaStudioView('ministries')"><span>✦</span>Ministries</button>
+              <button type="button" data-koinonia-view="prayers" onclick="setKoinoniaStudioView('prayers')"><span>♡</span>Prayer Requests</button>
               <button type="button" data-koinonia-view="news" onclick="setKoinoniaStudioView('news')"><span>↗</span>News feeds</button>
             </nav>
 
@@ -1321,6 +1323,44 @@
                 <section class="koinonia-ministry-detail" id="koinoniaMinistryDetail"><div class="koinonia-ministry-empty"><span>✦</span><strong>Select a ministry</strong><p>Choose a team to see its members, add a parishioner, and review requests.</p></div></section>
               </div>
             </section>
+
+            <section class="koinonia-studio-view prayer-admin-workspace" data-koinonia-panel="prayers" aria-labelledby="prayerAdminHeading" hidden>
+              <div class="prayer-admin-head"><div><span class="eyebrow">Pastoral care</span><h2 id="prayerAdminHeading">Prayer Requests</h2><p>Review community requests, protect private submissions, and mark answered prayers.</p></div><button class="btn btn-ghost" type="button" onclick="loadParishPrayerRequests(true)">Refresh</button></div>
+              <div class="prayer-admin-metrics" aria-label="Prayer request summary">
+                <article><span>Awaiting review</span><strong id="prayerMetricPending">—</strong><small>Pending or reported</small></article>
+                <article><span>Active</span><strong id="prayerMetricActive">—</strong><small>Visible to parishioners</small></article>
+                <article><span>Clergy only</span><strong id="prayerMetricClergy">—</strong><small>Private dashboard requests</small></article>
+                <article><span>Answered</span><strong id="prayerMetricAnswered">—</strong><small>Thanksgiving shared</small></article>
+              </div>
+              <div class="prayer-admin-layout">
+                <section class="prayer-admin-inbox" aria-labelledby="prayerInboxHeading">
+                  <div class="prayer-admin-panel-head"><div><span class="eyebrow">Moderation inbox</span><h3 id="prayerInboxHeading">Parish requests</h3></div><div class="prayer-admin-filters" aria-label="Filter prayer requests"><button type="button" data-prayer-admin-filter="review" aria-pressed="true" onclick="setParishPrayerFilter('review',this)">Needs review</button><button type="button" data-prayer-admin-filter="active" aria-pressed="false" onclick="setParishPrayerFilter('active',this)">Active</button><button type="button" data-prayer-admin-filter="clergy" aria-pressed="false" onclick="setParishPrayerFilter('clergy',this)">Clergy only</button><button type="button" data-prayer-admin-filter="answered" aria-pressed="false" onclick="setParishPrayerFilter('answered',this)">Answered</button><button type="button" data-prayer-admin-filter="all" aria-pressed="false" onclick="setParishPrayerFilter('all',this)">All</button></div></div>
+                  <div id="prayerAdminList"><p class="sw-tool-loading">Loading prayer requests…</p></div>
+                </section>
+                <aside class="prayer-admin-settings" aria-labelledby="prayerSettingsHeading">
+                  <div><span class="eyebrow">Parish settings</span><h3 id="prayerSettingsHeading">Prayer list safeguards</h3><p>These settings apply whenever Prayer Requests is turned on above.</p></div>
+                  <form id="prayerSettingsForm" onsubmit="saveParishPrayerSettings(event)">
+                    <label class="prayer-admin-check"><input id="prayerApprovalRequired" type="checkbox" /><span><strong>Require approval</strong><small>Review parish-wide requests before publishing.</small></span></label>
+                    <label class="prayer-admin-check"><input id="prayerAnonymousAllowed" type="checkbox" /><span><strong>Allow anonymous posts</strong><small>Names remain visible to dashboard staff.</small></span></label>
+                    <label>Archive active requests after<input id="prayerArchiveDays" type="number" min="7" max="365" step="1" /><small>Days; answered requests remain in their own view.</small></label>
+                    <label>Pastoral notice<textarea id="prayerPastoralNoticeInput" maxlength="500" rows="5"></textarea></label>
+                    <button class="btn btn-gold" type="submit">Save safeguards</button>
+                  </form>
+                </aside>
+              </div>
+            </section>
+
+            <dialog class="prayer-admin-dialog" id="prayerAdminReviewDialog" aria-labelledby="prayerAdminReviewHeading">
+              <form id="prayerAdminReviewForm" onsubmit="submitParishPrayerReview(event)">
+                <button class="prayer-admin-dialog-close" type="button" aria-label="Close" onclick="closeParishPrayerReview()">×</button>
+                <span class="eyebrow">Prayer request review</span><h2 id="prayerAdminReviewHeading">Review request</h2>
+                <div class="prayer-admin-review-request"><strong id="prayerAdminReviewName">Parishioner</strong><p id="prayerAdminReviewBody"></p></div>
+                <div class="prayer-admin-review-grid"><label>Status<select id="prayerAdminReviewStatus"><option value="pending">Awaiting review</option><option value="active">Active</option><option value="answered">Answered</option><option value="flagged">Hold for review</option><option value="declined">Declined</option><option value="archived">Archived</option></select></label><label>Visibility<select id="prayerAdminReviewVisibility"><option value="parish_members">Parish community</option><option value="clergy_only">Clergy only</option></select></label></div>
+                <label>Private dashboard note<textarea id="prayerAdminReviewNote" maxlength="1000" rows="3" placeholder="Optional internal note"></textarea></label>
+                <label>Reason shown when declined<textarea id="prayerAdminDeclineReason" maxlength="500" rows="2" placeholder="Optional pastoral explanation for the requester"></textarea></label>
+                <div class="prayer-admin-dialog-actions"><button class="btn btn-ghost" type="button" onclick="closeParishPrayerReview()">Cancel</button><button class="btn btn-gold" type="submit">Save decision</button></div>
+              </form>
+            </dialog>
 
             <section class="communications-content-section koinonia-studio-view blog-admin-section" data-koinonia-panel="news" aria-labelledby="blogAdminHeading" hidden>
               <div class="communications-section-heading"><span class="eyebrow">External writing</span><h2 id="blogAdminHeading">Priest’s Blog</h2><p>Surface the newest posts from a priest’s public blog in Koinonia through RSS or Atom.</p></div>
@@ -1864,6 +1904,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
-  <script src="/parish/app.js?v=20260812starterfunds1"></script>
+  <script src="/parish/app.js?v=20260817prayers1"></script>
 </body>
 </html>

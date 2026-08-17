@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { exchangeEnabledFor, signupsEnabledFor } from "../src/lib/entitlements.js";
+import { exchangeEnabledFor, prayerRequestsEnabledFor, signupsEnabledFor } from "../src/lib/entitlements.js";
 import { claimSignupSlot, deleteSheet, deleteSlot, listSignupInboxActions, listUpcomingSignupCommitments, requestSignupCoverage, SignupAccessError, updateSheet, updateSlot } from "../src/handlers/koinonia-signups.js";
 import { completeExchangeListing, expireKoinoniaExchangeListings, ExchangeAccessError, uploadListingPhoto } from "../src/handlers/koinonia-exchange.js";
 import { getCommunityToolBadgeCounts, markCommunityToolOpened } from "../src/handlers/koinonia-community-tools.js";
@@ -50,6 +50,9 @@ assert.equal(signupsEnabledFor({ subscriptionTier: "parish", signupsEnabled: fal
 assert.equal(exchangeEnabledFor({ subscriptionTier: "parish", exchangeEnabled: false }), false);
 assert.equal(signupsEnabledFor({ subscriptionTier: "parish", communicationsEnabled: false }), false);
 assert.equal(exchangeEnabledFor({ subscriptionTier: "stewardship" }), false);
+assert.equal(prayerRequestsEnabledFor({ subscriptionTier: "parish" }), true);
+assert.equal(prayerRequestsEnabledFor({ subscriptionTier: "parish", prayerRequestsEnabled: false }), false);
+assert.equal(prayerRequestsEnabledFor({ subscriptionTier: "parish", communicationsEnabled: false }), false);
 
 const sqlite = new DatabaseSync(":memory:");
 sqlite.exec("PRAGMA foreign_keys = ON;");
@@ -84,9 +87,12 @@ sqlite.exec("CREATE TABLE directory_ministry_participants (parish_id TEXT, minis
 sqlite.exec(read("migrations/0092_koinonia_signups_and_exchange.sql"));
 sqlite.exec(read("migrations/0093_ministry_workspace.sql"));
 sqlite.exec(read("migrations/0094_koinonia_community_tool_views.sql"));
+sqlite.exec(read("migrations/0097_koinonia_prayer_requests.sql"));
 
 const env = d1Environment(sqlite);
 const now = Date.now();
+sqlite.prepare("INSERT INTO directory_people (id, parish_id, preferred_name) VALUES (?, ?, ?)")
+  .run("person-1", "st-fiacre", "Maria");
 sqlite.prepare("INSERT INTO directory_ministries (id, parish_id, display_name) VALUES (?, ?, ?)")
   .run("ministry-meals", "st-fiacre", "Hospitality");
 sqlite.prepare("INSERT INTO directory_ministry_leaders (parish_id, ministry_id, person_id, assignment_type, active) VALUES (?, ?, ?, 'leader', 1)")
@@ -215,22 +221,32 @@ sqlite.prepare(`INSERT INTO koinonia_exchange_listings
   (id, parish_id, posted_by_person_id, listing_type, category, title, status, created_at, updated_at)
   VALUES ('listing-badge', 'st-fiacre', 'poster-1', 'offer', 'books', 'Fresh books', 'active', ?, ?)`)
   .run(now, now);
+sqlite.prepare(`INSERT INTO koinonia_prayer_requests
+  (id, parish_id, submitted_by_person_id, body, visibility, status, created_at, updated_at, published_at, expires_at)
+  VALUES ('prayer-badge', 'st-fiacre', 'person-1', 'Please pray for a family in need.', 'parish_members', 'active', ?, ?, ?, ?)`)
+  .run(now, now, now, now + 86400000);
 assert.deepEqual(
-  await getCommunityToolBadgeCounts(env, claimContext, { signups:true, exchange:true }, now + 1000),
-  { signups:1, exchange:1 },
+  await getCommunityToolBadgeCounts(env, claimContext, { signups:true, exchange:true, prayers:true }, now + 1000),
+  { signups:1, exchange:1, prayers:1 },
   "each Community Tool badge must count only currently published content newer than that page's own last-open timestamp",
 );
 await markCommunityToolOpened(env, claimContext, "signups", now + 1);
 assert.deepEqual(
-  await getCommunityToolBadgeCounts(env, claimContext, { signups:true, exchange:true }, now + 1000),
-  { signups:0, exchange:1 },
+  await getCommunityToolBadgeCounts(env, claimContext, { signups:true, exchange:true, prayers:true }, now + 1000),
+  { signups:0, exchange:1, prayers:1 },
   "opening Signups must clear only the Signups badge",
 );
 await markCommunityToolOpened(env, claimContext, "exchange", now + 1);
 assert.deepEqual(
-  await getCommunityToolBadgeCounts(env, claimContext, { signups:true, exchange:true }, now + 1000),
-  { signups:0, exchange:0 },
+  await getCommunityToolBadgeCounts(env, claimContext, { signups:true, exchange:true, prayers:true }, now + 1000),
+  { signups:0, exchange:0, prayers:1 },
   "opening Exchange must clear its own badge without relying on general notification state",
+);
+await markCommunityToolOpened(env, claimContext, "prayers", now + 1);
+assert.deepEqual(
+  await getCommunityToolBadgeCounts(env, claimContext, { signups:true, exchange:true, prayers:true }, now + 1000),
+  { signups:0, exchange:0, prayers:0 },
+  "opening Prayer Requests must clear only the prayer badge",
 );
 sqlite.prepare(`INSERT INTO koinonia_signup_sheets
   (id, parish_id, ministry_id, title, category, status, visibility, created_by_person_id,
@@ -239,7 +255,7 @@ sqlite.prepare(`INSERT INTO koinonia_signup_sheets
     'open', 'parish_members', 'person-1', 'person-1', ?, ?, ?)`)
   .run(now + 2, now + 2, now + 2);
 assert.equal(
-  (await getCommunityToolBadgeCounts(env, claimContext, { signups:true, exchange:true }, now + 1000)).signups,
+  (await getCommunityToolBadgeCounts(env, claimContext, { signups:true, exchange:true, prayers:true }, now + 1000)).signups,
   1,
   "a newly published form must restore the Signups badge even after older forms were cleared",
 );
@@ -266,7 +282,7 @@ assert.match(sources.exchange, /exchangePhotoStorageKey[\s\S]*GROUP_MESSAGE_ASSE
 assert.match(sources.pushes, /sendSignupReminderPush[\s\S]*sendExchangeMessagePush/);
 assert.match(sources.pushes, /sendSignupPublishedPush[\s\S]*sendExchangeListingPush/);
 assert.match(sources.parishLife, /\/api\/donor\/koinonia\/community-tools\/badges/);
-assert.match(sources.parishLife, /data-community-tool-badge="signups"[\s\S]*data-community-tool-badge="exchange"/);
+assert.match(sources.parishLife, /data-community-tool-badge="signups"[\s\S]*data-community-tool-badge="exchange"[\s\S]*data-community-tool-badge="prayers"/);
 assert.match(sources.signupsClient, /community-tools\/signups\/opened/);
 assert.match(read("public/myagapay/exchange.js"), /community-tools\/exchange\/opened/);
 assert.match(sources.worker, /koinonia_exchange_expiry_sweep[\s\S]*expireKoinoniaExchangeListings/);
@@ -274,11 +290,12 @@ assert.match(sources.worker, /\/api\/donor\/koinonia\/signups/);
 assert.match(sources.worker, /\/api\/donor\/koinonia\/exchange/);
 assert.match(sources.shell, /parishFeature: "signupsEnabled"/);
 assert.match(sources.shell, /parishFeature: "exchangeEnabled"/);
-assert.match(sources.parishDashboard, /id="signupsEnabledSwitch"[\s\S]*id="exchangeEnabledSwitch"/);
+assert.match(sources.shell, /parishFeature: "prayerRequestsEnabled"/);
+assert.match(sources.parishDashboard, /id="signupsEnabledSwitch"[\s\S]*id="exchangeEnabledSwitch"[\s\S]*id="prayerRequestsEnabledSwitch"/);
 assert.match(sources.parishApp, /JSON\.stringify\(\{ \[field\]: enabled \}\)/);
 assert.match(sources.signupsPage, /Koinonia[\s\S]*Signups/);
 assert.match(sources.signupsPage, /id="signupActionDialog"[\s\S]*id="signupActionText"/, "signup details and coverage reasons must use an accessible modal");
-assert.match(sources.signupsPage, /myagapay-shell\.js\?v=20260816parishtools2/, "Parish Signups must load the current unified app navigation shell");
+assert.match(sources.signupsPage, /myagapay-shell\.js\?v=20260817prayers1/, "Parish Signups must load the current unified app navigation shell");
 assert.match(sources.signupsClient, /JSON\.stringify\(\{ comment \}\)/, "claim details must be sent to the signup API");
 assert.doesNotMatch(sources.signupsClient, /window\.prompt/, "coverage requests must not use a browser prompt");
 assert.match(sources.parishLife, /\/api\/donor\/koinonia\/signups\/upcoming/);

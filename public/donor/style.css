@@ -9735,7 +9735,7 @@ html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-link],
 .myagapay-nav-loading {
   pointer-events: none;
 }
-.parish-life-community-tools { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.parish-life-community-tools { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
 .parish-life-community-tool { position:relative; display:grid; grid-template-columns:auto minmax(0,1fr) auto; grid-template-rows:auto auto; column-gap:10px; align-items:center; min-height:82px; border:1px solid rgba(196,156,80,.35); border-radius:14px; padding:12px 13px; background:linear-gradient(145deg,#fff,#faf6eb); color:#061522; text-decoration:none; box-shadow:0 5px 16px rgba(6,21,34,.045); }
 .parish-life-community-tool > span { display:grid; grid-row:1 / 3; place-items:center; width:36px; height:36px; border-radius:10px; background:#061522; color:#dabb70; font:600 20px/1 "Cormorant Garamond",serif; }
 .parish-life-community-tool strong { align-self:end; font:600 18px/1.05 "Cormorant Garamond",serif; }
@@ -9971,4 +9971,73 @@ html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-link],
   .exchange-draft-photo-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .exchange-photo-picker-actions { display:grid; grid-template-columns:1fr 1fr; }
   .koinonia-trust-banner { align-items:flex-start; flex-direction:column; }
+}
+
+/* Koinonia Prayer Requests */
+.prayer-requests-shell { max-width:900px; margin:0 auto; }
+.prayer-requests-hero { background:linear-gradient(135deg,#061522 0%,#132b3b 68%,#344047 100%); }
+.prayer-pastoral-notice { display:flex; align-items:flex-start; gap:13px; margin:14px 0; border:1px solid rgba(196,156,80,.34); border-radius:14px; padding:14px 16px; background:#fffaf0; color:#34444e; }
+.prayer-pastoral-notice > span { display:grid; place-items:center; width:36px; height:36px; flex:0 0 auto; border-radius:50%; background:#061522; color:#dabb70; font:600 21px/1 "Cormorant Garamond",serif; }
+.prayer-pastoral-notice strong { display:block; color:#061522; font-size:13px; }
+.prayer-pastoral-notice p { margin:3px 0 0; color:#66737b; font-size:12px; line-height:1.5; }
+.prayer-filter-bar { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 12px; }
+.prayer-filter-bar button { min-height:36px; border:1px solid #d8d3c7; border-radius:999px; padding:0 13px; background:#fff; color:#59666f; font:700 11px/1 "DM Sans",sans-serif; cursor:pointer; }
+.prayer-filter-bar button:hover { border-color:#b88f42; color:#795c24; }
+.prayer-filter-bar button[aria-pressed="true"] { border-color:#061522; background:#061522; color:#fff; }
+#prayerMineFilter { margin-left:auto; }
+.prayer-request-list { display:grid; gap:12px; }
+.prayer-request-card { border:1px solid rgba(196,156,80,.32); border-radius:17px; padding:17px 18px; background:linear-gradient(145deg,#fff,#faf6eb); box-shadow:0 6px 18px rgba(6,21,34,.055); }
+.prayer-request-card.is-answered { border-color:#bfd7c6; background:linear-gradient(145deg,#fff,#f1f8f3); }
+.prayer-request-card.is-pending,.prayer-request-card.is-flagged { border-style:dashed; }
+.prayer-request-card header { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:10px; }
+.prayer-request-avatar { display:grid; place-items:center; width:36px; height:36px; border-radius:50%; background:#8a6a2c; color:#fff; font:600 17px/1 "Cormorant Garamond",serif; }
+.prayer-request-card header > div { display:grid; gap:1px; min-width:0; }
+.prayer-request-card header strong { color:#10222f; font-size:13px; }
+.prayer-request-card header small { color:#7a858c; font-size:10px; }
+.prayer-request-card header em { border-radius:999px; padding:5px 8px; background:#f3ead5; color:#75591f; font:700 9px/1 "DM Sans",sans-serif; font-style:normal; white-space:nowrap; }
+.prayer-request-card.is-answered header em { background:#e2f0e6; color:#2f6743; }
+.prayer-request-card.is-declined header em,.prayer-request-card.is-archived header em { background:#ecebea; color:#667078; }
+.prayer-request-card > p { margin:15px 0; color:#263943; font:500 15px/1.65 "DM Sans",sans-serif; white-space:pre-wrap; }
+.prayer-request-card > aside { display:grid; gap:3px; margin:0 0 13px; border-left:3px solid #b88f42; padding:7px 10px; background:#fffaf0; color:#5f6b72; font-size:11px; }
+.prayer-request-card > aside strong { color:#594417; }
+.prayer-request-card footer { display:flex; align-items:center; justify-content:space-between; gap:12px; border-top:1px solid rgba(6,21,34,.08); padding-top:12px; }
+.prayer-request-card footer > span { color:#738087; font-size:10px; }
+.prayer-request-card footer > div { display:flex; align-items:center; justify-content:flex-end; gap:7px; flex-wrap:wrap; }
+.prayer-prayed-button,.prayer-secondary-action,.prayer-report-link { min-height:32px; border-radius:9px; padding:0 10px; font:700 10px/1 "DM Sans",sans-serif; cursor:pointer; }
+.prayer-prayed-button { display:inline-flex; align-items:center; gap:5px; border:1px solid #a77f31; background:transparent; color:#75591f; }
+.prayer-prayed-button.is-prayed { background:#8a6a2c; color:#fff; }
+.prayer-secondary-action { border:1px solid #d5d0c5; background:#fff; color:#4f5c64; }
+.prayer-report-link { border:0; background:transparent; color:#7a858c; text-decoration:underline; }
+.prayer-empty-state { padding:38px 22px; }
+.prayer-empty-state > span { display:block; margin-bottom:8px; color:#a77f31; font:600 34px/1 "Cormorant Garamond",serif; }
+.prayer-dialog { width:min(640px,calc(100% - 28px)); max-height:calc(100vh - 28px); border:0; border-radius:20px; padding:0; background:#fffdf8; color:#172934; box-shadow:0 24px 70px rgba(6,21,34,.32); }
+.prayer-dialog::backdrop { background:rgba(6,21,34,.62); backdrop-filter:blur(3px); }
+.prayer-dialog form { position:relative; display:grid; gap:15px; padding:26px; }
+.prayer-dialog h2 { margin:0; color:#061522; font:600 31px/1.08 "Cormorant Garamond",serif; }
+.prayer-dialog form > p { margin:-8px 0 0; color:#66737b; font-size:12px; line-height:1.5; }
+.prayer-dialog-close { position:absolute; top:16px; right:16px; width:34px; height:34px; border:1px solid #ddd7ca; border-radius:50%; background:#fff; color:#59666f; font-size:20px; cursor:pointer; }
+.prayer-dialog label:not(.prayer-anonymous-option) { display:grid; gap:7px; color:#233743; font-size:12px; }
+.prayer-dialog textarea,.prayer-dialog select { width:100%; border:1px solid #d8d2c7; border-radius:11px; padding:11px 12px; background:#fff; color:#132631; font:500 13px/1.5 "DM Sans",sans-serif; }
+.prayer-dialog textarea:focus,.prayer-dialog select:focus { outline:2px solid rgba(184,143,66,.25); border-color:#b88f42; }
+.prayer-audience-options { display:grid; gap:8px; margin:0; border:0; padding:0; }
+.prayer-audience-options legend { margin-bottom:7px; color:#233743; font-size:12px; font-weight:700; }
+.prayer-audience-options label,.prayer-anonymous-option { display:flex; align-items:flex-start; gap:10px; border:1px solid #ddd8ce; border-radius:11px; padding:11px 12px; background:#fff; cursor:pointer; }
+.prayer-audience-options input,.prayer-anonymous-option input { margin-top:3px; accent-color:#8a6a2c; }
+.prayer-audience-options span,.prayer-anonymous-option span { display:grid; gap:2px; }
+.prayer-audience-options strong,.prayer-anonymous-option strong { color:#172934; font-size:12px; }
+.prayer-audience-options small,.prayer-anonymous-option small { color:#6f7b82; font-size:10px; line-height:1.45; }
+.prayer-dialog-actions { display:flex; justify-content:flex-end; gap:9px; margin-top:2px; }
+.prayer-report-dialog { width:min(520px,calc(100% - 28px)); }
+@media (max-width:700px) {
+  .prayer-requests-shell { padding-left:14px; padding-right:14px; }
+  .prayer-request-card footer { align-items:flex-start; flex-direction:column; }
+  .prayer-request-card footer > div { width:100%; justify-content:flex-start; }
+  #prayerMineFilter { margin-left:0; }
+}
+@media (max-width:480px) {
+  .prayer-request-card { padding:15px; }
+  .prayer-request-card header { grid-template-columns:auto minmax(0,1fr); }
+  .prayer-request-card header em { grid-column:2; justify-self:start; }
+  .prayer-dialog form { padding:24px 18px 19px; }
+  .prayer-dialog-actions { display:grid; grid-template-columns:1fr 1fr; }
 }

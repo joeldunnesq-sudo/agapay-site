@@ -100,6 +100,7 @@
     groups: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c.5-4 2.8-6 5.5-6s5 2 5.5 6"/><path d="M14 15c3.5.2 5.8 1.9 6.5 5"/></svg>',
     signups: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5M8 16h3"/><path d="m15 16 1.5 1.5L20 14"/></svg>',
     exchange: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h13"/><path d="m14 4 3 3-3 3"/><path d="M20 17H7"/><path d="m10 14-3 3 3 3"/></svg>',
+    prayers: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.7A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/><path d="M12 7v7M9.5 10h5"/></svg>',
     calendar: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/></svg>',
     today: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/><circle cx="12" cy="15.5" r="1.7"/></svg>',
     commemorations: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20"/><path d="M5 7h14"/><path d="M7 12h10"/><path d="M9 22h6"/></svg>',
@@ -131,6 +132,7 @@
       { id: "directory", href: "/myagapay/directory", label: "Directory", short: "Parish member directory", icon: icons.directory, parishFeature: "directoryEnabled" },
       { id: "signups", href: "/myagapay/signups", label: "Parish Signups", short: "Serve the faithful", icon: icons.signups, parishFeature: "signupsEnabled" },
       { id: "exchange", href: "/myagapay/exchange", label: "Parish Exchange", short: "Offer or request useful items", icon: icons.exchange, parishFeature: "exchangeEnabled" },
+      { id: "prayers", href: "/myagapay/prayer-requests", label: "Prayer Requests", short: "Pray for one another", icon: icons.prayers, parishFeature: "prayerRequestsEnabled" },
       { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore, parishFeature: "bookstoreEnabled" },
       { id: "settings", href: "/myagapay/account", label: "Settings", short: "Account settings", icon: icons.account, mobileFallbackFor: "bookstoreEnabled", desktopHidden: true },
       { id: "learn", href: "/myagapay/learn", label: "Learn", short: "Homeschool dashboard", icon: icons.learn, mobileFallbackFor: "directoryEnabled" }
@@ -145,6 +147,7 @@
     communicationsEnabled: false,
     signupsEnabled: false,
     exchangeEnabled: false,
+    prayerRequestsEnabled: false,
     parishLifeAvailable: false
   };
   let capabilitiesLoaded = false;
@@ -182,7 +185,7 @@
     if (pathname.startsWith("/myagapay/learn")) return "learn";
     if (pathname === "/myagapay" || pathname === "/myagapay/" || pathname === "/myagapay/dashboard") return "giving";
     if (pathname.startsWith("/myagapay/bookstore")) return "bookstore";
-    if (pathname.startsWith("/myagapay/parish-life") || pathname.startsWith("/myagapay/feed") || pathname.startsWith("/myagapay/news") || pathname.startsWith("/myagapay/groups") || pathname.startsWith("/myagapay/signups") || pathname.startsWith("/myagapay/exchange") || pathname.startsWith("/myagapay/teaching") || pathname.startsWith("/myagapay/media") || pathname.startsWith("/myagapay/calendar")) return "parish-life";
+    if (pathname.startsWith("/myagapay/parish-life") || pathname.startsWith("/myagapay/feed") || pathname.startsWith("/myagapay/news") || pathname.startsWith("/myagapay/groups") || pathname.startsWith("/myagapay/signups") || pathname.startsWith("/myagapay/exchange") || pathname.startsWith("/myagapay/prayer-requests") || pathname.startsWith("/myagapay/teaching") || pathname.startsWith("/myagapay/media") || pathname.startsWith("/myagapay/calendar")) return "parish-life";
     if (pathname.startsWith("/myagapay/sacraments") || pathname.startsWith("/myagapay/giving/commemorations") || pathname.startsWith("/myagapay/giving/names")) return "commemorations";
     if (pathname.startsWith("/myagapay/directory")) return "directory";
     if (pathname.startsWith("/myagapay/giving/history") || pathname.startsWith("/myagapay/giving/offerings")) return "history";
@@ -193,7 +196,7 @@
   }
 
   function ensureParishLifeBackLink(pathname = window.location.pathname) {
-    const isSubpage = /^\/myagapay\/(?:feed|news|groups|teaching|media(?:\/watch)?|signups|exchange|calendar)(?:\.html)?\/?$/.test(pathname);
+    const isSubpage = /^\/myagapay\/(?:feed|news|groups|teaching|media(?:\/watch)?|signups|exchange|prayer-requests|calendar)(?:\.html)?\/?$/.test(pathname);
     if (!isSubpage || document.querySelector("[data-parish-life-back]")) return;
     const page = document.querySelector(".page");
     if (!page) return;
@@ -606,6 +609,7 @@
       communicationsEnabled: Boolean(parish?.communicationsEnabled),
       signupsEnabled: Boolean(parish?.signupsEnabled),
       exchangeEnabled: Boolean(parish?.exchangeEnabled),
+      prayerRequestsEnabled: Boolean(parish?.prayerRequestsEnabled),
       parishLifeLabel: String(parish?.parishLifeLabel || ""),
       parishLifeAvailable: Boolean(parish?.parishLifeAvailable)
     };
@@ -667,6 +671,10 @@
       return;
     }
     if (authoritative && window.location.pathname.startsWith("/myagapay/exchange") && !parishCapabilities.exchangeEnabled) {
+      window.location.replace("/myagapay/parish-life");
+      return;
+    }
+    if (authoritative && window.location.pathname.startsWith("/myagapay/prayer-requests") && !parishCapabilities.prayerRequestsEnabled) {
       window.location.replace("/myagapay/parish-life");
       return;
     }

@@ -19,6 +19,69 @@
       --serif: 'Cormorant Garamond', Georgia, serif;
       --sans: 'DM Sans', system-ui, sans-serif;
     }
+
+/* Koinonia Prayer Requests dashboard */
+.prayer-admin-workspace { display:grid; gap:18px; border:1px solid #d5d1c7; border-radius:22px; padding:25px; background:#f7f4ed; box-shadow:0 8px 24px rgba(13,23,34,.055); }
+.prayer-admin-head { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
+.prayer-admin-head h2 { margin:3px 0 4px; color:#0d1722; font:600 34px/1.08 var(--serif); letter-spacing:-.025em; }
+.prayer-admin-head p { margin:0; color:#68727b; font-size:13px; }
+.prayer-admin-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+.prayer-admin-metrics article { display:grid; gap:3px; border:1px solid #d9d5cc; border-radius:15px; padding:15px; background:#fff; box-shadow:0 4px 14px rgba(13,23,34,.04); }
+.prayer-admin-metrics span { color:#66737b; font-size:11px; font-weight:700; }
+.prayer-admin-metrics strong { color:#0d1722; font:600 30px/1 var(--serif); }
+.prayer-admin-metrics small { color:#8a9398; font-size:9px; }
+.prayer-admin-layout { display:grid; grid-template-columns:minmax(0,1.75fr) minmax(260px,.75fr); gap:15px; align-items:start; }
+.prayer-admin-inbox,.prayer-admin-settings { border:1px solid #d9d5cc; border-radius:17px; background:#fff; box-shadow:0 5px 16px rgba(13,23,34,.04); }
+.prayer-admin-inbox { overflow:hidden; }
+.prayer-admin-panel-head { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; border-bottom:1px solid #e4e0d8; padding:17px; }
+.prayer-admin-panel-head h3,.prayer-admin-settings h3 { margin:2px 0 0; color:#111d27; font:600 24px/1.1 var(--serif); }
+.prayer-admin-filters { display:flex; justify-content:flex-end; gap:5px; flex-wrap:wrap; }
+.prayer-admin-filters button { min-height:30px; border:1px solid #d7d2c8; border-radius:999px; padding:0 9px; background:#fff; color:#66737b; font:700 9px/1 var(--sans); cursor:pointer; }
+.prayer-admin-filters button[aria-pressed="true"] { border-color:#0d1722; background:#0d1722; color:#fff; }
+#prayerAdminList { display:grid; }
+.prayer-admin-row { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:12px; align-items:start; padding:16px 17px; border-bottom:1px solid #ece8e0; }
+.prayer-admin-row:last-child { border-bottom:0; }
+.prayer-admin-row.is-flagged { background:#fff6f2; }
+.prayer-admin-row.is-clergy { background:#fbf8f0; }
+.prayer-admin-avatar { display:grid; place-items:center; width:38px; height:38px; border-radius:50%; background:#0d1722; color:#d8b66b; font:600 18px/1 var(--serif); }
+.prayer-admin-row-copy { min-width:0; }
+.prayer-admin-row-meta { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:5px; }
+.prayer-admin-row-meta strong { color:#152735; font-size:12px; }
+.prayer-admin-row-meta span { border-radius:999px; padding:4px 7px; background:#eee9dd; color:#72581f; font:700 8px/1 var(--sans); }
+.prayer-admin-row-meta span.is-alert { background:#f5dfdc; color:#913c36; }
+.prayer-admin-row-copy > p { display:-webkit-box; overflow:hidden; margin:0; color:#4e5f69; font-size:12px; line-height:1.55; -webkit-box-orient:vertical; -webkit-line-clamp:3; }
+.prayer-admin-row-copy > small { display:block; margin-top:6px; color:#899197; font-size:9px; }
+.prayer-admin-row-actions { display:flex; gap:6px; align-items:center; }
+.prayer-admin-row-actions button { min-height:32px; border:1px solid #d2ccc0; border-radius:9px; padding:0 9px; background:#fff; color:#475761; font:700 9px/1 var(--sans); cursor:pointer; }
+.prayer-admin-row-actions button.is-primary { border-color:#8c6a29; background:#8c6a29; color:#fff; }
+.prayer-admin-empty { padding:38px 20px; color:#6f7980; text-align:center; }
+.prayer-admin-empty strong { display:block; margin-bottom:5px; color:#20333f; }
+.prayer-admin-settings { position:sticky; top:14px; padding:18px; }
+.prayer-admin-settings > div > p { margin:5px 0 16px; color:#6e7980; font-size:10px; line-height:1.45; }
+.prayer-admin-settings form { display:grid; gap:12px; }
+.prayer-admin-settings form > label:not(.prayer-admin-check) { display:grid; gap:6px; color:#334651; font-size:10px; font-weight:700; }
+.prayer-admin-settings input[type="number"],.prayer-admin-settings textarea { width:100%; border:1px solid #d6d1c8; border-radius:9px; padding:9px 10px; background:#fff; color:#1b303d; font:500 11px/1.45 var(--sans); }
+.prayer-admin-settings label > small { color:#7d878d; font-size:8px; font-weight:500; }
+.prayer-admin-check { display:flex; gap:9px; align-items:flex-start; border:1px solid #e0dbd1; border-radius:10px; padding:10px; background:#faf8f3; cursor:pointer; }
+.prayer-admin-check input { margin-top:2px; accent-color:#8c6a29; }
+.prayer-admin-check span { display:grid; gap:2px; }
+.prayer-admin-check strong { color:#243744; font-size:10px; }
+.prayer-admin-check small { color:#7b858b; font-size:8px; line-height:1.4; }
+.prayer-admin-dialog { width:min(640px,calc(100% - 32px)); max-height:calc(100vh - 32px); border:0; border-radius:19px; padding:0; background:#fffdf8; color:#1b303d; box-shadow:0 24px 70px rgba(6,21,34,.35); }
+.prayer-admin-dialog::backdrop { background:rgba(6,21,34,.63); backdrop-filter:blur(3px); }
+.prayer-admin-dialog form { position:relative; display:grid; gap:14px; padding:25px; }
+.prayer-admin-dialog h2 { margin:0; color:#0d1722; font:600 31px/1.08 var(--serif); }
+.prayer-admin-dialog-close { position:absolute; top:15px; right:15px; display:grid; place-items:center; width:34px; height:34px; border:1px solid #ddd7cd; border-radius:50%; background:#fff; color:#52616a; font-size:20px; cursor:pointer; }
+.prayer-admin-review-request { border:1px solid #ddd7cc; border-radius:12px; padding:13px; background:#f8f4ea; }
+.prayer-admin-review-request strong { color:#0d1722; font-size:11px; }
+.prayer-admin-review-request p { margin:5px 0 0; color:#465963; font-size:12px; line-height:1.55; white-space:pre-wrap; }
+.prayer-admin-review-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.prayer-admin-dialog label { display:grid; gap:6px; color:#2d414e; font-size:10px; font-weight:700; }
+.prayer-admin-dialog select,.prayer-admin-dialog textarea { width:100%; border:1px solid #d6d1c8; border-radius:9px; padding:9px 10px; background:#fff; color:#1b303d; font:500 11px/1.45 var(--sans); }
+.prayer-admin-dialog-actions { display:flex; justify-content:flex-end; gap:9px; }
+@media (max-width:980px) { .prayer-admin-layout { grid-template-columns:1fr; } .prayer-admin-settings { position:static; } }
+@media (max-width:760px) { .prayer-admin-workspace { padding:18px; } .prayer-admin-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .prayer-admin-panel-head { flex-direction:column; } .prayer-admin-filters { justify-content:flex-start; } .prayer-admin-row { grid-template-columns:auto minmax(0,1fr); } .prayer-admin-row-actions { grid-column:2; } }
+@media (max-width:520px) { .prayer-admin-head { flex-direction:column; } .prayer-admin-review-grid { grid-template-columns:1fr; } .prayer-admin-dialog form { padding:22px 17px 18px; } }
     body { margin: 0; min-height: 100vh; font-family: var(--sans); background: linear-gradient(180deg, rgba(6,21,34,0.07), transparent 320px), linear-gradient(90deg, rgba(184,144,47,0.06), transparent 32%, rgba(11,33,48,0.05)), var(--cream); color: var(--ink); }
     body.dashboard-booting { overflow: hidden; }
     body.dashboard-booting .app { visibility: hidden; }
@@ -1010,7 +1073,7 @@
     .koinonia-preview-button { border-color:rgba(255,255,255,.28) !important; background:rgba(255,255,255,.08) !important; color:#fff !important; backdrop-filter:blur(8px); }
     .koinonia-preview-button:hover { border-color:#c9a24a !important; background:rgba(201,162,74,.16) !important; }
     .koinonia-studio-notice { border-color:#dec78f; background:#fffaf0; }
-    .koinonia-studio-nav { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:7px; padding:7px; border:1px solid #d4d1c6; border-radius:16px; background:rgba(255,255,255,.78); box-shadow:0 5px 18px rgba(13,23,34,.05); }
+    .koinonia-studio-nav { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:7px; padding:7px; border:1px solid #d4d1c6; border-radius:16px; background:rgba(255,255,255,.78); box-shadow:0 5px 18px rgba(13,23,34,.05); }
     .koinonia-studio-nav button { display:flex; align-items:center; justify-content:center; gap:8px; min-height:46px; border:0; border-radius:11px; background:transparent; color:#68727b; font:700 12px/1 var(--sans); cursor:pointer; }
     .koinonia-studio-nav button span { color:#9b7a36; font-size:16px; }
     .koinonia-studio-nav button:hover { background:#f5f2eb; color:#0d1722; }

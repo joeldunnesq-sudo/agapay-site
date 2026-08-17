@@ -223,6 +223,7 @@ import { handleKoinoniaAccess } from "./handlers/koinonia-access.js";
 import { handleDonorKoinoniaCommunityTools } from "./handlers/koinonia-community-tools.js";
 import { handleDonorKoinoniaSignups, sendScheduledSignupReminders } from "./handlers/koinonia-signups.js";
 import { expireKoinoniaExchangeListings, handleDonorKoinoniaExchange } from "./handlers/koinonia-exchange.js";
+import { handleDonorKoinoniaPrayerRequests, handleParishPrayerRequests } from "./handlers/koinonia-prayer-requests.js";
 import { handleDonorTeaching, handleParishTeaching } from "./handlers/parish-teaching.js";
 import { handleDonorVideo, handleParishVideo } from "./handlers/parish-video.js";
 import { handleDonorBlog, handleDonorCustomNewsFeeds, handleDonorExternalFeed, handleDonorOcaNews, handleParishBlog } from "./handlers/parish-blog.js";
@@ -704,6 +705,8 @@ const MYAGAPAY_ASSET_ROUTES = new Map([
   ["/myagapay/signups/", "/myagapay/signups.html"],
   ["/myagapay/exchange", "/myagapay/exchange.html"],
   ["/myagapay/exchange/", "/myagapay/exchange.html"],
+  ["/myagapay/prayer-requests", "/myagapay/prayer-requests.html"],
+  ["/myagapay/prayer-requests/", "/myagapay/prayer-requests.html"],
   ["/myagapay/teaching", "/myagapay/teaching.html"],
   ["/myagapay/teaching/", "/myagapay/teaching.html"],
   ["/myagapay/media", "/myagapay/media.html"],
@@ -2896,6 +2899,7 @@ export default {
       || url.pathname === "/api/donor/koinonia/community-tools" || url.pathname.startsWith("/api/donor/koinonia/community-tools/")
       || url.pathname === "/api/donor/koinonia/signups" || url.pathname.startsWith("/api/donor/koinonia/signups/")
       || url.pathname === "/api/donor/koinonia/exchange" || url.pathname.startsWith("/api/donor/koinonia/exchange/")
+      || url.pathname === "/api/donor/koinonia/prayer-requests" || url.pathname.startsWith("/api/donor/koinonia/prayer-requests/")
       || url.pathname === "/api/donor/feed" || url.pathname.startsWith("/api/donor/feed/")
       || url.pathname === "/api/donor/groups" || url.pathname.startsWith("/api/donor/groups/")
       || url.pathname === "/api/donor/teaching" || url.pathname.startsWith("/api/donor/teaching/")
@@ -2903,12 +2907,13 @@ export default {
       || url.pathname === "/api/donor/digest/subscription"
       || url.pathname === "/api/donor/digest/unsubscribe"
       || url.pathname === "/api/admin/communications/send-weekly-digest"
-      || (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/communications"));
+      || (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/communications"))
+      || (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/prayer-requests"));
     if (parishLifeApiRoute && !parishLifeAvailable) {
       return json({ error: "Not found" }, { status: 404 });
     }
 
-    const parishLifePageRoute = /^\/myagapay\/(?:feed|groups|signups|exchange|teaching|media|media\/watch)(?:\.html)?\/?$/.test(url.pathname);
+    const parishLifePageRoute = /^\/myagapay\/(?:feed|groups|signups|exchange|prayer-requests|teaching|media|media\/watch)(?:\.html)?\/?$/.test(url.pathname);
     if (parishLifePageRoute && !parishLifeAvailable) {
       return new Response("Not found", {
         status: 404,
@@ -3326,6 +3331,9 @@ export default {
     if (url.pathname === "/api/donor/koinonia/exchange" || url.pathname.startsWith("/api/donor/koinonia/exchange/")) {
       return handleDonorKoinoniaExchange(request, env, ctx);
     }
+    if (url.pathname === "/api/donor/koinonia/prayer-requests" || url.pathname.startsWith("/api/donor/koinonia/prayer-requests/")) {
+      return handleDonorKoinoniaPrayerRequests(request, env);
+    }
     if (url.pathname === "/api/donor/feed") {
       return handleDonorFeed(request, env);
     }
@@ -3568,6 +3576,7 @@ export default {
         communicationsEnabled:  true,
         signupsEnabled:         true,
         exchangeEnabled:        true,
+        prayerRequestsEnabled:  true,
         dashboardInviteEmailStatus: "sent",
         adminNotificationEmailStatus: "sent",
         receivedAt:             "2024-09-22T09:00:00.000Z",
@@ -3600,6 +3609,7 @@ export default {
         communicationsEnabled: true,
         signupsEnabled: true,
         exchangeEnabled: true,
+        prayerRequestsEnabled: true,
         givingFunds: demoFunds,
         campaigns: demoCampaigns,
         feastCampaigns: [],
@@ -3913,6 +3923,12 @@ export default {
         return handleParishBlog(request, env, parishId);
       }
       return handleParishCommunications(request, env, parishId, subpath, ctx);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/prayer-requests")) {
+      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/prayer-requests");
+      const parishId = decodeURIComponent(parts[0].replace(/\/+$/, ""));
+      const subpath = parts.slice(1).join("/prayer-requests") || "";
+      return handleParishPrayerRequests(request, env, parishId, subpath);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/email-credentials")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/email-credentials", ""));

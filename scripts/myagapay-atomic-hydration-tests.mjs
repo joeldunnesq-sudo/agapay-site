@@ -29,6 +29,7 @@ const protectedPages = [
   "public/myagapay/media.html",
   "public/myagapay/news.html",
   "public/myagapay/parish-life.html",
+  "public/myagapay/prayer-requests.html",
   "public/myagapay/sacraments.html",
   "public/myagapay/teaching.html",
   "public/myagapay/watch.html",
@@ -55,14 +56,16 @@ for (const file of protectedPages) {
     ].includes(file)
       ? "20260803storefront1"
     : file === "public/myagapay/parish-life.html"
-          ? "20260816parishtools2"
+          ? "20260817prayers1"
+        : file === "public/myagapay/prayer-requests.html"
+          ? "20260817prayers1"
         : file === "public/myagapay/giving/calendar.html"
           ? "20260809readingscroll2"
           : "20260802playerredesign1";
   assert.match(html, /<html[^>]*data-myagapay-hydrate/, `${file} must opt into the pre-paint hydration shield`);
   assert.match(html, new RegExp(`/donor/style\\.css\\?v=${expectedStylesheetVersion}`), `${file} must load the current atomic-paint CSS version`);
-  assert.match(html, /<script src="\/myagapay-shell\.js\?v=20260816parishtools2"><\/script>/, `${file} must install the tracker before page-level scripts`);
-  assert.doesNotMatch(html, /myagapay-shell\.js\?v=20260816parishtools2" defer/, `${file} must not defer initial shell setup`);
+  assert.match(html, /<script src="\/myagapay-shell\.js\?v=20260817prayers1"><\/script>/, `${file} must install the tracker before page-level scripts`);
+  assert.doesNotMatch(html, /myagapay-shell\.js\?v=20260817prayers1" defer/, `${file} must not defer initial shell setup`);
 }
 
 assert.match(

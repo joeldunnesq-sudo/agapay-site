@@ -1,9 +1,9 @@
 import { d1First, d1Run, hasProductionStore, json, missingProductionStoreResponse, rateLimit } from "../lib/core.js";
-import { exchangeEnabledFor, signupsEnabledFor } from "../lib/entitlements.js";
+import { exchangeEnabledFor, prayerRequestsEnabledFor, signupsEnabledFor } from "../lib/entitlements.js";
 import { verifiedHouseholdAccess } from "./koinonia-access.js";
 import { findRegistrationByParishId } from "./parish.js";
 
-const TOOLS = new Set(["signups", "exchange"]);
+const TOOLS = new Set(["signups", "exchange", "prayers"]);
 const PRIVATE_HEADERS = {
   "Cache-Control": "private, no-store",
   "X-Robots-Tag": "noindex, nofollow",
@@ -22,10 +22,11 @@ function enabledTools(registration) {
   return {
     signups: signupsEnabledFor(registration),
     exchange: exchangeEnabledFor(registration),
+    prayers: prayerRequestsEnabledFor(registration),
   };
 }
 
-export async function getCommunityToolBadgeCounts(env, context, enabled = { signups: true, exchange: true }, asOf = Date.now()) {
+export async function getCommunityToolBadgeCounts(env, context, enabled = { signups: true, exchange: true, prayers: true }, asOf = Date.now()) {
   const row = await d1First(env, `
     SELECT
       (SELECT COUNT(*)
@@ -43,15 +44,32 @@ export async function getCommunityToolBadgeCounts(env, context, enabled = { sign
            SELECT view.last_opened_at FROM koinonia_community_tool_views view
            WHERE view.parish_id = ?1 AND view.person_id = ?2 AND view.tool = 'exchange'
          ), 0)) AS exchange_count
+      ,(SELECT COUNT(*)
+       FROM koinonia_prayer_requests prayer
+       WHERE prayer.parish_id = ?1 AND prayer.status = 'active' AND prayer.visibility = 'parish_members'
+         AND (prayer.expires_at IS NULL OR prayer.expires_at > ?3)
+         AND prayer.published_at > COALESCE((
+           SELECT view.last_opened_at FROM koinonia_prayer_views view
+           WHERE view.parish_id = ?1 AND view.person_id = ?2
+         ), 0)) AS prayers_count
   `, context.parishId, context.personId, asOf);
   return {
     signups: enabled.signups ? Math.max(0, Number(row?.signups_count) || 0) : 0,
     exchange: enabled.exchange ? Math.max(0, Number(row?.exchange_count) || 0) : 0,
+    prayers: enabled.prayers ? Math.max(0, Number(row?.prayers_count) || 0) : 0,
   };
 }
 
 export async function markCommunityToolOpened(env, context, tool, openedAt = Date.now()) {
   if (!TOOLS.has(tool)) throw new Error("Unknown Community Tool.");
+  if (tool === "prayers") {
+    await d1Run(env, `
+      INSERT INTO koinonia_prayer_views (parish_id, person_id, last_opened_at)
+      VALUES (?1, ?2, ?3)
+      ON CONFLICT(parish_id, person_id) DO UPDATE SET last_opened_at = excluded.last_opened_at
+    `, context.parishId, context.personId, openedAt);
+    return { ok: true, tool, lastOpenedAt: openedAt };
+  }
   await d1Run(env, `
     INSERT INTO koinonia_community_tool_views (parish_id, person_id, tool, last_opened_at)
     VALUES (?1, ?2, ?3, ?4)
