@@ -295,7 +295,7 @@ assert.match(sources.parishDashboard, /id="signupsEnabledSwitch"[\s\S]*id="excha
 assert.match(sources.parishApp, /JSON\.stringify\(\{ \[field\]: enabled \}\)/);
 assert.match(sources.signupsPage, /Koinonia[\s\S]*Signups/);
 assert.match(sources.signupsPage, /id="signupActionDialog"[\s\S]*id="signupActionText"/, "signup details and coverage reasons must use an accessible modal");
-assert.match(sources.signupsPage, /myagapay-shell\.js\?v=20260817prayers1/, "Parish Signups must load the current unified app navigation shell");
+assert.match(sources.signupsPage, /myagapay-shell\.js\?v=20260817prayerui1/, "Parish Signups must load the current unified app navigation shell");
 assert.match(sources.signupsClient, /JSON\.stringify\(\{ comment \}\)/, "claim details must be sent to the signup API");
 assert.doesNotMatch(sources.signupsClient, /window\.prompt/, "coverage requests must not use a browser prompt");
 assert.match(sources.parishLife, /\/api\/donor\/koinonia\/signups\/upcoming/);

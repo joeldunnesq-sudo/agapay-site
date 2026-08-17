@@ -127,14 +127,26 @@ const sources = {
   memberClient: read("public/myagapay/prayer-requests.js"),
   dashboard: read("public/parish/dashboard.html"),
   dashboardClient: read("public/parish/app.js"),
+  donorStyles: read("public/donor/style.css"),
+  shell: read("public/myagapay-shell.js"),
 };
 assert.match(sources.worker, /\/api\/donor\/koinonia\/prayer-requests/);
 assert.match(sources.worker, /handleParishPrayerRequests/);
 assert.match(sources.handler, /prayerRequestsEnabledFor\(found\.registration\)/, "the member API must enforce the ON/OFF switch server-side");
 assert.match(sources.parishLife, /Prayer Requests[\s\S]*data-community-tool-badge="prayers"/);
+assert.match(sources.parishLife, /href="\/myagapay\/prayer-requests"><span aria-hidden="true">🙏<\/span>/, "the app Community Tool must use praying hands");
+assert.match(sources.shell, /prayers:[^\n]*🙏/, "the unified app navigation must use praying hands for Prayer Requests");
 assert.match(sources.memberPage, /Parish community[\s\S]*Clergy only[\s\S]*Post anonymously/);
 assert.match(sources.memberClient, /community-tools\/prayers\/opened/);
 assert.match(sources.dashboard, /id="prayerRequestsEnabledSwitch"[\s\S]*data-koinonia-panel="prayers"/);
+assert.match(sources.dashboard, /data-koinonia-view="prayers"[^>]*>[\s\S]*?🙏[\s\S]*?Prayer Requests<\/button>/, "the parish dashboard Prayer Requests tab must use praying hands");
+const koinoniaMenuIndex = sources.dashboard.indexOf('<nav class="koinonia-studio-nav"');
+assert.ok(sources.dashboard.indexOf('id="communicationsEnabledSwitch"') < koinoniaMenuIndex, "the master Koinonia switch must remain in the hero");
+for (const id of ["signupsEnabledSwitch", "exchangeEnabledSwitch", "prayerRequestsEnabledSwitch"]) {
+  assert.ok(sources.dashboard.indexOf(`id="${id}"`) > koinoniaMenuIndex, `${id} must sit in the feature menu below the hero`);
+}
+assert.match(sources.dashboard, /class="koinonia-feature-menu"[\s\S]*id="signupsEnabledSwitch"[\s\S]*id="exchangeEnabledSwitch"[\s\S]*id="prayerRequestsEnabledSwitch"/);
+assert.match(sources.donorStyles, /parish-life-liturgical-hero \.cal-date-badge \{[\s\S]*display: grid;[\s\S]*row-gap: 3px;/, "the Koinonia church date must evenly separate and center its three date rows");
 assert.match(sources.dashboard, /id="prayerApprovalRequired"[\s\S]*id="prayerAnonymousAllowed"[\s\S]*id="prayerArchiveDays"/);
 assert.match(sources.dashboardClient, /prayers: 'prayerRequestsEnabled'/);
 assert.match(sources.dashboardClient, /patchParishPrayerRequest[\s\S]*saveParishPrayerSettings/);

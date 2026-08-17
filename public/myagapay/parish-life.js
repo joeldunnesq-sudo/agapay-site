@@ -153,7 +153,7 @@ function parishLifeTierSectionsHtml(communicationsEnabled, capabilities = {}) {
   const communityTools = [
     capabilities.signupsEnabled ? '<a class="parish-life-community-tool" href="/myagapay/signups"><span aria-hidden="true">✓</span><strong>Parish Signups</strong><small>Serve the faithful</small><em>Open →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="signups" hidden></b></a>' : '',
     capabilities.exchangeEnabled ? '<a class="parish-life-community-tool" href="/myagapay/exchange"><span aria-hidden="true">⇄</span><strong>Parish Exchange</strong><small>Offer or request useful items</small><em>Browse →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="exchange" hidden></b></a>' : '',
-    capabilities.prayerRequestsEnabled ? '<a class="parish-life-community-tool" href="/myagapay/prayer-requests"><span aria-hidden="true">♡</span><strong>Prayer Requests</strong><small>Pray for one another</small><em>Pray →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="prayers" hidden></b></a>' : ''
+    capabilities.prayerRequestsEnabled ? '<a class="parish-life-community-tool" href="/myagapay/prayer-requests"><span aria-hidden="true">🙏</span><strong>Prayer Requests</strong><small>Pray for one another</small><em>Pray →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="prayers" hidden></b></a>' : ''
   ].filter(Boolean).join("");
   return `
     ${communityTools ? `<section class="parish-life-home-section" aria-labelledby="communityToolsHeading"><div class="parish-life-section-head"><h2 id="communityToolsHeading">Community Tools</h2></div><div class="parish-life-community-tools">${communityTools}</div></section>` : ""}

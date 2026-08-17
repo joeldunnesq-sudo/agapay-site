@@ -8,6 +8,7 @@ import {
   ANNOUNCEMENT_ALLOWED_TAGS,
   ANNOUNCEMENT_CATEGORIES,
   createParishAnnouncement,
+  deleteParishAnnouncement,
   getAnnouncementReadVisibility,
   getDonorAnnouncementFeed,
   listParishAnnouncements,
@@ -168,6 +169,10 @@ feed = await getDonorAnnouncementFeed(db, { parishId: "parish-one", donorId: "do
 assert.deepEqual(feed.announcements.map(({ id }) => id), [pinnedDraft.id], "archiving should remove an announcement from the donor feed");
 const adminAnnouncements = await listParishAnnouncements(db, "parish-one");
 assert.equal(adminAnnouncements.find(({ id }) => id === draft.id).status, "archived", "archiving should retain the announcement in the admin list");
+const deletedAnnouncement = await deleteParishAnnouncement(db, { parishId: "parish-one", announcementId: draft.id });
+assert.equal(deletedAnnouncement.id, draft.id, "deleting should return the removed announcement for asset cleanup");
+assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM parish_announcements WHERE id = ?").get(draft.id).count, 0, "deleting should permanently remove the announcement");
+assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM parish_content_reads WHERE content_type = 'announcement' AND content_id = ?").get(draft.id).count, 0, "deleting should remove announcement read history");
 
 const eventsDraft = await createParishAnnouncement(db, {
   parishId: "parish-one",
@@ -185,7 +190,7 @@ assert.throws(() => sqlite.prepare(`
 `).run(), /CHECK constraint failed/, "the announcement schema must reject categories outside its taxonomy");
 
 const handlerSource = readFileSync(path.join(root, "src", "handlers", "parish-communications.js"), "utf8");
-assert.match(handlerSource, /import \{ getReadContentIds, getReadReceipts, markContentRead \} from "\.\.\/lib\/content-reads\.js"/);
+assert.match(handlerSource, /import \{ deleteContentReads, getReadContentIds, getReadReceipts, markContentRead \} from "\.\.\/lib\/content-reads\.js"/);
 assert.match(handlerSource, /const CONTENT_TYPE = "announcement"/);
 assert.match(handlerSource, /getReadContentIds\(db, \{[\s\S]*?contentType: CONTENT_TYPE,[\s\S]*?contentIds,/);
 assert.match(handlerSource, /markContentRead\(db, \{[\s\S]*?contentType: CONTENT_TYPE,/);
@@ -201,6 +206,10 @@ assert.match(adminUiSource, /async function toggleCommunicationsFeature\(input\)
 assert.match(adminUiSource, /body: JSON\.stringify\(\{ communicationsEnabled: enabled \}\)/);
 assert.match(adminUiSource, /category: document\.getElementById\('announcementCategory'\)\.value/);
 assert.match(dashboardSource, /id="announcementCategory"[\s\S]*?value="general"[\s\S]*?value="services"[\s\S]*?value="education"/);
+assert.match(dashboardSource, /id="announcementEditDialog"[\s\S]*?id="announcementEditTitle"[\s\S]*?id="announcementEditCategory"[\s\S]*?id="announcementEditBody"[\s\S]*?id="announcementEditHeroImage"[\s\S]*?id="announcementEditPinned"/);
+assert.match(adminUiSource, /function saveAnnouncementEdit\([\s\S]*?title:[\s\S]*?category:[\s\S]*?body:[\s\S]*?pinned:/, "the full announcement editor must save every editable field");
+assert.match(adminUiSource, /async function deleteAnnouncement\([\s\S]*?method:'DELETE'/, "the dashboard must expose permanent announcement deletion");
+assert.match(handlerSource, /parts\.length === 1 && request\.method === "DELETE"[\s\S]*?deleteParishAnnouncement/, "the announcement API must authorize and handle permanent deletion");
 const feedUiSource = readFileSync(path.join(root, "public", "myagapay", "feed.js"), "utf8");
 assert.match(feedUiSource, /All[\s\S]*Pinned[\s\S]*Services[\s\S]*Events[\s\S]*Youth[\s\S]*Outreach[\s\S]*Education[\s\S]*General/);
 assert.match(feedUiSource, /announcementsForFilter\(value\)\.length/);

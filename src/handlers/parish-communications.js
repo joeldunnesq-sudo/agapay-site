@@ -1,4 +1,4 @@
-import { getReadContentIds, getReadReceipts, markContentRead } from "../lib/content-reads.js";
+import { deleteContentReads, getReadContentIds, getReadReceipts, markContentRead } from "../lib/content-reads.js";
 import { communicationsEnabledFor, hasModuleAccess } from "../lib/entitlements.js";
 import { agapayEmailHtml, resendSendingDomainFromWebsite, sendEmail } from "../lib/email.js";
 import { loadAllRegistrations } from "../lib/registrations.js";
@@ -205,6 +205,18 @@ export async function archiveParishAnnouncement(db, { parishId, announcementId }
     "SELECT * FROM parish_announcements WHERE id = ? AND parish_id = ?"
   ).bind(announcementId, parishId).first();
   return row ? announcementFromRow(row) : null;
+}
+
+export async function deleteParishAnnouncement(db, { parishId, announcementId }) {
+  const row = await db.prepare(
+    "SELECT * FROM parish_announcements WHERE id = ? AND parish_id = ?"
+  ).bind(announcementId, parishId).first();
+  if (!row) return null;
+  await deleteContentReads(db, { parishId, contentType: CONTENT_TYPE, contentId: announcementId });
+  await db.prepare(
+    "DELETE FROM parish_announcements WHERE id = ? AND parish_id = ?"
+  ).bind(announcementId, parishId).run();
+  return announcementFromRow(row);
 }
 
 export async function getDonorAnnouncementFeed(db, { parishId, donorId, category = "" }) {
@@ -621,6 +633,18 @@ export async function handleParishCommunications(request, env, parishId, subpath
       return announcement
         ? json({ ok: true, announcement })
         : json({ error: "Announcement not found" }, { status: 404 });
+    }
+    if (parts.length === 1 && request.method === "DELETE") {
+      const announcement = await deleteParishAnnouncement(db, {
+        parishId,
+        announcementId: decodeURIComponent(parts[0]),
+      });
+      if (!announcement) return json({ error: "Announcement not found" }, { status: 404 });
+      const publicBase = String(env.ANNOUNCEMENT_ASSETS_URL || "").replace(/\/+$/, "");
+      if (announcement.heroImageUrl && publicBase && env.ANNOUNCEMENT_ASSETS && announcement.heroImageUrl.startsWith(`${publicBase}/`)) {
+        await env.ANNOUNCEMENT_ASSETS.delete(announcement.heroImageUrl.slice(publicBase.length + 1)).catch(() => {});
+      }
+      return json({ ok: true, deletedId: announcement.id });
     }
     if (parts.length === 2 && parts[1] === "readers" && request.method === "GET") {
       const visibility = await getAnnouncementReadVisibility(db, {

@@ -49,3 +49,13 @@ export async function getReadReceipts(db, { parishId, contentType, contentId }) 
     readAt,
   }));
 }
+
+export async function deleteContentReads(db, { parishId, contentType, contentId }) {
+  await db
+    .prepare(`
+      DELETE FROM parish_content_reads
+      WHERE parish_id = ? AND content_type = ? AND content_id = ?
+    `)
+    .bind(parishId, contentType, contentId)
+    .run();
+}

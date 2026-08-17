@@ -8556,6 +8556,11 @@ textarea {
   top: 0;
   right: 0;
   z-index: 3;
+  display: grid;
+  grid-template-rows: auto minmax(34px, auto) auto;
+  align-items: center;
+  justify-items: center;
+  row-gap: 3px;
   width: 70px;
   border-top: 0;
   border-right: 0;
@@ -8564,9 +8569,9 @@ textarea {
   background: rgba(255, 255, 255, 0.085);
   backdrop-filter: blur(10px);
 }
-.donor-parish-life-page .parish-life-liturgical-hero .cal-date-weekday { font-size: 8.5px; }
-.donor-parish-life-page .parish-life-liturgical-hero .cal-date-day { margin: 1px 0; font-size: 30px; }
-.donor-parish-life-page .parish-life-liturgical-hero .cal-date-my { font-size: 9px; }
+.donor-parish-life-page .parish-life-liturgical-hero .cal-date-weekday { font-size: 8.5px; line-height: 1.15; }
+.donor-parish-life-page .parish-life-liturgical-hero .cal-date-day { display: grid; place-items: center; min-height: 34px; margin: 0; font-size: 30px; line-height: 1; }
+.donor-parish-life-page .parish-life-liturgical-hero .cal-date-my { font-size: 9px; line-height: 1.2; }
 .donor-parish-life-page .parish-life-liturgical-hero .cal-today-main { width: 100%; }
 
 /* The full calendar repeats the same compact, single-column hero treatment. */

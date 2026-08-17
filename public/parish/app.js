@@ -11399,6 +11399,7 @@
           ${item.status !== 'archived' ? `<button class="btn btn-ghost btn-sm" type="button" onclick="editAnnouncement('${escapeAttr(item.id)}')">Edit</button>` : ''}
           ${item.status === 'draft' ? `<button class="btn btn-gold btn-sm" type="button" onclick="publishAnnouncement('${escapeAttr(item.id)}',this)">Publish</button>` : ''}
           ${item.status !== 'archived' ? `<button class="btn btn-danger btn-sm" type="button" onclick="archiveAnnouncement('${escapeAttr(item.id)}',this)">Archive</button>` : ''}
+          <button class="btn btn-danger btn-sm" type="button" onclick="deleteAnnouncement('${escapeAttr(item.id)}',this)">Delete</button>
         </div>
         <div class="communications-readers" id="communicationsReaders-${escapeAttr(item.id)}" hidden></div>
       </article>
@@ -11494,8 +11495,8 @@
     panel.innerHTML = readers.length ? `<strong>${readers.length} parishioner${readers.length === 1 ? '' : 's'} read this</strong><ul>${readers.map(reader => `<li><span>${escapeHtml(reader.displayName || reader.donorId || 'Parishioner')}</span><time>${escapeHtml(new Date(reader.readAt).toLocaleString())}</time></li>`).join('')}</ul>` : '<strong>No readers yet</strong><p>Readers will appear here after opening this announcement in My AGAPAY.</p>';
   }
 
-  function insertAnnouncementFormatting(kind) {
-    const textarea = document.getElementById('announcementBody');
+  function insertAnnouncementFormatting(kind, targetId = 'announcementBody') {
+    const textarea = document.getElementById(targetId);
     if (!textarea) return;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
@@ -11846,16 +11847,59 @@
     return data.announcement;
   }
 
-  async function editAnnouncement(id) {
+  function editAnnouncement(id) {
     const item = communicationsState.announcements.find(row => row.id === id);
-    if (!item) return;
-    const title = prompt('Announcement title', item.title);
-    if (title === null) return;
-    const body = prompt('Announcement message', item.body);
-    if (body === null) return;
-    const pinned = confirm('Pin this announcement above newer updates?');
-    try { await patchAnnouncement(id, { title, body, pinned }); setStatus('Announcement updated.','success'); }
-    catch (error) { setStatus(error.message,'error'); }
+    const dialog = document.getElementById('announcementEditDialog');
+    if (!item || !dialog || item.status === 'archived') return;
+    dialog.dataset.announcementId = id;
+    document.getElementById('announcementEditTitle').value = item.title || '';
+    document.getElementById('announcementEditCategory').value = item.category || 'general';
+    document.getElementById('announcementEditBody').value = item.body || '';
+    document.getElementById('announcementEditPinned').checked = Boolean(item.pinned);
+    document.getElementById('announcementEditHeroImage').value = '';
+    document.getElementById('announcementEditHeroCurrent').textContent = item.heroImageUrl
+      ? 'A hero image is currently attached. Choose a file only to replace it.'
+      : 'No hero image is attached. Choose a file to add one.';
+    document.getElementById('announcementEditStatus').textContent = item.status === 'published'
+      ? 'This announcement is published. Saved changes appear immediately in My AGAPAY.'
+      : 'This announcement is still a draft.';
+    if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open','');
+    window.setTimeout(() => document.getElementById('announcementEditTitle')?.focus(), 40);
+  }
+
+  function closeAnnouncementEditor() {
+    const dialog = document.getElementById('announcementEditDialog');
+    if (!dialog) return;
+    delete dialog.dataset.announcementId;
+    if (typeof dialog.close === 'function') dialog.close(); else dialog.removeAttribute('open');
+    document.getElementById('announcementEditForm')?.reset();
+  }
+
+  async function saveAnnouncementEdit(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    if (!form.reportValidity()) return;
+    const dialog = document.getElementById('announcementEditDialog');
+    const id = dialog?.dataset.announcementId || '';
+    const button = form.querySelector('button[type="submit"]');
+    if (!id) return;
+    if (button) { button.disabled = true; button.classList.add('loading'); }
+    try {
+      await patchAnnouncement(id, {
+        title: document.getElementById('announcementEditTitle').value,
+        category: document.getElementById('announcementEditCategory').value,
+        body: document.getElementById('announcementEditBody').value,
+        pinned: document.getElementById('announcementEditPinned').checked,
+      });
+      const heroImage = document.getElementById('announcementEditHeroImage').files?.[0];
+      if (heroImage) {
+        await uploadAnnouncementHero(id, heroImage);
+        await loadCommunicationsTab(true);
+      }
+      closeAnnouncementEditor();
+      setStatus('Announcement updated.','success');
+    } catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
   }
 
   async function publishAnnouncement(id, button) {
@@ -11875,6 +11919,20 @@
       if (!response.ok) throw new Error(data.error || 'Unable to archive announcement.');
       await loadCommunicationsTab(true);
       setStatus('Announcement archived.','success');
+    } catch (error) { setStatus(error.message,'error'); }
+    finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
+  }
+
+  async function deleteAnnouncement(id, button) {
+    const item = communicationsState.announcements.find(row => row.id === id);
+    if (!confirm(`Permanently delete “${item?.title || 'this announcement'}”? Its read history and attached hero image will also be removed. This cannot be undone.`)) return;
+    if (button) { button.disabled = true; button.classList.add('loading'); }
+    try {
+      const response = await fetch(communicationsApi('/' + encodeURIComponent(id)), { method:'DELETE', headers:authHeaders() });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Unable to delete announcement.');
+      await loadCommunicationsTab(true);
+      setStatus('Announcement permanently deleted.','success');
     } catch (error) { setStatus(error.message,'error'); }
     finally { if (button) { button.disabled = false; button.classList.remove('loading'); } }
   }

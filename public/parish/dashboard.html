@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/parish/style.css?v=20260817prayers1" />
+  <link rel="stylesheet" href="/parish/style.css?v=20260817prayerui1" />
   <link rel="stylesheet" href="/parish/redesign.css?v=20260812simple10min1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="stylesheet" href="/styles/stewardship.css?v=20260806standalonetabs1" />
@@ -1248,9 +1248,6 @@
             <div class="koinonia-studio-identity"><span class="koinonia-studio-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg></span><div><span class="eyebrow">Parish publishing studio</span><h1>Koinonia</h1><p>Shape the digital life of your parish with news, teaching, audio, and video.</p></div></div>
             <div class="communications-admin-actions">
               <div class="koinonia-feature-toggle"><span><strong>Koinonia</strong><small>Publishing and parish life</small></span><label class="sac-admin-switch agapay-feature-switch" title="Show or hide parish-published Koinonia content in My AGAPAY"><input id="communicationsEnabledSwitch" type="checkbox" aria-label="Show parish-published Koinonia content in My AGAPAY" onchange="toggleCommunicationsFeature(this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
-              <div class="koinonia-feature-toggle"><span><strong>Parish Signups</strong><small>Serve the faithful</small></span><label class="sac-admin-switch agapay-feature-switch" title="Show or hide Parish Signups"><input id="signupsEnabledSwitch" type="checkbox" aria-label="Show Parish Signups to parishioners" onchange="toggleKoinoniaSubfeature('signups', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
-              <div class="koinonia-feature-toggle"><span><strong>Parish Exchange</strong><small>Offer or request useful items</small></span><label class="sac-admin-switch agapay-feature-switch" title="Show or hide Parish Exchange"><input id="exchangeEnabledSwitch" type="checkbox" aria-label="Show Parish Exchange to parishioners" onchange="toggleKoinoniaSubfeature('exchange', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
-              <div class="koinonia-feature-toggle"><span><strong>Prayer Requests</strong><small>Pray for one another</small></span><label class="sac-admin-switch agapay-feature-switch" title="Show or hide Prayer Requests"><input id="prayerRequestsEnabledSwitch" type="checkbox" aria-label="Show Prayer Requests to parishioners" onchange="toggleKoinoniaSubfeature('prayers', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
             </div>
           </header>
           <div id="communicationsPaywall" class="communications-paywall" hidden><strong>Koinonia is included with Parish.</strong><p>Review your plan to publish parish life in My AGAPAY.</p><button class="btn btn-gold" type="button" onclick="switchTab('settings')">Review Parish tier</button></div>
@@ -1262,9 +1259,15 @@
               <button type="button" data-koinonia-view="audio" onclick="setKoinoniaStudioView('audio')"><span>♪</span>Audio</button>
               <button type="button" data-koinonia-view="video" onclick="setKoinoniaStudioView('video')"><span>▶</span>Video</button>
               <button type="button" data-koinonia-view="ministries" onclick="setKoinoniaStudioView('ministries')"><span>✦</span>Ministries</button>
-              <button type="button" data-koinonia-view="prayers" onclick="setKoinoniaStudioView('prayers')"><span>♡</span>Prayer Requests</button>
+              <button type="button" data-koinonia-view="prayers" onclick="setKoinoniaStudioView('prayers')"><span aria-hidden="true">🙏</span>Prayer Requests</button>
               <button type="button" data-koinonia-view="news" onclick="setKoinoniaStudioView('news')"><span>↗</span>News feeds</button>
             </nav>
+
+            <div class="koinonia-feature-menu" role="group" aria-label="Koinonia community feature controls">
+              <div class="koinonia-feature-menu-item"><span class="koinonia-feature-menu-icon" aria-hidden="true">✓</span><div><strong>Parish Signups</strong><small>Serve the faithful</small></div><label class="sac-admin-switch" title="Show or hide Parish Signups"><input id="signupsEnabledSwitch" type="checkbox" aria-label="Show Parish Signups to parishioners" onchange="toggleKoinoniaSubfeature('signups', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
+              <div class="koinonia-feature-menu-item"><span class="koinonia-feature-menu-icon" aria-hidden="true">⇄</span><div><strong>Parish Exchange</strong><small>Offer or request useful items</small></div><label class="sac-admin-switch" title="Show or hide Parish Exchange"><input id="exchangeEnabledSwitch" type="checkbox" aria-label="Show Parish Exchange to parishioners" onchange="toggleKoinoniaSubfeature('exchange', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
+              <div class="koinonia-feature-menu-item"><span class="koinonia-feature-menu-icon" aria-hidden="true">🙏</span><div><strong>Prayer Requests</strong><small>Pray for one another</small></div><label class="sac-admin-switch" title="Show or hide Prayer Requests"><input id="prayerRequestsEnabledSwitch" type="checkbox" aria-label="Show Prayer Requests to parishioners" onchange="toggleKoinoniaSubfeature('prayers', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
+            </div>
 
             <section class="koinonia-studio-view" data-koinonia-panel="overview" aria-labelledby="koinoniaOverviewHeading">
               <div class="koinonia-overview-welcome">
@@ -1402,6 +1405,27 @@
               <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">All announcements</span><h2>Drafts and published updates</h2></div><button class="btn btn-ghost btn-sm" type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="communicationsList"><p class="sw-tool-loading">Loading...</p></div></section>
               </div>
             </section>
+            <dialog class="communications-edit-dialog" id="announcementEditDialog" aria-labelledby="announcementEditHeading">
+              <form class="communications-compose" id="announcementEditForm" onsubmit="saveAnnouncementEdit(event)">
+                <button class="communications-edit-close" type="button" aria-label="Close announcement editor" onclick="closeAnnouncementEditor()">×</button>
+                <div class="communications-edit-heading"><span class="eyebrow">Edit announcement</span><h2 id="announcementEditHeading">Update the full announcement</h2><p id="announcementEditStatus">Changes to published announcements appear immediately in My AGAPAY.</p></div>
+                <label>Title<input id="announcementEditTitle" maxlength="180" required /></label>
+                <label>Category<select id="announcementEditCategory" required><option value="general">General</option><option value="services">Services</option><option value="events">Events</option><option value="youth">Youth</option><option value="outreach">Outreach</option><option value="education">Education</option></select></label>
+                <label>Message
+                  <span class="communications-format-toolbar" aria-label="Announcement formatting tools">
+                    <button type="button" onclick="insertAnnouncementFormatting('bold','announcementEditBody')"><strong>B</strong><span>Bold</span></button>
+                    <button type="button" onclick="insertAnnouncementFormatting('italic','announcementEditBody')"><em>I</em><span>Italic</span></button>
+                    <button type="button" onclick="insertAnnouncementFormatting('link','announcementEditBody')">↗<span>Link</span></button>
+                    <button type="button" onclick="insertAnnouncementFormatting('list','announcementEditBody')">•<span>List</span></button>
+                  </span>
+                  <textarea id="announcementEditBody" maxlength="12000" rows="10" required></textarea>
+                  <small>Update the complete message using bold, italic, links, or bulleted lists.</small>
+                </label>
+                <label>Replace hero image <input id="announcementEditHeroImage" type="file" accept="image/jpeg,image/png,image/webp" /><small id="announcementEditHeroCurrent">Choose a file only when you want to replace the current image.</small></label>
+                <label class="communications-pin"><input id="announcementEditPinned" type="checkbox" /> Pin this announcement above newer updates</label>
+                <div class="communications-edit-actions"><button class="btn btn-ghost" type="button" onclick="closeAnnouncementEditor()">Cancel</button><button class="btn btn-gold" type="submit">Save changes</button></div>
+              </form>
+            </dialog>
             <section class="communications-content-section koinonia-studio-view teaching-admin-section" data-koinonia-panel="audio" aria-labelledby="teachingAdminHeading" hidden>
               <div class="communications-section-heading"><span class="eyebrow">Formation and sound</span><h2 id="teachingAdminHeading">Audio</h2><p>Publish homilies, catechism, liturgical recordings, choir, and special events by uploading audio or linking to a recording.</p></div>
               <div class="communications-grid">
@@ -1904,6 +1928,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
-  <script src="/parish/app.js?v=20260817prayers1"></script>
+  <script src="/parish/app.js?v=20260817announcementedit1"></script>
 </body>
 </html>
