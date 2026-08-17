@@ -19,8 +19,8 @@
 
 @media (max-width:700px) {
   :is(.koinonia-inner-page,.app-inner-page) .donor-mobile-content { align-content:start; padding-top:14px; }
-  .app-main-feature-page .topbar { display:none !important; }
-  .koinonia-mobile-appbar { display:flex; align-items:center; justify-content:space-between; gap:12px; width:min(100%,480px); border-radius:28px 28px 0 0; padding:18px 20px 15px; background:#061522; color:#fff; }
+  :is(.koinonia-inner-page,.app-inner-page,.prayer-requests-page,.koinonia-landing-page) .topbar { display:none !important; }
+  .koinonia-mobile-appbar { display:flex; align-items:center; justify-content:space-between; gap:12px; width:min(100%,480px); border-radius:28px 28px 0 0; padding:18px 20px 15px; background:var(--myagapay-nav-background,linear-gradient(135deg,#061522 0%,#0a2035 62%,#101d22 100%)); color:#fff; box-shadow:0 10px 28px rgba(6,21,34,.16); }
   .koinonia-mobile-brand { display:flex; align-items:center; gap:10px; min-width:0; color:inherit; text-decoration:none; }
   .koinonia-mobile-mark { display:grid; place-items:center; width:32px; height:32px; flex:0 0 auto; border:1px solid rgba(255,255,255,.38); border-radius:50%; }
   .koinonia-mobile-mark img { width:22px; height:22px; object-fit:contain; }
@@ -45,10 +45,13 @@
   .app-main-feature-page .koinonia-inner-shell { padding-top:14px; }
   .donor-directory-page .directory-main > .koinonia-mobile-appbar { width:calc(100% + 32px); max-width:none; margin-left:-16px; margin-right:-16px; border-radius:0; }
   .donor-directory-page.app-main-feature-page .directory-view-switcher { margin-top:14px; }
+  .koinonia-landing-page .donor-mobile-content { align-content:start; padding-top:14px; }
+  .koinonia-landing-page .parish-life-page-shell { width:min(100%,480px); }
 }
 
 @media (max-width:430px) {
   :is(.koinonia-inner-page,.app-inner-page) .donor-mobile-content { padding-top:0; }
+  .koinonia-landing-page .donor-mobile-content { padding-top:0; }
   .koinonia-mobile-appbar,
   :is(.koinonia-inner-page,.app-inner-page) .koinonia-inner-shell { width:100%; border-radius:0; box-shadow:none; }
   .koinonia-mobile-menu { top:66px; right:12px; }

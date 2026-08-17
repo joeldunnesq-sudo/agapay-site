@@ -21,6 +21,9 @@
   --r: 10px;
   --rlg: 14px;
   --shadow: 0 10px 30px rgba(6, 21, 34, 0.08);
+  --myagapay-nav-background:
+    radial-gradient(circle at 84% 0%, rgba(201, 162, 91, 0.2), transparent 22rem),
+    linear-gradient(135deg, #061522 0%, #0a2035 62%, #101d22 100%);
 }
 
 html { scroll-behavior: smooth; }
@@ -6247,9 +6250,7 @@ body.donor-home {
   gap: 1rem;
   border-bottom: 1px solid rgba(201, 162, 91, 0.38);
   padding: 0.72rem clamp(0.9rem, 2.5vw, 1.8rem);
-  background:
-    radial-gradient(circle at 84% 0%, rgba(201, 162, 91, 0.2), transparent 22rem),
-    linear-gradient(135deg, #061522 0%, #0a2035 62%, #101d22 100%);
+  background: var(--myagapay-nav-background);
   box-shadow: 0 10px 28px rgba(6, 21, 34, 0.16);
   color: #fffdf8;
 }
@@ -10046,7 +10047,7 @@ html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-link],
 .prayer-report-dialog { width:min(520px,calc(100% - 28px)); }
 @media (max-width:700px) {
   .prayer-requests-page .donor-mobile-content { align-content:start; padding-top:14px; }
-  .prayer-mobile-appbar { display:flex; align-items:center; justify-content:space-between; gap:12px; width:min(100%,480px); border-radius:28px 28px 0 0; padding:18px 20px 15px; background:#061522; color:#fff; }
+  .prayer-mobile-appbar { display:flex; align-items:center; justify-content:space-between; gap:12px; width:min(100%,480px); border-radius:28px 28px 0 0; padding:18px 20px 15px; background:var(--myagapay-nav-background); color:#fff; box-shadow:0 10px 28px rgba(6,21,34,.16); }
   .prayer-mobile-brand { display:flex; align-items:center; gap:10px; min-width:0; color:inherit; text-decoration:none; }
   .prayer-mobile-mark { display:grid; place-items:center; width:32px; height:32px; flex:0 0 auto; border:1px solid rgba(255,255,255,.38); border-radius:50%; }
   .prayer-mobile-mark img { width:22px; height:22px; object-fit:contain; }
