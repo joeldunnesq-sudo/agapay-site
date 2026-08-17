@@ -134,12 +134,21 @@ assert.match(sources.worker, /\/api\/donor\/koinonia\/prayer-requests/);
 assert.match(sources.worker, /handleParishPrayerRequests/);
 assert.match(sources.handler, /prayerRequestsEnabledFor\(found\.registration\)/, "the member API must enforce the ON/OFF switch server-side");
 assert.match(sources.parishLife, /Prayer Requests[\s\S]*data-community-tool-badge="prayers"/);
-assert.match(sources.parishLife, /href="\/myagapay\/prayer-requests"><span aria-hidden="true">🙏<\/span>/, "the app Community Tool must use praying hands");
-assert.match(sources.shell, /prayers:[^\n]*🙏/, "the unified app navigation must use praying hands for Prayer Requests");
+assert.match(sources.parishLife, /href="\/myagapay\/prayer-requests"><span aria-hidden="true"><svg class="prayer-hands-icon"/, "the app Community Tool must use the praying-hands SVG");
+assert.match(sources.shell, /prayers:[^\n]*<svg class="prayer-hands-icon"/, "the unified app navigation must use the praying-hands SVG");
 assert.match(sources.memberPage, /Parish community[\s\S]*Clergy only[\s\S]*Post anonymously/);
+assert.match(sources.memberPage, /class="prayer-page-heading"[\s\S]*&larr; Parish Life[\s\S]*New request/, "the member page must use the compact mockup-style heading");
+assert.doesNotMatch(sources.memberPage, /prayer-requests-hero|prayer-pastoral-notice/, "the oversized hero and pastoral banner must not return");
+assert.match(sources.memberClient, /daysAgo === 0[\s\S]*Today[\s\S]*Yesterday/, "request cards must use the mockup's relative dates");
+assert.match(sources.memberClient, /const PRAYER_HANDS_ICON = '<svg class="prayer-hands-icon"/);
+assert.match(sources.memberClient, /\$\{PRAYER_HANDS_ICON\}<\/span>\$\{request\.prayedByMe/, "the I prayed action must use the praying-hands SVG");
+assert.match(sources.donorStyles, /\.prayer-dialog:not\(\.prayer-report-dialog\) \{ inset:auto 0 0;[\s\S]*border-radius:22px 22px 0 0;/, "the mobile composer must open as a bottom sheet");
 assert.match(sources.memberClient, /community-tools\/prayers\/opened/);
 assert.match(sources.dashboard, /id="prayerRequestsEnabledSwitch"[\s\S]*data-koinonia-panel="prayers"/);
-assert.match(sources.dashboard, /data-koinonia-view="prayers"[^>]*>[\s\S]*?🙏[\s\S]*?Prayer Requests<\/button>/, "the parish dashboard Prayer Requests tab must use praying hands");
+assert.match(sources.dashboard, /data-koinonia-view="prayers"[^>]*>[\s\S]*?<svg class="prayer-hands-icon"[\s\S]*?Prayer Requests<\/button>/, "the parish dashboard Prayer Requests tab must use the praying-hands SVG");
+for (const source of [sources.parishLife, sources.shell, sources.memberClient, sources.dashboard]) {
+  assert.doesNotMatch(source, /🙏|&#128591;/, "Prayer Requests surfaces must not fall back to an emoji icon");
+}
 const koinoniaMenuIndex = sources.dashboard.indexOf('<nav class="koinonia-studio-nav"');
 assert.ok(sources.dashboard.indexOf('id="communicationsEnabledSwitch"') < koinoniaMenuIndex, "the master Koinonia switch must remain in the hero");
 for (const id of ["signupsEnabledSwitch", "exchangeEnabledSwitch", "prayerRequestsEnabledSwitch"]) {

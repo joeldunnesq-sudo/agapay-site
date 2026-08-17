@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/donor/style.css?v=20260817prayers1" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260817prayermockup2" />
   <script src="/pwa-register.js" defer></script>
-  <script src="/myagapay-shell.js?v=20260817prayerui1"></script>
-  <script src="/myagapay/prayer-requests.js?v=20260817prayers1" defer></script>
+  <script src="/myagapay-shell.js?v=20260817prayersvg1"></script>
+  <script src="/myagapay/prayer-requests.js?v=20260817prayermockup2" defer></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <meta name="theme-color" content="#061522" />
 </head>
@@ -29,8 +29,14 @@
     <main class="content donor-mobile-content">
       <div class="topbar"><div class="topbar-title">Prayer Requests</div></div>
       <div class="page koinonia-feature-shell prayer-requests-shell">
-        <header class="koinonia-feature-hero prayer-requests-hero"><div><span class="eyebrow">Koinonia</span><h1>Prayer Requests</h1><p>Pray for one another in your parish community.</p></div><button class="btn btn-gold" type="button" onclick="openPrayerComposer()">Share a request</button></header>
-        <section class="prayer-pastoral-notice" aria-labelledby="prayerPastoralHeading"><span aria-hidden="true">♡</span><div><strong id="prayerPastoralHeading">A pastoral space</strong><p id="prayerPastoralNotice">Prayer requests are shared with care.</p></div></section>
+        <header class="prayer-page-heading">
+          <a class="prayer-page-back" href="/myagapay/parish-life">&larr; Parish Life</a>
+          <div class="prayer-page-title-row">
+            <div><h1>Prayer Requests</h1><p>Pray for one another</p></div>
+            <button class="prayer-new-request" type="button" onclick="openPrayerComposer()"><span aria-hidden="true">+</span> New request</button>
+          </div>
+          <p class="prayer-page-pastoral" id="prayerPastoralNotice">Prayer requests are shared with care.</p>
+        </header>
         <div class="notice" id="prayerStatus" role="status">Loading prayer requests…</div>
         <div class="prayer-filter-bar" aria-label="Filter prayer requests">
           <button type="button" data-prayer-filter="all" aria-pressed="true" onclick="setPrayerFilter('all',this)">All</button>

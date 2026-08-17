@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/parish/style.css?v=20260817prayerui1" />
+  <link rel="stylesheet" href="/parish/style.css?v=20260817prayersvg1" />
   <link rel="stylesheet" href="/parish/redesign.css?v=20260812simple10min1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="stylesheet" href="/styles/stewardship.css?v=20260806standalonetabs1" />
@@ -1259,14 +1259,14 @@
               <button type="button" data-koinonia-view="audio" onclick="setKoinoniaStudioView('audio')"><span>♪</span>Audio</button>
               <button type="button" data-koinonia-view="video" onclick="setKoinoniaStudioView('video')"><span>▶</span>Video</button>
               <button type="button" data-koinonia-view="ministries" onclick="setKoinoniaStudioView('ministries')"><span>✦</span>Ministries</button>
-              <button type="button" data-koinonia-view="prayers" onclick="setKoinoniaStudioView('prayers')"><span aria-hidden="true">🙏</span>Prayer Requests</button>
+              <button type="button" data-koinonia-view="prayers" onclick="setKoinoniaStudioView('prayers')"><span aria-hidden="true"><svg class="prayer-hands-icon" viewBox="0 0 24 24" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.7 15.8 9.5 4.4a1.4 1.4 0 0 0-2.8.3l.5 6.3-3.5 5.3a2 2 0 0 0 .4 2.6L6.8 21"/><path d="m10.1 12.4-1.9-2.2A1.45 1.45 0 0 0 6 12l2.8 4.2"/><path d="m13.3 15.8 1.2-11.4a1.4 1.4 0 0 1 2.8.3l-.5 6.3 3.5 5.3a2 2 0 0 1-.4 2.6L17.2 21"/><path d="m13.9 12.4 1.9-2.2A1.45 1.45 0 0 1 18 12l-2.8 4.2"/><path d="M12 3v13.6"/></svg></span>Prayer Requests</button>
               <button type="button" data-koinonia-view="news" onclick="setKoinoniaStudioView('news')"><span>↗</span>News feeds</button>
             </nav>
 
             <div class="koinonia-feature-menu" role="group" aria-label="Koinonia community feature controls">
               <div class="koinonia-feature-menu-item"><span class="koinonia-feature-menu-icon" aria-hidden="true">✓</span><div><strong>Parish Signups</strong><small>Serve the faithful</small></div><label class="sac-admin-switch" title="Show or hide Parish Signups"><input id="signupsEnabledSwitch" type="checkbox" aria-label="Show Parish Signups to parishioners" onchange="toggleKoinoniaSubfeature('signups', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
               <div class="koinonia-feature-menu-item"><span class="koinonia-feature-menu-icon" aria-hidden="true">⇄</span><div><strong>Parish Exchange</strong><small>Offer or request useful items</small></div><label class="sac-admin-switch" title="Show or hide Parish Exchange"><input id="exchangeEnabledSwitch" type="checkbox" aria-label="Show Parish Exchange to parishioners" onchange="toggleKoinoniaSubfeature('exchange', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
-              <div class="koinonia-feature-menu-item"><span class="koinonia-feature-menu-icon" aria-hidden="true">🙏</span><div><strong>Prayer Requests</strong><small>Pray for one another</small></div><label class="sac-admin-switch" title="Show or hide Prayer Requests"><input id="prayerRequestsEnabledSwitch" type="checkbox" aria-label="Show Prayer Requests to parishioners" onchange="toggleKoinoniaSubfeature('prayers', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
+              <div class="koinonia-feature-menu-item"><span class="koinonia-feature-menu-icon" aria-hidden="true"><svg class="prayer-hands-icon" viewBox="0 0 24 24" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.7 15.8 9.5 4.4a1.4 1.4 0 0 0-2.8.3l.5 6.3-3.5 5.3a2 2 0 0 0 .4 2.6L6.8 21"/><path d="m10.1 12.4-1.9-2.2A1.45 1.45 0 0 0 6 12l2.8 4.2"/><path d="m13.3 15.8 1.2-11.4a1.4 1.4 0 0 1 2.8.3l-.5 6.3 3.5 5.3a2 2 0 0 1-.4 2.6L17.2 21"/><path d="m13.9 12.4 1.9-2.2A1.45 1.45 0 0 1 18 12l-2.8 4.2"/><path d="M12 3v13.6"/></svg></span><div><strong>Prayer Requests</strong><small>Pray for one another</small></div><label class="sac-admin-switch" title="Show or hide Prayer Requests"><input id="prayerRequestsEnabledSwitch" type="checkbox" aria-label="Show Prayer Requests to parishioners" onchange="toggleKoinoniaSubfeature('prayers', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
             </div>
 
             <section class="koinonia-studio-view" data-koinonia-panel="overview" aria-labelledby="koinoniaOverviewHeading">

@@ -1,4 +1,5 @@
 const prayerState = { requests: [], settings: null, mineOnly: false, filter: "all", reportRequestId: "" };
+const PRAYER_HANDS_ICON = '<svg class="prayer-hands-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.7 15.8 9.5 4.4a1.4 1.4 0 0 0-2.8.3l.5 6.3-3.5 5.3a2 2 0 0 0 .4 2.6L6.8 21"/><path d="m10.1 12.4-1.9-2.2A1.45 1.45 0 0 0 6 12l2.8 4.2"/><path d="m13.3 15.8 1.2-11.4a1.4 1.4 0 0 1 2.8.3l-.5 6.3 3.5 5.3a2 2 0 0 1-.4 2.6L17.2 21"/><path d="m13.9 12.4 1.9-2.2A1.45 1.45 0 0 1 18 12l-2.8 4.2"/><path d="M12 3v13.6"/></svg>';
 
 function prayerEscape(value) {
   return String(value ?? "")
@@ -33,6 +34,13 @@ function prayerStatus(message, state = "") {
 function prayerDate(value) {
   const date = new Date(Number(value));
   if (Number.isNaN(date.getTime())) return "";
+  const today = new Date();
+  const currentDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const requestDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const daysAgo = Math.round((currentDay.getTime() - requestDay.getTime()) / 86400000);
+  if (daysAgo === 0) return "Today";
+  if (daysAgo === 1) return "Yesterday";
+  if (daysAgo > 1 && daysAgo < 7) return `${daysAgo} days ago`;
   return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date);
 }
 
@@ -51,7 +59,7 @@ function renderPrayerRequests() {
   if (!target) return;
   const requests = visiblePrayerRequests();
   if (!requests.length) {
-    target.innerHTML = `<div class="koinonia-empty-state prayer-empty-state"><span aria-hidden="true">♡</span><strong>${prayerState.mineOnly ? "You have no requests in this view" : "No prayer requests in this view"}</strong><p>${prayerState.mineOnly ? "Share a request whenever you would like your parish to pray with you." : "Choose another filter or return later."}</p>${prayerState.mineOnly ? '<button class="btn btn-gold" type="button" onclick="openPrayerComposer()">Share a request</button>' : ""}</div>`;
+    target.innerHTML = `<div class="koinonia-empty-state prayer-empty-state"><span aria-hidden="true">${PRAYER_HANDS_ICON}</span><strong>${prayerState.mineOnly ? "You have no requests in this view" : "No prayer requests in this view"}</strong><p>${prayerState.mineOnly ? "Share a request whenever you would like your parish to pray with you." : "Choose another filter or return later."}</p>${prayerState.mineOnly ? '<button class="btn btn-gold" type="button" onclick="openPrayerComposer()">Share a request</button>' : ""}</div>`;
     return;
   }
   target.innerHTML = requests.map((request) => {
@@ -65,7 +73,7 @@ function renderPrayerRequests() {
       <header><span class="prayer-request-avatar" aria-hidden="true">${request.anonymous && !request.mine ? "A" : prayerEscape(String(name || "P").slice(0, 1).toUpperCase())}</span><div><strong>${prayerEscape(name)}</strong><small>${prayerEscape(prayerDate(request.createdAt))}</small></div><em>${prayerEscape(prayerStatusLabel(request))}</em></header>
       <p>${prayerEscape(request.body)}</p>
       ${request.status === "declined" && request.declineReason ? `<aside><strong>Parish response</strong><span>${prayerEscape(request.declineReason)}</span></aside>` : ""}
-      <footer><span>${canPray ? `${request.prayerCount} parishioner${request.prayerCount === 1 ? "" : "s"} prayed` : "Shared with your parish"}</span><div>${canReport ? `<button class="prayer-report-link" type="button" onclick="openPrayerReport('${prayerEscape(request.id)}')">Report</button>` : ""}${canArchive ? `<button class="prayer-secondary-action" type="button" onclick="archivePrayerRequest('${prayerEscape(request.id)}')">Withdraw</button>` : ""}${canAnswer ? `<button class="prayer-secondary-action" type="button" onclick="markPrayerAnswered('${prayerEscape(request.id)}')">Mark answered</button>` : ""}${canPray ? `<button class="prayer-prayed-button${request.prayedByMe ? " is-prayed" : ""}" type="button" aria-pressed="${request.prayedByMe ? "true" : "false"}" onclick="togglePrayer('${prayerEscape(request.id)}')"><span aria-hidden="true">♡</span>${request.prayedByMe ? "Prayed" : "I prayed"}</button>` : ""}</div></footer>
+      <footer><span>${canPray ? `${request.prayerCount} parishioner${request.prayerCount === 1 ? "" : "s"} prayed` : "Shared with your parish"}</span><div>${canReport ? `<button class="prayer-report-link" type="button" onclick="openPrayerReport('${prayerEscape(request.id)}')">Report</button>` : ""}${canArchive ? `<button class="prayer-secondary-action" type="button" onclick="archivePrayerRequest('${prayerEscape(request.id)}')">Withdraw</button>` : ""}${canAnswer ? `<button class="prayer-secondary-action" type="button" onclick="markPrayerAnswered('${prayerEscape(request.id)}')">Mark answered</button>` : ""}${canPray ? `<button class="prayer-prayed-button${request.prayedByMe ? " is-prayed" : ""}" type="button" aria-pressed="${request.prayedByMe ? "true" : "false"}" onclick="togglePrayer('${prayerEscape(request.id)}')"><span aria-hidden="true">${PRAYER_HANDS_ICON}</span>${request.prayedByMe ? "Prayed" : "I prayed"}</button>` : ""}</div></footer>
     </article>`;
   }).join("");
 }

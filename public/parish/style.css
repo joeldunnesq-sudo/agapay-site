@@ -1084,12 +1084,14 @@
     .koinonia-studio-nav { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:7px; padding:7px; border:1px solid #d4d1c6; border-radius:16px; background:rgba(255,255,255,.78); box-shadow:0 5px 18px rgba(13,23,34,.05); }
     .koinonia-studio-nav button { display:flex; align-items:center; justify-content:center; gap:8px; min-height:46px; border:0; border-radius:11px; background:transparent; color:#68727b; font:700 12px/1 var(--sans); cursor:pointer; }
     .koinonia-studio-nav button span { color:#9b7a36; font-size:16px; }
+    .koinonia-studio-nav button span .prayer-hands-icon { width:18px; height:18px; }
     .koinonia-studio-nav button:hover { background:#f5f2eb; color:#0d1722; }
     .koinonia-studio-nav button.is-active { background:#0d1722; color:#fff; box-shadow:0 6px 16px rgba(13,23,34,.16); }
     .koinonia-studio-nav button.is-active span { color:#d1ad5e; }
     .koinonia-feature-menu { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; margin-top:-15px; padding:0 7px; }
     .koinonia-feature-menu-item { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:11px; min-height:62px; border:1px solid #d4d1c6; border-radius:14px; padding:9px 10px; background:rgba(255,255,255,.86); box-shadow:0 4px 14px rgba(13,23,34,.045); }
     .koinonia-feature-menu-icon { display:grid; place-items:center; width:34px; height:34px; border-radius:10px; background:#f3e8d7; color:#8b6725; font-size:16px; }
+    .koinonia-feature-menu-icon .prayer-hands-icon { width:18px; height:18px; }
     .koinonia-feature-menu-item > div { display:grid; gap:2px; min-width:0; }
     .koinonia-feature-menu-item strong { color:#17232d; font-size:12px; }
     .koinonia-feature-menu-item small { overflow:hidden; color:#7a838a; font-size:9.5px; line-height:1.25; text-overflow:ellipsis; white-space:nowrap; }
