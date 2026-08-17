@@ -1,12 +1,7 @@
 import { htmlEscape } from "./format.js";
 
 const RESEND_EMAILS_URL = "https://api.resend.com/emails";
-const RESEND_DOMAINS_VALIDATION_URL = "https://api.resend.com/domains?limit=1";
 const RESEND_USER_AGENT = "AGAPAY/1.0";
-
-function database(env) {
-  return env.AGAPAY_DB || env.DB || null;
-}
 
 export function agapayEmailHtml(appUrl, title, bodyHtml) {
   const baseUrl = String(appUrl || "https://agapay.app").replace(/\/+$/, "");
@@ -48,109 +43,19 @@ export function agapayEmailHtml(appUrl, title, bodyHtml) {
   `;
 }
 
-export function resendSendingDomainFromWebsite(website) {
-  const value = String(website || "").trim();
-  if (!value) return "";
-  try {
-    const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
-    return url.hostname.toLowerCase().replace(/^www\./, "");
-  } catch {
-    return "";
-  }
-}
-
-export async function getParishEmailCredentialStatus(env, parishId) {
-  const db = database(env);
-  const normalizedParishId = String(parishId || "").trim();
-  if (!db || !normalizedParishId) return { configured: false, configuredAt: "" };
-  try {
-    const row = await db.prepare(`
-      SELECT configured_at
-      FROM parish_email_credentials
-      WHERE parish_id = ?
-    `).bind(normalizedParishId).first();
-    return {
-      configured: Boolean(row),
-      configuredAt: String(row?.configured_at || ""),
-    };
-  } catch (error) {
-    console.warn(JSON.stringify({
-      event: "parish_email_credential_status_unavailable",
-      parishId: normalizedParishId,
-      error: error?.message || String(error),
-    }));
-    return { configured: false, configuredAt: "" };
-  }
-}
-
-export async function resolveResendApiKey(env, parishId) {
-  const sharedKey = String(env.RESEND_API_KEY || "").trim();
-  const db = database(env);
-  const normalizedParishId = String(parishId || "").trim();
-  if (!db || !normalizedParishId) return { apiKey: sharedKey, source: "shared" };
-  try {
-    const row = await db.prepare(`
-      SELECT resend_api_key
-      FROM parish_email_credentials
-      WHERE parish_id = ?
-    `).bind(normalizedParishId).first();
-    const parishKey = String(row?.resend_api_key || "").trim();
-    return parishKey
-      ? { apiKey: parishKey, source: "parish" }
-      : { apiKey: sharedKey, source: "shared" };
-  } catch (error) {
-    console.warn(JSON.stringify({
-      event: "parish_email_credential_lookup_failed",
-      parishId: normalizedParishId,
-      error: error?.message || String(error),
-    }));
-    return { apiKey: sharedKey, source: "shared" };
-  }
-}
-
-export async function validateResendApiKey(apiKey, fetchImpl = fetch) {
-  const normalized = String(apiKey || "").trim();
-  if (!/^re_[A-Za-z0-9_-]{8,}$/.test(normalized)) {
-    return { valid: false, reason: "Enter a valid Resend API key beginning with re_." };
-  }
-  try {
-    const response = await fetchImpl(RESEND_DOMAINS_VALIDATION_URL, {
-      headers: {
-        Authorization: `Bearer ${normalized}`,
-        Accept: "application/json",
-        "User-Agent": RESEND_USER_AGENT,
-      },
-    });
-    const body = await response.json().catch(() => ({}));
-    if (response.ok) return { valid: true, permission: "full_access" };
-    if (response.status === 401 && body?.name === "restricted_api_key") {
-      return { valid: true, permission: "sending_access" };
-    }
-    if (response.status === 401 || response.status === 403) {
-      return { valid: false, reason: "Resend rejected this API key." };
-    }
-    return { valid: false, retryable: response.status >= 500 || response.status === 429, reason: "Resend could not validate this API key right now." };
-  } catch {
-    return { valid: false, retryable: true, reason: "Resend could not be reached to validate this API key." };
-  }
-}
-
-export async function sendEmail(env, message, options = {}) {
-  const credentials = await resolveResendApiKey(env, options.parishId);
-  if (!credentials.apiKey) return { status: "not_configured" };
-  const outboundMessage = credentials.source === "parish" && options.parishFrom
-    ? { ...message, from: options.parishFrom }
-    : message;
+export async function sendEmail(env, message) {
+  const apiKey = String(env.RESEND_API_KEY || "").trim();
+  if (!apiKey) return { status: "not_configured" };
 
   try {
     const response = await fetch(RESEND_EMAILS_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${credentials.apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
         "User-Agent": RESEND_USER_AGENT,
       },
-      body: JSON.stringify(outboundMessage),
+      body: JSON.stringify(message),
     });
     const bodyText = await response.text();
     let body = {};

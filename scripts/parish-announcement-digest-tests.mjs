@@ -49,8 +49,8 @@ const registration = {
 };
 const env = { AGAPAY_DB: db, AGAPAY_APP_URL: "https://agapay.test" };
 const sent = [];
-const captureEmail = async (_env, message, options) => {
-  sent.push({ message, options });
+const captureEmail = async (_env, message) => {
+  sent.push({ message });
   return { status: "sent", httpStatus: 200 };
 };
 
@@ -110,8 +110,7 @@ assert.match(sent[0].message.html, /123 Parish Way/);
 assert.match(sent[0].message.html, /Chicago IL 60601/);
 assert.match(sent[0].message.html, new RegExp(`/api/donor/digest/unsubscribe\\?token=${subscription.unsubscribeToken}`));
 assert.equal(sent[0].message.headers["List-Unsubscribe"], `<https://agapay.test/api/donor/digest/unsubscribe?token=${subscription.unsubscribeToken}>`);
-assert.equal(sent[0].options.parishId, registration.parishId, "digest sends must identify the parish for credential resolution");
-assert.equal(sent[0].options.parishFrom, "St. Test Parish <announcements@st-test.example>");
+assert.equal(sent[0].message.from, "AGAPAY <onboarding@agapay.app>", "digests must use AGAPAY's centrally managed sender");
 
 results = await sendWeeklyAnnouncementDigestEmails(env, "2026-07-19T12:00:00.000Z", {}, {
   registrations: [{ ...registration, communicationsEnabled: false }],

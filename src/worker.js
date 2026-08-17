@@ -217,7 +217,6 @@ import {
   handleParishCommunications,
   sendWeeklyAnnouncementDigestEmails,
 } from "./handlers/parish-communications.js";
-import { handleParishEmailCredentials } from "./handlers/parish-email-credentials.js";
 import { handleDonorGroups, purgeExpiredGroupMessages } from "./handlers/donor-groups.js";
 import { handleKoinoniaAccess } from "./handlers/koinonia-access.js";
 import { handleDonorKoinoniaCommunityTools } from "./handlers/koinonia-community-tools.js";
@@ -3929,10 +3928,6 @@ export default {
       const parishId = decodeURIComponent(parts[0].replace(/\/+$/, ""));
       const subpath = parts.slice(1).join("/prayer-requests") || "";
       return handleParishPrayerRequests(request, env, parishId, subpath);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/email-credentials")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/email-credentials", ""));
-      return handleParishEmailCredentials(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments", ""));

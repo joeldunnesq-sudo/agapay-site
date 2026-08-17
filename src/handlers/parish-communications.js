@@ -1,6 +1,6 @@
 import { deleteContentReads, getReadContentIds, getReadReceipts, markContentRead } from "../lib/content-reads.js";
 import { communicationsEnabledFor, hasModuleAccess } from "../lib/entitlements.js";
-import { agapayEmailHtml, resendSendingDomainFromWebsite, sendEmail } from "../lib/email.js";
+import { agapayEmailHtml, sendEmail } from "../lib/email.js";
 import { loadAllRegistrations } from "../lib/registrations.js";
 import { sendAnnouncementPush } from "../lib/push-notifications.js";
 import { renderBoundedRichText } from "../lib/rich-text.js";
@@ -435,8 +435,6 @@ export async function sendWeeklyAnnouncementDigestEmails(env, scheduledTime, opt
       results.push({ parishId: subscription.parishId, donorId: subscription.donorId, status: "dry_run", announcementCount: announcements.length });
       continue;
     }
-    const sendingDomain = resendSendingDomainFromWebsite(registration.website);
-    const parishSenderName = String(registration.parishName || "Parish announcements").replace(/[<>]/g, "").trim();
     const email = await send(env, {
       from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
       to: [subscription.donorId],
@@ -445,9 +443,6 @@ export async function sendWeeklyAnnouncementDigestEmails(env, scheduledTime, opt
       html: content.html,
       text: content.text,
       headers: { "List-Unsubscribe": `<${content.unsubscribeUrl}>` },
-    }, {
-      parishId: subscription.parishId,
-      parishFrom: sendingDomain ? `${parishSenderName} <announcements@${sendingDomain}>` : "",
     });
     if (email.status === "sent") {
       await db.prepare(`

@@ -340,21 +340,6 @@
     .parish-logo-placeholder { display: grid; place-items: center; color: var(--stone); font-size: 11px; text-align: center; }
     .parish-logo-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.55rem; }
     .parish-logo-actions input[type="file"] { max-width: 260px; }
-    .parish-email-account-status { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; border: 1px solid rgba(184,144,47,0.28); border-radius: 12px; background: rgba(184,144,47,0.08); padding: 0.9rem 1rem; }
-    .parish-email-account-status > span { display: grid; width: 28px; height: 28px; flex: 0 0 auto; place-items: center; border-radius: 999px; background: var(--gold); color: var(--deep); font-weight: 900; }
-    .parish-email-account-status.connected { border-color: rgba(46,107,74,0.3); background: rgba(46,107,74,0.08); }
-    .parish-email-account-status.connected > span { background: #2e6b4a; color: #fff; }
-    .parish-email-account-status strong, .parish-email-account-status small { display: block; }
-    .parish-email-account-status small { margin-top: 0.2rem; color: var(--stone); line-height: 1.45; }
-    .parish-email-setup-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr); gap: 1.25rem; align-items: start; }
-    .parish-email-setup-grid h3 { margin: 0 0 0.65rem; color: var(--deep); font-family: var(--serif); font-size: 20px; }
-    .parish-email-setup-grid ol { margin: 0; padding-left: 1.2rem; color: var(--stone); font-size: 13px; line-height: 1.65; }
-    .parish-email-setup-grid .section-note { margin: 0.65rem 0 0; }
-    .parish-email-key-form { border: 1px solid var(--line); border-radius: 12px; background: var(--paper); padding: 1rem; }
-    .parish-email-key-form input { width: 100%; margin-top: 0.4rem; }
-    .parish-email-key-form .section-note { margin: 0.65rem 0 0.85rem; }
-    .parish-email-form-status { display: block; min-height: 1.25rem; margin-top: 0.65rem; color: var(--stone); font-size: 12px; line-height: 1.45; }
-    @media (max-width: 760px) { .parish-email-setup-grid { grid-template-columns: 1fr; } }
     .sidebar-parish-meta { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: 0.55rem; }
     .sidebar-status-chip { display: inline-flex; align-items: center; border-radius: 999px; padding: 0.22rem 0.6rem; background: rgba(11,33,48,0.25); color: var(--gold); font-size: 11px; font-weight: 700; text-transform: capitalize; }
     .sidebar-status-chip.paused { background: rgba(184,144,47,0.18); color: var(--gold); }
