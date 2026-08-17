@@ -23,9 +23,9 @@ assert.match(page, /self\/addresses`, \{[\s\S]*city,[\s\S]*region,[\s\S]*visibil
 assert.match(page, /class="topbar"[\s\S]*class="directory-nav-identity"/);
 assert.doesNotMatch(page, /class="directory-mobile-cross"/);
 assert.match(page, /class="topbar-title">Parish Directory</);
-assert.match(page, /class="directory-top cal-hero myagapay-page-hero"[\s\S]*?Find parish families, namedays, and ways to serve/);
-assert.doesNotMatch(page, /\.directory-top\.myagapay-page-hero \{ display:none !important; \}/);
-assert.match(page, /\.directory-top\.myagapay-page-hero \.cal-hero-inner \{ padding:18px; \}/);
+assert.match(page, /class="koinonia-mobile-appbar"[\s\S]*?class="koinonia-page-heading directory-app-heading"[\s\S]*?Find parish families, namedays, and ways to serve/);
+assert.match(page, /class="koinonia-page-back"[^>]*data-parish-life-back[\s\S]*?My AGAPAY/);
+assert.doesNotMatch(page, /class="directory-top cal-hero myagapay-page-hero"/);
 assert.doesNotMatch(page, /mobileDirectory(?:Title|Location|Count)|directoryHeroLocation/);
 assert.match(page, /function directoryHomeTitle\(\) \{[\s\S]*return "Parish Directory";/);
 assert.match(page, /directoryParish = \{[\s\S]*name: parish\.name[\s\S]*city: parish\.city[\s\S]*state: parish\.state/);

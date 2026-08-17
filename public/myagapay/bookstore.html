@@ -11,6 +11,7 @@
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js" defer></script>
   <link rel="stylesheet" href="/donor/style.css?v=20260803iospolish1" />
+  <link rel="stylesheet" href="/myagapay/koinonia-inner.css?v=20260817compact1" />
   <script src="/security.js"></script>
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260817prayersvg2"></script>
@@ -354,7 +355,7 @@
     @media (max-width:420px) { .bookstore-product-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; } }
   </style>
 </head>
-<body class="donor-mobile-page donor-bookstore-page">
+<body class="donor-mobile-page donor-bookstore-page app-inner-page">
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-scroll">
@@ -366,13 +367,11 @@
       <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/giving/give"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg> Add offering</a></div>
     </aside>
     <main class="content donor-mobile-content">
+      <header class="koinonia-mobile-appbar"><a class="koinonia-mobile-brand" href="/myagapay" aria-label="Open My AGAPAY"><span class="koinonia-mobile-mark" aria-hidden="true"><img src="/mark.png" alt="" /></span><span><strong>MY AGAPAY</strong><small>Bookstore</small></span></a><a class="koinonia-mobile-notifications" href="/myagapay/feed" aria-label="Open Community Inbox"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></a></header>
       <div class="topbar"><div class="topbar-title">Parish Bookstore</div></div>
-      <div class="page">
+      <div class="page koinonia-inner-shell">
         <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
-        <section class="bookstore-store-hero" aria-labelledby="bookstoreHeroTitle">
-          <div class="bookstore-store-hero-copy"><div class="bookstore-store-eyebrow">Your parish bookstore</div><h1 id="bookstoreHeroTitle">Books and parish goods, ready for pickup.</h1><p id="bookstoreHeroDescription">Browse the parish shelves, add what you need, and check out securely from your phone.</p></div>
-          <div class="bookstore-store-promises" aria-label="Bookstore benefits"><span><i>✓</i> Secure Stripe checkout</span><span><i>⌂</i> Parish pickup</span><span><i>◎</i> Scan unlisted books</span></div>
-        </section>
+        <header class="koinonia-page-heading" aria-labelledby="bookstoreHeroTitle"><a class="koinonia-page-back" href="/myagapay" data-parish-life-back><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>My AGAPAY</a><div class="koinonia-page-title-row"><div><h1 id="bookstoreHeroTitle">Parish Bookstore</h1><p id="bookstoreHeroDescription">Books and parish goods, ready for secure checkout and parish pickup.</p></div></div></header>
 
         <section class="bookstore-storefront-layout">
           <div class="bookstore-storefront-card" id="bookstoreFormCard">

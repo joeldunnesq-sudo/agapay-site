@@ -399,7 +399,8 @@ assert.ok(donorBookstore.includes("bookstoreHeroTitle") && donorBookstore.includ
 assert.ok(donorApp.includes("Shop the shelves at ${bookstoreLabel} bookstore.") && donorApp.includes("AGAPAY Parish+") && donorApp.includes("Request this feature for my parish"), "Bookstore page should preserve parish-specific storefront copy, Parish+ unavailable messaging, and feature request flow");
 const myAgapayBookstore = await readFile("public/myagapay/bookstore.html", "utf8");
 assert.ok(
-  myAgapayBookstore.includes("bookstore-store-hero")
+  myAgapayBookstore.includes('class="koinonia-page-heading"') &&
+    !myAgapayBookstore.includes('class="bookstore-store-hero"')
     && myAgapayBookstore.includes("Shop the shelves")
     && myAgapayBookstore.includes('id="bookstoreProductSearch"')
     && myAgapayBookstore.includes('id="bookstoreMobileCartBar"')

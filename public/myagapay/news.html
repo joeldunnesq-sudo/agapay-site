@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/donor/style.css?v=20260802playerredesign1" />
+  <link rel="stylesheet" href="/myagapay/koinonia-inner.css?v=20260817compact1" />
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260817prayersvg2"></script>
   <script src="/myagapay/news.js?v=20260801news2" defer></script>
@@ -16,7 +17,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
 </head>
-<body class="donor-mobile-page donor-news-page">
+<body class="donor-mobile-page donor-news-page koinonia-inner-page">
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-scroll">
@@ -28,9 +29,10 @@
       <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/parish-life">← Back to Koinonia</a></div>
     </aside>
     <main class="content donor-mobile-content">
+      <header class="koinonia-mobile-appbar"><a class="koinonia-mobile-brand" href="/myagapay/parish-life" aria-label="Open Koinonia"><span class="koinonia-mobile-mark" aria-hidden="true"><img src="/mark.png" alt="" /></span><span><strong>MY AGAPAY</strong><small>Koinonia</small></span></a><a class="koinonia-mobile-notifications" href="/myagapay/feed" aria-label="Open Community Inbox"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></a></header>
       <div class="topbar"><div class="topbar-title">News</div></div>
-      <div class="page news-page-shell">
-        <header class="koinonia-screen-head" aria-labelledby="newsHeading"><div><h1 id="newsHeading">News Feeds</h1><p>Parish writing and Orthodox news, gathered in one place</p></div></header>
+      <div class="page news-page-shell koinonia-inner-shell">
+        <header class="koinonia-page-heading" aria-labelledby="newsHeading"><a class="koinonia-page-back" href="/myagapay/parish-life" data-parish-life-back><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Koinonia</a><div class="koinonia-page-title-row"><div><h1 id="newsHeading">News Feeds</h1><p>Parish writing and Orthodox news, gathered in one place</p></div></div></header>
         <section class="news-source-section" aria-labelledby="newsSourcesHeading">
           <div class="news-source-heading"><div><span class="eyebrow">Your choice</span><h2 id="newsSourcesHeading">Choose your sources</h2></div><p>Nothing appears until you follow a source. You can change these choices at any time.</p></div>
           <div class="news-source-grid" id="newsSourcePreferences"><p class="sw-tool-loading">Loading available sources…</p></div>
