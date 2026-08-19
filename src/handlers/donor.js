@@ -47,6 +47,7 @@ import { recordParishFeatureRequest } from "../lib/parish-feature-requests.js";
 import { submitParishSupportTicket } from "../lib/parish-support-tickets.js";
 import { validateSafeExternalUrl } from "../lib/safe-external-url.js";
 import { fetchKoinoniaCalendarIcs, normalizeKoinoniaCalendarUrl } from "../lib/koinonia-calendar.js";
+import { loadPublishedCommerceCalendarEvents } from "./parish-events.js";
 import { getDirectorySettings } from "../directory/settings.js";
 import { resolveDirectorySelfServiceContext, syncSelfServiceContactsFromDonor } from "../directory/self-service.js";
 
@@ -1377,19 +1378,23 @@ export async function handleDonorParishCalendar(request, env) {
   if (!donor) return unauthorized();
   if (!donor.defaultParishId) return json({ connected:false, events:[] });
   const found = await findRegistrationByParishId(env, donor.defaultParishId);
+  const commerceEvents = await loadPublishedCommerceCalendarEvents(env, donor.defaultParishId, found?.registration || {});
   const sourceUrl = String(found?.registration?.koinoniaCalendarUrl || "").trim();
-  if (!sourceUrl) return json({ connected:false, events:[] });
+  if (!sourceUrl) return json({ connected:false, internal:true, events:commerceEvents }, { headers:{ "Cache-Control":"private, max-age=300" } });
   let subscriptionUrl;
   try {
     subscriptionUrl = normalizeKoinoniaCalendarUrl(sourceUrl);
   } catch {
-    return json({ connected:true, events:[], unavailable:true }, { headers:{ "Cache-Control":"private, no-store" } });
+    return json({ connected:true, internal:true, events:commerceEvents, unavailable:true }, { headers:{ "Cache-Control":"private, no-store" } });
   }
   try {
     const text = await fetchKoinoniaCalendarIcs(subscriptionUrl);
-    return json({ connected:true, subscriptionUrl, events:parseKoinoniaCalendarIcs(text), syncedAt:new Date().toISOString() }, { headers:{ "Cache-Control":"private, max-age=300" } });
+    const events = [...parseKoinoniaCalendarIcs(text), ...commerceEvents]
+      .sort((left, right) => String(left.startsAt || "").localeCompare(String(right.startsAt || "")))
+      .slice(0, 240);
+    return json({ connected:true, internal:true, subscriptionUrl, events, syncedAt:new Date().toISOString() }, { headers:{ "Cache-Control":"private, max-age=300" } });
   } catch {
-    return json({ connected:true, subscriptionUrl, events:[], unavailable:true }, { headers:{ "Cache-Control":"private, no-store" } });
+    return json({ connected:true, internal:true, subscriptionUrl, events:commerceEvents, unavailable:true }, { headers:{ "Cache-Control":"private, no-store" } });
   }
 }
 

@@ -420,18 +420,22 @@ function renderMinistryCommerce(target, items, parishId) {
         <label>Listing type<select name="offeringKind" required><option value="event">Event</option><option value="meal">Meal</option></select></label>
         <label>Item name<input name="name" required maxlength="180" placeholder="Adult dinner plate" /></label>
         <label>Price<div class="money-input"><i>$</i><input name="priceCents" type="number" min="0.01" step="0.01" required placeholder="18.00" /></div></label>
-        <label>Event date<input name="eventDate" type="date" /></label>
+        <label>Event date<input name="eventDate" type="date" required /></label>
+        <label>Start time<input name="eventStartTime" type="time" /></label>
+        <label>End time<input name="eventEndTime" type="time" /></label>
         <label>Location<input name="eventLocation" maxlength="200" placeholder="Parish Hall" /></label>
         <label>Quantity available<input name="stockQuantity" type="number" min="0" step="1" placeholder="e.g. 60" /></label>
         <label>Limit per order <small>(optional)</small><input name="maxQuantityPerOrder" type="number" min="1" step="1" placeholder="e.g. 6" /></label>
+        <label>Publication<select name="status"><option value="active">Publish now</option><option value="draft">Save as draft</option></select></label>
         <label class="is-wide">Description<textarea name="description" rows="2" maxlength="600" placeholder="Roast lamb, rice pilaf, salad, and bread"></textarea></label>
+        <label class="is-wide ministry-commerce-calendar-check"><input name="showOnCalendar" type="checkbox" checked /><span>Show on the parish calendar when published</span></label>
         <p class="ministry-commerce-duplicate-note" id="ministryCommerceDuplicateNote" hidden>Duplicating <strong id="ministryCommerceDuplicateSource"></strong> — pick a new date before saving.</p>
         <button class="btn btn-gold" type="submit">Create listing &amp; get QR code</button>
       </form>
     </details>
     <div id="ministryCommerceNewQr"></div>
     <div class="ministry-commerce-grid">${items.length ? items.map(item => `<article class="ministry-commerce-card">
-      <div><span class="eyebrow">${item.offeringKind === 'meal' ? 'Meal' : 'Event'} · ${item.eventDate ? groupsEscape(item.eventDate) : 'No date set'}${item.eventLocation ? ` · ${groupsEscape(item.eventLocation)}` : ''}</span><h3>${groupsEscape(item.name)}</h3><p>${groupsEscape(item.description || '')}</p><p><strong>${ministryCommerceMoney(item.priceCents)}</strong>${item.trackInventory ? ` · ${Number(item.stockQuantity || 0)} available` : ''}${item.status === 'archived' ? ' · <em>Archived</em>' : ''}</p></div>
+      <div><span class="eyebrow">${item.offeringKind === 'meal' ? 'Meal' : 'Event'} · ${item.eventDate ? groupsEscape(item.eventDate) : 'No date set'}${item.eventStartTime ? ` · ${groupsEscape(item.eventStartTime)}` : ''}${item.eventLocation ? ` · ${groupsEscape(item.eventLocation)}` : ''}</span><h3>${groupsEscape(item.name)}</h3><p>${groupsEscape(item.description || '')}</p><p><strong>${ministryCommerceMoney(item.priceCents)}</strong>${item.trackInventory ? ` · ${Number(item.stockQuantity || 0)} available` : ''} · <em>${item.status === 'active' ? 'Published' : item.status === 'draft' ? 'Draft' : 'Archived'}</em> · ${item.showOnCalendar ? 'On parish calendar' : 'Calendar hidden'}</p></div>
       <details class="ministry-commerce-qr-toggle" ontoggle="if(this.open) renderMinistryCommerceQr('${groupsEscape(parishId)}','${groupsEscape(item.variantId)}')">
         <summary>Show payment QR code</summary>
         <div class="ministry-commerce-qr-panel">
@@ -445,7 +449,8 @@ function renderMinistryCommerce(target, items, parishId) {
       </details>
       <div class="ministry-commerce-card-actions">
         <button type="button" onclick="duplicateMinistryCommerceItem('${groupsEscape(item.id)}')">Duplicate for next year</button>
-        <button class="group-signup-delete" onclick="toggleMinistryCommerceItemStatus('${groupsEscape(item.id)}','${item.status === 'archived' ? 'active' : 'archived'}')">${item.status === 'archived' ? 'Reactivate' : 'Archive'}</button>
+        <button type="button" onclick="toggleMinistryCommerceCalendar('${groupsEscape(item.id)}',${item.showOnCalendar ? 'false' : 'true'})">${item.showOnCalendar ? 'Hide from calendar' : 'Show on calendar'}</button>
+        <button class="group-signup-delete" onclick="toggleMinistryCommerceItemStatus('${groupsEscape(item.id)}','${item.status === 'active' ? 'archived' : 'active'}')">${item.status === 'active' ? 'Archive' : 'Publish'}</button>
       </div>
     </article>`).join('') : '<div class="group-signups-empty"><strong>No listings yet</strong><p>Add your first dinner plate or fundraiser item above.</p></div>'}</div>`;
 }
@@ -461,10 +466,14 @@ function duplicateMinistryCommerceItem(productId) {
   form.elements.offeringKind.value = source.offeringKind === 'meal' ? 'meal' : 'event';
   form.elements.priceCents.value = source.priceCents ? (source.priceCents / 100).toFixed(2) : '';
   form.elements.eventDate.value = ''; // force picking a new date, not last year's
+  form.elements.eventStartTime.value = source.eventStartTime || '';
+  form.elements.eventEndTime.value = source.eventEndTime || '';
   form.elements.eventLocation.value = source.eventLocation || '';
   form.elements.stockQuantity.value = source.stockQuantity || '';
   form.elements.maxQuantityPerOrder.value = source.maxQuantityPerOrder || '';
   form.elements.description.value = source.description || '';
+  form.elements.status.value = 'draft';
+  form.elements.showOnCalendar.checked = source.showOnCalendar !== false;
   const note = document.getElementById('ministryCommerceDuplicateNote');
   const noteSource = document.getElementById('ministryCommerceDuplicateSource');
   if (note && noteSource) { noteSource.textContent = source.name; note.hidden = false; }
@@ -483,14 +492,19 @@ async function createMinistryCommerceItemUI(event) {
     description: d.get('description'),
     priceCents,
     eventDate: d.get('eventDate'),
+    eventStartTime: d.get('eventStartTime'),
+    eventEndTime: d.get('eventEndTime'),
     eventLocation: d.get('eventLocation'),
     stockQuantity: d.get('stockQuantity') ? Number(d.get('stockQuantity')) : 0,
-    maxQuantityPerOrder: d.get('maxQuantityPerOrder') ? Number(d.get('maxQuantityPerOrder')) : null
+    maxQuantityPerOrder: d.get('maxQuantityPerOrder') ? Number(d.get('maxQuantityPerOrder')) : null,
+    showOnCalendar: d.get('showOnCalendar') === 'on',
+    status: d.get('status')
   };
   const result = await groupsFetch(`/api/donor/groups/${encodeURIComponent(ministryGroupsState.activeGroupId)}/commerce`, { method: 'POST', body: JSON.stringify(body) });
   if (!result) return;
-  groupStatus(`${body.name} is live. Its QR code is ready below.`);
+  groupStatus(body.status === 'draft' ? `${body.name} was saved as a draft.` : `${body.name} is live and appears on the parish calendar.`);
   form.reset();
+  form.elements.showOnCalendar.checked = true;
   await loadActiveGroupWorkspace('commerce');
   // Auto-open the new item's QR right away, so a leader creating a listing
   // gets the printable code immediately without hunting for it in the list.
@@ -503,7 +517,13 @@ async function createMinistryCommerceItemUI(event) {
 
 async function toggleMinistryCommerceItemStatus(productId, nextStatus) {
   await groupsFetch(`/api/donor/groups/${encodeURIComponent(ministryGroupsState.activeGroupId)}/commerce/${encodeURIComponent(productId)}`, { method: 'PATCH', body: JSON.stringify({ status: nextStatus }) });
-  groupStatus(nextStatus === 'archived' ? 'Listing archived.' : 'Listing reactivated.');
+  groupStatus(nextStatus === 'archived' ? 'Listing archived.' : 'Listing published.');
+  await loadActiveGroupWorkspace('commerce');
+}
+
+async function toggleMinistryCommerceCalendar(productId, showOnCalendar) {
+  await groupsFetch(`/api/donor/groups/${encodeURIComponent(ministryGroupsState.activeGroupId)}/commerce/${encodeURIComponent(productId)}`, { method: 'PATCH', body: JSON.stringify({ showOnCalendar: Boolean(showOnCalendar) }) });
+  groupStatus(showOnCalendar ? 'Listing added to the parish calendar.' : 'Listing hidden from the parish calendar.');
   await loadActiveGroupWorkspace('commerce');
 }
 

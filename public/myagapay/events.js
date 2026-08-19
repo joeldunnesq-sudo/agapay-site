@@ -54,8 +54,13 @@ function renderMyEventsList() {
     const cap = myEventsCap(item);
     const meta = [];
     if (item.eventDate) meta.push(myEventsEscape(myEventsFormatDate(item.eventDate)));
+    if (item.eventStartTime) {
+      const [hour, minute] = String(item.eventStartTime).split(":").map(Number);
+      const time = new Date(2000, 0, 1, hour, minute).toLocaleTimeString("en-US", { hour:"numeric", minute:"2-digit" });
+      meta.push(myEventsEscape(time));
+    }
     if (item.eventLocation) meta.push(myEventsEscape(item.eventLocation));
-    return `<div class="events-item-card">
+    return `<div class="events-item-card" data-variant-id="${myEventsEscape(item.variantId)}">
       ${available ? "" : '<span class="events-sold-out">Sold out</span>'}
       <strong>${myEventsEscape(item.name)}${item.variantName ? ` — ${myEventsEscape(item.variantName)}` : ""}</strong>
       ${meta.length ? `<div class="events-item-meta">${meta.join(" · ")}</div>` : ""}
@@ -70,6 +75,20 @@ function renderMyEventsList() {
       </div>
     </div>`;
   }).join("");
+}
+
+function focusLinkedMyEventsItem() {
+  const variantId = new URLSearchParams(location.search).get("item");
+  if (!variantId) return;
+  const item = myEventsState.items.find(row => row.variantId === variantId);
+  const card = Array.from(document.querySelectorAll("[data-variant-id]")).find(node => node.dataset.variantId === variantId);
+  if (!item || !card) {
+    myEventsStatus("That listing is no longer available.", "error");
+    return;
+  }
+  card.classList.add("is-linked");
+  myEventsStatus(`${item.name} is ready to add to your order.`);
+  requestAnimationFrame(() => card.scrollIntoView({ behavior:"smooth", block:"center" }));
 }
 
 function renderMyEventsCart() {
@@ -110,6 +129,7 @@ async function loadMyEvents() {
     if (data.parish?.name) document.getElementById("eventsParishName").textContent = `${data.parish.name} — Meals & Events`;
     myEventsStatus("");
     renderMyEventsCart();
+    focusLinkedMyEventsItem();
   } catch (error) {
     myEventsStatus(error.message || "Unable to load Meals & Events.", "error");
   }

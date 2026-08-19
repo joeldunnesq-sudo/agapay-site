@@ -1605,6 +1605,8 @@ function donorParishCalendarEventDateKey(event = {}) {
 }
 
 function donorParishCalendarEventCategory(event = {}) {
+  if (event.commerceKind === "meal") return "gold";
+  if (event.commerceKind === "event") return "blue";
   const title = String(event.title || "").toLowerCase();
   if (/liturgy|vespers|matins|orthros|paraklesis|akathist|vigil|service|confession/.test(title)) return "gold";
   if (/fellowship|youth|class|study|meeting|festival|community|choir|coffee|ministry/.test(title)) return "blue";
@@ -1637,7 +1639,12 @@ function renderDonorParishCalendarSelectedDate() {
     const time = event.allDay ? "All day" : eventDate.toLocaleTimeString(undefined, { hour:"numeric", minute:"2-digit" });
     const location = String(event.location || "").trim();
     const description = String(event.description || "").trim();
-    return `<article class="cal-parish-event ${donorParishCalendarEventCategory(event)}"><span class="cal-parish-event-marker" aria-hidden="true"></span><span class="cal-parish-event-body"><strong>${escapeHtml(event.title || "Parish event")}</strong><small>${escapeHtml(time)}${location ? ` · ${escapeHtml(location)}` : ""}</small>${description ? `<p>${escapeHtml(description)}</p>` : ""}</span></article>`;
+    const context = [event.typeLabel, event.hostName, event.availabilityLabel].filter(Boolean).join(" · ");
+    const href = String(event.href || "").trim();
+    const content = `<span class="cal-parish-event-marker" aria-hidden="true"></span><span class="cal-parish-event-body">${context ? `<em>${escapeHtml(context)}</em>` : ""}<strong>${escapeHtml(event.title || "Parish event")}</strong><small>${escapeHtml(time)}${location ? ` · ${escapeHtml(location)}` : ""}</small>${description ? `<p>${escapeHtml(description)}</p>` : ""}</span>`;
+    return href
+      ? `<a class="cal-parish-event ${donorParishCalendarEventCategory(event)}" href="${escapeHtml(href)}">${content}</a>`
+      : `<article class="cal-parish-event ${donorParishCalendarEventCategory(event)}">${content}</article>`;
   }).join("")}`;
 }
 
@@ -1766,15 +1773,17 @@ function renderDonorParishCalendar(payload = {}, parish = null) {
 
   const parishName = parish?.name || donorProfile()?.defaultParish?.name || "Your Church";
   const subscriptionUrl = donorParishCalendarSubscriptionUrl(payload.subscriptionUrl);
+  const events = Array.isArray(payload.events) ? payload.events : [];
   const connected = Boolean(payload.connected && subscriptionUrl);
+  const calendarAvailable = connected || events.length > 0;
   const hasSubscriptionControls = Boolean(subscribe && subscribeButton && googleButton && copyButton && help);
   if (title.dataset.calendarTitle !== "fixed") title.textContent = `${parishName} Calendar`;
   status.classList.toggle("is-connected", connected);
   if (subscribe) subscribe.hidden = !connected;
   if (help) help.hidden = !connected;
-  monthView.hidden = !connected;
+  monthView.hidden = !calendarAvailable;
 
-  if (!connected) {
+  if (!calendarAvailable) {
     status.textContent = "Not connected";
     intro.textContent = parish
       ? (hasSubscriptionControls
@@ -1801,15 +1810,16 @@ function renderDonorParishCalendar(payload = {}, parish = null) {
     if (googleUrl) googleButton.href = googleUrl;
   }
 
-  const events = Array.isArray(payload.events) ? payload.events : [];
-  status.textContent = payload.unavailable ? "Connected · preview unavailable" : "Connected";
-  intro.textContent = payload.unavailable
-    ? (hasSubscriptionControls
-      ? "The event preview is temporarily unavailable, but you can still subscribe to the parish calendar."
-      : "The event preview is temporarily unavailable. Open the full calendar to manage your subscription.")
-    : (hasSubscriptionControls
-      ? "Upcoming events published by your parish. Subscribe once and changes will stay in sync."
-      : "Events published by your parish for the selected week.");
+  status.textContent = connected
+    ? (payload.unavailable ? "Published events · external calendar unavailable" : "Connected")
+    : "Published events";
+  intro.textContent = connected
+    ? (payload.unavailable
+      ? "AGAPAY events and meals are available below. The connected external calendar could not be refreshed right now."
+      : (hasSubscriptionControls
+        ? "Upcoming parish events, including published meals and registrations. Subscribe once and external calendar changes stay in sync."
+        : "Events published by your parish for the selected week."))
+    : "Events and meals published by your parish or its ministries. Select a listing to view details or register.";
 
   const today = new Date();
   const defaultView = monthView.dataset.calendarDefaultView === "month" ? "month" : "week";

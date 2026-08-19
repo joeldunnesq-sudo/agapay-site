@@ -5402,26 +5402,31 @@
         <div class="form-group full"><label class="form-label">${copy.singular} name</label><input name="name" required maxlength="180" placeholder="${copy.namePlaceholder}" /></div>
         <div class="form-group full"><label class="form-label">Description</label><textarea class="form-input" name="description" rows="2" maxlength="600" placeholder="What parishioners are purchasing"></textarea></div>
         <div class="form-group"><label class="form-label">Price</label><input name="price" type="number" min="0.01" step="0.01" required placeholder="20.00" /></div>
-        <div class="form-group"><label class="form-label">${copy.dateLabel}</label><input name="eventDate" type="date" /></div>
+        <div class="form-group"><label class="form-label">${copy.dateLabel}</label><input name="eventDate" type="date" required /></div>
+        <div class="form-group"><label class="form-label">Start time</label><input name="eventStartTime" type="time" /></div>
+        <div class="form-group"><label class="form-label">End time</label><input name="eventEndTime" type="time" /></div>
         <div class="form-group"><label class="form-label">Location</label><input name="eventLocation" maxlength="200" placeholder="Parish Hall" /></div>
         <div class="form-group"><label class="form-label">Quantity available</label><input name="stockQuantity" type="number" min="0" step="1" value="0" /></div>
         <div class="form-group"><label class="form-label">Limit per order</label><input name="maxQuantityPerOrder" type="number" min="1" step="1" placeholder="Optional" /></div>
         <div class="form-group"><label class="form-label">Sales close</label><input name="salesCloseAt" type="datetime-local" /></div>
+        <div class="form-group"><label class="form-label">Publication</label><select name="status"><option value="active">Publish now</option><option value="draft">Save as draft</option></select></div>
         <label class="form-check full"><input name="trackInventory" type="checkbox" checked /> Track quantity and stop checkout when sold out</label>
-        <button class="btn btn-gold" type="submit">Publish ${copy.singular}</button>
+        <label class="form-check full"><input name="showOnCalendar" type="checkbox" checked /> Show on the parish calendar when published</label>
+        <button class="btn btn-gold" type="submit">Save ${copy.singular}</button>
       </form></div>
     </section>`;
     const rows = items.map(item => `<tr>
       <td><strong>${escapeHtml(item.name)}</strong>${item.description ? `<br><small class="muted">${escapeHtml(item.description)}</small>` : ''}</td>
       <td>${escapeHtml(item.ministryName || 'Parish')}</td>
-      <td>${item.eventDate ? escapeHtml(item.eventDate) : '—'}${item.eventLocation ? `<br><small class="muted">${escapeHtml(item.eventLocation)}</small>` : ''}</td>
+      <td>${item.eventDate ? escapeHtml(item.eventDate) : '—'}${item.eventStartTime ? ` · ${escapeHtml(item.eventStartTime)}` : ''}${item.eventLocation ? `<br><small class="muted">${escapeHtml(item.eventLocation)}</small>` : ''}<br><small class="muted">${item.showOnCalendar ? 'On parish calendar' : 'Calendar hidden'}</small></td>
       <td>${eventsMoney(item.priceCents)}</td>
       <td>${item.trackInventory ? `${Number(item.stockQuantity || 0)} left` : 'Unlimited'}</td>
       <td>${Number(item.unitsSold || 0)}</td>
-      <td><span class="acct-status ${item.status === 'archived' ? 'draft' : 'posted'}">${item.status === 'archived' ? 'Archived' : 'Active'}</span></td>
+      <td><span class="acct-status ${item.status === 'active' ? 'posted' : 'draft'}">${item.status === 'active' ? 'Published' : item.status === 'draft' ? 'Draft' : 'Archived'}</span></td>
       <td><div class="bookstore-header-actions">
         <button class="btn btn-ghost btn-sm" type="button" onclick="moveParishCommerceOffering('${escapeHtml(item.id)}','${kind === 'meal' ? 'event' : 'meal'}','${kind}')">Move to ${kind === 'meal' ? 'Events' : 'Meals'}</button>
-        <button class="btn btn-ghost btn-sm" type="button" onclick="toggleEventsOversightStatus('${escapeHtml(item.id)}','${item.status === 'archived' ? 'active' : 'archived'}','${kind}')">${item.status === 'archived' ? 'Reactivate' : 'Archive'}</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="toggleEventsCalendarVisibility('${escapeHtml(item.id)}',${item.showOnCalendar ? 'false' : 'true'},'${kind}')">${item.showOnCalendar ? 'Hide from calendar' : 'Show on calendar'}</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="toggleEventsOversightStatus('${escapeHtml(item.id)}','${item.status === 'active' ? 'archived' : 'active'}','${kind}')">${item.status === 'active' ? 'Archive' : 'Publish'}</button>
       </div></td>
     </tr>`).join('');
     const orderRows = orders.map(order => `<tr>
@@ -5458,11 +5463,15 @@
       description: data.get('description'),
       priceCents: Math.round(Number(data.get('price') || 0) * 100),
       eventDate: data.get('eventDate'),
+      eventStartTime: data.get('eventStartTime'),
+      eventEndTime: data.get('eventEndTime'),
       eventLocation: data.get('eventLocation'),
       stockQuantity: Number(data.get('stockQuantity') || 0),
       maxQuantityPerOrder: data.get('maxQuantityPerOrder') ? Number(data.get('maxQuantityPerOrder')) : null,
       salesCloseAt: data.get('salesCloseAt') || null,
-      trackInventory: data.get('trackInventory') === 'on'
+      trackInventory: data.get('trackInventory') === 'on',
+      showOnCalendar: data.get('showOnCalendar') === 'on',
+      status: data.get('status')
     };
     const button = form.querySelector('button[type="submit"]');
     if (button) button.disabled = true;
@@ -5475,7 +5484,9 @@
       form.reset();
       const inventory = form.elements.trackInventory;
       if (inventory) inventory.checked = true;
-      setStatus(`${copy.singular} published.`, 'success');
+      const calendar = form.elements.showOnCalendar;
+      if (calendar) calendar.checked = true;
+      setStatus(body.status === 'draft' ? `${copy.singular} saved as a draft.` : `${copy.singular} published and added to the parish calendar.`, 'success');
       await loadEventsOversightPanel(kind, true);
     } catch (error) {
       setStatus(error.message, 'error');
@@ -5509,7 +5520,22 @@
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Unable to update this listing.');
-      setStatus(nextStatus === 'archived' ? 'Listing archived.' : 'Listing reactivated.', 'success');
+      setStatus(nextStatus === 'archived' ? 'Listing archived.' : 'Listing published.', 'success');
+      await loadEventsOversightPanel(offeringKind, true);
+    } catch (err) {
+      setStatus(err.message, 'error');
+    }
+  }
+
+  async function toggleEventsCalendarVisibility(productId, showOnCalendar, offeringKind = 'event') {
+    try {
+      const res = await fetch(eventsApi('/' + encodeURIComponent(productId)), {
+        method: 'PATCH', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ showOnCalendar: Boolean(showOnCalendar) })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to update calendar visibility.');
+      setStatus(showOnCalendar ? 'Listing added to the parish calendar.' : 'Listing hidden from the parish calendar.', 'success');
       await loadEventsOversightPanel(offeringKind, true);
     } catch (err) {
       setStatus(err.message, 'error');

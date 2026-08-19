@@ -22,4 +22,7 @@ if (failures.length) {
 }
 
 assert.match(pricing, /aria-labelledby="stripe-nonprofit-title"/, "the pricing explanation should be a labeled page section");
+assert.match(pricing, /\.tier-card \{[^}]*display: flex;[^}]*flex-direction: column;/, "pricing cards should use a column flex layout so small badges cannot stretch into grid rows");
+assert.match(pricing, /\.early-adopter-badge \{[^}]*align-self: center;[^}]*white-space: nowrap;/, "early-adopter badges should retain their compact pill geometry");
+assert.match(pricing, /\.value-card img \{[^}]*clip-path: inset\(0 0 0 10%\);[^}]*translateX\(-5%\)/, "the stewardship sketch should crop out the source image's blank left strip");
 console.log("PASS - pricing page explains Stripe nonprofit rates, eligibility, exclusions, and application steps");

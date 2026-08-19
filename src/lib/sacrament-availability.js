@@ -47,7 +47,7 @@ function zonedDateStr(date, timeZone) {
  * single-correction technique: guess it's UTC, see what that guess reads as
  * in the target zone, then shift by the difference.
  */
-function zonedTimeToUtc(dateStr, timeStr, timeZone) {
+export function zonedTimeToUtc(dateStr, timeStr, timeZone) {
   const naiveUtc = new Date(`${dateStr}T${timeStr}:00Z`);
   const p = zonedParts(naiveUtc, timeZone);
   const asIfUtc = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);

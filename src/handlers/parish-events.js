@@ -49,6 +49,7 @@ import { bookstoreSellerDisclosure } from "../lib/commerce-readiness.js";
 import { resolveSettlementProfileId } from "../lib/settlement-profiles.js";
 import { stripeFormConnectedRequest } from "../lib/stripe-connect.js";
 import { donorName } from "../lib/stripe-fees.js";
+import { zonedTimeToUtc } from "../lib/sacrament-availability.js";
 
 function centsFromEventAmount(value) {
   const number = Number(String(value || "").replace(/[^0-9.]/g, ""));
@@ -83,6 +84,40 @@ function eventOfferingKindFromBody(body = {}) {
   return value;
 }
 
+const EVENT_LISTING_STATUSES = new Set(["active", "draft", "archived"]);
+
+function eventListingStatus(value, fallback = "active") {
+  const status = String(value || fallback).trim().toLowerCase();
+  if (!EVENT_LISTING_STATUSES.has(status)) {
+    const error = new Error("Choose Draft, Published, or Archived status.");
+    error.status = 422;
+    throw error;
+  }
+  return status;
+}
+
+function eventClockTime(value = "") {
+  const time = String(value || "").trim();
+  if (!time) return "";
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
+    const error = new Error("Enter a valid event time.");
+    error.status = 422;
+    throw error;
+  }
+  return time;
+}
+
+function storedEventClockTime(value = "") {
+  try { return eventClockTime(value); }
+  catch { return ""; }
+}
+
+function validTimeZone(value = "") {
+  const timeZone = String(value || "").trim() || "America/Chicago";
+  try { new Intl.DateTimeFormat("en-US", { timeZone }); return timeZone; }
+  catch { return "America/Chicago"; }
+}
+
 function normalizeEventProduct(row = {}) {
   const priceCents = Number(row.unit_price_cents || 0);
   return {
@@ -91,6 +126,10 @@ function normalizeEventProduct(row = {}) {
     name: row.name || "Event item",
     description: row.description || "",
     eventDate: row.event_date || "",
+    eventStartTime: row.event_start_time || "",
+    eventEndTime: row.event_end_time || "",
+    eventTimezone: row.event_timezone || "",
+    showOnCalendar: Number(row.show_on_calendar ?? 1) !== 0,
     eventLocation: row.event_location || "",
     eventDetails: row.event_details || "",
     offeringKind: eventOfferingKind(row.item_category),
@@ -108,6 +147,63 @@ function normalizeEventProduct(row = {}) {
   };
 }
 
+export async function loadPublishedCommerceCalendarEvents(env, parishId, registration = {}) {
+  if (!d1(env) || !parishId || !commerceSuiteEnabledFor(registration)) return [];
+  const eventsEnabled = eventsEnabledFor(registration);
+  const mealsEnabled = mealsEnabledFor(registration);
+  if (!eventsEnabled && !mealsEnabled) return [];
+  const rows = await d1All(env, `
+    SELECT p.id, p.name, p.description, p.item_category, p.event_date, p.event_start_time,
+           p.event_end_time, p.event_timezone, p.event_location, p.event_details, p.sales_close_at,
+           p.ministry_id, m.display_name AS ministry_name,
+           MIN(v.id) AS variant_id, MIN(v.unit_price_cents) AS unit_price_cents,
+           SUM(CASE WHEN v.track_inventory = 0 THEN 0 ELSE COALESCE(v.stock_quantity, 0) END) AS stock_quantity,
+           MIN(COALESCE(v.track_inventory, 1)) AS track_inventory
+    FROM commerce_products p
+    LEFT JOIN commerce_product_variants v
+      ON v.product_id = p.id AND v.parish_id = p.parish_id
+      AND v.commerce_module = 'events' AND v.status = 'active'
+    LEFT JOIN directory_ministries m
+      ON m.id = p.ministry_id AND m.parish_id = p.parish_id
+    WHERE p.parish_id = ? AND p.commerce_module = 'events' AND p.status = 'active'
+      AND COALESCE(p.show_on_calendar, 1) = 1 AND p.event_date IS NOT NULL AND p.event_date <> ''
+      AND p.event_date BETWEEN date('now', '-1 day') AND date('now', '+180 days')
+    GROUP BY p.id
+    ORDER BY p.event_date ASC, p.event_start_time ASC, p.name COLLATE NOCASE
+  `, parishId);
+  return rows.flatMap((row) => {
+    const offeringKind = eventOfferingKind(row.item_category);
+    if ((offeringKind === "meal" && !mealsEnabled) || (offeringKind === "event" && !eventsEnabled)) return [];
+    const startTime = storedEventClockTime(row.event_start_time || "");
+    const endTime = storedEventClockTime(row.event_end_time || "");
+    const timeZone = validTimeZone(row.event_timezone || registration.timezone);
+    const startsAt = startTime ? zonedTimeToUtc(row.event_date, startTime, timeZone).toISOString() : row.event_date;
+    const endsAt = endTime ? zonedTimeToUtc(row.event_date, endTime, timeZone).toISOString() : "";
+    const stockQuantity = Number(row.stock_quantity || 0);
+    const trackInventory = Number(row.track_inventory ?? 1) !== 0;
+    const salesClosed = Boolean(row.sales_close_at && Date.parse(row.sales_close_at) < Date.now());
+    const soldOut = trackInventory && stockQuantity <= 0;
+    const hostName = row.ministry_id ? (row.ministry_name || "Parish ministry") : (registration.parishName || registration.name || "Parish");
+    return [{
+      id: `commerce-${row.id}`,
+      source: "commerce",
+      commerceKind: offeringKind,
+      typeLabel: offeringKind === "meal" ? "Meal" : "Event",
+      title: row.name || (offeringKind === "meal" ? "Parish meal" : "Parish event"),
+      description: row.description || row.event_details || "",
+      location: row.event_location || "",
+      startsAt,
+      endsAt,
+      allDay: !startTime,
+      timeZone,
+      hostName,
+      ministryId: row.ministry_id || "",
+      availabilityLabel: salesClosed ? "Sales closed" : soldOut ? "Sold out" : "Registration open",
+      href: `/myagapay/events?item=${encodeURIComponent(row.variant_id || "")}&kind=${offeringKind}`
+    }];
+  });
+}
+
 function salesClosed(product) {
   if (!product.salesCloseAt) return false;
   const closeTime = Date.parse(product.salesCloseAt);
@@ -118,7 +214,8 @@ function salesClosed(product) {
 export async function loadDonorEventProducts(env, parishId, availability = {}) {
   if (!d1(env)) return [];
   const rows = await d1All(env, `
-    SELECT p.id, p.name, p.description, p.item_category, p.event_date, p.event_location, p.event_details,
+    SELECT p.id, p.name, p.description, p.item_category, p.event_date, p.event_start_time, p.event_end_time,
+           p.event_timezone, p.show_on_calendar, p.event_location, p.event_details,
            p.sales_close_at, p.default_tax_code, p.fulfillment_type, p.image_url,
            v.id AS variant_id, v.variant_name, v.unit_price_cents, v.tax_code,
            v.fulfillment_type AS variant_fulfillment_type, v.stock_quantity, v.track_inventory,
@@ -482,6 +579,10 @@ function normalizeEventProductAdmin(row = {}) {
     description: row.description || "",
     offeringKind: eventOfferingKind(row.item_category),
     eventDate: row.event_date || "",
+    eventStartTime: row.event_start_time || "",
+    eventEndTime: row.event_end_time || "",
+    eventTimezone: row.event_timezone || "",
+    showOnCalendar: Number(row.show_on_calendar ?? 1) !== 0,
     eventLocation: row.event_location || "",
     eventDetails: row.event_details || "",
     salesCloseAt: row.sales_close_at || "",
@@ -532,7 +633,8 @@ export async function handleParishEvents(request, env, parishId, subpath = "") {
   // variants per product yet -- one product, one variant, one price.
   if (request.method === "GET" && segments.length === 0) {
     const rows = await d1All(env, `
-      SELECT p.id, p.name, p.description, p.item_category, p.event_date, p.event_location, p.event_details,
+      SELECT p.id, p.name, p.description, p.item_category, p.event_date, p.event_start_time, p.event_end_time,
+             p.event_timezone, p.show_on_calendar, p.event_location, p.event_details,
              p.sales_close_at, p.status, p.ministry_id, m.display_name AS ministry_name,
              v.id AS variant_id, v.variant_name, v.unit_price_cents, v.stock_quantity,
              v.track_inventory, v.max_quantity_per_order,
@@ -628,6 +730,13 @@ export async function handleParishEvents(request, env, parishId, subpath = "") {
       : null;
     const description = String(body.description || "").trim().slice(0, 600);
     const eventDate = String(body.eventDate || "").trim().slice(0, 40);
+    let eventStartTime, eventEndTime, status;
+    try {
+      eventStartTime = eventClockTime(body.eventStartTime);
+      eventEndTime = eventClockTime(body.eventEndTime);
+      status = eventListingStatus(body.status);
+    } catch (error) { return json({ error: error.message }, { status: error.status || 422 }); }
+    if (eventEndTime && !eventStartTime) return json({ error: "Add a start time before the end time." }, { status: 422 });
     const eventLocation = String(body.eventLocation || "").trim().slice(0, 200);
     const eventDetails = String(body.eventDetails || "").trim().slice(0, 1000);
     const salesCloseAt = String(body.salesCloseAt || "").trim().slice(0, 40) || null;
@@ -640,9 +749,12 @@ export async function handleParishEvents(request, env, parishId, subpath = "") {
     await d1Run(env, `
       INSERT INTO commerce_products
         (id, parish_id, commerce_module, name, description, item_category, fulfillment_type,
-         status, event_date, event_location, event_details, sales_close_at, created_at, updated_at)
-      VALUES (?, ?, 'events', ?, ?, ?, 'physical_pickup', 'active', ?, ?, ?, ?, ?, ?)
-    `, productId, parishId, name, description, newOfferingKind, eventDate || null, eventLocation || null, eventDetails || null, salesCloseAt, now, now);
+         status, event_date, event_start_time, event_end_time, event_timezone, show_on_calendar,
+         event_location, event_details, sales_close_at, published_at, created_at, updated_at)
+      VALUES (?, ?, 'events', ?, ?, ?, 'physical_pickup', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, productId, parishId, name, description, newOfferingKind, status, eventDate || null,
+      eventStartTime || null, eventEndTime || null, validTimeZone(auth.registration.timezone), body.showOnCalendar === false ? 0 : 1,
+      eventLocation || null, eventDetails || null, salesCloseAt, status === "active" ? now : null, now, now);
     await d1Run(env, `
       INSERT INTO commerce_product_variants
         (id, product_id, parish_id, commerce_module, variant_name, unit_price_cents,
@@ -672,11 +784,29 @@ export async function handleParishEvents(request, env, parishId, subpath = "") {
     for (const [key, column] of [
       ["name", "name"], ["description", "description"], ["eventDate", "event_date"],
       ["eventLocation", "event_location"], ["eventDetails", "event_details"],
-      ["salesCloseAt", "sales_close_at"], ["status", "status"]
+      ["salesCloseAt", "sales_close_at"]
     ]) {
       if (body[key] === undefined) continue;
       productFields.push(`${column} = ?`);
       productParams.push(String(body[key] || "").trim().slice(0, 1000) || null);
+    }
+    for (const [key, column] of [["eventStartTime", "event_start_time"], ["eventEndTime", "event_end_time"]]) {
+      if (body[key] === undefined) continue;
+      try {
+        productFields.push(`${column} = ?`);
+        productParams.push(eventClockTime(body[key]) || null);
+      } catch (error) { return json({ error: error.message }, { status: error.status || 422 }); }
+    }
+    if (body.status !== undefined) {
+      try {
+        const status = eventListingStatus(body.status);
+        productFields.push("status = ?", "published_at = CASE WHEN ? = 'active' THEN COALESCE(published_at, ?) ELSE published_at END");
+        productParams.push(status, status, now);
+      } catch (error) { return json({ error: error.message }, { status: error.status || 422 }); }
+    }
+    if (body.showOnCalendar !== undefined) {
+      productFields.push("show_on_calendar = ?");
+      productParams.push(body.showOnCalendar === false ? 0 : 1);
     }
     if (body.offeringKind !== undefined) {
       try {
@@ -754,7 +884,8 @@ export async function requireParishCommerceSuite(env, parishId) {
 export async function listMinistryCommerceItems(env, parishId, ministryId) {
   await requireParishCommerceSuite(env, parishId);
   const rows = await d1All(env, `
-    SELECT p.id, p.name, p.description, p.item_category, p.event_date, p.event_location, p.event_details,
+    SELECT p.id, p.name, p.description, p.item_category, p.event_date, p.event_start_time, p.event_end_time,
+           p.event_timezone, p.show_on_calendar, p.event_location, p.event_details,
            p.sales_close_at, p.status, p.ministry_id,
            v.id AS variant_id, v.variant_name, v.unit_price_cents, v.stock_quantity,
            v.track_inventory, v.max_quantity_per_order,
@@ -777,7 +908,7 @@ export async function listMinistryCommerceItems(env, parishId, ministryId) {
 }
 
 export async function createMinistryCommerceItem(request, env, parishId, ministryId, personId) {
-  await requireParishCommerceSuite(env, parishId);
+  const registration = await requireParishCommerceSuite(env, parishId);
   let body = {};
   try { body = await request.json(); } catch { const e = new Error("Invalid JSON body"); e.status = 400; throw e; }
 
@@ -792,6 +923,10 @@ export async function createMinistryCommerceItem(request, env, parishId, ministr
     : null;
   const description = String(body.description || "").trim().slice(0, 600);
   const eventDate = String(body.eventDate || "").trim().slice(0, 40);
+  const eventStartTime = eventClockTime(body.eventStartTime);
+  const eventEndTime = eventClockTime(body.eventEndTime);
+  if (eventEndTime && !eventStartTime) { const e = new Error("Add a start time before the end time."); e.status = 422; throw e; }
+  const status = eventListingStatus(body.status);
   const eventLocation = String(body.eventLocation || "").trim().slice(0, 200);
   const eventDetails = String(body.eventDetails || "").trim().slice(0, 1000);
   const salesCloseAt = String(body.salesCloseAt || "").trim().slice(0, 40) || null;
@@ -803,10 +938,14 @@ export async function createMinistryCommerceItem(request, env, parishId, ministr
   await d1Run(env, `
     INSERT INTO commerce_products
       (id, parish_id, commerce_module, name, description, item_category, fulfillment_type,
-       status, event_date, event_location, event_details, sales_close_at,
+       status, event_date, event_start_time, event_end_time, event_timezone, show_on_calendar,
+       event_location, event_details, sales_close_at, published_at,
        ministry_id, created_by_person_id, created_at, updated_at)
-    VALUES (?, ?, 'events', ?, ?, ?, 'physical_pickup', 'active', ?, ?, ?, ?, ?, ?, ?, ?)
-  `, productId, parishId, name, description, offeringKind, eventDate || null, eventLocation || null, eventDetails || null, salesCloseAt, ministryId, personId, now, now);
+    VALUES (?, ?, 'events', ?, ?, ?, 'physical_pickup', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `, productId, parishId, name, description, offeringKind, status, eventDate || null,
+    eventStartTime || null, eventEndTime || null, validTimeZone(registration.timezone), body.showOnCalendar === false ? 0 : 1,
+    eventLocation || null, eventDetails || null, salesCloseAt, status === "active" ? now : null,
+    ministryId, personId, now, now);
   await d1Run(env, `
     INSERT INTO commerce_product_variants
       (id, product_id, parish_id, commerce_module, variant_name, unit_price_cents,
@@ -840,11 +979,25 @@ export async function patchMinistryCommerceItem(request, env, parishId, ministry
   for (const [key, column] of [
     ["name", "name"], ["description", "description"], ["eventDate", "event_date"],
     ["eventLocation", "event_location"], ["eventDetails", "event_details"],
-    ["salesCloseAt", "sales_close_at"], ["status", "status"]
+    ["salesCloseAt", "sales_close_at"]
   ]) {
     if (body[key] === undefined) continue;
     productFields.push(`${column} = ?`);
     productParams.push(String(body[key] || "").trim().slice(0, 1000) || null);
+  }
+  for (const [key, column] of [["eventStartTime", "event_start_time"], ["eventEndTime", "event_end_time"]]) {
+    if (body[key] === undefined) continue;
+    productFields.push(`${column} = ?`);
+    productParams.push(eventClockTime(body[key]) || null);
+  }
+  if (body.status !== undefined) {
+    const status = eventListingStatus(body.status);
+    productFields.push("status = ?", "published_at = CASE WHEN ? = 'active' THEN COALESCE(published_at, ?) ELSE published_at END");
+    productParams.push(status, status, now);
+  }
+  if (body.showOnCalendar !== undefined) {
+    productFields.push("show_on_calendar = ?");
+    productParams.push(body.showOnCalendar === false ? 0 : 1);
   }
   if (body.offeringKind !== undefined) {
     productFields.push("item_category = ?");

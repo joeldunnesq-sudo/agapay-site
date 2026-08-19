@@ -3,6 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import {
   createMinistryCommerceItem,
   listMinistryCommerceItems,
+  loadPublishedCommerceCalendarEvents,
   loadDonorEventProducts,
   patchMinistryCommerceItem
 } from "../src/handlers/parish-events.js";
@@ -12,8 +13,9 @@ sqlite.exec(`
   CREATE TABLE commerce_products (
     id TEXT PRIMARY KEY, parish_id TEXT, commerce_module TEXT, name TEXT,
     description TEXT, item_category TEXT, default_tax_code TEXT, fulfillment_type TEXT, status TEXT,
-    image_url TEXT, event_date TEXT, event_location TEXT, event_details TEXT,
-    sales_close_at TEXT, ministry_id TEXT, created_by_person_id TEXT, created_at TEXT, updated_at TEXT
+    image_url TEXT, event_date TEXT, event_start_time TEXT, event_end_time TEXT, event_timezone TEXT,
+    show_on_calendar INTEGER NOT NULL DEFAULT 1, event_location TEXT, event_details TEXT,
+    sales_close_at TEXT, published_at TEXT, ministry_id TEXT, created_by_person_id TEXT, created_at TEXT, updated_at TEXT
   );
   CREATE TABLE commerce_product_variants (
     id TEXT PRIMARY KEY, product_id TEXT, parish_id TEXT, commerce_module TEXT,
@@ -239,3 +241,35 @@ const parishAdminListing = oversightItems.find(i => i.name === "Patronal Feast D
 assert.equal(parishAdminListing.ministryName, "Parish", "a listing with no ministry_id (created by full parish admin) must show 'Parish', not blank or null");
 
 console.log("PASS - admin oversight list correctly attributes ministry-created listings via directory_ministries join, and labels parish-admin-created listings as 'Parish'");
+
+sqlite.prepare("UPDATE commerce_products SET event_date=date('now','+30 day'), event_start_time='17:30', event_end_time='20:00', event_timezone='America/Chicago' WHERE id='ministry_a_item'").run();
+sqlite.exec(`
+  INSERT INTO commerce_products (id, parish_id, commerce_module, name, item_category, status, event_date, show_on_calendar)
+  VALUES ('hidden_calendar_item', 'parish_1', 'events', 'Hidden Supper', 'meal', 'active', date('now','+31 day'), 0);
+  INSERT INTO commerce_product_variants (id, product_id, parish_id, commerce_module, variant_name, unit_price_cents, stock_quantity, track_inventory, status)
+  VALUES ('hidden_calendar_variant', 'hidden_calendar_item', 'parish_1', 'events', '', 900, 10, 1, 'active');
+  INSERT INTO commerce_products (id, parish_id, commerce_module, name, item_category, status, event_date, show_on_calendar)
+  VALUES ('draft_calendar_item', 'parish_1', 'events', 'Draft Festival', 'event', 'draft', date('now','+32 day'), 1);
+  INSERT INTO commerce_product_variants (id, product_id, parish_id, commerce_module, variant_name, unit_price_cents, stock_quantity, track_inventory, status)
+  VALUES ('draft_calendar_variant', 'draft_calendar_item', 'parish_1', 'events', '', 900, 10, 1, 'active');
+`);
+
+const calendarRegistration = {
+  subscriptionTier: "parish",
+  eventsEnabled: true,
+  mealsEnabled: true,
+  timezone: "America/Chicago",
+  parishName: "St. Test Parish"
+};
+const calendarEvents = await loadPublishedCommerceCalendarEvents(env, "parish_1", calendarRegistration);
+const choirCalendarEvent = calendarEvents.find(event => event.id === "commerce-ministry_a_item");
+assert.ok(choirCalendarEvent, "published ministry listings should surface in the parish calendar");
+assert.equal(choirCalendarEvent.hostName, "Choir Ministry", "calendar entries should attribute the publishing ministry");
+assert.equal(choirCalendarEvent.allDay, false, "a listing with a start time should be a timed event");
+assert.match(choirCalendarEvent.href, /\/myagapay\/events\?item=ministry_a_variant&kind=event/, "calendar entries should link to the purchasable variant");
+assert.ok(!calendarEvents.some(event => event.id === "commerce-hidden_calendar_item"), "calendar-hidden listings must stay out of the calendar");
+assert.ok(!calendarEvents.some(event => event.id === "commerce-draft_calendar_item"), "draft listings must stay out of the calendar");
+const mealsCalendar = await loadPublishedCommerceCalendarEvents(env, "parish_1", { ...calendarRegistration, eventsEnabled:false });
+assert.ok(mealsCalendar.length && mealsCalendar.every(event => event.commerceKind === "meal"), "the Events feature switch should not hide published Meals");
+
+console.log("PASS - published parish and ministry commerce listings surface in the calendar with visibility, status, feature, time, attribution, and checkout-link controls");
