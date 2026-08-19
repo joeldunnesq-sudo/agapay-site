@@ -77,6 +77,34 @@ function setDonorStatus(message, tone = "info") {
   ["donorStatus", "desktopDonorStatus"].forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
+    const isBookstoreToast = id === "donorStatus" && document.body?.classList.contains("donor-bookstore-page");
+    if (isBookstoreToast) {
+      window.clearTimeout(el.bookstoreToastTimer);
+      window.clearTimeout(el.bookstoreToastCleanupTimer);
+      el.textContent = message || "";
+      el.className = message ? `notice ${tone} bookstore-toast` : "notice bookstore-toast";
+      el.setAttribute("role", tone === "error" ? "alert" : "status");
+      el.setAttribute("aria-live", tone === "error" ? "assertive" : "polite");
+      if (!message) {
+        el.classList.remove("is-visible");
+        el.hidden = true;
+        el.style.display = "none";
+        return;
+      }
+      el.hidden = false;
+      el.style.display = "block";
+      window.requestAnimationFrame(() => el.classList.add("is-visible"));
+      if (tone !== "error") {
+        el.bookstoreToastTimer = window.setTimeout(() => {
+          el.classList.remove("is-visible");
+          el.bookstoreToastCleanupTimer = window.setTimeout(() => {
+            el.hidden = true;
+            el.style.display = "none";
+          }, 240);
+        }, 2800);
+      }
+      return;
+    }
     el.textContent = message || "";
     el.className = message ? `notice ${tone}` : "notice";
     el.style.display = message ? "block" : "none";
@@ -4769,6 +4797,7 @@ let bookstoreItemFieldsSchema = null;
 let bookstoreProducts = [];
 let bookstoreCart = [];
 let bookstoreCatalogQuery = "";
+let bookstoreCatalogCategory = "all";
 let bookstoreParishes = [];
 
 async function loadBookstoreItemFieldsSchema() {
@@ -4829,6 +4858,11 @@ function setBookstoreCatalogQuery(value = "") {
   renderBookstoreProducts(bookstoreProducts);
 }
 
+function setBookstoreCatalogCategory(category = "all") {
+  bookstoreCatalogCategory = String(category || "all");
+  renderBookstoreProducts(bookstoreProducts);
+}
+
 function bookstoreCategoryIcon(category = "other") {
   const icons = {
     sale: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 7v8.5L16.5 27 27 16.5 15.5 5H7a2 2 0 0 0-2 2Z"/><circle cx="11" cy="11" r="2"/><path d="m12 21 8-8M13 14h.01M20 21h.01"/></svg>',
@@ -4848,12 +4882,13 @@ function bookstoreBarcodeIcon() {
 }
 
 function bookstoreProductCard(product, { popular = false } = {}) {
-  const cartItem = bookstoreCart.find(ci => ci.productId === product.id && ci.variantId === (product.variantId || ""));
+  const cartIndex = bookstoreCart.findIndex(ci => ci.productId === product.id && ci.variantId === (product.variantId || ""));
+  const cartItem = cartIndex >= 0 ? bookstoreCart[cartIndex] : null;
   const available = product.trackInventory === false || Number(product.stockQuantity || 0) > 0;
-  const qtyBadge = cartItem ? `<span class="bookstore-product-card-qty">${Number(cartItem.quantity || 1)}</span>` : "";
+  const qtyBadge = cartItem ? `<span class="bookstore-product-card-qty">${Number(cartItem.quantity || 1)} in cart</span>` : "";
   const description = String(product.description || "").trim();
   const productMedia = product.imageUrl
-    ? `<span class="bookstore-product-media"><img src="${escapeHtml(product.imageUrl)}" alt="" loading="lazy" decoding="async"></span>`
+    ? `<span class="bookstore-product-media"><img src="${escapeHtml(product.imageUrl)}" alt="${escapeHtml(product.name || "Bookstore item")}" loading="lazy" decoding="async"></span>`
     : `<span class="bookstore-product-media" aria-hidden="true">${bookstoreCategoryIcon(product.category)}</span>`;
   const popularity = popular
     ? `<span class="bookstore-popular-rank">${Number(product.unitsSold || 0) > 0 ? `${Number(product.unitsSold)} sold` : "Parish favorite"}</span>`
@@ -4862,18 +4897,27 @@ function bookstoreProductCard(product, { popular = false } = {}) {
   const price = product.onSale
     ? `<span class="bookstore-price bookstore-price-sale"><del>${formatCentsAsDollars(product.regularPriceCents)}</del><strong>${formatCentsAsDollars(product.priceCents)}</strong></span>`
     : `<span class="bookstore-price">${formatCentsAsDollars(product.priceCents)}</span>`;
+  const action = cartItem
+    ? `<span class="bookstore-product-stepper" aria-label="Quantity for ${escapeHtml(product.name)}">
+        <button type="button" onclick="changeBookstoreCartQuantity(${cartIndex}, -1)" aria-label="Remove one ${escapeHtml(product.name)}">−</button>
+        <strong aria-live="polite">${Number(cartItem.quantity || 1)}</strong>
+        <button type="button" onclick="changeBookstoreCartQuantity(${cartIndex}, 1)" aria-label="Add another ${escapeHtml(product.name)}">+</button>
+      </span>`
+    : `<button type="button" class="bookstore-product-add" onclick="addBookstoreProductToCart('${escapeHtml(product.id)}','${escapeHtml(product.variantId || "")}')" ${available ? "" : "disabled"}>${available ? "+ Add" : "Unavailable"}</button>`;
   return `
-    <button type="button" class="bookstore-product-card${popular ? " bookstore-popular-card" : ""}${product.onSale ? " bookstore-product-on-sale" : ""}" onclick="addBookstoreProductToCart('${escapeHtml(product.id)}','${escapeHtml(product.variantId || "")}')" ${available ? "" : "disabled"}>
+    <article class="bookstore-product-card${popular ? " bookstore-popular-card" : ""}${product.onSale ? " bookstore-product-on-sale" : ""}${available ? "" : " is-unavailable"}">
       ${qtyBadge}
       ${available ? "" : '<span class="bookstore-product-stock-out">Out of stock</span>'}
       ${saleBadge}
       ${productMedia}
       ${popularity}
-      <strong>${escapeHtml(product.name)}</strong>
-      ${description ? `<small>${escapeHtml(description)}</small>` : ""}
-      <span class="bookstore-product-meta"><span class="bookstore-category-pill">${escapeHtml(product.onSale ? "Sale" : (product.categoryLabel || "Item"))}</span>${price}</span>
-      <span class="bookstore-product-add">${available ? "Add to cart" : "Currently unavailable"}</span>
-    </button>`;
+      <div class="bookstore-product-copy">
+        <span class="bookstore-category-pill">${escapeHtml(product.onSale ? "Sale" : (product.categoryLabel || "Item"))}</span>
+        <strong>${escapeHtml(product.name)}</strong>
+        ${description ? `<small>${escapeHtml(description)}</small>` : ""}
+      </div>
+      <span class="bookstore-product-meta">${price}${action}</span>
+    </article>`;
 }
 
 function renderBookstorePopularItems(products = []) {
@@ -4882,9 +4926,32 @@ function renderBookstorePopularItems(products = []) {
   if (!section || !grid) return;
   const popular = [...products]
     .sort((a, b) => Number(b.unitsSold || 0) - Number(a.unitsSold || 0) || String(a.name || "").localeCompare(String(b.name || "")))
-    .slice(0, 2);
-  section.hidden = popular.length === 0;
+    .slice(0, 4);
+  section.hidden = popular.length === 0 || Boolean(bookstoreCatalogQuery) || bookstoreCatalogCategory !== "all";
   grid.innerHTML = popular.map(product => bookstoreProductCard(product, { popular: true })).join("");
+}
+
+function renderBookstoreCategoryFilters(products = []) {
+  const target = document.getElementById("bookstoreCategoryFilters");
+  if (!target) return;
+  const categories = new Map();
+  products.forEach(product => {
+    const key = product.category || "other";
+    const label = product.categoryLabel || BOOKSTORE_CATEGORY_LABELS[key] || "Other";
+    if (!categories.has(key)) categories.set(key, { label, count: 0 });
+    categories.get(key).count += 1;
+  });
+  const hasSale = products.some(product => product.onSale);
+  const availableCategories = new Set(["all", ...(hasSale ? ["sale"] : []), ...categories.keys()]);
+  if (!availableCategories.has(bookstoreCatalogCategory)) bookstoreCatalogCategory = "all";
+  const filters = [
+    { key:"all", label:"All", count:products.length },
+    ...(hasSale ? [{ key:"sale", label:"Sale", count:products.filter(product => product.onSale).length }] : []),
+    ...Array.from(categories.entries())
+      .sort(([, left], [, right]) => left.label.localeCompare(right.label))
+      .map(([key, value]) => ({ key, ...value }))
+  ];
+  target.innerHTML = filters.map(filter => `<button type="button" class="bookstore-category-chip${bookstoreCatalogCategory === filter.key ? " is-active" : ""}" onclick="setBookstoreCatalogCategory('${escapeHtml(filter.key)}')" aria-pressed="${bookstoreCatalogCategory === filter.key}">${filter.key === "sale" ? '<span aria-hidden="true">%</span>' : ""}${escapeHtml(filter.label)} <small>${filter.count}</small></button>`).join("");
 }
 
 function renderBookstoreProducts(products = []) {
@@ -4894,17 +4961,22 @@ function renderBookstoreProducts(products = []) {
   if (!products.length) {
     if (count) count.textContent = "No catalog items yet";
     renderBookstorePopularItems([]);
+    renderBookstoreCategoryFilters([]);
     container.innerHTML = '<div class="notice">No parish products yet. Scan a book below and, after purchase, it will be added to the parish catalog for other parishioners.</div>';
     return;
   }
 
   renderBookstorePopularItems(products);
+  renderBookstoreCategoryFilters(products);
 
-  const visibleProducts = bookstoreCatalogQuery
-    ? products.filter(product => [product.name, product.description, product.categoryLabel]
-        .some(value => String(value || "").toLowerCase().includes(bookstoreCatalogQuery)))
-    : products;
-  if (count) count.textContent = bookstoreCatalogQuery
+  const visibleProducts = products.filter(product => {
+    const matchesQuery = !bookstoreCatalogQuery || [product.name, product.description, product.categoryLabel]
+      .some(value => String(value || "").toLowerCase().includes(bookstoreCatalogQuery));
+    const matchesCategory = bookstoreCatalogCategory === "all"
+      || (bookstoreCatalogCategory === "sale" ? product.onSale : product.category === bookstoreCatalogCategory);
+    return matchesQuery && matchesCategory;
+  });
+  if (count) count.textContent = bookstoreCatalogQuery || bookstoreCatalogCategory !== "all"
     ? `${visibleProducts.length} of ${products.length} items`
     : `${products.length} item${products.length === 1 ? "" : "s"} available`;
   if (!visibleProducts.length) {
@@ -4912,49 +4984,7 @@ function renderBookstoreProducts(products = []) {
     return;
   }
 
-  const openLabels = new Set(Array.from(container.querySelectorAll("details.bookstore-category-group[open]")).map(el => el.dataset.category));
-
-  const groups = new Map();
-  visibleProducts.forEach(product => {
-    const label = product.onSale ? "Sale" : (product.categoryLabel || "Other items");
-    const key = product.onSale ? "sale" : (product.category || "other");
-    if (!groups.has(key)) groups.set(key, { label, items: [] });
-    groups.get(key).items.push(product);
-  });
-
-  container.innerHTML = Array.from(groups.entries())
-    .sort(([a], [b]) => a === "sale" ? -1 : b === "sale" ? 1 : 0)
-    .map(([category, group]) => {
-    const { label, items } = group;
-    const cartQtyInCategory = items.reduce((sum, product) => {
-      const cartItem = bookstoreCart.find(ci => ci.productId === product.id && ci.variantId === (product.variantId || ""));
-      return sum + (cartItem ? Number(cartItem.quantity || 1) : 0);
-    }, 0);
-    const isOpen = openLabels.has(category);
-    const badge = cartQtyInCategory
-      ? `<span class="bookstore-category-count">${cartQtyInCategory} in cart</span>`
-      : `<span class="bookstore-category-tally">${items.length} item${items.length === 1 ? "" : "s"}</span>`;
-    const cardsHtml = items.map(product => bookstoreProductCard(product)).join("");
-    const categoryTools = category === "book"
-      ? `<div class="bookstore-category-scan">
-          <span class="bookstore-category-scan-icon">${bookstoreBarcodeIcon()}</span>
-          <span><strong>Have the book in your hand?</strong><small>Scan its barcode and we’ll identify it for you.</small></span>
-          <button type="button" onclick="startBookstoreBookScan()">Scan barcode</button>
-        </div>`
-      : "";
-
-    return `
-      <details class="bookstore-category-group" data-category="${escapeHtml(category)}"${isOpen ? " open" : ""}>
-        <summary class="bookstore-category-summary">
-          <span class="bookstore-category-icon">${bookstoreCategoryIcon(category)}</span>
-          <span class="bookstore-category-name">${escapeHtml(label)}</span>
-          ${badge}
-        </summary>
-        ${categoryTools}
-        <div class="bookstore-product-grid">${cardsHtml}</div>
-      </details>
-    `;
-  }).join("");
+  container.innerHTML = `<div class="bookstore-product-grid">${visibleProducts.map(product => bookstoreProductCard(product)).join("")}</div>`;
 }
 
 function renderBookstoreCart() {
@@ -4969,18 +4999,22 @@ function renderBookstoreCart() {
   if (count) count.textContent = String(itemCount);
   if (mobileTotal) mobileTotal.textContent = formatCentsAsDollars(subtotal);
   if (mobileCount) mobileCount.textContent = String(itemCount);
+  const mobileCartBar = document.getElementById("bookstoreMobileCartBar");
+  if (mobileCartBar) mobileCartBar.hidden = itemCount === 0;
   document.getElementById("bookstoreShopGrid")?.classList.toggle("has-cart", itemCount > 0);
   if (bookstoreProducts.length) renderBookstoreProducts(bookstoreProducts);
   if (!list) return;
   if (!bookstoreCart.length) {
     list.innerHTML = '<div class="notice">Your cart is empty.</div>';
+    setBookstoreMobileCartOpen(false);
     return;
   }
   list.innerHTML = bookstoreCart.map((item, index) => `
     <div class="bookstore-cart-row">
       <div class="bookstore-cart-row-top">
+        <span class="bookstore-cart-thumb" aria-hidden="true">${item.imageUrl ? `<img src="${escapeHtml(item.imageUrl)}" alt="">` : bookstoreCategoryIcon(item.itemCategory || bookstoreProductById(item.productId, item.variantId)?.category || "other")}</span>
         <div><strong>${escapeHtml(item.name)}</strong><br><small>${escapeHtml(item.categoryLabel || "Bookstore item")} · ${formatCentsAsDollars(item.unitPriceCents)} each</small></div>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="removeBookstoreCartItem(${index})">Remove</button>
+        <button type="button" class="bookstore-cart-remove" onclick="removeBookstoreCartItem(${index})" aria-label="Remove ${escapeHtml(item.name)} from cart">×</button>
       </div>
       <div class="bookstore-qty-controls" aria-label="Quantity for ${escapeHtml(item.name)}">
         <button type="button" onclick="changeBookstoreCartQuantity(${index}, -1)">-</button>
@@ -4992,15 +5026,33 @@ function renderBookstoreCart() {
   `).join("");
 }
 
-function toggleBookstoreMobileCart() {
+function setBookstoreMobileCartOpen(isOpen) {
   const panel = document.getElementById("bookstoreCartPanel");
   const trigger = document.getElementById("bookstoreMobileCartBar");
   const action = document.getElementById("bookstoreMobileCartAction");
+  const backdrop = document.getElementById("bookstoreCartBackdrop");
   if (!panel || !trigger) return;
-  const isOpen = panel.classList.toggle("is-mobile-open");
+  const isMobile = window.matchMedia?.("(max-width: 700px)")?.matches;
+  panel.classList.toggle("is-mobile-open", isOpen);
   trigger.setAttribute("aria-expanded", String(isOpen));
   if (action) action.textContent = isOpen ? "Close" : "View";
-  if (isOpen) panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  if (backdrop) backdrop.hidden = !isOpen;
+  document.body.classList.toggle("bookstore-cart-open", isOpen);
+  if (isMobile) {
+    panel.setAttribute("aria-hidden", String(!isOpen));
+    panel.inert = !isOpen;
+    if (isOpen) panel.querySelector(".bookstore-cart-close")?.focus();
+    else if (document.activeElement && panel.contains(document.activeElement)) trigger.focus();
+  } else {
+    panel.removeAttribute("aria-hidden");
+    panel.inert = false;
+  }
+}
+
+function toggleBookstoreMobileCart() {
+  if (!bookstoreCart.length) return;
+  const panel = document.getElementById("bookstoreCartPanel");
+  setBookstoreMobileCartOpen(!panel?.classList.contains("is-mobile-open"));
 }
 
 function addBookstoreProductToCart(productId, variantId = "") {
@@ -5018,6 +5070,7 @@ function addBookstoreProductToCart(productId, variantId = "") {
     variantId: product.variantId,
     name: product.name,
     categoryLabel: product.categoryLabel,
+    imageUrl: product.imageUrl || "",
     unitPriceCents: product.priceCents,
     quantity: 1
   });
@@ -5028,7 +5081,9 @@ function addBookstoreProductToCart(productId, variantId = "") {
 function changeBookstoreCartQuantity(index, delta) {
   const item = bookstoreCart[index];
   if (!item) return;
-  item.quantity = Math.max(1, Math.min(50, Number(item.quantity || 1) + delta));
+  const nextQuantity = Number(item.quantity || 1) + delta;
+  if (nextQuantity <= 0) bookstoreCart.splice(index, 1);
+  else item.quantity = Math.min(50, nextQuantity);
   renderBookstoreCart();
 }
 
@@ -5391,6 +5446,7 @@ document.addEventListener("click", event => {
 });
 document.addEventListener("keydown", event => {
   if (event.key === "Escape" && !document.getElementById("bookstoreParishMenu")?.hidden) closeBookstoreParishMenu({ restoreFocus: true });
+  if (event.key === "Escape" && document.getElementById("bookstoreCartPanel")?.classList.contains("is-mobile-open")) setBookstoreMobileCartOpen(false);
 });
 
 async function loadDonorBookstorePage() {
