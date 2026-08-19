@@ -302,7 +302,8 @@
     .result-row.muted strong { color: #5B656D; font-size: 0.96rem; }
     .result-row.net { margin-top: 0.2rem; border: 0; background: rgba(6, 21, 34, 0.06); border-radius: 10px; padding: 0.75rem 0.85rem; font-weight: 800; }
     .value-card { position: relative; min-height: 100%; padding: 1.35rem; display: grid; align-content: start; gap: 1rem; }
-    .value-card img { margin-top: auto; width: 100%; max-height: 210px; object-fit: contain; object-position: center; clip-path: inset(0 0 0 10%); transform: translateX(-5%); filter: saturate(0) brightness(1.1) contrast(1.2); mix-blend-mode: multiply; }
+    .value-card-art { height: 210px; margin-top: auto; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .value-card-art img { flex: 0 0 auto; width: auto; height: 210px; max-width: none; clip-path: inset(0 0 0 10%); transform: translateX(-5%); filter: saturate(0) brightness(1.1) contrast(1.2); mix-blend-mode: multiply; }
 
     .faq-section { margin-top: 1.35rem; border-top: 1px solid rgba(200, 162, 74, 0.3); padding-top: 1.1rem; }
     .faq-title { text-align: center; margin-bottom: 0.95rem; }
@@ -709,7 +710,7 @@
             <p>AGAPAY combines giving, commemorations, calendar-aware campaigns, donor history, pledge tracking, and Stewardship Health insights in a values-aligned platform. The goal is not just to process gifts, but to help parish leaders understand and strengthen the spiritual work those gifts sustain.</p>
           </div>
           <a class="small-btn primary" href="/give/how-it-works">How AGAPAY works</a>
-          <img src="/images/pricing/church-tier-parish.png" alt="Parish church sketch" />
+          <div class="value-card-art"><img src="/images/pricing/church-tier-parish.png" alt="Parish church sketch" /></div>
         </aside>
       </div>
 
