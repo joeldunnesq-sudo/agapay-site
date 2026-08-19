@@ -46,7 +46,7 @@ assert.match(html, /\.bookstore-catalog-heading \{ position:static; z-index:auto
 assert.match(app, /classList\.toggle\("has-cart", itemCount > 0\)/,
   "the storefront width must respond to actual cart state");
 
-assert.match(html, /donor\/style\.css\?v=20260819calendar1/,
+assert.match(html, /donor\/style\.css\?v=20260819newsimage1/,
   "the bookstore must load the updated storefront styles with a fresh immutable URL");
 assert.match(html, /donor\/app\.js\?v=20260816torch1/,
   "the bookstore must load the updated storefront behavior with a fresh immutable URL");

@@ -51,6 +51,50 @@ function entryLink(block, feedUrl) {
   try { return validateParishBlogUrl(rssLink, feedUrl); } catch { return ""; }
 }
 
+function xmlAttributeValue(attributes, name) {
+  const match = String(attributes || "").match(new RegExp(`\\b${name}\\s*=\\s*(["'])([\\s\\S]*?)\\1`, "i"));
+  return match?.[2] || "";
+}
+
+function normalizedArticleImageUrl(value, feedUrl) {
+  const raw = decodeXmlEntities(String(value || "").trim());
+  if (!raw) return "";
+  try {
+    const parsed = new URL(raw, feedUrl);
+    if (parsed.protocol === "http:") parsed.protocol = "https:";
+    return validateParishBlogUrl(parsed.toString());
+  } catch {
+    return "";
+  }
+}
+
+function entryImageUrl(block, feedUrl) {
+  for (const match of String(block || "").matchAll(/<media:(content|thumbnail)\b([^>]*)\/?\s*>/gi)) {
+    const attributes = match[2] || "";
+    const type = xmlAttributeValue(attributes, "type").toLowerCase();
+    const medium = xmlAttributeValue(attributes, "medium").toLowerCase();
+    if ((type && !type.startsWith("image/")) || (medium && medium !== "image")) continue;
+    const imageUrl = normalizedArticleImageUrl(xmlAttributeValue(attributes, "url"), feedUrl);
+    if (imageUrl) return imageUrl;
+  }
+  for (const match of String(block || "").matchAll(/<(enclosure|link)\b([^>]*)\/?\s*>/gi)) {
+    const tag = match[1].toLowerCase();
+    const attributes = match[2] || "";
+    const type = xmlAttributeValue(attributes, "type").toLowerCase();
+    const rel = xmlAttributeValue(attributes, "rel").toLowerCase();
+    if (tag === "link" && rel !== "enclosure") continue;
+    const rawUrl = xmlAttributeValue(attributes, tag === "link" ? "href" : "url");
+    if (type ? !type.startsWith("image/") : !/\.(?:avif|gif|jpe?g|png|webp)(?:[?#]|$)/i.test(rawUrl)) continue;
+    const imageUrl = normalizedArticleImageUrl(rawUrl, feedUrl);
+    if (imageUrl) return imageUrl;
+  }
+  for (const match of String(block || "").matchAll(/<img\b([^>]*)>/gi)) {
+    const imageUrl = normalizedArticleImageUrl(xmlAttributeValue(match[1], "src"), feedUrl);
+    if (imageUrl) return imageUrl;
+  }
+  return "";
+}
+
 export function parseParishBlogFeed(xml, feedUrl) {
   const source = String(xml || "");
   const blocks = [...source.matchAll(/<(item|entry)\b[^>]*>([\s\S]*?)<\/\1>/gi)].map((match) => match[2]);
@@ -63,6 +107,7 @@ export function parseParishBlogFeed(xml, feedUrl) {
     return {
       title,
       url,
+      imageUrl: entryImageUrl(block, feedUrl),
       excerpt,
       publishedAt: Number.isNaN(parsedDate.getTime()) ? "" : parsedDate.toISOString(),
     };

@@ -530,7 +530,10 @@ function renderRecentNews(sources = []) {
     <section class="parish-life-home-section" aria-labelledby="recentNewsHeading">
       <div class="parish-life-section-head"><h2 id="recentNewsHeading">Recent News</h2><a href="/myagapay/news">All News</a></div>
       <div class="parish-life-blog-list">${articles.map((post) => `
-        <a class="parish-life-blog-card" href="${parishLifeEscape(post.url)}" target="_blank" rel="noopener noreferrer"><strong>${parishLifeEscape(post.title)}</strong><span aria-hidden="true">↗</span></a>`).join("")}</div>
+        <a class="parish-life-blog-card${post.imageUrl ? " has-image" : ""}" href="${parishLifeEscape(post.url)}" target="_blank" rel="noopener noreferrer">
+          ${post.imageUrl ? `<span class="parish-life-blog-image"><img src="${parishLifeEscape(post.imageUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></span>` : ""}
+          <strong>${parishLifeEscape(post.title)}</strong><span class="parish-life-blog-arrow" aria-hidden="true">↗</span>
+        </a>`).join("")}</div>
     </section>`;
 }
 

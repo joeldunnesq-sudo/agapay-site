@@ -17,15 +17,22 @@ const rss = `<?xml version="1.0"?><rss><channel><item>
   <title><![CDATA[A Pastoral Reflection]]></title>
   <link>https://father.example.org/reflection</link>
   <description><![CDATA[<p>Grace &amp; peace.</p><script>bad()</script>]]></description>
+  <enclosure url="http://images.example.org/pastoral-reflection.jpg" type="image/jpeg" />
   <pubDate>Fri, 31 Jul 2026 12:00:00 GMT</pubDate>
 </item></channel></rss>`;
 const parsed = parseParishBlogFeed(rss, "https://father.example.org/feed.xml");
 assert.deepEqual(parsed, [{
   title: "A Pastoral Reflection",
   url: "https://father.example.org/reflection",
+  imageUrl: "https://images.example.org/pastoral-reflection.jpg",
   excerpt: "Grace & peace.",
   publishedAt: "2026-07-31T12:00:00.000Z",
 }]);
+const unsafeImage = parseParishBlogFeed(`<?xml version="1.0"?><rss><channel><item>
+  <title>Safe article</title><link>https://father.example.org/safe</link>
+  <description><![CDATA[<img src="javascript:alert(1)">Text]]></description>
+</item></channel></rss>`, "https://father.example.org/feed.xml");
+assert.equal(unsafeImage[0].imageUrl, "", "unsafe image schemes must never reach Koinonia cards");
 
 const fetched = [];
 const fetcher = async (url) => {
@@ -82,6 +89,7 @@ assert.match(dashboard, /koinoniaPublishedAnnouncements[\s\S]*koinoniaPublishedA
 assert.match(parishApp, /function setKoinoniaStudioView[\s\S]*function renderKoinoniaOverview/);
 assert.match(parishApp, /renderKoinoniaOverview\(\);[\s\S]*setKoinoniaStudioView\(koinoniaStudioView\)/, "loaded content should refresh the studio overview");
 assert.match(landing, /Recent News/);
+assert.match(landing, /post\.imageUrl[\s\S]*class="parish-life-blog-image"[\s\S]*loading="lazy"[\s\S]*referrerpolicy="no-referrer"/, "Koinonia Recent News should render lazy, privacy-conscious article images when feeds provide them");
 assert.match(landing, /\.slice\(0, 3\)/, "Koinonia home should show only the three newest combined articles");
 assert.match(landing, /Choose your news sources[\s\S]*Nothing appears until you follow/);
 assert.ok(landing.indexOf("Your Ministries") < landing.indexOf('id="listenHeading"'), "ministries should appear above the unified listening section and video on Koinonia home");
@@ -94,6 +102,7 @@ assert.match(donorStyle, /donor-calendar-page, \.donor-news-page[\s\S]*--k-gold:
 assert.match(blogHandler, /SPZH_FEED_URL = "https:\/\/spzh\.eu\/en\/rss"/);
 assert.match(blogHandler, /ORTHODOX_TIMES_FEED_URL = "https:\/\/orthodoxtimes\.com\/feed\/"/);
 assert.match(blogHandler, /ORTHODOX_ETHOS_FEED_URL = "https:\/\/www\.orthodoxethos\.com\/blog-feed\.xml"/);
+assert.match(blogHandler, /media:\(content\|thumbnail\)[\s\S]*enclosure\|link[\s\S]*<img/, "news parsing should support Media RSS, image enclosures, Atom enclosures, and embedded article images");
 assert.match(blogHandler, /if \(!subscribed\) return json\(\{ \.\.\.basePayload, posts: \[\] \}\)/, "built-in feeds must return no articles until the donor follows them");
 assert.match(blogHandler, /validateParishBlogUrl\(input\.url\)[\s\S]*resolveParishBlogFeed\(sourceUrl\)/, "custom feeds must use the existing public-HTTPS validation and feed discovery");
 assert.match(worker, /"\/myagapay\/news", "\/myagapay\/news\.html"/);
