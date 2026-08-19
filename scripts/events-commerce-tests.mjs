@@ -81,6 +81,11 @@ const festival = products.find(p => p.name === "Greek Fest Admission");
 assert.equal(festival.maxQuantityPerOrder, 0, "NULL max_quantity_per_order must normalize to 0 (no cap), not null/NaN");
 assert.equal(festival.offeringKind, "event", "event listings must retain their UI classification");
 
+const mealsOnly = await loadDonorEventProducts(env, "parish_1", { eventsEnabled: false, mealsEnabled: true });
+assert.deepEqual(mealsOnly.map((product) => product.offeringKind), ["meal"], "turning Events off must hide only Event listings");
+const eventsOnly = await loadDonorEventProducts(env, "parish_1", { eventsEnabled: true, mealsEnabled: false });
+assert.deepEqual(eventsOnly.map((product) => product.offeringKind), ["event"], "turning Meals off must hide only Meal listings");
+
 console.log("PASS - events module product listing is module-isolated (no bookstore leakage) and event/date/location/cap fields round-trip");
 
 // â”€â”€ Admin CRUD SQL smoke test â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

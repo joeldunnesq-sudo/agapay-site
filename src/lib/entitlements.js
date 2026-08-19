@@ -132,6 +132,16 @@ export function commerceSuiteEnabledFor(registration) {
   return tierIncludesModule(registration, "commerceSuite");
 }
 
+export function eventsEnabledFor(registration) {
+  return commerceSuiteEnabledFor(registration)
+    && registration?.eventsEnabled !== false;
+}
+
+export function mealsEnabledFor(registration) {
+  return commerceSuiteEnabledFor(registration)
+    && registration?.mealsEnabled !== false;
+}
+
 export function accountingEnabledFor(registration) {
   return registration?.accountingEnabled !== false && tierIncludesModule(registration, "accounting");
 }
@@ -184,6 +194,8 @@ export function entitlementsSummary(registration) {
       },
       commerceSuite: {
         included: commerceSuiteEnabledFor(registration),
+        eventsEnabled: eventsEnabledFor(registration),
+        mealsEnabled: mealsEnabledFor(registration),
         source: commerceSuiteEnabledFor(registration) ? "tier" : "none"
       },
       communications: {

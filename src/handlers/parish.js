@@ -102,7 +102,7 @@ export {
   sacramentsEnabledFor,
 };
 
-import { bookstoreEnabledFor, communicationsEnabledFor, directoryEnabledFor, entitlementsSummary, exchangeEnabledFor, givingFeatureAccess, hasParishPlusAccess, prayerRequestsEnabledFor, sacramentsEnabledFor, signupsEnabledFor, stewardshipToolAccess, tierIncludesModule, tierIncludesParishPlus } from "../lib/entitlements.js";
+import { bookstoreEnabledFor, communicationsEnabledFor, directoryEnabledFor, entitlementsSummary, eventsEnabledFor, exchangeEnabledFor, givingFeatureAccess, hasParishPlusAccess, mealsEnabledFor, prayerRequestsEnabledFor, sacramentsEnabledFor, signupsEnabledFor, stewardshipToolAccess, tierIncludesModule, tierIncludesParishPlus } from "../lib/entitlements.js";
 import { getDirectorySettings } from "../directory/settings.js";
 import {
   createTaxExemptionClaim,
@@ -2542,7 +2542,7 @@ export function parishDashboardPayload(parishId, registration) {
     recurringGivingEnabled: registration.recurringGivingEnabled ?? true,
     candlesEnabled: registration.candlesEnabled ?? true,
     commemorationsEnabled: registration.commemorationsEnabled ?? true,
-    bookstoreEnabled: bookstoreEnabledFor(registration),
+    bookstoreEnabled: bookstoreEnabledFor(registration), eventsEnabled: eventsEnabledFor(registration), mealsEnabled: mealsEnabledFor(registration),
     communicationsEnabled: communicationsEnabledFor(registration),
     signupsEnabled: signupsEnabledFor(registration), exchangeEnabled: exchangeEnabledFor(registration), prayerRequestsEnabled: prayerRequestsEnabledFor(registration),
     stewardshipActive: stewardshipToolAccess(registration),
@@ -2783,7 +2783,7 @@ export async function handleParishDashboard(request, env, parishId) {
       signupsEnabled: Boolean(body.signupsEnabled ?? current.signupsEnabled ?? true), exchangeEnabled: Boolean(body.exchangeEnabled ?? current.exchangeEnabled ?? true), prayerRequestsEnabled: Boolean(body.prayerRequestsEnabled ?? current.prayerRequestsEnabled ?? true),
       sacramentsEnabled: Boolean(body.sacramentsEnabled ?? current.sacramentsEnabled ?? false) && hasParishPlusAccess(current),
       sacramentPriests: body.sacramentPriests !== undefined ? sanitizeSacramentPriests(body.sacramentPriests, current) : normalizeSacramentPriests(current),
-      bookstoreEnabled: Boolean(body.bookstoreEnabled ?? current.bookstoreEnabled ?? false),
+      bookstoreEnabled: Boolean(body.bookstoreEnabled ?? current.bookstoreEnabled ?? false), eventsEnabled: Boolean(body.eventsEnabled ?? current.eventsEnabled ?? true), mealsEnabled: Boolean(body.mealsEnabled ?? current.mealsEnabled ?? true),
       funds: catalogChanged ? submittedCatalog.funds : current.funds,
       campaigns: catalogChanged ? submittedCatalog.campaigns : current.campaigns,
       feastCampaigns: catalogChanged ? submittedCatalog.feastCampaigns : current.feastCampaigns,

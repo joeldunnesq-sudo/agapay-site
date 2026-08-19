@@ -5306,6 +5306,49 @@
       : { singular: 'Event', plural: 'Events', namePlaceholder: 'Parish festival admission', dateLabel: 'Event date' };
   }
 
+  function renderCommerceOfferingFeatureToggle(offeringKind = 'event') {
+    const kind = commerceOfferingKind(offeringKind);
+    const copy = commerceOfferingCopy(kind);
+    const root = document.getElementById(kind === 'meal' ? 'mealsFeatureToggle' : 'eventsFeatureToggle');
+    if (!root) return;
+    const key = kind === 'meal' ? 'mealsEnabled' : 'eventsEnabled';
+    const enabled = currentParish?.[key] !== false;
+    root.innerHTML = `<label class="sac-admin-switch agapay-feature-switch" title="Show or hide ${copy.plural} in My AGAPAY">
+      <input type="checkbox" aria-label="Show ${copy.plural} in My AGAPAY" ${enabled ? 'checked' : ''} onchange="toggleCommerceOfferingFeature(this,'${kind}')" />
+      <span aria-hidden="true"></span>
+      <em>${enabled ? 'On' : 'Off'}</em>
+    </label>`;
+  }
+
+  async function toggleCommerceOfferingFeature(input, offeringKind = 'event') {
+    if (!currentParish) return;
+    const kind = commerceOfferingKind(offeringKind);
+    const copy = commerceOfferingCopy(kind);
+    const key = kind === 'meal' ? 'mealsEnabled' : 'eventsEnabled';
+    const enabled = Boolean(input?.checked);
+    const previous = currentParish[key] !== false;
+    if (input) input.disabled = true;
+    try {
+      const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId), {
+        method: 'PATCH',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [key]: enabled })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || `Unable to update ${copy.plural}.`);
+      currentParish = { ...currentParish, ...(payload.parish || {}), [key]: Boolean(payload.parish?.[key] ?? enabled) };
+      renderCommerceOfferingFeatureToggle(kind);
+      setStatus(currentParish[key] ? `${copy.plural} are on for parishioners.` : `${copy.plural} are off for parishioners.`, 'success');
+    } catch (error) {
+      currentParish[key] = previous;
+      if (input) input.checked = previous;
+      renderCommerceOfferingFeatureToggle(kind);
+      setStatus(error.message, 'error');
+    } finally {
+      if (input) input.disabled = false;
+    }
+  }
+
   function eventsMoney(cents) {
     return (Number(cents || 0) / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
   }
@@ -5316,6 +5359,7 @@
     const state = eventsOversightState[kind];
     const body = document.getElementById(kind === 'meal' ? 'mealsOversightBody' : 'eventsOversightBody');
     if (!body || !currentParish) return;
+    renderCommerceOfferingFeatureToggle(kind);
     if (state.loaded && !force) { renderEventsOversightPanel(kind); return; }
     if (state.loading) return;
     state.loading = true;

@@ -7,10 +7,12 @@ import {
   accountingTierFor,
   directoryEnabledFor,
   entitlementsSummary,
+  eventsEnabledFor,
   givingFeatureAccess,
   hasLegacyParishPlusAddOn,
   hasModuleAccess,
   hasParishPlusAccess,
+  mealsEnabledFor,
   sacramentsEnabledFor,
   tierIncludesModule,
   tierIncludesParishPlus
@@ -195,6 +197,20 @@ await test("the full Commerce suite is Parish-only while Stewardship retains Boo
   assert.equal(parish.modules.commerceSuite.included, true);
   assert.equal(commerceSuiteEnabledFor({ subscriptionTier: "diocese" }), true);
   assert.equal(commerceSuiteEnabledFor({ subscriptionTier: "giving" }), false);
+});
+
+await test("Events and Meals default on but retain independent donor-facing switches", async () => {
+  const registration = { subscriptionTier: "parish", eventsEnabled: false, mealsEnabled: true };
+  const summary = entitlementsSummary(registration).modules.commerceSuite;
+  assert.equal(summary.included, true, "turning off a storefront must not remove the parish admin workspace");
+  assert.equal(summary.eventsEnabled, false);
+  assert.equal(summary.mealsEnabled, true);
+  assert.equal(eventsEnabledFor(registration), false);
+  assert.equal(mealsEnabledFor(registration), true);
+  assert.equal(eventsEnabledFor({ subscriptionTier: "parish" }), true);
+  assert.equal(mealsEnabledFor({ subscriptionTier: "parish" }), true);
+  assert.equal(eventsEnabledFor({ subscriptionTier: "stewardship" }), false);
+  assert.equal(mealsEnabledFor({ subscriptionTier: "stewardship" }), false);
 });
 
 await test("communications requires a current Parish-level tier and honors the parish on/off choice", async () => {

@@ -44,7 +44,7 @@ import {
   verifyParishDashboardBearer,
 } from "./parish.js";
 
-import { commerceSuiteEnabledFor } from "../lib/entitlements.js";
+import { commerceSuiteEnabledFor, eventsEnabledFor, mealsEnabledFor } from "../lib/entitlements.js";
 import { bookstoreSellerDisclosure } from "../lib/commerce-readiness.js";
 import { resolveSettlementProfileId } from "../lib/settlement-profiles.js";
 import { stripeFormConnectedRequest } from "../lib/stripe-connect.js";
@@ -115,7 +115,7 @@ function salesClosed(product) {
   return Date.now() > closeTime;
 }
 
-export async function loadDonorEventProducts(env, parishId) {
+export async function loadDonorEventProducts(env, parishId, availability = {}) {
   if (!d1(env)) return [];
   const rows = await d1All(env, `
     SELECT p.id, p.name, p.description, p.item_category, p.event_date, p.event_location, p.event_details,
@@ -138,7 +138,13 @@ export async function loadDonorEventProducts(env, parishId) {
     WHERE p.parish_id = ? AND p.commerce_module = 'events' AND p.status = 'active'
     ORDER BY p.event_date ASC, p.name COLLATE NOCASE
   `, parishId, parishId);
-  return rows.map(normalizeEventProduct).filter(product => product.variantId && product.priceCents > 0);
+  return rows.map(normalizeEventProduct).filter(product => (
+    product.variantId
+    && product.priceCents > 0
+    && (product.offeringKind === "meal"
+      ? availability.mealsEnabled !== false
+      : availability.eventsEnabled !== false)
+  ));
 }
 
 async function loadDonorEventOrders(env, parishId, donorEmail) {
@@ -171,7 +177,9 @@ async function resolveDonorEventsParish(request, env, donor, explicitParishId = 
   if (!parishId) return { error: json({ error: "Choose your parish in Settings before ordering." }, { status: 422 }) };
   const found = await findRegistrationByParishId(env, parishId);
   if (!found?.registration) return { error: json({ error: "Parish not found." }, { status: 404 }) };
-  return { parishId, registration: found.registration, available: commerceSuiteEnabledFor(found.registration) };
+  const eventsEnabled = eventsEnabledFor(found.registration);
+  const mealsEnabled = mealsEnabledFor(found.registration);
+  return { parishId, registration: found.registration, eventsEnabled, mealsEnabled, available: eventsEnabled || mealsEnabled };
 }
 
 async function resolvePublicEventsParish(env, parishId = "") {
@@ -179,10 +187,14 @@ async function resolvePublicEventsParish(env, parishId = "") {
   if (!cleanParishId) return { error: json({ error: "Parish not found." }, { status: 404 }) };
   const found = await findRegistrationByParishId(env, cleanParishId);
   if (!found?.registration) return { error: json({ error: "Parish not found." }, { status: 404 }) };
+  const eventsEnabled = eventsEnabledFor(found.registration);
+  const mealsEnabled = mealsEnabledFor(found.registration);
   return {
     parishId: cleanParishId,
     registration: found.registration,
-    available: commerceSuiteEnabledFor(found.registration)
+    eventsEnabled,
+    mealsEnabled,
+    available: eventsEnabled || mealsEnabled
   };
 }
 
@@ -248,9 +260,10 @@ export async function handleDonorEvents(request, env, publicParishId = "") {
     if (resolved.error) return resolved.error;
     return json({
       available: Boolean(resolved.available),
+      availability: { events: Boolean(resolved.eventsEnabled), meals: Boolean(resolved.mealsEnabled) },
       parish: { id: resolved.parishId, name: resolved.registration?.name || resolved.registration?.parishName || "" },
       sellerDisclosure: resolved.registration ? bookstoreSellerDisclosure(resolved.registration.commerceSellerDisplayName || resolved.registration.name || resolved.registration.parishName) : "",
-      items: resolved.available ? await loadDonorEventProducts(env, resolved.parishId) : [],
+      items: resolved.available ? await loadDonorEventProducts(env, resolved.parishId, resolved) : [],
       orders: isGuestCheckout ? [] : await loadDonorEventOrders(env, resolved.parishId, normalizeEmail(donor.email))
     });
   }
@@ -272,6 +285,12 @@ export async function handleDonorEvents(request, env, publicParishId = "") {
   let items;
   try { items = await normalizeEventCartItems(env, resolved.parishId, submittedItems); }
   catch (err) { return json({ error: err.message || "Check your order and try again." }, { status: 422 }); }
+  if (items.some((item) => item.offeringKind === "event") && !resolved.eventsEnabled) {
+    return json({ error: "Your parish has Events checkout turned off." }, { status: 409 });
+  }
+  if (items.some((item) => item.offeringKind === "meal") && !resolved.mealsEnabled) {
+    return json({ error: "Your parish has Meals checkout turned off." }, { status: 409 });
+  }
 
   const subtotalCents = items.reduce((sum, item) => sum + (item.unitPriceCents * item.quantity), 0);
   const donorEmail = normalizeEmail(donor?.email || body.email);

@@ -6,6 +6,7 @@ const css = fs.readFileSync(new URL('../public/styles/stewardship.css', import.m
 const parishCss = fs.readFileSync(new URL('../public/parish/style.css', import.meta.url), 'utf8');
 const groupsApp = fs.readFileSync(new URL('../public/myagapay/groups.js', import.meta.url), 'utf8');
 const eventsHandler = fs.readFileSync(new URL('../src/handlers/parish-events.js', import.meta.url), 'utf8');
+const parishHandler = fs.readFileSync(new URL('../src/handlers/parish.js', import.meta.url), 'utf8');
 
 const productKeys = ['overview', 'bookstore', 'events', 'meals', 'retreats', 'camp', 'tuition'];
 const checks = [
@@ -23,6 +24,8 @@ const checks = [
   ['unfinished Commerce products are not presented as live', ['retreats', 'camp', 'tuition'].every((key) => dashboard.includes(`disabled data-commerce-product="${key}"`)) && dashboard.includes('Coming soon')],
   ['Events is a live parish-admin workspace with its own creation flow', dashboard.includes('data-commerce-product="events" onclick="switchCommerceProduct(\'events\')"') && dashboard.includes('id="commerceEventsPanel"') && dashboard.includes("loadEventsOversightPanel('event', true)") && app.includes("submitParishCommerceOffering(event,'${kind}')")],
   ['Meals is a separate live parish-admin workspace over the shared Events commerce API', dashboard.includes('data-commerce-product="meals" onclick="switchCommerceProduct(\'meals\')"') && dashboard.includes('id="commerceMealsPanel"') && dashboard.includes("loadEventsOversightPanel('meal', true)") && app.includes(`new Set(['overview', 'bookstore', 'events', 'meals'])`) && app.includes("eventsApi('?offeringKind=' + encodeURIComponent(kind))")],
+  ['Events and Meals heroes have independent saved My AGAPAY switches', dashboard.includes('id="eventsFeatureToggle"') && dashboard.includes('id="mealsFeatureToggle"') && app.includes("function toggleCommerceOfferingFeature(input, offeringKind = 'event')") && app.includes("body: JSON.stringify({ [key]: enabled })")],
+  ['Events and Meals switches persist and enforce independent donor checkout gates', parishHandler.includes('eventsEnabled: Boolean(body.eventsEnabled ?? current.eventsEnabled ?? true)') && parishHandler.includes('mealsEnabled: Boolean(body.mealsEnabled ?? current.mealsEnabled ?? true)') && eventsHandler.includes('Your parish has Events checkout turned off.') && eventsHandler.includes('Your parish has Meals checkout turned off.')],
   ['Koinonia ministry groups can create either Event or Meal listings in one shared workspace', groupsApp.includes('name="offeringKind" required') && groupsApp.includes('<option value="event">Event</option>') && groupsApp.includes('<option value="meal">Meal</option>') && groupsApp.includes("offeringKind: d.get('offeringKind')") && eventsHandler.includes('eventOfferingKindFromBody(body)')],
   ['Retreats are reserved for future registrations and Merchandise stays within Bookstore', dashboard.includes('data-commerce-product="retreats"') && dashboard.includes('<span>Retreats</span>') && !dashboard.includes('data-commerce-product="merch"')],
   ['Candles remain outside the Commerce product navigation', !dashboard.includes('data-commerce-product="candles"')],
