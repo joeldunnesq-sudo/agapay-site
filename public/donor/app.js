@@ -1627,7 +1627,7 @@ function renderDonorParishCalendarMonth() {
   const weekViewButton = document.getElementById("parishCalendarWeekView");
   const monthViewButton = document.getElementById("parishCalendarMonthView");
   const periodDate = donorParishCalendarView.periodDate;
-  if (!label || !grid || !previous || !next || !weekViewButton || !monthViewButton || !(periodDate instanceof Date)) return;
+  if (!label || !grid || !previous || !next || !(periodDate instanceof Date)) return;
 
   const today = new Date();
   const todayKey = donorParishCalendarDateKey(today);
@@ -1635,10 +1635,10 @@ function renderDonorParishCalendarMonth() {
   const dates = [];
   const cells = [];
   const isWeek = donorParishCalendarView.viewMode === "week";
-  weekViewButton.classList.toggle("is-active", isWeek);
-  monthViewButton.classList.toggle("is-active", !isWeek);
-  weekViewButton.setAttribute("aria-pressed", String(isWeek));
-  monthViewButton.setAttribute("aria-pressed", String(!isWeek));
+  weekViewButton?.classList.toggle("is-active", isWeek);
+  monthViewButton?.classList.toggle("is-active", !isWeek);
+  weekViewButton?.setAttribute("aria-pressed", String(isWeek));
+  monthViewButton?.setAttribute("aria-pressed", String(!isWeek));
   grid.classList.toggle("is-week", isWeek);
 
   if (isWeek) {
@@ -1734,57 +1734,70 @@ function renderDonorParishCalendar(payload = {}, parish = null) {
   const help = document.getElementById("parishCalendarSubscribeHelp");
   const monthView = document.getElementById("parishCalendarMonth");
   const target = document.getElementById("parishCalendarEventList");
-  if (!title || !status || !intro || !subscribe || !subscribeButton || !googleButton || !copyButton || !help || !monthView || !target) return;
+  if (!title || !status || !intro || !monthView || !target) return;
 
   const parishName = parish?.name || donorProfile()?.defaultParish?.name || "Your Church";
   const subscriptionUrl = donorParishCalendarSubscriptionUrl(payload.subscriptionUrl);
   const connected = Boolean(payload.connected && subscriptionUrl);
-  title.textContent = `${parishName} Calendar`;
+  const hasSubscriptionControls = Boolean(subscribe && subscribeButton && googleButton && copyButton && help);
+  if (title.dataset.calendarTitle !== "fixed") title.textContent = `${parishName} Calendar`;
   status.classList.toggle("is-connected", connected);
-  subscribe.hidden = !connected;
-  help.hidden = !connected;
+  if (subscribe) subscribe.hidden = !connected;
+  if (help) help.hidden = !connected;
   monthView.hidden = !connected;
 
   if (!connected) {
     status.textContent = "Not connected";
     intro.textContent = parish
-      ? "Your parish has not connected its public calendar yet. Feast highlights are still available below."
+      ? (hasSubscriptionControls
+        ? "Your parish has not connected its public calendar yet. Feast highlights are still available below."
+        : "Your parish has not connected its public calendar yet.")
       : "Sign in and choose your home parish to load its connected calendar.";
     target.innerHTML = "";
     return;
   }
 
-  copyButton.dataset.subscriptionUrl = subscriptionUrl;
   const googleUrl = donorParishCalendarGoogleUrl(subscriptionUrl);
-  const platform = donorParishCalendarPlatform();
-  const isAndroid = platform === "android";
-  const subscribeLabel = subscribeButton.querySelector("[data-calendar-subscribe-label]");
-  subscribeButton.href = isAndroid ? (googleUrl || subscriptionUrl) : subscriptionUrl.replace(/^https:/i, "webcal:");
-  subscribeButton.target = isAndroid ? "_blank" : "";
-  subscribeButton.rel = isAndroid ? "noopener" : "";
-  if (subscribeLabel) subscribeLabel.textContent = isAndroid
-    ? (googleUrl ? "Add to Google Calendar" : "Open calendar subscription")
-    : "Add to phone calendar";
-  googleButton.hidden = isAndroid || !googleUrl;
-  if (googleUrl) googleButton.href = googleUrl;
+  if (copyButton) copyButton.dataset.subscriptionUrl = subscriptionUrl;
+  if (subscribeButton && googleButton) {
+    const platform = donorParishCalendarPlatform();
+    const isAndroid = platform === "android";
+    const subscribeLabel = subscribeButton.querySelector("[data-calendar-subscribe-label]");
+    subscribeButton.href = isAndroid ? (googleUrl || subscriptionUrl) : subscriptionUrl.replace(/^https:/i, "webcal:");
+    subscribeButton.target = isAndroid ? "_blank" : "";
+    subscribeButton.rel = isAndroid ? "noopener" : "";
+    if (subscribeLabel) subscribeLabel.textContent = isAndroid
+      ? (googleUrl ? "Add to Google Calendar" : "Open calendar subscription")
+      : "Add to phone calendar";
+    googleButton.hidden = isAndroid || !googleUrl;
+    if (googleUrl) googleButton.href = googleUrl;
+  }
 
   const events = Array.isArray(payload.events) ? payload.events : [];
   status.textContent = payload.unavailable ? "Connected · preview unavailable" : "Connected";
   intro.textContent = payload.unavailable
-    ? "The event preview is temporarily unavailable, but you can still subscribe to the parish calendar."
-    : "Upcoming events published by your parish. Subscribe once and changes will stay in sync.";
+    ? (hasSubscriptionControls
+      ? "The event preview is temporarily unavailable, but you can still subscribe to the parish calendar."
+      : "The event preview is temporarily unavailable. Open the full calendar to manage your subscription.")
+    : (hasSubscriptionControls
+      ? "Upcoming events published by your parish. Subscribe once and changes will stay in sync."
+      : "Events published by your parish for the selected week.");
 
   const today = new Date();
-  const currentWeek = donorParishCalendarStartOfWeek(today);
-  const weekEnd = new Date(currentWeek);
-  weekEnd.setDate(weekEnd.getDate() + 6);
-  const weekStartKey = donorParishCalendarDateKey(currentWeek);
-  const weekEndKey = donorParishCalendarDateKey(weekEnd);
+  const defaultView = monthView.dataset.calendarDefaultView === "month" ? "month" : "week";
+  const periodStart = defaultView === "month"
+    ? new Date(today.getFullYear(), today.getMonth(), 1)
+    : donorParishCalendarStartOfWeek(today);
+  const periodEnd = defaultView === "month"
+    ? new Date(today.getFullYear(), today.getMonth() + 1, 0)
+    : new Date(periodStart.getFullYear(), periodStart.getMonth(), periodStart.getDate() + 6);
+  const periodStartKey = donorParishCalendarDateKey(periodStart);
+  const periodEndKey = donorParishCalendarDateKey(periodEnd);
   donorParishCalendarView = {
     events,
-    viewMode:"week",
+    viewMode:defaultView,
     periodDate:today,
-    selectedDate:events.map(donorParishCalendarEventDateKey).find(key => key >= weekStartKey && key <= weekEndKey) || donorParishCalendarDateKey(today),
+    selectedDate:events.map(donorParishCalendarEventDateKey).find(key => key >= periodStartKey && key <= periodEndKey) || donorParishCalendarDateKey(today),
     unavailable:Boolean(payload.unavailable)
   };
   renderDonorParishCalendarMonth();

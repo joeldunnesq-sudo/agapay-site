@@ -52,9 +52,9 @@ assert.match(landing, />Make a festal offering</);
 assert.doesNotMatch(landing, /class="cal-hero parish-life-saint-card"/, "the Koinonia landing should not duplicate Saint of the Day in a second card");
 assert.match(donorApp, /class=\"cal-saint-chip\" id=\"saintPreviewCard\"[\s\S]*?commemorated today\">\$\{saintCount\} saint[\s\S]*?<b aria-hidden=\"true\">→<\/b>/, "the saints-count pill should open the saint modal and show a directional arrow without nesting another chip inside it");
 assert.match(landing, /id="donorSaintModal"[\s\S]*Orthocal\.info/);
-assert.match(landing, />Upcoming Events<[\s\S]*Loading the next liturgical observance/);
+assert.match(landing, />This Week in the Church<[\s\S]*data-calendar-default-view="week"/);
 assert.match(landing, /href="\/myagapay\/calendar">Full Calendar</);
-assert.ok(landing.indexOf('id="parishLifeInboxMount"') < landing.indexOf(">Upcoming Events<"), "the actionable announcements card should sit directly below the hero and before Upcoming Events");
+assert.ok(landing.indexOf('id="parishLifeInboxMount"') < landing.indexOf(">This Week in the Church<"), "the actionable announcements card should sit directly below the hero and before the week calendar");
 assert.doesNotMatch(landing, />Community</, "the product must not be renamed Community in the rendered landing");
 assert.match(
   donorStyles,

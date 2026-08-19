@@ -654,8 +654,11 @@ async function loadParishLife() {
       const personalServices = parishLifeApprovedServiceEvents(sacramentRequests || {});
       const signupEvents = parishLifeSignupEvents(signupCommitments || {});
       const parishEvents = parishCalendar?.events || [];
-      renderParishLifeCalendarEvents({ events:[...signupEvents, ...personalServices, ...parishEvents] }, parish);
-    }).catch(() => renderParishLifeCalendarEvents({}, parish));
+      renderDonorParishCalendar({
+        ...(parishCalendar || {}),
+        events:[...signupEvents, ...personalServices, ...parishEvents]
+      }, parish);
+    }).catch(() => renderDonorParishCalendar({}, parish));
 
     if (!experience.communicationsEnabled) {
       await Promise.all([liturgicalDayPromise, calendarPromise]);

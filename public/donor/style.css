@@ -8545,6 +8545,25 @@ textarea {
   max-width: 760px;
 }
 
+.donor-parish-life-page .parish-life-week-calendar {
+  --cal-gold: #b88f42;
+  --cal-gold-soft: #f3e8d7;
+  --cal-paper: #fff;
+  --cal-cream: #f5f2eb;
+  --cal-stone: #6b7280;
+  --cal-muted: #6b7280;
+  --cal-ink: #111827;
+  --cal-line: #d4d1c6;
+  --cal-serif: "Cormorant Garamond", Georgia, serif;
+}
+.donor-parish-life-page .parish-life-week-calendar-meta { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:-2px 0 10px; }
+.donor-parish-life-page .parish-life-week-calendar .cal-parish-calendar-intro { margin:0; }
+.donor-parish-life-page .parish-life-week-calendar .cal-parish-calendar-status { flex:0 0 auto; }
+.donor-parish-life-page .parish-life-week-calendar .cal-parish-month { margin:0 0 14px; }
+@media (max-width: 520px) {
+  .donor-parish-life-page .parish-life-week-calendar-meta { align-items:flex-start; flex-direction:column-reverse; gap:5px; }
+}
+
 .donor-parish-life-page .parish-life-liturgical-hero {
   --cal-deep: #061522;
   --cal-deep-2: #0b2130;

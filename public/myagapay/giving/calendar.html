@@ -9,11 +9,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=20260819newsimage1" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260819koinoniaweek1" />
   <script src="/liturgical-calendar.js"></script>
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260817bookstoreprayer1"></script>
-  <script src="/donor/app.js?v=20260819calendar1" defer></script>
+  <script src="/donor/app.js?v=20260819koinoniaweek1" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -81,14 +81,10 @@
                 <a class="cal-btn cal-btn-outline" id="parishCalendarGoogleButton" href="#" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>Add to Google Calendar</a>
                 <button class="cal-btn cal-btn-outline" id="parishCalendarCopyButton" type="button" onclick="copyDonorParishCalendarUrl(this)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>Copy subscription link</button>
               </div>
-              <div class="cal-parish-month" id="parishCalendarMonth" hidden>
-                <div class="cal-parish-view-switch" role="group" aria-label="Calendar view">
-                  <button type="button" id="parishCalendarWeekView" class="is-active" onclick="setDonorParishCalendarView('week')" aria-pressed="true">Week</button>
-                  <button type="button" id="parishCalendarMonthView" onclick="setDonorParishCalendarView('month')" aria-pressed="false">Month</button>
-                </div>
+              <div class="cal-parish-month" id="parishCalendarMonth" data-calendar-default-view="month" hidden>
                 <div class="cal-parish-month-head">
                   <button type="button" id="parishCalendarPreviousMonth" onclick="changeDonorParishCalendarPeriod(-1)" aria-label="Show previous period">‹</button>
-                  <strong id="parishCalendarMonthLabel">This week</strong>
+                  <strong id="parishCalendarMonthLabel">This month</strong>
                   <button type="button" id="parishCalendarNextMonth" onclick="changeDonorParishCalendarPeriod(1)" aria-label="Show next period">›</button>
                 </div>
                 <div class="cal-parish-weekdays" aria-hidden="true"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
