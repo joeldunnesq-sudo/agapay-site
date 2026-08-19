@@ -100,6 +100,22 @@ assert.equal(workerUtcCalendar[0].startsAt, "2026-08-08T22:00:00.000Z", "5 PM Am
 assert.equal(workerUtcCalendar.some(event => event.title === "Great Canon"), false, "COUNT-limited recurrences must not continue after their final instance");
 assert.equal(workerUtcCalendar.some(event => event.startsAt === "2026-08-15T22:00:00.000Z"), false, "EXDATE should remove excluded recurring instances");
 
+const transfigurationCalendar = `BEGIN:VCALENDAR
+BEGIN:VEVENT
+UID:transfiguration-liturgy
+DTSTART;TZID=America/Chicago:20240819T090000
+DTEND;TZID=America/Chicago:20240819T110000
+RRULE:FREQ=YEARLY
+SUMMARY:Liturgy for Transfiguration
+END:VEVENT
+END:VCALENDAR`;
+const transfigurationBeforeStart = parseKoinoniaCalendarIcs(transfigurationCalendar, new Date("2026-08-19T13:00:00.000Z"));
+assert.equal(transfigurationBeforeStart.length, 1, "yearly Google Calendar events should expand into the current festal year");
+assert.equal(transfigurationBeforeStart[0].startsAt, "2026-08-19T14:00:00.000Z", "yearly TZID recurrences should preserve their local start time");
+assert.equal(transfigurationBeforeStart[0].endsAt, "2026-08-19T16:00:00.000Z", "yearly TZID recurrences should preserve their duration");
+const transfigurationInProgress = parseKoinoniaCalendarIcs(transfigurationCalendar, new Date("2026-08-19T14:10:00.000Z"));
+assert.equal(transfigurationInProgress.length, 1, "an in-progress recurring service should remain visible until it ends");
+
 const dashboard = await readFile(new URL("../public/parish/dashboard.html", import.meta.url), "utf8");
 const app = await readFile(new URL("../public/parish/app.js", import.meta.url), "utf8");
 const parish = await readFile(new URL("../src/handlers/parish.js", import.meta.url), "utf8");
@@ -156,6 +172,10 @@ assert.match(donorCalendar, /id="parishCalendarGoogleButton"/);
 assert.match(donorCalendar, /id="parishCalendarCopyButton"/);
 assert.match(donorCalendar, /id="parishCalendarWeekView"/);
 assert.match(donorCalendar, /id="parishCalendarMonthView"/);
+assert.match(donorCalendar, /id="calendarUpcomingFeast"/, "the full calendar should show the next feast before the annual timeline");
+assert.match(donorCalendar, /<details class="cal-festal-year" id="calendarFestalYear">/, "the full festal year should be collapsed behind an accessible disclosure");
+assert.match(donorApp, /const upcomingFeast = \[\.\.\.highlighted, \.\.\.highlightsForYear\(year \+ 1\)\]/, "the upcoming feast should roll into the next civil year when necessary");
+assert.match(donorApp, /View the full \$\{year\} festal year/, "the feast disclosure should identify the full festal year");
 assert.doesNotMatch(donorCalendar, /id="saintPreviewCard"|id="donorSaintModal"/, "the full calendar must not show the Saint of the Day card or modal");
 assert.doesNotMatch(donorCalendar, /class="cal-metrics"|id="nextFeastDate"|id="paschaDate"|id="calendarShortName"/, "the full calendar must not show the Next Feast, Pascha, or Calendar summary cards");
 assert.match(donorCalendar, /class="cal-hero calendar-liturgical-hero"/);

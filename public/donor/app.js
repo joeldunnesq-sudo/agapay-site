@@ -1350,24 +1350,31 @@ document.addEventListener("keydown", (event) => {
 function renderDonorCalendarFeasts(parish) {
   const api = window.AGAPAYLiturgicalCalendar;
   const grid = document.getElementById("calendarGrid");
+  const upcomingTarget = document.getElementById("calendarUpcomingFeast");
   if (!grid || !api) return;
 
   const calendar = parish?.liturgicalCalendar || donorProfile()?.defaultParish?.liturgicalCalendar || donorProfile()?.liturgicalCalendar || "julian";
-  const year = new Date().getFullYear();
+  const now = new Date();
+  const year = now.getFullYear();
   const label = api.calendarLabel(calendar);
-  const feasts = api.liturgicalFeastsForYear(year, calendar);
-  const patronalFeast = parishPatronalFeastForYear(parish, year, calendar, feasts);
-  const next = api.nextLiturgicalFeast(calendar, new Date());
+  const next = api.nextLiturgicalFeast(calendar, now);
   const pascha = api.orthodoxPascha(year);
-  const highlightMap = new Map(
-    feasts
+  const highlightsForYear = (feastYear) => {
+    const feasts = api.liturgicalFeastsForYear(feastYear, calendar);
+    const patronalFeast = parishPatronalFeastForYear(parish, feastYear, calendar, feasts);
+    const highlightMap = new Map(feasts
       .filter((feast) => ["great", "major", "holy-week", "bright-week", "fast"].includes(feast.rank))
       .map((feast) => [feast.id || `${feast.date}-${feast.name}`, feast])
-  );
-  if (patronalFeast) highlightMap.set(patronalFeast.id || `${patronalFeast.date}-${patronalFeast.name}`, patronalFeast);
-  const highlighted = Array.from(highlightMap.values())
-    .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")) || String(a.name || "").localeCompare(String(b.name || "")))
-    .slice(0, 40);
+    );
+    if (patronalFeast) highlightMap.set(patronalFeast.id || `${patronalFeast.date}-${patronalFeast.name}`, patronalFeast);
+    return Array.from(highlightMap.values())
+      .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")) || String(a.name || "").localeCompare(String(b.name || "")));
+  };
+  const highlighted = highlightsForYear(year);
+  const todayIso = todayIsoLocal();
+  const upcomingFeast = [...highlighted, ...highlightsForYear(year + 1)]
+    .filter((feast) => ["great", "major", "patronal"].includes(feast.rank) && String(feast.date || "") >= todayIso)
+    .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")) || String(a.name || "").localeCompare(String(b.name || "")))[0] || null;
 
   setText("calendarModePill", label);
   setText("nextFeastDate", calendarShortDateIso(next?.date));
@@ -1394,6 +1401,28 @@ function renderDonorCalendarFeasts(parish) {
   };
   const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const feastRowHtml = (feast, extraClass = "") => {
+    const meta = rankMeta(feast.rank);
+    const match = /^\d{4}-(\d{2})-(\d{2})$/.exec(String(feast.date || ""));
+    const monthIdx = match ? Number(match[1]) - 1 : 0;
+    const day = match ? String(Number(match[2])) : "";
+    return `
+      <div class="cal-feast-row ${meta.cls}${extraClass}">
+        <div class="cal-feast-date">
+          <div class="cal-feast-date-day">${escapeHtml(day)}</div>
+          <div class="cal-feast-date-mon">${escapeHtml(MONTHS_SHORT[monthIdx] || "")}</div>
+        </div>
+        <div class="cal-feast-name">${escapeHtml(feast.name)}</div>
+        <span class="cal-feast-rank ${meta.cls}">${escapeHtml(meta.label)}</span>
+      </div>`;
+  };
+
+  if (upcomingTarget) {
+    upcomingTarget.innerHTML = upcomingFeast
+      ? `<div class="cal-feast-upcoming-label">Upcoming feast</div>${feastRowHtml(upcomingFeast, " is-upcoming")}`
+      : '<div class="cal-timeline-empty">No upcoming feast was found.</div>';
+  }
+  setText("calendarFestalYearLabel", `View the full ${year} festal year`);
 
   // Group feasts by month (dates are YYYY-MM-DD strings, already chronological)
   const byMonth = new Map();
@@ -1406,18 +1435,7 @@ function renderDonorCalendarFeasts(parish) {
   });
 
   const sections = Array.from(byMonth.keys()).sort((a, b) => a - b).map((monthIdx) => {
-    const rows = byMonth.get(monthIdx).map((feast) => {
-      const meta = rankMeta(feast.rank);
-      return `
-        <div class="cal-feast-row ${meta.cls}">
-          <div class="cal-feast-date">
-            <div class="cal-feast-date-day">${escapeHtml(feast._day)}</div>
-            <div class="cal-feast-date-mon">${escapeHtml(feast._mon)}</div>
-          </div>
-          <div class="cal-feast-name">${escapeHtml(feast.name)}</div>
-          <span class="cal-feast-rank ${meta.cls}">${escapeHtml(meta.label)}</span>
-        </div>`;
-    }).join("");
+    const rows = byMonth.get(monthIdx).map((feast) => feastRowHtml(feast)).join("");
     return `<div class="cal-month"><div class="cal-month-label">${MONTHS[monthIdx]}</div>${rows}</div>`;
   }).join("");
 

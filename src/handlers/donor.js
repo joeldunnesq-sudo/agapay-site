@@ -1238,6 +1238,7 @@ function icsCountLatestPossible(startCursor, frequency, interval, count) {
   if (frequency === "DAILY") latest.setUTCDate(latest.getUTCDate() + span);
   if (frequency === "WEEKLY") latest.setUTCDate(latest.getUTCDate() + span * 7 + 6);
   if (frequency === "MONTHLY") latest.setUTCMonth(latest.getUTCMonth() + span);
+  if (frequency === "YEARLY") latest.setUTCFullYear(latest.getUTCFullYear() + span);
   return latest;
 }
 
@@ -1245,7 +1246,7 @@ const ICS_TIMEZONE_MARGIN_MS = 36 * 60 * 60 * 1000;
 
 function icsBlockMayOverlap(block, now, horizon) {
   const recurrence = block.match(/(?:^|\r?\n)RRULE:([^\r\n]+)/)?.[1] || "";
-  if (recurrence) return /(?:^|;)FREQ=(?:DAILY|WEEKLY|MONTHLY)(?:;|$)/.test(recurrence);
+  if (recurrence) return /(?:^|;)FREQ=(?:DAILY|WEEKLY|MONTHLY|YEARLY)(?:;|$)/.test(recurrence);
   const startValue = block.match(/(?:^|\r?\n)DTSTART[^:]*:([^\r\n]+)/)?.[1] || "";
   const startParts = icsDateParts(startValue);
   if (!startParts) return true;
@@ -1261,7 +1262,7 @@ function expandIcsEvent(event, now, horizon, context) {
   const startParts = icsDateParts(event.dtstart);
   if (!startParts) return [];
   const rule = event.rrule ? icsRule(event.rrule) : null;
-  if (rule && (!rule.FREQ || !["DAILY", "WEEKLY", "MONTHLY"].includes(rule.FREQ))) return [];
+  if (rule && (!rule.FREQ || !["DAILY", "WEEKLY", "MONTHLY", "YEARLY"].includes(rule.FREQ))) return [];
   const startCursor = icsNaiveDate(startParts);
   if (!rule) {
     const endParts = icsDateParts(event.dtend);
@@ -1288,10 +1289,13 @@ function expandIcsEvent(event, now, horizon, context) {
   const until = icsDate(rule.UNTIL, event.dtstartParams, context) || horizon;
   const results = [];
   const byDays = new Set(String(rule.BYDAY || ICS_WEEKDAYS[startCursor.getUTCDay()]).split(",").map(day => day.slice(-2)));
+  const byMonths = new Set(String(rule.BYMONTH || startParts.month).split(",").map(Number).filter(month => month >= 1 && month <= 12));
+  const byMonthDays = String(rule.BYMONTHDAY || startParts.day).split(",").map(Number).filter(day => day >= -31 && day <= 31 && day !== 0);
   const excluded = new Set((event.exdates || []).flatMap(entry => String(entry.value || "").split(",").map(value => icsDate(value, { ...event.dtstartParams, ...entry.params }, context)?.getTime())).filter(Number.isFinite));
   let cursor = new Date(startCursor);
   if (!count) {
-    const zonedToday = icsDateInEventZone(now, event, context);
+    const recurrenceSearchStart = duration ? new Date(now.getTime() - duration) : now;
+    const zonedToday = icsDateInEventZone(recurrenceSearchStart, event, context);
     if (zonedToday) {
       const todayCursor = new Date(Date.UTC(zonedToday.year, zonedToday.month - 1, zonedToday.day, startParts.hour, startParts.minute, startParts.second));
       if (todayCursor > cursor) cursor = todayCursor;
@@ -1304,15 +1308,22 @@ function expandIcsEvent(event, now, horizon, context) {
     const dayDelta = Math.floor((cursor - startCursor) / 86400000);
     const weekDelta = Math.floor(dayDelta / 7);
     const monthDelta = (cursor.getUTCFullYear() - startCursor.getUTCFullYear()) * 12 + cursor.getUTCMonth() - startCursor.getUTCMonth();
+    const yearDelta = cursor.getUTCFullYear() - startCursor.getUTCFullYear();
+    const daysInCursorMonth = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 0)).getUTCDate();
+    const matchesYearlyMonthDay = byMonthDays.some(day => day > 0
+      ? cursor.getUTCDate() === day
+      : cursor.getUTCDate() === daysInCursorMonth + day + 1);
     const matches = cursor >= startCursor && (
       (frequency === "DAILY" && dayDelta % interval === 0)
       || (frequency === "WEEKLY" && weekDelta % interval === 0 && byDays.has(ICS_WEEKDAYS[cursor.getUTCDay()]))
       || (frequency === "MONTHLY" && monthDelta % interval === 0 && cursor.getUTCDate() === startCursor.getUTCDate())
+      || (frequency === "YEARLY" && yearDelta % interval === 0 && byMonths.has(cursor.getUTCMonth() + 1) && matchesYearlyMonthDay)
     );
     if (matches) {
       occurrencesSeen += 1;
-      if (instanceStart >= now && !excluded.has(instanceStart.getTime())) {
-        results.push({ start:instanceStart, end:duration ? new Date(instanceStart.getTime() + duration) : null, duration });
+      const instanceEnd = duration ? new Date(instanceStart.getTime() + duration) : null;
+      if ((instanceEnd || instanceStart) >= now && !excluded.has(instanceStart.getTime())) {
+        results.push({ start:instanceStart, end:instanceEnd, duration });
       }
       if (count && occurrencesSeen >= count) break;
     }

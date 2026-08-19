@@ -7250,6 +7250,18 @@ body.donor-home {
 .cal-legend .major::before { background: var(--cal-major); }
 .cal-legend .fast::before { background: var(--cal-fast); }
 .cal-legend .bright::before { background: var(--cal-bright); }
+.cal-legend .patronal::before { background: var(--cal-gold); }
+
+.cal-feast-upcoming-label { margin: 2px 0 8px; color: var(--cal-muted); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.cal-feast-upcoming .cal-feast-row { margin-bottom: 0; }
+.cal-feast-upcoming .cal-feast-row.is-upcoming { border-color: rgba(200,162,74,.34); box-shadow: 0 7px 20px rgba(6,21,34,.07); }
+.cal-festal-year { margin-top: 14px; border-top: 1px solid var(--cal-line); padding-top: 2px; }
+.cal-festal-year > summary { min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--cal-ink); cursor: pointer; font-size: 11px; font-weight: 800; letter-spacing: .04em; list-style: none; }
+.cal-festal-year > summary::-webkit-details-marker { display: none; }
+.cal-festal-year > summary i { width: 25px; height: 25px; display: grid; place-items: center; flex: 0 0 auto; border: 1px solid var(--cal-line); border-radius: 50%; color: var(--cal-gold); font-style: normal; }
+.cal-festal-year > summary i::before { content: "+"; font-size: 17px; font-weight: 500; line-height: 1; }
+.cal-festal-year[open] > summary i::before { content: "\2212"; }
+.cal-festal-year-body { padding-top: 8px; }
 
 /* ── FEAST TIMELINE ── */
 .cal-timeline { margin-top: 4px; }
