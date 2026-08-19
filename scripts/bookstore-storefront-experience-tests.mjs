@@ -86,6 +86,8 @@ assert.match(html, /\.bookstore-category-filters \{ width:100%; max-width:100%; 
   "mobile category scrolling must remain inside the centered content width");
 assert.match(html, /\.bookstore-popular \{ width:100%; max-width:100%; margin:0 0 14px;/,
   "the Popular items rail must not use full-bleed negative margins that shift wide Android layouts");
+assert.match(html, /\.bookstore-storefront-layout \{ width:auto; min-width:0; max-width:100%; \}/,
+  "the bookstore layout must consume the space between the shared Koinonia shell margins instead of adding 100% width on top of them");
 assert.match(app, /bookstore-sale-ribbon/);
 assert.match(app, /<del>\$\{formatCentsAsDollars\(product\.regularPriceCents\)\}<\/del>/,
   "sale cards must show the crossed-out regular price");
