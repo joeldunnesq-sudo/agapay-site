@@ -54,6 +54,7 @@ import {
 
 import {
   defaultSubscriptionTier,
+  normalizeParishHouseholdBand,
   subscriptionReady,
   subscriptionTier,
 } from "../lib/subscriptions.js";
@@ -1220,7 +1221,8 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
       ? generateDashboardToken()
       : requestedDashboardToken;
     const nextSubscriptionTierId = body.subscriptionTier || current.subscriptionTier || defaultSubscriptionTier(current);
-    const nextTier = subscriptionTier(nextSubscriptionTierId) || subscriptionTier(defaultSubscriptionTier(current));
+    const nextParishHouseholdBand = normalizeParishHouseholdBand(body.parishHouseholdBand ?? current.parishHouseholdBand);
+    const nextTier = subscriptionTier({ ...current, subscriptionTier: nextSubscriptionTierId, parishHouseholdBand: nextParishHouseholdBand }) || subscriptionTier({ ...current, subscriptionTier: defaultSubscriptionTier(current), parishHouseholdBand: nextParishHouseholdBand });
     const nextSubscriptionStatus = nextTier?.monthlyCents === 0
       ? "free_forever"
       : body.subscriptionStatus || current.subscriptionStatus || "not_started";
@@ -1246,6 +1248,7 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
       platformFee: body.platformFee ?? current.platformFee ?? "",
       liturgicalCalendar: body.liturgicalCalendar ?? current.liturgicalCalendar ?? "julian",
       subscriptionTier: nextTier?.id || nextSubscriptionTierId,
+      parishHouseholdBand: nextParishHouseholdBand || current.parishHouseholdBand || "",
       subscriptionTierLabel: nextTier?.label || current.subscriptionTierLabel || "",
       subscriptionMonthlyCents: nextTier?.monthlyCents ?? current.subscriptionMonthlyCents ?? null,
       subscriptionStatus: nextSubscriptionStatus,
@@ -1563,7 +1566,7 @@ export async function handleAdminOnboardingTest(request, env, reference) {
     if (!normalizeEmail(updated.treasurerEmail) || !normalizeEmail(updated.priestEmail)) {
       return json({ error: "A priest email and treasurer email are required before preparing the signoff exercise." }, { status: 422 });
     }
-    const tier = subscriptionTier(updated.subscriptionTier || defaultSubscriptionTier(updated));
+    const tier = subscriptionTier(updated);
     stagingPassword = generateSecret("Agapay-Staging");
     updated = await applyParishDashboardPassword({
       ...updated,

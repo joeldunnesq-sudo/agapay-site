@@ -46,6 +46,7 @@ import { upsertStripeChargeVolumeRecord } from "../lib/stripe-volume.js";
 import { donorName } from "../lib/stripe-fees.js";
 import { STRIPE_READINESS_MAX_AGE_MS, invalidateOnboardingSignoffIfChanged } from "../lib/parish-onboarding.js";
 import { sendDashboardInvite } from "../lib/parish-notifications.js";
+import { activateEarlyAdopterPricing, releaseEarlyAdopterReservation, retireEarlyAdopterPricing } from "../lib/early-adopter-pricing.js";
 
 import {
   appendAdminAudit,
@@ -315,6 +316,15 @@ export async function updateSubscriptionRecord(env, reference, updates) {
   if (!hasProductionStore(env) || !reference) return null;
   const current = await loadRegistrationByReference(env, reference);
   if (!current) return null;
+  const nextStatus = String(updates.subscriptionStatus || current.subscriptionStatus || "").toLowerCase();
+  if (current.subscriptionPricingProgram === "founding_20" && nextStatus === "active") {
+    await activateEarlyAdopterPricing(env, reference);
+    updates = { ...updates, earlyAdopterActivatedAt: current.earlyAdopterActivatedAt || new Date().toISOString() };
+  }
+  if (current.subscriptionPricingProgram === "founding_20" && nextStatus === "cancelled") {
+    await retireEarlyAdopterPricing(env, reference);
+    updates = { ...updates, subscriptionPricingProgram: "standard", earlyAdopterEndedAt: new Date().toISOString(), earlyAdopterSlot: null };
+  }
   const updated = {
     ...current,
     ...updates,
@@ -750,6 +760,19 @@ export async function processStripeWebhookEvent(env, event) {
     }
   }
 
+  if (event.type === "checkout.session.expired" && object.mode === "subscription" && object.metadata?.product !== "learn") {
+    const reference = object.metadata?.agapay_reference || object.client_reference_id || "";
+    if (reference) {
+      await releaseEarlyAdopterReservation(env, reference);
+      await updateSubscriptionRecord(env, reference, {
+        subscriptionStatus: "not_started",
+        earlyAdopterSlot: null,
+        earlyAdopterReservedAt: "",
+        stripeSubscriptionCheckoutSessionStatus: "expired"
+      });
+    }
+  }
+
   if (event.type === "checkout.session.completed" && object.mode === "subscription") {
     if (object.metadata?.product === "learn") {
       await persistLearnBillingFromStripe(env, {
@@ -838,7 +861,9 @@ export async function processStripeWebhookEvent(env, event) {
     const tierUpdates = selectedTier ? {
       subscriptionTier: selectedTier.id,
       subscriptionTierLabel: selectedTier.label,
-      subscriptionMonthlyCents: selectedTier.monthlyCents
+      subscriptionMonthlyCents: selectedTier.monthlyCents,
+      ...(selectedTier.pricingProgram ? { subscriptionPricingProgram: selectedTier.pricingProgram === "early_adopter" ? "founding_20" : selectedTier.pricingProgram } : {}),
+      ...(selectedTier.parishHouseholdBand ? { parishHouseholdBand: selectedTier.parishHouseholdBand } : {})
     } : {};
     const status = event.type === "customer.subscription.deleted"
       ? "cancelled"

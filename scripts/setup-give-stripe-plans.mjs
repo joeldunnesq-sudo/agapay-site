@@ -1,12 +1,13 @@
-// Idempotently creates the shared AGAPAY Give Stripe Product, its three
-// monthly Prices, and a Customer Portal configuration that permits plan
-// changes and end-of-period cancellation.
+// Idempotently creates the shared AGAPAY Give Stripe Product, the published
+// early-adopter and standard monthly Prices, and a Customer Portal
+// configuration for billing details and cancellation. Plan/band changes stay
+// inside AGAPAY so a parish cannot select a smaller household band in Stripe.
 //
 // Run with STRIPE_SECRET_KEY in the local environment:
 //   node scripts/setup-give-stripe-plans.mjs
 //
-// The script never prints the Stripe secret. It prints the four resulting
-// IDs so they can be stored as Worker secrets.
+// The script never prints the Stripe secret. It prints the resulting IDs so
+// they can be stored as Worker secrets.
 const secret = process.env.STRIPE_SECRET_KEY;
 if (!secret) throw new Error("STRIPE_SECRET_KEY is required.");
 
@@ -45,10 +46,19 @@ if (!product) {
 }
 
 const plans = [
-  { key: "starter", label: "Starter", cents: 900 },
-  { key: "giving", label: "Giving Plus", cents: 4900 },
-  { key: "stewardship", label: "Stewardship", cents: 9900 },
-  { key: "parish", label: "Parish", cents: 14900 }
+  { key: "starter", tier: "starter", label: "Starter", cents: 900, env: "AGAPAY_STRIPE_PRICE_STARTER_MONTHLY" },
+  { key: "giving_early", tier: "giving", label: "Giving Plus early adopter", cents: 4900, env: "AGAPAY_STRIPE_PRICE_GIVING_MONTHLY" },
+  { key: "giving_standard", tier: "giving", label: "Giving Plus standard", cents: 7900, env: "AGAPAY_STRIPE_PRICE_GIVING_79_MONTHLY" },
+  { key: "stewardship_early", tier: "stewardship", label: "Stewardship early adopter", cents: 9900, env: "AGAPAY_STRIPE_PRICE_STEWARDSHIP_MONTHLY" },
+  { key: "stewardship_standard", tier: "stewardship", label: "Stewardship standard", cents: 14900, env: "AGAPAY_STRIPE_PRICE_STEWARDSHIP_149_MONTHLY" },
+  { key: "parish_early_under_50", tier: "parish", band: "under_50", label: "Parish early adopter · under 50 households", cents: 14900, env: "AGAPAY_STRIPE_PRICE_PARISH_149_MONTHLY" },
+  { key: "parish_early_50_149", tier: "parish", band: "50_149", label: "Parish early adopter · 50–149 households", cents: 19900, env: "AGAPAY_STRIPE_PRICE_PARISH_199_MONTHLY" },
+  { key: "parish_early_150_299", tier: "parish", band: "150_299", label: "Parish early adopter · 150–299 households", cents: 24900, env: "AGAPAY_STRIPE_PRICE_PARISH_249_EARLY_MONTHLY" },
+  { key: "parish_early_300_599", tier: "parish", band: "300_599", label: "Parish early adopter · 300–599 households", cents: 34900, env: "AGAPAY_STRIPE_PRICE_PARISH_349_EARLY_MONTHLY" },
+  { key: "parish_standard_under_50", tier: "parish", band: "under_50", label: "Parish standard · under 50 households", cents: 24900, env: "AGAPAY_STRIPE_PRICE_PARISH_249_MONTHLY" },
+  { key: "parish_standard_50_149", tier: "parish", band: "50_149", label: "Parish standard · 50–149 households", cents: 34900, env: "AGAPAY_STRIPE_PRICE_PARISH_349_MONTHLY" },
+  { key: "parish_standard_150_299", tier: "parish", band: "150_299", label: "Parish standard · 150–299 households", cents: 44900, env: "AGAPAY_STRIPE_PRICE_PARISH_449_MONTHLY" },
+  { key: "parish_standard_300_599", tier: "parish", band: "300_599", label: "Parish standard · 300–599 households", cents: 64900, env: "AGAPAY_STRIPE_PRICE_PARISH_649_MONTHLY" }
 ];
 
 const prices = {};
@@ -70,7 +80,9 @@ for (const plan of plans) {
         ["tax_behavior", "exclusive"],
         ["lookup_key", `agapay_give_${plan.key}_monthly`],
         ["nickname", `AGAPAY ${plan.label} — monthly`],
-        ["metadata[agapay_subscription_tier]", plan.key]
+        ["metadata[agapay_subscription_tier]", plan.tier],
+        ["metadata[agapay_household_band]", plan.band || ""],
+        ["metadata[agapay_pricing_program]", plan.key.includes("standard") ? "standard" : plan.key.includes("early") ? "founding_20" : "standard"]
       ])
     });
   }
@@ -93,23 +105,13 @@ const portalConfiguration = await stripe("/billing_portal/configurations", {
     ["features[subscription_cancel][enabled]", "true"],
     ["features[subscription_cancel][mode]", "at_period_end"],
     ["features[subscription_cancel][proration_behavior]", "none"],
-    ["features[subscription_update][enabled]", "true"],
-    ["features[subscription_update][default_allowed_updates][]", "price"],
-    ["features[subscription_update][proration_behavior]", "create_prorations"],
-    ["features[subscription_update][products][0][product]", product.id],
-    ["features[subscription_update][products][0][prices][]", prices.starter],
-    ["features[subscription_update][products][0][prices][]", prices.giving],
-    ["features[subscription_update][products][0][prices][]", prices.stewardship],
-    ["features[subscription_update][products][0][prices][]", prices.parish],
+    ["features[subscription_update][enabled]", "false"],
     ["metadata[agapay_configuration_key]", "give_self_service_v1"]
   ])
 });
 
 console.log(JSON.stringify({
   AGAPAY_STRIPE_PRODUCT_GIVE: product.id,
-  AGAPAY_STRIPE_PRICE_STARTER_MONTHLY: prices.starter,
-  AGAPAY_STRIPE_PRICE_GIVING_MONTHLY: prices.giving,
-  AGAPAY_STRIPE_PRICE_STEWARDSHIP_MONTHLY: prices.stewardship,
-  AGAPAY_STRIPE_PRICE_PARISH_149_MONTHLY: prices.parish,
+  ...Object.fromEntries(plans.map((plan) => [plan.env, prices[plan.key]])),
   AGAPAY_STRIPE_BILLING_PORTAL_CONFIGURATION: portalConfiguration.id
 }, null, 2));

@@ -4,6 +4,7 @@ export const REGISTRATION_PRIVACY_NOTICE_VERSION = "2026-08-11";
 const PUBLIC_REGISTRATION_STRING_LIMITS = Object.freeze({
   communityType: 80,
   subscriptionTier: 40,
+  parishHouseholdBand: 40,
   promo: 100,
   parishName: 200,
   jurisdiction: 200,

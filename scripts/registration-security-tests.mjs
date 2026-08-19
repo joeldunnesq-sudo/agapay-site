@@ -44,6 +44,7 @@ function registrationBody(overrides = {}) {
   return {
     communityType: "Parish",
     subscriptionTier: "giving",
+    parishHouseholdBand: "50_149",
     parishName: "St. Boundary Orthodox Church",
     jurisdiction: "Orthodox Church in America",
     addressLine1: "100 Test Avenue",

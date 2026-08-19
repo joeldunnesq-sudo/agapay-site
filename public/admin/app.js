@@ -2641,12 +2641,27 @@ let selectedReference = '';
               <div>
                 <label for="subscriptionTier">Subscription tier</label>
                 <select id="subscriptionTier">
-                  <option value="giving" ${['giving','mission'].includes(reg.subscriptionTier || '') ? 'selected' : ''}>Giving - $49/mo, no donation fee</option>
-                  <option value="stewardship" ${(reg.subscriptionTier || '') === 'stewardship' ? 'selected' : ''}>Stewardship - $99/mo, no donation fee</option>
-                  <option value="parish" ${(!reg.subscriptionTier || reg.subscriptionTier === 'parish') ? 'selected' : ''}>Parish - $149/mo, no donation fee</option>
+                  <option value="giving" ${['giving','mission'].includes(reg.subscriptionTier || '') ? 'selected' : ''}>Giving Plus - $49/mo early adopter</option>
+                  <option value="stewardship" ${(reg.subscriptionTier || '') === 'stewardship' ? 'selected' : ''}>Stewardship - $99/mo early adopter</option>
+                  <option value="parish" ${(!reg.subscriptionTier || reg.subscriptionTier === 'parish') ? 'selected' : ''}>Parish - household-priced</option>
                   <option value="diocese" ${reg.subscriptionTier === 'diocese' ? 'selected' : ''}>Cathedral / Diocese - negotiated subscription, no donation fee</option>
                   <option value="monastery_free" ${reg.subscriptionTier === 'monastery_free' ? 'selected' : ''}>Monastery / Skete - no monthly fee, no donation fee</option>
                 </select>
+              </div>
+              <div>
+                <label for="parishHouseholdBand">Active parish households</label>
+                <select id="parishHouseholdBand">
+                  <option value="">Not recorded / legacy</option>
+                  <option value="under_50" ${reg.parishHouseholdBand === 'under_50' ? 'selected' : ''}>Fewer than 50</option>
+                  <option value="50_149" ${reg.parishHouseholdBand === '50_149' ? 'selected' : ''}>50–149</option>
+                  <option value="150_299" ${reg.parishHouseholdBand === '150_299' ? 'selected' : ''}>150–299</option>
+                  <option value="300_599" ${reg.parishHouseholdBand === '300_599' ? 'selected' : ''}>300–599</option>
+                  <option value="600_plus" ${reg.parishHouseholdBand === '600_plus' ? 'selected' : ''}>600+ / custom</option>
+                </select>
+              </div>
+              <div>
+                <label>Pricing program</label>
+                <input value="${escapeAttr(reg.subscriptionPricingProgram === 'founding_20' ? `Early adopter #${reg.earlyAdopterSlot || ''}` : reg.subscriptionPricingProgram || 'Assigned at checkout')}" disabled />
               </div>
               <div>
                 <label for="subscriptionStatus">Subscription status</label>
@@ -2864,6 +2879,7 @@ let selectedReference = '';
             platformFee: document.getElementById('platformFee').value,
             liturgicalCalendar: document.getElementById('liturgicalCalendar').value,
             subscriptionTier: document.getElementById('subscriptionTier').value,
+            parishHouseholdBand: document.getElementById('parishHouseholdBand').value,
             subscriptionStatus: document.getElementById('subscriptionStatus').value,
             stripeCustomerId: document.getElementById('stripeCustomerId').value,
             stripeSubscriptionId: document.getElementById('stripeSubscriptionId').value,
@@ -2988,6 +3004,7 @@ let selectedReference = '';
           },
           body: JSON.stringify({
             subscriptionTier: document.getElementById('subscriptionTier').value,
+            parishHouseholdBand: document.getElementById('parishHouseholdBand').value,
             trialDays: options.trialDays || 0
           })
         });

@@ -9,6 +9,14 @@ import {
 } from "./core.js";
 import { defaultSubscriptionTier } from "./subscriptions.js";
 
+function safeParseKvRegistration(value) {
+  try {
+    return typeof value === "string" ? JSON.parse(value) : safeParseJsonRow(value);
+  } catch {
+    return null;
+  }
+}
+
 export function adminRegistrationSummary(registration = {}, fallbackReference = "") {
   registration = registration || {};
   return {
@@ -25,6 +33,8 @@ export function adminRegistrationSummary(registration = {}, fallbackReference = 
     treasurerEmail: registration.treasurerEmail || "",
     givingStatus: registration.givingStatus || "active",
     subscriptionTier: registration.subscriptionTier || defaultSubscriptionTier(registration),
+    parishHouseholdBand: registration.parishHouseholdBand || "",
+    subscriptionPricingProgram: registration.subscriptionPricingProgram || "",
     subscriptionStatus: registration.subscriptionStatus || "not_started",
     stripeAccountStatus: registration.stripeAccountStatus || "not_started",
     dashboardInviteEmailStatus: registration.dashboardInviteEmailStatus || "",
@@ -70,7 +80,7 @@ export async function loadAllRegistrations(env, options = {}) {
   const keys = await listKvKeys(env, { limit: hardLimit });
   const rows = await Promise.all(keys.map((key) => env.AGAPAY_REGISTRATIONS.get(key.name)));
   return rows
-    .map(safeParseJsonRow)
+    .map(safeParseKvRegistration)
     .filter(Boolean)
     .filter((registration) => !options.status || registration.status === options.status)
     .slice(0, hardLimit);
@@ -82,7 +92,7 @@ export async function loadAllKvRegistrations(env, options = {}) {
   const keys = await listKvKeys(env, { limit: hardLimit });
   const rows = await Promise.all(keys.map((key) => env.AGAPAY_REGISTRATIONS.get(key.name)));
   return rows
-    .map(safeParseJsonRow)
+    .map(safeParseKvRegistration)
     .filter(Boolean)
     .filter((registration) => !options.status || registration.status === options.status)
     .slice(0, hardLimit);

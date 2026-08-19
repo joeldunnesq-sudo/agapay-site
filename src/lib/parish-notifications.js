@@ -306,7 +306,7 @@ export async function sendRegistrationConfirmation(env, appUrl, registration) {
   const dashboardUrl = `${appUrl}/give/login?parish=${encodeURIComponent(parishId)}`;
   const safeDashboardUrl = htmlEscape(dashboardUrl);
   const temporaryPassword = htmlEscape(registration.parishDashboardToken || "");
-  const tier = subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration));
+  const tier = subscriptionTier(registration);
   const tierLabel = htmlEscape(subscriptionTierSummary(tier));
   return sendEmail(env, {
     from,
@@ -344,6 +344,8 @@ export async function sendRegistrationConfirmation(env, appUrl, registration) {
       `Reference number: ${registration.reference || ""}`,
       `Community: ${registration.parishName || ""}`,
       `Subscription tier: ${subscriptionTierSummary(tier)}`,
+      registration.parishHouseholdBand ? `Parish household band: ${registration.parishHouseholdBand}` : "",
+      registration.subscriptionPricingProgram ? `Pricing program: ${registration.subscriptionPricingProgram}` : "",
       "",
       "DASHBOARD ACCESS",
       `Dashboard: ${dashboardUrl}`,
@@ -367,7 +369,7 @@ export async function sendAdminRegistrationNotice(env, appUrl, registration) {
   const replyTo = registration.priestEmail || env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
   const adminUrl = `${appUrl}/admin`;
   const parishName = htmlEscape(registration.parishName || "New parish registration");
-  const tier = subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration));
+  const tier = subscriptionTier(registration);
   const location = [registration.city, registration.state].filter(Boolean).join(", ");
   const address = [registration.addressLine1, registration.addressLine2, [registration.city, registration.state, registration.postalCode].filter(Boolean).join(" ")]
     .filter(Boolean)

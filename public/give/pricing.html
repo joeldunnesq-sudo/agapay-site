@@ -10,7 +10,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-chrome-192x192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/favicons/android-chrome-512x512.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
-  <meta name="description" content="Compare AGAPAY Orthodox giving app pricing: Starter $9, Giving Plus $49, Stewardship $99, and the complete Parish platform $149 per month." />
+  <meta name="description" content="Compare AGAPAY Orthodox church software pricing, including early-adopter Giving Plus, Stewardship, and household-based Parish plans with Koinonia, Accounting, Directory, Sacraments, and Commerce." />
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1" />
   <link rel="canonical" href="https://agapay.app/give/pricing" />
   <meta property="og:type" content="website" />
@@ -136,6 +136,16 @@
     .tier-title { text-align: center; color: #071729; text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--serif); font-weight: 600; font-size: 1.5rem; line-height: 0.98; }
     .tier-price { text-align: center; color: var(--night); font-family: var(--serif); font-size: 2.7rem; line-height: 0.95; font-weight: 700; }
     .tier-price span { font-family: var(--sans); font-size: 0.78rem; color: var(--gold-dark); font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
+    .early-adopter-badge { justify-self: center; border: 1px solid rgba(200, 162, 74, 0.52); border-radius: 999px; background: rgba(200, 162, 74, 0.12); padding: 0.35rem 0.65rem; color: #6f5117; font-size: 0.68rem; font-weight: 850; letter-spacing: 0.08em; text-transform: uppercase; }
+    .tier-standard { text-align: center; color: #687078; font-size: 0.78rem; font-weight: 750; }
+    .tier-standard strong { color: var(--night); }
+    .tier-rate-note { margin-top: -0.2rem; text-align: center; color: #68511e; font-size: 0.72rem; line-height: 1.45; }
+    .parish-price-bands { overflow: hidden; border: 1px solid rgba(166, 159, 145, 0.3); border-radius: 12px; background: rgba(255,255,255,0.58); }
+    .parish-price-band { display: grid; grid-template-columns: 1fr auto auto; gap: 0.55rem; align-items: center; padding: 0.55rem 0.65rem; border-top: 1px solid rgba(166, 159, 145, 0.2); color: #33404A; font-size: 0.69rem; }
+    .parish-price-band:first-child { border-top: 0; }
+    .parish-price-band span { min-width: 0; }
+    .parish-price-band del { color: #737a80; }
+    .parish-price-band strong { color: var(--night); white-space: nowrap; }
     .tier-sub { min-height: 42px; text-align: center; color: #33404A; font-size: 0.88rem; line-height: 1.45; }
     .tier-features { list-style: none; display: grid; gap: 0.52rem; margin-top: 0.15rem; }
     .tier-features li { display: grid; grid-template-columns: 18px 1fr; gap: 0.42rem; color: #28323A; font-size: 0.82rem; line-height: 1.4; align-items: start; }
@@ -373,7 +383,7 @@
         <div class="eyebrow"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M8 7h8"/><path d="M6 12h12"/><path d="M8 16l8 2"/></svg>Pricing</div>
         <h1>No AGAPAY donation fee</h1>
         <h2>Just a simple monthly subscription.</h2>
-        <p>Start with essential giving, add deeper stewardship tools when your leaders need them, or bring the full work of parish life into one platform. AGAPAY never takes a percentage of donations; gifts flow straight to your parish's own Stripe account.</p>
+        <p>Start with essential giving, add deeper stewardship tools when your leaders need them, or bring the full work of parish life into one platform. Early-adopter pricing is limited to the first 20 organizations that activate an eligible paid subscription. AGAPAY never takes a percentage of donations; gifts flow straight to your parish's own Stripe account.</p>
         <div class="hero-actions">
           <a class="hero-btn-primary" href="/register"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-8 0v2"/><circle cx="12" cy="7" r="4"/><path d="M4 21h16"/></svg>Start for free</a>
           <a class="hero-btn-secondary" href="#calculator"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 11h2"/><path d="M14 11h2"/><path d="M8 15h2"/><path d="M14 15h2"/></svg>See your net deposit</a>
@@ -442,7 +452,7 @@
         </div>
         <div class="fee-note">
           <svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M6 19V9l6-5 6 5v10"/><path d="M9 19v-6h6v6"/></svg>
-          <p><strong>Choose by capability, not parish size.</strong> Upgrade, downgrade, or cancel at any time as your church's needs change.</p>
+          <p><strong>Choose lower tiers by capability; Parish scales by active-household band.</strong> Upgrade, downgrade, or cancel as your church's needs change.</p>
         </div>
       </aside>
       <div class="pricing-grid">
@@ -469,7 +479,10 @@
         <article class="tier-card tier-card--primary">
           <div class="tier-icon"><svg viewBox="0 0 24 24" aria-label="Parish church"><path d="M3 20h18"/><path d="M5 20v-8l7-5 7 5v8"/><path d="M9 20v-5a3 3 0 0 1 6 0v5"/><path d="M12 7V3"/><path d="M10.5 4.5h3"/><path d="M7 13h2M15 13h2"/></svg></div>
           <h2 class="tier-title">Giving Plus</h2>
+          <div class="early-adopter-badge">Early adopter · first 20</div>
+          <div class="tier-standard">Standard rate <strong>$79/mo</strong></div>
           <div class="tier-price">$49 <span>/ mo</span></div>
+          <div class="tier-rate-note">Early-adopter rate while continuously subscribed.</div>
           <p class="tier-sub">Orthodox giving tools for parishes ready to go beyond the basics.</p>
           <ul class="tier-features">
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Everything in Starter, plus</li>
@@ -489,7 +502,10 @@
         <article class="tier-card tier-card--primary">
           <div class="tier-icon"><svg viewBox="0 0 24 24" aria-label="Domed Orthodox church"><path d="M2.5 20h19"/><path d="M4 20v-7h4v7M16 20v-7h4v7"/><path d="M8 20V11h8v9"/><path d="M9 11c0-3 1.4-4.5 3-5.5 1.6 1 3 2.5 3 5.5"/><path d="M12 5.5V2"/><path d="M10.5 3.5h3"/><path d="M10 20v-4a2 2 0 0 1 4 0v4"/></svg></div>
           <h2 class="tier-title">Stewardship</h2>
+          <div class="early-adopter-badge">Early adopter · first 20</div>
+          <div class="tier-standard">Standard rate <strong>$149/mo</strong></div>
           <div class="tier-price">$99 <span>/ mo</span></div>
+          <div class="tier-rate-note">Early-adopter rate while continuously subscribed.</div>
           <p class="tier-sub">Giving plus the insight leaders need to cultivate faithful stewardship.</p>
           <ul class="tier-features">
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Everything in Giving Plus, plus</li>
@@ -507,16 +523,28 @@
         <article class="tier-card tier-card--primary">
           <div class="tier-icon"><svg viewBox="0 0 24 24" aria-label="Large three-domed Orthodox church"><path d="M1.5 20h21"/><path d="M3 20v-8h5v8M16 20v-8h5v8"/><path d="M8 20V9h8v11"/><path d="M4 12c0-2 1-3 1.5-3.8C6 9 7 10 7 12M17 12c0-2 1-3 1.5-3.8C19 9 20 10 20 12"/><path d="M9 9c0-3 1.5-4.5 3-5.5 1.5 1 3 2.5 3 5.5"/><path d="M12 3.5V1.5M10.7 2.5h2.6M5.5 8.2V5.5M4.4 6.5h2.2M18.5 8.2V5.5M17.4 6.5h2.2"/><path d="M10 20v-5a2 2 0 0 1 4 0v5"/></svg></div>
           <h2 class="tier-title">Parish</h2>
-          <div class="tier-price">$149 <span>/ mo</span></div>
-          <p class="tier-sub">A complete parish operations platform for established churches that want to cultivate stewardship and serve parishioners well.</p>
+          <div class="early-adopter-badge">Early adopter · first 20</div>
+          <div class="tier-standard">Standard pricing from <strong>$249/mo</strong></div>
+          <div class="tier-price">$149 <span>/ mo starting</span></div>
+          <div class="tier-rate-note">Household-based early-adopter pricing while continuously subscribed.</div>
+          <div class="parish-price-bands" aria-label="Parish household pricing">
+            <div class="parish-price-band"><span>Under 50 households</span><del>$249</del><strong>$149/mo</strong></div>
+            <div class="parish-price-band"><span>50–149 households</span><del>$349</del><strong>$199/mo</strong></div>
+            <div class="parish-price-band"><span>150–299 households</span><del>$449</del><strong>$249/mo</strong></div>
+            <div class="parish-price-band"><span>300–599 households</span><del>$649</del><strong>$349/mo</strong></div>
+            <div class="parish-price-band"><span>600+ households</span><span></span><strong>Custom</strong></div>
+          </div>
+          <p class="tier-sub">AGAPAY's complete Orthodox church-management and parish-operations platform, priced by active families rather than individual members.</p>
           <ul class="tier-features">
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Everything in Stewardship, plus</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Sacraments &amp; Services requests from parishioners</li>
-            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Full Parish Commerce suite, with new products added as they launch</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Full Parish Commerce: Bookstore, Events, Meals, orders, tax, and accounting</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Parish Directory and member workflows</li>
-            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Koinonia parish feed, announcements, and ministry groups</li>
-            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Parish audio library, video, and news hub</li>
-            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Orthodox podcast discovery, subscriptions, RSS imports, and saved listening progress</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Koinonia parish feed, targeted announcements, and member engagement</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Ministry-group workspaces, leaders, members, posts, and shared resources</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Ministry-led Events and Meals with parish oversight and shared checkout</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Prayer requests, parish signups, and the community Exchange</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Parish audio, video, news, Orthodox podcasts, RSS imports, and saved listening</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Accounting Suite</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Additional administrator seats, roles, and invite workflow</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Guided in-dashboard setup and configuration support</li>
@@ -543,7 +571,7 @@
           <div class="tier-icon"><svg viewBox="0 0 24 24" aria-label="Grand five-domed Orthodox cathedral"><path d="M1 20h22"/><path d="M3 20v-7h4v7M17 20v-7h4v7"/><path d="M7 20V10h10v10"/><path d="M8 10c0-2.4 1.2-3.8 2.4-4.7M16 10c0-2.4-1.2-3.8-2.4-4.7"/><path d="M10.4 5.3C10.4 3.5 11.2 2.4 12 2c.8.4 1.6 1.5 1.6 3.3"/><path d="M3.5 13c0-1.7.8-2.8 1.5-3.4.7.6 1.5 1.7 1.5 3.4M17.5 13c0-1.7.8-2.8 1.5-3.4.7.6 1.5 1.7 1.5 3.4"/><path d="M8 10c0-1.6.7-2.6 1.4-3.2M16 10c0-1.6-.7-2.6-1.4-3.2"/><path d="M12 2V.5M10.8 1.2h2.4M5 9.6V7.4M4 8.2h2M19 9.6V7.4M18 8.2h2"/><path d="M9.5 20v-5a2.5 2.5 0 0 1 5 0v5"/><path d="M4.2 16h1.6M18.2 16h1.6"/></svg></div>
           <h2 class="tier-title">Cathedral / Diocese</h2>
           <div class="tier-price">Custom</div>
-          <p class="tier-sub">For 301+ households, cathedrals, and diocesan use.</p>
+          <p class="tier-sub">For cathedrals, dioceses, and multi-parish organizations requiring a tailored agreement.</p>
           <ul class="tier-features">
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>No AGAPAY donation fee, same as every tier</li>
             <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Multi-parish dashboard</li>
@@ -728,6 +756,10 @@
             <p>No setup fees, no annual lock-in, and no cancellation penalties. Standard tiers are month to month.</p>
           </article>
           <article class="faq">
+            <button type="button" aria-expanded="false">How does early-adopter pricing work? <span>+</span></button>
+            <p>The first 20 verified organizations that activate an eligible Giving Plus, Stewardship, or Parish subscription receive the published early-adopter schedule while continuously subscribed. Parish pricing follows the church's active-household band and is reviewed during onboarding; cancelling the subscription ends early-adopter status.</p>
+          </article>
+          <article class="faq">
             <button type="button" aria-expanded="false">How do card and bank fees work? <span>+</span></button>
             <p>AGAPAY does not charge a donation fee. Stripe&rsquo;s processing rate depends on the payment method and your account&rsquo;s approved pricing. Eligible U.S. nonprofits may receive 2.2% + $0.30 standard-card donation pricing, while ACH is generally 0.8% capped at $5. Donors can choose to cover the processing cost at checkout.</p>
           </article>
@@ -741,7 +773,7 @@
           </article>
           <article class="faq">
             <button type="button" aria-expanded="false">What does Parish add beyond Stewardship? <span>+</span></button>
-            <p>Parish adds the operational tools that serve the whole community: Koinonia parish communications, ministry groups, audio, video, news, and Orthodox podcasts; plus Directory, Sacraments &amp; Services, staff workflows, the full Parish Commerce suite beyond Stewardship's Bookstore access, Text-to-Give, guided onboarding, and priority support.</p>
+            <p>Parish adds the operational tools that serve the whole community: Koinonia's parish feed, targeted announcements, ministry groups, prayer requests, signups, Exchange, audio, video, news, and Orthodox podcasts; plus Directory, Sacraments &amp; Services, Accounting, staff workflows, and the complete Commerce suite—including ministry-led Events and Meals—along with Text-to-Give, guided onboarding, and priority support.</p>
           </article>
           <article class="faq">
             <button type="button" aria-expanded="false">How does AGAPAY verify canonical standing? <span>+</span></button>

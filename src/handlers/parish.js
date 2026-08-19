@@ -114,7 +114,7 @@ import {
 
 import {
   PARISH_INTRO_DEMO_DAYS,
-  defaultSubscriptionTier as sharedDefaultSubscriptionTier,
+  defaultSubscriptionTier as sharedDefaultSubscriptionTier, normalizeParishHouseholdBand,
   parishIntroDemoEligible,
   subscriptionTier as sharedSubscriptionTier,
 } from "../lib/subscriptions.js";
@@ -1621,7 +1621,7 @@ export async function handleRegistrations(request, env) {
     "acceptingName", "acceptingEmail", "acceptingRole"
   ];
 
-  if (registrationRequiresJurisdiction(body.communityType)) requiredFields.push("jurisdiction");
+  if (registrationRequiresJurisdiction(body.communityType)) requiredFields.push("jurisdiction"); if (String(body.subscriptionTier || "").toLowerCase() === "parish") requiredFields.push("parishHouseholdBand");
   if (registrationRequiresWebsite(body.communityType)) requiredFields.push("website");
   if (registrationRequiresValuesReview(body.communityType)) requiredFields.push("organizationDescription");
 
@@ -1643,10 +1643,10 @@ export async function handleRegistrations(request, env) {
   if (!validTierForCommunity) {
     return json({ error: "Choose a valid starting tier for this community type." }, { status: 422 });
   }
-
+  if (requestedTier === "parish" && !normalizeParishHouseholdBand(body.parishHouseholdBand)) return json({ error: "Choose a valid active-household range." }, { status: 422 });
   const reference = `AGP-REG-${Date.now().toString(36).toUpperCase()}`, receivedAt = new Date().toISOString();
   const subscriptionTierId = requestedTier;
-  const tier = subscriptionTier(subscriptionTierId) || subscriptionTier(defaultSubscriptionTier(body));
+  const tier = sharedSubscriptionTier({ ...body, subscriptionTier: subscriptionTierId }) || sharedSubscriptionTier({ ...body, subscriptionTier: defaultSubscriptionTier(body) });
   const baseParishId = parishSlug(body.parishName, body.city);
   let parishId = baseParishId;
   if (await findRegistrationByParishId(env, parishId)) {
@@ -1674,7 +1674,7 @@ export async function handleRegistrations(request, env) {
     parishDashboardTokenTemporary: true,
     parishDashboardTokenCreatedAt: receivedAt,
     ...registrationAgreementEvidence(receivedAt),
-    subscriptionTier: tier?.id || "parish",
+    subscriptionTier: tier?.id || "parish", subscriptionPricingProgram: ["giving", "stewardship", "parish"].includes(tier?.id) ? "early_adopter_candidate" : "standard",
     subscriptionStatus: tier?.monthlyCents === 0 ? "free_forever" : "not_started",
     subscriptionMonthlyCents: tier?.monthlyCents ?? null,
     subscriptionTierLabel: tier?.label || ""
@@ -2390,7 +2390,7 @@ export async function handleParishSubscriptionPortal(request, env, parishId) {
       "flow_data[after_completion][redirect][return_url]",
       `${appUrl}/parish/dashboard?parish=${encodeURIComponent(parishId)}&subscription_cancelled=1`
     );
-  }
+  } else form.set("flow_data[type]", "payment_method_update");
   if (env.AGAPAY_STRIPE_BILLING_PORTAL_CONFIGURATION) {
     form.set("configuration", env.AGAPAY_STRIPE_BILLING_PORTAL_CONFIGURATION);
   }
@@ -2486,7 +2486,7 @@ export function summarizeCharges(charges) {
 }
 
 export function parishDashboardPayload(parishId, registration) {
-  const currentTier = subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration));
+  const currentTier = sharedSubscriptionTier(registration);
   const givingPlus = givingFeatureAccess(registration, "branding");
   return {
     parishId,

@@ -1,12 +1,13 @@
 import { json } from "./core.js";
 import { slugify } from "./format.js";
-import { defaultSubscriptionTier, subscriptionReady, subscriptionTier } from "./subscriptions.js";
+import { defaultSubscriptionTier, normalizeParishHouseholdBand, subscriptionReady, subscriptionTier } from "./subscriptions.js";
 import { stripeFormRequest, stripeGetRequest } from "./stripe-connect.js";
 import { applySubscriptionTaxCode } from "./tax-codes.js";
 import { applyApprovedExemptionIfExists } from "./tax-exemption.js";
 import { subscriptionCheckoutReadinessGate, withTaxReadinessDefaults } from "./tax-readiness.js";
 import { ensureBenevolenceFundInRegistration } from "./stewardship-funds.js";
 import { invalidateOnboardingSignoffIfChanged } from "./parish-onboarding.js";
+import { claimEarlyAdopterPricing } from "./early-adopter-pricing.js";
 
 async function persistSubscriptionMaterialChange(env, reference, registration, updated, saveRegistrationRecord) {
   const safeUpdate = await invalidateOnboardingSignoffIfChanged(registration, updated, {
@@ -53,6 +54,20 @@ export async function createSubscriptionCheckoutForRegistration({
   saveRegistrationRecord
 }) {
   const tierId = body.subscriptionTier || registration.subscriptionTier || defaultSubscriptionTier(registration);
+  const requestedHouseholdBand = normalizeParishHouseholdBand(body.parishHouseholdBand ?? registration.parishHouseholdBand);
+  if (String(tierId || "").toLowerCase() === "parish" && !requestedHouseholdBand) {
+    return json({ error: "Choose a valid active-household range for Parish pricing." }, { status: 422 });
+  }
+  if (requestedHouseholdBand) registration = { ...registration, parishHouseholdBand: requestedHouseholdBand };
+  if (["giving", "stewardship", "parish"].includes(String(tierId || "").toLowerCase())) {
+    const pricing = await claimEarlyAdopterPricing(env, reference, registration);
+    registration = {
+      ...registration,
+      subscriptionPricingProgram: pricing.program,
+      earlyAdopterSlot: pricing.slot,
+      earlyAdopterReservedAt: pricing.program === "founding_20" ? pricing.reservedAt : ""
+    };
+  }
   const tier = subscriptionTier({ ...registration, subscriptionTier: tierId });
   if (!tier) return json({ error: "Unknown subscription tier" }, { status: 422 });
 
@@ -125,7 +140,10 @@ export async function createSubscriptionCheckoutForRegistration({
       proration_behavior: "create_prorations",
       "metadata[agapay_reference]": reference,
       "metadata[agapay_parish_id]": registration.parishId || slugify(registration.parishName),
-      "metadata[agapay_subscription_tier]": tier.id
+      "metadata[agapay_subscription_tier]": tier.id,
+      "metadata[agapay_pricing_program]": registration.subscriptionPricingProgram || "standard",
+      "metadata[agapay_household_band]": registration.parishHouseholdBand || "",
+      "metadata[agapay_early_adopter_slot]": registration.earlyAdopterSlot ? String(registration.earlyAdopterSlot) : ""
     });
     const configuredPriceId = tier.stripePriceEnv ? env[tier.stripePriceEnv] : "";
     if (configuredPriceId) {
@@ -229,10 +247,16 @@ export async function createSubscriptionCheckoutForRegistration({
     "metadata[agapay_reference]": reference,
     "metadata[agapay_parish_id]": registration.parishId || slugify(registration.parishName),
     "metadata[agapay_subscription_tier]": tier.id,
+    "metadata[agapay_pricing_program]": registration.subscriptionPricingProgram || "standard",
+    "metadata[agapay_household_band]": registration.parishHouseholdBand || "",
+    "metadata[agapay_early_adopter_slot]": registration.earlyAdopterSlot ? String(registration.earlyAdopterSlot) : "",
     "metadata[agapay_trial_days]": trialDays ? String(trialDays) : "",
     "subscription_data[metadata][agapay_reference]": reference,
     "subscription_data[metadata][agapay_parish_id]": registration.parishId || slugify(registration.parishName),
     "subscription_data[metadata][agapay_subscription_tier]": tier.id,
+    "subscription_data[metadata][agapay_pricing_program]": registration.subscriptionPricingProgram || "standard",
+    "subscription_data[metadata][agapay_household_band]": registration.parishHouseholdBand || "",
+    "subscription_data[metadata][agapay_early_adopter_slot]": registration.earlyAdopterSlot ? String(registration.earlyAdopterSlot) : "",
     "subscription_data[metadata][agapay_trial_days]": trialDays ? String(trialDays) : "",
     "line_items[0][quantity]": "1"
   });

@@ -206,7 +206,7 @@ await checkAsync("checkout: Parish paid checkout relies on Stripe automatic tax,
   };
   try {
     const registration = {
-      status: "verified", subscriptionTier: "parish", taxReadinessStatus: "tax_needs_review",
+      status: "verified", subscriptionTier: "parish", parishHouseholdBand: "under_50", taxReadinessStatus: "tax_needs_review",
       treasurerEmail: "treasurer@example.org", ...REGISTRATION_ADDRESS
     };
     const response = await createSubscriptionCheckoutForRegistration({
@@ -269,7 +269,7 @@ await checkAsync("active subscription: changes the existing item instead of crea
       env: { STRIPE_SECRET_KEY: "sk_test_fake" },
       reference: "test-ref",
       registration,
-      body: { subscriptionTier: "parish" },
+      body: { subscriptionTier: "parish", parishHouseholdBand: "under_50" },
       saveRegistrationRecord: noopSave
     });
     const payload = await response.json();
@@ -327,7 +327,7 @@ await checkAsync("active subscription: replaces an archived inline Checkout prod
       env: { STRIPE_SECRET_KEY: "sk_test_fake" },
       reference: "test-ref",
       registration,
-      body: { subscriptionTier: "parish" },
+      body: { subscriptionTier: "parish", parishHouseholdBand: "under_50" },
       saveRegistrationRecord: noopSave
     });
     const payload = await response.json();
@@ -353,7 +353,7 @@ await checkAsync("checkout: admin-authorized demo creates a no-card trial that c
   };
   try {
     const registration = {
-      status: "verified", subscriptionTier: "parish", taxReadinessStatus: "tax_blocked",
+      status: "verified", subscriptionTier: "parish", parishHouseholdBand: "under_50", taxReadinessStatus: "tax_blocked",
       stripeCustomerId: "cus_existing", parishName: "St. Fiacre", ...COMPLETE_ADDRESS
     };
     const response = await createSubscriptionCheckoutForRegistration({
@@ -392,7 +392,7 @@ await checkAsync("checkout: trusted parish introductory demo creates a 30-day no
   };
   try {
     const registration = {
-      status: "verified", subscriptionTier: "parish", taxReadinessStatus: "tax_needs_review",
+      status: "verified", subscriptionTier: "parish", parishHouseholdBand: "under_50", taxReadinessStatus: "tax_needs_review",
       stripeCustomerId: "cus_existing", parishName: "St. Nicholas", ...COMPLETE_ADDRESS
     };
     const response = await createSubscriptionCheckoutForRegistration({
@@ -400,7 +400,7 @@ await checkAsync("checkout: trusted parish introductory demo creates a 30-day no
       env: { STRIPE_SECRET_KEY: "sk_test_fake" },
       reference: "canonical-parish-ref",
       registration,
-      body: { subscriptionTier: "parish", trialDays: 90 },
+      body: { subscriptionTier: "parish", parishHouseholdBand: "under_50", trialDays: 90 },
       introductoryTrialDays: 30,
       saveRegistrationRecord: noopSave
     });
@@ -429,7 +429,7 @@ await checkAsync("checkout: parish-supplied trialDays cannot create a free trial
   };
   try {
     const registration = {
-      status: "verified", subscriptionTier: "parish", taxReadinessStatus: "tax_ready_for_checkout",
+      status: "verified", subscriptionTier: "parish", parishHouseholdBand: "under_50", taxReadinessStatus: "tax_ready_for_checkout",
       stripeCustomerId: "cus_existing", parishName: "St. Fiacre", ...COMPLETE_ADDRESS
     };
     const response = await createSubscriptionCheckoutForRegistration({

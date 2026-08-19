@@ -121,7 +121,7 @@ assert.ok(registerHtml.includes("startOrganizationRegistration"), "registration 
 assert.ok(registerHtml.includes("organizationDescription"), "registration should collect values-review copy when needed");
 assert.ok(registerHtml.includes("requiresJurisdiction"), "registration should branch required fields by organization type");
 assert.ok(registerHtml.includes("requiresWebsite"), "registration should require websites for businesses");
-assert.ok(registerHtml.includes('id="subscriptionTier"') && registerHtml.includes("Starter — $9/month") && registerHtml.includes("Parish — $149/month"), "registration should require a current starting-tier choice");
+assert.ok(registerHtml.includes('id="subscriptionTier"') && registerHtml.includes("Starter — $9/month") && registerHtml.includes("Parish — from $149/month early adopter") && registerHtml.includes('id="parishHouseholdBand"'), "registration should require a current starting-tier and household-band choice");
 assert.ok(registerHtml.includes("subscriptionTier: document.getElementById('subscriptionTier').value"), "registration should submit the selected starting tier");
 assert.ok(parishHandler.includes('requiredFields') && parishHandler.includes('"subscriptionTier"') && parishHandler.includes("validTierForCommunity"), "registration backend should validate the selected tier for the community type");
 assert.ok(parishNotifications.includes("Getting started with AGAPAY") && parishNotifications.includes("attachments: currentGuideAttachment ? [currentGuideAttachment] : []"), "the Getting started email should attach the current parish guide");
@@ -467,37 +467,40 @@ const stewardshipPricingCard = givePricingHtml.slice(
 );
 const parishPricingCard = givePricingHtml.slice(
   givePricingHtml.indexOf('<h2 class="tier-title">Parish</h2>'),
-  givePricingHtml.indexOf('<h2 class="tier-title">Diocese</h2>')
+  givePricingHtml.indexOf('<h2 class="tier-title">Cathedral / Diocese</h2>')
 );
 assert.ok(
   subscriptionCatalog.includes('id: "starter"')
     && subscriptionCatalog.includes("monthlyCents: 900")
-    && subscriptionCatalog.includes("monthlyCents: 14900")
+    && subscriptionCatalog.includes("standardMonthlyCents: 24900")
+    && subscriptionCatalog.includes("earlyAdopterMonthlyCents: 14900")
     && subscriptionCatalog.includes('label: "Giving Plus"'),
-  "subscription catalog should expose Starter at $9, Giving Plus, and Parish at $149"
+  "subscription catalog should expose Starter and household-priced Parish early-adopter and standard rates"
 );
 assert.ok(
   givePricingHtml.includes('<h2 class="tier-title">Starter</h2>')
     && givePricingHtml.includes('<div class="tier-price">$9 <span>/ mo</span></div>')
     && givePricingHtml.includes('<h2 class="tier-title">Giving Plus</h2>')
-    && givePricingHtml.includes('<div class="tier-price">$149 <span>/ mo</span></div>')
+    && givePricingHtml.includes('<div class="tier-price">$149 <span>/ mo starting</span></div>')
+    && givePricingHtml.includes("Early adopter · first 20")
     && /<ul class="tier-features">\r?\n\s*<li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"\/><\/svg><\/span>Everything in Starter, plus<\/li>/.test(givingPlusPricingCard)
     && givePricingHtml.includes("Parish logo across giving pages and church search")
     && !givePricingHtml.includes("Parish logo, public page, and church search listing")
     && ["Small mission chapel", "Parish church", "Domed Orthodox church", "Large three-domed Orthodox church", "Grand five-domed Orthodox cathedral", "Orthodox monastery complex"].every((label) => givePricingHtml.includes(`aria-label="${label}"`)),
-  "Give pricing should show the $149 Parish plan with distinct, progressively ornate church, cathedral, and monastic icons"
+  "Give pricing should show household-based early-adopter Parish pricing with distinct church, cathedral, and monastic icons"
 );
 assert.ok(
   !givePricingHtml.includes("Stewardship Health dashboard for parish giving trends")
     && !givePricingHtml.includes("Pledge progress, giving gaps, and follow-up visibility")
-    && givePricingHtml.includes("Full Parish Commerce suite")
-    && givePricingHtml.includes("Stewardship's Bookstore access"),
+    && givePricingHtml.includes("Full Parish Commerce: Bookstore, Events, Meals")
+    && parishPricingCard.includes("Everything in Stewardship, plus"),
   "Parish pricing should inherit Stewardship without duplicating its benefits and should distinguish the full Commerce suite from Stewardship Bookstore"
 );
 assert.ok(
-  parishPricingCard.includes("Koinonia parish feed, announcements, and ministry groups")
-    && parishPricingCard.includes("Parish audio library, video, and news hub")
-    && parishPricingCard.includes("Orthodox podcast discovery, subscriptions, RSS imports, and saved listening progress")
+  parishPricingCard.includes("Koinonia parish feed, targeted announcements, and member engagement")
+    && parishPricingCard.includes("Ministry-group workspaces, leaders, members, posts, and shared resources")
+    && parishPricingCard.includes("Prayer requests, parish signups, and the community Exchange")
+    && parishPricingCard.includes("Parish audio, video, news, Orthodox podcasts, RSS imports, and saved listening")
     && !stewardshipPricingCard.includes("Koinonia parish feed"),
   "Koinonia community, media, and podcast features should be included in the Parish tier"
 );

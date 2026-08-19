@@ -376,15 +376,30 @@
         <div class="form-group" id="subscriptionTierGroup">
           <label for="subscriptionTier">Starting AGAPAY tier <span class="required">*</span></label>
           <div class="select-wrap">
-            <select id="subscriptionTier">
+            <select id="subscriptionTier" onchange="updateHouseholdBandVisibility()">
               <option value="">Choose the tier you want to start with</option>
               <option value="starter">Starter — $9/month</option>
-              <option value="giving">Giving Plus — $49/month</option>
-              <option value="stewardship">Stewardship — $99/month</option>
-              <option value="parish">Parish — $149/month</option>
+              <option value="giving">Giving Plus — $49/month early adopter</option>
+              <option value="stewardship">Stewardship — $99/month early adopter</option>
+              <option value="parish">Parish — from $149/month early adopter</option>
             </select>
           </div>
-          <span class="tier-choice-note" id="subscriptionTierNote">Your selection will be included with your canonical-standing review. Billing does not begin until approval and checkout.</span>
+          <span class="tier-choice-note" id="subscriptionTierNote">Early-adopter pricing is limited to the first 20 organizations that activate an eligible paid subscription. Billing does not begin until approval and checkout.</span>
+        </div>
+
+        <div class="form-group" id="parishHouseholdBandGroup" style="display:none;">
+          <label for="parishHouseholdBand">Approximate active parish households <span class="required">*</span></label>
+          <div class="select-wrap">
+            <select id="parishHouseholdBand">
+              <option value="">Select a household range</option>
+              <option value="under_50">Fewer than 50 households</option>
+              <option value="50_149">50–149 households</option>
+              <option value="150_299">150–299 households</option>
+              <option value="300_599">300–599 households</option>
+              <option value="600_plus">600+ households — custom Parish pricing</option>
+            </select>
+          </div>
+          <span class="tier-choice-note">Count active families or independently registered adult households, not individual parishioners. The range is confirmed during onboarding.</span>
         </div>
 
         <div class="form-group">
@@ -860,6 +875,14 @@
       if (el) el.classList.toggle('conditional-hidden', !visible);
     }
 
+    function updateHouseholdBandVisibility() {
+      const group = document.getElementById('parishHouseholdBandGroup');
+      if (!group) return;
+      const visible = document.getElementById('subscriptionTier').value === 'parish';
+      group.style.display = visible ? '' : 'none';
+      if (!visible) document.getElementById('parishHouseholdBand').value = '';
+    }
+
     function updateDynamicForm() {
       const config = activeTypeConfig();
       document.getElementById('organizationNameLabel').innerHTML = `${config.nameLabel} ${requiredMark}`;
@@ -895,14 +918,16 @@
         tierSelect.innerHTML = [
           '<option value="">Choose the tier you want to start with</option>',
           '<option value="starter">Starter — $9/month</option>',
-          '<option value="giving">Giving Plus — $49/month</option>',
-          '<option value="stewardship">Stewardship — $99/month</option>',
-          '<option value="parish">Parish — $149/month</option>'
+          '<option value="giving">Giving Plus — $49/month early adopter</option>',
+          '<option value="stewardship">Stewardship — $99/month early adopter</option>',
+          '<option value="parish">Parish — from $149/month early adopter</option>'
         ].join('');
         tierSelect.value = selectedTier;
         tierSelect.disabled = false;
-        tierNote.textContent = 'Your selection will be included with your canonical-standing review. Billing does not begin until approval and checkout.';
+        tierNote.textContent = 'Early-adopter pricing is limited to the first 20 organizations that activate an eligible paid subscription. Billing does not begin until approval and checkout.';
       }
+
+      updateHouseholdBandVisibility();
 
       document.getElementById('agreementText').innerHTML = 'I agree to the <a href="/terms#arbitration" target="_blank" rel="noopener noreferrer">Terms of Service</a>, acknowledge the <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and confirm I am authorized to act for this organization.';
     }
@@ -940,6 +965,7 @@
         if (!document.getElementById('state').value)               { alert('Please select your state.'); return false; }
         if (!document.getElementById('postalCode').value.trim())   { alert('Please enter the ZIP or postal code.'); return false; }
         if (!document.getElementById('subscriptionTier').value)    { alert('Please choose the AGAPAY tier you want to start with.'); return false; }
+        if (document.getElementById('subscriptionTier').value === 'parish' && !document.getElementById('parishHouseholdBand').value) { alert('Please choose the approximate number of active parish households.'); return false; }
         if (config.requiresWebsite && !document.getElementById('website').value.trim()) { alert('Please enter the business website so AGAPAY can verify fit.'); return false; }
         if (config.requiresDescription && !document.getElementById('organizationDescription').value.trim()) { alert('Please enter a short description so AGAPAY can review fit.'); return false; }
       }
@@ -966,6 +992,7 @@
       const community = [
         ['Community type', communityType],
         ['Starting tier',  document.getElementById('subscriptionTier').selectedOptions[0]?.textContent || 'Not selected'],
+        ...(document.getElementById('subscriptionTier').value === 'parish' ? [['Active households', document.getElementById('parishHouseholdBand').selectedOptions[0]?.textContent || 'Not selected']] : []),
         ['Name',           document.getElementById('parishName').value],
         ['Address',        address],
         ...(config.requiresJurisdiction || document.getElementById('jurisdiction').value ? [['Jurisdiction', document.getElementById('jurisdiction').value || '-']] : []),
@@ -1128,6 +1155,7 @@
       const payload = {
         communityType,
         subscriptionTier: document.getElementById('subscriptionTier').value,
+        parishHouseholdBand: document.getElementById('parishHouseholdBand').value,
         ...(promoParam ? { promo: promoParam } : {}),
         parishName,
         jurisdiction: document.getElementById('jurisdiction').value,

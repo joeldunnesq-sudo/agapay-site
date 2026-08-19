@@ -7,11 +7,39 @@
 // so this file has no dependency on registration-shaped input; it only
 // describes what each tier includes, not whether any particular parish
 // currently has access (that's what entitlementsSummary() is for).
+export const EARLY_ADOPTER_LIMIT = 20;
+export const EARLY_ADOPTER_PROGRAM_ID = "founding_20";
+
+export const parishHouseholdBands = Object.freeze([
+  { id: "under_50", label: "Fewer than 50 households", minHouseholds: 0, maxHouseholds: 49, earlyAdopterMonthlyCents: 14900, standardMonthlyCents: 24900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_149_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_249_MONTHLY" },
+  { id: "50_149", label: "50–149 households", minHouseholds: 50, maxHouseholds: 149, earlyAdopterMonthlyCents: 19900, standardMonthlyCents: 34900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_199_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_349_MONTHLY" },
+  { id: "150_299", label: "150–299 households", minHouseholds: 150, maxHouseholds: 299, earlyAdopterMonthlyCents: 24900, standardMonthlyCents: 44900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_249_EARLY_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_449_MONTHLY" },
+  { id: "300_599", label: "300–599 households", minHouseholds: 300, maxHouseholds: 599, earlyAdopterMonthlyCents: 34900, standardMonthlyCents: 64900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_349_EARLY_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_649_MONTHLY" },
+  { id: "600_plus", label: "600+ households", minHouseholds: 600, maxHouseholds: null, earlyAdopterMonthlyCents: null, standardMonthlyCents: null, earlyStripePriceEnv: "", standardStripePriceEnv: "" }
+]);
+
+export function normalizeParishHouseholdBand(value = "") {
+  const normalized = String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+  const aliases = { under50: "under_50", fewer_than_50: "under_50", "50_149_households": "50_149", "150_299_households": "150_299", "300_599_households": "300_599", "600_households": "600_plus" };
+  const id = aliases[normalized] || normalized;
+  return parishHouseholdBands.some((band) => band.id === id) ? id : "";
+}
+
+export function parishHouseholdPricing(registration = {}) {
+  const bandId = normalizeParishHouseholdBand(registration.parishHouseholdBand || registration.householdBand) || "under_50";
+  const band = parishHouseholdBands.find((candidate) => candidate.id === bandId) || parishHouseholdBands[0];
+  const pricingProgram = String(registration.subscriptionPricingProgram || "").toLowerCase() === "standard" ? "standard" : "early_adopter";
+  const monthlyCents = pricingProgram === "standard" ? band.standardMonthlyCents : band.earlyAdopterMonthlyCents;
+  const stripePriceEnv = pricingProgram === "standard" ? band.standardStripePriceEnv : band.earlyStripePriceEnv;
+  return { ...band, pricingProgram, monthlyCents, stripePriceEnv };
+}
+
 export const subscriptionTiers = [
   {
     id: "starter",
     label: "Starter",
     monthlyCents: 900,
+    standardMonthlyCents: 900,
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_STARTER_MONTHLY",
     description: "Mission-ready giving with General Operating, one designated fund, and candles.",
@@ -21,8 +49,11 @@ export const subscriptionTiers = [
     id: "giving",
     label: "Giving Plus",
     monthlyCents: 4900,
+    standardMonthlyCents: 7900,
+    earlyAdopterMonthlyCents: 4900,
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_GIVING_MONTHLY",
+    standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_GIVING_79_MONTHLY",
     description: "Essential online giving tools for Orthodox churches.",
     modules: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
   },
@@ -30,8 +61,11 @@ export const subscriptionTiers = [
     id: "stewardship",
     label: "Stewardship",
     monthlyCents: 9900,
+    standardMonthlyCents: 14900,
+    earlyAdopterMonthlyCents: 9900,
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_STEWARDSHIP_MONTHLY",
+    standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_STEWARDSHIP_149_MONTHLY",
     description: "Giving plus pledge, donor, and Stewardship Health tools.",
     modules: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: false, bookstore: true, commerceSuite: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
   },
@@ -39,6 +73,8 @@ export const subscriptionTiers = [
     id: "parish",
     label: "Parish",
     monthlyCents: 14900,
+    standardMonthlyCents: 24900,
+    earlyAdopterMonthlyCents: 14900,
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     // Version the binding when the published price changes so an older
     // Cloudflare secret can never silently charge the previous $199 rate.
@@ -80,12 +116,27 @@ export function parishIntroDemoEligible(registration = {}) {
 }
 
 export function publicSubscriptionTiers() {
-  return subscriptionTiers.map(({ stripePriceEnv, ...tier }) => tier);
+  return subscriptionTiers.map(({ stripePriceEnv, standardStripePriceEnv, ...tier }) => tier.id === "parish"
+    ? { ...tier, householdPriced: true, householdBands: parishHouseholdBands.map(({ earlyStripePriceEnv, standardStripePriceEnv, ...band }) => band) }
+    : tier);
 }
 
 export function subscriptionTierFromStripePriceId(env = {}, priceId = "") {
-  const matched = subscriptionTiers.find((tier) => tier.stripePriceEnv && env[tier.stripePriceEnv] === priceId);
-  return matched || null;
+  const matched = subscriptionTiers.find((tier) => tier.id !== "parish" && tier.stripePriceEnv && env[tier.stripePriceEnv] === priceId);
+  if (matched) return matched;
+  const standardMatched = subscriptionTiers.find((tier) => tier.id !== "parish" && tier.standardStripePriceEnv && env[tier.standardStripePriceEnv] === priceId);
+  if (standardMatched) return { ...standardMatched, monthlyCents: standardMatched.standardMonthlyCents, stripePriceEnv: standardMatched.standardStripePriceEnv, pricingProgram: "standard" };
+  for (const band of parishHouseholdBands) {
+    if (band.earlyStripePriceEnv && env[band.earlyStripePriceEnv] === priceId) {
+      const parish = subscriptionTiers.find((tier) => tier.id === "parish");
+      return { ...parish, ...band, id: parish.id, monthlyCents: band.earlyAdopterMonthlyCents, stripePriceEnv: band.earlyStripePriceEnv, pricingProgram: "early_adopter", parishHouseholdBand: band.id };
+    }
+    if (band.standardStripePriceEnv && env[band.standardStripePriceEnv] === priceId) {
+      const parish = subscriptionTiers.find((tier) => tier.id === "parish");
+      return { ...parish, ...band, id: parish.id, monthlyCents: band.standardMonthlyCents, stripePriceEnv: band.standardStripePriceEnv, pricingProgram: "standard", parishHouseholdBand: band.id };
+    }
+  }
+  return null;
 }
 
 export function defaultSubscriptionTier(registration = {}) {
@@ -101,9 +152,17 @@ export function subscriptionTier(registration = {}) {
   const rawSelected = String(isTierId ? registration : registration.subscriptionTier || registration.tier || "").trim().toLowerCase();
   // Existing "mission" records become Giving without requiring a data migration.
   const selected = rawSelected === "mission" ? "giving" : rawSelected;
-  return subscriptionTiers.find((tier) => tier.id === selected)
+  const matched = subscriptionTiers.find((tier) => tier.id === selected)
     || (!isTierId ? subscriptionTiers.find((tier) => tier.id === defaultSubscriptionTier(registration)) : null)
     || subscriptionTiers.find((tier) => tier.id === "parish");
+  if (matched?.id !== "parish") {
+    if (!isTierId && String(registration.subscriptionPricingProgram || "").toLowerCase() === "standard" && Number.isFinite(matched?.standardMonthlyCents)) {
+      return { ...matched, monthlyCents: matched.standardMonthlyCents, stripePriceEnv: matched.standardStripePriceEnv || "", pricingProgram: "standard" };
+    }
+    return { ...matched, pricingProgram: matched?.earlyAdopterMonthlyCents ? "early_adopter" : "standard" };
+  }
+  const pricing = parishHouseholdPricing(isTierId ? {} : registration);
+  return { ...matched, ...pricing, id: matched.id, parishHouseholdBand: pricing.id };
 }
 
 export function subscriptionReady(registration = {}) {
