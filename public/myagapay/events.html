@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" data-myagapay-hydrate>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meals &amp; Events | My AGAPAY</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260817bookstoreprayer1" />
+  <link rel="stylesheet" href="/myagapay/koinonia-inner.css?v=20260817bookstoreprayer1" />
+  <script src="/pwa-register.js" defer></script>
+  <script src="/myagapay-shell.js?v=20260817bookstoreprayer1"></script>
+  <script src="/myagapay/events.js?v=20260819events1" defer></script>
+  <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
+  <meta name="theme-color" content="#061522" />
+  <style>
+    .events-item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+    .events-item-card{position:relative;border:1px solid rgba(166,159,145,.32);background:#fff;border-radius:10px;padding:14px 12px 12px;text-align:left;display:flex;flex-direction:column;gap:6px;min-height:120px}
+    .events-item-card strong{color:#171715;font-size:14px;line-height:1.3;font-family:var(--serif,serif)}
+    .events-item-meta{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11px;color:#8A8374;font-weight:700}
+    .events-item-desc{color:#6F6A60;font-size:12px;line-height:1.4}
+    .events-item-foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .events-item-foot b{font-family:var(--serif,serif);font-size:14px;color:#171715}
+    .events-qty{display:flex;align-items:center;gap:8px}
+    .events-qty button{width:28px;height:28px;border-radius:999px;border:1px solid rgba(166,159,145,.5);background:#fff;cursor:pointer;line-height:1;font-size:14px}
+    .events-qty button:disabled{opacity:.4;cursor:not-allowed}
+    .events-qty span{min-width:16px;text-align:center;font-weight:700}
+    .events-sold-out{position:absolute;top:9px;right:9px;padding:4px 8px;border-radius:999px;background:#9D4A46;color:#fff;font:800 9px/1.2 var(--sans,sans-serif);letter-spacing:.06em;text-transform:uppercase}
+    @media(max-width:700px){
+      .events-page .koinonia-feature-shell{padding-bottom:16px}
+      #eventsCartPanel{position:sticky;bottom:92px;z-index:5;background:#fffdf8;border-radius:14px;box-shadow:0 -8px 24px rgba(6,21,34,.12)}
+    }
+  </style>
+</head>
+<body class="donor-mobile-page donor-parish-life-page koinonia-feature-page events-page">
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-scroll">
+        <div class="brand"><div class="brand-row"><a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home"><img src="/mark.png" alt="AGAPAY" /></a><span class="brand-name">AGAPAY</span><span class="dashboard-home-cue">Home</span></div><span class="pill">Donor Dashboard</span></div>
+        <div class="profile-panel"><div class="profile-name">Meals &amp; Events</div><div class="profile-meta">Feast days and fundraisers</div></div>
+        <nav class="nav unified-product-nav"></nav>
+      </div>
+      <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/parish-life">← Back to Koinonia</a></div>
+    </aside>
+    <main class="content donor-mobile-content">
+      <header class="prayer-mobile-appbar">
+        <a class="prayer-mobile-brand" href="/myagapay/parish-life" aria-label="Open Parish Life">
+          <span class="prayer-mobile-mark" aria-hidden="true"><img src="/mark.png" alt="" /></span>
+          <span><strong>MY AGAPAY</strong><small>Meals &amp; Events</small></span>
+        </a>
+        <button class="koinonia-mobile-menu-toggle" type="button" data-myagapay-app-menu-toggle aria-label="Open My AGAPAY navigation"><span class="koinonia-mobile-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span></button>
+      </header>
+      <div class="topbar"><div class="topbar-title">Meals &amp; Events</div></div>
+      <div class="page koinonia-feature-shell">
+        <header class="prayer-page-heading">
+          <a class="prayer-page-back" href="/myagapay/parish-life" data-parish-life-back><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Koinonia</a>
+          <div class="prayer-page-title-row"><div><h1 id="eventsParishName">Meals &amp; Events</h1><p>Feast day dinners, festival plates, and parish fundraisers</p></div></div>
+        </header>
+        <div class="notice" id="eventsStatus" role="status">Loading…</div>
+        <section class="events-item-grid" id="eventsList" aria-live="polite"></section>
+
+        <details class="bookstore-manual-panel" id="eventsCartPanel" style="margin-top:18px" open>
+          <summary>Your order — <span id="eventsCartCount">0</span> item(s), <span id="eventsCartTotal">$0.00</span></summary>
+          <div class="bookstore-manual-body">
+            <form id="eventsCheckoutForm">
+              <label class="form-label" for="eventsPickupNote">Pickup note (optional)</label>
+              <textarea id="eventsPickupNote" rows="2" maxlength="240" placeholder="For example: picking up for a family of 4" style="width:100%;margin-bottom:10px"></textarea>
+              <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#6F6A60;margin-bottom:12px"><input id="eventsCoverFees" type="checkbox" checked /> Help cover processing so more supports the parish</label>
+              <button class="btn btn-gold" id="eventsCheckoutButton" type="submit" disabled>Continue to secure checkout →</button>
+            </form>
+          </div>
+        </details>
+      </div>
+      <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
+    </main>
+  </div>
+</body>
+</html>

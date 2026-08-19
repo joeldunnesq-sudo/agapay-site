@@ -209,6 +209,7 @@ import {
   handleDonorNotifications,
   handleDonorNotificationDismiss,
 } from "./handlers/donor.js";
+import { handleDonorEvents, handleParishEvents } from "./handlers/parish-events.js";
 
 import {
   handleAnnouncementDigestUnsubscribe,
@@ -690,6 +691,8 @@ const MYAGAPAY_ASSET_ROUTES = new Map([
   ["/myagapay/join-household", "/myagapay/join-household.html"],
   ["/myagapay/bookstore", "/myagapay/bookstore.html"],
   ["/myagapay/bookstore/", "/myagapay/bookstore.html"],
+  ["/myagapay/events", "/myagapay/events.html"],
+  ["/myagapay/events/", "/myagapay/events.html"],
   ["/myagapay/parish-life", "/myagapay/parish-life.html"],
   ["/myagapay/parish-life/", "/myagapay/parish-life.html"],
   ["/myagapay/calendar", "/myagapay/giving/calendar.html"],
@@ -846,6 +849,10 @@ function cleanAssetRequest(request) {
   }
   if (/^\/[^/]+\/bookstore\/?$/.test(url.pathname) || /^\/bookstore\/[^/]+\/?$/.test(url.pathname)) {
     url.pathname = "/bookstore/index.html";
+    return new Request(url, request);
+  }
+  if (/^\/[^/]+\/events\/?$/.test(url.pathname) || /^\/events\/[^/]+\/?$/.test(url.pathname)) {
+    url.pathname = "/events/index.html";
     return new Request(url, request);
   }
   if (/^\/give\/[^/]+\/[^/]+-campaign\/?$/.test(url.pathname)) {
@@ -3408,6 +3415,13 @@ export default {
       const parishId = decodeURIComponent(url.pathname.replace("/api/public/bookstore/", "").replace(/\/+$/, ""));
       return handleDonorBookstore(request, env, parishId);
     }
+    if (url.pathname === "/api/donor/events") {
+      return handleDonorEvents(request, env);
+    }
+    if (url.pathname.startsWith("/api/public/events/")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/public/events/", "").replace(/\/+$/, ""));
+      return handleDonorEvents(request, env, parishId);
+    }
     if (url.pathname === "/api/donor/commemorations") {
       return handleDonorCommemorations(request, env);
     }
@@ -4029,6 +4043,12 @@ export default {
       const parishId = decodeURIComponent(parts[0].replace(/\/+$/, ""));
       const subpath = parts.slice(1).join("/bookstore") || "";
       return handleParishBookstore(request, env, parishId, subpath);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/events")) {
+      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/events");
+      const parishId = decodeURIComponent(parts[0].replace(/\/+$/, ""));
+      const subpath = parts.slice(1).join("/events") || "";
+      return handleParishEvents(request, env, parishId, subpath);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/settlement-profiles")) {
       const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/settlement-profiles");

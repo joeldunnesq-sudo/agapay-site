@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#061522" />
+  <title>Parish Meals &amp; Events | AGAPAY</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Deliberately reuses the Bookstore stylesheet -- same parish-commerce
+       visual language (navy/gold, .store-*, .product, .cart-card classes),
+       no need to fork a second stylesheet for the same design system. -->
+  <link rel="stylesheet" href="/bookstore/style.css?v=20260731storefront1" />
+  <style>
+    .event-card{display:flex;flex-direction:column;text-align:left;position:relative}
+    .event-meta{display:flex;flex-wrap:wrap;gap:6px 14px;margin:2px 0 6px;font-size:11px;color:var(--stone);font-weight:600}
+    .event-meta span{display:inline-flex;align-items:center;gap:5px}
+    .event-meta svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+    .event-details{font-size:12px;color:var(--stone);margin:0 0 10px;line-height:1.5}
+    .event-qty{display:flex;align-items:center;gap:10px;margin-top:auto}
+    .event-qty button{width:32px;height:32px;border-radius:50%;border:1px solid #dcd2c2;background:#fff;font-size:16px;font-weight:700;cursor:pointer;line-height:1}
+    .event-qty button:disabled{opacity:.4;cursor:not-allowed}
+    .event-qty span{min-width:18px;text-align:center;font-weight:700}
+    .event-cap{font-size:10px;color:var(--stone);margin-left:auto}
+    .events-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+    .event-highlight{animation:eventHighlightPulse 1.8s ease-out 2;box-shadow:0 0 0 3px #C49C50}
+    @keyframes eventHighlightPulse{0%{box-shadow:0 0 0 3px rgba(196,156,80,.9)}50%{box-shadow:0 0 0 3px rgba(196,156,80,.25)}100%{box-shadow:0 0 0 3px rgba(196,156,80,.9)}}
+    @media(max-width:520px){.events-grid{grid-template-columns:1fr}}
+  </style>
+  <script src="/events/app.js?v=20260819events1" defer></script>
+</head>
+<body>
+  <header class="store-header">
+    <a class="store-brand" href="/" aria-label="AGAPAY home"><img src="/mark.png" alt="" /><span><b>AGAPAY</b><small>Parish Meals &amp; Events</small></span></a>
+    <div class="secure-note"><span aria-hidden="true">●</span> Secure checkout by Stripe</div>
+  </header>
+
+  <main>
+    <section class="store-hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Welcome</span>
+        <h1 id="parishName">Parish meals &amp; events</h1>
+        <p>Feast day dinners, festival plates, and fundraisers hosted by your parish community. Choose an item below and check out securely.</p>
+        <div class="hero-assurances"><span>Parish pickup</span><span>No account required</span><span>Receipt by email</span></div>
+      </div>
+      <div class="hero-ornament" aria-hidden="true"><img src="/mark.png" alt="" /></div>
+    </section>
+
+    <div id="status" class="notice" hidden role="status" aria-live="polite"></div>
+
+    <div class="store-layout">
+      <div class="store-main">
+        <section class="section-card catalog-card">
+          <div class="section-heading"><div><span class="eyebrow">Hosted by your parish</span><h2>Available now</h2><p>Tap an item to add it to your order.</p></div><span id="catalogCount" class="count-pill">0 items</span></div>
+          <div id="products" class="events-grid"><div class="loading-state"><span></span><p>Loading events…</p></div></div>
+        </section>
+      </div>
+
+      <aside class="cart-card">
+        <div class="cart-heading"><div><span class="eyebrow">Your order</span><h2>Basket</h2></div><span id="cartCount" class="cart-count">0</span></div>
+        <div id="cart" class="cart"><div class="empty-cart"><span aria-hidden="true">✦</span><b>Your basket is empty</b><p>Choose an item from the list.</p></div></div>
+        <div class="total"><span>Subtotal</span><strong id="total">$0.00</strong></div>
+        <form id="checkoutForm">
+          <label class="checkout-field"><span>Name</span><input id="guestName" autocomplete="name" required /></label>
+          <label class="checkout-field"><span>Email for receipt</span><input id="guestEmail" type="email" autocomplete="email" required /></label>
+          <label class="checkout-field"><span>Pickup note <small>(optional)</small></span><textarea id="pickupNote" rows="2" maxlength="240" placeholder="For example: picking up for a family of 4"></textarea></label>
+          <label class="cover-fees"><input id="coverFees" type="checkbox" checked /><span><b>Help cover processing</b><small>So more of your purchase supports the parish.</small></span></label>
+          <button class="checkout" id="checkoutButton" type="submit" disabled>Continue to secure checkout <span>→</span></button>
+        </form>
+        <p class="seller" id="sellerDisclosure">Your parish is the seller and merchant of record. AGAPAY provides the software.</p>
+      </aside>
+    </div>
+  </main>
+
+  <footer><img src="/mark.png" alt="" /><p><b>Parish commerce, made simple.</b><br />A secure meals &amp; events experience from AGAPAY.</p></footer>
+</body>
+</html>

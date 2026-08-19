@@ -20,6 +20,23 @@ const fundCode = (value) => text(value).toUpperCase().replace(/[^A-Z0-9_-]/g, ""
 const generalFundAliases = new Set(["general", "general operating fund", "general stewardship", "stewardship"]);
 const isGeneralOperatingFund = (...values) => values.some((value) => generalFundAliases.has(text(value).toLowerCase()));
 
+function allocateCommerceItemTax(items, orderTaxCents) {
+  const totalTax = cents(orderTaxCents);
+  const existingTax = items.reduce((sum, item) => sum + cents(item.tax_cents), 0);
+  if (!totalTax || existingTax > 0 || !items.length) {
+    return items.map((item) => ({ ...item, accountingTaxCents: cents(item.tax_cents) }));
+  }
+  const gross = items.reduce((sum, item) => sum + cents(item.subtotal_cents), 0);
+  let remaining = totalTax;
+  return items.map((item, index) => {
+    const allocated = index === items.length - 1
+      ? remaining
+      : Math.min(remaining, gross ? Math.round(totalTax * cents(item.subtotal_cents) / gross) : 0);
+    remaining -= allocated;
+    return { ...item, accountingTaxCents: allocated };
+  });
+}
+
 async function digest(value) {
   const bytes = new TextEncoder().encode(String(value));
   return [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))]
@@ -354,8 +371,8 @@ export async function loadGivingCatalogFromAccounting(env, parishId, registratio
 
 export async function wireCommerceOrderToAccounting(env, orderId) {
   if (!env?.AGAPAY_DB?.prepare || !orderId) return null;
-  const order = await d1First(env, "SELECT * FROM commerce_orders WHERE id=? AND commerce_module='bookstore'", orderId);
-  if (!order || order.payment_status !== "paid") return null;
+  const order = await d1First(env, "SELECT * FROM commerce_orders WHERE id=?", orderId);
+  if (!order || !["paid", "partially_refunded", "refunded", "disputed", "dispute_closed"].includes(order.payment_status)) return null;
   const db = await resolveOperationalAccountingDatabase(env, order.parish_id);
   if (!db) return null;
   let items = await d1All(env, "SELECT * FROM commerce_order_items WHERE order_id=? ORDER BY created_at,id", order.id);
@@ -364,6 +381,9 @@ export async function wireCommerceOrderToAccounting(env, orderId) {
     item_category: order.item_category, quantity: order.quantity, subtotal_cents: order.subtotal_cents,
     tax_cents: order.tax_cents, cost_basis_cents: null
   }];
+  items = allocateCommerceItemTax(items, order.tax_cents);
+  const commerceModule = text(order.commerce_module) || "bookstore";
+  const fallbackItemName = commerceModule === "events" ? "Event item" : "Bookstore item";
   for (const item of items) {
     const operationalId = text(item.product_id) || text(item.variant_id) || text(item.id);
     await db.prepare(`INSERT INTO accounting_commerce_items
@@ -375,8 +395,9 @@ export async function wireCommerceOrderToAccounting(env, orderId) {
        current_unit_cost=COALESCE(excluded.current_unit_cost,accounting_commerce_items.current_unit_cost),
        is_active=1,version=accounting_commerce_items.version+1,updated_at=datetime('now')`)
       .bind(`commerceitem_${await digest(operationalId)}`, operationalId, text(item.sku) || null,
-        text(item.item_name) || "Bookstore item", text(item.item_category) || null,
-        cents(item.tax_cents) > 0 ? 1 : 0, item.cost_basis_cents == null ? null : cents(item.cost_basis_cents)).run();
+        text(item.item_name) || fallbackItemName, text(item.item_category) || null,
+        item.accountingTaxCents > 0 || Boolean(text(item.tax_code)) ? 1 : 0,
+        item.cost_basis_cents == null ? null : cents(item.cost_basis_cents)).run();
   }
   const gross = items.reduce((sum, item) => sum + cents(item.subtotal_cents), 0) || cents(order.subtotal_cents);
   const tax = cents(order.tax_cents);
@@ -385,15 +406,52 @@ export async function wireCommerceOrderToAccounting(env, orderId) {
     event: {
       sourceType: "commerce_sale_completed", sourceEventId: `commerce:${order.id}:completed`,
       orderId: order.id, orderNumber: text(order.order_number), occurredAt: order.completed_at || order.updated_at,
-      commerceChannel: "bookstore", tenderType: "stripe", grossMerchandiseAmount: gross,
+      commerceChannel: commerceModule, tenderType: "stripe", grossMerchandiseAmount: gross,
       taxableAmount: tax ? gross : 0, taxExemptAmount: tax ? 0 : gross, salesTaxAmount: tax,
       feeAmount: cents(order.stripe_fee_cents), netAmount: cents(order.parish_net_cents),
+      settlementProfileId: text(order.settlement_profile_id),
       items: items.map((item) => ({
         operationalItemId: text(item.product_id) || text(item.variant_id) || text(item.id),
-        sku: text(item.sku), name: text(item.item_name) || "Bookstore item",
+        sku: text(item.sku), name: text(item.item_name) || fallbackItemName,
         quantity: cents(item.quantity) || 1, grossAmount: cents(item.subtotal_cents),
-        taxAmount: cents(item.tax_cents), unitCostSnapshot: item.cost_basis_cents == null ? null : cents(item.cost_basis_cents)
+        taxAmount: item.accountingTaxCents,
+        unitCostSnapshot: item.cost_basis_cents == null ? null : cents(item.cost_basis_cents)
       }))
+    }
+  });
+  return processCommerceSourceEvent(db, {
+    actor: actor("accounting.commerce.post"), entitlementTier: "parish", sourceEventId: source.id
+  });
+}
+
+export async function wireCommerceDisputeToAccounting(env, orderId, dispute = {}, phase = "created") {
+  if (!env?.AGAPAY_DB?.prepare || !orderId) return null;
+  const order = await d1First(env, "SELECT * FROM commerce_orders WHERE id=?", orderId);
+  if (!order) return null;
+  const db = await resolveOperationalAccountingDatabase(env, order.parish_id);
+  if (!db) return null;
+  const disputeId = text(dispute.id);
+  const amount = cents(dispute.amount);
+  if (!disputeId || !amount) return null;
+  const won = phase === "closed" && text(dispute.status).toLowerCase() === "won";
+  const sourceType = won
+    ? "commerce_dispute_won"
+    : phase === "closed"
+      ? "commerce_dispute_lost"
+      : "commerce_dispute_created";
+  const source = await ingestCommerceSourceEvent(db, {
+    actor: actor("accounting.commerce.post"), entitlementTier: "parish",
+    event: {
+      sourceType,
+      sourceEventId: `commerce:${order.id}:dispute:${disputeId}:${phase}`,
+      orderId: order.id,
+      orderNumber: text(order.order_number),
+      occurredAt: dispute.created ? new Date(dispute.created * 1000).toISOString() : new Date().toISOString(),
+      currency: text(dispute.currency) || "USD",
+      commerceChannel: text(order.commerce_module) || "bookstore",
+      tenderType: "stripe",
+      grossMerchandiseAmount: amount,
+      settlementProfileId: text(order.settlement_profile_id)
     }
   });
   return processCommerceSourceEvent(db, {
@@ -422,8 +480,10 @@ export async function wireCommerceRefundsToAccounting(env, orderId, charge = {})
         sourceEventId: `commerce:${order.id}:refund:${refundId}`, orderId: order.id,
         orderNumber: text(order.order_number),
         occurredAt: refund.created ? new Date(refund.created * 1000).toISOString() : new Date().toISOString(),
-        currency: text(refund.currency || charge.currency) || "USD", commerceChannel: "bookstore",
-        tenderType: "stripe", refundAmount: amount, salesTaxAmount: tax
+        currency: text(refund.currency || charge.currency) || "USD",
+        commerceChannel: text(order.commerce_module) || "bookstore",
+        tenderType: "stripe", refundAmount: amount, salesTaxAmount: tax,
+        settlementProfileId: text(order.settlement_profile_id)
       }
     });
     results.push(await processCommerceSourceEvent(db, {

@@ -28,7 +28,7 @@ export const SETTLEMENT_PROFILE_TYPES = [
 
 // Module keys wired into the app today. The column itself is free-text so
 // future Parish+ modules can be assigned without a migration.
-export const KNOWN_MODULE_KEYS = ["giving", "bookstore"];
+export const KNOWN_MODULE_KEYS = ["giving", "bookstore", "events"];
 
 function newProfileId() {
   const bytes = new Uint8Array(12);

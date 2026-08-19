@@ -1593,7 +1593,7 @@
       const settings = accountingData.setup?.settings;
       if (!settings) { pane.innerHTML = accountingEmpty('Accounting settings are not loaded', 'Refresh to load the parish accounting configuration.'); return; }
       const staff=accountingStaffSession()?.profile;
-      pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Accounting configuration</span><h2>Settings</h2><p>Manage the fiscal calendar, staff access, connected accounting, and help resources.</p></div><button class="acct-refresh" onclick="lockAccountingWorkspace()">Lock Accounting</button></div><div class="acct-setup-grid"><section class="acct-card acct-guide-card"><div><span class="acct-kicker">Accounting Suite Guide</span><h2>See how the whole system works</h2><p>Open the practical 13-page guide for Treasurer and Accountant views, income, non-cash gifts, bills, funds, reports, budgets, close, and staff access.</p></div><div class="acct-guide-actions"><a class="primary" href="/docs/AGAPAY-Accounting-Suite-Guide-Comprehensive.pdf" target="_blank" rel="noopener">Open guide</a><a href="/docs/AGAPAY-Accounting-Suite-Guide-Comprehensive.pdf" download>Download PDF</a></div></section><section class="acct-card acct-settings"><span class="acct-kicker">Fiscal calendar</span><h2>Parish accounting year</h2><label>Fiscal year starts<select id="accountingFiscalMonth">${Array.from({length:12},(_,index)=>`<option value="${index+1}" ${Number(settings.fiscalYearStartMonth||1)===index+1?'selected':''}>${new Date(2026,index,1).toLocaleString('en-US',{month:'long'})}</option>`).join('')}</select></label><label>Opening balances<select id="accountingOpeningDisposition"><option value="pending" ${settings.openingBalancesDisposition==='pending'?'selected':''}>Still to be entered</option><option value="required" ${settings.openingBalancesDisposition==='required'?'selected':''}>Required</option><option value="deferred" ${settings.openingBalancesDisposition==='deferred'?'selected':''}>Deferred</option><option value="not_applicable" ${settings.openingBalancesDisposition==='not_applicable'?'selected':''}>Not applicable</option><option value="posted" ${settings.openingBalancesDisposition==='posted'?'selected':''}>Posted</option></select></label>${accountingPledgeAccountSetting(settings)}<button type="button" class="acct-primary" onclick="saveAccountingSettings()">Save settings</button></section><section class="acct-card acct-settings"><span class="acct-kicker">Current operator</span><h2>${escapeHtml(staff?.displayName || 'Accounting staff')}</h2><p>${escapeHtml((staff?.roleTemplate || '').replaceAll('_',' '))} · Four-hour protected Accounting session.</p><form onsubmit="changeAccountingPin(event)"><label>New six-digit PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required></label><button class="acct-primary">Change my PIN</button><span class="acct-form-status"></span></form></section><section class="acct-card acct-settings"><span class="acct-kicker">Staff access</span><h2>Add a named profile</h2><form onsubmit="addAccountingStaff(event)"><label>Name<input name="displayName" required maxlength="120"></label><label>Responsibility<select name="roleTemplate"><option value="bookkeeper">Bookkeeper</option><option value="treasurer">Treasurer</option><option value="rector">Rector</option><option value="council_member">Council member</option></select></label><label>Temporary six-digit PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required></label><button class="acct-primary">Add profile</button><span class="acct-form-status"></span></form></section><section class="acct-card"><span class="acct-kicker">Connected activity</span><h2>Give &amp; Commerce</h2><p>Manage automatic posting, Stripe clearing, fees, refunds, and Parish Bookstore accounting.</p><button class="acct-primary" onclick="setAccountingView('integrations')">Open integration settings</button></section></div>`; return;
+      pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Accounting configuration</span><h2>Settings</h2><p>Manage the fiscal calendar, staff access, connected accounting, and help resources.</p></div><button class="acct-refresh" onclick="lockAccountingWorkspace()">Lock Accounting</button></div><div class="acct-setup-grid"><section class="acct-card acct-guide-card"><div><span class="acct-kicker">Accounting Suite Guide</span><h2>See how the whole system works</h2><p>Open the practical 13-page guide for Treasurer and Accountant views, income, non-cash gifts, bills, funds, reports, budgets, close, and staff access.</p></div><div class="acct-guide-actions"><a class="primary" href="/docs/AGAPAY-Accounting-Suite-Guide-Comprehensive.pdf" target="_blank" rel="noopener">Open guide</a><a href="/docs/AGAPAY-Accounting-Suite-Guide-Comprehensive.pdf" download>Download PDF</a></div></section><section class="acct-card acct-settings"><span class="acct-kicker">Fiscal calendar</span><h2>Parish accounting year</h2><label>Fiscal year starts<select id="accountingFiscalMonth">${Array.from({length:12},(_,index)=>`<option value="${index+1}" ${Number(settings.fiscalYearStartMonth||1)===index+1?'selected':''}>${new Date(2026,index,1).toLocaleString('en-US',{month:'long'})}</option>`).join('')}</select></label><label>Opening balances<select id="accountingOpeningDisposition"><option value="pending" ${settings.openingBalancesDisposition==='pending'?'selected':''}>Still to be entered</option><option value="required" ${settings.openingBalancesDisposition==='required'?'selected':''}>Required</option><option value="deferred" ${settings.openingBalancesDisposition==='deferred'?'selected':''}>Deferred</option><option value="not_applicable" ${settings.openingBalancesDisposition==='not_applicable'?'selected':''}>Not applicable</option><option value="posted" ${settings.openingBalancesDisposition==='posted'?'selected':''}>Posted</option></select></label>${accountingPledgeAccountSetting(settings)}<button type="button" class="acct-primary" onclick="saveAccountingSettings()">Save settings</button></section><section class="acct-card acct-settings"><span class="acct-kicker">Current operator</span><h2>${escapeHtml(staff?.displayName || 'Accounting staff')}</h2><p>${escapeHtml((staff?.roleTemplate || '').replaceAll('_',' '))} · Four-hour protected Accounting session.</p><form onsubmit="changeAccountingPin(event)"><label>New six-digit PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required></label><button class="acct-primary">Change my PIN</button><span class="acct-form-status"></span></form></section><section class="acct-card acct-settings"><span class="acct-kicker">Staff access</span><h2>Add a named profile</h2><form onsubmit="addAccountingStaff(event)"><label>Name<input name="displayName" required maxlength="120"></label><label>Responsibility<select name="roleTemplate"><option value="bookkeeper">Bookkeeper</option><option value="treasurer">Treasurer</option><option value="rector">Rector</option><option value="council_member">Council member</option></select></label><label>Temporary six-digit PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required></label><button class="acct-primary">Add profile</button><span class="acct-form-status"></span></form></section><section class="acct-card"><span class="acct-kicker">Connected activity</span><h2>Give &amp; Commerce</h2><p>Manage automatic posting, Stripe clearing, fees, refunds, and all Parish Commerce accounting.</p><button class="acct-primary" onclick="setAccountingView('integrations')">Open integration settings</button></section></div>`; return;
     }
     if (accountingView === 'setup') {
       const overview = accountingData.setup;
@@ -2227,7 +2227,7 @@
   }
   function renderAccountingIntegrationsBase(pane) {
     const data=accountingData.integrations;if(!data){pane.innerHTML='<p class="sw-tool-loading">Loading Give & Commerce...</p>';return;}const give=data.give||{},settings=data.settings||{},commerce=data.commerce;
-    pane.innerHTML=`<div class="acct-list-head"><div><span class="acct-kicker">Automated posting</span><h2>Give & Stripe accounting</h2><p>Donation charges, Stripe fees, refunds, and payouts flow into the ledger with traceable source records.</p></div></div><div class="acct-kpis"><div><span>Source events</span><strong>${give.events||0}</strong></div><div><span>Gross contributions</span><strong>${accountingMoney(give.grossContributions)}</strong></div><div><span>Stripe fees</span><strong>${accountingMoney(give.stripeFees)}</strong></div></div><div class="acct-setup-grid"><section class="acct-card acct-settings"><span class="acct-kicker">Posting policy</span><h2>Integration settings</h2><label>Posting mode<select id="accountingIntegrationMode"><option value="automatic" ${settings.postingMode==='automatic'?'selected':''}>Automatic</option><option value="review" ${settings.postingMode==='review'?'selected':''}>Review before posting</option></select></label><button class="acct-primary" onclick="saveAccountingIntegrationSettings()">Save policy</button></section><section class="acct-card"><span class="acct-kicker">Stripe clearing</span><h2>${accountingMoney(data.clearing?.calculatedBalance)} expected balance</h2><p>${data.clearing?.balanced===false?'Review the difference against Stripe before closing the period.':'Charges, fees, refunds, and payouts are aligned for this period.'}</p></section></div>${accountingData.tier!=='advanced_operations'?accountingParishOnly():`<div class="acct-list-head"><div><span class="acct-kicker">Parish Commerce</span><h2>Bookstore accounting</h2><p>Sales, refunds, fees, inventory cost, and sales-tax liability are posted from the AGAPAY Bookstore.</p></div><button class="acct-refresh" onclick="downloadAccountingFile(accountingApi('/commerce/sales-tax.csv'),'agapay-commerce-sales-tax.csv')">Export tax report</button></div><div class="acct-kpis"><div><span>Net sales</span><strong>${accountingMoney(commerce?.netSales)}</strong></div><div><span>Sales tax collected</span><strong>${accountingMoney(commerce?.salesTaxCollected)}</strong></div><div><span>Needs review</span><strong>${(commerce?.unposted||0)+(commerce?.exceptions||0)}</strong></div></div>`}`;
+    pane.innerHTML=`<div class="acct-list-head"><div><span class="acct-kicker">Automated posting</span><h2>Give & Stripe accounting</h2><p>Donation charges, Stripe fees, refunds, and payouts flow into the ledger with traceable source records.</p></div></div><div class="acct-kpis"><div><span>Source events</span><strong>${give.events||0}</strong></div><div><span>Gross contributions</span><strong>${accountingMoney(give.grossContributions)}</strong></div><div><span>Stripe fees</span><strong>${accountingMoney(give.stripeFees)}</strong></div></div><div class="acct-setup-grid"><section class="acct-card acct-settings"><span class="acct-kicker">Posting policy</span><h2>Integration settings</h2><label>Posting mode<select id="accountingIntegrationMode"><option value="automatic" ${settings.postingMode==='automatic'?'selected':''}>Automatic</option><option value="review" ${settings.postingMode==='review'?'selected':''}>Review before posting</option></select></label><button class="acct-primary" onclick="saveAccountingIntegrationSettings()">Save policy</button></section><section class="acct-card"><span class="acct-kicker">Stripe clearing</span><h2>${accountingMoney(data.clearing?.calculatedBalance)} expected balance</h2><p>${data.clearing?.balanced===false?'Review the difference against Stripe before closing the period.':'Charges, fees, refunds, and payouts are aligned for this period.'}</p></section></div>${accountingData.tier!=='advanced_operations'?accountingParishOnly():`<div class="acct-list-head"><div><span class="acct-kicker">Parish Commerce</span><h2>Commerce accounting</h2><p>Bookstore and Meals &amp; Events sales, refunds, fees, inventory cost, and sales-tax liability post into one traceable ledger workflow.</p></div><button class="acct-refresh" onclick="downloadAccountingFile(accountingApi('/commerce/sales-tax.csv'),'agapay-commerce-sales-tax.csv')">Export tax report</button></div><div class="acct-kpis"><div><span>Net sales</span><strong>${accountingMoney(commerce?.netSales)}</strong></div><div><span>Sales tax collected</span><strong>${accountingMoney(commerce?.salesTaxCollected)}</strong></div><div><span>Needs review</span><strong>${(commerce?.unposted||0)+(commerce?.exceptions||0)}</strong></div></div>`}`;
   }
   function renderAccountingIntegrations(pane){renderAccountingIntegrationsBase(pane);if(accountingData.tier!=='advanced_operations'||!accountingData.integrations)return;pane.insertAdjacentHTML('beforeend',`<div class="acct-setup-grid"><section class="acct-card"><span class="acct-kicker">Commerce item mapping</span><h2>Configure an item</h2><form class="acct-phase-form" onsubmit="configureAccountingCommerceItem(event)"><label>Operational item ID<input name="operationalItemId" required></label><label>Name<input name="name" required></label><label>Revenue account<select name="defaultRevenueAccountId">${accountingData.accounts.map(a=>`<option value="${escapeAttr(a.id)}">${escapeHtml(a.accountNumber)} · ${escapeHtml(a.name)}</option>`).join('')}</select></label><label>Default fund<select name="defaultFundId">${accountingData.funds.map(f=>`<option value="${escapeAttr(f.id)}">${escapeHtml(f.code)} · ${escapeHtml(f.name)}</option>`).join('')}</select></label><button class="acct-primary">Save commerce item</button><span class="acct-form-status"></span></form></section><section class="acct-card"><span class="acct-kicker">Commerce backfill preview</span><h2>Review historical orders</h2><form class="acct-phase-form" onsubmit="previewAccountingCommerceBackfill(event)"><label>Start<input name="startDate" type="date" required></label><label>End<input name="endDate" type="date" required></label><button class="acct-primary">Preview backfill</button><span class="acct-form-status"></span></form><div id="accountingCommerceBackfillPreview"></div></section></div>`);}
   async function configureAccountingCommerceItem(event){event.preventDefault();const payload=await phaseEMutation('/commerce/items',Object.fromEntries(new FormData(event.currentTarget)));if(payload)event.currentTarget.querySelector('.acct-form-status').textContent='Commerce item saved.';}
@@ -4652,7 +4652,7 @@
 
   function switchCommerceProduct(product, focus = true) {
     const fullSuite = moduleIncluded('commerceSuite');
-    const allowed = fullSuite ? new Set(['overview', 'bookstore']) : new Set(['bookstore']);
+    const allowed = fullSuite ? new Set(['overview', 'bookstore', 'events', 'meals']) : new Set(['bookstore']);
     commerceProductState = allowed.has(product) ? product : (fullSuite ? 'overview' : 'bookstore');
     document.querySelectorAll('.commerce-product-tab').forEach((tab) => {
       const fullSuiteOnly = tab.dataset.commerceProduct !== 'bookstore';
@@ -4668,6 +4668,8 @@
       panel.classList.toggle('is-active', active);
     });
     if (commerceProductState === 'overview') renderCommerceOverview();
+    if (commerceProductState === 'events') loadEventsOversightPanel('event');
+    if (commerceProductState === 'meals') loadEventsOversightPanel('meal');
   }
 
   function setCommerceOverviewRange(range) {
@@ -4803,7 +4805,7 @@
   // ── Payment routes (Funds & Alms) ────────────────────────────────────────
   let settlementProfilesState = { loaded: false, loading: false, profiles: [], profileTypes: [], stewardshipActive: false };
 
-  const SETTLEMENT_MODULE_LABELS = { giving: 'Giving (donations)', bookstore: 'Bookstore Payments' };
+  const SETTLEMENT_MODULE_LABELS = { giving: 'Giving (donations)', bookstore: 'Bookstore Payments', events: 'Meals & Events' };
   const SETTLEMENT_TYPE_LABELS = {
     general_giving: 'General Giving',
     liturgical: 'Liturgical',
@@ -5281,6 +5283,192 @@
       body.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
     } finally {
       bookstoreSalesState.loading = false;
+    }
+  }
+
+  function eventsApi(path = '') {
+    if (!currentParish?.parishId) throw new Error('Load a parish first.');
+    return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/events' + path;
+  }
+
+  const eventsOversightState = {
+    event: { loaded: false, loading: false, items: [], sales: { kpis: {}, orders: [] } },
+    meal: { loaded: false, loading: false, items: [], sales: { kpis: {}, orders: [] } }
+  };
+
+  function commerceOfferingKind(value) {
+    return value === 'meal' ? 'meal' : 'event';
+  }
+
+  function commerceOfferingCopy(value) {
+    return commerceOfferingKind(value) === 'meal'
+      ? { singular: 'Meal', plural: 'Meals', namePlaceholder: 'Adult festival dinner plate', dateLabel: 'Serving or pickup date' }
+      : { singular: 'Event', plural: 'Events', namePlaceholder: 'Parish festival admission', dateLabel: 'Event date' };
+  }
+
+  function eventsMoney(cents) {
+    return (Number(cents || 0) / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  }
+
+  async function loadEventsOversightPanel(offeringKind = 'event', force = false) {
+    const kind = commerceOfferingKind(offeringKind);
+    const copy = commerceOfferingCopy(kind);
+    const state = eventsOversightState[kind];
+    const body = document.getElementById(kind === 'meal' ? 'mealsOversightBody' : 'eventsOversightBody');
+    if (!body || !currentParish) return;
+    if (state.loaded && !force) { renderEventsOversightPanel(kind); return; }
+    if (state.loading) return;
+    state.loading = true;
+    if (!state.loaded) body.innerHTML = `<p class="sw-tool-loading">Loading ${copy.plural}…</p>`;
+    try {
+      const [itemsRes, salesRes] = await Promise.all([
+        fetch(eventsApi('?offeringKind=' + encodeURIComponent(kind)), { headers: authHeaders() }),
+        fetch(eventsApi('/sales?offeringKind=' + encodeURIComponent(kind)), { headers: authHeaders() })
+      ]);
+      const [data, sales] = await Promise.all([
+        itemsRes.json().catch(() => ({})),
+        salesRes.json().catch(() => ({}))
+      ]);
+      if (!itemsRes.ok) throw new Error(data.error || `Unable to load ${copy.plural}.`);
+      if (!salesRes.ok) throw new Error(sales.error || `Unable to load ${copy.plural} sales.`);
+      state.items = data.items || [];
+      state.sales = sales || { kpis: {}, orders: [] };
+      state.loaded = true;
+      renderEventsOversightPanel(kind);
+    } catch (err) {
+      body.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
+    } finally {
+      state.loading = false;
+    }
+  }
+
+  function renderEventsOversightPanel(offeringKind = 'event') {
+    const kind = commerceOfferingKind(offeringKind);
+    const copy = commerceOfferingCopy(kind);
+    const state = eventsOversightState[kind];
+    const body = document.getElementById(kind === 'meal' ? 'mealsOversightBody' : 'eventsOversightBody');
+    if (!body) return;
+    const items = state.items;
+    const sales = state.sales || {};
+    const kpis = sales.kpis || {};
+    const orders = sales.orders || [];
+    const createForm = `<section class="section-card bookstore-card" style="margin-bottom:18px;">
+      <div class="section-header"><div class="section-title">Add a ${copy.singular.toLowerCase()}</div></div>
+      <div class="section-body"><form class="bookstore-form" onsubmit="submitParishCommerceOffering(event,'${kind}')">
+        <div class="form-group full"><label class="form-label">${copy.singular} name</label><input name="name" required maxlength="180" placeholder="${copy.namePlaceholder}" /></div>
+        <div class="form-group full"><label class="form-label">Description</label><textarea class="form-input" name="description" rows="2" maxlength="600" placeholder="What parishioners are purchasing"></textarea></div>
+        <div class="form-group"><label class="form-label">Price</label><input name="price" type="number" min="0.01" step="0.01" required placeholder="20.00" /></div>
+        <div class="form-group"><label class="form-label">${copy.dateLabel}</label><input name="eventDate" type="date" /></div>
+        <div class="form-group"><label class="form-label">Location</label><input name="eventLocation" maxlength="200" placeholder="Parish Hall" /></div>
+        <div class="form-group"><label class="form-label">Quantity available</label><input name="stockQuantity" type="number" min="0" step="1" value="0" /></div>
+        <div class="form-group"><label class="form-label">Limit per order</label><input name="maxQuantityPerOrder" type="number" min="1" step="1" placeholder="Optional" /></div>
+        <div class="form-group"><label class="form-label">Sales close</label><input name="salesCloseAt" type="datetime-local" /></div>
+        <label class="form-check full"><input name="trackInventory" type="checkbox" checked /> Track quantity and stop checkout when sold out</label>
+        <button class="btn btn-gold" type="submit">Publish ${copy.singular}</button>
+      </form></div>
+    </section>`;
+    const rows = items.map(item => `<tr>
+      <td><strong>${escapeHtml(item.name)}</strong>${item.description ? `<br><small class="muted">${escapeHtml(item.description)}</small>` : ''}</td>
+      <td>${escapeHtml(item.ministryName || 'Parish')}</td>
+      <td>${item.eventDate ? escapeHtml(item.eventDate) : '—'}${item.eventLocation ? `<br><small class="muted">${escapeHtml(item.eventLocation)}</small>` : ''}</td>
+      <td>${eventsMoney(item.priceCents)}</td>
+      <td>${item.trackInventory ? `${Number(item.stockQuantity || 0)} left` : 'Unlimited'}</td>
+      <td>${Number(item.unitsSold || 0)}</td>
+      <td><span class="acct-status ${item.status === 'archived' ? 'draft' : 'posted'}">${item.status === 'archived' ? 'Archived' : 'Active'}</span></td>
+      <td><div class="bookstore-header-actions">
+        <button class="btn btn-ghost btn-sm" type="button" onclick="moveParishCommerceOffering('${escapeHtml(item.id)}','${kind === 'meal' ? 'event' : 'meal'}','${kind}')">Move to ${kind === 'meal' ? 'Events' : 'Meals'}</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="toggleEventsOversightStatus('${escapeHtml(item.id)}','${item.status === 'archived' ? 'active' : 'archived'}','${kind}')">${item.status === 'archived' ? 'Reactivate' : 'Archive'}</button>
+      </div></td>
+    </tr>`).join('');
+    const orderRows = orders.map(order => `<tr>
+      <td><strong>${escapeHtml(order.orderNumber || order.id)}</strong><br><small class="muted">${escapeHtml(order.itemDescription)}</small></td>
+      <td>${escapeHtml(order.donorName || order.donorEmail || 'Guest')}</td>
+      <td>${eventsMoney(order.subtotalCents)}</td>
+      <td>${eventsMoney(order.taxCents)}</td>
+      <td><strong>${eventsMoney(order.totalChargedCents)}</strong></td>
+      <td>${escapeHtml(order.fulfillmentStatus)}</td>
+      <td>${escapeHtml(order.receiptEmailStatus || 'Stripe receipt')}</td>
+    </tr>`).join('');
+    body.innerHTML = `${createForm}<div class="acct-kpis">
+      <div><span>Paid orders</span><strong>${Number(kpis.orderCount || 0)}</strong></div>
+      <div><span>Gross sales</span><strong>${eventsMoney(kpis.subtotalCents)}</strong></div>
+      <div><span>Sales tax collected</span><strong>${eventsMoney(kpis.taxCents)}</strong></div>
+      <div><span>Parish net</span><strong>${eventsMoney(kpis.parishNetCents)}</strong></div>
+    </div>
+    ${items.length ? `<div class="acct-table-wrap"><table class="acct-table"><thead><tr>
+      <th>Item</th><th>Ministry</th><th>Date &amp; location</th><th>Price</th><th>Stock</th><th>Sold</th><th>Status</th><th></th>
+    </tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="bk-panel-empty">No ${copy.plural.toLowerCase()} listings yet.</p>`}
+    <div class="acct-list-head"><div><span class="acct-kicker">Recent activity</span><h2>${copy.plural} sales</h2><p>Checkout tax, receipt state, and fulfillment are shown for the latest paid orders.</p></div></div>
+    ${orderRows ? `<div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Order</th><th>Customer</th><th>Subtotal</th><th>Tax</th><th>Total</th><th>Fulfillment</th><th>Receipt</th></tr></thead><tbody>${orderRows}</tbody></table></div>` : `<p class="bk-panel-empty">No paid ${copy.plural.toLowerCase()} orders yet.</p>`}`;
+  }
+
+  async function submitParishCommerceOffering(event, offeringKind) {
+    event.preventDefault();
+    const kind = commerceOfferingKind(offeringKind);
+    const copy = commerceOfferingCopy(kind);
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const body = {
+      offeringKind: kind,
+      name: data.get('name'),
+      description: data.get('description'),
+      priceCents: Math.round(Number(data.get('price') || 0) * 100),
+      eventDate: data.get('eventDate'),
+      eventLocation: data.get('eventLocation'),
+      stockQuantity: Number(data.get('stockQuantity') || 0),
+      maxQuantityPerOrder: data.get('maxQuantityPerOrder') ? Number(data.get('maxQuantityPerOrder')) : null,
+      salesCloseAt: data.get('salesCloseAt') || null,
+      trackInventory: data.get('trackInventory') === 'on'
+    };
+    const button = form.querySelector('button[type="submit"]');
+    if (button) button.disabled = true;
+    try {
+      const response = await fetch(eventsApi(''), {
+        method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Unable to create this ${copy.singular.toLowerCase()}.`);
+      form.reset();
+      const inventory = form.elements.trackInventory;
+      if (inventory) inventory.checked = true;
+      setStatus(`${copy.singular} published.`, 'success');
+      await loadEventsOversightPanel(kind, true);
+    } catch (error) {
+      setStatus(error.message, 'error');
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
+  async function moveParishCommerceOffering(productId, nextKind, currentKind) {
+    const destination = commerceOfferingCopy(nextKind);
+    try {
+      const response = await fetch(eventsApi('/' + encodeURIComponent(productId)), {
+        method: 'PATCH', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ offeringKind: commerceOfferingKind(nextKind) })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Unable to move this listing.');
+      eventsOversightState[commerceOfferingKind(nextKind)].loaded = false;
+      setStatus(`Listing moved to ${destination.plural}.`, 'success');
+      await loadEventsOversightPanel(currentKind, true);
+    } catch (error) {
+      setStatus(error.message, 'error');
+    }
+  }
+
+  async function toggleEventsOversightStatus(productId, nextStatus, offeringKind = 'event') {
+    try {
+      const res = await fetch(eventsApi('/' + encodeURIComponent(productId)), {
+        method: 'PATCH', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStatus })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to update this listing.');
+      setStatus(nextStatus === 'archived' ? 'Listing archived.' : 'Listing reactivated.', 'success');
+      await loadEventsOversightPanel(offeringKind, true);
+    } catch (err) {
+      setStatus(err.message, 'error');
     }
   }
 

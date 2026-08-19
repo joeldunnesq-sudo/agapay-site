@@ -19,6 +19,8 @@ import {
   numericCents,
   stripeObjectId,
 } from "../lib/stripe-connect.js";
+import { agapayEmailHtml, sendEmail } from "../lib/email.js";
+import { htmlEscape } from "../lib/format.js";
 import {
   bookstoreEnabledFor,
   centsFromBody,
@@ -371,18 +373,18 @@ async function promotePaidScannedBooksToCatalog(env, order, now) {
   }
 }
 
-export async function applyBookstoreInventoryAtCompletion(env, order, now = new Date().toISOString()) {
+export async function applyBookstoreInventoryAtCompletion(env, order, now = new Date().toISOString(), commerceModule = "bookstore") {
   if (!order?.id || !order?.parish_id || !commerceDatabase(env)) return { applied: false, oversold: false };
   const trackedItems = await d1All(env, `
     SELECT i.product_id, i.variant_id, MAX(COALESCE(i.sku, v.sku, '')) AS sku,
            SUM(i.quantity) AS quantity
     FROM commerce_order_items i
     JOIN commerce_product_variants v
-      ON v.id = i.variant_id AND v.parish_id = i.parish_id AND v.commerce_module = 'bookstore'
-    WHERE i.order_id = ? AND i.parish_id = ? AND i.commerce_module = 'bookstore'
+      ON v.id = i.variant_id AND v.parish_id = i.parish_id AND v.commerce_module = ?
+    WHERE i.order_id = ? AND i.parish_id = ? AND i.commerce_module = ?
       AND i.variant_id IS NOT NULL AND i.variant_id <> '' AND v.track_inventory = 1
     GROUP BY i.variant_id
-  `, order.id, order.parish_id);
+  `, commerceModule, order.id, order.parish_id, commerceModule);
   if (!trackedItems.length) return { applied: false, oversold: false };
 
   const marker = `${BOOKSTORE_INVENTORY_MARKER_PREFIX}${generateSecret("claim")}]`;
@@ -392,27 +394,27 @@ export async function applyBookstoreInventoryAtCompletion(env, order, now = new 
       sql: `UPDATE commerce_orders
             SET parish_notes = trim(COALESCE(parish_notes, '') || CASE WHEN COALESCE(parish_notes, '') = '' THEN '' ELSE char(10) END || ?),
                 updated_at = ?
-            WHERE id = ? AND parish_id = ? AND commerce_module = 'bookstore'
+            WHERE id = ? AND parish_id = ? AND commerce_module = ?
               AND COALESCE(parish_notes, '') NOT LIKE ?`,
-      params: [marker, now, order.id, order.parish_id, `%${BOOKSTORE_INVENTORY_MARKER_PREFIX}%`]
+      params: [marker, now, order.id, order.parish_id, commerceModule, `%${BOOKSTORE_INVENTORY_MARKER_PREFIX}%`]
     },
     {
       sql: `UPDATE commerce_orders
             SET parish_notes = trim(COALESCE(parish_notes, '') || char(10) || ?),
                 fulfillment_status = 'pending', updated_at = ?
-            WHERE id = ? AND parish_id = ? AND commerce_module = 'bookstore'
+            WHERE id = ? AND parish_id = ? AND commerce_module = ?
               AND parish_notes LIKE ?
               AND EXISTS (
                 SELECT 1
                 FROM commerce_order_items i
                 JOIN commerce_product_variants v
-                  ON v.id = i.variant_id AND v.parish_id = i.parish_id AND v.commerce_module = 'bookstore'
+                  ON v.id = i.variant_id AND v.parish_id = i.parish_id AND v.commerce_module = ?
                 WHERE i.order_id = commerce_orders.id AND i.parish_id = commerce_orders.parish_id
-                  AND i.commerce_module = 'bookstore' AND v.track_inventory = 1
+                  AND i.commerce_module = ? AND v.track_inventory = 1
                 GROUP BY v.id
                 HAVING SUM(i.quantity) > MAX(v.stock_quantity)
               )`,
-      params: [BOOKSTORE_INVENTORY_ATTENTION, now, order.id, order.parish_id, markerLike]
+      params: [BOOKSTORE_INVENTORY_ATTENTION, now, order.id, order.parish_id, commerceModule, markerLike, commerceModule, commerceModule]
     },
     ...trackedItems.flatMap(item => {
       const quantity = Number(item.quantity || 0);
@@ -421,33 +423,33 @@ export async function applyBookstoreInventoryAtCompletion(env, order, now = new 
           sql: `INSERT INTO commerce_inventory_movements
                   (id, parish_id, commerce_module, product_id, variant_id, sku,
                    movement_type, quantity_delta, order_id, created_at)
-                SELECT ?, ?, 'bookstore', ?, ?, ?, 'sale', ?, ?, ?
+                SELECT ?, ?, ?, ?, ?, ?, 'sale', ?, ?, ?
                 WHERE EXISTS (
                   SELECT 1 FROM commerce_product_variants v
                   JOIN commerce_orders o ON o.id = ? AND o.parish_id = ?
-                  WHERE v.id = ? AND v.parish_id = ? AND v.commerce_module = 'bookstore'
+                  WHERE v.id = ? AND v.parish_id = ? AND v.commerce_module = ?
                     AND v.track_inventory = 1 AND v.stock_quantity >= ?
                     AND o.parish_notes LIKE ?
                 ) AND NOT EXISTS (
                   SELECT 1 FROM commerce_inventory_movements m
-                  WHERE m.parish_id = ? AND m.commerce_module = 'bookstore'
+                  WHERE m.parish_id = ? AND m.commerce_module = ?
                     AND m.variant_id = ? AND m.order_id = ? AND m.movement_type = 'sale'
                 )`,
-          params: [generateSecret("inventory_movement"), order.parish_id, item.product_id,
+          params: [generateSecret("inventory_movement"), order.parish_id, commerceModule, item.product_id,
             item.variant_id, item.sku || null, -quantity, order.id, now,
-            order.id, order.parish_id, item.variant_id, order.parish_id, quantity, markerLike,
-            order.parish_id, item.variant_id, order.id]
+            order.id, order.parish_id, item.variant_id, order.parish_id, commerceModule, quantity, markerLike,
+            order.parish_id, commerceModule, item.variant_id, order.id]
         },
         {
           sql: `UPDATE commerce_product_variants
                 SET stock_quantity = stock_quantity - ?, updated_at = ?
-                WHERE id = ? AND parish_id = ? AND commerce_module = 'bookstore'
+                WHERE id = ? AND parish_id = ? AND commerce_module = ?
                   AND track_inventory = 1 AND stock_quantity >= ?
                   AND EXISTS (
                     SELECT 1 FROM commerce_orders o
                     WHERE o.id = ? AND o.parish_id = ? AND o.parish_notes LIKE ?
                   )`,
-          params: [quantity, now, item.variant_id, order.parish_id,
+          params: [quantity, now, item.variant_id, order.parish_id, commerceModule,
             quantity, order.id, order.parish_id, markerLike]
         }
       ];
@@ -1270,16 +1272,93 @@ export async function handleParishSettlementProfiles(request, env, parishId, sub
   return json({ error: "Not found" }, { status: 404 });
 }
 
-// Marks a bookstore commerce order paid once Stripe confirms, and reconciles
+function commerceMoney(cents) {
+  return `$${(Number(cents || 0) / 100).toFixed(2)}`;
+}
+
+export async function sendCommerceReceiptIfNeeded(env, orderId) {
+  if (!commerceDatabase(env) || !orderId || !String(env.RESEND_API_KEY || "").trim()) {
+    return { status: "not_configured" };
+  }
+  const order = await d1First(env, "SELECT * FROM commerce_orders WHERE id = ?", orderId);
+  if (!order?.donor_email || !["paid", "partially_refunded", "refunded"].includes(order.payment_status)) return null;
+
+  const now = new Date().toISOString();
+  const claim = await d1Run(env, `
+    UPDATE commerce_orders
+    SET receipt_email_status = 'sending', updated_at = ?
+    WHERE id = ?
+      AND (
+        COALESCE(receipt_email_status, '') NOT IN ('sending', 'sent')
+        OR (receipt_email_status = 'sending' AND datetime(updated_at) <= datetime('now', '-15 minutes'))
+      )
+  `, now, order.id);
+  if (changedRows(claim) !== 1) return { status: "already_claimed" };
+
+  try {
+    const items = await d1All(env, `
+      SELECT item_name, item_description, quantity, subtotal_cents
+      FROM commerce_order_items
+      WHERE order_id = ?
+      ORDER BY created_at, id
+    `, order.id);
+    const found = await findRegistrationByParishId(env, order.parish_id);
+    const registration = found?.registration || {};
+    const parishName = registration.commerceSellerDisplayName
+      || registration.name || registration.parishName || "your parish";
+    const channelLabel = order.commerce_module === "events" ? "Meals & Events" : "Bookstore";
+    const itemRows = (items.length ? items : [{
+      item_name: order.item_description,
+      quantity: order.quantity,
+      subtotal_cents: order.subtotal_cents
+    }]).map((item) => `
+      <tr>
+        <td style="padding:7px 10px 7px 0;color:#171715;">${htmlEscape(item.item_name || item.item_description || "Commerce item")} × ${Math.max(1, Number(item.quantity || 1))}</td>
+        <td style="padding:7px 0;text-align:right;color:#171715;">${commerceMoney(item.subtotal_cents)}</td>
+      </tr>`).join("");
+    const appUrl = env.AGAPAY_APP_URL || env.AGAPAY_PUBLIC_URL || "https://agapay.app";
+    const result = await sendEmail(env, {
+      from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
+      to: [String(order.donor_email).trim().toLowerCase()],
+      reply_to: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
+      subject: `${channelLabel} receipt — ${parishName}`,
+      html: agapayEmailHtml(appUrl, `${channelLabel} receipt`, `
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Thank you, ${htmlEscape(order.donor_name || "friend")}. Your purchase from <strong>${htmlEscape(parishName)}</strong> is confirmed.</p>
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">${itemRows}
+          <tr><td style="padding:9px 10px 7px 0;border-top:1px solid #E5DED0;"><strong>Subtotal</strong></td><td style="padding:9px 0 7px;border-top:1px solid #E5DED0;text-align:right;">${commerceMoney(order.subtotal_cents)}</td></tr>
+          <tr><td style="padding:7px 10px 7px 0;"><strong>Sales tax</strong></td><td style="padding:7px 0;text-align:right;">${commerceMoney(order.tax_cents)}</td></tr>
+          <tr><td style="padding:7px 10px 7px 0;"><strong>Total charged</strong></td><td style="padding:7px 0;text-align:right;"><strong>${commerceMoney(order.total_charged_cents)}</strong></td></tr>
+        </table>
+        ${order.pickup_note ? `<p style="margin:18px 0 0;font-size:13px;color:#595959;"><strong>Pickup note:</strong> ${htmlEscape(order.pickup_note)}</p>` : ""}
+        <p style="margin:18px 0 0;font-size:12px;line-height:1.6;color:#6F6A60;">This is a purchase receipt, not a charitable-contribution acknowledgment.</p>
+      `),
+      text: `${channelLabel} receipt from ${parishName}\nSubtotal: ${commerceMoney(order.subtotal_cents)}\nSales tax: ${commerceMoney(order.tax_cents)}\nTotal charged: ${commerceMoney(order.total_charged_cents)}\nThis is a purchase receipt, not a charitable-contribution acknowledgment.`
+    });
+    const status = result?.status === "sent" ? "sent" : (result?.status || "failed");
+    await d1Run(env, `
+      UPDATE commerce_orders
+      SET receipt_email_status = ?, receipt_email_id = ?, receipt_email_sent_at = ?, updated_at = ?
+      WHERE id = ?
+    `, status, result?.id || "", status === "sent" ? now : null, now, order.id);
+    return result;
+  } catch (error) {
+    await d1Run(env,
+      "UPDATE commerce_orders SET receipt_email_status = 'failed', updated_at = ? WHERE id = ?",
+      new Date().toISOString(), order.id);
+    return { status: "failed", detail: error?.message || String(error) };
+  }
+}
+
+// Marks a commerce order paid once Stripe confirms, and reconciles
 // real Stripe fees / parish net from the balance transaction. Without this the
 // order sits at payment_status='pending' forever and never shows up in sales
-// reporting. Idempotent: a second call for an already-paid order is a no-op.
+// reporting. Replays do not re-apply inventory; a later Checkout Session may
+// still reconcile automatic-tax facts after a PaymentIntent arrived first.
 // `object` is the Stripe checkout.session (kind='session') or payment_intent
 // (kind='payment_intent') from the webhook.
 export async function completeCommerceOrderFromStripe(env, object = {}, kind = "session") {
   if (!commerceDatabase(env)) return null;
   const meta = object.metadata || {};
-  if (meta.commerce_module && meta.commerce_module !== "bookstore") return null;
 
   const paymentIntentId = kind === "payment_intent"
     ? (object.id || "")
@@ -1288,17 +1367,17 @@ export async function completeCommerceOrderFromStripe(env, object = {}, kind = "
   let order = null;
   if (kind === "session" && object.id) {
     order = await d1First(env,
-      `SELECT * FROM commerce_orders WHERE checkout_session_id = ? AND commerce_module = 'bookstore'`,
+      `SELECT * FROM commerce_orders WHERE checkout_session_id = ?`,
       object.id);
   }
   if (!order && meta.order_id) {
     order = await d1First(env,
-      `SELECT * FROM commerce_orders WHERE id = ? AND commerce_module = 'bookstore'`,
+      `SELECT * FROM commerce_orders WHERE id = ?`,
       meta.order_id);
   }
   if (!order && paymentIntentId) {
     order = await d1First(env,
-      `SELECT * FROM commerce_orders WHERE stripe_payment_intent_id = ? AND commerce_module = 'bookstore'`,
+      `SELECT * FROM commerce_orders WHERE stripe_payment_intent_id = ?`,
       paymentIntentId);
   }
   if (!order) return null;
@@ -1306,8 +1385,33 @@ export async function completeCommerceOrderFromStripe(env, object = {}, kind = "
   // be processed before a delayed payment/session completion event, so never
   // let completion regress one of those later lifecycle states back to paid.
   if (["paid", "partially_refunded", "refunded", "disputed", "dispute_closed"].includes(order.payment_status)) {
-    await promotePaidScannedBooksToCatalog(env, order, new Date().toISOString());
-    return order; // accounting wiring can still replay safely
+    const replayNow = new Date().toISOString();
+    let replayedOrder = order;
+    if (kind === "session") {
+      const hasSessionTax = object.total_details?.amount_tax != null;
+      const hasSessionTotal = object.amount_total != null;
+      const reconciledTaxCents = hasSessionTax ? numericCents(object.total_details.amount_tax) : Number(order.tax_cents || 0);
+      const reconciledTotalCents = hasSessionTotal ? numericCents(object.amount_total) : Number(order.total_charged_cents || 0);
+      await d1Run(env, `
+        UPDATE commerce_orders
+        SET tax_cents = ?, total_charged_cents = ?,
+            stripe_payment_intent_id = COALESCE(NULLIF(?, ''), stripe_payment_intent_id),
+            stripe_customer_id = COALESCE(NULLIF(?, ''), stripe_customer_id),
+            updated_at = ?
+        WHERE id = ?
+      `, reconciledTaxCents, reconciledTotalCents,
+        paymentIntentId, stripeObjectId(object.customer), replayNow, order.id);
+      replayedOrder = {
+        ...order,
+        tax_cents: reconciledTaxCents,
+        total_charged_cents: reconciledTotalCents,
+        stripe_payment_intent_id: paymentIntentId || order.stripe_payment_intent_id,
+        stripe_customer_id: stripeObjectId(object.customer) || order.stripe_customer_id,
+        updated_at: replayNow
+      };
+    }
+    await promotePaidScannedBooksToCatalog(env, replayedOrder, replayNow);
+    return replayedOrder;
   }
 
   const fees = paymentIntentId
@@ -1357,7 +1461,9 @@ export async function completeCommerceOrderFromStripe(env, object = {}, kind = "
   );
 
   await promotePaidScannedBooksToCatalog(env, order, now);
-  await applyBookstoreInventoryAtCompletion(env, order, now);
+  if (order.commerce_module === "bookstore" || order.commerce_module === "events") {
+    await applyBookstoreInventoryAtCompletion(env, order, now, order.commerce_module);
+  }
 
   return { ...order, payment_status: paymentStatus, status, tax_cents: taxCents,
     total_charged_cents: totalCents, stripe_fee_cents: stripeFeeCents,
@@ -1374,7 +1480,7 @@ export async function refundCommerceOrderFromStripe(env, charge = {}) {
   const pi = stripeObjectId(charge.payment_intent);
   if (!pi) return null;
   const order = await d1First(env,
-    `SELECT id, total_charged_cents FROM commerce_orders WHERE stripe_payment_intent_id = ? AND commerce_module = 'bookstore'`,
+    `SELECT id, total_charged_cents FROM commerce_orders WHERE stripe_payment_intent_id = ?`,
     pi);
   if (!order) return null;
   const refunded = numericCents(charge.amount_refunded);
@@ -1386,14 +1492,14 @@ export async function refundCommerceOrderFromStripe(env, charge = {}) {
   return order;
 }
 
-// Reflects Stripe disputes back onto bookstore orders. Safe to call for any
-// charge dispute: non-bookstore and unknown payment intents no-op.
+// Reflects Stripe disputes back onto commerce orders (any module). Safe to
+// call for any charge dispute: unknown payment intents no-op.
 export async function disputeCommerceOrderFromStripe(env, dispute = {}, phase = "created") {
   if (!commerceDatabase(env)) return null;
   const pi = stripeObjectId(dispute.payment_intent);
   if (!pi) return null;
   const order = await d1First(env,
-    `SELECT id FROM commerce_orders WHERE stripe_payment_intent_id = ? AND commerce_module = 'bookstore'`,
+    `SELECT id FROM commerce_orders WHERE stripe_payment_intent_id = ?`,
     pi);
   if (!order) return null;
   const won = String(dispute.status || "").toLowerCase() === "won";

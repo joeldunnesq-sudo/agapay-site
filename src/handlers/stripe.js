@@ -66,8 +66,10 @@ import {
   completeCommerceOrderFromStripe,
   disputeCommerceOrderFromStripe,
   refundCommerceOrderFromStripe,
+  sendCommerceReceiptIfNeeded,
 } from "./parish-commerce.js";
 import {
+  wireCommerceDisputeToAccounting,
   wireCommerceOrderToAccounting,
   wireCommerceRefundsToAccounting,
   wireGivingOfferingToAccounting,
@@ -94,6 +96,15 @@ function stripePayoutBankSummary(account = {}) {
 }
 
 const NON_PRODUCTION_ENVIRONMENTS = new Set(["development", "test", "staging", "preview"]);
+const ORDER_COMPLETION_COMMERCE_MODULES = new Set(["bookstore", "events"]);
+const ORDER_COMPLETION_ORDER_ID_PREFIXES = ["bookstore_", "event_"];
+
+function isCommerceOrderCompletion(object = {}) {
+  const module = String(object.metadata?.commerce_module || "");
+  const orderId = String(object.metadata?.order_id || "");
+  return ORDER_COMPLETION_COMMERCE_MODULES.has(module)
+    || ORDER_COMPLETION_ORDER_ID_PREFIXES.some((prefix) => orderId.startsWith(prefix));
+}
 
 function stripeAccountMaterialState(account = {}) {
   return JSON.stringify({
@@ -486,10 +497,12 @@ export async function processStripeWebhookEvent(env, event) {
       return;
     }
 
-    if (object.metadata?.commerce_module === "bookstore"
-      || String(object.metadata?.order_id || "").startsWith("bookstore_")) {
+    if (isCommerceOrderCompletion(object)) {
       const order = await completeCommerceOrderFromStripe(env, object, "session");
-      if (order?.id) await wireCommerceOrderToAccounting(env, order.id);
+      if (order?.id) {
+        await wireCommerceOrderToAccounting(env, order.id);
+        await sendCommerceReceiptIfNeeded(env, order.id);
+      }
       return;
     }
 
@@ -565,10 +578,11 @@ export async function processStripeWebhookEvent(env, event) {
   }
 
   if (event.type === "payment_intent.succeeded") {
-    if (object.metadata?.commerce_module === "bookstore"
-      || String(object.metadata?.order_id || "").startsWith("bookstore_")) {
-      const order = await completeCommerceOrderFromStripe(env, object, "payment_intent");
-      if (order?.id) await wireCommerceOrderToAccounting(env, order.id);
+    if (isCommerceOrderCompletion(object)) {
+      // PaymentIntent events do not contain Checkout Session automatic-tax
+      // totals. Complete payment/inventory now, then let the session webhook
+      // reconcile tax and become the accounting/receipt source of truth.
+      await completeCommerceOrderFromStripe(env, object, "payment_intent");
       return;
     }
     const existingOffering = await loadDonorOfferingByPaymentIntent(env, object.id);
@@ -634,7 +648,8 @@ export async function processStripeWebhookEvent(env, event) {
   }
 
   if (event.type === "charge.dispute.created") {
-    await disputeCommerceOrderFromStripe(env, object, "created");
+    const commerceOrder = await disputeCommerceOrderFromStripe(env, object, "created");
+    if (commerceOrder?.id) await wireCommerceDisputeToAccounting(env, commerceOrder.id, object, "created");
     await updateDonorOfferingByPaymentIntent(env, object.payment_intent, {
       status: "disputed",
       paymentStatus: "disputed",
@@ -646,7 +661,8 @@ export async function processStripeWebhookEvent(env, event) {
   }
 
   if (event.type === "charge.dispute.closed") {
-    await disputeCommerceOrderFromStripe(env, object, "closed");
+    const commerceOrder = await disputeCommerceOrderFromStripe(env, object, "closed");
+    if (commerceOrder?.id) await wireCommerceDisputeToAccounting(env, commerceOrder.id, object, "closed");
     await updateDonorOfferingByPaymentIntent(env, object.payment_intent, {
       status: object.status === "won" ? "completed" : "dispute_closed",
       paymentStatus: object.status === "won" ? "paid" : "dispute_closed",

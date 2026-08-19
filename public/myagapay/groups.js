@@ -218,7 +218,7 @@ function renderGroupThread(group, messages) {
   const messagesOpen = activeTab === "messages";
   panel.innerHTML = `
     <div class="group-thread-head"><button type="button" class="group-thread-back" onclick="closeMinistryGroup()" aria-label="Back to ministry groups"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Groups</span></button><div class="group-thread-identity">${ministryGroupAvatar(group, "header")}<div><span class="eyebrow">Ministry workspace</span><h2>${groupsEscape(group.name)}</h2><p>${groupsEscape(group.description || "Messages and service coordination for this ministry.")}</p></div></div><div class="group-thread-actions">${group.role === "leader" ? `<button type="button" class="groups-refresh" data-message-action onclick="toggleGroupCatchUp('${groupsEscape(group.id)}',this)" aria-expanded="false"${messagesOpen ? "" : " hidden"}>Who’s caught up</button>` : ""}<button type="button" class="groups-refresh" data-message-action onclick="openMinistryGroup('${groupsEscape(group.id)}')"${messagesOpen ? "" : " hidden"}>Refresh messages</button></div></div>
-    <nav class="group-workspace-tabs" aria-label="${groupsEscape(group.name)} tools">${[["overview","Overview"],["messages","Messages"],["signups","Signups"],["schedule","Schedule"],["members","Members"],["resources","Resources"]].map(([tab,label])=>`<button type="button" data-group-tab="${tab}" class="${activeTab===tab?"is-active":""}" onclick="switchGroupWorkspace('${tab}')" aria-selected="${activeTab===tab}">${label}</button>`).join("")}</nav>
+    <nav class="group-workspace-tabs" aria-label="${groupsEscape(group.name)} tools">${[["overview","Overview"],["messages","Messages"],["signups","Signups"],["schedule","Schedule"],["commerce","Meals & Events"],["members","Members"],["resources","Resources"]].map(([tab,label])=>`<button type="button" data-group-tab="${tab}" class="${activeTab===tab?"is-active":""}" onclick="switchGroupWorkspace('${tab}')" aria-selected="${activeTab===tab}">${label}</button>`).join("")}</nav>
     <div class="group-message-list" id="groupMessageList" data-group-workspace="messages"${messagesOpen ? "" : " hidden"}>${messages.length ? messages.map(message => `
       <article class="group-message ${message.mine ? "is-outgoing" : "is-incoming"} is-${groupsEscape(message.messageType || "text")}${message.read ? "" : " is-unread"}"><div><strong>${message.mine ? "You" : groupsEscape(message.authorName)}</strong><time>${groupsEscape(groupMessageTime(message.createdAt))}</time></div>${renderGroupMessageContent(message)}</article>
     `).join("") : '<div class="group-thread-empty"><strong>No messages yet</strong><p>Start the conversation for your ministry.</p></div>'}</div>
@@ -233,7 +233,7 @@ function renderGroupThread(group, messages) {
       </div>
       <small class="group-thread-retention">Voice notes and photos are removed after 30 days. Conversation history remains available.</small>
     </form>
-    ${["overview","signups","schedule","members","resources"].map(tab=>`<section class="group-signups-workspace group-${tab}-workspace" id="group${tab[0].toUpperCase()+tab.slice(1)}Workspace" data-group-workspace="${tab}"${activeTab===tab?"":" hidden"}><div class="group-signups-loading">Loading ${groupsEscape(group.name)} ${tab}…</div></section>`).join("")}
+    ${["overview","signups","schedule","commerce","members","resources"].map(tab=>`<section class="group-signups-workspace group-${tab}-workspace" id="group${tab[0].toUpperCase()+tab.slice(1)}Workspace" data-group-workspace="${tab}"${activeTab===tab?"":" hidden"}><div class="group-signups-loading">Loading ${groupsEscape(group.name)} ${tab}…</div></section>`).join("")}
   `;
   renderGroupAttachmentPreview();
   void hydrateGroupPhotos();
@@ -266,7 +266,7 @@ function groupSignupDisplayDate(value) {
 }
 
 async function switchGroupWorkspace(tab) {
-  if (!['overview','messages','signups','schedule','members','resources'].includes(tab)) return;
+  if (!['overview','messages','signups','schedule','commerce','members','resources'].includes(tab)) return;
   ministryGroupsState.activeTab = tab;
   document.querySelectorAll('[data-group-workspace]').forEach((element) => { element.hidden = element.dataset.groupWorkspace !== tab; });
   document.querySelectorAll('[data-group-tab]').forEach((button) => {
@@ -284,6 +284,7 @@ async function loadActiveGroupWorkspace(tab) {
   try {
     if(tab==='overview'){const d=await groupsFetch(`/api/donor/groups/${encodeURIComponent(id)}/overview`);target.innerHTML=`<div class="ministry-overview-hero"><span class="eyebrow">At a glance</span><h3>Your ministry today</h3><p>Everything that needs attention, gathered in one place.</p></div><div class="ministry-overview-grid"><button onclick="switchGroupWorkspace('schedule')"><span>Next event</span><strong>${groupsEscape(d.event?.title||'Nothing scheduled')}</strong><small>${d.event?groupsEscape(groupSignupDisplayDate(d.event.starts_at)):'Create a ministry event'}</small></button><button onclick="switchGroupWorkspace('signups')"><span>Open need</span><strong>${groupsEscape(d.signup?.title||'No open signup')}</strong><small>${d.signup?`${Number(d.signup.openings)} openings`:'Create a signup form'}</small></button><button onclick="switchGroupWorkspace('messages')"><span>Latest message</span><strong>${groupsEscape((d.latestMessage?.body||'No messages yet').slice(0,80))}</strong><small>Open conversation</small></button><button onclick="switchGroupWorkspace('resources')"><span>Latest resource</span><strong>${groupsEscape(d.resource?.title||'No resources yet')}</strong><small>Open shared library</small></button></div>${(d.coverageRequests||[]).length?`<section class="ministry-coverage"><span class="eyebrow">Help requested</span><h3>Can you cover?</h3>${d.coverageRequests.map(request=>`<article><span><strong>${groupsEscape(request.requester_name||'A teammate')} needs coverage</strong><small>${groupsEscape(request.title)} · ${groupsEscape(request.label)} · ${groupsEscape(groupSignupDisplayDate(request.slot_date))}</small>${request.note?`<p>${groupsEscape(request.note)}</p>`:''}</span><button type="button" onclick="acceptMinistryCoverage('${groupsEscape(request.id)}')">I can cover</button></article>`).join('')}</section>`:''}<section class="ministry-my-commitments"><h3>My commitments</h3>${(d.myCommitments||[]).length?(d.myCommitments||[]).map(c=>`<a href="/myagapay/signups?sheet=${encodeURIComponent(c.sheetId||c.sheet_id||'')}"><strong>${groupsEscape(c.title)}</strong><span>${groupsEscape(c.label)} · ${groupsEscape(groupSignupDisplayDate(c.slot_date))}</span></a>`).join(''):'<p>You have no upcoming commitments for this ministry.</p>'}</section>`;}
     if(tab==='schedule'){const [d,m]=await Promise.all([groupsFetch(`/api/donor/groups/${encodeURIComponent(id)}/schedule`),groupsFetch(`/api/donor/groups/${encodeURIComponent(id)}/members`)]);renderMinistrySchedule(target,d.events||[],m.members||[]);}
+    if(tab==='commerce'){const d=await groupsFetch(`/api/donor/groups/${encodeURIComponent(id)}/commerce`);renderMinistryCommerce(target,d.items||[],d.parishId||'');}
     if(tab==='members'){const d=await groupsFetch(`/api/donor/groups/${encodeURIComponent(id)}/members`);renderMinistryMembers(target,d.members||[]);}
     if(tab==='resources'){const d=await groupsFetch(`/api/donor/groups/${encodeURIComponent(id)}/resources`);renderMinistryResources(target,d.resources||[]);}
   } catch(error){target.innerHTML=`<div class="group-signups-empty"><strong>Unable to load ${groupsEscape(tab)}</strong><p>${groupsEscape(error.message)}</p></div>`;}
@@ -302,6 +303,209 @@ async function saveMinistryAvailability(event){event.preventDefault();const d=ne
 function renderMinistryResources(target,resources){target.innerHTML=`<div class="group-signups-head"><div><span class="eyebrow">Shared library</span><h3>Resources</h3><p>Keep checklists, instructions, training, and useful links close at hand.</p></div></div><details class="group-signup-create"><summary>+ Share a resource</summary><form onsubmit="createMinistryResource(event)"><label>Title<input name="title" required maxlength="180" /></label><label>Type<select name="resourceType"><option value="checklist">Checklist</option><option value="document">Document</option><option value="training">Training</option><option value="link">Link</option></select></label><label class="is-wide">Link<input name="url" type="url" placeholder="https://" /></label><label class="is-wide">Notes<textarea name="notes" rows="3"></textarea></label><button class="btn btn-gold" type="submit">Share resource</button></form></details><div class="ministry-resource-grid">${resources.length?resources.map(r=>`<article><span>${groupsEscape(r.resource_type)}</span><h3>${groupsEscape(r.title)}</h3><p>${groupsEscape(r.notes||'')}</p><div>${r.url?`<a href="${groupsEscape(r.url)}" target="_blank" rel="noopener">Open resource ↗</a>`:''}<button class="group-signup-delete" onclick="deleteMinistryResource('${groupsEscape(r.id)}')">Delete</button></div></article>`).join(''):'<div class="group-signups-empty"><strong>No shared resources</strong><p>Add the ministry’s first checklist or useful link.</p></div>'}</div>`;}
 async function createMinistryResource(event){event.preventDefault();const d=Object.fromEntries(new FormData(event.currentTarget));await groupsFetch(`/api/donor/groups/${encodeURIComponent(ministryGroupsState.activeGroupId)}/resources`,{method:'POST',body:JSON.stringify(d)});groupStatus('Resource shared.');await loadActiveGroupWorkspace('resources');}
 async function deleteMinistryResource(id){if(!confirm('Delete this shared resource?'))return;await groupsFetch(`/api/donor/groups/${encodeURIComponent(ministryGroupsState.activeGroupId)}/resources/${encodeURIComponent(id)}`,{method:'DELETE'});await loadActiveGroupWorkspace('resources');}
+
+// Meals & Events (ministry-delegated commerce)
+// Lets an active ministry leader create priced festal-event listings (feast
+// day dinners, festival plates) without parish-dashboard credentials, and
+// generates a per-listing QR code -- reusing the exact qrcode-generator +
+// brand-badge pattern the parish dashboard already uses for the Bookstore
+// guest checkout QR (see public/parish/app.js renderBookstoreGuestCheckout).
+// Duplicated here rather than shared, since groups.js and parish/app.js are
+// separate non-module <script> includes with no import mechanism between them.
+const ministryCommerceMoney = cents => (Number(cents || 0) / 100).toLocaleString(undefined, { style: "currency", currency: "USD" });
+let ministryCommerceQrSvgByVariant = {};
+let ministryCommerceMarkDataUriPromise = null;
+
+function ministryCommerceMarkDataUri() {
+  if (ministryCommerceMarkDataUriPromise) return ministryCommerceMarkDataUriPromise;
+  ministryCommerceMarkDataUriPromise = fetch('/mark.png')
+    .then(res => res.blob())
+    .then(blob => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    }))
+    .catch(() => { ministryCommerceMarkDataUriPromise = null; return ''; });
+  return ministryCommerceMarkDataUriPromise;
+}
+
+function ministryCommerceBrandQrSvg(svg, logoHref) {
+  const badge = `
+    <g class="agapay-qr-badge" aria-hidden="true">
+      <circle cx="50%" cy="50%" r="10.5%" fill="#FFFDF9" stroke="#C8A24A" stroke-width="1.4"/>
+      ${logoHref ? `<image href="${logoHref}" x="41.5%" y="41.5%" width="17%" height="17%" preserveAspectRatio="xMidYMid meet"/>` : ''}
+    </g>`;
+  return svg.replace('</svg>', `${badge}</svg>`);
+}
+
+function ministryCommerceQrUrl(parishId, variantId) {
+  if (!parishId || !variantId) return '';
+  return `${window.location.origin}/events/${encodeURIComponent(parishId)}?item=${encodeURIComponent(variantId)}`;
+}
+
+async function renderMinistryCommerceQr(parishId, variantId) {
+  const target = document.getElementById(`commerceQr-${CSS.escape(variantId)}`);
+  const url = ministryCommerceQrUrl(parishId, variantId);
+  if (!target || !url || typeof qrcode === 'undefined') return;
+  const qr = qrcode(0, 'H');
+  qr.addData(url);
+  qr.make();
+  const rawSvg = qr.createSvgTag(4, 3)
+    .replace(/<svg /, '<svg role="img" aria-label="Payment QR code" ')
+    .replace(/fill="#000000"/g, 'fill="#061522"');
+  ministryCommerceQrSvgByVariant[variantId] = ministryCommerceBrandQrSvg(rawSvg, '');
+  target.innerHTML = ministryCommerceQrSvgByVariant[variantId];
+  const logoHref = await ministryCommerceMarkDataUri();
+  if (logoHref) {
+    ministryCommerceQrSvgByVariant[variantId] = ministryCommerceBrandQrSvg(rawSvg, logoHref);
+    if (target.isConnected) target.innerHTML = ministryCommerceQrSvgByVariant[variantId];
+  }
+}
+
+function ministryCommerceDownloadBlob(filename, blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function downloadMinistryCommerceQr(parishId, variantId, itemName, extension) {
+  if (!ministryCommerceQrSvgByVariant[variantId] || !ministryCommerceQrSvgByVariant[variantId].includes('<image ')) {
+    await renderMinistryCommerceQr(parishId, variantId);
+  }
+  const svg = ministryCommerceQrSvgByVariant[variantId];
+  if (!svg) { groupStatus('QR code is not ready yet.'); return; }
+  const withNs = svg.includes('xmlns=') ? svg : svg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
+  const filenameBase = String(itemName || 'event').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'event';
+  if (extension === 'svg') {
+    ministryCommerceDownloadBlob(`${filenameBase}-qr.svg`, new Blob([withNs], { type: 'image/svg+xml;charset=utf-8' }));
+    groupStatus('QR code SVG downloaded.');
+    return;
+  }
+  const image = new Image();
+  const svgUrl = URL.createObjectURL(new Blob([withNs], { type: 'image/svg+xml;charset=utf-8' }));
+  image.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1200; canvas.height = 1200;
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, 1200, 1200);
+    context.drawImage(image, 0, 0, 1200, 1200);
+    URL.revokeObjectURL(svgUrl);
+    canvas.toBlob(blob => {
+      if (!blob) { groupStatus('Unable to create the QR code PNG.'); return; }
+      ministryCommerceDownloadBlob(`${filenameBase}-qr.png`, blob);
+      groupStatus('QR code PNG downloaded.');
+    }, 'image/png');
+  };
+  image.onerror = () => { URL.revokeObjectURL(svgUrl); groupStatus('Unable to render the QR code PNG.'); };
+  image.src = svgUrl;
+}
+
+async function copyMinistryCommerceLink(parishId, variantId) {
+  const url = ministryCommerceQrUrl(parishId, variantId);
+  if (!url) return;
+  try { await navigator.clipboard.writeText(url); groupStatus('Payment link copied.'); }
+  catch { groupStatus(url); }
+}
+
+function renderMinistryCommerce(target, items, parishId) {
+  ministryGroupsState.commerceParishId = parishId;
+  ministryGroupsState.commerceItems = items;
+  target.innerHTML = `<div class="group-signups-head"><div><span class="eyebrow">Feast days &amp; fundraisers</span><h3>Meals &amp; Events</h3><p>Price a dinner, festival plate, or fundraiser item. Each listing gets its own QR code you can print and post — guests can pay without installing the app.</p></div></div>
+    <details class="group-signup-create" id="ministryCommerceCreatePanel"><summary>+ Add an item</summary>
+      <form id="ministryCommerceCreateForm" onsubmit="createMinistryCommerceItemUI(event)">
+        <label>Listing type<select name="offeringKind" required><option value="event">Event</option><option value="meal">Meal</option></select></label>
+        <label>Item name<input name="name" required maxlength="180" placeholder="Adult dinner plate" /></label>
+        <label>Price<div class="money-input"><i>$</i><input name="priceCents" type="number" min="0.01" step="0.01" required placeholder="18.00" /></div></label>
+        <label>Event date<input name="eventDate" type="date" /></label>
+        <label>Location<input name="eventLocation" maxlength="200" placeholder="Parish Hall" /></label>
+        <label>Quantity available<input name="stockQuantity" type="number" min="0" step="1" placeholder="e.g. 60" /></label>
+        <label>Limit per order <small>(optional)</small><input name="maxQuantityPerOrder" type="number" min="1" step="1" placeholder="e.g. 6" /></label>
+        <label class="is-wide">Description<textarea name="description" rows="2" maxlength="600" placeholder="Roast lamb, rice pilaf, salad, and bread"></textarea></label>
+        <p class="ministry-commerce-duplicate-note" id="ministryCommerceDuplicateNote" hidden>Duplicating <strong id="ministryCommerceDuplicateSource"></strong> — pick a new date before saving.</p>
+        <button class="btn btn-gold" type="submit">Create listing &amp; get QR code</button>
+      </form>
+    </details>
+    <div id="ministryCommerceNewQr"></div>
+    <div class="ministry-commerce-grid">${items.length ? items.map(item => `<article class="ministry-commerce-card">
+      <div><span class="eyebrow">${item.offeringKind === 'meal' ? 'Meal' : 'Event'} · ${item.eventDate ? groupsEscape(item.eventDate) : 'No date set'}${item.eventLocation ? ` · ${groupsEscape(item.eventLocation)}` : ''}</span><h3>${groupsEscape(item.name)}</h3><p>${groupsEscape(item.description || '')}</p><p><strong>${ministryCommerceMoney(item.priceCents)}</strong>${item.trackInventory ? ` · ${Number(item.stockQuantity || 0)} available` : ''}${item.status === 'archived' ? ' · <em>Archived</em>' : ''}</p></div>
+      <details class="ministry-commerce-qr-toggle" ontoggle="if(this.open) renderMinistryCommerceQr('${groupsEscape(parishId)}','${groupsEscape(item.variantId)}')">
+        <summary>Show payment QR code</summary>
+        <div class="ministry-commerce-qr-panel">
+          <div id="commerceQr-${groupsEscape(item.variantId)}" class="ministry-commerce-qr-image" aria-live="polite"></div>
+          <div class="ministry-commerce-qr-actions">
+            <button type="button" onclick="copyMinistryCommerceLink('${groupsEscape(parishId)}','${groupsEscape(item.variantId)}')">Copy link</button>
+            <button type="button" onclick="downloadMinistryCommerceQr('${groupsEscape(parishId)}','${groupsEscape(item.variantId)}','${groupsEscape(item.name)}','png')">Download PNG</button>
+            <button type="button" onclick="downloadMinistryCommerceQr('${groupsEscape(parishId)}','${groupsEscape(item.variantId)}','${groupsEscape(item.name)}','svg')">Download SVG</button>
+          </div>
+        </div>
+      </details>
+      <div class="ministry-commerce-card-actions">
+        <button type="button" onclick="duplicateMinistryCommerceItem('${groupsEscape(item.id)}')">Duplicate for next year</button>
+        <button class="group-signup-delete" onclick="toggleMinistryCommerceItemStatus('${groupsEscape(item.id)}','${item.status === 'archived' ? 'active' : 'archived'}')">${item.status === 'archived' ? 'Reactivate' : 'Archive'}</button>
+      </div>
+    </article>`).join('') : '<div class="group-signups-empty"><strong>No listings yet</strong><p>Add your first dinner plate or fundraiser item above.</p></div>'}</div>`;
+}
+
+function duplicateMinistryCommerceItem(productId) {
+  const source = (ministryGroupsState.commerceItems || []).find(item => item.id === productId);
+  if (!source) return;
+  const panel = document.getElementById('ministryCommerceCreatePanel');
+  const form = document.getElementById('ministryCommerceCreateForm');
+  if (!panel || !form) return;
+  panel.open = true;
+  form.elements.name.value = source.name || '';
+  form.elements.offeringKind.value = source.offeringKind === 'meal' ? 'meal' : 'event';
+  form.elements.priceCents.value = source.priceCents ? (source.priceCents / 100).toFixed(2) : '';
+  form.elements.eventDate.value = ''; // force picking a new date, not last year's
+  form.elements.eventLocation.value = source.eventLocation || '';
+  form.elements.stockQuantity.value = source.stockQuantity || '';
+  form.elements.maxQuantityPerOrder.value = source.maxQuantityPerOrder || '';
+  form.elements.description.value = source.description || '';
+  const note = document.getElementById('ministryCommerceDuplicateNote');
+  const noteSource = document.getElementById('ministryCommerceDuplicateSource');
+  if (note && noteSource) { noteSource.textContent = source.name; note.hidden = false; }
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  form.elements.eventDate.focus();
+}
+
+async function createMinistryCommerceItemUI(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const d = new FormData(form);
+  const priceCents = Math.round(Number(d.get('priceCents') || 0) * 100);
+  const body = {
+    offeringKind: d.get('offeringKind'),
+    name: d.get('name'),
+    description: d.get('description'),
+    priceCents,
+    eventDate: d.get('eventDate'),
+    eventLocation: d.get('eventLocation'),
+    stockQuantity: d.get('stockQuantity') ? Number(d.get('stockQuantity')) : 0,
+    maxQuantityPerOrder: d.get('maxQuantityPerOrder') ? Number(d.get('maxQuantityPerOrder')) : null
+  };
+  const result = await groupsFetch(`/api/donor/groups/${encodeURIComponent(ministryGroupsState.activeGroupId)}/commerce`, { method: 'POST', body: JSON.stringify(body) });
+  if (!result) return;
+  groupStatus(`${body.name} is live. Its QR code is ready below.`);
+  form.reset();
+  await loadActiveGroupWorkspace('commerce');
+  // Auto-open the new item's QR right away, so a leader creating a listing
+  // gets the printable code immediately without hunting for it in the list.
+  requestAnimationFrame(() => {
+    const qrTarget = document.getElementById(`commerceQr-${result.variantId}`);
+    const details = qrTarget?.closest('details');
+    if (details) { details.open = true; details.scrollIntoView({ behavior: 'smooth', block: 'center' }); renderMinistryCommerceQr(result.parishId, result.variantId); }
+  });
+}
+
+async function toggleMinistryCommerceItemStatus(productId, nextStatus) {
+  await groupsFetch(`/api/donor/groups/${encodeURIComponent(ministryGroupsState.activeGroupId)}/commerce/${encodeURIComponent(productId)}`, { method: 'PATCH', body: JSON.stringify({ status: nextStatus }) });
+  groupStatus(nextStatus === 'archived' ? 'Listing archived.' : 'Listing reactivated.');
+  await loadActiveGroupWorkspace('commerce');
+}
 
 function renderGroupSignupManager() {
   const target = document.getElementById("groupSignupsWorkspace");

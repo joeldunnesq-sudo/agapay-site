@@ -1546,11 +1546,11 @@
             <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" data-commerce-product="bookstore" onclick="switchCommerceProduct('bookstore')">
               <span>Bookstore</span>
             </button>
-            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="events">
-              <span>Events</span><em>Coming soon</em>
+            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" data-commerce-product="events" onclick="switchCommerceProduct('events')">
+              <span>Events</span>
             </button>
-            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="meals">
-              <span>Meals</span><em>Coming soon</em>
+            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" data-commerce-product="meals" onclick="switchCommerceProduct('meals')">
+              <span>Meals</span>
             </button>
             <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="retreats">
               <span>Retreats</span><em>Coming soon</em>
@@ -1692,6 +1692,40 @@
               <div id="bookstoreStarterCatalog"><p class="sw-tool-loading">Loading...</p></div>
             </div>
           </section>
+          </section>
+
+          <section class="commerce-workspace-panel" id="commerceEventsPanel" data-commerce-panel="events" hidden>
+            <div class="sw-suite-hero events-hero">
+              <div class="sw-suite-hero-copy">
+                <span class="sw-suite-eyebrow">Parish Commerce</span>
+                <h1 class="sw-suite-heading">Events</h1>
+                <p class="sw-suite-subhead">Manage ticketed gatherings, festivals, fundraisers, and other parish events—including listings created by ministry leaders in Koinonia.</p>
+              </div>
+              <div class="sw-suite-hero-status">
+                <button class="sw-suite-refresh-btn" type="button" onclick="loadEventsOversightPanel('event', true)" title="Refresh" aria-label="Refresh Events">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/><polyline points="10 1 10 4 13 4"/></svg>
+                </button>
+              </div>
+            </div>
+            <p class="section-note" style="margin:0 0 14px;">Parish staff can create Events here. Ministry leaders can also create them from <strong>Koinonia → Groups → [Ministry] → Meals &amp; Events</strong>.</p>
+            <div id="eventsOversightBody"><p class="sw-tool-loading">Loading Events…</p></div>
+          </section>
+
+          <section class="commerce-workspace-panel" id="commerceMealsPanel" data-commerce-panel="meals" hidden>
+            <div class="sw-suite-hero events-hero">
+              <div class="sw-suite-hero-copy">
+                <span class="sw-suite-eyebrow">Parish Commerce</span>
+                <h1 class="sw-suite-heading">Meals</h1>
+                <p class="sw-suite-subhead">Manage dinner plates, festival food, coffee-hour sales, and other prepared-meal offerings through the same parish commerce system.</p>
+              </div>
+              <div class="sw-suite-hero-status">
+                <button class="sw-suite-refresh-btn" type="button" onclick="loadEventsOversightPanel('meal', true)" title="Refresh" aria-label="Refresh Meals">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/><polyline points="10 1 10 4 13 4"/></svg>
+                </button>
+              </div>
+            </div>
+            <p class="section-note" style="margin:0 0 14px;">Parish staff can create Meals here. Ministry leaders can also create them from <strong>Koinonia → Groups → [Ministry] → Meals &amp; Events</strong>.</p>
+            <div id="mealsOversightBody"><p class="sw-tool-loading">Loading Meals…</p></div>
           </section>
         </div>
       </div>

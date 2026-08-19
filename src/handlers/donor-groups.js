@@ -13,6 +13,7 @@ import {
   rateLimit,
 } from "../lib/core.js";
 import { verifiedHouseholdAccess } from "./koinonia-access.js";
+import { createMinistryCommerceItem, listMinistryCommerceItems, patchMinistryCommerceItem } from "./parish-events.js";
 
 const CONTENT_TYPE = "group_message";
 export const GROUP_MESSAGE_ATTACHMENT_RETENTION_DAYS = 30;
@@ -713,6 +714,21 @@ export async function handleDonorGroups(request, env, ctx = null) {
     if(parts.length===2&&parts[1]==="resources"&&request.method==="GET") return privateJson(await listMinistryResources(env,context,parts[0]));
     if(parts.length===2&&parts[1]==="resources"&&request.method==="POST") return privateJson(await createMinistryResource(request,env,context,parts[0]),{status:201});
     if(parts.length===3&&parts[1]==="resources"&&request.method==="DELETE") return privateJson(await deleteMinistryResource(env,context,parts[0],parts[2]));
+    if(parts.length===2&&parts[1]==="commerce"&&request.method==="GET"){
+      await requireActiveMinistryMember(env,context,parts[0]);
+      try { return privateJson(await listMinistryCommerceItems(env,context.parishId,parts[0])); }
+      catch(error){ throw new GroupMessageAccessError(error.message,error.status||400); }
+    }
+    if(parts.length===2&&parts[1]==="commerce"&&request.method==="POST"){
+      if(!await isActiveMinistryLeader(env,{parishId:context.parishId,ministryId:parts[0],personId:context.personId})) throw new GroupMessageAccessError("Only active ministry leaders can create priced listings.",403);
+      try { return privateJson(await createMinistryCommerceItem(request,env,context.parishId,parts[0],context.personId),{status:201}); }
+      catch(error){ throw new GroupMessageAccessError(error.message,error.status||400); }
+    }
+    if(parts.length===3&&parts[1]==="commerce"&&request.method==="PATCH"){
+      if(!await isActiveMinistryLeader(env,{parishId:context.parishId,ministryId:parts[0],personId:context.personId})) throw new GroupMessageAccessError("Only active ministry leaders can edit priced listings.",403);
+      try { return privateJson(await patchMinistryCommerceItem(request,env,context.parishId,parts[0],parts[2])); }
+      catch(error){ throw new GroupMessageAccessError(error.message,error.status||400); }
+    }
     if (parts.length === 2 && parts[1] === "messages" && request.method === "GET") {
       return privateJson(await listGroupMessages(env, { ...context, ministryId: parts[0] }));
     }
