@@ -80,6 +80,12 @@ assert.match(html, /\.donor-bookstore-page \.my-agapay-tabbar,[\s\S]*?z-index:22
   "the mobile bookstore nav must remain opaque and above sticky storefront controls");
 assert.match(html, /padding:10px 10px calc\(172px \+ env\(safe-area-inset-bottom\)\)/,
   "the mobile bookstore must reserve scroll clearance for both the checkout bar and canonical bottom nav");
+assert.match(html, /\.donor-bookstore-page,[\s\S]*?\.donor-bookstore-page \.content,[\s\S]*?width:100%; min-width:0; max-width:100%; overflow-x:hidden;/,
+  "the Galaxy-width storefront must contain page-level horizontal overflow");
+assert.match(html, /\.bookstore-category-filters \{ width:100%; max-width:100%; margin:0 0 16px;/,
+  "mobile category scrolling must remain inside the centered content width");
+assert.match(html, /\.bookstore-popular \{ width:100%; max-width:100%; margin:0 0 14px;/,
+  "the Popular items rail must not use full-bleed negative margins that shift wide Android layouts");
 assert.match(app, /bookstore-sale-ribbon/);
 assert.match(app, /<del>\$\{formatCentsAsDollars\(product\.regularPriceCents\)\}<\/del>/,
   "sale cards must show the crossed-out regular price");

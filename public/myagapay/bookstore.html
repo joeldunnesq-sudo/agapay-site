@@ -280,7 +280,7 @@
     .bookstore-orders-card .list { margin:0; }
     @media (max-width:1000px) { .bookstore-store-hero { grid-template-columns:1fr; } .bookstore-store-promises { grid-template-columns:repeat(3,1fr); } }
     @media (max-width:700px) {
-      .donor-bookstore-page { overflow-x:clip; }
+      .donor-bookstore-page { overflow-x:hidden; }
       .donor-bookstore-page .page { padding:10px 10px calc(106px + env(safe-area-inset-bottom)); background:#f5f3ee; }
       .donor-bookstore-page .my-agapay-tabbar,
       .donor-bookstore-page .mobile-tabbar {
@@ -442,20 +442,27 @@
       .bookstore-popular-card { min-width:min(245px,43vw); scroll-snap-align:start; }
     }
     @media (max-width:700px) {
-      .donor-bookstore-page .page { padding:10px 10px calc(172px + env(safe-area-inset-bottom)); }
+      .donor-bookstore-page,
+      .donor-bookstore-page .app,
+      .donor-bookstore-page .content,
+      .donor-bookstore-page .page { width:100%; min-width:0; max-width:100%; overflow-x:hidden; }
+      .donor-bookstore-page .page { margin-inline:auto; padding:10px 10px calc(172px + env(safe-area-inset-bottom)); }
       .bookstore-toast { top:calc(82px + env(safe-area-inset-top)); width:calc(100vw - 20px); }
       .bookstore-storefront-layout,
       .bookstore-storefront-card,
       .bookstore-store-context,
+      .bookstore-shop-grid,
+      .bookstore-catalog-pane,
       .bookstore-catalog-heading { width:100%; min-width:0; max-width:100%; }
       .bookstore-store-context { margin-bottom:9px; padding:9px 10px; }
       .bookstore-catalog-heading { position:static; align-items:stretch; flex-direction:column; gap:9px; margin:0 0 8px; padding:12px; background:#fff; }
       .bookstore-catalog-heading h2 { font-size:22px; }
       .bookstore-search { width:100%; }
       .bookstore-search input { min-height:45px; border-radius:12px; }
-      .bookstore-category-filters { margin-right:-10px; margin-left:-10px; padding-right:10px; padding-left:10px; }
+      .bookstore-category-filters { width:100%; max-width:100%; margin:0 0 16px; padding-right:2px; padding-left:2px; overscroll-behavior-inline:contain; }
       .bookstore-category-chip { min-height:36px; }
-      .bookstore-popular { margin-right:-10px; margin-left:-10px; border-radius:0; padding:13px 10px; }
+      .bookstore-popular { width:100%; max-width:100%; margin:0 0 14px; border-radius:16px; padding:13px 10px; }
+      .bookstore-popular-grid { width:100%; max-width:100%; overscroll-behavior-inline:contain; }
       .bookstore-popular-heading { flex-direction:row; align-items:end; }
       .bookstore-popular-heading h2 { font-size:21px; }
       .bookstore-popular-heading p { display:none; }
