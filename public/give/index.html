@@ -260,6 +260,7 @@
         <span class="council-jump-label">Council guide</span>
         <div class="council-jump-links">
           <a href="#why">Why AGAPAY</a>
+          <a href="#koinonia">Koinonia</a>
           <a href="#features">Features</a>
           <a href="#how-it-works">How It Works</a>
           <a href="#pricing">Pricing</a>
@@ -404,6 +405,50 @@
           <span id="solutionFocusCopy">One place for stewardship, candles, designated funds, and campaigns, with records that stay clear for parish leaders.</span>
         </div>
         <p class="solution-foot">Together, we strengthen the institutions that sustain Orthodox life.</p>
+      </div>
+    </section>
+
+    <section class="section koinonia-feature" id="koinonia" aria-labelledby="koinonia-feature-title">
+      <div class="section-inner koinonia-feature-grid">
+        <div class="koinonia-feature-copy">
+          <div class="eyebrow">Koinonia · Parish Life Together</div>
+          <h2 id="koinonia-feature-title">Giving belongs inside the life of the parish.</h2>
+          <p class="lead">Koinonia gives every parish a shared home for the worship, fellowship, service, and relationships that make stewardship meaningful. It is built into AGAPAY—not added as a separate community tool.</p>
+          <div class="koinonia-feature-points">
+            <article>
+              <strong>Today in the Church</strong>
+              <span>Feasts, fasts, saints, parish events, and festal giving prompts share the same liturgical awareness.</span>
+            </article>
+            <article>
+              <strong>Ministries &amp; community tools</strong>
+              <span>Ministry groups, parish signups, prayer requests, the Parish Exchange, events, and meals stay close to the people doing the work.</span>
+            </article>
+            <article>
+              <strong>Teaching, audio, video &amp; news</strong>
+              <span>Parish media and trusted Orthodox content give households one place to listen, watch, learn, and remain connected.</span>
+            </article>
+          </div>
+          <a class="btn btn-gold" href="/give/pricing">See Parish pricing</a>
+        </div>
+
+        <div class="koinonia-showcase" aria-label="Three real Koinonia app screens">
+          <div class="koinonia-phone-frame">
+            <div class="koinonia-phone-screen" id="koinoniaPhoneScreen">
+              <img class="is-active" data-koinonia-slide="0" src="/images/app/screenshots/koinonia-give-1.jpg" alt="Koinonia home showing the Transfiguration feast, fasting guidance, parish inbox, and weekly calendar" width="720" height="1560" loading="lazy" decoding="async" />
+              <img data-koinonia-slide="1" data-src="/images/app/screenshots/koinonia-give-2.jpg" alt="Koinonia community tools showing parish signups, the Parish Exchange, prayer requests, ministries, and Orthodox audio" width="720" height="1560" loading="lazy" decoding="async" />
+              <img data-koinonia-slide="2" data-src="/images/app/screenshots/koinonia-give-3.jpg" alt="Koinonia media showing parish video and current Orthodox news" width="720" height="1560" loading="lazy" decoding="async" />
+            </div>
+          </div>
+          <div class="koinonia-slide-caption" aria-live="polite">
+            <strong id="koinoniaSlideTitle">Today &amp; Calendar</strong>
+            <span id="koinoniaSlideCopy">The liturgical day and the parish week, connected.</span>
+          </div>
+          <div class="koinonia-slide-controls" role="tablist" aria-label="Explore Koinonia screens">
+            <button class="is-active" type="button" role="tab" aria-selected="true" aria-controls="koinoniaPhoneScreen" data-koinonia-index="0" data-title="Today &amp; Calendar" data-copy="The liturgical day and the parish week, connected.">Today</button>
+            <button type="button" role="tab" aria-selected="false" aria-controls="koinoniaPhoneScreen" data-koinonia-index="1" data-title="Community &amp; Ministries" data-copy="Prayer, service, ministry life, and Orthodox media in one parish home.">Community</button>
+            <button type="button" role="tab" aria-selected="false" aria-controls="koinoniaPhoneScreen" data-koinonia-index="2" data-title="Parish Media &amp; News" data-copy="Parish video and current Orthodox news keep the community informed.">Media</button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -848,6 +893,54 @@
       households.addEventListener("input", updateImpact);
       updateImpact();
     }
+
+    const koinoniaScreen = document.querySelector("#koinoniaPhoneScreen");
+    const koinoniaSlides = Array.from(document.querySelectorAll("[data-koinonia-slide]"));
+    const koinoniaControls = Array.from(document.querySelectorAll("[data-koinonia-index]"));
+    const koinoniaSlideTitle = document.querySelector("#koinoniaSlideTitle");
+    const koinoniaSlideCopy = document.querySelector("#koinoniaSlideCopy");
+    let koinoniaIndex = 0;
+    let koinoniaTimer = null;
+
+    function showKoinoniaSlide(nextIndex, fromAuto = false) {
+      if (!koinoniaScreen || !koinoniaSlides.length || !koinoniaControls.length) return;
+      const normalizedIndex = ((Number(nextIndex) % koinoniaSlides.length) + koinoniaSlides.length) % koinoniaSlides.length;
+      const target = koinoniaSlides[normalizedIndex];
+      const control = koinoniaControls[normalizedIndex];
+      const reveal = () => koinoniaSlides.forEach((slide, index) => slide.classList.toggle("is-active", index === normalizedIndex));
+
+      if (!target.getAttribute("src") && target.dataset.src) {
+        target.addEventListener("load", reveal, { once: true });
+        target.src = target.dataset.src;
+      } else {
+        reveal();
+      }
+
+      koinoniaControls.forEach((button, index) => {
+        const isActive = index === normalizedIndex;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-selected", String(isActive));
+      });
+      koinoniaSlideTitle.textContent = control.dataset.title;
+      koinoniaSlideCopy.textContent = control.dataset.copy;
+      koinoniaIndex = normalizedIndex;
+      if (!fromAuto) startKoinoniaAutoplay();
+    }
+
+    function startKoinoniaAutoplay() {
+      if (koinoniaTimer) window.clearInterval(koinoniaTimer);
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      koinoniaTimer = window.setInterval(() => showKoinoniaSlide(koinoniaIndex + 1, true), 4800);
+    }
+
+    koinoniaControls.forEach((button) => {
+      button.addEventListener("click", () => showKoinoniaSlide(button.dataset.koinoniaIndex));
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden && koinoniaTimer) window.clearInterval(koinoniaTimer);
+      else startKoinoniaAutoplay();
+    });
+    startKoinoniaAutoplay();
   </script>
   <script type="module">
     const canvas = document.querySelector("#sacredCanvas");

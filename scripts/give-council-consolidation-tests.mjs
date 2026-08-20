@@ -12,7 +12,7 @@ const worker = read("src/worker.js");
 
 assert.equal(existsSync(path.join(root, "public/give/why.html")), false, "the retired Why page must stay removed");
 
-for (const id of ["why", "features", "how-it-works", "pricing", "faq"]) {
+for (const id of ["why", "koinonia", "features", "how-it-works", "pricing", "faq"]) {
   assert.match(overview, new RegExp(`id=["']${id}["']`), `the council overview must expose #${id}`);
   assert.match(overview, new RegExp(`href=["']#${id}["']`), `the sticky council guide must link to #${id}`);
 }
@@ -21,6 +21,17 @@ assert.match(overview, /href="\/give\/pricing">See full pricing →<\/a>/, "the 
 assert.match(overviewStyles, /\.council-jump-nav\s*\{[\s\S]*?position:\s*sticky/, "the council guide must remain sticky");
 assert.match(overview, /Julian and Revised-Julian calendar support/, "the unique liturgical-calendar distinction must remain consolidated");
 assert.match(overview, /Built for the nave, not adapted from the megachurch\./, "the unique Orthodox-first positioning must remain consolidated");
+assert.match(overview, /Giving belongs inside the life of the parish\./, "the Give overview should highlight Koinonia as part of the connected parish platform");
+for (const [index, label] of [[1, "Today & Calendar"], [2, "Community & Ministries"], [3, "Parish Media & News"]]) {
+  const assetPath = path.join(root, `public/images/app/screenshots/koinonia-give-${index}.jpg`);
+  assert.equal(existsSync(assetPath), true, `Koinonia screenshot ${index} must be present`);
+  assert.ok(statSync(assetPath).size < 200_000, `Koinonia screenshot ${index} should be optimized for page speed`);
+  assert.match(overview, new RegExp(`koinonia-give-${index}\\.jpg`), `the Koinonia showcase must use screenshot ${index}`);
+  assert.ok(overview.includes(`data-title="${label.replaceAll("&", "&amp;")}"`), `the Koinonia showcase should label ${label}`);
+}
+assert.match(overview, /setInterval\(\(\) => showKoinoniaSlide\(koinoniaIndex \+ 1, true\), 4800\)/, "Koinonia screenshots should advance automatically");
+assert.match(overview, /prefers-reduced-motion: reduce/, "Koinonia autoplay should respect reduced-motion preferences");
+assert.match(overviewStyles, /\.koinonia-phone-frame\s*\{[\s\S]*?aspect-ratio:\s*720 \/ 1560/, "Koinonia screenshots should keep their phone aspect ratio");
 
 const staticServerRoute = server.match(/else if \(\[(.*?)\]\.includes\(pathname\)\) \{\s*pathname = `\$\{pathname\}\.html`;/s)?.[1] || "";
 assert.doesNotMatch(staticServerRoute, /\/give\/why/, "resolveStaticPath must not map /give/why to a deleted file");
