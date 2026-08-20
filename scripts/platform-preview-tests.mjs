@@ -52,6 +52,7 @@ assert.match(html, /rel="canonical" href="https:\/\/agapay\.app\/"/, "platform h
 assert.match(html, /og:image" content="https:\/\/agapay\.app\/images\/AGAPAY_social_share_v2\.png"[\s\S]*?og:image:width" content="1200"[\s\S]*?og:image:height" content="630"/, "homepage should use the supplied landscape social sharing image with accurate dimensions");
 assert.match(html, /href="\/give\/request-demo"/, "homepage should route parish demo requests to the existing form");
 assert.match(html, /href="\/register"/, "homepage should preserve the free-start route");
+assert.match(html, /<a class="op-btn op-btn-outline" href="\/give">Learn more<\/a>/, "final homepage CTA should link visitors to the AGAPAY Give overview");
 assert.match(css, /@media \(max-width: 980px\)/, "preview should include a tablet layout");
 assert.match(css, /@media \(max-width: 620px\)/, "preview should include a narrow-phone layout");
 assert.match(css, /\.op-hero::after[\s\S]*?background: url\("\/mark\.png"\)[\s\S]*?opacity: \.07/, "hero should carry a restrained oversized AGAPAY mark");
