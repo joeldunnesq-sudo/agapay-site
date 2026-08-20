@@ -41,22 +41,22 @@
   ],
   "screenshots": [
     {
-      "src": "/images/app/screenshots/giving-dashboard.jpg",
-      "sizes": "1440x3120",
+      "src": "/images/app/screenshots/giving-dashboard.jpg?v=6a4506c0ba14",
+      "sizes": "720x1560",
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "My AGAPAY giving dashboard"
     },
     {
-      "src": "/images/app/screenshots/koinonia-2.jpg",
-      "sizes": "1440x3120",
+      "src": "/images/app/screenshots/koinonia-2.jpg?v=717831e4c5b7",
+      "sizes": "720x1560",
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "Koinonia ministries and Orthodox audio"
     },
     {
-      "src": "/images/app/screenshots/parish-bookstore.jpg",
-      "sizes": "1440x3120",
+      "src": "/images/app/screenshots/parish-bookstore.jpg?v=7a0005fdc4b5",
+      "sizes": "720x1560",
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "Parish bookstore checkout"

@@ -20,18 +20,20 @@
   <meta property="og:title" content="AGAPAY | Orthodox Church Management Software for Parish Life" />
   <meta property="og:description" content="The Orthodox CMS for parish life: giving, people, ministries, sacraments, events, commerce, communications, and accounting in one connected system." />
   <meta property="og:url" content="https://agapay.app/" />
-  <meta property="og:image" content="https://agapay.app/images/AGAPAY_social_share.png" />
-  <meta property="og:image:width" content="1122" />
-  <meta property="og:image:height" content="1402" />
+  <meta property="og:image" content="https://agapay.app/images/AGAPAY_social_share_v2.png" />
+  <meta property="og:image:alt" content="AGAPAY Orthodox parish platform shown across Give, Koinonia, and Bookstore app screens" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="AGAPAY | Orthodox Church Management Software" />
   <meta name="twitter:description" content="The Orthodox CMS for parish life—giving, ministries, sacraments, commerce, communications, and accounting in one system." />
-  <meta name="twitter:image" content="https://agapay.app/images/AGAPAY_social_share.png" />
+  <meta name="twitter:image" content="https://agapay.app/images/AGAPAY_social_share_v2.png" />
+  <meta name="twitter:image:alt" content="AGAPAY Orthodox parish platform shown across Give, Koinonia, and Bookstore app screens" />
   <meta name="theme-color" content="#061522" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preload" as="image" href="/images/app/screenshots/giving-dashboard.jpg" fetchpriority="high" />
+  <link rel="preload" as="image" type="image/jpeg" href="/images/app/screenshots/giving-dashboard.jpg?v=6a4506c0ba14" fetchpriority="high" />
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" /></noscript>
 
@@ -118,11 +120,11 @@
           <div class="op-phone-frame">
             <div class="op-phone-notch" aria-hidden="true"></div>
             <div class="op-phone-screen" id="opPhoneScreen">
-              <img class="is-active" data-room="give" src="/images/app/screenshots/giving-dashboard.jpg" alt="AGAPAY Give dashboard showing an annual pledge, total giving, and quick-give options" fetchpriority="high" />
-              <img data-room="bookstore" src="/images/app/screenshots/parish-bookstore.jpg?v=df993248c4c8" alt="Parish bookstore showing category filters and popular items" />
-              <img data-room="koinonia" src="/images/app/screenshots/koinonia.jpg" alt="Koinonia showing the Transfiguration of Our Lord feast, fasting status, a festal offering prompt, and this week in the Church" />
-              <img data-room="directory" src="/images/app/screenshots/directory.jpg" alt="Parish directory showing member households and namedays" />
-              <img data-room="sacraments" src="/images/app/screenshots/sacraments-and-services.jpg?v=4ec640ba3917" alt="Sacraments and services screen for requesting confession, baptism, and wedding services" />
+              <img class="is-active" data-room="give" src="/images/app/screenshots/giving-dashboard.jpg?v=6a4506c0ba14" alt="AGAPAY Give dashboard showing an annual pledge, total giving, and quick-give options" width="720" height="1560" decoding="async" fetchpriority="high" />
+              <img data-room="bookstore" data-src="/images/app/screenshots/parish-bookstore.jpg?v=7a0005fdc4b5" alt="Parish bookstore showing category filters and popular items" width="720" height="1560" decoding="async" />
+              <img data-room="koinonia" data-src="/images/app/screenshots/koinonia.jpg?v=7097a46f6deb" alt="Koinonia showing the Transfiguration of Our Lord feast, fasting status, a festal offering prompt, and this week in the Church" width="720" height="1560" decoding="async" />
+              <img data-room="directory" data-src="/images/app/screenshots/directory.jpg?v=832ffbdc303c" alt="Parish directory showing member households and namedays" width="720" height="1560" decoding="async" />
+              <img data-room="sacraments" data-src="/images/app/screenshots/sacraments-and-services.jpg?v=d341e8558523" alt="Sacraments and services screen for requesting confession, baptism, and wedding services" width="720" height="1560" decoding="async" />
             </div>
           </div>
           <div class="op-phone-caption" aria-live="polite">
@@ -275,7 +277,7 @@
           </div>
         </div>
         <div class="op-connector-shot">
-          <img src="/images/app/screenshots/koinonia.jpg" alt="Koinonia showing the Transfiguration of Our Lord, Dormition Fast guidance, tone of the week, and a festal offering prompt" loading="lazy" />
+          <img src="/images/app/screenshots/koinonia.jpg?v=7097a46f6deb" alt="Koinonia showing the Transfiguration of Our Lord, Dormition Fast guidance, tone of the week, and a festal offering prompt" width="720" height="1560" loading="lazy" decoding="async" />
         </div>
       </div>
     </section>
@@ -359,7 +361,14 @@
       function activate(room, fromAuto) {
         const tab = tabs.find((t) => t.dataset.room === room);
         if (!tab) return;
-        screen.querySelectorAll('img').forEach((img) => img.classList.toggle('is-active', img.dataset.room === room));
+        const target = screen.querySelector(`img[data-room="${room}"]`);
+        const showTarget = () => screen.querySelectorAll('img').forEach((img) => img.classList.toggle('is-active', img === target));
+        if (target && !target.getAttribute('src') && target.dataset.src) {
+          target.addEventListener('load', showTarget, { once: true });
+          target.src = target.dataset.src;
+        } else {
+          showTarget();
+        }
         tabs.forEach((t) => {
           const isActive = t === tab;
           t.classList.toggle('is-active', isActive);

@@ -211,7 +211,7 @@ p { margin: 0; line-height: 1.7; }
 .op-system-core span { color: rgba(246,241,232,.58); font-size: .55rem; letter-spacing: .06em; text-transform: uppercase; }
 
 .op-connector { background: linear-gradient(180deg, var(--cream), #EFE7D6); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.op-connector-inner { display: grid; grid-template-columns: 0.95fr 1.05fr; gap: clamp(2rem, 5vw, 4rem); align-items: center; padding: clamp(3.5rem, 7vw, 5.5rem) 0; }
+.op-connector-inner { display: grid; grid-template-columns: 0.95fr 1.05fr; gap: clamp(2rem, 5vw, 4rem); align-items: center; padding-block: clamp(3.5rem, 7vw, 5.5rem); }
 .op-connector-shot { position: relative; }
 .op-connector-shot img {
   width: 100%; max-width: 300px; margin: 0 auto; border-radius: 20px;
@@ -251,7 +251,7 @@ p { margin: 0; line-height: 1.7; }
 
 /* ── Trust band ───────────────────────────────────────────────── */
 .op-trust { background: linear-gradient(90deg, var(--navy), var(--navy-2)); color: var(--paper); }
-.op-trust-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; padding: clamp(2.8rem, 5vw, 3.6rem) 0; }
+.op-trust-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; padding-block: clamp(2.8rem, 5vw, 3.6rem); }
 .op-trust-item { text-align: left; }
 .op-trust-item svg { width: 26px; height: 26px; stroke: var(--gold); fill: none; stroke-width: 1.6; margin-bottom: 0.8rem; }
 .op-trust-item strong { display: block; font-family: var(--serif); font-size: 1.1rem; margin-bottom: 0.3rem; }

@@ -18,8 +18,8 @@ assert.ok(
     && html.indexOf('class="op-jurisdictions"') < html.indexOf('class="op-statement op-verse-band"'),
   "canonical-jurisdiction trust bar should sit directly between the hero and scripture"
 );
-assert.match(html, /parish-bookstore\.jpg\?v=df993248c4c8/, "homepage should cache-bust the latest Bookstore screenshot");
-assert.match(html, /sacraments-and-services\.jpg\?v=4ec640ba3917/, "homepage should cache-bust the latest Sacraments & Services screenshot");
+assert.match(html, /data-src="\/images\/app\/screenshots\/parish-bookstore\.jpg\?v=7a0005fdc4b5"/, "homepage should defer the optimized Bookstore screenshot until its tab is shown");
+assert.match(html, /data-src="\/images\/app\/screenshots\/sacraments-and-services\.jpg\?v=d341e8558523"/, "homepage should defer the optimized Sacraments & Services screenshot until its tab is shown");
 assert.ok(
   html.indexOf('id="pillars"') < html.indexOf('class="op-statement op-positioning"')
     && html.indexOf('class="op-statement op-positioning"') < html.indexOf('id="connected-system"'),
@@ -37,8 +37,9 @@ for (const capability of ["Koinonia", "Directory", "Sacraments", "Events", "Meal
 }
 for (const room of ["give", "koinonia", "directory", "sacraments", "bookstore"]) {
   assert.match(html, new RegExp(`role="tab"[^>]+data-room="${room}"`), `homepage should expose an accessible ${room} room tab`);
-  assert.match(html, new RegExp(`data-room="${room}"[^>]+src="/images/app/screenshots/`), `homepage should show a real ${room} app screen`);
+  assert.match(html, new RegExp(`data-room="${room}"[^>]+(?:src|data-src)="/images/app/screenshots/[^\"]+\\.jpg\\?v=`), `homepage should show an optimized real ${room} app screen`);
 }
+assert.match(html, /target\.addEventListener\('load', showTarget, \{ once: true \}\)/, "inactive app screenshots should replace the visible screen only after loading");
 const expectedRoomOrder = ["give", "bookstore", "koinonia", "directory", "sacraments"];
 const roomTabPositions = expectedRoomOrder.map((room) => html.indexOf(`role="tab" aria-selected="${room === "give" ? "true" : "false"}" aria-controls="opPhoneScreen" data-room="${room}"`));
 assert.ok(roomTabPositions.every((position, index) => position >= 0 && (index === 0 || position > roomTabPositions[index - 1])), "room tabs should mirror the app bottom navigation order");
@@ -48,12 +49,15 @@ assert.match(html, /href="\/site-chrome\.css"/, "homepage should use the canonic
 assert.match(html, /src="\/site-chrome\.js"/, "homepage should use the canonical shared navigation and footer behavior");
 assert.doesNotMatch(html, /data-no-site-chrome/, "homepage should allow the canonical site chrome to render");
 assert.match(html, /rel="canonical" href="https:\/\/agapay\.app\/"/, "platform homepage should publish the root canonical URL");
+assert.match(html, /og:image" content="https:\/\/agapay\.app\/images\/AGAPAY_social_share_v2\.png"[\s\S]*?og:image:width" content="1200"[\s\S]*?og:image:height" content="630"/, "homepage should use the supplied landscape social sharing image with accurate dimensions");
 assert.match(html, /href="\/give\/request-demo"/, "homepage should route parish demo requests to the existing form");
 assert.match(html, /href="\/register"/, "homepage should preserve the free-start route");
 assert.match(css, /@media \(max-width: 980px\)/, "preview should include a tablet layout");
 assert.match(css, /@media \(max-width: 620px\)/, "preview should include a narrow-phone layout");
 assert.match(css, /\.op-hero::after[\s\S]*?background: url\("\/mark\.png"\)[\s\S]*?opacity: \.07/, "hero should carry a restrained oversized AGAPAY mark");
 assert.match(css, /\.op-oversight-step-mark svg[\s\S]*?left: 50%; top: 50%[\s\S]*?translate\(-50%, -50%\)/, "workflow checkmarks should be centered inside their circles");
+assert.match(css, /\.op-connector-inner[^\n]+padding-block:/, "The Thread section should preserve the shared mobile gutters");
+assert.match(css, /\.op-trust-grid[^\n]+padding-block:/, "trust items should preserve the shared mobile gutters");
 assert.match(css, /@media \(prefers-reduced-motion: reduce\)/, "preview should respect reduced-motion preferences");
 
 console.log("PASS - product-first homepage presents the real app, shared liturgical context, ministry oversight, commerce, and accounting as one parish platform");
