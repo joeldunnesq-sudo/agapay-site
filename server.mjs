@@ -318,8 +318,8 @@ export const server = http.createServer(async (req, res) => {
 
     const requestUrl = new URL(req.url, `http://${req.headers.host}`);
     if (req.method === "GET" || req.method === "HEAD") {
-      if (["/give", "/give/", "/give.html", "/give/index.html"].includes(requestUrl.pathname.toLowerCase())) {
-        requestUrl.pathname = "/";
+      if (["/give.html", "/give/index.html"].includes(requestUrl.pathname.toLowerCase())) {
+        requestUrl.pathname = "/give";
         res.writeHead(301, { Location: requestUrl.toString() });
         res.end();
         return;
@@ -349,7 +349,7 @@ export const server = http.createServer(async (req, res) => {
         return;
       }
       if (["/give/why", "/give/why.html", "/give/why/"].includes(requestUrl.pathname.toLowerCase())) {
-        requestUrl.pathname = "/";
+        requestUrl.pathname = "/give";
         requestUrl.hash = "why";
         res.writeHead(301, { Location: requestUrl.toString() });
         res.end();
@@ -384,9 +384,9 @@ export const server = http.createServer(async (req, res) => {
       ["/pricing", "/give/pricing"],
       ["/pricing.html", "/give/pricing"],
       ["/pricing/", "/give/pricing"],
-      ["/why", "/#why"],
-      ["/why.html", "/#why"],
-      ["/why/", "/#why"]
+      ["/why", "/give#why"],
+      ["/why.html", "/give#why"],
+      ["/why/", "/give#why"]
     ]);
     if (req.method === "GET" || req.method === "HEAD") {
       const canonicalGivingPath = legacyGivingRedirects.get(requestUrl.pathname.toLowerCase());

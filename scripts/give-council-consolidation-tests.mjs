@@ -25,7 +25,7 @@ assert.match(overview, /Built for the nave, not adapted from the megachurch\./, 
 const staticServerRoute = server.match(/else if \(\[(.*?)\]\.includes\(pathname\)\) \{\s*pathname = `\$\{pathname\}\.html`;/s)?.[1] || "";
 assert.doesNotMatch(staticServerRoute, /\/give\/why/, "resolveStaticPath must not map /give/why to a deleted file");
 assert.match(server, /\["\/give\/why", "\/give\/why\.html", "\/give\/why\/"\][\s\S]*?requestUrl\.hash = "why";[\s\S]*?writeHead\(301/, "the local server must explicitly redirect every retired /give/why variant");
-assert.match(server, /\["\/why", "\/#why"\][\s\S]*?\["\/why\.html", "\/#why"\][\s\S]*?\["\/why\/", "\/#why"\]/, "legacy bare Why routes must target the homepage overview anchor");
+assert.match(server, /\["\/why", "\/give#why"\][\s\S]*?\["\/why\.html", "\/give#why"\][\s\S]*?\["\/why\/", "\/give#why"\]/, "legacy bare Why routes must target the Give overview anchor");
 assert.match(server, /canonicalGivingPath\.split\("#"\)[\s\S]*?requestUrl\.hash = canonicalHash/, "legacy redirects must preserve anchors as URL fragments");
 
 const staticWorkerRoute = worker.match(/const staticGivePages = new Set\(\[(.*?)\]\)/s)?.[1] || "";
@@ -55,12 +55,16 @@ try {
   for (const retiredPath of ["/give/why", "/give/why.html", "/give/why/", "/why", "/why.html", "/why/"]) {
     const response = await fetch(`${origin}${retiredPath}`, { redirect: "manual" });
     assert.equal(response.status, 301, `${retiredPath} must return a permanent redirect`);
-    assert.equal(response.headers.get("location"), `${origin}/#why`, `${retiredPath} must preserve the homepage #why destination`);
+    assert.equal(response.headers.get("location"), `${origin}/give#why`, `${retiredPath} must preserve the Give overview #why destination`);
   }
-  for (const giveAlias of ["/give", "/give/", "/give.html", "/give/index.html"]) {
+  for (const giveOverviewPath of ["/give", "/give/"]) {
+    const response = await fetch(`${origin}${giveOverviewPath}?source=direct`, { redirect: "manual" });
+    assert.equal(response.status, 200, `${giveOverviewPath} must serve the dedicated Give overview`);
+  }
+  for (const giveAlias of ["/give.html", "/give/index.html"]) {
     const response = await fetch(`${origin}${giveAlias}?source=legacy`, { redirect: "manual" });
     assert.equal(response.status, 301, `${giveAlias} must return a permanent redirect`);
-    assert.equal(response.headers.get("location"), `${origin}/?source=legacy`, `${giveAlias} must preserve the query while redirecting to the homepage`);
+    assert.equal(response.headers.get("location"), `${origin}/give?source=legacy`, `${giveAlias} must preserve the query while redirecting to the canonical Give overview`);
   }
   for (const preservedPath of ["/give/features", "/give/pricing", "/give/how-it-works"]) {
     const response = await fetch(`${origin}${preservedPath}`, { redirect: "manual" });

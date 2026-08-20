@@ -4,7 +4,7 @@
   if (/^\/(?:admin|parish|donor|myagapay)(?:\/|$)/.test(path)) return;
 
   const PRIMARY_LINKS = [
-    { href: "/", label: "AGAPAY Give", key: "give" },
+    { href: "/give", label: "AGAPAY Give", key: "give" },
     { href: "/learn", label: "AGAPAY Learn", key: "learn" },
     { href: "/design", label: "AGAPAY Design", key: "design" },
     { href: "/about", label: "About", key: "about" },
@@ -18,7 +18,7 @@
   ];
 
   function activeKeyFromPath() {
-    if (path === "/" || path === "/index.html") return "give";
+    if (path === "/" || path === "/index.html") return "";
     if (path === "/why") return "why";
     if (path === "/give/request-demo" || path.endsWith("/give/request-demo.html")) return "demo";
     if (path === "/give/features" || path.endsWith("/give/features.html")) return "give";
@@ -134,7 +134,8 @@
             </div>
             <nav class="footer-col" aria-label="Platform">
               <h4>Platform</h4>
-              <a href="/">AGAPAY Give</a>
+              <a href="/">AGAPAY Platform</a>
+              <a href="/give">AGAPAY Give</a>
               <a href="/learn">AGAPAY Learn</a>
               <a href="/design">AGAPAY Design</a>
               ${isHomepage ? "" : '<a href="/marketplace">Marketplace</a><a href="/directory">Directory</a>'}
@@ -142,11 +143,11 @@
             </nav>
             <nav class="footer-col" aria-label="AGAPAY Give">
               <h4>Give</h4>
-              <a href="/">Overview</a>
+              <a href="/give">Overview</a>
               <a href="/give/features">Features</a>
               <a href="/give/how-it-works">How It Works</a>
               <a href="/give/pricing">Pricing</a>
-              <a href="/#why">Why AGAPAY Give</a>
+              <a href="/give#why">Why AGAPAY Give</a>
             </nav>
             <nav class="footer-col" aria-label="AGAPAY Learn">
               <h4>Learn</h4>

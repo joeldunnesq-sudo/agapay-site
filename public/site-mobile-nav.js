@@ -3,7 +3,7 @@
   if (/^\/(?:admin|parish|donor)(?:\/|$)/.test(path)) return;
 
   const links = [
-    { href: "/", label: "AGAPAY Give" },
+    { href: "/give", label: "AGAPAY Give" },
     { href: "/marketplace", label: "Marketplace" },
     { href: "/directory", label: "Directory" },
     { href: "/give/how-it-works", label: "Resources" },

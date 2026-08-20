@@ -902,9 +902,9 @@ const LEGACY_GIVING_PAGE_REDIRECTS = new Map([
   ["/pricing", "/give/pricing"],
   ["/pricing.html", "/give/pricing"],
   ["/pricing/", "/give/pricing"],
-  ["/why", "/#why"],
-  ["/why.html", "/#why"],
-  ["/why/", "/#why"]
+  ["/why", "/give#why"],
+  ["/why.html", "/give#why"],
+  ["/why/", "/give#why"]
 ]);
 
 function canonicalCampaignPathFromLegacy(url) {
@@ -2933,8 +2933,8 @@ export default {
     }
 
     if (request.method === "GET" || request.method === "HEAD") {
-      if (["/give", "/give/", "/give.html", "/give/index.html"].includes(url.pathname.toLowerCase())) {
-        url.pathname = "/";
+      if (["/give.html", "/give/index.html"].includes(url.pathname.toLowerCase())) {
+        url.pathname = "/give";
         return Response.redirect(url.toString(), 301);
       }
       if (["/give/share", "/give/share/", "/give/share.html"].includes(url.pathname.toLowerCase())) {
@@ -2954,7 +2954,7 @@ export default {
         return Response.redirect(url.toString(), 301);
       }
       if (["/give/why", "/give/why.html", "/give/why/"].includes(url.pathname.toLowerCase())) {
-        url.pathname = "/";
+        url.pathname = "/give";
         url.hash = "why";
         return Response.redirect(url.toString(), 301);
       }
