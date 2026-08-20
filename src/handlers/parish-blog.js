@@ -95,6 +95,23 @@ function entryImageUrl(block, feedUrl) {
   return "";
 }
 
+function articleMainImageUrl(html, articleUrl) {
+  for (const match of String(html || "").matchAll(/<meta\b([^>]*)>/gi)) {
+    const attributes = match[1] || "";
+    const key = (xmlAttributeValue(attributes, "property") || xmlAttributeValue(attributes, "name")).toLowerCase();
+    if (!["og:image", "og:image:url", "og:image:secure_url", "twitter:image", "twitter:image:src"].includes(key)) continue;
+    const imageUrl = normalizedArticleImageUrl(xmlAttributeValue(attributes, "content"), articleUrl);
+    if (imageUrl) return imageUrl;
+  }
+  for (const match of String(html || "").matchAll(/<link\b([^>]*)>/gi)) {
+    const attributes = match[1] || "";
+    if (xmlAttributeValue(attributes, "rel").toLowerCase() !== "image_src") continue;
+    const imageUrl = normalizedArticleImageUrl(xmlAttributeValue(attributes, "href"), articleUrl);
+    if (imageUrl) return imageUrl;
+  }
+  return "";
+}
+
 export function parseParishBlogFeed(xml, feedUrl) {
   const source = String(xml || "");
   const blocks = [...source.matchAll(/<(item|entry)\b[^>]*>([\s\S]*?)<\/\1>/gi)].map((match) => match[2]);
@@ -145,19 +162,33 @@ async function fetchPublicBlogUrl(url, fetcher = fetch, redirects = 0) {
   return { body, contentType: response.headers.get("content-type") || "", url: safeUrl };
 }
 
-export async function resolveParishBlogFeed(sourceUrl, fetcher = fetch) {
+async function enrichParishBlogPostImages(posts, fetcher) {
+  return Promise.all(posts.map(async (post) => {
+    try {
+      const article = await fetchPublicBlogUrl(post.url, fetcher);
+      const imageUrl = articleMainImageUrl(article.body, article.url);
+      return imageUrl ? { ...post, imageUrl } : post;
+    } catch {
+      return post;
+    }
+  }));
+}
+
+export async function resolveParishBlogFeed(sourceUrl, fetcher = fetch, options = {}) {
   const source = validateParishBlogUrl(sourceUrl);
   const first = await fetchPublicBlogUrl(source, fetcher);
   if (/<(?:rss|feed|rdf:RDF)\b/i.test(first.body)) {
-    const posts = parseParishBlogFeed(first.body, first.url);
+    let posts = parseParishBlogFeed(first.body, first.url);
     if (!posts.length) throw new Error("No readable posts were found in this RSS or Atom feed.");
+    if (options.enrichImages) posts = await enrichParishBlogPostImages(posts, fetcher);
     return { sourceUrl: source, feedUrl: first.url, posts };
   }
   const feedUrl = discoveredFeedUrl(first.body, first.url);
   if (!feedUrl) throw new Error("No RSS or Atom feed was advertised by this blog.");
   const feed = await fetchPublicBlogUrl(feedUrl, fetcher);
-  const posts = parseParishBlogFeed(feed.body, feed.url);
+  let posts = parseParishBlogFeed(feed.body, feed.url);
   if (!posts.length) throw new Error("No readable posts were found in this RSS or Atom feed.");
+  if (options.enrichImages) posts = await enrichParishBlogPostImages(posts, fetcher);
   return { sourceUrl: source, feedUrl: feed.url, posts };
 }
 
@@ -290,7 +321,7 @@ export async function handleDonorExternalFeed(request, env, feedKey) {
   };
   if (!subscribed) return json({ ...basePayload, posts: [] });
   try {
-    const resolved = await resolveParishBlogFeed(source.feedUrl);
+    const resolved = await resolveParishBlogFeed(source.feedUrl, fetch, { enrichImages: true });
     return json({ ...basePayload, posts: resolved.posts });
   } catch (error) {
     console.warn("external_feed_unavailable", JSON.stringify({ feedKey, message: error.message || String(error) }));
@@ -352,7 +383,7 @@ export async function handleDonorCustomNewsFeeds(request, env, feedId = "") {
       posts: [],
     };
     try {
-      const resolved = await resolveParishBlogFeed(row.feed_url);
+      const resolved = await resolveParishBlogFeed(row.feed_url, fetch, { enrichImages: true });
       return { ...base, posts: resolved.posts };
     } catch (error) {
       console.warn("custom_news_feed_unavailable", JSON.stringify({ feedId: row.id, message: error.message || String(error) }));

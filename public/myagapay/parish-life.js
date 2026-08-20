@@ -532,6 +532,7 @@ function renderRecentNews(sources = []) {
       <div class="parish-life-blog-list">${articles.map((post) => `
         <a class="parish-life-blog-card${post.imageUrl ? " has-image" : ""}" href="${parishLifeEscape(post.url)}" target="_blank" rel="noopener noreferrer">
           ${post.imageUrl ? `<span class="parish-life-blog-image"><img src="${parishLifeEscape(post.imageUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></span>` : ""}
+          <span class="parish-life-blog-source">${parishLifeEscape(post.source)}</span>
           <strong>${parishLifeEscape(post.title)}</strong><span class="parish-life-blog-arrow" aria-hidden="true">↗</span>
         </a>`).join("")}</div>
     </section>`;

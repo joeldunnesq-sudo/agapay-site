@@ -49,6 +49,24 @@ assert.equal(resolved.feedUrl, "https://father.example.org/feed.xml");
 assert.equal(resolved.posts[0].title, "A Pastoral Reflection");
 assert.deepEqual(fetched, ["https://father.example.org/blog", "https://father.example.org/feed.xml"]);
 
+const rssWithoutImage = `<?xml version="1.0"?><rss><channel><item>
+  <title>Article with page metadata</title>
+  <link>https://news.example.org/article</link>
+</item></channel></rss>`;
+const enrichedFetched = [];
+const enrichedFetcher = async (url) => {
+  enrichedFetched.push(url);
+  if (url === "https://news.example.org/article") {
+    return new Response('<html><head><meta property="og:image" content="http://images.example.org/article-main.jpg"></head></html>', {
+      headers: { "content-type": "text/html" },
+    });
+  }
+  return new Response(rssWithoutImage, { headers: { "content-type": "application/rss+xml" } });
+};
+const enriched = await resolveParishBlogFeed("https://news.example.org/feed.xml", enrichedFetcher, { enrichImages: true });
+assert.equal(enriched.posts[0].imageUrl, "https://images.example.org/article-main.jpg", "article metadata should supply the main photo when the feed omits it");
+assert.deepEqual(enrichedFetched, ["https://news.example.org/feed.xml", "https://news.example.org/article"]);
+
 assert.equal(isOcaJurisdiction("OCA"), true);
 assert.equal(isOcaJurisdiction("Orthodox Church in America · Diocese of the South"), true);
 assert.equal(isOcaJurisdiction("Antiochian Orthodox Christian Archdiocese"), false);
@@ -90,7 +108,8 @@ assert.match(parishApp, /function setKoinoniaStudioView[\s\S]*function renderKoi
 assert.match(parishApp, /renderKoinoniaOverview\(\);[\s\S]*setKoinoniaStudioView\(koinoniaStudioView\)/, "loaded content should refresh the studio overview");
 assert.match(landing, /Recent News/);
 assert.match(landing, /post\.imageUrl[\s\S]*class="parish-life-blog-image"[\s\S]*loading="lazy"[\s\S]*referrerpolicy="no-referrer"/, "Koinonia Recent News should render lazy, privacy-conscious article images when feeds provide them");
-assert.match(landing, /\.slice\(0, 3\)/, "Koinonia home should show only the three newest combined articles");
+assert.match(landing, /class="parish-life-blog-source">\$\{parishLifeEscape\(post\.source\)\}/, "Koinonia Recent News should identify the source of every article");
+assert.match(landing, /\.slice\(0, 4\)/, "Koinonia home should show only the four newest combined articles");
 assert.match(landing, /Choose your news sources[\s\S]*Nothing appears until you follow/);
 assert.ok(landing.indexOf("Your Ministries") < landing.indexOf('id="listenHeading"'), "ministries should appear above the unified listening section and video on Koinonia home");
 assert.match(newsPage, /News Feeds[\s\S]*Choose your sources[\s\S]*Follow another RSS feed/);
@@ -103,8 +122,9 @@ assert.match(blogHandler, /SPZH_FEED_URL = "https:\/\/spzh\.eu\/en\/rss"/);
 assert.match(blogHandler, /ORTHODOX_TIMES_FEED_URL = "https:\/\/orthodoxtimes\.com\/feed\/"/);
 assert.match(blogHandler, /ORTHODOX_ETHOS_FEED_URL = "https:\/\/www\.orthodoxethos\.com\/blog-feed\.xml"/);
 assert.match(blogHandler, /media:\(content\|thumbnail\)[\s\S]*enclosure\|link[\s\S]*<img/, "news parsing should support Media RSS, image enclosures, Atom enclosures, and embedded article images");
+assert.match(blogHandler, /og:image[\s\S]*twitter:image[\s\S]*enrichParishBlogPostImages/, "news parsing should fall back to an article's social metadata for its main photo");
 assert.match(blogHandler, /if \(!subscribed\) return json\(\{ \.\.\.basePayload, posts: \[\] \}\)/, "built-in feeds must return no articles until the donor follows them");
 assert.match(blogHandler, /validateParishBlogUrl\(input\.url\)[\s\S]*resolveParishBlogFeed\(sourceUrl\)/, "custom feeds must use the existing public-HTTPS validation and feed discovery");
 assert.match(worker, /"\/myagapay\/news", "\/myagapay\/news\.html"/);
 
-console.log("PASS - donor-curated news sources, custom RSS, feed sanitization, and three-article Koinonia preview");
+console.log("PASS - donor-curated news sources, custom RSS, main-photo enrichment, and four-article Koinonia preview");

@@ -9006,6 +9006,7 @@ textarea {
 .parish-life-blog-image { grid-column: 1 / -1; display: block; overflow: hidden; aspect-ratio: 16 / 9; margin: 0 -10px 2px; background: linear-gradient(135deg, var(--k-surface-2), var(--k-gold-soft)); }
 .parish-life-blog-image img { width: 100%; height: 100%; display: block; object-fit: cover; transition: transform .2s ease; }
 .parish-life-blog-card:hover .parish-life-blog-image img { transform: scale(1.025); }
+.parish-life-blog-source { grid-column: 1 / -1; color: var(--k-gold-hover); font-size: 9px; font-weight: 800; letter-spacing: .09em; line-height: 1.2; text-transform: uppercase; }
 .parish-life-blog-arrow { color: var(--k-gold); font-size: 12px; }
 .parish-life-news-invitation { display:flex; align-items:center; gap:13px; border:1px solid var(--k-border); border-radius:15px; padding:15px; background:linear-gradient(135deg,var(--k-surface),var(--k-surface-2)); color:var(--k-text); text-decoration:none; }
 .parish-life-news-invitation:hover { border-color:var(--k-gold); transform:translateY(-1px); box-shadow:0 8px 20px rgba(13,23,34,.08); }
