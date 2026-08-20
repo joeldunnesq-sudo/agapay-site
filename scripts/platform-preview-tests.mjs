@@ -26,7 +26,7 @@ assert.ok(
   "Orthodox-first positioning should sit between The Platform and the connected-system section"
 );
 assert.match(html, /One parish\. One connected system\./, "homepage should explain that every parish capability shares one system");
-assert.match(html, /One Church deserves[\s\S]*one unified place for parish life\./, "connected-system copy should make the platform benefit clear");
+assert.match(html, /The Church deserves[\s\S]*one unified place for parish life\./, "connected-system copy should make the platform benefit clear");
 assert.match(html, /Your parish,[\s\S]*connected\./, "connected-system section should express its shared foundation in parish-centered language");
 assert.match(html, /Give · Serve · Love/, "connected-system center should express AGAPAY's parish-life actions");
 for (const icon of ["heart-give", "handshake", "orthodox-cross", "grid"]) {
@@ -52,7 +52,8 @@ assert.match(html, /rel="canonical" href="https:\/\/agapay\.app\/"/, "platform h
 assert.match(html, /og:image" content="https:\/\/agapay\.app\/images\/AGAPAY_social_share_v2\.png"[\s\S]*?og:image:width" content="1200"[\s\S]*?og:image:height" content="630"/, "homepage should use the supplied landscape social sharing image with accurate dimensions");
 assert.match(html, /href="\/give\/request-demo"/, "homepage should route parish demo requests to the existing form");
 assert.match(html, /href="\/register"/, "homepage should preserve the free-start route");
-assert.match(html, /<a class="op-btn op-btn-outline" href="\/give">Learn more<\/a>/, "final homepage CTA should link visitors to the AGAPAY Give overview");
+assert.match(html, /<a class="op-btn op-btn-outline" href="\/give">Explore AGAPAY Give<\/a>/, "final homepage CTA should describe its AGAPAY Give destination");
+assert.doesNotMatch(html, /<a[^>]+href="\/give"[^>]*>\s*Learn more\s*<\/a>/i, "homepage links should not use generic Lighthouse-unfriendly text");
 assert.match(css, /@media \(max-width: 980px\)/, "preview should include a tablet layout");
 assert.match(css, /@media \(max-width: 620px\)/, "preview should include a narrow-phone layout");
 assert.match(css, /\.op-hero::after[\s\S]*?background: url\("\/mark\.png"\)[\s\S]*?opacity: \.07/, "hero should carry a restrained oversized AGAPAY mark");
