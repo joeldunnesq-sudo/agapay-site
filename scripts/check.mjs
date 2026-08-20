@@ -188,7 +188,7 @@ for (const shortcutIcon of ["give-v2.png", "today-v2.png", "directory-v2.png", "
   assert.ok(manifest.includes(`/images/app/shortcuts/${shortcutIcon}`), `My AGAPAY PWA manifest should include the ${shortcutIcon} shortcut icon`);
   await access(`public/images/app/shortcuts/${shortcutIcon}`);
 }
-for (const screenshot of ["giving-dashboard.jpg", "today-in-the-church.jpg", "parish-bookstore.jpg"]) {
+for (const screenshot of ["giving-dashboard.jpg", "koinonia-2.jpg", "parish-bookstore.jpg"]) {
   assert.ok(manifest.includes(`/images/app/screenshots/${screenshot}`), `My AGAPAY PWA manifest should include ${screenshot}`);
   await access(`public/images/app/screenshots/${screenshot}`);
 }
