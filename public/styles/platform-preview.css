@@ -211,11 +211,10 @@ p { margin: 0; line-height: 1.7; }
 .op-system-core span { color: rgba(246,241,232,.58); font-size: .55rem; letter-spacing: .06em; text-transform: uppercase; }
 
 .op-connector { background: linear-gradient(180deg, var(--cream), #EFE7D6); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.op-connector-inner { display: grid; grid-template-columns: 0.95fr 1.05fr; gap: clamp(2rem, 5vw, 4rem); align-items: center; padding-block: clamp(3.5rem, 7vw, 5.5rem); }
+.op-connector-inner { display: grid; grid-template-columns: 0.95fr 1.05fr; gap: clamp(2rem, 5vw, 4rem); align-items: center; padding: clamp(3.5rem, 7vw, 5.5rem) 0; }
 .op-connector-shot { position: relative; }
 .op-connector-shot img {
-  width: 100%; height: auto; max-width: 300px; margin: 0 auto; border-radius: 20px;
-  aspect-ratio: 720 / 1560; object-fit: contain;
+  width: 100%; max-width: 300px; margin: 0 auto; border-radius: 20px;
   box-shadow: 0 24px 50px -18px rgba(6,21,34,.35); border: 6px solid var(--navy);
 }
 .op-connector h2 { font-size: clamp(1.8rem, 3.2vw, 2.3rem); line-height: 1.2; }
@@ -273,6 +272,7 @@ p { margin: 0; line-height: 1.7; }
   .op-system-core { grid-column: 1 / 3; grid-row: 1; margin-bottom: .8rem; }
   .op-system-giving, .op-system-koinonia, .op-system-pastoral, .op-system-operations { grid-column: auto; grid-row: auto; }
   .op-connector-inner { grid-template-columns: 1fr; }
+  .op-connector-copy { padding-inline: clamp(1.25rem, 4vw, 2.5rem); }
   .op-connector-shot { order: -1; }
   .op-oversight-grid { grid-template-columns: 1fr; }
   .op-trust-grid { grid-template-columns: repeat(2, 1fr); }

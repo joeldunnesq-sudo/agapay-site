@@ -56,8 +56,8 @@ assert.match(css, /@media \(max-width: 980px\)/, "preview should include a table
 assert.match(css, /@media \(max-width: 620px\)/, "preview should include a narrow-phone layout");
 assert.match(css, /\.op-hero::after[\s\S]*?background: url\("\/mark\.png"\)[\s\S]*?opacity: \.07/, "hero should carry a restrained oversized AGAPAY mark");
 assert.match(css, /\.op-oversight-step-mark svg[\s\S]*?left: 50%; top: 50%[\s\S]*?translate\(-50%, -50%\)/, "workflow checkmarks should be centered inside their circles");
-assert.match(css, /\.op-connector-inner[^\n]+padding-block:/, "The Thread section should preserve the shared mobile gutters");
-assert.match(css, /\.op-connector-shot img[\s\S]*?width: 100%; height: auto;[\s\S]*?aspect-ratio: 720 \/ 1560; object-fit: contain;/, "The Thread screenshot should preserve its phone aspect ratio at every viewport width");
+assert.match(css, /@media \(max-width: 980px\)[\s\S]*?\.op-connector-copy \{ padding-inline: clamp\(1\.25rem, 4vw, 2\.5rem\); \}/, "The Thread copy should receive the mobile gutter without resizing its screenshot");
+assert.doesNotMatch(html, /op-connector-shot[\s\S]*?<img[^>]+width="720"[^>]+height="1560"/, "The Thread screenshot should keep its original intrinsic display behavior");
 assert.match(css, /\.op-trust-grid[^\n]+padding-block:/, "trust items should preserve the shared mobile gutters");
 assert.match(css, /@media \(prefers-reduced-motion: reduce\)/, "preview should respect reduced-motion preferences");
 
