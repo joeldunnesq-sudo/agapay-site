@@ -4,11 +4,9 @@
   if (/^\/(?:admin|parish|donor|myagapay)(?:\/|$)/.test(path)) return;
 
   const PRIMARY_LINKS = [
-    { href: "/give", label: "AGAPAY Give", key: "give" },
-    { href: "/learn", label: "AGAPAY Learn", key: "learn" },
-    { href: "/design", label: "AGAPAY Design", key: "design" },
-    { href: "/about", label: "About", key: "about" },
-    { href: "/contact", label: "Contact", key: "contact" }
+    { href: "/give/how-it-works", label: "How It Works", key: "how" },
+    { href: "/give/pricing", label: "Pricing", key: "pricing" },
+    { href: "/give/features", label: "Features", key: "features" }
   ];
 
   const SIGN_IN_LINKS = [
@@ -19,14 +17,12 @@
 
   function activeKeyFromPath() {
     if (path === "/" || path === "/index.html") return "";
-    if (path === "/why") return "why";
     if (path === "/give/request-demo" || path.endsWith("/give/request-demo.html")) return "demo";
-    if (path === "/give/features" || path.endsWith("/give/features.html")) return "give";
-    if (path === "/give/pricing" || path.endsWith("/give/pricing.html")) return "give";
-    if (path === "/give/how-it-works" || path.endsWith("/give/how-it-works.html")) return "give";
+    if (path === "/give/features" || path.endsWith("/give/features.html")) return "features";
+    if (path === "/give/pricing" || path.endsWith("/give/pricing.html")) return "pricing";
+    if (path === "/give/how-it-works" || path.endsWith("/give/how-it-works.html")) return "how";
     if (path === "/contact" || path.endsWith("/contact.html")) return "contact";
     if (path === "/about" || path.endsWith("/about.html")) return "about";
-    if (path === "/give" || path.endsWith("/give/index.html") || path.startsWith("/give/")) return "give";
     if (path === "/learn" || path === "/learn/" || path.startsWith("/learn/")) return "learn";
     if (path === "/design" || path.endsWith("/design.html")) return "design";
     if (path === "/marketplace" || path.endsWith("/marketplace.html")) return "marketplace";

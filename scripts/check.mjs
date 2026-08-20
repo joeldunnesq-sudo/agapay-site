@@ -26,8 +26,13 @@ const siteChrome = await readFile("public/site-chrome.js", "utf8");
 assert.ok(siteChrome.includes('class="btn-demo${activeKey === "demo" ? " active" : ""}" href="/give/request-demo"'), "canonical desktop navigation should present Request a Demo beside the primary action");
 assert.ok(siteChrome.includes('class="drawer-demo" href="/give/request-demo"'), "canonical mobile navigation should present Request a Demo as an action button");
 assert.ok(!siteChrome.includes('{ href: "/give/request-demo", label: "Request Demo", key: "demo" }'), "Request a Demo should not remain in the canonical text-link group");
-assert.ok(siteChrome.includes('{ href: "/contact", label: "Contact", key: "contact" }'), "canonical static-site navigation should include Contact");
-assert.ok(!siteChrome.includes('{ href: "/give/#why", label: "Why AGAPAY", key: "why" }'), "canonical static-site navigation should not retain the removed Why AGAPAY item");
+for (const link of [
+  '{ href: "/give/how-it-works", label: "How It Works", key: "how" }',
+  '{ href: "/give/pricing", label: "Pricing", key: "pricing" }',
+  '{ href: "/give/features", label: "Features", key: "features" }'
+]) assert.ok(siteChrome.includes(link), `canonical static-site navigation should include ${link}`);
+assert.ok(!siteChrome.includes('{ href: "/give#why", label: "Why AGAPAY"'), "canonical primary navigation should not duplicate the Why section integrated into /give");
+assert.ok(!siteChrome.includes('{ href: "/learn", label: "AGAPAY Learn", key: "learn" }') && !siteChrome.includes('{ href: "/design", label: "AGAPAY Design", key: "design" }'), "canonical primary navigation should stay focused on AGAPAY Give");
 assert.ok(!/btn-donate[\s\S]{0,180}shellIcon\("giving-hand"\)/.test(siteChrome), "canonical Start for free button should not include an unrelated giving-hand icon");
 assert.ok(!/drawer-join[\s\S]{0,120}shellIcon\("giving-hand"\)/.test(siteChrome), "mobile Start for free button should not include an unrelated giving-hand icon");
 const backendSources = worker + core + stripeConnect + adminHandler + donorHandler + parishHandler + parishCommemorationsHandler + parishGivingCatalogHandler + parishGivingReportsHandler + parishSacramentsHandler + parishReconciliationHandler + parishNotifications + stripeFees + stripeHandler + parishInterestHandler;
@@ -710,8 +715,8 @@ assert.ok(platformHome.includes("Koinonia") && platformHome.includes("Sacraments
 assert.ok(platformHome.includes('src="/site-chrome.js"'), "platform homepage should render the canonical navigation that routes giving-focused visitors to /give");
 assert.ok(givingOverview.includes('rel="canonical" href="https://agapay.app/give"') && givingOverview.includes("The Orthodox Giving App") && givingOverview.includes("Built for Parish Life"), "dedicated Give overview should retain the former Give-first homepage and publish its own canonical URL");
 const canonicalChrome = await readFile("public/site-chrome.js", "utf8");
-assert.ok(canonicalChrome.includes('{ href: "/give", label: "AGAPAY Give"'), "canonical navigation should route giving-focused visitors to /give");
-assert.ok(canonicalChrome.includes('{ href: "/design", label: "AGAPAY Design"') && canonicalChrome.includes('return "design"'), "canonical navigation should include AGAPAY Design with an active route");
+assert.ok(canonicalChrome.includes('{ href: "/give/how-it-works", label: "How It Works"') && canonicalChrome.includes('{ href: "/give/features", label: "Features"'), "canonical navigation should lead with the standalone AGAPAY Give pages");
+assert.ok(canonicalChrome.includes('return "how"') && canonicalChrome.includes('return "pricing"') && canonicalChrome.includes('return "features"'), "canonical navigation should highlight each Give destination independently");
 assert.ok(canonicalChrome.includes('const isHomepage = path === "/" || path === "/index.html"') && canonicalChrome.includes('${isHomepage ? "" :'), "canonical footer should hide Marketplace and Directory on the homepage");
 assert.ok(canonicalChrome.includes('href="/register"') && canonicalChrome.includes("Start for free"), "canonical marketing navigation should offer the free registration CTA");
 assert.ok(registerHtml.includes("free 30-day AGAPAY demo") && registerHtml.includes("No card is required"), "parish registration should explain the free demo terms");
@@ -722,6 +727,10 @@ await assert.rejects(access("public/vision.html"), undefined, "the retired Visio
 assert.match(worker, /\["\/vision", "\/vision\/", "\/vision\.html"\][\s\S]*?url\.pathname = "\/about";[\s\S]*?Response\.redirect\(url\.toString\(\), 301\)/, "the production worker must permanently redirect every retired Vision route");
 assert.match(localServerSource, /\["\/vision", "\/vision\/", "\/vision\.html"\][\s\S]*?requestUrl\.pathname = "\/about";[\s\S]*?writeHead\(301/, "the local server must mirror the retired Vision redirects");
 const siteMobileNav = await readFile("public/site-mobile-nav.js", "utf8");
+for (const [href, label] of [["/give/how-it-works", "How It Works"], ["/give/pricing", "Pricing"], ["/give/features", "Features"]]) {
+  assert.ok(siteMobileNav.includes(`{ href: "${href}", label: "${label}" }`), `legacy mobile navigation should include ${label}`);
+}
+assert.ok(!siteMobileNav.includes('{ href: "/give#why", label: "Why AGAPAY" }'), "legacy mobile navigation should not duplicate the Why section integrated into /give");
 const learnOverview = await readFile("public/learn/index.html", "utf8");
 for (const [label, source] of [["homepage", platformHome], ["canonical chrome", canonicalChrome], ["mobile navigation", siteMobileNav], ["registration", registerHtml], ["Directory intake", directoryPage], ["Learn overview", learnOverview]]) {
   assert.ok(!source.includes('href="/vision"') && !source.includes('{ href: "/vision"'), `${label} must not link to the retired Vision page`);

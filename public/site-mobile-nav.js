@@ -3,11 +3,9 @@
   if (/^\/(?:admin|parish|donor)(?:\/|$)/.test(path)) return;
 
   const links = [
-    { href: "/give", label: "AGAPAY Give" },
-    { href: "/marketplace", label: "Marketplace" },
-    { href: "/directory", label: "Directory" },
-    { href: "/give/how-it-works", label: "Resources" },
-    { href: "/about", label: "About" }
+    { href: "/give/how-it-works", label: "How It Works" },
+    { href: "/give/pricing", label: "Pricing" },
+    { href: "/give/features", label: "Features" }
   ];
 
   const nav =
@@ -77,8 +75,9 @@
 
   function isActive(href) {
     if (!href) return false;
-    if (href === "/") return path === "/";
-    return path === href || path.startsWith(href + "/");
+    const hrefPath = href.split("#")[0];
+    if (hrefPath === "/") return path === "/";
+    return path === hrefPath || path === hrefPath + ".html" || path.startsWith(hrefPath + "/");
   }
 
   function openDrawer() {
