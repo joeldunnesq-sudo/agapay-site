@@ -57,6 +57,7 @@ assert.match(css, /@media \(max-width: 620px\)/, "preview should include a narro
 assert.match(css, /\.op-hero::after[\s\S]*?background: url\("\/mark\.png"\)[\s\S]*?opacity: \.07/, "hero should carry a restrained oversized AGAPAY mark");
 assert.match(css, /\.op-oversight-step-mark svg[\s\S]*?left: 50%; top: 50%[\s\S]*?translate\(-50%, -50%\)/, "workflow checkmarks should be centered inside their circles");
 assert.match(css, /\.op-connector-inner[^\n]+padding-block:/, "The Thread section should preserve the shared mobile gutters");
+assert.match(css, /\.op-connector-shot img[\s\S]*?width: 100%; height: auto;[\s\S]*?aspect-ratio: 720 \/ 1560; object-fit: contain;/, "The Thread screenshot should preserve its phone aspect ratio at every viewport width");
 assert.match(css, /\.op-trust-grid[^\n]+padding-block:/, "trust items should preserve the shared mobile gutters");
 assert.match(css, /@media \(prefers-reduced-motion: reduce\)/, "preview should respect reduced-motion preferences");
 

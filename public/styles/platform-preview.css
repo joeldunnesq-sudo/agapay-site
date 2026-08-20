@@ -214,7 +214,8 @@ p { margin: 0; line-height: 1.7; }
 .op-connector-inner { display: grid; grid-template-columns: 0.95fr 1.05fr; gap: clamp(2rem, 5vw, 4rem); align-items: center; padding-block: clamp(3.5rem, 7vw, 5.5rem); }
 .op-connector-shot { position: relative; }
 .op-connector-shot img {
-  width: 100%; max-width: 300px; margin: 0 auto; border-radius: 20px;
+  width: 100%; height: auto; max-width: 300px; margin: 0 auto; border-radius: 20px;
+  aspect-ratio: 720 / 1560; object-fit: contain;
   box-shadow: 0 24px 50px -18px rgba(6,21,34,.35); border: 6px solid var(--navy);
 }
 .op-connector h2 { font-size: clamp(1.8rem, 3.2vw, 2.3rem); line-height: 1.2; }
