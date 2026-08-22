@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "playwright": "^1.61.1",
-    "wrangler": "^4.123.0"
+    "wrangler": "^4.124.0"
   },
   "overrides": {
     "@cloudflare/puppeteer": {
