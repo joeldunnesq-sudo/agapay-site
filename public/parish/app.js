@@ -8894,7 +8894,53 @@
   }
 
   // ── SETUP WIZARD ─────────────────────────────────────────
-  function tierPriceLabel(tier) { if(!tier) return ''; if(tier.monthlyCents===null) return 'Custom'; if(Number(tier.monthlyCents)===0) return '$0/mo'; return `${money(tier.monthlyCents)}/mo`; }
+  function tierPriceLabel(tier) { if(!tier) return ''; if(tier.id==='parish'&&tier.householdPriced) return 'priced by active households'; if(tier.monthlyCents===null) return 'Custom'; if(Number(tier.monthlyCents)===0) return '$0/mo'; return `${money(tier.monthlyCents)}/mo`; }
+  function parishTierDefinition() { return (currentParish?.subscriptionTiers || []).find((tier) => tier.id === 'parish') || null; }
+  function parishPricingUsesStandardRates() { return String(currentParish?.subscriptionPricingProgram || '').toLowerCase() === 'standard'; }
+  function parishBandPriceCents(band = {}) { return parishPricingUsesStandardRates() ? band.standardMonthlyCents : band.earlyAdopterMonthlyCents; }
+  function parishHouseholdBandOptionsMarkup(selectedId = '') {
+    const bands = parishTierDefinition()?.householdBands || [];
+    return `<option value="">Select an active-household range</option>${bands.map((band) => {
+      const cents = parishBandPriceCents(band);
+      const price = cents === null || cents === undefined ? 'Custom pricing' : `${money(cents)}/mo`;
+      return `<option value="${escapeHtml(band.id)}" ${band.id===selectedId?'selected':''}>${escapeHtml(band.label)} — ${escapeHtml(price)}</option>`;
+    }).join('')}`;
+  }
+  function parishHouseholdPickerMarkup({ tierSelectId, bandSelectId, groupId, summaryId }) {
+    return `<div class="form-group full parish-household-pricing" id="${groupId}" hidden>
+      <label class="form-label" for="${bandSelectId}">Active parish households</label>
+      <select id="${bandSelectId}" onchange="syncParishHouseholdPricing('${tierSelectId}','${bandSelectId}','${groupId}','${summaryId}')">${parishHouseholdBandOptionsMarkup(currentParish?.parishHouseholdBand || '')}</select>
+      <p class="section-note" id="${summaryId}">Choose a range to calculate the Parish monthly price.</p>
+    </div>`;
+  }
+  function syncParishHouseholdPricing(tierSelectId, bandSelectId, groupId, summaryId) {
+    const tier = document.getElementById(tierSelectId);
+    const band = document.getElementById(bandSelectId);
+    const group = document.getElementById(groupId);
+    const summary = document.getElementById(summaryId);
+    const isParish = tier?.value === 'parish';
+    if (group) group.hidden = !isParish;
+    if (!isParish || !summary) return;
+    const selected = (parishTierDefinition()?.householdBands || []).find((item) => item.id === band?.value);
+    if (!selected) { summary.textContent = 'Choose a range to calculate the Parish monthly price.'; return; }
+    const cents = parishBandPriceCents(selected);
+    const program = parishPricingUsesStandardRates() ? 'standard' : 'early-adopter';
+    summary.textContent = cents === null || cents === undefined
+      ? `${selected.label} uses custom Parish pricing. AGAPAY will confirm the amount before billing.`
+      : `${selected.label}: ${money(cents)}/month at the ${program} rate.`;
+  }
+  function parishPricingUsageMarkup() {
+    const usage = currentParish?.parishPricingUsage;
+    if (!usage?.trackingAvailable) return '<div class="parish-pricing-usage is-neutral"><strong>Automatic household tracking</strong><span>AGAPAY will count represented households as parishioners link their My AGAPAY accounts.</span></div>';
+    const userLabel = `${Number(usage.linkedUsers || 0)} linked user${Number(usage.linkedUsers || 0)===1?'':'s'}`;
+    const householdLabel = `${Number(usage.representedHouseholds || 0)} represented household${Number(usage.representedHouseholds || 0)===1?'':'s'}`;
+    const detail = usage.upgradeRequired
+      ? `Your live household count has reached the ${usage.recommendedBandLabel} band. Select that band below to keep Parish pricing current.`
+      : usage.nextThreshold === null
+        ? 'This is the highest published Parish band; AGAPAY will coordinate custom pricing with your church.'
+        : `${Number(usage.remainingUntilNextBand || 0)} more represented household${Number(usage.remainingUntilNextBand || 0)===1?'':'s'} before the ${usage.nextBandLabel} band.`;
+    return `<div class="parish-pricing-usage ${usage.upgradeRequired?'needs-upgrade':'is-current'}"><strong>${usage.upgradeRequired?'Household-band update needed':'Household usage is being tracked'}</strong><span>${escapeHtml(userLabel)} across ${escapeHtml(householdLabel)}. ${escapeHtml(detail)}</span></div>`;
+  }
   function subscriptionDemoActive(parish = currentParish) { return String(parish?.subscriptionStatus || '').toLowerCase() === 'trialing'; }
   function subscriptionDemoEnd(parish = currentParish) {
     const explicit = new Date(parish?.subscriptionTrialEndsAt || '');
@@ -9365,7 +9411,8 @@
     const demoEligible=Boolean(currentParish.subscriptionIntroDemoEligible);
     const pendingDemo=currentParish.subscriptionStatus==='trial_checkout_created';
     const freeDemoPath=demoEligible||pendingDemo;
-    pane.innerHTML=`<div class="setup-wizard-card"><div class="setup-wizard-body"><div><div class="setup-title">${freeDemoPath?'First-time setup':'Continue with AGAPAY'}</div><p class="setup-copy">${freeDemoPath?'Start with a free 30-day AGAPAY demo, then connect Stripe so the parish can receive gifts.':'Your free demo has ended. Choose a tier and add billing information to restore subscription access.'}</p><div class="setup-steps"><div class="setup-step done">${setupCheckMarkup()}<div><strong>1. Contact info verified</strong><span>Your canonical parish registration has been verified.</span></div></div><div class="setup-step done">${setupCheckMarkup()}<div><strong>2. Choose your ${freeDemoPath?'demo ':''}tier</strong><span>${escapeHtml(currentParish.subscriptionTierLabel || currentParish.subscriptionTier || 'Your selected tier')} determines which tools are available.</span></div></div><div class="setup-step ${billingDone?'done':''}">${setupCheckMarkup()}<div><strong>3. ${freeDemoPath?'Start the free demo':'Activate the subscription'}</strong><span>${billingDone?'Your free demo is active. No card was required.':pendingDemo?'Finish the no-card demo confirmation to activate AGAPAY.':demoEligible?'Confirm the free 30-day demo. No card is required.':'Add billing information to continue with the selected tier.'}</span></div></div><div class="setup-step ${stripeDone?'done':''}">${setupCheckMarkup()}<div><strong>4. Connect Stripe for donations</strong><span>${stripeDone?'Stripe is connected for parish giving.':billingDone?'Connect the parish payout account. This is separate from AGAPAY billing.':freeDemoPath?'Donation setup unlocks after the demo begins.':'Donation setup remains separate from the AGAPAY subscription.'}</span></div></div></div></div><div class="setup-action-panel">${billingDone?'':`<label for="setupSubscriptionTier">AGAPAY ${freeDemoPath?'demo ':''}tier</label><select id="setupSubscriptionTier">${tierOptions}</select><button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startSubscriptionCheckout(this)">${pendingDemo?'Continue demo setup':demoEligible?'Start free 30-day demo':'Activate subscription'}</button><p class="setup-copy setup-action-copy">${freeDemoPath?'No card required. You will add billing information only if you choose to continue after the demo.':'Secure checkout collects the billing information needed to reactivate AGAPAY.'}</p>`}${billingDone&&!stripeDone?'<button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startStripeOnboarding(this)">Connect Stripe for donations</button><p class="setup-copy setup-action-copy">This asks for parish payout and organization details—not payment for AGAPAY.</p>':''}<div class="setup-link-box" id="setupLinkBox"><a id="setupActionLink" href="#" target="_blank" rel="noopener">${freeDemoPath?'Open free demo setup':'Open subscription setup'}</a><p id="setupLinkHelp"></p></div></div></div></div>`;
+    pane.innerHTML=`<div class="setup-wizard-card"><div class="setup-wizard-body"><div><div class="setup-title">${freeDemoPath?'First-time setup':'Continue with AGAPAY'}</div><p class="setup-copy">${freeDemoPath?'Start with a free 30-day AGAPAY demo, then connect Stripe so the parish can receive gifts.':'Your free demo has ended. Choose a tier and add billing information to restore subscription access.'}</p><div class="setup-steps"><div class="setup-step done">${setupCheckMarkup()}<div><strong>1. Contact info verified</strong><span>Your canonical parish registration has been verified.</span></div></div><div class="setup-step done">${setupCheckMarkup()}<div><strong>2. Choose your ${freeDemoPath?'demo ':''}tier</strong><span>${escapeHtml(currentParish.subscriptionTierLabel || currentParish.subscriptionTier || 'Your selected tier')} determines which tools are available.</span></div></div><div class="setup-step ${billingDone?'done':''}">${setupCheckMarkup()}<div><strong>3. ${freeDemoPath?'Start the free demo':'Activate the subscription'}</strong><span>${billingDone?'Your free demo is active. No card was required.':pendingDemo?'Finish the no-card demo confirmation to activate AGAPAY.':demoEligible?'Confirm the free 30-day demo. No card is required.':'Add billing information to continue with the selected tier.'}</span></div></div><div class="setup-step ${stripeDone?'done':''}">${setupCheckMarkup()}<div><strong>4. Connect Stripe for donations</strong><span>${stripeDone?'Stripe is connected for parish giving.':billingDone?'Connect the parish payout account. This is separate from AGAPAY billing.':freeDemoPath?'Donation setup unlocks after the demo begins.':'Donation setup remains separate from the AGAPAY subscription.'}</span></div></div></div></div><div class="setup-action-panel">${billingDone?'':`<label for="setupSubscriptionTier">AGAPAY ${freeDemoPath?'demo ':''}tier</label><select id="setupSubscriptionTier" onchange="syncParishHouseholdPricing('setupSubscriptionTier','setupParishHouseholdBand','setupParishHouseholdBandGroup','setupParishHouseholdPrice')">${tierOptions}</select>${parishHouseholdPickerMarkup({tierSelectId:'setupSubscriptionTier',bandSelectId:'setupParishHouseholdBand',groupId:'setupParishHouseholdBandGroup',summaryId:'setupParishHouseholdPrice'})}<button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startSubscriptionCheckout(this)">${pendingDemo?'Continue demo setup':demoEligible?'Start free 30-day demo':'Activate subscription'}</button><p class="setup-copy setup-action-copy">${freeDemoPath?'No card required. You will add billing information only if you choose to continue after the demo.':'Secure checkout collects the billing information needed to reactivate AGAPAY.'}</p>`}${billingDone&&!stripeDone?'<button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startStripeOnboarding(this)">Connect Stripe for donations</button><p class="setup-copy setup-action-copy">This asks for parish payout and organization details—not payment for AGAPAY.</p>':''}<div class="setup-link-box" id="setupLinkBox"><a id="setupActionLink" href="#" target="_blank" rel="noopener">${freeDemoPath?'Open free demo setup':'Open subscription setup'}</a><p id="setupLinkHelp"></p></div></div></div></div>`;
+    if (!billingDone) syncParishHouseholdPricing('setupSubscriptionTier','setupParishHouseholdBand','setupParishHouseholdBandGroup','setupParishHouseholdPrice');
   }
 
   // Dashboard-homepage "Your Subscription" panel: current plan, modules
@@ -9382,10 +9429,12 @@
     const demoActive = subscriptionDemoActive(p);
     const demoEndLabel = subscriptionDemoDateLabel(p);
     const demoDays = subscriptionDemoDaysRemaining(p);
-    const standardPriceLabel = p.subscriptionMonthlyCents === 0 ? 'Free forever' : p.subscriptionMonthlyCents ? (money(p.subscriptionMonthlyCents) + '/mo') : 'Custom pricing';
+    const parishBandMissing = p.subscriptionTier === 'parish' && !p.parishHouseholdBand;
+    const standardPriceLabel = parishBandMissing ? 'Household band needed' : p.subscriptionMonthlyCents === 0 ? 'Free forever' : p.subscriptionMonthlyCents ? (money(p.subscriptionMonthlyCents) + '/mo') : 'Custom pricing';
     const priceLabel = demoActive ? `${demoDays} day${demoDays===1?'':'s'} remaining` : standardPriceLabel;
     const billingActive = Boolean(p.setup?.billingActive);
     const stripeConnected = Boolean(p.setup?.stripeConnected);
+    const pricingUsage = p.parishPricingUsage || {};
 
     const statusChip = (label, active) => `<span class="pdx-sub-status ${active ? 'is-ready' : 'needs-attention'}"><span aria-hidden="true">${active ? '✓' : '!'}</span>${escapeHtml(label)}</span>`;
     const moduleRow = (label, moduleKey, description, includedTier) => {
@@ -9409,6 +9458,7 @@
         <div class="pdx-sub-status-row">
           ${statusChip(demoActive ? 'Free demo active' : billingActive ? 'Billing active' : 'Billing not started', billingActive)}
           ${statusChip(stripeConnected ? 'Stripe connected' : 'Stripe not connected', stripeConnected)}
+          ${pricingUsage.upgradeRequired ? statusChip('Household band update needed', false) : ''}
         </div>
         <button class="pdx-sub-plan-action" type="button" onclick="switchTab('settings')">${demoActive?'Add billing details or manage demo':ent.parishPlusIncludedInTier ? 'Manage subscription' : 'Explore upgrade options'}<span aria-hidden="true">→</span></button>
       </div>
@@ -9617,10 +9667,12 @@
         <a class="btn btn-ghost" href="mailto:support@agapay.app?subject=${encodeURIComponent('Dashboard invite request for ' + (p.parishName || p.parishId || 'our parish'))}&body=${encodeURIComponent('Please add or update dashboard access for ' + (p.parishName || p.parishId || 'our parish') + '.\n\nRequested user:\nEmail:\nRole:\n\nRequested by:\n')}" target="_blank" rel="noopener">Request additional dashboard invite</a>
       </div>
       <div class="section-divider"><span>AGAPAY subscription</span></div>
+      ${parishPricingUsageMarkup()}
       <div class="form-grid">
         <div class="form-group"><label class="form-label">Current tier</label><input value="${escapeHtml(p.subscriptionTierLabel || p.subscriptionTier || 'Not selected')}" disabled /></div>
         <div class="form-group"><label class="form-label">Billing status</label><input value="${escapeHtml(statusLabel(p.subscriptionStatus || 'not_started'))}" disabled /></div>
-        <div class="form-group full"><label class="form-label" for="subscriptionTierUpgrade">Change AGAPAY tier</label><select id="subscriptionTierUpgrade">${tierOptions}</select></div>
+        <div class="form-group full"><label class="form-label" for="subscriptionTierUpgrade">Change AGAPAY tier</label><select id="subscriptionTierUpgrade" onchange="syncParishHouseholdPricing('subscriptionTierUpgrade','subscriptionHouseholdBandUpgrade','subscriptionHouseholdBandGroup','subscriptionHouseholdBandPrice')">${tierOptions}</select></div>
+        ${parishHouseholdPickerMarkup({tierSelectId:'subscriptionTierUpgrade',bandSelectId:'subscriptionHouseholdBandUpgrade',groupId:'subscriptionHouseholdBandGroup',summaryId:'subscriptionHouseholdBandPrice'})}
       </div>
       <p class="section-note">${p.parishId === 'st-fiacre' ? 'Demo mode: switch tiers instantly to show churches how AGAPAY changes at each level. No Stripe billing is changed.' : demoActive ? `Your free 30-day demo is active${demoEndLabel?` through ${escapeHtml(demoEndLabel)}`:''}. No card is required during the demo. Add billing information in the secure portal only if you want to continue afterward.` : billingActive ? "Choose a tier here to update the existing AGAPAY subscription. Use Stripe's secure billing portal for payment details or cancellation." : demoEligible ? 'Choose a tier and start the free 30-day demo. No card is required. Stewardship unlocks pledge and giving-health tools; Parish adds the complete operations suite.' : 'Choose a tier and complete subscription checkout to reactivate AGAPAY.'}</p>
       <div class="btn-row">
@@ -9660,6 +9712,7 @@
         <a id="stripeOnboardingLink" href="#" target="_blank" rel="noopener">Open Stripe onboarding</a>
         <p>Stripe onboarding links are single-use. If the link expires, return here and create a new one.</p>
       </div>`;
+    syncParishHouseholdPricing('subscriptionTierUpgrade','subscriptionHouseholdBandUpgrade','subscriptionHouseholdBandGroup','subscriptionHouseholdBandPrice');
     syncPatronalFeastOptionsFromSettings();
 
     editableFunds          = fallbackFundsArray(p.funds);
@@ -10853,7 +10906,12 @@
     if (btn){btn.classList.add('loading');btn.disabled=true;}
     try {
       const tier = document.getElementById(tierSelectId || 'setupSubscriptionTier');
-      const res  = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/subscription-checkout',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({subscriptionTier:tier?tier.value:currentParish.subscriptionTier})});
+      const householdBandId = tierSelectId === 'subscriptionTierUpgrade' ? 'subscriptionHouseholdBandUpgrade' : 'setupParishHouseholdBand';
+      const householdBand = document.getElementById(householdBandId);
+      if ((tier?.value || currentParish.subscriptionTier) === 'parish' && !householdBand?.value) {
+        throw new Error('Choose the parish active-household range before continuing.');
+      }
+      const res  = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/subscription-checkout',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({subscriptionTier:tier?tier.value:currentParish.subscriptionTier,parishHouseholdBand:householdBand?.value||''})});
       const data = await res.json(); if (!res.ok) throw new Error(data.detail||data.error||'Unable to create checkout');
       if (data.registration) currentParish = { ...currentParish, ...data.registration };
       if (!data.checkoutUrl){if(win)win.close();await loadDashboard();setStatus('Subscription updated. No checkout required.','success');return;}
@@ -11138,12 +11196,14 @@
   async function changeDemoTier(btn) {
     if (currentParish?.parishId !== 'st-fiacre') return;
     const tier = document.getElementById('subscriptionTierUpgrade')?.value || '';
+    const parishHouseholdBand = document.getElementById('subscriptionHouseholdBandUpgrade')?.value || '';
+    if (tier === 'parish' && !parishHouseholdBand) { setStatus('Choose the parish active-household range first.', 'error'); return; }
     if (btn){btn.classList.add('loading');btn.disabled=true;}
     try {
       const res = await fetch('/api/parish/dashboard/st-fiacre/demo-tier', {
         method: 'POST',
         headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscriptionTier: tier })
+        body: JSON.stringify({ subscriptionTier: tier, parishHouseholdBand })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Unable to change the demo tier');

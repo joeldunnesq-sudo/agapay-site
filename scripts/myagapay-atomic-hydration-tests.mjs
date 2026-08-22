@@ -40,7 +40,9 @@ const protectedPages = [
 
 for (const file of protectedPages) {
   const html = read(file);
-  const expectedStylesheetVersion = "20260819koinoniaweek1";
+  const expectedStylesheetVersion = file === "public/myagapay/parish-life.html"
+    ? "20260822koinoniaright3"
+    : "20260819koinoniaweek1";
   assert.match(html, /<html[^>]*data-myagapay-hydrate/, `${file} must opt into the pre-paint hydration shield`);
   assert.match(html, new RegExp(`/donor/style\\.css\\?v=${expectedStylesheetVersion}`), `${file} must load the current atomic-paint CSS version`);
   assert.match(html, /<script src="\/myagapay-shell\.js\?v=[a-zA-Z0-9]+"><\/script>/, `${file} must install the versioned tracker before page-level scripts`);

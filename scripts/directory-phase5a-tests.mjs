@@ -21,6 +21,7 @@ import {
   getPublishedMinistry,
   linkExternalIdentity,
   listDirectoryReviewQueue,
+  listMemberDirectoryHouseholds,
   listMemberDirectoryPeople,
   listPublishedMinistries,
   resolveDirectoryAdminContext,
@@ -326,6 +327,10 @@ await test("participant publication is separate and then appears on profile and 
   const listedMember = filtered.items.find((item) => item.id === member.id);
   assert.ok(listedMember);
   assert.equal(listedMember.ministries[0].displayName, "Hospitality", "published ministry affiliations must be present on browse cards");
+  const households = await listMemberDirectoryHouseholds(env, { context: memberDirectoryContext });
+  const householdMember = households.items.flatMap((item) => item.members).find((item) => item.id === member.id);
+  assert.ok(householdMember, "the published member must remain present on the default household card");
+  assert.equal(householdMember.ministries[0].displayName, "Hospitality", "default household cards must carry each adult's published ministry affiliations");
 });
 
 await test("ministry search finds a home-parish My AGAPAY profile and links it when assigned", async () => {

@@ -279,6 +279,10 @@
     .member-card-ministry-pill { display:inline-flex; align-items:center; gap:5px; max-width:100%; padding:4px 8px; border:1px solid rgba(11,33,48,.2); border-radius:999px; background:#eef3f7; color:#163447; font-size:10.5px; font-weight:800; line-height:1.1; }
     .member-card-ministry-pill svg { width:12px; height:12px; flex:0 0 auto; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
     .member-card-ministry-pill.is-council { border-color:#0b2130; background:#0b2130; color:#e8cb82; box-shadow:0 3px 9px rgba(6,21,34,.14); }
+    .member-card-family-members { display:grid; gap:8px; margin:8px 0; padding-top:8px; border-top:1px solid rgba(6,21,34,.09); }
+    .member-card-family-member { display:grid; gap:3px; }
+    .member-card-family-name { color:#344654; font-size:11.5px; font-weight:700; line-height:1.2; }
+    .member-card-family-member .member-card-ministries { margin:0; }
     .profile-head .member-card-ministries { margin-bottom:0; }
     .household-member-detail .member-card-ministries { margin:8px 0 0; }
     .directory-nameday-spotlight { margin:0 26px 18px; }
@@ -1690,6 +1694,15 @@
         return `<span class="member-card-ministry-pill${isCouncilMinistry(ministry) ? " is-council" : ""}">${ministryIconSvg}<span>${esc(label)}</span></span>`;
       }).join("")}</span>`;
     }
+    function familyMemberMinistriesHtml(item = {}) {
+      const members = Array.isArray(item.members) ? item.members.filter((member) => member.displayName) : [];
+      if (!members.length) return "";
+      return `<span class="member-card-family-members" aria-label="Family members and parish ministries">${members.map((member) => `
+        <span class="member-card-family-member">
+          <span class="member-card-family-name">${esc(member.displayName)}</span>
+          ${ministryPillsHtml(member)}
+        </span>`).join("")}</span>`;
+    }
     function computeUpcomingNamedays(items = [], windowDays = 21, limit = 12) {
       const upcoming = [];
       for (const item of items) {
@@ -1741,10 +1754,12 @@
         ? `<span class="member-card-nameday-pill">${namedayIconSvg}${esc(namedayPillLabel(soonest.days))} · ${esc(formatNamedayDate(soonest.feastMonthDay) || soonest.feastMonthDay)}${soonest.personLabel ? ` (${esc(soonest.personLabel)})` : ""}</span>`
         : "";
       const skills = (item.skillsPreview || item.skills || []).slice(0, 3);
+      const familyMembers = family ? familyMemberMinistriesHtml(item) : "";
       const ministries = family ? "" : ministryPillsHtml(item);
       return `<span class="member-card-copy">
         <strong>${esc(item.displayName)}</strong>
         ${meta ? `<small class="member-card-meta">${esc(meta)}</small>` : ""}
+        ${familyMembers}
         ${ministries}
         ${namedayPill}
         ${namedays ? `<small class="member-card-namedays">${esc(namedays)}</small>` : ""}

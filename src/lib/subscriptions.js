@@ -34,6 +34,39 @@ export function parishHouseholdPricing(registration = {}) {
   return { ...band, pricingProgram, monthlyCents, stripePriceEnv };
 }
 
+export function parishHouseholdBandForCount(value = 0) {
+  const count = Math.max(0, Math.trunc(Number(value) || 0));
+  return parishHouseholdBands.find((band) => band.maxHouseholds === null || count <= band.maxHouseholds)
+    || parishHouseholdBands[parishHouseholdBands.length - 1];
+}
+
+export function parishPricingUsageStatus(registration = {}, representedHouseholds = 0, linkedUsers = 0) {
+  const householdCount = Math.max(0, Math.trunc(Number(representedHouseholds) || 0));
+  const userCount = Math.max(0, Math.trunc(Number(linkedUsers) || 0));
+  const selectedBandId = normalizeParishHouseholdBand(registration.parishHouseholdBand || registration.householdBand);
+  const selectedBandIndex = parishHouseholdBands.findIndex((band) => band.id === selectedBandId);
+  const selectedBand = selectedBandIndex >= 0 ? parishHouseholdBands[selectedBandIndex] : null;
+  const recommendedBand = parishHouseholdBandForCount(householdCount);
+  const recommendedBandIndex = parishHouseholdBands.findIndex((band) => band.id === recommendedBand.id);
+  const nextBand = selectedBandIndex >= 0 ? parishHouseholdBands[selectedBandIndex + 1] || null : parishHouseholdBands[0];
+  const nextThreshold = nextBand?.minHouseholds ?? null;
+  const remainingUntilNextBand = nextThreshold === null ? null : Math.max(0, nextThreshold - householdCount);
+  return {
+    linkedUsers: userCount,
+    representedHouseholds: householdCount,
+    selectedBandId,
+    selectedBandLabel: selectedBand?.label || "",
+    recommendedBandId: recommendedBand.id,
+    recommendedBandLabel: recommendedBand.label,
+    nextBandId: nextBand?.id || "",
+    nextBandLabel: nextBand?.label || "",
+    nextThreshold,
+    remainingUntilNextBand,
+    needsBandSelection: !selectedBand,
+    upgradeRequired: selectedBandIndex >= 0 && recommendedBandIndex > selectedBandIndex
+  };
+}
+
 export const subscriptionTiers = [
   {
     id: "starter",

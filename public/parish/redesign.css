@@ -1690,6 +1690,17 @@
 .pdx-sub-module-copy small { margin-top:3px; color:var(--stone); font-size:9px; line-height:1.35; }
 .pdx-sub-module-state { border-radius:999px; padding:4px 7px; background:rgba(46,107,74,.09); color:#2e6b4a; font-size:8px; font-weight:800; white-space:nowrap; }
 .pdx-sub-module.is-locked .pdx-sub-module-state { background:rgba(184,144,47,.1); color:var(--gold-dark); }
+.parish-household-pricing[hidden] { display:none !important; }
+.parish-household-pricing .section-note { margin:7px 0 0; }
+.parish-pricing-usage { display:grid; gap:4px; margin:0 0 16px; border:1px solid rgba(46,107,74,.22); border-radius:11px; padding:12px 14px; background:rgba(46,107,74,.07); }
+.parish-pricing-usage strong { color:#214f38; font-size:12px; }
+.parish-pricing-usage span { color:#4f5f56; font-size:11px; line-height:1.5; }
+.parish-pricing-usage.needs-upgrade { border-color:rgba(184,92,47,.4); background:rgba(184,92,47,.09); }
+.parish-pricing-usage.needs-upgrade strong { color:#8b3f20; }
+.parish-pricing-usage.needs-upgrade span { color:#6d493a; }
+.parish-pricing-usage.is-neutral { border-color:var(--line); background:#f8f6f1; }
+.parish-pricing-usage.is-neutral strong { color:var(--ink); }
+.parish-pricing-usage.is-neutral span { color:var(--stone); }
 
 /* Responsive breakpoints */
 @media (max-width: 1100px) {

@@ -2,17 +2,8 @@
 // Parish handlers and shared helpers (Stripe, donor, admin extracted to own files).
 
 import { activeFestalAlmsCampaigns } from "../festal-alms.js";
-import {
-  enrichParishGivingOptions,
-  publicBoolean,
-  publicComment,
-} from "./parish-giving-catalog.js";
-import {
-  commemorationSourceIdFromOffering,
-  ensureCommemorationEntryFromOffering,
-  saveCommemorationEntry,
-  splitSubmittedNames,
-} from "./parish-commemorations.js";
+import { enrichParishGivingOptions, publicBoolean, publicComment } from "./parish-giving-catalog.js";
+import { commemorationSourceIdFromOffering, ensureCommemorationEntryFromOffering, saveCommemorationEntry, splitSubmittedNames } from "./parish-commemorations.js";
 import { submitParishSupportTicket } from "../lib/parish-support-tickets.js";
 import { dismissParishFeatureRequest, loadPendingParishFeatureRequests } from "../lib/parish-feature-requests.js";
 import {
@@ -104,13 +95,8 @@ export {
 
 import { bookstoreEnabledFor, communicationsEnabledFor, directoryEnabledFor, entitlementsSummary, eventsEnabledFor, exchangeEnabledFor, givingFeatureAccess, hasParishPlusAccess, mealsEnabledFor, prayerRequestsEnabledFor, sacramentsEnabledFor, signupsEnabledFor, stewardshipToolAccess, tierIncludesModule, tierIncludesParishPlus } from "../lib/entitlements.js";
 import { getDirectorySettings } from "../directory/settings.js";
-import {
-  createTaxExemptionClaim,
-  issueClaimUploadToken
-} from "../lib/tax-exemption.js";
-import {
-  createSubscriptionCheckoutForRegistration,
-} from "../lib/subscription-checkout.js";
+import { createTaxExemptionClaim, issueClaimUploadToken } from "../lib/tax-exemption.js";
+import { createSubscriptionCheckoutForRegistration } from "../lib/subscription-checkout.js";
 
 import {
   PARISH_INTRO_DEMO_DAYS,
@@ -118,25 +104,17 @@ import {
   parishIntroDemoEligible,
   subscriptionTier as sharedSubscriptionTier,
 } from "../lib/subscriptions.js";
+import { loadParishPricingUsage, validateParishCheckoutBand } from "../lib/parish-pricing-usage.js";
 
-import {
-  parishSlug,
-} from "../lib/format.js";
-
-import {
-  resolveSettlementProfileId,
-} from "../lib/settlement-profiles.js";
+import { parishSlug } from "../lib/format.js";
+import { resolveSettlementProfileId } from "../lib/settlement-profiles.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
 import { registrationAgreementEvidence, registrationRequiresJurisdiction, registrationRequiresValuesReview, registrationRequiresWebsite, sanitizePublicRegistrationInput } from "../lib/registration-intake.js";
 import { withTaxReadinessDefaults } from "../lib/tax-readiness.js";
 import { recordOrganizationRegistrationAcceptance } from "../lib/legal-acceptance.js";
 export { registrationRequiresJurisdiction };
-import {
-  publicPaymentFeeSchedules,
-} from "../lib/payment-fees.js";
-import {
-  classifyStripeCharge,
-} from "../lib/stripe-volume.js";
+import { publicPaymentFeeSchedules } from "../lib/payment-fees.js";
+import { classifyStripeCharge } from "../lib/stripe-volume.js";
 import {
   MAX_DONATION_CENTS,
   centsFromAmount,
@@ -2221,6 +2199,9 @@ export async function handleParishSubscriptionCheckout(request, env, parishId) {
     body = {};
   }
 
+  const liveUsage = await validateParishCheckoutBand(env, parishId, found.registration, body);
+  if (liveUsage) return json({ error: `Your ${liveUsage.representedHouseholds} represented households require the ${liveUsage.recommendedBandLabel} Parish pricing band.`, code: "parish_household_band_upgrade_required", parishPricingUsage: liveUsage }, { status: 422 });
+
   return createSubscriptionCheckoutForRegistration({
     request,
     env,
@@ -2245,7 +2226,15 @@ export async function handleParishDemoTier(request, env, parishId) {
 
   const body = await request.json().catch(() => ({}));
   const requestedTier = String(body.subscriptionTier || "").trim().toLowerCase();
-  const tier = sharedSubscriptionTier({ subscriptionTier: requestedTier });
+  const requestedHouseholdBand = normalizeParishHouseholdBand(body.parishHouseholdBand ?? found.registration.parishHouseholdBand);
+  if (requestedTier === "parish" && !requestedHouseholdBand) {
+    return json({ error: "Choose a valid active-household range for the Parish demo." }, { status: 422 });
+  }
+  const tier = sharedSubscriptionTier({
+    ...found.registration,
+    subscriptionTier: requestedTier,
+    parishHouseholdBand: requestedHouseholdBand
+  });
   if (!tier || !["starter", "giving", "stewardship", "parish"].includes(tier.id)) {
     return json({ error: "Choose Starter, Giving Plus, Stewardship, or Parish for the demo." }, { status: 422 });
   }
@@ -2255,6 +2244,7 @@ export async function handleParishDemoTier(request, env, parishId) {
     ...current,
     subscriptionTier: tier.id,
     subscriptionTierLabel: tier.label,
+    parishHouseholdBand: requestedHouseholdBand || current.parishHouseholdBand || "",
     subscriptionMonthlyCents: tier.monthlyCents,
     subscriptionStatus: "active",
     subscriptionTrialDays: 0,
@@ -2264,7 +2254,7 @@ export async function handleParishDemoTier(request, env, parishId) {
   let updated = tier.modules?.givingPlus ? ensureBenevolenceFundInRegistration(tierUpdate).registration : tierUpdate;
   updated = await invalidateOnboardingSignoffIfChanged(current, updated, { actor: current.treasurerEmail || current.priestEmail || "parish", reason: "The parish subscription tier changed.", receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app" });
   await saveRegistrationRecord(env, found.key, updated, current);
-  return json({ ok: true, parish: parishDashboardPayload(parishId, updated) });
+  return json({ ok: true, parish: await parishDashboardPayloadWithPricingUsage(env, parishId, updated) });
 }
 
 export async function handleParishSubscriptionRefresh(request, env, parishId) {
@@ -2516,6 +2506,8 @@ export function parishDashboardPayload(parishId, registration) {
     stripeChargesEnabled: Boolean(registration.stripeChargesEnabled),
     subscriptionTier: registration.subscriptionTier || defaultSubscriptionTier(registration),
     subscriptionTierLabel: currentTier?.label || registration.subscriptionTierLabel || "",
+    parishHouseholdBand: normalizeParishHouseholdBand(registration.parishHouseholdBand),
+    subscriptionPricingProgram: registration.subscriptionPricingProgram || "",
     subscriptionStatus: registration.subscriptionStatus || "not_started",
     stripeCustomerId: registration.stripeCustomerId || "",
     stripeSubscriptionId: registration.stripeSubscriptionId || "",
@@ -2551,6 +2543,13 @@ export function parishDashboardPayload(parishId, registration) {
     funds: Array.isArray(registration.funds) ? registration.funds : [],
     campaigns: Array.isArray(registration.campaigns) ? registration.campaigns : [],
     feastCampaigns: Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : []
+  };
+}
+
+async function parishDashboardPayloadWithPricingUsage(env, parishId, registration) {
+  return {
+    ...parishDashboardPayload(parishId, registration),
+    parishPricingUsage: await loadParishPricingUsage(env, parishId, registration)
   };
 }
 
@@ -2673,7 +2672,7 @@ export async function handleParishDashboard(request, env, parishId) {
       || (item.featureId === "giving-plus" && !givingFeatureAccess(registration, "customFunds"))
     );
     const dashboardParish = await enrichParishGivingOptions(env, {
-      ...parishDashboardPayload(parishId, registration),
+      ...await parishDashboardPayloadWithPricingUsage(env, parishId, registration),
       id: parishId,
       accountingAvailable: accountingAvailableForParish(parishId, env),
       parishLifeAvailable: parishLifeAvailableFor(env),
@@ -2833,7 +2832,7 @@ export async function handleParishDashboard(request, env, parishId) {
     if (onboardingWorkflowEnabled(updated)) updated.onboardingState = recommendedOnboardingState(updated, updated.onboardingChecks);
     updated = await invalidateOnboardingSignoffIfChanged(current, updated, { actor: current.treasurerEmail || current.priestEmail || "parish", reason: "The parish changed material onboarding configuration.", receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app" });
     await saveRegistrationRecord(env, found.key, updated, current);
-    const responseParish = parishDashboardPayload(parishId, updated);
+    const responseParish = await parishDashboardPayloadWithPricingUsage(env, parishId, updated);
     responseParish.onboarding = await buildParishOnboardingWorkflow(updated, { appUrl: env.AGAPAY_APP_URL || new URL(request.url).origin, receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app" });
     return json({
       ok: true,
@@ -2888,7 +2887,7 @@ export async function handleParishSession(request, env, parishId) {
     ok: true,
     token: session.token,
     expiresAt: session.expiresAt,
-    parish: parishDashboardPayload(parishId, session.registration)
+    parish: await parishDashboardPayloadWithPricingUsage(env, parishId, session.registration)
   });
 }
 

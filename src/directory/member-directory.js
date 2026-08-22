@@ -420,14 +420,14 @@ async function publishedPhoto(env, context, ownerType, ownerId) {
 }
 
 async function personDto(env, context, row, { detail = false, skillsPreview = null } = {}) {
-  const [contacts, namedays, city, photo, publishedSkills] = await Promise.all([
+  const [contacts, namedays, city, photo, publishedSkills, ministries] = await Promise.all([
     detail ? publishedContacts(env, context, "person", row.id) : Promise.resolve([]),
     publishedNamedaysForPerson(env, context, row.id),
     publishedCity(env, context, "person", row.id),
     publishedPhoto(env, context, "person", row.id),
-    Array.isArray(skillsPreview) ? Promise.resolve(skillsPreview) : publishedSkillPreviewsForPerson(env, context, row.id)
+    Array.isArray(skillsPreview) ? Promise.resolve(skillsPreview) : publishedSkillPreviewsForPerson(env, context, row.id),
+    publishedMinistryAffiliationsForPerson(env, { context, personId: row.id }).catch(() => [])
   ]);
-  const ministries = detail ? await publishedMinistryAffiliationsForPerson(env, { context, personId: row.id }).catch(() => []) : [];
   const displayName = row.preferred_name || "Parish member";
   if (photo) photo.alt = displayName;
   return {
@@ -619,17 +619,10 @@ function alphabet(items) {
 async function peopleItems(env, context) {
   const rows = await peopleBaseRows(env, context);
   const items = await Promise.all(rows.map((row) => personDto(env, context, row)));
-  const ministryRows = await Promise.all(items.map(async (item) => ({
-    id: item.id,
-    ministries: await publishedMinistryAffiliationsForPerson(env, { context, personId: item.id }).catch(() => [])
-  })));
-  const ministriesByPerson = new Map(ministryRows.map((row) => [row.id, row.ministries]));
   return items.map((item) => {
-    const ministries = ministriesByPerson.get(item.id) || [];
     return {
       ...item,
-      ministries,
-      searchText: normalizeQuery([item.displayName, item.suffix, item.household?.displayName, item.city, ...ministries.map((ministry) => ministry.displayName)].filter(Boolean).join(" "))
+      searchText: normalizeQuery([item.displayName, item.suffix, item.household?.displayName, item.city, ...item.ministries.map((ministry) => ministry.displayName)].filter(Boolean).join(" "))
     };
   });
 }
@@ -639,7 +632,11 @@ async function householdItems(env, context) {
   const items = await Promise.all(rows.map((row) => householdDto(env, context, row)));
   return items.map((item) => ({
     ...item,
-    searchText: normalizeQuery([item.displayName, item.city, ...item.members.map((member) => member.displayName)].filter(Boolean).join(" "))
+    searchText: normalizeQuery([
+      item.displayName,
+      item.city,
+      ...item.members.flatMap((member) => [member.displayName, ...(member.ministries || []).map((ministry) => ministry.displayName)])
+    ].filter(Boolean).join(" "))
   }));
 }
 
