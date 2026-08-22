@@ -8624,7 +8624,7 @@ textarea {
 .donor-parish-life-page .parish-life-liturgical-hero .cal-date-weekday { font-size: 8.5px; line-height: 1.15; }
 .donor-parish-life-page .parish-life-liturgical-hero .cal-date-day { display: grid; place-items: center; min-height: 34px; margin: 0; font-size: 30px; line-height: 1; }
 .donor-parish-life-page .parish-life-liturgical-hero .cal-date-my { font-size: 9px; line-height: 1.2; }
-.donor-parish-life-page .parish-life-liturgical-hero .cal-date-calendar { margin-top:2px; color:var(--cal-gold-bright); font-size:7px; font-weight:800; letter-spacing:.08em; line-height:1; text-transform:uppercase; }
+.donor-parish-life-page .parish-life-liturgical-hero .cal-date-calendar { margin-top:3px; color:rgba(246,241,232,.58); font-family:var(--sans); font-size:6px; font-weight:700; letter-spacing:.12em; line-height:1; text-transform:uppercase; }
 .donor-parish-life-page .parish-life-liturgical-hero .cal-today-main { width: 100%; }
 
 /* The full calendar repeats the same compact, single-column hero treatment. */
@@ -9510,7 +9510,7 @@ textarea {
   .donor-parish-life-page .parish-life-liturgical-hero .cal-date-weekday { font-size: 7.5px; }
   .donor-parish-life-page .parish-life-liturgical-hero .cal-date-day { font-size: 26px; }
   .donor-parish-life-page .parish-life-liturgical-hero .cal-date-my { font-size: 8px; }
-  .donor-parish-life-page .parish-life-liturgical-hero .cal-date-calendar { font-size:6.5px; }
+  .donor-parish-life-page .parish-life-liturgical-hero .cal-date-calendar { font-size:5.5px; }
   .donor-calendar-page .calendar-liturgical-hero .cal-hero-inner { padding: 20px 18px 18px; }
   .donor-calendar-page .calendar-liturgical-hero .cal-hero-eyebrow { max-width: calc(100% - 70px); margin-bottom: 12px; font-size: 8.5px; }
   .donor-calendar-page .calendar-liturgical-hero .cal-date-badge { width: 62px; padding: 7px 4px 8px; border-radius: 0 0 0 13px; }
