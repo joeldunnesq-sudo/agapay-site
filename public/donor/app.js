@@ -1204,6 +1204,7 @@ function renderDonorTodayInChurch(parish, payload) {
   const date = payload?.date || todayIsoLocal();
   const civilParts = longDateParts(date);
   const churchParts = longDateParts(churchCalendarDate(date, calendar));
+  const usesJulianCalendar = calendarLabel(calendar) === "Julian";
   const today = payload?.today || {};
   const feast = payload?.feast || null;
   const feastTitle = today.primarySaintTitle || today.feastTitle || feast?.name || (civilParts.weekday === "Sunday" ? "The Lord's Day" : "Today in the Church");
@@ -1227,6 +1228,11 @@ function renderDonorTodayInChurch(parish, payload) {
   setText("todayMonthDay", churchParts.dayNum);
   setText("todayYear", churchParts.monthYear);
   setText("todayCalendarLabel", `${calendarLabel(calendar)} calendar date`);
+  setText("todayChurchDateCalendar", "Julian");
+  const churchDateBadge = document.getElementById("todayChurchDateBadge");
+  if (churchDateBadge) churchDateBadge.hidden = !usesJulianCalendar;
+  const dateHeadingRow = document.querySelector(".parish-life-liturgical-hero .cal-date-heading-row");
+  if (dateHeadingRow) dateHeadingRow.classList.toggle("is-civil-only", !usesJulianCalendar);
   setText("todayFeastTitle", feastTitle);
   const feastNote = document.getElementById("todayFeastNote");
   if (feastNote) {

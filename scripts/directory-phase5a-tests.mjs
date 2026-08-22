@@ -323,7 +323,9 @@ await test("participant publication is separate and then appears on profile and 
   const profile = await getMemberDirectoryPerson(env, { context: memberDirectoryContext, personId: member.id });
   assert.equal(profile.person.ministries[0].displayName, "Hospitality");
   const filtered = await listMemberDirectoryPeople(env, { context: memberDirectoryContext, ministryId: ministry.id });
-  assert.equal(filtered.items.some((item) => item.id === member.id), true);
+  const listedMember = filtered.items.find((item) => item.id === member.id);
+  assert.ok(listedMember);
+  assert.equal(listedMember.ministries[0].displayName, "Hospitality", "published ministry affiliations must be present on browse cards");
 });
 
 await test("ministry search finds a home-parish My AGAPAY profile and links it when assigned", async () => {

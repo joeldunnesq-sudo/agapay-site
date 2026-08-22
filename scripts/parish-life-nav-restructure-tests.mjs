@@ -44,7 +44,7 @@ assert.match(donorStyles, /\.parish-life-community-tool \{[^}]*min-height:82px/,
 assert.match(donorStyles, /@media \(max-width:680px\)[\s\S]{0,160}\.parish-life-community-tools \{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, "all three Community Tool cards should remain in one row on mobile");
 
 assert.match(landing, /class="cal-hero parish-life-liturgical-hero"/);
-assert.match(landing, /class="cal-date-badge"/);
+assert.match(landing, /class="cal-date-heading-row"/);
 assert.match(landing, /id="todayCivilDateEyebrow"/);
 assert.match(landing, /id="todayFeastNote"/);
 assert.match(landing, /id="todayChips"/);
@@ -62,7 +62,10 @@ assert.match(
   "the Koinonia landing header should use the same Cormorant serif family as the My AGAPAY home header"
 );
 assert.match(donorStyles, /\.donor-parish-life-page \.parish-life-liturgical-hero \.cal-today-row \{ display: block; \}/, "the Koinonia hero should use one text column");
-assert.match(donorStyles, /\.donor-parish-life-page \.parish-life-liturgical-hero \.cal-date-badge \{[\s\S]*?position: absolute;[\s\S]*?top: 0;[\s\S]*?right: 0;/, "the church date should sit in a compact top-right cutout");
+assert.match(donorStyles, /\.donor-parish-life-page \.parish-life-liturgical-hero \.cal-date-heading-row \{[\s\S]*?display: flex;[\s\S]*?justify-content: flex-start;/, "the Church badge and civil-date copy should begin together at the top-left");
+assert.match(donorStyles, /\.donor-parish-life-page \.parish-life-liturgical-hero \.cal-date-heading-row \{[\s\S]*?margin: -24px -26px 15px;/, "the Church badge row should reach the hero's top-left edges instead of remaining inset");
+assert.match(donorStyles, /\.donor-parish-life-page \.parish-life-liturgical-hero \.cal-date-badge \{[\s\S]*?border-radius: 0 0 14px 0;/, "the Church badge should mirror the original corner cutout on the left");
+assert.match(donorStyles, /\.donor-parish-life-page \.parish-life-liturgical-hero \.cal-date-heading-row\.is-civil-only \{[\s\S]*?margin: 0 0 15px;/, "Revised-Julian parishes should restore the civil date to the normal content inset");
 
 const sandbox = { window: {}, document: { addEventListener() {} }, console };
 vm.runInNewContext(landingScript, sandbox);
@@ -184,7 +187,10 @@ for (const [name, source] of Object.entries({ calendar, feed, groups, teaching, 
 assert.match(shell, /function ensureParishLifeBackLink[\s\S]*feed\|news\|groups\|teaching\|media/);
 assert.match(shell, /link\.href = "\/myagapay\/parish-life"/);
 assert.match(shell, /className = "parish-life-back-link koinonia-page-back"[\s\S]*page\.prepend\(link\)/, "each Koinonia subpage must put its back arrow at the top-left of page content");
-assert.match(donorApp, /churchCalendarDate\(date, calendar\)[\s\S]*todayCivilDateEyebrow[\s\S]*churchParts\.dayNum[\s\S]*churchParts\.monthYear/, "the eyebrow must show the civil date while the badge uses the parish calendar date");
+assert.match(landing, /class="cal-date-heading-row"[\s\S]*id="todayChurchDateBadge"[\s\S]*id="todayChurchDateCalendar">Julian<[\s\S]*id="todayCivilDateEyebrow"/, "the Koinonia hero must put the Julian Church date at left with the civil date beside it");
+assert.doesNotMatch(landing, /id="todayCalendarLabel"/, "Koinonia should not repeat a separate Julian calendar designation beside the badge");
+assert.match(donorApp, /churchCalendarDate\(date, calendar\)[\s\S]*usesJulianCalendar[\s\S]*todayCivilDateEyebrow[\s\S]*churchParts\.dayNum[\s\S]*todayChurchDateBadge[\s\S]*hidden = !usesJulianCalendar/, "the eyebrow must show the civil date while the Julian-only badge uses the parish calendar date");
+assert.match(donorApp, /dateHeadingRow\.classList\.toggle\("is-civil-only", !usesJulianCalendar\)/, "Revised-Julian parishes should remove the Church-date box and use the civil-only layout");
 
 assert.doesNotMatch(parishDashboard, /class="koinonia-quick-publish"/, "At a glance should no longer duplicate announcement, audio, and video actions");
 assert.match(parishDashboard, /koinonia-overview-welcome[\s\S]*koinonia-calendar-connect is-compact[\s\S]*id="koinoniaCalendarUrl"/, "At a glance should contain the calendar connection card");

@@ -261,13 +261,38 @@
     .member-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(232px, 1fr)); gap:16px; padding:0 26px 26px; }
     .member-card { position:relative; border:1px solid var(--line-soft); background:#fff; border-radius:20px; padding:0; display:grid; grid-template-rows:170px auto; gap:0; overflow:hidden; text-align:left; cursor:pointer; min-height:250px; box-shadow:var(--shadow-md); transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
     .member-card:hover, .member-card:focus-visible { outline:none; transform:translateY(-3px); box-shadow:0 18px 36px rgba(6,21,34,.14); border-color:rgba(200,162,74,.55); }
-    .member-photo { width:100%; height:100%; border-radius:0; background:linear-gradient(145deg, #e8efe9, #f6f1e8); object-fit:cover; object-position:center; display:grid; place-items:center; font-family:var(--font-display); font-size:32px; font-weight:600; color:var(--green); }
+    .member-photo { width:100%; height:100%; border-radius:0; background:var(--avatar-bg, linear-gradient(145deg, #e8efe9, #f6f1e8)); object-fit:cover; object-position:center; display:grid; place-items:center; font-family:var(--font-display); font-size:32px; font-weight:600; color:var(--avatar-ink, var(--green)); }
     img.member-photo { display:block; }
     .household-card img.member-photo { object-fit:contain; }
     .member-card > span:last-child { display:block; padding:16px 17px 18px; }
     .member-card strong { display:block; color:var(--ink); font-family:var(--font-display); font-size:21px; line-height:1.1; }
     .member-card small { display:block; color:var(--muted); margin-top:6px; font-size:12px; line-height:1.4; }
     .member-directory > .actions { padding:0 26px 26px; }
+    .avatar-tint-1 { --avatar-bg:linear-gradient(150deg,#f8ecd2,#eccb84); --avatar-ink:#6f4f16; }
+    .avatar-tint-2 { --avatar-bg:linear-gradient(150deg,#e9eef0,#c9d6da); --avatar-ink:#33505a; }
+    .avatar-tint-3 { --avatar-bg:linear-gradient(150deg,#f3e6e2,#e2bdb2); --avatar-ink:#7a3b2c; }
+    .avatar-tint-4 { --avatar-bg:linear-gradient(150deg,#e9ede4,#c7d3b8); --avatar-ink:#3f5232; }
+    .avatar-tint-5 { --avatar-bg:linear-gradient(150deg,#e4e6f0,#c3c8e0); --avatar-ink:#38416f; }
+    .member-card-nameday-pill { display:inline-flex; align-items:center; gap:5px; margin:0 0 8px; padding:3px 9px 3px 7px; border-radius:999px; font-size:11px; font-weight:700; background:linear-gradient(135deg,#f8ecd2,#f3ddad); color:#6f4f16; border:1px solid rgba(184,138,61,.32); width:fit-content; }
+    .member-card-nameday-pill svg { width:11px; height:11px; stroke:#8a651f; fill:none; stroke-width:2; flex:0 0 auto; }
+    .member-card-ministries { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+    .member-card-ministry-pill { display:inline-flex; align-items:center; gap:5px; max-width:100%; padding:4px 8px; border:1px solid rgba(11,33,48,.2); border-radius:999px; background:#eef3f7; color:#163447; font-size:10.5px; font-weight:800; line-height:1.1; }
+    .member-card-ministry-pill svg { width:12px; height:12px; flex:0 0 auto; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    .member-card-ministry-pill.is-council { border-color:#0b2130; background:#0b2130; color:#e8cb82; box-shadow:0 3px 9px rgba(6,21,34,.14); }
+    .profile-head .member-card-ministries { margin-bottom:0; }
+    .household-member-detail .member-card-ministries { margin:8px 0 0; }
+    .directory-nameday-spotlight { margin:0 26px 18px; }
+    .directory-nameday-spotlight-head { display:flex; align-items:center; gap:7px; margin:0 0 10px; }
+    .directory-nameday-spotlight-head svg { width:16px; height:16px; stroke:var(--gold-deep); fill:none; stroke-width:1.8; flex:0 0 auto; }
+    .directory-nameday-spotlight-head strong { font-family:"Cormorant Garamond",Georgia,serif; font-size:16px; color:var(--navy); font-weight:600; }
+    .directory-nameday-spotlight-row { display:flex; gap:10px; overflow-x:auto; padding:2px 2px 8px; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; }
+    .directory-nameday-spotlight-row::-webkit-scrollbar { display:none; }
+    .nameday-spotlight-card { flex:0 0 auto; scroll-snap-align:start; min-width:132px; max-width:132px; background:linear-gradient(160deg,#fff,var(--gold-tint-2)); border:1px solid rgba(184,138,61,.28); border-radius:14px; padding:10px 12px; text-align:left; }
+    .nameday-spotlight-card .nsc-date { display:block; font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--gold-deep); }
+    .nameday-spotlight-card .nsc-name { display:block; margin-top:4px; font-family:"Cormorant Garamond",Georgia,serif; font-size:16px; font-weight:600; color:var(--navy); line-height:1.2; }
+    .nameday-spotlight-card .nsc-family { display:block; margin-top:2px; font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .member-card-skills { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+    .member-card-skills > span { border:1px solid rgba(169,124,37,.28); border-radius:999px; background:#f8f1e2; color:#6f4f16; padding:3px 7px; font-size:11px; line-height:1.1; }
     .member-directory > .profile-pane { padding:26px; }
     .profile-pane { display:grid; gap:14px; }
     .profile-head { display:grid; grid-template-columns:80px 1fr; gap:16px; align-items:center; }
@@ -341,6 +366,7 @@
     .directory-nav-identity { min-width:0; display:grid; gap:2px; }
     .directory-nav-identity .topbar-title { display:block; }
     .mobile-directory-home { display:none; }
+    .mobile-back { display:none; }
     .directory-view-switcher {
       position:sticky;
       top:12px;
@@ -586,6 +612,7 @@
       .directory-browse-note { padding:0 2px 10px !important; font-size:11px; }
       .directory-tabs { margin:14px 16px 0; }
       .alphabet { margin:12px 16px 14px; }
+      .directory-nameday-spotlight { margin:14px 16px; }
       .member-grid { grid-template-columns:1fr; gap:10px; padding:0 0 18px; }
       .member-card { min-height:0; grid-template-columns:68px minmax(0,1fr); grid-template-rows:68px; align-items:center; gap:12px; border-radius:16px; padding:11px; }
       .member-card:hover, .member-card:focus-visible { transform:none; }
@@ -667,7 +694,7 @@
         background:#fff;
         box-shadow:none;
       }
-      .member-card .member-photo { width:56px; height:56px; border-radius:50%; background:#efe7d8; color:#6f4f16; font-size:21px; }
+      .member-card .member-photo { width:56px; height:56px; border-radius:50%; background:var(--avatar-bg, #efe7d8); color:var(--avatar-ink, #6f4f16); font-size:21px; border:2px solid #fff; box-shadow:0 0 0 1px rgba(200,162,74,.4); }
       .member-card > span:last-child { padding:0; }
       .member-card strong { font-size:18px; margin-bottom:2px; }
       .member-card small { color:#70695d; font-size:12px; line-height:1.35; }
@@ -1080,6 +1107,7 @@
           </div>
           <p id="memberDirectoryPrivacy" class="privacy-reminder">This directory is private to authorized members of your parish. Please use contact information respectfully and do not copy or distribute it outside the parish.</p>
         </div>
+        <div class="directory-nameday-spotlight" id="directoryNamedaySpotlight" hidden></div>
         <details class="directory-filter-card" id="directoryFilters">
           <summary>
             <span class="directory-filter-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></span>
@@ -1355,13 +1383,22 @@
       const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
       return `${parts[0]?.charAt(0) || ""}${parts.length > 1 ? parts.at(-1).charAt(0) : ""}`.toUpperCase() || "AG";
     }
+    function directoryAvatarTintClass(name) {
+      const clean = String(name || "").trim();
+      if (!clean) return "avatar-tint-1";
+      let hash = 0;
+      for (let i = 0; i < clean.length; i += 1) hash = (hash * 31 + clean.charCodeAt(i)) >>> 0;
+      return `avatar-tint-${(hash % 5) + 1}`;
+    }
     function photoHtml(item, className = "member-photo") {
       const ownerType = item?.type === "household" ? "household" : "person";
       const initials = directoryInitials(item?.displayName, item?.type);
       const url = mediaPreviewUrl(item?.photo, ownerType);
-      return url
-        ? `<img class="${className}" data-auth-src="${esc(url)}" data-photo-fallback="${esc(initials)}" alt="${esc(item?.photo?.alt || item?.displayName || "Directory photo")}" loading="lazy" />`
-        : `<span class="${className}" aria-hidden="true">${esc(initials)}</span>`;
+      const tintClass = directoryAvatarTintClass(item?.displayName);
+      if (url) {
+        return `<img class="${className} ${tintClass}" data-auth-src="${esc(url)}" data-photo-fallback="${esc(initials)}" alt="${esc(item?.photo?.alt || item?.displayName || "Directory photo")}" loading="lazy" />`;
+      }
+      return `<span class="${className} ${tintClass}" aria-hidden="true">${esc(initials)}</span>`;
     }
     function mediaVariantFor(ownerType) {
       return ownerType === "household" ? "household_card" : "avatar_medium";
@@ -1608,6 +1645,83 @@
       }
       return [item.household?.displayName, item.city, item.suffix].filter(Boolean).join(" · ");
     }
+    function daysUntilNextOccurrence(monthDay) {
+      const match = String(monthDay || "").match(/^(\d{2})-(\d{2})$/);
+      if (!match) return null;
+      const month = Number(match[1]) - 1;
+      const day = Number(match[2]);
+      const now = new Date();
+      const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+      let target = Date.UTC(now.getFullYear(), month, day);
+      if (target < todayUTC) target = Date.UTC(now.getFullYear() + 1, month, day);
+      return Math.round((target - todayUTC) / 86400000);
+    }
+    function namedayCandidates(item) {
+      const family = item.type === "household";
+      return family
+        ? (item.members || []).flatMap((member) => (member.namedays || []).map((nameday) => ({ ...nameday, personLabel: String(member.displayName || "").split(/\s+/)[0] })))
+        : (item.namedays || []).map((nameday) => ({ ...nameday, personLabel: String(item.displayName || "").split(/\s+/)[0] }));
+    }
+    function soonestUpcomingNameday(item) {
+      let best = null;
+      for (const nameday of namedayCandidates(item)) {
+        const days = daysUntilNextOccurrence(nameday.feastMonthDay);
+        if (days === null) continue;
+        if (!best || days < best.days) best = { days, feastMonthDay: nameday.feastMonthDay, personLabel: nameday.personLabel };
+      }
+      return best;
+    }
+    function namedayPillLabel(days) {
+      if (days === 0) return "Today";
+      if (days === 1) return "Tomorrow";
+      return `In ${days}d`;
+    }
+    const namedayIconSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c2 3 3 5 3 7a3 3 0 1 1-6 0c0-2 1-4 3-7Z"/><path d="M6 22c0-4 2.5-6 6-6s6 2 6 6"/></svg>';
+    const ministryIconSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="16.5" cy="9" r="2.5"/><path d="M2.5 20c.5-4.2 2.4-6.2 5.5-6.2s5 2 5.5 6.2M13 15.2c1-.8 2.1-1.2 3.5-1.2 2.8 0 4.5 1.8 5 5.4"/></svg>';
+    function isCouncilMinistry(ministry = {}) {
+      return String(ministry.slug || "").toLowerCase() === "parish-council"
+        || /\b(parish council|vestry|parish board)\b/i.test(String(ministry.displayName || ministry.name || ""));
+    }
+    function ministryPillsHtml(item = {}) {
+      const ministries = Array.isArray(item.ministries) ? item.ministries : [];
+      if (!ministries.length) return "";
+      return `<span class="member-card-ministries" aria-label="Parish ministries">${ministries.map((ministry) => {
+        const label = ministry.displayName || ministry.name || "Parish ministry";
+        return `<span class="member-card-ministry-pill${isCouncilMinistry(ministry) ? " is-council" : ""}">${ministryIconSvg}<span>${esc(label)}</span></span>`;
+      }).join("")}</span>`;
+    }
+    function computeUpcomingNamedays(items = [], windowDays = 21, limit = 12) {
+      const upcoming = [];
+      for (const item of items) {
+        const familyLabel = item.type === "household" ? item.displayName : (item.household?.displayName || "");
+        for (const nameday of namedayCandidates(item)) {
+          const days = daysUntilNextOccurrence(nameday.feastMonthDay);
+          if (days === null || days > windowDays) continue;
+          upcoming.push({ days, feastMonthDay: nameday.feastMonthDay, personLabel: nameday.personLabel, familyLabel });
+        }
+      }
+      upcoming.sort((a, b) => a.days - b.days);
+      return upcoming.slice(0, limit);
+    }
+    function renderNamedaySpotlight(items = []) {
+      const container = document.getElementById("directoryNamedaySpotlight");
+      if (!container) return;
+      const upcoming = computeUpcomingNamedays(items);
+      if (!upcoming.length) {
+        container.hidden = true;
+        container.innerHTML = "";
+        return;
+      }
+      container.hidden = false;
+      container.innerHTML = `
+        <div class="directory-nameday-spotlight-head">${namedayIconSvg}<strong>Upcoming namedays</strong></div>
+        <div class="directory-nameday-spotlight-row">${upcoming.map((nameday) => `
+          <article class="nameday-spotlight-card">
+            <span class="nsc-date">${esc(nameday.days <= 1 ? namedayPillLabel(nameday.days) : (formatNamedayDate(nameday.feastMonthDay) || nameday.feastMonthDay))}</span>
+            <span class="nsc-name">${esc(nameday.personLabel || "—")}</span>
+            ${nameday.familyLabel ? `<span class="nsc-family">${esc(nameday.familyLabel)}</span>` : ""}
+          </article>`).join("")}</div>`;
+    }
     function memberCardBody(item) {
       const family = item.type === "household";
       const meta = family
@@ -1622,10 +1736,17 @@
             const date = formatNamedayDate(nameday.feastMonthDay);
             return `${date || nameday.feastMonthDay}${nameday.saintName ? ` – ${nameday.saintName}` : ""}`;
           }).join(" • ");
+      const soonest = soonestUpcomingNameday(item);
+      const namedayPill = soonest && soonest.days <= 30
+        ? `<span class="member-card-nameday-pill">${namedayIconSvg}${esc(namedayPillLabel(soonest.days))} · ${esc(formatNamedayDate(soonest.feastMonthDay) || soonest.feastMonthDay)}${soonest.personLabel ? ` (${esc(soonest.personLabel)})` : ""}</span>`
+        : "";
       const skills = (item.skillsPreview || item.skills || []).slice(0, 3);
+      const ministries = family ? "" : ministryPillsHtml(item);
       return `<span class="member-card-copy">
         <strong>${esc(item.displayName)}</strong>
         ${meta ? `<small class="member-card-meta">${esc(meta)}</small>` : ""}
+        ${ministries}
+        ${namedayPill}
         ${namedays ? `<small class="member-card-namedays">${esc(namedays)}</small>` : ""}
         ${skills.length ? `<span class="member-card-skills">${skills.map((skill) => `<span>${esc(skill.displayLabel || skill.name || skill)}</span>`).join("")}</span>` : ""}
       </span>`;
@@ -1709,6 +1830,7 @@
         memberState.items = append ? [...memberState.items, ...(result.items || [])] : (result.items || []);
         populateMemberSkillFilter(memberState.items);
         refreshMemberCards();
+        if (!append) renderNamedaySpotlight(memberState.items);
         if (result.alphabet) renderAlphabet(result.alphabet);
         memberState.cursor = result.nextCursor || "";
         document.getElementById("memberLoadMore").hidden = !memberState.cursor;
@@ -1738,6 +1860,7 @@
           memberState.cursor = directory.households.nextCursor || "";
           populateMemberSkillFilter(memberState.items);
           refreshMemberCards();
+          renderNamedaySpotlight(memberState.items);
           document.getElementById("memberLoadMore").hidden = !memberState.cursor;
         } else {
           await loadMemberDirectory();
@@ -1826,9 +1949,10 @@
       const shared = contacts || namedays
         ? `<div class="household-member-details">${contacts}${namedays}</div>`
         : `<small>No contact information or name day shared.</small>`;
+      const ministries = ministryPillsHtml(member);
       return `<article class="household-member-detail">
         ${photoHtml(member)}
-        <div><h3>${esc(member.displayName)}</h3><small>${esc(member.relationship || "Family member")}</small>${shared}</div>
+        <div><h3>${esc(member.displayName)}</h3><small>${esc(member.relationship || "Family member")}</small>${ministries}${shared}</div>
       </article>`;
     }
     function renderFamilyDetailMember(member) {
@@ -1895,9 +2019,10 @@
           <div class="actions"><button class="btn secondary" type="button" id="closeMemberProfile">Back to Directory</button></div>
         </article>`;
       } else {
+        const ministries = ministryPillsHtml(profile);
         pane.innerHTML = `
         <article class="mini-card">
-          <div class="profile-head">${photoHtml(profile)}<div><h2>${esc(profile.displayName)}</h2><div class="profile-meta">${[profile.city, profile.household?.displayName].filter(Boolean).map((value) => `<span>${esc(value)}</span>`).join("")}</div></div></div>
+          <div class="profile-head">${photoHtml(profile)}<div><h2>${esc(profile.displayName)}</h2><div class="profile-meta">${[profile.city, profile.household?.displayName].filter(Boolean).map((value) => `<span>${esc(value)}</span>`).join("")}</div>${ministries}</div></div>
           <div class="actions">${householdLink}<button class="btn secondary" type="button" id="closeMemberProfile">Back to Browse</button></div>
           ${contacts ? `<button class="directory-contact-reveal" type="button" data-reveal-directory-contact>Reveal contact info</button><div class="actions" data-directory-contacts hidden>${contacts}</div>` : ""}
           ${members}

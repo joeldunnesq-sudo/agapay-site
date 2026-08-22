@@ -8580,26 +8580,43 @@ textarea {
   /* no visual overrides: this is the pre-existing calendar hero */
 }
 
-/* One generous text column, with the church date tucked into the corner. */
-.donor-parish-life-page .parish-life-liturgical-hero .cal-hero-eyebrow {
-  max-width: calc(100% - 82px);
-  margin-bottom: 14px;
+/* Keep the original date treatment, with the Church badge moved to top-left. */
+.donor-parish-life-page .parish-life-liturgical-hero .cal-date-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+  margin: -24px -26px 15px;
+  padding-right: 26px;
+}
+.donor-parish-life-page .parish-life-liturgical-hero .cal-date-heading-copy {
+  flex: 1;
+  min-width: 0;
+}
+.donor-parish-life-page .parish-life-liturgical-hero .cal-date-heading-copy .cal-hero-eyebrow {
+  display: flex;
+  max-width: none;
+  margin: 0;
+}
+.donor-parish-life-page .parish-life-liturgical-hero .cal-date-heading-row.is-civil-only {
+  margin: 0 0 15px;
+  padding-right: 0;
 }
 .donor-parish-life-page .parish-life-liturgical-hero .cal-today-row { display: block; }
 .donor-parish-life-page .parish-life-liturgical-hero .cal-date-badge {
-  position: absolute;
-  top: 0;
-  right: 0;
+  position: static;
   z-index: 3;
+  align-self: stretch;
+  flex: 0 0 70px;
   display: grid;
-  grid-template-rows: auto minmax(34px, auto) auto;
+  grid-template-rows: auto minmax(34px, auto) auto auto;
   align-items: center;
   justify-items: center;
   row-gap: 3px;
   width: 70px;
   border-top: 0;
-  border-right: 0;
-  border-radius: 0 0 0 16px;
+  border-left: 0;
+  border-radius: 0 0 14px 0;
   padding: 9px 5px 10px;
   background: rgba(255, 255, 255, 0.085);
   backdrop-filter: blur(10px);
@@ -8607,6 +8624,7 @@ textarea {
 .donor-parish-life-page .parish-life-liturgical-hero .cal-date-weekday { font-size: 8.5px; line-height: 1.15; }
 .donor-parish-life-page .parish-life-liturgical-hero .cal-date-day { display: grid; place-items: center; min-height: 34px; margin: 0; font-size: 30px; line-height: 1; }
 .donor-parish-life-page .parish-life-liturgical-hero .cal-date-my { font-size: 9px; line-height: 1.2; }
+.donor-parish-life-page .parish-life-liturgical-hero .cal-date-calendar { margin-top:2px; color:var(--cal-gold-bright); font-size:7px; font-weight:800; letter-spacing:.08em; line-height:1; text-transform:uppercase; }
 .donor-parish-life-page .parish-life-liturgical-hero .cal-today-main { width: 100%; }
 
 /* The full calendar repeats the same compact, single-column hero treatment. */
@@ -9485,11 +9503,14 @@ textarea {
   .donor-parish-life-page .parish-life-page-shell { gap: 0; }
   .donor-parish-life-page .parish-life-liturgical-hero { margin-bottom: 6px; }
   .donor-parish-life-page .parish-life-liturgical-hero .cal-hero-inner { padding: 20px 18px 18px; }
-  .donor-parish-life-page .parish-life-liturgical-hero .cal-hero-eyebrow { max-width: calc(100% - 70px); margin-bottom: 12px; font-size: 8.5px; }
-  .donor-parish-life-page .parish-life-liturgical-hero .cal-date-badge { width: 62px; padding: 7px 4px 8px; border-radius: 0 0 0 13px; }
+  .donor-parish-life-page .parish-life-liturgical-hero .cal-date-heading-row { gap: 12px; margin:-20px -18px 13px; padding-right:18px; }
+  .donor-parish-life-page .parish-life-liturgical-hero .cal-date-heading-row.is-civil-only { margin:0 0 13px; padding-right:0; }
+  .donor-parish-life-page .parish-life-liturgical-hero .cal-date-heading-copy .cal-hero-eyebrow { font-size: 8.5px; }
+  .donor-parish-life-page .parish-life-liturgical-hero .cal-date-badge { flex-basis:62px; width:62px; padding:7px 4px 8px; border-radius:0 0 13px 0; }
   .donor-parish-life-page .parish-life-liturgical-hero .cal-date-weekday { font-size: 7.5px; }
   .donor-parish-life-page .parish-life-liturgical-hero .cal-date-day { font-size: 26px; }
   .donor-parish-life-page .parish-life-liturgical-hero .cal-date-my { font-size: 8px; }
+  .donor-parish-life-page .parish-life-liturgical-hero .cal-date-calendar { font-size:6.5px; }
   .donor-calendar-page .calendar-liturgical-hero .cal-hero-inner { padding: 20px 18px 18px; }
   .donor-calendar-page .calendar-liturgical-hero .cal-hero-eyebrow { max-width: calc(100% - 70px); margin-bottom: 12px; font-size: 8.5px; }
   .donor-calendar-page .calendar-liturgical-hero .cal-date-badge { width: 62px; padding: 7px 4px 8px; border-radius: 0 0 0 13px; }

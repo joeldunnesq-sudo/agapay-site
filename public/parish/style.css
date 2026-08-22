@@ -1201,6 +1201,8 @@
     .koinonia-ministry-roster strong,.koinonia-ministry-roster small { display:block; }
     .koinonia-ministry-roster strong { font-size:12px; }.koinonia-ministry-roster small { color:#7b8389; font-size:10px; }
     .koinonia-ministry-roster button { border:0; background:transparent; color:#985447; font-size:10px; font-weight:800; cursor:pointer; }
+    .koinonia-ministry-roster-actions { display:flex; align-items:center; justify-content:flex-end; gap:5px; }
+    .koinonia-ministry-roster-actions .is-directory { border:1px solid rgba(184,138,61,.32); border-radius:999px; padding:5px 8px; background:#fbf5e8; color:#6f4f16; }
     .koinonia-ministry-roster>p { color:#7a8289; font-size:12px; }
     .koinonia-ministry-request-list { display:grid; gap:8px; margin-top:12px; }
     .koinonia-ministry-request-list article { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:11px; padding:12px; border:1px solid #e0d5bd; border-radius:12px; background:#fffaf1; }

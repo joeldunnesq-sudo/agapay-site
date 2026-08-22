@@ -11329,9 +11329,9 @@
         <div class="koinonia-ministry-form-actions"><button class="btn btn-ghost" type="button" onclick="toggleKoinoniaMinistryEditor('${escapeAttr(ministry.id)}',false)">Cancel</button><button class="btn btn-gold" type="submit">Save changes</button></div>
       </form>` : ''}
       <section class="koinonia-ministry-image-tools"><div><strong>Group photo</strong><p>Shown beside this ministry name in Koinonia and group chats.</p></div><label class="btn btn-gold">${ministry.hasImage ? 'Replace photo' : 'Choose photo'}<input type="file" accept="image/jpeg,image/png,image/webp" onchange="uploadKoinoniaMinistryImage(event,'${escapeAttr(ministry.id)}')" hidden /></label>${ministry.hasImage ? `<button type="button" class="btn btn-ghost" onclick="removeKoinoniaMinistryImage('${escapeAttr(ministry.id)}')">Remove photo</button>` : ''}</section>
-      <section class="koinonia-ministry-detail-section"><div class="koinonia-panel-head"><div><span class="eyebrow">Team roster</span><h4>${participants.length} member${participants.length === 1 ? '' : 's'}</h4></div></div>
+      <section class="koinonia-ministry-detail-section"><div class="koinonia-panel-head"><div><span class="eyebrow">Team roster</span><h4>${participants.length} member${participants.length === 1 ? '' : 's'}</h4><p>Published memberships appear beneath each person's name in the private parish directory.</p></div></div>
         <form class="koinonia-member-search" onsubmit="searchKoinoniaMinistryPeople(event,'${escapeAttr(ministry.id)}')"><label for="koinoniaMemberSearch">Invite a My AGAPAY parishioner into this group</label><div><input id="koinoniaMemberSearch" name="query" required minlength="2" placeholder="Search by name or email" /><button type="submit">Search</button></div><div id="koinoniaMemberSearchResults"></div></form>
-        <div class="koinonia-ministry-roster">${participants.length ? participants.map(person => `<article><span>${escapeHtml((person.displayName || 'P').slice(0,1))}</span><div><strong>${escapeHtml(person.displayName)}</strong><small>${escapeHtml(contentCategoryLabel(person.participationType))}</small></div><button type="button" onclick="removeKoinoniaMinistryMember('${escapeAttr(ministry.id)}','${escapeAttr(person.id)}')">Remove</button></article>`).join('') : '<p>No parishioners have been added yet.</p>'}</div>
+        <div class="koinonia-ministry-roster">${participants.length ? participants.map(person => { const badgeShown = person.approvedPublication && person.publicationPreference === 'directory'; return `<article><span>${escapeHtml((person.displayName || 'P').slice(0,1))}</span><div><strong>${escapeHtml(person.displayName)}</strong><small>${escapeHtml(contentCategoryLabel(person.participationType))} · ${badgeShown ? 'Directory badge shown' : 'Directory badge hidden'}</small></div><div class="koinonia-ministry-roster-actions"><button class="is-directory" type="button" onclick="setKoinoniaMinistryDirectoryBadge('${escapeAttr(ministry.id)}','${escapeAttr(person.id)}',${badgeShown ? 'false' : 'true'})">${badgeShown ? 'Hide badge' : 'Show badge'}</button><button type="button" onclick="removeKoinoniaMinistryMember('${escapeAttr(ministry.id)}','${escapeAttr(person.id)}')">Remove</button></div></article>`; }).join('') : '<p>No parishioners have been added yet.</p>'}</div>
       </section>
       <section class="koinonia-ministry-detail-section"><div class="koinonia-panel-head"><div><span class="eyebrow">Incoming interest</span><h4>${requests.length ? `${requests.length} waiting` : 'All caught up'}</h4></div></div><div class="koinonia-ministry-request-list">${requests.length ? requests.map(request => `<article><span>✦</span><div><strong>${escapeHtml(request.displayName || 'Parishioner')}</strong><small>Wants to join as ${escapeHtml(contentCategoryLabel(request.interestType))}</small>${request.memberNote ? `<p>${escapeHtml(request.memberNote)}</p>` : ''}</div><div><button type="button" onclick="reviewKoinoniaMinistryRequest('${escapeAttr(request.id)}','approve')">Approve</button><button class="is-secondary" type="button" onclick="reviewKoinoniaMinistryRequest('${escapeAttr(request.id)}','deny')">Decline</button></div></article>`).join('') : '<div class="koinonia-ministry-caught-up"><span>✓</span><p>No ministry-specific requests need a response.</p></div>'}</div></section>
       <section class="koinonia-ministry-danger"><div><strong>Delete ministry group</strong><p>This permanently erases the group, its memberships, requests, messages, photos, and voice notes.</p></div><button type="button" onclick="deleteKoinoniaMinistry('${escapeAttr(ministry.id)}','${escapeAttr(ministry.displayName)}')">Delete group</button></section>`;
@@ -11445,10 +11445,10 @@
 
   async function addKoinoniaMinistryMember(ministryId, candidateId) {
     try {
-      const response = await fetch(directoryAdminApi('/ministries/' + encodeURIComponent(ministryId) + '/participants'), { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ candidateId, participationType:'member' }) });
+      const response = await fetch(directoryAdminApi('/ministries/' + encodeURIComponent(ministryId) + '/participants'), { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ candidateId, participationType:'member', publish:true }) });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.message || payload.error || 'Unable to add this parishioner.');
-      koinoniaMinistriesState.loaded = false; await loadKoinoniaMinistries(true); setStatus('Parishioner added to the ministry group.', 'success');
+      koinoniaMinistriesState.loaded = false; await loadKoinoniaMinistries(true); setStatus('Parishioner added. Their ministry badge is now visible in the private parish directory.', 'success');
     } catch (error) { setStatus(error.message, 'error'); }
   }
 
@@ -11458,6 +11458,14 @@
       const response = await fetch(directoryAdminApi('/ministries/' + encodeURIComponent(ministryId) + '/participants-remove/' + encodeURIComponent(participantId)), { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ reasonCode:'parish_admin_removed' }) });
       const payload = await response.json().catch(() => ({})); if (!response.ok) throw new Error(payload.message || payload.error || 'Unable to remove this parishioner.');
       koinoniaMinistriesState.loaded = false; await loadKoinoniaMinistries(true); setStatus('Parishioner removed from the ministry group.', 'success');
+    } catch (error) { setStatus(error.message, 'error'); }
+  }
+
+  async function setKoinoniaMinistryDirectoryBadge(ministryId, participantId, visible) {
+    try {
+      const response = await fetch(directoryAdminApi('/ministries/' + encodeURIComponent(ministryId) + '/participants-publication/' + encodeURIComponent(participantId)), { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ preference:visible ? 'directory' : 'hidden', approvedPublication:visible }) });
+      const payload = await response.json().catch(() => ({})); if (!response.ok) throw new Error(payload.message || payload.error || 'Unable to update the Directory badge.');
+      koinoniaMinistriesState.loaded = false; await loadKoinoniaMinistries(true); setStatus(visible ? 'Ministry badge shown in the private parish directory.' : 'Ministry badge hidden from the private parish directory.', 'success');
     } catch (error) { setStatus(error.message, 'error'); }
   }
 
