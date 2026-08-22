@@ -448,6 +448,7 @@ assert.match(handlerSource, /isActivityRequest[\s\S]*available: false, activity:
 assert.equal((handlerSource.match(/parish_content_reads/g) || []).length, 0, "attachment retention must never alter shared read receipts");
 assert.match(handlerSource, /parts\.length === 2 && parts\[1\] === "image"/, "ministry images must have a member-authenticated delivery route");
 const groupsUiSource = readFileSync(path.join(root, "public", "myagapay", "groups.js"), "utf8");
+const donorStylesSource = readFileSync(path.join(root, "public", "donor", "style.css"), "utf8");
 assert.match(groupsUiSource, /ministryGroupAvatar\(group/, "group images must surface beside ministry names in the chat list and header");
 const ministryServiceSource = readFileSync(path.join(root, "src", "directory", "ministries.js"), "utf8");
 assert.match(ministryServiceSource, /DELETE FROM parish_content_reads[\s\S]*DELETE FROM parish_group_messages[\s\S]*DELETE FROM directory_ministries/, "ministry deletion must erase read receipts and messages before the group record");
@@ -468,6 +469,9 @@ assert.match(groupsUiSource, /X-AGAPAY-Attachment-Bytes/, "the browser must decl
 assert.match(groupsUiSource, /group-thread-back[\s\S]*closeMinistryGroup/, "an open ministry conversation should provide an app-style back control");
 assert.match(groupsUiSource, /classList\.toggle\("is-group-thread-open"/, "opening a ministry should activate the full-screen conversation state");
 assert.match(groupsUiSource, /syncGroupThreadUrl\(groupId\)/, "the selected ministry should remain addressable while the conversation is open");
+assert.match(donorStylesSource, /\.donor-groups-page\.is-group-thread-open \.koinonia-mobile-appbar,[\s\S]*display: none !important/, "the mobile app bar must not push the composer below the locked conversation viewport");
+assert.match(donorStylesSource, /\.donor-groups-page\.is-group-thread-open \.content \{[\s\S]*?height: 100%;[\s\S]*?min-height: 0;[\s\S]*?overflow: hidden;[\s\S]*?padding: 0;/, "the open conversation must use exactly one viewport and leave scrolling to the message list");
+assert.match(donorStylesSource, /\.donor-groups-page\.is-group-thread-open \.group-message-list \{[\s\S]*?min-height: 0;[\s\S]*?flex: 1 1 auto;[\s\S]*?overflow-y: auto;/, "messages must remain independently scrollable above the composer");
 const wranglerSource = readFileSync(path.join(root, "wrangler.toml"), "utf8");
 assert.match(wranglerSource, /binding = "GROUP_MESSAGE_ASSETS"[\s\S]*?bucket_name = "agapay-group-message-assets"/);
 assert.doesNotMatch(wranglerSource, /GROUP_MESSAGE_ASSETS_URL/, "the private group bucket must not expose an r2.dev URL");

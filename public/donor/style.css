@@ -9353,17 +9353,33 @@ textarea {
 
 
 /* A selected ministry becomes a focused, app-like conversation screen. */
-.donor-groups-page.is-group-thread-open { overflow: hidden; }
-.donor-groups-page.is-group-thread-open .app { grid-template-columns: minmax(0, 1fr); }
+.donor-groups-page.is-group-thread-open {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.donor-groups-page.is-group-thread-open .app {
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
 .donor-groups-page.is-group-thread-open .sidebar { display: none !important; }
 .donor-groups-page.is-group-thread-open .topbar,
+.donor-groups-page.is-group-thread-open .koinonia-mobile-appbar,
 .donor-groups-page.is-group-thread-open .mobile-tabbar,
 .donor-groups-page.is-group-thread-open .my-agapay-tabbar { display: none !important; }
-.donor-groups-page.is-group-thread-open .main { min-height: 100dvh; }
+.donor-groups-page.is-group-thread-open .content {
+  display: block;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+}
 .donor-groups-page.is-group-thread-open .page.groups-page-shell {
   width: 100%;
   max-width: none;
-  height: 100dvh;
+  height: 100%;
+  min-height: 0;
   margin: 0;
   padding: 0;
 }
@@ -9371,10 +9387,11 @@ textarea {
 .donor-groups-page.is-group-thread-open .koinonia-page-back,
 .donor-groups-page.is-group-thread-open .push-notification-card,
 .donor-groups-page.is-group-thread-open .groups-list-panel { display: none; }
-.donor-groups-page.is-group-thread-open .groups-layout { display: block; height: 100%; }
+.donor-groups-page.is-group-thread-open .groups-layout { display: block; height: 100%; min-height: 0; }
 .donor-groups-page.is-group-thread-open .group-thread-panel {
   display: flex;
   height: 100%;
+  min-height: 0;
   flex-direction: column;
   border: 0;
   border-radius: 0;
