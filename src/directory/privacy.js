@@ -23,6 +23,8 @@ export const FIELD_DEFAULTS = Object.freeze({
   adult_legal_name: { visibility: "staff", eligible: false },
   adult_email: { visibility: "private", eligible: false },
   adult_phone: { visibility: "private", eligible: false },
+  adult_birthday: { visibility: "private", eligible: false },
+  household_anniversary: { visibility: "private", eligible: false },
   person_photo: { visibility: "private", eligible: false },
   household_photo: { visibility: "private", eligible: false },
   street_address: { visibility: "staff", eligible: false },
@@ -163,7 +165,7 @@ export async function evaluateFieldPolicy(env, { parishId, ownerType, ownerId, f
   if (fieldKey.includes("email") || fieldKey.includes("phone")) maxVisibility = settings.contactMaxVisibility;
   let visibility = mostRestrictive(baseVisibility, maxVisibility);
 
-  const explicitOptInEligible = ["adult_email", "adult_phone", "city_state", "household_display_name", "adult_preferred_name", "person_photo", "household_photo"].includes(fieldKey);
+  const explicitOptInEligible = ["adult_email", "adult_phone", "adult_birthday", "household_anniversary", "city_state", "household_display_name", "adult_preferred_name", "person_photo", "household_photo"].includes(fieldKey);
   let eligible = effectivePreference ? Number(effectivePreference.publication_eligible || 0) === 1 : Boolean(publicationEligible && (defaults.eligible || explicitOptInEligible));
   if (ownerType === "person") {
     const flags = await getPersonPrivacyFlags(env, { parishId, personId: ownerId });

@@ -24,9 +24,9 @@ import {
   safeJson
 } from "./shared.js";
 
-const EDITABLE_PERSON_FIELDS = Object.freeze(["preferredName", "middleName", "suffix", "dateOfBirth"]);
+const EDITABLE_PERSON_FIELDS = Object.freeze(["preferredName", "middleName", "suffix", "dateOfBirth", "birthdayVisibility"]);
 const REVIEW_PERSON_FIELDS = Object.freeze(["legalName", "biologicalSex", "deceased", "active", "notes"]);
-const EDITABLE_HOUSEHOLD_FIELDS = Object.freeze(["displayName"]);
+const EDITABLE_HOUSEHOLD_FIELDS = Object.freeze(["displayName", "anniversaryDate", "anniversaryVisibility"]);
 const CHANGE_REQUEST_TYPES = Object.freeze([
   "person_profile_review",
   "household_membership_add",
@@ -116,6 +116,8 @@ function householdDto(row) {
     id: row.id,
     parishId: row.parish_id,
     displayName: row.display_name,
+    anniversaryDate: row.anniversary_date || "",
+    anniversaryVisibility: row.anniversary_visibility || "private",
     active: toBool(row.active),
     version: Number(row.updated_at || 0)
   };
@@ -133,6 +135,7 @@ function memberDto(row) {
   return {
     personId: row.person_id,
     preferredName: row.preferred_name,
+    dateOfBirth: row.date_of_birth || "",
     relationship: row.relationship,
     child: toBool(row.is_child),
     protectedPerson: toBool(row.protected_person),
@@ -460,7 +463,7 @@ export async function getSelfServiceProfile(env, { context }) {
   const donor = await loadDonor(env, context.user.email).catch(() => null);
   if (donor) await syncSelfServiceContactsFromDonor(env, { context, donor }).catch(() => null);
   const parishId = context.activeParishContexts[0]?.parishId || context.currentPerson.id;
-  const [contacts, addresses, publication, namePreference] = await Promise.all([
+  const [contacts, addresses, publication, namePreference, birthdayPreference] = await Promise.all([
     listActiveContactsForOwner(env, { parishId, ownerType: "person", ownerId: context.currentPerson.id }),
     listActiveAddressesForOwner(env, { parishId, ownerType: "person", ownerId: context.currentPerson.id }),
     getPublicationProfile(env, { parishId, ownerType: "person", ownerId: context.currentPerson.id }),
@@ -470,6 +473,15 @@ export async function getSelfServiceProfile(env, { context }) {
        FROM directory_field_privacy_preferences
        WHERE parish_id = ?1 AND owner_type = 'person' AND owner_id = ?2
          AND field_key = 'adult_preferred_name' AND active = 1`,
+      parishId,
+      context.currentPerson.id
+    ),
+    d1First(
+      env,
+      `SELECT visibility, publication_eligible
+       FROM directory_field_privacy_preferences
+       WHERE parish_id = ?1 AND owner_type = 'person' AND owner_id = ?2
+         AND field_key = 'adult_birthday' AND active = 1`,
       parishId,
       context.currentPerson.id
     )
@@ -485,6 +497,10 @@ export async function getSelfServiceProfile(env, { context }) {
         name: {
           visibility: namePreference?.visibility || "directory_members",
           publicationEligible: namePreference ? toBool(namePreference.publication_eligible) : true
+        },
+        birthday: {
+          visibility: birthdayPreference?.visibility || "private",
+          publicationEligible: birthdayPreference ? toBool(birthdayPreference.publication_eligible) : false
         }
       },
       editableFields: EDITABLE_PERSON_FIELDS,
@@ -901,6 +917,19 @@ export async function updateSelfServicePersonProfile(env, { context, patch = {},
       safeMessage: "Your directory profile was updated."
     })
   ]);
+  if ("birthdayVisibility" in patch) {
+    const visibility = normalizeStarterVisibility(patch.birthdayVisibility, "private");
+    await setFieldPrivacyPreference(env, {
+      actor: selfActor(context, parishId),
+      parishId,
+      ownerType: "person",
+      ownerId: personId,
+      fieldKey: "adult_birthday",
+      visibility,
+      publicationEligible: visibility === "directory_members",
+      correlationId
+    });
+  }
   const updated = await d1First(env, "SELECT * FROM directory_people WHERE id = ?1", personId);
   const flags = await getPersonPrivacyFlags(env, { parishId, personId });
   return personDto(updated, flags);
@@ -912,13 +941,13 @@ export async function getHouseholdSelfServiceProfile(env, { context, householdId
   if (!managed) throw new DirectoryServiceError("forbidden", "You cannot manage this household.", 403);
   const household = await d1First(env, "SELECT * FROM directory_households WHERE id = ?1 AND parish_id = ?2 AND active = 1", cleanedHouseholdId, managed.parishId);
   if (!household) throw new DirectoryServiceError("not_found", "Household was not found.", 404);
-  const [contacts, addresses, publication, members, admins, invitations, requests] = await Promise.all([
+  const [contacts, addresses, publication, members, admins, invitations, requests, anniversaryPreference] = await Promise.all([
     listActiveContactsForOwner(env, { parishId: managed.parishId, ownerType: "household", ownerId: cleanedHouseholdId }),
     listActiveAddressesForOwner(env, { parishId: managed.parishId, ownerType: "household", ownerId: cleanedHouseholdId }),
     getPublicationProfile(env, { parishId: managed.parishId, ownerType: "household", ownerId: cleanedHouseholdId }),
     d1All(
       env,
-      `SELECT hm.person_id, hm.relationship, p.preferred_name, p.updated_at AS person_updated_at,
+      `SELECT hm.person_id, hm.relationship, p.preferred_name, p.date_of_birth, p.updated_at AS person_updated_at,
               COALESCE(f.is_child, 0) AS is_child,
               COALESCE(f.protected_person, 0) AS protected_person,
               EXISTS(SELECT 1 FROM directory_person_links l WHERE l.person_id = p.id AND l.active = 1) AS account_linked
@@ -945,10 +974,19 @@ export async function getHouseholdSelfServiceProfile(env, { context, householdId
       "SELECT * FROM directory_change_requests WHERE parish_id = ?1 AND household_id = ?2 AND status = 'pending' ORDER BY created_at DESC",
       managed.parishId,
       cleanedHouseholdId
+    ),
+    d1First(
+      env,
+      `SELECT visibility, publication_eligible
+       FROM directory_field_privacy_preferences
+       WHERE parish_id = ?1 AND owner_type = 'household' AND owner_id = ?2
+         AND field_key = 'household_anniversary' AND active = 1`,
+      managed.parishId,
+      cleanedHouseholdId
     )
   ]);
   return {
-    household: householdDto(household),
+    household: householdDto({ ...household, anniversary_visibility: anniversaryPreference?.visibility || "private" }),
     contacts: contacts.map(contactDto),
     addresses: addresses.map(addressDto),
     publication,
@@ -974,7 +1012,7 @@ export async function updateHouseholdMember(env, { context, householdId, personI
   }
   const member = await d1First(
     env,
-    `SELECT hm.person_id, hm.relationship, p.preferred_name, p.updated_at AS person_updated_at,
+    `SELECT hm.person_id, hm.relationship, p.preferred_name, p.date_of_birth, p.updated_at AS person_updated_at,
             COALESCE(f.is_child, 0) AS is_child,
             EXISTS(SELECT 1 FROM directory_person_links l WHERE l.person_id = p.id AND l.active = 1) AS account_linked
        FROM directory_household_members hm
@@ -992,8 +1030,12 @@ export async function updateHouseholdMember(env, { context, householdId, personI
   }
   const canRename = toBool(member.is_child) || !toBool(member.account_linked);
   const preferredName = cleanText(data.preferredName || member.preferred_name, { required: true, max: 160, field: "preferredName" });
+  const dateOfBirth = "dateOfBirth" in data ? cleanDate(data.dateOfBirth, "dateOfBirth") : member.date_of_birth;
   if (!canRename && preferredName !== member.preferred_name) {
     throw new DirectoryServiceError("account_managed", "This adult manages their own name through My AGAPAY.", 409);
+  }
+  if (!canRename && dateOfBirth !== member.date_of_birth) {
+    throw new DirectoryServiceError("account_managed", "This adult manages their own birthday through My AGAPAY.", 409);
   }
   const timestamp = nowMs();
   const statements = [
@@ -1014,6 +1056,12 @@ export async function updateHouseholdMember(env, { context, householdId, personI
       }
     );
   }
+  if (dateOfBirth !== member.date_of_birth) {
+    statements.push({
+      sql: "UPDATE directory_people SET date_of_birth = ?, updated_at = ? WHERE id = ? AND active = 1",
+      params: [dateOfBirth, timestamp, personId]
+    });
+  }
   statements.push(auditStatement({
     action: "directory.self_service.household_member_updated",
     actor: selfActor(context, managed.parishId),
@@ -1021,12 +1069,12 @@ export async function updateHouseholdMember(env, { context, householdId, personI
     targetType: "directory_person",
     targetId: personId,
     householdId,
-    before: { preferredName: member.preferred_name, relationship: member.relationship },
-    after: { preferredName, relationship },
+    before: { preferredName: member.preferred_name, relationship: member.relationship, dateOfBirth: member.date_of_birth || "" },
+    after: { preferredName, relationship, dateOfBirth: dateOfBirth || "" },
     correlationId
   }));
   await runAtomic(env, statements);
-  return { personId, preferredName, relationship, child: toBool(member.is_child), accountLinked: toBool(member.account_linked), version: timestamp };
+  return { personId, preferredName, dateOfBirth: dateOfBirth || "", relationship, child: toBool(member.is_child), accountLinked: toBool(member.account_linked), version: timestamp };
 }
 
 export async function deleteHouseholdMember(env, { context, householdId, personId, correlationId = "" }) {
@@ -1097,12 +1145,13 @@ export async function updateHouseholdSelfServiceProfile(env, { context, househol
   const current = await getHouseholdSelfServiceProfile(env, { context, householdId });
   assertExpectedVersion(current.household.version, patch.expectedVersion);
   const displayName = "displayName" in patch ? cleanText(patch.displayName, { required: true, max: 200, field: "displayName" }) : current.household.displayName;
+  const anniversaryDate = "anniversaryDate" in patch ? cleanDate(patch.anniversaryDate, "anniversaryDate") : current.household.anniversaryDate;
   const timestamp = nowMs();
   const actor = selfActor(context, current.household.parishId);
   await runAtomic(env, [
     {
-      sql: "UPDATE directory_households SET display_name = ?, updated_at = ? WHERE id = ? AND updated_at = ?",
-      params: [displayName, timestamp, current.household.id, current.household.version]
+      sql: "UPDATE directory_households SET display_name = ?, anniversary_date = ?, updated_at = ? WHERE id = ? AND updated_at = ?",
+      params: [displayName, anniversaryDate, timestamp, current.household.id, current.household.version]
     },
     auditStatement({
       action: "directory.self_service.household_profile_updated",
@@ -1111,11 +1160,24 @@ export async function updateHouseholdSelfServiceProfile(env, { context, househol
       targetType: "directory_household",
       targetId: current.household.id,
       householdId: current.household.id,
-      before: { displayName: current.household.displayName },
-      after: { displayName },
+      before: { displayName: current.household.displayName, anniversaryDate: current.household.anniversaryDate },
+      after: { displayName, anniversaryDate },
       correlationId
     })
   ]);
+  if ("anniversaryVisibility" in patch) {
+    const visibility = normalizeStarterVisibility(patch.anniversaryVisibility, "private");
+    await setFieldPrivacyPreference(env, {
+      actor,
+      parishId: current.household.parishId,
+      ownerType: "household",
+      ownerId: current.household.id,
+      fieldKey: "household_anniversary",
+      visibility,
+      publicationEligible: visibility === "directory_members",
+      correlationId
+    });
+  }
   return getHouseholdSelfServiceProfile(env, { context, householdId });
 }
 

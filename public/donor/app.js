@@ -1619,10 +1619,28 @@ function donorParishCalendarEventCategory(event = {}) {
   return "plum";
 }
 
-let donorParishCalendarView = { events:[], viewMode:"week", periodDate:null, selectedDate:"", unavailable:false };
+const DONOR_CALENDAR_CELEBRATION_ICONS = {
+  birthday: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 11h14v9H5zM4 11h16M12 11v9M7 7h10v4H7z"/><path d="M9 7c-1.4-1.2-.7-3 1-3 1.2 0 2 1.1 2 3M15 7c1.4-1.2.7-3-1-3-1.2 0-2 1.1-2 3"/></svg>',
+  anniversary: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20S4.5 15.5 4.5 9.2A4.2 4.2 0 0 1 12 6.6a4.2 4.2 0 0 1 7.5 2.6C19.5 15.5 12 20 12 20Z"/></svg>',
+  nameday: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1.7 1.8 2.6 3.3 2.6 4.8a2.6 2.6 0 0 1-5.2 0C9.4 6.3 10.3 4.8 12 3Z"/><path d="M8.5 11h7l-.8 9h-5.4zM7.5 20h9"/></svg>'
+};
+
+let donorParishCalendarView = { events:[], celebrations:[], viewMode:"week", periodDate:null, selectedDate:"", unavailable:false };
 
 function donorParishCalendarEventsOn(dateKey) {
   return donorParishCalendarView.events.filter(event => donorParishCalendarEventDateKey(event) === dateKey);
+}
+
+function donorParishCalendarCelebrationsOn(dateKey) {
+  return donorParishCalendarView.celebrations.filter(item => item.date === dateKey);
+}
+
+function donorParishCalendarCelebrationHtml(item = {}) {
+  const type = ["birthday", "anniversary", "nameday"].includes(item.type) ? item.type : "nameday";
+  const detail = type === "anniversary" && item.years
+    ? `${item.years}${item.years === 1 ? " year" : " years"}`
+    : item.detail || item.typeLabel || "Parish celebration";
+  return `<article class="cal-parish-celebration ${type}"><span class="cal-parish-celebration-icon" aria-hidden="true">${DONOR_CALENDAR_CELEBRATION_ICONS[type]}</span><span class="cal-parish-event-body"><em>${escapeHtml(item.typeLabel || "Celebration")}</em><strong>${escapeHtml(item.label || "Parish family")}</strong><small>${escapeHtml(detail)}</small></span></article>`;
 }
 
 function renderDonorParishCalendarSelectedDate() {
@@ -1635,12 +1653,17 @@ function renderDonorParishCalendarSelectedDate() {
     return;
   }
   const events = donorParishCalendarEventsOn(dateKey);
+  const celebrations = donorParishCalendarCelebrationsOn(dateKey);
   const heading = escapeHtml(date.toLocaleDateString(undefined, { weekday:"long", month:"long", day:"numeric" }));
-  if (!events.length) {
-    target.innerHTML = `<div class="cal-parish-selected-head"><strong>${heading}</strong></div><div class="cal-parish-calendar-empty">${donorParishCalendarView.unavailable ? "We could not refresh events right now." : "No parish events are scheduled for this day."}</div>`;
+  if (!events.length && !celebrations.length) {
+    target.innerHTML = `<div class="cal-parish-selected-head"><strong>${heading}</strong></div><div class="cal-parish-calendar-empty">${donorParishCalendarView.unavailable ? "We could not refresh events right now." : "No parish events or shared celebrations are scheduled for this day."}</div>`;
     return;
   }
-  target.innerHTML = `<div class="cal-parish-selected-head"><strong>${heading}</strong><span>${events.length} event${events.length === 1 ? "" : "s"}</span></div>${events.map((event) => {
+  const counts = [
+    events.length ? `${events.length} event${events.length === 1 ? "" : "s"}` : "",
+    celebrations.length ? `${celebrations.length} celebration${celebrations.length === 1 ? "" : "s"}` : ""
+  ].filter(Boolean).join(" · ");
+  const eventHtml = events.map((event) => {
     const eventDate = donorParishCalendarEventDate(event);
     const time = event.allDay ? "All day" : eventDate.toLocaleTimeString(undefined, { hour:"numeric", minute:"2-digit" });
     const location = String(event.location || "").trim();
@@ -1651,7 +1674,8 @@ function renderDonorParishCalendarSelectedDate() {
     return href
       ? `<a class="cal-parish-event ${donorParishCalendarEventCategory(event)}" href="${escapeHtml(href)}">${content}</a>`
       : `<article class="cal-parish-event ${donorParishCalendarEventCategory(event)}">${content}</article>`;
-  }).join("")}`;
+  }).join("");
+  target.innerHTML = `<div class="cal-parish-selected-head"><strong>${heading}</strong><span>${counts}</span></div>${eventHtml}${celebrations.map(donorParishCalendarCelebrationHtml).join("")}`;
 }
 
 function donorParishCalendarStartOfWeek(date) {
@@ -1711,9 +1735,13 @@ function renderDonorParishCalendarMonth() {
   dates.forEach((date) => {
     const dateKey = donorParishCalendarDateKey(date);
     const events = donorParishCalendarEventsOn(dateKey);
-    const markerHtml = events.slice(0,3).map(event => `<i class="${donorParishCalendarEventCategory(event)}"></i>`).join("");
-    const countLabel = events.length ? `, ${events.length} event${events.length === 1 ? "" : "s"}` : ", no events";
-    cells.push(`<button type="button" class="cal-parish-day${events.length ? " has-events" : ""}${dateKey === todayKey ? " is-today" : ""}${dateKey === donorParishCalendarView.selectedDate ? " is-selected" : ""}" onclick="selectDonorParishCalendarDate('${dateKey}')" aria-label="${escapeHtml(date.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"}))}${countLabel}" aria-pressed="${dateKey === donorParishCalendarView.selectedDate}"><span>${date.getDate()}</span>${events.length ? `<span class="cal-parish-day-markers" aria-hidden="true">${markerHtml}${events.length > 3 ? `<b>+${events.length - 3}</b>` : ""}</span>` : ""}</button>`);
+    const celebrations = donorParishCalendarCelebrationsOn(dateKey);
+    const eventMarkers = events.slice(0, celebrations.length ? 2 : 3).map(event => `<i class="${donorParishCalendarEventCategory(event)}"></i>`);
+    const markerHtml = [...eventMarkers, ...(celebrations.length ? ['<i class="celebration"></i>'] : [])].join("");
+    const hiddenCount = Math.max(0, events.length + celebrations.length - eventMarkers.length - (celebrations.length ? 1 : 0));
+    const countLabel = `${events.length ? `, ${events.length} event${events.length === 1 ? "" : "s"}` : ", no events"}${celebrations.length ? `, ${celebrations.length} celebration${celebrations.length === 1 ? "" : "s"}` : ""}`;
+    const hasItems = events.length || celebrations.length;
+    cells.push(`<button type="button" class="cal-parish-day${hasItems ? " has-events" : ""}${celebrations.length ? " has-celebrations" : ""}${dateKey === todayKey ? " is-today" : ""}${dateKey === donorParishCalendarView.selectedDate ? " is-selected" : ""}" onclick="selectDonorParishCalendarDate('${dateKey}')" aria-label="${escapeHtml(date.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"}))}${countLabel}" aria-pressed="${dateKey === donorParishCalendarView.selectedDate}"><span>${date.getDate()}</span>${hasItems ? `<span class="cal-parish-day-markers" aria-hidden="true">${markerHtml}${hiddenCount ? `<b>+${hiddenCount}</b>` : ""}</span>` : ""}</button>`);
   });
   grid.innerHTML = cells.join("");
   renderDonorParishCalendarSelectedDate();
@@ -1764,7 +1792,7 @@ function changeDonorParishCalendarPeriod(offset) {
   renderDonorParishCalendarMonth();
 }
 
-function renderDonorParishCalendar(payload = {}, parish = null) {
+function renderDonorParishCalendar(payload = {}, parish = null, celebrationPayload = {}) {
   const title = document.getElementById("parishCalendarTitle");
   const status = document.getElementById("parishCalendarStatus");
   const intro = document.getElementById("parishCalendarIntro");
@@ -1780,8 +1808,9 @@ function renderDonorParishCalendar(payload = {}, parish = null) {
   const parishName = parish?.name || donorProfile()?.defaultParish?.name || "Your Church";
   const subscriptionUrl = donorParishCalendarSubscriptionUrl(payload.subscriptionUrl);
   const events = Array.isArray(payload.events) ? payload.events : [];
+  const celebrations = Array.isArray(celebrationPayload.items) ? celebrationPayload.items : [];
   const connected = Boolean(payload.connected && subscriptionUrl);
-  const calendarAvailable = connected || events.length > 0;
+  const calendarAvailable = connected || events.length > 0 || celebrations.length > 0;
   const hasSubscriptionControls = Boolean(subscribe && subscribeButton && googleButton && copyButton && help);
   if (title.dataset.calendarTitle !== "fixed") title.textContent = `${parishName} Calendar`;
   status.classList.toggle("is-connected", connected);
@@ -1818,14 +1847,16 @@ function renderDonorParishCalendar(payload = {}, parish = null) {
 
   status.textContent = connected
     ? (payload.unavailable ? "Published events · external calendar unavailable" : "Connected")
-    : "Published events";
+    : (events.length ? "Published events" : "Shared celebrations");
   intro.textContent = connected
     ? (payload.unavailable
       ? "AGAPAY events and meals are available below. The connected external calendar could not be refreshed right now."
       : (hasSubscriptionControls
         ? "Upcoming parish events, including published meals and registrations. Subscribe once and external calendar changes stay in sync."
         : "Events published by your parish for the selected week."))
-    : "Events and meals published by your parish or its ministries. Select a listing to view details or register.";
+    : (events.length
+      ? "Events and meals published by your parish or its ministries. Select a listing to view details or register."
+      : "Your church calendar is not connected, but directory celebrations are available in the month view.");
 
   const today = new Date();
   const defaultView = monthView.dataset.calendarDefaultView === "month" ? "month" : "week";
@@ -1839,12 +1870,23 @@ function renderDonorParishCalendar(payload = {}, parish = null) {
   const periodEndKey = donorParishCalendarDateKey(periodEnd);
   donorParishCalendarView = {
     events,
+    celebrations,
     viewMode:defaultView,
     periodDate:today,
-    selectedDate:events.map(donorParishCalendarEventDateKey).find(key => key >= periodStartKey && key <= periodEndKey) || donorParishCalendarDateKey(today),
+    selectedDate:[...events.map(donorParishCalendarEventDateKey), ...celebrations.map(item => item.date)]
+      .find(key => key >= periodStartKey && key <= periodEndKey) || donorParishCalendarDateKey(today),
     unavailable:Boolean(payload.unavailable)
   };
   renderDonorParishCalendarMonth();
+}
+
+function donorCalendarCelebrationRequestPath() {
+  const today = new Date();
+  const start = new Date(today.getFullYear(), today.getMonth(), 1);
+  const navigationEnd = new Date(today.getTime() + 180 * 86400000);
+  const end = new Date(navigationEnd.getFullYear(), navigationEnd.getMonth() + 1, 0);
+  const days = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+  return `/api/directory/member/milestones?from=${donorParishCalendarDateKey(start)}&days=${days}`;
 }
 
 async function copyDonorParishCalendarUrl(button) {
@@ -1883,16 +1925,17 @@ async function loadDonorCalendarPage() {
     return;
   }
   try {
-    const [data, sacramentPayload, parishCalendarPayload] = await Promise.all([
+    const [data, sacramentPayload, parishCalendarPayload, celebrationPayload] = await Promise.all([
       donorApi("/api/donor/dashboard"),
       donorApi("/api/donor/sacraments").catch(() => ({ requests:[] })),
-      donorApi("/api/donor/parish-calendar").catch(() => ({ connected:false, events:[] }))
+      donorApi("/api/donor/parish-calendar").catch(() => ({ connected:false, events:[] })),
+      donorApi(donorCalendarCelebrationRequestPath()).catch(() => ({ milestones:{ items:[] } }))
     ]);
     setDonorProfile(data.donor);
     renderDonorCalendarFeasts(data.parish || null);
     renderDonorCalendarPrompts(data.parish || null);
     renderDonorPersonalCalendar(sacramentPayload);
-    renderDonorParishCalendar(parishCalendarPayload, data.parish || null);
+    renderDonorParishCalendar(parishCalendarPayload, data.parish || null, celebrationPayload.milestones || {});
     loadDonorLiturgicalDay(data.parish || null);
   } catch (err) {
     if (isDonorUnauthorized(err)) {

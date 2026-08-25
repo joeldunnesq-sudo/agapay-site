@@ -17,6 +17,7 @@ import {
 import {
   searchSkillListings
 } from "../directory/skills-service.js";
+import { listDirectoryMilestones } from "../directory/milestones.js";
 
 const PRIVATE_HEADERS = {
   "Cache-Control": "private, no-store",
@@ -65,6 +66,15 @@ function listArgs(url) {
   };
 }
 
+function milestoneFromDate(value) {
+  const cleaned = String(value || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) return new Date();
+  const parsed = new Date(`${cleaned}T12:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === cleaned
+    ? parsed
+    : new Date();
+}
+
 export async function handleDirectoryMember(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -76,6 +86,14 @@ export async function handleDirectoryMember(request, env) {
 
     if (request.method === "GET" && path === "/api/directory/member") {
       return privateJson({ ok: true, directory: await getMemberDirectoryHome(env, { context }) });
+    }
+
+    if (request.method === "GET" && path === "/api/directory/member/milestones") {
+      return privateJson({ ok: true, milestones: await listDirectoryMilestones(env, {
+        context,
+        days: url.searchParams.get("days") || 30,
+        fromDate: milestoneFromDate(url.searchParams.get("from"))
+      }) });
     }
 
     if (request.method === "GET" && path === "/api/directory/member/people") {

@@ -57,6 +57,7 @@ function makeD1Env() {
   db.exec(migration("0024_directory_invitations_claims.sql"));
   db.exec(migration("0025_directory_self_service_phase2a.sql"));
   db.exec(migration("0033_directory_household_namedays.sql"));
+  db.exec(migration("0104_directory_parish_milestones.sql"));
   db.exec(`
     CREATE TABLE donors (
       email TEXT PRIMARY KEY,

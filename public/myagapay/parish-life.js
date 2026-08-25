@@ -456,29 +456,68 @@ function renderParishLifeContinueListening(item = null) {
   const percent = duration ? Math.min(100, Math.round((position / duration) * 100)) : 0;
   const href = `/myagapay/teaching?mode=podcasts&feed=${encodeURIComponent(item.feedUrl)}&episode=${encodeURIComponent(item.episodeKey)}`;
   target.innerHTML = `<a class="parish-life-continue-card" href="${href}">
-    <span class="parish-life-continue-play" aria-hidden="true">▶</span>
+    <span class="parish-life-continue-art" aria-hidden="true">${item.artwork ? `<img src="${parishLifeEscape(item.artwork)}" alt="" loading="lazy" decoding="async" />` : "♫"}</span>
     <span class="parish-life-continue-copy">
       <small>Podcast · ${parishLifeEscape(item.showTitle || "Orthodox Podcast")}</small>
       <strong>${parishLifeEscape(item.episodeTitle || "Untitled episode")}</strong>
       <span class="parish-life-continue-progress" aria-hidden="true"><i style="width:${percent}%"></i></span>
       <em>${parishLifeEscape(parishLifePodcastTime(position))}${duration ? ` of ${parishLifeEscape(parishLifePodcastTime(duration))}` : " listened"}</em>
     </span>
-    <span class="parish-life-continue-action">Resume</span>
+    <span class="parish-life-continue-play" aria-hidden="true">▶</span>
   </a>`;
 }
 
 async function loadParishLifeContinueListening(headers) {
   try {
-    const response = await fetch("/api/listen/progress", { headers, cache: "no-store" });
+    const [response, subscriptionsResponse] = await Promise.all([
+      fetch("/api/listen/progress", { headers, cache: "no-store" }),
+      fetch("/api/listen/subscriptions", { headers, cache: "no-store" }).catch(() => null)
+    ]);
     if (window.MyAgapayShell?.handleUnauthorized(response)) return;
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || "Unable to load podcast progress.");
     const activeEpisode = Array.isArray(data.items) ? data.items[0] : null;
-    renderParishLifeContinueListening(activeEpisode || null);
+    const subscriptions = subscriptionsResponse?.ok
+      ? (await subscriptionsResponse.json().catch(() => ({}))).subscriptions || []
+      : [];
+    const subscription = activeEpisode ? subscriptions.find((item) => item.feedUrl === activeEpisode.feedUrl) : null;
+    renderParishLifeContinueListening(activeEpisode ? { ...activeEpisode, artwork: subscription?.artwork || "" } : null);
   } catch {
     // Listening progress must not block the rest of the Koinonia landing page.
     renderParishLifeContinueListening(null);
   }
+}
+
+const PARISH_LIFE_MILESTONE_ICONS = {
+  birthday: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 11h14v9H5zM4 11h16M12 11v9M7 7h10v4H7z"/><path d="M9 7c-1.4-1.2-.7-3 1-3 1.2 0 2 1.1 2 3M15 7c1.4-1.2.7-3-1-3-1.2 0-2 1.1-2 3"/></svg>',
+  anniversary: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20S4.5 15.5 4.5 9.2A4.2 4.2 0 0 1 12 6.6a4.2 4.2 0 0 1 7.5 2.6C19.5 15.5 12 20 12 20Z"/></svg>',
+  nameday: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1.7 1.8 2.6 3.3 2.6 4.8a2.6 2.6 0 0 1-5.2 0C9.4 6.3 10.3 4.8 12 3Z"/><path d="M8.5 11h7l-.8 9h-5.4zM7.5 20h9"/></svg>'
+};
+
+function parishLifeMilestoneWhen(item) {
+  if (item.daysAway === 0) return "Today";
+  if (item.daysAway === 1) return "Tomorrow";
+  const date = new Date(`${item.date}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? "Upcoming" : date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+}
+
+function renderParishLifeMilestones(payload = {}) {
+  const section = document.getElementById("parishLifeMilestonesSection");
+  const target = document.getElementById("parishLifeMilestones");
+  if (!section || !target) return;
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  section.hidden = !items.length;
+  if (!items.length) { target.innerHTML = ""; return; }
+  target.innerHTML = items.slice(0, 8).map((item) => {
+    const detail = item.type === "anniversary" && item.years
+      ? `${item.years}${item.years === 1 ? " year" : " years"}`
+      : item.detail || item.typeLabel;
+    return `<article class="parish-life-milestone-card parish-life-milestone-${parishLifeEscape(item.type)}">
+      <span class="parish-life-milestone-icon">${PARISH_LIFE_MILESTONE_ICONS[item.icon] || PARISH_LIFE_MILESTONE_ICONS.nameday}</span>
+      <span class="parish-life-milestone-copy"><small>${parishLifeEscape(item.typeLabel)}</small><strong>${parishLifeEscape(item.label)}</strong><em>${parishLifeEscape(detail)}</em></span>
+      <time datetime="${parishLifeEscape(item.date)}">${parishLifeEscape(parishLifeMilestoneWhen(item))}</time>
+    </article>`;
+  }).join("");
 }
 
 async function loadRecentPodcastEpisodes(headers) {
@@ -687,6 +726,9 @@ async function loadParishLife() {
       window.MyAgapayShell?.setTeachingUnreadCount(Math.max(0, Number(teaching?.unreadCount) || 0));
     });
     const podcastProgressPromise = loadParishLifeContinueListening(headers);
+    const milestonesPromise = parishLifeFetch("/api/directory/member/milestones?days=1", headers)
+      .then((payload) => renderParishLifeMilestones(payload?.milestones || {}))
+      .catch(() => renderParishLifeMilestones({}));
     const podcastsPromise = loadRecentPodcastEpisodes(headers);
     const mediaPromise = parishLifeFetch("/api/donor/videos", headers).then((media) => renderRecentVideos(media || {}));
     const newsPromise = Promise.all([
@@ -700,7 +742,7 @@ async function loadParishLife() {
     ]).then(([customNews, ...newsSources]) => {
       renderRecentNews([...newsSources.filter(Boolean), ...(customNews?.feeds || [])]);
     });
-    await Promise.all([liturgicalDayPromise, calendarPromise, feedPromise, groupsPromise, communityToolBadgesPromise, teachingPromise, podcastProgressPromise, podcastsPromise, mediaPromise, newsPromise]);
+    await Promise.all([liturgicalDayPromise, calendarPromise, feedPromise, groupsPromise, communityToolBadgesPromise, teachingPromise, podcastProgressPromise, milestonesPromise, podcastsPromise, mediaPromise, newsPromise]);
     status.hidden = true;
   } catch (error) {
     if (typeof loadDonorLiturgicalDay === "function") await loadDonorLiturgicalDay(null);
