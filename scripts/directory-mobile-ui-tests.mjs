@@ -8,16 +8,16 @@ const myAgapayShell = readFileSync("public/myagapay-shell.js", "utf8");
 const worker = readFileSync("src/worker.js", "utf8");
 
 assert.match(page, /Four simple steps for your family directory entry/);
-assert.match(page, /const EDIT_WIZARD_TITLES = \["About You", "Members & Namedays", "Directory Sharing", "Skills"\]/);
+assert.match(page, /const EDIT_WIZARD_TITLES = \["Your information", "Your family", "Privacy choices", "Ways to help"\]/);
 assert.match(page, /Share Family in Directory/);
 assert.doesNotMatch(page, />Pending Changes</);
 assert.match(page, /\.directory-modal \{ position:fixed; inset:0; z-index:120;/);
 assert.match(page, /id="memberEditForm"[\s\S]*name="saintName"[\s\S]*name="feastMonth"[\s\S]*name="feastDay"/);
-assert.match(page, /Save Member Details/);
+assert.match(page, /Save family member/);
 assert.match(page, /feastMonthDay: `\$\{feastMonth\}-\$\{feastDay\.padStart\(2, "0"\)\}`/);
 assert.match(page, /id="householdDetailsForm"[\s\S]*name="city"[\s\S]*name="region"/);
 assert.doesNotMatch(page, /id="householdDetailsForm"(?:(?!<\/form>)[\s\S])*name="locationVisibility"/);
-assert.match(page, /class="household-hub-identity" data-wizard-step="2"[\s\S]*Family name<input name="displayName"/);
+assert.match(page, /class="household-hub-identity" data-wizard-step="2"[\s\S]*Family or household name<input name="displayName"/);
 assert.doesNotMatch(page, /class="household-hub-identity" data-wizard-step="0"/);
 assert.match(page, /self\/addresses`, \{[\s\S]*city,[\s\S]*region,[\s\S]*visibility: locationVisibility/);
 assert.match(page, /class="topbar"[\s\S]*class="directory-nav-identity"/);
@@ -99,7 +99,7 @@ assert.match(page, /skillListingsById = new Map/);
 assert.match(page, /event\.target\.closest\("\[data-edit-skill\]"\)/);
 assert.match(page, /form\.elements\.listingId\.value = listing\.id/);
 assert.match(page, /id="cancelSkillEdit" hidden/);
-assert.match(page, /EDIT_WIZARD_TITLES = \["About You", "Members & Namedays", "Directory Sharing", "Skills"\]/);
+assert.match(page, /EDIT_WIZARD_TITLES = \["Your information", "Your family", "Privacy choices", "Ways to help"\]/);
 assert.doesNotMatch(page, /id="ownDirectoryPreview"/);
 assert.match(page, /<details class="directory-filter-card" id="directoryFilters">[\s\S]*?Search directory[\s\S]*?Nameday[\s\S]*?Skills[\s\S]*?<\/details>/);
 assert.match(page, /id="directoryFilterSummary">Find by family, nameday, or skill/);
@@ -121,7 +121,7 @@ assert.match(page, /managed through this family’s My AGAPAY account/);
 assert.match(page, /Review your sharing choices when you are ready to appear in the directory\./);
 assert.doesNotMatch(page, /Save the changes in this step before continuing\./);
 assert.match(page, /id="editWizardStatus" role="status" aria-live="polite"/);
-assert.match(page, /showNotice\("About You saved successfully\. You can continue when ready\."\)/);
+assert.match(page, /showNotice\("Your information was saved\. Continue when you are ready\."\)/);
 assert.match(page, /\.edit-wizard-steps \{ display:none; \}/);
 assert.match(page, /id="householdMemberList"/);
 assert.match(page, /id="adultAddSection" hidden/);
@@ -141,6 +141,7 @@ assert.match(page, /body \.personal-settings\[open\] > \.directory-grid \{ displ
 assert.match(page, /\.personal-settings \[data-wizard-step\]\.wizard-step-active,[\s\S]*display:block !important;/);
 assert.match(page, /section\.classList\.toggle\("wizard-step-active", active\);/);
 assert.match(page, /@media \(max-width: 860px\) \{[\s\S]*?\.edit-wizard-footer \{\s*position:static;/);
+assert.match(page, /@media \(max-width: 860px\) \{[\s\S]*?\.donor-directory-page \.sharing-row \{[\s\S]*?grid-template-columns:minmax\(0,1fr\);[\s\S]*?\.donor-directory-page \.sharing-row select \{[\s\S]*?width:100%;[\s\S]*?max-width:100%;/, "the Directory Sharing step must stack its privacy controls throughout the mobile wizard breakpoint");
 assert.doesNotMatch(page, /\.personal-settings > \.directory-grid \{ min-height:calc\(100dvh - 214px\);/);
 assert.ok(
   page.indexOf('body[data-mobile-view="browse"] .directory-grid { display:none; }')
