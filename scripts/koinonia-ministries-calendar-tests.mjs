@@ -189,7 +189,9 @@ assert.match(donorCalendar, /id="calendarUpcomingFeast"/, "the full calendar sho
 assert.match(donorCalendar, /<details class="cal-festal-year" id="calendarFestalYear">/, "the full festal year should be collapsed behind an accessible disclosure");
 assert.match(donorApp, /const upcomingFeast = \[\.\.\.highlighted, \.\.\.highlightsForYear\(year \+ 1\)\]/, "the upcoming feast should roll into the next civil year when necessary");
 assert.match(donorApp, /View the full \$\{year\} festal year/, "the feast disclosure should identify the full festal year");
-assert.doesNotMatch(donorCalendar, /id="saintPreviewCard"|id="donorSaintModal"/, "the full calendar must not show the Saint of the Day card or modal");
+assert.doesNotMatch(donorCalendar, /id="saintPreviewCard"/, "the full calendar should keep saint lives in the compact hero chip instead of a second Saint of the Day card");
+assert.match(donorCalendar, /id="donorSaintModal"[\s\S]*?id="donorSaintModalBody"[\s\S]*?Orthocal\.info/, "the full calendar saint chip should open a complete saint-life dialog");
+assert.match(donorStyles, /:is\(\.donor-parish-life-page, \.donor-calendar-page\) \.cal-saint-chip \{/, "the full calendar saint-life action should share the styled Koinonia pill");
 assert.doesNotMatch(donorCalendar, /class="cal-metrics"|id="nextFeastDate"|id="paschaDate"|id="calendarShortName"/, "the full calendar must not show the Next Feast, Pascha, or Calendar summary cards");
 assert.match(donorCalendar, /class="cal-hero calendar-liturgical-hero"/);
 assert.match(donorCalendar, /id="todayCivilDateEyebrow"/);

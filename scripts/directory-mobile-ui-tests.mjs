@@ -81,6 +81,7 @@ assert.match(page, /data-reveal-directory-contact/);
 assert.match(page, /body\.donor-directory-page \.mobile-tabbar \{ display:none !important; \}/);
 assert.match(page, /body\.donor-directory-page\.directory-profile-open \{ height:auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch; \}/);
 assert.match(page, /body\.donor-directory-page\.directory-profile-open #memberProfile \{ padding-bottom:calc\(7\.75rem \+ env\(safe-area-inset-bottom\)\); scroll-margin-top:12px; \}/);
+assert.match(page, /\.directory-main \{[\s\S]*?padding:0 16px calc\(7rem \+ env\(safe-area-inset-bottom\)\);[\s\S]*?scroll-padding-bottom:calc\(7rem \+ env\(safe-area-inset-bottom\)\);/, "the Family Information footer must scroll completely above the fixed bottom navigation");
 assert.match(page, /pane\.hidden = false;[\s\S]*?document\.body\.style\.overflow = "";[\s\S]*?classList\.add\("directory-profile-open"\)/);
 assert.match(page, /body\.donor-directory-page\.myagapay-main-page \.directory-main > \.topbar \{[\s\S]*?width:100vw;[\s\S]*?margin-left:calc\(50% - 50vw\);/);
 assert.match(page, /body\.donor-directory-page \{[\s\S]*?overflow-x:hidden;/);

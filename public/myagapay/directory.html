@@ -673,7 +673,12 @@
       /* Canonical Church Directory mobile language from the supplied reference. */
       body.donor-directory-page { background:#e9e5dc; }
       .donor-directory-page .directory-shell { width:min(430px,100%); min-height:100vh; margin:0 auto; background:#fffdf8; box-shadow:0 20px 60px rgba(6,21,34,.18); }
-      .directory-main { min-height:100vh; padding:0 16px calc(24px + env(safe-area-inset-bottom)); background:#fffdf8; }
+      .directory-main {
+        min-height:100vh;
+        padding:0 16px calc(7rem + env(safe-area-inset-bottom));
+        scroll-padding-bottom:calc(7rem + env(safe-area-inset-bottom));
+        background:#fffdf8;
+      }
       body.donor-directory-page.myagapay-main-page .directory-main > .topbar {
         width:100vw;
         max-width:none;

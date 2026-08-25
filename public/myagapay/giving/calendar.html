@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=20260825koinoniacelebrations2" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260825calendarsaints1" />
   <script src="/liturgical-calendar.js"></script>
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260817bookstoreprayer1"></script>
@@ -153,6 +153,23 @@
       </div>
       <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
     </main>
+  </div>
+  <div class="donor-saint-modal" id="donorSaintModal" hidden>
+    <div class="donor-saint-modal-card" role="dialog" aria-modal="true" aria-labelledby="donorSaintModalTitle">
+      <div class="donor-saint-modal-head">
+        <div>
+          <span class="calendar-panel-kicker" id="donorSaintModalKicker">Saint of the Day</span>
+          <h2 id="donorSaintModalTitle">Saint of the Day</h2>
+          <p id="donorSaintModalSubtitle">Today's commemoration</p>
+        </div>
+        <button type="button" class="donor-saint-close" onclick="closeDonorSaintModal()" aria-label="Close saint life">×</button>
+      </div>
+      <div class="donor-saint-modal-body" id="donorSaintModalBody"></div>
+      <div class="donor-saint-modal-foot">
+        <span>Lives of the Saints courtesy of Orthocal.info</span>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeDonorSaintModal()">Close</button>
+      </div>
+    </div>
   </div>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
