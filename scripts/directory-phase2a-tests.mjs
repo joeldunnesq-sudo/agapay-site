@@ -424,6 +424,46 @@ await test("person and household contacts are distinct; platform login email is 
   );
 });
 
+await test("household admin can edit a linked spouse's birthday and directory contact sharing without changing login identity", async () => {
+  const { env, db, admin, context, spouse, household } = await fixture();
+  const spouseUser = await ensurePlatformUser(env, { email: "john.login@example.org", displayName: "John Dunn" });
+  await linkExternalIdentity(env, { actor: admin, personId: spouse.id, linkType: "platform_user", externalId: spouseUser.id });
+
+  await updateHouseholdMember(env, {
+    context,
+    householdId: household.id,
+    personId: spouse.id,
+    data: {
+      preferredName: "John Dunn",
+      relationship: "spouse",
+      dateOfBirth: "1984-04-18",
+      birthdayVisibility: "directory_members",
+      email: "john.directory@example.org",
+      emailVisibility: "directory_members",
+      phone: "(555) 222-4411",
+      phoneVisibility: "staff"
+    }
+  });
+
+  const savedPerson = db.prepare("SELECT date_of_birth FROM directory_people WHERE id = ?").get(spouse.id);
+  assert.equal(savedPerson.date_of_birth, "1984-04-18");
+  const birthdayPreference = db.prepare("SELECT visibility FROM directory_field_privacy_preferences WHERE owner_type = 'person' AND owner_id = ? AND field_key = 'adult_birthday' AND active = 1").get(spouse.id);
+  assert.equal(birthdayPreference.visibility, "directory_members");
+  const contacts = db.prepare("SELECT contact_type, value, visibility, verified FROM directory_contact_methods WHERE owner_type = 'person' AND owner_id = ? AND active = 1 ORDER BY contact_type").all(spouse.id);
+  assert.deepEqual(contacts.map((contact) => ({ ...contact })), [
+    { contact_type: "email", value: "john.directory@example.org", visibility: "directory_members", verified: 0 },
+    { contact_type: "phone", value: "(555) 222-4411", visibility: "staff", verified: 0 }
+  ]);
+  const storedLogin = db.prepare("SELECT email FROM platform_users WHERE id = ?").get(spouseUser.id);
+  assert.equal(storedLogin.email, "john.login@example.org", "directory contact edits must not change the spouse's login email");
+
+  const profile = await getHouseholdSelfServiceProfile(env, { context, householdId: household.id });
+  const savedSpouse = profile.members.find((member) => member.personId === spouse.id);
+  assert.equal(savedSpouse.accountLinked, true);
+  assert.equal(savedSpouse.birthdayVisibility, "directory_members");
+  assert.deepEqual(savedSpouse.contacts.map((contact) => [contact.contactType, contact.visibility]), [["email", "directory_members"], ["phone", "staff"]]);
+});
+
 await test("household admin can retrieve and edit household-owned profile but not canonical structure", async () => {
   const { env, db, context, household } = await fixture();
   const profile = await getHouseholdSelfServiceProfile(env, { context, householdId: household.id });

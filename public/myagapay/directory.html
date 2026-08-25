@@ -1094,6 +1094,14 @@
                 <label>Relationship to you<select name="relationship"><option value="spouse">Spouse</option><option value="child">Child</option><option value="adult_child">Adult child</option><option value="other">Other</option></select></label>
                 <label>Birthday (optional)<input name="dateOfBirth" type="date" /></label>
                 <label>Who can see the birthday?<select name="birthdayVisibility"><option value="private">Only me</option><option value="staff">Parish staff</option><option value="directory_members">Parish directory</option></select></label>
+                <fieldset class="field-group" id="memberContactFields" hidden>
+                  <legend class="group-legend">Contact information</legend>
+                  <p class="visibility-legend" style="grid-column:1/-1;">These details belong to this family member’s directory profile. Changing an email here does not change their My AGAPAY login email.</p>
+                  <label>Email (optional)<input name="email" type="email" autocomplete="off" placeholder="name@example.com" /></label>
+                  <label>Who can see the email?<select name="emailVisibility"><option value="private">Only this family</option><option value="staff">Parish staff</option><option value="directory_members">Parish directory</option></select></label>
+                  <label>Phone (optional)<input name="phone" type="tel" autocomplete="off" placeholder="(555) 555-0123" /></label>
+                  <label>Who can see the phone?<select name="phoneVisibility"><option value="private">Only this family</option><option value="staff">Parish staff</option><option value="directory_members">Parish directory</option></select></label>
+                </fieldset>
                 <label>Patron saint (optional)<input name="saintName" placeholder="St. Maria" /></label>
                 <label>Name day month<select name="feastMonth"><option value="">No name day</option><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></label>
                 <label>Name day<input name="feastDay" type="number" min="1" max="31" inputmode="numeric" placeholder="22" /></label>
@@ -2408,11 +2416,17 @@
         const nameday = householdNamedays.find((item) => item.personId === member.personId)
           || householdNamedays.find((item) => item.displayName === member.preferredName);
         const birthdaySummary = member.dateOfBirth ? "Birthday added" : "Birthday not added";
+        const contactTypes = new Set((member.contacts || []).map((contact) => contact.contactType));
+        const contactSummary = member.child
+          ? ""
+          : contactTypes.size
+            ? `${contactTypes.has("email") ? "Email" : ""}${contactTypes.has("email") && contactTypes.has("phone") ? " and " : ""}${contactTypes.has("phone") ? "phone" : ""} added`
+            : "Contact info not added";
         const namedaySummary = nameday
           ? `${nameday.saintName} · ${nameday.feastMonthDay} · ${statusLabel(nameday.visibility)}`
           : "Nameday not added";
         return `<div class="household-member-row" data-household-member-id="${esc(member.personId)}">
-          <div><strong>${esc(member.preferredName)}</strong><small>${isSelf ? "You" : esc(relationshipLabel(member.relationship))}</small><small>${esc(birthdaySummary)} · ${esc(namedaySummary)}</small></div>
+          <div><strong>${esc(member.preferredName)}</strong><small>${isSelf ? "You" : esc(relationshipLabel(member.relationship))}</small><small>${esc([birthdaySummary, contactSummary, namedaySummary].filter(Boolean).join(" · "))}</small></div>
           <div class="actions">
             <button class="btn secondary" type="button" data-edit-household-member="${esc(member.personId)}">Edit</button>
             ${isSelf || member.child || member.accountLinked ? "" : `
@@ -3297,6 +3311,8 @@
         const isSelf = member.personId === currentPersonId;
         const nameday = householdNamedays.find((item) => item.personId === member.personId)
           || householdNamedays.find((item) => item.displayName === member.preferredName);
+        const emailContact = (member.contacts || []).find((contact) => contact.contactType === "email");
+        const phoneContact = (member.contacts || []).find((contact) => contact.contactType === "phone");
         const [month, day] = String(nameday?.feastMonthDay || "").split("-");
         form.elements.personId.value = member.personId;
         form.elements.namedayId.value = nameday?.id || "";
@@ -3305,9 +3321,17 @@
         form.elements.relationship.value = ["spouse", "child", "adult_child", "other"].includes(member.relationship) ? member.relationship : "other";
         form.elements.relationship.disabled = isSelf;
         form.elements.dateOfBirth.value = member.dateOfBirth || "";
-        form.elements.dateOfBirth.readOnly = !isSelf && Boolean(member.accountLinked && !member.child);
-        form.elements.birthdayVisibility.value = isSelf ? (profileState?.profile?.sharing?.birthday?.visibility || "private") : "private";
-        form.elements.birthdayVisibility.disabled = !isSelf || Boolean(member.child);
+        form.elements.dateOfBirth.readOnly = false;
+        form.elements.birthdayVisibility.value = isSelf ? (profileState?.profile?.sharing?.birthday?.visibility || "private") : (member.birthdayVisibility || "private");
+        form.elements.birthdayVisibility.disabled = Boolean(member.child);
+        const contactFields = document.getElementById("memberContactFields");
+        const manageContacts = !isSelf && !member.child;
+        contactFields.hidden = !manageContacts;
+        contactFields.querySelectorAll("input,select").forEach((control) => { control.disabled = !manageContacts; });
+        form.elements.email.value = emailContact?.value || "";
+        form.elements.emailVisibility.value = emailContact?.visibility || "private";
+        form.elements.phone.value = phoneContact?.value || "";
+        form.elements.phoneVisibility.value = phoneContact?.visibility || "private";
         form.elements.saintName.value = nameday?.saintName || "";
         form.elements.feastMonth.value = month || "";
         form.elements.feastDay.value = day ? Number(day) : "";
@@ -3315,7 +3339,7 @@
         form.dataset.dirty = "";
         form.hidden = false;
         form.scrollIntoView({ behavior: "smooth", block: "center" });
-        showWizardStatus(`Editing ${member.preferredName} and their nameday.`);
+        showWizardStatus(`Editing ${member.preferredName}’s birthday, contact information, and name day.`);
         return;
       }
       if (deleteButton) {
@@ -3363,7 +3387,18 @@
         } else {
           await api(`/api/directory/households/${encodeURIComponent(household.id)}/self/members/${encodeURIComponent(values.personId)}`, {
             method: "PATCH",
-            body: JSON.stringify({ preferredName: values.preferredName, relationship: values.relationship, dateOfBirth: values.dateOfBirth })
+            body: JSON.stringify({
+              preferredName: values.preferredName,
+              relationship: values.relationship,
+              dateOfBirth: values.dateOfBirth,
+              birthdayVisibility: values.birthdayVisibility || "private",
+              ...(form.elements.email.disabled ? {} : {
+                email: values.email || "",
+                emailVisibility: values.emailVisibility || "private",
+                phone: values.phone || "",
+                phoneVisibility: values.phoneVisibility || "private"
+              })
+            })
           });
         }
         if (saintName || feastMonth || feastDay) {
@@ -3402,6 +3437,8 @@
       form.elements.relationship.disabled = false;
       form.elements.dateOfBirth.readOnly = false;
       form.elements.birthdayVisibility.disabled = false;
+      document.getElementById("memberContactFields").hidden = true;
+      document.getElementById("memberContactFields").querySelectorAll("input,select").forEach((control) => { control.disabled = true; });
       form.hidden = true;
       form.dataset.dirty = "";
       showWizardStatus("");

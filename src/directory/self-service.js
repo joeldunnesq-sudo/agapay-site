@@ -985,12 +985,33 @@ export async function getHouseholdSelfServiceProfile(env, { context, householdId
       cleanedHouseholdId
     )
   ]);
+  const membersWithDetails = await Promise.all(members.map(async (row) => {
+    const member = memberDto(row);
+    if (member.child) return { ...member, contacts: [], birthdayVisibility: "private" };
+    const [personContacts, birthdayPreference] = await Promise.all([
+      listActiveContactsForOwner(env, { parishId: managed.parishId, ownerType: "person", ownerId: member.personId }),
+      d1First(
+        env,
+        `SELECT visibility
+           FROM directory_field_privacy_preferences
+          WHERE parish_id = ?1 AND owner_type = 'person' AND owner_id = ?2
+            AND field_key = 'adult_birthday' AND active = 1`,
+        managed.parishId,
+        member.personId
+      )
+    ]);
+    return {
+      ...member,
+      contacts: personContacts.map(contactDto),
+      birthdayVisibility: birthdayPreference?.visibility || "private"
+    };
+  }));
   return {
     household: householdDto({ ...household, anniversary_visibility: anniversaryPreference?.visibility || "private" }),
     contacts: contacts.map(contactDto),
     addresses: addresses.map(addressDto),
     publication,
-    members: members.map(memberDto),
+    members: membersWithDetails,
     administrators: admins.map((row) => ({ personId: row.person_id, preferredName: row.preferred_name })),
     pendingInvitations: invitations.filter((invitation) => invitation.intendedHouseholdId === cleanedHouseholdId && ["pending", "sent", "opened", "accepted"].includes(invitation.status)).map((invitation) => ({
       id: invitation.id,
@@ -1002,6 +1023,53 @@ export async function getHouseholdSelfServiceProfile(env, { context, householdId
     pendingRequests: requests.map(requestDto),
     editableFields: EDITABLE_HOUSEHOLD_FIELDS
   };
+}
+
+async function saveManagedHouseholdMemberContact(env, {
+  context,
+  parishId,
+  personId,
+  contactType,
+  value,
+  visibility,
+  correlationId = ""
+}) {
+  const existingContacts = await listActiveContactsForOwner(env, { parishId, ownerType: "person", ownerId: personId });
+  const existing = existingContacts.find((contact) => contact.contactType === contactType && contact.primary)
+    || existingContacts.find((contact) => contact.contactType === contactType);
+  const cleanedValue = String(value || "").trim();
+  const serviceActor = { ...selfActor(context, parishId), capabilities: [DIRECTORY_CAPABILITIES.manage] };
+  if (!cleanedValue) {
+    if (existing) await deactivateContactMethod(env, { actor: serviceActor, parishId, contactId: existing.id, correlationId });
+    return null;
+  }
+  if (existing) {
+    return updateContactMethod(env, {
+      actor: serviceActor,
+      parishId,
+      contactId: existing.id,
+      patch: {
+        value: cleanedValue,
+        label: existing.label || (contactType === "phone" ? "mobile" : "personal"),
+        primary: true,
+        visibility
+      },
+      correlationId
+    });
+  }
+  return createContactMethod(env, {
+    actor: serviceActor,
+    parishId,
+    ownerType: "person",
+    ownerId: personId,
+    contactType,
+    value: cleanedValue,
+    label: contactType === "phone" ? "mobile" : "personal",
+    primary: true,
+    verified: false,
+    visibility,
+    correlationId
+  });
 }
 
 export async function updateHouseholdMember(env, { context, householdId, personId, data = {}, correlationId = "" }) {
@@ -1031,11 +1099,9 @@ export async function updateHouseholdMember(env, { context, householdId, personI
   const canRename = toBool(member.is_child) || !toBool(member.account_linked);
   const preferredName = cleanText(data.preferredName || member.preferred_name, { required: true, max: 160, field: "preferredName" });
   const dateOfBirth = "dateOfBirth" in data ? cleanDate(data.dateOfBirth, "dateOfBirth") : member.date_of_birth;
+  const birthdayVisibility = "birthdayVisibility" in data ? normalizeStarterVisibility(data.birthdayVisibility, "private") : null;
   if (!canRename && preferredName !== member.preferred_name) {
     throw new DirectoryServiceError("account_managed", "This adult manages their own name through My AGAPAY.", 409);
-  }
-  if (!canRename && dateOfBirth !== member.date_of_birth) {
-    throw new DirectoryServiceError("account_managed", "This adult manages their own birthday through My AGAPAY.", 409);
   }
   const timestamp = nowMs();
   const statements = [
@@ -1074,7 +1140,44 @@ export async function updateHouseholdMember(env, { context, householdId, personI
     correlationId
   }));
   await runAtomic(env, statements);
-  return { personId, preferredName, dateOfBirth: dateOfBirth || "", relationship, child: toBool(member.is_child), accountLinked: toBool(member.account_linked), version: timestamp };
+  const serviceActor = { ...selfActor(context, managed.parishId), capabilities: [DIRECTORY_CAPABILITIES.manage] };
+  if (birthdayVisibility !== null && !toBool(member.is_child)) {
+    await setFieldPrivacyPreference(env, {
+      actor: serviceActor,
+      parishId: managed.parishId,
+      ownerType: "person",
+      ownerId: personId,
+      fieldKey: "adult_birthday",
+      visibility: birthdayVisibility,
+      publicationEligible: birthdayVisibility === "directory_members",
+      correlationId
+    });
+  }
+  if (!toBool(member.is_child)) {
+    if ("email" in data || "emailVisibility" in data) {
+      await saveManagedHouseholdMemberContact(env, {
+        context,
+        parishId: managed.parishId,
+        personId,
+        contactType: "email",
+        value: data.email,
+        visibility: normalizeStarterVisibility(data.emailVisibility, "private"),
+        correlationId
+      });
+    }
+    if ("phone" in data || "phoneVisibility" in data) {
+      await saveManagedHouseholdMemberContact(env, {
+        context,
+        parishId: managed.parishId,
+        personId,
+        contactType: "phone",
+        value: data.phone,
+        visibility: normalizeStarterVisibility(data.phoneVisibility, "private"),
+        correlationId
+      });
+    }
+  }
+  return { personId, preferredName, dateOfBirth: dateOfBirth || "", birthdayVisibility: birthdayVisibility || "private", relationship, child: toBool(member.is_child), accountLinked: toBool(member.account_linked), version: timestamp };
 }
 
 export async function deleteHouseholdMember(env, { context, householdId, personId, correlationId = "" }) {

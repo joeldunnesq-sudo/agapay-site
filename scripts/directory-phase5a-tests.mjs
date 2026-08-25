@@ -367,12 +367,20 @@ await test("ministry search finds a home-parish My AGAPAY profile and links it w
   assert.ok(db.prepare("SELECT id FROM directory_ministry_participants WHERE person_id = ? AND ministry_id = ? AND status = 'active'").get(linked.id, ministry.id));
 });
 
-await test("published leadership is display-only and grants no platform capabilities", async () => {
-  const { env, adminContext, other, otherUser, memberDirectoryContext } = await fixture();
+await test("published leadership surfaces on the spouse's family card and grants no platform capabilities", async () => {
+  const { env, db, adminContext, household, other, otherUser, memberDirectoryContext } = await fixture();
+  db.prepare("UPDATE directory_household_members SET relationship = 'spouse' WHERE household_id = ? AND person_id = ?").run(household.id, other.id);
   const ministry = await createActiveMinistry(env, adminContext);
   await assignMinistryLeader(env, { context: adminContext, ministryId: ministry.id, personId: other.id, assignmentType: "coordinator", publish: true });
   const detail = await getPublishedMinistry(env, { context: memberDirectoryContext, ministryId: ministry.id });
   assert.equal(detail.ministry.leaders[0].displayName, "Nina Antioch");
+  const households = await listMemberDirectoryHouseholds(env, { context: memberDirectoryContext });
+  const spouse = households.items.flatMap((item) => item.members).find((item) => item.id === other.id);
+  assert.equal(db.prepare("SELECT relationship FROM directory_household_members WHERE household_id = ? AND person_id = ?").get(household.id, other.id).relationship, "spouse");
+  assert.equal(spouse?.ministries[0].displayName, "Hospitality", "a published ministry leader must appear on their family card even without a separate participant row");
+  assert.equal(spouse?.ministries[0].leadershipType, "coordinator");
+  const ministryPeople = await listMemberDirectoryPeople(env, { context: memberDirectoryContext, ministryId: ministry.id });
+  assert.ok(ministryPeople.items.some((person) => person.id === other.id), "published leaders must remain discoverable through the ministry filter");
   const auth = await resolveAuthorizationContext(env, { userId: otherUser.id, parishId: "st-fiacre" });
   assert.equal(auth.capabilities.includes("directory.ministries.manage"), false);
   assert.equal(auth.capabilities.includes("commerce.manage"), false);

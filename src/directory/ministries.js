@@ -818,25 +818,45 @@ export async function closeMinistryInterestReview(env, { context, row, decision,
 
 export async function publishedMinistryAffiliationsForPerson(env, { context, personId }) {
   const resolvedId = await resolvePersonAlias(env, { parishId: context.parishId, personId });
-  const rows = await d1All(
-    env,
-    `SELECT m.id, m.display_name, m.slug, m.category, mp.participation_type,
-            CASE WHEN ml.id IS NULL THEN '' ELSE ml.assignment_type END AS leadership_type
-       FROM directory_ministry_participants mp
-       JOIN directory_ministries m ON m.id = mp.ministry_id
-       LEFT JOIN directory_ministry_leaders ml
-         ON ml.parish_id = mp.parish_id AND ml.ministry_id = mp.ministry_id
-        AND ml.person_id = mp.person_id AND ml.active = 1 AND ml.publication_state = 'published'
-      WHERE mp.parish_id = ?1 AND mp.person_id = ?2
-        AND mp.status = 'active'
-        AND mp.publication_preference = 'directory' AND mp.approved_publication = 1
-        AND m.status IN ('active','paused') AND m.visibility IN ('parish_members','participants_only')
-      ORDER BY m.display_order ASC, m.display_name ASC`,
-    context.parishId,
-    resolvedId
-  );
+  const [participantRows, leaderRows] = await Promise.all([
+    d1All(
+      env,
+      `SELECT m.id, m.display_name, m.slug, m.category, m.display_order, mp.participation_type,
+              CASE WHEN ml.id IS NULL THEN '' ELSE ml.assignment_type END AS leadership_type
+         FROM directory_ministry_participants mp
+         JOIN directory_ministries m ON m.id = mp.ministry_id
+         LEFT JOIN directory_ministry_leaders ml
+           ON ml.parish_id = mp.parish_id AND ml.ministry_id = mp.ministry_id
+          AND ml.person_id = mp.person_id AND ml.active = 1 AND ml.publication_state = 'published'
+        WHERE mp.parish_id = ?1 AND mp.person_id = ?2
+          AND mp.status = 'active'
+          AND mp.publication_preference = 'directory' AND mp.approved_publication = 1
+          AND m.status IN ('active','paused') AND m.visibility IN ('parish_members','participants_only')`,
+      context.parishId,
+      resolvedId
+    ),
+    d1All(
+      env,
+      `SELECT m.id, m.display_name, m.slug, m.category, m.display_order,
+              '' AS participation_type, ml.assignment_type AS leadership_type
+         FROM directory_ministry_leaders ml
+         JOIN directory_ministries m ON m.id = ml.ministry_id
+        WHERE ml.parish_id = ?1 AND ml.person_id = ?2
+          AND ml.active = 1 AND ml.publication_state = 'published'
+          AND m.status IN ('active','paused') AND m.visibility IN ('parish_members','participants_only')`,
+      context.parishId,
+      resolvedId
+    )
+  ]);
   const flags = await getPersonPrivacyFlags(env, { parishId: context.parishId, personId: resolvedId });
   if (flags.isChild || flags.protectedPerson) return [];
+  const affiliations = new Map(participantRows.map((row) => [row.id, row]));
+  for (const leader of leaderRows) {
+    const existing = affiliations.get(leader.id);
+    affiliations.set(leader.id, existing ? { ...existing, leadership_type: leader.leadership_type } : leader);
+  }
+  const rows = [...affiliations.values()].sort((a, b) => Number(a.display_order || 100) - Number(b.display_order || 100)
+    || String(a.display_name || "").localeCompare(String(b.display_name || "")));
   return rows.map((row) => ({
     id: row.id,
     displayName: row.display_name,
@@ -851,13 +871,24 @@ export async function publishedMinistryAffiliationsForPerson(env, { context, per
 export async function personIdsWithPublishedMinistry(env, { context, ministryId }) {
   const rows = await d1All(
     env,
-    `SELECT mp.person_id
-       FROM directory_ministry_participants mp
-       JOIN directory_ministries m ON m.id = mp.ministry_id
-       LEFT JOIN directory_person_privacy_flags f ON f.parish_id = mp.parish_id AND f.person_id = mp.person_id AND f.active = 1
-      WHERE mp.parish_id = ?1 AND mp.ministry_id = ?2
-        AND mp.status = 'active' AND mp.publication_preference = 'directory' AND mp.approved_publication = 1
-        AND m.status IN ('active','paused') AND m.visibility IN ('parish_members','participants_only')
+    `SELECT published.person_id
+       FROM (
+         SELECT mp.person_id
+           FROM directory_ministry_participants mp
+           JOIN directory_ministries m ON m.id = mp.ministry_id
+          WHERE mp.parish_id = ?1 AND mp.ministry_id = ?2
+            AND mp.status = 'active' AND mp.publication_preference = 'directory' AND mp.approved_publication = 1
+            AND m.status IN ('active','paused') AND m.visibility IN ('parish_members','participants_only')
+         UNION
+         SELECT ml.person_id
+           FROM directory_ministry_leaders ml
+           JOIN directory_ministries m ON m.id = ml.ministry_id
+          WHERE ml.parish_id = ?1 AND ml.ministry_id = ?2
+            AND ml.active = 1 AND ml.publication_state = 'published'
+            AND m.status IN ('active','paused') AND m.visibility IN ('parish_members','participants_only')
+       ) published
+       LEFT JOIN directory_person_privacy_flags f ON f.parish_id = ?1 AND f.person_id = published.person_id AND f.active = 1
+      WHERE 1 = 1
         AND COALESCE(f.protected_person, 0) = 0 AND COALESCE(f.is_child, 0) = 0`,
     context.parishId,
     ministryId
