@@ -201,7 +201,7 @@ function parishLifeInboxShellHtml(communicationsEnabled) {
   if (!communicationsEnabled) return "";
   return `<section class="parish-life-home-section" aria-labelledby="communityInboxHeading">
     <div class="parish-life-community-inbox" id="parishLifeCommunityInbox">
-      <div class="parish-life-inbox-loading"><strong id="communityInboxHeading">New Updates for You!</strong><p class="sw-tool-loading parish-life-section-loading" role="status">Loading your Community Inbox…</p></div>
+      <div class="parish-life-inbox-loading"><strong id="communityInboxHeading">Parish Today</strong><p class="sw-tool-loading parish-life-section-loading" role="status">Loading your parish summary…</p></div>
     </div>
   </section>`;
 }
@@ -216,9 +216,17 @@ function parishLifeInboxDate(value) {
   return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }
 
-function renderCommunityInbox(feed = {}, signupPayload = {}) {
+let parishLifeInboxCelebrationState = { items:[] };
+
+function renderCommunityInbox(feed = {}, signupPayload = {}, celebrationPayload = null) {
   const target = document.getElementById("parishLifeCommunityInbox");
   if (!target) return;
+  if (celebrationPayload && typeof celebrationPayload === "object") {
+    parishLifeInboxCelebrationState = {
+      items:Array.isArray(celebrationPayload.items) ? celebrationPayload.items : []
+    };
+  }
+  const celebrationHtml = parishLifeInboxCelebrationsHtml(parishLifeInboxCelebrationState);
   const signupActions = (signupPayload.actions || []).slice(0, 4);
   const announcements = (feed.announcements || [])
     .filter((item) => item.status === "published" && item.pinned === true && !item.read)
@@ -226,7 +234,7 @@ function renderCommunityInbox(feed = {}, signupPayload = {}) {
     .slice(0, Math.max(0, 4 - signupActions.length));
   const actionCount = signupActions.length + announcements.length;
   if (!actionCount) {
-    target.innerHTML = `<div class="parish-life-inbox-head is-caught-up"><span class="parish-life-inbox-symbol" aria-hidden="true">✓</span><span><strong id="communityInboxHeading">You’re all caught up</strong><p>Messages and general updates stay in the bell count above.</p></span><a href="/myagapay/feed">Open inbox →</a></div>`;
+    target.innerHTML = `<div class="parish-life-inbox-head is-caught-up"><span class="parish-life-inbox-symbol" aria-hidden="true">✓</span><span><strong id="communityInboxHeading">Parish Today</strong><p>You’re all caught up on parish updates.</p></span><a href="/myagapay/feed">Open inbox →</a></div>${celebrationHtml}`;
     return;
   }
   const signupRows = signupActions.map((item) => {
@@ -246,10 +254,10 @@ function renderCommunityInbox(feed = {}, signupPayload = {}) {
   target.innerHTML = `
     <button class="parish-life-inbox-head" type="button" onclick="toggleParishLifeInbox(this)" aria-expanded="true">
       <span class="parish-life-inbox-symbol" aria-hidden="true">!</span>
-      <span><strong id="communityInboxHeading">New Updates for You!</strong><p><b data-community-action-count>${actionCount}</b> ${actionCount === 1 ? "thing needs" : "things need"} your attention</p></span>
+      <span><strong id="communityInboxHeading">Parish Today</strong><p><b data-community-action-count>${actionCount}</b> ${actionCount === 1 ? "thing needs" : "things need"} your attention</p></span>
       <em aria-hidden="true">⌃</em>
     </button>
-    <div class="parish-life-inbox-list">${signupRows}${announcementRows}<a class="parish-life-inbox-footer" href="/myagapay/feed">Open Community Inbox <span data-parish-life-unread hidden>0</span> →</a></div>`;
+    <div class="parish-life-inbox-list">${signupRows}${announcementRows}<a class="parish-life-inbox-footer" href="/myagapay/feed">Open Community Inbox <span data-parish-life-unread hidden>0</span> →</a></div>${celebrationHtml}`;
 }
 
 function toggleParishLifeInbox(button) {
@@ -488,36 +496,30 @@ async function loadParishLifeContinueListening(headers) {
   }
 }
 
-const PARISH_LIFE_MILESTONE_ICONS = {
+const PARISH_LIFE_CELEBRATION_ICONS = {
   birthday: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 11h14v9H5zM4 11h16M12 11v9M7 7h10v4H7z"/><path d="M9 7c-1.4-1.2-.7-3 1-3 1.2 0 2 1.1 2 3M15 7c1.4-1.2.7-3-1-3-1.2 0-2 1.1-2 3"/></svg>',
   anniversary: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20S4.5 15.5 4.5 9.2A4.2 4.2 0 0 1 12 6.6a4.2 4.2 0 0 1 7.5 2.6C19.5 15.5 12 20 12 20Z"/></svg>',
   nameday: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1.7 1.8 2.6 3.3 2.6 4.8a2.6 2.6 0 0 1-5.2 0C9.4 6.3 10.3 4.8 12 3Z"/><path d="M8.5 11h7l-.8 9h-5.4zM7.5 20h9"/></svg>'
 };
 
-function parishLifeMilestoneWhen(item) {
-  if (item.daysAway === 0) return "Today";
-  if (item.daysAway === 1) return "Tomorrow";
-  const date = new Date(`${item.date}T12:00:00`);
-  return Number.isNaN(date.getTime()) ? "Upcoming" : date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-}
-
-function renderParishLifeMilestones(payload = {}) {
-  const section = document.getElementById("parishLifeMilestonesSection");
-  const target = document.getElementById("parishLifeMilestones");
-  if (!section || !target) return;
+function parishLifeInboxCelebrationsHtml(payload = {}) {
   const items = Array.isArray(payload.items) ? payload.items : [];
-  section.hidden = !items.length;
-  if (!items.length) { target.innerHTML = ""; return; }
-  target.innerHTML = items.slice(0, 8).map((item) => {
+  if (!items.length) return "";
+  const visible = items.slice(0, 3);
+  const rows = visible.map((item) => {
     const detail = item.type === "anniversary" && item.years
       ? `${item.years}${item.years === 1 ? " year" : " years"}`
-      : item.detail || item.typeLabel;
-    return `<article class="parish-life-milestone-card parish-life-milestone-${parishLifeEscape(item.type)}">
-      <span class="parish-life-milestone-icon">${PARISH_LIFE_MILESTONE_ICONS[item.icon] || PARISH_LIFE_MILESTONE_ICONS.nameday}</span>
-      <span class="parish-life-milestone-copy"><small>${parishLifeEscape(item.typeLabel)}</small><strong>${parishLifeEscape(item.label)}</strong><em>${parishLifeEscape(detail)}</em></span>
-      <time datetime="${parishLifeEscape(item.date)}">${parishLifeEscape(parishLifeMilestoneWhen(item))}</time>
-    </article>`;
+      : item.typeLabel || "Celebration";
+    return `<a class="parish-life-inbox-celebration parish-life-inbox-celebration-${parishLifeEscape(item.type)}" href="/myagapay/calendar">
+      <span class="parish-life-inbox-celebration-icon" aria-hidden="true">${PARISH_LIFE_CELEBRATION_ICONS[item.icon] || PARISH_LIFE_CELEBRATION_ICONS.nameday}</span>
+      <span><strong>${parishLifeEscape(item.label)}</strong><small>${parishLifeEscape(detail)}</small></span>
+    </a>`;
   }).join("");
+  const remaining = items.length - visible.length;
+  return `<div class="parish-life-inbox-celebrations" aria-label="Celebrating today">
+    <div class="parish-life-inbox-celebrations-head"><strong>Celebrating today</strong><a href="/myagapay/calendar">Full Calendar →</a></div>
+    <div class="parish-life-inbox-celebrations-list">${rows}${remaining > 0 ? `<a class="parish-life-inbox-celebrations-more" href="/myagapay/calendar">+${remaining} more</a>` : ""}</div>
+  </div>`;
 }
 
 async function loadRecentPodcastEpisodes(headers) {
@@ -706,11 +708,14 @@ async function loadParishLife() {
       return;
     }
 
+    const celebrationsPromise = parishLifeFetch("/api/directory/member/milestones?days=1", headers)
+      .catch(() => ({ milestones:{ items:[] } }));
     const feedPromise = Promise.all([
       parishLifeFetch("/api/donor/feed", headers),
       signupPayloadPromise,
-    ]).then(([feed, signupPayload]) => {
-      renderCommunityInbox(feed || {}, signupPayload || {});
+      celebrationsPromise,
+    ]).then(([feed, signupPayload, celebrations]) => {
+      renderCommunityInbox(feed || {}, signupPayload || {}, celebrations?.milestones || {});
       window.MyAgapayShell?.setFeedUnreadCount(Math.max(0, Number(feed?.unreadCount) || 0));
     });
     const groupsPromise = parishLifeFetch("/api/donor/groups", headers).then((groups) => {
@@ -726,9 +731,6 @@ async function loadParishLife() {
       window.MyAgapayShell?.setTeachingUnreadCount(Math.max(0, Number(teaching?.unreadCount) || 0));
     });
     const podcastProgressPromise = loadParishLifeContinueListening(headers);
-    const milestonesPromise = parishLifeFetch("/api/directory/member/milestones?days=1", headers)
-      .then((payload) => renderParishLifeMilestones(payload?.milestones || {}))
-      .catch(() => renderParishLifeMilestones({}));
     const podcastsPromise = loadRecentPodcastEpisodes(headers);
     const mediaPromise = parishLifeFetch("/api/donor/videos", headers).then((media) => renderRecentVideos(media || {}));
     const newsPromise = Promise.all([
@@ -742,7 +744,7 @@ async function loadParishLife() {
     ]).then(([customNews, ...newsSources]) => {
       renderRecentNews([...newsSources.filter(Boolean), ...(customNews?.feeds || [])]);
     });
-    await Promise.all([liturgicalDayPromise, calendarPromise, feedPromise, groupsPromise, communityToolBadgesPromise, teachingPromise, podcastProgressPromise, milestonesPromise, podcastsPromise, mediaPromise, newsPromise]);
+    await Promise.all([liturgicalDayPromise, calendarPromise, feedPromise, groupsPromise, communityToolBadgesPromise, teachingPromise, podcastProgressPromise, podcastsPromise, mediaPromise, newsPromise]);
     status.hidden = true;
   } catch (error) {
     if (typeof loadDonorLiturgicalDay === "function") await loadDonorLiturgicalDay(null);

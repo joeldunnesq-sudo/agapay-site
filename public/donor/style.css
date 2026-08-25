@@ -8902,6 +8902,22 @@ textarea {
   text-align: center;
 }
 .parish-life-inbox-footer > span:not([hidden])::before { content: " · "; }
+.parish-life-inbox-celebrations { display:grid; gap:9px; border-top:1px solid var(--k-divider); padding:11px 14px 13px; background:rgba(255,255,255,.74); }
+.parish-life-inbox-celebrations-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.parish-life-inbox-celebrations-head > strong { color:var(--k-text); font-family:"Playfair Display",Georgia,serif; font-size:13px; }
+.parish-life-inbox-celebrations-head > a { color:var(--k-gold-hover); font-size:9px; font-weight:800; text-decoration:none; white-space:nowrap; }
+.parish-life-inbox-celebrations-list { display:flex; gap:7px; min-width:0; overflow-x:auto; padding-bottom:1px; scrollbar-width:none; }
+.parish-life-inbox-celebrations-list::-webkit-scrollbar { display:none; }
+.parish-life-inbox-celebration { display:grid; min-width:0; flex:1 1 0; grid-template-columns:30px minmax(0,1fr); align-items:center; gap:8px; border:1px solid var(--k-border); border-radius:11px; padding:8px 9px; background:var(--k-surface); color:inherit; text-decoration:none; }
+.parish-life-inbox-celebration:hover { border-color:rgba(184,143,66,.6); background:var(--k-surface-2); }
+.parish-life-inbox-celebration-icon { display:grid; width:30px; height:30px; place-items:center; border-radius:9px; background:var(--k-gold-soft); color:var(--k-gold-hover); }
+.parish-life-inbox-celebration-icon svg { width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+.parish-life-inbox-celebration > span:last-child { display:grid; min-width:0; gap:2px; }
+.parish-life-inbox-celebration strong { overflow:hidden; color:var(--k-text); font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
+.parish-life-inbox-celebration small { overflow:hidden; color:var(--k-muted); font-size:8px; text-overflow:ellipsis; white-space:nowrap; }
+.parish-life-inbox-celebration-anniversary .parish-life-inbox-celebration-icon { background:rgba(126,68,105,.11); color:#7e4469; }
+.parish-life-inbox-celebration-nameday .parish-life-inbox-celebration-icon { background:rgba(48,109,139,.11); color:#306d8b; }
+.parish-life-inbox-celebrations-more { display:grid; min-width:74px; place-items:center; flex:0 0 auto; border:1px dashed var(--k-border); border-radius:11px; padding:8px; color:var(--k-gold-hover); font-size:9px; font-weight:800; text-align:center; text-decoration:none; }
 
 .parish-life-recording-list {
   border: 1px solid var(--k-border);
@@ -8980,18 +8996,6 @@ textarea {
 .parish-life-continue-progress i { display: block; height: 100%; border-radius: inherit; background: var(--k-gold); }
 .parish-life-continue-action { color: var(--k-gold-hover); font-size: 10px; font-weight: 700; }
 
-.parish-life-milestones-intro { margin: -3px 0 10px; color: var(--k-muted); font-size: 11px; line-height: 1.45; }
-.parish-life-milestone-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.parish-life-milestone-card { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-width: 0; border: 1px solid var(--k-border); border-radius: 14px; padding: 11px 12px; background: var(--k-surface); }
-.parish-life-milestone-icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 11px; background: var(--k-gold-soft); color: var(--k-gold-hover); }
-.parish-life-milestone-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.parish-life-milestone-copy { display: grid; min-width: 0; gap: 2px; }
-.parish-life-milestone-copy small { color: var(--k-gold-hover); font-size: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-.parish-life-milestone-copy strong { overflow: hidden; color: var(--k-text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.parish-life-milestone-copy em { overflow: hidden; color: var(--k-muted); font-size: 9px; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
-.parish-life-milestone-card time { color: var(--k-text); font-size: 9px; font-weight: 700; white-space: nowrap; }
-.parish-life-milestone-anniversary .parish-life-milestone-icon { background: rgba(126, 68, 105, .11); color: #7e4469; }
-.parish-life-milestone-nameday .parish-life-milestone-icon { background: rgba(48, 109, 139, .11); color: #306d8b; }
 
 .parish-life-video-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .parish-life-video-grid > .parish-life-empty-state { grid-column: 1 / -1; }
@@ -9591,6 +9595,9 @@ textarea {
     font-size: 9px;
   }
   .parish-life-inbox-footer { padding: 9px 12px; }
+  .parish-life-inbox-celebrations { padding:10px 12px 12px; }
+  .parish-life-inbox-celebrations-list { margin-right:-12px; padding-right:12px; }
+  .parish-life-inbox-celebration { min-width:min(195px,72vw); flex:0 0 auto; }
   .parish-life-blog-list { gap: 6px; }
   .parish-life-blog-card { min-height: 68px; gap: 5px; padding: 9px; }
   .parish-life-blog-card.has-image { padding: 0 9px 9px; }
@@ -9601,7 +9608,6 @@ textarea {
   .parish-life-recording-row > em { grid-column: auto; }
   .parish-life-ministry-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .parish-life-video-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .parish-life-milestone-list { grid-template-columns: 1fr; }
   .parish-life-video-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
   .parish-life-ministry-tile { min-height: 90px; }
   .media-page-shell, .media-watch-shell { padding: 16px 16px 92px; }

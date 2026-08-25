@@ -57,10 +57,12 @@ const [page, script, styles, calendarPage, donorApp, directory, privacy, selfSer
   readFile(new URL("../migrations/0104_directory_parish_milestones.sql", import.meta.url), "utf8")
 ]);
 
-assert.match(page, /parishCalendarEventList[\s\S]*id="parishLifeMilestonesSection"[\s\S]*id="parishLifeMilestones"/, "milestones should sit directly below the synced calendar");
-assert.match(page, />Parish Celebrations<\//, "the parish-facing heading should use warm celebration language");
-assert.doesNotMatch(page, />Parish Milestones<\//, "the parish-facing heading should not use milestones language");
+assert.match(page, /id="parishLifeInboxMount"[\s\S]*id="parishCalendarEventList"/, "the Parish Today panel should remain ahead of the synced calendar");
+assert.doesNotMatch(page, /id="parishLifeMilestonesSection"|id="parishLifeMilestones"/, "Koinonia should not retain a standalone celebrations section");
 assert.match(script, /directory\/member\/milestones\?days=1/, "the Koinonia home page should request today only");
+assert.match(script, /communityInboxHeading">Parish Today<[\s\S]*Celebrating today[\s\S]*Full Calendar/, "today's celebrations should fold into the Parish Today inbox panel");
+assert.match(script, /const actionCount = signupActions\.length \+ announcements\.length/, "celebrations must not alter announcement or action counts");
+assert.doesNotMatch(script, /renderParishLifeMilestones|parish-life-milestone-card/, "the removed standalone renderer should not remain in the homepage script");
 assert.match(script, /parish-life-continue-art[\s\S]*parish-life-continue-copy[\s\S]*parish-life-continue-play/, "album art should replace the old leading play control and play should replace Resume");
 assert.doesNotMatch(script, /parish-life-continue-action">Resume/, "the old text Resume action should be removed");
 assert.match(styles, /parish-life-liturgical-hero \.cal-today-title \{ padding-right: 82px; \}/, "the saint title should reserve the Church-date badge area");
