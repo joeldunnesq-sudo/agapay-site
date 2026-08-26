@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="en" data-myagapay-hydrate>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parish Library | My AGAPAY</title>
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260825library1" />
+  <link rel="stylesheet" href="/myagapay/library.css?v=20260825library1" />
+  <script src="/pwa-register.js" defer></script>
+  <script src="/myagapay-shell.js?v=20260825library1"></script>
+  <script src="/myagapay/library.js?v=20260825library1" defer></script>
+  <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
+  <meta name="theme-color" content="#061522" />
+</head>
+<body class="donor-mobile-page donor-library-page app-inner-page app-main-feature-page">
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-scroll">
+        <div class="brand"><div class="brand-row"><a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home"><img src="/mark.png" alt="AGAPAY" /></a><span class="brand-name">AGAPAY</span><span class="dashboard-home-cue">Home</span></div><span class="pill">Donor Dashboard</span></div>
+        <div class="profile-panel"><div class="profile-name">Parish Library</div><div class="profile-meta" id="libraryParishName">Documents and links from your church</div></div>
+        <nav class="nav unified-product-nav"></nav>
+        <div class="sidebar-card"><h3>From your parish</h3><div class="mini-item"><strong>Curated resources</strong><span>Documents, guides, forms, and articles published by parish staff.</span></div><div class="mini-item"><strong>Member access</strong><span>Uploaded PDFs are delivered through your signed-in My AGAPAY account.</span></div></div>
+      </div>
+      <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/parish-life">Open Koinonia</a></div>
+    </aside>
+    <main class="content donor-mobile-content">
+      <header class="library-mobile-appbar"><a class="library-mobile-brand" href="/myagapay" aria-label="Open My AGAPAY"><span class="library-mobile-mark" aria-hidden="true"><img src="/mark.png" alt="" /></span><span><strong>MY AGAPAY</strong><small>Parish Library</small></span></a><button class="koinonia-mobile-menu-toggle" type="button" data-myagapay-app-menu-toggle aria-label="Open My AGAPAY navigation"><span class="koinonia-mobile-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span></button></header>
+      <div class="topbar"><div class="topbar-title">Parish Library</div></div>
+      <div class="page library-page">
+        <header class="library-hero">
+          <span class="library-hero-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg></span>
+          <div><span>From your church</span><h1>Parish Library</h1><p>Documents, links, and guides chosen for your parish community.</p></div>
+        </header>
+        <section class="library-tools" aria-label="Find a parish resource">
+          <label class="library-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span class="sr-only">Search resources</span><input id="librarySearch" type="search" placeholder="Search the library" autocomplete="off" /></label>
+          <select id="libraryCategory" aria-label="Filter by category"><option value="">All categories</option><option value="prayer_worship">Prayer &amp; Worship</option><option value="faith_formation">Faith Formation</option><option value="newcomers">Newcomers</option><option value="ministries">Ministries</option><option value="forms_policies">Forms &amp; Policies</option><option value="pastoral_letters">Pastoral Letters</option><option value="parish_life">Parish Life</option></select>
+        </section>
+        <div class="notice" id="libraryStatus" role="status">Loading your parish library…</div>
+        <section class="library-grid" id="libraryGrid" aria-live="polite"></section>
+      </div>
+      <nav class="mobile-tabbar" aria-label="My AGAPAY navigation"></nav>
+    </main>
+  </div>
+</body>
+</html>

@@ -118,6 +118,12 @@ bucket_name = "agapay-teaching-assets"
 binding = "GROUP_MESSAGE_ASSETS"
 bucket_name = "agapay-group-message-assets"
 
+# Parish Library PDFs share the existing private member-content bucket under
+# a separate prefix and binding. All reads go through an authenticated route.
+[[r2_buckets]]
+binding = "PARISH_LIBRARY_ASSETS"
+bucket_name = "agapay-group-message-assets"
+
 # Private bucket for sales-tax exemption documents. Unlike CAMPAIGN_ASSETS,
 # this bucket must NEVER have a public r2.dev URL enabled -- all access goes
 # through authenticated Worker routes (src/handlers/tax-exemption.js) that
@@ -233,4 +239,8 @@ bucket_name = "agapay-teaching-assets-staging"
 
 [[env.staging.r2_buckets]]
 binding = "GROUP_MESSAGE_ASSETS"
+bucket_name = "agapay-group-message-assets-staging"
+
+[[env.staging.r2_buckets]]
+binding = "PARISH_LIBRARY_ASSETS"
 bucket_name = "agapay-group-message-assets-staging"

@@ -12,6 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/parish/style.css?v=20260817centralemail1" />
   <link rel="stylesheet" href="/parish/redesign.css?v=20260822householdbands1" />
+  <link rel="stylesheet" href="/parish/library.css?v=20260825library1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="stylesheet" href="/styles/stewardship.css?v=20260806standalonetabs1" />
   <link rel="manifest" href="/manifest.webmanifest" />
@@ -101,6 +102,11 @@
           <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8"/><path d="M8 13h5"/><circle cx="17" cy="13" r="1"/></svg>
           <span class="nav-label">Directory</span>
           <span class="nav-module-status" id="directoryNavStatus" hidden>Off</span>
+        </div>
+        <div class="sidebar-nav-item" onclick="switchTab('library')" id="nav-library">
+          <svg viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg>
+          <span class="nav-label">Parish Library</span>
+          <span class="nav-module-status" id="libraryNavStatus" hidden>Off</span>
         </div>
         <div class="sidebar-nav-item" onclick="switchTab('communications')" id="nav-communications" hidden>
           <svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg>
@@ -1229,6 +1235,11 @@
         </div>
       </div>
 
+      <!-- ── PARISH LIBRARY TAB ────────────────────── -->
+      <div class="tab-panel parish-tier-panel" id="tab-library">
+        <div id="parishLibraryAdmin" class="parish-library-admin"><p class="sw-tool-loading">Loading Parish Library…</p></div>
+      </div>
+
       <!-- ── KOINONIA STUDIO TAB ────────────────────── -->
       <div class="tab-panel parish-tier-panel" id="tab-communications">
         <div class="communications-admin-shell koinonia-studio">
@@ -1894,6 +1905,11 @@
     <span>Directory</span>
     <em class="mobile-module-status" hidden>Off</em>
   </button>
+  <button class="mobile-tab-link" type="button" data-nav-tab="library" onclick="switchTab('library')">
+    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 7a4 4 0 0 1 4-4h14v21H9a4 4 0 0 0-4 4z"/><path d="M5 7v21"/><path d="M10 9h8"/><path d="M10 14h7"/></svg>
+    <span>Library</span>
+    <em class="mobile-module-status" hidden>Off</em>
+  </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="communications" onclick="switchTab('communications')" hidden>
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg>
     <span>Koinonia</span>
@@ -1956,6 +1972,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
+  <script src="/parish/library.js?v=20260825library1"></script>
   <script src="/parish/app.js?v=20260822householdbands1"></script>
 </body>
 </html>

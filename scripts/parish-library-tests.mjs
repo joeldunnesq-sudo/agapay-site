@@ -1,0 +1,93 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  archiveParishLibraryResource,
+  createParishLibraryResource,
+  listParishLibraryResources,
+  PARISH_LIBRARY_CATEGORIES,
+  updateParishLibraryResource,
+  validateParishLibraryPdf,
+} from "../src/handlers/parish-library.js";
+import { getParishLibrarySettings, setParishLibraryEnabled } from "../src/lib/parish-library.js";
+
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+const sqlite = new DatabaseSync(":memory:");
+sqlite.exec(readFileSync(path.join(root, "migrations", "0105_parish_library.sql"), "utf8"));
+const db = {
+  prepare(sql) {
+    return {
+      parameters: [],
+      bind(...parameters) { this.parameters = parameters; return this; },
+      async first() { return sqlite.prepare(sql).get(...this.parameters) || null; },
+      async all() { return { results: sqlite.prepare(sql).all(...this.parameters) }; },
+      async run() { const result = sqlite.prepare(sql).run(...this.parameters); return { success: true, meta: { changes: result.changes } }; },
+    };
+  },
+};
+
+assert.deepEqual(PARISH_LIBRARY_CATEGORIES, ["prayer_worship", "faith_formation", "newcomers", "ministries", "forms_policies", "pastoral_letters", "parish_life"]);
+assert.deepEqual(await getParishLibrarySettings(db, "parish-a"), { enabled: false, updatedAt: "" });
+assert.equal((await setParishLibraryEnabled(db, { parishId: "parish-a", enabled: true, updatedBy: "staff@example.test" })).enabled, true);
+
+const link = await createParishLibraryResource(db, {
+  parishId: "parish-a", createdBy: "staff@example.test",
+  input: { title: "Welcome guide", description: "Start here", category: "newcomers", resourceType: "link", url: "https://example.org/welcome", pinned: true },
+});
+assert.equal(link.status, "draft");
+assert.equal(link.url, "https://example.org/welcome");
+assert.deepEqual(await listParishLibraryResources(db, "parish-a", { publishedOnly: true }), []);
+await updateParishLibraryResource(db, { parishId: "parish-a", resourceId: link.id, input: { status: "published" } });
+
+const pdf = await createParishLibraryResource(db, {
+  parishId: "parish-a", createdBy: "staff@example.test",
+  input: { title: "Parish handbook", description: "Policies and contacts", category: "forms_policies", resourceType: "pdf" },
+});
+await assert.rejects(
+  updateParishLibraryResource(db, { parishId: "parish-a", resourceId: pdf.id, input: { status: "published" } }),
+  /Upload the PDF/,
+);
+sqlite.prepare("UPDATE parish_library_resources SET object_key = ?, file_name = ?, file_size = ? WHERE id = ?")
+  .run("parish-library/parish-a/handbook.pdf", "handbook.pdf", 128, pdf.id);
+await updateParishLibraryResource(db, { parishId: "parish-a", resourceId: pdf.id, input: { status: "published" } });
+let published = await listParishLibraryResources(db, "parish-a", { publishedOnly: true });
+assert.deepEqual(published.map(({ id }) => id), [link.id, pdf.id], "featured resources should sort first");
+await archiveParishLibraryResource(db, { parishId: "parish-a", resourceId: link.id });
+published = await listParishLibraryResources(db, "parish-a", { publishedOnly: true });
+assert.deepEqual(published.map(({ id }) => id), [pdf.id]);
+
+await assert.rejects(
+  createParishLibraryResource(db, { parishId: "parish-a", createdBy: "staff", input: { title: "Unsafe", resourceType: "link", url: "http://localhost/internal" } }),
+  /public HTTPS/,
+);
+assert.throws(() => sqlite.prepare(`
+  INSERT INTO parish_library_resources (id, parish_id, title, category, resource_type, created_by)
+  VALUES ('bad', 'parish-a', 'Bad', 'unknown', 'pdf', 'staff')
+`).run(), /CHECK constraint failed/);
+
+const validPdf = await validateParishLibraryPdf(new Request("https://agapay.test/upload", { method: "POST", headers: { "Content-Type": "application/pdf" }, body: new TextEncoder().encode("%PDF-1.7\nfixture") }));
+assert.equal(validPdf.size, 16);
+const fakePdf = await validateParishLibraryPdf(new Request("https://agapay.test/upload", { method: "POST", headers: { "Content-Type": "application/pdf" }, body: new TextEncoder().encode("not-a-pdf") }));
+assert.equal(fakePdf.status, 415);
+
+const [worker, handler, shell, donorPage, donorScript, adminPage, adminScript, wrangler] = [
+  "src/worker.js", "src/handlers/parish-library.js", "public/myagapay-shell.js", "public/myagapay/library.html", "public/myagapay/library.js",
+  "public/parish/dashboard.html", "public/parish/library.js", "wrangler.toml",
+].map((file) => readFileSync(path.join(root, file), "utf8"));
+assert.match(worker, /handleDonorParishLibrary/);
+assert.match(worker, /handleParishLibrary/);
+assert.match(shell, /const sacramentOrLibrary = parishCapabilities\.sacramentsEnabled[\s\S]*parishCapabilities\.libraryEnabled[\s\S]*byId\.get\("history"\)/);
+assert.match(shell, /mobileLabel: "Library"/);
+assert.match(shell, /pathname\.startsWith\("\/myagapay\/library"\)/);
+assert.match(donorPage, /<h1>Parish Library<\/h1>/);
+assert.match(donorScript, /fetch\("\/api\/donor\/library"/);
+assert.match(donorScript, /data-library-pdf/);
+assert.match(adminPage, /id="nav-library"/);
+assert.match(adminPage, /id="tab-library"/);
+assert.match(handler, /PARISH_LIBRARY_ASSETS|parish-library\/|Parish Library file storage/);
+assert.match(adminScript, /resourceType[\s\S]*PDF document[\s\S]*Article link/);
+assert.match(wrangler, /binding = "PARISH_LIBRARY_ASSETS"[\s\S]*bucket_name = "agapay-group-message-assets"/);
+
+console.log("PASS - parish-scoped library resources, private PDFs, staff controls, and adaptive bottom navigation");

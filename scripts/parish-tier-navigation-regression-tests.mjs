@@ -18,12 +18,13 @@ const parishItems = [...parishGroupSource.matchAll(/class="sidebar-nav-item"[^>]
 assert.deepEqual(parishItems, [
   "nav-sacraments",
   "nav-directory",
+  "nav-library",
   "nav-communications",
   "nav-accounting",
   "nav-text",
-], "Koinonia must sit directly after Directory and before Accounting");
+], "Parish Library and Koinonia must remain grouped between Directory and Accounting");
 
-assert.match(app, /const parishOrder = \['sacraments', 'directory', 'communications', 'accounting', 'text'\]/, "runtime ordering must place Koinonia after Directory and before Accounting");
+assert.match(app, /const parishOrder = \['sacraments', 'directory', 'library', 'communications', 'accounting', 'text'\]/, "runtime ordering must place Parish Library before Koinonia and Accounting");
 assert.match(app, /parishOrder\.forEach[\s\S]*parishGroup\.appendChild\(item\)[\s\S]*sidebar\.appendChild\(parishGroup\)/, "runtime ordering must keep all Parish items inside the labeled group");
 
 assert.match(dashboard, /<body class="dashboard-booting">[\s\S]*id="dashboardBootScreen"[\s\S]*<div class="app">/, "the gated dashboard must start behind a dedicated loading screen");

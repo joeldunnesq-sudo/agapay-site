@@ -200,7 +200,7 @@
     content?.classList.toggle('sacraments-tab-active', tab === 'sacraments');
     if (tab === 'accounting') window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     activeTab = tab;
-    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship Health', accounting:'Accounting', sacraments:'Sacraments & Services', directory:'Parish Directory', communications:'Communications', bookstore:'Commerce' };
+    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship Health', accounting:'Accounting', sacraments:'Sacraments & Services', directory:'Parish Directory', library:'Parish Library', communications:'Communications', bookstore:'Commerce' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     syncTopbarTabIcon(tab);
@@ -214,6 +214,7 @@
     if (tab === 'stewardship') loadStewardshipPanel();
     if (tab === 'sacraments') loadSacramentsTab();
     if (tab === 'directory' && moduleIncluded('directory')) loadDirectoryAdminTab();
+    if (tab === 'library') loadParishLibraryAdmin();
     if (tab === 'communications') loadCommunicationsTab();
     if (tab === 'accounting') loadAccountingTab();
     if (tab === 'bookstore') {
@@ -4634,6 +4635,7 @@
       sacBadge.classList.remove('nav-upgrade-badge--active');
     }
     syncModuleStatusNavigation('sacraments', sacramentsActive, sacIsOn);
+    syncModuleStatusNavigation('library', sacramentsActive, Boolean(currentParish?.libraryEnabled));
     syncModuleStatusNavigation('directory', moduleIncluded('directory'), Boolean(currentParish?.directoryEnabled));
     syncModuleStatusNavigation('communications', moduleIncluded('communications'), Boolean(currentParish?.communicationsEnabled));
   }
@@ -4670,6 +4672,28 @@
     if (commerceProductState === 'overview') renderCommerceOverview();
     if (commerceProductState === 'events') loadEventsOversightPanel('event');
     if (commerceProductState === 'meals') loadEventsOversightPanel('meal');
+  }
+
+  function loadParishLibraryAdmin(force = false) {
+    const included = moduleIncluded('sacraments');
+    syncTierRequirementNavigation('library', 'Parish', included);
+    syncModuleStatusNavigation('library', included, Boolean(currentParish?.libraryEnabled));
+    if (!included) {
+      const root = document.getElementById('parishLibraryAdmin');
+      if (root) root.innerHTML = '<div class="communications-paywall"><strong>Parish Library is included with Parish.</strong><p>Upgrade to publish documents and trusted links for parishioners in My AGAPAY.</p><button class="btn btn-gold" type="button" onclick="switchTab(\'settings\')">Review Parish tier</button></div>';
+      return;
+    }
+    if (!currentParish?.parishId) return;
+    window.ParishLibraryAdmin?.load({
+      force,
+      parishId: currentParish.parishId,
+      headers: authHeaders,
+      notify: setStatus,
+      onSettingsChanged(enabled) {
+        currentParish.libraryEnabled = Boolean(enabled);
+        syncModuleStatusNavigation('library', true, currentParish.libraryEnabled);
+      }
+    });
   }
 
   function setCommerceOverviewRange(range) {
@@ -9489,6 +9513,7 @@
       el.hidden = false;
     });
     syncTierRequirementNavigation('directory', 'Parish', directoryActive);
+    syncTierRequirementNavigation('library', 'Parish', moduleIncluded('sacraments'));
     syncTierRequirementNavigation('accounting', 'Parish', accountingIncluded);
     syncModuleStatusNavigation('accounting', accountingIncluded, accountingIncluded);
     if (accountingNav) accountingNav.title = accountingIncluded ? 'Accounting workspace' : 'Requires Parish';
@@ -9508,7 +9533,7 @@
     ];
     // Product requirement: Koinonia sits directly after Directory and before
     // Accounting in the bottom Parish tier block.
-    const parishOrder = ['sacraments', 'directory', 'communications', 'accounting', 'text'];
+    const parishOrder = ['sacraments', 'directory', 'library', 'communications', 'accounting', 'text'];
     const sidebar = document.querySelector('.sidebar-nav');
     preParishOrder.forEach((tab) => {
       const item = document.getElementById(`nav-${tab}`);

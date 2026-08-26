@@ -49,6 +49,7 @@ import { validateSafeExternalUrl } from "../lib/safe-external-url.js";
 import { fetchKoinoniaCalendarIcs, normalizeKoinoniaCalendarUrl } from "../lib/koinonia-calendar.js";
 import { loadPublishedCommerceCalendarEvents } from "./parish-events.js";
 import { getDirectorySettings } from "../directory/settings.js";
+import { getParishLibrarySettings } from "../lib/parish-library.js";
 import { resolveDirectorySelfServiceContext, syncSelfServiceContactsFromDonor } from "../directory/self-service.js";
 
 import {
@@ -945,8 +946,12 @@ export async function handleDonorDashboard(request, env) {
     if (found) {
       parish = parishFromRegistration(found.registration);
       if (parish) {
-        const directorySettings = await getDirectorySettings(env, parish.id);
+        const [directorySettings, librarySettings] = await Promise.all([
+          getDirectorySettings(env, parish.id),
+          getParishLibrarySettings(env.AGAPAY_DB || env.DB, parish.id),
+        ]);
         parish.directoryEnabled = directoryEnabledFor(found.registration, directorySettings);
+        parish.libraryEnabled = librarySettings.enabled && hasParishPlusAccess(found.registration);
         const parishLifeExperience = parishLifeExperienceFor(found.registration);
         parish.communicationsEnabled = parishLifeExperience.communicationsEnabled;
         parish.signupsEnabled = signupsEnabledFor(found.registration);

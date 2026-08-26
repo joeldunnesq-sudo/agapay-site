@@ -74,7 +74,7 @@ assert.match(groupHandler, /export async function listGroupActivity[\s\S]*getRea
 assert.match(shell, /parishLifeAvailable/);
 assert.match(parishDashboard, /id="nav-communications" hidden/);
 assert.match(parishDashboard, /id="nav-bookstore"[\s\S]*id="nav-tier-parish"[\s\S]*id="nav-sacraments"[\s\S]*id="nav-directory"[\s\S]*id="nav-communications"[\s\S]*id="nav-accounting"[\s\S]*id="nav-text"/, "Koinonia must sit after Directory and before Accounting");
-assert.match(parishApp, /const parishOrder = \['sacraments', 'directory', 'communications', 'accounting', 'text'\]/, "runtime navigation ordering must keep Koinonia after Directory and before Accounting");
+assert.match(parishApp, /const parishOrder = \['sacraments', 'directory', 'library', 'communications', 'accounting', 'text'\]/, "runtime navigation ordering must keep Library after Directory and Koinonia before Accounting");
 assert.match(parishApp, /communicationsNav\.hidden = !parishLifeAvailable/);
 assert.match(workerSource, /parishLifeApiRoute[\s\S]*status: 404/);
 

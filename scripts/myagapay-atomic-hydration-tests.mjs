@@ -26,6 +26,7 @@ const protectedPages = [
   "public/myagapay/directory.html",
   "public/myagapay/feed.html",
   "public/myagapay/groups.html",
+  "public/myagapay/library.html",
   "public/myagapay/media.html",
   "public/myagapay/news.html",
   "public/myagapay/parish-life.html",
@@ -38,11 +39,17 @@ const protectedPages = [
   "public/myagapay/giving/history.html"
 ];
 
+const pageStylesheetVersions = new Map([
+  ["public/myagapay/directory.html", "20260825koinoniamilestones1"],
+  ["public/myagapay/giving/calendar.html", "20260825calendarsaints1"],
+  ["public/myagapay/groups.html", "20260822groupsscroll1"],
+  ["public/myagapay/library.html", "20260825library1"],
+  ["public/myagapay/parish-life.html", "20260825koinoniatoday2"],
+]);
+
 for (const file of protectedPages) {
   const html = read(file);
-  const expectedStylesheetVersion = file === "public/myagapay/parish-life.html"
-    ? "20260822koinoniaright3"
-    : "20260819koinoniaweek1";
+  const expectedStylesheetVersion = pageStylesheetVersions.get(file) || "20260819koinoniaweek1";
   assert.match(html, /<html[^>]*data-myagapay-hydrate/, `${file} must opt into the pre-paint hydration shield`);
   assert.match(html, new RegExp(`/donor/style\\.css\\?v=${expectedStylesheetVersion}`), `${file} must load the current atomic-paint CSS version`);
   assert.match(html, /<script src="\/myagapay-shell\.js\?v=[a-zA-Z0-9]+"><\/script>/, `${file} must install the versioned tracker before page-level scripts`);

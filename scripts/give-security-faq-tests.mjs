@@ -1,0 +1,30 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+const read = (file) => readFileSync(path.join(root, file), "utf8");
+const html = read("public/give/security.html");
+const css = read("public/styles/give-security.css");
+const worker = read("src/worker.js");
+const server = read("server.mjs");
+const chrome = read("public/site-chrome.js");
+
+assert.match(worker, /staticGivePages = new Set\(\[[^\]]*"security"/, "the clean /give/security route must resolve to its static page");
+assert.match(server, /"\/give\/security"\]\.includes\(pathname\)/, "the local server must resolve the clean /give/security route");
+assert.match(chrome, /href="\/give\/security">Security FAQ/, "the shared Give footer must link to the security FAQ");
+assert.match(html, /<title>Security &amp; Payments FAQ \| AGAPAY Give<\/title>/, "the FAQ needs a descriptive page title");
+assert.match(html, /"@type": "FAQPage"/, "the page must provide FAQ structured data");
+assert.match(html, /PBKDF2-SHA256/, "password handling must be described precisely");
+assert.match(html, /Stripe-hosted Checkout/, "the FAQ must explain that Stripe collects sensitive payment details");
+assert.match(html, /do not pass through or get stored by the AGAPAY application/, "the FAQ must distinguish Stripe data from AGAPAY records");
+assert.match(html, /cryptographic signature and timestamp/, "the FAQ must explain Stripe webhook verification");
+assert.match(html, /cross-parish requests are denied/, "the FAQ must describe parish data isolation");
+assert.match(html, /masked last four digits/, "the FAQ must explain the bank-reference storage boundary");
+assert.match(html, /No responsible online service can promise zero risk/, "the FAQ must avoid absolute security promises");
+assert.doesNotMatch(html, /AGAPAY is (?:unhackable|bank-grade|PCI(?:-DSS)? certified)/i, "the FAQ must not make unsupported security or compliance claims");
+assert.match(css, /@media \(max-width: 620px\)/, "the security FAQ must include a phone layout");
+assert.match(css, /prefers-reduced-motion: reduce/, "the security FAQ must respect reduced-motion preferences");
+
+console.log("PASS - AGAPAY Give security FAQ is precise, discoverable, responsive, and avoids unsupported claims");

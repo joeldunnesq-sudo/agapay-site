@@ -1,0 +1,153 @@
+:root {
+  --security-navy: #061522;
+  --security-navy-soft: #0d2637;
+  --security-gold: #c9a25b;
+  --security-gold-dark: #8e681f;
+  --security-parchment: #f7f1e7;
+  --security-paper: #fffdf8;
+  --security-ink: #102130;
+  --security-muted: #5f6a72;
+  --security-line: rgba(133, 111, 73, 0.24);
+  --security-shadow: 0 24px 70px rgba(6, 21, 34, 0.09);
+}
+
+html { scroll-behavior: smooth; }
+body.security-page { margin: 0; background: var(--security-parchment); color: var(--security-ink); font-family: "DM Sans", sans-serif; }
+.security-page *, .security-page *::before, .security-page *::after { box-sizing: border-box; }
+.security-page main { overflow: clip; }
+
+.security-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 660px;
+  display: grid;
+  align-items: center;
+  padding: clamp(6.5rem, 10vw, 9rem) clamp(1.25rem, 5vw, 5rem) clamp(4.5rem, 8vw, 7rem);
+  color: #fff;
+  background:
+    radial-gradient(circle at 82% 30%, rgba(201, 162, 91, 0.19), transparent 28%),
+    radial-gradient(circle at 12% 90%, rgba(58, 115, 139, 0.2), transparent 30%),
+    linear-gradient(145deg, #061522 0%, #0b2536 58%, #061522 100%);
+}
+.security-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.16;
+  background-image: linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: linear-gradient(to bottom, #000, transparent 90%);
+}
+.security-hero-inner { width: min(1180px, 100%); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(340px, .8fr); gap: clamp(3rem, 7vw, 7rem); align-items: center; }
+.security-eyebrow { display: inline-flex; align-items: center; gap: .65rem; color: var(--security-gold); font-size: .75rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+.security-eyebrow > span { width: 34px; height: 1px; background: currentColor; }
+.security-hero h1 { max-width: 790px; margin: 1rem 0 1.25rem; font-family: "Cormorant Garamond", serif; font-size: clamp(3rem, 6.7vw, 5.8rem); font-weight: 500; line-height: .94; letter-spacing: -.035em; }
+.security-hero-copy > p { max-width: 670px; margin: 0; color: rgba(255,255,255,.72); font-size: clamp(1rem, 1.5vw, 1.17rem); line-height: 1.75; }
+.security-hero-actions, .security-closing-actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2rem; }
+.security-primary-button, .security-secondary-button { min-height: 50px; display: inline-flex; align-items: center; justify-content: center; padding: .8rem 1.35rem; border-radius: 8px; font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-decoration: none; text-transform: uppercase; transition: transform .18s ease, background .18s ease, border-color .18s ease; }
+.security-primary-button { color: var(--security-navy); background: linear-gradient(135deg, #dfbd74, #b98832); border: 1px solid #dfbd74; }
+.security-secondary-button { color: #fff; background: transparent; border: 1px solid rgba(255,255,255,.3); }
+.security-primary-button:hover, .security-secondary-button:hover { transform: translateY(-2px); }
+.security-secondary-button:hover { border-color: var(--security-gold); }
+
+.security-shield { position: relative; padding: 2rem; border: 1px solid rgba(224, 191, 119, .32); border-radius: 24px; background: linear-gradient(145deg, rgba(255,255,255,.1), rgba(255,255,255,.035)); box-shadow: 0 28px 90px rgba(0,0,0,.26); backdrop-filter: blur(14px); }
+.security-shield::after { content: ""; position: absolute; width: 90px; height: 90px; right: -25px; top: -25px; border: 1px solid rgba(201,162,91,.22); border-radius: 50%; }
+.security-shield-mark { width: 84px; height: 92px; display: grid; place-items: center; color: var(--security-gold); }
+.security-shield-mark svg { width: 100%; height: 100%; fill: rgba(201,162,91,.08); stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.security-shield-copy { margin-top: 1.2rem; }
+.security-shield-copy span { color: var(--security-gold); font-size: .68rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.security-shield-copy strong { display: block; margin-top: .5rem; font-family: "Cormorant Garamond", serif; font-size: 1.75rem; font-weight: 600; line-height: 1.1; }
+.security-shield ul { list-style: none; display: grid; gap: .8rem; margin: 1.5rem 0 0; padding: 1.4rem 0 0; border-top: 1px solid rgba(255,255,255,.12); }
+.security-shield li { display: flex; gap: .7rem; align-items: center; color: rgba(255,255,255,.75); font-size: .88rem; }
+.security-shield li span { color: var(--security-gold); }
+
+.security-summary { position: relative; z-index: 2; padding: 0 1.25rem; margin-top: -48px; }
+.security-summary-inner { width: min(1140px, 100%); margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--security-line); border-radius: 18px; background: var(--security-paper); box-shadow: var(--security-shadow); overflow: hidden; }
+.security-summary article { min-width: 0; display: flex; gap: 1rem; padding: 1.65rem; }
+.security-summary article + article { border-left: 1px solid var(--security-line); }
+.security-summary-icon { width: 44px; height: 44px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; color: var(--security-gold-dark); background: rgba(201,162,91,.12); }
+.security-summary-icon svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.security-summary strong { display: block; margin: .08rem 0 .35rem; font-size: .93rem; }
+.security-summary p { margin: 0; color: var(--security-muted); font-size: .8rem; line-height: 1.55; }
+
+.security-content { padding: clamp(5rem, 9vw, 8.5rem) 1.25rem; scroll-margin-top: 80px; }
+.security-content-inner { width: min(1140px, 100%); margin: 0 auto; display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: clamp(2.5rem, 6vw, 6rem); align-items: start; }
+.security-guide { position: sticky; top: 100px; display: grid; gap: 1rem; }
+.security-guide-card { padding: 1.5rem; border: 1px solid var(--security-line); border-radius: 16px; background: rgba(255,253,248,.72); }
+.security-guide-card > span { color: var(--security-gold-dark); font-size: .67rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.security-guide-card h2 { margin: .65rem 0 .6rem; font-family: "Cormorant Garamond", serif; font-size: 1.7rem; font-weight: 600; line-height: 1.05; }
+.security-guide-card p { margin: 0; color: var(--security-muted); font-size: .82rem; line-height: 1.6; }
+.security-guide-card nav { display: grid; gap: .25rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--security-line); }
+.security-guide-card nav a { padding: .55rem .65rem; border-radius: 7px; color: #31414d; font-size: .78rem; font-weight: 700; text-decoration: none; }
+.security-guide-card nav a:hover { color: var(--security-navy); background: rgba(201,162,91,.1); }
+.security-guide-note { display: flex; gap: .8rem; padding: 1.1rem; border-radius: 13px; color: rgba(255,255,255,.72); background: var(--security-navy); }
+.security-guide-note svg { width: 20px; height: 20px; flex: 0 0 auto; fill: none; stroke: var(--security-gold); stroke-width: 1.7; stroke-linecap: round; }
+.security-guide-note p { margin: 0; font-size: .75rem; line-height: 1.55; }
+.security-guide-note strong { color: #fff; }
+
+.security-faq-heading { padding-bottom: 2rem; border-bottom: 1px solid var(--security-line); }
+.security-faq-heading h2 { margin: .75rem 0 .65rem; font-family: "Cormorant Garamond", serif; font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 500; line-height: 1; letter-spacing: -.025em; }
+.security-faq-heading p { max-width: 650px; margin: 0; color: var(--security-muted); line-height: 1.7; }
+.security-faq-group { padding-top: 3rem; scroll-margin-top: 90px; }
+.security-group-title { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.1rem; }
+.security-group-title > span { width: 48px; height: 48px; display: grid; place-items: center; border: 1px solid rgba(201,162,91,.34); border-radius: 50%; color: var(--security-gold-dark); background: rgba(201,162,91,.09); }
+.security-group-title svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.security-group-title small { display: block; margin-bottom: .18rem; color: var(--security-gold-dark); font-size: .63rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.security-group-title h3 { margin: 0; font-family: "Cormorant Garamond", serif; font-size: 1.7rem; font-weight: 600; }
+.security-faq details { border-top: 1px solid var(--security-line); }
+.security-faq details:last-child { border-bottom: 1px solid var(--security-line); }
+.security-faq summary { position: relative; list-style: none; cursor: pointer; padding: 1.35rem 3.1rem 1.35rem 0; color: var(--security-ink); font-size: .98rem; font-weight: 700; line-height: 1.45; }
+.security-faq summary::-webkit-details-marker { display: none; }
+.security-faq summary > span { position: absolute; top: 50%; right: .45rem; width: 24px; height: 24px; transform: translateY(-50%); border: 1px solid rgba(142,104,31,.35); border-radius: 50%; }
+.security-faq summary > span::before, .security-faq summary > span::after { content: ""; position: absolute; left: 6px; right: 6px; top: 11px; height: 1.5px; background: var(--security-gold-dark); transition: transform .18s ease; }
+.security-faq summary > span::after { transform: rotate(90deg); }
+.security-faq details[open] summary > span::after { transform: rotate(0); }
+.security-answer { padding: 0 3rem 1.45rem 0; }
+.security-answer p, .security-answer li { color: var(--security-muted); font-size: .91rem; line-height: 1.75; }
+.security-answer p { margin: 0; }
+.security-answer ul { margin: 0; padding-left: 1.25rem; }
+.security-answer li + li { margin-top: .42rem; }
+.security-answer a { color: var(--security-gold-dark); font-weight: 700; }
+
+.security-closing { width: min(1140px, calc(100% - 2.5rem)); margin: 0 auto clamp(4rem, 8vw, 7rem); display: flex; align-items: center; justify-content: space-between; gap: 2rem; padding: clamp(2rem, 5vw, 3.5rem); border-radius: 20px; color: #fff; background: linear-gradient(135deg, var(--security-navy), #12384b); box-shadow: var(--security-shadow); }
+.security-closing > div > span { color: var(--security-gold); font-size: .68rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+.security-closing h2 { margin: .55rem 0 .4rem; font-family: "Cormorant Garamond", serif; font-size: clamp(2.1rem, 4vw, 3.25rem); font-weight: 500; line-height: 1; }
+.security-closing p { margin: 0; color: rgba(255,255,255,.66); line-height: 1.6; }
+.security-closing-actions { flex: 0 0 auto; margin-top: 0; }
+
+@media (max-width: 900px) {
+  .security-hero { min-height: auto; }
+  .security-hero-inner { grid-template-columns: 1fr; }
+  .security-shield { max-width: 540px; }
+  .security-summary-inner { grid-template-columns: 1fr; }
+  .security-summary article + article { border-left: 0; border-top: 1px solid var(--security-line); }
+  .security-content-inner { grid-template-columns: 1fr; }
+  .security-guide { position: static; grid-template-columns: 1fr 1fr; }
+  .security-guide-card nav { grid-template-columns: 1fr 1fr; }
+  .security-closing { align-items: flex-start; flex-direction: column; }
+}
+
+@media (max-width: 620px) {
+  .security-hero { padding: 6rem 1rem 5.5rem; }
+  .security-hero h1 { font-size: clamp(2.8rem, 14vw, 4.3rem); }
+  .security-hero-actions, .security-closing-actions { width: 100%; flex-direction: column; }
+  .security-primary-button, .security-secondary-button { width: 100%; }
+  .security-shield { padding: 1.4rem; border-radius: 18px; }
+  .security-shield-mark { width: 68px; height: 76px; }
+  .security-summary { margin-top: -34px; padding: 0 1rem; }
+  .security-summary article { padding: 1.25rem; }
+  .security-content { padding: 4.5rem 1rem; }
+  .security-guide { grid-template-columns: 1fr; }
+  .security-guide-card nav { grid-template-columns: 1fr; }
+  .security-faq-heading h2 { font-size: 2.7rem; }
+  .security-faq-group { padding-top: 2.5rem; }
+  .security-faq summary { padding-right: 2.8rem; font-size: .92rem; }
+  .security-answer { padding-right: .5rem; }
+  .security-closing { width: calc(100% - 2rem); padding: 1.6rem; border-radius: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .security-primary-button, .security-secondary-button, .security-faq summary > span::after { transition: none; }
+}

@@ -21,6 +21,7 @@
     if (path === "/give/features" || path.endsWith("/give/features.html")) return "features";
     if (path === "/give/pricing" || path.endsWith("/give/pricing.html")) return "pricing";
     if (path === "/give/how-it-works" || path.endsWith("/give/how-it-works.html")) return "how";
+    if (path === "/give/security" || path.endsWith("/give/security.html")) return "security";
     if (path === "/contact" || path.endsWith("/contact.html")) return "contact";
     if (path === "/about" || path.endsWith("/about.html")) return "about";
     if (path === "/learn" || path === "/learn/" || path.startsWith("/learn/")) return "learn";
@@ -143,6 +144,7 @@
               <a href="/give/features">Features</a>
               <a href="/give/how-it-works">How It Works</a>
               <a href="/give/pricing">Pricing</a>
+              <a href="/give/security">Security FAQ</a>
               <a href="/give#why">Why AGAPAY Give</a>
             </nav>
             <nav class="footer-col" aria-label="AGAPAY Learn">
@@ -241,7 +243,7 @@
   }
 
   function initPageReveal(activeKey) {
-    if (!["why", "vision", "features", "pricing", "how", "about"].includes(activeKey)) return;
+    if (!["why", "vision", "features", "pricing", "how", "security", "about"].includes(activeKey)) return;
 
     const selectors = [
       ".hero-copy",

@@ -225,6 +225,7 @@ import { handleDonorKoinoniaSignups, sendScheduledSignupReminders } from "./hand
 import { expireKoinoniaExchangeListings, handleDonorKoinoniaExchange } from "./handlers/koinonia-exchange.js";
 import { handleDonorKoinoniaPrayerRequests, handleParishPrayerRequests } from "./handlers/koinonia-prayer-requests.js";
 import { handleDonorTeaching, handleParishTeaching } from "./handlers/parish-teaching.js";
+import { handleDonorParishLibrary, handleParishLibrary } from "./handlers/parish-library.js";
 import { handleDonorVideo, handleParishVideo } from "./handlers/parish-video.js";
 import { handleDonorBlog, handleDonorCustomNewsFeeds, handleDonorExternalFeed, handleDonorOcaNews, handleParishBlog } from "./handlers/parish-blog.js";
 import { handleDonorPush } from "./lib/push-notifications.js";
@@ -863,7 +864,7 @@ function cleanAssetRequest(request) {
     url.pathname = "/give/parish-giving/index.html";
     return new Request(url, request);
   }
-  const staticGivePages = new Set(["features", "how-it-works", "pricing", "request-demo", "get-agapay", "parish-giving", "recurring-donations", "fundraising", "event-payments"]);
+  const staticGivePages = new Set(["features", "how-it-works", "pricing", "request-demo", "get-agapay", "parish-giving", "recurring-donations", "fundraising", "event-payments", "security"]);
   const givePage = url.pathname.match(/^\/give\/([^/]+)\/?$/)?.[1] || "";
   if (staticGivePages.has(givePage)) {
     url.pathname = `/give/${givePage}.html`;
@@ -3346,6 +3347,9 @@ export default {
     if (url.pathname === "/api/donor/teaching") {
       return handleDonorTeaching(request, env);
     }
+    if (url.pathname === "/api/donor/library" || url.pathname.startsWith("/api/donor/library/")) {
+      return handleDonorParishLibrary(request, env, url.pathname.replace("/api/donor/library", ""));
+    }
     if (url.pathname === "/api/donor/videos") {
       return handleDonorVideo(request, env);
     }
@@ -3920,6 +3924,12 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/commemorations")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/commemorations", ""));
       return handleParishCommemorations(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/library")) {
+      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/library");
+      const parishId = decodeURIComponent(parts[0].replace(/\/+$/, ""));
+      const subpath = parts.slice(1).join("/library") || "";
+      return handleParishLibrary(request, env, parishId, subpath);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/communications")) {
       const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/communications");
