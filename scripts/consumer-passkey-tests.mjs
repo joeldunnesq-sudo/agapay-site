@@ -118,22 +118,39 @@ await test("a verified donor email change preserves the stable passkey account",
   assert.equal(after.donor_email, "after@example.com");
 });
 
-await test("My AGAPAY surfaces preferred passkey sign-in, email fallback, enrollment, and device management", async () => {
+await test("My AGAPAY clearly separates existing-passkey sign-in from first-time enrollment", async () => {
   const login = readFileSync(path.join(root, "public", "myagapay", "login.html"), "utf8");
   const account = readFileSync(path.join(root, "public", "myagapay", "account.html"), "utf8");
   const client = readFileSync(path.join(root, "public", "scripts", "consumer-passkeys.js"), "utf8");
   const worker = readFileSync(path.join(root, "src", "worker.js"), "utf8");
-  assert.match(login, /Preferred sign-in/);
-  assert.match(login, /Sign in with email instead/);
+  assert.match(login, /Already set up\?/);
+  assert.match(login, /Use my passkey/);
+  assert.match(login, /First time using passkeys\?/);
+  assert.match(login, /sign in with your email and password below/i);
+  assert.match(login, /Email sign-in/);
   assert.match(login, /autocomplete="username webauthn"/);
-  assert.match(login, /Add a passkey\?/);
+  assert.match(login, /Create your passkey/);
+  assert.match(login, /Create passkey on this device/);
   assert.match(account, /Sign-in &amp; Security/);
+  assert.match(account, /before using “Use my passkey”/i);
   assert.match(account, /verified email and password remain available for recovery/i);
   assert.match(login, /isConditionalMediationAvailable/);
   assert.match(login, /mediation: "conditional"|mediation === "conditional"/);
   assert.match(client, /navigator\.credentials\.get/);
   assert.match(worker, /handleConsumerPasskeyAuthenticationVerify/);
   assert.match(worker, /handleConsumerPasskeyRegistrationVerify/);
+});
+
+await test("installed Android app avoids competing passkey requests and gives an actionable empty-selection path", async () => {
+  const login = readFileSync(path.join(root, "public", "myagapay", "login.html"), "utf8");
+  const client = readFileSync(path.join(root, "public", "scripts", "consumer-passkeys.js"), "utf8");
+  assert.match(login, /function isInstalledApp\(\)/);
+  assert.match(login, /if \(isInstalledApp\(\)\) return;/);
+  assert.match(login, /await stopConditionalPasskey\(\)/);
+  assert.match(login, /No My AGAPAY passkey was selected/);
+  assert.match(login, /we’ll help you add one next/);
+  assert.match(client, /friendly\.code = operation === 'registration' \? 'passkey_setup_not_completed' : 'passkey_not_selected'/);
+  assert.doesNotMatch(client, /Passkey use was cancelled or timed out/);
 });
 
 if (!process.exitCode) console.log(`\n${passed} consumer passkey tests passed.`);

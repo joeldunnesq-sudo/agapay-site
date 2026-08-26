@@ -99,9 +99,16 @@
     return payload;
   }
 
-  function friendlyCredentialError(error, fallback) {
+  function friendlyCredentialError(error, fallback, operation = 'authentication') {
     if (error?.name === 'AbortError') return error;
-    if (error?.name === 'NotAllowedError') return new Error('Passkey use was cancelled or timed out.');
+    if (error?.name === 'NotAllowedError') {
+      const friendly = new Error(operation === 'registration'
+        ? 'Passkey setup was not completed. Keep this page open and try again when your device prompt appears.'
+        : 'No My AGAPAY passkey was selected.');
+      friendly.name = 'NotAllowedError';
+      friendly.code = operation === 'registration' ? 'passkey_setup_not_completed' : 'passkey_not_selected';
+      return friendly;
+    }
     if (error?.name === 'InvalidStateError') return new Error('That passkey is already registered on this account.');
     return error instanceof Error ? error : new Error(fallback);
   }
@@ -132,7 +139,7 @@
     try {
       credential = await navigator.credentials.create({ publicKey: creationOptionsFromJson(started.options) });
     } catch (error) {
-      throw friendlyCredentialError(error, 'Passkey setup could not start.');
+      throw friendlyCredentialError(error, 'Passkey setup could not start.', 'registration');
     }
     if (!credential) throw new Error('Passkey setup was cancelled.');
     return api('/api/donor/passkeys/registration/verify', {
@@ -184,7 +191,7 @@
     if (!entries.length) {
       const empty = document.createElement('div');
       empty.className = 'passkey-empty-state';
-      empty.innerHTML = '<strong>No passkeys yet</strong><span>Add this phone or computer for faster sign-in next time.</span>';
+      empty.innerHTML = '<strong>No passkeys saved yet</strong><span>Add this phone or computer before using “Use my passkey” on the sign-in screen.</span>';
       listElement.appendChild(empty);
       return;
     }

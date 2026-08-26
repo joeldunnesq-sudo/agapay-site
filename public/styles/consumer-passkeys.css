@@ -42,6 +42,21 @@
 
 .passkey-login-button { width: 100%; min-height: 52px; justify-content: center; }
 
+.passkey-first-time-note {
+  display: grid;
+  gap: .2rem;
+  padding: .85rem 1rem;
+  border: 1px solid rgba(184,144,47,.3);
+  border-radius: 12px;
+  background: rgba(255,248,233,.72);
+  color: var(--stone);
+  font-size: .86rem;
+  line-height: 1.5;
+}
+
+.passkey-first-time-note strong { color: var(--deep); }
+.passkey-first-time-note.is-next-step { border-color: var(--gold); background: #fff5d9; box-shadow: 0 0 0 3px rgba(184,144,47,.12); }
+
 .passkey-login-divider {
   display: flex;
   align-items: center;
@@ -56,6 +71,10 @@
 .passkey-login-divider::before,
 .passkey-login-divider::after { content: ""; height: 1px; background: rgba(166,159,145,.38); flex: 1; }
 .passkey-offer-card { border-color: rgba(184, 144, 47, 0.48); background: #fffaf0; }
+.passkey-setup-progress { display: flex; align-items: center; gap: .6rem; color: #2d6b43; font-size: .86rem; }
+.passkey-setup-progress span { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; background: #2d6b43; color: white; font-weight: 800; }
+.passkey-recovery-note { padding: .75rem .85rem; border-radius: 10px; background: rgba(6,21,34,.055); }
+.passkey-recovery-note strong { color: var(--deep); }
 .passkey-security-card .card-body { display: grid; gap: 1rem; }
 .passkey-security-intro { align-items: flex-start; }
 .passkey-security-intro h2 { margin: 0; font-family: var(--serif); color: var(--deep); }

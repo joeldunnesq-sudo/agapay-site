@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css?v=20260819koinoniaweek1" />
-  <link rel="stylesheet" href="/styles/consumer-passkeys.css?v=20260826a" />
+  <link rel="stylesheet" href="/styles/consumer-passkeys.css?v=20260826b" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <script>
     if ("serviceWorker" in navigator) {
@@ -26,7 +26,7 @@
   </script>
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260817bookstoreprayer1" defer></script>
-  <script src="/scripts/consumer-passkeys.js?v=20260826a" defer></script>
+  <script src="/scripts/consumer-passkeys.js?v=20260826b" defer></script>
   <script src="/donor/app.js?v=20260712a" defer></script>
   <script src="/donor/pwa-install.js" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
@@ -63,14 +63,18 @@
       <form class="donor-auth-card" id="donorLoginForm">
         <div class="passkey-login-heading">
           <div>
-            <span class="passkey-preferred-label">Preferred sign-in</span>
-            <h2>Sign in with a passkey</h2>
-            <p>Use Face ID, your fingerprint, or your device screen lock.</p>
+            <span class="passkey-preferred-label">Already set up?</span>
+            <h2>Use your passkey</h2>
+            <p>Choose this if you previously added a passkey to My AGAPAY.</p>
           </div>
           <span class="passkey-login-icon" aria-hidden="true">✓</span>
         </div>
-        <button class="btn btn-gold passkey-login-button" id="donorPasskeyLogin" type="button">Continue with a passkey</button>
-        <div class="passkey-login-divider"><span>Sign in with email instead</span></div>
+        <button class="btn btn-gold passkey-login-button" id="donorPasskeyLogin" type="button">Use my passkey</button>
+        <div class="passkey-first-time-note" id="passkeyFirstTimeNote">
+          <strong>First time using passkeys?</strong>
+          <span>Sign in with your email and password below. After you sign in, we’ll help you create one.</span>
+        </div>
+        <div class="passkey-login-divider"><span>Email sign-in</span></div>
         <div class="form-group">
           <label class="form-label" for="donorEmail">Email</label>
           <input class="form-input" id="donorEmail" type="email" autocomplete="username webauthn" placeholder="you@example.com" />
@@ -87,12 +91,14 @@
       </form>
 
       <section class="donor-auth-card passkey-offer-card" id="donorPasskeyOffer" hidden>
-        <span class="passkey-preferred-label">Make the next sign-in easier</span>
-        <h2>Add a passkey?</h2>
-        <p>You’re signed in. Save a passkey on this device to use Face ID, your fingerprint, or your screen lock next time. Your verified email remains your recovery option.</p>
+        <div class="passkey-setup-progress"><span aria-hidden="true">1</span><strong>You signed in successfully</strong></div>
+        <span class="passkey-preferred-label">Optional next step</span>
+        <h2>Create your passkey</h2>
+        <p>This saves a secure sign-in for My AGAPAY in your phone or password manager. Next time, you can use your fingerprint, face, or device PIN instead of typing your password.</p>
+        <p class="passkey-recovery-note"><strong>You won’t be locked out.</strong> Your verified email and password will still work.</p>
         <div class="donor-auth-actions">
-          <button class="btn btn-gold" id="donorPasskeyCreate" type="button">Add passkey</button>
-          <button class="btn btn-ghost" id="donorPasskeySkip" type="button">Not now</button>
+          <button class="btn btn-gold" id="donorPasskeyCreate" type="button">Create passkey on this device</button>
+          <button class="btn btn-ghost" id="donorPasskeySkip" type="button">Continue without one</button>
         </div>
       </section>
 
@@ -139,6 +145,7 @@
       const passkeyLoginButton = document.getElementById("donorPasskeyLogin");
       const passkeyOffer = document.getElementById("donorPasskeyOffer");
       let conditionalPasskeyController = null;
+      let conditionalPasskeyPromise = null;
 
       function setStatus(message, tone = "info") {
         if (!status) return;
@@ -209,14 +216,35 @@
           setStatus("Passkey accepted.", "success");
           openDestination();
         } catch (error) {
-          if (error?.name !== "AbortError" && options.mediation !== "conditional") setStatus(error.message, "error");
+          if (error?.name !== "AbortError" && options.mediation !== "conditional") {
+            if (error?.code === "passkey_not_selected") {
+              setStatus("No My AGAPAY passkey was selected. If you have not created one yet, sign in with email and password below—we’ll help you add one next.", "error");
+              document.getElementById("passkeyFirstTimeNote")?.classList.add("is-next-step");
+              document.getElementById("donorEmail")?.focus({ preventScroll: true });
+            } else {
+              setStatus(error.message, "error");
+            }
+          }
         }
       }
 
-      passkeyLoginButton?.addEventListener("click", () => {
+      async function stopConditionalPasskey() {
+        const pending = conditionalPasskeyPromise;
         conditionalPasskeyController?.abort();
         conditionalPasskeyController = null;
-        signInWithPasskey();
+        conditionalPasskeyPromise = null;
+        if (pending) await pending.catch(() => {});
+      }
+
+      function isInstalledApp() {
+        return window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator.standalone === true;
+      }
+
+      passkeyLoginButton?.addEventListener("click", async () => {
+        passkeyLoginButton.disabled = true;
+        await stopConditionalPasskey();
+        await signInWithPasskey();
+        passkeyLoginButton.disabled = false;
       });
 
       document.getElementById("donorPasskeyCreate")?.addEventListener("click", async (event) => {
@@ -249,8 +277,7 @@
 
       loginForm?.addEventListener("submit", async (event) => {
         event.preventDefault();
-        conditionalPasskeyController?.abort();
-        conditionalPasskeyController = null;
+        await stopConditionalPasskey();
         const email = document.getElementById("donorEmail")?.value.trim();
         const password = document.getElementById("donorPassword")?.value;
         if (!email || !password) {
@@ -339,13 +366,19 @@
           if (passkeyLoginButton) passkeyLoginButton.hidden = true;
           return;
         }
+        // Conditional autofill is useful in a browser field, but Android's
+        // installed PWA can briefly keep that request active when the visible
+        // passkey button is tapped. The explicit button is clearer in-app and
+        // avoids competing Credential Manager requests.
+        if (isInstalledApp()) return;
         if (!window.PublicKeyCredential.isConditionalMediationAvailable) return;
         try {
           if (!(await window.PublicKeyCredential.isConditionalMediationAvailable())) return;
           conditionalPasskeyController = new AbortController();
-          signInWithPasskey({ mediation: "conditional", signal: conditionalPasskeyController.signal });
+          conditionalPasskeyPromise = signInWithPasskey({ mediation: "conditional", signal: conditionalPasskeyController.signal });
         } catch {
           conditionalPasskeyController = null;
+          conditionalPasskeyPromise = null;
         }
       });
     })();

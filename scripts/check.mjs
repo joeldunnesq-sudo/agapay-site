@@ -215,7 +215,7 @@ assert.ok(adminApp.includes('requestedTab') && adminApp.includes('queue-mobile-s
 assert.ok(adminHtml.includes("weeklyCommemorationParishId") && adminApp.includes("runWeeklyCommemorationEmail") && adminApp.includes("/api/admin/commemorations/send-weekly"), "admin dashboard should expose a weekly commemoration email preview/send control");
 assert.ok(adminHtml.includes("weeklyTreasurerParishId") && adminApp.includes("runWeeklyTreasurerEmail") && adminApp.includes("/api/admin/commerce/send-weekly-treasurer"), "admin dashboard should expose a weekly treasurer commerce email preview/send control");
 assert.ok(adminCss.includes('admin-mobile-command') && adminCss.includes('mobile-review-bar') && adminCss.includes('product-admin-hero-giving { display: none; }'), "admin dashboard should include dedicated mobile verification layout styles");
-assert.ok(serviceWorker.includes('agapay-static-v30'), "service worker cache version should advance when PWA shell caching behavior changes");
+assert.ok(serviceWorker.includes('agapay-static-v31'), "service worker cache version should advance when PWA shell caching behavior changes");
 assert.ok(
   serviceWorker.includes('"/myagapay/teaching.html"')
     && serviceWorker.includes('url.pathname.startsWith("/myagapay/teaching") ? caches.match("/myagapay/teaching.html")'),
