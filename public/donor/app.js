@@ -1217,12 +1217,15 @@ function liturgicalReadingRows(today = {}) {
   });
 
   const rows = [];
-  const hasAlternatives = groups.size > 1;
+  const observanceTitle = String(today.feastTitle || "").trim();
   groups.forEach((readings, appointment) => {
+    const appointmentKind = /(?:^|\s)(?:St\.?|Saint)\s/i.test(appointment) ? "Saint" : "Feast";
     rows.push({
       text: appointment
-        ? `For ${appointment}${hasAlternatives ? " — when this service is celebrated" : ""}`
-        : "Readings of the day",
+        ? `${appointmentKind} — ${appointment}`
+        : observanceTitle
+          ? `Feast — ${observanceTitle}`
+          : "Readings of the day",
       className: "cal-reading-line is-heading"
     });
     ["epistle", "gospel"].forEach((type) => {
@@ -1231,10 +1234,6 @@ function liturgicalReadingRows(today = {}) {
         className: "cal-reading-line"
       }));
     });
-  });
-  if (hasAlternatives) rows.push({
-    text: "The parish Typikon determines which appointed readings are proclaimed.",
-    className: "cal-reading-line is-guidance"
   });
   return rows;
 }
@@ -1258,9 +1257,6 @@ function renderDonorTodayInChurch(parish, payload) {
     : "";
   const firstStory = stories.find((story) => story?.primary) || stories[0] || {};
   const saintCount = stories.length || saintNames.length;
-  const observanceTitle = String(today.feastTitle || "").trim();
-  const showsSeparateObservance = observanceTitle
-    && observanceTitle.toLowerCase() !== String(feastTitle || "").trim().toLowerCase();
   const giveHref = donorGiftUrl("feast", parish, { feast: feastTitle });
   donorCalendarState.liturgicalDay = today;
   donorCalendarState.calendar = calendar;
@@ -1281,10 +1277,6 @@ function renderDonorTodayInChurch(parish, payload) {
   if (feastNote) {
     const unavailableNote = "Daily readings and saint lives are temporarily unavailable, but feast highlights still follow your Church calendar.";
     const readingLines = liturgicalReadingRows(today);
-    if (showsSeparateObservance) readingLines.unshift({
-      text: `Liturgical observance: ${observanceTitle}`,
-      className: "cal-reading-line is-observance"
-    });
     if (nameDayText) readingLines.push({ text: nameDayText, className: "cal-reading-line is-guidance" });
     if (today.sourceConnected === false || !readingLines.length) {
       feastNote.textContent = today.sourceConnected === false

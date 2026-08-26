@@ -7135,11 +7135,6 @@ body.donor-home {
   text-transform: uppercase;
 }
 .cal-today-note .cal-reading-line.is-heading:first-child { margin-top: 0; }
-.cal-today-note .cal-reading-line.is-observance {
-  margin-bottom: 9px;
-  color: rgba(246,241,232,0.88);
-  font-weight: 700;
-}
 .cal-today-note .cal-reading-line.is-guidance {
   margin-top: 8px;
   color: rgba(246,241,232,0.58);
