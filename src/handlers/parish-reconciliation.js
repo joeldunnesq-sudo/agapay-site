@@ -152,6 +152,58 @@ function reconciliationAllocation(offering = {}) {
   return { key: "general", category: "General Giving", label: fund || "General Operating Fund" };
 }
 
+export function buildFundTransferWorksheet(allocations = [], summary = {}) {
+  const depositedCents = Math.round(Number(summary.depositedCents || 0));
+  const lines = (Array.isArray(allocations) ? allocations : []).map((item) => {
+    const key = String(item?.key || "").trim() || `allocation:${String(item?.label || "giving").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+    const category = String(item?.category || "Giving").trim() || "Giving";
+    const label = String(item?.label || "General Giving").trim() || "General Giving";
+    const netCents = Math.round(Number(item?.netCents || 0));
+    const isGeneral = key === "general" || category === "General Giving";
+    return {
+      key,
+      category,
+      label,
+      transactionCount: Math.max(0, Math.round(Number(item?.transactionCount || 0))),
+      grossCents: Math.round(Number(item?.grossCents || 0)),
+      feeCents: Math.round(Number(item?.feeCents || 0)),
+      netCents,
+      recommendedAction: isGeneral ? "retain" : "transfer",
+      needsReview: netCents < 0,
+    };
+  });
+  const allocatedNetCents = lines.reduce((sum, item) => sum + item.netCents, 0);
+  const recommendedTransferCents = lines
+    .filter((item) => item.recommendedAction === "transfer" && item.netCents > 0)
+    .reduce((sum, item) => sum + item.netCents, 0);
+  const unallocatedCents = depositedCents - allocatedNetCents;
+  return {
+    available: lines.length > 0,
+    lines,
+    depositedCents,
+    allocatedNetCents,
+    recommendedTransferCents,
+    retainInDepositAccountCents: depositedCents - recommendedTransferCents,
+    unallocatedCents,
+    readyToTransfer: lines.length > 0 && unallocatedCents === 0 && lines.every((item) => !item.needsReview),
+    note: "Transfer recommendations use net amounts from paid Stripe payouts after recorded fees, refunds, and disputes. AGAPAY does not initiate the bank transfers.",
+  };
+}
+
+export function normalizeFundTransferInstructions(value) {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 100).map((item) => {
+    const action = item?.action === "transfer" ? "transfer" : "retain";
+    return {
+      key: String(item?.key || "").trim().slice(0, 180),
+      action,
+      destination: action === "transfer" ? String(item?.destination || "").trim().slice(0, 160) : "",
+      completed: action === "transfer" && Boolean(item?.completed),
+      reference: action === "transfer" ? String(item?.reference || "").trim().slice(0, 160) : "",
+    };
+  }).filter((item) => item.key);
+}
+
 function signedFeeParts(transaction, source) {
   const details = Array.isArray(transaction.fee_details) ? transaction.fee_details : [];
   const applicationFee = details
@@ -550,6 +602,18 @@ export async function handleParishReconciliation(request, env, parishId) {
         feeCents: gifts.reduce((sum, gift) => sum + Number(gift.totalFeeCents || 0), 0)
       },
       allocations: [],
+      transferWorksheet: {
+        available: false,
+        requiresDetail: true,
+        lines: [],
+        depositedCents,
+        allocatedNetCents: 0,
+        recommendedTransferCents: 0,
+        retainInDepositAccountCents: depositedCents,
+        unallocatedCents: depositedCents,
+        readyToTransfer: false,
+        note: "Prepare the detailed worksheet to calculate manual transfers by fund."
+      },
       payouts: payoutRows.sort((a, b) => Number(b.arrivalDate || 0) - Number(a.arrivalDate || 0)),
       transactions: [],
       exceptions: [],
@@ -710,30 +774,34 @@ export async function handleParishReconciliation(request, env, parishId) {
     ? Math.max(0, Math.min(100, Math.round((matchedNetCents / payoutCompositionNetCents) * 100)))
     : 100;
 
+  const allocationRows = Array.from(allocations.values()).sort((a, b) => b.netCents - a.netCents);
+  const summary = {
+    depositedCents,
+    inTransitCents,
+    failedPayoutCents,
+    grossActivityCents,
+    refundCents,
+    stripeFeeCents,
+    agapayFeeCents,
+    totalFeeCents: stripeFeeCents + agapayFeeCents,
+    payoutCompositionNetCents,
+    matchedNetCents,
+    unmatchedNetCents,
+    matchedPercent,
+    payoutCount: payouts.length,
+    paidPayoutCount: payoutRows.filter((payout) => payout.status === "paid").length,
+    exceptionCount: exceptions.length
+  };
+
   return json({
     available: true,
     parishId,
     period,
     closeRecord,
-    summary: {
-      depositedCents,
-      inTransitCents,
-      failedPayoutCents,
-      grossActivityCents,
-      refundCents,
-      stripeFeeCents,
-      agapayFeeCents,
-      totalFeeCents: stripeFeeCents + agapayFeeCents,
-      payoutCompositionNetCents,
-      matchedNetCents,
-      unmatchedNetCents,
-      matchedPercent,
-      payoutCount: payouts.length,
-      paidPayoutCount: payoutRows.filter((payout) => payout.status === "paid").length,
-      exceptionCount: exceptions.length
-    },
+    summary,
     giftActivity,
-    allocations: Array.from(allocations.values()).sort((a, b) => b.netCents - a.netCents),
+    allocations: allocationRows,
+    transferWorksheet: buildFundTransferWorksheet(allocationRows, summary),
     payouts: payoutRows.sort((a, b) => Number(b.arrivalDate || 0) - Number(a.arrivalDate || 0)),
     transactions: transactionRows.sort((a, b) => Number(b.created || 0) - Number(a.created || 0)),
     exceptions,
@@ -771,6 +839,7 @@ export async function handleParishReconciliationClose(request, env, parishId) {
     .filter((payout) => String(payout.status || "").toLowerCase() === "paid")
     .reduce((sum, payout) => sum + Number(payout.amount || 0), 0);
   const notes = String(body.notes || "").trim().slice(0, 2000);
+  const transferInstructions = normalizeFundTransferInstructions(body.transferInstructions);
   if (closed && bankStatementCents !== expectedDepositCents && !notes) {
     return json({ error: "Add a treasurer note explaining the bank difference before closing." }, { status: 400 });
   }
@@ -782,6 +851,7 @@ export async function handleParishReconciliationClose(request, env, parishId) {
     expectedDepositCents,
     differenceCents: bankStatementCents - expectedDepositCents,
     notes,
+    transferInstructions,
     closedAt: closed ? new Date().toISOString() : "",
     updatedAt: new Date().toISOString()
   };

@@ -482,6 +482,46 @@
 .pdx-rc-alloc-bar-track i { display: block; height: 100%; border-radius: 4px; width: 0; transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1); }
 .pdx-rc-alloc-bar-meta { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--stone); margin-top: 5px; }
 
+/* Treasurer fund-transfer worksheet */
+.pdx-rc-transfer-panel { overflow: hidden; }
+.pdx-rc-transfer-intro { margin: -2px 0 18px; max-width: 78ch; color: var(--stone); font-size: 12.5px; line-height: 1.6; }
+.pdx-rc-transfer-empty { display: flex; align-items: center; justify-content: space-between; gap: 24px; border: 1px solid rgba(200,162,74,.28); border-radius: 13px; padding: 18px; background: linear-gradient(135deg, rgba(200,162,74,.08), rgba(255,255,255,.72)); }
+.pdx-rc-transfer-empty > div { display: grid; gap: 4px; min-width: 0; }
+.pdx-rc-transfer-empty strong { color: var(--ink); font-family: var(--serif); font-size: 17px; }
+.pdx-rc-transfer-empty span { max-width: 68ch; color: var(--stone); font-size: 12px; line-height: 1.5; }
+.pdx-rc-transfer-summary { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin-bottom: 12px; }
+.pdx-rc-transfer-summary > div { border: 1px solid var(--line); border-radius: 11px; padding: 12px 14px; background: var(--paper); min-width: 0; }
+.pdx-rc-transfer-summary span,.pdx-rc-transfer-summary strong { display: block; }
+.pdx-rc-transfer-summary span { color: var(--stone); font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.pdx-rc-transfer-summary strong { margin-top: 4px; color: var(--ink); font-family: var(--serif); font-size: 21px; }
+.pdx-rc-transfer-ready,.pdx-rc-transfer-hold { display: grid; gap: 3px; margin-bottom: 12px; border-radius: 10px; padding: 11px 13px; }
+.pdx-rc-transfer-ready { border: 1px solid rgba(74,124,89,.22); background: rgba(74,124,89,.07); }
+.pdx-rc-transfer-ready strong { color: var(--pdx-success); }
+.pdx-rc-transfer-hold { border: 1px solid rgba(196,146,42,.32); background: rgba(196,146,42,.1); }
+.pdx-rc-transfer-hold strong { color: #856219; }
+.pdx-rc-transfer-ready span,.pdx-rc-transfer-hold span { color: var(--stone); font-size: 11.5px; line-height: 1.45; }
+.pdx-rc-transfer-list { display: grid; gap: 10px; }
+.pdx-rc-transfer-row { display: grid; grid-template-columns: minmax(190px,1.35fr) minmax(105px,.55fr) minmax(170px,.85fr); gap: 11px 14px; align-items: end; border: 1px solid var(--line); border-left: 4px solid rgba(111,106,96,.3); border-radius: 12px; padding: 14px; background: #fff; }
+.pdx-rc-transfer-row.is-transfer { border-left-color: var(--gold); background: linear-gradient(90deg,rgba(200,162,74,.045),#fff 18%); }
+.pdx-rc-transfer-row.needs-review { border-left-color: var(--pdx-alert); background: rgba(176,74,63,.035); }
+.pdx-rc-transfer-fund { align-self: center; min-width: 0; }
+.pdx-rc-transfer-fund span,.pdx-rc-transfer-fund strong,.pdx-rc-transfer-fund small { display: block; }
+.pdx-rc-transfer-fund span { color: var(--gold-dark); font-size: 9px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+.pdx-rc-transfer-fund strong { margin-top: 3px; color: var(--ink); font-family: var(--serif); font-size: 17px; overflow-wrap: anywhere; }
+.pdx-rc-transfer-fund small { margin-top: 4px; color: var(--stone); font-size: 10.5px; line-height: 1.35; }
+.pdx-rc-transfer-net { align-self: center; min-width: 0; }
+.pdx-rc-transfer-net span,.pdx-rc-transfer-net strong { display: block; }
+.pdx-rc-transfer-net span { color: var(--stone); font-size: 9px; font-weight: 700; text-transform: uppercase; }
+.pdx-rc-transfer-net strong { margin-top: 3px; color: var(--ink); font-family: var(--serif); font-size: 19px; }
+.pdx-rc-transfer-action,.pdx-rc-transfer-destination,.pdx-rc-transfer-reference { display: grid; gap: 5px; min-width: 0; color: var(--stone); font-size: 9.5px; font-weight: 700; letter-spacing: .035em; }
+.pdx-rc-transfer-action select,.pdx-rc-transfer-destination input,.pdx-rc-transfer-reference input { box-sizing: border-box; width: 100%; min-width: 0; border: 1px solid rgba(6,21,34,.14); border-radius: 9px; padding: 9px 10px; background: #fff; color: var(--ink); font: 500 11.5px var(--sans); }
+.pdx-rc-transfer-action select:disabled,.pdx-rc-transfer-destination input:disabled,.pdx-rc-transfer-reference input:disabled { background: #f4f2ed; color: var(--muted); }
+.pdx-rc-transfer-destination { grid-column: 1 / span 2; }
+.pdx-rc-transfer-completed { display: flex; align-items: center; gap: 7px; align-self: center; color: var(--ink); font-size: 11px; font-weight: 700; }
+.pdx-rc-transfer-completed input { width: 16px; height: 16px; accent-color: var(--gold-dark); }
+.pdx-rc-transfer-warning { grid-column: 1 / -1; border-radius: 8px; padding: 8px 10px; background: rgba(176,74,63,.08); color: #8d3d35; font-size: 10.5px; font-weight: 700; }
+.pdx-rc-transfer-disclaimer { margin: 13px 0 0; color: var(--stone); font-size: 10.5px; line-height: 1.5; }
+
 /* Payouts timeline */
 .pdx-rc-payout-list { display: flex; flex-direction: column; gap: 10px; }
 .pdx-rc-payout { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--paper); }
@@ -1741,6 +1781,17 @@
   .pdx-rc-payout-summary { grid-template-columns: 44px 1fr; row-gap: 6px; }
   .pdx-rc-payout-amount, .pdx-rc-payout-status-chip { grid-column: 2; text-align: left; }
   .pdx-rc-controls { align-items: stretch; }
+  .pdx-rc-transfer-row { grid-template-columns: minmax(0,1fr) minmax(110px,.42fr); }
+  .pdx-rc-transfer-action { grid-column: 1 / -1; }
+  .pdx-rc-transfer-destination { grid-column: 1 / -1; }
+}
+@media (max-width: 620px) {
+  .pdx-rc-transfer-empty { align-items: stretch; flex-direction: column; }
+  .pdx-rc-transfer-empty .btn { width: 100%; justify-content: center; }
+  .pdx-rc-transfer-summary { grid-template-columns: 1fr; }
+  .pdx-rc-transfer-row { grid-template-columns: 1fr; padding: 12px; }
+  .pdx-rc-transfer-action,.pdx-rc-transfer-destination,.pdx-rc-transfer-completed,.pdx-rc-transfer-reference { grid-column: 1; }
+  .pdx-rc-transfer-panel .pdx-panel-header { align-items: flex-start; }
 }
 /* ════════════════════════════════════════════════════════════
    PARISH + HUB REDESIGN (status-tile dashboard)

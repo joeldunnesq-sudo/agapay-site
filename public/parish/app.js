@@ -10279,7 +10279,7 @@
   }
 
   function setReconciliationLoading(message) {
-    const ids = ['reconcileAllocationsPane', 'reconcileGiftActivityPane', 'reconcilePayoutsPane', 'reconcileExceptionsPane'];
+    const ids = ['reconcileAllocationsPane', 'reconcileTransferWorksheetPane', 'reconcileGiftActivityPane', 'reconcilePayoutsPane', 'reconcileExceptionsPane'];
     ids.forEach(id => {
       const el = document.getElementById(id);
       if (el) el.innerHTML = `<div class="history-empty">${escapeHtml(message)}</div>`;
@@ -10305,6 +10305,30 @@
       setReconciliationLoading(error.message);
       const status = document.getElementById('reconcileStatusLine');
       if (status) status.innerHTML = `<span class="reconcile-state attention">Needs attention</span><span>${escapeHtml(error.message)}</span>`;
+      setStatus(error.message, 'error');
+    } finally {
+      if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+    }
+  }
+
+  async function loadFundTransferWorksheet(btn) {
+    if (!currentParish) { setStatus('Load a parish first.', 'error'); return; }
+    const month = document.getElementById('reconcileMonth')?.value;
+    if (!month) return;
+    if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+    const pane = document.getElementById('reconcileTransferWorksheetPane');
+    if (pane) pane.innerHTML = '<div class="history-empty">Matching paid Stripe payouts to fund records…</div>';
+    try {
+      const path = `/api/parish/dashboard/${encodeURIComponent(currentParish.parishId)}/reconciliation?month=${encodeURIComponent(month)}&detail=full`;
+      const response = await fetch(path, { headers: authHeaders() });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || data.error || `Unable to prepare fund transfers (${response.status}).`);
+      reconciliationData = data;
+      renderReconciliation(data);
+      document.getElementById('reconcileTransferWorksheetPane')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setStatus('Fund transfer worksheet prepared from paid Stripe payouts.', 'success');
+    } catch (error) {
+      if (pane) pane.innerHTML = `<div class="history-empty">${escapeHtml(error.message)}</div>`;
       setStatus(error.message, 'error');
     } finally {
       if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
@@ -10376,6 +10400,7 @@
     if (excCard) excCard.classList.toggle('attention', exceptionCount > 0);
 
     renderReconciliationAllocations(data.allocations || [], deposited);
+    renderFundTransferWorksheet(data.transferWorksheet || {}, close?.transferInstructions || []);
     renderReconciliationGiftActivity(data.giftActivity || {});
     renderReconciliationPayouts(data.payouts || [], data.transactions || []);
     renderReconciliationExceptions(data.exceptions || []);
@@ -10482,6 +10507,107 @@
         });
       }, 100));
     }
+  }
+
+  function renderFundTransferWorksheet(worksheet, savedInstructions = []) {
+    const pane = document.getElementById('reconcileTransferWorksheetPane');
+    const printButton = document.getElementById('reconcileTransferPrintButton');
+    if (!pane) return;
+    if (printButton) printButton.disabled = !worksheet?.available;
+
+    if (worksheet?.requiresDetail) {
+      pane.innerHTML = `<div class="pdx-rc-transfer-empty">
+        <div><strong>Prepare the transfer plan when you are ready.</strong><span>AGAPAY will match each paid Stripe payout to its gifts, fees, refunds, and designated funds. This can take a little longer than the monthly summary.</span></div>
+        <button class="btn btn-gold" type="button" onclick="loadFundTransferWorksheet(this)">Prepare fund transfers</button>
+      </div>`;
+      return;
+    }
+    if (!worksheet?.available || !Array.isArray(worksheet.lines) || !worksheet.lines.length) {
+      pane.innerHTML = '<div class="pdx-recurring-empty">No matched fund allocations are available for a transfer worksheet.</div>';
+      return;
+    }
+
+    const savedByKey = new Map((Array.isArray(savedInstructions) ? savedInstructions : []).map(item => [String(item.key || ''), item]));
+    const rows = worksheet.lines.map(line => {
+      const saved = savedByKey.get(String(line.key || '')) || {};
+      const action = line.needsReview ? 'retain' : (saved.action || line.recommendedAction || 'retain');
+      const transfer = action === 'transfer';
+      return `<div class="pdx-rc-transfer-row ${line.needsReview ? 'needs-review' : ''}" data-transfer-row data-key="${escapeAttr(line.key || '')}" data-net-cents="${Number(line.netCents || 0)}">
+        <div class="pdx-rc-transfer-fund">
+          <span>${escapeHtml(line.category || 'Giving')}</span>
+          <strong>${escapeHtml(line.label || 'General Giving')}</strong>
+          <small>${Number(line.transactionCount || 0)} transaction${Number(line.transactionCount || 0) === 1 ? '' : 's'} · ${escapeHtml(money(line.grossCents || 0))} gross · ${escapeHtml(money(line.feeCents || 0))} fees</small>
+        </div>
+        <div class="pdx-rc-transfer-net"><span>Net amount</span><strong>${escapeHtml(moneyFull(line.netCents || 0))}</strong></div>
+        <label class="pdx-rc-transfer-action">Handling
+          <select data-transfer-action onchange="updateFundTransferWorksheet()" ${line.needsReview ? 'disabled' : ''}>
+            <option value="retain" ${transfer ? '' : 'selected'}>Keep in deposit account</option>
+            <option value="transfer" ${transfer ? 'selected' : ''}>Transfer manually</option>
+          </select>
+        </label>
+        <label class="pdx-rc-transfer-destination">Destination bank / account nickname
+          <input data-transfer-destination maxlength="160" placeholder="Example: Building Fund savings" value="${escapeAttr(saved.destination || '')}" ${transfer ? '' : 'disabled'} />
+        </label>
+        <label class="pdx-rc-transfer-completed"><input data-transfer-completed type="checkbox" ${saved.completed && transfer ? 'checked' : ''} ${transfer ? '' : 'disabled'} onchange="updateFundTransferWorksheet()" /> Transfer completed</label>
+        <label class="pdx-rc-transfer-reference">Bank reference or check number
+          <input data-transfer-reference maxlength="160" placeholder="Optional confirmation" value="${escapeAttr(saved.reference || '')}" ${transfer ? '' : 'disabled'} />
+        </label>
+        ${line.needsReview ? '<div class="pdx-rc-transfer-warning">This fund has a negative net amount. Review refunds or disputes before moving money.</div>' : ''}
+      </div>`;
+    }).join('');
+    const unallocated = Number(worksheet.unallocatedCents || 0);
+    pane.innerHTML = `<div class="pdx-rc-transfer-summary">
+        <div><span>Stripe deposits</span><strong>${escapeHtml(money(worksheet.depositedCents || 0))}</strong></div>
+        <div><span>Planned transfers</span><strong id="reconcileTransferPlanned">${escapeHtml(money(worksheet.recommendedTransferCents || 0))}</strong></div>
+        <div><span>Remain in deposit account</span><strong id="reconcileTransferRetained">${escapeHtml(money(worksheet.retainInDepositAccountCents || 0))}</strong></div>
+      </div>
+      ${unallocated !== 0 ? `<div class="pdx-rc-transfer-hold"><strong>Keep ${escapeHtml(moneyFull(Math.abs(unallocated)))} in the deposit account for review.</strong><span>The paid payout and matched fund totals differ. Do not distribute this amount until the reconciliation exceptions are resolved.</span></div>` : '<div class="pdx-rc-transfer-ready"><strong>Fund totals match the paid Stripe deposits.</strong><span>Review the destinations below before making transfers.</span></div>'}
+      <div class="pdx-rc-transfer-list">${rows}</div>
+      <p class="pdx-rc-transfer-disclaimer">These are accounting instructions for the parish treasurer. AGAPAY does not initiate, schedule, or approve transfers between parish bank accounts.</p>`;
+    updateFundTransferWorksheet();
+  }
+
+  function updateFundTransferWorksheet() {
+    const rows = [...document.querySelectorAll('[data-transfer-row]')];
+    let plannedCents = 0;
+    rows.forEach(row => {
+      const action = row.querySelector('[data-transfer-action]')?.value || 'retain';
+      const transfer = action === 'transfer';
+      const netCents = Number(row.dataset.netCents || 0);
+      if (transfer && netCents > 0) plannedCents += netCents;
+      const destination = row.querySelector('[data-transfer-destination]');
+      const completed = row.querySelector('[data-transfer-completed]');
+      const reference = row.querySelector('[data-transfer-reference]');
+      if (destination) destination.disabled = !transfer;
+      if (completed) {
+        completed.disabled = !transfer;
+        if (!transfer) completed.checked = false;
+      }
+      if (reference) reference.disabled = !transfer;
+      row.classList.toggle('is-transfer', transfer);
+    });
+    const depositedCents = Number(reconciliationData?.transferWorksheet?.depositedCents || reconciliationData?.summary?.depositedCents || 0);
+    const planned = document.getElementById('reconcileTransferPlanned');
+    const retained = document.getElementById('reconcileTransferRetained');
+    if (planned) planned.textContent = money(plannedCents);
+    if (retained) retained.textContent = money(depositedCents - plannedCents);
+  }
+
+  function collectFundTransferInstructions() {
+    const rows = [...document.querySelectorAll('[data-transfer-row]')];
+    if (!rows.length) return Array.isArray(reconciliationData?.closeRecord?.transferInstructions)
+      ? reconciliationData.closeRecord.transferInstructions
+      : [];
+    return rows.map(row => {
+      const action = row.querySelector('[data-transfer-action]')?.value === 'transfer' ? 'transfer' : 'retain';
+      return {
+        key: row.dataset.key || '',
+        action,
+        destination: action === 'transfer' ? (row.querySelector('[data-transfer-destination]')?.value.trim() || '') : '',
+        completed: action === 'transfer' && Boolean(row.querySelector('[data-transfer-completed]')?.checked),
+        reference: action === 'transfer' ? (row.querySelector('[data-transfer-reference]')?.value.trim() || '') : ''
+      };
+    }).filter(item => item.key);
   }
 
   function renderReconciliationGiftActivity(activity) {
@@ -10608,7 +10734,14 @@
       const response = await fetch(`/api/parish/dashboard/${encodeURIComponent(currentParish.parishId)}/reconciliation/close`, {
         method: 'POST',
         headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ month: reconciliationData.period?.month, bankStatementCents, expectedDepositCents, notes, closed })
+        body: JSON.stringify({
+          month: reconciliationData.period?.month,
+          bankStatementCents,
+          expectedDepositCents,
+          notes,
+          closed,
+          transferInstructions: collectFundTransferInstructions()
+        })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Unable to save the month close.');
@@ -10626,6 +10759,7 @@
   function exportReconciliationCsv() {
     if (!reconciliationData?.available) { setStatus('Run the reconciliation first.', 'error'); return; }
     const data = reconciliationData;
+    const transferInstructions = new Map(collectFundTransferInstructions().map(item => [item.key, item]));
     const rows = [
       ['AGAPAY Monthly Reconciliation', currentParish?.parishName || ''],
       ['Month', data.period?.month || ''],
@@ -10636,6 +10770,14 @@
       ['Fund Allocation'],
       ['Category', 'Fund / Campaign', 'Transactions', 'Gross', 'Fees', 'Net'],
       ...(data.allocations || []).map(item => [item.category, item.label, item.transactionCount, item.grossCents / 100, item.feeCents / 100, item.netCents / 100]),
+      [],
+      ['Fund Transfer Worksheet'],
+      ['Fund / Campaign', 'Net amount', 'Handling', 'Destination', 'Completed', 'Reference'],
+      ...(data.transferWorksheet?.lines || []).map(item => {
+        const instruction = transferInstructions.get(item.key) || { action: item.recommendedAction || 'retain' };
+        return [item.label, item.netCents / 100, instruction.action === 'transfer' ? 'Transfer manually' : 'Keep in deposit account', instruction.destination || '', instruction.completed ? 'Yes' : 'No', instruction.reference || ''];
+      }),
+      ['Unallocated amount held for review', Number(data.transferWorksheet?.unallocatedCents || 0) / 100],
       [],
       ['Stripe Payouts'],
       ['Arrival date', 'Payout ID', 'Status', 'Amount', 'Matched', 'Difference'],
@@ -10651,6 +10793,22 @@
     setStatus(`Exported ${name}.`, 'success');
   }
 
+  function printFundTransferWorksheet() {
+    const worksheet = reconciliationData?.transferWorksheet;
+    if (!worksheet?.available) { setStatus('Prepare the detailed fund transfer worksheet first.', 'error'); return; }
+    const instructions = new Map(collectFundTransferInstructions().map(item => [item.key, item]));
+    const rows = (worksheet.lines || []).map(item => {
+      const instruction = instructions.get(item.key) || { action: item.recommendedAction || 'retain' };
+      const handling = instruction.action === 'transfer' ? 'Transfer manually' : 'Keep in deposit account';
+      const status = instruction.action === 'transfer' ? (instruction.completed ? 'Completed' : 'Pending') : 'Retained';
+      return `<tr><td><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.category)}</small></td><td>${moneyFull(item.grossCents || 0)}</td><td>${moneyFull(item.feeCents || 0)}</td><td><strong>${moneyFull(item.netCents || 0)}</strong></td><td>${escapeHtml(handling)}</td><td>${escapeHtml(instruction.destination || '—')}</td><td>${escapeHtml(status)}${instruction.reference ? `<small>${escapeHtml(instruction.reference)}</small>` : ''}</td></tr>`;
+    }).join('');
+    const popup = window.open('', '_blank', 'noopener,noreferrer');
+    if (!popup) { setStatus('Allow pop-ups to print the fund transfer worksheet.', 'error'); return; }
+    popup.document.write(`<!doctype html><html><head><title>AGAPAY Fund Transfer Worksheet</title><style>body{font:13px Arial;color:#061522;margin:38px}header{border-bottom:3px solid #c9a24a;padding-bottom:15px;margin-bottom:22px}small{display:block;color:#68717a;margin-top:3px}h1{font:600 28px Georgia,serif;margin:5px 0}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}.summary div{border:1px solid #ddd;padding:12px}.summary span{display:block;color:#666;font-size:10px;text-transform:uppercase}.summary strong{display:block;font:600 20px Georgia,serif;margin-top:4px}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border-bottom:1px solid #ddd;padding:8px;text-align:left;vertical-align:top}th{font-size:10px;text-transform:uppercase;color:#555}.hold{border:1px solid #d7b96c;background:#fff8e6;padding:10px;margin-top:14px}.sign{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:48px}.sign div{border-top:1px solid #333;padding-top:6px;color:#666}.note{margin-top:24px;color:#666;line-height:1.5}@media print{body{margin:14mm}}@media(max-width:700px){.summary{grid-template-columns:1fr}}</style></head><body><header><small>AGAPAY GIVE · TREASURER WORKSHEET</small><h1>${escapeHtml(currentParish?.parishName || 'Parish')}</h1><div>${escapeHtml(reconciliationMonthLabel(reconciliationData?.period?.month))}</div></header><div class="summary"><div><span>Stripe deposits</span><strong>${moneyFull(worksheet.depositedCents || 0)}</strong></div><div><span>Planned transfers</span><strong>${moneyFull([...instructions.entries()].reduce((sum,[key,value])=>{const line=(worksheet.lines||[]).find(item=>item.key===key);return sum+(value.action==='transfer'&&Number(line?.netCents||0)>0?Number(line.netCents):0)},0))}</strong></div><div><span>Unallocated / review</span><strong>${moneyFull(worksheet.unallocatedCents || 0)}</strong></div></div>${Number(worksheet.unallocatedCents || 0)!==0?`<div class="hold"><strong>Hold ${moneyFull(Math.abs(Number(worksheet.unallocatedCents || 0)))} for review.</strong> Do not distribute the unmatched amount until reconciliation exceptions are resolved.</div>`:''}<table><thead><tr><th>Fund</th><th>Gross</th><th>Fees</th><th>Net</th><th>Handling</th><th>Destination</th><th>Status / reference</th></tr></thead><tbody>${rows}</tbody></table><p class="note">Stripe made one combined payout to the parish deposit account. These amounts are derived from paid payout activity after recorded fees, refunds, and disputes. AGAPAY does not initiate or approve bank transfers.</p><div class="sign"><div>Treasurer signature / date</div><div>Reviewer signature / date</div></div><script>window.onload=()=>window.print()<\/script></body></html>`);
+    popup.document.close();
+  }
+
   function printReconciliationReport() {
     if (!reconciliationData?.available) { setStatus('Run the reconciliation first.', 'error'); return; }
     const data = reconciliationData;
@@ -10660,7 +10818,9 @@
     const allocations = (data.allocations || []).map(item => `<tr><td>${escapeHtml(item.category)}</td><td>${escapeHtml(item.label)}</td><td>${item.transactionCount || 0}</td><td>${moneyFull(item.netCents || 0)}</td></tr>`).join('');
     const payouts = (data.payouts || []).map(item => `<tr><td>${reconciliationDate(item.arrivalDate)}</td><td>${escapeHtml(item.id)}</td><td>${escapeHtml(statusLabel(item.status))}</td><td>${moneyFull(item.amountCents || 0)}</td></tr>`).join('');
     const exceptions = (data.exceptions || []).map(item => `<li>${escapeHtml(item.message)}</li>`).join('') || '<li>None.</li>';
-    popup.document.write(`<!doctype html><html><head><title>AGAPAY Reconciliation</title><style>body{font:14px Arial;color:#061522;margin:40px}h1,h2{font-family:Georgia,serif}header{border-bottom:3px solid #c9a24a;margin-bottom:24px;padding-bottom:16px}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.summary div{border:1px solid #ddd;padding:12px}.summary span{display:block;color:#666;font-size:11px;text-transform:uppercase}.summary strong{font-size:20px}table{width:100%;border-collapse:collapse;margin:12px 0 28px}th,td{border-bottom:1px solid #ddd;padding:8px;text-align:left}th{font-size:11px;text-transform:uppercase}footer{margin-top:36px;border-top:1px solid #ccc;padding-top:12px;color:#666}@media print{body{margin:18mm}.no-print{display:none}}@media(max-width:700px){.summary{grid-template-columns:1fr 1fr}}</style></head><body><header><small>AGAPAY GIVE · MONTHLY RECONCILIATION</small><h1>${escapeHtml(currentParish.parishName || 'Parish')}</h1><p>${escapeHtml(reconciliationMonthLabel(data.period?.month))}</p></header><div class="summary"><div><span>Bank deposits</span><strong>${money(summary.depositedCents || 0)}</strong></div><div><span>Gross activity</span><strong>${money(summary.grossActivityCents || 0)}</strong></div><div><span>Total fees</span><strong>${money(summary.totalFeeCents || 0)}</strong></div><div><span>Matched</span><strong>${summary.matchedPercent ?? 0}%</strong></div></div><h2>Fund allocation</h2><table><thead><tr><th>Category</th><th>Post to</th><th>Count</th><th>Net</th></tr></thead><tbody>${allocations || '<tr><td colspan="4">No allocations.</td></tr>'}</tbody></table><h2>Stripe payouts</h2><table><thead><tr><th>Arrival</th><th>Payout</th><th>Status</th><th>Amount</th></tr></thead><tbody>${payouts || '<tr><td colspan="4">No payouts.</td></tr>'}</tbody></table><h2>Review items</h2><ul>${exceptions}</ul><footer>Generated ${escapeHtml(new Date(data.generatedAt || Date.now()).toLocaleString())} · AGAPAY Give</footer><script>window.onload=()=>window.print()<\/script></body></html>`);
+    const transferInstructions = new Map(collectFundTransferInstructions().map(item => [item.key, item]));
+    const transfers = (data.transferWorksheet?.lines || []).map(item => { const instruction = transferInstructions.get(item.key) || { action:item.recommendedAction || 'retain' }; return `<tr><td>${escapeHtml(item.label)}</td><td>${moneyFull(item.netCents || 0)}</td><td>${instruction.action === 'transfer' ? 'Transfer manually' : 'Keep in deposit account'}</td><td>${escapeHtml(instruction.destination || '—')}</td><td>${instruction.completed ? 'Completed' : instruction.action === 'transfer' ? 'Pending' : 'Retained'}</td></tr>`; }).join('');
+    popup.document.write(`<!doctype html><html><head><title>AGAPAY Reconciliation</title><style>body{font:14px Arial;color:#061522;margin:40px}h1,h2{font-family:Georgia,serif}header{border-bottom:3px solid #c9a24a;margin-bottom:24px;padding-bottom:16px}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.summary div{border:1px solid #ddd;padding:12px}.summary span{display:block;color:#666;font-size:11px;text-transform:uppercase}.summary strong{font-size:20px}table{width:100%;border-collapse:collapse;margin:12px 0 28px}th,td{border-bottom:1px solid #ddd;padding:8px;text-align:left}th{font-size:11px;text-transform:uppercase}footer{margin-top:36px;border-top:1px solid #ccc;padding-top:12px;color:#666}@media print{body{margin:18mm}.no-print{display:none}}@media(max-width:700px){.summary{grid-template-columns:1fr 1fr}}</style></head><body><header><small>AGAPAY GIVE · MONTHLY RECONCILIATION</small><h1>${escapeHtml(currentParish.parishName || 'Parish')}</h1><p>${escapeHtml(reconciliationMonthLabel(data.period?.month))}</p></header><div class="summary"><div><span>Bank deposits</span><strong>${money(summary.depositedCents || 0)}</strong></div><div><span>Gross activity</span><strong>${money(summary.grossActivityCents || 0)}</strong></div><div><span>Total fees</span><strong>${money(summary.totalFeeCents || 0)}</strong></div><div><span>Matched</span><strong>${summary.matchedPercent ?? 0}%</strong></div></div><h2>Fund allocation</h2><table><thead><tr><th>Category</th><th>Post to</th><th>Count</th><th>Net</th></tr></thead><tbody>${allocations || '<tr><td colspan="4">No allocations.</td></tr>'}</tbody></table>${transfers ? `<h2>Fund transfer worksheet</h2><table><thead><tr><th>Fund</th><th>Net</th><th>Handling</th><th>Destination</th><th>Status</th></tr></thead><tbody>${transfers}</tbody></table>` : ''}<h2>Stripe payouts</h2><table><thead><tr><th>Arrival</th><th>Payout</th><th>Status</th><th>Amount</th></tr></thead><tbody>${payouts || '<tr><td colspan="4">No payouts.</td></tr>'}</tbody></table><h2>Review items</h2><ul>${exceptions}</ul><footer>Generated ${escapeHtml(new Date(data.generatedAt || Date.now()).toLocaleString())} · AGAPAY Give</footer><script>window.onload=()=>window.print()<\/script></body></html>`);
     popup.document.close();
   }
 

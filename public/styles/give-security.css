@@ -63,8 +63,8 @@ body.security-page { margin: 0; background: var(--security-parchment); color: va
 .security-shield li span { color: var(--security-gold); }
 
 .security-summary { position: relative; z-index: 2; padding: 0 1.25rem; margin-top: -48px; }
-.security-summary-inner { width: min(1140px, 100%); margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--security-line); border-radius: 18px; background: var(--security-paper); box-shadow: var(--security-shadow); overflow: hidden; }
-.security-summary article { min-width: 0; display: flex; gap: 1rem; padding: 1.65rem; }
+.security-summary-inner { width: min(1140px, 100%); margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--security-line); border-radius: 18px; background: var(--security-paper); box-shadow: var(--security-shadow); overflow: hidden; }
+.security-summary article { min-width: 0; display: flex; gap: .85rem; padding: 1.4rem; }
 .security-summary article + article { border-left: 1px solid var(--security-line); }
 .security-summary-icon { width: 44px; height: 44px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; color: var(--security-gold-dark); background: rgba(201,162,91,.12); }
 .security-summary-icon svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }

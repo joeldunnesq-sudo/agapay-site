@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Security &amp; Payments FAQ | AGAPAY Give</title>
-  <meta name="description" content="Plain-language answers for parish councils about AGAPAY passwords, Stripe payments, parish data, staff access, private files, and financial safeguards." />
+  <meta name="description" content="Plain-language answers for parish councils about AGAPAY passwords, Stripe payments, Cloudflare, Turnstile, DDoS protection, parish data, and financial safeguards." />
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1" />
   <link rel="canonical" href="https://agapay.app/give/security" />
   <meta property="og:type" content="website" />
@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site-chrome.css" />
-  <link rel="stylesheet" href="/styles/give-security.css?v=20260825security1" />
+  <link rel="stylesheet" href="/styles/give-security.css?v=20260825security2" />
   <script src="/site-chrome.js" defer></script>
 
   <script type="application/ld+json">
@@ -55,6 +55,21 @@
       },
       {
         "@type": "Question",
+        "name": "Can Stripe send each designated fund to a different parish bank account?",
+        "acceptedAnswer": { "@type": "Answer", "text": "AGAPAY's Standard Stripe account model sends a combined payout to the parish's verified payout account. AGAPAY's Fund Transfer Worksheet calculates the net amount attributable to each fund so the treasurer can document manual transfers between parish bank accounts." }
+      },
+      {
+        "@type": "Question",
+        "name": "How does Cloudflare Turnstile protect AGAPAY forms?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Turnstile challenges suspicious form activity and produces a short-lived, single-use token. AGAPAY submits that token to Cloudflare's Siteverify service and rejects the protected request if validation fails." }
+      },
+      {
+        "@type": "Question",
+        "name": "How does Cloudflare help protect AGAPAY from DDoS attacks?",
+        "acceptedAnswer": { "@type": "Answer", "text": "AGAPAY runs through Cloudflare, whose network automatically detects and mitigates many network-layer and HTTP distributed denial-of-service attacks. This protects availability; it is separate from encryption and access control." }
+      },
+      {
+        "@type": "Question",
         "name": "Can one parish see another parish's records?",
         "acceptedAnswer": { "@type": "Answer", "text": "AGAPAY scopes protected records and requests to a parish identifier and checks the signed-in person's membership or staff authorization before returning parish data." }
       },
@@ -74,7 +89,7 @@
         <div class="security-hero-copy">
           <div class="security-eyebrow"><span aria-hidden="true"></span>Security at AGAPAY</div>
           <h1 id="security-title">Clear answers about passwords, payments, and parish data.</h1>
-          <p>Security should be understandable to the people entrusted with parish oversight. This page explains what AGAPAY protects, what Stripe handles, and what every parish can do to help.</p>
+          <p>Security should be understandable to the people entrusted with parish oversight. This page explains what AGAPAY protects, what Stripe and Cloudflare handle, and what every parish can do to help.</p>
           <div class="security-hero-actions">
             <a class="security-primary-button" href="#frequently-asked-questions">Read the FAQ</a>
             <a class="security-secondary-button" href="/contact">Ask us a question</a>
@@ -94,6 +109,7 @@
             <li><span aria-hidden="true">✓</span> Stripe-hosted payment entry</li>
             <li><span aria-hidden="true">✓</span> Parish-scoped authorization</li>
             <li><span aria-hidden="true">✓</span> Signed payment confirmation</li>
+            <li><span aria-hidden="true">✓</span> Cloudflare edge protection</li>
           </ul>
         </div>
       </div>
@@ -113,6 +129,10 @@
           <span class="security-summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 20 7v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V7z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg></span>
           <div><strong>Parish access is separated</strong><p>Protected requests are checked against parish identity, membership, and staff permissions.</p></div>
         </article>
+        <article>
+          <span class="security-summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 17.5h13a3.5 3.5 0 0 0 .4-7A5.5 5.5 0 0 0 8 8.5a4.5 4.5 0 0 0-3 8.5Z"/><path d="m9 13 2 2 4-5"/></svg></span>
+          <div><strong>Cloudflare protects the edge</strong><p>Turnstile challenges abusive form traffic while Cloudflare mitigates many DDoS attacks before application processing.</p></div>
+        </article>
       </div>
     </section>
 
@@ -127,6 +147,7 @@
               <a href="#passwords">Passwords &amp; sign-in</a>
               <a href="#payments">Stripe &amp; payments</a>
               <a href="#parish-data">Parish data &amp; access</a>
+              <a href="#cloudflare">Cloudflare &amp; network protection</a>
               <a href="#shared-responsibility">Shared responsibility</a>
             </nav>
           </div>
@@ -197,6 +218,10 @@
               <summary>Does AGAPAY store a parish's full bank-account number?<span aria-hidden="true"></span></summary>
               <div class="security-answer"><p>No. Stripe manages the verified payout destination. Where AGAPAY Accounting displays a bank reference, it is limited to a masked last four digits; the application rejects full account numbers in those records.</p></div>
             </details>
+            <details>
+              <summary>Can Stripe send each designated fund to a different parish bank account?<span aria-hidden="true"></span></summary>
+              <div class="security-answer"><p>Not through AGAPAY's current Standard Stripe account model. Stripe sends one combined payout to the parish's verified payout account, while AGAPAY preserves the designation of every matched gift. In Monthly Reconciliation, the <strong>Fund Transfer Worksheet</strong> calculates each fund's net share after recorded fees, refunds, and disputes. The treasurer can identify the destination bank account, record whether the transfer was completed, add a bank reference, and print or export the worksheet. AGAPAY provides the accounting instructions but does not initiate or approve transfers between parish bank accounts.</p></div>
+            </details>
           </section>
 
           <section class="security-faq-group" id="parish-data" aria-labelledby="parish-data-title">
@@ -224,6 +249,34 @@
             <details>
               <summary>How is information protected in the browser?<span aria-hidden="true"></span></summary>
               <div class="security-answer"><p>AGAPAY is served over HTTPS and uses browser-security headers to require secure transport, reduce content-type confusion, restrict framing, and limit browser permissions. Authenticated app and dashboard pages are marked private and are not intended to be stored by shared caches or indexed by search engines.</p></div>
+            </details>
+          </section>
+
+          <section class="security-faq-group" id="cloudflare" aria-labelledby="cloudflare-title">
+            <div class="security-group-title">
+              <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 17.5h13a3.5 3.5 0 0 0 .4-7A5.5 5.5 0 0 0 8 8.5a4.5 4.5 0 0 0-3 8.5Z"/><path d="m9 13 2 2 4-5"/></svg></span>
+              <div><small>Edge and infrastructure safeguards</small><h3 id="cloudflare-title">Cloudflare &amp; network protection</h3></div>
+            </div>
+
+            <details open>
+              <summary>What role does Cloudflare play in AGAPAY's security?<span aria-hidden="true"></span></summary>
+              <div class="security-answer"><p>AGAPAY runs on Cloudflare Workers and uses Cloudflare-managed services for application data and private file storage. Incoming web requests are handled through Cloudflare's network before AGAPAY's authorization and business rules run. Cloudflare supplies the edge network, TLS handling, managed storage security, and DDoS mitigation; AGAPAY remains responsible for its own authentication, parish authorization, application logic, and safe configuration.</p></div>
+            </details>
+            <details>
+              <summary>How is information encrypted within Cloudflare?<span aria-hidden="true"></span></summary>
+              <div class="security-answer"><p>AGAPAY uses HTTPS for information traveling between the browser and the service. Cloudflare documents that D1 databases, Workers KV values, and R2 objects are automatically encrypted at rest with AES-256 and that service connections use TLS in transit. Private R2 files are still delivered through AGAPAY's authenticated routes rather than being made public merely because the underlying storage is encrypted. See Cloudflare's current documentation for <a href="https://developers.cloudflare.com/d1/reference/data-security/" target="_blank" rel="noopener">D1</a>, <a href="https://developers.cloudflare.com/kv/reference/data-security/" target="_blank" rel="noopener">Workers KV</a>, and <a href="https://developers.cloudflare.com/r2/reference/data-security/" target="_blank" rel="noopener">R2</a>.</p></div>
+            </details>
+            <details>
+              <summary>How does Cloudflare Turnstile protect AGAPAY forms?<span aria-hidden="true"></span></summary>
+              <div class="security-answer"><p>AGAPAY places Turnstile on sensitive public workflows such as parish registration, donor signup, and online giving. The browser receives a short-lived challenge token, but the widget alone is not treated as proof. AGAPAY sends the token and request address to Cloudflare's Siteverify service and rejects the protected request if validation fails. Cloudflare specifies that Turnstile tokens expire after five minutes and can be used only once, which helps resist automated submissions and replay attempts. <a href="https://developers.cloudflare.com/turnstile/get-started/server-side-validation/" target="_blank" rel="noopener">Read Cloudflare's Siteverify documentation.</a></p></div>
+            </details>
+            <details>
+              <summary>How does Cloudflare help protect AGAPAY from DDoS attacks?<span aria-hidden="true"></span></summary>
+              <div class="security-answer"><p>A distributed denial-of-service attack attempts to overwhelm a service with traffic. Cloudflare's network automatically detects and mitigates many network-layer and HTTP DDoS attacks before they reach AGAPAY's application processing. AGAPAY also uses application-level rate limits on sensitive endpoints. DDoS mitigation protects service availability; it does <strong>not</strong> replace password security, parish authorization, encryption, backups, or financial review. <a href="https://developers.cloudflare.com/ddos-protection/" target="_blank" rel="noopener">Read Cloudflare's DDoS overview.</a></p></div>
+            </details>
+            <details>
+              <summary>Does Cloudflare protection guarantee AGAPAY will never be unavailable?<span aria-hidden="true"></span></summary>
+              <div class="security-answer"><p>No. Cloudflare's global network substantially strengthens availability and absorbs many forms of abusive traffic, but no provider can guarantee that every attack, software defect, configuration error, upstream outage, or third-party disruption will be prevented. AGAPAY therefore combines provider safeguards with application controls, monitoring, testing, and recoverable records.</p></div>
             </details>
           </section>
 
