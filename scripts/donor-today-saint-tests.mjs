@@ -75,6 +75,7 @@ assert.equal(tikhonEnriched.feastTitle, "Leavetaking of Transfiguration", "the A
 assert.equal(tikhonEnriched.primarySaintTitle, "St Tikhon of Zadonsk (1783)", "the saint remains the Today hero title");
 
 const donorApp = readFileSync(path.join(repoRoot, "public", "donor", "app.js"), "utf8");
+const parishLife = readFileSync(path.join(repoRoot, "public", "myagapay", "parish-life.html"), "utf8");
 assert.match(donorApp, /today\.primarySaintTitle \|\| today\.feastTitle/);
 assert.match(donorApp, /stories\.find\(\(story\) => story\?\.primary\) \|\| stories\[0\]/);
 assert.match(donorApp, /function liturgicalReadingRows[\s\S]*when this service is celebrated[\s\S]*Readings of the day/,
@@ -87,5 +88,7 @@ assert.match(donorApp, /Liturgical observance: \$\{observanceTitle\}/,
   "a feast or leavetaking must be labeled separately when the hero centers a saint");
 assert.match(donorApp, /feastNote\.replaceChildren[\s\S]*line\.className = reading\.className/,
   "each daily reading must render as its own hero line");
+assert.match(parishLife, /\/donor\/app\.js\?v=20260826liturgicalreadings1/,
+  "the Koinonia page must invalidate cached donor-app bundles when liturgical rendering changes");
 
 console.log("PASS - Today hero, saint card, and first life use the same primary commemoration");
