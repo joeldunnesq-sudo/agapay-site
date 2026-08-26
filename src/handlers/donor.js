@@ -51,6 +51,7 @@ import { loadPublishedCommerceCalendarEvents } from "./parish-events.js";
 import { getDirectorySettings } from "../directory/settings.js";
 import { getParishLibrarySettings } from "../lib/parish-library.js";
 import { resolveDirectorySelfServiceContext, syncSelfServiceContactsFromDonor } from "../directory/self-service.js";
+import { migrateConsumerPasskeyEmail } from "../lib/consumer-passkeys.js";
 
 import {
   resolveSettlementProfileId,
@@ -900,6 +901,10 @@ export async function handleDonorDashboard(request, env) {
     }
 
     if (emailChanged) {
+      const passkeyMigration = await migrateConsumerPasskeyEmail(env, donor.email, requestedEmail);
+      if (passkeyMigration.conflict) {
+        return json({ error: "That email address is already connected to another passkey account" }, { status: 409 });
+      }
       await migrateDonorEmailReferences(env, donor.email, requestedEmail);
       await deleteDonor(env, donor.email);
     }

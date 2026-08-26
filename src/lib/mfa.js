@@ -16,6 +16,13 @@ import {
   secureCompare,
   sha256Hex,
 } from "./core.js";
+import {
+  base64UrlToBytes,
+  bytesToBase64Url,
+  opaqueWebauthnUserId,
+  safeJson,
+  webauthnRpContext,
+} from "./webauthn.js";
 
 const MFA_TRANSACTION_TTL_MS = 5 * 60 * 1000;
 const MFA_STEP_UP_TTL_MS = 15 * 60 * 1000;
@@ -35,19 +42,6 @@ export function freshMfaAt(value, nowMs = Date.now()) {
 
 function nowIso() {
   return new Date().toISOString();
-}
-
-function bytesToBase64Url(bytes) {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-
-function base64UrlToBytes(value) {
-  const normalized = String(value || "").replace(/-/g, "+").replace(/_/g, "/");
-  const padded = normalized + "=".repeat((4 - normalized.length % 4) % 4);
-  const binary = atob(padded);
-  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
 function randomBytes(length) {
@@ -126,15 +120,6 @@ function normalizePrincipal(principalType, principalId) {
   return { principalType: type, principalId: id };
 }
 
-function safeJson(value, fallback) {
-  try {
-    const parsed = JSON.parse(String(value || ""));
-    return parsed ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
-
 export async function loadMfaProfile(env, principalType, principalId) {
   const principal = normalizePrincipal(principalType, principalId);
   if (!principal || !d1(env)) return null;
@@ -181,23 +166,6 @@ export async function mfaStatus(env, principalType, principalId) {
     totpEnabled: Boolean(profile?.totp_confirmed_at),
     recoveryCodesRemaining: Array.isArray(recoveryHashes) ? recoveryHashes.length : 0,
   };
-}
-
-function rpContext(request, env) {
-  const requestUrl = new URL(request.url);
-  const configured = String(env?.AGAPAY_APP_URL || "").trim();
-  const origin = requestUrl.hostname === "localhost" || requestUrl.hostname === "127.0.0.1"
-    ? requestUrl.origin
-    : configured ? new URL(configured).origin : requestUrl.origin;
-  return { origin, rpID: new URL(origin).hostname };
-}
-
-async function principalUserId(principalType, principalId) {
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(`${principalType}:${principalId}`),
-  );
-  return new Uint8Array(digest);
 }
 
 async function saveTransaction(env, {
@@ -281,7 +249,7 @@ export async function beginMfaAuthentication(env, request, {
   let passkeyOptions = null;
   if (status.methods.includes("passkey")) {
     const passkeys = await listPasskeys(env, principalType, principalId);
-    const { rpID } = rpContext(request, env);
+    const { rpID } = webauthnRpContext(request, env);
     passkeyOptions = await generateAuthenticationOptions({
       rpID,
       allowCredentials: passkeys.map((row) => ({
@@ -367,11 +335,11 @@ export async function beginMfaEnrollment(env, request, pendingToken, {
   }
   if (method !== "passkey") throw new Error("Unsupported MFA method.");
   const passkeys = await listPasskeys(env, transaction.principal_type, transaction.principal_id);
-  const { rpID } = rpContext(request, env);
+  const { rpID } = webauthnRpContext(request, env);
   const options = await generateRegistrationOptions({
     rpName: "AGAPAY",
     rpID,
-    userID: await principalUserId(transaction.principal_type, transaction.principal_id),
+    userID: await opaqueWebauthnUserId(transaction.principal_type, transaction.principal_id),
     userName: transaction.principal_id,
     userDisplayName: displayName,
     attestationType: "none",
@@ -460,7 +428,7 @@ export async function verifyMfaEnrollment(env, request, pendingToken, { method, 
     });
   } else if (method === "passkey") {
     if (!transaction.webauthn_challenge || !credential) throw new Error("Passkey setup was not started.");
-    const { origin, rpID } = rpContext(request, env);
+    const { origin, rpID } = webauthnRpContext(request, env);
     const verification = await verifyRegistrationResponse({
       response: credential,
       expectedChallenge: transaction.webauthn_challenge,
@@ -541,7 +509,7 @@ export async function verifyMfaAuthentication(env, request, pendingToken, { meth
       transaction.principal_id,
     );
     if (!saved) throw new Error("That passkey is not registered for this account.");
-    const { origin, rpID } = rpContext(request, env);
+    const { origin, rpID } = webauthnRpContext(request, env);
     const verification = await verifyAuthenticationResponse({
       response: credential,
       expectedChallenge: transaction.webauthn_challenge,

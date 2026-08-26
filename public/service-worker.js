@@ -1,4 +1,4 @@
-const AGAPAY_CACHE = "agapay-static-v29";
+const AGAPAY_CACHE = "agapay-static-v30";
 
 const STATIC_ASSETS = [
   "/myagapay/login",
@@ -6,7 +6,9 @@ const STATIC_ASSETS = [
   "/donor/style.css",
   "/donor/app.js",
   "/donor/pwa-install.js",
+  "/scripts/consumer-passkeys.js",
   "/styles/numbers.css",
+  "/styles/consumer-passkeys.css",
   "/myagapay/manifest.webmanifest",
   "/mark.png",
   "/pwa-register.js",
@@ -89,6 +91,7 @@ function isVersionedStaticAsset(request, url) {
   if (request.method !== "GET" || url.origin !== self.location.origin || !url.searchParams.has("v")) return false;
   return url.pathname === "/donor/style.css"
     || url.pathname === "/donor/app.js"
+    || url.pathname === "/scripts/consumer-passkeys.js"
     || url.pathname === "/myagapay-shell.js"
     || url.pathname === "/liturgical-calendar.js"
     || url.pathname.startsWith("/myagapay/");

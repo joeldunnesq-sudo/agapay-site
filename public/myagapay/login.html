@@ -16,6 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css?v=20260819koinoniaweek1" />
+  <link rel="stylesheet" href="/styles/consumer-passkeys.css?v=20260826a" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <script>
     if ("serviceWorker" in navigator) {
@@ -25,6 +26,7 @@
   </script>
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260817bookstoreprayer1" defer></script>
+  <script src="/scripts/consumer-passkeys.js?v=20260826a" defer></script>
   <script src="/donor/app.js?v=20260712a" defer></script>
   <script src="/donor/pwa-install.js" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
@@ -59,10 +61,19 @@
       </section>
 
       <form class="donor-auth-card" id="donorLoginForm">
-        <h2>My AGAPAY Login</h2>
+        <div class="passkey-login-heading">
+          <div>
+            <span class="passkey-preferred-label">Preferred sign-in</span>
+            <h2>Sign in with a passkey</h2>
+            <p>Use Face ID, your fingerprint, or your device screen lock.</p>
+          </div>
+          <span class="passkey-login-icon" aria-hidden="true">✓</span>
+        </div>
+        <button class="btn btn-gold passkey-login-button" id="donorPasskeyLogin" type="button">Continue with a passkey</button>
+        <div class="passkey-login-divider"><span>Sign in with email instead</span></div>
         <div class="form-group">
           <label class="form-label" for="donorEmail">Email</label>
-          <input class="form-input" id="donorEmail" type="email" autocomplete="email" placeholder="you@example.com" />
+          <input class="form-input" id="donorEmail" type="email" autocomplete="username webauthn" placeholder="you@example.com" />
         </div>
         <div class="form-group">
           <label class="form-label" for="donorPassword">Password</label>
@@ -74,6 +85,16 @@
           <button class="btn btn-ghost" type="button" data-donor-auth-view="reset">Forgot password?</button>
         </div>
       </form>
+
+      <section class="donor-auth-card passkey-offer-card" id="donorPasskeyOffer" hidden>
+        <span class="passkey-preferred-label">Make the next sign-in easier</span>
+        <h2>Add a passkey?</h2>
+        <p>You’re signed in. Save a passkey on this device to use Face ID, your fingerprint, or your screen lock next time. Your verified email remains your recovery option.</p>
+        <div class="donor-auth-actions">
+          <button class="btn btn-gold" id="donorPasskeyCreate" type="button">Add passkey</button>
+          <button class="btn btn-ghost" id="donorPasskeySkip" type="button">Not now</button>
+        </div>
+      </section>
 
       <form class="donor-auth-card" id="donorResetRequestForm" hidden>
         <h2>Reset password</h2>
@@ -115,6 +136,9 @@
       const loginForm = document.getElementById("donorLoginForm");
       const resetRequestForm = document.getElementById("donorResetRequestForm");
       const resetConfirmForm = document.getElementById("donorResetConfirmForm");
+      const passkeyLoginButton = document.getElementById("donorPasskeyLogin");
+      const passkeyOffer = document.getElementById("donorPasskeyOffer");
+      let conditionalPasskeyController = null;
 
       function setStatus(message, tone = "info") {
         if (!status) return;
@@ -148,6 +172,68 @@
         return data;
       }
 
+      function completeSignIn(data, fallbackEmail = "") {
+        if (window.AgapayPasskeys) window.AgapayPasskeys.storeSession(data);
+        else {
+          if (data.token) localStorage.setItem("agapayDonorToken", data.token);
+          const donorEmail = data.donor?.email || fallbackEmail;
+          if (donorEmail) localStorage.setItem("agapayDonorEmail", donorEmail);
+          if (data.donor) localStorage.setItem("agapayDonorProfile", JSON.stringify({ ...data.donor, email: donorEmail }));
+        }
+      }
+
+      function openDestination() {
+        const destination = safeNextPath();
+        setStatus(destination.startsWith("/myagapay/learn") ? "Opening AGAPAY Learn…" : "Opening My AGAPAY…", "success");
+        window.location.href = destination;
+      }
+
+      async function offerPasskeyOrContinue() {
+        if (!window.AgapayPasskeys?.isSupported()) return openDestination();
+        try {
+          const status = await window.AgapayPasskeys.list();
+          if (status.passkeys?.length) return openDestination();
+          loginForm.hidden = true;
+          passkeyOffer.hidden = false;
+          setStatus("");
+        } catch {
+          openDestination();
+        }
+      }
+
+      async function signInWithPasskey(options = {}) {
+        setStatus(options.mediation === "conditional" ? "" : "Use your device prompt to sign in…");
+        try {
+          const data = await window.AgapayPasskeys.authenticate(options);
+          completeSignIn(data);
+          setStatus("Passkey accepted.", "success");
+          openDestination();
+        } catch (error) {
+          if (error?.name !== "AbortError" && options.mediation !== "conditional") setStatus(error.message, "error");
+        }
+      }
+
+      passkeyLoginButton?.addEventListener("click", () => {
+        conditionalPasskeyController?.abort();
+        conditionalPasskeyController = null;
+        signInWithPasskey();
+      });
+
+      document.getElementById("donorPasskeyCreate")?.addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        button.disabled = true;
+        setStatus("Follow your device prompt to create the passkey…");
+        try {
+          await window.AgapayPasskeys.register("This device");
+          setStatus("Passkey saved. Opening My AGAPAY…", "success");
+          openDestination();
+        } catch (error) {
+          setStatus(error.message, "error");
+          button.disabled = false;
+        }
+      });
+      document.getElementById("donorPasskeySkip")?.addEventListener("click", openDestination);
+
       document.querySelectorAll("[data-donor-auth-view]").forEach((button) => {
         button.addEventListener("click", () => {
           const view = button.getAttribute("data-donor-auth-view");
@@ -163,6 +249,8 @@
 
       loginForm?.addEventListener("submit", async (event) => {
         event.preventDefault();
+        conditionalPasskeyController?.abort();
+        conditionalPasskeyController = null;
         const email = document.getElementById("donorEmail")?.value.trim();
         const password = document.getElementById("donorPassword")?.value;
         if (!email || !password) {
@@ -172,17 +260,9 @@
         setStatus("Signing you in...");
         try {
           const data = await postJson("/api/donor/login", { email, password });
-          if (data.token) localStorage.setItem("agapayDonorToken", data.token);
-          // Always save the email — use the typed email as fallback if API omits it
-          const donorEmail = data.donor?.email || email;
-          localStorage.setItem("agapayDonorEmail", donorEmail);
-          if (data.donor) {
-            const profile = { ...data.donor, email: donorEmail };
-            localStorage.setItem("agapayDonorProfile", JSON.stringify(profile));
-          }
-          const destination = safeNextPath();
-          setStatus(destination.startsWith("/myagapay/learn") ? "Signed in. Opening AGAPAY Learn..." : "Signed in. Opening My AGAPAY...", "success");
-          window.location.href = destination;
+          completeSignIn(data, email);
+          setStatus("Signed in.", "success");
+          await offerPasskeyOrContinue();
         } catch (error) {
           localStorage.removeItem("agapayDonorToken");
           setStatus(error.message === "Unauthorized"
@@ -253,6 +333,21 @@
       }
 
       window.__agapayDonorLoginControlsReady = true;
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        if (!window.AgapayPasskeys?.isSupported()) {
+          if (passkeyLoginButton) passkeyLoginButton.hidden = true;
+          return;
+        }
+        if (!window.PublicKeyCredential.isConditionalMediationAvailable) return;
+        try {
+          if (!(await window.PublicKeyCredential.isConditionalMediationAvailable())) return;
+          conditionalPasskeyController = new AbortController();
+          signInWithPasskey({ mediation: "conditional", signal: conditionalPasskeyController.signal });
+        } catch {
+          conditionalPasskeyController = null;
+        }
+      });
     })();
   </script>
 </body>

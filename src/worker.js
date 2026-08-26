@@ -210,6 +210,13 @@ import {
   handleDonorNotificationDismiss,
 } from "./handlers/donor.js";
 import { handleDonorEvents, handleParishEvents } from "./handlers/parish-events.js";
+import {
+  handleConsumerPasskeyAuthenticationOptions,
+  handleConsumerPasskeyAuthenticationVerify,
+  handleConsumerPasskeyRegistrationOptions,
+  handleConsumerPasskeyRegistrationVerify,
+  handleConsumerPasskeys,
+} from "./handlers/consumer-passkeys.js";
 
 import {
   handleAnnouncementDigestUnsubscribe,
@@ -3295,6 +3302,25 @@ export default {
     }
     if (url.pathname === "/api/donor/login") {
       return handleDonorLogin(request, env);
+    }
+    if (url.pathname === "/api/donor/passkeys/authentication/options") {
+      return handleConsumerPasskeyAuthenticationOptions(request, env);
+    }
+    if (url.pathname === "/api/donor/passkeys/authentication/verify") {
+      return handleConsumerPasskeyAuthenticationVerify(request, env);
+    }
+    if (url.pathname === "/api/donor/passkeys/registration/options") {
+      return handleConsumerPasskeyRegistrationOptions(request, env);
+    }
+    if (url.pathname === "/api/donor/passkeys/registration/verify") {
+      return handleConsumerPasskeyRegistrationVerify(request, env);
+    }
+    if (url.pathname === "/api/donor/passkeys") {
+      return handleConsumerPasskeys(request, env);
+    }
+    if (url.pathname.startsWith("/api/donor/passkeys/")) {
+      const credentialId = decodeURIComponent(url.pathname.replace("/api/donor/passkeys/", ""));
+      return handleConsumerPasskeys(request, env, credentialId);
     }
     if (url.pathname === "/api/donor/password-reset-request") {
       return handleDonorPasswordResetRequest(request, env);

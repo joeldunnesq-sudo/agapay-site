@@ -10,9 +10,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css?v=20260819koinoniaweek1" />
+  <link rel="stylesheet" href="/styles/consumer-passkeys.css?v=20260826a" />
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260817bookstoreprayer1"></script>
   <script src="/donor/app.js?v=20260803storecompliance1" defer></script>
+  <script src="/scripts/consumer-passkeys.js?v=20260826a" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -113,6 +115,32 @@
                 <button class="btn btn-ghost" type="button" onclick="logoutDonor()">Log out</button>
               </div>
             </form>
+          </div>
+        </section>
+        <section class="card section-gap passkey-security-card" id="consumerPasskeyCard">
+          <div class="card-header">
+            <div class="card-title"><span class="card-icon passkey-card-icon" aria-hidden="true">✓</span> Sign-in &amp; Security</div>
+            <span class="status-pill" id="consumerPasskeyCount">Checking…</span>
+          </div>
+          <div class="card-body">
+            <div class="passkey-security-intro">
+              <div>
+                <h2>Passkeys</h2>
+                <p class="form-help">Sign in without typing your password. Use Face ID, your fingerprint, device PIN, or a security key. Your verified email and password remain available for recovery.</p>
+              </div>
+              <span class="passkey-security-badge">Recommended</span>
+            </div>
+            <div class="passkey-add-row">
+              <div class="form-group">
+                <label class="form-label" for="consumerPasskeyNewLabel">Name this device</label>
+                <input class="form-input" id="consumerPasskeyNewLabel" placeholder="e.g. My iPhone" maxlength="80" />
+              </div>
+              <button class="btn btn-gold" id="consumerPasskeyAdd" type="button">Add a passkey</button>
+            </div>
+            <div class="passkey-security-message" id="consumerPasskeyMessage" role="status" aria-live="polite"></div>
+            <div class="passkey-device-list" id="consumerPasskeyList" aria-label="Saved passkeys">
+              <div class="passkey-empty-state"><strong>Loading saved passkeys…</strong></div>
+            </div>
           </div>
         </section>
         <section class="card section-gap" id="givingStatementsCard">
