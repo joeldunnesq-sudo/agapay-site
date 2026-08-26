@@ -72,9 +72,9 @@ assert.equal(validPdf.size, 16);
 const fakePdf = await validateParishLibraryPdf(new Request("https://agapay.test/upload", { method: "POST", headers: { "Content-Type": "application/pdf" }, body: new TextEncoder().encode("not-a-pdf") }));
 assert.equal(fakePdf.status, 415);
 
-const [worker, handler, shell, donorPage, donorScript, adminPage, adminScript, wrangler] = [
+const [worker, handler, shell, donorPage, donorScript, adminPage, adminScript, adminStyles, wrangler] = [
   "src/worker.js", "src/handlers/parish-library.js", "public/myagapay-shell.js", "public/myagapay/library.html", "public/myagapay/library.js",
-  "public/parish/dashboard.html", "public/parish/library.js", "wrangler.toml",
+  "public/parish/dashboard.html", "public/parish/library.js", "public/parish/library.css", "wrangler.toml",
 ].map((file) => readFileSync(path.join(root, file), "utf8"));
 assert.match(worker, /handleDonorParishLibrary/);
 assert.match(worker, /handleParishLibrary/);
@@ -86,8 +86,17 @@ assert.match(donorScript, /fetch\("\/api\/donor\/library"/);
 assert.match(donorScript, /data-library-pdf/);
 assert.match(adminPage, /id="nav-library"/);
 assert.match(adminPage, /id="tab-library"/);
+assert.match(adminPage, /library\.css\?v=20260825library2/);
+assert.match(adminPage, /library\.js\?v=20260825library2/);
 assert.match(handler, /PARISH_LIBRARY_ASSETS|parish-library\/|Parish Library file storage/);
 assert.match(adminScript, /resourceType[\s\S]*PDF document[\s\S]*Article link/);
+assert.match(adminScript, /pl-admin-hero sw-suite-hero/);
+assert.match(adminScript, /pl-admin-metrics/);
+assert.match(adminScript, /data-pl-filter/);
+assert.match(adminScript, /pl-admin-library-card[\s\S]*pl-admin-editor-card/, "resource catalog should come before the editor");
+assert.match(adminStyles, /grid-template-columns:\s*minmax\(0,\s*1\.35fr\)\s+minmax\(310px,\s*0\.75fr\)/);
+assert.match(adminStyles, /@media \(max-width:\s*800px\)[\s\S]*overflow-x:\s*clip/);
+assert.match(adminStyles, /bottom:\s*calc\(5\.25rem \+ env\(safe-area-inset-bottom\)\)/);
 assert.match(wrangler, /binding = "PARISH_LIBRARY_ASSETS"[\s\S]*bucket_name = "agapay-group-message-assets"/);
 
 console.log("PASS - parish-scoped library resources, private PDFs, staff controls, and adaptive bottom navigation");
