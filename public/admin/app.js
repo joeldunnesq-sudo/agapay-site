@@ -1,4 +1,5 @@
 let selectedReference = '';
+    window.AgapayMfa?.installFetchStepUp();
     let registrationsCache = [];
     const adminSessionKey = 'agapay_admin_token';
     const adminActorKey = 'agapay_admin_actor';
@@ -152,9 +153,12 @@ let selectedReference = '';
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || 'Unable to log in');
-        if (!result.token) throw new Error('Session token missing from response');
-        saveAdminSession(result.token);
-        try { sessionStorage.setItem(adminActorKey, result.actor || actor || 'Admin'); } catch {}
+        const authenticated = result.mfaRequired
+          ? await window.AgapayMfa.runFlow(result, { displayName: actor || 'AGAPAY administrator' })
+          : result;
+        if (!authenticated.token) throw new Error('Session token missing from response');
+        saveAdminSession(authenticated.token);
+        try { sessionStorage.setItem(adminActorKey, authenticated.actor || actor || 'Admin'); } catch {}
         window.location.href = '/admin';
       } catch (err) {
         setStatus(err.message, 'error');

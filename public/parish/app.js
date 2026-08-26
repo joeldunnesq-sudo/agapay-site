@@ -1,4 +1,5 @@
 // ── STATE ────────────────────────────────────────────────
+  window.AgapayMfa?.installFetchStepUp();
   let currentParish     = null;
   let currentQrSvg      = '';
   let editableFunds     = [];
@@ -415,9 +416,12 @@
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Unable to log in');
-      if (!data.token) throw new Error('Login succeeded but no session token was returned.');
+      const authenticated = data.mfaRequired
+        ? await window.AgapayMfa.runFlow(data, { displayName: parishId + ' administrator' })
+        : data;
+      if (!authenticated.token) throw new Error('Login succeeded but no session token was returned.');
       sessionStorage.setItem('agapay_parish_id', parishId);
-      sessionStorage.setItem(parishSessionStorageKey, data.token);
+      sessionStorage.setItem(parishSessionStorageKey, authenticated.token);
       sessionStorage.removeItem(legacyParishTokenStorageKey);
       window.location.href = '/parish/dashboard?parish=' + encodeURIComponent(parishId);
     } catch (err) {
@@ -880,13 +884,16 @@
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Unable to create your access');
-      if (!data.parishId || !data.parishToken) throw new Error('Your account was created, but the parish dashboard could not be opened. Please contact AGAPAY support.');
-      sessionStorage.setItem('agapay_parish_id', data.parishId);
-      sessionStorage.setItem(parishSessionStorageKey, data.parishToken);
-      sessionStorage.setItem(identitySessionStorageKey, data.token || '');
-      sessionStorage.setItem(identityEmailStorageKey, data.identityEmail || '');
+      const authenticated = data.mfaRequired
+        ? await window.AgapayMfa.runFlow(data, { displayName })
+        : data;
+      if (!authenticated.parishId || !authenticated.parishToken) throw new Error('Your account was created, but the parish dashboard could not be opened. Please contact AGAPAY support.');
+      sessionStorage.setItem('agapay_parish_id', authenticated.parishId);
+      sessionStorage.setItem(parishSessionStorageKey, authenticated.parishToken);
+      sessionStorage.setItem(identitySessionStorageKey, authenticated.token || '');
+      sessionStorage.setItem(identityEmailStorageKey, authenticated.identityEmail || '');
       sessionStorage.removeItem(legacyParishTokenStorageKey);
-      window.location.href = '/parish/dashboard?parish=' + encodeURIComponent(data.parishId);
+      window.location.href = '/parish/dashboard?parish=' + encodeURIComponent(authenticated.parishId);
     } catch (err) {
       setStatus(err.message, 'error');
     } finally {

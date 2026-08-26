@@ -42,6 +42,7 @@ PARISH_COMMERCE_READINESS_ENFORCED_FOR_ALL = "false"
 TAX_EXEMPTION_WORKFLOW_ENABLED = "true"
 TAX_EXEMPTION_DOCUMENT_UPLOAD_ENABLED = "true"
 TAX_EXEMPTION_STRIPE_SYNC_ENABLED = "true"
+PRIVILEGED_MFA_REQUIRED = "true"
 
 [triggers]
 crons = ["0 8 * * *", "0 14 * * 6"]
@@ -199,6 +200,7 @@ TEACHING_ASSETS_URL = "https://pub-03d1c07bbdb14970a0b0021aeb0961d8.r2.dev"
 ACCOUNTING_DATABASE_BINDINGS = '{"agapay-acct-staging-parish-a":"ACCOUNTING_DB_ST_FIACRE","agapay-acct-staging-parish-b":"ACCOUNTING_DB_RELEASE_GATE_B"}'
 ACCOUNTING_PREPARED_PARISH_DATABASES = '{"st-fiacre":"agapay-acct-staging-parish-a","st-tester-san-antonio":"agapay-acct-staging-parish-b"}'
 ACCOUNTING_TEST_PARISH_IDS = "st-tester-san-antonio"
+PRIVILEGED_MFA_REQUIRED = "true"
 
 [env.staging.triggers]
 crons = []

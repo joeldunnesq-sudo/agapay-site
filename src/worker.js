@@ -424,6 +424,14 @@ import {
   handleMembershipInvitationRevoke,
   handleMembershipList,
 } from "./handlers/identity.js";
+import {
+  enforcePrivilegedMfa,
+  handleMfaEnrollmentOptions,
+  handleMfaEnrollmentVerify,
+  handleMfaStatus,
+  handleMfaStepUp,
+  handleMfaVerify,
+} from "./handlers/mfa.js";
 
 async function handleWaitlist(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
@@ -2933,6 +2941,9 @@ export default {
       return corsPreflightResponse(env);
     }
 
+    const privilegedMfaGate = await enforcePrivilegedMfa(request, env, url);
+    if (privilegedMfaGate) return privilegedMfaGate;
+
     if (request.method === "GET" || request.method === "HEAD") {
       if (["/give.html", "/give/index.html"].includes(url.pathname.toLowerCase())) {
         url.pathname = "/give";
@@ -3458,6 +3469,11 @@ export default {
     if (url.pathname === "/api/admin/session") {
       return handleAdminSession(request, env);
     }
+    if (url.pathname === "/api/mfa/enrollment/options") return handleMfaEnrollmentOptions(request, env);
+    if (url.pathname === "/api/mfa/enrollment/verify") return handleMfaEnrollmentVerify(request, env);
+    if (url.pathname === "/api/mfa/verify") return handleMfaVerify(request, env);
+    if (url.pathname === "/api/mfa/step-up") return handleMfaStepUp(request, env);
+    if (url.pathname === "/api/mfa/status") return handleMfaStatus(request, env);
     // ── Platform Identity (Accounting Package 0.75C) ────────────────────
     if (url.pathname === "/api/identity/login") {
       return handleIdentityLogin(request, env);

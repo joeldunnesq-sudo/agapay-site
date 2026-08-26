@@ -47,6 +47,7 @@ import {
   parishIdIndexKey,
   parseJsonRow,
   publicDonor,
+  privilegedMfaRequired,
   rateLimit,
   rateLimitByKey,
   recordStripeEvent,
@@ -65,6 +66,7 @@ import {
   verifyPasswordRecord,
   verifyTurnstileIfConfigured,
 } from "../lib/core.js";
+import { beginMfaAuthentication } from "../lib/mfa.js";
 import { loadGivingCatalogFromAccounting, synchronizeGivingCatalogWithAccounting } from "../accounting/source-wiring.js";
 import { accountingAvailableForParish } from "../lib/accounting-demo-access.js";
 import { parishLifeAvailableFor } from "../lib/parish-life-access.js";
@@ -288,11 +290,9 @@ export async function requireAdminContext(request, env) {
 
   const session = await resolveAdminSession(env, submitted);
   if (!session) return null;
-  return {
-    actor: session.actor || "Admin",
-    authType: "session",
-    expiresAt: session.expiresAt || ""
-  };
+  if (privilegedMfaRequired(env) && !session.mfaVerifiedAt) return null;
+  return { actor: session.actor || "Admin", authType: "session", expiresAt: session.expiresAt || "",
+    sessionId: session.id || "", mfaVerifiedAt: session.mfaVerifiedAt || "" };
 }
 
 export async function requireAdmin(request, env) {
@@ -2875,9 +2875,9 @@ export async function handleParishSession(request, env, parishId) {
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
 
   const password = String(body.password || "").trim();
-  if (!(await verifyParishDashboardPassword(found.registration, password))) {
-    return unauthorized();
-  }
+  if (!(await verifyParishDashboardPassword(found.registration, password))) return unauthorized();
+  if (privilegedMfaRequired(env)) return json({ ok: true, ...(await beginMfaAuthentication(env, request,
+    { principalType: "parish_admin", principalId: parishId, purpose: "login", metadata: {} })) });
 
   const session = await issueParishDashboardSession(found.registration);
   await saveRegistrationRecord(env, found.key, session.registration, found.registration);

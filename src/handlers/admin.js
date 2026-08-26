@@ -29,6 +29,7 @@ import {
   parishIdIndexKey,
   parseJsonRow,
   parsePasswordRecord,
+  privilegedMfaRequired,
   rateLimit,
   rateLimitByKey,
   recordStripeEvent,
@@ -41,6 +42,7 @@ import {
   stripeSubscriptionIndexKey,
   unauthorized,
 } from "../lib/core.js";
+import { beginMfaAuthentication } from "../lib/mfa.js";
 
 import {
   loadAdminRegistrationPage,
@@ -1095,7 +1097,19 @@ export async function handleAdminSession(request, env) {
     : "";
   if (!(await verifyPasswordRecord(password, stored))) return unauthorized();
 
-  const session = await issueAdminSession(env, "Admin");
+  const actor = normalizeAdminActor(body.actor || "Admin");
+  if (privilegedMfaRequired(env)) {
+    return json({
+      ok: true,
+      ...(await beginMfaAuthentication(env, request, {
+        principalType: "platform_admin",
+        principalId: "platform",
+        purpose: "login",
+        metadata: { actor },
+      })),
+    });
+  }
+  const session = await issueAdminSession(env, actor);
   return json({ ok: true, ...session });
 }
 

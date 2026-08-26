@@ -26,7 +26,8 @@ import {
   createPasswordRecord,
   verifyPasswordRecord,
   getBearerToken,
-  loadDonor
+  loadDonor,
+  privilegedMfaRequired
 } from "./core.js";
 
 const PLATFORM_SESSION_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours -- shorter than the donor default, appropriate for a staff/back-office identity
@@ -120,36 +121,77 @@ export async function verifyPlatformUserPassword(env, email, password) {
 // Issues a new session token for a platform user, invalidating any prior
 // session (single active session per user, deliberately simple for this
 // foundational package -- multi-session support is not required here).
-export async function issuePlatformUserSession(env, userId) {
+export async function issuePlatformUserSession(env, userId, { mfaVerifiedAt = "" } = {}) {
   if (!d1(env) || !userId) return null;
   const token = generateSecret("agp_user");
   const salt = generateSecret("user_salt");
   const tokenHash = await hashSessionToken(token, salt);
   const expiresAt = new Date(Date.now() + PLATFORM_SESSION_TTL_MS).toISOString();
-  await d1Run(
-    env,
-    `UPDATE platform_users
-     SET session_token_hash = ?2, session_salt = ?3, session_expires_at = ?4, updated_at = ?5
-     WHERE id = ?1`,
-    userId,
-    tokenHash,
-    salt,
-    expiresAt,
-    nowIso()
-  );
-  return { token, expiresAt };
+  try {
+    await d1Run(
+      env,
+      `UPDATE platform_users
+       SET session_token_hash = ?2, session_salt = ?3, session_expires_at = ?4,
+           session_mfa_verified_at = ?5, updated_at = ?6
+       WHERE id = ?1`,
+      userId,
+      tokenHash,
+      salt,
+      expiresAt,
+      mfaVerifiedAt || null,
+      nowIso()
+    );
+  } catch (error) {
+    if (privilegedMfaRequired(env) || !String(error?.message || error).includes("session_mfa_verified_at")) throw error;
+    // Backward-compatible only while MFA is disabled, so pre-0106 local/test
+    // databases can still issue legacy sessions during a staged rollout.
+    await d1Run(
+      env,
+      `UPDATE platform_users
+       SET session_token_hash = ?2, session_salt = ?3, session_expires_at = ?4, updated_at = ?5
+       WHERE id = ?1`,
+      userId,
+      tokenHash,
+      salt,
+      expiresAt,
+      nowIso()
+    );
+  }
+  return { token, expiresAt, mfaVerifiedAt: mfaVerifiedAt || "" };
+}
+
+export async function markPlatformUserSessionMfaVerified(env, userId, verifiedAt = nowIso()) {
+  if (!d1(env) || !userId) return false;
+  const result = await d1(env).prepare(
+    `UPDATE platform_users SET session_mfa_verified_at = ?2, updated_at = ?2
+     WHERE id = ?1 AND session_token_hash IS NOT NULL`
+  ).bind(userId, verifiedAt).run();
+  return Number(result?.meta?.changes || 0) === 1;
 }
 
 export async function revokePlatformUserSession(env, userId) {
   if (!d1(env) || !userId) return;
-  await d1Run(
-    env,
-    `UPDATE platform_users
-     SET session_token_hash = NULL, session_salt = NULL, session_expires_at = NULL, updated_at = ?2
-     WHERE id = ?1`,
-    userId,
-    nowIso()
-  );
+  try {
+    await d1Run(
+      env,
+      `UPDATE platform_users
+       SET session_token_hash = NULL, session_salt = NULL, session_expires_at = NULL,
+           session_mfa_verified_at = NULL, updated_at = ?2
+       WHERE id = ?1`,
+      userId,
+      nowIso()
+    );
+  } catch (error) {
+    if (!String(error?.message || error).includes("session_mfa_verified_at")) throw error;
+    await d1Run(
+      env,
+      `UPDATE platform_users
+       SET session_token_hash = NULL, session_salt = NULL, session_expires_at = NULL, updated_at = ?2
+       WHERE id = ?1`,
+      userId,
+      nowIso()
+    );
+  }
 }
 
 // The platform-user analog of requireDonor. Resolves a request's bearer
@@ -165,7 +207,10 @@ export async function requirePlatformUser(request, env) {
     const row = await findPlatformUserByEmail(env, email);
     if (row?.status === "active" && row.session_token_hash && row.session_salt && (!row.session_expires_at || new Date(row.session_expires_at).getTime() >= Date.now())) {
       const submittedHash = await hashSessionToken(token, row.session_salt);
-      if (secureCompare(submittedHash, row.session_token_hash)) return rowToPlatformUser(row);
+      if (secureCompare(submittedHash, row.session_token_hash)) {
+        if (privilegedMfaRequired(env) && !row.session_mfa_verified_at) return null;
+        return { ...rowToPlatformUser(row), mfaVerifiedAt: row.session_mfa_verified_at || "" };
+      }
     }
   }
 

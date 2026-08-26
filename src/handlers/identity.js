@@ -19,8 +19,10 @@ import {
   getBearerToken,
   issueParishDashboardSession,
   normalizeEmail,
+  privilegedMfaRequired,
   rateLimit
 } from "../lib/core.js";
+import { beginMfaAuthentication } from "../lib/mfa.js";
 import {
   requirePlatformUser,
   verifyPlatformUserPassword,
@@ -59,6 +61,18 @@ export async function handleIdentityLogin(request, env) {
 
   const user = await verifyPlatformUserPassword(env, email, password);
   if (!user) return json({ error: "Invalid email or password." }, { status: 401 });
+
+  if (privilegedMfaRequired(env)) {
+    return json({
+      ok: true,
+      ...(await beginMfaAuthentication(env, request, {
+        principalType: "platform_user",
+        principalId: user.id,
+        purpose: "login",
+        metadata: { identityEmail: email },
+      })),
+    });
+  }
 
   const session = await issuePlatformUserSession(env, user.id);
   if (!session) return json({ error: "Unable to start a session." }, { status: 500 });
@@ -112,6 +126,22 @@ export async function handleIdentityInvitationAccept(request, env, token) {
     request
   });
   if (!result.ok) return json({ error: result.error || "Unable to accept invitation." }, { status: 400 });
+
+  if (privilegedMfaRequired(env)) {
+    return json({
+      ok: true,
+      ...(await beginMfaAuthentication(env, request, {
+        principalType: "platform_user",
+        principalId: result.userId,
+        purpose: "invitation",
+        metadata: {
+          identityEmail: result.email,
+          parishId: result.parishId,
+          membershipId: result.membershipId,
+        },
+      })),
+    });
+  }
 
   const session = await issuePlatformUserSession(env, result.userId);
   let parishSession = null;

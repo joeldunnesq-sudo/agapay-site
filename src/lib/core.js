@@ -23,6 +23,10 @@ export const PARISH_SESSION_TTL_MS = 1000 * 60 * 60 * 12;
 export const PARISH_SESSION_MAX = 16;
 export const STRIPE_EVENT_PROCESSING_RETRY_MS = 1000 * 60 * 10;
 
+export function privilegedMfaRequired(env) {
+  return String(env?.PRIVILEGED_MFA_REQUIRED || "").trim().toLowerCase() === "true";
+}
+
 const marketplaceBrowseCategories = [
   { id: "all", label: "All Categories", icon: "grid" },
   { id: "books-media", label: "Books & Media", icon: "book-open" },
@@ -876,7 +880,7 @@ export function pruneAdminSessions(sessions, nowMs = Date.now()) {
   });
 }
 
-export async function issueAdminSession(env, actor = "Admin") {
+export async function issueAdminSession(env, actor = "Admin", { mfaVerifiedAt = "" } = {}) {
   const nowMs = Date.now();
   const token = generateSecret("agp_admin");
   const sessionSalt = generateSecret("admin_salt");
@@ -891,12 +895,26 @@ export async function issueAdminSession(env, actor = "Admin") {
     tokenHash,
     sessionSalt,
     createdAt,
-    expiresAt
+    expiresAt,
+    mfaVerifiedAt: mfaVerifiedAt || ""
   });
   sessions.sort((a, b) => String(a.createdAt || "").localeCompare(String(b.createdAt || "")));
   while (sessions.length > ADMIN_SESSION_MAX) sessions.shift();
   await saveAdminSessionStore(env, { version: 1, sessions });
-  return { token, actor: normalizeAdminActor(actor), createdAt, expiresAt };
+  return { token, actor: normalizeAdminActor(actor), createdAt, expiresAt, mfaVerifiedAt: mfaVerifiedAt || "" };
+}
+
+export async function markAdminSessionMfaVerified(env, sessionId, verifiedAt = new Date().toISOString()) {
+  if (!sessionId) return false;
+  const store = await loadAdminSessionStore(env);
+  let changed = false;
+  const sessions = store.sessions.map((entry) => {
+    if (entry?.id !== sessionId) return entry;
+    changed = true;
+    return { ...entry, mfaVerifiedAt: verifiedAt };
+  });
+  if (changed) await saveAdminSessionStore(env, { version: 1, sessions });
+  return changed;
 }
 
 export async function resolveAdminSession(env, token) {
@@ -914,7 +932,8 @@ export async function resolveAdminSession(env, token) {
       return {
         id: session.id || "",
         actor: normalizeAdminActor(session.actor || "Admin"),
-        expiresAt: session.expiresAt
+        expiresAt: session.expiresAt,
+        mfaVerifiedAt: session.mfaVerifiedAt || ""
       };
     }
   }
@@ -1041,7 +1060,7 @@ export function pruneParishDashboardSessions(sessions, nowMs = Date.now()) {
   });
 }
 
-export async function issueParishDashboardSession(registration) {
+export async function issueParishDashboardSession(registration, { mfaVerifiedAt = "" } = {}) {
   const nowMs = Date.now();
   const token = generateSecret("agp_parish");
   const sessionSalt = generateSecret("parish_salt");
@@ -1054,7 +1073,8 @@ export async function issueParishDashboardSession(registration) {
     tokenHash,
     sessionSalt,
     createdAt,
-    expiresAt
+    expiresAt,
+    mfaVerifiedAt: mfaVerifiedAt || ""
   });
   sessions.sort((a, b) => String(a.createdAt || "").localeCompare(String(b.createdAt || "")));
   while (sessions.length > PARISH_SESSION_MAX) sessions.shift();
@@ -1063,6 +1083,7 @@ export async function issueParishDashboardSession(registration) {
     token,
     createdAt,
     expiresAt,
+    mfaVerifiedAt: mfaVerifiedAt || "",
     registration: {
       ...registration,
       parishDashboardSessions: sessions
@@ -1078,11 +1099,23 @@ export async function resolveParishDashboardSession(registration, token) {
     if (secureCompare(submitted, session.tokenHash || "")) {
       return {
         id: session.id || "",
-        expiresAt: session.expiresAt || ""
+        expiresAt: session.expiresAt || "",
+        mfaVerifiedAt: session.mfaVerifiedAt || ""
       };
     }
   }
   return null;
+}
+
+export function markParishDashboardSessionMfaVerified(registration, sessionId, verifiedAt = new Date().toISOString()) {
+  if (!registration || !sessionId) return { registration, changed: false };
+  let changed = false;
+  const sessions = (Array.isArray(registration.parishDashboardSessions) ? registration.parishDashboardSessions : []).map((entry) => {
+    if (entry?.id !== sessionId) return entry;
+    changed = true;
+    return { ...entry, mfaVerifiedAt: verifiedAt };
+  });
+  return { registration: changed ? { ...registration, parishDashboardSessions: sessions } : registration, changed };
 }
 
 // ─── AGAPAY Parish + access ─────────────────────────────────────────────────
