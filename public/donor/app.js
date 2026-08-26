@@ -1199,6 +1199,46 @@ function saintStoryModalHtml(saints = [], unavailableMessage = "") {
   }).join("");
 }
 
+function liturgicalReadingRows(today = {}) {
+  const appointments = Array.isArray(today.readingAppointments) && today.readingAppointments.length
+    ? today.readingAppointments
+    : [
+        today.epistleRef && { type: "epistle", ref: today.epistleRef, appointment: "" },
+        today.gospelRef && { type: "gospel", ref: today.gospelRef, appointment: "" },
+      ].filter(Boolean);
+  const groups = new Map();
+  appointments.forEach((reading) => {
+    const type = String(reading?.type || "").toLowerCase();
+    const ref = String(reading?.ref || "").trim();
+    if (!ref || (type !== "epistle" && type !== "gospel")) return;
+    const appointment = String(reading?.appointment || "").trim();
+    if (!groups.has(appointment)) groups.set(appointment, []);
+    groups.get(appointment).push({ type, ref });
+  });
+
+  const rows = [];
+  const hasAlternatives = groups.size > 1;
+  groups.forEach((readings, appointment) => {
+    rows.push({
+      text: appointment
+        ? `For ${appointment}${hasAlternatives ? " — when this service is celebrated" : ""}`
+        : "Readings of the day",
+      className: "cal-reading-line is-heading"
+    });
+    ["epistle", "gospel"].forEach((type) => {
+      readings.filter((reading) => reading.type === type).forEach((reading) => rows.push({
+        text: `${type === "epistle" ? "Epistle" : "Gospel"}: ${reading.ref}`,
+        className: "cal-reading-line"
+      }));
+    });
+  });
+  if (hasAlternatives) rows.push({
+    text: "The parish Typikon determines which appointed readings are proclaimed.",
+    className: "cal-reading-line is-guidance"
+  });
+  return rows;
+}
+
 function renderDonorTodayInChurch(parish, payload) {
   const calendar = parish?.liturgicalCalendar || donorProfile()?.defaultParish?.liturgicalCalendar || donorProfile()?.liturgicalCalendar || "julian";
   const date = payload?.date || todayIsoLocal();
@@ -1218,6 +1258,9 @@ function renderDonorTodayInChurch(parish, payload) {
     : "";
   const firstStory = stories.find((story) => story?.primary) || stories[0] || {};
   const saintCount = stories.length || saintNames.length;
+  const observanceTitle = String(today.feastTitle || "").trim();
+  const showsSeparateObservance = observanceTitle
+    && observanceTitle.toLowerCase() !== String(feastTitle || "").trim().toLowerCase();
   const giveHref = donorGiftUrl("feast", parish, { feast: feastTitle });
   donorCalendarState.liturgicalDay = today;
   donorCalendarState.calendar = calendar;
@@ -1237,20 +1280,21 @@ function renderDonorTodayInChurch(parish, payload) {
   const feastNote = document.getElementById("todayFeastNote");
   if (feastNote) {
     const unavailableNote = "Daily readings and saint lives are temporarily unavailable, but feast highlights still follow your Church calendar.";
-    const readingLines = [
-      today.epistleRef && `Epistle: ${today.epistleRef}`,
-      today.gospelRef && `Gospel: ${today.gospelRef}`,
-      nameDayText,
-    ].filter(Boolean);
+    const readingLines = liturgicalReadingRows(today);
+    if (showsSeparateObservance) readingLines.unshift({
+      text: `Liturgical observance: ${observanceTitle}`,
+      className: "cal-reading-line is-observance"
+    });
+    if (nameDayText) readingLines.push({ text: nameDayText, className: "cal-reading-line is-guidance" });
     if (today.sourceConnected === false || !readingLines.length) {
       feastNote.textContent = today.sourceConnected === false
         ? unavailableNote
         : "Daily readings, saints, and fasting notes follow the Orthodox calendar.";
     } else {
-      feastNote.replaceChildren(...readingLines.map((text) => {
+      feastNote.replaceChildren(...readingLines.map((reading) => {
         const line = document.createElement("span");
-        line.className = "cal-reading-line";
-        line.textContent = text;
+        line.className = reading.className;
+        line.textContent = reading.text;
         return line;
       }));
     }

@@ -24,9 +24,30 @@ function readingRef(day = {}, source) {
   return reading?.display || reading?.short_display || "Not listed";
 }
 
+function readingPreview(reading = {}) {
+  return (reading.passage || []).slice(0, 3).map((verse) => `${verse.chapter}:${verse.verse} ${verse.content}`).join(" ");
+}
+
 function firstReadingText(day = {}, source) {
   const reading = (day.readings || []).find((entry) => String(entry.source || "").toLowerCase() === source);
-  return (reading?.passage || []).slice(0, 3).map((verse) => `${verse.chapter}:${verse.verse} ${verse.content}`).join(" ");
+  return readingPreview(reading);
+}
+
+export function orthocalReadingAppointments(day = {}) {
+  return (Array.isArray(day.readings) ? day.readings : [])
+    .map((reading) => {
+      const type = String(reading?.source || "").trim().toLowerCase();
+      if (type !== "epistle" && type !== "gospel") return null;
+      const ref = String(reading?.display || reading?.short_display || "").trim();
+      if (!ref) return null;
+      return {
+        type,
+        ref,
+        appointment: String(reading?.description || "").trim(),
+        preview: readingPreview(reading)
+      };
+    })
+    .filter(Boolean);
 }
 
 function stripHtml(value = "") {
@@ -148,6 +169,7 @@ export async function enrichLiturgicalDayWithOrthocal(liturgicalDay, { calendarT
     const titles = Array.isArray(day.titles) ? day.titles : [];
     const saints = Array.isArray(day.saints) ? day.saints : [];
     const saintStories = orthocalSaintStories(day);
+    const readingAppointments = orthocalReadingAppointments(day);
     const primarySaintTitle = saintStories.find((story) => story.primary)?.name || saintStories[0]?.name || saints[0] || "";
     return {
       ...liturgicalDay,
@@ -160,6 +182,7 @@ export async function enrichLiturgicalDayWithOrthocal(liturgicalDay, { calendarT
       tone: day.tone ? `Tone ${day.tone}` : liturgicalDay.tone,
       epistleRef: readingRef(day, "epistle"),
       gospelRef: readingRef(day, "gospel"),
+      readingAppointments,
       epistlePreview: firstReadingText(day, "epistle"),
       gospelPreview: firstReadingText(day, "gospel"),
       sourceLabel: "Orthocal.info",

@@ -104,12 +104,20 @@ export interface LiturgicalDay {
   tone: string;
   epistleRef: string;
   gospelRef: string;
+  readingAppointments?: LiturgicalReadingAppointment[];
   epistleTextKjv: string;
   gospelTextKjv: string;
   troparionText: string;
   troparionTone: string;
   kontakionText: string;
   kontakionTone: string;
+}
+
+export interface LiturgicalReadingAppointment {
+  type: "epistle" | "gospel";
+  ref: string;
+  appointment: string;
+  preview: string;
 }
 
 export interface HouseholdStream {
