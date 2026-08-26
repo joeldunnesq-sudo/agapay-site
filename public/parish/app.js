@@ -1031,7 +1031,6 @@
       campaigns: document.getElementById('tab-campaigns'),
       givers: document.getElementById('tab-givers'),
       reconcile: document.getElementById('tab-reconcile'),
-      commemorations: document.getElementById('commemorationQueueCard'),
       statements: document.getElementById('pdxGsSection')
     };
     Object.entries(givingPlusTargets).forEach(([key, element]) => {
@@ -1042,21 +1041,15 @@
     syncDashboardPaywall(document.getElementById('tab-options'), 'options', 'Giving Plus', !optionsIncluded);
     syncTierRequirementNavigation('options', 'Giving Plus', optionsIncluded);
 
-    const stewardshipTargets = {
-      stewardship: document.getElementById('tab-stewardship'),
-      bookstore: document.getElementById('tab-bookstore')
-    };
-    Object.entries(stewardshipTargets).forEach(([key, element]) => {
-      const locked = isStarterTier() || !moduleIncluded(key === 'bookstore' ? 'bookstore' : 'stewardshipHealth');
-      syncDashboardPaywall(element, key, 'Stewardship', locked);
-      syncTierRequirementNavigation(key, 'Stewardship', !locked);
-    });
+    const stewardshipLocked = !moduleIncluded('stewardshipHealth');
+    syncDashboardPaywall(document.getElementById('tab-stewardship'), 'stewardship', 'Giving Plus', stewardshipLocked);
+    syncTierRequirementNavigation('stewardship', 'Giving Plus', !stewardshipLocked);
+    const bookstoreLocked = !moduleIncluded('bookstore');
+    syncDashboardPaywall(document.getElementById('tab-bookstore'), 'bookstore', 'Bookstore add-on', bookstoreLocked);
+    syncTierRequirementNavigation('bookstore', 'Bookstore add-on', !bookstoreLocked);
 
     const parishTargets = {
-      sacraments: document.getElementById('tab-sacraments'),
-      directory: document.getElementById('tab-directory'),
-      text: document.getElementById('tab-text'),
-      accounting: document.getElementById('tab-accounting')
+      text: document.getElementById('tab-text')
     };
     Object.entries(parishTargets).forEach(([key, element]) => {
       const moduleKey = key === 'text' ? 'textToGive' : key;
@@ -1064,6 +1057,12 @@
       syncDashboardPaywall(element, key, 'Parish', locked);
       syncTierRequirementNavigation(key, 'Parish', !locked);
     });
+    syncDashboardPaywall(document.getElementById('tab-directory'), 'directory', 'Giving Plus', !moduleIncluded('directory'));
+    syncTierRequirementNavigation('directory', 'Giving Plus', moduleIncluded('directory'));
+    syncDashboardPaywall(document.getElementById('tab-sacraments'), 'sacraments', 'Sacraments add-on', !moduleIncluded('sacraments'));
+    syncTierRequirementNavigation('sacraments', 'Sacraments add-on', moduleIncluded('sacraments'));
+    syncDashboardPaywall(document.getElementById('tab-accounting'), 'accounting', 'Accounting add-on', !moduleIncluded('accounting'));
+    syncTierRequirementNavigation('accounting', 'Accounting add-on', moduleIncluded('accounting'));
   }
 
   function moduleIncluded(moduleId) {
@@ -4608,10 +4607,10 @@
     const mobileCommunicationsNav = document.querySelector('.mobile-tab-link[data-nav-tab="communications"]');
     if (communicationsNav) communicationsNav.hidden = !parishLifeAvailable;
     if (mobileCommunicationsNav) mobileCommunicationsNav.hidden = !parishLifeAvailable;
-    syncTierRequirementNavigation('stewardship', 'Stewardship', stewardshipActive);
+    syncTierRequirementNavigation('stewardship', 'Giving Plus', stewardshipActive);
     const bookstoreBadge = document.getElementById('bookstoreNavBadge');
     const mobileBookstoreBadge = document.getElementById('mobileBookstoreBadge');
-    syncTierRequirementNavigation('bookstore', 'Stewardship', bookstoreActive);
+    syncTierRequirementNavigation('bookstore', 'Bookstore add-on', bookstoreActive);
     if (bookstoreBadge) {
       bookstoreBadge.hidden = bookstoreActive;
       bookstoreBadge.textContent = 'Upgrade';
@@ -4624,11 +4623,10 @@
     }
     syncModuleStatusNavigation('bookstore', bookstoreActive, Boolean(currentParish?.bookstoreEnabled));
 
-    // Sacraments & Services is a Parish tier feature. Parish-tier parishes
-    // can turn the donor-facing entry on or off from the Sacraments tab.
+    // Entitlement and the parish's donor-facing on/off switch stay separate.
     const sacIsOn = Boolean(currentParish?.sacramentsEnabled);
     const sacBadge = document.getElementById('sacramentsNavBadge');
-    syncTierRequirementNavigation('sacraments', 'Parish', sacramentsActive);
+    syncTierRequirementNavigation('sacraments', 'Sacraments add-on', sacramentsActive);
     if (sacBadge) {
       sacBadge.hidden = sacramentsActive;
       sacBadge.textContent = 'Upgrade';
@@ -8986,6 +8984,52 @@
     const tiers = currentParish?.subscriptionTiers || [];
     return tiers.map(t => `<option value="${escapeHtml(t.id)}" ${t.id===selectedId?'selected':''}>${escapeHtml(t.label)} - ${escapeHtml(tierPriceLabel(t))}</option>`).join('');
   }
+  function subscriptionAddOnPriceCents(addOn = {}) { return parishPricingUsesStandardRates() ? addOn.standardMonthlyCents : addOn.earlyAdopterMonthlyCents; }
+  function subscriptionAddOnPickerMarkup({ tierSelectId, groupId }) {
+    const selected = new Set(currentParish?.subscriptionAddOns || []);
+    const catalog = currentParish?.subscriptionAddOnCatalog || [];
+    return `<div class="form-group full" id="${groupId}" data-tier-select-id="${tierSelectId}" hidden><label class="form-label">Optional Giving Plus add-ons</label><div class="toggle-row">${catalog.map((addOn) => `<label class="check-card"><input type="checkbox" data-subscription-add-on="${escapeHtml(addOn.id)}" ${selected.has(addOn.id)?'checked':''} onchange="syncSubscriptionAddOnChoice('${groupId}')" /> <span><strong>${escapeHtml(addOn.label)}</strong><small>${escapeHtml(money(subscriptionAddOnPriceCents(addOn)))}/mo${addOn.id==='accounting'?' · includes Full Commerce + Bookstore':addOn.id==='full_commerce'?' · includes Bookstore':''}</small></span></label>`).join('')}</div><p class="section-note">Add-ons are available with Giving Plus. Included add-ons never stack, and Parish already includes every module.</p><p class="section-note" data-subscription-price-summary aria-live="polite"></p></div>`;
+  }
+  function syncSubscriptionAddOnVisibility(tierSelectId, groupId) {
+    const group = document.getElementById(groupId);
+    if (group) group.hidden = document.getElementById(tierSelectId)?.value !== 'giving';
+    syncSubscriptionAddOnChoice(groupId);
+  }
+  function syncSubscriptionAddOnChoice(groupId) {
+    const group = document.getElementById(groupId);
+    const accounting = group?.querySelector('[data-subscription-add-on="accounting"]');
+    const fullCommerce = group?.querySelector('[data-subscription-add-on="full_commerce"]');
+    const bookstore = group?.querySelector('[data-subscription-add-on="bookstore"]');
+    if (fullCommerce) {
+      if (accounting?.checked) fullCommerce.checked = false;
+      fullCommerce.disabled = Boolean(accounting?.checked);
+      fullCommerce.closest('.check-card')?.classList.toggle('is-disabled', Boolean(accounting?.checked));
+    }
+    if (bookstore) {
+      if (accounting?.checked || fullCommerce?.checked) bookstore.checked = false;
+      bookstore.disabled = Boolean(accounting?.checked || fullCommerce?.checked);
+      bookstore.closest('.check-card')?.classList.toggle('is-disabled', Boolean(accounting?.checked || fullCommerce?.checked));
+    }
+    updateSubscriptionAddOnTotal(groupId);
+  }
+  function updateSubscriptionAddOnTotal(groupId) {
+    const group = document.getElementById(groupId);
+    const summary = group?.querySelector('[data-subscription-price-summary]');
+    const tierId = document.getElementById(group?.dataset.tierSelectId || '')?.value;
+    const tier = (currentParish?.subscriptionTiers || []).find((item) => item.id === tierId);
+    if (!summary || tierId !== 'giving' || !tier) return;
+    const selected = new Set(selectedSubscriptionAddOns(groupId));
+    const addOnCents = (currentParish?.subscriptionAddOnCatalog || [])
+      .filter((addOn) => selected.has(addOn.id))
+      .reduce((total, addOn) => total + Number(subscriptionAddOnPriceCents(addOn) || 0), 0);
+    const totalCents = Number(tier.monthlyCents || 0) + addOnCents;
+    summary.innerHTML = `<strong>Estimated monthly subscription: ${escapeHtml(money(totalCents))}/month.</strong> Stripe checkout will show this same recurring total before payment.`;
+  }
+  function selectedSubscriptionAddOns(groupId) {
+    const group = document.getElementById(groupId);
+    if (!group || group.hidden) return [];
+    return Array.from(group.querySelectorAll('[data-subscription-add-on]:checked')).map((input) => input.dataset.subscriptionAddOn);
+  }
   function setupCheckMarkup() { return '<span class="setup-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>'; }
   function billingStatusDone(status) { return ['active','trialing','free_forever'].includes(status); }
   async function refreshSubscriptionStatus(options) {
@@ -9490,33 +9534,33 @@
         <div class="pdx-sub-modules-head"><div><span>Plan access</span><strong>Included parish tools</strong></div><button type="button" onclick="switchTab('settings')">Compare tiers</button></div>
         <div class="pdx-sub-module-grid">
           ${moduleRow('Giving Plus', 'givingPlus', 'Custom funds, campaigns, givers, and reconciliation', 'Giving Plus')}
-          ${moduleRow('Stewardship Health', 'stewardshipHealth', 'Pledges, insights, and stewardship reporting', 'Stewardship')}
-          ${moduleRow('Bookstore', 'bookstore', 'Parish commerce and Stripe-powered sales', 'Stewardship')}
-          ${moduleRow('Parish Directory', 'directory', 'Member, household, and ministry records', 'Parish')}
-          ${moduleRow('Sacraments & Services', 'sacraments', 'Pastoral requests and clergy coordination', 'Parish')}
+          ${moduleRow('Stewardship Health', 'stewardshipHealth', 'Pledges, insights, and stewardship reporting', 'Giving Plus')}
+          ${moduleRow('Bookstore', 'bookstore', 'Parish commerce and Stripe-powered sales', 'Bookstore add-on')}
+          ${moduleRow('Parish Directory', 'directory', 'Member, household, and ministry records', 'Giving Plus')}
+          ${moduleRow('Sacraments & Services', 'sacraments', 'Pastoral requests and clergy coordination', 'Sacraments add-on')}
           ${moduleRow('Text-to-Give', 'textToGive', 'Keywords that route donors to your giving page', 'Parish')}
         </div>
       </div>`;
   }
 
   function updateTierScopedNavigation() {
-    const stewardshipIncluded = !isStarterTier() && (isParishTier() || isParishPlusActive());
+    const stewardshipIncluded = moduleIncluded('stewardshipHealth');
     const directoryActive = moduleIncluded('directory');
     const accountingIncluded = moduleIncluded('accounting');
     const accountingNav = document.getElementById('nav-accounting');
     const stewardshipNav = document.getElementById('nav-stewardship');
     stewardshipNav?.removeAttribute('hidden');
-    syncTierRequirementNavigation('stewardship', 'Stewardship', stewardshipIncluded);
-    if (stewardshipNav) stewardshipNav.title = stewardshipIncluded ? 'Stewardship Health' : 'Requires Stewardship';
+    syncTierRequirementNavigation('stewardship', 'Giving Plus', stewardshipIncluded);
+    if (stewardshipNav) stewardshipNav.title = stewardshipIncluded ? 'Stewardship Health' : 'Requires Giving Plus';
     document.getElementById('nav-directory')?.removeAttribute('hidden');
     document.querySelectorAll('.mobile-tab-link[data-nav-tab="directory"]').forEach((el) => {
       el.hidden = false;
     });
-    syncTierRequirementNavigation('directory', 'Parish', directoryActive);
+    syncTierRequirementNavigation('directory', 'Giving Plus', directoryActive);
     syncTierRequirementNavigation('library', 'Parish', moduleIncluded('sacraments'));
-    syncTierRequirementNavigation('accounting', 'Parish', accountingIncluded);
+    syncTierRequirementNavigation('accounting', 'Accounting add-on', accountingIncluded);
     syncModuleStatusNavigation('accounting', accountingIncluded, accountingIncluded);
-    if (accountingNav) accountingNav.title = accountingIncluded ? 'Accounting workspace' : 'Requires Parish';
+    if (accountingNav) accountingNav.title = accountingIncluded ? 'Accounting workspace' : 'Requires Accounting add-on or Parish';
     document.querySelectorAll('.mobile-tab-link[data-nav-tab="stewardship"]').forEach((el) => {
       el.hidden = false;
       el.classList.toggle('mobile-tab-link--gated', !stewardshipIncluded);
@@ -9553,6 +9597,270 @@
       const item = document.querySelector(`.mobile-tab-link[data-nav-tab="${tab}"]`);
       if (mobile && item) mobile.appendChild(item);
     });
+  }
+
+  // ── SALES-TAX EXEMPTION ───────────────────────────────────
+  const taxExemptionJurisdictions = [
+    'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
+    'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
+    'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC','FEDERAL','OTHER'
+  ];
+
+  function taxExemptionApi(path = '') {
+    if (!currentParish?.parishId) return '';
+    return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/tax-exemption' + path;
+  }
+
+  function taxExemptionStatusCopy(status) {
+    return {
+      pending: ['Under review', 'AGAPAY is reviewing the exemption request. Sales tax remains enabled until approval.'],
+      approved: ['Approved', 'Applicable AGAPAY subscription charges are tax-exempt. New billing Customers are synchronized before checkout.'],
+      replacement_required: ['Document needed', 'AGAPAY requested updated documentation. Upload it here so the review can continue.'],
+      rejected: ['Not approved', 'This request was not approved. You may submit a new request with corrected information.'],
+      expired: ['Expired', 'The exemption is no longer active. Submit current documentation for a new review.'],
+      revoked: ['Revoked', 'The exemption is no longer active. Contact support if you believe this is incorrect.']
+    }[status] || ['Not submitted', 'No sales-tax exemption request is on file.'];
+  }
+
+  function taxExemptionJurisdictionOptions(selected = '') {
+    const normalized = String(selected || currentParish?.state || '').trim().toUpperCase();
+    return '<option value="">Choose jurisdiction…</option>' + taxExemptionJurisdictions.map((code) => {
+      const label = code === 'FEDERAL' ? 'Federal' : code === 'OTHER' ? 'Other / multistate' : code;
+      return `<option value="${code}" ${code === normalized ? 'selected' : ''}>${label}</option>`;
+    }).join('');
+  }
+
+  function taxExemptionRequestForm(previousClaim = null) {
+    return `
+      <form class="tax-exemption-form" onsubmit="submitParishTaxExemption(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="taxExemptionJurisdiction">Exemption jurisdiction</label>
+            <select id="taxExemptionJurisdiction" name="jurisdiction" required onchange="syncTaxExemptionJurisdiction()">${taxExemptionJurisdictionOptions(previousClaim?.jurisdiction)}</select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="taxExemptionType">Organization type</label>
+            <select id="taxExemptionType" name="exemptionType">
+              <option value="religious_organization">Religious organization</option>
+              <option value="charitable_organization">Charitable organization</option>
+              <option value="government_entity">Government entity</option>
+              <option value="other">Other exempt organization</option>
+            </select>
+          </div>
+          <div class="form-group full" id="taxExemptionOtherGroup" hidden>
+            <label class="form-label" for="taxExemptionExplanation">Jurisdiction or multistate explanation</label>
+            <textarea id="taxExemptionExplanation" name="multistateExplanation" rows="3" placeholder="Explain where and how this exemption applies."></textarea>
+          </div>
+          <div class="form-group full" id="taxExemptionStateGuidance" hidden></div>
+          <div class="form-group">
+            <label class="form-label" for="taxExemptionCertificateNumber">Certificate number <span class="optional">(if shown)</span></label>
+            <input id="taxExemptionCertificateNumber" name="certificateNumber" autocomplete="off" placeholder="Certificate or exemption number" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="taxExemptionEffectiveDate">Effective date <span class="optional">(if shown)</span></label>
+            <input id="taxExemptionEffectiveDate" name="effectiveDate" type="date" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="taxExemptionExpirationDate">Expiration date <span class="optional">(if applicable)</span></label>
+            <input id="taxExemptionExpirationDate" name="expirationDate" type="date" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="taxExemptionDocument">Exemption document</label>
+            <input id="taxExemptionDocument" name="document" type="file" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" required />
+            <p class="section-note">PDF, JPG, or PNG, up to 10 MB. The document is stored privately and is visible only to authorized parish and AGAPAY administrators.</p>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="taxExemptionRepresentativeName">Authorized representative</label>
+            <input id="taxExemptionRepresentativeName" name="authorizedRepresentativeName" required placeholder="Full legal name" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="taxExemptionRepresentativeTitle">Representative title</label>
+            <input id="taxExemptionRepresentativeTitle" name="authorizedRepresentativeTitle" required placeholder="Treasurer, rector, board officer…" />
+          </div>
+        </div>
+        <label class="check-card tax-exemption-certification"><input name="certified" type="checkbox" required /> I certify that I am authorized to submit this request and that the information and document are accurate.</label>
+        <p class="section-note">Submitting a document does not automatically make the parish tax-exempt. AGAPAY reviews the request and applies the exemption to subscription billing only after approval.</p>
+        <div class="btn-row"><button class="btn btn-gold" type="submit">Submit for review</button></div>
+      </form>`;
+  }
+
+  function taxExemptionDocumentForm(hasDocument = false) {
+    return `
+      <form class="tax-exemption-upload" onsubmit="uploadParishTaxExemptionDocument(event)">
+        <div class="form-group">
+          <label class="form-label" for="taxExemptionReplacementDocument">${hasDocument ? 'Replace current document' : 'Upload exemption document'}</label>
+          <input id="taxExemptionReplacementDocument" name="document" type="file" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" required />
+          <p class="section-note">PDF, JPG, or PNG, up to 10 MB. Uploading a replacement archives the prior document; it does not approve the request.</p>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-gold" type="submit">${hasDocument ? 'Upload replacement' : 'Upload document'}</button>
+          ${hasDocument ? '<button class="btn btn-ghost" type="button" onclick="viewParishTaxExemptionDocument(this)">View current document</button>' : ''}
+        </div>
+      </form>`;
+  }
+
+  function renderParishTaxExemption(data = {}) {
+    const pane = document.getElementById('taxExemptionPane');
+    if (!pane) return;
+    const claim = data.claim || null;
+    const status = claim?.status || '';
+    const copy = taxExemptionStatusCopy(status);
+    const detail = claim ? `
+      <div class="tax-exemption-facts">
+        <div><span>Jurisdiction</span><strong>${escapeHtml(claim.jurisdiction || '—')}</strong></div>
+        <div><span>Certificate</span><strong>${escapeHtml(claim.maskedCertificateNumber || 'Not listed')}</strong></div>
+        <div><span>Submitted</span><strong>${claim.createdAt ? escapeHtml(new Date(claim.createdAt).toLocaleDateString()) : '—'}</strong></div>
+        <div><span>Expiration</span><strong>${claim.expirationDate ? escapeHtml(new Date(claim.expirationDate + 'T00:00:00').toLocaleDateString()) : 'No expiration listed'}</strong></div>
+      </div>` : '';
+    const reason = claim?.replacementReason || claim?.rejectionReason || claim?.revocationReason || '';
+    let action = '';
+    if (!claim || ['rejected', 'expired'].includes(status)) action = taxExemptionRequestForm(claim);
+    else if (['pending', 'replacement_required'].includes(status)) action = taxExemptionDocumentForm(Boolean(data.hasDocument));
+    else if (status === 'approved' && data.hasDocument) action = '<div class="btn-row"><button class="btn btn-ghost" type="button" onclick="viewParishTaxExemptionDocument(this)">View current document</button></div>';
+    else if (status === 'revoked') action = '<p class="section-note">Contact <a href="mailto:support@agapay.app">support@agapay.app</a> before submitting a new request.</p>';
+
+    pane.innerHTML = `
+      <div class="tax-exemption-status-card tax-exemption-status-${escapeHtml(status || 'none')}">
+        <div><span class="tax-exemption-eyebrow">Current status</span><h3>${escapeHtml(copy[0])}</h3><p>${escapeHtml(copy[1])}</p></div>
+        <span class="tax-exemption-status-pill">${escapeHtml(copy[0])}</span>
+      </div>
+      ${reason ? `<div class="tax-exemption-reason"><strong>AGAPAY note</strong><span>${escapeHtml(reason)}</span></div>` : ''}
+      ${detail}
+      ${action}
+      <div id="taxExemptionActionStatus" class="section-note" role="status" aria-live="polite"></div>`;
+    syncTaxExemptionJurisdiction();
+  }
+
+  async function loadParishTaxExemption() {
+    const pane = document.getElementById('taxExemptionPane');
+    if (!pane || !currentParish?.parishId) return;
+    pane.innerHTML = '<p class="section-note">Loading sales-tax status…</p>';
+    try {
+      const response = await fetch(taxExemptionApi(), { headers: authHeaders(), cache: 'no-store' });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || 'Unable to load sales-tax exemption status.');
+      renderParishTaxExemption(payload);
+    } catch (error) {
+      pane.innerHTML = `<div class="tax-exemption-error"><strong>Sales-tax status is unavailable.</strong><span>${escapeHtml(error.message)}</span><button class="btn btn-ghost" type="button" onclick="loadParishTaxExemption()">Try again</button></div>`;
+    }
+  }
+
+  async function syncTaxExemptionJurisdiction() {
+    const select = document.getElementById('taxExemptionJurisdiction');
+    const otherGroup = document.getElementById('taxExemptionOtherGroup');
+    const explanation = document.getElementById('taxExemptionExplanation');
+    const guidance = document.getElementById('taxExemptionStateGuidance');
+    if (!select) return;
+    const isOther = select.value === 'OTHER';
+    if (otherGroup) otherGroup.hidden = !isOther;
+    if (explanation) explanation.required = isOther;
+    if (!guidance || !select.value || ['FEDERAL', 'OTHER'].includes(select.value)) {
+      if (guidance) guidance.hidden = true;
+      return;
+    }
+    try {
+      const response = await fetch('/api/tax-exemption/state-guidance?state=' + encodeURIComponent(select.value));
+      const data = await response.json().catch(() => ({}));
+      guidance.hidden = !data.hasNoStatewideGeneralSalesTax;
+      guidance.innerHTML = data.hasNoStatewideGeneralSalesTax ? `<div class="tax-exemption-guidance">${escapeHtml(data.guidance || '')} Documentation is still required if you are claiming an exemption.</div>` : '';
+    } catch {
+      guidance.hidden = true;
+    }
+  }
+
+  function setTaxExemptionActionStatus(message, kind = '') {
+    const status = document.getElementById('taxExemptionActionStatus');
+    if (!status) return;
+    status.textContent = message;
+    status.className = `section-note tax-exemption-action-status ${kind}`;
+  }
+
+  async function submitParishTaxExemption(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = event.submitter;
+    const raw = new FormData(form);
+    const file = raw.get('document');
+    if (!file || !file.size) { setTaxExemptionActionStatus('Choose the exemption document to upload.', 'error'); return; }
+    if (file.size > 10 * 1024 * 1024) { setTaxExemptionActionStatus('The document must be 10 MB or smaller.', 'error'); return; }
+    const payload = {
+      claimsExemption: true,
+      jurisdiction: raw.get('jurisdiction'),
+      exemptionType: raw.get('exemptionType'),
+      multistateExplanation: String(raw.get('multistateExplanation') || '').trim(),
+      certificateNumber: String(raw.get('certificateNumber') || '').trim(),
+      effectiveDate: raw.get('effectiveDate'),
+      expirationDate: raw.get('expirationDate'),
+      authorizedRepresentativeName: String(raw.get('authorizedRepresentativeName') || '').trim(),
+      authorizedRepresentativeTitle: String(raw.get('authorizedRepresentativeTitle') || '').trim(),
+      certified: raw.get('certified') === 'on'
+    };
+    if (button) { button.disabled = true; button.classList.add('loading'); }
+    setTaxExemptionActionStatus('Submitting request…');
+    try {
+      const response = await fetch(taxExemptionApi(), { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Unable to submit the request.');
+      const upload = new FormData();
+      upload.append('document', file, file.name);
+      const uploadResponse = await fetch(taxExemptionApi('/upload'), { method: 'POST', headers: authHeaders(), body: upload });
+      const uploadResult = await uploadResponse.json().catch(() => ({}));
+      if (!uploadResponse.ok) throw new Error(uploadResult.error || 'The request was saved, but the document upload failed. Retry the upload below.');
+      setStatus('Sales-tax exemption request submitted for review.', 'success');
+      await loadParishTaxExemption();
+    } catch (error) {
+      setTaxExemptionActionStatus(error.message, 'error');
+    } finally {
+      if (button) { button.disabled = false; button.classList.remove('loading'); }
+    }
+  }
+
+  async function uploadParishTaxExemptionDocument(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = event.submitter;
+    const file = new FormData(form).get('document');
+    if (!file || !file.size) { setTaxExemptionActionStatus('Choose a document to upload.', 'error'); return; }
+    if (file.size > 10 * 1024 * 1024) { setTaxExemptionActionStatus('The document must be 10 MB or smaller.', 'error'); return; }
+    if (button) { button.disabled = true; button.classList.add('loading'); }
+    setTaxExemptionActionStatus('Uploading document…');
+    try {
+      const upload = new FormData();
+      upload.append('document', file, file.name);
+      const response = await fetch(taxExemptionApi('/upload'), { method: 'POST', headers: authHeaders(), body: upload });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || 'Unable to upload the document.');
+      setStatus('Exemption document uploaded.', 'success');
+      await loadParishTaxExemption();
+    } catch (error) {
+      setTaxExemptionActionStatus(error.message, 'error');
+    } finally {
+      if (button) { button.disabled = false; button.classList.remove('loading'); }
+    }
+  }
+
+  async function viewParishTaxExemptionDocument(button) {
+    if (button) { button.disabled = true; button.classList.add('loading'); }
+    try {
+      const response = await fetch(taxExemptionApi('/document'), { headers: authHeaders() });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || 'Unable to open the document.');
+      }
+      const objectUrl = URL.createObjectURL(await response.blob());
+      const opened = window.open(objectUrl, '_blank', 'noopener');
+      if (!opened) {
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.target = '_blank';
+        link.click();
+      }
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+    } catch (error) {
+      setTaxExemptionActionStatus(error.message, 'error');
+    } finally {
+      if (button) { button.disabled = false; button.classList.remove('loading'); }
+    }
   }
 
   // ── RENDER DASHBOARD ──────────────────────────────────────
@@ -9691,15 +9999,19 @@
       <div class="btn-row">
         <a class="btn btn-ghost" href="mailto:support@agapay.app?subject=${encodeURIComponent('Dashboard invite request for ' + (p.parishName || p.parishId || 'our parish'))}&body=${encodeURIComponent('Please add or update dashboard access for ' + (p.parishName || p.parishId || 'our parish') + '.\n\nRequested user:\nEmail:\nRole:\n\nRequested by:\n')}" target="_blank" rel="noopener">Request additional dashboard invite</a>
       </div>
+      <div class="section-divider"><span>AGAPAY sales tax</span></div>
+      <p class="section-note">A parish's nonprofit status does not automatically make every purchase tax-free. Submit the applicable exemption certificate here; AGAPAY will review it before changing subscription billing in Stripe.</p>
+      <div id="taxExemptionPane" class="tax-exemption-pane"><p class="section-note">Loading sales-tax status…</p></div>
       <div class="section-divider"><span>AGAPAY subscription</span></div>
       ${parishPricingUsageMarkup()}
       <div class="form-grid">
         <div class="form-group"><label class="form-label">Current tier</label><input value="${escapeHtml(p.subscriptionTierLabel || p.subscriptionTier || 'Not selected')}" disabled /></div>
         <div class="form-group"><label class="form-label">Billing status</label><input value="${escapeHtml(statusLabel(p.subscriptionStatus || 'not_started'))}" disabled /></div>
-        <div class="form-group full"><label class="form-label" for="subscriptionTierUpgrade">Change AGAPAY tier</label><select id="subscriptionTierUpgrade" onchange="syncParishHouseholdPricing('subscriptionTierUpgrade','subscriptionHouseholdBandUpgrade','subscriptionHouseholdBandGroup','subscriptionHouseholdBandPrice')">${tierOptions}</select></div>
+        <div class="form-group full"><label class="form-label" for="subscriptionTierUpgrade">Change AGAPAY tier</label><select id="subscriptionTierUpgrade" onchange="syncParishHouseholdPricing('subscriptionTierUpgrade','subscriptionHouseholdBandUpgrade','subscriptionHouseholdBandGroup','subscriptionHouseholdBandPrice');syncSubscriptionAddOnVisibility('subscriptionTierUpgrade','subscriptionAddOnUpgradeGroup')">${tierOptions}</select></div>
         ${parishHouseholdPickerMarkup({tierSelectId:'subscriptionTierUpgrade',bandSelectId:'subscriptionHouseholdBandUpgrade',groupId:'subscriptionHouseholdBandGroup',summaryId:'subscriptionHouseholdBandPrice'})}
+        ${subscriptionAddOnPickerMarkup({tierSelectId:'subscriptionTierUpgrade',groupId:'subscriptionAddOnUpgradeGroup'})}
       </div>
-      <p class="section-note">${p.parishId === 'st-fiacre' ? 'Demo mode: switch tiers instantly to show churches how AGAPAY changes at each level. No Stripe billing is changed.' : demoActive ? `Your free 30-day demo is active${demoEndLabel?` through ${escapeHtml(demoEndLabel)}`:''}. No card is required during the demo. Add billing information in the secure portal only if you want to continue afterward.` : billingActive ? "Choose a tier here to update the existing AGAPAY subscription. Use Stripe's secure billing portal for payment details or cancellation." : demoEligible ? 'Choose a tier and start the free 30-day demo. No card is required. Stewardship unlocks pledge and giving-health tools; Parish adds the complete operations suite.' : 'Choose a tier and complete subscription checkout to reactivate AGAPAY.'}</p>
+      <p class="section-note">${p.parishId === 'st-fiacre' ? 'Demo mode: switch tiers instantly to show churches how AGAPAY changes at each level. No Stripe billing is changed.' : demoActive ? `Your free 30-day demo is active${demoEndLabel?` through ${escapeHtml(demoEndLabel)}`:''}. No card is required during the demo. Add billing information in the secure portal only if you want to continue afterward.` : billingActive ? "Choose a tier or Giving Plus add-ons here to update the existing AGAPAY subscription. Use Stripe's secure billing portal for payment details or cancellation." : demoEligible ? 'Choose a tier and start the free 30-day demo. No card is required. Giving Plus includes pledges, Stewardship Health, and the Parish Directory; Parish includes the complete operations suite.' : 'Choose a tier and complete subscription checkout to reactivate AGAPAY.'}</p>
       <div class="btn-row">
         ${p.parishId === 'st-fiacre'
           ? '<button class="btn btn-gold" onclick="changeDemoTier(this)">Apply demo tier</button>'
@@ -9722,11 +10034,11 @@
         <label class="check-card"><input id="recurringGivingEnabled" type="checkbox" ${(p.recurringGivingEnabled??true)?'checked':''} /> Recurring giving</label>
         <label class="check-card"><input id="candlesEnabled" type="checkbox" ${(p.candlesEnabled??true)?'checked':''} /> Candles</label>
         <label class="check-card"><input id="commemorationsEnabled" type="checkbox" ${(p.commemorationsEnabled??true)?'checked':''} /> Commemorations</label>
-        <label class="check-card" ${moduleIncluded('bookstore')?'':'title="Requires Stewardship or Parish"'}>
+        <label class="check-card" ${moduleIncluded('bookstore')?'':'title="Requires the Bookstore or Full Commerce add-on"'}>
           <input id="bookstoreEnabled" type="checkbox" ${moduleIncluded('bookstore')?'':'disabled'} ${(p.bookstoreEnabled??false)?'checked':''} /> Bookstore Payments
         </label>
       </div>
-      ${moduleIncluded('bookstore') ? '' : '<p class="section-note">Bookstore Payments is included with Stewardship and Parish. Review the plans to let donors pay for books, prayer ropes, and other items from My AGAPAY.</p>'}
+      ${moduleIncluded('bookstore') ? '' : '<p class="section-note">Bookstore Payments is available through the Bookstore add-on, Full Commerce, or Parish. Full Commerce already includes Bookstore.</p>'}
       <div class="btn-row">
         <button class="btn btn-gold" onclick="saveDashboard(this)">Save changes</button>
         ${(p.setup||{}).billingActive?'<button class="btn btn-primary" onclick="startStripeOnboarding(this)">Start Stripe onboarding</button>':'<button class="btn btn-ghost" disabled title="Complete AGAPAY billing first">Stripe unlocks after billing</button>'}
@@ -9738,7 +10050,9 @@
         <p>Stripe onboarding links are single-use. If the link expires, return here and create a new one.</p>
       </div>`;
     syncParishHouseholdPricing('subscriptionTierUpgrade','subscriptionHouseholdBandUpgrade','subscriptionHouseholdBandGroup','subscriptionHouseholdBandPrice');
+    syncSubscriptionAddOnVisibility('subscriptionTierUpgrade','subscriptionAddOnUpgradeGroup');
     syncPatronalFeastOptionsFromSettings();
+    loadParishTaxExemption();
 
     editableFunds          = fallbackFundsArray(p.funds);
     if (!hasGivingPlusAccess()) {
@@ -11093,10 +11407,11 @@
       const tier = document.getElementById(tierSelectId || 'setupSubscriptionTier');
       const householdBandId = tierSelectId === 'subscriptionTierUpgrade' ? 'subscriptionHouseholdBandUpgrade' : 'setupParishHouseholdBand';
       const householdBand = document.getElementById(householdBandId);
+      const addOnGroupId = tierSelectId === 'subscriptionTierUpgrade' ? 'subscriptionAddOnUpgradeGroup' : 'setupSubscriptionAddOnGroup';
       if ((tier?.value || currentParish.subscriptionTier) === 'parish' && !householdBand?.value) {
         throw new Error('Choose the parish active-household range before continuing.');
       }
-      const res  = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/subscription-checkout',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({subscriptionTier:tier?tier.value:currentParish.subscriptionTier,parishHouseholdBand:householdBand?.value||''})});
+      const res  = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/subscription-checkout',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({subscriptionTier:tier?tier.value:currentParish.subscriptionTier,parishHouseholdBand:householdBand?.value||'',subscriptionAddOns:selectedSubscriptionAddOns(addOnGroupId)})});
       const data = await res.json(); if (!res.ok) throw new Error(data.detail||data.error||'Unable to create checkout');
       if (data.registration) currentParish = { ...currentParish, ...data.registration };
       if (!data.checkoutUrl){if(win)win.close();await loadDashboard();setStatus('Subscription updated. No checkout required.','success');return;}

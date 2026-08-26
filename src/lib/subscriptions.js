@@ -14,9 +14,51 @@ export const parishHouseholdBands = Object.freeze([
   { id: "under_50", label: "Fewer than 50 households", minHouseholds: 0, maxHouseholds: 49, earlyAdopterMonthlyCents: 14900, standardMonthlyCents: 24900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_149_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_249_MONTHLY" },
   { id: "50_149", label: "50–149 households", minHouseholds: 50, maxHouseholds: 149, earlyAdopterMonthlyCents: 19900, standardMonthlyCents: 34900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_199_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_349_MONTHLY" },
   { id: "150_299", label: "150–299 households", minHouseholds: 150, maxHouseholds: 299, earlyAdopterMonthlyCents: 24900, standardMonthlyCents: 44900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_249_EARLY_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_449_MONTHLY" },
-  { id: "300_599", label: "300–599 households", minHouseholds: 300, maxHouseholds: 599, earlyAdopterMonthlyCents: 34900, standardMonthlyCents: 64900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_349_EARLY_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_649_MONTHLY" },
+  { id: "300_599", label: "300–599 households", minHouseholds: 300, maxHouseholds: 599, earlyAdopterMonthlyCents: 34900, standardMonthlyCents: 54900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_349_EARLY_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_549_MONTHLY" },
   { id: "600_plus", label: "600+ households", minHouseholds: 600, maxHouseholds: null, earlyAdopterMonthlyCents: null, standardMonthlyCents: null, earlyStripePriceEnv: "", standardStripePriceEnv: "" }
 ]);
+
+export const subscriptionAddOns = Object.freeze([
+  { id: "koinonia", label: "Koinonia", description: "Parish life, communications, ministries, prayer requests, signups, and Exchange.", earlyAdopterMonthlyCents: 2900, standardMonthlyCents: 2900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_KOINONIA_29_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_KOINONIA_29_MONTHLY", modules: ["communications"] },
+  { id: "sacraments", label: "Sacraments & Services", description: "Parishioner requests, scheduling, priest workflows, and calendar connections.", earlyAdopterMonthlyCents: 1900, standardMonthlyCents: 1900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_SACRAMENTS_19_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_SACRAMENTS_19_MONTHLY", modules: ["sacraments"] },
+  { id: "bookstore", label: "Bookstore", description: "A focused parish storefront for books, icons, candles, and parish goods.", earlyAdopterMonthlyCents: 900, standardMonthlyCents: 900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_BOOKSTORE_9_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_BOOKSTORE_9_MONTHLY", modules: ["bookstore"] },
+  { id: "full_commerce", label: "Full Commerce", description: "Bookstore, events, meals, orders, tax, and connected accounting workflows.", earlyAdopterMonthlyCents: 3900, standardMonthlyCents: 3900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_COMMERCE_39_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_COMMERCE_39_MONTHLY", modules: ["bookstore", "commerceSuite"] },
+  { id: "accounting", label: "Accounting", description: "Full Commerce and Bookstore, plus fund accounting, reconciliation, reporting, statements, and operational accounting tools.", earlyAdopterMonthlyCents: 17900, standardMonthlyCents: 17900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_ACCOUNTING_179_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_ACCOUNTING_179_MONTHLY", modules: ["bookstore", "commerceSuite", "accounting", "accountingAdvancedOperations"] }
+]);
+
+export function normalizeSubscriptionAddOns(value = [], tierId = "giving") {
+  if (String(tierId || "").toLowerCase() !== "giving") return [];
+  let entries = value;
+  if (typeof entries === "string") {
+    try { entries = JSON.parse(entries); }
+    catch { entries = entries.split(","); }
+  }
+  const allowed = new Set(subscriptionAddOns.map((addOn) => addOn.id));
+  const selected = [...new Set((Array.isArray(entries) ? entries : []).map((entry) => String(entry || "").trim().toLowerCase()).filter((entry) => allowed.has(entry)))];
+  if (selected.includes("accounting")) return selected.filter((entry) => entry !== "bookstore" && entry !== "full_commerce");
+  return selected.includes("full_commerce") ? selected.filter((entry) => entry !== "bookstore") : selected;
+}
+
+export function subscriptionAddOnsFor(registration = {}) {
+  const tierId = typeof registration === "string" ? registration : registration.subscriptionTier || registration.tier;
+  return normalizeSubscriptionAddOns(typeof registration === "object" ? registration.subscriptionAddOns : [], tierId);
+}
+
+export function subscriptionAddOnPricing(addOn, pricingProgram = "founding_20") {
+  const definition = typeof addOn === "string" ? subscriptionAddOns.find((candidate) => candidate.id === addOn) : addOn;
+  if (!definition) return null;
+  const standard = String(pricingProgram || "").toLowerCase() === "standard";
+  return {
+    ...definition,
+    pricingProgram: standard ? "standard" : "early_adopter",
+    monthlyCents: standard ? definition.standardMonthlyCents : definition.earlyAdopterMonthlyCents,
+    stripePriceEnv: standard ? definition.standardStripePriceEnv : definition.earlyStripePriceEnv
+  };
+}
+
+export function publicSubscriptionAddOns() {
+  return subscriptionAddOns.map(({ earlyStripePriceEnv, standardStripePriceEnv, ...addOn }) => addOn);
+}
 
 export function normalizeParishHouseholdBand(value = "") {
   const normalized = String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
@@ -75,32 +117,19 @@ export const subscriptionTiers = [
     standardMonthlyCents: 900,
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_STARTER_MONTHLY",
-    description: "Mission-ready giving with General Operating, one designated fund, and candles.",
+    description: "Mission-ready recurring giving, commemorations, General Operating, one designated fund, and candles.",
     modules: { givingPlus: false, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
   },
   {
     id: "giving",
     label: "Giving Plus",
-    monthlyCents: 4900,
+    monthlyCents: 7900,
     standardMonthlyCents: 7900,
-    earlyAdopterMonthlyCents: 4900,
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
-    stripePriceEnv: "AGAPAY_STRIPE_PRICE_GIVING_MONTHLY",
+    stripePriceEnv: "AGAPAY_STRIPE_PRICE_GIVING_79_MONTHLY",
     standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_GIVING_79_MONTHLY",
-    description: "Essential online giving tools for Orthodox churches.",
-    modules: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
-  },
-  {
-    id: "stewardship",
-    label: "Stewardship",
-    monthlyCents: 9900,
-    standardMonthlyCents: 14900,
-    earlyAdopterMonthlyCents: 9900,
-    transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
-    stripePriceEnv: "AGAPAY_STRIPE_PRICE_STEWARDSHIP_MONTHLY",
-    standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_STEWARDSHIP_149_MONTHLY",
-    description: "Giving plus pledge, donor, and Stewardship Health tools.",
-    modules: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: false, bookstore: true, commerceSuite: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
+    description: "Giving, pledges, Stewardship Health, and the Parish Directory in one connected foundation.",
+    modules: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: true, bookstore: false, commerceSuite: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
   },
   {
     id: "parish",
@@ -183,8 +212,7 @@ export function defaultSubscriptionTier(registration = {}) {
 export function subscriptionTier(registration = {}) {
   const isTierId = typeof registration === "string";
   const rawSelected = String(isTierId ? registration : registration.subscriptionTier || registration.tier || "").trim().toLowerCase();
-  // Existing "mission" records become Giving without requiring a data migration.
-  const selected = rawSelected === "mission" ? "giving" : rawSelected;
+  const selected = rawSelected === "mission" ? "starter" : rawSelected;
   const matched = subscriptionTiers.find((tier) => tier.id === selected)
     || (!isTierId ? subscriptionTiers.find((tier) => tier.id === defaultSubscriptionTier(registration)) : null)
     || subscriptionTiers.find((tier) => tier.id === "parish");

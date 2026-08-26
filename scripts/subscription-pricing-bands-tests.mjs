@@ -5,6 +5,8 @@ import {
   parishHouseholdBands,
   parishPricingUsageStatus,
   publicSubscriptionTiers,
+  subscriptionAddOns,
+  normalizeSubscriptionAddOns,
   subscriptionTier,
 } from "../src/lib/subscriptions.js";
 import { claimEarlyAdopterPricing } from "../src/lib/early-adopter-pricing.js";
@@ -16,14 +18,38 @@ assert.deepEqual(
     ["under_50", 24900, 14900],
     ["50_149", 34900, 19900],
     ["150_299", 44900, 24900],
-    ["300_599", 64900, 34900],
+    ["300_599", 54900, 34900],
     ["600_plus", null, null],
   ]
 );
 assert.equal(subscriptionTier({ subscriptionTier: "parish", parishHouseholdBand: "150_299", subscriptionPricingProgram: "founding_20" }).monthlyCents, 24900);
 assert.equal(subscriptionTier({ subscriptionTier: "parish", parishHouseholdBand: "150_299", subscriptionPricingProgram: "standard" }).monthlyCents, 44900);
 assert.equal(subscriptionTier({ subscriptionTier: "giving", subscriptionPricingProgram: "standard" }).monthlyCents, 7900);
-assert.equal(subscriptionTier({ subscriptionTier: "stewardship", subscriptionPricingProgram: "standard" }).monthlyCents, 14900);
+assert.deepEqual(subscriptionAddOns.map((addOn) => [addOn.id, addOn.earlyAdopterMonthlyCents, addOn.standardMonthlyCents]), [
+  ["koinonia", 2900, 2900],
+  ["sacraments", 1900, 1900],
+  ["bookstore", 900, 900],
+  ["full_commerce", 3900, 3900],
+  ["accounting", 17900, 17900]
+]);
+assert.deepEqual(normalizeSubscriptionAddOns(["bookstore", "full_commerce"], "giving"), ["full_commerce"]);
+assert.deepEqual(normalizeSubscriptionAddOns(["bookstore", "full_commerce", "accounting"], "giving"), ["accounting"]);
+const accountingBundle = normalizeSubscriptionAddOns(["bookstore", "full_commerce", "accounting"], "giving");
+assert.equal(
+  subscriptionTier({ subscriptionTier: "giving" }).monthlyCents
+    + subscriptionAddOns.filter((addOn) => accountingBundle.includes(addOn.id)).reduce((total, addOn) => total + addOn.standardMonthlyCents, 0),
+  25800,
+  "Giving Plus with Accounting should bill $258/month without stacking included Commerce or Bookstore prices"
+);
+const focusedOperationsBundle = normalizeSubscriptionAddOns(["koinonia", "sacraments", "bookstore", "full_commerce", "accounting"], "giving");
+assert.deepEqual(focusedOperationsBundle, ["koinonia", "sacraments", "accounting"]);
+assert.equal(
+  subscriptionTier({ subscriptionTier: "giving" }).monthlyCents
+    + subscriptionAddOns.filter((addOn) => focusedOperationsBundle.includes(addOn.id)).reduce((total, addOn) => total + addOn.standardMonthlyCents, 0),
+  30600,
+  "Giving Plus with all non-overlapping operational add-ons should bill $306/month"
+);
+assert.equal(publicSubscriptionTiers().some((tier) => tier.id === "stewardship"), false);
 assert.equal(publicSubscriptionTiers().find((tier) => tier.id === "parish").householdBands.length, 5);
 assert.deepEqual(
   parishPricingUsageStatus({ parishHouseholdBand: "under_50" }, 50, 63),

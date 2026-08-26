@@ -464,10 +464,6 @@ const starterPricingCard = givePricingHtml.slice(
 );
 const givingPlusPricingCard = givePricingHtml.slice(
   givePricingHtml.indexOf('<h2 class="tier-title">Giving Plus</h2>'),
-  givePricingHtml.indexOf('<h2 class="tier-title">Stewardship</h2>')
-);
-const stewardshipPricingCard = givePricingHtml.slice(
-  givePricingHtml.indexOf('<h2 class="tier-title">Stewardship</h2>'),
   givePricingHtml.indexOf('<h2 class="tier-title">Parish</h2>')
 );
 const parishPricingCard = givePricingHtml.slice(
@@ -486,34 +482,31 @@ assert.ok(
   givePricingHtml.includes('<h2 class="tier-title">Starter</h2>')
     && givePricingHtml.includes('<div class="tier-price">$9 <span>/ mo</span></div>')
     && givePricingHtml.includes('<h2 class="tier-title">Giving Plus</h2>')
+    && givePricingHtml.includes('<div class="tier-price">$79 <span>/ mo</span></div>')
     && givePricingHtml.includes('<div class="tier-price">$149 <span>/ mo starting</span></div>')
     && givePricingHtml.includes("Early adopter · first 20")
     && /<ul class="tier-features">\r?\n\s*<li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"\/><\/svg><\/span>Everything in Starter, plus<\/li>/.test(givingPlusPricingCard)
     && givePricingHtml.includes("Parish logo across giving pages and church search")
     && !givePricingHtml.includes("Parish logo, public page, and church search listing")
-    && ["Small mission chapel", "Parish church", "Domed Orthodox church", "Large three-domed Orthodox church", "Grand five-domed Orthodox cathedral", "Orthodox monastery complex"].every((label) => givePricingHtml.includes(`aria-label="${label}"`)),
+    && ["Small mission chapel", "Parish church", "Large three-domed Orthodox church", "Grand five-domed Orthodox cathedral", "Orthodox monastery complex"].every((label) => givePricingHtml.includes(`aria-label="${label}"`)),
   "Give pricing should show household-based early-adopter Parish pricing with distinct church, cathedral, and monastic icons"
 );
 assert.ok(
   !givePricingHtml.includes("Stewardship Health dashboard for parish giving trends")
     && !givePricingHtml.includes("Pledge progress, giving gaps, and follow-up visibility")
     && givePricingHtml.includes("Full Parish Commerce: Bookstore, Events, Meals")
-    && parishPricingCard.includes("Everything in Stewardship, plus"),
-  "Parish pricing should inherit Stewardship without duplicating its benefits and should distinguish the full Commerce suite from Stewardship Bookstore"
+    && parishPricingCard.includes("Everything in Giving Plus and every add-on"),
+  "Parish pricing should bundle Giving Plus and every operational add-on"
 );
 assert.ok(
   parishPricingCard.includes("Koinonia parish feed, targeted announcements, and member engagement")
     && parishPricingCard.includes("Ministry-group workspaces, leaders, members, posts, and shared resources")
     && parishPricingCard.includes("Prayer requests, parish signups, and the community Exchange")
     && parishPricingCard.includes("Parish audio, video, news, Orthodox podcasts, RSS imports, and saved listening")
-    && !stewardshipPricingCard.includes("Koinonia parish feed"),
+    && !givingPlusPricingCard.includes("Koinonia parish feed"),
   "Koinonia community, media, and podcast features should be included in the Parish tier"
 );
-assert.equal(
-  givePricingHtml.match(/Enhanced giving, (?:donor, fund|fund, donor), and pledge reports/g)?.length,
-  1,
-  "enhanced giving reports should appear only in the Stewardship tier"
-);
+assert.ok(givingPlusPricingCard.includes("Pledge tracking and Stewardship Health"), "Giving Plus should include pledge tracking and Stewardship Health");
 assert.ok(
   givePricingHtml.includes('class="tier-coming-soon"')
     && givePricingHtml.includes('class="tier-coming-soon-badge">Coming soon</span>')
@@ -541,26 +534,24 @@ assert.ok(
     && !givePricingHtml.includes("</svg></span>Campaigns</li>"),
   "Starter should include its three-fund mission package and direct links while Giving Plus owns unlimited funds, parish branding, and Campaign Giving"
 );
-assert.equal(
-  givePricingHtml.match(/Parish council and annual-meeting-ready stewardship insights/g)?.length,
-  1,
-  "annual-meeting-ready stewardship insights should appear exactly once"
+assert.ok(
+  subscriptionCatalog.includes('id: "full_commerce"')
+    && subscriptionCatalog.includes('modules: ["bookstore", "commerceSuite"]')
+    && subscriptionCatalog.includes('modules: ["bookstore", "commerceSuite", "accounting", "accountingAdvancedOperations"]')
+    && subscriptionCatalog.includes("bookstore: true, commerceSuite: true")
+    && givePricingHtml.includes("Koinonia · $29/mo")
+    && givePricingHtml.includes("Sacraments &amp; Services · $19/mo")
+    && givePricingHtml.includes("Bookstore · $9/mo")
+    && givePricingHtml.includes("Full Commerce · $39/mo")
+    && givePricingHtml.includes("Accounting · $179/mo")
+    && givePricingHtml.includes("Accounting includes both Full Commerce and Bookstore"),
+  "subscription metadata should make Full Commerce include Bookstore and Accounting include both commerce modules"
 );
 assert.ok(
-  stewardshipPricingCard.includes("Annual meeting packet creator")
-    && !starterPricingCard.includes("Annual meeting packet creator")
-    && !givingPlusPricingCard.includes("Annual meeting packet creator"),
-  "the annual meeting packet creator should be listed in Stewardship, not Starter or Giving Plus"
-);
-assert.ok(
-  givePricingHtml.indexOf("Parish council and annual-meeting-ready stewardship insights")
-    < givePricingHtml.indexOf('<h2 class="tier-title">Parish</h2>'),
-  "annual-meeting-ready stewardship insights should belong to the Stewardship tier"
-);
-assert.ok(
-  subscriptionCatalog.includes("bookstore: true, commerceSuite: false")
-    && subscriptionCatalog.includes("bookstore: true, commerceSuite: true"),
-  "subscription metadata should separate Stewardship Bookstore from the Parish Commerce suite"
+  parishDashboardApp.includes("function updateSubscriptionAddOnTotal(groupId)")
+    && parishDashboardApp.includes("Estimated monthly subscription:")
+    && parishDashboardApp.includes("Stripe checkout will show this same recurring total before payment."),
+  "the parish dashboard should preview the exact Giving Plus and add-on recurring total before Stripe checkout"
 );
 assert.ok(
   parishDashboardApp.includes("function updateStarterPaywalls()")
@@ -626,8 +617,8 @@ assert.ok(
 assert.ok(
   parishDashboardApp.includes("nav-label-stack")
     && parishDashboardApp.includes("(stack || element).appendChild(label)")
-    && parishDashboardApp.includes("syncTierRequirementNavigation('directory', 'Parish', directoryActive)"),
-  "tier requirement labels should sit beneath tab names and Directory should retain a Parish-tier upgrade path"
+    && parishDashboardApp.includes("syncTierRequirementNavigation('directory', 'Giving Plus', directoryActive)"),
+  "tier requirement labels should sit beneath tab names and Directory should retain a Giving Plus upgrade path"
 );
 assert.ok(
   parishDashboardApp.includes("pdx-sub-plan-kicker")
@@ -638,14 +629,14 @@ assert.ok(
 assert.ok(
   parishDashboardApp.includes("Included with ${includedTier}")
     && parishDashboardApp.includes("'Giving Plus')")
-    && parishDashboardApp.includes("'Stewardship')")
+    && parishDashboardApp.includes("'Bookstore add-on')")
     && parishDashboardApp.includes("'Parish')")
     && parishDashboardApp.indexOf("moduleRow('Stewardship Health'") < parishDashboardApp.indexOf("moduleRow('Bookstore'")
     && parishDashboardApp.indexOf("moduleRow('Bookstore'") < parishDashboardApp.indexOf("moduleRow('Parish Directory'"),
   "subscription modules should use clear add-on language and follow tier availability order"
 );
 assert.ok(
-  parishDashboardApp.includes("syncTierRequirementNavigation('stewardship', 'Stewardship', stewardshipActive)")
+  parishDashboardApp.includes("syncTierRequirementNavigation('stewardship', 'Giving Plus', stewardshipActive)")
     && parishDashboardApp.includes("sacBadge.hidden = sacramentsActive")
     && parishDashboardApp.includes("syncModuleStatusNavigation('sacraments', sacramentsActive, sacIsOn)"),
   "late dashboard badge refreshes should preserve upgrade pills below the tier and show Sacraments on/off status within the tier"

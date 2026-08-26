@@ -177,6 +177,16 @@ export async function handleParishTaxExemptionClaim(request, env, parishId) {
     || Boolean(String(body.multistateExplanation || "").trim());
 
   try {
+    const currentClaim = await getCurrentTaxExemptionForRegistration(env, reference);
+    if (currentClaim && ["pending", "replacement_required", "approved"].includes(currentClaim.status)) {
+      const message = currentClaim.status === "approved"
+        ? "This parish already has an approved sales-tax exemption. Contact AGAPAY support if the legal exemption details have changed."
+        : currentClaim.status === "replacement_required"
+          ? "A replacement document is already requested for this exemption. Upload the new document to the existing claim."
+          : "A sales-tax exemption request is already pending. Upload or replace its document instead of submitting a duplicate request.";
+      return json({ error: message, claim: taxExemptionToJson(currentClaim) }, { status: 409 });
+    }
+
     const taxExemptionId = await createTaxExemptionClaim(env, {
       registrationReference: reference,
       parishId,
@@ -188,6 +198,7 @@ export async function handleParishTaxExemptionClaim(request, env, parishId) {
       authorizedRepresentativeName: representativeName,
       authorizedRepresentativeTitle: representativeTitle,
       actorUserId: registration.treasurerEmail || registration.priestEmail || "",
+      supersedesTaxExemptionId: currentClaim?.id || null,
       internalReviewStatus: needsManualReviewFlag ? "needs_manual_review" : null
     });
 

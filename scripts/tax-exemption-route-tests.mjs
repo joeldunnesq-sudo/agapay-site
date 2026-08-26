@@ -21,13 +21,14 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-import { issueAdminSession } from "../src/lib/core.js";
+import { issueAdminSession, issueParishDashboardSession } from "../src/lib/core.js";
 import { createTaxExemptionClaim, getTaxExemptionById } from "../src/lib/tax-exemption.js";
 import {
   handleAdminTaxExemptionSyncRetry,
   handleAdminTaxExemptionSyncReconcile,
   handleAdminTaxExemptionExpire,
-  handleAdminTaxExemptionApprove
+  handleAdminTaxExemptionApprove,
+  handleParishTaxExemptionClaim
 } from "../src/handlers/tax-exemption.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -116,6 +117,33 @@ async function makeAdminRequest(env, { method = "POST", body, token }) {
   });
 }
 
+async function parishSession(db, reference) {
+  const registration = JSON.parse(db.prepare(`SELECT data FROM registrations WHERE reference = ?`).get(reference).data);
+  const session = await issueParishDashboardSession(registration);
+  db.prepare(`UPDATE registrations SET data = ? WHERE reference = ?`).run(JSON.stringify(session.registration), reference);
+  return session.token;
+}
+
+function makeParishClaimRequest(token, body) {
+  return new Request("https://example.test/api/parish/dashboard/test-parish/tax-exemption", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+}
+
+function validParishClaim(overrides = {}) {
+  return {
+    claimsExemption: true,
+    jurisdiction: "TX",
+    exemptionType: "religious_organization",
+    authorizedRepresentativeName: "Alex Treasurer",
+    authorizedRepresentativeTitle: "Treasurer",
+    certified: true,
+    ...overrides
+  };
+}
+
 function currentVersion(db, taxExemptionId) {
   return db.prepare(`SELECT updated_at FROM tax_exemptions WHERE id = ?`).get(taxExemptionId).updated_at;
 }
@@ -139,6 +167,36 @@ async function test(name, fn) {
 // ---------------------------------------------------------------------
 // Per-Customer retry route
 // ---------------------------------------------------------------------
+
+await test("parish claim route: a second submission cannot create a duplicate pending claim", async () => {
+  const { env, db } = makeD1Env();
+  seedRegistration(db, { reference: "AGP-REG-P1", parishId: "test-parish" });
+  const token = await parishSession(db, "AGP-REG-P1");
+
+  const first = await handleParishTaxExemptionClaim(makeParishClaimRequest(token, validParishClaim()), env, "test-parish");
+  assert.equal(first.status, 201);
+  const second = await handleParishTaxExemptionClaim(makeParishClaimRequest(token, validParishClaim()), env, "test-parish");
+  const secondBody = await second.json();
+  assert.equal(second.status, 409);
+  assert.match(secondBody.error, /already pending/i);
+  assert.equal(db.prepare(`SELECT COUNT(*) AS n FROM tax_exemptions WHERE registration_reference = ?`).get("AGP-REG-P1").n, 1);
+});
+
+await test("parish claim route: a corrected claim after rejection supersedes the prior claim", async () => {
+  const { env, db } = makeD1Env();
+  seedRegistration(db, { reference: "AGP-REG-P2", parishId: "test-parish-two" });
+  const token = await parishSession(db, "AGP-REG-P2");
+
+  const first = await handleParishTaxExemptionClaim(makeParishClaimRequest(token, validParishClaim()), env, "test-parish-two");
+  const firstBody = await first.json();
+  db.prepare(`UPDATE tax_exemptions SET status = 'rejected', updated_at = ? WHERE id = ?`).run("2026-08-25T12:00:00.000Z", firstBody.taxExemptionId);
+
+  const second = await handleParishTaxExemptionClaim(makeParishClaimRequest(token, validParishClaim({ certificateNumber: "CORRECTED-22" })), env, "test-parish-two");
+  const secondBody = await second.json();
+  assert.equal(second.status, 201);
+  const corrected = db.prepare(`SELECT supersedes_tax_exemption_id FROM tax_exemptions WHERE id = ?`).get(secondBody.taxExemptionId);
+  assert.equal(corrected.supersedes_tax_exemption_id, firstBody.taxExemptionId);
+});
 
 await test("retry route: unauthorized request is rejected", async () => {
   const { env } = makeD1Env();

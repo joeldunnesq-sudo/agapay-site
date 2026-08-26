@@ -1669,6 +1669,7 @@ let selectedReference = '';
           await loadDetail(selectedReference, { silent: true, noScroll: true });
         }
         loadPlatformSummary();
+        loadTaxExemptionSummary();
         loadRecentActivity();
         loadLearnAdmin();
         loadStewardshipCompStatus();
@@ -3700,6 +3701,14 @@ let selectedReference = '';
         document.getElementById('taxExemptionWorkflowNotice').style.display = data.workflowEnabled ? 'none' : '';
         document.getElementById('taxExemptionSyncDisabledNotice').style.display = data.stripeSyncEnabled ? 'none' : '';
         const c = data.counts || {};
+        const attention = Number(c.needsAttention) || 0;
+        const navCount = document.getElementById('navTaxExemptionCount');
+        const overviewCount = document.getElementById('overviewTaxExemptionCount');
+        [navCount, overviewCount].forEach((element) => {
+          if (!element) return;
+          element.textContent = String(attention);
+          element.hidden = attention === 0;
+        });
         const cards = [
           ['pending', 'Pending review', c.pending],
           ['approved', 'Approved', c.approved],

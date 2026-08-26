@@ -1,6 +1,6 @@
 import { json } from "./core.js";
 import { slugify } from "./format.js";
-import { defaultSubscriptionTier, normalizeParishHouseholdBand, subscriptionReady, subscriptionTier } from "./subscriptions.js";
+import { defaultSubscriptionTier, normalizeParishHouseholdBand, normalizeSubscriptionAddOns, subscriptionAddOnPricing, subscriptionReady, subscriptionTier } from "./subscriptions.js";
 import { stripeFormRequest, stripeGetRequest } from "./stripe-connect.js";
 import { applySubscriptionTaxCode } from "./tax-codes.js";
 import { applyApprovedExemptionIfExists } from "./tax-exemption.js";
@@ -54,12 +54,13 @@ export async function createSubscriptionCheckoutForRegistration({
   saveRegistrationRecord
 }) {
   const tierId = body.subscriptionTier || registration.subscriptionTier || defaultSubscriptionTier(registration);
+  const requestedAddOns = normalizeSubscriptionAddOns(body.subscriptionAddOns ?? registration.subscriptionAddOns ?? [], tierId);
   const requestedHouseholdBand = normalizeParishHouseholdBand(body.parishHouseholdBand ?? registration.parishHouseholdBand);
   if (String(tierId || "").toLowerCase() === "parish" && !requestedHouseholdBand) {
     return json({ error: "Choose a valid active-household range for Parish pricing." }, { status: 422 });
   }
   if (requestedHouseholdBand) registration = { ...registration, parishHouseholdBand: requestedHouseholdBand };
-  if (["giving", "stewardship", "parish"].includes(String(tierId || "").toLowerCase())) {
+  if (String(tierId || "").toLowerCase() === "parish") {
     const pricing = await claimEarlyAdopterPricing(env, reference, registration);
     registration = {
       ...registration,
@@ -70,12 +71,17 @@ export async function createSubscriptionCheckoutForRegistration({
   }
   const tier = subscriptionTier({ ...registration, subscriptionTier: tierId });
   if (!tier) return json({ error: "Unknown subscription tier" }, { status: 422 });
+  const addOns = requestedAddOns.map((id) => subscriptionAddOnPricing(id, registration.subscriptionPricingProgram)).filter(Boolean);
+  const addOnMonthlyCents = addOns.reduce((sum, addOn) => sum + Number(addOn.monthlyCents || 0), 0);
+  const subscriptionMonthlyCents = Number(tier.monthlyCents || 0) + addOnMonthlyCents;
 
   if (tier.monthlyCents === 0) {
     let updated = withTierFundDefaults({
       ...registration,
       subscriptionTier: tier.id,
       subscriptionTierLabel: tier.label,
+      subscriptionAddOns: [],
+      subscriptionAddOnMonthlyCents: 0,
       subscriptionMonthlyCents: 0,
       subscriptionStatus: "free_forever",
       subscriptionUpdatedAt: new Date().toISOString()
@@ -141,6 +147,7 @@ export async function createSubscriptionCheckoutForRegistration({
       "metadata[agapay_reference]": reference,
       "metadata[agapay_parish_id]": registration.parishId || slugify(registration.parishName),
       "metadata[agapay_subscription_tier]": tier.id,
+      "metadata[agapay_subscription_add_ons]": requestedAddOns.join(","),
       "metadata[agapay_pricing_program]": registration.subscriptionPricingProgram || "standard",
       "metadata[agapay_household_band]": registration.parishHouseholdBand || "",
       "metadata[agapay_early_adopter_slot]": registration.earlyAdopterSlot ? String(registration.earlyAdopterSlot) : ""
@@ -167,6 +174,27 @@ export async function createSubscriptionCheckoutForRegistration({
       updateForm.set("items[0][price_data][tax_behavior]", "exclusive");
     }
 
+    const existingItems = Array.isArray(subscription.body?.items?.data) ? subscription.body.items.data : [];
+    existingItems.slice(1).forEach((existingItem, index) => {
+      if (!existingItem?.id) return;
+      const itemIndex = index + 1;
+      updateForm.set(`items[${itemIndex}][id]`, existingItem.id);
+      updateForm.set(`items[${itemIndex}][deleted]`, "true");
+    });
+    addOns.forEach((addOn, index) => {
+      const itemIndex = existingItems.length + index;
+      const addOnPriceId = addOn.stripePriceEnv ? env[addOn.stripePriceEnv] : "";
+      updateForm.set(`items[${itemIndex}][quantity]`, "1");
+      if (addOnPriceId) updateForm.set(`items[${itemIndex}][price]`, addOnPriceId);
+      else {
+        updateForm.set(`items[${itemIndex}][price_data][currency]`, "usd");
+        updateForm.set(`items[${itemIndex}][price_data][product]`, currentProduct);
+        updateForm.set(`items[${itemIndex}][price_data][recurring][interval]`, "month");
+        updateForm.set(`items[${itemIndex}][price_data][unit_amount]`, String(addOn.monthlyCents));
+        updateForm.set(`items[${itemIndex}][price_data][tax_behavior]`, "exclusive");
+      }
+    });
+
     const changed = await stripeFormRequest(
       env,
       `/v1/subscriptions/${encodeURIComponent(registration.stripeSubscriptionId)}`,
@@ -183,7 +211,10 @@ export async function createSubscriptionCheckoutForRegistration({
       ...billingRegistration,
       subscriptionTier: tier.id,
       subscriptionTierLabel: tier.label,
-      subscriptionMonthlyCents: tier.monthlyCents,
+      subscriptionAddOns: requestedAddOns,
+      subscriptionAddOnMonthlyCents: addOnMonthlyCents,
+      subscriptionBaseMonthlyCents: tier.monthlyCents,
+      subscriptionMonthlyCents,
       subscriptionStatus: changed.body.status || registration.subscriptionStatus || "active",
       stripeSubscriptionId: changed.body.id || registration.stripeSubscriptionId,
       subscriptionUpdatedAt: new Date().toISOString()
@@ -247,6 +278,7 @@ export async function createSubscriptionCheckoutForRegistration({
     "metadata[agapay_reference]": reference,
     "metadata[agapay_parish_id]": registration.parishId || slugify(registration.parishName),
     "metadata[agapay_subscription_tier]": tier.id,
+    "metadata[agapay_subscription_add_ons]": requestedAddOns.join(","),
     "metadata[agapay_pricing_program]": registration.subscriptionPricingProgram || "standard",
     "metadata[agapay_household_band]": registration.parishHouseholdBand || "",
     "metadata[agapay_early_adopter_slot]": registration.earlyAdopterSlot ? String(registration.earlyAdopterSlot) : "",
@@ -254,6 +286,7 @@ export async function createSubscriptionCheckoutForRegistration({
     "subscription_data[metadata][agapay_reference]": reference,
     "subscription_data[metadata][agapay_parish_id]": registration.parishId || slugify(registration.parishName),
     "subscription_data[metadata][agapay_subscription_tier]": tier.id,
+    "subscription_data[metadata][agapay_subscription_add_ons]": requestedAddOns.join(","),
     "subscription_data[metadata][agapay_pricing_program]": registration.subscriptionPricingProgram || "standard",
     "subscription_data[metadata][agapay_household_band]": registration.parishHouseholdBand || "",
     "subscription_data[metadata][agapay_early_adopter_slot]": registration.earlyAdopterSlot ? String(registration.earlyAdopterSlot) : "",
@@ -289,6 +322,24 @@ export async function createSubscriptionCheckoutForRegistration({
     }
   }
 
+  for (const [index, addOn] of addOns.entries()) {
+    const itemIndex = index + 1;
+    const addOnPriceId = addOn.stripePriceEnv ? env[addOn.stripePriceEnv] : "";
+    checkoutForm.set(`line_items[${itemIndex}][quantity]`, "1");
+    if (addOnPriceId) {
+      checkoutForm.set(`line_items[${itemIndex}][price]`, addOnPriceId);
+      continue;
+    }
+    checkoutForm.set(`line_items[${itemIndex}][price_data][currency]`, "usd");
+    checkoutForm.set(`line_items[${itemIndex}][price_data][unit_amount]`, String(addOn.monthlyCents));
+    checkoutForm.set(`line_items[${itemIndex}][price_data][recurring][interval]`, "month");
+    checkoutForm.set(`line_items[${itemIndex}][price_data][tax_behavior]`, "exclusive");
+    checkoutForm.set(`line_items[${itemIndex}][price_data][product_data][name]`, `AGAPAY ${addOn.label} Add-on`);
+    checkoutForm.set(`line_items[${itemIndex}][price_data][product_data][description]`, addOn.description);
+    const addOnTaxCode = applySubscriptionTaxCode(checkoutForm, `line_items[${itemIndex}][price_data][product_data]`, "giving", env);
+    if (addOnTaxCode.blocked) return json({ error: "Billing configuration issue -- checkout is temporarily unavailable while a required tax setting is completed. Please contact support@agapay.app." }, { status: 503 });
+  }
+
   const session = await stripeFormRequest(env, "/v1/checkout/sessions", checkoutForm);
   if (!session.ok) {
     return json(
@@ -301,7 +352,10 @@ export async function createSubscriptionCheckoutForRegistration({
     ...billingRegistration,
     subscriptionTier: tier.id,
     subscriptionTierLabel: tier.label,
-    subscriptionMonthlyCents: tier.monthlyCents,
+    subscriptionAddOns: requestedAddOns,
+    subscriptionAddOnMonthlyCents: addOnMonthlyCents,
+    subscriptionBaseMonthlyCents: tier.monthlyCents,
+    subscriptionMonthlyCents,
     subscriptionStatus: trialDays ? "trial_checkout_created" : "checkout_created",
     subscriptionTrialDays: trialDays || 0,
     subscriptionTrialRequestedAt: trialDays ? new Date().toISOString() : "",

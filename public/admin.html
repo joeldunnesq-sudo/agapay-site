@@ -66,7 +66,7 @@
           </button>
           <button class="sidebar-nav-item" type="button" onclick="switchTab('taxexemptions')" id="nav-taxexemptions">
             <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.5 0 2.9.37 4.14 1.02"/></svg>
-            <span>Tax exemption review</span>
+            <span>Tax exemption review</span><span class="nav-count" id="navTaxExemptionCount" hidden>0</span>
           </button>
           <div class="sidebar-nav-group-label">Operations</div>
           <button class="sidebar-nav-item" type="button" onclick="switchTab('nonprofitpricing')" id="nav-nonprofitpricing">
@@ -171,12 +171,13 @@
           <section class="admin-start-here" aria-labelledby="adminStartHereTitle">
             <div class="admin-start-here-head">
               <div><div class="admin-kicker">Recommended workflow</div><h2 id="adminStartHereTitle">Start here</h2></div>
-              <span>Three steps</span>
+              <span>Four steps</span>
             </div>
             <div class="admin-workflow-grid">
               <button type="button" class="admin-workflow-step" onclick="switchTab('giving')"><strong><span>1</span> Review new parishes</strong><small>Verify the church, send access, and follow Stripe readiness.</small><em>Open onboarding →</em></button>
               <button type="button" class="admin-workflow-step" onclick="switchTab('support')"><strong><span>2</span> Answer support</strong><small>See parish and household questions that still need a response.</small><em>Open support →</em></button>
-              <button type="button" class="admin-workflow-step" onclick="switchTab('accountingops')"><strong><span>3</span> Confirm platform health</strong><small>Review accounting integrity and recovery evidence.</small><em>Open operations →</em></button>
+              <button type="button" class="admin-workflow-step" onclick="switchTab('taxexemptions')"><strong><span>3</span> Review tax exemptions <b class="admin-workflow-count" id="overviewTaxExemptionCount" hidden>0</b></strong><small>Review parish certificates and confirm the Stripe Customer sync.</small><em>Open tax review →</em></button>
+              <button type="button" class="admin-workflow-step" onclick="switchTab('accountingops')"><strong><span>4</span> Confirm platform health</strong><small>Review accounting integrity and recovery evidence.</small><em>Open operations →</em></button>
             </div>
           </section>
 
@@ -591,6 +592,18 @@
             </div>
           </section>
 
+          <section class="section-card tax-exemption-admin-guide" aria-labelledby="taxExemptionAdminGuideTitle">
+            <div class="section-header"><div class="section-title" id="taxExemptionAdminGuideTitle">Review workflow</div></div>
+            <div class="section-body">
+              <ol class="tax-exemption-admin-steps">
+                <li><strong>Open the certificate.</strong><span>Confirm the organization, jurisdiction, dates, and document match the parish record.</span></li>
+                <li><strong>Approve or request a correction.</strong><span>Approval is allowed only with a current document. Rejection and replacement requests require a reason.</span></li>
+                <li><strong>Confirm Stripe sync.</strong><span>An approval is not finalized when a required Customer update fails. Retry or reconcile any flagged Customer.</span></li>
+                <li><strong>Watch renewals.</strong><span>Expiring, revoked, and replacement-required claims remove or suspend only AGAPAY-owned Stripe exemption changes.</span></li>
+              </ol>
+            </div>
+          </section>
+
           <div class="section-card" id="taxExemptionWorkflowNotice" style="display:none;background:#fdf2f2;border-color:rgba(138,40,40,0.22);">
             <div class="section-body" style="padding:12px 16px;color:#8a2828;font-weight:600;">The sales-tax exemption workflow is currently disabled. You can review historical claims, but approve/reject/replace/revoke actions are turned off.</div>
           </div>
@@ -807,6 +820,7 @@
           <section class="product-admin-hero">
             <div><div class="admin-kicker">Platform reliability controls</div><h2>Accounting Integrity Operations</h2><p>Inspect parish accounting health, run integrity scans, manage protective states, and verify recovery evidence. These controls are intentionally unavailable in parish dashboards.</p></div>
           </section>
+
           <section class="section-card">
             <div class="section-header"><div class="section-title">Accounting health target</div></div>
             <div class="section-body">

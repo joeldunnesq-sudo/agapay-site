@@ -13,6 +13,7 @@
 // of tier, so no existing subscriber loses anything they are currently
 // paying for.
 import { hasActiveStewardshipComp, hasStewardshipAccess, stewardshipStatus } from "./core.js";
+import { subscriptionAddOns, subscriptionAddOnsFor } from "./subscriptions.js";
 
 // Per-tier, per-module inclusion. Bookstore/Commerce is included for
 // monasteries even though Stewardship Health and Sacraments are not --
@@ -20,8 +21,7 @@ import { hasActiveStewardshipComp, hasStewardshipAccess, stewardshipStatus } fro
 // promised on the public features page for monastic communities.
 const TIER_MODULES = {
   starter: { givingPlus: false, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, communications: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
-  giving: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, communications: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
-  stewardship: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: false, bookstore: true, commerceSuite: false, communications: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
+  giving: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: true, bookstore: false, commerceSuite: false, communications: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
   parish: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, commerceSuite: true, communications: true, textToGive: true, accounting: true, accountingAdvancedOperations: true },
   diocese: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, commerceSuite: true, communications: true, textToGive: true, accounting: true, accountingAdvancedOperations: true },
   monastery_free: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, communications: false, textToGive: false, accounting: false, accountingAdvancedOperations: false }
@@ -34,7 +34,7 @@ export const GIVING_FEATURES = Object.freeze({
   branding: "givingPlus",
   customFunds: "givingPlus",
   campaigns: "givingPlus",
-  commemorations: "givingPlus",
+  commemorations: null,
   annualStatements: "givingPlus",
   reconciliation: "givingPlus",
   giverInsights: "givingPlus",
@@ -43,7 +43,7 @@ export const GIVING_FEATURES = Object.freeze({
 
 export function normalizedSubscriptionTier(registration) {
   const tier = String(registration?.subscriptionTier || "").toLowerCase();
-  return tier === "mission" ? "giving" : tier;
+  return tier === "mission" ? "starter" : tier;
 }
 
 export function tierIncludesModule(registration, moduleId) {
@@ -74,13 +74,18 @@ export function hasLegacyParishPlusAddOn(registration) {
   return hasStewardshipAccess(registration);
 }
 
+export function subscriptionAddOnIncludesModule(registration, moduleId) {
+  const selected = new Set(subscriptionAddOnsFor(registration));
+  return subscriptionAddOns.some((addOn) => selected.has(addOn.id) && addOn.modules.includes(moduleId));
+}
+
 export function hasModuleAccess(registration, moduleId) {
   // Directory and Text-to-Give were never part of the retired Parish + add-on.
   // They are available only through a tier that explicitly includes them.
   if (moduleId === "directory" || moduleId === "textToGive" || moduleId === "commerceSuite" || moduleId === "communications") {
-    return tierIncludesModule(registration, moduleId);
+    return tierIncludesModule(registration, moduleId) || subscriptionAddOnIncludesModule(registration, moduleId);
   }
-  return tierIncludesModule(registration, moduleId) || hasLegacyParishPlusAddOn(registration);
+  return tierIncludesModule(registration, moduleId) || subscriptionAddOnIncludesModule(registration, moduleId) || hasLegacyParishPlusAddOn(registration);
 }
 
 // True if the parish has at least the Parish-tier module set, or the
@@ -129,7 +134,7 @@ export function prayerRequestsEnabledFor(registration) {
 }
 
 export function commerceSuiteEnabledFor(registration) {
-  return tierIncludesModule(registration, "commerceSuite");
+  return hasModuleAccess(registration, "commerceSuite");
 }
 
 export function eventsEnabledFor(registration) {
@@ -143,16 +148,17 @@ export function mealsEnabledFor(registration) {
 }
 
 export function accountingEnabledFor(registration) {
-  return registration?.accountingEnabled !== false && tierIncludesModule(registration, "accounting");
+  return registration?.accountingEnabled !== false && hasModuleAccess(registration, "accounting");
 }
 
 export function accountingTierFor(registration) {
   if (!accountingEnabledFor(registration)) return "unavailable";
-  return tierIncludesModule(registration, "accountingAdvancedOperations") ? "advanced_operations" : "core";
+  return hasModuleAccess(registration, "accountingAdvancedOperations") ? "advanced_operations" : "core";
 }
 
 function moduleSource(registration, moduleId) {
   if (tierIncludesModule(registration, moduleId)) return "tier";
+  if (subscriptionAddOnIncludesModule(registration, moduleId)) return "add_on";
   if (hasLegacyParishPlusAddOn(registration)) return "legacy_addon";
   return "none";
 }
@@ -163,6 +169,7 @@ export function entitlementsSummary(registration) {
   const tier = normalizedSubscriptionTier(registration) || "parish";
   return {
     tier,
+    addOns: subscriptionAddOnsFor(registration),
     parishPlusIncludedInTier: tierIncludesParishPlus(registration),
     parishPlusActive: hasParishPlusAccess(registration),
     legacyAddOnActive: hasLegacyParishPlusAddOn(registration),
@@ -196,12 +203,12 @@ export function entitlementsSummary(registration) {
         included: commerceSuiteEnabledFor(registration),
         eventsEnabled: eventsEnabledFor(registration),
         mealsEnabled: mealsEnabledFor(registration),
-        source: commerceSuiteEnabledFor(registration) ? "tier" : "none"
+        source: moduleSource(registration, "commerceSuite")
       },
       communications: {
         included: hasModuleAccess(registration, "communications"),
         parishHasEnabled: registration?.communicationsEnabled !== false,
-        source: tierIncludesModule(registration, "communications") ? "tier" : "none"
+        source: moduleSource(registration, "communications")
       },
       directory: {
         included: hasModuleAccess(registration, "directory"),
@@ -216,7 +223,7 @@ export function entitlementsSummary(registration) {
         tier: accountingTierFor(registration),
         coreLedgerIncluded: accountingEnabledFor(registration),
         advancedOperationsIncluded: accountingTierFor(registration) === "advanced_operations",
-        source: tierIncludesModule(registration, "accounting") ? "tier" : "none"
+        source: moduleSource(registration, "accounting")
       }
     },
     givingFeatures: Object.fromEntries(

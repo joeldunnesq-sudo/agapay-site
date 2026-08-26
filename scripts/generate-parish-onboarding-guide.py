@@ -1,4 +1,5 @@
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
@@ -94,6 +95,14 @@ styles.add(ParagraphStyle(
     "CoverLead", parent=styles["BodyText"], fontName="Helvetica", fontSize=11,
     leading=17, textColor=CREAM, alignment=TA_CENTER, leftIndent=35, rightIndent=35,
 ))
+styles.add(ParagraphStyle(
+    "GuideTableHead", parent=styles["BodyText"], fontName="Helvetica-Bold", fontSize=8,
+    leading=11, textColor=WHITE,
+))
+styles.add(ParagraphStyle(
+    "GuideTableBody", parent=styles["BodyText"], fontName="Helvetica", fontSize=8,
+    leading=11, textColor=INK,
+))
 
 
 def bullets(items):
@@ -104,7 +113,11 @@ def bullets(items):
 
 
 def table(data, widths):
-    result = Table(data, colWidths=widths, repeatRows=1, hAlign="LEFT")
+    wrapped = [
+        [Paragraph(escape(str(cell)), styles["GuideTableHead" if row_index == 0 else "GuideTableBody"]) for cell in row]
+        for row_index, row in enumerate(data)
+    ]
+    result = Table(wrapped, colWidths=widths, repeatRows=1, hAlign="LEFT")
     result.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), NAVY),
         ("TEXTCOLOR", (0, 0), (-1, 0), WHITE),
@@ -185,10 +198,9 @@ story += [
     Paragraph("Choose the right tier", styles["GuideTitle"]),
     table([
         ["Tier", "Monthly", "Designed for"],
-        ["Starter", "$9", "Core one-time and recurring giving, one General Stewardship fund, giving link, QR code, receipts, history, and CSV export."],
-        ["Giving Plus", "$49", "Everything in Starter plus parish logo, custom funds, campaigns, commemorations, enhanced reports, and annual statements."],
-        ["Stewardship", "$99", "Everything in Giving Plus plus pledges, giving trends, recurring-gift insight, Stewardship Health, and Bookstore payments."],
-        ["Parish", "$149", "The complete parish platform, including Directory, Sacraments & Services, Text-to-Give, operational workflows, and advanced accounting access."],
+        ["Starter", "$9", "Core one-time and recurring giving, commemorations, one General Stewardship fund, one designated fund, candles, giving link, QR code, receipts, history, and CSV export."],
+        ["Giving Plus", "$79", "Everything in Starter plus parish branding, custom funds, campaigns, pledges, Stewardship Health, annual statements, and the Parish Directory."],
+        ["Parish", "From $149", "The complete parish platform, including every add-on; early-adopter and standard rates are based on active households."],
         ["Cathedral / Diocese", "Custom", "Cathedral, diocesan, and multi-parish needs with organization-level reporting and support."],
         ["Monastic", "$0", "Giving Plus capabilities for canonical monasteries, sketes, and convents, with no monthly platform fee."],
     ], [1.32 * inch, 0.72 * inch, 4.62 * inch]),
@@ -245,7 +257,7 @@ story += [
         "Create campaigns with clear goals, dates, and descriptions.",
         "Configure liturgical commemorations and annual statement settings as appropriate.",
     ]),
-    Paragraph("Stewardship and Parish", styles["GuideH2"]),
+    Paragraph("Giving Plus and Parish", styles["GuideH2"]),
     *bullets([
         "Review pledge tracking, recurring-gift visibility, and Stewardship Health.",
         "For Parish, enable Directory, Sacraments & Services, and Text-to-Give only when the parish is ready to use them.",

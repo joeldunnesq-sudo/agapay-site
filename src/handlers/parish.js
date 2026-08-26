@@ -98,12 +98,7 @@ import { getDirectorySettings } from "../directory/settings.js";
 import { createTaxExemptionClaim, issueClaimUploadToken } from "../lib/tax-exemption.js";
 import { createSubscriptionCheckoutForRegistration } from "../lib/subscription-checkout.js";
 
-import {
-  PARISH_INTRO_DEMO_DAYS,
-  defaultSubscriptionTier as sharedDefaultSubscriptionTier, normalizeParishHouseholdBand,
-  parishIntroDemoEligible,
-  subscriptionTier as sharedSubscriptionTier,
-} from "../lib/subscriptions.js";
+import { PARISH_INTRO_DEMO_DAYS, defaultSubscriptionTier as sharedDefaultSubscriptionTier, normalizeParishHouseholdBand, parishIntroDemoEligible, publicSubscriptionAddOns, subscriptionAddOnPricing, subscriptionAddOnsFor, subscriptionTier as sharedSubscriptionTier } from "../lib/subscriptions.js";
 import { loadParishPricingUsage, validateParishCheckoutBand } from "../lib/parish-pricing-usage.js";
 
 import { parishSlug } from "../lib/format.js";
@@ -960,7 +955,7 @@ export function parishFromRegistration(registration) {
     givingPlusEnabled: givingPlus,
     designatedFundsEnabled: starterDesignatedFund && publicFunds.some((fund) => !isGeneralGivingFund(fund)),
     candlesEnabled: candleGiving && (registration.candlesEnabled ?? true),
-    commemorationsEnabled: givingPlus && (registration.commemorationsEnabled ?? true),
+    commemorationsEnabled: givingFeatureAccess(registration, "commemorations") && (registration.commemorationsEnabled ?? true),
     sacramentsEnabled: sacramentsEnabledFor(registration),
     bookstoreEnabled: bookstoreEnabledFor(registration),
     processingFeeSchedules: publicPaymentFeeSchedules(),
@@ -1612,7 +1607,7 @@ export async function handleRegistrations(request, env) {
 
   const communityType = String(body.communityType || "");
   const requestedTier = String(body.subscriptionTier || "").trim().toLowerCase();
-  const selectableParishTiers = new Set(["starter", "giving", "stewardship", "parish"]);
+  const selectableParishTiers = new Set(["starter", "giving", "parish"]);
   const validTierForCommunity = communityType === "Cathedral"
     ? requestedTier === "diocese"
     : communityType === "Monastery"
@@ -1652,7 +1647,7 @@ export async function handleRegistrations(request, env) {
     parishDashboardTokenTemporary: true,
     parishDashboardTokenCreatedAt: receivedAt,
     ...registrationAgreementEvidence(receivedAt),
-    subscriptionTier: tier?.id || "parish", subscriptionPricingProgram: ["giving", "stewardship", "parish"].includes(tier?.id) ? "early_adopter_candidate" : "standard",
+    subscriptionTier: tier?.id || "parish", subscriptionPricingProgram: tier?.id === "parish" ? "early_adopter_candidate" : "standard",
     subscriptionStatus: tier?.monthlyCents === 0 ? "free_forever" : "not_started",
     subscriptionMonthlyCents: tier?.monthlyCents ?? null,
     subscriptionTierLabel: tier?.label || ""
@@ -2235,7 +2230,7 @@ export async function handleParishDemoTier(request, env, parishId) {
     subscriptionTier: requestedTier,
     parishHouseholdBand: requestedHouseholdBand
   });
-  if (!tier || !["starter", "giving", "stewardship", "parish"].includes(tier.id)) {
+  if (!tier || !["starter", "giving", "parish"].includes(tier.id)) {
     return json({ error: "Choose Starter, Giving Plus, Stewardship, or Parish for the demo." }, { status: 422 });
   }
 
@@ -2478,6 +2473,8 @@ export function summarizeCharges(charges) {
 export function parishDashboardPayload(parishId, registration) {
   const currentTier = sharedSubscriptionTier(registration);
   const givingPlus = givingFeatureAccess(registration, "branding");
+  const currentAddOns = subscriptionAddOnsFor(registration);
+  const currentAddOnMonthlyCents = currentAddOns.reduce((sum, id) => sum + Number(subscriptionAddOnPricing(id, registration.subscriptionPricingProgram)?.monthlyCents || 0), 0);
   return {
     parishId,
     parishName: registration.parishName,
@@ -2514,7 +2511,8 @@ export function parishDashboardPayload(parishId, registration) {
     // Display the current published tier price. Stored amounts describe an
     // earlier checkout and must not leave the dashboard advertising a stale
     // plan price after the catalog changes.
-    subscriptionMonthlyCents: currentTier?.monthlyCents ?? null,
+    subscriptionMonthlyCents: currentTier?.monthlyCents === null ? null : Number(currentTier?.monthlyCents || 0) + currentAddOnMonthlyCents,
+    subscriptionAddOns: currentAddOns,
     subscriptionTrialDays: Number(registration.subscriptionTrialDays || 0),
     subscriptionTrialStartedAt: registration.subscriptionTrialStartedAt || "",
     subscriptionTrialEndsAt: registration.subscriptionTrialEndsAt || "",
@@ -2530,6 +2528,7 @@ export function parishDashboardPayload(parishId, registration) {
       temporaryPassword: Boolean(registration.parishDashboardTokenTemporary)
     },
     subscriptionTiers: publicSubscriptionTiers(),
+    subscriptionAddOnCatalog: publicSubscriptionAddOns(),
     platformFee: registration.platformFee || "",
     recurringGivingEnabled: registration.recurringGivingEnabled ?? true,
     candlesEnabled: registration.candlesEnabled ?? true,

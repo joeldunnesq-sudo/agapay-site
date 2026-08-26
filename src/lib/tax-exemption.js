@@ -843,7 +843,7 @@ export async function getTaxExemptionSummaryCounts(env) {
   const zero = {
     pending: 0, approved: 0, replacementRequired: 0, expiringSoon: 0, expired: 0,
     rejected: 0, revoked: 0, failedSync: 0, partialSync: 0, reconciliationRequired: 0,
-    waitingForCustomer: 0, pendingWithoutDocument: 0
+    waitingForCustomer: 0, pendingWithoutDocument: 0, needsAttention: 0
   };
   if (!d1(env)) return zero;
 
@@ -894,6 +894,17 @@ export async function getTaxExemptionSummaryCounts(env) {
        AND NOT EXISTS (SELECT 1 FROM tax_exemption_documents d WHERE d.tax_exemption_id = t.id AND d.is_current = 1)`
   );
 
+  const needsAttentionRow = await d1First(
+    env,
+    `SELECT COUNT(DISTINCT t.id) AS n
+       FROM tax_exemptions t
+       LEFT JOIN tax_exemption_stripe_syncs s ON s.tax_exemption_id = t.id
+      WHERE t.status IN ('pending', 'replacement_required')
+         OR (t.status = 'approved' AND t.expiration_date IS NOT NULL AND t.expiration_date != '' AND t.expiration_date BETWEEN ?1 AND ?2)
+         OR s.sync_status IN ('failed', 'reconciliation_required')`,
+    today, in30Days
+  );
+
   return {
     pending: byStatus.pending || 0,
     approved: byStatus.approved || 0,
@@ -906,7 +917,8 @@ export async function getTaxExemptionSummaryCounts(env) {
     partialSync,
     reconciliationRequired,
     waitingForCustomer: Number(waitingForCustomerRow?.n) || 0,
-    pendingWithoutDocument: Number(pendingWithoutDocumentRow?.n) || 0
+    pendingWithoutDocument: Number(pendingWithoutDocumentRow?.n) || 0,
+    needsAttention: Number(needsAttentionRow?.n) || 0
   };
 }
 

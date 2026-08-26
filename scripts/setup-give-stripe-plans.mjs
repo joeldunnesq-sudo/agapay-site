@@ -47,10 +47,7 @@ if (!product) {
 
 const plans = [
   { key: "starter", tier: "starter", label: "Starter", cents: 900, env: "AGAPAY_STRIPE_PRICE_STARTER_MONTHLY" },
-  { key: "giving_early", tier: "giving", label: "Giving Plus early adopter", cents: 4900, env: "AGAPAY_STRIPE_PRICE_GIVING_MONTHLY" },
-  { key: "giving_standard", tier: "giving", label: "Giving Plus standard", cents: 7900, env: "AGAPAY_STRIPE_PRICE_GIVING_79_MONTHLY" },
-  { key: "stewardship_early", tier: "stewardship", label: "Stewardship early adopter", cents: 9900, env: "AGAPAY_STRIPE_PRICE_STEWARDSHIP_MONTHLY" },
-  { key: "stewardship_standard", tier: "stewardship", label: "Stewardship standard", cents: 14900, env: "AGAPAY_STRIPE_PRICE_STEWARDSHIP_149_MONTHLY" },
+  { key: "giving", tier: "giving", label: "Giving Plus", cents: 7900, env: "AGAPAY_STRIPE_PRICE_GIVING_79_MONTHLY" },
   { key: "parish_early_under_50", tier: "parish", band: "under_50", label: "Parish early adopter · under 50 households", cents: 14900, env: "AGAPAY_STRIPE_PRICE_PARISH_149_MONTHLY" },
   { key: "parish_early_50_149", tier: "parish", band: "50_149", label: "Parish early adopter · 50–149 households", cents: 19900, env: "AGAPAY_STRIPE_PRICE_PARISH_199_MONTHLY" },
   { key: "parish_early_150_299", tier: "parish", band: "150_299", label: "Parish early adopter · 150–299 households", cents: 24900, env: "AGAPAY_STRIPE_PRICE_PARISH_249_EARLY_MONTHLY" },
@@ -58,14 +55,22 @@ const plans = [
   { key: "parish_standard_under_50", tier: "parish", band: "under_50", label: "Parish standard · under 50 households", cents: 24900, env: "AGAPAY_STRIPE_PRICE_PARISH_249_MONTHLY" },
   { key: "parish_standard_50_149", tier: "parish", band: "50_149", label: "Parish standard · 50–149 households", cents: 34900, env: "AGAPAY_STRIPE_PRICE_PARISH_349_MONTHLY" },
   { key: "parish_standard_150_299", tier: "parish", band: "150_299", label: "Parish standard · 150–299 households", cents: 44900, env: "AGAPAY_STRIPE_PRICE_PARISH_449_MONTHLY" },
-  { key: "parish_standard_300_599", tier: "parish", band: "300_599", label: "Parish standard · 300–599 households", cents: 64900, env: "AGAPAY_STRIPE_PRICE_PARISH_649_MONTHLY" }
+  { key: "parish_standard_300_599", tier: "parish", band: "300_599", label: "Parish standard · 300–599 households", cents: 54900, env: "AGAPAY_STRIPE_PRICE_PARISH_549_MONTHLY" },
+  { key: "addon_koinonia", tier: "giving", addOn: "koinonia", label: "Koinonia add-on", cents: 2900, env: "AGAPAY_STRIPE_PRICE_ADDON_KOINONIA_29_MONTHLY" },
+  { key: "addon_sacraments", tier: "giving", addOn: "sacraments", label: "Sacraments & Services add-on", cents: 1900, env: "AGAPAY_STRIPE_PRICE_ADDON_SACRAMENTS_19_MONTHLY" },
+  { key: "addon_bookstore", tier: "giving", addOn: "bookstore", label: "Bookstore add-on", cents: 900, env: "AGAPAY_STRIPE_PRICE_ADDON_BOOKSTORE_9_MONTHLY" },
+  { key: "addon_commerce", tier: "giving", addOn: "full_commerce", label: "Full Commerce add-on", cents: 3900, env: "AGAPAY_STRIPE_PRICE_ADDON_COMMERCE_39_MONTHLY" },
+  { key: "addon_accounting", tier: "giving", addOn: "accounting", label: "Accounting add-on", cents: 17900, env: "AGAPAY_STRIPE_PRICE_ADDON_ACCOUNTING_179_MONTHLY" }
 ];
 
 const prices = {};
 for (const plan of plans) {
+  // Stripe Price amounts are immutable, so amount-versioned lookup keys let a
+  // revised catalog coexist with archived or otherwise unused older prices.
+  const lookupKey = `agapay_give_${plan.key}_${plan.cents}_monthly`;
   const existing = await stripe(`/prices?product=${encodeURIComponent(product.id)}&active=true&limit=100`);
   let price = existing.data?.find((candidate) =>
-    candidate.lookup_key === `agapay_give_${plan.key}_monthly`
+    candidate.lookup_key === lookupKey
     && candidate.unit_amount === plan.cents
     && candidate.recurring?.interval === "month"
   );
@@ -78,9 +83,10 @@ for (const plan of plans) {
         ["unit_amount", plan.cents],
         ["recurring[interval]", "month"],
         ["tax_behavior", "exclusive"],
-        ["lookup_key", `agapay_give_${plan.key}_monthly`],
+        ["lookup_key", lookupKey],
         ["nickname", `AGAPAY ${plan.label} — monthly`],
         ["metadata[agapay_subscription_tier]", plan.tier],
+        ["metadata[agapay_subscription_add_on]", plan.addOn || ""],
         ["metadata[agapay_household_band]", plan.band || ""],
         ["metadata[agapay_pricing_program]", plan.key.includes("standard") ? "standard" : plan.key.includes("early") ? "founding_20" : "standard"]
       ])

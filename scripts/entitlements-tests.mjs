@@ -32,9 +32,10 @@ async function test(name, fn) {
   }
 }
 
-await test("Giving includes only the essential giving platform", async () => {
+await test("Giving Plus includes stewardship and directory without operational add-ons", async () => {
   const reg = { subscriptionTier: "giving" };
-  assert.equal(tierIncludesModule(reg, "stewardshipHealth"), false);
+  assert.equal(tierIncludesModule(reg, "stewardshipHealth"), true);
+  assert.equal(tierIncludesModule(reg, "directory"), true);
   assert.equal(tierIncludesModule(reg, "sacraments"), false);
   assert.equal(tierIncludesModule(reg, "bookstore"), false);
   assert.equal(tierIncludesParishPlus(reg), false);
@@ -47,7 +48,7 @@ await test("Starter provides core giving without Giving Plus features", async ()
   assert.equal(tierIncludesModule(reg, "stewardshipHealth"), false);
   assert.equal(entitlementsSummary(reg).modules.givingPlus.included, false);
   assert.equal(tierIncludesModule({ subscriptionTier: "giving" }, "givingPlus"), true);
-  for (const feature of ["branding", "customFunds", "campaigns", "commemorations", "annualStatements", "reconciliation", "giverInsights"]) {
+  for (const feature of ["branding", "customFunds", "campaigns", "annualStatements", "reconciliation", "giverInsights"]) {
     assert.equal(givingFeatureAccess(reg, feature), false);
     assert.equal(givingFeatureAccess({ subscriptionTier: "giving" }, feature), true);
   }
@@ -55,14 +56,21 @@ await test("Starter provides core giving without Giving Plus features", async ()
   assert.equal(givingFeatureAccess(reg, "candles"), true);
   assert.equal(givingFeatureAccess(reg, "starterDesignatedFund"), true);
   assert.equal(givingFeatureAccess(reg, "qrToolkit"), true);
+  assert.equal(givingFeatureAccess(reg, "commemorations"), true);
+  assert.equal(givingFeatureAccess(reg, "campaigns"), false);
   assert.equal(entitlementsSummary(reg).givingFeatures.branding, false);
   assert.equal(entitlementsSummary(reg).givingFeatures.candles, true);
   assert.equal(entitlementsSummary(reg).givingFeatures.starterDesignatedFund, true);
 });
 
-await test("Accounting remains unavailable outside the private Parish demo", async () => {
+await test("Accounting is available through its Giving Plus add-on or Parish", async () => {
   assert.equal(accountingEnabledFor({ subscriptionTier: "giving" }), false);
-  assert.equal(accountingEnabledFor({ subscriptionTier: "stewardship" }), false);
+  const accountingAddOn = { subscriptionTier: "giving", subscriptionAddOns: ["bookstore", "full_commerce", "accounting"] };
+  assert.equal(accountingEnabledFor(accountingAddOn), true);
+  assert.equal(bookstoreEnabledFor(accountingAddOn), true);
+  assert.equal(commerceSuiteEnabledFor(accountingAddOn), true);
+  assert.deepEqual(entitlementsSummary(accountingAddOn).addOns, ["accounting"]);
+  assert.equal(accountingTierFor(accountingAddOn), "advanced_operations");
   assert.equal(accountingEnabledFor({ subscriptionTier: "parish" }), true);
   assert.equal(accountingTierFor({ subscriptionTier: "giving" }), "unavailable");
   assert.equal(accountingTierFor({ subscriptionTier: "parish" }), "advanced_operations");
@@ -70,12 +78,12 @@ await test("Accounting remains unavailable outside the private Parish demo", asy
   assert.equal(entitlementsSummary({ subscriptionTier: "parish" }).modules.accounting.advancedOperationsIncluded, true);
 });
 
-await test("Stewardship adds insights and Bookstore, but not the full Commerce suite", async () => {
-  const reg = { subscriptionTier: "stewardship" };
+await test("Giving Plus add-ons unlock only their selected modules", async () => {
+  const reg = { subscriptionTier: "giving", subscriptionAddOns: ["bookstore", "sacraments"] };
   assert.equal(tierIncludesModule(reg, "stewardshipHealth"), true);
-  assert.equal(tierIncludesModule(reg, "sacraments"), false);
-  assert.equal(tierIncludesModule(reg, "directory"), false);
-  assert.equal(tierIncludesModule(reg, "bookstore"), true);
+  assert.equal(hasModuleAccess(reg, "sacraments"), true);
+  assert.equal(tierIncludesModule(reg, "directory"), true);
+  assert.equal(hasModuleAccess(reg, "bookstore"), true);
   assert.equal(tierIncludesModule(reg, "commerceSuite"), false);
   assert.equal(bookstoreEnabledFor(reg), true);
   assert.equal(commerceSuiteEnabledFor(reg), false);
@@ -188,11 +196,12 @@ await test("Bookstore dashboard access remains included when the donor-facing fe
   assert.equal(bookstoreEnabledFor({ subscriptionTier: "parish", bookstoreEnabled: false }), false);
 });
 
-await test("the full Commerce suite is Parish-only while Stewardship retains Bookstore", async () => {
-  const stewardship = entitlementsSummary({ subscriptionTier: "stewardship" });
+await test("Full Commerce includes Bookstore and never requires both add-ons", async () => {
+  const commerce = entitlementsSummary({ subscriptionTier: "giving", subscriptionAddOns: ["bookstore", "full_commerce"] });
   const parish = entitlementsSummary({ subscriptionTier: "parish" });
-  assert.equal(stewardship.modules.bookstore.included, true);
-  assert.equal(stewardship.modules.commerceSuite.included, false);
+  assert.deepEqual(commerce.addOns, ["full_commerce"]);
+  assert.equal(commerce.modules.bookstore.included, true);
+  assert.equal(commerce.modules.commerceSuite.included, true);
   assert.equal(parish.modules.bookstore.included, true);
   assert.equal(parish.modules.commerceSuite.included, true);
   assert.equal(commerceSuiteEnabledFor({ subscriptionTier: "diocese" }), true);
@@ -209,15 +218,16 @@ await test("Events and Meals default on but retain independent donor-facing swit
   assert.equal(mealsEnabledFor(registration), true);
   assert.equal(eventsEnabledFor({ subscriptionTier: "parish" }), true);
   assert.equal(mealsEnabledFor({ subscriptionTier: "parish" }), true);
-  assert.equal(eventsEnabledFor({ subscriptionTier: "stewardship" }), false);
-  assert.equal(mealsEnabledFor({ subscriptionTier: "stewardship" }), false);
+  assert.equal(eventsEnabledFor({ subscriptionTier: "giving" }), false);
+  assert.equal(mealsEnabledFor({ subscriptionTier: "giving" }), false);
 });
 
 await test("communications requires a current Parish-level tier and honors the parish on/off choice", async () => {
   assert.equal(communicationsEnabledFor({ subscriptionTier: "parish" }), true);
   assert.equal(communicationsEnabledFor({ subscriptionTier: "parish", communicationsEnabled: false }), false);
   assert.equal(communicationsEnabledFor({ subscriptionTier: "diocese" }), true);
-  assert.equal(communicationsEnabledFor({ subscriptionTier: "stewardship" }), false);
+  assert.equal(communicationsEnabledFor({ subscriptionTier: "giving" }), false);
+  assert.equal(communicationsEnabledFor({ subscriptionTier: "giving", subscriptionAddOns: ["koinonia"] }), true);
   assert.equal(communicationsEnabledFor({ subscriptionTier: "mission", stewardshipStatus: "active" }), false);
   const disabled = entitlementsSummary({ subscriptionTier: "parish", communicationsEnabled: false }).modules.communications;
   assert.equal(disabled.included, true, "turning Communications off must not remove the staff workspace entitlement");
@@ -228,7 +238,7 @@ await test("communications requires a current Parish-level tier and honors the p
 await test("directoryEnabledFor requires the tier and both parish member-directory switches", async () => {
   const enabled = { directoryEnabled: true, ordinaryMemberAccessEnabled: true };
   assert.equal(directoryEnabledFor({ subscriptionTier: "parish" }, enabled), true);
-  assert.equal(directoryEnabledFor({ subscriptionTier: "giving" }, enabled), false);
+  assert.equal(directoryEnabledFor({ subscriptionTier: "giving" }, enabled), true);
   assert.equal(directoryEnabledFor({ subscriptionTier: "parish" }, { ...enabled, directoryEnabled: false }), false);
   assert.equal(directoryEnabledFor({ subscriptionTier: "parish" }, { ...enabled, ordinaryMemberAccessEnabled: false }), false);
 });
@@ -237,6 +247,7 @@ await test("bookstoreEnabledFor defaults open (not explicitly false) once module
   assert.equal(bookstoreEnabledFor({ subscriptionTier: "parish" }), true);
   assert.equal(bookstoreEnabledFor({ subscriptionTier: "parish", bookstoreEnabled: false }), false);
   assert.equal(bookstoreEnabledFor({ subscriptionTier: "giving" }), false);
+  assert.equal(bookstoreEnabledFor({ subscriptionTier: "giving", subscriptionAddOns: ["full_commerce"] }), true);
   assert.equal(bookstoreEnabledFor({ subscriptionTier: "monastery_free" }), false);
   assert.equal(bookstoreEnabledFor({ subscriptionTier: "starter", stewardshipStatus: "active" }), false);
 });

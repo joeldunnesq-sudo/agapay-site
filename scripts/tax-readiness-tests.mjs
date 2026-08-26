@@ -11,6 +11,7 @@
 // Run directly: node scripts/tax-readiness-tests.mjs
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 import {
   TAX_READINESS_STATUSES,
@@ -62,6 +63,39 @@ const REGISTRATION_ADDRESS = {
   postalCode: "78205",
   country: "US"
 };
+
+const parishDashboardScript = readFileSync(new URL("../public/parish/app.js", import.meta.url), "utf8");
+const adminDashboardHtml = readFileSync(new URL("../public/admin.html", import.meta.url), "utf8");
+const adminDashboardScript = readFileSync(new URL("../public/admin/app.js", import.meta.url), "utf8");
+const taxExemptionHandlerSource = readFileSync(new URL("../src/handlers/tax-exemption.js", import.meta.url), "utf8");
+
+check("parish dashboard: exposes the complete authenticated exemption request, upload, status, and document-view workflow", () => {
+  for (const required of [
+    "taxExemptionPane",
+    "submitParishTaxExemption",
+    "uploadParishTaxExemptionDocument",
+    "viewParishTaxExemptionDocument",
+    "'/tax-exemption' + path",
+    "taxExemptionApi('/upload')",
+    "taxExemptionApi('/document')"
+  ]) assert.ok(parishDashboardScript.includes(required), `missing parish exemption UI wiring: ${required}`);
+});
+
+check("admin dashboard: makes exemption reviews a numbered overview step and documents the Stripe confirmation workflow", () => {
+  for (const required of [
+    "overviewTaxExemptionCount",
+    "Review tax exemptions",
+    "Confirm Stripe sync.",
+    "navTaxExemptionCount"
+  ]) assert.ok(adminDashboardHtml.includes(required), `missing admin exemption workflow affordance: ${required}`);
+  assert.ok(adminDashboardScript.includes("loadTaxExemptionSummary();"));
+  assert.ok(adminDashboardScript.includes("c.needsAttention"));
+});
+
+check("parish exemption route: prevents duplicate active claims and links a later terminal-state claim to the prior record", () => {
+  assert.ok(taxExemptionHandlerSource.includes('["pending", "replacement_required", "approved"].includes(currentClaim.status)'));
+  assert.ok(taxExemptionHandlerSource.includes("supersedesTaxExemptionId: currentClaim?.id || null"));
+});
 
 // ── hasCompleteBillingAddress ───────────────────────────────────────────────
 check("hasCompleteBillingAddress: true when all required fields present (line2 optional)", () => {
@@ -192,6 +226,7 @@ await checkAsync("checkout: paid tier missing billing address is blocked before 
 await checkAsync("checkout: Parish paid checkout relies on Stripe automatic tax, not manual parish tax status", async () => {
   let calls = [];
   let customerBody = "";
+  let checkoutBody = "";
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url, options = {}) => {
     calls.push(String(url));
@@ -200,6 +235,7 @@ await checkAsync("checkout: Parish paid checkout relies on Stripe automatic tax,
       return { ok: true, json: async () => ({ id: "cus_fake123" }) };
     }
     if (String(url).includes("/v1/checkout/sessions")) {
+      checkoutBody = String(options.body || "");
       return { ok: true, json: async () => ({ id: "cs_fake123", url: "https://checkout.stripe.com/fake" }) };
     }
     throw new Error("Unexpected fetch: " + url);
@@ -213,6 +249,7 @@ await checkAsync("checkout: Parish paid checkout relies on Stripe automatic tax,
       request: fakeRequest, env: { STRIPE_SECRET_KEY: "sk_test_fake" }, reference: "test-ref", registration, body: {}, saveRegistrationRecord: noopSave
     });
     const payload = await response.json();
+    const checkout = new URLSearchParams(checkoutBody);
     assert.equal(response.status, 201);
     assert.equal(payload.ok, true);
     assert.equal(payload.checkoutUrl, "https://checkout.stripe.com/fake");
@@ -226,6 +263,8 @@ await checkAsync("checkout: Parish paid checkout relies on Stripe automatic tax,
     assert.equal(customer.get("address[postal_code]"), REGISTRATION_ADDRESS.postalCode);
     assert.equal(customer.get("address[country]"), REGISTRATION_ADDRESS.country);
     assert.equal(payload.registration.billingAddressLine1, REGISTRATION_ADDRESS.addressLine1);
+    assert.equal(checkout.get("automatic_tax[enabled]"), "true");
+    assert.equal(checkout.get("billing_address_collection"), "required");
   } finally {
     globalThis.fetch = originalFetch;
   }

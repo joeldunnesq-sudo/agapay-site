@@ -11,6 +11,7 @@ import {
 import { logEvent } from "../lib/logging.js";
 
 import {
+  normalizeSubscriptionAddOns,
   subscriptionTier,
   subscriptionTierFromStripePriceId,
 } from "../lib/subscriptions.js";
@@ -857,11 +858,17 @@ export async function processStripeWebhookEvent(env, event) {
 
     const reference = object.metadata?.agapay_reference || "";
     const activePriceId = object.items?.data?.[0]?.price?.id || "";
-    const selectedTier = subscriptionTierFromStripePriceId(env, activePriceId);
+    const metadataTierId = object.metadata?.agapay_subscription_tier || "";
+    const selectedTier = subscriptionTierFromStripePriceId(env, activePriceId)
+      || (metadataTierId ? subscriptionTier({ subscriptionTier: metadataTierId, subscriptionPricingProgram: object.metadata?.agapay_pricing_program, parishHouseholdBand: object.metadata?.agapay_household_band }) : null);
+    const selectedAddOns = normalizeSubscriptionAddOns(object.metadata?.agapay_subscription_add_ons || "", selectedTier?.id || metadataTierId);
+    const stripeMonthlyCents = (object.items?.data || []).reduce((sum, item) => sum + (Number(item?.price?.unit_amount || 0) * Number(item?.quantity || 1)), 0);
     const tierUpdates = selectedTier ? {
       subscriptionTier: selectedTier.id,
       subscriptionTierLabel: selectedTier.label,
-      subscriptionMonthlyCents: selectedTier.monthlyCents,
+      subscriptionAddOns: selectedAddOns,
+      subscriptionBaseMonthlyCents: selectedTier.monthlyCents,
+      subscriptionMonthlyCents: stripeMonthlyCents || selectedTier.monthlyCents,
       ...(selectedTier.pricingProgram ? { subscriptionPricingProgram: selectedTier.pricingProgram === "early_adopter" ? "founding_20" : selectedTier.pricingProgram } : {}),
       ...(selectedTier.parishHouseholdBand ? { parishHouseholdBand: selectedTier.parishHouseholdBand } : {})
     } : {};

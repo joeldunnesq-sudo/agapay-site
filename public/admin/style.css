@@ -790,8 +790,61 @@
     }
     .admin-workflow-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 0.7rem;
+    }
+    .admin-workflow-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.45rem;
+      height: 1.45rem;
+      margin-left: auto;
+      padding: 0 .35rem;
+      border-radius: 999px;
+      background: #8a2828;
+      color: #fff;
+      font: 800 11px/1 var(--sans);
+    }
+    .tax-exemption-admin-steps {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: .75rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: tax-review;
+    }
+    .tax-exemption-admin-steps li {
+      position: relative;
+      display: grid;
+      gap: .35rem;
+      min-width: 0;
+      padding: .9rem .9rem .9rem 2.75rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--paper);
+      counter-increment: tax-review;
+    }
+    .tax-exemption-admin-steps li::before {
+      content: counter(tax-review);
+      position: absolute;
+      left: .8rem;
+      top: .85rem;
+      display: grid;
+      place-items: center;
+      width: 1.45rem;
+      height: 1.45rem;
+      border-radius: 50%;
+      background: rgba(196,150,62,.14);
+      color: #8a651c;
+      font-size: .72rem;
+      font-weight: 800;
+    }
+    .tax-exemption-admin-steps strong { color: var(--ink); font-size: .82rem; }
+    .tax-exemption-admin-steps span { color: var(--stone); font-size: .75rem; line-height: 1.5; }
+    @media (max-width: 1180px) {
+      .admin-workflow-grid, .tax-exemption-admin-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     .admin-workflow-step {
       display: grid;
@@ -2335,7 +2388,7 @@
       .giving-summary-grid { grid-template-columns: 1fr; }
       .revenue-grid, .revenue-fee-stats, .learn-admin-grid,
       .product-overview-grid, .product-admin-grid, .admin-command-hero { grid-template-columns: 1fr; }
-      .admin-workflow-grid { grid-template-columns: 1fr; }
+      .admin-workflow-grid, .tax-exemption-admin-steps { grid-template-columns: 1fr; }
       .admin-workflow-step { min-height: 0; }
       .product-admin-hero { align-items: flex-start; flex-direction: column; }
       .admin-mobile-command {
