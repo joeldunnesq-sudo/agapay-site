@@ -303,7 +303,7 @@ export async function handleParishRecurringHealth(request, env, parishId) {
     return unauthorized();
   }
   if (!givingFeatureAccess(found.registration, "giverInsights")) {
-    return json({ error: "Recurring-gift insights are available with Giving Plus." }, { status: 403 });
+    return json({ error: "Recurring-gift insights are available with Give +." }, { status: 403 });
   }
 
   const records = await loadParishRecurringOfferings(env, parishId, 1000);

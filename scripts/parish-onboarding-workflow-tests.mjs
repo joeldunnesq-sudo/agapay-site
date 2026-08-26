@@ -83,7 +83,7 @@ function readyRegistration(overrides = {}) {
     stripeRequirementsDue: [],
     stripeStatusCheckedAt: now,
     subscriptionTier: "giving",
-    subscriptionTierLabel: "Giving Plus",
+    subscriptionTierLabel: "Give +",
     subscriptionStatus: "active",
     recurringGivingEnabled: true,
     funds: [{ id: "general", code: "general", name: "General Operating Fund", restrictionType: "unrestricted", isDefault: true, enabled: true, active: true, donorVisible: true, givingEnabled: true }],

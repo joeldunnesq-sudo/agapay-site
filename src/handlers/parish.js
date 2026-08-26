@@ -980,9 +980,9 @@ export function starterFundCatalogError(funds = []) {
   const generalCount = active.filter(isGeneralGivingFund).length;
   const designatedCount = active.filter((fund) => !isGeneralGivingFund(fund) && !isCandleGivingFund(fund)).length;
   const candleCount = active.filter(isCandleGivingFund).length;
-  if (generalCount !== 1) return "Starter must keep exactly one active General Operating Fund.";
-  if (candleCount > 1) return "Starter can keep only one active Candle Fund.";
-  if (designatedCount > 1) return "Starter includes one active designated fund. Upgrade to Giving Plus for additional funds.";
+  if (generalCount !== 1) return "Give must keep exactly one active General Operating Fund.";
+  if (candleCount > 1) return "Give can keep only one active Candle Fund.";
+  if (designatedCount > 1) return "Give includes one active designated fund. Upgrade to Give + for additional funds.";
   return "";
 }
 
@@ -1777,7 +1777,7 @@ export async function handleCheckout(request, env) {
     || (requestedGiftType === "candles" && parish.candlesEnabled)
     || (parish.givingPlusEnabled && ["commemoration", "campaign", "feast"].includes(requestedGiftType));
   if (!permittedGiftType) {
-    return json({ error: "This offering type is available with Giving Plus." }, { status: 403 });
+    return json({ error: "This offering type is available with Give +." }, { status: 403 });
   }
 
   const requestedFundKey = String(body.fundId || body.fund || "").trim();
@@ -2231,7 +2231,7 @@ export async function handleParishDemoTier(request, env, parishId) {
     parishHouseholdBand: requestedHouseholdBand
   });
   if (!tier || !["starter", "giving", "parish"].includes(tier.id)) {
-    return json({ error: "Choose Starter, Giving Plus, Stewardship, or Parish for the demo." }, { status: 422 });
+    return json({ error: "Choose Give, Give +, Stewardship, or Parish for the demo." }, { status: 422 });
   }
 
   const current = found.registration;
@@ -2702,7 +2702,7 @@ export async function handleParishDashboard(request, env, parishId) {
       return json({ error: "Designated funds are not available on this plan." }, { status: 403 });
     }
     if (!givingPlus && (body.campaigns !== undefined || body.feastCampaigns !== undefined)) {
-      return json({ error: "Campaigns and festal alms are available with Giving Plus." }, { status: 403 });
+      return json({ error: "Campaigns and festal alms are available with Give +." }, { status: 403 });
     }
     if (!givingPlus && body.funds !== undefined) {
       const limitError = starterFundCatalogError(body.funds);

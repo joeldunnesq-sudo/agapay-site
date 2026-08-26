@@ -2646,7 +2646,7 @@ let selectedReference = '';
               <div>
                 <label for="subscriptionTier">Subscription tier</label>
                 <select id="subscriptionTier">
-                  <option value="giving" ${['giving','mission'].includes(reg.subscriptionTier || '') ? 'selected' : ''}>Giving Plus - $49/mo early adopter</option>
+                  <option value="giving" ${['giving','mission'].includes(reg.subscriptionTier || '') ? 'selected' : ''}>Give + - $49/mo early adopter</option>
                   <option value="stewardship" ${(reg.subscriptionTier || '') === 'stewardship' ? 'selected' : ''}>Stewardship - $99/mo early adopter</option>
                   <option value="parish" ${(!reg.subscriptionTier || reg.subscriptionTier === 'parish') ? 'selected' : ''}>Parish - household-priced</option>
                   <option value="diocese" ${reg.subscriptionTier === 'diocese' ? 'selected' : ''}>Cathedral / Diocese - negotiated subscription, no donation fee</option>

@@ -494,9 +494,9 @@ function ensureGivingPlusPaywall() {
   dialog.innerHTML = `
     <div class="giving-plus-paywall-inner">
       <button class="giving-plus-paywall-close" type="button" aria-label="Close" onclick="closeGivingPlusPaywall()">×</button>
-      <span class="giving-plus-paywall-badge">Giving Plus feature</span>
+      <span class="giving-plus-paywall-badge">Give + feature</span>
       <h2 id="givingPlusPaywallTitle">Help your parish offer more ways to give</h2>
-      <p id="givingPlusPaywallCopy">Starter includes a General Operating Fund, one designated fund, and candles. Giving Plus unlocks unlimited funds, campaigns, commemorations, and festal alms.</p>
+      <p id="givingPlusPaywallCopy">Give includes a General Operating Fund, one designated fund, and candles. Give + unlocks unlimited funds, campaigns, commemorations, and festal alms.</p>
       <div class="giving-plus-paywall-actions">
         <button class="btn btn-ghost" type="button" onclick="closeGivingPlusPaywall()">Not now</button>
         <button class="btn btn-gold" id="givingPlusEncourageButton" type="button" onclick="requestParishGivingPlusUpgrade(this)">Encourage my parish</button>
@@ -529,8 +529,8 @@ function openGivingPlusPaywall(event, parish, giftType = "") {
   if (copy) {
     const starterOption = ["fund", "candles"].includes(normalizeDonorGiftType(giftType));
     copy.textContent = starterOption
-      ? `${selectedParish?.name || "This parish"} can offer ${label.toLowerCase()} on Starter, but this option has not been configured or is currently paused.`
-      : `${label} is available with Giving Plus. Starter includes General Operating, one designated fund, and candle giving.`;
+      ? `${selectedParish?.name || "This parish"} can offer ${label.toLowerCase()} on Give, but this option has not been configured or is currently paused.`
+      : `${label} is available with Give +. Give includes General Operating, one designated fund, and candle giving.`;
   }
   if (status) status.textContent = selectedParish
     ? "You can privately let parish leadership know that you want more giving options."

@@ -111,7 +111,7 @@ function baseRegistration(overrides = {}) {
     stripePayoutBankLast4: "4242",
     stripeStatusCheckedAt: checkedAt,
     subscriptionTier: "giving",
-    subscriptionTierLabel: "Giving Plus",
+    subscriptionTierLabel: "Give +",
     subscriptionStatus: "trialing",
     recurringGivingEnabled: true,
     funds: [{ id: "general", code: "general", name: "General Operating Fund", restrictionType: "unrestricted", isDefault: true, enabled: true, active: true, donorVisible: true, givingEnabled: true }],

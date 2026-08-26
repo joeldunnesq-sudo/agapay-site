@@ -39,7 +39,7 @@ assert.equal(
   subscriptionTier({ subscriptionTier: "giving" }).monthlyCents
     + subscriptionAddOns.filter((addOn) => accountingBundle.includes(addOn.id)).reduce((total, addOn) => total + addOn.standardMonthlyCents, 0),
   25800,
-  "Giving Plus with Accounting should bill $258/month without stacking included Commerce or Bookstore prices"
+  "Give + with Accounting should bill $258/month without stacking included Commerce or Bookstore prices"
 );
 const focusedOperationsBundle = normalizeSubscriptionAddOns(["koinonia", "sacraments", "bookstore", "full_commerce", "accounting"], "giving");
 assert.deepEqual(focusedOperationsBundle, ["koinonia", "sacraments", "accounting"]);
@@ -47,7 +47,7 @@ assert.equal(
   subscriptionTier({ subscriptionTier: "giving" }).monthlyCents
     + subscriptionAddOns.filter((addOn) => focusedOperationsBundle.includes(addOn.id)).reduce((total, addOn) => total + addOn.standardMonthlyCents, 0),
   30600,
-  "Giving Plus with all non-overlapping operational add-ons should bill $306/month"
+  "Give + with all non-overlapping operational add-ons should bill $306/month"
 );
 assert.equal(publicSubscriptionTiers().some((tier) => tier.id === "stewardship"), false);
 assert.equal(publicSubscriptionTiers().find((tier) => tier.id === "parish").householdBands.length, 5);

@@ -112,7 +112,7 @@ export function parishPricingUsageStatus(registration = {}, representedHousehold
 export const subscriptionTiers = [
   {
     id: "starter",
-    label: "Starter",
+    label: "Give",
     monthlyCents: 900,
     standardMonthlyCents: 900,
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
@@ -122,7 +122,7 @@ export const subscriptionTiers = [
   },
   {
     id: "giving",
-    label: "Giving Plus",
+    label: "Give +",
     monthlyCents: 7900,
     standardMonthlyCents: 7900,
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",

@@ -507,7 +507,7 @@ export async function handleParishCommemorations(request, env, parishId) {
     return unauthorized();
   }
   if (!givingFeatureAccess(found.registration, "commemorations")) {
-    return json({ error: "Commemorations are available with Giving Plus." }, { status: 403 });
+    return json({ error: "Commemorations are available with Give +." }, { status: 403 });
   }
 
   const { start, end } = weekWindow();

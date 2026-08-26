@@ -523,7 +523,7 @@ export async function handleParishReconciliation(request, env, parishId) {
   const token = getBearerToken(request);
   if (!(await verifyParishDashboardBearer(found.registration, token))) return unauthorized();
   if (!givingFeatureAccess(found.registration, "reconciliation")) {
-    return json({ error: "Monthly reconciliation is available with Giving Plus." }, { status: 403 });
+    return json({ error: "Monthly reconciliation is available with Give +." }, { status: 403 });
   }
 
   const url = new URL(request.url);
@@ -820,7 +820,7 @@ export async function handleParishReconciliationClose(request, env, parishId) {
   const token = getBearerToken(request);
   if (!(await verifyParishDashboardBearer(found.registration, token))) return unauthorized();
   if (!givingFeatureAccess(found.registration, "reconciliation")) {
-    return json({ error: "Monthly reconciliation is available with Giving Plus." }, { status: 403 });
+    return json({ error: "Monthly reconciliation is available with Give +." }, { status: 403 });
   }
 
   let body;

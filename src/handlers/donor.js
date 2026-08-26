@@ -1130,7 +1130,7 @@ export async function handleDonorGivingPlusFeatureRequest(request, env) {
   const found = await findRegistrationByParishId(env, donor.defaultParishId);
   if (!found) return json({ error: "Your selected parish could not be found." }, { status: 404 });
   if (givingFeatureAccess(found.registration, "customFunds")) {
-    return json({ ok: true, alreadyEnabled: true, message: "Your parish already includes Giving Plus." });
+    return json({ ok: true, alreadyEnabled: true, message: "Your parish already includes Give +." });
   }
 
   const result = await recordParishFeatureRequest(env, {

@@ -54,7 +54,7 @@ assert.match(parishHandler, /requestedGiftType === "candles" && parish\.candlesE
 assert.match(parishHandler, /starterFundCatalogError\(body\.funds\)/);
 assert.match(donorApp, /function parishCanUseGiftType/);
 assert.match(publicForm, /type === 'funds' \? !parish\.designatedFundsEnabled/);
-assert.match(parishApp, /Starter gives your mission three clear destinations/);
+assert.match(parishApp, /Give offers your mission three clear destinations/);
 assert.match(parishApp, /class="starter-tier-upgrade-card"/);
 assert.match(parishApp, /Your current plan remains fully usable with General Operating, one designated fund, and candles/);
 assert.doesNotMatch(parishApp, /renderGivingOptionsEditor[\s\S]*?: '<div class="starter-tier-paywall">[\s\S]*?Save giving options/);
@@ -62,4 +62,4 @@ assert.match(pricing, /One custom designated fund/);
 assert.match(pricing, /Built-in candle giving/);
 assert.match(pricing, /Unlimited custom and restricted funds/);
 
-console.log("PASS - Starter includes General Operating, one designated fund, and candles while Giving Plus retains advanced giving");
+console.log("PASS - Give includes General Operating, one designated fund, and candles while Give + retains advanced giving");

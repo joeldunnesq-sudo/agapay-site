@@ -178,7 +178,7 @@ story += [
         ["Organization details", "Legal name, EIN, physical address, phone number, and authorized representative."],
         ["Banking", "The parish-owned checking account and ACH routing information used for Stripe payouts."],
         ["Leadership contacts", "Primary clergy or administrator contact and finance or treasurer contact."],
-        ["Branding", "A parish logo, if using Giving Plus or a higher tier."],
+        ["Branding", "A parish logo, if using Give + or a higher tier."],
     ], [1.55 * inch, 5.1 * inch]),
     Paragraph("The six-part flow", styles["GuideH2"]),
     *bullets([
@@ -198,11 +198,11 @@ story += [
     Paragraph("Choose the right tier", styles["GuideTitle"]),
     table([
         ["Tier", "Monthly", "Designed for"],
-        ["Starter", "$9", "Core one-time and recurring giving, commemorations, one General Stewardship fund, one designated fund, candles, giving link, QR code, receipts, history, and CSV export."],
-        ["Giving Plus", "$79", "Everything in Starter plus parish branding, custom funds, campaigns, pledges, Stewardship Health, annual statements, and the Parish Directory."],
+        ["Give", "$9", "Core one-time and recurring giving, commemorations, one General Stewardship fund, one designated fund, candles, giving link, QR code, receipts, history, and CSV export."],
+        ["Give +", "$79", "Everything in Give plus parish branding, custom funds, campaigns, pledges, Stewardship Health, annual statements, and the Parish Directory."],
         ["Parish", "From $149", "The complete parish platform, including every add-on; early-adopter and standard rates are based on active households."],
         ["Cathedral / Diocese", "Custom", "Cathedral, diocesan, and multi-parish needs with organization-level reporting and support."],
-        ["Monastic", "$0", "Giving Plus capabilities for canonical monasteries, sketes, and convents, with no monthly platform fee."],
+        ["Monastic", "$0", "Give + capabilities for canonical monasteries, sketes, and convents, with no monthly platform fee."],
     ], [1.32 * inch, 0.72 * inch, 4.62 * inch]),
     Paragraph(
         "The tier controls feature access in both the dashboard and backend. You may upgrade or downgrade later; "
@@ -242,7 +242,7 @@ story += [
     ], [1.65 * inch, 5 * inch]),
     PageBreak(),
     Paragraph("Configure and launch Giving", styles["GuideTitle"]),
-    Paragraph("Starter launch checklist", styles["GuideH2"]),
+    Paragraph("Give launch checklist", styles["GuideH2"]),
     *bullets([
         "Review the General Stewardship fund.",
         "Open the public giving page and confirm parish name and location.",
@@ -250,14 +250,14 @@ story += [
         "Complete a small test gift and verify the receipt and dashboard history.",
         "Place the giving link and QR code on the parish website, bulletin, and printed materials.",
     ]),
-    Paragraph("Giving Plus and higher", styles["GuideH2"]),
+    Paragraph("Give + and higher", styles["GuideH2"]),
     *bullets([
         "Upload the parish logo for the dashboard, giving pages, campaigns, and church search.",
         "Create and name custom funds in the Funds tab; that catalog is the source of truth for Giving and Accounting.",
         "Create campaigns with clear goals, dates, and descriptions.",
         "Configure liturgical commemorations and annual statement settings as appropriate.",
     ]),
-    Paragraph("Giving Plus and Parish", styles["GuideH2"]),
+    Paragraph("Give + and Parish", styles["GuideH2"]),
     *bullets([
         "Review pledge tracking, recurring-gift visibility, and Stewardship Health.",
         "For Parish, enable Directory, Sacraments & Services, and Text-to-Give only when the parish is ready to use them.",

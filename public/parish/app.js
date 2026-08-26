@@ -277,16 +277,16 @@
     const ministryService = request.featureId === 'ministry-service';
     if (heading) heading.textContent = ministryService ? 'A parishioner wants to serve' : 'Your donors want more AGAPAY features';
     if (copy) copy.textContent = count === 1
-      ? (ministryService ? 'A parishioner let you know they are ready to serve.' : `A parishioner asked your church to add ${givingPlus ? 'more giving options through Giving Plus' : 'pledge tracking and the Stewardship features that support it'}.`)
-      : (ministryService ? `${count} parishioners let you know they are ready to serve.` : `${count} parishioners asked your church to add ${givingPlus ? 'more giving options through Giving Plus' : 'pledge tracking and the Stewardship features that support it'}.`);
+      ? (ministryService ? 'A parishioner let you know they are ready to serve.' : `A parishioner asked your church to add ${givingPlus ? 'more giving options through Give +' : 'pledge tracking and the Stewardship features that support it'}.`)
+      : (ministryService ? `${count} parishioners let you know they are ready to serve.` : `${count} parishioners asked your church to add ${givingPlus ? 'more giving options through Give +' : 'pledge tracking and the Stewardship features that support it'}.`);
     if (featureTitle) featureTitle.textContent = ministryService ? 'Ready to get involved' : givingPlus ? 'More ways to give' : 'Annual pledge progress';
     if (featureDescription) featureDescription.textContent = ministryService
       ? 'Consider publishing ministry opportunities or inviting parishioners to speak with a ministry leader after services.'
       : givingPlus
-      ? 'Giving Plus unlocks designated funds, candles, commemorations, campaigns, festal alms, and other donor giving choices.'
+      ? 'Give + unlocks designated funds, candles, commemorations, campaigns, festal alms, and other donor giving choices.'
       : 'The Stewardship tier gives parishioners a live pledge tracker and gives parish leaders pledge, giving-health, and annual-meeting insights.';
     if (action) {
-      action.textContent = ministryService ? 'Acknowledge' : givingPlus ? 'View Giving Plus tier' : 'View Stewardship tier';
+      action.textContent = ministryService ? 'Acknowledge' : givingPlus ? 'View Give + tier' : 'View Stewardship tier';
       action.setAttribute('onclick', ministryService ? 'dismissParishFeatureRequest(false)' : 'dismissParishFeatureRequest(true)');
     }
     if (status) status.textContent = 'Requests are counted privately; donor identities are not shown.';
@@ -940,12 +940,12 @@
   }
 
   const starterLockedFeatures = {
-    options: ['Custom funds & alms', 'Create and name custom funds, organize designated giving, and manage standing alms with Giving Plus.'],
-    campaigns: ['Campaign pages', 'Create goal-based, shareable campaigns with Giving Plus.'],
-    givers: ['Giver insights', 'See donor-level history and deeper giving reports with Giving Plus.'],
-    reconcile: ['Monthly reconciliation', 'Match gifts, fees, refunds, and Stripe deposits with Giving Plus.'],
-    commemorations: ['Commemorations', 'Starter includes candle giving. Liturgical commemorations, Moliebens, Panikhidas, and the priest queue are included with Giving Plus.'],
-    statements: ['Annual giving statements', 'Generate and email annual donor statements with Giving Plus.'],
+    options: ['Custom funds & alms', 'Create and name custom funds, organize designated giving, and manage standing alms with Give +.'],
+    campaigns: ['Campaign pages', 'Create goal-based, shareable campaigns with Give +.'],
+    givers: ['Giver insights', 'See donor-level history and deeper giving reports with Give +.'],
+    reconcile: ['Monthly reconciliation', 'Match gifts, fees, refunds, and Stripe deposits with Give +.'],
+    commemorations: ['Commemorations', 'Give includes candle giving. Liturgical commemorations, Moliebens, Panikhidas, and the priest queue are included with Give +.'],
+    statements: ['Annual giving statements', 'Generate and email annual donor statements with Give +.'],
     stewardship: ['Stewardship Health', 'Track pledges, understand giving health, prepare stewardship reports, and keep annual records with the Stewardship tier.'],
     bookstore: ['Parish Commerce', 'Manage bookstore sales now and add more parish commerce products as they become available in the Stewardship tier.'],
     sacraments: ['Sacraments & Services', 'Receive pastoral requests, coordinate clergy schedules, and keep families informed with the Parish tier.'],
@@ -954,7 +954,7 @@
     directory: ['Parish Directory', 'Manage member and household records, privacy controls, namedays, ministries, and parish connections with the Parish tier.']
   };
 
-  function starterPaywallMarkup(featureKey, tierLabel = 'Giving Plus') {
+  function starterPaywallMarkup(featureKey, tierLabel = 'Give +') {
     const [title, copy] = starterLockedFeatures[featureKey];
     return `<div class="starter-tier-paywall">
       <span class="starter-tier-paywall-badge">${escapeHtml(tierLabel)}</span>
@@ -1041,16 +1041,16 @@
       statements: document.getElementById('pdxGsSection')
     };
     Object.entries(givingPlusTargets).forEach(([key, element]) => {
-      syncDashboardPaywall(element, key, 'Giving Plus', givingPlusLocked);
-      if (['campaigns', 'givers', 'reconcile'].includes(key)) syncTierRequirementNavigation(key, 'Giving Plus', !givingPlusLocked);
+      syncDashboardPaywall(element, key, 'Give +', givingPlusLocked);
+      if (['campaigns', 'givers', 'reconcile'].includes(key)) syncTierRequirementNavigation(key, 'Give +', !givingPlusLocked);
     });
     const optionsIncluded = hasFundManagementAccess();
-    syncDashboardPaywall(document.getElementById('tab-options'), 'options', 'Giving Plus', !optionsIncluded);
-    syncTierRequirementNavigation('options', 'Giving Plus', optionsIncluded);
+    syncDashboardPaywall(document.getElementById('tab-options'), 'options', 'Give +', !optionsIncluded);
+    syncTierRequirementNavigation('options', 'Give +', optionsIncluded);
 
     const stewardshipLocked = !moduleIncluded('stewardshipHealth');
-    syncDashboardPaywall(document.getElementById('tab-stewardship'), 'stewardship', 'Giving Plus', stewardshipLocked);
-    syncTierRequirementNavigation('stewardship', 'Giving Plus', !stewardshipLocked);
+    syncDashboardPaywall(document.getElementById('tab-stewardship'), 'stewardship', 'Give +', stewardshipLocked);
+    syncTierRequirementNavigation('stewardship', 'Give +', !stewardshipLocked);
     const bookstoreLocked = !moduleIncluded('bookstore');
     syncDashboardPaywall(document.getElementById('tab-bookstore'), 'bookstore', 'Bookstore add-on', bookstoreLocked);
     syncTierRequirementNavigation('bookstore', 'Bookstore add-on', !bookstoreLocked);
@@ -1064,8 +1064,8 @@
       syncDashboardPaywall(element, key, 'Parish', locked);
       syncTierRequirementNavigation(key, 'Parish', !locked);
     });
-    syncDashboardPaywall(document.getElementById('tab-directory'), 'directory', 'Giving Plus', !moduleIncluded('directory'));
-    syncTierRequirementNavigation('directory', 'Giving Plus', moduleIncluded('directory'));
+    syncDashboardPaywall(document.getElementById('tab-directory'), 'directory', 'Give +', !moduleIncluded('directory'));
+    syncTierRequirementNavigation('directory', 'Give +', moduleIncluded('directory'));
     syncDashboardPaywall(document.getElementById('tab-sacraments'), 'sacraments', 'Sacraments add-on', !moduleIncluded('sacraments'));
     syncTierRequirementNavigation('sacraments', 'Sacraments add-on', moduleIncluded('sacraments'));
     syncDashboardPaywall(document.getElementById('tab-accounting'), 'accounting', 'Accounting add-on', !moduleIncluded('accounting'));
@@ -4614,7 +4614,7 @@
     const mobileCommunicationsNav = document.querySelector('.mobile-tab-link[data-nav-tab="communications"]');
     if (communicationsNav) communicationsNav.hidden = !parishLifeAvailable;
     if (mobileCommunicationsNav) mobileCommunicationsNav.hidden = !parishLifeAvailable;
-    syncTierRequirementNavigation('stewardship', 'Giving Plus', stewardshipActive);
+    syncTierRequirementNavigation('stewardship', 'Give +', stewardshipActive);
     const bookstoreBadge = document.getElementById('bookstoreNavBadge');
     const mobileBookstoreBadge = document.getElementById('mobileBookstoreBadge');
     syncTierRequirementNavigation('bookstore', 'Bookstore add-on', bookstoreActive);
@@ -8319,9 +8319,9 @@
       </div>`;
     }).join('') : '<div class="option-empty options-summary-empty">No giving options configured yet.</div>'}</div>
       <div class="option-builder options-summary-builder">
-        <div class="option-builder-title">${hasGivingPlusAccess() ? 'Add a fund' : 'Your Starter designated fund'}</div>
-        <p class="section-note">${hasGivingPlusAccess() ? 'Funds shown above are the source of truth for donor choices and the Accounting suite. Saving creates or updates the matching accounting funds automatically.' : 'Starter includes General Operating, one active designated fund, and candle giving. Edit the designated fund above or upgrade for additional funds.'}</p>
-        ${starterLimitReached ? '<div class="option-empty">Your one Starter designated fund is active. Edit it above, or upgrade to Giving Plus to add more.</div>' : `<div class="builder-grid"><select id="fundPreset" onchange="fillGivingPreset('fund')"><option value="custom" selected>Custom fund — name it yourself</option><optgroup label="Start from a preset">${presetOptions(fundPresets)}</optgroup></select><input id="fundAccountNumber" maxlength="24" placeholder="Fund account number (optional), e.g. 2100" /><input id="fundName" maxlength="120" placeholder="Custom fund name, e.g. Mission Development Fund" /><select id="fundRestriction"><option value="unrestricted">Unrestricted</option><option value="board_designated">Board designated</option><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option></select><textarea id="fundDescription" maxlength="500" placeholder="Describe what this parish-created fund supports."></textarea><button class="btn btn-gold" onclick="addGivingOption('fund')">Add designated fund</button></div>`}
+        <div class="option-builder-title">${hasGivingPlusAccess() ? 'Add a fund' : 'Your Give designated fund'}</div>
+        <p class="section-note">${hasGivingPlusAccess() ? 'Funds shown above are the source of truth for donor choices and the Accounting suite. Saving creates or updates the matching accounting funds automatically.' : 'Give includes General Operating, one active designated fund, and candle giving. Edit the designated fund above or upgrade for additional funds.'}</p>
+        ${starterLimitReached ? '<div class="option-empty">Your one Give designated fund is active. Edit it above, or upgrade to Give + to add more.</div>' : `<div class="builder-grid"><select id="fundPreset" onchange="fillGivingPreset('fund')"><option value="custom" selected>Custom fund — name it yourself</option><optgroup label="Start from a preset">${presetOptions(fundPresets)}</optgroup></select><input id="fundAccountNumber" maxlength="24" placeholder="Fund account number (optional), e.g. 2100" /><input id="fundName" maxlength="120" placeholder="Custom fund name, e.g. Mission Development Fund" /><select id="fundRestriction"><option value="unrestricted">Unrestricted</option><option value="board_designated">Board designated</option><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option></select><textarea id="fundDescription" maxlength="500" placeholder="Describe what this parish-created fund supports."></textarea><button class="btn btn-gold" onclick="addGivingOption('fund')">Add designated fund</button></div>`}
       </div>
     </div>`;
   }
@@ -8637,9 +8637,9 @@
   }
 
   function addGivingOption(kind) {
-    if (kind === 'campaign' && !hasGivingPlusAccess()) { setStatus('Campaigns require Giving Plus.', 'error'); return; }
+    if (kind === 'campaign' && !hasGivingPlusAccess()) { setStatus('Campaigns require Give +.', 'error'); return; }
     if (kind === 'fund' && !hasGivingPlusAccess() && editableFunds.some((fund) => fund && !isGeneralDashboardFund(fund) && !isCandleDashboardFund(fund) && fund.enabled !== false && fund.active !== false)) {
-      setStatus('Starter includes one active designated fund. Edit the current fund or upgrade to add more.', 'error');
+      setStatus('Give includes one active designated fund. Edit the current fund or upgrade to add more.', 'error');
       return;
     }
     const prefix = kind === 'fund' ? 'fund' : 'campaign';
@@ -8995,7 +8995,7 @@
   function subscriptionAddOnPickerMarkup({ tierSelectId, groupId }) {
     const selected = new Set(currentParish?.subscriptionAddOns || []);
     const catalog = currentParish?.subscriptionAddOnCatalog || [];
-    return `<div class="form-group full" id="${groupId}" data-tier-select-id="${tierSelectId}" hidden><label class="form-label">Optional Giving Plus add-ons</label><div class="toggle-row">${catalog.map((addOn) => `<label class="check-card"><input type="checkbox" data-subscription-add-on="${escapeHtml(addOn.id)}" ${selected.has(addOn.id)?'checked':''} onchange="syncSubscriptionAddOnChoice('${groupId}')" /> <span><strong>${escapeHtml(addOn.label)}</strong><small>${escapeHtml(money(subscriptionAddOnPriceCents(addOn)))}/mo${addOn.id==='accounting'?' · includes Full Commerce + Bookstore':addOn.id==='full_commerce'?' · includes Bookstore':''}</small></span></label>`).join('')}</div><p class="section-note">Add-ons are available with Giving Plus. Included add-ons never stack, and Parish already includes every module.</p><p class="section-note" data-subscription-price-summary aria-live="polite"></p></div>`;
+    return `<div class="form-group full" id="${groupId}" data-tier-select-id="${tierSelectId}" hidden><label class="form-label">Optional Give + add-ons</label><div class="toggle-row">${catalog.map((addOn) => `<label class="check-card"><input type="checkbox" data-subscription-add-on="${escapeHtml(addOn.id)}" ${selected.has(addOn.id)?'checked':''} onchange="syncSubscriptionAddOnChoice('${groupId}')" /> <span><strong>${escapeHtml(addOn.label)}</strong><small>${escapeHtml(money(subscriptionAddOnPriceCents(addOn)))}/mo${addOn.id==='accounting'?' · includes Full Commerce + Bookstore':addOn.id==='full_commerce'?' · includes Bookstore':''}</small></span></label>`).join('')}</div><p class="section-note">Add-ons are available with Give +. Included add-ons never stack, and Parish already includes every module.</p><p class="section-note" data-subscription-price-summary aria-live="polite"></p></div>`;
   }
   function syncSubscriptionAddOnVisibility(tierSelectId, groupId) {
     const group = document.getElementById(groupId);
@@ -9186,7 +9186,7 @@
 
   function givingSetupTierDetails() {
     const tier = String(currentParish?.subscriptionTier || 'starter').toLowerCase();
-    const label = currentParish?.subscriptionTierLabel || (tier === 'starter' ? 'Starter' : 'Giving Plus');
+    const label = currentParish?.subscriptionTierLabel || (tier === 'starter' ? 'Give' : 'Give +');
     const givingPlus = hasGivingPlusAccess();
     const featureCopy = tier === 'starter'
       ? 'General Operating, one designated fund, candles, and recurring giving'
@@ -9273,8 +9273,8 @@
     const fundLimit = Number.isFinite(tier.designatedLimit) ? `Choose up to ${tier.designatedLimit}` : 'Choose any that apply';
     return `<div class="giving-setup-screen">
       <div class="giving-setup-screen-heading"><span>Step 2 of 3</span><h3>Choose giving destinations</h3><p>${escapeHtml(fundLimit)}. Start small—these can always be changed later.</p></div>
-      <section class="giving-setup-choice-section"><div class="giving-setup-choice-head"><div><strong>Designated funds</strong><small>${tier.givingPlus ? 'Your plan supports unlimited active designated funds.' : 'Starter supports one active designated fund.'}</small></div><em>${givingSetupDraft.designatedFunds.length}${Number.isFinite(tier.designatedLimit) ? ` / ${tier.designatedLimit}` : ''} selected</em></div>${givingSetupChoiceRows(givingSetupDraft.designatedFunds, 'fund')}${givingSetupPresetButtons('fund')}<div class="giving-setup-custom"><input id="givingSetupCustomFund" maxlength="120" placeholder="Or name a different fund"><button type="button" onclick="addGivingSetupCustom('fund')">Add fund</button></div></section>
-      ${tier.givingPlus ? `<section class="giving-setup-choice-section"><div class="giving-setup-choice-head"><div><strong>Launch campaigns</strong><small>Optional, time-limited needs. Skip this if there is no current campaign.</small></div><em>${givingSetupDraft.campaigns.length} selected</em></div>${givingSetupChoiceRows(givingSetupDraft.campaigns, 'campaign')}${givingSetupPresetButtons('campaign')}<div class="giving-setup-custom"><input id="givingSetupCustomCampaign" maxlength="120" placeholder="Or name a current campaign"><button type="button" onclick="addGivingSetupCustom('campaign')">Add campaign</button></div></section>` : '<div class="giving-setup-upgrade-note"><strong>Campaigns are not part of Starter.</strong><span>You can launch now with General Operating, one designated fund, and candles. Upgrade later if the parish needs campaigns.</span></div>'}
+      <section class="giving-setup-choice-section"><div class="giving-setup-choice-head"><div><strong>Designated funds</strong><small>${tier.givingPlus ? 'Your plan supports unlimited active designated funds.' : 'Give supports one active designated fund.'}</small></div><em>${givingSetupDraft.designatedFunds.length}${Number.isFinite(tier.designatedLimit) ? ` / ${tier.designatedLimit}` : ''} selected</em></div>${givingSetupChoiceRows(givingSetupDraft.designatedFunds, 'fund')}${givingSetupPresetButtons('fund')}<div class="giving-setup-custom"><input id="givingSetupCustomFund" maxlength="120" placeholder="Or name a different fund"><button type="button" onclick="addGivingSetupCustom('fund')">Add fund</button></div></section>
+      ${tier.givingPlus ? `<section class="giving-setup-choice-section"><div class="giving-setup-choice-head"><div><strong>Launch campaigns</strong><small>Optional, time-limited needs. Skip this if there is no current campaign.</small></div><em>${givingSetupDraft.campaigns.length} selected</em></div>${givingSetupChoiceRows(givingSetupDraft.campaigns, 'campaign')}${givingSetupPresetButtons('campaign')}<div class="giving-setup-custom"><input id="givingSetupCustomCampaign" maxlength="120" placeholder="Or name a current campaign"><button type="button" onclick="addGivingSetupCustom('campaign')">Add campaign</button></div></section>` : '<div class="giving-setup-upgrade-note"><strong>Campaigns are not part of Give.</strong><span>You can launch now with General Operating, one designated fund, and candles. Upgrade later if the parish needs campaigns.</span></div>'}
     </div>`;
   }
 
@@ -9540,10 +9540,10 @@
       <div class="pdx-sub-modules">
         <div class="pdx-sub-modules-head"><div><span>Plan access</span><strong>Included parish tools</strong></div><button type="button" onclick="switchTab('settings')">Compare tiers</button></div>
         <div class="pdx-sub-module-grid">
-          ${moduleRow('Giving Plus', 'givingPlus', 'Custom funds, campaigns, givers, and reconciliation', 'Giving Plus')}
-          ${moduleRow('Stewardship Health', 'stewardshipHealth', 'Pledges, insights, and stewardship reporting', 'Giving Plus')}
+          ${moduleRow('Give +', 'givingPlus', 'Custom funds, campaigns, givers, and reconciliation', 'Give +')}
+          ${moduleRow('Stewardship Health', 'stewardshipHealth', 'Pledges, insights, and stewardship reporting', 'Give +')}
           ${moduleRow('Bookstore', 'bookstore', 'Parish commerce and Stripe-powered sales', 'Bookstore add-on')}
-          ${moduleRow('Parish Directory', 'directory', 'Member, household, and ministry records', 'Giving Plus')}
+          ${moduleRow('Parish Directory', 'directory', 'Member, household, and ministry records', 'Give +')}
           ${moduleRow('Sacraments & Services', 'sacraments', 'Pastoral requests and clergy coordination', 'Sacraments add-on')}
           ${moduleRow('Text-to-Give', 'textToGive', 'Keywords that route donors to your giving page', 'Parish')}
         </div>
@@ -9557,13 +9557,13 @@
     const accountingNav = document.getElementById('nav-accounting');
     const stewardshipNav = document.getElementById('nav-stewardship');
     stewardshipNav?.removeAttribute('hidden');
-    syncTierRequirementNavigation('stewardship', 'Giving Plus', stewardshipIncluded);
-    if (stewardshipNav) stewardshipNav.title = stewardshipIncluded ? 'Stewardship Health' : 'Requires Giving Plus';
+    syncTierRequirementNavigation('stewardship', 'Give +', stewardshipIncluded);
+    if (stewardshipNav) stewardshipNav.title = stewardshipIncluded ? 'Stewardship Health' : 'Requires Give +';
     document.getElementById('nav-directory')?.removeAttribute('hidden');
     document.querySelectorAll('.mobile-tab-link[data-nav-tab="directory"]').forEach((el) => {
       el.hidden = false;
     });
-    syncTierRequirementNavigation('directory', 'Giving Plus', directoryActive);
+    syncTierRequirementNavigation('directory', 'Give +', directoryActive);
     syncTierRequirementNavigation('library', 'Parish', moduleIncluded('sacraments'));
     syncTierRequirementNavigation('accounting', 'Accounting add-on', accountingIncluded);
     syncModuleStatusNavigation('accounting', accountingIncluded, accountingIncluded);
@@ -9933,10 +9933,10 @@
           <label class="form-label">Parish logo</label>
           <div class="parish-logo-settings">
             ${!hasGivingPlusAccess()
-              ? `<div class="parish-logo-preview parish-logo-placeholder">Giving Plus<br>feature</div>
+              ? `<div class="parish-logo-preview parish-logo-placeholder">Give +<br>feature</div>
                 <div>
-                  <p class="section-note">Add your parish logo to the dashboard, public giving pages, campaign pages, and church search with Giving Plus. Any logo previously uploaded is preserved and will reappear if you upgrade.</p>
-                  <button class="btn btn-gold" type="button" onclick="switchTab('settings')">Upgrade to Giving Plus</button>
+                  <p class="section-note">Add your parish logo to the dashboard, public giving pages, campaign pages, and church search with Give +. Any logo previously uploaded is preserved and will reappear if you upgrade.</p>
+                  <button class="btn btn-gold" type="button" onclick="switchTab('settings')">Upgrade to Give +</button>
                 </div>`
               : p.logoUrl
               ? `<img class="parish-logo-preview" src="${escapeHtml(p.logoUrl)}" alt="${escapeHtml((p.parishName || 'Parish') + ' logo')}" />`
@@ -10018,7 +10018,7 @@
         ${parishHouseholdPickerMarkup({tierSelectId:'subscriptionTierUpgrade',bandSelectId:'subscriptionHouseholdBandUpgrade',groupId:'subscriptionHouseholdBandGroup',summaryId:'subscriptionHouseholdBandPrice'})}
         ${subscriptionAddOnPickerMarkup({tierSelectId:'subscriptionTierUpgrade',groupId:'subscriptionAddOnUpgradeGroup'})}
       </div>
-      <p class="section-note">${p.parishId === 'st-fiacre' ? 'Demo mode: switch tiers instantly to show churches how AGAPAY changes at each level. No Stripe billing is changed.' : demoActive ? `Your free 30-day demo is active${demoEndLabel?` through ${escapeHtml(demoEndLabel)}`:''}. No card is required during the demo. Add billing information in the secure portal only if you want to continue afterward.` : billingActive ? "Choose a tier or Giving Plus add-ons here to update the existing AGAPAY subscription. Use Stripe's secure billing portal for payment details or cancellation." : demoEligible ? 'Choose a tier and start the free 30-day demo. No card is required. Giving Plus includes pledges, Stewardship Health, and the Parish Directory; Parish includes the complete operations suite.' : 'Choose a tier and complete subscription checkout to reactivate AGAPAY.'}</p>
+      <p class="section-note">${p.parishId === 'st-fiacre' ? 'Demo mode: switch tiers instantly to show churches how AGAPAY changes at each level. No Stripe billing is changed.' : demoActive ? `Your free 30-day demo is active${demoEndLabel?` through ${escapeHtml(demoEndLabel)}`:''}. No card is required during the demo. Add billing information in the secure portal only if you want to continue afterward.` : billingActive ? "Choose a tier or Give + add-ons here to update the existing AGAPAY subscription. Use Stripe's secure billing portal for payment details or cancellation." : demoEligible ? 'Choose a tier and start the free 30-day demo. No card is required. Give + includes pledges, Stewardship Health, and the Parish Directory; Parish includes the complete operations suite.' : 'Choose a tier and complete subscription checkout to reactivate AGAPAY.'}</p>
       <div class="btn-row">
         ${p.parishId === 'st-fiacre'
           ? '<button class="btn btn-gold" onclick="changeDemoTier(this)">Apply demo tier</button>'
@@ -10093,8 +10093,8 @@
     const pane = document.getElementById('editorPane'); if (!pane) return;
     pane.innerHTML = `
       ${renderOptionsProgressSummary()}
-      <div class="giving-options-intro">${hasGivingPlusAccess() ? 'These are the choices donors see after selecting <strong>Designated Fund</strong> or <strong>Alms Campaign</strong>. Add presets or write your own.' : 'Starter gives your mission three clear destinations: <strong>General Operating</strong>, <strong>one designated fund</strong>, and <strong>Candles</strong>.'}</div>
-      ${hasGivingPlusAccess() ? `<div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Alms campaigns</h3><span class="option-group-count">${editableCampaigns.length} shown</span></div><div class="option-list">${optionCards(editableCampaigns,'campaign','No alms campaigns configured yet.')}</div><div class="option-builder"><div class="option-builder-title">Add an alms campaign</div><div class="builder-grid"><select id="campaignPreset" onchange="fillGivingPreset('campaign')"><option value="">Choose a preset...</option>${presetOptions(campaignPresets)}</select><input id="campaignAccountNumber" maxlength="24" placeholder="Account number, e.g. 2200" /><input id="campaignName" placeholder="Campaign name, e.g. Support for the Petrov Family" /><select id="campaignRestriction"><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option><option value="board_designated">Board designated</option><option value="unrestricted">Unrestricted</option></select><textarea id="campaignDescription" placeholder="Describe the need in plain language."></textarea><input id="campaignGoal" type="number" min="0" step="1" placeholder="Goal amount, e.g. 45000" /><button class="btn btn-ghost" onclick="addGivingOption('campaign')">Add campaign</button></div></div></div>${renderFeastCampaignSetup()}` : '<aside class="starter-tier-upgrade-card"><div><span class="starter-tier-paywall-badge">Giving Plus</span><strong>Need more giving destinations?</strong><p>Your current plan remains fully usable with General Operating, one designated fund, and candles. Upgrade only when you need unlimited funds, campaigns, commemorations, festal alms, branding, statements, or enhanced reporting.</p></div><button class="btn btn-gold" type="button" onclick="switchTab(\'settings\')">Compare plans</button></aside>'}
+      <div class="giving-options-intro">${hasGivingPlusAccess() ? 'These are the choices donors see after selecting <strong>Designated Fund</strong> or <strong>Alms Campaign</strong>. Add presets or write your own.' : 'Give offers your mission three clear destinations: <strong>General Operating</strong>, <strong>one designated fund</strong>, and <strong>Candles</strong>.'}</div>
+      ${hasGivingPlusAccess() ? `<div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Alms campaigns</h3><span class="option-group-count">${editableCampaigns.length} shown</span></div><div class="option-list">${optionCards(editableCampaigns,'campaign','No alms campaigns configured yet.')}</div><div class="option-builder"><div class="option-builder-title">Add an alms campaign</div><div class="builder-grid"><select id="campaignPreset" onchange="fillGivingPreset('campaign')"><option value="">Choose a preset...</option>${presetOptions(campaignPresets)}</select><input id="campaignAccountNumber" maxlength="24" placeholder="Account number, e.g. 2200" /><input id="campaignName" placeholder="Campaign name, e.g. Support for the Petrov Family" /><select id="campaignRestriction"><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option><option value="board_designated">Board designated</option><option value="unrestricted">Unrestricted</option></select><textarea id="campaignDescription" placeholder="Describe the need in plain language."></textarea><input id="campaignGoal" type="number" min="0" step="1" placeholder="Goal amount, e.g. 45000" /><button class="btn btn-ghost" onclick="addGivingOption('campaign')">Add campaign</button></div></div></div>${renderFeastCampaignSetup()}` : '<aside class="starter-tier-upgrade-card"><div><span class="starter-tier-paywall-badge">Give +</span><strong>Need more giving destinations?</strong><p>Your current plan remains fully usable with General Operating, one designated fund, and candles. Upgrade only when you need unlimited funds, campaigns, commemorations, festal alms, branding, statements, or enhanced reporting.</p></div><button class="btn btn-gold" type="button" onclick="switchTab(\'settings\')">Compare plans</button></aside>'}
       <div class="btn-row"><button class="btn btn-gold" onclick="saveDashboard(this)">Save giving options</button><button class="btn btn-ghost" onclick="loadDashboard()">Discard changes</button></div>`;
   }
 

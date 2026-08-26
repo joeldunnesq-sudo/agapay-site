@@ -46,8 +46,8 @@ if (!product) {
 }
 
 const plans = [
-  { key: "starter", tier: "starter", label: "Starter", cents: 900, env: "AGAPAY_STRIPE_PRICE_STARTER_MONTHLY" },
-  { key: "giving", tier: "giving", label: "Giving Plus", cents: 7900, env: "AGAPAY_STRIPE_PRICE_GIVING_79_MONTHLY" },
+  { key: "starter", tier: "starter", label: "Give", cents: 900, env: "AGAPAY_STRIPE_PRICE_STARTER_MONTHLY" },
+  { key: "giving", tier: "giving", label: "Give +", cents: 7900, env: "AGAPAY_STRIPE_PRICE_GIVING_79_MONTHLY" },
   { key: "parish_early_under_50", tier: "parish", band: "under_50", label: "Parish early adopter · under 50 households", cents: 14900, env: "AGAPAY_STRIPE_PRICE_PARISH_149_MONTHLY" },
   { key: "parish_early_50_149", tier: "parish", band: "50_149", label: "Parish early adopter · 50–149 households", cents: 19900, env: "AGAPAY_STRIPE_PRICE_PARISH_199_MONTHLY" },
   { key: "parish_early_150_299", tier: "parish", band: "150_299", label: "Parish early adopter · 150–299 households", cents: 24900, env: "AGAPAY_STRIPE_PRICE_PARISH_249_EARLY_MONTHLY" },

@@ -126,7 +126,7 @@ assert.ok(registerHtml.includes("startOrganizationRegistration"), "registration 
 assert.ok(registerHtml.includes("organizationDescription"), "registration should collect values-review copy when needed");
 assert.ok(registerHtml.includes("requiresJurisdiction"), "registration should branch required fields by organization type");
 assert.ok(registerHtml.includes("requiresWebsite"), "registration should require websites for businesses");
-assert.ok(registerHtml.includes('id="subscriptionTier"') && registerHtml.includes("Starter — $9/month") && registerHtml.includes("Parish — from $149/month early adopter") && registerHtml.includes('id="parishHouseholdBand"'), "registration should require a current starting-tier and household-band choice");
+assert.ok(registerHtml.includes('id="subscriptionTier"') && registerHtml.includes("Give — $9/month") && registerHtml.includes("Give + — $79/month") && registerHtml.includes("Parish — from $149/month early adopter") && registerHtml.includes('id="parishHouseholdBand"'), "registration should require the renamed Give tiers and a household-band choice");
 assert.ok(registerHtml.includes("subscriptionTier: document.getElementById('subscriptionTier').value"), "registration should submit the selected starting tier");
 assert.ok(parishHandler.includes('requiredFields') && parishHandler.includes('"subscriptionTier"') && parishHandler.includes("validTierForCommunity"), "registration backend should validate the selected tier for the community type");
 assert.ok(parishNotifications.includes("Getting started with AGAPAY") && parishNotifications.includes("attachments: currentGuideAttachment ? [currentGuideAttachment] : []"), "the Getting started email should attach the current parish guide");
@@ -215,7 +215,7 @@ assert.ok(adminApp.includes('requestedTab') && adminApp.includes('queue-mobile-s
 assert.ok(adminHtml.includes("weeklyCommemorationParishId") && adminApp.includes("runWeeklyCommemorationEmail") && adminApp.includes("/api/admin/commemorations/send-weekly"), "admin dashboard should expose a weekly commemoration email preview/send control");
 assert.ok(adminHtml.includes("weeklyTreasurerParishId") && adminApp.includes("runWeeklyTreasurerEmail") && adminApp.includes("/api/admin/commerce/send-weekly-treasurer"), "admin dashboard should expose a weekly treasurer commerce email preview/send control");
 assert.ok(adminCss.includes('admin-mobile-command') && adminCss.includes('mobile-review-bar') && adminCss.includes('product-admin-hero-giving { display: none; }'), "admin dashboard should include dedicated mobile verification layout styles");
-assert.ok(serviceWorker.includes('agapay-static-v32'), "service worker cache version should advance when PWA shell caching behavior changes");
+assert.ok(serviceWorker.includes('agapay-static-v33'), "service worker cache version should advance when PWA shell caching behavior changes");
 assert.ok(
   serviceWorker.includes('"/myagapay/teaching.html"')
     && serviceWorker.includes('url.pathname.startsWith("/myagapay/teaching") ? caches.match("/myagapay/teaching.html")'),
@@ -355,14 +355,14 @@ assert.ok(
     && donorApp.includes("function updateGivingTierTiles")
     && donorApp.includes("function openGivingPlusPaywall")
     && donorApp.includes("/api/donor/giving-plus-feature-request"),
-  "My AGAPAY should gate Giving Plus tiles with an upgrade paywall and a parish encouragement action"
+  "My AGAPAY should gate Give + tiles with an upgrade paywall and a parish encouragement action"
 );
 assert.ok(
   donorHandler.includes('featureId: "giving-plus"')
     && worker.includes('url.pathname === "/api/donor/giving-plus-feature-request"')
     && parishDashboardApp.includes("item?.featureId === 'giving-plus'")
     && parishHandler.includes('["pledge-tracker", "giving-plus", "ministry-service"].includes(featureId)'),
-  "Giving Plus donor requests should be stored, surfaced in the parish dashboard, and dismissible"
+  "Give + donor requests should be stored, surfaced in the parish dashboard, and dismissible"
 );
 const myAgapayHistory = await readFile("public/myagapay/giving/history.html", "utf8");
 assert.ok(
@@ -459,11 +459,11 @@ assert.ok(
 const givePricingHtml = await readFile("public/give/pricing.html", "utf8");
 const subscriptionCatalog = await readFile("src/lib/subscriptions.js", "utf8");
 const starterPricingCard = givePricingHtml.slice(
-  givePricingHtml.indexOf('<h2 class="tier-title">Starter</h2>'),
-  givePricingHtml.indexOf('<h2 class="tier-title">Giving Plus</h2>')
+  givePricingHtml.indexOf('<h2 class="tier-title">Give</h2>'),
+  givePricingHtml.indexOf('<h2 class="tier-title">Give +</h2>')
 );
 const givingPlusPricingCard = givePricingHtml.slice(
-  givePricingHtml.indexOf('<h2 class="tier-title">Giving Plus</h2>'),
+  givePricingHtml.indexOf('<h2 class="tier-title">Give +</h2>'),
   givePricingHtml.indexOf('<h2 class="tier-title">Parish</h2>')
 );
 const parishPricingCard = givePricingHtml.slice(
@@ -475,17 +475,18 @@ assert.ok(
     && subscriptionCatalog.includes("monthlyCents: 900")
     && subscriptionCatalog.includes("standardMonthlyCents: 24900")
     && subscriptionCatalog.includes("earlyAdopterMonthlyCents: 14900")
-    && subscriptionCatalog.includes('label: "Giving Plus"'),
-  "subscription catalog should expose Starter and household-priced Parish early-adopter and standard rates"
+    && subscriptionCatalog.includes('label: "Give"')
+    && subscriptionCatalog.includes('label: "Give +"'),
+  "subscription catalog should expose Give, Give +, and household-priced Parish rates"
 );
 assert.ok(
-  givePricingHtml.includes('<h2 class="tier-title">Starter</h2>')
+  givePricingHtml.includes('<h2 class="tier-title">Give</h2>')
     && givePricingHtml.includes('<div class="tier-price">$9 <span>/ mo</span></div>')
-    && givePricingHtml.includes('<h2 class="tier-title">Giving Plus</h2>')
+    && givePricingHtml.includes('<h2 class="tier-title">Give +</h2>')
     && givePricingHtml.includes('<div class="tier-price">$79 <span>/ mo</span></div>')
     && givePricingHtml.includes('<div class="tier-price">$149 <span>/ mo starting</span></div>')
     && givePricingHtml.includes("Early adopter · first 20")
-    && /<ul class="tier-features">\r?\n\s*<li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"\/><\/svg><\/span>Everything in Starter, plus<\/li>/.test(givingPlusPricingCard)
+    && /<ul class="tier-features">\r?\n\s*<li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"\/><\/svg><\/span>Everything in Give, plus<\/li>/.test(givingPlusPricingCard)
     && givePricingHtml.includes("Parish logo across giving pages and church search")
     && !givePricingHtml.includes("Parish logo, public page, and church search listing")
     && ["Small mission chapel", "Parish church", "Large three-domed Orthodox church", "Grand five-domed Orthodox cathedral", "Orthodox monastery complex"].every((label) => givePricingHtml.includes(`aria-label="${label}"`)),
@@ -495,8 +496,8 @@ assert.ok(
   !givePricingHtml.includes("Stewardship Health dashboard for parish giving trends")
     && !givePricingHtml.includes("Pledge progress, giving gaps, and follow-up visibility")
     && givePricingHtml.includes("Full Parish Commerce: Bookstore, Events, Meals")
-    && parishPricingCard.includes("Everything in Giving Plus and every add-on"),
-  "Parish pricing should bundle Giving Plus and every operational add-on"
+    && parishPricingCard.includes("Everything in Give + and every add-on"),
+  "Parish pricing should bundle Give + and every operational add-on"
 );
 assert.ok(
   parishPricingCard.includes("Koinonia parish feed, targeted announcements, and member engagement")
@@ -506,7 +507,7 @@ assert.ok(
     && !givingPlusPricingCard.includes("Koinonia parish feed"),
   "Koinonia community, media, and podcast features should be included in the Parish tier"
 );
-assert.ok(givingPlusPricingCard.includes("Pledge tracking and Stewardship Health"), "Giving Plus should include pledge tracking and Stewardship Health");
+assert.ok(givingPlusPricingCard.includes("Pledge tracking and Stewardship Health"), "Give + should include pledge tracking and Stewardship Health");
 assert.ok(
   givePricingHtml.includes('class="tier-coming-soon"')
     && givePricingHtml.includes('class="tier-coming-soon-badge">Coming soon</span>')
@@ -532,7 +533,7 @@ assert.ok(
     && !givePricingHtml.includes("Campaigns, direct parish links, and QR codes")
     && !givePricingHtml.includes("Parish logo, public page, and church search listing")
     && !givePricingHtml.includes("</svg></span>Campaigns</li>"),
-  "Starter should include its three-fund mission package and direct links while Giving Plus owns unlimited funds, parish branding, and Campaign Giving"
+  "Give should include its three-fund mission package and direct links while Give + owns unlimited funds, parish branding, and Campaign Giving"
 );
 assert.ok(
   subscriptionCatalog.includes('id: "full_commerce"')
@@ -551,13 +552,13 @@ assert.ok(
   parishDashboardApp.includes("function updateSubscriptionAddOnTotal(groupId)")
     && parishDashboardApp.includes("Estimated monthly subscription:")
     && parishDashboardApp.includes("Stripe checkout will show this same recurring total before payment."),
-  "the parish dashboard should preview the exact Giving Plus and add-on recurring total before Stripe checkout"
+  "the parish dashboard should preview the exact Give + and add-on recurring total before Stripe checkout"
 );
 assert.ok(
   parishDashboardApp.includes("function updateStarterPaywalls()")
-    && parishDashboardApp.includes("Upgrade to Giving Plus")
+    && parishDashboardApp.includes("Upgrade to Give +")
     && parishDashboardApp.includes("givingFeatures?.branding"),
-  "Starter dashboard should preview locked Giving Plus features with an upgrade paywall"
+  "Give dashboard should preview locked Give + features with an upgrade paywall"
 );
 assert.ok(
   parishDashboardApp.includes('class="btn btn-gold" href="https://dashboard.stripe.com"')
@@ -571,18 +572,18 @@ assert.ok(
   "the authenticated parish payload should expose the Stripe state needed for billing controls"
 );
 assert.ok(
-  parishHandlers.includes('Parish logo branding is available with Giving Plus.')
+  parishHandlers.includes('Parish logo branding is available with Give +.')
     && parishHandler.includes('logoUrl: givingPlus ? registration.logoUrl || "" : ""')
     && parishDashboardApp.includes("Any logo previously uploaded is preserved"),
-  "parish logo branding should be preserved but displayed and uploaded only with Giving Plus"
+  "parish logo branding should be preserved but displayed and uploaded only with Give +"
 );
 for (const enforcement of [
-  "Campaigns are available with Giving Plus.",
-  "Commemorations are available with Giving Plus.",
-  "Monthly reconciliation is available with Giving Plus.",
-  "Recurring-gift insights are available with Giving Plus.",
-  "Campaigns and festal alms are available with Giving Plus.",
-  "Starter includes one active designated fund. Upgrade to Giving Plus for additional funds."
+  "Campaigns are available with Give +.",
+  "Commemorations are available with Give +.",
+  "Monthly reconciliation is available with Give +.",
+  "Recurring-gift insights are available with Give +.",
+  "Campaigns and festal alms are available with Give +.",
+  "Give includes one active designated fund. Upgrade to Give + for additional funds."
 ]) {
   assert.ok(parishHandlers.includes(enforcement), `backend should enforce tier access: ${enforcement}`);
 }
@@ -617,8 +618,8 @@ assert.ok(
 assert.ok(
   parishDashboardApp.includes("nav-label-stack")
     && parishDashboardApp.includes("(stack || element).appendChild(label)")
-    && parishDashboardApp.includes("syncTierRequirementNavigation('directory', 'Giving Plus', directoryActive)"),
-  "tier requirement labels should sit beneath tab names and Directory should retain a Giving Plus upgrade path"
+    && parishDashboardApp.includes("syncTierRequirementNavigation('directory', 'Give +', directoryActive)"),
+  "tier requirement labels should sit beneath tab names and Directory should retain a Give + upgrade path"
 );
 assert.ok(
   parishDashboardApp.includes("pdx-sub-plan-kicker")
@@ -628,7 +629,7 @@ assert.ok(
 );
 assert.ok(
   parishDashboardApp.includes("Included with ${includedTier}")
-    && parishDashboardApp.includes("'Giving Plus')")
+    && parishDashboardApp.includes("'Give +')")
     && parishDashboardApp.includes("'Bookstore add-on')")
     && parishDashboardApp.includes("'Parish')")
     && parishDashboardApp.indexOf("moduleRow('Stewardship Health'") < parishDashboardApp.indexOf("moduleRow('Bookstore'")
@@ -636,7 +637,7 @@ assert.ok(
   "subscription modules should use clear add-on language and follow tier availability order"
 );
 assert.ok(
-  parishDashboardApp.includes("syncTierRequirementNavigation('stewardship', 'Giving Plus', stewardshipActive)")
+  parishDashboardApp.includes("syncTierRequirementNavigation('stewardship', 'Give +', stewardshipActive)")
     && parishDashboardApp.includes("sacBadge.hidden = sacramentsActive")
     && parishDashboardApp.includes("syncModuleStatusNavigation('sacraments', sacramentsActive, sacIsOn)"),
   "late dashboard badge refreshes should preserve upgrade pills below the tier and show Sacraments on/off status within the tier"
@@ -690,6 +691,13 @@ assert.ok(givingOverview.includes("Giving and parish life, connected in one Orth
 assert.ok(givingOverview.includes("Parish operations") && givingOverview.indexOf("Parish operations") < givingOverview.indexOf("giving-roadmap"), "Giving overview should list Parish operations as available now");
 assert.ok(givingOverview.includes("Text-to-Give") && givingOverview.includes("Coming Soon"), "Giving overview should clearly identify remaining coming-soon products");
 assert.ok(givingOverview.includes("processed and protected by Stripe") && givingOverview.includes("AGAPAY never holds donated funds") && givingOverview.includes("No Donation Middleman"), "Giving overview should emphasize Stripe protection and no donation middleman custody");
+assert.ok(
+  givingOverview.includes('<span>Give</span>')
+    && givingOverview.includes('<span>Give +</span>')
+    && !givingOverview.includes('<span>Starter</span>')
+    && !givingOverview.includes('<span>Giving Plus</span>'),
+  "Giving overview should use the Give and Give + platform tier names"
+);
 assert.ok(
   givingHowItWorks.includes('id="koinonia-community-title"')
     && givingHowItWorks.includes("Participate in ministry")

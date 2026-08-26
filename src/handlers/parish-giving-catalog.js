@@ -294,7 +294,7 @@ export async function handleParishCampaignUpload(request, env, parishId) {
   const token = getBearerToken(request);
   if (!(await verifyParishDashboardBearer(found.registration, token))) return unauthorized();
   if (!givingFeatureAccess(found.registration, "campaigns")) {
-    return json({ error: "Campaigns are available with Giving Plus." }, { status: 403 });
+    return json({ error: "Campaigns are available with Give +." }, { status: 403 });
   }
 
   if (!env.CAMPAIGN_ASSETS || !env.CAMPAIGN_ASSETS_URL) {
@@ -354,7 +354,7 @@ export async function handleParishLogo(request, env, parishId) {
   const token = getBearerToken(request);
   if (!(await verifyParishDashboardBearer(found.registration, token))) return unauthorized();
   if (request.method === "POST" && !givingFeatureAccess(found.registration, "branding")) {
-    return json({ error: "Parish logo branding is available with Giving Plus." }, { status: 403 });
+    return json({ error: "Parish logo branding is available with Give +." }, { status: 403 });
   }
   if (!env.CAMPAIGN_ASSETS || !env.CAMPAIGN_ASSETS_URL) {
     return json({ error: "Parish logo storage is not configured." }, { status: 503 });

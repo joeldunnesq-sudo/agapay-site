@@ -47,7 +47,7 @@ async function requireParishApiContext(request, env, parishId) {
     return { ok: false, response: unauthorized() };
   }
   if (!givingFeatureAccess(found.registration, "annualStatements")) {
-    return { ok: false, response: json({ error: "Annual giving statements are available with Giving Plus." }, { status: 403 }) };
+    return { ok: false, response: json({ error: "Annual giving statements are available with Give +." }, { status: 403 }) };
   }
   return { ok: true, registration: found.registration, key: found.key };
 }

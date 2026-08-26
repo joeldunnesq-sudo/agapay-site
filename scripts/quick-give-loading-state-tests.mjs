@@ -79,7 +79,7 @@ const end = donorApp.indexOf("const donorGiftTypeCopy", start);
 assert.ok(start >= 0 && end > start, "Quick Give state functions must remain testable as one browser-safe unit");
 vm.runInNewContext(donorApp.slice(start, end), context);
 
-// Genuine first visit: pending is neutral, then fresh Giving Plus data resolves
+// Genuine first visit: pending is neutral, then fresh Give + data resolves
 // directly to allowed. At no point may an allowed tile carry the locked class.
 context.setGivingTierTilesLoading();
 for (const tile of tiles) {

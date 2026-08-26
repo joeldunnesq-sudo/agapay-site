@@ -32,7 +32,7 @@ async function test(name, fn) {
   }
 }
 
-await test("Giving Plus includes stewardship and directory without operational add-ons", async () => {
+await test("Give + includes stewardship and directory without operational add-ons", async () => {
   const reg = { subscriptionTier: "giving" };
   assert.equal(tierIncludesModule(reg, "stewardshipHealth"), true);
   assert.equal(tierIncludesModule(reg, "directory"), true);
@@ -42,7 +42,7 @@ await test("Giving Plus includes stewardship and directory without operational a
   assert.equal(hasParishPlusAccess(reg), false);
 });
 
-await test("Starter provides core giving without Giving Plus features", async () => {
+await test("Give provides core giving without Give + features", async () => {
   const reg = { subscriptionTier: "starter" };
   assert.equal(tierIncludesModule(reg, "givingPlus"), false);
   assert.equal(tierIncludesModule(reg, "stewardshipHealth"), false);
@@ -63,7 +63,7 @@ await test("Starter provides core giving without Giving Plus features", async ()
   assert.equal(entitlementsSummary(reg).givingFeatures.starterDesignatedFund, true);
 });
 
-await test("Accounting is available through its Giving Plus add-on or Parish", async () => {
+await test("Accounting is available through its Give + add-on or Parish", async () => {
   assert.equal(accountingEnabledFor({ subscriptionTier: "giving" }), false);
   const accountingAddOn = { subscriptionTier: "giving", subscriptionAddOns: ["bookstore", "full_commerce", "accounting"] };
   assert.equal(accountingEnabledFor(accountingAddOn), true);
@@ -78,7 +78,7 @@ await test("Accounting is available through its Giving Plus add-on or Parish", a
   assert.equal(entitlementsSummary({ subscriptionTier: "parish" }).modules.accounting.advancedOperationsIncluded, true);
 });
 
-await test("Giving Plus add-ons unlock only their selected modules", async () => {
+await test("Give + add-ons unlock only their selected modules", async () => {
   const reg = { subscriptionTier: "giving", subscriptionAddOns: ["bookstore", "sacraments"] };
   assert.equal(tierIncludesModule(reg, "stewardshipHealth"), true);
   assert.equal(hasModuleAccess(reg, "sacraments"), true);
