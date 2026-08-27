@@ -99,7 +99,13 @@ assert.match(shell, /function hamburgerProducts\(\)[\s\S]*return visibleProducts
 assert.match(shell, /function mobileAppMenuLinks\(\)[\s\S]*const links = hamburgerProducts\(\)/);
 assert.match(shell, /mobileLabel: "Library"/);
 assert.match(shell, /pathname\.startsWith\("\/myagapay\/library"\)/);
-assert.match(donorPage, /<h1>Parish Library<\/h1>/);
+assert.match(donorPage, /<h1[^>]*>Parish Library<\/h1>/);
+assert.match(donorPage, /class="koinonia-mobile-appbar"/);
+assert.match(donorPage, /class="page koinonia-inner-shell library-page"/);
+assert.match(donorPage, /class="koinonia-page-heading library-page-heading"/);
+assert.doesNotMatch(donorPage, /library-hero/, "Library should use the shared app heading instead of a marketing-style hero");
+assert.match(donorPage, /koinonia-inner\.css\?v=20260817bookstoreprayer1/);
+assert.match(donorPage, /library\.css\?v=20260827libraryapp1/);
 assert.match(donorPage, /myagapay-shell\.js\?v=20260827librarymenu1/);
 assert.match(parishLifePage, /myagapay-shell\.js\?v=20260827librarymenu1/);
 assert.match(donorScript, /fetch\("\/api\/donor\/library"/);

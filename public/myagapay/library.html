@@ -10,7 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/donor/style.css?v=20260825library1" />
-  <link rel="stylesheet" href="/myagapay/library.css?v=20260825library1" />
+  <link rel="stylesheet" href="/myagapay/koinonia-inner.css?v=20260817bookstoreprayer1" />
+  <link rel="stylesheet" href="/myagapay/library.css?v=20260827libraryapp1" />
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260827librarymenu1"></script>
   <script src="/myagapay/library.js?v=20260825library1" defer></script>
@@ -29,12 +30,13 @@
       <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/parish-life">Open Koinonia</a></div>
     </aside>
     <main class="content donor-mobile-content">
-      <header class="library-mobile-appbar"><a class="library-mobile-brand" href="/myagapay" aria-label="Open My AGAPAY"><span class="library-mobile-mark" aria-hidden="true"><img src="/mark.png" alt="" /></span><span><strong>MY AGAPAY</strong><small>Parish Library</small></span></a><button class="koinonia-mobile-menu-toggle" type="button" data-myagapay-app-menu-toggle aria-label="Open My AGAPAY navigation"><span class="koinonia-mobile-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span></button></header>
+      <header class="koinonia-mobile-appbar"><a class="koinonia-mobile-brand" href="/myagapay" aria-label="Open My AGAPAY"><span class="koinonia-mobile-mark" aria-hidden="true"><img src="/mark.png" alt="" /></span><span><strong>MY AGAPAY</strong><small>Parish Library</small></span></a><button class="koinonia-mobile-menu-toggle" type="button" data-myagapay-app-menu-toggle aria-label="Open My AGAPAY navigation"><span class="koinonia-mobile-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span></button></header>
       <div class="topbar"><div class="topbar-title">Parish Library</div></div>
-      <div class="page library-page">
-        <header class="library-hero">
-          <span class="library-hero-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg></span>
-          <div><span>From your church</span><h1>Parish Library</h1><p>Documents, links, and guides chosen for your parish community.</p></div>
+      <div class="page koinonia-inner-shell library-page">
+        <header class="koinonia-page-heading library-page-heading" aria-labelledby="libraryHeading">
+          <div class="koinonia-page-title-row">
+            <div><h1 id="libraryHeading">Parish Library</h1><p>Resources chosen for your parish community</p></div>
+          </div>
         </header>
         <section class="library-tools" aria-label="Find a parish resource">
           <label class="library-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span class="sr-only">Search resources</span><input id="librarySearch" type="search" placeholder="Search the library" autocomplete="off" /></label>
