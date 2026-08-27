@@ -8,11 +8,12 @@ const donorCss = await read("public/donor/style.css");
 const koinoniaPages = ["feed", "news", "groups", "teaching", "media", "signups", "exchange"];
 const productPages = ["bookstore", "directory", "sacraments"];
 const navVersion = "20260817bookstoreprayer1";
+const shellVersion = "20260827librarymenu1";
 
 for (const pageName of [...koinoniaPages, ...productPages]) {
   const html = await read(`public/myagapay/${pageName}.html`);
   assert.match(html, new RegExp(`/myagapay/koinonia-inner\\.css\\?v=${navVersion}`), `${pageName} must load the shared app-like inner-page frame`);
-  assert.match(html, new RegExp(`/myagapay-shell\\.js\\?v=${navVersion}`), `${pageName} must load the menu-capable My AGAPAY shell`);
+  assert.match(html, new RegExp(`/myagapay-shell\\.js\\?v=${shellVersion}`), `${pageName} must load the menu-capable My AGAPAY shell`);
   assert.match(html, /class="koinonia-mobile-appbar"/, `${pageName} must show the compact My AGAPAY mobile app bar`);
   assert.match(html, /class="koinonia-mobile-menu-toggle"[^>]*data-myagapay-app-menu-toggle/, `${pageName} must replace the bell with the My AGAPAY hamburger menu`);
   assert.doesNotMatch(html, /koinonia-mobile-notifications/, `${pageName} must not retain the announcement bell shortcut`);
@@ -60,7 +61,8 @@ assert.match(donorCss, /\.donor-home \.donor-home-topbar \{[^}]*background: var\
 assert.match(donorCss, /\.prayer-mobile-appbar \{[^}]*background:var\(--myagapay-nav-background\)/, "Prayer Requests must use the canonical navigation gradient");
 assert.match(sharedShell, /\.donor-mobile-page \.topbar \{[\s\S]*?background: var\(--myagapay-nav-background,/, "standard My AGAPAY topbars must use the dashboard gradient on every page");
 assert.match(sharedShell, /function initializeMobileAppMenus\(/, "the shared shell must initialize app bar menus");
-assert.match(sharedShell, /const links = visibleProducts\(\)/, "the hamburger menu must honor parish feature capabilities");
+assert.match(sharedShell, /function hamburgerProducts\(\)[\s\S]*return visibleProducts\(\)/, "the hamburger menu must honor parish feature capabilities");
+assert.match(sharedShell, /const links = hamburgerProducts\(\)/, "the hamburger menu must use the complete enabled-product list instead of the bottom-nav slots");
 assert.match(sharedShell, /aria-controls/, "the hamburger menu must expose its controlled panel accessibly");
 
 console.log("PASS - My AGAPAY destinations use app-like headers, capability-aware hamburger navigation, and non-redundant main feature layouts");

@@ -189,6 +189,12 @@
     ].filter(Boolean);
   }
 
+  function hamburgerProducts() {
+    // The hamburger shows every enabled product, independent of the five-slot
+    // bottom bar. This keeps Library reachable when Sacraments owns its slot.
+    return visibleProducts();
+  }
+
   function activeProduct(pathname = window.location.pathname) {
     if (pathname.startsWith("/myagapay/learn")) return "learn";
     if (pathname === "/myagapay" || pathname === "/myagapay/" || pathname === "/myagapay/dashboard") return "giving";
@@ -604,7 +610,7 @@
 
   function mobileAppMenuLinks() {
     const active = activeProduct();
-    const links = visibleProducts()
+    const links = hamburgerProducts()
       .filter((item) => !item.deferUntilCapabilitiesLoaded || capabilitiesLoaded)
       .map((item) => {
         const current = item.id === active;

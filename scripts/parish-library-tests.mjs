@@ -11,7 +11,12 @@ import {
   updateParishLibraryResource,
   validateParishLibraryPdf,
 } from "../src/handlers/parish-library.js";
-import { getParishLibrarySettings, setParishLibraryEnabled } from "../src/lib/parish-library.js";
+import {
+  ensureStFiacreParishLibraryDemo,
+  getParishLibrarySettings,
+  setParishLibraryEnabled,
+  ST_FIACRE_LIBRARY_DEMO_RESOURCES,
+} from "../src/lib/parish-library.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sqlite = new DatabaseSync(":memory:");
@@ -31,6 +36,17 @@ const db = {
 assert.deepEqual(PARISH_LIBRARY_CATEGORIES, ["prayer_worship", "faith_formation", "newcomers", "ministries", "forms_policies", "pastoral_letters", "parish_life"]);
 assert.deepEqual(await getParishLibrarySettings(db, "parish-a"), { enabled: false, updatedAt: "" });
 assert.equal((await setParishLibraryEnabled(db, { parishId: "parish-a", enabled: true, updatedBy: "staff@example.test" })).enabled, true);
+
+assert.equal(await ensureStFiacreParishLibraryDemo(db, "st-fiacre"), true);
+assert.equal((await getParishLibrarySettings(db, "st-fiacre")).enabled, true);
+const demoResources = await listParishLibraryResources(db, "st-fiacre", { publishedOnly: true });
+assert.equal(demoResources.length, ST_FIACRE_LIBRARY_DEMO_RESOURCES.length);
+assert.ok(demoResources.every((resource) => resource.resourceType === "link" && resource.status === "published"));
+assert.ok(demoResources.every((resource) => /^https:\/\/(?:www\.)?saintjonah\.org\//.test(resource.url)));
+assert.equal(await ensureStFiacreParishLibraryDemo(db, "st-fiacre"), false, "demo seed should be idempotent");
+assert.equal((await listParishLibraryResources(db, "st-fiacre", { publishedOnly: true })).length, demoResources.length);
+await setParishLibraryEnabled(db, { parishId: "st-fiacre", enabled: false, updatedBy: "staff@example.test" });
+assert.equal((await getParishLibrarySettings(db, "st-fiacre")).enabled, false, "a later staff choice should remain authoritative");
 
 const link = await createParishLibraryResource(db, {
   parishId: "parish-a", createdBy: "staff@example.test",
@@ -72,16 +88,20 @@ assert.equal(validPdf.size, 16);
 const fakePdf = await validateParishLibraryPdf(new Request("https://agapay.test/upload", { method: "POST", headers: { "Content-Type": "application/pdf" }, body: new TextEncoder().encode("not-a-pdf") }));
 assert.equal(fakePdf.status, 415);
 
-const [worker, handler, shell, donorPage, donorScript, adminPage, adminScript, adminStyles, wrangler] = [
+const [worker, handler, shell, donorPage, donorScript, parishLifePage, adminPage, adminScript, adminStyles, wrangler] = [
   "src/worker.js", "src/handlers/parish-library.js", "public/myagapay-shell.js", "public/myagapay/library.html", "public/myagapay/library.js",
-  "public/parish/dashboard.html", "public/parish/library.js", "public/parish/library.css", "wrangler.toml",
+  "public/myagapay/parish-life.html", "public/parish/dashboard.html", "public/parish/library.js", "public/parish/library.css", "wrangler.toml",
 ].map((file) => readFileSync(path.join(root, file), "utf8"));
 assert.match(worker, /handleDonorParishLibrary/);
 assert.match(worker, /handleParishLibrary/);
 assert.match(shell, /const sacramentOrLibrary = parishCapabilities\.sacramentsEnabled[\s\S]*parishCapabilities\.libraryEnabled[\s\S]*byId\.get\("history"\)/);
+assert.match(shell, /function hamburgerProducts\(\)[\s\S]*return visibleProducts\(\)/);
+assert.match(shell, /function mobileAppMenuLinks\(\)[\s\S]*const links = hamburgerProducts\(\)/);
 assert.match(shell, /mobileLabel: "Library"/);
 assert.match(shell, /pathname\.startsWith\("\/myagapay\/library"\)/);
 assert.match(donorPage, /<h1>Parish Library<\/h1>/);
+assert.match(donorPage, /myagapay-shell\.js\?v=20260827librarymenu1/);
+assert.match(parishLifePage, /myagapay-shell\.js\?v=20260827librarymenu1/);
 assert.match(donorScript, /fetch\("\/api\/donor\/library"/);
 assert.match(donorScript, /data-library-pdf/);
 assert.match(adminPage, /id="nav-library"/);
