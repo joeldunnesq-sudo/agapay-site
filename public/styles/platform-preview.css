@@ -249,6 +249,31 @@ p { margin: 0; line-height: 1.7; }
 .op-oversight-step strong { display: block; font-family: var(--serif); font-size: 1.05rem; color: var(--paper); }
 .op-oversight-step span { display: block; font-size: 0.88rem; color: rgba(246,241,232,.72); margin-top: 0.15rem; }
 
+/* ── PWA install ──────────────────────────────────────────────── */
+.op-install { position: relative; overflow: hidden; padding: clamp(4.5rem, 8vw, 7rem) 0; background: linear-gradient(135deg,#f7f0e3,#fffdf8 58%,#efe2cc); }
+.op-install::before { content: ""; position: absolute; left: -14rem; bottom: -18rem; width: 38rem; aspect-ratio: 1; border: 1px solid rgba(169,124,37,.13); border-radius: 50%; box-shadow: 0 0 0 5rem rgba(169,124,37,.025),0 0 0 10rem rgba(169,124,37,.018); }
+.op-install-grid { position: relative; display: grid; grid-template-columns: minmax(0,1.05fr) minmax(360px,.75fr); gap: clamp(2.5rem,7vw,6rem); align-items: center; }
+.op-install-copy h2 { max-width: 14ch; font-size: clamp(2.5rem,4.8vw,4.2rem); line-height: .98; }
+.op-install-copy h2 em { color: var(--gold-2); font-weight: 500; }
+.op-install-copy > p { max-width: 60ch; margin-top: 1.25rem; color: var(--muted); font-size: 1.02rem; }
+.op-install-actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.7rem; }
+.op-install .op-btn { cursor: pointer; }
+.op-install .op-btn-ghost { color: var(--navy); border-color: rgba(6,21,34,.25); background: rgba(255,255,255,.5); }
+.op-install .op-btn:disabled { cursor: default; opacity: .68; transform: none; }
+.op-install-status { min-height: 1.5rem; font-size: .82rem !important; font-weight: 700; color: #3f5f4b !important; }
+.op-install-steps { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .65rem; margin-top: 1.2rem; }
+.op-install-step { min-height: 112px; padding: .9rem; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.58); transition: border-color .18s ease,background-color .18s ease,box-shadow .18s ease; }
+.op-install-step span { display: block; color: var(--gold-2); font-size: .64rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.op-install-step strong { display: block; margin-top: .45rem; color: #3f474c; font-size: .76rem; line-height: 1.5; }
+.op-install-step.is-highlighted { border-color: rgba(169,124,37,.65); background: #fffaf0; box-shadow: 0 8px 22px rgba(75,54,23,.08); }
+.op-install-note { margin-top: 1rem !important; font-size: .72rem !important; line-height: 1.6; }
+.op-install-visual { position: relative; min-height: 570px; overflow: hidden; border: 1px solid rgba(169,124,37,.28); border-radius: 24px; background: var(--navy); box-shadow: 0 28px 65px rgba(6,21,34,.2); }
+.op-install-visual > img { width: 100%; height: 100%; position: absolute; inset: 0; object-fit: cover; object-position: center 48%; }
+.op-install-badge { position: absolute; z-index: 2; left: 1rem; right: 1rem; bottom: 1rem; display: flex; align-items: center; gap: .75rem; padding: .75rem; border: 1px solid rgba(255,255,255,.2); border-radius: 13px; color: var(--paper); background: rgba(6,21,34,.9); box-shadow: 0 14px 30px rgba(0,0,0,.28); backdrop-filter: blur(12px); }
+.op-install-badge img { width: 48px; height: 48px; border-radius: 11px; }
+.op-install-badge span { display: grid; gap: .1rem; color: rgba(246,241,232,.7); font-size: .7rem; }
+.op-install-badge strong { color: var(--paper); font-family: var(--serif); font-size: 1rem; letter-spacing: .05em; }
+
 /* ── Trust band ───────────────────────────────────────────────── */
 .op-trust { background: linear-gradient(90deg, var(--navy), var(--navy-2)); color: var(--paper); }
 .op-trust-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; padding-block: clamp(2.8rem, 5vw, 3.6rem); }
@@ -275,6 +300,8 @@ p { margin: 0; line-height: 1.7; }
   .op-connector-copy { padding-inline: clamp(1.25rem, 4vw, 2.5rem); }
   .op-connector-shot { order: -1; }
   .op-oversight-grid { grid-template-columns: 1fr; }
+  .op-install-grid { grid-template-columns: 1fr; }
+  .op-install-visual { min-height: 520px; order: -1; }
   .op-trust-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 620px) {
@@ -285,9 +312,15 @@ p { margin: 0; line-height: 1.7; }
   .op-system { grid-template-columns: 1fr; }
   .op-system-core { grid-column: 1; width: 190px; height: 190px; }
   .op-system-node { min-height: 170px; }
+  .op-install { padding-top: 1rem; }
+  .op-install-visual { min-height: 430px; border-radius: 16px; }
+  .op-install-steps { grid-template-columns: 1fr; }
+  .op-install-step { min-height: auto; }
+  .op-install-actions .op-btn { width: 100%; }
   .op-trust-grid { grid-template-columns: 1fr; }
   .op-hero-actions .op-btn, .op-final-actions .op-btn { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
   .op-phone-screen img { transition: none; }
+  .op-install-step { transition: none; }
 }

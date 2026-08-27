@@ -174,12 +174,25 @@ a { color: inherit; }
 .give-koinonia-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .7rem; margin-top: 1.4rem; }
 .give-koinonia-list span { position: relative; padding: .75rem .8rem .75rem 1.8rem; border: 1px solid rgba(169,121,34,.2); border-radius: 10px; background: rgba(255,255,255,.55); color: #45535c; font-size: .76rem; line-height: 1.4; }
 .give-koinonia-list span::before { content: "✓"; position: absolute; left: .65rem; color: var(--give-gold-dark); font-weight: 900; }
-.give-koinonia-screens { min-height: 570px; display: flex; align-items: center; justify-content: center; gap: .75rem; perspective: 900px; }
-.give-screen { width: 28%; margin: 0; transform: rotateY(-5deg) translateY(18px); }
-.give-screen-main { width: 34%; transform: translateY(-10px); }
-.give-screen:last-child { transform: rotateY(5deg) translateY(18px); }
-.give-screen img { display: block; width: 100%; height: auto; border: 5px solid #0c2231; border-radius: 22px; box-shadow: 0 24px 50px rgba(6,21,34,.2); }
-.give-screen figcaption { margin-top: .6rem; color: #53616a; font-size: .65rem; font-weight: 800; text-align: center; }
+.give-koinonia-screens { position: relative; min-height: 650px; display: grid; place-items: center; isolation: isolate; }
+.give-koinonia-screens::before { content: ""; position: absolute; z-index: -1; width: min(520px,92%); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle,rgba(211,174,88,.24),rgba(211,174,88,.07) 48%,transparent 70%); }
+.give-koinonia-phone { width: clamp(228px,38vw,292px); margin: 0; }
+.give-koinonia-phone-shell { position: relative; padding: 7px; border: 1px solid rgba(255,255,255,.22); border-radius: 34px; background: #071723; box-shadow: 0 34px 70px rgba(6,21,34,.27),0 8px 18px rgba(6,21,34,.16),inset 0 0 0 1px rgba(211,174,88,.18); }
+.give-koinonia-phone-shell::before { content: ""; position: absolute; z-index: 3; top: 14px; left: 50%; width: 28%; height: 18px; transform: translateX(-50%); border-radius: 999px; background: #07131d; box-shadow: 0 1px 0 rgba(255,255,255,.08); }
+.give-koinonia-viewport { overflow: hidden; aspect-ratio: 720 / 1560; border-radius: 27px; background: #071723; }
+.give-koinonia-track { height: 400%; animation: give-koinonia-swipe 16s cubic-bezier(.72,0,.2,1) infinite; will-change: transform; }
+.give-koinonia-slide { height: 25%; overflow: hidden; }
+.give-koinonia-slide img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.give-koinonia-phone figcaption { display: flex; align-items: center; justify-content: center; gap: .45rem; margin-top: .8rem; color: #53616a; font-size: .67rem; font-weight: 800; line-height: 1.4; text-align: center; }
+.give-koinonia-phone figcaption span { width: 22px; height: 22px; display: inline-grid; flex: 0 0 auto; place-items: center; border: 1px solid rgba(169,121,34,.35); border-radius: 50%; color: var(--give-gold-dark); background: rgba(255,255,255,.58); }
+.give-koinonia-phone:hover .give-koinonia-track { animation-play-state: paused; }
+
+@keyframes give-koinonia-swipe {
+  0%, 19% { transform: translateY(0); }
+  25%, 44% { transform: translateY(-25%); }
+  50%, 69% { transform: translateY(-50%); }
+  75%, 100% { transform: translateY(-75%); }
+}
 
 .give-report-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1rem; }
 .give-report-grid article { min-height: 200px; padding: 1.25rem; border: 1px solid var(--give-line); border-radius: 14px; background: #fff; }
@@ -258,9 +271,7 @@ a { color: inherit; }
   .give-addons-head > p { text-align: left; }
   .give-liturgical-callout { grid-template-columns: 1fr; }
   .give-liturgical-tags { justify-content: flex-start; }
-  .give-koinonia-screens { min-height: 460px; gap: .35rem; }
-  .give-screen { width: 29%; }
-  .give-screen-main { width: 36%; }
+  .give-koinonia-screens { min-height: 640px; }
   .give-why-points { grid-template-columns: 1fr; }
 }
 
@@ -289,13 +300,17 @@ a { color: inherit; }
   .give-step-grid { grid-template-columns: 1fr; }
   .give-step-grid li { min-height: auto; }
   .give-koinonia-list { grid-template-columns: 1fr; }
-  .give-koinonia-screens { min-height: 355px; }
-  .give-screen img { border-width: 3px; border-radius: 14px; }
-  .give-screen figcaption { font-size: .54rem; }
+  .give-koinonia-screens { min-height: 570px; }
+  .give-koinonia-phone { width: min(228px,72vw); }
+  .give-koinonia-phone-shell { padding: 5px; border-radius: 28px; }
+  .give-koinonia-viewport { border-radius: 23px; }
+  .give-koinonia-phone-shell::before { top: 11px; height: 15px; }
+  .give-koinonia-phone figcaption { font-size: .61rem; }
   .give-council-actions .give-button { width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  .give-koinonia-track { transform: translateY(0); }
 }

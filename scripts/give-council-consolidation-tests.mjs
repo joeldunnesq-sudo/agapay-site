@@ -60,6 +60,11 @@ for (const securityBoundary of [
 assert.match(styles, /\.give-section-nav\s*\{[^}]*position:\s*sticky/, "the section navigator must remain sticky");
 assert.match(styles, /@media \(max-width: 560px\)/, "the consolidated page must have a phone layout");
 assert.match(styles, /prefers-reduced-motion: reduce/, "the page must respect reduced-motion preferences");
+assert.equal((overview.match(/class="give-koinonia-phone"/g) || []).length, 1, "Koinonia must present one phone viewport instead of three separate phones");
+assert.equal((overview.match(/class="give-koinonia-slide"/g) || []).length, 4, "the phone track must include three screens and one seamless-loop duplicate");
+assert.match(styles, /@keyframes give-koinonia-swipe[\s\S]*translateY\(-25%\)[\s\S]*translateY\(-50%\)[\s\S]*translateY\(-75%\)/, "Koinonia screens must swipe upward one phone-height at a time");
+assert.match(styles, /\.give-koinonia-track\s*\{[^}]*height:\s*400%;[^}]*animation:\s*give-koinonia-swipe/, "the four-screen track must animate inside one clipped phone viewport");
+assert.match(styles, /prefers-reduced-motion: reduce[\s\S]*\.give-koinonia-track\s*\{[^}]*transform:\s*translateY\(0\)/, "reduced-motion users must receive a stable first Koinonia screen");
 
 for (const retiredFile of ["features", "how-it-works", "pricing", "security", "get-agapay", "recurring-donations", "fundraising", "event-payments", "parish-giving"]) {
   assert.equal(existsSync(path.join(root, `public/give/${retiredFile}.html`)), false, `${retiredFile}.html must be removed after consolidation`);

@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const [html, css, iconSprite] = await Promise.all([
+const [html, css, iconSprite, pwaInstall] = await Promise.all([
   readFile(new URL("../public/index.html", import.meta.url), "utf8"),
   readFile(new URL("../public/styles/platform-preview.css", import.meta.url), "utf8"),
-  readFile(new URL("../public/images/icons/agapay-icons.svg", import.meta.url), "utf8")
+  readFile(new URL("../public/images/icons/agapay-icons.svg", import.meta.url), "utf8"),
+  readFile(new URL("../public/pwa-home-install.js", import.meta.url), "utf8")
 ]);
 
 assert.match(html, /One platform for all of <em>Orthodox parish life\.<\/em>/, "homepage should lead with the complete Orthodox parish platform position");
@@ -52,6 +53,13 @@ assert.match(html, /rel="canonical" href="https:\/\/agapay\.app\/"/, "platform h
 assert.match(html, /og:image" content="https:\/\/agapay\.app\/images\/AGAPAY_social_share_v2\.png"[\s\S]*?og:image:width" content="1200"[\s\S]*?og:image:height" content="630"/, "homepage should use the supplied landscape social sharing image with accurate dimensions");
 assert.match(html, /href="\/give\/request-demo"/, "homepage should route parish demo requests to the existing form");
 assert.match(html, /href="\/register"/, "homepage should preserve the free-start route");
+assert.match(html, /id="install-app"[\s\S]*?Install AGAPAY\.[\s\S]*?progressive web app/, "homepage should include a visible, useful PWA install section");
+assert.match(html, /Android &amp; desktop[\s\S]*?Install app[\s\S]*?iPhone &amp; iPad[\s\S]*?Add to Home Screen/, "homepage should explain Android, desktop, and iOS installation paths");
+assert.match(html, /src="\/pwa-home-install\.js"/, "homepage should load the PWA install interaction");
+assert.match(pwaInstall, /beforeinstallprompt[\s\S]*?event\.preventDefault\(\)[\s\S]*?deferredInstallPrompt = event/, "homepage install behavior should capture the native browser prompt");
+assert.match(pwaInstall, /deferredInstallPrompt\.prompt\(\)[\s\S]*?userChoice/, "homepage install button should open and resolve the native prompt when available");
+assert.match(pwaInstall, /display-mode: standalone[\s\S]*?window\.navigator\.standalone/, "homepage should recognize an already-installed PWA on Android, desktop, and iOS");
+assert.match(pwaInstall, /Share, then Add to Home Screen/, "homepage install behavior should retain the Safari-specific fallback");
 assert.match(html, /<a class="op-btn op-btn-outline" href="\/give">Explore AGAPAY Give<\/a>/, "final homepage CTA should describe its AGAPAY Give destination");
 assert.doesNotMatch(html, /<a[^>]+href="\/give"[^>]*>\s*Learn more\s*<\/a>/i, "homepage links should not use generic Lighthouse-unfriendly text");
 assert.match(css, /@media \(max-width: 980px\)/, "preview should include a tablet layout");
@@ -61,6 +69,8 @@ assert.match(css, /\.op-oversight-step-mark svg[\s\S]*?left: 50%; top: 50%[\s\S]
 assert.match(css, /@media \(max-width: 980px\)[\s\S]*?\.op-connector-copy \{ padding-inline: clamp\(1\.25rem, 4vw, 2\.5rem\); \}/, "The Thread copy should receive the mobile gutter without resizing its screenshot");
 assert.doesNotMatch(html, /op-connector-shot[\s\S]*?<img[^>]+width="720"[^>]+height="1560"/, "The Thread screenshot should keep its original intrinsic display behavior");
 assert.match(css, /\.op-trust-grid[^\n]+padding-block:/, "trust items should preserve the shared mobile gutters");
+assert.match(css, /\.op-install-grid[\s\S]*?grid-template-columns:[^;]+;/, "PWA install section should use an app-like split layout on large screens");
+assert.match(css, /@media \(max-width: 620px\)[\s\S]*?\.op-install-steps \{ grid-template-columns: 1fr; \}/, "PWA installation steps should stack cleanly on phones");
 assert.match(css, /@media \(prefers-reduced-motion: reduce\)/, "preview should respect reduced-motion preferences");
 
 console.log("PASS - product-first homepage presents the real app, shared liturgical context, ministry oversight, commerce, and accounting as one parish platform");
