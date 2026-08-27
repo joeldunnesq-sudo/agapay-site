@@ -47,7 +47,7 @@ const parishHandler = read("src/handlers/parish.js");
 const donorApp = read("public/donor/app.js");
 const publicForm = read("public/give/form.html");
 const parishApp = read("public/parish/app.js");
-const pricing = read("public/give/pricing.html");
+const pricing = read("public/give/index.html");
 
 assert.match(parishHandler, /requestedGiftType === "fund" && parish\.designatedFundsEnabled/);
 assert.match(parishHandler, /requestedGiftType === "candles" && parish\.candlesEnabled/);
@@ -58,8 +58,8 @@ assert.match(parishApp, /Give offers your mission three clear destinations/);
 assert.match(parishApp, /class="starter-tier-upgrade-card"/);
 assert.match(parishApp, /Your current plan remains fully usable with General Operating, one designated fund, and candles/);
 assert.doesNotMatch(parishApp, /renderGivingOptionsEditor[\s\S]*?: '<div class="starter-tier-paywall">[\s\S]*?Save giving options/);
-assert.match(pricing, /One custom designated fund/);
-assert.match(pricing, /Built-in candle giving/);
-assert.match(pricing, /Unlimited custom and restricted funds/);
+assert.match(pricing, /General Operating and one designated fund/);
+assert.match(pricing, /Candles, memorials, and commemorations/);
+assert.match(pricing, /Unlimited funds, campaigns, and pledge tracking/);
 
 console.log("PASS - Give includes General Operating, one designated fund, and candles while Give + retains advanced giving");

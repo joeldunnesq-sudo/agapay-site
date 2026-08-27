@@ -70,18 +70,18 @@ const missingBandResponse = await (await import("../src/lib/subscription-checkou
 });
 assert.equal(missingBandResponse.status, 422);
 
-const pricingPage = await readFile(new URL("../public/give/pricing.html", import.meta.url), "utf8");
+const pricingPage = await readFile(new URL("../public/give/index.html", import.meta.url), "utf8");
 const registerPage = await readFile(new URL("../public/register.html", import.meta.url), "utf8");
 const parishDashboardApp = await readFile(new URL("../public/parish/app.js", import.meta.url), "utf8");
 const parishHandler = await readFile(new URL("../src/handlers/parish.js", import.meta.url), "utf8");
 const parishPricingUsage = await readFile(new URL("../src/lib/parish-pricing-usage.js", import.meta.url), "utf8");
 assert.doesNotMatch(pricingPage, /early-adopter|first 20/i);
 assert.doesNotMatch(pricingPage, /Koinonia · \$49\/mo/);
-assert.match(pricingPage, /Sacraments &amp; Services · \$9\/mo/);
-assert.match(pricingPage, /Full Commerce · \$29\/mo/);
-assert.match(pricingPage, /Accounting Suite · \$129\/mo/);
-assert.match(pricingPage, /Koinonia parish feed, targeted announcements, and member engagement/);
-assert.match(pricingPage, /Ministry-led Events and Meals/);
+assert.match(pricingPage, /Sacraments &amp; Services<\/span><strong>\$9\/mo/);
+assert.match(pricingPage, /Full Commerce<\/span><strong>\$29\/mo/);
+assert.match(pricingPage, /Accounting Suite<\/span><strong>\$129\/mo/);
+assert.match(pricingPage, /Koinonia parish community and media/);
+assert.match(pricingPage, /Full Commerce adds Events, Meals, tax, and connected orders/);
 assert.match(registerPage, /id="parishHouseholdBand"/);
 assert.match(registerPage, /parishHouseholdBand: document\.getElementById\('parishHouseholdBand'\)\.value/);
 assert.match(parishDashboardApp, /bandSelectId:'subscriptionHouseholdBandUpgrade'/);

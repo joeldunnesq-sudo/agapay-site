@@ -3,9 +3,9 @@
   if (/^\/(?:admin|parish|donor)(?:\/|$)/.test(path)) return;
 
   const links = [
-    { href: "/give/how-it-works", label: "How It Works" },
-    { href: "/give/pricing", label: "Pricing" },
-    { href: "/give/features", label: "Features" }
+    { href: "/give#pricing", label: "Pricing" },
+    { href: "/give#security", label: "Security" },
+    { href: "/give#platform", label: "Platform" }
   ];
 
   const nav =

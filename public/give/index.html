@@ -1,49 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-US">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-chrome-192x192.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="/favicons/android-chrome-512x512.png" />
-  <link rel="shortcut icon" href="/favicons/favicon.ico" />
-  <title>Orthodox Giving App &amp; Tithing Software | AGAPAY Give</title>
-  <meta name="description" content="AGAPAY Give is the Orthodox giving app for parish tithes, recurring donations, candles, commemorations, memorials, campaigns, and donor records." />
+  <title>Orthodox Church Management Software &amp; Giving | AGAPAY</title>
+  <meta name="description" content="Orthodox church management software for giving, stewardship, Koinonia, directories, sacraments, commerce, and accounting. Plans start at $9 per month." />
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
   <link rel="canonical" href="https://agapay.app/give" />
+  <link rel="alternate" hreflang="en-US" href="https://agapay.app/give" />
+  <link rel="alternate" hreflang="x-default" href="https://agapay.app/give" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="AGAPAY" />
-  <meta property="og:title" content="AGAPAY Give | Orthodox Giving App &amp; Tithing Software" />
-  <meta property="og:description" content="Purpose-built Orthodox tithing and donation software for parishes, monasteries, and faithful donors." />
+  <meta property="og:title" content="Orthodox Church Management Software &amp; Giving | AGAPAY" />
+  <meta property="og:description" content="One Orthodox-first platform for parish giving, stewardship, community, sacraments, commerce, and accounting." />
   <meta property="og:url" content="https://agapay.app/give" />
   <meta property="og:image" content="https://agapay.app/images/AGAPAY_social_share.png" />
-  <meta property="og:image:alt" content="AGAPAY Give mobile dashboard on a phone beside a candle and Orthodox books" />
+  <meta property="og:image:alt" content="AGAPAY Orthodox church management and giving app" />
   <meta property="og:image:width" content="1122" />
   <meta property="og:image:height" content="1402" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="AGAPAY Give | Orthodox Giving App &amp; Tithing Software" />
-  <meta name="twitter:description" content="Orthodox tithing and donation software for parishes, monasteries, and faithful donors." />
+  <meta name="twitter:title" content="Orthodox Church Management Software &amp; Giving | AGAPAY" />
+  <meta name="twitter:description" content="Giving, stewardship, Koinonia, directories, sacraments, commerce, and accounting in one Orthodox-first platform." />
   <meta name="twitter:image" content="https://agapay.app/images/AGAPAY_social_share.png" />
   <meta name="theme-color" content="#061522" />
-
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link rel="preload" as="image" href="/images/giving/app-phone-mockup.png" type="image/png" fetchpriority="high" />
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" /></noscript>
-
-  <link rel="stylesheet" href="/styles/index.css" />
-  <link rel="stylesheet" href="/styles/numbers.css" />
-  <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="preload" as="image" href="/images/giving/app-phone-mockup.png" fetchpriority="high" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&amp;family=DM+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site-chrome.css" />
-  <script src="/site-chrome.js" defer></script>
+  <link rel="stylesheet" href="/styles/give.css?v=20260827consolidated1" />
+  <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
+  <script src="/site-chrome.js?v=20260827givesections1" defer></script>
   <script src="/pwa-register.js" defer></script>
   <script type="application/ld+json">
   {
@@ -54,1195 +44,262 @@
         "@id": "https://agapay.app/#organization",
         "name": "AGAPAY",
         "url": "https://agapay.app/",
-        "logo": {
-          "@type": "ImageObject",
-          "url": "https://agapay.app/mark.png"
-        },
-        "description": "AGAPAY builds Orthodox-first giving and parish software for churches, monasteries, ministries, and faithful households."
+        "logo": { "@type": "ImageObject", "url": "https://agapay.app/mark.png" },
+        "description": "Orthodox-first church management software for parishes, monasteries, ministries, and faithful households."
       },
       {
         "@type": "WebSite",
         "@id": "https://agapay.app/#website",
         "url": "https://agapay.app/",
         "name": "AGAPAY",
-        "alternateName": ["AGAPAY Platform", "AGAPAY Orthodox Parish Software"],
         "publisher": { "@id": "https://agapay.app/#organization" },
         "inLanguage": "en-US"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://agapay.app/give#breadcrumbs",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "AGAPAY", "item": "https://agapay.app/" },
+          { "@type": "ListItem", "position": 2, "name": "Orthodox Church Management Software", "item": "https://agapay.app/give" }
+        ]
       },
       {
         "@type": "WebPage",
         "@id": "https://agapay.app/give#webpage",
         "url": "https://agapay.app/give",
-        "name": "Orthodox Giving App & Tithing Software | AGAPAY Give",
-        "description": "AGAPAY Give is the Orthodox giving app for parish tithes, recurring donations, candles, commemorations, memorials, campaigns, and donor records.",
+        "name": "Orthodox Church Management Software & Giving | AGAPAY",
+        "description": "Orthodox church management software for giving, stewardship, Koinonia, directories, sacraments, commerce, and accounting.",
         "isPartOf": { "@id": "https://agapay.app/#website" },
-        "about": { "@id": "https://agapay.app/give#app" },
-        "mainEntity": { "@id": "https://agapay.app/give#app" },
-        "primaryImageOfPage": {
-          "@type": "ImageObject",
-          "url": "https://agapay.app/images/AGAPAY_social_share.png",
-          "width": 1122,
-          "height": 1402
-        },
+        "breadcrumb": { "@id": "https://agapay.app/give#breadcrumbs" },
+        "mainEntity": { "@id": "https://agapay.app/give#software" },
         "inLanguage": "en-US"
       },
       {
         "@type": ["SoftwareApplication", "WebApplication"],
-        "@id": "https://agapay.app/give#app",
-        "name": "AGAPAY Give",
-        "alternateName": ["Orthodox Giving App", "Orthodox Tithing App"],
+        "@id": "https://agapay.app/give#software",
+        "name": "AGAPAY",
+        "alternateName": ["AGAPAY Give", "Orthodox Church Management Software", "Orthodox Giving App"],
         "url": "https://agapay.app/give",
-        "description": "Purpose-built Orthodox giving and tithing software for parish donations, recurring gifts, candles, commemorations, memorials, campaigns, and donor records.",
-        "applicationCategory": "FinanceApplication",
-        "applicationSubCategory": "Church giving and tithing software",
-        "operatingSystem": "Web",
+        "description": "One Orthodox-first platform for online giving, recurring tithes, stewardship reporting, Koinonia, parish directories, sacrament scheduling, church commerce, and fund accounting.",
+        "applicationCategory": "BusinessApplication",
+        "applicationSubCategory": "Church management and giving software",
+        "operatingSystem": "Web, iOS, Android",
         "browserRequirements": "Requires a modern web browser",
-        "isAccessibleForFree": true,
-        "installUrl": "https://agapay.app/give#install",
-        "image": "https://agapay.app/images/giving/app-phone-mockup.png",
-        "screenshot": "https://agapay.app/images/giving/app-phone-mockup.png",
-        "featureList": [
-          "One-time and recurring parish donations",
-          "Candle offerings",
-          "Memorials and commemorations",
-          "Parish campaigns and designated funds",
-          "Donor giving history and annual pledges",
-          "Parish dashboards and QR codes",
-          "Fund accounting and financial reporting",
-          "Parish directory and member workflows",
-          "Parish commerce and order management",
-          "Koinonia community, fellowship, and media"
-        ],
+        "image": "https://agapay.app/images/AGAPAY_social_share.png",
+        "screenshot": "https://agapay.app/images/app/screenshots/giving-dashboard.jpg",
         "provider": { "@id": "https://agapay.app/#organization" },
-        "mainEntityOfPage": { "@id": "https://agapay.app/give#webpage" },
+        "featureList": [
+          "One-time and recurring Orthodox parish donations",
+          "Candles, memorials, and commemorations",
+          "Campaigns, pledges, and Stewardship Health reporting",
+          "Koinonia parish communications and ministry groups",
+          "Private household-based parish directory",
+          "Sacraments and services scheduling",
+          "Bookstore, events, meals, and sales tax workflows",
+          "Fund accounting, reconciliation, budgets, and reporting"
+        ],
         "offers": {
-          "@type": "Offer",
-          "price": "0",
+          "@type": "AggregateOffer",
           "priceCurrency": "USD",
-          "description": "Donor access is free; parish subscriptions start at $9 per month.",
-          "url": "https://agapay.app/give/pricing",
+          "lowPrice": "9",
+          "highPrice": "209",
+          "offerCount": "7",
+          "url": "https://agapay.app/give#pricing",
           "availability": "https://schema.org/InStock"
         },
         "audience": {
           "@type": "Audience",
-          "audienceType": "Orthodox parishes, monasteries, ministries, and faithful donors"
+          "audienceType": "Orthodox parishes, monasteries, clergy, treasurers, parish councils, ministries, and faithful households"
         }
       },
       {
         "@type": "FAQPage",
-        "@id": "https://agapay.app/give#faq",
+        "@id": "https://agapay.app/give#faq-schema",
         "mainEntity": [
           {
             "@type": "Question",
-            "name": "What is an Orthodox giving app?",
-            "acceptedAnswer": { "@type": "Answer", "text": "An Orthodox giving app supports parish stewardship in the context of Orthodox life. AGAPAY Give combines online tithes and donations with candles, memorials, commemorations, campaigns, designated funds, and parish administration." }
+            "name": "Does AGAPAY charge a percentage of parish donations?",
+            "acceptedAnswer": { "@type": "Answer", "text": "No. AGAPAY adds no percentage-based donation fee on any plan. Standard Stripe processing fees still apply, and donors may choose to cover those fees." }
           },
           {
             "@type": "Question",
-            "name": "Can parishioners make recurring tithes and donations with AGAPAY Give?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Yes. Donors can make one-time or recurring gifts and review their giving history through My AGAPAY." }
+            "name": "How does AGAPAY protect payment information?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Sensitive card and bank information is collected by Stripe-hosted Checkout and does not pass through or get stored by the AGAPAY application. Gifts and sales settle through the parish's own connected Stripe account." }
           },
           {
             "@type": "Question",
-            "name": "Can donors submit candles, memorials, and names for commemoration?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Yes. AGAPAY Give supports candle offerings, memorial gifts, and names of the living and departed for parish commemoration workflows." }
+            "name": "What is included in Give Plus?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Give Plus includes everything in Give, plus unlimited funds, campaigns, pledge tracking, Stewardship Health, the Parish Directory, Bookstore, Parish Library, and Koinonia." }
           },
           {
             "@type": "Question",
-            "name": "Is Text-to-Give available?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Text-to-Give is a coming-soon AGAPAY Give feature. The current platform supports web giving, parish campaigns, recurring gifts, QR codes, candles, memorials, commemorations, and donor records." }
+            "name": "What does the Parish plan include?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Parish includes every AGAPAY pillar: Give Plus, Sacraments and Services, Full Commerce, Accounting, Text-to-Give when available, guided onboarding, and priority support." }
+          },
+          {
+            "@type": "Question",
+            "name": "Does AGAPAY support Julian and Revised Julian calendars?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. AGAPAY's liturgical awareness supports Julian and Revised Julian parish calendars, including feast days, fasting periods, daily saints, and commemorations." }
+          },
+          {
+            "@type": "Question",
+            "name": "Can a parish council review AGAPAY before approving it?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. Parishes can request a guided demo and download the parish council proposal. The subscription and parish launch do not begin until the parish approves its completed configuration." }
           }
         ]
       }
     ]
   }
   </script>
-  <style>
-  /* ── PWA Install section ─────────────────────────────────────────────────── */
-  /* Install section — parchment card style matching how-it-works */
-  .install { position: relative; margin: 1.5rem; padding: clamp(2.5rem,5vw,4rem) clamp(1.5rem,4vw,3rem); border-radius: 16px; border: 1px solid rgba(200,162,74,.28); overflow: hidden; background: linear-gradient(180deg, var(--parchment, #fdf8ef) 0%, var(--parchment-2, #f5ede0) 100%); }
-  .install::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 60% at 90% 0%, rgba(200,162,74,.12) 0%, transparent 60%); pointer-events: none; }
-  .install > * { position: relative; z-index: 1; }
-  .install-inner { max-width: var(--page-width, 1480px); margin: 0 auto; display: grid; grid-template-columns: 1fr auto; gap: clamp(2rem,5vw,4rem); align-items: center; }
-  @media (max-width: 780px) {
-    .install-inner { grid-template-columns: 1fr; }
-    .install-phone-img { width: 200px; margin: 0 auto; }
-  }
-  .install-eyebrow { display: inline-flex; align-items: center; gap: .5rem; color: var(--gold-dark, #8a6a1a); text-transform: uppercase; letter-spacing: .16em; font-size: .7rem; font-weight: 800; margin-bottom: .85rem; }
-  .install-eyebrow svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  .install-head h2 { font-family: 'Cormorant Garamond', serif; color: #0a1524; font-size: clamp(2rem,4vw,3rem); font-weight: 500; line-height: 1.06; margin: 0 0 .6rem; }
-  .install-head p { color: var(--stone, #4a5568); font-size: 1rem; line-height: 1.65; max-width: 480px; margin: 0 0 1.5rem; }
-  /* OS toggle */
-  .os-toggle-wrap { margin-bottom: 1.5rem; }
-  .os-toggle { display: inline-flex; background: rgba(6,21,34,.05); border: 1px solid rgba(6,21,34,.12); border-radius: 12px; padding: 4px; gap: 4px; }
-  .os-btn { display: flex; align-items: center; gap: 8px; padding: 9px 20px; border: none; border-radius: 9px; background: transparent; color: #4a5568; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: background .15s, color .15s; }
-  .os-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
-  .os-btn[aria-selected="true"] { background: rgba(181,148,47,.15); color: var(--gold-dark, #8a6a1a); }
-  .os-btn:hover:not([aria-selected="true"]) { background: rgba(6,21,34,.06); color: #0a1524; }
-  /* Panels */
-  .os-panel { display: none; }
-  .os-panel.is-active { display: block; }
-  /* Steps */
-  .install-steps { display: grid; gap: .75rem; margin-bottom: 1.6rem; }
-  .install-step { display: flex; align-items: flex-start; gap: .85rem; padding: .95rem 1.1rem; border-radius: 12px; border: 1px solid rgba(200,162,74,.25); background: rgba(255,253,248,.72); }
-  .install-step p { color: #2a333b; font-size: .94rem; line-height: 1.5; margin: 0; }
-  .install-step strong { color: #0a1524; font-weight: 700; }
-  .isn { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; font-family: 'Cormorant Garamond', serif; font-size: .95rem; font-weight: 600; border: 1px solid rgba(200,162,74,.5); background: rgba(200,162,74,.1); color: var(--gold-dark, #8a6a1a); }
-  /* Install CTA */
-  .install-cta { margin-top: 4px; }
-  .btn-install { min-height: 50px; min-width: 220px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: .6rem; padding: 0 1.7rem; font-size: .88rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; background: linear-gradient(135deg, #D6AF5B, #B98832); color: #071522; border: none; cursor: pointer; transition: transform .18s ease, opacity .18s ease; }
-  .btn-install:hover { transform: translateY(-2px); }
-  .btn-install:disabled { opacity: .45; cursor: default; }
-  .btn-install svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
-  .install-note { margin: 12px 0 0; font-size: 13px; color: #5a7080; max-width: 400px; line-height: 1.5; }
-  /* iOS callout */
-  .ios-callout { display: flex; align-items: flex-start; gap: 10px; background: rgba(6,21,34,.05); border: 1px solid rgba(6,21,34,.1); border-radius: 12px; padding: 14px 16px; color: #4a5568; font-size: 14px; line-height: 1.5; max-width: 440px; }
-  .ios-callout svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; margin-top: 1px; }
-  .ios-share { display: inline-block; width: 16px; height: 16px; stroke: var(--gold-dark, #8a6a1a); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vertical-align: middle; margin: 0 2px; }
-  /* Phone mockup */
-  .install-phone-img { width: clamp(200px, 28vw, 300px); height: auto; border-radius: 16px; display: block; box-shadow: 0 24px 60px rgba(6,21,34,.28); }
-  .btn-navy { background: #061522; color: #f3ead4; border-color: #061522; }
-  .btn-navy:hover { background: #0d2133; }
-  /* ── end PWA Install ─────────────────────────────────────────────────────── */
-  </style>
 </head>
 <body>
-  <main>
-    <section class="hero">
-      <div class="hero-inner">
-        <div class="hero-main">
-          <div class="hero-copy">
-            <div class="eyebrow">AGAPAY Give</div>
-            <h1>The Orthodox Giving App <span>Built for Parish Life</span></h1>
-            <div class="hero-rule" aria-hidden="true"></div>
-            <p>AGAPAY Give is an Orthodox giving and tithing app for parishes, monasteries, and faithful donors - helping communities receive offerings, remember the living and the departed, and steward every gift with clarity. Transactions are processed and protected by Stripe; AGAPAY never holds donated funds.</p>
-            <div class="hero-actions">
-              <a class="btn btn-gold" href="/give/request-demo">Request a Parish Demo</a>
-              <a class="btn btn-outline" href="/register">Start for free</a>
-              <a class="btn btn-outline" href="/give/pricing">View Pricing</a>
-              <a class="btn btn-outline" href="/give/find-parish">Find a Parish</a>
-              <a class="btn btn-outline" href="#why">Why AGAPAY Exists</a>
-              <a class="btn btn-navy" id="heroInstallBtn" href="#install">Get the App</a>
-            </div>
-            <div class="hero-note">Built for stewardship, commemorations, candles, offerings, and the daily work of sustaining Orthodox life - without placing AGAPAY between the donor and the Church.</div>
+  <main class="give-page">
+    <section class="give-hero" aria-labelledby="give-title">
+      <div class="give-wrap give-hero-grid">
+        <div class="give-hero-copy">
+          <p class="give-eyebrow">Orthodox church management software</p>
+          <h1 id="give-title">One platform for all of Orthodox parish life.</h1>
+          <p class="give-hero-lead">AGAPAY brings giving, stewardship, people, ministries, sacraments, events, commerce, communications, and accounting into one connected, liturgically aware system.</p>
+          <div class="give-hero-actions">
+            <a class="give-button give-button-gold" href="/give/request-demo">Request a parish demo</a>
+            <a class="give-button give-button-light" href="#pricing">See plans and pricing</a>
           </div>
-          <div class="hero-visual" aria-label="AGAPAY Give mobile dashboard shown on a phone beside Orthodox books and candle" role="img">
-            <img src="/images/giving/app-phone-mockup.png" alt="" fetchpriority="high" />
+          <div class="give-hero-proof" aria-label="AGAPAY platform highlights">
+            <span><strong>$0</strong> AGAPAY donation fee</span>
+            <span><strong>$9</strong> starting monthly price</span>
+            <span><strong>6</strong> connected parish pillars</span>
           </div>
         </div>
-        <div class="hero-trust" aria-label="AGAPAY trust points">
-          <div class="hero-trust-item is-active" data-focus-title="Secure giving" data-focus-copy="Transactions are processed and protected by Stripe, with gifts routed to the church's connected account. AGAPAY never holds donated funds.">
-            <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-5"/></svg>
-            <span><strong>Processed by Stripe</strong><br />Protected giving, direct parish flow.</span>
+        <div class="give-hero-visual">
+          <div class="give-phone-halo" aria-hidden="true"></div>
+          <img src="/images/giving/app-phone-mockup.png" alt="AGAPAY Orthodox parish giving and stewardship app dashboard" fetchpriority="high" />
+          <div class="give-price-float">
+            <span>Recommended starting point</span>
+            <strong>Give + <b>$79/mo</b></strong>
+            <small>Giving, stewardship, directory, Bookstore, Parish Library, and Koinonia</small>
           </div>
-          <div class="hero-trust-item" data-focus-title="Canonical care" data-focus-copy="Communities are reviewed before activation so donors know where their gifts are going.">
-            <svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/><path d="M8 12l3 3 5-6"/></svg>
-            <span><strong>Canonically Minded</strong><br />Communities reviewed before activation.</span>
-          </div>
-          <div class="hero-trust-item" data-focus-title="Human support" data-focus-copy="Real help for onboarding, donor questions, parish workflows, and the practical details of launch.">
-            <svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/><path d="M8 12l3 3 5-6"/></svg>
-            <span><strong>Dedicated Support</strong><br />People who understand the mission.</span>
-          </div>
-          <div class="hero-trust-item" data-focus-title="Orthodox by design" data-focus-copy="Built around offerings, candles, commemorations, stewardship, and the communities that sustain Orthodox life.">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"> <path d="M12 2v20"/> <path d="M9 6h6"/> <path d="M5 10h14"/> <path d="M9 15L15 19"/> </svg>
-            <span><strong>Built by Orthodox Christians</strong><br />For Orthodox Christians.</span>
-          </div>
-        </div>
-        <div class="hero-focus" aria-live="polite">
-          <strong id="heroFocusTitle">Secure giving:</strong>
-          <span id="heroFocusCopy">Transactions are processed and protected by Stripe, with gifts routed to the church's connected account. AGAPAY never holds donated funds.</span>
         </div>
       </div>
     </section>
 
-    <nav class="council-jump-nav" aria-label="Parish council guide">
-      <div class="council-jump-inner">
-        <span class="council-jump-label">Council guide</span>
-        <div class="council-jump-links">
-          <a href="#why">Why AGAPAY</a>
-          <a href="#koinonia">Koinonia</a>
-          <a href="#features">Features</a>
-          <a href="#how-it-works">How It Works</a>
-          <a href="#pricing">Pricing</a>
-          <a href="#faq">FAQ</a>
-        </div>
+    <nav class="give-section-nav" aria-label="AGAPAY Give page sections">
+      <div class="give-wrap give-section-links">
+        <a href="#pricing">Pricing</a><a href="#security">Security</a><a href="#platform">Platform</a><a href="#koinonia">Koinonia</a><a href="#reporting">Reporting</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a>
       </div>
     </nav>
 
-    <section class="section interactive" aria-labelledby="interactive-title">
-      <div class="section-inner interactive-grid">
-        <div class="interactive-copy">
-          <div class="eyebrow">Premium Giving Experience</div>
-          <h2 id="interactive-title">Let every gift feel clear, intentional, and beautifully received.</h2>
-          <p class="lead">AGAPAY can help a parish show donors the real impact of steady stewardship while keeping the administrative side calm and organized.</p>
-        </div>
-        <div class="amount-playground" aria-label="Interactive giving impact calculator">
-          <div class="playground-head">
-            <div>
-              <span>Impact preview</span>
-              <strong id="impactAmount">$100 monthly gift</strong>
-            </div>
-            <div>
-              <span>Households</span>
-              <strong id="impactFamilies">85</strong>
-            </div>
-          </div>
-          <div class="amount-grid" aria-label="Choose monthly gift amount">
-            <button class="amount-button" type="button" data-amount="50">$50</button>
-            <button class="amount-button" type="button" data-amount="100" aria-pressed="true">$100</button>
-            <button class="amount-button" type="button" data-amount="150">$150</button>
-            <button class="amount-button" type="button" data-amount="250">$250</button>
-          </div>
-          <div class="playground-slider">
-            <label for="households">Participating households <span id="householdLabel">85</span></label>
-            <input id="households" type="range" min="20" max="250" value="85" />
-          </div>
-          <div class="playground-result" aria-live="polite">
-            <div class="result-card">
-              <span>Monthly</span>
-              <strong id="monthlyImpact">$8,500</strong>
-            </div>
-            <div class="result-card">
-              <span>Annual</span>
-              <strong id="annualImpact">$102,000</strong>
-            </div>
-            <div class="result-card">
-              <span>Receipts</span>
-              <strong id="receiptImpact">85</strong>
-            </div>
-          </div>
-        </div>
+    <section class="give-priority" aria-label="Pricing and security overview">
+      <div class="give-wrap give-priority-grid">
+        <a class="give-priority-card" href="#pricing">
+          <span class="give-card-kicker">Clear parish pricing</span><strong>Start at $9 per month. Give + is $79.</strong><p>No setup fee, no contract, and no percentage added to donations.</p><b>Compare every plan <span aria-hidden="true">&rarr;</span></b>
+        </a>
+        <a class="give-priority-card give-priority-card-dark" href="#security">
+          <span class="give-card-kicker">Security is required</span><strong>Stripe-hosted payments. Required administrator MFA.</strong><p>Parish-scoped data, role-based access, bot protection, and durable audit history.</p><b>See how AGAPAY protects data <span aria-hidden="true">&rarr;</span></b>
+        </a>
       </div>
     </section>
 
-    <section class="section problem" id="why">
-      <div class="section-inner problem-grid">
-        <div class="problem-copy">
-          <div class="eyebrow">WHY AGAPAY GIVE</div>
-          <h2>Built for the nave, not adapted from the megachurch.</h2>
-          <p class="lead">General church-giving platforms can process gifts capably. The difference is what the platform was shaped around. AGAPAY began within Orthodox parish life, built by Orthodox Christians for Orthodox Christians—not retrofitted from a generic nonprofit or corporate-style ministry product.</p>
-          <p class="lead">That changes the center of gravity: stewardship, candles, memorials, commemorations, special collections, and feast-aware campaigns belong together because giving is participation in the life of the Church, not merely a checkout and receipt.</p>
-          <strong>Modern capability matters. So do liturgical time, canonical care, prayer, and the human work of parish stewardship.</strong>
-          <p class="council-scope">AGAPAY is in its founding stage, onboarding its first parishes ahead of public launch. It currently serves recognized Orthodox communities across the United States, keeping stewardship funds domestic and within U.S. compliance.</p>
+    <section class="give-section give-pricing-section" id="pricing" aria-labelledby="pricing-title">
+      <div class="give-wrap">
+        <header class="give-section-head give-section-head-split">
+          <div><p class="give-eyebrow">Plans and cost to the parish</p><h2 id="pricing-title">Straightforward Orthodox church software pricing.</h2></div>
+          <div class="give-zero-fee"><strong>$0 AGAPAY donation fee</strong><span>AGAPAY adds no percentage-based fee to donations on any plan.</span></div>
+        </header>
+        <div class="give-plan-grid">
+          <article class="give-plan-card">
+            <div class="give-plan-top"><div><span class="give-plan-name">Give</span><small>Essential online giving</small></div><div class="give-plan-price"><strong>$9</strong><span>/mo</span></div></div>
+            <ul class="give-check-list"><li>One-time and recurring tithes</li><li>General Operating and one designated fund</li><li>Candles, memorials, and commemorations</li><li>Giving links, QR codes, receipts, and export</li></ul>
+            <a class="give-button give-button-outline" href="/register">Choose Give</a>
+          </article>
+          <article class="give-plan-card give-plan-featured">
+            <div class="give-plan-badge">Start here</div>
+            <div class="give-plan-top"><div><span class="give-plan-name">Give +</span><small>Giving, stewardship, and parish life</small></div><div class="give-plan-price"><strong>$79</strong><span>/mo</span></div></div>
+            <ul class="give-check-list"><li>Everything in Give</li><li>Unlimited funds, campaigns, and pledge tracking</li><li>Stewardship Health and annual statements</li><li>Parish Directory, Bookstore, and Parish Library</li><li>Koinonia parish community and media</li></ul>
+            <a class="give-button give-button-gold" href="/register">Choose Give +</a>
+          </article>
+          <article class="give-plan-card give-parish-plan">
+            <div class="give-plan-top"><div><span class="give-plan-name">Parish</span><small>The complete operations platform</small></div><div class="give-plan-price give-plan-price-from"><em>from</em><strong>$149</strong><span>/mo</span></div></div>
+            <p class="give-plan-intro">Every AGAPAY pillar at one household-based rate.</p>
+            <table class="give-price-table"><caption>Monthly Parish pricing by active household count</caption><tbody><tr><th scope="row">Under 50 households</th><td>$149/mo</td></tr><tr><th scope="row">50-149 households</th><td>$179/mo</td></tr><tr><th scope="row">150-299 households</th><td>$199/mo</td></tr><tr><th scope="row">300-599 households</th><td>$209/mo</td></tr><tr><th scope="row">600+ households</th><td>Custom</td></tr></tbody></table>
+            <a class="give-button give-button-outline" href="/give/request-demo">Discuss Parish</a>
+          </article>
         </div>
-        <div class="problem-list">
-          <div class="problem-item">
-            <div class="icon-ring"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/><path d="M5 4l2 2M19 4l-2 2"/></svg></div>
-            <div><h3>Liturgical Time, Not Marketing Windows</h3><p>Julian and Revised-Julian calendar support helps campaigns follow Orthodox feasts and fasts rather than generic seasonal calendars.</p></div>
-          </div>
-          <div class="problem-item">
-            <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 13h8"/></svg></div>
-            <div><h3>Prayer in the Workflow</h3><p>Names of the living and departed stay connected to their offering and can be routed toward the priest’s preparation.</p></div>
-          </div>
-          <div class="problem-item">
-            <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/><path d="M9 12l2 2 4-5"/></svg></div>
-            <div><h3>Trust Before Activation</h3><p>Canonical standing is reviewed before a community receives gifts, and AGAPAY never holds donated funds.</p></div>
-          </div>
+        <div class="give-addons" aria-labelledby="addons-title">
+          <div class="give-addons-head"><div><p class="give-eyebrow">A la carte on Give +</p><h3 id="addons-title">Add only the operational pillars you need.</h3></div><p>Every add-on is already included in Parish.</p></div>
+          <div class="give-addon-grid"><article><span>Sacraments &amp; Services</span><strong>$9/mo</strong><p>Requests, pastoral review, scheduling, and commemoration workflows.</p></article><article><span>Full Commerce</span><strong>$29/mo</strong><p>Bookstore is in Give +; Full Commerce adds Events, Meals, tax, and connected orders.</p></article><article><span>Accounting Suite</span><strong>$129/mo</strong><p>Fund accounting, reconciliation, budgets, reporting, and Full Commerce included.</p></article></div>
         </div>
+        <div class="give-processing-grid" aria-label="Payment processing costs">
+          <div><strong>$0</strong><span>AGAPAY donation fee</span></div>
+          <div><strong>Stripe rates</strong><span>Card and ACH processing is billed by Stripe.</span></div>
+          <div><strong>Nonprofit pricing</strong><span>Eligible organizations can <a href="https://support.stripe.com/questions/fee-discount-for-nonprofit-organizations" target="_blank" rel="noopener noreferrer">apply directly to Stripe</a>; Stripe controls approval, rates, and continued eligibility.</span></div>
+        </div>
+        <p class="give-pricing-note"><strong>No setup fee and no long-term contract.</strong> Standard Stripe processing fees still apply. Donors may choose to cover processing fees so the parish receives the full intended gift.</p>
       </div>
     </section>
 
-    <section class="section solution">
-      <div class="section-inner">
-        <div class="solution-aura" aria-hidden="true"></div>
-        <div class="solution-head">
-          <div class="eyebrow">THE SOLUTION</div>
-          <h2>Giving built around Orthodox life.</h2>
-          <p>AGAPAY brings offerings, candles, designated funds, campaigns, and commemorations together in one platform - shaped around the parish, the monastery, and the faithful who support them. We reverently facilitate the connection; Stripe processes the gift, and AGAPAY never holds donated funds.</p>
+    <section class="give-section give-security-section" id="security" aria-labelledby="security-title">
+      <div class="give-wrap">
+        <header class="give-section-head give-section-head-light"><p class="give-eyebrow">Security and payments</p><h2 id="security-title">Security is part of the product, not fine print.</h2><p>AGAPAY protects parish and donor information with clear boundaries at payment, login, storage, and every role inside the parish.</p></header>
+        <div class="give-security-grid">
+          <article><span class="give-security-icon" aria-hidden="true">1</span><h3>Payment details stay with Stripe</h3><p>Sensitive card and bank details are collected by Stripe-hosted Checkout. They do not pass through or get stored by the AGAPAY application, and funds settle through the parish's connected Stripe account.</p></article>
+          <article><span class="give-security-icon" aria-hidden="true">2</span><h3>Administrator MFA is mandatory</h3><p>Privileged users must verify a second factor using a passkey, device biometric, or authenticator code. Recovery codes provide a controlled path if a device is lost.</p></article>
+          <article><span class="give-security-icon" aria-hidden="true">3</span><h3>Every parish is isolated</h3><p>Directory, donation, and financial access is parish-scoped. Cross-parish requests are denied, and staff see only the capabilities assigned to their active role.</p></article>
+          <article><span class="give-security-icon" aria-hidden="true">4</span><h3>Important changes leave a record</h3><p>Administrative and financial actions create audit history so sensitive changes cannot be made quietly. Parish leaders can trace who did what and when.</p></article>
         </div>
-        <div class="ecosystem" data-active="parishes">
-          <div class="spoke-canvas" aria-hidden="true">
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-              <path class="spoke-main spoke-parishes" d="M34 30 H42" />
-              <path class="spoke-main spoke-monasteries" d="M34 70 H42" />
-              <path class="spoke-main spoke-donors" d="M66 30 H58" />
-              <path class="spoke-main spoke-commemorations" d="M66 70 H58" />
-
-              <path class="spoke-angled spoke-parishes" d="M42 30 L47 45" />
-              <path class="spoke-angled spoke-monasteries" d="M42 70 L47 55" />
-              <path class="spoke-angled spoke-donors" d="M58 30 L53 45" />
-              <path class="spoke-angled spoke-commemorations" d="M58 70 L53 55" />
-
-              <circle class="spoke-dot" cx="34" cy="30" r="0.6" />
-              <circle class="spoke-dot" cx="34" cy="70" r="0.6" />
-              <circle class="spoke-dot" cx="66" cy="30" r="0.6" />
-              <circle class="spoke-dot" cx="66" cy="70" r="0.6" />
-            </svg>
-          </div>
-          <div class="ecosystem-side">
-            <div class="ecosystem-item is-active" tabindex="0" data-solution="parishes" data-title="Parishes &amp; Missions" data-copy="One place for stewardship, candles, designated funds, and campaigns, with records that stay clear for parish leaders.">
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M4 21h16"/><path d="M6 21V10l6-5 6 5v11"/><path d="M9 21v-6h6v6"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></div>
-              <div><h3>Parishes &amp; Missions</h3><p>Receive stewardship, candle offerings, designated funds, and campaigns through one unified platform.</p></div>
-            </div>
-            <div class="ecosystem-item" tabindex="0" data-solution="monasteries" data-title="Monasteries" data-copy="A simple, trustworthy way for benefactors to sustain sacred hospitality, prayer, building needs, and daily monastery life.">
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M5 21h14"/><path d="M7 21V9l5-5 5 5v12"/><path d="M10 21v-5h4v5"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></div>
-              <div><h3>Monasteries</h3><p>Receive donations and support your sacred mission through trusted digital giving tools - with no monthly platform fee, ever, and no AGAPAY donation fee.</p></div>
-            </div>
-          </div>
-
-          <div class="ecosystem-center">
-            <div class="center-medallion">
-              <div>
-                <img src="/mark.png" alt="" />
-                <span>AGAPAY</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="ecosystem-side">
-            <div class="ecosystem-item right" tabindex="0" data-solution="donors" data-title="Faithful Donors" data-copy="A donor experience that feels calm, secure, and intentionally Orthodox, from recurring gifts to giving history.">
-              <div><h3>Faithful Donors</h3><p>Give confidently to your parish or monastery, and submit names of the living and the departed for commemoration.</p></div>
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M16 11a4 4 0 1 0-8 0"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/><path d="M19 8a3 3 0 0 1 2 3"/><path d="M3 11a3 3 0 0 1 2-3"/></svg></div>
-            </div>
-            <div class="ecosystem-item right" tabindex="0" data-solution="commemorations" data-title="Commemorations" data-copy="Names offered with gifts can reach the parish each week, keeping generosity tied to prayer and remembrance.">
-              <div><h3>Commemorations</h3><p>Names submitted with a gift reach your priest each week, so the living and the departed are remembered at the altar.</p></div>
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 13h8"/></svg></div>
-            </div>
-          </div>
+        <div class="give-security-details">
+          <details><summary>Passwords, passkeys, and account protection</summary><p>Passwords are stored as salted PBKDF2-SHA256 hashes, not readable text. Sign-in endpoints are rate-limited, donor email ownership is verified, privileged sessions require fresh MFA assurance, and My AGAPAY supports phishing-resistant passkeys.</p></details>
+          <details><summary>Stripe verification and parish funds</summary><p>AGAPAY verifies Stripe webhook events using a cryptographic signature and timestamp before updating a payment record. AGAPAY stores only the identifiers and masked references needed for reconciliation. It does not initiate or approve transfers from the parish bank account.</p></details>
+          <details><summary>Cloudflare, storage encryption, and bot protection</summary><p>AGAPAY runs on Cloudflare for network filtering, DDoS mitigation, and service availability. Cloudflare-managed storage is automatically encrypted at rest with AES-256. Turnstile protects sensitive public forms; its tokens expire after five minutes and can be used only once.</p></details>
         </div>
-        <div class="solution-focus" aria-live="polite">
-          <strong id="solutionFocusTitle">Parishes &amp; Missions</strong>
-          <span id="solutionFocusCopy">One place for stewardship, candles, designated funds, and campaigns, with records that stay clear for parish leaders.</span>
-        </div>
-        <p class="solution-foot">Together, we strengthen the institutions that sustain Orthodox life.</p>
+        <p class="give-security-caveat">No responsible online service can promise zero risk. AGAPAY uses layered controls, narrow access, verified payment events, and transparent operating boundaries instead of unsupported security guarantees.</p>
       </div>
     </section>
 
-    <section class="section koinonia-feature" id="koinonia" aria-labelledby="koinonia-feature-title">
-      <div class="section-inner koinonia-feature-grid">
-        <div class="koinonia-feature-copy">
-          <div class="eyebrow">Koinonia · Parish Life Together</div>
-          <h2 id="koinonia-feature-title">Giving belongs inside the life of the parish.</h2>
-          <p class="lead">Koinonia gives every parish a shared home for the worship, fellowship, service, and relationships that make stewardship meaningful. It is built into AGAPAY—not added as a separate community tool.</p>
-          <div class="koinonia-feature-points">
-            <article>
-              <strong>Today in the Church</strong>
-              <span>Feasts, fasts, saints, parish events, and festal giving prompts share the same liturgical awareness.</span>
-            </article>
-            <article>
-              <strong>Ministries &amp; community tools</strong>
-              <span>Ministry groups, parish signups, prayer requests, the Parish Exchange, events, and meals stay close to the people doing the work.</span>
-            </article>
-            <article>
-              <strong>Teaching, audio, video &amp; news</strong>
-              <span>Parish media and trusted Orthodox content give households one place to listen, watch, learn, and remain connected.</span>
-            </article>
-          </div>
-          <a class="btn btn-gold" href="/give/pricing">See Parish pricing</a>
+    <section class="give-section" id="platform" aria-labelledby="platform-title">
+      <div class="give-wrap">
+        <header class="give-section-head"><p class="give-eyebrow">One system, not six</p><h2 id="platform-title">Every part of parish life, now in one place.</h2><p>AGAPAY is Orthodox church management software built as a connected platform, so giving, households, ministries, sacraments, sales, and accounting can share the same parish context.</p></header>
+        <div class="give-platform-grid">
+          <article id="giving"><span id="recurring-donations" class="give-anchor-alias" aria-hidden="true"></span><span id="fundraising" class="give-anchor-alias" aria-hidden="true"></span><span class="give-status">Live</span><h3>Giving &amp; Stewardship</h3><p>Tithes, recurring gifts, candles, campaigns, pledges, donor history, annual statements, and Stewardship Health.</p></article>
+          <article><span class="give-status">Live</span><h3>Koinonia</h3><p>A private parish feed, ministry groups, signups, prayer requests, Exchange, recordings, videos, news, and library resources.</p><a href="#koinonia">Explore Koinonia</a></article>
+          <article><span class="give-status">Live</span><h3>Directory &amp; Households</h3><p>A private, member-only directory organized by household with namedays, shared contact details, ministries, and privacy controls.</p></article>
+          <article><span class="give-status">Live</span><h3>Sacraments &amp; Services</h3><p>Open-time booking, structured baptism and wedding requests, pastoral review, priest schedules, and altar commemoration names.</p></article>
+          <article id="commerce"><span id="event-payments" class="give-anchor-alias" aria-hidden="true"></span><span class="give-status">Live</span><h3>Bookstore &amp; Church Commerce</h3><p>Bookstore goods, feast-day dinners, festival plates, ministry events, guest checkout, QR codes, inventory, and automatic sales tax.</p></article>
+          <article><span class="give-status">Live</span><h3>Accounting</h3><p>Fund accounting, journal entries, reconciliation, payables, budgets, reporting, and year-end work connected to gifts and sales.</p></article>
         </div>
-
-        <div class="koinonia-showcase" aria-label="Three real Koinonia app screens">
-          <div class="koinonia-phone-frame">
-            <div class="koinonia-phone-screen" id="koinoniaPhoneScreen">
-              <img class="is-active" data-koinonia-slide="0" src="/images/app/screenshots/koinonia-give-1.jpg" alt="Koinonia home showing the Transfiguration feast, fasting guidance, parish inbox, and weekly calendar" width="720" height="1560" loading="lazy" decoding="async" />
-              <img data-koinonia-slide="1" data-src="/images/app/screenshots/koinonia-give-2.jpg" alt="Koinonia community tools showing parish signups, the Parish Exchange, prayer requests, ministries, and Orthodox audio" width="720" height="1560" loading="lazy" decoding="async" />
-              <img data-koinonia-slide="2" data-src="/images/app/screenshots/koinonia-give-3.jpg" alt="Koinonia media showing parish video and current Orthodox news" width="720" height="1560" loading="lazy" decoding="async" />
-            </div>
-          </div>
-          <div class="koinonia-slide-caption" aria-live="polite">
-            <strong id="koinoniaSlideTitle">Today &amp; Calendar</strong>
-            <span id="koinoniaSlideCopy">The liturgical day and the parish week, connected.</span>
-          </div>
-          <div class="koinonia-slide-controls" role="tablist" aria-label="Explore Koinonia screens">
-            <button class="is-active" type="button" role="tab" aria-selected="true" aria-controls="koinoniaPhoneScreen" data-koinonia-index="0" data-title="Today &amp; Calendar" data-copy="The liturgical day and the parish week, connected.">Today</button>
-            <button type="button" role="tab" aria-selected="false" aria-controls="koinoniaPhoneScreen" data-koinonia-index="1" data-title="Community &amp; Ministries" data-copy="Prayer, service, ministry life, and Orthodox media in one parish home.">Community</button>
-            <button type="button" role="tab" aria-selected="false" aria-controls="koinoniaPhoneScreen" data-koinonia-index="2" data-title="Parish Media &amp; News" data-copy="Parish video and current Orthodox news keep the community informed.">Media</button>
-          </div>
-        </div>
+        <div class="give-liturgical-callout"><div><p class="give-eyebrow">Liturgically aware by design</p><h3>Every part of AGAPAY already knows what day it is in the Church.</h3><p>Julian and Revised Julian parish calendars shape fasting context, daily saints and commemorations, feast-day giving prompts, and the experience parishioners see first in Koinonia.</p></div><div class="give-liturgical-tags" aria-label="Liturgical calendar capabilities"><span>Julian &amp; Revised Julian</span><span>Fasts &amp; feasts</span><span>Saints &amp; commemorations</span><span>Festal giving prompts</span></div></div>
       </div>
     </section>
 
-    <section class="section giving-capabilities" id="features" aria-labelledby="giving-capabilities-title">
-      <div class="section-inner">
-        <div class="giving-capabilities-head">
-          <div>
-            <div class="eyebrow">Available Now</div>
-            <h2 id="giving-capabilities-title">Giving and parish life, connected in one Orthodox platform.</h2>
-          </div>
-          <p class="lead">From a donor's first offering to a treasurer's year-end records, AGAPAY Give keeps stewardship, prayer, and parish administration connected in one Orthodox giving app.</p>
-        </div>
-
-        <div class="giving-capability-grid">
-          <article class="giving-capability-card">
-            <span class="giving-status is-live">Live</span>
-            <h3>One-time &amp; recurring giving</h3>
-            <p>Receive tithes, stewardship commitments, designated gifts, and recurring parish donations through secure Stripe checkout.</p>
-          </article>
-          <article class="giving-capability-card">
-            <span class="giving-status is-live">Live</span>
-            <h3>Candles &amp; commemorations</h3>
-            <p>Accept candle and memorial offerings with names of the living and departed, organized for parish prayer and follow-up.</p>
-          </article>
-          <article class="giving-capability-card">
-            <span class="giving-status is-live">Live</span>
-            <h3>Campaigns &amp; parish funds</h3>
-            <p>Create shareable campaign pages with photos, goals, progress, descriptions, and updates, or direct gifts to designated funds.</p>
-          </article>
-          <article class="giving-capability-card">
-            <span class="giving-status is-live">Live</span>
-            <h3>Donor records &amp; pledges</h3>
-            <p>Give donors a clear history of offerings, annual pledge progress, commemorations, and recurring commitments in My AGAPAY.</p>
-          </article>
-          <article class="giving-capability-card">
-            <span class="giving-status is-live">Live</span>
-            <h3>Parish administration</h3>
-            <p>Review giving history, funds, candle totals and names, campaigns, commemorations, and connected Stripe status in one dashboard.</p>
-          </article>
-          <article class="giving-capability-card">
-            <span class="giving-status is-live">Live</span>
-            <h3>QR codes &amp; direct parish links</h3>
-            <p>Help parishioners reach the right giving experience from a bulletin, narthex sign, website, email, or shared campaign link.</p>
-          </article>
-          <article class="giving-capability-card">
-            <span class="giving-status is-live">Live</span>
-            <h3>Parish operations</h3>
-            <p>Bring Stewardship Health, parishioner services, staff access, and parish commerce together with guided onboarding and support.</p>
-          </article>
-          <article class="giving-capability-card">
-            <span class="giving-status is-live">New</span>
-            <h3>Accounting</h3>
-            <p>Keep fund accounting, journal entries, payables, reconciliation, budgets, reporting, and year-end records connected to the gifts that created them.</p>
-          </article>
-          <article class="giving-capability-card">
-            <span class="giving-status is-live">New</span>
-            <h3>Directory</h3>
-            <p>Give clergy and authorized parish staff a secure, shared directory for households, member details, communication, and pastoral follow-up.</p>
-          </article>
-          <article class="giving-capability-card">
-            <span class="giving-status is-live">New</span>
-            <h3>Commerce</h3>
-            <p>Manage bookstore goods, parish products, orders, and checkout while keeping purchases clearly separate from donations and stewardship gifts.</p>
-          </article>
-          <article class="giving-capability-card">
-            <span class="giving-status is-live">New</span>
-            <h3>Koinonia</h3>
-            <p><em>Koinonia</em> (κοινωνία) means fellowship, communion, and shared participation. It is the umbrella for parish announcements, ministry groups, teaching, audio, video, news, and Orthodox podcasts because these tools help a community share its life in Christ. Acts 2:42 describes the Church this way: “And they continued stedfastly in the apostles' doctrine and fellowship, and in breaking of bread, and in prayers.”</p>
-          </article>
-        </div>
-
-        <div class="giving-roadmap" aria-labelledby="giving-roadmap-title">
-          <div>
-            <div class="eyebrow">Coming Soon</div>
-            <h3 id="giving-roadmap-title">The next tools in the AGAPAY Give roadmap.</h3>
-          </div>
-          <div class="giving-roadmap-items">
-            <p><strong>Text-to-Give · Parish plan</strong><span>One AGAPAY number with a unique parish keyword and the correct giving link.</span></p>
-          </div>
-        </div>
-
-        <div class="giving-capability-actions">
-          <a class="btn btn-gold" href="/give/features">See all features →</a>
-          <a class="btn btn-outline" href="/give/how-it-works">See How AGAPAY Works</a>
-          <a class="btn btn-outline" href="/give/pricing">See full pricing →</a>
-          <a class="btn btn-outline" href="/give/find-parish">Find an Orthodox Parish</a>
-        </div>
-        <nav class="giving-guides" aria-label="Orthodox giving guides">
-          <strong>Explore by need:</strong>
-          <a href="/give/parish-giving">Orthodox parish giving software</a>
-          <a href="/give/recurring-donations">Recurring giving for churches</a>
-          <a href="/give/fundraising">Orthodox church fundraising</a>
-        </nav>
+    <section class="give-section give-koinonia-section" id="koinonia" aria-labelledby="koinonia-title">
+      <div class="give-wrap give-koinonia-grid">
+        <div><p class="give-eyebrow">Koinonia is included in Give +</p><h2 id="koinonia-title">A genuine parish community, not a public social network.</h2><p class="give-section-lead">Every Koinonia feature requires a verified household member of the parish. The result is one private place for the liturgical day, parish announcements, ministries, service, teaching, and mutual care.</p><div class="give-koinonia-list"><span>Parish feed and Community Inbox</span><span>Ministry groups and schedules</span><span>Signups, meal trains, and volunteer needs</span><span>Parish Exchange</span><span>Prayer requests with clergy-only privacy</span><span>Audio, video, podcasts, and parish news</span><span>Parish Library</span><span>Google Calendar connection</span></div></div>
+        <div class="give-koinonia-screens" aria-label="Koinonia app screens"><figure class="give-screen give-screen-main"><img src="/images/app/screenshots/koinonia-give-1.jpg" alt="Koinonia Today and Orthodox liturgical calendar screen" loading="lazy" width="720" height="1560" /><figcaption>Today &amp; Calendar</figcaption></figure><figure class="give-screen"><img src="/images/app/screenshots/koinonia-give-2.jpg" alt="Koinonia parish community and ministry screen" loading="lazy" width="720" height="1560" /><figcaption>Community &amp; Ministries</figcaption></figure><figure class="give-screen"><img src="/images/app/screenshots/koinonia-give-3.jpg" alt="Koinonia parish media and news screen" loading="lazy" width="720" height="1560" /><figcaption>Parish Media &amp; News</figcaption></figure></div>
       </div>
     </section>
 
-    <section class="section council-path" id="how-it-works" aria-labelledby="council-path-title">
-      <div class="section-inner">
-        <div class="council-section-head">
-          <div>
-            <div class="eyebrow">A COUNCIL-SIZED DECISION PATH</div>
-            <h2 id="council-path-title">From first review to parish launch.</h2>
-          </div>
-          <p class="lead">A parish council can evaluate fit, choose the capabilities it needs, and understand the rollout without piecing the decision together across multiple pages.</p>
-        </div>
-        <div class="council-step-grid">
-          <article class="council-step">
-            <span class="council-step-number">01</span>
-            <h3>Confirm the fit</h3>
-            <p>Review the Orthodox-first approach, canonical safeguards, giving flow, and the needs of your priest, treasurer, council, and faithful.</p>
-          </article>
-          <article class="council-step">
-            <span class="council-step-number">02</span>
-            <h3>Choose capabilities</h3>
-            <p>Select by the work your parish needs now—from simple online giving through stewardship insight and complete parish operations.</p>
-          </article>
-          <article class="council-step">
-            <span class="council-step-number">03</span>
-            <h3>Register and connect</h3>
-            <p>Complete parish registration and canonical review, then connect the church’s own Stripe account so AGAPAY never holds donated funds.</p>
-          </article>
-          <article class="council-step">
-            <span class="council-step-number">04</span>
-            <h3>Configure and share</h3>
-            <p>Set up funds, campaigns, branding, direct links, and QR codes with guided onboarding and support for a confident parish launch.</p>
-          </article>
-        </div>
-        <div class="council-path-actions">
-          <a class="btn btn-gold" href="/register">Start for free</a>
-          <a class="btn btn-outline" href="/give/features">See all features →</a>
-        </div>
+    <section class="give-section" id="reporting" aria-labelledby="reporting-title">
+      <div class="give-wrap">
+        <header class="give-section-head"><p class="give-eyebrow">Giving intelligence and automated reporting</p><h2 id="reporting-title">See the real shape of parish giving, not just the total.</h2><p>Stewardship Health turns the gifts and pledges already flowing through AGAPAY into useful council-level signals and print-ready reports.</p></header>
+        <div class="give-report-grid"><article><span>Giving intelligence</span><h3>Distribution</h3><p>See how many donors give at each annual level, from smaller offerings through major gifts.</p></article><article><span>Giving intelligence</span><h3>Donor retention</h3><p>Track retained, lapsed, and new donors year over year before a change reaches the total.</p></article><article><span>Giving intelligence</span><h3>Concentration risk</h3><p>Understand the anonymized share of giving from the top households and surface dependency risk.</p></article><article><span>Giving intelligence</span><h3>Recurring stability</h3><p>Measure predictable recurring gifts against one-time giving and active recurring households.</p></article><article><span>Automated reporting</span><h3>Monthly council reports</h3><p>Generate current stewardship and financial summaries without rebuilding spreadsheets before meetings.</p></article><article><span>Automated reporting</span><h3>Annual statements and packets</h3><p>Produce donor statements in batches and assemble a polished annual meeting packet from current records.</p></article></div>
+        <div class="give-report-callout"><strong>What used to take a treasurer days can take minutes.</strong><span>No duplicate export process and no report reconstructed from scratch.</span></div>
       </div>
     </section>
 
-    <section class="section council-pricing" id="pricing" aria-labelledby="council-pricing-title">
-      <div class="section-inner">
-        <div class="council-section-head">
-          <div>
-            <div class="eyebrow">PRICING AT A GLANCE</div>
-            <h2 id="council-pricing-title">Choose the capabilities your church needs.</h2>
-          </div>
-          <p class="lead">Begin with simple digital giving, add Orthodox giving tools and stewardship insight as needed, or choose Parish for the complete operations platform.</p>
-        </div>
-        <div class="council-plan-grid">
-          <article class="council-plan">
-            <span>Give</span>
-            <strong>$9 <small>/ mo</small></strong>
-            <p>The essential online-giving foundation for a new Orthodox mission.</p>
-          </article>
-          <article class="council-plan">
-            <span>Give +</span>
-            <strong>$79 <small>/ mo</small></strong>
-            <p>Campaigns, pledges, Stewardship Health, Parish Directory, Bookstore, Parish Library, and Koinonia at one flat monthly price.</p>
-          </article>
-          <article class="council-plan">
-            <span>Parish</span>
-            <strong>From $149 <small>/ mo</small></strong>
-            <p>Flat household pricing for the complete Koinonia, Accounting, Directory, Sacraments, and Commerce platform.</p>
-          </article>
-        </div>
-        <p class="council-pricing-note"><strong>No setup fee, contract, or introductory-price fine print.</strong> Parish rates scale predictably by active-household band.</p>
-        <div class="council-pricing-actions">
-          <a class="btn btn-gold" href="/give/pricing">See full pricing →</a>
-          <a class="btn btn-outline" href="/register">Start for free</a>
-        </div>
-      </div>
+    <section class="give-section give-how-section" id="how-it-works" aria-labelledby="how-title">
+      <div class="give-wrap"><header class="give-section-head"><p class="give-eyebrow">How AGAPAY launches</p><h2 id="how-title">A council-friendly path from review to parish launch.</h2></header><ol class="give-step-grid"><li><span>1</span><h3>Parish approves moving forward</h3><p>The subscription and parish launch wait until the parish approves its completed configuration.</p></li><li><span>2</span><h3>Staff completes setup</h3><p>AGAPAY provides guided onboarding around the parish's identity, verified Stripe account, households, and selected features.</p></li><li><span>3</span><h3>Launch to the parish</h3><p>Share giving links, My AGAPAY, Koinonia, and the parish's connected workflows with the community.</p></li><li><span>4</span><h3>Grow without rebuilding</h3><p>Add focused Give + features or move into the bundled Parish plan as the organization is ready.</p></li></ol></div>
     </section>
 
-    <section class="trust-band">
-      <div class="trust-grid">
-        <div class="trust-copy">
-          <div class="eyebrow">BUILT ON TRUST</div>
-          <h2>Secure. Reliable. Transparent.</h2>
-          <p class="lead">AGAPAY combines modern giving technology with dedicated support and values-aligned service you can trust - designed to support Orthodox communities with clarity, security, and long-term stability. Stewardship without the middleman: all giving transactions are processed and protected by Stripe, and AGAPAY never holds donated funds.</p>
-        </div>
-        <div class="trust-badge"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/></svg><span>Processed by Stripe<br />Modern protected checkout for every online gift.</span></div>
-        <div class="trust-badge"><svg class="dollar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="8"/> <path d="M12 7v10"/> <path d="M15 8h-5a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4h-5"/> </svg><span>No Donation Middleman<br />AGAPAY never holds donated funds.</span></div>
-        <div class="trust-badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6"/><path d="M9 9h.01"/><path d="M15 15h.01"/></svg><span>No AGAPAY Donation Fee<br />Eligible nonprofit donations: cards 2.2% + $0.30; ACH 0.8%, capped at $5.<a class="stripe-nonprofit-rate-link" href="#stripe-nonprofit-fee-disclaimer" aria-label="See Stripe nonprofit pricing eligibility disclaimer">*</a></span></div>
-        <div class="trust-badge"><svg viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><path d="M4 14h4v6H4z"/><path d="M16 14h4v6h-4z"/></svg><span>Dedicated Support<br />Real people who understand Orthodox communities.</span></div>
-        <div class="trust-badge"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Canonical Review<br />Communities are reviewed before they can receive gifts.</span></div>
-      </div>
+    <section class="give-why" id="why" aria-labelledby="why-title"><div class="give-wrap"><p class="give-eyebrow">Why we built this</p><h2 id="why-title">Built from inside the life it serves.</h2><p>AGAPAY is not generic church software with Orthodox vocabulary added later. It is a platform for the whole reverent life of Orthodox Christians and the parishes that carry them.</p><div class="give-why-points"><span><strong>Canonically minded</strong> Communities are reviewed before activation.</span><span><strong>Human support</strong> Real help for onboarding and parish workflows.</span><span><strong>Orthodox by design</strong> Built by Orthodox Christians for Orthodox Christians.</span></div></div></section>
+
+    <section class="give-section give-council-section" id="parish-council" aria-labelledby="council-title">
+      <div class="give-wrap give-council-grid"><div><p class="give-eyebrow">For parish councils</p><h2 id="council-title">Bring one clear proposal to the next meeting.</h2><p>The parish council overview summarizes the platform, security model, stewardship intelligence, reporting, exact pricing, and next steps in a print-ready three-page document.</p><div class="give-council-actions"><a class="give-button give-button-gold" href="/downloads/agapay-parish-council-overview.pdf" download>Download council proposal</a><a class="give-button give-button-light" href="/give/request-demo">Schedule a guided demo</a></div></div><div class="give-council-summary" aria-label="Parish council proposal contents"><span><b>01</b> Complete platform and Koinonia</span><span><b>02</b> Security, intelligence, and reporting</span><span><b>03</b> Pricing and council next steps</span></div></div>
     </section>
 
-    <section class="section giving-faq" id="faq" aria-labelledby="giving-faq-title">
-      <div class="section-inner giving-faq-layout">
-        <div class="giving-faq-intro">
-          <div class="eyebrow">Common Questions</div>
-          <h2 id="giving-faq-title">Orthodox giving, made clearer.</h2>
-          <p class="lead">AGAPAY Give is purpose-built for the practical and spiritual rhythms of Orthodox generosity.</p>
-        </div>
-        <div class="giving-faq-list">
-          <details open>
-            <summary>What is an Orthodox giving app?</summary>
-            <p>An Orthodox giving app is online giving software designed around Orthodox parish life. AGAPAY Give supports stewardship, tithes, candles, memorials, commemorations, campaigns, and donor records in one platform.</p>
-          </details>
-          <details>
-            <summary>Can parishioners make recurring tithes and donations?</summary>
-            <p>Yes. Donors can make one-time or recurring gifts to verified Orthodox parishes and monasteries through secure Stripe checkout. AGAPAY never holds donated funds; we bring donors and churches together through a protected giving flow.</p>
-          </details>
-          <details>
-            <summary>Does AGAPAY hold donated funds?</summary>
-            <p>No. Online gifts are processed and protected by Stripe and routed through the church's own connected Stripe account. AGAPAY reverently facilitates giving without becoming the custodian of donated funds.</p>
-          </details>
-          <details>
-            <summary>Can donors submit candles, memorials, and names for commemoration?</summary>
-            <p>Yes. AGAPAY Give supports candle offerings, memorial gifts, and names of the living and departed for parish commemoration workflows.</p>
-          </details>
-          <details>
-            <summary>Is Text-to-Give available?</summary>
-            <p>Text-to-Give is a coming-soon AGAPAY Give feature. The current platform supports web giving, parish campaigns, recurring gifts, QR codes, candles, memorials, commemorations, and donor records.</p>
-          </details>
-        </div>
-      </div>
+    <section class="give-section give-faq-section" id="faq" aria-labelledby="faq-title">
+      <div class="give-wrap give-faq-grid"><header class="give-section-head"><p class="give-eyebrow">Frequently asked questions</p><h2 id="faq-title">Clear answers for clergy, treasurers, and parish councils.</h2><p>Need to discuss a parish-specific workflow? <a href="/give/request-demo">Request a guided demo</a> or email <a href="mailto:support@agapay.app">support@agapay.app</a>.</p></header><div class="give-faq-list"><details><summary>Does AGAPAY charge a percentage of parish donations?</summary><p>No. AGAPAY adds no percentage-based donation fee on any plan. Standard Stripe processing fees still apply, and donors may choose to cover them so the parish receives the full intended gift.</p></details><details><summary>How does AGAPAY protect payment information?</summary><p>Stripe-hosted Checkout collects sensitive card and bank details. Those details do not pass through or get stored by the AGAPAY application. Gifts and sales are processed through the parish's connected Stripe account.</p></details><details><summary>What is included in Give +?</summary><p>Give + includes Give, unlimited funds, campaigns, pledges, Stewardship Health, the Parish Directory, Bookstore, Parish Library, and Koinonia. Sacraments, Full Commerce, and Accounting can be purchased individually.</p></details><details><summary>When is Parish the better choice?</summary><p>Choose Parish when the organization wants every connected pillar rather than adding individual modules. Parish bundles Give +, Sacraments, Full Commerce, Accounting, guided onboarding, and priority support at a household-based rate.</p></details><details><summary>Can plans and add-ons change later?</summary><p>Yes. There is no setup fee or long-term contract. A parish can change its tier and selected add-ons as its needs grow.</p></details><details><summary>Does AGAPAY support Julian and Revised Julian parish calendars?</summary><p>Yes. Liturgical awareness includes Julian and Revised Julian calendars, feasts, fasting periods, daily saints, commemorations, and festal giving context.</p></details></div></div>
     </section>
 
-    <section class="mission-band">
-      <div class="mission-copy">
-        <div class="eyebrow">OUR MISSION</div>
-        <h2>Strengthening Orthodox life through faithful stewardship.</h2>
-        <p>AGAPAY exists to help Orthodox communities build durable institutions, support meaningful work, and strengthen the bonds between parishes, monasteries, and the faithful. We believe true stewardship builds a foundation that outlasts our lifetime.</p>
-        <a href="/about">Learn About Our Mission</a>
-      </div>
-      <div class="mission-image" role="img" aria-label="Orthodox faithful gathered inside a parish church">
-        <div class="mission-smoke" aria-hidden="true">
-          <span class="smoke-wisp"></span>
-          <span class="smoke-wisp"></span>
-          <span class="smoke-wisp"></span>
-          <span class="smoke-wisp"></span>
-        </div>
-      </div>
-    </section>
-
-    <section class="section join">
-      <div class="section-inner">
-        <div class="join-grid">
-          <div>
-            <div class="eyebrow">Join Us</div>
-            <h2>Join the future of Orthodox giving.</h2>
-            <p>Whether you serve a parish, mission, or monastery, AGAPAY is building the giving infrastructure to help Orthodox communities thrive together.</p>
-            <div class="join-actions">
-              <a class="btn btn-gold" href="/register">Start for free</a>
-              <a class="btn btn-outline" href="/give/how-it-works">See How it Works</a>
-            </div>
-          </div>
-          <div class="join-features">
-            <div class="join-feature">
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 4.5h6"/><path d="M9 10l1.5 1.5L13 9"/><path d="M9 14l1.5 1.5L13 13"/><path d="M14.5 10h2.5"/><path d="M14.5 14h2.5"/></svg></div>
-              <div><h3>Easy Onboarding</h3><p>Get set up with personalized guidance.</p></div>
-            </div>
-            <div class="join-feature">
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/><path d="M9 12l2 2 4-5"/></svg></div>
-              <div><h3>Dedicated Support</h3><p>Real people who understand your mission.</p></div>
-            </div>
-            <div class="join-feature">
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 13h8"/></svg></div>
-              <div><h3>Commemorations</h3><p>Living and departed names reach your priest each week.</p></div>
-            </div>
-            <div class="join-feature">
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M5 21h14"/><path d="M7 21V9l5-5 5 5v12"/><path d="M10 21v-5h4v5"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></div>
-              <div><h3>Kingdom Impact</h3><p>Every gift helps strengthen our community.</p></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="install reveal" id="install">
-      <div class="install-inner">
-        <div>
-          <div class="install-head">
-            <div class="install-eyebrow">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>
-              Add AGAPAY to your phone
-            </div>
-            <h2>Your giving, a tap away.</h2>
-            <p>Add our web-based app to your home screen for quick access to your giving, intentions, and commemorations. It opens straight from your browser &mdash; no app store, no download.</p>
-          </div>
-    
-          <div class="os-toggle-wrap">
-            <div class="os-toggle" role="tablist" aria-label="Choose your device">
-              <button class="os-btn" id="osAndroidBtn" role="tab" aria-selected="false" aria-controls="panelAndroid">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path class="logo-line" d="M7.2 8.5h9.6c.8 0 1.4.6 1.4 1.4v5.8c0 .8-.6 1.4-1.4 1.4H7.2c-.8 0-1.4-.6-1.4-1.4V9.9c0-.8.6-1.4 1.4-1.4Z"/><path class="logo-line" d="M8.3 8 6.9 5.7M15.7 8l1.4-2.3M9 17.1v2.7M15 17.1v2.7M4.1 10.2v5.3M19.9 10.2v5.3"/><circle cx="9.6" cy="11.4" r=".55"/><circle cx="14.4" cy="11.4" r=".55"/></svg>
-                Android
-              </button>
-              <button class="os-btn" id="osAppleBtn" role="tab" aria-selected="false" aria-controls="panelApple">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.08ZM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25Z"/></svg>
-                iPhone &amp; iPad
-              </button>
-            </div>
-          </div>
-    
-          <div class="os-panel" id="panelAndroid" role="tabpanel" aria-labelledby="osAndroidBtn">
-            <div class="install-steps">
-              <div class="install-step">
-                <span class="isn">1</span>
-                <p>Tap <strong>Install AGAPAY</strong> below. Your browser will ask to add our web-based app to your home screen.</p>
-              </div>
-              <div class="install-step">
-                <span class="isn">2</span>
-                <p>Confirm <strong>Install</strong>, and the AGAPAY icon appears with your other apps.</p>
-              </div>
-              <div class="install-step">
-                <span class="isn">3</span>
-                <p>Open it anytime to give, light a candle, or submit names for commemoration.</p>
-              </div>
-            </div>
-            <div class="install-cta">
-              <button class="btn-install" id="androidInstallBtn">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Install AGAPAY
-              </button>
-              <p class="install-note">If your browser doesn&rsquo;t prompt automatically, it will open AGAPAY so you can choose &ldquo;Add to Home screen&rdquo; from the browser menu.</p>
-            </div>
-          </div>
-    
-          <div class="os-panel" id="panelApple" role="tabpanel" aria-labelledby="osAppleBtn">
-            <div class="install-steps">
-              <div class="install-step">
-                <span class="isn">1</span>
-                <p>Open AGAPAY in <strong>Safari</strong> (iPhone and iPad can add our web-based app from Safari).</p>
-              </div>
-              <div class="install-step">
-                <span class="isn">2</span>
-                <p>Tap the <strong>Share</strong> button
-                  <svg class="ios-share" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L8 8m4-4 4 4"/><path d="M5 12v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>
-                  at the bottom of the screen.</p>
-              </div>
-              <div class="install-step">
-                <span class="isn">3</span>
-                <p>Scroll down and tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>. The AGAPAY icon appears with your other apps.</p>
-              </div>
-            </div>
-            <div class="install-cta">
-              <span class="ios-callout">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
-                On iPhone &amp; iPad, use Safari&rsquo;s Share menu &mdash; Apple doesn&rsquo;t allow a one-tap install button.
-              </span>
-            </div>
-          </div>
-        </div>
-        <div>
-          <img src="/images/app-phone-mockup.png" alt="AGAPAY donor dashboard on a phone" class="install-phone-img" loading="lazy" width="320" height="693" />
-        </div>
-      </div>
-    </section>
-    <aside class="stripe-fee-disclaimer" id="stripe-nonprofit-fee-disclaimer">
-      <strong>* Stripe nonprofit pricing disclaimer:</strong> Discounted donation transaction fees are subject to Stripe&rsquo;s review, approval, and ongoing determination. AGAPAY cannot guarantee eligibility or that Stripe will apply or maintain these rates.
-    </aside>
+    <section class="give-final-cta" aria-label="Start with AGAPAY"><div class="give-wrap"><p class="give-eyebrow">One parish. One connected system.</p><h2>See what AGAPAY would look like for your parish.</h2><p>Start a no-card 30-day demo or walk through the platform with a real person.</p><div class="give-final-actions"><a class="give-button give-button-gold" href="/register">Start free</a><a class="give-button give-button-light" href="/give/request-demo">Request a parish demo</a><a class="give-text-link" href="/give/find-parish">Find a parish on AGAPAY</a></div></div></section>
   </main>
-
-  <script>
-    const heroVideo = document.querySelector(".hero-video");
-    if (heroVideo) {
-      heroVideo.addEventListener("canplay", () => {
-        heroVideo.classList.add("is-loaded");
-      }, { once: true });
-    }
-
-    const currency = new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0
-    });
-
-    const heroTrustItems = Array.from(document.querySelectorAll(".hero-trust-item"));
-    const heroFocusTitle = document.querySelector("#heroFocusTitle");
-    const heroFocusCopy = document.querySelector("#heroFocusCopy");
-
-    function setHeroFocus(item) {
-      if (!item || !heroFocusTitle || !heroFocusCopy) return;
-      heroTrustItems.forEach((trustItem) => trustItem.classList.toggle("is-active", trustItem === item));
-      heroFocusTitle.textContent = `${item.dataset.focusTitle}:`;
-      heroFocusCopy.textContent = item.dataset.focusCopy;
-    }
-
-    heroTrustItems.forEach((item) => {
-      item.setAttribute("tabindex", "0");
-      item.addEventListener("mouseenter", () => setHeroFocus(item));
-      item.addEventListener("focus", () => setHeroFocus(item));
-    });
-
-    const ecosystem = document.querySelector(".ecosystem");
-    const ecosystemItems = Array.from(document.querySelectorAll(".ecosystem-item"));
-    const solutionFocusTitle = document.querySelector("#solutionFocusTitle");
-    const solutionFocusCopy = document.querySelector("#solutionFocusCopy");
-
-    function setSolutionFocus(item) {
-      if (!ecosystem || !item || !solutionFocusTitle || !solutionFocusCopy) return;
-      ecosystem.dataset.active = item.dataset.solution;
-      ecosystem.classList.add("has-active");
-      ecosystemItems.forEach((ecosystemItem) => {
-        ecosystemItem.classList.toggle("is-active", ecosystemItem === item);
-      });
-      solutionFocusTitle.textContent = item.dataset.title;
-      solutionFocusCopy.textContent = item.dataset.copy;
-    }
-
-    ecosystemItems.forEach((item) => {
-      item.addEventListener("mouseenter", () => setSolutionFocus(item));
-      item.addEventListener("focus", () => setSolutionFocus(item));
-      item.addEventListener("click", () => setSolutionFocus(item));
-    });
-
-    const amountButtons = Array.from(document.querySelectorAll(".amount-button"));
-    const households = document.querySelector("#households");
-    const impactAmount = document.querySelector("#impactAmount");
-    const impactFamilies = document.querySelector("#impactFamilies");
-    const householdLabel = document.querySelector("#householdLabel");
-    const monthlyImpact = document.querySelector("#monthlyImpact");
-    const annualImpact = document.querySelector("#annualImpact");
-    const receiptImpact = document.querySelector("#receiptImpact");
-    let selectedAmount = 100;
-
-    function updateImpact() {
-      if (!households) return;
-      const familyCount = Number(households.value);
-      impactAmount.textContent = `${currency.format(selectedAmount)} monthly gift`;
-      impactFamilies.textContent = familyCount;
-      householdLabel.textContent = familyCount;
-      monthlyImpact.textContent = currency.format(selectedAmount * familyCount);
-      annualImpact.textContent = currency.format(selectedAmount * familyCount * 12);
-      receiptImpact.textContent = familyCount;
-    }
-
-    amountButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        selectedAmount = Number(button.dataset.amount);
-        amountButtons.forEach((item) => {
-          item.setAttribute("aria-pressed", String(item === button));
-        });
-        updateImpact();
-      });
-    });
-
-    if (households) {
-      households.addEventListener("input", updateImpact);
-      updateImpact();
-    }
-
-    const koinoniaScreen = document.querySelector("#koinoniaPhoneScreen");
-    const koinoniaSlides = Array.from(document.querySelectorAll("[data-koinonia-slide]"));
-    const koinoniaControls = Array.from(document.querySelectorAll("[data-koinonia-index]"));
-    const koinoniaSlideTitle = document.querySelector("#koinoniaSlideTitle");
-    const koinoniaSlideCopy = document.querySelector("#koinoniaSlideCopy");
-    let koinoniaIndex = 0;
-    let koinoniaTimer = null;
-
-    function showKoinoniaSlide(nextIndex, fromAuto = false) {
-      if (!koinoniaScreen || !koinoniaSlides.length || !koinoniaControls.length) return;
-      const normalizedIndex = ((Number(nextIndex) % koinoniaSlides.length) + koinoniaSlides.length) % koinoniaSlides.length;
-      const target = koinoniaSlides[normalizedIndex];
-      const control = koinoniaControls[normalizedIndex];
-      const reveal = () => koinoniaSlides.forEach((slide, index) => slide.classList.toggle("is-active", index === normalizedIndex));
-
-      if (!target.getAttribute("src") && target.dataset.src) {
-        target.addEventListener("load", reveal, { once: true });
-        target.src = target.dataset.src;
-      } else {
-        reveal();
-      }
-
-      koinoniaControls.forEach((button, index) => {
-        const isActive = index === normalizedIndex;
-        button.classList.toggle("is-active", isActive);
-        button.setAttribute("aria-selected", String(isActive));
-      });
-      koinoniaSlideTitle.textContent = control.dataset.title;
-      koinoniaSlideCopy.textContent = control.dataset.copy;
-      koinoniaIndex = normalizedIndex;
-      if (!fromAuto) startKoinoniaAutoplay();
-    }
-
-    function startKoinoniaAutoplay() {
-      if (koinoniaTimer) window.clearInterval(koinoniaTimer);
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      koinoniaTimer = window.setInterval(() => showKoinoniaSlide(koinoniaIndex + 1, true), 4800);
-    }
-
-    koinoniaControls.forEach((button) => {
-      button.addEventListener("click", () => showKoinoniaSlide(button.dataset.koinoniaIndex));
-    });
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden && koinoniaTimer) window.clearInterval(koinoniaTimer);
-      else startKoinoniaAutoplay();
-    });
-    startKoinoniaAutoplay();
-  </script>
-  <script type="module">
-    const canvas = document.querySelector("#sacredCanvas");
-
-    async function startSacredScene() {
-      if (
-        !canvas ||
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
-        window.matchMedia("(max-width: 720px)").matches
-      ) return;
-
-      try {
-        const [{ default: gsap }, THREE] = await Promise.all([
-          import("https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js"),
-          import("https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js")
-        ]);
-
-        const hero = document.querySelector(".hero");
-        const renderer = new THREE.WebGLRenderer({
-          canvas,
-          alpha: true,
-          antialias: true,
-          powerPreference: "high-performance"
-        });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.8));
-
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(44, 1, 0.1, 100);
-        camera.position.z = 9;
-
-        const mobile = window.matchMedia("(max-width: 720px)").matches;
-        const particleCount = mobile ? 90 : 180;
-        const positions = new Float32Array(particleCount * 3);
-        const colors = new Float32Array(particleCount * 3);
-        const gold = new THREE.Color("#D9B461");
-        const ember = new THREE.Color("#A97C25");
-        const cream = new THREE.Color("#F6F1E8");
-
-        for (let index = 0; index < particleCount; index += 1) {
-          const i = index * 3;
-          positions[i] = (Math.random() - 0.5) * (mobile ? 9 : 13);
-          positions[i + 1] = (Math.random() - 0.52) * 7;
-          positions[i + 2] = (Math.random() - 0.5) * 4;
-
-          const color = index % 5 === 0 ? cream : gold.clone().lerp(ember, Math.random() * 0.65);
-          colors[i] = color.r;
-          colors[i + 1] = color.g;
-          colors[i + 2] = color.b;
-        }
-
-        const particleGeometry = new THREE.BufferGeometry();
-        particleGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-        particleGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-
-        const particleMaterial = new THREE.PointsMaterial({
-          size: mobile ? 0.045 : 0.055,
-          transparent: true,
-          opacity: 0.76,
-          vertexColors: true,
-          depthWrite: false,
-          blending: THREE.AdditiveBlending
-        });
-
-        const particles = new THREE.Points(particleGeometry, particleMaterial);
-        scene.add(particles);
-
-        const ringGroup = new THREE.Group();
-        scene.add(ringGroup);
-
-        const ringMaterial = new THREE.LineBasicMaterial({
-          color: "#C8A24A",
-          transparent: true,
-          opacity: mobile ? 0.16 : 0.26,
-          blending: THREE.AdditiveBlending
-        });
-
-        function addArc(radius, start, length, yOffset) {
-          const points = [];
-          const segments = 72;
-          for (let step = 0; step <= segments; step += 1) {
-            const angle = start + (length * step) / segments;
-            points.push(new THREE.Vector3(
-              Math.cos(angle) * radius,
-              Math.sin(angle) * radius + yOffset,
-              -0.6
-            ));
-          }
-          const geometry = new THREE.BufferGeometry().setFromPoints(points);
-          const line = new THREE.Line(geometry, ringMaterial);
-          ringGroup.add(line);
-        }
-
-        addArc(mobile ? 2.2 : 3.1, 0.2, 1.25, 0.1);
-        addArc(mobile ? 2.7 : 3.75, 2.65, 1.05, -0.18);
-        addArc(mobile ? 1.65 : 2.35, 4.4, 1.2, 0.24);
-        ringGroup.position.x = mobile ? 1.7 : 3.1;
-        ringGroup.position.y = mobile ? 0.7 : 0.2;
-
-        const mouse = { x: 0, y: 0 };
-        window.addEventListener("pointermove", (event) => {
-          mouse.x = (event.clientX / window.innerWidth - 0.5) * 0.5;
-          mouse.y = (event.clientY / window.innerHeight - 0.5) * 0.35;
-        }, { passive: true });
-
-        function resize() {
-          const rect = hero.getBoundingClientRect();
-          renderer.setSize(rect.width, rect.height, false);
-          camera.aspect = rect.width / rect.height;
-          camera.updateProjectionMatrix();
-        }
-
-        window.addEventListener("resize", resize, { passive: true });
-        resize();
-
-        gsap.from(".hero-copy > *", {
-          y: 22,
-          opacity: 0,
-          duration: 1.05,
-          ease: "power3.out",
-          stagger: 0.12
-        });
-        gsap.from(".hero-trust-item", {
-          y: 16,
-          opacity: 0,
-          duration: 0.8,
-          ease: "power2.out",
-          stagger: 0.08,
-          delay: 0.45
-        });
-        gsap.from(".amount-playground", {
-          y: 36,
-          opacity: 0,
-          duration: 0.95,
-          ease: "power3.out",
-          scrollTrigger: undefined
-        });
-        gsap.from(".solution-head, .ecosystem-item, .center-medallion, .solution-focus", {
-          y: 24,
-          opacity: 0,
-          duration: 0.9,
-          ease: "power3.out",
-          stagger: 0.08,
-          delay: 0.2
-        });
-        gsap.to(".solution-aura", {
-          opacity: 0.82,
-          scale: 1.04,
-          duration: 4.8,
-          yoyo: true,
-          repeat: -1,
-          ease: "sine.inOut"
-        });
-
-        const clock = new THREE.Clock();
-        let frameId = 0;
-
-        function animate() {
-          const elapsed = clock.getElapsedTime();
-          const positionAttribute = particleGeometry.getAttribute("position");
-
-          for (let index = 0; index < particleCount; index += 1) {
-            const i = index * 3;
-            const drift = Math.sin(elapsed * 0.35 + index) * 0.0015;
-            positions[i] += drift;
-            positions[i + 1] += 0.0025 + Math.sin(elapsed + index) * 0.0009;
-            if (positions[i + 1] > 3.7) {
-              positions[i + 1] = -3.7;
-              positions[i] = (Math.random() - 0.5) * (mobile ? 9 : 13);
-            }
-          }
-
-          positionAttribute.needsUpdate = true;
-          particles.rotation.y = elapsed * 0.025 + mouse.x;
-          particles.rotation.x = mouse.y;
-          ringGroup.rotation.z = Math.sin(elapsed * 0.22) * 0.045;
-          ringGroup.rotation.y = Math.sin(elapsed * 0.18) * 0.08 + mouse.x * 0.5;
-          particleMaterial.opacity = 0.62 + Math.sin(elapsed * 1.4) * 0.08;
-          renderer.render(scene, camera);
-          frameId = requestAnimationFrame(animate);
-        }
-
-        animate();
-
-        document.addEventListener("visibilitychange", () => {
-          if (document.hidden) {
-            cancelAnimationFrame(frameId);
-            return;
-          }
-          animate();
-        });
-      } catch (error) {
-        canvas.remove();
-      }
-    }
-
-    function scheduleSacredScene() {
-      const start = () => {
-        if ("requestIdleCallback" in window) {
-          window.requestIdleCallback(() => startSacredScene(), { timeout: 2500 });
-        } else {
-          window.setTimeout(() => startSacredScene(), 1200);
-        }
-      };
-
-      if (document.readyState === "complete") {
-        start();
-      } else {
-        window.addEventListener("load", start, { once: true });
-      }
-    }
-
-    scheduleSacredScene();
-  </script>
-
-  <script>
-    (function () {
-      // ── OS auto-detect ─────────────────────────────────────────────────────
-      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
-        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-      const isAndroid = /android/i.test(navigator.userAgent);
-
-      const androidBtn = document.getElementById("osAndroidBtn");
-      const appleBtn   = document.getElementById("osAppleBtn");
-      const panelAndroid = document.getElementById("panelAndroid");
-      const panelApple   = document.getElementById("panelApple");
-      const installSection = document.getElementById("install");
-      const heroInstallBtn = document.getElementById("heroInstallBtn");
-
-      function selectOS(os) {
-        const isApple = os === "apple";
-        androidBtn.setAttribute("aria-selected", String(!isApple));
-        appleBtn.setAttribute("aria-selected",   String(isApple));
-        panelAndroid.classList.toggle("is-active", !isApple);
-        panelApple.classList.toggle("is-active",    isApple);
-      }
-
-      // Auto-select based on device; default to Android (has install prompt)
-      selectOS(isIOS ? "apple" : "android");
-
-      androidBtn.addEventListener("click", () => selectOS("android"));
-      appleBtn.addEventListener("click",   () => selectOS("apple"));
-
-      // ── beforeinstallprompt capture ────────────────────────────────────────
-      let deferredPrompt = null;
-      const installBtn = document.getElementById("androidInstallBtn");
-
-      function scrollToInstall(os) {
-        selectOS(os);
-        if (installSection) installSection.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-
-      async function triggerAndroidInstall() {
-        selectOS("android");
-
-        if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone) {
-          window.location.href = "/myagapay/login?source=pwa";
-          return;
-        }
-
-        if (!deferredPrompt) {
-          scrollToInstall("android");
-          return;
-        }
-
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        deferredPrompt = null;
-        if (installBtn) installBtn.disabled = true;
-        if (outcome === "accepted") {
-          const cta = panelAndroid.querySelector(".install-cta");
-          if (cta) cta.innerHTML = "<p style=\"color:#5a9a6a;font-weight:600;\">✓ Installing AGAPAY&hellip;</p>";
-        }
-      }
-
-      window.addEventListener("beforeinstallprompt", (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        if (installBtn) installBtn.disabled = false;
-      });
-
-      // If already installed as PWA, hide the Android panel CTA
-      window.addEventListener("appinstalled", () => {
-        deferredPrompt = null;
-        const cta = panelAndroid && panelAndroid.querySelector(".install-cta");
-        if (cta) cta.innerHTML = "<p style=\"color:#5a9a6a;font-weight:600;\">✓ AGAPAY is installed on this device.</p>";
-      });
-
-      if (installBtn) {
-        // Start disabled; enabled when prompt is ready
-        installBtn.disabled = true;
-
-        installBtn.addEventListener("click", () => {
-          triggerAndroidInstall();
-        });
-      }
-
-      if (heroInstallBtn) {
-        heroInstallBtn.addEventListener("click", (event) => {
-          event.preventDefault();
-          if (isAndroid) {
-            triggerAndroidInstall();
-            return;
-          }
-          scrollToInstall(isIOS ? "apple" : "android");
-        });
-      }
-    })();
-  </script>
 </body>
 </html>

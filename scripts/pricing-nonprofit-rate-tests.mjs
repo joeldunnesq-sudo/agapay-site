@@ -1,18 +1,14 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
-const pricing = fs.readFileSync(new URL("../public/give/pricing.html", import.meta.url), "utf8");
+const pricing = fs.readFileSync(new URL("../public/give/index.html", import.meta.url), "utf8");
 
 const checks = [
-  ["standard-card nonprofit rate", pricing.includes("2.2% + $0.30")],
-  ["ACH rate and cap", pricing.includes("0.8%") && pricing.includes("Capped at $5")],
-  ["American Express exception", pricing.includes("American Express") && pricing.includes("3.5%")],
-  ["80 percent donation-volume requirement", pricing.includes("at least 80% of Stripe payment volume")],
-  ["nonqualifying payment types", ["ticket sales", "membership dues", "tuition", "registration fees", "auction payments"].every(value => pricing.includes(value))],
+  ["zero AGAPAY donation fee", pricing.includes("$0") && pricing.includes("AGAPAY donation fee")],
+  ["Stripe processing disclosure", pricing.includes("Card and ACH processing is billed by Stripe")],
   ["Stripe Support application link", pricing.includes("https://support.stripe.com/questions/fee-discount-for-nonprofit-organizations")],
-  ["nonprofit team email", pricing.includes("mailto:nonprofit@stripe.com")],
-  ["non-retroactive timing guidance", pricing.includes("should not assume Stripe will apply discounted rates retroactively")],
-  ["Stripe-controlled eligibility disclaimer", pricing.includes("Rates and eligibility are determined by Stripe and may change")]
+  ["Stripe-controlled eligibility disclaimer", pricing.includes("Stripe controls approval, rates, and continued eligibility")],
+  ["donor processing-cost option", pricing.includes("Donors may choose to cover processing fees")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed);
@@ -21,9 +17,6 @@ if (failures.length) {
   process.exit(1);
 }
 
-assert.match(pricing, /aria-labelledby="stripe-nonprofit-title"/, "the pricing explanation should be a labeled page section");
-assert.match(pricing, /\.tier-card \{[^}]*display: flex;[^}]*flex-direction: column;/, "pricing cards should use a column flex layout so small badges cannot stretch into grid rows");
-assert.match(pricing, /\.everyday-pricing-badge \{[^}]*align-self: center;[^}]*white-space: nowrap;/, "everyday-pricing badges should retain their compact pill geometry");
-assert.match(pricing, /\.value-card-art \{[^}]*overflow: hidden;[^}]*justify-content: center;/, "the stewardship sketch should render inside a dedicated crop viewport");
-assert.match(pricing, /\.value-card-art img \{[^}]*width: auto;[^}]*height: 210px;[^}]*clip-path: inset\(0 0 0 10%\);[^}]*translateX\(-5%\)/, "the stewardship sketch crop should be measured against the illustration's rendered width, not a letterboxed full-card image box");
-console.log("PASS - pricing page explains Stripe nonprofit rates, eligibility, exclusions, and application steps");
+assert.match(pricing, /aria-label="Payment processing costs"/, "the pricing explanation should be a labeled content group");
+assert.doesNotMatch(pricing, /2\.2% \+ \$0\.30|3\.5%|at least 80%/, "the marketing page should not hard-code changeable Stripe rates or eligibility rules");
+console.log("PASS - consolidated pricing explains AGAPAY fees and routes current nonprofit-rate decisions to Stripe");

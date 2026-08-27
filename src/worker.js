@@ -879,7 +879,7 @@ function cleanAssetRequest(request) {
     url.pathname = "/give/parish-giving/index.html";
     return new Request(url, request);
   }
-  const staticGivePages = new Set(["features", "how-it-works", "pricing", "request-demo", "get-agapay", "parish-giving", "recurring-donations", "fundraising", "event-payments", "security"]);
+  const staticGivePages = new Set(["request-demo"]);
   const givePage = url.pathname.match(/^\/give\/([^/]+)\/?$/)?.[1] || "";
   if (staticGivePages.has(givePage)) {
     url.pathname = `/give/${givePage}.html`;
@@ -909,18 +909,31 @@ async function fetchCleanAsset(request, env) {
 }
 
 const LEGACY_GIVING_PAGE_REDIRECTS = new Map([
-  ["/features", "/give/features"],
-  ["/features.html", "/give/features"],
-  ["/features/", "/give/features"],
-  ["/how-it-works", "/give/how-it-works"],
-  ["/how-it-works.html", "/give/how-it-works"],
-  ["/how-it-works/", "/give/how-it-works"],
-  ["/pricing", "/give/pricing"],
-  ["/pricing.html", "/give/pricing"],
-  ["/pricing/", "/give/pricing"],
+  ["/features", "/give#platform"],
+  ["/features.html", "/give#platform"],
+  ["/features/", "/give#platform"],
+  ["/how-it-works", "/give#how-it-works"],
+  ["/how-it-works.html", "/give#how-it-works"],
+  ["/how-it-works/", "/give#how-it-works"],
+  ["/pricing", "/give#pricing"],
+  ["/pricing.html", "/give#pricing"],
+  ["/pricing/", "/give#pricing"],
   ["/why", "/give#why"],
   ["/why.html", "/give#why"],
   ["/why/", "/give#why"]
+]);
+
+const GIVE_MARKETING_SECTION_REDIRECTS = new Map([
+  ["features", "platform"],
+  ["pricing", "pricing"],
+  ["how-it-works", "how-it-works"],
+  ["get-agapay", "parish-council"],
+  ["parish-giving", "giving"],
+  ["recurring-donations", "recurring-donations"],
+  ["fundraising", "fundraising"],
+  ["event-payments", "event-payments"],
+  ["security", "security"],
+  ["why", "why"]
 ]);
 
 function canonicalCampaignPathFromLegacy(url) {
@@ -2956,8 +2969,16 @@ export default {
         url.pathname = "/give";
         return Response.redirect(url.toString(), 301);
       }
+      const consolidatedGivePage = url.pathname.toLowerCase().match(/^\/give\/([^/]+?)(?:\.html)?\/?$/)?.[1] || "";
+      const consolidatedGiveSection = GIVE_MARKETING_SECTION_REDIRECTS.get(consolidatedGivePage);
+      if (consolidatedGiveSection) {
+        url.pathname = "/give";
+        url.hash = consolidatedGiveSection;
+        return Response.redirect(url.toString(), 301);
+      }
       if (["/give/share", "/give/share/", "/give/share.html"].includes(url.pathname.toLowerCase())) {
-        url.pathname = "/give/get-agapay";
+        url.pathname = "/give";
+        url.hash = "parish-council";
         return Response.redirect(url.toString(), 301);
       }
       if (["/vision", "/vision/", "/vision.html"].includes(url.pathname.toLowerCase())) {
@@ -2970,11 +2991,6 @@ export default {
       }
       if (["/give/find-church", "/give/find-church.html", "/give/find_parish", "/give/parish-list"].includes(url.pathname)) {
         url.pathname = "/give/find-parish";
-        return Response.redirect(url.toString(), 301);
-      }
-      if (["/give/why", "/give/why.html", "/give/why/"].includes(url.pathname.toLowerCase())) {
-        url.pathname = "/give";
-        url.hash = "why";
         return Response.redirect(url.toString(), 301);
       }
       const legacyParishId = String(url.searchParams.get("parish") || "").trim();

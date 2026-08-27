@@ -1,12 +1,13 @@
 (function () {
   const path = (window.location.pathname || "/").toLowerCase();
+  const hash = (window.location.hash || "").toLowerCase();
   const isHomepage = path === "/" || path === "/index.html";
   if (/^\/(?:admin|parish|donor|myagapay)(?:\/|$)/.test(path)) return;
 
   const PRIMARY_LINKS = [
-    { href: "/give/how-it-works", label: "How It Works", key: "how" },
-    { href: "/give/pricing", label: "Pricing", key: "pricing" },
-    { href: "/give/features", label: "Features", key: "features" }
+    { href: "/give#pricing", label: "Pricing", key: "pricing" },
+    { href: "/give#security", label: "Security", key: "security" },
+    { href: "/give#platform", label: "Platform", key: "platform" }
   ];
 
   const SIGN_IN_LINKS = [
@@ -17,11 +18,11 @@
 
   function activeKeyFromPath() {
     if (path === "/" || path === "/index.html") return "";
+    if (path === "/give" || path === "/give/") {
+      if (["#pricing", "#security", "#platform"].includes(hash)) return hash.slice(1);
+      return "platform";
+    }
     if (path === "/give/request-demo" || path.endsWith("/give/request-demo.html")) return "demo";
-    if (path === "/give/features" || path.endsWith("/give/features.html")) return "features";
-    if (path === "/give/pricing" || path.endsWith("/give/pricing.html")) return "pricing";
-    if (path === "/give/how-it-works" || path.endsWith("/give/how-it-works.html")) return "how";
-    if (path === "/give/security" || path.endsWith("/give/security.html")) return "security";
     if (path === "/contact" || path.endsWith("/contact.html")) return "contact";
     if (path === "/about" || path.endsWith("/about.html")) return "about";
     if (path === "/learn" || path === "/learn/" || path.startsWith("/learn/")) return "learn";
@@ -141,10 +142,11 @@
             <nav class="footer-col" aria-label="AGAPAY Give">
               <h4>Give</h4>
               <a href="/give">Overview</a>
-              <a href="/give/features">Features</a>
-              <a href="/give/how-it-works">How It Works</a>
-              <a href="/give/pricing">Pricing</a>
-              <a href="/give/security">Security FAQ</a>
+              <a href="/give#platform">Platform</a>
+              <a href="/give#pricing">Pricing</a>
+              <a href="/give#security">Security</a>
+              <a href="/give#how-it-works">How It Works</a>
+              <a href="/give#parish-council">Parish Council</a>
               <a href="/give#why">Why AGAPAY Give</a>
             </nav>
             <nav class="footer-col" aria-label="AGAPAY Learn">

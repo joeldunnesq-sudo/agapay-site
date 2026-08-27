@@ -6,42 +6,73 @@ import { fileURLToPath } from "node:url";
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => readFileSync(path.join(root, file), "utf8");
 const overview = read("public/give/index.html");
-const overviewStyles = read("public/styles/index.css");
+const styles = read("public/styles/give.css");
 const server = read("server.mjs");
 const worker = read("src/worker.js");
+const sitemap = read("public/sitemap.xml");
 
-assert.equal(existsSync(path.join(root, "public/give/why.html")), false, "the retired Why page must stay removed");
-
-for (const id of ["why", "koinonia", "features", "how-it-works", "pricing", "faq"]) {
-  assert.match(overview, new RegExp(`id=["']${id}["']`), `the council overview must expose #${id}`);
-  assert.match(overview, new RegExp(`href=["']#${id}["']`), `the sticky council guide must link to #${id}`);
+for (const id of ["pricing", "security", "platform", "koinonia", "reporting", "how-it-works", "why", "parish-council", "faq"]) {
+  assert.match(overview, new RegExp(`id=["']${id}["']`), `the consolidated Give page must expose #${id}`);
 }
-assert.match(overview, /href="\/give\/features">See all features →<\/a>/, "the overview must link to the deep Features page");
-assert.match(overview, /href="\/give\/pricing">See full pricing →<\/a>/, "the overview must link to the deep Pricing page");
-assert.match(overviewStyles, /\.council-jump-nav\s*\{[\s\S]*?position:\s*sticky/, "the council guide must remain sticky");
-assert.match(overview, /Julian and Revised-Julian calendar support/, "the unique liturgical-calendar distinction must remain consolidated");
-assert.match(overview, /Built for the nave, not adapted from the megachurch\./, "the unique Orthodox-first positioning must remain consolidated");
-assert.match(overview, /Giving belongs inside the life of the parish\./, "the Give overview should highlight Koinonia as part of the connected parish platform");
-for (const [index, label] of [[1, "Today & Calendar"], [2, "Community & Ministries"], [3, "Parish Media & News"]]) {
+for (const id of ["pricing", "security", "platform", "koinonia", "reporting", "how-it-works", "faq"]) {
+  assert.match(overview, new RegExp(`href=["']#${id}["']`), `the in-page navigation must link to #${id}`);
+}
+
+assert.match(overview, /<title>Orthodox Church Management Software &amp; Giving \| AGAPAY<\/title>/, "the page title must target the primary Orthodox CMS and giving intent");
+assert.match(overview, /name="description" content="Orthodox church management software[^\"]+Plans start at \$9 per month\./, "the search description must be specific and price-aware");
+assert.match(overview, /rel="canonical" href="https:\/\/agapay\.app\/give"/, "the consolidated page must be canonical");
+assert.match(overview, /hreflang="x-default"/, "the canonical page must provide a default language target");
+assert.match(overview, /fetchpriority="high"/, "the hero image must be prioritized for rendering");
+assert.match(overview, /loading="lazy" width="720" height="1560"/, "below-fold app screenshots must be lazy and dimensioned");
+
+const structuredData = overview.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] || "";
+const graph = JSON.parse(structuredData)["@graph"];
+assert.ok(graph.some((item) => item["@type"] === "WebPage"), "structured data must identify the canonical WebPage");
+assert.ok(graph.some((item) => Array.isArray(item["@type"]) && item["@type"].includes("SoftwareApplication")), "structured data must describe the software application");
+assert.ok(graph.some((item) => item["@type"] === "BreadcrumbList"), "structured data must expose breadcrumbs");
+assert.ok(graph.some((item) => item["@type"] === "FAQPage"), "structured data must mirror the visible FAQ");
+const software = graph.find((item) => Array.isArray(item["@type"]) && item["@type"].includes("SoftwareApplication"));
+assert.deepEqual([software.offers.lowPrice, software.offers.highPrice], ["9", "209"], "aggregate offers must match the published monthly ladder");
+
+for (const copy of [
+  "$0 AGAPAY donation fee",
+  "Give + is $79",
+  "Under 50 households</th><td>$149/mo",
+  "50-149 households</th><td>$179/mo",
+  "150-299 households</th><td>$199/mo",
+  "300-599 households</th><td>$209/mo",
+  "Sacraments &amp; Services</span><strong>$9/mo",
+  "Full Commerce</span><strong>$29/mo",
+  "Accounting Suite</span><strong>$129/mo",
+  "Koinonia is included in Give +"
+]) assert.ok(overview.includes(copy), `the proposal-aligned page must include ${copy}`);
+
+for (const securityBoundary of [
+  "Stripe-hosted Checkout",
+  "PBKDF2-SHA256",
+  "cryptographic signature and timestamp",
+  "Cross-parish requests are denied",
+  "automatically encrypted at rest with AES-256",
+  "tokens expire after five minutes and can be used only once",
+  "No responsible online service can promise zero risk"
+]) assert.ok(overview.includes(securityBoundary), `the consolidated security section must retain: ${securityBoundary}`);
+
+assert.match(styles, /\.give-section-nav\s*\{[^}]*position:\s*sticky/, "the section navigator must remain sticky");
+assert.match(styles, /@media \(max-width: 560px\)/, "the consolidated page must have a phone layout");
+assert.match(styles, /prefers-reduced-motion: reduce/, "the page must respect reduced-motion preferences");
+
+for (const retiredFile of ["features", "how-it-works", "pricing", "security", "get-agapay", "recurring-donations", "fundraising", "event-payments", "parish-giving"]) {
+  assert.equal(existsSync(path.join(root, `public/give/${retiredFile}.html`)), false, `${retiredFile}.html must be removed after consolidation`);
+  assert.ok(!sitemap.includes(`https://agapay.app/give/${retiredFile}`), `${retiredFile} must not remain in the sitemap`);
+}
+assert.ok(sitemap.includes("<loc>https://agapay.app/give</loc>"), "the sitemap must retain the one canonical Give page");
+assert.equal(existsSync(path.join(root, "public/downloads/agapay-parish-council-overview.pdf")), true, "the council proposal download must remain public");
+
+for (const index of [1, 2, 3]) {
   const assetPath = path.join(root, `public/images/app/screenshots/koinonia-give-${index}.jpg`);
-  assert.equal(existsSync(assetPath), true, `Koinonia screenshot ${index} must be present`);
-  assert.ok(statSync(assetPath).size < 200_000, `Koinonia screenshot ${index} should be optimized for page speed`);
-  assert.match(overview, new RegExp(`koinonia-give-${index}\\.jpg`), `the Koinonia showcase must use screenshot ${index}`);
-  assert.ok(overview.includes(`data-title="${label.replaceAll("&", "&amp;")}"`), `the Koinonia showcase should label ${label}`);
+  assert.equal(existsSync(assetPath), true, `Koinonia screenshot ${index} must remain available`);
+  assert.ok(statSync(assetPath).size < 200_000, `Koinonia screenshot ${index} must remain optimized`);
 }
-assert.match(overview, /setInterval\(\(\) => showKoinoniaSlide\(koinoniaIndex \+ 1, true\), 4800\)/, "Koinonia screenshots should advance automatically");
-assert.match(overview, /prefers-reduced-motion: reduce/, "Koinonia autoplay should respect reduced-motion preferences");
-assert.match(overviewStyles, /\.koinonia-phone-frame\s*\{[\s\S]*?aspect-ratio:\s*720 \/ 1560/, "Koinonia screenshots should keep their phone aspect ratio");
-
-const staticServerRoute = server.match(/else if \(\[(.*?)\]\.includes\(pathname\)\) \{\s*pathname = `\$\{pathname\}\.html`;/s)?.[1] || "";
-assert.doesNotMatch(staticServerRoute, /\/give\/why/, "resolveStaticPath must not map /give/why to a deleted file");
-assert.match(server, /\["\/give\/why", "\/give\/why\.html", "\/give\/why\/"\][\s\S]*?requestUrl\.hash = "why";[\s\S]*?writeHead\(301/, "the local server must explicitly redirect every retired /give/why variant");
-assert.match(server, /\["\/why", "\/give#why"\][\s\S]*?\["\/why\.html", "\/give#why"\][\s\S]*?\["\/why\/", "\/give#why"\]/, "legacy bare Why routes must target the Give overview anchor");
-assert.match(server, /canonicalGivingPath\.split\("#"\)[\s\S]*?requestUrl\.hash = canonicalHash/, "legacy redirects must preserve anchors as URL fragments");
-
-const staticWorkerRoute = worker.match(/const staticGivePages = new Set\(\[(.*?)\]\)/s)?.[1] || "";
-assert.doesNotMatch(staticWorkerRoute, /"why"/, "the production asset router must not map /give/why to a deleted file");
-assert.match(worker, /\["\/give\/why", "\/give\/why\.html", "\/give\/why\/"\][\s\S]*?url\.hash = "why";[\s\S]*?Response\.redirect\(url\.toString\(\), 301\)/, "the production worker must mirror the retired-page redirect");
 
 function filesUnder(directory) {
   return readdirSync(directory).flatMap((entry) => {
@@ -49,11 +80,27 @@ function filesUnder(directory) {
     return statSync(fullPath).isDirectory() ? filesUnder(fullPath) : [fullPath];
   });
 }
-
+const retiredHref = /href=["']\/give\/(?:features|how-it-works|pricing|security|get-agapay|recurring-donations|fundraising|event-payments|parish-giving)(?:["'#?])/i;
 const staleInternalReferences = filesUnder(path.join(root, "public"))
   .filter((file) => /\.(?:html|js|xml)$/i.test(file))
-  .filter((file) => readFileSync(file, "utf8").includes("/give/why"));
-assert.deepEqual(staleInternalReferences, [], "public pages, navigation, and sitemap must not link to the retired /give/why URL");
+  .filter((file) => retiredHref.test(readFileSync(file, "utf8")));
+assert.deepEqual(staleInternalReferences, [], "public pages and navigation must link directly to consolidated anchors");
+
+assert.match(worker, /GIVE_MARKETING_SECTION_REDIRECTS/, "the Worker must own the production consolidation redirects");
+assert.match(server, /consolidatedGiveSections/, "the local server must mirror consolidation redirects");
+
+const redirects = new Map([
+  ["features", "platform"],
+  ["pricing", "pricing"],
+  ["how-it-works", "how-it-works"],
+  ["security", "security"],
+  ["get-agapay", "parish-council"],
+  ["recurring-donations", "recurring-donations"],
+  ["fundraising", "fundraising"],
+  ["event-payments", "event-payments"],
+  ["parish-giving", "giving"],
+  ["why", "why"]
+]);
 
 const { server: localServer } = await import("../server.mjs");
 await new Promise((resolve, reject) => {
@@ -61,28 +108,21 @@ await new Promise((resolve, reject) => {
   localServer.listen(0, "127.0.0.1", resolve);
 });
 try {
-  const address = localServer.address();
-  const origin = `http://127.0.0.1:${address.port}`;
-  for (const retiredPath of ["/give/why", "/give/why.html", "/give/why/", "/why", "/why.html", "/why/"]) {
-    const response = await fetch(`${origin}${retiredPath}`, { redirect: "manual" });
-    assert.equal(response.status, 301, `${retiredPath} must return a permanent redirect`);
-    assert.equal(response.headers.get("location"), `${origin}/give#why`, `${retiredPath} must preserve the Give overview #why destination`);
+  const origin = `http://127.0.0.1:${localServer.address().port}`;
+  for (const [page, anchor] of redirects) {
+    for (const suffix of ["", "/", ".html"]) {
+      const response = await fetch(`${origin}/give/${page}${suffix}?source=legacy`, { redirect: "manual" });
+      assert.equal(response.status, 301, `/give/${page}${suffix} must permanently redirect`);
+      assert.equal(response.headers.get("location"), `${origin}/give?source=legacy#${anchor}`, `the ${page} redirect must preserve its section and query`);
+    }
   }
-  for (const giveOverviewPath of ["/give", "/give/"]) {
-    const response = await fetch(`${origin}${giveOverviewPath}?source=direct`, { redirect: "manual" });
-    assert.equal(response.status, 200, `${giveOverviewPath} must serve the dedicated Give overview`);
+  for (const pathName of ["/give", "/give/"]) {
+    const response = await fetch(`${origin}${pathName}`, { redirect: "manual" });
+    assert.equal(response.status, 200, `${pathName} must serve the consolidated overview`);
   }
-  for (const giveAlias of ["/give.html", "/give/index.html"]) {
-    const response = await fetch(`${origin}${giveAlias}?source=legacy`, { redirect: "manual" });
-    assert.equal(response.status, 301, `${giveAlias} must return a permanent redirect`);
-    assert.equal(response.headers.get("location"), `${origin}/give?source=legacy`, `${giveAlias} must preserve the query while redirecting to the canonical Give overview`);
-  }
-  for (const preservedPath of ["/give/features", "/give/pricing", "/give/how-it-works"]) {
-    const response = await fetch(`${origin}${preservedPath}`, { redirect: "manual" });
-    assert.equal(response.status, 200, `${preservedPath} must remain independently addressable`);
-  }
+  assert.equal((await fetch(`${origin}/give/request-demo`, { redirect: "manual" })).status, 200, "the demo workflow must remain a distinct route");
 } finally {
-  await new Promise(resolve => localServer.close(resolve));
+  await new Promise((resolve) => localServer.close(resolve));
 }
 
-console.log("PASS - council Give overview consolidation, anchors, redirects, and retired Why references");
+console.log("PASS - one canonical Give page, proposal-aligned SEO, pricing, security, and permanent section redirects");

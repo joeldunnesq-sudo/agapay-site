@@ -309,7 +309,7 @@ async function resolveStaticPath(urlPath) {
     pathname = "/give/find-parish.html";
   } else if (/^\/give\/[^/]+\/[^/]+-campaign\/?$/.test(pathname)) {
     pathname = "/give/parish-giving/index.html";
-  } else if (["/give/features", "/give/how-it-works", "/give/pricing", "/give/request-demo", "/give/get-agapay", "/give/parish-giving", "/give/recurring-donations", "/give/fundraising", "/give/event-payments", "/give/security"].includes(pathname)) {
+  } else if (pathname === "/give/request-demo") {
     pathname = `${pathname}.html`;
   } else if (/^\/give\/[^/]+\/?$/.test(pathname)) {
     pathname = "/give/form.html";
@@ -330,8 +330,30 @@ export const server = http.createServer(async (req, res) => {
         res.end();
         return;
       }
+      const consolidatedGiveSections = new Map([
+        ["features", "platform"],
+        ["pricing", "pricing"],
+        ["how-it-works", "how-it-works"],
+        ["get-agapay", "parish-council"],
+        ["parish-giving", "giving"],
+        ["recurring-donations", "recurring-donations"],
+        ["fundraising", "fundraising"],
+        ["event-payments", "event-payments"],
+        ["security", "security"],
+        ["why", "why"]
+      ]);
+      const consolidatedGivePage = requestUrl.pathname.toLowerCase().match(/^\/give\/([^/]+?)(?:\.html)?\/?$/)?.[1] || "";
+      const consolidatedGiveSection = consolidatedGiveSections.get(consolidatedGivePage);
+      if (consolidatedGiveSection) {
+        requestUrl.pathname = "/give";
+        requestUrl.hash = consolidatedGiveSection;
+        res.writeHead(301, { Location: requestUrl.toString() });
+        res.end();
+        return;
+      }
       if (["/give/share", "/give/share/", "/give/share.html"].includes(requestUrl.pathname.toLowerCase())) {
-        requestUrl.pathname = "/give/get-agapay";
+        requestUrl.pathname = "/give";
+        requestUrl.hash = "parish-council";
         res.writeHead(301, { Location: requestUrl.toString() });
         res.end();
         return;
@@ -350,13 +372,6 @@ export const server = http.createServer(async (req, res) => {
       }
       if (["/give/find-church", "/give/find-church.html", "/give/find_parish", "/give/parish-list"].includes(requestUrl.pathname)) {
         requestUrl.pathname = "/give/find-parish";
-        res.writeHead(301, { Location: requestUrl.toString() });
-        res.end();
-        return;
-      }
-      if (["/give/why", "/give/why.html", "/give/why/"].includes(requestUrl.pathname.toLowerCase())) {
-        requestUrl.pathname = "/give";
-        requestUrl.hash = "why";
         res.writeHead(301, { Location: requestUrl.toString() });
         res.end();
         return;
@@ -381,15 +396,15 @@ export const server = http.createServer(async (req, res) => {
       }
     }
     const legacyGivingRedirects = new Map([
-      ["/features", "/give/features"],
-      ["/features.html", "/give/features"],
-      ["/features/", "/give/features"],
-      ["/how-it-works", "/give/how-it-works"],
-      ["/how-it-works.html", "/give/how-it-works"],
-      ["/how-it-works/", "/give/how-it-works"],
-      ["/pricing", "/give/pricing"],
-      ["/pricing.html", "/give/pricing"],
-      ["/pricing/", "/give/pricing"],
+      ["/features", "/give#platform"],
+      ["/features.html", "/give#platform"],
+      ["/features/", "/give#platform"],
+      ["/how-it-works", "/give#how-it-works"],
+      ["/how-it-works.html", "/give#how-it-works"],
+      ["/how-it-works/", "/give#how-it-works"],
+      ["/pricing", "/give#pricing"],
+      ["/pricing.html", "/give#pricing"],
+      ["/pricing/", "/give#pricing"],
       ["/why", "/give#why"],
       ["/why.html", "/give#why"],
       ["/why/", "/give#why"]

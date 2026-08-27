@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const [referralPage, requestDemoPage, pixel, privacy, headers, core] = await Promise.all([
-  readFile("public/give/get-agapay.html", "utf8"),
+const [givePage, requestDemoPage, pixel, privacy, headers, core] = await Promise.all([
+  readFile("public/give/index.html", "utf8"),
   readFile("public/give/request-demo.html", "utf8"),
   readFile("public/meta-pixel.js", "utf8"),
   readFile("public/privacy.html", "utf8"),
@@ -11,7 +11,6 @@ const [referralPage, requestDemoPage, pixel, privacy, headers, core] = await Pro
 ]);
 
 const pixelId = "1065546639329281";
-const referralUrl = "https://agapay.app/give/request-demo?utm_source=parishioner&utm_medium=referral&utm_campaign=get_agapay";
 const tagCount = (source, pattern) => [...source.matchAll(pattern)].length;
 
 assert.equal(tagCount(pixel, /window\.fbq\("init", pixelId\)/g), 1, "Meta Pixel must initialize once in the shared loader");
@@ -20,25 +19,10 @@ assert.match(pixel, new RegExp(pixelId), "shared loader must use the configured 
 assert.match(pixel, /https:\/\/connect\.facebook\.net\/en_US\/fbevents\.js/, "shared loader must use Meta's standard client library");
 assert.match(pixel, /typeof window\.fbq !== "function"[\s\S]*catch \(_error\)/, "tracking helpers must fail silently when Meta is unavailable");
 
-for (const [name, page] of [["referral", referralPage], ["request-demo", requestDemoPage]]) {
-  assert.equal(tagCount(page, /<script src="\/meta-pixel\.js"><\/script>/g), 1, `${name} page must load the shared Pixel once`);
-  assert.equal(tagCount(page, new RegExp(`facebook\\.com/tr\\?id=${pixelId}`, "g")), 1, `${name} page must have one noscript fallback`);
-}
-
-assert.equal(tagCount(referralPage, /<a\b[^>]*data-email-link[^>]*>/g), 3, "every referral email action must retain the reusable tracking hook");
-assert.equal(tagCount(referralPage, /<button\b[^>]*data-copy-link[^>]*>/g), 2, "every copy action must retain the reusable tracking hook");
-assert.equal(tagCount(referralPage, /<a\b[^>]*data-council-download[^>]*>/g), 3, "every council PDF link must have the reusable tracking hook");
-for (const link of referralPage.match(/<a\b[^>]*href="\/downloads\/agapay-parish-council-overview\.pdf"[^>]*>/g) || []) {
-  assert.match(link, /data-council-download/, "every council PDF link must be tracked");
-}
-
-assert.match(referralPage, /AGAPAYShareEmail[\s\S]*destination: "request-demo"[\s\S]*method: "email"/);
-assert.match(referralPage, /AGAPAYCouncilPDF[\s\S]*file: "agapay-parish-council-overview\.pdf"/);
-assert.match(referralPage, /await navigator\.clipboard\.writeText\(shareUrl\)/, "clipboard must receive the attributed referral URL");
-assert.match(referralPage, /if \(copied && typeof window\.trackMetaEvent === "function"\)[\s\S]*AGAPAYCopyShareLink[\s\S]*destination: "request-demo"[\s\S]*method: "copy"/, "copy conversion must fire only after a successful copy");
-assert.ok(referralPage.includes(`const shareUrl = "${referralUrl}";`), "email and clipboard sharing must use the attributed URL");
-assert.match(referralPage, /The shared link is agapay\.app\/give\/request-demo/, "visible helper text must retain the clean URL");
-assert.match(referralPage, /Here is the information: https:\/\/agapay\.app\/give\/request-demo<\/p>/, "visible email preview must retain the clean URL");
+assert.equal(tagCount(requestDemoPage, /<script src="\/meta-pixel\.js"><\/script>/g), 1, "request-demo page must load the shared Pixel once");
+assert.equal(tagCount(requestDemoPage, new RegExp(`facebook\\.com/tr\\?id=${pixelId}`, "g")), 1, "request-demo page must have one noscript fallback");
+assert.match(givePage, /href="\/downloads\/agapay-parish-council-overview\.pdf" download/, "the consolidated Give page must preserve the council proposal download");
+assert.match(givePage, /href="\/give\/request-demo"/, "the consolidated Give page must preserve the guided-demo path");
 
 const backendSuccessCheck = requestDemoPage.indexOf('if (!response.ok || !payload.ok) throw new Error');
 const leadCall = requestDemoPage.indexOf("trackLeadOnce();", backendSuccessCheck);

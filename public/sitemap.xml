@@ -8,7 +8,7 @@
   </url>
   <url>
     <loc>https://agapay.app/give</loc>
-    <lastmod>2026-08-19</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
@@ -37,31 +37,7 @@
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://agapay.app/give/features</loc>
-    <lastmod>2026-08-06</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.82</priority>
-  </url>
-  <url>
-    <loc>https://agapay.app/give/how-it-works</loc>
-    <lastmod>2026-08-06</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.82</priority>
-  </url>
-  <url>
-    <loc>https://agapay.app/give/pricing</loc>
-    <lastmod>2026-08-06</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.82</priority>
-  </url>
-  <url>
     <loc>https://agapay.app/give/request-demo</loc>
-    <lastmod>2026-08-05</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.88</priority>
-  </url>
-  <url>
-    <loc>https://agapay.app/give/get-agapay</loc>
     <lastmod>2026-08-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.88</priority>
@@ -71,24 +47,6 @@
     <lastmod>2026-06-18</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.82</priority>
-  </url>
-  <url>
-    <loc>https://agapay.app/give/parish-giving</loc>
-    <lastmod>2026-08-06</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.72</priority>
-  </url>
-  <url>
-    <loc>https://agapay.app/give/recurring-donations</loc>
-    <lastmod>2026-08-06</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.72</priority>
-  </url>
-  <url>
-    <loc>https://agapay.app/give/fundraising</loc>
-    <lastmod>2026-08-06</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.72</priority>
   </url>
   <url>
     <loc>https://agapay.app/marketplace</loc>

@@ -27,9 +27,9 @@ assert.ok(siteChrome.includes('class="btn-demo${activeKey === "demo" ? " active"
 assert.ok(siteChrome.includes('class="drawer-demo" href="/give/request-demo"'), "canonical mobile navigation should present Request a Demo as an action button");
 assert.ok(!siteChrome.includes('{ href: "/give/request-demo", label: "Request Demo", key: "demo" }'), "Request a Demo should not remain in the canonical text-link group");
 for (const link of [
-  '{ href: "/give/how-it-works", label: "How It Works", key: "how" }',
-  '{ href: "/give/pricing", label: "Pricing", key: "pricing" }',
-  '{ href: "/give/features", label: "Features", key: "features" }'
+  '{ href: "/give#pricing", label: "Pricing", key: "pricing" }',
+  '{ href: "/give#security", label: "Security", key: "security" }',
+  '{ href: "/give#platform", label: "Platform", key: "platform" }'
 ]) assert.ok(siteChrome.includes(link), `canonical static-site navigation should include ${link}`);
 assert.ok(!siteChrome.includes('{ href: "/give#why", label: "Why AGAPAY"'), "canonical primary navigation should not duplicate the Why section integrated into /give");
 assert.ok(!siteChrome.includes('{ href: "/learn", label: "AGAPAY Learn", key: "learn" }') && !siteChrome.includes('{ href: "/design", label: "AGAPAY Design", key: "design" }'), "canonical primary navigation should stay focused on AGAPAY Give");
@@ -95,8 +95,8 @@ assert.ok(worker.includes('["/parish/login", "/give/login"]'), "legacy parish lo
 assert.ok(worker.includes('url.pathname === "/give/login"'), "worker should serve the Give login URL from the parish login shell");
 assert.ok(worker.includes('url.pathname.startsWith("/give/")') && worker.includes('url.pathname = "/give/form.html"'), "worker should serve parish giving pages at /give/:parish");
 assert.ok(worker.includes('url.pathname.startsWith("/giving/")'), "worker should permanently redirect legacy /giving URLs");
-for (const givingPage of ["features", "how-it-works", "pricing"]) {
-  assert.ok(worker.includes(`["/${givingPage}", "/give/${givingPage}"]`), `worker should redirect /${givingPage} to /give/${givingPage}`);
+for (const [legacyPage, anchor] of [["features", "platform"], ["how-it-works", "how-it-works"], ["pricing", "pricing"]]) {
+  assert.ok(worker.includes(`["/${legacyPage}", "/give#${anchor}"]`), `worker should redirect /${legacyPage} to the canonical Give section`);
 }
 assert.ok(worker.includes('["/why", "/give#why"]'), "worker should redirect /why to the dedicated Give overview anchor");
 assert.ok(worker.includes('["/give.html", "/give/index.html"]') && worker.includes('url.pathname = "/give"'), "worker should canonicalize legacy Give HTML aliases without redirecting /give away from its overview");
@@ -204,9 +204,9 @@ assert.ok(pwaRegister.includes("registerOrUpdate();") && !pwaRegister.includes('
 assert.ok(rootPage.includes('/manifest.webmanifest') && rootPage.includes('/pwa-register.js'), "public homepage should expose the root manifest and register the root service worker");
 assert.ok(rootManifest.includes('"start_url": "/?source=pwa"') && rootManifest.includes('"scope": "/"'), "root PWA manifest should launch and scope the public AGAPAY app at the site root");
 assert.ok(rootManifest.includes('"orientation": "portrait-primary"'), "root PWA manifest should prefer the phone-first portrait orientation");
-assert.ok(givingOverviewPage.includes('/pwa-register.js') && givingOverviewPage.includes('id="heroInstallBtn"'), "Give homepage should register the service worker and route the hero Get the App button through install logic");
-assert.ok(/class="hero-actions"[\s\S]{0,500}href="\/give\/pricing"[\s\S]{0,80}>View Pricing<\/a>/.test(givingOverviewPage), "Give homepage hero should link directly to pricing");
-assert.ok(givingOverviewPage.includes("const isAndroid") && givingOverviewPage.includes("triggerAndroidInstall()") && givingOverviewPage.includes('scrollToInstall(isIOS ? "apple" : "android")'), "Give homepage hero install button should prompt Android users and scroll other users to app instructions");
+assert.ok(givingOverviewPage.includes('/pwa-register.js') && givingOverviewPage.includes('/myagapay/manifest.webmanifest'), "Give homepage should remain installable without carrying a separate marketing-page installer");
+assert.ok(/class="give-hero-actions"[\s\S]{0,500}href="#pricing"[\s\S]{0,80}>See plans and pricing<\/a>/.test(givingOverviewPage), "Give homepage hero should link directly to the consolidated pricing section");
+assert.ok(!givingOverviewPage.includes("three.module.js") && !givingOverviewPage.includes("gsap@"), "the consolidated Give page should not load the retired animation runtime");
 assert.ok(adminHtml.includes('/admin/manifest.webmanifest') && adminLoginHtml.includes('/admin/manifest.webmanifest'), "admin console should install with the dedicated AGAPAY Admin manifest");
 assert.ok(adminHtml.includes('/images/app/agapay-admin.png') && adminLoginHtml.includes('/images/app/agapay-admin.png') && adminManifest.includes('/images/app/agapay-admin.png'), "admin PWA should use the dedicated admin app icon");
 assert.ok(adminManifest.includes('"id": "/admin-pwa"') && adminManifest.includes('"name": "AGAPAY Admin"') && adminManifest.includes('"start_url": "/admin?source=admin-pwa&tab=giving"') && adminManifest.includes('"scope": "/admin"'), "admin PWA manifest should open the mobile verification queue with a distinct app identity");
@@ -313,8 +313,8 @@ assert.ok(donorHome.includes('/myagapay/learn') && myAgapayGiveHome.includes('/m
 const myAgapayHomeHamburger = myAgapayGiveHome.match(/<div class="donor-home-account-dropdown"[\s\S]*?<\/div>/)?.[0] || "";
 assert.ok(!myAgapayHomeHamburger.includes("/myagapay/parish-life"), "the My AGAPAY dashboard hamburger should not duplicate Koinonia navigation");
 assert.ok(
-  ["Accounting", "Directory", "Commerce", "Koinonia", "Acts 2:42", "κοινωνία"].every((feature) => publicGivePage.includes(feature)),
-  "the /give page should present the new parish platform features and explain Koinonia with Acts 2:42"
+  ["Accounting", "Directory", "Commerce", "Koinonia", "Sacraments", "verified household member"].every((feature) => publicGivePage.includes(feature)),
+  "the /give page should present every parish platform pillar and explain Koinonia's verified-household boundary"
 );
 assert.ok(donorHome.includes('showing-giving-dashboard') && !donorHome.includes('my-agapay-live-grid') && !donorHome.includes('my-agapay-coming-grid'), "My AGAPAY root should open the Give dashboard directly without a product picker");
 assert.ok(donorHome.includes("metricMonth"), "donor home should show month-to-date giving");
@@ -456,19 +456,19 @@ assert.ok(
     && giveHtml.includes("Molieben (Paraklesis) &amp; Panikhida (Parastas)"),
   "public parish giving should label stewardship as Tithes and include Greek commemoration terminology"
 );
-const givePricingHtml = await readFile("public/give/pricing.html", "utf8");
+const givePricingHtml = await readFile("public/give/index.html", "utf8");
 const subscriptionCatalog = await readFile("src/lib/subscriptions.js", "utf8");
 const starterPricingCard = givePricingHtml.slice(
-  givePricingHtml.indexOf('<h2 class="tier-title">Give</h2>'),
-  givePricingHtml.indexOf('<h2 class="tier-title">Give +</h2>')
+  givePricingHtml.indexOf('<span class="give-plan-name">Give</span>'),
+  givePricingHtml.indexOf('<span class="give-plan-name">Give +</span>')
 );
 const givingPlusPricingCard = givePricingHtml.slice(
-  givePricingHtml.indexOf('<h2 class="tier-title">Give +</h2>'),
-  givePricingHtml.indexOf('<h2 class="tier-title">Parish</h2>')
+  givePricingHtml.indexOf('<span class="give-plan-name">Give +</span>'),
+  givePricingHtml.indexOf('<span class="give-plan-name">Parish</span>')
 );
 const parishPricingCard = givePricingHtml.slice(
-  givePricingHtml.indexOf('<h2 class="tier-title">Parish</h2>'),
-  givePricingHtml.indexOf('<h2 class="tier-title">Cathedral / Diocese</h2>')
+  givePricingHtml.indexOf('<span class="give-plan-name">Parish</span>'),
+  givePricingHtml.indexOf('<div class="give-addons"')
 );
 assert.ok(
   subscriptionCatalog.includes('id: "starter"')
@@ -486,70 +486,48 @@ assert.ok(
   "subscription catalog should expose Give, Give +, and household-priced Parish rates"
 );
 assert.ok(
-  givePricingHtml.includes('<h2 class="tier-title">Give</h2>')
-    && givePricingHtml.includes('<div class="tier-price">$9 <span>/ mo</span></div>')
-    && givePricingHtml.includes('<h2 class="tier-title">Give +</h2>')
-    && givePricingHtml.includes('<div class="tier-price">$79 <span>/ mo</span></div>')
-    && givePricingHtml.includes('<div class="tier-price">$149 <span>/ mo starting</span></div>')
-    && givePricingHtml.includes("Flat everyday pricing")
-    && !/early-adopter|first 20/i.test(givePricingHtml)
-    && /<ul class="tier-features">\r?\n\s*<li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"\/><\/svg><\/span>Everything in Give, plus<\/li>/.test(givingPlusPricingCard)
-    && givePricingHtml.includes("Parish logo across giving pages and church search")
-    && !givePricingHtml.includes("Parish logo, public page, and church search listing")
-    && ["Small mission chapel", "Parish church", "Large three-domed Orthodox church", "Grand five-domed Orthodox cathedral", "Orthodox monastery complex"].every((label) => givePricingHtml.includes(`aria-label="${label}"`)),
-  "Give pricing should show flat household-based Parish pricing with distinct church, cathedral, and monastic icons"
+  starterPricingCard.includes('<strong>$9</strong><span>/mo</span>')
+    && givingPlusPricingCard.includes('<strong>$79</strong><span>/mo</span>')
+    && parishPricingCard.includes('<strong>$149</strong><span>/mo</span>')
+    && givePricingHtml.includes("Under 50 households</th><td>$149/mo")
+    && givePricingHtml.includes("300-599 households</th><td>$209/mo")
+    && !/early-adopter|first 20/i.test(givePricingHtml),
+  "the consolidated Give page should show flat proposal-aligned Give, Give +, and household Parish pricing"
 );
 assert.ok(
-  !givePricingHtml.includes("Stewardship Health dashboard for parish giving trends")
-    && !givePricingHtml.includes("Pledge progress, giving gaps, and follow-up visibility")
-    && givePricingHtml.includes("Full Parish Commerce: Bookstore, Events, Meals")
-    && parishPricingCard.includes("Everything in Give + and every add-on"),
+  parishPricingCard.includes("Every AGAPAY pillar at one household-based rate")
+    && givePricingHtml.includes("Every add-on is already included in Parish"),
   "Parish pricing should bundle Give + and every operational add-on"
 );
 assert.ok(
-  parishPricingCard.includes("Koinonia parish feed, targeted announcements, and member engagement")
-    && parishPricingCard.includes("Ministry-group workspaces, leaders, members, posts, and shared resources")
-    && parishPricingCard.includes("Prayer requests, parish signups, and the community Exchange")
-    && parishPricingCard.includes("Parish audio, video, news, Orthodox podcasts, RSS imports, and saved listening")
-    && givingPlusPricingCard.includes("Koinonia parish feed, ministries, signups, prayer, media, and Parish Library"),
+  givingPlusPricingCard.includes("Parish Directory, Bookstore, and Parish Library")
+    && givingPlusPricingCard.includes("Koinonia parish community and media")
+    && givePricingHtml.includes("Koinonia is included in Give +"),
   "Koinonia and Parish Library should be included in Give + and inherited by Parish"
 );
-assert.ok(givingPlusPricingCard.includes("Pledge tracking and Stewardship Health"), "Give + should include pledge tracking and Stewardship Health");
-assert.ok(givingPlusPricingCard.includes("Bookstore and parish goods checkout"), "Give + should include Bookstore");
+assert.ok(givingPlusPricingCard.includes("Stewardship Health and annual statements"), "Give + should include pledge and Stewardship Health reporting");
+assert.ok(givingPlusPricingCard.includes("Bookstore"), "Give + should include Bookstore");
 assert.ok(
   !givePricingHtml.includes("Koinonia · $49/mo")
-    && givePricingHtml.includes("Sacraments &amp; Services · $9/mo")
-    && givePricingHtml.includes("Full Commerce · $29/mo")
-    && givePricingHtml.includes("Accounting Suite · $129/mo")
-    && !givePricingHtml.includes("Bookstore · $9/mo"),
+    && givePricingHtml.includes("Sacraments &amp; Services</span><strong>$9/mo")
+    && givePricingHtml.includes("Full Commerce</span><strong>$29/mo")
+    && givePricingHtml.includes("Accounting Suite</span><strong>$129/mo")
+    && !givePricingHtml.includes("Bookstore</span><strong>$9/mo"),
   "Give + add-ons should match the proposal and should not resell its included Bookstore"
 );
 assert.ok(
-  givePricingHtml.includes('class="tier-coming-soon"')
-    && givePricingHtml.includes('class="tier-coming-soon-badge">Coming soon</span>')
-    && givePricingHtml.includes("<strong>Text-to-Give</strong>")
-    && !givePricingHtml.includes("<strong>Parish Accounting</strong>")
-    && parishPricingCard.includes("</svg></span>Accounting Suite</li>")
-    && givePricingHtml.indexOf('class="tier-coming-soon"') > givePricingHtml.indexOf("Priority email support"),
-  "Parish pricing should group polished coming-soon features at the bottom of the card"
+  givePricingHtml.includes("guided onboarding")
+    && givePricingHtml.includes("priority support")
+    && givePricingHtml.includes("Full Commerce, Accounting"),
+  "Parish pricing should explain its complete operational bundle"
 );
 assert.ok(
-  starterPricingCard.includes("Direct parish giving links and QR codes")
-    && starterPricingCard.includes("General Operating Fund")
-    && starterPricingCard.includes("One custom designated fund")
-    && starterPricingCard.includes("Built-in candle giving")
-    && !starterPricingCard.includes("Parish logo across giving pages and church search")
-    && !starterPricingCard.includes("Unlimited custom and restricted funds")
-    && givingPlusPricingCard.includes("Parish logo across giving pages and church search")
-    && givingPlusPricingCard.includes("Unlimited custom and restricted funds")
-    && givingPlusPricingCard.includes("</svg></span>Campaign Giving</li>")
-    && givingPlusPricingCard.includes("Liturgical calendar integration")
-    && !givingPlusPricingCard.includes("Liturgical calendar timing")
-    && !givingPlusPricingCard.includes("Direct parish giving links and QR codes")
-    && !givePricingHtml.includes("Campaigns, direct parish links, and QR codes")
-    && !givePricingHtml.includes("Parish logo, public page, and church search listing")
-    && !givePricingHtml.includes("</svg></span>Campaigns</li>"),
-  "Give should include its three-fund mission package and direct links while Give + owns unlimited funds, parish branding, and Campaign Giving"
+  starterPricingCard.includes("General Operating and one designated fund")
+    && starterPricingCard.includes("Candles, memorials, and commemorations")
+    && starterPricingCard.includes("Giving links, QR codes, receipts, and export")
+    && !starterPricingCard.includes("Unlimited funds")
+    && givingPlusPricingCard.includes("Unlimited funds, campaigns, and pledge tracking"),
+  "Give should retain its essential package while Give + owns unlimited funds and campaigns"
 );
 assert.ok(
   subscriptionCatalog.includes('id: "full_commerce"')
@@ -557,11 +535,11 @@ assert.ok(
     && subscriptionCatalog.includes('modules: ["bookstore", "commerceSuite", "accounting", "accountingAdvancedOperations"]')
     && subscriptionCatalog.includes("bookstore: true, commerceSuite: true")
     && !givePricingHtml.includes("Koinonia · $49/mo")
-    && givePricingHtml.includes("Sacraments &amp; Services · $9/mo")
-    && !givePricingHtml.includes("Bookstore · $9/mo")
-    && givePricingHtml.includes("Full Commerce · $29/mo")
-    && givePricingHtml.includes("Accounting Suite · $129/mo")
-    && givePricingHtml.includes("Bookstore comes with Give +; Accounting Suite includes Full Commerce"),
+    && givePricingHtml.includes("Sacraments &amp; Services</span><strong>$9/mo")
+    && !givePricingHtml.includes("Bookstore</span><strong>$9/mo")
+    && givePricingHtml.includes("Full Commerce</span><strong>$29/mo")
+    && givePricingHtml.includes("Accounting Suite</span><strong>$129/mo")
+    && givePricingHtml.includes("Bookstore is in Give +; Full Commerce adds Events, Meals"),
   "subscription metadata should include Bookstore in Give + and make Accounting Suite include Full Commerce"
 );
 assert.ok(
@@ -699,27 +677,27 @@ assert.ok(sacramentPriestsMigration.includes("priest_name") && sacramentPriestsM
 assert.ok(donorApp.includes("priestName: slot.priestName") && backendSources.includes("priestName = String(body.priestName") && backendSources.includes("isSlotStillOpen(env, { parishId, date, time, priestName })"), "donor Sacraments booking should carry the selected priest through to the scheduled request");
 assert.ok(donorApp.includes("handleDonorCheckoutReturn"), "donor dashboard should confirm returned Stripe checkout sessions");
 const givingOverview = await readFile("public/give/index.html", "utf8");
-const givingHowItWorks = await readFile("public/give/how-it-works.html", "utf8");
-assert.ok(givingOverview.includes("Orthodox Giving App &amp; Tithing Software") || givingOverview.includes("Orthodox Giving App & Tithing Software"), "Giving overview should target Orthodox giving and tithing search intent");
+assert.ok(givingOverview.includes("Orthodox Church Management Software &amp; Giving"), "Giving overview should target Orthodox church management and giving search intent");
 assert.ok(givingOverview.includes('"SoftwareApplication"') && givingOverview.includes('"@type": "FAQPage"'), "Giving overview should include software and FAQ structured data");
 assert.ok(givingOverview.includes('"@type": "WebSite"') && givingOverview.includes('"@type": "WebPage"'), "Giving overview should connect WebSite and WebPage structured data to the app");
-assert.ok(givingOverview.includes("Giving and parish life, connected in one Orthodox platform"), "Giving overview should describe currently available tools");
-assert.ok(givingOverview.includes("Parish operations") && givingOverview.indexOf("Parish operations") < givingOverview.indexOf("giving-roadmap"), "Giving overview should list Parish operations as available now");
-assert.ok(givingOverview.includes("Text-to-Give") && givingOverview.includes("Coming Soon"), "Giving overview should clearly identify remaining coming-soon products");
-assert.ok(givingOverview.includes("processed and protected by Stripe") && givingOverview.includes("AGAPAY never holds donated funds") && givingOverview.includes("No Donation Middleman"), "Giving overview should emphasize Stripe protection and no donation middleman custody");
+assert.ok(givingOverview.includes("One platform for all of Orthodox parish life") && givingOverview.includes("One system, not six"), "Giving overview should present one connected Orthodox platform");
+for (const pillar of ["Giving &amp; Stewardship", "Koinonia", "Directory &amp; Households", "Sacraments &amp; Services", "Bookstore &amp; Church Commerce", "Accounting"]) {
+  assert.ok(givingOverview.includes(pillar), `Giving overview should include the live ${pillar} pillar`);
+}
+assert.ok(givingOverview.includes("Stripe-hosted Checkout") && givingOverview.includes("parish's connected Stripe account") && givingOverview.includes("$0 AGAPAY donation fee"), "Giving overview should emphasize Stripe payment boundaries and no AGAPAY donation fee");
 assert.ok(
-  givingOverview.includes('<span>Give</span>')
-    && givingOverview.includes('<span>Give +</span>')
-    && !givingOverview.includes('<span>Starter</span>')
-    && !givingOverview.includes('<span>Giving Plus</span>'),
+  givingOverview.includes('<span class="give-plan-name">Give</span>')
+    && givingOverview.includes('<span class="give-plan-name">Give +</span>')
+    && !givingOverview.includes('<span class="give-plan-name">Starter</span>'),
   "Giving overview should use the Give and Give + platform tier names"
 );
 assert.ok(
-  givingHowItWorks.includes('id="koinonia-community-title"')
-    && givingHowItWorks.includes("Participate in ministry")
-    && givingHowItWorks.includes("Learn and listen together")
-    && givingHowItWorks.includes("create My AGAPAY → connect with your parish and household"),
-  "How It Works should explain how a person participates in parish community through Koinonia"
+  givingOverview.includes('id="how-it-works"')
+    && givingOverview.includes("Parish approves moving forward")
+    && givingOverview.includes("Staff completes setup")
+    && givingOverview.includes("Launch to the parish")
+    && givingOverview.includes("Grow without rebuilding"),
+  "the consolidated How It Works section should explain the full parish launch"
 );
 const platformHome = await readFile("public/index.html", "utf8");
 assert.ok(platformHome.includes('rel="canonical" href="https://agapay.app/"') && platformHome.includes('property="og:url" content="https://agapay.app/"'), "platform homepage should publish the site root as its canonical and social URL");
@@ -728,10 +706,10 @@ assert.ok(platformHome.includes("Orthodox Church Management Software for Parish 
 assert.ok(platformHome.includes("giving-dashboard.jpg?v=6a4506c0ba14") && platformHome.includes("data-src=\"/images/app/screenshots/parish-bookstore.jpg?v=7a0005fdc4b5\"") && platformHome.includes('width="720" height="1560"'), "homepage should use right-sized screenshots and defer inactive app rooms");
 assert.ok(platformHome.includes("Koinonia") && platformHome.includes("Sacraments") && platformHome.includes("Accounting"), "platform homepage should surface community, pastoral, and financial operations");
 assert.ok(platformHome.includes('src="/site-chrome.js"'), "platform homepage should render the canonical navigation that routes giving-focused visitors to /give");
-assert.ok(givingOverview.includes('rel="canonical" href="https://agapay.app/give"') && givingOverview.includes("The Orthodox Giving App") && givingOverview.includes("Built for Parish Life"), "dedicated Give overview should retain the former Give-first homepage and publish its own canonical URL");
+assert.ok(givingOverview.includes('rel="canonical" href="https://agapay.app/give"') && givingOverview.includes("One platform for all of Orthodox parish life"), "the consolidated Give page should publish one canonical URL and proposal-aligned headline");
 const canonicalChrome = await readFile("public/site-chrome.js", "utf8");
-assert.ok(canonicalChrome.includes('{ href: "/give/how-it-works", label: "How It Works"') && canonicalChrome.includes('{ href: "/give/features", label: "Features"'), "canonical navigation should lead with the standalone AGAPAY Give pages");
-assert.ok(canonicalChrome.includes('return "how"') && canonicalChrome.includes('return "pricing"') && canonicalChrome.includes('return "features"'), "canonical navigation should highlight each Give destination independently");
+assert.ok(canonicalChrome.includes('{ href: "/give#pricing", label: "Pricing"') && canonicalChrome.includes('{ href: "/give#security", label: "Security"') && canonicalChrome.includes('{ href: "/give#platform", label: "Platform"'), "canonical navigation should link directly to the three primary Give sections");
+assert.ok(canonicalChrome.includes('return hash.slice(1)') && canonicalChrome.includes('return "platform"'), "canonical navigation should recognize anchored Give destinations");
 assert.ok(canonicalChrome.includes('const isHomepage = path === "/" || path === "/index.html"') && canonicalChrome.includes('${isHomepage ? "" :'), "canonical footer should hide Marketplace and Directory on the homepage");
 assert.ok(canonicalChrome.includes('href="/register"') && canonicalChrome.includes("Start for free"), "canonical marketing navigation should offer the free registration CTA");
 assert.ok(registerHtml.includes("free 30-day AGAPAY demo") && registerHtml.includes("No card is required"), "parish registration should explain the free demo terms");
@@ -742,7 +720,7 @@ await assert.rejects(access("public/vision.html"), undefined, "the retired Visio
 assert.match(worker, /\["\/vision", "\/vision\/", "\/vision\.html"\][\s\S]*?url\.pathname = "\/about";[\s\S]*?Response\.redirect\(url\.toString\(\), 301\)/, "the production worker must permanently redirect every retired Vision route");
 assert.match(localServerSource, /\["\/vision", "\/vision\/", "\/vision\.html"\][\s\S]*?requestUrl\.pathname = "\/about";[\s\S]*?writeHead\(301/, "the local server must mirror the retired Vision redirects");
 const siteMobileNav = await readFile("public/site-mobile-nav.js", "utf8");
-for (const [href, label] of [["/give/how-it-works", "How It Works"], ["/give/pricing", "Pricing"], ["/give/features", "Features"]]) {
+for (const [href, label] of [["/give#pricing", "Pricing"], ["/give#security", "Security"], ["/give#platform", "Platform"]]) {
   assert.ok(siteMobileNav.includes(`{ href: "${href}", label: "${label}" }`), `legacy mobile navigation should include ${label}`);
 }
 assert.ok(!siteMobileNav.includes('{ href: "/give#why", label: "Why AGAPAY" }'), "legacy mobile navigation should not duplicate the Why section integrated into /give");
@@ -755,25 +733,13 @@ assert.ok(sitemap.includes("<loc>https://agapay.app/</loc>"), "sitemap should in
 assert.ok(sitemap.includes("<loc>https://agapay.app/give</loc>"), "sitemap should list the independently addressable Give overview");
 assert.ok(sitemap.includes("https://agapay.app/design"), "sitemap should include the canonical AGAPAY Design URL");
 assert.ok(!sitemap.includes("https://agapay.app/vision"), "sitemap must not publish the retired Vision URL");
-for (const givingPage of ["features", "how-it-works", "pricing"]) {
-  const html = await readFile(`public/give/${givingPage}.html`, "utf8");
-  assert.ok(html.includes(`https://agapay.app/give/${givingPage}`), `Give ${givingPage} page should use its nested canonical URL`);
-  assert.ok(sitemap.includes(`https://agapay.app/give/${givingPage}`), `sitemap should include /give/${givingPage}`);
+for (const givingPage of ["features", "how-it-works", "pricing", "security", "get-agapay", "recurring-donations", "fundraising", "event-payments", "parish-giving"]) {
+  await assert.rejects(access(`public/give/${givingPage}.html`), undefined, `retired Give ${givingPage} page must be removed`);
+  assert.ok(!sitemap.includes(`https://agapay.app/give/${givingPage}`), `sitemap should consolidate /give/${givingPage} into /give`);
 }
 assert.ok(!sitemap.includes("https://agapay.app/give/why"), "sitemap should retire the consolidated Give Why page");
 assert.ok(sitemap.includes("https://agapay.app/give/find-parish"), "sitemap should include the canonical parish finder URL");
 assert.ok(!sitemap.includes("https://agapay.app/give/event-payments"), "sitemap should exclude the not-yet-indexable event payments roadmap page");
-for (const [page, title] of [
-  ["parish-giving", "Orthodox Parish Giving Software"],
-  ["recurring-donations", "Recurring Giving for Orthodox Churches"],
-  ["fundraising", "Orthodox Church Fundraising Software"],
-]) {
-  const html = await readFile(`public/give/${page}.html`, "utf8");
-  assert.ok(html.includes(`<h1>${title}</h1>`) && html.includes('"@type": "BreadcrumbList"'), `${page} should publish useful, structured Orthodox giving content`);
-  assert.ok(sitemap.includes(`https://agapay.app/give/${page}`), `${page} should remain discoverable in the sitemap`);
-}
-const eventPaymentsPage = await readFile("public/give/event-payments.html", "utf8");
-assert.ok(eventPaymentsPage.includes('name="robots" content="noindex,follow"') && eventPaymentsPage.includes("Coming Soon"), "event payments should remain transparent and noindex until generally available");
 assert.ok(!sitemap.includes("<loc>https://agapay.app/features</loc>"), "sitemap should not list the legacy root features URL");
 assert.ok(!sitemap.includes("<loc>https://agapay.app/how-it-works</loc>"), "sitemap should not list the legacy root how-it-works URL");
 assert.ok(!sitemap.includes("<loc>https://agapay.app/pricing</loc>"), "sitemap should not list the legacy root pricing URL");
