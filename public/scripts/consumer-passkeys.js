@@ -191,7 +191,7 @@
     if (!entries.length) {
       const empty = document.createElement('div');
       empty.className = 'passkey-empty-state';
-      empty.innerHTML = '<strong>No passkeys saved yet</strong><span>Add this phone or computer before using “Use my passkey” on the sign-in screen.</span>';
+      empty.innerHTML = '<strong>No passkeys saved yet</strong><span>Add this phone or computer to unlock the installed My AGAPAY app automatically.</span>';
       listElement.appendChild(empty);
       return;
     }

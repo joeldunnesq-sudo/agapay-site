@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css?v=20260819koinoniaweek1" />
-  <link rel="stylesheet" href="/styles/consumer-passkeys.css?v=20260826b" />
+  <link rel="stylesheet" href="/styles/consumer-passkeys.css?v=20260827automatic1" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <script>
     if ("serviceWorker" in navigator) {
@@ -26,9 +26,9 @@
   </script>
   <script src="/pwa-register.js" defer></script>
   <script src="/myagapay-shell.js?v=20260827librarymenu1" defer></script>
-  <script src="/scripts/consumer-passkeys.js?v=20260826b" defer></script>
+  <script src="/scripts/consumer-passkeys.js?v=20260827automatic1" defer></script>
   <script src="/donor/app.js?v=20260712a" defer></script>
-  <script src="/donor/pwa-install.js" defer></script>
+  <script src="/donor/pwa-install.js?v=20260827automatic1" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
 </head>
 <body class="donor-login-simple">
@@ -43,7 +43,7 @@
         <div>
           <div class="eyebrow">Welcome back</div>
           <h1>Open My AGAPAY.</h1>
-          <p>Log in once to access your AGAPAY Give, Learn, and account tools.</p>
+          <p>The installed app unlocks with your fingerprint, face, device PIN, or passkey. Email sign-in remains available for recovery.</p>
         </div>
       </div>
 
@@ -61,20 +61,11 @@
       </section>
 
       <form class="donor-auth-card" id="donorLoginForm">
-        <div class="passkey-login-heading">
-          <div>
-            <span class="passkey-preferred-label">Already set up?</span>
-            <h2>Use your passkey</h2>
-            <p>Choose this if you previously added a passkey to My AGAPAY.</p>
-          </div>
-          <span class="passkey-login-icon" aria-hidden="true">✓</span>
+        <div>
+          <span class="passkey-preferred-label">Recovery</span>
+          <h2>Email sign-in</h2>
+          <p class="form-help">Use your email and password if biometric sign-in is unavailable or you have not added a passkey yet.</p>
         </div>
-        <button class="btn btn-gold passkey-login-button" id="donorPasskeyLogin" type="button">Use my passkey</button>
-        <div class="passkey-first-time-note" id="passkeyFirstTimeNote">
-          <strong>First time using passkeys?</strong>
-          <span>Sign in with your email and password below. After you sign in, we’ll help you create one.</span>
-        </div>
-        <div class="passkey-login-divider"><span>Email sign-in</span></div>
         <div class="form-group">
           <label class="form-label" for="donorEmail">Email</label>
           <input class="form-input" id="donorEmail" type="email" autocomplete="username webauthn" placeholder="you@example.com" />
@@ -142,7 +133,6 @@
       const loginForm = document.getElementById("donorLoginForm");
       const resetRequestForm = document.getElementById("donorResetRequestForm");
       const resetConfirmForm = document.getElementById("donorResetConfirmForm");
-      const passkeyLoginButton = document.getElementById("donorPasskeyLogin");
       const passkeyOffer = document.getElementById("donorPasskeyOffer");
       let conditionalPasskeyController = null;
       let conditionalPasskeyPromise = null;
@@ -218,8 +208,7 @@
         } catch (error) {
           if (error?.name !== "AbortError" && options.mediation !== "conditional") {
             if (error?.code === "passkey_not_selected") {
-              setStatus("No My AGAPAY passkey was selected. If you have not created one yet, sign in with email and password below—we’ll help you add one next.", "error");
-              document.getElementById("passkeyFirstTimeNote")?.classList.add("is-next-step");
+              setStatus("Biometric sign-in was not completed. Use your email and password below if you need the recovery path.", "error");
               document.getElementById("donorEmail")?.focus({ preventScroll: true });
             } else {
               setStatus(error.message, "error");
@@ -239,13 +228,6 @@
       function isInstalledApp() {
         return window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator.standalone === true;
       }
-
-      passkeyLoginButton?.addEventListener("click", async () => {
-        passkeyLoginButton.disabled = true;
-        await stopConditionalPasskey();
-        await signInWithPasskey();
-        passkeyLoginButton.disabled = false;
-      });
 
       document.getElementById("donorPasskeyCreate")?.addEventListener("click", async (event) => {
         const button = event.currentTarget;
@@ -362,15 +344,15 @@
       window.__agapayDonorLoginControlsReady = true;
 
       document.addEventListener("DOMContentLoaded", async () => {
-        if (!window.AgapayPasskeys?.isSupported()) {
-          if (passkeyLoginButton) passkeyLoginButton.hidden = true;
+        if (!window.AgapayPasskeys?.isSupported() || token || params.get("reset") === "1") return;
+        // The installed app always asks the operating system to unlock My
+        // AGAPAY. Email/password remains visible as the recovery path if no
+        // passkey is available or the device prompt is dismissed.
+        if (isInstalledApp()) {
+          window.MyAgapayShell?.clearSession();
+          await signInWithPasskey();
           return;
         }
-        // Conditional autofill is useful in a browser field, but Android's
-        // installed PWA can briefly keep that request active when the visible
-        // passkey button is tapped. The explicit button is clearer in-app and
-        // avoids competing Credential Manager requests.
-        if (isInstalledApp()) return;
         if (!window.PublicKeyCredential.isConditionalMediationAvailable) return;
         try {
           if (!(await window.PublicKeyCredential.isConditionalMediationAvailable())) return;

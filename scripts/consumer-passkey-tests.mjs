@@ -118,21 +118,20 @@ await test("a verified donor email change preserves the stable passkey account",
   assert.equal(after.donor_email, "after@example.com");
 });
 
-await test("My AGAPAY clearly separates existing-passkey sign-in from first-time enrollment", async () => {
+await test("My AGAPAY automatically unlocks the installed app and keeps email recovery", async () => {
   const login = readFileSync(path.join(root, "public", "myagapay", "login.html"), "utf8");
   const account = readFileSync(path.join(root, "public", "myagapay", "account.html"), "utf8");
   const client = readFileSync(path.join(root, "public", "scripts", "consumer-passkeys.js"), "utf8");
   const worker = readFileSync(path.join(root, "src", "worker.js"), "utf8");
-  assert.match(login, /Already set up\?/);
-  assert.match(login, /Use my passkey/);
-  assert.match(login, /First time using passkeys\?/);
-  assert.match(login, /sign in with your email and password below/i);
+  assert.doesNotMatch(login, /id="donorPasskeyLogin"|Use my passkey/);
+  assert.doesNotMatch(login, /First time using passkeys\?/);
   assert.match(login, /Email sign-in/);
+  assert.match(login, /biometric sign-in is unavailable/i);
   assert.match(login, /autocomplete="username webauthn"/);
   assert.match(login, /Create your passkey/);
   assert.match(login, /Create passkey on this device/);
   assert.match(account, /Sign-in &amp; Security/);
-  assert.match(account, /before using “Use my passkey”/i);
+  assert.match(account, /automatically when it opens/i);
   assert.match(account, /verified email and password remain available for recovery/i);
   assert.match(login, /isConditionalMediationAvailable/);
   assert.match(login, /mediation: "conditional"|mediation === "conditional"/);
@@ -141,16 +140,22 @@ await test("My AGAPAY clearly separates existing-passkey sign-in from first-time
   assert.match(worker, /handleConsumerPasskeyRegistrationVerify/);
 });
 
-await test("installed Android app avoids competing passkey requests and gives an actionable empty-selection path", async () => {
+await test("installed app starts one automatic required passkey request with email fallback", async () => {
   const login = readFileSync(path.join(root, "public", "myagapay", "login.html"), "utf8");
   const client = readFileSync(path.join(root, "public", "scripts", "consumer-passkeys.js"), "utf8");
+  const shell = readFileSync(path.join(root, "public", "myagapay-shell.js"), "utf8");
   assert.match(login, /function isInstalledApp\(\)/);
-  assert.match(login, /if \(isInstalledApp\(\)\) return;/);
+  assert.match(login, /if \(isInstalledApp\(\)\) \{[\s\S]*clearSession\(\)[\s\S]*await signInWithPasskey\(\);[\s\S]*return;/);
+  assert.doesNotMatch(login, /passkeyLoginButton|donorPasskeyLogin/);
   assert.match(login, /await stopConditionalPasskey\(\)/);
-  assert.match(login, /No My AGAPAY passkey was selected/);
-  assert.match(login, /we’ll help you add one next/);
+  assert.match(login, /Biometric sign-in was not completed/);
+  assert.match(login, /recovery path/);
   assert.match(client, /friendly\.code = operation === 'registration' \? 'passkey_setup_not_completed' : 'passkey_not_selected'/);
   assert.doesNotMatch(client, /Passkey use was cancelled or timed out/);
+  const pwaInstall = readFileSync(path.join(root, "public", "donor", "pwa-install.js"), "utf8");
+  assert.doesNotMatch(pwaInstall, /redirectAuthenticatedPwaDonor|window\.location\.replace\("\/myagapay\/"\)/);
+  assert.match(shell, /function initializeInstalledAppBiometricLock\(\)/);
+  assert.match(shell, /backgroundLockDelayMs = 30 \* 1000[\s\S]*visibilitychange[\s\S]*redirectToLogin\("biometric-required"\)/);
 });
 
 if (!process.exitCode) console.log(`\n${passed} consumer passkey tests passed.`);

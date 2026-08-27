@@ -2,13 +2,6 @@
   const DISMISS_KEY = "agapay_pwa_install_dismissed";
   let deferredInstallPrompt = null;
 
-  function donorSession() {
-    return {
-      email: localStorage.getItem("agapayDonorEmail") || "",
-      token: localStorage.getItem("agapayDonorToken") || ""
-    };
-  }
-
   function isStandalone() {
     return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
   }
@@ -41,32 +34,6 @@
     if (iosInstructions) iosInstructions.hidden = mode !== "ios";
   }
 
-  async function redirectAuthenticatedPwaDonor() {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("source") !== "pwa") return;
-    const session = donorSession();
-    if (!session.email || !session.token) return;
-    try {
-      const res = await fetch("/api/donor/dashboard", {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${session.token}`,
-          "X-AGAPAY-Donor-Email": session.email
-        }
-      });
-      if (res.ok) {
-        window.location.replace("/myagapay/");
-        return;
-      }
-      if (res.status === 401) {
-        localStorage.removeItem("agapayDonorToken");
-        localStorage.removeItem("agapayDonorProfile");
-      }
-    } catch {
-      // Stay on the login page if the session cannot be verified.
-    }
-  }
-
   // Service worker registration is handled centrally by /pwa-register.js
   // to avoid duplicate registrations across pages that include this file.
 
@@ -79,8 +46,6 @@
   window.addEventListener("appinstalled", dismissInstallCard);
 
   document.addEventListener("DOMContentLoaded", () => {
-    redirectAuthenticatedPwaDonor();
-
     const installButton = document.getElementById("pwaInstallButton");
     const dismissButton = document.getElementById("pwaInstallDismiss");
 
