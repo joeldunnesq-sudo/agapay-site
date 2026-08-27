@@ -7,23 +7,24 @@
 // so this file has no dependency on registration-shaped input; it only
 // describes what each tier includes, not whether any particular parish
 // currently has access (that's what entitlementsSummary() is for).
+// Legacy early-adopter identifiers remain exported only so historical Stripe
+// records and slot cleanup can still be processed. New checkouts always use
+// the flat standard catalog below.
 export const EARLY_ADOPTER_LIMIT = 20;
 export const EARLY_ADOPTER_PROGRAM_ID = "founding_20";
 
 export const parishHouseholdBands = Object.freeze([
-  { id: "under_50", label: "Fewer than 50 households", minHouseholds: 0, maxHouseholds: 49, earlyAdopterMonthlyCents: 14900, standardMonthlyCents: 24900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_149_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_249_MONTHLY" },
-  { id: "50_149", label: "50–149 households", minHouseholds: 50, maxHouseholds: 149, earlyAdopterMonthlyCents: 19900, standardMonthlyCents: 34900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_199_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_349_MONTHLY" },
-  { id: "150_299", label: "150–299 households", minHouseholds: 150, maxHouseholds: 299, earlyAdopterMonthlyCents: 24900, standardMonthlyCents: 44900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_249_EARLY_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_449_MONTHLY" },
-  { id: "300_599", label: "300–599 households", minHouseholds: 300, maxHouseholds: 599, earlyAdopterMonthlyCents: 34900, standardMonthlyCents: 54900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_349_EARLY_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_549_MONTHLY" },
+  { id: "under_50", label: "Under 50 households", minHouseholds: 0, maxHouseholds: 49, earlyAdopterMonthlyCents: 14900, standardMonthlyCents: 14900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_149_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_149_MONTHLY" },
+  { id: "50_149", label: "50–149 households", minHouseholds: 50, maxHouseholds: 149, earlyAdopterMonthlyCents: 17900, standardMonthlyCents: 17900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_179_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_179_MONTHLY" },
+  { id: "150_299", label: "150–299 households", minHouseholds: 150, maxHouseholds: 299, earlyAdopterMonthlyCents: 19900, standardMonthlyCents: 19900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_199_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_199_MONTHLY" },
+  { id: "300_599", label: "300–599 households", minHouseholds: 300, maxHouseholds: 599, earlyAdopterMonthlyCents: 20900, standardMonthlyCents: 20900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_209_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_209_MONTHLY" },
   { id: "600_plus", label: "600+ households", minHouseholds: 600, maxHouseholds: null, earlyAdopterMonthlyCents: null, standardMonthlyCents: null, earlyStripePriceEnv: "", standardStripePriceEnv: "" }
 ]);
 
 export const subscriptionAddOns = Object.freeze([
-  { id: "koinonia", label: "Koinonia", description: "Parish life, communications, ministries, prayer requests, signups, and Exchange.", earlyAdopterMonthlyCents: 2900, standardMonthlyCents: 2900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_KOINONIA_29_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_KOINONIA_29_MONTHLY", modules: ["communications"] },
-  { id: "sacraments", label: "Sacraments & Services", description: "Parishioner requests, scheduling, priest workflows, and calendar connections.", earlyAdopterMonthlyCents: 1900, standardMonthlyCents: 1900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_SACRAMENTS_19_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_SACRAMENTS_19_MONTHLY", modules: ["sacraments"] },
-  { id: "bookstore", label: "Bookstore", description: "A focused parish storefront for books, icons, candles, and parish goods.", earlyAdopterMonthlyCents: 900, standardMonthlyCents: 900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_BOOKSTORE_9_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_BOOKSTORE_9_MONTHLY", modules: ["bookstore"] },
-  { id: "full_commerce", label: "Full Commerce", description: "Bookstore, events, meals, orders, tax, and connected accounting workflows.", earlyAdopterMonthlyCents: 3900, standardMonthlyCents: 3900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_COMMERCE_39_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_COMMERCE_39_MONTHLY", modules: ["bookstore", "commerceSuite"] },
-  { id: "accounting", label: "Accounting", description: "Full Commerce and Bookstore, plus fund accounting, reconciliation, reporting, statements, and operational accounting tools.", earlyAdopterMonthlyCents: 17900, standardMonthlyCents: 17900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_ACCOUNTING_179_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_ACCOUNTING_179_MONTHLY", modules: ["bookstore", "commerceSuite", "accounting", "accountingAdvancedOperations"] }
+  { id: "sacraments", label: "Sacraments & Services", description: "Parishioner requests, scheduling, priest workflows, and calendar connections.", earlyAdopterMonthlyCents: 900, standardMonthlyCents: 900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_SACRAMENTS_9_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_SACRAMENTS_9_MONTHLY", modules: ["sacraments"] },
+  { id: "full_commerce", label: "Full Commerce", description: "Events, meals, orders, tax, and connected workflows; Bookstore is already included in Give +.", earlyAdopterMonthlyCents: 2900, standardMonthlyCents: 2900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_COMMERCE_29_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_COMMERCE_29_MONTHLY", modules: ["bookstore", "commerceSuite"] },
+  { id: "accounting", label: "Accounting Suite", description: "Full Commerce and Bookstore, plus fund accounting, reconciliation, reporting, statements, and operational accounting tools.", earlyAdopterMonthlyCents: 12900, standardMonthlyCents: 12900, earlyStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_ACCOUNTING_129_MONTHLY", standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_ADDON_ACCOUNTING_129_MONTHLY", modules: ["bookstore", "commerceSuite", "accounting", "accountingAdvancedOperations"] }
 ]);
 
 export function normalizeSubscriptionAddOns(value = [], tierId = "giving") {
@@ -44,15 +45,14 @@ export function subscriptionAddOnsFor(registration = {}) {
   return normalizeSubscriptionAddOns(typeof registration === "object" ? registration.subscriptionAddOns : [], tierId);
 }
 
-export function subscriptionAddOnPricing(addOn, pricingProgram = "founding_20") {
+export function subscriptionAddOnPricing(addOn, pricingProgram = "standard") {
   const definition = typeof addOn === "string" ? subscriptionAddOns.find((candidate) => candidate.id === addOn) : addOn;
   if (!definition) return null;
-  const standard = String(pricingProgram || "").toLowerCase() === "standard";
   return {
     ...definition,
-    pricingProgram: standard ? "standard" : "early_adopter",
-    monthlyCents: standard ? definition.standardMonthlyCents : definition.earlyAdopterMonthlyCents,
-    stripePriceEnv: standard ? definition.standardStripePriceEnv : definition.earlyStripePriceEnv
+    pricingProgram: "standard",
+    monthlyCents: definition.standardMonthlyCents,
+    stripePriceEnv: definition.standardStripePriceEnv
   };
 }
 
@@ -70,9 +70,9 @@ export function normalizeParishHouseholdBand(value = "") {
 export function parishHouseholdPricing(registration = {}) {
   const bandId = normalizeParishHouseholdBand(registration.parishHouseholdBand || registration.householdBand) || "under_50";
   const band = parishHouseholdBands.find((candidate) => candidate.id === bandId) || parishHouseholdBands[0];
-  const pricingProgram = String(registration.subscriptionPricingProgram || "").toLowerCase() === "standard" ? "standard" : "early_adopter";
-  const monthlyCents = pricingProgram === "standard" ? band.standardMonthlyCents : band.earlyAdopterMonthlyCents;
-  const stripePriceEnv = pricingProgram === "standard" ? band.standardStripePriceEnv : band.earlyStripePriceEnv;
+  const pricingProgram = "standard";
+  const monthlyCents = band.standardMonthlyCents;
+  const stripePriceEnv = band.standardStripePriceEnv;
   return { ...band, pricingProgram, monthlyCents, stripePriceEnv };
 }
 
@@ -128,14 +128,14 @@ export const subscriptionTiers = [
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_GIVING_79_MONTHLY",
     standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_GIVING_79_MONTHLY",
-    description: "Giving, pledges, Stewardship Health, and the Parish Directory in one connected foundation.",
-    modules: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: true, bookstore: false, commerceSuite: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
+    description: "Giving, campaigns, pledges, Stewardship Health, Parish Directory, Bookstore, Parish Library, and Koinonia in one connected foundation.",
+    modules: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: true, bookstore: true, commerceSuite: false, communications: true, textToGive: false, accounting: false, accountingTier: "unavailable" }
   },
   {
     id: "parish",
     label: "Parish",
     monthlyCents: 14900,
-    standardMonthlyCents: 24900,
+    standardMonthlyCents: 14900,
     earlyAdopterMonthlyCents: 14900,
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     // Version the binding when the published price changes so an older

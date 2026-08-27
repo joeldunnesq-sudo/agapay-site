@@ -2646,8 +2646,8 @@ let selectedReference = '';
               <div>
                 <label for="subscriptionTier">Subscription tier</label>
                 <select id="subscriptionTier">
-                  <option value="giving" ${['giving','mission'].includes(reg.subscriptionTier || '') ? 'selected' : ''}>Give + - $49/mo early adopter</option>
-                  <option value="stewardship" ${(reg.subscriptionTier || '') === 'stewardship' ? 'selected' : ''}>Stewardship - $99/mo early adopter</option>
+                  <option value="starter" ${['starter','mission'].includes(reg.subscriptionTier || '') ? 'selected' : ''}>Give - $9/mo</option>
+                  <option value="giving" ${reg.subscriptionTier === 'giving' ? 'selected' : ''}>Give + - $79/mo</option>
                   <option value="parish" ${(!reg.subscriptionTier || reg.subscriptionTier === 'parish') ? 'selected' : ''}>Parish - household-priced</option>
                   <option value="diocese" ${reg.subscriptionTier === 'diocese' ? 'selected' : ''}>Cathedral / Diocese - negotiated subscription, no donation fee</option>
                   <option value="monastery_free" ${reg.subscriptionTier === 'monastery_free' ? 'selected' : ''}>Monastery / Skete - no monthly fee, no donation fee</option>
@@ -2666,7 +2666,7 @@ let selectedReference = '';
               </div>
               <div>
                 <label>Pricing program</label>
-                <input value="${escapeAttr(reg.subscriptionPricingProgram === 'founding_20' ? `Early adopter #${reg.earlyAdopterSlot || ''}` : reg.subscriptionPricingProgram || 'Assigned at checkout')}" disabled />
+                <input value="Flat everyday pricing" disabled />
               </div>
               <div>
                 <label for="subscriptionStatus">Subscription status</label>

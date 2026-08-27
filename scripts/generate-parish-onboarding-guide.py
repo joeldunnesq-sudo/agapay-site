@@ -199,17 +199,25 @@ story += [
     table([
         ["Tier", "Monthly", "Designed for"],
         ["Give", "$9", "Core one-time and recurring giving, commemorations, one General Stewardship fund, one designated fund, candles, giving link, QR code, receipts, history, and CSV export."],
-        ["Give +", "$79", "Everything in Give plus parish branding, custom funds, campaigns, pledges, Stewardship Health, annual statements, and the Parish Directory."],
-        ["Parish", "From $149", "The complete parish platform, including every add-on; early-adopter and standard rates are based on active households."],
+        ["Give +", "$79", "Everything in Give plus parish branding, custom funds, campaigns, pledges, Stewardship Health, annual statements, the Parish Directory, Bookstore, Parish Library, and Koinonia."],
+        ["Parish", "From $149", "The complete parish platform, including every add-on, at a flat rate based on active households."],
         ["Cathedral / Diocese", "Custom", "Cathedral, diocesan, and multi-parish needs with organization-level reporting and support."],
         ["Monastic", "$0", "Give + capabilities for canonical monasteries, sketes, and convents, with no monthly platform fee."],
     ], [1.32 * inch, 0.72 * inch, 4.62 * inch]),
+    Paragraph("Add exactly what Give + needs", styles["GuideH2"]),
+    table([
+        ["Add-on", "Monthly", "Unlocks"],
+        ["Sacraments & Services", "$9", "Parishioner requests, scheduling, priest workflows, and calendar connections."],
+        ["Full Commerce", "$29", "Events, meals, orders, and tax workflows. Bookstore is already included in Give +."],
+        ["Accounting Suite", "$129", "Full Commerce plus fund accounting, journals, reconciliation, financial reporting, and statements."],
+    ], [1.42 * inch, 0.72 * inch, 4.52 * inch]),
     Paragraph(
-        "The tier controls feature access in both the dashboard and backend. You may upgrade or downgrade later; "
-        "features and paywalls update to match the active subscription.",
+        "Each remaining Give + add-on is purchased and gated independently. Koinonia and Parish Library are included in Give +. Accounting Suite includes Full Commerce, so included capabilities never stack. "
+        "You may change tiers or add-ons later; dashboard and backend access update to match the active subscription.",
         styles["GuideCallout"],
     ),
-    Paragraph("After canonical approval", styles["GuideH2"]),
+    PageBreak(),
+    Paragraph("After canonical approval", styles["GuideTitle"]),
     *bullets([
         "Open the parish dashboard link in the approval email.",
         "Sign in with the Parish ID and temporary password supplied at registration.",
@@ -260,7 +268,8 @@ story += [
     Paragraph("Give + and Parish", styles["GuideH2"]),
     *bullets([
         "Review pledge tracking, recurring-gift visibility, and Stewardship Health.",
-        "For Parish, enable Directory, Sacraments & Services, and Text-to-Give only when the parish is ready to use them.",
+        "Give + includes Directory, Bookstore, Parish Library, and Koinonia. Turn on their member-facing experiences when the parish is ready to use them.",
+        "Configure any purchased Sacraments & Services, Full Commerce, or Accounting Suite add-ons; Parish includes all three.",
         "Assign staff access carefully and keep finance permissions limited to authorized personnel.",
     ]),
     PageBreak(),

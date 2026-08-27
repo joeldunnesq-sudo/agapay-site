@@ -380,10 +380,10 @@
               <option value="">Choose the tier you want to start with</option>
               <option value="starter">Give — $9/month</option>
               <option value="giving">Give + — $79/month</option>
-              <option value="parish">Parish — from $149/month early adopter</option>
+              <option value="parish">Parish — from $149/month</option>
             </select>
           </div>
-          <span class="tier-choice-note" id="subscriptionTierNote">Parish early-adopter pricing is limited to the first 20 organizations that activate Parish. Give and Give + use flat pricing. Billing does not begin until approval and checkout.</span>
+          <span class="tier-choice-note" id="subscriptionTierNote">Every tier and household band uses flat everyday pricing. Billing does not begin until approval and checkout.</span>
         </div>
 
         <div class="form-group" id="parishHouseholdBandGroup" style="display:none;">
@@ -918,11 +918,11 @@
           '<option value="">Choose the tier you want to start with</option>',
           '<option value="starter">Give — $9/month</option>',
           '<option value="giving">Give + — $79/month</option>',
-          '<option value="parish">Parish — from $149/month early adopter</option>'
+          '<option value="parish">Parish — from $149/month</option>'
         ].join('');
         tierSelect.value = selectedTier;
         tierSelect.disabled = false;
-        tierNote.textContent = 'Early-adopter pricing is limited to the first 20 organizations that activate an eligible paid subscription. Billing does not begin until approval and checkout.';
+        tierNote.textContent = 'Every tier and household band uses flat everyday pricing. Billing does not begin until approval and checkout.';
       }
 
       updateHouseholdBandVisibility();

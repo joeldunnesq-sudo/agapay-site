@@ -8925,8 +8925,7 @@
   // ── SETUP WIZARD ─────────────────────────────────────────
   function tierPriceLabel(tier) { if(!tier) return ''; if(tier.id==='parish'&&tier.householdPriced) return 'priced by active households'; if(tier.monthlyCents===null) return 'Custom'; if(Number(tier.monthlyCents)===0) return '$0/mo'; return `${money(tier.monthlyCents)}/mo`; }
   function parishTierDefinition() { return (currentParish?.subscriptionTiers || []).find((tier) => tier.id === 'parish') || null; }
-  function parishPricingUsesStandardRates() { return String(currentParish?.subscriptionPricingProgram || '').toLowerCase() === 'standard'; }
-  function parishBandPriceCents(band = {}) { return parishPricingUsesStandardRates() ? band.standardMonthlyCents : band.earlyAdopterMonthlyCents; }
+  function parishBandPriceCents(band = {}) { return band.standardMonthlyCents; }
   function parishHouseholdBandOptionsMarkup(selectedId = '') {
     const bands = parishTierDefinition()?.householdBands || [];
     return `<option value="">Select an active-household range</option>${bands.map((band) => {
@@ -8953,10 +8952,9 @@
     const selected = (parishTierDefinition()?.householdBands || []).find((item) => item.id === band?.value);
     if (!selected) { summary.textContent = 'Choose a range to calculate the Parish monthly price.'; return; }
     const cents = parishBandPriceCents(selected);
-    const program = parishPricingUsesStandardRates() ? 'standard' : 'early-adopter';
     summary.textContent = cents === null || cents === undefined
       ? `${selected.label} uses custom Parish pricing. AGAPAY will confirm the amount before billing.`
-      : `${selected.label}: ${money(cents)}/month at the ${program} rate.`;
+      : `${selected.label}: ${money(cents)}/month at the flat everyday rate.`;
   }
   function parishPricingUsageMarkup() {
     const usage = currentParish?.parishPricingUsage;
@@ -8991,11 +8989,11 @@
     const tiers = currentParish?.subscriptionTiers || [];
     return tiers.map(t => `<option value="${escapeHtml(t.id)}" ${t.id===selectedId?'selected':''}>${escapeHtml(t.label)} - ${escapeHtml(tierPriceLabel(t))}</option>`).join('');
   }
-  function subscriptionAddOnPriceCents(addOn = {}) { return parishPricingUsesStandardRates() ? addOn.standardMonthlyCents : addOn.earlyAdopterMonthlyCents; }
+  function subscriptionAddOnPriceCents(addOn = {}) { return addOn.standardMonthlyCents; }
   function subscriptionAddOnPickerMarkup({ tierSelectId, groupId }) {
     const selected = new Set(currentParish?.subscriptionAddOns || []);
     const catalog = currentParish?.subscriptionAddOnCatalog || [];
-    return `<div class="form-group full" id="${groupId}" data-tier-select-id="${tierSelectId}" hidden><label class="form-label">Optional Give + add-ons</label><div class="toggle-row">${catalog.map((addOn) => `<label class="check-card"><input type="checkbox" data-subscription-add-on="${escapeHtml(addOn.id)}" ${selected.has(addOn.id)?'checked':''} onchange="syncSubscriptionAddOnChoice('${groupId}')" /> <span><strong>${escapeHtml(addOn.label)}</strong><small>${escapeHtml(money(subscriptionAddOnPriceCents(addOn)))}/mo${addOn.id==='accounting'?' · includes Full Commerce + Bookstore':addOn.id==='full_commerce'?' · includes Bookstore':''}</small></span></label>`).join('')}</div><p class="section-note">Add-ons are available with Give +. Included add-ons never stack, and Parish already includes every module.</p><p class="section-note" data-subscription-price-summary aria-live="polite"></p></div>`;
+    return `<div class="form-group full" id="${groupId}" data-tier-select-id="${tierSelectId}" hidden><label class="form-label">Optional Give + add-ons</label><div class="toggle-row">${catalog.map((addOn) => `<label class="check-card"><input type="checkbox" data-subscription-add-on="${escapeHtml(addOn.id)}" ${selected.has(addOn.id)?'checked':''} onchange="syncSubscriptionAddOnChoice('${groupId}')" /> <span><strong>${escapeHtml(addOn.label)}</strong><small>${escapeHtml(money(subscriptionAddOnPriceCents(addOn)))}/mo${addOn.id==='accounting'?' · includes Full Commerce':addOn.id==='full_commerce'?' · adds Events & Meals':''}</small></span></label>`).join('')}</div><p class="section-note">Give + already includes Koinonia, Parish Library, Directory, and Bookstore. Add Sacraments &amp; Services, Full Commerce, or Accounting Suite individually; included capabilities never stack, and Parish includes every module.</p><p class="section-note" data-subscription-price-summary aria-live="polite"></p></div>`;
   }
   function syncSubscriptionAddOnVisibility(tierSelectId, groupId) {
     const group = document.getElementById(groupId);
@@ -9006,16 +9004,10 @@
     const group = document.getElementById(groupId);
     const accounting = group?.querySelector('[data-subscription-add-on="accounting"]');
     const fullCommerce = group?.querySelector('[data-subscription-add-on="full_commerce"]');
-    const bookstore = group?.querySelector('[data-subscription-add-on="bookstore"]');
     if (fullCommerce) {
       if (accounting?.checked) fullCommerce.checked = false;
       fullCommerce.disabled = Boolean(accounting?.checked);
       fullCommerce.closest('.check-card')?.classList.toggle('is-disabled', Boolean(accounting?.checked));
-    }
-    if (bookstore) {
-      if (accounting?.checked || fullCommerce?.checked) bookstore.checked = false;
-      bookstore.disabled = Boolean(accounting?.checked || fullCommerce?.checked);
-      bookstore.closest('.check-card')?.classList.toggle('is-disabled', Boolean(accounting?.checked || fullCommerce?.checked));
     }
     updateSubscriptionAddOnTotal(groupId);
   }
@@ -9542,7 +9534,7 @@
         <div class="pdx-sub-module-grid">
           ${moduleRow('Give +', 'givingPlus', 'Custom funds, campaigns, givers, and reconciliation', 'Give +')}
           ${moduleRow('Stewardship Health', 'stewardshipHealth', 'Pledges, insights, and stewardship reporting', 'Give +')}
-          ${moduleRow('Bookstore', 'bookstore', 'Parish commerce and Stripe-powered sales', 'Bookstore add-on')}
+          ${moduleRow('Bookstore', 'bookstore', 'Parish commerce and Stripe-powered sales', 'Give +')}
           ${moduleRow('Parish Directory', 'directory', 'Member, household, and ministry records', 'Give +')}
           ${moduleRow('Sacraments & Services', 'sacraments', 'Pastoral requests and clergy coordination', 'Sacraments add-on')}
           ${moduleRow('Text-to-Give', 'textToGive', 'Keywords that route donors to your giving page', 'Parish')}
@@ -10018,7 +10010,7 @@
         ${parishHouseholdPickerMarkup({tierSelectId:'subscriptionTierUpgrade',bandSelectId:'subscriptionHouseholdBandUpgrade',groupId:'subscriptionHouseholdBandGroup',summaryId:'subscriptionHouseholdBandPrice'})}
         ${subscriptionAddOnPickerMarkup({tierSelectId:'subscriptionTierUpgrade',groupId:'subscriptionAddOnUpgradeGroup'})}
       </div>
-      <p class="section-note">${p.parishId === 'st-fiacre' ? 'Demo mode: switch tiers instantly to show churches how AGAPAY changes at each level. No Stripe billing is changed.' : demoActive ? `Your free 30-day demo is active${demoEndLabel?` through ${escapeHtml(demoEndLabel)}`:''}. No card is required during the demo. Add billing information in the secure portal only if you want to continue afterward.` : billingActive ? "Choose a tier or Give + add-ons here to update the existing AGAPAY subscription. Use Stripe's secure billing portal for payment details or cancellation." : demoEligible ? 'Choose a tier and start the free 30-day demo. No card is required. Give + includes pledges, Stewardship Health, and the Parish Directory; Parish includes the complete operations suite.' : 'Choose a tier and complete subscription checkout to reactivate AGAPAY.'}</p>
+      <p class="section-note">${p.parishId === 'st-fiacre' ? 'Demo mode: switch tiers instantly to show churches how AGAPAY changes at each level. No Stripe billing is changed.' : demoActive ? `Your free 30-day demo is active${demoEndLabel?` through ${escapeHtml(demoEndLabel)}`:''}. No card is required during the demo. Add billing information in the secure portal only if you want to continue afterward.` : billingActive ? "Choose a tier or individual Give + add-ons here to update the existing AGAPAY subscription. Use Stripe's secure billing portal for payment details or cancellation." : demoEligible ? 'Choose a tier and start the free 30-day demo. No card is required. Give + includes pledges, Stewardship Health, Parish Directory, and Bookstore; Parish includes the complete operations suite.' : 'Choose a tier and complete subscription checkout to reactivate AGAPAY.'}</p>
       <div class="btn-row">
         ${p.parishId === 'st-fiacre'
           ? '<button class="btn btn-gold" onclick="changeDemoTier(this)">Apply demo tier</button>'

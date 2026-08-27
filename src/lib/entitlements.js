@@ -15,13 +15,12 @@
 import { hasActiveStewardshipComp, hasStewardshipAccess, stewardshipStatus } from "./core.js";
 import { subscriptionAddOns, subscriptionAddOnsFor } from "./subscriptions.js";
 
-// Per-tier, per-module inclusion. Bookstore/Commerce is included for
-// monasteries even though Stewardship Health and Sacraments are not --
-// matches the "product and craft sale campaigns" capability already
-// promised on the public features page for monastic communities.
+// Per-tier, per-module inclusion. Give + is the purchasable foundation for
+// Directory, Bookstore, Parish Library, and Koinonia; the remaining
+// operational pillars layer onto it as add-ons.
 const TIER_MODULES = {
   starter: { givingPlus: false, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, communications: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
-  giving: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: true, bookstore: false, commerceSuite: false, communications: false, textToGive: false, accounting: false, accountingAdvancedOperations: false },
+  giving: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: true, bookstore: true, commerceSuite: false, communications: true, textToGive: false, accounting: false, accountingAdvancedOperations: false },
   parish: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, commerceSuite: true, communications: true, textToGive: true, accounting: true, accountingAdvancedOperations: true },
   diocese: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, commerceSuite: true, communications: true, textToGive: true, accounting: true, accountingAdvancedOperations: true },
   monastery_free: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, communications: false, textToGive: false, accounting: false, accountingAdvancedOperations: false }

@@ -7,7 +7,6 @@ import { applyApprovedExemptionIfExists } from "./tax-exemption.js";
 import { subscriptionCheckoutReadinessGate, withTaxReadinessDefaults } from "./tax-readiness.js";
 import { ensureBenevolenceFundInRegistration } from "./stewardship-funds.js";
 import { invalidateOnboardingSignoffIfChanged } from "./parish-onboarding.js";
-import { claimEarlyAdopterPricing } from "./early-adopter-pricing.js";
 
 async function persistSubscriptionMaterialChange(env, reference, registration, updated, saveRegistrationRecord) {
   const safeUpdate = await invalidateOnboardingSignoffIfChanged(registration, updated, {
@@ -61,13 +60,7 @@ export async function createSubscriptionCheckoutForRegistration({
   }
   if (requestedHouseholdBand) registration = { ...registration, parishHouseholdBand: requestedHouseholdBand };
   if (String(tierId || "").toLowerCase() === "parish") {
-    const pricing = await claimEarlyAdopterPricing(env, reference, registration);
-    registration = {
-      ...registration,
-      subscriptionPricingProgram: pricing.program,
-      earlyAdopterSlot: pricing.slot,
-      earlyAdopterReservedAt: pricing.program === "founding_20" ? pricing.reservedAt : ""
-    };
+    registration = { ...registration, subscriptionPricingProgram: "standard" };
   }
   const tier = subscriptionTier({ ...registration, subscriptionTier: tierId });
   if (!tier) return json({ error: "Unknown subscription tier" }, { status: 422 });
