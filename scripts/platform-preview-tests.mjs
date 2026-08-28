@@ -53,7 +53,7 @@ assert.match(html, /rel="canonical" href="https:\/\/agapay\.app\/"/, "platform h
 assert.match(html, /og:image" content="https:\/\/agapay\.app\/images\/AGAPAY_social_share_v2\.png"[\s\S]*?og:image:width" content="1200"[\s\S]*?og:image:height" content="630"/, "homepage should use the supplied landscape social sharing image with accurate dimensions");
 assert.match(html, /href="\/give\/request-demo"/, "homepage should route parish demo requests to the existing form");
 assert.match(html, /href="\/register"/, "homepage should preserve the free-start route");
-assert.match(html, /id="install-app"[\s\S]*?Install AGAPAY\.[\s\S]*?progressive web app/, "homepage should include a visible, useful PWA install section");
+assert.match(html, /id="install-app"[\s\S]*?Parish life in your pocket[\s\S]*?Install My AGAPAY\.<br \/><em>Give - Serve - Be engaged with parish life<\/em>[\s\S]*?progressive web app/, "homepage should include the requested parish-life copy in its PWA install section");
 assert.match(html, /Android &amp; desktop[\s\S]*?Install app[\s\S]*?iPhone &amp; iPad[\s\S]*?Add to Home Screen/, "homepage should explain Android, desktop, and iOS installation paths");
 assert.match(html, /src="\/pwa-home-install\.js"/, "homepage should load the PWA install interaction");
 assert.match(pwaInstall, /beforeinstallprompt[\s\S]*?event\.preventDefault\(\)[\s\S]*?deferredInstallPrompt = event/, "homepage install behavior should capture the native browser prompt");

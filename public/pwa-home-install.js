@@ -33,14 +33,14 @@
     button.disabled = mode === "installed";
 
     if (mode === "installed") {
-      button.textContent = "AGAPAY is installed";
-      status.textContent = "AGAPAY is already installed on this device.";
+      button.textContent = "My AGAPAY is installed";
+      status.textContent = "My AGAPAY is already installed on this device.";
       highlightStep("");
       return;
     }
     if (mode === "ready") {
-      button.textContent = "Install AGAPAY";
-      status.textContent = "Your browser is ready. Tap Install AGAPAY to add it to this device.";
+      button.textContent = "Install My AGAPAY";
+      status.textContent = "Your browser is ready. Tap Install My AGAPAY to add it to this device.";
       highlightStep("android");
       return;
     }
