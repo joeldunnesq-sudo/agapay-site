@@ -13,7 +13,7 @@ import { assertRestoreSafe } from '../src/portability/suppression.js';
 
 const dir = path.resolve('artifacts/portability-staging');
 mkdirSync(dir,{recursive:true});
-const audit = {schemas:[{kind:'central',baselineSha256:'71ca5b0ae88a36ecd5c1157b93fbf0c8a5dd1a0cc073c3d377a549b389f96cd6',fixtureSha256:'c8b0d99cae5a46df793f63df739534db8c7061a7fa113e58fb89f41360ff8d37'},{kind:'accounting',baselineSha256:'b891b2e24dff8429f487cb3f7569875df44915f204479b7285362da977c25fab',fixtureSha256:'662221949e046a41dcccfab39f9142c78df664341338b5b86e06359c9f050db3'}]};
+const audit = {schemas:[{kind:'central',baselineSha256:'71ca5b0ae88a36ecd5c1157b93fbf0c8a5dd1a0cc073c3d377a549b389f96cd6',fixtureSha256:'28b23a618fdd51576638ea75f0082a542825e3518a9375d882386c4e39fa0e6e'},{kind:'accounting',baselineSha256:'b891b2e24dff8429f487cb3f7569875df44915f204479b7285362da977c25fab',fixtureSha256:'662221949e046a41dcccfab39f9142c78df664341338b5b86e06359c9f050db3'}]};
 const counters = { statements: 0, calls: 0, storageCalls:0 };
 function binding(db) {
   const prepare = sql => ({ sql, params: [], bind(...params) { this.params = params; return this; },
