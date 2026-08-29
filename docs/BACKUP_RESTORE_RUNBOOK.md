@@ -135,6 +135,15 @@ all 441 barriers on a clean scratch restore, every validator check passed. The
 scratch database and local SQL/checksum files were then deleted with readback;
 production was never a write target.
 
+The August 29 real provider multi-store qualification then exercised the wider
+recovery boundary. `scripts/portability-provider-multistore-restore.mjs` restored
+live central and St. Fiacre accounting exports, all 26 production file objects, and
+all 35 current legacy KV keys into fixed private scratch resources. It compared the
+central validator output, exact accounting schema and ledger fingerprints, and
+SHA-256 hashes for every restored file/KV value, then repeated the source inventory
+to detect concurrent changes. All scratch resources and local SQL copies were
+deleted with readback. The production stores were read-only throughout.
+
 ## 5. Validating the restore
 
 Run the read-only validator against the restored copy:

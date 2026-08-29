@@ -17,6 +17,7 @@ the pending natural-expiry observation.
 | Controlled-clock backup sweep | Remote synthetic object deleted and absence verified with HEAD. Not natural expiry. |
 | Backup restoration | Hashed synthetic central/accounting snapshots restored into separate remote D1 targets; files/KV isolated; ledger not restored. |
 | Authentic central D1 restore | Passed against the newest paired private production SQL/checksum artifact. The checksum and migration history were verified before target creation; pending migrations and 441 barriers were applied to a fixed unbound scratch D1; all read-only validator checks passed. The scratch database and local backup copies were deleted after success. Production was not written. |
+| Real provider multi-store restore | Passed under evidence hash `4d90e468ac6393d4c070bdcb9794bdd9a3625ccbe1c0fe957cffede74d7585fc`: live central and St. Fiacre accounting D1 exports, all 26 production file objects (24,828,438 bytes), and all 35 current KV keys were restored into fixed private scratch resources. Central validation, exact accounting schema/ledger fingerprints, file/KV body hashes, and source-stability readback passed. Scratch D1/KV/R2 resources and local SQL files were deleted with readback; production was read-only. |
 | Full-schema local export/closure/restore | Passed, including other-parish preservation, retained financial file, book freeze, credential removal, and repeated sanitization. |
 | Remote closure/restore suppression | Passed in a private hosted Worker: ZIP verification, consent, freeze, authorization, purge, old-restore denial, replay, sanitization, and repeated sanitization. The earlier operator-proxy run remains recorded as interrupted. |
 | Hosted query budget | Passed: every phase stayed within the enforced 800-operation work budget; maximum hosted use was 697. |
@@ -26,7 +27,7 @@ the pending natural-expiry observation.
 | Production ownership/schema | Passed: migrations 0108-0110, 441 generated barriers, 26 R2 ownership rows, 18 KV ownership rows, and three inventory reviews read back successfully; there are zero jobs/closures and all flags remain false. |
 | Production private portability storage | Passed: three separate private R2 buckets were created and read back with r2.dev disabled and no custom domains. The temporary export prefix has a seven-day lifecycle; authority, closure, and completion prefixes have indefinite locks; authority.json matches the configured identifier. No Worker was deployed and all flags remain false. |
 | Public media migration | Passed: registry-owned Worker delivery is deployed with no-store and range support. Three historical references were hash-guarded and rewritten, all objects were verified through the Worker, all three r2.dev origins read back disabled, and there are zero custom domains. The disabled-origin attestation is staged for deployment. |
-| Recovery-copy inventory | Partially passed: 29 recent scheduled backup runs were successful, none of 297 current GitHub Actions artifacts was a database backup, and D1 Time Travel was available at 7/29 days but unavailable at 31 days. Off-provider/manual copies remain unverified, no restore was performed by this audit, and natural lifecycle expiry is still pending. |
+| Recovery-copy inventory | Partially passed: 29 recent scheduled backup runs were successful, none of 297 current GitHub Actions artifacts was a database backup, and D1 Time Travel was available at 7/29 days but unavailable at 31 days. The separate real provider multi-store restore qualification passed; off-provider/manual copies remain unverified and natural lifecycle expiry is still pending. |
 
 ## Schema corrections
 
@@ -197,9 +198,9 @@ Remaining release work, in order:
    This only performs HEAD and does not run a sweep. The planted probe prevents the
    main drill from running and contaminating the observation. Check that no manual
    deletion/sweep occurred before treating absence as lifecycle evidence.
-2. Finish the off-provider/manual-copy attestation, a real accounting/file/KV
-   provider restore qualification, browser/MFA/billing validation,
-   retention disclosure approval, and realistic volume testing.
+2. Finish the off-provider/manual-copy attestation, browser/MFA/billing validation,
+   retention disclosure approval, and realistic volume testing. The real
+   accounting/file/KV provider restore qualification is complete.
 
 The production accounting identity and 365-day backup lifecycle items are complete.
 The identity was corroborated by the immutable database UUID/creation time, the

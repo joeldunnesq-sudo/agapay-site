@@ -38,6 +38,7 @@ and require an operator-assisted full export.
 | Backup expiry | Strict expiry removes the newest-backup exception only when ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED is explicitly true. The default preserves the deployed policy. Strict sweeps check deletion with HEAD and record evidence; confirmation requires the gate and matching evidence no more than 48 hours old. |
 | Restore safeguards | Independent private R2 closure authority, request/scheduler safety checks, quarantine, suppression replay, and restored-data sanitization. An older DB cannot pass the runtime gate while missing an independent closure authorization. |
 | Recovery | Checkpoints support retry after partial cleanup. Ambiguous uploads retain a durable fence. Operator-only reconciliation handles file ownership, interrupted file operations, and abandoned unconfirmed preparation. Confirmed closure cannot be undone by cancellation. |
+| Real provider restore | A hash-locked operator exported the live central and St. Fiacre accounting D1 databases into fixed unbound scratch databases, restored all 26 production file objects (24,828,438 bytes) into private scratch R2, and restored all 35 current legacy KV keys. Central validation, exact accounting schema/ledger fingerprints, every file/KV body hash, and a second source-stability inventory passed. All scratch resources and local SQL copies were deleted with provider readback; production was read-only. |
 | Public media | The registry-owned Worker route is deployed and returns `no-store`. Three historical D1/KV URLs were rewritten with guarded hash/readback checks. All three r2.dev origins are disabled, with zero custom domains, and the disabled-origin attestation is configured. |
 
 The accounting books and retained financial/legal rows are **not physically erased**
@@ -83,11 +84,15 @@ and three successful no-store Worker HEAD responses.
    unbound scratch D1: its stored checksum and migration history matched, current
    migrations and all 441 barriers were applied, the complete read-only validator
    passed, and the scratch database plus local copies were deleted with readback.
-   The isolated hosted drill separately verified accounting/file/KV restoration,
-   closure suppression, and repeated quarantined sanitization with synthetic data.
-   Complete the off-provider/manual-copy attestation and a real multi-store recovery
-   exercise before release. Natural one-day lifecycle observation is awaiting its
-   threshold and provider deletion.
+   The isolated hosted drill separately verified closure suppression and repeated
+   quarantined sanitization with synthetic data. A subsequent real provider
+   multi-store qualification restored the live central and St. Fiacre accounting
+   databases, all 26 production file objects, and all 35 current KV keys into fixed
+   private scratch resources. Database validation, exact schema/ledger comparisons,
+   body hashes, source-stability readback, and scratch/local cleanup all passed;
+   production was never a write target. Complete the off-provider/manual-copy
+   attestation before release. Natural one-day lifecycle observation is awaiting
+   its threshold and provider deletion.
 3. Approve/version the public retention disclosure, including minimal closure and
    receipt metadata. No automatic disposal of legally held/immutable records is
    enabled by a review date.

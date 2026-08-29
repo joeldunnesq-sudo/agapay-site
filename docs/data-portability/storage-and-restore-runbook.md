@@ -239,8 +239,19 @@ read-only validation correctly failed migration currency and barrier checks. The
 corrected restore procedure applied current migrations and regenerated all 441
 reviewed barriers before validation; every check then passed. The scratch database
 was deleted with provider readback and both local backup files were removed. This
-qualifies the central D1 backup path; it does not attest undiscoverable manual copies
-or replace a real accounting/file/KV multi-store restore exercise.
+qualifies the central D1 backup path; it does not attest undiscoverable manual copies.
+
+A separate August 29 real provider multi-store qualification used fresh, hash-locked
+metadata and fixed unbound targets. It restored live central and St. Fiacre
+accounting D1 exports, all 26 production file objects (24,828,438 bytes), and all 35
+current KV keys. The central validator, exact accounting schema and ledger
+fingerprints, every restored file/KV body hash, and a second source-stability
+inventory passed. The accounting export's exact current schema was compared rather
+than replaying its historical bootstrap migrations. All scratch databases,
+namespace, private buckets, and local SQL files were deleted with provider readback.
+Production bindings were read-only. The operator is
+`scripts/portability-provider-multistore-restore.mjs`; it defaults to a plan and
+requires a fresh evidence hash for apply.
 
 D1 Time Travel history has its own provider retention window. SQL DELETE does not
 erase that history. Shared backups cannot be destroyed solely for one parish if

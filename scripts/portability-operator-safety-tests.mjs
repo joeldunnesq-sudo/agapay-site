@@ -11,6 +11,7 @@ const publicMedia = readFileSync(new URL('./portability-public-media-audit.mjs',
 const publicMediaRewrite = readFileSync(new URL('./portability-public-media-rewrite.mjs', import.meta.url), 'utf8');
 const publicMediaDisable = readFileSync(new URL('./portability-public-media-disable.mjs', import.meta.url), 'utf8');
 const quarantinedRestore = readFileSync(new URL('./portability-quarantined-d1-restore.mjs', import.meta.url), 'utf8');
+const multistoreRestore = readFileSync(new URL('./portability-provider-multistore-restore.mjs', import.meta.url), 'utf8');
 const recovery = readFileSync(new URL('./portability-recovery-inventory.mjs', import.meta.url), 'utf8');
 const privateStorage = readFileSync(new URL('./portability-production-private-storage.mjs', import.meta.url), 'utf8');
 const plan = spawnSync(process.execPath, ['scripts/portability-accounting-identity.mjs'], { encoding: 'utf8' });
@@ -41,7 +42,7 @@ assert.doesNotMatch(lifecycle, /\.delete\s*\(/);
 assert.match(audit, /backupObjectExpiryPresent/);
 assert.match(audit, /blocked_missing_backup_object_expiry/);
 assert.match(audit, /passed_scoped_checks_only/);
-for (const name of ['portability-production-storage-audit.mjs','portability-public-media-audit.mjs','portability-public-media-rewrite.mjs','portability-public-media-disable.mjs','portability-quarantined-d1-restore.mjs','portability-recovery-inventory.mjs']) {
+for (const name of ['portability-production-storage-audit.mjs','portability-public-media-audit.mjs','portability-public-media-rewrite.mjs','portability-public-media-disable.mjs','portability-quarantined-d1-restore.mjs','portability-provider-multistore-restore.mjs','portability-recovery-inventory.mjs']) {
   const result=spawnSync(process.execPath,['scripts/'+name],{encoding:'utf8'}); assert.equal(result.status,0,name); assert.equal(JSON.parse(result.stdout).mode,'plan',name);
 }
 const privateStoragePlan=spawnSync(process.execPath,['scripts/portability-production-private-storage.mjs'],{encoding:'utf8'});assert.equal(privateStoragePlan.status,0);assert.equal(JSON.parse(privateStoragePlan.stdout).defaultWrites,false);
@@ -52,5 +53,15 @@ assert.doesNotMatch(publicMedia,/method:\s*['"](?:PUT|POST|DELETE)/);assert.matc
 assert.match(publicMediaRewrite,/--apply <evidence-sha256>/);assert.match(publicMediaRewrite,/older than 30 minutes/);assert.match(publicMediaRewrite,/source_hash=.*state='pending'/);assert.match(publicMediaRewrite,/state='stored'/);assert.match(publicMediaRewrite,/Historical public media references remain after rewrite/);assert.match(publicMediaRewrite,/PARISH_R2_DEV_PUBLIC_ACCESS_DISABLED/);assert.doesNotMatch(publicMediaRewrite,/r2', 'bucket', 'dev-url', 'disable/);
 assert.match(publicMediaDisable,/--apply <evidence-sha256>/);assert.match(publicMediaDisable,/older than 30 minutes/);assert.match(publicMediaDisable,/dev-url', 'disable'/);assert.match(publicMediaDisable,/r2DevDisabled: 3/);assert.match(publicMediaDisable,/PARISH_AUTOMATIC_CLOSURE_ENABLED/);assert.doesNotMatch(publicMediaDisable,/r2', 'object', 'delete/);
 assert.match(quarantinedRestore,/--apply <evidence-sha256>/);assert.match(quarantinedRestore,/older than 30 minutes/);assert.match(quarantinedRestore,/d1', 'create', target/);assert.match(quarantinedRestore,/d1', 'migrations', 'apply', 'RESTORE_TARGET'/);assert.match(quarantinedRestore,/install-write-barriers\.sql/);assert.match(quarantinedRestore,/validate-restore\.mjs/);assert.match(quarantinedRestore,/d1', 'delete', target, '--skip-confirmation'/);assert.match(quarantinedRestore,/unlinkSync\(sqlPath\)/);assert.doesNotMatch(quarantinedRestore,/d1', 'execute', 'agapay-production'/);
+assert.match(multistoreRestore,/--apply <evidence-sha256>/);assert.match(multistoreRestore,/older than 30 minutes/);assert.match(multistoreRestore,/productionWrites: false/);
+assert.match(multistoreRestore,/d1', 'export', sources\.central\.name/);assert.match(multistoreRestore,/d1', 'export', sources\.accounting\.name/);
+assert.match(multistoreRestore,/d1', 'create', name/);assert.match(multistoreRestore,/kv', 'namespace', 'create', targetNames\.kv/);assert.match(multistoreRestore,/r2', 'bucket', 'create', info\.target/);
+assert.match(multistoreRestore,/validate-restore\.mjs/);assert.match(multistoreRestore,/install-write-barriers\.sql/);assert.match(multistoreRestore,/Production accounting changed during export/);
+assert.match(multistoreRestore,/Restored accounting schema differs from source/);assert.doesNotMatch(multistoreRestore,/migrations', 'apply', 'RESTORE_ACCOUNTING'/);
+assert.match(multistoreRestore,/PRAGMA foreign_keys=OFF/);assert.match(multistoreRestore,/Provider export has an unexpected restore preamble/);
+assert.match(multistoreRestore,/Provider could not verify scratch R2 bucket absence/);assert.match(multistoreRestore,/for \(let attempt = 0; attempt < 3; attempt\+\+\)/);
+assert.match(multistoreRestore,/r2', 'bucket', 'delete', item\.name/);assert.match(multistoreRestore,/kv', 'namespace', 'delete'/);assert.match(multistoreRestore,/d1', 'delete', item\.name/);
+assert.match(multistoreRestore,/unlinkSync\(centralSqlPath\)/);assert.match(multistoreRestore,/unlinkSync\(accountingSqlPath\)/);
+assert.doesNotMatch(multistoreRestore,/d1', '(?:execute|delete)', sources\.(?:central|accounting)\.name/);
 assert.match(privateStorage,/assert\.deepEqual\(args, \['--apply', policyVersion\]/);assert.match(privateStorage,/PARISH_AUTOMATIC_CLOSURE_ENABLED/);assert.match(privateStorage,/featureFlagsEnabled: false/);assert.doesNotMatch(privateStorage,/r2', 'object', 'delete/);
 console.log('PASS - production portability operators default read-only, require fresh hashed evidence for writes, and fail closed');
