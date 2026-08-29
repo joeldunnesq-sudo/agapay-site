@@ -7,7 +7,8 @@ and strict backup expiry remain **disabled in production**.
 Policy: 2026-08-28-active-storage-v2.
 
 Dedicated remote staging resources have now been provisioned and tested. The
-full-schema local rehearsal and private hosted export/closure/restore drill pass.
+full-schema local rehearsal, private hosted export/closure/restore drill, and
+separate realistic-volume hosted export gate pass.
 Confirmation is split into consent, book-freeze, and authorization phases; the
 largest hosted phase used 697 of the enforced 800-operation work budget. See
 [Staging release review](staging-release-review.md) for current evidence and the
@@ -41,6 +42,7 @@ and require an operator-assisted full export.
 | Real provider restore | A hash-locked operator exported the live central and St. Fiacre accounting D1 databases into fixed unbound scratch databases, restored all 26 production file objects (24,828,438 bytes) into private scratch R2, and restored all 35 current legacy KV keys. Central validation, exact accounting schema/ledger fingerprints, every file/KV body hash, and a second source-stability inventory passed. All scratch resources and local SQL copies were deleted with provider readback; production was read-only. |
 | Public media | The registry-owned Worker route is deployed and returns `no-store`. Three historical D1/KV URLs were rewritten with guarded hash/readback checks. All three r2.dev origins are disabled, with zero custom domains, and the disabled-origin attestation is configured. |
 | Browser safety gate | A repeatable local Playwright gate exercises the real parish portability and privileged-MFA clients. It proves a 428 step-up opens the MFA flow and resumes the original request, active billing rejects the final-export request, and an ordinary ZIP download never calls closure confirmation. A post-deployment, read-only production walkthrough then opened the St. Fiacre panel with a fresh authenticated session, returned the intended release-disabled state with zero jobs and disabled actions, and produced no browser warnings or errors. No production export, billing change, or purge was attempted. |
+| Realistic volume | A native local workerd gate and a separate private hosted Worker both exported 21,008 synthetic rows: 12,003 central parish/control rows and 9,005 accounting rows, including 4,000 offerings, 3,000 journal entries, and 6,000 journal lines. The hosted archive was 11,350,769 bytes. Row counts, archive hash, secret exclusion, and tenant scope passed. A separate 10,001-row dataset returned 413, preserved every source row, and published no partial archive. The route-less test Worker was removed after the run; its private archive bucket has one-day expiry. |
 
 The accounting books and retained financial/legal rows are **not physically erased**
 by this flow. They are disclosed retention exceptions. Active legal holds block
@@ -97,11 +99,10 @@ and three successful no-store Worker HEAD responses.
 3. Approve/version the public retention disclosure, including minimal closure and
    receipt metadata. No automatic disposal of legally held/immutable records is
    enabled by a review date.
-4. Keep the bounded confirmation budget regression and hosted drill in the release
-   process. Reconcile representative
-   staging exports and real-volume operation/restore tests before enabling closure.
-   The independent ledger currently caps at 1,000
-   closures and object/key inventories at 10,000 entries.
+4. Keep the bounded confirmation budget, hosted closure/restore drill, and
+   realistic-volume export gate in the release process. Re-run the volume profile
+   when row schemas or self-service limits change. The independent ledger currently
+   caps at 1,000 closures and object/key inventories at 10,000 entries.
 
 Cloudflare Stream video still requires an operator-assisted complete export and
 provider disposition; it blocks self-service export/closure rather than being
@@ -131,6 +132,12 @@ restore stores, ordinary/aborted downloads, archive checksums and write barriers
 active-data deletion with private financial retention, and quarantined restore
 replay/sanitization. The independent ledger is never rolled back. Other-parish
 records and shared donor identities survive; repeated sanitization is tested.
+
+The separate `npm run test:portability-volume` gate uses the complete reviewed
+central and accounting schemas inside workerd. It exports 21,008 synthetic rows
+into an 11.35 MB ZIP, verifies every manifest checksum and secret exclusion, and
+proves a 10,001-row dataset fails without publishing an archive or changing source
+data. The same profile passed in an isolated, route-less hosted Worker invocation.
 
 This caught and fixed handling of D1's protected `_cf_METADATA` table in both
 central and accounting inventories. Only specific provider tables are excluded;

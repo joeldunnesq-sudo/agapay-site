@@ -14,6 +14,7 @@ neither the local drill capability flag nor the synthetic administrator adapter.
 ```sh
 npm ci
 npm run test:parish-portability-runtime
+npm run test:portability-volume
 ```
 
 The drill also runs in `npm run check:release-gates` and the full `npm run check`.
@@ -56,7 +57,9 @@ Cloudflare documents that table in its
 
 - Fixtures cover the directory/registration/legal/portability schemas and a
   minimal financial-document foreign key. This is not every production table,
-  full accounting books, every upload route, or representative production volume.
+  full accounting books, or every upload route. A separate full-schema volume gate
+  now covers 21,008 synthetic central/accounting rows locally and in a hosted Worker.
+  It is a reviewed stress profile, not a measurement of live parish distributions.
   Existing separate accounting tests exercise book freezes and immutable history.
 - The test calls production service functions through a test-only adapter. It
   does not replace browser, fresh-MFA, cancellation, and full HTTP-route testing.

@@ -29,6 +29,7 @@ the pending natural-expiry observation.
 | Public media migration | Passed: registry-owned Worker delivery is deployed with no-store and range support. Three historical references were hash-guarded and rewritten, all objects were verified through the Worker, all three r2.dev origins read back disabled, and there are zero custom domains. The disabled-origin attestation is staged for deployment. |
 | Browser/MFA/billing gate | Passed: the local real-client gate opened and completed MFA step-up, active billing blocked final-export creation, and an ordinary ZIP download made no closure-confirmation request. A duplicate-parish-row authentication mismatch found in the signed-in production panel was fixed and deployed. The post-deployment read-only production walkthrough accepted a fresh MFA-backed session, showed the intended release-disabled state with zero jobs and disabled actions, and logged no browser warnings or errors. No production export, billing change, or purge was attempted. |
 | Recovery-copy inventory | Partially passed: 29 recent scheduled backup runs were successful, none of 297 current GitHub Actions artifacts was a database backup, and D1 Time Travel was available at 7/29 days but unavailable at 31 days. The separate real provider multi-store restore qualification passed; off-provider/manual copies remain unverified and natural lifecycle expiry is still pending. |
+| Realistic volume | Passed locally and in a separate private hosted Worker. The reviewed full schemas exported 21,008 synthetic rows, including 4,000 offerings, 3,000 journal entries, and 6,000 journal lines, into an 11,350,769-byte hosted ZIP. Counts, hash, secret exclusion, and tenant scope passed. A 10,001-row boundary returned 413, left all source rows intact, and published no archive. The route-less Worker was removed; its private synthetic archive has one-day lifecycle expiry. |
 
 ## Schema corrections
 
@@ -91,10 +92,11 @@ D1 export can briefly block queries; avoid unnecessary repeat production exports
 
 The first remote attempt ran service code in an operator Node process through real
 remote bindings and remains incomplete evidence. The successful rerun used separate
-hosted Worker invocations for each bounded phase. Neither run certifies browser/MFA/
-billing flows, all production upload routes, or production volume. Synthetic books
-contain identity/credential metadata, not journal entries; separate accounting
-tests cover posted-history immutability.
+hosted Worker invocations for each bounded phase. That closure drill does not certify
+browser/MFA/billing flows or all production upload routes. A later isolated volume
+gate separately exercised 3,000 accounting journal entries, 6,000 journal lines,
+and 12,003 central parish/control rows inside a hosted Worker. All data was synthetic;
+this is not a claim about the size distribution of live parishes.
 
 ## Evidence and recovery
 
@@ -107,6 +109,8 @@ Evidence is in the ignored `artifacts/portability-staging/` directory:
 - `stopped-run-readback.json`: direct final status and remaining lease; zero rows written.
 - `query-budget.json`: offline counts of actual service operations.
 - `hosted-drill-state.json`: per-invocation result, operation count, and Worker version.
+- `volume-gate.json`: local workerd profile, archive checksum/size, timing, and
+  the successful fail-closed boundary assertions.
 - `natural-expiry-state.json`: planted object hash, original upload time, threshold, and later observations.
 - `production-readiness-audit.json`: read-only production flags, identity result,
   31 aggregate legacy counts, registry/barrier counts, and lifecycle readback.
@@ -137,6 +141,11 @@ Evidence is in the ignored `artifacts/portability-staging/` directory:
   post-write identity readback.
 - `production-backup-lifecycle.json`: metadata-only 59-object inventory, age
   bounds, zero-expired assertion, rule evidence hash, and provider readback hash.
+
+The ignored `artifacts/portability-volume-hosted/` directory holds the separate
+volume resource manifest, disabled-public-access and lifecycle readbacks, reviewed
+configs, and `hosted-volume-state.json`. The temporary Worker version was
+`6126a7ec-cf3a-4ab6-b7aa-63fa07ea1981` and was deleted after the successful run.
 
 Baseline SHA-256 values:
 
@@ -192,6 +201,23 @@ errors were a separate transport/lifecycle issue, not evidence of a platform-lim
 failure; hosted phase boundaries and disposed RPC results avoid relying on one
 long-lived proxy execution.
 
+## Realistic-volume result
+
+`npm run test:portability-volume` now runs in `check:release-gates`. The local
+native-binding run exported 21,008 rows into an 11,350,769-byte ZIP with 235 entries
+in under four seconds. The private hosted Worker exported the same row profile and byte
+size in 9.009 seconds. Content hashes differ because the manifest contains each
+run's export timestamps. Both runs verified every declared file checksum, removed
+synthetic registration/accounting secrets, preserved another tenant, and stayed
+below the 24 MB and 10,000-row-per-dataset limits.
+
+A separate parish with 10,001 `directory_people` rows failed with
+`export_too_large`/HTTP 413 locally and remotely. Its job retained no manifest or
+archive key, its R2 job prefix remained empty, and all 10,001 source rows remained.
+The hosted resources use the exact prefix `agapay-portability-volume-20260829`;
+the bucket has r2.dev disabled, no custom domains, and one-day expiry for
+`parish-exports/`. Production resources and flags were not read or changed.
+
 Remaining release work, in order:
 
 1. After the lifecycle threshold, run
@@ -199,9 +225,9 @@ Remaining release work, in order:
    This only performs HEAD and does not run a sweep. The planted probe prevents the
    main drill from running and contaminating the observation. Check that no manual
    deletion/sweep occurred before treating absence as lifecycle evidence.
-2. Finish the off-provider/manual-copy attestation, retention disclosure approval,
-   and realistic volume testing. The browser/MFA/billing gate and real accounting,
-   file, and KV provider restore qualification are complete.
+2. Finish the off-provider/manual-copy attestation and retention disclosure approval.
+   The browser/MFA/billing gate, realistic-volume gate, and real accounting, file,
+   and KV provider restore qualification are complete.
 
 The production accounting identity and 365-day backup lifecycle items are complete.
 The identity was corroborated by the immutable database UUID/creation time, the

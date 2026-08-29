@@ -14,6 +14,8 @@ const quarantinedRestore = readFileSync(new URL('./portability-quarantined-d1-re
 const multistoreRestore = readFileSync(new URL('./portability-provider-multistore-restore.mjs', import.meta.url), 'utf8');
 const recovery = readFileSync(new URL('./portability-recovery-inventory.mjs', import.meta.url), 'utf8');
 const privateStorage = readFileSync(new URL('./portability-production-private-storage.mjs', import.meta.url), 'utf8');
+const volumeProvision = readFileSync(new URL('./portability-volume-provision.mjs', import.meta.url), 'utf8');
+const volumeHosted = readFileSync(new URL('./portability-volume-hosted.mjs', import.meta.url), 'utf8');
 const plan = spawnSync(process.execPath, ['scripts/portability-accounting-identity.mjs'], { encoding: 'utf8' });
 assert.equal(plan.status, 0);
 const parsed = JSON.parse(plan.stdout);
@@ -64,4 +66,7 @@ assert.match(multistoreRestore,/r2', 'bucket', 'delete', item\.name/);assert.mat
 assert.match(multistoreRestore,/unlinkSync\(centralSqlPath\)/);assert.match(multistoreRestore,/unlinkSync\(accountingSqlPath\)/);
 assert.doesNotMatch(multistoreRestore,/d1', '(?:execute|delete)', sources\.(?:central|accounting)\.name/);
 assert.match(privateStorage,/assert\.deepEqual\(args, \['--apply', policyVersion\]/);assert.match(privateStorage,/PARISH_AUTOMATIC_CLOSURE_ENABLED/);assert.match(privateStorage,/featureFlagsEnabled: false/);assert.doesNotMatch(privateStorage,/r2', 'object', 'delete/);
+const volumePlan=spawnSync(process.execPath,['scripts/portability-volume-provision.mjs'],{encoding:'utf8'});assert.equal(volumePlan.status,0);const volumePlanData=JSON.parse(volumePlan.stdout);assert.equal(volumePlanData.deploy,false);assert.equal(volumePlanData.productionChanges,false);assert.match(volumePlanData.prefix,/^agapay-portability-volume-/);
+assert.match(volumeProvision,/argument === '--create'/);assert.match(volumeProvision,/workers_dev: false/);assert.match(volumeProvision,/preview_urls: false/);assert.match(volumeProvision,/dev-url', 'disable'/);assert.match(volumeProvision,/--expire-days', '1'/);
+assert.match(volumeHosted,/\['--configure', '--run'\]/);assert.match(volumeHosted,/workers_dev: false/);assert.match(volumeHosted,/preview_urls: false/);assert.match(volumeHosted,/protectedIds/);assert.match(volumeHosted,/vars: \{ \.\.\.base\.vars/);assert.match(volumeProvision,/PARISH_AUTOMATIC_CLOSURE_ENABLED: 'false'/);
 console.log('PASS - production portability operators default read-only, require fresh hashed evidence for writes, and fail closed');
