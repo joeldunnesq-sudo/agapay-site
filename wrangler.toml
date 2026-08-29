@@ -52,7 +52,7 @@ PARISH_AUTOMATIC_CLOSURE_ENABLED = "false"
 PARISH_PUBLIC_MEDIA_DELIVERY_ENABLED = "2026-08-28-active-storage-v2"
 # Set only after all historical references are rewritten and every r2.dev origin
 # is disabled and read back. Its absence keeps closure/cache disposal blocked.
-# PARISH_R2_DEV_PUBLIC_ACCESS_DISABLED = "2026-08-28-active-storage-v2"
+PARISH_R2_DEV_PUBLIC_ACCESS_DISABLED = "2026-08-28-active-storage-v2"
 # Independent R2 closure authority. This identifier is not a credential; the
 # matching authority.json object is protected by an indefinite bucket lock.
 PARISH_SUPPRESSION_AUTHORITY = "25a7aefe-a931-456b-ac59-62d538428e9a"

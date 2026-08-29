@@ -1,8 +1,9 @@
 # Storage disposal and restore safeguards
 
 Status: implemented and tested locally and in isolated hosted staging on
-August 28, 2026. Production schema, ownership controls, and private portability
-storage are installed; **the application code is not deployed or enabled.**
+August 28, 2026. Production schema, ownership controls, private portability
+storage, and Worker public-media delivery are deployed. Export, storage guards,
+automatic closure, and strict backup expiry remain disabled.
 Policy identifier: `2026-08-28-active-storage-v2`.
 
 ## Release boundary
@@ -101,18 +102,24 @@ keys can themselves contain personal information.
 
 ### Public media caches
 
-The current production asset URLs still use public r2.dev domains. **They are not
-covered by the zone cache purge adapter.** A registry-owned Worker delivery route
-is implemented at `/api/public/parish-assets/{campaign|announcement|teaching}/...`;
-it verifies the ownership row and ETag, observes closure fences, supports audio
-ranges, and always returns `no-store`. It is policy-gated and not deployed/enabled.
+Production asset URLs now use the registry-owned Worker delivery route at
+`/api/public/parish-assets/{campaign|announcement|teaching}/...`; it verifies the
+ownership row and ETag, observes closure fences, supports audio ranges, and always
+returns `no-store`.
 
-Deployment order is strict: deploy the inactive route and ownership registry; then
+The completed deployment followed this strict order: deploy the inactive route and ownership registry; then
 enable Worker delivery and set new-upload bases while leaving the separate r2.dev-
 disabled attestation unset. Verify Worker delivery, rewrite all central/KV historical
 references, and verify every rewritten URL. Disable all three r2.dev origins and read
 back their disabled status. Only then set the r2.dev-disabled attestation. Worker
 delivery alone never satisfies the closure/cache-disposal gate.
+
+The August 29 cutover rewrote exactly three references under fresh hash evidence:
+one central registration JSON value, one legacy KV value, and one teaching-post URL.
+Post-write ownership still reconciled 26 physical objects to 26 references. All
+three r2.dev origins then read back disabled, zero custom domains remained, and all
+three objects continued returning 200/no-store through the Worker. The matching
+`PARISH_R2_DEV_PUBLIC_ACCESS_DISABLED` attestation is configured for deployment.
 
 The adapter needs PARISH_ASSET_CACHE_ZONE_ID, a least-privilege
 PARISH_ASSET_CACHE_PURGE_TOKEN secret, and

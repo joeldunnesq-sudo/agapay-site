@@ -27,6 +27,14 @@ const publicBases = Object.freeze({
   ANNOUNCEMENT_ASSETS: 'https://pub-b0974d02d1bf41288b3082849e87f676.r2.dev',
   TEACHING_ASSETS: 'https://pub-b6fa9c48d8be43bebaacef7f7ba448e4.r2.dev'
 });
+const workerPublicBases = Object.freeze({
+  CAMPAIGN_ASSETS: 'https://agapay.app/api/public/parish-assets/campaign',
+  ANNOUNCEMENT_ASSETS: 'https://agapay.app/api/public/parish-assets/announcement',
+  TEACHING_ASSETS: 'https://agapay.app/api/public/parish-assets/teaching'
+});
+const referenceBases = Object.freeze(Object.fromEntries(Object.keys(publicBases).map(binding => [binding, [publicBases[binding], workerPublicBases[binding]]])));
+const allReferenceBases = Object.values(referenceBases).flat();
+const publicMediaPolicyVersion = '2026-08-28-active-storage-v2';
 const buckets = Object.freeze({
   CAMPAIGN_ASSETS: 'agapay-campaign-assets',
   ANNOUNCEMENT_ASSETS: 'agapay-announcement-assets',
@@ -62,9 +70,11 @@ for (const [binding, bucketName] of Object.entries(buckets)) {
   assert.match(productionConfig, new RegExp(`binding = "${binding}"\\s+bucket_name = "${bucketName}"`));
 }
 assert.match(productionConfig, /binding = "PARISH_LIBRARY_ASSETS"\s+bucket_name = "agapay-group-message-assets"/);
-for (const [binding, base] of Object.entries(publicBases)) {
+for (const [binding, base] of Object.entries(workerPublicBases)) {
   assert.match(productionConfig, new RegExp(`^${binding}_URL = "${base.replaceAll('.', '\\.')}"$`, 'm'));
 }
+assert.match(productionConfig, new RegExp(`^PARISH_PUBLIC_MEDIA_DELIVERY_ENABLED = "${publicMediaPolicyVersion}"$`, 'm'));
+assert.match(productionConfig, new RegExp(`^PARISH_R2_DEV_PUBLIC_ACCESS_DISABLED = "${publicMediaPolicyVersion}"$`, 'm'));
 for (const flag of ['PARISH_PORTABILITY_ENABLED', 'PARISH_STORAGE_GUARDS_ENABLED', 'PARISH_AUTOMATIC_CLOSURE_ENABLED']) {
   assert.match(productionConfig, new RegExp(`^${flag} = "false"$`, 'm'));
 }
@@ -111,9 +121,10 @@ function d1Read(database, statements) {
 function cleanKeyFromUrl(value, base) {
   if (typeof value !== 'string' || !value.startsWith(base + '/')) return null;
   try {
-    const url = new URL(value);
-    if (url.origin !== new URL(base).origin || url.search || url.hash) return null;
-    return decodeURIComponent(url.pathname.replace(/^\/+/, ''));
+    const url = new URL(value), baseUrl = new URL(base);
+    const basePath = baseUrl.pathname.replace(/\/+$/, '');
+    if (url.origin !== baseUrl.origin || url.search || url.hash || !url.pathname.startsWith(basePath + '/')) return null;
+    return decodeURIComponent(url.pathname.slice(basePath.length + 1));
   } catch { return null; }
 }
 
@@ -130,10 +141,10 @@ function strings(value, found = []) {
 
 const centralStatements = [
   "SELECT parish_id FROM registrations WHERE parish_id IS NOT NULL AND parish_id<>'' LIMIT 10000",
-  `SELECT r.parish_id,j.value url FROM registrations r,json_tree(r.data) j WHERE json_valid(r.data) AND r.parish_id IS NOT NULL AND j.type='text' AND (${Object.values(publicBases).map(base => `substr(j.value,1,${base.length + 1})='${base}/'`).join(' OR ')}) LIMIT 10000`,
-  `SELECT parish_id,image_url url FROM commerce_products WHERE image_url IS NOT NULL AND (${Object.values(publicBases).map(base => `substr(image_url,1,${base.length + 1})='${base}/'`).join(' OR ')}) LIMIT 10000`,
-  `SELECT parish_id,hero_image_url url FROM parish_announcements WHERE substr(hero_image_url,1,${publicBases.ANNOUNCEMENT_ASSETS.length + 1})='${publicBases.ANNOUNCEMENT_ASSETS}/' LIMIT 10000`,
-  `SELECT parish_id,audio_url url FROM parish_teaching_posts WHERE substr(audio_url,1,${publicBases.TEACHING_ASSETS.length + 1})='${publicBases.TEACHING_ASSETS}/' LIMIT 10000`,
+  `SELECT r.parish_id,j.value url FROM registrations r,json_tree(r.data) j WHERE json_valid(r.data) AND r.parish_id IS NOT NULL AND j.type='text' AND (${allReferenceBases.map(base => `substr(j.value,1,${base.length + 1})='${base}/'`).join(' OR ')}) LIMIT 10000`,
+  `SELECT parish_id,image_url url FROM commerce_products WHERE image_url IS NOT NULL AND (${allReferenceBases.map(base => `substr(image_url,1,${base.length + 1})='${base}/'`).join(' OR ')}) LIMIT 10000`,
+  `SELECT parish_id,hero_image_url url FROM parish_announcements WHERE ${referenceBases.ANNOUNCEMENT_ASSETS.map(base => `substr(hero_image_url,1,${base.length + 1})='${base}/'`).join(' OR ')} LIMIT 10000`,
+  `SELECT parish_id,audio_url url FROM parish_teaching_posts WHERE ${referenceBases.TEACHING_ASSETS.map(base => `substr(audio_url,1,${base.length + 1})='${base}/'`).join(' OR ')} LIMIT 10000`,
   "SELECT parish_id,image_storage_key object_key FROM directory_ministries WHERE image_storage_key IS NOT NULL AND image_storage_key<>'' LIMIT 10000",
   "SELECT parish_id,ministry_id,id FROM parish_group_messages WHERE attachment_url IS NOT NULL AND attachment_url<>'' LIMIT 10000",
   "SELECT l.parish_id,p.storage_key object_key FROM koinonia_exchange_photos p JOIN koinonia_exchange_listings l ON l.id=p.listing_id WHERE p.storage_key IS NOT NULL AND p.storage_key<>'' LIMIT 10000",
@@ -168,14 +179,14 @@ function addReference(binding, key, parishId, source) {
   if (!current) references.set(id, { binding, key, parishId, sources: new Set() });
   references.get(id)?.sources.add(source);
 }
-for (const row of central[1]) for (const [binding, base] of Object.entries(publicBases)) {
+for (const row of central[1]) for (const [binding, bases] of Object.entries(referenceBases)) for (const base of bases) {
   const key = cleanKeyFromUrl(row.url, base); if (key) addReference(binding, key, row.parish_id, 'central_registration_json');
 }
-for (const row of central[2]) for (const [binding, base] of Object.entries(publicBases)) {
+for (const row of central[2]) for (const [binding, bases] of Object.entries(referenceBases)) for (const base of bases) {
   const key = cleanKeyFromUrl(row.url, base); if (key) addReference(binding, key, row.parish_id, 'commerce_product');
 }
-for (const row of central[3]) addReference('ANNOUNCEMENT_ASSETS', cleanKeyFromUrl(row.url, publicBases.ANNOUNCEMENT_ASSETS), row.parish_id, 'announcement');
-for (const row of central[4]) addReference('TEACHING_ASSETS', cleanKeyFromUrl(row.url, publicBases.TEACHING_ASSETS), row.parish_id, 'teaching_post');
+for (const row of central[3]) for (const base of referenceBases.ANNOUNCEMENT_ASSETS) addReference('ANNOUNCEMENT_ASSETS', cleanKeyFromUrl(row.url, base), row.parish_id, 'announcement');
+for (const row of central[4]) for (const base of referenceBases.TEACHING_ASSETS) addReference('TEACHING_ASSETS', cleanKeyFromUrl(row.url, base), row.parish_id, 'teaching_post');
 for (const row of central[5]) addReference('GROUP_MESSAGE_ASSETS', row.object_key, row.parish_id, 'ministry_image');
 for (const row of central[6]) addReference('GROUP_MESSAGE_ASSETS', ['group-messages', safeSegment(row.parish_id, 'parish'), safeSegment(row.ministry_id, 'ministry'), safeSegment(row.id, 'message')].join('/'), row.parish_id, 'group_message');
 for (const row of central[7]) addReference('GROUP_MESSAGE_ASSETS', row.object_key, row.parish_id, 'exchange_photo');
@@ -232,7 +243,7 @@ try {
     kvClassifiedKeys++;
     legacyRegistry.push({ objectKey: key, parishId: record.parishId, sourceHash: await sha256(raw), state: 'stored' });
     knownParishes.add(record.parishId);
-    for (const value of strings(record.data)) for (const [binding, base] of Object.entries(publicBases)) {
+    for (const value of strings(record.data)) for (const [binding, bases] of Object.entries(referenceBases)) for (const base of bases) {
       const objectKey = cleanKeyFromUrl(value, base);
       if (objectKey) addReference(binding, objectKey, record.parishId, 'legacy_kv');
     }

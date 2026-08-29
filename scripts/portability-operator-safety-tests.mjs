@@ -8,6 +8,8 @@ const audit = readFileSync(new URL('./portability-production-audit.mjs', import.
 const storage = readFileSync(new URL('./portability-production-storage-audit.mjs', import.meta.url), 'utf8');
 const registry = readFileSync(new URL('./portability-production-registry-apply.mjs', import.meta.url), 'utf8');
 const publicMedia = readFileSync(new URL('./portability-public-media-audit.mjs', import.meta.url), 'utf8');
+const publicMediaRewrite = readFileSync(new URL('./portability-public-media-rewrite.mjs', import.meta.url), 'utf8');
+const publicMediaDisable = readFileSync(new URL('./portability-public-media-disable.mjs', import.meta.url), 'utf8');
 const recovery = readFileSync(new URL('./portability-recovery-inventory.mjs', import.meta.url), 'utf8');
 const privateStorage = readFileSync(new URL('./portability-production-private-storage.mjs', import.meta.url), 'utf8');
 const plan = spawnSync(process.execPath, ['scripts/portability-accounting-identity.mjs'], { encoding: 'utf8' });
@@ -38,7 +40,7 @@ assert.doesNotMatch(lifecycle, /\.delete\s*\(/);
 assert.match(audit, /backupObjectExpiryPresent/);
 assert.match(audit, /blocked_missing_backup_object_expiry/);
 assert.match(audit, /passed_scoped_checks_only/);
-for (const name of ['portability-production-storage-audit.mjs','portability-public-media-audit.mjs','portability-recovery-inventory.mjs']) {
+for (const name of ['portability-production-storage-audit.mjs','portability-public-media-audit.mjs','portability-public-media-rewrite.mjs','portability-public-media-disable.mjs','portability-recovery-inventory.mjs']) {
   const result=spawnSync(process.execPath,['scripts/'+name],{encoding:'utf8'}); assert.equal(result.status,0,name); assert.equal(JSON.parse(result.stdout).mode,'plan',name);
 }
 const privateStoragePlan=spawnSync(process.execPath,['scripts/portability-production-private-storage.mjs'],{encoding:'utf8'});assert.equal(privateStoragePlan.status,0);assert.equal(JSON.parse(privateStoragePlan.stdout).defaultWrites,false);
@@ -46,5 +48,7 @@ assert.match(storage,/metadata-only R2 listing/); assert.match(storage,/rawValue
 const registryPlan=spawnSync(process.execPath,['scripts/portability-production-registry-apply.mjs'],{encoding:'utf8'});assert.equal(registryPlan.status,0);assert.equal(JSON.parse(registryPlan.stdout).defaultWrites,false);
 assert.match(registry,/older than 30 minutes/);assert.match(registry,/args\.length, 3/);assert.match(registry,/empty \|\| complete/);assert.match(registry,/productionFlagsFalse/);
 assert.doesNotMatch(publicMedia,/method:\s*['"](?:PUT|POST|DELETE)/);assert.match(recovery,/restoresPerformed:false/);
+assert.match(publicMediaRewrite,/--apply <evidence-sha256>/);assert.match(publicMediaRewrite,/older than 30 minutes/);assert.match(publicMediaRewrite,/source_hash=.*state='pending'/);assert.match(publicMediaRewrite,/state='stored'/);assert.match(publicMediaRewrite,/Historical public media references remain after rewrite/);assert.match(publicMediaRewrite,/PARISH_R2_DEV_PUBLIC_ACCESS_DISABLED/);assert.doesNotMatch(publicMediaRewrite,/r2', 'bucket', 'dev-url', 'disable/);
+assert.match(publicMediaDisable,/--apply <evidence-sha256>/);assert.match(publicMediaDisable,/older than 30 minutes/);assert.match(publicMediaDisable,/dev-url', 'disable'/);assert.match(publicMediaDisable,/r2DevDisabled: 3/);assert.match(publicMediaDisable,/PARISH_AUTOMATIC_CLOSURE_ENABLED/);assert.doesNotMatch(publicMediaDisable,/r2', 'object', 'delete/);
 assert.match(privateStorage,/assert\.deepEqual\(args, \['--apply', policyVersion\]/);assert.match(privateStorage,/PARISH_AUTOMATIC_CLOSURE_ENABLED/);assert.match(privateStorage,/featureFlagsEnabled: false/);assert.doesNotMatch(privateStorage,/r2', 'object', 'delete/);
 console.log('PASS - production portability operators default read-only, require fresh hashed evidence for writes, and fail closed');

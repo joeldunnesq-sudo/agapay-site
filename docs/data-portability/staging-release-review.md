@@ -1,9 +1,9 @@
 # Portability staging release review
 
 August 29, 2026. **Production release is not approved.** A private, route-less
-staging test Worker was temporarily deployed for the hosted drill; no production
-application Worker was deployed. Production portability and strict-expiry switches
-remain off. The temporary Worker was removed after preserving the completed drill
+staging test Worker was temporarily deployed for the hosted drill. The production
+Worker now includes the verified public-media route, while portability, closure,
+storage-guard, and strict-expiry switches remain off. The temporary Worker was removed after preserving the completed drill
 record and version identifier; the isolated data resources remain for evidence and
 the pending natural-expiry observation.
 
@@ -24,7 +24,7 @@ the pending natural-expiry observation.
 | Production scoped readiness audit | Passed after controlled reconciliation: all 31 legacy accounting tables are empty, the book identity is independently evidenced, the backup bucket has a verified 365-day object-expiration rule, and all release flags remain false. This does not clear the remaining release gates. |
 | Production ownership/schema | Passed: migrations 0108-0110, 441 generated barriers, 26 R2 ownership rows, 18 KV ownership rows, and three inventory reviews read back successfully; there are zero jobs/closures and all flags remain false. |
 | Production private portability storage | Passed: three separate private R2 buckets were created and read back with r2.dev disabled and no custom domains. The temporary export prefix has a seven-day lifecycle; authority, closure, and completion prefixes have indefinite locks; authority.json matches the configured identifier. No Worker was deployed and all flags remain false. |
-| Public media migration | Code and tests pass for registry-owned Worker delivery with no-store and range support. Production still has three r2.dev origins enabled and three immutable-cache objects, so this gate remains blocked until deploy, reference rewrite, and r2.dev disable/readback. |
+| Public media migration | Passed: registry-owned Worker delivery is deployed with no-store and range support. Three historical references were hash-guarded and rewritten, all objects were verified through the Worker, all three r2.dev origins read back disabled, and there are zero custom domains. The disabled-origin attestation is staged for deployment. |
 | Recovery-copy inventory | Partially passed: 29 recent scheduled backup runs were successful, none of 297 current GitHub Actions artifacts was a database backup, and D1 Time Travel was available at 7/29 days but unavailable at 31 days. Off-provider/manual copies remain unverified, no restore was performed by this audit, and natural lifecycle expiry is still pending. |
 
 ## Schema corrections
@@ -115,9 +115,14 @@ Evidence is in the ignored `artifacts/portability-staging/` directory:
 - `production-private-storage.json`: exact bucket names plus hashed public-access,
   custom-domain, lifecycle, lock, and authority readbacks. It records that no
   Worker was deployed and no feature flag was enabled.
+- `production-public-media-rewrite.json`: exact hashed three-record proposal and
+  post-write verification for one registration, one legacy KV record, and one
+  teaching post; raw values are not persisted.
+- `production-public-media-disable.json`: exact provider/Worker evidence hash and
+  post-write readback for three disabled r2.dev origins and zero custom domains.
 - `production-public-media-audit.json`: provider status hashes and metadata-only
-  HEAD evidence; all three r2.dev origins and all three inventoried objects are
-  reachable, with matching ETags and one-year immutable cache metadata.
+  HEAD evidence; all three r2.dev origins are disabled and all three inventoried
+  objects are reachable through the Worker with no-store.
 - `production-recovery-inventory.json`: read-only scheduled-run and GitHub artifact
   counts, D1 Time Travel checks at 7/29/31 days, and the existing R2 lifecycle
   evidence reference. It records that no restore was performed and that manual or
@@ -188,8 +193,8 @@ Remaining release work, in order:
    This only performs HEAD and does not run a sweep. The planted probe prevents the
    main drill from running and contaminating the observation. Check that no manual
    deletion/sweep occurred before treating absence as lifecycle evidence.
-2. Finish the public-media cache migration, off-provider/manual-copy attestation,
-   quarantined provider restore validation, browser/MFA/billing validation,
+2. Finish the off-provider/manual-copy attestation, quarantined provider restore
+   validation, browser/MFA/billing validation,
    retention disclosure approval, and realistic volume testing.
 
 The production accounting identity and 365-day backup lifecycle items are complete.

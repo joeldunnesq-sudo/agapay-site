@@ -178,7 +178,7 @@ try {
   await call({ action:'validate', target:'restore' });
   assert.equal(egressAttempts,0);
   pass('independent ledger blocks restored data until quarantine replay and sanitization; repeated sanitization is safe');
-  console.log(`Portability local workerd drill passed (${passed.length} checkpoints). Natural lifecycle expiry, public-media migration, recovery-copy inventory, and rollout remain release gates.`);
+  console.log(`Portability local workerd drill passed (${passed.length} checkpoints). Natural lifecycle expiry, recovery-copy inventory, and rollout remain release gates.`);
 } finally {
   await mf.dispose();
 }

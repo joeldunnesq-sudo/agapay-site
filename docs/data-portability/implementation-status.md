@@ -1,9 +1,9 @@
 # Parish portability implementation status
 
 Updated August 29, 2026. Implemented and exercised in isolated staging;
-the additive production schema, ownership registries, and three safeguarded private
-storage buckets are installed, but the application code is **not deployed or enabled
-in production**.
+the additive production schema, ownership registries, private storage, and Worker
+public-media route are deployed. Parish export, storage guards, automatic closure,
+and strict backup expiry remain **disabled in production**.
 Policy: 2026-08-28-active-storage-v2.
 
 Dedicated remote staging resources have now been provisioned and tested. The
@@ -38,6 +38,7 @@ and require an operator-assisted full export.
 | Backup expiry | Strict expiry removes the newest-backup exception only when ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED is explicitly true. The default preserves the deployed policy. Strict sweeps check deletion with HEAD and record evidence; confirmation requires the gate and matching evidence no more than 48 hours old. |
 | Restore safeguards | Independent private R2 closure authority, request/scheduler safety checks, quarantine, suppression replay, and restored-data sanitization. An older DB cannot pass the runtime gate while missing an independent closure authorization. |
 | Recovery | Checkpoints support retry after partial cleanup. Ambiguous uploads retain a durable fence. Operator-only reconciliation handles file ownership, interrupted file operations, and abandoned unconfirmed preparation. Confirmed closure cannot be undone by cancellation. |
+| Public media | The registry-owned Worker route is deployed and returns `no-store`. Three historical D1/KV URLs were rewritten with guarded hash/readback checks. All three r2.dev origins are disabled, with zero custom domains, and the disabled-origin attestation is configured. |
 
 The accounting books and retained financial/legal rows are **not physically erased**
 by this flow. They are disclosed retention exceptions. Active legal holds block
@@ -66,14 +67,15 @@ reconciled. The existing St. Fiacre book now has an independently evidenced
 expiration lifecycle rule. The pre-change inventory found 59 objects, none past
 the retention threshold. These scoped corrections are not overall release approval.
 
-1. Deploy the registry-owned, no-store Worker public-media route, rewrite the three
-   historical production URLs, verify them, then disable and read back all three
-   r2.dev origins. The route is implemented and tested but not deployed; production
-   currently still serves three immutable-cache objects through r2.dev.
-2. Retire old unguarded Worker versions and any direct-upload credentials. Keep
+The public-media migration is complete. The deployed Worker served all three
+inventoried objects before and after the guarded reference rewrite; the post-cutover
+audit found three disabled r2.dev origins, zero enabled origins, zero custom domains,
+and three successful no-store Worker HEAD responses.
+
+1. Retire old unguarded Worker versions and any direct-upload credentials. Keep
    independently evidenced identity metadata on every accounting database; the
    current St. Fiacre production book and current R2/KV ownership are reconciled.
-3. The production backup bucket's 365-day lifecycle and 59 current objects are verified.
+2. The production backup bucket's 365-day lifecycle and 59 current objects are verified.
    A read-only recovery inventory found 29 recent successful scheduled backup runs,
    no database backup among 297 current GitHub Actions artifacts, and D1 Time Travel
    available at 7 and 29 days but unavailable at 31 days. Complete the off-provider/
@@ -81,10 +83,10 @@ the retention threshold. These scoped corrections are not overall release approv
    remote drill verified lock enforcement, a controlled-clock backup sweep,
    snapshot restoration, closure, and repeated quarantined sanitization. Natural
    one-day lifecycle observation is awaiting its threshold and provider deletion.
-4. Approve/version the public retention disclosure, including minimal closure and
+3. Approve/version the public retention disclosure, including minimal closure and
    receipt metadata. No automatic disposal of legally held/immutable records is
    enabled by a review date.
-5. Keep the bounded confirmation budget regression and hosted drill in the release
+4. Keep the bounded confirmation budget regression and hosted drill in the release
    process. Reconcile representative
    staging exports and real-volume operation/restore tests before enabling closure.
    The independent ledger currently caps at 1,000
@@ -97,8 +99,9 @@ silently omitted.
 All three portability feature switches remain false in wrangler.toml:
 PARISH_PORTABILITY_ENABLED, PARISH_STORAGE_GUARDS_ENABLED, and
 PARISH_AUTOMATIC_CLOSURE_ENABLED. Once closures are enabled, storage guards must
-remain enabled even if export UI is disabled. Operational verification attestations
-remain unset; they must not be used to bypass unverified deployment prerequisites.
+remain enabled even if export UI is disabled. The r2.dev-disabled attestation is now
+set from provider readback; other operational attestations must not be used to bypass
+their remaining deployment prerequisites.
 
 The separate ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED gate is also false in both
 production and shared accounting staging. The existing daily cron does not depend
@@ -153,13 +156,15 @@ The following checks passed in this update:
 
 The earlier synthetic browser test covered opening the panel, queueing an export,
 and downloading it. This update did not run a production or browser-driven purge.
-No production application deployment, subscription, or release flag was changed.
+The production Worker was deployed with the inactive portability code and active
+public-media route. No subscription was changed and all portability/closure flags
+remain false.
 Reviewed production changes now comprise one accounting identity control row, one
 backup-bucket lifecycle rule, migrations 0108-0110, 26 R2 ownership rows, 18 KV
 ownership rows, three inventory reviews, 441 inert closure barrier triggers, and
 three private portability buckets. Temporary exports have a seven-day provider
 lifecycle; the independent authority/closure/completion prefixes are indefinitely
-locked. The application bindings are configured locally but have not been deployed.
+locked. The application bindings and public-media delivery configuration are deployed.
 
 The private hosted staging drill passed export, verified download, consent, book
 freeze, authorization, purge, restore denial, suppression replay, and repeatable
