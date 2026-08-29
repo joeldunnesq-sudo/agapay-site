@@ -40,9 +40,23 @@ export async function handleParishPortability(request, env, parishId, suffix = '
     const token = getBearerToken(request);
     if (!token) return reply({ error: 'Unauthorized' }, 401);
     const actorHash = await actorFingerprint(token);
-    // Read directly during closure: normal parish lookup intentionally denies access.
-    const row = env.AGAPAY_DB ? await env.AGAPAY_DB.prepare('SELECT data FROM registrations WHERE parish_id=? ORDER BY updated_at DESC LIMIT 1').bind(parishId).first() : null;
-    const registration = row ? JSON.parse(row.data) : (await findRegistrationByParishId(env, parishId))?.registration;
+    // Use the same authoritative record selection as the rest of the parish
+    // dashboard while the parish is active. A parish can have historical rows
+    // with the same parish_id, and authenticating against a different row would
+    // reject an otherwise valid dashboard session.
+    const found = await findRegistrationByParishId(env, parishId);
+    let registration = found?.registration || null;
+    if (!registration && env.AGAPAY_DB) {
+      // During closure the normal lookup intentionally denies access. Read the
+      // record directly so the original bearer can retrieve its status receipt,
+      // using the same deterministic ordering as findRegistrationByParishId.
+      const row = await env.AGAPAY_DB.prepare(`SELECT data FROM registrations
+        WHERE parish_id=?
+        ORDER BY COALESCE(json_extract(data, '$.updatedAt'), updated_at, received_at) DESC,
+          updated_at DESC, reference DESC
+        LIMIT 1`).bind(parishId).first();
+      registration = row ? JSON.parse(row.data) : null;
+    }
     const session = registration ? await resolveParishDashboardSession(registration, token) : null;
     const item = suffix.match(/^\/([a-f0-9-]{36})(?:\/(download|confirm|cancel|retry|receipt))?$/);
     if (!session) {

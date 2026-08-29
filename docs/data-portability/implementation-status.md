@@ -40,6 +40,7 @@ and require an operator-assisted full export.
 | Recovery | Checkpoints support retry after partial cleanup. Ambiguous uploads retain a durable fence. Operator-only reconciliation handles file ownership, interrupted file operations, and abandoned unconfirmed preparation. Confirmed closure cannot be undone by cancellation. |
 | Real provider restore | A hash-locked operator exported the live central and St. Fiacre accounting D1 databases into fixed unbound scratch databases, restored all 26 production file objects (24,828,438 bytes) into private scratch R2, and restored all 35 current legacy KV keys. Central validation, exact accounting schema/ledger fingerprints, every file/KV body hash, and a second source-stability inventory passed. All scratch resources and local SQL copies were deleted with provider readback; production was read-only. |
 | Public media | The registry-owned Worker route is deployed and returns `no-store`. Three historical D1/KV URLs were rewritten with guarded hash/readback checks. All three r2.dev origins are disabled, with zero custom domains, and the disabled-origin attestation is configured. |
+| Browser safety gate | A repeatable local Playwright gate now exercises the real parish portability and privileged-MFA clients. It proves a 428 step-up opens the MFA flow and resumes the original request, active billing rejects the final-export request, and an ordinary ZIP download never calls closure confirmation. It uses synthetic credentials and data only. |
 
 The accounting books and retained financial/legal rows are **not physically erased**
 by this flow. They are disclosed retention exceptions. Active legal holds block
@@ -164,8 +165,13 @@ The following checks passed in this update:
 - Wrangler deployment dry run (bundle only; no deployment)
 - Syntax checks and git diff --check
 
-The earlier synthetic browser test covered opening the panel, queueing an export,
-and downloading it. This update did not run a production or browser-driven purge.
+The repeatable synthetic browser gate covers opening the panel, completing fresh
+MFA, rejecting a final export while billing is active, queueing an ordinary export,
+and downloading it without invoking closure confirmation. It also guards the
+client-side checksum and explicit-confirmation wiring in CI's static release checks.
+The production panel exposed and now has a regression fix for duplicate parish rows
+being selected differently by the dashboard and portability authentication paths.
+This update did not run a production or browser-driven purge.
 The production Worker was deployed with the inactive portability code and active
 public-media route. No subscription was changed and all portability/closure flags
 remain false.
