@@ -86,7 +86,7 @@ assert.match(bootstrap, /memberships\/invitations/);
 assert.match(bootstrap, /identity\/invitations/);
 assert.match(bootstrap, /["']X-AGAPAY-User-Email["']/);
 assert.match(bootstrap, /membership\.status === ["']active["']/);
-assert.match(workflow, /upload-artifact@v4/);
+assert.match(workflow, /upload-artifact@v7/);
 assert.match(smoke, /ACCOUNTING_READ_SMOKE_PATHS|readAccountingSections/);
 assert.match(signoff, /Physical check-stock verification/);
 assert.match(signoff, /not complete/i);
