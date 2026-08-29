@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import path from 'node:path';
 import { POLICY_VERSION } from '../src/portability/catalog.js';
-import { RETENTION_DISCLOSURE_VERSION } from '../src/portability/closure.js';
+import { RETENTION_DISCLOSURE_VERSION } from '../src/portability/policy.js';
 import { sha256, utf8 } from '../src/portability/archive.js';
 import { startExport, processExport, getJob, confirmClosure, runPortabilityJobs } from '../src/portability/service.js';
 import { protectFileStorage } from '../src/portability/storage.js';

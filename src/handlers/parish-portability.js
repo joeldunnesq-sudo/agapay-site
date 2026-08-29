@@ -2,7 +2,8 @@ import { getBearerToken, json, rateLimit, resolveParishDashboardSession } from '
 import { findRegistrationByParishId } from './parish.js';
 import { stripeGetRequest } from '../lib/stripe-connect.js';
 import { POLICY_VERSION, PortabilityError } from '../portability/catalog.js';
-import { closureReadiness, retentionDisclosure } from '../portability/closure.js';
+import { closureReadiness } from '../portability/closure.js';
+import { retentionDisclosure } from '../portability/policy.js';
 import { actorFingerprint, cancelExport, confirmClosure, downloadExport, getJob, jobReceipt, publicJob, requirePortability, retryExport, startExport, JOB_SELECTION } from '../portability/service.js';
 
 const headers = { 'Cache-Control': 'private, no-store', Vary: 'Authorization', 'X-Robots-Tag': 'noindex, nofollow', 'X-Content-Type-Options': 'nosniff' };

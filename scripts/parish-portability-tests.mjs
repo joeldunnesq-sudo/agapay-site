@@ -9,7 +9,8 @@ import { createZip, sha256, utf8 } from '../src/portability/archive.js';
 import { collectParishExport } from '../src/portability/export.js';
 import { classifyLegacyRecord, collectLegacyRecords } from '../src/portability/legacy.js';
 import { collectAccountingRecords } from '../src/portability/accounting.js';
-import { barrierStatements, closureReadiness, retentionDisclosure, RETENTION_DISCLOSURE_VERSION } from '../src/portability/closure.js';
+import { barrierStatements, closureReadiness } from '../src/portability/closure.js';
+import { retentionDisclosure, RETENTION_DISCLOSURE_VERSION } from '../src/portability/policy.js';
 import { actorFingerprint, startExport, processExport, confirmClosure, getJob, downloadExport, retryExport, cancelExport, runPortabilityJobs } from '../src/portability/service.js';
 import { handleParishPortability } from '../src/handlers/parish-portability.js';
 import { protectFileStorage, inventoryParishObjects, assertStorageDrained } from '../src/portability/storage.js';
@@ -25,6 +26,9 @@ assert.ok(retentionDisclosureDraft.includes(`**Disclosure version:** \`${RETENTI
 assert.match(retentionDisclosureDraft, /Status:\*\* Draft pending formal approval/);
 assert.match(retentionDisclosureDraft, /does not authorize production deletion/);
 for (const section of retentionDisclosure({}).sections) assert.ok(retentionDisclosureDraft.includes(`### ${section.title}`), `review document must contain the ${section.key} section`);
+const installedBarriers = readFileSync(new URL('../docs/data-portability/install-write-barriers.sql', import.meta.url), 'utf8').replaceAll('\r\n', '\n');
+const generatedBarriers = '-- Install only after migration 0109 and schema/retention review.\n-- These triggers enforce closure tombstones even when the web feature is disabled.\n' + barrierStatements().join('\n') + '\n';
+assert.equal(installedBarriers, generatedBarriers, 'checked-in closure barriers must match the runtime generator');
 
 function memoryBucket() {
   const objects = new Map();

@@ -13,6 +13,8 @@ Confirmation is split into consent, book-freeze, and authorization phases; the
 largest hosted phase used 697 of the enforced 800-operation work budget. See
 [Staging release review](staging-release-review.md) for current evidence and the
 next required engineering work. A green regression suite is not release approval.
+For module ownership, state transitions, read-only triage, and the test ladder,
+see the [portability debugging guide](debugging-guide.md).
 
 ## Available behavior
 

@@ -8,7 +8,7 @@ import { build } from 'esbuild';
 import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
 import { directoryImportFixture } from './directory-import-fixture.mjs';
 import { POLICY_VERSION } from '../src/portability/catalog.js';
-import { RETENTION_DISCLOSURE_VERSION } from '../src/portability/closure.js';
+import { RETENTION_DISCLOSURE_VERSION } from '../src/portability/policy.js';
 
 // Esbuild 0.28 on Windows mis-resolves entry points when absWorkingDir retains
 // the trailing separator returned for a directory file URL.

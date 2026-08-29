@@ -6,7 +6,7 @@ import path from 'node:path';
 import {getPlatformProxy} from 'wrangler';
 import {sha256} from '../src/portability/archive.js';
 import {POLICY_VERSION} from '../src/portability/catalog.js';
-import {RETENTION_DISCLOSURE_VERSION} from '../src/portability/closure.js';
+import {RETENTION_DISCLOSURE_VERSION} from '../src/portability/policy.js';
 
 assert.ok(['--configure','--run'].includes(process.argv[2]),'Use --configure or --run');
 const dir=path.resolve('artifacts/portability-staging');

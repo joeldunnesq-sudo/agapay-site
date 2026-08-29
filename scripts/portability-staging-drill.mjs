@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { getPlatformProxy, unstable_splitSqlQuery } from 'wrangler';
 import { POLICY_VERSION, quoted } from '../src/portability/catalog.js';
-import { RETENTION_DISCLOSURE_VERSION } from '../src/portability/closure.js';
+import { RETENTION_DISCLOSURE_VERSION } from '../src/portability/policy.js';
 import { sha256 } from '../src/portability/archive.js';
 import { protectFileStorage } from '../src/portability/storage.js';
 import { protectLegacyStorage, collectLegacyRecords } from '../src/portability/legacy.js';
