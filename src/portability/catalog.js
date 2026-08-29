@@ -42,6 +42,8 @@ const JOIN_SCOPES = {
   membership_capabilities: ['membership_id', 'parish_memberships', 'id'],
   nonprofit_pricing_documents: ['application_id', 'nonprofit_pricing_applications', 'id'],
   sacrament_baptism_details: ['request_id', 'sacrament_requests', 'id'],
+  sacrament_preparation_request_items: ['request_id', 'sacrament_preparation_request_plans', 'request_id'],
+  sacrament_preparation_template_items: ['template_id', 'sacrament_preparation_templates', 'id'],
   sacrament_wedding_details: ['request_id', 'sacrament_requests', 'id'],
   stewardship_agenda_items: ['annual_meeting_id', 'stewardship_annual_meetings', 'id'],
   stewardship_financial_summaries: ['annual_meeting_id', 'stewardship_annual_meetings', 'id'],

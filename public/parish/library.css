@@ -1,9 +1,10 @@
 .parish-library-admin {
-  width: min(1180px, 100%);
-  max-width: 100%;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
   min-width: 0;
-  margin: 0 auto;
-  padding: 1.5rem 2rem 3rem;
+  margin: 0;
+  padding: 0;
   color: var(--deep, #061522);
   font-family: var(--sans, "DM Sans", sans-serif);
 }
@@ -617,7 +618,7 @@
 @media (max-width: 800px) {
   .parish-library-admin {
     overflow-x: clip;
-    padding: 0.75rem 0.65rem calc(7.25rem + env(safe-area-inset-bottom));
+    padding: 0;
   }
 
   .pl-admin-hero.sw-suite-hero {

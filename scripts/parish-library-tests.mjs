@@ -112,9 +112,15 @@ assert.match(donorScript, /fetch\("\/api\/donor\/library"/);
 assert.match(donorScript, /data-library-pdf/);
 assert.match(adminPage, /id="nav-library"/);
 assert.match(adminPage, /id="tab-library"/);
-assert.match(adminPage, /library\.css\?v=20260825library2/);
+assert.match(adminPage, /library\.css\?v=20260829fullscreen1/);
 assert.match(adminPage, /library\.js\?v=20260825library2/);
 assert.match(handler, /PARISH_LIBRARY_ASSETS|parish-library\/|Parish Library file storage/);
+assert.match(handler, /parts\[0\] === "settings" && request\.method === "GET"/);
+const parishDashboardScript = readFileSync(path.join(root, "public", "parish", "app.js"), "utf8");
+assert.match(parishDashboardScript, /refreshParishLibraryNavigationStatus\(\)/);
+assert.match(parishDashboardScript, /library\/settings/);
+assert.match(parishDashboardScript, /const libraryIncluded = isParishPlusActive\(\)/);
+assert.doesNotMatch(parishDashboardScript, /syncModuleStatusNavigation\('library', sacramentsActive/);
 assert.match(adminScript, /resourceType[\s\S]*PDF document[\s\S]*Article link/);
 assert.match(adminScript, /pl-admin-hero sw-suite-hero/);
 assert.match(adminScript, /pl-admin-metrics/);
@@ -123,6 +129,7 @@ assert.match(adminScript, /pl-admin-library-card[\s\S]*pl-admin-editor-card/, "r
 assert.match(adminStyles, /grid-template-columns:\s*minmax\(0,\s*1\.35fr\)\s+minmax\(310px,\s*0\.75fr\)/);
 assert.match(adminStyles, /@media \(max-width:\s*800px\)[\s\S]*overflow-x:\s*clip/);
 assert.match(adminStyles, /bottom:\s*calc\(5\.25rem \+ env\(safe-area-inset-bottom\)\)/);
+assert.match(adminStyles, /\.parish-library-admin\s*\{[\s\S]*width:\s*100%;[\s\S]*max-width:\s*none;/);
 assert.match(wrangler, /binding = "PARISH_LIBRARY_ASSETS"[\s\S]*bucket_name = "agapay-group-message-assets"/);
 
 console.log("PASS - parish-scoped library resources, private PDFs, staff controls, and adaptive bottom navigation");

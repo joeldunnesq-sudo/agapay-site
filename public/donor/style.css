@@ -7745,6 +7745,59 @@ a.cal-parish-event:focus-visible { outline:3px solid rgba(198,154,57,.3); outlin
 }
 .sac-booked-panel p,
 .sac-link-panel p { margin: 0; line-height: 1.55; }
+.sac-preparation-plan {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 0.9rem;
+  padding: 1rem;
+  border: 1px solid rgba(201, 162, 91, 0.28);
+  border-radius: 14px;
+  background: rgba(255, 253, 248, 0.82);
+}
+.sac-preparation-head { display: flex; justify-content: space-between; gap: 1rem; align-items: start; }
+.sac-preparation-head span {
+  color: var(--gold);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.sac-preparation-head h3 { margin: 0.15rem 0 0; color: var(--ink); font-family: var(--serif); font-size: 1.35rem; }
+.sac-preparation-head > strong { display: grid; place-items: center; min-width: 44px; min-height: 34px; border-radius: 99px; background: var(--ink); color: var(--cream); font-size: 0.78rem; }
+.sac-preparation-progress { height: 7px; overflow: hidden; border-radius: 99px; background: rgba(6,21,34,0.1); }
+.sac-preparation-progress i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--gold), #dab86c); transition: width .2s ease; }
+.sac-preparation-plan > p { margin: 0; color: var(--stone); font-size: 0.86rem; line-height: 1.55; }
+.sac-preparation-canonical, .sac-preparation-scope { padding: 0.75rem; border-left: 3px solid var(--gold); border-radius: 7px; background: rgba(201,162,91,.08); }
+.sac-preparation-canonical { display: grid; gap: .2rem; color: var(--stone); font-size: .82rem; line-height: 1.5; }
+.sac-preparation-canonical strong { color: var(--ink); }
+.sac-preparation-scope { font-size: .76rem !important; }
+.sac-preparation-guides { display: grid; gap: .4rem; padding: .75rem; border: 1px solid rgba(201,162,91,.22); border-radius: 10px; background: #fff; }
+.sac-preparation-guides > strong { color: var(--ink); font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; }
+.sac-preparation-guides a { color: var(--blue); font-size: .84rem; font-weight: 700; }
+.sac-preparation-items { display: grid; gap: .65rem; }
+.sac-preparation-item { display: grid; gap: .65rem; padding: .8rem; border: 1px solid rgba(6,21,34,.1); border-radius: 11px; background: #fff; }
+.sac-preparation-item.is-approved, .sac-preparation-item.is-completed, .sac-preparation-item.is-waived { border-color: rgba(53,116,82,.28); background: rgba(53,116,82,.04); }
+.sac-preparation-item.is-needs_attention { border-color: rgba(167,72,54,.3); background: rgba(167,72,54,.04); }
+.sac-preparation-item-main { display: grid; grid-template-columns: 24px minmax(0,1fr); gap: .6rem; align-items: start; }
+.sac-preparation-item-main input { width: 19px; height: 19px; margin-top: .1rem; accent-color: var(--gold); }
+.sac-preparation-item-mark { display:grid; place-items:center; width:22px; height:22px; border-radius:50%; background:rgba(201,162,91,.12); color:var(--gold); font-weight:800; }
+.sac-preparation-item-main strong { color: var(--ink); font-size: .9rem; }
+.sac-preparation-item-main p { margin: .2rem 0; color: var(--stone); font-size: .8rem; line-height: 1.5; }
+.sac-preparation-item-main small { display:block; margin-top:.35rem; color:#9b493b; font-size:.76rem; }
+.sac-preparation-status { display: inline-flex; margin-top: .25rem; padding: .18rem .42rem; border-radius: 99px; background: rgba(6,21,34,.07); color: var(--stone); font-size: .66rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+.sac-preparation-documents { display: grid; gap: .35rem; padding-left: 1.9rem; }
+.sac-preparation-documents > div { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; font-size: .76rem; }
+.sac-preparation-documents a { color: var(--blue); font-weight: 700; }
+.sac-preparation-documents span { color: var(--stone); text-transform: capitalize; }
+.sac-preparation-documents button { border: 0; background: transparent; color: #9b493b; font-weight: 700; cursor: pointer; }
+.sac-preparation-upload { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .45rem; align-items: center; padding-left: 1.9rem; }
+.sac-preparation-upload input { min-width: 0; color: var(--stone); font-size: .75rem; }
+.sac-preparation-upload small { grid-column: 1 / -1; color: var(--stone); font-size: .68rem; }
+@media (max-width: 560px) {
+  .sac-preparation-plan { padding: .8rem; }
+  .sac-preparation-upload { grid-template-columns: 1fr; padding-left: 0; }
+  .sac-preparation-documents { padding-left: 0; }
+}
 .sac-modal-open { overflow: hidden; }
 .sac-modal {
   position: fixed;

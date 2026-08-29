@@ -151,6 +151,12 @@ bucket_name = "agapay-group-message-assets"
 binding = "TAX_EXEMPTION_DOCS"
 bucket_name = "agapay-tax-exemption-docs"
 
+# Private Wedding and Baptism preparation guides and supporting documents.
+# Never enable r2.dev; every read is authorized and streamed by the Worker.
+[[r2_buckets]]
+binding = "SACRAMENT_DOCUMENTS"
+bucket_name = "agapay-sacrament-documents"
+
 # Private evidence for Stripe nonprofit-pricing applications. This is a
 # separate legal record from sales-tax exemption and must never expose r2.dev.
 [[r2_buckets]]
@@ -280,3 +286,7 @@ bucket_name = "agapay-group-message-assets-staging"
 [[env.staging.r2_buckets]]
 binding = "PARISH_LIBRARY_ASSETS"
 bucket_name = "agapay-group-message-assets-staging"
+
+[[env.staging.r2_buckets]]
+binding = "SACRAMENT_DOCUMENTS"
+bucket_name = "agapay-sacrament-documents-staging"

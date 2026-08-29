@@ -104,6 +104,7 @@ import { storeCommemorationEntry } from "./parish-commemorations.js";
 import { enrichParishGivingOptions } from "./parish-giving-catalog.js";
 import { sacramentTypeLabel } from "./parish-sacraments.js";
 import { syncSacramentRequestToGoogleCalendar } from "../sacraments/google-calendar.js";
+import { attachPreparationToRequests } from "../sacraments/preparation.js";
 
 // src/handlers/donor.js
 // Donor session, dashboard, offerings, commemorations, and password handlers.
@@ -2175,15 +2176,17 @@ function publicWeddingDetails(row) {
 async function attachSacramentDetails(env, row) {
   const base = publicSacramentRequest(row);
   if (!row) return base;
+  let detailed = base;
   if (row.sacrament_type === "baptism" || row.sacrament_type === "chrismation") {
     const detail = await d1First(env, "SELECT * FROM sacrament_baptism_details WHERE request_id = ?", row.id).catch(() => null);
-    return { ...base, baptismDetails: publicBaptismDetails(detail) };
+    detailed = { ...base, baptismDetails: publicBaptismDetails(detail) };
   }
   if (row.sacrament_type === "wedding") {
     const detail = await d1First(env, "SELECT * FROM sacrament_wedding_details WHERE request_id = ?", row.id).catch(() => null);
-    return { ...base, weddingDetails: publicWeddingDetails(detail) };
+    detailed = { ...base, weddingDetails: publicWeddingDetails(detail) };
   }
-  return base;
+  const [prepared] = await attachPreparationToRequests(env, [detailed]);
+  return prepared;
 }
 
 // Batched version for lists -- at most two IN(...) queries total instead of
@@ -2213,7 +2216,7 @@ async function attachSacramentDetailsBatch(env, rows = []) {
     for (const detail of details) weddingDetailsById.set(detail.request_id, detail);
   }
 
-  return rows.map((row) => {
+  const detailedRows = rows.map((row) => {
     const base = publicSacramentRequest(row);
     if (row.sacrament_type === "baptism" || row.sacrament_type === "chrismation") {
       return { ...base, baptismDetails: publicBaptismDetails(baptismDetailsById.get(row.id) || null) };
@@ -2223,6 +2226,7 @@ async function attachSacramentDetailsBatch(env, rows = []) {
     }
     return base;
   });
+  return attachPreparationToRequests(env, detailedRows);
 }
 
 // GET  /api/donor/sacraments        — list the signed-in donor's own requests

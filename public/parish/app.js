@@ -4649,7 +4649,9 @@
       sacBadge.classList.remove('nav-upgrade-badge--active');
     }
     syncModuleStatusNavigation('sacraments', sacramentsActive, sacIsOn);
-    syncModuleStatusNavigation('library', sacramentsActive, Boolean(currentParish?.libraryEnabled));
+    const libraryIncluded = isParishPlusActive();
+    syncTierRequirementNavigation('library', 'Give +', libraryIncluded);
+    syncModuleStatusNavigation('library', libraryIncluded && typeof currentParish?.libraryEnabled === 'boolean', Boolean(currentParish?.libraryEnabled));
     syncModuleStatusNavigation('directory', moduleIncluded('directory'), Boolean(currentParish?.directoryEnabled));
     syncModuleStatusNavigation('communications', moduleIncluded('communications'), Boolean(currentParish?.communicationsEnabled));
   }
@@ -4689,12 +4691,12 @@
   }
 
   function loadParishLibraryAdmin(force = false) {
-    const included = moduleIncluded('sacraments');
-    syncTierRequirementNavigation('library', 'Parish', included);
+    const included = isParishPlusActive();
+    syncTierRequirementNavigation('library', 'Give +', included);
     syncModuleStatusNavigation('library', included, Boolean(currentParish?.libraryEnabled));
     if (!included) {
       const root = document.getElementById('parishLibraryAdmin');
-      if (root) root.innerHTML = '<div class="communications-paywall"><strong>Parish Library is included with Parish.</strong><p>Upgrade to publish documents and trusted links for parishioners in My AGAPAY.</p><button class="btn btn-gold" type="button" onclick="switchTab(\'settings\')">Review Parish tier</button></div>';
+      if (root) root.innerHTML = '<div class="communications-paywall"><strong>Parish Library is included with Give +.</strong><p>Upgrade to publish documents and trusted links for parishioners in My AGAPAY.</p><button class="btn btn-gold" type="button" onclick="switchTab(\'settings\')">Review Give +</button></div>';
       return;
     }
     if (!currentParish?.parishId) return;
@@ -4708,6 +4710,27 @@
         syncModuleStatusNavigation('library', true, currentParish.libraryEnabled);
       }
     });
+  }
+
+  async function refreshParishLibraryNavigationStatus() {
+    const included = isParishPlusActive();
+    syncTierRequirementNavigation('library', 'Give +', included);
+    if (!included || !currentParish?.parishId) {
+      syncModuleStatusNavigation('library', false, false);
+      return;
+    }
+    try {
+      const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/library/settings', {
+        headers: authHeaders(),
+        cache: 'no-store'
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || 'Unable to load Parish Library visibility.');
+      currentParish.libraryEnabled = Boolean(payload.settings?.enabled);
+      syncModuleStatusNavigation('library', true, currentParish.libraryEnabled);
+    } catch {
+      syncModuleStatusNavigation('library', typeof currentParish.libraryEnabled === 'boolean', Boolean(currentParish.libraryEnabled));
+    }
   }
 
   function setCommerceOverviewRange(range) {
@@ -6467,7 +6490,7 @@
   // reuses stewardshipState (already fetched by loadStewardshipPanel) to
   // decide whether to show the upsell or the actual request list, so
   // switching to this tab never needs a second status round-trip.
-  let sacramentsState = { loaded: false, requests: [] };
+  let sacramentsState = { loaded: false, requests: [], preparationTemplates: [], preparationDocumentsConfigured: false };
   let sacramentsGoogleState = { loaded: false, loading: false, configured: false, connections: [] };
   let sacramentsDashboardTab = 'rules';
   let sacramentsPriestIndex = 0;
@@ -6587,7 +6610,12 @@
       const res = await fetch(sacramentsApi(), { headers: authHeaders() });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Unable to load requests.');
-      sacramentsState = { loaded: true, requests: data.requests || [] };
+      sacramentsState = {
+        loaded: true,
+        requests: data.requests || [],
+        preparationTemplates: data.preparationTemplates || [],
+        preparationDocumentsConfigured: Boolean(data.preparationDocumentsConfigured)
+      };
       renderSacramentsPanel();
       setTimeout(() => loadSacramentsAvailability(), 250);
       setTimeout(() => loadSacramentsGoogleStatus(), 350);
@@ -7216,6 +7244,181 @@
     return confirmed >= today && confirmed <= weekAhead;
   }
 
+  function preparationItemEditorRow(item = {}, index = 0) {
+    const type = item.itemType || 'confirmation';
+    return `<div class="sac-prep-editor-item" data-prep-item data-item-id="${escapeAttr(item.id || '')}">
+      <span class="sac-prep-drag-order">${index + 1}</span>
+      <div class="sac-prep-editor-fields">
+        <input class="form-control" data-prep-title value="${escapeAttr(item.title || '')}" placeholder="Preparation step" />
+        <textarea class="form-control" data-prep-description rows="2" placeholder="Clear instructions for the parishioner">${escapeHtml(item.description || '')}</textarea>
+        <div class="sac-prep-editor-options">
+          <select class="form-control" data-prep-type>
+            ${[['information','Guide / information'],['confirmation','Parishioner confirmation'],['document','Document required'],['clergy_review','Clergy review']].map(([value,label]) => `<option value="${value}" ${type === value ? 'selected' : ''}>${label}</option>`).join('')}
+          </select>
+          <label><input type="checkbox" data-prep-required ${item.required !== false ? 'checked' : ''} /> Required</label>
+          <button class="sac-admin-text-btn" type="button" onclick="removePreparationTemplateItem(this)">Remove</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function preparationTemplateEditor(template) {
+    const type = template.sacramentType;
+    const typeLabel = type === 'wedding' ? 'Wedding' : 'Baptism';
+    const guides = template.guides || [];
+    return `<section class="sac-admin-panel sac-prep-template" data-prep-template="${type}">
+      <div class="sac-admin-panel-head">
+        <div><span>Preparation template</span><h2>${typeLabel}</h2></div>
+        <b>v${Number(template.version || 1)}</b>
+      </div>
+      <p class="sac-prep-scope-notice">${escapeHtml(template.requirementsNotice || '')}</p>
+      <div class="sac-prep-template-fields">
+        <label class="sac-admin-wide-field"><span>Title</span><input class="form-control" data-prep-template-title value="${escapeAttr(template.title || '')}" /></label>
+        <label class="sac-admin-wide-field"><span>Introduction</span><textarea class="form-control" data-prep-template-introduction rows="3">${escapeHtml(template.introduction || '')}</textarea></label>
+        <label class="sac-admin-wide-field"><span>Pastoral and canonical guidance</span><textarea class="form-control" data-prep-template-canonical rows="3">${escapeHtml(template.canonicalNote || '')}</textarea><small>State your parish's requirements under clergy direction; avoid implying one universal jurisdictional rule.</small></label>
+      </div>
+      <div class="sac-prep-editor-list" data-prep-item-list>
+        ${(template.items || []).map(preparationItemEditorRow).join('')}
+      </div>
+      <div class="sac-admin-actions">
+        <button class="sac-admin-outline-btn" type="button" onclick="addPreparationTemplateItem('${type}')">Add step</button>
+        <button class="btn btn-gold" type="button" onclick="savePreparationTemplate('${type}', this)">Save ${typeLabel} template</button>
+      </div>
+      <div class="sac-prep-guides">
+        <div class="sac-admin-panel-head"><div><span>Downloads</span><h2>Parish guides and forms</h2></div></div>
+        ${guides.length ? `<div class="sac-prep-guide-list">${guides.map(guide => `<div class="sac-prep-guide-row"><a href="${sacramentsApi('/preparation/documents/' + encodeURIComponent(guide.id) + '?download=1')}" target="_blank" rel="noopener">${escapeHtml(guide.displayName)}</a><span>${Math.max(1, Math.round(Number(guide.fileSize || 0) / 1024))} KB</span><button type="button" class="sac-admin-text-btn" onclick="deletePreparationGuide('${guide.id}')">Remove</button></div>`).join('')}</div>` : '<p class="sac-admin-muted">No preparation guides uploaded yet.</p>'}
+        ${sacramentsState.preparationDocumentsConfigured ? `<form class="sac-prep-upload-form" onsubmit="uploadPreparationGuide(event, '${type}')"><input class="form-control" name="displayName" placeholder="Guide title" required /><input class="form-control" name="document" type="file" accept=".pdf,.jpg,.jpeg,.png" required /><button class="sac-admin-outline-btn" type="submit">Upload guide</button></form>` : '<div class="notice">Private sacrament document storage must be configured before uploading guides.</div>'}
+      </div>
+    </section>`;
+  }
+
+  function renderSacramentsPreparationTemplates() {
+    const templates = sacramentsState.preparationTemplates || [];
+    if (!templates.length) return '<div class="sac-admin-panel sac-admin-empty"><span>Preparation</span><h2>Templates unavailable</h2><p>Apply the Sacrament Preparation database migration, then refresh this page.</p></div>';
+    return `<div class="sac-prep-template-grid">${templates.map(preparationTemplateEditor).join('')}</div>`;
+  }
+
+  function addPreparationTemplateItem(type) {
+    const list = document.querySelector(`[data-prep-template="${type}"] [data-prep-item-list]`);
+    if (!list) return;
+    list.insertAdjacentHTML('beforeend', preparationItemEditorRow({}, list.querySelectorAll('[data-prep-item]').length));
+  }
+
+  function removePreparationTemplateItem(button) {
+    const row = button.closest('[data-prep-item]');
+    const list = row?.parentElement;
+    row?.remove();
+    list?.querySelectorAll('.sac-prep-drag-order').forEach((node, index) => { node.textContent = String(index + 1); });
+  }
+
+  async function savePreparationTemplate(type, button) {
+    const root = document.querySelector(`[data-prep-template="${type}"]`);
+    if (!root) return;
+    const items = [...root.querySelectorAll('[data-prep-item]')].map(row => ({
+      id: row.dataset.itemId || '',
+      title: row.querySelector('[data-prep-title]')?.value || '',
+      description: row.querySelector('[data-prep-description]')?.value || '',
+      itemType: row.querySelector('[data-prep-type]')?.value || 'confirmation',
+      required: Boolean(row.querySelector('[data-prep-required]')?.checked)
+    }));
+    const body = {
+      title: root.querySelector('[data-prep-template-title]')?.value || '',
+      introduction: root.querySelector('[data-prep-template-introduction]')?.value || '',
+      canonicalNote: root.querySelector('[data-prep-template-canonical]')?.value || '',
+      items
+    };
+    try {
+      if (button) button.disabled = true;
+      const res = await fetch(sacramentsApi('/preparation/templates/' + encodeURIComponent(type)), {
+        method: 'PUT', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to save the template.');
+      const index = sacramentsState.preparationTemplates.findIndex(item => item.sacramentType === type);
+      if (index >= 0) sacramentsState.preparationTemplates[index] = data.template;
+      setStatus(`${type === 'wedding' ? 'Wedding' : 'Baptism'} preparation template saved.`, 'success');
+      renderSacramentsPanel();
+    } catch (error) { setStatus(error.message, 'error'); }
+    finally { if (button) button.disabled = false; }
+  }
+
+  async function uploadPreparationGuide(event, type) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector('button[type="submit"]');
+    try {
+      if (button) button.disabled = true;
+      const res = await fetch(sacramentsApi('/preparation/templates/' + encodeURIComponent(type) + '/documents'), {
+        method: 'POST', headers: authHeaders(), body: new FormData(form)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to upload the guide.');
+      sacramentsState.preparationTemplates = data.templates || sacramentsState.preparationTemplates;
+      setStatus('Preparation guide uploaded.', 'success');
+      renderSacramentsPanel();
+    } catch (error) { setStatus(error.message, 'error'); }
+    finally { if (button) button.disabled = false; }
+  }
+
+  async function deletePreparationGuide(documentId) {
+    if (!confirm('Remove this preparation guide?')) return;
+    try {
+      const res = await fetch(sacramentsApi('/preparation/documents/' + encodeURIComponent(documentId)), { method: 'DELETE', headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to remove the guide.');
+      await loadSacramentsPanel(true);
+      setStatus('Preparation guide removed.', 'success');
+    } catch (error) { setStatus(error.message, 'error'); }
+  }
+
+  function renderParishPreparationPlan(row) {
+    const plan = row.preparation;
+    if (!plan) return '';
+    const progress = plan.progress || { completed: 0, total: 0, percent: 0 };
+    return `<details class="sac-prep-request-plan">
+      <summary><span>Preparation</span><strong>${progress.completed}/${progress.total} required steps complete</strong><i style="--progress:${progress.percent}%"></i></summary>
+      <p class="sac-prep-scope-notice">${escapeHtml(plan.requirementsNotice || '')}</p>
+      ${plan.items.map(item => `<article class="sac-prep-review-item is-${escapeAttr(item.status)}">
+        <div><span class="sac-prep-item-status">${escapeHtml(String(item.status || 'pending').replaceAll('_', ' '))}</span><strong>${escapeHtml(item.title)}${item.required ? ' *' : ''}</strong><p>${escapeHtml(item.description || '')}</p>${item.parishionerNote ? `<small>Parishioner note: ${escapeHtml(item.parishionerNote)}</small>` : ''}</div>
+        ${(item.documents || []).length ? `<div class="sac-prep-document-list">${item.documents.map(doc => `<div><a href="${sacramentsApi('/' + encodeURIComponent(row.id) + '/preparation/documents/' + encodeURIComponent(doc.id))}" target="_blank" rel="noopener">${escapeHtml(doc.displayName)}</a><span>${escapeHtml(doc.reviewStatus)}</span><button type="button" onclick="reviewSacramentPreparationDocument('${row.id}','${doc.id}','accepted')">Accept</button><button type="button" onclick="reviewSacramentPreparationDocument('${row.id}','${doc.id}','rejected')">Needs attention</button></div>`).join('')}</div>` : ''}
+        <div class="sac-prep-review-actions">
+          <button type="button" onclick="reviewSacramentPreparationItem('${row.id}','${item.id}','approved')">Approve</button>
+          <button type="button" onclick="reviewSacramentPreparationItem('${row.id}','${item.id}','needs_attention')">Needs attention</button>
+          <button type="button" onclick="reviewSacramentPreparationItem('${row.id}','${item.id}','waived')">Waive</button>
+        </div>
+        ${item.reviewerNote ? `<small>Parish note: ${escapeHtml(item.reviewerNote)}</small>` : ''}
+      </article>`).join('')}
+    </details>`;
+  }
+
+  async function reviewSacramentPreparationItem(requestId, itemId, status) {
+    const reviewerNote = status === 'needs_attention' ? (prompt('What does the parishioner need to correct or provide?') || '') : '';
+    if (status === 'needs_attention' && !reviewerNote) return;
+    try {
+      const res = await fetch(sacramentsApi('/' + encodeURIComponent(requestId) + '/preparation/items/' + encodeURIComponent(itemId)), {
+        method: 'PATCH', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ status, reviewerNote })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to review the step.');
+      await loadSacramentsPanel(true);
+      setStatus('Preparation step updated.', 'success');
+    } catch (error) { setStatus(error.message, 'error'); }
+  }
+
+  async function reviewSacramentPreparationDocument(requestId, documentId, reviewStatus) {
+    const reviewerNote = reviewStatus === 'rejected' ? (prompt('What needs attention in this document?') || '') : '';
+    if (reviewStatus === 'rejected' && !reviewerNote) return;
+    try {
+      const res = await fetch(sacramentsApi('/' + encodeURIComponent(requestId) + '/preparation/documents/' + encodeURIComponent(documentId)), {
+        method: 'PATCH', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ reviewStatus, reviewerNote })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to review the document.');
+      await loadSacramentsPanel(true);
+      setStatus('Document review saved.', 'success');
+    } catch (error) { setStatus(error.message, 'error'); }
+  }
+
   function renderSacramentsPanel() {
     const pane = document.getElementById('sacramentsPane');
     if (!pane) return;
@@ -7232,6 +7435,10 @@
     }
     if (sacramentsDashboardTab === 'rules') {
       pane.innerHTML = renderSacramentsRules();
+      return;
+    }
+    if (sacramentsDashboardTab === 'preparation') {
+      pane.innerHTML = renderSacramentsPreparationTemplates();
       return;
     }
     if (sacramentsDashboardTab === 'calendar') {
@@ -7310,6 +7517,7 @@
           ${requested ? `<span><strong>Requested:</strong> ${escapeHtml(requested)}</span>` : ''}
           ${row.locationAddress ? `<span><strong>Location:</strong> ${escapeHtml(row.locationAddress)}</span>` : ''}
           ${row.notes ? `<span><strong>Notes:</strong> ${escapeHtml(row.notes)}</span>` : ''}
+          ${renderParishPreparationPlan(row)}
         </div>
         <div class="sac-admin-request-editor" id="saceditor-${row.id}" hidden>
           <div class="sac-admin-form-grid">
@@ -8886,7 +9094,8 @@
       currentParish = data.parish;
       await Promise.all([
         refreshSubscriptionStatus({ quiet: true }),
-        refreshStripeStatus({ quiet: true })
+        refreshStripeStatus({ quiet: true }),
+        refreshParishLibraryNavigationStatus()
       ]);
       bookstoreCatalogState = { loaded: false, products: [], lowStockProducts: [], countSessions: [], starterCatalog: [] };
       bookstoreLowStockOnly = false;

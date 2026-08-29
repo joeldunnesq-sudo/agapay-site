@@ -36,6 +36,7 @@ import {
   weekWindow,
 } from "./parish-commemorations.js";
 import { syncSacramentRequestToGoogleCalendar } from "../sacraments/google-calendar.js";
+import { attachPreparationToRequests, loadPreparationTemplates } from "../sacraments/preparation.js";
 
 // POST /api/admin/sacraments/enabled
 // Body: { parishId: string, enabled: boolean }
@@ -116,15 +117,17 @@ function publicWeddingDetails(row) {
 async function attachSacramentDetailsForParish(env, row) {
   const base = parishSacramentRequestRow(row);
   if (!row) return base;
+  let detailed = base;
   if (row.sacrament_type === "baptism" || row.sacrament_type === "chrismation") {
     const detail = await d1First(env, "SELECT * FROM sacrament_baptism_details WHERE request_id = ?", row.id).catch(() => null);
-    return { ...base, baptismDetails: publicBaptismDetails(detail) };
+    detailed = { ...base, baptismDetails: publicBaptismDetails(detail) };
   }
   if (row.sacrament_type === "wedding") {
     const detail = await d1First(env, "SELECT * FROM sacrament_wedding_details WHERE request_id = ?", row.id).catch(() => null);
-    return { ...base, weddingDetails: publicWeddingDetails(detail) };
+    detailed = { ...base, weddingDetails: publicWeddingDetails(detail) };
   }
-  return base;
+  const [prepared] = await attachPreparationToRequests(env, [detailed]);
+  return prepared;
 }
 
 // Batched version of attachSacramentDetailsForParish for lists -- fetches
@@ -156,7 +159,7 @@ async function attachSacramentDetailsForParishBatch(env, rows = []) {
     for (const detail of details) weddingDetailsById.set(detail.request_id, detail);
   }
 
-  return rows.map((row) => {
+  const detailedRows = rows.map((row) => {
     const base = parishSacramentRequestRow(row);
     if (row.sacrament_type === "baptism" || row.sacrament_type === "chrismation") {
       return { ...base, baptismDetails: publicBaptismDetails(baptismDetailsById.get(row.id) || null) };
@@ -166,11 +169,13 @@ async function attachSacramentDetailsForParishBatch(env, rows = []) {
     }
     return base;
   });
+  return attachPreparationToRequests(env, detailedRows);
 }
 
 function parishSacramentRequestRow(row = {}) {
   return {
     id: row.id,
+    parishId: row.parish_id,
     donorEmail: row.donor_email,
     sacramentType: row.sacrament_type,
     otherTypeLabel: row.other_type_label || "",
@@ -234,7 +239,13 @@ export async function handleParishSacraments(request, env, parishId) {
   }
 
   const requestsWithDetails = await attachSacramentDetailsForParishBatch(env, rows || []);
-  return json({ ok: true, requests: requestsWithDetails });
+  const preparationTemplates = await loadPreparationTemplates(env, parishId);
+  return json({
+    ok: true,
+    requests: requestsWithDetails,
+    preparationTemplates,
+    preparationDocumentsConfigured: Boolean(env.SACRAMENT_DOCUMENTS)
+  });
 }
 
 // PATCH /api/parish/dashboard/:parishId/sacraments/:requestId

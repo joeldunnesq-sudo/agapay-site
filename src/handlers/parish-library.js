@@ -256,6 +256,9 @@ export async function handleParishLibrary(request, env, parishId, subpath = "") 
       const resource = await createParishLibraryResource(db, { parishId, createdBy, input: await request.json() });
       return json({ ok: true, resource }, { status: 201 });
     }
+    if (parts.length === 1 && parts[0] === "settings" && request.method === "GET") {
+      return json({ ok: true, settings: await getParishLibrarySettings(db, parishId) });
+    }
     if (parts.length === 1 && parts[0] === "settings" && request.method === "PATCH") {
       const input = await request.json();
       return json({ ok: true, settings: await setParishLibraryEnabled(db, { parishId, enabled: Boolean(input.enabled), updatedBy: createdBy }) });

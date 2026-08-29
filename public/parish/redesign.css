@@ -1106,7 +1106,7 @@
   margin-bottom: 14px; padding:24px 26px; border:1px solid rgba(232,200,121,.22); border-radius:10px;
   background:#061522; box-shadow:0 12px 28px rgba(6,21,34,.14);
 }
-.pdx-dir-print-sheet { width:min(1180px,100%); margin:32px auto 0; padding:0 24px 40px; }
+.pdx-dir-print-sheet { box-sizing:border-box; width:100%; max-width:none; margin:0; padding:0; }
 .pdx-dir-canonical-kicker { display:block; margin-bottom:7px; color:#e8c879; font-size:10px; font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
 .pdx-dir-canonical-head h1 { margin: 0; color: var(--cream); font: 600 34px/1.05 var(--serif); }
 .pdx-dir-canonical-head p { max-width:690px; margin: 7px 0 0; color: rgba(246,241,232,.72); font-size: 13px; line-height:1.5; }

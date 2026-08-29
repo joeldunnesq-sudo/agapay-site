@@ -10,6 +10,7 @@ const FILE_COLUMNS = {
   directory_media_variants: ['DIRECTORY_MEDIA', 'r2_object_key'],
   directory_ministries: ['GROUP_MESSAGE_ASSETS', 'image_storage_key'],
   parish_library_resources: ['PARISH_LIBRARY_ASSETS', 'object_key'],
+  sacrament_preparation_documents: ['SACRAMENT_DOCUMENTS', 'storage_key'],
   koinonia_exchange_photos: ['GROUP_MESSAGE_ASSETS', 'storage_key'],
   tax_exemption_documents: ['TAX_EXEMPTION_DOCS', 'storage_key'],
   nonprofit_pricing_documents: ['NONPROFIT_PRICING_DOCS', 'storage_key'],

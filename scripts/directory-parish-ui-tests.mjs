@@ -58,7 +58,7 @@ const checks = [
   ['the Directory bypasses the stale empty dashboard wrapper', app.includes("classList.toggle('directory-tab-active'") && css.includes('.content.directory-tab-active > .detail-wrap { display: none; }') && css.includes('.app.directory-tab-active > .sidebar { display: none; }')],
   ['AGAPAY navy and gold style the actions', css.includes('background:#061522') && css.includes('var(--gold)')],
   ['AGAPAY serif and sans typography are used', css.includes('var(--serif)') && css.includes('var(--sans)')],
-  ['prototype print sheet width and flat table are preserved', css.includes('width:min(1180px,100%)') && css.includes('box-shadow:none')],
+  ['the directory fills the available feature-page width while keeping its flat table', css.includes('.pdx-dir-print-sheet { box-sizing:border-box; width:100%; max-width:none;') && css.includes('box-shadow:none')],
   ['initials medallions retain true centering', css.includes('.pdx-dir-table-avatar { display:grid; place-items:center;') && css.includes('.pdx-dir-table-household > div > span')],
   ['Parish Directory hero uses the signature AGAPAY navy', css.includes('.pdx-dir-canonical-head {') && css.includes('background:#061522') && css.includes('color: var(--cream)')]
 ];

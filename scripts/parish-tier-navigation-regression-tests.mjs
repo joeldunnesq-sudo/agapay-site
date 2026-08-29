@@ -28,16 +28,22 @@ assert.match(app, /const parishOrder = \['sacraments', 'directory', 'library', '
 assert.match(app, /parishOrder\.forEach[\s\S]*parishGroup\.appendChild\(item\)[\s\S]*sidebar\.appendChild\(parishGroup\)/, "runtime ordering must keep all Parish items inside the labeled group");
 
 assert.match(dashboard, /<body class="dashboard-booting">[\s\S]*id="dashboardBootScreen"[\s\S]*<div class="app">/, "the gated dashboard must start behind a dedicated loading screen");
-assert.ok(dashboard.includes('/parish/style.css?v=20260817centralemail1') && dashboard.includes('/parish/redesign.css?v=20260825fundtransfers1') && dashboard.includes('/parish/app.js?v=20260828portability1') && dashboard.includes('/styles/stewardship.css?v=20260806standalonetabs1'), "the loading-state assets must use the current cache versions");
+assert.ok(dashboard.includes('/parish/style.css?v=20260817centralemail1') && dashboard.includes('/parish/redesign.css?v=20260829fullscreen1') && dashboard.includes('/parish/library.css?v=20260829fullscreen1') && dashboard.includes('/parish/app.js?v=20260829fullscreen1') && dashboard.includes('/styles/stewardship.css?v=20260829fullscreen1'), "the loading-state assets must use the current cache versions");
 assert.ok(
   app.includes("content?.classList.toggle('standalone-tab-active', panel?.parentElement === content)")
     && /\.content\.standalone-tab-active > \.detail-wrap\s*\{\s*display:\s*none;\s*\}/.test(stewardshipCss),
   "direct-child Parish tier panels must remove the empty standard tab spacer before their hero"
 );
+assert.ok(
+  stewardshipCss.includes('#tab-directory.parish-tier-panel.active')
+    && stewardshipCss.includes('#tab-library.parish-tier-panel.active')
+    && stewardshipCss.includes('#tab-library .parish-library-admin'),
+  "Directory and Parish Library must use the shared full-width feature-page frame"
+);
 assert.match(style, /body\.dashboard-booting \.app \{ visibility: hidden; \}/, "the dashboard shell must stay hidden until parish entitlements are rendered");
 assert.match(style, /body\.dashboard-refreshing::before/, "an in-place refresh must use a progress indicator without hiding the loaded dashboard");
 assert.match(app, /const initialLoad = !currentParish/, "dashboard loading must distinguish first load from refresh");
 assert.match(app, /renderDashboard\(\);\s*if \(initialLoad\) finishDashboardBoot\(\);/, "the dashboard must become visible only after the entitlement-aware render completes");
-assert.match(app, /await Promise\.all\(\[\s*refreshSubscriptionStatus[\s\S]*refreshStripeStatus/, "independent status refreshes should run concurrently to reduce startup time");
+assert.match(app, /await Promise\.all\(\[\s*refreshSubscriptionStatus[\s\S]*refreshStripeStatus[\s\S]*refreshParishLibraryNavigationStatus/, "independent status refreshes should run concurrently to reduce startup time");
 
 console.log("PASS - Parish navigation keeps its tier order and does not flash gated features before entitlements load");

@@ -2001,6 +2001,66 @@
   outline: 3px solid rgba(184,144,47,0.3);
   outline-offset: 2px;
 }
+.sac-prep-template-grid { display: grid; gap: 1rem; }
+.sac-prep-template { display: grid; gap: 1rem; }
+.sac-prep-scope-notice {
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border-left: 3px solid var(--gold);
+  border-radius: 6px;
+  background: rgba(184,144,47,0.08);
+  color: var(--stone);
+  font: 500 12px/1.55 var(--sans);
+}
+.sac-prep-template-fields { display: grid; gap: 0.75rem; }
+.sac-prep-template-fields label { display: grid; gap: 0.35rem; }
+.sac-prep-template-fields small { color: var(--stone); font: 500 11px/1.45 var(--sans); }
+.sac-prep-editor-list { display: grid; gap: 0.6rem; }
+.sac-prep-editor-item {
+  display: grid;
+  grid-template-columns: 28px minmax(0,1fr);
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid var(--sac-line);
+  border-radius: 9px;
+  background: #fff;
+}
+.sac-prep-drag-order {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--deep);
+  color: var(--cream);
+  font: 800 11px var(--sans);
+}
+.sac-prep-editor-fields { display: grid; gap: 0.5rem; }
+.sac-prep-editor-options { display: flex; flex-wrap: wrap; align-items: center; gap: 0.55rem; }
+.sac-prep-editor-options select { width: min(250px,100%); }
+.sac-prep-editor-options label { color: var(--stone); font: 700 12px var(--sans); }
+.sac-prep-guides { display: grid; gap: 0.65rem; padding-top: 0.8rem; border-top: 1px solid var(--sac-line); }
+.sac-prep-guide-list { display: grid; gap: 0.4rem; }
+.sac-prep-guide-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.65rem; padding: 0.55rem 0.7rem; border: 1px solid var(--sac-line); border-radius: 7px; background:#fff; }
+.sac-prep-guide-row a { color: var(--deep); font: 700 12px var(--sans); }
+.sac-prep-guide-row span { color: var(--stone); font: 600 11px var(--sans); }
+.sac-prep-upload-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.55rem; align-items: end; }
+.sac-prep-request-plan { width: 100%; margin-top: 0.4rem; padding: 0.7rem; border: 1px solid var(--sac-line); border-radius: 9px; background: #faf8f3; }
+.sac-prep-request-plan summary { display: grid; grid-template-columns: auto 1fr; gap: 0.3rem 0.75rem; cursor: pointer; color: var(--deep); }
+.sac-prep-request-plan summary span { color: #8a6317; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.sac-prep-request-plan summary i { grid-column: 1 / -1; height: 5px; overflow: hidden; border-radius: 99px; background: rgba(6,21,34,.09); }
+.sac-prep-request-plan summary i::after { content:""; display:block; width:var(--progress); height:100%; background:var(--gold); }
+.sac-prep-review-item { display:grid; gap:.5rem; margin-top:.65rem; padding:.75rem; border:1px solid var(--sac-line); border-radius:8px; background:#fff; }
+.sac-prep-review-item p { margin:.2rem 0 0; }
+.sac-prep-item-status { float:right; padding:.18rem .4rem; border-radius:99px; background:rgba(6,21,34,.06); text-transform:capitalize; }
+.sac-prep-review-actions, .sac-prep-document-list > div { display:flex; flex-wrap:wrap; align-items:center; gap:.4rem; }
+.sac-prep-review-actions button, .sac-prep-document-list button { padding:.3rem .5rem; border:1px solid var(--sac-line); border-radius:5px; background:#fff; color:var(--deep); font:700 11px var(--sans); cursor:pointer; }
+.sac-prep-document-list { display:grid; gap:.35rem; }
+.sac-prep-document-list a { color:var(--deep); font-weight:700; }
+@media (max-width: 760px) {
+  .sac-prep-upload-form { grid-template-columns: 1fr; }
+  .sac-prep-editor-options { align-items: stretch; flex-direction: column; }
+}
 .sac-admin-workspace { gap: 1rem; }
 .sac-admin-panel {
   padding: 1.15rem;
@@ -2891,6 +2951,7 @@
 
 .content > #tab-sacraments.parish-tier-panel.active,
 .content > #tab-directory.parish-tier-panel.active,
+.content > #tab-library.parish-tier-panel.active,
 .content > #tab-communications.parish-tier-panel.active,
 .content > #tab-accounting.parish-tier-panel.active,
 .content > #tab-text.parish-tier-panel.active {
@@ -2906,6 +2967,7 @@
 
 #tab-sacraments .sac-admin-shell,
 #tab-directory .pdx-dir-workspace,
+#tab-library .parish-library-admin,
 #tab-communications .koinonia-studio,
 #tab-accounting .acct-workspace,
 #tab-text > * {
@@ -2919,6 +2981,7 @@
 @media (max-width: 720px) {
   .content > #tab-sacraments.parish-tier-panel.active,
   .content > #tab-directory.parish-tier-panel.active,
+  .content > #tab-library.parish-tier-panel.active,
   .content > #tab-communications.parish-tier-panel.active,
   .content > #tab-accounting.parish-tier-panel.active,
   .content > #tab-text.parish-tier-panel.active {

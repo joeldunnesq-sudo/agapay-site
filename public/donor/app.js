@@ -4338,9 +4338,95 @@ function sacramentCommonFields(card) {
   </div>`;
 }
 
+function donorFormDataHeaders() {
+  const headers = new Headers(donorAuthHeaders());
+  headers.delete("Content-Type");
+  return headers;
+}
+
+function sacramentPreparationStatusLabel(status) {
+  return {
+    pending: "To do", completed: "Complete", submitted: "Submitted",
+    approved: "Approved", needs_attention: "Needs attention", waived: "Waived"
+  }[status] || String(status || "To do").replaceAll("_", " ");
+}
+
+function renderDonorSacramentPreparation(request) {
+  const plan = request?.preparation;
+  if (!plan) return "";
+  const progress = plan.progress || { completed: 0, total: 0, percent: 0, complete: false };
+  const editable = ["requested", "acknowledged", "scheduled"].includes(request.status);
+  const documentUrl = (id, download = false) => `/api/donor/sacraments/${encodeURIComponent(request.id)}/preparation/documents/${encodeURIComponent(id)}${download ? "?download=1" : ""}`;
+  return `<section class="sac-preparation-plan" aria-label="${escapeHtml(plan.title || "Preparation checklist")}">
+    <header class="sac-preparation-head">
+      <div><span>Preparation checklist</span><h3>${escapeHtml(plan.title || "Preparation")}</h3></div>
+      <strong>${progress.completed}/${progress.total}</strong>
+    </header>
+    <div class="sac-preparation-progress" aria-label="${progress.percent}% complete"><i style="width:${progress.percent}%"></i></div>
+    ${plan.introduction ? `<p>${escapeHtml(plan.introduction)}</p>` : ""}
+    ${plan.canonicalNote ? `<div class="sac-preparation-canonical"><strong>Pastoral guidance</strong><span>${escapeHtml(plan.canonicalNote)}</span></div>` : ""}
+    <p class="sac-preparation-scope">${escapeHtml(plan.requirementsNotice || "")}</p>
+    ${(plan.guides || []).length ? `<div class="sac-preparation-guides"><strong>Guides and forms</strong>${plan.guides.map(guide => `<a href="${documentUrl(guide.id, true)}">${escapeHtml(guide.displayName)}</a>`).join("")}</div>` : ""}
+    <div class="sac-preparation-items">
+      ${(plan.items || []).map(item => {
+        const done = ["completed", "approved", "waived"].includes(item.status);
+        const canCheck = editable && ["information", "confirmation"].includes(item.itemType);
+        const documents = item.documents || [];
+        return `<article class="sac-preparation-item is-${escapeHtml(item.status)}">
+          <div class="sac-preparation-item-main">
+            ${["information", "confirmation"].includes(item.itemType) ? `<input type="checkbox" ${done ? "checked" : ""} ${canCheck ? "" : "disabled"} aria-label="Mark ${escapeHtml(item.title)} complete" onchange="updateSacramentPreparationItem('${request.id}','${item.id}',this.checked)" />` : `<span class="sac-preparation-item-mark" aria-hidden="true">${item.itemType === "document" ? "↥" : "✦"}</span>`}
+            <div><strong>${escapeHtml(item.title)}${item.required ? " *" : ""}</strong><p>${escapeHtml(item.description || "")}</p><span class="sac-preparation-status">${escapeHtml(sacramentPreparationStatusLabel(item.status))}</span>${item.reviewerNote ? `<small>${escapeHtml(item.reviewerNote)}</small>` : ""}</div>
+          </div>
+          ${documents.length ? `<div class="sac-preparation-documents">${documents.map(doc => `<div><a href="${documentUrl(doc.id)}" target="_blank" rel="noopener">${escapeHtml(doc.displayName)}</a><span>${escapeHtml(doc.reviewStatus === "rejected" ? "Needs attention" : doc.reviewStatus)}</span>${editable && doc.uploadedByType === "donor" && doc.reviewStatus !== "accepted" ? `<button type="button" onclick="deleteSacramentPreparationDocument('${request.id}','${doc.id}')">Remove</button>` : ""}</div>`).join("")}</div>` : ""}
+          ${editable && item.itemType === "document" ? `<form class="sac-preparation-upload" onsubmit="uploadSacramentPreparationDocument(event,'${request.id}','${item.id}')"><input name="document" type="file" accept=".pdf,.jpg,.jpeg,.png" required /><button class="btn btn-ghost btn-sm" type="submit">Upload document</button><small>PDF, JPG, or PNG · up to 10 MB</small></form>` : ""}
+        </article>`;
+      }).join("")}
+    </div>
+  </section>`;
+}
+
+async function updateSacramentPreparationItem(requestId, itemId, completed) {
+  try {
+    setDonorStatus("Saving preparation progress...");
+    await donorApi(`/api/donor/sacraments/${encodeURIComponent(requestId)}/preparation/items/${encodeURIComponent(itemId)}`, {
+      method: "PATCH", body: JSON.stringify({ completed })
+    });
+    setDonorStatus("Preparation progress saved.", "success");
+    await loadDonorSacramentsPage();
+  } catch (error) {
+    setDonorStatus(error.message, "error");
+    await loadDonorSacramentsPage();
+  }
+}
+
+async function uploadSacramentPreparationDocument(event, requestId, itemId) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector('button[type="submit"]');
+  try {
+    if (button) { button.disabled = true; button.textContent = "Uploading..."; }
+    setDonorStatus("Uploading securely...");
+    await donorApi(`/api/donor/sacraments/${encodeURIComponent(requestId)}/preparation/items/${encodeURIComponent(itemId)}/documents`, {
+      method: "POST", headers: donorFormDataHeaders(), body: new FormData(form)
+    });
+    setDonorStatus("Document submitted to your parish.", "success");
+    await loadDonorSacramentsPage();
+  } catch (error) { setDonorStatus(error.message, "error"); }
+  finally { if (button) { button.disabled = false; button.textContent = "Upload document"; } }
+}
+
+async function deleteSacramentPreparationDocument(requestId, documentId) {
+  if (!confirm("Remove this submitted document?")) return;
+  try {
+    await donorApi(`/api/donor/sacraments/${encodeURIComponent(requestId)}/preparation/documents/${encodeURIComponent(documentId)}`, { method: "DELETE" });
+    setDonorStatus("Document removed.", "success");
+    await loadDonorSacramentsPage();
+  } catch (error) { setDonorStatus(error.message, "error"); }
+}
+
 function renderRequestFormForCard(card) {
   const existing = sacramentPrimaryRequest(card.type);
-  if (existing) return `<div class="sac-booked-panel"><strong>Request sent — ${escapeHtml(sacramentSummary(existing))}</strong><p>Your parish will review and follow up.</p><button class="btn btn-ghost btn-sm" type="button" onclick="cancelSacramentRequest('${existing.id}', this)">Change</button></div>`;
+  if (existing) return `<div class="sac-booked-panel"><strong>Request sent — ${escapeHtml(sacramentSummary(existing))}</strong><p>Your parish will review and follow up.</p><button class="btn btn-ghost btn-sm" type="button" onclick="cancelSacramentRequest('${existing.id}', this)">Change</button></div>${renderDonorSacramentPreparation(existing)}`;
   const requirements = (SAC_REQUIREMENTS[card.type] || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
   const detailFields = card.type === "baptism"
     ? `<div class="form-grid">

@@ -182,6 +182,10 @@ import {
   handleSacramentsGoogleDisconnect,
   handleSacramentsGoogleStatus,
 } from "./sacraments/google-calendar.js";
+import {
+  handleDonorSacramentPreparation,
+  handleParishSacramentPreparation,
+} from "./handlers/sacrament-preparation.js";
 
 import {
   handleDonorClaimCheckout,
@@ -3520,6 +3524,9 @@ export default {
     if (url.pathname === "/api/donor/sacraments/book") {
       return handleDonorSacramentBook(request, env);
     }
+    if (url.pathname.startsWith("/api/donor/sacraments/") && url.pathname.includes("/preparation/")) {
+      return handleDonorSacramentPreparation(request, env, url.pathname.replace("/api/donor/sacraments/", ""));
+    }
     if (url.pathname.startsWith("/api/donor/sacraments/") && url.pathname.endsWith("/cancel")) {
       const requestId = decodeURIComponent(url.pathname.replace("/api/donor/sacraments/", "").replace("/cancel", ""));
       return handleDonorSacramentCancel(request, env, requestId);
@@ -4068,6 +4075,14 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/sacraments/availability/blackouts/")) {
       const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/sacraments/availability/blackouts/");
       return handleParishAvailabilityBlackoutDelete(request, env, decodeURIComponent(parts[0] || ""), decodeURIComponent(parts[1] || ""));
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/sacraments/preparation")) {
+      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/sacraments/");
+      return handleParishSacramentPreparation(request, env, decodeURIComponent(parts[0] || ""), parts.slice(1).join("/sacraments/"));
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/sacraments/") && url.pathname.includes("/preparation/")) {
+      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/sacraments/");
+      return handleParishSacramentPreparation(request, env, decodeURIComponent(parts[0] || ""), parts.slice(1).join("/sacraments/"));
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/sacraments/")) {
       const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/sacraments/");
