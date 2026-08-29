@@ -107,11 +107,12 @@ is implemented at `/api/public/parish-assets/{campaign|announcement|teaching}/..
 it verifies the ownership row and ETag, observes closure fences, supports audio
 ranges, and always returns `no-store`. It is policy-gated and not deployed/enabled.
 
-Deployment order is strict: deploy the inactive route and ownership registry,
-rewrite all central/KV references to the Worker bases, verify every rewritten URL,
-set new uploads to the Worker bases, disable all three r2.dev origins, and read back
-their disabled status. Only then set both public-media policy attestations. Never
-set an attestation while an r2.dev origin or historical reference remains live.
+Deployment order is strict: deploy the inactive route and ownership registry; then
+enable Worker delivery and set new-upload bases while leaving the separate r2.dev-
+disabled attestation unset. Verify Worker delivery, rewrite all central/KV historical
+references, and verify every rewritten URL. Disable all three r2.dev origins and read
+back their disabled status. Only then set the r2.dev-disabled attestation. Worker
+delivery alone never satisfies the closure/cache-disposal gate.
 
 The adapter needs PARISH_ASSET_CACHE_ZONE_ID, a least-privilege
 PARISH_ASSET_CACHE_PURGE_TOKEN secret, and

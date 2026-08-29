@@ -18,12 +18,18 @@ export function publicMediaBase(env, binding) {
   } catch { return ''; }
 }
 
-export function workerPublicMediaVerified(env) {
-  if (env.PARISH_PUBLIC_MEDIA_DELIVERY_ENABLED !== POLICY_VERSION || env.PARISH_R2_DEV_PUBLIC_ACCESS_DISABLED !== POLICY_VERSION) return false;
+export function workerPublicMediaDeliveryEnabled(env) {
+  if (env.PARISH_PUBLIC_MEDIA_DELIVERY_ENABLED !== POLICY_VERSION) return false;
   return Object.values(PUBLIC_MEDIA_BINDINGS).every(binding => {
     const expected = publicMediaBase(env, binding);
     return expected && String(env[binding + '_URL'] || '').replace(/\/+$/, '') === expected;
   });
+}
+
+// Closure/cache disposal may rely on Worker delivery only after the historical
+// public origins have also been disabled and independently attested.
+export function workerPublicMediaVerified(env) {
+  return workerPublicMediaDeliveryEnabled(env) && env.PARISH_R2_DEV_PUBLIC_ACCESS_DISABLED === POLICY_VERSION;
 }
 
 export function parsePublicMediaPath(pathname) {

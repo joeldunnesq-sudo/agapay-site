@@ -1,6 +1,5 @@
-import { POLICY_VERSION } from '../portability/catalog.js';
 import { assertParishWritable, objectOwnership } from '../portability/storage.js';
-import { parsePublicMediaPath, workerPublicMediaVerified } from '../portability/public-media.js';
+import { parsePublicMediaPath, workerPublicMediaDeliveryEnabled } from '../portability/public-media.js';
 
 const headersFor = object => {
   const headers = new Headers({
@@ -19,7 +18,7 @@ const unavailable = (status = 404) => new Response(null, { status, headers: { 'C
 
 export async function handlePublicParishAsset(request, env) {
   if (!['GET', 'HEAD'].includes(request.method)) return unavailable(405);
-  if (env.PARISH_PUBLIC_MEDIA_DELIVERY_ENABLED !== POLICY_VERSION || !workerPublicMediaVerified(env)) return unavailable();
+  if (!workerPublicMediaDeliveryEnabled(env)) return unavailable();
   const target = parsePublicMediaPath(new URL(request.url).pathname);
   if (!target || !env[target.binding]) return unavailable();
   const owner = await objectOwnership(env, target.binding, target.key);
