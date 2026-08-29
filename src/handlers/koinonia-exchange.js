@@ -401,6 +401,7 @@ export async function uploadListingPhoto(request, env, context, listingId) {
   let stored;
   try {
     stored = await storeGroupMessageAttachment(env.GROUP_MESSAGE_ASSETS, {
+      parishId: context.parishId,
       key,
       source: request.body,
       contentType: metadata.contentType,

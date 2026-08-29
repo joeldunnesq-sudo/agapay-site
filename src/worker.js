@@ -92,6 +92,11 @@ import { accountingAvailableForParish } from "./lib/accounting-demo-access.js";
 import { parishLifeAvailableFor } from "./lib/parish-life-access.js";
 import { runScheduledAccountingIntegrity } from "./accounting/integrity/scheduler.js";
 import { sweepAccountingBackupRetention } from "./accounting/backup-retention.js";
+import { handleParishPortability } from "./handlers/parish-portability.js";
+import { runPortabilityJobs } from "./portability/service.js";
+import { assertRestoreSafe } from "./portability/suppression.js";
+import { protectFileStorage } from "./portability/storage.js";
+import { protectLegacyStorage } from "./portability/legacy.js";
 import { synchronizeGivingCatalogWithAccounting } from "./accounting/source-wiring.js";
 import {
   STEWARDSHIP_FUND_DEFAULTS,
@@ -232,6 +237,7 @@ import { handleDonorKoinoniaSignups, sendScheduledSignupReminders } from "./hand
 import { expireKoinoniaExchangeListings, handleDonorKoinoniaExchange } from "./handlers/koinonia-exchange.js";
 import { handleDonorKoinoniaPrayerRequests, handleParishPrayerRequests } from "./handlers/koinonia-prayer-requests.js";
 import { handleDonorTeaching, handleParishTeaching } from "./handlers/parish-teaching.js";
+import { handlePublicParishAsset } from "./handlers/public-parish-assets.js";
 import { handleDonorParishLibrary, handleParishLibrary } from "./handlers/parish-library.js";
 import { handleDonorVideo, handleParishVideo } from "./handlers/parish-video.js";
 import { handleDonorBlog, handleDonorCustomNewsFeeds, handleDonorExternalFeed, handleDonorOcaNews, handleParishBlog } from "./handlers/parish-blog.js";
@@ -2895,6 +2901,12 @@ export function observeScheduledTask(name, task, env = {}) {
 export default {
   async scheduled(event, env, ctx) {
     if (env && !env.DB && env.AGAPAY_DB) env.DB = env.AGAPAY_DB;
+    await assertRestoreSafe(env);
+    env = protectLegacyStorage(protectFileStorage(env));
+    if (event.cron === "*/5 * * * *") {
+      ctx.waitUntil(observeScheduledTask("parish_portability_jobs", runPortabilityJobs(env), env));
+      return;
+    }
     ctx.waitUntil(observeScheduledTask("scheduled_accounting_recurring", runScheduledRecurringTransactions(env, event.scheduledTime), env));
     ctx.waitUntil(observeScheduledTask("nonprofit_pricing_threshold_alerts", sendNonprofitThresholdAlerts(env), env));
     ctx.waitUntil(observeScheduledTask("group_message_retention_sweep", purgeExpiredGroupMessages(env, event.scheduledTime), env));
@@ -2917,6 +2929,9 @@ export default {
 
   async fetch(request, env, ctx) {
     if (env && !env.DB && env.AGAPAY_DB) env.DB = env.AGAPAY_DB;
+    try { await assertRestoreSafe(env); }
+    catch { return json({ error: "Service is paused for storage safety verification." }, { status: 503, headers: { "Cache-Control": "private, no-store" } }); }
+    env = protectLegacyStorage(protectFileStorage(env));
     const url = new URL(request.url);
 
     if (["GET", "HEAD"].includes(request.method) && url.pathname === "/.well-known/assetlinks.json") {
@@ -2963,6 +2978,9 @@ export default {
 
     const privilegedMfaGate = await enforcePrivilegedMfa(request, env, url);
     if (privilegedMfaGate) return privilegedMfaGate;
+
+    const portabilityRoute = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/portability(\/.*)?$/);
+    if (portabilityRoute) return handleParishPortability(request, env, decodeURIComponent(portabilityRoute[1]), portabilityRoute[2] || "");
 
     if (request.method === "GET" || request.method === "HEAD") {
       if (["/give.html", "/give/index.html"].includes(url.pathname.toLowerCase())) {
@@ -3066,6 +3084,7 @@ export default {
     if (request.method === "GET" && url.pathname === "/api/parishes") { const r = await handleParishes(request, env); return addCorsHeaders(r, env); }
     if (request.method === "GET" && url.pathname === "/api/campaign") { const r = await handlePublicCampaign(request, env); return addCorsHeaders(r, env); }
     if (request.method === "GET" && url.pathname === "/api/platform/summary") { const r = await handlePublicPlatformSummary(env); return addCorsHeaders(r, env); }
+    if (url.pathname.startsWith("/api/public/parish-assets/")) return handlePublicParishAsset(request, env);
     if (request.method === "GET" && url.pathname === "/api/subscription-tiers") {
       return corsJson({ tiers: publicSubscriptionTiers() }, env);
     }

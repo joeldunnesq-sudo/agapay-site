@@ -2,6 +2,7 @@
 // Parish handlers and shared helpers (Stripe, donor, admin extracted to own files).
 
 import { activeFestalAlmsCampaigns } from "../festal-alms.js";
+import { parishClosureState } from "../portability/closure.js";
 import { enrichParishGivingOptions, publicBoolean, publicComment } from "./parish-giving-catalog.js";
 import { commemorationSourceIdFromOffering, ensureCommemorationEntryFromOffering, saveCommemorationEntry, splitSubmittedNames } from "./parish-commemorations.js";
 import { submitParishSupportTicket } from "../lib/parish-support-tickets.js";
@@ -1163,6 +1164,7 @@ export async function verifiedRegistrationParishes(env, options = {}) {
 }
 
 export async function findRegistrationByParishId(env, parishId) {
+  if (await parishClosureState(env, parishId)) return null;
   if (d1(env)) {
     const row = await d1First(
       env,

@@ -547,9 +547,10 @@ export async function handleParishAnnouncementHeroUpload(request, env, parishId,
     `${Date.now()}-${crypto.randomUUID()}.${upload.ext}`,
   ].join("/");
   await env.ANNOUNCEMENT_ASSETS.put(key, upload.bytes, {
+    customMetadata: { agapayParishId: parishId },
     httpMetadata: {
       contentType: upload.contentType,
-      cacheControl: "public, max-age=31536000, immutable",
+      cacheControl: "no-store",
     },
   });
   const publicBase = String(env.ANNOUNCEMENT_ASSETS_URL).replace(/\/+$/, "");

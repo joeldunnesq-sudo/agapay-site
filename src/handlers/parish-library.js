@@ -221,6 +221,7 @@ async function uploadParishLibraryPdf(request, env, parishId, resourceId) {
   const fileName = safeFileName(request.headers.get("x-agapay-file-name") || `${current.title}.pdf`);
   const key = `parish-library/${encodeURIComponent(parishId)}/${encodeURIComponent(resourceId)}/${Date.now()}-${crypto.randomUUID()}.pdf`;
   await env.PARISH_LIBRARY_ASSETS.put(key, upload.bytes, {
+    customMetadata: { agapayParishId: parishId },
     httpMetadata: { contentType: "application/pdf", cacheControl: "private, no-store" },
   });
   try {

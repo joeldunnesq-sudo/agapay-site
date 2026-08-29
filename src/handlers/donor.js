@@ -1,5 +1,6 @@
 import { bookstoreReadinessSummary, bookstoreSellerDisclosure } from "../lib/commerce-readiness.js";
 import { logEvent } from "../lib/logging.js";
+import { directoryInvitationNext } from "../lib/directory-invitation-next.js";
 import { ACCOUNT_ACCEPTANCE_DISCLOSURE, CURRENT_TERMS_VERSION, recordLegalAcceptance } from "../lib/legal-acceptance.js";
 import { SCHEDULABLE_SACRAMENT_TYPES, computeAvailableSlots, isSchedulableOfferingKey, isSlotStillOpen } from "../lib/sacrament-availability.js";
 import {
@@ -528,7 +529,8 @@ export async function handleDonorSignup(request, env) {
   const verificationToken = generateSecret("verify");
   const verificationSalt = generateSecret("verify_salt");
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-  const verificationUrl = `${String(appUrl).replace(/\/+$/, "")}/myagapay/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(verificationToken)}`;
+  const invitationNext = directoryInvitationNext(body.next);
+  const verificationUrl = `${String(appUrl).replace(/\/+$/, "")}/myagapay/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(verificationToken)}${invitationNext ? `&next=${encodeURIComponent(invitationNext)}` : ''}`;
   const donor = await applyDonorPassword({
     ...(existing || {}),
     email,
@@ -743,6 +745,8 @@ export async function handleDonorVerifyPage(request, env) {
 
   const verification = await handleDonorVerify(request, env);
   const data = await verification.json().catch(() => ({}));
+  const invitationNext = directoryInvitationNext(new URL(request.url).searchParams.get("next"));
+  const destination = invitationNext || "/myagapay";
 
   if (!verification.ok) {
     return donorVerifyHtml(
@@ -761,7 +765,7 @@ export async function handleDonorVerifyPage(request, env) {
         title: "Email already verified",
         message: "Your email is already verified. Please log in to open your donor dashboard.",
         status: "success",
-        refreshUrl: "/myagapay/login"
+        refreshUrl: invitationNext ? `/myagapay/login?next=${encodeURIComponent(invitationNext)}` : "/myagapay/login"
       },
       { status: 200 }
     );
@@ -780,7 +784,7 @@ export async function handleDonorVerifyPage(request, env) {
     if (session.token) localStorage.setItem("agapayDonorToken", session.token);
     if (session.donor) localStorage.setItem("agapayDonorProfile", JSON.stringify(session.donor));
   } catch (err) {}
-  window.location.replace("/myagapay");
+  window.location.replace(${jsonForScript(destination)});
 })();
 </script>`;
 
@@ -790,7 +794,7 @@ export async function handleDonorVerifyPage(request, env) {
       message: data.alreadyVerified ? "Your email was already verified. Opening your donor dashboard." : "Your email is verified. Opening your donor dashboard.",
       status: "success",
       script,
-      refreshUrl: "/myagapay"
+      refreshUrl: destination
     },
     { status: 200 }
   );

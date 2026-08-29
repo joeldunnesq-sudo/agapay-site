@@ -1,4 +1,5 @@
 import { d1All, d1Run, generateSecret } from "../../lib/core.js";
+import { parishClosureState } from "../../portability/closure.js";
 import { agapayEmailHtml, sendEmail } from "../../lib/email.js";
 import { htmlEscape } from "../../lib/format.js";
 import { createBoundD1ProvisioningAdapter, createD1DatabaseFacade } from "../provisioning/adapters.js";
@@ -23,6 +24,7 @@ function maskEmail(value) {
 async function ensureCanaryRegistered(env, adapter, correlationId) {
   const parishId = String(env.ACCOUNTING_CANARY_PARISH_ID || "").trim();
   if (!parishId) return null;
+  if (await parishClosureState(env,parishId)) return null;
   const databaseIdentifier = "agapay-acct-production-e4601e1d985ec8dcb9fe";
   return activatePreparedParishAccounting(env, { adapter, parishId, databaseIdentifier, subscriptionTier: "parish", correlationId });
 }
@@ -94,6 +96,7 @@ export async function runScheduledAccountingIntegrity(env, scheduledTime = Date.
       AND d.environment='production' AND d.provisioning_status='ready'`);
   const results = [];
   for (const row of rows) {
+    if (await parishClosureState(env,row.parish_id)) continue;
     const bindingName = configured[row.database_identifier];
     if (!bindingName || !env[bindingName]) continue;
     const db = createD1DatabaseFacade(adapter, bindingName);

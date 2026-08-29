@@ -39,10 +39,10 @@ export async function validateAccountingAttachmentUpload({ filename, declaredMim
   return { ok: true, mimeType: sniffed };
 }
 
-export async function putAccountingAttachment(env, { arrayBuffer, mimeType }) {
+export async function putAccountingAttachment(env, { parishId, arrayBuffer, mimeType }) {
   if (!env.ACCOUNTING_ATTACHMENTS) throw new Error("ACCOUNTING_ATTACHMENTS R2 binding is not configured");
   const storageKey = generateStorageKey();
-  await env.ACCOUNTING_ATTACHMENTS.put(storageKey, arrayBuffer, { httpMetadata: { contentType: mimeType } });
+  await env.ACCOUNTING_ATTACHMENTS.put(storageKey, arrayBuffer, { customMetadata: { agapayParishId: parishId }, httpMetadata: { contentType: mimeType } });
   return storageKey;
 }
 

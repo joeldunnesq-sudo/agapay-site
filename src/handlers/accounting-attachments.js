@@ -48,7 +48,7 @@ export async function handleAccountingAttachments(request, env, parishId) {
       const arrayBuffer = await file.arrayBuffer();
       const validation = await validateAccountingAttachmentUpload({ filename: file.name, declaredMimeType: file.type, arrayBuffer });
       if (!validation.ok) return reply({ error: validation.error }, 422);
-      storageKey = await putAccountingAttachment(env, { arrayBuffer, mimeType: validation.mimeType });
+      storageKey = await putAccountingAttachment(env, { parishId, arrayBuffer, mimeType: validation.mimeType });
       try {
         const attachment = await recordAttachment(ctx.db, {
           actor: ctx.actor,

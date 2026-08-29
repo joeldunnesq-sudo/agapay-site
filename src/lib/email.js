@@ -43,7 +43,7 @@ export function agapayEmailHtml(appUrl, title, bodyHtml) {
   `;
 }
 
-export async function sendEmail(env, message) {
+export async function sendEmail(env, message, { idempotencyKey = '', timeoutMs = 0 } = {}) {
   const apiKey = String(env.RESEND_API_KEY || "").trim();
   if (!apiKey) return { status: "not_configured" };
 
@@ -54,8 +54,10 @@ export async function sendEmail(env, message) {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
         "User-Agent": RESEND_USER_AGENT,
+        ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
       },
       body: JSON.stringify(message),
+      ...(timeoutMs ? { signal: AbortSignal.timeout(timeoutMs) } : {}),
     });
     const bodyText = await response.text();
     let body = {};

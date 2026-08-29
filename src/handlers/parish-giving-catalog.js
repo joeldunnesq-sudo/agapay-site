@@ -326,9 +326,10 @@ export async function handleParishCampaignUpload(request, env, parishId) {
     `${Date.now()}-${crypto.randomUUID()}.${ext}`
   ].join("/");
   await env.CAMPAIGN_ASSETS.put(key, bytes, {
+    customMetadata: { agapayParishId: parishId },
     httpMetadata: {
       contentType,
-      cacheControl: "public, max-age=31536000, immutable"
+      cacheControl: "no-store"
     }
   });
   const publicBase = String(env.CAMPAIGN_ASSETS_URL || "").replace(/\/+$/, "");
@@ -393,7 +394,8 @@ export async function handleParishLogo(request, env, parishId) {
 
   const key = `parish-logos/${slugify(parishId)}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
   await env.CAMPAIGN_ASSETS.put(key, bytes, {
-    httpMetadata: { contentType, cacheControl: "public, max-age=31536000, immutable" }
+    customMetadata: { agapayParishId: parishId },
+    httpMetadata: { contentType, cacheControl: "no-store" }
   });
   const publicBase = String(env.CAMPAIGN_ASSETS_URL || "").replace(/\/+$/, "");
   const logoUrl = `${publicBase}/${key}`;

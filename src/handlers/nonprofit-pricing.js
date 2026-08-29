@@ -182,6 +182,7 @@ export async function handleParishNonprofitPricingDocumentUpload(request, env, p
   if (!validation.ok) return json({ error: validation.error }, { status: 422 });
 
   const storageKey = await putNonprofitPricingDocument(env, {
+    parishId,
     arrayBuffer,
     mimeType: validation.mimeType
   });

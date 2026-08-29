@@ -28,7 +28,7 @@ assert.match(app, /const parishOrder = \['sacraments', 'directory', 'library', '
 assert.match(app, /parishOrder\.forEach[\s\S]*parishGroup\.appendChild\(item\)[\s\S]*sidebar\.appendChild\(parishGroup\)/, "runtime ordering must keep all Parish items inside the labeled group");
 
 assert.match(dashboard, /<body class="dashboard-booting">[\s\S]*id="dashboardBootScreen"[\s\S]*<div class="app">/, "the gated dashboard must start behind a dedicated loading screen");
-assert.ok(dashboard.includes('/parish/style.css?v=20260817centralemail1') && dashboard.includes('/parish/redesign.css?v=20260825fundtransfers1') && dashboard.includes('/parish/app.js?v=20260827pricing1') && dashboard.includes('/styles/stewardship.css?v=20260806standalonetabs1'), "the loading-state assets must use the current cache versions");
+assert.ok(dashboard.includes('/parish/style.css?v=20260817centralemail1') && dashboard.includes('/parish/redesign.css?v=20260825fundtransfers1') && dashboard.includes('/parish/app.js?v=20260828portability1') && dashboard.includes('/styles/stewardship.css?v=20260806standalonetabs1'), "the loading-state assets must use the current cache versions");
 assert.ok(
   app.includes("content?.classList.toggle('standalone-tab-active', panel?.parentElement === content)")
     && /\.content\.standalone-tab-active > \.detail-wrap\s*\{\s*display:\s*none;\s*\}/.test(stewardshipCss),

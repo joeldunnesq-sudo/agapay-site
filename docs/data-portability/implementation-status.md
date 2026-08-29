@@ -1,0 +1,174 @@
+# Parish portability implementation status
+
+Updated August 29, 2026. Implemented and exercised in isolated staging;
+the additive production schema, ownership registries, and three safeguarded private
+storage buckets are installed, but the application code is **not deployed or enabled
+in production**.
+Policy: 2026-08-28-active-storage-v2.
+
+Dedicated remote staging resources have now been provisioned and tested. The
+full-schema local rehearsal and private hosted export/closure/restore drill pass.
+Confirmation is split into consent, book-freeze, and authorization phases; the
+largest hosted phase used 697 of the enforced 800-operation work budget. See
+[Staging release review](staging-release-review.md) for current evidence and the
+next required engineering work. A green regression suite is not release approval.
+
+## Available behavior
+
+The parish Settings panel provides separate ordinary exports and final closure.
+Both require current administrator authorization and fresh MFA. Closure additionally
+requires cancelled billing, verification of the administrator's saved ZIP, typed
+confirmation, and a fresh source comparison under database/storage write barriers.
+Downloading alone never authorizes deletion.
+
+Exports contain JSON, spreadsheet-safe CSV, supported uploaded files, row counts,
+and checksum manifests. Credentials and independent donor/Learn accounts are
+excluded. Shared people retain their independent identities. Limits remain 24 MB,
+10,000 rows per dataset, and 2,000 ZIP entries; larger requests fail explicitly
+and require an operator-assisted full export.
+
+## Work completed in this update
+
+| Area | Implemented |
+| --- | --- |
+| Files | Every current R2 writer supplies parish ownership. Guarded operations are tracked in D1; closure waits for them. Full bucket inventories cover orphaned uploads and variants. Unknown ownership/ETags stop closure. Financial files move to verified private retention copies; eligible active files and all known temporary exports are removed with checkpoints and deletion verification. |
+| Legacy data | Explicit KV record/index classification, central app_settings ownership, a D1 registry of acknowledged KV writes, hash/convergence checks, scoped disposal, and closed-parish read/write suppression. Independent donor/Learn records survive. |
+| Accounting retention | Dedicated books are identity-checked and frozen with added triggers. Existing immutable journal/closing rules are preserved. Accounting schedulers skip closed parishes. Financial/legal dependencies remain, with a minimal registration stub where a retained foreign key requires it. |
+| Retention tracking | Financial/support copies have restricted-retention records and review dates. Defaults follow existing product policy: seven years for financial/legal evidence, three for support; longer accounting settings are honoured. Review dates do not authorize deletion or override holds. |
+| Backup expiry | Strict expiry removes the newest-backup exception only when ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED is explicitly true. The default preserves the deployed policy. Strict sweeps check deletion with HEAD and record evidence; confirmation requires the gate and matching evidence no more than 48 hours old. |
+| Restore safeguards | Independent private R2 closure authority, request/scheduler safety checks, quarantine, suppression replay, and restored-data sanitization. An older DB cannot pass the runtime gate while missing an independent closure authorization. |
+| Recovery | Checkpoints support retry after partial cleanup. Ambiguous uploads retain a durable fence. Operator-only reconciliation handles file ownership, interrupted file operations, and abandoned unconfirmed preparation. Confirmed closure cannot be undone by cancellation. |
+
+The accounting books and retained financial/legal rows are **not physically erased**
+by this flow. They are disclosed retention exceptions. Active legal holds block
+self-service closure for review. At a retention deadline the item becomes
+review_due; disposal of immutable history still requires an authorized retention
+review. The application does not claim an all-copies-deleted status.
+
+A separate independent completion marker also rejects intermediate backups taken
+after authorization but before the central purge. A crash or uncertain provider
+outcome does not produce a successful receipt.
+Obsolete file/KV ownership indexes are removed only after successful cleanup,
+because source keys can contain personal information.
+
+## Production prerequisites still outstanding
+
+The code now has the storage/disposal adapters. Production migrations 0108, 0109,
+and 0110 are applied. The generated 441-trigger closure barrier set is installed,
+with zero closure/job rows. A metadata-only inventory reconciled all 26 physical
+R2 objects and all 18 parish-scoped KV keys; their complete readback hashes match.
+All production release flags remain false.
+
+A fixed-scope production audit found all three release flags false and all 31
+legacy accounting tables empty. The two configuration gaps it found have been
+reconciled. The existing St. Fiacre book now has an independently evidenced
+`parish_id`, and the production backup bucket now has a verified 365-day object-
+expiration lifecycle rule. The pre-change inventory found 59 objects, none past
+the retention threshold. These scoped corrections are not overall release approval.
+
+1. Deploy the registry-owned, no-store Worker public-media route, rewrite the three
+   historical production URLs, verify them, then disable and read back all three
+   r2.dev origins. The route is implemented and tested but not deployed; production
+   currently still serves three immutable-cache objects through r2.dev.
+2. Retire old unguarded Worker versions and any direct-upload credentials. Keep
+   independently evidenced identity metadata on every accounting database; the
+   current St. Fiacre production book and current R2/KV ownership are reconciled.
+3. The production backup bucket's 365-day lifecycle and 59 current objects are verified.
+   A read-only recovery inventory found 29 recent successful scheduled backup runs,
+   no database backup among 297 current GitHub Actions artifacts, and D1 Time Travel
+   available at 7 and 29 days but unavailable at 31 days. Complete the off-provider/
+   manual-copy attestation and a complete quarantined Cloudflare restore drill. The isolated
+   remote drill verified lock enforcement, a controlled-clock backup sweep,
+   snapshot restoration, closure, and repeated quarantined sanitization. Natural
+   one-day lifecycle observation is awaiting its threshold and provider deletion.
+4. Approve/version the public retention disclosure, including minimal closure and
+   receipt metadata. No automatic disposal of legally held/immutable records is
+   enabled by a review date.
+5. Keep the bounded confirmation budget regression and hosted drill in the release
+   process. Reconcile representative
+   staging exports and real-volume operation/restore tests before enabling closure.
+   The independent ledger currently caps at 1,000
+   closures and object/key inventories at 10,000 entries.
+
+Cloudflare Stream video still requires an operator-assisted complete export and
+provider disposition; it blocks self-service export/closure rather than being
+silently omitted.
+
+All three portability feature switches remain false in wrangler.toml:
+PARISH_PORTABILITY_ENABLED, PARISH_STORAGE_GUARDS_ENABLED, and
+PARISH_AUTOMATIC_CLOSURE_ENABLED. Once closures are enabled, storage guards must
+remain enabled even if export UI is disabled. Operational verification attestations
+remain unset; they must not be used to bypass unverified deployment prerequisites.
+
+The separate ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED gate is also false in both
+production and shared accounting staging. The existing daily cron does not depend
+on the portability switches. With strict expiry disabled, it preserves the newest
+backup when all copies are expired and cannot issue strict-expiry evidence.
+
+## Local runtime release drill
+
+The next validation layer now passes using native local D1, R2, and KV bindings
+inside workerd, rather than only Node mocks. Run
+`npm run test:parish-portability-runtime`; it is also part of `npm run check`
+through `check:release-gates`.
+
+The six checkpoints cover initialization, a pre-closure snapshot into separate
+restore stores, ordinary/aborted downloads, archive checksums and write barriers,
+active-data deletion with private financial retention, and quarantined restore
+replay/sanitization. The independent ledger is never rolled back. Other-parish
+records and shared donor identities survive; repeated sanitization is tested.
+
+This caught and fixed handling of D1's protected `_cf_METADATA` table in both
+central and accounting inventories. Only specific provider tables are excluded;
+unrecognized application tables still block exports.
+
+The local test uses synthetic fixtures and an isolated local-only entrypoint, with
+application network egress blocked, no credentials, and ephemeral storage. A
+separate private, route-less staging Worker completed the same bounded phases; it
+did not send email or change subscriptions. See
+[Local runtime drill](local-runtime-drill.md) for scope and remaining remote gates.
+
+See [Storage and restore runbook](storage-and-restore-runbook.md) for bindings,
+retention boundaries, maintenance functions, and the restore sequence.
+
+## Verification
+
+Local synthetic SQLite/D1 and R2/KV tests cover tenant isolation, credential
+filtering, source/ZIP hashes, ordinary and aborted downloads, stale or invalid
+confirmation, missing triggers, transaction rollback, durable retries, shared
+people, orphaned uploads, uncertain provider outcomes, stale KV list/value
+behavior, retained file copies, minimal retained registrations, immutable
+accounting freezes, expired backup evidence, and quarantined restore replay.
+
+The following checks passed in this update:
+
+- npm run check (complete suite, including the local workerd drill)
+- npm run test:parish-portability-runtime (six checkpoints)
+- npm run test:parish-portability
+- npm run check:core
+- npm run check:accounting
+- npm run check:directory
+- Wrangler deployment dry run (bundle only; no deployment)
+- Syntax checks and git diff --check
+
+The earlier synthetic browser test covered opening the panel, queueing an export,
+and downloading it. This update did not run a production or browser-driven purge.
+No production application deployment, subscription, or release flag was changed.
+Reviewed production changes now comprise one accounting identity control row, one
+backup-bucket lifecycle rule, migrations 0108-0110, 26 R2 ownership rows, 18 KV
+ownership rows, three inventory reviews, 441 inert closure barrier triggers, and
+three private portability buckets. Temporary exports have a seven-day provider
+lifecycle; the independent authority/closure/completion prefixes are indefinitely
+locked. The application bindings are configured locally but have not been deployed.
+
+The private hosted staging drill passed export, verified download, consent, book
+freeze, authorization, purge, restore denial, suppression replay, and repeatable
+sanitization. Its largest invocation used 697 of the enforced 800-operation work
+budget. A real R2 lifecycle probe remains pending after its one-day threshold;
+crossing that threshold alone does not prove provider deletion.
+
+A read-only remote staging metadata check found no migration-history entries
+for 0108/0109/0110 and no portability control tables. All queries reported zero
+rows written and changed_db=false. Shared staging was not changed. A separate
+dedicated environment now has reviewed zero-row baselines and its own resources;
+no migrations were applied to the shared environment during this check.

@@ -18,11 +18,12 @@ export function generateGivingStatementStorageKey() {
   return `gstmt/${hex}`;
 }
 
-export async function putGivingStatementPdf(env, { storageKey, bytes }) {
+export async function putGivingStatementPdf(env, { parishId, storageKey, bytes }) {
   if (!env.GIVING_STATEMENTS) {
     throw new Error("GIVING_STATEMENTS R2 binding is not configured");
   }
   await env.GIVING_STATEMENTS.put(storageKey, bytes, {
+    customMetadata: { agapayParishId: parishId },
     httpMetadata: { contentType: "application/pdf" }
   });
 }

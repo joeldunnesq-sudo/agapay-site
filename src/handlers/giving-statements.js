@@ -323,7 +323,7 @@ export async function runGivingStatementJob(env, jobId) {
       });
 
       const storageKey = generateGivingStatementStorageKey();
-      await putGivingStatementPdf(env, { storageKey, bytes: pdfBytes });
+      await putGivingStatementPdf(env, { parishId: job.parish_id, storageKey, bytes: pdfBytes });
 
       const statementId = generateSecret("gst");
       await d1Run(

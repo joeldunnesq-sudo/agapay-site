@@ -25,6 +25,7 @@ import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { readdirSync } from "node:fs";
 import path from "node:path";
+import { barrierStatements } from '../src/portability/closure.js';
 
 // Resolve wrangler's actual JS entry point and invoke it with `node`
 // directly, instead of going through `npx`/`wrangler.cmd`. This sidesteps
@@ -229,9 +230,24 @@ check("tax_exemptions.registration_reference resolves to a registrations row", (
   return true;
 });
 
+check('Portability closure barriers and local suppression state', () => {
+  const tables = query("SELECT name FROM sqlite_master WHERE type='table'").map(row => row.name);
+  const required = ['parish_data_closures','parish_portability_jobs','parish_portability_steps','parish_portability_objects','parish_portability_storage_operations','parish_portability_legacy_keys','parish_portability_retention'];
+  if (required.some(name => !tables.includes(name))) throw new Error('Current portability migrations are missing.');
+  const triggers = new Map(query("SELECT name,sql FROM sqlite_master WHERE type='trigger' AND name LIKE 'portability_%'").map(row => [row.name,row.sql]));
+  const normalize = sql => String(sql).replace(/IF NOT EXISTS\s+/gi,'').replace(/\s+/g,'').replace(/;$/,'').toLowerCase();
+  for (const sql of barrierStatements(tables)) {
+    const name = sql.match(/EXISTS "([^"]+)"/)[1];
+    if (normalize(triggers.get(name)) !== normalize(sql)) throw new Error('Missing or changed write barrier: ' + name);
+  }
+  const unresolved = query("SELECT c.parish_id FROM parish_data_closures c LEFT JOIN parish_portability_jobs j ON j.id=c.job_id WHERE c.state<>'closed' OR j.status<>'active_data_deleted' OR j.confirmed_at IS NULL");
+  if (unresolved.length) throw new Error('Unfinished closure suppression requires reconciliation before traffic.');
+  return 'local barriers verified; original independent ledger comparison is still required';
+});
+
 console.log("");
 if (failures > 0) {
   console.error(`${failures} check(s) failed. Do not treat this restore as validated.`);
   process.exit(1);
 }
-console.log("All restore-validation checks passed.");
+console.log("All read-only database checks passed. Keep quarantine until independent closure-ledger comparison and file/KV/accounting restore verification also pass.");

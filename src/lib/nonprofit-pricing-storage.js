@@ -17,12 +17,13 @@ export function generateNonprofitPricingStorageKey() {
   return `nonprofit-pricing/${hex}`;
 }
 
-export async function putNonprofitPricingDocument(env, { arrayBuffer, mimeType }) {
+export async function putNonprofitPricingDocument(env, { parishId, arrayBuffer, mimeType }) {
   if (!env.NONPROFIT_PRICING_DOCS) {
     throw new Error("NONPROFIT_PRICING_DOCS R2 binding is not configured");
   }
   const storageKey = generateNonprofitPricingStorageKey();
   await env.NONPROFIT_PRICING_DOCS.put(storageKey, arrayBuffer, {
+    customMetadata: { agapayParishId: parishId },
     httpMetadata: { contentType: mimeType }
   });
   return storageKey;

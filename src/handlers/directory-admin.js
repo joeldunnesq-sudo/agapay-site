@@ -5,6 +5,7 @@ import { buildParishDirectoryPdf } from "../lib/directory-pdf.js";
 import { findRegistrationByParishId } from "./parish.js";
 import { decodeAndNormalizeSource } from "../directory/media-transform.js";
 import { DirectoryServiceError } from "../directory/foundation.js";
+import { handleDirectoryImports } from "./directory-imports.js";
 import {
   applyHouseholdDirectCorrection,
   applyPersonDirectCorrection,
@@ -222,7 +223,7 @@ async function uploadMinistryImage(request, env, context, ministryId, correlatio
   const key = ministryImageStorageKey(context.parishId, ministryId);
   let stored;
   try {
-    stored = await storeGroupMessageAttachment(env.GROUP_MESSAGE_ASSETS, { key, source: request.body, contentType, maxBytes: MINISTRY_IMAGE_MAX_BYTES });
+    stored = await storeGroupMessageAttachment(env.GROUP_MESSAGE_ASSETS, { parishId: context.parishId, key, source: request.body, contentType, maxBytes: MINISTRY_IMAGE_MAX_BYTES });
   } catch (error) {
     if (error?.message === "GROUP_MESSAGE_ATTACHMENT_TOO_LARGE") throw new DirectoryServiceError("image_too_large", "Ministry images must be 5MB or smaller.", 413);
     throw error;
@@ -273,6 +274,9 @@ export async function handleDirectoryAdmin(request, env, parishId) {
   try {
     const context = await adminContext(request, env, parishId);
     if (!context) return privateJson({ error: "Unauthorized" }, { status: 401 });
+
+    const importResponse = await handleDirectoryImports(request, env, context, path);
+    if (importResponse) return importResponse;
 
     if (request.method === "GET" && path === "/context") return privateJson({ ok: true, context });
     if (request.method === "GET" && path === "/settings") {

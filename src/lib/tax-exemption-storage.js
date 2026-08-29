@@ -117,12 +117,13 @@ export async function validateExemptionUpload({ filename, declaredMimeType, arra
  * tax_exemption_documents D1 row (src/lib/tax-exemption.js
  * attachTaxExemptionDocument) -- this function only touches R2.
  */
-export async function putExemptionDocument(env, { arrayBuffer, mimeType }) {
+export async function putExemptionDocument(env, { parishId, arrayBuffer, mimeType }) {
   if (!env.TAX_EXEMPTION_DOCS) {
     throw new Error("TAX_EXEMPTION_DOCS R2 binding is not configured");
   }
   const storageKey = generateStorageKey();
   await env.TAX_EXEMPTION_DOCS.put(storageKey, arrayBuffer, {
+    customMetadata: { agapayParishId: parishId },
     httpMetadata: { contentType: mimeType }
   });
   return storageKey;

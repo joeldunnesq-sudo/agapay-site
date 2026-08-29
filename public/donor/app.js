@@ -2293,6 +2293,7 @@ async function signupFromPage(event) {
       body: JSON.stringify({
         donorName,
         householdName: donorName,
+        next: new URLSearchParams(window.location.search).get("next") || "",
         email,
         password,
         parishId,

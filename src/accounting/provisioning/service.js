@@ -17,7 +17,8 @@ export async function validateProvisionedAccountingDatabase(adapter, providerId)
 
 export async function provisionAccountingDatabase({ adapter, parishId, environment }) {
   const name = await deterministicAccountingDatabaseName({ parishId, environment });
-  const database = await adapter.findByName(name) || await adapter.create(name);
+  const priorDatabase = await adapter.findByName(name);
+  const database = priorDatabase || await adapter.create(name);
   await adapter.execute(database.providerId, ACCOUNTING_FOUNDATION_MIGRATION.statements[1]);
   const existing = rows(await adapter.execute(database.providerId, "SELECT version, checksum FROM accounting_migrations WHERE version = ?", [ACCOUNTING_FOUNDATION_MIGRATION.version]))[0];
   if (existing && existing.checksum !== ACCOUNTING_FOUNDATION_MIGRATION.checksum) throw new AccountingDatabaseError("Accounting migration checksum drift was detected.");
@@ -25,6 +26,9 @@ export async function provisionAccountingDatabase({ adapter, parishId, environme
     for (const statement of ACCOUNTING_FOUNDATION_MIGRATION.statements) await adapter.execute(database.providerId, statement);
     await adapter.execute(database.providerId, "INSERT OR IGNORE INTO accounting_migrations (version, checksum) VALUES (?, ?)", [ACCOUNTING_FOUNDATION_MIGRATION.version, ACCOUNTING_FOUNDATION_MIGRATION.checksum]);
   }
+  // Only a newly created, server-named database can be assigned automatically.
+  // Existing books without identity require independent ownership review.
+  if (!priorDatabase) await adapter.execute(database.providerId, "INSERT INTO accounting_database_metadata(key,value) VALUES('parish_id',?)", [parishId]);
   const validation = await validateProvisionedAccountingDatabase(adapter, database.providerId);
   if (!validation.ok) throw new AccountingDatabaseError("Accounting database validation failed.", { details: validation });
   return { name, providerId: database.providerId, schemaVersion: ACCOUNTING_FOUNDATION_MIGRATION.schemaVersion, migrationVersion: ACCOUNTING_FOUNDATION_MIGRATION.version, validation };

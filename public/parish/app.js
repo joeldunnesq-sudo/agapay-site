@@ -630,6 +630,14 @@
     return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/directory/admin' + path;
   }
 
+  function openParishPortability() {
+    if (currentParish?.parishId && window.ParishPortability) window.ParishPortability.open({ parishId: currentParish.parishId, headers: authHeaders });
+  }
+
+  function openDirectoryImport() {
+    window.DirectoryImport.open({ api: directoryAdminApi, headers: authHeaders, onChange: () => loadDirectoryAdminTab(true) });
+  }
+
   async function loadDirectoryAdminTab(force = false) {
     const pane = document.getElementById('directoryAdminPane');
     if (!pane) return;
@@ -752,6 +760,7 @@
           <p class="sw-suite-subhead">Find families, member contact information, namedays, and ways parishioners can help. <strong>${households.length}</strong> households <i></i> <strong>${publishedMemberCount}</strong> members</p>
         </div>
         <div class="pdx-dir-canonical-actions sw-suite-hero-status agapay-feature-actions">
+          <button class="pdx-dir-export-btn" type="button" onclick="openDirectoryImport()">Import directory</button>
           ${renderDirectoryFeatureToggle(settings)}
           <button class="pdx-dir-export-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/published-adults.csv')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>Export CSV</button>
           <button class="pdx-dir-print-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/directory.pdf')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>Download PDF</button>
@@ -789,7 +798,7 @@
           </table>
         </div>
         <div id="directoryRecordDetail" class="pdx-dir-review-detail pdx-dir-inline-detail" aria-live="polite"></div>
-        <p class="pdx-dir-canonical-note"><strong>Where do these records come from?</strong> Families enter and maintain their information in My AGAPAY. Parish staff can review the information here without changing a family’s privacy choices.</p>
+        <p class="pdx-dir-canonical-note"><strong>Where do these records come from?</strong> Families enter and maintain their information in My AGAPAY, or parish staff import existing contacts. Imported contacts remain private until the normal sharing and approval steps are complete. Parish staff can review information without changing a family’s privacy choices.</p>
       </div>
 
       <div class="pdx-dir-tab-panel" data-dir-panel="tools" hidden>
@@ -10021,6 +10030,9 @@
           : `<button class="btn btn-gold" onclick="startSubscriptionCheckout(this, 'subscriptionTierUpgrade')">${demoEligible?'Start free 30-day demo':'Start tier checkout'}</button>`}
       </div>
       <div class="setup-link-box" id="subscriptionUpgradeLinkBox"><a id="subscriptionUpgradeLink" href="#" target="_blank" rel="noopener">Open billing checkout</a><p id="subscriptionUpgradeHelp"></p></div>
+      <div class="section-divider"><span>Data portability</span></div>
+      <p class="section-note">Your parish records should remain accessible when you leave. Download a copy or review export and closure options. Downloading alone never deletes data, and exporting does not cancel billing.</p>
+      <div class="btn-row"><button type="button" class="btn btn-ghost" onclick="openParishPortability()">Data portability &amp; closure</button></div>
       <div class="section-divider"><span>Stripe account</span></div>
       <p class="section-note">Manage your parish Stripe account — update bank account details, payout schedule, business information, and view your full transaction history directly in Stripe.</p>
       <div class="btn-row">

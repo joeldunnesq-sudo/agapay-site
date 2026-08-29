@@ -183,7 +183,7 @@ export function limitGroupMessageAttachmentStream(source, maxBytes = GROUP_MESSA
   return { stream: source.pipeThrough(limiter), bytesRead: () => bytesRead };
 }
 
-export async function storeGroupMessageAttachment(bucket, { key, source, contentType, contentLength, maxBytes = GROUP_MESSAGE_ATTACHMENT_MAX_BYTES }) {
+export async function storeGroupMessageAttachment(bucket, { parishId, key, source, contentType, contentLength, maxBytes = GROUP_MESSAGE_ATTACHMENT_MAX_BYTES }) {
   if (!Number.isInteger(contentLength) || contentLength < 1) throw new Error("GROUP_MESSAGE_ATTACHMENT_LENGTH_REQUIRED");
   if (contentLength > maxBytes) throw new Error("GROUP_MESSAGE_ATTACHMENT_TOO_LARGE");
   const bounded = limitGroupMessageAttachmentStream(source, maxBytes);
@@ -194,6 +194,7 @@ export async function storeGroupMessageAttachment(bucket, { key, source, content
   try {
     const [object] = await Promise.all([
       bucket.put(key, fixed.readable, {
+        customMetadata: { agapayParishId: parishId },
         httpMetadata: { contentType, cacheControl: "private, no-store" },
       }),
       bounded.stream.pipeTo(fixed.writable),
@@ -466,6 +467,7 @@ async function postGroupMessageAttachment(request, env, context, ministryId, mes
   let stored;
   try {
     stored = await storeGroupMessageAttachment(env.GROUP_MESSAGE_ASSETS, {
+      parishId: context.parishId,
       key,
       source: request.body,
       contentType: metadata.contentType,

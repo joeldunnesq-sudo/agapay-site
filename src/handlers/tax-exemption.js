@@ -273,7 +273,8 @@ export async function handleClaimScopedDocumentUpload(request, env, taxExemption
   });
   if (!validation.ok) return json({ error: validation.error }, { status: 422 });
 
-  const storageKey = await putExemptionDocument(env, { arrayBuffer, mimeType: validation.mimeType });
+  const owner = await d1First(env, 'SELECT parish_id FROM registrations WHERE reference=?1', claim.registration_reference);
+  const storageKey = await putExemptionDocument(env, { parishId: owner?.parish_id, arrayBuffer, mimeType: validation.mimeType });
   const documentId = await attachTaxExemptionDocument(env, {
     taxExemptionId: claim.id,
     registrationReference: claim.registration_reference,
@@ -330,7 +331,7 @@ export async function handleParishTaxExemptionDocumentUpload(request, env, paris
   });
   if (!validation.ok) return json({ error: validation.error }, { status: 422 });
 
-  const storageKey = await putExemptionDocument(env, { arrayBuffer, mimeType: validation.mimeType });
+  const storageKey = await putExemptionDocument(env, { parishId, arrayBuffer, mimeType: validation.mimeType });
   const documentId = await attachTaxExemptionDocument(env, {
     taxExemptionId: claim.id,
     registrationReference: reference,

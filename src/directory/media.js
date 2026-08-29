@@ -245,10 +245,10 @@ export async function createDirectoryMediaUploadSession(env, { context, ownerTyp
   return { id: sessionId, parishId: auth.parishId, ownerType: auth.ownerType, ownerId: auth.ownerId, mediaPurpose: auth.mediaPurpose, visibility: auth.visibility, expiresAt: timestamp + DIRECTORY_MEDIA_LIMITS.uploadSessionTtlMs };
 }
 
-async function putObject(env, key, arrayBuffer, mimeType) {
+async function putObject(env, key, arrayBuffer, mimeType, parishId) {
   const bucket = mediaBucket(env);
   if (!bucket) throw new DirectoryServiceError("storage_unavailable", "Directory media storage is not configured.", 503);
-  await bucket.put(key, arrayBuffer, { httpMetadata: { contentType: mimeType } });
+  await bucket.put(key, arrayBuffer, { customMetadata: { agapayParishId: parishId }, httpMetadata: { contentType: mimeType } });
 }
 
 async function deleteObject(env, key) {
@@ -295,8 +295,8 @@ export async function completeDirectoryMediaUpload(env, { context, sessionId, fi
     });
   }
 
-  await putObject(env, originalKey, arrayBuffer, validation.mimeType);
-  for (const variant of transformedVariants) await putObject(env, variant.key, variant.transformed.bytes, variant.transformed.mimeType);
+  await putObject(env, originalKey, arrayBuffer, validation.mimeType, auth.parishId);
+  for (const variant of transformedVariants) await putObject(env, variant.key, variant.transformed.bytes, variant.transformed.mimeType, auth.parishId);
 
   const statements = [
     {
@@ -771,7 +771,7 @@ export async function reprocessDirectoryMediaAsset(env, { context, mediaAssetId,
   const existingVariants = await d1All(env, "SELECT * FROM directory_media_variants WHERE media_asset_id = ?1", asset.id);
   const oldKeysToClean = existingVariants.map((row) => row.r2_object_key);
 
-  for (const variant of transformedVariants) await putObject(env, variant.key, variant.transformed.bytes, variant.transformed.mimeType);
+  for (const variant of transformedVariants) await putObject(env, variant.key, variant.transformed.bytes, variant.transformed.mimeType, asset.parish_id);
 
   // Part 14 "Approval Policy for Legacy Approved Photos": legacy crop
   // coordinates were never persisted by Phase 2B, so this reprocessing

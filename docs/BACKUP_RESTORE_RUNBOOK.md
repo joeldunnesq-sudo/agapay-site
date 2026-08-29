@@ -59,9 +59,21 @@ without checking current usage in `src/lib/core.js`.
 - Objects stored in the private `ACCOUNTING_BACKUPS` bucket are subject to
   an age-based Worker sweep. The default window is 365 days and is adjustable
   through `ACCOUNTING_BACKUP_RETENTION_DAYS`. Age is determined from R2's
-  upload timestamp, not the human-chosen filename. When every object is older
-  than the window, the sweep always preserves the single most recently
-  uploaded backup so disaster recovery is never left with zero copies.
+  upload timestamp, not the human-chosen filename. Strict expiry is separately gated
+  by `ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED="true"`, which remains false in
+  production and shared staging pending release review. While false (or unset),
+  the sweep preserves the newest copy when all copies are expired, matching the
+  existing deployed policy. It cannot issue strict-expiry closure evidence.
+  With strict expiry enabled there is no newest-backup exception:
+  every expired object is deleted, even if all copies are expired. Each deletion
+  is verified with R2 HEAD. A failed verification fails the scheduled task.
+  Keep backup creation monitored so expiry does not leave recovery without a
+  recent copy. Do not re-upload/copy an old backup to reset its age.
+  The daily sweep can run up to one day after the threshold; configure the matching
+  R2 lifecycle rule as a second expiry mechanism and verify it in staging.
+  When strict expiry and the independent closure ledger are configured, a successful sweep writes
+  `backup-expiry/latest.json` there. Closure confirmation requires evidence no more
+  than 48 hours old, plus the versioned operational release attestation.
 - The daily workflow stores central D1 exports and SHA-256 checksum files
   under `platform-d1/` in this private bucket. The retention sweep applies
   to them as well. Manual exports should still be performed immediately
@@ -83,6 +95,19 @@ without checking current usage in `src/lib/core.js`.
 ## 4. Restoring into a temporary test database
 
 Never restore directly into `agapay-production`. Create a scratch database:
+
+**Closure suppression is a mandatory part of restore validation.** Before a
+restore, set `PARISH_RESTORE_QUARANTINE=true` and stop all writers to the target.
+Keep `PARISH_STORAGE_GUARDS_ENABLED=true`; disabling the safety gate is not a
+restore procedure. Bind the original private `PARISH_CLOSURE_LEDGER`, never a
+historical copy. Apply current migrations and execute the operator-only
+`replayClosureSuppressions` and `sanitizeRestoredParish` functions in
+`src/portability/restore.js` using the quarantined target bindings and reviewed
+maintenance evidence hash. The functions have no public route. See
+`docs/data-portability/storage-and-restore-runbook.md` for the full sequence.
+Then run the read-only checks below. They alone do not authorize returning traffic.
+Test the independent suppression gate and all restored file/KV/accounting stores
+before removing quarantine. The same requirement applies to D1 Time Travel.
 
 ```
 npx wrangler d1 create agapay-restore-test

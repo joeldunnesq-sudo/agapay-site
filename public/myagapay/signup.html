@@ -240,6 +240,10 @@
 
   <script>document.addEventListener("DOMContentLoaded", () => {
     loadPublicParishes("parish");
+    const invitationNext = new URLSearchParams(window.location.search).get("next") || "";
+    if (/^\/myagapay\/directory\?invite=[a-f0-9]{64}$/.test(invitationNext)) {
+      document.querySelectorAll('a[href="/myagapay/login"]').forEach((link) => { link.href = "/myagapay/login?next=" + encodeURIComponent(invitationNext); });
+    }
     const agreement = document.getElementById("agreeTerms");
     const submit = document.getElementById("signupSubmit");
     agreement?.addEventListener("change", () => { if (submit) submit.disabled = !agreement.checked; });

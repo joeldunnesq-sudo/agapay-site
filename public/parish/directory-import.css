@@ -1,0 +1,27 @@
+.directory-import-dialog { width:min(1020px,calc(100vw - 28px)); max-height:90dvh; overflow:auto; border:1px solid #d6c6a5; border-radius:18px; padding:28px; background:#fffcf6; color:#152d40; font-family:var(--sans,Arial,sans-serif); box-shadow:0 24px 80px #06152266; }
+.directory-import-dialog::backdrop { background:#061522b8; }
+.directory-import-dialog header { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
+.directory-import-dialog h2 { margin:5px 0 12px; font:500 34px var(--serif,Georgia,serif); }
+.directory-import-dialog h3 { margin:0 0 10px; font-size:18px; }
+.directory-import-eyebrow { font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:#886521; }
+.directory-import-dialog p { font-size:14px; line-height:1.6; margin:8px 0 16px; }
+.directory-import-dialog section { margin-top:24px; padding-top:22px; border-top:1px solid #e3d8c3; }
+.directory-import-dialog label { display:grid; gap:7px; font-size:13px; font-weight:700; }
+.directory-import-dialog button { border:1px solid #b7c2c8; border-radius:8px; padding:10px 14px; background:#fff; color:#152d40; cursor:pointer; font:600 13px var(--sans,Arial,sans-serif); }
+.directory-import-dialog button.btn-gold { color:#fff; background:#061522; border-color:#061522; margin-top:12px; }
+.directory-import-dialog button:disabled { opacity:.55; cursor:default; }
+.directory-import-dialog :focus-visible { outline:3px solid #b98a32; outline-offset:3px; }
+.directory-import-dialog select,.directory-import-dialog input[type=file] { min-width:0; max-width:100%; padding:10px; border:1px solid #bdc7cd; border-radius:7px; background:white; color:#152d40; }
+.directory-import-actions { display:flex; align-items:flex-end; flex-wrap:wrap; gap:12px; }
+.directory-import-columns { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+.directory-import-dialog .directory-import-note { font-size:12px; color:#536675; }
+.directory-import-dialog .directory-import-check { display:flex; align-items:flex-start; gap:10px; margin-top:18px; font-weight:500; line-height:1.6; }
+.directory-import-check input { flex-shrink:0; width:18px; height:18px; margin-top:2px; }
+.directory-import-table { max-height:320px; overflow:auto; border:1px solid #d8dedf; border-radius:8px; margin-top:14px; }
+.directory-import-table table { width:100%; border-collapse:collapse; font-size:12px; }
+.directory-import-table th { text-align:left; background:#edf1f2; position:sticky; top:0; }
+.directory-import-table td,.directory-import-table th { padding:10px; border-bottom:1px solid #dde2e3; vertical-align:top; overflow-wrap:anywhere; }
+#dirImportStatus { color:#193e54; font-weight:700; }
+#dirImportHistory { display:flex; flex-wrap:wrap; gap:8px; }
+.directory-import-dialog [hidden] { display:none !important; }
+@media (max-width:640px) { .directory-import-dialog { padding:18px; } .directory-import-columns { grid-template-columns:1fr; } .directory-import-dialog h2 { font-size:27px; } .directory-import-table { max-height:260px; } }

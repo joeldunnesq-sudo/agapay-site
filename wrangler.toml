@@ -43,9 +43,20 @@ TAX_EXEMPTION_WORKFLOW_ENABLED = "true"
 TAX_EXEMPTION_DOCUMENT_UPLOAD_ENABLED = "true"
 TAX_EXEMPTION_STRIPE_SYNC_ENABLED = "true"
 PRIVILEGED_MFA_REQUIRED = "true"
+# Portability is opt-in pending private storage and staging verification.
+PARISH_PORTABILITY_ENABLED = "false"
+PARISH_STORAGE_GUARDS_ENABLED = "false"
+# Enable guards only after migration 0110, private closure/retention buckets,
+# full legacy object ownership reconciliation, and an isolated restore drill.
+PARISH_AUTOMATIC_CLOSURE_ENABLED = "false"
+# Independent R2 closure authority. This identifier is not a credential; the
+# matching authority.json object is protected by an indefinite bucket lock.
+PARISH_SUPPRESSION_AUTHORITY = "25a7aefe-a931-456b-ac59-62d538428e9a"
+# Separate cron gate: false preserves the deployed newest-backup exception.
+ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED = "false"
 
 [triggers]
-crons = ["0 8 * * *", "0 14 * * 6"]
+crons = ["0 8 * * *", "0 14 * * 6", "*/5 * * * *"]
 
 [assets]
 directory = "./public"
@@ -175,6 +186,24 @@ bucket_name = "agapay-accounting-backups"
 binding = "ACCOUNTING_ATTACHMENTS"
 bucket_name = "agapay-accounting-attachments"
 
+# Private seven-day portability archives. Public access stays disabled and the
+# provider lifecycle rule applies only to parish-exports/.
+[[r2_buckets]]
+binding = "PARISH_EXPORTS"
+bucket_name = "agapay-parish-exports"
+
+# Restricted financial/legal/support copies retained for policy review. This
+# bucket intentionally has no blanket lifecycle rule.
+[[r2_buckets]]
+binding = "PARISH_RETAINED_DATA"
+bucket_name = "agapay-parish-retained-data"
+
+# Independent restore/closure authority. authority.json, closures/, and
+# completions/ are protected by indefinite R2 bucket-lock rules.
+[[r2_buckets]]
+binding = "PARISH_CLOSURE_LEDGER"
+bucket_name = "agapay-parish-closure-ledger"
+
 [browser]
 binding = "BROWSER"
 
@@ -190,6 +219,7 @@ enabled = true
 head_sampling_rate = 1
 
 [env.staging.vars]
+ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED = "false"
 AGAPAY_APP_URL = "https://agapay-site-staging.joeldunnesq.workers.dev"
 AGAPAY_PUBLIC_URL = "https://agapay-site-staging.joeldunnesq.workers.dev"
 AGAPAY_ENVIRONMENT = "staging"

@@ -226,14 +226,15 @@ export function limitTeachingAudioStream(source, maxBytes = TEACHING_AUDIO_MAX_B
   return { stream: source.pipeThrough(limiter), bytesRead: () => bytesRead };
 }
 
-export async function storeTeachingAudio(bucket, { key, source, contentType, contentLength = 0, maxBytes = TEACHING_AUDIO_MAX_BYTES }) {
+export async function storeTeachingAudio(bucket, { parishId, key, source, contentType, contentLength = 0, maxBytes = TEACHING_AUDIO_MAX_BYTES }) {
   const knownLength = Math.max(0, Number(contentLength) || 0);
   if (knownLength > maxBytes) throw new Error("TEACHING_AUDIO_TOO_LARGE");
   const bounded = knownLength ? null : limitTeachingAudioStream(source, maxBytes);
   const uploadSource = bounded ? bounded.stream : source;
   try {
     const object = await bucket.put(key, uploadSource, {
-      httpMetadata: { contentType, cacheControl: "public, max-age=31536000, immutable" },
+      customMetadata: { agapayParishId: parishId },
+      httpMetadata: { contentType, cacheControl: "no-store" },
     });
     return { object, size: Number(object?.size ?? (knownLength || bounded?.bytesRead() || 0)) };
   } catch (error) {
@@ -269,7 +270,7 @@ export async function handleParishTeachingAudioUpload(request, env, parishId, te
   const key = ["teaching", safeSegment(parishId, "parish"), safeSegment(teachingId, "post"), `${Date.now()}-${crypto.randomUUID()}.${metadata.ext}`].join("/");
   let stored;
   try {
-    stored = await storeTeachingAudio(env.TEACHING_ASSETS, { key, source: request.body, contentType: metadata.contentType, contentLength: metadata.contentLength });
+    stored = await storeTeachingAudio(env.TEACHING_ASSETS, { parishId, key, source: request.body, contentType: metadata.contentType, contentLength: metadata.contentLength });
   } catch (error) {
     if (error?.message === "TEACHING_AUDIO_TOO_LARGE") {
       return json({ error: "Teaching audio must be 50MB or smaller." }, { status: 413 });

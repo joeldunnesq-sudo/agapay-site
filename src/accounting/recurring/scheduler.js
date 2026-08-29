@@ -1,4 +1,5 @@
 import { d1All } from "../../lib/core.js";
+import { parishClosureState } from "../../portability/closure.js";
 import { createBoundD1ProvisioningAdapter, createD1DatabaseFacade } from "../provisioning/adapters.js";
 import { processDueRecurringBills } from "../payables/recurring-bills.js";
 import { processDueRecurringTransactions } from "./service.js";
@@ -18,6 +19,7 @@ export async function runScheduledRecurringTransactions(env,scheduledTime=Date.n
       AND d.environment='production' AND d.provisioning_status='ready'`);
   const asOfDate=new Date(scheduledTime).toISOString().slice(0,10),results=[];
   for(const row of rows){
+    if(await parishClosureState(env,row.parish_id))continue;
     const bindingName=configured[row.database_identifier];if(!bindingName||!env[bindingName])continue;
     const db=createD1DatabaseFacade(adapter,bindingName);
     try{
