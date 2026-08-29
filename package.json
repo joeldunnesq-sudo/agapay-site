@@ -35,7 +35,7 @@
     "@cf-wasm/photon": "^0.3.7",
     "@cloudflare/puppeteer": "^1.3.0",
     "@simplewebauthn/server": "^13.3.3",
-    "hls.js": "^1.6.16",
+    "hls.js": "^1.7.1",
     "pdf-lib": "^1.17.1",
     "svix": "^1.99.1",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
