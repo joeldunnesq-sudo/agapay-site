@@ -16,6 +16,7 @@ the pending natural-expiry observation.
 | Ledger protection | Rules read back; actual remote overwrite and delete attempts rejected. |
 | Controlled-clock backup sweep | Remote synthetic object deleted and absence verified with HEAD. Not natural expiry. |
 | Backup restoration | Hashed synthetic central/accounting snapshots restored into separate remote D1 targets; files/KV isolated; ledger not restored. |
+| Authentic central D1 restore | Passed against the newest paired private production SQL/checksum artifact. The checksum and migration history were verified before target creation; pending migrations and 441 barriers were applied to a fixed unbound scratch D1; all read-only validator checks passed. The scratch database and local backup copies were deleted after success. Production was not written. |
 | Full-schema local export/closure/restore | Passed, including other-parish preservation, retained financial file, book freeze, credential removal, and repeated sanitization. |
 | Remote closure/restore suppression | Passed in a private hosted Worker: ZIP verification, consent, freeze, authorization, purge, old-restore denial, replay, sanitization, and repeated sanitization. The earlier operator-proxy run remains recorded as interrupted. |
 | Hosted query budget | Passed: every phase stayed within the enforced 800-operation work budget; maximum hosted use was 697. |
@@ -127,6 +128,9 @@ Evidence is in the ignored `artifacts/portability-staging/` directory:
   counts, D1 Time Travel checks at 7/29/31 days, and the existing R2 lifecycle
   evidence reference. It records that no restore was performed and that manual or
   off-provider copies remain unverified.
+- `production-quarantined-d1-restore.json`: newest private SQL/checksum metadata,
+  source/migration/barrier evidence hashes, validator-output hash, and verified
+  scratch/local cleanup. Raw backup bytes are not retained in the evidence.
 - `production-accounting-identity.json`: Cloudflare/Git/book evidence hash and
   post-write identity readback.
 - `production-backup-lifecycle.json`: metadata-only 59-object inventory, age
@@ -193,8 +197,8 @@ Remaining release work, in order:
    This only performs HEAD and does not run a sweep. The planted probe prevents the
    main drill from running and contaminating the observation. Check that no manual
    deletion/sweep occurred before treating absence as lifecycle evidence.
-2. Finish the off-provider/manual-copy attestation, quarantined provider restore
-   validation, browser/MFA/billing validation,
+2. Finish the off-provider/manual-copy attestation, a real accounting/file/KV
+   provider restore qualification, browser/MFA/billing validation,
    retention disclosure approval, and realistic volume testing.
 
 The production accounting identity and 365-day backup lifecycle items are complete.

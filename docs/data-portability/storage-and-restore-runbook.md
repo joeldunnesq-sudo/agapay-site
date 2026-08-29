@@ -231,6 +231,17 @@ support attachments, or copies in accounts outside the repository/provider view.
 An accountable operator must inventory and attest those locations and their final
 disposal dates before setting PARISH_BACKUP_EXPIRY_VERIFIED.
 
+An August 29 authentic central-D1 restore qualification selected the newest paired
+private production SQL/checksum artifact under a fresh metadata evidence hash. The
+stored checksum and migration history were verified before creating a fixed unbound
+scratch D1. Because the backup predated portability migrations 0108–0110, the first
+read-only validation correctly failed migration currency and barrier checks. The
+corrected restore procedure applied current migrations and regenerated all 441
+reviewed barriers before validation; every check then passed. The scratch database
+was deleted with provider readback and both local backup files were removed. This
+qualifies the central D1 backup path; it does not attest undiscoverable manual copies
+or replace a real accounting/file/KV multi-store restore exercise.
+
 D1 Time Travel history has its own provider retention window. SQL DELETE does not
 erase that history. Shared backups cannot be destroyed solely for one parish if
 other parishes still need recovery. A restore must suppress closed parishes instead.

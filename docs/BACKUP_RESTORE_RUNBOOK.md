@@ -117,6 +117,24 @@ npx wrangler d1 execute agapay-restore-test --remote --file=agapay-production-YY
 This gives you a completely separate D1 database (its own database ID) to
 validate against, with zero risk to production data.
 
+**Do not validate immediately when the backup predates current migrations.** Bind
+only the scratch database in an operator-only Wrangler configuration, apply every
+pending migration, and install the current generated portability barriers from
+`docs/data-portability/install-write-barriers.sql`. The validator must fail if
+`d1_migrations` is absent/stale or the barriers do not match. The guarded routine
+`scripts/portability-quarantined-d1-restore.mjs` implements metadata inventory,
+checksum verification, scratch creation, current migration/barrier application,
+read-only validation, success-only scratch deletion, and local-copy cleanup. It
+defaults to a no-network plan and requires a fresh evidence hash for apply.
+
+The August 29, 2026 qualification demonstrated why this ordering matters: the
+newest valid private backup predated migrations 0108–0110. Its first read-only
+validation passed all data-integrity checks but correctly failed migration currency
+and portability barriers. After applying the current migrations and regenerating
+all 441 barriers on a clean scratch restore, every validator check passed. The
+scratch database and local SQL/checksum files were then deleted with readback;
+production was never a write target.
+
 ## 5. Validating the restore
 
 Run the read-only validator against the restored copy:

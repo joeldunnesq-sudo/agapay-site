@@ -78,11 +78,16 @@ and three successful no-store Worker HEAD responses.
 2. The production backup bucket's 365-day lifecycle and 59 current objects are verified.
    A read-only recovery inventory found 29 recent successful scheduled backup runs,
    no database backup among 297 current GitHub Actions artifacts, and D1 Time Travel
-   available at 7 and 29 days but unavailable at 31 days. Complete the off-provider/
-   manual-copy attestation and a complete quarantined Cloudflare restore drill. The isolated
-   remote drill verified lock enforcement, a controlled-clock backup sweep,
-   snapshot restoration, closure, and repeated quarantined sanitization. Natural
-   one-day lifecycle observation is awaiting its threshold and provider deletion.
+   available at 7 and 29 days but unavailable at 31 days. The newest paired private
+   production D1 SQL/checksum artifact was subsequently restored into a fixed,
+   unbound scratch D1: its stored checksum and migration history matched, current
+   migrations and all 441 barriers were applied, the complete read-only validator
+   passed, and the scratch database plus local copies were deleted with readback.
+   The isolated hosted drill separately verified accounting/file/KV restoration,
+   closure suppression, and repeated quarantined sanitization with synthetic data.
+   Complete the off-provider/manual-copy attestation and a real multi-store recovery
+   exercise before release. Natural one-day lifecycle observation is awaiting its
+   threshold and provider deletion.
 3. Approve/version the public retention disclosure, including minimal closure and
    receipt metadata. No automatic disposal of legally held/immutable records is
    enabled by a review date.
@@ -165,6 +170,9 @@ ownership rows, three inventory reviews, 441 inert closure barrier triggers, and
 three private portability buckets. Temporary exports have a seven-day provider
 lifecycle; the independent authority/closure/completion prefixes are indefinitely
 locked. The application bindings and public-media delivery configuration are deployed.
+The authentic central-D1 restore qualification created only a temporary unbound
+scratch database; it was deleted after validation, and both local backup files were
+removed. It did not write to production.
 
 The private hosted staging drill passed export, verified download, consent, book
 freeze, authorization, purge, restore denial, suppression replay, and repeatable
