@@ -5,6 +5,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import path from 'node:path';
 import { POLICY_VERSION } from '../src/portability/catalog.js';
+import { RETENTION_DISCLOSURE_VERSION } from '../src/portability/closure.js';
 import { sha256, utf8 } from '../src/portability/archive.js';
 import { startExport, processExport, getJob, confirmClosure, runPortabilityJobs } from '../src/portability/service.js';
 import { protectFileStorage } from '../src/portability/storage.js';
@@ -56,7 +57,7 @@ try {
   central.prepare("INSERT INTO accounting_entities(id,parish_id) VALUES('budget-entity',?)").run(parishId);
   central.exec("INSERT INTO accounting_databases(id,accounting_entity_id,environment,database_identifier) VALUES('budget-db','budget-entity','staging','agapay-acct-staging-query-budget')");
   books.prepare("INSERT INTO accounting_database_metadata(key,value) VALUES('parish_id',?)").run(parishId);
-  const env = { AGAPAY_DB: binding(central), DRILL_BOOKS: binding(books), AGAPAY_ENVIRONMENT: 'staging', ACCOUNTING_DATABASE_BINDINGS: JSON.stringify({ 'agapay-acct-staging-query-budget': 'DRILL_BOOKS' }), PARISH_EXPORTS: bucket(), PARISH_RETAINED_DATA: bucket(), PARISH_CLOSURE_LEDGER: bucket(), PARISH_SUPPRESSION_AUTHORITY: 'query-budget', PARISH_PORTABILITY_ENABLED: 'true', PARISH_STORAGE_GUARDS_ENABLED: 'true', PARISH_AUTOMATIC_CLOSURE_ENABLED: 'true', ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED: 'true', PARISH_BACKUP_EXPIRY_VERIFIED: POLICY_VERSION };
+  const env = { AGAPAY_DB: binding(central), DRILL_BOOKS: binding(books), AGAPAY_ENVIRONMENT: 'staging', ACCOUNTING_DATABASE_BINDINGS: JSON.stringify({ 'agapay-acct-staging-query-budget': 'DRILL_BOOKS' }), PARISH_EXPORTS: bucket(), PARISH_RETAINED_DATA: bucket(), PARISH_CLOSURE_LEDGER: bucket(), PARISH_SUPPRESSION_AUTHORITY: 'query-budget', PARISH_PORTABILITY_ENABLED: 'true', PARISH_STORAGE_GUARDS_ENABLED: 'true', PARISH_AUTOMATIC_CLOSURE_ENABLED: 'true', PARISH_RETENTION_DISCLOSURE_APPROVED: RETENTION_DISCLOSURE_VERSION, ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED: 'true', PARISH_BACKUP_EXPIRY_VERIFIED: POLICY_VERSION };
   await env.PARISH_CLOSURE_LEDGER.put('authority.json', JSON.stringify({ id: 'query-budget', policyVersion: POLICY_VERSION }));
   await env.PARISH_CLOSURE_LEDGER.put('backup-expiry/latest.json', JSON.stringify({ strictExpiryEnabled: true, verifiedAt: Date.now(), retentionDays: 365, newestBackupPreserved: false, oldestRetainedAt: null }));
   const values=new Map();

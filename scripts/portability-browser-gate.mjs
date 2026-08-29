@@ -12,6 +12,7 @@ assert.match(portabilityClient, /archiveHash:\s*verifiedHash/, 'closure must sub
 assert.match(portabilityClient, /crypto\.subtle\.digest\('SHA-256'/, 'saved ZIP verification must happen on the device');
 assert.match(portabilityClient, /Downloading alone does not close your parish/, 'download UI must state that downloading is non-destructive');
 assert.match(portabilityClient, /data-action="confirm"/, 'closure confirmation must remain a separate explicit action');
+assert.match(portabilityClient, /retention disclosure is a draft awaiting formal approval/, 'unapproved retention copy must be visible and keep closure disabled');
 assert.match(mfaClient, /payload\.code !== 'mfa_step_up_required'/, 'the fetch wrapper must recognize only explicit MFA step-up responses');
 
 if (process.argv.includes('--static-only')) {
@@ -48,8 +49,12 @@ function portabilityState() {
     policyVersion: 'synthetic-browser-gate',
     disclosure: {
       version: 'synthetic-browser-gate',
-      financial: 'Financial records required for accounting and legal obligations remain restricted for their approved retention period.',
-      support: 'Support correspondence remains restricted for its approved retention period.',
+      status: 'approved',
+      approvalRequired: false,
+      sections: [
+        { key: 'financial', title: 'Accounting records', text: 'Financial records required for accounting and legal obligations remain restricted for their approved retention period.' },
+        { key: 'support', title: 'Support records', text: 'Support correspondence remains restricted for its approved retention period.' },
+      ],
     },
     closure: { available: true, blockers: [] },
     jobs: ordinaryReady ? [{

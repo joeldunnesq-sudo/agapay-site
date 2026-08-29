@@ -9,7 +9,7 @@ import { createZip, sha256, utf8 } from '../src/portability/archive.js';
 import { collectParishExport } from '../src/portability/export.js';
 import { classifyLegacyRecord, collectLegacyRecords } from '../src/portability/legacy.js';
 import { collectAccountingRecords } from '../src/portability/accounting.js';
-import { barrierStatements, closureReadiness } from '../src/portability/closure.js';
+import { barrierStatements, closureReadiness, retentionDisclosure, RETENTION_DISCLOSURE_VERSION } from '../src/portability/closure.js';
 import { actorFingerprint, startExport, processExport, confirmClosure, getJob, downloadExport, retryExport, cancelExport, runPortabilityJobs } from '../src/portability/service.js';
 import { handleParishPortability } from '../src/handlers/parish-portability.js';
 import { protectFileStorage, inventoryParishObjects, assertStorageDrained } from '../src/portability/storage.js';
@@ -19,6 +19,12 @@ import { replayClosureSuppressions, sanitizeRestoredParish } from '../src/portab
 import { reconcileObjectOwnership, reconcileFileOperation } from '../src/portability/maintenance.js';
 import { reviewDueRetentions } from '../src/portability/disposal.js';
 import { verifyBackupExpiryEvidence } from '../src/portability/backup-evidence.js';
+
+const retentionDisclosureDraft = readFileSync(new URL('../docs/data-portability/retention-disclosure-draft.md', import.meta.url), 'utf8');
+assert.ok(retentionDisclosureDraft.includes(`**Disclosure version:** \`${RETENTION_DISCLOSURE_VERSION}\``));
+assert.match(retentionDisclosureDraft, /Status:\*\* Draft pending formal approval/);
+assert.match(retentionDisclosureDraft, /does not authorize production deletion/);
+for (const section of retentionDisclosure({}).sections) assert.ok(retentionDisclosureDraft.includes(`### ${section.title}`), `review document must contain the ${section.key} section`);
 
 function memoryBucket() {
   const objects = new Map();
@@ -40,7 +46,7 @@ async function fixture({ barriers = true } = {}) {
   f.env.ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED = 'true';
   f.db.exec(readFileSync(new URL('../migrations/0109_parish_portability.sql', import.meta.url), 'utf8'));
   f.db.exec(readFileSync(new URL('../migrations/0110_portability_storage_safeguards.sql', import.meta.url), 'utf8'));
-  Object.assign(f.env, { PARISH_PORTABILITY_ENABLED: 'true', PARISH_AUTOMATIC_CLOSURE_ENABLED: 'true', PARISH_STORAGE_GUARDS_ENABLED: 'true', PARISH_SUPPRESSION_AUTHORITY: 'test-ledger', PARISH_BACKUP_EXPIRY_VERIFIED: POLICY_VERSION, PARISH_EXPORTS: memoryBucket(), PARISH_CLOSURE_LEDGER: memoryBucket(), PARISH_RETAINED_DATA: memoryBucket() });
+  Object.assign(f.env, { PARISH_PORTABILITY_ENABLED: 'true', PARISH_AUTOMATIC_CLOSURE_ENABLED: 'true', PARISH_RETENTION_DISCLOSURE_APPROVED: RETENTION_DISCLOSURE_VERSION, PARISH_STORAGE_GUARDS_ENABLED: 'true', PARISH_SUPPRESSION_AUTHORITY: 'test-ledger', PARISH_BACKUP_EXPIRY_VERIFIED: POLICY_VERSION, PARISH_EXPORTS: memoryBucket(), PARISH_CLOSURE_LEDGER: memoryBucket(), PARISH_RETAINED_DATA: memoryBucket() });
   await f.env.PARISH_CLOSURE_LEDGER.put('authority.json',JSON.stringify({ id: 'test-ledger', policyVersion: POLICY_VERSION }));
   await f.env.PARISH_CLOSURE_LEDGER.put('backup-expiry/latest.json',JSON.stringify({ strictExpiryEnabled: true, verifiedAt: Date.now(), retentionDays: 365, newestBackupPreserved: false, oldestRetainedAt: null }));
   for (const parish of ['parish-a', 'parish-b']) {
@@ -246,6 +252,15 @@ assert.equal(text(entries(standardZip)['hello.txt']), 'Portable parish records')
   const job = await f.start('close'); await processExport(f.env, 'parish-a', job.id);
   await assert.rejects(f.confirm(await getJob(f.env, 'parish-a', job.id)), /write barriers/);
   assert.equal(closureReadiness({}, {}).available, false);
+  const draftDisclosure = retentionDisclosure({});
+  assert.equal(draftDisclosure.version, RETENTION_DISCLOSURE_VERSION);
+  assert.equal(draftDisclosure.status, 'draft_pending_approval');
+  assert.equal(draftDisclosure.approvalRequired, true);
+  assert.deepEqual(draftDisclosure.sections.map(section => section.key), ['activeData','financial','support','closureRecords','sharedAccounts','backups','providers']);
+  const withoutApproval = { ...f.env }; delete withoutApproval.PARISH_RETENTION_DISCLOSURE_APPROVED;
+  assert.ok(closureReadiness(withoutApproval, {}).blockers.some(blocker => blocker.code === 'retention_disclosure_unapproved'));
+  assert.ok(closureReadiness({ ...f.env, PARISH_RETENTION_DISCLOSURE_APPROVED: 'stale-version' }, {}).blockers.some(blocker => blocker.code === 'retention_disclosure_unapproved'));
+  assert.equal(retentionDisclosure(f.env).status, 'approved');
   for (const manifest of [{ activeLegalHolds: [{ id: 'hold' }] }, { assets: [{ key: 'photo' }] }, { legacyRecords: [{ key: 'legacy' }] }, { tables: [{ table: 'accounting/ledger', rowCount: 1 }] }]) assert.equal(closureReadiness(f.env, manifest).available, false);
   const original = JSON.parse(f.db.prepare("SELECT data FROM registrations WHERE parish_id='parish-a'").get().data);
   original.parishDashboardSessions[0].mfaVerifiedAt = new Date(Date.now() + 60000).toISOString();

@@ -8,6 +8,7 @@ import { build } from 'esbuild';
 import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
 import { directoryImportFixture } from './directory-import-fixture.mjs';
 import { POLICY_VERSION } from '../src/portability/catalog.js';
+import { RETENTION_DISCLOSURE_VERSION } from '../src/portability/closure.js';
 
 // Esbuild 0.28 on Windows mis-resolves entry points when absWorkingDir retains
 // the trailing separator returned for a directory file URL.
@@ -23,7 +24,7 @@ const options = convertV4MiniflareOptions({
   modules: true, script: built.outputFiles[0].text, compatibilityDate, compatibilityFlags: ['nodejs_compat'],
   host: '127.0.0.1', port: 0, cf: false,
   d1Databases: ['AGAPAY_DB','RESTORE_AGAPAY_DB'], kvNamespaces: ['AGAPAY_REGISTRATIONS','RESTORE_AGAPAY_REGISTRATIONS'], r2Buckets: storage,
-  bindings: { PORTABILITY_LOCAL_DRILL: 'true', DRILL_TOKEN: token, AGAPAY_ENVIRONMENT: 'staging', PARISH_PORTABILITY_ENABLED: 'true', PARISH_STORAGE_GUARDS_ENABLED: 'true', PARISH_AUTOMATIC_CLOSURE_ENABLED: 'true', ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED: 'true', PARISH_SUPPRESSION_AUTHORITY: 'local-synthetic-ledger', PARISH_BACKUP_EXPIRY_VERIFIED: POLICY_VERSION, PARISH_LEGACY_INVENTORY_VERIFIED: POLICY_VERSION },
+  bindings: { PORTABILITY_LOCAL_DRILL: 'true', DRILL_TOKEN: token, AGAPAY_ENVIRONMENT: 'staging', PARISH_PORTABILITY_ENABLED: 'true', PARISH_STORAGE_GUARDS_ENABLED: 'true', PARISH_AUTOMATIC_CLOSURE_ENABLED: 'true', PARISH_RETENTION_DISCLOSURE_APPROVED: RETENTION_DISCLOSURE_VERSION, ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED: 'true', PARISH_SUPPRESSION_AUTHORITY: 'local-synthetic-ledger', PARISH_BACKUP_EXPIRY_VERIFIED: POLICY_VERSION, PARISH_LEGACY_INVENTORY_VERIFIED: POLICY_VERSION },
   outboundService() { egressAttempts++; throw new Error('Network egress is forbidden in the portability drill'); },
 });
 options.telemetry = { enabled: false };

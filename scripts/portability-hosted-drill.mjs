@@ -6,6 +6,7 @@ import path from 'node:path';
 import {getPlatformProxy} from 'wrangler';
 import {sha256} from '../src/portability/archive.js';
 import {POLICY_VERSION} from '../src/portability/catalog.js';
+import {RETENTION_DISCLOSURE_VERSION} from '../src/portability/closure.js';
 
 assert.ok(['--configure','--run'].includes(process.argv[2]),'Use --configure or --run');
 const dir=path.resolve('artifacts/portability-staging');
@@ -27,7 +28,7 @@ for(const r of base.kv_namespaces){assert.equal(r.id,resources.kv[r.binding].id)
 for(const r of base.r2_buckets){assert.equal(r.bucket_name,resources.r2[r.binding].name);assert.ok(r.bucket_name.startsWith(prefix+'-'));assert.match(resources.safeguards[r.binding].publicAccess,/Public access via the r2\.dev URL is disabled/);assert.match(resources.safeguards[r.binding].domains,/There are no custom domains/);}
 assert.ok(prior.centralSnapshot&&prior.bookSnapshot&&prior.filesSnapshot&&prior.lockTested);
 assert.ok(!existsSync(path.join(dir,'natural-expiry-state.json')),'Do not contaminate a natural-expiry observation');
-const config={...base,name,main:path.resolve('scripts/fixtures/portability-staging-worker.js'),routes:[],version_metadata:{binding:'DRILL_VERSION'},vars:{...base.vars,PORTABILITY_PRIVATE_DRILL:'true',DRILL_JOB_ID:prior.jobId,DRILL_EVIDENCE_SHA256:evidenceSha256,PARISH_PORTABILITY_ENABLED:'true',PARISH_STORAGE_GUARDS_ENABLED:'true',PARISH_AUTOMATIC_CLOSURE_ENABLED:'true',ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED:'true',ACCOUNTING_BACKUP_RETENTION_DAYS:'1',PARISH_SUPPRESSION_AUTHORITY:prefix,PARISH_BACKUP_EXPIRY_VERIFIED:POLICY_VERSION,PARISH_LEGACY_INVENTORY_VERIFIED:POLICY_VERSION,ACCOUNTING_DATABASE_BINDINGS:JSON.stringify({[resources.d1.DRILL_BOOKS.name]:'DRILL_BOOKS'})}};
+const config={...base,name,main:path.resolve('scripts/fixtures/portability-staging-worker.js'),routes:[],version_metadata:{binding:'DRILL_VERSION'},vars:{...base.vars,PORTABILITY_PRIVATE_DRILL:'true',DRILL_JOB_ID:prior.jobId,DRILL_EVIDENCE_SHA256:evidenceSha256,PARISH_PORTABILITY_ENABLED:'true',PARISH_STORAGE_GUARDS_ENABLED:'true',PARISH_AUTOMATIC_CLOSURE_ENABLED:'true',PARISH_RETENTION_DISCLOSURE_APPROVED:RETENTION_DISCLOSURE_VERSION,ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED:'true',ACCOUNTING_BACKUP_RETENTION_DAYS:'1',PARISH_SUPPRESSION_AUTHORITY:prefix,PARISH_BACKUP_EXPIRY_VERIFIED:POLICY_VERSION,PARISH_LEGACY_INVENTORY_VERIFIED:POLICY_VERSION,ACCOUNTING_DATABASE_BINDINGS:JSON.stringify({[resources.d1.DRILL_BOOKS.name]:'DRILL_BOOKS'})}};
 for(const key of ['d1_databases','kv_namespaces','r2_buckets'])config[key]=config[key].map(({remote,...binding})=>binding);
 const operator={name:prefix+'-operator',account_id:base.account_id,compatibility_date:base.compatibility_date,compatibility_flags:base.compatibility_flags,workers_dev:false,preview_urls:false,services:[{binding:'DRILL',service:name,remote:true}]};
 const configPath=path.join(dir,'hosted-worker.json'),operatorPath=path.join(dir,'hosted-operator.json');

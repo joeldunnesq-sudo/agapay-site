@@ -5,6 +5,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { getPlatformProxy, unstable_splitSqlQuery } from 'wrangler';
 import { POLICY_VERSION, quoted } from '../src/portability/catalog.js';
+import { RETENTION_DISCLOSURE_VERSION } from '../src/portability/closure.js';
 import { sha256 } from '../src/portability/archive.js';
 import { protectFileStorage } from '../src/portability/storage.js';
 import { protectLegacyStorage, collectLegacyRecords } from '../src/portability/legacy.js';
@@ -63,7 +64,7 @@ for(const {binding} of config.r2_buckets){
 }
 // Test attestations apply only to these isolated synthetic stores. The report
 // explicitly distinguishes controlled-clock expiry from natural lifecycle expiry.
-const env={...boundEnv,AGAPAY_ENVIRONMENT:'staging',PARISH_PORTABILITY_ENABLED:'true',PARISH_STORAGE_GUARDS_ENABLED:'true',PARISH_AUTOMATIC_CLOSURE_ENABLED:'true',ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED:'true',ACCOUNTING_BACKUP_RETENTION_DAYS:'1',PARISH_SUPPRESSION_AUTHORITY:prefix,PARISH_BACKUP_EXPIRY_VERIFIED:POLICY_VERSION,PARISH_LEGACY_INVENTORY_VERIFIED:POLICY_VERSION,ACCOUNTING_DATABASE_BINDINGS:JSON.stringify({[resources.d1.DRILL_BOOKS.name]:'DRILL_BOOKS'})};
+const env={...boundEnv,AGAPAY_ENVIRONMENT:'staging',PARISH_PORTABILITY_ENABLED:'true',PARISH_STORAGE_GUARDS_ENABLED:'true',PARISH_AUTOMATIC_CLOSURE_ENABLED:'true',PARISH_RETENTION_DISCLOSURE_APPROVED:RETENTION_DISCLOSURE_VERSION,ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED:'true',ACCOUNTING_BACKUP_RETENTION_DAYS:'1',PARISH_SUPPRESSION_AUTHORITY:prefix,PARISH_BACKUP_EXPIRY_VERIFIED:POLICY_VERSION,PARISH_LEGACY_INVENTORY_VERIFIED:POLICY_VERSION,ACCOUNTING_DATABASE_BINDINGS:JSON.stringify({[resources.d1.DRILL_BOOKS.name]:'DRILL_BOOKS'})};
 const restored={...env,AGAPAY_DB:env.RESTORE_AGAPAY_DB,DRILL_BOOKS:env.RESTORE_DRILL_BOOKS,AGAPAY_REGISTRATIONS:env.RESTORE_AGAPAY_REGISTRATIONS,DIRECTORY_MEDIA:env.RESTORE_DIRECTORY_MEDIA,TAX_EXEMPTION_DOCS:env.RESTORE_TAX_EXEMPTION_DOCS,PARISH_EXPORTS:env.RESTORE_PARISH_EXPORTS};
 const parishId='portability-staging-a', other='portability-staging-b';
 const actorHash=await sha256(prefix+':synthetic-administrator');
