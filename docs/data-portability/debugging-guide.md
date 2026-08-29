@@ -14,6 +14,7 @@ production operators; they are not shipped as request-path code.
 | --- | --- |
 | Policy versions and parish-facing retention copy | `src/portability/policy.js` |
 | Job scheduling and state transitions | `src/portability/service.js` |
+| Allowlisted stage and failed-safeguard snapshot | `src/portability/diagnostics.js` |
 | Export collection and manifest construction | `src/portability/export.js` |
 | Reviewed central schema, ownership, and redaction | `src/portability/schema.js`, `src/portability/catalog.js` |
 | Closure blockers, write barriers, and central purge plan | `src/portability/closure.js` |
@@ -95,12 +96,22 @@ Never repair a portability job with an ad hoc `UPDATE` or by deleting a closure
 marker. Use the documented recovery operator for the failed boundary; those
 operators default to plan/read-only mode and require fresh evidence for writes.
 
+Authenticated job responses include a `diagnostic` snapshot with exactly three
+fields: its schema version, the current generic stage, and the failed safeguard
+family when one exists. The snapshot is built by an allowlist and never copies a
+job row. It therefore excludes parish identifiers, administrator fingerprints,
+archive keys and hashes, manifests, donor information, and raw error text.
+
 ## Test ladder
 
 Run the smallest relevant gate first, then widen:
 
 ```text
 npm run test:parish-portability
+node scripts/portability-tests/lifecycle.test.mjs
+node scripts/portability-tests/export.test.mjs
+node scripts/portability-tests/deletion.test.mjs
+node scripts/portability-tests/safeguards.test.mjs
 npm run test:parish-portability-runtime
 npm run test:portability-query-budget
 npm run test:portability-volume
@@ -108,7 +119,8 @@ npm run test:parish-portability-browser
 npm run check
 ```
 
-- The first command covers domain behavior and failure recovery in memory.
+- The first command runs all four in-memory suites. The next four commands run a
+  single lifecycle, export, deletion, or safeguard suite for focused debugging.
 - The runtime drill covers native Worker, D1, R2, and KV behavior.
 - Query-budget and volume gates catch provider-limit and scale regressions.
 - The browser gate checks MFA, billing cancellation, local ZIP verification, and

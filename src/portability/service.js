@@ -8,6 +8,7 @@ import { freezeAccountingBooks, releaseAccountingFreeze, purgeAccountingCredenti
 import { disposeParishFiles, disposeLegacyRecords, retainScopedSettings, recordRetention, reviewDueRetentions, removeParishExportCopies, removeDisposedOwnershipIndexes } from './disposal.js';
 import { verifyBackupExpiryEvidence } from './backup-evidence.js';
 import { portabilityBudget, recoveryBudget } from './budget.js';
+import { portabilityDiagnosticSnapshot } from './diagnostics.js';
 
 const now = () => Date.now();
 const uuid = () => crypto.randomUUID();
@@ -34,6 +35,7 @@ export function publicJob(env, job) {
     createdAt: job.created_at, expiresAt: job.expires_at, confirmedAt: job.confirmed_at,
     completedAt: job.completed_at, archiveSha256: job.archive_sha256, archiveBytes: job.archive_bytes,
     errorCode: job.error_code, rowCount: manifest?.tables?.reduce((n, table) => n + table.rowCount, 0) || 0,
+    diagnostic: portabilityDiagnosticSnapshot(job),
     closure: closureReadiness(env, manifest),
   };
 }

@@ -13,6 +13,8 @@ assert.match(portabilityClient, /crypto\.subtle\.digest\('SHA-256'/, 'saved ZIP 
 assert.match(portabilityClient, /Downloading alone does not close your parish/, 'download UI must state that downloading is non-destructive');
 assert.match(portabilityClient, /data-action="confirm"/, 'closure confirmation must remain a separate explicit action');
 assert.match(portabilityClient, /retention disclosure is a draft awaiting formal approval/, 'unapproved retention copy must be visible and keep closure disabled');
+assert.match(portabilityClient, /Current stage:/, 'the job card must show the sanitized diagnostic stage');
+assert.match(portabilityClient, /Failed safeguard:/, 'the job card must show a sanitized failed-safeguard family');
 assert.match(mfaClient, /payload\.code !== 'mfa_step_up_required'/, 'the fetch wrapper must recognize only explicit MFA step-up responses');
 
 if (process.argv.includes('--static-only')) {
@@ -67,6 +69,7 @@ function portabilityState() {
       archiveBytes: archive.length,
       archiveSha256: 'a'.repeat(64),
       errorCode: '',
+      diagnostic: { version: 1, stage: 'ready_for_download', failedSafeguard: null },
       confirmedAt: null,
       closure: { available: false, blockers: [] },
     }] : [],
@@ -172,6 +175,7 @@ try {
 
   await page.getByRole('button', { name: 'Prepare parish export' }).click();
   await page.getByRole('button', { name: 'Download ZIP' }).waitFor();
+  await page.locator('.portability-small').filter({ hasText: 'Current stage: ready for download' }).waitFor();
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download ZIP' }).click();
   const download = await downloadPromise;

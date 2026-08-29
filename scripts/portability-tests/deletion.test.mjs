@@ -1,0 +1,104 @@
+import assert from 'node:assert/strict';
+import { POLICY_VERSION, inspectStorage } from '../../src/portability/catalog.js';
+import { utf8 } from '../../src/portability/archive.js';
+import { barrierStatements } from '../../src/portability/closure.js';
+import { processExport, confirmClosure, getJob, retryExport, cancelExport, runPortabilityJobs } from '../../src/portability/service.js';
+import { handleParishPortability } from '../../src/handlers/parish-portability.js';
+import { protectFileStorage } from '../../src/portability/storage.js';
+import { assertRestoreSafe } from '../../src/portability/suppression.js';
+import { replayClosureSuppressions, sanitizeRestoredParish } from '../../src/portability/restore.js';
+import { reviewDueRetentions } from '../../src/portability/disposal.js';
+import { portabilityFixture as fixture, memoryBucket } from './fixtures.mjs';
+
+{
+  const f = await fixture();
+  let job = await f.start('close');
+  await processExport(f.env, 'parish-a', job.id); job = await getJob(f.env, 'parish-a', job.id);
+  await assert.rejects(confirmClosure(f.env, { parishId: 'parish-a', jobId: job.id, actorHash: f.actor, archiveHash: 'bad', policyVersion: POLICY_VERSION, saved: true, confirmation: 'parish-a' }), /Verify/);
+  f.db.prepare("UPDATE directory_people SET preferred_name='Changed' WHERE id='a'").run();
+  await assert.rejects(f.confirm(job), /changed/);
+  assert.equal(f.db.prepare('SELECT count(*) n FROM parish_data_closures').get().n, 0, 'stale export releases barrier and deletes nothing');
+  await cancelExport(f.env, 'parish-a', job.id);
+  job = await f.start('close'); await processExport(f.env, 'parish-a', job.id); job = await getJob(f.env, 'parish-a', job.id);
+  await f.confirm(job);
+  assert.throws(() => f.db.prepare("UPDATE directory_people SET preferred_name='Late writer' WHERE id='a'").run(), /WRITE_BLOCKED/);
+  f.db.prepare("UPDATE directory_people SET preferred_name='Other parish update' WHERE id='b'").run();
+  f.env.PARISH_EXPORTS.failDelete = true;
+  await assert.rejects(processExport(f.env, 'parish-a', job.id), /synthetic/);
+  assert.equal(f.db.prepare("SELECT count(*) n FROM directory_people WHERE id='a'").get().n, 0);
+  assert.equal(f.db.prepare("SELECT count(*) n FROM directory_people WHERE id IN ('b','shared')").get().n, 2);
+  assert.equal(f.db.prepare("SELECT count(*) n FROM directory_contact_methods WHERE parish_id='parish-b'").get().n, 1);
+  assert.throws(() => f.db.prepare("INSERT INTO directory_people(id,created_by_parish_id,preferred_name,created_at,updated_at) VALUES('late','parish-a','Late',1,1)").run(), /WRITE_BLOCKED/);
+  assert.throws(() => f.db.prepare("INSERT INTO membership_capabilities(id,membership_id,capability,granted_at) VALUES('late-cap','deleted-membership','directory.manage','2026-08-28')").run(), /WRITE_BLOCKED/, 'parent-scoped records cannot return as orphans after closure');
+  f.db.prepare("UPDATE directory_people SET preferred_name='Still shared' WHERE id='shared'").run();
+  f.env.PARISH_EXPORTS.failDelete = false;
+  await retryExport(f.env, 'parish-a', job.id); await processExport(f.env, 'parish-a', job.id);
+  const completed = await getJob(f.env, 'parish-a', job.id);
+  assert.equal(completed.status, 'active_data_deleted'); assert.equal(completed.manifest_json, null);
+  assert.equal(f.env.PARISH_EXPORTS.objects.size, 0);
+  const receipt = await handleParishPortability(new Request('https://agapay.test/api', { headers: { Authorization: 'Bearer ' + f['parish-a'] } }), f.env, 'parish-a', '/' + job.id + '/receipt');
+  assert.equal(receipt.status, 200); assert.equal((await receipt.json()).receipt.status, 'active_data_deleted');
+  assert.equal((await handleParishPortability(new Request('https://agapay.test/api'), f.env, 'parish-a')).status, 401);
+  f.db.close();
+}
+{
+  const f = await fixture();
+  const backup = await f.start('export'); await processExport(f.env, 'parish-a', backup.id);
+  const job = await f.start('close'); await processExport(f.env, 'parish-a', job.id);
+  const ready = await getJob(f.env, 'parish-a', job.id); await f.confirm(ready);
+  f.db.exec("CREATE TRIGGER test_purge_failure BEFORE DELETE ON registrations WHEN OLD.parish_id='parish-a' BEGIN SELECT RAISE(ABORT,'synthetic transaction failure'); END;");
+  await assert.rejects(processExport(f.env, 'parish-a', job.id), /transaction failure/);
+  assert.equal(f.db.prepare("SELECT count(*) n FROM directory_people WHERE id='a'").get().n, 1, 'a late SQL failure rolls back preceding deletes');
+  assert.equal(f.db.prepare("SELECT count(*) n FROM parish_portability_steps WHERE step_key='central_purge'").get().n, 0);
+  f.db.exec('DROP TRIGGER test_purge_failure');
+  await runPortabilityJobs(f.env);
+  assert.equal((await getJob(f.env, 'parish-a', job.id)).status, 'active_data_deleted', 'scheduler resumes authorized failed deletion without the browser');
+  assert.equal(f.env.PARISH_EXPORTS.objects.size, 0, 'closure removes earlier exports of the same parish too');
+  assert.equal((await getJob(f.env, 'parish-a', backup.id)).status, 'cancelled');
+  f.db.close();
+}
+{
+  const f=await fixture({barriers:false});
+  f.db.exec("CREATE TABLE tax_exemption_documents(id TEXT PRIMARY KEY,registration_reference TEXT REFERENCES registrations(reference),storage_key TEXT); INSERT INTO tax_exemption_documents VALUES('doc','ref-parish-a','texdoc/a');");
+  f.db.prepare('INSERT INTO app_settings(key,value,updated_at) VALUES(?,?,?)').run('parish-feature-requests:parish-a',JSON.stringify({features:{test:1}}),'2026-08-28');
+  f.db.prepare('INSERT INTO app_settings(key,value,updated_at) VALUES(?,?,?)').run('__agapay_parish_support_ticket:a',JSON.stringify({parishId:'parish-a',message:'Help me'}),'2026-08-28');
+  for(const sql of barrierStatements((await inspectStorage(f.env.AGAPAY_DB)).map(t=>t.name)))f.db.exec(sql);
+  f.env.TAX_EXEMPTION_DOCS=memoryBucket();
+  await protectFileStorage(f.env).TAX_EXEMPTION_DOCS.put('texdoc/a',utf8('financial evidence'),{customMetadata:{agapayParishId:'parish-a'}});
+  const job=await f.start('close'); await processExport(f.env,'parish-a',job.id); await f.confirm(await getJob(f.env,'parish-a',job.id));
+  await processExport(f.env,'parish-a',job.id);
+  assert.equal(await f.env.TAX_EXEMPTION_DOCS.head('texdoc/a'),null);
+  const registration=f.db.prepare("SELECT * FROM registrations WHERE parish_id='parish-a'").get();
+  assert.equal(registration.status,'closed'); assert.equal(registration.parish_name,null);
+  assert.deepEqual(JSON.parse(registration.data),{parishId:'parish-a',status:'closed'});
+  assert.equal(f.db.prepare("SELECT count(*) n FROM app_settings WHERE key LIKE '%parish-a' OR key='__agapay_parish_support_ticket:a'").get().n,0);
+  assert.equal(f.env.PARISH_RETAINED_DATA.objects.size,2,'only supporting evidence and support correspondence copied');
+  const retention=f.db.prepare('SELECT * FROM parish_portability_retention').all();
+  assert.ok(retention.some(row=>row.category==='support')); assert.ok(retention.some(row=>row.category==='financial'));
+  await reviewDueRetentions(f.env,Date.UTC(2140,0,1));
+  assert.ok(f.db.prepare('SELECT status FROM parish_portability_retention').all().every(row=>row.status==='review_due'));
+  assert.equal(f.env.PARISH_RETAINED_DATA.objects.size,2,'review date is not an authorization to destroy legal evidence');
+  assert.throws(()=>f.db.prepare("UPDATE registrations SET data='{}' WHERE parish_id='parish-a'").run(),/WRITE_BLOCKED/);
+  f.db.close();
+}
+{
+  const source=await fixture(), restored=await fixture();
+  const job=await source.start('close'); await processExport(source.env,'parish-a',job.id); await source.confirm(await getJob(source.env,'parish-a',job.id)); await processExport(source.env,'parish-a',job.id);
+  restored.env.PARISH_CLOSURE_LEDGER=source.env.PARISH_CLOSURE_LEDGER;
+  await assert.rejects(assertRestoreSafe(restored.env),/suppression replay/);
+  await assert.rejects(replayClosureSuppressions(restored.env,'b'.repeat(64)),/quarantine/);
+  restored.env.PARISH_RESTORE_QUARANTINE='true';
+  await replayClosureSuppressions(restored.env,'b'.repeat(64));
+  await assert.rejects(assertRestoreSafe({...restored.env,PARISH_RESTORE_QUARANTINE:'false'}),/suppression replay/,'replay alone cannot authorize serving resurrected records');
+  restored.db.prepare("UPDATE parish_data_closures SET state='deleting' WHERE parish_id='parish-a'").run();
+  await assert.rejects(assertRestoreSafe({...restored.env,PARISH_RESTORE_QUARANTINE:'false'}),/suppression replay/,'an intermediate backup taken after authorization cannot defeat independent completion evidence');
+  await sanitizeRestoredParish(restored.env,'parish-a','b'.repeat(64));
+  await assert.rejects(assertRestoreSafe(restored.env),/quarantined/);
+  await assertRestoreSafe({...restored.env,PARISH_RESTORE_QUARANTINE:'false'});
+  assert.equal(restored.db.prepare("SELECT count(*) n FROM directory_people WHERE id='a'").get().n,0);
+  assert.equal(restored.db.prepare("SELECT count(*) n FROM directory_people WHERE id='b'").get().n,1);
+  await sanitizeRestoredParish(restored.env,'parish-a','b'.repeat(64));
+  restored.env.PARISH_CLOSURE_LEDGER=memoryBucket();
+  await assert.rejects(assertRestoreSafe({...restored.env,PARISH_RESTORE_QUARANTINE:'false'}),/authority/,'empty or misbound ledgers fail closed');
+  source.db.close(); restored.db.close();
+}
