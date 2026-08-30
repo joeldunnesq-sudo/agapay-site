@@ -6,7 +6,7 @@ import {
   assertManifestFresh,
   checksumFromFile,
   compareSnapshots,
-  countSqlBatches,
+  countStatementBatches,
   createBackupManifest,
   prepareRestoreSql,
   snapshotFromRemoteRows,
@@ -110,7 +110,7 @@ if (command === 'prepare-export') {
   const manifest = readManifest();
   const schemaRows = wranglerJson(database, userSchemaSql());
   const tables = schemaRows.filter((row) => row.type === 'table').map((row) => row.name);
-  const countRows = countSqlBatches(tables).flatMap((sql) => wranglerJson(database, sql));
+  const countRows = countStatementBatches(tables).flatMap((sql) => wranglerJson(database, sql));
   const quickCheckRows = wranglerJson(database, 'PRAGMA quick_check');
   if (String(quickCheckRows[0]?.quick_check || '').toLowerCase() !== 'ok')
     throw new Error('Remote D1 PRAGMA quick_check failed.');

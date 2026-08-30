@@ -48,13 +48,18 @@ export function countSql(tableNames) {
     .join(' UNION ALL ');
 }
 
-export function countSqlBatches(tableNames, batchSize = 50) {
+export function countStatementBatches(tableNames, batchSize = 50) {
   if (!Number.isInteger(batchSize) || batchSize < 1)
     throw new Error('Row-count batch size must be a positive integer.');
-  if (!tableNames.length) return [countSql([])];
+  if (!tableNames.length) return [`SELECT '' tableName,0 rowCount WHERE 0`];
   const batches = [];
   for (let index = 0; index < tableNames.length; index += batchSize) {
-    batches.push(countSql(tableNames.slice(index, index + batchSize)));
+    batches.push(
+      tableNames
+        .slice(index, index + batchSize)
+        .map((name) => `SELECT ${quoteLiteral(name)} tableName,COUNT(*) rowCount FROM ${quoteIdentifier(name)}`)
+        .join(';\n')
+    );
   }
   return batches;
 }

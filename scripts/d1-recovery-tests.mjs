@@ -6,7 +6,7 @@ import {
   assertManifestFresh,
   compareSnapshots,
   countSql,
-  countSqlBatches,
+  countStatementBatches,
   createBackupManifest,
   prepareRestoreSql,
   sha256,
@@ -38,14 +38,16 @@ assert.equal(snapshot.tableCount, 2);
 assert.equal(snapshot.totalRows, 3);
 assert.deepEqual(snapshot.rowCounts, { children: 2, parents: 1 });
 assert.match(countSql(['a"b']), /"a""b"/);
-const batchedCountSql = countSqlBatches(
+const batchedCountSql = countStatementBatches(
   Array.from({ length: 125 }, (_, index) => `table_${index}`),
   50
 );
 assert.equal(batchedCountSql.length, 3);
 assert.equal((batchedCountSql[0].match(/SELECT /g) || []).length, 50);
 assert.equal((batchedCountSql[2].match(/SELECT /g) || []).length, 25);
-assert.throws(() => countSqlBatches(['example'], 0), /positive integer/);
+assert.doesNotMatch(batchedCountSql[0], /UNION ALL/);
+assert.equal((batchedCountSql[0].match(/;\n/g) || []).length, 49);
+assert.throws(() => countStatementBatches(['example'], 0), /positive integer/);
 
 const createdAt = '2026-08-29T12:00:00.000Z';
 const manifest = createBackupManifest({
@@ -68,6 +70,16 @@ assert.deepEqual(
 
 const rows = unwrapD1Rows([{ success: true, results: [{ name: 'one' }] }]);
 assert.deepEqual(rows, [{ name: 'one' }]);
+assert.deepEqual(
+  unwrapD1Rows([
+    { success: true, results: [{ tableName: 'parents', rowCount: 1 }] },
+    { success: true, results: [{ tableName: 'children', rowCount: 2 }] },
+  ]),
+  [
+    { tableName: 'parents', rowCount: 1 },
+    { tableName: 'children', rowCount: 2 },
+  ]
+);
 assert.deepEqual(compareSnapshots(snapshot, snapshot), {
   schemaSha256: snapshot.schemaSha256,
   tableCount: 2,
