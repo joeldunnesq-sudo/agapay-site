@@ -11,6 +11,7 @@ import {
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = validateAccountingMigrationManifest(root, loadAccountingMigrationManifest(root));
+const migrationNames = manifest.migrations.map((migration) => migration.name);
 const verifyOnly = process.argv.includes('--verify-only');
 const databases = process.argv.filter((argument) => !argument.startsWith('--')).slice(2);
 const targets = databases.length ? databases : ['ACCOUNTING_DB_ST_FIACRE', 'ACCOUNTING_DB_PHASE_G_CANARY'];
@@ -82,14 +83,22 @@ function inspectDatabase(database) {
     Number(rows.integrity) === 1 &&
     Number(rows.check_printing) === 1 &&
     Number(rows.phase_g_index) === 1 &&
-    !platformFeeAccount &&
-    Number(rows.giving_column) === 0 &&
-    Number(rows.pledge_column) === 0;
+    Number(rows.attachments) === 0 &&
+    Number(rows.payment_runs) === 0 &&
+    Number(rows.giving_column) === 1 &&
+    Number(rows.pledge_column) === 1 &&
+    Number(rows.migration_sessions) === 1 &&
+    Number(rows.recurring_bills) === 1 &&
+    finalAccount;
+  const detectedAppliedNames = legacyPhaseG
+    ? [...migrationNames.slice(0, 14), migrationNames[17], ...migrationNames.slice(21, 25)]
+    : [];
   return {
     tableExists: Number(rows.ledger_table) === 1,
     databaseState: empty ? 'empty' : schemaCurrent && finalAccount ? 'current' : legacyPhaseG ? 'legacy' : 'incomplete',
-    detectedBaselineThrough: legacyPhaseG ? '0014_phase_g_query_indexes.sql' : undefined,
-    evidence: rows,
+    detectedAppliedNames,
+    detectedBaselineMarker: legacyPhaseG ? 'legacy-phase-g-selective-2026-08' : undefined,
+    evidence: { ...rows, platform_fee_account: Number(platformFeeAccount), final_account: Number(finalAccount) },
   };
 }
 

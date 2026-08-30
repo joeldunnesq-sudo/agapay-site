@@ -57,38 +57,45 @@ export function planAccountingMigrationLedger({
   tableExists,
   appliedNames,
   databaseState,
-  detectedBaselineThrough,
+  detectedAppliedNames = [],
+  detectedBaselineMarker,
 }) {
   const expectedNames = migrationNames(manifest);
-  const baselineThrough = detectedBaselineThrough || manifest.baselineThrough;
-  const baselineNames = baselineMigrationNames(manifest, baselineThrough);
   const applied = [...appliedNames];
+  const expected = new Set(expectedNames);
 
-  for (let index = 0; index < applied.length; index += 1) {
-    if (applied[index] !== expectedNames[index]) {
-      throw new Error(`Accounting migration ledger drift at position ${index + 1}: ${applied[index] || 'missing'}`);
-    }
+  for (const name of applied) {
+    if (!expected.has(name)) throw new Error(`Accounting migration ledger contains an unknown migration: ${name}`);
   }
-
-  if (applied.length > expectedNames.length) {
-    throw new Error('Accounting migration ledger contains migrations missing from the checked-in manifest.');
-  }
+  if (new Set(applied).size !== applied.length)
+    throw new Error('Accounting migration ledger contains duplicate names.');
 
   if (!tableExists && databaseState === 'empty') {
     return Object.freeze({ mode: 'fresh', missingBaseline: [] });
   }
 
-  const missingBaseline = baselineNames.slice(applied.length);
+  if (!tableExists && databaseState === 'legacy' && detectedAppliedNames.length) {
+    for (const name of detectedAppliedNames) {
+      if (!expected.has(name)) throw new Error(`Unknown detected accounting migration: ${name}`);
+    }
+    return Object.freeze({
+      mode: 'bootstrap',
+      missingBaseline: [...detectedAppliedNames],
+      baselineThrough: detectedBaselineMarker || 'selective-legacy-baseline',
+    });
+  }
+
   if (tableExists && databaseState !== 'current') {
     return Object.freeze({ mode: 'ready', missingBaseline: [] });
   }
+  const baselineNames = baselineMigrationNames(manifest);
+  const appliedSet = new Set(applied);
+  const missingBaseline = baselineNames.filter((name) => !appliedSet.has(name));
   if (missingBaseline.length) {
     if (databaseState !== 'current') {
-      if (databaseState !== 'legacy' || !detectedBaselineThrough) {
-        throw new Error('Existing accounting schema is incomplete; refusing to baseline its migration ledger.');
-      }
+      throw new Error('Existing accounting schema is incomplete; refusing to baseline its migration ledger.');
     }
-    return Object.freeze({ mode: 'bootstrap', missingBaseline, baselineThrough });
+    return Object.freeze({ mode: 'bootstrap', missingBaseline, baselineThrough: manifest.baselineThrough });
   }
 
   return Object.freeze({ mode: 'ready', missingBaseline: [] });

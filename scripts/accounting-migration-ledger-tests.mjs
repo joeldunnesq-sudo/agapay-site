@@ -34,15 +34,22 @@ const legacyPlan = planAccountingMigrationLedger({
   tableExists: false,
   appliedNames: [],
   databaseState: 'legacy',
-  detectedBaselineThrough: '0014_phase_g_query_indexes.sql',
+  detectedAppliedNames: [...baseline.slice(0, 14), baseline[17], ...baseline.slice(21, 25)],
+  detectedBaselineMarker: 'legacy-phase-g-selective-2026-08',
 });
 assert.equal(legacyPlan.mode, 'bootstrap');
-assert.equal(legacyPlan.missingBaseline.length, 14);
-assert.equal(legacyPlan.baselineThrough, '0014_phase_g_query_indexes.sql');
+assert.equal(legacyPlan.missingBaseline.length, 19);
+assert.equal(legacyPlan.baselineThrough, 'legacy-phase-g-selective-2026-08');
+assert.ok(!legacyPlan.missingBaseline.includes('0019_phase_l_attachments.sql'));
 assert.equal(
-  baselineMigrationNames(manifest, legacyPlan.baselineThrough).at(-1),
-  '0014_phase_g_query_indexes.sql',
-  'the known Phase G production canary must resume at migration 0015'
+  planAccountingMigrationLedger({
+    manifest,
+    tableExists: true,
+    appliedNames: legacyPlan.missingBaseline,
+    databaseState: 'legacy',
+  }).mode,
+  'ready',
+  'an interrupted deployment must leave Wrangler free to apply the unrecorded migrations on retry'
 );
 assert.equal(
   planAccountingMigrationLedger({
@@ -83,11 +90,11 @@ assert.throws(
     planAccountingMigrationLedger({
       manifest,
       tableExists: true,
-      appliedNames: [baseline[1]],
+      appliedNames: ['unknown.sql'],
       databaseState: 'current',
     }),
-  /ledger drift/,
-  'an out-of-order native migration ledger must fail closed'
+  /unknown migration/,
+  'an unknown native migration ledger entry must fail closed'
 );
 
 const sql = buildAccountingMigrationBaselineSql(baseline, manifest.baselineThrough);
@@ -103,11 +110,13 @@ legacyCanary.exec(readFileSync(path.join(root, 'scripts', 'accounting-canary-boo
 for (const migration of manifest.migrations.slice(5, 14)) {
   legacyCanary.exec(readFileSync(path.join(root, 'accounting-migrations', migration.name), 'utf8'));
 }
-for (const migration of [manifest.migrations[23], manifest.migrations[24]]) {
+for (const migration of [manifest.migrations[17], ...manifest.migrations.slice(21, 25)]) {
   legacyCanary.exec(readFileSync(path.join(root, 'accounting-migrations', migration.name), 'utf8'));
 }
 legacyCanary.exec(buildAccountingMigrationBaselineSql(legacyPlan.missingBaseline, legacyPlan.baselineThrough));
-for (const migration of manifest.migrations.slice(14)) {
+for (const migration of manifest.migrations.filter(
+  (candidate) => !legacyPlan.missingBaseline.includes(candidate.name)
+)) {
   legacyCanary.exec(readFileSync(path.join(root, 'accounting-migrations', migration.name), 'utf8'));
   legacyCanary.prepare(`INSERT INTO "${ACCOUNTING_MIGRATION_TABLE}" (name) VALUES (?)`).run(migration.name);
 }

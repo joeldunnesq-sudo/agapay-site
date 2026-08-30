@@ -17,7 +17,7 @@ AGAPAY production changes land through a pull request to `main`. The repository'
 
 Production accounting bindings use `accounting-migrations/` and Wrangler's native `_agapay_d1_migrations` ledger. The separate `accounting_migrations` table remains AGAPAY's domain-level provisioning audit and is not reused by Wrangler.
 
-The first protected production release baselines migrations 0001 through 0025 only after `scripts/bootstrap-accounting-migration-ledger.mjs` verifies final-schema tables, columns, and the 0025 chart account. The historical Phase G canary is the sole narrower exception: its documented migration-0014 schema is fingerprinted across the foundation, budgeting, commerce, closing, integrity, check-printing, and Phase G index boundaries before migrations 0001–0014 are recorded and 0015 onward are applied normally. Empty databases are never baselined; they apply every migration from 0001. Any unrecognized incomplete database fails closed and emits non-sensitive schema evidence for diagnosis.
+The first protected production release baselines migrations 0001 through 0025 only after `scripts/bootstrap-accounting-migration-ledger.mjs` verifies final-schema tables, columns, and the 0025 chart account. The historical Phase G canary is the sole narrower exception: its documented migration-0014 foundation plus the exact later selectively applied schema markers are fingerprinted before those known migrations are recorded and Wrangler applies only the missing files. Empty databases are never baselined; they apply every migration from 0001. Any unrecognized incomplete database fails closed and emits non-sensitive schema evidence for diagnosis.
 
 For each future migration:
 
