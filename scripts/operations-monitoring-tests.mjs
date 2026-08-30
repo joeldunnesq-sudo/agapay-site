@@ -48,6 +48,25 @@ assert.equal(canary.status, 200);
 assert.equal((await canary.json()).scheduler.ok, true);
 assert.equal((await handleOperationsCanary(new Request(authorized.url), env)).status, 401);
 
+const originalConsoleError = console.error;
+try {
+  console.error = () => {};
+  const failedCanary = await handleOperationsCanary(authorized, {
+    ...env,
+    DB: {
+      prepare() {
+        throw new Error('private database detail');
+      },
+    },
+  });
+  assert.equal(failedCanary.status, 503);
+  const failedPayload = await failedCanary.json();
+  assert.equal(failedPayload.error, 'heartbeat_read_failed');
+  assert.doesNotMatch(JSON.stringify(failedPayload), /private database detail/);
+} finally {
+  console.error = originalConsoleError;
+}
+
 await recordScheduledHeartbeat(env, {
   name: 'test',
   cron: '* * * * *',

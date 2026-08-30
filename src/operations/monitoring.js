@@ -78,13 +78,13 @@ export async function handleOperationsCanary(request, env) {
       ok ? 200 : 503
     );
   } catch (error) {
+    console.error('operations_canary_heartbeat_read_failed', error?.message || String(error));
     return response(
       {
         ok: false,
         checkedAt: new Date().toISOString(),
         bindings: bindingChecks,
         error: 'heartbeat_read_failed',
-        detail: error?.message || String(error),
       },
       503
     );
