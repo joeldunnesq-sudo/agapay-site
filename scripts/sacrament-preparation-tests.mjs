@@ -133,7 +133,7 @@ assert.equal(validateSacramentDocumentUpload({ filename: "guide.png", declaredMi
 assert.equal(sanitizeSacramentDocumentFilename("../../bad\r\nname.pdf"), ".._.._badname.pdf");
 
 const worker = readFileSync(path.join(root, "src", "worker.js"), "utf8");
-const parishApp = readFileSync(path.join(root, "public", "parish", "app.js"), "utf8");
+const parishApp = readFileSync(path.join(root, "public", "parish", "features", "sacraments.js"), "utf8");
 const donorApp = readFileSync(path.join(root, "public", "donor", "app.js"), "utf8");
 const dashboard = readFileSync(path.join(root, "public", "parish", "dashboard.html"), "utf8");
 const wrangler = readFileSync(path.join(root, "wrangler.toml"), "utf8");
@@ -144,6 +144,7 @@ assert.match(parishApp, /reviewSacramentPreparationDocument/);
 assert.match(donorApp, /renderDonorSacramentPreparation/);
 assert.match(donorApp, /uploadSacramentPreparationDocument/);
 assert.match(dashboard, /data-sac-tab="preparation"/);
+assert.match(dashboard, /\/parish\/features\/sacraments\.js\?v=20260829modules2/);
 assert.match(wrangler, /binding = "SACRAMENT_DOCUMENTS"/);
 
 console.log("PASS - Sacrament Preparation templates, snapshots, progress, documents, routes, and UI are wired");

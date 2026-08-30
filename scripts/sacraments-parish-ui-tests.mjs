@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 
 const dashboard = fs.readFileSync(new URL('../public/parish/dashboard.html', import.meta.url), 'utf8');
-const app = fs.readFileSync(new URL('../public/parish/app.js', import.meta.url), 'utf8');
+const coreApp = fs.readFileSync(new URL('../public/parish/app.js', import.meta.url), 'utf8');
+const sacramentsFeature = fs.readFileSync(new URL('../public/parish/features/sacraments.js', import.meta.url), 'utf8');
+const app = `${coreApp}\n${sacramentsFeature}`;
 const css = fs.readFileSync(new URL('../public/styles/stewardship.css', import.meta.url), 'utf8');
 const donorApp = fs.readFileSync(new URL('../public/donor/app.js', import.meta.url), 'utf8');
 const donorHandler = fs.readFileSync(new URL('../src/handlers/donor.js', import.meta.url), 'utf8');
@@ -13,6 +15,7 @@ const liveDashboard = dashboard.slice(
 );
 
 const checks = [
+  ['Sacraments is owned by a registered feature module loaded before the dashboard core', dashboard.indexOf('/parish/feature-registry.js?v=20260829modules2') < dashboard.indexOf('/parish/features/sacraments.js?v=20260829modules2') && dashboard.indexOf('/parish/features/sacraments.js?v=20260829modules2') < dashboard.indexOf('/parish/app.js?v=20260829modules2') && sacramentsFeature.includes("ParishFeatureRegistry.register('sacraments'") && !coreApp.includes('let sacramentsState')],
   ['Sacraments removes the unused dashboard spacer when active', app.includes(`classList.toggle('sacraments-tab-active', tab === 'sacraments')`) && css.includes('.content.sacraments-tab-active > .detail-wrap { display: none; }') && css.includes('.content.sacraments-tab-active > #tab-sacraments.active {')],
   ['live Sacraments uses the shared AGAPAY feature hero', dashboard.includes('sac-admin-head sw-suite-hero') && dashboard.includes('sac-admin-status sw-suite-hero-status agapay-feature-actions')],
   ['Sacraments hero omits the redundant refresh control', !liveDashboard.includes('sw-suite-refresh-btn') && !liveDashboard.includes('Refresh Sacraments &amp; Services')],

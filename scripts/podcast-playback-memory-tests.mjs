@@ -176,22 +176,24 @@ try {
   globalThis.fetch = originalFetch;
 }
 
-const [migration, subscriptionMigration, worker, teaching, teachingHtml, donorStyles] = await Promise.all([
+const [migration, subscriptionMigration, workerRoot, publicRoutes, teaching, teachingHtml, donorStyles] = await Promise.all([
   readFile(new URL("../migrations/0078_donor_podcast_progress.sql", import.meta.url), "utf8"),
   readFile(new URL("../migrations/0080_donor_podcast_subscriptions.sql", import.meta.url), "utf8"),
   readFile(new URL("../src/worker.js", import.meta.url), "utf8"),
+  readFile(new URL("../src/routes/public.js", import.meta.url), "utf8"),
   readFile(new URL("../public/myagapay/teaching.js", import.meta.url), "utf8"),
   readFile(new URL("../public/myagapay/teaching.html", import.meta.url), "utf8"),
   readFile(new URL("../public/donor/style.css", import.meta.url), "utf8"),
 ]);
+const worker = `${workerRoot}\n${publicRoutes}`;
 
 assert.match(migration, /PRIMARY KEY \(donor_id, episode_key\)/);
 assert.match(migration, /idx_donor_podcast_progress_recent[\s\S]*donor_id, updated_at DESC/);
 assert.match(subscriptionMigration, /PRIMARY KEY \(donor_id, feed_url\)/);
 assert.match(subscriptionMigration, /idx_donor_podcast_subscriptions_recent[\s\S]*donor_id, updated_at DESC/);
-assert.match(worker, /url\.pathname === "\/api\/listen\/progress"[\s\S]*handleListenProgress/);
-assert.match(worker, /url\.pathname === "\/api\/listen\/subscriptions"[\s\S]*handleListenSubscriptions/);
-assert.match(worker, /url\.pathname === "\/api\/listen\/audio"[\s\S]*handleListenAudio/);
+assert.match(worker, /url\.pathname === ['"]\/api\/listen\/progress['"][\s\S]*handleListenProgress/);
+assert.match(worker, /url\.pathname === ['"]\/api\/listen\/subscriptions['"][\s\S]*handleListenSubscriptions/);
+assert.match(worker, /url\.pathname === ['"]\/api\/listen\/audio['"][\s\S]*handleListenAudio/);
 assert.match(teaching, /function podcastEpisodeKey\(guid, audioUrl\)[\s\S]*trim\(\) \|\| String\(audioUrl/,
   "RSS guid must be preferred with audio URL only as fallback");
 const episodeKeyFunction = teaching.match(/function podcastEpisodeKey\(guid, audioUrl\) \{[\s\S]*?\n\}/)?.[0];

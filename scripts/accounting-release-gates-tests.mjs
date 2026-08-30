@@ -4,7 +4,7 @@ import { accountingAvailableForParish } from "../src/lib/accounting-demo-access.
 import { ACCOUNTING_HANDLER_FILES, enumerateAccountingRoutes } from "./lib/accounting-release-gates.mjs";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
-const [serviceWorker, parishApp, gate1, gate2, gate3, bootstrap, helpers, smoke, deploy, workflow, signoff, packageJson] = await Promise.all([
+const [serviceWorker, parishApp, gate1, gate2, gate3, bootstrap, helpers, smoke, deploy, workflow, signoff, packageJson, testManifest] = await Promise.all([
   read("public/service-worker.js"),
   read("public/parish/app.js"),
   read("scripts/accounting-release-gate-1-check-print.mjs"),
@@ -16,7 +16,8 @@ const [serviceWorker, parishApp, gate1, gate2, gate3, bootstrap, helpers, smoke,
   read(".github/workflows/deploy.yml"),
   read(".github/workflows/accounting-release-gates.yml"),
   read("docs/accounting/accounting-release-gates-signoff.md"),
-  read("package.json")
+  read("package.json"),
+  read("scripts/test-manifest.mjs")
 ]);
 
 assert.match(serviceWorker, /pathname\.startsWith\(["']\/api\/["']\).*return true/s);
@@ -26,7 +27,8 @@ assert.match(gate2, /registration\.update\(\)/);
 assert.match(parishApp, /addEventListener\('offline'/);
 assert.match(parishApp, /serviceWorker\?\.addEventListener\('controllerchange'/);
 assert.match(parishApp, /open Accounting form was preserved/);
-assert.match(packageJson, /accounting-release-gate-2-sw-lifecycle\.mjs --static-only/);
+assert.match(packageJson, /"check:release-gates": "node scripts\/run-tests\.mjs release-gates"/);
+assert.match(testManifest, /accounting-release-gate-2-sw-lifecycle\.mjs --static-only/);
 console.log("PASS - authenticated parish/API caching remains prohibited and gate 2 is permanent");
 
 assert.equal(accountingAvailableForParish("st-fiacre"), true);

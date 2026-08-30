@@ -16,6 +16,9 @@ const sourceFiles = [
   "src/handlers/stripe.js",
   "src/lib/parish-notifications.js",
   "src/lib/stripe-fees.js",
+  ...fs.readdirSync(path.join(root, "src", "routes"))
+    .filter((file) => file.endsWith(".js"))
+    .map((file) => `src/routes/${file}`),
   "src/worker.js"
 ];
 

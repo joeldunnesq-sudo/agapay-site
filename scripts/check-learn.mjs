@@ -6,6 +6,7 @@ import { buildLearnPrintDocument, buildLearnReportPrintDocument, buildPrintJobRe
 import { getLearnSeedSnapshot } from "../src/learn/demo-data.js";
 import { applyPlannerOverrides, computeMoveUnfinishedWork, describePlannerStatus, findNextOpenWeekday } from "../src/learn/planner-overrides.js";
 import { createSeedLearnRepository } from "../src/learn/repository.js";
+import { readWorkerCompositionSource } from "./lib/worker-composition-source.mjs";
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -230,7 +231,7 @@ const odysseyIndexHtml = readFileSync(new URL("../public/learn/odyssey/index.htm
 const odysseyFaqHtml = readFileSync(new URL("../public/learn/odyssey/faq.html", import.meta.url), "utf8");
 const odysseyActivateHtml = readFileSync(new URL("../public/learn/odyssey/dashboard/activate.html", import.meta.url), "utf8");
 const odysseyLoginHtml = readFileSync(new URL("../public/learn/odyssey/dashboard/login.html", import.meta.url), "utf8");
-const workerSource = readFileSync(new URL("../src/worker.js", import.meta.url), "utf8");
+const workerSource = readWorkerCompositionSource();
 
 assert(odysseyFaqHtml.includes("AGAPAY Learn has been pre-approved for Odyssey"), "Odyssey FAQ should accurately state pre-approval status.");
 assert(odysseyFaqHtml.includes("Student Data & Privacy") || odysseyFaqHtml.includes("Student Data &amp; Privacy"), "Odyssey FAQ should include a Student Data & Privacy section.");
@@ -390,7 +391,7 @@ assert(workerSource.includes('["/learn/odyssey/faq/", "/learn/odyssey/faq.html"]
   const handlersSource = readFileSync(new URL("../src/learn/handlers.js", import.meta.url), "utf8");
   assert(handlersSource.includes("export async function handleLearnMoveUnfinishedWork"), "handlers.js should export handleLearnMoveUnfinishedWork.");
 
-  assert(workerSource.includes('url.pathname === "/api/learn/planner/move"') && workerSource.includes("handleLearnMoveUnfinishedWork(request, env)"), "worker.js should route POST /api/learn/planner/move to handleLearnMoveUnfinishedWork.");
+  assert(workerSource.includes("/api/learn/planner/move") && workerSource.includes("handleLearnMoveUnfinishedWork"), "the Learn registry should route POST /api/learn/planner/move to handleLearnMoveUnfinishedWork.");
 }
 
 // ── UI: Move Unfinished Work control and clearer status language ──────────

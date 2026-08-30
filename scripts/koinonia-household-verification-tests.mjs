@@ -19,6 +19,7 @@ import {
   isHouseholdVerificationCurrent,
 } from "../src/lib/household-verification.js";
 import { ensurePlatformUser } from "../src/lib/identity.js";
+import { readWorkerCompositionSource } from "./lib/worker-composition-source.mjs";
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const migration = (name) => readFileSync(path.join(repoRoot, "migrations", name), "utf8");
@@ -224,7 +225,7 @@ await assertVerificationDenial(
 );
 
 const [workerSource, feedSource, teachingSource, groupsSource, videoSource, landingSource, skillsSource] = await Promise.all([
-  readFile(new URL("../src/worker.js", import.meta.url), "utf8"),
+  Promise.resolve(readWorkerCompositionSource(repoRoot)),
   readFile(new URL("../src/handlers/parish-communications.js", import.meta.url), "utf8"),
   readFile(new URL("../src/handlers/parish-teaching.js", import.meta.url), "utf8"),
   readFile(new URL("../src/handlers/donor-groups.js", import.meta.url), "utf8"),

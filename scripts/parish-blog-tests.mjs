@@ -71,10 +71,11 @@ assert.equal(isOcaJurisdiction("OCA"), true);
 assert.equal(isOcaJurisdiction("Orthodox Church in America · Diocese of the South"), true);
 assert.equal(isOcaJurisdiction("Antiochian Orthodox Christian Archdiocese"), false);
 
-const [migration, preferencesMigration, worker, dashboard, parishApp, landing, newsPage, newsScript, blogHandler, donorStyle] = await Promise.all([
+const [migration, preferencesMigration, workerRoot, donorRoutes, dashboard, parishApp, landing, newsPage, newsScript, blogHandler, donorStyle] = await Promise.all([
   readFile(new URL("../migrations/0076_parish_blog_feeds.sql", import.meta.url), "utf8"),
   readFile(new URL("../migrations/0077_donor_news_source_subscriptions.sql", import.meta.url), "utf8"),
   readFile(new URL("../src/worker.js", import.meta.url), "utf8"),
+  readFile(new URL("../src/routes/donor.js", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/dashboard.html", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/app.js", import.meta.url), "utf8"),
   readFile(new URL("../public/myagapay/parish-life.js", import.meta.url), "utf8"),
@@ -83,6 +84,7 @@ const [migration, preferencesMigration, worker, dashboard, parishApp, landing, n
   readFile(new URL("../src/handlers/parish-blog.js", import.meta.url), "utf8"),
   readFile(new URL("../public/donor/style.css", import.meta.url), "utf8"),
 ]);
+const worker = `${workerRoot}\n${donorRoutes}`;
 assert.match(migration, /CREATE TABLE IF NOT EXISTS parish_blog_feeds/);
 assert.match(migration, /CREATE TABLE IF NOT EXISTS donor_external_feed_subscriptions/);
 assert.match(preferencesMigration, /CREATE TABLE IF NOT EXISTS donor_news_source_subscriptions/);
@@ -95,10 +97,10 @@ preferencesDb.exec(migration);
 preferencesDb.exec(preferencesMigration);
 assert.equal(preferencesDb.prepare("SELECT COUNT(*) AS count FROM donor_news_source_subscriptions").get().count, 0, "a new donor must start with no selected news sources");
 assert.throws(() => preferencesDb.prepare("INSERT INTO donor_news_source_subscriptions (donor_id, source_key, subscribed) VALUES (?, ?, 1)").run("donor@example.test", "unapproved"), /CHECK constraint failed/, "the schema must reject unknown built-in sources");
-assert.match(worker, /"\/api\/donor\/blog"[\s\S]*handleDonorBlog/);
-assert.match(worker, /"\/api\/donor\/oca-news"[\s\S]*handleDonorOcaNews/);
-assert.match(worker, /"\/api\/donor\/external-feeds\/"[\s\S]*handleDonorExternalFeed/);
-assert.match(worker, /"\/api\/donor\/custom-news-feeds"[\s\S]*handleDonorCustomNewsFeeds/);
+assert.match(worker, /['"]\/api\/donor\/blog['"][\s\S]*handleDonorBlog/);
+assert.match(worker, /['"]\/api\/donor\/oca-news['"][\s\S]*handleDonorOcaNews/);
+assert.match(worker, /['"]\/api\/donor\/external-feeds\/['"][\s\S]*handleDonorExternalFeed/);
+assert.match(worker, /['"]\/api\/donor\/custom-news-feeds['"][\s\S]*handleDonorCustomNewsFeeds/);
 assert.match(dashboard, /id="parishBlogEnabled"[\s\S]*id="parishBlogSourceUrl"/);
 assert.match(parishApp, /saveParishBlogSettings[\s\S]*communicationsApi\('\/blog'\)/);
 assert.match(dashboard, /<span class="nav-label">Koinonia<\/span>/, "the parish navigation should use the donor-facing Koinonia name");

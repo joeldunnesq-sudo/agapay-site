@@ -1,7 +1,10 @@
 import fs from 'node:fs';
 
 const dashboard = fs.readFileSync(new URL('../public/parish/dashboard.html', import.meta.url), 'utf8');
-const app = fs.readFileSync(new URL('../public/parish/app.js', import.meta.url), 'utf8');
+const coreApp = fs.readFileSync(new URL('../public/parish/app.js', import.meta.url), 'utf8');
+const directoryFeature = fs.readFileSync(new URL('../public/parish/features/directory.js', import.meta.url), 'utf8');
+const sacramentsFeature = fs.readFileSync(new URL('../public/parish/features/sacraments.js', import.meta.url), 'utf8');
+const app = `${coreApp}\n${directoryFeature}\n${sacramentsFeature}`;
 const css = fs.readFileSync(new URL('../public/parish/redesign.css', import.meta.url), 'utf8');
 const stewardshipCss = fs.readFileSync(new URL('../public/styles/stewardship.css', import.meta.url), 'utf8');
 const adminService = fs.readFileSync(new URL('../src/directory/admin.js', import.meta.url), 'utf8');
@@ -17,6 +20,7 @@ const openHouseholdSource = app.slice(openHouseholdStart, openHouseholdEnd);
 
 const checks = [
   ['the legacy Directory Operations hero is removed', !dashboard.includes('Directory Operations')],
+  ['Directory is owned by a dedicated feature module loaded before the dashboard core', dashboard.indexOf('/parish/features/directory.js?v=') < dashboard.indexOf('/parish/app.js?v=') && directoryFeature.includes("ParishFeatureRegistry.register('directory'") && !coreApp.includes('function loadDirectoryAdminTab')],
   ['the live Directory API remains wired', app.includes("directoryAdminApi('/households?limit=100')") && app.includes("directoryAdminApi('/print/directory')")],
   ['Directory has a parish-facing on/off switch', app.includes('function toggleDirectoryFeature(input)') && app.includes("directoryAdminApi('/settings')") && app.includes('ordinaryMemberAccessEnabled: enabled')],
   ['Directory and Bookstore share the same visible feature switch', app.includes('pdx-dir-feature-switch agapay-feature-switch') && app.includes('class="sac-admin-switch agapay-feature-switch"') && app.includes('aria-label="Show parish directory in My AGAPAY"') && app.includes('aria-label="Show Bookstore in My AGAPAY"') && stewardshipCss.includes('.agapay-feature-switch input:checked + span') && stewardshipCss.includes('.agapay-feature-switch input:focus-visible + span')],

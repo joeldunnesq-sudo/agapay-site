@@ -186,7 +186,7 @@ assert.equal(fixedStored.size, 10 * 1024 * 1024);
 const sourceFiles = await Promise.all([
   "src/lib/rich-text.js", "src/handlers/parish-communications.js", "src/handlers/parish-teaching.js",
   "public/myagapay/parish-life.html", "public/myagapay/parish-life.js", "public/myagapay/teaching.html", "public/myagapay/teaching.js",
-  "public/parish/dashboard.html", "public/parish/app.js", "src/worker.js",
+  "public/parish/dashboard.html", "public/parish/app.js", "src/worker.js", "src/routes/parish.js",
 ].map(async (relative) => [relative, readFileSync(path.join(root, relative), "utf8")]));
 const sources = Object.fromEntries(sourceFiles);
 const implementationCount = [...sources["src/lib/rich-text.js"].matchAll(/function\s+stripAuthoredHtml\s*\(/g)].length
@@ -197,7 +197,7 @@ assert.match(sources["src/handlers/parish-communications.js"], /import \{ render
 assert.match(sources["src/handlers/parish-teaching.js"], /import \{ renderBoundedRichText \} from "\.\.\/lib\/rich-text\.js"/);
 assert.match(sources["src/handlers/parish-teaching.js"], /sendTeachingPush\(env, \{/);
 assert.match(sources["src/handlers/parish-teaching.js"], /contentLength: metadata\.contentLength[\s\S]*teaching_audio_storage_failed/, "R2 uploads must preserve known-length request streams and return an actionable storage error");
-assert.match(sources["src/worker.js"], /handleParishTeaching\(request, env, parishId,[\s\S]*, ctx\)/);
+assert.match(sources["src/routes/parish.js"], /handleParishTeaching\(request, env, parishId,[\s\S]*, ctx\)/);
 assert.match(sources["public/myagapay/parish-life.js"], />Listen<[\s\S]*href="\/myagapay\/teaching">Open Library/);
 assert.match(sources["public/myagapay/parish-life.js"], /post\.status === "published" && Boolean\(post\.audioUrl\)/);
 assert.match(sources["public/myagapay/parish-life.js"], /parishLifeFetch\("\/api\/donor\/teaching"[\s\S]*\.then\(\(teaching\)[\s\S]*renderRecentRecordings[\s\S]*setTeachingUnreadCount\(Math\.max\(0, Number\(teaching\?\.unreadCount\) \|\| 0\)\)/, "the teaching request must fill the unified Listen section and update unread state independently");

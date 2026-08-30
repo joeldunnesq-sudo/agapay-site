@@ -11,10 +11,11 @@ import {
 } from "../src/handlers/stewardship-accounting-bridge.js";
 import { upsertStewardshipFinancialSnapshot } from "../src/stewardship/financial-snapshots.js";
 import { budgetPledgeComparison } from "../src/handlers/accounting-payables-budgets.js";
+import { readWorkerCompositionSource } from "./lib/worker-composition-source.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => readFileSync(path.join(root, file), "utf8");
-const worker = read("src/worker.js");
+const worker = readWorkerCompositionSource(root);
 const stewardship = read("src/handlers/stewardship.js");
 const bridge = read("src/handlers/stewardship-accounting-bridge.js");
 const budgets = read("src/handlers/accounting-payables-budgets.js");

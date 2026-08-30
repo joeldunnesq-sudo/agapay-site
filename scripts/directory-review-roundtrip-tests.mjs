@@ -6,7 +6,7 @@ const [migration, service, admin, selfHandler, parishApp, parishCss, memberUi] =
   readFile(new URL("../src/directory/review-correspondence.js", import.meta.url), "utf8"),
   readFile(new URL("../src/directory/admin.js", import.meta.url), "utf8"),
   readFile(new URL("../src/handlers/directory-self-service.js", import.meta.url), "utf8"),
-  readFile(new URL("../public/parish/app.js", import.meta.url), "utf8"),
+  readFile(new URL("../public/parish/features/directory.js", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/redesign.css", import.meta.url), "utf8"),
   readFile(new URL("../public/myagapay/directory.html", import.meta.url), "utf8")
 ]);

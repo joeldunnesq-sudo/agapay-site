@@ -11,6 +11,7 @@ tmp-*/
 
 # Local logs and environment files
 *.log
+.eslintcache
 .env
 .env.*
 .dev.vars

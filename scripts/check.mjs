@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import { parishSlug } from "../src/lib/format.js";
+import { readWorkerCompositionSource } from "./lib/worker-composition-source.mjs";
 
-const worker = await readFile("src/worker.js", "utf8");
+const worker = readWorkerCompositionSource();
+const hasWorkerRoute = (pathname) => worker.includes(`"${pathname}"`) || worker.includes(`'${pathname}'`);
 const localServerSource = await readFile("server.mjs", "utf8");
 const core = await readFile("src/lib/core.js", "utf8");
 const stripeConnect = await readFile("src/lib/stripe-connect.js", "utf8");
@@ -86,13 +88,13 @@ assert.ok(backendSources.includes("handleParishStripeRefresh"), "parishes should
 assert.ok(backendSources.includes("PARISH_ID_INDEX_PREFIX"), "worker should maintain KV parish id indexes");
 assert.ok(backendSources.includes("handleAdminRebuildIndexes"), "worker should expose an admin-only index rebuild endpoint");
 assert.ok(backendSources.includes("handleAdminReleaseStatus"), "worker should expose an admin release status endpoint");
-assert.ok(worker.includes('url.pathname === "/api/admin/release-status"'), "worker should route the admin release status endpoint");
-assert.ok(worker.includes("handleAdminWeeklyCommemorationEmails") && worker.includes('url.pathname === "/api/admin/commemorations/send-weekly"'), "worker should expose an admin-only weekly commemoration email diagnostic endpoint");
+assert.ok(hasWorkerRoute("/api/admin/release-status"), "worker should route the admin release status endpoint");
+assert.ok(worker.includes("handleAdminWeeklyCommemorationEmails") && hasWorkerRoute("/api/admin/commemorations/send-weekly"), "worker should expose an admin-only weekly commemoration email diagnostic endpoint");
 assert.ok(worker.includes("weekly_commemoration_emails") && worker.includes("dryRun: body.dryRun !== false"), "weekly commemoration emails should be observable and dry-run by default when triggered manually");
-assert.ok(worker.includes("sendWeeklyTreasurerCommerceEmails") && worker.includes('url.pathname === "/api/admin/commerce/send-weekly-treasurer"'), "worker should expose an admin-only weekly treasurer commerce email endpoint");
+assert.ok(worker.includes("sendWeeklyTreasurerCommerceEmails") && hasWorkerRoute("/api/admin/commerce/send-weekly-treasurer"), "worker should expose an admin-only weekly treasurer commerce email endpoint");
 assert.ok(worker.includes("commerce_weekly_reports") && worker.includes("weekly_treasurer_commerce_emails"), "weekly treasurer commerce emails should be deduped and observable");
 assert.ok(worker.includes('["/parish/login", "/give/login"]'), "legacy parish login should redirect to the Give login URL");
-assert.ok(worker.includes('url.pathname === "/give/login"'), "worker should serve the Give login URL from the parish login shell");
+assert.ok(hasWorkerRoute("/give/login"), "worker should serve the Give login URL from the parish login shell");
 assert.ok(worker.includes('url.pathname.startsWith("/give/")') && worker.includes('url.pathname = "/give/form.html"'), "worker should serve parish giving pages at /give/:parish");
 assert.ok(worker.includes('url.pathname.startsWith("/giving/")'), "worker should permanently redirect legacy /giving URLs");
 for (const [legacyPage, anchor] of [["features", "platform"], ["how-it-works", "how-it-works"], ["pricing", "pricing"]]) {
@@ -109,7 +111,7 @@ assert.ok(worker.includes("/api/checkout-session-status"), "worker should expose
 assert.ok(backendSources.includes("session_id={CHECKOUT_SESSION_ID}"), "Stripe success URLs should include the Checkout session id");
 assert.ok(backendSources.includes("/myagapay?gift_success=1"), "authenticated donor checkouts should return to the My AGAPAY dashboard");
 assert.ok(!worker.includes("const parishes = ["), "worker should not hardcode demo parishes");
-assert.ok(worker.includes('url.pathname === "/donor/verify"'), "worker should route donor verification links before assets");
+assert.ok(hasWorkerRoute("/donor/verify"), "worker should route donor verification links before assets");
 assert.ok(worker.includes("handleDonorVerifyPage"), "worker should handle donor verification links server-side");
 await assert.rejects(access("functions/donor/verify.js"), undefined, "donor verification should not use a Pages Function adapter");
 await assert.rejects(access("public/_routes.json"), undefined, "Wrangler Worker deploy should not include Pages Functions route config");
@@ -150,7 +152,7 @@ const findChurchPage = await readFile("public/give/find-parish.html", "utf8");
 assert.ok(findChurchPage.includes("Bring AGAPAY Give to your parish"), "find-parish should invite parishioners to advocate for AGAPAY Give");
 assert.ok(findChurchPage.includes("/api/parish-interest"), "find-parish interest form should post to its Worker endpoint");
 assert.ok(findChurchPage.includes("data-agapay-turnstile") && findChurchPage.includes("agapaySecurityPayload"), "parish interest outreach should use Turnstile when configured");
-assert.ok(worker.includes('url.pathname === "/api/parish-interest"'), "worker should route parish interest submissions");
+assert.ok(hasWorkerRoute("/api/parish-interest"), "worker should route parish interest submissions");
 
 
 const donorApp = await readFile("public/donor/app.js", "utf8");
@@ -168,7 +170,13 @@ const listenIndex = await readFile("public/listen/index.html", "utf8");
 const adminPwa = await readFile("public/admin/pwa.js", "utf8");
 const serviceWorker = await readFile("public/service-worker.js", "utf8");
 const pwaRegister = await readFile("public/pwa-register.js", "utf8");
-const parishDashboardApp = await readFile("public/parish/app.js", "utf8");
+const parishDashboardCore = await readFile("public/parish/app.js", "utf8");
+const parishDashboardApp = [
+  parishDashboardCore,
+  await readFile("public/parish/features/directory.js", "utf8"),
+  await readFile("public/parish/features/library.js", "utf8"),
+  await readFile("public/parish/features/sacraments.js", "utf8"),
+].join("\n");
 const parishLoginPage = await readFile("public/parish/login.html", "utf8");
 const givingOverviewPage = await readFile("public/give/index.html", "utf8");
 const rootPage = await readFile("public/index.html", "utf8");
@@ -288,7 +296,7 @@ assert.ok(
   "the shared My AGAPAY hamburger menu should open a working problem and feature request form"
 );
 assert.ok(
-  worker.includes('url.pathname === "/api/donor/support-tickets"')
+  hasWorkerRoute("/api/donor/support-tickets")
     && donorHandler.includes("export async function handleDonorSupportTicket")
     && donorHandler.includes('rateLimit(request, env, "donor-support-ticket"')
     && donorHandler.includes('source: "myagapay"')
@@ -359,7 +367,7 @@ assert.ok(
 );
 assert.ok(
   donorHandler.includes('featureId: "giving-plus"')
-    && worker.includes('url.pathname === "/api/donor/giving-plus-feature-request"')
+    && hasWorkerRoute("/api/donor/giving-plus-feature-request")
     && parishDashboardApp.includes("item?.featureId === 'giving-plus'")
     && parishHandler.includes('["pledge-tracker", "giving-plus", "ministry-service"].includes(featureId)'),
   "Give + donor requests should be stored, surfaced in the parish dashboard, and dismissible"
@@ -594,8 +602,8 @@ assert.ok(campaignPage.includes("/api/campaign?"), "campaign share page should l
 assert.ok(campaignPage.includes('`${slug}-campaign`'), "campaign routes should resolve campaign names that already end in Campaign without breaking lookup");
 assert.ok(campaignPage.includes("/api/create-checkout-session") && campaignPage.includes('giftType: "campaign"'), "campaign share page should create a direct Stripe checkout for campaign gifts");
 assert.ok(campaignPage.includes('"/give/"') && campaignPage.includes('"-campaign"'), "campaign share page should build canonical nested campaign URLs");
-assert.ok(worker.includes('url.pathname === "/api/campaign"'), "worker should route public campaign lookup API");
-assert.ok(worker.includes('endsWith("/campaign-upload")'), "worker should route authenticated parish campaign photo uploads");
+assert.ok(hasWorkerRoute("/api/campaign"), "worker should route public campaign lookup API");
+assert.ok(hasWorkerRoute("/campaign-upload") && worker.includes("handleParishCampaignUpload"), "worker should route authenticated parish campaign photo uploads");
 assert.ok(worker.includes('startsWith("/give/parish-giving/")'), "worker should serve campaign share URLs instead of the generic giving form");
 assert.ok(worker.includes("async function fetchCleanAsset"), "worker should keep rewritten asset routes at their canonical public URLs");
 assert.ok(worker.includes("canonicalCampaignPathFromLegacy"), "worker should redirect legacy campaign URLs to canonical nested campaign routes");
@@ -641,7 +649,7 @@ assert.ok(
   parishDashboardHtml.includes('id="parishFeatureRequestDialog"')
     && parishDashboardApp.includes("showParishFeatureRequestPopup(data.featureRequests || [])")
     && parishDashboardApp.includes("/feature-requests/${encodeURIComponent(request.featureId)}/dismiss")
-    && worker.includes('url.pathname === "/api/donor/stewardship-feature-request"'),
+    && hasWorkerRoute("/api/donor/stewardship-feature-request"),
   "donor Stewardship requests should surface as dismissible parish-dashboard login popups"
 );
 assert.ok(
@@ -778,8 +786,8 @@ assert.ok(!auditLogLib.includes("DELETE FROM audit_log") && !auditLogLib.include
 assert.ok(backendSources.includes("recordAuditEvent(env, request, {") && backendSources.includes('action: "admin.index_rebuild"'), "index rebuild should record an audit event");
 assert.ok(backendSources.includes('action: "registration.status_changed"'), "registration status changes should record an audit event");
 assert.ok(backendSources.includes("handleAdminAuditLog"), "worker should expose an admin audit-log viewer endpoint");
-assert.ok(worker.includes('url.pathname === "/api/admin/audit-log"'), "worker should route GET /api/admin/audit-log");
-assert.ok(worker.includes("async function handleHealth") && worker.includes('url.pathname === "/api/health"'), "worker should expose GET /api/health for launch diagnostics");
+assert.ok(hasWorkerRoute("/api/admin/audit-log"), "worker should route GET /api/admin/audit-log");
+assert.ok(worker.includes("async function handleHealth") && hasWorkerRoute("/api/health"), "worker should expose GET /api/health for launch diagnostics");
 assert.ok(worker.includes("STRIPE_SECRET_KEY") && worker.includes("RESEND_API_KEY") && worker.includes("TAX_EXEMPTION_DOCS") && worker.includes("GIVING_STATEMENTS"), "health endpoint should report config presence without exposing secret values");
 
 // Stewardship tab redesign -- renamed "Stewardship Health", with a
@@ -819,9 +827,9 @@ assert.ok(parishAppJs.includes("function loadStewardshipHealthScorePanel"), "app
 assert.ok(parishAppJs.includes("function loadDonorConcentrationPanel"), "app.js should define loadDonorConcentrationPanel");
 assert.ok(parishAppJs.includes("function loadRecurringGivingPanel"), "app.js should define loadRecurringGivingPanel");
 assert.ok(parishAppJs.includes("stewardshipApi('/giving/health-score") && parishAppJs.includes("stewardshipApi('/giving/concentration") && parishAppJs.includes("stewardshipApi('/giving/recurring"), "Stewardship Health tab should call the new health-score/concentration/recurring endpoints");
-assert.ok(worker.includes('endsWith("/stewardship/giving/retention")') && worker.includes('endsWith("/stewardship/giving/distribution")'), "retention/distribution endpoints should still exist -- their data feeds the new cards, not removed");
-assert.ok(worker.includes('endsWith("/stewardship/giving/concentration")') && worker.includes('endsWith("/stewardship/giving/recurring")') && worker.includes('endsWith("/stewardship/giving/health-score")'), "worker should route the three new stewardship giving endpoints");
-assert.ok(worker.includes('endsWith("/stewardship/report/monthly")'), "worker should route the monthly stewardship report endpoint");
+assert.ok(hasWorkerRoute("/stewardship/giving/retention") && hasWorkerRoute("/stewardship/giving/distribution"), "retention/distribution endpoints should still exist -- their data feeds the new cards, not removed");
+assert.ok(hasWorkerRoute("/stewardship/giving/concentration") && hasWorkerRoute("/stewardship/giving/recurring") && hasWorkerRoute("/stewardship/giving/health-score"), "worker should route the three new stewardship giving endpoints");
+assert.ok(hasWorkerRoute("/stewardship/report/monthly"), "worker should route the monthly stewardship report endpoint");
 assert.ok(!parishDashboardHtml.includes('id="swGivingFullLink"'), "standalone Full metrics report link should be retired -- combined into the Monthly Stewardship Report instead");
 assert.ok(worker.includes("handleStewardshipGivingFunds(withYear(\"funds\")"), "monthly report should include the Giving by Fund breakdown that used to be exclusive to the standalone report");
 assert.ok(parishDashboardHtml.includes('id="stewardshipManualIncomePane"') && parishDashboardHtml.includes("Record outside-AGAPAY giving"), "Financial Snapshots should include compact outside-AGAPAY contribution intake");

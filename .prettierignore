@@ -1,0 +1,11 @@
+node_modules/
+public/vendor/
+tmp/
+tmp-*/
+.tmp-*/
+artifacts/
+migrations/
+accounting-migrations/
+public/images/
+public/videos/
+public/downloads/

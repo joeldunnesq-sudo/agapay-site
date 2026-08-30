@@ -16,7 +16,7 @@ const read = (file) => readFileSync(path.join(root, file), "utf8");
 const migration = read("accounting-migrations/0023_migration_import_sessions.sql");
 const serviceSource = read("src/accounting/migration/service.js");
 const handlerSource = read("src/handlers/accounting-migration.js");
-const workerSource = read("src/worker.js");
+const workerSource = `${read("src/worker.js")}\n${read("src/routes/accounting.js")}`;
 const uiSource = read("public/parish/app.js");
 const authorizationSource = read("src/lib/authorization.js");
 const reconciliationSource = read("src/accounting/reconciliation/service.js");
@@ -95,7 +95,7 @@ async function initialized() {
 }
 
 {
-  assert.match(reconciliationSource, /from "\.\.\/csv-utils\.js"/);
+  assert.match(reconciliationSource, /from ['"]\.\.\/csv-utils\.js['"]/);
   for (const helper of ["csvRows", "normalize", "text", "cents", "digest"]) assert.doesNotMatch(reconciliationSource, new RegExp(`function ${helper}\\(`));
   assert.doesNotMatch(serviceSource, /(?:INSERT\s+INTO|UPDATE)\s+accounting_funds/i);
   console.log("PASS - CSV helpers are shared and the migration service never writes accounting_funds directly");
@@ -237,7 +237,7 @@ console.log("PASS - chart import rejects an unconfirmed source type, links an ex
     "/migration/transaction-history/preview", "/migration/transaction-history/commit"
   ]) assert.match(handlerSource, new RegExp(route.replaceAll("/", "\\/")));
   assert.match(handlerSource, /accounting\.migration\.import/);
-  assert.ok(workerSource.indexOf("handleAccountingMigration") < workerSource.indexOf("handleAccountingLedger(request"));
+  assert.ok(workerSource.indexOf("actions.handleAccountingMigration") < workerSource.indexOf("actions.handleAccountingLedger"));
   assert.match(handlerSource, /handleParishDashboard/);
   assert.match(handlerSource, /method:\s*"PATCH"/);
   assert.match(authorizationSource, /"accounting\.migration\.import"/);

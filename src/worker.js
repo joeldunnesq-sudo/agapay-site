@@ -1,4 +1,13 @@
 import { calendarLabel, liturgicalFeastsForYear, nextLiturgicalFeast, orthodoxPascha } from "./liturgical-calendar.js";
+import { routeAdminRequest } from "./routes/admin.js";
+import { routeAccountingRequest } from "./routes/accounting.js";
+import { routeDirectoryRequest } from "./routes/directory.js";
+import { routeDonorRequest } from "./routes/donor.js";
+import { routeLearnRequest } from "./routes/learn.js";
+import { routeParishRequest } from "./routes/parish.js";
+import { routePublicRequest } from "./routes/public.js";
+import { dispatchRouteRegistries } from "./routes/registry.js";
+import { routeStewardshipRequest } from "./routes/stewardship.js";
 import { enrichLiturgicalDayWithOrthocal } from "./learn/readings-source.js";
 import {
   ADMIN_PASSWORD_KV_KEY,
@@ -2902,6 +2911,299 @@ export function observeScheduledTask(name, task, env = {}) {
     });
 }
 
+const ROUTE_ACTIONS = Object.freeze({
+  addCorsHeaders,
+  accountingAvailableForParish,
+  corsJson,
+  handleAdminAccountingOperations,
+  handleAdminAuditLog,
+  handleAdminEmailDiagnostics,
+  handleAdminGrantStewardshipComp,
+  handleAdminLearnCommunity,
+  handleAdminLearnFeedback,
+  handleAdminLearnScholarship,
+  handleAdminLearnSummary,
+  handleAdminMigrateKvToD1,
+  handleAdminNonprofitPricing,
+  handleAdminNonprofitPricingAlerts,
+  handleAdminNonprofitPricingDocumentView,
+  handleAdminOnboardingTest,
+  handleAdminParishSupportTickets,
+  handleAdminPassword,
+  handleAdminPlatformSummary,
+  handleAdminRecentActivity,
+  handleAdminRebuildIndexes,
+  handleAdminRegistrationDetail,
+  handleAdminRegistrationGivingSummary,
+  handleAdminRegistrations,
+  handleAdminReleaseStatus,
+  handleAdminSession,
+  handleAdminSetSacramentsEnabled,
+  handleAdminStewardshipCompStatus,
+  handleAdminTaxExemptionApprove,
+  handleAdminTaxExemptionDetail,
+  handleAdminTaxExemptionDocumentView,
+  handleAdminTaxExemptionExpire,
+  handleAdminTaxExemptionNote,
+  handleAdminTaxExemptionQueue,
+  handleAdminTaxExemptionReject,
+  handleAdminTaxExemptionRequestReplacement,
+  handleAdminTaxExemptionRetrySync,
+  handleAdminTaxExemptionRevoke,
+  handleAdminTaxExemptionSummary,
+  handleAdminTaxExemptionSyncReconcile,
+  handleAdminTaxExemptionSyncRetry,
+  handleAdminWeeklyAnnouncementDigest,
+  handleAdminWeeklyCommemorationEmails,
+  handleAdminWeeklySacramentDigest,
+  handleAdminWeeklyTreasurerCommerceEmails,
+  handleAccountingAccess,
+  handleAccountingAdjustments,
+  handleAccountingAttachments,
+  handleAccountingClose,
+  handleAccountingGovernance,
+  handleAccountingLedger,
+  handleAccountingMigration,
+  handleAccountingPayablesBudgets,
+  handleAccountingReconciliationCommerce,
+  handleAccountingRecurring,
+  handleAccountingSetupReports,
+  handleAnnouncementDigestUnsubscribe,
+  handleConsumerPasskeyAuthenticationOptions,
+  handleConsumerPasskeyAuthenticationVerify,
+  handleConsumerPasskeyRegistrationOptions,
+  handleConsumerPasskeyRegistrationVerify,
+  handleConsumerPasskeys,
+  handleDirectoryAdmin,
+  handleDirectoryIntake,
+  handleDirectoryMedia,
+  handleDirectoryMember,
+  handleDirectorySelfService,
+  handleClaimScopedDocumentUpload,
+  handleDonorAccountDeletion,
+  handleDonorBlog,
+  handleDonorBookstore,
+  handleDonorBookstoreIsbnLookup,
+  handleDonorBookstoreItemFields,
+  handleDonorBookstoreRequestFeature,
+  handleDonorClaimCheckout,
+  handleDonorCommemorations,
+  handleDonorCustomNewsFeeds,
+  handleDonorDashboard,
+  handleDonorDigestSubscription,
+  handleDonorEvents,
+  handleDonorExternalFeed,
+  handleDonorFeed,
+  handleDonorGivingPlusFeatureRequest,
+  handleDonorGivingStatementDownload,
+  handleDonorGivingStatements,
+  handleDonorGroups,
+  handleDonorKoinoniaCommunityTools,
+  handleDonorKoinoniaExchange,
+  handleDonorKoinoniaPrayerRequests,
+  handleDonorKoinoniaSignups,
+  handleDonorLogin,
+  handleDonorLiturgicalDay,
+  handleDonorMinistryServiceInterest,
+  handleDonorNotificationDismiss,
+  handleDonorNotifications,
+  handleDonorOcaNews,
+  handleDonorOfferings,
+  handleDonorParishCalendar,
+  handleDonorParishLibrary,
+  handleDonorPasswordResetConfirm,
+  handleDonorPasswordResetRequest,
+  handleDonorPush,
+  handleDonorSacramentAvailability,
+  handleDonorSacramentBook,
+  handleDonorSacramentCancel,
+  handleDonorSacramentPreparation,
+  handleDonorSacraments,
+  handleDonorSession,
+  handleDonorSignup,
+  handleDonorStewardshipFeatureRequest,
+  handleDonorSubscriptionPortal,
+  handleDonorSupportTicket,
+  handleDonorTeaching,
+  handleDonorVerify,
+  handleDonorVerifyPage,
+  handleDonorVideo,
+  handleKoinoniaAccess,
+  handleHealth,
+  handleListenAudio,
+  handleListenProgress,
+  handleListenRss,
+  handleListenSearch,
+  handleListenSubscriptions,
+  handleLiturgicalCalendar,
+  handleMarketplaceCatalog,
+  handleDashboardInvite,
+  handleIdentityCapabilityCatalog,
+  handleIdentityInvitationAccept,
+  handleIdentityLogin,
+  handleIdentityLogout,
+  handleIdentitySession,
+  handleMembershipInvitationCreate,
+  handleMembershipInvitationRevoke,
+  handleMembershipList,
+  handleParishAvailabilityBlackoutCreate,
+  handleParishAvailabilityBlackoutDelete,
+  handleParishAvailabilityRuleCreate,
+  handleParishAvailabilityRuleDelete,
+  handleParishBlog,
+  handleParishBookstore,
+  handleParishBookstoreReadiness,
+  handleParishCampaignUpload,
+  handleParishCommemorations,
+  handleParishCommunications,
+  handleParishDashboard,
+  handleParishDemoTier,
+  handleParishEvents,
+  handleParishFeatureRequestDismiss,
+  handleParishGivingHistory,
+  handleParishGivingSummary,
+  handleParishLibrary,
+  handleParishLogo,
+  handleParishNonprofitPricing,
+  handleParishNonprofitPricingDocumentUpload,
+  handleParishNonprofitPricingDocumentView,
+  handleParishOnboarding,
+  handleParishPasswordResetConfirm,
+  handleParishPasswordResetRequest,
+  handleParishPayoutDiagnostics,
+  handleParishPrayerRequests,
+  handleParishReconciliation,
+  handleParishReconciliationClose,
+  handleParishRecurringHealth,
+  handleParishSacramentAvailability,
+  handleParishSacramentPreparation,
+  handleParishSacramentUpdate,
+  handleParishSacraments,
+  handleParishSession,
+  handleParishSettlementProfiles,
+  handleParishStewardshipBillingPortal,
+  handleParishStewardshipMeetingDetail,
+  handleParishStewardshipMeetings,
+  handleParishStewardshipSubscribe,
+  handleParishStewardshipSummary,
+  handleParishStripeOnboarding,
+  handleParishStripeRefresh,
+  handleParishStripeVolume,
+  handleParishSubscriptionCheckout,
+  handleParishSubscriptionPortal,
+  handleParishSubscriptionRefresh,
+  handleParishTaxExemptionClaim,
+  handleParishTaxExemptionDocumentUpload,
+  handleParishTaxExemptionDocumentView,
+  handleParishTeaching,
+  handleParishVideo,
+  handleParishInterest,
+  handleParishes,
+  handleLearnAttendanceSave,
+  handleLearnBillingCancel,
+  handleLearnBillingCheckout,
+  handleLearnBillingStatus,
+  handleLearnBooks,
+  handleLearnCommunity,
+  handleLearnCommunityFlag,
+  handleLearnCommunitySubmit,
+  handleLearnCompletionSave,
+  handleLearnCoOp,
+  handleLearnDashboard,
+  handleLearnFamilyPlanningSave,
+  handleLearnFeedbackSubmit,
+  handleLearnFormation,
+  handleLearnGoogleCalendarCallback,
+  handleLearnGoogleCalendarConnect,
+  handleLearnGoogleCalendarPreview,
+  handleLearnGoogleCalendarStatus,
+  handleLearnGoogleCalendarSync,
+  handleLearnGraceModeSave,
+  handleLearnGrades,
+  handleLearnGradesSave,
+  handleLearnMeta,
+  handleLearnMoveUnfinishedWork,
+  handleLearnOdysseyActivate,
+  handleLearnOnboarding,
+  handleLearnOnboardingSave,
+  handleLearnPlanner,
+  handleLearnPlannerBlockSave,
+  handleLearnPrintCenter,
+  handleLearnPrintPdf,
+  handleLearnReports,
+  handleLearnSaints,
+  handleLearnTermClose,
+  handleLearnTestScores,
+  handleLearnTestScoresSave,
+  handleSacramentsGoogleCallback,
+  handleSacramentsGoogleConnect,
+  handleSacramentsGoogleDisconnect,
+  handleSacramentsGoogleStatus,
+  handlePublicCampaign,
+  handlePublicParishAsset,
+  handlePublicPlatformSummary,
+  handleRegistrations,
+  handleResendWebhook,
+  handleSecurityConfig,
+  handleStripeWebhook,
+  handleTaxExemptionStateGuidance,
+  handleWaitlist,
+  handleMfaEnrollmentOptions,
+  handleMfaEnrollmentVerify,
+  handleMfaStatus,
+  handleMfaStepUp,
+  handleMfaVerify,
+  handleStripeRefresh,
+  handleSubscriptionCheckout,
+  handleCheckout,
+  handleCheckoutSessionStatus,
+  handleGivingStatementJobCreate,
+  handleGivingStatementJobList,
+  handleGivingStatementJobStatus,
+  handleGivingStatementPreview,
+  handleStewardshipAccountingBridge,
+  handleStewardshipBilling,
+  handleStewardshipBillingPortal,
+  handleStewardshipFinancials,
+  handleStewardshipGivingActivate,
+  handleStewardshipGivingConcentration,
+  handleStewardshipGivingDistribution,
+  handleStewardshipGivingFunds,
+  handleStewardshipGivingHealthScore,
+  handleStewardshipGivingMetricsPage,
+  handleStewardshipGivingRecurring,
+  handleStewardshipGivingRetention,
+  handleStewardshipGivingSummary,
+  handleStewardshipHome,
+  handleStewardshipManualIncomeCreate,
+  handleStewardshipManualIncomeDelete,
+  handleStewardshipManualIncomeList,
+  handleStewardshipMeetingEdit,
+  handleStewardshipMeetingList,
+  handleStewardshipMeetingNew,
+  handleStewardshipMeetingPdf,
+  handleStewardshipMeetingPreview,
+  handleStewardshipMonthlyFinancialReport,
+  handleStewardshipMonthlyReport,
+  handleStewardshipNudge,
+  handleStewardshipSubscribe,
+  handleStewardshipWebhook,
+  json,
+  publicSubscriptionTiers,
+  requireDonor,
+});
+
+const API_ROUTE_REGISTRIES = Object.freeze([
+  routePublicRequest,
+  routeAccountingRequest,
+  routeDirectoryRequest,
+  routeLearnRequest,
+  routeDonorRequest,
+  routeAdminRequest,
+  routeStewardshipRequest,
+  routeParishRequest,
+]);
+
 export default {
   async scheduled(event, env, ctx) {
     if (env && !env.DB && env.AGAPAY_DB) env.DB = env.AGAPAY_DB;
@@ -3057,111 +3359,14 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
 
-    if (request.method === "POST" && url.pathname === "/api/stripe/webhook") {
-      return handleStripeWebhook(request, env);
-    }
-    if (request.method === "POST" && url.pathname === "/api/resend/webhook") {
-      return handleResendWebhook(request, env);
-    }
-
-    // ─── Listen profile SSO — resolves the signed-in donor using the standard
-    //     Bearer token + X-AGAPAY-Donor-Email header sent by the donor dashboard.
-    if (request.method === "GET" && url.pathname === "/api/listen/profile") {
-      try {
-        const donor = await requireDonor(request, env);
-        if (donor) {
-          const name = donor.donorName || donor.householdName || "AGAPAY Member";
-          const initials = name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "--";
-          return json({ authenticated: true, name, initials, memberStatus: "AGAPAY Member" });
-        }
-      } catch (err) {
-        console.warn("Listen profile SSO error:", err);
-      }
-      return json({ authenticated: false, name: "Guest Listener", initials: "--", memberStatus: "Anonymous" });
-    }
-
-    if (request.method === "GET" && url.pathname === "/api/listen/search") return handleListenSearch(request, env);
-    if (request.method === "GET" && url.pathname === "/api/listen/rss")    return handleListenRss(request, env);
-    if (request.method === "GET" && url.pathname === "/api/listen/audio")  return handleListenAudio(request, env);
-    if (url.pathname === "/api/listen/progress") return handleListenProgress(request, env);
-    if (url.pathname === "/api/listen/subscriptions") return handleListenSubscriptions(request, env);
-    if (request.method === "GET" && url.pathname === "/api/parishes") { const r = await handleParishes(request, env); return addCorsHeaders(r, env); }
-    if (request.method === "GET" && url.pathname === "/api/campaign") { const r = await handlePublicCampaign(request, env); return addCorsHeaders(r, env); }
-    if (request.method === "GET" && url.pathname === "/api/platform/summary") { const r = await handlePublicPlatformSummary(env); return addCorsHeaders(r, env); }
-    if (url.pathname.startsWith("/api/public/parish-assets/")) return handlePublicParishAsset(request, env);
-    if (request.method === "GET" && url.pathname === "/api/subscription-tiers") {
-      return corsJson({ tiers: publicSubscriptionTiers() }, env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/marketplace/catalog") {
-      const r = await handleMarketplaceCatalog(request); return addCorsHeaders(r, env);
-    }
-    if (url.pathname === "/api/waitlist") {
-      return handleWaitlist(request, env);
-    }
-    if (url.pathname === "/api/directory/intake") {
-      return handleDirectoryIntake(request, env);
-    }
-    const accountingAccessMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/accounting-access(?:\/.*)?$/);
-    if (accountingAccessMatch) {
-      const accountingParishId = decodeURIComponent(accountingAccessMatch[1]);
-      if (!accountingAvailableForParish(accountingParishId, env)) {
-        return json(
-          { error: "Not found" },
-          { status: 404, headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" } }
-        );
-      }
-      return handleAccountingAccess(request, env, accountingParishId);
-    }
-    const accountingMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/accounting(?:\/.*)?$/);
-    if (accountingMatch) {
-      const accountingParishId = decodeURIComponent(accountingMatch[1]);
-      if (!accountingAvailableForParish(accountingParishId, env)) {
-        return json(
-          { error: "Not found" },
-          { status: 404, headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" } }
-        );
-      }
-      const recurringResponse = await handleAccountingRecurring(request, env, accountingParishId);
-      if (recurringResponse) return recurringResponse;
-      const phaseDResponse = await handleAccountingPayablesBudgets(request, env, accountingParishId);
-      if (phaseDResponse) return phaseDResponse;
-      const phaseEResponse = await handleAccountingReconciliationCommerce(request, env, accountingParishId);
-      if (phaseEResponse) return phaseEResponse;
-      const phaseFResponse = await handleAccountingClose(request, env, accountingParishId);
-      if (phaseFResponse) return phaseFResponse;
-      const setupReportsResponse = await handleAccountingSetupReports(request, env, accountingParishId);
-      if (setupReportsResponse) return setupReportsResponse;
-      const adjustmentsResponse = await handleAccountingAdjustments(request, env, accountingParishId);
-      if (adjustmentsResponse) return adjustmentsResponse;
-      const governanceResponse = await handleAccountingGovernance(request, env, accountingParishId);
-      if (governanceResponse) return governanceResponse;
-      const attachmentsResponse = await handleAccountingAttachments(request, env, accountingParishId);
-      if (attachmentsResponse) return attachmentsResponse;
-      const migrationResponse = await handleAccountingMigration(request, env, accountingParishId);
-      if (migrationResponse) return migrationResponse;
-      const accountingResponse = await handleAccountingLedger(request, env, accountingParishId);
-      if (accountingResponse) return accountingResponse;
-    }
-    const directoryAdminMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/directory\/admin(?:\/.*)?$/);
-    if (directoryAdminMatch) {
-      const directoryAdminResponse = await handleDirectoryAdmin(request, env, decodeURIComponent(directoryAdminMatch[1]));
-      if (directoryAdminResponse) return directoryAdminResponse;
-    }
-    if (url.pathname.startsWith("/api/directory/member")) {
-      const directoryMemberResponse = await handleDirectoryMember(request, env);
-      if (directoryMemberResponse) return directoryMemberResponse;
-    }
-    if (url.pathname.startsWith("/api/directory/media/")) {
-      const directoryMediaResponse = await handleDirectoryMedia(request, env);
-      if (directoryMediaResponse) return directoryMediaResponse;
-    }
-    if (url.pathname.startsWith("/api/directory/")) {
-      const directorySelfServiceResponse = await handleDirectorySelfService(request, env);
-      if (directorySelfServiceResponse) return directorySelfServiceResponse;
-    }
-    if (url.pathname === "/api/parish-interest") {
-      return handleParishInterest(request, env);
-    }
+    const routedApiResponse = await dispatchRouteRegistries(API_ROUTE_REGISTRIES, {
+      request,
+      env,
+      ctx,
+      url,
+      actions: ROUTE_ACTIONS,
+    });
+    if (routedApiResponse !== null) return routedApiResponse;
     if (url.pathname === "/api/contact" && request.method === "POST") {
       try {
         const body = await request.json().catch(() => ({}));
@@ -3201,410 +3406,6 @@ export default {
       } catch (err) {
         return json({ error: "Something went wrong. Please try again." }, { status: 500 });
       }
-    }
-    if (request.method === "GET" && url.pathname === "/api/security/config") {
-      return handleSecurityConfig(env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/health") {
-      return handleHealth(env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/liturgical-calendar") {
-      const r = await handleLiturgicalCalendar(request); return addCorsHeaders(r, env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/donor/liturgical-day") {
-      return handleDonorLiturgicalDay(request, env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/learn/meta") {
-      return handleLearnMeta(env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/learn/dashboard") {
-      return handleLearnDashboard(request, env);
-    }
-    if (request.method === "POST" && url.pathname === "/api/learn/completion") {
-      return handleLearnCompletionSave(request, env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/learn/planner") {
-      return handleLearnPlanner(request, env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/learn/print-center") {
-      return handleLearnPrintCenter(request, env);
-    }
-    if (request.method === "POST" && url.pathname.startsWith("/api/learn/print/")) {
-      return handleLearnPrintPdf(request, env, decodeURIComponent(url.pathname.slice("/api/learn/print/".length)));
-    }
-    if (request.method === "POST" && url.pathname === "/api/learn/print") {
-      return handleLearnPrintPdf(request, env, "");
-    }
-    if (request.method === "GET" && url.pathname === "/api/learn/formation") {
-      return handleLearnFormation(request, env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/learn/saints") {
-      return handleLearnSaints(request, env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/learn/books") {
-      return handleLearnBooks(request, env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/learn/grades") {
-      return handleLearnGrades(request, env);
-    }
-    if (request.method === "POST" && url.pathname === "/api/learn/grades") {
-      return handleLearnGradesSave(request, env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/learn/test-scores") {
-      return handleLearnTestScores(request, env);
-    }
-    if (request.method === "POST" && url.pathname === "/api/learn/test-scores") {
-      return handleLearnTestScoresSave(request, env);
-    }
-    if (request.method === "POST" && url.pathname === "/api/learn/attendance") {
-      return handleLearnAttendanceSave(request, env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/learn/community") {
-      return handleLearnCommunity(request, env);
-    }
-    if (request.method === "POST" && url.pathname === "/api/learn/community/resources") {
-      return handleLearnCommunitySubmit(request, env);
-    }
-    if (request.method === "POST" && url.pathname.startsWith("/api/learn/community/resources/") && url.pathname.endsWith("/flag")) {
-      const resourceId = decodeURIComponent(url.pathname.slice("/api/learn/community/resources/".length, -"/flag".length));
-      return handleLearnCommunityFlag(request, env, resourceId);
-    }
-    if (request.method === "GET" && url.pathname === "/api/learn/reports") {
-      return handleLearnReports(request, env);
-    }
-    if (request.method === "POST" && url.pathname.startsWith("/api/learn/terms/") && url.pathname.endsWith("/close")) {
-      const termId = decodeURIComponent(url.pathname.slice("/api/learn/terms/".length, -"/close".length));
-      return handleLearnTermClose(request, env, termId);
-    }
-    if (request.method === "GET" && url.pathname === "/api/learn/co-op") {
-      return handleLearnCoOp(request, env);
-    }
-    if (request.method === "GET" && (url.pathname === "/api/learn/onboarding" || url.pathname === "/api/learn/setup")) {
-      return handleLearnOnboarding(request, env);
-    }
-    if (url.pathname === "/api/learn/odyssey/activate" && request.method === "POST") {
-      return handleLearnOdysseyActivate(request, env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/learn/billing/status") {
-      return handleLearnBillingStatus(request, env);
-    }
-    if (request.method === "POST" && url.pathname === "/api/learn/billing/checkout") {
-      return handleLearnBillingCheckout(request, env);
-    }
-    if (request.method === "POST" && url.pathname === "/api/learn/billing/cancel") {
-      return handleLearnBillingCancel(request, env);
-    }
-    if (url.pathname === "/api/learn/google-calendar/status") {
-      return handleLearnGoogleCalendarStatus(request, env);
-    }
-    if (url.pathname === "/api/learn/google-calendar/connect") {
-      return handleLearnGoogleCalendarConnect(request, env);
-    }
-    if (url.pathname === "/api/learn/google-calendar/callback") {
-      if (String(url.searchParams.get("state") || "").startsWith("sac.")) {
-        return handleSacramentsGoogleCallback(request, env);
-      }
-      return handleLearnGoogleCalendarCallback(request, env);
-    }
-    if (url.pathname === "/api/learn/google-calendar/preview") {
-      return handleLearnGoogleCalendarPreview(request, env);
-    }
-    if (url.pathname === "/api/learn/google-calendar/sync") {
-      return handleLearnGoogleCalendarSync(request, env);
-    }
-    if (request.method === "POST" && url.pathname === "/api/learn/grace-mode") {
-      return handleLearnGraceModeSave(request, env);
-    }
-    if (request.method === "POST" && (url.pathname === "/api/learn/onboarding" || url.pathname === "/api/learn/setup")) {
-      return handleLearnOnboardingSave(request, env);
-    }
-    if (request.method === "POST" && url.pathname === "/api/learn/family-planning") {
-      return handleLearnFamilyPlanningSave(request, env);
-    }
-    if (request.method === "POST" && url.pathname === "/api/learn/planner") {
-      return handleLearnPlannerBlockSave(request, env);
-    }
-    if (request.method === "POST" && url.pathname === "/api/learn/planner/move") {
-      return handleLearnMoveUnfinishedWork(request, env);
-    }
-    if (request.method === "POST" && url.pathname === "/api/learn/feedback") {
-      return handleLearnFeedbackSubmit(request, env);
-    }
-    if (request.method === "POST" && url.pathname === "/api/registrations") return handleRegistrations(request, env);
-    if (url.pathname === "/api/tax-exemption/state-guidance") return handleTaxExemptionStateGuidance(request, env);
-    if (url.pathname.startsWith("/api/tax-exemption/") && url.pathname.endsWith("/upload")) {
-      const taxExemptionId = decodeURIComponent(url.pathname.replace("/api/tax-exemption/", "").replace("/upload", ""));
-      return handleClaimScopedDocumentUpload(request, env, taxExemptionId);
-    }
-    if (url.pathname === "/api/donor/signup") {
-      return handleDonorSignup(request, env);
-    }
-    if (url.pathname === "/api/donor/login") {
-      return handleDonorLogin(request, env);
-    }
-    if (url.pathname === "/api/donor/passkeys/authentication/options") {
-      return handleConsumerPasskeyAuthenticationOptions(request, env);
-    }
-    if (url.pathname === "/api/donor/passkeys/authentication/verify") {
-      return handleConsumerPasskeyAuthenticationVerify(request, env);
-    }
-    if (url.pathname === "/api/donor/passkeys/registration/options") {
-      return handleConsumerPasskeyRegistrationOptions(request, env);
-    }
-    if (url.pathname === "/api/donor/passkeys/registration/verify") {
-      return handleConsumerPasskeyRegistrationVerify(request, env);
-    }
-    if (url.pathname === "/api/donor/passkeys") {
-      return handleConsumerPasskeys(request, env);
-    }
-    if (url.pathname.startsWith("/api/donor/passkeys/")) {
-      const credentialId = decodeURIComponent(url.pathname.replace("/api/donor/passkeys/", ""));
-      return handleConsumerPasskeys(request, env, credentialId);
-    }
-    if (url.pathname === "/api/donor/password-reset-request") {
-      return handleDonorPasswordResetRequest(request, env);
-    }
-    if (url.pathname === "/api/donor/password-reset-confirm") {
-      return handleDonorPasswordResetConfirm(request, env);
-    }
-    if (url.pathname === "/api/donor/verify") {
-      return handleDonorVerify(request, env);
-    }
-    if (
-      url.pathname === "/donor/verify" ||
-      url.pathname === "/donor/verify/" ||
-      url.pathname === "/my-agapay/verify" ||
-      url.pathname === "/my-agapay/verify/" ||
-      url.pathname === "/myagapay/verify" ||
-      url.pathname === "/myagapay/verify/"
-    ) {
-      return handleDonorVerifyPage(request, env);
-    }
-    if (url.pathname === "/api/donor/session") {
-      return handleDonorSession(request, env);
-    }
-    if (url.pathname === "/api/donor/claim-checkout") {
-      return handleDonorClaimCheckout(request, env);
-    }
-    if (url.pathname === "/api/donor/notifications") {
-      return handleDonorNotifications(request, env);
-    }
-    if (url.pathname.startsWith("/api/donor/notifications/") && url.pathname.endsWith("/dismiss")) {
-      const notifId = decodeURIComponent(url.pathname.replace("/api/donor/notifications/", "").replace("/dismiss", ""));
-      return handleDonorNotificationDismiss(request, env, notifId);
-    }
-    if (url.pathname === "/api/donor/dashboard") {
-      return handleDonorDashboard(request, env);
-    }
-    if (url.pathname === "/api/donor/support-tickets") {
-      return handleDonorSupportTicket(request, env);
-    }
-    if (url.pathname === "/api/donor/account-deletion") {
-      return handleDonorAccountDeletion(request, env);
-    }
-    if (url.pathname === "/api/donor/koinonia-access") {
-      return handleKoinoniaAccess(request, env);
-    }
-    if (url.pathname === "/api/donor/koinonia/community-tools" || url.pathname.startsWith("/api/donor/koinonia/community-tools/")) {
-      return handleDonorKoinoniaCommunityTools(request, env);
-    }
-    if (url.pathname === "/api/donor/koinonia/signups" || url.pathname.startsWith("/api/donor/koinonia/signups/")) {
-      return handleDonorKoinoniaSignups(request, env, ctx);
-    }
-    if (url.pathname === "/api/donor/koinonia/exchange" || url.pathname.startsWith("/api/donor/koinonia/exchange/")) {
-      return handleDonorKoinoniaExchange(request, env, ctx);
-    }
-    if (url.pathname === "/api/donor/koinonia/prayer-requests" || url.pathname.startsWith("/api/donor/koinonia/prayer-requests/")) {
-      return handleDonorKoinoniaPrayerRequests(request, env);
-    }
-    if (url.pathname === "/api/donor/feed") {
-      return handleDonorFeed(request, env);
-    }
-    if (url.pathname === "/api/donor/teaching") {
-      return handleDonorTeaching(request, env);
-    }
-    if (url.pathname === "/api/donor/library" || url.pathname.startsWith("/api/donor/library/")) {
-      return handleDonorParishLibrary(request, env, url.pathname.replace("/api/donor/library", ""));
-    }
-    if (url.pathname === "/api/donor/videos") {
-      return handleDonorVideo(request, env);
-    }
-    if (url.pathname === "/api/donor/blog") {
-      return handleDonorBlog(request, env);
-    }
-    if (url.pathname === "/api/donor/oca-news") {
-      return handleDonorOcaNews(request, env);
-    }
-    if (url.pathname === "/api/donor/custom-news-feeds") {
-      return handleDonorCustomNewsFeeds(request, env);
-    }
-    if (url.pathname.startsWith("/api/donor/custom-news-feeds/")) {
-      return handleDonorCustomNewsFeeds(request, env, decodeURIComponent(url.pathname.replace("/api/donor/custom-news-feeds/", "").replace(/\/+$/, "")));
-    }
-    if (url.pathname.startsWith("/api/donor/external-feeds/")) {
-      return handleDonorExternalFeed(request, env, decodeURIComponent(url.pathname.replace("/api/donor/external-feeds/", "").replace(/\/+$/, "")));
-    }
-    if (url.pathname === "/api/donor/digest/subscription") {
-      return handleDonorDigestSubscription(request, env);
-    }
-    if (url.pathname === "/api/donor/digest/unsubscribe") {
-      return handleAnnouncementDigestUnsubscribe(request, env);
-    }
-    if (url.pathname.startsWith("/api/donor/push/")) {
-      const pushAction = url.pathname.replace("/api/donor/push/", "").replace(/\/+$/, "");
-      return handleDonorPush(request, env, pushAction);
-    }
-    if (url.pathname.startsWith("/api/donor/feed/") && url.pathname.endsWith("/read")) {
-      const announcementId = decodeURIComponent(url.pathname.replace("/api/donor/feed/", "").replace("/read", ""));
-      return handleDonorFeed(request, env, announcementId);
-    }
-    if (url.pathname === "/api/donor/groups" || url.pathname.startsWith("/api/donor/groups/")) {
-      return handleDonorGroups(request, env, ctx);
-    }
-    if (url.pathname === "/api/donor/stewardship-feature-request") {
-      return handleDonorStewardshipFeatureRequest(request, env);
-    }
-    if (url.pathname === "/api/donor/giving-plus-feature-request") {
-      return handleDonorGivingPlusFeatureRequest(request, env);
-    }
-    if (url.pathname === "/api/donor/ministry-service-interest") {
-      return handleDonorMinistryServiceInterest(request, env);
-    }
-    if (url.pathname === "/api/donor/parish-calendar") {
-      return handleDonorParishCalendar(request, env);
-    }
-    if (url.pathname === "/api/donor/offerings") {
-      return handleDonorOfferings(request, env);
-    }
-    if (url.pathname === "/api/donor/subscription-portal") {
-      return handleDonorSubscriptionPortal(request, env);
-    }
-    if (url.pathname === "/api/donor/bookstore/item-fields") {
-      return handleDonorBookstoreItemFields(request, env);
-    }
-    if (url.pathname === "/api/donor/bookstore/isbn-lookup") {
-      return handleDonorBookstoreIsbnLookup(request, env);
-    }
-    if (url.pathname === "/api/donor/bookstore/request-feature") {
-      return handleDonorBookstoreRequestFeature(request, env);
-    }
-    if (url.pathname === "/api/donor/bookstore") {
-      return handleDonorBookstore(request, env);
-    }
-    if (url.pathname.startsWith("/api/public/bookstore/")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/public/bookstore/", "").replace(/\/+$/, ""));
-      return handleDonorBookstore(request, env, parishId);
-    }
-    if (url.pathname === "/api/donor/events") {
-      return handleDonorEvents(request, env);
-    }
-    if (url.pathname.startsWith("/api/public/events/")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/public/events/", "").replace(/\/+$/, ""));
-      return handleDonorEvents(request, env, parishId);
-    }
-    if (url.pathname === "/api/donor/commemorations") {
-      return handleDonorCommemorations(request, env);
-    }
-    if (url.pathname === "/api/donor/giving-statements") {
-      return handleDonorGivingStatements(request, env);
-    }
-    if (url.pathname.startsWith("/api/donor/giving-statements/") && url.pathname.endsWith("/download")) {
-      const statementId = decodeURIComponent(url.pathname.replace("/api/donor/giving-statements/", "").replace("/download", ""));
-      return handleDonorGivingStatementDownload(request, env, statementId);
-    }
-    if (url.pathname === "/api/donor/sacraments") {
-      return handleDonorSacraments(request, env);
-    }
-    if (url.pathname === "/api/parish/sacraments/google-calendar/callback") {
-      return handleSacramentsGoogleCallback(request, env);
-    }
-    if (url.pathname === "/api/donor/sacraments/availability") {
-      return handleDonorSacramentAvailability(request, env);
-    }
-    if (url.pathname === "/api/donor/sacraments/book") {
-      return handleDonorSacramentBook(request, env);
-    }
-    if (url.pathname.startsWith("/api/donor/sacraments/") && url.pathname.includes("/preparation/")) {
-      return handleDonorSacramentPreparation(request, env, url.pathname.replace("/api/donor/sacraments/", ""));
-    }
-    if (url.pathname.startsWith("/api/donor/sacraments/") && url.pathname.endsWith("/cancel")) {
-      const requestId = decodeURIComponent(url.pathname.replace("/api/donor/sacraments/", "").replace("/cancel", ""));
-      return handleDonorSacramentCancel(request, env, requestId);
-    }
-    if (request.method === "GET" && url.pathname === "/api/admin/registrations") {
-      return handleAdminRegistrations(request, env);
-    }
-    if (url.pathname === "/api/admin/session") {
-      return handleAdminSession(request, env);
-    }
-    if (url.pathname === "/api/mfa/enrollment/options") return handleMfaEnrollmentOptions(request, env);
-    if (url.pathname === "/api/mfa/enrollment/verify") return handleMfaEnrollmentVerify(request, env);
-    if (url.pathname === "/api/mfa/verify") return handleMfaVerify(request, env);
-    if (url.pathname === "/api/mfa/step-up") return handleMfaStepUp(request, env);
-    if (url.pathname === "/api/mfa/status") return handleMfaStatus(request, env);
-    // ── Platform Identity (Accounting Package 0.75C) ────────────────────
-    if (url.pathname === "/api/identity/login") {
-      return handleIdentityLogin(request, env);
-    }
-    if (url.pathname === "/api/identity/session") {
-      return handleIdentitySession(request, env);
-    }
-    if (url.pathname === "/api/identity/logout") {
-      return handleIdentityLogout(request, env);
-    }
-    if (url.pathname === "/api/identity/capabilities") {
-      return handleIdentityCapabilityCatalog(request);
-    }
-    if (url.pathname.startsWith("/api/identity/invitations/") && url.pathname.endsWith("/accept")) {
-      const token = decodeURIComponent(url.pathname.replace("/api/identity/invitations/", "").replace("/accept", ""));
-      return handleIdentityInvitationAccept(request, env, token);
-    }
-    if (request.method === "GET" && url.pathname === "/api/admin/platform-summary") {
-      return handleAdminPlatformSummary(request, env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/admin/recent-activity") {
-      return handleAdminRecentActivity(request, env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/admin/release-status") {
-      return handleAdminReleaseStatus(request, env);
-    }
-    if (url.pathname === "/api/admin/email-diagnostics") {
-      return handleAdminEmailDiagnostics(request, env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/admin/audit-log") {
-      return handleAdminAuditLog(request, env);
-    }
-    if (url.pathname.startsWith("/api/admin/accounting/")) {
-      return handleAdminAccountingOperations(request, env);
-    }
-    if (url.pathname === "/api/admin/commemorations/send-weekly") {
-      return handleAdminWeeklyCommemorationEmails(request, env);
-    }
-    if (url.pathname === "/api/admin/commerce/send-weekly-treasurer") {
-      return handleAdminWeeklyTreasurerCommerceEmails(request, env);
-    }
-    if (url.pathname === "/api/admin/sacraments/send-weekly-digest") {
-      return handleAdminWeeklySacramentDigest(request, env);
-    }
-    if (url.pathname.startsWith("/api/donor/teaching/") && url.pathname.endsWith("/read")) {
-      const teachingId = decodeURIComponent(url.pathname.replace("/api/donor/teaching/", "").replace("/read", ""));
-      return handleDonorTeaching(request, env, teachingId, "read");
-    }
-    if (url.pathname.startsWith("/api/donor/videos/")) {
-      const parts = url.pathname.replace("/api/donor/videos/", "").split("/").filter(Boolean).map(decodeURIComponent);
-      return handleDonorVideo(request, env, parts[0] || "", parts[1] || "");
-    }
-    if (url.pathname === "/api/admin/communications/send-weekly-digest") {
-      return handleAdminWeeklyAnnouncementDigest(request, env);
-    }
-    if (url.pathname === "/api/admin/stewardship/comp" && request.method === "POST") {
-      return handleAdminGrantStewardshipComp(request, env);
-    }
-    if (url.pathname === "/api/admin/stewardship/comp-status" && request.method === "GET") {
-      return handleAdminStewardshipCompStatus(request, env);
-    }
-    if (url.pathname === "/api/admin/sacraments/enabled" && request.method === "POST") {
-      return handleAdminSetSacramentsEnabled(request, env);
     }
     if (url.pathname === "/api/admin/seed-demo" && request.method === "POST") {
       if (!(await requireAdmin(request, env))) return unauthorized();
@@ -3869,479 +3670,6 @@ export default {
           : "St. Fiacre Orthodox Church (Demo) seeded. Use password 'demo2025' for the parish dashboard."
       });
     }
-    if (url.pathname === "/api/admin/rebuild-indexes") {
-      return handleAdminRebuildIndexes(request, env);
-    }
-    if (url.pathname === "/api/admin/migrate-kv-to-d1") {
-      // One-time migration tool — gated by env flag to prevent accidental re-runs.
-      // Set AGAPAY_ENABLE_KV_MIGRATION=true in Cloudflare dashboard only when needed.
-      if (env.AGAPAY_ENABLE_KV_MIGRATION !== "true") {
-        return json({ error: "Migration endpoint is disabled. Set AGAPAY_ENABLE_KV_MIGRATION=true to enable." }, { status: 403 });
-      }
-      return handleAdminMigrateKvToD1(request, env);
-    }
-    if (url.pathname === "/api/admin/password") {
-      return handleAdminPassword(request, env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/admin/learn/summary") {
-      return handleAdminLearnSummary(request, env);
-    }
-    if (url.pathname.startsWith("/api/admin/learn/feedback/")) {
-      return handleAdminLearnFeedback(request, env, decodeURIComponent(url.pathname.slice("/api/admin/learn/feedback/".length)));
-    }
-    if (url.pathname === "/api/admin/parish-support-tickets") {
-      return handleAdminParishSupportTickets(request, env);
-    }
-    if (url.pathname.startsWith("/api/admin/parish-support-tickets/")) {
-      return handleAdminParishSupportTickets(request, env, decodeURIComponent(url.pathname.slice("/api/admin/parish-support-tickets/".length)));
-    }
-    if (url.pathname === "/api/admin/learn/scholarships") {
-      return handleAdminLearnScholarship(request, env);
-    }
-    if (url.pathname === "/api/admin/learn/community") {
-      return handleAdminLearnCommunity(request, env);
-    }
-    if (url.pathname.startsWith("/api/admin/learn/community/")) {
-      return handleAdminLearnCommunity(request, env, decodeURIComponent(url.pathname.slice("/api/admin/learn/community/".length)));
-    }
-    if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/subscription-checkout")) {
-      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/subscription-checkout", ""));
-      return handleSubscriptionCheckout(request, env, reference);
-    }
-    if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/stripe-refresh")) {
-      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/stripe-refresh", ""));
-      return handleStripeRefresh(request, env, reference);
-    }
-    if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/giving-summary")) {
-      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/giving-summary", ""));
-      return handleAdminRegistrationGivingSummary(request, env, reference);
-    }
-    if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/dashboard-invite")) {
-      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/dashboard-invite", ""));
-      return handleDashboardInvite(request, env, reference);
-    }
-    if (url.pathname === "/api/admin/tax-exemptions/summary") return handleAdminTaxExemptionSummary(request, env);
-    if (url.pathname === "/api/admin/tax-exemptions") return handleAdminTaxExemptionQueue(request, env);
-    if (url.pathname.startsWith("/api/admin/tax-exemptions/")) {
-      const rest = url.pathname.replace("/api/admin/tax-exemptions/", "");
-      const parts = rest.split("/");
-      const [taxExemptionId, action, syncId, syncAction] = parts;
-      if (action === "syncs" && syncId && syncAction === "retry") return handleAdminTaxExemptionSyncRetry(request, env, taxExemptionId, syncId);
-      if (action === "syncs" && syncId && syncAction === "reconcile") return handleAdminTaxExemptionSyncReconcile(request, env, taxExemptionId, syncId);
-      if (action === "approve") return handleAdminTaxExemptionApprove(request, env, taxExemptionId);
-      if (action === "reject") return handleAdminTaxExemptionReject(request, env, taxExemptionId);
-      if (action === "request-replacement") return handleAdminTaxExemptionRequestReplacement(request, env, taxExemptionId);
-      if (action === "revoke") return handleAdminTaxExemptionRevoke(request, env, taxExemptionId);
-      if (action === "expire") return handleAdminTaxExemptionExpire(request, env, taxExemptionId);
-      if (action === "retry-sync") return handleAdminTaxExemptionRetrySync(request, env, taxExemptionId);
-      if (action === "document") return handleAdminTaxExemptionDocumentView(request, env, taxExemptionId, "inline");
-      if (action === "document-download") return handleAdminTaxExemptionDocumentView(request, env, taxExemptionId, "attachment");
-      if (action === "notes") return handleAdminTaxExemptionNote(request, env, taxExemptionId);
-      if (!action) return handleAdminTaxExemptionDetail(request, env, taxExemptionId);
-      return json({ error: "Not found" }, { status: 404 });
-    }
-    if (url.pathname === "/api/admin/nonprofit-pricing") {
-      return handleAdminNonprofitPricing(request, env);
-    }
-    if (url.pathname === "/api/admin/nonprofit-pricing/alerts/run") {
-      return handleAdminNonprofitPricingAlerts(request, env);
-    }
-    if (url.pathname.startsWith("/api/admin/nonprofit-pricing/applications/") && url.pathname.includes("/documents/")) {
-      const rest = url.pathname.replace("/api/admin/nonprofit-pricing/applications/", "");
-      const [applicationId, documentPart] = rest.split("/documents/");
-      const documentId = decodeURIComponent(String(documentPart || "").replace(/\/download$/, ""));
-      return handleAdminNonprofitPricingDocumentView(
-        request,
-        env,
-        decodeURIComponent(applicationId),
-        documentId,
-        String(documentPart || "").endsWith("/download") ? "attachment" : "inline"
-      );
-    }
-
-    if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/onboarding-test")) {
-      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/onboarding-test", ""));
-      return handleAdminOnboardingTest(request, env, reference);
-    }
-    if (url.pathname.startsWith("/api/admin/registrations/")) {
-      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", ""));
-      return handleAdminRegistrationDetail(request, env, reference);
-    }
-    if (url.pathname === "/api/parish/password-reset-request") {
-      return handleParishPasswordResetRequest(request, env);
-    }
-    if (url.pathname === "/api/parish/password-reset-confirm") {
-      return handleParishPasswordResetConfirm(request, env);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/session")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/session", ""));
-      return handleParishSession(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/onboarding")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/onboarding", ""));
-      return handleParishOnboarding(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stripe-onboarding")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stripe-onboarding", ""));
-      return handleParishStripeOnboarding(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stripe-refresh")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stripe-refresh", ""));
-      return handleParishStripeRefresh(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/subscription-checkout")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/subscription-checkout", ""));
-      return handleParishSubscriptionCheckout(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/demo-tier")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/demo-tier", ""));
-      return handleParishDemoTier(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/subscription-refresh")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/subscription-refresh", ""));
-      return handleParishSubscriptionRefresh(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/subscription-portal")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/subscription-portal", ""));
-      return handleParishSubscriptionPortal(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/commemorations")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/commemorations", ""));
-      return handleParishCommemorations(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/library")) {
-      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/library");
-      const parishId = decodeURIComponent(parts[0].replace(/\/+$/, ""));
-      const subpath = parts.slice(1).join("/library") || "";
-      return handleParishLibrary(request, env, parishId, subpath);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/communications")) {
-      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/communications");
-      const parishId = decodeURIComponent(parts[0].replace(/\/+$/, ""));
-      const subpath = parts.slice(1).join("/communications") || "";
-      const normalizedSubpath = subpath.replace(/^\/+/, "");
-      if (normalizedSubpath === "teaching" || normalizedSubpath.startsWith("teaching/")) {
-        return handleParishTeaching(request, env, parishId, normalizedSubpath.replace(/^teaching\/?/, ""), ctx);
-      }
-      if (normalizedSubpath === "video" || normalizedSubpath.startsWith("video/")) {
-        return handleParishVideo(request, env, parishId, normalizedSubpath.replace(/^video\/?/, ""));
-      }
-      if (normalizedSubpath === "blog") {
-        return handleParishBlog(request, env, parishId);
-      }
-      return handleParishCommunications(request, env, parishId, subpath, ctx);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/prayer-requests")) {
-      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/prayer-requests");
-      const parishId = decodeURIComponent(parts[0].replace(/\/+$/, ""));
-      const subpath = parts.slice(1).join("/prayer-requests") || "";
-      return handleParishPrayerRequests(request, env, parishId, subpath);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments", ""));
-      return handleParishSacraments(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments/google-calendar/status")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments/google-calendar/status", ""));
-      return handleSacramentsGoogleStatus(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments/google-calendar/connect")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments/google-calendar/connect", ""));
-      return handleSacramentsGoogleConnect(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments/google-calendar/disconnect")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments/google-calendar/disconnect", ""));
-      return handleSacramentsGoogleDisconnect(request, env, parishId);
-    }
-    // ── Native availability booking (must be matched before the generic
-    // /sacraments/:requestId catch-all below, since "availability" would
-    // otherwise be mistaken for a request id) ──────────────────────────────
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments/availability")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments/availability", ""));
-      return handleParishSacramentAvailability(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments/availability/rules")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments/availability/rules", ""));
-      return handleParishAvailabilityRuleCreate(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/sacraments/availability/rules/")) {
-      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/sacraments/availability/rules/");
-      return handleParishAvailabilityRuleDelete(request, env, decodeURIComponent(parts[0] || ""), decodeURIComponent(parts[1] || ""));
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/sacraments/availability/blackouts")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/sacraments/availability/blackouts", ""));
-      return handleParishAvailabilityBlackoutCreate(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/sacraments/availability/blackouts/")) {
-      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/sacraments/availability/blackouts/");
-      return handleParishAvailabilityBlackoutDelete(request, env, decodeURIComponent(parts[0] || ""), decodeURIComponent(parts[1] || ""));
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/sacraments/preparation")) {
-      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/sacraments/");
-      return handleParishSacramentPreparation(request, env, decodeURIComponent(parts[0] || ""), parts.slice(1).join("/sacraments/"));
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/sacraments/") && url.pathname.includes("/preparation/")) {
-      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/sacraments/");
-      return handleParishSacramentPreparation(request, env, decodeURIComponent(parts[0] || ""), parts.slice(1).join("/sacraments/"));
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/sacraments/")) {
-      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/sacraments/");
-      const parishId = decodeURIComponent(parts[0] || "");
-      const requestId = decodeURIComponent(parts[1] || "");
-      return handleParishSacramentUpdate(request, env, parishId, requestId);
-    }
-    // ── Platform Identity & Parish Memberships (Accounting Package 0.75C) ──
-    // Additive routes only -- none of these are reachable via, or affect,
-    // any existing parish-dashboard route above.
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/memberships/invitations")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/memberships/invitations", ""));
-      return handleMembershipInvitationCreate(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/memberships/invitations/")) {
-      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/memberships/invitations/");
-      return handleMembershipInvitationRevoke(request, env, decodeURIComponent(parts[0] || ""), decodeURIComponent(parts[1] || ""));
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/memberships")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/memberships", ""));
-      return handleMembershipList(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/giving-summary")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/giving-summary", ""));
-      return handleParishGivingSummary(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stripe-volume")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stripe-volume", ""));
-      return handleParishStripeVolume(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/nonprofit-pricing")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/nonprofit-pricing", ""));
-      return handleParishNonprofitPricing(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/nonprofit-pricing/documents")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/nonprofit-pricing/documents", ""));
-      return handleParishNonprofitPricingDocumentUpload(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/nonprofit-pricing/documents/")) {
-      const [parishId, documentPart] = url.pathname.replace("/api/parish/dashboard/", "").split("/nonprofit-pricing/documents/");
-      const documentId = decodeURIComponent(String(documentPart || "").replace(/\/download$/, ""));
-      return handleParishNonprofitPricingDocumentView(
-        request,
-        env,
-        decodeURIComponent(parishId),
-        documentId,
-        String(documentPart || "").endsWith("/download") ? "attachment" : "inline"
-      );
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/giving-history")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/giving-history", ""));
-      return handleParishGivingHistory(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/recurring-health")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/recurring-health", ""));
-      return handleParishRecurringHealth(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/bookstore")) {
-      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/bookstore");
-      const parishId = decodeURIComponent(parts[0].replace(/\/+$/, ""));
-      const subpath = parts.slice(1).join("/bookstore") || "";
-      return handleParishBookstore(request, env, parishId, subpath);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/events")) {
-      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/events");
-      const parishId = decodeURIComponent(parts[0].replace(/\/+$/, ""));
-      const subpath = parts.slice(1).join("/events") || "";
-      return handleParishEvents(request, env, parishId, subpath);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/settlement-profiles")) {
-      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/settlement-profiles");
-      const parishId = decodeURIComponent(parts[0].replace(/\/+$/, ""));
-      const subpath = parts.slice(1).join("/settlement-profiles") || "";
-      return handleParishSettlementProfiles(request, env, parishId, subpath);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/payout-diagnostics")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/payout-diagnostics", ""));
-      return handleParishPayoutDiagnostics(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/reconciliation/close")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/reconciliation/close", ""));
-      return handleParishReconciliationClose(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/reconciliation")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/reconciliation", ""));
-      return handleParishReconciliation(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/campaign-upload")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/campaign-upload", ""));
-      return handleParishCampaignUpload(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/logo")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/logo", ""));
-      return handleParishLogo(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship", ""));
-      return handleParishStewardshipSummary(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/subscribe")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/subscribe", ""));
-      return handleParishStewardshipSubscribe(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/billing-portal")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/billing-portal", ""));
-      return handleParishStewardshipBillingPortal(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/meetings")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/meetings", ""));
-      return handleParishStewardshipMeetings(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/stewardship/meetings/")) {
-      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/stewardship/meetings/");
-      const parishId = decodeURIComponent(parts[0] || "");
-      const meetingId = decodeURIComponent(parts[1] || "");
-      return handleParishStewardshipMeetingDetail(request, env, parishId, meetingId);
-    }
-    if (request.method === "POST" && url.pathname === "/api/create-checkout-session") {
-      return handleCheckout(request, env);
-    }
-    if ((request.method === "GET" || request.method === "POST") && url.pathname === "/api/checkout-session-status") {
-      return handleCheckoutSessionStatus(request, env);
-    }
-
-    // ── Stewardship module routes ─────────────────────────────────────────
-    if (url.pathname === "/parish/stewardship") return handleStewardshipHome(request, env);
-    if (url.pathname === "/parish/stewardship/giving") return handleStewardshipGivingMetricsPage(request, env);
-    if (request.method === "POST" && url.pathname === "/parish/stewardship/subscribe") return handleStewardshipSubscribe(request, env);
-    if (url.pathname === "/parish/stewardship/billing") return handleStewardshipBilling(request, env);
-    if (request.method === "POST" && url.pathname === "/parish/stewardship/billing-portal") return handleStewardshipBillingPortal(request, env);
-    if (url.pathname === "/parish/stewardship/annual-meetings") return handleStewardshipMeetingList(request, env);
-    if ((request.method === "GET" || request.method === "POST") && url.pathname === "/parish/stewardship/annual-meetings/new") return handleStewardshipMeetingNew(request, env);
-    if (request.method === "POST" && url.pathname === "/webhooks/stewardship") return handleStewardshipWebhook(request, env);
-    if (request.method === "POST" && url.pathname === "/api/parish/stewardship/webhook") return handleStewardshipWebhook(request, env);
-    if (url.pathname.startsWith("/parish/stewardship/annual-meetings/")) {
-      const swPath = url.pathname.replace("/parish/stewardship/annual-meetings/", "");
-      const [swId, swAction] = swPath.split("/");
-      if (swId) {
-        if (swAction === "preview") return handleStewardshipMeetingPreview(request, env, swId);
-        if (swAction === "pdf") return handleStewardshipMeetingPdf(request, env, swId);
-        return handleStewardshipMeetingEdit(request, env, swId);
-      }
-    }
-
-    // ── Stewardship Giving API ────────────────────────────────────────────
-    // Real-time pledge tracking and metrics for AGAPAY Parish +.
-    // All routes gated by has_stewardship_suite feature flag in D1.
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/summary")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/summary", ""));
-      return handleStewardshipGivingSummary(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/funds")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/funds", ""));
-      return handleStewardshipGivingFunds(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/distribution")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/distribution", ""));
-      return handleStewardshipGivingDistribution(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/retention")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/retention", ""));
-      return handleStewardshipGivingRetention(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/concentration")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/concentration", ""));
-      return handleStewardshipGivingConcentration(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/recurring")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/recurring", ""));
-      return handleStewardshipGivingRecurring(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/health-score")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/health-score", ""));
-      return handleStewardshipGivingHealthScore(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/report/monthly-financial")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/report/monthly-financial", ""));
-      return handleStewardshipMonthlyFinancialReport(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/report/monthly")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/report/monthly", ""));
-      return handleStewardshipMonthlyReport(request, env, parishId);
-    }
-    if (request.method === "GET" && url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/income/manual")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/income/manual", ""));
-      return handleStewardshipManualIncomeList(request, env, parishId);
-    }
-    if (request.method === "POST" && url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/income/manual")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/income/manual", ""));
-      return handleStewardshipManualIncomeCreate(request, env, parishId);
-    }
-    if (request.method === "DELETE" && url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/stewardship/income/manual/")) {
-      const rest = url.pathname.replace("/api/parish/dashboard/", "");
-      const [parishIdRaw, , , , entryIdRaw] = rest.split("/"); // parishId / stewardship / income / manual / entryId
-      return handleStewardshipManualIncomeDelete(request, env, decodeURIComponent(parishIdRaw), decodeURIComponent(entryIdRaw || ""));
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/activate")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/activate", ""));
-      return handleStewardshipGivingActivate(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/nudge")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/nudge", ""));
-      return handleStewardshipNudge(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/financials/accounting-summary")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/financials/accounting-summary", ""));
-      return handleStewardshipAccountingBridge(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/financials/import-from-accounting")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/financials/import-from-accounting", ""));
-      return handleStewardshipAccountingBridge(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/financials")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/financials", ""));
-      return handleStewardshipFinancials(request, env, parishId);
-    }
-
-    // ── Annual giving statements (IRS-compliant donor PDFs) ────────────────
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/giving-statements/preview")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/giving-statements/preview", ""));
-      return handleGivingStatementPreview(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/giving-statements/jobs")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/giving-statements/jobs", ""));
-      if (request.method === "POST") return handleGivingStatementJobCreate(request, env, parishId, ctx);
-      return handleGivingStatementJobList(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/giving-statements/jobs/")) {
-      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/giving-statements/jobs/");
-      const parishId = decodeURIComponent(parts[0] || "");
-      const jobId = decodeURIComponent(parts[1] || "");
-      return handleGivingStatementJobStatus(request, env, parishId, jobId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/bookstore-readiness")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/bookstore-readiness", ""));
-      return handleParishBookstoreReadiness(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/feature-requests/") && url.pathname.endsWith("/dismiss")) {
-      const [parishId, featurePart] = url.pathname.replace("/api/parish/dashboard/", "").split("/feature-requests/");
-      const featureId = decodeURIComponent(featurePart.replace("/dismiss", ""));
-      return handleParishFeatureRequestDismiss(request, env, decodeURIComponent(parishId), featureId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/tax-exemption/document")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/tax-exemption/document", ""));
-      return handleParishTaxExemptionDocumentView(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/tax-exemption/upload")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/tax-exemption/upload", ""));
-      return handleParishTaxExemptionDocumentUpload(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/tax-exemption")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/tax-exemption", ""));
-      return handleParishTaxExemptionClaim(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", ""));
-      return handleParishDashboard(request, env, parishId);
-    }
-
     if (url.pathname.startsWith("/api/")) {
       return json({ error: "Not found" }, { status: 404 });
     }

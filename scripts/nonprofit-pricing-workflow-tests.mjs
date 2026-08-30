@@ -10,6 +10,8 @@ import { generateNonprofitPricingStorageKey } from "../src/lib/nonprofit-pricing
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const migration = read("migrations/0042_nonprofit_pricing_applications.sql");
 const worker = read("src/worker.js");
+const parishRoutes = read("src/routes/parish.js");
+const adminRoutes = read("src/routes/admin.js");
 const handler = read("src/handlers/nonprofit-pricing.js");
 const parishHtml = read("public/parish/dashboard.html");
 const parishApp = read("public/parish/app.js");
@@ -67,8 +69,9 @@ assert.ok(!storageKey.includes("parish"));
 
 assert.ok(wrangler.includes('binding = "NONPROFIT_PRICING_DOCS"'));
 assert.ok(wrangler.includes("NONPROFIT_PRICING_ALERT_EMAIL"));
-assert.ok(worker.includes('endsWith("/nonprofit-pricing")'));
-assert.ok(worker.includes("/api/admin/nonprofit-pricing/alerts/run"));
+assert.ok(worker.includes("routeParishRequest"));
+assert.ok(parishRoutes.includes("'/nonprofit-pricing'"));
+assert.ok(adminRoutes.includes("'/api/admin/nonprofit-pricing/alerts/run'"));
 assert.ok(handler.includes("Upload Stripe's approval message before recording approval."));
 assert.ok(parishHtml.includes("Apply for Stripe nonprofit pricing"));
 assert.ok(parishApp.includes("saveNonprofitPricingAttestation"));

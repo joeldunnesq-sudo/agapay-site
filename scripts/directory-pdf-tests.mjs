@@ -57,7 +57,7 @@ for (const page of pdf.getPages()) assert.deepEqual(page.getSize(), { width: 612
 
 const handler = readFileSync(new URL("../src/handlers/directory-admin.js", import.meta.url), "utf8");
 const service = readFileSync(new URL("../src/directory/skills-service.js", import.meta.url), "utf8");
-const parishApp = readFileSync(new URL("../public/parish/app.js", import.meta.url), "utf8");
+const parishApp = readFileSync(new URL("../public/parish/features/directory.js", import.meta.url), "utf8");
 assert.ok(handler.includes('path === "/exports/directory.pdf"'));
 assert.ok(handler.includes('new URL("/mark.png", request.url)'));
 assert.ok(handler.includes("registration.logoStorageKey"));

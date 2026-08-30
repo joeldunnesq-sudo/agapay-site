@@ -18,7 +18,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => readFileSync(path.join(root, file), "utf8");
 const migration = read("accounting-migrations/0019_phase_l_attachments.sql");
 const handler = read("src/handlers/accounting-attachments.js");
-const worker = read("src/worker.js");
+const worker = `${read("src/worker.js")}\n${read("src/routes/accounting.js")}`;
 const parishApp = read("public/parish/app.js");
 const wrangler = read("wrangler.toml");
 const has = (source, needles, label) => needles.forEach((needle) => assert.ok(source.includes(needle), `${label} must include ${needle}`));
@@ -29,7 +29,7 @@ assert.deepEqual(Object.entries(ROLE_TEMPLATES).filter(([, grants]) => grants.in
 
 has(migration, ["DROP TABLE IF EXISTS accounting_attachment_metadata", "CREATE TABLE IF NOT EXISTS accounting_attachments", "entity_type IN ('journal_entry','bill','reconciliation_session')", "storage_status IN ('stored','deleted')", "size_bytes > 0 AND size_bytes <= 10485760"], "Phase L migration");
 has(handler, ["/attachments", "/attachments/upload", "/download", "accounting.attachments.view", "accounting.attachments.manage", "accounting-attachment-upload", "request.formData()", "deleteAccountingAttachment"], "attachment handler");
-assert.ok(worker.indexOf("handleAccountingAttachments(request, env, accountingParishId)") < worker.indexOf("handleAccountingLedger(request, env, accountingParishId)"), "attachment dispatch must precede ledger fallback");
+assert.ok(worker.indexOf("actions.handleAccountingAttachments") < worker.indexOf("actions.handleAccountingLedger"), "attachment dispatch must precede ledger fallback");
 has(wrangler, ['binding = "ACCOUNTING_ATTACHMENTS"', 'bucket_name = "agapay-accounting-attachments"'], "R2 binding");
 has(parishApp, ["function renderAccountingAttachments", "function accountingUpload", "renderAccountingAttachments('bill'", "renderAccountingAttachments('journal_entry'", "renderAccountingAttachments('reconciliation_session'"], "shared attachment UI");
 

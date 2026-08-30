@@ -10,7 +10,7 @@ import { accountingAvailableForParish, ACCOUNTING_DEMO_PARISH_ID } from "../src/
 import { adminRegistrationSummary } from "../src/lib/registrations.js";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
-const worker = read("src/worker.js");
+const worker = `${read("src/worker.js")}\n${read("src/routes/accounting.js")}`;
 const routes = read("src/handlers/accounting-setup-reports.js");
 const phaseDRoutes = read("src/handlers/accounting-payables-budgets.js");
 const phaseERoutes = read("src/handlers/accounting-reconciliation-commerce.js");
@@ -26,7 +26,7 @@ const parishHandler = read("src/handlers/parish.js");
 
 assert.match(worker, /handleAccountingSetupReports/);
 assert.match(worker, /handleAccountingAccess/);
-assert.match(worker, /accountingAvailableForParish\(accountingParishId,\s*env\)/);
+assert.match(worker, /accountingAvailableForParish\((?:accountingParishId|parishId),\s*env\)/);
 assert.equal(ACCOUNTING_DEMO_PARISH_ID, "st-fiacre");
 assert.equal(accountingAvailableForParish("st-fiacre"), true);
 assert.equal(accountingAvailableForParish("ST-FIACRE"), true);

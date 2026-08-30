@@ -8,6 +8,7 @@ import {
   sendWeeklyAnnouncementDigestEmails,
   setAnnouncementDigestSubscription,
 } from "../src/handlers/parish-communications.js";
+import { readWorkerCompositionSource } from "./lib/worker-composition-source.mjs";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sqlite = new DatabaseSync(":memory:");
@@ -155,11 +156,14 @@ results = await sendWeeklyAnnouncementDigestEmails(env, "2026-07-26T12:00:00.000
 assert.deepEqual(results, [], "an unsubscribed donor must not receive later digests");
 assert.equal(sent.length, 1);
 
-const workerSource = readFileSync(path.join(root, "src", "worker.js"), "utf8");
+const workerSource = readWorkerCompositionSource(root);
 const feedHtml = readFileSync(path.join(root, "public", "myagapay", "feed.html"), "utf8");
 const feedJs = readFileSync(path.join(root, "public", "myagapay", "feed.js"), "utf8");
 const parishApp = readFileSync(path.join(root, "public", "parish", "app.js"), "utf8");
-assert.match(workerSource, /url\.pathname === "\/api\/donor\/digest\/unsubscribe"[\s\S]*?handleAnnouncementDigestUnsubscribe\(request, env\)/);
+assert.match(
+  workerSource,
+  /['"]\/api\/donor\/digest\/unsubscribe['"],\s*['"]handleAnnouncementDigestUnsubscribe['"]/
+);
 assert.match(workerSource, /sendWeeklyAnnouncementDigestEmails\(env, event\.scheduledTime\)/);
 assert.match(feedHtml, /id="feedDigestToggle" type="checkbox" disabled/);
 assert.match(feedJs, /body: JSON\.stringify\(\{ subscribed: requested \}\)/);

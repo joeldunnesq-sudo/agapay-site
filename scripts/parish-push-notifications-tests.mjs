@@ -11,6 +11,7 @@ import {
   sendSignupPublishedPush,
   sendTeachingPush,
 } from "../src/lib/push-notifications.js";
+import { readWorkerCompositionSource } from "./lib/worker-composition-source.mjs";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sqlite = new DatabaseSync(":memory:");
@@ -182,7 +183,7 @@ assert.equal(
   "a 404/410 push response must delete the expired subscription",
 );
 
-const workerSource = readFileSync(path.join(root, "src", "worker.js"), "utf8");
+const workerSource = readWorkerCompositionSource(root);
 const serviceWorker = readFileSync(path.join(root, "public", "service-worker.js"), "utf8");
 const pushUi = readFileSync(path.join(root, "public", "myagapay", "push-notifications.js"), "utf8");
 const feedHtml = readFileSync(path.join(root, "public", "myagapay", "feed.html"), "utf8");
