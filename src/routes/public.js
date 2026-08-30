@@ -50,6 +50,12 @@ export async function routePublicRequest({ request, env, url, actions }) {
   if (url.pathname === '/api/parish-interest') return actions.handleParishInterest(request, env);
   if (request.method === 'GET' && url.pathname === '/api/security/config') return actions.handleSecurityConfig(env);
   if (request.method === 'GET' && url.pathname === '/api/health') return actions.handleHealth(env);
+  if (request.method === 'GET' && url.pathname === '/api/operations/canary') {
+    return actions.handleOperationsCanary(request, env);
+  }
+  if (request.method === 'POST' && url.pathname === '/api/operations/monitor-alert') {
+    return actions.handleOperationsMonitorAlert(request, env);
+  }
   if (request.method === 'GET' && url.pathname === '/api/liturgical-calendar') {
     return actions.addCorsHeaders(await actions.handleLiturgicalCalendar(request), env);
   }

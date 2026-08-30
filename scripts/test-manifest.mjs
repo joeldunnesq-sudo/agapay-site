@@ -61,6 +61,12 @@ const core = [
   'scripts/architecture-boundaries-tests.mjs',
   'scripts/route-registry-tests.mjs',
   'scripts/accounting-migration-ledger-tests.mjs',
+  'scripts/d1-recovery-tests.mjs',
+  'scripts/production-monitor-tests.mjs',
+  'scripts/operations-monitoring-tests.mjs',
+  'scripts/source-size-budget-tests.mjs',
+  'scripts/critical-path-manifest-tests.mjs',
+  'scripts/production-operations-workflow-tests.mjs',
 ];
 
 const accounting = [
@@ -159,6 +165,17 @@ const releaseGates = [
   'scripts/accounting-release-gates-tests.mjs',
 ];
 
+const critical = [
+  'scripts/worker-hardening-tests.mjs',
+  'scripts/privileged-mfa-tests.mjs',
+  'scripts/consumer-passkey-tests.mjs',
+  'scripts/accounting-gateway-tests.mjs',
+  'scripts/accounting-staff-access-tests.mjs',
+  'scripts/accounting-ledger-tests.mjs',
+  'scripts/accounting-migration-ledger-tests.mjs',
+  'scripts/stripe-source-event-tests.mjs',
+];
+
 const unique = (...groups) => [...new Set(groups.flat())];
 
 export const testGroups = Object.freeze({
@@ -175,6 +192,7 @@ export const testGroups = Object.freeze({
   sacraments: productUi.filter((test) => /sacrament|church-requested/.test(test)),
   security: core.filter((test) => /security|hardening|identity|mfa|legal|tax|launch-controls/.test(test)),
   'release-gates': releaseGates,
+  critical,
   precheck: ['scripts/privileged-mfa-tests.mjs', 'scripts/consumer-passkey-tests.mjs'],
-  all: unique(smoke, core, accounting, productUi, directory, releaseGates),
+  all: unique(smoke, core, accounting, productUi, directory, releaseGates, critical),
 });

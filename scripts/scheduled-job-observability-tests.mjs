@@ -73,9 +73,9 @@ try {
   const scheduledBody = workerSource.slice(workerSource.indexOf("async scheduled(event, env, ctx)"), workerSource.indexOf("async fetch(request, env, ctx)"));
   const waitUntilLines = scheduledBody.split(/\r?\n/).filter((line) => line.includes("ctx.waitUntil("));
   assert.equal(waitUntilLines.length, 14, "the Worker should have exactly 14 real scheduled job registrations, including parish portability");
-  assert.ok(waitUntilLines.every((line) => line.includes("observeScheduledTask(") && line.includes(", env));")), "every scheduled job must flow through the alerting wrapper with its environment");
-  assert.match(scheduledBody, /observeScheduledTask\("koinonia_exchange_expiry_sweep", expireKoinoniaExchangeListings\(env, event\.scheduledTime\), env\)/);
-  assert.match(scheduledBody, /observeScheduledTask\("koinonia_signup_reminders", sendScheduledSignupReminders\(env, event\.scheduledTime\), env\)/);
+  assert.ok(waitUntilLines.every((line) => line.includes("observeScheduledTask(") && line.includes(", env, event));")), "every scheduled job must flow through the alerting and heartbeat wrapper with its event metadata");
+  assert.match(scheduledBody, /observeScheduledTask\("koinonia_exchange_expiry_sweep", expireKoinoniaExchangeListings\(env, event\.scheduledTime\), env, event\)/);
+  assert.match(scheduledBody, /observeScheduledTask\("koinonia_signup_reminders", sendScheduledSignupReminders\(env, event\.scheduledTime\), env, event\)/);
 } finally {
   console.log = originalLog;
   console.error = originalError;

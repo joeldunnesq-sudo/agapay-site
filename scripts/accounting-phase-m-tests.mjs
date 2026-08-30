@@ -11,6 +11,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => readFileSync(path.join(root, file), "utf8");
 const migration = read("accounting-migrations/0020_phase_m_payment_runs.sql");
 const service = read("src/accounting/payables/service.js");
+const vendorReporting = read("src/accounting/payables/vendor-reporting.js");
 const handler = read("src/handlers/accounting-payables-budgets.js");
 const parishApp = read("public/parish/app.js");
 const has = (source, needles, label) => needles.forEach((needle) => assert.ok(source.includes(needle), `${label} must include ${needle}`));
@@ -31,10 +32,12 @@ has(service, [
   "export async function listPaymentRuns",
   "export async function paymentRunDetail",
   "export async function printPaymentRun",
+], "Phase M payables service");
+has(vendorReporting, [
   "export async function vendor1099Summary",
   "payment_method NOT IN ('debit_card','credit_card')",
   "60000"
-], "Phase M payables service");
+], "Phase M vendor reporting boundary");
 has(handler, [
   'path === "/payables/payment-runs"',
   "payment-runs\\/([^/]+)",

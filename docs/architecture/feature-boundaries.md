@@ -38,3 +38,7 @@ Route order is part of the public contract. Add specific routes before generic p
 ## Enforcement
 
 `scripts/architecture-boundaries-tests.mjs` protects script order, feature registration, router composition, and the size ceilings for handwritten composition files. `scripts/run-tests.mjs` is the single tagged test entry point used by local development and CI.
+
+`config/source-size-budgets.json` freezes every legacy JavaScript hotspot above 1,200 physical lines at its current size. A budget is a ceiling, not permission to add code: changed behavior must be extracted into the nearest domain module. New files cannot cross 1,200 lines, and a legacy budget entry must be removed once extraction takes that file below the threshold.
+
+The `critical` test tag is the explicit runtime gate for authentication and financial boundaries. Its membership is protected by `scripts/critical-path-manifest-tests.mjs`; required CI still runs those suites through the complete `all` group.
