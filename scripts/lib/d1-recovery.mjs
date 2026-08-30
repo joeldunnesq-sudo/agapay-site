@@ -64,6 +64,22 @@ export function countStatementBatches(tableNames, batchSize = 50) {
   return batches;
 }
 
+export function quickCheckStatementBatches(tableNames, batchSize = 25) {
+  if (!Number.isInteger(batchSize) || batchSize < 1)
+    throw new Error('Quick-check batch size must be a positive integer.');
+  if (!tableNames.length) return ['PRAGMA quick_check'];
+  const batches = [];
+  for (let index = 0; index < tableNames.length; index += batchSize) {
+    batches.push(
+      tableNames
+        .slice(index, index + batchSize)
+        .map((name) => `PRAGMA quick_check(${quoteIdentifier(name)})`)
+        .join(';\n')
+    );
+  }
+  return batches;
+}
+
 function normalizeSchemaObjects(rows) {
   return rows.map((row) => ({
     type: String(row.type),

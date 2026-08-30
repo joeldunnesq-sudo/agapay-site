@@ -9,6 +9,7 @@ import {
   countStatementBatches,
   createBackupManifest,
   prepareRestoreSql,
+  quickCheckStatementBatches,
   snapshotFromRemoteRows,
   unwrapD1Rows,
   userSchemaSql,
@@ -111,8 +112,11 @@ if (command === 'prepare-export') {
   const schemaRows = wranglerJson(database, userSchemaSql());
   const tables = schemaRows.filter((row) => row.type === 'table').map((row) => row.name);
   const countRows = countStatementBatches(tables).flatMap((sql) => wranglerJson(database, sql));
-  const quickCheckRows = wranglerJson(database, 'PRAGMA quick_check');
-  if (String(quickCheckRows[0]?.quick_check || '').toLowerCase() !== 'ok')
+  const quickCheckRows = quickCheckStatementBatches(tables).flatMap((sql) => wranglerJson(database, sql));
+  if (
+    quickCheckRows.length !== tables.length ||
+    quickCheckRows.some((row) => String(row?.quick_check || '').toLowerCase() !== 'ok')
+  )
     throw new Error('Remote D1 PRAGMA quick_check failed.');
   const restored = snapshotFromRemoteRows(schemaRows, countRows);
   const comparison = compareSnapshots(manifest.validation, restored);

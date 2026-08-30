@@ -9,6 +9,7 @@ import {
   countStatementBatches,
   createBackupManifest,
   prepareRestoreSql,
+  quickCheckStatementBatches,
   sha256,
   snapshotSqlExport,
   unwrapD1Rows,
@@ -48,6 +49,15 @@ assert.equal((batchedCountSql[2].match(/SELECT /g) || []).length, 25);
 assert.doesNotMatch(batchedCountSql[0], /UNION ALL/);
 assert.equal((batchedCountSql[0].match(/;\n/g) || []).length, 49);
 assert.throws(() => countStatementBatches(['example'], 0), /positive integer/);
+const batchedQuickCheckSql = quickCheckStatementBatches(
+  Array.from({ length: 61 }, (_, index) => `table_${index}`),
+  25
+);
+assert.equal(batchedQuickCheckSql.length, 3);
+assert.equal((batchedQuickCheckSql[0].match(/PRAGMA quick_check/g) || []).length, 25);
+assert.equal((batchedQuickCheckSql[2].match(/PRAGMA quick_check/g) || []).length, 11);
+assert.match(quickCheckStatementBatches(['a"b'])[0], /"a""b"/);
+assert.throws(() => quickCheckStatementBatches(['example'], 0), /positive integer/);
 
 const createdAt = '2026-08-29T12:00:00.000Z';
 const manifest = createBackupManifest({
