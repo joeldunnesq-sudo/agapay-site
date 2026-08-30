@@ -1,0 +1,74 @@
+name: Production outside-in monitor
+
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agapay-production-monitor
+  cancel-in-progress: true
+
+jobs:
+  monitor:
+    name: Public, authenticated, scheduler, and backup checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run outside-in and authenticated canary checks
+        id: outside-in
+        continue-on-error: true
+        env:
+          AGAPAY_BASE_URL: https://agapay.app
+          AGAPAY_MONITOR_CANARY_TOKEN: ${{ secrets.AGAPAY_MONITOR_CANARY_TOKEN }}
+        run: node scripts/production-monitor.mjs
+
+      - name: Check private backup freshness
+        id: backup
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        shell: bash
+        run: |
+          mkdir -p artifacts/production-monitor
+          npx wrangler r2 object get "agapay-accounting-backups/platform-d1/latest.json" --remote --file artifacts/production-monitor/latest-backup.json
+          node scripts/d1-recovery.mjs inspect-manifest --manifest artifacts/production-monitor/latest-backup.json --max-age-hours 30
+
+      - name: Send independent email alert through production Resend
+        if: always() && (steps.outside-in.outcome != 'success' || steps.backup.outcome != 'success')
+        continue-on-error: true
+        env:
+          AGAPAY_BASE_URL: https://agapay.app
+          AGAPAY_MONITOR_CANARY_TOKEN: ${{ secrets.AGAPAY_MONITOR_CANARY_TOKEN }}
+          AGAPAY_MONITOR_FAILURE_SUMMARY: 'Outside-in outcome: ${{ steps.outside-in.outcome }}. Backup-freshness outcome: ${{ steps.backup.outcome }}.'
+        run: node scripts/production-monitor-alert.mjs
+
+      - name: Upload monitor evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: production-monitor-${{ github.run_id }}
+          path: artifacts/production-monitor/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Fail after evidence and alert handling
+        if: always() && (steps.outside-in.outcome != 'success' || steps.backup.outcome != 'success')
+        run: |
+          echo "Production monitoring failed. Outside-in=${{ steps.outside-in.outcome }}, backup=${{ steps.backup.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      - name: Record healthy result
+        if: steps.outside-in.outcome == 'success' && steps.backup.outcome == 'success'
+        run: echo "Health, latency, parish dashboard, public giving, authenticated bindings/scheduler canary, and backup freshness passed." >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,28 @@
+{
+  "maximumUnbudgetedLines": 1200,
+  "files": {
+    "public/admin/app.js": 4198,
+    "public/donor/app.js": 5867,
+    "public/learn/dashboard-shell.js": 9272,
+    "public/learn/dashboard-view-models.js": 1724,
+    "public/learn/support.js": 1527,
+    "public/listen/app.js": 1598,
+    "public/parish/app.js": 11289,
+    "public/parish/features/directory.js": 1257,
+    "public/parish/features/sacraments.js": 1577,
+    "scripts/tax-exemption-tests.mjs": 1302,
+    "scripts/worker-hardening-tests.mjs": 1874,
+    "src/directory/admin.js": 1920,
+    "src/directory/self-service.js": 1733,
+    "src/handlers/admin.js": 1687,
+    "src/handlers/donor.js": 2859,
+    "src/handlers/parish-commerce.js": 1516,
+    "src/handlers/parish.js": 2999,
+    "src/handlers/stewardship.js": 3570,
+    "src/learn/print-documents.js": 1950,
+    "src/learn/repository.js": 1487,
+    "src/learn/setup-persistence.js": 1687,
+    "src/lib/tax-exemption.js": 1338,
+    "src/worker.js": 3717
+  }
+}

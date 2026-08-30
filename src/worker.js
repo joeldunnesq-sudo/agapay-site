@@ -120,6 +120,8 @@ import {
   handleParishNonprofitPricingDocumentView,
 } from "./handlers/nonprofit-pricing.js";
 import { sendNonprofitThresholdAlerts } from "./lib/nonprofit-pricing.js";
+import { handleOperationsCanary, handleOperationsMonitorAlert } from "./operations/monitoring.js";
+import { recordScheduledHeartbeat } from "./operations/scheduled-heartbeats.js";
 
 import {
   verifyParishDashboardBearer,
@@ -2754,7 +2756,9 @@ async function handleHealth(env) {
       campaignAssets: Boolean(env.CAMPAIGN_ASSETS),
       taxExemptionDocs: Boolean(env.TAX_EXEMPTION_DOCS),
       nonprofitPricingDocs: Boolean(env.NONPROFIT_PRICING_DOCS),
-      givingStatements: Boolean(env.GIVING_STATEMENTS)
+      givingStatements: Boolean(env.GIVING_STATEMENTS),
+      accountingBackups: Boolean(env.ACCOUNTING_BACKUPS),
+      sacramentDocuments: Boolean(env.SACRAMENT_DOCUMENTS)
     }
   };
 
@@ -2891,13 +2895,35 @@ async function sendScheduledJobFailureAlert(env, name, error, failedAt) {
   return result;
 }
 
-export function observeScheduledTask(name, task, env = {}) {
-  return Promise.resolve(task)
-    .then((results) => {
+export function observeScheduledTask(name, task, env = {}, event = {}) {
+  const startedAtMs = Date.now();
+  const startedAt = new Date(startedAtMs).toISOString();
+  const runId = `${name}:${event.scheduledTime || startedAtMs}`;
+  const heartbeat = { name, cron: String(event.cron || "unknown"), runId, startedAt };
+  return Promise.all([
+    Promise.resolve(task),
+    recordScheduledHeartbeat(env, { ...heartbeat, status: "running" })
+  ])
+    .then(async ([results]) => {
+      const completedAtMs = Date.now();
+      await recordScheduledHeartbeat(env, {
+        ...heartbeat,
+        status: "completed",
+        completedAt: new Date(completedAtMs).toISOString(),
+        durationMs: completedAtMs - startedAtMs
+      });
       console.log(name, JSON.stringify(results));
       return results;
     })
     .catch(async (error) => {
+      const completedAtMs = Date.now();
+      await recordScheduledHeartbeat(env, {
+        ...heartbeat,
+        status: "failed",
+        completedAt: new Date(completedAtMs).toISOString(),
+        durationMs: completedAtMs - startedAtMs,
+        errorSummary: String(error?.message || error).slice(0, 500)
+      });
       console.error(`${name}_failed`, error?.message || String(error));
       try {
         const alert = await sendScheduledJobFailureAlert(env, name, error, new Date().toISOString());
@@ -3030,6 +3056,8 @@ const ROUTE_ACTIONS = Object.freeze({
   handleDonorVideo,
   handleKoinoniaAccess,
   handleHealth,
+  handleOperationsCanary,
+  handleOperationsMonitorAlert,
   handleListenAudio,
   handleListenProgress,
   handleListenRss,
@@ -3210,26 +3238,26 @@ export default {
     await assertRestoreSafe(env);
     env = protectLegacyStorage(protectFileStorage(env));
     if (event.cron === "*/5 * * * *") {
-      ctx.waitUntil(observeScheduledTask("parish_portability_jobs", runPortabilityJobs(env), env));
+      ctx.waitUntil(observeScheduledTask("parish_portability_jobs", runPortabilityJobs(env), env, event));
       return;
     }
-    ctx.waitUntil(observeScheduledTask("scheduled_accounting_recurring", runScheduledRecurringTransactions(env, event.scheduledTime), env));
-    ctx.waitUntil(observeScheduledTask("nonprofit_pricing_threshold_alerts", sendNonprofitThresholdAlerts(env), env));
-    ctx.waitUntil(observeScheduledTask("group_message_retention_sweep", purgeExpiredGroupMessages(env, event.scheduledTime), env));
-    ctx.waitUntil(observeScheduledTask("koinonia_exchange_expiry_sweep", expireKoinoniaExchangeListings(env, event.scheduledTime), env));
-    ctx.waitUntil(observeScheduledTask("koinonia_signup_reminders", sendScheduledSignupReminders(env, event.scheduledTime), env));
+    ctx.waitUntil(observeScheduledTask("scheduled_accounting_recurring", runScheduledRecurringTransactions(env, event.scheduledTime), env, event));
+    ctx.waitUntil(observeScheduledTask("nonprofit_pricing_threshold_alerts", sendNonprofitThresholdAlerts(env), env, event));
+    ctx.waitUntil(observeScheduledTask("group_message_retention_sweep", purgeExpiredGroupMessages(env, event.scheduledTime), env, event));
+    ctx.waitUntil(observeScheduledTask("koinonia_exchange_expiry_sweep", expireKoinoniaExchangeListings(env, event.scheduledTime), env, event));
+    ctx.waitUntil(observeScheduledTask("koinonia_signup_reminders", sendScheduledSignupReminders(env, event.scheduledTime), env, event));
     if (event.cron === "0 8 * * *") {
-      ctx.waitUntil(observeScheduledTask("accounting_backup_retention_sweep", sweepAccountingBackupRetention(env, event.scheduledTime), env));
+      ctx.waitUntil(observeScheduledTask("accounting_backup_retention_sweep", sweepAccountingBackupRetention(env, event.scheduledTime), env, event));
       return;
     }
-    ctx.waitUntil(observeScheduledTask("scheduled_accounting_integrity", runScheduledAccountingIntegrity(env, event.scheduledTime), env));
-    ctx.waitUntil(observeScheduledTask("weekly_commemoration_emails", sendWeeklyCommemorationEmails(env, event.scheduledTime), env));
-    ctx.waitUntil(observeScheduledTask("weekly_treasurer_commerce_emails", sendWeeklyTreasurerCommerceEmails(env, event.scheduledTime), env));
-    ctx.waitUntil(observeScheduledTask("stewardship_comp_reminders", sendStewardshipCompExpiryReminders(env), env));
-    ctx.waitUntil(observeScheduledTask("tax_exemption_expiration_sweep", processExpiredTaxExemptions(env), env));
-    ctx.waitUntil(observeScheduledTask("weekly_sacrament_digest", sendWeeklySacramentDigestEmails(env, event.scheduledTime), env));
+    ctx.waitUntil(observeScheduledTask("scheduled_accounting_integrity", runScheduledAccountingIntegrity(env, event.scheduledTime), env, event));
+    ctx.waitUntil(observeScheduledTask("weekly_commemoration_emails", sendWeeklyCommemorationEmails(env, event.scheduledTime), env, event));
+    ctx.waitUntil(observeScheduledTask("weekly_treasurer_commerce_emails", sendWeeklyTreasurerCommerceEmails(env, event.scheduledTime), env, event));
+    ctx.waitUntil(observeScheduledTask("stewardship_comp_reminders", sendStewardshipCompExpiryReminders(env), env, event));
+    ctx.waitUntil(observeScheduledTask("tax_exemption_expiration_sweep", processExpiredTaxExemptions(env), env, event));
+    ctx.waitUntil(observeScheduledTask("weekly_sacrament_digest", sendWeeklySacramentDigestEmails(env, event.scheduledTime), env, event));
     if (parishLifeAvailableFor(env)) {
-      ctx.waitUntil(observeScheduledTask("weekly_announcement_digest", sendWeeklyAnnouncementDigestEmails(env, event.scheduledTime), env));
+      ctx.waitUntil(observeScheduledTask("weekly_announcement_digest", sendWeeklyAnnouncementDigestEmails(env, event.scheduledTime), env, event));
     }
   },
 

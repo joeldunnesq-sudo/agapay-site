@@ -35,18 +35,34 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           stamp="$(date -u +'%Y%m%dT%H%M%SZ')"
+          created_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           backup_file="agapay-production-${stamp}-${GITHUB_RUN_ID}.sql"
           checksum_file="${backup_file}.sha256"
+          manifest_file="${backup_file}.manifest.json"
           npx wrangler d1 export agapay-production --remote --skip-confirmation --output "$backup_file"
           # D1 exports can place a child table and its rows before a referenced
           # parent table. Disabling FK enforcement for the import session makes
           # the export directly restorable into a new blank D1 database.
-          restore_file="${backup_file}.restore"
-          { printf 'PRAGMA foreign_keys=OFF;\n'; cat "$backup_file"; } > "$restore_file"
-          mv "$restore_file" "$backup_file"
-          sha256sum "$backup_file" > "$checksum_file"
+          # prepare-export prepends PRAGMA foreign_keys=OFF; idempotently.
+          node scripts/d1-recovery.mjs prepare-export --backup "$backup_file"
+          node scripts/d1-recovery.mjs write-checksum --backup "$backup_file" --output "$checksum_file"
           echo "BACKUP_FILE=$backup_file" >> "$GITHUB_ENV"
           echo "CHECKSUM_FILE=$checksum_file" >> "$GITHUB_ENV"
+          echo "MANIFEST_FILE=$manifest_file" >> "$GITHUB_ENV"
+          echo "BACKUP_CREATED_AT=$created_at" >> "$GITHUB_ENV"
+
+      - name: Prove the export restores locally and create recovery manifest
+        shell: bash
+        run: |
+          node scripts/d1-recovery.mjs capture \
+            --database agapay-production \
+            --backup "$BACKUP_FILE" \
+            --checksum "$CHECKSUM_FILE" \
+            --backup-key "platform-d1/$BACKUP_FILE" \
+            --checksum-key "platform-d1/$CHECKSUM_FILE" \
+            --manifest-key "platform-d1/$MANIFEST_FILE" \
+            --created-at "$BACKUP_CREATED_AT" \
+            --output "$MANIFEST_FILE"
 
       - name: Upload encrypted-at-rest backup to private R2
         shell: bash
@@ -55,6 +71,23 @@ jobs:
         run: |
           npx wrangler r2 object put "agapay-accounting-backups/platform-d1/${BACKUP_FILE}" --remote --force --file "$BACKUP_FILE"
           npx wrangler r2 object put "agapay-accounting-backups/platform-d1/${CHECKSUM_FILE}" --remote --force --file "$CHECKSUM_FILE"
+          npx wrangler r2 object put "agapay-accounting-backups/platform-d1/${MANIFEST_FILE}" --remote --force --content-type application/json --file "$MANIFEST_FILE"
+          npx wrangler r2 object put "agapay-accounting-backups/platform-d1/latest.json" --remote --force --content-type application/json --file "$MANIFEST_FILE"
+
+      - name: Download stored objects and verify checksum
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          mkdir -p artifacts/production-d1-backup
+          npx wrangler r2 object get "agapay-accounting-backups/platform-d1/${BACKUP_FILE}" --remote --file artifacts/production-d1-backup/readback.sql
+          npx wrangler r2 object get "agapay-accounting-backups/platform-d1/${CHECKSUM_FILE}" --remote --file artifacts/production-d1-backup/readback.sha256
+          npx wrangler r2 object get "agapay-accounting-backups/platform-d1/latest.json" --remote --file artifacts/production-d1-backup/latest.json
+          node scripts/d1-recovery.mjs verify-files \
+            --manifest artifacts/production-d1-backup/latest.json \
+            --backup artifacts/production-d1-backup/readback.sql \
+            --checksum artifacts/production-d1-backup/readback.sha256 \
+            --max-age-hours 2
 
       - name: Record backup result
-        run: echo "Private D1 backup and SHA-256 checksum uploaded under platform-d1/." >> "$GITHUB_STEP_SUMMARY"
+        run: echo "Private D1 backup was locally restored, uploaded under platform-d1/, downloaded again, and SHA-256 verified. RPO target 24h; RTO target 8h." >> "$GITHUB_STEP_SUMMARY"
