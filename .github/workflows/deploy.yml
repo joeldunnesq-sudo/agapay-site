@@ -25,6 +25,25 @@ permissions:
   contents: read
 
 jobs:
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies (deterministic)
+        run: npm ci
+
+      - name: Run lint, formatting, and architecture checks
+        run: npm run quality
+
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -53,9 +72,10 @@ jobs:
 
   deploy:
     name: Deploy
-    needs: test
+    needs: [quality, test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment: production
     # Only this job -- the one that actually touches production -- is
     # concurrency-limited. The "test" job above is deliberately left
     # unrestricted: it's non-destructive and safe to run in parallel across
@@ -77,6 +97,10 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: '24'
+          cache: 'npm'
+
+      - name: Install release tooling (deterministic)
+        run: npm ci
 
       - name: Validate Cloudflare authentication
         uses: cloudflare/wrangler-action@v4
@@ -90,21 +114,27 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
-          command: d1 migrations apply agapay-production --remote
+          command: d1 migrations apply agapay-production --remote --env=""
+
+      - name: Bootstrap existing production accounting migration ledgers
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node scripts/bootstrap-accounting-migration-ledger.mjs
 
       - name: Apply St. Fiacre accounting migrations
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
-          command: d1 execute ACCOUNTING_DB_ST_FIACRE --remote --file accounting-migrations/0025_in_kind_contributions_account.sql
+          command: d1 migrations apply ACCOUNTING_DB_ST_FIACRE --remote --env=""
 
       - name: Apply accounting canary migrations
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
-          command: d1 execute ACCOUNTING_DB_PHASE_G_CANARY --remote --file accounting-migrations/0025_in_kind_contributions_account.sql
+          command: d1 migrations apply ACCOUNTING_DB_PHASE_G_CANARY --remote --env=""
 
       - name: Record deployment timestamp
         shell: bash
@@ -115,7 +145,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
-          command: deploy --var AGAPAY_BUILD_SHA:${{ github.sha }} --var AGAPAY_DEPLOYED_AT:${{ env.AGAPAY_DEPLOYED_AT }}
+          command: deploy --env="" --var AGAPAY_BUILD_SHA:${{ github.sha }} --var AGAPAY_DEPLOYED_AT:${{ env.AGAPAY_DEPLOYED_AT }}
 
   post-deploy-accounting-smoke:
     name: Post-deploy accounting smoke
