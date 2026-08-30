@@ -1,9 +1,9 @@
 # Parish portability implementation status
 
-Updated August 29, 2026. Implemented and exercised in isolated staging;
+Updated August 30, 2026. Implemented and exercised in isolated staging;
 the additive production schema, ownership registries, private storage, and Worker
-public-media route are deployed. Parish export, storage guards, automatic closure,
-and strict backup expiry remain **disabled in production**.
+public-media route are deployed. Ordinary parish export is **enabled in production**.
+Storage guards, automatic closure, and strict backup expiry remain disabled.
 Policy: 2026-08-28-active-storage-v2.
 
 Dedicated remote staging resources have now been provisioned and tested. The
@@ -95,9 +95,9 @@ and three successful no-store Worker HEAD responses.
    databases, all 26 production file objects, and all 35 current KV keys into fixed
    private scratch resources. Database validation, exact schema/ledger comparisons,
    body hashes, source-stability readback, and scratch/local cleanup all passed;
-   production was never a write target. Complete the off-provider/manual-copy
-   attestation before release. Natural one-day lifecycle observation is awaiting
-   its threshold and provider deletion.
+   production was never a write target. The isolated one-day R2 lifecycle
+   observation subsequently passed. Complete the off-provider/manual-copy
+   attestation before automatic-closure release.
 3. Approve/version the public retention disclosure, including minimal closure and
    receipt metadata. No automatic disposal of legally held/immutable records is
    enabled by a review date.
@@ -110,12 +110,13 @@ Cloudflare Stream video still requires an operator-assisted complete export and
 provider disposition; it blocks self-service export/closure rather than being
 silently omitted.
 
-All three portability feature switches remain false in wrangler.toml:
-PARISH_PORTABILITY_ENABLED, PARISH_STORAGE_GUARDS_ENABLED, and
-PARISH_AUTOMATIC_CLOSURE_ENABLED. Once closures are enabled, storage guards must
-remain enabled even if export UI is disabled. The r2.dev-disabled attestation is now
-set from provider readback; other operational attestations must not be used to bypass
-their remaining deployment prerequisites.
+PARISH_PORTABILITY_ENABLED is true in production, enabling ordinary downloadable
+exports and their background jobs. PARISH_STORAGE_GUARDS_ENABLED and
+PARISH_AUTOMATIC_CLOSURE_ENABLED remain false, so a download cannot authorize a
+purge and the final-export action remains blocked. Once closures are approved and
+enabled, storage guards must remain enabled even if export UI is later disabled.
+The r2.dev-disabled attestation is set from provider readback; other operational
+attestations must not be used to bypass their remaining deployment prerequisites.
 
 The separate ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED gate is also false in both
 production and shared accounting staging. The existing daily cron does not depend

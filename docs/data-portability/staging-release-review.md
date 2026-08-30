@@ -1,9 +1,11 @@
 # Portability staging release review
 
-August 30, 2026. **Production release is not approved.** A private, route-less
+August 30, 2026. **Automatic-closure production release is not approved.** Ordinary
+parish exports are approved and enabled in production. A private, route-less
 staging test Worker was temporarily deployed for the hosted drill. The production
-Worker now includes the verified public-media route, while portability, closure,
-storage-guard, and strict-expiry switches remain off. The temporary Worker was removed after preserving the completed drill
+Worker includes the verified public-media route and ordinary export switch, while
+closure, storage-guard, and strict-expiry switches remain off. The temporary Worker
+was removed after preserving the completed drill
 record and version identifier; the isolated data resources remain for evidence and
 investigation after the natural-expiry observation passed.
 

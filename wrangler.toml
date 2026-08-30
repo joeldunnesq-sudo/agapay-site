@@ -43,11 +43,11 @@ TAX_EXEMPTION_WORKFLOW_ENABLED = "true"
 TAX_EXEMPTION_DOCUMENT_UPLOAD_ENABLED = "true"
 TAX_EXEMPTION_STRIPE_SYNC_ENABLED = "true"
 PRIVILEGED_MFA_REQUIRED = "true"
-# Portability is opt-in pending private storage and staging verification.
-PARISH_PORTABILITY_ENABLED = "false"
+# Ordinary downloadable exports are active. Closure remains separately gated.
+PARISH_PORTABILITY_ENABLED = "true"
 PARISH_STORAGE_GUARDS_ENABLED = "false"
-# Enable guards only after migration 0110, private closure/retention buckets,
-# full legacy object ownership reconciliation, and an isolated restore drill.
+# Enable guards with automatic closure only after the remaining manual-copy and
+# retention-disclosure approvals; ordinary exports do not require them.
 PARISH_AUTOMATIC_CLOSURE_ENABLED = "false"
 PARISH_PUBLIC_MEDIA_DELIVERY_ENABLED = "2026-08-28-active-storage-v2"
 # Set only after all historical references are rewritten and every r2.dev origin
