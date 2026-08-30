@@ -46,14 +46,22 @@ export function validateAccountingMigrationManifest(rootDir, manifest) {
   return manifest;
 }
 
-export function baselineMigrationNames(manifest) {
-  const baselineIndex = migrationNames(manifest).indexOf(manifest.baselineThrough);
+export function baselineMigrationNames(manifest, baselineThrough = manifest.baselineThrough) {
+  const baselineIndex = migrationNames(manifest).indexOf(baselineThrough);
+  if (baselineIndex < 0) throw new Error(`Unknown accounting migration baseline: ${baselineThrough}`);
   return migrationNames(manifest).slice(0, baselineIndex + 1);
 }
 
-export function planAccountingMigrationLedger({ manifest, tableExists, appliedNames, databaseState }) {
+export function planAccountingMigrationLedger({
+  manifest,
+  tableExists,
+  appliedNames,
+  databaseState,
+  detectedBaselineThrough,
+}) {
   const expectedNames = migrationNames(manifest);
-  const baselineNames = baselineMigrationNames(manifest);
+  const baselineThrough = detectedBaselineThrough || manifest.baselineThrough;
+  const baselineNames = baselineMigrationNames(manifest, baselineThrough);
   const applied = [...appliedNames];
 
   for (let index = 0; index < applied.length; index += 1) {
@@ -76,9 +84,11 @@ export function planAccountingMigrationLedger({ manifest, tableExists, appliedNa
   }
   if (missingBaseline.length) {
     if (databaseState !== 'current') {
-      throw new Error('Existing accounting schema is incomplete; refusing to baseline its migration ledger.');
+      if (databaseState !== 'legacy' || !detectedBaselineThrough) {
+        throw new Error('Existing accounting schema is incomplete; refusing to baseline its migration ledger.');
+      }
     }
-    return Object.freeze({ mode: 'bootstrap', missingBaseline });
+    return Object.freeze({ mode: 'bootstrap', missingBaseline, baselineThrough });
   }
 
   return Object.freeze({ mode: 'ready', missingBaseline: [] });
