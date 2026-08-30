@@ -48,6 +48,17 @@ export function countSql(tableNames) {
     .join(' UNION ALL ');
 }
 
+export function countSqlBatches(tableNames, batchSize = 50) {
+  if (!Number.isInteger(batchSize) || batchSize < 1)
+    throw new Error('Row-count batch size must be a positive integer.');
+  if (!tableNames.length) return [countSql([])];
+  const batches = [];
+  for (let index = 0; index < tableNames.length; index += batchSize) {
+    batches.push(countSql(tableNames.slice(index, index + batchSize)));
+  }
+  return batches;
+}
+
 function normalizeSchemaObjects(rows) {
   return rows.map((row) => ({
     type: String(row.type),
