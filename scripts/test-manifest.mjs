@@ -60,6 +60,7 @@ const core = [
   'scripts/parish-extraction-tests.mjs',
   'scripts/architecture-boundaries-tests.mjs',
   'scripts/route-registry-tests.mjs',
+  'scripts/accounting-migration-ledger-tests.mjs',
 ];
 
 const accounting = [

@@ -5,7 +5,7 @@ tmp-*/
 .tmp-*/
 artifacts/
 migrations/
-accounting-migrations/
+accounting-migrations/*.sql
 public/images/
 public/videos/
 public/downloads/

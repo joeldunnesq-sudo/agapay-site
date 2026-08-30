@@ -12,8 +12,9 @@
     "test:parish-ui": "node scripts/run-tests.mjs parish-ui",
     "test:sacraments": "node scripts/run-tests.mjs sacraments",
     "lint": "eslint src public/parish/feature-registry.js public/parish/features scripts server.mjs --cache",
-    "format": "prettier --write eslint.config.js public/parish/feature-registry.js public/parish/features src/routes scripts/run-tests.mjs scripts/test-manifest.mjs scripts/architecture-boundaries-tests.mjs scripts/route-registry-tests.mjs scripts/lib/worker-composition-source.mjs src/accounting/commerce/service.js src/accounting/payables/service.js src/accounting/reconciliation/service.js src/accounting/ledger/workspace.js src/accounting/payables/check-printing.js src/handlers/accounting-close.js src/handlers/accounting-ledger.js",
-    "format:check": "prettier --check eslint.config.js public/parish/feature-registry.js public/parish/features src/routes scripts/run-tests.mjs scripts/test-manifest.mjs scripts/architecture-boundaries-tests.mjs scripts/route-registry-tests.mjs scripts/lib/worker-composition-source.mjs src/accounting/commerce/service.js src/accounting/payables/service.js src/accounting/reconciliation/service.js src/accounting/ledger/workspace.js src/accounting/payables/check-printing.js src/handlers/accounting-close.js src/handlers/accounting-ledger.js",
+    "format": "prettier --write package.json eslint.config.js .github/workflows/deploy.yml .github/workflows/deploy-staging.yml accounting-migrations/manifest.json public/parish/feature-registry.js public/parish/features src/routes scripts/run-tests.mjs scripts/test-manifest.mjs scripts/architecture-boundaries-tests.mjs scripts/route-registry-tests.mjs scripts/accounting-migration-ledger-tests.mjs scripts/bootstrap-accounting-migration-ledger.mjs scripts/lib/accounting-migration-ledger.mjs scripts/lib/worker-composition-source.mjs src/accounting/commerce/service.js src/accounting/payables/service.js src/accounting/reconciliation/service.js src/accounting/ledger/workspace.js src/accounting/payables/check-printing.js src/handlers/accounting-close.js src/handlers/accounting-ledger.js",
+    "format:check": "prettier --check package.json eslint.config.js .github/workflows/deploy.yml .github/workflows/deploy-staging.yml accounting-migrations/manifest.json public/parish/feature-registry.js public/parish/features src/routes scripts/run-tests.mjs scripts/test-manifest.mjs scripts/architecture-boundaries-tests.mjs scripts/route-registry-tests.mjs scripts/accounting-migration-ledger-tests.mjs scripts/bootstrap-accounting-migration-ledger.mjs scripts/lib/accounting-migration-ledger.mjs scripts/lib/worker-composition-source.mjs src/accounting/commerce/service.js src/accounting/payables/service.js src/accounting/reconciliation/service.js src/accounting/ledger/workspace.js src/accounting/payables/check-printing.js src/handlers/accounting-close.js src/handlers/accounting-ledger.js",
+    "quality": "npm run lint -- --no-cache --max-warnings 14 && npm run format:check && node scripts/accounting-migration-ledger-tests.mjs",
     "test:festal-alms": "node scripts/festal-alms-tests.mjs",
     "test:parish-feature-requests": "node scripts/parish-feature-request-tests.mjs",
     "test:mfa": "node scripts/privileged-mfa-tests.mjs",
@@ -49,8 +50,10 @@
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "esbuild": "0.28.1",
     "eslint": "^10.9.1",
+    "globals": "^17.11.0",
     "miniflare": "5.20260811.1-alpha",
     "playwright": "^1.61.1",
     "prettier": "^3.9.6",

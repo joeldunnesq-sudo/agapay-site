@@ -1,4 +1,8 @@
+import js from '@eslint/js';
+import globals from 'globals';
+
 const handwrittenIgnores = ['node_modules/**', 'public/vendor/**', 'tmp/**', 'tmp-*/**', '.tmp-*/**', 'artifacts/**'];
+const recommendedRules = js.configs.recommended.rules;
 
 export default [
   { ignores: handwrittenIgnores },
@@ -20,5 +24,28 @@ export default [
       'no-unreachable': 'error',
       'max-lines': ['warn', { max: 1200, skipBlankLines: true, skipComments: true }],
     },
+  },
+  {
+    files: ['src/routes/**/*.js'],
+    languageOptions: { globals: globals.serviceworker },
+    rules: recommendedRules,
+  },
+  {
+    files: [
+      'scripts/run-tests.mjs',
+      'scripts/test-manifest.mjs',
+      'scripts/architecture-boundaries-tests.mjs',
+      'scripts/route-registry-tests.mjs',
+      'scripts/accounting-migration-ledger-tests.mjs',
+      'scripts/bootstrap-accounting-migration-ledger.mjs',
+      'scripts/lib/accounting-migration-ledger.mjs',
+    ],
+    languageOptions: { globals: globals.node },
+    rules: recommendedRules,
+  },
+  {
+    files: ['public/parish/feature-registry.js'],
+    languageOptions: { globals: globals.browser },
+    rules: recommendedRules,
   },
 ];

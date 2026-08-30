@@ -110,11 +110,15 @@ database_id = "24f514a6-6904-425b-a4c8-b3584b23c0be"
 binding = "ACCOUNTING_DB_ST_FIACRE"
 database_name = "agapay-acct-production-4ab22bac06dca8b80e70"
 database_id = "7d3a6a59-f622-4303-9e84-e1074879d11d"
+migrations_dir = "accounting-migrations"
+migrations_table = "_agapay_d1_migrations"
 
 [[d1_databases]]
 binding = "ACCOUNTING_DB_PHASE_G_CANARY"
 database_name = "agapay-acct-production-e4601e1d985ec8dcb9fe"
 database_id = "0b55d572-7dbc-4f6d-97a5-826841f4bbb8"
+migrations_dir = "accounting-migrations"
+migrations_table = "_agapay_d1_migrations"
 
 [[r2_buckets]]
 binding = "CAMPAIGN_ASSETS"
