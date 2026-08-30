@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
 import {
   ACCOUNTING_MIGRATION_TABLE,
@@ -27,6 +28,21 @@ assert.equal(
   planAccountingMigrationLedger({ manifest, tableExists: false, appliedNames: [], databaseState: 'current' }).mode,
   'bootstrap',
   'an existing current production database must receive the one-time native ledger baseline'
+);
+const legacyPlan = planAccountingMigrationLedger({
+  manifest,
+  tableExists: false,
+  appliedNames: [],
+  databaseState: 'legacy',
+  detectedBaselineThrough: '0014_phase_g_query_indexes.sql',
+});
+assert.equal(legacyPlan.mode, 'bootstrap');
+assert.equal(legacyPlan.missingBaseline.length, 14);
+assert.equal(legacyPlan.baselineThrough, '0014_phase_g_query_indexes.sql');
+assert.equal(
+  baselineMigrationNames(manifest, legacyPlan.baselineThrough).at(-1),
+  '0014_phase_g_query_indexes.sql',
+  'the known Phase G production canary must resume at migration 0015'
 );
 assert.equal(
   planAccountingMigrationLedger({
@@ -58,6 +74,11 @@ assert.throws(
   'an incomplete legacy database must fail closed'
 );
 assert.throws(
+  () => planAccountingMigrationLedger({ manifest, tableExists: false, appliedNames: [], databaseState: 'legacy' }),
+  /refusing to baseline/,
+  'a legacy schema without an exact detected prefix must fail closed'
+);
+assert.throws(
   () =>
     planAccountingMigrationLedger({
       manifest,
@@ -73,6 +94,39 @@ const sql = buildAccountingMigrationBaselineSql(baseline, manifest.baselineThrou
 assert.match(sql, new RegExp(ACCOUNTING_MIGRATION_TABLE));
 assert.equal((sql.match(/INSERT OR IGNORE INTO/g) || []).length, 25);
 assert.match(sql, /native_migration_baseline/);
+
+const legacyCanary = new DatabaseSync(':memory:');
+for (const migration of manifest.migrations.slice(0, 5)) {
+  legacyCanary.exec(readFileSync(path.join(root, 'accounting-migrations', migration.name), 'utf8'));
+}
+legacyCanary.exec(readFileSync(path.join(root, 'scripts', 'accounting-canary-bootstrap.sql'), 'utf8'));
+for (const migration of manifest.migrations.slice(5, 14)) {
+  legacyCanary.exec(readFileSync(path.join(root, 'accounting-migrations', migration.name), 'utf8'));
+}
+for (const migration of [manifest.migrations[23], manifest.migrations[24]]) {
+  legacyCanary.exec(readFileSync(path.join(root, 'accounting-migrations', migration.name), 'utf8'));
+}
+legacyCanary.exec(buildAccountingMigrationBaselineSql(legacyPlan.missingBaseline, legacyPlan.baselineThrough));
+for (const migration of manifest.migrations.slice(14)) {
+  legacyCanary.exec(readFileSync(path.join(root, 'accounting-migrations', migration.name), 'utf8'));
+  legacyCanary.prepare(`INSERT INTO "${ACCOUNTING_MIGRATION_TABLE}" (name) VALUES (?)`).run(migration.name);
+}
+assert.equal(
+  legacyCanary.prepare(`SELECT COUNT(*) count FROM "${ACCOUNTING_MIGRATION_TABLE}"`).get().count,
+  25,
+  'the legacy Phase G canary must safely converge through migration 0025'
+);
+assert.equal(
+  legacyCanary.prepare("SELECT COUNT(*) count FROM accounting_accounts WHERE id='acct_5850'").get().count,
+  1
+);
+assert.equal(
+  legacyCanary
+    .prepare("SELECT COUNT(*) count FROM pragma_table_info('accounting_funds') WHERE name='giving_enabled'")
+    .get().count,
+  1
+);
+legacyCanary.close();
 
 const wrangler = readFileSync(path.join(root, 'wrangler.toml'), 'utf8');
 const workflow = readFileSync(path.join(root, '.github', 'workflows', 'deploy.yml'), 'utf8');
