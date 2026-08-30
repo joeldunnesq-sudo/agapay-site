@@ -1,8 +1,8 @@
 import { clientIp, d1, d1Run, normalizeEmail, sha256Hex } from "./core.js";
 
-export const CURRENT_TERMS_VERSION = "2026-08-02-final";
-export const CURRENT_TERMS_SHA256 = "37fed3f75db644c166ca143f749e63565fd3a4a4008972f1cabe4cca97ec2e9b";
-export const CURRENT_PRIVACY_NOTICE_VERSION = "2026-08-11";
+export const CURRENT_TERMS_VERSION = "2026-08-30";
+export const CURRENT_TERMS_SHA256 = "e30d2a1996f56b11b75c5f9b6fc55e8048b750bc14b5fb8356d640033b76103d";
+export const CURRENT_PRIVACY_NOTICE_VERSION = "2026-08-30";
 
 export const ORGANIZATION_ACCEPTANCE_DISCLOSURE = "I confirm that I am authorized to bind the organization named above and that the information above is accurate. I agree to the Terms of Service, including the 30-day informal-resolution process, small-claims option, and court provisions in Section 24. I acknowledge the Privacy Policy.";
 export const ACCOUNT_ACCEPTANCE_DISCLOSURE = "I agree to the Terms of Service, including the 30-day informal-resolution process, small-claims option, and court provisions in Section 24. I acknowledge the Privacy Policy.";

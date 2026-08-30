@@ -368,7 +368,7 @@
  .retention-rows { margin: 1.25rem 0; }
  .retention-row {
  display: grid;
- grid-template-columns: 1fr auto;
+ grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
  align-items: baseline;
  gap: 1rem;
  padding: 0.7rem 0;
@@ -380,9 +380,11 @@
  font-family: 'Cormorant Garamond', serif;
  font-size: 0.9rem;
  color: var(--gold);
- white-space: nowrap;
+ white-space: normal;
  letter-spacing: 0.04em;
  }
+
+ .section h3[id] { margin-top: 1.5rem; scroll-margin-top: 110px; }
 
 
  .callout {
@@ -625,7 +627,7 @@
  <div class="hero-inner">
  <p class="hero-eyebrow">AGAPAY Privacy</p>
  <h1>Privacy Policy</h1>
- <p class="hero-sub">Last updated: August 11, 2026. Effective for new Users: August 11, 2026. Effective for existing Users upon notice, no earlier than September 10, 2026.</p>
+ <p class="hero-sub">Last updated: August 30, 2026. Effective for new Users: August 30, 2026. Effective for existing Users upon notice, no earlier than September 29, 2026.</p>
  </div>
 </div>
 <main class="page-body">
@@ -650,7 +652,7 @@
  <li><a href="#cookies"><span class="num">05</span>Cookies &amp; Tracking</a></li>
  <li><a href="#third-parties"><span class="num">06</span>Third-Party Providers</a></li>
  <li><a href="#sharing"><span class="num">07</span>Data Sharing &amp; Disclosure</a></li>
- <li><a href="#retention"><span class="num">08</span>Data Retention</a></li>
+ <li><a href="#retention"><span class="num">08</span>Retention &amp; Parish Portability</a></li>
  <li><a href="#security"><span class="num">09</span>Security</a></li>
  <li><a href="#california"><span class="num">10</span>California Rights (CCPA/CPRA)</a></li>
  <li><a href="#texas"><span class="num">11</span>Texas Rights (TDPSA)</a></li>
@@ -962,6 +964,15 @@
  </div>
  </div>
  <p>Upon expiration of the applicable retention period, data is securely deleted or irreversibly anonymized using industry-standard methods. You may request early deletion of non-legally-required data under Section 10-11 below.</p>
+ <h3 id="parish-data-portability">Parish exports, closure, and retained copies</h3>
+ <div class="callout callout-important"><strong>Current availability, August 30, 2026:</strong> Parish data exports are available. Automatic parish closure and deletion are not enabled. Preparing or downloading an export does not cancel billing, close the parish account, or delete parish data.</div>
+ <p><strong>Requesting an export.</strong> Authorized parish administrators may use <strong>Data portability</strong> in the parish dashboard after signing in and completing the required identity verification. Exports provide eligible parish-scoped CSV and JSON records, supported uploaded files, and a manifest listing the export window, included files, checksums, and exclusions. They may contain sensitive parish, directory, giving, or accounting information. Authentication credentials, independent donor accounts, parent-owned Learn records, and other parishes' private data are excluded; shared identities contain limited fields. External media may be listed as links. An ordinary export is not a complete inventory of every stored or third-party copy. Contact <a href="mailto:hello@agapay.app">hello@agapay.app</a> if an export exceeds the limits shown in the dialog, needs unsupported media, fails, or is unavailable.</p>
+ <p><strong>Temporary archives and downloaded copies.</strong> Export archives are held in private storage and downloaded through authenticated access. Download access expires seven days after the request, at the deadline shown in the dashboard. Expired archives are scheduled for cleanup; expiration of access is not a claim that every stored or recovery copy was erased at that instant. Export status and integrity metadata may remain after archive cleanup. Save and inspect the archive before the deadline, keep it secure, and share it only with authorized recipients. AGAPAY cannot recall copies already downloaded or transferred by the parish.</p>
+ <p><strong>Cancellation and deletion are separate.</strong> Subscription cancellation remains available through the <a href="/terms#fees">billing controls or support</a>. It does not automatically delete records, and an export does not cancel the subscription. Contact us to request closure or deletion while the automated workflow is unavailable. These requests remain subject to identity and authority checks, applicable rights, and lawful retention exceptions; the disabled automated workflow does not suspend an individual's privacy rights or applicable response deadlines.</p>
+ <p><strong>Retained records.</strong> A future automated closure would remove only eligible active parish data after a saved and verified final export, separate confirmation, and required safeguards. Accounting books, transactions, supporting financial or legal evidence, relevant support correspondence, legal holds, and minimal closure records may need to remain with restricted access. Independent donor accounts, parent-owned Learn records, and identities needed by another parish are not erased as part of one parish's closure. The applicable categories, retention periods, and any review dates must be disclosed before closure is authorized. A review date is not confirmation of automatic deletion. The draft automated-closure retention schedule is not approved by publication of this notice, and this notice does not replace the retention periods above with that draft schedule.</p>
+ <p><strong>Backups and restoration.</strong> Deleting active records is separate from expiry of backups and provider recovery history. Strict backup expiry for automatic parish closure is not yet enabled: the current recovery process can preserve the newest recovery copy when all copies are past the normal expiry period. We therefore do not promise that downloading an export or cancelling a subscription immediately erases every backup. Automatic closure remains unavailable until backup expiry, recovery-copy inventory, and restoration safeguards are verified. Those safeguards require replaying the independent closure record before restored service resumes so that a completed closure is not undone by a restore. Records legitimately retained after closure may also appear in later backups until approved disposal.</p>
+ <p><strong>Copies outside the parish purge.</strong> Records independently held by Stripe, email delivery providers, external media services, the parish, or other recipients follow their own applicable retention and deletion controls. AGAPAY's parish export or active-data purge does not itself erase those copies. We remain responsible for applicable obligations concerning providers processing data on our behalf.</p>
+ <p><strong>Individual requests.</strong> Parish-wide portability is separate from your right to request access, correction, or deletion of your own information. Use the <a href="#contact">contact and request methods below</a> or the <a href="/account-deletion">My AGAPAY account deletion page</a>; you do not need parish administrator access to submit an individual request.</p>
  </section>
 
 

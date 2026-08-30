@@ -23,6 +23,17 @@ assert.ok(readFileSync(path.join(root, "docs", "legal", "terms", "terms-2026-08-
 const db = new DatabaseSync(":memory:");
 db.exec(readFileSync(path.join(root, "migrations", "0088_legal_acceptances.sql"), "utf8"));
 db.exec(readFileSync(path.join(root, "migrations", "0095_finalized_legal_terms.sql"), "utf8"));
+const priorVersions = db.prepare("SELECT * FROM legal_terms_versions ORDER BY version").all();
+db.exec(readFileSync(path.join(root, "migrations", "0113_portability_legal_notices.sql"), "utf8"));
+assert.deepEqual(db.prepare("SELECT * FROM legal_terms_versions WHERE version <> ? ORDER BY version").all(CURRENT_TERMS_VERSION), priorVersions, "publishing revised Terms must preserve prior version records");
+assert.equal(db.prepare("SELECT COUNT(*) AS n FROM legal_acceptances").get().n, 0, "publishing a notice must not fabricate user acceptance");
+const publishedVersion = db.prepare("SELECT * FROM legal_terms_versions WHERE version = ?").get(CURRENT_TERMS_VERSION);
+assert.equal(publishedVersion.content_sha256, CURRENT_TERMS_SHA256);
+assert.equal(publishedVersion.snapshot_path, `docs/legal/terms/terms-${CURRENT_TERMS_VERSION}.html`);
+assert.equal(publishedVersion.effective_for_new_users_at, "2026-08-30T00:00:00.000Z");
+assert.equal(publishedVersion.effective_for_existing_users_at, "2026-09-29T00:00:00.000Z");
+const previousSnapshot = readFileSync(path.join(root, "docs", "legal", "terms", "terms-2026-08-02-final.html"), "utf8").replace(/\r\n/g, "\n");
+assert.equal(createHash("sha256").update(previousSnapshot).digest("hex"), priorVersions.find(row => row.version === "2026-08-02-final").content_sha256, "the prior accepted Terms must remain unchanged");
 const env = {
   AGAPAY_DB: {
     prepare(sql) {
