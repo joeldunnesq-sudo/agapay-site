@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { REGISTRATION_TERMS_VERSION } from "../src/lib/registration-intake.js";
+import { REGISTRATION_TERMS_VERSION, REGISTRATION_PRIVACY_NOTICE_VERSION } from "../src/lib/registration-intake.js";
+import { CURRENT_TERMS_VERSION, CURRENT_PRIVACY_NOTICE_VERSION } from "../src/lib/legal-acceptance.js";
 
 const terms = await readFile(new URL("../public/terms.html", import.meta.url), "utf8");
 const privacy = await readFile(new URL("../public/privacy.html", import.meta.url), "utf8");
@@ -12,8 +13,12 @@ const expectedSections = [
   "liability", "indemnification", "updates", "arbitration", "governing", "general", "contact"
 ];
 
-assert.equal(REGISTRATION_TERMS_VERSION, "2026-08-02-final", "registration must record the signed-off Terms version");
-assert.match(terms, /Last updated: August 2, 2026[\s\S]*Effective for existing Users upon affirmative acceptance, no earlier than September 1, 2026/);
+assert.equal(REGISTRATION_TERMS_VERSION, CURRENT_TERMS_VERSION, "registration and acceptance must record the same Terms version");
+assert.equal(CURRENT_TERMS_VERSION, "2026-08-30");
+assert.equal(REGISTRATION_PRIVACY_NOTICE_VERSION, CURRENT_PRIVACY_NOTICE_VERSION);
+assert.equal(CURRENT_PRIVACY_NOTICE_VERSION, "2026-08-30");
+assert.match(terms, /Last updated: August 30, 2026[\s\S]*Effective for existing Users upon affirmative acceptance, no earlier than September 29, 2026/);
+assert.match(privacy, /Last updated: August 30, 2026[\s\S]*Effective for existing Users upon notice, no earlier than September 29, 2026/);
 assert.match(terms, /AGAPAY, a Texas sole proprietorship operating under the AGAPAY name/);
 
 const tocIds = [...terms.matchAll(/<li><a href="#([^"]+)"><span class="num">\d{2}<\/span>/g)].map((match) => match[1]);
@@ -45,5 +50,26 @@ assert.match(terms, /Delivery is deemed accepted when AGAPAY sends that written 
 assert.match(terms, /court requires a signed waiver, court order, sworn filing, personal service, or another formality/);
 assert.match(privacy, /governed by Section 24 of the[\s\S]*Terms of Service/);
 assert.match(privacy, /does not require arbitration or a class-action waiver/);
+
+// Public notices must distinguish the released export feature from unapproved closure.
+for (const notice of [terms, privacy]) {
+  assert.match(notice, /Parish data exports are available\. Automatic parish closure and deletion are not enabled\./);
+  assert.match(notice, /Preparing or downloading an export does not cancel billing, close the parish account, or delete parish data\./);
+  assert.match(notice, /CSV and JSON[\s\S]*manifest[\s\S]*exclusions/);
+  assert.match(notice, /Authentication credentials, independent donor accounts, parent-owned Learn records, and other parishes' private data are excluded/);
+  assert.match(notice, /seven days after the request/);
+}
+assert.match(terms, /id="data-portability"/);
+assert.match(terms, /href="\/privacy#parish-data-portability"/);
+assert.match(terms, /Publishing this notice does not approve the draft closure retention schedule/);
+assert.match(privacy, /id="parish-data-portability"/);
+assert.match(privacy, /expiration of access is not a claim that every stored or recovery copy was erased/);
+assert.match(privacy, /preserve the newest recovery copy/);
+assert.match(privacy, /replaying the independent closure record before restored service resumes/);
+assert.match(privacy, /A review date is not confirmation of automatic deletion/);
+assert.match(privacy, /does not replace the retention periods above with that draft schedule/);
+assert.match(privacy, /disabled automated workflow does not suspend an individual's privacy rights/);
+assert.match(privacy, /do not need parish administrator access to submit an individual request/);
+assert.match(privacy, /Records independently held by Stripe[\s\S]*does not itself erase those copies/);
 
 console.log("Terms substantive-review regression tests passed.");

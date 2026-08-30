@@ -7,6 +7,7 @@ export function directoryImportFixture() {
   db.exec(readFileSync(new URL('../migrations/0001_production_records.sql', import.meta.url), 'utf8'));
   db.exec(readFileSync(new URL('../migrations/0088_legal_acceptances.sql', import.meta.url), 'utf8'));
   db.exec(readFileSync(new URL('../migrations/0095_finalized_legal_terms.sql', import.meta.url), 'utf8'));
+  db.exec(readFileSync(new URL('../migrations/0113_portability_legal_notices.sql', import.meta.url), 'utf8'));
   const wrap = (sql) => ({ sql, params: [], bind(...args) { this.params = args; return this; },
     async first() { return db.prepare(sql).get(...this.params) || null; },
     async all() { return { results: db.prepare(sql).all(...this.params) }; },
