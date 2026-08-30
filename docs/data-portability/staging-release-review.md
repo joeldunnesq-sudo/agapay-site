@@ -1,11 +1,11 @@
 # Portability staging release review
 
-August 29, 2026. **Production release is not approved.** A private, route-less
+August 30, 2026. **Production release is not approved.** A private, route-less
 staging test Worker was temporarily deployed for the hosted drill. The production
 Worker now includes the verified public-media route, while portability, closure,
 storage-guard, and strict-expiry switches remain off. The temporary Worker was removed after preserving the completed drill
 record and version identifier; the isolated data resources remain for evidence and
-the pending natural-expiry observation.
+investigation after the natural-expiry observation passed.
 
 ## Results
 
@@ -22,13 +22,13 @@ the pending natural-expiry observation.
 | Remote closure/restore suppression | Passed in a private hosted Worker: ZIP verification, consent, freeze, authorization, purge, old-restore denial, replay, sanitization, and repeated sanitization. The earlier operator-proxy run remains recorded as interrupted. |
 | Hosted query budget | Passed: every phase stayed within the enforced 800-operation work budget; maximum hosted use was 697. |
 | Regression suite/bundle | npm run check and Wrangler deploy --dry-run passed. They do not clear the failed release gates. |
-| Natural lifecycle / D1 recovery expiry | Probe planted at 2026-08-28 23:55:46 UTC; the one-day threshold is 2026-08-29 23:55:46 UTC. Absence has not yet been observed or certified. |
+| Natural lifecycle / D1 recovery expiry | Passed for isolated staging R2: the probe was present before its one-day threshold and a read-only HEAD observed absence at 2026-08-30 14:35:03 UTC, 14 hours 39 minutes after the threshold. No object content was read and no application sweep ran. D1 recovery expiry was separately observed at 29/31 days. This does not certify production backup retention. |
 | Production scoped readiness audit | Passed after controlled reconciliation: all 31 legacy accounting tables are empty, the book identity is independently evidenced, the backup bucket has a verified 365-day object-expiration rule, and all release flags remain false. This does not clear the remaining release gates. |
 | Production ownership/schema | Passed: migrations 0108-0110, 441 generated barriers, 26 R2 ownership rows, 18 KV ownership rows, and three inventory reviews read back successfully; there are zero jobs/closures and all flags remain false. |
 | Production private portability storage | Passed: three separate private R2 buckets were created and read back with r2.dev disabled and no custom domains. The temporary export prefix has a seven-day lifecycle; authority, closure, and completion prefixes have indefinite locks; authority.json matches the configured identifier. No Worker was deployed and all flags remain false. |
 | Public media migration | Passed: registry-owned Worker delivery is deployed with no-store and range support. Three historical references were hash-guarded and rewritten, all objects were verified through the Worker, all three r2.dev origins read back disabled, and there are zero custom domains. The disabled-origin attestation is staged for deployment. |
 | Browser/MFA/billing gate | Passed: the local real-client gate opened and completed MFA step-up, active billing blocked final-export creation, and an ordinary ZIP download made no closure-confirmation request. A duplicate-parish-row authentication mismatch found in the signed-in production panel was fixed and deployed. The post-deployment read-only production walkthrough accepted a fresh MFA-backed session, showed the intended release-disabled state with zero jobs and disabled actions, and logged no browser warnings or errors. No production export, billing change, or purge was attempted. |
-| Recovery-copy inventory | Partially passed: 29 recent scheduled backup runs were successful, none of 297 current GitHub Actions artifacts was a database backup, and D1 Time Travel was available at 7/29 days but unavailable at 31 days. The separate real provider multi-store restore qualification passed; off-provider/manual copies remain unverified and natural lifecycle expiry is still pending. |
+| Recovery-copy inventory | Partially passed: the August 30 refresh found 30 recent scheduled backup runs successful and no database payload among 323 current GitHub Actions artifacts. Four name matches were the recovery drill's explicitly metadata-only JSON evidence artifacts. D1 Time Travel remained available at 7/29 days and unavailable at 31 days. The real provider multi-store restore qualification and isolated R2 natural-lifecycle observation passed; off-provider/manual copies remain unverified. |
 | Realistic volume | Passed locally and in a separate private hosted Worker. The reviewed full schemas exported 21,008 synthetic rows, including 4,000 offerings, 3,000 journal entries, and 6,000 journal lines, into an 11,350,769-byte hosted ZIP. Counts, hash, secret exclusion, and tenant scope passed. A 10,001-row boundary returned 413, left all source rows intact, and published no archive. The route-less Worker was removed; its private synthetic archive has one-day lifecycle expiry. |
 
 ## Schema corrections
@@ -218,16 +218,11 @@ The hosted resources use the exact prefix `agapay-portability-volume-20260829`;
 the bucket has r2.dev disabled, no custom domains, and one-day expiry for
 `parish-exports/`. Production resources and flags were not read or changed.
 
-Remaining release work, in order:
+Remaining release work:
 
-1. After the lifecycle threshold, run
-   `node scripts/portability-staging-expiry.mjs --check`.
-   This only performs HEAD and does not run a sweep. The planted probe prevents the
-   main drill from running and contaminating the observation. Check that no manual
-   deletion/sweep occurred before treating absence as lifecycle evidence.
-2. Finish the off-provider/manual-copy attestation and retention disclosure approval.
-   The browser/MFA/billing gate, realistic-volume gate, and real accounting, file,
-   and KV provider restore qualification are complete.
+1. Finish the off-provider/manual-copy attestation and retention disclosure approval.
+   The natural-lifecycle observation, browser/MFA/billing gate, realistic-volume
+   gate, and real accounting, file, and KV provider restore qualification are complete.
 
 The production accounting identity and 365-day backup lifecycle items are complete.
 The identity was corroborated by the immutable database UUID/creation time, the
@@ -236,9 +231,15 @@ and the central registry. The lifecycle inventory found objects from July 21
 through August 28 and no object already beyond the configured period. The strict
 application sweep remains disabled pending the rest of the release review.
 
-Natural lifecycle deletion is asynchronous; crossing the threshold does not
+Natural lifecycle deletion is asynchronous; crossing the threshold alone did not
 prove deletion. A read-only HEAD at 2026-08-29 00:04:43 UTC confirmed that the
-object was still present before its threshold. No follow-up automation is running.
+object was present before its threshold. A second read-only HEAD at
+2026-08-30 14:35:03 UTC observed absence 14 hours 39 minutes after the threshold.
+The route-less staging configuration had no cron trigger, the drill guard prevented
+the application sweep from running, and this operator did not manually delete or
+rewrite the probe. The sanitized evidence is
+`natural-lifecycle-observation-2026-08-30.json`. This verifies the isolated R2
+lifecycle path only, not production backup retention or undiscoverable copies.
 
 Staging resources remain for investigation and incur normal provider usage.
 Before teardown, preserve evidence, verify exact names/IDs, and obtain approval.

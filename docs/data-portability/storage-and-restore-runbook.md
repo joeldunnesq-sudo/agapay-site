@@ -218,7 +218,9 @@ The August 28 production lifecycle inventory found 59 objects, from July 21 thro
 August 28, and none already older than 365 days. A named 365-day object-expiration
 rule was then added and verified by provider readback. The strict application sweep
 remains disabled; lifecycle configuration alone does not certify manual copies,
-D1 Time Travel expiry, successful restores, or the pending natural-expiry probe.
+D1 Time Travel expiry, successful restores, or production expiry behavior. The
+separate isolated staging R2 probe was present before its one-day threshold and
+absent on a read-only HEAD at 2026-08-30 14:35:03 UTC; no application sweep ran.
 
 The August 29 read-only recovery inventory found 29 recent successful executions
 of the production D1 backup workflow. None of the 297 then-current GitHub Actions
@@ -230,6 +232,13 @@ perform a restore and cannot discover personal downloads, manually copied export
 support attachments, or copies in accounts outside the repository/provider view.
 An accountable operator must inventory and attest those locations and their final
 disposal dates before setting PARISH_BACKUP_EXPIRY_VERIFIED.
+
+The August 30 refresh found 30 successful recent backup runs and 323 current
+GitHub Actions artifacts. Four broad name matches were the recovery drill's
+explicitly metadata-only JSON evidence artifacts, not database payloads; the
+inventory now classifies those separately. D1 Time Travel retained the same
+7/29-day available and 31-day unavailable result. The isolated R2 natural-lifecycle
+probe also passed. Manual and off-provider copy attestation remains outstanding.
 
 An August 29 authentic central-D1 restore qualification selected the newest paired
 private production SQL/checksum artifact under a fresh metadata evidence hash. The

@@ -1,0 +1,21 @@
+{
+  "result": "passed_natural_lifecycle_observation",
+  "scope": "isolated_synthetic_staging_r2",
+  "uploadedAt": "2026-08-28T23:55:46.483Z",
+  "presentObservedAt": "2026-08-29T00:04:43.322Z",
+  "expiresAfter": "2026-08-29T23:55:46.483Z",
+  "absenceObservedAt": "2026-08-30T14:35:03.367Z",
+  "absenceObservationDelayMs": 52756884,
+  "observationMethod": "read_only_r2_head",
+  "objectContentRead": false,
+  "applicationSweepRan": false,
+  "workerDeployed": false,
+  "workersDevEnabled": false,
+  "previewUrlsEnabled": false,
+  "routesConfigured": false,
+  "cronCount": 0,
+  "productionDataAccessed": false,
+  "productionRetentionVerified": false,
+  "manualOrOffProviderCopiesVerified": false,
+  "sourceStateSha256": "a70db719fc9806a2a6cd9a76698d9815d4718d3201acef5b412bfad9a9ad282b"
+}

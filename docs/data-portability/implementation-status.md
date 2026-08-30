@@ -200,8 +200,10 @@ removed. It did not write to production.
 The private hosted staging drill passed export, verified download, consent, book
 freeze, authorization, purge, restore denial, suppression replay, and repeatable
 sanitization. Its largest invocation used 697 of the enforced 800-operation work
-budget. A real R2 lifecycle probe remains pending after its one-day threshold;
-crossing that threshold alone does not prove provider deletion.
+budget. The real isolated R2 lifecycle probe was present before its one-day
+threshold and absent on a read-only HEAD at 2026-08-30 14:35:03 UTC, 14 hours
+39 minutes after the threshold. No application sweep ran. This verifies the
+isolated provider lifecycle path, not production retention or manual copies.
 
 A read-only remote staging metadata check found no migration-history entries
 for 0108/0109/0110 and no portability control tables. All queries reported zero
