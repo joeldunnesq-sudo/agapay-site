@@ -72,6 +72,10 @@ const core = [
 ];
 
 const accounting = [
+  'scripts/accounting-activation-tests.mjs',
+  'scripts/accounting-activation-access-tests.mjs',
+  'scripts/accounting-activation-workflow-tests.mjs',
+  'scripts/build-accounting-provisioning-schema.mjs --check',
   'scripts/accounting-gateway-tests.mjs',
   'scripts/accounting-environment-tests.mjs',
   'scripts/accounting-staff-access-tests.mjs',

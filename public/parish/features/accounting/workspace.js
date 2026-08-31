@@ -505,6 +505,7 @@ async function loadAccountingTab(force = false) {
   if (!force && pane.dataset.loaded === 'true') return;
   pane.innerHTML = '<p class="sw-tool-loading">Loading Accounting...</p>';
   try {
+    if (typeof accountingActivationGuard === 'function' && (await accountingActivationGuard(pane))) return;
     const [
       setupRes,
       referenceRes,

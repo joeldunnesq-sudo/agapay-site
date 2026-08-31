@@ -9,7 +9,7 @@ export const PORTABILITY_SCHEMA = Object.freeze({
   "accounting_integrity_alert_deliveries": ["attempted_at","correlation_id","delivery_status","id","parish_id","provider_message_id","recipient_masked","scan_id","severity"],
   "accounting_integrity_release_requests": ["completed_at","expected_version","id","parish_id","reason","requested_at","requested_by","result_json","status"],
   "accounting_lifecycle_events": ["accounting_database_id","accounting_entity_id","actor_type","actor_user_id","correlation_id","created_at","event_type","from_state","id","reason","to_state"],
-  "accounting_provisioning_operations": ["accounting_entity_id","attempt_count","completed_at","correlation_id","created_at","environment","failure_code","failure_message","id","idempotency_key","lease_expires_at","lease_token","operation","started_at","status","updated_at"],
+  "accounting_provisioning_operations": ["options_json","progress_step","progress_current","provider_id","wizard_completed_at","accounting_entity_id","attempt_count","completed_at","correlation_id","created_at","environment","failure_code","failure_message","id","idempotency_key","lease_expires_at","lease_token","operation","started_at","status","updated_at"],
   "accounting_schema_versions": ["created_at","description","id","migration_version","released_at","schema_version","status"],
   "accounting_staff_profiles": ["capabilities_json","created_at","created_by_actor_id","created_by_actor_type","display_name","failed_attempts","id","last_authenticated_at","locked_until","parish_id","pin_record","role_template","status","updated_at"],
   "accounting_staff_sessions": ["created_at","expires_at","id","parish_id","profile_id","revoked_at","token_hash","token_salt"],

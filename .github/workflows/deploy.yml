@@ -139,6 +139,18 @@ jobs:
           wranglerVersion: '4'
           command: d1 migrations apply ACCOUNTING_DB_PHASE_G_CANARY --remote --env=""
 
+      - name: Migrate wizard-provisioned accounting databases
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node scripts/migrate-managed-accounting.mjs
+
+      - name: Deploy private accounting provisioner
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          wranglerVersion: '4'
+          command: deploy --config wrangler.accounting-provisioner.json
+
       - name: Record deployment timestamp
         shell: bash
         run: echo "AGAPAY_DEPLOYED_AT=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"

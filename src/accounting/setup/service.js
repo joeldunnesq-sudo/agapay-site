@@ -24,9 +24,9 @@ export async function getAccountingSettings(db, { actor } = {}) {
   return settingsDto(await first(db, "SELECT * FROM accounting_settings WHERE id='primary'"));
 }
 
-export async function initializeAccountingSetup(db, { actor, date = new Date(), correlationId = "" } = {}) {
+export async function initializeAccountingSetup(db, { actor, date = new Date(), fiscalYearStartMonth = 1, correlationId = "" } = {}) {
   requireCapability(actor, "accounting.configure");
-  const initialization = await initializeLedger(db, { actor, date, correlationId });
+  const initialization = await initializeLedger(db, { actor, date, fiscalYearStartMonth, correlationId });
   await run(db, `INSERT OR IGNORE INTO accounting_settings(id,default_fund_id) SELECT 'primary',id FROM accounting_funds WHERE is_default=1 LIMIT 1`);
   return Object.freeze({ initialization, settings: settingsDto(await first(db, "SELECT * FROM accounting_settings WHERE id='primary'")) });
 }
