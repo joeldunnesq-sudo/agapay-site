@@ -31,10 +31,11 @@
   <link rel="preload" as="image" href="/images/giving/app-phone-mockup.png" fetchpriority="high" />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&amp;family=DM+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site-chrome.css" />
-  <link rel="stylesheet" href="/styles/give.css?v=20260831campaigns2" />
+  <link rel="stylesheet" href="/styles/give.css?v=20260831intelligence1" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <script src="/site-chrome.js?v=20260827givesections1" defer></script>
   <script src="/pwa-register.js" defer></script>
+  <script src="/pwa-home-install.js" defer></script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -184,7 +185,7 @@
 
     <nav class="give-section-nav" aria-label="AGAPAY Give page sections">
       <div class="give-wrap give-section-links">
-        <a href="#security">Security</a><a href="#pricing">Pricing</a><a href="#platform">Platform</a><a href="#campaigns">Campaigns</a><a href="#koinonia">Koinonia</a><a href="#reporting">Reporting</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a>
+        <a href="#security">Security</a><a href="#pricing">Pricing</a><a href="#platform">Platform</a><a href="#campaigns">Campaigns</a><a href="#koinonia">Koinonia</a><a href="#reporting">Reporting</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a><a href="#install-app">Get the app</a>
       </div>
     </nav>
 
@@ -337,7 +338,46 @@
     <section class="give-section" id="reporting" aria-labelledby="reporting-title">
       <div class="give-wrap">
         <header class="give-section-head"><p class="give-eyebrow">Giving intelligence and automated reporting</p><h2 id="reporting-title">See the real shape of parish giving, not just the total.</h2><p>Stewardship Health turns the gifts and pledges already flowing through AGAPAY into useful council-level signals and print-ready reports.</p></header>
-        <div class="give-report-grid"><article><span>Giving intelligence</span><h3>Distribution</h3><p>See how many donors give at each annual level, from smaller offerings through major gifts.</p></article><article><span>Giving intelligence</span><h3>Donor retention</h3><p>Track retained, lapsed, and new donors year over year before a change reaches the total.</p></article><article><span>Giving intelligence</span><h3>Concentration risk</h3><p>Understand the anonymized share of giving from the top households and surface dependency risk.</p></article><article><span>Giving intelligence</span><h3>Recurring stability</h3><p>Measure predictable recurring gifts against one-time giving and active recurring households.</p></article><article><span>Automated reporting</span><h3>Monthly council reports</h3><p>Generate current stewardship and financial summaries without rebuilding spreadsheets before meetings.</p></article><article><span>Automated reporting</span><h3>Annual statements and packets</h3><p>Produce donor statements in batches and assemble a polished annual meeting packet from current records.</p></article></div>
+        <p class="give-intelligence-note">Included with Stewardship Health on Give + and Parish. <em>The visuals below illustrate each dashboard; they are not actual parish data.</em></p>
+        <div class="give-intelligence-grid">
+          <article>
+            <div class="give-intelligence-top"><span class="give-intelligence-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 13h3v7H4zM10 8h3v12h-3zM16 3h3v17h-3z" /></svg></span><span class="give-status">Live</span></div>
+            <h3>Giving Distribution</h3>
+            <p>See how many donors give at each annual level, from smaller offerings through major gifts. Understand the shape of parish giving, beyond a single total.</p>
+            <figure class="give-intelligence-chart" role="img" aria-label="Illustrative giving distribution across five annual giving bands, from under $500 to $10,000 or more. Bar heights are examples, not parish data.">
+              <div class="give-distribution-bars" aria-hidden="true"><i style="--bar-height:72%"></i><i style="--bar-height:100%"></i><i style="--bar-height:55%"></i><i style="--bar-height:32%"></i><i style="--bar-height:17%"></i></div>
+              <div class="give-distribution-labels" aria-hidden="true"><span>&lt;$500</span><span>$500–2K</span><span>$2–5K</span><span>$5–10K</span><span>$10K+</span></div>
+            </figure>
+          </article>
+          <article>
+            <div class="give-intelligence-top"><span class="give-intelligence-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="3" /><path d="M3 20v-2a6 6 0 0 1 12 0v2M15 9h6m-3-3 3 3-3 3" /></svg></span><span class="give-status">Live</span></div>
+            <h3>Donor Retention</h3>
+            <p>Track retained, new, and lapsed donors year over year. Spot changes in participation before they become changes in the total.</p>
+            <figure class="give-intelligence-chart" role="img" aria-label="Illustrative donor retention bar split into retained donors, new donors, and lapsed donors. Segment sizes are examples, not parish data.">
+              <div class="give-stacked-bar" aria-hidden="true"><i class="give-chart-green" style="flex:68"></i><i class="give-chart-gold" style="flex:20"></i><i class="give-chart-stone" style="flex:12"></i></div>
+              <div class="give-chart-legend" aria-hidden="true"><span><i class="give-chart-green"></i>Retained</span><span><i class="give-chart-gold"></i>New</span><span><i class="give-chart-stone"></i>Lapsed</span></div>
+            </figure>
+          </article>
+          <article>
+            <div class="give-intelligence-top"><span class="give-intelligence-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 2 8 4v6c0 5-5 8-8 10-3-2-8-5-8-10V6l8-4Z M12 7v6m0 3v1" /></svg></span><span class="give-status">Live</span></div>
+            <h3>Giving Concentration Risk</h3>
+            <p>Understand how much annual giving comes from the top households, anonymized and ranked. See when the parish relies on a small share of its donors.</p>
+            <figure class="give-intelligence-chart" role="img" aria-label="Illustrative annual giving concentration bar comparing the top ten households with everyone else. Segment sizes are examples, not parish data.">
+              <div class="give-stacked-bar" aria-hidden="true"><i class="give-chart-gold-dark" style="flex:36"></i><i class="give-chart-cream" style="flex:64"></i></div>
+              <div class="give-chart-legend" aria-hidden="true"><span><i class="give-chart-gold-dark"></i>Top 10 households</span><span><i class="give-chart-cream"></i>Everyone else</span></div>
+            </figure>
+          </article>
+          <article>
+            <div class="give-intelligence-top"><span class="give-intelligence-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 4v6h-6M4 20v-6h6M20 10a8 8 0 0 0-14-5M4 14a8 8 0 0 0 14 5" /></svg></span><span class="give-status">Live</span></div>
+            <h3>Recurring Gift Stability</h3>
+            <p>Compare recurring gifts with one-time giving and follow active recurring households. See the predictable support behind parish life.</p>
+            <figure class="give-intelligence-chart" role="img" aria-label="Illustrative giving stability bar comparing recurring gifts with one-time gifts. Segment sizes are examples, not parish data.">
+              <div class="give-stacked-bar" aria-hidden="true"><i class="give-chart-green" style="flex:60"></i><i class="give-chart-stone" style="flex:40"></i></div>
+              <div class="give-chart-legend" aria-hidden="true"><span><i class="give-chart-green"></i>Recurring</span><span><i class="give-chart-stone"></i>One-time</span></div>
+            </figure>
+          </article>
+        </div>
+        <div class="give-report-grid"><article><span>Automated reporting</span><h3>Monthly council reports</h3><p>Generate current stewardship and financial summaries without rebuilding spreadsheets before meetings.</p></article><article><span>Automated reporting</span><h3>Annual statements and packets</h3><p>Produce donor statements in batches and assemble a polished annual meeting packet from current records.</p></article></div>
         <div class="give-report-callout"><strong>What used to take a treasurer days can take minutes.</strong><span>No duplicate export process and no report reconstructed from scratch.</span></div>
       </div>
     </section>
@@ -354,6 +394,34 @@
 
     <section class="give-section give-faq-section" id="faq" aria-labelledby="faq-title">
       <div class="give-wrap give-faq-grid"><header class="give-section-head"><p class="give-eyebrow">Frequently asked questions</p><h2 id="faq-title">Clear answers for clergy, treasurers, and parish councils.</h2><p>Need to discuss a parish-specific workflow? <a href="/give/request-demo">Request a guided demo</a> or email <a href="mailto:support@agapay.app">support@agapay.app</a>.</p></header><div class="give-faq-list"><details><summary>Does AGAPAY charge a percentage of parish donations?</summary><p>No. AGAPAY adds no percentage-based donation fee on any plan. Standard Stripe processing fees still apply, and donors may choose to cover them so the parish receives the full intended gift.</p></details><details><summary>How does AGAPAY protect payment information?</summary><p>Stripe-hosted Checkout collects sensitive card and bank details. Those details do not pass through or get stored by the AGAPAY application. Gifts and sales are processed through the parish's connected Stripe account.</p></details><details><summary>What is included in Give +?</summary><p>Give + includes Give, unlimited funds, campaigns, pledges, Stewardship Health, the Parish Directory, Bookstore, Parish Library, and Koinonia. Sacraments, Full Commerce, and Accounting can be purchased individually.</p></details><details><summary>When is Parish the better choice?</summary><p>Choose Parish when the organization wants every connected pillar rather than adding individual modules. Parish bundles Give +, Sacraments, Full Commerce, Accounting, guided onboarding, and priority support at a household-based rate.</p></details><details><summary>Can plans and add-ons change later?</summary><p>Yes. There is no setup fee or long-term contract. A parish can change its tier and selected add-ons as its needs grow.</p></details><details><summary>Does AGAPAY support Julian and Revised Julian parish calendars?</summary><p>Yes. Liturgical awareness includes Julian and Revised Julian calendars, feasts, fasting periods, daily saints, commemorations, and festal giving context.</p></details></div></div>
+    </section>
+
+    <section class="give-section give-install-section" id="install-app" aria-labelledby="install-app-title">
+      <div class="give-wrap give-install-grid">
+        <div class="give-install-copy">
+          <header class="give-section-head">
+            <p class="give-eyebrow">My AGAPAY · Parish life in your pocket</p>
+            <h2 id="install-app-title">Get the app.<br />Take parish life with you.</h2>
+            <p>Give, serve, and stay connected to your parish. Install My AGAPAY for one-tap access to giving, campaigns, Koinonia, the parish directory, Bookstore, and more.</p>
+          </header>
+          <p class="give-install-intro">No app store required. My AGAPAY is a progressive web app you install directly from your browser.</p>
+          <div class="give-install-actions">
+            <button class="give-button give-button-gold" id="homePwaInstallButton" type="button">Install My AGAPAY</button>
+            <a class="give-button give-button-outline" href="/myagapay/login">Open My AGAPAY</a>
+          </div>
+          <p class="give-install-status" id="homePwaInstallStatus" aria-live="polite">Choose Install when your browser offers it, or follow the steps below.</p>
+          <div class="give-install-steps op-install-steps" aria-label="How to install My AGAPAY">
+            <div data-install-step="android"><span>Android &amp; desktop</span><strong>Open your browser menu and choose Install app.</strong></div>
+            <div data-install-step="ios"><span>iPhone &amp; iPad</span><strong>In Safari, tap Share, then Add to Home Screen.</strong></div>
+            <div><span>You're ready</span><strong>Open My AGAPAY from its icon and sign in with your existing account.</strong></div>
+          </div>
+          <p class="give-install-note">The same My AGAPAY account, with a place on your home screen. Your parish's plan and your account permissions determine which features are available.</p>
+        </div>
+        <div class="give-install-visual" aria-label="My AGAPAY app preview">
+          <img src="/images/app-phone-mockup.png" alt="My AGAPAY on a phone showing the parish giving dashboard" loading="lazy" width="1418" height="1786" />
+          <div class="give-install-badge"><img src="/images/app/icon-192.png" alt="" width="48" height="48" /><span><strong>My AGAPAY</strong>Give · Serve · Live</span></div>
+        </div>
+      </div>
     </section>
 
     <section class="give-final-cta" aria-label="Start with AGAPAY"><div class="give-wrap"><p class="give-eyebrow">One parish. One connected system.</p><h2>See what AGAPAY would look like for your parish.</h2><p>Start a no-card 30-day demo or walk through the platform with a real person.</p><div class="give-final-actions"><a class="give-button give-button-gold" href="/register">Start free</a><a class="give-button give-button-light" href="/give/request-demo">Request a parish demo</a><a class="give-text-link" href="/give/find-parish">Find a parish on AGAPAY</a></div></div></section>
