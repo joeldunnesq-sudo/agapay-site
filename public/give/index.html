@@ -184,18 +184,36 @@
 
     <nav class="give-section-nav" aria-label="AGAPAY Give page sections">
       <div class="give-wrap give-section-links">
-        <a href="#pricing">Pricing</a><a href="#campaigns">Campaigns</a><a href="#security">Security</a><a href="#platform">Platform</a><a href="#koinonia">Koinonia</a><a href="#reporting">Reporting</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a>
+        <a href="#security">Security</a><a href="#pricing">Pricing</a><a href="#platform">Platform</a><a href="#campaigns">Campaigns</a><a href="#koinonia">Koinonia</a><a href="#reporting">Reporting</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a>
       </div>
     </nav>
 
-    <section class="give-priority" aria-label="Pricing and security overview">
+    <section class="give-priority" aria-label="Security and pricing overview">
       <div class="give-wrap give-priority-grid">
-        <a class="give-priority-card" href="#pricing">
-          <span class="give-card-kicker">Clear parish pricing</span><strong>Start at $9 per month. Give + is $79.</strong><p>No setup fee, no contract, and no percentage added to donations.</p><b>Compare every plan <span aria-hidden="true">&rarr;</span></b>
-        </a>
         <a class="give-priority-card give-priority-card-dark" href="#security">
           <span class="give-card-kicker">Security is required</span><strong>Stripe-hosted payments. Required administrator MFA.</strong><p>Parish-scoped data, role-based access, bot protection, and durable audit history.</p><b>See how AGAPAY protects data <span aria-hidden="true">&rarr;</span></b>
         </a>
+        <a class="give-priority-card" href="#pricing">
+          <span class="give-card-kicker">Clear parish pricing</span><strong>Start at $9 per month. Give + is $79.</strong><p>No setup fee, no contract, and no percentage added to donations.</p><b>Compare every plan <span aria-hidden="true">&rarr;</span></b>
+        </a>
+      </div>
+    </section>
+
+    <section class="give-section give-security-section" id="security" aria-labelledby="security-title">
+      <div class="give-wrap">
+        <header class="give-section-head give-section-head-light"><p class="give-eyebrow">Security and payments</p><h2 id="security-title">Security is part of the product, not fine print.</h2><p>AGAPAY protects parish and donor information with clear boundaries at payment, login, storage, and every role inside the parish.</p></header>
+        <div class="give-security-grid">
+          <article><span class="give-security-icon" aria-hidden="true">1</span><h3>Payment details stay with Stripe</h3><p>Sensitive card and bank details are collected by Stripe-hosted Checkout. They do not pass through or get stored by the AGAPAY application, and funds settle through the parish's connected Stripe account.</p></article>
+          <article><span class="give-security-icon" aria-hidden="true">2</span><h3>Administrator MFA is mandatory</h3><p>Privileged users must verify a second factor using a passkey, device biometric, or authenticator code. Recovery codes provide a controlled path if a device is lost.</p></article>
+          <article><span class="give-security-icon" aria-hidden="true">3</span><h3>Every parish is isolated</h3><p>Directory, donation, and financial access is parish-scoped. Cross-parish requests are denied, and staff see only the capabilities assigned to their active role.</p></article>
+          <article><span class="give-security-icon" aria-hidden="true">4</span><h3>Important changes leave a record</h3><p>Administrative and financial actions create audit history so sensitive changes cannot be made quietly. Parish leaders can trace who did what and when.</p></article>
+        </div>
+        <div class="give-security-details">
+          <details><summary>Passwords, passkeys, and account protection</summary><p>Passwords are stored as salted PBKDF2-SHA256 hashes, not readable text. Sign-in endpoints are rate-limited, donor email ownership is verified, privileged sessions require fresh MFA assurance, and My AGAPAY supports phishing-resistant passkeys.</p></details>
+          <details><summary>Stripe verification and parish funds</summary><p>AGAPAY verifies Stripe webhook events using a cryptographic signature and timestamp before updating a payment record. AGAPAY stores only the identifiers and masked references needed for reconciliation. It does not initiate or approve transfers from the parish bank account.</p></details>
+          <details><summary>Cloudflare, storage encryption, and bot protection</summary><p>AGAPAY runs on Cloudflare for network filtering, DDoS mitigation, and service availability. Cloudflare-managed storage is automatically encrypted at rest with AES-256. Turnstile protects sensitive public forms; its tokens expire after five minutes and can be used only once.</p></details>
+        </div>
+        <p class="give-security-caveat">No responsible online service can promise zero risk. AGAPAY uses layered controls, narrow access, verified payment events, and transparent operating boundaries instead of unsupported security guarantees.</p>
       </div>
     </section>
 
@@ -237,6 +255,21 @@
       </div>
     </section>
 
+    <section class="give-section" id="platform" aria-labelledby="platform-title">
+      <div class="give-wrap">
+        <header class="give-section-head"><p class="give-eyebrow">One system, not six</p><h2 id="platform-title">Every part of parish life, now in one place.</h2><p>AGAPAY is Orthodox church management software built as a connected platform, so giving, households, ministries, sacraments, sales, and accounting can share the same parish context.</p></header>
+        <div class="give-platform-grid">
+          <article id="giving"><span id="recurring-donations" class="give-anchor-alias" aria-hidden="true"></span><span id="fundraising" class="give-anchor-alias" aria-hidden="true"></span><span class="give-status">Live</span><h3>Giving &amp; Stewardship</h3><p>Tithes, recurring gifts, candles, campaigns, pledges, donor history, annual statements, and Stewardship Health.</p></article>
+          <article><span class="give-status">Live</span><h3>Koinonia</h3><p>A private parish feed, ministry groups, signups, prayer requests, Exchange, recordings, videos, news, and library resources.</p><a href="#koinonia">Explore Koinonia</a></article>
+          <article><span class="give-status">Live</span><h3>Directory &amp; Households</h3><p>A private, member-only directory organized by household with namedays, shared contact details, ministries, and privacy controls.</p></article>
+          <article><span class="give-status">Live</span><h3>Sacraments &amp; Services</h3><p>Open-time booking, structured baptism and wedding requests, pastoral review, priest schedules, and altar commemoration names.</p></article>
+          <article id="commerce"><span id="event-payments" class="give-anchor-alias" aria-hidden="true"></span><span class="give-status">Live</span><h3>Bookstore &amp; Church Commerce</h3><p>Bookstore goods, feast-day dinners, festival plates, ministry events, guest checkout, QR codes, inventory, and automatic sales tax.</p></article>
+          <article><span class="give-status">Live</span><h3>Accounting</h3><p>Fund accounting, journal entries, reconciliation, payables, budgets, reporting, and year-end work connected to gifts and sales.</p></article>
+        </div>
+        <div class="give-liturgical-callout"><div><p class="give-eyebrow">Liturgically aware by design</p><h3>Every part of AGAPAY already knows what day it is in the Church.</h3><p>Julian and Revised Julian parish calendars shape fasting context, daily saints and commemorations, feast-day giving prompts, and the experience parishioners see first in Koinonia.</p></div><div class="give-liturgical-tags" aria-label="Liturgical calendar capabilities"><span>Julian &amp; Revised Julian</span><span>Fasts &amp; feasts</span><span>Saints &amp; commemorations</span><span>Festal giving prompts</span></div></div>
+      </div>
+    </section>
+
     <section class="give-section give-campaign-section" id="campaigns" aria-labelledby="campaigns-title">
       <div class="give-wrap">
         <header class="give-section-head">
@@ -274,42 +307,9 @@
               <div><dt><a href="https://www.gofundme.com/c/pricing?lang=en-US" target="_blank" rel="noopener noreferrer">Standard GoFundMe</a></dt><dd>2.9% + $0.30</dd></div>
             </dl>
             <p class="give-campaign-terms">U.S. domestic USD donations; published rates checked August 31, 2026. Savings apply only when your parish's actual Stripe fee is lower for the same donation. This compares per-donation processing fees, excluding AGAPAY subscriptions, optional tips, and international or currency-conversion charges. GoFundMe certified-nonprofit and Pro pricing are not included in this comparison.</p>
-            <p class="give-campaign-terms"><a href="https://support.stripe.com/questions/fee-discount-for-nonprofit-organizations" target="_blank" rel="noopener noreferrer">Stripe nonprofit pricing requires approval</a> and is not automatic for churches. Stripe requires eligible nonprofit status and at least 80% tax-deductible donation volume; it sets your rate and continued eligibility.</p>
+            <p class="give-campaign-terms"><a href="https://support.stripe.com/questions/fee-discount-for-nonprofit-organizations" target="_blank" rel="noopener noreferrer">Stripe nonprofit pricing requires approval</a> and is not automatic for churches. Check Stripe's current nonprofit and donation-volume requirements; Stripe sets your rate and continued eligibility.</p>
           </aside>
         </div>
-      </div>
-    </section>
-
-    <section class="give-section give-security-section" id="security" aria-labelledby="security-title">
-      <div class="give-wrap">
-        <header class="give-section-head give-section-head-light"><p class="give-eyebrow">Security and payments</p><h2 id="security-title">Security is part of the product, not fine print.</h2><p>AGAPAY protects parish and donor information with clear boundaries at payment, login, storage, and every role inside the parish.</p></header>
-        <div class="give-security-grid">
-          <article><span class="give-security-icon" aria-hidden="true">1</span><h3>Payment details stay with Stripe</h3><p>Sensitive card and bank details are collected by Stripe-hosted Checkout. They do not pass through or get stored by the AGAPAY application, and funds settle through the parish's connected Stripe account.</p></article>
-          <article><span class="give-security-icon" aria-hidden="true">2</span><h3>Administrator MFA is mandatory</h3><p>Privileged users must verify a second factor using a passkey, device biometric, or authenticator code. Recovery codes provide a controlled path if a device is lost.</p></article>
-          <article><span class="give-security-icon" aria-hidden="true">3</span><h3>Every parish is isolated</h3><p>Directory, donation, and financial access is parish-scoped. Cross-parish requests are denied, and staff see only the capabilities assigned to their active role.</p></article>
-          <article><span class="give-security-icon" aria-hidden="true">4</span><h3>Important changes leave a record</h3><p>Administrative and financial actions create audit history so sensitive changes cannot be made quietly. Parish leaders can trace who did what and when.</p></article>
-        </div>
-        <div class="give-security-details">
-          <details><summary>Passwords, passkeys, and account protection</summary><p>Passwords are stored as salted PBKDF2-SHA256 hashes, not readable text. Sign-in endpoints are rate-limited, donor email ownership is verified, privileged sessions require fresh MFA assurance, and My AGAPAY supports phishing-resistant passkeys.</p></details>
-          <details><summary>Stripe verification and parish funds</summary><p>AGAPAY verifies Stripe webhook events using a cryptographic signature and timestamp before updating a payment record. AGAPAY stores only the identifiers and masked references needed for reconciliation. It does not initiate or approve transfers from the parish bank account.</p></details>
-          <details><summary>Cloudflare, storage encryption, and bot protection</summary><p>AGAPAY runs on Cloudflare for network filtering, DDoS mitigation, and service availability. Cloudflare-managed storage is automatically encrypted at rest with AES-256. Turnstile protects sensitive public forms; its tokens expire after five minutes and can be used only once.</p></details>
-        </div>
-        <p class="give-security-caveat">No responsible online service can promise zero risk. AGAPAY uses layered controls, narrow access, verified payment events, and transparent operating boundaries instead of unsupported security guarantees.</p>
-      </div>
-    </section>
-
-    <section class="give-section" id="platform" aria-labelledby="platform-title">
-      <div class="give-wrap">
-        <header class="give-section-head"><p class="give-eyebrow">One system, not six</p><h2 id="platform-title">Every part of parish life, now in one place.</h2><p>AGAPAY is Orthodox church management software built as a connected platform, so giving, households, ministries, sacraments, sales, and accounting can share the same parish context.</p></header>
-        <div class="give-platform-grid">
-          <article id="giving"><span id="recurring-donations" class="give-anchor-alias" aria-hidden="true"></span><span id="fundraising" class="give-anchor-alias" aria-hidden="true"></span><span class="give-status">Live</span><h3>Giving &amp; Stewardship</h3><p>Tithes, recurring gifts, candles, campaigns, pledges, donor history, annual statements, and Stewardship Health.</p></article>
-          <article><span class="give-status">Live</span><h3>Koinonia</h3><p>A private parish feed, ministry groups, signups, prayer requests, Exchange, recordings, videos, news, and library resources.</p><a href="#koinonia">Explore Koinonia</a></article>
-          <article><span class="give-status">Live</span><h3>Directory &amp; Households</h3><p>A private, member-only directory organized by household with namedays, shared contact details, ministries, and privacy controls.</p></article>
-          <article><span class="give-status">Live</span><h3>Sacraments &amp; Services</h3><p>Open-time booking, structured baptism and wedding requests, pastoral review, priest schedules, and altar commemoration names.</p></article>
-          <article id="commerce"><span id="event-payments" class="give-anchor-alias" aria-hidden="true"></span><span class="give-status">Live</span><h3>Bookstore &amp; Church Commerce</h3><p>Bookstore goods, feast-day dinners, festival plates, ministry events, guest checkout, QR codes, inventory, and automatic sales tax.</p></article>
-          <article><span class="give-status">Live</span><h3>Accounting</h3><p>Fund accounting, journal entries, reconciliation, payables, budgets, reporting, and year-end work connected to gifts and sales.</p></article>
-        </div>
-        <div class="give-liturgical-callout"><div><p class="give-eyebrow">Liturgically aware by design</p><h3>Every part of AGAPAY already knows what day it is in the Church.</h3><p>Julian and Revised Julian parish calendars shape fasting context, daily saints and commemorations, feast-day giving prompts, and the experience parishioners see first in Koinonia.</p></div><div class="give-liturgical-tags" aria-label="Liturgical calendar capabilities"><span>Julian &amp; Revised Julian</span><span>Fasts &amp; feasts</span><span>Saints &amp; commemorations</span><span>Festal giving prompts</span></div></div>
       </div>
     </section>
 

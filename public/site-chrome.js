@@ -5,8 +5,8 @@
   if (/^\/(?:admin|parish|donor|myagapay)(?:\/|$)/.test(path)) return;
 
   const PRIMARY_LINKS = [
-    { href: "/give#pricing", label: "Pricing", key: "pricing" },
     { href: "/give#security", label: "Security", key: "security" },
+    { href: "/give#pricing", label: "Pricing", key: "pricing" },
     { href: "/give#platform", label: "Platform", key: "platform" }
   ];
 
