@@ -41,7 +41,7 @@ async function exportGiversMonthlyCsv(event) {
     const rows = Number(response.headers.get('X-AGAPAY-Export-Rows') || 0);
     status.textContent = rows
       ? `Exported ${rows} transaction${rows === 1 ? '' : 's'} for ${month}, grouped by ${groupBy === 'giver' ? 'giver' : 'giving date'}.`
-      : `No recorded online gifts for ${month}. Downloaded a CSV with column headers.`;
+      : `No recorded gifts for ${month}. Downloaded a CSV with column headers.`;
   } catch (error) {
     status.textContent = error.message;
   } finally {
@@ -74,7 +74,9 @@ function renderGiversPanel() {
   }
   const groups = new Map();
   allGifts.forEach((gift) => {
-    const key = (gift.donorEmail || gift.donorName || 'anonymous').toLowerCase();
+    const key =
+      gift.giverKey ||
+      (gift.donorEmail ? 'email:' + gift.donorEmail.trim().toLowerCase() : gift.id ? 'gift:' + gift.id : 'anonymous');
     const existing = groups.get(key) || {
       name: gift.donorName || 'Anonymous giver',
       email: gift.donorEmail || '',
@@ -85,7 +87,8 @@ function renderGiversPanel() {
       firstGiftAt: '',
     };
     existing.giftCount += 1;
-    existing.totalCents += Number(gift.amountCents || 0);
+    existing.outsideCount = (existing.outsideCount || 0) + (gift.source === 'outside' ? 1 : 0);
+    existing.totalCents += Number((gift.giftAmountCents ?? gift.amountCents) || 0);
     existing.recurring = existing.recurring || Boolean(gift.recurring);
     const date = gift.date || gift.createdAt || '';
     if (date) {
@@ -107,7 +110,7 @@ function renderGiversPanel() {
 
   // Median gift (across all gifts, not per-donor)
   const amounts = allGifts
-    .map((g) => Number(g.amountCents || 0))
+    .map((g) => Number((g.giftAmountCents ?? g.amountCents) || 0))
     .filter((a) => a > 0)
     .sort((a, b) => a - b);
   const median = amounts.length ? amounts[Math.floor(amounts.length / 2)] : 0;
@@ -134,7 +137,7 @@ function renderGiversPanel() {
     countMeta.innerHTML =
       newThisMonth > 0
         ? `<span class="pdx-delta up">${newThisMonth}</span>new this month`
-        : `<span style="opacity:0.7;">Distinct households</span>`;
+        : `<span style="opacity:0.7;">Identified giving records</span>`;
   const totalMeta = document.getElementById('pdxGvKpiTotalMeta');
   if (totalMeta)
     totalMeta.innerHTML = `<span style="opacity:0.7;">Across ${allGifts.length} gift${allGifts.length === 1 ? '' : 's'}</span>`;
@@ -152,7 +155,7 @@ function renderGiversPanel() {
   const heroTitle = document.getElementById('pdxGvTitle');
   if (heroTitle)
     heroTitle.innerHTML = givers.length
-      ? `<em>${givers.length}</em> household${givers.length === 1 ? ' has' : 's have'} given<br>to your parish this year.`
+      ? `<em>${givers.length}</em> household${givers.length === 1 ? ' has' : 's have'} given<br>in your loaded giving records.`
       : `Load giving history to see your parish community.`;
   const donutPct = document.getElementById('pdxGvRecurringPct');
   const donutSub = document.getElementById('pdxGvRecurringSub');
@@ -274,7 +277,7 @@ function renderGiversDirectory() {
         </div>
         <div class="pdx-gv-dir-email">${escapeHtml(g.email || 'No email shown')}</div>
         <div class="pdx-gv-dir-meta">
-          <span>${g.giftCount} gift${g.giftCount === 1 ? '' : 's'}</span>
+          <span>${g.giftCount} gift${g.giftCount === 1 ? '' : 's'}${g.outsideCount ? ' · ' + g.outsideCount + ' outside' : ''}</span>
           ${g.recurring ? '<span class="pdx-gv-dir-recur">Recurring</span>' : `<span>Last ${escapeHtml(shortDate(g.lastGiftAt))}</span>`}
         </div>
       </div>

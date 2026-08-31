@@ -1,5 +1,6 @@
 import { json } from "./core.js";
 import { offeringFeeBreakdown } from "./stripe-fees.js";
+import { outsideGiftsForGiving } from "./outside-gifts.js";
 
 const PAGE_SIZE = 500;
 const MAX_EXPORT_ROWS = 25000;
@@ -48,14 +49,16 @@ export function givingExportRows(records, options) {
 
 export function monthlyGivingCsv(rows, options) {
   const headers = ["Giving date", "Parish timezone", "Paid timestamp UTC", "Giver", "Giver email", "Fund", "Fund ID", "Campaign", "Gift type", "Frequency", "Currency", "Gift amount", "Amount charged", "Stripe fee", "AGAPAY fee", "Total fees", "Net before refunds", "Fees covered by donor", "Fee basis", "Refunds to date", "Latest refund timestamp", "Status", "Transaction ID", "Stripe payment intent", "Stripe charge", "Stripe balance transaction"];
-  const money = (cents) => (Number(cents || 0) / 100).toFixed(2);
+  headers.push("Source", "Outside reference", "Recorded by", "Giving purpose", "Pledge year");
+  const money = (cents) => cents === null ? "" : (Number(cents || 0) / 100).toFixed(2);
   const data = rows.map(({ offering: o, id, status, timestamp, givingDate, name, email, fees: f }) => [
     givingDate, options.timezone, timestamp, name, email,
     ["general", "stewardship"].includes(o.giftType) ? "General Operating Fund" : o.fund || o.fundId || "General Operating Fund",
     o.fundId || (["general", "stewardship"].includes(o.giftType) ? "general" : ""), o.campaign || o.campaignId || "", o.giftType || "offering", o.frequency || "once", (o.currency || "usd").toUpperCase(),
     money(f.giftAmountCents), money(f.chargeCents), money(f.stripeFeeCents), money(f.agapayFeeCents), money(f.totalFeeCents), money(f.parishNetCents), money(f.donorCoveredFeeCents),
-    o.stripeBalanceTransactionId ? "Stripe balance transaction" : "Estimate / unverified",
-    money(o.refundedCents), o.refundedAt || "", status, id, o.stripePaymentIntentId || o.paymentIntentId || "", o.stripeChargeId || "", o.stripeBalanceTransactionId || ""
+    o.source === "outside" ? "Outside contribution; fees and bank net not verified" : o.stripeBalanceTransactionId ? "Stripe balance transaction" : "Estimate / unverified",
+    o.source === "outside" ? "" : money(o.refundedCents), o.refundedAt || "", status, id, o.stripePaymentIntentId || o.paymentIntentId || "", o.stripeChargeId || "", o.stripeBalanceTransactionId || "",
+    o.source === "outside" ? o.sourceLabel : "AGAPAY online", o.reference || "", o.enteredBy || "", o.source === "outside" ? (o.givingKind === "pledge" ? "Pledge payment" : "Other giving") : "", o.pledgeYear || ""
   ]);
   return "\uFEFF" + [headers, ...data].map((row) => row.map(csvCell).join(",")).join("\r\n") + "\r\n";
 }
@@ -85,7 +88,13 @@ export async function exportMonthlyGiving(request, env, parishId, registration) 
     cursor = rows[rows.length - 1].id;
   }
   let rows;
-  try { rows = givingExportRows(records, options); }
+  try {
+    rows = givingExportRows(records, options);
+    const outside = await outsideGiftsForGiving(env,parishId,registration,{start:options.month+"-01",end:options.month+"-31"});
+    rows.push(...outside.map(g => ({ offering:g,id:g.id,status:"recorded outside",timestamp:"",givingDate:g.receivedDate,name:g.donorName,email:g.donorEmail,giverKey:(g.donorEmail || g.donorName).toLowerCase(),fees:{giftAmountCents:g.amountCents,chargeCents:null,stripeFeeCents:null,agapayFeeCents:null,totalFeeCents:null,parishNetCents:null,donorCoveredFeeCents:null} })));
+    rows.sort((a,b) => (options.groupBy === "giver" ? a.giverKey.localeCompare(b.giverKey) : a.givingDate.localeCompare(b.givingDate)) || a.givingDate.localeCompare(b.givingDate) || a.id.localeCompare(b.id));
+    if (rows.length > MAX_EXPORT_ROWS) return json({error:"This month exceeds the complete export limit. Contact support; no partial CSV was generated."},{status:413});
+  }
   catch { return json({ error: "A giving record needs review before a complete CSV can be generated. Contact support." }, { status: 409 }); }
   const filename = `${String(parishId).replace(/[^a-zA-Z0-9_-]/g, "-")}-giving-${options.month}-by-${options.groupBy}.csv`;
   return new Response(monthlyGivingCsv(rows, options), { headers: {

@@ -27,6 +27,7 @@ const background = {
   '/giving-summary': { summary: {} },
   '/recurring-health': { health: {} },
   '/giving-history': { gifts: [], manualAccountingGifts: [] },
+  '/outside-gifts': { gifts: [] },
   '/stripe-volume': { volume: { connected: false } },
   '/commemorations': { entries: [] },
   '/nonprofit-pricing': {},

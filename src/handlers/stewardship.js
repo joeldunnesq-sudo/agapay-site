@@ -1,3 +1,4 @@
+import { outsidePledgeGiving } from "../lib/outside-pledges.js";
 // src/handlers/stewardship.js
 // AGAPAY Stewardship module — Parish-tier annual meeting packet builder.
 // All routes live under /parish/stewardship/*.
@@ -3035,6 +3036,7 @@ export async function handleStewardshipNudge(request, env, parishId) {
     givenMap[row.donor_email] = Number(row.given_cents || 0);
   }
 
+  for (const row of await outsidePledgeGiving(env,parishId,year)) givenMap[row.donor_email] = (givenMap[row.donor_email] || 0) + Number(row.given_cents);
   // Identify behind donors
   const behind = pledges
     .map(p => {

@@ -113,7 +113,7 @@ function renderHistoryInsights() {
   const fundMap = new Map();
   gifts.forEach((gift) => {
     const date = new Date(gift.date || gift.createdAt || 0);
-    const cents = Number((gift.parishNetCents ?? gift.amountCents) || 0);
+    const cents = Number((gift.giftAmountCents ?? gift.amountCents) || 0);
     if (!Number.isNaN(date.getTime())) {
       const bucket = monthMap.get(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`);
       if (bucket) {
@@ -160,7 +160,7 @@ function renderHistoryInsights() {
 
 function renderHistoryTable() {
   // Summary stats
-  const total = filteredGifts.reduce((s, g) => s + ((g.parishNetCents ?? g.amountCents) || 0), 0);
+  const total = filteredGifts.reduce((s, g) => s + ((g.giftAmountCents ?? g.amountCents) || 0), 0);
   const avg = filteredGifts.length ? Math.round(total / filteredGifts.length) : 0;
   const recurring = filteredGifts.filter((g) => g.recurring).length;
   const donors = new Set(
@@ -207,9 +207,9 @@ function renderHistoryTable() {
           <td data-label="Donor"><span class="parish-history-donor"><strong>${g.donorName ? escapeHtml(g.donorName) : 'Anonymous donor'}</strong><small>${g.donorEmail ? escapeHtml(g.donorEmail) : 'No email available'}</small></span></td>
           <td data-label="Fund"><span class="history-fund">${escapeHtml(g.fund || g.fundId || 'General')}</span>${details}</td>
           <td data-label="Gift"><span class="history-amount">${moneyFull(giftCents)}</span></td>
-          <td data-label="Fees"><span class="history-fee ${g.coverFees ? 'covered' : 'absorbed'}">${g.coverFees ? 'Donor covered' : feeCents ? '-' + moneyFull(feeCents) : 'No fee'}</span></td>
-          <td data-label="Net"><span class="parish-history-net">${moneyFull(netCents)}</span></td>
-          <td data-label="Type"><span class="history-type">${g.recurring ? 'Recurring' : 'One-time'}</span></td>
+          <td data-label="Fees"><span class="history-fee ${g.coverFees ? 'covered' : 'absorbed'}">${g.source === 'outside' ? 'Not verified' : g.coverFees ? 'Donor covered' : feeCents ? '-' + moneyFull(feeCents) : 'No fee'}</span></td>
+          <td data-label="Net"><span class="parish-history-net">${g.source === 'outside' ? '—' : moneyFull(netCents)}</span></td>
+          <td data-label="Type"><span class="history-type">${g.source === 'outside' ? 'Outside · ' + escapeHtml(g.sourceLabel) : g.recurring ? 'Recurring' : 'One-time'}</span></td>
         </tr>`;
     })
     .join('');
@@ -246,17 +246,22 @@ function exportHistoryCsv() {
   const rows = filteredGifts.map((g) =>
     [
       fullDate(g.date || g.createdAt),
-      (((g.parishNetCents ?? g.amountCents) || 0) / 100).toFixed(2),
+      g.source === 'outside' ? '' : (((g.parishNetCents ?? g.amountCents) || 0) / 100).toFixed(2),
       (((g.giftAmountCents ?? g.amountCents) || 0) / 100).toFixed(2),
-      ((g.totalFeeCents || 0) / 100).toFixed(2),
-      g.coverFees ? 'Yes' : 'No',
+      g.source === 'outside' ? '' : ((g.totalFeeCents || 0) / 100).toFixed(2),
+      g.source === 'outside' ? 'Not verified' : g.coverFees ? 'Yes' : 'No',
       g.donorName || 'Anonymous',
       g.donorEmail || '',
       g.fund || g.fundId || 'General',
-      g.recurring ? 'Recurring' : 'One-time',
+      g.source === 'outside' ? 'Outside - ' + g.sourceLabel : g.recurring ? 'Recurring' : 'One-time',
       (g.commemorationNames || []).join('; '),
     ]
-      .map((cell) => `"${String(cell).replace(/"/g, '""')}"`)
+      .map(
+        (cell) =>
+          `"${String(cell)
+            .replace(/^[\s\uFEFF]*[=+@-]|^[\t\r\n]/, (match) => "'" + match)
+            .replace(/"/g, '""')}"`
+      )
       .join(',')
   );
   const csv = [headers.join(','), ...rows].join('\n');

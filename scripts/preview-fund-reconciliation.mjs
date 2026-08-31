@@ -3,10 +3,11 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
-import { createFundReconciliationFixture } from './lib/fund-reconciliation-fixture.mjs';
+import { createOutsideGiftsFixture } from './lib/outside-gifts-fixture.mjs';
+import { handleParishGivingHistory } from '../src/handlers/parish-giving-reports.js';
 import { fundReportPeriod, loadFundGiftActivity } from '../src/lib/fund-reporting.js';
 
-const fixture = await createFundReconciliationFixture();
+const fixture = await createOutsideGiftsFixture();
 fixture.installStripeMock();
 const week = fundReportPeriod({ week: true, timezone: fixture.registration.timezone });
 fixture.registration.funds.forEach((fund, index) =>
@@ -56,6 +57,11 @@ const server = http.createServer(async (req, res) => {
       const base = '/api/parish/dashboard/synthetic-parish';
       const suffix = url.pathname.slice(base.length);
       if (url.pathname === base) return json({ parish: fixture.dashboard() });
+      if (suffix === '/outside-gifts' || suffix.startsWith('/outside-gifts/')) {
+        let body='';for await(const chunk of req) { body+=chunk; if(body.length>16384) return json({error:'Request too large'},413); }
+        const response=await fixture.outside(suffix.slice('/outside-gifts'.length)+url.search,body?JSON.parse(body):undefined);
+        return json(await response.json(),response.status);
+      }
       if (suffix === '/reconciliation') {
         const response = await fixture.report(url.searchParams.get('month') || fixture.month);
         return json(await response.json(), response.status);
@@ -91,15 +97,10 @@ const server = http.createServer(async (req, res) => {
           },
         });
       }
-      if (suffix === '/giving-history')
-        return json({
-          gifts: fixture.offerings.map((gift) => ({
-            ...gift,
-            date: gift.paidAt,
-            parishNetCents: gift.amountCents - gift.stripeFeeCents,
-          })),
-          manualAccountingGifts: [],
-        });
+      if (suffix === '/giving-history') {
+        const response=await handleParishGivingHistory(new Request(origin+req.url,{headers:{Authorization:'Bearer '+fixture.token}}),fixture.env,fixture.registration.parishId);
+        res.writeHead(response.status,Object.fromEntries(response.headers));res.end(await response.text());return;
+      }
       if (suffix === '/recurring-health') return json({ health: { activeCount: 8, monthlyRecurringCents: 240000 } });
       if (suffix === '/stripe-volume') return json({ volume: { connected: false } });
       const background = [

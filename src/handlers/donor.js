@@ -1,4 +1,5 @@
 import { bookstoreReadinessSummary, bookstoreSellerDisclosure } from "../lib/commerce-readiness.js";
+import { addOutsideDonorPledgeSummary } from "../lib/outside-pledges.js";
 import { logEvent } from "../lib/logging.js";
 import { directoryInvitationNext } from "../lib/directory-invitation-next.js";
 import { ACCOUNT_ACCEPTANCE_DISCLOSURE, CURRENT_TERMS_VERSION, recordLegalAcceptance } from "../lib/legal-acceptance.js";
@@ -949,7 +950,7 @@ export async function handleDonorDashboard(request, env) {
   const offerings = await reconcilePendingDonorOfferings(env, await loadDonorOfferings(env, donor.email, 100));
   const publicOfferings = offerings.map(publicDonorOffering);
   const commemorations = await loadReconciledDonorCommemorations(env, donor.email, offerings, 100);
-  const summary = donorSummaryFromOfferings(offerings, commemorations);
+  const summary = await addOutsideDonorPledgeSummary(env, donor, donorSummaryFromOfferings(offerings, commemorations));
   let parish = null;
   if (donor.defaultParishId) {
     const found = await findRegistrationByParishId(env, donor.defaultParishId);
@@ -1453,7 +1454,7 @@ export async function handleDonorOfferings(request, env) {
   if (!donor) return unauthorized();
   const offerings = await reconcilePendingDonorOfferings(env, await loadDonorOfferings(env, donor.email, 100));
   const commemorations = await loadReconciledDonorCommemorations(env, donor.email, offerings, 100);
-  return json({ offerings: offerings.map(publicDonorOffering), summary: donorSummaryFromOfferings(offerings, commemorations) });
+  return json({ offerings: offerings.map(publicDonorOffering), summary: await addOutsideDonorPledgeSummary(env, donor, donorSummaryFromOfferings(offerings, commemorations)) });
 }
 
 export async function handleDonorSubscriptionPortal(request, env) {
