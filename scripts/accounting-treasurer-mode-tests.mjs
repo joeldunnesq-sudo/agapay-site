@@ -211,7 +211,7 @@ const expectedLabels = {
   acct_4300:"Bookstore Sales"
 };
 for (const [accountId, label] of Object.entries(expectedLabels)) {
-  assert.match(app, new RegExp(`${accountId}:\\s*'${label.replace(/[&]/g, "\\&")}'`));
+  assert.match(app, new RegExp(`${accountId}:\\s*'${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}'`));
 }
 assert.match(app, /ACCOUNTING_SIMPLE_REVENUE_LABELS\[account\.id\] \|\| account\.name/);
 console.log("PASS - seeded and custom revenue accounts have the required plain-language labels");
