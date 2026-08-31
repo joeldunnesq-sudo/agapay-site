@@ -106,6 +106,10 @@ a { color: inherit; }
 .give-campaign-story > p { color: var(--give-muted); line-height: 1.75; }
 .give-campaign-story .give-check-list { gap: 1rem; font-size: .9rem; line-height: 1.65; }
 .give-campaign-story .give-check-list strong { color: var(--give-ink); }
+.give-campaign-urgent { padding: 1.1rem 1.25rem; border-left: 3px solid var(--give-gold); background: var(--give-cream); border-radius: 0 12px 12px 0; }
+.give-campaign-urgent h4 { margin: 0 0 .6rem; font-size: 1rem; line-height: 1.45; }
+.give-campaign-urgent p { margin: .6rem 0; color: #4c5962; font-size: .88rem; line-height: 1.65; }
+.give-campaign-urgent small { display: block; color: var(--give-muted); font-size: .75rem; line-height: 1.6; }
 .give-campaign-actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.5rem; }
 .give-campaign-savings { padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid rgba(38,120,78,.24); border-radius: 18px; background: linear-gradient(145deg,#edf6ef,#fffdf8); box-shadow: var(--give-shadow); }
 .give-campaign-savings .give-eyebrow { color: var(--give-green); }
