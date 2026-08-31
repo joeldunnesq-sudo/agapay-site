@@ -45,10 +45,10 @@ assert.deepEqual([software.offers.lowPrice, software.offers.highPrice], ["9", "2
 const homepageGraph = JSON.parse(read("public/index.html").match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1])["@graph"];
 assert.deepEqual(homepageGraph.find((item) => item["@id"] === software["@id"]), software, "homepage and Give must describe one software entity with consistent pricing and features");
 assert.equal(software.isAccessibleForFree, false, "free registration must not mark the paid parish software as free");
-const textContent = (html) => html.replace(/<[^>]*>/g, "").replaceAll("&amp;", "&").replace(/\s+/g, " ").trim();
+const escapeText = (text) => text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 const faqSection = overview.match(/<section[^>]+id="faq"[\s\S]*?<\/section>/)[0];
-const visibleFaqs = [...faqSection.matchAll(/<details><summary>([\s\S]*?)<\/summary><p>([\s\S]*?)<\/p><\/details>/g)].map((match) => ({ name: textContent(match[1]), text: textContent(match[2]) }));
-const structuredFaqs = graph.find((item) => item["@type"] === "FAQPage").mainEntity.map((item) => ({ name: item.name, text: item.acceptedAnswer.text }));
+const visibleFaqs = [...faqSection.matchAll(/<details><summary>([\s\S]*?)<\/summary><p>([\s\S]*?)<\/p><\/details>/g)].map((match) => ({ name: match[1], text: match[2] }));
+const structuredFaqs = graph.find((item) => item["@type"] === "FAQPage").mainEntity.map((item) => ({ name: escapeText(item.name), text: escapeText(item.acceptedAnswer.text) }));
 assert.deepEqual(structuredFaqs, visibleFaqs, "every structured FAQ must match an actual visible question and answer");
 
 const planCards = [...overview.matchAll(/<article class="give-plan-card[^\"]*">([\s\S]*?)<\/article>/g)].map((match) => match[1]);
