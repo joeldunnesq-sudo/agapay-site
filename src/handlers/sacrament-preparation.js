@@ -8,6 +8,7 @@ import {
   validateSacramentDocumentUpload
 } from "../lib/sacrament-document-storage.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
+import { hasModuleAccess } from "../lib/entitlements.js";
 import {
   getBearerToken,
   hasProductionStore,
@@ -18,7 +19,6 @@ import {
 } from "../lib/core.js";
 import {
   findRegistrationByParishId,
-  hasParishPlusAccess,
   requireDonor,
   sacramentsEnabledFor,
   verifyParishDashboardBearer
@@ -48,12 +48,10 @@ async function requireParishPreparationContext(request, env, parishId) {
   if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) {
     return { response: unauthorized() };
   }
-  if (!sacramentsEnabledFor(found.registration)) {
+  if (!hasModuleAccess(found.registration, "sacraments")) {
     return {
       response: json({
-        error: hasParishPlusAccess(found.registration)
-          ? "Sacraments & Services is coming soon for your parish."
-          : "Sacraments & Services requires AGAPAY Parish +."
+        error: "Sacraments & Services requires the Sacraments add-on or Parish."
       }, { status: 402 })
     };
   }

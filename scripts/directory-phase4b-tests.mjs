@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { seedDirectoryEntitlement } from "./lib/directory-entitlement-fixture.mjs";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -131,6 +132,7 @@ async function requestFor(env, user, path) {
 
 async function fixture() {
   const { env, db } = makeD1Env();
+  seedDirectoryEntitlement(db);
   const actor = seedActor();
   await updateDirectorySettings(env, { actor, parishId: "st-fiacre", patch: { directoryEnabled: true, ordinaryMemberAccessEnabled: true } });
 

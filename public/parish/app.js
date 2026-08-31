@@ -139,7 +139,7 @@
     content?.classList.toggle('commerce-tab-active', tab === 'bookstore');
     document.querySelector('.app')?.classList.toggle('sacraments-tab-active', tab === 'sacraments');
     content?.classList.toggle('sacraments-tab-active', tab === 'sacraments');
-    if (tab === 'accounting') window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (['accounting', 'reconcile'].includes(tab)) window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     activeTab = tab;
     const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship Health', accounting:'Accounting', sacraments:'Sacraments & Services', directory:'Parish Directory', library:'Parish Library', communications:'Communications', bookstore:'Commerce' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
@@ -214,10 +214,10 @@
     if (featureDescription) featureDescription.textContent = ministryService
       ? 'Consider publishing ministry opportunities or inviting parishioners to speak with a ministry leader after services.'
       : givingPlus
-      ? 'Give + unlocks designated funds, candles, commemorations, campaigns, festal alms, and other donor giving choices.'
-      : 'The Stewardship tier gives parishioners a live pledge tracker and gives parish leaders pledge, giving-health, and annual-meeting insights.';
+      ? 'Give + adds campaigns, festal alms, branding, annual statements, and enhanced reporting to complete essential giving.'
+      : 'Give + gives parishioners a live pledge tracker and gives parish leaders pledge, giving-health, and annual-meeting insights.';
     if (action) {
-      action.textContent = ministryService ? 'Acknowledge' : givingPlus ? 'View Give + tier' : 'View Stewardship tier';
+      action.textContent = ministryService ? 'Acknowledge' : givingPlus ? 'View Give + tier' : 'View Give + tier';
       action.setAttribute('onclick', ministryService ? 'dismissParishFeatureRequest(false)' : 'dismissParishFeatureRequest(true)');
     }
     if (status) status.textContent = 'Requests are counted privately; donor identities are not shown.';
@@ -591,11 +591,11 @@
     options: ['Custom funds & alms', 'Create and name custom funds, organize designated giving, and manage standing alms with Give +.'],
     campaigns: ['Campaign pages', 'Create goal-based, shareable campaigns with Give +.'],
     givers: ['Giver insights', 'See donor-level history and deeper giving reports with Give +.'],
-    reconcile: ['Monthly reconciliation', 'Match gifts, fees, refunds, and Stripe deposits with Give +.'],
+    reconcile: ['Monthly reconciliation', 'Understand Stripe payouts and fund allocations on every plan.'],
     commemorations: ['Commemorations', 'Give includes candle giving. Liturgical commemorations, Moliebens, Panikhidas, and the priest queue are included with Give +.'],
     statements: ['Annual giving statements', 'Generate and email annual donor statements with Give +.'],
-    stewardship: ['Stewardship Health', 'Track pledges, understand giving health, prepare stewardship reports, and keep annual records with the Stewardship tier.'],
-    bookstore: ['Parish Commerce', 'Manage bookstore sales now and add more parish commerce products as they become available in the Stewardship tier.'],
+    stewardship: ['Stewardship Health', 'Track pledges, understand giving health, prepare stewardship reports, and keep annual records with Give +.'],
+    bookstore: ['Parish Commerce', 'Manage bookstore sales now and add more parish commerce products as they become available with Give +; Events and Meals require Full Commerce or Parish.'],
     sacraments: ['Sacraments & Services', 'Receive pastoral requests, coordinate clergy schedules, and keep families informed with the Parish tier.'],
     text: ['Text-to-Give', 'Reserve parish keywords and route donors from the shared AGAPAY number to the right giving page with the Parish tier.'],
     accounting: ['Parish Accounting', 'Keep funds, ledgers, payables, budgets, reconciliation, and financial reports together with the Parish tier.'],
@@ -684,14 +684,16 @@
     const givingPlusLocked = !hasGivingPlusAccess();
     const givingPlusTargets = {
       campaigns: document.getElementById('tab-campaigns'),
-      givers: document.getElementById('tab-givers'),
-      reconcile: document.getElementById('tab-reconcile'),
       statements: document.getElementById('pdxGsSection')
     };
     Object.entries(givingPlusTargets).forEach(([key, element]) => {
       syncDashboardPaywall(element, key, 'Give +', givingPlusLocked);
-      if (['campaigns', 'givers', 'reconcile'].includes(key)) syncTierRequirementNavigation(key, 'Give +', !givingPlusLocked);
+      if (key === 'campaigns') syncTierRequirementNavigation(key, 'Give +', !givingPlusLocked);
     });
+    syncDashboardPaywall(document.getElementById('tab-givers'), 'givers', 'Give', false);
+    syncTierRequirementNavigation('givers', 'Give', true);
+    syncDashboardPaywall(document.getElementById('tab-reconcile'), 'reconcile', 'Give', false);
+    syncTierRequirementNavigation('reconcile', 'Give', true);
     const optionsIncluded = hasFundManagementAccess();
     syncDashboardPaywall(document.getElementById('tab-options'), 'options', 'Give +', !optionsIncluded);
     syncTierRequirementNavigation('options', 'Give +', optionsIncluded);
@@ -700,8 +702,8 @@
     syncDashboardPaywall(document.getElementById('tab-stewardship'), 'stewardship', 'Give +', stewardshipLocked);
     syncTierRequirementNavigation('stewardship', 'Give +', !stewardshipLocked);
     const bookstoreLocked = !moduleIncluded('bookstore');
-    syncDashboardPaywall(document.getElementById('tab-bookstore'), 'bookstore', 'Bookstore add-on', bookstoreLocked);
-    syncTierRequirementNavigation('bookstore', 'Bookstore add-on', !bookstoreLocked);
+    syncDashboardPaywall(document.getElementById('tab-bookstore'), 'bookstore', 'Give +', bookstoreLocked);
+    syncTierRequirementNavigation('bookstore', 'Give +', !bookstoreLocked);
 
     const parishTargets = {
       text: document.getElementById('tab-text')
@@ -731,7 +733,7 @@
 
   function updateStewardshipBadges(isActive, options = {}) {
     window.ParishFeatureRegistry?.get('stewardship')?.renderMeetings(isActive);
-    const stewardshipActive = !isStarterTier() && moduleIncluded('stewardshipHealth');
+    const stewardshipActive = moduleIncluded('stewardshipHealth');
     const bookstoreActive = moduleIncluded('bookstore');
     const sacramentsActive = moduleIncluded('sacraments');
     const parishLifeAvailable = Boolean(currentParish?.parishLifeAvailable);
@@ -742,7 +744,7 @@
     syncTierRequirementNavigation('stewardship', 'Give +', stewardshipActive);
     const bookstoreBadge = document.getElementById('bookstoreNavBadge');
     const mobileBookstoreBadge = document.getElementById('mobileBookstoreBadge');
-    syncTierRequirementNavigation('bookstore', 'Bookstore add-on', bookstoreActive);
+    syncTierRequirementNavigation('bookstore', 'Give +', bookstoreActive);
     if (bookstoreBadge) {
       bookstoreBadge.hidden = bookstoreActive;
       bookstoreBadge.textContent = 'Upgrade';
@@ -765,7 +767,7 @@
       sacBadge.classList.remove('nav-upgrade-badge--active');
     }
     syncModuleStatusNavigation('sacraments', sacramentsActive, sacIsOn);
-    const libraryIncluded = isParishPlusActive();
+    const libraryIncluded = moduleIncluded('library');
     syncTierRequirementNavigation('library', 'Give +', libraryIncluded);
     syncModuleStatusNavigation('library', libraryIncluded && typeof currentParish?.libraryEnabled === 'boolean', Boolean(currentParish?.libraryEnabled));
     syncModuleStatusNavigation('directory', moduleIncluded('directory'), Boolean(currentParish?.directoryEnabled));
@@ -1198,7 +1200,7 @@
       <div class="pdx-sub-modules">
         <div class="pdx-sub-modules-head"><div><span>Plan access</span><strong>Included parish tools</strong></div><button type="button" onclick="switchTab('settings')">Compare tiers</button></div>
         <div class="pdx-sub-module-grid">
-          ${moduleRow('Give +', 'givingPlus', 'Custom funds, campaigns, givers, and reconciliation', 'Give +')}
+          ${moduleRow('Give +', 'givingPlus', 'Campaigns, branding, and annual statements', 'Give +')}
           ${moduleRow('Stewardship Health', 'stewardshipHealth', 'Pledges, insights, and stewardship reporting', 'Give +')}
           ${moduleRow('Bookstore', 'bookstore', 'Parish commerce and Stripe-powered sales', 'Give +')}
           ${moduleRow('Parish Directory', 'directory', 'Member, household, and ministry records', 'Give +')}
@@ -1222,7 +1224,7 @@
       el.hidden = false;
     });
     syncTierRequirementNavigation('directory', 'Give +', directoryActive);
-    syncTierRequirementNavigation('library', 'Parish', moduleIncluded('sacraments'));
+    syncTierRequirementNavigation('library', 'Give +', moduleIncluded('library'));
     syncTierRequirementNavigation('accounting', 'Accounting add-on', accountingIncluded);
     syncModuleStatusNavigation('accounting', accountingIncluded, accountingIncluded);
     if (accountingNav) accountingNav.title = accountingIncluded ? 'Accounting workspace' : 'Requires Accounting add-on or Parish';
@@ -1234,34 +1236,37 @@
   }
 
   function orderTierNavigation() {
-    // Navigation follows the subscription ladder. Parish-only tools stay
-    // inside their labeled group instead of being pulled into the root nav.
-    const preParishOrder = [
-      'giving', 'qr', 'history', 'options', 'campaigns', 'givers', 'reconcile',
-      'stewardship', 'bookstore'
+    const groups = [
+      { id: 'give', label: 'Give', tabs: ['giving', 'history', 'givers', 'reconcile', 'options', 'qr'] },
+      { id: 'giving-plus', label: 'Give +', tabs: ['campaigns', 'stewardship', 'directory', 'library', 'communications', 'bookstore'] },
+      { id: 'parish', label: 'Parish', tabs: ['sacraments', 'accounting', 'text'] }
     ];
-    // Product requirement: Koinonia sits directly after Directory and before
-    // Accounting in the bottom Parish tier block.
-    const parishOrder = ['sacraments', 'directory', 'library', 'communications', 'accounting', 'text'];
     const sidebar = document.querySelector('.sidebar-nav');
-    preParishOrder.forEach((tab) => {
-      const item = document.getElementById(`nav-${tab}`);
-      if (sidebar && item) sidebar.appendChild(item);
+    const mobile = document.querySelector('.mobile-tabbar');
+    groups.forEach(({ id, label, tabs }) => {
+      const group = document.getElementById(`nav-tier-${id}`);
+      if (sidebar && group) sidebar.appendChild(group);
+      if (mobile) {
+        let heading = mobile.querySelector(`[data-tier-heading="${id}"]`);
+        if (!heading) {
+          heading = document.createElement('span');
+          heading.className = 'mobile-tier-heading';
+          heading.dataset.tierHeading = id;
+          heading.textContent = label;
+        }
+        mobile.appendChild(heading);
+      }
+      tabs.forEach((tab) => {
+        const item = document.getElementById(`nav-${tab}`);
+        if (group && item) group.appendChild(item);
+        const mobileItem = document.querySelector(`.mobile-tab-link[data-nav-tab="${tab}"]`);
+        if (mobile && mobileItem) mobile.appendChild(mobileItem);
+      });
     });
-    const parishGroup = document.getElementById('nav-tier-parish');
-    parishOrder.forEach((tab) => {
-      const item = document.getElementById(`nav-${tab}`);
-      if (parishGroup && item) parishGroup.appendChild(item);
-    });
-    if (sidebar && parishGroup) sidebar.appendChild(parishGroup);
     const settings = document.getElementById('nav-settings');
     if (sidebar && settings) sidebar.appendChild(settings);
-
-    const mobile = document.querySelector('.mobile-tabbar');
-    [...preParishOrder, ...parishOrder, 'settings'].forEach((tab) => {
-      const item = document.querySelector(`.mobile-tab-link[data-nav-tab="${tab}"]`);
-      if (mobile && item) mobile.appendChild(item);
-    });
+    const mobileSettings = document.querySelector('.mobile-tab-link[data-nav-tab="settings"]');
+    if (mobile && mobileSettings) mobile.appendChild(mobileSettings);
   }
 
   // ── SALES-TAX EXEMPTION ───────────────────────────────────
@@ -1686,11 +1691,11 @@
         <label class="check-card"><input id="recurringGivingEnabled" type="checkbox" ${(p.recurringGivingEnabled??true)?'checked':''} /> Recurring giving</label>
         <label class="check-card"><input id="candlesEnabled" type="checkbox" ${(p.candlesEnabled??true)?'checked':''} /> Candles</label>
         <label class="check-card"><input id="commemorationsEnabled" type="checkbox" ${(p.commemorationsEnabled??true)?'checked':''} /> Commemorations</label>
-        <label class="check-card" ${moduleIncluded('bookstore')?'':'title="Requires the Bookstore or Full Commerce add-on"'}>
+        <label class="check-card" ${moduleIncluded('bookstore')?'':'title="Requires Give + or Parish"'}>
           <input id="bookstoreEnabled" type="checkbox" ${moduleIncluded('bookstore')?'':'disabled'} ${(p.bookstoreEnabled??false)?'checked':''} /> Bookstore Payments
         </label>
       </div>
-      ${moduleIncluded('bookstore') ? '' : '<p class="section-note">Bookstore Payments is available through the Bookstore add-on, Full Commerce, or Parish. Full Commerce already includes Bookstore.</p>'}
+      ${moduleIncluded('bookstore') ? '' : '<p class="section-note">Bookstore is included in Give +. Full Commerce adds Events and Meals; Parish includes the entire suite.</p>'}
       <div class="btn-row">
         <button class="btn btn-gold" onclick="saveDashboard(this)">Save changes</button>
         ${(p.setup||{}).billingActive?'<button class="btn btn-primary" onclick="startStripeOnboarding(this)">Start Stripe onboarding</button>':'<button class="btn btn-ghost" disabled title="Complete AGAPAY billing first">Stripe unlocks after billing</button>'}
@@ -1707,14 +1712,6 @@
     loadParishTaxExemption();
 
     editableFunds          = fallbackFundsArray(p.funds);
-    if (!hasGivingPlusAccess()) {
-      let activeDesignatedSeen = false;
-      editableFunds = editableFunds.map((fund) => {
-        if (!fund || isGeneralDashboardFund(fund) || isCandleDashboardFund(fund) || fund.enabled === false || fund.active === false) return fund;
-        if (!activeDesignatedSeen) { activeDesignatedSeen = true; return fund; }
-        return { ...fund, enabled: false };
-      });
-    }
     editableCampaigns      = fallbackCampaignsArray(p.campaigns);
     editableFeastCampaigns = Array.isArray(p.feastCampaigns)
       ? p.feastCampaigns.map((campaign) => ({ ...campaign, destinationFundId: campaign.destinationFundId || 'benevolence-fund' }))

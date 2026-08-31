@@ -189,7 +189,7 @@ function renderStewardshipUnavailableForTier() {
     planPane.innerHTML =
       '<div class="sw-upsell-row-inner">' +
       '<div class="sw-upsell-row-copy">' +
-      '<strong>Stewardship plan</strong>' +
+      '<strong>Stewardship Health · Give +</strong>' +
       '<p>Upgrade to Stewardship or Parish to use pledge reports, donor insights, and Stewardship Health.</p>' +
       '</div>' +
       '<div class="sw-upsell-row-actions">' +
@@ -283,8 +283,8 @@ function renderStewardshipUpsellState(planPane) {
   planPane.innerHTML =
     '<div class="sw-upsell-row-inner">' +
     '<div class="sw-upsell-row-copy">' +
-    '<strong>Stewardship plan</strong>' +
-    '<p>Stewardship reports, pledge context, and giving-health insights are included with Stewardship and Parish.</p>' +
+    '<strong>Stewardship Health · Give +</strong>' +
+    '<p>Stewardship reports, pledge context, and giving-health insights are included with Give + and Parish.</p>' +
     '</div>' +
     '<div class="sw-upsell-row-actions">' +
     '<button class="sw-subscribe-btn" type="button" onclick="switchTab(\'settings\')">Review tier settings</button>' +

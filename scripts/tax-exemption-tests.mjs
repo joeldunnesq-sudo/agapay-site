@@ -1258,13 +1258,6 @@ await test("re-applying to the same Stewardship Customer does not create a dupli
   assert.equal(rows.length, 1, "the UNIQUE(tax_exemption_id, stripe_customer_id) constraint prevents a duplicate row");
 });
 
-await test("both Stewardship Customer-creation call sites in src/handlers/stewardship.js use the shared helper", () => {
-  const stewardshipSource = readFileSync(path.join(__dirname, "..", "src", "handlers", "stewardship.js"), "utf8");
-  const occurrences = (stewardshipSource.match(/applyApprovedExemptionIfExists/g) || []).length;
-  assert.equal(occurrences, 3, "expected 1 import + 2 call sites (the two independent Stewardship checkout routes)");
-  assert.ok(stewardshipSource.includes('customerRole: "stewardship"'));
-});
-
 await test("a claim-scoped upload token authorizes only its own claim and expires", async () => {
   const { env, db } = makeD1Env();
   seedRegistration(db, { reference: "AGP-REG-TOKEN-1", parishId: "st-gregory" });

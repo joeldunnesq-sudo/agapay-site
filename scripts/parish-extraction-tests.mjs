@@ -241,7 +241,6 @@ assertImports(parishSacraments, "./parish.js", [
   "findRegistrationByParishId",
   "generateSecret",
   "getBearerToken",
-  "hasParishPlusAccess",
   "hasProductionStore",
   "json",
   "missingProductionStoreResponse",
@@ -290,7 +289,6 @@ assertImports(parishCommerce, "./parish.js", [
   "findRegistrationByParishId",
   "generateSecret",
   "getBearerToken",
-  "hasParishPlusAccess",
   "hasProductionStore",
   "json",
   "missingProductionStoreResponse",
@@ -360,10 +358,8 @@ const reconciliationPublicFunctions = [
 ];
 const reconciliationPrivateHelpers = [
   "paymentIntentFromStripeSource",
-  "reconciliationAllocation",
   "signedFeeParts",
   "reconciliationCloseRecord",
-  "saveReconciliationCloseRecord",
   "paymentIntentForReconciliationTransaction",
 ];
 for (const name of [...reconciliationPublicFunctions, ...reconciliationPrivateHelpers]) {
@@ -385,7 +381,6 @@ assertImports(parishReconciliation, "./parish.js", [
   "hasProductionStore",
   "json",
   "loadDonorOfferingByPaymentIntent",
-  "loadParishPaidOfferings",
   "missingProductionStoreResponse",
   "rateLimit",
   "unauthorized",
@@ -394,7 +389,7 @@ assertImports(parishReconciliation, "./parish.js", [
 assertImports(parishReconciliation, "../lib/core.js", [
   "d1",
   "d1GetSetting",
-  "d1SetSetting",
+  "resolveParishDashboardSession",
 ]);
 assertImports(parishReconciliation, "../lib/stripe-connect.js", [
   "stripeGetConnectedRequest",

@@ -22,15 +22,12 @@ const parishGroupSource = dashboard.slice(parishGroupStart, settingsStart);
 const parishItems = [...parishGroupSource.matchAll(/class="sidebar-nav-item"[^>]*id="(nav-[^"]+)"/g)].map((match) => match[1]);
 assert.deepEqual(parishItems, [
   "nav-sacraments",
-  "nav-directory",
-  "nav-library",
-  "nav-communications",
   "nav-accounting",
   "nav-text",
-], "Parish Library and Koinonia must remain grouped between Directory and Accounting");
+], "Parish-only tools stay in the Parish group");
 
-assert.match(app, /const parishOrder = \['sacraments', 'directory', 'library', 'communications', 'accounting', 'text'\]/, "runtime ordering must place Parish Library before Koinonia and Accounting");
-assert.match(app, /parishOrder\.forEach[\s\S]*parishGroup\.appendChild\(item\)[\s\S]*sidebar\.appendChild\(parishGroup\)/, "runtime ordering must keep all Parish items inside the labeled group");
+assert.match(app, /tabs: \['campaigns', 'stewardship', 'directory', 'library', 'communications', 'bookstore'\]/, "Give + groups community tools with Commerce last");
+assert.match(app, /tabs: \['giving', 'history', 'givers', 'reconcile', 'options', 'qr'\]/, "basic giving includes Givers and reconciliation in order");
 
 assert.match(dashboard, /<body class="dashboard-booting">[\s\S]*id="dashboardBootScreen"[\s\S]*<div class="app">/, "the gated dashboard must start behind a dedicated loading screen");
 const featureAssetVersions = [

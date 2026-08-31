@@ -1,3 +1,5 @@
+import { hasModuleAccess } from "../lib/entitlements.js";
+import { actorDto } from "./admin-actor.js";
 import { currentUser, resolveAuthorizationContext } from "../lib/authorization.js";
 import { d1All, d1First, generateSecret, getBearerToken, resolveParishDashboardSession } from "../lib/core.js";
 import { findRegistrationByParishId } from "../handlers/parish.js";
@@ -134,16 +136,6 @@ function requireAny(actor, parishId, capabilities) {
   return assertParishActor(actor, parishId, [...capabilities, DIRECTORY_CAPABILITIES.manage]);
 }
 
-function actorDto(ctx) {
-  return {
-    userId: ctx.user.id,
-    actorType: ctx.actorType || "platform_user",
-    parishId: ctx.parishId || ctx.membership?.parishId,
-    capabilities: ctx.capabilities,
-    personId: ctx.personId || ""
-  };
-}
-
 async function linkedPersonId(env, userId) {
   const row = await d1First(
     env,
@@ -164,6 +156,8 @@ export async function resolveDirectoryAdminContext(env, { request, parishId }) {
   if (!membership) throw new DirectoryServiceError("forbidden", "Directory administration requires an active parish membership.", 403);
   const directoryCapabilities = capabilities.filter((capability) => capability.startsWith("directory."));
   if (!directoryCapabilities.length) throw new DirectoryServiceError("forbidden", "Directory administration requires a directory capability.", 403);
+  const found = await findRegistrationByParishId(env, cleanedParishId);
+  if (!hasModuleAccess(found?.registration, "directory")) throw new DirectoryServiceError("subscription_required", "Parish Directory requires Give + or Parish.", 403);
   const personId = await linkedPersonId(env, user.id);
   const actor = { userId: user.id, parishId: cleanedParishId, capabilities, personId };
   return {
@@ -230,6 +224,7 @@ export async function requireParishDashboardDirectoryAccess(request, env, { pari
   if (!found?.registration) return null;
   const session = await resolveParishDashboardSession(found.registration, getBearerToken(request));
   if (!session) return null;
+  if (!hasModuleAccess(found.registration, "directory")) throw new DirectoryServiceError("subscription_required", "Parish Directory requires Give + or Parish.", 403);
 
   const actorId = cleanedParishId;
   const actorLabel = found.registration.contactEmail

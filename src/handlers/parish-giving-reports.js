@@ -17,6 +17,8 @@ import {
   unauthorized,
   verifyParishDashboardBearer,
 } from "./parish.js";
+import { fundReportPeriod, parishReportingTimezone, loadFundGiftActivity } from "../lib/fund-reporting.js";
+import { exportMonthlyGiving } from "../lib/monthly-giving-export.js";
 import { d1 } from "../lib/core.js";
 import { monthLabel } from "../lib/format.js";
 import {
@@ -161,6 +163,15 @@ export async function handleParishGivingSummary(request, env, parishId) {
     return unauthorized();
   }
 
+  if (new URL(request.url).searchParams.get("view") === "weekly-funds") {
+    try {
+      const period = fundReportPeriod({ week: true, timezone: parishReportingTimezone(found.registration) });
+      return json({ weeklyFunds: await loadFundGiftActivity(env, parishId, period, found.registration) });
+    } catch {
+      return json({ error: "Weekly fund totals could not be verified. Please retry." }, { status: 503 });
+    }
+  }
+
   const emptySummary = {
     ...summarizeCharges([]),
     generatedAt: new Date().toISOString()
@@ -276,6 +287,10 @@ export async function handleParishGivingHistory(request, env, parishId) {
   const token = getBearerToken(request);
   if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
+  }
+
+  if (new URL(request.url).searchParams.get("format") === "csv") {
+    return exportMonthlyGiving(request, env, parishId, found.registration);
   }
 
   const [gifts, manualAccountingGifts] = await Promise.all([

@@ -37,7 +37,6 @@ import { verifyStripeWebhook } from "./stripe.js";
 import { requireAdmin } from "./admin.js";
 
 import { getBearerToken } from "../lib/core.js";
-import { applyApprovedExemptionIfExists } from "../lib/tax-exemption.js";
 import { upsertStewardshipFinancialSnapshot } from "../stewardship/financial-snapshots.js";
 import { synchronizeGivingCatalogWithAccounting } from "../accounting/source-wiring.js";
 import {
@@ -226,92 +225,8 @@ async function stripePlatformGet(env, path) {
 
 // ─── Paywall page ─────────────────────────────────────────────────────────────
 
-function paywallHtml(registration, env) {
-  const parishName = registration.parishName || registration.name || "Your Parish";
-  const base = absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL);
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AGAPAY Stewardship</title>
-  <link rel="stylesheet" href="${base}/site-chrome.css" />
-  <link rel="stylesheet" href="${base}/parish/style.css" />
-  <style>
-    .paywall { max-width: 720px; margin: 0 auto; padding: 3rem 1.5rem; }
-    .paywall-hero { text-align: center; margin-bottom: 3rem; }
-    .paywall-hero h1 { font-size: 2.2rem; font-family: var(--font-serif); color: var(--gold); margin-bottom: .5rem; }
-    .paywall-hero p { color: var(--text-muted); max-width: 520px; margin: 0 auto; line-height: 1.6; }
-    .paywall-feature { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; display: flex; gap: 1rem; align-items: flex-start; }
-    .paywall-feature-icon { font-size: 2rem; flex-shrink: 0; }
-    .paywall-feature h3 { margin: 0 0 .25rem; font-size: 1.05rem; }
-    .paywall-feature p { margin: 0; color: var(--text-muted); font-size: .9rem; }
-    .plan-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
-    @media (max-width: 520px) { .plan-cards { grid-template-columns: 1fr; } }
-    .plan-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem 1.5rem; text-align: center; }
-    .plan-card.featured { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 6%, var(--surface-2)); }
-    .plan-card .badge { display: inline-block; background: var(--gold); color: #000; font-size: .7rem; font-weight: 700; letter-spacing: .05em; padding: .2rem .6rem; border-radius: 20px; margin-bottom: .75rem; text-transform: uppercase; }
-    .plan-price { font-size: 2.5rem; font-weight: 700; color: var(--text); margin: .5rem 0 .25rem; }
-    .plan-price span { font-size: 1rem; font-weight: 400; color: var(--text-muted); }
-    .plan-label { color: var(--text-muted); font-size: .9rem; margin-bottom: 1.5rem; }
-    .plan-note { font-size: .8rem; color: var(--text-muted); margin-top: 1.5rem; text-align: center; }
-    .btn-primary { display: inline-block; background: var(--gold); color: #000; font-weight: 600; padding: .75rem 1.5rem; border-radius: 8px; text-decoration: none; border: none; cursor: pointer; font-size: .95rem; width: 100%; }
-    .btn-primary:hover { background: var(--gold-hover, #c8922a); }
-    .coming-soon-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .5rem; }
-    .coming-soon-list li { color: var(--text-muted); font-size: .9rem; }
-    .coming-soon-list li::before { content: "⟡ "; color: var(--gold); }
-  </style>
-</head>
-<body class="dashboard-body">
-  <div class="paywall">
-    <div class="paywall-hero">
-      <p style="color:var(--gold);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.5rem">AGAPAY</p>
-      <h1>AGAPAY Stewardship</h1>
-      <p>Parish commerce, annual meeting packets, parish council records, restricted fund reporting, and faithful parish administration — built for Orthodox communities.</p>
-    </div>
-
-    <div class="paywall-feature">
-      <div class="paywall-feature-icon">📋</div>
-      <div>
-        <h3>Annual Meeting Packet Builder</h3>
-        <p>Generate a complete, branded annual parish meeting packet — agenda, reports, financial summary, restricted funds, nominations, and resolutions — in minutes.</p>
-      </div>
-    </div>
-
-    <div class="plan-cards">
-      <div class="plan-card">
-        <div class="plan-price">$39<span>/mo</span></div>
-        <div class="plan-label">Monthly plan</div>
-        <form method="POST" action="/parish/stewardship/subscribe">
-          <input type="hidden" name="plan" value="monthly" />
-          <button type="submit" class="btn-primary">Start Monthly</button>
-        </form>
-      </div>
-      <div class="plan-card featured">
-        <div class="badge">Best Value</div>
-        <div class="plan-price">$399<span>/yr</span></div>
-        <div class="plan-label">Annual plan — save $69</div>
-        <form method="POST" action="/parish/stewardship/subscribe">
-          <input type="hidden" name="plan" value="annual" />
-          <button type="submit" class="btn-primary">Start Annual</button>
-        </form>
-      </div>
-    </div>
-
-    <p class="plan-note">Your subscription applies to the <strong>${escHtml(parishName)}</strong> parish account. A 14-day free trial is included.</p>
-
-    <div style="margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border)">
-        <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1rem">Coming soon in Parish +:</p>
-      <ul class="coming-soon-list">
-        <li>Document Vault</li>
-        <li>Compliance Calendar</li>
-        <li>Parish Council Records</li>
-      </ul>
-    </div>
-  </div>
-  ${stewardshipSessionScript()}
-</body>
-</html>`;
+function paywallHtml() {
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Stewardship Health — AGAPAY</title></head><body><main><h1>Stewardship Health is included in Give +</h1><p>Choose Give + or Parish in your dashboard settings to access stewardship reports, pledge context, and giving-health insights.</p><a href="/parish/dashboard">Review current plans</a></main></body></html>`;
 }
 
 // ─── Module home (when subscribed) ───────────────────────────────────────────
@@ -1856,86 +1771,14 @@ export async function handleParishStewardshipSummary(request, env, parishId) {
     stewardship: stewardshipPublicStatus(registration),
     setupRequired,
     meetings: (meetings || []).map(publicMeeting),
-    subscribePlans: [
-      { id: "monthly", label: "Monthly", priceLabel: "$39/mo", trialLabel: "14-day free trial" },
-      { id: "annual", label: "Annual", priceLabel: "$399/yr", trialLabel: "Save $69 annually" }
-    ]
+    subscribePlans: []
   });
 }
 
 export async function handleParishStewardshipSubscribe(request, env, parishId) {
-  if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const ctx = await requireParishApiContext(request, env, parishId);
   if (!ctx.ok) return ctx.response;
-  const { registration, key: registrationKey } = ctx;
-  if (STEWARDSHIP_COMING_SOON) return stewardshipComingSoonJson();
-
-  const limited = await rateLimit(request, env, "stewardship-subscribe", { limit: 5, windowSeconds: 60 });
-  if (limited) return limited;
-
-  const body = await parseJsonBody(request);
-  if (!body) return json({ error: "Invalid JSON body" }, { status: 400 });
-  const plan = body.plan === "annual" ? "annual" : "monthly";
-  const priceId = plan === "annual"
-    ? env.STEWARDSHIP_STRIPE_PRICE_ANNUAL
-    : env.STEWARDSHIP_STRIPE_PRICE_MONTHLY;
-  if (!priceId) {
-    return json({ error: "Stewardship pricing is not configured yet." }, { status: 500 });
-  }
-
-  const base = absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL);
-  let customerId = registration.stewardshipStripeCustomerId;
-  if (!customerId) {
-    const customer = await stripePlatformPost(env, "/customers", {
-      email: registration.email || registration.contactEmail || "",
-      name: registration.parishName || registration.name || "",
-      metadata: { parish_id: registration.parishId },
-    });
-    if (customer.error) return json({ error: customer.error?.message || "Could not create billing customer." }, { status: 500 });
-    customerId = customer.id;
-    registration.stewardshipStripeCustomerId = customerId;
-    await saveRegistrationRecord(env, registrationKey, registration);
-
-    // A parish may have had its exemption claim approved before this
-    // Stewardship Customer existed (see approveTaxExemption's "waiting
-    // for customer" path in src/lib/tax-exemption.js). Apply it now,
-    // before creating the first taxable Stewardship Checkout Session --
-    // never silently create a taxable subscription for an
-    // already-approved-exempt parish. Uses the exact same helper already
-    // proven for Giving/Parish+ in src/lib/subscription-checkout.js.
-    const exemptionApplied = await applyApprovedExemptionIfExists(env, {
-      registration: { ...registration, reference: registrationKey },
-      stripeCustomerId: customerId,
-      customerRole: "stewardship"
-    });
-    if (exemptionApplied.applied && !exemptionApplied.ok) {
-      return json(
-        { error: "Billing configuration issue -- your organization's approved tax exemption could not be applied yet. Please contact support@agapay.app before completing checkout." },
-        { status: 503 }
-      );
-    }
-  }
-
-  const session = await stripePlatformPost(env, "/checkout/sessions", {
-    customer: customerId,
-    mode: "subscription",
-    "automatic_tax[enabled]": "true",
-    billing_address_collection: "required",
-    "customer_update[address]": "auto",
-    "line_items[0][price]": priceId,
-    "line_items[0][quantity]": "1",
-    "subscription_data[trial_period_days]": "14",
-    "subscription_data[metadata][parish_id]": registration.parishId,
-    "metadata[parish_id]": registration.parishId,
-    "metadata[product_key]": STEWARDSHIP_PRODUCT_KEY,
-    success_url: base + "/parish/dashboard?tab=stewardship&subscribed=1",
-    cancel_url: base + "/parish/dashboard?tab=stewardship",
-  });
-
-  if (session.error || !session.url) {
-    return json({ error: session.error?.message || "Could not create checkout session." }, { status: 500 });
-  }
-  return json({ ok: true, checkoutUrl: session.url });
+  return json({ error: "Separate Stewardship subscriptions have been retired. Stewardship Health is included in Give + and Parish. Choose a current plan in parish dashboard settings.", code: "subscription_option_retired" }, { status: 410 });
 }
 
 export async function handleParishStewardshipBillingPortal(request, env, parishId) {
@@ -2145,92 +1988,11 @@ export async function handleStewardshipHome(request, env) {
 
 // POST /parish/stewardship/subscribe
 export async function handleStewardshipSubscribe(request, env) {
-  if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const ctx = await requireParishContext(request, env);
   if (!ctx.ok) return ctx.response;
-  const { registration, key: registrationKey } = ctx;
-  if (STEWARDSHIP_COMING_SOON) {
-    return new Response(stewardshipComingSoonHtml(registration, env), {
-      status: 409,
-      headers: { "Content-Type": "text/html;charset=utf-8" },
-    });
-  }
-
-  const limited = await rateLimit(request, env, "stewardship-subscribe", { limit: 5, windowSeconds: 60 });
-  if (limited) return limited;
-
-  const form = await parseFormBody(request);
-  const plan = form.plan === "annual" ? "annual" : "monthly";
-
-  // Determine Stripe Price ID from env
-  const priceId = plan === "annual"
-    ? env.STEWARDSHIP_STRIPE_PRICE_ANNUAL
-    : env.STEWARDSHIP_STRIPE_PRICE_MONTHLY;
-
-  if (!priceId) {
-    return json({ error: "Stewardship pricing not configured. Set STEWARDSHIP_STRIPE_PRICE_MONTHLY and STEWARDSHIP_STRIPE_PRICE_ANNUAL." }, { status: 500 });
-  }
-
-  const base = absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL);
-
-  // Create or retrieve Stripe customer for this parish
-  let customerId = registration.stewardshipStripeCustomerId;
-  if (!customerId) {
-    const customer = await stripePlatformPost(env, "/customers", {
-      email: registration.email || registration.contactEmail || "",
-      name: registration.parishName || registration.name || "",
-      metadata: { parish_id: registration.parishId },
-    });
-    if (customer.error) return json({ error: "Could not create billing customer." }, { status: 500 });
-    customerId = customer.id;
-    registration.stewardshipStripeCustomerId = customerId;
-    await saveRegistrationRecord(env, registrationKey, registration);
-
-    // A parish may have had its exemption claim approved before this
-    // Stewardship Customer existed (see approveTaxExemption's "waiting
-    // for customer" path in src/lib/tax-exemption.js). Apply it now,
-    // before creating the first taxable Stewardship Checkout Session --
-    // never silently create a taxable subscription for an
-    // already-approved-exempt parish. Uses the exact same helper already
-    // proven for Giving/Parish+ in src/lib/subscription-checkout.js.
-    const exemptionApplied = await applyApprovedExemptionIfExists(env, {
-      registration: { ...registration, reference: registrationKey },
-      stripeCustomerId: customerId,
-      customerRole: "stewardship"
-    });
-    if (exemptionApplied.applied && !exemptionApplied.ok) {
-      return json(
-        { error: "Billing configuration issue -- your organization's approved tax exemption could not be applied yet. Please contact support@agapay.app before completing checkout." },
-        { status: 503 }
-      );
-    }
-  }
-
-  // Create Stripe Checkout Session
-  const session = await stripePlatformPost(env, "/checkout/sessions", {
-    customer: customerId,
-    mode: "subscription",
-    "automatic_tax[enabled]": "true",
-    billing_address_collection: "required",
-    "customer_update[address]": "auto",
-    "line_items[0][price]": priceId,
-    "line_items[0][quantity]": "1",
-    "subscription_data[trial_period_days]": "14",
-    "subscription_data[metadata][parish_id]": registration.parishId,
-    "metadata[parish_id]": registration.parishId,
-    "metadata[product_key]": STEWARDSHIP_PRODUCT_KEY,
-    success_url: base + "/parish/stewardship?subscribed=1",
-    cancel_url: base + "/parish/stewardship",
-  });
-
-  if (session.error || !session.url) {
-    return json({ error: session.error?.message || "Could not create checkout session." }, { status: 500 });
-  }
-
-  return Response.redirect(session.url, 303);
+  return json({ error: "Separate Stewardship subscriptions have been retired. Stewardship Health is included in Give + and Parish. Choose a current plan in parish dashboard settings.", code: "subscription_option_retired" }, { status: 410 });
 }
 
-// GET /parish/stewardship/billing
 export async function handleStewardshipBilling(request, env) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const ctx = await requireParishContext(request, env);

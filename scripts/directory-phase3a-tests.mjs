@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { seedDirectoryEntitlement } from "./lib/directory-entitlement-fixture.mjs";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -158,6 +159,7 @@ function grant(db, { userId, parishId = "st-fiacre", capabilities }) {
 
 async function fixture() {
   const { env, db } = makeD1Env();
+  seedDirectoryEntitlement(db);
   const reviewerUser = await ensurePlatformUser(env, { email: "reviewer@example.org", displayName: "Reviewer" });
   const requesterUser = await ensurePlatformUser(env, { email: "anna@example.org", displayName: "Anna Dunn" });
   const limitedUser = await ensurePlatformUser(env, { email: "limited@example.org", displayName: "Limited" });
@@ -298,6 +300,16 @@ await test("admin context denies unrecognized bearer token", async () => {
   assert.equal(response.status, 200);
   const payload = await response.json();
   assert.equal(payload.context.permissions.canReviewRequests, true);
+});
+
+await test("a downgrade revokes directory access for both dashboard and capability-scoped sessions", async () => {
+  const { env, db, reviewerUser } = await fixture();
+  const dashboardRequest = await requestWithParishDashboardSession(env, db);
+  db.prepare("UPDATE registrations SET data=json_set(data,'$.subscriptionTier','starter') WHERE parish_id='st-fiacre'").run();
+  assert.equal((await handleDirectoryAdmin(dashboardRequest, env, "st-fiacre")).status, 403);
+  const session = await issuePlatformUserSession(env, reviewerUser.id);
+  const platformRequest = requestWithSession("https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/context", session, reviewerUser.email);
+  assert.equal((await handleDirectoryAdmin(platformRequest, env, "st-fiacre")).status, 403);
 });
 
 await test("parish dashboard directory actions are audited as parish dashboard account", async () => {
