@@ -25,6 +25,7 @@ jobs:
       - name: Read Test Lubbock accounting and Stripe health
         run: node scripts/accounting-health-live.mjs
         env:
+          TEST_LUBBOCK_PARISH_SESSION: ${{ secrets.TEST_LUBBOCK_PARISH_SESSION }}
           TEST_LUBBOCK_PARISH_PASSWORD: ${{ secrets.TEST_LUBBOCK_PARISH_PASSWORD }}
           TEST_LUBBOCK_STAFF_PROFILE_ID: ${{ secrets.TEST_LUBBOCK_STAFF_PROFILE_ID }}
           TEST_LUBBOCK_STAFF_PIN: ${{ secrets.TEST_LUBBOCK_STAFF_PIN }}
