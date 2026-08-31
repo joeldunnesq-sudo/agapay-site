@@ -685,7 +685,7 @@ assert.ok(sacramentPriestsMigration.includes("priest_name") && sacramentPriestsM
 assert.ok(donorApp.includes("priestName: slot.priestName") && backendSources.includes("priestName = String(body.priestName") && backendSources.includes("isSlotStillOpen(env, { parishId, date, time, priestName })"), "donor Sacraments booking should carry the selected priest through to the scheduled request");
 assert.ok(donorApp.includes("handleDonorCheckoutReturn"), "donor dashboard should confirm returned Stripe checkout sessions");
 const givingOverview = await readFile("public/give/index.html", "utf8");
-assert.ok(givingOverview.includes("Orthodox Church Management Software &amp; Giving"), "Giving overview should target Orthodox church management and giving search intent");
+assert.ok(givingOverview.includes("Custom-Built Orthodox Church Management Software") && givingOverview.includes("Orthodox tithing app"), "Giving overview should target Orthodox church management and tithing search intent");
 assert.ok(givingOverview.includes('"SoftwareApplication"') && givingOverview.includes('"@type": "FAQPage"'), "Giving overview should include software and FAQ structured data");
 assert.ok(givingOverview.includes('"@type": "WebSite"') && givingOverview.includes('"@type": "WebPage"'), "Giving overview should connect WebSite and WebPage structured data to the app");
 assert.ok(givingOverview.includes("The Orthodox Giving App <em>for all of parish life.</em>") && givingOverview.includes("One system, not six"), "Giving overview should present one connected Orthodox platform");
@@ -710,7 +710,7 @@ assert.ok(
 const platformHome = await readFile("public/index.html", "utf8");
 assert.ok(platformHome.includes('rel="canonical" href="https://agapay.app/"') && platformHome.includes('property="og:url" content="https://agapay.app/"'), "platform homepage should publish the site root as its canonical and social URL");
 assert.ok(platformHome.includes("One platform for all of") && platformHome.includes("Orthodox parish life.") && platformHome.includes("One parish. One connected system."), "homepage should lead with the complete AGAPAY Orthodox parish platform and explain its shared system");
-assert.ok(platformHome.includes("Orthodox Church Management Software for Parish Life") && platformHome.includes("Orthodox church management software (CMS)") && platformHome.includes("Orthodox CMS"), "homepage SEO should explicitly position AGAPAY as Orthodox church management software and an Orthodox CMS");
+assert.ok(platformHome.includes("Orthodox Tithing App") && platformHome.includes("custom-built Orthodox church management software platform"), "homepage SEO should position AGAPAY as the Orthodox tithing app and custom-built parish platform");
 assert.ok(platformHome.includes("giving-dashboard.jpg?v=6a4506c0ba14") && platformHome.includes("data-src=\"/images/app/screenshots/parish-bookstore.jpg?v=7a0005fdc4b5\"") && platformHome.includes('width="720" height="1560"'), "homepage should use right-sized screenshots and defer inactive app rooms");
 assert.ok(platformHome.includes("Koinonia") && platformHome.includes("Sacraments") && platformHome.includes("Accounting"), "platform homepage should surface community, pastoral, and financial operations");
 assert.ok(platformHome.includes('src="/site-chrome.js"'), "platform homepage should render the canonical navigation that routes giving-focused visitors to /give");

@@ -27,8 +27,8 @@ for (const id of ["pricing", "security", "platform", "giving-app", "koinonia", "
   assert.match(overview, new RegExp(`href=["']#${id}["']`), `the in-page navigation must link to #${id}`);
 }
 
-assert.match(overview, /<title>Orthodox Church Management Software &amp; Giving \| AGAPAY<\/title>/, "the page title must target the primary Orthodox CMS and giving intent");
-assert.match(overview, /name="description" content="Orthodox church management software[^\"]+Plans start at \$9 per month\./, "the search description must be specific and price-aware");
+assert.match(overview, /<title>Custom-Built Orthodox Church Management Software \| AGAPAY<\/title>/, "the page title must target the custom-built Orthodox CMS intent");
+assert.match(overview, /name="description" content="Custom-built Orthodox church management software[^\"]+Orthodox tithing app[^\"]+Plans start at \$9 per month\./, "the search description must connect tithing and parish management with actual pricing");
 assert.match(overview, /rel="canonical" href="https:\/\/agapay\.app\/give"/, "the consolidated page must be canonical");
 assert.match(overview, /hreflang="x-default"/, "the canonical page must provide a default language target");
 assert.match(overview, /fetchpriority="high"/, "the hero image must be prioritized for rendering");
@@ -42,6 +42,14 @@ assert.ok(graph.some((item) => item["@type"] === "BreadcrumbList"), "structured 
 assert.ok(graph.some((item) => item["@type"] === "FAQPage"), "structured data must mirror the visible FAQ");
 const software = graph.find((item) => Array.isArray(item["@type"]) && item["@type"].includes("SoftwareApplication"));
 assert.deepEqual([software.offers.lowPrice, software.offers.highPrice], ["9", "209"], "aggregate offers must match the published monthly ladder");
+const homepageGraph = JSON.parse(read("public/index.html").match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1])["@graph"];
+assert.deepEqual(homepageGraph.find((item) => item["@id"] === software["@id"]), software, "homepage and Give must describe one software entity with consistent pricing and features");
+assert.equal(software.isAccessibleForFree, false, "free registration must not mark the paid parish software as free");
+const textContent = (html) => html.replace(/<[^>]*>/g, "").replaceAll("&amp;", "&").replace(/\s+/g, " ").trim();
+const faqSection = overview.match(/<section[^>]+id="faq"[\s\S]*?<\/section>/)[0];
+const visibleFaqs = [...faqSection.matchAll(/<details><summary>([\s\S]*?)<\/summary><p>([\s\S]*?)<\/p><\/details>/g)].map((match) => ({ name: textContent(match[1]), text: textContent(match[2]) }));
+const structuredFaqs = graph.find((item) => item["@type"] === "FAQPage").mainEntity.map((item) => ({ name: item.name, text: item.acceptedAnswer.text }));
+assert.deepEqual(structuredFaqs, visibleFaqs, "every structured FAQ must match an actual visible question and answer");
 
 const planCards = [...overview.matchAll(/<article class="give-plan-card[^\"]*">([\s\S]*?)<\/article>/g)].map((match) => match[1]);
 assert.equal(planCards.length, 3, "the pricing comparison must retain Give, Give +, and Parish");
