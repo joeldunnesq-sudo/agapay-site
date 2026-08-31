@@ -35,6 +35,9 @@ export default [
       'scripts/run-tests.mjs',
       'scripts/lint.mjs',
       'scripts/lint-warning-baseline-tests.mjs',
+      'scripts/parish-diagnostics-tests.mjs',
+      'scripts/lib/browser-error-gate.mjs',
+      'scripts/lib/parish-browser-fixture.mjs',
       'scripts/lib/lint-warning-baseline.mjs',
       'scripts/test-manifest.mjs',
       'scripts/architecture-boundaries-tests.mjs',
@@ -58,7 +61,17 @@ export default [
     rules: recommendedRules,
   },
   {
-    files: ['public/parish/feature-registry.js'],
+    files: ['scripts/parish-dashboard-browser-tests.mjs'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+    rules: recommendedRules,
+  },
+  {
+    files: ['public/parish/dashboard-runtime.js'],
+    languageOptions: { sourceType: 'script', globals: globals.browser },
+    rules: recommendedRules,
+  },
+  {
+    files: ['public/parish/feature-registry.js', 'public/parish/diagnostics.js'],
     languageOptions: { globals: globals.browser },
     rules: recommendedRules,
   },

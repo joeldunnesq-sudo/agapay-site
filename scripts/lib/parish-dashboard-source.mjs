@@ -14,7 +14,7 @@ export function parishDashboardFeaturePaths() {
 }
 
 export function readParishDashboardSource() {
-  return ['public/parish/app.js', ...parishDashboardFeaturePaths()]
+  return ['public/parish/app.js', 'public/parish/dashboard-runtime.js', ...parishDashboardFeaturePaths()]
     .map((file) => readFileSync(new URL(file, root), 'utf8'))
     .join('\n');
 }

@@ -32,6 +32,7 @@
     <h1 id="dashboardBootTitle">Preparing your parish workspace</h1>
     <p id="dashboardBootMessage">Loading your parish, plan, and available tools.</p>
     <div class="dashboard-boot-progress" aria-hidden="true"><span></span></div>
+    <button class="btn btn-gold" id="dashboardBootRetry" type="button" onclick="loadDashboard(this)" hidden>Try again</button>
     <a class="dashboard-boot-recovery" id="dashboardBootRecovery" href="/give/login" hidden>Return to parish login</a>
   </div>
 </div>
@@ -2021,6 +2022,8 @@
   <script src="/parish/features/koinonia/prayers.js?v=20260830features1"></script>
   <script src="/parish/features/koinonia/media.js?v=20260830features1"></script>
   <script src="/parish/features/koinonia.js?v=20260830features1"></script>
+  <script src="/parish/diagnostics.js?v=20260831debug1"></script>
+  <script src="/parish/dashboard-runtime.js?v=20260831debug1"></script>
   <script src="/parish/app.js?v=20260830features1"></script>
 </body>
 </html>
