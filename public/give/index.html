@@ -31,7 +31,7 @@
   <link rel="preload" as="image" href="/images/giving/app-phone-mockup.png" fetchpriority="high" />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&amp;family=DM+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site-chrome.css" />
-  <link rel="stylesheet" href="/styles/give.css?v=20260831appfeatures1" />
+  <link rel="stylesheet" href="/styles/give.css?v=20260831orthodoxgiving1" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <script src="/site-chrome.js?v=20260827givesections1" defer></script>
   <script src="/pwa-register.js" defer></script>
@@ -192,7 +192,7 @@
 
     <nav class="give-section-nav" aria-label="AGAPAY Give page sections">
       <div class="give-wrap give-section-links">
-        <a href="#security">Security</a><a href="#pricing">Pricing</a><a href="#platform">Platform</a><a href="#campaigns">Campaigns</a><a href="#koinonia">Koinonia</a><a href="#app-features">In the app</a><a href="#reporting">Reporting</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a><a href="#install-app">Get the app</a>
+        <a href="#security">Security</a><a href="#giving-app">Giving</a><a href="#pricing">Pricing</a><a href="#platform">Platform</a><a href="#campaigns">Campaigns</a><a href="#koinonia">Koinonia</a><a href="#app-features">In the app</a><a href="#reporting">Reporting</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a><a href="#install-app">Get the app</a>
       </div>
     </nav>
 
@@ -222,6 +222,26 @@
           <details><summary>Cloudflare, storage encryption, and bot protection</summary><p>AGAPAY runs on Cloudflare for network filtering, DDoS mitigation, and service availability. Cloudflare-managed storage is automatically encrypted at rest with AES-256. Turnstile protects sensitive public forms; its tokens expire after five minutes and can be used only once.</p></details>
         </div>
         <p class="give-security-caveat">No responsible online service can promise zero risk. AGAPAY uses layered controls, narrow access, verified payment events, and transparent operating boundaries instead of unsupported security guarantees.</p>
+      </div>
+    </section>
+
+    <section class="give-section give-orthodox-section" id="giving-app" aria-labelledby="giving-app-title">
+      <div class="give-wrap give-orthodox-grid">
+        <div>
+          <header class="give-section-head"><p class="give-eyebrow">Orthodox-first giving · At the heart of My AGAPAY</p><h2 id="giving-app-title">Give in the ways that belong to Orthodox life.</h2><p>Our giving is woven into prayer, remembrance, feast days, and the daily life of the parish. AGAPAY brings those offerings together in one familiar app, built around the way Orthodox Christians give.</p></header>
+          <div class="give-orthodox-ways" aria-label="Ways to give and follow your offerings">
+            <div><strong>Tithes &amp; stewardship</strong><span>Support parish life with one-time or recurring gifts.</span></div>
+            <div><strong>Candle offerings</strong><span>Make an offering connected to prayer.</span></div>
+            <div><strong>Memorial offerings</strong><span>Give in remembrance of loved ones.</span></div>
+            <div><strong>Festal alms</strong><span>Connect generosity with the Church's feast days.</span></div>
+            <div><strong>Parish campaigns</strong><span>Help meet a shared goal or an urgent need.</span></div>
+            <div><strong>Your giving history</strong><span>See your offerings and monthly and yearly totals together.</span></div>
+          </div>
+          <div class="give-pledge-highlight"><p class="give-eyebrow">Your commitment, kept in view</p><h3>A pledge you can follow all year.</h3><p>Set or update your annual pledge and see your stewardship giving progress toward it, right on your Giving dashboard. Your commitment and your progress stay together, alongside your giving history.</p><strong>Basic pledge tracking is included in Give.</strong></div>
+          <div class="give-orthodox-actions"><a class="give-button give-button-gold" href="/give/request-demo">See Orthodox giving in a demo</a><a class="give-button give-button-outline" href="#pricing">Find your parish's plan</a></div>
+          <p class="give-orthodox-note">Campaigns, Festal Alms, and Stewardship Health are available with Give + and Parish. Offerings shown in the app depend on your parish's plan and enabled features.</p>
+        </div>
+        <figure class="give-orthodox-screen"><a href="/images/app/screenshots/give-feature-giving-dashboard.jpg" target="_blank" rel="noopener noreferrer" aria-label="View the Giving dashboard screenshot in a new tab"><img src="/images/app/screenshots/give-feature-giving-dashboard.jpg" alt="My AGAPAY Giving dashboard with annual pledge progress, monthly and yearly giving totals, and Quick Give options for tithes, candles, memorials, festal alms, and campaigns" loading="lazy" decoding="async" width="1440" height="3120" /></a><figcaption>Your pledge, your offerings, your parish.<br />Select the screen for a closer look.</figcaption></figure>
       </div>
     </section>
 
@@ -409,8 +429,18 @@
             </figure>
           </article>
         </div>
-        <div class="give-report-grid"><article><span>Automated reporting</span><h3>Monthly council reports</h3><p>Generate current stewardship and financial summaries without rebuilding spreadsheets before meetings.</p></article><article><span>Automated reporting</span><h3>Annual statements and packets</h3><p>Produce donor statements in batches and assemble a polished annual meeting packet from current records.</p></article></div>
-        <div class="give-report-callout"><strong>What used to take a treasurer days can take minutes.</strong><span>No duplicate export process and no report reconstructed from scratch.</span></div>
+      </div>
+    </section>
+
+    <section class="give-section give-report-tools" id="automated-reports" aria-labelledby="report-tools-title">
+      <div class="give-wrap">
+        <header class="give-section-head"><p class="give-eyebrow">Automated reports &amp; annual meeting packets</p><h2 id="report-tools-title">Less paperwork. More time for parish life.</h2><p>Stop rebuilding the same reports before every meeting. Turn the records already in AGAPAY into clear summaries, donor statements, and a prepared annual meeting packet, with less copying, chasing files, and formatting.</p></header>
+        <div class="give-report-grid">
+          <article><span>Every month</span><h3>Council reports, without the scramble.</h3><p>Generate stewardship and financial summaries from current records. Give your council a clear starting point without reassembling spreadsheets each month.</p></article>
+          <article><span>At year-end</span><h3>Prepare statements in batches.</h3><p>Produce annual donor statements together instead of preparing each letter individually. Put the time back into review and parish care.</p></article>
+          <article><span>For the annual meeting</span><h3>One packet. A prepared parish.</h3><p>Bring the agenda, ministry reports, financial summary, and meeting materials into one packet. Edit, preview, and produce a print-ready PDF.</p><small>Annual meeting packet builder: Parish tier.</small></article>
+        </div>
+        <div class="give-report-callout"><div><strong>Your staff reviews the details. The tools handle the repeatable work.</strong><span>Report availability follows your parish's plan and enabled modules.</span></div><a class="give-button give-button-gold" href="/give/request-demo">See the reporting tools</a></div>
       </div>
     </section>
 
