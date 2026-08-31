@@ -78,15 +78,15 @@ const donorApp = readFileSync(path.join(repoRoot, "public", "donor", "app.js"), 
 const parishLife = readFileSync(path.join(repoRoot, "public", "myagapay", "parish-life.html"), "utf8");
 assert.match(donorApp, /today\.primarySaintTitle \|\| today\.feastTitle/);
 assert.match(donorApp, /stories\.find\(\(story\) => story\?\.primary\) \|\| stories\[0\]/);
-assert.match(donorApp, /\? `\$\{appointmentKind\} — \$\{appointment\}`[\s\S]*\? `Feast — \$\{observanceTitle\}`/,
-  "the Today hero must label feast and saint reading groups directly");
+assert.match(donorApp, /if \(groups\.size > 1\) rows\.push\(\{[\s\S]*\? `Feast — \$\{observanceTitle\}`/,
+  "the Today hero must label feast and saint reading groups only when multiple appointments need distinction");
 assert.match(donorApp, /\["epistle", "gospel"\]/,
   "each appointment must order the Gospel after the Epistle");
 assert.doesNotMatch(donorApp, /when this service is celebrated|The parish Typikon determines which appointed readings are proclaimed|Liturgical observance:/,
   "the Today hero must keep the grouped reading presentation concise");
 assert.match(donorApp, /feastNote\.replaceChildren[\s\S]*line\.className = reading\.className/,
   "each daily reading must render as its own hero line");
-assert.match(parishLife, /\/donor\/app\.js\?v=20260826givetiers1/,
+assert.match(parishLife, /\/donor\/app\.js\?v=20260831liturgical1/,
   "the Koinonia page must invalidate cached donor-app bundles when liturgical rendering changes");
 
 console.log("PASS - Today hero, saint card, and first life use the same primary commemoration");

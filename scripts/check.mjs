@@ -171,6 +171,7 @@ const listenIndex = await readFile("public/listen/index.html", "utf8");
 const adminPwa = await readFile("public/admin/pwa.js", "utf8");
 const serviceWorker = await readFile("public/service-worker.js", "utf8");
 const pwaRegister = await readFile("public/pwa-register.js", "utf8");
+const pwaHomeInstall = await readFile("public/pwa-home-install.js", "utf8");
 const parishDashboardCore = await readParishDashboardSource();
 const parishDashboardApp = [
   parishDashboardCore,
@@ -211,7 +212,8 @@ assert.ok(myAgapayLoginPage.includes("/myagapay/manifest.webmanifest?v=20260729c
 assert.ok(/navigator\.serviceWorker\.register\(\s*(["'])\/service-worker\.js\1/.test(myAgapayLoginPage), "My AGAPAY login HTML should directly register the service worker for PWABuilder's source parser");
 assert.ok(pwaRegister.includes("registerOrUpdate();") && !pwaRegister.includes('window.addEventListener("load"'), "PWA registration should start immediately so automated analyzers can detect the service worker");
 assert.ok(rootPage.includes('/manifest.webmanifest') && rootPage.includes('/pwa-register.js'), "public homepage should expose the root manifest and register the root service worker");
-assert.ok(rootManifest.includes('"start_url": "/?source=pwa"') && rootManifest.includes('"scope": "/"'), "root PWA manifest should launch and scope the public AGAPAY app at the site root");
+assert.ok(rootManifest.includes('"name": "My AGAPAY"') && rootManifest.includes('"start_url": "/myagapay/login?source=pwa"') && rootManifest.includes('"scope": "/"'), "the homepage installer should launch My AGAPAY at its login page while retaining compatibility with existing root-scope installs");
+assert.ok(pwaHomeInstall.includes('isLegacyHomepageLaunch()') && pwaHomeInstall.includes('window.location.replace("/myagapay/login?source=pwa")'), "existing homepage-installed My AGAPAY icons should be repaired to open the login page");
 assert.ok(rootManifest.includes('"orientation": "portrait-primary"'), "root PWA manifest should prefer the phone-first portrait orientation");
 assert.ok(givingOverviewPage.includes('/pwa-register.js') && givingOverviewPage.includes('/myagapay/manifest.webmanifest'), "Give homepage should remain installable without carrying a separate marketing-page installer");
 assert.ok(/class="give-hero-actions"[\s\S]{0,500}href="#pricing"[\s\S]{0,80}>See plans and pricing<\/a>/.test(givingOverviewPage), "Give homepage hero should link directly to the consolidated pricing section");

@@ -40,6 +40,28 @@ const [parishDashboard, parishDashboardApp, parishDashboardStyles] = await Promi
   "dashboard.html", "app.js", "style.css",
 ].map((file) => file === "app.js" ? readParishDashboardSource() : readFile(new URL(`../public/parish/${file}`, import.meta.url), "utf8")));
 const donorStyles = await readFile(new URL("../public/donor/style.css", import.meta.url), "utf8");
+const readingRowsStart = donorApp.indexOf("function liturgicalReadingRows");
+const readingRowsEnd = donorApp.indexOf("function renderDonorTodayInChurch", readingRowsStart);
+const readingRowsSandbox = {};
+vm.runInNewContext(`${donorApp.slice(readingRowsStart, readingRowsEnd)}\nglobalThis.liturgicalReadingRows = liturgicalReadingRows;`, readingRowsSandbox);
+const singleAppointmentRows = JSON.parse(JSON.stringify(readingRowsSandbox.liturgicalReadingRows({
+  feastTitle: "Saints Alexander, John, and Paul",
+  readingAppointments: [
+    { type: "epistle", ref: "Hebrews 11:33–12:2", appointment: "Saints Alexander, John, and Paul" },
+    { type: "gospel", ref: "Matthew 10:32–33, 37–38; 19:27–30", appointment: "Saints Alexander, John, and Paul" },
+  ],
+})));
+assert.deepEqual(singleAppointmentRows.map((row) => row.text), [
+  "Epistle: Hebrews 11:33–12:2",
+  "Gospel: Matthew 10:32–33, 37–38; 19:27–30",
+], "a single appointed set should not repeat the feast or saint title above its readings");
+const multipleAppointmentRows = JSON.parse(JSON.stringify(readingRowsSandbox.liturgicalReadingRows({
+  readingAppointments: [
+    { type: "epistle", ref: "Romans 1:1–7", appointment: "Readings of the day" },
+    { type: "epistle", ref: "Hebrews 11:33–12:2", appointment: "Saint Alexander" },
+  ],
+})));
+assert.equal(multipleAppointmentRows.filter((row) => row.className.includes("is-heading")).length, 2, "multiple appointed sets should retain headings that distinguish their readings");
 assert.match(donorStyles, /\.parish-life-community-tools \{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, "all three Community Tools should sit in one row on wider screens");
 assert.match(donorStyles, /\.parish-life-community-tool \{[^}]*min-height:82px/, "Community Tool cards should remain compact");
 assert.match(donorStyles, /@media \(max-width:680px\)[\s\S]{0,160}\.parish-life-community-tools \{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, "all three Community Tool cards should remain in one row on mobile");
@@ -190,8 +212,8 @@ assert.match(shell, /link\.href = "\/myagapay\/parish-life"/);
 assert.match(shell, /className = "parish-life-back-link koinonia-page-back"[\s\S]*page\.prepend\(link\)/, "each Koinonia subpage must put its back arrow at the top-left of page content");
 assert.match(landing, /class="cal-date-heading-row"[\s\S]*id="todayChurchDateBadge"[\s\S]*id="todayChurchDateCalendar">Julian<[\s\S]*id="todayCivilDateEyebrow"/, "the Koinonia hero must retain the Julian Church date and civil-date eyebrow in one compact heading region");
 assert.doesNotMatch(landing, /id="todayCalendarLabel"/, "Koinonia should not repeat a separate Julian calendar designation beside the badge");
-assert.match(landing, /family=DM\+Sans[^\"]+[\s\S]*\/donor\/style\.css\?v=20260825koinoniatoday2/, "the Koinonia landing must load its intended DM Sans typography and the current versioned stylesheet");
-assert.match(landing, /\/donor\/app\.js\?v=20260826givetiers1/, "the Koinonia landing must load the current versioned calendar script");
+assert.match(landing, /family=DM\+Sans[^\"]+[\s\S]*\/donor\/style\.css\?v=20260831liturgical1/, "the Koinonia landing must load its intended DM Sans typography and the current versioned stylesheet");
+assert.match(landing, /\/donor\/app\.js\?v=20260831liturgical1/, "the Koinonia landing must load the current versioned calendar script");
 assert.match(donorStyles, /\.cal-date-calendar \{[^}]*font-family:var\(--sans\)[^}]*font-size:6px[^}]*font-weight:700/, "the Julian designation must use the site sans typography at a quiet supporting size");
 assert.match(donorApp, /churchCalendarDate\(date, calendar\)[\s\S]*usesJulianCalendar[\s\S]*todayCivilDateEyebrow[\s\S]*churchParts\.dayNum[\s\S]*todayChurchDateBadge[\s\S]*hidden = !usesJulianCalendar/, "the eyebrow must show the civil date while the Julian-only badge uses the parish calendar date");
 assert.match(donorApp, /dateHeadingRow\.classList\.toggle\("is-civil-only", !usesJulianCalendar\)/, "Revised-Julian parishes should remove the Church-date box and use the civil-only layout");

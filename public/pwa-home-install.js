@@ -5,6 +5,19 @@
     return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
   }
 
+  function isLegacyHomepageLaunch() {
+    const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
+    return isStandalone() && ["/", "/index", "/index.html"].includes(pathname);
+  }
+
+  // Older homepage installs used the public site as their launch target even
+  // though the install action was labeled My AGAPAY. Send those existing app
+  // icons to the same login route used by the corrected manifest.
+  if (isLegacyHomepageLaunch()) {
+    window.location.replace("/myagapay/login?source=pwa");
+    return;
+  }
+
   function isIosSafari() {
     const ua = window.navigator.userAgent.toLowerCase();
     const isIos = /iphone|ipad|ipod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
