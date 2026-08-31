@@ -1,12 +1,54 @@
 'use strict';
 
 /* global allGifts, pdxAnimateCount, money, shortDate, escapeHtml, populateGivingStatementsPanel,
-  checkNudgeEligibility */
-/* exported setGiversSort, scrollToGiverDirectory, renderGiversPanel */
+  checkNudgeEligibility, currentParish, authHeaders, downloadBlob */
+/* exported setGiversSort, scrollToGiverDirectory, renderGiversPanel, exportGiversMonthlyCsv */
 
 // Giving givers; read shared identity and catalog state only when actions run.
 
 let pdxGiversSort = 'amount';
+
+async function exportGiversMonthlyCsv(event) {
+  event.preventDefault();
+  if (!currentParish?.parishId) return;
+  const month = document.getElementById('givingExportMonth')?.value;
+  const groupBy = document.getElementById('givingExportGroup')?.value || 'date';
+  const status = document.getElementById('givingExportStatus');
+  const button = event.submitter || event.currentTarget.querySelector('button[type="submit"]');
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month || '')) {
+    status.textContent = 'Choose a giving month first.';
+    return;
+  }
+  button.disabled = true;
+  button.classList.add('loading');
+  status.textContent = 'Preparing your complete monthly export…';
+  try {
+    const query = new URLSearchParams({ format: 'csv', month, groupBy });
+    const response = await fetch(
+      '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/giving-history?' + query,
+      { headers: authHeaders() }
+    );
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || 'Unable to export giving. Please try again.');
+    }
+    if (!response.headers.get('Content-Type')?.includes('text/csv'))
+      throw new Error('The export response was not a CSV. Please try again.');
+    const filename =
+      response.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] ||
+      `giving-${month}-by-${groupBy}.csv`;
+    downloadBlob(filename, await response.blob());
+    const rows = Number(response.headers.get('X-AGAPAY-Export-Rows') || 0);
+    status.textContent = rows
+      ? `Exported ${rows} transaction${rows === 1 ? '' : 's'} for ${month}, grouped by ${groupBy === 'giver' ? 'giver' : 'giving date'}.`
+      : `No recorded online gifts for ${month}. Downloaded a CSV with column headers.`;
+  } catch (error) {
+    status.textContent = error.message;
+  } finally {
+    button.disabled = false;
+    button.classList.remove('loading');
+  }
+}
 
 function setGiversSort(mode, btn) {
   pdxGiversSort = mode;
@@ -23,6 +65,13 @@ function scrollToGiverDirectory() {
 }
 
 function renderGiversPanel() {
+  const exportMonth = document.getElementById('givingExportMonth');
+  if (exportMonth && !exportMonth.value) {
+    const previousMonth = new Date();
+    previousMonth.setDate(1);
+    previousMonth.setMonth(previousMonth.getMonth() - 1);
+    exportMonth.value = `${previousMonth.getFullYear()}-${String(previousMonth.getMonth() + 1).padStart(2, '0')}`;
+  }
   const groups = new Map();
   allGifts.forEach((gift) => {
     const key = (gift.donorEmail || gift.donorName || 'anonymous').toLowerCase();

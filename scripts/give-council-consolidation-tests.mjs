@@ -11,6 +11,15 @@ const server = read("server.mjs");
 const worker = read("src/worker.js");
 const sitemap = read("public/sitemap.xml");
 
+// Retired add-on checkout routes cannot create a second subscription or Customer.
+const stewardshipSource = read("src/handlers/stewardship.js");
+for (const name of ["handleParishStewardshipSubscribe", "handleStewardshipSubscribe"]) {
+  const handler = stewardshipSource.slice(stewardshipSource.indexOf("export async function " + name)).split("\n}")[0];
+  assert.match(handler, /subscription_option_retired/);
+  assert.match(handler, /status: 410/);
+  assert.doesNotMatch(handler, /stripePlatformPost|applyApprovedExemptionIfExists/);
+}
+
 for (const id of ["pricing", "security", "platform", "koinonia", "reporting", "how-it-works", "why", "parish-council", "faq"]) {
   assert.match(overview, new RegExp(`id=["']${id}["']`), `the consolidated Give page must expose #${id}`);
 }
@@ -33,6 +42,21 @@ assert.ok(graph.some((item) => item["@type"] === "BreadcrumbList"), "structured 
 assert.ok(graph.some((item) => item["@type"] === "FAQPage"), "structured data must mirror the visible FAQ");
 const software = graph.find((item) => Array.isArray(item["@type"]) && item["@type"].includes("SoftwareApplication"));
 assert.deepEqual([software.offers.lowPrice, software.offers.highPrice], ["9", "209"], "aggregate offers must match the published monthly ladder");
+
+const planCards = [...overview.matchAll(/<article class="give-plan-card[^\"]*">([\s\S]*?)<\/article>/g)].map((match) => match[1]);
+assert.equal(planCards.length, 3, "the pricing comparison must retain Give, Give +, and Parish");
+assert.match(planCards[0], /<span class="give-plan-name">Give<\/span>/);
+assert.match(planCards[0], /<strong>\$9<\/strong>/);
+assert.match(planCards[0], /<li>Basic pledge tracking<\/li>/, "Give must explicitly include basic pledge tracking");
+assert.match(planCards[1], /Everything in Give/, "Give + must inherit basic pledge tracking");
+assert.match(planCards[1], /Stewardship Health analytics and annual statements/, "advanced stewardship reporting must remain in Give +");
+assert.doesNotMatch(planCards[1], /<li>[^<]*pledge tracking/i, "pledge tracking must not be listed as an upgrade-only feature");
+assert.ok(software.featureList.includes("Basic pledge tracking included in Give at $9 per month"), "search metadata must reflect the base-tier feature");
+const pledgeFaq = graph.find((item) => item["@type"] === "FAQPage").mainEntity.find((item) => item.name === "Is pledge tracking included in Give?");
+assert.ok(pledgeFaq, "structured FAQ must answer which tier includes pledges");
+assert.ok(overview.includes(`<summary>${pledgeFaq.name}</summary><p>${pledgeFaq.acceptedAnswer.text.replaceAll("Give Plus", "Give +")}</p>`), "visible and structured pledge FAQs must agree");
+assert.match(read("public/index.html"), /Give includes[^<]*basic pledge tracking for \$9 per month\. Give \+ adds campaigns and Stewardship Health analytics/, "the homepage must distinguish basic pledges from advanced analytics");
+assert.match(read("public/give/request-demo.html"), /basic pledge tracking — included in Give/, "the demo-page feature summary must include base-tier pledges");
 
 for (const copy of [
   "$0 AGAPAY donation fee",

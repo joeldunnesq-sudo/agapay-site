@@ -2,7 +2,7 @@
 
 /* global activeTab, currentParish, allGifts, loadGivingHistory, renderGiversPanel,
   renderGivingOptionsEditor, loadSettlementProfilesPanel, loadReconciliation, statusLabel,
-  loadGivingSummary, loadRecurringHealth, renderQrCode, loadCommemorations, initReconciliationMonths */
+  loadGivingSummary, loadWeeklyFunds, loadRecurringHealth, renderQrCode, loadCommemorations, initReconciliationMonths */
 
 // Giving owns its tab workflows and delayed dashboard refresh work.
 // Authentication, settings saves, and shared catalog state remain in core.
@@ -41,6 +41,7 @@ function renderGivingOverviewStatus() {
 
 function refreshGivingDashboard() {
   setTimeout(() => loadGivingSummary(), 250);
+  setTimeout(() => loadWeeklyFunds(), 350);
   setTimeout(() => loadRecurringHealth(), 500);
   setTimeout(async () => {
     await renderQrCode();

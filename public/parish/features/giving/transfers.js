@@ -1,7 +1,7 @@
 'use strict';
 
-/* global escapeAttr, escapeHtml, money, moneyFull, reconciliationData */
-/* exported renderFundTransferWorksheet, collectFundTransferInstructions */
+/* global escapeAttr, escapeHtml, moneyFull, reconciliationData */
+/* exported renderFundTransferWorksheet, collectFundTransferInstructions, updateFundTransferWorksheet */
 
 // Giving transfers; read shared identity and catalog state only when actions run.
 
@@ -36,12 +36,12 @@ function renderFundTransferWorksheet(worksheet, savedInstructions = []) {
         <div class="pdx-rc-transfer-fund">
           <span>${escapeHtml(line.category || 'Giving')}</span>
           <strong>${escapeHtml(line.label || 'General Giving')}</strong>
-          <small>${Number(line.transactionCount || 0)} transaction${Number(line.transactionCount || 0) === 1 ? '' : 's'} · ${escapeHtml(money(line.grossCents || 0))} gross · ${escapeHtml(money(line.feeCents || 0))} fees</small>
+          <small>${Number(line.transactionCount || 0)} transaction${Number(line.transactionCount || 0) === 1 ? '' : 's'} · ${escapeHtml(moneyFull(line.grossCents || 0))} gross · ${escapeHtml(moneyFull(line.feeCents || 0))} fees</small>
         </div>
         <div class="pdx-rc-transfer-net"><span>Net amount</span><strong>${escapeHtml(moneyFull(line.netCents || 0))}</strong></div>
         <label class="pdx-rc-transfer-action">Handling
           <select data-transfer-action onchange="updateFundTransferWorksheet()" ${line.needsReview ? 'disabled' : ''}>
-            <option value="retain" ${transfer ? '' : 'selected'}>Keep in deposit account</option>
+            <option value="retain" ${transfer ? '' : 'selected'}>Record allocation only</option>
             <option value="transfer" ${transfer ? 'selected' : ''}>Transfer manually</option>
           </select>
         </label>
@@ -58,13 +58,13 @@ function renderFundTransferWorksheet(worksheet, savedInstructions = []) {
     .join('');
   const unallocated = Number(worksheet.unallocatedCents || 0);
   pane.innerHTML = `<div class="pdx-rc-transfer-summary">
-        <div><span>Stripe deposits</span><strong>${escapeHtml(money(worksheet.depositedCents || 0))}</strong></div>
-        <div><span>Planned transfers</span><strong id="reconcileTransferPlanned">${escapeHtml(money(worksheet.recommendedTransferCents || 0))}</strong></div>
-        <div><span>Remain in deposit account</span><strong id="reconcileTransferRetained">${escapeHtml(money(worksheet.retainInDepositAccountCents || 0))}</strong></div>
+        <div><span>Stripe deposits</span><strong>${escapeHtml(moneyFull(worksheet.depositedCents || 0))}</strong></div>
+        <div><span>Planned transfers</span><strong id="reconcileTransferPlanned">${escapeHtml(moneyFull(worksheet.recommendedTransferCents || 0))}</strong></div>
+        <div><span>Remain in deposit account</span><strong id="reconcileTransferRetained">${escapeHtml(moneyFull(worksheet.retainInDepositAccountCents || 0))}</strong></div>
       </div>
-      ${unallocated !== 0 ? `<div class="pdx-rc-transfer-hold"><strong>Keep ${escapeHtml(moneyFull(Math.abs(unallocated)))} in the deposit account for review.</strong><span>The paid payout and matched fund totals differ. Do not distribute this amount until the reconciliation exceptions are resolved.</span></div>` : '<div class="pdx-rc-transfer-ready"><strong>Fund totals match the paid Stripe deposits.</strong><span>Review the destinations below before making transfers.</span></div>'}
+      ${!worksheet.readyToTransfer ? `<div class="pdx-rc-transfer-hold"><strong>Review required before using these amounts.</strong><span>Unallocated difference: ${escapeHtml(moneyFull(unallocated))}. Unresolved items can offset to zero; check all review items above.</span></div>` : '<div class="pdx-rc-transfer-ready"><strong>Fund totals match the paid Stripe deposits.</strong><span>Allocations do not require separate bank transfers. Record optional handling below.</span></div>'}
       <div class="pdx-rc-transfer-list">${rows}</div>
-      <p class="pdx-rc-transfer-disclaimer">These are accounting instructions for the parish treasurer. AGAPAY does not initiate, schedule, or approve transfers between parish bank accounts.</p>`;
+      <p class="pdx-rc-transfer-disclaimer">Optional treasurer notes, saved with the reconciled review. Period receipts are not current fund balances or a recommendation to transfer the full amount. AGAPAY does not initiate, schedule, or approve transfers between parish bank accounts.</p>`;
   updateFundTransferWorksheet();
 }
 
@@ -92,8 +92,8 @@ function updateFundTransferWorksheet() {
   );
   const planned = document.getElementById('reconcileTransferPlanned');
   const retained = document.getElementById('reconcileTransferRetained');
-  if (planned) planned.textContent = money(plannedCents);
-  if (retained) retained.textContent = money(depositedCents - plannedCents);
+  if (planned) planned.textContent = moneyFull(plannedCents);
+  if (retained) retained.textContent = moneyFull(depositedCents - plannedCents);
 }
 
 function collectFundTransferInstructions() {

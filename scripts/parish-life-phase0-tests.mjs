@@ -74,8 +74,8 @@ assert.match(hubScript, /if \(!experience\.communicationsEnabled\)[\s\S]*return;
 assert.match(groupHandler, /export async function listGroupActivity[\s\S]*getReadContentIds[\s\S]*messages\.slice\(0, 10\)/);
 assert.match(shell, /parishLifeAvailable/);
 assert.match(parishDashboard, /id="nav-communications" hidden/);
-assert.match(parishDashboard, /id="nav-bookstore"[\s\S]*id="nav-tier-parish"[\s\S]*id="nav-sacraments"[\s\S]*id="nav-directory"[\s\S]*id="nav-communications"[\s\S]*id="nav-accounting"[\s\S]*id="nav-text"/, "Koinonia must sit after Directory and before Accounting");
-assert.match(parishApp, /const parishOrder = \['sacraments', 'directory', 'library', 'communications', 'accounting', 'text'\]/, "runtime navigation ordering must keep Library after Directory and Koinonia before Accounting");
+assert.match(parishDashboard, /id="nav-tier-giving-plus"[\s\S]*id="nav-directory"[\s\S]*id="nav-communications"[\s\S]*id="nav-bookstore"[\s\S]*id="nav-tier-parish"[\s\S]*id="nav-sacraments"[\s\S]*id="nav-accounting"[\s\S]*id="nav-text"/, "Koinonia must sit after Directory and before Accounting");
+assert.match(parishApp, /tabs: \['campaigns', 'stewardship', 'directory', 'library', 'communications', 'bookstore'\]/, "runtime navigation ordering must keep Library after Directory and Koinonia before Accounting");
 assert.match(parishApp, /communicationsNav\.hidden = !parishLifeAvailable/);
 assert.match(workerSource, /parishLifeApiRoute[\s\S]*status: 404/);
 

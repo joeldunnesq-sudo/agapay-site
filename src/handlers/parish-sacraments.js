@@ -3,6 +3,7 @@
 
 import {
   givingFeatureAccess,
+  hasModuleAccess,
 } from "../lib/entitlements.js";
 import {
   htmlEscape,
@@ -19,7 +20,6 @@ import {
   findRegistrationByParishId,
   generateSecret,
   getBearerToken,
-  hasParishPlusAccess,
   hasProductionStore,
   json,
   missingProductionStoreResponse,
@@ -217,13 +217,10 @@ export async function handleParishSacraments(request, env, parishId) {
     return unauthorized();
   }
 
-  if (!sacramentsEnabledFor(found.registration)) {
+  if (!hasModuleAccess(found.registration, "sacraments")) {
     return json({
-      error: hasParishPlusAccess(found.registration)
-        ? "Sacraments & Services is coming soon for your parish."
-        : "Sacraments & Services requires AGAPAY Parish +.",
-      stewardshipRequired: !hasParishPlusAccess(found.registration),
-      comingSoon: hasParishPlusAccess(found.registration)
+      error: "Sacraments & Services requires the Sacraments add-on or Parish.",
+      subscriptionRequired: true
     }, { status: 402 });
   }
 
@@ -264,13 +261,10 @@ export async function handleParishSacramentUpdate(request, env, parishId, reques
     return unauthorized();
   }
 
-  if (!sacramentsEnabledFor(found.registration)) {
+  if (!hasModuleAccess(found.registration, "sacraments")) {
     return json({
-      error: hasParishPlusAccess(found.registration)
-        ? "Sacraments & Services is coming soon for your parish."
-        : "Sacraments & Services requires AGAPAY Parish +.",
-      stewardshipRequired: !hasParishPlusAccess(found.registration),
-      comingSoon: hasParishPlusAccess(found.registration)
+      error: "Sacraments & Services requires the Sacraments add-on or Parish.",
+      subscriptionRequired: true
     }, { status: 402 });
   }
 
@@ -361,8 +355,8 @@ async function requireSacramentsParishContext(request, env, parishId) {
   if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return { ok: false, response: unauthorized() };
   }
-  if (!sacramentsEnabledFor(found.registration)) {
-    return { ok: false, response: json({ error: "Sacraments & Services is not enabled for this parish." }, { status: 402 }) };
+  if (!hasModuleAccess(found.registration, "sacraments")) {
+    return { ok: false, response: json({ error: "Sacraments & Services requires the Sacraments add-on or Parish." }, { status: 402 }) };
   }
   return { ok: true, registration: found.registration, key: found.key };
 }

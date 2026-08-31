@@ -9,6 +9,7 @@
 let gsJobHistoryLoaded = false;
 
 function populateGivingStatementsPanel() {
+  if (!currentParish?.entitlements?.givingFeatures?.annualStatements) return;
   const yearSel = document.getElementById('gsFiscalYear');
   if (yearSel && !yearSel.dataset.populated) {
     const nowYear = new Date().getFullYear();

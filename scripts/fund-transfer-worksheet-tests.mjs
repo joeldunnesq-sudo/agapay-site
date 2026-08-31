@@ -16,16 +16,16 @@ const worksheet = buildFundTransferWorksheet([
   { key: "general", category: "General Giving", label: "General Operating Fund", grossCents: 100000, feeCents: 3000, netCents: 97000, transactionCount: 4 },
   { key: "fund:building", category: "Designated Fund", label: "Building Fund", grossCents: 50000, feeCents: 1500, netCents: 48500, transactionCount: 2 },
   { key: "fund:benevolence", category: "Benevolence Fund", label: "Festal Alms", grossCents: 25000, feeCents: 750, netCents: 24250, transactionCount: 1 },
-], { depositedCents: 169750 });
+], { depositedCents: 169750, readyForReview: true });
 
 assert.equal(worksheet.available, true);
 assert.equal(worksheet.readyToTransfer, true);
 assert.equal(worksheet.allocatedNetCents, 169750);
-assert.equal(worksheet.recommendedTransferCents, 72750);
-assert.equal(worksheet.retainInDepositAccountCents, 97000);
+assert.equal(worksheet.recommendedTransferCents, 0);
+assert.equal(worksheet.retainInDepositAccountCents, 169750);
 assert.equal(worksheet.unallocatedCents, 0);
 assert.equal(worksheet.lines.find((line) => line.key === "general")?.recommendedAction, "retain");
-assert.equal(worksheet.lines.find((line) => line.key === "fund:building")?.recommendedAction, "transfer");
+assert.equal(worksheet.lines.find((line) => line.key === "fund:building")?.recommendedAction, "retain");
 
 const unmatched = buildFundTransferWorksheet(worksheet.lines, { depositedCents: 170000 });
 assert.equal(unmatched.unallocatedCents, 250);
@@ -44,7 +44,7 @@ const dashboard = read("public/parish/dashboard.html");
 const app = readParishDashboardSource();
 const css = read("public/parish/redesign.css");
 assert.match(dashboard, /id="reconcileTransferWorksheetPane"/);
-assert.match(dashboard, /Prepare fund transfers/);
+assert.match(dashboard, /Optional manual handling notes/);
 assert.match(app, /detail=full/);
 assert.match(app, /function renderFundTransferWorksheet/);
 assert.match(app, /transferInstructions: collectFundTransferInstructions\(\)/);

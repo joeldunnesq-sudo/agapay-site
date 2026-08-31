@@ -514,7 +514,7 @@ assert.ok(
     && givePricingHtml.includes("Koinonia is included in Give +"),
   "Koinonia and Parish Library should be included in Give + and inherited by Parish"
 );
-assert.ok(givingPlusPricingCard.includes("Stewardship Health and annual statements"), "Give + should include pledge and Stewardship Health reporting");
+assert.ok(givingPlusPricingCard.includes("Stewardship Health analytics and annual statements"), "Give + should include advanced Stewardship Health reporting");
 assert.ok(givingPlusPricingCard.includes("Bookstore"), "Give + should include Bookstore");
 assert.ok(
   !givePricingHtml.includes("Koinonia · $49/mo")
@@ -531,12 +531,12 @@ assert.ok(
   "Parish pricing should explain its complete operational bundle"
 );
 assert.ok(
-  starterPricingCard.includes("General Operating and one designated fund")
+  starterPricingCard.includes("General Operating and unlimited designated funds")
     && starterPricingCard.includes("Candles, memorials, and commemorations")
-    && starterPricingCard.includes("Giving links, QR codes, receipts, and export")
-    && !starterPricingCard.includes("Unlimited funds")
-    && givingPlusPricingCard.includes("Unlimited funds, campaigns, and pledge tracking"),
-  "Give should retain its essential package while Give + owns unlimited funds and campaigns"
+    && starterPricingCard.includes("giver records")
+    && starterPricingCard.includes("Basic pledge tracking")
+    && givingPlusPricingCard.includes("Campaigns and branding"),
+  "Give includes unlimited funds and basic pledges while Give + adds campaigns"
 );
 assert.ok(
   subscriptionCatalog.includes('id: "full_commerce"')
@@ -583,10 +583,8 @@ assert.ok(
 for (const enforcement of [
   "Campaigns are available with Give +.",
   "Commemorations are available with Give +.",
-  "Monthly reconciliation is available with Give +.",
   "Recurring-gift insights are available with Give +.",
   "Campaigns and festal alms are available with Give +.",
-  "Give includes one active designated fund. Upgrade to Give + for additional funds."
 ]) {
   assert.ok(parishHandlers.includes(enforcement), `backend should enforce tier access: ${enforcement}`);
 }
@@ -612,10 +610,11 @@ assert.ok(worker.includes('/^\\/give\\/[^/]+\\/[^/]+-campaign\\/?$/'), "worker s
 assert.ok(parishDashboardApp.includes("campaignPublicUrl") && parishDashboardApp.includes("-campaign"), "parish dashboard should publish canonical nested campaign URLs");
 assert.ok(
   parishDashboardApp.includes("function orderTierNavigation()")
-    && parishDashboardApp.includes("'stewardship', 'bookstore'")
-    && parishDashboardApp.includes("const parishOrder = ['sacraments', 'directory', 'library', 'communications', 'accounting', 'text']")
-    && parishDashboardApp.includes("parishGroup.appendChild(item)")
-    && parishDashboardApp.includes("sidebar.appendChild(parishGroup)"),
+    && parishDashboardApp.includes("tabs: ['giving', 'history', 'givers', 'reconcile', 'options', 'qr']")
+    && parishDashboardApp.includes("tabs: ['campaigns', 'stewardship', 'directory', 'library', 'communications', 'bookstore']")
+    && parishDashboardApp.includes("tabs: ['sacraments', 'accounting', 'text']")
+    && parishDashboardApp.includes("group.appendChild(item)")
+    && parishDashboardApp.includes("sidebar.appendChild(group)"),
   "parish dashboard tabs should follow the tier ladder while keeping Parish-only tools grouped"
 );
 assert.ok(

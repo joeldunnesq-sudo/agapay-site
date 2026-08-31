@@ -12,6 +12,8 @@ import {
   normalizeEmail,
   rateLimit,
 } from "../lib/core.js";
+import { communicationsEnabledFor } from "../lib/entitlements.js";
+import { findRegistrationByParishId } from "./parish.js";
 import { verifiedHouseholdAccess } from "./koinonia-access.js";
 import { createMinistryCommerceItem, listMinistryCommerceItems, patchMinistryCommerceItem } from "./parish-events.js";
 
@@ -698,6 +700,8 @@ export async function handleDonorGroups(request, env, ctx = null) {
     const access = await verifiedHouseholdAccess(request, env);
     if (access.response) return access.response;
     const context = access.context;
+    const found = await findRegistrationByParishId(env, context.parishId);
+    if (!communicationsEnabledFor(found?.registration)) return privateJson({ error: "Koinonia requires an active Give + or Parish plan and must be enabled by the parish." }, { status: 403 });
 
     if (isActivityRequest) {
       return privateJson(await listGroupActivity(env, context));

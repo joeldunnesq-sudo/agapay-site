@@ -1,3 +1,4 @@
+import { hasModuleAccess } from "../lib/entitlements.js";
 import {
   findRegistrationByParishId,
   getBearerToken,
@@ -106,6 +107,7 @@ async function requireParish(request, env, parishId) {
   const found = await findRegistrationByParishId(env, parishId);
   if (!found?.registration) return { response: json({ error: "Parish not found." }, { status: 404 }) };
   if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) return { response: unauthorized() };
+  if (!hasModuleAccess(found.registration, "sacraments")) return { response: json({ error: "Sacraments calendar connections require the Sacraments add-on or Parish." }, { status: 403 }) };
   return { registration: found.registration };
 }
 

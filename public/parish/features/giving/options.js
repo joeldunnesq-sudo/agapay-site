@@ -189,11 +189,6 @@ function progressMarkup(raisedCents, goalCents) {
 }
 
 function renderOptionsProgressSummary() {
-  const activeFunds = editableFunds.filter((fund) => fund && fund.enabled !== false && fund.active !== false);
-  const activeDesignatedFunds = activeFunds.filter(
-    (fund) => !isGeneralDashboardFund(fund) && !isCandleDashboardFund(fund)
-  );
-  const starterLimitReached = !hasGivingPlusAccess() && activeDesignatedFunds.length >= 1;
   const summaryFunds = editableFunds.map((item, index) => ({ item, index }));
   if (!summaryFunds.some((row) => isCandleDashboardFund(row.item))) {
     summaryFunds.push({
@@ -280,9 +275,9 @@ function renderOptionsProgressSummary() {
       : '<div class="option-empty options-summary-empty">No giving options configured yet.</div>'
   }</div>
       <div class="option-builder options-summary-builder">
-        <div class="option-builder-title">${hasGivingPlusAccess() ? 'Add a fund' : 'Your Give designated fund'}</div>
-        <p class="section-note">${hasGivingPlusAccess() ? 'Funds shown above are the source of truth for donor choices and the Accounting suite. Saving creates or updates the matching accounting funds automatically.' : 'Give includes General Operating, one active designated fund, and candle giving. Edit the designated fund above or upgrade for additional funds.'}</p>
-        ${starterLimitReached ? '<div class="option-empty">Your one Give designated fund is active. Edit it above, or upgrade to Give + to add more.</div>' : `<div class="builder-grid"><select id="fundPreset" onchange="fillGivingPreset('fund')"><option value="custom" selected>Custom fund — name it yourself</option><optgroup label="Start from a preset">${presetOptions(fundPresets)}</optgroup></select><input id="fundAccountNumber" maxlength="24" placeholder="Fund account number (optional), e.g. 2100" /><input id="fundName" maxlength="120" placeholder="Custom fund name, e.g. Mission Development Fund" /><select id="fundRestriction"><option value="unrestricted">Unrestricted</option><option value="board_designated">Board designated</option><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option></select><textarea id="fundDescription" maxlength="500" placeholder="Describe what this parish-created fund supports."></textarea><button class="btn btn-gold" onclick="addGivingOption('fund')">Add designated fund</button></div>`}
+        <div class="option-builder-title">Add a designated fund</div>
+        <p class="section-note">Every plan includes unlimited designated funds. When Accounting is active, saved funds also synchronize with your books.</p>
+        <div class="builder-grid"><select id="fundPreset" onchange="fillGivingPreset('fund')"><option value="custom" selected>Custom fund — name it yourself</option><optgroup label="Start from a preset">${presetOptions(fundPresets)}</optgroup></select><input id="fundAccountNumber" maxlength="24" placeholder="Fund account number (optional), e.g. 2100" /><input id="fundName" maxlength="120" placeholder="Custom fund name, e.g. Mission Development Fund" /><select id="fundRestriction"><option value="unrestricted">Unrestricted</option><option value="board_designated">Board designated</option><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option></select><textarea id="fundDescription" maxlength="500" placeholder="Describe what this parish-created fund supports."></textarea><button class="btn btn-gold" onclick="addGivingOption('fund')">Add designated fund</button></div>
       </div>
     </div>`;
 }
@@ -290,21 +285,6 @@ function renderOptionsProgressSummary() {
 function addGivingOption(kind) {
   if (kind === 'campaign' && !hasGivingPlusAccess()) {
     setStatus('Campaigns require Give +.', 'error');
-    return;
-  }
-  if (
-    kind === 'fund' &&
-    !hasGivingPlusAccess() &&
-    editableFunds.some(
-      (fund) =>
-        fund &&
-        !isGeneralDashboardFund(fund) &&
-        !isCandleDashboardFund(fund) &&
-        fund.enabled !== false &&
-        fund.active !== false
-    )
-  ) {
-    setStatus('Give includes one active designated fund. Edit the current fund or upgrade to add more.', 'error');
     return;
   }
   const prefix = kind === 'fund' ? 'fund' : 'campaign';
@@ -425,7 +405,7 @@ function renderGivingOptionsEditor() {
   if (!pane) return;
   pane.innerHTML = `
       ${renderOptionsProgressSummary()}
-      <div class="giving-options-intro">${hasGivingPlusAccess() ? 'These are the choices donors see after selecting <strong>Designated Fund</strong> or <strong>Alms Campaign</strong>. Add presets or write your own.' : 'Give offers your mission three clear destinations: <strong>General Operating</strong>, <strong>one designated fund</strong>, and <strong>Candles</strong>.'}</div>
-      ${hasGivingPlusAccess() ? `<div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Alms campaigns</h3><span class="option-group-count">${editableCampaigns.length} shown</span></div><div class="option-list">${optionCards(editableCampaigns, 'campaign', 'No alms campaigns configured yet.')}</div><div class="option-builder"><div class="option-builder-title">Add an alms campaign</div><div class="builder-grid"><select id="campaignPreset" onchange="fillGivingPreset('campaign')"><option value="">Choose a preset...</option>${presetOptions(campaignPresets)}</select><input id="campaignAccountNumber" maxlength="24" placeholder="Account number, e.g. 2200" /><input id="campaignName" placeholder="Campaign name, e.g. Support for the Petrov Family" /><select id="campaignRestriction"><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option><option value="board_designated">Board designated</option><option value="unrestricted">Unrestricted</option></select><textarea id="campaignDescription" placeholder="Describe the need in plain language."></textarea><input id="campaignGoal" type="number" min="0" step="1" placeholder="Goal amount, e.g. 45000" /><button class="btn btn-ghost" onclick="addGivingOption('campaign')">Add campaign</button></div></div></div>${renderFeastCampaignSetup()}` : '<aside class="starter-tier-upgrade-card"><div><span class="starter-tier-paywall-badge">Give +</span><strong>Need more giving destinations?</strong><p>Your current plan remains fully usable with General Operating, one designated fund, and candles. Upgrade only when you need unlimited funds, campaigns, commemorations, festal alms, branding, statements, or enhanced reporting.</p></div><button class="btn btn-gold" type="button" onclick="switchTab(\'settings\')">Compare plans</button></aside>'}
+      <div class="giving-options-intro">${hasGivingPlusAccess() ? 'These are the choices donors see after selecting <strong>Designated Fund</strong> or <strong>Alms Campaign</strong>. Add presets or write your own.' : 'Give includes <strong>General Operating</strong>, <strong>unlimited designated funds</strong>, and <strong>Candles</strong>.'}</div>
+      ${hasGivingPlusAccess() ? `<div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Alms campaigns</h3><span class="option-group-count">${editableCampaigns.length} shown</span></div><div class="option-list">${optionCards(editableCampaigns, 'campaign', 'No alms campaigns configured yet.')}</div><div class="option-builder"><div class="option-builder-title">Add an alms campaign</div><div class="builder-grid"><select id="campaignPreset" onchange="fillGivingPreset('campaign')"><option value="">Choose a preset...</option>${presetOptions(campaignPresets)}</select><input id="campaignAccountNumber" maxlength="24" placeholder="Account number, e.g. 2200" /><input id="campaignName" placeholder="Campaign name, e.g. Support for the Petrov Family" /><select id="campaignRestriction"><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option><option value="board_designated">Board designated</option><option value="unrestricted">Unrestricted</option></select><textarea id="campaignDescription" placeholder="Describe the need in plain language."></textarea><input id="campaignGoal" type="number" min="0" step="1" placeholder="Goal amount, e.g. 45000" /><button class="btn btn-ghost" onclick="addGivingOption('campaign')">Add campaign</button></div></div></div>${renderFeastCampaignSetup()}` : '<aside class="starter-tier-upgrade-card"><div><span class="starter-tier-paywall-badge">Give +</span><strong>Ready for campaigns and parish life?</strong><p>Give includes unlimited funds, candles, commemorations, giver records, and CSV export. Give + adds campaigns, festal alms, branding, statements, enhanced reporting, and connected parish life.</p></div><button class="btn btn-gold" type="button" onclick="switchTab(\'settings\')">Compare plans</button></aside>'}
       <div class="btn-row"><button class="btn btn-gold" onclick="saveDashboard(this)">Save giving options</button><button class="btn btn-ghost" onclick="loadDashboard()">Discard changes</button></div>`;
 }

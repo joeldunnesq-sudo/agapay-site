@@ -144,7 +144,7 @@ assert.match(parishApp, /reviewSacramentPreparationDocument/);
 assert.match(donorApp, /renderDonorSacramentPreparation/);
 assert.match(donorApp, /uploadSacramentPreparationDocument/);
 assert.match(dashboard, /data-sac-tab="preparation"/);
-assert.match(dashboard, /\/parish\/features\/sacraments\.js\?v=20260831intelligence1/);
+assert.match(dashboard, /\/parish\/features\/sacraments\.js\?v=20260831funds2/);
 assert.match(wrangler, /binding = "SACRAMENT_DOCUMENTS"/);
 
 console.log("PASS - Sacrament Preparation templates, snapshots, progress, documents, routes, and UI are wired");

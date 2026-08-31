@@ -148,13 +148,13 @@ function givingSetupTierDetails() {
   const givingPlus = hasGivingPlusAccess();
   const featureCopy =
     tier === 'starter'
-      ? 'General Operating, one designated fund, candles, and recurring giving'
+      ? 'General Operating, unlimited designated funds, candles, and recurring giving'
       : tier === 'stewardship'
         ? 'Unlimited funds and campaigns, recurring giving, donor tools, and Stewardship Health'
         : ['parish', 'diocese'].includes(tier)
           ? 'Unlimited funds and campaigns, recurring giving, stewardship, and the complete parish operations suite'
           : 'Unlimited funds and campaigns, recurring giving, receipts, and enhanced giving reports';
-  return { tier, label, givingPlus, designatedLimit: givingPlus ? Infinity : 1, featureCopy };
+  return { tier, label, givingPlus, designatedLimit: Infinity, featureCopy };
 }
 
 function activeGivingSetupItems(items) {
@@ -250,8 +250,8 @@ function givingSetupChoicesMarkup(tier) {
     : 'Choose any that apply';
   return `<div class="giving-setup-screen">
       <div class="giving-setup-screen-heading"><span>Step 2 of 3</span><h3>Choose giving destinations</h3><p>${escapeHtml(fundLimit)}. Start small—these can always be changed later.</p></div>
-      <section class="giving-setup-choice-section"><div class="giving-setup-choice-head"><div><strong>Designated funds</strong><small>${tier.givingPlus ? 'Your plan supports unlimited active designated funds.' : 'Give supports one active designated fund.'}</small></div><em>${givingSetupDraft.designatedFunds.length}${Number.isFinite(tier.designatedLimit) ? ` / ${tier.designatedLimit}` : ''} selected</em></div>${givingSetupChoiceRows(givingSetupDraft.designatedFunds, 'fund')}${givingSetupPresetButtons('fund')}<div class="giving-setup-custom"><input id="givingSetupCustomFund" maxlength="120" placeholder="Or name a different fund"><button type="button" onclick="addGivingSetupCustom('fund')">Add fund</button></div></section>
-      ${tier.givingPlus ? `<section class="giving-setup-choice-section"><div class="giving-setup-choice-head"><div><strong>Launch campaigns</strong><small>Optional, time-limited needs. Skip this if there is no current campaign.</small></div><em>${givingSetupDraft.campaigns.length} selected</em></div>${givingSetupChoiceRows(givingSetupDraft.campaigns, 'campaign')}${givingSetupPresetButtons('campaign')}<div class="giving-setup-custom"><input id="givingSetupCustomCampaign" maxlength="120" placeholder="Or name a current campaign"><button type="button" onclick="addGivingSetupCustom('campaign')">Add campaign</button></div></section>` : '<div class="giving-setup-upgrade-note"><strong>Campaigns are not part of Give.</strong><span>You can launch now with General Operating, one designated fund, and candles. Upgrade later if the parish needs campaigns.</span></div>'}
+      <section class="giving-setup-choice-section"><div class="giving-setup-choice-head"><div><strong>Designated funds</strong><small>Every plan supports unlimited active designated funds.</small></div><em>${givingSetupDraft.designatedFunds.length}${Number.isFinite(tier.designatedLimit) ? ` / ${tier.designatedLimit}` : ''} selected</em></div>${givingSetupChoiceRows(givingSetupDraft.designatedFunds, 'fund')}${givingSetupPresetButtons('fund')}<div class="giving-setup-custom"><input id="givingSetupCustomFund" maxlength="120" placeholder="Or name a different fund"><button type="button" onclick="addGivingSetupCustom('fund')">Add fund</button></div></section>
+      ${tier.givingPlus ? `<section class="giving-setup-choice-section"><div class="giving-setup-choice-head"><div><strong>Launch campaigns</strong><small>Optional, time-limited needs. Skip this if there is no current campaign.</small></div><em>${givingSetupDraft.campaigns.length} selected</em></div>${givingSetupChoiceRows(givingSetupDraft.campaigns, 'campaign')}${givingSetupPresetButtons('campaign')}<div class="giving-setup-custom"><input id="givingSetupCustomCampaign" maxlength="120" placeholder="Or name a current campaign"><button type="button" onclick="addGivingSetupCustom('campaign')">Add campaign</button></div></section>` : '<div class="giving-setup-upgrade-note"><strong>Campaigns are not part of Give.</strong><span>You can launch now with General Operating, unlimited designated funds, and candles. Upgrade later if the parish needs campaigns.</span></div>'}
     </div>`;
 }
 
@@ -338,13 +338,6 @@ function addGivingSetupPreset(kind, key) {
   const tier = givingSetupTierDetails();
   const target = kind === 'fund' ? givingSetupDraft.designatedFunds : givingSetupDraft.campaigns;
   if (kind === 'campaign' && !tier.givingPlus) return;
-  if (kind === 'fund' && target.length >= tier.designatedLimit) {
-    setStatus(
-      `${tier.label} supports one active designated fund. Remove the current choice to select another.`,
-      'error'
-    );
-    return;
-  }
   const preset = (kind === 'fund' ? fundPresets : campaignPresets)[key];
   if (!preset || target.some((item) => item.id === preset.id)) return;
   target.push({
@@ -369,10 +362,6 @@ function addGivingSetupCustom(kind) {
   }
   const target = kind === 'fund' ? givingSetupDraft.designatedFunds : givingSetupDraft.campaigns;
   if (kind === 'campaign' && !tier.givingPlus) return;
-  if (kind === 'fund' && target.length >= tier.designatedLimit) {
-    setStatus(`${tier.label} supports one active designated fund. Remove the current choice to add another.`, 'error');
-    return;
-  }
   if (target.some((item) => String(item.name || '').toLowerCase() === name.toLowerCase())) {
     setStatus('That giving destination is already selected.', 'error');
     return;

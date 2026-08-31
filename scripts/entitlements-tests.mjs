@@ -48,11 +48,13 @@ await test("Give provides core giving without Give + features", async () => {
   assert.equal(tierIncludesModule(reg, "stewardshipHealth"), false);
   assert.equal(entitlementsSummary(reg).modules.givingPlus.included, false);
   assert.equal(tierIncludesModule({ subscriptionTier: "giving" }, "givingPlus"), true);
-  for (const feature of ["branding", "customFunds", "campaigns", "annualStatements", "reconciliation", "giverInsights"]) {
+  for (const feature of ["branding", "campaigns", "annualStatements", "giverInsights"]) {
     assert.equal(givingFeatureAccess(reg, feature), false);
     assert.equal(givingFeatureAccess({ subscriptionTier: "giving" }, feature), true);
   }
   assert.equal(givingFeatureAccess(reg, "basicGiving"), true);
+  assert.equal(givingFeatureAccess(reg, "customFunds"), true);
+  assert.equal(givingFeatureAccess(reg, "reconciliation"), true);
   assert.equal(givingFeatureAccess(reg, "candles"), true);
   assert.equal(givingFeatureAccess(reg, "starterDesignatedFund"), true);
   assert.equal(givingFeatureAccess(reg, "qrToolkit"), true);
@@ -251,7 +253,7 @@ await test("bookstoreEnabledFor defaults open (not explicitly false) once module
   assert.equal(bookstoreEnabledFor({ subscriptionTier: "giving", bookstoreEnabled: false }), false);
   assert.equal(bookstoreEnabledFor({ subscriptionTier: "giving", subscriptionAddOns: ["full_commerce"] }), true);
   assert.equal(bookstoreEnabledFor({ subscriptionTier: "monastery_free" }), false);
-  assert.equal(bookstoreEnabledFor({ subscriptionTier: "starter", stewardshipStatus: "active" }), false);
+  assert.equal(bookstoreEnabledFor({ subscriptionTier: "starter", stewardshipStatus: "active" }), true);
 });
 
 await test("entitlementsSummary reports source as tier, legacy_addon, or none", async () => {

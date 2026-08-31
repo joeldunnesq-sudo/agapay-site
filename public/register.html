@@ -911,7 +911,7 @@
         tierSelect.innerHTML = '<option value="monastery_free">Monastic — $0/month</option>';
         tierSelect.value = 'monastery_free';
         tierSelect.disabled = true;
-        tierNote.textContent = 'Canonical monasteries, sketes, and convents receive Give + capabilities with no monthly platform fee.';
+        tierNote.textContent = 'Canonical monasteries, sketes, and convents receive advanced giving (including funds, campaigns, branding, and statements) with no monthly platform fee. Directory, Koinonia, Library, Bookstore, and operational modules are not included in this monastic plan.';
       } else {
         const selectedTier = ['starter', 'giving', 'parish'].includes(tierSelect.value) ? tierSelect.value : '';
         tierSelect.innerHTML = [

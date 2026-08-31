@@ -31,7 +31,6 @@ import {
   findRegistrationByParishId,
   generateSecret,
   getBearerToken,
-  hasParishPlusAccess,
   hasProductionStore,
   json,
   missingProductionStoreResponse,
@@ -43,6 +42,7 @@ import {
   unauthorized,
   verifyParishDashboardBearer,
 } from "./parish.js";
+import { hasModuleAccess } from "../lib/entitlements.js";
 
 const commerceDatabase = (env) => env.AGAPAY_DB || env.DB || null;
 const BOOKSTORE_INVENTORY_MARKER_PREFIX = "[inventory-applied:";
@@ -652,8 +652,8 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
   if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
   }
-  if (!hasParishPlusAccess(found.registration)) {
-    return json({ error: "Bookstore Payments requires AGAPAY Parish +." }, { status: 403 });
+  if (!hasModuleAccess(found.registration, "bookstore")) {
+    return json({ error: "Bookstore is included with Give + or Parish." }, { status: 403 });
   }
 
   const segments = String(subpath || "").replace(/^\/+/, "").split("/").filter(Boolean);

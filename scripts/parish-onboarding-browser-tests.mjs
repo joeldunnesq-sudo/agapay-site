@@ -63,8 +63,12 @@ try {
       await modal.getByRole('button', { name: 'Add fund', exact: true }).click();
       await modal.locator('#givingSetupCustomFund').fill('Second fund');
       await modal.getByRole('button', { name: 'Add fund', exact: true }).click();
-      assert.equal(await modal.locator('.giving-setup-selected-row').count(), 1, 'starter permits one designated fund');
-      assert.ok((await page.locator('#toastContainer').textContent()).includes('supports one active designated fund'));
+      assert.equal(
+        await modal.locator('.giving-setup-selected-row').count(),
+        2,
+        'Give permits multiple designated funds'
+      );
+      assert.equal(await modal.getByRole('button', { name: 'Remove Second fund', exact: true }).count(), 1);
       await modal.getByRole('button', { name: 'Back', exact: true }).click();
       assert.equal(await modal.locator('#givingSetupGeneralName').inputValue(), 'Parish operating draft');
       assert.equal(await modal.locator('#givingSetupGeneralDescription').inputValue(), 'Draft description');

@@ -2,11 +2,8 @@
 // reflects Stripe's own standard processing cost only, which AGAPAY does
 // not collect or mark up. AGAPAY's revenue is the monthly subscription.
 //
-// modules mirrors src/lib/entitlements.js's TIER_MODULES -- kept as a
-// separate, display-only copy here (rather than importing entitlements.js)
-// so this file has no dependency on registration-shaped input; it only
-// describes what each tier includes, not whether any particular parish
-// currently has access (that's what entitlementsSummary() is for).
+// The catalog defines module inclusion once. entitlements.js consumes it
+// and adds subscription status, selected add-ons, and existing grants.
 // Legacy early-adopter identifiers remain exported only so historical Stripe
 // records and slot cleanup can still be processed. New checkouts always use
 // the flat standard catalog below.
@@ -117,8 +114,8 @@ export const subscriptionTiers = [
     standardMonthlyCents: 900,
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_STARTER_MONTHLY",
-    description: "Mission-ready recurring giving, commemorations, General Operating, one designated fund, and candles.",
-    modules: { givingPlus: false, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
+    description: "Complete essential giving: recurring gifts, commemorations, General Operating, unlimited designated funds, candles, and giver records.",
+    modules: { givingPlus: false, stewardshipHealth: false, sacraments: false, directory: false, library: false, bookstore: false, commerceSuite: false, communications: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
   },
   {
     id: "giving",
@@ -129,7 +126,7 @@ export const subscriptionTiers = [
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_GIVING_79_MONTHLY",
     standardStripePriceEnv: "AGAPAY_STRIPE_PRICE_GIVING_79_MONTHLY",
     description: "Giving, campaigns, pledges, Stewardship Health, Parish Directory, Bookstore, Parish Library, and Koinonia in one connected foundation.",
-    modules: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: true, bookstore: true, commerceSuite: false, communications: true, textToGive: false, accounting: false, accountingTier: "unavailable" }
+    modules: { givingPlus: true, stewardshipHealth: true, sacraments: false, directory: true, library: true, bookstore: true, commerceSuite: false, communications: true, textToGive: false, accounting: false, accountingTier: "unavailable" }
   },
   {
     id: "parish",
@@ -142,7 +139,7 @@ export const subscriptionTiers = [
     // Cloudflare secret can never silently charge the previous $199 rate.
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_149_MONTHLY",
     description: "Monthly AGAPAY platform subscription for established parishes.",
-    modules: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, commerceSuite: true, textToGive: true, accounting: true, accountingTier: "advanced_operations" }
+    modules: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, library: true, bookstore: true, commerceSuite: true, communications: true, textToGive: true, accounting: true, accountingTier: "advanced_operations" }
   },
   {
     id: "diocese",
@@ -151,7 +148,7 @@ export const subscriptionTiers = [
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_DIOCESE_MONTHLY",
     description: "Custom AGAPAY subscription pricing for cathedrals, dioceses, and multi-parish organizations.",
-    modules: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, bookstore: true, commerceSuite: true, textToGive: true, accounting: true, accountingTier: "advanced_operations" }
+    modules: { givingPlus: true, stewardshipHealth: true, sacraments: true, directory: true, library: true, bookstore: true, commerceSuite: true, communications: true, textToGive: true, accounting: true, accountingTier: "advanced_operations" }
   },
   {
     id: "monastery_free",
@@ -160,7 +157,7 @@ export const subscriptionTiers = [
     transactionRateLabel: "No AGAPAY donation fee (Stripe processing only)",
     stripePriceEnv: "",
     description: "No monthly subscription fee for Orthodox monasteries and sketes.",
-    modules: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, bookstore: false, commerceSuite: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
+    modules: { givingPlus: true, stewardshipHealth: false, sacraments: false, directory: false, library: false, bookstore: false, commerceSuite: false, communications: false, textToGive: false, accounting: false, accountingTier: "unavailable" }
   }
 ];
 
@@ -226,9 +223,20 @@ export function subscriptionTier(registration = {}) {
   return { ...matched, ...pricing, id: matched.id, parishHouseholdBand: pricing.id };
 }
 
+// Older records have no explicit status; retain their existing entitlement
+// behavior. Once present, status is authoritative for every paid module.
+export function subscriptionEntitlementActive(registration) {
+  if (!registration) return false;
+  const status = String(registration.subscriptionStatus || registration.billingStatus || "").trim().toLowerCase();
+  if (!status) return true;
+  if (!["active", "trialing", "free_forever"].includes(status)) return false;
+  return status !== "trialing" || !registration.subscriptionTrialEndsAt
+    || Date.parse(registration.subscriptionTrialEndsAt) > Date.now();
+}
+
 export function subscriptionReady(registration = {}) {
   const explicitStatus = String(registration.subscriptionStatus || registration.billingStatus || "").toLowerCase();
-  if (explicitStatus) return ["active", "trialing", "free_forever"].includes(explicitStatus);
+  if (explicitStatus) return subscriptionEntitlementActive(registration);
   // Backward compatibility for records created before subscription status
   // was stored. Once an explicit status exists, it is authoritative.
   return Boolean(registration.subscriptionId || registration.stripeSubscriptionId);
