@@ -18,6 +18,16 @@ assert.match(architectureGuide, /New feature code should not be added directly/)
 assert.ok(dashboard.length < 160_000, 'dashboard.html exceeded its shell size ceiling');
 
 const app = await read('public/parish/app.js');
+for (const pagePath of ['public/parish/dashboard.html', 'public/parish/login.html']) {
+  const page = await read(pagePath);
+  const diagnostics = page.indexOf('/parish/diagnostics.js');
+  const lifecycle = page.indexOf('/parish/dashboard-runtime.js');
+  const core = page.indexOf('/parish/app.js');
+  assert.ok(
+    diagnostics >= 0 && lifecycle > diagnostics && core > lifecycle,
+    `${pagePath} must load diagnostics and lifecycle before core`
+  );
+}
 assert.ok(app.split(/\r?\n/).length < 6_900, 'app.js grew past its legacy-shell ceiling; move feature code out');
 assert.ok(worker.split(/\r?\n/).length < 4_000, 'worker.js grew past its composition-root ceiling; move routes out');
 

@@ -67,8 +67,8 @@ assert.ok(
 );
 assert.match(style, /body\.dashboard-booting \.app \{ visibility: hidden; \}/, "the dashboard shell must stay hidden until parish entitlements are rendered");
 assert.match(style, /body\.dashboard-refreshing::before/, "an in-place refresh must use a progress indicator without hiding the loaded dashboard");
-assert.match(app, /const initialLoad = !currentParish/, "dashboard loading must distinguish first load from refresh");
-assert.match(app, /renderDashboard\(\);\s*if \(initialLoad\) finishDashboardBoot\(\);/, "the dashboard must become visible only after the entitlement-aware render completes");
+// First-load/refresh distinction and reveal ordering are exercised against the
+// real DOM in parish-dashboard-browser-tests.mjs, including failed-render retry.
 assert.match(parishRuntime, /await Promise\.all\(\[\s*refreshSubscriptionStatus[\s\S]*refreshStripeStatus[\s\S]*refreshParishLibraryNavigationStatus/, "independent status refreshes should run concurrently to reduce startup time");
 
 console.log("PASS - Parish navigation keeps its tier order and does not flash gated features before entitlements load");

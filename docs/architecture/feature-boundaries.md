@@ -21,6 +21,11 @@ window.ParishFeatureRegistry.register('feature-id', {
 
 Feature scripts currently remain classic scripts because the dashboard still has legacy inline handlers and shared globals. This registry is the migration boundary: new behavior belongs in the feature file, while `app.js` retains shell concerns such as authentication, navigation, entitlement state, and shared status UI.
 
+Dashboard boot and retry handling lives in `public/parish/dashboard-runtime.js`,
+with safe local reporting in `public/parish/diagnostics.js`. Both load before the
+core on dashboard and login pages. See [dashboard debugging](dashboard-debugging.md)
+for the browser regression gate and diagnostic privacy contract.
+
 Rules:
 
 - Use a lowercase kebab-case feature ID.

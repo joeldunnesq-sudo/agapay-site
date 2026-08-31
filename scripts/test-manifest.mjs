@@ -66,6 +66,7 @@ const core = [
   'scripts/operations-monitoring-tests.mjs',
   'scripts/source-size-budget-tests.mjs',
   'scripts/lint-warning-baseline-tests.mjs',
+  'scripts/parish-diagnostics-tests.mjs',
   'scripts/critical-path-manifest-tests.mjs',
   'scripts/production-operations-workflow-tests.mjs',
 ];
@@ -107,6 +108,7 @@ const accounting = [
 ];
 
 const productUi = [
+  'scripts/parish-dashboard-browser-tests.mjs',
   'scripts/parish-dashboard-modules-tests.mjs',
   'scripts/commerce-parish-ui-tests.mjs',
   'scripts/events-commerce-tests.mjs',

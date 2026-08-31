@@ -70,7 +70,7 @@ assert.equal(login.run("authHeaders()['X-AGAPAY-Accounting-Profile']"), 'treasur
 const dashboard = createPage();
 const scripts = [
   ...read('public/parish/dashboard.html').matchAll(
-    /<script src="(\/parish\/(?:feature-registry|features\/[^"?]+|app)\.js)\?[^\"]+"><\/script>/g
+    /<script src="(\/parish\/(?:diagnostics|dashboard-runtime|feature-registry|features\/[^"?]+|app)\.js)\?[^\"]+"><\/script>/g
   ),
 ].map((match) => `public${match[1]}`);
 for (const file of scripts) dashboard.load(file);
