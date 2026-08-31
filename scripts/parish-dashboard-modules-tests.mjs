@@ -23,7 +23,7 @@ const [dashboard, registry, core, directory, library, sacraments, accounting, co
   Object.values(paths).map((path) => readFile(path, "utf8")),
 );
 
-const registryScript = '/parish/feature-registry.js?v=20260831giving1';
+const registryScript = '/parish/feature-registry.js?v=20260831intelligence1';
 const coreScript = '/parish/app.js?';
 assert.ok(dashboard.includes(coreScript), 'dashboard core must be loaded');
 assert.ok(dashboard.includes(registryScript), 'feature registry must be loaded');
