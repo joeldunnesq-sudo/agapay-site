@@ -218,6 +218,19 @@ a { color: inherit; }
   75%, 100% { transform: translateY(-75%); }
 }
 
+.give-app-features-section { background: linear-gradient(180deg,#f5efe4,#fffdf8); }
+.give-app-features-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
+.give-app-feature { display: grid; grid-template-columns: minmax(0,1fr) 144px; gap: clamp(1rem,2.5vw,1.75rem); align-items: center; padding: clamp(1.25rem,2.5vw,1.75rem); border: 1px solid var(--give-line); border-radius: 18px; background: rgba(255,255,255,.85); }
+.give-app-feature-copy h3 { margin: 0 0 .85rem; font: 600 clamp(1.65rem,2.6vw,2.2rem)/1.05 var(--give-serif); }
+.give-app-feature-copy > p:not(.give-eyebrow) { margin: 0; color: var(--give-muted); font-size: .88rem; line-height: 1.7; }
+.give-app-feature-plan { display: block; margin-top: 1.25rem; color: var(--give-gold-dark); font-size: .72rem; font-weight: 800; line-height: 1.5; }
+.give-app-feature-shot { display: block; color: var(--give-gold-dark); text-align: center; text-decoration: none; }
+.give-app-feature-shot img { display: block; width: 100%; height: auto; border: 4px solid var(--give-navy); border-radius: 17px; box-shadow: 0 14px 26px rgba(6,21,34,.17); }
+.give-app-feature-shot > span { display: block; margin-top: .75rem; font-size: .72rem; font-weight: 800; }
+.give-app-feature-shot:hover > span { text-decoration: underline; text-underline-offset: 3px; }
+.give-app-feature-shot:focus-visible { outline: 3px solid var(--give-gold-dark); outline-offset: 6px; border-radius: 17px; }
+.give-app-features-note { margin: 1.2rem 0 0; color: var(--give-muted); font-size: .77rem; line-height: 1.65; }
+
 .give-intelligence-note { margin: -.75rem 0 1.5rem; color: var(--give-muted); font-size: .88rem; line-height: 1.7; }
 .give-intelligence-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; margin-bottom: 1.5rem; }
 .give-intelligence-grid article { display: flex; flex-direction: column; padding: clamp(1.15rem,2.5vw,1.75rem); border: 1px solid var(--give-line); border-radius: 18px; background: var(--give-paper); }
@@ -317,6 +330,8 @@ a { color: inherit; }
 .give-text-link { color: #efcf80; font-size: .82rem; font-weight: 800; text-underline-offset: 4px; }
 
 @media (max-width: 980px) {
+  .give-app-features-grid { grid-template-columns: 1fr; }
+  .give-app-feature { grid-template-columns: minmax(0,1fr) 155px; }
   .give-install-grid { grid-template-columns: 1fr; }
   .give-install-visual { width: min(100%, 460px); margin-inline: auto; }
   .give-campaign-grid { grid-template-columns: 1fr; }
@@ -350,6 +365,8 @@ a { color: inherit; }
 }
 
 @media (max-width: 560px) {
+  .give-app-feature { grid-template-columns: minmax(0,1fr) 112px; gap: 1rem; padding: 1.1rem; }
+  .give-app-feature-copy > p:not(.give-eyebrow) { font-size: .8rem; }
   .give-install-steps { grid-template-columns: 1fr; }
   .give-install-actions .give-button { width: 100%; }
   .give-campaign-actions .give-button { width: 100%; }
