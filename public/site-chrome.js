@@ -60,7 +60,7 @@
             <span class="brand-mark"><img src="/mark.png" alt="" /></span>
             <span class="brand-name">
               <strong>AGAPAY</strong>
-              <span class="brand-tagline" aria-label="Love how you give, learn, and live">Love how you <span class="flip-word" data-flip-word aria-hidden="true">GIVE</span></span>
+              <span class="brand-tagline" aria-label="Love how you serve, learn, and live">Love how you <span class="flip-word" data-flip-word aria-hidden="true">SERVE</span></span>
             </span>
           </a>
 
@@ -227,7 +227,7 @@
   }
 
   function initFlipTaglines() {
-    const words = ["GIVE", "LEARN", "LIVE"];
+    const words = ["SERVE", "LEARN", "LIVE"];
     const nodes = Array.from(document.querySelectorAll("[data-flip-word]"));
     if (!nodes.length || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
