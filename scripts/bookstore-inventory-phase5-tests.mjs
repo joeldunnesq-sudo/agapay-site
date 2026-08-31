@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
@@ -120,7 +121,7 @@ assert.equal(viewed.movements[0].countSessionId, sessionId);
 
 const migration = await readFile(new URL("../migrations/0063_bookstore_physical_counts.sql", import.meta.url), "utf8");
 const handler = await readFile(new URL("../src/handlers/parish-commerce.js", import.meta.url), "utf8");
-const app = await readFile(new URL("../public/parish/app.js", import.meta.url), "utf8");
+const app = await readParishDashboardSource();
 const dashboard = await readFile(new URL("../public/parish/dashboard.html", import.meta.url), "utf8");
 assert.match(migration, /CREATE TABLE IF NOT EXISTS commerce_inventory_count_sessions/);
 assert.match(migration, /ADD COLUMN count_session_id/);
@@ -128,7 +129,7 @@ assert.match(handler, /Add a note explaining the difference for \$\{item\.name\}
   "the close handler must use the reconciliation-style required-note register per item");
 assert.match(app, /id="bookstoreCountError"/,
   "the count UI must surface the server's required-note rejection inside the count session");
-assert.match(app, /movement\.movementType === 'physical_count' \? 'Physical count'/);
+assert.match(app, /movement\.movementType === 'physical_count'\s+\? 'Physical count'/);
 assert.match(app, /openBookstoreClosedCount/);
 assert.match(dashboard, /id="bookstoreCountSessions"/,
   "closed count sessions should be viewable beneath the current bookstore inventory list");

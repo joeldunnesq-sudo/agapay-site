@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
@@ -51,7 +52,7 @@ try {
 }
 
 const dashboard = read("public/parish/dashboard.html");
-const parishApp = read("public/parish/app.js");
+const parishApp = readParishDashboardSource();
 const worker = read("src/worker.js");
 const emailLibrary = read("src/lib/email.js");
 assert.doesNotMatch(dashboard, /Parish Email Sending|parishEmailCredentialsBody/);

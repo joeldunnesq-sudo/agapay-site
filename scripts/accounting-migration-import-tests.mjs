@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
@@ -17,7 +18,7 @@ const migration = read("accounting-migrations/0023_migration_import_sessions.sql
 const serviceSource = read("src/accounting/migration/service.js");
 const handlerSource = read("src/handlers/accounting-migration.js");
 const workerSource = `${read("src/worker.js")}\n${read("src/routes/accounting.js")}`;
-const uiSource = read("public/parish/app.js");
+const uiSource = readParishDashboardSource();
 const authorizationSource = read("src/lib/authorization.js");
 const reconciliationSource = read("src/accounting/reconciliation/service.js");
 const capabilityMigration = read("migrations/0042_accounting_migration_import_capability.sql");
@@ -251,8 +252,8 @@ console.log("PASS - chart import rejects an unconfirmed source type, links an ex
   for (const copy of ["Move from QuickBooks or Aplos", "Start clean with an opening balance", "Import full transaction history (advanced)", "does not reconstruct the accounts-payable subledger"]) {
     assert.match(uiSource, new RegExp(copy.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
   }
-  assert.match(uiSource, /migrationSourceGuide\('aplos',true\)\}\$\{migrationSourceGuide\('quickbooks'\)\}/, "source selection must visibly lead with the expanded Aplos guide while retaining QuickBooks");
-  assert.match(uiSource, /const sourceGuides=`[\s\S]*migrationSourceGuide\('aplos',session\.sourceSystem==='aplos'\)[\s\S]*migrationSourceGuide\('quickbooks',session\.sourceSystem==='quickbooks'\)/, "active migration sessions must keep both source guides available");
+  assert.match(uiSource, /migrationSourceGuide\('aplos',\s*true\)\}\$\{migrationSourceGuide\('quickbooks'\)\}/, "source selection must visibly lead with the expanded Aplos guide while retaining QuickBooks");
+  assert.match(uiSource, /const sourceGuides\s*=\s*`[\s\S]*migrationSourceGuide\('aplos',\s*session\.sourceSystem\s*===\s*'aplos'\)[\s\S]*migrationSourceGuide\('quickbooks',\s*session\.sourceSystem\s*===\s*'quickbooks'\)/, "active migration sessions must keep both source guides available");
   console.log("PASS - routes, treasurer-only capability, handler ordering, real PATCH dispatch, and both UI paths are present");
 }
 

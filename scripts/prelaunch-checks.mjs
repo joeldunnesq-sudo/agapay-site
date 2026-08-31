@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
@@ -50,7 +51,7 @@ assert.ok(registerHtml.includes("startDonorRegistration"), "Registration page sh
 assert.ok(registerHtml.includes("startOrganizationRegistration"), "Registration page should support organization entry");
 assert.ok(registerHtml.includes("organizationDescription"), "Registration page should support values-review descriptions");
 
-const parishApp = await readFile("public/parish/app.js", "utf8");
+const parishApp = await readParishDashboardSource();
 assert.ok(parishApp.includes("addressLine1"), "Parish settings should include editable address line 1");
 assert.ok(parishApp.includes("postalCode"), "Parish settings should include editable postal code");
 assert.ok(parishApp.includes("country"), "Parish settings should include editable country");

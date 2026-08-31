@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
@@ -21,7 +22,7 @@ const payablesHandler = read("src/handlers/accounting-payables-budgets.js");
 const setupHandler = read("src/handlers/accounting-setup-reports.js");
 const payablesService = read("src/accounting/payables/service.js");
 const setupService = read("src/accounting/setup/service.js");
-const parishApp = read("public/parish/app.js");
+const parishApp = readParishDashboardSource();
 const has = (source, needles, label) => needles.forEach((needle) => assert.ok(source.includes(needle), `${label} must include ${needle}`));
 
 has(payablesHandler, ["/payables/vendors", "updateVendor", "archiveVendor", "unarchiveVendor", '"ap.enter"'], "vendor lifecycle routes");

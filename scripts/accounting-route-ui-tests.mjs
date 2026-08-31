@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { handleAccountingSetupReports } from "../src/handlers/accounting-setup-reports.js";
@@ -16,7 +17,7 @@ const phaseDRoutes = read("src/handlers/accounting-payables-budgets.js");
 const phaseERoutes = read("src/handlers/accounting-reconciliation-commerce.js");
 const phaseFRoutes = read("src/handlers/accounting-close.js");
 const dashboard = read("public/parish/dashboard.html");
-const app = read("public/parish/app.js");
+const app = readParishDashboardSource();
 const css = read("public/parish/redesign.css");
 const admin = read("src/handlers/admin.js");
 const adminHtml = read("public/admin.html");
@@ -116,8 +117,8 @@ for (const action of ["renderAccountingPayments", "showAccountingPaymentForm", "
 assert.match(app, /function syncAccountingPaymentMethod\b/, "bill payments must switch between check and online-payment fields");
 for (const paymentOption of ["Online bill pay", "ACH / bank transfer", "Wire transfer", "Debit card", "Credit card", "Printed check"]) assert.ok(app.includes(paymentOption), `missing bill-payment method ${paymentOption}`);
 assert.match(app, /Confirmation \/ reference number/);
-assert.match(app, /raw\.paymentMethod!=='check'/, "non-check bill payments should post immediately after they are recorded");
-assert.match(app, /isCheck&&!payment\.printCount/, "only unprinted check payments should have posting disabled");
+assert.match(app, /raw\.paymentMethod\s*!==\s*'check'/, "non-check bill payments should post immediately after they are recorded");
+assert.match(app, /isCheck\s*&&\s*!payment\.printCount/, "only unprinted check payments should have posting disabled");
 for (const stock of ["top_check_two_stubs", "bottom_check_two_stubs", "check_only"]) assert.ok(app.includes(stock) && phaseDRoutes.includes(stock), `missing Phase H check stock support ${stock}`);
 assert.match(app, /Reason for reprinting this check/);
 assert.match(app, /Original printed/);
@@ -149,7 +150,7 @@ for (const expenseAction of ["showAccountingExpenseAccountForm", "saveAccounting
 assert.ok(app.includes('data-default-fund='), "journal account choices should carry their configured default fund");
 assert.ok(app.includes("fundSelect.value = defaultFundId"), "selecting an expense account should automatically select its default fund");
 assert.ok(routes.includes('path.match(/^\\/accounts'), "accounting setup handler should expose account creation and editing");
-for (const reportName of ["Balance Sheet", "Income Statement", "Comparative Income Statement Periods", "Budget to Actual", "Income Statement by Fund", "Balance Sheet by Fund", "Income Statement by Month", "Comparative Income Statement", "Comparative Budget to Actual", "Budget by Fund"]) assert.ok(app.includes(`title:'${reportName}'`), `missing report library option ${reportName}`);
+for (const reportName of ["Balance Sheet", "Income Statement", "Comparative Income Statement Periods", "Budget to Actual", "Income Statement by Fund", "Balance Sheet by Fund", "Income Statement by Month", "Comparative Income Statement", "Comparative Budget to Actual", "Budget by Fund"]) assert.ok(new RegExp(`title:\\s*'${reportName}'`).test(app), `missing report library option ${reportName}`);
 assert.ok(app.includes(`<button onclick="openAccountingReport('expenses')">Expense Report</button>`), "Reports quick access should include Expense Report");
 for (const reportAction of ["renderAccountingReportLibrary", "filterAccountingReportLibrary", "openAccountingReport", "loadAccountingBudgetLibraryReport", "renderAccountingReports"]) assert.match(app, new RegExp(`function ${reportAction}\\b`), `missing report library action ${reportAction}`);
 assert.ok(app.includes("accountingCustomReport"), "custom comparative and fund reports should support screen, print, and CSV output");

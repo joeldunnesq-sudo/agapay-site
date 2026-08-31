@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
@@ -20,7 +21,7 @@ const stewardship = read("src/handlers/stewardship.js");
 const bridge = read("src/handlers/stewardship-accounting-bridge.js");
 const budgets = read("src/handlers/accounting-payables-budgets.js");
 const setup = read("src/accounting/setup/service.js");
-const app = read("public/parish/app.js");
+const app = readParishDashboardSource();
 const platformMigration = read("migrations/0041_stewardship_accounting_import.sql");
 const accountingMigration = read("accounting-migrations/0022_pledge_comparison_account.sql");
 

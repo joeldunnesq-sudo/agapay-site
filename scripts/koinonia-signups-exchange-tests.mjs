@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
@@ -267,7 +268,7 @@ const sources = {
   pushes: read("src/lib/push-notifications.js"),
   shell: read("public/myagapay-shell.js"),
   parishDashboard: read("public/parish/dashboard.html"),
-  parishApp: read("public/parish/app.js"),
+  parishApp: readParishDashboardSource(),
   signupsPage: read("public/myagapay/signups.html"),
   signupsClient: read("public/myagapay/signups.js"),
   exchangePage: read("public/myagapay/exchange.html"),

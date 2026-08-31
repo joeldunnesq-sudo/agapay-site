@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -12,7 +13,7 @@ const close=read("src/handlers/accounting-close.js");
 const reconciliation=read("src/handlers/accounting-reconciliation-commerce.js");
 const budgets=read("src/handlers/accounting-payables-budgets.js");
 const worker=`${read("src/worker.js")}\n${read("src/routes/accounting.js")}`;
-const app=read("public/parish/app.js");
+const app=readParishDashboardSource();
 const dashboard=read("public/parish/dashboard.html");
 const has=(source,needles,label)=>needles.forEach(needle=>assert.ok(source.includes(needle),`${label} must include ${needle}`));
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
@@ -13,7 +14,7 @@ const migration = read("accounting-migrations/0020_phase_m_payment_runs.sql");
 const service = read("src/accounting/payables/service.js");
 const vendorReporting = read("src/accounting/payables/vendor-reporting.js");
 const handler = read("src/handlers/accounting-payables-budgets.js");
-const parishApp = read("public/parish/app.js");
+const parishApp = readParishDashboardSource();
 const has = (source, needles, label) => needles.forEach((needle) => assert.ok(source.includes(needle), `${label} must include ${needle}`));
 
 has(migration, [

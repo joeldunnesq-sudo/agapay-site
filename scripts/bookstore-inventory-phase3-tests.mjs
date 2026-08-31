@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
@@ -90,7 +91,7 @@ for (const quantity of [0, -1, 1.5]) {
 assert.equal(sqlite.prepare("SELECT stock_quantity FROM commerce_product_variants WHERE id = 'variant_1'").get().stock_quantity, 12);
 assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM commerce_inventory_movements").get().count, 2);
 
-const app = await readFile(new URL("../public/parish/app.js", import.meta.url), "utf8");
+const app = await readParishDashboardSource();
 assert.match(app, /Receive stock/);
 assert.match(app, /\/receive/);
 assert.match(app, /movement\.movementType === 'receiving'/);

@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
@@ -85,7 +86,7 @@ for (const invalid of [-1, 1.5, "not-a-number", null, ""]) {
   assert.equal(rejected.status, 422);
 }
 
-const app = await readFile(new URL("../public/parish/app.js", import.meta.url), "utf8");
+const app = await readParishDashboardSource();
 const dashboard = await readFile(new URL("../public/parish/dashboard.html", import.meta.url), "utf8");
 assert.match(app, /products\/low-stock/);
 assert.match(app, /setBookstoreLowStockFilter/);

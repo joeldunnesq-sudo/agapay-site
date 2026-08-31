@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
@@ -176,7 +177,7 @@ assert.match(handler, /recordInKindGift\(ctx\.db,\s*\{\s*actor:\s*ctx\.actor,\s*
 assert.doesNotMatch(handler, /accounting\.simple/);
 console.log("PASS - the simple and split-deposit routes reuse accounting.journals.create");
 
-const app = read("public/parish/app.js");
+const app = readParishDashboardSource();
 const dashboard = read("public/parish/dashboard.html");
 assert.match(app, /let accountingExperienceMode = 'treasurer'/);
 assert.match(app, /sessionStorage\.setItem\('agapay\.accountingExperienceMode'/);
@@ -186,11 +187,11 @@ assert.match(app, /function renderAccountingJournalEditor/);
 assert.match(app, /accountingExperienceMode === 'treasurer' && accountingView === 'ledger'/);
 assert.match(app, /newAccountingJournal\(\)/);
 assert.match(app, /function accountingOverviewHero\(\)/);
-assert.match(app, /if \(accountingExperienceMode === 'treasurer'\) return `<section class="acct-command-hero">/);
+assert.match(app, /if \(accountingExperienceMode === 'treasurer'\)\s+return `<section class="acct-command-hero">/);
 assert.match(app, /pane\.innerHTML = `\$\{accountingOverviewHero\(\)\}<div class="acct-suite-stats">/);
 assert.doesNotMatch(app, /renderAccountingTreasurerHome/);
 const overviewHero = app.slice(app.indexOf("function accountingOverviewHero"), app.indexOf("function renderAccountingOverview"));
-const treasurerHero = overviewHero.slice(0, overviewHero.indexOf("\n    return `<section class=\"acct-command-hero\">"));
+const treasurerHero = overviewHero.slice(0, overviewHero.lastIndexOf('return `<section class="acct-command-hero">'));
 assert.match(treasurerHero, /Record Income/);
 assert.match(treasurerHero, /Pay a Bill/);
 assert.doesNotMatch(treasurerHero, /New journal|Manage funds|Reconcile|Run reports/);
@@ -210,7 +211,7 @@ const expectedLabels = {
   acct_4300:"Bookstore Sales"
 };
 for (const [accountId, label] of Object.entries(expectedLabels)) {
-  assert.match(app, new RegExp(`${accountId}:'${label.replace(/[&]/g, "\\&")}'`));
+  assert.match(app, new RegExp(`${accountId}:\\s*'${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}'`));
 }
 assert.match(app, /ACCOUNTING_SIMPLE_REVENUE_LABELS\[account\.id\] \|\| account\.name/);
 console.log("PASS - seeded and custom revenue accounts have the required plain-language labels");
@@ -230,7 +231,7 @@ assert.match(app, /name="valuationBasis"[^>]*required/);
 assert.match(app, /Processional cross, vehicle, building materials, or donated services/);
 assert.doesNotMatch(app, /placeholder="Organ,/);
 assert.match(app, /accountingApi\('\/simple\/in-kind-gifts'\)/);
-assert.match(app, /\['asset','expense'\]\.includes\(account\.category\)/);
+assert.match(app, /\['asset',\s*'expense'\]\.includes\(account\.category\)/);
 assert.doesNotMatch(app.slice(app.indexOf("function accountingInKindGiftForm"), app.indexOf("function accountingOverviewHero")), /depositAccountId|bankAccounts/);
 console.log("PASS - Treasurer view exposes a separate non-cash gift form with required description and valuation fields");
 

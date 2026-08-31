@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import worker from "../src/worker.js";
@@ -319,7 +320,7 @@ const dashboardResponse = await worker.fetch(new Request(
 assert.equal(dashboardResponse.status, 200, "the authenticated parish dashboard must authorize trial Go Live without a second treasurer login");
 
 const [parishUi, parishStyles, parishRedesign, adminUi, adminStyles, stripeHandler, subscriptionCheckout, parishHandler, parishOnboardingHandler, workerSource, stewardshipHandler] = await Promise.all([
-  readFile(new URL("../public/parish/app.js", import.meta.url), "utf8"),
+  readParishDashboardSource(),
   readFile(new URL("../public/parish/style.css", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/redesign.css", import.meta.url), "utf8"),
   readFile(new URL("../public/admin/app.js", import.meta.url), "utf8"),

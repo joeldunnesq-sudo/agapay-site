@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -5,7 +6,7 @@ import { chromium } from 'playwright';
 
 const mfaClient = await readFile(new URL('../public/scripts/privileged-mfa.js', import.meta.url), 'utf8');
 const portabilityClient = await readFile(new URL('../public/parish/portability.js', import.meta.url), 'utf8');
-const parishApp = await readFile(new URL('../public/parish/app.js', import.meta.url), 'utf8');
+const parishApp = await readParishDashboardSource();
 
 assert.match(parishApp, /AgapayMfa\?\.installFetchStepUp\(\)/, 'parish dashboard must install the MFA fetch wrapper');
 assert.match(portabilityClient, /archiveHash:\s*verifiedHash/, 'closure must submit the locally verified archive hash');

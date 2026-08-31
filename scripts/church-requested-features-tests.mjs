@@ -1,10 +1,11 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 const [donorHandler, donorApp, accountHtml, parishCore, sacramentsFeature, parishHtml, worker, googleCalendar, publicStore, publicStoreApp] = await Promise.all([
   read("src/handlers/donor.js"), read("public/donor/app.js"), read("public/myagapay/account.html"),
-  read("public/parish/app.js"), read("public/parish/features/sacraments.js"), read("public/parish/dashboard.html"), read("src/worker.js"),
+  readParishDashboardSource(), read("public/parish/features/sacraments.js"), read("public/parish/dashboard.html"), read("src/worker.js"),
   read("src/sacraments/google-calendar.js"), read("public/bookstore/index.html"), read("public/bookstore/app.js")
 ]);
 const parishApp = `${parishCore}\n${sacramentsFeature}`;

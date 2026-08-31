@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
@@ -187,7 +188,7 @@ const sourceFiles = await Promise.all([
   "src/lib/rich-text.js", "src/handlers/parish-communications.js", "src/handlers/parish-teaching.js",
   "public/myagapay/parish-life.html", "public/myagapay/parish-life.js", "public/myagapay/teaching.html", "public/myagapay/teaching.js",
   "public/parish/dashboard.html", "public/parish/app.js", "src/worker.js", "src/routes/parish.js",
-].map(async (relative) => [relative, readFileSync(path.join(root, relative), "utf8")]));
+].map(async (relative) => [relative, relative === "public/parish/app.js" ? readParishDashboardSource() : readFileSync(path.join(root, relative), "utf8")]));
 const sources = Object.fromEntries(sourceFiles);
 const implementationCount = [...sources["src/lib/rich-text.js"].matchAll(/function\s+stripAuthoredHtml\s*\(/g)].length
   + [...sources["src/handlers/parish-communications.js"].matchAll(/function\s+stripAuthoredHtml\s*\(/g)].length
@@ -205,12 +206,12 @@ assert.match(sources["public/parish/dashboard.html"], /id="teachingAudio"/);
 assert.match(sources["public/parish/dashboard.html"], /id="teachingAudioUrl"[\s\S]*id="teachingPinned"[\s\S]*Pin when published/);
 assert.match(sources["public/parish/dashboard.html"], /id="teachingCategory"[\s\S]*?value="homilies"[\s\S]*?value="special_events"/);
 assert.match(sources["public/parish/app.js"], /createTeachingDraft/);
-assert.match(sources["public/parish/app.js"], /category:document\.getElementById\('teachingCategory'\)\.value/);
+assert.match(sources["public/parish/app.js"], /category:\s*document\.getElementById\('teachingCategory'\)\.value/);
 assert.match(sources["public/parish/app.js"], /audioUrl[\s\S]*toggleTeachingPin/);
 assert.match(sources["public/parish/app.js"], /Will pin when published[\s\S]*Publish pinned audio/, "the parish dashboard must distinguish draft pin intent from a visible published pin");
 assert.match(sources["public/parish/app.js"], /chooseTeachingAudioUpload[\s\S]*Replace audio file[\s\S]*uploadTeachingAudio/, "a saved draft must offer a direct retry after an upload failure");
-assert.match(sources["public/parish/app.js"], /Add audio link[\s\S]*setTeachingAudioLink[\s\S]*audioUrl:audioUrl\.trim\(\)[\s\S]*Parishioners can now play this post in My AGAPAY/, "a text-only post must be repairable with a direct audio link from the parish library");
-assert.match(sources["public/parish/app.js"], /deleteTeachingPost[\s\S]*method:'DELETE'[\s\S]*Teaching post permanently deleted/, "audio posts of every status must offer permanent deletion");
+assert.match(sources["public/parish/app.js"], /Add audio link[\s\S]*setTeachingAudioLink[\s\S]*audioUrl:\s*audioUrl\.trim\(\)[\s\S]*Parishioners can now play this post in My AGAPAY/, "a text-only post must be repairable with a direct audio link from the parish library");
+assert.match(sources["public/parish/app.js"], /deleteTeachingPost[\s\S]*method:\s*'DELETE'[\s\S]*Teaching post permanently deleted/, "audio posts of every status must offer permanent deletion");
 assert.match(sources["public/myagapay/parish-life.js"], /Boolean\(right\.pinned\)[\s\S]*Pinned ·/);
 assert.match(sources["public/myagapay/parish-life.js"], /Continue listening[\s\S]*Latest audio/, "unfinished podcast listening must appear above the combined latest-audio list on the Koinonia landing page");
 assert.match(sources["public/myagapay/parish-life.js"], /function parishLifeBalancedListenItems[\s\S]*podcastReserve[\s\S]*parishReserve[\s\S]*Math\.min\(parish\.length, 2/, "the combined list must reserve space for parish audio without excluding subscribed podcasts");

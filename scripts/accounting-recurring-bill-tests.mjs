@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
@@ -111,7 +112,7 @@ await updateRecurringBillSchedule(db, {
 assert.equal((await processDueRecurringBills(db, { asOfDate: "2026-08-30", actor, entitlementTier: "parish" })).length, 0);
 console.log("PASS - recurring vendor schedules create reviewable draft bills idempotently and can be paused");
 
-const app = read("public/parish/app.js");
+const app = readParishDashboardSource();
 assert.match(app, /onchange="applyAccountingBillVendorDefaults\(this\)"/);
 assert.match(app, /if \(vendor\.defaultExpenseAccountId.*form\.elements\.accountId/);
 assert.match(app, /if \(vendor\.defaultFundId.*form\.elements\.fundId/);

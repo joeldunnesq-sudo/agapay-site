@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
@@ -142,7 +143,7 @@ const saleUpdate = await patchBookstoreProduct(env, "parish_1", "product_1", {
 assert.equal(saleUpdate.status, 200);
 assert.equal(sqlite.prepare("SELECT sale_price_cents FROM commerce_product_variants WHERE id = 'variant_1'").get().sale_price_cents, 1795);
 
-const app = await readFile(new URL("../public/parish/app.js", import.meta.url), "utf8");
+const app = await readParishDashboardSource();
 assert.match(app, /Inventory audit trail/);
 assert.match(app, /Explain the stock difference/);
 assert.match(app, /\/movements/);

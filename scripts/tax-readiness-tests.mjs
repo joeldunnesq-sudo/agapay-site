@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 // scripts/tax-readiness-tests.mjs
 //
 // Exercises the real src/lib/tax-readiness.js gate directly (pure
@@ -64,7 +65,7 @@ const REGISTRATION_ADDRESS = {
   country: "US"
 };
 
-const parishDashboardScript = readFileSync(new URL("../public/parish/app.js", import.meta.url), "utf8");
+const parishDashboardScript = readParishDashboardSource();
 const adminDashboardHtml = readFileSync(new URL("../public/admin.html", import.meta.url), "utf8");
 const adminDashboardScript = readFileSync(new URL("../public/admin/app.js", import.meta.url), "utf8");
 const taxExemptionHandlerSource = readFileSync(new URL("../src/handlers/tax-exemption.js", import.meta.url), "utf8");

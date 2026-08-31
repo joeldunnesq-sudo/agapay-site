@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
@@ -6,7 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => readFileSync(path.join(root, file), "utf8");
-const app = read("public/parish/app.js");
+const app = readParishDashboardSource();
 const css = read("public/parish/style.css");
 const handler = read("src/handlers/stewardship.js");
 const dashboard = read("public/parish/dashboard.html");

@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { parishFromRegistration, starterFundCatalogError } from "../src/handlers/parish.js";
@@ -46,7 +47,7 @@ assert.match(starterFundCatalogError(starter.funds.filter((fund) => fund.id !== 
 const parishHandler = read("src/handlers/parish.js");
 const donorApp = read("public/donor/app.js");
 const publicForm = read("public/give/form.html");
-const parishApp = read("public/parish/app.js");
+const parishApp = readParishDashboardSource();
 const pricing = read("public/give/index.html");
 
 assert.match(parishHandler, /requestedGiftType === "fund" && parish\.designatedFundsEnabled/);
