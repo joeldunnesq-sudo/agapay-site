@@ -50,7 +50,6 @@ assert.equal(directory.calls[0].args[2], 'st fiacre');
 
 const accountingCalls = [];
 const accounting = requestContext('/api/parish/dashboard/demo/accounting/reports', 'GET', {
-  accountingAvailableForParish: () => true,
   handleAccountingRecurring: () => {
     accountingCalls.push('recurring');
     return null;

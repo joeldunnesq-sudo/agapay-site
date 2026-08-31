@@ -162,4 +162,29 @@ await dashboard.run("loadRegisteredParishFeature('accounting')");
 assert.match(accountingPane.innerHTML, /Who is using Accounting\?/);
 assert.match(accountingPane.innerHTML, /Test Treasurer/);
 assert.match(accountingPane.innerHTML, /verifyAccountingStaff\(event\)/);
+
+// An entitled parish without books needs an accurate setup state, not the
+// demo-only preview, a second upgrade, or a staff PIN that cannot open books.
+dashboard.context.fetch = async (url) => ({
+  ok: !url.endsWith('/accounting/setup'),
+  status: url.endsWith('/accounting/setup') ? 401 : 200,
+  json: async () =>
+    url.endsWith('/accounting-access/profiles')
+      ? { accounting: { status: 'setup_required', ready: false }, profiles: [] }
+      : {},
+});
+await dashboard.run("loadRegisteredParishFeature('accounting')");
+assert.match(accountingPane.innerHTML, /Accounting is included — setup is required/);
+assert.match(accountingPane.innerHTML, /no additional upgrade is required/);
+assert.doesNotMatch(accountingPane.innerHTML, /St\. Fiacre|Beta|\$84,260|bootstrapAccountingStaff/);
+assert.equal(accountingPane.dataset.loaded, 'pending');
+
+// Platform users get the same state from the capability-protected setup API.
+dashboard.context.fetch = async () => ({
+  ok: false,
+  status: 409,
+  json: async () => ({ accounting: { status: 'setup_required', ready: false } }),
+});
+await dashboard.run("loadRegisteredParishFeature('accounting')");
+assert.match(accountingPane.innerHTML, /no additional upgrade is required/);
 console.log('PASS - classic-script startup, login and staff authentication, Commerce tiers, and Koinonia load/refresh');

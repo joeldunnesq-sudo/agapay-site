@@ -374,7 +374,7 @@ assert.match(parishUi, /givingSetupReviewed:\s*true/, "saving the giving setup w
 assert.match(parishUi, /importDecision:[\s\S]*requested/, "the giving setup wizard must record the parish import decision");
 assert.doesNotMatch(parishUi.match(/async function saveGivingSetupWizard[\s\S]*?async function submitTreasurerGoLive/)?.[0] || '', /payload\(\)/, "the setup wizard must send a focused payload instead of unrelated dashboard fields");
 assert.match(parishHandler, /body\.givingSetupReviewed === true[\s\S]*recordParishGivingSetupReview/, "the parish save must complete the giving review gate");
-assert.match(parishHandler, /accountingCatalogChanged = catalogChanged && accountingAvailableForParish\(parishId, env\)/, "tiers without live Accounting must save giving setup without requiring an Accounting database");
+assert.match(parishHandler, /accountingCatalogChanged = catalogChanged && await accountingCatalogRequiredForParish\(env, parishId, current\)/, "parishes awaiting their first books must be able to save giving setup, while existing books still require synchronization");
 assert.match(parishStyles, /\.giving-setup-modal\s*\{[^}]*position:\s*fixed/, "the giving setup wizard must render as a modal pop-out");
 assert.match(parishUi, /if \(tab === 'funds'\) tab = 'options'/, "legacy Funds navigation targets must resolve to the real Funds & Alms tab");
 assert.match(parishUi, /if \(!panel\) \{[\s\S]*current page was left open/, "unknown dashboard targets must fail safely without blanking the current panel");

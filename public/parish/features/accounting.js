@@ -117,6 +117,10 @@ async function renderAccountingAccess(message = '') {
     const response = await fetch(accountingAccessApi('/profiles'), { headers: authHeaders() });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.error || 'The parish session has expired.');
+    if (payload.accounting && !payload.accounting.ready) {
+      renderAccountingReadiness(payload.accounting, pane);
+      return;
+    }
     const profiles = payload.profiles || [];
     pane.innerHTML = profiles.length
       ? `<section class="acct-access-card"><span class="acct-kicker">Protected financial workspace</span><h2>Who is using Accounting?</h2><p>Select your named profile and enter your six-digit PIN. This lets AGAPAY preserve a reliable audit trail without changing the parish’s main login.</p>${message ? `<div class="acct-access-message">${escapeHtml(message)}</div>` : ''}<form onsubmit="verifyAccountingStaff(event)"><label>Staff profile<select name="profileId" required>${profiles.map((profile) => `<option value="${escapeAttr(profile.id)}">${escapeHtml(profile.displayName)} · ${escapeHtml(profile.roleTemplate.replaceAll('_', ' '))}</option>`).join('')}</select></label><label>Accounting PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required placeholder="Six digits"></label><button class="acct-primary">Open Accounting</button><span class="acct-form-status"></span></form></section>`

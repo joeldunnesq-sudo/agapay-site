@@ -69,7 +69,7 @@ import {
 } from "../lib/core.js";
 import { beginMfaAuthentication } from "../lib/mfa.js";
 import { loadGivingCatalogFromAccounting, synchronizeGivingCatalogWithAccounting } from "../accounting/source-wiring.js";
-import { accountingAvailableForParish } from "../lib/accounting-demo-access.js";
+import { accountingCatalogRequiredForParish } from "../lib/accounting-availability.js";
 import { parishLifeAvailableFor } from "../lib/parish-life-access.js";
 import { fetchKoinoniaCalendarIcs, normalizeKoinoniaCalendarUrl } from "../lib/koinonia-calendar.js";
 import { ensureBenevolenceFundInRegistration, mergeStewardshipFundsIntoRegistration } from "../lib/stewardship-funds.js";
@@ -96,7 +96,7 @@ export {
   sacramentsEnabledFor,
 };
 
-import { bookstoreEnabledFor, communicationsEnabledFor, directoryEnabledFor, entitlementsSummary, eventsEnabledFor, exchangeEnabledFor, givingFeatureAccess, hasParishPlusAccess, mealsEnabledFor, prayerRequestsEnabledFor, sacramentsEnabledFor, signupsEnabledFor, stewardshipToolAccess, tierIncludesModule, tierIncludesParishPlus } from "../lib/entitlements.js";
+import { accountingEnabledFor, bookstoreEnabledFor, communicationsEnabledFor, directoryEnabledFor, entitlementsSummary, eventsEnabledFor, exchangeEnabledFor, givingFeatureAccess, hasParishPlusAccess, mealsEnabledFor, prayerRequestsEnabledFor, sacramentsEnabledFor, signupsEnabledFor, stewardshipToolAccess, tierIncludesModule, tierIncludesParishPlus } from "../lib/entitlements.js";
 import { getDirectorySettings } from "../directory/settings.js";
 import { createTaxExemptionClaim, issueClaimUploadToken } from "../lib/tax-exemption.js";
 import { createSubscriptionCheckoutForRegistration } from "../lib/subscription-checkout.js";
@@ -2541,6 +2541,7 @@ export function parishDashboardPayload(parishId, registration) {
     stewardshipActive: stewardshipToolAccess(registration),
     parishPlusIncludedInTier: tierIncludesParishPlus(registration),
     entitlements: entitlementsSummary(registration),
+    accountingAvailable: accountingEnabledFor(registration),
     funds: Array.isArray(registration.funds) ? registration.funds : [],
     campaigns: Array.isArray(registration.campaigns) ? registration.campaigns : [],
     feastCampaigns: Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : []
@@ -2675,7 +2676,6 @@ export async function handleParishDashboard(request, env, parishId) {
     const dashboardParish = await enrichParishGivingOptions(env, {
       ...await parishDashboardPayloadWithPricingUsage(env, parishId, registration),
       id: parishId,
-      accountingAvailable: accountingAvailableForParish(parishId, env),
       parishLifeAvailable: parishLifeAvailableFor(env),
       directoryEnabled: directoryEnabledFor(registration, directorySettings)
     });
@@ -2801,7 +2801,7 @@ export async function handleParishDashboard(request, env, parishId) {
       updated = nextSession.registration;
     }
 
-    const accountingCatalogChanged = catalogChanged && accountingAvailableForParish(parishId, env) && (
+    const accountingCatalogChanged = catalogChanged && await accountingCatalogRequiredForParish(env, parishId, current) && (
       body.accountingCatalogChanged === true
       || (body.accountingCatalogChanged === undefined && givingCatalogChanged({
         funds: updated.funds,

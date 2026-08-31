@@ -147,7 +147,13 @@ export function mealsEnabledFor(registration) {
 }
 
 export function accountingEnabledFor(registration) {
-  return registration?.accountingEnabled !== false && hasModuleAccess(registration, "accounting");
+  if (!registration || registration.accountingEnabled === false) return false;
+  if (hasLegacyParishPlusAddOn(registration)) return true;
+  const status = String(registration.subscriptionStatus || "").toLowerCase();
+  if (status && !["active", "trialing", "free_forever"].includes(status)) return false;
+  if (status === "trialing" && registration.subscriptionTrialEndsAt
+    && !(Date.parse(registration.subscriptionTrialEndsAt) > Date.now())) return false;
+  return hasModuleAccess(registration, "accounting");
 }
 
 export function accountingTierFor(registration) {
