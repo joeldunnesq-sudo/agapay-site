@@ -1,7 +1,7 @@
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { accountingAvailableForParish } from "../src/lib/accounting-demo-access.js";
+import { accountingEnabledFor } from "../src/lib/entitlements.js";
 import { ACCOUNTING_HANDLER_FILES, enumerateAccountingRoutes } from "./lib/accounting-release-gates.mjs";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
@@ -32,12 +32,12 @@ assert.match(packageJson, /"check:release-gates": "node scripts\/run-tests\.mjs 
 assert.match(testManifest, /accounting-release-gate-2-sw-lifecycle\.mjs --static-only/);
 console.log("PASS - authenticated parish/API caching remains prohibited and gate 2 is permanent");
 
-assert.equal(accountingAvailableForParish("st-fiacre"), true);
-assert.equal(accountingAvailableForParish("release-gate-b", { AGAPAY_ENVIRONMENT:"staging", ACCOUNTING_TEST_PARISH_IDS:"release-gate-b" }), true);
-assert.equal(accountingAvailableForParish("st-tester-san-antonio", { AGAPAY_ENVIRONMENT:"staging", ACCOUNTING_TEST_PARISH_IDS:"st-tester-san-antonio" }), true);
-assert.equal(accountingAvailableForParish("release-gate-b", { AGAPAY_ENVIRONMENT:"production", ACCOUNTING_TEST_PARISH_IDS:"release-gate-b" }), false);
-assert.equal(accountingAvailableForParish("release-gate-b", { ACCOUNTING_TEST_PARISH_IDS:"release-gate-b" }), false);
-console.log("PASS - a second test parish is possible only in an explicit non-production environment");
+for (const parishId of ["st-fiacre", "release-gate-b", "test-lubbock"]) {
+  assert.equal(accountingEnabledFor({ parishId, subscriptionTier: "parish", subscriptionStatus: "trialing" }), true);
+  assert.equal(accountingEnabledFor({ parishId, subscriptionTier: "starter" }), false);
+}
+assert.equal(accountingEnabledFor(null), false);
+console.log("PASS - Accounting requires subscription entitlement for every parish, including test parishes");
 
 const inventory = await enumerateAccountingRoutes();
 assert.equal(inventory.coverage.length, ACCOUNTING_HANDLER_FILES.length);

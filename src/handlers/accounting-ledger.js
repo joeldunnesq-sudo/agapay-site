@@ -1,5 +1,4 @@
 import { json } from '../lib/core.js';
-import { accountingAvailableForParish } from '../lib/accounting-demo-access.js';
 import { authorize } from '../lib/authorization.js';
 import { requireAccountingStaffProfile } from '../lib/accounting-staff.js';
 import { accountingEnabledFor, accountingTierFor } from '../lib/entitlements.js';
@@ -37,7 +36,16 @@ export async function resolveAccountingDatabaseForParish(env, parishId) {
     registration = (await findRegistrationByParishId(env, parishId))?.registration || null,
     entity = await loadAccountingEntityByParish(env, parishId),
     registry = entity && (await loadAccountingDatabaseForEntity(env, entity.id, environment));
-  if (!entity || !registry) return { registration, entity, registry, db: null };
+  if (
+    !accountingEnabledFor(registration) ||
+    !entity ||
+    !registry ||
+    entity.entityStatus !== 'ready' ||
+    entity.activationStatus !== 'active' ||
+    registry.provisioningStatus !== 'ready' ||
+    registry.healthStatus !== 'healthy'
+  )
+    return { registration, entity, registry, db: null };
   const provider = await loadAccountingDatabaseProviderRecord(env, entity.id, environment);
   if (!provider) return { registration, entity, registry, provider: null, db: null };
   const adapter = await resolveCloudflareD1Adapter(env, provider.databaseIdentifier),
@@ -52,7 +60,6 @@ export async function resolveAccountingDatabaseForParish(env, parishId) {
   };
 }
 export async function accountingContext(request, env, parishId, capability) {
-  if (!accountingAvailableForParish(parishId, env)) return { error: reply({ error: 'Not found' }, 404) };
   const auth =
     (await authorize(request, env, { parishId, capability })) ||
     (await requireAccountingStaffProfile(request, env, parishId, capability));
@@ -64,10 +71,20 @@ export async function accountingContext(request, env, parishId, capability) {
   if (
     !entity ||
     entity.entityStatus !== 'ready' ||
+    entity.activationStatus !== 'active' ||
     registry?.provisioningStatus !== 'ready' ||
     registry?.healthStatus !== 'healthy'
   )
-    return { error: reply({ error: 'Accounting is not ready or did not pass its safety checks.' }, 409) };
+    return {
+      error: reply(
+        {
+          error:
+            'Accounting is included, but its books are not ready or did not pass their safety checks. Contact AGAPAY support to complete setup.',
+          accounting: { status: entity ? 'unavailable' : 'setup_required', ready: false },
+        },
+        409
+      ),
+    };
   if (!db) return { error: reply({ error: 'Accounting database is unavailable.' }, 503) };
   return {
     db,

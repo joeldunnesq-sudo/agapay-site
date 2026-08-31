@@ -97,7 +97,6 @@ import {
 } from "./lib/core.js";
 
 import { bookstoreEnabledFor, sacramentsEnabledFor } from "./lib/entitlements.js";
-import { accountingAvailableForParish } from "./lib/accounting-demo-access.js";
 import { parishLifeAvailableFor } from "./lib/parish-life-access.js";
 import { runScheduledAccountingIntegrity } from "./accounting/integrity/scheduler.js";
 import { sweepAccountingBackupRetention } from "./accounting/backup-retention.js";
@@ -2939,7 +2938,6 @@ export function observeScheduledTask(name, task, env = {}, event = {}) {
 
 const ROUTE_ACTIONS = Object.freeze({
   addCorsHeaders,
-  accountingAvailableForParish,
   corsJson,
   handleAdminAccountingOperations,
   handleAdminAuditLog,

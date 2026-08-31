@@ -7,7 +7,6 @@ import { handleAccountingReconciliationCommerce } from "../src/handlers/accounti
 import { handleAccountingClose } from "../src/handlers/accounting-close.js";
 import { handleAccountingAccess } from "../src/handlers/accounting-access.js";
 import { handleAccountingRecurring } from "../src/handlers/accounting-recurring.js";
-import { accountingAvailableForParish, ACCOUNTING_DEMO_PARISH_ID } from "../src/lib/accounting-demo-access.js";
 import { adminRegistrationSummary } from "../src/lib/registrations.js";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -27,20 +26,13 @@ const parishHandler = read("src/handlers/parish.js");
 
 assert.match(worker, /handleAccountingSetupReports/);
 assert.match(worker, /handleAccountingAccess/);
-assert.match(worker, /accountingAvailableForParish\((?:accountingParishId|parishId),\s*env\)/);
-assert.equal(ACCOUNTING_DEMO_PARISH_ID, "st-fiacre");
-assert.equal(accountingAvailableForParish("st-fiacre"), true);
-assert.equal(accountingAvailableForParish("ST-FIACRE"), true);
-assert.equal(accountingAvailableForParish("parish-a"), false);
-assert.equal(accountingAvailableForParish("parish-b", { AGAPAY_ENVIRONMENT:"staging", ACCOUNTING_TEST_PARISH_IDS:"parish-b, parish-c" }), true);
-assert.equal(accountingAvailableForParish("parish-b", { AGAPAY_ENVIRONMENT:"production", ACCOUNTING_TEST_PARISH_IDS:"parish-b" }), false);
-assert.equal(accountingAvailableForParish("parish-b", { ACCOUNTING_TEST_PARISH_IDS:"parish-b" }), false);
+assert.doesNotMatch(worker, /accountingAvailableForParish|ACCOUNTING_TEST_PARISH_IDS/, "routing must defer authorization and entitlement to authenticated handlers");
 assert.equal(adminRegistrationSummary({ parishId:"st-fiacre" }).parishId, "st-fiacre", "admin registration summaries must expose the parish target ID");
 assert.match(app, /function accountingPreviewOnly\(\)/);
 assert.match(app, /!currentParish\?\.accountingAvailable/, "the parish UI must use server-computed Accounting availability");
 assert.doesNotMatch(app, /return !moduleIncluded\('accounting'\) \|\| currentParish\?\.parishId !== 'st-fiacre'/, "the parish UI must not hard-code a single Accounting parish");
 assert.match(app, /if \(data\.parish\) currentParish = \{ \.\.\.currentParish, \.\.\.data\.parish \};/, "Stripe refresh must preserve server-computed feature access");
-assert.match(parishHandler, /accountingAvailable:\s*accountingAvailableForParish\(parishId,\s*env\)/, "the dashboard payload must expose environment-aware Accounting availability");
+assert.match(parishHandler, /accountingAvailable:\s*accountingEnabledFor\(registration\)/, "all dashboard responses must expose entitlement-based Accounting availability");
 assert.match(ledgerHandler, /detectAccountingEnvironment\(env\)/, "accounting database resolution must use the active environment");
 assert.doesNotMatch(ledgerHandler, /loadAccountingDatabaseForEntity\(env,entity\.id,"production"\)/, "staging must not resolve production registry records");
 assert.match(admin, /\/api\/admin\/accounting\/activate-prepared/);
@@ -59,7 +51,8 @@ assert.match(adminHtml, /role="status" aria-live="polite"/, "accounting target l
 assert.match(adminHtml, /id="accountingPreparedActivation" hidden/, "prepared-database activation must be hidden until a non-production environment is confirmed");
 assert.match(adminApp, /activation\.hidden=!adminAccountingEnvironment\|\|adminAccountingEnvironment==='production'/, "production must not present an unusable staging-only action");
 assert.match(app, /function renderAccountingPaywall\(/);
-assert.match(app, /Unlock the Accounting Suite/);
+assert.match(app, /Accounting is included — setup is required/);
+assert.doesNotMatch(app, /St\. Fiacre remains the live demonstration parish/);
 assert.match(app, /Financial command center/);
 assert.match(app, /const accountingIncluded = moduleIncluded\('accounting'\)/);
 assert.match(app, /syncTierRequirementNavigation\('accounting', 'Accounting add-on', accountingIncluded\)/);
@@ -157,20 +150,20 @@ assert.ok(app.includes("accountingCustomReport"), "custom comparative and fund r
 for (const recurringFeature of ["Recurring expenses", "Schedule expense", "Due transactions post automatically each morning", "Every two weeks"]) assert.ok(app.includes(recurringFeature), `missing recurring transaction feature ${recurringFeature}`);
 for (const recurringAction of ["accountingRecurringPanel", "saveAccountingRecurring", "toggleAccountingRecurring"]) assert.match(app, new RegExp(`function ${recurringAction}\\b`), `missing recurring transaction action ${recurringAction}`);
 const unauthorized = await handleAccountingSetupReports(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/setup"), {}, "parish-a");
-assert.equal(unauthorized.status, 404);
+assert.equal(unauthorized.status, 401);
 assert.equal(unauthorized.headers.get("Cache-Control"), "private, no-store");
 const phaseDUnauthorized = await handleAccountingPayablesBudgets(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/payables/overview"), {}, "parish-a");
-assert.equal(phaseDUnauthorized.status, 404);
+assert.equal(phaseDUnauthorized.status, 401);
 assert.equal(phaseDUnauthorized.headers.get("Cache-Control"), "private, no-store");
 const phaseEUnauthorized = await handleAccountingReconciliationCommerce(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/bank/accounts"), {}, "parish-a");
-assert.equal(phaseEUnauthorized.status, 404);
+assert.equal(phaseEUnauthorized.status, 401);
 assert.equal(phaseEUnauthorized.headers.get("Cache-Control"), "private, no-store");
 const phaseFUnauthorized = await handleAccountingClose(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/close/workspace"), {}, "parish-a");
-assert.equal(phaseFUnauthorized.status, 404);
+assert.equal(phaseFUnauthorized.status, 401);
 assert.equal(phaseFUnauthorized.headers.get("Cache-Control"), "private, no-store");
 const accessUnauthorized = await handleAccountingAccess(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting-access/profiles"), {}, "parish-a");
-assert.equal(accessUnauthorized.status, 404);
+assert.equal(accessUnauthorized.status, 401);
 const recurringUnauthorized = await handleAccountingRecurring(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/recurring-transactions"), {}, "parish-a");
-assert.equal(recurringUnauthorized.status, 404);
+assert.equal(recurringUnauthorized.status, 401);
 
 console.log("Accounting route and parish UI checks passed.");

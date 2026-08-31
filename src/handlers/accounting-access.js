@@ -1,5 +1,6 @@
 import { getBearerToken, json, rateLimit } from "../lib/core.js";
-import { accountingAvailableForParish } from "../lib/accounting-demo-access.js";
+import { accountingReadinessForParish } from "../lib/accounting-availability.js";
+import { accountingEnabledFor } from "../lib/entitlements.js";
 import { expandRoleTemplate } from "../lib/authorization.js";
 import { createAccountingStaffProfile, listAccountingStaffProfiles, requireAccountingStaffProfile, revokeAccountingStaffSession, updateAccountingStaffPin, verifyAccountingStaffPin } from "../lib/accounting-staff.js";
 import { findRegistrationByParishId, verifyParishDashboardBearer } from "./parish.js";
@@ -8,17 +9,20 @@ import { recordAuditEvent } from "../lib/audit-log.js";
 const reply = (body, status = 200) => json(body, { status, headers: { "Cache-Control":"private, no-store", "X-Robots-Tag":"noindex, nofollow", Vary:"Authorization" } });
 async function parishGate(request, env, parishId) {
   const found = await findRegistrationByParishId(env, parishId);
-  return Boolean(found && await verifyParishDashboardBearer(found.registration, getBearerToken(request)));
+  return found && await verifyParishDashboardBearer(found.registration, getBearerToken(request)) ? found.registration : null;
 }
 
 export async function handleAccountingAccess(request, env, parishId) {
-  if (!accountingAvailableForParish(parishId, env)) return reply({ error:"Not found" }, 404);
   const base = `/api/parish/dashboard/${encodeURIComponent(parishId)}/accounting-access`;
   const url = new URL(request.url); if (!url.pathname.startsWith(base)) return null;
   const path = url.pathname.slice(base.length);
   const limited = await rateLimit(request, env, "accounting-staff-access", { limit: 40, windowSeconds: 300 }); if (limited) return limited;
-  if (!(await parishGate(request, env, parishId))) return reply({ error:"Unauthorized" }, 401);
-  if (request.method === "GET" && path === "/profiles") return reply({ profiles: await listAccountingStaffProfiles(env, parishId) });
+  const registration = await parishGate(request, env, parishId);
+  if (!registration) return reply({ error:"Unauthorized" }, 401);
+  if (!accountingEnabledFor(registration)) return reply({ error:"Accounting is not included or is disabled for this parish." }, 403);
+  const accounting = await accountingReadinessForParish(env, parishId, registration);
+  if (request.method === "GET" && path === "/profiles") return reply({ accounting, profiles: accounting.ready ? await listAccountingStaffProfiles(env, parishId) : [] });
+  if (!accounting.ready) return reply({ error:"Accounting is included, but its books are not ready. Contact AGAPAY support to complete setup.", accounting }, 409);
   const body = await request.json().catch(() => ({}));
   if (request.method === "POST" && path === "/bootstrap") {
     if ((await listAccountingStaffProfiles(env, parishId)).length) return reply({ error:"Accounting access is already activated." }, 409);
