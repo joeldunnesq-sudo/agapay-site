@@ -87,6 +87,82 @@ function body(request, method = 'POST') {
 
 try {
   await scenario(
+    'visual reports show budget pace, fund shares, and responsive charts',
+    async (page) => {
+      await settled(page);
+      const reports = page.locator('.sw-reports-intelligence');
+      assert.equal(await reports.locator('.sw-report-collected > strong').textContent(), '$162,000');
+      assert.ok((await reports.locator('.sw-report-pace-note').textContent()).includes('$18,000'));
+      assert.equal(await reports.locator('.sw-report-chart-metric > strong').first().textContent(), '54%');
+      assert.equal(await reports.locator('.sw-report-budget-chart [aria-hidden="true"]').count(), 3);
+      assert.equal(await reports.locator('.sw-report-fund').count(), 3);
+      assert.equal(await reports.locator('.sw-report-fund-label > span').nth(1).textContent(), 'Building <fund>');
+      assert.ok((await reports.locator('.sw-report-prior').textContent()).includes('Prior full-year giving'));
+      assert.ok(!/undefined|NaN/.test(await reports.textContent()));
+      await mkdir('artifacts/stewardship-reports', { recursive: true });
+      for (const width of [1440, 768, 390]) {
+        await page.setViewportSize({ width, height: 1100 });
+        assert.equal(await reports.evaluate((el) => el.scrollWidth <= el.clientWidth), true);
+        const charts = await reports.locator('.sw-report-chart-card').all();
+        const first = await charts[0].boundingBox();
+        const second = await charts[1].boundingBox();
+        if (width === 1440) assert.equal(first.y, second.y);
+        if (width === 390) assert.ok(second.y > first.y);
+        await reports.screenshot({ path: `artifacts/stewardship-reports/reports-${width}.png` });
+      }
+    },
+    {
+      '/stewardship/giving/summary': {
+        body: {
+          total_actual_cents: 16200000,
+          total_pledged_cents: 30000000,
+          run_rate_cents: 24300000,
+          active_donors: 180,
+          pledging_donors: 120,
+          avg_per_donor_cents: 90000,
+          day_of_year: 219,
+          days_in_year: 365,
+          prior_year_actual_cents: 28500000,
+        },
+      },
+      '/stewardship/giving/funds': {
+        body: {
+          funds: [
+            { fund_name: 'General Operating', total_cents: 8500000 },
+            { fund_name: 'Building <fund>', total_cents: 3800000 },
+            { fund_name: 'Outreach & Alms', total_cents: 1400000 },
+          ],
+        },
+      },
+    }
+  );
+
+  await scenario(
+    'missing goals and fund failures stay distinct from measured zero',
+    async (page) => {
+      await settled(page);
+      const reports = page.locator('.sw-reports-intelligence');
+      assert.ok((await reports.textContent()).includes('No annual pledge goal yet'));
+      assert.ok((await reports.textContent()).includes('Fund breakdown is temporarily unavailable'));
+      assert.equal(await reports.locator('.sw-report-collected > strong').textContent(), '$0');
+      assert.equal(await reports.locator('.sw-report-kpis .sw-kpi-value').last().textContent(), '—');
+      assert.ok(!/undefined|NaN/.test(await reports.textContent()));
+    },
+    {
+      '/stewardship/giving/summary': {
+        body: {
+          total_actual_cents: 0,
+          total_pledged_cents: 0,
+          run_rate_cents: 0,
+          active_donors: 0,
+          pledging_donors: 0,
+        },
+      },
+      '/stewardship/giving/funds': { status: 503, body: { error: 'Synthetic fund failure' } },
+    }
+  );
+
+  await scenario(
     'Giving intelligence charts, accessible values, health disclosure, and responsive layout',
     async (page) => {
       await settled(page);
