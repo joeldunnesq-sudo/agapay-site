@@ -60,7 +60,7 @@ function swReportFunds(f) {
       ? `<ul class="sw-report-funds">${rows}</ul>`
       : '<p class="sw-chart-empty">No giving by fund yet. Recorded gifts will appear here with their share of the fund total.</p>';
   return `<section class="sw-report-chart-card"><div class="sw-report-chart-heading"><h3>Giving by Fund</h3><span class="sw-report-chart-caption">Share of fund giving</span></div>
-    <div class="sw-report-chart-metric"><strong>${f.error ? '—' : fmtDollars(total)}</strong><span>across ${funds.length} ${funds.length === 1 ? 'fund' : 'funds'}</span></div>
+    <div class="sw-report-chart-metric"><strong>${f.error ? '—' : fmtDollars(total)}</strong><span>${f.error ? 'fund total unavailable' : `across ${funds.length} ${funds.length === 1 ? 'fund' : 'funds'}`}</span></div>
     ${content}<p class="sw-chart-note">Recorded AGAPAY gifts by fund. Outside giving is included in the overall collected total, but not this breakdown.</p></section>`;
 }
 
