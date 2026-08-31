@@ -15,8 +15,8 @@ export const ACCOUNTING_HANDLER_FILES = Object.freeze([
 ]);
 
 export const ACCOUNTING_READ_SMOKE_PATHS = Object.freeze([
-  ["ledger", "/ledger"],
-  ["reports", "/reports/financial-position"],
+  ["ledger", "/general-ledger"],
+  ["reports", "/reports/statement-of-financial-position"],
   ["payables", "/payables/overview"],
   ["budgets", "/budgets"],
   ["reconciliation", "/bank/accounts"],

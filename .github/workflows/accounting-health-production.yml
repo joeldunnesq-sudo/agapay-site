@@ -1,0 +1,39 @@
+name: Production Accounting Health - Test Lubbock
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: accounting-health-test-lubbock
+  cancel-in-progress: false
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Verify production health-check safety
+        run: node scripts/accounting-health-live-tests.mjs
+      - name: Read Test Lubbock accounting and Stripe health
+        run: node scripts/accounting-health-live.mjs
+        env:
+          TEST_LUBBOCK_PARISH_SESSION: ${{ secrets.TEST_LUBBOCK_PARISH_SESSION }}
+          TEST_LUBBOCK_PARISH_PASSWORD: ${{ secrets.TEST_LUBBOCK_PARISH_PASSWORD }}
+          TEST_LUBBOCK_STAFF_PROFILE_ID: ${{ secrets.TEST_LUBBOCK_STAFF_PROFILE_ID }}
+          TEST_LUBBOCK_STAFF_PIN: ${{ secrets.TEST_LUBBOCK_STAFF_PIN }}
+      - name: Upload sanitized health evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: accounting-health-test-lubbock-${{ github.run_id }}
+          path: artifacts/accounting-health/
+          if-no-files-found: error
+          retention-days: 14
