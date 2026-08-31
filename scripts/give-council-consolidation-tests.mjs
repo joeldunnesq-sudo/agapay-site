@@ -20,10 +20,10 @@ for (const name of ["handleParishStewardshipSubscribe", "handleStewardshipSubscr
   assert.doesNotMatch(handler, /stripePlatformPost|applyApprovedExemptionIfExists/);
 }
 
-for (const id of ["pricing", "security", "platform", "koinonia", "reporting", "how-it-works", "why", "parish-council", "faq"]) {
+for (const id of ["pricing", "security", "platform", "giving-app", "koinonia", "app-features", "campaigns", "reporting", "automated-reports", "how-it-works", "why", "parish-council", "faq", "install-app"]) {
   assert.match(overview, new RegExp(`id=["']${id}["']`), `the consolidated Give page must expose #${id}`);
 }
-for (const id of ["pricing", "security", "platform", "koinonia", "reporting", "how-it-works", "faq"]) {
+for (const id of ["pricing", "security", "platform", "giving-app", "koinonia", "app-features", "campaigns", "reporting", "how-it-works", "faq", "install-app"]) {
   assert.match(overview, new RegExp(`href=["']#${id}["']`), `the in-page navigation must link to #${id}`);
 }
 
@@ -85,10 +85,12 @@ assert.match(styles, /\.give-section-nav\s*\{[^}]*position:\s*sticky/, "the sect
 assert.match(styles, /@media \(max-width: 560px\)/, "the consolidated page must have a phone layout");
 assert.match(styles, /prefers-reduced-motion: reduce/, "the page must respect reduced-motion preferences");
 assert.equal((overview.match(/class="give-koinonia-phone"/g) || []).length, 1, "Koinonia must present one phone viewport instead of three separate phones");
-assert.equal((overview.match(/class="give-koinonia-slide"/g) || []).length, 4, "the phone track must include three screens and one seamless-loop duplicate");
-assert.match(styles, /@keyframes give-koinonia-swipe[\s\S]*translateY\(-25%\)[\s\S]*translateY\(-50%\)[\s\S]*translateY\(-75%\)/, "Koinonia screens must swipe upward one phone-height at a time");
-assert.match(styles, /\.give-koinonia-track\s*\{[^}]*height:\s*400%;[^}]*animation:\s*give-koinonia-swipe/, "the four-screen track must animate inside one clipped phone viewport");
-assert.match(styles, /prefers-reduced-motion: reduce[\s\S]*\.give-koinonia-track\s*\{[^}]*transform:\s*translateY\(0\)/, "reduced-motion users must receive a stable first Koinonia screen");
+assert.equal((overview.match(/class="give-koinonia-slide"/g) || []).length, 3, "Koinonia should scroll through three unique screens");
+const previewScript = read("public/koinonia-preview.js");
+assert.match(previewScript, /image\.decode\(\)/, "Koinonia should wait for images before advancing");
+assert.match(previewScript, /IntersectionObserver/, "Koinonia should advance only while visible");
+assert.match(previewScript, /paused = reducedMotion\.matches/, "Koinonia should start paused for reduced motion");
+assert.match(overview, /data-koinonia-pause[\s\S]*data-koinonia-next/, "Koinonia should provide pause and manual next controls");
 
 for (const retiredFile of ["features", "how-it-works", "pricing", "security", "get-agapay", "recurring-donations", "fundraising", "event-payments", "parish-giving"]) {
   assert.equal(existsSync(path.join(root, `public/give/${retiredFile}.html`)), false, `${retiredFile}.html must be removed after consolidation`);
