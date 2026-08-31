@@ -1,7 +1,7 @@
 'use strict';
 
 /* global currentParish, stewardshipApi, authHeaders, checkNudgeEligibility, escapeHtml,
-  parishSessionStorageKey */
+  parishSessionStorageKey, renderGivingMetrics */
 /* exported loadGivingMetricsPanel, loadStewardshipHealthScorePanel, loadDonorConcentrationPanel,
   loadRecurringGivingPanel, loadGivingIntelligencePanels, openStewardshipMonthlyReport */
 
@@ -150,139 +150,6 @@ function renderDonorRetention(d) {
       `${retained} retained, ${newDonors} new, ${lapsed} lapsed donors. Bar shows donor counts across both years.`
     ) +
     `<p class="sw-chart-note">${rate === null ? 'No prior-year donors to compare yet.' : `${swNumber(retained)} of ${swNumber(d.prior_donors)} prior-year donors have given again.`} Lapsed means no recorded gift in the selected year.</p>`
-  );
-}
-
-function swRing(pct, tone, valueLabel, subLabel) {
-  const clamped = Math.max(0, Math.min(100, pct));
-  const circumference = 2 * Math.PI * 26;
-  const dash = (clamped / 100) * circumference;
-  return (
-    '<div class="sw-ring-row">' +
-    '<svg class="sw-ring-svg" viewBox="0 0 60 60">' +
-    '<circle class="sw-ring-track" cx="30" cy="30" r="26"/>' +
-    '<circle class="sw-ring-fill tone-' +
-    tone +
-    '" cx="30" cy="30" r="26" ' +
-    'stroke-dasharray="' +
-    dash.toFixed(1) +
-    ' ' +
-    circumference.toFixed(1) +
-    '"/>' +
-    '</svg>' +
-    '<div class="sw-ring-copy"><strong>' +
-    escapeHtml(valueLabel) +
-    '</strong><span>' +
-    escapeHtml(subLabel) +
-    '</span></div>' +
-    '</div>'
-  );
-}
-
-function renderGivingMetrics(s, f, year) {
-  const pct =
-    s.total_pledged_cents > 0 ? Math.min(100, Math.round((s.total_actual_cents / s.total_pledged_cents) * 100)) : 0;
-  const rrPct =
-    s.total_pledged_cents > 0 ? Math.min(100, Math.round((s.run_rate_cents / s.total_pledged_cents) * 100)) : 0;
-  const yoy =
-    s.prior_year_actual_cents > 0
-      ? Math.round(((s.total_actual_cents - s.prior_year_actual_cents) / s.prior_year_actual_cents) * 100)
-      : null;
-  const yoyHtml =
-    yoy !== null
-      ? '<span class="sw-yoy sw-yoy-' +
-        (yoy >= 0 ? 'up' : 'down') +
-        '">' +
-        (yoy >= 0 ? '▲' : '▼') +
-        ' ' +
-        Math.abs(yoy) +
-        '% vs prior year</span>'
-      : '';
-
-  // Budget Pace — the annual pledge total treated as the giving goal,
-  // pro-rated against how far through the fiscal year today is. This is
-  // what turns "projected year-end: $218,000" from a number nobody can
-  // evaluate into a clear behind/ahead-of-pace verdict.
-  let budgetPaceHtml = '';
-  if (s.total_pledged_cents > 0 && s.day_of_year && s.days_in_year) {
-    const expectedByTodayCents = Math.round(s.total_pledged_cents * (s.day_of_year / s.days_in_year));
-    const behindPaceCents = expectedByTodayCents - s.total_actual_cents;
-    const isBehind = behindPaceCents > 0;
-    budgetPaceHtml =
-      '<div class="sw-fin-section-label" style="margin-top:1.1rem;">Budget Pace</div>' +
-      '<div class="sw-budget-pace-grid">' +
-      gmKpi('Annual Goal', fmtDollars(s.total_pledged_cents), 'fiscal year ' + year) +
-      gmKpi('Expected by Today', fmtDollars(expectedByTodayCents), 'pro-rated to date') +
-      gmKpi('Actual Collected', fmtDollars(s.total_actual_cents), '') +
-      gmKpi(isBehind ? 'Behind Pace' : 'Ahead of Pace', fmtDollars(Math.abs(behindPaceCents)), '') +
-      gmKpi(
-        'Projected Year-End',
-        fmtDollars(s.run_rate_cents),
-        s.run_rate_cents >= s.total_pledged_cents ? 'on track to meet goal' : 'short of goal at this pace'
-      ) +
-      '</div>';
-  }
-
-  const fundRows = (f.funds || [])
-    .filter((fd) => fd.total_cents > 0)
-    .map(
-      (fd) =>
-        '<tr class="sw-fund-row">' +
-        '<td class="sw-fund-name">' +
-        escapeHtml(fd.fund_name) +
-        '</td>' +
-        '<td class="sw-fund-total">' +
-        fmtDollars(fd.total_cents) +
-        '</td>' +
-        '<td class="sw-fund-pct">' +
-        fd.pct_of_total +
-        '%' +
-        '<span class="sw-fund-bar"><i style="width:' +
-        Math.min(100, fd.pct_of_total) +
-        '%"></i></span>' +
-        '</td>' +
-        '</tr>'
-    )
-    .join('');
-
-  const ringTone = pct >= 90 ? 'green' : pct >= 60 ? 'gold' : 'red';
-  const ringHtml = s.total_pledged_cents > 0 ? swRing(pct, ringTone, pct + '%', 'of pledge goal') : '';
-
-  return (
-    ringHtml +
-    '<div class="sw-kpi-grid">' +
-    gmKpi('Collected', fmtDollars(s.total_actual_cents), yoyHtml || s.active_donors + ' donors') +
-    gmKpi('Pledged', fmtDollars(s.total_pledged_cents), s.pledging_donors + ' pledging households') +
-    gmKpi('Fulfillment', s.fulfillment_rate_pct !== null ? s.fulfillment_rate_pct + '%' : '—', 'of pledge goal') +
-    gmKpi('Avg / Donor', fmtDollars(s.avg_per_donor_cents), s.active_donors + ' active this year') +
-    '</div>' +
-    budgetPaceHtml +
-    (s.total_pledged_cents > 0
-      ? '<div class="sw-progress-block">' +
-        '<div class="sw-progress-label"><span>Collected vs pledge goal</span><strong>' +
-        pct +
-        '%</strong></div>' +
-        '<div class="sw-progress-track"><div class="sw-progress-fill" style="width:' +
-        pct +
-        '%"></div></div>' +
-        '<div class="sw-progress-label sw-progress-label--runrate"><span>Run-rate projection</span><strong>' +
-        fmtDollars(s.run_rate_cents) +
-        '</strong></div>' +
-        '<div class="sw-progress-track"><div class="sw-progress-fill sw-progress-fill--dim" style="width:' +
-        rrPct +
-        '%"></div></div>' +
-        '</div>'
-      : '') +
-    (fundRows
-      ? '<div class="sw-fund-table-wrap">' +
-        '<table class="sw-fund-table">' +
-        '<thead><tr><th>Fund</th><th class="sw-th-right">Total</th><th class="sw-th-right">Share</th></tr></thead>' +
-        '<tbody>' +
-        fundRows +
-        '</tbody>' +
-        '</table>' +
-        '</div>'
-      : '')
   );
 }
 
