@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
@@ -187,7 +188,7 @@ const sourceFiles = await Promise.all([
   "src/lib/rich-text.js", "src/handlers/parish-communications.js", "src/handlers/parish-teaching.js",
   "public/myagapay/parish-life.html", "public/myagapay/parish-life.js", "public/myagapay/teaching.html", "public/myagapay/teaching.js",
   "public/parish/dashboard.html", "public/parish/app.js", "src/worker.js", "src/routes/parish.js",
-].map(async (relative) => [relative, readFileSync(path.join(root, relative), "utf8")]));
+].map(async (relative) => [relative, relative === "public/parish/app.js" ? readParishDashboardSource() : readFileSync(path.join(root, relative), "utf8")]));
 const sources = Object.fromEntries(sourceFiles);
 const implementationCount = [...sources["src/lib/rich-text.js"].matchAll(/function\s+stripAuthoredHtml\s*\(/g)].length
   + [...sources["src/handlers/parish-communications.js"].matchAll(/function\s+stripAuthoredHtml\s*\(/g)].length

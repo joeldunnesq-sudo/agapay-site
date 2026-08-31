@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
@@ -20,7 +21,7 @@ const read = (file) => readFileSync(path.join(root, file), "utf8");
 const migration = read("accounting-migrations/0021_phase_n_cash_flow_classification.sql");
 const reports = read("src/accounting/reports/service.js");
 const handler = read("src/handlers/accounting-setup-reports.js");
-const app = read("public/parish/app.js");
+const app = readParishDashboardSource();
 const has = (source, needles, label) => needles.forEach((needle) => assert.ok(source.includes(needle), `${label} must include ${needle}`));
 
 has(migration, ["UPDATE accounting_accounts", "cash_flow_classification='operating'", "is_posting_account=1", "cash_flow_classification IS NULL"], "cash-flow backfill");

@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
@@ -77,7 +78,7 @@ const [migration, preferencesMigration, workerRoot, donorRoutes, dashboard, pari
   readFile(new URL("../src/worker.js", import.meta.url), "utf8"),
   readFile(new URL("../src/routes/donor.js", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/dashboard.html", import.meta.url), "utf8"),
-  readFile(new URL("../public/parish/app.js", import.meta.url), "utf8"),
+  readParishDashboardSource(),
   readFile(new URL("../public/myagapay/parish-life.js", import.meta.url), "utf8"),
   readFile(new URL("../public/myagapay/news.html", import.meta.url), "utf8"),
   readFile(new URL("../public/myagapay/news.js", import.meta.url), "utf8"),

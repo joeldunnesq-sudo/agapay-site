@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -40,7 +41,7 @@ assert.deepEqual(instructions, [
 ]);
 
 const dashboard = read("public/parish/dashboard.html");
-const app = read("public/parish/app.js");
+const app = readParishDashboardSource();
 const css = read("public/parish/redesign.css");
 assert.match(dashboard, /id="reconcileTransferWorksheetPane"/);
 assert.match(dashboard, /Prepare fund transfers/);

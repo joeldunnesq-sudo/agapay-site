@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
@@ -102,7 +103,7 @@ assert.equal(channelFeedRequests, 1);
 assert.equal(latestChannelVideo.youtubeUrl, "https://www.youtube.com/watch?v=latest12345");
 assert.equal(latestChannelVideo.channelUpload, true);
 
-const sources = Object.fromEntries(["src/handlers/parish-video.js","src/worker.js","public/parish/dashboard.html","public/parish/app.js","public/parish/style.css","public/myagapay/parish-life.html","public/myagapay/parish-life.js","public/myagapay/media.html","public/myagapay/media.js","public/myagapay/watch.html","public/myagapay/watch.js","public/donor/style.css"].map(file=>[file,readFileSync(path.join(root,file),"utf8")]));
+const sources = Object.fromEntries(["src/handlers/parish-video.js","src/worker.js","public/parish/dashboard.html","public/parish/app.js","public/parish/style.css","public/myagapay/parish-life.html","public/myagapay/parish-life.js","public/myagapay/media.html","public/myagapay/media.js","public/myagapay/watch.html","public/myagapay/watch.js","public/donor/style.css"].map(file=>[file,file === "public/parish/app.js" ? readParishDashboardSource() : readFileSync(path.join(root,file),"utf8")]));
 assert.match(sources["src/handlers/parish-video.js"], /requireSignedURLs:\s*true/);
 assert.match(sources["src/handlers/parish-video.js"], /WHERE id = \? AND parish_id = \? AND status = 'published'/);
 for (const functionName of ["createStreamUpload", "createVideoDraft", "privateStreamAssets", "updateVideoPost"]) {

@@ -1,7 +1,8 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import fs from 'node:fs';
 
 const dashboard = fs.readFileSync(new URL('../public/parish/dashboard.html', import.meta.url), 'utf8');
-const app = fs.readFileSync(new URL('../public/parish/app.js', import.meta.url), 'utf8');
+const app = readParishDashboardSource();
 const css = fs.readFileSync(new URL('../public/styles/stewardship.css', import.meta.url), 'utf8');
 const parishCss = fs.readFileSync(new URL('../public/parish/style.css', import.meta.url), 'utf8');
 const groupsApp = fs.readFileSync(new URL('../public/myagapay/groups.js', import.meta.url), 'utf8');

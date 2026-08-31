@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
@@ -231,7 +232,7 @@ assert.ok(db.prepare("SELECT id FROM accounting_funds WHERE id='fund_catalog_old
 const wiring = read("src/accounting/source-wiring.js");
 const parish = read("src/handlers/parish.js");
 const accountingRoutes = read("src/handlers/accounting-setup-reports.js");
-const app = read("public/parish/app.js");
+const app = readParishDashboardSource();
 const dashboard = read("public/parish/dashboard.html");
 
 assert.match(wiring, /giving_source_type/);

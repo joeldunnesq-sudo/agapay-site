@@ -1,9 +1,10 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const [dashboard, app, directoryFeature, libraryFeature, sacramentsFeature, style, stewardshipCss] = await Promise.all([
   readFile(new URL("../public/parish/dashboard.html", import.meta.url), "utf8"),
-  readFile(new URL("../public/parish/app.js", import.meta.url), "utf8"),
+  readParishDashboardSource(),
   readFile(new URL("../public/parish/features/directory.js", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/features/library.js", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/features/sacraments.js", import.meta.url), "utf8"),

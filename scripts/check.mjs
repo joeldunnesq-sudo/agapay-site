@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import { parishSlug } from "../src/lib/format.js";
@@ -170,7 +171,7 @@ const listenIndex = await readFile("public/listen/index.html", "utf8");
 const adminPwa = await readFile("public/admin/pwa.js", "utf8");
 const serviceWorker = await readFile("public/service-worker.js", "utf8");
 const pwaRegister = await readFile("public/pwa-register.js", "utf8");
-const parishDashboardCore = await readFile("public/parish/app.js", "utf8");
+const parishDashboardCore = await readParishDashboardSource();
 const parishDashboardApp = [
   parishDashboardCore,
   await readFile("public/parish/features/directory.js", "utf8"),
@@ -794,7 +795,7 @@ assert.ok(worker.includes("STRIPE_SECRET_KEY") && worker.includes("RESEND_API_KE
 // composite Health Score card (absorbing retention), a Donor Concentration
 // Risk card (reusing the distribution endpoint's aggregation), a new
 // Recurring Giving Health card, and a Monthly Stewardship Report button.
-const parishAppJs = await readFile("public/parish/app.js", "utf8");
+const parishAppJs = await readParishDashboardSource();
 const stewardshipCss = await readFile("public/styles/stewardship.css", "utf8");
 assert.ok(parishDashboardHtml.includes('id="stewardshipHealthScorePane"'), "Stewardship Health tab should include a Health Score card");
 assert.ok(parishDashboardHtml.includes('points="3.8 12 7.2 12 9.2 8.3 12.3 15.8 14.5 12 20.2 12"'), "Stewardship Health card should use the heartbeat icon");

@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { accountingAvailableForParish } from "../src/lib/accounting-demo-access.js";
@@ -6,7 +7,7 @@ import { ACCOUNTING_HANDLER_FILES, enumerateAccountingRoutes } from "./lib/accou
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 const [serviceWorker, parishApp, gate1, gate2, gate3, bootstrap, helpers, smoke, deploy, workflow, signoff, packageJson, testManifest] = await Promise.all([
   read("public/service-worker.js"),
-  read("public/parish/app.js"),
+  readParishDashboardSource(),
   read("scripts/accounting-release-gate-1-check-print.mjs"),
   read("scripts/accounting-release-gate-2-sw-lifecycle.mjs"),
   read("scripts/accounting-release-gate-3-cross-tenant.mjs"),

@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { parseKoinoniaCalendarIcs } from "../src/handlers/donor.js";
@@ -117,7 +118,7 @@ const transfigurationInProgress = parseKoinoniaCalendarIcs(transfigurationCalend
 assert.equal(transfigurationInProgress.length, 1, "an in-progress recurring service should remain visible until it ends");
 
 const dashboard = await readFile(new URL("../public/parish/dashboard.html", import.meta.url), "utf8");
-const app = await readFile(new URL("../public/parish/app.js", import.meta.url), "utf8");
+const app = await readParishDashboardSource();
 const parish = await readFile(new URL("../src/handlers/parish.js", import.meta.url), "utf8");
 const donorHandler = await readFile(new URL("../src/handlers/donor.js", import.meta.url), "utf8");
 const life = await readFile(new URL("../public/myagapay/parish-life.js", import.meta.url), "utf8");

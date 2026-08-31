@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import worker from "../src/worker.js";
@@ -59,7 +60,7 @@ const [hub, hubScript, shell, parishDashboard, parishApp, groupHandler, workerSo
   readFile(new URL("../public/myagapay/parish-life.js", import.meta.url), "utf8"),
   readFile(new URL("../public/myagapay-shell.js", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/dashboard.html", import.meta.url), "utf8"),
-  readFile(new URL("../public/parish/app.js", import.meta.url), "utf8"),
+  readParishDashboardSource(),
   readFile(new URL("../src/handlers/donor-groups.js", import.meta.url), "utf8"),
   readFile(new URL("../src/worker.js", import.meta.url), "utf8"),
 ]);

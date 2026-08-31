@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { normalizeBookstoreCartItems } from "../src/handlers/donor.js";
@@ -164,7 +165,7 @@ await completeCommerceOrderFromStripe(env, {
 assert.equal(sqlite.prepare("SELECT stock_quantity FROM commerce_product_variants WHERE id = 'variant_last'").get().stock_quantity, 0,
   "a replayed completion must not decrement stock again");
 
-const parishApp = await import("node:fs").then(fs => fs.readFileSync(new URL("../public/parish/app.js", import.meta.url), "utf8"));
+const parishApp = await import("node:fs").then(fs => readParishDashboardSource());
 assert.match(parishApp, /Oversold · needs review/);
 assert.match(parishApp, /Paid past available stock/);
 

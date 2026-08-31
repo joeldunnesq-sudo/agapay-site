@@ -29,6 +29,27 @@ Rules:
 - Do not move authentication tokens or parish identity into module-level mutable state.
 - Load `feature-registry.js` before feature scripts and load feature scripts before `app.js` until the legacy global compatibility layer is retired.
 
+Large features have one lifecycle entry (`features/accounting.js`, for example)
+and supporting classic scripts in their own subdirectory (`features/accounting/`).
+Supporting scripts do not register independent features. Load them exactly once,
+before their parent entry and before `app.js`. The recursive architecture check
+enforces these rules and the existing file-size ceilings. Do not access core
+state during feature script initialization; use it only inside functions called
+after the dashboard core has loaded.
+
+Accounting owns its workspace, treasurer forms, ledger, payables, reports, fund
+administration, banking, close/governance, and migration UI. The shared
+`accountingStaffSessionKey()` and `accountingStaffSession()` functions remain in
+`app.js`: core authentication also runs on the standalone login page, which does
+not load dashboard features. Shared Giving catalogs and Stewardship remain in
+the core.
+
+Source-based regression tests use `scripts/lib/parish-dashboard-source.mjs` to
+read the actual extracted files listed in dashboard HTML. Boundary checks still
+read the core separately. `parish-dashboard-runtime-tests.mjs` executes the
+classic scripts separately in HTML order and exercises login authentication
+without feature scripts.
+
 ## Worker routes
 
 Domain route matching belongs under `src/routes/`. A router receives request-scoped context and returns a `Response` when it matches or `null` when it does not. `src/worker.js` owns only cross-cutting gates, ordered router composition, the final API 404, and static asset fallback.

@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import {
@@ -72,7 +73,7 @@ assert.equal(missingBandResponse.status, 422);
 
 const pricingPage = await readFile(new URL("../public/give/index.html", import.meta.url), "utf8");
 const registerPage = await readFile(new URL("../public/register.html", import.meta.url), "utf8");
-const parishDashboardApp = await readFile(new URL("../public/parish/app.js", import.meta.url), "utf8");
+const parishDashboardApp = await readParishDashboardSource();
 const parishHandler = await readFile(new URL("../src/handlers/parish.js", import.meta.url), "utf8");
 const parishPricingUsage = await readFile(new URL("../src/lib/parish-pricing-usage.js", import.meta.url), "utf8");
 assert.doesNotMatch(pricingPage, /early-adopter|first 20/i);

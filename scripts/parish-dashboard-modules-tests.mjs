@@ -9,18 +9,19 @@ const paths = {
   directory: new URL("public/parish/features/directory.js", root),
   library: new URL("public/parish/features/library.js", root),
   sacraments: new URL("public/parish/features/sacraments.js", root),
+  accounting: new URL("public/parish/features/accounting.js", root),
   notifications: new URL("src/lib/parish-notifications.js", root),
 };
 
-const [dashboard, registry, core, directory, library, sacraments, notifications] = await Promise.all(
+const [dashboard, registry, core, directory, library, sacraments, accounting, notifications] = await Promise.all(
   Object.values(paths).map((path) => readFile(path, "utf8")),
 );
 
-const registryScript = '/parish/feature-registry.js?v=20260829modules2';
-const coreScript = '/parish/app.js?v=20260829modules2';
+const registryScript = '/parish/feature-registry.js?v=20260830features1';
+const coreScript = '/parish/app.js?v=20260830features1';
 assert.ok(dashboard.includes(registryScript), 'feature registry must be loaded');
 for (const feature of ["directory", "library", "sacraments"]) {
-  const featureScript = `/parish/features/${feature}.js?v=20260829modules2`;
+  const featureScript = `/parish/features/${feature}.js?v=20260830features1`;
   assert.ok(dashboard.includes(featureScript), `${feature} feature script must be loaded`);
   assert.ok(dashboard.indexOf(registryScript) < dashboard.indexOf(featureScript), `registry must load before ${feature}`);
   assert.ok(dashboard.indexOf(featureScript) < dashboard.indexOf(coreScript), `${feature} must load before the dashboard core`);
@@ -36,6 +37,10 @@ assert.match(core, /loadRegisteredParishFeature\('library'\)/);
 assert.match(directory, /ParishFeatureRegistry\.register\('directory'/);
 assert.match(library, /ParishFeatureRegistry\.register\('library'/);
 assert.match(sacraments, /ParishFeatureRegistry\.register\('sacraments'/);
+assert.doesNotMatch(core, /function loadAccountingTab/);
+assert.match(core, /loadRegisteredParishFeature\('accounting'\)/);
+assert.match(accounting, /ParishFeatureRegistry\.register\('accounting'/);
+assert.match(core, /function accountingStaffSession\(/, 'shared authentication must work without feature scripts');
 
 const coreStats = await stat(paths.core);
 assert.ok(coreStats.size < 950_000, `dashboard core grew past its 950 KB guardrail (${coreStats.size} bytes)`);
@@ -46,3 +51,4 @@ assert.doesNotMatch(notifications, /onboardingPdfB64/, "the retired embedded onb
 assert.ok(notificationStats.size < 100_000, `notification module grew past its 100 KB guardrail (${notificationStats.size} bytes)`);
 
 console.log("PASS - Parish dashboard feature boundaries and source-size guardrails");
+await import('./parish-dashboard-runtime-tests.mjs');

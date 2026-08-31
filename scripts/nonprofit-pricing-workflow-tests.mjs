@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
@@ -14,7 +15,7 @@ const parishRoutes = read("src/routes/parish.js");
 const adminRoutes = read("src/routes/admin.js");
 const handler = read("src/handlers/nonprofit-pricing.js");
 const parishHtml = read("public/parish/dashboard.html");
-const parishApp = read("public/parish/app.js");
+const parishApp = readParishDashboardSource();
 const adminHtml = read("public/admin.html");
 const adminApp = read("public/admin/app.js");
 const wrangler = read("wrangler.toml");

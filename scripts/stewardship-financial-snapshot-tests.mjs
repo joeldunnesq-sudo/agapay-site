@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
@@ -11,7 +12,7 @@ const externalAssetsMigration = read("migrations/0050_financial_snapshot_externa
 const restrictedAdjustmentsMigration = read("migrations/0052_restricted_fund_snapshot_adjustments.sql");
 const worker = read("src/worker.js");
 const handler = read("src/handlers/stewardship.js");
-const app = read("public/parish/app.js");
+const app = readParishDashboardSource();
 const dashboard = read("public/parish/dashboard.html");
 const css = read("public/parish/style.css");
 const stewardshipCss = read("public/styles/stewardship.css");

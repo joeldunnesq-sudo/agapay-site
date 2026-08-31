@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
@@ -219,7 +220,7 @@ await test("admin and parish clients load the mandatory MFA experience", async (
     assert.match(source, /privileged-mfa\.css/);
   }
   assert.match(readFileSync(path.join(root, "public/admin/app.js"), "utf8"), /AgapayMfa\.runFlow/);
-  assert.match(readFileSync(path.join(root, "public/parish/app.js"), "utf8"), /AgapayMfa\.runFlow/);
+  assert.match(readParishDashboardSource(), /AgapayMfa\.runFlow/);
 });
 
 if (!process.exitCode) console.log(`\n${passed} privileged MFA tests passed.`);
