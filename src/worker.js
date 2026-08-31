@@ -97,6 +97,7 @@ import {
 } from "./lib/core.js";
 
 import { bookstoreEnabledFor, sacramentsEnabledFor } from "./lib/entitlements.js";
+import { readStewardshipGivingMix } from "./lib/stewardship-giving.js";
 import { parishLifeAvailableFor } from "./lib/parish-life-access.js";
 import { runScheduledAccountingIntegrity } from "./accounting/integrity/scheduler.js";
 import { sweepAccountingBackupRetention } from "./accounting/backup-retention.js";
@@ -2013,17 +2014,11 @@ async function handleStewardshipGivingRecurring(request, env, parishId) {
 
   const url  = new URL(request.url);
   const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
-  const yearStart = `${year}-01-01`;
-  const yearEnd   = `${year}-12-31`;
   const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString();
   const fortyFiveDaysAgo = new Date(Date.now() - 45 * 86400000).toISOString();
 
   const [totalRow, recurringPaidRows, failedRow, canceledRow] = await Promise.all([
-    env.AGAPAY_DB.prepare(`
-      SELECT COALESCE(SUM(COALESCE(json_extract(data, '$.giftAmountCents'), json_extract(data, '$.amountCents'), 0)), 0) AS total_cents
-      FROM donor_offerings
-      WHERE parish_id = ? AND payment_status = 'paid' AND created_at BETWEEN ? AND ?
-    `).bind(parishId, yearStart, yearEnd).first(),
+    readStewardshipGivingMix(env, parishId, year),
 
     // Most recent successful charge per active recurring subscription —
     // used both to count active recurring donors and to build a
@@ -2068,9 +2063,11 @@ async function handleStewardshipGivingRecurring(request, env, parishId) {
   const mrrCents = Math.round(activeRecurring.reduce((s, r) => s + monthlyEquivFor(r.amount_cents || 0, r.frequency), 0));
   const avgRecurringGiftCents = recurringDonorCount > 0 ? Math.round(mrrCents / recurringDonorCount) : 0;
   const totalGivingCents = totalRow?.total_cents || 0;
-  const recurringAnnualEquivCents = mrrCents * 12;
+  // The chart compares gifts received in the same year. Annualized MRR is
+  // a projection and can otherwise make a partial year appear 100% recurring.
+  const recurringReceivedCents = totalRow?.recurring_received_cents || 0;
   const pctRecurringOfTotal = totalGivingCents > 0
-    ? Math.round((Math.min(recurringAnnualEquivCents, totalGivingCents) / totalGivingCents) * 100)
+    ? Math.round((recurringReceivedCents / totalGivingCents) * 100)
     : null;
 
   return json({

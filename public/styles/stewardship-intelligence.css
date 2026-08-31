@@ -1,0 +1,113 @@
+/* Giving intelligence: data-led charts within the Stewardship Health tab. */
+#tab-stewardship {
+  --sw-chart-green: #23794e;
+  --sw-chart-gold: #bb9138;
+  --sw-chart-sand: #cbbba3;
+  --sw-chart-pale: #e9e0ca;
+}
+.sw-intelligence-hero .sw-suite-subhead { max-width: none; font-size: 15px; }
+.sw-suite-tool-grid--health { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.15rem; }
+.sw-suite-tool-grid--health .sw-suite-tool-card {
+  background: #fffdf9;
+  box-shadow: 0 3px 14px rgba(6,21,34,.025);
+  border-color: #e2ded5;
+  border-radius: 18px;
+}
+.sw-suite-tool-grid--health .sw-tool-card-icon {
+  width: 42px; height: 42px; border-radius: 50%; margin: 1.35rem 1.4rem 0;
+  background: #faf6eb; color: #a47a23;
+}
+.sw-suite-tool-grid--health .sw-tool-card-icon svg { width: 21px; height: 21px; }
+.sw-suite-tool-grid--health .sw-tool-card-title {
+  font-family: var(--sans); font-size: 1.08rem; font-weight: 700;
+  padding: .8rem 1.4rem 0; margin: 0; white-space: normal; line-height: 1.3;
+}
+.sw-suite-tool-grid--health .sw-tool-card-desc {
+  padding: .4rem 1.4rem 0; margin: 0; font-size: .82rem; line-height: 1.55;
+  min-height: 3rem; color: #60676b; background: none; border: 0;
+}
+.sw-suite-tool-grid--health .sw-tool-card-body { padding: 1.1rem 1.4rem 1.4rem; }
+.sw-intelligence-metric { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+.sw-intelligence-metric > div { display: flex; align-items: baseline; gap: .7rem; flex-wrap: wrap; }
+.sw-intelligence-metric strong, .sw-concentration-stat strong {
+  font-family: var(--sans); font-variant-numeric: tabular-nums;
+  font-size: clamp(2rem, 3vw, 2.65rem); font-weight: 600; line-height: 1; letter-spacing: -.05em; color: var(--deep);
+}
+.sw-intelligence-metric span { font-size: .78rem; color: #60676b; }
+.sw-chart-period { flex-shrink: 0; font-size: .68rem !important; }
+.sw-distribution-chart { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .8rem; padding-top: 1.2rem; }
+.sw-distribution-column { text-align: center; min-width: 0; }
+.sw-distribution-track { height: 105px; display: flex; align-items: flex-end; border-bottom: 1px solid #d9d0ba; }
+.sw-distribution-bar {
+  width: 100%; background: var(--sw-chart-gold); position: relative;
+  border-radius: 5px 5px 0 0; min-height: 0;
+}
+.sw-distribution-column:first-child .sw-distribution-bar { background: #a97f27; }
+.sw-distribution-bar strong { position: absolute; bottom: calc(100% + 7px); left: 0; right: 0; font-size: .85rem; font-weight: 600; color: var(--deep); }
+.sw-distribution-column > span { display: block; margin-top: .65rem; color: #66645f; font-size: .69rem; }
+.sw-stacked-chart { display: flex; height: 34px; gap: 4px; border-radius: 6px; overflow: hidden; }
+.sw-chart-segment { min-width: 0; border-radius: 4px; }
+.sw-chart-segment[style="width:0%"] { display: none; }
+.sw-chart-green { background: var(--sw-chart-green); }
+.sw-chart-gold { background: var(--sw-chart-gold); }
+.sw-chart-sand { background: var(--sw-chart-sand); }
+.sw-chart-pale { background: var(--sw-chart-pale); }
+.sw-chart-legend { list-style: none; padding: 0; margin: .85rem 0 1.1rem; display: flex; flex-wrap: wrap; gap: .65rem 1.25rem; }
+.sw-chart-legend li { display: flex; align-items: center; gap: .4rem; font-size: .75rem; color: #66645f; }
+.sw-chart-legend i { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.sw-chart-legend strong { color: var(--deep); font-weight: 600; font-variant-numeric: tabular-nums; }
+.sw-chart-note, .sw-chart-empty, .sw-intelligence-source { font-size: .72rem; color: #6d716e; line-height: 1.6; margin: .9rem 0 0; }
+.sw-chart-empty { padding: 1.25rem 0; }
+.sw-intelligence-source { margin: -.1rem .25rem 1.5rem; max-width: 100ch; }
+.sw-tool-concentration .sw-concentration-row { gap: 1rem; margin: 0 0 .9rem; }
+.sw-tool-concentration .sw-concentration-stat { border: 0; background: none; padding: 0; }
+.sw-tool-concentration .sw-concentration-stat span { margin-top: .5rem; }
+.sw-tool-concentration .sw-concentration-risk-badge { align-self: flex-start; margin-bottom: 1.15rem; }
+.sw-tool-recurring .sw-recurring-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; border-top: 1px solid #e8e3d9; padding-top: 1rem; }
+.sw-tool-recurring .sw-kpi-card { padding: 0; border: 0; background: none; }
+.sw-tool-recurring .sw-kpi-value { font-family: var(--sans); font-size: 1.35rem; }
+.sw-tool-recurring .sw-kpi-label { font-size: .65rem; }
+.sw-tool-recurring .sw-kpi-sub { font-size: .64rem; }
+.sw-tool-recurring .sw-recurring-alert-row { margin-top: 1rem; gap: .65rem; }
+.sw-tool-recurring .sw-recurring-alert { display: flex; align-items: baseline; gap: .4rem; padding: .5rem .65rem; }
+.sw-tool-recurring .sw-recurring-alert strong { font-family: var(--sans); font-size: .9rem; }
+.sw-tool-recurring .sw-recurring-alert span { font-size: .65rem; }
+.sw-suite-tool-grid--health .sw-tool-health-score {
+  grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: .9rem;
+  background: linear-gradient(110deg, #f7f3e8, #fffdf9 70%); padding: 1.1rem 1.4rem;
+}
+.sw-suite-tool-grid--health .sw-tool-health-score .sw-tool-card-icon { grid-column: 1; grid-row: 1; margin: 0; width: 24px; height: 24px; border: 0; background: none; }
+.sw-suite-tool-grid--health .sw-tool-health-score .sw-tool-card-title { grid-column: 2; padding: 0; align-self: center; font-size: .83rem; }
+.sw-suite-tool-grid--health .sw-tool-health-score .sw-tool-card-body { grid-column: 1 / -1; padding: .8rem 0 0; }
+.sw-suite-tool-grid--health .sw-health-score-row { align-items: center; margin-bottom: 0; }
+.sw-suite-tool-grid--health .sw-health-score-badge {
+  width: 78px; height: 78px; border: 0; position: relative; isolation: isolate;
+  background: conic-gradient(var(--gold) var(--sw-score), #e5dfd1 0);
+}
+.sw-suite-tool-grid--health .sw-health-score-badge.tone-green { background: conic-gradient(var(--sw-chart-green) var(--sw-score), #e5dfd1 0); }
+.sw-suite-tool-grid--health .sw-health-score-badge.tone-red { background: conic-gradient(#a3483d var(--sw-score), #e5dfd1 0); }
+.sw-health-score-badge::before { content: ''; position: absolute; inset: 6px; background: #fbf8f0; border-radius: 50%; z-index: -1; }
+.sw-health-score-badge strong { font-family: var(--sans); font-size: 1.7rem; }
+.sw-suite-tool-grid--health .sw-health-score-headline { font-family: var(--sans); font-size: 1.05rem; }
+.sw-health-score-sub { font-size: .78rem; line-height: 1.5; margin-bottom: 0; max-width: 78ch; }
+.sw-health-details { margin-top: .85rem; border-top: 1px solid #e4ddcd; padding-top: .75rem; }
+.sw-health-details summary { cursor: pointer; font-size: .74rem; font-weight: 600; color: #6f541d; }
+.sw-health-details summary span { float: right; color: #73736a; font-weight: 400; }
+.sw-health-details summary:focus-visible { outline: 2px solid #a47a23; outline-offset: 4px; }
+.sw-suite-tool-grid--health .sw-health-chips { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 1rem; }
+.sw-signal-track { height: 4px; margin-top: .6rem; background: #e8e3d9; border-radius: 4px; overflow: hidden; }
+.sw-signal-track i { display: block; height: 100%; background: var(--gold); }
+@media (max-width: 760px) {
+  .sw-suite-tool-grid--health { grid-template-columns: minmax(0, 1fr); }
+  .sw-suite-tool-grid--health .sw-health-chips { grid-template-columns: 1fr; }
+  .sw-suite-tool-grid--health .sw-health-score-row { flex-direction: row; }
+  .sw-tool-concentration .sw-concentration-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sw-tool-recurring .sw-recurring-alert-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 420px) {
+  .sw-intelligence-metric { flex-wrap: wrap; gap: .65rem; }
+  .sw-distribution-chart { gap: .45rem; }
+  .sw-distribution-column > span { font-size: .62rem; }
+  .sw-tool-recurring .sw-recurring-kpi-grid { grid-template-columns: 1fr; }
+  .sw-tool-recurring .sw-recurring-alert { flex-wrap: wrap; }
+}

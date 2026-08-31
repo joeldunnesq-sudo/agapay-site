@@ -138,6 +138,7 @@ const productUi = [
   'scripts/donor-today-saint-tests.mjs',
   'scripts/stewardship-packet-editor-tests.mjs',
   'scripts/stewardship-financial-snapshot-tests.mjs',
+  'scripts/stewardship-giving-intelligence-tests.mjs',
   'scripts/give-security-faq-tests.mjs',
 ];
 

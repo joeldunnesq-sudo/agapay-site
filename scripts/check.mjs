@@ -791,12 +791,11 @@ assert.ok(hasWorkerRoute("/api/admin/audit-log"), "worker should route GET /api/
 assert.ok(worker.includes("async function handleHealth") && hasWorkerRoute("/api/health"), "worker should expose GET /api/health for launch diagnostics");
 assert.ok(worker.includes("STRIPE_SECRET_KEY") && worker.includes("RESEND_API_KEY") && worker.includes("TAX_EXEMPTION_DOCS") && worker.includes("GIVING_STATEMENTS"), "health endpoint should report config presence without exposing secret values");
 
-// Stewardship tab redesign -- renamed "Stewardship Health", with a
-// composite Health Score card (absorbing retention), a Donor Concentration
-// Risk card (reusing the distribution endpoint's aggregation), a new
-// Recurring Giving Health card, and a Monthly Stewardship Report button.
+// Giving intelligence keeps the health overview and four giving charts
+// together, with the existing reports and records below them.
 const parishAppJs = await readParishDashboardSource();
 const stewardshipCss = await readFile("public/styles/stewardship.css", "utf8");
+const intelligenceCss = await readFile("public/styles/stewardship-intelligence.css", "utf8");
 assert.ok(parishDashboardHtml.includes('id="stewardshipHealthScorePane"'), "Stewardship Health tab should include a Health Score card");
 assert.ok(parishDashboardHtml.includes('points="3.8 12 7.2 12 9.2 8.3 12.3 15.8 14.5 12 20.2 12"'), "Stewardship Health card should use the heartbeat icon");
 assert.ok(parishDashboardHtml.includes('id="stewardshipConcentrationPane"'), "Stewardship Health tab should include a Donor Concentration Risk card");
@@ -808,12 +807,14 @@ assert.ok(
     && parishDashboardHtml.indexOf('id="stewardshipHealthScorePane"', stewardshipHealthGridStart) < stewardshipReportsStart
     && parishDashboardHtml.indexOf('id="stewardshipConcentrationPane"', stewardshipHealthGridStart) < stewardshipReportsStart
     && parishDashboardHtml.indexOf('id="stewardshipRecurringPane"', stewardshipHealthGridStart) < stewardshipReportsStart,
-  "the three Stewardship health signals should share the top three-column grid"
+  "Stewardship health signals should remain above the reports"
 );
 assert.ok(
-  /\.sw-suite-tool-grid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/.test(stewardshipCss)
-    && stewardshipCss.includes(".sw-suite-tool-grid--health .sw-health-score-copy"),
-  "the Stewardship health grid should use three desktop columns with compact score content"
+  /\.sw-suite-tool-grid--health\s*\{[\s\S]*?grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/.test(intelligenceCss)
+    && parishDashboardHtml.includes('id="stewardshipDistributionPane"')
+    && parishDashboardHtml.includes('id="stewardshipRetentionPane"')
+    && parishDashboardHtml.includes('Giving intelligence'),
+  "Giving intelligence should show distribution and retention in a two-column chart grid"
 );
 assert.ok(
   parishDashboardHtml.includes("sw-tool-meeting-packets-featured")

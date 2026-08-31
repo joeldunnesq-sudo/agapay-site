@@ -3,7 +3,7 @@
 /* global currentParish, isStarterTier, isParishTier, isParishPlusActive, syncDashboardPaywall,
   renderParishPlusMeetingsPane, authHeaders, updateStewardshipBadges, loadStewardshipHealthScorePanel,
   loadGivingMetricsPanel, loadFinancialSnapshotsPanel, loadManualIncomePanel, loadDonorConcentrationPanel,
-  loadRecurringGivingPanel, escapeHtml, setStatus */
+  loadRecurringGivingPanel, loadGivingIntelligencePanels, escapeHtml, setStatus */
 /* exported dismissStewardshipCompNotice, startStewardshipSubscription, openStewardshipBilling */
 
 // Plan status, lifecycle, billing, and founding-parish notices.
@@ -69,6 +69,7 @@ async function loadStewardshipPanel(force = false) {
 
 function loadStewardshipEssentialPanels() {
   loadStewardshipHealthScorePanel();
+  loadGivingIntelligencePanels();
   setTimeout(() => loadGivingMetricsPanel(), 300);
   setTimeout(() => loadFinancialSnapshotsPanel(), 600);
   setTimeout(() => loadManualIncomePanel(), 900);
@@ -204,6 +205,10 @@ function renderStewardshipUnavailableForTier() {
   if (concentrationPane) concentrationPane.innerHTML = locked;
   if (recurringPane) recurringPane.innerHTML = locked;
   if (manualIncomePane) manualIncomePane.innerHTML = locked;
+  for (const id of ['stewardshipDistributionPane', 'stewardshipRetentionPane']) {
+    const pane = document.getElementById(id);
+    if (pane) pane.innerHTML = locked;
+  }
 }
 
 function renderStewardshipPanel() {
@@ -330,6 +335,12 @@ function renderStewardshipUpsellState(planPane) {
   }
 
   // ── Concentration Risk tool card — locked ───────────────────────────────
+  for (const id of ['stewardshipDistributionPane', 'stewardshipRetentionPane']) {
+    const pane = document.getElementById(id);
+    if (pane)
+      pane.innerHTML =
+        '<div class="sw-tool-locked"><div class="sw-tool-locked-badge">Subscribe to unlock Giving intelligence</div></div>';
+  }
   const concentrationPane = document.getElementById('stewardshipConcentrationPane');
   if (concentrationPane) {
     concentrationPane.innerHTML =
