@@ -1219,10 +1219,9 @@ function liturgicalReadingRows(today = {}) {
   const rows = [];
   const observanceTitle = String(today.feastTitle || "").trim();
   groups.forEach((readings, appointment) => {
-    const appointmentKind = /(?:^|\s)(?:St\.?|Saint)\s/i.test(appointment) ? "Saint" : "Feast";
-    rows.push({
+    if (groups.size > 1) rows.push({
       text: appointment
-        ? `${appointmentKind} — ${appointment}`
+        ? `${/(?:^|\s)(?:St\.?|Saint)\s/i.test(appointment) ? "Saint" : "Feast"} — ${appointment}`
         : observanceTitle
           ? `Feast — ${observanceTitle}`
           : "Readings of the day",

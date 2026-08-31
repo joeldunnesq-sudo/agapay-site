@@ -1,9 +1,9 @@
 {
   "id": "/",
-  "name": "AGAPAY",
-  "short_name": "AGAPAY",
-  "description": "Orthodox giving, parish tools, and My AGAPAY.",
-  "start_url": "/?source=pwa",
+  "name": "My AGAPAY",
+  "short_name": "My AGAPAY",
+  "description": "Give, learn, and take part in your Orthodox parish life.",
+  "start_url": "/myagapay/login?source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone"],

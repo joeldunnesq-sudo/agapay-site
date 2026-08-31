@@ -41,10 +41,10 @@ const protectedPages = [
 
 const pageStylesheetVersions = new Map([
   ["public/myagapay/directory.html", "20260825koinoniamilestones1"],
-  ["public/myagapay/giving/calendar.html", "20260825calendarsaints1"],
+  ["public/myagapay/giving/calendar.html", "20260831liturgical1"],
   ["public/myagapay/groups.html", "20260822groupsscroll1"],
   ["public/myagapay/library.html", "20260825library1"],
-  ["public/myagapay/parish-life.html", "20260825koinoniatoday2"],
+  ["public/myagapay/parish-life.html", "20260831liturgical1"],
 ]);
 
 for (const file of protectedPages) {
