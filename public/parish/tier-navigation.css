@@ -1,0 +1,17 @@
+.mobile-tier-heading { flex: 0 0 auto; align-self: center; padding: 0 8px; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted, #667085); border-left: 1px solid var(--border, #ddd); }
+.giving-export-card { display: grid; grid-template-columns: minmax(220px, 1fr) auto; gap: 20px 28px; padding: 26px 30px; margin-bottom: 24px; border: 1px solid #dacb9e; border-radius: 18px; background: linear-gradient(120deg, #faf7ee, #fffdf7); color: #22332d; box-shadow: 0 8px 24px rgba(32, 47, 39, .04); }
+.giving-export-eyebrow { display: block; color: #76602c; font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 8px; }
+.giving-export-copy h2 { margin: 0 0 7px; font-size: clamp(20px, 2vw, 27px); line-height: 1.2; }
+.giving-export-copy p { margin: 0; font-size: 13px; line-height: 1.6; color: #546258; }
+.giving-export-controls { display: flex; align-items: end; gap: 12px; flex-wrap: wrap; }
+.giving-export-controls label { display: grid; gap: 7px; font-size: 11px; font-weight: 700; color: #455449; }
+.giving-export-controls input, .giving-export-controls select { min-height: 44px; min-width: 150px; max-width: 100%; padding: 9px 11px; border: 1px solid #ccc8b8; border-radius: 8px; background: #fff; color: #22332d; font: inherit; font-size: 13px; }
+.giving-export-controls :focus-visible { outline: 3px solid #24644c; outline-offset: 3px; }
+.giving-export-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; white-space: nowrap; }
+.giving-export-button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.giving-export-note, .giving-export-status { grid-column: 1 / -1; margin: 0; font-size: 11px; line-height: 1.6; color: #5d685f; }
+.giving-export-note { border-top: 1px solid #e5dfce; padding-top: 12px; }
+.giving-export-status:empty { display: none; }
+.giving-export-status { font-size: 13px; font-weight: 600; color: #234e3d; }
+@media (max-width: 1150px) { .giving-export-card { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .giving-export-card { padding: 20px 17px; gap: 16px; } .giving-export-controls { display: grid; grid-template-columns: 1fr 1fr; } .giving-export-controls label { min-width: 0; } .giving-export-controls input, .giving-export-controls select { min-width: 0; width: 100%; box-sizing: border-box; } .giving-export-button { grid-column: 1 / -1; width: 100%; } }

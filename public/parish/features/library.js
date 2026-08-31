@@ -4,7 +4,7 @@
 // Loaded before app.js to preserve the existing global dashboard action names.
 
 function loadParishLibraryAdmin(force = false) {
-  const included = isParishPlusActive();
+  const included = moduleIncluded('library');
   syncTierRequirementNavigation('library', 'Give +', included);
   syncModuleStatusNavigation('library', included, Boolean(currentParish?.libraryEnabled));
   if (!included) {
@@ -28,7 +28,7 @@ function loadParishLibraryAdmin(force = false) {
 }
 
 async function refreshParishLibraryNavigationStatus() {
-  const included = isParishPlusActive();
+  const included = moduleIncluded('library');
   syncTierRequirementNavigation('library', 'Give +', included);
   if (!included || !currentParish?.parishId) {
     syncModuleStatusNavigation('library', false, false);

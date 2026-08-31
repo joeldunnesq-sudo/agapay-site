@@ -873,17 +873,17 @@ async function withMockFetch(handler, run) {
       headers: { Authorization: `Bearer ${parishLogin.token}` },
       body: { month: "2026-06", bankStatementCents: 200, expectedDepositCents: 200, closed: true }
     }), testEnv);
-    assert.equal(unexplainedDifference.status, 400, "server should recompute expected deposits and require a note for differences");
+    assert.equal(unexplainedDifference.status, 400, "bank totals require independent confirmation; notes cannot waive that check");
 
     const balancedClose = await worker.fetch(request("/api/parish/dashboard/st-test/reconciliation/close", {
       method: "POST",
       headers: { Authorization: `Bearer ${parishLogin.token}` },
-      body: { month: "2026-06", bankStatementCents: 100, expectedDepositCents: 999999, closed: true }
+      body: { month: "2026-06", bankStatementCents: 100, bankConfirmed: true, expectedDepositCents: 999999, closed: true }
     }), testEnv);
-    assert.equal(balancedClose.status, 200);
-    const closeBody = await json(balancedClose);
-    assert.equal(closeBody.record.expectedDepositCents, 100, "close record should use Stripe's total rather than the browser value");
-    assert.equal(closeBody.record.status, "closed");
+    assert.equal(balancedClose.status, 503, "KV-only accounts must not close without a durable report snapshot");
+    assert.match((await json(balancedClose)).error, /giving database/);
+    // Real D1-backed matching, browser-total forgery, and successful closes are
+    // exercised through real SQL in fund-reconciliation-tests.mjs.
   });
 
 }

@@ -96,7 +96,7 @@ export {
   sacramentsEnabledFor,
 };
 
-import { accountingEnabledFor, bookstoreEnabledFor, communicationsEnabledFor, directoryEnabledFor, entitlementsSummary, eventsEnabledFor, exchangeEnabledFor, givingFeatureAccess, hasParishPlusAccess, mealsEnabledFor, prayerRequestsEnabledFor, sacramentsEnabledFor, signupsEnabledFor, stewardshipToolAccess, tierIncludesModule, tierIncludesParishPlus } from "../lib/entitlements.js";
+import { accountingEnabledFor, bookstoreEnabledFor, communicationsEnabledFor, directoryEnabledFor, entitlementsSummary, eventsEnabledFor, exchangeEnabledFor, givingFeatureAccess, hasParishPlusAccess, hasModuleAccess, mealsEnabledFor, prayerRequestsEnabledFor, sacramentsEnabledFor, signupsEnabledFor, stewardshipToolAccess, tierIncludesModule, tierIncludesParishPlus } from "../lib/entitlements.js";
 import { getDirectorySettings } from "../directory/settings.js";
 import { createTaxExemptionClaim, issueClaimUploadToken } from "../lib/tax-exemption.js";
 import { createSubscriptionCheckoutForRegistration } from "../lib/subscription-checkout.js";
@@ -924,7 +924,7 @@ export function parishFromRegistration(registration) {
   const designatedFunds = configuredFunds.filter((fund) => !isGeneralGivingFund(fund) && !isCandleGivingFund(fund));
   const publicFunds = givingPlus
     ? (configuredFunds.length ? configuredFunds : [generalFund])
-    : [generalFund, ...(starterDesignatedFund ? designatedFunds.slice(0, 1) : [])];
+    : [generalFund, ...(starterDesignatedFund ? designatedFunds : [])];
 
   const storedImageUrl = registration.imageUrl || registration.photoUrl || "";
   const customImageUrl = isCommunitySketchImage(storedImageUrl) ? "" : storedImageUrl;
@@ -979,11 +979,9 @@ export function isCandleGivingFund(fund = {}) {
 export function starterFundCatalogError(funds = []) {
   const active = (Array.isArray(funds) ? funds : []).filter((fund) => fund && fund.enabled !== false && fund.active !== false);
   const generalCount = active.filter(isGeneralGivingFund).length;
-  const designatedCount = active.filter((fund) => !isGeneralGivingFund(fund) && !isCandleGivingFund(fund)).length;
   const candleCount = active.filter(isCandleGivingFund).length;
   if (generalCount !== 1) return "Give must keep exactly one active General Operating Fund.";
   if (candleCount > 1) return "Give can keep only one active Candle Fund.";
-  if (designatedCount > 1) return "Give includes one active designated fund. Upgrade to Give + for additional funds.";
   return "";
 }
 
@@ -2233,7 +2231,7 @@ export async function handleParishDemoTier(request, env, parishId) {
     parishHouseholdBand: requestedHouseholdBand
   });
   if (!tier || !["starter", "giving", "parish"].includes(tier.id)) {
-    return json({ error: "Choose Give, Give +, Stewardship, or Parish for the demo." }, { status: 422 });
+    return json({ error: "Choose Give, Give +, or Parish for the demo." }, { status: 422 });
   }
 
   const current = found.registration;
@@ -2671,7 +2669,7 @@ export async function handleParishDashboard(request, env, parishId) {
     const featureRequests = pendingFeatureRequests.filter((item) =>
       item.featureId === "ministry-service"
       || (item.featureId === "pledge-tracker" && !stewardshipToolAccess(registration))
-      || (item.featureId === "giving-plus" && !givingFeatureAccess(registration, "customFunds"))
+      || (item.featureId === "giving-plus" && !givingFeatureAccess(registration, "campaigns"))
     );
     const dashboardParish = await enrichParishGivingOptions(env, {
       ...await parishDashboardPayloadWithPricingUsage(env, parishId, registration),
@@ -2698,7 +2696,7 @@ export async function handleParishDashboard(request, env, parishId) {
         error: "Treasurer Go-Live signoff is required before the giving page can be activated."
       }, { status: 409 });
     }
-    const givingPlus = givingFeatureAccess(current, "customFunds");
+    const givingPlus = givingFeatureAccess(current, "campaigns");
     const starterDesignatedFund = givingFeatureAccess(current, "starterDesignatedFund");
     if (!starterDesignatedFund && body.funds !== undefined) {
       return json({ error: "Designated funds are not available on this plan." }, { status: 403 });
@@ -2781,7 +2779,7 @@ export async function handleParishDashboard(request, env, parishId) {
       commemorationsEnabled: Boolean(body.commemorationsEnabled ?? current.commemorationsEnabled ?? true),
       communicationsEnabled: Boolean(body.communicationsEnabled ?? current.communicationsEnabled ?? true),
       signupsEnabled: Boolean(body.signupsEnabled ?? current.signupsEnabled ?? true), exchangeEnabled: Boolean(body.exchangeEnabled ?? current.exchangeEnabled ?? true), prayerRequestsEnabled: Boolean(body.prayerRequestsEnabled ?? current.prayerRequestsEnabled ?? true),
-      sacramentsEnabled: Boolean(body.sacramentsEnabled ?? current.sacramentsEnabled ?? false) && hasParishPlusAccess(current),
+      sacramentsEnabled: Boolean(body.sacramentsEnabled ?? current.sacramentsEnabled ?? false) && hasModuleAccess(current, "sacraments"),
       sacramentPriests: body.sacramentPriests !== undefined ? sanitizeSacramentPriests(body.sacramentPriests, current) : normalizeSacramentPriests(current),
       bookstoreEnabled: Boolean(body.bookstoreEnabled ?? current.bookstoreEnabled ?? false), eventsEnabled: Boolean(body.eventsEnabled ?? current.eventsEnabled ?? true), mealsEnabled: Boolean(body.mealsEnabled ?? current.mealsEnabled ?? true),
       funds: catalogChanged ? submittedCatalog.funds : current.funds,

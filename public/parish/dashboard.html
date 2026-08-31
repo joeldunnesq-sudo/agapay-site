@@ -25,6 +25,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="stylesheet" href="/parish/tier-navigation.css?v=20260831tiers1" />
+  <link rel="stylesheet" href="/parish/fund-reconciliation.css?v=20260831funds2" />
 </head>
 <body class="dashboard-booting">
 <div class="dashboard-boot-screen" id="dashboardBootScreen" role="status" aria-live="polite" aria-label="Loading parish dashboard">
@@ -61,17 +63,11 @@
       </div>
 
       <nav class="sidebar-nav">
+        <div class="sidebar-nav-tier-group" id="nav-tier-give" aria-label="Give tools">
+          <span class="sidebar-nav-tier-label">Give</span>
         <div class="sidebar-nav-item active" onclick="switchTab('giving')" id="nav-giving">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 16v-4"/><path d="M12 16V8"/><path d="M17 16v-6"/></svg>
           Giving Overview
-        </div>
-        <div class="sidebar-nav-item" onclick="switchTab('options')" id="nav-options">
-          <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-          Funds &amp; Alms
-        </div>
-        <div class="sidebar-nav-item" onclick="switchTab('campaigns')" id="nav-campaigns">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          Campaigns
         </div>
         <div class="sidebar-nav-item" onclick="switchTab('history')" id="nav-history">
           <svg viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
@@ -81,26 +77,21 @@
           <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Givers
         </div>
+        <button class="sidebar-nav-item fr-nav-button" type="button" onclick="switchTab('reconcile')" id="nav-reconcile"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h4m0 5 2 2 4-4"/></svg><span class="nav-label">Monthly reconciliation</span></button>
+        <div class="sidebar-nav-item" onclick="switchTab('options')" id="nav-options">
+          <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Funds &amp; Alms
+        </div>
+        </div>
+        <div class="sidebar-nav-tier-group" id="nav-tier-giving-plus" aria-label="Give + tools">
+          <span class="sidebar-nav-tier-label">Give +</span>
+        <div class="sidebar-nav-item" onclick="switchTab('campaigns')" id="nav-campaigns">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Campaigns
+        </div>
         <div class="sidebar-nav-item" onclick="switchTab('stewardship')" id="nav-stewardship">
           <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           <span class="nav-label">Stewardship Health</span>
-        </div>
-        <div class="sidebar-nav-item" onclick="switchTab('commerce')" id="nav-bookstore">
-          <svg viewBox="0 0 24 24"><path d="M5 8h14l1 13H4L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/><path d="M8 13h8"/></svg>
-          <span class="nav-label-stack">
-            <span class="nav-label">Commerce</span>
-            <small class="bookstore-low-stock-nav" id="bookstoreLowStockNavBadge" hidden></small>
-          </span>
-          <span class="nav-module-status" id="bookstoreNavStatus" hidden>Off</span>
-          <span class="nav-upgrade-badge" id="bookstoreNavBadge" hidden>Upgrade</span>
-        </div>
-        <div class="sidebar-nav-tier-group" id="nav-tier-parish" aria-label="Parish tier tools">
-          <span class="sidebar-nav-tier-label">Parish tier</span>
-        <div class="sidebar-nav-item" onclick="switchTab('sacraments')" id="nav-sacraments">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/></svg>
-          <span class="nav-label">Sacraments &amp; Services</span>
-          <span class="nav-module-status" id="sacramentsNavStatus" hidden>Off</span>
-          <span class="nav-upgrade-badge" id="sacramentsNavBadge" hidden>Upgrade</span>
         </div>
         <div class="sidebar-nav-item" onclick="switchTab('directory')" id="nav-directory">
           <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8"/><path d="M8 13h5"/><circle cx="17" cy="13" r="1"/></svg>
@@ -117,6 +108,24 @@
           <span class="nav-label">Koinonia</span>
           <span class="nav-module-status" id="communicationsNavStatus" hidden>Off</span>
           <span class="nav-upgrade-badge" id="communicationsNavBadge" hidden>Upgrade</span>
+        </div>
+        <div class="sidebar-nav-item" onclick="switchTab('commerce')" id="nav-bookstore">
+          <svg viewBox="0 0 24 24"><path d="M5 8h14l1 13H4L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/><path d="M8 13h8"/></svg>
+          <span class="nav-label-stack">
+            <span class="nav-label">Commerce</span>
+            <small class="bookstore-low-stock-nav" id="bookstoreLowStockNavBadge" hidden></small>
+          </span>
+          <span class="nav-module-status" id="bookstoreNavStatus" hidden>Off</span>
+          <span class="nav-upgrade-badge" id="bookstoreNavBadge" hidden>Upgrade</span>
+        </div>
+        </div>
+        <div class="sidebar-nav-tier-group" id="nav-tier-parish" aria-label="Parish tools">
+          <span class="sidebar-nav-tier-label">Parish</span>
+        <div class="sidebar-nav-item" onclick="switchTab('sacraments')" id="nav-sacraments">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/></svg>
+          <span class="nav-label">Sacraments &amp; Services</span>
+          <span class="nav-module-status" id="sacramentsNavStatus" hidden>Off</span>
+          <span class="nav-upgrade-badge" id="sacramentsNavBadge" hidden>Upgrade</span>
         </div>
         <div class="sidebar-nav-item" onclick="switchTab('accounting')" id="nav-accounting">
           <svg viewBox="0 0 24 24"><path d="M4 3h16v18H4z"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h3"/><path d="M15 14v4"/><path d="M13 16h4"/></svg>
@@ -242,6 +251,14 @@
             <div class="pdx-kpi-meta" id="pdxKpiGiftCountMeta"><span style="opacity:0.7;">Awaiting data</span></div>
             <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
           </div>
+        </section>
+
+        <section class="fr-card sw-reports-intelligence fr-weekly" id="weeklyFundsCard">
+          <div class="fr-card-head fr-weekly-heading">
+            <div><span class="fr-eyebrow">Your week in giving</span><h2>Giving by fund</h2><p id="weeklyFundsPeriod">Last completed week · Monday–Sunday</p></div>
+            <button class="sw-report-generate-btn" type="button" onclick="switchTab('reconcile')"><span aria-hidden="true">▤</span> Monthly reconciliation</button>
+          </div>
+          <div id="weeklyFundsPane" aria-live="polite"><p class="fr-source">Loading weekly fund activity…</p></div>
         </section>
 
         <!-- STATUS STRIP -->
@@ -377,172 +394,72 @@
         </div>
       </div>
 
-      <!-- ── MONTHLY RECONCILIATION TAB ─────────────────────── -->
+      <!-- Monthly reconciliation: included with every giving plan. -->
       <div class="tab-panel" id="tab-reconcile">
-        <div id="reconcileWorkspace">
-        <!-- HERO -->
-        <section class="pdx-rc-hero">
-          <div class="pdx-rc-hero-top">
-            <div>
-              <div class="pdx-rc-hero-eyebrow">Monthly Reconciliation</div>
-              <h1 class="pdx-rc-hero-title" id="pdxRcMonthTitle">Select a month</h1>
-              <p class="pdx-rc-hero-meta">Match Stripe deposits to gifts, fees, and refunds before closing the month.</p>
+        <div id="reconcileWorkspace" aria-busy="false">
+          <header class="sw-suite-hero fr-hero">
+            <div class="sw-suite-hero-copy">
+              <span class="sw-suite-eyebrow">Giving clarity · included in every plan</span>
+              <h1 class="sw-suite-heading">Monthly reconciliation</h1>
+              <p class="sw-suite-subhead">One clear record of your payouts, your funds, and your bank check.</p>
             </div>
-            <div class="pdx-rc-controls">
-              <select id="reconcileMonth" onchange="loadReconciliation()"></select>
-              <span class="pdx-rc-status-pill open" id="pdxRcStatusPill">Open month</span>
+            <div class="sw-suite-hero-status"><span class="fr-state" id="pdxRcStatusPill">Choose a month</span></div>
+          </header>
+          <div class="fr-toolbar">
+            <label for="reconcileMonth">Reporting month<select id="reconcileMonth" onchange="loadReconciliation()"></select></label>
+            <div class="fr-actions">
+              <button class="sw-action-btn" type="button" onclick="loadReconciliation(this)">Refresh report</button>
+              <details class="fr-export-menu"><summary class="sw-report-generate-btn">Export report <span aria-hidden="true">↓</span></summary>
+                <div class="fr-export-options">
+                  <button type="button" data-reconcile-export disabled onclick="exportFundReconciliation('funds')">Fund summary CSV</button>
+                  <button type="button" data-reconcile-export disabled onclick="exportFundReconciliation('transactions')">Transaction detail CSV</button>
+                  <button type="button" data-reconcile-export disabled onclick="printReconciliationReport()">Print report</button>
+                </div>
+              </details>
             </div>
           </div>
-
-          <div class="pdx-rc-hero-figure">
-            <div class="pdx-rc-total-block">
-              <div class="pdx-rc-total-label">Deposited to bank</div>
-              <div class="pdx-rc-total" id="reconcileDeposited">—</div>
-              <div class="pdx-rc-total-sub" id="reconcilePayoutCount">Run a reconciliation to view Stripe payouts.</div>
-            </div>
-            <div class="pdx-rc-match-block">
-              <div class="pdx-rc-match-label">Match Confidence</div>
-              <div class="pdx-rc-match-numbers">
-                <span class="pdx-rc-match-pct" id="reconcileMatchedPercent">—</span>
-                <span class="pdx-rc-match-sub" id="pdxRcMatchSub">Awaiting month data</span>
+          <p class="fr-source" id="reconcileStatusLine" role="status">Your report will prepare automatically.</p>
+          <div id="reconcileResults" hidden>
+            <section class="fr-summary sw-reports-intelligence" aria-label="Payout and allocation totals">
+              <div class="fr-summary-main"><span>Stripe-paid payouts</span><strong id="reconcileDeposited">—</strong><small id="reconcilePayoutCount">—</small></div>
+              <div><span>Attributed to funds</span><strong id="reconcileMatched">—</strong><small>After actual fees and adjustments</small></div>
+              <div><span>Needs allocation</span><strong id="reconcileUnallocated">—</strong><small id="reconcileReviewCount">—</small></div>
+            </section>
+            <section class="fr-card sw-reports-intelligence">
+              <div class="fr-card-head"><span class="fr-step">01</span><div><h2>Where this money belongs</h2><p>Net cash in this month's paid automatic payouts. Fund names come from Funds &amp; Alms; original gift designations stay in the transaction record.</p></div></div>
+              <div id="reconcileAllocationsPane"></div>
+              <p class="fr-source" id="reconcileReviewNotice"></p>
+            </section>
+            <section class="fr-card sw-reports-intelligence">
+              <div class="fr-card-head"><span class="fr-step">02</span><div><h2>Review the payout trail</h2><p>Every amount should trace back to a payment, a fund, and a Stripe payout.</p></div></div>
+              <div id="reconcileExceptionsPane"></div>
+              <details class="fr-disclosure"><summary>Stripe payouts &amp; source transactions</summary><div id="reconcilePayoutsPane"></div></details>
+              <details class="fr-disclosure"><summary>Gift activity by giving date</summary><p class="fr-source">Gift dates and payout dates differ. These totals are not expected to match.</p><div id="reconcileGiftActivityPane"></div></details>
+              <details class="fr-disclosure"><summary>Optional manual handling notes</summary>
+                <p class="fr-source">Record allocations in your books. If you separately move money between parish bank accounts, you may note it here. AGAPAY does not initiate or approve transfers.</p>
+                <div id="reconcileTransferWorksheetPane"></div>
+                <button class="sw-action-btn" id="reconcileTransferPrintButton" type="button" onclick="printFundTransferWorksheet()" disabled>Print worksheet</button>
+              </details>
+            </section>
+            <section class="fr-card sw-reports-intelligence">
+              <div class="fr-card-head"><span class="fr-step">03</span><div><h2>Compare with your bank</h2><p>Treasurer closeout: confirm only Stripe deposits, not all parish deposits.</p></div></div>
+              <div class="fr-bank-grid">
+                <div>
+                  <label for="reconcileBankAmount">Stripe deposits on your bank statement</label>
+                  <input id="reconcileBankAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Enter statement total" oninput="updateReconciliationDifference()" />
+                  <label class="fr-check"><input id="reconcileBankConfirmed" type="checkbox" onchange="updateReconciliationDifference()" />I checked this amount against the bank statement.</label>
+                  <div id="reconcileDifference" class="fr-bank-difference" role="status">Not checked against your bank yet.</div>
+                </div>
+                <div><label for="reconcileNotes">Treasurer notes</label><textarea id="reconcileNotes" rows="4" maxlength="2000" placeholder="Posting dates, references, or a reason to reopen a prior review…"></textarea></div>
               </div>
-              <div class="pdx-rc-match-bar"><div class="pdx-rc-match-bar-fill" id="pdxRcMatchBarFill" style="width:0;"></div></div>
-              <div class="pdx-rc-match-legend">
-                <span class="matched">Matched to AGAPAY records</span>
-                <span class="unmatched">Awaiting review</span>
+              <div class="fr-actions fr-bank-actions">
+                <button class="sw-report-generate-btn" id="reconcileSaveButton" type="button" disabled onclick="saveReconciliationClose(true, this)">Save reconciled review</button>
+                <button class="sw-action-btn" id="reconcileReopenButton" type="button" hidden onclick="saveReconciliationClose(false, this)">Reopen review</button>
               </div>
-            </div>
+              <p class="fr-source">Stripe's expected arrival date may differ from the bank posting date. A difference remains visible until resolved. Saving preserves a report revision; it never moves money.</p>
+              <details class="fr-disclosure"><summary>Saved review history</summary><p class="fr-source">Last 25 saved revisions. Prior snapshots are preserved when a review is reopened.</p><div id="reconcileReviewHistory"></div></details>
+            </section>
           </div>
-        </section>
-
-        <!-- Preserved for legacy JS bindings -->
-        <div id="reconcileStatusLine" hidden></div>
-        <span id="reconcileMatched" hidden></span>
-
-        <!-- KPI BAND -->
-        <section class="pdx-kpi-band">
-          <div class="pdx-kpi-card">
-            <div class="pdx-kpi-label">Gross activity</div>
-            <div class="pdx-kpi-value" id="reconcileGross">—</div>
-            <div class="pdx-kpi-meta">Before refunds &amp; fees</div>
-            <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-          </div>
-          <div class="pdx-kpi-card">
-            <div class="pdx-kpi-label">Total fees</div>
-            <div class="pdx-kpi-value" id="reconcileFees">—</div>
-            <div class="pdx-kpi-meta" id="reconcileFeeBreakdown">Stripe + AGAPAY</div>
-            <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/><path d="M6 12h12"/></svg></div>
-          </div>
-          <div class="pdx-kpi-card">
-            <div class="pdx-kpi-label">Refunds</div>
-            <div class="pdx-kpi-value" id="reconcileRefunds">—</div>
-            <div class="pdx-kpi-meta" id="pdxRcRefundMeta">Returned or disputed</div>
-            <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg></div>
-          </div>
-          <div class="pdx-kpi-card" id="pdxRcExceptionsCard">
-            <div class="pdx-kpi-label">Needs review</div>
-            <div class="pdx-kpi-value" id="reconcileExceptions">—</div>
-            <div class="pdx-kpi-meta">Exceptions before close</div>
-            <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5"/><path d="M12 17h.01"/></svg></div>
-          </div>
-        </section>
-
-        <!-- FUND ALLOCATION -->
-        <section class="pdx-panel">
-          <div class="pdx-panel-header">
-            <div class="pdx-panel-title">
-              <div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19H2"/></svg></div>
-              Where the deposit went
-            </div>
-            <div style="display:flex; gap:10px; align-items:center;">
-              <div class="pdx-rc-alloc-toggle" id="pdxRcAllocToggle">
-                <button class="active" data-mode="stacked" onclick="setReconcileAllocView('stacked', this)">Stacked</button>
-                <button data-mode="bars" onclick="setReconcileAllocView('bars', this)">Per fund</button>
-              </div>
-              <button class="pdx-link-btn" onclick="exportReconciliationCsv()">Export CSV</button>
-            </div>
-          </div>
-          <div id="reconcileAllocationsPane">
-            <div class="pdx-recurring-empty">Run a reconciliation to see how deposits should be posted.</div>
-          </div>
-        </section>
-
-        <!-- FUND TRANSFER WORKSHEET -->
-        <section class="pdx-panel pdx-rc-transfer-panel">
-          <div class="pdx-panel-header">
-            <div class="pdx-panel-title">
-              <div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M3 7h18"/><path d="M5 7v11h14V7"/><path d="M8 11h8"/><path d="m13 15 3-2-3-2"/></svg></div>
-              Prepare fund transfers
-            </div>
-            <button class="pdx-link-btn" id="reconcileTransferPrintButton" type="button" onclick="printFundTransferWorksheet()" disabled>Print worksheet</button>
-          </div>
-          <p class="pdx-rc-transfer-intro">Stripe sends the parish one combined payout. This worksheet separates that deposit by net fund amount so the treasurer can make and document any transfers between parish bank accounts.</p>
-          <div id="reconcileTransferWorksheetPane">
-            <div class="pdx-recurring-empty">Run a reconciliation, then prepare the detailed fund-transfer worksheet.</div>
-          </div>
-        </section>
-
-        <!-- GIFT ACTIVITY (kept as a compact strip) -->
-        <section class="pdx-panel">
-          <div class="pdx-panel-header">
-            <div class="pdx-panel-title">
-              <div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M3 12h18"/><path d="m15 6 6 6-6 6"/><path d="M9 6H3v12h6"/></svg></div>
-              Gift Activity This Month
-            </div>
-          </div>
-          <div id="reconcileGiftActivityPane">
-            <div class="pdx-recurring-empty">Gift activity will appear separately from payout timing.</div>
-          </div>
-        </section>
-
-        <!-- STRIPE PAYOUTS -->
-        <section class="pdx-panel">
-          <div class="pdx-panel-header">
-            <div class="pdx-panel-title">
-              <div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M5 6v12h14V6"/><path d="M8 10h8"/><path d="M8 14h5"/></svg></div>
-              Stripe Payouts
-            </div>
-            <button class="pdx-link-btn" onclick="printReconciliationReport()">Print closeout</button>
-          </div>
-          <div id="reconcilePayoutsPane">
-            <div class="pdx-recurring-empty">Payouts arriving in this month will appear here.</div>
-          </div>
-        </section>
-
-        <!-- EXCEPTIONS -->
-        <section class="pdx-panel">
-          <div class="pdx-panel-header">
-            <div class="pdx-panel-title">
-              <div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5"/><path d="M12 17h.01"/></svg></div>
-              Review Before Closing
-            </div>
-          </div>
-          <div id="reconcileExceptionsPane">
-            <div class="pdx-recurring-empty">Run a reconciliation to identify anything needing attention.</div>
-          </div>
-        </section>
-
-        <!-- CLOSE CARD -->
-        <section class="pdx-rc-close-card">
-          <div class="pdx-rc-close-layout">
-            <div>
-              <div class="pdx-rc-close-eyebrow">Treasurer closeout</div>
-              <h2 class="pdx-rc-close-title">Confirm the bank statement and close the month.</h2>
-              <p class="pdx-rc-close-copy">Enter the total AGAPAY Stripe deposits shown on the bank statement. AGAPAY will preserve the difference, notes, and close date for the parish record.</p>
-            </div>
-            <div class="pdx-rc-close-form">
-              <label for="reconcileBankAmount">Bank statement deposit total</label>
-              <input id="reconcileBankAmount" type="number" min="0" step="0.01" placeholder="0.00" oninput="updateReconciliationDifference()" />
-              <div class="pdx-rc-difference" id="reconcileDifference"><span>Difference</span><b>—</b></div>
-              <label for="reconcileNotes">Treasurer notes</label>
-              <textarea id="reconcileNotes" rows="4" placeholder="Check numbers, journal entry reference, timing notes, or unresolved items..."></textarea>
-              <div class="pdx-rc-close-actions">
-                <button class="btn btn-gold" type="button" onclick="saveReconciliationClose(true, this)">Mark month closed</button>
-                <button class="btn btn-ghost" type="button" onclick="saveReconciliationClose(false, this)">Reopen month</button>
-              </div>
-            </div>
-          </div>
-        </section>
         </div>
       </div>
 
@@ -629,6 +546,21 @@
 
       <!-- ── SETTINGS TAB ────────────────────────────────────── -->
       <div class="tab-panel" id="tab-givers">
+        <section class="giving-export-card" aria-labelledby="givingExportTitle">
+          <div class="giving-export-copy">
+            <span class="giving-export-eyebrow">Monthly bookkeeping · every plan</span>
+            <h2 id="givingExportTitle">Your giving, ready for your books.</h2>
+            <p>Download every recorded online gift for the month—not just the rows shown below.</p>
+          </div>
+          <form class="giving-export-controls" onsubmit="exportGiversMonthlyCsv(event)">
+            <label for="givingExportMonth">Giving month<input id="givingExportMonth" type="month" required /></label>
+            <label for="givingExportGroup">Group by<select id="givingExportGroup"><option value="date">Giving date</option><option value="giver">Giver</option></select></label>
+            <button class="btn btn-gold giving-export-button" type="submit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5" /></svg><span>Export giving CSV</span></button>
+          </form>
+          <p><button class="sw-action-btn" type="button" onclick="switchTab('reconcile')">Reconcile monthly deposits →</button></p>
+          <p class="giving-export-note">One transaction per row, using the parish timezone. Includes funds, gross gifts, fees, net amounts, and payment IDs. Fee estimates and refunds to date are labelled; this is not a bank-deposit report.</p>
+          <p class="giving-export-status" id="givingExportStatus" role="status" aria-live="polite"></p>
+        </section>
         <!-- HERO — warm cream/gold pastoral treatment -->
         <section class="pdx-gv-hero">
           <div class="pdx-gv-hero-layout">
@@ -2024,58 +1956,59 @@
   <script src="/parish/directory-import.js?v=20260828import1"></script>
   <link rel="stylesheet" href="/parish/portability.css?v=20260828portability1" />
   <script src="/parish/portability.js?v=20260828portability1"></script>
-  <script src="/parish/feature-registry.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/directory.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/library.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/sacraments.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/accounting/workspace.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/accounting/treasurer.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/accounting/ledger.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/accounting/payables.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/accounting/reports.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/accounting/funds.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/accounting/banking.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/accounting/close.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/accounting/migration.js?v=20260831intelligence1"></script>
+  <script src="/parish/feature-registry.js?v=20260831funds2"></script>
+  <script src="/parish/features/directory.js?v=20260831funds2"></script>
+  <script src="/parish/features/library.js?v=20260831funds2"></script>
+  <script src="/parish/features/sacraments.js?v=20260831funds2"></script>
+  <script src="/parish/features/accounting/workspace.js?v=20260831funds2"></script>
+  <script src="/parish/features/accounting/treasurer.js?v=20260831funds2"></script>
+  <script src="/parish/features/accounting/ledger.js?v=20260831funds2"></script>
+  <script src="/parish/features/accounting/payables.js?v=20260831funds2"></script>
+  <script src="/parish/features/accounting/reports.js?v=20260831funds2"></script>
+  <script src="/parish/features/accounting/funds.js?v=20260831funds2"></script>
+  <script src="/parish/features/accounting/banking.js?v=20260831funds2"></script>
+  <script src="/parish/features/accounting/close.js?v=20260831funds2"></script>
+  <script src="/parish/features/accounting/migration.js?v=20260831funds2"></script>
   <script src="/parish/features/accounting/activation.js?v=20260831logo3"></script>
-  <script src="/parish/features/accounting.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/commerce/bookstore-catalog.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/commerce/bookstore-checkout.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/commerce/bookstore-sales.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/commerce/offerings.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/commerce/bookstore-counts.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/commerce/bookstore-inventory.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/commerce.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/koinonia/ministries.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/koinonia/announcements.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/koinonia/prayers.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/koinonia/media.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/koinonia.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/onboarding.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/campaigns.js?v=20260831intelligence1"></script>
+  <script src="/parish/features/accounting.js?v=20260831funds2"></script>
+  <script src="/parish/features/commerce/bookstore-catalog.js?v=20260831funds2"></script>
+  <script src="/parish/features/commerce/bookstore-checkout.js?v=20260831funds2"></script>
+  <script src="/parish/features/commerce/bookstore-sales.js?v=20260831funds2"></script>
+  <script src="/parish/features/commerce/offerings.js?v=20260831funds2"></script>
+  <script src="/parish/features/commerce/bookstore-counts.js?v=20260831funds2"></script>
+  <script src="/parish/features/commerce/bookstore-inventory.js?v=20260831funds2"></script>
+  <script src="/parish/features/commerce.js?v=20260831funds2"></script>
+  <script src="/parish/features/koinonia/ministries.js?v=20260831funds2"></script>
+  <script src="/parish/features/koinonia/announcements.js?v=20260831funds2"></script>
+  <script src="/parish/features/koinonia/prayers.js?v=20260831funds2"></script>
+  <script src="/parish/features/koinonia/media.js?v=20260831funds2"></script>
+  <script src="/parish/features/koinonia.js?v=20260831funds2"></script>
+  <script src="/parish/features/onboarding.js?v=20260831funds2"></script>
+  <script src="/parish/features/campaigns.js?v=20260831funds2"></script>
   <script src="/parish/features/stewardship/reports.js?v=20260831reports1"></script>
   <script src="/parish/features/stewardship/metrics.js?v=20260831reports1"></script>
-  <script src="/parish/features/stewardship/financials.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/stewardship/financials-editor.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/stewardship/outside-giving.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/stewardship/nudges.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/stewardship/meetings.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/stewardship.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/giving/commemorations.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/giving/feasts.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/giving/givers.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/giving/history.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/giving/options.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/giving/overview.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/giving/reconciliation-reports.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/giving/reconciliation.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/giving/recurring.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/giving/sharing.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/giving/statements.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/giving/transfers.js?v=20260831intelligence1"></script>
-  <script src="/parish/features/giving.js?v=20260831intelligence1"></script>
+  <script src="/parish/features/stewardship/financials.js?v=20260831funds2"></script>
+  <script src="/parish/features/stewardship/financials-editor.js?v=20260831funds2"></script>
+  <script src="/parish/features/stewardship/outside-giving.js?v=20260831funds2"></script>
+  <script src="/parish/features/stewardship/nudges.js?v=20260831funds2"></script>
+  <script src="/parish/features/stewardship/meetings.js?v=20260831funds2"></script>
+  <script src="/parish/features/stewardship.js?v=20260831funds2"></script>
+  <script src="/parish/features/giving/commemorations.js?v=20260831funds2"></script>
+  <script src="/parish/features/giving/feasts.js?v=20260831funds2"></script>
+  <script src="/parish/features/giving/givers.js?v=20260831funds2"></script>
+  <script src="/parish/features/giving/history.js?v=20260831funds2"></script>
+  <script src="/parish/features/giving/options.js?v=20260831funds2"></script>
+  <script src="/parish/features/giving/overview.js?v=20260831funds2"></script>
+  <script src="/parish/features/giving/weekly-funds.js?v=20260831funds2"></script>
+  <script src="/parish/features/giving/reconciliation-reports.js?v=20260831funds2"></script>
+  <script src="/parish/features/giving/reconciliation.js?v=20260831funds2"></script>
+  <script src="/parish/features/giving/recurring.js?v=20260831funds2"></script>
+  <script src="/parish/features/giving/sharing.js?v=20260831funds2"></script>
+  <script src="/parish/features/giving/statements.js?v=20260831funds2"></script>
+  <script src="/parish/features/giving/transfers.js?v=20260831funds2"></script>
+  <script src="/parish/features/giving.js?v=20260831funds2"></script>
   <script src="/parish/diagnostics.js?v=20260831debug1"></script>
-  <script src="/parish/dashboard-runtime.js?v=20260831intelligence1"></script>
-  <script src="/parish/app.js?v=20260831intelligence1"></script>
+  <script src="/parish/dashboard-runtime.js?v=20260831funds2"></script>
+  <script src="/parish/app.js?v=20260831funds2"></script>
 </body>
 </html>

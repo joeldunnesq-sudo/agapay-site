@@ -114,13 +114,13 @@ assert.deepEqual(givingCalls.splice(0), ['loadReconciliation']);
 const givingDelays = [];
 giving.context.setTimeout = (_callback, delay) => givingDelays.push(delay);
 giving.run("activeTab = 'giving'; ParishFeatureRegistry.get('giving').refresh()");
-assert.deepEqual(givingDelays.splice(0), [250, 500, 750, 1000, 1250]);
+assert.deepEqual(givingDelays.splice(0), [250, 350, 500, 750, 1000, 1250]);
 assert.deepEqual(givingCalls, []);
 giving.run("activeTab = 'history'; ParishFeatureRegistry.get('giving').refresh()");
-assert.deepEqual(givingDelays.splice(0), [250, 500, 750, 1000]);
+assert.deepEqual(givingDelays.splice(0), [250, 350, 500, 750, 1000]);
 assert.deepEqual(givingCalls.splice(0), ['loadGivingHistory']);
 giving.run("activeTab = 'reconcile'; ParishFeatureRegistry.get('giving').refresh()");
-assert.deepEqual(givingDelays.splice(0), [250, 500, 750, 1000, 1250]);
+assert.deepEqual(givingDelays.splice(0), [250, 350, 500, 750, 1000, 1250]);
 assert.deepEqual(givingCalls.splice(0), ['loadReconciliation']);
 
 // Exercise the real parent lifecycle and navigation with leaf loaders observed.

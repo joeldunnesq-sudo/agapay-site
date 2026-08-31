@@ -8,7 +8,7 @@ import {
   rateLimit,
   unauthorized,
 } from "../lib/core.js";
-import { hasParishPlusAccess } from "../lib/entitlements.js";
+import { hasModuleAccess } from "../lib/entitlements.js";
 import { getParishLibrarySettings, setParishLibraryEnabled } from "../lib/parish-library.js";
 import { validateSafeExternalUrl } from "../lib/safe-external-url.js";
 import {
@@ -197,8 +197,8 @@ async function requireLibraryAdmin(request, env, parishId) {
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return { error: json({ error: "Parish not found" }, { status: 404 }) };
   if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) return { error: unauthorized() };
-  if (!hasParishPlusAccess(found.registration)) {
-    return { error: json({ error: "Parish Library requires the Parish tier." }, { status: 403 }) };
+  if (!hasModuleAccess(found.registration, "library")) {
+    return { error: json({ error: "Parish Library requires Give + or Parish." }, { status: 403 }) };
   }
   return { found };
 }
@@ -291,7 +291,7 @@ export async function handleDonorParishLibrary(request, env, subpath = "") {
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Your selected parish could not be found." }, { status: 404 });
   const settings = await getParishLibrarySettings(db, parishId);
-  if (!settings.enabled || !hasParishPlusAccess(found.registration)) {
+  if (!settings.enabled || !hasModuleAccess(found.registration, "library")) {
     return json({ available: false, parish: { id: parishId, name: found.registration.parishName || "" }, resources: [] });
   }
   const parts = String(subpath || "").replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);

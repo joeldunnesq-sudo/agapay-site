@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
+import { entitlementsSummary } from '../src/lib/entitlements.js';
 import { openParishFixture, parish, origin } from './lib/parish-browser-fixture.mjs';
 
 /* global loadGivingHistory, loadGivingSummary, loadCommemorations */
@@ -48,6 +49,7 @@ const givingParish = {
   ...parish,
   subscriptionTier: 'giving',
   subscriptionTierLabel: 'Give +',
+  entitlements: entitlementsSummary({ subscriptionTier: 'giving', subscriptionStatus: 'active' }),
   onboarding: { enabled: true, state: 'LIVE' },
   funds: [...parish.funds, { id: 'benevolence-fund', name: 'Benevolence Fund', enabled: true }],
   campaigns: [
@@ -72,6 +74,8 @@ const defaults = {
     },
   },
   '/settlement-profiles': { body: { profiles: [] } },
+  '/library/settings': { body: { settings: { enabled: true } } },
+  '/bookstore/products/low-stock': { body: { products: [] } },
 };
 const browser = await chromium.launch({ headless: true });
 
@@ -248,13 +252,18 @@ try {
     }
   );
 
-  const period = `${year}-01`;
+  const period = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)).toISOString().slice(0, 7);
   let closeRecord = null,
     reconFails = false;
   const closes = [];
   const recon = {
     available: true,
-    period: { month: period },
+    complete: true,
+    parishId: 'synthetic-parish',
+    fingerprint: 'fixture-report',
+    state: 'ready_for_bank_check',
+    generatedAt: recent,
+    period: { month: period, label: period, timezone: 'UTC' },
     summary: {
       depositedCents: 10000,
       grossActivityCents: 10500,
@@ -262,9 +271,18 @@ try {
       matchedNetCents: 10000,
       matchedPercent: 100,
       paidPayoutCount: 1,
+      readyForReview: true,
     },
     allocations: [
-      { category: 'Giving', label: 'Building', netCents: 10000, grossCents: 10500, feeCents: 500, transactionCount: 1 },
+      {
+        key: 'building',
+        category: 'Giving',
+        label: 'Building',
+        netCents: 10000,
+        grossCents: 10500,
+        feeCents: 500,
+        transactionCount: 1,
+      },
     ],
     transferWorksheet: {
       available: true,
@@ -277,27 +295,27 @@ try {
     async (page) => {
       await page.locator('.mobile-tab-link[data-nav-tab="reconcile"]').evaluate((el) => el.click());
       await page.locator('#reconcileBankAmount').waitFor();
-      await page.waitForFunction(() => document.getElementById('reconcileBankAmount').value === '100.00');
-      assert.equal(await page.locator('#pdxRcStatusPill').textContent(), 'Ready to close');
+      assert.equal(await page.locator('#reconcileBankAmount').inputValue(), '');
+      assert.equal(await page.locator('#pdxRcStatusPill').textContent(), 'Awaiting bank check');
       await page.locator('#reconcileBankAmount').fill('99');
-      await page.getByRole('button', { name: 'Mark month closed' }).click();
-      await page
-        .getByText('Add a treasurer note explaining the bank difference before closing.', { exact: true })
-        .waitFor();
+      await page.locator('#reconcileBankConfirmed').check();
+      assert.equal(await page.locator('#reconcileSaveButton').isDisabled(), true);
       assert.equal(closes.length, 0);
       await page.locator('#reconcileNotes').fill('Synthetic timing difference');
+      await page.getByText('Optional manual handling notes', { exact: true }).click();
       const row = page.locator('[data-transfer-row]');
       await row.locator('[data-transfer-action]').selectOption('transfer');
       await row.locator('[data-transfer-destination]').fill(' Building savings ');
       await row.locator('[data-transfer-completed]').check();
       await row.locator('[data-transfer-reference]').fill(' TEST-123 ');
-      await page.getByRole('button', { name: 'Mark month closed' }).click();
+      await page.locator('#reconcileBankAmount').fill('100.00');
+      await page.getByRole('button', { name: 'Save reconciled review' }).click();
       await page.getByText('Synthetic close unavailable', { exact: true }).waitFor();
       assert.equal(await page.locator('#reconcileNotes').inputValue(), 'Synthetic timing difference');
-      await page.getByRole('button', { name: 'Mark month closed' }).click();
-      await page.locator('#pdxRcStatusPill').filter({ hasText: 'Month closed' }).waitFor();
+      await page.getByRole('button', { name: 'Save reconciled review' }).click();
+      await page.locator('#pdxRcStatusPill').filter({ hasText: 'Reconciled' }).waitFor();
       assert.deepEqual(closes[0], closes[1]);
-      assert.equal(closes[1].bankStatementCents, 9900);
+      assert.equal(closes[1].bankStatementCents, 10000);
       assert.deepEqual(closes[1].transferInstructions, [
         {
           key: 'building',
@@ -307,20 +325,18 @@ try {
           reference: 'TEST-123',
         },
       ]);
+      await page.locator('.fr-export-menu > summary').click();
       const csv = await downloadedText(page, () =>
-        page
-          .locator('#tab-reconcile')
-          .getByRole('button', { name: /export.*csv/i })
-          .click()
+        page.locator('#tab-reconcile').getByRole('button', { name: 'Fund summary CSV', exact: true }).click()
       );
-      assert.equal(csv.name, `synthetic-parish-reconciliation-${period}.csv`);
-      assert.ok(csv.text.includes('Building savings'));
-      await page.getByRole('button', { name: 'Reopen month' }).click();
-      await page.locator('#pdxRcStatusPill').filter({ hasText: 'Ready to close' }).waitFor();
+      assert.equal(csv.name, `synthetic-parish-reconciliation-${period}-funds.csv`);
+      assert.ok(csv.text.includes('Building'));
+      await page.getByRole('button', { name: 'Reopen review' }).click();
+      await page.locator('#pdxRcStatusPill').filter({ hasText: 'Awaiting bank check' }).waitFor();
       assert.equal(closes.at(-1).closed, false);
       reconFails = true;
       await page.locator('#reconcileMonth').selectOption({ index: 1 });
-      await page.locator('.toast').filter({ hasText: 'Synthetic reconciliation unavailable' }).waitFor();
+      await page.locator('#reconcileStatusLine').filter({ hasText: 'Synthetic reconciliation unavailable' }).waitFor();
     },
     {
       '/reconciliation': () =>
@@ -331,7 +347,12 @@ try {
         const data = payload(request);
         closes.push(data);
         if (closes.length === 1) return { status: 503, body: { error: 'Synthetic close unavailable' } };
-        closeRecord = { ...data, status: data.closed ? 'closed' : 'open' };
+        closeRecord = {
+          ...data,
+          reviewId: 'review-' + closes.length,
+          updatedAt: recent,
+          status: data.closed ? 'closed' : 'open',
+        };
         return { body: { record: closeRecord } };
       },
     }

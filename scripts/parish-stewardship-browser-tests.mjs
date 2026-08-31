@@ -90,7 +90,7 @@ try {
     'visual reports show budget pace, fund shares, and responsive charts',
     async (page) => {
       await settled(page);
-      const reports = page.locator('.sw-reports-intelligence');
+      const reports = page.locator('#tab-stewardship .sw-reports-intelligence');
       assert.equal(await reports.locator('.sw-report-collected > strong').textContent(), '$162,000');
       assert.ok((await reports.locator('.sw-report-pace-note').textContent()).includes('$18,000'));
       assert.equal(await reports.locator('.sw-report-chart-metric > strong').first().textContent(), '54%');
@@ -141,7 +141,7 @@ try {
     'missing goals and fund failures stay distinct from measured zero',
     async (page) => {
       await settled(page);
-      const reports = page.locator('.sw-reports-intelligence');
+      const reports = page.locator('#tab-stewardship .sw-reports-intelligence');
       assert.ok((await reports.textContent()).includes('No annual pledge goal yet'));
       assert.ok((await reports.textContent()).includes('Fund breakdown is temporarily unavailable'));
       assert.equal(await reports.locator('.sw-report-collected > strong').textContent(), '$0');

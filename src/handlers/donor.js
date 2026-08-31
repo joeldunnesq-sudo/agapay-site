@@ -41,7 +41,7 @@ import {
   subscriptionTier,
 } from "../lib/subscriptions.js";
 
-import { bookstoreEnabledFor, directoryEnabledFor, exchangeEnabledFor, givingFeatureAccess, hasParishPlusAccess, prayerRequestsEnabledFor, sacramentsEnabledFor, signupsEnabledFor, stewardshipToolAccess } from "../lib/entitlements.js";
+import { bookstoreEnabledFor, directoryEnabledFor, exchangeEnabledFor, givingFeatureAccess, hasModuleAccess, prayerRequestsEnabledFor, sacramentsEnabledFor, signupsEnabledFor, stewardshipToolAccess } from "../lib/entitlements.js";
 import { parishLifeAvailableFor } from "../lib/parish-life-access.js";
 import { parishLifeExperienceFor } from "../lib/parish-life-experience.js";
 import { recordParishFeatureRequest } from "../lib/parish-feature-requests.js";
@@ -961,7 +961,7 @@ export async function handleDonorDashboard(request, env) {
           getParishLibrarySettings(env.AGAPAY_DB || env.DB, parish.id),
         ]);
         parish.directoryEnabled = directoryEnabledFor(found.registration, directorySettings);
-        parish.libraryEnabled = librarySettings.enabled && hasParishPlusAccess(found.registration);
+        parish.libraryEnabled = librarySettings.enabled && hasModuleAccess(found.registration, "library");
         const parishLifeExperience = parishLifeExperienceFor(found.registration);
         parish.communicationsEnabled = parishLifeExperience.communicationsEnabled;
         parish.signupsEnabled = signupsEnabledFor(found.registration);
@@ -1134,7 +1134,7 @@ export async function handleDonorGivingPlusFeatureRequest(request, env) {
 
   const found = await findRegistrationByParishId(env, donor.defaultParishId);
   if (!found) return json({ error: "Your selected parish could not be found." }, { status: 404 });
-  if (givingFeatureAccess(found.registration, "customFunds")) {
+  if (givingFeatureAccess(found.registration, "campaigns")) {
     return json({ ok: true, alreadyEnabled: true, message: "Your parish already includes Give +." });
   }
 
@@ -2283,12 +2283,10 @@ export async function handleDonorSacraments(request, env) {
   // on the soft-rollout flag for this specific parish.
   if (!sacramentsEnabledFor(found.registration)) {
     return json({
-      error: hasParishPlusAccess(found.registration)
-        ? "Sacraments & Services is coming soon for your parish."
-        : "This parish has not enabled Sacraments & Services.",
-      detail: hasParishPlusAccess(found.registration)
-        ? "Your parish will have this feature soon."
-        : "This feature is part of AGAPAY Parish +. Your parish will need to subscribe before you can submit requests here."
+      error: "This parish has not enabled Sacraments & Services.",
+      detail: hasModuleAccess(found.registration, "sacraments")
+        ? "Your parish can enable online requests in its dashboard settings."
+        : "Online requests require the Sacraments add-on or Parish."
     }, { status: 402 });
   }
 

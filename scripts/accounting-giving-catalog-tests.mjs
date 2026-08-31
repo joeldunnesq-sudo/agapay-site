@@ -7,7 +7,8 @@ import {
   mergeStewardshipFundsIntoRegistration,
   STEWARDSHIP_FUND_DEFAULTS
 } from "../src/lib/stewardship-funds.js";
-import { accountingFund } from "../src/accounting/source-wiring.js";
+import { accountingFund, synchronizeGivingCatalogIntoDatabase } from "../src/accounting/source-wiring.js";
+import { fundAllocation } from "../src/lib/fund-reporting.js";
 import { givingCatalogChanged } from "../src/handlers/parish.js";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -228,6 +229,26 @@ assert.equal(
   "an explicitly linked ledger fund must reclaim its publishing identity without deleting the historical fund"
 );
 assert.ok(db.prepare("SELECT id FROM accounting_funds WHERE id='fund_catalog_old'").get(), "historical ledger funds must remain intact");
+
+const giveCatalog = {
+  subscriptionTier: "starter",
+  funds: [{ id: "general", name: "General Operating Fund" },
+    { id: "mission-reserve", name: "Mission Reserve", restrictionType: "donor_restricted_temporary" }]
+};
+const originalGift = { fundId: "mission-reserve", fund: "Mission Reserve" };
+const beforeUpgrade = fundAllocation(originalGift, giveCatalog);
+const firstSync = await synchronizeGivingCatalogIntoDatabase(asyncDb, giveCatalog);
+const linkedReserve = firstSync.funds.find((fund) => fund.id === originalGift.fundId);
+const upgradedCatalog = { ...giveCatalog, subscriptionTier: "parish", funds: firstSync.funds };
+linkedReserve.name = "Mission Development Reserve";
+const secondSync = await synchronizeGivingCatalogIntoDatabase(asyncDb, upgradedCatalog);
+const upgradedFund = secondSync.funds.find((fund) => fund.id === originalGift.fundId);
+assert.equal(upgradedFund.accountingFundId, linkedReserve.accountingFundId, "upgrade/save must reuse the ledger identity");
+const reconciledFund = fundAllocation(originalGift, { ...upgradedCatalog, funds: secondSync.funds });
+assert.equal(reconciledFund.key, beforeUpgrade.key, "upgrading cannot move receipts between giving funds");
+assert.equal(reconciledFund.label, upgradedFund.name);
+assert.equal(originalGift.fund, "Mission Reserve", "catalog synchronization cannot rewrite the historical gift label");
+assert.equal(db.prepare("SELECT COUNT(*) AS total FROM accounting_funds WHERE giving_source_type='fund' AND giving_source_id='mission-reserve'").get().total, 1);
 
 const wiring = read("src/accounting/source-wiring.js");
 const parish = read("src/handlers/parish.js");
