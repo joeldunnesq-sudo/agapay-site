@@ -226,10 +226,6 @@ a { color: inherit; }
 .give-koinonia-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .7rem; margin-top: 1.4rem; }
 .give-koinonia-list span { position: relative; padding: .75rem .8rem .75rem 1.8rem; border: 1px solid rgba(169,121,34,.2); border-radius: 10px; background: rgba(255,255,255,.55); color: #45535c; font-size: .76rem; line-height: 1.4; }
 .give-koinonia-list span::before { content: "✓"; position: absolute; left: .65rem; color: var(--give-gold-dark); font-weight: 900; }
-.give-exchange-callout { margin-top: 1.4rem; padding: 1.25rem; border-left: 3px solid var(--give-gold-dark); border-radius: 0 14px 14px 0; background: rgba(255,255,255,.65); }
-.give-exchange-callout h3 { margin: 0 0 .65rem; font: 600 1.7rem/1.1 var(--give-serif); }
-.give-exchange-callout > p:not(.give-eyebrow) { margin: 0 0 .8rem; color: #45535c; font-size: .87rem; line-height: 1.7; }
-.give-exchange-callout small { display: block; color: #53616a; font-size: .74rem; line-height: 1.6; }
 .give-koinonia-screens { position: relative; min-height: 650px; display: grid; place-items: center; isolation: isolate; }
 .give-koinonia-screens::before { content: ""; position: absolute; z-index: -1; width: min(520px,92%); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle,rgba(211,174,88,.24),rgba(211,174,88,.07) 48%,transparent 70%); }
 .give-koinonia-phone { width: clamp(228px,38vw,292px); margin: 0; }
