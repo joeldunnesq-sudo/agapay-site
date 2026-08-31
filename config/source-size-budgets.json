@@ -1,13 +1,13 @@
 {
   "maximumUnbudgetedLines": 1200,
   "files": {
-    "public/admin/app.js": 4198,
+    "public/admin/app.js": 4173,
     "public/donor/app.js": 5867,
     "public/learn/dashboard-shell.js": 9272,
     "public/learn/dashboard-view-models.js": 1724,
     "public/learn/support.js": 1527,
     "public/listen/app.js": 1598,
-    "public/parish/app.js": 6783,
+    "public/parish/app.js": 6767,
     "public/parish/features/directory.js": 1257,
     "public/parish/features/sacraments.js": 1577,
     "scripts/tax-exemption-tests.mjs": 1302,

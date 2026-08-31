@@ -65,6 +65,7 @@ const core = [
   'scripts/production-monitor-tests.mjs',
   'scripts/operations-monitoring-tests.mjs',
   'scripts/source-size-budget-tests.mjs',
+  'scripts/lint-warning-baseline-tests.mjs',
   'scripts/critical-path-manifest-tests.mjs',
   'scripts/production-operations-workflow-tests.mjs',
 ];

@@ -3722,9 +3722,6 @@
     receiptDetails: 'The receipt name and contact details are correct.',
     agapayPlan: 'The selected AGAPAY plan is correct.'
   };
-  function onboardingStateLabel(value) {
-    return String(value || 'onboarding').replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-  }
   function onboardingSignoffMarkup(workflow) {
     const summary = workflow.summary || {};
     const org = summary.organization || {};

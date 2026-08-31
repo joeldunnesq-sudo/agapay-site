@@ -33,6 +33,9 @@ export default [
   {
     files: [
       'scripts/run-tests.mjs',
+      'scripts/lint.mjs',
+      'scripts/lint-warning-baseline-tests.mjs',
+      'scripts/lib/lint-warning-baseline.mjs',
       'scripts/test-manifest.mjs',
       'scripts/architecture-boundaries-tests.mjs',
       'scripts/route-registry-tests.mjs',

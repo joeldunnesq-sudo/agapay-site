@@ -2381,9 +2381,8 @@ let selectedReference = '';
       </section>`;
     }
 
-    function renderOnboardingControls(reg, currentPhase) {
+    function renderOnboardingControls(reg) {
       const workflow = reg.onboardingWorkflow || {};
-      const checks = workflow.checks || reg.onboardingChecks || {};
       const signoff = workflow.signoff || {};
       return `<div class="admin-section onboarding-admin-section onboarding-ready-panel">
         <div class="onboarding-signoff-state ${signoff.status === 'signed' ? 'signed' : workflow.canGoLive ? 'ready' : 'waiting'}">
@@ -2393,30 +2392,6 @@ let selectedReference = '';
         </div>
         ${reg.onboardingTestMode ? `<div class="onboarding-staging-tools"><div><span>Staging only</span><strong>Test the 10-minute parish setup</strong><p>Prepare a ready parish record, then open the parish dashboard to test the treasurer review and launch.</p></div><div class="btn-row"><button class="secondary btn-sm" type="button" onclick="runOnboardingTestAction('${jsAttr(reg.reference)}','reset_workflow',this)">Reset test</button><button class="gold btn-sm" type="button" onclick="runOnboardingTestAction('${jsAttr(reg.reference)}','prepare_ready',this)">Prepare parish test</button></div><div id="stagingOnboardingResult" class="staging-onboarding-result" aria-live="polite"></div></div>` : ''}
       </div>`;
-      /* Legacy five-phase renderer retained below for source compatibility; unreachable. */
-      return `
-        <div class="admin-section onboarding-admin-section onboarding-phase-card ${currentPhase === 'validation' ? 'is-current' : ''}" id="onboarding-phase-validation">
-          <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('validation')"><span>5</span><div><small>Validate &amp; hand off</small><strong>Test the complete giving flow</strong></div><em>${currentPhase === 'validation' ? 'Working step' : 'Open'}</em></button>
-          <p class="onboarding-section-copy">Record the manual evidence below. Stripe, subscription, credential, and canonical gates are calculated by the server and cannot be manually marked ready.</p>
-          <div class="onboarding-signoff-state ${signoff.status === 'signed' ? 'signed' : workflow.canGoLive ? 'ready' : 'waiting'}">
-            <span>${signoff.status === 'signed' ? 'Treasurer signoff recorded' : workflow.canGoLive ? 'Ready for parish signoff' : 'Treasurer signoff locked'}</span>
-            <strong>${signoff.status === 'signed' ? `${escapeHtml(signoff.signerName || 'Treasurer')} · ${escapeHtml(shortDate(signoff.signedAt))}` : workflow.canGoLive ? 'The treasurer can now review the frozen snapshot and click Go Live.' : 'Complete every gate below before the treasurer can publish.'}</strong>
-            <small>Only the verified parish treasurer can activate the giving link. Admin records evidence and resolves blockers.</small>
-          </div>
-          ${renderOnboardingManualChecks(checks, ['testGift', 'receipt', 'reportingAccounting', 'givingAssets'])}
-          ${reg.onboardingTestMode ? `<div class="onboarding-staging-tools">
-            <div><span>Staging only</span><strong>Workflow test controls</strong><p>Prepare a safe synthetic Stripe-ready record, exercise gates independently, or reset the signoff for another end-to-end run. The server refuses these actions in production.</p></div>
-            <div class="btn-row">
-              <button class="secondary btn-sm" type="button" onclick="runOnboardingTestAction('${jsAttr(reg.reference)}','reset_workflow',this)">Reset workflow</button>
-              <button class="secondary btn-sm" type="button" onclick="runOnboardingTestAction('${jsAttr(reg.reference)}','simulate_stripe_ready',this)">Simulate Stripe ready</button>
-              <button class="secondary btn-sm" type="button" onclick="runOnboardingTestAction('${jsAttr(reg.reference)}','pass_manual_gates',this)">Pass manual gates</button>
-              <button class="secondary btn-sm" type="button" onclick="runOnboardingTestAction('${jsAttr(reg.reference)}','reset_signoff',this)">Reset signoff</button>
-              <button class="gold btn-sm" type="button" onclick="runOnboardingTestAction('${jsAttr(reg.reference)}','prepare_ready',this)">Prepare Go-Live test</button>
-            </div>
-            <div id="stagingOnboardingResult" class="staging-onboarding-result" aria-live="polite"></div>
-          </div>` : ''}
-          <p class="onboarding-section-copy"><strong>Publication:</strong> AGAPAY Admin cannot activate an enrolled parish. After every gate passes, the verified treasurer reviews the locked snapshot and clicks Go Live from the parish dashboard.</p>
-        </div>`;
     }
 
     function readOnboardingChecks() {
@@ -2586,7 +2561,7 @@ let selectedReference = '';
           </div>
         </details>
         <div class="actions onboarding-actions">
-          ${renderOnboardingControls(reg, currentPhase)}
+          ${renderOnboardingControls(reg)}
           <div class="admin-section onboarding-phase-card ${currentPhase === 'identity' ? 'is-current' : ''}" id="onboarding-phase-identity">
             <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('identity')"><span>1</span><div><small>Verify parish</small><strong>Verify parish and approving priest</strong></div><em>${currentPhase === 'identity' ? 'Current' : 'Open'}</em></button>
             <div class="onboarding-verification-rule"><strong>Verify the priest, not a public treasurer listing.</strong><p>Confirm the canonical parish and priest through the diocese, jurisdiction, official parish website, or a call to the publicly listed parish number. Then record that verified leader's confirmation of the treasurer's name and email below.</p></div>

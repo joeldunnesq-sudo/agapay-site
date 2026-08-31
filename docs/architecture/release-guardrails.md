@@ -7,11 +7,26 @@ AGAPAY production changes land through a pull request to `main`. The repository'
 `Quality` runs `npm run quality`, which enforces:
 
 - ESLint across handwritten Worker, browser, and test code, with the recommended correctness rules enabled for new frontend/route/test boundaries.
-- A fixed maximum of 14 grandfathered large-file warnings so new warnings fail CI.
+- An explicit file/rule warning baseline, so new warnings cannot replace resolved warnings elsewhere.
 - Prettier checks for the actively maintained boundaries and release workflows.
 - The immutable accounting migration manifest and production migration wiring.
 
 `Test` runs the complete tagged test manifest. Production deployment requires both jobs.
+
+`npm run lint` uses `scripts/lint.mjs` to check all handwritten JavaScript under
+`src`, `public`, and `scripts`, plus `server.mjs`. The ESLint configuration still
+excludes `public/vendor`. Every diagnostic remains visible. Errors always fail;
+warnings must exactly match the file/rule counts in
+`config/lint-warning-baseline.json`. The baseline records existing `max-lines`
+warnings, including the six previously uncovered Admin, Donor, Learn, and Listen
+warnings. It does not disable rules or permit source growth.
+
+When cleanup resolves a warning, remove or reduce its baseline entry in the same
+change; stale allowances fail lint. Do not regenerate the baseline automatically
+to make CI pass. Any new allowance needs explicit review. Physical source-size
+ceilings remain enforced separately by `config/source-size-budgets.json` and
+should decrease when legacy code is removed. Use `npm run lint -- --no-cache` for
+an uncached run; `npm run quality` always does this.
 
 ## Accounting migrations
 
