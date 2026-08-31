@@ -98,6 +98,7 @@ const accounting = [
   'scripts/accounting-recurring-bill-tests.mjs',
   'scripts/accounting-giving-catalog-tests.mjs',
   'scripts/accounting-route-ui-tests.mjs',
+  'scripts/accounting-trial-access-tests.mjs',
   'scripts/accounting-phase-i-tests.mjs',
   'scripts/accounting-phase-j-tests.mjs',
   'scripts/accounting-phase-k-tests.mjs',

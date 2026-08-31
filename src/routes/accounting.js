@@ -2,12 +2,6 @@ export async function routeAccountingRequest({ request, env, url, actions }) {
   const accessMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/accounting-access(?:\/.*)?$/);
   if (accessMatch) {
     const parishId = decodeURIComponent(accessMatch[1]);
-    if (!actions.accountingAvailableForParish(parishId, env)) {
-      return actions.json(
-        { error: 'Not found' },
-        { status: 404, headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow' } }
-      );
-    }
     return actions.handleAccountingAccess(request, env, parishId);
   }
 
@@ -15,12 +9,6 @@ export async function routeAccountingRequest({ request, env, url, actions }) {
   if (!accountingMatch) return null;
 
   const parishId = decodeURIComponent(accountingMatch[1]);
-  if (!actions.accountingAvailableForParish(parishId, env)) {
-    return actions.json(
-      { error: 'Not found' },
-      { status: 404, headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow' } }
-    );
-  }
 
   const handlers = [
     actions.handleAccountingRecurring,

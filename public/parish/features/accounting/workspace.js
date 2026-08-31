@@ -88,9 +88,7 @@ function renderAccountingPaywall(pane = document.getElementById('accountingPane'
   const shell = pane.closest('.acct-suite-shell');
   shell?.classList.toggle('acct-suite-shell--tier-paywall', !included);
   document.getElementById('accountingTierLabel').textContent = included ? 'Parish Accounting' : 'Parish tier';
-  document.getElementById('accountingTierCopy').textContent = included
-    ? 'Beta access coming soon'
-    : 'Upgrade to unlock';
+  document.getElementById('accountingTierCopy').textContent = included ? 'Included in your plan' : 'Upgrade to unlock';
   document.getElementById('accountingParishName').textContent =
     currentParish?.name || currentParish?.parishName || 'Your parish';
   document.getElementById('accountingFiscalYear').textContent = 'Current fiscal year';
@@ -156,47 +154,27 @@ function renderAccountingPaywall(pane = document.getElementById('accountingPane'
         </div>`;
     return;
   }
-  pane.innerHTML = `
-      <section class="acct-paywall-launch">
-        <div class="acct-paywall-launch-icon">₳</div>
-        <div>
-          <span>${included ? 'Beta testing' : 'Included with Parish'}</span>
-          <h2>${included ? 'Your Accounting Suite preview is ready' : 'See the whole parish financial picture'}</h2>
-          <p>Go beyond donation totals with true fund accounting, a balanced general ledger, payables, budgets, bank reconciliation, and parish-ready reports in one workspace.</p>
-          <button class="btn btn-gold" type="button" onclick="switchTab('settings')">${included ? 'Review subscription' : 'Review Parish tier'}</button>
-        </div>
-      </section>
-      <section class="acct-paywall-preview" aria-label="Preview of the AGAPAY Accounting Suite">
-        <div class="acct-paywall-veil">
-          <div>
-            <span class="acct-paywall-lock">⌑</span>
-            <strong>${included ? 'Accounting is currently in beta testing' : 'Unlock the Accounting Suite'}</strong>
-            <small>${included ? 'St. Fiacre remains the live demonstration parish while access is prepared.' : 'Available with the Parish tier after beta testing.'}</small>
-            <button class="acct-primary" type="button" onclick="switchTab('settings')">${included ? 'View plan details' : 'Explore Parish tier'}</button>
-          </div>
-        </div>
-        <section class="acct-command-hero">
-          <div><span class="acct-kicker">Financial command center</span><h2>Clarity for every parish dollar.</h2><p>Fund accounting, giving, payables, and bank activity—one balanced set of books.</p></div>
-          <div class="acct-command-actions"><button><b>＋</b><span>New journal<small>Record an entry</small></span></button><button><b>◫</b><span>Manage funds<small>Track restrictions</small></span></button><button><b>⇄</b><span>Reconcile<small>Match the bank</small></span></button><button><b>▤</b><span>Run reports<small>Review results</small></span></button></div>
-        </section>
-        <div class="acct-suite-stats">
-          <div class="acct-suite-stat featured"><span>Cash on hand</span><strong>$84,260</strong><small>Across active cash and bank accounts</small></div>
-          <div class="acct-suite-stat"><span>Total net assets</span><strong>$126,840</strong><small>Financial position is balanced</small></div>
-          <div class="acct-suite-stat"><span>Current activity</span><strong>$12,475</strong><small>24 posted entries · 2 drafts</small></div>
-          <div class="acct-suite-stat"><span>Tracked funds</span><strong>7</strong><small>3 donor restricted</small></div>
-        </div>
-        <div class="acct-suite-overview-grid">
-          <div>
-            <div class="acct-suite-section-head"><h2>Where things stand</h2><span>One connected set of books</span></div>
-            <div class="acct-suite-modules">
-              <button class="acct-suite-module"><span>Payables</span><strong>$3,480</strong><small>2 awaiting approval</small></button>
-              <button class="acct-suite-module"><span>Reconciliation</span><strong>1 open</strong><small>2 connected bank accounts</small></button>
-              <button class="acct-suite-module"><span>Budget vs actual</span><strong>On track</strong><small>Current operating plan</small></button>
-              <button class="acct-suite-module"><span>Financial reports</span><strong>Balanced</strong><small>Statements and trial balance</small></button>
-            </div>
-          </div>
-        </div>
-      </section>`;
+  renderAccountingReadiness({ status: 'disabled', ready: false }, pane);
+}
+
+function renderAccountingReadiness(accounting, pane = document.getElementById('accountingPane')) {
+  if (!pane) return;
+  const setup = accounting.status === 'setup_required';
+  const disabled = accounting.status === 'disabled';
+  const title = setup
+    ? 'Accounting is included — setup is required'
+    : disabled
+      ? 'Accounting access is disabled'
+      : 'Accounting needs attention';
+  const message = setup
+    ? 'Your Parish tier or Accounting add-on includes Accounting during the free trial. This parish does not yet have its own Accounting books. Contact AGAPAY support to complete setup; no additional upgrade is required.'
+    : disabled
+      ? 'Accounting is included in your plan, but access has been disabled for this parish. Contact AGAPAY support for help.'
+      : 'Accounting is included in your plan, but its books are not ready or did not pass their safety checks. Contact AGAPAY support before continuing.';
+  pane.dataset.loaded = 'pending';
+  const copy = document.getElementById('accountingTierCopy');
+  if (copy) copy.textContent = setup ? 'Included · Setup required' : 'Included · Needs attention';
+  pane.innerHTML = `<section class="acct-access-card"><span class="acct-kicker">Accounting access</span><h2>${title}</h2><p>${message}</p><button class="acct-primary" type="button" onclick="loadAccountingTab(true)">Check again</button></section>`;
 }
 
 function accountingViewTitle() {
@@ -565,6 +543,10 @@ async function loadAccountingTab(force = false) {
     const bankAccounts = await bankAccountsRes.json().catch(() => ({}));
     if (setupRes.status === 401) {
       await renderAccountingAccess();
+      return;
+    }
+    if (setupRes.status === 409 && setup.accounting) {
+      renderAccountingReadiness(setup.accounting, pane);
       return;
     }
     if (!setupRes.ok) throw new Error(setup.message || setup.error || 'Accounting setup is unavailable.');
