@@ -3722,9 +3722,6 @@
     receiptDetails: 'The receipt name and contact details are correct.',
     agapayPlan: 'The selected AGAPAY plan is correct.'
   };
-  function onboardingStateLabel(value) {
-    return String(value || 'onboarding').replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-  }
   function onboardingSignoffMarkup(workflow) {
     const summary = workflow.summary || {};
     const org = summary.organization || {};
@@ -3795,19 +3792,6 @@
 
   function renderDeterministicOnboardingWizard(workflow) {
     renderSimpleParishSetupWizard(workflow);
-    return;
-    const pane = document.getElementById('setupWizardPane');
-    if (!pane) return;
-    const live = workflow.state === 'LIVE';
-    const givingUrl = workflow.summary?.givingUrl || `/give/${encodeURIComponent(currentParish.parishId || '')}`;
-    const steps = (workflow.steps || []).map((item, index) => `<div class="setup-step ${item.passed ? 'done' : ''}">${setupCheckMarkup()}<div><strong>${index + 1}. ${escapeHtml(item.title)}</strong><span>${escapeHtml(item.detail || '')}</span></div></div>`).join('');
-    const blockers = (workflow.blockers || []).slice(0, 5);
-    const action = live
-      ? `<div class="onboarding-live-mark" aria-hidden="true">✓</div><strong>Giving is live</strong><p class="setup-copy setup-action-copy">Treasurer signoff is recorded and the public giving link is active.</p><a class="btn btn-gold onboarding-link-button" href="${escapeHtml(givingUrl)}" target="_blank" rel="noopener">Open giving page</a>`
-      : workflow.canGoLive
-        ? `<strong>Ready for treasurer review</strong><p class="setup-copy setup-action-copy">Every operational gate has passed. Review the snapshot and complete the required signoff below.</p><button class="btn btn-gold" type="button" onclick="document.getElementById('treasurerSignoff')?.scrollIntoView({behavior:'smooth',block:'start'})">Review and sign</button>`
-        : `<strong>${escapeHtml(blockers.length ? `${blockers.length} blocking item${blockers.length === 1 ? '' : 's'} shown` : 'Onboarding in progress')}</strong><div class="onboarding-blockers">${blockers.map(item => `<div><span>!</span><p><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.detail || '')}</small></p></div>`).join('')}</div>${workflow.stripe?.connected && !workflow.stripe?.ready ? '<button class="btn btn-gold" type="button" onclick="refreshStripeStatus({force:true})">Refresh Stripe readiness</button>' : ''}<button class="onboarding-secondary" type="button" onclick="switchTab('settings')">Open parish settings</button>`;
-    pane.innerHTML = `<div class="setup-wizard-card deterministic-onboarding"><div class="setup-wizard-body"><div><div class="onboarding-kicker">${escapeHtml(onboardingStateLabel(workflow.state))}</div><div class="setup-title">Parish launch checklist</div><p class="setup-copy">${live ? 'Launch is complete. Material changes will pause giving and require a new treasurer signoff.' : 'AGAPAY keeps the giving page hidden until all 17 gates pass and the treasurer approves the exact configuration.'}</p><div class="onboarding-progress"><span style="width:${Math.round((Number(workflow.completedSteps || 0) / Math.max(1, Number(workflow.totalSteps || 17))) * 100)}%"></span></div><div class="onboarding-progress-label"><strong>${workflow.completedSteps || 0} of ${workflow.totalSteps || 17}</strong><span>required gates complete</span></div><details class="onboarding-step-details" ${workflow.canGoLive ? '' : 'open'}><summary>View all onboarding gates</summary><div class="setup-steps">${steps}</div></details></div><div class="setup-action-panel">${action}</div></div>${workflow.canGoLive ? onboardingSignoffMarkup(workflow) : ''}</div>`;
   }
 
   let givingSetupWizardStep = 0;
