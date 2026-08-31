@@ -119,6 +119,7 @@ const accountingServiceAllowList = new Set([
   "ingestCommerceSourceEvent",
   "provisionAccountingDatabase",
   "validateProvisionedAccountingDatabase",
+  "initializeLedgerChart", // Internal bootstrap between migrations 0005 and 0006; never a public route.
   "nextCheckNumber",
   "reserveCheckNumbers",
   "classifyIntegritySeverity",

@@ -1,6 +1,6 @@
 import { d1All } from "../../lib/core.js";
 import { parishClosureState } from "../../portability/closure.js";
-import { createBoundD1ProvisioningAdapter, createD1DatabaseFacade } from "../provisioning/adapters.js";
+import { resolveScheduledAccountingDatabase } from "../provisioning/adapters.js";
 import { processDueRecurringBills } from "../payables/recurring-bills.js";
 import { processDueRecurringTransactions } from "./service.js";
 
@@ -9,10 +9,8 @@ const SYSTEM_ACTOR=Object.freeze({
   type:"system",
   capabilities:Object.freeze(["accounting.journals.create","accounting.journals.post","ap.enter"])
 });
-function configuredBindings(env){try{return JSON.parse(String(env.ACCOUNTING_DATABASE_BINDINGS||"{}"));}catch{return{};}}
 
 export async function runScheduledRecurringTransactions(env,scheduledTime=Date.now()){
-  const adapter=createBoundD1ProvisioningAdapter(env),configured=configuredBindings(env);
   const rows=await d1All(env,`SELECT e.parish_id,e.subscription_tier,d.database_identifier
     FROM accounting_entities e JOIN accounting_databases d ON d.accounting_entity_id=e.id
     WHERE e.entity_status='ready' AND e.activation_status='active'
@@ -20,8 +18,7 @@ export async function runScheduledRecurringTransactions(env,scheduledTime=Date.n
   const asOfDate=new Date(scheduledTime).toISOString().slice(0,10),results=[];
   for(const row of rows){
     if(await parishClosureState(env,row.parish_id))continue;
-    const bindingName=configured[row.database_identifier];if(!bindingName||!env[bindingName])continue;
-    const db=createD1DatabaseFacade(adapter,bindingName);
+    const db=await resolveScheduledAccountingDatabase(env,row.database_identifier);if(!db)continue;
     try{
       const [postings,bills]=await Promise.all([
         processDueRecurringTransactions(db,{asOfDate,actor:SYSTEM_ACTOR}),

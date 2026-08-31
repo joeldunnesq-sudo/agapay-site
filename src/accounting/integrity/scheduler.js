@@ -2,7 +2,7 @@ import { d1All, d1Run, generateSecret } from "../../lib/core.js";
 import { parishClosureState } from "../../portability/closure.js";
 import { agapayEmailHtml, sendEmail } from "../../lib/email.js";
 import { htmlEscape } from "../../lib/format.js";
-import { createBoundD1ProvisioningAdapter, createD1DatabaseFacade } from "../provisioning/adapters.js";
+import { createBoundD1ProvisioningAdapter, resolveScheduledAccountingDatabase } from "../provisioning/adapters.js";
 import { activatePreparedParishAccounting } from "../provisioning/orchestrator.js";
 import { releaseProtectiveState, runIntegrityScan } from "./service.js";
 
@@ -11,10 +11,6 @@ const SYSTEM_ACTOR = Object.freeze({
   type: "system",
   capabilities: Object.freeze(["accounting.integrity.scan", "accounting.integrity.protect"])
 });
-
-function configuredBindings(env) {
-  try { return JSON.parse(String(env.ACCOUNTING_DATABASE_BINDINGS || "{}")); } catch { return {}; }
-}
 
 function maskEmail(value) {
   const [name = "", domain = ""] = String(value || "").split("@");
@@ -89,7 +85,6 @@ export async function runScheduledAccountingIntegrity(env, scheduledTime = Date.
   const adapter = createBoundD1ProvisioningAdapter(env);
   const correlationId = `scheduled-accounting-integrity-${new Date(scheduledTime).toISOString()}`;
   await ensureCanaryRegistered(env, adapter, correlationId);
-  const configured = configuredBindings(env);
   const rows = await d1All(env, `SELECT e.parish_id,e.subscription_tier,d.database_identifier
     FROM accounting_entities e JOIN accounting_databases d ON d.accounting_entity_id=e.id
     WHERE e.entity_status='ready' AND e.activation_status='active'
@@ -97,9 +92,8 @@ export async function runScheduledAccountingIntegrity(env, scheduledTime = Date.
   const results = [];
   for (const row of rows) {
     if (await parishClosureState(env,row.parish_id)) continue;
-    const bindingName = configured[row.database_identifier];
-    if (!bindingName || !env[bindingName]) continue;
-    const db = createD1DatabaseFacade(adapter, bindingName);
+    const db = await resolveScheduledAccountingDatabase(env,row.database_identifier);
+    if (!db) continue;
     const scan = await runIntegrityScan(db, { actor: SYSTEM_ACTOR, entitlementTier: row.subscription_tier, scanType: "full", scope: "full", correlationId });
     const findings = (await db.prepare("SELECT health_code,severity,safe_summary,recommended_action FROM accounting_integrity_findings WHERE scan_id=? ORDER BY severity DESC").bind(scan.id).all()).results;
     const alert = await alertForFindings(env, db, { parishId: row.parish_id, scan, findings, correlationId });

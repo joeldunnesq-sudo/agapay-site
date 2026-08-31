@@ -13,7 +13,7 @@ export function createCloudflareD1ProvisioningAdapter(env) {
     const response = await fetch(url, { ...init, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(init.headers || {}) } });
     if (!response.ok) throw providerError("Cloudflare D1 provisioning request failed.", response);
     const payload = await response.json();
-    if (!payload.success) throw new AccountingDatabaseError("Cloudflare D1 rejected the provisioning request.");
+    if (!payload.success || (Array.isArray(payload.result) && payload.result.some(item => item.success === false))) throw new AccountingDatabaseError("Cloudflare D1 rejected the provisioning request.");
     return payload.result;
   }
   return Object.freeze({
@@ -32,7 +32,7 @@ export function createCloudflareD1ProvisioningAdapter(env) {
       return call(`${base}/${encodeURIComponent(providerId)}/query`, { method: "POST", body: JSON.stringify({ sql, params }) });
     },
     async batch(providerId, statements) {
-      return call(`${base}/${encodeURIComponent(providerId)}/query`, { method: "POST", body: JSON.stringify(statements) });
+      return call(`${base}/${encodeURIComponent(providerId)}/query`, { method: "POST", body: JSON.stringify({ batch: statements }) });
     }
   });
 }
@@ -63,12 +63,28 @@ export function createBoundD1ProvisioningAdapter(env) {
 export async function resolveCloudflareD1Adapter(env, databaseName) {
   const bound = createBoundD1ProvisioningAdapter(env);
   if (await bound.findByName(databaseName)) return bound;
+  if (env.ACCOUNTING_PROVISIONER) return Object.freeze({
+    provider: 'cloudflare-d1-service',
+    findByName: name => env.ACCOUNTING_PROVISIONER.resolve(name),
+    execute: (name, sql, params = []) => env.ACCOUNTING_PROVISIONER.query(name, [{ sql, params }]),
+    batch: (name, statements) => env.ACCOUNTING_PROVISIONER.query(name, statements),
+  });
   return createCloudflareD1ProvisioningAdapter(env);
 }
 
 export function createD1DatabaseFacade(adapter, providerId) {
   const prepare = (sql) => ({ sql, params: [], bind(...params) { this.params = params; return this; }, async all() { const r = await adapter.execute(providerId, sql, this.params); return { results: r?.[0]?.results || r?.results || [] }; }, async first() { return (await this.all()).results[0] || null; }, async run() { const r = await adapter.execute(providerId, sql, this.params); return { success: true, meta: r?.[0]?.meta || r?.meta || {} }; } });
   return Object.freeze({ prepare, async batch(statements) { if (adapter.batch) return adapter.batch(providerId, statements.map(s => ({ sql: s.sql, params: s.params }))); const out=[]; for(const s of statements) out.push(await s.run()); return out; } });
+}
+
+export async function resolveScheduledAccountingDatabase(env, databaseName) {
+  const bound = createBoundD1ProvisioningAdapter(env);
+  const resource = await bound.findByName(databaseName);
+  if (resource) return createD1DatabaseFacade(bound,resource.providerId);
+  if (!env.ACCOUNTING_PROVISIONER) return null;
+  const adapter = await resolveCloudflareD1Adapter(env,databaseName);
+  const managed = await adapter.findByName(databaseName);
+  return managed ? createD1DatabaseFacade(adapter,managed.providerId) : null;
 }
 
 export function createInMemoryProvisioningAdapter() {

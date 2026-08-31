@@ -5,6 +5,7 @@ import { expandRoleTemplate } from "../lib/authorization.js";
 import { createAccountingStaffProfile, listAccountingStaffProfiles, requireAccountingStaffProfile, revokeAccountingStaffSession, updateAccountingStaffPin, verifyAccountingStaffPin } from "../lib/accounting-staff.js";
 import { findRegistrationByParishId, verifyParishDashboardBearer } from "./parish.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
+import { handleAccountingActivation } from './accounting-activation.js';
 
 const reply = (body, status = 200) => json(body, { status, headers: { "Cache-Control":"private, no-store", "X-Robots-Tag":"noindex, nofollow", Vary:"Authorization" } });
 async function parishGate(request, env, parishId) {
@@ -16,10 +17,12 @@ export async function handleAccountingAccess(request, env, parishId) {
   const base = `/api/parish/dashboard/${encodeURIComponent(parishId)}/accounting-access`;
   const url = new URL(request.url); if (!url.pathname.startsWith(base)) return null;
   const path = url.pathname.slice(base.length);
-  const limited = await rateLimit(request, env, "accounting-staff-access", { limit: 40, windowSeconds: 300 }); if (limited) return limited;
+  const polling = request.method === 'GET' && path === '/activation';
+  const limited = await rateLimit(request, env, polling ? 'accounting-activation-status' : "accounting-staff-access", { limit: polling ? 90 : 40, windowSeconds: 300 }); if (limited) return limited;
   const registration = await parishGate(request, env, parishId);
   if (!registration) return reply({ error:"Unauthorized" }, 401);
   if (!accountingEnabledFor(registration)) return reply({ error:"Accounting is not included or is disabled for this parish." }, 403);
+  if (path === '/activation' || path.startsWith('/activation/')) return handleAccountingActivation(request,env,parishId,path);
   const accounting = await accountingReadinessForParish(env, parishId, registration);
   if (request.method === "GET" && path === "/profiles") return reply({ accounting, profiles: accounting.ready ? await listAccountingStaffProfiles(env, parishId) : [] });
   if (!accounting.ready) return reply({ error:"Accounting is included, but its books are not ready. Contact AGAPAY support to complete setup.", accounting }, 409);

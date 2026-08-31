@@ -264,6 +264,10 @@ export async function wireGivingRefundsToAccounting(env, offering = {}, charge =
 export async function synchronizeGivingCatalogWithAccounting(env, parishId, registration = {}) {
   const db = await resolveOperationalAccountingDatabase(env, parishId);
   if (!db) return { available: false, synchronized: 0 };
+  return synchronizeGivingCatalogIntoDatabase(db, registration);
+}
+
+export async function synchronizeGivingCatalogIntoDatabase(db, registration = {}) {
   const records = [
     ...(Array.isArray(registration.funds) ? registration.funds : []).map((item) => ({ ...item, sourceType: "fund" })),
     ...(Array.isArray(registration.campaigns) ? registration.campaigns : []).map((item) => ({ ...item, sourceType: "campaign" }))

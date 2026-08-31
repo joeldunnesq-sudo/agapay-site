@@ -59,6 +59,11 @@ PARISH_SUPPRESSION_AUTHORITY = "25a7aefe-a931-456b-ac59-62d538428e9a"
 # Separate cron gate: false preserves the deployed newest-backup exception.
 ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED = "false"
 
+[[services]]
+binding = "ACCOUNTING_PROVISIONER"
+service = "agapay-accounting-provisioner"
+entrypoint = "AccountingProvisionerService"
+
 [triggers]
 crons = ["0 8 * * *", "0 14 * * 6", "*/5 * * * *"]
 
