@@ -26,10 +26,14 @@ import {
   requirePlatformUser,
 } from "../lib/identity.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
+import { mfaErrorDetails } from "../lib/mfa-diagnostics.js";
 import { findRegistrationByParishId, saveRegistrationRecord } from "./parish.js";
 
-function mfaError(error, status = 400) {
-  return json({ error: String(error?.message || error || "MFA request failed."), code: "mfa_error" }, { status });
+function mfaError(error, operation) {
+  const { reason, status, message } = mfaErrorDetails(error);
+  const reference = crypto.randomUUID();
+  console.warn("mfa_request_failed", { operation, reason, status, reference });
+  return json({ error: message, code: "mfa_error", reference }, { status });
 }
 
 async function bodyJson(request) {
@@ -120,7 +124,7 @@ export async function handleMfaEnrollmentOptions(request, env) {
     });
     return json({ ok: true, ...result });
   } catch (error) {
-    return mfaError(error);
+    return mfaError(error, "enrollment_options");
   }
 }
 
@@ -134,7 +138,7 @@ export async function handleMfaEnrollmentVerify(request, env) {
     const result = await verifyMfaEnrollment(env, request, body.pendingToken, body);
     return json(await finalizeMfa(env, request, result));
   } catch (error) {
-    return mfaError(error);
+    return mfaError(error, "enrollment_verify");
   }
 }
 
@@ -148,7 +152,7 @@ export async function handleMfaVerify(request, env) {
     const result = await verifyMfaAuthentication(env, request, body.pendingToken, body);
     return json(await finalizeMfa(env, request, result));
   } catch (error) {
-    return mfaError(error);
+    return mfaError(error, "authentication_verify");
   }
 }
 
@@ -191,7 +195,7 @@ export async function handleMfaStepUp(request, env) {
     });
     return json({ ok: true, ...flow });
   } catch (error) {
-    return mfaError(error);
+    return mfaError(error, "step_up");
   }
 }
 
