@@ -1,0 +1,125 @@
+import assert from 'node:assert/strict';
+import { runAccountingHealth } from './accounting-health-live.mjs';
+
+const root = '/api/parish/dashboard/test-lubbock';
+const env = {
+  TEST_LUBBOCK_PARISH_PASSWORD: 'fixture-password',
+  TEST_LUBBOCK_STAFF_PROFILE_ID: 'fixture-profile',
+  TEST_LUBBOCK_STAFF_PIN: '123456',
+};
+const now = new Date('2026-08-31T12:00:00Z');
+
+async function run({ credentials = env, override = () => undefined } = {}) {
+  const requests = [];
+  const evidence = await runAccountingHealth({
+    env: credentials,
+    now,
+    fetchImpl: async (url, options) => {
+      const parsed = new URL(url);
+      assert.equal(parsed.origin, 'https://agapay.app');
+      const path = parsed.pathname;
+      assert.ok(path === '/api/health' || path.startsWith(`${root}/`));
+      assert.equal(options.redirect, 'error', 'Do not follow a redirect with credentials.');
+      requests.push({ path, method: options.method });
+      if (options.method !== 'GET') {
+        assert.equal(options.method, 'POST');
+        assert.ok(
+          [`${root}/session`, `${root}/accounting-access/verify`].includes(path),
+          'Only authentication can write.'
+        );
+      }
+      const replacement = override(path, options);
+      if (replacement) return replacement;
+      let payload;
+      if (path === '/api/health') payload = { ok: true, checks: { d1: { ok: true }, kv: { ok: true } } };
+      else if (path.endsWith('/session')) payload = { token: 'private-parish-token' };
+      else if (path.endsWith('/payout-diagnostics'))
+        payload = {
+          parishId: 'test-lubbock',
+          payoutsRequest: { ok: true },
+          balanceTransactionsRequest: { ok: true },
+          payouts: [],
+          matchedOfferings: [{ donorEmail: 'private@example.test', amountCents: 19000 }],
+        };
+      else if (path.endsWith('/reconciliation'))
+        payload = {
+          parishId: 'test-lubbock',
+          available: true,
+          summary: { payoutCount: 0, depositedCents: 0 },
+          transactions: [],
+        };
+      else if (path.endsWith('/profiles'))
+        payload = { accounting: { ready: true }, profiles: [{ id: env.TEST_LUBBOCK_STAFF_PROFILE_ID }] };
+      else if (path.endsWith('/verify'))
+        payload = { ok: true, profile: { id: env.TEST_LUBBOCK_STAFF_PROFILE_ID }, token: 'private-staff-token' };
+      else if (path.endsWith('/governance/health'))
+        payload = { ok: true, health: { status: 'healthy', protectiveState: { state: 'normal' }, latestScan: null } };
+      else payload = { ok: true };
+      return Response.json(payload);
+    },
+  });
+  const serialized = JSON.stringify(evidence);
+  for (const secret of [
+    ...Object.values(env),
+    'private-parish-token',
+    'private-staff-token',
+    'private@example.test',
+    '19000',
+  ])
+    assert.ok(!serialized.includes(secret), 'Evidence must not contain credentials or financial records.');
+  return { evidence, requests };
+}
+
+const healthy = await run();
+assert.equal(healthy.evidence.status, 'passed');
+assert.equal(healthy.evidence.payoutHistory, 'empty_no_payout_history_coverage');
+assert.equal(healthy.evidence.integrityScanRecorded, false);
+assert.equal(healthy.requests.filter((r) => r.method === 'POST').length, 2);
+assert.equal(healthy.evidence.checks.filter((c) => c.name.startsWith('accounting-') && c.passed).length, 11);
+
+const missing = await run({ credentials: {} });
+assert.equal(missing.evidence.status, 'blocked_missing_credentials');
+assert.equal(missing.requests.length, 1);
+const mfa = await run({
+  override: (path) => (path.endsWith('/session') ? Response.json({ mfaRequired: true }) : undefined),
+});
+assert.equal(mfa.evidence.status, 'blocked_parish_login');
+assert.equal(mfa.requests.length, 2, 'Never bypass MFA.');
+const pin = await run({
+  override: (path) => (path.endsWith('/verify') ? Response.json({ error: 'bad PIN' }, { status: 401 }) : undefined),
+});
+assert.equal(pin.evidence.status, 'blocked_staff_login');
+assert.equal(
+  pin.requests.filter((r) => r.path.endsWith('/verify')).length,
+  1,
+  'Never retry a PIN and risk locking the profile.'
+);
+const stripe = await run({
+  override: (path) =>
+    path.endsWith('/payout-diagnostics') ? Response.json({ error: 'Stripe failure' }, { status: 502 }) : undefined,
+});
+assert.equal(stripe.evidence.status, 'failed');
+const disconnected = await run({
+  override: (path) => (path.endsWith('/payout-diagnostics') ? Response.json({ available: false }) : undefined),
+});
+assert.equal(disconnected.evidence.status, 'failed');
+const protective = await run({
+  override: (path) =>
+    path.endsWith('/governance/health')
+      ? Response.json({
+          ok: true,
+          health: { status: 'posting_blocked', protectiveState: { state: 'posting_blocked' } },
+        })
+      : undefined,
+});
+assert.equal(protective.evidence.status, 'failed');
+const mismatch = await run({
+  override: (path) =>
+    path.endsWith('/reconciliation')
+      ? Response.json({ parishId: 'other-parish', available: true, summary: { payoutCount: 0 }, transactions: [] })
+      : undefined,
+});
+assert.equal(mismatch.evidence.status, 'failed');
+console.log(
+  'PASS - read-only production request boundary, secret redaction, missing credentials, MFA, PIN failure, Stripe failures, parish identity, and protective states'
+);
