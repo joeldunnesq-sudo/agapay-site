@@ -330,6 +330,7 @@
       .section { padding-left: .85rem; padding-right: .85rem; }
     }
   </style>
+  <script src="/marketing-funnel.js" defer></script>
 </head>
 <body>
   <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1065546639329281&amp;ev=PageView&amp;noscript=1" alt="" /></noscript>
@@ -624,7 +625,7 @@
 
       function referralAttributionLines() {
         const params = new URLSearchParams(window.location.search);
-        const keys = ["utm_source", "utm_medium", "utm_campaign"];
+        const keys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "agapay_entry", "agapay_cta"];
         const values = keys.map(function (key) {
           const value = String(params.get(key) || "").replace(/[\r\n]/g, " ").trim().slice(0, 120);
           return value ? `${key}: ${value}` : "";

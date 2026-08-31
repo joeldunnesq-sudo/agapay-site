@@ -29,9 +29,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preload" as="image" href="/images/giving/app-phone-mockup.png" fetchpriority="high" />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&amp;family=DM+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&amp;family=DM+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site-chrome.css" />
-  <link rel="stylesheet" href="/styles/give.css?v=20260831koinoniapills1" />
+  <link rel="stylesheet" href="/styles/give.css?v=20260831restored1" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <script src="/site-chrome.js?v=20260827givesections1" defer></script>
   <script src="/pwa-register.js" defer></script>
@@ -159,15 +159,18 @@
     ]
   }
   </script>
+  <link rel="stylesheet" href="/styles/koinonia-preview.css" />
+  <script src="/koinonia-preview.js" defer></script>
+  <script src="/marketing-funnel.js" defer></script>
 </head>
 <body>
   <main class="give-page">
     <section class="give-hero" aria-labelledby="give-title">
       <div class="give-wrap give-hero-grid">
         <div class="give-hero-copy">
-          <p class="give-eyebrow">Orthodox church management software</p>
-          <h1 id="give-title">One platform for all of Orthodox parish life.</h1>
-          <p class="give-hero-lead">AGAPAY brings giving, stewardship, people, ministries, sacraments, events, commerce, communications, and accounting into one connected, liturgically aware system.</p>
+          <p class="give-eyebrow">Parish Life in your pocket</p>
+          <h1 id="give-title">The Orthodox Giving App <em>for all of parish life.</em></h1>
+          <p class="give-hero-lead">Orthodox Church Management Software built for all of parish life. Compare plans, explore the tools, and see how payments and parish data are protected.</p>
           <div class="give-hero-actions">
             <a class="give-button give-button-gold" href="/give/request-demo">Request a parish demo</a>
             <a class="give-button give-button-light" href="#pricing">See plans and pricing</a>
@@ -179,7 +182,6 @@
           </div>
         </div>
         <div class="give-hero-visual">
-          <div class="give-phone-halo" aria-hidden="true"></div>
           <img src="/images/giving/app-phone-mockup.png" alt="AGAPAY Orthodox parish giving and stewardship app dashboard" fetchpriority="high" />
           <div class="give-price-float">
             <span>Recommended starting point</span>
@@ -192,36 +194,18 @@
 
     <nav class="give-section-nav" aria-label="AGAPAY Give page sections">
       <div class="give-wrap give-section-links">
-        <a href="#security">Security</a><a href="#pricing">Pricing</a><a href="#platform">Platform</a><a href="#giving-app">Giving</a><a href="#koinonia">Koinonia</a><a href="#app-features">In the app</a><a href="#campaigns">Campaigns</a><a href="#reporting">Reporting</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a><a href="#install-app">Get the app</a>
+        <a href="#pricing">Pricing</a><a href="#security">Security</a><a href="#platform">Platform</a><a href="#giving-app">Giving</a><a href="#koinonia">Koinonia</a><a href="#app-features">In the app</a><a href="#campaigns">Campaigns</a><a href="#reporting">Reporting</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a><a href="#install-app">Get the app</a>
       </div>
     </nav>
 
-    <section class="give-priority" aria-label="Security and pricing overview">
+    <section class="give-priority" aria-label="Pricing and security overview">
       <div class="give-wrap give-priority-grid">
-        <a class="give-priority-card give-priority-card-dark" href="#security">
-          <span class="give-card-kicker">Security is required</span><strong>Stripe-hosted payments. Required administrator MFA.</strong><p>Parish-scoped data, role-based access, bot protection, and durable audit history.</p><b>See how AGAPAY protects data <span aria-hidden="true">&rarr;</span></b>
-        </a>
         <a class="give-priority-card" href="#pricing">
           <span class="give-card-kicker">Clear parish pricing</span><strong>Start at $9 per month. Give + is $79.</strong><p>No setup fee, no contract, and no percentage added to donations.</p><b>Compare every plan <span aria-hidden="true">&rarr;</span></b>
         </a>
-      </div>
-    </section>
-
-    <section class="give-section give-security-section" id="security" aria-labelledby="security-title">
-      <div class="give-wrap">
-        <header class="give-section-head give-section-head-light"><p class="give-eyebrow">Security and payments</p><h2 id="security-title">Security is part of the product, not fine print.</h2><p>AGAPAY protects parish and donor information with clear boundaries at payment, login, storage, and every role inside the parish.</p></header>
-        <div class="give-security-grid">
-          <article><span class="give-security-icon" aria-hidden="true">1</span><h3>Payment details stay with Stripe</h3><p>Sensitive card and bank details are collected by Stripe-hosted Checkout. They do not pass through or get stored by the AGAPAY application, and funds settle through the parish's connected Stripe account.</p></article>
-          <article><span class="give-security-icon" aria-hidden="true">2</span><h3>Administrator MFA is mandatory</h3><p>Privileged users must verify a second factor using a passkey, device biometric, or authenticator code. Recovery codes provide a controlled path if a device is lost.</p></article>
-          <article><span class="give-security-icon" aria-hidden="true">3</span><h3>Every parish is isolated</h3><p>Directory, donation, and financial access is parish-scoped. Cross-parish requests are denied, and staff see only the capabilities assigned to their active role.</p></article>
-          <article><span class="give-security-icon" aria-hidden="true">4</span><h3>Important changes leave a record</h3><p>Administrative and financial actions create audit history so sensitive changes cannot be made quietly. Parish leaders can trace who did what and when.</p></article>
-        </div>
-        <div class="give-security-details">
-          <details><summary>Passwords, passkeys, and account protection</summary><p>Passwords are stored as salted PBKDF2-SHA256 hashes, not readable text. Sign-in endpoints are rate-limited, donor email ownership is verified, privileged sessions require fresh MFA assurance, and My AGAPAY supports phishing-resistant passkeys.</p></details>
-          <details><summary>Stripe verification and parish funds</summary><p>AGAPAY verifies Stripe webhook events using a cryptographic signature and timestamp before updating a payment record. AGAPAY stores only the identifiers and masked references needed for reconciliation. It does not initiate or approve transfers from the parish bank account.</p></details>
-          <details><summary>Cloudflare, storage encryption, and bot protection</summary><p>AGAPAY runs on Cloudflare for network filtering, DDoS mitigation, and service availability. Cloudflare-managed storage is automatically encrypted at rest with AES-256. Turnstile protects sensitive public forms; its tokens expire after five minutes and can be used only once.</p></details>
-        </div>
-        <p class="give-security-caveat">No responsible online service can promise zero risk. AGAPAY uses layered controls, narrow access, verified payment events, and transparent operating boundaries instead of unsupported security guarantees.</p>
+        <a class="give-priority-card give-priority-card-dark" href="#security">
+          <span class="give-card-kicker">Security is required</span><strong>Stripe-hosted payments. Required administrator MFA.</strong><p>Parish-scoped data, role-based access, bot protection, and durable audit history.</p><b>See how AGAPAY protects data <span aria-hidden="true">&rarr;</span></b>
+        </a>
       </div>
     </section>
 
@@ -260,6 +244,24 @@
           <div><strong>Nonprofit pricing</strong><span>Eligible organizations can <a href="https://support.stripe.com/questions/fee-discount-for-nonprofit-organizations" target="_blank" rel="noopener noreferrer">apply directly to Stripe</a>; Stripe controls approval, rates, and continued eligibility.</span></div>
         </div>
         <p class="give-pricing-note"><strong>No setup fee and no long-term contract.</strong> Standard Stripe processing fees still apply. Donors may choose to cover processing fees so the parish receives the full intended gift.</p>
+      </div>
+    </section>
+
+    <section class="give-section give-security-section" id="security" aria-labelledby="security-title">
+      <div class="give-wrap">
+        <header class="give-section-head give-section-head-light"><p class="give-eyebrow">Security and payments</p><h2 id="security-title">Security is part of the product, not fine print.</h2><p>AGAPAY protects parish and donor information with clear boundaries at payment, login, storage, and every role inside the parish.</p></header>
+        <div class="give-security-grid">
+          <article><span class="give-security-icon" aria-hidden="true">1</span><h3>Payment details stay with Stripe</h3><p>Sensitive card and bank details are collected by Stripe-hosted Checkout. They do not pass through or get stored by the AGAPAY application, and funds settle through the parish's connected Stripe account.</p></article>
+          <article><span class="give-security-icon" aria-hidden="true">2</span><h3>Administrator MFA is mandatory</h3><p>Privileged users must verify a second factor using a passkey, device biometric, or authenticator code. Recovery codes provide a controlled path if a device is lost.</p></article>
+          <article><span class="give-security-icon" aria-hidden="true">3</span><h3>Every parish is isolated</h3><p>Directory, donation, and financial access is parish-scoped. Cross-parish requests are denied, and staff see only the capabilities assigned to their active role.</p></article>
+          <article><span class="give-security-icon" aria-hidden="true">4</span><h3>Important changes leave a record</h3><p>Administrative and financial actions create audit history so sensitive changes cannot be made quietly. Parish leaders can trace who did what and when.</p></article>
+        </div>
+        <div class="give-security-details">
+          <details><summary>Passwords, passkeys, and account protection</summary><p>Passwords are stored as salted PBKDF2-SHA256 hashes, not readable text. Sign-in endpoints are rate-limited, donor email ownership is verified, privileged sessions require fresh MFA assurance, and My AGAPAY supports phishing-resistant passkeys.</p></details>
+          <details><summary>Stripe verification and parish funds</summary><p>AGAPAY verifies Stripe webhook events using a cryptographic signature and timestamp before updating a payment record. AGAPAY stores only the identifiers and masked references needed for reconciliation. It does not initiate or approve transfers from the parish bank account.</p></details>
+          <details><summary>Cloudflare, storage encryption, and bot protection</summary><p>AGAPAY runs on Cloudflare for network filtering, DDoS mitigation, and service availability. Cloudflare-managed storage is automatically encrypted at rest with AES-256. Turnstile protects sensitive public forms; its tokens expire after five minutes and can be used only once.</p></details>
+        </div>
+        <p class="give-security-caveat">No responsible online service can promise zero risk. AGAPAY uses layered controls, narrow access, verified payment events, and transparent operating boundaries instead of unsupported security guarantees.</p>
       </div>
     </section>
 
@@ -307,18 +309,21 @@
           <div class="give-koinonia-list"><span>Parish feed and Community Inbox</span><span>Ministry groups have in-app communication and planning</span><span>Signups, meal trains, and volunteer needs</span><span>Parish Exchange — a private parish-only marketplace</span><span>Prayer requests with clergy-only privacy</span><span>Audio, video, podcasts, and parish news</span><span>Parish Library</span><span>Parish calendar connection</span></div>
         </div>
         <div class="give-koinonia-screens" aria-label="Animated preview of Koinonia app screens">
-          <figure class="give-koinonia-phone">
+          <figure class="give-koinonia-phone" data-koinonia-preview>
             <div class="give-koinonia-phone-shell">
-              <div class="give-koinonia-viewport">
+              <div class="give-koinonia-viewport" aria-label="Koinonia screen preview">
                 <div class="give-koinonia-track">
-                  <div class="give-koinonia-slide"><img src="/images/app/screenshots/koinonia-give-1.jpg" alt="Koinonia Today and Orthodox liturgical calendar screen" loading="lazy" width="720" height="1560" /></div>
-                  <div class="give-koinonia-slide"><img src="/images/app/screenshots/koinonia-give-2.jpg" alt="Koinonia parish community and ministry screen" loading="lazy" width="720" height="1560" /></div>
-                  <div class="give-koinonia-slide"><img src="/images/app/screenshots/koinonia-give-3.jpg" alt="Koinonia parish media and news screen" loading="lazy" width="720" height="1560" /></div>
-                  <div class="give-koinonia-slide" aria-hidden="true"><img src="/images/app/screenshots/koinonia-give-1.jpg" alt="" loading="lazy" width="720" height="1560" /></div>
+                  <div class="give-koinonia-slide" data-screen-name="Today"><img src="/images/app/screenshots/koinonia-give-1.jpg" alt="Koinonia Today and Orthodox liturgical calendar screen" loading="lazy" width="720" height="1560" /></div>
+                  <div class="give-koinonia-slide" data-screen-name="Community" aria-hidden="true"><img src="/images/app/screenshots/koinonia-give-2.jpg" alt="Koinonia parish community and ministry screen" loading="lazy" width="720" height="1560" /></div>
+                  <div class="give-koinonia-slide" data-screen-name="Parish media" aria-hidden="true"><img src="/images/app/screenshots/koinonia-give-3.jpg" alt="Koinonia parish media and news screen" loading="lazy" width="720" height="1560" /></div>
                 </div>
               </div>
             </div>
-            <figcaption><span aria-hidden="true">↑</span> Today, community, and parish media in one continuous swipe</figcaption>
+            <figcaption><span data-koinonia-caption>Today · 1 of 3</span></figcaption>
+            <div class="koinonia-preview-controls" hidden>
+              <button type="button" data-koinonia-pause>Pause preview</button>
+              <button type="button" data-koinonia-next>Next screen <span aria-hidden="true">→</span></button>
+            </div>
           </figure>
         </div>
       </div>

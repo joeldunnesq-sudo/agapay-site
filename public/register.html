@@ -269,6 +269,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="stylesheet" href="/site-chrome.css" />
   <script src="/site-chrome.js" defer></script>
+  <script src="/marketing-funnel.js" defer></script>
 </head>
 <body>
 
@@ -1143,6 +1144,15 @@
       const priestEmail    = document.getElementById('priestEmail').value.trim();
       const treasurerEmail = document.getElementById('treasurerEmail').value.trim();
       const notes          = document.getElementById('notes').value.trim();
+      const referralParams = new URLSearchParams(window.location.search);
+      const referralLines = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'agapay_entry', 'agapay_cta']
+        .map((key) => {
+          const value = String(referralParams.get(key) || '').replace(/[\r\n]/g, ' ').trim().slice(0, 120);
+          return value ? `${key}: ${value}` : '';
+        }).filter(Boolean);
+      const notesWithAttribution = [notes, ...(referralLines.length ? ['', 'Referral attribution:', ...referralLines] : [])].join('\n');
+      // Attribution must not make an otherwise valid intake exceed its notes limit.
+      const attributedNotes = notesWithAttribution.length <= 4000 ? notesWithAttribution : notes;
 
       // Hide form, show spinner
       document.getElementById('progressWrap').style.display = 'none';
@@ -1172,7 +1182,7 @@
         treasurerFirst: document.getElementById('treasurerFirst').value,
         treasurerLast: document.getElementById('treasurerLast').value,
         treasurerEmail,
-        notes,
+        notes: attributedNotes,
         canonicalAgreement: true,
         acceptingName,
         acceptingEmail,

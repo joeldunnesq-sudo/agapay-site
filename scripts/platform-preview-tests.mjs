@@ -22,9 +22,12 @@ assert.ok(
 assert.match(html, /data-src="\/images\/app\/screenshots\/parish-bookstore\.jpg\?v=7a0005fdc4b5"/, "homepage should defer the optimized Bookstore screenshot until its tab is shown");
 assert.match(html, /data-src="\/images\/app\/screenshots\/sacraments-and-services\.jpg\?v=d341e8558523"/, "homepage should defer the optimized Sacraments & Services screenshot until its tab is shown");
 assert.ok(
-  html.indexOf('id="pillars"') < html.indexOf('class="op-statement op-positioning"')
-    && html.indexOf('class="op-statement op-positioning"') < html.indexOf('id="connected-system"'),
-  "Orthodox-first positioning should sit between The Platform and the connected-system section"
+  html.indexOf('class="op-statement op-verse-band"') < html.indexOf('id="connected-system"')
+    && html.indexOf('id="connected-system"') < html.indexOf('class="op-statement op-positioning"')
+    && html.indexOf('How Work Gets Done') < html.indexOf('id="pillars"')
+    && html.indexOf('id="pillars"') < html.indexOf('id="giving-impact"')
+    && html.indexOf('id="giving-impact"') < html.indexOf('id="install-app"'),
+  "connected system should follow scripture, with Platform and giving impact between ministry oversight and app installation"
 );
 assert.match(html, /One parish\. One connected system\./, "homepage should explain that every parish capability shares one system");
 assert.match(html, /The Church deserves[\s\S]*one unified place for parish life\./, "connected-system copy should make the platform benefit clear");
@@ -52,22 +55,23 @@ assert.doesNotMatch(html, /data-no-site-chrome/, "homepage should allow the cano
 assert.match(html, /rel="canonical" href="https:\/\/agapay\.app\/"/, "platform homepage should publish the root canonical URL");
 assert.match(html, /og:image" content="https:\/\/agapay\.app\/images\/AGAPAY_social_share_v2\.png"[\s\S]*?og:image:width" content="1200"[\s\S]*?og:image:height" content="630"/, "homepage should use the supplied landscape social sharing image with accurate dimensions");
 assert.match(html, /href="\/give\/request-demo"/, "homepage should route parish demo requests to the existing form");
-assert.match(html, /href="\/register"/, "homepage should preserve the free-start route");
-assert.match(html, /id="install-app"[\s\S]*?Parish life in your pocket[\s\S]*?Install My AGAPAY\.<br \/><em>Give - Serve - Be engaged with parish life<\/em>[\s\S]*?progressive web app/, "homepage should include the requested parish-life copy in its PWA install section");
+assert.match(html, /op-hero-actions[\s\S]*?op-btn-gold" href="\/give"/, "homepage primary action should lead to the platform overview");
+assert.match(html, /id="install-app"[\s\S]*?Parish life in your pocket[\s\S]*?One familiar place[\s\S]*?for your parishioners/, "homepage should lead with parishioner benefits");
+assert.match(html, /<details class="op-install-disclosure">[\s\S]*?<summary>Already using AGAPAY\? Install the app<\/summary>/, "installation instructions should be optional for existing users");
 assert.match(html, /Android &amp; desktop[\s\S]*?Install app[\s\S]*?iPhone &amp; iPad[\s\S]*?Add to Home Screen/, "homepage should explain Android, desktop, and iOS installation paths");
 assert.match(html, /src="\/pwa-home-install\.js"/, "homepage should load the PWA install interaction");
 assert.match(pwaInstall, /beforeinstallprompt[\s\S]*?event\.preventDefault\(\)[\s\S]*?deferredInstallPrompt = event/, "homepage install behavior should capture the native browser prompt");
 assert.match(pwaInstall, /deferredInstallPrompt\.prompt\(\)[\s\S]*?userChoice/, "homepage install button should open and resolve the native prompt when available");
 assert.match(pwaInstall, /display-mode: standalone[\s\S]*?window\.navigator\.standalone/, "homepage should recognize an already-installed PWA on Android, desktop, and iOS");
 assert.match(pwaInstall, /Share, then Add to Home Screen/, "homepage install behavior should retain the Safari-specific fallback");
-assert.match(html, /<a class="op-btn op-btn-outline" href="\/give">Explore AGAPAY Give<\/a>/, "final homepage CTA should describe its AGAPAY Give destination");
+assert.match(html, /op-final-actions[\s\S]*?op-btn-gold" href="\/give"/, "final homepage action should lead to the platform overview");
 assert.doesNotMatch(html, /<a[^>]+href="\/give"[^>]*>\s*Learn more\s*<\/a>/i, "homepage links should not use generic Lighthouse-unfriendly text");
 assert.match(css, /@media \(max-width: 980px\)/, "preview should include a tablet layout");
 assert.match(css, /@media \(max-width: 620px\)/, "preview should include a narrow-phone layout");
 assert.match(css, /\.op-hero::after[\s\S]*?background: url\("\/mark\.png"\)[\s\S]*?opacity: \.07/, "hero should carry a restrained oversized AGAPAY mark");
 assert.match(css, /\.op-oversight-step-mark svg[\s\S]*?left: 50%; top: 50%[\s\S]*?translate\(-50%, -50%\)/, "workflow checkmarks should be centered inside their circles");
 assert.match(css, /@media \(max-width: 980px\)[\s\S]*?\.op-connector-copy \{ padding-inline: clamp\(1\.25rem, 4vw, 2\.5rem\); \}/, "The Thread copy should receive the mobile gutter without resizing its screenshot");
-assert.doesNotMatch(html, /op-connector-shot[\s\S]*?<img[^>]+width="720"[^>]+height="1560"/, "The Thread screenshot should keep its original intrinsic display behavior");
+assert.match(html, /op-connector-shot[\s\S]*?data-koinonia-preview/, "homepage should show the scrolling Koinonia preview");
 assert.match(css, /\.op-trust-grid[^\n]+padding-block:/, "trust items should preserve the shared mobile gutters");
 assert.match(css, /\.op-install-grid[\s\S]*?grid-template-columns:[^;]+;/, "PWA install section should use an app-like split layout on large screens");
 assert.match(css, /@media \(max-width: 620px\)[\s\S]*?\.op-install-steps \{ grid-template-columns: 1fr; \}/, "PWA installation steps should stack cleanly on phones");

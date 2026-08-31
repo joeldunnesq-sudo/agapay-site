@@ -1,0 +1,21 @@
+.give-koinonia-phone { width: clamp(228px,38vw,292px); margin: 0; }
+.give-koinonia-phone-shell { position: relative; padding: 7px; border: 1px solid rgba(255,255,255,.22); border-radius: 34px; background: #071723; box-shadow: 0 34px 70px rgba(6,21,34,.27),0 8px 18px rgba(6,21,34,.16); }
+.give-koinonia-phone-shell::before { content: ""; position: absolute; z-index: 3; top: 14px; left: 50%; width: 28%; height: 18px; transform: translateX(-50%); border-radius: 999px; background: #07131d; pointer-events: none; }
+.give-koinonia-viewport { position: relative; overflow: hidden; aspect-ratio: 720 / 1560; border-radius: 27px; background: #071723; }
+.give-koinonia-track { position: absolute; inset: 0; height: 300%; transform: translateY(0); transition: transform 1.2s cubic-bezier(.65,0,.25,1); }
+.give-koinonia-slide { height: calc(100% / 3); overflow: hidden; }
+.give-koinonia-slide img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.give-koinonia-phone figcaption { margin-top: .8rem; color: #53616a; font: 600 .75rem/1.4 "DM Sans",Arial,sans-serif; text-align: center; }
+.koinonia-preview-controls:not([hidden]) { display: flex; justify-content: center; gap: .5rem; margin-top: .65rem; }
+.koinonia-preview-controls button { min-height: 44px; padding: .55rem .7rem; border: 1px solid rgba(169,121,34,.45); border-radius: 6px; background: rgba(255,253,248,.8); color: #061522; font: 600 .7rem/1.2 "DM Sans",Arial,sans-serif; cursor: pointer; }
+.koinonia-preview-controls button:hover { background: #f1e4c9; }
+.koinonia-preview-controls button:focus-visible { outline: 2px solid #a97922; outline-offset: 3px; }
+@media (max-width: 560px) {
+  .give-koinonia-phone { width: min(260px,76vw); }
+  .give-koinonia-phone-shell { padding: 5px; border-radius: 28px; }
+  .give-koinonia-viewport { border-radius: 23px; }
+  .give-koinonia-phone-shell::before { top: 11px; height: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .give-koinonia-track { transition: none; }
+}
