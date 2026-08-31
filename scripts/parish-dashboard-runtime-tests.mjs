@@ -53,6 +53,7 @@ const login = createPage();
 login.load('public/parish/app.js');
 assert.equal(login.run('authHeaders().Authorization'), 'Bearer test-parish-token');
 assert.equal(login.run('accountingStaffSession()'), null);
+assert.equal(login.run('isParishPlusActive()'), false, 'login entitlement checks must work without the registry');
 login.run("currentParish = { parishId: 'test-parish' }");
 login.storage.set(
   'agapay.accountingStaff.test-parish',
@@ -78,6 +79,49 @@ for (const feature of dashboard.context.ParishFeatureRegistry.list()) {
   await dashboard.run(`loadRegisteredParishFeature('${feature.id}')`);
 }
 assert.equal(dashboard.run('authHeaders().Authorization'), 'Bearer test-parish-token');
+
+// Shared navigation reads legacy add-on status through the registered feature,
+// while the server-computed entitlement remains authoritative when present.
+dashboard.run("currentParish = { parishId: 'test-parish', subscriptionTier: 'giving' }");
+dashboard.run("stewardshipState.stewardship = { legacyAddOnActive: true }");
+assert.equal(dashboard.run('isParishPlusActive()'), true);
+dashboard.run('currentParish.entitlements = { parishPlusActive: false }');
+assert.equal(dashboard.run('isParishPlusActive()'), false);
+dashboard.run('stewardshipState.loaded = true');
+dashboard.run("ParishFeatureRegistry.get('stewardship').invalidate()");
+assert.equal(dashboard.run('stewardshipState.loaded'), false);
+assert.equal(dashboard.run("ParishFeatureRegistry.get('stewardship').getStatus().legacyAddOnActive"), true);
+dashboard.run('currentParish = null; stewardshipState.stewardship = null');
+
+// Giving's registry owns dispatch and refresh scheduling without changing the
+// existing cache behavior or eagerly reading the core during script loading.
+const giving = createPage();
+for (const file of scripts) giving.load(file);
+const givingCalls = [];
+for (const name of ['loadGivingHistory', 'renderGiversPanel', 'renderGivingOptionsEditor', 'loadSettlementProfilesPanel', 'loadReconciliation']) {
+  giving.context[name] = () => givingCalls.push(name);
+}
+giving.run("currentParish = { parishId: 'test-parish' }");
+await giving.run("loadRegisteredParishFeature('giving', 'options')");
+assert.deepEqual(givingCalls.splice(0), ['loadGivingHistory', 'renderGivingOptionsEditor', 'loadSettlementProfilesPanel']);
+giving.run('allGifts = [{}]');
+await giving.run("loadRegisteredParishFeature('giving', 'givers')");
+assert.deepEqual(givingCalls.splice(0), ['renderGiversPanel']);
+await giving.run("loadRegisteredParishFeature('giving', 'history')");
+assert.deepEqual(givingCalls, []);
+await giving.run("loadRegisteredParishFeature('giving', 'reconcile')");
+assert.deepEqual(givingCalls.splice(0), ['loadReconciliation']);
+const givingDelays = [];
+giving.context.setTimeout = (_callback, delay) => givingDelays.push(delay);
+giving.run("activeTab = 'giving'; ParishFeatureRegistry.get('giving').refresh()");
+assert.deepEqual(givingDelays.splice(0), [250, 500, 750, 1000, 1250]);
+assert.deepEqual(givingCalls, []);
+giving.run("activeTab = 'history'; ParishFeatureRegistry.get('giving').refresh()");
+assert.deepEqual(givingDelays.splice(0), [250, 500, 750, 1000]);
+assert.deepEqual(givingCalls.splice(0), ['loadGivingHistory']);
+giving.run("activeTab = 'reconcile'; ParishFeatureRegistry.get('giving').refresh()");
+assert.deepEqual(givingDelays.splice(0), [250, 500, 750, 1000, 1250]);
+assert.deepEqual(givingCalls.splice(0), ['loadReconciliation']);
 
 // Exercise the real parent lifecycle and navigation with leaf loaders observed.
 // This protects tier defaults, old links, and Events/Meals dispatch when products

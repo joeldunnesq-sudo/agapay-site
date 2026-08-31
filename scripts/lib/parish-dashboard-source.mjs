@@ -8,7 +8,7 @@ export function parishDashboardFeaturePaths() {
   const html = readFileSync(new URL('public/parish/dashboard.html', root), 'utf8');
   return [
     ...html.matchAll(
-      /<script src="(\/parish\/features\/(?:accounting|commerce|koinonia)(?:\/[^"?]+)?\.js)\?[^\"]+"><\/script>/g
+      /<script src="(\/parish\/features\/(?:accounting|commerce|koinonia|onboarding|campaigns|stewardship|giving)(?:\/[^"?]+)?\.js)\?[^\"]+"><\/script>/g
     ),
   ].map((match) => `public${match[1]}`);
 }

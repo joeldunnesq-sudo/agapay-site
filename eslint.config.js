@@ -61,12 +61,26 @@ export default [
     rules: recommendedRules,
   },
   {
-    files: ['scripts/parish-dashboard-browser-tests.mjs'],
+    files: [
+      'scripts/parish-dashboard-browser-tests.mjs',
+      'scripts/parish-onboarding-browser-tests.mjs',
+      'scripts/parish-campaign-browser-tests.mjs',
+      'scripts/parish-stewardship-browser-tests.mjs',
+      'scripts/parish-giving-browser-tests.mjs',
+    ],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
     rules: recommendedRules,
   },
   {
-    files: ['public/parish/dashboard-runtime.js'],
+    files: [
+      'public/parish/dashboard-runtime.js',
+      'public/parish/features/onboarding.js',
+      'public/parish/features/campaigns.js',
+      'public/parish/features/stewardship.js',
+      'public/parish/features/stewardship/**/*.js',
+      'public/parish/features/giving.js',
+      'public/parish/features/giving/**/*.js',
+    ],
     languageOptions: { sourceType: 'script', globals: globals.browser },
     rules: recommendedRules,
   },

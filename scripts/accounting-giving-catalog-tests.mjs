@@ -306,10 +306,10 @@ assert.match(app, /options-summary-builder/, "the Active giving options card mus
 assert.match(app, /onclick="editGivingOption\('fund',\$\{row\.index\}\)"/, "fund rows in Active giving options must expose inline editing");
 assert.match(app, /class="options-summary-action"/, "active-fund edit buttons must sit in the far-right action column");
 assert.match(app, /function updateFeastCampaignFund\b/, "Major Feast Alms campaigns must expose a destination-fund selector");
-assert.match(app, /destinationFundId:'benevolence-fund'/, "new Major Feast Alms campaigns must default to Benevolence");
+assert.match(app, /destinationFundId:\s*'benevolence-fund'/, "new Major Feast Alms campaigns must default to Benevolence");
 assert.match(app, /Parish feast day/, "Funds & Alms must label the feast configured in Parish Settings");
 assert.doesNotMatch(app, /<h3 class="option-group-title">Designated funds<\/h3>/, "Funds & Alms must not render a duplicate Designated funds card");
-assert.match(app, /Benevolence Fund'[^}\n]+restrictionType:'donor_restricted_temporary'/, "new Benevolence funds must default to donor restricted");
+assert.match(app, /Benevolence Fund'[^}]+restrictionType:\s*'donor_restricted_temporary'/, "new Benevolence funds must default to donor restricted");
 assert.match(app, /Funds &amp; Alms is the source of truth/);
 assert.match(app, /funds: editableFunds,[\s\S]*campaigns: editableCampaigns,[\s\S]*feastCampaigns: editableFeastCampaigns/, "saving another dashboard tab must retain Funds & Alms state");
 assert.match(app, /givingCatalogChanged: givingCatalogSnapshot\(\) !== givingCatalogBaseline/, "ordinary settings saves must identify unchanged Funds & Alms state");

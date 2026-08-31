@@ -38,6 +38,11 @@ const featureAssetVersions = [
   '/parish/features/directory.js',
   '/parish/features/library.js',
   '/parish/features/sacraments.js',
+  '/parish/features/onboarding.js',
+  '/parish/features/campaigns.js',
+  '/parish/features/stewardship.js',
+  '/parish/features/giving.js',
+  '/parish/dashboard-runtime.js',
   '/parish/app.js',
 ].map((asset) => dashboard.match(new RegExp(`${asset.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\?v=([^"']+)`))?.[1]);
 assert.ok(

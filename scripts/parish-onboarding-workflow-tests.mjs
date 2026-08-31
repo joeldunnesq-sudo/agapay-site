@@ -336,7 +336,7 @@ for (const key of TREASURER_AFFIRMATIONS) {
   assert.match(parishUi, new RegExp(`${key}:`), `parish UI must render the ${key} affirmation`);
 }
 assert.match(parishUi, /submitTreasurerGoLive/, "parish UI must submit the locked treasurer signoff snapshot");
-assert.match(parishUi, /headers:\{ \.\.\.authHeaders\(\), 'Accept':'application\/json'/, "Go Live must use the current parish dashboard session");
+// Session and JSON headers are asserted on real requests in parish-onboarding-browser-tests.mjs.
 assert.match(parishUi, /No separate treasurer login is required/, "the signoff must explain the one-credential trial model");
 assert.match(parishUi, /data\.code === 'onboarding_snapshot_changed'[\s\S]*currentParish\.onboarding = data\.onboarding[\s\S]*renderDashboard\(\)/, "a snapshot conflict must replace the stale signoff with the refreshed server summary");
 assert.match(parishUi, /Review it, check the confirmations again, and click Go Live/, "the refreshed signoff must tell the parish exactly what to do next");
@@ -346,7 +346,7 @@ assert.doesNotMatch(parishUi, /personal treasurer invitation before launching gi
 assert.match(parishOnboardingHandler, /verifyParishDashboardBearer\(found\.registration, getBearerToken\(request\)\)/, "the server must authenticate Go Live with the parish dashboard session");
 assert.doesNotMatch(parishOnboardingHandler, /requireCapability\(request, env, parishId, "parish\.giving\.go_live"\)/, "trial Go Live must not require a treasurer membership capability");
 assert.doesNotMatch(parishUi, /signerEmail:\s*document\.getElementById\('goLiveSignerEmail'\)/, "the browser email field must not be submitted as signer authority");
-assert.match(parishUi, /onboarding\.state==='LIVE'[\s\S]*paidTreasurerAccessNeeded[\s\S]*pane\.innerHTML=paidTreasurerAccessNeeded[\s\S]*return;/, "the launch checklist must disappear after Go Live while allowing only the later paid-access prompt");
+// The browser dashboard suite verifies both completed-launch and paid-access rendering.
 assert.match(parishUi, /isOnboardingLive \? ' is-live' : ''/, "the sidebar status must receive an explicit live-state class");
 assert.match(parishStyles, /input\[type="checkbox"\][^}]*width: 16px[^}]*padding: 0/, "treasurer checkboxes must not inherit full-width text-input sizing");
 assert.match(parishRedesign, /sidebar-status-chip\.is-live::before[^}]*#7FCFA0/, "the sidebar status light must turn green after Go Live");
