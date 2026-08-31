@@ -12,6 +12,7 @@ const reads = new Set([
   '/api/health',
   `${root}/payout-diagnostics`,
   `${root}/accounting-access/profiles`,
+  `${root}/accounting/payables/bills`,
   ...ACCOUNTING_READ_SMOKE_PATHS.map(([, suffix]) => `${root}/accounting${suffix}`),
 ]);
 
@@ -31,12 +32,13 @@ export async function runAccountingHealth({ env = process.env, fetchImpl = fetch
   };
   let token = '';
   let staffHeaders = {};
+  let attachmentPath = null;
   async function request(path, body) {
     const login = path === `${root}/session` || path === `${root}/accounting-access/verify`;
     const reconciliation = new RegExp(`^${root}/reconciliation\\?month=\\d{4}-(0[1-9]|1[0-2])(&detail=full)?$`).test(
       path
     );
-    if (body !== undefined ? !login : !reads.has(path) && !reconciliation) {
+    if (body !== undefined ? !login : !reads.has(path) && !reconciliation && path !== attachmentPath) {
       throw new Error('Request is outside the production health-check allowlist.');
     }
     const response = await fetchImpl(`${baseUrl}${path}`, {
@@ -178,6 +180,27 @@ export async function runAccountingHealth({ env = process.env, fetchImpl = fetch
     };
   staffHeaders = { 'X-AGAPAY-Accounting-Profile': staff.profile.id, 'X-AGAPAY-Accounting-Token': staff.token };
   for (const [section, suffix] of ACCOUNTING_READ_SMOKE_PATHS) {
+    if (section === 'attachments') {
+      const bills = await check(
+        'accounting-attachment-records',
+        `${root}/accounting/payables/bills`,
+        (p) => p?.ok === true && Array.isArray(p.bills)
+      );
+      if (!bills) continue;
+      const bill = bills.bills.find((item) => typeof item.id === 'string' && item.id.trim());
+      if (!bill) {
+        evidence.checks.push({
+          name: 'accounting-attachments',
+          passed: null,
+          skipped: true,
+          reason: 'no_existing_bill',
+        });
+        continue;
+      }
+      attachmentPath = `${root}/accounting/attachments?entityType=bill&entityId=${encodeURIComponent(bill.id)}`;
+      await check('accounting-attachments', attachmentPath, (p) => p?.ok === true && Array.isArray(p.attachments));
+      continue;
+    }
     const payload = await check(
       `accounting-${section}`,
       `${root}/accounting${suffix}`,
@@ -191,14 +214,17 @@ export async function runAccountingHealth({ env = process.env, fetchImpl = fetch
       evidence.integrityScanRecorded = Boolean(payload.health?.latestScan);
     }
   }
-  return { ...evidence, status: evidence.checks.every((c) => c.passed) ? 'passed' : 'failed' };
+  return { ...evidence, status: evidence.checks.every((c) => c.passed || c.skipped) ? 'passed' : 'failed' };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const evidence = await runAccountingHealth();
   await mkdir('artifacts/accounting-health', { recursive: true });
   await writeFile('artifacts/accounting-health/test-lubbock.json', `${JSON.stringify(evidence, null, 2)}\n`);
-  for (const check of evidence.checks) console.log(`${check.passed ? 'PASS' : 'FAIL'} - ${check.name}`);
+  for (const check of evidence.checks)
+    console.log(
+      `${check.skipped ? 'SKIP' : check.passed ? 'PASS' : 'FAIL'} - ${check.name}${check.skipped ? ` (${check.reason})` : ''}`
+    );
   console.log(`Accounting health: ${evidence.status}`);
   if (evidence.missing.length) console.log(`Missing protected secrets: ${evidence.missing.join(', ')}`);
   if (evidence.status === 'blocked_parish_mfa')

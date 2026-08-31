@@ -41,6 +41,9 @@ reconciliation closes, account setup, Stripe configuration changes, or new
 integrity scans are performed. Missing credentials and access failures exit
 nonzero. An empty payout history is explicitly reported as lacking historical
 payout coverage. No prior integrity scan is also reported explicitly.
+The attachment check lists existing bills and reads attachments for one existing
+bill only. If no bill exists, attachment coverage is explicitly skipped; the
+check never creates a sample bill. Other failed reads still fail the run.
 
 Artifacts contain pass/fail results and coverage flags, never credentials,
 response bodies, donor records, financial amounts, or Stripe account IDs. A
