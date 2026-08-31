@@ -54,6 +54,11 @@ assert.equal(
   202
 );
 assert.equal(starts, 1);
+env.ACCOUNTING_PROVISIONER.status = async () => ({ status: 'ready', completed: false });
+const staleStaff = request('/activation');
+staleStaff.headers.set('X-AGAPAY-Accounting-Profile', 'revoked-profile');
+staleStaff.headers.set('X-AGAPAY-Accounting-Token', 'revoked-token');
+assert.equal((await (await handleAccountingAccess(staleStaff, env, 'parish-a')).json()).staffReady, false);
 assert.equal(
   (
     await handleAccountingAccess(

@@ -58,7 +58,7 @@ async function renderAccountingActivation(pane = document.getElementById('accoun
   document.getElementById('accountingParishName').textContent =
     currentParish.name || currentParish.parishName || 'Your parish';
   if (status.status === 'ready') {
-    if (!accountingStaffSession()) {
+    if (status.staffReady === false || !accountingStaffSession()) {
       await renderAccountingAccess();
       const form = pane.innerHTML;
       pane.innerHTML = accountingActivationShell(2, form);

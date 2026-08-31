@@ -61,9 +61,15 @@ export async function handleAccountingActivation(request, env, parishId, path) {
             ? { status: 'ready', completed: true }
             : { status: 'review_required', available: false, completed: false }
         );
-      return reply(
-        env.ACCOUNTING_PROVISIONER ? await env.ACCOUNTING_PROVISIONER.status(parishId) : activationDto(operation, false)
-      );
+      const status = env.ACCOUNTING_PROVISIONER
+        ? await env.ACCOUNTING_PROVISIONER.status(parishId)
+        : activationDto(operation, false);
+      if (status.status === 'ready' && !status.completed) {
+        status.staffReady = Boolean(
+          await requireAccountingStaffProfile(request, env, parishId, 'accounting.configure')
+        );
+      }
+      return reply(status);
     }
     if (request.method !== 'POST') return reply({ error: 'Method not allowed' }, 405);
     if (Number(request.headers.get('Content-Length') || 0) > 1_100_000)
