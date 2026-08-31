@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
+import { mkdir } from 'node:fs/promises';
 import { openParishFixture, parish, origin } from './lib/parish-browser-fixture.mjs';
 
 /* global loadDashboard, loadGivingMetricsPanel,
@@ -45,6 +46,8 @@ const defaults = {
   },
   '/stewardship/giving/funds': { body: { funds: [{ fund_name: 'Building <fund>', total_cents: 25000 }] } },
   '/stewardship/giving/health-score': { body: { score: 75, components: [] } },
+  '/stewardship/giving/distribution': { body: { total_donors: 0, tiers: [] } },
+  '/stewardship/giving/retention': { body: { retained: 0, lapsed: 0, new_donors: 0, retention_rate_pct: null } },
   '/stewardship/giving/concentration': { body: { total_donors: 0 } },
   '/stewardship/giving/recurring': { body: { recurring_donor_count: 2 } },
   '/stewardship/financials': { body: financialData },
@@ -83,6 +86,133 @@ function body(request, method = 'POST') {
 }
 
 try {
+  await scenario(
+    'Giving intelligence charts, accessible values, health disclosure, and responsive layout',
+    async (page) => {
+      await settled(page);
+      await page.getByRole('heading', { name: 'Giving intelligence', exact: true }).waitFor();
+      assert.equal(
+        await page
+          .locator('#stewardshipDistributionPane .sw-distribution-bar strong')
+          .allTextContents()
+          .then((v) => v.join(',')),
+        '48,72,36,18,6'
+      );
+      assert.ok((await page.locator('#stewardshipRetentionPane').textContent()).includes('80%'));
+      assert.ok((await page.locator('#stewardshipRetentionPane').textContent()).includes('144 of 180'));
+      assert.ok(
+        (await page.locator('#stewardshipRetentionPane [role="img"]').getAttribute('aria-label')).includes(
+          '144 retained, 36 new, 36 lapsed'
+        )
+      );
+      assert.ok(
+        (await page.locator('#stewardshipConcentrationPane [role="img"]').getAttribute('aria-label')).includes('42%')
+      );
+      assert.ok(
+        (await page.locator('#stewardshipRecurringPane [role="img"]').getAttribute('aria-label')).includes('62%')
+      );
+      await page.locator('.sw-health-details summary').click();
+      assert.equal(await page.locator('.sw-health-chips').isVisible(), true);
+      await page.locator('.sw-health-details summary').click();
+      await mkdir('artifacts/giving-intelligence', { recursive: true });
+      for (const width of [1440, 768, 390]) {
+        await page.setViewportSize({ width, height: 1100 });
+        const distribution = await page.locator('.sw-tool-distribution').boundingBox();
+        const retention = await page.locator('.sw-tool-retention').boundingBox();
+        if (width === 1440) assert.equal(distribution.y, retention.y, 'desktop charts should be side by side');
+        if (width === 390) assert.ok(retention.y > distribution.y, 'mobile charts should stack');
+        assert.equal(
+          await page.locator('.sw-suite-tool-grid--health').evaluate((el) => el.scrollWidth <= el.clientWidth),
+          true,
+          'chart grid must not overflow'
+        );
+        await page
+          .locator('.sw-suite-tool-grid--health')
+          .screenshot({ path: `artifacts/giving-intelligence/charts-${width}.png` });
+        if (width === 1440) {
+          await page.locator('.sw-intelligence-hero').scrollIntoViewIfNeeded();
+          const hero = await page.locator('.sw-intelligence-hero').boundingBox();
+          const grid = await page.locator('.sw-suite-tool-grid--health').boundingBox();
+          await page.screenshot({
+            path: 'artifacts/giving-intelligence/preview.png',
+            fullPage: true,
+            clip: { x: hero.x, y: hero.y, width: hero.width, height: grid.y + grid.height - hero.y },
+          });
+        }
+      }
+    },
+    {
+      '/stewardship/giving/health-score': {
+        body: {
+          score: 82,
+          status: 'On Track',
+          components: [
+            { key: 'pledge_fulfillment', label: 'Pledge fulfillment', score: 90 },
+            { key: 'donor_retention', label: 'Donor retention', score: 80 },
+            { key: 'concentration_risk', label: 'Concentration risk', score: 65 },
+          ],
+        },
+      },
+      '/stewardship/giving/distribution': {
+        body: {
+          fiscal_year: year,
+          total_donors: 180,
+          tiers: [48, 72, 36, 18, 6].map((count, i) => ({ label: `Band ${i}`, count })),
+        },
+      },
+      '/stewardship/giving/retention': {
+        body: {
+          fiscal_year: year,
+          prior_year: year - 1,
+          prior_donors: 180,
+          current_donors: 180,
+          retained: 144,
+          new_donors: 36,
+          lapsed: 36,
+          retention_rate_pct: 80,
+        },
+      },
+      '/stewardship/giving/concentration': {
+        body: { total_donors: 180, top5_pct: 28, top10_pct: 42, risk_level: 'moderate' },
+      },
+      '/stewardship/giving/recurring': {
+        body: {
+          recurring_donor_count: 96,
+          monthly_recurring_revenue_cents: 1240000,
+          avg_recurring_gift_cents: 12917,
+          pct_of_total_giving_recurring: 62,
+          failed_payments_90d: 2,
+          canceled_gifts_90d: 1,
+        },
+      },
+    }
+  );
+
+  let failInsights = true;
+  await scenario(
+    'Giving intelligence failure retry and empty history do not imply zero retention',
+    async (page) => {
+      await settled(page);
+      await page.locator('#stewardshipDistributionPane').getByRole('button', { name: 'Try again' }).waitFor();
+      failInsights = false;
+      await page.locator('#stewardshipDistributionPane').getByRole('button', { name: 'Try again' }).click();
+      await page
+        .locator('#stewardshipDistributionPane')
+        .getByText(/No giving recorded yet/)
+        .waitFor();
+      const retention = await page.locator('#stewardshipRetentionPane').textContent();
+      assert.ok(retention.includes('No prior-year donors to compare yet.'));
+      assert.ok(!retention.includes('0%'));
+      assert.equal(await page.locator('#stewardshipRecurringPane .sw-stacked-chart').count(), 0);
+    },
+    {
+      '/stewardship/giving/distribution': () =>
+        failInsights
+          ? { status: 503, body: { error: 'Synthetic unavailable' } }
+          : defaults['/stewardship/giving/distribution'],
+    }
+  );
+
   let statusRequests = 0;
   let latest = { ...parish, onboarding: { enabled: true, state: 'LIVE' } };
   await scenario(
