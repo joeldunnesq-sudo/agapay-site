@@ -78,4 +78,48 @@ for (const feature of dashboard.context.ParishFeatureRegistry.list()) {
   await dashboard.run(`loadRegisteredParishFeature('${feature.id}')`);
 }
 assert.equal(dashboard.run('authHeaders().Authorization'), 'Bearer test-parish-token');
-console.log('PASS - classic-script startup, feature lifecycles, and standalone login authentication');
+
+// Exercise the real parent lifecycle and navigation with leaf loaders observed.
+// This protects tier defaults, old links, and Events/Meals dispatch when products
+// are added beneath Commerce without making network requests in the test.
+const calls = [];
+dashboard.context.renderCommerceOverview = () => calls.push(['overview']);
+dashboard.context.loadEventsOversightPanel = (kind) => calls.push(['offering', kind]);
+dashboard.context.loadBookstoreCatalogTab = (force) => calls.push(['catalog', force]);
+dashboard.context.moduleIncluded = () => true;
+await dashboard.run("loadRegisteredParishFeature('commerce')");
+assert.equal(dashboard.run('commerceProductState'), 'overview');
+assert.deepEqual(calls.splice(0), [['overview'], ['catalog', false]]);
+for (const [product, kind] of [
+  ['events', 'event'],
+  ['meals', 'meal'],
+]) {
+  dashboard.run(`switchCommerceProduct('${product}')`);
+  assert.equal(dashboard.run('commerceProductState'), product);
+  assert.deepEqual(calls.splice(0), [['offering', kind]]);
+}
+dashboard.run("switchCommerceProduct('bookstore')");
+await dashboard.run("ParishFeatureRegistry.get('commerce').refresh()");
+assert.equal(dashboard.run('commerceProductState'), 'bookstore', 'refresh must preserve the selected product');
+assert.deepEqual(calls.splice(0), [['catalog', true]]);
+for (const product of ['retreats', 'camp', 'tuition']) {
+  assert.match(read('public/parish/dashboard.html'), new RegExp(`disabled data-commerce-product="${product}"`));
+  dashboard.run(`switchCommerceProduct('${product}')`);
+  assert.equal(dashboard.run('commerceProductState'), 'overview', 'unimplemented products must remain unavailable');
+}
+calls.length = 0;
+dashboard.elements.set('tab-bookstore', { classList: { add() {} } });
+dashboard.elements.set('topbarTitle', { textContent: '' });
+for (const fullSuite of [true, false]) {
+  dashboard.context.moduleIncluded = (id) => id !== 'commerceSuite' || fullSuite;
+  for (const alias of ['commerce', 'bookstore', 'parishplus']) {
+    dashboard.run(`switchTab('${alias}')`);
+    assert.equal(dashboard.run('commerceProductState'), fullSuite ? 'overview' : 'bookstore');
+    assert.equal(dashboard.run('activeTab'), 'bookstore');
+    assert.deepEqual(calls.splice(0), fullSuite ? [['overview'], ['catalog', false]] : [['catalog', false]]);
+  }
+}
+dashboard.run("switchCommerceProduct('events')");
+assert.equal(dashboard.run('commerceProductState'), 'bookstore', 'bookstore-only tiers cannot select Events');
+assert.deepEqual(calls, []);
+console.log('PASS - classic-script startup, login authentication, and Commerce product lifecycle and tier defaults');

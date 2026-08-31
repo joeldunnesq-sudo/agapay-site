@@ -10,10 +10,11 @@ const paths = {
   library: new URL("public/parish/features/library.js", root),
   sacraments: new URL("public/parish/features/sacraments.js", root),
   accounting: new URL("public/parish/features/accounting.js", root),
+  commerce: new URL("public/parish/features/commerce.js", root),
   notifications: new URL("src/lib/parish-notifications.js", root),
 };
 
-const [dashboard, registry, core, directory, library, sacraments, accounting, notifications] = await Promise.all(
+const [dashboard, registry, core, directory, library, sacraments, accounting, commerce, notifications] = await Promise.all(
   Object.values(paths).map((path) => readFile(path, "utf8")),
 );
 
@@ -41,6 +42,10 @@ assert.doesNotMatch(core, /function loadAccountingTab/);
 assert.match(core, /loadRegisteredParishFeature\('accounting'\)/);
 assert.match(accounting, /ParishFeatureRegistry\.register\('accounting'/);
 assert.match(core, /function accountingStaffSession\(/, 'shared authentication must work without feature scripts');
+assert.doesNotMatch(core, /function (loadBookstoreCatalogTab|switchCommerceProduct|loadEventsOversightPanel)/);
+assert.match(core, /loadRegisteredParishFeature\('commerce'\)/);
+assert.match(commerce, /ParishFeatureRegistry\.register\('commerce'/);
+assert.match(core, /function loadSettlementProfilesPanel\(/, 'Giving and Commerce share payment routing in the core');
 
 const coreStats = await stat(paths.core);
 assert.ok(coreStats.size < 950_000, `dashboard core grew past its 950 KB guardrail (${coreStats.size} bytes)`);

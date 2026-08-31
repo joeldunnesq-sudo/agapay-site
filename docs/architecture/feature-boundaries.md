@@ -44,6 +44,16 @@ administration, banking, close/governance, and migration UI. The shared
 not load dashboard features. Shared Giving catalogs and Stewardship remain in
 the core.
 
+Commerce is the parent feature (`features/commerce.js`) for all current and future
+commerce products. It owns product navigation, entitlement-based defaults, the
+shared overview, and reporting ranges. Bookstore catalog, checkout, sales,
+inventory, and physical counts live under `features/commerce/`; Events and Meals
+share `offerings.js`. Add future commerce implementations under this same parent,
+not as separate dashboard features or new code in `app.js`. Retreats, Camp, and
+Tuition remain disabled placeholders until their implementations ship. Existing
+`commerce`, `bookstore`, and `parishplus` navigation aliases still open Commerce.
+Payment settlement profiles remain in the core because Giving also uses them.
+
 Source-based regression tests use `scripts/lib/parish-dashboard-source.mjs` to
 read the actual extracted files listed in dashboard HTML. Boundary checks still
 read the core separately. `parish-dashboard-runtime-tests.mjs` executes the

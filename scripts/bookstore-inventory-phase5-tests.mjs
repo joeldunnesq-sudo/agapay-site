@@ -129,7 +129,7 @@ assert.match(handler, /Add a note explaining the difference for \$\{item\.name\}
   "the close handler must use the reconciliation-style required-note register per item");
 assert.match(app, /id="bookstoreCountError"/,
   "the count UI must surface the server's required-note rejection inside the count session");
-assert.match(app, /movement\.movementType === 'physical_count' \? 'Physical count'/);
+assert.match(app, /movement\.movementType === 'physical_count'\s+\? 'Physical count'/);
 assert.match(app, /openBookstoreClosedCount/);
 assert.match(dashboard, /id="bookstoreCountSessions"/,
   "closed count sessions should be viewable beneath the current bookstore inventory list");
