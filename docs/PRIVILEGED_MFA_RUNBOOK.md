@@ -34,6 +34,29 @@ Recommended release order:
 
 Never rotate `AGAPAY_MFA_ENCRYPTION_KEY` without first re-encrypting every stored TOTP secret. Passkeys and recovery codes do not depend on that key.
 
+## Readiness and setup failures
+
+`GET /api/health` includes `checks.mfa`. This encrypts and decrypts a disposable
+in-memory setup key with the deployed encryption binding and verifies a TOTP
+code. It never reads or writes an account, MFA profile, transaction, or recovery
+code. If privileged MFA is required, a failed MFA readiness check makes health
+return 503 so the existing production monitor and release smoke checks detect it.
+This check does not prove enrollment persistence or validate an existing user's
+stored secret.
+
+Setup and verification errors include a reference number shown to the user.
+Find the matching `mfa_request_failed` entry in Workers Logs. Entries contain
+only the reference, operation, HTTP status, and a fixed failure category. Never
+add raw exceptions, request bodies, setup keys, OTPs, or credential responses to
+these logs. Categories distinguish missing encryption configuration, encryption
+or decryption errors, profile writes, transaction writes, expired challenges,
+and unexpected failures. Server failures return 5xx; known validation errors
+retain their actionable 400 responses.
+
+If investigating a report from before these diagnostics were deployed, the
+historical HTTP status alone does not establish its cause. Do not reset an
+existing passkey or rotate the encryption key just to reproduce the error.
+
 ## Lost-device recovery
 
 The administrator should first use a saved recovery code, then enroll a replacement method. If all passkeys, the authenticator, and recovery codes are unavailable, there is intentionally no self-service bypass. AGAPAY support must verify the administrator through an out-of-band parish authorization process before resetting the MFA profile directly. Password reset alone is insufficient.

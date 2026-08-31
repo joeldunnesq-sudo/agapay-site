@@ -23,6 +23,7 @@ import {
   safeJson,
   webauthnRpContext,
 } from "./webauthn.js";
+import { MfaServiceError } from "./mfa-diagnostics.js";
 
 const MFA_TRANSACTION_TTL_MS = 5 * 60 * 1000;
 const MFA_STEP_UP_TTL_MS = 15 * 60 * 1000;
@@ -88,29 +89,59 @@ function base32Decode(value) {
 
 async function encryptionKey(env) {
   const material = String(env?.AGAPAY_MFA_ENCRYPTION_KEY || "").trim();
-  if (!material) throw new Error("AGAPAY_MFA_ENCRYPTION_KEY is not configured.");
+  if (!material) throw new MfaServiceError("totp_key_unconfigured");
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`agapay-mfa:v1:${material}`));
   return crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
 }
 
 async function encryptTotpSecret(env, secret) {
-  const iv = randomBytes(12);
-  const ciphertext = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
-    await encryptionKey(env),
-    new TextEncoder().encode(secret),
-  );
-  return { ciphertext: bytesToBase64Url(new Uint8Array(ciphertext)), iv: bytesToBase64Url(iv) };
+  try {
+    const iv = randomBytes(12);
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      await encryptionKey(env),
+      new TextEncoder().encode(secret),
+    );
+    return { ciphertext: bytesToBase64Url(new Uint8Array(ciphertext)), iv: bytesToBase64Url(iv) };
+  } catch (error) {
+    if (error instanceof MfaServiceError) throw error;
+    throw new MfaServiceError("totp_encrypt_failed");
+  }
 }
 
 async function decryptTotpSecret(env, profile) {
   if (!profile?.totp_secret_ciphertext || !profile?.totp_secret_iv) return "";
-  const plaintext = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: base64UrlToBytes(profile.totp_secret_iv) },
-    await encryptionKey(env),
-    base64UrlToBytes(profile.totp_secret_ciphertext),
-  );
-  return new TextDecoder().decode(plaintext);
+  try {
+    const plaintext = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: base64UrlToBytes(profile.totp_secret_iv) },
+      await encryptionKey(env),
+      base64UrlToBytes(profile.totp_secret_ciphertext),
+    );
+    return new TextDecoder().decode(plaintext);
+  } catch (error) {
+    if (error instanceof MfaServiceError) throw error;
+    throw new MfaServiceError("totp_decrypt_failed");
+  }
+}
+
+// Exercise the deployed encryption binding and TOTP implementation entirely in
+// memory. Do not read or write any MFA profile, transaction, or recovery code.
+export async function mfaReadiness(env) {
+  const required = privilegedMfaRequired(env);
+  try {
+    const secret = base32Encode(randomBytes(20));
+    const encrypted = await encryptTotpSecret(env, secret);
+    const decrypted = await decryptTotpSecret(env, {
+      totp_secret_ciphertext: encrypted.ciphertext,
+      totp_secret_iv: encrypted.iv,
+    });
+    const atMs = Date.now();
+    const code = await hotp(secret, Math.floor(atMs / 1000 / TOTP_PERIOD_SECONDS));
+    const ok = decrypted === secret && await verifyTotpCode(decrypted, code, atMs);
+    return { required, ok, ...(!ok ? { error: "totp_crypto_failed" } : {}) };
+  } catch (error) {
+    return { required, ok: false, error: error instanceof MfaServiceError ? error.reason : "totp_crypto_failed" };
+  }
 }
 
 function normalizePrincipal(principalType, principalId) {
@@ -319,12 +350,20 @@ export async function beginMfaEnrollment(env, request, pendingToken, {
   if (method === "totp") {
     const secret = base32Encode(randomBytes(20));
     const encrypted = await encryptTotpSecret(env, secret);
-    await upsertProfile(env, transaction.principal_type, transaction.principal_id, {
-      totpSecretCiphertext: encrypted.ciphertext,
-      totpSecretIv: encrypted.iv,
-      totpConfirmedAt: null,
-    });
-    await updateTransactionChallenge(env, transaction.id, "", "totp");
+    try {
+      await upsertProfile(env, transaction.principal_type, transaction.principal_id, {
+        totpSecretCiphertext: encrypted.ciphertext,
+        totpSecretIv: encrypted.iv,
+        totpConfirmedAt: null,
+      });
+    } catch {
+      throw new MfaServiceError("totp_profile_write_failed");
+    }
+    try {
+      await updateTransactionChallenge(env, transaction.id, "", "totp");
+    } catch {
+      throw new MfaServiceError("totp_transaction_write_failed");
+    }
     const issuer = "AGAPAY";
     const label = `${issuer}:${displayName}`;
     return {
