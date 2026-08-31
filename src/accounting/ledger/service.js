@@ -1,5 +1,7 @@
 import { AccountingDatabaseError, ValidationError } from "../errors.js";
 
+import { fiscalCalendar } from '../provisioning/fiscal-calendar.js';
+
 const REQUIRED_TYPES = Object.freeze([
   ["type_asset","ASSET","Assets","asset","debit","balance_sheet",10],
   ["type_liability","LIABILITY","Liabilities","liability","credit","balance_sheet",20],
@@ -39,26 +41,28 @@ async function all(db, sql, ...params) { return (await db.prepare(sql).bind(...p
 async function run(db, sql, ...params) { return db.prepare(sql).bind(...params).run(); }
 function safeEntry(row) { return row && Object.freeze({ id: row.id, entryNumber: row.entry_number || "", entryDate: row.entry_date, postingDate: row.posting_date || "", description: row.description, status: row.status, sourceType: row.source_type, totalDebits: Number(row.total_debits), totalCredits: Number(row.total_credits), currency: row.currency, version: Number(row.version), postedAt: row.posted_at || "" }); }
 
-export async function initializeLedger(db, { actor, date = new Date(), correlationId = "" } = {}) {
+export async function initializeLedgerChart(db, { actor } = {}) {
+  requireCapability(actor, 'accounting.configure');
+  const hasCashFlow = (await all(db, 'PRAGMA table_info(accounting_accounts)')).some(column => column.name === 'cash_flow_classification');
+    for (const type of REQUIRED_TYPES) await run(db, `INSERT OR IGNORE INTO accounting_account_types(id,code,name,category,normal_balance,statement_type,sort_order,is_system) VALUES(?,?,?,?,?,?,?,1)`, ...type);
+    for (const account of DEFAULT_ACCOUNTS) {
+      const type = REQUIRED_TYPES.find((item) => item[0] === account[3]);
+      await run(db, `INSERT OR IGNORE INTO accounting_accounts(id,account_number,name,account_type_id,normal_balance,is_posting_account,is_system,requires_fund${hasCashFlow ? ',cash_flow_classification' : ''}) VALUES(?,?,?,?,?,?,?,1${hasCashFlow ? " ,'operating'" : ''})`, account[0],account[1],account[2],account[3],type[4],account[4],account[5]);
+    }
+    await run(db, `INSERT OR IGNORE INTO accounting_funds(id,code,name,restriction_type,is_default,is_active,is_system) VALUES('fund_general','GENERAL','General Operating Fund','unrestricted',1,1,1)`);
+}
+
+export async function initializeLedger(db, { actor, date = new Date(), fiscalYearStartMonth = 1, correlationId = "" } = {}) {
   requireCapability(actor, "accounting.configure");
   const existing = await first(db, "SELECT value FROM accounting_database_metadata WHERE key='ledger_initialization_state'");
   if (existing?.value === "initialized") return ledgerInitializationStatus(db);
   await run(db, "INSERT INTO accounting_database_metadata(key,value) VALUES('ledger_initialization_state','initializing') ON CONFLICT(key) DO UPDATE SET value='initializing',updated_at=datetime('now')");
   try {
-    for (const type of REQUIRED_TYPES) await run(db, `INSERT OR IGNORE INTO accounting_account_types(id,code,name,category,normal_balance,statement_type,sort_order,is_system) VALUES(?,?,?,?,?,?,?,1)`, ...type);
-    for (const account of DEFAULT_ACCOUNTS) {
-      const type = REQUIRED_TYPES.find((item) => item[0] === account[3]);
-      await run(db, `INSERT OR IGNORE INTO accounting_accounts(id,account_number,name,account_type_id,normal_balance,is_posting_account,is_system,requires_fund,cash_flow_classification) VALUES(?,?,?,?,?,?,?,1,'operating')`, account[0],account[1],account[2],account[3],type[4],account[4],account[5]);
-    }
-    await run(db, `INSERT OR IGNORE INTO accounting_funds(id,code,name,restriction_type,is_default,is_active,is_system) VALUES('fund_general','GENERAL','General Operating Fund','unrestricted',1,1,1)`);
-    const year = date.getUTCFullYear();
-    const yearId = `fy_${year}`;
-    await run(db, `INSERT OR IGNORE INTO accounting_fiscal_years(id,name,start_date,end_date,status,is_current) VALUES(?,?,?,?, 'open',1)`, yearId,String(year),`${year}-01-01`,`${year}-12-31`);
-    for (let month=1; month<=12; month++) {
-      const start = `${year}-${String(month).padStart(2,"0")}-01`;
-      const endDate = new Date(Date.UTC(year,month,0)).getUTCDate();
-      const end = `${year}-${String(month).padStart(2,"0")}-${endDate}`;
-      await run(db, `INSERT OR IGNORE INTO accounting_periods(id,fiscal_year_id,period_number,name,start_date,end_date,status,opened_at) VALUES(?,?,?,?,?,?,?,?)`, `period_${year}_${month}`,yearId,month,new Date(Date.UTC(year,month-1,1)).toLocaleString("en",{month:"long",timeZone:"UTC"}),start,end,month === date.getUTCMonth()+1 ? "open" : "future",month === date.getUTCMonth()+1 ? now() : null);
+    await initializeLedgerChart(db, { actor });
+    const calendar = fiscalCalendar(date, fiscalYearStartMonth);
+    await run(db, "INSERT OR IGNORE INTO accounting_fiscal_years(id,name,start_date,end_date,status,is_current) VALUES(?,?,?,?,'open',1)", calendar.id,calendar.name,calendar.start,calendar.end);
+    for (const period of calendar.periods) {
+      await run(db, "INSERT OR IGNORE INTO accounting_periods(id,fiscal_year_id,period_number,name,start_date,end_date,status,opened_at) VALUES(?,?,?,?,?,?,?,?)", period.id,calendar.id,period.number,period.name,period.start,period.end,period.open ? 'open' : 'future',period.open ? now() : null);
     }
     await run(db, "INSERT INTO accounting_database_metadata(key,value) VALUES('ledger_schema_version','1') ON CONFLICT(key) DO UPDATE SET value='1',updated_at=datetime('now')");
     await run(db, "INSERT INTO accounting_database_metadata(key,value) VALUES('ledger_initialization_state','initialized') ON CONFLICT(key) DO UPDATE SET value='initialized',updated_at=datetime('now')");

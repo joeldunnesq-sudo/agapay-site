@@ -137,8 +137,14 @@ async function bootstrapAccountingStaff(event) {
   status.textContent = 'Creating profile…';
   try {
     const raw = Object.fromEntries(new FormData(form));
-    await accountingAccessRequest('/bootstrap', raw);
-    await renderAccountingAccess('Profile created. Enter your new PIN to continue.');
+    const { profile } = await accountingAccessRequest('/bootstrap', raw);
+    const payload = await accountingAccessRequest('/verify', { profileId: profile.id, pin: raw.pin });
+    form.reset();
+    sessionStorage.setItem(
+      accountingStaffSessionKey(),
+      JSON.stringify({ token: payload.token, expiresAt: payload.expiresAt, profile: payload.profile })
+    );
+    await loadAccountingTab(true);
   } catch (error) {
     status.textContent = error.message;
   }
@@ -223,4 +229,9 @@ function accountingEmpty(title, copy) {
 window.ParishFeatureRegistry.register('accounting', {
   load: loadAccountingTab,
   refresh: () => loadAccountingTab(true),
+  activate: async () => {
+    if (!currentParish?.accountingAvailable) return;
+    const status = await accountingActivationStatus().catch(() => null);
+    if (status && !status.completed) switchTab('accounting');
+  },
 });

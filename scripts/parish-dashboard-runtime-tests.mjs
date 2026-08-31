@@ -198,9 +198,11 @@ dashboard.context.fetch = async (url) => ({
   ok: !url.endsWith('/accounting/setup'),
   status: url.endsWith('/accounting/setup') ? 401 : 200,
   json: async () =>
-    url.endsWith('/accounting-access/profiles')
-      ? { profiles: [{ id: 'staff', displayName: 'Test Treasurer', roleTemplate: 'treasurer' }] }
-      : {},
+    url.endsWith('/accounting-access/activation')
+      ? { status: 'ready', completed: true }
+      : url.endsWith('/accounting-access/profiles')
+        ? { profiles: [{ id: 'staff', displayName: 'Test Treasurer', roleTemplate: 'treasurer' }] }
+        : {},
 });
 await dashboard.run("loadRegisteredParishFeature('accounting')");
 assert.match(accountingPane.innerHTML, /Who is using Accounting\?/);
@@ -209,21 +211,27 @@ assert.match(accountingPane.innerHTML, /verifyAccountingStaff\(event\)/);
 
 // An entitled parish without books needs an accurate setup state, not the
 // demo-only preview, a second upgrade, or a staff PIN that cannot open books.
+dashboard.run('accountingActivation.complete = false');
+for (const id of ['accountingTierLabel', 'accountingTierCopy', 'accountingParishName'])
+  dashboard.elements.set(id, { textContent: '' });
 dashboard.context.fetch = async (url) => ({
   ok: !url.endsWith('/accounting/setup'),
   status: url.endsWith('/accounting/setup') ? 401 : 200,
   json: async () =>
-    url.endsWith('/accounting-access/profiles')
-      ? { accounting: { status: 'setup_required', ready: false }, profiles: [] }
-      : {},
+    url.endsWith('/accounting-access/activation')
+      ? { status: 'not_started', available: true, completed: false }
+      : url.endsWith('/accounting-access/profiles')
+        ? { accounting: { status: 'setup_required', ready: false }, profiles: [] }
+        : {},
 });
 await dashboard.run("loadRegisteredParishFeature('accounting')");
-assert.match(accountingPane.innerHTML, /Accounting is included — setup is required/);
-assert.match(accountingPane.innerHTML, /no additional upgrade is required/);
+assert.match(accountingPane.innerHTML, /Create my parish’s books/);
+assert.match(accountingPane.innerHTML, /Aplos or QuickBooks/);
 assert.doesNotMatch(accountingPane.innerHTML, /St\. Fiacre|Beta|\$84,260|bootstrapAccountingStaff/);
-assert.equal(accountingPane.dataset.loaded, 'pending');
+assert.equal(accountingPane.dataset.loaded, 'activation');
 
 // Platform users get the same state from the capability-protected setup API.
+dashboard.run('accountingActivation.complete = true');
 dashboard.context.fetch = async () => ({
   ok: false,
   status: 409,
