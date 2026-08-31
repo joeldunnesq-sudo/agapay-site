@@ -120,6 +120,7 @@ import {
 } from "./handlers/nonprofit-pricing.js";
 import { sendNonprofitThresholdAlerts } from "./lib/nonprofit-pricing.js";
 import { handleOperationsCanary, handleOperationsMonitorAlert } from "./operations/monitoring.js";
+import { mfaReadiness } from "./lib/mfa.js";
 import { recordScheduledHeartbeat } from "./operations/scheduled-heartbeats.js";
 
 import {
@@ -2746,6 +2747,7 @@ async function handleHealth(env) {
   const now = new Date().toISOString();
   const checks = {
     worker: { ok: true },
+    mfa: await mfaReadiness(env),
     d1: { ok: false },
     kv: { ok: false },
     stripe: { configured: Boolean(env.STRIPE_SECRET_KEY) },
@@ -2784,7 +2786,7 @@ async function handleHealth(env) {
     checks.kv.error = error?.message || "unavailable";
   }
 
-  const ok = Boolean(checks.worker.ok && checks.d1.ok && checks.kv.ok);
+  const ok = Boolean(checks.worker.ok && checks.d1.ok && checks.kv.ok && (!checks.mfa.required || checks.mfa.ok));
   return json({
     ok,
     version: env.AGAPAY_BUILD_SHA || "unknown",

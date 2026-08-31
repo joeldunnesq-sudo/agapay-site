@@ -10,12 +10,14 @@ import {
   beginMfaAuthentication,
   beginMfaEnrollment,
   freshMfaAt,
+  mfaReadiness,
   mfaStatus,
   verifyMfaAuthentication,
   verifyMfaEnrollment,
 } from "../src/lib/mfa.js";
 import { issueAdminSession } from "../src/lib/core.js";
-import { enforcePrivilegedMfa } from "../src/handlers/mfa.js";
+import { enforcePrivilegedMfa, handleMfaEnrollmentOptions } from "../src/handlers/mfa.js";
+import worker from "../src/worker.js";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(dirname, "..");
@@ -108,6 +110,104 @@ await test("MFA migration adds encrypted profiles, passkeys, transactions, and s
   assert.ok(tables.includes("privileged_mfa_transactions"));
   const columns = db.prepare("PRAGMA table_info(platform_users)").all().map((row) => row.name);
   assert.ok(columns.includes("session_mfa_verified_at"));
+});
+
+await test("MFA readiness exercises encryption without touching account storage", async () => {
+  const { env } = makeD1Env();
+  env.AGAPAY_DB = { prepare() { throw new Error("Readiness must not access account storage"); } };
+  assert.deepEqual(await mfaReadiness(env), { required: true, ok: true });
+  for (const key of [undefined, "", " \n "]) {
+    assert.deepEqual(await mfaReadiness({ ...env, AGAPAY_MFA_ENCRYPTION_KEY: key }), {
+      required: true, ok: false, error: "totp_key_unconfigured",
+    });
+  }
+});
+
+await test("public health detects unavailable required MFA without exposing the encryption binding", async () => {
+  const { env } = makeD1Env();
+  env.AGAPAY_REGISTRATIONS = { async get() { return null; } };
+  const request = new Request("https://agapay.app/api/health");
+  const healthy = await worker.fetch(request, env, {});
+  assert.equal(healthy.status, 200);
+  const payload = await healthy.json();
+  assert.deepEqual(payload.checks.mfa, { required: true, ok: true });
+  assert.equal(JSON.stringify(payload).includes(env.AGAPAY_MFA_ENCRYPTION_KEY), false);
+  delete env.AGAPAY_MFA_ENCRYPTION_KEY;
+  const unavailable = await worker.fetch(request, env, {});
+  assert.equal(unavailable.status, 503);
+  const failed = await unavailable.json();
+  assert.equal(failed.ok, false);
+  assert.equal(failed.checks.mfa.error, "totp_key_unconfigured");
+  env.PRIVILEGED_MFA_REQUIRED = "false";
+  assert.equal((await worker.fetch(request, env, {})).status, 200);
+});
+
+async function enrollmentFailure(env, pendingToken) {
+  const logs = [];
+  const warn = console.warn;
+  console.warn = (...args) => logs.push(args);
+  try {
+    const response = await handleMfaEnrollmentOptions(new Request("https://agapay.app/api/mfa/enrollment/options", {
+      method: "POST",
+      body: JSON.stringify({ pendingToken, method: "totp", displayName: "Private administrator name" }),
+    }), env);
+    return { response, payload: await response.json(), logs };
+  } finally {
+    console.warn = warn;
+  }
+}
+
+await test("missing encryption fails safely, preserves the transaction, and leaves passkeys available", async () => {
+  const { env, db } = makeD1Env();
+  const request = new Request("https://agapay.app/api/admin/session");
+  const login = await beginMfaAuthentication(env, request, { principalType: "parish_admin", principalId: "test-parish" });
+  delete env.AGAPAY_MFA_ENCRYPTION_KEY;
+  const { response, payload, logs } = await enrollmentFailure(env, login.pendingToken);
+  assert.equal(response.status, 503);
+  assert.match(payload.error, /temporarily unavailable/);
+  assert.match(payload.reference, /^[a-f0-9-]{36}$/);
+  assert.deepEqual(logs, [["mfa_request_failed", {
+    operation: "enrollment_options", reason: "totp_key_unconfigured", status: 503, reference: payload.reference,
+  }]]);
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM privileged_mfa_profiles").get().n, 0);
+  const transaction = db.prepare("SELECT attempts, consumed_at FROM privileged_mfa_transactions").get();
+  assert.deepEqual({ ...transaction }, { attempts: 0, consumed_at: null });
+  const passkey = await beginMfaEnrollment(env, request, login.pendingToken, { method: "passkey" });
+  assert.equal(passkey.method, "passkey");
+  assert.equal(passkey.options.authenticatorSelection.userVerification, "required");
+});
+
+await test("enrollment diagnostics distinguish storage failures without leaking raw errors or credentials", async () => {
+  const { env } = makeD1Env();
+  const request = new Request("https://agapay.app/api/admin/session");
+  const login = await beginMfaAuthentication(env, request, { principalType: "parish_admin", principalId: "test-parish" });
+  const originalDb = env.AGAPAY_DB;
+  for (const [pattern, reason, status] of [
+    [/INSERT INTO privileged_mfa_profiles/, "totp_profile_write_failed", 503],
+    [/UPDATE privileged_mfa_transactions\s+SET webauthn_challenge/, "totp_transaction_write_failed", 503],
+    [/SELECT \* FROM privileged_mfa_transactions/, "unexpected_failure", 500],
+  ]) {
+    env.AGAPAY_DB = { prepare(sql) {
+      if (pattern.test(sql)) throw new Error("D1_ERROR: sensitive-setup-key sensitive-token private-email@example.test");
+      return originalDb.prepare(sql);
+    } };
+    const result = await enrollmentFailure(env, login.pendingToken);
+    assert.equal(result.response.status, status);
+    assert.equal(result.logs[0][1].reason, reason);
+    const exposed = JSON.stringify({ payload: result.payload, logs: result.logs });
+    for (const secret of ["sensitive-setup-key", "sensitive-token", "private-email", "Private administrator name", login.pendingToken, env.AGAPAY_MFA_ENCRYPTION_KEY]) {
+      assert.equal(exposed.includes(secret), false);
+    }
+  }
+});
+
+await test("expired enrollment keeps actionable instructions and a searchable error reference", async () => {
+  const { env } = makeD1Env();
+  const result = await enrollmentFailure(env, "invalid-token");
+  assert.equal(result.response.status, 400);
+  assert.equal(result.payload.error, "MFA setup expired. Please sign in again.");
+  assert.equal(result.logs[0][1].reason, "setup_expired");
+  assert.equal(result.logs[0][1].reference, result.payload.reference);
 });
 
 await test("TOTP enrollment encrypts the secret and issues one-time recovery codes", async () => {

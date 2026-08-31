@@ -76,7 +76,10 @@
       body: JSON.stringify(body || {}),
     });
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(payload.error || 'Multi-factor authentication failed.');
+    if (!response.ok) {
+      const reference = /^[a-f0-9-]{36}$/i.test(payload.reference || '') ? ` Reference: ${payload.reference}` : '';
+      throw new Error((payload.error || 'Multi-factor authentication failed.') + reference);
+    }
     return payload;
   }
 
