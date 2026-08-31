@@ -5,8 +5,8 @@
   if (/^\/(?:admin|parish|donor|myagapay)(?:\/|$)/.test(path)) return;
 
   const PRIMARY_LINKS = [
-    { href: "/give#pricing", label: "Pricing", key: "pricing" },
     { href: "/give#security", label: "Security", key: "security" },
+    { href: "/give#pricing", label: "Pricing", key: "pricing" },
     { href: "/give#platform", label: "Platform", key: "platform" }
   ];
 
@@ -60,7 +60,7 @@
             <span class="brand-mark"><img src="/mark.png" alt="" /></span>
             <span class="brand-name">
               <strong>AGAPAY</strong>
-              <span class="brand-tagline" aria-label="Love how you give, learn, and live">Love how you <span class="flip-word" data-flip-word aria-hidden="true">GIVE</span></span>
+              <span class="brand-tagline" aria-label="Love how you give, serve, and live">Love how you <span class="flip-word" data-flip-word aria-hidden="true">GIVE</span></span>
             </span>
           </a>
 
@@ -227,7 +227,7 @@
   }
 
   function initFlipTaglines() {
-    const words = ["GIVE", "LEARN", "LIVE"];
+    const words = ["GIVE", "SERVE", "LIVE"];
     const nodes = Array.from(document.querySelectorAll("[data-flip-word]"));
     if (!nodes.length || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 

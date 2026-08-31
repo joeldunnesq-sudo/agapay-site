@@ -31,10 +31,11 @@
   <link rel="preload" as="image" href="/images/giving/app-phone-mockup.png" fetchpriority="high" />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&amp;family=DM+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site-chrome.css" />
-  <link rel="stylesheet" href="/styles/give.css?v=20260827consolidated1" />
+  <link rel="stylesheet" href="/styles/give.css?v=20260831koinoniapills1" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <script src="/site-chrome.js?v=20260827givesections1" defer></script>
   <script src="/pwa-register.js" defer></script>
+  <script src="/pwa-home-install.js" defer></script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -191,18 +192,36 @@
 
     <nav class="give-section-nav" aria-label="AGAPAY Give page sections">
       <div class="give-wrap give-section-links">
-        <a href="#pricing">Pricing</a><a href="#security">Security</a><a href="#platform">Platform</a><a href="#koinonia">Koinonia</a><a href="#reporting">Reporting</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a>
+        <a href="#security">Security</a><a href="#pricing">Pricing</a><a href="#platform">Platform</a><a href="#giving-app">Giving</a><a href="#koinonia">Koinonia</a><a href="#app-features">In the app</a><a href="#campaigns">Campaigns</a><a href="#reporting">Reporting</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a><a href="#install-app">Get the app</a>
       </div>
     </nav>
 
-    <section class="give-priority" aria-label="Pricing and security overview">
+    <section class="give-priority" aria-label="Security and pricing overview">
       <div class="give-wrap give-priority-grid">
-        <a class="give-priority-card" href="#pricing">
-          <span class="give-card-kicker">Clear parish pricing</span><strong>Start at $9 per month. Give + is $79.</strong><p>No setup fee, no contract, and no percentage added to donations.</p><b>Compare every plan <span aria-hidden="true">&rarr;</span></b>
-        </a>
         <a class="give-priority-card give-priority-card-dark" href="#security">
           <span class="give-card-kicker">Security is required</span><strong>Stripe-hosted payments. Required administrator MFA.</strong><p>Parish-scoped data, role-based access, bot protection, and durable audit history.</p><b>See how AGAPAY protects data <span aria-hidden="true">&rarr;</span></b>
         </a>
+        <a class="give-priority-card" href="#pricing">
+          <span class="give-card-kicker">Clear parish pricing</span><strong>Start at $9 per month. Give + is $79.</strong><p>No setup fee, no contract, and no percentage added to donations.</p><b>Compare every plan <span aria-hidden="true">&rarr;</span></b>
+        </a>
+      </div>
+    </section>
+
+    <section class="give-section give-security-section" id="security" aria-labelledby="security-title">
+      <div class="give-wrap">
+        <header class="give-section-head give-section-head-light"><p class="give-eyebrow">Security and payments</p><h2 id="security-title">Security is part of the product, not fine print.</h2><p>AGAPAY protects parish and donor information with clear boundaries at payment, login, storage, and every role inside the parish.</p></header>
+        <div class="give-security-grid">
+          <article><span class="give-security-icon" aria-hidden="true">1</span><h3>Payment details stay with Stripe</h3><p>Sensitive card and bank details are collected by Stripe-hosted Checkout. They do not pass through or get stored by the AGAPAY application, and funds settle through the parish's connected Stripe account.</p></article>
+          <article><span class="give-security-icon" aria-hidden="true">2</span><h3>Administrator MFA is mandatory</h3><p>Privileged users must verify a second factor using a passkey, device biometric, or authenticator code. Recovery codes provide a controlled path if a device is lost.</p></article>
+          <article><span class="give-security-icon" aria-hidden="true">3</span><h3>Every parish is isolated</h3><p>Directory, donation, and financial access is parish-scoped. Cross-parish requests are denied, and staff see only the capabilities assigned to their active role.</p></article>
+          <article><span class="give-security-icon" aria-hidden="true">4</span><h3>Important changes leave a record</h3><p>Administrative and financial actions create audit history so sensitive changes cannot be made quietly. Parish leaders can trace who did what and when.</p></article>
+        </div>
+        <div class="give-security-details">
+          <details><summary>Passwords, passkeys, and account protection</summary><p>Passwords are stored as salted PBKDF2-SHA256 hashes, not readable text. Sign-in endpoints are rate-limited, donor email ownership is verified, privileged sessions require fresh MFA assurance, and My AGAPAY supports phishing-resistant passkeys.</p></details>
+          <details><summary>Stripe verification and parish funds</summary><p>AGAPAY verifies Stripe webhook events using a cryptographic signature and timestamp before updating a payment record. AGAPAY stores only the identifiers and masked references needed for reconciliation. It does not initiate or approve transfers from the parish bank account.</p></details>
+          <details><summary>Cloudflare, storage encryption, and bot protection</summary><p>AGAPAY runs on Cloudflare for network filtering, DDoS mitigation, and service availability. Cloudflare-managed storage is automatically encrypted at rest with AES-256. Turnstile protects sensitive public forms; its tokens expire after five minutes and can be used only once.</p></details>
+        </div>
+        <p class="give-security-caveat">No responsible online service can promise zero risk. AGAPAY uses layered controls, narrow access, verified payment events, and transparent operating boundaries instead of unsupported security guarantees.</p>
       </div>
     </section>
 
@@ -244,24 +263,6 @@
       </div>
     </section>
 
-    <section class="give-section give-security-section" id="security" aria-labelledby="security-title">
-      <div class="give-wrap">
-        <header class="give-section-head give-section-head-light"><p class="give-eyebrow">Security and payments</p><h2 id="security-title">Security is part of the product, not fine print.</h2><p>AGAPAY protects parish and donor information with clear boundaries at payment, login, storage, and every role inside the parish.</p></header>
-        <div class="give-security-grid">
-          <article><span class="give-security-icon" aria-hidden="true">1</span><h3>Payment details stay with Stripe</h3><p>Sensitive card and bank details are collected by Stripe-hosted Checkout. They do not pass through or get stored by the AGAPAY application, and funds settle through the parish's connected Stripe account.</p></article>
-          <article><span class="give-security-icon" aria-hidden="true">2</span><h3>Administrator MFA is mandatory</h3><p>Privileged users must verify a second factor using a passkey, device biometric, or authenticator code. Recovery codes provide a controlled path if a device is lost.</p></article>
-          <article><span class="give-security-icon" aria-hidden="true">3</span><h3>Every parish is isolated</h3><p>Directory, donation, and financial access is parish-scoped. Cross-parish requests are denied, and staff see only the capabilities assigned to their active role.</p></article>
-          <article><span class="give-security-icon" aria-hidden="true">4</span><h3>Important changes leave a record</h3><p>Administrative and financial actions create audit history so sensitive changes cannot be made quietly. Parish leaders can trace who did what and when.</p></article>
-        </div>
-        <div class="give-security-details">
-          <details><summary>Passwords, passkeys, and account protection</summary><p>Passwords are stored as salted PBKDF2-SHA256 hashes, not readable text. Sign-in endpoints are rate-limited, donor email ownership is verified, privileged sessions require fresh MFA assurance, and My AGAPAY supports phishing-resistant passkeys.</p></details>
-          <details><summary>Stripe verification and parish funds</summary><p>AGAPAY verifies Stripe webhook events using a cryptographic signature and timestamp before updating a payment record. AGAPAY stores only the identifiers and masked references needed for reconciliation. It does not initiate or approve transfers from the parish bank account.</p></details>
-          <details><summary>Cloudflare, storage encryption, and bot protection</summary><p>AGAPAY runs on Cloudflare for network filtering, DDoS mitigation, and service availability. Cloudflare-managed storage is automatically encrypted at rest with AES-256. Turnstile protects sensitive public forms; its tokens expire after five minutes and can be used only once.</p></details>
-        </div>
-        <p class="give-security-caveat">No responsible online service can promise zero risk. AGAPAY uses layered controls, narrow access, verified payment events, and transparent operating boundaries instead of unsupported security guarantees.</p>
-      </div>
-    </section>
-
     <section class="give-section" id="platform" aria-labelledby="platform-title">
       <div class="give-wrap">
         <header class="give-section-head"><p class="give-eyebrow">One system, not six</p><h2 id="platform-title">Every part of parish life, now in one place.</h2><p>AGAPAY is Orthodox church management software built as a connected platform, so giving, households, ministries, sacraments, sales, and accounting can share the same parish context.</p></header>
@@ -277,9 +278,34 @@
       </div>
     </section>
 
+    <section class="give-section give-orthodox-section" id="giving-app" aria-labelledby="giving-app-title">
+      <div class="give-wrap give-orthodox-grid">
+        <div>
+          <header class="give-section-head"><p class="give-eyebrow">Orthodox-first giving · At the heart of My AGAPAY</p><h2 id="giving-app-title">Give in the ways that belong to Orthodox life.</h2><p>Our giving is woven into prayer, remembrance, feast days, and the daily life of the parish. AGAPAY brings those offerings together in one familiar app, built around the way Orthodox Christians give.</p></header>
+          <div class="give-orthodox-ways" aria-label="Ways to give and follow your offerings">
+            <div><strong>Tithes &amp; stewardship</strong><span>Support parish life with one-time or recurring gifts.</span></div>
+            <div><strong>Candle offerings</strong><span>Make an offering connected to prayer.</span></div>
+            <div><strong>Memorial offerings</strong><span>Give in remembrance of loved ones.</span></div>
+            <div><strong>Festal alms</strong><span>Connect generosity with the Church's feast days.</span></div>
+            <div><strong>Parish campaigns</strong><span>Help meet a shared goal or an urgent need.</span></div>
+            <div><strong>Your giving history</strong><span>See your offerings and monthly and yearly totals together.</span></div>
+          </div>
+          <div class="give-pledge-highlight"><p class="give-eyebrow">Your commitment, kept in view</p><h3>A pledge you can follow all year.</h3><p>Set or update your annual pledge and see your stewardship giving progress toward it, right on your Giving dashboard. Your commitment and your progress stay together, alongside your giving history.</p><strong>Basic pledge tracking is included in Give.</strong></div>
+          <div class="give-orthodox-actions"><a class="give-button give-button-gold" href="/give/request-demo">See Orthodox giving in a demo</a><a class="give-button give-button-outline" href="#pricing">Find your parish's plan</a></div>
+          <p class="give-orthodox-note">Campaigns, Festal Alms, and Stewardship Health are available with Give + and Parish. Offerings shown in the app depend on your parish's plan and enabled features.</p>
+        </div>
+        <figure class="give-orthodox-screen"><a href="/images/app/screenshots/give-feature-giving-dashboard.jpg" target="_blank" rel="noopener noreferrer" aria-label="View the Giving dashboard screenshot in a new tab"><img src="/images/app/screenshots/give-feature-giving-dashboard.jpg" alt="My AGAPAY Giving dashboard with annual pledge progress, monthly and yearly giving totals, and Quick Give options for tithes, candles, memorials, festal alms, and campaigns" loading="lazy" decoding="async" width="1440" height="3120" /></a><figcaption>Your pledge, your offerings, your parish.<br />Select the screen for a closer look.</figcaption></figure>
+      </div>
+    </section>
+
     <section class="give-section give-koinonia-section" id="koinonia" aria-labelledby="koinonia-title">
       <div class="give-wrap give-koinonia-grid">
-        <div><p class="give-eyebrow">Koinonia is included in Give +</p><h2 id="koinonia-title">A genuine parish community, not a public social network.</h2><p class="give-section-lead">Every Koinonia feature requires a verified household member of the parish. The result is one private place for the liturgical day, parish announcements, ministries, service, teaching, and mutual care.</p><div class="give-koinonia-list"><span>Parish feed and Community Inbox</span><span>Ministry groups and schedules</span><span>Signups, meal trains, and volunteer needs</span><span>Parish Exchange</span><span>Prayer requests with clergy-only privacy</span><span>Audio, video, podcasts, and parish news</span><span>Parish Library</span><span>Google Calendar connection</span></div></div>
+        <div>
+          <p class="give-eyebrow">Koinonia is included in Give +</p>
+          <h2 id="koinonia-title">A genuine parish community, not a public social network.</h2>
+          <p class="give-section-lead">Every Koinonia feature requires a verified household member of the parish. The result is one private place for the liturgical day, parish announcements, ministries, service, teaching, and mutual care.</p>
+          <div class="give-koinonia-list"><span>Parish feed and Community Inbox</span><span>Ministry groups have in-app communication and planning</span><span>Signups, meal trains, and volunteer needs</span><span>Parish Exchange — a private parish-only marketplace</span><span>Prayer requests with clergy-only privacy</span><span>Audio, video, podcasts, and parish news</span><span>Parish Library</span><span>Parish calendar connection</span></div>
+        </div>
         <div class="give-koinonia-screens" aria-label="Animated preview of Koinonia app screens">
           <figure class="give-koinonia-phone">
             <div class="give-koinonia-phone-shell">
@@ -298,11 +324,134 @@
       </div>
     </section>
 
+    <section class="give-section give-app-features-section" id="app-features" aria-labelledby="app-features-title">
+      <div class="give-wrap">
+        <header class="give-section-head"><p class="give-eyebrow">More inside My AGAPAY</p><h2 id="app-features-title">Parish life goes beyond Sunday.</h2><p>Find your people, discover a good book, open a trusted resource, or take the next step toward a sacrament. The same app brings these everyday connections together.</p></header>
+        <div class="give-app-features-grid">
+          <section class="give-app-feature" aria-labelledby="app-bookstore-title">
+            <div class="give-app-feature-copy"><p class="give-eyebrow">Bookstore</p><h3 id="app-bookstore-title">Your parish shop, close at hand.</h3><p>Browse books, candles, prayer ropes, and parish favorites. Search by category, see what's available, and pay securely through Stripe.</p><span class="give-app-feature-plan">Included in Give + and Parish</span></div>
+            <a class="give-app-feature-shot" href="/images/app/screenshots/give-feature-parish-bookstore.jpg" target="_blank" rel="noopener noreferrer" aria-label="View the Bookstore app screenshot in a new tab"><img src="/images/app/screenshots/give-feature-parish-bookstore.jpg" alt="My AGAPAY Bookstore with shop search, categories, and popular parish items" loading="lazy" decoding="async" width="1440" height="3120" /><span>View screen <span aria-hidden="true">↗</span></span></a>
+          </section>
+          <section class="give-app-feature" aria-labelledby="app-library-title">
+            <div class="give-app-feature-copy"><p class="give-eyebrow">Parish Library</p><h3 id="app-library-title">Good resources. Chosen by your parish.</h3><p>Keep prayer texts, articles, pastoral letters, and formation resources in one searchable library. Find what your parish recommends without digging through old messages.</p><span class="give-app-feature-plan">Included in Give + and Parish</span></div>
+            <a class="give-app-feature-shot" href="/images/app/screenshots/give-feature-parish-library.jpg" target="_blank" rel="noopener noreferrer" aria-label="View the Parish Library app screenshot in a new tab"><img src="/images/app/screenshots/give-feature-parish-library.jpg" alt="My AGAPAY Parish Library with resource search, categories, and featured Orthodox service texts" loading="lazy" decoding="async" width="1440" height="3120" /><span>View screen <span aria-hidden="true">↗</span></span></a>
+          </section>
+          <section class="give-app-feature" aria-labelledby="app-directory-title">
+            <div class="give-app-feature-copy"><p class="give-eyebrow">Parish Directory</p><h3 id="app-directory-title">Know the people beside you.</h3><p>Find parish households by family, nameday, or skill. Keep your family's information current in a private directory built for the parish community.</p><span class="give-app-feature-plan">Included in Give + and Parish</span></div>
+            <a class="give-app-feature-shot" href="/images/app/screenshots/give-feature-directory.jpg" target="_blank" rel="noopener noreferrer" aria-label="View the Directory app screenshot in a new tab"><img src="/images/app/screenshots/give-feature-directory.jpg" alt="My AGAPAY Directory showing household cards and filters for family, nameday, or skill" loading="lazy" decoding="async" width="1440" height="3120" /><span>View screen <span aria-hidden="true">↗</span></span></a>
+          </section>
+          <section class="give-app-feature" aria-labelledby="app-sacraments-title">
+            <div class="give-app-feature-copy"><p class="give-eyebrow">Sacraments &amp; Services</p><h3 id="app-sacraments-title">The next step, with your parish.</h3><p>Reserve an available confession time, begin a baptism or wedding request, and see upcoming appointments. Keep the details together while your clergy guide the process.</p><span class="give-app-feature-plan">Give + add-on · Included in Parish</span></div>
+            <a class="give-app-feature-shot" href="/images/app/screenshots/give-feature-sacraments-and-services.jpg" target="_blank" rel="noopener noreferrer" aria-label="View the Sacraments and Services app screenshot in a new tab"><img src="/images/app/screenshots/give-feature-sacraments-and-services.jpg" alt="My AGAPAY Sacraments and Services with parish calendar and confession, baptism, and wedding requests" loading="lazy" decoding="async" width="1440" height="3120" /><span>View screen <span aria-hidden="true">↗</span></span></a>
+          </section>
+        </div>
+        <p class="give-app-features-note">Screens from My AGAPAY. Available features follow your parish's plan, enabled modules, and member permissions. Select a screen to see the full image.</p>
+      </div>
+    </section>
+
+    <section class="give-section give-campaign-section" id="campaigns" aria-labelledby="campaigns-title">
+      <div class="give-wrap">
+        <header class="give-section-head">
+          <p class="give-eyebrow">Parish campaigns · Included in Give + and Parish</p>
+          <h2 id="campaigns-title">Why send parishioners to a third-party crowdfunding site?</h2>
+          <p>Run campaigns directly through your parish on AGAPAY, with <strong>no AGAPAY campaign fee — only Stripe processing.</strong> Your plan subscription still applies; there is no extra AGAPAY fee to launch a campaign or collect its donations.</p>
+        </header>
+        <figure class="give-campaign-preview">
+          <a href="/images/app/screenshots/give-feature-campaign.png" target="_blank" rel="noopener noreferrer" aria-label="View the full parish campaign screenshot in a new tab">
+            <img src="/images/app/screenshots/give-feature-campaign.png" alt="St Fiacre demo campaign for church roof restoration, showing the parish story, fundraising progress, recent gifts, and donation form" loading="lazy" decoding="async" width="1801" height="1834" />
+          </a>
+          <figcaption><span><strong>Your parish. Your purpose. One giving page.</strong> A demo campaign with its story, progress, and giving form together.</span><a href="/images/app/screenshots/give-feature-campaign.png" target="_blank" rel="noopener noreferrer">View full screenshot <span aria-hidden="true">↗</span></a></figcaption>
+        </figure>
+        <div class="give-campaign-grid">
+          <div class="give-campaign-story">
+            <h3>A parish purpose. A parish giving page.</h3>
+            <p>Restore the iconostasis, repair the roof, support a mission, or meet a neighbor's urgent need. Give your community a focused campaign without moving its giving to another platform.</p>
+            <ul class="give-check-list">
+              <li><strong>Share your campaign.</strong> Bring parishioners to a dedicated campaign page on AGAPAY.</li>
+              <li><strong>Keep funds with your parish.</strong> Donations process through your parish's connected Stripe account.</li>
+              <li><strong>Keep the records together.</strong> Campaign gifts stay connected to parish giving history and reporting.</li>
+            </ul>
+            <div class="give-campaign-urgent">
+              <h4>When the need is urgent, your parish already has a place to start.</h4>
+              <p>For parishes already verified on AGAPAY with an active, verified Stripe account, campaigns use that existing setup. No separate crowdfunding account to open and verify before you can begin.</p>
+              <p>Your parish receives the funds and decides how to distribute them once available. That means a simpler path from a time-sensitive need to a parish-led response.</p>
+              <small>Stripe's ongoing verification requirements, reviews, and payout schedules still apply. Funds are not guaranteed to be available immediately.</small>
+            </div>
+            <div class="give-campaign-actions">
+              <a class="give-button give-button-gold" href="/give/request-demo">See parish campaigns in a demo</a>
+              <a class="give-button give-button-outline" href="#pricing">Compare plans</a>
+            </div>
+          </div>
+          <aside class="give-campaign-savings" aria-labelledby="campaign-savings-title">
+            <p class="give-eyebrow">More of each gift for the purpose</p>
+            <h3 id="campaign-savings-title">Nonprofit pricing can make a difference.</h3>
+            <p>With approved Stripe nonprofit pricing, <strong>AGAPAY campaigns can cost less in processing fees per donation than GiveSendGo and standard GoFundMe fundraising.</strong></p>
+            <dl class="give-campaign-rates">
+              <div><dt>AGAPAY campaigns</dt><dd>Your approved Stripe rate<span>+ $0 AGAPAY campaign fee</span></dd></div>
+              <div><dt><a href="https://www.givesendgo.com/pricing-and-fees" target="_blank" rel="noopener noreferrer">GiveSendGo</a></dt><dd>2.7% + $0.30</dd></div>
+              <div><dt><a href="https://www.gofundme.com/c/pricing?lang=en-US" target="_blank" rel="noopener noreferrer">Standard GoFundMe</a></dt><dd>2.9% + $0.30</dd></div>
+            </dl>
+            <p class="give-campaign-terms">U.S. domestic USD donations; published rates checked August 31, 2026. Savings apply only when your parish's actual Stripe fee is lower for the same donation. This compares per-donation processing fees, excluding AGAPAY subscriptions, optional tips, and international or currency-conversion charges. GoFundMe certified-nonprofit and Pro pricing are not included in this comparison.</p>
+            <p class="give-campaign-terms"><a href="https://support.stripe.com/questions/fee-discount-for-nonprofit-organizations" target="_blank" rel="noopener noreferrer">Stripe nonprofit pricing requires approval</a> and is not automatic for churches. Check Stripe's current nonprofit and donation-volume requirements; Stripe sets your rate and continued eligibility.</p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
     <section class="give-section" id="reporting" aria-labelledby="reporting-title">
       <div class="give-wrap">
         <header class="give-section-head"><p class="give-eyebrow">Giving intelligence and automated reporting</p><h2 id="reporting-title">See the real shape of parish giving, not just the total.</h2><p>Basic pledge tracking is included in Give. With Give +, Stewardship Health turns the gifts and pledges already flowing through AGAPAY into useful council-level analytics and print-ready reports.</p></header>
-        <div class="give-report-grid"><article><span>Giving intelligence</span><h3>Distribution</h3><p>See how many donors give at each annual level, from smaller offerings through major gifts.</p></article><article><span>Giving intelligence</span><h3>Donor retention</h3><p>Track retained, lapsed, and new donors year over year before a change reaches the total.</p></article><article><span>Giving intelligence</span><h3>Concentration risk</h3><p>Understand the anonymized share of giving from the top households and surface dependency risk.</p></article><article><span>Giving intelligence</span><h3>Recurring stability</h3><p>Measure predictable recurring gifts against one-time giving and active recurring households.</p></article><article><span>Automated reporting</span><h3>Monthly council reports</h3><p>Generate current stewardship and financial summaries without rebuilding spreadsheets before meetings.</p></article><article><span>Automated reporting</span><h3>Annual statements and packets</h3><p>Produce donor statements in batches and assemble a polished annual meeting packet from current records.</p></article></div>
-        <div class="give-report-callout"><strong>What used to take a treasurer days can take minutes.</strong><span>No duplicate export process and no report reconstructed from scratch.</span></div>
+        <p class="give-intelligence-note">Included with Stewardship Health on Give + and Parish. <em>The visuals below illustrate each dashboard; they are not actual parish data.</em></p>
+        <div class="give-intelligence-grid">
+          <article>
+            <div class="give-intelligence-top"><span class="give-intelligence-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 13h3v7H4zM10 8h3v12h-3zM16 3h3v17h-3z" /></svg></span><span class="give-status">Live</span></div>
+            <h3>Giving Distribution</h3>
+            <p>See how many donors give at each annual level, from smaller offerings through major gifts. Understand the shape of parish giving, beyond a single total.</p>
+            <figure class="give-intelligence-chart" role="img" aria-label="Illustrative giving distribution across five annual giving bands, from under $500 to $10,000 or more. Bar heights are examples, not parish data.">
+              <div class="give-distribution-bars" aria-hidden="true"><i style="--bar-height:72%"></i><i style="--bar-height:100%"></i><i style="--bar-height:55%"></i><i style="--bar-height:32%"></i><i style="--bar-height:17%"></i></div>
+              <div class="give-distribution-labels" aria-hidden="true"><span>&lt;$500</span><span>$500–2K</span><span>$2–5K</span><span>$5–10K</span><span>$10K+</span></div>
+            </figure>
+          </article>
+          <article>
+            <div class="give-intelligence-top"><span class="give-intelligence-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="3" /><path d="M3 20v-2a6 6 0 0 1 12 0v2M15 9h6m-3-3 3 3-3 3" /></svg></span><span class="give-status">Live</span></div>
+            <h3>Donor Retention</h3>
+            <p>Track retained, new, and lapsed donors year over year. Spot changes in participation before they become changes in the total.</p>
+            <figure class="give-intelligence-chart" role="img" aria-label="Illustrative donor retention bar split into retained donors, new donors, and lapsed donors. Segment sizes are examples, not parish data.">
+              <div class="give-stacked-bar" aria-hidden="true"><i class="give-chart-green" style="flex:68"></i><i class="give-chart-gold" style="flex:20"></i><i class="give-chart-stone" style="flex:12"></i></div>
+              <div class="give-chart-legend" aria-hidden="true"><span><i class="give-chart-green"></i>Retained</span><span><i class="give-chart-gold"></i>New</span><span><i class="give-chart-stone"></i>Lapsed</span></div>
+            </figure>
+          </article>
+          <article>
+            <div class="give-intelligence-top"><span class="give-intelligence-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 2 8 4v6c0 5-5 8-8 10-3-2-8-5-8-10V6l8-4Z M12 7v6m0 3v1" /></svg></span><span class="give-status">Live</span></div>
+            <h3>Giving Concentration Risk</h3>
+            <p>Understand how much annual giving comes from the top households, anonymized and ranked. See when the parish relies on a small share of its donors.</p>
+            <figure class="give-intelligence-chart" role="img" aria-label="Illustrative annual giving concentration bar comparing the top ten households with everyone else. Segment sizes are examples, not parish data.">
+              <div class="give-stacked-bar" aria-hidden="true"><i class="give-chart-gold-dark" style="flex:36"></i><i class="give-chart-cream" style="flex:64"></i></div>
+              <div class="give-chart-legend" aria-hidden="true"><span><i class="give-chart-gold-dark"></i>Top 10 households</span><span><i class="give-chart-cream"></i>Everyone else</span></div>
+            </figure>
+          </article>
+          <article>
+            <div class="give-intelligence-top"><span class="give-intelligence-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 4v6h-6M4 20v-6h6M20 10a8 8 0 0 0-14-5M4 14a8 8 0 0 0 14 5" /></svg></span><span class="give-status">Live</span></div>
+            <h3>Recurring Gift Stability</h3>
+            <p>Compare recurring gifts with one-time giving and follow active recurring households. See the predictable support behind parish life.</p>
+            <figure class="give-intelligence-chart" role="img" aria-label="Illustrative giving stability bar comparing recurring gifts with one-time gifts. Segment sizes are examples, not parish data.">
+              <div class="give-stacked-bar" aria-hidden="true"><i class="give-chart-green" style="flex:60"></i><i class="give-chart-stone" style="flex:40"></i></div>
+              <div class="give-chart-legend" aria-hidden="true"><span><i class="give-chart-green"></i>Recurring</span><span><i class="give-chart-stone"></i>One-time</span></div>
+            </figure>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="give-section give-report-tools" id="automated-reports" aria-labelledby="report-tools-title">
+      <div class="give-wrap">
+        <header class="give-section-head"><p class="give-eyebrow">Automated reports &amp; annual meeting packets</p><h2 id="report-tools-title">Less paperwork. More time for parish life.</h2><p>Stop rebuilding the same reports before every meeting. Turn the records already in AGAPAY into clear summaries, donor statements, and a prepared annual meeting packet, with less copying, chasing files, and formatting.</p></header>
+        <div class="give-report-grid">
+          <article><span>Every month</span><h3>Council reports, without the scramble.</h3><p>Generate stewardship and financial summaries from current records. Give your council a clear starting point without reassembling spreadsheets each month.</p></article>
+          <article><span>At year-end</span><h3>Prepare statements in batches.</h3><p>Produce annual donor statements together instead of preparing each letter individually. Put the time back into review and parish care.</p></article>
+          <article><span>For the annual meeting</span><h3>One packet. A prepared parish.</h3><p>Bring the agenda, ministry reports, financial summary, and meeting materials into one packet. Edit, preview, and produce a print-ready PDF.</p><small>Annual meeting packet builder: Parish tier.</small></article>
+        </div>
+        <div class="give-report-callout"><div><strong>Your staff reviews the details. The tools handle the repeatable work.</strong><span>Report availability follows your parish's plan and enabled modules.</span></div><a class="give-button give-button-gold" href="/give/request-demo">See the reporting tools</a></div>
       </div>
     </section>
 
@@ -313,11 +462,39 @@
     <section class="give-why" id="why" aria-labelledby="why-title"><div class="give-wrap"><p class="give-eyebrow">Why we built this</p><h2 id="why-title">Built from inside the life it serves.</h2><p>AGAPAY is not generic church software with Orthodox vocabulary added later. It is a platform for the whole reverent life of Orthodox Christians and the parishes that carry them.</p><div class="give-why-points"><span><strong>Canonically minded</strong> Communities are reviewed before activation.</span><span><strong>Human support</strong> Real help for onboarding and parish workflows.</span><span><strong>Orthodox by design</strong> Built by Orthodox Christians for Orthodox Christians.</span></div></div></section>
 
     <section class="give-section give-council-section" id="parish-council" aria-labelledby="council-title">
-      <div class="give-wrap give-council-grid"><div><p class="give-eyebrow">For parish councils</p><h2 id="council-title">Bring one clear proposal to the next meeting.</h2><p>The parish council overview summarizes the platform, security model, stewardship intelligence, reporting, exact pricing, and next steps in a print-ready three-page document.</p><div class="give-council-actions"><a class="give-button give-button-gold" href="/downloads/agapay-parish-council-overview.pdf" download>Download council proposal</a><a class="give-button give-button-light" href="/give/request-demo">Schedule a guided demo</a></div></div><div class="give-council-summary" aria-label="Parish council proposal contents"><span><b>01</b> Complete platform and Koinonia</span><span><b>02</b> Security, intelligence, and reporting</span><span><b>03</b> Pricing and council next steps</span></div></div>
+      <div class="give-wrap give-council-grid"><div><p class="give-eyebrow">For parish councils</p><h2 id="council-title">Bring one clear proposal to the next meeting.</h2><p>The parish council overview summarizes the platform, security model, stewardship intelligence, reporting, exact pricing, and next steps in a print-ready four-page document.</p><div class="give-council-actions"><a class="give-button give-button-gold" href="/downloads/agapay-parish-council-overview.pdf" download>Download council proposal</a><a class="give-button give-button-light" href="/give/request-demo">Schedule a guided demo</a></div></div><div class="give-council-summary" aria-label="Parish council proposal contents"><span><b>01</b> Complete platform and Koinonia</span><span><b>02</b> Security, intelligence, and reporting</span><span><b>03</b> Pricing and council next steps</span></div></div>
     </section>
 
     <section class="give-section give-faq-section" id="faq" aria-labelledby="faq-title">
       <div class="give-wrap give-faq-grid"><header class="give-section-head"><p class="give-eyebrow">Frequently asked questions</p><h2 id="faq-title">Clear answers for clergy, treasurers, and parish councils.</h2><p>Need to discuss a parish-specific workflow? <a href="/give/request-demo">Request a guided demo</a> or email <a href="mailto:support@agapay.app">support@agapay.app</a>.</p></header><div class="give-faq-list"><details><summary>Does AGAPAY charge a percentage of parish donations?</summary><p>No. AGAPAY adds no percentage-based donation fee on any plan. Standard Stripe processing fees still apply, and donors may choose to cover them so the parish receives the full intended gift.</p></details><details><summary>How does AGAPAY protect payment information?</summary><p>Stripe-hosted Checkout collects sensitive card and bank details. Those details do not pass through or get stored by the AGAPAY application. Gifts and sales are processed through the parish's connected Stripe account.</p></details><details><summary>Is pledge tracking included in Give?</summary><p>Yes. Basic pledge tracking is included in Give at $9 per month, alongside one-time and recurring giving, unlimited designated funds, giver records, and monthly CSV export. Give + adds Stewardship Health analytics and annual statements.</p></details><details><summary>What is included in Give +?</summary><p>Give + includes everything in Give, including basic pledge tracking, plus campaigns, branding, Stewardship Health analytics, annual statements, the Parish Directory, Bookstore, Parish Library, and Koinonia. Sacraments, Full Commerce, and Accounting can be purchased individually.</p></details><details><summary>When is Parish the better choice?</summary><p>Choose Parish when the organization wants every connected pillar rather than adding individual modules. Parish bundles Give +, Sacraments, Full Commerce, Accounting, guided onboarding, and priority support at a household-based rate.</p></details><details><summary>Can plans and add-ons change later?</summary><p>Yes. There is no setup fee or long-term contract. A parish can change its tier and selected add-ons as its needs grow.</p></details><details><summary>Does AGAPAY support Julian and Revised Julian parish calendars?</summary><p>Yes. Liturgical awareness includes Julian and Revised Julian calendars, feasts, fasting periods, daily saints, commemorations, and festal giving context.</p></details></div></div>
+    </section>
+
+    <section class="give-section give-install-section" id="install-app" aria-labelledby="install-app-title">
+      <div class="give-wrap give-install-grid">
+        <div class="give-install-copy">
+          <header class="give-section-head">
+            <p class="give-eyebrow">My AGAPAY · Parish life in your pocket</p>
+            <h2 id="install-app-title">Get the app.<br />Take parish life with you.</h2>
+            <p>Give, serve, and stay connected to your parish. Install My AGAPAY for one-tap access to giving, campaigns, Koinonia, the parish directory, Bookstore, and more.</p>
+          </header>
+          <p class="give-install-intro">No app store required. My AGAPAY is a progressive web app you install directly from your browser.</p>
+          <div class="give-install-actions">
+            <button class="give-button give-button-gold" id="homePwaInstallButton" type="button">Install My AGAPAY</button>
+            <a class="give-button give-button-outline" href="/myagapay/login">Open My AGAPAY</a>
+          </div>
+          <p class="give-install-status" id="homePwaInstallStatus" aria-live="polite">Choose Install when your browser offers it, or follow the steps below.</p>
+          <div class="give-install-steps op-install-steps" aria-label="How to install My AGAPAY">
+            <div data-install-step="android"><span>Android &amp; desktop</span><strong>Open your browser menu and choose Install app.</strong></div>
+            <div data-install-step="ios"><span>iPhone &amp; iPad</span><strong>In Safari, tap Share, then Add to Home Screen.</strong></div>
+            <div><span>You're ready</span><strong>Open My AGAPAY from its icon and sign in with your existing account.</strong></div>
+          </div>
+          <p class="give-install-note">The same My AGAPAY account, with a place on your home screen. Your parish's plan and your account permissions determine which features are available.</p>
+        </div>
+        <div class="give-install-visual" aria-label="My AGAPAY app preview">
+          <img src="/images/app-phone-mockup.png" alt="My AGAPAY on a phone showing the parish giving dashboard" loading="lazy" width="1418" height="1786" />
+          <div class="give-install-badge"><img src="/images/app/icon-192.png" alt="" width="48" height="48" /><span><strong>My AGAPAY</strong>Give · Serve · Live</span></div>
+        </div>
+      </div>
     </section>
 
     <section class="give-final-cta" aria-label="Start with AGAPAY"><div class="give-wrap"><p class="give-eyebrow">One parish. One connected system.</p><h2>See what AGAPAY would look like for your parish.</h2><p>Start a no-card 30-day demo or walk through the platform with a real person.</p><div class="give-final-actions"><a class="give-button give-button-gold" href="/register">Start free</a><a class="give-button give-button-light" href="/give/request-demo">Request a parish demo</a><a class="give-text-link" href="/give/find-parish">Find a parish on AGAPAY</a></div></div></section>
