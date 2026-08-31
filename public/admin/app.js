@@ -521,16 +521,19 @@ let selectedReference = '';
       const verified = Number(summary.totalVerified || 0);
       const connected = Number(summary.connectedStripeAccounts || 0);
       const pending = registrationsCache.filter(item => ['pending', 'needs_more_info'].includes(item.status || 'pending')).length;
-      const givingHealth = verified ? Math.round((connected / verified) * 100) : pending ? 50 : 0;
       const learnActive = Number(learnCounts.active || 0) + Number(learnCounts.trialing || 0) + Number(learnCounts.freeForever || 0);
-      const totalProducts = 4;
-      const liveProducts = 2;
-      const healthScore = Math.round(((givingHealth || 0) + (learnActive ? 100 : 65) + 40 + 40) / totalProducts);
+      const attentionCount = registrationsCache.filter(item => Boolean(nextActionPriority(item))).length;
+      const healthScore = registrationsCache.length
+        ? Math.round(((registrationsCache.length - attentionCount) / registrationsCache.length) * 100)
+        : 100;
 
       const healthEl = document.getElementById('overviewHealthScore');
       const healthNote = document.getElementById('overviewHealthNote');
       if (healthEl) healthEl.textContent = `${Math.max(0, Math.min(100, healthScore))}%`;
-      if (healthNote) healthNote.textContent = `${liveProducts} products live, ${pending} Giving registration${pending === 1 ? '' : 's'} awaiting action.`;
+      healthEl?.closest('.admin-focus-score-ring')?.style.setProperty('--admin-score', `${Math.max(0, Math.min(100, healthScore))}%`);
+      if (healthNote) healthNote.textContent = attentionCount
+        ? `${attentionCount} parish record${attentionCount === 1 ? '' : 's'} need an admin action.`
+        : 'No parish onboarding actions are waiting.';
 
       grid.innerHTML = [
         productCard({
@@ -1695,7 +1698,7 @@ let selectedReference = '';
         return action && action.priority < 99;
       }).length;
       document.getElementById('metricTotal').textContent = registrations.length;
-      document.getElementById('metricPending').textContent = registrations.filter(item => item.status === 'pending').length;
+      document.getElementById('metricPending').textContent = registrations.filter(item => ['pending', 'needs_more_info'].includes(item.status || 'pending')).length;
       document.getElementById('metricVerified').textContent = registrations.filter(item => item.status === 'verified').length;
       document.getElementById('metricStripeReady').textContent = registrations.filter(item => ['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus)).length;
       const navCount = document.getElementById('navOnboardingCount');
@@ -1957,10 +1960,10 @@ let selectedReference = '';
       }
 
       container.innerHTML = items.map(({ reg, action }) => `
-        <div class="next-action-item" onclick="loadDetail('${jsAttr(reg.reference)}')">
+        <button type="button" class="next-action-item" onclick="loadDetail('${jsAttr(reg.reference)}')">
           <div class="next-action-name">${escapeHtml(reg.parishName || reg.reference)}</div>
           <div class="next-action-label">${escapeHtml(action.label)}</div>
-        </div>
+        </button>
       `).join('');
     }
 
@@ -3079,10 +3082,12 @@ let selectedReference = '';
       const mobileNav = document.querySelector(`.mobile-tab-link[data-nav-tab="${tab}"]`);
       if (panel) panel.classList.add('active');
       if (nav)   nav.classList.add('active');
+      const navToolbox = nav?.closest('.sidebar-toolbox');
+      if (navToolbox) navToolbox.open = true;
       if (mobileNav) mobileNav.classList.add('active');
       activeTab = tab;
       const titles = {
-        overview: 'Overview',
+        overview: 'Today',
         giving: 'Parish Onboarding',
         learn: 'AGAPAY Learn',
         marketplace: 'AGAPAY Marketplace',
@@ -3097,7 +3102,7 @@ let selectedReference = '';
       };
       const descriptions = {
         overview: 'What needs your attention today.',
-        giving: 'Verify, invite, connect Stripe, and confirm billing.',
+        giving: 'Complete the next required action for one parish at a time.',
         learn: 'Subscriptions, scholarships, feedback, and community review.',
         marketplace: 'Marketplace readiness and seller activity.',
         directory: 'Directory participation and publication health.',
@@ -3513,7 +3518,7 @@ let selectedReference = '';
     async function bulkAction(action) {
       if (!selectedRefs.size) return;
       const refs = Array.from(selectedRefs);
-      const labels = { invite: 'dashboard invites', stripe: 'Stripe onboarding links' };
+      const labels = { invite: 'dashboard invites' };
       const label = labels[action];
       if (!label) return;
       if (!confirm(`Send ${label} to ${refs.length} parish(es)?`)) return;
@@ -3526,17 +3531,10 @@ let selectedReference = '';
 
       for (const ref of refs) {
         try {
-          if (action === 'invite') {
-            const r = await fetch('/api/admin/registrations/' + encodeURIComponent(ref) + '/dashboard-invite', { method: 'POST', headers: authHeaders() });
-            const body = await r.json().catch(() => ({}));
-            if (handleAuthFailure(r, body)) return;
-            if (!r.ok) throw new Error(body.detail || body.error || 'Invite failed');
-          } else if (action === 'stripe') {
-            const r = await fetch('/api/admin/registrations/' + encodeURIComponent(ref) + '/stripe-onboarding', { method: 'POST', headers: authHeaders() });
-            const body = await r.json().catch(() => ({}));
-            if (handleAuthFailure(r, body)) return;
-            if (!r.ok) throw new Error(body.detail || body.error || 'Stripe link failed');
-          }
+          const r = await fetch('/api/admin/registrations/' + encodeURIComponent(ref) + '/dashboard-invite', { method: 'POST', headers: authHeaders() });
+          const body = await r.json().catch(() => ({}));
+          if (handleAuthFailure(r, body)) return;
+          if (!r.ok) throw new Error(body.detail || body.error || 'Invite failed');
           done++;
           rows.push({ tone: 'success', message: `${ref}: Success` });
         } catch (err) {

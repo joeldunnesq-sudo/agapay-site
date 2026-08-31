@@ -262,7 +262,7 @@ Block when:
 - The parish ID collides with or could be confused with another organization.
 - Required canonical fields are incomplete.
 
-Important current-product safeguard: the present admin implementation can default a newly verified parish to an active giving status. The operator must explicitly select `hidden` and verify the saved result. This is a P1 workflow gap until the product separates canonical verification from publication.
+Current product safeguard: the Admin save path forces a newly verified parish to remain `hidden`. The operator must still reopen the record and verify the saved `verified` and `hidden` values. The treasurer's completed Go Live signoff is the only pre-live transition to `active`.
 
 ### Step 5 — Send personal dashboard invitations
 

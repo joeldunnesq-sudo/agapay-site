@@ -367,6 +367,8 @@ assert.match(adminUi, /renderOnboardingManualChecks\(onboardingChecks, \['giving
 assert.match(adminStyles, /onboarding-phase-card:not\(\.is-current\)[^{]*\{[^}]*padding/, "non-current onboarding phases must collapse to compact rows");
 assert.match(parishUi, /10-minute parish setup/, "the parish UI must present the setup-time target");
 assert.match(parishUi, /Three steps to start giving/, "the parish UI must present three simple stages");
+assert.match(parishUi, /Where donations go[\s\S]*Parish identity and receipts[\s\S]*Giving choices[\s\S]*AGAPAY plan/, "the final parish review must group launch details into four understandable sections");
+assert.match(parishUi, /all eight confirmations/, "the final approval must explain that every required acknowledgement is retained");
 assert.match(parishUi, /openGivingSetupWizard\(\)/, "Review giving setup must open the guided modal instead of navigating to a dashboard tab");
 assert.match(parishUi, /givingSetupTierDetails/, "the giving setup modal must derive its choices from the selected AGAPAY tier");
 assert.match(parishUi, /Step 1 of 3[\s\S]*Step 2 of 3[\s\S]*Step 3 of 3/, "the giving setup modal must keep a short three-screen sequence");
@@ -388,5 +390,9 @@ assert.match(parishHandler, /Stripe subscription status changed/, "parish-side S
 assert.match(workerSource, /Stewardship activation changed the giving-fund catalog/, "Stewardship fund provisioning must invalidate signoff");
 assert.match(workerSource, /The demo seed changed material parish or giving configuration/, "demo record material rewrites must invalidate signoff");
 assert.match(stewardshipHandler, /Stewardship activation changed the giving-fund catalog/, "Stewardship webhook fund provisioning must invalidate signoff");
+
+const onboardingSop = await readFile(new URL("../docs/parish-onboarding-go-live-sop.md", import.meta.url), "utf8");
+assert.match(onboardingSop, /Admin save path forces a newly verified parish to remain `hidden`/, "the SOP must describe the enforced verified-hidden safeguard");
+assert.doesNotMatch(onboardingSop, /can default a newly verified parish to an active giving status/, "the SOP must not retain the stale active-by-default warning");
 
 console.log("Parish onboarding workflow tests passed.");
