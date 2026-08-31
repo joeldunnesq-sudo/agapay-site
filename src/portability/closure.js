@@ -11,6 +11,8 @@ FINANCIAL_TABLES.add('accounting_entities');
 FINANCIAL_TABLES.add('accounting_databases');
 // Historical fund codes support retained giving/accounting records.
 FINANCIAL_TABLES.add('giving_funds');
+FINANCIAL_TABLES.add('outside_gift_details');
+FINANCIAL_TABLES.add('outside_gift_audit');
 
 // Release blockers are explicit, and cannot be bypassed by a request payload.
 // This prevents a partial adapter from promising parish-wide erasure.

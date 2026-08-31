@@ -4,6 +4,7 @@ import { routeAccountingRequest } from "./routes/accounting.js";
 import { routeDirectoryRequest } from "./routes/directory.js";
 import { routeDonorRequest } from "./routes/donor.js";
 import { routeLearnRequest } from "./routes/learn.js";
+import { stewardshipGivingSummary } from "./lib/stewardship-summary.js";
 import { routeParishRequest } from "./routes/parish.js";
 import { routePublicRequest } from "./routes/public.js";
 import { dispatchRouteRegistries } from "./routes/registry.js";
@@ -1753,61 +1754,7 @@ async function handleStewardshipGivingSummary(request, env, parishId) {
 
   const url  = new URL(request.url);
   const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
-  const yearStart = `${year}-01-01`;
-  const yearEnd   = `${year}-12-31`;
-
-  const today     = new Date();
-  const dayOfYear = Math.max(1, Math.ceil((today - new Date(`${year}-01-01`)) / 86400000));
-  const daysInYear = (year % 4 === 0) ? 366 : 365;
-
-  const [pledgeRow, actualRow, priorRow, manualCurrentCents, manualPriorCents] = await Promise.all([
-    env.AGAPAY_DB.prepare(`
-      SELECT COUNT(*) AS pledging_donors, SUM(target_amount_cents) AS total_pledged_cents
-      FROM household_pledges WHERE parish_id = ? AND fiscal_year = ?
-    `).bind(parishId, year).first(),
-
-    env.AGAPAY_DB.prepare(`
-      SELECT
-        COUNT(DISTINCT donor_email) AS active_donors,
-        SUM(COALESCE(json_extract(data, '$.giftAmountCents'), json_extract(data, '$.amountCents'), 0)) AS total_actual_cents
-      FROM donor_offerings
-      WHERE parish_id = ? AND payment_status IN ('paid', 'succeeded')
-        AND created_at BETWEEN ? AND ?
-    `).bind(parishId, yearStart, yearEnd).first(),
-
-    env.AGAPAY_DB.prepare(`
-      SELECT SUM(COALESCE(json_extract(data, '$.giftAmountCents'), json_extract(data, '$.amountCents'), 0)) AS total_prior_cents
-      FROM donor_offerings
-      WHERE parish_id = ? AND payment_status IN ('paid', 'succeeded')
-        AND created_at BETWEEN ? AND ?
-    `).bind(parishId, `${year - 1}-01-01`, `${year - 1}-12-31`).first(),
-
-    manualIncomeTotalCents(env, parishId, yearStart, yearEnd),
-    manualIncomeTotalCents(env, parishId, `${year - 1}-01-01`, `${year - 1}-12-31`),
-  ]);
-
-  const totalPledged = pledgeRow?.total_pledged_cents || 0;
-  const totalActual  = (actualRow?.total_actual_cents || 0) + manualCurrentCents;
-  const totalPrior   = (priorRow?.total_prior_cents || 0) + manualPriorCents;
-  const runRate      = Math.round((totalActual / dayOfYear) * daysInYear);
-  const fulfillment  = totalPledged > 0 ? Math.round((totalActual / totalPledged) * 100) : null;
-  const avgPerDonor  = (actualRow?.active_donors || 0) > 0
-    ? Math.round(totalActual / actualRow.active_donors) : 0;
-
-  return json({
-    fiscal_year:             year,
-    pledging_donors:         pledgeRow?.pledging_donors      || 0,
-    active_donors:           actualRow?.active_donors        || 0,
-    total_pledged_cents:     totalPledged,
-    total_actual_cents:      totalActual,
-    manual_income_cents:     manualCurrentCents,
-    prior_year_actual_cents: totalPrior,
-    run_rate_cents:          runRate,
-    fulfillment_rate_pct:    fulfillment,
-    avg_per_donor_cents:     avgPerDonor,
-    day_of_year:             dayOfYear,
-    days_in_year:            daysInYear,
-  });
+  return json(await stewardshipGivingSummary(env,parishId,year,manualIncomeTotalCents));
 }
 
 // GET /api/parish/dashboard/:parishId/stewardship/giving/funds
@@ -2260,6 +2207,7 @@ async function handleStewardshipManualIncomeDelete(request, env, parishId, entry
   const gate = await requireStewardshipFeature(env, parishId);
   if (gate) return gate;
   if (!entryId) return json({ error: "Missing entry id." }, { status: 400 });
+  if (entryId.startsWith("outside_")) return json({ error: "Use Givers to correct or void this individual gift; its audit history must be retained." }, { status: 409 });
 
   await env.AGAPAY_DB.prepare(
     `DELETE FROM manual_income_entries WHERE id = ? AND parish_id = ?`

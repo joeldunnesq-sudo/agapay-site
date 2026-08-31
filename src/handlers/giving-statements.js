@@ -35,6 +35,7 @@ import {
 import { findRegistrationByParishId, requireDonor, verifyParishDashboardBearer } from "./parish.js";
 import { offeringLabel } from "./donor.js";
 import { givingFeatureAccess } from "../lib/entitlements.js";
+import { outsideGiftsForGiving } from "../lib/outside-gifts.js";
 
 // ─── Auth ──────────────────────────────────────────────────────────────────
 
@@ -121,6 +122,16 @@ export async function computeParishDonorYearGiving(env, parishId, fiscalYear) {
     });
   }
 
+  const outside = await outsideGiftsForGiving(env, parishId, {}, {start:yearStart, end:`${fiscalYear}-12-31`});
+  for (const gift of outside) {
+    const email = normalizeEmail(gift.donorEmail);
+    if (!email || !gift.giverReferenceId) continue;
+    if (!byDonor.has(email)) byDonor.set(email, {email, donorName:gift.donorName, totalCents:0, gifts:[]});
+    const entry = byDonor.get(email);
+    entry.totalCents += gift.amountCents;
+    entry.gifts.push({date:gift.receivedDate + 'T12:00:00Z', amountCents:gift.amountCents, label:gift.fund + ' (' + gift.sourceLabel + ')'});
+  }
+  for (const entry of byDonor.values()) entry.gifts.sort((a,b) => a.date.localeCompare(b.date));
   return Array.from(byDonor.values());
 }
 

@@ -19,6 +19,7 @@ import {
 } from "./parish.js";
 import { fundReportPeriod, parishReportingTimezone, loadFundGiftActivity } from "../lib/fund-reporting.js";
 import { exportMonthlyGiving } from "../lib/monthly-giving-export.js";
+import { outsideGiftsForGiving, subtractLinkedOutsideGifts } from "../lib/outside-gifts.js";
 import { d1 } from "../lib/core.js";
 import { monthLabel } from "../lib/format.js";
 import {
@@ -293,13 +294,14 @@ export async function handleParishGivingHistory(request, env, parishId) {
     return exportMonthlyGiving(request, env, parishId, found.registration);
   }
 
-  const [gifts, manualAccountingGifts] = await Promise.all([
+  const [gifts, manualAccountingGifts, outsideGifts] = await Promise.all([
     loadParishPaidOfferings(env, parishId, 500),
-    loadManualAccountingGivingEntries(env, parishId, 500)
+    loadManualAccountingGivingEntries(env, parishId, 500),
+    outsideGiftsForGiving(env, parishId, found.registration)
   ]);
   return json({
-    gifts,
-    manualAccountingGifts,
+    gifts: [...gifts, ...outsideGifts],
+    manualAccountingGifts: subtractLinkedOutsideGifts(manualAccountingGifts, outsideGifts),
     generatedAt: new Date().toISOString()
   });
 }

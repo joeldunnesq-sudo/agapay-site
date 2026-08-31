@@ -1,6 +1,6 @@
 /* Shared visual language with stewardship-intelligence.css: warm cards,
    gold controls, serif headings, tabular figures, restrained review states. */
-.fr-nav-button{width:100%;background:none;border:0;text-align:left;font:inherit}
+.fr-nav-button{width:100%;background:none;border:0;text-align:left;font-family:inherit;font-weight:inherit;line-height:inherit}
 .fr-review-entry{padding:1rem 0;border-bottom:1px solid #e8e3d9;color:var(--deep);font-size:.8rem}
 .fr-review-entry span,.fr-review-entry small{display:block;margin-top:.4rem;color:#626b6c;font-size:.7rem;overflow-wrap:anywhere}
 .fr-review-entry p{margin:.5rem 0}

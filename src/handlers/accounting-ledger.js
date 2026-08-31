@@ -88,6 +88,7 @@ export async function accountingContext(request, env, parishId, capability) {
   if (!db) return { error: reply({ error: 'Accounting database is unavailable.' }, 503) };
   return {
     db,
+    entityId: entity.id,
     registration,
     actor: { id: auth.user.id, type: auth.actorType || 'platform_user', capabilities: auth.capabilities || [] },
     tier: accountingTierFor(registration),

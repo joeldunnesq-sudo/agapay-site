@@ -149,13 +149,13 @@ try {
 
   let historyFails = false;
   await scenario(
-    'history filters, net totals, escaped donors, CSV, and recovery; givers search and sort',
+    'history filters, contribution totals, escaped donors, CSV, and recovery; givers search and sort',
     async (page) => {
       await page.locator('#nav-history').click();
       const rows = page.locator('#historyTableWrap tbody tr');
       await page.locator('#histRangeFilter').selectOption('all');
       assert.equal(await rows.count(), 3);
-      assert.equal(await page.locator('#histStatAmount').textContent(), '$172');
+      assert.equal(await page.locator('#histStatAmount').textContent(), '$175');
       assert.equal(await rows.locator('img').count(), 0);
       await page.locator('#histTypeFilter').selectOption('recurring');
       assert.equal(await rows.count(), 1);

@@ -82,9 +82,11 @@ function renderManualIncome(d) {
             '<td class="sw-income-notes">' +
             escapeHtml([e.batchReference, e.notes].filter(Boolean).join(' · ')) +
             '</td>' +
-            '<td><button type="button" class="sw-income-delete-btn" onclick="deleteManualIncomeEntry(\'' +
-            escapeAttr(e.id) +
-            '\')" title="Delete entry">&times;</button></td>' +
+            (e.id.startsWith('outside_')
+              ? '<td>Manage in Givers</td>'
+              : '<td><button type="button" class="sw-income-delete-btn" onclick="deleteManualIncomeEntry(\'' +
+                escapeAttr(e.id) +
+                '\')" title="Delete entry">&times;</button></td>') +
             '</tr>'
         )
         .join('')

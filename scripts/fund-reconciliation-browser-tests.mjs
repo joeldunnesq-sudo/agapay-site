@@ -51,6 +51,21 @@ async function openReport(page) {
   await page.locator('#nav-reconcile').click();
   await page.locator('#reconcileResults').waitFor({ state: 'visible' });
 }
+async function assertNavigationTypography(page) {
+  const styles = await page.evaluate(() =>
+    ['nav-givers', 'nav-reconcile', 'nav-options'].map((id) => {
+      const css = getComputedStyle(document.getElementById(id));
+      return {
+        fontFamily: css.fontFamily,
+        fontSize: css.fontSize,
+        fontWeight: css.fontWeight,
+        lineHeight: css.lineHeight,
+      };
+    })
+  );
+  assert.deepEqual(styles[1], styles[0], 'Monthly reconciliation must match Givers typography');
+  assert.deepEqual(styles[1], styles[2], 'Monthly reconciliation must match Funds & Alms typography');
+}
 async function download(page, name) {
   const menu = page.locator('.fr-export-menu');
   if (!(await menu.getAttribute('open'))) {
@@ -68,12 +83,14 @@ try {
     'Give has monthly navigation, weekly entry, blank bank check, save and reopen',
     async (page, finance) => {
       await page.getByRole('heading', { name: 'Giving by fund', exact: true }).waitFor();
+      await assertNavigationTypography(page);
       assert.deepEqual(
         await page.locator('#nav-tier-give .sidebar-nav-item').evaluateAll((nodes) => nodes.map((node) => node.id)),
         ['nav-giving', 'nav-history', 'nav-givers', 'nav-reconcile', 'nav-options']
       );
       await page.getByRole('button', { name: 'Monthly reconciliation', exact: true }).last().click();
       await page.locator('#reconcileResults').waitFor({ state: 'visible' });
+      await assertNavigationTypography(page);
       assert.equal(await page.locator('#reconcileMonth').inputValue(), finance.month);
       assert.equal(await page.locator('#reconcileDeposited').innerText(), '$12,848.54');
       assert.equal(await page.locator('#reconcileBankAmount').inputValue(), '');

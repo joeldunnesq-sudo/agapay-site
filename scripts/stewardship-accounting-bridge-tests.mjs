@@ -18,6 +18,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => readFileSync(path.join(root, file), "utf8");
 const worker = readWorkerCompositionSource(root);
 const stewardship = read("src/handlers/stewardship.js");
+const givingSummary = read("src/lib/stewardship-summary.js");
 const bridge = read("src/handlers/stewardship-accounting-bridge.js");
 const budgets = read("src/handlers/accounting-payables-budgets.js");
 const setup = read("src/accounting/setup/service.js");
@@ -181,7 +182,8 @@ assert.doesNotMatch(manualPost, /INSERT INTO stewardship_financial_summaries|DEL
 
 const pledgeAggregation = `SELECT COUNT(*) AS pledging_donors, SUM(target_amount_cents) AS total_pledged_cents
       FROM household_pledges WHERE parish_id = ? AND fiscal_year = ?`;
-assert.ok(worker.replaceAll("\r\n", "\n").includes(pledgeAggregation), "Giving Metrics pledge aggregation must remain unchanged");
+assert.ok(worker.includes("stewardshipGivingSummary(env"), "Giving Metrics must use its extracted summary module");
+assert.ok(givingSummary.replaceAll("\r\n", "\n").includes(pledgeAggregation), "Giving Metrics pledged-total aggregation must remain unchanged");
 assert.ok(budgets.replaceAll("\r\n", "\n").includes(pledgeAggregation), "budget comparison must use the identical pledge aggregation");
 assert.ok(budgets.includes("/pledge-comparison"));
 assert.ok(budgets.includes('if (method === "GET") return path.startsWith("/payables") ? "ap.view" : "budgets.view"'));

@@ -96,7 +96,7 @@ export async function createFundReconciliationFixture({ month = fundReportPeriod
     Date.parse(month + '-' + String(day).padStart(2, '0') + 'T' + String(hour).padStart(2, '0') + ':00:00Z') / 1000;
   const addOffering = (gift) => {
     offerings.push(gift);
-    db.prepare('INSERT OR REPLACE INTO donor_offerings VALUES(?,?,?,?,?,?,?)').run(
+    db.prepare('INSERT OR REPLACE INTO donor_offerings(id,parish_id,payment_intent_id,status,payment_status,created_at,data) VALUES(?,?,?,?,?,?,?)').run(
       gift.id,
       gift.parishId,
       gift.stripePaymentIntentId,
