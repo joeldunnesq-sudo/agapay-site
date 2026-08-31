@@ -53,6 +53,8 @@
   flex-shrink: 0;
   display: grid;
   place-items: center;
+  gap: 6px;
+  padding: 12px;
   width: 102px;
   height: 102px;
   border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent);
@@ -61,11 +63,15 @@
   font-size: 27px;
   line-height: 1.1;
 }
+.acct-wizard-seal img,
+.acct-wizard-orbit img {
+  display: block;
+  object-fit: contain;
+}
 .acct-wizard-seal span {
   font-size: 8px;
   letter-spacing: 2px;
   text-align: center;
-  margin-top: -12px;
 }
 .acct-wizard-steps {
   list-style: none;
@@ -294,6 +300,7 @@
   border-radius: 50%;
   font-size: 27px;
   color: var(--gold);
+  background: var(--deep);
   animation: acct-wizard-pulse 2.5s ease-in-out infinite;
 }
 .acct-wizard-orbit.is-paused {
@@ -444,6 +451,12 @@
   .acct-wizard-seal {
     width: 76px;
     height: 76px;
+    padding: 8px;
+    gap: 3px;
+  }
+  .acct-wizard-seal img {
+    width: 32px;
+    height: 36px;
   }
   .acct-wizard-seal span {
     font-size: 7px;
