@@ -82,10 +82,11 @@ check("parish dashboard: exposes the complete authenticated exemption request, u
   ]) assert.ok(parishDashboardScript.includes(required), `missing parish exemption UI wiring: ${required}`);
 });
 
-check("admin dashboard: makes exemption reviews a numbered overview step and documents the Stripe confirmation workflow", () => {
+check("admin dashboard: keeps exemption reviews in the focused work queues and documents the Stripe confirmation workflow", () => {
   for (const required of [
     "overviewTaxExemptionCount",
-    "Review tax exemptions",
+    "Tax exemptions",
+    "Certificates that need a decision",
     "Confirm Stripe sync.",
     "navTaxExemptionCount"
   ]) assert.ok(adminDashboardHtml.includes(required), `missing admin exemption workflow affordance: ${required}`);

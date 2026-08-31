@@ -919,28 +919,38 @@
     .onboarding-secondary { margin-top: 0.5rem; border: 0; background: transparent; color: rgba(246,241,232,.76); text-decoration: underline; cursor: pointer; }
     .onboarding-live-mark { display: grid; place-items: center; width: 48px; height: 48px; margin-bottom: 0.75rem; border: 1px solid rgba(216,176,88,.55); border-radius: 999px; background: rgba(216,176,88,.12); color: var(--gold); font-size: 24px; }
     .onboarding-link-button { justify-content: center; margin-top: 0.85rem; text-decoration: none; }
-    .treasurer-signoff { position: relative; z-index: 1; margin: 0 1.25rem 1.25rem; padding: 1.1rem; border: 1px solid rgba(216,176,88,.32); border-radius: 12px; background: rgba(246,241,232,.06); }
+    .treasurer-signoff { position: relative; z-index: 1; margin: 0 1.25rem 1.25rem; padding: 1.1rem; border: 1px solid rgba(216,176,88,.32); border-radius: 14px; background: #fbf8f1; color: var(--deep); }
     .treasurer-signoff-head { display: flex; justify-content: space-between; gap: 1rem; align-items: start; }
-    .treasurer-signoff-head span:first-child { color: var(--gold); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-    .treasurer-signoff h3 { margin: .2rem 0; color: var(--cream); font-family: var(--serif); font-size: 1.35rem; font-weight: 500; }
-    .treasurer-signoff-head p { margin: 0; max-width: 680px; color: rgba(246,241,232,.66); font-size: 12px; line-height: 1.5; }
-    .onboarding-snapshot { flex: none; padding: .35rem .5rem; border-radius: 6px; background: rgba(246,241,232,.08); color: rgba(246,241,232,.55) !important; font-family: monospace; font-size: 9px !important; letter-spacing: 0 !important; text-transform: none !important; }
-    .signoff-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; margin-top: 1rem; }
-    .signoff-summary-row { min-width: 0; padding: .65rem; border: 1px solid rgba(246,241,232,.11); border-radius: 8px; background: rgba(11,33,48,.2); }
-    .signoff-summary-row > span { display: block; color: var(--gold); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
-    .signoff-summary-row strong { display: block; overflow-wrap: anywhere; margin-top: .25rem; color: var(--cream); font-size: 12px; }
-    .signoff-summary-row small { display: block; overflow-wrap: anywhere; margin-top: .2rem; color: rgba(246,241,232,.52); font-size: 10px; line-height: 1.35; }
-    .signoff-affirmations { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin-top: 1rem; }
-    .treasurer-signoff .signoff-affirmations > label, .treasurer-signoff > .signoff-authority { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: .6rem; align-items: start; min-width: 0; margin: 0; padding: .7rem .75rem; border: 1px solid rgba(246,241,232,.13); border-radius: 8px; color: rgba(246,241,232,.8); font-size: 11px; font-weight: 500; letter-spacing: normal; line-height: 1.4; text-transform: none; cursor: pointer; }
-    .treasurer-signoff .signoff-affirmations > label > input[type="checkbox"], .treasurer-signoff > .signoff-authority > input[type="checkbox"] { width: 16px; min-width: 16px; height: 16px; margin: 1px 0 0; padding: 0; border: 0; border-radius: 3px; box-shadow: none; accent-color: var(--gold); }
-    .treasurer-signoff .signoff-affirmations > label > span, .treasurer-signoff > .signoff-authority > span { display: block; min-width: 0; overflow-wrap: break-word; white-space: normal; }
+    .treasurer-signoff-head span:first-child { color: var(--gold-dark); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .treasurer-signoff h3 { margin: .2rem 0; color: var(--deep); font-family: var(--serif); font-size: 1.35rem; font-weight: 500; }
+    .treasurer-signoff-head p { margin: 0; max-width: 680px; color: var(--stone); font-size: 12px; line-height: 1.5; }
+    .signoff-review-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 1rem; }
+    .signoff-review-group, .signoff-approval { min-width: 0; padding: .9rem; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .signoff-review-group-head, .signoff-approval-head { display: grid; grid-template-columns: 28px minmax(0,1fr); gap: 9px; align-items: start; }
+    .signoff-review-group-head > span, .signoff-approval-head > span { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: rgba(201,162,91,.14); color: var(--gold-dark); font-size: 11px; font-weight: 800; }
+    .signoff-review-group-head > div, .signoff-approval-head > div { display: grid; gap: 2px; }
+    .signoff-review-group-head strong, .signoff-approval-head strong { color: var(--deep); font-size: 12px; }
+    .signoff-review-group-head small, .signoff-approval-head small { color: var(--stone); font-size: 10px; line-height: 1.35; }
+    .signoff-summary { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: .75rem; }
+    .signoff-summary-row { min-width: 0; padding: .6rem .65rem; border: 1px solid var(--line); border-radius: 8px; background: #fbfaf7; }
+    .signoff-summary-row > span { display: block; color: var(--gold-dark); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .signoff-summary-row strong { display: block; overflow-wrap: anywhere; margin-top: .2rem; color: var(--deep); font-size: 12px; }
+    .signoff-summary-row small { display: block; overflow-wrap: anywhere; margin-top: .15rem; color: var(--stone); font-size: 10px; line-height: 1.35; }
+    .signoff-affirmations { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: .7rem; }
+    .treasurer-signoff .signoff-affirmations > label, .treasurer-signoff .signoff-authority { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: .6rem; align-items: start; min-width: 0; margin: 0; padding: .65rem; border: 1px solid rgba(82,113,95,.2); border-radius: 8px; background: rgba(82,113,95,.045); color: var(--deep); font-size: 11px; font-weight: 500; letter-spacing: normal; line-height: 1.4; text-transform: none; cursor: pointer; }
+    .treasurer-signoff .signoff-affirmations > label > input[type="checkbox"], .treasurer-signoff .signoff-authority > input[type="checkbox"] { width: 16px; min-width: 16px; height: 16px; margin: 1px 0 0; padding: 0; border: 0; border-radius: 3px; box-shadow: none; accent-color: var(--sage); }
+    .treasurer-signoff .signoff-affirmations > label > span, .treasurer-signoff .signoff-authority > span { display: block; min-width: 0; overflow-wrap: break-word; white-space: normal; }
+    .signoff-record-note { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .35rem 1rem; margin: .75rem 0; padding: .65rem .75rem; border-radius: 8px; background: rgba(11,33,48,.055); color: var(--stone); font-size: 10px; }
+    .signoff-record-note strong { color: var(--deep); }
+    .signoff-approval { margin-top: .75rem; }
     .signoff-identity { display: grid; grid-template-columns: 1.3fr 1fr 1.5fr; gap: 8px; margin-top: 1rem; }
-    .signoff-identity label { display: block; margin-bottom: .3rem; color: var(--gold); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
-    .signoff-identity input { width: 100%; border: 1px solid rgba(246,241,232,.18); border-radius: 8px; background: rgba(246,241,232,.08); color: var(--cream); padding: .65rem; }
+    .signoff-identity label { display: block; margin-bottom: .3rem; color: var(--gold-dark); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .signoff-identity input { width: 100%; border: 1px solid var(--line); border-radius: 8px; background: #fffdf9; color: var(--deep); padding: .65rem; }
+    .signoff-identity small { display: block; margin-top: .3rem; color: var(--stone); font-size: 9px; line-height: 1.35; }
     .signoff-authority { margin-top: 8px; }
     .signoff-submit { display: flex; justify-content: flex-end; align-items: center; gap: 1rem; margin-top: .8rem; }
-    .signoff-submit p { flex: 1; margin: 0; color: #f1aa9d; font-size: 11px; }
-    @media (max-width: 900px) { .deterministic-onboarding .setup-wizard-body, .signoff-summary, .signoff-affirmations, .signoff-identity { grid-template-columns: 1fr; } .treasurer-signoff { margin: 0 .75rem .75rem; } .treasurer-signoff-head { flex-direction: column; } }
+    .signoff-submit p { flex: 1; margin: 0; color: #9a3428; font-size: 11px; }
+    @media (max-width: 900px) { .deterministic-onboarding .setup-wizard-body, .signoff-review-grid, .signoff-identity { grid-template-columns: 1fr; } .treasurer-signoff { margin: 0 .75rem .75rem; } .treasurer-signoff-head { flex-direction: column; } }
     /* Forms & toggles */
     .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
     .full { grid-column: 1 / -1; }

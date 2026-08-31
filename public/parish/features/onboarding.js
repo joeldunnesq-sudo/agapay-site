@@ -40,26 +40,26 @@ function onboardingSignoffMarkup(workflow) {
   const bankLabel = stripe.payoutBankName
     ? `${stripe.payoutBankName}${stripe.payoutBankLast4 ? ` ending ${stripe.payoutBankLast4}` : ''}`
     : 'Confirm the payout bank directly in Stripe';
-  const rows = [
-    [
+  const rows = {
+    organizationName: [
       'Organization',
       org.publicName || 'Not set',
       org.legalReceiptName && org.legalReceiptName !== org.publicName
         ? `Receipt name: ${org.legalReceiptName}`
         : 'Public and receipt names match',
     ],
-    [
+    stripeAccount: [
       'Stripe account',
       stripe.accountId || 'Not connected',
       `Charges ${stripe.chargesEnabled ? 'enabled' : 'blocked'} · payouts ${stripe.payoutsEnabled ? 'enabled' : 'blocked'} · refreshed ${stripeCheckedAt}`,
     ],
-    ['Payout bank', bankLabel, 'Bank details remain visible in Stripe only'],
-    [
+    payoutBank: ['Payout bank', bankLabel, 'Bank details remain visible in Stripe only'],
+    generalFund: [
       'General fund',
       general?.name || 'Not configured',
       general?.accountNumber ? `Account ${general.accountNumber}` : 'Unrestricted operating fund',
     ],
-    [
+    designatedFunds: [
       'Designated giving',
       `${designated.length} active item${designated.length === 1 ? '' : 's'}`,
       designated
@@ -67,26 +67,65 @@ function onboardingSignoffMarkup(workflow) {
         .filter(Boolean)
         .join(', ') || 'No designated funds or campaigns',
     ],
-    ['Recurring giving', giving.recurringGivingEnabled ? 'Enabled' : 'Disabled', 'Parish-selected setting'],
-    ['Receipt', receipt.legalName || org.publicName || 'Not set', receipt.contact || 'No contact configured'],
-    ['AGAPAY plan', plan.label || plan.id || 'Not selected', plan.status || 'Status unavailable'],
+    recurringGiving: [
+      'Recurring giving',
+      giving.recurringGivingEnabled ? 'Enabled' : 'Disabled',
+      'Parish-selected setting',
+    ],
+    receiptDetails: [
+      'Receipt',
+      receipt.legalName || org.publicName || 'Not set',
+      receipt.contact || 'No contact configured',
+    ],
+    agapayPlan: ['AGAPAY plan', plan.label || plan.id || 'Not selected', plan.status || 'Status unavailable'],
+  };
+  const reviewGroups = [
+    {
+      title: 'Where donations go',
+      detail: 'Confirm the connected account and payout destination.',
+      keys: ['stripeAccount', 'payoutBank'],
+    },
+    {
+      title: 'Parish identity and receipts',
+      detail: 'Confirm the names and contact information donors will receive.',
+      keys: ['organizationName', 'receiptDetails'],
+    },
+    {
+      title: 'Giving choices',
+      detail: 'Confirm the general fund, designated options, and recurring gifts.',
+      keys: ['generalFund', 'designatedFunds', 'recurringGiving'],
+    },
+    {
+      title: 'AGAPAY plan',
+      detail: 'Confirm the subscription selected for this parish.',
+      keys: ['agapayPlan'],
+    },
   ];
+  const reviewMarkup = reviewGroups
+    .map(
+      (group, index) => `<section class="signoff-review-group">
+        <div class="signoff-review-group-head"><span>${index + 1}</span><div><strong>${escapeHtml(group.title)}</strong><small>${escapeHtml(group.detail)}</small></div></div>
+        <div class="signoff-summary">${group.keys
+          .map((key) => {
+            const [label, value, detail] = rows[key];
+            return `<div class="signoff-summary-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></div>`;
+          })
+          .join('')}</div>
+        <div class="signoff-affirmations">${group.keys.map((key) => `<label><input class="treasurer-affirmation" type="checkbox" data-key="${key}"><span>${escapeHtml(treasurerAffirmationCopy[key])}</span></label>`).join('')}</div>
+      </section>`
+    )
+    .join('');
   return `<div class="treasurer-signoff" id="treasurerSignoff">
-      <div class="treasurer-signoff-head"><div><span>Required final approval</span><h3>Treasurer go-live signoff</h3><p>Review the frozen configuration below. All eight affirmations are recorded with the signer and timestamp.</p></div><span class="onboarding-snapshot">Snapshot ${escapeHtml(String(workflow.materialVersion || '').slice(0, 10))}</span></div>
-      <div class="signoff-summary">${rows.map(([label, value, detail]) => `<div class="signoff-summary-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></div>`).join('')}</div>
-      <div class="signoff-affirmations">${Object.entries(treasurerAffirmationCopy)
-        .map(
-          ([key, label]) =>
-            `<label><input class="treasurer-affirmation" type="checkbox" data-key="${key}"><span>${escapeHtml(label)}</span></label>`
-        )
-        .join('')}</div>
-      <div class="signoff-identity">
+      <div class="treasurer-signoff-head"><div><span>Required final approval</span><h3>Treasurer go-live signoff</h3><p>Review four short sections. Check each confirmation, add your name and title, then launch giving.</p></div></div>
+      <div class="signoff-review-grid">${reviewMarkup}</div>
+      <div class="signoff-record-note"><strong>Review record</strong><span class="onboarding-snapshot">Configuration ${escapeHtml(String(workflow.materialVersion || '').slice(0, 10))} · Stripe refreshed ${escapeHtml(stripeCheckedAt)}</span></div>
+      <section class="signoff-approval"><div class="signoff-approval-head"><span>5</span><div><strong>Approve the launch</strong><small>Your identity and authority are stored with all eight confirmations.</small></div></div><div class="signoff-identity">
         <div><label for="goLiveSignerName">Treasurer name</label><input id="goLiveSignerName" autocomplete="name" placeholder="Full legal name"></div>
         <div><label for="goLiveSignerTitle">Title</label><input id="goLiveSignerTitle" value="Parish Treasurer" autocomplete="organization-title"></div>
         <div><label for="goLiveSignerEmail">Treasurer email on file</label><input id="goLiveSignerEmail" type="email" value="${escapeHtml(summary.treasurerEmail || '')}" readonly aria-describedby="goLiveSignerEmailNote"><small id="goLiveSignerEmailNote">This email will be recorded with the signoff. No separate treasurer login is required.</small></div>
       </div>
       <label class="signoff-authority"><input id="goLiveAuthority" type="checkbox"><span>I am authorized to approve online giving for this parish.</span></label>
-      <div class="signoff-submit"><p id="goLiveError" role="alert"></p><button class="btn btn-gold" type="button" onclick="submitTreasurerGoLive(this)">Go Live</button></div>
+      <div class="signoff-submit"><p id="goLiveError" role="alert"></p><button class="btn btn-gold" type="button" onclick="submitTreasurerGoLive(this)">Go Live</button></div></section>
     </div>`;
 }
 function renderSimpleParishSetupWizard(workflow) {
