@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { runAccountingHealth } from './accounting-health-live.mjs';
+import { ACCOUNTING_READ_SMOKE_PATHS } from './lib/accounting-release-gates.mjs';
+import { readFile } from 'node:fs/promises';
 
 const root = '/api/parish/dashboard/test-lubbock';
 const env = {
@@ -48,6 +50,7 @@ async function run({ credentials = env, override = () => undefined } = {}) {
           summary: { payoutCount: 0, depositedCents: 0 },
           transactions: [],
         };
+      else if (path.endsWith('/payables/bills')) payload = { ok: true, bills: [] };
       else if (path.endsWith('/profiles'))
         payload = { accounting: { ready: true }, profiles: [{ id: env.TEST_LUBBOCK_STAFF_PROFILE_ID }] };
       else if (path.endsWith('/verify'))
@@ -78,6 +81,38 @@ assert.equal(healthy.evidence.payoutHistory, 'empty_no_payout_history_coverage')
 assert.equal(healthy.evidence.integrityScanRecorded, false);
 assert.equal(healthy.requests.filter((r) => r.method === 'POST').length, 2);
 assert.equal(healthy.evidence.checks.filter((c) => c.name.startsWith('accounting-') && c.passed).length, 11);
+assert.equal(healthy.evidence.checks.find((c) => c.name === 'accounting-attachments').reason, 'no_existing_bill');
+assert.equal(
+  healthy.requests.some((r) => r.path.endsWith('/attachments')),
+  false,
+  'Never query a fabricated bill or create one for a health check.'
+);
+
+// Check the production handler contracts, not just a permissive fetch fixture.
+const ledgerSource = await readFile(new URL('../src/handlers/accounting-ledger.js', import.meta.url), 'utf8');
+const reportsSource = await readFile(new URL('../src/handlers/accounting-setup-reports.js', import.meta.url), 'utf8');
+assert.equal(ACCOUNTING_READ_SMOKE_PATHS.find(([name]) => name === 'ledger')[1], '/general-ledger');
+assert.match(ledgerSource, /general-ledger\|account-registers\|fund-registers/);
+const reportPath = ACCOUNTING_READ_SMOKE_PATHS.find(([name]) => name === 'reports')[1];
+assert.ok(reportsSource.includes(`path === "${reportPath}"`));
+const attached = await run({
+  override: (path, options) => {
+    if (path.endsWith('/payables/bills')) return Response.json({ ok: true, bills: [{ id: 'existing-bill' }] });
+    if (path.endsWith('/attachments')) {
+      assert.equal(options.method, 'GET');
+      return Response.json({ ok: true, attachments: [] });
+    }
+  },
+});
+assert.equal(attached.evidence.status, 'passed');
+assert.equal(attached.evidence.checks.find((c) => c.name === 'accounting-attachments').passed, true);
+const missingAttachment = await run({
+  override: (path) => {
+    if (path.endsWith('/payables/bills')) return Response.json({ ok: true, bills: [{ id: 'existing-bill' }] });
+    if (path.endsWith('/attachments')) return Response.json({ error: 'failure' }, { status: 400 });
+  },
+});
+assert.equal(missingAttachment.evidence.status, 'failed', 'Do not suppress a real attachment read failure.');
 
 const missing = await run({ credentials: {} });
 assert.equal(missing.evidence.status, 'blocked_missing_credentials');
