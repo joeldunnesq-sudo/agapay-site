@@ -7,7 +7,7 @@ import { ACCOUNTING_READ_SMOKE_PATHS } from './lib/accounting-release-gates.mjs'
 const baseUrl = 'https://agapay.app';
 const parishId = 'test-lubbock';
 const root = `/api/parish/dashboard/${parishId}`;
-const secretNames = ['TEST_LUBBOCK_PARISH_PASSWORD', 'TEST_LUBBOCK_STAFF_PROFILE_ID', 'TEST_LUBBOCK_STAFF_PIN'];
+const secretNames = ['TEST_LUBBOCK_STAFF_PROFILE_ID', 'TEST_LUBBOCK_STAFF_PIN'];
 const reads = new Set([
   '/api/health',
   `${root}/payout-diagnostics`,
@@ -16,6 +16,8 @@ const reads = new Set([
 ]);
 
 export async function runAccountingHealth({ env = process.env, fetchImpl = fetch, now = new Date() } = {}) {
+  const suppliedSession = String(env.TEST_LUBBOCK_PARISH_SESSION || '').trim();
+  const required = suppliedSession ? secretNames : ['TEST_LUBBOCK_PARISH_PASSWORD', ...secretNames];
   const evidence = {
     generatedAt: now.toISOString(),
     baseUrl,
@@ -24,7 +26,8 @@ export async function runAccountingHealth({ env = process.env, fetchImpl = fetch
     checks: [],
     scope:
       'Read-only financial checks; authentication creates sessions and audit records. No payments, closes, imports, or new integrity scans.',
-    missing: secretNames.filter((name) => !String(env[name] || '').trim()),
+    authentication: suppliedSession ? 'existing_mfa_session' : 'password',
+    missing: required.filter((name) => !String(env[name] || '').trim()),
   };
   let token = '';
   let staffHeaders = {};
@@ -60,7 +63,15 @@ export async function runAccountingHealth({ env = process.env, fetchImpl = fetch
     try {
       const result = await request(path, body);
       const passed = result.status === 200 && Boolean(validate(result.payload));
-      evidence.checks.push({ name, status: result.status, passed });
+      // Whitelist diagnostic codes; never retain the MFA challenge, methods,
+      // pending token, recovery codes, or any raw response body.
+      const reason =
+        result.payload?.mfaRequired === true
+          ? 'mfa_required'
+          : ['mfa_relogin_required', 'mfa_step_up_required'].includes(result.payload?.code)
+            ? result.payload.code
+            : null;
+      evidence.checks.push({ name, status: result.status, passed, ...(reason ? { reason } : {}) });
       return passed ? result.payload : null;
     } catch {
       evidence.checks.push({ name, status: 0, passed: false });
@@ -73,14 +84,30 @@ export async function runAccountingHealth({ env = process.env, fetchImpl = fetch
     (p) => p?.ok === true && p?.checks?.d1?.ok === true && p?.checks?.kv?.ok === true
   );
   if (evidence.missing.length) return { ...evidence, status: 'blocked_missing_credentials' };
-  const login = await check(
-    'parish-login',
-    `${root}/session`,
-    (p) => typeof p?.token === 'string' && p.token.length > 0,
-    { password: env.TEST_LUBBOCK_PARISH_PASSWORD }
-  );
-  if (!login) return { ...evidence, status: 'blocked_parish_login' };
-  token = login.token;
+  if (suppliedSession) {
+    token = suppliedSession;
+    // The application's existing authorization and MFA checks validate the
+    // session. Never mint a token or fall back to password authentication.
+    const session = await check(
+      'parish-session',
+      `${root}/accounting-access/profiles`,
+      (p) => p?.accounting && Array.isArray(p.profiles)
+    );
+    if (!session) return { ...evidence, status: 'blocked_parish_session' };
+  } else {
+    const login = await check(
+      'parish-login',
+      `${root}/session`,
+      (p) => p?.mfaRequired !== true && typeof p?.token === 'string' && p.token.length > 0,
+      { password: env.TEST_LUBBOCK_PARISH_PASSWORD }
+    );
+    if (!login)
+      return {
+        ...evidence,
+        status: evidence.checks.at(-1)?.reason === 'mfa_required' ? 'blocked_parish_mfa' : 'blocked_parish_login',
+      };
+    token = login.token;
+  }
 
   const diagnostics = await check(
     'stripe-payout-diagnostics',
@@ -143,7 +170,12 @@ export async function runAccountingHealth({ env = process.env, fetchImpl = fetch
       p.token.length > 0,
     { profileId: env.TEST_LUBBOCK_STAFF_PROFILE_ID, pin: env.TEST_LUBBOCK_STAFF_PIN }
   );
-  if (!staff) return { ...evidence, status: 'blocked_staff_login' };
+  if (!staff)
+    return {
+      ...evidence,
+      status:
+        evidence.checks.at(-1)?.reason === 'mfa_step_up_required' ? 'blocked_staff_mfa_refresh' : 'blocked_staff_login',
+    };
   staffHeaders = { 'X-AGAPAY-Accounting-Profile': staff.profile.id, 'X-AGAPAY-Accounting-Token': staff.token };
   for (const [section, suffix] of ACCOUNTING_READ_SMOKE_PATHS) {
     const payload = await check(
@@ -169,6 +201,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   for (const check of evidence.checks) console.log(`${check.passed ? 'PASS' : 'FAIL'} - ${check.name}`);
   console.log(`Accounting health: ${evidence.status}`);
   if (evidence.missing.length) console.log(`Missing protected secrets: ${evidence.missing.join(', ')}`);
+  if (evidence.status === 'blocked_parish_mfa')
+    console.log('NOTICE - Password accepted; complete MFA and supply a fresh authenticated parish session.');
+  if (evidence.status === 'blocked_parish_session' || evidence.status === 'blocked_staff_mfa_refresh')
+    console.log(
+      'NOTICE - The supplied session was rejected or needs fresh MFA. Sign in with MFA again; no fallback or retry was attempted.'
+    );
   if (evidence.payoutHistory === 'empty_no_payout_history_coverage')
     console.log('NOTICE - No payout history; historical payout coverage remains unverified.');
   if (evidence.integrityScanRecorded === false)

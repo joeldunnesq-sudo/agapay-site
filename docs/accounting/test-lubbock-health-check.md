@@ -11,11 +11,19 @@ Configure these encrypted secrets in the repository's **production** GitHub envi
 - `TEST_LUBBOCK_PARISH_PASSWORD`: the existing Test Lubbock dashboard password.
 - `TEST_LUBBOCK_STAFF_PROFILE_ID`: an existing named Accounting administrator's profile ID.
 - `TEST_LUBBOCK_STAFF_PIN`: that profile's existing six-digit PIN.
+- `TEST_LUBBOCK_PARISH_SESSION`: optional, short-lived parish session issued by
+  the normal Test Lubbock login **after completing MFA**. This takes precedence
+  over the password. Production requires MFA, so password alone cannot finish
+  login. Treat the session as a password; never put it in chat, source, artifacts,
+  or a workflow input. Refresh it immediately before a run and remove the GitHub
+  secret after the manual check. The server enforces session validity and fresh
+  MFA for Accounting PIN verification; the workflow never fabricates a session
+  or falls back to password login if a supplied session is rejected.
 
 Do not copy staging credentials, reset passwords, create staff profiles, disable
 MFA, or put credentials in source, chat, or workflow inputs to make the run pass.
-If parish login requires MFA, this unattended workflow reports blocked access;
-it does not bypass the challenge. The profile needs permission to read the eight
+If password login requires MFA, this unattended workflow reports
+`blocked_parish_mfa`; it does not bypass the challenge. The profile needs permission to read the eight
 accounting sections, including governance health.
 
 After the workflow is available on the repository's default branch, run:
@@ -42,4 +50,7 @@ isolation gate, transaction posting, check printing, or a fresh integrity scan.
 On 2026-08-31, inspection found no secrets in the production environment and
 confirmed that the normal post-deploy smoke had skipped authenticated checks.
 The staging run `33350317424` failed at payout diagnostics with HTTP 502.
-Production credentials must be configured before this new check can pass.
+Run `33416463802`, attempt 2, confirmed that the updated password was accepted
+(HTTP 200), but production returned an MFA challenge rather than a session.
+The workflow needs a session issued after completing MFA before authenticated
+financial checks can run. No Stripe or Accounting reads were reached in that attempt.

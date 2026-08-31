@@ -61,6 +61,8 @@ async function run({ credentials = env, override = () => undefined } = {}) {
   const serialized = JSON.stringify(evidence);
   for (const secret of [
     ...Object.values(env),
+    'private-mfa-session',
+    'private-pending-mfa-token',
     'private-parish-token',
     'private-staff-token',
     'private@example.test',
@@ -81,10 +83,49 @@ const missing = await run({ credentials: {} });
 assert.equal(missing.evidence.status, 'blocked_missing_credentials');
 assert.equal(missing.requests.length, 1);
 const mfa = await run({
-  override: (path) => (path.endsWith('/session') ? Response.json({ mfaRequired: true }) : undefined),
+  override: (path) =>
+    path.endsWith('/session')
+      ? Response.json({ mfaRequired: true, pendingToken: 'private-pending-mfa-token' })
+      : undefined,
 });
-assert.equal(mfa.evidence.status, 'blocked_parish_login');
+assert.equal(mfa.evidence.status, 'blocked_parish_mfa');
 assert.equal(mfa.requests.length, 2, 'Never bypass MFA.');
+const sessionCredentials = {
+  ...env,
+  TEST_LUBBOCK_PARISH_PASSWORD: '',
+  TEST_LUBBOCK_PARISH_SESSION: 'private-mfa-session',
+};
+const session = await run({ credentials: sessionCredentials });
+assert.equal(session.evidence.status, 'passed');
+assert.equal(session.evidence.authentication, 'existing_mfa_session');
+assert.equal(
+  session.requests.some((r) => r.path.endsWith('/session')),
+  false,
+  'A verified session must not fall back to password login.'
+);
+assert.equal(
+  session.requests.filter((r) => r.method === 'POST').length,
+  1,
+  'Only Accounting PIN verification posts when using an existing session.'
+);
+const rejectedSession = await run({
+  credentials: sessionCredentials,
+  override: (path) =>
+    path.endsWith('/profiles') ? Response.json({ code: 'mfa_relogin_required' }, { status: 401 }) : undefined,
+});
+assert.equal(rejectedSession.evidence.status, 'blocked_parish_session');
+assert.equal(
+  rejectedSession.requests.length,
+  2,
+  'Rejected sessions must stop before any financial request or PIN attempt.'
+);
+const staleMfa = await run({
+  credentials: sessionCredentials,
+  override: (path) =>
+    path.endsWith('/verify') ? Response.json({ code: 'mfa_step_up_required' }, { status: 428 }) : undefined,
+});
+assert.equal(staleMfa.evidence.status, 'blocked_staff_mfa_refresh');
+assert.equal(staleMfa.requests.filter((r) => r.path.endsWith('/verify')).length, 1);
 const pin = await run({
   override: (path) => (path.endsWith('/verify') ? Response.json({ error: 'bad PIN' }, { status: 401 }) : undefined),
 });
