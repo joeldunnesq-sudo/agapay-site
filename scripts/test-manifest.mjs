@@ -114,6 +114,10 @@ const accounting = [
 
 const productUi = [
   'scripts/parish-dashboard-browser-tests.mjs',
+  'scripts/parish-onboarding-browser-tests.mjs',
+  'scripts/parish-campaign-browser-tests.mjs',
+  'scripts/parish-stewardship-browser-tests.mjs',
+  'scripts/parish-giving-browser-tests.mjs',
   'scripts/parish-dashboard-modules-tests.mjs',
   'scripts/commerce-parish-ui-tests.mjs',
   'scripts/events-commerce-tests.mjs',

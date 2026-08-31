@@ -28,7 +28,7 @@ for (const pagePath of ['public/parish/dashboard.html', 'public/parish/login.htm
     `${pagePath} must load diagnostics and lifecycle before core`
   );
 }
-assert.ok(app.split(/\r?\n/).length < 6_900, 'app.js grew past its legacy-shell ceiling; move feature code out');
+assert.ok(app.split(/\r?\n/).length < 2_300, 'app.js grew past its legacy-shell ceiling; move feature code out');
 assert.ok(worker.split(/\r?\n/).length < 4_000, 'worker.js grew past its composition-root ceiling; move routes out');
 
 const featureFiles = (await readdir(new URL('public/parish/features/', root), { recursive: true }))

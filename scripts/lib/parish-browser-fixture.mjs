@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { captureBrowserErrors } from './browser-error-gate.mjs';
 
 const publicRoot = fileURLToPath(new URL('../../public/', import.meta.url));
-export const origin = 'http://parish.test';
+// Match production's secure context, including crypto.randomUUID in action handlers.
+export const origin = 'https://parish.test';
 export const parish = {
   parishId: 'synthetic-parish',
   parishName: 'Synthetic Test Parish',
@@ -69,7 +70,7 @@ export async function openParishFixture(browser, dashboardResponse = () => ({ pa
     }
     if (url.pathname === base) {
       requests++;
-      const response = await dashboardResponse(requests);
+      const response = await dashboardResponse(requests, route.request());
       if (response.abort) return route.abort('failed');
       if (response.raw !== undefined)
         return route.fulfill({ status: response.status || 200, body: response.raw, contentType: 'text/html' });
@@ -77,10 +78,18 @@ export async function openParishFixture(browser, dashboardResponse = () => ({ pa
     }
     if (url.pathname.startsWith('/api/')) {
       const suffix = url.pathname.slice(base.length);
-      if (url.pathname.startsWith(base) && Object.hasOwn(background, suffix)) {
+      const responseKey = Object.hasOwn(apiResponses, url.pathname) ? url.pathname : suffix;
+      if (
+        Object.hasOwn(apiResponses, url.pathname) ||
+        (url.pathname.startsWith(base + '/') &&
+          (Object.hasOwn(background, suffix) || Object.hasOwn(apiResponses, suffix)))
+      ) {
+        const override = apiResponses[responseKey];
+        const response = typeof override === 'function' ? await override(route.request()) : override;
+        if (response?.abort) return route.abort('failed');
         return route.fulfill({
-          status: apiResponses[suffix]?.status || 200,
-          json: apiResponses[suffix]?.body || background[suffix],
+          status: response?.status || 200,
+          json: response?.body || background[suffix],
         });
       }
       unexpected.push(url.pathname);

@@ -3,12 +3,10 @@
 /* exported loadDashboard, bookstoreCatalogState, bookstoreLowStockOnly, parishFeatureRequests */
 /* global dashboardLoadPromise:writable, currentParish:writable,
   bookstoreCatalogState:writable, bookstoreLowStockOnly:writable, parishFeatureRequests:writable,
-  activeTab, stewardshipState, setStatus, authHeaders, refreshSubscriptionStatus,
+  activeTab, setStatus, authHeaders, refreshSubscriptionStatus,
   refreshStripeStatus, refreshParishLibraryNavigationStatus, saveSession, renderDashboard,
   syncBookstoreLowStockNavigation, loadBookstoreLowStockBadge, switchTab, setSacramentsDashboardTab,
-  showParishFeatureRequestPopup, updateStewardshipBadges, isParishPlusActive, loadGivingSummary,
-  loadRecurringHealth, renderQrCode, loadCommemorations, loadGivingHistory, loadStewardshipPanel,
-  loadReconciliation */
+  showParishFeatureRequestPopup, updateStewardshipBadges, isParishPlusActive, loadRegisteredParishFeature */
 
 // Dashboard boot/retry lifecycle. Read legacy shared state only when called.
 function setDashboardBootMessage(title, message) {
@@ -115,20 +113,9 @@ async function loadDashboardInner(btn) {
     parishFeatureRequests = data.featureRequests || [];
     showParishFeatureRequestPopup(data.featureRequests || []);
     updateStewardshipBadges(isParishPlusActive(), { renderPanel: false });
-    setTimeout(() => loadGivingSummary(), 250);
-    setTimeout(() => loadRecurringHealth(), 500);
-    setTimeout(async () => {
-      await renderQrCode();
-    }, 750);
-    setTimeout(() => loadCommemorations(), 1000);
-    if (['history', 'givers', 'options'].includes(activeTab)) {
-      loadGivingHistory();
-    } else {
-      setTimeout(() => loadGivingHistory(), 1250);
-    }
-    stewardshipState.loaded = false;
-    if (activeTab === 'stewardship') loadStewardshipPanel(true);
-    if (activeTab === 'reconcile') loadReconciliation();
+    window.ParishFeatureRegistry?.get('giving')?.refresh();
+    window.ParishFeatureRegistry?.get('stewardship')?.invalidate();
+    if (activeTab === 'stewardship') loadRegisteredParishFeature('stewardship', true);
     if (initialLoad) finishDashboardBoot();
   } catch (err) {
     currentParish = previousParish;

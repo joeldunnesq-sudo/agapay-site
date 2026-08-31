@@ -15,7 +15,7 @@ const liveDashboard = dashboard.slice(
 );
 
 const checks = [
-  ['Sacraments is owned by a registered feature module loaded before the dashboard core', dashboard.indexOf('/parish/feature-registry.js?v=20260830features1') < dashboard.indexOf('/parish/features/sacraments.js?v=20260830features1') && dashboard.indexOf('/parish/features/sacraments.js?v=20260830features1') < dashboard.indexOf('/parish/app.js?v=20260830features1') && sacramentsFeature.includes("ParishFeatureRegistry.register('sacraments'") && !coreApp.includes('let sacramentsState')],
+  ['Sacraments is owned by a registered feature module loaded before the dashboard core', dashboard.indexOf('/parish/feature-registry.js?v=20260831giving1') < dashboard.indexOf('/parish/features/sacraments.js?v=20260831giving1') && dashboard.indexOf('/parish/features/sacraments.js?v=20260831giving1') < dashboard.indexOf('/parish/app.js?') && sacramentsFeature.includes("ParishFeatureRegistry.register('sacraments'") && !coreApp.includes('let sacramentsState')],
   ['Sacraments removes the unused dashboard spacer when active', app.includes(`classList.toggle('sacraments-tab-active', tab === 'sacraments')`) && css.includes('.content.sacraments-tab-active > .detail-wrap { display: none; }') && css.includes('.content.sacraments-tab-active > #tab-sacraments.active {')],
   ['live Sacraments uses the shared AGAPAY feature hero', dashboard.includes('sac-admin-head sw-suite-hero') && dashboard.includes('sac-admin-status sw-suite-hero-status agapay-feature-actions')],
   ['Sacraments hero omits the redundant refresh control', !liveDashboard.includes('sw-suite-refresh-btn') && !liveDashboard.includes('Refresh Sacraments &amp; Services')],
