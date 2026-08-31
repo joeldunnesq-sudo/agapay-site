@@ -113,7 +113,7 @@ assert.match(sources["src/handlers/parish-video.js"], /parts\[0\] === "upload-ur
 assert.match(sources["public/parish/app.js"], /uploadVideoDirectly\(data\.uploadUrl, file/);
 assert.match(sources["public/parish/app.js"], /KOINONIA_NATIVE_VIDEO_UPLOADS_VISIBLE\s*=\s*false/, "native upload UI must stay behind the dormant product flag");
 assert.match(sources["public/parish/dashboard.html"], /data-native-video-management hidden[\s\S]*data-native-video-upload[\s\S]*createVideoUpload\(event\)/, "native Stream uploads must remain hidden while existing records can still be managed");
-assert.match(sources["public/parish/app.js"], /deleteVideo[\s\S]*method:'DELETE'[\s\S]*Video permanently deleted/, "native videos of every status must offer permanent deletion");
+assert.match(sources["public/parish/app.js"], /deleteVideo[\s\S]*method:\s*'DELETE'[\s\S]*Video permanently deleted/, "native videos of every status must offer permanent deletion");
 assert.match(sources["public/parish/dashboard.html"], /Choose the YouTube privacy setting intentionally[\s\S]*Public:[\s\S]*searchable[\s\S]*Unlisted:[\s\S]*anyone with the link can watch[\s\S]*does not require a login[\s\S]*Private:[\s\S]*explicitly invited Google accounts[\s\S]*every viewer needs a Google account and an individual invitation/i);
 assert.match(sources["public/parish/dashboard.html"], /Announcements, Groups, and Teaching[\s\S]*verified-household gate[\s\S]*YouTube-hosted video—even Unlisted—does not carry that same guarantee[\s\S]*AGAPAY cannot control YouTube access[\s\S]*youtubeVideoUrl[\s\S]*Validate and add/i, "privacy guidance must be permanent and appear before submission controls");
 assert.match(sources["public/myagapay/media.html"], /href="\/myagapay\/parish-life"[^>]*>← Back</);

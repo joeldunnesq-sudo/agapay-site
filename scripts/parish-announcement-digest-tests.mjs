@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
@@ -159,7 +160,7 @@ assert.equal(sent.length, 1);
 const workerSource = readWorkerCompositionSource(root);
 const feedHtml = readFileSync(path.join(root, "public", "myagapay", "feed.html"), "utf8");
 const feedJs = readFileSync(path.join(root, "public", "myagapay", "feed.js"), "utf8");
-const parishApp = readFileSync(path.join(root, "public", "parish", "app.js"), "utf8");
+const parishApp = readParishDashboardSource();
 assert.match(
   workerSource,
   /['"]\/api\/donor\/digest\/unsubscribe['"],\s*['"]handleAnnouncementDigestUnsubscribe['"]/

@@ -122,4 +122,44 @@ for (const fullSuite of [true, false]) {
 dashboard.run("switchCommerceProduct('events')");
 assert.equal(dashboard.run('commerceProductState'), 'bookstore', 'bookstore-only tiers cannot select Events');
 assert.deepEqual(calls, []);
-console.log('PASS - classic-script startup, login authentication, and Commerce product lifecycle and tier defaults');
+
+// Real Koinonia loading should cache data, refresh on demand, and keep the
+// selected publishing channel. Responses stay entirely within this test.
+const requests = [];
+dashboard.run(
+  "currentParish = { parishId: 'test-parish', parishLifeAvailable: true, communicationsEnabled: true, accountingAvailable: true }"
+);
+dashboard.context.fetch = async (url) => {
+  requests.push(url);
+  return { ok: true, status: 200, json: async () => ({}) };
+};
+await dashboard.run("loadRegisteredParishFeature('koinonia')");
+assert.deepEqual(
+  requests.splice(0),
+  ['', '/teaching', '/video', '/blog'].map((path) => '/api/parish/dashboard/test-parish/communications' + path)
+);
+assert.equal(dashboard.run('communicationsState.loaded'), true);
+await dashboard.run("loadRegisteredParishFeature('koinonia')");
+assert.equal(requests.length, 0, 'loaded Koinonia content should be cached');
+dashboard.run("setKoinoniaStudioView('audio')");
+await dashboard.run("ParishFeatureRegistry.get('koinonia').refresh()");
+assert.equal(requests.length, 4);
+assert.equal(dashboard.run('koinoniaStudioView'), 'audio');
+
+// A locked Accounting workspace must still render named-staff access after
+// the parallel workspace requests, rather than failing due to a missing global.
+const accountingPane = { dataset: {}, innerHTML: '', closest: () => null };
+dashboard.elements.set('accountingPane', accountingPane);
+dashboard.context.fetch = async (url) => ({
+  ok: !url.endsWith('/accounting/setup'),
+  status: url.endsWith('/accounting/setup') ? 401 : 200,
+  json: async () =>
+    url.endsWith('/accounting-access/profiles')
+      ? { profiles: [{ id: 'staff', displayName: 'Test Treasurer', roleTemplate: 'treasurer' }] }
+      : {},
+});
+await dashboard.run("loadRegisteredParishFeature('accounting')");
+assert.match(accountingPane.innerHTML, /Who is using Accounting\?/);
+assert.match(accountingPane.innerHTML, /Test Treasurer/);
+assert.match(accountingPane.innerHTML, /verifyAccountingStaff\(event\)/);
+console.log('PASS - classic-script startup, login and staff authentication, Commerce tiers, and Koinonia load/refresh');

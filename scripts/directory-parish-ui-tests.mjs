@@ -1,10 +1,11 @@
 import fs from 'node:fs';
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 
 const dashboard = fs.readFileSync(new URL('../public/parish/dashboard.html', import.meta.url), 'utf8');
 const coreApp = fs.readFileSync(new URL('../public/parish/app.js', import.meta.url), 'utf8');
 const directoryFeature = fs.readFileSync(new URL('../public/parish/features/directory.js', import.meta.url), 'utf8');
 const sacramentsFeature = fs.readFileSync(new URL('../public/parish/features/sacraments.js', import.meta.url), 'utf8');
-const app = `${coreApp}\n${directoryFeature}\n${sacramentsFeature}`;
+const app = `${readParishDashboardSource()}\n${directoryFeature}\n${sacramentsFeature}`;
 const css = fs.readFileSync(new URL('../public/parish/redesign.css', import.meta.url), 'utf8');
 const stewardshipCss = fs.readFileSync(new URL('../public/styles/stewardship.css', import.meta.url), 'utf8');
 const adminService = fs.readFileSync(new URL('../src/directory/admin.js', import.meta.url), 'utf8');

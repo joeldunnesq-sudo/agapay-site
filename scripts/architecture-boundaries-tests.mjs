@@ -18,7 +18,7 @@ assert.match(architectureGuide, /New feature code should not be added directly/)
 assert.ok(dashboard.length < 160_000, 'dashboard.html exceeded its shell size ceiling');
 
 const app = await read('public/parish/app.js');
-assert.ok(app.split(/\r?\n/).length < 11_500, 'app.js grew past its legacy-shell ceiling; move feature code out');
+assert.ok(app.split(/\r?\n/).length < 6_900, 'app.js grew past its legacy-shell ceiling; move feature code out');
 assert.ok(worker.split(/\r?\n/).length < 4_000, 'worker.js grew past its composition-root ceiling; move routes out');
 
 const featureFiles = (await readdir(new URL('public/parish/features/', root), { recursive: true }))

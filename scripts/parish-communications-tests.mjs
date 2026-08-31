@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
@@ -198,7 +199,7 @@ assert.doesNotMatch(handlerSource, /parish_content_reads/, "the announcement fea
 assert.doesNotMatch(handlerSource, /directory\/media\.js/, "announcement images must not use Directory's consent-oriented media pipeline");
 assert.match(handlerSource, /rateLimit\(request, env, "parish-communications-upload"/);
 assert.match(handlerSource, /PARISH_EDITORIAL_IMAGE_MAX_BYTES/);
-const adminUiSource = readFileSync(path.join(root, "public", "parish", "app.js"), "utf8");
+const adminUiSource = readParishDashboardSource();
 const dashboardSource = readFileSync(path.join(root, "public", "parish", "dashboard.html"), "utf8");
 assert.match(adminUiSource, /toggleAnnouncementReaders/);
 assert.match(adminUiSource, /\/readers/);
@@ -208,7 +209,7 @@ assert.match(adminUiSource, /category: document\.getElementById\('announcementCa
 assert.match(dashboardSource, /id="announcementCategory"[\s\S]*?value="general"[\s\S]*?value="services"[\s\S]*?value="education"/);
 assert.match(dashboardSource, /id="announcementEditDialog"[\s\S]*?id="announcementEditTitle"[\s\S]*?id="announcementEditCategory"[\s\S]*?id="announcementEditBody"[\s\S]*?id="announcementEditHeroImage"[\s\S]*?id="announcementEditPinned"/);
 assert.match(adminUiSource, /function saveAnnouncementEdit\([\s\S]*?title:[\s\S]*?category:[\s\S]*?body:[\s\S]*?pinned:/, "the full announcement editor must save every editable field");
-assert.match(adminUiSource, /async function deleteAnnouncement\([\s\S]*?method:'DELETE'/, "the dashboard must expose permanent announcement deletion");
+assert.match(adminUiSource, /async function deleteAnnouncement\([\s\S]*?method:\s*'DELETE'/, "the dashboard must expose permanent announcement deletion");
 assert.match(handlerSource, /parts\.length === 1 && request\.method === "DELETE"[\s\S]*?deleteParishAnnouncement/, "the announcement API must authorize and handle permanent deletion");
 const feedUiSource = readFileSync(path.join(root, "public", "myagapay", "feed.js"), "utf8");
 assert.match(feedUiSource, /All[\s\S]*Pinned[\s\S]*Services[\s\S]*Events[\s\S]*Youth[\s\S]*Outreach[\s\S]*Education[\s\S]*General/);

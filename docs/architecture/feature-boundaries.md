@@ -54,6 +54,11 @@ Tuition remain disabled placeholders until their implementations ship. Existing
 `commerce`, `bookstore`, and `parishplus` navigation aliases still open Commerce.
 Payment settlement profiles remain in the core because Giving also uses them.
 
+Koinonia (`features/koinonia.js`) owns the existing `communications` dashboard
+tab. Its supporting files cover announcements and overview, ministries and
+calendar settings, prayer requests, and audio/video publishing. It continues to
+use the Directory feature's API helper for ministry administration.
+
 Source-based regression tests use `scripts/lib/parish-dashboard-source.mjs` to
 read the actual extracted files listed in dashboard HTML. Boundary checks still
 read the core separately. `parish-dashboard-runtime-tests.mjs` executes the

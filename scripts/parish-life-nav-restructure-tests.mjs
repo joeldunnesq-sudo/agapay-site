@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";
@@ -37,7 +38,7 @@ const [landing, landingScript, shell, donorApp, calendar, feed, groups, teaching
 ].map((file) => readFile(new URL(`../public/myagapay/${file}`, import.meta.url), "utf8")));
 const [parishDashboard, parishDashboardApp, parishDashboardStyles] = await Promise.all([
   "dashboard.html", "app.js", "style.css",
-].map((file) => readFile(new URL(`../public/parish/${file}`, import.meta.url), "utf8")));
+].map((file) => file === "app.js" ? readParishDashboardSource() : readFile(new URL(`../public/parish/${file}`, import.meta.url), "utf8")));
 const donorStyles = await readFile(new URL("../public/donor/style.css", import.meta.url), "utf8");
 assert.match(donorStyles, /\.parish-life-community-tools \{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, "all three Community Tools should sit in one row on wider screens");
 assert.match(donorStyles, /\.parish-life-community-tool \{[^}]*min-height:82px/, "Community Tool cards should remain compact");

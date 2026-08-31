@@ -107,7 +107,8 @@ assert.match(parishApp, /saveParishBlogSettings[\s\S]*communicationsApi\('\/blog
 assert.match(dashboard, /<span class="nav-label">Koinonia<\/span>/, "the parish navigation should use the donor-facing Koinonia name");
 assert.match(dashboard, /data-koinonia-view="overview"[\s\S]*data-koinonia-view="announcements"[\s\S]*data-koinonia-view="audio"[\s\S]*data-koinonia-view="video"[\s\S]*data-koinonia-view="news"/, "Koinonia Studio should separate publishing channels");
 assert.match(dashboard, /koinoniaPublishedAnnouncements[\s\S]*koinoniaPublishedAudio[\s\S]*koinoniaPublishedVideo[\s\S]*koinoniaBlogStatus/, "the studio overview should expose live channel health");
-assert.match(parishApp, /function setKoinoniaStudioView[\s\S]*function renderKoinoniaOverview/);
+assert.match(parishApp, /function setKoinoniaStudioView/);
+assert.match(parishApp, /function renderKoinoniaOverview/);
 assert.match(parishApp, /renderKoinoniaOverview\(\);[\s\S]*setKoinoniaStudioView\(koinoniaStudioView\)/, "loaded content should refresh the studio overview");
 assert.match(landing, /Recent News/);
 assert.match(landing, /post\.imageUrl[\s\S]*class="parish-life-blog-image"[\s\S]*loading="lazy"[\s\S]*referrerpolicy="no-referrer"/, "Koinonia Recent News should render lazy, privacy-conscious article images when feeds provide them");

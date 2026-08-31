@@ -11,17 +11,18 @@ const paths = {
   sacraments: new URL("public/parish/features/sacraments.js", root),
   accounting: new URL("public/parish/features/accounting.js", root),
   commerce: new URL("public/parish/features/commerce.js", root),
+  koinonia: new URL("public/parish/features/koinonia.js", root),
   notifications: new URL("src/lib/parish-notifications.js", root),
 };
 
-const [dashboard, registry, core, directory, library, sacraments, accounting, commerce, notifications] = await Promise.all(
+const [dashboard, registry, core, directory, library, sacraments, accounting, commerce, koinonia, notifications] = await Promise.all(
   Object.values(paths).map((path) => readFile(path, "utf8")),
 );
 
 const registryScript = '/parish/feature-registry.js?v=20260830features1';
 const coreScript = '/parish/app.js?v=20260830features1';
 assert.ok(dashboard.includes(registryScript), 'feature registry must be loaded');
-for (const feature of ["directory", "library", "sacraments"]) {
+for (const feature of ["directory", "library", "sacraments", "accounting", "commerce", "koinonia"]) {
   const featureScript = `/parish/features/${feature}.js?v=20260830features1`;
   assert.ok(dashboard.includes(featureScript), `${feature} feature script must be loaded`);
   assert.ok(dashboard.indexOf(registryScript) < dashboard.indexOf(featureScript), `registry must load before ${feature}`);
@@ -46,10 +47,13 @@ assert.doesNotMatch(core, /function (loadBookstoreCatalogTab|switchCommerceProdu
 assert.match(core, /loadRegisteredParishFeature\('commerce'\)/);
 assert.match(commerce, /ParishFeatureRegistry\.register\('commerce'/);
 assert.match(core, /function loadSettlementProfilesPanel\(/, 'Giving and Commerce share payment routing in the core');
+assert.doesNotMatch(core, /function (loadCommunicationsTab|renderKoinoniaOverview)/);
+assert.match(core, /loadRegisteredParishFeature\('koinonia'\)/);
+assert.match(koinonia, /ParishFeatureRegistry\.register\('koinonia'/);
 
 const coreStats = await stat(paths.core);
-assert.ok(coreStats.size < 950_000, `dashboard core grew past its 950 KB guardrail (${coreStats.size} bytes)`);
-assert.ok(core.split(/\r?\n/).length < 12_000, "dashboard core grew past its 12,000-line guardrail");
+assert.ok(coreStats.size < 460_000, `dashboard core grew past its 460 KB guardrail (${coreStats.size} bytes)`);
+assert.ok(core.split(/\r?\n/).length < 6_900, "dashboard core grew past its 6,900-line guardrail");
 
 const notificationStats = await stat(paths.notifications);
 assert.doesNotMatch(notifications, /onboardingPdfB64/, "the retired embedded onboarding PDF must not return");
