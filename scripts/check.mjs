@@ -30,12 +30,14 @@ assert.ok(siteChrome.includes('class="btn-demo${activeKey === "demo" ? " active"
 assert.ok(siteChrome.includes('class="drawer-demo" href="/give/request-demo"'), "canonical mobile navigation should present Request a Demo as an action button");
 assert.ok(!siteChrome.includes('{ href: "/give/request-demo", label: "Request Demo", key: "demo" }'), "Request a Demo should not remain in the canonical text-link group");
 for (const link of [
-  '{ href: "/give#pricing", label: "Pricing", key: "pricing" }',
-  '{ href: "/give#security", label: "Security", key: "security" }',
   '{ href: "/give", label: "Platform", key: "platform" }',
   '{ href: "/about", label: "About", key: "about" }',
   '{ href: "/contact", label: "Contact", key: "contact" }'
 ]) assert.ok(siteChrome.includes(link), `canonical static-site navigation should include ${link}`);
+for (const link of [
+  '{ href: "/give#pricing", label: "Pricing", key: "pricing" }',
+  '{ href: "/give#security", label: "Security", key: "security" }'
+]) assert.ok(!siteChrome.includes(link), `canonical static-site navigation should not include ${link}`);
 assert.ok(!siteChrome.includes('{ href: "/give#why", label: "Why AGAPAY"'), "canonical primary navigation should not duplicate the Why section integrated into /give");
 assert.ok(!siteChrome.includes('{ href: "/learn", label: "AGAPAY Learn", key: "learn" }') && !siteChrome.includes('{ href: "/design", label: "AGAPAY Design", key: "design" }'), "canonical primary navigation should stay focused on AGAPAY Give");
 assert.ok(!/btn-donate[\s\S]{0,180}shellIcon\("giving-hand"\)/.test(siteChrome), "canonical Start for free button should not include an unrelated giving-hand icon");
@@ -720,7 +722,14 @@ assert.ok(platformHome.includes("Koinonia") && platformHome.includes("Sacraments
 assert.ok(platformHome.includes('src="/site-chrome.js"'), "platform homepage should render the canonical navigation that routes giving-focused visitors to /give");
 assert.ok(givingOverview.includes('rel="canonical" href="https://agapay.app/give"') && givingOverview.includes("The Orthodox Giving App <em>for all of parish life.</em>"), "the consolidated Give page should publish one canonical URL and the approved Orthodox giving headline");
 const canonicalChrome = await readFile("public/site-chrome.js", "utf8");
-assert.ok(canonicalChrome.includes('{ href: "/give#pricing", label: "Pricing"') && canonicalChrome.includes('{ href: "/give#security", label: "Security"') && canonicalChrome.includes('{ href: "/give", label: "Platform"'), "canonical navigation should link to the Give overview, pricing, and security");
+assert.ok(
+  canonicalChrome.includes('{ href: "/give", label: "Platform"')
+    && canonicalChrome.includes('{ href: "/about", label: "About"')
+    && canonicalChrome.includes('{ href: "/contact", label: "Contact"')
+    && !canonicalChrome.includes('{ href: "/give#pricing", label: "Pricing"')
+    && !canonicalChrome.includes('{ href: "/give#security", label: "Security"'),
+  "canonical navigation should link to Platform, About, and Contact without Pricing or Security"
+);
 assert.ok(canonicalChrome.includes('return hash.slice(1)') && canonicalChrome.includes('return "platform"'), "canonical navigation should recognize anchored Give destinations");
 assert.ok(canonicalChrome.includes('const isHomepage = path === "/" || path === "/index.html"') && canonicalChrome.includes('${isHomepage ? "" :'), "canonical footer should hide Marketplace and Directory on the homepage");
 assert.ok(canonicalChrome.includes('href="/register"') && canonicalChrome.includes("Start for free"), "canonical marketing navigation should offer the free registration CTA");
