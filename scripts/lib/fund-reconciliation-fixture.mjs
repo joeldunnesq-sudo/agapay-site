@@ -9,7 +9,9 @@ import {
   handleParishReconciliationClose,
 } from '../../src/handlers/parish-reconciliation.js';
 
-export async function createFundReconciliationFixture({ month = fundReportPeriod().month } = {}) {
+export async function createFundReconciliationFixture({
+  month = fundReportPeriod({ timezone: 'America/Chicago' }).month,
+} = {}) {
   const db = new DatabaseSync(':memory:');
   db.exec(`CREATE TABLE app_settings(key TEXT PRIMARY KEY,value TEXT,updated_at TEXT);
     CREATE TABLE registrations(reference TEXT PRIMARY KEY,parish_id TEXT,data TEXT,updated_at TEXT,received_at TEXT);
@@ -96,7 +98,9 @@ export async function createFundReconciliationFixture({ month = fundReportPeriod
     Date.parse(month + '-' + String(day).padStart(2, '0') + 'T' + String(hour).padStart(2, '0') + ':00:00Z') / 1000;
   const addOffering = (gift) => {
     offerings.push(gift);
-    db.prepare('INSERT OR REPLACE INTO donor_offerings(id,parish_id,payment_intent_id,status,payment_status,created_at,data) VALUES(?,?,?,?,?,?,?)').run(
+    db.prepare(
+      'INSERT OR REPLACE INTO donor_offerings(id,parish_id,payment_intent_id,status,payment_status,created_at,data) VALUES(?,?,?,?,?,?,?)'
+    ).run(
       gift.id,
       gift.parishId,
       gift.stripePaymentIntentId,
