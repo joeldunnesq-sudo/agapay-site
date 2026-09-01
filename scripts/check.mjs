@@ -32,7 +32,9 @@ assert.ok(!siteChrome.includes('{ href: "/give/request-demo", label: "Request De
 for (const link of [
   '{ href: "/give#pricing", label: "Pricing", key: "pricing" }',
   '{ href: "/give#security", label: "Security", key: "security" }',
-  '{ href: "/give", label: "Platform", key: "platform" }'
+  '{ href: "/give", label: "Platform", key: "platform" }',
+  '{ href: "/about", label: "About", key: "about" }',
+  '{ href: "/contact", label: "Contact", key: "contact" }'
 ]) assert.ok(siteChrome.includes(link), `canonical static-site navigation should include ${link}`);
 assert.ok(!siteChrome.includes('{ href: "/give#why", label: "Why AGAPAY"'), "canonical primary navigation should not duplicate the Why section integrated into /give");
 assert.ok(!siteChrome.includes('{ href: "/learn", label: "AGAPAY Learn", key: "learn" }') && !siteChrome.includes('{ href: "/design", label: "AGAPAY Design", key: "design" }'), "canonical primary navigation should stay focused on AGAPAY Give");
