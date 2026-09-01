@@ -15,7 +15,8 @@ const structuredData = JSON.parse(html.match(/<script type="application\/ld\+jso
 
 assert.match(worker, /\["security", "security"\]/, "the production Worker must redirect /give/security to the consolidated section");
 assert.match(server, /\["security", "security"\]/, "the local server must mirror the security redirect");
-assert.match(chrome, /href: "\/give#security", label: "Security"/, "shared navigation must link directly to the security section");
+assert.match(html, /give-section-links[\s\S]*?<a href="#security">Security<\/a>/, "the Give secondary navigation must link directly to the security section");
+assert.match(chrome, /<a href="\/give#security">Security<\/a>/, "the canonical footer must retain a direct link to the security section");
 assert.ok(structuredData["@graph"].some((item) => item["@type"] === "FAQPage"), "the consolidated page must retain valid FAQ structured data");
 assert.match(html, /PBKDF2-SHA256/, "password handling must be described precisely");
 assert.match(html, /Stripe-hosted Checkout/, "the page must explain that Stripe collects sensitive payment details");
