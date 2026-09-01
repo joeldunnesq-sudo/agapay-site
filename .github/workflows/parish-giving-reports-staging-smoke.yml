@@ -31,6 +31,7 @@ jobs:
         run: node scripts/parish-giving-reports-staging-smoke.mjs "${{ inputs.target_url }}"
         env:
           ACCOUNTING_GATE_PARISH_A_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_A_ID }}
+          ACCOUNTING_GATE_PARISH_B_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_B_ID }}
           ACCOUNTING_GATE_PARISH_A_PASSWORD: ${{ secrets.ACCOUNTING_GATE_PARISH_A_PASSWORD }}
 
       - name: Upload staging evidence

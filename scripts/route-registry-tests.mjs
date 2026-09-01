@@ -78,6 +78,14 @@ const stewardship = requestContext('/api/parish/dashboard/demo/stewardship/incom
 assert.equal(await (await routeStewardshipRequest(stewardship)).text(), 'handleStewardshipManualIncomeDelete');
 assert.equal(stewardship.calls[0].args[3], 'entry-9');
 
+const attendance = requestContext('/api/parish/dashboard/demo/stewardship/attendance?weeks=26');
+assert.equal(await (await routeStewardshipRequest(attendance)).text(), 'handleStewardshipAttendance');
+const attendanceDelegation = requestContext('/api/parish/dashboard/demo/stewardship/attendance/delegation', 'PATCH');
+assert.equal(
+  await (await routeStewardshipRequest(attendanceDelegation)).text(),
+  'handleStewardshipAttendanceDelegation'
+);
+
 const sacramentRules = requestContext('/api/parish/dashboard/demo/sacraments/availability/rules', 'POST');
 assert.equal(await (await routeParishRequest(sacramentRules)).text(), 'handleParishAvailabilityRuleCreate');
 

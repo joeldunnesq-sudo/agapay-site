@@ -16,6 +16,7 @@ assert.ok(
 
 const credentials = requiredEnvironment([
   "ACCOUNTING_GATE_PARISH_A_ID",
+  "ACCOUNTING_GATE_PARISH_B_ID",
   "ACCOUNTING_GATE_PARISH_A_PASSWORD",
 ]);
 const parishId = credentials.ACCOUNTING_GATE_PARISH_A_ID;
@@ -69,6 +70,33 @@ assert.equal(recurring.response.status, 200, `Recurring health returned HTTP ${r
 assert.ok(recurring.payload.health, "Recurring health should return a health object.");
 assert.ok(Array.isArray(recurring.payload.health.rows), "Recurring health should return health rows.");
 
+const attendance = await requestJson(`${dashboardPath}/stewardship/attendance?weeks=13`, { token });
+assert.equal(attendance.response.status, 200, `Attendance trend returned HTTP ${attendance.response.status}.`);
+assert.equal(attendance.payload.points?.length, 13, "Attendance trend should preserve all 13 Sunday slots, including gaps.");
+assert.ok(attendance.payload.summary, "Attendance trend should include its parish summary.");
+
+const invalidAttendance = await requestJson(`${dashboardPath}/stewardship/attendance`, {
+  method: "PATCH",
+  token,
+  body: { weekOf: "2026-08-31", headcount: 42 },
+});
+assert.equal(invalidAttendance.response.status, 422, "A non-Sunday attendance correction should fail without writing.");
+
+const currentDelegateId = attendance.payload.delegate?.ministryId || null;
+const delegation = await requestJson(`${dashboardPath}/stewardship/attendance/delegation`, {
+  method: "PATCH",
+  token,
+  body: { ministryId: currentDelegateId },
+});
+assert.equal(delegation.response.status, 200, `Attendance delegation returned HTTP ${delegation.response.status}.`);
+assert.equal(delegation.payload.delegate?.ministryId || null, currentDelegateId, "The no-op delegation save should preserve the current delegate.");
+
+const crossParishAttendance = await requestJson(
+  `/api/parish/dashboard/${encodeURIComponent(credentials.ACCOUNTING_GATE_PARISH_B_ID)}/stewardship/attendance?weeks=13`,
+  { token },
+);
+assert.equal(crossParishAttendance.response.status, 401, "A Parish A bearer must not read Parish B attendance.");
+
 const evidence = {
   target: baseUrl,
   parishId,
@@ -89,10 +117,17 @@ const evidence = {
     failedThisMonthCount: recurring.payload.health.failedThisMonthCount,
     lapsedCount: recurring.payload.health.lapsedCount,
   },
+  attendance: {
+    weeksReturned: attendance.payload.points.length,
+    weeksReported: attendance.payload.summary.weeksReported,
+    currentDelegateId,
+    invalidCorrectionStatus: invalidAttendance.response.status,
+    crossParishStatus: crossParishAttendance.response.status,
+  },
   verifiedAt: new Date().toISOString(),
 };
 await writeArtifact("artifacts/parish-giving-reports-staging-smoke.json", evidence);
 console.log(
   `PASS - giving summary, Stripe volume, giving history (${evidence.historyCount} gifts), `
-  + "and recurring-giving health",
+  + "recurring-giving health, and parish attendance authorization",
 );
