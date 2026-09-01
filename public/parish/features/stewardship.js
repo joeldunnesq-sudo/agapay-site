@@ -3,7 +3,8 @@
 /* global currentParish, isStarterTier, isParishTier, isParishPlusActive, syncDashboardPaywall,
   renderParishPlusMeetingsPane, authHeaders, updateStewardshipBadges, loadStewardshipHealthScorePanel,
   loadGivingMetricsPanel, loadFinancialSnapshotsPanel, loadManualIncomePanel, loadDonorConcentrationPanel,
-  loadRecurringGivingPanel, loadGivingIntelligencePanels, loadStewardshipAttendancePanel, escapeHtml, setStatus */
+  loadRecurringGivingPanel, loadGivingIntelligencePanels, loadStewardshipAttendancePanel,
+  loadDiocesanStatisticsPreview, ensureDiocesanStatisticsCard, escapeHtml, setStatus */
 /* exported dismissStewardshipCompNotice, startStewardshipSubscription, openStewardshipBilling */
 
 // Plan status, lifecycle, billing, and founding-parish notices.
@@ -69,6 +70,7 @@ async function loadStewardshipPanel(force = false) {
 
 function loadStewardshipEssentialPanels() {
   loadStewardshipAttendancePanel();
+  loadDiocesanStatisticsPreview();
   loadStewardshipHealthScorePanel();
   loadGivingIntelligencePanels();
   setTimeout(() => loadGivingMetricsPanel(), 300);
@@ -183,6 +185,7 @@ function renderStewardshipUnavailableForTier() {
   const recurringPane = document.getElementById('stewardshipRecurringPane');
   const manualIncomePane = document.getElementById('stewardshipManualIncomePane');
   const attendancePane = document.getElementById('stewardshipAttendancePane');
+  const diocesanStatisticsPane = ensureDiocesanStatisticsCard();
   if (statusEl) {
     statusEl.textContent = 'Parish tier';
     statusEl.className = 'sw-suite-status-label sw-suite-status--upsell';
@@ -208,6 +211,7 @@ function renderStewardshipUnavailableForTier() {
   if (recurringPane) recurringPane.innerHTML = locked;
   if (manualIncomePane) manualIncomePane.innerHTML = locked;
   if (attendancePane) attendancePane.innerHTML = locked;
+  if (diocesanStatisticsPane) diocesanStatisticsPane.innerHTML = locked;
   for (const id of ['stewardshipDistributionPane', 'stewardshipRetentionPane']) {
     const pane = document.getElementById(id);
     if (pane) pane.innerHTML = locked;

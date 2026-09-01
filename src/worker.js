@@ -325,6 +325,7 @@ import {
   handleStewardshipAttendance,
   handleStewardshipAttendanceDelegation,
 } from "./handlers/stewardship-attendance.js";
+import { handleDiocesanStatisticsReport } from "./handlers/diocesan-statistics.js";
 
 import {
   handleGivingStatementPreview,
@@ -3143,6 +3144,7 @@ const ROUTE_ACTIONS = Object.freeze({
   handleStewardshipAccountingBridge,
   handleStewardshipAttendance,
   handleStewardshipAttendanceDelegation,
+  handleDiocesanStatisticsReport,
   handleStewardshipBilling,
   handleStewardshipBillingPortal,
   handleStewardshipFinancials,
