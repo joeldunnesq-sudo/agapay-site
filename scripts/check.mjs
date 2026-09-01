@@ -691,6 +691,7 @@ assert.ok(sacramentPriestsMigration.includes("priest_name") && sacramentPriestsM
 assert.ok(donorApp.includes("priestName: slot.priestName") && backendSources.includes("priestName = String(body.priestName") && backendSources.includes("isSlotStillOpen(env, { parishId, date, time, priestName })"), "donor Sacraments booking should carry the selected priest through to the scheduled request");
 assert.ok(donorApp.includes("handleDonorCheckoutReturn"), "donor dashboard should confirm returned Stripe checkout sessions");
 const givingOverview = await readFile("public/give/index.html", "utf8");
+const giveStyles = await readFile("public/styles/give.css", "utf8");
 assert.ok(givingOverview.includes("Custom-Built Orthodox Church Management Software") && givingOverview.includes("Orthodox tithing app"), "Giving overview should target Orthodox church management and tithing search intent");
 assert.ok(givingOverview.includes('"SoftwareApplication"') && givingOverview.includes('"@type": "FAQPage"'), "Giving overview should include software and FAQ structured data");
 assert.ok(givingOverview.includes('"@type": "WebSite"') && givingOverview.includes('"@type": "WebPage"'), "Giving overview should connect WebSite and WebPage structured data to the app");
@@ -721,6 +722,12 @@ assert.ok(platformHome.includes("giving-dashboard.jpg?v=6a4506c0ba14") && platfo
 assert.ok(platformHome.includes("Koinonia") && platformHome.includes("Sacraments") && platformHome.includes("Accounting"), "platform homepage should surface community, pastoral, and financial operations");
 assert.ok(platformHome.includes('src="/site-chrome.js"'), "platform homepage should render the canonical navigation that routes giving-focused visitors to /give");
 assert.ok(givingOverview.includes('rel="canonical" href="https://agapay.app/give"') && givingOverview.includes("The Orthodox Giving App <em>for all of parish life.</em>"), "the consolidated Give page should publish one canonical URL and the approved Orthodox giving headline");
+assert.ok(
+  giveStyles.includes(".give-hero h1 em { display: block;")
+    && giveStyles.includes("font: italic 500 clamp(2.45rem,5.2vw,4.5rem)/.98 var(--give-serif)")
+    && giveStyles.includes(".give-hero h1 em { font-size: 2.55rem; }"),
+  "the italicized Give hero headline should begin on a new line at the responsive H2 size"
+);
 const giveSectionNav = givingOverview.match(/<nav class="give-section-nav"[\s\S]*?<\/nav>/)?.[0] || "";
 assert.match(giveSectionNav, /give-section-links">\s*<a href="#why">Why AGAPAY<\/a>/, "the Give secondary navigation should lead with Why AGAPAY");
 assert.ok(givingOverview.indexOf('id="why"') < givingOverview.indexOf('id="pricing"'), "the Why AGAPAY section should appear before Plans and cost to the parish");
