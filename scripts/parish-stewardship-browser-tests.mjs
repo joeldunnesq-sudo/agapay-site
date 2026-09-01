@@ -68,6 +68,22 @@ const defaults = {
       delegateOptions: [],
     },
   },
+  '/reports/diocesan-statistics': {
+    body: {
+      report: {
+        year,
+        attendance: {
+          status: 'not_reported',
+          message: 'No attendance reported',
+          averageWeeklyAttendance: null,
+          weeksReported: 0,
+        },
+        membership: { people: 284, households: 126, catechumensMade: 6 },
+        sacraments: { baptism: 2, chrismation: 1, wedding: 1, funeral: 3, total: 7 },
+        giving: { totalActualCents: 2500000, activeDonors: 42 },
+      },
+    },
+  },
   '/stewardship/financials': { body: financialData },
   '/stewardship/financials/accounting-summary': { body: { available: false, reason: 'not_provisioned' } },
   '/stewardship/income/manual': { body: { entries: [] } },
@@ -138,6 +154,7 @@ async function settled(page) {
   await page.locator('#givingMetricsPane .sw-kpi-grid').waitFor();
   await page.locator('#stewardshipFinancialsPane .sw-fin-kpi-grid').waitFor();
   await page.locator('.sw-income-form').waitFor({ state: 'attached' });
+  await page.locator('#diocesanStatisticsPane .sw-report-overview').waitFor();
 }
 
 function body(request, method = 'POST') {
@@ -152,6 +169,11 @@ try {
     'weekly attendance trend, missing Sundays, staff correction, delegation, and responsive layout',
     async (page) => {
       await settled(page);
+      const diocesanCard = page.locator('#diocesanStatisticsCard');
+      await diocesanCard.getByText('Annual Statistical Report', { exact: true }).waitFor();
+      assert.ok((await diocesanCard.textContent()).includes('No attendance reported'));
+      assert.ok((await diocesanCard.textContent()).includes('6 catechumens made'));
+      assert.ok((await diocesanCard.textContent()).includes('7'));
       const card = page.locator('.sw-attendance-card');
       await card.getByRole('heading', { name: 'Weekly attendance', exact: true }).waitFor();
       assert.ok(

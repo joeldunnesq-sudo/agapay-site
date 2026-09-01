@@ -12,6 +12,7 @@ const DASHBOARD_SUFFIX_ROUTES = new Map([
   ['/stewardship/giving/health-score', 'handleStewardshipGivingHealthScore'],
   ['/stewardship/attendance', 'handleStewardshipAttendance'],
   ['/stewardship/attendance/delegation', 'handleStewardshipAttendanceDelegation'],
+  ['/reports/diocesan-statistics', 'handleDiocesanStatisticsReport'],
   ['/stewardship/report/monthly-financial', 'handleStewardshipMonthlyFinancialReport'],
   ['/stewardship/report/monthly', 'handleStewardshipMonthlyReport'],
   ['/stewardship/giving/activate', 'handleStewardshipGivingActivate'],

@@ -49,6 +49,7 @@ const core = [
   'scripts/entitlements-tests.mjs',
   'scripts/stewardship-accounting-bridge-tests.mjs',
   'scripts/stewardship-attendance-tests.mjs',
+  'scripts/diocesan-statistics-tests.mjs',
   'scripts/settlement-profiles-tests.mjs',
   'scripts/tax-exemption-tests.mjs',
   'scripts/tax-exemption-route-tests.mjs',

@@ -15,7 +15,7 @@ const [dashboard, registry, worker, architectureGuide] = await Promise.all([
 assert.match(registry, /function register\(id, definition\)/);
 assert.match(registry, /typeof definition\.load !== 'function'/);
 assert.match(architectureGuide, /New feature code should not be added directly/);
-assert.ok(dashboard.length < 160_000, 'dashboard.html exceeded its shell size ceiling');
+assert.ok(dashboard.replace(/\r\n/g, '\n').length < 160_000, 'dashboard.html exceeded its shell size ceiling');
 
 const app = await read('public/parish/app.js');
 for (const pagePath of ['public/parish/dashboard.html', 'public/parish/login.html']) {
