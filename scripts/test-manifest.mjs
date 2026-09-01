@@ -56,6 +56,7 @@ const core = [
   'scripts/identity-tests.mjs',
   'scripts/content-reads-tests.mjs',
   'scripts/parish-communications-tests.mjs',
+  'scripts/parish-bulletin-tests.mjs',
   'scripts/parish-announcement-digest-tests.mjs',
   'scripts/central-email-sending-tests.mjs',
   'scripts/parish-group-messages-tests.mjs',

@@ -2168,6 +2168,32 @@ CREATE TABLE parish_announcements (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 , hero_image_url TEXT, category TEXT NOT NULL DEFAULT 'general'
   CHECK (category IN ('services', 'events', 'youth', 'outreach', 'education', 'general')));
+CREATE TABLE parish_bulletins (
+  id TEXT PRIMARY KEY,
+  parish_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  service_date TEXT NOT NULL CHECK (date(service_date) IS NOT NULL AND service_date = date(service_date)),
+  template TEXT NOT NULL DEFAULT 'heritage' CHECK (template IN ('heritage', 'quiet', 'folded')),
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+  content_json TEXT NOT NULL,
+  created_by TEXT NOT NULL,
+  published_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE parish_bulletin_troparia (
+  id TEXT PRIMARY KEY,
+  parish_id TEXT NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'troparion' CHECK(kind IN ('troparion', 'kontakion', 'other')),
+  title TEXT NOT NULL,
+  tone TEXT NOT NULL DEFAULT '',
+  text_body TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0 CHECK(sort_order >= 0 AND sort_order <= 99),
+  active INTEGER NOT NULL DEFAULT 1 CHECK(active IN (0, 1)),
+  created_by TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 CREATE TABLE parish_availability_blackouts (
   id         TEXT NOT NULL PRIMARY KEY,
   parish_id  TEXT NOT NULL,
@@ -3117,6 +3143,8 @@ CREATE INDEX idx_nonprofit_pricing_audit_application
 CREATE INDEX idx_nonprofit_pricing_documents_application
   ON nonprofit_pricing_documents (application_id, document_type, is_current);
 CREATE INDEX idx_parish_announcements_feed ON parish_announcements(parish_id, status, published_at DESC);
+CREATE INDEX idx_parish_bulletins_edition ON parish_bulletins(parish_id, status, service_date DESC, updated_at DESC);
+CREATE INDEX idx_parish_bulletin_troparia_parish_active_sort ON parish_bulletin_troparia(parish_id, active, sort_order);
 CREATE INDEX idx_parish_availability_blackouts_parish_date
   ON parish_availability_blackouts(parish_id, date);
 CREATE INDEX idx_parish_availability_blackouts_parish_range
@@ -3593,6 +3621,12 @@ CREATE TRIGGER "portability_parish_announcement_digest_subscriptions_update" BEF
 CREATE TRIGGER "portability_parish_announcements_delete" BEFORE DELETE ON "parish_announcements" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (c.state IN ('preparing','closed')) AND ((OLD.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
 CREATE TRIGGER "portability_parish_announcements_insert" BEFORE INSERT ON "parish_announcements" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (1=1) AND ((NEW.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
 CREATE TRIGGER "portability_parish_announcements_update" BEFORE UPDATE ON "parish_announcements" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (1=1) AND ((OLD.parish_id = c.parish_id) OR (NEW.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
+CREATE TRIGGER "portability_parish_bulletins_delete" BEFORE DELETE ON "parish_bulletins" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (c.state IN ('preparing','closed')) AND ((OLD.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
+CREATE TRIGGER "portability_parish_bulletins_insert" BEFORE INSERT ON "parish_bulletins" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (1=1) AND ((NEW.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
+CREATE TRIGGER "portability_parish_bulletins_update" BEFORE UPDATE ON "parish_bulletins" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (1=1) AND ((OLD.parish_id = c.parish_id) OR (NEW.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
+CREATE TRIGGER "portability_parish_bulletin_troparia_delete" BEFORE DELETE ON "parish_bulletin_troparia" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (c.state IN ('preparing','closed')) AND ((OLD.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
+CREATE TRIGGER "portability_parish_bulletin_troparia_insert" BEFORE INSERT ON "parish_bulletin_troparia" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (1=1) AND ((NEW.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
+CREATE TRIGGER "portability_parish_bulletin_troparia_update" BEFORE UPDATE ON "parish_bulletin_troparia" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (1=1) AND ((OLD.parish_id = c.parish_id) OR (NEW.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
 CREATE TRIGGER "portability_parish_availability_blackouts_delete" BEFORE DELETE ON "parish_availability_blackouts" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (c.state IN ('preparing','closed')) AND ((OLD.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
 CREATE TRIGGER "portability_parish_availability_blackouts_insert" BEFORE INSERT ON "parish_availability_blackouts" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (1=1) AND ((NEW.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
 CREATE TRIGGER "portability_parish_availability_blackouts_update" BEFORE UPDATE ON "parish_availability_blackouts" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (1=1) AND ((OLD.parish_id = c.parish_id) OR (NEW.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
