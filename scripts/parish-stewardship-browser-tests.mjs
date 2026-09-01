@@ -50,10 +50,72 @@ const defaults = {
   '/stewardship/giving/retention': { body: { retained: 0, lapsed: 0, new_donors: 0, retention_rate_pct: null } },
   '/stewardship/giving/concentration': { body: { total_donors: 0 } },
   '/stewardship/giving/recurring': { body: { recurring_donor_count: 2 } },
+  '/stewardship/attendance': {
+    body: {
+      range: { weeks: 52, startWeekOf: '2025-09-07', endWeekOf: '2026-08-30' },
+      points: [{ weekOf: '2026-08-30', headcount: null }],
+      summary: {
+        latestHeadcount: null,
+        latestWeekOf: null,
+        eightWeekAverage: null,
+        priorEightWeekAverage: null,
+        eightWeekChangePct: null,
+        weeksReported: 0,
+        expectedWeeks: 52,
+        reportingCoveragePct: 0,
+      },
+      delegate: null,
+      delegateOptions: [],
+    },
+  },
   '/stewardship/financials': { body: financialData },
   '/stewardship/financials/accounting-summary': { body: { available: false, reason: 'not_provisioned' } },
   '/stewardship/income/manual': { body: { entries: [] } },
 };
+
+const attendanceMissingWeeks = new Set([4, 11, 12, 23, 31, 38, 45]);
+let attendancePoints = Array.from({ length: 52 }, (_, index) => {
+  const date = new Date('2025-09-07T12:00:00.000Z');
+  date.setUTCDate(date.getUTCDate() + index * 7);
+  return {
+    weekOf: date.toISOString().slice(0, 10),
+    headcount: attendanceMissingWeeks.has(index) ? null : Math.round(142 + index * 0.7 + Math.sin(index / 3) * 8),
+  };
+});
+let attendanceDelegate = null;
+
+function attendanceTrend(weeks = 52) {
+  const points = attendancePoints.slice(-weeks);
+  const measured = points.filter(({ headcount }) => typeof headcount === 'number');
+  const latest = measured.at(-1) || null;
+  const recent = points.slice(-8).filter(({ headcount }) => typeof headcount === 'number');
+  const prior = points.slice(-16, -8).filter(({ headcount }) => typeof headcount === 'number');
+  const average = (rows) => (rows.length ? rows.reduce((sum, row) => sum + row.headcount, 0) / rows.length : null);
+  const recentAverage = average(recent);
+  const priorAverage = average(prior);
+  return {
+    range: { weeks, startWeekOf: points[0].weekOf, endWeekOf: points.at(-1).weekOf },
+    points,
+    summary: {
+      latestHeadcount: latest?.headcount ?? null,
+      latestWeekOf: latest?.weekOf ?? null,
+      eightWeekAverage: recentAverage,
+      priorEightWeekAverage: priorAverage,
+      eightWeekChangePct:
+        recentAverage !== null && priorAverage
+          ? Math.round(((recentAverage - priorAverage) / priorAverage) * 1000) / 10
+          : null,
+      weeksReported: measured.length,
+      expectedWeeks: points.length,
+      reportingCoveragePct: Math.round((measured.length / points.length) * 100),
+    },
+    delegate: attendanceDelegate,
+    delegateOptions: [
+      { id: 'council', name: 'Parish Council' },
+      { id: 'choir', name: 'Choir' },
+    ],
+  };
+}
 const browser = await chromium.launch({ headless: true });
 
 async function scenario(name, run, overrides = {}, dashboardResponse = () => ({ parish: entitled })) {
@@ -86,6 +148,87 @@ function body(request, method = 'POST') {
 }
 
 try {
+  await scenario(
+    'weekly attendance trend, missing Sundays, staff correction, delegation, and responsive layout',
+    async (page) => {
+      await settled(page);
+      const card = page.locator('.sw-attendance-card');
+      await card.getByRole('heading', { name: 'Weekly attendance', exact: true }).waitFor();
+      assert.ok(
+        (await card.locator('[role="img"]').getAttribute('aria-label')).includes('Gaps indicate weeks with no report')
+      );
+      assert.ok((await card.locator('.sw-attendance-line').count()) > 1, 'missing Sundays must split the weekly line');
+      assert.ok(
+        (await card.locator('.sw-attendance-average-line').count()) > 1,
+        'missing Sundays must split the rolling average'
+      );
+      assert.equal(await card.locator('.sw-attendance-latest').count(), 1);
+      assert.ok((await card.textContent()).includes('45 of 52 Sundays'));
+      assert.ok(
+        (await card.boundingBox()).y <
+          (await page.locator('#tab-stewardship > .sw-reports-intelligence').boundingBox()).y,
+        'attendance belongs before annual reports'
+      );
+
+      await card.locator('#attendanceWeekOf').fill('2026-08-30');
+      await card.locator('#attendanceHeadcount').fill('184');
+      await card.getByRole('button', { name: 'Save attendance', exact: true }).click();
+      await card.getByText('Saved 184 for August 30, 2026.', { exact: true }).waitFor();
+      assert.equal(await card.locator('.sw-attendance-kpi strong').first().textContent(), '184');
+
+      await card.locator('.sw-attendance-delegation select').selectOption('choir');
+      await card.getByRole('button', { name: 'Save delegation', exact: true }).click();
+      await card.getByText('Choir can now submit weekly attendance.', { exact: true }).waitFor();
+      assert.equal(await card.locator('.sw-attendance-delegation select').inputValue(), 'choir');
+
+      await card.getByRole('button', { name: '13 weeks', exact: true }).click();
+      await card.locator('.sw-attendance-kpi small').filter({ hasText: 'of 13 Sundays' }).waitFor();
+      assert.equal(await card.locator('[data-attendance-weeks="13"]').getAttribute('class'), 'is-active');
+
+      await mkdir('artifacts/stewardship-attendance', { recursive: true });
+      for (const width of [1440, 768, 390]) {
+        await page.setViewportSize({ width, height: 1100 });
+        assert.equal(
+          await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
+          true,
+          `attendance page must not overflow at ${width}px`
+        );
+        if (width > 460)
+          assert.equal(
+            await card.locator('.sw-attendance-chart-wrap').evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+            true
+          );
+        else
+          assert.ok(
+            await card.locator('.sw-attendance-chart-wrap').evaluate((el) => el.scrollWidth > el.clientWidth),
+            'mobile chart should scroll inside its own frame'
+          );
+        await card.screenshot({ path: `artifacts/stewardship-attendance/attendance-${width}.png` });
+      }
+    },
+    {
+      '/stewardship/attendance': (request) => {
+        const url = new URL(request.url());
+        if (request.method() === 'GET') return { body: attendanceTrend(Number(url.searchParams.get('weeks') || 52)) };
+        const payload = body(request, 'PATCH');
+        const point = attendancePoints.find(({ weekOf }) => weekOf === payload.weekOf);
+        assert.ok(point, 'staff correction must target a Sunday in the visible range');
+        point.headcount = payload.headcount;
+        return { body: payload };
+      },
+      '/stewardship/attendance/delegation': (request) => {
+        const payload = body(request, 'PATCH');
+        attendanceDelegate = payload.ministryId
+          ? {
+              ministryId: payload.ministryId,
+              ministryName: payload.ministryId === 'choir' ? 'Choir' : 'Parish Council',
+            }
+          : null;
+        return { body: { delegate: attendanceDelegate } };
+      },
+    }
+  );
+
   await scenario(
     'visual reports show budget pace, fund shares, and responsive charts',
     async (page) => {

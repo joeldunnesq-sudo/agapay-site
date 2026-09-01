@@ -2386,8 +2386,28 @@ CREATE TABLE parish_stewardship_settings (
   has_stewardship_suite        INTEGER NOT NULL DEFAULT 0,
   stripe_subscription_item_id  TEXT,
   fiscal_year_start_month      INTEGER NOT NULL DEFAULT 1,
+  headcount_delegate_ministry_id TEXT,
   updated_at                   TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE parish_weekly_headcounts (
+  id TEXT PRIMARY KEY,
+  parish_id TEXT NOT NULL,
+  week_of TEXT NOT NULL CHECK (date(week_of) IS NOT NULL AND week_of = date(week_of) AND strftime('%w', week_of) = '0'),
+  headcount INTEGER NOT NULL CHECK (headcount >= 0),
+  submitted_by_actor_type TEXT NOT NULL CHECK (submitted_by_actor_type IN ('parish_staff', 'ministry_leader')),
+  submitted_by_actor_id TEXT NOT NULL,
+  submitted_by_ministry_id TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  CHECK (
+    (submitted_by_actor_type = 'parish_staff' AND submitted_by_ministry_id IS NULL)
+    OR
+    (submitted_by_actor_type = 'ministry_leader' AND submitted_by_ministry_id IS NOT NULL AND length(trim(submitted_by_ministry_id)) > 0)
+  ),
+  UNIQUE (parish_id, week_of)
+);
+CREATE INDEX idx_parish_weekly_headcounts_trend
+  ON parish_weekly_headcounts(parish_id, week_of);
 CREATE TABLE parish_teaching_posts (
   id TEXT PRIMARY KEY,
   parish_id TEXT NOT NULL,
@@ -3615,6 +3635,9 @@ CREATE TRIGGER "portability_parish_memberships_update" BEFORE UPDATE ON "parish_
 CREATE TRIGGER "portability_parish_stewardship_settings_delete" BEFORE DELETE ON "parish_stewardship_settings" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (c.state IN ('preparing','closed')) AND ((OLD.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
 CREATE TRIGGER "portability_parish_stewardship_settings_insert" BEFORE INSERT ON "parish_stewardship_settings" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (1=1) AND ((NEW.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
 CREATE TRIGGER "portability_parish_stewardship_settings_update" BEFORE UPDATE ON "parish_stewardship_settings" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (1=1) AND ((OLD.parish_id = c.parish_id) OR (NEW.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
+CREATE TRIGGER "portability_parish_weekly_headcounts_delete" BEFORE DELETE ON "parish_weekly_headcounts" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (c.state IN ('preparing','closed')) AND ((OLD.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
+CREATE TRIGGER "portability_parish_weekly_headcounts_insert" BEFORE INSERT ON "parish_weekly_headcounts" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (1=1) AND ((NEW.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
+CREATE TRIGGER "portability_parish_weekly_headcounts_update" BEFORE UPDATE ON "parish_weekly_headcounts" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (1=1) AND ((OLD.parish_id = c.parish_id) OR (NEW.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
 CREATE TRIGGER "portability_parish_teaching_posts_delete" BEFORE DELETE ON "parish_teaching_posts" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (c.state IN ('preparing','closed')) AND ((OLD.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
 CREATE TRIGGER "portability_parish_teaching_posts_insert" BEFORE INSERT ON "parish_teaching_posts" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (1=1) AND ((NEW.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;
 CREATE TRIGGER "portability_parish_teaching_posts_update" BEFORE UPDATE ON "parish_teaching_posts" WHEN EXISTS(SELECT 1 FROM parish_data_closures c WHERE (1=1) AND ((OLD.parish_id = c.parish_id) OR (NEW.parish_id = c.parish_id))) BEGIN SELECT RAISE(ABORT,'PARISH_CLOSURE_WRITE_BLOCKED'); END;

@@ -16,6 +16,10 @@ import { communicationsEnabledFor } from "../lib/entitlements.js";
 import { findRegistrationByParishId } from "./parish.js";
 import { verifiedHouseholdAccess } from "./koinonia-access.js";
 import { createMinistryCommerceItem, listMinistryCommerceItems, patchMinistryCommerceItem } from "./parish-events.js";
+import {
+  AttendanceValidationError,
+  saveParishWeeklyHeadcount,
+} from "../stewardship/attendance.js";
 
 const CONTENT_TYPE = "group_message";
 export const GROUP_MESSAGE_ATTACHMENT_RETENTION_DAYS = 30;
@@ -299,6 +303,18 @@ export async function listActiveMinistryGroups(env, { parishId, personId, donorI
     ORDER BY m.display_order ASC, m.display_name ASC
   `, personId, parishId, personId, personId);
 
+  let delegatedMinistryId = null;
+  try {
+    const setting = await d1First(env, `
+      SELECT headcount_delegate_ministry_id
+      FROM parish_stewardship_settings
+      WHERE parish_id = ? AND has_stewardship_suite = 1
+    `, parishId);
+    delegatedMinistryId = setting?.headcount_delegate_ministry_id || null;
+  } catch {
+    // Keep established ministry messaging available during migration rollout.
+  }
+
   return Promise.all(rows.map(async (row) => {
     const messageRows = await d1All(env, `
       SELECT id FROM parish_group_messages
@@ -321,6 +337,7 @@ export async function listActiveMinistryGroups(env, { parishId, personId, donorI
       imageUrl: row.image_storage_key ? ministryImageDeliveryUrl(row.id) : "",
       imageUpdatedAt: Number(row.image_updated_at || 0),
       role: Number(row.is_leader || 0) === 1 ? "leader" : "participant",
+      headcountDelegated: row.id === delegatedMinistryId,
       messageCount: contentIds.length,
       unreadCount: contentIds.length - readIds.length,
     };
@@ -689,6 +706,45 @@ function scheduleGroupMessagePush(env, ctx, context, ministryId, message) {
   ctx.waitUntil(delivery);
 }
 
+export async function recordDelegatedParishHeadcount(request, env, context, ministryId) {
+  if (!await isActiveMinistryLeader(env, {
+    parishId: context.parishId,
+    ministryId,
+    personId: context.personId,
+  })) {
+    throw new GroupMessageAccessError("Only an active leader of the delegated ministry can record parish attendance.", 403);
+  }
+  const delegated = await d1First(env, `
+    SELECT m.id
+    FROM parish_stewardship_settings s
+    JOIN directory_ministries m
+      ON m.id = s.headcount_delegate_ministry_id
+     AND m.parish_id = s.parish_id
+     AND m.status = 'active'
+    WHERE s.parish_id = ? AND m.id = ? AND s.has_stewardship_suite = 1
+    LIMIT 1
+  `, context.parishId, ministryId);
+  if (!delegated) {
+    throw new GroupMessageAccessError("This ministry is not currently delegated to record parish attendance.", 403);
+  }
+  const body = await request.json().catch(() => ({}));
+  try {
+    return await saveParishWeeklyHeadcount(env, {
+      parishId: context.parishId,
+      weekOf: body.weekOf,
+      headcount: body.headcount,
+      actorType: "ministry_leader",
+      actorId: context.personId,
+      ministryId,
+    });
+  } catch (error) {
+    if (error instanceof AttendanceValidationError) {
+      throw new GroupMessageAccessError(error.message, error.status);
+    }
+    throw error;
+  }
+}
+
 export async function handleDonorGroups(request, env, ctx = null) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   if (!database(env)) return missingProductionStoreResponse();
@@ -717,6 +773,7 @@ export async function handleDonorGroups(request, env, ctx = null) {
     if(parts.length===2&&parts[1]==="schedule"&&request.method==="POST") return privateJson(await createMinistryEvents(request,env,context,parts[0]),{status:201});
     if(parts.length===3&&parts[1]==="schedule"&&request.method==="DELETE") return privateJson(await deleteMinistryEvent(env,context,parts[0],parts[2]));
     if(parts.length===4&&parts[1]==="schedule"&&parts[3]==="attendance"&&request.method==="PATCH") return privateJson(await recordMinistryAttendance(request,env,context,parts[0],parts[2]));
+    if(parts.length===2&&parts[1]==="headcount"&&request.method==="PATCH") return privateJson(await recordDelegatedParishHeadcount(request,env,context,parts[0]));
     if(parts.length===2&&parts[1]==="resources"&&request.method==="GET") return privateJson(await listMinistryResources(env,context,parts[0]));
     if(parts.length===2&&parts[1]==="resources"&&request.method==="POST") return privateJson(await createMinistryResource(request,env,context,parts[0]),{status:201});
     if(parts.length===3&&parts[1]==="resources"&&request.method==="DELETE") return privateJson(await deleteMinistryResource(env,context,parts[0],parts[2]));

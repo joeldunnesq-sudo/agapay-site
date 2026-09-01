@@ -320,6 +320,10 @@ import {
   handleAdminStewardshipCompStatus,
 } from "./handlers/stewardship.js";
 import { handleStewardshipAccountingBridge } from "./handlers/stewardship-accounting-bridge.js";
+import {
+  handleStewardshipAttendance,
+  handleStewardshipAttendanceDelegation,
+} from "./handlers/stewardship-attendance.js";
 
 import {
   handleGivingStatementPreview,
@@ -3135,6 +3139,8 @@ const ROUTE_ACTIONS = Object.freeze({
   handleGivingStatementJobStatus,
   handleGivingStatementPreview,
   handleStewardshipAccountingBridge,
+  handleStewardshipAttendance,
+  handleStewardshipAttendanceDelegation,
   handleStewardshipBilling,
   handleStewardshipBillingPortal,
   handleStewardshipFinancials,

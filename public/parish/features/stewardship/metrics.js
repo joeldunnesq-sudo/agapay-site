@@ -3,7 +3,9 @@
 /* global currentParish, stewardshipApi, authHeaders, checkNudgeEligibility, escapeHtml,
   parishSessionStorageKey, renderGivingMetrics */
 /* exported loadGivingMetricsPanel, loadStewardshipHealthScorePanel, loadDonorConcentrationPanel,
-  loadRecurringGivingPanel, loadGivingIntelligencePanels, openStewardshipMonthlyReport */
+  loadRecurringGivingPanel, loadGivingIntelligencePanels, loadStewardshipAttendancePanel,
+  saveStewardshipAttendance, saveAttendanceDelegate, syncAttendanceEntryFromWeek,
+  openStewardshipMonthlyReport */
 
 // Giving metrics, health, concentration, recurring gifts, and monthly reports.
 // Read shared parish identity and authentication only when actions run.
@@ -78,6 +80,214 @@ function swStackedChart(segments, description) {
     )
     .join('');
   return `<div class="sw-stacked-chart" role="img" aria-label="${escapeHtml(description)}">${bars}</div><ul class="sw-chart-legend">${legend}</ul>`;
+}
+
+// ── Weekly parish attendance ─────────────────────────────────────────────
+let attendanceState = { weeks: 52, data: null, message: '' };
+
+function ensureStewardshipAttendanceCard() {
+  let pane = document.getElementById('stewardshipAttendancePane');
+  if (pane) return pane;
+  const mount = document.getElementById('stewardshipAttendanceMount');
+  if (!mount) return null;
+  mount.innerHTML = `<section class="sw-suite-tool-card sw-attendance-card" aria-labelledby="stewardshipAttendanceTitle"><div class="sw-attendance-heading"><div><span class="sw-attendance-eyebrow">Parish life</span><h2 class="sw-tool-card-title" id="stewardshipAttendanceTitle">Weekly attendance</h2><p class="sw-tool-card-desc">A parish-wide view of Sunday headcount, with missing weeks kept visible.</p></div><div class="sw-attendance-ranges" aria-label="Attendance chart range"><button type="button" data-attendance-weeks="13" onclick="loadStewardshipAttendancePanel(13)">13 weeks</button><button type="button" data-attendance-weeks="26" onclick="loadStewardshipAttendancePanel(26)">26 weeks</button><button type="button" data-attendance-weeks="52" class="is-active" onclick="loadStewardshipAttendancePanel(52)">52 weeks</button></div></div><div class="sw-attendance-pane" id="stewardshipAttendancePane" aria-live="polite"><p class="sw-tool-loading">Loading…</p></div></section>`;
+  pane = document.getElementById('stewardshipAttendancePane');
+  return pane;
+}
+
+function swAttendanceDate(value, options = { month: 'short', day: 'numeric' }) {
+  const date = new Date(`${value}T12:00:00.000Z`);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('en-US', options);
+}
+
+function swTrendChart(points) {
+  const measured = points.filter((point) => typeof point.headcount === 'number');
+  if (!measured.length) {
+    return '<div class="sw-attendance-empty"><strong>No attendance recorded yet</strong><p>Record a Sunday headcount to begin the parish trend. Missing weeks will remain blank rather than appearing as zero.</p></div>';
+  }
+  const width = 860;
+  const height = 300;
+  const margin = { top: 22, right: 28, bottom: 46, left: 52 };
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
+  const maximum = Math.max(1, ...measured.map((point) => point.headcount));
+  const ceiling = Math.max(10, Math.ceil(maximum / 10) * 10);
+  const x = (index) =>
+    margin.left + (points.length === 1 ? innerWidth / 2 : (index / (points.length - 1)) * innerWidth);
+  const y = (value) => margin.top + innerHeight - (value / ceiling) * innerHeight;
+  const pathSegments = (values) => {
+    const segments = [];
+    let segment = [];
+    values.forEach((value, index) => {
+      if (typeof value === 'number') segment.push([x(index), y(value)]);
+      else if (segment.length) {
+        segments.push(segment);
+        segment = [];
+      }
+    });
+    if (segment.length) segments.push(segment);
+    return segments;
+  };
+  const weeklySegments = pathSegments(points.map((point) => point.headcount));
+  const rollingValues = points.map((point, index) => {
+    if (typeof point.headcount !== 'number') return null;
+    const values = points
+      .slice(Math.max(0, index - 7), index + 1)
+      .map((entry) => entry.headcount)
+      .filter((value) => typeof value === 'number');
+    return values.length >= 2 ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+  });
+  const rollingSegments = pathSegments(rollingValues);
+  const weeklyPaths = weeklySegments
+    .map((segment) => {
+      const line = segment.map(([px, py], index) => `${index ? 'L' : 'M'}${px.toFixed(1)},${py.toFixed(1)}`).join(' ');
+      const area = `${line} L${segment.at(-1)[0].toFixed(1)},${(margin.top + innerHeight).toFixed(1)} L${segment[0][0].toFixed(1)},${(margin.top + innerHeight).toFixed(1)} Z`;
+      return `<path class="sw-attendance-area" d="${area}"/><path class="sw-attendance-line" d="${line}"/>`;
+    })
+    .join('');
+  const rollingPaths = rollingSegments
+    .map(
+      (segment) =>
+        `<path class="sw-attendance-average-line" d="${segment.map(([px, py], index) => `${index ? 'L' : 'M'}${px.toFixed(1)},${py.toFixed(1)}`).join(' ')}"/>`
+    )
+    .join('');
+  const grid = [0, 0.25, 0.5, 0.75, 1]
+    .map((fraction) => {
+      const value = Math.round(ceiling * (1 - fraction));
+      const py = margin.top + innerHeight * fraction;
+      return `<line x1="${margin.left}" x2="${width - margin.right}" y1="${py}" y2="${py}"/><text x="${margin.left - 10}" y="${py + 4}">${value}</text>`;
+    })
+    .join('');
+  const tickIndexes = [
+    ...new Set([0, Math.floor((points.length - 1) / 3), Math.floor(((points.length - 1) * 2) / 3), points.length - 1]),
+  ];
+  const ticks = tickIndexes
+    .map(
+      (index) =>
+        `<text x="${x(index)}" y="${height - 15}" text-anchor="middle">${escapeHtml(swAttendanceDate(points[index].weekOf))}</text>`
+    )
+    .join('');
+  const latestIndex = points.map((point) => point.headcount).findLastIndex((value) => typeof value === 'number');
+  const latest = points[latestIndex];
+  const description = `${measured.length} of ${points.length} Sundays reported. Latest attendance ${latest.headcount} on ${swAttendanceDate(latest.weekOf, { month: 'long', day: 'numeric', year: 'numeric' })}. Gaps indicate weeks with no report.`;
+  return `<div class="sw-attendance-chart-wrap"><svg class="sw-attendance-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(description)}"><g class="sw-attendance-grid">${grid}${ticks}</g>${weeklyPaths}${rollingPaths}<circle class="sw-attendance-latest" cx="${x(latestIndex)}" cy="${y(latest.headcount)}" r="6"/><circle class="sw-attendance-latest-core" cx="${x(latestIndex)}" cy="${y(latest.headcount)}" r="2.5"/></svg><div class="sw-attendance-legend" aria-hidden="true"><span><i class="is-weekly"></i>Weekly headcount</span><span><i class="is-average"></i>8-week rolling average</span></div><p class="sw-chart-note">${escapeHtml(description)}</p></div>`;
+}
+
+function attendanceMetric(label, value, detail) {
+  return `<div class="sw-attendance-kpi"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></div>`;
+}
+
+function renderStewardshipAttendance(data) {
+  const summary = data.summary || {};
+  const latest = summary.latestHeadcount === null ? '—' : Number(summary.latestHeadcount).toLocaleString('en-US');
+  const average =
+    summary.eightWeekAverage === null
+      ? '—'
+      : Number(summary.eightWeekAverage).toLocaleString('en-US', { maximumFractionDigits: 1 });
+  const change =
+    summary.eightWeekChangePct === null
+      ? '—'
+      : `${summary.eightWeekChangePct > 0 ? '+' : ''}${summary.eightWeekChangePct}%`;
+  const coverage = summary.reportingCoveragePct === null ? '—' : `${summary.reportingCoveragePct}%`;
+  const delegateOptions = (data.delegateOptions || [])
+    .map(
+      (ministry) =>
+        `<option value="${escapeHtml(ministry.id)}"${data.delegate?.ministryId === ministry.id ? ' selected' : ''}>${escapeHtml(ministry.name)}</option>`
+    )
+    .join('');
+  const selectedWeek = data.range?.endWeekOf || '';
+  const selectedPoint = (data.points || []).find((point) => point.weekOf === selectedWeek);
+  const message = attendanceState.message
+    ? `<p class="sw-attendance-status is-success" role="status">${escapeHtml(attendanceState.message)}</p>`
+    : '<p class="sw-attendance-status" id="attendanceSaveStatus" role="status"></p>';
+  return `<div class="sw-attendance-kpis">${attendanceMetric('Latest Sunday', latest, summary.latestWeekOf ? swAttendanceDate(summary.latestWeekOf, { month: 'short', day: 'numeric', year: 'numeric' }) : 'No report yet')}${attendanceMetric('8-week average', average, 'Reported Sundays')}${attendanceMetric('Change', change, 'Prior 8-week average')}${attendanceMetric('Reporting coverage', coverage, `${summary.weeksReported || 0} of ${summary.expectedWeeks || 0} Sundays`)}</div><div class="sw-attendance-controls"><form class="sw-attendance-entry" onsubmit="saveStewardshipAttendance(event)"><div><span class="sw-attendance-control-label">Record this week</span><p>Staff can enter or correct any Sunday.</p></div><label>Sunday<input id="attendanceWeekOf" name="weekOf" type="date" min="${escapeHtml(data.range?.startWeekOf || '')}" max="${escapeHtml(data.range?.endWeekOf || '')}" value="${escapeHtml(selectedWeek)}" onchange="syncAttendanceEntryFromWeek(this.value)" required></label><label>Headcount<input id="attendanceHeadcount" name="headcount" type="number" min="0" step="1" value="${typeof selectedPoint?.headcount === 'number' ? selectedPoint.headcount : ''}" placeholder="0" required></label><button type="submit">Save attendance</button></form><form class="sw-attendance-delegation" onsubmit="saveAttendanceDelegate(event)"><div><span class="sw-attendance-control-label">Entry delegation</span><p>Parish staff always retain access. Delegation only lets active leaders submit.</p></div><label>Ministry<select name="ministryId"><option value="">Parish staff only</option>${delegateOptions}</select></label><button type="submit">Save delegation</button></form></div>${message}${swTrendChart(data.points || [])}`;
+}
+
+async function loadStewardshipAttendancePanel(weeks = attendanceState.weeks) {
+  const pane = ensureStewardshipAttendanceCard();
+  if (!pane || !currentParish) return;
+  attendanceState.weeks = Number(weeks) || 52;
+  document
+    .querySelectorAll('[data-attendance-weeks]')
+    .forEach((button) =>
+      button.classList.toggle('is-active', Number(button.dataset.attendanceWeeks) === attendanceState.weeks)
+    );
+  pane.setAttribute('aria-busy', 'true');
+  if (!attendanceState.data) pane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
+  try {
+    const res = await fetch(stewardshipApi(`/attendance?weeks=${attendanceState.weeks}`), { headers: authHeaders() });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Attendance is unavailable.');
+    attendanceState.data = data;
+    pane.innerHTML = renderStewardshipAttendance(data);
+    attendanceState.message = '';
+  } catch (error) {
+    pane.innerHTML = `<div class="sw-attendance-empty"><strong>Attendance unavailable</strong><p>${escapeHtml(error.message)}</p><button type="button" onclick="loadStewardshipAttendancePanel()">Try again</button></div>`;
+  } finally {
+    pane.removeAttribute('aria-busy');
+  }
+}
+
+function syncAttendanceEntryFromWeek(weekOf) {
+  const input = document.getElementById('attendanceHeadcount');
+  const point = attendanceState.data?.points?.find((entry) => entry.weekOf === weekOf);
+  if (input) input.value = typeof point?.headcount === 'number' ? point.headcount : '';
+}
+
+async function saveStewardshipAttendance(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector('button[type="submit"]');
+  const data = new FormData(form);
+  button.disabled = true;
+  try {
+    const res = await fetch(stewardshipApi('/attendance'), {
+      method: 'PATCH',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ weekOf: data.get('weekOf'), headcount: Number(data.get('headcount')) }),
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload.error || 'Unable to save attendance.');
+    attendanceState.message = `Saved ${payload.headcount.toLocaleString('en-US')} for ${swAttendanceDate(payload.weekOf, { month: 'long', day: 'numeric', year: 'numeric' })}.`;
+    await loadStewardshipAttendancePanel();
+  } catch (error) {
+    const status = document.getElementById('attendanceSaveStatus');
+    if (status) {
+      status.textContent = error.message;
+      status.className = 'sw-attendance-status is-error';
+    }
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function saveAttendanceDelegate(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector('button[type="submit"]');
+  const ministryId = new FormData(form).get('ministryId');
+  button.disabled = true;
+  try {
+    const res = await fetch(stewardshipApi('/attendance/delegation'), {
+      method: 'PATCH',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ministryId }),
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload.error || 'Unable to save delegation.');
+    attendanceState.message = payload.delegate
+      ? `${payload.delegate.ministryName} can now submit weekly attendance.`
+      : 'Weekly attendance is now staff-only.';
+    await loadStewardshipAttendancePanel();
+  } catch (error) {
+    const status = document.getElementById('attendanceSaveStatus');
+    if (status) {
+      status.textContent = error.message;
+      status.className = 'sw-attendance-status is-error';
+    }
+  } finally {
+    button.disabled = false;
+  }
 }
 
 async function loadGivingIntelligencePanels(year) {
