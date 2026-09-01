@@ -89,6 +89,9 @@ assert.equal(
 const sacramentRules = requestContext('/api/parish/dashboard/demo/sacraments/availability/rules', 'POST');
 assert.equal(await (await routeParishRequest(sacramentRules)).text(), 'handleParishAvailabilityRuleCreate');
 
+const bulletins = requestContext('/api/parish/dashboard/demo/bulletins');
+assert.equal(await (await routeParishRequest(bulletins)).text(), 'handleParishBulletins');
+
 const sacramentPreparation = requestContext(
   '/api/parish/dashboard/demo/sacraments/request-1/preparation/items',
   'PATCH'

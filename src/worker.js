@@ -247,6 +247,7 @@ import {
   handleParishCommunications,
   sendWeeklyAnnouncementDigestEmails,
 } from "./handlers/parish-communications.js";
+import { handleParishBulletins } from "./handlers/parish-bulletins.js";
 import { handleDonorGroups, purgeExpiredGroupMessages } from "./handlers/donor-groups.js";
 import { handleKoinoniaAccess } from "./handlers/koinonia-access.js";
 import { handleDonorKoinoniaCommunityTools } from "./handlers/koinonia-community-tools.js";
@@ -3030,6 +3031,7 @@ const ROUTE_ACTIONS = Object.freeze({
   handleParishBlog,
   handleParishBookstore,
   handleParishBookstoreReadiness,
+  handleParishBulletins,
   handleParishCampaignUpload,
   handleParishCommemorations,
   handleParishCommunications,
@@ -3242,6 +3244,7 @@ export default {
       || url.pathname === "/api/donor/digest/subscription"
       || url.pathname === "/api/donor/digest/unsubscribe"
       || url.pathname === "/api/admin/communications/send-weekly-digest"
+      || (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/bulletins"))
       || (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/communications"))
       || (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/prayer-requests"));
     if (parishLifeApiRoute && !parishLifeAvailable) {

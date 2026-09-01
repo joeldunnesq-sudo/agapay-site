@@ -66,6 +66,9 @@ export async function routeParishRequest({ request, env, ctx, url, actions }) {
   if (suffix.startsWith('/library')) {
     return actions.handleParishLibrary(request, env, parishId, suffix.slice('/library'.length));
   }
+  if (suffix.startsWith('/bulletins')) {
+    return actions.handleParishBulletins(request, env, parishId, suffix.slice('/bulletins'.length));
+  }
   if (suffix.startsWith('/communications')) {
     const subpath = suffix.slice('/communications'.length);
     const normalizedSubpath = subpath.replace(/^\/+/, '');

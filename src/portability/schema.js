@@ -164,6 +164,8 @@ export const PORTABILITY_SCHEMA = Object.freeze({
   "nonprofit_pricing_threshold_alerts": ["donation_percent","last_observed_at","notified_at","parish_id","resolved_at","risk_band","threshold_exposure_percent"],
   "parish_announcement_digest_subscriptions": ["donor_id","last_digest_sent_at","parish_id","subscribed_at","unsubscribe_token","unsubscribed_at"],
   "parish_announcements": ["body","category","created_at","created_by","hero_image_url","id","parish_id","pinned","published_at","status","title","updated_at"],
+  "parish_bulletins": ["content_json","created_at","created_by","id","parish_id","published_at","service_date","status","template","title","updated_at"],
+  "parish_bulletin_troparia": ["active","created_at","created_by","id","kind","parish_id","sort_order","text_body","title","tone","updated_at"],
   "parish_availability_blackouts": ["created_at","date","end_date","id","parish_id","priest_email","priest_name","reason"],
   "parish_availability_rules": ["active","created_at","day_of_week","end_time","id","parish_id","priest_email","priest_name","sacrament_type","slot_minutes","start_time","updated_at"],
   "parish_blog_feeds": ["enabled","feed_url","parish_id","source_url","updated_at","updated_by"],
