@@ -114,7 +114,7 @@ const onboarding = repository.getOnboarding();
 assert(onboarding.onboarding.steps.some((step) => step.status === "active"), "Onboarding should have an active setup step.");
 assert(onboarding.setupCompleted === false, "Unsaved Learn households should be identified as first-run setup.");
 
-const learnShell = readFileSync(new URL("../public/learn/dashboard-shell.js", import.meta.url), "utf8");
+const learnShell = readFileSync(new URL("../public/learn/dashboard-shell.js", import.meta.url), "utf8").replaceAll("\r\n", "\n");
 const learnMobileGate = readFileSync(new URL("../public/learn/mobile-gate.js", import.meta.url), "utf8");
 const learnBilling = readFileSync(new URL("../src/learn/billing.js", import.meta.url), "utf8");
 const learnHandlers = readFileSync(new URL("../src/learn/handlers.js", import.meta.url), "utf8");
