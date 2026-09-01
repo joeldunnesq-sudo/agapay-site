@@ -98,6 +98,11 @@ const sacramentPreparation = requestContext(
 );
 assert.equal(await (await routeParishRequest(sacramentPreparation)).text(), 'handleParishSacramentPreparation');
 
+const pastoralFollowUp = requestContext('/api/parish/dashboard/demo/sacraments/follow-up/followup-1/contacts', 'POST');
+assert.equal(await (await routeParishRequest(pastoralFollowUp)).text(), 'handleParishPastoralFollowUp');
+assert.equal(pastoralFollowUp.calls[0].args[3], '/followup-1/contacts');
+assert.equal(pastoralFollowUp.calls[0].args[4], pastoralFollowUp.ctx);
+
 const parishFallback = requestContext('/api/parish/dashboard/demo/unknown');
 assert.equal(await (await routeParishRequest(parishFallback)).text(), 'handleParishDashboard');
 assert.equal(parishFallback.calls[0].args[2], 'demo/unknown');

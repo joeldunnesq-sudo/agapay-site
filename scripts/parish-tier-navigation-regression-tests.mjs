@@ -43,7 +43,7 @@ const featureAssetVersions = [
   '/parish/app.js',
 ].map((asset) => dashboard.match(new RegExp(`${asset.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\?v=([^"']+)`))?.[1]);
 assert.ok(
-  dashboard.includes('/parish/style.css?v=20260817centralemail1')
+  dashboard.includes('/parish/style.css?v=20260901memorial1')
     && dashboard.includes('/parish/redesign.css?v=20260829fullscreen1')
     && dashboard.includes('/parish/library.css?v=20260829fullscreen1')
     && dashboard.includes('/styles/stewardship.css?v=20260829fullscreen1')

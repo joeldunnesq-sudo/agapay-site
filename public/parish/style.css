@@ -4188,6 +4188,136 @@
     .sac-admin-history summary::-webkit-details-marker { display: none; }
     .sac-admin-history[open] summary { margin-bottom: 0.85rem; }
     .sac-admin-empty { text-align: center; padding: 2rem; }
+    .pastoral-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 0.25rem 0 0.35rem;
+    }
+    .pastoral-heading > div > span,
+    .pastoral-add summary > span {
+      color: var(--sac-gold);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .pastoral-heading h2 {
+      margin: 0.15rem 0 0;
+      color: var(--sac-text);
+      font: 600 clamp(1.7rem, 4vw, 2.25rem)/1.05 "Cormorant Garamond", serif;
+    }
+    .pastoral-heading p {
+      max-width: 720px;
+      margin: 0.35rem 0 0;
+      color: var(--sac-muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .pastoral-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.7rem;
+    }
+    .pastoral-summary > div {
+      display: grid;
+      gap: 0.1rem;
+      border: 1px solid var(--sac-line);
+      border-radius: 4px;
+      padding: 0.85rem 1rem;
+    }
+    .pastoral-summary > div.overdue { border-color: rgba(150,40,40,0.35); background: rgba(150,40,40,0.035); }
+    .pastoral-summary > div.memorial { border-color: rgba(113,76,132,0.3); background: rgba(113,76,132,0.04); }
+    .pastoral-summary strong {
+      color: var(--sac-text);
+      font: 600 1.6rem "Cormorant Garamond", serif;
+    }
+    .pastoral-summary span { color: var(--sac-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .pastoral-add summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      cursor: pointer;
+      list-style: none;
+    }
+    .pastoral-add summary::-webkit-details-marker { display: none; }
+    .pastoral-add summary strong { color: var(--sac-text); font: 600 1.2rem "Cormorant Garamond", serif; }
+    .pastoral-add[open] summary { margin-bottom: 0.75rem; padding-bottom: 0.7rem; border-bottom: 1px solid var(--sac-line-soft); }
+    .pastoral-directory-search {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) auto;
+      gap: 0.6rem;
+      align-items: center;
+      margin: 0.85rem 0;
+    }
+    .pastoral-directory-search input {
+      width: 100%;
+      min-height: 36px;
+      border: 1px solid var(--sac-line);
+      border-radius: 4px;
+      background: transparent;
+      color: var(--sac-text);
+      font: 14px "Lora", serif;
+      padding: 0.45rem 0.65rem;
+    }
+    .pastoral-directory-search .sac-admin-status-text { grid-column: 1 / -1; }
+    .pastoral-add-form { display: grid; gap: 0.75rem; }
+    .pastoral-card-list { display: grid; gap: 0.65rem; }
+    .pastoral-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.75rem 1rem;
+      border: 1px solid var(--sac-line);
+      border-left: 3px solid var(--sac-gold);
+      border-radius: 4px;
+      padding: 0.9rem 1rem;
+    }
+    .pastoral-card.overdue { border-color: rgba(150,40,40,0.35); border-left-color: #962828; background: rgba(150,40,40,0.035); }
+    .pastoral-card-title { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+    .pastoral-card-title strong { color: var(--sac-text); font: 600 19px "Cormorant Garamond", serif; }
+    .pastoral-reason,
+    .pastoral-urgent {
+      border-radius: 3px;
+      background: var(--sac-gold-soft);
+      color: var(--sac-gold-dark);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 0.16rem 0.42rem;
+    }
+    .pastoral-urgent { background: rgba(150,40,40,0.1); color: #8a2929; }
+    .pastoral-scheduled { border-radius: 3px; padding: 0.16rem 0.42rem; background: rgba(35,92,77,0.1); color: #235c4d; font-size: 10px; font-weight: 600; }
+    .pastoral-card-main p { margin: 0.18rem 0 0; color: var(--sac-muted); font-size: 12px; line-height: 1.5; }
+    .pastoral-card-main p b { color: var(--sac-text); }
+    .pastoral-card-main .pastoral-card-note { margin-top: 0.45rem; padding-top: 0.4rem; border-top: 1px solid var(--sac-line-soft); }
+    .pastoral-card-actions { display: flex; align-items: flex-start; gap: 0.45rem; flex-wrap: wrap; justify-content: flex-end; }
+    .pastoral-inline-form { grid-column: 1 / -1; display: grid; gap: 0.75rem; border-top: 1px solid var(--sac-line); padding-top: 0.85rem; }
+    .pastoral-inline-form[hidden] { display: none; }
+    .pastoral-repose-fields { display: grid; gap: 0.75rem; border: 1px solid rgba(113,76,132,0.2); border-radius: 4px; padding: 0.8rem; background: rgba(113,76,132,0.025); }
+    .pastoral-repose-fields[hidden] { display: none; }
+    .pastoral-marker-choices { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.5rem; border: 0; margin: 0; padding: 0; }
+    .pastoral-marker-choices legend { grid-column: 1 / -1; margin-bottom: 0.35rem; color: var(--sac-muted); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+    .pastoral-marker-choices label { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.2rem 0.4rem; align-items: center; border: 1px solid var(--sac-line-soft); border-radius: 4px; padding: 0.55rem; color: var(--sac-text); font-size: 11px; }
+    .pastoral-marker-choices input { width: auto; min-height: auto; }
+    .pastoral-marker-choices small { grid-column: 2; min-height: 1em; color: var(--sac-muted); font-size: 9px; }
+    .pastoral-memorial-card { border-left-color: #714c84; }
+    .pastoral-memorial-queue > .sac-admin-panel-head > div > span { color: #714c84; }
+    .pastoral-close-check em { display: flex; align-items: center; gap: 0.45rem; min-height: 36px; color: var(--sac-muted); font: normal 12px "Lora", serif; }
+    .pastoral-close-check input { width: auto; min-height: auto; }
+    .pastoral-history summary { list-style: none; }
+    .pastoral-closed-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: center;
+      border-top: 1px solid var(--sac-line-soft);
+      padding: 0.65rem 0;
+    }
+    .pastoral-closed-row:first-child { border-top: 0; }
+    .pastoral-closed-row > div { display: grid; gap: 0.15rem; }
+    .pastoral-closed-row strong { color: var(--sac-text); font: 600 16px "Cormorant Garamond", serif; }
+    .pastoral-closed-row span { color: var(--sac-muted); font-size: 11px; }
     @media (max-width: 760px) {
       .sac-admin-shell {
         margin: 0 -0.5rem;
@@ -4211,6 +4341,14 @@
       .sac-admin-rules-row {
         grid-template-columns: 1fr;
       }
+      .pastoral-heading,
+      .pastoral-card,
+      .pastoral-closed-row { grid-template-columns: 1fr; flex-direction: column; }
+      .pastoral-card-actions { justify-content: flex-start; }
+      .pastoral-summary { grid-template-columns: 1fr; }
+      .pastoral-marker-choices { grid-template-columns: 1fr 1fr; }
+      .pastoral-directory-search { grid-template-columns: 1fr; }
+      .pastoral-directory-search .sac-admin-status-text { grid-column: auto; }
     }
 
     @media (max-width: 620px) {

@@ -124,6 +124,7 @@ import { sendNonprofitThresholdAlerts } from "./lib/nonprofit-pricing.js";
 import { handleOperationsCanary, handleOperationsMonitorAlert } from "./operations/monitoring.js";
 import { mfaReadiness } from "./lib/mfa.js";
 import { recordScheduledHeartbeat } from "./operations/scheduled-heartbeats.js";
+import { materializeMemorialAnniversaries } from "./sacraments/memorial-followup.js";
 
 import {
   verifyParishDashboardBearer,
@@ -199,6 +200,7 @@ import {
   handleDonorSacramentPreparation,
   handleParishSacramentPreparation,
 } from "./handlers/sacrament-preparation.js";
+import { handleParishPastoralFollowUp } from "./handlers/parish-pastoral-followup.js";
 
 import {
   handleDonorClaimCheckout,
@@ -1409,38 +1411,65 @@ async function sendWeeklySacramentDigestEmails(env, scheduledTime, options = {})
        ORDER BY confirmed_date ASC LIMIT 25`,
       registration.parishId, todayIso, weekAheadIso
     );
+    const memorials = await d1All(env,
+      `SELECT m.id, m.marker_type, m.target_date, m.status, p.preferred_name,
+          c.assigned_priest_name, c.assigned_priest_email
+       FROM sacrament_memorial_markers m
+       JOIN sacrament_memorial_cycles c ON c.id = m.cycle_id
+       JOIN directory_people p ON p.id = c.person_id
+       WHERE c.parish_id = ? AND c.status = 'active'
+         AND m.status = 'pending' AND m.remind_on <= ?
+       ORDER BY m.target_date ASC LIMIT 25`,
+      registration.parishId, weekAheadIso
+    ).catch(error => {
+      if (/sacrament_memorial_|no such table/i.test(String(error?.message || error || ""))) return [];
+      throw error;
+    });
+    const recipients = [...new Set([recipient, ...memorials.map(row => normalizeEmail(row.assigned_priest_email))].filter(Boolean))];
 
-    if (!needsResponse.length && !thisWeek.length) {
+    if (!needsResponse.length && !thisWeek.length && !memorials.length) {
       results.push({ parishId: registration.parishId, parishName: registration.parishName || "", status: "skipped", reason: "nothing_pending" });
       continue;
     }
     if (dryRun) {
       results.push({
-        parishId: registration.parishId, parishName: registration.parishName || "", to: recipient,
-        status: "dry_run", needsResponseCount: needsResponse.length, overdueCount: overdue.length, thisWeekCount: thisWeek.length
+        parishId: registration.parishId, parishName: registration.parishName || "", to: recipients,
+        status: "dry_run", needsResponseCount: needsResponse.length, overdueCount: overdue.length,
+        thisWeekCount: thisWeek.length, memorialCount: memorials.length
       });
       continue;
     }
 
     const typeLabel = (row) => htmlEscape(row.other_type_label || sacramentTypeLabel(row.sacrament_type));
     const listItem = (label, meta) => `<li style="margin:0 0 6px;">${label}${meta ? ` <span style="color:#6F6A60;">— ${htmlEscape(meta)}</span>` : ""}</li>`;
-    const section = (title, rows, metaFn) => rows.length
-      ? `<p style="margin:18px 0 6px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#6F6A60;font-weight:700;">${title}</p><ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.6;color:#171715;">${rows.map((r) => listItem(typeLabel(r), metaFn(r))).join("")}</ul>`
+    const section = (title, rows, metaFn, labelFn = typeLabel) => rows.length
+      ? `<p style="margin:18px 0 6px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#6F6A60;font-weight:700;">${title}</p><ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.6;color:#171715;">${rows.map((r) => listItem(labelFn(r), metaFn(r))).join("")}</ul>`
       : "";
 
+    const memorialLabel = (row) => ({
+      third_day: "3rd-day memorial",
+      ninth_day: "9th-day memorial",
+      fortieth_day: "40th-day memorial",
+      six_month: "Six-month memorial",
+      first_anniversary: "First-anniversary memorial",
+      annual_anniversary: "Annual memorial",
+    }[row.marker_type] || "Memorial service");
     const subject = overdue.length
       ? `${overdue.length} sacrament request${overdue.length === 1 ? "" : "s"} waiting on ${registration.parishName || "your parish"}`
+      : memorials.length
+        ? `${memorials.length} memorial observance${memorials.length === 1 ? "" : "s"} to arrange at ${registration.parishName || "your parish"}`
       : `Sacraments & Services: this week at ${registration.parishName || "your parish"}`;
 
     const email = await sendEmail(env, {
       from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
-      to: [recipient],
+      to: recipients,
       reply_to: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
       subject,
       html: agapayEmailHtml(appUrl, "Sacraments & Services — Weekly Digest", `
         <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#171715;">Here's what needs attention in Sacraments &amp; Services for <strong>${htmlEscape(registration.parishName || "your parish")}</strong>.</p>
         ${overdue.length ? `<p style="margin:0;padding:10px 14px;background:#FBEFE9;border:1px solid rgba(178,68,30,0.28);border-radius:10px;font-size:14px;color:#8B2A0E;"><strong>${overdue.length}</strong> request${overdue.length === 1 ? "" : "s"} ha${overdue.length === 1 ? "s" : "ve"} been waiting more than 48 hours for a response.</p>` : ""}
         ${section("Needs a response", needsResponse, (r) => `waiting since ${new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`)}
+        ${section("Memorial observances to arrange", memorials, (r) => `${r.preferred_name} · ${r.target_date}${r.assigned_priest_name ? ` · ${r.assigned_priest_name}` : ""}`, memorialLabel)}
         ${section("Scheduled this week", thisWeek, (r) => r.confirmed_date)}
         <p style="margin:18px 0 0;font-size:13px;color:#6F6A60;">Review and respond from your parish dashboard, under Sacraments &amp; Services.</p>
       `),
@@ -1448,14 +1477,17 @@ async function sendWeeklySacramentDigestEmails(env, scheduledTime, options = {})
         subject, "",
         "Needs a response:",
         ...(needsResponse.length ? needsResponse.map((r) => `- ${r.other_type_label || sacramentTypeLabel(r.sacrament_type)} (since ${r.created_at})`) : ["None"]),
+        "", "Memorial observances to arrange:",
+        ...(memorials.length ? memorials.map((r) => `- ${memorialLabel(r)} for ${r.preferred_name} (target ${r.target_date})`) : ["None"]),
         "", "Scheduled this week:",
         ...(thisWeek.length ? thisWeek.map((r) => `- ${r.other_type_label || sacramentTypeLabel(r.sacrament_type)} on ${r.confirmed_date}`) : ["None"])
       ].join("\n")
     });
 
     results.push({
-      parishId: registration.parishId, parishName: registration.parishName || "", to: recipient,
-      status: email.status, needsResponseCount: needsResponse.length, overdueCount: overdue.length, thisWeekCount: thisWeek.length
+      parishId: registration.parishId, parishName: registration.parishName || "", to: recipients,
+      status: email.status, needsResponseCount: needsResponse.length, overdueCount: overdue.length,
+      thisWeekCount: thisWeek.length, memorialCount: memorials.length
     });
   }
 
@@ -3050,6 +3082,7 @@ const ROUTE_ACTIONS = Object.freeze({
   handleParishOnboarding,
   handleParishPasswordResetConfirm,
   handleParishPasswordResetRequest,
+  handleParishPastoralFollowUp,
   handleParishPayoutDiagnostics,
   handleParishPrayerRequests,
   handleParishReconciliation,
@@ -3201,6 +3234,7 @@ export default {
     ctx.waitUntil(observeScheduledTask("group_message_retention_sweep", purgeExpiredGroupMessages(env, event.scheduledTime), env, event));
     ctx.waitUntil(observeScheduledTask("koinonia_exchange_expiry_sweep", expireKoinoniaExchangeListings(env, event.scheduledTime), env, event));
     ctx.waitUntil(observeScheduledTask("koinonia_signup_reminders", sendScheduledSignupReminders(env, event.scheduledTime), env, event));
+    ctx.waitUntil(observeScheduledTask("memorial_anniversary_materialization", materializeMemorialAnniversaries(env, event.scheduledTime), env, event));
     if (event.cron === "0 8 * * *") {
       ctx.waitUntil(observeScheduledTask("accounting_backup_retention_sweep", sweepAccountingBackupRetention(env, event.scheduledTime), env, event));
       return;
