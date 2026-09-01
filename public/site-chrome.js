@@ -7,7 +7,9 @@
   const PRIMARY_LINKS = [
     { href: "/give", label: "Platform", key: "platform" },
     { href: "/give#pricing", label: "Pricing", key: "pricing" },
-    { href: "/give#security", label: "Security", key: "security" }
+    { href: "/give#security", label: "Security", key: "security" },
+    { href: "/about", label: "About", key: "about" },
+    { href: "/contact", label: "Contact", key: "contact" }
   ];
 
   const SIGN_IN_LINKS = [
