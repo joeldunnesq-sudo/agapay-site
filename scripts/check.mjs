@@ -721,6 +721,9 @@ assert.ok(platformHome.includes("giving-dashboard.jpg?v=6a4506c0ba14") && platfo
 assert.ok(platformHome.includes("Koinonia") && platformHome.includes("Sacraments") && platformHome.includes("Accounting"), "platform homepage should surface community, pastoral, and financial operations");
 assert.ok(platformHome.includes('src="/site-chrome.js"'), "platform homepage should render the canonical navigation that routes giving-focused visitors to /give");
 assert.ok(givingOverview.includes('rel="canonical" href="https://agapay.app/give"') && givingOverview.includes("The Orthodox Giving App <em>for all of parish life.</em>"), "the consolidated Give page should publish one canonical URL and the approved Orthodox giving headline");
+const giveSectionNav = givingOverview.match(/<nav class="give-section-nav"[\s\S]*?<\/nav>/)?.[0] || "";
+assert.match(giveSectionNav, /give-section-links">\s*<a href="#why">Why AGAPAY<\/a>/, "the Give secondary navigation should lead with Why AGAPAY");
+assert.ok(givingOverview.indexOf('id="why"') < givingOverview.indexOf('id="pricing"'), "the Why AGAPAY section should appear before Plans and cost to the parish");
 const canonicalChrome = await readFile("public/site-chrome.js", "utf8");
 assert.ok(
   canonicalChrome.includes('{ href: "/give", label: "Platform"')
