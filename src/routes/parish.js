@@ -100,6 +100,15 @@ export async function routeParishRequest({ request, env, ctx, url, actions }) {
       decodeURIComponent(suffix.slice('/sacraments/availability/blackouts/'.length))
     );
   }
+  if (suffix === '/sacraments/follow-up' || suffix.startsWith('/sacraments/follow-up/')) {
+    return actions.handleParishPastoralFollowUp(
+      request,
+      env,
+      parishId,
+      suffix.slice('/sacraments/follow-up'.length),
+      ctx
+    );
+  }
   if (
     suffix.includes('/sacraments/preparation') ||
     (suffix.startsWith('/sacraments/') && suffix.includes('/preparation/'))

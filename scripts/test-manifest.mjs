@@ -140,6 +140,7 @@ const productUi = [
   'scripts/starter-tier-offerings-tests.mjs',
   'scripts/sacraments-parish-ui-tests.mjs',
   'scripts/sacrament-preparation-tests.mjs',
+  'scripts/pastoral-followup-tests.mjs',
   'scripts/church-requested-features-tests.mjs',
   'scripts/giving-history-ui-tests.mjs',
   'scripts/donor-today-saint-tests.mjs',
@@ -210,7 +211,7 @@ export const testGroups = Object.freeze({
     productUi.filter((test) => /donor|giving-history/.test(test))
   ),
   directory,
-  sacraments: productUi.filter((test) => /sacrament|church-requested/.test(test)),
+  sacraments: productUi.filter((test) => /sacrament|pastoral-followup|church-requested/.test(test)),
   security: core.filter((test) => /security|hardening|identity|mfa|legal|tax|launch-controls/.test(test)),
   'release-gates': releaseGates,
   critical,

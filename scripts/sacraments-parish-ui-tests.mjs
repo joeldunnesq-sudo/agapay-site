@@ -3,7 +3,8 @@ import fs from 'node:fs';
 const dashboard = fs.readFileSync(new URL('../public/parish/dashboard.html', import.meta.url), 'utf8');
 const coreApp = fs.readFileSync(new URL('../public/parish/app.js', import.meta.url), 'utf8');
 const sacramentsFeature = fs.readFileSync(new URL('../public/parish/features/sacraments.js', import.meta.url), 'utf8');
-const app = `${coreApp}\n${sacramentsFeature}`;
+const pastoralFollowUp = fs.readFileSync(new URL('../public/parish/features/sacraments/pastoral-followup.js', import.meta.url), 'utf8');
+const app = `${coreApp}\n${sacramentsFeature}\n${pastoralFollowUp}`;
 const css = fs.readFileSync(new URL('../public/styles/stewardship.css', import.meta.url), 'utf8');
 const donorApp = fs.readFileSync(new URL('../public/donor/app.js', import.meta.url), 'utf8');
 const donorHandler = fs.readFileSync(new URL('../src/handlers/donor.js', import.meta.url), 'utf8');
@@ -15,12 +16,13 @@ const liveDashboard = dashboard.slice(
 );
 
 const checks = [
-  ['Sacraments is owned by a registered feature module loaded before the dashboard core', dashboard.indexOf('/parish/feature-registry.js?v=') < dashboard.indexOf('/parish/features/sacraments.js?v=') && dashboard.indexOf('/parish/features/sacraments.js?v=') < dashboard.indexOf('/parish/app.js?') && sacramentsFeature.includes("ParishFeatureRegistry.register('sacraments'") && !coreApp.includes('let sacramentsState')],
+  ['Sacraments is owned by a registered feature module loaded before the dashboard core', dashboard.indexOf('/parish/feature-registry.js?v=') < dashboard.indexOf('/parish/features/sacraments/pastoral-followup.js?v=20260901memorial1') && dashboard.indexOf('/parish/features/sacraments/pastoral-followup.js?v=20260901memorial1') < dashboard.indexOf('/parish/features/sacraments.js?v=') && dashboard.indexOf('/parish/features/sacraments.js?v=') < dashboard.indexOf('/parish/app.js?') && sacramentsFeature.includes("ParishFeatureRegistry.register('sacraments'") && !coreApp.includes('let sacramentsState')],
   ['Sacraments removes the unused dashboard spacer when active', app.includes(`classList.toggle('sacraments-tab-active', tab === 'sacraments')`) && css.includes('.content.sacraments-tab-active > .detail-wrap { display: none; }') && css.includes('.content.sacraments-tab-active > #tab-sacraments.active {')],
   ['live Sacraments uses the shared AGAPAY feature hero', dashboard.includes('sac-admin-head sw-suite-hero') && dashboard.includes('sac-admin-status sw-suite-hero-status agapay-feature-actions')],
   ['Sacraments hero omits the redundant refresh control', !liveDashboard.includes('sw-suite-refresh-btn') && !liveDashboard.includes('Refresh Sacraments &amp; Services')],
   ['Sacraments uses the shared on/off feature switch', app.includes('class="sac-admin-switch agapay-feature-switch"') && app.includes('aria-label="Show Sacraments and Services in My AGAPAY"') && app.includes("${enabled ? 'On' : 'Off'}")],
   ['priest context is separated cleanly from hero actions', dashboard.includes('class="sac-admin-context-bar"') && dashboard.includes('id="sacramentsPriestPicker"') && dashboard.includes('class="sac-admin-context-status"')],
+  ['Pastoral follow-up is a priest-filtered Sacraments workspace', dashboard.includes('data-sac-tab="follow-up"') && app.includes('pastoralMatchesSelectedPriest') && app.includes('Clergy tickler') && app.includes('Log contact') && app.includes('Schedule visit')],
   ['Sacrament Rules replaces the duplicate Weekly Availability tab', !liveDashboard.includes('>Weekly Availability<') && liveDashboard.indexOf('Blackout Dates') < liveDashboard.indexOf('Sacrament Rules') && liveDashboard.indexOf('Sacrament Rules') < liveDashboard.indexOf('>Requests<') && liveDashboard.indexOf('>Requests<') < liveDashboard.indexOf('>Calendar<')],
   ['priest calendars distinguish blackout and scheduled dates', app.includes("row.status === 'scheduled'") && app.includes("has-blackout") && app.includes("has-scheduled") && css.includes('.sac-admin-cal-cell.has-blackout') && css.includes('.sac-admin-cal-cell.has-scheduled')],
   ['blackouts accept inclusive date ranges', app.includes('sacAvailNewBlackoutStartDate') && app.includes('sacAvailNewBlackoutEndDate') && app.includes('formatSacramentDateRange')],

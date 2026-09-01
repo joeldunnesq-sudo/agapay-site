@@ -176,6 +176,9 @@ function parishSacramentRequestRow(row = {}) {
   return {
     id: row.id,
     parishId: row.parish_id,
+    personId: row.person_id || "",
+    requestSource: row.request_source || "donor",
+    sourceId: row.source_id || "",
     donorEmail: row.donor_email,
     sacramentType: row.sacrament_type,
     otherTypeLabel: row.other_type_label || "",
@@ -294,12 +297,24 @@ export async function handleParishSacramentUpdate(request, env, parishId, reques
 
   const updated = await d1First(env, "SELECT * FROM sacrament_requests WHERE id = ?", requestId);
 
+  if (updated.request_source === "pastoral_memorial" && updated.source_id) {
+    const markerStatus = nextStatus === "completed" ? "completed" : ["cancelled", "declined"].includes(nextStatus) ? "skipped" : nextStatus === "scheduled" ? "scheduled" : "pending";
+    if (markerStatus) {
+      await d1Run(env, `
+        UPDATE sacrament_memorial_markers
+        SET status = ?, scheduled_for = ?, completed_at = ?, updated_at = ?
+        WHERE id = ? AND cycle_id IN (SELECT id FROM sacrament_memorial_cycles WHERE parish_id = ?)
+      `, markerStatus, markerStatus === "scheduled" ? confirmedDate || null : null,
+      ["completed", "skipped"].includes(markerStatus) ? now : null, now, updated.source_id, parishId);
+    }
+  }
+
   // Calendar sync is intentionally best-effort: the parish request save is
   // authoritative and must succeed even if Google is temporarily unavailable.
   const calendarSync = await syncSacramentRequestToGoogleCalendar(env, found.registration, updated, existing);
 
   // Notify the donor of a meaningful status change — best-effort, never blocks the save.
-  if (nextStatus !== existing.status) {
+  if (nextStatus !== existing.status && updated.request_source !== "pastoral_memorial") {
     try {
       await notifyDonorOfSacramentStatusChange(env, found.registration, updated);
     } catch { /* notification failure never blocks the update */ }
