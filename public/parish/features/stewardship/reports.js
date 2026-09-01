@@ -123,7 +123,7 @@ function renderDiocesanStatisticsPreview(report) {
       ? `${swNumber(attendance.weeksReported)} Sundays reported`
       : 'No attendance reported';
   return `<div class="sw-report-overview"><div class="sw-report-collected"><span class="sw-report-eyebrow">${escapeHtml(String(report.year))} diocesan snapshot</span><strong>${escapeHtml(attendanceValue)}</strong><span>average weekly attendance · ${escapeHtml(attendanceDetail)}</span></div>
-    <div class="sw-kpi-grid sw-report-kpis">${gmKpi('Directory membership', swNumber(report.membership?.people), swNumber(report.membership?.households) + ' active households')}${gmKpi('Completed sacraments', swNumber(report.sacraments?.total), 'baptisms, chrismations, weddings, funerals')}${gmKpi('Recorded giving', fmtDollars(report.giving?.totalActualCents || 0), swNumber(report.giving?.activeDonors) + ' active donors')}</div></div>
+    <div class="sw-kpi-grid sw-report-kpis">${gmKpi('Directory membership', swNumber(report.membership?.people), swNumber(report.membership?.households) + ' active households · ' + swNumber(report.membership?.catechumensMade) + ' catechumens made')}${gmKpi('Completed sacraments', swNumber(report.sacraments?.total), 'baptisms, chrismations, weddings, funerals')}${gmKpi('Recorded giving', fmtDollars(report.giving?.totalActualCents || 0), swNumber(report.giving?.activeDonors) + ' active donors')}</div></div>
     <p class="sw-chart-note">Membership is the current active Directory snapshot. Sacraments, attendance, and giving use the selected calendar year.</p>`;
 }
 

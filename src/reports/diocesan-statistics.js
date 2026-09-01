@@ -68,30 +68,31 @@ export async function aggregateDiocesanStatistics(
   const nextYearStart = `${reportingYear + 1}-01-01`;
   const yearEnd = `${reportingYear}-12-31`;
 
-  const [attendanceRow, sacramentResult, membershipRow, membershipStatusResult, giving] = await Promise.all([
-    env.AGAPAY_DB.prepare(
-      `SELECT COUNT(*) AS weeks_reported,
+  const [attendanceRow, sacramentResult, membershipRow, membershipStatusResult, catechumensMadeRow, giving] =
+    await Promise.all([
+      env.AGAPAY_DB.prepare(
+        `SELECT COUNT(*) AS weeks_reported,
               AVG(headcount) AS average_headcount,
               MIN(week_of) AS first_week,
               MAX(week_of) AS last_week
          FROM parish_weekly_headcounts
         WHERE parish_id = ? AND week_of >= ? AND week_of < ?`
-    )
-      .bind(parishId, yearStart, nextYearStart)
-      .first(),
-    env.AGAPAY_DB.prepare(
-      `SELECT sacrament_type, COUNT(*) AS total
+      )
+        .bind(parishId, yearStart, nextYearStart)
+        .first(),
+      env.AGAPAY_DB.prepare(
+        `SELECT sacrament_type, COUNT(*) AS total
          FROM sacrament_requests
         WHERE parish_id = ? AND status = 'completed'
           AND sacrament_type IN ('baptism', 'chrismation', 'wedding', 'funeral')
           AND COALESCE(NULLIF(confirmed_date, ''), substr(updated_at, 1, 10), substr(created_at, 1, 10)) >= ?
           AND COALESCE(NULLIF(confirmed_date, ''), substr(updated_at, 1, 10), substr(created_at, 1, 10)) < ?
         GROUP BY sacrament_type`
-    )
-      .bind(parishId, yearStart, nextYearStart)
-      .all(),
-    env.AGAPAY_DB.prepare(
-      `SELECT COUNT(DISTINCT p.id) AS people,
+      )
+        .bind(parishId, yearStart, nextYearStart)
+        .all(),
+      env.AGAPAY_DB.prepare(
+        `SELECT COUNT(DISTINCT p.id) AS people,
               COUNT(DISTINCT h.id) AS households
          FROM directory_parish_affiliations a
          JOIN directory_people p ON p.id = a.person_id AND p.active = 1
@@ -99,20 +100,37 @@ export async function aggregateDiocesanStatistics(
          LEFT JOIN directory_households h ON h.id = hm.household_id
           AND h.parish_id = a.parish_id AND h.active = 1
         WHERE a.parish_id = ? AND a.active = 1 AND a.status != 'former_member'`
-    )
-      .bind(parishId)
-      .first(),
-    env.AGAPAY_DB.prepare(
-      `SELECT a.status, COUNT(DISTINCT a.person_id) AS total
+      )
+        .bind(parishId)
+        .first(),
+      env.AGAPAY_DB.prepare(
+        `SELECT a.status, COUNT(DISTINCT a.person_id) AS total
          FROM directory_parish_affiliations a
          JOIN directory_people p ON p.id = a.person_id AND p.active = 1
         WHERE a.parish_id = ? AND a.active = 1 AND a.status != 'former_member'
         GROUP BY a.status`
-    )
-      .bind(parishId)
-      .all(),
-    givingSummaryLoader(env, parishId, reportingYear, manualIncomeTotalCents),
-  ]);
+      )
+        .bind(parishId)
+        .all(),
+      env.AGAPAY_DB.prepare(
+        `SELECT COUNT(DISTINCT person_id) AS total
+         FROM directory_parish_affiliations
+        WHERE parish_id = ? AND status = 'catechumen'
+          AND CASE
+                WHEN joined_date GLOB '????-??-??' THEN joined_date
+                WHEN typeof(created_at) = 'integer' THEN date(created_at / 1000, 'unixepoch')
+                ELSE substr(created_at, 1, 10)
+              END >= ?
+          AND CASE
+                WHEN joined_date GLOB '????-??-??' THEN joined_date
+                WHEN typeof(created_at) = 'integer' THEN date(created_at / 1000, 'unixepoch')
+                ELSE substr(created_at, 1, 10)
+              END < ?`
+      )
+        .bind(parishId, yearStart, nextYearStart)
+        .first(),
+      givingSummaryLoader(env, parishId, reportingYear, manualIncomeTotalCents),
+    ]);
 
   const weeksReported = number(attendanceRow?.weeks_reported);
   const sacramentCounts = { baptism: 0, chrismation: 0, wedding: 0, funeral: 0 };
@@ -145,6 +163,7 @@ export async function aggregateDiocesanStatistics(
     membership: {
       people: number(membershipRow?.people),
       households: number(membershipRow?.households),
+      catechumensMade: number(catechumensMadeRow?.total),
       statuses: affiliationStatuses,
       asOf: new Date().toISOString(),
     },
@@ -255,6 +274,7 @@ export async function buildDiocesanStatisticsPdf({ parish = {}, report }) {
   const leftStart = y;
   row('Active people', report.membership.people, MARGIN, MARGIN + 135);
   row('Active households', report.membership.households, MARGIN, MARGIN + 135);
+  row(`Catechumens made in ${report.year}`, report.membership.catechumensMade, MARGIN, MARGIN + 170);
   y = leftStart;
   row('Members', report.membership.statuses.member || 0, MARGIN + 275, MARGIN + 435);
   row('Catechumens', report.membership.statuses.catechumen || 0, MARGIN + 275, MARGIN + 435);

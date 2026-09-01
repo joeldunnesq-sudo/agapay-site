@@ -51,7 +51,8 @@ try {
       id TEXT PRIMARY KEY, household_id TEXT NOT NULL, person_id TEXT NOT NULL, active INTEGER NOT NULL
     );
     CREATE TABLE directory_parish_affiliations (
-      id TEXT PRIMARY KEY, person_id TEXT NOT NULL, parish_id TEXT NOT NULL, status TEXT NOT NULL, active INTEGER NOT NULL
+      id TEXT PRIMARY KEY, person_id TEXT NOT NULL, parish_id TEXT NOT NULL, status TEXT NOT NULL,
+      joined_date TEXT, active INTEGER NOT NULL, created_at INTEGER NOT NULL
     );
 
     INSERT INTO parish_weekly_headcounts VALUES
@@ -73,9 +74,12 @@ try {
       ('hm1', 'h1', 'p1', 1), ('hm2', 'h1', 'p2', 1), ('hm3', 'h2', 'p3', 1),
       ('hm4', 'h3', 'inactive', 1), ('hm5', 'h2', 'former', 1);
     INSERT INTO directory_parish_affiliations VALUES
-      ('af1', 'p1', 'full', 'member', 1), ('af2', 'p2', 'full', 'catechumen', 1),
-      ('af3', 'p3', 'full', 'clergy', 1), ('af4', 'inactive', 'full', 'member', 1),
-      ('af5', 'former', 'full', 'former_member', 1);
+      ('af1', 'p1', 'full', 'member', '2026-01-06', 1, 1767657600000),
+      ('af2', 'p2', 'full', 'catechumen', NULL, 1, 1735689600000),
+      ('af3', 'p3', 'full', 'clergy', '2020-01-01', 1, 1577836800000),
+      ('af4', 'inactive', 'full', 'member', '2020-01-01', 1, 1577836800000),
+      ('af5', 'former', 'full', 'former_member', '2020-01-01', 1, 1577836800000),
+      ('af6', 'p1', 'full', 'catechumen', '2025-01-05', 0, 1736035200000);
   `);
 
   const env = { AGAPAY_DB: d1Binding(db) };
@@ -89,6 +93,7 @@ try {
   assert.equal(full.attendance.weeksReported, 2);
   assert.equal(full.membership.people, 3);
   assert.equal(full.membership.households, 2);
+  assert.equal(full.membership.catechumensMade, 2);
   assert.deepEqual(full.membership.statuses, { catechumen: 1, clergy: 1, member: 1 });
   assert.deepEqual(full.sacraments, { baptism: 1, chrismation: 1, wedding: 1, funeral: 1, total: 4 });
   assert.equal(full.giving.totalActualCents, 2500000);
