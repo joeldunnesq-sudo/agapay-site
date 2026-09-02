@@ -23,9 +23,9 @@
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store
 
-# The Worker rewrites clean public URLs to the asset above, but Cloudflare
-# matches _headers against the original request URL. Keep the clean route in
-# lockstep with the physical asset rule so third-party iframes are permitted.
+# Cloudflare matches _headers against the original request URL. Keep this clean
+# route in lockstep with the physical asset rule; fetchCleanAsset also enforces
+# the exception after the asset response is returned.
 /give/embed/*
   ! X-Frame-Options
   Content-Security-Policy: frame-ancestors *

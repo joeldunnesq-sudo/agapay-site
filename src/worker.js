@@ -927,15 +927,34 @@ function cleanAssetRequest(request) {
 }
 
 async function fetchCleanAsset(request, env) {
+  const requestPath = new URL(request.url).pathname;
+  const isGivingEmbed = requestPath === "/give/embed"
+    || requestPath === "/give/embed.html"
+    || /^\/give\/embed\/[^/]+\/?$/.test(requestPath);
+  const applyGivingEmbedHeaders = (response) => {
+    if (!isGivingEmbed) return response;
+    const headers = new Headers(response.headers);
+    headers.delete("X-Frame-Options");
+    headers.set("Content-Security-Policy", "frame-ancestors *");
+    headers.set("X-Robots-Tag", "noindex, nofollow");
+    headers.set("Cache-Control", "no-store");
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  };
   const assetRequest = cleanAssetRequest(request);
   const response = await env.ASSETS.fetch(assetRequest);
-  if (assetRequest.url === request.url || ![301, 302, 307, 308].includes(response.status)) return response;
+  if (assetRequest.url === request.url || ![301, 302, 307, 308].includes(response.status)) {
+    return applyGivingEmbedHeaders(response);
+  }
 
   const location = response.headers.get("Location");
-  if (!location) return response;
+  if (!location) return applyGivingEmbedHeaders(response);
   const target = new URL(location, assetRequest.url);
-  if (target.origin !== new URL(request.url).origin) return response;
-  return env.ASSETS.fetch(new Request(target, request));
+  if (target.origin !== new URL(request.url).origin) return applyGivingEmbedHeaders(response);
+  return applyGivingEmbedHeaders(await env.ASSETS.fetch(new Request(target, request)));
 }
 
 const LEGACY_GIVING_PAGE_REDIRECTS = new Map([

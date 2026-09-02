@@ -166,6 +166,34 @@ async function withMockFetch(handler, run) {
 }
 
 {
+  const testEnv = env();
+  const assetPaths = [];
+  testEnv.ASSETS = {
+    async fetch(assetRequest) {
+      assetPaths.push(new URL(assetRequest.url).pathname);
+      return new Response("<!doctype html><title>Asset</title>", {
+        status: 200,
+        headers: {
+          "Content-Type": "text/html",
+          "X-Frame-Options": "SAMEORIGIN",
+        },
+      });
+    },
+  };
+
+  const embed = await worker.fetch(request("/give/embed/st-test"), testEnv);
+  assert.equal(embed.status, 200);
+  assert.equal(assetPaths[0], "/give/embed.html");
+  assert.equal(embed.headers.get("X-Frame-Options"), null, "clean giving-box routes must be frameable by organization websites");
+  assert.equal(embed.headers.get("Content-Security-Policy"), "frame-ancestors *");
+  assert.equal(embed.headers.get("X-Robots-Tag"), "noindex, nofollow");
+  assert.equal(embed.headers.get("Cache-Control"), "no-store");
+
+  const normalPage = await worker.fetch(request("/give"), testEnv);
+  assert.equal(normalPage.headers.get("X-Frame-Options"), "SAMEORIGIN", "normal AGAPAY pages must retain clickjacking protection");
+}
+
+{
   const hashedEnv = env();
   const hashedLogin = await worker.fetch(request("/api/admin/session", {
     method: "POST",

@@ -56,12 +56,15 @@ violations first.**
 ## Public giving-box exceptions
 
 `/give/embed.html` and its clean public route `/give/embed/*` are the only AGAPAY
-pages intended for third-party framing. Their `_headers` rules remove
-`X-Frame-Options`, enforce `Content-Security-Policy: frame-ancestors *`, prevent
-indexing, and disable storage with `Cache-Control: no-store`. Both rules are
-required because Cloudflare matches headers against the original public URL
-before the Worker rewrite resolves the clean route to the physical asset. All
-other pages retain `SAMEORIGIN`.
+pages intended for third-party framing. Their `_headers` rules declare the
+exception, and `fetchCleanAsset()` enforces it after the asset response returns:
+it removes `X-Frame-Options`, sets `Content-Security-Policy: frame-ancestors *`,
+prevents indexing, and disables storage with `Cache-Control: no-store`. The
+Worker enforcement is required because the Assets layer can retain the global
+frame header while applying custom headers. Both URL rules are still required
+because Cloudflare matches `_headers` against the original public URL before
+the Worker rewrite resolves the clean route to the physical asset. All other
+pages retain `SAMEORIGIN`.
 
 `/giving-box.js` is the small public loader organizations paste into their
 websites. Its exact rule permits cross-origin loading and uses a one-hour
