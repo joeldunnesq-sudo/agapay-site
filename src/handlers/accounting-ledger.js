@@ -2,6 +2,12 @@ import { json } from '../lib/core.js';
 import { authorize } from '../lib/authorization.js';
 import { requireAccountingStaffProfile } from '../lib/accounting-staff.js';
 import { accountingEnabledFor, accountingTierFor } from '../lib/entitlements.js';
+import {
+  authorizeOrganization,
+  bindOrganizationAuthorizationContext,
+  evaluateOrganizationModuleAccess,
+  ORGANIZATION_MODULES,
+} from '../organizations/index.js';
 import { findRegistrationByParishId } from './parish.js';
 import {
   createD1DatabaseFacade,
@@ -31,9 +37,8 @@ import {
 } from '../accounting/index.js';
 const HEADERS = { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow', Vary: 'Authorization' };
 const reply = (payload, status = 200) => json(payload, { status, headers: HEADERS });
-export async function resolveAccountingDatabaseForParish(env, parishId) {
+async function resolveAccountingDatabaseForRegistration(env, parishId, registration) {
   const environment = detectAccountingEnvironment(env),
-    registration = (await findRegistrationByParishId(env, parishId))?.registration || null,
     entity = await loadAccountingEntityByParish(env, parishId),
     registry = entity && (await loadAccountingDatabaseForEntity(env, entity.id, environment));
   if (
@@ -59,12 +64,40 @@ export async function resolveAccountingDatabaseForParish(env, parishId) {
     db: physical ? createD1DatabaseFacade(adapter, physical.providerId) : null,
   };
 }
-export async function accountingContext(request, env, parishId, capability) {
-  const auth =
-    (await authorize(request, env, { parishId, capability })) ||
-    (await requireAccountingStaffProfile(request, env, parishId, capability));
+
+export async function resolveAccountingDatabaseForParish(env, parishId) {
+  const registration = (await findRegistrationByParishId(env, parishId))?.registration || null;
+  return resolveAccountingDatabaseForRegistration(env, parishId, registration);
+}
+
+export async function accountingContext(request, env, parishId, capability, dependencies = {}) {
+  const findRegistration = dependencies.findRegistrationByParishId || findRegistrationByParishId,
+    authorizeLegacyParish = dependencies.authorize || authorize,
+    requireLegacyStaff = dependencies.requireAccountingStaffProfile || requireAccountingStaffProfile,
+    resolveDatabase = dependencies.resolveAccountingDatabaseForRegistration || resolveAccountingDatabaseForRegistration,
+    found = await findRegistration(env, parishId);
+  if (!found?.registration) return null;
+  const moduleAccess = evaluateOrganizationModuleAccess(
+    found.registration,
+    ORGANIZATION_MODULES.ACCOUNTING,
+    accountingEnabledFor,
+    { organizationId: parishId, registrationReference: found.key }
+  );
+  if (!moduleAccess.organization) return null;
+  const platformAuthorization = await authorizeOrganization(request, env, {
+      organization: moduleAccess.organization,
+      capability,
+      authorize: authorizeLegacyParish,
+    }),
+    staffAuthorization = platformAuthorization
+      ? null
+      : await requireLegacyStaff(request, env, moduleAccess.organization.legacy.parishId, capability),
+    auth = platformAuthorization || bindOrganizationAuthorizationContext(staffAuthorization, moduleAccess.organization);
   if (!auth) return null;
-  const resolved = await resolveAccountingDatabaseForParish(env, parishId),
+  if (!moduleAccess.allowed)
+    return { error: reply({ error: 'Accounting is not included in this subscription.' }, 403) };
+  const tenantParishId = auth.organizationScope.legacyParishId,
+    resolved = await resolveDatabase(env, tenantParishId, found.registration),
     { registration, entity, registry, db } = resolved;
   if (!accountingEnabledFor(registration))
     return { error: reply({ error: 'Accounting is not included in this subscription.' }, 403) };
@@ -90,6 +123,8 @@ export async function accountingContext(request, env, parishId, capability) {
     db,
     entityId: entity.id,
     registration,
+    organization: auth.organization,
+    organizationScope: auth.organizationScope,
     actor: { id: auth.user.id, type: auth.actorType || 'platform_user', capabilities: auth.capabilities || [] },
     tier: accountingTierFor(registration),
     databaseStatus: registry.provisioningStatus,

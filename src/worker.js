@@ -4,6 +4,7 @@ import { routeAccountingRequest } from "./routes/accounting.js";
 import { routeDirectoryRequest } from "./routes/directory.js";
 import { routeDonorRequest } from "./routes/donor.js";
 import { routeLearnRequest } from "./routes/learn.js";
+import { routeOrganizationRequest } from "./routes/organization.js";
 import { stewardshipGivingSummary } from "./lib/stewardship-summary.js";
 import { routeParishRequest } from "./routes/parish.js";
 import { routePublicRequest } from "./routes/public.js";
@@ -108,10 +109,7 @@ import { assertRestoreSafe } from "./portability/suppression.js";
 import { protectFileStorage } from "./portability/storage.js";
 import { protectLegacyStorage } from "./portability/legacy.js";
 import { synchronizeGivingCatalogWithAccounting } from "./accounting/source-wiring.js";
-import {
-  STEWARDSHIP_FUND_DEFAULTS,
-  mergeStewardshipFundsIntoRegistration
-} from "./lib/stewardship-funds.js";
+import { STEWARDSHIP_FUND_DEFAULTS, mergeStewardshipFundsIntoRegistration } from "./lib/stewardship-funds.js";
 import {
   handleAdminNonprofitPricing,
   handleAdminNonprofitPricingAlerts,
@@ -155,10 +153,7 @@ import {
   handleParishRecurringHealth,
   handleParishStripeVolume,
 } from "./handlers/parish-giving-reports.js";
-import {
-  loadCommemorationEntries,
-  weekWindow,
-} from "./handlers/parish-commemorations.js";
+import { loadCommemorationEntries, weekWindow } from "./handlers/parish-commemorations.js";
 import {
   handleParishPayoutDiagnostics,
   handleParishReconciliation,
@@ -2932,6 +2927,8 @@ export function observeScheduledTask(name, task, env = {}, event = {}) {
 const ROUTE_ACTIONS = Object.freeze({
   addCorsHeaders,
   corsJson,
+  findRegistrationByParishId,
+  getBearerToken,
   handleAdminAccountingOperations,
   handleAdminAuditLog,
   handleAdminEmailDiagnostics,
@@ -3214,11 +3211,14 @@ const ROUTE_ACTIONS = Object.freeze({
   handleStewardshipSubscribe,
   handleStewardshipWebhook,
   json,
+  unauthorized,
+  verifyParishDashboardBearer,
   publicSubscriptionTiers,
   requireDonor,
 });
 
 const API_ROUTE_REGISTRIES = Object.freeze([
+  routeOrganizationRequest,
   routePublicRequest,
   routeAccountingRequest,
   routeDirectoryRequest,

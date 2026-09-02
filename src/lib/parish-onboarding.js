@@ -1,12 +1,16 @@
 import { normalizeEmail, sha256Hex } from "./core.js";
 import { accountingEnabledFor } from "./entitlements.js";
 import { subscriptionReady, subscriptionTier } from "./subscriptions.js";
+import {
+  VERIFICATION_ONBOARDING_MANUAL_CHECKS,
+  verificationOnboardingSteps
+} from "../organizations/verification-policies.js";
 
 export const PARISH_ONBOARDING_WORKFLOW_VERSION = 1;
 export const STRIPE_READINESS_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 export const ONBOARDING_MANUAL_CHECKS = Object.freeze([
-  "authorizedRepresentative",
+  ...VERIFICATION_ONBOARDING_MANUAL_CHECKS,
   "givingConfiguration",
   "importDecision"
 ]);
@@ -350,17 +354,12 @@ export async function buildParishOnboardingWorkflow(registration = {}, options =
   const checks = normalizeOnboardingChecks({}, registration.onboardingChecks);
   const stripe = stripeReadiness(registration, options.now ?? Date.now());
   const generalFund = validateGeneralOperatingFund(registration);
-  const canonicalVerified = registration.status === "verified"
-    && Boolean(text(registration.reviewedBy))
-    && Boolean(text(registration.verificationSource))
-    && Boolean(text(registration.bishopOrAuthority))
-    && Boolean(text(registration.dioceseOrDeanery));
+  const verificationSteps = verificationOnboardingSteps(registration, checks);
   const personalAccessAccepted = accessAccepted(registration, options);
   const paidSubscription = text(registration.subscriptionStatus, 80).toLowerCase() === "active";
   const workflowSteps = [
     step("registration", "Registration received", Boolean(registration.reference), registration.reference ? `Reference ${registration.reference}` : "Registration reference is missing."),
-    step("canonical", "Canonical parish confirmed", canonicalVerified, canonicalVerified ? "Canonical review fields are complete." : "Complete canonical reviewer, source, authority, and diocese/deanery."),
-    step("representative", "Approving priest confirmed treasurer", manualPassed(checks, "authorizedRepresentative"), checks.authorizedRepresentative.note || "Verify the priest from an official source, then record that leader's confirmation of the treasurer's name and email."),
+    ...verificationSteps,
     step("verifiedHidden", "Organization verified and hidden", registration.status === "verified" && registration.givingStatus === "hidden", registration.status === "verified" ? `Giving status: ${registration.givingStatus || "hidden"}.` : "Verify the organization in AGAPAY Admin."),
     step("invite", "Dashboard invite delivered", registration.dashboardInviteEmailStatus === "sent", registration.dashboardInviteEmailStatus === "sent" ? "Invite delivery is confirmed." : "Send the dashboard invite to verified recipients."),
     step("credential", paidSubscription ? "Treasurer dashboard access secured" : "Parish dashboard access secured", personalAccessAccepted, personalAccessAccepted

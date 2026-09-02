@@ -1,3 +1,5 @@
+import { registrationRequirementsForCommunityType } from "../organizations/verification-policies.js";
+
 export const REGISTRATION_TERMS_VERSION = "2026-08-30";
 export const REGISTRATION_PRIVACY_NOTICE_VERSION = "2026-08-30";
 
@@ -56,15 +58,15 @@ export function registrationAgreementEvidence(acceptedAt) {
 }
 
 export function registrationRequiresJurisdiction(type) {
-  return ["Mission", "Parish", "Cathedral", "Monastery", "Monastery / Skete"].includes(String(type || ""));
+  return registrationRequirementsForCommunityType(type).jurisdiction;
 }
 
 export function registrationRequiresValuesReview(type) {
-  return ["Business", "Ministry / Nonprofit", "School / Academy", "Other Orthodox Organization"].includes(String(type || ""));
+  return registrationRequirementsForCommunityType(type).valuesReview;
 }
 
 export function registrationRequiresWebsite(type) {
-  return String(type || "") === "Business";
+  return registrationRequirementsForCommunityType(type).website;
 }
 
 /**

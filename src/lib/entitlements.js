@@ -1,5 +1,5 @@
 // Centralized feature-entitlement logic for the AGAPAY Parish subscription
-// model. This is the single source of truth for "does this parish have
+// model. This is the single source of truth for "does this organization have
 // access to X" -- every handler and the parish dashboard client should
 // derive access from these functions rather than re-deriving the same
 // tier/add-on logic independently (which is how sacramentsEnabledFor ended
@@ -13,6 +13,8 @@
 // This compatibility path is not a purchasable plan or a feature gate.
 import { hasActiveStewardshipComp, hasStewardshipAccess, stewardshipStatus } from "./core.js";
 import { subscriptionAddOns, subscriptionAddOnsFor, subscriptionTiers, subscriptionEntitlementActive } from "./subscriptions.js";
+import { organizationModuleProfile, organizationTypeEligibleForModule } from "../organizations/module-profiles.js";
+import { organizationClassificationForRegistration } from "../organizations/types.js";
 
 // Per-tier, per-module inclusion. Give + is the purchasable foundation for
 // Directory, Bookstore, Parish Library, and Koinonia; the remaining
@@ -52,7 +54,9 @@ export function tierIncludesModule(registration, moduleId) {
 export function givingFeatureAccess(registration, featureId) {
   if (!Object.prototype.hasOwnProperty.call(GIVING_FEATURES, featureId)) return false;
   const requiredModule = GIVING_FEATURES[featureId];
-  return requiredModule === null || tierIncludesModule(registration, requiredModule);
+  return requiredModule === null
+    ? organizationEligibleForEntitlementModule(registration, "giving")
+    : hasModuleAccess(registration, requiredModule);
 }
 
 // Back-compat convenience: "Parish +" as a bundle, true if the parish's
@@ -74,17 +78,33 @@ export function subscriptionAddOnIncludesModule(registration, moduleId) {
   return subscriptionAddOns.some((addOn) => selected.has(addOn.id) && addOn.modules.includes(moduleId));
 }
 
+function structuralModuleId(moduleId) {
+  // Advanced Accounting is a subscription tier inside the structurally
+  // eligible Accounting module, not a separately activatable organization module.
+  return moduleId === "accountingAdvancedOperations" ? "accounting" : moduleId;
+}
+
+export function organizationEligibleForEntitlementModule(registration, moduleId) {
+  const classification = organizationClassificationForRegistration(registration);
+  return Boolean(
+    classification.recognized
+    && organizationTypeEligibleForModule(classification.organizationType, structuralModuleId(moduleId))
+  );
+}
+
 export function hasModuleAccess(registration, moduleId) {
-  return tierIncludesModule(registration, moduleId)
+  return organizationEligibleForEntitlementModule(registration, moduleId)
+    && (tierIncludesModule(registration, moduleId)
     || subscriptionAddOnIncludesModule(registration, moduleId)
-    || (LEGACY_MODULES.has(moduleId) && hasLegacyParishPlusAddOn(registration));
+    || (LEGACY_MODULES.has(moduleId) && hasLegacyParishPlusAddOn(registration)));
 }
 
 // True if the parish has at least the Parish-tier module set, or the
 // legacy add-on. Used where a single "Parish + active" boolean is needed
 // (e.g. dashboard nav badges) rather than a per-module check.
 export function hasParishPlusAccess(registration) {
-  return tierIncludesParishPlus(registration) || hasLegacyParishPlusAddOn(registration);
+  return MODULE_IDS.every((moduleId) => organizationEligibleForEntitlementModule(registration, moduleId))
+    && (tierIncludesParishPlus(registration) || hasLegacyParishPlusAddOn(registration));
 }
 
 export function stewardshipToolAccess(registration) {
@@ -149,6 +169,7 @@ export function accountingTierFor(registration) {
 }
 
 function moduleSource(registration, moduleId) {
+  if (!organizationEligibleForEntitlementModule(registration, moduleId)) return "none";
   if (tierIncludesModule(registration, moduleId)) return "tier";
   if (subscriptionAddOnIncludesModule(registration, moduleId)) return "add_on";
   if (LEGACY_MODULES.has(moduleId) && hasLegacyParishPlusAddOn(registration)) return "legacy_addon";
@@ -159,18 +180,30 @@ function moduleSource(registration, moduleId) {
 // instead of re-deriving tier/add-on logic itself.
 export function entitlementsSummary(registration) {
   const tier = normalizedSubscriptionTier(registration) || "parish";
+  const classification = organizationClassificationForRegistration(registration);
+  const moduleProfile = organizationModuleProfile(classification.organizationType);
+  const parishPlusStructurallyEligible = MODULE_IDS.every((moduleId) =>
+    organizationEligibleForEntitlementModule(registration, moduleId)
+  );
   return {
     tier,
     addOns: subscriptionAddOnsFor(registration),
-    parishPlusIncludedInTier: tierIncludesParishPlus(registration),
+    organizationEligibility: {
+      organizationType: classification.organizationType,
+      organizationSubtype: classification.organizationSubtype,
+      classificationRecognized: classification.recognized,
+      moduleProfileId: moduleProfile.id,
+      moduleActivation: moduleProfile.activation
+    },
+    parishPlusIncludedInTier: parishPlusStructurallyEligible && tierIncludesParishPlus(registration),
     parishPlusActive: hasParishPlusAccess(registration),
-    legacyAddOnActive: hasLegacyParishPlusAddOn(registration),
+    legacyAddOnActive: parishPlusStructurallyEligible && hasLegacyParishPlusAddOn(registration),
     legacyAddOnStatus: stewardshipStatus(registration),
-    comped: hasActiveStewardshipComp(registration),
+    comped: parishPlusStructurallyEligible && hasActiveStewardshipComp(registration),
     modules: {
       givingPlus: {
-        included: tierIncludesModule(registration, "givingPlus"),
-        source: tierIncludesModule(registration, "givingPlus") ? "tier" : "none"
+        included: hasModuleAccess(registration, "givingPlus"),
+        source: moduleSource(registration, "givingPlus")
       },
       stewardshipHealth: {
         included: hasModuleAccess(registration, "stewardshipHealth"),

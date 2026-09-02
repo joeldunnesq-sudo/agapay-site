@@ -1,12 +1,8 @@
 import { AccountingDatabaseError, ValidationError } from "../errors.js";
 import { createJournalDraft, postJournalEntry } from "../ledger/service.js";
+import { DONATION_ACCOUNTING_SOURCE_TYPES } from "../../payments/classification.js";
 
-export const GIVE_STRIPE_SOURCE_TYPES = Object.freeze([
-  "donation_succeeded", "stripe_fee_assessed", "agapay_fee_assessed", "stripe_fee_refunded",
-  "donation_refunded", "donation_partially_refunded", "stripe_dispute_created",
-  "stripe_dispute_won", "stripe_dispute_lost", "stripe_chargeback_fee",
-  "stripe_payout_paid", "stripe_payout_failed", "stripe_payout_canceled", "stripe_payout_reversed"
-]);
+export const GIVE_STRIPE_SOURCE_TYPES = DONATION_ACCOUNTING_SOURCE_TYPES;
 
 const POSTABLE = new Set(GIVE_STRIPE_SOURCE_TYPES.filter((type) => !["stripe_payout_failed", "stripe_payout_canceled"].includes(type)));
 const DATE = /^\d{4}-\d{2}-\d{2}$/;

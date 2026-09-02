@@ -2474,6 +2474,7 @@ export function parishDashboardPayload(parishId, registration) {
   const currentTier = sharedSubscriptionTier(registration);
   const givingPlus = givingFeatureAccess(registration, "branding");
   const currentAddOns = subscriptionAddOnsFor(registration);
+  const entitlements = entitlementsSummary(registration);
   const currentAddOnMonthlyCents = currentAddOns.reduce((sum, id) => sum + Number(subscriptionAddOnPricing(id, registration.subscriptionPricingProgram)?.monthlyCents || 0), 0);
   return {
     parishId,
@@ -2537,8 +2538,8 @@ export function parishDashboardPayload(parishId, registration) {
     communicationsEnabled: communicationsEnabledFor(registration),
     signupsEnabled: signupsEnabledFor(registration), exchangeEnabled: exchangeEnabledFor(registration), prayerRequestsEnabled: prayerRequestsEnabledFor(registration),
     stewardshipActive: stewardshipToolAccess(registration),
-    parishPlusIncludedInTier: tierIncludesParishPlus(registration),
-    entitlements: entitlementsSummary(registration),
+    parishPlusIncludedInTier: entitlements.parishPlusIncludedInTier,
+    entitlements,
     accountingAvailable: accountingEnabledFor(registration),
     funds: Array.isArray(registration.funds) ? registration.funds : [],
     campaigns: Array.isArray(registration.campaigns) ? registration.campaigns : [],
