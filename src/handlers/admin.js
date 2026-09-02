@@ -44,9 +44,7 @@ import {
 } from "../lib/core.js";
 import { beginMfaAuthentication } from "../lib/mfa.js";
 
-import {
-  loadAdminRegistrationPage,
-} from "../lib/registrations.js";
+import { loadAdminRegistrationPage } from "../lib/registrations.js";
 
 import {
   monthLabel,
