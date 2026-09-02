@@ -120,10 +120,18 @@ export async function listMembershipsForParish(env, parishId) {
   if (!d1(env) || !parishId) return [];
   const rows = await d1All(
     env,
-    "SELECT * FROM parish_memberships WHERE parish_id = ?1 ORDER BY created_at ASC",
+    `SELECT membership.*, users.email AS user_email, users.display_name AS user_display_name
+       FROM parish_memberships membership
+       LEFT JOIN platform_users users ON users.id = membership.user_id
+      WHERE membership.parish_id = ?1
+      ORDER BY membership.created_at ASC`,
     parishId
   );
-  return rows.map(rowToMembership);
+  return rows.map((row) => ({
+    ...rowToMembership(row),
+    email: row.user_email || "",
+    displayName: row.user_display_name || ""
+  }));
 }
 
 async function createOrReactivateMembership(env, { userId, parishId, roleTemplate, invitedByUserId }) {

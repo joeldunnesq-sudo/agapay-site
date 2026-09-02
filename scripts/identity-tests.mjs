@@ -49,9 +49,9 @@ import {
   CAPABILITY_CATALOG,
   ROLE_TEMPLATES
 } from "../src/lib/authorization.js";
-import { handleIdentityLogin, handleMembershipInvitationCreate } from "../src/handlers/identity.js";
+import { handleIdentityLogin, handleMembershipInvitationCreate, handleMembershipList } from "../src/handlers/identity.js";
 import { issueDonorSession } from "../src/handlers/donor.js";
-import { saveDonor } from "../src/lib/core.js";
+import { resolveParishDashboardSession, saveDonor } from "../src/lib/core.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -597,6 +597,8 @@ await test("named staff login returns both identity and parish sessions only for
   assert.equal(payload.identityEmail, email);
   assert.equal(payload.parishId, "staff-login-parish");
   assert.ok(await requirePlatformUser(authenticatedRequest({ email, token: payload.token }), env));
+  const stored = JSON.parse(env.AGAPAY_DB._raw.prepare("SELECT data FROM registrations WHERE parish_id = ?").get("staff-login-parish").data);
+  assert.equal((await resolveParishDashboardSession(stored, payload.parishToken)).accessType, "staff");
 
   const denied = await handleIdentityLogin(new Request("https://agapay.test/api/identity/login", {
     method: "POST",
@@ -621,14 +623,14 @@ await test("route protection: invitation-create route denies a request without p
   assert.equal(response.status, 401, "expected the route to reject a caller lacking parish.members.invite");
 });
 
-await test("route protection: invitation-create route succeeds for a caller holding parish.members.invite", async () => {
+await test("staff access routes create an invitation and list named account details", async () => {
   const { env } = makeD1Env();
   db_registerParish(env, "route-parish-2");
-  const secretary = await seedActiveMember(env, { parishId: "route-parish-2", email: "secretary2@example.org", roleTemplate: "secretary" });
+  const rector = await seedActiveMember(env, { parishId: "route-parish-2", email: "rector2@example.org", roleTemplate: "rector" });
 
   const request = authenticatedRequest({
-    email: "secretary2@example.org",
-    token: secretary.token,
+    email: "rector2@example.org",
+    token: rector.token,
     url: "https://agapay.test/api/parish/dashboard/route-parish-2/memberships/invitations",
     init: { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: "invitee@example.org", roleTemplate: "volunteer" }) }
   });
@@ -636,6 +638,18 @@ await test("route protection: invitation-create route succeeds for a caller hold
   assert.equal(response.status, 200, "expected the route to accept a caller holding parish.members.invite");
   const body = await response.json();
   assert.ok(body.token, "expected the route to return an invitation token");
+  assert.equal(body.emailStatus, "not_configured");
+
+  const listResponse = await handleMembershipList(authenticatedRequest({
+    email: "rector2@example.org",
+    token: rector.token,
+    url: "https://agapay.test/api/parish/dashboard/route-parish-2/memberships"
+  }), env, "route-parish-2");
+  assert.equal(listResponse.status, 200);
+  const list = await listResponse.json();
+  assert.equal(list.memberships[0].email, "rector2@example.org");
+  assert.equal(list.memberships[0].displayName, "");
+  assert.equal(list.invitations.find((invitation) => invitation.email === "invitee@example.org").status, "pending");
 });
 
 function db_registerParish(env, parishId) {

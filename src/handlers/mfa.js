@@ -84,7 +84,10 @@ async function finalizeMfa(env, request, result) {
     if (metadata.parishId) {
       const found = await findRegistrationByParishId(env, metadata.parishId);
       if (found) {
-        const parishSession = await issueParishDashboardSession(found.registration, { mfaVerifiedAt: verifiedAt });
+        const parishSession = await issueParishDashboardSession(found.registration, {
+          mfaVerifiedAt: verifiedAt,
+          accessType: "staff",
+        });
         await saveRegistrationRecord(env, found.key, parishSession.registration, found.registration);
         payload = {
           ...payload,
@@ -249,7 +252,9 @@ export async function enforcePrivilegedMfa(request, env, url) {
     if (!session) return null;
     if (!session.mfaVerifiedAt) return mfaReloginRequired();
     const sensitiveRead = /\/(?:tax-exemption|nonprofit-pricing)\/document|\/giving-statements\//.test(path);
-    if ((request.method !== "GET" || sensitiveRead) && !freshMfaAt(session.mfaVerifiedAt)) {
+    const refreshSafePost = request.method === "POST"
+      && /\/(?:subscription-refresh|stripe-refresh)$/.test(path);
+    if (((request.method !== "GET" && !refreshSafePost) || sensitiveRead) && !freshMfaAt(session.mfaVerifiedAt)) {
       return stepUpRequired("parish_admin", parishId);
     }
   }

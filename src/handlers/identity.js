@@ -41,6 +41,7 @@ import {
 import { CAPABILITY_CATALOG, ROLE_TEMPLATES, requireCapability, requireActiveMembership, sanitizeGrantableCapabilities } from "../lib/authorization.js";
 import { findRegistrationByParishId, saveRegistrationRecord, verifyParishDashboardBearer } from "./parish.js";
 import { recommendedOnboardingState } from "../lib/parish-onboarding.js";
+import { sendParishStaffAccessInvitation } from "../lib/parish-notifications.js";
 
 export { PLATFORM_USER_EMAIL_HEADER };
 
@@ -85,7 +86,7 @@ export async function handleIdentityLogin(request, env) {
   if (parishId) {
     const found = await findRegistrationByParishId(env, parishId);
     if (!found) return json({ error: "Parish dashboard record not found." }, { status: 404 });
-    parishSession = await issueParishDashboardSession(found.registration);
+    parishSession = await issueParishDashboardSession(found.registration, { accessType: "staff" });
     await saveRegistrationRecord(env, found.key, parishSession.registration, found.registration);
   }
 
@@ -188,7 +189,7 @@ export async function handleIdentityInvitationAccept(request, env, token) {
       parishUpdatedAt: result.acceptedAt
     };
     registration.onboardingState = recommendedOnboardingState(registration, registration.onboardingChecks);
-    parishSession = await issueParishDashboardSession(registration);
+    parishSession = await issueParishDashboardSession(registration, { accessType: "staff" });
     await saveRegistrationRecord(env, found.key, parishSession.registration, found.registration);
   }
   return json({
@@ -255,6 +256,13 @@ export async function handleMembershipInvitationCreate(request, env, parishId) {
   // as something worth comparing against.
   const explicitCapabilities = sanitizeGrantableCapabilities(Array.isArray(body.capabilities) ? body.capabilities : []);
 
+  const existingInvitations = await listInvitationsForParish(env, parishId);
+  for (const pending of existingInvitations.filter(
+    (item) => item.status === "pending" && normalizeEmail(item.email) === email
+  )) {
+    await revokeInvitation(env, { invitationId: pending.id, actorUserId: gate.actorUserId, request });
+  }
+
   const invitation = await createInvitation(env, {
     parishId,
     email,
@@ -276,10 +284,20 @@ export async function handleMembershipInvitationCreate(request, env, parishId) {
     return json({ error: invitation.error || "Unable to create invitation." }, { status });
   }
 
-  // The invitation token is returned directly rather than emailed, since
-  // this package builds the backend framework only -- delivery (email) and
-  // any accept-invitation UI are explicitly out of scope here.
-  return json({ ok: true, invitationId: invitation.id, token: invitation.token, expiresAt: invitation.expiresAt });
+  const found = await findRegistrationByParishId(env, parishId);
+  const delivery = await sendParishStaffAccessInvitation(
+    env,
+    env.AGAPAY_APP_URL || "https://agapay.app",
+    found?.registration || { parishId },
+    { ...invitation, email, roleTemplate }
+  );
+  return json({
+    ok: true,
+    invitationId: invitation.id,
+    token: invitation.token,
+    expiresAt: invitation.expiresAt,
+    emailStatus: delivery.status || "failed"
+  });
 }
 
 // GET /api/parish/dashboard/:parishId/memberships

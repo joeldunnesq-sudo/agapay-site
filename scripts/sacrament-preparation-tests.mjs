@@ -134,16 +134,23 @@ assert.equal(sanitizeSacramentDocumentFilename("../../bad\r\nname.pdf"), ".._.._
 
 const worker = readFileSync(path.join(root, "src", "worker.js"), "utf8");
 const parishApp = readFileSync(path.join(root, "public", "parish", "features", "sacraments.js"), "utf8");
+const parishPreparation = readFileSync(path.join(root, "public", "parish", "features", "sacraments", "preparation.js"), "utf8");
 const donorApp = readFileSync(path.join(root, "public", "donor", "app.js"), "utf8");
 const dashboard = readFileSync(path.join(root, "public", "parish", "dashboard.html"), "utf8");
 const wrangler = readFileSync(path.join(root, "wrangler.toml"), "utf8");
 assert.match(worker, /handleDonorSacramentPreparation/);
 assert.match(worker, /handleParishSacramentPreparation/);
 assert.match(parishApp, /renderSacramentsPreparationTemplates/);
+assert.match(parishPreparation, /function renderSacramentsPreparationTemplates/);
+assert.match(parishPreparation, /<details class="sac-admin-panel sac-prep-template"/);
+assert.doesNotMatch(parishPreparation, /<details class="sac-admin-panel sac-prep-template"[^>]*\sopen(?:\s|>|=)/);
+assert.match(parishPreparation, /Build each preparation journey once/);
+assert.match(parishPreparation, /AGAPAY privately copies the current template/);
 assert.match(parishApp, /reviewSacramentPreparationDocument/);
 assert.match(donorApp, /renderDonorSacramentPreparation/);
 assert.match(donorApp, /uploadSacramentPreparationDocument/);
 assert.match(dashboard, /data-sac-tab="preparation"/);
+assert.ok(dashboard.indexOf("/parish/features/sacraments/preparation.js?v=") < dashboard.indexOf("/parish/features/sacraments.js?v="));
 assert.match(dashboard, /\/parish\/features\/sacraments\.js\?v=[^"']+/);
 assert.match(wrangler, /binding = "SACRAMENT_DOCUMENTS"/);
 

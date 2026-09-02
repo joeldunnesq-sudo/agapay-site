@@ -1060,7 +1060,10 @@ export function pruneParishDashboardSessions(sessions, nowMs = Date.now()) {
   });
 }
 
-export async function issueParishDashboardSession(registration, { mfaVerifiedAt = "" } = {}) {
+export async function issueParishDashboardSession(
+  registration,
+  { mfaVerifiedAt = "", accessType = "primary_parish" } = {}
+) {
   const nowMs = Date.now();
   const token = generateSecret("agp_parish");
   const sessionSalt = generateSecret("parish_salt");
@@ -1074,7 +1077,8 @@ export async function issueParishDashboardSession(registration, { mfaVerifiedAt 
     sessionSalt,
     createdAt,
     expiresAt,
-    mfaVerifiedAt: mfaVerifiedAt || ""
+    mfaVerifiedAt: mfaVerifiedAt || "",
+    accessType: accessType === "staff" ? "staff" : "primary_parish"
   });
   sessions.sort((a, b) => String(a.createdAt || "").localeCompare(String(b.createdAt || "")));
   while (sessions.length > PARISH_SESSION_MAX) sessions.shift();
@@ -1084,6 +1088,7 @@ export async function issueParishDashboardSession(registration, { mfaVerifiedAt 
     createdAt,
     expiresAt,
     mfaVerifiedAt: mfaVerifiedAt || "",
+    accessType: accessType === "staff" ? "staff" : "primary_parish",
     registration: {
       ...registration,
       parishDashboardSessions: sessions
@@ -1100,7 +1105,8 @@ export async function resolveParishDashboardSession(registration, token) {
       return {
         id: session.id || "",
         expiresAt: session.expiresAt || "",
-        mfaVerifiedAt: session.mfaVerifiedAt || ""
+        mfaVerifiedAt: session.mfaVerifiedAt || "",
+        accessType: session.accessType || ""
       };
     }
   }

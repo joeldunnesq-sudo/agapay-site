@@ -109,6 +109,39 @@ export async function sendTreasurerStripeInvite(env, appUrl, registration) {
   });
 }
 
+export async function sendParishStaffAccessInvitation(env, appUrl, registration, invitation) {
+  const email = normalizeEmail(invitation?.email);
+  const token = String(invitation?.token || "");
+  if (!email || !token) return { status: "missing_recipient" };
+  const roleLabels = {
+    rector: "Rector", priest: "Priest", deacon: "Deacon", treasurer: "Treasurer",
+    bookkeeper: "Bookkeeper", secretary: "Parish secretary", administrator: "Parish administrator",
+    council_member: "Parish council member", volunteer: "Volunteer", reader: "Read-only staff",
+    bookstore_manager: "Commerce manager"
+  };
+  const baseUrl = String(appUrl || "https://agapay.app").replace(/\/+$/, "");
+  const accessUrl = `${baseUrl}/give/login?invite=${encodeURIComponent(token)}`;
+  const parishName = registration?.parishName || "Your parish";
+  const roleLabel = roleLabels[invitation.roleTemplate] || "Parish staff";
+  return sendEmail(env, {
+    from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
+    to: [email],
+    reply_to: registration?.priestEmail || registration?.email || env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
+    subject: `${parishName} invited you to AGAPAY`,
+    html: agapayEmailHtml(baseUrl, "Create your personal AGAPAY access", `
+      <p><strong>${htmlEscape(parishName)}</strong> invited you to its parish dashboard as <strong>${htmlEscape(roleLabel)}</strong>.</p>
+      <p>Open the secure link below, enter your name, and create your own password. If multi-factor authentication is required, AGAPAY will guide you through it before opening the dashboard.</p>
+      <p style="margin:24px 0;"><a href="${htmlEscape(accessUrl)}" style="display:inline-block;background:#C9A25B;color:#061522;padding:13px 19px;border-radius:9px;text-decoration:none;font-weight:700;">Create my staff access</a></p>
+      <p style="font-size:13px;color:#6F6A60;">This personal link expires in 14 days and can be used once. Do not forward it to another person.</p>
+    `),
+    text: [
+      `${parishName} invited you to its AGAPAY parish dashboard as ${roleLabel}.`, "",
+      "Open this secure link, enter your name, and create your own password:", accessUrl, "",
+      "If multi-factor authentication is required, AGAPAY will guide you through it. This link expires in 14 days and can be used once."
+    ].join("\n")
+  });
+}
+
 export async function sendDashboardInvite(env, appUrl, registration) {
   const parishId = registration.parishId || parishSlug(registration.parishName, registration.city);
   const paidSubscription = String(registration.subscriptionStatus || "").trim().toLowerCase() === "active";

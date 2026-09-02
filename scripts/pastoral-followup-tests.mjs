@@ -26,11 +26,14 @@ import {
 } from '../src/sacraments/pastoral-digest.js';
 import { inspectStorage } from '../src/portability/catalog.js';
 import { CAPABILITY_CATALOG, ROLE_TEMPLATES } from '../src/lib/authorization.js';
+import { issueParishDashboardSession } from '../src/lib/core.js';
+import { handleParishPastoralFollowUp } from '../src/handlers/parish-pastoral-followup.js';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const sqlite = new DatabaseSync(':memory:');
 sqlite.exec('PRAGMA foreign_keys = ON');
 for (const migration of [
+  '0001_production_records.sql',
   '0020_platform_identity.sql',
   '0022_directory_canonical_foundation.sql',
   '0023_directory_contact_privacy_publication.sql',
@@ -39,6 +42,7 @@ for (const migration of [
   '0120_sacrament_memorial_ticklers.sql',
   '0121_sacrament_clergy_care_scope.sql',
   '0122_sacrament_pastoral_digest_delivery.sql',
+  '0123_priest_pastoral_coverage.sql',
 ])
   sqlite.exec(readFileSync(path.join(root, 'migrations', migration), 'utf8'));
 
@@ -83,9 +87,10 @@ const env = {
 sqlite.prepare(`INSERT INTO parish_memberships (id, user_id, parish_id, role_template, status) VALUES (?, ?, ?, ?, 'active')`).run('membership-priest', 'user-priest', 'parish-a', 'priest');
 sqlite.prepare(`INSERT INTO parish_memberships (id, user_id, parish_id, role_template, status) VALUES (?, ?, ?, ?, 'active')`).run('membership-rector', 'user-rector', 'parish-a', 'rector');
 sqlite.exec(readFileSync(path.join(root, 'migrations', '0121_sacrament_clergy_care_scope.sql'), 'utf8'));
+sqlite.exec(readFileSync(path.join(root, 'migrations', '0123_priest_pastoral_coverage.sql'), 'utf8'));
 assert.deepEqual(
   sqlite.prepare('SELECT capability FROM membership_capabilities WHERE membership_id = ? ORDER BY capability').all('membership-priest').map((row) => row.capability),
-  ['sacraments.pastoral.manage_own']
+  ['sacraments.pastoral.coverage', 'sacraments.pastoral.manage_own']
 );
 assert.deepEqual(
   sqlite.prepare('SELECT capability FROM membership_capabilities WHERE membership_id = ? ORDER BY capability').all('membership-rector').map((row) => row.capability),
@@ -185,6 +190,35 @@ await assert.rejects(
   /not active in this parish/
 );
 assert.equal(await findPastoralFollowup(env, 'parish-b', followup.id), null, 'follow-ups must be tenant scoped');
+
+const dashboardSession = await issueParishDashboardSession({
+  parishId: 'parish-a',
+  parishName: 'St. Test Parish',
+  subscriptionTier: 'parish',
+  sacramentsEnabled: true,
+  sacramentPriests: [
+    { name: 'Fr. Thomas', email: 'father@example.test' },
+    { name: 'Fr. Nicholas', email: 'nicholas@example.test' },
+  ],
+  parishDashboardSessions: [],
+});
+sqlite.prepare(`INSERT INTO registrations
+  (reference, parish_id, status, parish_name, received_at, updated_at, data)
+  VALUES (?, ?, 'verified', ?, datetime('now'), datetime('now'), ?)`)
+  .run('registration-parish-a', 'parish-a', 'St. Test Parish', JSON.stringify(dashboardSession.registration));
+const dashboardResponse = await handleParishPastoralFollowUp(
+  new Request('https://agapay.app/api/parish/dashboard/parish-a/sacraments/follow-up?scope=mine', {
+    headers: { Authorization: `Bearer ${dashboardSession.token}` },
+  }),
+  env,
+  'parish-a'
+);
+assert.equal(dashboardResponse.status, 200, 'the normal parish dashboard session must open Follow-up');
+const dashboardPayload = await dashboardResponse.json();
+assert.equal(dashboardPayload.access.dashboardSession, true);
+assert.equal(dashboardPayload.access.scope, 'all', 'a parish dashboard session sees the full clergy coverage list');
+assert.equal(dashboardPayload.access.canCover, true);
+assert.equal(dashboardPayload.followups.length, 1);
 
 followup = await recordPastoralContact(env, {
   parishId: 'parish-a',
@@ -463,11 +497,14 @@ assert.match(feature, /Cover all clergy/);
 assert.match(feature, /Record a repose/);
 assert.match(feature, /agapay_identity_session_token/);
 assert.match(pastoralHandler, /requireActiveMembership/);
+assert.match(pastoralHandler, /verifyParishDashboardBearer/);
+assert.match(pastoralHandler, /dashboardSession: true/);
+assert.match(pastoralHandler, /actorType: context\.identity \? 'platform_user' : 'parish'/);
 assert.match(pastoralHandler, /assigned to another priest/);
 assert.ok(CAPABILITY_CATALOG.includes('sacraments.pastoral.manage_own'));
 assert.ok(CAPABILITY_CATALOG.includes('sacraments.pastoral.coverage'));
 assert.ok(ROLE_TEMPLATES.priest.includes('sacraments.pastoral.manage_own'));
-assert.ok(!ROLE_TEMPLATES.priest.includes('sacraments.pastoral.coverage'));
+assert.ok(ROLE_TEMPLATES.priest.includes('sacraments.pastoral.coverage'));
 assert.ok(ROLE_TEMPLATES.rector.includes('sacraments.pastoral.coverage'));
 assert.match(worker, /memorial_anniversary_materialization/);
 assert.match(worker, /Memorial observances to arrange/);

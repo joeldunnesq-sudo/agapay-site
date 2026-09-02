@@ -4,6 +4,7 @@ import { processExport, confirmClosure, getJob, retryExport, cancelExport, runPo
 import { handleParishPortability } from '../../src/handlers/parish-portability.js';
 import { suppressionRecord } from '../../src/portability/suppression.js';
 import { portabilityFixture as fixture } from './fixtures.mjs';
+import { issueParishDashboardSession } from '../../src/lib/core.js';
 
 {
   const f=await fixture();
@@ -77,6 +78,21 @@ import { portabilityFixture as fixture } from './fixtures.mjs';
   f.db.prepare("INSERT INTO registrations(reference,parish_id,updated_at,data) VALUES('ref-parish-a-history','parish-a','2026-08-29T00:00:00.000Z',?)").run(JSON.stringify({ parishId: 'parish-a', parishDashboardSessions: [] }));
   const response = await handleParishPortability(new Request('https://agapay.test/api', { headers: { Authorization: 'Bearer ' + f['parish-a'] } }), f.env, 'parish-a');
   assert.equal(response.status, 200, 'portability authenticates against the same authoritative duplicate parish record as the dashboard');
+  f.db.close();
+}
+{
+  const f = await fixture();
+  const registration = JSON.parse(f.db.prepare("SELECT data FROM registrations WHERE reference='ref-parish-a'").get().data);
+  const staffSession = await issueParishDashboardSession(registration, {
+    mfaVerifiedAt: new Date().toISOString(),
+    accessType: 'staff',
+  });
+  f.db.prepare("UPDATE registrations SET data=? WHERE reference='ref-parish-a'").run(JSON.stringify(staffSession.registration));
+  const response = await handleParishPortability(new Request('https://agapay.test/api', {
+    headers: { Authorization: 'Bearer ' + staffSession.token },
+  }), f.env, 'parish-a');
+  assert.equal(response.status, 403, 'invited staff sessions cannot access parish portability');
+  assert.equal((await response.json()).code, 'primary_parish_login_required');
   f.db.close();
 }
 {

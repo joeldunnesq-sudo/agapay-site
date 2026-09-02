@@ -46,7 +46,7 @@ assert.ok(
   dashboard.includes('/parish/style.css?v=20260901memorial1')
     && dashboard.includes('/parish/redesign.css?v=20260829fullscreen1')
     && dashboard.includes('/parish/library.css?v=20260829fullscreen1')
-    && dashboard.includes('/styles/stewardship.css?v=20260829fullscreen1')
+    && dashboard.includes('/styles/stewardship.css?v=20260902access1')
     && featureAssetVersions.every((version) => version && version === featureAssetVersions[0]),
   "the loading-state assets must use current, synchronized cache versions"
 );
