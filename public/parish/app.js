@@ -466,6 +466,7 @@
   function fallbackFundsArray(v)     { return JSON.parse(fallbackFunds(v)); }
   function fallbackCampaignsArray(v) { return JSON.parse(fallbackCampaigns(v)); }
   function dedicatedGivingUrl() { return currentParish ? `${window.location.origin}/give/${encodeURIComponent(currentParish.parishId)}` : ''; }
+  function dedicatedGivingEmbedUrl() { return currentParish ? `${window.location.origin}/give/embed/${encodeURIComponent(currentParish.parishId)}` : ''; }
   function downloadBlob(filename, blob) { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
   function slugifyLocal(v) { return String(v||'item').toLowerCase().replace(/&/g,' and ').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,48)||'item'; }
   function money(cents) { return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format((Number(cents)||0)/100); }
@@ -1555,6 +1556,8 @@
     chip.className = `sidebar-status-chip ${p.givingStatus || 'active'}${isOnboardingLive ? ' is-live' : ''}`;
     window.ParishFeatureRegistry?.get('giving')?.renderOverview();
     document.getElementById('sidebarPublicLink').href = dedicatedGivingUrl();
+    const embedPreviewLink = document.getElementById('givingEmbedPreviewLink');
+    if (embedPreviewLink) embedPreviewLink.href = dedicatedGivingEmbedUrl();
     document.getElementById('topbarTitle').textContent = p.parishName || 'Parish Dashboard';
     syncTopbarTabIcon(activeTab);
     const commIcon = document.getElementById('commemorationCommunityIcon');

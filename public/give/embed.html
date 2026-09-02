@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Give securely with AGAPAY</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/give/embed.css?v=20260902compact2" />
+  <script src="/security.js" defer></script>
+  <script src="/give/embed.js?v=20260902compact3" defer></script>
+</head>
+<body>
+  <main class="giving-frame">
+    <article class="giving-box" aria-label="Secure AGAPAY giving form">
+
+      <div class="step-ribbon" aria-label="Giving progress">
+        <span class="step-ribbon__item is-active" data-step-marker="1"><i>1</i> Gift</span>
+        <span class="step-ribbon__line" aria-hidden="true"></span>
+        <span class="step-ribbon__item" data-step-marker="2"><i>2</i> Details</span>
+        <span class="step-ribbon__line" aria-hidden="true"></span>
+        <span class="step-ribbon__item" data-step-marker="3"><i>3</i> Checkout</span>
+      </div>
+
+      <div class="giving-status" id="givingStatus" role="status" aria-live="polite" hidden></div>
+
+      <section class="giving-step" id="giftStep" aria-labelledby="giftStepTitle">
+        <div class="section-heading section-heading--gift">
+          <span class="section-kicker" id="giftStepTitle">Your gift</span>
+        </div>
+
+        <div class="frequency-tabs" role="tablist" aria-label="Donation frequency">
+          <button type="button" role="tab" aria-selected="true" class="is-active" data-frequency="once">One-time</button>
+          <button type="button" role="tab" aria-selected="false" data-frequency="monthly">Monthly</button>
+          <button type="button" role="tab" aria-selected="false" data-frequency="quarterly">Quarterly</button>
+          <button type="button" role="tab" aria-selected="false" data-frequency="yearly">Yearly</button>
+        </div>
+        <p class="frequency-note" id="frequencyNote">A single gift, given securely.</p>
+
+        <div class="amount-block">
+          <span class="field-label">Choose an amount</span>
+          <div class="amount-grid" role="group" aria-label="Suggested gift amounts">
+            <button type="button" data-amount="250">$250</button>
+            <button type="button" data-amount="100">$100</button>
+            <button type="button" class="is-active" data-amount="50">$50</button>
+            <button type="button" data-amount="25">$25</button>
+            <button type="button" data-amount="15">$15</button>
+            <button type="button" data-amount="5">$5</button>
+          </div>
+          <label class="other-amount" for="customAmount">
+            <span aria-hidden="true">$</span>
+            <input id="customAmount" type="number" min="1" max="50000" step="0.01" inputmode="decimal" placeholder="Other amount" aria-label="Other gift amount" />
+            <small>USD</small>
+          </label>
+        </div>
+
+        <div class="optional-grid">
+          <label class="option-card" for="addNote">
+            <input id="addNote" type="checkbox" />
+            <span class="custom-check" aria-hidden="true"></span>
+            <span><strong>Add a note</strong><small>Share a brief message with the organization.</small></span>
+          </label>
+          <label class="option-card" id="tributeOption" for="addTribute">
+            <input id="addTribute" type="checkbox" />
+            <span class="custom-check" aria-hidden="true"></span>
+            <span><strong>Honor or remember</strong><small>Dedicate this gift to someone.</small></span>
+          </label>
+        </div>
+
+        <label class="reveal-field" id="noteField" for="giftNote" hidden>
+          <span class="field-label">Note to the organization</span>
+          <textarea id="giftNote" rows="3" maxlength="280" placeholder="Optional encouragement, dedication, or message"></textarea>
+        </label>
+
+        <div class="tribute-fields" id="tributeFields" hidden>
+          <label class="select-field">
+            <span class="field-label">Dedication</span>
+            <select id="tributeType">
+              <option value="honor">In honor of</option>
+              <option value="memory">In memory of</option>
+            </select>
+            <span class="select-chevron" aria-hidden="true">⌄</span>
+          </label>
+          <label class="reveal-field" for="tributeName">
+            <span class="field-label">Name</span>
+            <input id="tributeName" maxlength="100" autocomplete="off" placeholder="Full name" />
+          </label>
+        </div>
+
+        <label class="fee-card" for="coverFees">
+          <span class="fee-switch"><input id="coverFees" type="checkbox" checked /><i aria-hidden="true"></i></span>
+          <span><strong>Maximize my impact</strong><small>I’ll cover Stripe’s standard processing cost so the full gift reaches the organization. AGAPAY charges no donation fee.</small></span>
+        </label>
+
+        <button class="primary-action" id="continueButton" type="button">
+          <span>Continue with <strong id="continueAmount">$50</strong></span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+        </button>
+      </section>
+
+      <section class="giving-step" id="detailsStep" aria-labelledby="detailsStepTitle" hidden>
+        <button class="back-button" id="backButton" type="button"><span aria-hidden="true">←</span> Change gift</button>
+        <div class="section-heading">
+          <span class="section-kicker">Almost there</span>
+          <h2 id="detailsStepTitle">Who is making this gift?</h2>
+          <p>Your receipt and giving record will be sent to this email.</p>
+        </div>
+
+        <div class="gift-summary" aria-label="Gift summary">
+          <div>
+            <span id="summaryFrequency">One-time gift</span>
+            <strong id="summaryFund">General Fund</strong>
+          </div>
+          <strong id="summaryAmount">$50</strong>
+        </div>
+
+        <form id="donorForm">
+          <div class="name-grid">
+            <label class="input-field" for="firstName">
+              <span class="field-label">First name</span>
+              <input id="firstName" name="firstName" autocomplete="given-name" required />
+            </label>
+            <label class="input-field" for="lastName">
+              <span class="field-label">Last name</span>
+              <input id="lastName" name="lastName" autocomplete="family-name" />
+            </label>
+          </div>
+          <label class="input-field" for="email">
+            <span class="field-label">Email address</span>
+            <input id="email" name="email" type="email" autocomplete="email" inputmode="email" required />
+          </label>
+          <div class="turnstile-wrap" data-agapay-turnstile data-action="giving-widget-checkout"></div>
+          <button class="primary-action primary-action--checkout" id="checkoutButton" type="submit">
+            <span>Continue to secure checkout</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          </button>
+        </form>
+
+        <p class="secure-note"><span aria-hidden="true">◆</span> Payments are processed by Stripe. AGAPAY never holds donated funds.</p>
+      </section>
+
+      <section class="completion-state" id="completionState" aria-labelledby="completionTitle" hidden>
+        <div class="completion-icon" aria-hidden="true">✓</div>
+        <span class="section-kicker">Gift received</span>
+        <h2 id="completionTitle">Thank you. Your generosity matters.</h2>
+        <p id="completionCopy">Your payment was successful. A receipt will arrive by email.</p>
+        <a id="giveAgainLink" class="secondary-action" href="#">Make another gift</a>
+      </section>
+
+      <section class="unavailable-state" id="unavailableState" aria-labelledby="unavailableTitle" hidden>
+        <div class="completion-icon completion-icon--quiet" aria-hidden="true">✦</div>
+        <span class="section-kicker">Giving unavailable</span>
+        <h2 id="unavailableTitle">This organization’s giving box is not active yet.</h2>
+        <p>No checkout has been started. Please contact the organization or visit AGAPAY.</p>
+        <a class="secondary-action" href="https://agapay.app" target="_top">Visit AGAPAY</a>
+      </section>
+
+      <footer class="giving-footer">
+        <a href="https://agapay.app" target="_blank" rel="noopener noreferrer" aria-label="Powered by AGAPAY">
+          <img src="/mark.png" alt="" aria-hidden="true" />
+          <span>Powered by <strong>AGAPAY</strong></span>
+        </a>
+        <span class="footer-divider" aria-hidden="true"></span>
+        <span>Love how you give.</span>
+      </footer>
+    </article>
+  </main>
+</body>
+</html>

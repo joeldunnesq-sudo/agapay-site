@@ -35,10 +35,9 @@ touching all 36 individually right now.
 breaking anything):
 - `X-Content-Type-Options: nosniff`
 - `Referrer-Policy: strict-origin-when-cross-origin`
-- `X-Frame-Options: SAMEORIGIN` — blocks other sites from framing AGAPAY
-  pages (clickjacking defense). `SAMEORIGIN` rather than `DENY` in case
-  AGAPAY ever needs to frame itself; nothing today intentionally embeds
-  AGAPAY pages in a third-party iframe.
+- `X-Frame-Options: SAMEORIGIN` — blocks other sites from framing normal
+  AGAPAY pages (clickjacking defense). The narrowly scoped giving-box routes
+  are the intentional exception described below.
 - `Strict-Transport-Security: max-age=2592000; includeSubDomains` (30 days)
   — rollout stage 1. This intentionally omits `preload` and uses a
   moderate lifetime while the effect across the verified DNS inventory
@@ -53,6 +52,25 @@ breaking anything):
 This was a deliberate choice, not an oversight — **do not flip this to a
 plain enforcing `Content-Security-Policy` header without watching for
 violations first.**
+
+## Public giving-box exceptions
+
+`/give/embed.html` and its clean public route `/give/embed/*` are the only AGAPAY
+pages intended for third-party framing. Their `_headers` rules declare the
+exception, and `fetchCleanAsset()` enforces it after the asset response returns:
+it removes `X-Frame-Options`, sets `Content-Security-Policy: frame-ancestors *`,
+prevents indexing, and disables storage with `Cache-Control: no-store`. The
+Worker enforcement is required because the Assets layer can retain the global
+frame header while applying custom headers. Both URL rules are still required
+because Cloudflare matches `_headers` against the original public URL before
+the Worker rewrite resolves the clean route to the physical asset. All other
+pages retain `SAMEORIGIN`.
+
+`/giving-box.js` is the small public loader organizations paste into their
+websites. Its exact rule permits cross-origin loading and uses a one-hour
+browser cache so security and compatibility fixes can roll out without asking
+organizations to replace their snippet. The loader validates both the message
+origin and sending iframe before applying automatic height updates.
 
 ## Why CSP is Report-Only
 

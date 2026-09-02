@@ -307,11 +307,15 @@ async function resolveStaticPath(urlPath) {
     pathname = "/parish/login.html";
   } else if (pathname === "/give/find-parish") {
     pathname = "/give/find-parish.html";
+  } else if (/^\/give\/embed\/[^/]+\/?$/.test(pathname)) {
+    pathname = "/give/embed.html";
   } else if (/^\/give\/[^/]+\/[^/]+-campaign\/?$/.test(pathname)) {
     pathname = "/give/parish-giving/index.html";
+  } else if (pathname === "/give/embed") {
+    pathname = "/give/embed.html";
   } else if (pathname === "/give/request-demo") {
     pathname = `${pathname}.html`;
-  } else if (/^\/give\/[^/]+\/?$/.test(pathname)) {
+  } else if (/^\/give\/[^/]+\/?$/.test(pathname) && !path.extname(pathname)) {
     pathname = "/give/form.html";
   }
   if (!path.extname(pathname)) pathname = `${pathname}.html`;

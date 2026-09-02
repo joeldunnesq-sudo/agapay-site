@@ -3,6 +3,7 @@
 
 import { activeFestalAlmsCampaigns } from "../festal-alms.js";
 import { parishClosureState } from "../portability/closure.js";
+import { givingCheckoutReturnUrls, normalizeGivingFrequency, stripeRecurringSchedule } from "../payments/giving-checkout.js";
 import { enrichParishGivingOptions, publicBoolean, publicComment } from "./parish-giving-catalog.js";
 import { commemorationSourceIdFromOffering, ensureCommemorationEntryFromOffering, saveCommemorationEntry, splitSubmittedNames } from "./parish-commemorations.js";
 import { submitParishSupportTicket } from "../lib/parish-support-tickets.js";
@@ -933,6 +934,7 @@ export function parishFromRegistration(registration) {
     id,
     name: registration.parishName,
     type,
+    communityType: registration.communityType || type,
     jurisdiction: normalizeJurisdiction(registration.jurisdiction || "other"),
     jurisdictionLabel: registration.jurisdiction || "Other canonical jurisdiction",
     city: registration.city || "",
@@ -1767,6 +1769,9 @@ export async function handleCheckout(request, env) {
   const amountCents = centsFromAmount(body.amount);
   if (!amountCents) return json({ error: donationAmountError(body.amount) }, { status: 422 });
 
+  const requestedFrequency = normalizeGivingFrequency(body.frequency);
+  if (!requestedFrequency) return json({ error: "Choose a supported gift frequency." }, { status: 422 });
+
   const parish = await findCheckoutParish(env, body.parishId);
   if (!parish || parish.status !== "verified") return json({ error: "Verified parish not found" }, { status: 404 });
   const giftTypeAliases = { candle: "candles", funds: "fund", love: "commemoration", alms: "feast" };
@@ -1806,7 +1811,7 @@ export async function handleCheckout(request, env) {
     );
   }
 
-  const recurring = body.frequency && body.frequency !== "once";
+  const recurring = requestedFrequency !== "once";
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   const normalizedDonorEmail = normalizeEmail(body.email);
   const normalizedGiftType = requestedGiftType;
@@ -1850,18 +1855,7 @@ export async function handleCheckout(request, env) {
     : body.campaignId || body.campaign || "";
   const donor = await requireDonor(request, env);
   const donorDashboardReturn = Boolean(donor?.email && normalizeEmail(donor.email) === normalizedDonorEmail);
-  const campaignPageCheckout = String(body.source || "").toLowerCase() === "campaign_page";
-  const returnPath = String(body.returnPath || "").startsWith("/") ? String(body.returnPath) : "";
-  const successUrl = donorDashboardReturn
-    ? `${appUrl}/myagapay?gift_success=1&session_id={CHECKOUT_SESSION_ID}`
-    : campaignPageCheckout
-    ? `${appUrl}/give/${encodeURIComponent(parish.id)}?giftType=campaign&campaign=${encodeURIComponent(body.campaign || "")}&success=1&session_id={CHECKOUT_SESSION_ID}`
-    : `${appUrl}/give/${encodeURIComponent(parish.id)}?success=1&session_id={CHECKOUT_SESSION_ID}`;
-  const cancelUrl = donorDashboardReturn
-    ? `${appUrl}/myagapay/giving/give?checkout_canceled=1`
-    : campaignPageCheckout && returnPath
-    ? `${appUrl}${returnPath}${returnPath.includes("?") ? "&" : "?"}checkout_canceled=1`
-    : `${appUrl}/give/${encodeURIComponent(parish.id)}?canceled=1`;
+  const { successUrl, cancelUrl } = givingCheckoutReturnUrls({ appUrl, parishId: parish.id, source: body.source, returnPath: body.returnPath, donorDashboardReturn, campaign: body.campaign });
   const {
     chargeCents,
     estimatedStripeFeeCents,
@@ -1901,7 +1895,7 @@ export async function handleCheckout(request, env) {
     campaign: checkoutCampaign,
     campaign_id: checkoutCampaignId,
     campaign_description: body.campaignDescription || "",
-    frequency: body.frequency || "once",
+    frequency: requestedFrequency,
     amount_cents: String(amountCents),
     charge_cents: String(chargeCents),
     agapay_fee_cents: String(agapayFeeCents),
@@ -1941,8 +1935,11 @@ export async function handleCheckout(request, env) {
   // Stripe's own processing cost deducted (see checkoutFinancials above).
 
   if (recurring) {
-    form.set("line_items[0][price_data][recurring][interval]", body.frequency === "weekly" || body.frequency === "biweekly" ? "week" : "month");
-    if (body.frequency === "biweekly") form.set("line_items[0][price_data][recurring][interval_count]", "2");
+    const recurringSchedule = stripeRecurringSchedule(requestedFrequency);
+    form.set("line_items[0][price_data][recurring][interval]", recurringSchedule.interval);
+    if (recurringSchedule.count > 1) {
+      form.set("line_items[0][price_data][recurring][interval_count]", String(recurringSchedule.count));
+    }
   }
 
   const headers = {
@@ -1983,7 +1980,7 @@ export async function handleCheckout(request, env) {
     publicComment: publicComment(body.publicComment),
     feastDescription: body.feastDescription || "",
     inMemoriam: body.inMemoriam || "",
-    frequency: body.frequency || "once",
+    frequency: requestedFrequency,
     amountCents,
     chargeCents,
     agapayFeeCents,

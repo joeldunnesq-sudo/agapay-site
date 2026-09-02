@@ -52,6 +52,7 @@ const core = [
   'scripts/admin-usability-tests.mjs',
   'scripts/terms-substantive-review-tests.mjs',
   'scripts/worker-hardening-tests.mjs',
+  'scripts/giving-box-tests.mjs',
   'scripts/entitlements-tests.mjs',
   'scripts/stewardship-accounting-bridge-tests.mjs',
   'scripts/stewardship-attendance-tests.mjs',

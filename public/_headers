@@ -15,6 +15,30 @@
   Permissions-Policy: geolocation=(), microphone=(), camera=(self), payment=(self), fullscreen=(self "https://www.youtube.com" "https://www.youtube-nocookie.com")
   Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://static.cloudflareinsights.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://challenges.cloudflare.com https://*.cloudflarestream.com https://www.facebook.com; media-src 'self' https://*.cloudflarestream.com; frame-src https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self'
 
+# This one public surface is intentionally embeddable on organization websites.
+# Keep every other AGAPAY page under the SAMEORIGIN policy above.
+/give/embed.html
+  ! X-Frame-Options
+  Content-Security-Policy: frame-ancestors *
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+# Cloudflare matches _headers against the original request URL. Keep this clean
+# route in lockstep with the physical asset rule; fetchCleanAsset also enforces
+# the exception after the asset response is returned.
+/give/embed/*
+  ! X-Frame-Options
+  Content-Security-Policy: frame-ancestors *
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+# Small public loader copied into customer websites. Keep this cross-origin,
+# version-light, and cache briefly so fixes roll out without snippet changes.
+/giving-box.js
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+  Cache-Control: public, max-age=3600, must-revalidate
+
 # Browsers check this file for updates independently of the app-shell cache.
 /service-worker.js
   Cache-Control: no-cache

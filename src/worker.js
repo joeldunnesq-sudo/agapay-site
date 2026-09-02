@@ -31,6 +31,7 @@ import {
   STRIPE_EVENT_PROCESSING_RETRY_MS,
   STRIPE_PAYMENT_INTENT_INDEX_PREFIX,
   STRIPE_SUBSCRIPTION_INDEX_PREFIX,
+  applyGivingEmbedHeaders,
   applyDonorPassword,
   applyParishDashboardPassword,
   claimStripeEvent,
@@ -905,8 +906,8 @@ function cleanAssetRequest(request) {
     url.pathname = "/give/parish-giving/index.html";
     return new Request(url, request);
   }
-  const staticGivePages = new Set(["request-demo"]);
-  const givePage = url.pathname.match(/^\/give\/([^/]+)\/?$/)?.[1] || "";
+  const staticGivePages = new Set(["request-demo", "embed"]);
+  const givePage = /^\/give\/embed\/[^/]+\/?$/.test(url.pathname) ? "embed" : url.pathname.match(/^\/give\/([^/]+)\/?$/)?.[1] || "";
   if (staticGivePages.has(givePage)) {
     url.pathname = `/give/${givePage}.html`;
     return new Request(url, request);
@@ -923,15 +924,14 @@ function cleanAssetRequest(request) {
 }
 
 async function fetchCleanAsset(request, env) {
-  const assetRequest = cleanAssetRequest(request);
-  const response = await env.ASSETS.fetch(assetRequest);
-  if (assetRequest.url === request.url || ![301, 302, 307, 308].includes(response.status)) return response;
+  const assetRequest = cleanAssetRequest(request), response = await env.ASSETS.fetch(assetRequest);
+  if (assetRequest.url === request.url || ![301, 302, 307, 308].includes(response.status)) return applyGivingEmbedHeaders(request, response);
 
   const location = response.headers.get("Location");
-  if (!location) return response;
+  if (!location) return applyGivingEmbedHeaders(request, response);
   const target = new URL(location, assetRequest.url);
-  if (target.origin !== new URL(request.url).origin) return response;
-  return env.ASSETS.fetch(new Request(target, request));
+  if (target.origin !== new URL(request.url).origin) return applyGivingEmbedHeaders(request, response);
+  return applyGivingEmbedHeaders(request, await env.ASSETS.fetch(new Request(target, request)));
 }
 
 const LEGACY_GIVING_PAGE_REDIRECTS = new Map([
