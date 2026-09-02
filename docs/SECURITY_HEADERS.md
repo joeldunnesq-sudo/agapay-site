@@ -36,8 +36,8 @@ breaking anything):
 - `X-Content-Type-Options: nosniff`
 - `Referrer-Policy: strict-origin-when-cross-origin`
 - `X-Frame-Options: SAMEORIGIN` — blocks other sites from framing normal
-  AGAPAY pages (clickjacking defense). The narrowly scoped
-  `/give/embed.html` asset is the intentional exception described below.
+  AGAPAY pages (clickjacking defense). The narrowly scoped giving-box routes
+  are the intentional exception described below.
 - `Strict-Transport-Security: max-age=2592000; includeSubDomains` (30 days)
   — rollout stage 1. This intentionally omits `preload` and uses a
   moderate lifetime while the effect across the verified DNS inventory
@@ -55,10 +55,13 @@ violations first.**
 
 ## Public giving-box exceptions
 
-`/give/embed.html` is the only AGAPAY page intended for third-party framing.
-Its exact `_headers` rule removes `X-Frame-Options`, enforces
-`Content-Security-Policy: frame-ancestors *`, prevents indexing, and disables
-storage with `Cache-Control: no-store`. All other pages retain `SAMEORIGIN`.
+`/give/embed.html` and its clean public route `/give/embed/*` are the only AGAPAY
+pages intended for third-party framing. Their `_headers` rules remove
+`X-Frame-Options`, enforce `Content-Security-Policy: frame-ancestors *`, prevent
+indexing, and disable storage with `Cache-Control: no-store`. Both rules are
+required because Cloudflare matches headers against the original public URL
+before the Worker rewrite resolves the clean route to the physical asset. All
+other pages retain `SAMEORIGIN`.
 
 `/giving-box.js` is the small public loader organizations paste into their
 websites. Its exact rule permits cross-origin loading and uses a one-hour

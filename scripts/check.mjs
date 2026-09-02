@@ -852,10 +852,11 @@ assert.ok(securityHeadersFile.includes("Content-Security-Policy-Report-Only:"), 
 assert.ok(securityHeadersFile.includes("camera=(self)"), "Permissions-Policy should allow same-origin camera for the bookstore barcode scanner");
 assert.ok(
   securityHeadersFile.includes("/give/embed.html")
+    && securityHeadersFile.includes("/give/embed/*")
     && securityHeadersFile.includes("! X-Frame-Options")
     && securityHeadersFile.includes("Content-Security-Policy: frame-ancestors *")
     && securityHeadersFile.includes("X-Robots-Tag: noindex, nofollow"),
-  "only the dedicated noindex giving-box asset should opt out of the site's SAMEORIGIN frame policy"
+  "only the dedicated noindex giving-box asset and clean public route should opt out of the site's SAMEORIGIN frame policy"
 );
 assert.ok(
   securityHeadersFile.includes("/giving-box.js")

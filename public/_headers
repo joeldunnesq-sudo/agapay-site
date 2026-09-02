@@ -23,6 +23,15 @@
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store
 
+# The Worker rewrites clean public URLs to the asset above, but Cloudflare
+# matches _headers against the original request URL. Keep the clean route in
+# lockstep with the physical asset rule so third-party iframes are permitted.
+/give/embed/*
+  ! X-Frame-Options
+  Content-Security-Policy: frame-ancestors *
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
 # Small public loader copied into customer websites. Keep this cross-origin,
 # version-light, and cache briefly so fixes roll out without snippet changes.
 /giving-box.js
