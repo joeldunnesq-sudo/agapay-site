@@ -1,9 +1,8 @@
 // AGAPAY Accounting Package 0.75C -- Platform Identity & Parish Membership routes.
 //
-// Backend-only surface: login, session lookup, logout for platform users,
-// and the invitation create/accept lifecycle. No HTML/UI is added anywhere
-// in this package -- per this package's explicit scope, invitations get a
-// data model and a reusable backend, not a screen.
+// Login, session lookup, logout for platform users, and the invitation
+// create/accept lifecycle. A named staff login may also request a parish
+// dashboard session after its active membership has been verified.
 //
 // These routes are entirely new and additive. Nothing here modifies or is
 // called by any existing route -- the legacy parish-dashboard bearer flow
@@ -57,10 +56,16 @@ export async function handleIdentityLogin(request, env) {
 
   const email = normalizeEmail(body.email);
   const password = String(body.password || "");
+  const parishId = String(body.parishId || "").trim();
   if (!email || !password) return json({ error: "Email and password are required." }, { status: 400 });
 
   const user = await verifyPlatformUserPassword(env, email, password);
   if (!user) return json({ error: "Invalid email or password." }, { status: 401 });
+  const memberships = parishId ? await listMembershipsForUser(env, user.id) : [];
+  const membership = parishId
+    ? memberships.find((row) => row.parishId === parishId && row.status === "active")
+    : null;
+  if (parishId && !membership) return json({ error: "This staff account does not have active access to that parish." }, { status: 403 });
 
   if (privilegedMfaRequired(env)) {
     return json({
@@ -69,15 +74,31 @@ export async function handleIdentityLogin(request, env) {
         principalType: "platform_user",
         principalId: user.id,
         purpose: "login",
-        metadata: { identityEmail: email },
+        metadata: { identityEmail: email, parishId, membershipId: membership?.id || "" },
       })),
     });
   }
 
   const session = await issuePlatformUserSession(env, user.id);
   if (!session) return json({ error: "Unable to start a session." }, { status: 500 });
+  let parishSession = null;
+  if (parishId) {
+    const found = await findRegistrationByParishId(env, parishId);
+    if (!found) return json({ error: "Parish dashboard record not found." }, { status: 404 });
+    parishSession = await issueParishDashboardSession(found.registration);
+    await saveRegistrationRecord(env, found.key, parishSession.registration, found.registration);
+  }
 
-  return json({ token: session.token, expiresAt: session.expiresAt, user: publicPlatformUser(user) });
+  return json({
+    token: session.token,
+    expiresAt: session.expiresAt,
+    identityEmail: email,
+    user: publicPlatformUser(user),
+    parishId,
+    membershipId: membership?.id || "",
+    parishToken: parishSession?.token || "",
+    parishTokenExpiresAt: parishSession?.expiresAt || ""
+  });
 }
 
 // GET /api/identity/session -- "whoami" for a platform-user session.

@@ -131,15 +131,19 @@ export function buildMemorialSchedule(reposedOnInput, markerTypesInput) {
   });
 }
 
-export async function listMemorialMarkers(env, parishId) {
+export async function listMemorialMarkers(env, parishId, assignedPriestEmail = '') {
+  const normalizedAssignee = normalizeEmail(assignedPriestEmail);
   const rows = await d1All(
     env,
     `${MARKER_SELECT}
      WHERE c.parish_id = ? AND c.status = 'active'
+       AND (? = '' OR LOWER(COALESCE(c.assigned_priest_email, '')) = ?)
      ORDER BY CASE m.status WHEN 'pending' THEN 0 WHEN 'arranged' THEN 1 WHEN 'scheduled' THEN 2 ELSE 3 END,
        m.target_date, p.preferred_name COLLATE NOCASE
      LIMIT 1000`,
-    parishId
+    parishId,
+    normalizedAssignee,
+    normalizedAssignee
   );
   return rows.map(markerDto);
 }
@@ -152,25 +156,64 @@ export async function findMemorialMarker(env, parishId, markerId) {
 export async function recordRepose(env, input = {}) {
   const parishId = cleanText(input.parishId, 120);
   const followupId = cleanText(input.followupId, 160);
+  const personId = cleanText(input.personId, 160);
   const actor = cleanText(input.actor, 180) || 'parish-dashboard';
   const reposedOn = validDate(input.reposedOn);
   const markers = buildMemorialSchedule(reposedOn, input.markerTypes);
-  const followup = await d1First(
-    env,
-    `SELECT f.*, p.preferred_name FROM sacrament_pastoral_followups f
-     JOIN directory_people p ON p.id = f.person_id
-     WHERE f.id = ? AND f.parish_id = ?`,
-    followupId,
-    parishId
-  );
-  if (!followup) throw new PastoralFollowUpError('Pastoral follow-up not found.', 404);
-  if (followup.status !== 'active') throw new PastoralFollowUpError('Reopen this follow-up before recording a repose.', 409);
+  const followup = followupId
+    ? await d1First(
+        env,
+        `SELECT f.*, p.preferred_name FROM sacrament_pastoral_followups f
+         JOIN directory_people p ON p.id = f.person_id
+         WHERE f.id = ? AND f.parish_id = ?`,
+        followupId,
+        parishId
+      )
+    : null;
+  if (followupId && !followup) throw new PastoralFollowUpError('Pastoral follow-up not found.', 404);
+  if (followup && followup.status !== 'active') throw new PastoralFollowUpError('Reopen this follow-up before recording a repose.', 409);
+  const person = followup
+    ? { id: followup.person_id, preferred_name: followup.preferred_name }
+    : await d1First(
+        env,
+        `SELECT p.id, p.preferred_name FROM directory_people p
+         WHERE p.id = ? AND p.active = 1 AND p.deceased = 0 AND (
+           p.created_by_parish_id = ? OR
+           EXISTS (SELECT 1 FROM directory_parish_affiliations a WHERE a.person_id = p.id AND a.parish_id = ? AND a.active = 1 AND a.status != 'former_member') OR
+           EXISTS (SELECT 1 FROM directory_household_members hm JOIN directory_households h ON h.id = hm.household_id WHERE hm.person_id = p.id AND hm.active = 1 AND h.parish_id = ? AND h.active = 1)
+         )`,
+        personId,
+        parishId,
+        parishId,
+        parishId
+      );
+  if (!person) throw new PastoralFollowUpError('Choose an active person from this parish directory.', 404);
+  if (!followup) {
+    const existingFollowup = await d1First(
+      env,
+      `SELECT id, status FROM sacrament_pastoral_followups
+       WHERE parish_id = ? AND person_id = ?`,
+      parishId,
+      person.id
+    );
+    if (existingFollowup) {
+      throw new PastoralFollowUpError(
+        existingFollowup.status === 'active'
+          ? 'This person already has a pastoral follow-up. Record the repose from that care plan.'
+          : 'This person has a closed pastoral follow-up. Reopen it before recording the repose.',
+        409
+      );
+    }
+  }
+  const assignedPriestName = followup?.assigned_priest_name || cleanText(input.assignedPriestName, 120);
+  const assignedPriestEmail = followup?.assigned_priest_email || normalizeEmail(input.assignedPriestEmail);
+  if (!assignedPriestName || !assignedPriestEmail) throw new PastoralFollowUpError('Choose the priest responsible for memorial follow-up.');
   if (!reposedOn) throw new PastoralFollowUpError('Choose a valid date of repose.');
   const existing = await d1First(
     env,
     'SELECT id FROM sacrament_memorial_cycles WHERE parish_id = ? AND person_id = ?',
     parishId,
-    followup.person_id
+    person.id
   );
   if (existing) throw new PastoralFollowUpError('This person already has a memorial observance cycle.', 409);
 
@@ -181,14 +224,14 @@ export async function recordRepose(env, input = {}) {
   const statements = [
     {
       sql: `UPDATE directory_people SET deceased = 1, reposed_on = ?, updated_at = ? WHERE id = ?`,
-      params: [reposedOn, Date.now(), followup.person_id],
+      params: [reposedOn, Date.now(), person.id],
     },
-    {
+    ...(followup ? [{
       sql: `UPDATE sacrament_pastoral_followups
         SET status = 'closed', next_due_on = NULL, closed_at = ?, closed_by = ?, closure_outcome = 'reposed',
             closure_reason = ?, updated_at = ? WHERE id = ? AND parish_id = ?`,
       params: [now, actor, cleanText(input.closureReason, 500) || `Reposed ${reposedOn}`, now, followupId, parishId],
-    },
+    }] : []),
     {
       sql: `INSERT INTO sacrament_memorial_cycles
         (id, parish_id, person_id, followup_id, assigned_priest_name, assigned_priest_email,
@@ -197,10 +240,10 @@ export async function recordRepose(env, input = {}) {
       params: [
         cycleId,
         parishId,
-        followup.person_id,
-        followupId,
-        followup.assigned_priest_name,
-        followup.assigned_priest_email || null,
+        person.id,
+        followupId || null,
+        assignedPriestName,
+        assignedPriestEmail,
         reposedOn,
         includeSixMonth ? 1 : 0,
         annualEnabled ? 1 : 0,
@@ -228,10 +271,10 @@ export async function recordRepose(env, input = {}) {
   await d1Batch(env, statements);
   return {
     cycleId,
-    personId: followup.person_id,
-    personName: followup.preferred_name,
-    assignedPriestName: followup.assigned_priest_name,
-    assignedPriestEmail: followup.assigned_priest_email || '',
+    personId: person.id,
+    personName: person.preferred_name,
+    assignedPriestName,
+    assignedPriestEmail,
     reposedOn,
     markers: (await listMemorialMarkers(env, parishId)).filter((marker) => marker.cycleId === cycleId),
   };

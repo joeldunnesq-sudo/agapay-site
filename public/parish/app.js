@@ -364,7 +364,7 @@
 
   // ── HELPERS ──────────────────────────────────────────────
   function showParishAuthForm(formId) {
-    ['parishLoginForm', 'parishAccessInviteForm', 'parishResetRequestForm', 'parishResetConfirmForm'].forEach((id) => {
+    ['parishLoginForm', 'parishStaffLoginForm', 'parishAccessInviteForm', 'parishResetRequestForm', 'parishResetConfirmForm'].forEach((id) => {
       const form = document.getElementById(id);
       if (form) form.hidden = id !== formId;
     });

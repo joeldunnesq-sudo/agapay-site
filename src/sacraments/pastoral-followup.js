@@ -139,15 +139,19 @@ const FOLLOWUP_SELECT = `
   JOIN directory_people p ON p.id = f.person_id
 `;
 
-export async function listPastoralFollowups(env, parishId) {
+export async function listPastoralFollowups(env, parishId, assignedPriestEmail = '') {
+  const normalizedAssignee = normalizeEmail(assignedPriestEmail);
   const rows = await d1All(
     env,
     `${FOLLOWUP_SELECT}
     WHERE f.parish_id = ?
+      AND (? = '' OR LOWER(COALESCE(f.assigned_priest_email, '')) = ?)
     ORDER BY CASE f.status WHEN 'active' THEN 0 ELSE 1 END, f.next_due_on, f.updated_at DESC
     LIMIT 500
   `,
-    parishId
+    parishId,
+    normalizedAssignee,
+    normalizedAssignee
   );
   return rows.map(followupDto);
 }

@@ -12,6 +12,7 @@ const SIMPLE_ROUTES = new Map([
   ['/api/admin/email-diagnostics', 'handleAdminEmailDiagnostics'],
   ['/api/admin/commemorations/send-weekly', 'handleAdminWeeklyCommemorationEmails'],
   ['/api/admin/commerce/send-weekly-treasurer', 'handleAdminWeeklyTreasurerCommerceEmails'],
+  ['/api/admin/sacraments/send-daily-pastoral-digest', 'handleAdminDailyPastoralCareDigest'],
   ['/api/admin/sacraments/send-weekly-digest', 'handleAdminWeeklySacramentDigest'],
   ['/api/admin/communications/send-weekly-digest', 'handleAdminWeeklyAnnouncementDigest'],
   ['/api/admin/rebuild-indexes', 'handleAdminRebuildIndexes'],

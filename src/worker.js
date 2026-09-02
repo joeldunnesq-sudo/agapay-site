@@ -125,7 +125,7 @@ import { handleOperationsCanary, handleOperationsMonitorAlert } from "./operatio
 import { mfaReadiness } from "./lib/mfa.js";
 import { recordScheduledHeartbeat } from "./operations/scheduled-heartbeats.js";
 import { materializeMemorialAnniversaries } from "./sacraments/memorial-followup.js";
-
+import { handleAdminDailyPastoralCareDigest, sendDailyPastoralCareDigestEmails } from "./sacraments/pastoral-digest.js";
 import {
   verifyParishDashboardBearer,
   findRegistrationByParishId,
@@ -1425,18 +1425,26 @@ async function sendWeeklySacramentDigestEmails(env, scheduledTime, options = {})
       if (/sacrament_memorial_|no such table/i.test(String(error?.message || error || ""))) return [];
       throw error;
     });
-    const recipients = [...new Set([recipient, ...memorials.map(row => normalizeEmail(row.assigned_priest_email))].filter(Boolean))];
+    const pastoralRecipients = [...new Set(
+      memorials.map(row => normalizeEmail(row.assigned_priest_email)).filter(Boolean)
+    )];
+    const recipients = [...new Set([recipient, ...pastoralRecipients].filter(Boolean))];
 
     if (!needsResponse.length && !thisWeek.length && !memorials.length) {
       results.push({ parishId: registration.parishId, parishName: registration.parishName || "", status: "skipped", reason: "nothing_pending" });
       continue;
     }
     if (dryRun) {
-      results.push({
-        parishId: registration.parishId, parishName: registration.parishName || "", to: recipients,
-        status: "dry_run", needsResponseCount: needsResponse.length, overdueCount: overdue.length,
-        thisWeekCount: thisWeek.length, memorialCount: memorials.length
-      });
+      for (const digestRecipient of recipients) {
+        const ownsGeneralQueue = normalizeEmail(digestRecipient) === normalizeEmail(recipient);
+        const recipientMemorials = memorials.filter(row => normalizeEmail(row.assigned_priest_email) === normalizeEmail(digestRecipient));
+        results.push({
+          parishId: registration.parishId, parishName: registration.parishName || "", to: [digestRecipient],
+          status: "dry_run", needsResponseCount: ownsGeneralQueue ? needsResponse.length : 0,
+          overdueCount: ownsGeneralQueue ? overdue.length : 0, thisWeekCount: ownsGeneralQueue ? thisWeek.length : 0,
+          memorialCount: recipientMemorials.length
+        });
+      }
       continue;
     }
 
@@ -1454,46 +1462,46 @@ async function sendWeeklySacramentDigestEmails(env, scheduledTime, options = {})
       first_anniversary: "First-anniversary memorial",
       annual_anniversary: "Annual memorial",
     }[row.marker_type] || "Memorial service");
-    const subject = overdue.length
-      ? `${overdue.length} sacrament request${overdue.length === 1 ? "" : "s"} waiting on ${registration.parishName || "your parish"}`
-      : memorials.length
-        ? `${memorials.length} memorial observance${memorials.length === 1 ? "" : "s"} to arrange at ${registration.parishName || "your parish"}`
-      : `Sacraments & Services: this week at ${registration.parishName || "your parish"}`;
-
-    const email = await sendEmail(env, {
-      from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
-      to: recipients,
-      reply_to: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
-      subject,
-      html: agapayEmailHtml(appUrl, "Sacraments & Services — Weekly Digest", `
-        <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#171715;">Here's what needs attention in Sacraments &amp; Services for <strong>${htmlEscape(registration.parishName || "your parish")}</strong>.</p>
-        ${overdue.length ? `<p style="margin:0;padding:10px 14px;background:#FBEFE9;border:1px solid rgba(178,68,30,0.28);border-radius:10px;font-size:14px;color:#8B2A0E;"><strong>${overdue.length}</strong> request${overdue.length === 1 ? "" : "s"} ha${overdue.length === 1 ? "s" : "ve"} been waiting more than 48 hours for a response.</p>` : ""}
-        ${section("Needs a response", needsResponse, (r) => `waiting since ${new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`)}
-        ${section("Memorial observances to arrange", memorials, (r) => `${r.preferred_name} · ${r.target_date}${r.assigned_priest_name ? ` · ${r.assigned_priest_name}` : ""}`, memorialLabel)}
-        ${section("Scheduled this week", thisWeek, (r) => r.confirmed_date)}
-        <p style="margin:18px 0 0;font-size:13px;color:#6F6A60;">Review and respond from your parish dashboard, under Sacraments &amp; Services.</p>
-      `),
-      text: [
-        subject, "",
-        "Needs a response:",
-        ...(needsResponse.length ? needsResponse.map((r) => `- ${r.other_type_label || sacramentTypeLabel(r.sacrament_type)} (since ${r.created_at})`) : ["None"]),
-        "", "Memorial observances to arrange:",
-        ...(memorials.length ? memorials.map((r) => `- ${memorialLabel(r)} for ${r.preferred_name} (target ${r.target_date})`) : ["None"]),
-        "", "Scheduled this week:",
-        ...(thisWeek.length ? thisWeek.map((r) => `- ${r.other_type_label || sacramentTypeLabel(r.sacrament_type)} on ${r.confirmed_date}`) : ["None"])
-      ].join("\n")
-    });
-
-    results.push({
-      parishId: registration.parishId, parishName: registration.parishName || "", to: recipients,
-      status: email.status, needsResponseCount: needsResponse.length, overdueCount: overdue.length,
-      thisWeekCount: thisWeek.length, memorialCount: memorials.length
-    });
+    for (const digestRecipient of recipients) {
+      const ownsGeneralQueue = normalizeEmail(digestRecipient) === normalizeEmail(recipient);
+      const recipientNeedsResponse = ownsGeneralQueue ? needsResponse : [];
+      const recipientOverdue = ownsGeneralQueue ? overdue : [];
+      const recipientThisWeek = ownsGeneralQueue ? thisWeek : [];
+      const recipientMemorials = memorials.filter(row => normalizeEmail(row.assigned_priest_email) === normalizeEmail(digestRecipient));
+      if (!recipientNeedsResponse.length && !recipientThisWeek.length && !recipientMemorials.length) continue;
+      const subject = recipientOverdue.length
+          ? `${recipientOverdue.length} sacrament request${recipientOverdue.length === 1 ? "" : "s"} waiting on ${registration.parishName || "your parish"}`
+          : recipientMemorials.length
+            ? `${recipientMemorials.length} memorial observance${recipientMemorials.length === 1 ? "" : "s"} to arrange at ${registration.parishName || "your parish"}`
+            : `Sacraments & Services: this week at ${registration.parishName || "your parish"}`;
+      const email = await sendEmail(env, {
+        from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
+        to: [digestRecipient],
+        reply_to: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
+        subject,
+        html: agapayEmailHtml(appUrl, "Sacraments & Services — Weekly Digest", `
+          <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#171715;">Here's what needs attention in your Sacraments &amp; Services care list for <strong>${htmlEscape(registration.parishName || "your parish")}</strong>.</p>
+          ${recipientOverdue.length ? `<p style="margin:0;padding:10px 14px;background:#FBEFE9;border:1px solid rgba(178,68,30,0.28);border-radius:10px;font-size:14px;color:#8B2A0E;"><strong>${recipientOverdue.length}</strong> request${recipientOverdue.length === 1 ? " has" : "s have"} been waiting more than 48 hours for a response.</p>` : ""}
+          ${section("Needs a response", recipientNeedsResponse, (r) => `waiting since ${new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`)}
+          ${section("Memorial observances to arrange", recipientMemorials, (r) => `${r.preferred_name} · ${r.target_date}`, memorialLabel)}
+          ${section("Scheduled this week", recipientThisWeek, (r) => r.confirmed_date)}
+          <p style="margin:18px 0 0;font-size:13px;color:#6F6A60;">Review and respond from your parish dashboard, under Sacraments &amp; Services → Follow-up.</p>
+        `),
+        text: [subject, "", "Needs a response:", ...(recipientNeedsResponse.length ? recipientNeedsResponse.map((r) => `- ${r.other_type_label || sacramentTypeLabel(r.sacrament_type)} (since ${r.created_at})`) : ["None"]),
+          "", "Memorial observances to arrange:", ...(recipientMemorials.length ? recipientMemorials.map((r) => `- ${memorialLabel(r)} for ${r.preferred_name} (target ${r.target_date})`) : ["None"]),
+          "", "Scheduled this week:", ...(recipientThisWeek.length ? recipientThisWeek.map((r) => `- ${r.other_type_label || sacramentTypeLabel(r.sacrament_type)} on ${r.confirmed_date}`) : ["None"])
+        ].join("\n")
+      });
+      results.push({
+        parishId: registration.parishId, parishName: registration.parishName || "", to: [digestRecipient],
+        status: email.status, needsResponseCount: recipientNeedsResponse.length, overdueCount: recipientOverdue.length,
+        thisWeekCount: recipientThisWeek.length, memorialCount: recipientMemorials.length
+      });
+    }
   }
 
   return results;
 }
-
 async function handleAdminWeeklySacramentDigest(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   const limited = await rateLimit(request, env, "admin-maintenance", { limit: 12, windowSeconds: 300 });
@@ -2962,6 +2970,7 @@ const ROUTE_ACTIONS = Object.freeze({
   handleAdminTaxExemptionSummary,
   handleAdminTaxExemptionSyncReconcile,
   handleAdminTaxExemptionSyncRetry,
+  handleAdminDailyPastoralCareDigest,
   handleAdminWeeklyAnnouncementDigest,
   handleAdminWeeklyCommemorationEmails,
   handleAdminWeeklySacramentDigest,
@@ -3229,6 +3238,7 @@ export default {
       ctx.waitUntil(observeScheduledTask("parish_portability_jobs", runPortabilityJobs(env), env, event));
       return;
     }
+    if (event.cron === "0 14 * * *") return ctx.waitUntil(observeScheduledTask("daily_pastoral_care_digest", sendDailyPastoralCareDigestEmails(env, event.scheduledTime), env, event));
     ctx.waitUntil(observeScheduledTask("scheduled_accounting_recurring", runScheduledRecurringTransactions(env, event.scheduledTime), env, event));
     ctx.waitUntil(observeScheduledTask("nonprofit_pricing_threshold_alerts", sendNonprofitThresholdAlerts(env), env, event));
     ctx.waitUntil(observeScheduledTask("group_message_retention_sweep", purgeExpiredGroupMessages(env, event.scheduledTime), env, event));
