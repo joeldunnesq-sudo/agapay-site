@@ -548,22 +548,6 @@
 
       <!-- ── SETTINGS TAB ────────────────────────────────────── -->
       <div class="tab-panel" id="tab-givers">
-        <section class="giving-export-card" aria-labelledby="givingExportTitle">
-          <div class="giving-export-copy">
-            <span class="giving-export-eyebrow">Monthly bookkeeping · every plan</span>
-            <h2 id="givingExportTitle">Your giving, ready for your books.</h2>
-            <p>Download every recorded online and outside gift for the month—not just the rows shown below.</p>
-          </div>
-          <form class="giving-export-controls" onsubmit="exportGiversMonthlyCsv(event)">
-            <label for="givingExportMonth">Giving month<input id="givingExportMonth" type="month" required /></label>
-            <label for="givingExportGroup">Group by<select id="givingExportGroup"><option value="date">Giving date</option><option value="giver">Giver</option></select></label>
-            <button class="btn btn-gold giving-export-button" type="submit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5" /></svg><span>Export giving CSV</span></button>
-          </form>
-          <p><button class="sw-action-btn" type="button" onclick="switchTab('reconcile')">Reconcile monthly deposits →</button></p>
-          <p class="giving-export-note">One transaction per row. Online dates use the parish timezone; outside gifts use their recorded received date. Includes funds, contribution amounts, source, and references. External fees and bank net are left unverified; this is not a bank-deposit report.</p>
-          <p class="giving-export-status" id="givingExportStatus" role="status" aria-live="polite"></p>
-        </section>
-        <div id="outsideGivingMount"></div>
         <!-- HERO — warm cream/gold pastoral treatment -->
         <section class="pdx-gv-hero">
           <div class="pdx-gv-hero-layout">
@@ -684,6 +668,23 @@
             <div class="pdx-gv-dir-empty">Load giving history to see donor households and gift patterns.</div>
           </div>
         </section>
+
+        <section class="giving-export-card" aria-labelledby="givingExportTitle">
+          <div class="giving-export-copy">
+            <span class="giving-export-eyebrow">Monthly giving export · every plan</span>
+            <h2 id="givingExportTitle">Monthly giving activity, ready for your books.</h2>
+            <p>Download every recorded online and outside gift for the month—not just the rows shown in the directory.</p>
+          </div>
+          <form class="giving-export-controls" onsubmit="exportGiversMonthlyCsv(event)">
+            <label for="givingExportMonth">Giving month<input id="givingExportMonth" type="month" required /></label>
+            <label for="givingExportGroup">Group by<select id="givingExportGroup"><option value="date">Giving date</option><option value="giver">Giver</option></select></label>
+            <button class="btn btn-gold giving-export-button" type="submit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5" /></svg><span>Export giving CSV</span></button>
+          </form>
+          <p><button class="sw-action-btn" type="button" onclick="switchTab('reconcile')">Open Stripe payout reconciliation →</button></p>
+          <p class="giving-export-note">This export lists contributions by giving or received date. It includes funds, contribution amounts, sources, and references, but it does not verify Stripe fees, net payouts, or bank deposits.</p>
+          <p class="giving-export-status" id="givingExportStatus" role="status" aria-live="polite"></p>
+        </section>
+        <div id="outsideGivingMount"></div>
 
         <!-- ANNUAL GIVING STATEMENTS -->
         <section class="pdx-panel" id="pdxGsSection">
