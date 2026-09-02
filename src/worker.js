@@ -889,6 +889,10 @@ function cleanAssetRequest(request) {
     url.pathname = "/give/find-parish.html";
     return new Request(url, request);
   }
+  if (/^\/give\/embed\/[^/]+\/?$/.test(url.pathname)) {
+    url.pathname = "/give/embed.html";
+    return new Request(url, request);
+  }
   if (/^\/[^/]+\/bookstore\/?$/.test(url.pathname) || /^\/bookstore\/[^/]+\/?$/.test(url.pathname)) {
     url.pathname = "/bookstore/index.html";
     return new Request(url, request);
@@ -905,7 +909,7 @@ function cleanAssetRequest(request) {
     url.pathname = "/give/parish-giving/index.html";
     return new Request(url, request);
   }
-  const staticGivePages = new Set(["request-demo"]);
+  const staticGivePages = new Set(["request-demo", "embed"]);
   const givePage = url.pathname.match(/^\/give\/([^/]+)\/?$/)?.[1] || "";
   if (staticGivePages.has(givePage)) {
     url.pathname = `/give/${givePage}.html`;

@@ -1,7 +1,7 @@
 'use strict';
 
-/* global currentParish, dedicatedGivingUrl, qrcode, setStatus, downloadBlob, escapeHtml */
-/* exported copyGivingLink, downloadQrSvg, downloadQrPng, downloadBulletinSvg, downloadBulletinPng */
+/* global currentParish, dedicatedGivingUrl, dedicatedGivingEmbedUrl, qrcode, setStatus, downloadBlob, escapeHtml */
+/* exported copyGivingLink, copyGivingEmbedCode, downloadQrSvg, downloadQrPng, downloadBulletinSvg, downloadBulletinPng */
 
 // Giving sharing; read shared identity and catalog state only when actions run.
 let currentQrSvg = '';
@@ -96,6 +96,25 @@ async function copyGivingLink() {
   }
   await navigator.clipboard.writeText(url);
   setStatus('Giving page link copied.', 'success');
+}
+
+function givingEmbedSnippet() {
+  const url = dedicatedGivingEmbedUrl();
+  if (!url) return '';
+  const organizationId = escapeHtml(String(currentParish?.parishId || ''));
+  const safeUrl = escapeHtml(url);
+  return `<div data-agapay-giving="${organizationId}"><a href="${safeUrl}" target="_blank" rel="noopener">Give securely with AGAPAY</a></div>
+<script async src="${window.location.origin}/giving-box.js"></script>`;
+}
+
+async function copyGivingEmbedCode() {
+  const snippet = givingEmbedSnippet();
+  if (!snippet) {
+    setStatus('Load a parish first.', 'error');
+    return;
+  }
+  await navigator.clipboard.writeText(snippet);
+  setStatus('Embed code copied — paste it anywhere on your website.', 'success');
 }
 
 // A previously-rendered currentQrSvg can exist without the logo baked in —

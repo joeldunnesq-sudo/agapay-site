@@ -933,6 +933,7 @@ export function parishFromRegistration(registration) {
     id,
     name: registration.parishName,
     type,
+    communityType: registration.communityType || type,
     jurisdiction: normalizeJurisdiction(registration.jurisdiction || "other"),
     jurisdictionLabel: registration.jurisdiction || "Other canonical jurisdiction",
     city: registration.city || "",
@@ -1767,6 +1768,12 @@ export async function handleCheckout(request, env) {
   const amountCents = centsFromAmount(body.amount);
   if (!amountCents) return json({ error: donationAmountError(body.amount) }, { status: 422 });
 
+  const rawFrequency = String(body.frequency || "once").trim().toLowerCase();
+  const requestedFrequency = rawFrequency === "annual" ? "yearly" : rawFrequency;
+  if (!["once", "weekly", "biweekly", "monthly", "quarterly", "yearly"].includes(requestedFrequency)) {
+    return json({ error: "Choose a supported gift frequency." }, { status: 422 });
+  }
+
   const parish = await findCheckoutParish(env, body.parishId);
   if (!parish || parish.status !== "verified") return json({ error: "Verified parish not found" }, { status: 404 });
   const giftTypeAliases = { candle: "candles", funds: "fund", love: "commemoration", alms: "feast" };
@@ -1806,7 +1813,7 @@ export async function handleCheckout(request, env) {
     );
   }
 
-  const recurring = body.frequency && body.frequency !== "once";
+  const recurring = requestedFrequency !== "once";
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   const normalizedDonorEmail = normalizeEmail(body.email);
   const normalizedGiftType = requestedGiftType;
@@ -1850,15 +1857,22 @@ export async function handleCheckout(request, env) {
     : body.campaignId || body.campaign || "";
   const donor = await requireDonor(request, env);
   const donorDashboardReturn = Boolean(donor?.email && normalizeEmail(donor.email) === normalizedDonorEmail);
-  const campaignPageCheckout = String(body.source || "").toLowerCase() === "campaign_page";
+  const checkoutSource = String(body.source || "").toLowerCase();
+  const campaignPageCheckout = checkoutSource === "campaign_page";
+  const embedCheckout = checkoutSource === "embed";
   const returnPath = String(body.returnPath || "").startsWith("/") ? String(body.returnPath) : "";
+  const embedPath = `/give/embed/${encodeURIComponent(parish.id)}`;
   const successUrl = donorDashboardReturn
     ? `${appUrl}/myagapay?gift_success=1&session_id={CHECKOUT_SESSION_ID}`
+    : embedCheckout
+    ? `${appUrl}${embedPath}?success=1&session_id={CHECKOUT_SESSION_ID}`
     : campaignPageCheckout
     ? `${appUrl}/give/${encodeURIComponent(parish.id)}?giftType=campaign&campaign=${encodeURIComponent(body.campaign || "")}&success=1&session_id={CHECKOUT_SESSION_ID}`
     : `${appUrl}/give/${encodeURIComponent(parish.id)}?success=1&session_id={CHECKOUT_SESSION_ID}`;
   const cancelUrl = donorDashboardReturn
     ? `${appUrl}/myagapay/giving/give?checkout_canceled=1`
+    : embedCheckout
+    ? `${appUrl}${embedPath}?canceled=1`
     : campaignPageCheckout && returnPath
     ? `${appUrl}${returnPath}${returnPath.includes("?") ? "&" : "?"}checkout_canceled=1`
     : `${appUrl}/give/${encodeURIComponent(parish.id)}?canceled=1`;
@@ -1901,7 +1915,7 @@ export async function handleCheckout(request, env) {
     campaign: checkoutCampaign,
     campaign_id: checkoutCampaignId,
     campaign_description: body.campaignDescription || "",
-    frequency: body.frequency || "once",
+    frequency: requestedFrequency,
     amount_cents: String(amountCents),
     charge_cents: String(chargeCents),
     agapay_fee_cents: String(agapayFeeCents),
@@ -1941,8 +1955,17 @@ export async function handleCheckout(request, env) {
   // Stripe's own processing cost deducted (see checkoutFinancials above).
 
   if (recurring) {
-    form.set("line_items[0][price_data][recurring][interval]", body.frequency === "weekly" || body.frequency === "biweekly" ? "week" : "month");
-    if (body.frequency === "biweekly") form.set("line_items[0][price_data][recurring][interval_count]", "2");
+    const recurringSchedule = {
+      weekly: { interval: "week", count: 1 },
+      biweekly: { interval: "week", count: 2 },
+      monthly: { interval: "month", count: 1 },
+      quarterly: { interval: "month", count: 3 },
+      yearly: { interval: "year", count: 1 }
+    }[requestedFrequency];
+    form.set("line_items[0][price_data][recurring][interval]", recurringSchedule.interval);
+    if (recurringSchedule.count > 1) {
+      form.set("line_items[0][price_data][recurring][interval_count]", String(recurringSchedule.count));
+    }
   }
 
   const headers = {
@@ -1983,7 +2006,7 @@ export async function handleCheckout(request, env) {
     publicComment: publicComment(body.publicComment),
     feastDescription: body.feastDescription || "",
     inMemoriam: body.inMemoriam || "",
-    frequency: body.frequency || "once",
+    frequency: requestedFrequency,
     amountCents,
     chargeCents,
     agapayFeeCents,

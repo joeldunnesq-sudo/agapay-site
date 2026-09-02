@@ -459,6 +459,10 @@ assert.ok(!learnDashboardShell.includes("Back to Give"), "Learn account menu sho
 assert.ok(learnDashboardShell.includes("myagapay-menu-trigger") && !learnDashboardShell.includes("learn-account-utility-avatar"), "Learn should replace account-holder initials with the shared hamburger menu");
 
 const giveHtml = await readFile("public/give/form.html", "utf8");
+const giveEmbedHtml = await readFile("public/give/embed.html", "utf8");
+const giveEmbedCss = await readFile("public/give/embed.css", "utf8");
+const giveEmbedJs = await readFile("public/give/embed.js", "utf8");
+const giveEmbedLoader = await readFile("public/giving-box.js", "utf8");
 assert.match(parishGivingCatalogHandler, /if \(!parish \|\| parish\.status !== "verified"\)/, "hidden onboarding parishes must return a normal 404 instead of throwing during public lookup");
 assert.match(giveHtml, /DEFAULT_PROCESSING_FEE_SCHEDULES\s*=\s*\{[\s\S]*rateBasisPoints:290[\s\S]*fixedFeeCents:30/, "the giving form must retain a standard card-fee fallback when parish data is unavailable");
 assert.match(giveHtml, /processingFeeSchedules:\s*\{ \.\.\.DEFAULT_PROCESSING_FEE_SCHEDULES/, "the parish response must merge over, not replace, the safe fee schedules");
@@ -602,6 +606,54 @@ assert.ok(giveHtml.includes("applyGiftQueryParams"), "giving page should deep-li
 assert.ok(giveHtml.includes("/security.js") && giveHtml.includes("data-agapay-turnstile"), "public giving checkout should render Turnstile when configured");
 assert.ok(giveHtml.includes("agapaySecurityPayload"), "public giving checkout should send Turnstile tokens when configured");
 assert.ok(giveHtml.includes("Processed and protected by Stripe") && giveHtml.includes("AGAPAY never holds donated funds"), "giving checkout should reassure donors that Stripe protects transactions and AGAPAY never holds donated funds");
+assert.ok(
+  giveEmbedHtml.includes('id="giftStep"')
+    && giveEmbedHtml.includes('id="detailsStep"')
+    && giveEmbedHtml.includes('data-frequency="quarterly"')
+    && giveEmbedHtml.includes('data-frequency="yearly"'),
+  "the embeddable giving box should provide a compact two-step gift flow with quarterly and yearly options"
+);
+assert.ok(
+  giveEmbedJs.includes("source: 'embed'")
+    && giveEmbedJs.includes("/api/create-checkout-session")
+    && giveEmbedJs.includes("agapay:giving-box-resize")
+    && giveEmbedJs.includes("/api/parishes?id="),
+  "the giving box should load a verified organization through the compatible public API, use shared checkout, and resize its host iframe"
+);
+assert.ok(
+  giveEmbedHtml.includes("Verified on AGAPAY")
+    && giveEmbedHtml.includes("Give with purpose.")
+    && giveEmbedHtml.includes("Generosity in action. Together.")
+    && !giveEmbedHtml.includes("Verified Orthodox parish")
+    && giveEmbedJs.includes("organizationTypeLabel")
+    && giveEmbedJs.includes("communityType"),
+  "the giving box should use organization-neutral language and identify each verified community by type"
+);
+assert.ok(
+  giveEmbedCss.includes("--navy: #071a2a")
+    && giveEmbedCss.includes("--gold: #c8a24a")
+    && giveEmbedCss.includes(".corner-ornament")
+    && giveEmbedHtml.includes("Powered by <strong>AGAPAY</strong>"),
+  "the giving box should carry the AGAPAY navy, gold, Orthodox ornament, and visible platform brand"
+);
+assert.ok(worker.includes('/^\\/give\\/embed\\/[^/]+\\/?$/') && worker.includes('url.pathname = "/give/embed.html"'), "the Worker should serve clean /give/embed/:parish URLs");
+assert.ok(localServerSource.includes('/^\\/give\\/embed\\/[^/]+\\/?$/') && localServerSource.includes('pathname = "/give/embed.html"'), "the local server should preview clean giving-box URLs");
+assert.ok(
+  parishDashboardApp.includes("function dedicatedGivingEmbedUrl()")
+    && parishDashboardApp.includes("function copyGivingEmbedCode()")
+    && parishDashboardApp.includes("givingEmbedSnippet")
+    && parishDashboardApp.includes('data-agapay-giving=')
+    && parishDashboardApp.includes('/giving-box.js'),
+  "the organization dashboard should copy the two-line giving-box loader snippet"
+);
+assert.ok(
+  giveEmbedLoader.includes("[data-agapay-giving]")
+    && giveEmbedLoader.includes("agapay:giving-box-resize")
+    && giveEmbedLoader.includes("event.origin !== record.origin")
+    && giveEmbedLoader.includes("organizationId")
+    && giveEmbedLoader.includes("MutationObserver"),
+  "the public giving-box loader should mount dynamic embeds and resize only trusted AGAPAY frames"
+);
 const campaignPage = await readFile("public/give/parish-giving/app.js", "utf8");
 assert.ok(campaignPage.includes("/api/campaign?"), "campaign share page should load campaign data from the Worker API");
 assert.ok(campaignPage.includes('`${slug}-campaign`'), "campaign routes should resolve campaign names that already end in Campaign without breaking lookup");
@@ -798,6 +850,19 @@ assert.ok(securityHeadersFile.includes("X-Content-Type-Options: nosniff"), "publ
 assert.ok(securityHeadersFile.includes(`Strict-Transport-Security: ${expectedHstsPolicy}`), "public/_headers should match the staged Worker HSTS policy");
 assert.ok(securityHeadersFile.includes("Content-Security-Policy-Report-Only:"), "public/_headers should ship CSP Report-Only, matching core.js");
 assert.ok(securityHeadersFile.includes("camera=(self)"), "Permissions-Policy should allow same-origin camera for the bookstore barcode scanner");
+assert.ok(
+  securityHeadersFile.includes("/give/embed.html")
+    && securityHeadersFile.includes("! X-Frame-Options")
+    && securityHeadersFile.includes("Content-Security-Policy: frame-ancestors *")
+    && securityHeadersFile.includes("X-Robots-Tag: noindex, nofollow"),
+  "only the dedicated noindex giving-box asset should opt out of the site's SAMEORIGIN frame policy"
+);
+assert.ok(
+  securityHeadersFile.includes("/giving-box.js")
+    && securityHeadersFile.includes("Access-Control-Allow-Origin: *")
+    && securityHeadersFile.includes("Cross-Origin-Resource-Policy: cross-origin"),
+  "the public giving-box loader should be explicitly available to external organization websites"
+);
 
 // Phase 6: audit log foundation
 const auditLogLib = await readFile("src/lib/audit-log.js", "utf8");
