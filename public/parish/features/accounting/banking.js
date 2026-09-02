@@ -24,15 +24,15 @@ function renderAccountingBankStatements(pane) {
 
 function renderAccountingBanking(pane) {
   const tabs = `<div class="acct-reconcile-switch" role="tablist" aria-label="Reconciliation workspace">
-      <button type="button" class="${accountingReconciliationView === 'giving' ? 'active' : ''}" onclick="setAccountingReconciliationView('giving')">Giving &amp; Stripe</button>
-      <button type="button" class="${accountingReconciliationView === 'bank' ? 'active' : ''}" onclick="setAccountingReconciliationView('bank')">Bank statements &amp; ledger</button>
+      <button type="button" class="${accountingReconciliationView === 'giving' ? 'active' : ''}" onclick="setAccountingReconciliationView('giving')">Stripe payouts &amp; funds</button>
+      <button type="button" class="${accountingReconciliationView === 'bank' ? 'active' : ''}" onclick="setAccountingReconciliationView('bank')">Bank reconciliation</button>
     </div>`;
   if (accountingReconciliationView === 'bank') {
     renderAccountingBankStatements(pane);
     pane.insertAdjacentHTML('afterbegin', tabs);
     return;
   }
-  pane.innerHTML = `${tabs}<div class="acct-reconcile-intro"><span class="acct-kicker">Connected giving activity</span><p>Review Stripe deposits, fund allocations, fees, refunds, and exceptions before completing the formal bank-statement reconciliation.</p></div>`;
+  pane.innerHTML = `${tabs}<div class="acct-reconcile-intro"><span class="acct-kicker">Stripe payout review</span><p>Review Stripe payouts, fund allocations, fees, refunds, and exceptions here. Then use Bank reconciliation to match the parish bank statement to the accounting ledger.</p></div>`;
   const workspace = document.getElementById('reconcileWorkspace');
   if (workspace) pane.append(workspace);
   loadReconciliation();

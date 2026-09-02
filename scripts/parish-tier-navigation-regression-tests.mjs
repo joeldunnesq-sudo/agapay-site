@@ -2,12 +2,13 @@ import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const [dashboard, app, directoryFeature, libraryFeature, sacramentsFeature, style, stewardshipCss] = await Promise.all([
+const [dashboard, app, directoryFeature, libraryFeature, sacramentsFeature, accountingBanking, style, stewardshipCss] = await Promise.all([
   readFile(new URL("../public/parish/dashboard.html", import.meta.url), "utf8"),
   readParishDashboardSource(),
   readFile(new URL("../public/parish/features/directory.js", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/features/library.js", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/features/sacraments.js", import.meta.url), "utf8"),
+  readFile(new URL("../public/parish/features/accounting/banking.js", import.meta.url), "utf8"),
   readFile(new URL("../public/parish/style.css", import.meta.url), "utf8"),
   readFile(new URL("../public/styles/stewardship.css", import.meta.url), "utf8"),
 ]);
@@ -28,6 +29,20 @@ assert.deepEqual(parishItems, [
 
 assert.match(app, /tabs: \['campaigns', 'stewardship', 'directory', 'library', 'communications', 'bookstore'\]/, "Give + groups community tools with Commerce last");
 assert.match(app, /tabs: \['giving', 'history', 'givers', 'reconcile', 'options', 'qr'\]/, "basic giving includes Givers and reconciliation in order");
+
+const giverDirectoryStart = dashboard.indexOf('id="pdxGvDirectorySection"');
+const monthlyGivingExportStart = dashboard.indexOf('class="giving-export-card"');
+const outsideGivingStart = dashboard.indexOf('id="outsideGivingMount"');
+const annualStatementsStart = dashboard.indexOf('id="pdxGsSection"');
+assert.ok(
+  giverDirectoryStart < monthlyGivingExportStart
+    && monthlyGivingExportStart < outsideGivingStart
+    && outsideGivingStart < annualStatementsStart,
+  "monthly giving export and outside gifts must sit below the giver directory and directly before annual statements"
+);
+assert.match(dashboard, /Monthly giving export · every plan/, "Givers must describe the monthly CSV as an export, not reconciliation");
+assert.match(dashboard, /Open Stripe payout reconciliation →/, "Givers must name the separate reconciliation workflow precisely");
+assert.match(accountingBanking, />Stripe payouts &amp; funds<[^]*>Bank reconciliation</, "Accounting must distinguish Stripe payout review from ledger-to-bank reconciliation");
 
 assert.match(dashboard, /<body class="dashboard-booting">[\s\S]*id="dashboardBootScreen"[\s\S]*<div class="app">/, "the gated dashboard must start behind a dedicated loading screen");
 const featureAssetVersions = [
