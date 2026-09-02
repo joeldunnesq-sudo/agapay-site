@@ -15,7 +15,8 @@
   <script src="/scripts/privileged-mfa.js?v=20260826mfa1" defer></script>
   <script src="/parish/diagnostics.js?v=20260831debug1" defer></script>
   <script src="/parish/dashboard-runtime.js?v=20260831giving1" defer></script>
-  <script src="/parish/app.js?v=20260831giving1" defer></script>
+  <script src="/parish/app.js?v=20260902pastoral3" defer></script>
+  <script src="/parish/staff-login.js?v=20260902pastoral1" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -51,8 +52,31 @@
         </div>
         <div class="parish-auth-actions">
           <button class="btn btn-gold" type="submit">Log in</button>
+          <button class="btn btn-ghost" type="button" onclick="showParishStaffLogin()">Staff sign in</button>
           <a class="btn btn-ghost" href="/register.html">Register parish</a>
           <button class="btn btn-ghost" type="button" onclick="showParishPasswordReset()">Forgot password?</button>
+        </div>
+      </form>
+
+      <form class="parish-auth-card" id="parishStaffLoginForm" onsubmit="loginParishStaff(event)" hidden>
+        <div class="eyebrow">Named clergy &amp; staff access</div>
+        <h2>Staff sign in</h2>
+        <p>Use the personal account created from your parish invitation. This keeps clergy care lists private and individually assigned.</p>
+        <div class="form-group">
+          <label class="form-label" for="parishStaffId">Parish name or username</label>
+          <input id="parishStaffId" autocomplete="organization" placeholder="st-seraphim-mission" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="parishStaffEmail">Your email</label>
+          <input id="parishStaffEmail" type="email" autocomplete="username" placeholder="father@example.org" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="parishStaffPassword">Your password</label>
+          <input id="parishStaffPassword" type="password" autocomplete="current-password" />
+        </div>
+        <div class="parish-auth-actions">
+          <button class="btn btn-gold" type="submit">Sign in</button>
+          <button class="btn btn-ghost" type="button" onclick="showParishLogin()">Use parish login</button>
         </div>
       </form>
 

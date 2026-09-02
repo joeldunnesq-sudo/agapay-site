@@ -20,17 +20,25 @@ import {
   scheduleMemorialService,
   updateMemorialMarker,
 } from '../src/sacraments/memorial-followup.js';
+import {
+  buildPastoralDigestGroups,
+  sendDailyPastoralCareDigestEmails,
+} from '../src/sacraments/pastoral-digest.js';
 import { inspectStorage } from '../src/portability/catalog.js';
+import { CAPABILITY_CATALOG, ROLE_TEMPLATES } from '../src/lib/authorization.js';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const sqlite = new DatabaseSync(':memory:');
 sqlite.exec('PRAGMA foreign_keys = ON');
 for (const migration of [
+  '0020_platform_identity.sql',
   '0022_directory_canonical_foundation.sql',
   '0023_directory_contact_privacy_publication.sql',
   '0008_sacrament_requests.sql',
   '0119_sacrament_pastoral_followup.sql',
   '0120_sacrament_memorial_ticklers.sql',
+  '0121_sacrament_clergy_care_scope.sql',
+  '0122_sacrament_pastoral_digest_delivery.sql',
 ])
   sqlite.exec(readFileSync(path.join(root, 'migrations', migration), 'utf8'));
 
@@ -72,6 +80,18 @@ const env = {
   },
 };
 
+sqlite.prepare(`INSERT INTO parish_memberships (id, user_id, parish_id, role_template, status) VALUES (?, ?, ?, ?, 'active')`).run('membership-priest', 'user-priest', 'parish-a', 'priest');
+sqlite.prepare(`INSERT INTO parish_memberships (id, user_id, parish_id, role_template, status) VALUES (?, ?, ?, ?, 'active')`).run('membership-rector', 'user-rector', 'parish-a', 'rector');
+sqlite.exec(readFileSync(path.join(root, 'migrations', '0121_sacrament_clergy_care_scope.sql'), 'utf8'));
+assert.deepEqual(
+  sqlite.prepare('SELECT capability FROM membership_capabilities WHERE membership_id = ? ORDER BY capability').all('membership-priest').map((row) => row.capability),
+  ['sacraments.pastoral.manage_own']
+);
+assert.deepEqual(
+  sqlite.prepare('SELECT capability FROM membership_capabilities WHERE membership_id = ? ORDER BY capability').all('membership-rector').map((row) => row.capability),
+  ['sacraments.pastoral.coverage', 'sacraments.pastoral.manage_own']
+);
+
 const now = Date.now();
 sqlite
   .prepare(
@@ -96,6 +116,13 @@ sqlite
   .run('person-b', 'parish-b', 'Not Parish A', now, now);
 sqlite
   .prepare(
+    `INSERT INTO directory_people
+  (id, created_by_parish_id, preferred_name, biological_sex, deceased, active, created_at, updated_at)
+  VALUES (?, ?, ?, 'unknown', 0, 1, ?, ?)`
+  )
+  .run('person-repose', 'parish-a', 'Helen Repose', now, now);
+sqlite
+  .prepare(
     `INSERT INTO directory_parish_affiliations
   (id, person_id, parish_id, status, active, created_at, updated_at)
   VALUES ('aff-shared', 'person-shared', 'parish-a', 'member', 1, ?, ?)`
@@ -114,7 +141,7 @@ sqlite
 const candidates = await listPastoralFollowupCandidates(env, 'parish-a', '');
 assert.deepEqual(
   candidates.map((row) => row.id),
-  ['person-shared', 'person-a']
+  ['person-repose', 'person-shared', 'person-a']
 );
 assert.equal(candidates.find((row) => row.id === 'person-a').phone, '555-0101');
 assert.deepEqual(
@@ -214,10 +241,32 @@ followup = await updatePastoralFollowup(env, {
 assert.equal(followup.status, 'active');
 assert.equal(followup.closedAt, '');
 assert.equal((await listPastoralFollowups(env, 'parish-a')).length, 1);
+assert.equal((await listPastoralFollowups(env, 'parish-a', 'nicholas@example.test')).length, 1);
+assert.equal((await listPastoralFollowups(env, 'parish-a', 'other@example.test')).length, 0);
 assert.equal(defaultNextPastoralDueOn('2026-09-01T16:00:00.000Z', 30), '2026-10-01');
 assert.deepEqual(
   buildMemorialSchedule('2026-09-01', ['third_day', 'ninth_day', 'fortieth_day']).map((marker) => marker.targetDate),
   ['2026-09-03', '2026-09-09', '2026-10-10']
+);
+await assert.rejects(
+  () => recordRepose(env, {
+    parishId: 'parish-a',
+    personId: 'person-a',
+    assignedPriestName: 'Fr. Nicholas',
+    assignedPriestEmail: 'nicholas@example.test',
+    reposedOn: '2026-09-01',
+  }),
+  /already has a pastoral follow-up/
+);
+await assert.rejects(
+  () => recordRepose(env, {
+    parishId: 'parish-a',
+    personId: 'person-b',
+    assignedPriestName: 'Fr. Nicholas',
+    assignedPriestEmail: 'nicholas@example.test',
+    reposedOn: '2026-09-01',
+  }),
+  /active person from this parish directory/
 );
 const repose = await recordRepose(env, {
   parishId: 'parish-a',
@@ -236,6 +285,22 @@ await assert.rejects(
   () => recordRepose(env, { parishId: 'parish-a', followupId: followup.id, reposedOn: '2026-09-01' }),
   /Reopen this follow-up/
 );
+const standaloneRepose = await recordRepose(env, {
+  parishId: 'parish-a',
+  personId: 'person-repose',
+  assignedPriestName: 'Fr. Nicholas',
+  assignedPriestEmail: 'nicholas@example.test',
+  reposedOn: '2026-09-02',
+  markerTypes: ['third_day', 'fortieth_day'],
+  annualEnabled: false,
+  actor: 'nicholas@example.test',
+});
+assert.equal(standaloneRepose.markers.length, 2);
+assert.equal(sqlite.prepare('SELECT followup_id FROM sacrament_memorial_cycles WHERE person_id = ?').get('person-repose').followup_id, null);
+assert.equal(sqlite.prepare('SELECT deceased FROM directory_people WHERE id = ?').get('person-repose').deceased, 1);
+assert.equal(sqlite.prepare('SELECT COUNT(*) AS count FROM sacrament_pastoral_followups WHERE person_id = ?').get('person-repose').count, 0);
+assert.deepEqual(standaloneRepose.markers.map((marker) => marker.targetDate), ['2026-09-04', '2026-10-11']);
+assert.equal((await listMemorialMarkers(env, 'parish-a', 'other@example.test')).length, 0);
 let memorials = await listMemorialMarkers(env, 'parish-a');
 const fortieth = memorials.find((marker) => marker.markerType === 'fortieth_day');
 const scheduled = await scheduleMemorialService(env, {
@@ -258,6 +323,105 @@ assert.ok((await materializeMemorialAnniversaries(env, Date.UTC(2028, 7, 5))).cr
 memorials = await listMemorialMarkers(env, 'parish-a');
 assert.ok(memorials.some((marker) => marker.markerKey === 'annual_2028'));
 
+const groupedDigest = buildPastoralDigestGroups([
+  { id: 'due-a', assigned_priest_email: 'FATHER@example.test', preferred_name: 'Due Today', reason: 'homebound', next_due_on: '2026-09-02' },
+  { id: 'overdue-a', assigned_priest_email: 'father@example.test', preferred_name: 'Overdue Person', reason: 'hospitalized', next_due_on: '2026-08-31' },
+  { id: 'upcoming-a', assigned_priest_email: 'father@example.test', preferred_name: 'Upcoming Person', reason: 'regular_check_in', next_due_on: '2026-09-09' },
+  { id: 'future-a', assigned_priest_email: 'father@example.test', preferred_name: 'Later Person', reason: 'other', next_due_on: '2026-09-10' },
+  { id: 'due-b', assigned_priest_email: 'nicholas@example.test', preferred_name: 'Other Assignment', reason: 'bereavement', next_due_on: '2026-09-02' },
+  { id: 'unassigned', assigned_priest_email: '', preferred_name: 'Unassigned Person', reason: 'other', next_due_on: '2026-09-02' },
+], '2026-09-02');
+assert.equal(groupedDigest.length, 2);
+assert.deepEqual(
+  groupedDigest.find((group) => group.recipientEmail === 'father@example.test'),
+  {
+    recipientEmail: 'father@example.test',
+    assignedPriestName: '',
+    overdue: [{ id: 'overdue-a', personName: 'Overdue Person', reason: 'hospitalized', nextDueOn: '2026-08-31' }],
+    dueToday: [{ id: 'due-a', personName: 'Due Today', reason: 'homebound', nextDueOn: '2026-09-02' }],
+    upcoming: [{ id: 'upcoming-a', personName: 'Upcoming Person', reason: 'regular_check_in', nextDueOn: '2026-09-09' }],
+    total: 3,
+    today: '2026-09-02',
+    upcomingThrough: '2026-09-09',
+  }
+);
+
+for (const [id, name] of [
+  ['person-digest-overdue', 'Anna Overdue'],
+  ['person-digest-today', 'Basil Today'],
+  ['person-digest-upcoming', 'Clara Upcoming'],
+  ['person-digest-other', 'Demetri Other'],
+]) {
+  sqlite.prepare(`INSERT INTO directory_people
+    (id, created_by_parish_id, preferred_name, biological_sex, deceased, active, created_at, updated_at)
+    VALUES (?, 'parish-a', ?, 'unknown', 0, 1, ?, ?)`)
+    .run(id, name, now, now);
+}
+await createPastoralFollowup(env, {
+  parishId: 'parish-a', personId: 'person-digest-overdue', assignedPriestName: 'Fr. Thomas',
+  assignedPriestEmail: 'father@example.test', reason: 'hospitalized', nextDueOn: '2026-08-30',
+  note: 'Private hospital details must never appear in a digest.', actor: 'office@example.test',
+});
+await createPastoralFollowup(env, {
+  parishId: 'parish-a', personId: 'person-digest-today', assignedPriestName: 'Fr. Thomas',
+  assignedPriestEmail: 'father@example.test', reason: 'homebound', nextDueOn: '2026-09-02',
+  actor: 'office@example.test',
+});
+await createPastoralFollowup(env, {
+  parishId: 'parish-a', personId: 'person-digest-upcoming', assignedPriestName: 'Fr. Thomas',
+  assignedPriestEmail: 'father@example.test', reason: 'regular_check_in', nextDueOn: '2026-09-08',
+  actor: 'office@example.test',
+});
+await createPastoralFollowup(env, {
+  parishId: 'parish-a', personId: 'person-digest-other', assignedPriestName: 'Fr. Nicholas',
+  assignedPriestEmail: 'nicholas@example.test', reason: 'bereavement', nextDueOn: '2026-09-02',
+  actor: 'office@example.test',
+});
+
+const deliveredMessages = [];
+const digestOptions = {
+  registrations: [{
+    parishId: 'parish-a', parishName: 'St. Test Parish', subscriptionTier: 'parish', sacramentsEnabled: true,
+  }],
+  emailSender: async (_emailEnv, message, deliveryOptions) => {
+    deliveredMessages.push({ message, deliveryOptions });
+    return { status: 'sent', httpStatus: 200, id: `email-${deliveredMessages.length}` };
+  },
+};
+const digestResults = await sendDailyPastoralCareDigestEmails(env, '2026-09-02T14:00:00.000Z', digestOptions);
+assert.equal(digestResults.length, 2);
+assert.equal(digestResults.find((result) => result.to[0] === 'father@example.test').overdueCount, 1);
+assert.equal(digestResults.find((result) => result.to[0] === 'father@example.test').dueTodayCount, 1);
+assert.equal(digestResults.find((result) => result.to[0] === 'father@example.test').upcomingCount, 1);
+assert.equal(deliveredMessages.length, 2);
+const fatherDigest = deliveredMessages.find((entry) => entry.message.to[0] === 'father@example.test');
+assert.match(fatherDigest.message.subject, /1 pastoral follow-up overdue/);
+assert.match(fatherDigest.message.html, /Overdue/);
+assert.match(fatherDigest.message.html, /Due today/);
+assert.match(fatherDigest.message.html, /Upcoming · next 7 days/);
+assert.match(fatherDigest.message.html, /Anna Overdue/);
+assert.match(fatherDigest.message.html, /Basil Today/);
+assert.match(fatherDigest.message.html, /Clara Upcoming/);
+assert.doesNotMatch(fatherDigest.message.html, /Demetri Other/);
+assert.doesNotMatch(fatherDigest.message.html, /Private hospital details/);
+assert.match(fatherDigest.message.text, /Care notes are not included/);
+assert.match(fatherDigest.deliveryOptions.idempotencyKey, /^pastoral-digest-[a-f0-9]{64}$/);
+
+const duplicateResults = await sendDailyPastoralCareDigestEmails(env, '2026-09-02T14:05:00.000Z', digestOptions);
+assert.ok(duplicateResults.every((result) => result.status === 'skipped' && result.reason === 'already_sent'));
+assert.equal(deliveredMessages.length, 2, 'a retry must not send the same priest digest twice');
+sqlite.prepare(`UPDATE sacrament_pastoral_digest_deliveries SET status = 'failed' WHERE recipient_masked = 'f***@example.test'`).run();
+const failedRetryResults = await sendDailyPastoralCareDigestEmails(env, '2026-09-02T14:10:00.000Z', digestOptions);
+assert.equal(failedRetryResults.find((result) => result.to[0] === 'father@example.test').status, 'sent');
+assert.equal(failedRetryResults.find((result) => result.to[0] === 'nicholas@example.test').reason, 'already_sent');
+assert.equal(deliveredMessages.length, 3, 'a failed ledger entry should be eligible for a same-day retry');
+const deliveryRows = sqlite.prepare('SELECT * FROM sacrament_pastoral_digest_deliveries ORDER BY recipient_masked').all();
+assert.equal(deliveryRows.length, 2);
+assert.ok(deliveryRows.every((row) => row.status === 'sent'));
+assert.ok(deliveryRows.every((row) => !JSON.stringify(row).includes('father@example.test')));
+assert.ok(deliveryRows.every((row) => !JSON.stringify(row).includes('nicholas@example.test')));
+assert.ok(deliveryRows.every((row) => !JSON.stringify(row).includes('Anna Overdue')));
+
 const pastoralInventory = (await inspectStorage(env.AGAPAY_DB)).filter((table) =>
   table.name.startsWith('sacrament_pastoral_') || table.name.startsWith('sacrament_memorial_')
 );
@@ -267,6 +431,7 @@ assert.deepEqual(
     'sacrament_memorial_cycles',
     'sacrament_memorial_markers',
     'sacrament_pastoral_contacts',
+    'sacrament_pastoral_digest_deliveries',
     'sacrament_pastoral_followups',
   ]
 );
@@ -281,6 +446,10 @@ const feature = readFileSync(
   path.join(root, 'public', 'parish', 'features', 'sacraments', 'pastoral-followup.js'),
   'utf8'
 );
+const pastoralHandler = readFileSync(path.join(root, 'src', 'handlers', 'parish-pastoral-followup.js'), 'utf8');
+const pastoralDigest = readFileSync(path.join(root, 'src', 'sacraments', 'pastoral-digest.js'), 'utf8');
+const adminRoute = readFileSync(path.join(root, 'src', 'routes', 'admin.js'), 'utf8');
+const wrangler = readFileSync(path.join(root, 'wrangler.toml'), 'utf8');
 assert.match(route, /handleParishPastoralFollowUp/);
 assert.match(worker, /handleParishPastoralFollowUp/);
 assert.match(dashboard, /data-sac-tab="follow-up"/);
@@ -290,10 +459,26 @@ assert.match(feature, /Close after this contact/);
 assert.match(feature, /Recovered \/ no routine follow-up needed/);
 assert.match(feature, /Date of repose/);
 assert.match(feature, /Memorial observances/);
+assert.match(feature, /Cover all clergy/);
+assert.match(feature, /Record a repose/);
+assert.match(feature, /agapay_identity_session_token/);
+assert.match(pastoralHandler, /requireActiveMembership/);
+assert.match(pastoralHandler, /assigned to another priest/);
+assert.ok(CAPABILITY_CATALOG.includes('sacraments.pastoral.manage_own'));
+assert.ok(CAPABILITY_CATALOG.includes('sacraments.pastoral.coverage'));
+assert.ok(ROLE_TEMPLATES.priest.includes('sacraments.pastoral.manage_own'));
+assert.ok(!ROLE_TEMPLATES.priest.includes('sacraments.pastoral.coverage'));
+assert.ok(ROLE_TEMPLATES.rector.includes('sacraments.pastoral.coverage'));
 assert.match(worker, /memorial_anniversary_materialization/);
-assert.match(worker, /assigned_priest_email/);
 assert.match(worker, /Memorial observances to arrange/);
+assert.match(worker, /daily_pastoral_care_digest/);
+assert.match(pastoralDigest, /Overdue/);
+assert.match(pastoralDigest, /Due today/);
+assert.match(pastoralDigest, /Upcoming · next 7 days/);
+assert.match(pastoralDigest, /Care notes are not included/);
+assert.match(adminRoute, /send-daily-pastoral-digest/);
+assert.match(wrangler, /"0 14 \* \* \*"/);
 assert.match(parishSacramentsHandler, /updated\.request_source === "pastoral_memorial"/);
 assert.match(parishSacramentsHandler, /updated\.request_source !== "pastoral_memorial"/);
 
-console.log('PASS - Pastoral follow-up closes with outcomes and creates scoped repose memorial ticklers and services');
+console.log('PASS - Named-clergy queues, repose ticklers, and idempotent daily pastoral digests are wired end to end');

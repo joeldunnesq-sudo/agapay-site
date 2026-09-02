@@ -158,6 +158,10 @@ export const CAPABILITY_CATALOG = Object.freeze([
   "donations.manage",
   "donor.statements",
 
+  // Sacraments & pastoral care
+  "sacraments.pastoral.manage_own",
+  "sacraments.pastoral.coverage",
+
   // Learn
   "learn.manage",
   "learn.admin",
@@ -260,7 +264,8 @@ export const ROLE_TEMPLATES = Object.freeze({
     "accounting.commerce.view", "accounting.commerce.configure", "accounting.commerce.post", "accounting.commerce.review", "accounting.commerce.backfill", "accounting.commerce.reports.view",
     "accounting.close.view", "accounting.close.create", "accounting.close.validate", "accounting.close.adjust", "accounting.close.review", "accounting.close.approve", "accounting.close.complete", "accounting.close.reopen", "accounting.year_end.view", "accounting.year_end.execute", "accounting.accountant_exports.generate", "accounting.audit_exports.generate", "accounting.retention.manage", "accounting.legal_hold.manage",
     "commerce.manage", "commerce.orders", "commerce.refunds", "commerce.products",
-    "donations.view", "donations.manage", "donor.statements"
+    "donations.view", "donations.manage", "donor.statements",
+    "sacraments.pastoral.manage_own", "sacraments.pastoral.coverage"
   ],
   treasurer: [
     "parish.view", "parish.members.invite", "parish.giving.go_live",
@@ -302,7 +307,7 @@ export const ROLE_TEMPLATES = Object.freeze({
   ],
   reader: ["parish.view"],
   deacon: ["parish.view", "donations.view"],
-  priest: ["parish.view", "donations.view", "donor.statements"],
+  priest: ["parish.view", "donations.view", "donor.statements", "sacraments.pastoral.manage_own"],
   administrator: [
     "parish.view", "parish.manage", "parish.members.invite", "parish.members.remove",
     "parish.roles.assign", "parish.settings.manage", "accounting.configure"

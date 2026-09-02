@@ -49,7 +49,7 @@ import {
   CAPABILITY_CATALOG,
   ROLE_TEMPLATES
 } from "../src/lib/authorization.js";
-import { handleMembershipInvitationCreate } from "../src/handlers/identity.js";
+import { handleIdentityLogin, handleMembershipInvitationCreate } from "../src/handlers/identity.js";
 import { issueDonorSession } from "../src/handlers/donor.js";
 import { saveDonor } from "../src/lib/core.js";
 
@@ -578,6 +578,33 @@ await test("currentUser/currentMembership/authorize are working aliases over the
 });
 
 // ── Route protection (handler-level) ────────────────────────────────────
+
+await test("named staff login returns both identity and parish sessions only for an active membership", async () => {
+  const { env } = makeD1Env();
+  db_registerParish(env, "staff-login-parish");
+  const email = "father-login@example.org";
+  await seedActiveMember(env, { parishId: "staff-login-parish", email, roleTemplate: "priest" });
+  const request = new Request("https://agapay.test/api/identity/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ parishId: "staff-login-parish", email, password: `${email} password 123` })
+  });
+  const response = await handleIdentityLogin(request, env);
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.ok(payload.token, "expected a named identity session");
+  assert.ok(payload.parishToken, "expected a parish dashboard session after membership verification");
+  assert.equal(payload.identityEmail, email);
+  assert.equal(payload.parishId, "staff-login-parish");
+  assert.ok(await requirePlatformUser(authenticatedRequest({ email, token: payload.token }), env));
+
+  const denied = await handleIdentityLogin(new Request("https://agapay.test/api/identity/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ parishId: "different-parish", email, password: `${email} password 123` })
+  }), env);
+  assert.equal(denied.status, 403);
+});
 
 await test("route protection: invitation-create route denies a request without parish.members.invite", async () => {
   const { env } = makeD1Env();

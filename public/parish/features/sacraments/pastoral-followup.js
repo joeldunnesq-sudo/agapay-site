@@ -9,7 +9,16 @@ let pastoralFollowUpState = {
   memorials: [],
   candidates: [],
   candidatesLoaded: false,
+  scope: 'mine',
+  access: null,
 };
+
+function pastoralAuthHeaders() {
+  const token = sessionStorage.getItem('agapay_identity_session_token') || '';
+  const email = sessionStorage.getItem('agapay_identity_email') || '';
+  if (!token || !email) return authHeaders();
+  return { Accept: 'application/json', Authorization: 'Bearer ' + token, 'X-AGAPAY-User-Email': email };
+}
 
 const PASTORAL_REASON_LABELS = {
   homebound: 'Homebound',
@@ -57,14 +66,23 @@ async function loadPastoralFollowUps(force = false) {
       memorials: [],
       candidates: [],
       candidatesLoaded: false,
+      scope: 'mine',
+      access: null,
     };
   }
   if (pastoralFollowUpState.loading || (pastoralFollowUpState.loaded && !force)) return;
   pastoralFollowUpState = { ...pastoralFollowUpState, loading: true, error: '' };
   renderSacramentsPanel();
   try {
-    const response = await fetch(sacramentsApi('/follow-up'), { headers: authHeaders() });
+    const response = await fetch(sacramentsApi('/follow-up?scope=' + encodeURIComponent(pastoralFollowUpState.scope)), {
+      headers: pastoralAuthHeaders(),
+    });
     const data = await response.json().catch(() => ({}));
+    if (response.status === 401 && !sessionStorage.getItem('agapay_identity_session_token')) {
+      throw new Error(
+        'Pastoral care lists require your personal staff sign-in. Log out, then choose Staff sign in on the parish login page.'
+      );
+    }
     if (!response.ok) throw new Error(data.error || 'Unable to load pastoral follow-up.');
     pastoralFollowUpState = {
       ...pastoralFollowUpState,
@@ -74,6 +92,8 @@ async function loadPastoralFollowUps(force = false) {
       error: '',
       followups: data.followups || [],
       memorials: data.memorials || [],
+      access: data.access || null,
+      scope: data.access?.scope || pastoralFollowUpState.scope,
     };
   } catch (error) {
     pastoralFollowUpState = {
@@ -92,7 +112,7 @@ async function searchPastoralFollowUpCandidates() {
   if (status) status.textContent = 'Searching…';
   try {
     const response = await fetch(sacramentsApi('/follow-up/candidates?q=' + encodeURIComponent(query)), {
-      headers: authHeaders(),
+      headers: pastoralAuthHeaders(),
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || 'Unable to search the directory.');
@@ -159,19 +179,6 @@ function pastoralMemorialDates(reposedOn) {
   };
 }
 
-function pastoralMatchesSelectedPriest(row) {
-  const selected = selectedSacramentPriest();
-  const selectedEmail = String(selected.email || '')
-    .trim()
-    .toLowerCase();
-  const rowEmail = String(row.assignedPriestEmail || '')
-    .trim()
-    .toLowerCase();
-  return selectedEmail && rowEmail
-    ? selectedEmail === rowEmail
-    : String(row.assignedPriestName || '') === String(selected.name || '');
-}
-
 function pastoralRelativeDue(dateText) {
   const due = new Date(`${dateText}T12:00:00`);
   const today = new Date(`${pastoralToday()}T12:00:00`);
@@ -225,6 +232,15 @@ function pastoralPriestOptions(row) {
     .join('');
 }
 
+function pastoralCreatePriestField(label = 'Assigned priest') {
+  const access = pastoralFollowUpState.access || {};
+  if (!access.canCover)
+    return `<label><span>${escapeHtml(label)}</span><input value="${escapeAttr(access.priest?.name || access.userName || '')}" disabled /></label>`;
+  return `<label><span>${escapeHtml(label)}</span><select name="assignedPriest" required>${sacramentPriests()
+    .map((priest) => `<option value="${escapeAttr(priest.email || priest.name)}">${escapeHtml(priest.name)}</option>`)
+    .join('')}</select></label>`;
+}
+
 function pastoralFollowUpCard(row, urgency = '') {
   const id = escapeAttr(row.id);
   const contactOptions = Object.entries(PASTORAL_CONTACT_LABELS)
@@ -261,7 +277,7 @@ function pastoralFollowUpCard(row, urgency = '') {
       </form>
       <form class="pastoral-inline-form" id="pastoral-settings-${id}" onsubmit="savePastoralSettings(event, '${id}')" hidden>
         <div class="sac-admin-form-grid">
-          <label><span>Assigned priest</span><select name="assignedPriest">${pastoralPriestOptions(row)}</select></label>
+          ${pastoralFollowUpState.access?.canCover ? `<label><span>Assigned priest</span><select name="assignedPriest">${pastoralPriestOptions(row)}</select></label>` : `<label><span>Assigned priest</span><input value="${escapeAttr(row.assignedPriestName)}" disabled /></label>`}
           <label><span>Reason</span><select name="reason">${pastoralReasonOptions(row.reason)}</select></label>
           <label><span>Next follow-up</span><input name="nextDueOn" type="date" value="${escapeAttr(row.nextDueOn)}" required /></label>
           <label><span>Cadence in days</span><input name="cadenceDays" type="number" min="1" max="3650" value="${escapeAttr(row.cadenceDays || '')}" /></label>
@@ -364,7 +380,6 @@ function pastoralAddForm() {
       return `<option value="${escapeAttr(person.id)}" ${disabled ? 'disabled' : ''}>${escapeHtml(label)}${disabled ? trackedLabel : ''}</option>`;
     })
     .join('');
-  const priest = selectedSacramentPriest();
   return `<details class="sac-admin-panel pastoral-add" id="pastoralAddFollowUp">
       <summary><span>Add follow-up</span><strong>Start tracking someone</strong></summary>
       <p class="sac-admin-muted">Choose an active person from Directory, assign responsibility, and set the first date this plan should surface.</p>
@@ -376,7 +391,7 @@ function pastoralAddForm() {
       <form class="pastoral-add-form" onsubmit="createPastoralFollowUp(event)">
         <div class="sac-admin-form-grid">
           <label><span>Person</span><select name="personId" required><option value="">${pastoralFollowUpState.candidatesLoaded ? 'Choose a person…' : 'Search Directory first…'}</option>${options}</select></label>
-          <label><span>Assigned priest</span><input value="${escapeAttr(priest.name)}" disabled /></label>
+          ${pastoralCreatePriestField()}
           <label><span>Reason</span><select name="reason">${pastoralReasonOptions('regular_check_in')}</select></label>
           <label><span>First follow-up</span><input name="nextDueOn" type="date" value="${escapeAttr(pastoralToday())}" required /></label>
           <label><span>Repeat every</span><select name="cadenceDays"><option value="7">Week</option><option value="14">2 weeks</option><option value="30" selected>Month</option><option value="60">2 months</option><option value="90">3 months</option><option value="180">6 months</option><option value="365">Year</option></select></label>
@@ -387,11 +402,42 @@ function pastoralAddForm() {
     </details>`;
 }
 
+function pastoralStandaloneReposeForm() {
+  const people = (pastoralFollowUpState.candidates || []).filter((person) => !person.followupId);
+  const options = people
+    .map(
+      (person) =>
+        `<option value="${escapeAttr(person.id)}">${escapeHtml([person.name, person.phone || person.email].filter(Boolean).join(' · '))}</option>`
+    )
+    .join('');
+  return `<details class="sac-admin-panel pastoral-add" id="pastoralRecordRepose">
+      <summary><span>Memorial care</span><strong>Record a repose</strong></summary>
+      <p class="sac-admin-muted">Use this when the person was not already on a pastoral follow-up plan. AGAPAY will close their active directory status and create the selected memorial reminders.</p>
+      <div class="pastoral-directory-search">
+        <input id="pastoralReposeSearch" placeholder="Search Directory by name" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('pastoralCandidateSearch').value=this.value;searchPastoralFollowUpCandidates();}" />
+        <button class="sac-admin-outline-btn" type="button" onclick="searchPastoralReposeCandidates()">Search Directory</button>
+      </div>
+      <form class="pastoral-add-form" onsubmit="recordStandalonePastoralRepose(event)">
+        <div class="sac-admin-form-grid">
+          <label><span>Person</span><select name="personId" required><option value="">${pastoralFollowUpState.candidatesLoaded ? 'Choose a person…' : 'Search Directory first…'}</option>${options}</select></label>
+          ${pastoralCreatePriestField('Memorial responsibility')}
+          <label><span>Date of repose</span><input name="reposedOn" type="date" required onchange="updatePastoralMemorialPreview(this.form)" /></label>
+          <label class="pastoral-close-check"><span>Ongoing observance</span><em><input name="annualEnabled" type="checkbox" checked /> Continue annual reminders</em></label>
+        </div>
+        <fieldset class="pastoral-marker-choices"><legend>Memorial observances</legend>
+          ${['third_day', 'ninth_day', 'fortieth_day', 'six_month', 'first_anniversary'].map((type) => `<label><input type="checkbox" name="markerType" value="${type}" checked onchange="updatePastoralMemorialPreview(this.form)" /><span>${escapeHtml(MEMORIAL_MARKER_LABELS[type])}</span><small data-marker-preview="${type}"></small></label>`).join('')}
+        </fieldset>
+        <label class="sac-admin-wide-field"><span>Brief note</span><input name="closureReason" maxlength="500" placeholder="Optional context for clergy history" /></label>
+        <div class="sac-admin-actions"><button class="btn btn-gold btn-sm" type="submit" ${people.length ? '' : 'disabled'}>Record repose and create reminders</button></div>
+      </form>
+    </details>`;
+}
+
 function renderPastoralFollowUps() {
   const state = pastoralFollowUpState;
   if (state.loading || !state.loaded) return renderSacramentsLoadingPanel('Loading pastoral follow-up…');
   if (state.error) return renderSacramentsErrorPanel(state.error, 'loadPastoralFollowUps(true)');
-  const rows = state.followups.filter(pastoralMatchesSelectedPriest);
+  const rows = state.followups;
   const active = rows.filter((row) => row.status === 'active');
   const today = pastoralToday();
   const weekEnd = pastoralDateFromToday(7);
@@ -399,7 +445,7 @@ function renderPastoralFollowUps() {
   const dueThisWeek = active.filter((row) => row.nextDueOn >= today && row.nextDueOn <= weekEnd);
   const upcoming = active.filter((row) => row.nextDueOn > weekEnd);
   const closed = rows.filter((row) => row.status === 'closed');
-  const memorials = state.memorials.filter(pastoralMatchesSelectedPriest);
+  const memorials = state.memorials;
   const memorialActionable = memorials.filter((marker) => marker.status === 'pending');
   const memorialDue = memorialActionable.filter((marker) => marker.remindOn <= today);
   const memorialUpcoming = memorialActionable.filter((marker) => marker.remindOn > today);
@@ -407,7 +453,10 @@ function renderPastoralFollowUps() {
   const memorialHistory = memorials.filter((marker) => ['completed', 'skipped'].includes(marker.status));
   return `<section class="pastoral-heading">
       <div><span>Clergy tickler</span><h2>Pastoral follow-up</h2><p>Keep the next contact and memorial observance visible so no one falls through the cracks.</p></div>
-      <button class="sac-admin-small-btn" type="button" onclick="loadPastoralFollowUps(true)">Refresh</button>
+      <div class="sac-admin-actions">
+        ${state.access?.canCover ? `<button class="sac-admin-small-btn" type="button" onclick="setPastoralScope('${state.scope === 'all' ? 'mine' : 'all'}')">${state.scope === 'all' ? 'Show my care list' : 'Cover all clergy'}</button>` : ''}
+        <button class="sac-admin-small-btn" type="button" onclick="loadPastoralFollowUps(true)">Refresh</button>
+      </div>
     </section>
     <div class="pastoral-summary" aria-label="Pastoral follow-up summary">
       <div class="overdue"><strong>${overdue.length}</strong><span>Overdue</span></div>
@@ -416,13 +465,14 @@ function renderPastoralFollowUps() {
       <div><strong>${upcoming.length}</strong><span>Upcoming</span></div>
     </div>
     ${pastoralAddForm()}
+    ${pastoralStandaloneReposeForm()}
     ${memorialQueue('Memorial observances', 'Needs scheduling', memorialDue, 'overdue')}
     ${memorialQueue('Scheduled memorials', 'Linked to Requests & Calendar', memorialScheduled)}
     ${pastoralQueue('Overdue', 'Needs attention', overdue, 'overdue')}
     ${pastoralQueue('Due this week', 'Next seven days', dueThisWeek, 'due')}
     ${pastoralQueue('Upcoming', 'Later follow-up', upcoming, 'upcoming')}
     ${memorialQueue('Later memorial observances', 'Preparation window has not opened', memorialUpcoming)}
-    ${!active.length && !memorialActionable.length && !memorialScheduled.length ? '<div class="sac-admin-panel sac-admin-empty"><span>All clear</span><h2>No active follow-ups for this priest</h2><p>Add someone from Directory or select another priest above.</p></div>' : ''}
+    ${!active.length && !memorialActionable.length && !memorialScheduled.length ? `<div class="sac-admin-panel sac-admin-empty"><span>All clear</span><h2>No active follow-ups in ${state.scope === 'all' ? 'the clergy coverage list' : 'your care list'}</h2><p>Add someone from Directory when ongoing contact would help.</p></div>` : ''}
     ${closed.length ? `<details class="sac-admin-panel sac-admin-history pastoral-history"><summary><span>History</span><h2>Closed plans <b>${closed.length}</b></h2></summary><div class="pastoral-card-list">${closed.map((row) => `<article class="pastoral-closed-row"><div><strong>${escapeHtml(row.personName)}</strong><span>${escapeHtml(PASTORAL_CLOSURE_LABELS[row.closureOutcome] || row.closureReason || 'Closed')} · ${escapeHtml(formatSacramentDisplayDate(row.closedAt))}</span></div>${row.closureOutcome === 'reposed' ? '<span>Memorial cycle active</span>' : `<button class="sac-admin-text-btn" type="button" onclick="reopenPastoralFollowUp('${escapeAttr(row.id)}')">Reopen</button>`}</article>`).join('')}</div></details>` : ''}
     ${memorialHistory.length ? `<details class="sac-admin-panel sac-admin-history pastoral-history"><summary><span>Memorial history</span><h2>Completed or skipped <b>${memorialHistory.length}</b></h2></summary><div class="pastoral-card-list">${memorialHistory.map((marker) => `<article class="pastoral-closed-row"><div><strong>${escapeHtml(marker.personName)} · ${escapeHtml(marker.markerLabel)}</strong><span>${escapeHtml(marker.status)} · ${escapeHtml(formatSacramentDisplayDate(marker.targetDate))}</span></div></article>`).join('')}</div></details>` : ''}`;
 }
@@ -479,7 +529,7 @@ function toggleMemorialSchedule(id) {
 async function pastoralMutation(path, method, body, successMessage) {
   const response = await fetch(sacramentsApi('/follow-up' + path), {
     method,
-    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    headers: { ...pastoralAuthHeaders(), 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   const data = await response.json().catch(() => ({}));
@@ -493,7 +543,11 @@ async function pastoralMutation(path, method, body, successMessage) {
 async function createPastoralFollowUp(event) {
   event.preventDefault();
   const form = event.currentTarget;
-  const priest = selectedSacramentPriest();
+  const priestKey = form.elements.assignedPriest?.value || pastoralFollowUpState.access?.priest?.email || '';
+  const priest =
+    sacramentPriests().find((row) => (row.email || row.name) === priestKey) ||
+    pastoralFollowUpState.access?.priest ||
+    selectedSacramentPriest();
   const button = form.querySelector('button[type="submit"]');
   if (button) button.disabled = true;
   try {
@@ -516,6 +570,94 @@ async function createPastoralFollowUp(event) {
     setStatus(error.message, 'error');
   } finally {
     if (button) button.disabled = false;
+  }
+}
+
+function renderPastoralCareOwner() {
+  const root = document.getElementById('sacramentsPriestPicker');
+  if (!root) return;
+  const access = pastoralFollowUpState.access || {};
+  const label = access.priest?.name || access.userName || access.userEmail || 'Named staff account';
+  root.innerHTML = `<span>${pastoralFollowUpState.scope === 'all' ? 'Coverage' : 'Care list'}</span><div class="sac-admin-priest-tabs"><button type="button" class="active" disabled>${escapeHtml(pastoralFollowUpState.scope === 'all' ? 'All clergy' : label)}</button></div>`;
+}
+
+function setPastoralScope(scope) {
+  pastoralFollowUpState.scope = scope === 'all' ? 'all' : 'mine';
+  pastoralFollowUpState.loaded = false;
+  loadPastoralFollowUps(true);
+}
+
+async function searchPastoralReposeCandidates() {
+  const source = document.getElementById('pastoralReposeSearch');
+  const target = document.getElementById('pastoralCandidateSearch');
+  if (target) target.value = source?.value || '';
+  await searchPastoralFollowUpCandidates();
+  const details = document.getElementById('pastoralRecordRepose');
+  if (details) details.open = true;
+}
+
+async function recordStandalonePastoralRepose(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector('button[type="submit"]');
+  const priestKey = form.elements.assignedPriest?.value || pastoralFollowUpState.access?.priest?.email || '';
+  const priest =
+    sacramentPriests().find((row) => (row.email || row.name) === priestKey) ||
+    pastoralFollowUpState.access?.priest ||
+    selectedSacramentPriest();
+  const markerTypes = [...form.querySelectorAll('input[name="markerType"]:checked')].map((input) => input.value);
+  if (!markerTypes.length) {
+    setStatus('Choose at least one memorial observance.', 'error');
+    return;
+  }
+  const person = pastoralFollowUpState.candidates.find((row) => row.id === form.elements.personId.value);
+  const confirmed = window.confirm(
+    `Record ${person?.name || 'this person'} as reposed on ${formatSacramentDisplayDate(form.elements.reposedOn.value)}? This will mark the Directory record as reposed and create ${markerTypes.length} memorial reminder${markerTypes.length === 1 ? '' : 's'}.`
+  );
+  if (!confirmed) return;
+  if (button) button.disabled = true;
+  try {
+    await pastoralMutation(
+      '/repose',
+      'POST',
+      {
+        personId: form.elements.personId.value,
+        assignedPriestName: priest.name,
+        assignedPriestEmail: priest.email,
+        reposedOn: form.elements.reposedOn.value,
+        markerTypes,
+        annualEnabled: Boolean(form.elements.annualEnabled.checked),
+        closureReason: form.elements.closureReason.value,
+      },
+      'Repose recorded and memorial reminders created.'
+    );
+  } catch (error) {
+    setStatus(error.message, 'error');
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function openPastoralReposeFromDirectory(personId, personName) {
+  switchTab('sacraments');
+  setSacramentsDashboardTab('follow-up');
+  await loadPastoralFollowUps();
+  try {
+    const response = await fetch(sacramentsApi('/follow-up/candidates?q=' + encodeURIComponent(personName || '')), {
+      headers: pastoralAuthHeaders(),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Unable to open memorial care.');
+    pastoralFollowUpState.candidates = data.people || [];
+    pastoralFollowUpState.candidatesLoaded = true;
+    renderSacramentsPanel();
+    const details = document.getElementById('pastoralRecordRepose');
+    if (details) details.open = true;
+    const select = details?.querySelector('select[name="personId"]');
+    if (select && [...select.options].some((option) => option.value === personId)) select.value = personId;
+    details?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (error) {
+    setStatus(error.message, 'error');
   }
 }
 
@@ -545,15 +687,15 @@ async function savePastoralContact(event, id) {
 async function savePastoralSettings(event, id) {
   event.preventDefault();
   const form = event.currentTarget;
-  const priestKey = form.elements.assignedPriest.value;
-  const priest = sacramentPriests().find((row) => (row.email || row.name) === priestKey) || selectedSacramentPriest();
+  const priestKey = form.elements.assignedPriest?.value || '';
+  const priest = sacramentPriests().find((row) => (row.email || row.name) === priestKey) || null;
   try {
+    const assignment = priest ? { assignedPriestName: priest.name, assignedPriestEmail: priest.email } : {};
     await pastoralMutation(
       '/' + encodeURIComponent(id),
       'PATCH',
       {
-        assignedPriestName: priest.name,
-        assignedPriestEmail: priest.email,
+        ...assignment,
         reason: form.elements.reason.value,
         nextDueOn: form.elements.nextDueOn.value,
         cadenceDays: form.elements.cadenceDays.value ? Number(form.elements.cadenceDays.value) : null,
@@ -708,6 +850,8 @@ window.SacramentPastoralFollowUp = {
       memorials: [],
       candidates: [],
       candidatesLoaded: false,
+      scope: 'mine',
+      access: null,
     };
   },
 };
@@ -723,10 +867,15 @@ function installSacramentPastoralFollowUp() {
     document.querySelectorAll('[data-sac-tab]').forEach((button) => {
       button.classList.toggle('active', button.dataset.sacTab === 'follow-up');
     });
+    renderPastoralCareOwner();
     pane.innerHTML = renderPastoralFollowUps();
   };
   window.setSacramentsDashboardTab = function setSacramentsDashboardTabWithPastoralFollowUp(tab) {
-    if (tab !== 'follow-up') return setSacramentsDashboardTabWithoutPastoralFollowUp(tab);
+    if (tab !== 'follow-up') {
+      const result = setSacramentsDashboardTabWithoutPastoralFollowUp(tab);
+      renderSacramentsPriestPicker();
+      return result;
+    }
     sacramentsDashboardTab = 'follow-up';
     loadPastoralFollowUps();
     window.renderSacramentsPanel();
