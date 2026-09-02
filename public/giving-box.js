@@ -46,8 +46,8 @@
     const url = givingUrl(container);
     if (!url) return null;
 
-    const maxWidth = boundedNumber(container.dataset.maxWidth, 740, 280, 1200);
-    const initialHeight = boundedNumber(container.dataset.height, 760, 520, 1800);
+    const maxWidth = boundedNumber(container.dataset.maxWidth, 560, 280, 1200);
+    const initialHeight = boundedNumber(container.dataset.height, 560, 420, 1800);
     const align = clean(container.dataset.align).toLowerCase();
     const frame = document.createElement('iframe');
     frame.src = url.href;
@@ -61,7 +61,7 @@
     frame.style.width = '100%';
     frame.style.height = `${initialHeight}px`;
     frame.style.border = '0';
-    frame.style.borderRadius = '24px';
+    frame.style.borderRadius = '18px';
     frame.style.background = 'transparent';
     frame.style.transition = 'height 180ms ease';
 
@@ -84,7 +84,7 @@
     if (!event.data || event.data.type !== 'agapay:giving-box-resize') return;
     for (const [frame, record] of mountedFrames) {
       if (event.source !== frame.contentWindow || event.origin !== record.origin) continue;
-      const height = boundedNumber(event.data.height, 760, 520, 1800);
+      const height = boundedNumber(event.data.height, 560, 420, 1800);
       frame.height = String(height);
       frame.style.height = `${height}px`;
       record.container.dispatchEvent(new CustomEvent('agapay:resize', { detail: { height } }));
@@ -92,7 +92,7 @@
     }
   });
 
-  const api = Object.freeze({ version: '1.0.0', mount, scan });
+  const api = Object.freeze({ version: '1.2.0', mount, scan });
   window.AGAPAYGivingBox = api;
 
   if (document.readyState === 'loading') {

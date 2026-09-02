@@ -18,16 +18,16 @@ Add any of these attributes to the `data-agapay-giving` element:
 | `data-amount` | `50` | Preselect a gift amount from $1 to $50,000. |
 | `data-frequency` | `monthly` | Preselect `once`, `monthly`, `quarterly`, or `yearly`. |
 | `data-fund` | `Scholarship Fund` | Preselect a fund by its public ID or exact name. |
-| `data-max-width` | `680` | Set a maximum width from 280–1,200 pixels. |
+| `data-max-width` | `640` | Override the compact 560-pixel default with any width from 280–1,200 pixels. |
 | `data-align` | `left` | Align the box `left`, `center` (default), or `right`. |
-| `data-height` | `760` | Set the initial height while the box loads. |
+| `data-height` | `640` | Override the compact 560-pixel initial height while the box loads. |
 | `data-loading` | `eager` | Load immediately instead of lazily. |
 | `data-title` | `Support our academy` | Provide a custom accessible iframe title. |
 
 For example:
 
 ```html
-<div data-agapay-giving="your-organization-id" data-frequency="monthly" data-fund="Scholarship Fund" data-max-width="680"></div>
+<div data-agapay-giving="your-organization-id" data-frequency="monthly" data-fund="Scholarship Fund" data-max-width="640"></div>
 <script async src="https://agapay.app/giving-box.js"></script>
 ```
 

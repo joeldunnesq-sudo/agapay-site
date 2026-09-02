@@ -272,27 +272,6 @@
     state.organization = organization;
     state.organizationId = organization.id || state.organizationId;
     document.title = `Give to ${organization.name || 'this organization'} with AGAPAY`;
-    el('organizationName').textContent = organization.name || 'Community organization';
-    const jurisdiction = cleanText(organization.jurisdictionLabel || organization.jurisdiction);
-    const meta = [
-      organizationTypeLabel(organization),
-      jurisdiction && !/^other canonical jurisdiction$/i.test(jurisdiction) ? jurisdiction : '',
-      [organization.city, organization.state].filter(Boolean).join(', '),
-    ]
-      .filter(Boolean)
-      .join(' · ');
-    el('organizationMeta').textContent = meta;
-    const logo = el('organizationLogo');
-    if (organization.logoUrl || organization.imageUrl) {
-      logo.src = organization.logoUrl || organization.imageUrl;
-      logo.alt = `${organization.name || 'Organization'} logo`;
-      logo.hidden = false;
-      el('organizationMonogram').hidden = true;
-    } else {
-      const genericWords = ['st.', 'saint', 'holy', 'orthodox', 'church', 'parish', 'mission', 'ministry', 'nonprofit', 'foundation', 'organization', 'school', 'academy', 'business'];
-      const words = cleanText(organization.name).split(/\s+/).filter((word) => !genericWords.includes(word.toLowerCase()));
-      el('organizationMonogram').textContent = (words[0]?.[0] || 'A').toUpperCase();
-    }
     const tributeEnabled = organization.tributeGivingEnabled !== false
       && !organizationTypeLabel(organization).toLowerCase().includes('business');
     el('tributeOption').hidden = !tributeEnabled;
@@ -311,8 +290,6 @@
     el('completionState').hidden = true;
     el('unavailableState').hidden = false;
     document.querySelector('.step-ribbon').hidden = true;
-    el('organizationName').textContent = 'AGAPAY Giving';
-    el('organizationMeta').textContent = '';
     notifyHeight();
   }
 

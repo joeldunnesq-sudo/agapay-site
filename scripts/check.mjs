@@ -614,6 +614,17 @@ assert.ok(
   "the embeddable giving box should provide a compact two-step gift flow with quarterly and yearly options"
 );
 assert.ok(
+  giveEmbedHtml.includes('id="giftStepTitle">Your gift</span>')
+    && !giveEmbedHtml.includes("Choose a rhythm of generosity."),
+  "the giving box should use the concise gift label without redundant promotional copy"
+);
+assert.ok(
+  giveEmbedCss.includes("width: min(100%, 540px)")
+    && giveEmbedLoader.includes("container.dataset.maxWidth, 560")
+    && giveEmbedLoader.includes("container.dataset.height, 560"),
+  "the giving box should default to a compact desktop footprint"
+);
+assert.ok(
   giveEmbedJs.includes("source: 'embed'")
     && giveEmbedJs.includes("/api/create-checkout-session")
     && giveEmbedJs.includes("agapay:giving-box-resize")
@@ -621,20 +632,20 @@ assert.ok(
   "the giving box should load a verified organization through the compatible public API, use shared checkout, and resize its host iframe"
 );
 assert.ok(
-  giveEmbedHtml.includes("Verified on AGAPAY")
-    && giveEmbedHtml.includes("Give with purpose.")
+  !giveEmbedHtml.includes("Verified on AGAPAY")
+    && !giveEmbedHtml.includes("Give with purpose.")
+    && !giveEmbedHtml.includes('class="giving-header"')
     && giveEmbedHtml.includes("Generosity in action. Together.")
     && !giveEmbedHtml.includes("Verified Orthodox parish")
     && giveEmbedJs.includes("organizationTypeLabel")
     && giveEmbedJs.includes("communityType"),
-  "the giving box should use organization-neutral language and identify each verified community by type"
+  "the giving box should remain organization-neutral without duplicating host-site identity or ownership claims"
 );
 assert.ok(
   giveEmbedCss.includes("--navy: #071a2a")
     && giveEmbedCss.includes("--gold: #c8a24a")
-    && giveEmbedCss.includes(".corner-ornament")
     && giveEmbedHtml.includes("Powered by <strong>AGAPAY</strong>"),
-  "the giving box should carry the AGAPAY navy, gold, Orthodox ornament, and visible platform brand"
+  "the giving box should retain AGAPAY navy, gold, and a visible but restrained platform brand"
 );
 assert.ok(worker.includes('/^\\/give\\/embed\\/[^/]+\\/?$/') && worker.includes('url.pathname = "/give/embed.html"'), "the Worker should serve clean /give/embed/:parish URLs");
 assert.ok(localServerSource.includes('/^\\/give\\/embed\\/[^/]+\\/?$/') && localServerSource.includes('pathname = "/give/embed.html"'), "the local server should preview clean giving-box URLs");
