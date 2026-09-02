@@ -59,7 +59,7 @@
     "miniflare": "5.20260811.1-alpha",
     "playwright": "^1.61.1",
     "prettier": "^3.9.6",
-    "wrangler": "^4.123.0"
+    "wrangler": "^4.127.1"
   },
   "overrides": {
     "@cloudflare/puppeteer": {
