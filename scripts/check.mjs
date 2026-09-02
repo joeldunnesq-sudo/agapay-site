@@ -619,6 +619,14 @@ assert.ok(
   "the giving box should use the concise gift label without redundant promotional copy"
 );
 assert.ok(
+  !giveEmbedHtml.includes('id="fundField"')
+    && !giveEmbedHtml.includes("Direct my gift")
+    && !giveEmbedLoader.includes("dataset.fund")
+    && giveEmbedJs.includes("giftType: 'stewardship'")
+    && giveEmbedJs.includes("fundId: ''"),
+  "embedded gifts should go directly to the General Fund without a donor-facing fund selector"
+);
+assert.ok(
   giveEmbedCss.includes("width: min(100%, 540px)")
     && giveEmbedLoader.includes("container.dataset.maxWidth, 560")
     && giveEmbedLoader.includes("container.dataset.height, 560"),
@@ -635,7 +643,7 @@ assert.ok(
   !giveEmbedHtml.includes("Verified on AGAPAY")
     && !giveEmbedHtml.includes("Give with purpose.")
     && !giveEmbedHtml.includes('class="giving-header"')
-    && giveEmbedHtml.includes("Generosity in action. Together.")
+    && giveEmbedHtml.includes("Love how you give.")
     && !giveEmbedHtml.includes("Verified Orthodox parish")
     && giveEmbedJs.includes("organizationTypeLabel")
     && giveEmbedJs.includes("communityType"),

@@ -17,7 +17,6 @@ Add any of these attributes to the `data-agapay-giving` element:
 | --- | --- | --- |
 | `data-amount` | `50` | Preselect a gift amount from $1 to $50,000. |
 | `data-frequency` | `monthly` | Preselect `once`, `monthly`, `quarterly`, or `yearly`. |
-| `data-fund` | `Scholarship Fund` | Preselect a fund by its public ID or exact name. |
 | `data-max-width` | `640` | Override the compact 560-pixel default with any width from 280–1,200 pixels. |
 | `data-align` | `left` | Align the box `left`, `center` (default), or `right`. |
 | `data-height` | `640` | Override the compact 560-pixel initial height while the box loads. |
@@ -27,11 +26,13 @@ Add any of these attributes to the `data-agapay-giving` element:
 For example:
 
 ```html
-<div data-agapay-giving="your-organization-id" data-frequency="monthly" data-fund="Scholarship Fund" data-max-width="640"></div>
+<div data-agapay-giving="your-organization-id" data-frequency="monthly" data-max-width="640"></div>
 <script async src="https://agapay.app/giving-box.js"></script>
 ```
 
 Multiple giving boxes can appear on one page. Include the loader script once; it discovers boxes added before or after the script loads.
+
+Embedded gifts always go to the organization's General Fund. Donors who need to select a designated fund or campaign can use the organization's full AGAPAY giving page.
 
 ## Content Security Policy
 

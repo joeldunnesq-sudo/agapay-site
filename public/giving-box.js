@@ -28,13 +28,11 @@
     const url = new URL(`/give/embed/${encodeURIComponent(organizationId)}`, loaderOrigin);
     const amount = boundedNumber(container.dataset.amount, 0, 0, 50000);
     const frequency = clean(container.dataset.frequency).toLowerCase();
-    const fund = clean(container.dataset.fund);
     const preview = clean(container.dataset.preview);
     if (amount >= 1) url.searchParams.set('amount', String(amount));
     if (['once', 'monthly', 'quarterly', 'yearly'].includes(frequency)) {
       url.searchParams.set('frequency', frequency);
     }
-    if (fund) url.searchParams.set('fund', fund);
     if (preview && ['localhost', '127.0.0.1', '::1'].includes(url.hostname)) {
       url.searchParams.set('preview', preview);
     }
@@ -92,7 +90,7 @@
     }
   });
 
-  const api = Object.freeze({ version: '1.2.0', mount, scan });
+  const api = Object.freeze({ version: '1.3.0', mount, scan });
   window.AGAPAYGivingBox = api;
 
   if (document.readyState === 'loading') {

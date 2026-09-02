@@ -28,20 +28,6 @@
     return String(value || '').trim();
   }
 
-  function isGeneralFund(fund = {}) {
-    return [fund.id, fund.code, fund.reportCode, fund.name]
-      .filter(Boolean)
-      .map((value) => cleanText(value).toLowerCase())
-      .some((value) => ['general', 'stewardship', 'general operating fund', 'general stewardship'].includes(value));
-  }
-
-  function isCandleFund(fund = {}) {
-    return [fund.id, fund.code, fund.reportCode, fund.name]
-      .filter(Boolean)
-      .map((value) => cleanText(value).toLowerCase())
-      .some((value) => ['candle', 'candles', 'candles / vigil lights', 'candle fund'].includes(value));
-  }
-
   function organizationIdFromLocation() {
     const params = new URLSearchParams(window.location.search);
     const requested = cleanText(params.get('parish'));
@@ -163,8 +149,7 @@
     el('continueAmount').textContent = amount;
     el('summaryAmount').textContent = amount;
     el('summaryFrequency').textContent = frequencyLabel();
-    const fundOption = el('fundSelect').selectedOptions[0];
-    el('summaryFund').textContent = fundOption?.textContent || 'General Fund';
+    el('summaryFund').textContent = 'General Fund';
   }
 
   function chooseFrequency(frequency) {
@@ -223,39 +208,6 @@
     notifyHeight();
   }
 
-  function selectedFund() {
-    const select = el('fundSelect');
-    const option = select.selectedOptions[0];
-    if (!option || option.value === 'general') return null;
-    return {
-      id: option.value,
-      name: option.textContent,
-    };
-  }
-
-  function populateFunds(organization) {
-    const select = el('fundSelect');
-    const requestedFund = cleanText(new URLSearchParams(window.location.search).get('fund'));
-    const available = (Array.isArray(organization.funds) ? organization.funds : [])
-      .filter((fund) => fund && fund.enabled !== false && fund.active !== false);
-    const general = available.find(isGeneralFund);
-    const designated = available
-      .filter((fund) => fund && fund.enabled !== false && fund.active !== false)
-      .filter((fund) => !isGeneralFund(fund) && !isCandleFund(fund));
-    select.replaceChildren(new Option(cleanText(general?.name) || 'General Fund', 'general'));
-    designated.forEach((fund) => {
-      const value = cleanText(fund.id || fund.code || fund.name);
-      const option = new Option(cleanText(fund.name) || 'Designated fund', value);
-      select.add(option);
-    });
-    el('fundField').hidden = designated.length === 0;
-    if (requestedFund) {
-      const match = Array.from(select.options).find((option) => [option.value, option.textContent].includes(requestedFund));
-      if (match) select.value = match.value;
-    }
-    updateGiftSummary();
-  }
-
   function organizationTypeLabel(organization = {}) {
     const value = cleanText(organization.communityType || organization.type).toLowerCase();
     if (value.includes('school') || value.includes('academy')) return 'School & Academy';
@@ -279,7 +231,7 @@
       el('addTribute').checked = false;
       el('tributeFields').hidden = true;
     }
-    populateFunds(organization);
+    updateGiftSummary();
     el('giveAgainLink').href = `/give/embed/${encodeURIComponent(state.organizationId)}`;
     notifyHeight();
   }
@@ -335,18 +287,17 @@
   }
 
   function checkoutPayload() {
-    const fund = selectedFund();
     const tributeName = cleanText(el('tributeName').value);
     const tribute = el('addTribute').checked && tributeName
       ? `${el('tributeType').value === 'memory' ? 'In memory of' : 'In honor of'} ${tributeName}`
       : '';
     return {
       parishId: state.organizationId,
-      giftType: fund ? 'fund' : 'stewardship',
+      giftType: 'stewardship',
       amount: state.amount,
       frequency: state.frequency,
-      fund: fund?.name || '',
-      fundId: fund?.id || '',
+      fund: '',
+      fundId: '',
       firstName: cleanText(el('firstName').value),
       lastName: cleanText(el('lastName').value),
       email: cleanText(el('email').value),
@@ -442,7 +393,6 @@
       button.addEventListener('click', () => chooseAmount(Number(button.dataset.amount), button));
     });
     el('customAmount').addEventListener('input', (event) => chooseAmount(event.target.value, null));
-    el('fundSelect').addEventListener('change', updateGiftSummary);
     el('addNote').addEventListener('change', revealOptionalFields);
     el('addTribute').addEventListener('change', revealOptionalFields);
     el('continueButton').addEventListener('click', () => {
