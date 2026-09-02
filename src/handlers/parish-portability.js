@@ -69,6 +69,12 @@ export async function handleParishPortability(request, env, parishId, suffix = '
       }
       return reply({ error: 'Unauthorized' }, 401);
     }
+    if (session.accessType !== 'primary_parish') {
+      return reply({
+        error: 'Sign out, then use the parish’s primary login to access data portability or close the account.',
+        code: 'primary_parish_login_required'
+      }, 403);
+    }
     const verified = Date.parse(session.mfaVerifiedAt || '');
     if (!Number.isFinite(verified) || verified > Date.now() || Date.now() - verified > 15 * 60000) return reply({ error: 'Confirm your identity before accessing parish data.', code: 'mfa_step_up_required', principalType: 'parish_admin', principalId: parishId }, 428);
     if (request.method === 'GET' && suffix === '') {

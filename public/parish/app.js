@@ -502,9 +502,8 @@
   function isStarterTier(parish = currentParish) {
     return String(parish?.subscriptionTier || '').toLowerCase() === 'starter';
   }
-
-
   function openParishPortability() {
+    if (sessionStorage.getItem(identitySessionStorageKey)) return setStatus('Sign out, then use the primary parish login to access data portability or close the account.', 'error');
     if (currentParish?.parishId && window.ParishPortability) window.ParishPortability.open({ parishId: currentParish.parishId, headers: authHeaders });
   }
 
@@ -1644,15 +1643,14 @@
       </div>
       <p class="section-note">Leave blank unless you want to change the parish dashboard password.</p>
       <div class="section-divider"><span>Team access</span></div>
+      <div id="parishStaffAccessManager"><div class="staff-access-loading">Loading staff access…</div></div>
+      <div class="section-divider"><span>Clergy scheduling contacts</span></div>
       <div class="form-grid">
         <div class="form-group"><label class="form-label">Priest access</label><input value="${escapeHtml(p.priestEmail||'Not listed')}" disabled /></div>
         <div class="form-group"><label class="form-label">Treasurer access</label><input value="${escapeHtml(p.treasurerEmail||'Not listed')}" disabled /></div>
         <div class="form-group full"><label class="form-label" for="sacramentPriestsText">Sacraments &amp; Services priests</label><textarea id="sacramentPriestsText" rows="4" placeholder="Fr. Michael | fr.michael@example.org&#10;Fr. Andrew | fr.andrew@example.org">${escapeHtml(formatSacramentPriestsForSettings(p.sacramentPriests || []))}</textarea></div>
       </div>
-      <p class="section-note">Priest and treasurer dashboard access is included for every verified parish. Add one Sacraments &amp; Services priest per line. Use “Name | email” when you want the email stored too.</p>
-      <div class="btn-row">
-        <a class="btn btn-ghost" href="mailto:support@agapay.app?subject=${encodeURIComponent('Dashboard invite request for ' + (p.parishName || p.parishId || 'our parish'))}&body=${encodeURIComponent('Please add or update dashboard access for ' + (p.parishName || p.parishId || 'our parish') + '.\n\nRequested user:\nEmail:\nRole:\n\nRequested by:\n')}" target="_blank" rel="noopener">Request additional dashboard invite</a>
-      </div>
+      <p class="section-note">These addresses route Sacraments &amp; Services assignments and notifications; they do not create logins. Add personal access above for every person who signs in.</p>
       <div class="section-divider"><span>AGAPAY sales tax</span></div>
       <p class="section-note">A parish's nonprofit status does not automatically make every purchase tax-free. Submit the applicable exemption certificate here; AGAPAY will review it before changing subscription billing in Stripe.</p>
       <div id="taxExemptionPane" class="tax-exemption-pane"><p class="section-note">Loading sales-tax status…</p></div>
@@ -1677,7 +1675,7 @@
       </div>
       <div class="setup-link-box" id="subscriptionUpgradeLinkBox"><a id="subscriptionUpgradeLink" href="#" target="_blank" rel="noopener">Open billing checkout</a><p id="subscriptionUpgradeHelp"></p></div>
       <div class="section-divider"><span>Data portability</span></div>
-      <p class="section-note">Your parish records should remain accessible when you leave. Download a copy or review export and closure options. Downloading alone never deletes data, and exporting does not cancel billing.</p>
+      <p class="section-note">Your parish records should remain accessible when you leave. For ownership protection, exports and account closure require the primary parish login created at signup; invited staff logins cannot perform these actions. Downloading alone never deletes data, and exporting does not cancel billing.</p>
       <div class="btn-row"><button type="button" class="btn btn-ghost" onclick="openParishPortability()">Data portability &amp; closure</button></div>
       <div class="section-divider"><span>Stripe account</span></div>
       <p class="section-note">Manage your parish Stripe account — update bank account details, payout schedule, business information, and view your full transaction history directly in Stripe.</p>
@@ -1710,6 +1708,7 @@
     syncSubscriptionAddOnVisibility('subscriptionTierUpgrade','subscriptionAddOnUpgradeGroup');
     syncPatronalFeastOptionsFromSettings();
     loadParishTaxExemption();
+    loadParishStaffAccess();
 
     editableFunds          = fallbackFundsArray(p.funds);
     editableCampaigns      = fallbackCampaignsArray(p.campaigns);

@@ -15,7 +15,7 @@ import {
   verifyMfaAuthentication,
   verifyMfaEnrollment,
 } from "../src/lib/mfa.js";
-import { issueAdminSession } from "../src/lib/core.js";
+import { issueAdminSession, issueParishDashboardSession } from "../src/lib/core.js";
 import { enforcePrivilegedMfa, handleMfaEnrollmentOptions } from "../src/handlers/mfa.js";
 import worker from "../src/worker.js";
 
@@ -27,6 +27,14 @@ function makeD1Env() {
   db.exec(readFileSync(path.join(root, "migrations", "0020_platform_identity.sql"), "utf8"));
   db.exec(readFileSync(path.join(root, "migrations", "0106_privileged_mfa.sql"), "utf8"));
   db.exec("CREATE TABLE app_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)");
+  db.exec(`CREATE TABLE registrations (
+    reference TEXT PRIMARY KEY,
+    parish_id TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    received_at TEXT,
+    updated_at TEXT NOT NULL,
+    data TEXT NOT NULL
+  )`);
 
   function wrap(sql) {
     return {
@@ -311,6 +319,40 @@ await test("the Worker gate rejects legacy privileged sessions and steps up stal
     headers: { Authorization: `Bearer ${fresh.token}` },
   });
   assert.equal(await enforcePrivilegedMfa(freshRequest, env, new URL(freshRequest.url)), null);
+});
+
+await test("dashboard reload synchronization reuses a verified parish session without weakening write step-up", async () => {
+  const { env, db } = makeD1Env();
+  const parishId = "refresh-safe-parish";
+  const issued = await issueParishDashboardSession({ parishId }, {
+    mfaVerifiedAt: new Date(Date.now() - 16 * 60_000).toISOString(),
+  });
+  db.prepare(`INSERT INTO registrations
+    (reference, parish_id, status, received_at, updated_at, data)
+    VALUES (?, ?, 'verified', ?, ?, ?)`).run(
+    "refresh-safe-registration",
+    parishId,
+    new Date().toISOString(),
+    new Date().toISOString(),
+    JSON.stringify(issued.registration),
+  );
+  const headers = { Authorization: `Bearer ${issued.token}` };
+
+  for (const route of ["subscription-refresh", "stripe-refresh"]) {
+    const request = new Request(`https://agapay.app/api/parish/dashboard/${parishId}/${route}`, {
+      method: "POST",
+      headers,
+    });
+    assert.equal(await enforcePrivilegedMfa(request, env, new URL(request.url)), null);
+  }
+
+  const writeRequest = new Request(`https://agapay.app/api/parish/dashboard/${parishId}/demo-tier`, {
+    method: "POST",
+    headers,
+  });
+  const writeGate = await enforcePrivilegedMfa(writeRequest, env, new URL(writeRequest.url));
+  assert.equal(writeGate.status, 428);
+  assert.equal((await writeGate.json()).code, "mfa_step_up_required");
 });
 
 await test("admin and parish clients load the mandatory MFA experience", async () => {

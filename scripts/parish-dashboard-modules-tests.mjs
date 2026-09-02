@@ -6,9 +6,11 @@ const paths = {
   dashboard: new URL("public/parish/dashboard.html", root),
   registry: new URL("public/parish/feature-registry.js", root),
   core: new URL("public/parish/app.js", root),
+  staffAccess: new URL("public/parish/features/staff-access.js", root),
   directory: new URL("public/parish/features/directory.js", root),
   library: new URL("public/parish/features/library.js", root),
   sacraments: new URL("public/parish/features/sacraments.js", root),
+  sacramentPreparation: new URL("public/parish/features/sacraments/preparation.js", root),
   accounting: new URL("public/parish/features/accounting.js", root),
   commerce: new URL("public/parish/features/commerce.js", root),
   koinonia: new URL("public/parish/features/koinonia.js", root),
@@ -19,7 +21,7 @@ const paths = {
   notifications: new URL("src/lib/parish-notifications.js", root),
 };
 
-const [dashboard, registry, core, directory, library, sacraments, accounting, commerce, koinonia, onboarding, campaigns, stewardship, giving, notifications] = await Promise.all(
+const [dashboard, registry, core, staffAccess, directory, library, sacraments, sacramentPreparation, accounting, commerce, koinonia, onboarding, campaigns, stewardship, giving, notifications] = await Promise.all(
   Object.values(paths).map((path) => readFile(path, "utf8")),
 );
 
@@ -27,6 +29,11 @@ const registryScript = '/parish/feature-registry.js?v=';
 const coreScript = '/parish/app.js?';
 assert.ok(dashboard.includes(coreScript), 'dashboard core must be loaded');
 assert.ok(dashboard.includes(registryScript), 'feature registry must be loaded');
+assert.ok(dashboard.indexOf('/parish/features/staff-access.js?') < dashboard.indexOf(coreScript));
+assert.match(staffAccess, /function inviteParishStaff/);
+assert.match(staffAccess, /Each person creates their own password and completes MFA/);
+assert.match(core, /id="parishStaffAccessManager"/);
+assert.match(core, /loadParishStaffAccess\(\)/);
 for (const feature of ["directory", "library", "sacraments", "accounting", "commerce", "koinonia", "onboarding", "campaigns", "stewardship", "giving"]) {
   const featureScript = `/parish/features/${feature}.js?`;
   assert.ok(dashboard.includes(featureScript), `${feature} feature script must be loaded`);
@@ -44,6 +51,8 @@ assert.match(core, /loadRegisteredParishFeature\('library'\)/);
 assert.match(directory, /ParishFeatureRegistry\.register\('directory'/);
 assert.match(library, /ParishFeatureRegistry\.register\('library'/);
 assert.match(sacraments, /ParishFeatureRegistry\.register\('sacraments'/);
+assert.match(sacramentPreparation, /function renderSacramentsPreparationTemplates/);
+assert.ok(dashboard.indexOf('/parish/features/sacraments/preparation.js?') < dashboard.indexOf('/parish/features/sacraments.js?'));
 assert.doesNotMatch(core, /function loadAccountingTab/);
 assert.match(core, /loadRegisteredParishFeature\('accounting'\)/);
 assert.match(accounting, /ParishFeatureRegistry\.register\('accounting'/);

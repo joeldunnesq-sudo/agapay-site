@@ -307,7 +307,10 @@ export const ROLE_TEMPLATES = Object.freeze({
   ],
   reader: ["parish.view"],
   deacon: ["parish.view", "donations.view"],
-  priest: ["parish.view", "donations.view", "donor.statements", "sacraments.pastoral.manage_own"],
+  priest: [
+    "parish.view", "donations.view", "donor.statements",
+    "sacraments.pastoral.manage_own", "sacraments.pastoral.coverage"
+  ],
   administrator: [
     "parish.view", "parish.manage", "parish.members.invite", "parish.members.remove",
     "parish.roles.assign", "parish.settings.manage", "accounting.configure"

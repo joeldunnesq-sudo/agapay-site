@@ -9,7 +9,7 @@ let pastoralFollowUpState = {
   memorials: [],
   candidates: [],
   candidatesLoaded: false,
-  scope: 'mine',
+  scope: 'all',
   access: null,
 };
 
@@ -66,7 +66,7 @@ async function loadPastoralFollowUps(force = false) {
       memorials: [],
       candidates: [],
       candidatesLoaded: false,
-      scope: 'mine',
+      scope: 'all',
       access: null,
     };
   }
@@ -78,11 +78,6 @@ async function loadPastoralFollowUps(force = false) {
       headers: pastoralAuthHeaders(),
     });
     const data = await response.json().catch(() => ({}));
-    if (response.status === 401 && !sessionStorage.getItem('agapay_identity_session_token')) {
-      throw new Error(
-        'Pastoral care lists require your personal staff sign-in. Log out, then choose Staff sign in on the parish login page.'
-      );
-    }
     if (!response.ok) throw new Error(data.error || 'Unable to load pastoral follow-up.');
     pastoralFollowUpState = {
       ...pastoralFollowUpState,
@@ -454,7 +449,7 @@ function renderPastoralFollowUps() {
   return `<section class="pastoral-heading">
       <div><span>Clergy tickler</span><h2>Pastoral follow-up</h2><p>Keep the next contact and memorial observance visible so no one falls through the cracks.</p></div>
       <div class="sac-admin-actions">
-        ${state.access?.canCover ? `<button class="sac-admin-small-btn" type="button" onclick="setPastoralScope('${state.scope === 'all' ? 'mine' : 'all'}')">${state.scope === 'all' ? 'Show my care list' : 'Cover all clergy'}</button>` : ''}
+        ${state.access?.canCover && !state.access?.dashboardSession ? `<button class="sac-admin-small-btn" type="button" onclick="setPastoralScope('${state.scope === 'all' ? 'mine' : 'all'}')">${state.scope === 'all' ? 'Show my care list' : 'Cover all clergy'}</button>` : ''}
         <button class="sac-admin-small-btn" type="button" onclick="loadPastoralFollowUps(true)">Refresh</button>
       </div>
     </section>
@@ -577,7 +572,7 @@ function renderPastoralCareOwner() {
   const root = document.getElementById('sacramentsPriestPicker');
   if (!root) return;
   const access = pastoralFollowUpState.access || {};
-  const label = access.priest?.name || access.userName || access.userEmail || 'Named staff account';
+  const label = access.priest?.name || access.userName || access.userEmail || 'Parish team';
   root.innerHTML = `<span>${pastoralFollowUpState.scope === 'all' ? 'Coverage' : 'Care list'}</span><div class="sac-admin-priest-tabs"><button type="button" class="active" disabled>${escapeHtml(pastoralFollowUpState.scope === 'all' ? 'All clergy' : label)}</button></div>`;
 }
 
@@ -850,7 +845,7 @@ window.SacramentPastoralFollowUp = {
       memorials: [],
       candidates: [],
       candidatesLoaded: false,
-      scope: 'mine',
+      scope: 'all',
       access: null,
     };
   },

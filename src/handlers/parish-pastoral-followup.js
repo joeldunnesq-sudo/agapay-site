@@ -2,6 +2,7 @@ import { recordAuditEvent } from '../lib/audit-log.js';
 import { hasModuleAccess } from '../lib/entitlements.js';
 import {
   hasProductionStore,
+  getBearerToken,
   json,
   missingProductionStoreResponse,
   normalizeEmail,
@@ -9,7 +10,7 @@ import {
   unauthorized,
 } from '../lib/core.js';
 import { requireActiveMembership } from '../lib/authorization.js';
-import { findRegistrationByParishId, normalizeSacramentPriests } from './parish.js';
+import { findRegistrationByParishId, normalizeSacramentPriests, verifyParishDashboardBearer } from './parish.js';
 import {
   PastoralFollowUpError,
   createPastoralFollowup,
@@ -40,21 +41,49 @@ async function requireContext(request, env, parishId) {
     };
   }
   const identity = await requireActiveMembership(request, env, parishId);
-  if (!identity) return { response: unauthorized() };
+  const priests = normalizeSacramentPriests(found.registration);
+  if (!identity) {
+    const dashboardAuthorized = await verifyParishDashboardBearer(found.registration, getBearerToken(request));
+    if (!dashboardAuthorized) return { response: unauthorized() };
+    return {
+      found,
+      identity: null,
+      priest: null,
+      priests,
+      canCover: true,
+      scopeEmail: '',
+      dashboardSession: true,
+    };
+  }
   const canManageOwn = identity.capabilities.includes('sacraments.pastoral.manage_own');
   const canCover = identity.capabilities.includes('sacraments.pastoral.coverage');
-  if (!canManageOwn && !canCover) return { response: json({ error: 'Pastoral care access is not assigned to this staff account.' }, { status: 403 }) };
-  const priests = normalizeSacramentPriests(found.registration);
+  if (!canManageOwn && !canCover)
+    return {
+      response: json({ error: 'Pastoral care access is not assigned to this staff account.' }, { status: 403 }),
+    };
   const priest = priests.find((row) => normalizeEmail(row.email) === normalizeEmail(identity.user.email)) || null;
   if (!priest && !canCover) {
-    return { response: json({ error: 'Your staff email must match a priest configured in Sacraments & Services.' }, { status: 403 }) };
+    return {
+      response: json(
+        { error: 'Your staff email must match a priest configured in Sacraments & Services.' },
+        { status: 403 }
+      ),
+    };
   }
   const requestedAll = new URL(request.url).searchParams.get('scope') === 'all';
-  return { found, identity, priest, priests, canCover, scopeEmail: canCover && (requestedAll || !priest) ? '' : normalizeEmail(priest.email) };
+  return {
+    found,
+    identity,
+    priest,
+    priests,
+    canCover,
+    scopeEmail: canCover && (requestedAll || !priest) ? '' : normalizeEmail(priest.email),
+    dashboardSession: false,
+  };
 }
 
 function actor(context = {}) {
-  return context.identity?.user?.email || context.identity?.user?.id || 'named-clergy';
+  return context.identity?.user?.email || context.identity?.user?.id || 'parish-dashboard';
 }
 
 function configuredPriest(registration, name, email) {
@@ -74,8 +103,8 @@ async function bodyJson(request) {
 
 async function audit(env, request, parishId, context, fields) {
   await recordAuditEvent(env, request, {
-    actorType: 'platform_user',
-    actorUserId: context.identity.user.id,
+    actorType: context.identity ? 'platform_user' : 'parish',
+    actorUserId: context.identity?.user?.id,
     organizationId: parishId,
     targetType: 'sacrament_pastoral_followup',
     ...fields,
@@ -83,8 +112,8 @@ async function audit(env, request, parishId, context, fields) {
 }
 
 function canManageAssigned(context, assignedPriestEmail) {
-  return context.canCover || (
-    context.priest && normalizeEmail(context.priest.email) === normalizeEmail(assignedPriestEmail)
+  return (
+    context.canCover || (context.priest && normalizeEmail(context.priest.email) === normalizeEmail(assignedPriestEmail))
   );
 }
 
@@ -157,9 +186,10 @@ export async function handleParishPastoralFollowUp(request, env, parishId, subpa
         access: {
           scope: context.scopeEmail ? 'mine' : 'all',
           canCover: context.canCover,
-          userEmail: context.identity.user.email || '',
-          userName: context.identity.user.displayName || '',
+          userEmail: context.identity?.user?.email || '',
+          userName: context.identity?.user?.displayName || '',
           priest: context.priest || null,
+          dashboardSession: context.dashboardSession,
         },
       });
     }
@@ -210,7 +240,14 @@ export async function handleParishPastoralFollowUp(request, env, parishId, subpa
         targetType: 'directory_person',
         after: { personId: result.personId, reposedOn: result.reposedOn, memorialMarkerCount: result.markers.length },
       });
-      if (ctx?.waitUntil) ctx.waitUntil(notifyPriestOfRepose(env, registration, result).catch((error) => console.error(JSON.stringify({ message: 'pastoral_repose_notification_failed', error: error?.message || String(error) }))));
+      if (ctx?.waitUntil)
+        ctx.waitUntil(
+          notifyPriestOfRepose(env, registration, result).catch((error) =>
+            console.error(
+              JSON.stringify({ message: 'pastoral_repose_notification_failed', error: error?.message || String(error) })
+            )
+          )
+        );
       return json({ ok: true, ...result }, { status: 201 });
     }
     if (parts[0] && parts.length === 1 && request.method === 'PATCH') {
@@ -218,7 +255,8 @@ export async function handleParishPastoralFollowUp(request, env, parishId, subpa
       await requireFollowupAccess(env, parishId, parts[0], context);
       let priestFields = {};
       if (body.assignedPriestName !== undefined || body.assignedPriestEmail !== undefined) {
-        if (!context.canCover) throw new PastoralFollowUpError('Only a rector covering the parish can reassign care.', 403);
+        if (!context.canCover)
+          throw new PastoralFollowUpError('Only a rector covering the parish can reassign care.', 403);
         const priest = configuredPriest(registration, body.assignedPriestName, body.assignedPriestEmail);
         if (!priest) throw new PastoralFollowUpError('Choose a priest configured for Sacraments & Services.');
         priestFields = { assignedPriestName: priest.name, assignedPriestEmail: priest.email };
