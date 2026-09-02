@@ -1,20 +1,8 @@
 import { AccountingDatabaseError, ValidationError } from '../errors.js';
 import { createJournalDraft, postJournalEntry } from '../ledger/service.js';
-export const COMMERCE_SOURCE_TYPES = Object.freeze([
-  'commerce_sale_completed',
-  'commerce_sale_partially_refunded',
-  'commerce_sale_refunded',
-  'commerce_sale_canceled',
-  'commerce_fee_assessed',
-  'commerce_fee_refunded',
-  'commerce_dispute_created',
-  'commerce_dispute_won',
-  'commerce_dispute_lost',
-  'commerce_chargeback_fee',
-  'commerce_payout_paid',
-  'commerce_payout_failed',
-  'commerce_payout_reversed',
-]);
+import { COMMERCE_ACCOUNTING_SOURCE_TYPES } from '../../payments/classification.js';
+
+export const COMMERCE_SOURCE_TYPES = COMMERCE_ACCOUNTING_SOURCE_TYPES;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 function id(p) {
   return `${p}_${crypto.randomUUID()}`;

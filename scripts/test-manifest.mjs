@@ -35,6 +35,12 @@ const core = [
   'scripts/outside-gifts-tests.mjs',
   'scripts/myagapay-inner-page-ui-tests.mjs',
   'scripts/registration-security-tests.mjs',
+  'scripts/organization-readiness-tests.mjs',
+  'scripts/organization-authorization-adoption-tests.mjs',
+  'scripts/organization-verification-policy-adoption-tests.mjs',
+  'scripts/organization-api-route-tests.mjs',
+  'scripts/organization-dashboard-entitlements-tests.mjs',
+  'scripts/payment-classification-tests.mjs',
   'scripts/subscription-pricing-bands-tests.mjs',
   'scripts/parish-onboarding-workflow-tests.mjs',
   'scripts/parish-onboarding-hardening-tests.mjs',
@@ -77,6 +83,8 @@ const core = [
 ];
 
 const accounting = [
+  'scripts/organization-authorization-adoption-tests.mjs',
+  'scripts/payment-classification-tests.mjs',
   'scripts/accounting-activation-tests.mjs',
   'scripts/accounting-activation-access-tests.mjs',
   'scripts/accounting-activation-workflow-tests.mjs',
@@ -192,6 +200,11 @@ const critical = [
   'scripts/privileged-mfa-tests.mjs',
   'scripts/consumer-passkey-tests.mjs',
   'scripts/accounting-gateway-tests.mjs',
+  'scripts/organization-authorization-adoption-tests.mjs',
+  'scripts/organization-verification-policy-adoption-tests.mjs',
+  'scripts/organization-api-route-tests.mjs',
+  'scripts/organization-dashboard-entitlements-tests.mjs',
+  'scripts/payment-classification-tests.mjs',
   'scripts/accounting-staff-access-tests.mjs',
   'scripts/accounting-ledger-tests.mjs',
   'scripts/accounting-migration-ledger-tests.mjs',

@@ -3,7 +3,17 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 
 const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
-const routeNames = ['public', 'accounting', 'directory', 'learn', 'donor', 'admin', 'stewardship', 'parish'];
+const routeNames = [
+  'organization',
+  'public',
+  'accounting',
+  'directory',
+  'learn',
+  'donor',
+  'admin',
+  'stewardship',
+  'parish',
+];
 
 const [dashboard, registry, worker, architectureGuide] = await Promise.all([
   read('public/parish/dashboard.html'),

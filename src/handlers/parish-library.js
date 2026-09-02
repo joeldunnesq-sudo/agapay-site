@@ -9,8 +9,15 @@ import {
   unauthorized,
 } from "../lib/core.js";
 import { hasModuleAccess } from "../lib/entitlements.js";
+import { recordAuditEvent } from "../lib/audit-log.js";
 import { getParishLibrarySettings, setParishLibraryEnabled } from "../lib/parish-library.js";
 import { validateSafeExternalUrl } from "../lib/safe-external-url.js";
+import {
+  bindOrganizationAuthorizationContext,
+  evaluateOrganizationModuleAccess,
+  ORGANIZATION_MODULES,
+  organizationAuditFields,
+} from "../organizations/index.js";
 import {
   findRegistrationByParishId,
   requireDonor,
@@ -197,10 +204,25 @@ async function requireLibraryAdmin(request, env, parishId) {
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return { error: json({ error: "Parish not found" }, { status: 404 }) };
   if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) return { error: unauthorized() };
-  if (!hasModuleAccess(found.registration, "library")) {
+  const moduleAccess = evaluateOrganizationModuleAccess(
+    found.registration,
+    ORGANIZATION_MODULES.LIBRARY,
+    hasModuleAccess,
+    { organizationId: parishId, registrationReference: found.key },
+  );
+  if (!moduleAccess.allowed) {
     return { error: json({ error: "Parish Library requires Give + or Parish." }, { status: 403 }) };
   }
-  return { found };
+  return bindOrganizationAuthorizationContext({ found }, moduleAccess.organization) || { error: unauthorized() };
+}
+
+async function recordLibraryAuditEvent(env, request, auth, actorUserId, fields) {
+  const auditFields = organizationAuditFields(auth.organization, {
+    actorUserId,
+    actorType: "parish",
+    ...fields,
+  });
+  if (auditFields) await recordAuditEvent(env, request, auditFields);
 }
 
 async function uploadParishLibraryPdf(request, env, parishId, resourceId) {
@@ -210,18 +232,21 @@ async function uploadParishLibraryPdf(request, env, parishId, resourceId) {
   const db = database(env);
   const auth = await requireLibraryAdmin(request, env, parishId);
   if (auth.error) return auth.error;
+  const tenantParishId = auth.organizationScope.legacyParishId;
+  const actorUserId = normalizeEmail(auth.found.registration.treasurerEmail || auth.found.registration.priestEmail)
+    || `parish:${tenantParishId}`;
   if (!env.PARISH_LIBRARY_ASSETS) return json({ error: "Parish Library file storage is not configured." }, { status: 503 });
   const current = await db.prepare("SELECT * FROM parish_library_resources WHERE id = ? AND parish_id = ?")
-    .bind(resourceId, parishId).first();
+    .bind(resourceId, tenantParishId).first();
   if (!current) return json({ error: "Resource not found" }, { status: 404 });
   if (current.resource_type !== "pdf") return json({ error: "This resource is an external link." }, { status: 422 });
   if (current.status === "archived") return json({ error: "Archived resources cannot be edited." }, { status: 422 });
   const upload = await validateParishLibraryPdf(request);
   if (upload.error) return json({ error: upload.error }, { status: upload.status });
   const fileName = safeFileName(request.headers.get("x-agapay-file-name") || `${current.title}.pdf`);
-  const key = `parish-library/${encodeURIComponent(parishId)}/${encodeURIComponent(resourceId)}/${Date.now()}-${crypto.randomUUID()}.pdf`;
+  const key = `parish-library/${encodeURIComponent(tenantParishId)}/${encodeURIComponent(resourceId)}/${Date.now()}-${crypto.randomUUID()}.pdf`;
   await env.PARISH_LIBRARY_ASSETS.put(key, upload.bytes, {
-    customMetadata: { agapayParishId: parishId },
+    customMetadata: { agapayParishId: tenantParishId },
     httpMetadata: { contentType: "application/pdf", cacheControl: "private, no-store" },
   });
   try {
@@ -229,13 +254,19 @@ async function uploadParishLibraryPdf(request, env, parishId, resourceId) {
       UPDATE parish_library_resources
       SET object_key = ?, file_name = ?, file_size = ?, updated_at = datetime('now')
       WHERE id = ? AND parish_id = ?
-    `).bind(key, fileName, upload.size, resourceId, parishId).run();
+    `).bind(key, fileName, upload.size, resourceId, tenantParishId).run();
   } catch (error) {
     await env.PARISH_LIBRARY_ASSETS.delete(key).catch(() => {});
     throw error;
   }
   if (current.object_key) await env.PARISH_LIBRARY_ASSETS.delete(current.object_key).catch(() => {});
   const resource = resourceFromRow(await db.prepare("SELECT * FROM parish_library_resources WHERE id = ?").bind(resourceId).first());
+  await recordLibraryAuditEvent(env, request, auth, actorUserId, {
+    action: "library.resource_pdf_uploaded",
+    targetType: "library_resource",
+    targetId: resourceId,
+    after: { fileSize: upload.size, resourceType: "pdf" },
+  });
   return json({ ok: true, resource });
 }
 
@@ -247,32 +278,73 @@ export async function handleParishLibrary(request, env, parishId, subpath = "") 
   if (parts.length === 2 && parts[1] === "file") return uploadParishLibraryPdf(request, env, parishId, decodeURIComponent(parts[0]));
   const auth = await requireLibraryAdmin(request, env, parishId);
   if (auth.error) return auth.error;
-  const createdBy = normalizeEmail(auth.found.registration.treasurerEmail || auth.found.registration.priestEmail) || `parish:${parishId}`;
+  const tenantParishId = auth.organizationScope.legacyParishId;
+  const createdBy = normalizeEmail(auth.found.registration.treasurerEmail || auth.found.registration.priestEmail) || `parish:${tenantParishId}`;
   try {
     if (!parts.length && request.method === "GET") {
-      return json({ settings: await getParishLibrarySettings(db, parishId), resources: await listParishLibraryResources(db, parishId) });
+      return json({ settings: await getParishLibrarySettings(db, tenantParishId), resources: await listParishLibraryResources(db, tenantParishId) });
     }
     if (!parts.length && request.method === "POST") {
-      const resource = await createParishLibraryResource(db, { parishId, createdBy, input: await request.json() });
+      const resource = await createParishLibraryResource(db, { parishId: tenantParishId, createdBy, input: await request.json() });
+      await recordLibraryAuditEvent(env, request, auth, createdBy, {
+        action: "library.resource_created",
+        targetType: "library_resource",
+        targetId: resource.id,
+        after: { category: resource.category, resourceType: resource.resourceType, status: resource.status },
+      });
       return json({ ok: true, resource }, { status: 201 });
     }
     if (parts.length === 1 && parts[0] === "settings" && request.method === "GET") {
-      return json({ ok: true, settings: await getParishLibrarySettings(db, parishId) });
+      return json({ ok: true, settings: await getParishLibrarySettings(db, tenantParishId) });
     }
     if (parts.length === 1 && parts[0] === "settings" && request.method === "PATCH") {
       const input = await request.json();
-      return json({ ok: true, settings: await setParishLibraryEnabled(db, { parishId, enabled: Boolean(input.enabled), updatedBy: createdBy }) });
+      const settings = await setParishLibraryEnabled(db, { parishId: tenantParishId, enabled: Boolean(input.enabled), updatedBy: createdBy });
+      await recordLibraryAuditEvent(env, request, auth, createdBy, {
+        action: "library.settings_changed",
+        targetType: "library_settings",
+        targetId: tenantParishId,
+        after: { enabled: settings.enabled },
+      });
+      return json({ ok: true, settings });
     }
     if (parts.length === 1 && request.method === "PATCH") {
-      const resource = await updateParishLibraryResource(db, { parishId, resourceId: decodeURIComponent(parts[0]), input: await request.json() });
+      const resourceId = decodeURIComponent(parts[0]);
+      const resource = await updateParishLibraryResource(db, { parishId: tenantParishId, resourceId, input: await request.json() });
+      if (resource) {
+        await recordLibraryAuditEvent(env, request, auth, createdBy, {
+          action: "library.resource_updated",
+          targetType: "library_resource",
+          targetId: resourceId,
+          after: { category: resource.category, resourceType: resource.resourceType, status: resource.status },
+        });
+      }
       return resource ? json({ ok: true, resource }) : json({ error: "Resource not found" }, { status: 404 });
     }
     if (parts.length === 1 && request.method === "DELETE") {
-      const resource = await deleteParishLibraryResource(db, env.PARISH_LIBRARY_ASSETS, { parishId, resourceId: decodeURIComponent(parts[0]) });
+      const resourceId = decodeURIComponent(parts[0]);
+      const resource = await deleteParishLibraryResource(db, env.PARISH_LIBRARY_ASSETS, { parishId: tenantParishId, resourceId });
+      if (resource) {
+        await recordLibraryAuditEvent(env, request, auth, createdBy, {
+          action: "library.resource_deleted",
+          targetType: "library_resource",
+          targetId: resourceId,
+          before: { resourceType: resource.resourceType, status: resource.status },
+        });
+      }
       return resource ? json({ ok: true, resource }) : json({ error: "Resource not found" }, { status: 404 });
     }
     if (parts.length === 2 && parts[1] === "archive" && request.method === "POST") {
-      const resource = await archiveParishLibraryResource(db, { parishId, resourceId: decodeURIComponent(parts[0]) });
+      const resourceId = decodeURIComponent(parts[0]);
+      const resource = await archiveParishLibraryResource(db, { parishId: tenantParishId, resourceId });
+      if (resource) {
+        await recordLibraryAuditEvent(env, request, auth, createdBy, {
+          action: "library.resource_archived",
+          targetType: "library_resource",
+          targetId: resourceId,
+          after: { status: resource.status },
+        });
+      }
       return resource ? json({ ok: true, resource }) : json({ error: "Resource not found" }, { status: 404 });
     }
     return json({ error: "Method not allowed" }, { status: 405 });
@@ -290,8 +362,18 @@ export async function handleDonorParishLibrary(request, env, subpath = "") {
   if (!parishId) return json({ error: "Choose a parish before opening its library." }, { status: 422 });
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Your selected parish could not be found." }, { status: 404 });
-  const settings = await getParishLibrarySettings(db, parishId);
-  if (!settings.enabled || !hasModuleAccess(found.registration, "library")) {
+  const moduleAccess = evaluateOrganizationModuleAccess(
+    found.registration,
+    ORGANIZATION_MODULES.LIBRARY,
+    hasModuleAccess,
+    { organizationId: parishId, registrationReference: found.key },
+  );
+  if (!moduleAccess.allowed) {
+    return json({ available: false, parish: { id: parishId, name: found.registration.parishName || "" }, resources: [] });
+  }
+  const tenantParishId = moduleAccess.organization.legacy.parishId;
+  const settings = await getParishLibrarySettings(db, tenantParishId);
+  if (!settings.enabled) {
     return json({ available: false, parish: { id: parishId, name: found.registration.parishName || "" }, resources: [] });
   }
   const parts = String(subpath || "").replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);
@@ -299,7 +381,7 @@ export async function handleDonorParishLibrary(request, env, subpath = "") {
     return json({
       available: true,
       parish: { id: parishId, name: found.registration.parishName || "" },
-      resources: await listParishLibraryResources(db, parishId, { publishedOnly: true }),
+      resources: await listParishLibraryResources(db, tenantParishId, { publishedOnly: true }),
     });
   }
   if (parts.length === 2 && parts[1] === "file" && request.method === "GET") {
@@ -307,7 +389,7 @@ export async function handleDonorParishLibrary(request, env, subpath = "") {
       SELECT object_key, file_name FROM parish_library_resources
       WHERE id = ? AND parish_id = ? AND resource_type = 'pdf' AND status = 'published'
         AND object_key IS NOT NULL AND (expires_at IS NULL OR expires_at > datetime('now'))
-    `).bind(decodeURIComponent(parts[0]), parishId).first();
+    `).bind(decodeURIComponent(parts[0]), tenantParishId).first();
     if (!row) return json({ error: "Published PDF not found" }, { status: 404 });
     if (!env.PARISH_LIBRARY_ASSETS) return json({ error: "Parish Library file storage is not configured." }, { status: 503 });
     const object = await env.PARISH_LIBRARY_ASSETS.get(row.object_key);

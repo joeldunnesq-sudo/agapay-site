@@ -4,6 +4,7 @@ import { routeAdminRequest } from '../src/routes/admin.js';
 import { routeDirectoryRequest } from '../src/routes/directory.js';
 import { routeDonorRequest } from '../src/routes/donor.js';
 import { routeLearnRequest } from '../src/routes/learn.js';
+import { routeOrganizationRequest } from '../src/routes/organization.js';
 import { routeParishRequest } from '../src/routes/parish.js';
 import { dispatchRouteRegistries } from '../src/routes/registry.js';
 import { routeStewardshipRequest } from '../src/routes/stewardship.js';
@@ -43,6 +44,12 @@ const orderedResponse = await dispatchRouteRegistries(
 );
 assert.deepEqual(order, ['first', 'second']);
 assert.equal(await orderedResponse.text(), 'matched');
+
+const organization = requestContext('/api/v1/organizations/demo', 'GET', {
+  findRegistrationByParishId: async () => null,
+  json: (body, init) => Response.json(body, init),
+});
+assert.equal((await routeOrganizationRequest(organization)).status, 404);
 
 const directory = requestContext('/api/parish/dashboard/st%20fiacre/directory/admin/settings');
 assert.equal(await (await routeDirectoryRequest(directory)).text(), 'handleDirectoryAdmin');

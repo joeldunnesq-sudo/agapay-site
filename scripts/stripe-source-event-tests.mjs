@@ -62,6 +62,10 @@ function makeCommerceEnv() {
   }, { correlationId: "corr-12345678" });
   assert.equal(envelope.operationalRecordType, "commerce_order");
   assert.equal(envelope.paymentIntentId, "pi_123");
+  assert.equal(envelope.paymentPurpose, "commerce");
+  assert.equal(envelope.paymentComponent, "principal");
+  assert.equal(envelope.paymentClass, "nonqualifying_commerce");
+  assert.equal(envelope.paymentAvailability, "context_required");
   assert.equal(envelope.idempotencyKey, "stripe:evt_source_1:checkout.session.completed:commerce_order:order_123");
 }
 

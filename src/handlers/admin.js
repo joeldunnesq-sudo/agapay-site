@@ -122,6 +122,7 @@ import {
 } from "../lib/parish-onboarding.js";
 import { accountingEnabledFor, accountingTierFor } from "../lib/entitlements.js";
 import { ensureBenevolenceFundInRegistration } from "../lib/stewardship-funds.js";
+import { evaluateOnboardingVerification } from "../organizations/verification-policies.js";
 import { accountingHealthOverview, activatePreparedParishAccounting, activateProtectiveState, createBoundD1ProvisioningAdapter, detectAccountingEnvironment, releaseProtectiveState, runIntegrityScan, verifyRecoveryEvidence } from "../accounting/index.js";
 import { resolveAccountingDatabaseForParish } from "./accounting-ledger.js";
 
@@ -1195,6 +1196,14 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
     const verificationSourceNext = body.verificationSource ?? current.verificationSource ?? "";
     const bishopOrAuthorityNext = body.bishopOrAuthority ?? current.bishopOrAuthority ?? "";
     const dioceseOrDeaneryNext = body.dioceseOrDeanery ?? current.dioceseOrDeanery ?? "";
+    const onboardingVerification = evaluateOnboardingVerification({
+      ...current,
+      status: nextStatus,
+      reviewedBy: reviewedByNext,
+      verificationSource: verificationSourceNext,
+      bishopOrAuthority: bishopOrAuthorityNext,
+      dioceseOrDeanery: dioceseOrDeaneryNext
+    });
 
     // Tax readiness is a manual admin decision, separate from canonical
     // verification -- see src/lib/tax-readiness.js. A blank/unknown value
@@ -1208,21 +1217,14 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
       : currentTaxReadinessStatus;
     const taxReadinessStatusChanged = nextTaxReadinessStatus !== currentTaxReadinessStatus;
 
-    if (nextStatus === "verified") {
-      const missing = [];
-      if (!String(reviewedByNext || "").trim()) missing.push("reviewedBy");
-      if (!String(verificationSourceNext || "").trim()) missing.push("verificationSource");
-      if (!String(bishopOrAuthorityNext || "").trim()) missing.push("bishopOrAuthority");
-      if (!String(dioceseOrDeaneryNext || "").trim()) missing.push("dioceseOrDeanery");
-      if (missing.length) {
-        return json(
-          {
-            error: "Canonical verification is incomplete. Fill reviewer name, verification source, bishop/authority, and diocese/deanery before marking verified.",
-            missing
-          },
-          { status: 422 }
-        );
-      }
+    if (nextStatus === "verified" && !onboardingVerification.passed) {
+      return json(
+        {
+          error: onboardingVerification.incompleteMessage,
+          missing: onboardingVerification.missingFields
+        },
+        { status: 422 }
+      );
     }
 
     const parishId = nextStatus === "verified"

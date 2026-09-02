@@ -4,6 +4,12 @@
 
 import { ValidationError } from "./errors.js";
 import { requireNonEmptyString } from "./validation.js";
+import {
+  classifyPayment,
+  classifyPaymentMetadata,
+  PAYMENT_COMPONENTS,
+  PAYMENT_PURPOSES
+} from "../payments/classification.js";
 
 export const STRIPE_SOURCE_EVENT_SCHEMA_VERSION = 1;
 
@@ -57,6 +63,42 @@ function isoFromStripeSeconds(value) {
   return new Date(numeric * 1000).toISOString();
 }
 
+function paymentComponentForStripeEvent(eventType) {
+  if (eventType === "charge.refunded") return PAYMENT_COMPONENTS.REFUND;
+  if (eventType.startsWith("charge.dispute")) return PAYMENT_COMPONENTS.DISPUTE;
+  if (eventType.startsWith("payout.")) return PAYMENT_COMPONENTS.PAYOUT;
+  return PAYMENT_COMPONENTS.PRINCIPAL;
+}
+
+function paymentClassificationForStripeEvent(eventType, object, operationalRecordType) {
+  const metadata = {
+    ...(object.invoice?.subscription_details?.metadata || {}),
+    ...(object.payment_intent?.metadata || {}),
+    ...(object.metadata || {})
+  };
+  const metadataClassification = classifyPaymentMetadata(metadata);
+  let purpose = metadataClassification.purpose;
+  let source = metadataClassification.source;
+  if (purpose === PAYMENT_PURPOSES.UNKNOWN) {
+    const fallbackPurposes = {
+      donor_offering: PAYMENT_PURPOSES.DONATION,
+      commerce_order: PAYMENT_PURPOSES.COMMERCE,
+      registration: PAYMENT_PURPOSES.PLATFORM_SUBSCRIPTION,
+      subscription: PAYMENT_PURPOSES.PLATFORM_SUBSCRIPTION
+    };
+    purpose = fallbackPurposes[operationalRecordType] || PAYMENT_PURPOSES.UNKNOWN;
+    if (purpose !== PAYMENT_PURPOSES.UNKNOWN) source = "operational_record_type";
+  }
+  return classifyPayment({
+    purpose,
+    component: paymentComponentForStripeEvent(eventType),
+    source,
+    paymentClass: metadataClassification.purpose === PAYMENT_PURPOSES.UNKNOWN
+      ? ""
+      : metadataClassification.paymentClass
+  });
+}
+
 export function classifyStripeSourceEvent(eventType, object = {}) {
   if (eventType.startsWith("checkout.session")) {
     if (object.metadata?.commerce_module) return "commerce_order";
@@ -103,6 +145,7 @@ export function createStripeSourceEventEnvelope(event = {}, {
   }
   const recordType = operationalRecordType || classifyStripeSourceEvent(eventType, object);
   const recordId = operationalRecordId || object.metadata?.order_id || object.metadata?.offering_id || object.id || "";
+  const paymentClassification = paymentClassificationForStripeEvent(eventType, object, recordType);
   const envelope = {
     schemaVersion: STRIPE_SOURCE_EVENT_SCHEMA_VERSION,
     sourceSystem: "stripe",
@@ -129,6 +172,12 @@ export function createStripeSourceEventEnvelope(event = {}, {
     revenueStreamId,
     sourceStatus,
     correlationId,
+    paymentClassificationVersion: paymentClassification.schemaVersion,
+    paymentPurpose: paymentClassification.purpose,
+    paymentComponent: paymentClassification.component,
+    paymentClass: paymentClassification.paymentClass,
+    paymentAvailability: paymentClassification.availability,
+    paymentClassificationSource: paymentClassification.source,
     idempotencyKey: stripeSourceIdempotencyKey({
       stripeEventId: event.id,
       eventType,
