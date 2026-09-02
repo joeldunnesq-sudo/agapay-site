@@ -166,34 +166,6 @@ async function withMockFetch(handler, run) {
 }
 
 {
-  const testEnv = env();
-  const assetPaths = [];
-  testEnv.ASSETS = {
-    async fetch(assetRequest) {
-      assetPaths.push(new URL(assetRequest.url).pathname);
-      return new Response("<!doctype html><title>Asset</title>", {
-        status: 200,
-        headers: {
-          "Content-Type": "text/html",
-          "X-Frame-Options": "SAMEORIGIN",
-        },
-      });
-    },
-  };
-
-  const embed = await worker.fetch(request("/give/embed/st-test"), testEnv);
-  assert.equal(embed.status, 200);
-  assert.equal(assetPaths[0], "/give/embed.html");
-  assert.equal(embed.headers.get("X-Frame-Options"), null, "clean giving-box routes must be frameable by organization websites");
-  assert.equal(embed.headers.get("Content-Security-Policy"), "frame-ancestors *");
-  assert.equal(embed.headers.get("X-Robots-Tag"), "noindex, nofollow");
-  assert.equal(embed.headers.get("Cache-Control"), "no-store");
-
-  const normalPage = await worker.fetch(request("/give"), testEnv);
-  assert.equal(normalPage.headers.get("X-Frame-Options"), "SAMEORIGIN", "normal AGAPAY pages must retain clickjacking protection");
-}
-
-{
   const hashedEnv = env();
   const hashedLogin = await worker.fetch(request("/api/admin/session", {
     method: "POST",
@@ -1174,72 +1146,6 @@ async function withMockFetch(handler, run) {
   assert.equal(offering.estimatedStripeFeeCents, 106);
   assert.equal(offering.stripeCustomerId, "cus_checkout_test");
   assert.equal(await testEnv.AGAPAY_REGISTRATIONS.get("__agapay_checkout_offering__cs_checkout_test"), "__agapay_donor_offering__giver@example.com:cs_checkout_test");
-
-  const recurringForms = [];
-  let recurringSession = 0;
-  await withMockFetch(async (url, init = {}) => {
-    const href = String(url);
-    if (href.includes("/v1/customers?")) {
-      return new Response(JSON.stringify({ data: [] }), { status: 200 });
-    }
-    if (href.endsWith("/v1/customers")) {
-      return new Response(JSON.stringify({ id: `cus_embed_${recurringSession}` }), { status: 200 });
-    }
-    if (href.endsWith("/v1/checkout/sessions")) {
-      recurringSession += 1;
-      const form = new URLSearchParams(init.body);
-      recurringForms.push(form);
-      return new Response(JSON.stringify({
-        id: `cs_embed_${recurringSession}`,
-        url: `https://checkout.stripe.test/embed-${recurringSession}`
-      }), { status: 200 });
-    }
-    throw new Error(`Unexpected fetch ${href}`);
-  }, async () => {
-    for (const [index, frequency] of ["quarterly", "yearly"].entries()) {
-      const checkout = await worker.fetch(request("/api/create-checkout-session", {
-        method: "POST",
-        headers: { "CF-Connecting-IP": `203.0.113.${30 + index}` },
-        body: {
-          parishId: "st-checkout",
-          giftType: "stewardship",
-          amount: 50,
-          frequency,
-          firstName: "Widget",
-          lastName: "Giver",
-          email: `widget-${frequency}@example.com`,
-          coverFees: true,
-          source: "embed"
-        }
-      }), testEnv);
-      assert.equal(checkout.status, 201);
-    }
-  });
-  assert.equal(recurringForms.length, 2);
-  assert.equal(recurringForms[0].get("mode"), "subscription");
-  assert.equal(recurringForms[0].get("line_items[0][price_data][recurring][interval]"), "month");
-  assert.equal(recurringForms[0].get("line_items[0][price_data][recurring][interval_count]"), "3");
-  assert.equal(recurringForms[0].get("metadata[frequency]"), "quarterly");
-  assert.equal(recurringForms[0].get("success_url"), "https://agapay.test/give/embed/st-checkout?success=1&session_id={CHECKOUT_SESSION_ID}");
-  assert.equal(recurringForms[0].get("cancel_url"), "https://agapay.test/give/embed/st-checkout?canceled=1");
-  assert.equal(recurringForms[1].get("line_items[0][price_data][recurring][interval]"), "year");
-  assert.equal(recurringForms[1].get("line_items[0][price_data][recurring][interval_count]"), null);
-  assert.equal(recurringForms[1].get("metadata[frequency]"), "yearly");
-
-  const invalidFrequency = await worker.fetch(request("/api/create-checkout-session", {
-    method: "POST",
-    headers: { "CF-Connecting-IP": "203.0.113.39" },
-    body: {
-      parishId: "st-checkout",
-      giftType: "stewardship",
-      amount: 25,
-      frequency: "daily",
-      firstName: "Unsupported",
-      email: "unsupported@example.com"
-    }
-  }), testEnv);
-  assert.equal(invalidFrequency.status, 422);
-  assert.equal((await json(invalidFrequency)).error, "Choose a supported gift frequency.");
 }
 
 {

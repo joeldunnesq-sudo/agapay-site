@@ -20,6 +20,7 @@ const parishSacramentsHandler = await readFile("src/handlers/parish-sacraments.j
 const parishReconciliationHandler = await readFile("src/handlers/parish-reconciliation.js", "utf8");
 const parishNotifications = await readFile("src/lib/parish-notifications.js", "utf8");
 const stripeFees = await readFile("src/lib/stripe-fees.js", "utf8");
+const givingCheckout = await readFile("src/payments/giving-checkout.js", "utf8");
 const stripeHandler = await readFile("src/handlers/stripe.js", "utf8");
 const parishInterestHandler = await readFile("src/handlers/parish-interest.js", "utf8");
 const wrangler = await readFile("wrangler.toml", "utf8");
@@ -42,7 +43,7 @@ assert.ok(!siteChrome.includes('{ href: "/give#why", label: "Why AGAPAY"'), "can
 assert.ok(!siteChrome.includes('{ href: "/learn", label: "AGAPAY Learn", key: "learn" }') && !siteChrome.includes('{ href: "/design", label: "AGAPAY Design", key: "design" }'), "canonical primary navigation should stay focused on AGAPAY Give");
 assert.ok(!/btn-donate[\s\S]{0,180}shellIcon\("giving-hand"\)/.test(siteChrome), "canonical Start for free button should not include an unrelated giving-hand icon");
 assert.ok(!/drawer-join[\s\S]{0,120}shellIcon\("giving-hand"\)/.test(siteChrome), "mobile Start for free button should not include an unrelated giving-hand icon");
-const backendSources = worker + core + stripeConnect + adminHandler + donorHandler + parishHandler + parishCommemorationsHandler + parishGivingCatalogHandler + parishGivingReportsHandler + parishSacramentsHandler + parishReconciliationHandler + parishNotifications + stripeFees + stripeHandler + parishInterestHandler;
+const backendSources = worker + core + stripeConnect + adminHandler + donorHandler + parishHandler + parishCommemorationsHandler + parishGivingCatalogHandler + parishGivingReportsHandler + parishSacramentsHandler + parishReconciliationHandler + parishNotifications + stripeFees + givingCheckout + stripeHandler + parishInterestHandler;
 const parishHandlers = parishHandler + parishCommemorationsHandler + parishGivingCatalogHandler + parishGivingReportsHandler + parishSacramentsHandler + parishReconciliationHandler;
 assert.equal(parishSlug("St. Fiacre Orthodox Church", "Munster"), "st-fiacre-munster", "parish usernames should include patronal name and city");
 assert.equal(parishSlug("Holy Resurrection Orthodox Church", "Boston"), "holy-resurrection-boston", "parish usernames should normalize common church suffixes");
@@ -655,7 +656,7 @@ assert.ok(
     && giveEmbedHtml.includes("Powered by <strong>AGAPAY</strong>"),
   "the giving box should retain AGAPAY navy, gold, and a visible but restrained platform brand"
 );
-assert.ok(worker.includes('/^\\/give\\/embed\\/[^/]+\\/?$/') && worker.includes('url.pathname = "/give/embed.html"'), "the Worker should serve clean /give/embed/:parish URLs");
+assert.ok(worker.includes('/^\\/give\\/embed\\/[^/]+\\/?$/') && worker.includes('const staticGivePages = new Set(["request-demo", "embed"])'), "the Worker should serve clean /give/embed/:parish URLs");
 assert.ok(localServerSource.includes('/^\\/give\\/embed\\/[^/]+\\/?$/') && localServerSource.includes('pathname = "/give/embed.html"'), "the local server should preview clean giving-box URLs");
 assert.ok(
   parishDashboardApp.includes("function dedicatedGivingEmbedUrl()")

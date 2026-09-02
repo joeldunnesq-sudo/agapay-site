@@ -31,6 +31,7 @@ import {
   STRIPE_EVENT_PROCESSING_RETRY_MS,
   STRIPE_PAYMENT_INTENT_INDEX_PREFIX,
   STRIPE_SUBSCRIPTION_INDEX_PREFIX,
+  applyGivingEmbedHeaders,
   applyDonorPassword,
   applyParishDashboardPassword,
   claimStripeEvent,
@@ -889,10 +890,6 @@ function cleanAssetRequest(request) {
     url.pathname = "/give/find-parish.html";
     return new Request(url, request);
   }
-  if (/^\/give\/embed\/[^/]+\/?$/.test(url.pathname)) {
-    url.pathname = "/give/embed.html";
-    return new Request(url, request);
-  }
   if (/^\/[^/]+\/bookstore\/?$/.test(url.pathname) || /^\/bookstore\/[^/]+\/?$/.test(url.pathname)) {
     url.pathname = "/bookstore/index.html";
     return new Request(url, request);
@@ -910,7 +907,7 @@ function cleanAssetRequest(request) {
     return new Request(url, request);
   }
   const staticGivePages = new Set(["request-demo", "embed"]);
-  const givePage = url.pathname.match(/^\/give\/([^/]+)\/?$/)?.[1] || "";
+  const givePage = /^\/give\/embed\/[^/]+\/?$/.test(url.pathname) ? "embed" : url.pathname.match(/^\/give\/([^/]+)\/?$/)?.[1] || "";
   if (staticGivePages.has(givePage)) {
     url.pathname = `/give/${givePage}.html`;
     return new Request(url, request);
@@ -927,34 +924,14 @@ function cleanAssetRequest(request) {
 }
 
 async function fetchCleanAsset(request, env) {
-  const requestPath = new URL(request.url).pathname;
-  const isGivingEmbed = requestPath === "/give/embed"
-    || requestPath === "/give/embed.html"
-    || /^\/give\/embed\/[^/]+\/?$/.test(requestPath);
-  const applyGivingEmbedHeaders = (response) => {
-    if (!isGivingEmbed) return response;
-    const headers = new Headers(response.headers);
-    headers.delete("X-Frame-Options");
-    headers.set("Content-Security-Policy", "frame-ancestors *");
-    headers.set("X-Robots-Tag", "noindex, nofollow");
-    headers.set("Cache-Control", "no-store");
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers,
-    });
-  };
-  const assetRequest = cleanAssetRequest(request);
-  const response = await env.ASSETS.fetch(assetRequest);
-  if (assetRequest.url === request.url || ![301, 302, 307, 308].includes(response.status)) {
-    return applyGivingEmbedHeaders(response);
-  }
+  const assetRequest = cleanAssetRequest(request), response = await env.ASSETS.fetch(assetRequest);
+  if (assetRequest.url === request.url || ![301, 302, 307, 308].includes(response.status)) return applyGivingEmbedHeaders(request, response);
 
   const location = response.headers.get("Location");
-  if (!location) return applyGivingEmbedHeaders(response);
+  if (!location) return applyGivingEmbedHeaders(request, response);
   const target = new URL(location, assetRequest.url);
-  if (target.origin !== new URL(request.url).origin) return applyGivingEmbedHeaders(response);
-  return applyGivingEmbedHeaders(await env.ASSETS.fetch(new Request(target, request)));
+  if (target.origin !== new URL(request.url).origin) return applyGivingEmbedHeaders(request, response);
+  return applyGivingEmbedHeaders(request, await env.ASSETS.fetch(new Request(target, request)));
 }
 
 const LEGACY_GIVING_PAGE_REDIRECTS = new Map([

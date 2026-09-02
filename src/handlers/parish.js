@@ -3,6 +3,7 @@
 
 import { activeFestalAlmsCampaigns } from "../festal-alms.js";
 import { parishClosureState } from "../portability/closure.js";
+import { givingCheckoutReturnUrls, normalizeGivingFrequency, stripeRecurringSchedule } from "../payments/giving-checkout.js";
 import { enrichParishGivingOptions, publicBoolean, publicComment } from "./parish-giving-catalog.js";
 import { commemorationSourceIdFromOffering, ensureCommemorationEntryFromOffering, saveCommemorationEntry, splitSubmittedNames } from "./parish-commemorations.js";
 import { submitParishSupportTicket } from "../lib/parish-support-tickets.js";
@@ -1768,11 +1769,8 @@ export async function handleCheckout(request, env) {
   const amountCents = centsFromAmount(body.amount);
   if (!amountCents) return json({ error: donationAmountError(body.amount) }, { status: 422 });
 
-  const rawFrequency = String(body.frequency || "once").trim().toLowerCase();
-  const requestedFrequency = rawFrequency === "annual" ? "yearly" : rawFrequency;
-  if (!["once", "weekly", "biweekly", "monthly", "quarterly", "yearly"].includes(requestedFrequency)) {
-    return json({ error: "Choose a supported gift frequency." }, { status: 422 });
-  }
+  const requestedFrequency = normalizeGivingFrequency(body.frequency);
+  if (!requestedFrequency) return json({ error: "Choose a supported gift frequency." }, { status: 422 });
 
   const parish = await findCheckoutParish(env, body.parishId);
   if (!parish || parish.status !== "verified") return json({ error: "Verified parish not found" }, { status: 404 });
@@ -1857,25 +1855,7 @@ export async function handleCheckout(request, env) {
     : body.campaignId || body.campaign || "";
   const donor = await requireDonor(request, env);
   const donorDashboardReturn = Boolean(donor?.email && normalizeEmail(donor.email) === normalizedDonorEmail);
-  const checkoutSource = String(body.source || "").toLowerCase();
-  const campaignPageCheckout = checkoutSource === "campaign_page";
-  const embedCheckout = checkoutSource === "embed";
-  const returnPath = String(body.returnPath || "").startsWith("/") ? String(body.returnPath) : "";
-  const embedPath = `/give/embed/${encodeURIComponent(parish.id)}`;
-  const successUrl = donorDashboardReturn
-    ? `${appUrl}/myagapay?gift_success=1&session_id={CHECKOUT_SESSION_ID}`
-    : embedCheckout
-    ? `${appUrl}${embedPath}?success=1&session_id={CHECKOUT_SESSION_ID}`
-    : campaignPageCheckout
-    ? `${appUrl}/give/${encodeURIComponent(parish.id)}?giftType=campaign&campaign=${encodeURIComponent(body.campaign || "")}&success=1&session_id={CHECKOUT_SESSION_ID}`
-    : `${appUrl}/give/${encodeURIComponent(parish.id)}?success=1&session_id={CHECKOUT_SESSION_ID}`;
-  const cancelUrl = donorDashboardReturn
-    ? `${appUrl}/myagapay/giving/give?checkout_canceled=1`
-    : embedCheckout
-    ? `${appUrl}${embedPath}?canceled=1`
-    : campaignPageCheckout && returnPath
-    ? `${appUrl}${returnPath}${returnPath.includes("?") ? "&" : "?"}checkout_canceled=1`
-    : `${appUrl}/give/${encodeURIComponent(parish.id)}?canceled=1`;
+  const { successUrl, cancelUrl } = givingCheckoutReturnUrls({ appUrl, parishId: parish.id, source: body.source, returnPath: body.returnPath, donorDashboardReturn, campaign: body.campaign });
   const {
     chargeCents,
     estimatedStripeFeeCents,
@@ -1955,13 +1935,7 @@ export async function handleCheckout(request, env) {
   // Stripe's own processing cost deducted (see checkoutFinancials above).
 
   if (recurring) {
-    const recurringSchedule = {
-      weekly: { interval: "week", count: 1 },
-      biweekly: { interval: "week", count: 2 },
-      monthly: { interval: "month", count: 1 },
-      quarterly: { interval: "month", count: 3 },
-      yearly: { interval: "year", count: 1 }
-    }[requestedFrequency];
+    const recurringSchedule = stripeRecurringSchedule(requestedFrequency);
     form.set("line_items[0][price_data][recurring][interval]", recurringSchedule.interval);
     if (recurringSchedule.count > 1) {
       form.set("line_items[0][price_data][recurring][interval_count]", String(recurringSchedule.count));
