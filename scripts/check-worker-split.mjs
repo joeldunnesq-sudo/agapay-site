@@ -1,29 +1,49 @@
-import fs from "node:fs";
-import path from "node:path";
+import fs from 'node:fs';
+import path from 'node:path';
 
 const root = process.cwd();
 const sourceFiles = [
-  "src/lib/core.js",
-  "src/lib/email.js",
-  "src/lib/format.js",
-  "src/lib/registrations.js",
-  "src/lib/stripe-connect.js",
-  "src/learn/community-store.js",
-  "src/learn/handlers.js",
-  "src/handlers/parish.js",
-  "src/handlers/donor.js",
-  "src/handlers/admin.js",
-  "src/handlers/stripe.js",
-  "src/lib/parish-notifications.js",
-  "src/lib/stripe-fees.js",
-  ...fs.readdirSync(path.join(root, "src", "routes"))
-    .filter((file) => file.endsWith(".js"))
+  'src/lib/core.js',
+  'src/lib/email.js',
+  'src/lib/format.js',
+  'src/lib/registrations.js',
+  'src/lib/stripe-connect.js',
+  'src/learn/community-store.js',
+  'src/learn/handlers.js',
+  'src/handlers/parish.js',
+  'src/handlers/parish-donor-offerings.js',
+  'src/handlers/parish-giving-read-models.js',
+  'src/handlers/parish-checkout.js',
+  'src/handlers/parish-dashboard-handler.js',
+  'src/handlers/parish-bookstore-inventory.js',
+  'src/handlers/parish-bookstore-handler.js',
+  'src/handlers/donor.js',
+  'src/handlers/donor-bookstore.js',
+  'src/handlers/donor-parish-calendar.js',
+  'src/handlers/donor-sacraments.js',
+  'src/handlers/donor-notifications.js',
+  'src/handlers/registration-admin-page.js',
+  'src/handlers/admin.js',
+  'src/handlers/admin-learning-support.js',
+  'src/handlers/admin-email-diagnostics.js',
+  'src/handlers/stewardship.js',
+  'src/handlers/stewardship-http.js',
+  'src/handlers/stewardship-presentation.js',
+  'src/handlers/stewardship-packet-presentation.js',
+  'src/handlers/stewardship-financials.js',
+  'src/handlers/stewardship-communications.js',
+  'src/handlers/stripe.js',
+  'src/lib/parish-notifications.js',
+  'src/lib/stripe-fees.js',
+  ...fs
+    .readdirSync(path.join(root, 'src', 'routes'))
+    .filter((file) => file.endsWith('.js'))
     .map((file) => `src/routes/${file}`),
-  "src/worker.js"
+  'src/worker.js',
 ];
 
 function read(file) {
-  return fs.readFileSync(path.join(root, file), "utf8");
+  return fs.readFileSync(path.join(root, file), 'utf8');
 }
 
 function exportedNames(source) {
@@ -31,8 +51,11 @@ function exportedNames(source) {
   for (const match of source.matchAll(/export\s+(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/g)) names.add(match[1]);
   for (const match of source.matchAll(/export\s+(?:const|let|var|class)\s+([A-Za-z_$][\w$]*)/g)) names.add(match[1]);
   for (const match of source.matchAll(/export\s*\{([\s\S]*?)\}/g)) {
-    for (const part of match[1].split(",")) {
-      const name = part.trim().split(/\s+as\s+/)[0]?.trim();
+    for (const part of match[1].split(',')) {
+      const name = part
+        .trim()
+        .split(/\s+as\s+/)[0]
+        ?.trim();
       if (name) names.add(name);
     }
   }
@@ -43,12 +66,12 @@ function namedImports(source) {
   const imports = [];
   for (const match of source.matchAll(/import\s*\{([\s\S]*?)\}\s*from\s*["']([^"']+)["'];?/g)) {
     const names = match[1]
-      .split(",")
+      .split(',')
       .map((part) => part.trim())
       .filter(Boolean)
       .map((part) => ({
         imported: part.split(/\s+as\s+/)[0].trim(),
-        local: (part.split(/\s+as\s+/)[1] || part.split(/\s+as\s+/)[0]).trim()
+        local: (part.split(/\s+as\s+/)[1] || part.split(/\s+as\s+/)[0]).trim(),
       }));
     imports.push({ specifier: match[2], names });
   }
@@ -56,16 +79,17 @@ function namedImports(source) {
 }
 
 function resolveSpecifier(fromFile, specifier) {
-  if (!specifier.startsWith(".")) return null;
+  if (!specifier.startsWith('.')) return null;
   const fromDir = path.dirname(fromFile);
   const resolved = path.normalize(path.join(fromDir, specifier));
-  return resolved.endsWith(".js") ? resolved.replaceAll("\\", "/") : `${resolved.replaceAll("\\", "/")}.js`;
+  return resolved.endsWith('.js') ? resolved.replaceAll('\\', '/') : `${resolved.replaceAll('\\', '/')}.js`;
 }
 
 function declaredNames(source) {
   const names = new Set();
   for (const match of source.matchAll(/(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/g)) names.add(match[1]);
-  for (const match of source.matchAll(/(?:export\s+)?(?:const|let|var|class)\s+([A-Za-z_$][\w$]*)/g)) names.add(match[1]);
+  for (const match of source.matchAll(/(?:export\s+)?(?:const|let|var|class)\s+([A-Za-z_$][\w$]*)/g))
+    names.add(match[1]);
   for (const item of namedImports(source)) {
     for (const name of item.names) names.add(name.local);
   }
@@ -83,13 +107,15 @@ for (const [file, source] of sources) {
     const available = exportsByFile.get(resolved);
     for (const name of importBlock.names) {
       if (!available.has(name.imported)) {
-        errors.push(`${file}: imports ${name.imported} from ${importBlock.specifier}, but ${resolved} does not export it`);
+        errors.push(
+          `${file}: imports ${name.imported} from ${importBlock.specifier}, but ${resolved} does not export it`
+        );
       }
     }
   }
 }
 
-const worker = sources.get("src/worker.js");
+const worker = sources.get('src/worker.js');
 const workerDeclared = declaredNames(worker);
 for (const match of worker.matchAll(/\b(handle[A-Z][A-Za-z0-9_]*)\s*\(/g)) {
   const name = match[1];
@@ -99,8 +125,8 @@ for (const match of worker.matchAll(/\b(handle[A-Z][A-Za-z0-9_]*)\s*\(/g)) {
 }
 
 if (errors.length) {
-  console.error(errors.map((error) => `- ${error}`).join("\n"));
+  console.error(errors.map((error) => `- ${error}`).join('\n'));
   process.exit(1);
 }
 
-console.log("worker split check ok");
+console.log('worker split check ok');

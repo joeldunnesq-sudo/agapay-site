@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
+import { readLearnDashboardSource } from './lib/learn-dashboard-source.mjs';
 
 const sanitizerSource = await readFile(new URL('../public/vendor/dompurify.es.mjs', import.meta.url), 'utf8');
-const shellSource = await readFile(new URL('../public/learn/dashboard-shell.js', import.meta.url), 'utf8');
+const shellSource = readLearnDashboardSource();
 const renderBoundarySource = await readFile(new URL('../public/learn/sanitized-render.js', import.meta.url), 'utf8');
 
 assert.match(

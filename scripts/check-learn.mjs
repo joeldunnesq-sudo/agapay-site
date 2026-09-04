@@ -7,6 +7,7 @@ import { getLearnSeedSnapshot } from "../src/learn/demo-data.js";
 import { applyPlannerOverrides, computeMoveUnfinishedWork, describePlannerStatus, findNextOpenWeekday } from "../src/learn/planner-overrides.js";
 import { createSeedLearnRepository } from "../src/learn/repository.js";
 import { readWorkerCompositionSource } from "./lib/worker-composition-source.mjs";
+import { readLearnDashboardSource, readLearnDashboardViewModelSource } from './lib/learn-dashboard-source.mjs';
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -114,7 +115,7 @@ const onboarding = repository.getOnboarding();
 assert(onboarding.onboarding.steps.some((step) => step.status === "active"), "Onboarding should have an active setup step.");
 assert(onboarding.setupCompleted === false, "Unsaved Learn households should be identified as first-run setup.");
 
-const learnShell = readFileSync(new URL("../public/learn/dashboard-shell.js", import.meta.url), "utf8").replaceAll("\r\n", "\n");
+const learnShell = readLearnDashboardSource().replaceAll("\r\n", "\n");
 const learnSanitizedRender = readFileSync(new URL("../public/learn/sanitized-render.js", import.meta.url), "utf8").replaceAll("\r\n", "\n");
 const learnMobileGate = readFileSync(new URL("../public/learn/mobile-gate.js", import.meta.url), "utf8");
 const learnBilling = readFileSync(new URL("../src/learn/billing.js", import.meta.url), "utf8");
@@ -401,13 +402,13 @@ assert(workerSource.includes('["/learn/odyssey/faq/", "/learn/odyssey/faq.html"]
 
 // ── UI: Move Unfinished Work control and clearer status language ──────────
 {
-  const learnShellSource = readFileSync(new URL("../public/learn/dashboard-shell.js", import.meta.url), "utf8");
+  const learnShellSource = readLearnDashboardSource();
   assert(learnShellSource.includes("data-move-unfinished") && learnShellSource.includes('data-move-mode="next-open-day"') && learnShellSource.includes('data-move-mode="reserve"'), "The Day view should render Move / Reserve controls for unfinished work.");
   assert(learnShellSource.includes("/api/learn/planner/move"), "The Move Unfinished Work control should call the move API.");
   assert(learnShellSource.includes('status !== "planned" && status !== "reduced"'), "The Move control should only appear on genuinely unfinished (planned/reduced) work, not completed or empty days.");
   assert(learnShellSource.includes("PLANNER_STATUS_META") && learnShellSource.includes('"Moved"') && learnShellSource.includes('"In Reserve"'), "Status pills should use plain-language labels (Moved / In Reserve) instead of raw status strings.");
 
-  const viewModelSource = readFileSync(new URL("../public/learn/dashboard-view-models.js", import.meta.url), "utf8");
+  const viewModelSource = readLearnDashboardViewModelSource();
   assert(viewModelSource.includes("planner.week?.reserveList"), "The planner view model should surface the week's reserveList into the Reserve card.");
 }
 

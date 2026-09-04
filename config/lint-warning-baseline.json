@@ -5,21 +5,6 @@
   "src/directory/self-service.js": {
     "max-lines": 1
   },
-  "src/handlers/admin.js": {
-    "max-lines": 1
-  },
-  "src/handlers/donor.js": {
-    "max-lines": 1
-  },
-  "src/handlers/parish-commerce.js": {
-    "max-lines": 1
-  },
-  "src/handlers/parish.js": {
-    "max-lines": 1
-  },
-  "src/handlers/stewardship.js": {
-    "max-lines": 1
-  },
   "src/learn/print-documents.js": {
     "max-lines": 1
   },

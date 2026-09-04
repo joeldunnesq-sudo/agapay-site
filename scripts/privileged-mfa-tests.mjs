@@ -1,4 +1,5 @@
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
+import { readAdminAppSource } from './lib/admin-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
@@ -361,7 +362,7 @@ await test("admin and parish clients load the mandatory MFA experience", async (
     assert.match(source, /privileged-mfa\.js/);
     assert.match(source, /privileged-mfa\.css/);
   }
-  assert.match(readFileSync(path.join(root, "public/admin/app.js"), "utf8"), /AgapayMfa\.runFlow/);
+  assert.match(readAdminAppSource(), /AgapayMfa\.runFlow/);
   assert.match(readParishDashboardSource(), /AgapayMfa\.runFlow/);
 });
 

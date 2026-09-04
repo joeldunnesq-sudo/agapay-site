@@ -1,4 +1,6 @@
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
+import { readAdminAppSource } from './lib/admin-dashboard-source.mjs';
+import { readParishHandlerSource } from './lib/parish-handler-source.mjs';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { handleAccountingSetupReports } from "../src/handlers/accounting-setup-reports.js";
@@ -20,9 +22,9 @@ const app = readParishDashboardSource();
 const css = read("public/parish/redesign.css");
 const admin = read("src/handlers/admin.js");
 const adminHtml = read("public/admin.html");
-const adminApp = read("public/admin/app.js");
+const adminApp = readAdminAppSource();
 const ledgerHandler = read("src/handlers/accounting-ledger.js");
-const parishHandler = read("src/handlers/parish.js");
+const parishHandler = readParishHandlerSource();
 
 assert.match(worker, /handleAccountingSetupReports/);
 assert.match(worker, /handleAccountingAccess/);

@@ -1,13 +1,16 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { readDonorAppSource } from './lib/donor-app-source.mjs';
+import { readDonorHandlerSource } from './lib/donor-handler-source.mjs';
+import { readLearnDashboardSource } from './lib/learn-dashboard-source.mjs';
 
 const read = (path) => fs.readFileSync(path, "utf8");
 const manifest = JSON.parse(read("public/myagapay/manifest.webmanifest"));
 const worker = read("src/worker.js");
-const donorHandler = read("src/handlers/donor.js");
+const donorHandler = readDonorHandlerSource();
 const account = read("public/myagapay/account.html");
-const donorApp = read("public/donor/app.js");
-const learnShell = read("public/learn/dashboard-shell.js");
+const donorApp = readDonorAppSource();
+const learnShell = readLearnDashboardSource();
 const deletionPage = read("public/account-deletion.html");
 const androidManifest = JSON.parse(read("store/android/twa-manifest.json"));
 const privacyManifest = read("store/ios/PrivacyInfo.xcprivacy");

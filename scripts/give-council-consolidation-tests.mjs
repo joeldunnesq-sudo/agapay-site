@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readStewardshipHandlerSource } from './lib/stewardship-handler-source.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => readFileSync(path.join(root, file), "utf8");
@@ -12,7 +13,7 @@ const worker = read("src/worker.js");
 const sitemap = read("public/sitemap.xml");
 
 // Retired add-on checkout routes cannot create a second subscription or Customer.
-const stewardshipSource = read("src/handlers/stewardship.js");
+const stewardshipSource = readStewardshipHandlerSource();
 for (const name of ["handleParishStewardshipSubscribe", "handleStewardshipSubscribe"]) {
   const handler = stewardshipSource.slice(stewardshipSource.indexOf("export async function " + name)).split("\n}")[0];
   assert.match(handler, /subscription_option_retired/);

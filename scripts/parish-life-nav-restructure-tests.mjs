@@ -213,7 +213,7 @@ assert.match(shell, /className = "parish-life-back-link koinonia-page-back"[\s\S
 assert.match(landing, /class="cal-date-heading-row"[\s\S]*id="todayChurchDateBadge"[\s\S]*id="todayChurchDateCalendar">Julian<[\s\S]*id="todayCivilDateEyebrow"/, "the Koinonia hero must retain the Julian Church date and civil-date eyebrow in one compact heading region");
 assert.doesNotMatch(landing, /id="todayCalendarLabel"/, "Koinonia should not repeat a separate Julian calendar designation beside the badge");
 assert.match(landing, /family=DM\+Sans[^\"]+[\s\S]*\/donor\/style\.css\?v=20260831liturgical1/, "the Koinonia landing must load its intended DM Sans typography and the current versioned stylesheet");
-assert.match(landing, /\/donor\/app\.js\?v=20260831liturgical1/, "the Koinonia landing must load the current versioned calendar script");
+assert.match(landing, /\/donor\/app\.js\?v=20260904-controllers1/, "the Koinonia landing must load the current versioned calendar script");
 assert.match(donorStyles, /\.cal-date-calendar \{[^}]*font-family:var\(--sans\)[^}]*font-size:6px[^}]*font-weight:700/, "the Julian designation must use the site sans typography at a quiet supporting size");
 assert.match(donorApp, /churchCalendarDate\(date, calendar\)[\s\S]*usesJulianCalendar[\s\S]*todayCivilDateEyebrow[\s\S]*churchParts\.dayNum[\s\S]*todayChurchDateBadge[\s\S]*hidden = !usesJulianCalendar/, "the eyebrow must show the civil date while the Julian-only badge uses the parish calendar date");
 assert.match(donorApp, /dateHeadingRow\.classList\.toggle\("is-civil-only", !usesJulianCalendar\)/, "Revised-Julian parishes should remove the Church-date box and use the civil-only layout");

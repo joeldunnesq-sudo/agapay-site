@@ -1,0 +1,138 @@
+{
+  "workerRouteOrder": [
+    "organization",
+    "public",
+    "accounting",
+    "directory",
+    "learn",
+    "donor",
+    "admin",
+    "stewardship",
+    "parish"
+  ],
+  "moduleExports": {
+    "src/worker.js": {
+      "sha256": "c901a48eb37c496de3052b49ec5428e26e0aa5b03d7f0c7be505dfc9d188bda6",
+      "count": 3
+    },
+    "src/handlers/admin.js": {
+      "sha256": "5cc3cba4a7c929659f13c2404db6b2684d43490dec2b622200b7f15e7dd11826",
+      "count": 22
+    },
+    "src/handlers/admin-learning-support.js": {
+      "sha256": "20800c3ce735e6dfd45829e9f4f1be9659f6e6c0c8809e24bde5b805a1202230",
+      "count": 5
+    },
+    "src/handlers/admin-email-diagnostics.js": {
+      "sha256": "f4534e78ba0e30e70c4f1e6f6d1cfba7f91251c1a7cb69f06b73207e898e9b69",
+      "count": 1
+    },
+    "src/handlers/donor.js": {
+      "sha256": "3278b970897671f9b648a72395fdc41e6ac3e6946c13a87ec1a00e71e3db8260",
+      "count": 45
+    },
+    "src/handlers/donor-bookstore.js": {
+      "sha256": "082dcd2760dcb582dfacef04aae58b0b10c89c50d3d3701e1de36a7d7588ac62",
+      "count": 9
+    },
+    "src/handlers/donor-parish-calendar.js": {
+      "sha256": "220de0046605b07ffd9dc89bc0aaa5586229857f170ab9a7895102e62dbf48ab",
+      "count": 2
+    },
+    "src/handlers/donor-sacraments.js": {
+      "sha256": "b0297790df5a38493d4981dbda45c0ec9306b19f9d7c0fe59770ac32f8be6359",
+      "count": 4
+    },
+    "src/handlers/donor-notifications.js": {
+      "sha256": "df0cb6d2db2478a2448932498ab2636d0458a06f3adc5b8c4988bb295585d241",
+      "count": 2
+    },
+    "src/handlers/registration-admin-page.js": {
+      "sha256": "ab0ecf23f729b0cd91dbb5f6977696eeb74248b788eb21f146dbbf110125a4a1",
+      "count": 2
+    },
+    "src/handlers/parish-commerce.js": {
+      "sha256": "50e0289b7f571b7b5745f87cac731c63569aae4d321ba9c0c1af30a5684901a9",
+      "count": 15
+    },
+    "src/handlers/parish-bookstore-inventory.js": {
+      "sha256": "fed2f4c2513d60dc144fb431ba1c48a1e8dfe5748c26cd4527e554cae3ca67f8",
+      "count": 14
+    },
+    "src/handlers/parish-bookstore-handler.js": {
+      "sha256": "a26b65797baae0a3900091f33f604642f761af0d6a39373dffcf33220f272e7b",
+      "count": 1
+    },
+    "src/handlers/parish.js": {
+      "sha256": "41d37d491b135d30fd77eab0827fdba1593691f1f10edfbfc54f2a8483197854",
+      "count": 96
+    },
+    "src/handlers/parish-donor-offerings.js": {
+      "sha256": "cb76714e2dede2e91c02a1bfaf924c00b52adc5a4b038d10673861325ac42076",
+      "count": 17
+    },
+    "src/handlers/parish-giving-read-models.js": {
+      "sha256": "3c2956ce92887d71ec98dfa5187c8e96952e5f2bec68a5472bd25709e96f7957",
+      "count": 9
+    },
+    "src/handlers/parish-checkout.js": {
+      "sha256": "74b4f1a286ca5a92d0b5b7ae8415fa62a90b68d724c808f2bc99bac3781fcf7d",
+      "count": 10
+    },
+    "src/handlers/parish-dashboard-handler.js": {
+      "sha256": "1b9a653a750b3a948a33fe2d0a09b7fa9a3534c1384b46632b76115eccf85d8d",
+      "count": 6
+    },
+    "src/handlers/stewardship.js": {
+      "sha256": "f90244107cc97112af4b1a273be64b852a0983ef50652eb663816307e042f361",
+      "count": 24
+    },
+    "src/handlers/stewardship-http.js": {
+      "sha256": "3b83a10f9df2462962db9ecbbe841c0ccf7613cc214f492069769e2f71bcbf4d",
+      "count": 17
+    },
+    "src/handlers/stewardship-presentation.js": {
+      "sha256": "e1e2a69f94a0573fb2d8f308a2852bfbb8fd4bfbbc21eea5d9bdf48dc71cc026",
+      "count": 4
+    },
+    "src/handlers/stewardship-packet-presentation.js": {
+      "sha256": "829cd88dff906f7789bbfea8c73d775f1e8ff1242667fa317a3094a2d92a0ca0",
+      "count": 1
+    },
+    "src/handlers/stewardship-financials.js": {
+      "sha256": "b590c37fc95c4ecee1f25e032c38d48b7a4d7ee35e890cbba122afb83f879fa9",
+      "count": 1
+    },
+    "src/handlers/stewardship-communications.js": {
+      "sha256": "920e3c212a177d87f8d68024c086b94abf5ee253a2fe0821a9e90e89c174d2d5",
+      "count": 2
+    },
+    "src/directory/admin.js": {
+      "sha256": "1c63f17ff7ea523cb5b0bd3a3f65dadc098fd64da1cf0fdfae698582f8172e18",
+      "count": 32
+    },
+    "src/directory/self-service.js": {
+      "sha256": "e8cac9b2248b5ae1262b0863d4117f44f5aa8f7834f06e1c716c09daa3d31210",
+      "count": 25
+    },
+    "src/learn/print-documents.js": {
+      "sha256": "0d3c57fd641b3542452fd0703dbde2feb7a93ef81aae2ab9a41ec8046a294eba",
+      "count": 8
+    },
+    "src/learn/repository.js": {
+      "sha256": "cfcc11f3eff389eba43916945514a9fb74f8529fb18842393ff85f80c3bccdc9",
+      "count": 6
+    },
+    "src/learn/setup-persistence.js": {
+      "sha256": "32676718cff2f81260678825bd2ea2436a673f3de24bdf2450af06bbd2fc8cba",
+      "count": 12
+    }
+  },
+  "generatedArtifacts": {
+    "public/learn/support.js": {
+      "status": "frozen_orphaned_generated_bundle",
+      "sha256": "8166f14c9f4c4e39664679299a55d38b897088e714e7a001d31abc49c709e7f4",
+      "declaredSource": "dc-runtime/src/*.ts"
+    }
+  }
+}

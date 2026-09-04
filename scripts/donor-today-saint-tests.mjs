@@ -86,7 +86,7 @@ assert.doesNotMatch(donorApp, /when this service is celebrated|The parish Typiko
   "the Today hero must keep the grouped reading presentation concise");
 assert.match(donorApp, /feastNote\.replaceChildren[\s\S]*line\.className = reading\.className/,
   "each daily reading must render as its own hero line");
-assert.match(parishLife, /\/donor\/app\.js\?v=20260831liturgical1/,
+assert.match(parishLife, /\/donor\/app\.js\?v=20260904-controllers1/,
   "the Koinonia page must invalidate cached donor-app bundles when liturgical rendering changes");
 
 console.log("PASS - Today hero, saint card, and first life use the same primary commemoration");

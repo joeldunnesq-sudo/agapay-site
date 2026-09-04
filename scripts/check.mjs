@@ -1,4 +1,9 @@
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
+import { readAdminAppSource } from './lib/admin-dashboard-source.mjs';
+import { readDonorAppSource } from './lib/donor-app-source.mjs';
+import { readDonorHandlerSource } from './lib/donor-handler-source.mjs';
+import { readLearnDashboardSource } from './lib/learn-dashboard-source.mjs';
+import { readParishHandlerSource } from './lib/parish-handler-source.mjs';
 import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import { parishSlug } from "../src/lib/format.js";
@@ -10,9 +15,9 @@ const localServerSource = await readFile("server.mjs", "utf8");
 const core = await readFile("src/lib/core.js", "utf8");
 const stripeConnect = await readFile("src/lib/stripe-connect.js", "utf8");
 const adminHandler = await readFile("src/handlers/admin.js", "utf8");
-const donorHandler = await readFile("src/handlers/donor.js", "utf8");
+const donorHandler = readDonorHandlerSource();
 const parishSupportTickets = await readFile("src/lib/parish-support-tickets.js", "utf8");
-const parishHandler = await readFile("src/handlers/parish.js", "utf8");
+const parishHandler = readParishHandlerSource();
 const parishCommemorationsHandler = await readFile("src/handlers/parish-commemorations.js", "utf8");
 const parishGivingCatalogHandler = await readFile("src/handlers/parish-giving-catalog.js", "utf8");
 const parishGivingReportsHandler = await readFile("src/handlers/parish-giving-reports.js", "utf8");
@@ -161,14 +166,14 @@ assert.ok(findChurchPage.includes("data-agapay-turnstile") && findChurchPage.inc
 assert.ok(hasWorkerRoute("/api/parish-interest"), "worker should route parish interest submissions");
 
 
-const donorApp = await readFile("public/donor/app.js", "utf8");
+const donorApp = readDonorAppSource();
 const publicLiturgicalCalendar = await readFile("public/liturgical-calendar.js", "utf8");
 const srcLiturgicalCalendar = await readFile("src/liturgical-calendar.js", "utf8");
 const myAgapayShell = await readFile("public/myagapay-shell.js", "utf8");
 const manifest = await readFile("public/myagapay/manifest.webmanifest", "utf8");
 const adminHtml = await readFile("public/admin.html", "utf8");
 const adminLoginHtml = await readFile("public/admin/login.html", "utf8");
-const adminApp = await readFile("public/admin/app.js", "utf8");
+const adminApp = readAdminAppSource();
 const adminCss = await readFile("public/admin/style.css", "utf8");
 const adminManifest = await readFile("public/admin/manifest.webmanifest", "utf8");
 const listenManifest = await readFile("public/listen/manifest.webmanifest", "utf8");
@@ -460,7 +465,7 @@ for (const page of donorPages) {
   }
 }
 
-const learnDashboardShell = await readFile("public/learn/dashboard-shell.js", "utf8");
+const learnDashboardShell = readLearnDashboardSource();
 assert.ok(!learnDashboardShell.includes("Back to Give"), "Learn account menu should not include a Back to Give action");
 assert.ok(learnDashboardShell.includes("myagapay-menu-trigger") && !learnDashboardShell.includes("learn-account-utility-avatar"), "Learn should replace account-holder initials with the shared hamburger menu");
 
@@ -762,7 +767,7 @@ assert.equal(parishDashboardApp.split("<em>${enabled ? 'On' : 'Off'}</em>").leng
 assert.ok(parishDashboardHtml.includes("sacramentsPriestPicker") && parishDashboardApp.includes("function selectSacramentsPriest") && parishDashboardApp.includes("sacramentPriestsText"), "parish Sacraments & Services should support multiple priests managed from Settings");
 assert.ok(parishDashboardApp.includes("loadReconciliation") && parishDashboardApp.includes("exportReconciliationCsv") && parishDashboardApp.includes("saveReconciliationClose"), "parish dashboard should load, export, and close monthly reconciliations");
 assert.ok(worker.includes("handleParishReconciliation") && worker.includes("/reconciliation/close"), "worker should route authenticated parish reconciliation endpoints");
-assert.ok(parishDashboardApp.includes("sacramentsEnabled: enabled") && backendSources.includes("sacramentsEnabledFor(found.registration)") && backendSources.includes("sacramentsEnabled: Boolean(body.sacramentsEnabled ?? current.sacramentsEnabled ?? false)"), "Sacraments & Services should default off and use the real donor-facing enable flag");
+assert.ok(parishDashboardApp.includes("sacramentsEnabled: enabled") && backendSources.includes("sacramentsEnabledFor(found.registration)") && /sacramentsEnabled:\s*Boolean\(body\.sacramentsEnabled \?\? current\.sacramentsEnabled \?\? false\)/.test(backendSources), "Sacraments & Services should default off and use the real donor-facing enable flag");
 const sacramentPriestsMigration = await readFile("migrations/0019_sacrament_priests.sql", "utf8");
 assert.ok(sacramentPriestsMigration.includes("priest_name") && sacramentPriestsMigration.includes("COALESCE(clergy_assigned"), "Sacraments & Services should migrate availability to priest-owned scheduling");
 assert.ok(donorApp.includes("priestName: slot.priestName") && backendSources.includes("priestName = String(body.priestName") && backendSources.includes("isSlotStillOpen(env, { parishId, date, time, priestName })"), "donor Sacraments booking should carry the selected priest through to the scheduled request");

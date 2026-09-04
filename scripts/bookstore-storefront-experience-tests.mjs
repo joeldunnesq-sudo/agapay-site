@@ -2,11 +2,12 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readDonorAppSource } from './lib/donor-app-source.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = file => readFileSync(path.join(root, file), "utf8");
 const html = read("public/myagapay/bookstore.html");
-const app = read("public/donor/app.js");
+const app = readDonorAppSource();
 
 assert.match(html, /id="bookstoreParishTrigger"[\s\S]*?aria-controls="bookstoreParishMenu"/,
   "the Shopping at card must expose an accessible church switcher");
@@ -48,7 +49,7 @@ assert.match(app, /classList\.toggle\("has-cart", itemCount > 0\)/,
 
 assert.match(html, /donor\/style\.css\?v=20260819koinoniaweek1/,
   "the bookstore must load the updated storefront styles with a fresh immutable URL");
-assert.match(html, /donor\/app\.js\?v=20260819bookstoreapp2/,
+assert.match(html, /donor\/app\.js\?v=20260904-controllers1/,
   "the bookstore must load the updated storefront behavior with a fresh immutable URL");
 assert.match(html, /id="donorStatus"[^>]*role="status"[^>]*aria-live="polite"[^>]*hidden/,
   "bookstore feedback must begin as a non-layout status surface");

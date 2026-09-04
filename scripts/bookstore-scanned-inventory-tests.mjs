@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { completeCommerceOrderFromStripe } from "../src/handlers/parish-commerce.js";
 import { bookstoreOrderSource, guestBookstoreItemError, loadDonorBookstoreProducts } from "../src/handlers/donor.js";
+import { readDonorAppSource } from './lib/donor-app-source.mjs';
 
 const guestScan = { source: "scan_and_go", itemCategory: "book", specifics: { isbn: "9780884651751", title: "The Orthodox Way" } };
 assert.equal(guestBookstoreItemError([guestScan]), "", "a guest may add a valid scanned book");
@@ -163,7 +164,7 @@ assert.deepEqual({ ...shopperCatalogItem }, { item_category: "icon", name: "St. 
 const publicStore = readFileSync(new URL("../public/bookstore/index.html", import.meta.url), "utf8");
 const publicStoreApp = readFileSync(new URL("../public/bookstore/app.js", import.meta.url), "utf8");
 const myAgapayStore = readFileSync(new URL("../public/myagapay/bookstore.html", import.meta.url), "utf8");
-const donorApp = readFileSync(new URL("../public/donor/app.js", import.meta.url), "utf8");
+const donorApp = readDonorAppSource();
 const myAgapayShell = readFileSync(new URL("../public/myagapay-shell.js", import.meta.url), "utf8");
 const workerSource = readFileSync(new URL("../src/worker.js", import.meta.url), "utf8");
 assert.doesNotMatch(publicStore, /class="hero-actions"/, "the hero stays visually quiet without duplicate bookstore actions");

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { buildUpcomingDirectoryMilestones } from "../src/directory/milestones.js";
+import { readDonorAppSource } from './lib/donor-app-source.mjs';
 
 const fromDate = new Date("2026-08-25T12:00:00Z");
 const milestones = buildUpcomingDirectoryMilestones({
@@ -49,7 +50,7 @@ const [page, script, styles, calendarPage, donorApp, directory, privacy, selfSer
   readFile(new URL("../public/myagapay/parish-life.js", import.meta.url), "utf8"),
   readFile(new URL("../public/donor/style.css", import.meta.url), "utf8"),
   readFile(new URL("../public/myagapay/giving/calendar.html", import.meta.url), "utf8"),
-  readFile(new URL("../public/donor/app.js", import.meta.url), "utf8"),
+  readDonorAppSource(),
   readFile(new URL("../public/myagapay/directory.html", import.meta.url), "utf8"),
   readFile(new URL("../src/directory/privacy.js", import.meta.url), "utf8"),
   readFile(new URL("../src/directory/self-service.js", import.meta.url), "utf8"),
