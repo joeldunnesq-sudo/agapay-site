@@ -21,6 +21,10 @@ h1, h2, h3 { font-family: var(--serif); color: var(--navy); margin: 0; font-weig
 p { margin: 0; line-height: 1.7; }
 
 .op-main { overflow: hidden; }
+.op-main > section:not(.op-hero) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 800px;
+}
 .op-wrap { max-width: 1220px; margin: 0 auto; padding: 0 clamp(1.25rem, 4vw, 2.5rem); }
 
 .op-eyebrow {
