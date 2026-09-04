@@ -449,6 +449,8 @@ assert.equal((handlerSource.match(/parish_content_reads/g) || []).length, 0, "at
 assert.match(handlerSource, /parts\.length === 2 && parts\[1\] === "image"/, "ministry images must have a member-authenticated delivery route");
 const groupsUiSource = readFileSync(path.join(root, "public", "myagapay", "groups.js"), "utf8");
 const donorStylesSource = readFileSync(path.join(root, "public", "donor", "style.css"), "utf8");
+assert.match(groupsUiSource, /renderGroupWorkspaceError[\s\S]*data-group-error-title[\s\S]*\.textContent[\s\S]*data-group-error-message[\s\S]*\.textContent/,
+  "group workspace exception text must reach the DOM through textContent rather than HTML interpolation");
 assert.match(groupsUiSource, /ministryGroupAvatar\(group/, "group images must surface beside ministry names in the chat list and header");
 const ministryServiceSource = readFileSync(path.join(root, "src", "directory", "ministries.js"), "utf8");
 assert.match(ministryServiceSource, /DELETE FROM parish_content_reads[\s\S]*DELETE FROM parish_group_messages[\s\S]*DELETE FROM directory_ministries/, "ministry deletion must erase read receipts and messages before the group record");

@@ -832,21 +832,22 @@ for (const [label, source] of [["homepage", platformHome], ["canonical chrome", 
   assert.ok(!source.includes('href="/vision"') && !source.includes('{ href: "/vision"'), `${label} must not link to the retired Vision page`);
 }
 const sitemap = await readFile("public/sitemap.xml", "utf8");
-assert.ok(sitemap.includes("<loc>https://agapay.app/</loc>"), "sitemap should include the platform homepage URL");
-assert.ok(sitemap.includes("<loc>https://agapay.app/give</loc>"), "sitemap should list the independently addressable Give overview");
-assert.ok(sitemap.includes("https://agapay.app/design"), "sitemap should include the canonical AGAPAY Design URL");
-assert.ok(!sitemap.includes("https://agapay.app/vision"), "sitemap must not publish the retired Vision URL");
+const sitemapLocations = new Set([...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]));
+assert.ok(sitemapLocations.has("https://agapay.app/"), "sitemap should include the platform homepage URL");
+assert.ok(sitemapLocations.has("https://agapay.app/give"), "sitemap should list the independently addressable Give overview");
+assert.ok(sitemapLocations.has("https://agapay.app/design"), "sitemap should include the canonical AGAPAY Design URL");
+assert.ok(!sitemapLocations.has("https://agapay.app/vision"), "sitemap must not publish the retired Vision URL");
 for (const givingPage of ["features", "how-it-works", "pricing", "security", "get-agapay", "recurring-donations", "fundraising", "event-payments", "parish-giving"]) {
   await assert.rejects(access(`public/give/${givingPage}.html`), undefined, `retired Give ${givingPage} page must be removed`);
-  assert.ok(!sitemap.includes(`https://agapay.app/give/${givingPage}`), `sitemap should consolidate /give/${givingPage} into /give`);
+  assert.ok(!sitemapLocations.has(`https://agapay.app/give/${givingPage}`), `sitemap should consolidate /give/${givingPage} into /give`);
 }
-assert.ok(!sitemap.includes("https://agapay.app/give/why"), "sitemap should retire the consolidated Give Why page");
-assert.ok(sitemap.includes("https://agapay.app/give/find-parish"), "sitemap should include the canonical parish finder URL");
-assert.ok(!sitemap.includes("https://agapay.app/give/event-payments"), "sitemap should exclude the not-yet-indexable event payments roadmap page");
-assert.ok(!sitemap.includes("<loc>https://agapay.app/features</loc>"), "sitemap should not list the legacy root features URL");
-assert.ok(!sitemap.includes("<loc>https://agapay.app/how-it-works</loc>"), "sitemap should not list the legacy root how-it-works URL");
-assert.ok(!sitemap.includes("<loc>https://agapay.app/pricing</loc>"), "sitemap should not list the legacy root pricing URL");
-assert.ok(!sitemap.includes("<loc>https://agapay.app/why</loc>"), "sitemap should not list the legacy root why URL");
+assert.ok(!sitemapLocations.has("https://agapay.app/give/why"), "sitemap should retire the consolidated Give Why page");
+assert.ok(sitemapLocations.has("https://agapay.app/give/find-parish"), "sitemap should include the canonical parish finder URL");
+assert.ok(!sitemapLocations.has("https://agapay.app/give/event-payments"), "sitemap should exclude the not-yet-indexable event payments roadmap page");
+assert.ok(!sitemapLocations.has("https://agapay.app/features"), "sitemap should not list the legacy root features URL");
+assert.ok(!sitemapLocations.has("https://agapay.app/how-it-works"), "sitemap should not list the legacy root how-it-works URL");
+assert.ok(!sitemapLocations.has("https://agapay.app/pricing"), "sitemap should not list the legacy root pricing URL");
+assert.ok(!sitemapLocations.has("https://agapay.app/why"), "sitemap should not list the legacy root why URL");
 assert.ok(registerHtml.includes("/security.js") && registerHtml.includes("data-agapay-turnstile"), "registration should render Turnstile when configured");
 assert.ok(registerHtml.includes('data-action="turnstile-spin-v1"'), "registration Turnstile should identify the protected registration action");
 assert.ok(registerHtml.includes("agapaySecurityPayload"), "registration should send Turnstile tokens when configured");

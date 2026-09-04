@@ -35,9 +35,9 @@
 import { PhotonImage, crop as photonCrop, resize, rotate, fliph, flipv, SamplingFilter } from "@cf-wasm/photon";
 import { DirectoryServiceError } from "./foundation.js";
 
-export const PIPELINE_VERSION = "directory-media-v1";
+export const PIPELINE_VERSION = "directory-media-v2";
 export const TRANSFORMER_NAME = "@cf-wasm/photon";
-export const TRANSFORMER_VERSION = "0.3.7";
+export const TRANSFORMER_VERSION = "0.4.0";
 
 // Pipeline versions this deployment currently accepts as "securely
 // transformed" for approval/delivery purposes (Part 18: "create a
@@ -46,7 +46,7 @@ export const TRANSFORMER_VERSION = "0.3.7";
 // bumps PIPELINE_VERSION and adds it here; old, no-longer-accepted
 // versions simply age out of this set, which is the single place every
 // approval/delivery check consults.
-export const ACCEPTED_PIPELINE_VERSIONS = Object.freeze([PIPELINE_VERSION]);
+export const ACCEPTED_PIPELINE_VERSIONS = Object.freeze(["directory-media-v1", PIPELINE_VERSION]);
 
 export function isAcceptedPipelineVersion(version) {
   return ACCEPTED_PIPELINE_VERSIONS.includes(version);

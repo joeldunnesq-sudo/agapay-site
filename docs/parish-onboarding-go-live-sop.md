@@ -945,6 +945,8 @@ Response:
 
 ## 11. Operator completion checklist
 
+Use `docs/client-onboarding-intake.md` to collect the client-supplied facts and approvals before completing this operator checklist. The intake document does not replace authoritative verification, Stripe server refreshes, configuration locking, or authenticated Go Live.
+
 This checklist is a summary. The detailed exit criteria above control if the summary and procedure ever differ.
 
 - [ ] Registration stored, acknowledged, deduplicated, and assigned.
