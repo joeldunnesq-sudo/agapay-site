@@ -5,13 +5,14 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readStewardshipHandlerSource } from './lib/stewardship-handler-source.mjs';
+import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (file) => readFileSync(path.join(root, file), 'utf8');
 const migration = read('migrations/0049_authoritative_stewardship_financial_snapshots.sql');
 const externalAssetsMigration = read('migrations/0050_financial_snapshot_external_assets.sql');
 const restrictedAdjustmentsMigration = read('migrations/0052_restricted_fund_snapshot_adjustments.sql');
-const worker = read('src/worker.js');
+const worker = readWorkerCompositionSource(root);
 const handler = readStewardshipHandlerSource();
 const financialHandler = read('src/handlers/stewardship-financials.js');
 const app = readParishDashboardSource();

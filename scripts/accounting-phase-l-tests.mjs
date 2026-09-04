@@ -5,6 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 import { CAPABILITY_CATALOG, ROLE_TEMPLATES } from "../src/lib/authorization.js";
 import { deleteAttachment, listAttachments, recordAttachment } from "../src/accounting/index.js";
 import {
@@ -19,7 +20,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => readFileSync(path.join(root, file), "utf8");
 const migration = read("accounting-migrations/0019_phase_l_attachments.sql");
 const handler = read("src/handlers/accounting-attachments.js");
-const worker = `${read("src/worker.js")}\n${read("src/routes/accounting.js")}`;
+const worker = readWorkerCompositionSource(root);
 const parishApp = readParishDashboardSource();
 const wrangler = read("wrangler.toml");
 const has = (source, needles, label) => needles.forEach((needle) => assert.ok(source.includes(needle), `${label} must include ${needle}`));

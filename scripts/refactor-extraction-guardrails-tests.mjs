@@ -70,6 +70,7 @@ assert.ok(learnModules.includes('public/learn/sanitized-render.js'));
 assert.match(readLearnDashboardSource(), /function toDashboardViewModel|function renderDashboard/);
 
 const workerSource = readFileSync(path.join(repoRoot, 'src/worker.js'), 'utf8');
+const workerRouteActionsSource = readFileSync(path.join(repoRoot, 'src/routes/worker-actions.js'), 'utf8');
 const registry = workerSource.match(/const API_ROUTE_REGISTRIES = Object\.freeze\(\[([\s\S]*?)\]\);/);
 assert.ok(registry, 'Worker must retain an explicit API route registry');
 const actualRouteOrder = [...registry[1].matchAll(/route([A-Z][A-Za-z]+)Request/g)].map(
@@ -77,10 +78,7 @@ const actualRouteOrder = [...registry[1].matchAll(/route([A-Z][A-Za-z]+)Request/
 );
 assert.deepEqual(actualRouteOrder, contracts.workerRouteOrder, 'Worker route precedence changed');
 
-const routeActionsBlock = workerSource.slice(
-  workerSource.indexOf('const ROUTE_ACTIONS'),
-  workerSource.indexOf('const API_ROUTE_REGISTRIES')
-);
+const routeActionsBlock = workerRouteActionsSource.slice(workerRouteActionsSource.indexOf('const ROUTE_ACTIONS'));
 const actualRouteActions = [...routeActionsBlock.matchAll(/^\s{2}([A-Za-z_$][\w$]*),?\s*$/gm)].map((match) => match[1]);
 const routeActionsDigest = createHash('sha256').update(JSON.stringify(actualRouteActions)).digest('hex');
 assert.equal(actualRouteActions.length, contracts.workerRouteActions.count, 'Worker route-action count changed');
@@ -94,6 +92,13 @@ const actualScheduledTaskOrder = [...scheduledBlock.matchAll(/observeScheduledTa
   (match) => match[1]
 );
 assert.deepEqual(actualScheduledTaskOrder, contracts.workerScheduledTaskOrder, 'Worker scheduled-task order changed');
+
+const workerLines = workerSource.split(/\r?\n/).length - 1;
+assert.ok(workerLines <= 1200, `Worker shell must stay at or below 1200 physical lines; found ${workerLines}`);
+const sourceBudgets = JSON.parse(readFileSync(path.join(repoRoot, 'config/source-size-budgets.json'), 'utf8'));
+const lintBaseline = JSON.parse(readFileSync(path.join(repoRoot, 'config/lint-warning-baseline.json'), 'utf8'));
+assert.equal(sourceBudgets.files['src/worker.js'], undefined, 'Completed Phase 5 must remove the Worker size budget');
+assert.equal(lintBaseline['src/worker.js'], undefined, 'Completed Phase 5 must remove the Worker lint exemption');
 
 for (const [file, exportContract] of Object.entries(contracts.moduleExports)) {
   const module = await import(pathToFileURL(path.join(repoRoot, file)).href);

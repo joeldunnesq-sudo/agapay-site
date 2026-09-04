@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 import {
   createPastoralFollowup,
   defaultNextPastoralDueOn,
@@ -473,7 +474,7 @@ assert.ok(pastoralInventory.every((table) => table.classification === 'parish'))
 assert.match(pastoralInventory.find((table) => table.name === 'sacrament_pastoral_contacts').scope, /followup_id/);
 
 const route = readFileSync(path.join(root, 'src', 'routes', 'parish.js'), 'utf8');
-const worker = readFileSync(path.join(root, 'src', 'worker.js'), 'utf8');
+const worker = readWorkerCompositionSource(root);
 const parishSacramentsHandler = readFileSync(path.join(root, 'src', 'handlers', 'parish-sacraments.js'), 'utf8');
 const dashboard = readFileSync(path.join(root, 'public', 'parish', 'dashboard.html'), 'utf8');
 const feature = readFileSync(

@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 import {
   archiveParishLibraryResource,
   createParishLibraryResource,
@@ -88,8 +89,9 @@ assert.equal(validPdf.size, 16);
 const fakePdf = await validateParishLibraryPdf(new Request("https://agapay.test/upload", { method: "POST", headers: { "Content-Type": "application/pdf" }, body: new TextEncoder().encode("not-a-pdf") }));
 assert.equal(fakePdf.status, 415);
 
-const [worker, handler, shell, donorPage, donorScript, parishLifePage, adminPage, adminScript, adminStyles, wrangler] = [
-  "src/worker.js", "src/handlers/parish-library.js", "public/myagapay-shell.js", "public/myagapay/library.html", "public/myagapay/library.js",
+const worker = readWorkerCompositionSource(root);
+const [handler, shell, donorPage, donorScript, parishLifePage, adminPage, adminScript, adminStyles, wrangler] = [
+  "src/handlers/parish-library.js", "public/myagapay-shell.js", "public/myagapay/library.html", "public/myagapay/library.js",
   "public/myagapay/parish-life.html", "public/parish/dashboard.html", "public/parish/library.js", "public/parish/library.css", "wrangler.toml",
 ].map((file) => readFileSync(path.join(root, file), "utf8"));
 assert.match(worker, /handleDonorParishLibrary/);

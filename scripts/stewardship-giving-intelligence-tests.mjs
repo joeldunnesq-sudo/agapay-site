@@ -5,7 +5,7 @@ import { runInNewContext } from 'node:vm';
 import { readStewardshipGivingMix } from '../src/lib/stewardship-giving.js';
 
 // Exercise the real handler and SQL against SQLite without calling parish services.
-const source = readFileSync(new URL('../src/worker.js', import.meta.url), 'utf8');
+const source = readFileSync(new URL('../src/handlers/stewardship-giving.js', import.meta.url), 'utf8');
 const start = source.indexOf('async function handleStewardshipGivingRecurring(');
 const end = source.indexOf('// GET /api/parish/dashboard/:parishId/stewardship/giving/health-score', start);
 assert.ok(start > 0 && end > start);

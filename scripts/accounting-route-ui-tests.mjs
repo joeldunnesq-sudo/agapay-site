@@ -1,6 +1,7 @@
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import { readAdminAppSource } from './lib/admin-dashboard-source.mjs';
 import { readParishHandlerSource } from './lib/parish-handler-source.mjs';
+import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { handleAccountingSetupReports } from "../src/handlers/accounting-setup-reports.js";
@@ -12,7 +13,7 @@ import { handleAccountingRecurring } from "../src/handlers/accounting-recurring.
 import { adminRegistrationSummary } from "../src/lib/registrations.js";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
-const worker = `${read("src/worker.js")}\n${read("src/routes/accounting.js")}`;
+const worker = readWorkerCompositionSource();
 const routes = read("src/handlers/accounting-setup-reports.js");
 const phaseDRoutes = read("src/handlers/accounting-payables-budgets.js");
 const phaseERoutes = read("src/handlers/accounting-reconciliation-commerce.js");

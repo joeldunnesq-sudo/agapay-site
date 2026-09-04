@@ -144,10 +144,14 @@ const parishGivingReports = await readFile(
 const stripe = await readFile(new URL('../src/handlers/stripe.js', import.meta.url), 'utf8');
 const donor = readDonorHandlerSource();
 const admin = await readFile(new URL('../src/handlers/admin.js', import.meta.url), 'utf8');
-const worker = await readFile(new URL('../src/worker.js', import.meta.url), 'utf8');
+const worker = await readFile(new URL('../src/routes/worker-actions.js', import.meta.url), 'utf8');
+const weeklyEmailDigests = await readFile(
+  new URL('../src/operations/weekly-email-digests.js', import.meta.url),
+  'utf8'
+);
 
 function importedNames(source, modulePath) {
-  const imports = [...source.matchAll(/import\s*{([\s\S]*?)}\s*from "([^"]+)";/g)];
+  const imports = [...source.matchAll(/import\s*{([\s\S]*?)}\s*from ["']([^"']+)["'];/g)];
   const matches = imports.filter((entry) => entry[2] === modulePath);
   assert.ok(matches.length, `expected an import from ${modulePath}`);
   return new Set(
@@ -235,8 +239,8 @@ assert.ok(
 assertImports(parishGivingReports, '../lib/stripe-volume.js', ['refreshStripeVolume', 'summarizeStoredStripeVolume']);
 assertImports(parishGivingReports, '../lib/core.js', ['d1']);
 assertImports(parishGivingReports, '../lib/format.js', ['monthLabel']);
-assertImports(worker, './handlers/parish-giving-reports.js', givingReportPublicFunctions.slice(1));
-const givingReportParishWorkerImports = importedNames(worker, './handlers/parish.js');
+assertImports(worker, '../handlers/parish-giving-reports.js', givingReportPublicFunctions.slice(1));
+const givingReportParishWorkerImports = importedNames(worker, '../handlers/parish.js');
 for (const name of givingReportPublicFunctions) {
   assert.ok(!givingReportParishWorkerImports.has(name), `worker should no longer import ${name} from parish.js`);
 }
@@ -303,8 +307,13 @@ assert.doesNotMatch(
   /(?:async\s+)?function\s+normalizeSacramentPriests\b/,
   'parish-sacraments should import normalizeSacramentPriests instead of redefining it'
 );
-assertImports(worker, './handlers/parish-sacraments.js', sacramentPublicFunctions);
-const parishWorkerImports = importedNames(worker, './handlers/parish.js');
+assertImports(
+  worker,
+  '../handlers/parish-sacraments.js',
+  sacramentPublicFunctions.filter((name) => name !== 'sacramentTypeLabel')
+);
+assertImports(weeklyEmailDigests, '../handlers/parish-sacraments.js', ['sacramentTypeLabel']);
+const parishWorkerImports = importedNames(worker, '../handlers/parish.js');
 for (const name of sacramentPublicFunctions) {
   assert.ok(!parishWorkerImports.has(name), `worker should no longer import ${name} from parish.js`);
 }
@@ -383,7 +392,7 @@ assertImports(parishCommerce, '../lib/stripe-connect.js', [
   'numericCents',
   'stripeObjectId',
 ]);
-assertImports(worker, './handlers/parish-commerce.js', ['handleParishBookstore', 'handleParishSettlementProfiles']);
+assertImports(worker, '../handlers/parish-commerce.js', ['handleParishBookstore', 'handleParishSettlementProfiles']);
 assertImports(stripe, './parish-commerce.js', [
   'completeCommerceOrderFromStripe',
   'disputeCommerceOrderFromStripe',
@@ -452,7 +461,7 @@ assert.doesNotMatch(
   /(?:async\s+)?function\s+(?:d1|d1GetSetting|d1SetSetting|stripeGetConnectedRequest|stripeObjectId)\b/,
   'parish-reconciliation should import canonical storage and Stripe helpers instead of redefining them'
 );
-assertImports(worker, './handlers/parish-reconciliation.js', [
+assertImports(worker, '../handlers/parish-reconciliation.js', [
   'handleParishPayoutDiagnostics',
   'handleParishReconciliation',
   'handleParishReconciliationClose',
@@ -530,7 +539,7 @@ assert.doesNotMatch(
 );
 assertImports(parishGivingCatalog, '../festal-alms.js', ['activeFestalAlmsCampaigns']);
 assertImports(parishGivingCatalog, '../lib/core.js', ['DONOR_OFFERING_KEY_PREFIX', 'd1', 'd1First', 'listKvKeys']);
-assertImports(worker, './handlers/parish-giving-catalog.js', [
+assertImports(worker, '../handlers/parish-giving-catalog.js', [
   'handleParishes',
   'handleParishCampaignUpload',
   'handleParishLogo',
@@ -606,7 +615,7 @@ assertImports(parishCommemorations, '../lib/core.js', [
   'normalizeEmail',
   'parseJsonRow',
 ]);
-assertImports(worker, './handlers/parish-commemorations.js', ['loadCommemorationEntries', 'weekWindow']);
+assertImports(weeklyEmailDigests, '../handlers/parish-commemorations.js', ['loadCommemorationEntries', 'weekWindow']);
 assertImports(parishSacraments, './parish-commemorations.js', ['loadCommemorationEntries', 'weekWindow']);
 assertImports(donor, './parish-commemorations.js', ['storeCommemorationEntry']);
 assertImports(stripe, './parish-commemorations.js', ['ensureCommemorationEntryFromOffering']);
@@ -618,7 +627,7 @@ assertImports(parish, './parish-commemorations.js', [
   'splitSubmittedNames',
 ]);
 for (const [source, modulePath, names] of [
-  [worker, './handlers/parish.js', ['loadCommemorationEntries', 'weekWindow']],
+  [worker, '../handlers/parish.js', ['loadCommemorationEntries', 'weekWindow']],
   [parishSacraments, './parish.js', ['loadCommemorationEntries', 'weekWindow']],
   [donor, './parish.js', ['storeCommemorationEntry']],
   [stripe, './parish.js', ['ensureCommemorationEntryFromOffering']],

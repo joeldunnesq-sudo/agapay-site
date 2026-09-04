@@ -3,6 +3,7 @@ import { readAdminAppSource } from './lib/admin-dashboard-source.mjs';
 import { readDonorAppSource } from './lib/donor-app-source.mjs';
 import { readParishHandlerSource } from './lib/parish-handler-source.mjs';
 import { readStewardshipHandlerSource } from './lib/stewardship-handler-source.mjs';
+import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
@@ -480,7 +481,7 @@ assert.equal(
 
 const wiring = read('src/accounting/source-wiring.js');
 const parish = readParishHandlerSource();
-const parishDashboardHandler = read("src/handlers/parish-dashboard-handler.js");
+const parishDashboardHandler = read('src/handlers/parish-dashboard-handler.js');
 const accountingRoutes = read('src/handlers/accounting-setup-reports.js');
 const app = readParishDashboardSource();
 const dashboard = read('public/parish/dashboard.html');
@@ -557,7 +558,7 @@ assert.equal(
   true,
   'editable campaign changes must still require catalog synchronization'
 );
-const worker = read('src/worker.js');
+const worker = readWorkerCompositionSource();
 const stewardship = readStewardshipHandlerSource();
 const donorApp = readDonorAppSource();
 const adminApp = readAdminAppSource();

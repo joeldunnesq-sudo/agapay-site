@@ -2,6 +2,7 @@ import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import { readAdminAppSource } from './lib/admin-dashboard-source.mjs';
 import { readStewardshipHandlerSource } from './lib/stewardship-handler-source.mjs';
 import { readParishHandlerSource } from './lib/parish-handler-source.mjs';
+import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import worker from '../src/worker.js';
@@ -540,7 +541,7 @@ const [
   readFile(new URL('../src/lib/subscription-checkout.js', import.meta.url), 'utf8'),
   Promise.resolve(readParishHandlerSource()),
   readFile(new URL('../src/handlers/parish-onboarding.js', import.meta.url), 'utf8'),
-  readFile(new URL('../src/worker.js', import.meta.url), 'utf8'),
+  Promise.resolve(readWorkerCompositionSource()),
   Promise.resolve(readStewardshipHandlerSource()),
 ]);
 for (const key of TREASURER_AFFIRMATIONS) {
