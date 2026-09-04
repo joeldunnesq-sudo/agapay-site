@@ -105,10 +105,11 @@ assert.equal(evidence.newestBackupPreserved,false);
 assert.equal(evidence.verifiedAt,Date.parse('2026-08-01T00:00:00Z'));
 
 const workerSource = readFileSync(path.join(root, "src", "worker.js"), "utf8");
+const observerSource = readFileSync(path.join(root, "src", "operations", "scheduled-task-observer.js"), "utf8");
 assert.match(workerSource, /sweepAccountingBackupRetention\(env, event\.scheduledTime\)/);
 assert.match(workerSource, /observeScheduledTask\("accounting_backup_retention_sweep", sweepAccountingBackupRetention/);
-assert.match(workerSource, /console\.error\(`\$\{name\}_failed`/);
-assert.match(workerSource, /throw error;/, "scheduled task errors must stay rejected after logging");
+assert.match(observerSource, /console\.error\(`\$\{name\}_failed`/);
+assert.match(observerSource, /throw error;/, "scheduled task errors must stay rejected after logging");
 const wranglerSource = readFileSync(path.join(root, "wrangler.toml"), "utf8");
 assert.match(wranglerSource, /ACCOUNTING_BACKUP_RETENTION_DAYS = "365"/);
 assert.match(wranglerSource.split('[env.staging]')[0], /ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED = "false"/);

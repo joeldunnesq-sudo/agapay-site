@@ -14,7 +14,11 @@ Learn is already an ES-module application. Its source helper follows the relativ
 
 `config/refactor-contracts.json` records the current ordered API route registry and the public export surface of the Worker and oversized server modules. Extraction PRs must preserve route precedence and public exports. A compatibility facade may re-export a function from its new domain module while consumers migrate incrementally.
 
+The Worker route-action surface and scheduled-task order are pinned as well. Phase 5 extractions may change where an implementation lives, but they must not silently add, remove, rename, or reorder the actions and scheduled jobs composed by the Worker shell.
+
 New Worker modules must keep request-specific state in function arguments, never mutable module scope. Promises must remain awaited, returned, or passed to `ctx.waitUntil()`. Refactoring must not add public Worker-to-Worker HTTP calls where a binding is available or introduce unbounded response buffering.
+
+Phase 5 begins with the scheduled-job observer in `src/operations/scheduled-task-observer.js`. `src/worker.js` keeps its existing `observeScheduledTask` export as a compatibility facade, while alert deduplication, heartbeat recording, and failure-email composition live behind that facade. Cron branching and job ordering remain in the Worker shell and are protected by the scheduled-task contract.
 
 ## Learn support bundle decision
 

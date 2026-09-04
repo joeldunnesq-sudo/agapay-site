@@ -10,10 +10,36 @@
     "stewardship",
     "parish"
   ],
+  "workerRouteActions": {
+    "sha256": "e40ba9af8d8e0fd52d5e108615c6b7bf5b2f4a3f90dee1b4c7b126de3b2fde98",
+    "count": 290
+  },
+  "workerScheduledTaskOrder": [
+    "parish_portability_jobs",
+    "daily_pastoral_care_digest",
+    "scheduled_accounting_recurring",
+    "nonprofit_pricing_threshold_alerts",
+    "group_message_retention_sweep",
+    "koinonia_exchange_expiry_sweep",
+    "koinonia_signup_reminders",
+    "memorial_anniversary_materialization",
+    "accounting_backup_retention_sweep",
+    "scheduled_accounting_integrity",
+    "weekly_commemoration_emails",
+    "weekly_treasurer_commerce_emails",
+    "stewardship_comp_reminders",
+    "tax_exemption_expiration_sweep",
+    "weekly_sacrament_digest",
+    "weekly_announcement_digest"
+  ],
   "moduleExports": {
     "src/worker.js": {
       "sha256": "c901a48eb37c496de3052b49ec5428e26e0aa5b03d7f0c7be505dfc9d188bda6",
       "count": 3
+    },
+    "src/operations/scheduled-task-observer.js": {
+      "sha256": "bd271de7565705d9059ac834c399e7dba0239fde8c329695a1fd4744ca97a2fb",
+      "count": 1
     },
     "src/handlers/admin.js": {
       "sha256": "5cc3cba4a7c929659f13c2404db6b2684d43490dec2b622200b7f15e7dd11826",

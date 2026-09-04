@@ -77,6 +77,24 @@ const actualRouteOrder = [...registry[1].matchAll(/route([A-Z][A-Za-z]+)Request/
 );
 assert.deepEqual(actualRouteOrder, contracts.workerRouteOrder, 'Worker route precedence changed');
 
+const routeActionsBlock = workerSource.slice(
+  workerSource.indexOf('const ROUTE_ACTIONS'),
+  workerSource.indexOf('const API_ROUTE_REGISTRIES')
+);
+const actualRouteActions = [...routeActionsBlock.matchAll(/^\s{2}([A-Za-z_$][\w$]*),?\s*$/gm)].map((match) => match[1]);
+const routeActionsDigest = createHash('sha256').update(JSON.stringify(actualRouteActions)).digest('hex');
+assert.equal(actualRouteActions.length, contracts.workerRouteActions.count, 'Worker route-action count changed');
+assert.equal(routeActionsDigest, contracts.workerRouteActions.sha256, 'Worker route-action surface changed');
+
+const scheduledBlock = workerSource.slice(
+  workerSource.indexOf('  async scheduled'),
+  workerSource.indexOf('  async fetch')
+);
+const actualScheduledTaskOrder = [...scheduledBlock.matchAll(/observeScheduledTask\("([^"]+)"/g)].map(
+  (match) => match[1]
+);
+assert.deepEqual(actualScheduledTaskOrder, contracts.workerScheduledTaskOrder, 'Worker scheduled-task order changed');
+
 for (const [file, exportContract] of Object.entries(contracts.moduleExports)) {
   const module = await import(pathToFileURL(path.join(repoRoot, file)).href);
   const exportedNames = Object.keys(module).sort();
@@ -103,5 +121,5 @@ assert.match(guardrailGuide, /preserve route precedence/i);
 assert.match(guardrailGuide, /inline handler/i);
 
 console.log(
-  `PASS - extraction contracts cover ${adminScripts.length} Admin scripts, ${donorScripts.length} Donor scripts, ${learnModules.length} Learn modules, ${contracts.workerRouteOrder.length} route registries, and ${Object.keys(contracts.moduleExports).length} module export surfaces`
+  `PASS - extraction contracts cover ${adminScripts.length} Admin scripts, ${donorScripts.length} Donor scripts, ${learnModules.length} Learn modules, ${contracts.workerRouteOrder.length} route registries, ${actualRouteActions.length} Worker actions, ${actualScheduledTaskOrder.length} scheduled tasks, and ${Object.keys(contracts.moduleExports).length} module export surfaces`
 );
