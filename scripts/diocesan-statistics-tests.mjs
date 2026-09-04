@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { aggregateDiocesanStatistics, buildDiocesanStatisticsPdf } from '../src/reports/diocesan-statistics.js';
+import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 
 function d1Binding(db) {
   return {
@@ -116,7 +117,7 @@ try {
   assert.ok(emptyPdf.length > 1500);
 
   const route = readFileSync(new URL('../src/routes/stewardship.js', import.meta.url), 'utf8');
-  const worker = readFileSync(new URL('../src/worker.js', import.meta.url), 'utf8');
+  const worker = readWorkerCompositionSource();
   const dashboard = readFileSync(new URL('../public/parish/dashboard.html', import.meta.url), 'utf8');
   const reports = readFileSync(new URL('../public/parish/features/stewardship/reports.js', import.meta.url), 'utf8');
   assert.match(route, /\/reports\/diocesan-statistics/);

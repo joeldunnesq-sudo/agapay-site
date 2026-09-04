@@ -120,6 +120,7 @@ assert.equal(methodResponse.headers.get('Allow'), 'GET');
 assert.equal(method.calls.lookups.length, 0);
 
 const worker = await readFile(new URL('../src/worker.js', import.meta.url), 'utf8');
+const workerActions = await readFile(new URL('../src/routes/worker-actions.js', import.meta.url), 'utf8');
 const registry = worker.slice(worker.indexOf('const API_ROUTE_REGISTRIES'));
 assert.ok(registry.indexOf('routeOrganizationRequest') < registry.indexOf('routePublicRequest'));
 for (const dependency of [
@@ -128,10 +129,7 @@ for (const dependency of [
   'unauthorized',
   'verifyParishDashboardBearer',
 ]) {
-  assert.match(
-    worker.slice(worker.indexOf('const ROUTE_ACTIONS'), worker.indexOf('const API_ROUTE_REGISTRIES')),
-    new RegExp(`\\b${dependency},`)
-  );
+  assert.match(workerActions.slice(workerActions.indexOf('const ROUTE_ACTIONS')), new RegExp(`\\b${dependency},`));
 }
 
 console.log('PASS - versioned organization API route is authenticated, bounded, and dormant-type closed');

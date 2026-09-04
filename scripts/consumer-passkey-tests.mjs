@@ -3,6 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 
 import {
   beginConsumerPasskeyAuthentication,
@@ -122,7 +123,7 @@ await test("My AGAPAY automatically unlocks the installed app and keeps email re
   const login = readFileSync(path.join(root, "public", "myagapay", "login.html"), "utf8");
   const account = readFileSync(path.join(root, "public", "myagapay", "account.html"), "utf8");
   const client = readFileSync(path.join(root, "public", "scripts", "consumer-passkeys.js"), "utf8");
-  const worker = readFileSync(path.join(root, "src", "worker.js"), "utf8");
+  const worker = readWorkerCompositionSource(root);
   assert.doesNotMatch(login, /id="donorPasskeyLogin"|Use my passkey/);
   assert.doesNotMatch(login, /First time using passkeys\?/);
   assert.match(login, /Email sign-in/);

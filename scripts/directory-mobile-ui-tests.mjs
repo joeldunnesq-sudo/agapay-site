@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { readDonorAppSource } from './lib/donor-app-source.mjs';
+import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 
 const page = readFileSync("public/myagapay/directory.html", "utf8");
 const accountPage = readFileSync("public/myagapay/account.html", "utf8");
 const donorApp = readDonorAppSource();
 const myAgapayShell = readFileSync("public/myagapay-shell.js", "utf8");
-const worker = readFileSync("src/worker.js", "utf8");
+const worker = readWorkerCompositionSource();
 
 assert.match(page, /Four simple steps for your family directory entry/);
 assert.match(page, /const EDIT_WIZARD_TITLES = \["Your information", "Your family", "Privacy choices", "Ways to help"\]/);

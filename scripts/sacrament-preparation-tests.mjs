@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 import {
   attachPreparationToRequests,
   createRequestPreparationSnapshot,
@@ -132,7 +133,7 @@ assert.equal(validateSacramentDocumentUpload({ filename: "guide.pdf", declaredMi
 assert.equal(validateSacramentDocumentUpload({ filename: "guide.png", declaredMimeType: "image/png", arrayBuffer: pdf }).ok, false);
 assert.equal(sanitizeSacramentDocumentFilename("../../bad\r\nname.pdf"), ".._.._badname.pdf");
 
-const worker = readFileSync(path.join(root, "src", "worker.js"), "utf8");
+const worker = readWorkerCompositionSource(root);
 const parishApp = readFileSync(path.join(root, "public", "parish", "features", "sacraments.js"), "utf8");
 const parishPreparation = readFileSync(path.join(root, "public", "parish", "features", "sacraments", "preparation.js"), "utf8");
 const donorApp = readFileSync(path.join(root, "public", "donor", "app.js"), "utf8");

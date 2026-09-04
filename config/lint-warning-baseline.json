@@ -14,9 +14,6 @@
   "src/learn/setup-persistence.js": {
     "max-lines": 1
   },
-  "src/worker.js": {
-    "max-lines": 1
-  },
   "public/admin/app.js": {
     "max-lines": 1
   },

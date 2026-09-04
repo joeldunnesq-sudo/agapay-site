@@ -6,11 +6,12 @@ import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 import { CAPABILITY_CATALOG, ROLE_TEMPLATES } from "../src/lib/authorization.js";
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
 const read=file=>readFileSync(path.join(root,file),"utf8");
-const worker=`${read("src/worker.js")}\n${read("src/routes/accounting.js")}`,governance=read("src/handlers/accounting-governance.js"),admin=read("src/handlers/admin.js");
+const worker=readWorkerCompositionSource(root),governance=read("src/handlers/accounting-governance.js"),admin=read("src/handlers/admin.js");
 const parishApp=readParishDashboardSource(),parishHtml=read("public/parish/dashboard.html"),adminApp=readAdminAppSource(),adminHtml=read("public/admin.html");
 const governanceBackfill=read("migrations/0062_accounting_governance_capability_backfill.sql");
 const has=(source,needles,label)=>needles.forEach(needle=>assert.ok(source.includes(needle),`${label} must include ${needle}`));

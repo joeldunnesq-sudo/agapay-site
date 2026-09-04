@@ -37,6 +37,30 @@
       "sha256": "c901a48eb37c496de3052b49ec5428e26e0aa5b03d7f0c7be505dfc9d188bda6",
       "count": 3
     },
+    "src/routes/worker-actions.js": {
+      "sha256": "d486086978e44fe5cec4ab2ab51a5d6465c9041f1778fd3b283bd27ca9237004",
+      "count": 1
+    },
+    "src/handlers/public-entry.js": {
+      "sha256": "18a5af04d54a548f7a0789d4a7f2e7d126f4a32619f9db85018df2f3fabf8ae5",
+      "count": 4
+    },
+    "src/operations/weekly-email-digests.js": {
+      "sha256": "9df48382221a87c02e476aab7cb236af5b9376967bfc0ca8c533ef5d2a75aa1c",
+      "count": 8
+    },
+    "src/handlers/stewardship-giving.js": {
+      "sha256": "20d5ff22e196287087952ef17ff76d9cee938984c4d5943f0d87cbf8edc306ab",
+      "count": 15
+    },
+    "src/handlers/stewardship-reports.js": {
+      "sha256": "86eb5cdd1b6382dd1bda625f437eeeb11eded59a09f1ab264dd98c9b337e57f4",
+      "count": 3
+    },
+    "src/handlers/platform-actions.js": {
+      "sha256": "3b5c987c98efad9acf418c2df71dec015ae378463045c3e606df77bd271cc345",
+      "count": 2
+    },
     "src/operations/scheduled-task-observer.js": {
       "sha256": "bd271de7565705d9059ac834c399e7dba0239fde8c329695a1fd4744ca97a2fb",
       "count": 1

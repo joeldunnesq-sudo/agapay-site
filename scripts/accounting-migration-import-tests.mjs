@@ -4,6 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 import {
   commitChartOfAccountsImport, commitFundMapping,
   commitOpeningBalanceImport, commitTransactionHistoryImport, createJournalDraft,
@@ -17,7 +18,7 @@ const read = (file) => readFileSync(path.join(root, file), "utf8");
 const migration = read("accounting-migrations/0023_migration_import_sessions.sql");
 const serviceSource = read("src/accounting/migration/service.js");
 const handlerSource = read("src/handlers/accounting-migration.js");
-const workerSource = `${read("src/worker.js")}\n${read("src/routes/accounting.js")}`;
+const workerSource = readWorkerCompositionSource(root);
 const uiSource = readParishDashboardSource();
 const authorizationSource = read("src/lib/authorization.js");
 const reconciliationSource = read("src/accounting/reconciliation/service.js");

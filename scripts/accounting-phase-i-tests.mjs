@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
 const read=file=>readFileSync(path.join(root,file),"utf8");
@@ -12,7 +13,7 @@ const adjustments=read("src/handlers/accounting-adjustments.js");
 const close=read("src/handlers/accounting-close.js");
 const reconciliation=read("src/handlers/accounting-reconciliation-commerce.js");
 const budgets=read("src/handlers/accounting-payables-budgets.js");
-const worker=`${read("src/worker.js")}\n${read("src/routes/accounting.js")}`;
+const worker=readWorkerCompositionSource(root);
 const app=readParishDashboardSource();
 const dashboard=read("public/parish/dashboard.html");
 const has=(source,needles,label)=>needles.forEach(needle=>assert.ok(source.includes(needle),`${label} must include ${needle}`));

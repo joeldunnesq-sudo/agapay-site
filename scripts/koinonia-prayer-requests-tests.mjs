@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
+import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
@@ -121,7 +122,7 @@ await updateOwnPrayerRequest(jsonRequest({ status:"answered" }, "PATCH"), env, j
 assert.equal(sqlite.prepare("SELECT status FROM koinonia_prayer_requests WHERE id = ?").get(immediatelyPublished.request.id).status, "answered", "a submitter must be able to mark an active prayer answered");
 
 const sources = {
-  worker: read("src/worker.js"),
+  worker: readWorkerCompositionSource(root),
   handler: read("src/handlers/koinonia-prayer-requests.js"),
   parishLife: read("public/myagapay/parish-life.js"),
   memberPage: read("public/myagapay/prayer-requests.html"),
