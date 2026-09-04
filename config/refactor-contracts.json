@@ -131,7 +131,7 @@
   "generatedArtifacts": {
     "public/learn/support.js": {
       "status": "frozen_orphaned_generated_bundle",
-      "sha256": "b90c7b9650144d5838e9e7629947327369ab3fc1e487736a6f46f05431778de6",
+      "sha256": "8166f14c9f4c4e39664679299a55d38b897088e714e7a001d31abc49c709e7f4",
       "declaredSource": "dc-runtime/src/*.ts"
     }
   }

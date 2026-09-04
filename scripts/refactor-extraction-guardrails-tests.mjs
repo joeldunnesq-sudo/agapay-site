@@ -87,10 +87,11 @@ for (const [file, exportContract] of Object.entries(contracts.moduleExports)) {
 
 for (const [file, artifact] of Object.entries(contracts.generatedArtifacts)) {
   assert.equal(artifact.status, 'frozen_orphaned_generated_bundle');
-  const source = readFileSync(path.join(repoRoot, file));
-  const digest = createHash('sha256').update(source).digest('hex');
+  const source = readFileSync(path.join(repoRoot, file), 'utf8');
+  const canonicalSource = source.replace(/\r\n?/g, '\n');
+  const digest = createHash('sha256').update(canonicalSource, 'utf8').digest('hex');
   assert.equal(digest, artifact.sha256, `${file} changed without recovering or replacing its generator`);
-  assert.match(source.toString('utf8', 0, 180), /GENERATED from dc-runtime\/src\/\*\.ts/);
+  assert.match(source.slice(0, 180), /GENERATED from dc-runtime\/src\/\*\.ts/);
 }
 
 const guardrailGuide = readFileSync(

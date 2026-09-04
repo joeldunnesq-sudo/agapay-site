@@ -18,7 +18,7 @@ New Worker modules must keep request-specific state in function arguments, never
 
 ## Learn support bundle decision
 
-`public/learn/support.js` declares that it is generated from `dc-runtime/src/*.ts`, but that source tree and its build command are not present in this repository. It is therefore classified as a **frozen orphaned generated bundle**, not handwritten refactor material.
+`public/learn/support.js` declares that it is generated from `dc-runtime/src/*.ts`, but that source tree and its build command are not present in this repository. It is therefore classified as a **frozen orphaned generated bundle**, not handwritten refactor material. Its checksum is calculated with canonical LF newlines so the guardrail is identical on Windows and Linux checkouts.
 
 The bundle is pinned by SHA-256 in `config/refactor-contracts.json`. Do not edit or mechanically split it. A dedicated change must choose one of these paths before its checksum can change:
 
