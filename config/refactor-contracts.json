@@ -41,6 +41,10 @@
       "sha256": "bd271de7565705d9059ac834c399e7dba0239fde8c329695a1fd4744ca97a2fb",
       "count": 1
     },
+    "src/handlers/mobile-app-associations.js": {
+      "sha256": "f8aa34e6bd6a4509e01a3864d42bb206203c240b486c0681c4ca274d925d9e26",
+      "count": 2
+    },
     "src/handlers/admin.js": {
       "sha256": "5cc3cba4a7c929659f13c2404db6b2684d43490dec2b622200b7f15e7dd11826",
       "count": 22

@@ -20,6 +20,8 @@ New Worker modules must keep request-specific state in function arguments, never
 
 Phase 5 begins with the scheduled-job observer in `src/operations/scheduled-task-observer.js`. `src/worker.js` keeps its existing `observeScheduledTask` export as a compatibility facade, while alert deduplication, heartbeat recording, and failure-email composition live behind that facade. Cron branching and job ordering remain in the Worker shell and are protected by the scheduled-task contract.
 
+The next Worker-shell extraction moves Android Digital Asset Links and Apple App Site Association response construction into `src/handlers/mobile-app-associations.js`. The Worker retains the exact `GET`/`HEAD` route checks ahead of the API registries; the handler preserves payloads, defaults, fingerprint and team-ID validation, cache headers, and empty-configuration behavior. Focused store-readiness tests exercise the extracted functions directly, while the Worker route-order and module-export contracts prevent composition drift.
+
 ## Learn support bundle decision
 
 `public/learn/support.js` declares that it is generated from `dc-runtime/src/*.ts`, but that source tree and its build command are not present in this repository. It is therefore classified as a **frozen orphaned generated bundle**, not handwritten refactor material. Its checksum is calculated with canonical LF newlines so the guardrail is identical on Windows and Linux checkouts.
