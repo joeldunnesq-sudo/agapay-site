@@ -1,4 +1,4 @@
-const AGAPAY_CACHE = "agapay-static-v36";
+const AGAPAY_CACHE = "agapay-static-v37";
 
 const STATIC_ASSETS = [
   "/myagapay/login",
@@ -62,6 +62,10 @@ function shouldBypassCache(request) {
   if (url.pathname.startsWith("/api/")) return true;
   if (url.pathname.startsWith("/admin")) return true;
   if (url.pathname.startsWith("/parish")) return true;
+  // These homepage styles are preloaded before becoming stylesheets. Let the
+  // browser reuse the preload directly instead of returning two service-worker
+  // responses that Chrome treats as different resources.
+  if (url.pathname === "/styles/platform-preview.css" || url.pathname === "/styles/koinonia-preview.css") return true;
   if (url.pathname.startsWith("/myagapay") && url.pathname !== "/myagapay/login" && !isOfflinePodcastShell) return true;
 
   // Donor dashboard pages and API-backed pages are intentionally network-only.
