@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
+import { readAdminAppSource } from './lib/admin-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
@@ -10,7 +11,7 @@ import { CAPABILITY_CATALOG, ROLE_TEMPLATES } from "../src/lib/authorization.js"
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
 const read=file=>readFileSync(path.join(root,file),"utf8");
 const worker=`${read("src/worker.js")}\n${read("src/routes/accounting.js")}`,governance=read("src/handlers/accounting-governance.js"),admin=read("src/handlers/admin.js");
-const parishApp=readParishDashboardSource(),parishHtml=read("public/parish/dashboard.html"),adminApp=read("public/admin/app.js"),adminHtml=read("public/admin.html");
+const parishApp=readParishDashboardSource(),parishHtml=read("public/parish/dashboard.html"),adminApp=readAdminAppSource(),adminHtml=read("public/admin.html");
 const governanceBackfill=read("migrations/0062_accounting_governance_capability_backfill.sql");
 const has=(source,needles,label)=>needles.forEach(needle=>assert.ok(source.includes(needle),`${label} must include ${needle}`));
 const capabilities=["accounting.integrity.view","accounting.integrity.scan","accounting.integrity.protect","accounting.recovery.verify"];

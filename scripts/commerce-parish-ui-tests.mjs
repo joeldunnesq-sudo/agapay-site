@@ -1,5 +1,6 @@
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import fs from 'node:fs';
+import { readParishHandlerSource } from './lib/parish-handler-source.mjs';
 
 const dashboard = fs.readFileSync(new URL('../public/parish/dashboard.html', import.meta.url), 'utf8');
 const app = readParishDashboardSource();
@@ -7,7 +8,7 @@ const css = fs.readFileSync(new URL('../public/styles/stewardship.css', import.m
 const parishCss = fs.readFileSync(new URL('../public/parish/style.css', import.meta.url), 'utf8');
 const groupsApp = fs.readFileSync(new URL('../public/myagapay/groups.js', import.meta.url), 'utf8');
 const eventsHandler = fs.readFileSync(new URL('../src/handlers/parish-events.js', import.meta.url), 'utf8');
-const parishHandler = fs.readFileSync(new URL('../src/handlers/parish.js', import.meta.url), 'utf8');
+const parishHandler = readParishHandlerSource();
 
 const productKeys = ['overview', 'bookstore', 'events', 'meals', 'retreats', 'camp', 'tuition'];
 const checks = [

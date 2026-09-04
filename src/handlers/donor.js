@@ -1,34 +1,24 @@
-import { bookstoreReadinessSummary, bookstoreSellerDisclosure } from "../lib/commerce-readiness.js";
 import { addOutsideDonorPledgeSummary } from "../lib/outside-pledges.js";
 import { logEvent } from "../lib/logging.js";
 import { directoryInvitationNext } from "../lib/directory-invitation-next.js";
 import { ACCOUNT_ACCEPTANCE_DISCLOSURE, CURRENT_TERMS_VERSION, recordLegalAcceptance } from "../lib/legal-acceptance.js";
-import { SCHEDULABLE_SACRAMENT_TYPES, computeAvailableSlots, isSchedulableOfferingKey, isSlotStillOpen } from "../lib/sacrament-availability.js";
 import {
   applyDonorPassword,
-  clampListLimit,
   d1,
-  d1All,
   d1First,
   d1Run,
-  decodeListCursor,
   deleteDonor,
-  getBearerToken,
   DONOR_SESSION_TTL_MS,
-  encodeListCursor,
   generateSecret,
   hashSessionToken,
   hasProductionStore,
-  isSystemKvKey,
   json,
-  listKvKeys,
   loadDonor,
   missingProductionStoreResponse,
   normalizeEmail,
   publicDonor,
   rateLimit,
   rateLimitByKey,
-  safeParseJsonRow,
   saveDonor,
   secureCompare,
   sha256Hex,
@@ -37,55 +27,30 @@ import {
   verifyTurnstileIfConfigured,
 } from "../lib/core.js";
 
-import {
-  defaultSubscriptionTier,
-  subscriptionTier,
-} from "../lib/subscriptions.js";
+import { subscriptionTier } from "../lib/subscriptions.js";
 
-import { bookstoreEnabledFor, directoryEnabledFor, exchangeEnabledFor, givingFeatureAccess, hasModuleAccess, prayerRequestsEnabledFor, sacramentsEnabledFor, signupsEnabledFor, stewardshipToolAccess } from "../lib/entitlements.js";
+import { directoryEnabledFor, exchangeEnabledFor, givingFeatureAccess, hasModuleAccess, prayerRequestsEnabledFor, signupsEnabledFor, stewardshipToolAccess } from "../lib/entitlements.js";
 import { parishLifeAvailableFor } from "../lib/parish-life-access.js";
 import { parishLifeExperienceFor } from "../lib/parish-life-experience.js";
 import { recordParishFeatureRequest } from "../lib/parish-feature-requests.js";
 import { submitParishSupportTicket } from "../lib/parish-support-tickets.js";
 import { validateSafeExternalUrl } from "../lib/safe-external-url.js";
-import { fetchKoinoniaCalendarIcs, normalizeKoinoniaCalendarUrl } from "../lib/koinonia-calendar.js";
-import { loadPublishedCommerceCalendarEvents } from "./parish-events.js";
 import { getDirectorySettings } from "../directory/settings.js";
 import { getParishLibrarySettings } from "../lib/parish-library.js";
 import { resolveDirectorySelfServiceContext, syncSelfServiceContactsFromDonor } from "../directory/self-service.js";
 import { migrateConsumerPasskeyEmail } from "../lib/consumer-passkeys.js";
 
-import {
-  resolveSettlementProfileId,
-} from "../lib/settlement-profiles.js";
+import { agapayEmailHtml, sendEmail } from "../lib/email.js";
 
-import {
-  agapayEmailHtml,
-  sendEmail,
-} from "../lib/email.js";
+import { htmlEscape } from "../lib/format.js";
 
-import {
-  htmlEscape,
-} from "../lib/format.js";
-
-import {
-  checkoutPaymentIntentId,
-  normalizedCheckoutPaymentStatus,
-  stripeAccountStatus,
-  stripeFormConnectedRequest,
-  stripeGetConnectedRequest,
-} from "../lib/stripe-connect.js";
-import {
-  donorName,
-  offeringFeeBreakdown,
-} from "../lib/stripe-fees.js";
+import { checkoutPaymentIntentId, normalizedCheckoutPaymentStatus, stripeAccountStatus, stripeFormConnectedRequest, stripeGetConnectedRequest } from "../lib/stripe-connect.js";
+import { offeringFeeBreakdown } from "../lib/stripe-fees.js";
 
 import {
   donorSummaryFromOfferings,
   findCheckoutParish,
-  findOrCreateDonorCustomer,
   findRegistrationByParishId,
-  verifyParishDashboardBearer,
   loadDonorOfferingByCheckout,
   loadDonorOfferingByPaymentIntent,
   loadDonorOfferings,
@@ -103,14 +68,29 @@ import {
 } from "./parish.js";
 import { storeCommemorationEntry } from "./parish-commemorations.js";
 import { enrichParishGivingOptions } from "./parish-giving-catalog.js";
-import { sacramentTypeLabel } from "./parish-sacraments.js";
-import { syncSacramentRequestToGoogleCalendar } from "../sacraments/google-calendar.js";
-import { attachPreparationToRequests } from "../sacraments/preparation.js";
+
+export {
+  bookstoreOrderSource,
+  guestBookstoreItemError,
+  handleDonorBookstore,
+  handleDonorBookstoreIsbnLookup,
+  handleDonorBookstoreItemFields,
+  handleDonorBookstoreRequestFeature,
+  handleParishBookstoreReadiness,
+  loadDonorBookstoreProducts,
+  normalizeBookstoreCartItems,
+} from "./donor-bookstore.js";
+
+export { handleDonorParishCalendar, parseKoinoniaCalendarIcs } from "./donor-parish-calendar.js";
+
+export { handleDonorSacramentAvailability, handleDonorSacramentBook, handleDonorSacramentCancel, handleDonorSacraments } from "./donor-sacraments.js";
+
+export { handleDonorNotificationDismiss, handleDonorNotifications } from "./donor-notifications.js";
+
+export { adminRegistrationSummary, loadAdminRegistrationPage } from "./registration-admin-page.js";
 
 // src/handlers/donor.js
 // Donor session, dashboard, offerings, commemorations, and password handlers.
-
-
 
 export async function handleDonorClaimCheckout(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
@@ -139,11 +119,7 @@ export async function handleDonorClaimCheckout(request, env) {
   }
 
   let verifiedSession = null;
-  const stripe = await stripeGetConnectedRequest(
-    env,
-    `/v1/checkout/sessions/${encodeURIComponent(sessionId)}`,
-    parish.stripeAccountId
-  );
+  const stripe = await stripeGetConnectedRequest(env, `/v1/checkout/sessions/${encodeURIComponent(sessionId)}`, parish.stripeAccountId);
   if (stripe.ok) {
     verifiedSession = stripe.body || {};
     const paymentIntentId = checkoutPaymentIntentId(verifiedSession);
@@ -151,9 +127,7 @@ export async function handleDonorClaimCheckout(request, env) {
     let status = offering.status || "checkout_created";
     if (paymentStatus === "paid" || verifiedSession.status === "complete") status = "completed";
     if (verifiedSession.status === "expired") status = "expired";
-    const feeUpdates = status === "completed" || paymentStatus === "paid"
-      ? await stripePaymentIntentFinancialUpdates(env, paymentIntentId, offering.parishId, offering)
-      : {};
+    const feeUpdates = status === "completed" || paymentStatus === "paid" ? await stripePaymentIntentFinancialUpdates(env, paymentIntentId, offering.parishId, offering) : {};
     await updateDonorOfferingByCheckout(env, sessionId, {
       status,
       paymentStatus,
@@ -161,40 +135,32 @@ export async function handleDonorClaimCheckout(request, env) {
       stripePaymentIntentId: paymentIntentId || offering.stripePaymentIntentId || "",
       stripeSubscriptionId: verifiedSession.subscription || offering.stripeSubscriptionId || "",
       completedAt: status === "completed" ? offering.completedAt || new Date().toISOString() : offering.completedAt || "",
-      ...feeUpdates
+      ...feeUpdates,
     });
   }
 
-  const refreshed = await loadDonorOfferingByCheckout(env, sessionId) || offering;
+  const refreshed = (await loadDonorOfferingByCheckout(env, sessionId)) || offering;
   const isPaid = refreshed.status === "completed" || refreshed.paymentStatus === "paid" || refreshed.paymentStatus === "succeeded";
   if (!isPaid) {
     return json({ error: "Payment is still processing. Please wait and try again in a moment." }, { status: 409 });
   }
 
-  const donorEmail = normalizeEmail(
-    refreshed.donorEmail
-      || verifiedSession?.customer_details?.email
-      || verifiedSession?.customer_email
-      || ""
-  );
+  const donorEmail = normalizeEmail(refreshed.donorEmail || verifiedSession?.customer_details?.email || verifiedSession?.customer_email || "");
   if (!donorEmail) return json({ error: "A donor email is required before creating an account." }, { status: 422 });
 
   const existing = await loadDonor(env, donorEmail);
   if (existing?.emailVerifiedAt) {
-    return json({
-      error: "A donor account already exists for this email. Please log in from the donor sign-in page.",
-      code: "account_exists"
-    }, { status: 409 });
+    return json(
+      {
+        error: "A donor account already exists for this email. Please log in from the donor sign-in page.",
+        code: "account_exists",
+      },
+      { status: 409 }
+    );
   }
 
   const now = new Date().toISOString();
-  const donorNameValue = String(
-    body.donorName
-    || body.householdName
-    || refreshed.donorName
-    || existing?.donorName
-    || donorEmail.split("@")[0]
-  ).trim();
+  const donorNameValue = String(body.donorName || body.householdName || refreshed.donorName || existing?.donorName || donorEmail.split("@")[0]).trim();
 
   const donorBase = {
     ...(existing || {}),
@@ -208,7 +174,7 @@ export async function handleDonorClaimCheckout(request, env) {
     emailVerificationSentAt: "",
     emailVerificationExpiresAt: "",
     createdAt: existing?.createdAt || now,
-    updatedAt: now
+    updatedAt: now,
   };
   const donor = await applyDonorPassword(donorBase, password);
   const session = await issueDonorSession(env, donor);
@@ -219,7 +185,7 @@ export async function handleDonorClaimCheckout(request, env) {
     donor: publicDonor(session.donor),
     checkoutSessionId: sessionId,
     status: refreshed.status || "completed",
-    paymentStatus: refreshed.paymentStatus || "paid"
+    paymentStatus: refreshed.paymentStatus || "paid",
   });
 }
 
@@ -236,7 +202,7 @@ export async function issueDonorSession(env, donor) {
     sessionTokenHash: await hashSessionToken(token, sessionSalt),
     sessionExpiresAt: new Date(Date.now() + DONOR_SESSION_TTL_MS).toISOString(),
     lastLoginAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   };
   await saveDonor(env, updated);
   return { token, donor: updated };
@@ -258,14 +224,18 @@ export async function sendDonorVerificationEmail(env, donor, verificationUrl) {
     to: [donor.email],
     reply_to: replyTo,
     subject: `${diagnostic ? "[TEST] " : ""}Verify your AGAPAY donor account`,
-    html: agapayEmailHtml(appUrl, "Verify your donor account", `
+    html: agapayEmailHtml(
+      appUrl,
+      "Verify your donor account",
+      `
       ${diagnosticBanner}
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
       <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">Hello ${name}, please verify your email address to finish setting up your AGAPAY donor dashboard.</p>
       <p style="margin:0 0 24px;"><a href="${safeUrl}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Verify email address</a></p>
       <p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#171715;">After verification, you can sign in to your donor dashboard to view offering history, submit commemorations, and give through AGAPAY.</p>
       <p style="margin:0;font-size:12px;line-height:1.6;color:#6F6A60;">If you did not create this AGAPAY account, you can ignore this email.</p>
-    `)
+    `
+    ),
   });
 }
 
@@ -281,19 +251,17 @@ export async function sendDonorPasswordResetEmail(env, donor, resetUrl) {
     to: [donor.email],
     reply_to: replyTo,
     subject: "Reset your AGAPAY donor password",
-    html: agapayEmailHtml(appUrl, "Reset your donor password", `
+    html: agapayEmailHtml(
+      appUrl,
+      "Reset your donor password",
+      `
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ, ${name}.</p>
       <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">Use this secure link to choose a new password for your AGAPAY donor dashboard.</p>
       <p style="margin:0 0 24px;"><a href="${safeUrl}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Reset donor password</a></p>
       <p style="margin:0;font-size:12px;line-height:1.6;color:#6F6A60;">If you did not request this, ignore this email. The link expires in 1 hour.</p>
-    `),
-    text: [
-      "Reset your AGAPAY donor password",
-      "",
-      `Open this link to choose a new password: ${resetUrl}`,
-      "",
-      "If you did not request this, ignore this email. The link expires in 1 hour."
-    ].join("\n")
+    `
+    ),
+    text: ["Reset your AGAPAY donor password", "", `Open this link to choose a new password: ${resetUrl}`, "", "If you did not request this, ignore this email. The link expires in 1 hour."].join("\n"),
   });
 }
 
@@ -313,7 +281,10 @@ export async function handleDonorPasswordResetRequest(request, env) {
   const email = normalizeEmail(body.email);
   if (!email) return json({ error: "Email is required" }, { status: 422 });
 
-  const generic = { ok: true, message: "If a verified donor account exists for that email, a reset link has been sent." };
+  const generic = {
+    ok: true,
+    message: "If a verified donor account exists for that email, a reset link has been sent.",
+  };
   const donor = await loadDonor(env, email);
   if (!donor?.emailVerifiedAt) return json(generic);
 
@@ -327,7 +298,7 @@ export async function handleDonorPasswordResetRequest(request, env) {
     passwordResetTokenHash: await sha256Hex(`${resetSalt}:${resetToken}`),
     passwordResetSentAt: new Date().toISOString(),
     passwordResetExpiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   };
 
   const emailResult = await sendDonorPasswordResetEmail(env, updated, resetUrl);
@@ -338,7 +309,7 @@ export async function handleDonorPasswordResetRequest(request, env) {
   return json({
     ...generic,
     email: { status: emailResult.status || "unknown", detail: emailResult.detail || "" },
-    resetUrl: emailResult.status === "not_configured" ? resetUrl : undefined
+    resetUrl: emailResult.status === "not_configured" ? resetUrl : undefined,
   });
 }
 
@@ -374,19 +345,22 @@ export async function handleDonorPasswordResetConfirm(request, env) {
   const submittedHash = await sha256Hex(`${donor.passwordResetSalt}:${token}`);
   if (!secureCompare(submittedHash, donor.passwordResetTokenHash)) return unauthorized();
 
-  const reset = await applyDonorPassword({
-    ...donor,
-    passwordResetSalt: "",
-    passwordResetTokenHash: "",
-    passwordResetSentAt: "",
-    passwordResetExpiresAt: "",
-    passwordResetEmailStatus: "",
-    passwordResetEmailDetail: "",
-    sessionSalt: "",
-    sessionTokenHash: "",
-    sessionExpiresAt: "",
-    updatedAt: new Date().toISOString()
-  }, newPassword);
+  const reset = await applyDonorPassword(
+    {
+      ...donor,
+      passwordResetSalt: "",
+      passwordResetTokenHash: "",
+      passwordResetSentAt: "",
+      passwordResetExpiresAt: "",
+      passwordResetEmailStatus: "",
+      passwordResetEmailDetail: "",
+      sessionSalt: "",
+      sessionTokenHash: "",
+      sessionExpiresAt: "",
+      updatedAt: new Date().toISOString(),
+    },
+    newPassword
+  );
   await saveDonor(env, reset);
   return json({ ok: true, updatedAt: reset.passwordUpdatedAt || new Date().toISOString() });
 }
@@ -394,7 +368,7 @@ export async function handleDonorPasswordResetConfirm(request, env) {
 export function formatUsdFromCents(centsValue) {
   return (Number(centsValue || 0) / 100).toLocaleString("en-US", {
     style: "currency",
-    currency: "USD"
+    currency: "USD",
   });
 }
 
@@ -421,7 +395,12 @@ export async function sendDonorDonationReceiptEmail(env, offering = {}) {
   const totalFees = formatUsdFromCents(fees.totalFeeCents);
   const donorCovered = formatUsdFromCents(fees.donorCoveredFeeCents);
   const stripeReference = htmlEscape(offering.stripePaymentIntentId || offering.checkoutSessionId || offering.id || "");
-  const donatedAt = htmlEscape(new Date(offering.completedAt || offering.createdAt || Date.now()).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }));
+  const donatedAt = htmlEscape(
+    new Date(offering.completedAt || offering.createdAt || Date.now()).toLocaleString("en-US", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    })
+  );
   const dashboardUrl = htmlEscape(`${String(appUrl).replace(/\/+$/, "")}/myagapay`);
   const diagnostic = offering.isDiagnostic === true;
   const diagnosticBanner = diagnostic
@@ -435,7 +414,9 @@ export async function sendDonorDonationReceiptEmail(env, offering = {}) {
        <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Parish received:</strong> ${htmlEscape(parishReceived)}</p>`
     : `<p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Stripe processing fee deducted:</strong> ${htmlEscape(totalFees)}</p>
        <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Parish received:</strong> ${htmlEscape(parishReceived)}</p>`;
-  const coverFeesNote = fees.coverFees ? "" : `
+  const coverFeesNote = fees.coverFees
+    ? ""
+    : `
       <p style="margin:0 0 18px;padding:13px 15px;border-left:3px solid #C9A25B;background:#FFF8EA;font-size:14px;line-height:1.65;color:#171715;">
         Next time, you can choose to cover the processing fees so ${parishName} receives the full intended gift.
       </p>`;
@@ -444,7 +425,10 @@ export async function sendDonorDonationReceiptEmail(env, offering = {}) {
     to: [donorEmail],
     reply_to: replyTo,
     subject: `${diagnostic ? "[TEST] " : ""}AGAPAY receipt - ${amount} to ${offering.parishName || "your parish"}`,
-    html: agapayEmailHtml(appUrl, "Donation receipt", `
+    html: agapayEmailHtml(
+      appUrl,
+      "Donation receipt",
+      `
       ${diagnosticBanner}
       <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ, ${donorName}.</p>
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Your gift has been received successfully through AGAPAY.</p>
@@ -460,7 +444,8 @@ export async function sendDonorDonationReceiptEmail(env, offering = {}) {
       ${coverFeesNote}
       <p style="margin:0 0 18px;font-size:14px;line-height:1.65;color:#171715;">You can view this gift in your donor dashboard and keep track of your offering history there.</p>
       <p style="margin:0;"><a href="${dashboardUrl}" style="display:inline-block;background:#C9A25B;color:#061522;padding:12px 18px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:17px;font-style:italic;font-weight:600;">Open donor dashboard</a></p>
-    `)
+    `
+    ),
   });
 }
 
@@ -485,7 +470,7 @@ export async function sendDonationReceiptIfNeeded(env, offering = {}) {
     emailReceiptStatus: email.status || "unknown",
     emailReceiptId: email.id || "",
     emailReceiptDetail: email.detail || "",
-    emailReceiptSentAt: email.status === "sent" ? new Date().toISOString() : ""
+    emailReceiptSentAt: email.status === "sent" ? new Date().toISOString() : "",
   };
   return storeDonorOffering(env, { ...current, ...updates });
 }
@@ -524,7 +509,12 @@ export async function handleDonorSignup(request, env) {
   }
   if (existing?.passwordRecord || existing?.passwordHash) {
     if (!(await verifyDonorPassword(existing, password))) {
-      return json({ error: "A donor account already exists for this email. Please log in or use the original password to resend verification." }, { status: 409 });
+      return json(
+        {
+          error: "A donor account already exists for this email. Please log in or use the original password to resend verification.",
+        },
+        { status: 409 }
+      );
     }
   }
 
@@ -532,21 +522,24 @@ export async function handleDonorSignup(request, env) {
   const verificationSalt = generateSecret("verify_salt");
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   const invitationNext = directoryInvitationNext(body.next);
-  const verificationUrl = `${String(appUrl).replace(/\/+$/, "")}/myagapay/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(verificationToken)}${invitationNext ? `&next=${encodeURIComponent(invitationNext)}` : ''}`;
-  const donor = await applyDonorPassword({
-    ...(existing || {}),
-    email,
-    donorName: donorNameValue,
-    householdName: body.householdName || donorNameValue,
-    defaultParishId: body.parishId || body.defaultParishId || existing?.defaultParishId || "",
-    emailVerifiedAt: "",
-    emailVerificationSalt: verificationSalt,
-    emailVerificationTokenHash: await sha256Hex(`${verificationSalt}:${verificationToken}`),
-    emailVerificationSentAt: now,
-    emailVerificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-    createdAt: existing?.createdAt || now,
-    updatedAt: now
-  }, password);
+  const verificationUrl = `${String(appUrl).replace(/\/+$/, "")}/myagapay/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(verificationToken)}${invitationNext ? `&next=${encodeURIComponent(invitationNext)}` : ""}`;
+  const donor = await applyDonorPassword(
+    {
+      ...(existing || {}),
+      email,
+      donorName: donorNameValue,
+      householdName: body.householdName || donorNameValue,
+      defaultParishId: body.parishId || body.defaultParishId || existing?.defaultParishId || "",
+      emailVerifiedAt: "",
+      emailVerificationSalt: verificationSalt,
+      emailVerificationTokenHash: await sha256Hex(`${verificationSalt}:${verificationToken}`),
+      emailVerificationSentAt: now,
+      emailVerificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      createdAt: existing?.createdAt || now,
+      updatedAt: now,
+    },
+    password
+  );
 
   await recordLegalAcceptance(env, request, {
     actorType: "adult_account_holder",
@@ -564,12 +557,15 @@ export async function handleDonorSignup(request, env) {
   donor.emailVerificationDetail = emailResult.detail || "";
   await saveDonor(env, donor);
 
-  return json({
-    ok: true,
-    donor: publicDonor(donor),
-    email: { status: emailResult.status || "unknown", detail: emailResult.detail || "" },
-    verificationUrl: emailResult.status === "not_configured" ? verificationUrl : undefined
-  }, { status: 201 });
+  return json(
+    {
+      ok: true,
+      donor: publicDonor(donor),
+      email: { status: emailResult.status || "unknown", detail: emailResult.detail || "" },
+      verificationUrl: emailResult.status === "not_configured" ? verificationUrl : undefined,
+    },
+    { status: 201 }
+  );
 }
 
 export async function handleDonorLogin(request, env) {
@@ -588,7 +584,10 @@ export async function handleDonorLogin(request, env) {
   const email = normalizeEmail(body.email);
   const password = String(body.password || "");
   if (!email || !password) return json({ error: "Email and password are required" }, { status: 422 });
-  const accountLimited = await rateLimitByKey(request, env, "donor-login-account", email, { limit: 10, windowSeconds: 300 });
+  const accountLimited = await rateLimitByKey(request, env, "donor-login-account", email, {
+    limit: 10,
+    windowSeconds: 300,
+  });
   if (accountLimited) return accountLimited;
 
   const donor = await loadDonor(env, email);
@@ -604,10 +603,13 @@ export async function handleDonorLogin(request, env) {
     return unauthorized();
   }
   if (donor.accountDeletionRequestedAt) {
-    return json({
-      error: "This account is scheduled for deletion. Contact support@agapay.app if you need help.",
-      code: "account_deletion_pending"
-    }, { status: 423 });
+    return json(
+      {
+        error: "This account is scheduled for deletion. Contact support@agapay.app if you need help.",
+        code: "account_deletion_pending",
+      },
+      { status: 423 }
+    );
   }
   if (!donor.emailVerifiedAt) {
     return json({ error: "Please verify your email before logging in.", code: "email_unverified" }, { status: 403 });
@@ -671,7 +673,7 @@ export async function handleDonorVerify(request, env) {
     emailVerificationSalt: "",
     emailVerificationTokenHash: "",
     emailVerificationExpiresAt: "",
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   };
   const session = await issueDonorSession(env, verified);
   return json({ ok: true, token: session.token, donor: publicDonor(session.donor) });
@@ -689,7 +691,8 @@ export function jsonForScript(value) {
 export function donorVerifyHtml({ title, message, status = "info", script = "", refreshUrl = "" }, init = {}) {
   const statusClass = status === "success" ? "success" : status === "error" ? "error" : "";
   const refresh = refreshUrl ? `<meta http-equiv="refresh" content="2; url=${htmlEscape(refreshUrl)}" />` : "";
-  return new Response(`<!DOCTYPE html>
+  return new Response(
+    `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -723,14 +726,16 @@ export function donorVerifyHtml({ title, message, status = "info", script = "", 
   </div>
   ${script}
 </body>
-</html>`, {
-    ...init,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "no-store",
-      ...(init.headers || {})
+</html>`,
+    {
+      ...init,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
+        ...(init.headers || {}),
+      },
     }
-  });
+  );
 }
 
 export async function handleDonorVerifyPage(request, env) {
@@ -739,7 +744,7 @@ export async function handleDonorVerifyPage(request, env) {
       {
         title: "Verification link unavailable",
         message: "Open your donor verification link in a browser to confirm your email.",
-        status: "error"
+        status: "error",
       },
       { status: 405 }
     );
@@ -755,7 +760,7 @@ export async function handleDonorVerifyPage(request, env) {
       {
         title: "We could not verify your email",
         message: data.error || data.detail || "This verification link is invalid or expired. Please sign up again to request a new link.",
-        status: "error"
+        status: "error",
       },
       { status: verification.status }
     );
@@ -767,7 +772,7 @@ export async function handleDonorVerifyPage(request, env) {
         title: "Email already verified",
         message: "Your email is already verified. Please log in to open your donor dashboard.",
         status: "success",
-        refreshUrl: invitationNext ? `/myagapay/login?next=${encodeURIComponent(invitationNext)}` : "/myagapay/login"
+        refreshUrl: invitationNext ? `/myagapay/login?next=${encodeURIComponent(invitationNext)}` : "/myagapay/login",
       },
       { status: 200 }
     );
@@ -776,7 +781,7 @@ export async function handleDonorVerifyPage(request, env) {
   const session = {
     email: data.donor?.email || new URL(request.url).searchParams.get("email") || "",
     token: data.token,
-    donor: data.donor || {}
+    donor: data.donor || {},
   };
   const script = `<script>
 (() => {
@@ -796,7 +801,7 @@ export async function handleDonorVerifyPage(request, env) {
       message: data.alreadyVerified ? "Your email was already verified. Opening your donor dashboard." : "Your email is verified. Opening your donor dashboard.",
       status: "success",
       script,
-      refreshUrl: destination
+      refreshUrl: destination,
     },
     { status: 200 }
   );
@@ -812,26 +817,27 @@ function attachDonorCampaignGiving(parish, offerings) {
   if (!parish) return parish;
   const groups = [parish.campaigns, parish.feastCampaigns].filter(Array.isArray);
   if (!groups.length) return parish;
-  const norm = (v) => String(v || "").trim().toLowerCase();
+  const norm = (v) =>
+    String(v || "")
+      .trim()
+      .toLowerCase();
 
   const paidCampaignGifts = offerings
     .filter(paidOfferingStatus)
     .map((o) => ({
       key: norm(o.campaign || o.campaignId || o.campaignName || o.campaignSlug),
       cents: offeringFeeBreakdown(o).giftAmountCents,
-      at: o.createdAt || ""
+      at: o.createdAt || "",
     }))
     .filter((g) => g.key);
 
   for (const group of groups) {
     for (const campaign of group) {
       if (!campaign || typeof campaign !== "object") continue;
-      const keys = new Set(
-        [campaign.id, campaign.feastId, campaign.name, campaign.campaignName, campaign.slug,
-          slugify(campaign.name || campaign.campaignName || "")]
-          .map(norm).filter(Boolean)
-      );
-      let cents = 0, count = 0, last = "";
+      const keys = new Set([campaign.id, campaign.feastId, campaign.name, campaign.campaignName, campaign.slug, slugify(campaign.name || campaign.campaignName || "")].map(norm).filter(Boolean));
+      let cents = 0,
+        count = 0,
+        last = "";
       for (const g of paidCampaignGifts) {
         if (!keys.has(g.key)) continue;
         cents += g.cents;
@@ -868,12 +874,8 @@ export async function handleDonorDashboard(request, env) {
       householdName: body.householdName ?? donor.householdName,
       contactPhone: body.contactPhone ?? body.phone ?? donor.contactPhone ?? "",
       defaultParishId: body.defaultParishId ?? body.parishId ?? donor.defaultParishId,
-      pledgeAmountCents: Number.isFinite(Number(body.pledgeAmountCents))
-        ? Math.max(0, Math.round(Number(body.pledgeAmountCents)))
-        : Number(donor.pledgeAmountCents || 0),
-      pledgeCadence: body.pledgeCadence === "monthly"
-        ? "monthly"
-        : (body.pledgeCadence === "annual" ? "annual" : (donor.pledgeCadence === "monthly" ? "monthly" : "annual")),
+      pledgeAmountCents: Number.isFinite(Number(body.pledgeAmountCents)) ? Math.max(0, Math.round(Number(body.pledgeAmountCents))) : Number(donor.pledgeAmountCents || 0),
+      pledgeCadence: body.pledgeCadence === "monthly" ? "monthly" : body.pledgeCadence === "annual" ? "annual" : donor.pledgeCadence === "monthly" ? "monthly" : "annual",
       pledgeYear: body.pledgeYear ?? donor.pledgeYear ?? "",
       addressLine1: body.addressLine1 ?? donor.addressLine1 ?? "",
       addressLine2: body.addressLine2 ?? donor.addressLine2 ?? "",
@@ -881,7 +883,7 @@ export async function handleDonorDashboard(request, env) {
       state: body.state ?? donor.state ?? "",
       postalCode: body.postalCode ?? donor.postalCode ?? "",
       country: body.country ?? donor.country ?? "",
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     const requestedEmail = normalizeEmail(body.email || donor.email);
@@ -895,7 +897,7 @@ export async function handleDonorDashboard(request, env) {
         ...updated,
         email: requestedEmail,
         emailVerifiedAt: new Date().toISOString(),
-        emailChangedAt: new Date().toISOString()
+        emailChangedAt: new Date().toISOString(),
       };
     }
 
@@ -919,7 +921,7 @@ export async function handleDonorDashboard(request, env) {
       await syncSelfServiceContactsFromDonor(env, {
         context: directoryContext,
         donor: updated,
-        correlationId: request.headers.get("X-Correlation-ID") || ""
+        correlationId: request.headers.get("X-Correlation-ID") || "",
       }).catch(() => null);
     }
 
@@ -929,17 +931,21 @@ export async function handleDonorDashboard(request, env) {
     const pledgeSyncParish = updated.defaultParishId || "";
     // Parish stewardship reports remain annual. A monthly donor pledge is
     // annualized here while My AGAPAY retains the donor's chosen cadence.
-    const pledgeSyncAmount = Number(updated.pledgeAmountCents || 0)
-      * (updated.pledgeCadence === "monthly" ? 12 : 1);
+    const pledgeSyncAmount = Number(updated.pledgeAmountCents || 0) * (updated.pledgeCadence === "monthly" ? 12 : 1);
     if (d1(env) && pledgeSyncParish.trim()) {
       const pledgeSyncYear = parseInt(updated.pledgeYear || new Date().getFullYear(), 10);
-      await env.AGAPAY_DB.prepare(`
+      await env.AGAPAY_DB.prepare(
+        `
         INSERT INTO household_pledges (donor_email, parish_id, fiscal_year, target_amount_cents)
         VALUES (?, ?, ?, ?)
         ON CONFLICT(donor_email, parish_id, fiscal_year) DO UPDATE SET
           target_amount_cents = excluded.target_amount_cents,
           updated_at          = datetime('now')
-      `).bind(updated.email, pledgeSyncParish, pledgeSyncYear, pledgeSyncAmount).run().catch(() => {});
+      `
+      )
+        .bind(updated.email, pledgeSyncParish, pledgeSyncYear, pledgeSyncAmount)
+        .run()
+        .catch(() => {});
     }
 
     return json({ ok: true, donor: publicDonor(updated) });
@@ -957,10 +963,7 @@ export async function handleDonorDashboard(request, env) {
     if (found) {
       parish = parishFromRegistration(found.registration);
       if (parish) {
-        const [directorySettings, librarySettings] = await Promise.all([
-          getDirectorySettings(env, parish.id),
-          getParishLibrarySettings(env.AGAPAY_DB || env.DB, parish.id),
-        ]);
+        const [directorySettings, librarySettings] = await Promise.all([getDirectorySettings(env, parish.id), getParishLibrarySettings(env.AGAPAY_DB || env.DB, parish.id)]);
         parish.directoryEnabled = directoryEnabledFor(found.registration, directorySettings);
         parish.libraryEnabled = librarySettings.enabled && hasModuleAccess(found.registration, "library");
         const parishLifeExperience = parishLifeExperienceFor(found.registration);
@@ -982,7 +985,7 @@ export async function handleDonorDashboard(request, env) {
     parish,
     summary,
     recentOfferings: publicOfferings.slice(0, 5),
-    recentCommemorations: commemorations.slice(0, 5)
+    recentCommemorations: commemorations.slice(0, 5),
   });
 }
 
@@ -998,17 +1001,22 @@ export async function handleDonorSupportTicket(request, env) {
   const parishId = String(donor.defaultParishId || "").trim();
   const found = parishId ? await findRegistrationByParishId(env, parishId) : null;
   const registration = found?.registration || {};
-  const result = await submitParishSupportTicket(env, request, {
-    parishId,
-    parishName: registration.parishName || registration.name || "My AGAPAY",
-    email: donor.email
-  }, {
-    ...body,
-    source: "myagapay",
-    submittedBy: donor.email,
-    page: String(body.page || "myagapay").slice(0, 80),
-    path: String(body.path || new URL(request.url).pathname).slice(0, 240)
-  });
+  const result = await submitParishSupportTicket(
+    env,
+    request,
+    {
+      parishId,
+      parishName: registration.parishName || registration.name || "My AGAPAY",
+      email: donor.email,
+    },
+    {
+      ...body,
+      source: "myagapay",
+      submittedBy: donor.email,
+      page: String(body.page || "myagapay").slice(0, 80),
+      path: String(body.path || new URL(request.url).pathname).slice(0, 240),
+    }
+  );
   return json(result, { status: result.ok ? 201 : result.status || 500 });
 }
 
@@ -1016,7 +1024,10 @@ export async function handleDonorAccountDeletion(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   const donor = await requireDonor(request, env);
   if (!donor) return unauthorized();
-  const limited = await rateLimitByKey(request, env, "donor-account-deletion", donor.email, { limit: 3, windowSeconds: 86400 });
+  const limited = await rateLimitByKey(request, env, "donor-account-deletion", donor.email, {
+    limit: 3,
+    windowSeconds: 86400,
+  });
   if (limited) return limited;
 
   const body = await request.json().catch(() => null);
@@ -1041,14 +1052,17 @@ export async function handleDonorAccountDeletion(request, env) {
       requestedAt
     );
   } else if (env.AGAPAY_REGISTRATIONS) {
-    await env.AGAPAY_REGISTRATIONS.put(`account-deletion-request:${requestId}`, JSON.stringify({
-      id: requestId,
-      donorEmail: donor.email,
-      status: "pending",
-      source: String(body.source || "myagapay-account-settings").slice(0, 80),
-      requestedAt,
-      updatedAt: requestedAt
-    }));
+    await env.AGAPAY_REGISTRATIONS.put(
+      `account-deletion-request:${requestId}`,
+      JSON.stringify({
+        id: requestId,
+        donorEmail: donor.email,
+        status: "pending",
+        source: String(body.source || "myagapay-account-settings").slice(0, 80),
+        requestedAt,
+        updatedAt: requestedAt,
+      })
+    );
   }
 
   await saveDonor(env, {
@@ -1058,7 +1072,7 @@ export async function handleDonorAccountDeletion(request, env) {
     sessionSalt: "",
     sessionTokenHash: "",
     sessionExpiresAt: "",
-    updatedAt: requestedAt
+    updatedAt: requestedAt,
   });
   await logEvent(env, {
     eventType: "donor.account_deletion.requested",
@@ -1066,15 +1080,18 @@ export async function handleDonorAccountDeletion(request, env) {
     route: "/api/donor/account-deletion",
     method: "POST",
     retryable: false,
-    metadata: { requestId, emailHash: await sha256Hex(donor.email) }
+    metadata: { requestId, emailHash: await sha256Hex(donor.email) },
   });
 
-  return json({
-    ok: true,
-    requestId,
-    requestedAt,
-    message: "Your account deletion request has been received. AGAPAY will complete it within 30 days and retain only records required by law."
-  }, { status: 202 });
+  return json(
+    {
+      ok: true,
+      requestId,
+      requestedAt,
+      message: "Your account deletion request has been received. AGAPAY will complete it within 30 days and retain only records required by law.",
+    },
+    { status: 202 }
+  );
 }
 
 export async function handleDonorStewardshipFeatureRequest(request, env) {
@@ -1086,13 +1103,7 @@ export async function handleDonorStewardshipFeatureRequest(request, env) {
     return json({ error: "Choose your home parish before sending this request." }, { status: 422 });
   }
 
-  const limited = await rateLimitByKey(
-    request,
-    env,
-    "donor-stewardship-feature-request",
-    `${donor.email}:${donor.defaultParishId}`,
-    { limit: 3, windowSeconds: 86400 }
-  );
+  const limited = await rateLimitByKey(request, env, "donor-stewardship-feature-request", `${donor.email}:${donor.defaultParishId}`, { limit: 3, windowSeconds: 86400 });
   if (limited) return limited;
 
   const found = await findRegistrationByParishId(env, donor.defaultParishId);
@@ -1104,15 +1115,16 @@ export async function handleDonorStewardshipFeatureRequest(request, env) {
   const result = await recordParishFeatureRequest(env, {
     parishId: donor.defaultParishId,
     featureId: "pledge-tracker",
-    donorEmail: donor.email
+    donorEmail: donor.email,
   });
-  return json({
-    ok: true,
-    duplicate: result.duplicate,
-    message: result.duplicate
-      ? "Your parish has already received your request."
-      : "Thank you. Your parish will see this request the next time they open their dashboard."
-  }, { status: result.duplicate ? 200 : 201 });
+  return json(
+    {
+      ok: true,
+      duplicate: result.duplicate,
+      message: result.duplicate ? "Your parish has already received your request." : "Thank you. Your parish will see this request the next time they open their dashboard.",
+    },
+    { status: result.duplicate ? 200 : 201 }
+  );
 }
 
 export async function handleDonorGivingPlusFeatureRequest(request, env) {
@@ -1124,13 +1136,7 @@ export async function handleDonorGivingPlusFeatureRequest(request, env) {
     return json({ error: "Choose your home parish before sending this request." }, { status: 422 });
   }
 
-  const limited = await rateLimitByKey(
-    request,
-    env,
-    "donor-giving-plus-feature-request",
-    `${donor.email}:${donor.defaultParishId}`,
-    { limit: 3, windowSeconds: 86400 }
-  );
+  const limited = await rateLimitByKey(request, env, "donor-giving-plus-feature-request", `${donor.email}:${donor.defaultParishId}`, { limit: 3, windowSeconds: 86400 });
   if (limited) return limited;
 
   const found = await findRegistrationByParishId(env, donor.defaultParishId);
@@ -1142,276 +1148,16 @@ export async function handleDonorGivingPlusFeatureRequest(request, env) {
   const result = await recordParishFeatureRequest(env, {
     parishId: donor.defaultParishId,
     featureId: "giving-plus",
-    donorEmail: donor.email
+    donorEmail: donor.email,
   });
-  return json({
-    ok: true,
-    duplicate: result.duplicate,
-    message: result.duplicate
-      ? "Your parish has already received your request."
-      : "Thank you. Your parish will see this request the next time they open their dashboard."
-  }, { status: result.duplicate ? 200 : 201 });
-}
-
-function unescapeIcsText(value = "") {
-  return String(value).replace(/\\n/gi, " ").replace(/\\,/g, ",").replace(/\\;/g, ";").replace(/\\\\/g, "\\").trim();
-}
-
-function icsDateParts(value = "") {
-  const raw = String(value).trim();
-  const match = raw.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?/);
-  if (!match) return null;
-  const [, year, month, day, hour = "00", minute = "00", second = "00", utc = ""] = match;
-  return {
-    year:Number(year), month:Number(month), day:Number(day),
-    hour:Number(hour), minute:Number(minute), second:Number(second),
-    utc:Boolean(utc), allDay:!raw.includes("T")
-  };
-}
-
-function icsZoneFormatter(timeZone, context) {
-  const cached = context?.formatters?.get(timeZone);
-  if (cached) return cached;
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hourCycle:"h23",
-    year:"numeric", month:"2-digit", day:"2-digit",
-    hour:"2-digit", minute:"2-digit", second:"2-digit"
-  });
-  if (context?.formatters && context.formatters.size < 16) context.formatters.set(timeZone, formatter);
-  return formatter;
-}
-
-function icsZonedDate(parts, timeZone, context) {
-  let timestamp = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
-  try {
-    const formatter = icsZoneFormatter(timeZone, context);
-    for (let pass = 0; pass < 2; pass += 1) {
-      const displayed = Object.fromEntries(formatter.formatToParts(new Date(timestamp)).map(part => [part.type, part.value]));
-      const displayedTimestamp = Date.UTC(
-        Number(displayed.year), Number(displayed.month) - 1, Number(displayed.day),
-        Number(displayed.hour), Number(displayed.minute), Number(displayed.second)
-      );
-      timestamp += Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second) - displayedTimestamp;
-    }
-  } catch {
-    return null;
-  }
-  return new Date(timestamp);
-}
-
-function icsDate(value = "", params = {}, context = undefined) {
-  const parts = icsDateParts(value);
-  if (!parts) return null;
-  let date;
-  if (parts.utc) {
-    date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second));
-  } else if (params.tzid) {
-    date = icsZonedDate(parts, params.tzid, context);
-  } else {
-    date = new Date(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
-  }
-  return !date || Number.isNaN(date.getTime()) ? null : date;
-}
-
-function icsRule(value = "") {
-  return Object.fromEntries(String(value).split(";").map(part => part.split("=")).filter(pair => pair.length === 2));
-}
-
-const ICS_WEEKDAYS = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
-
-function icsNaiveDate(parts) {
-  return new Date(Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second));
-}
-
-function icsDateInEventZone(date, event, context) {
-  if (event.dtstartParams?.tzid) {
-    try {
-      const formatter = icsZoneFormatter(event.dtstartParams.tzid, context);
-      const parts = Object.fromEntries(formatter.formatToParts(date).map(part => [part.type, part.value]));
-      return { year:Number(parts.year), month:Number(parts.month), day:Number(parts.day) };
-    } catch {
-      return null;
-    }
-  }
-  return event.dtstartParams?.utc
-    ? { year:date.getUTCFullYear(), month:date.getUTCMonth() + 1, day:date.getUTCDate() }
-    : { year:date.getFullYear(), month:date.getMonth() + 1, day:date.getDate() };
-}
-
-function icsRecurrenceDate(cursor, event, context) {
-  const parts = {
-    year:cursor.getUTCFullYear(), month:cursor.getUTCMonth() + 1, day:cursor.getUTCDate(),
-    hour:cursor.getUTCHours(), minute:cursor.getUTCMinutes(), second:cursor.getUTCSeconds()
-  };
-  if (event.dtstartParams?.tzid) return icsZonedDate(parts, event.dtstartParams.tzid, context);
-  if (event.dtstartParams?.utc) return new Date(Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second));
-  return new Date(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
-}
-
-function icsCountLatestPossible(startCursor, frequency, interval, count) {
-  const latest = new Date(startCursor);
-  const span = Math.max(0, count - 1) * interval;
-  if (frequency === "DAILY") latest.setUTCDate(latest.getUTCDate() + span);
-  if (frequency === "WEEKLY") latest.setUTCDate(latest.getUTCDate() + span * 7 + 6);
-  if (frequency === "MONTHLY") latest.setUTCMonth(latest.getUTCMonth() + span);
-  if (frequency === "YEARLY") latest.setUTCFullYear(latest.getUTCFullYear() + span);
-  return latest;
-}
-
-const ICS_TIMEZONE_MARGIN_MS = 36 * 60 * 60 * 1000;
-
-function icsBlockMayOverlap(block, now, horizon) {
-  const recurrence = block.match(/(?:^|\r?\n)RRULE:([^\r\n]+)/)?.[1] || "";
-  if (recurrence) return /(?:^|;)FREQ=(?:DAILY|WEEKLY|MONTHLY|YEARLY)(?:;|$)/.test(recurrence);
-  const startValue = block.match(/(?:^|\r?\n)DTSTART[^:]*:([^\r\n]+)/)?.[1] || "";
-  const startParts = icsDateParts(startValue);
-  if (!startParts) return true;
-  const endValue = block.match(/(?:^|\r?\n)DTEND[^:]*:([^\r\n]+)/)?.[1] || "";
-  const endParts = icsDateParts(endValue);
-  const approximateStart = icsNaiveDate(startParts).getTime();
-  const approximateEnd = endParts ? icsNaiveDate(endParts).getTime() : approximateStart;
-  return approximateStart <= horizon.getTime() + ICS_TIMEZONE_MARGIN_MS
-    && approximateEnd >= now.getTime() - ICS_TIMEZONE_MARGIN_MS;
-}
-
-function expandIcsEvent(event, now, horizon, context) {
-  const startParts = icsDateParts(event.dtstart);
-  if (!startParts) return [];
-  const rule = event.rrule ? icsRule(event.rrule) : null;
-  if (rule && (!rule.FREQ || !["DAILY", "WEEKLY", "MONTHLY", "YEARLY"].includes(rule.FREQ))) return [];
-  const startCursor = icsNaiveDate(startParts);
-  if (!rule) {
-    const endParts = icsDateParts(event.dtend);
-    const approximateEnd = endParts ? icsNaiveDate(endParts) : startCursor;
-    if (startCursor.getTime() > horizon.getTime() + ICS_TIMEZONE_MARGIN_MS
-      || approximateEnd.getTime() < now.getTime() - ICS_TIMEZONE_MARGIN_MS) return [];
-    const start = icsDate(event.dtstart, event.dtstartParams, context);
-    if (!start) return [];
-    const end = icsDate(event.dtend, event.dtendParams || event.dtstartParams, context);
-    const duration = end ? Math.max(0, end.getTime() - start.getTime()) : 0;
-    return start <= horizon && (end || start) >= now ? [{ start, end, duration }] : [];
-  }
-  const frequency = rule.FREQ;
-  const interval = Math.max(1, Number(rule.INTERVAL || 1));
-  const count = Math.max(0, Number.parseInt(rule.COUNT || "0", 10) || 0);
-  if (count) {
-    const latestPossible = icsCountLatestPossible(startCursor, frequency, interval, count);
-    if (latestPossible.getTime() < now.getTime() - ICS_TIMEZONE_MARGIN_MS) return [];
-  }
-  const start = icsDate(event.dtstart, event.dtstartParams, context);
-  if (!start) return [];
-  const end = icsDate(event.dtend, event.dtendParams || event.dtstartParams, context);
-  const duration = end ? Math.max(0, end.getTime() - start.getTime()) : 0;
-  const until = icsDate(rule.UNTIL, event.dtstartParams, context) || horizon;
-  const results = [];
-  const byDays = new Set(String(rule.BYDAY || ICS_WEEKDAYS[startCursor.getUTCDay()]).split(",").map(day => day.slice(-2)));
-  const byMonths = new Set(String(rule.BYMONTH || startParts.month).split(",").map(Number).filter(month => month >= 1 && month <= 12));
-  const byMonthDays = String(rule.BYMONTHDAY || startParts.day).split(",").map(Number).filter(day => day >= -31 && day <= 31 && day !== 0);
-  const excluded = new Set((event.exdates || []).flatMap(entry => String(entry.value || "").split(",").map(value => icsDate(value, { ...event.dtstartParams, ...entry.params }, context)?.getTime())).filter(Number.isFinite));
-  let cursor = new Date(startCursor);
-  if (!count) {
-    const recurrenceSearchStart = duration ? new Date(now.getTime() - duration) : now;
-    const zonedToday = icsDateInEventZone(recurrenceSearchStart, event, context);
-    if (zonedToday) {
-      const todayCursor = new Date(Date.UTC(zonedToday.year, zonedToday.month - 1, zonedToday.day, startParts.hour, startParts.minute, startParts.second));
-      if (todayCursor > cursor) cursor = todayCursor;
-    }
-  }
-  let occurrencesSeen = 0;
-  for (let guard = 0; guard < 5000 && results.length < 30; guard += 1) {
-    const instanceStart = icsRecurrenceDate(cursor, event, context);
-    if (!instanceStart || instanceStart > horizon || instanceStart > until) break;
-    const dayDelta = Math.floor((cursor - startCursor) / 86400000);
-    const weekDelta = Math.floor(dayDelta / 7);
-    const monthDelta = (cursor.getUTCFullYear() - startCursor.getUTCFullYear()) * 12 + cursor.getUTCMonth() - startCursor.getUTCMonth();
-    const yearDelta = cursor.getUTCFullYear() - startCursor.getUTCFullYear();
-    const daysInCursorMonth = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 0)).getUTCDate();
-    const matchesYearlyMonthDay = byMonthDays.some(day => day > 0
-      ? cursor.getUTCDate() === day
-      : cursor.getUTCDate() === daysInCursorMonth + day + 1);
-    const matches = cursor >= startCursor && (
-      (frequency === "DAILY" && dayDelta % interval === 0)
-      || (frequency === "WEEKLY" && weekDelta % interval === 0 && byDays.has(ICS_WEEKDAYS[cursor.getUTCDay()]))
-      || (frequency === "MONTHLY" && monthDelta % interval === 0 && cursor.getUTCDate() === startCursor.getUTCDate())
-      || (frequency === "YEARLY" && yearDelta % interval === 0 && byMonths.has(cursor.getUTCMonth() + 1) && matchesYearlyMonthDay)
-    );
-    if (matches) {
-      occurrencesSeen += 1;
-      const instanceEnd = duration ? new Date(instanceStart.getTime() + duration) : null;
-      if ((instanceEnd || instanceStart) >= now && !excluded.has(instanceStart.getTime())) {
-        results.push({ start:instanceStart, end:instanceEnd, duration });
-      }
-      if (count && occurrencesSeen >= count) break;
-    }
-    cursor.setUTCDate(cursor.getUTCDate() + 1);
-  }
-  return results;
-}
-
-export function parseKoinoniaCalendarIcs(text, fromDate = new Date()) {
-  const unfolded = String(text || "").replace(/\r?\n[ \t]/g, "");
-  const blocks = unfolded.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g) || [];
-  const now = new Date(fromDate);
-  const horizon = new Date(now.getTime() + 180 * 86400000);
-  const context = { formatters:new Map() };
-  return blocks.flatMap((block) => {
-    if (!icsBlockMayOverlap(block, now, horizon)) return [];
-    const event = {};
-    block.split(/\r?\n/).forEach(line => {
-      const separator = line.indexOf(":");
-      if (separator < 0) return;
-      const [rawKey, ...rawParams] = line.slice(0, separator).split(";");
-      const key = rawKey.toLowerCase();
-      const params = Object.fromEntries(rawParams.map((param) => {
-        const equals = param.indexOf("=");
-        return equals < 0 ? [param.toLowerCase(), ""] : [param.slice(0, equals).toLowerCase(), param.slice(equals + 1).replace(/^"|"$/g, "")];
-      }));
-      const value = line.slice(separator + 1);
-      if (key === "exdate") {
-        (event.exdates ||= []).push({ value, params });
-      } else if (["summary", "location", "description", "dtstart", "dtend", "rrule", "uid", "status"].includes(key)) {
-        event[key] = value;
-        event[`${key}Params`] = { ...params, utc:value.endsWith("Z") };
-      }
-    });
-    if (String(event.status || "").toUpperCase() === "CANCELLED") return [];
-    return expandIcsEvent(event, now, horizon, context).map(instance => ({
-      id: String(event.uid || `${event.summary || "event"}-${instance.start.toISOString()}`).slice(0, 240),
-      title: unescapeIcsText(event.summary) || "Parish event",
-      location: unescapeIcsText(event.location),
-      description: unescapeIcsText(event.description).slice(0, 500),
-      startsAt: instance.start.toISOString(),
-      endsAt: instance.end?.toISOString() || "",
-      allDay: !String(event.dtstart || "").includes("T")
-    }));
-  }).sort((left, right) => left.startsAt.localeCompare(right.startsAt)).slice(0, 180);
-}
-
-export async function handleDonorParishCalendar(request, env) {
-  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
-  const donor = await requireDonor(request, env);
-  if (!donor) return unauthorized();
-  if (!donor.defaultParishId) return json({ connected:false, events:[] });
-  const found = await findRegistrationByParishId(env, donor.defaultParishId);
-  const commerceEvents = await loadPublishedCommerceCalendarEvents(env, donor.defaultParishId, found?.registration || {});
-  const sourceUrl = String(found?.registration?.koinoniaCalendarUrl || "").trim();
-  if (!sourceUrl) return json({ connected:false, internal:true, events:commerceEvents }, { headers:{ "Cache-Control":"private, max-age=300" } });
-  let subscriptionUrl;
-  try {
-    subscriptionUrl = normalizeKoinoniaCalendarUrl(sourceUrl);
-  } catch {
-    return json({ connected:true, internal:true, events:commerceEvents, unavailable:true }, { headers:{ "Cache-Control":"private, no-store" } });
-  }
-  try {
-    const text = await fetchKoinoniaCalendarIcs(subscriptionUrl);
-    const events = [...parseKoinoniaCalendarIcs(text), ...commerceEvents]
-      .sort((left, right) => String(left.startsAt || "").localeCompare(String(right.startsAt || "")))
-      .slice(0, 240);
-    return json({ connected:true, internal:true, subscriptionUrl, events, syncedAt:new Date().toISOString() }, { headers:{ "Cache-Control":"private, max-age=300" } });
-  } catch {
-    return json({ connected:true, internal:true, subscriptionUrl, events:commerceEvents, unavailable:true }, { headers:{ "Cache-Control":"private, no-store" } });
-  }
+  return json(
+    {
+      ok: true,
+      duplicate: result.duplicate,
+      message: result.duplicate ? "Your parish has already received your request." : "Thank you. Your parish will see this request the next time they open their dashboard.",
+    },
+    { status: result.duplicate ? 200 : 201 }
+  );
 }
 
 export async function handleDonorMinistryServiceInterest(request, env) {
@@ -1423,13 +1169,7 @@ export async function handleDonorMinistryServiceInterest(request, env) {
     return json({ error: "Choose your home parish before sending this request." }, { status: 422 });
   }
 
-  const limited = await rateLimitByKey(
-    request,
-    env,
-    "donor-ministry-service-interest",
-    `${donor.email}:${donor.defaultParishId}`,
-    { limit: 3, windowSeconds: 86400 }
-  );
+  const limited = await rateLimitByKey(request, env, "donor-ministry-service-interest", `${donor.email}:${donor.defaultParishId}`, { limit: 3, windowSeconds: 86400 });
   if (limited) return limited;
 
   const found = await findRegistrationByParishId(env, donor.defaultParishId);
@@ -1437,15 +1177,16 @@ export async function handleDonorMinistryServiceInterest(request, env) {
   const result = await recordParishFeatureRequest(env, {
     parishId: donor.defaultParishId,
     featureId: "ministry-service",
-    donorEmail: donor.email
+    donorEmail: donor.email,
   });
-  return json({
-    ok: true,
-    duplicate: result.duplicate,
-    message: result.duplicate
-      ? "Your parish has already received your interest."
-      : "Thank you. Your parish dashboard has been notified that a parishioner wants to serve."
-  }, { status: result.duplicate ? 200 : 201 });
+  return json(
+    {
+      ok: true,
+      duplicate: result.duplicate,
+      message: result.duplicate ? "Your parish has already received your interest." : "Thank you. Your parish dashboard has been notified that a parishioner wants to serve.",
+    },
+    { status: result.duplicate ? 200 : 201 }
+  );
 }
 
 export async function handleDonorOfferings(request, env) {
@@ -1454,7 +1195,10 @@ export async function handleDonorOfferings(request, env) {
   if (!donor) return unauthorized();
   const offerings = await reconcilePendingDonorOfferings(env, await loadDonorOfferings(env, donor.email, 100));
   const commemorations = await loadReconciledDonorCommemorations(env, donor.email, offerings, 100);
-  return json({ offerings: offerings.map(publicDonorOffering), summary: await addOutsideDonorPledgeSummary(env, donor, donorSummaryFromOfferings(offerings, commemorations)) });
+  return json({
+    offerings: offerings.map(publicDonorOffering),
+    summary: await addOutsideDonorPledgeSummary(env, donor, donorSummaryFromOfferings(offerings, commemorations)),
+  });
 }
 
 export async function handleDonorSubscriptionPortal(request, env) {
@@ -1478,21 +1222,20 @@ export async function handleDonorSubscriptionPortal(request, env) {
     .filter((offering) => offering.stripeCustomerId && offering.parishId && offering.frequency && offering.frequency !== "once")
     .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
 
-  const selectedOffering = recurringOfferings.find((offering) => requestedParishId && offering.parishId === requestedParishId)
-    || recurringOfferings[0];
+  const selectedOffering = recurringOfferings.find((offering) => requestedParishId && offering.parishId === requestedParishId) || recurringOfferings[0];
 
   if (!selectedOffering) {
-    return json(
-      { error: "No recurring gifts found", detail: "Create a recurring gift before opening subscription management." },
-      { status: 422 }
-    );
+    return json({ error: "No recurring gifts found", detail: "Create a recurring gift before opening subscription management." }, { status: 422 });
   }
 
   const found = await findRegistrationByParishId(env, selectedOffering.parishId);
   const stripeAccountId = found?.registration?.stripeAccountId || "";
   if (!stripeAccountId) {
     return json(
-      { error: "Parish Stripe account unavailable", detail: "This parish is not currently connected for Stripe subscription management." },
+      {
+        error: "Parish Stripe account unavailable",
+        detail: "This parish is not currently connected for Stripe subscription management.",
+      },
       { status: 422 }
     );
   }
@@ -1500,1119 +1243,20 @@ export async function handleDonorSubscriptionPortal(request, env) {
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   const form = new URLSearchParams({
     customer: selectedOffering.stripeCustomerId,
-    return_url: `${String(appUrl).replace(/\/+$/, "")}/myagapay/giving/history`
+    return_url: `${String(appUrl).replace(/\/+$/, "")}/myagapay/giving/history`,
   });
 
   const session = await stripeFormConnectedRequest(env, "/v1/billing_portal/sessions", form, stripeAccountId);
   if (!session.ok) {
-    return json(
-      { error: "Stripe billing portal failed", detail: session.body.error?.message || "Unknown Stripe error" },
-      { status: 502 }
-    );
+    return json({ error: "Stripe billing portal failed", detail: session.body.error?.message || "Unknown Stripe error" }, { status: 502 });
   }
 
   return json({
     ok: true,
     portalUrl: session.body.url,
     parishId: selectedOffering.parishId,
-    parishName: selectedOffering.parishName || found?.registration?.parishName || ""
+    parishName: selectedOffering.parishName || found?.registration?.parishName || "",
   });
-}
-
-const BOOKSTORE_ITEM_FIELD_CATEGORIES = [
-  { category: "book", label: "Book", fields: [
-    { key: "title", label: "Title", required: true, maxLength: 180 },
-    { key: "author", label: "Author", required: false, maxLength: 120 },
-    { key: "isbn", label: "ISBN / barcode", required: false, maxLength: 32 }
-  ] },
-  { category: "prayer_rope", label: "Prayer Rope", fields: [
-    { key: "description", label: "Description", required: true, maxLength: 180 },
-    { key: "color", label: "Color", required: false, maxLength: 80 }
-  ] },
-  { category: "icon", label: "Icon", fields: [
-    { key: "saint_or_feast", label: "Saint or feast", required: true, maxLength: 160 },
-    { key: "size", label: "Size", required: false, maxLength: 80 }
-  ] },
-  { category: "candle", label: "Candle", fields: [{ key: "description", label: "Description", required: true, maxLength: 160 }] },
-  { category: "jewelry", label: "Jewelry / Cross", fields: [{ key: "description", label: "Description", required: true, maxLength: 180 }] },
-  { category: "incense", label: "Incense", fields: [{ key: "description", label: "Description", required: true, maxLength: 160 }] },
-  { category: "cd_dvd", label: "CD / DVD", fields: [{ key: "title", label: "Title", required: true, maxLength: 180 }] },
-  { category: "other", label: "Other Item", fields: [{ key: "description", label: "Description", required: true, maxLength: 180 }] }
-];
-
-function bookstoreCategoryLabel(category) {
-  return BOOKSTORE_ITEM_FIELD_CATEGORIES.find(entry => entry.category === category)?.label || "Item";
-}
-
-function centsFromBookstoreAmount(value) {
-  const number = Number(String(value || "").replace(/[^0-9.]/g, ""));
-  return Number.isFinite(number) && number > 0 ? Math.round(number * 100) : 0;
-}
-
-function normalizeBookstoreQuantity(value) {
-  const quantity = Math.trunc(Number(value || 1));
-  if (!Number.isFinite(quantity) || quantity < 1) return 1;
-  return Math.min(quantity, 50);
-}
-
-export function guestBookstoreItemError(items = []) {
-  for (const item of items) {
-    if (String(item?.productId || "").trim() || String(item?.variantId || "").trim()) continue;
-    const category = String(item?.itemCategory || "").trim();
-    const categoryConfig = BOOKSTORE_ITEM_FIELD_CATEGORIES.find(entry => entry.category === category);
-    const specifics = item?.specifics && typeof item.specifics === "object" ? item.specifics : {};
-    const isbn = String(item?.specifics?.isbn || item?.barcode || "").replace(/[^0-9Xx]/g, "");
-    if (item?.source === "scan_and_go" && category === "book" && [10, 13].includes(isbn.length)) continue;
-    const description = String(specifics.description || specifics.title || specifics.saint_or_feast || "").trim();
-    if (item?.source !== "shopper_added" || !categoryConfig || !description) {
-      return "Describe every shopper-added item and choose a valid category.";
-    }
-  }
-  return "";
-}
-
-export function bookstoreOrderSource(items = [], isGuestCheckout = false) {
-  if (items.some(item => item.source === "scan_and_go")) return "scan_and_go";
-  if (items.some(item => item.source === "shopper_added")) return "shopper_added";
-  if (isGuestCheckout) return "guest_checkout";
-  if (items.some(item => item.source === "catalog")) return "catalog";
-  return "manual_entry";
-}
-
-function describeManualBookstoreItem(category, specifics = {}) {
-  if (category === "book") return [specifics.title, specifics.author ? `by ${specifics.author}` : ""].filter(Boolean).join(" ") || "Book";
-  if (category === "icon") return specifics.saint_or_feast || specifics.description || "Icon";
-  return specifics.description || specifics.title || bookstoreCategoryLabel(category);
-}
-
-function normalizeBookstoreProduct(row = {}) {
-  const regularPriceCents = Number(row.unit_price_cents || 0);
-  const submittedSalePriceCents = Number(row.sale_price_cents || 0);
-  const onSale = submittedSalePriceCents > 0 && submittedSalePriceCents < regularPriceCents;
-  const priceCents = onSale ? submittedSalePriceCents : regularPriceCents;
-  return {
-    id: row.id || "",
-    variantId: row.variant_id || "",
-    name: row.name || "Bookstore item",
-    description: row.description || "",
-    category: row.item_category || "other",
-    categoryLabel: bookstoreCategoryLabel(row.item_category || "other"),
-    sku: row.sku || row.default_sku || "",
-    barcode: row.barcode || "",
-    taxCode: row.tax_code || row.default_tax_code || "",
-    fulfillmentType: row.variant_fulfillment_type || row.fulfillment_type || "physical_pickup",
-    priceCents,
-    priceLabel: `$${(priceCents / 100).toFixed(2)}`,
-    regularPriceCents,
-    salePriceCents: onSale ? submittedSalePriceCents : 0,
-    onSale,
-    savingsPercent: onSale ? Math.round((1 - (submittedSalePriceCents / regularPriceCents)) * 100) : 0,
-    stockQuantity: Number(row.stock_quantity || 0),
-    trackInventory: Number(row.track_inventory ?? 1) !== 0,
-    unitsSold: Number(row.units_sold || 0),
-    imageUrl: row.image_url || ""
-  };
-}
-
-export async function loadDonorBookstoreProducts(env, parishId) {
-  if (!d1(env)) return [];
-  const rows = await d1All(env, `
-    SELECT p.id, p.name, p.description, p.item_category, p.default_sku, p.default_tax_code,
-           p.fulfillment_type, p.image_url,
-           v.id AS variant_id, v.sku, v.barcode, v.variant_name, v.unit_price_cents, v.sale_price_cents,
-           v.tax_code, v.fulfillment_type AS variant_fulfillment_type,
-           v.stock_quantity, v.track_inventory, COALESCE(sales.units_sold, 0) AS units_sold
-    FROM commerce_products p
-    LEFT JOIN commerce_product_variants v
-     ON v.product_id = p.id AND v.parish_id = p.parish_id
-     AND v.commerce_module = 'bookstore' AND v.status = 'active'
-    LEFT JOIN (
-      SELECT i.variant_id, SUM(i.quantity) AS units_sold
-      FROM commerce_order_items i
-      JOIN commerce_orders o ON o.id = i.order_id
-      WHERE i.parish_id = ? AND i.commerce_module = 'bookstore'
-        AND (o.payment_status = 'paid' OR o.status = 'completed')
-      GROUP BY i.variant_id
-    ) sales ON sales.variant_id = v.id
-    WHERE p.parish_id = ? AND p.commerce_module = 'bookstore' AND p.status = 'active'
-    ORDER BY p.name COLLATE NOCASE, v.variant_name COLLATE NOCASE
-  `, parishId, parishId);
-  return rows.map(normalizeBookstoreProduct).filter(product => product.variantId && product.priceCents > 0);
-}
-
-async function loadDonorBookstoreOrders(env, parishId, donorEmail) {
-  if (!d1(env)) return [];
-  const rows = await d1All(env, `
-    SELECT id, order_number, status, payment_status, item_category, item_description, quantity,
-           subtotal_cents, tax_cents, total_charged_cents, fulfillment_status, pickup_note, created_at
-    FROM commerce_orders
-    WHERE parish_id = ? AND commerce_module = 'bookstore' AND donor_email = ?
-    ORDER BY created_at DESC LIMIT 20
-  `, parishId, donorEmail);
-
-  const orderIds = rows.map((row) => row.id);
-  const itemsByOrder = {};
-  if (orderIds.length) {
-    const placeholders = orderIds.map(() => "?").join(",");
-    const itemRows = await d1All(env, `
-      SELECT order_id, item_name, quantity, unit_price_cents, total_cents
-      FROM commerce_order_items
-      WHERE parish_id = ? AND order_id IN (${placeholders})
-      ORDER BY created_at ASC
-    `, parishId, ...orderIds);
-    for (const item of itemRows) {
-      (itemsByOrder[item.order_id] ||= []).push({
-        name: item.item_name,
-        quantity: Number(item.quantity || 1),
-        unitPriceCents: Number(item.unit_price_cents || 0),
-        totalCents: Number(item.total_cents || 0)
-      });
-    }
-  }
-
-  return rows.map(row => ({
-    id: row.id,
-    orderNumber: row.order_number || "",
-    status: row.status || "checkout_created",
-    paymentStatus: row.payment_status || "pending",
-    itemCategory: row.item_category || "other",
-    itemCategoryLabel: bookstoreCategoryLabel(row.item_category || "other"),
-    itemDescription: row.item_description || "Bookstore order",
-    quantity: Number(row.quantity || 1),
-    subtotalCents: Number(row.subtotal_cents || 0),
-    taxCents: Number(row.tax_cents || 0),
-    totalChargedCents: Number(row.total_charged_cents || row.subtotal_cents || 0),
-    fulfillmentStatus: row.fulfillment_status || "pending",
-    pickupNote: row.pickup_note || "",
-    createdAt: row.created_at || "",
-    // Falls back to a single synthetic line so older/edge-case orders that
-    // predate itemized storage still expand into a one-line receipt instead
-    // of an empty list.
-    items: (itemsByOrder[row.id] && itemsByOrder[row.id].length)
-      ? itemsByOrder[row.id]
-      : [{
-          name: row.item_description || "Bookstore item",
-          quantity: Number(row.quantity || 1),
-          unitPriceCents: Number(row.quantity) > 0 ? Math.round(Number(row.subtotal_cents || 0) / Number(row.quantity)) : Number(row.subtotal_cents || 0),
-          totalCents: Number(row.subtotal_cents || 0)
-        }]
-  }));
-}
-
-async function resolveDonorBookstoreParish(request, env, donor, explicitParishId = "") {
-  const parishId = String(explicitParishId || request.headers.get("X-AGAPAY-Parish-Id") || donor.defaultParishId || "").trim();
-  if (!parishId) return { error: json({ error: "Choose your parish in Settings before ordering from the bookstore." }, { status: 422 }) };
-  const found = await findRegistrationByParishId(env, parishId);
-  if (!found?.registration) return { error: json({ error: "Parish not found." }, { status: 404 }) };
-  const registration = found.registration;
-  if (!bookstoreEnabledFor(registration)) {
-    return { parishId, registration, available: false };
-  }
-  return { parishId, registration, available: true };
-}
-
-async function resolvePublicBookstoreParish(env, parishId = "") {
-  const cleanParishId = String(parishId || "").trim();
-  if (!cleanParishId) return { error: json({ error: "Parish not found." }, { status: 404 }) };
-  const found = await findRegistrationByParishId(env, cleanParishId);
-  if (!found?.registration) return { error: json({ error: "Parish not found." }, { status: 404 }) };
-  return {
-    parishId: cleanParishId,
-    registration: found.registration,
-    available: bookstoreEnabledFor(found.registration)
-  };
-}
-
-export async function handleDonorBookstoreItemFields(request, env) {
-  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
-  return json({ categories: BOOKSTORE_ITEM_FIELD_CATEGORIES });
-}
-
-export async function handleDonorBookstoreIsbnLookup(request, env) {
-  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
-  const url = new URL(request.url);
-  const isbn = String(url.searchParams.get("isbn") || "").replace(/[^0-9Xx]/g, "");
-  if (isbn.length !== 10 && isbn.length !== 13) return json({ found: false, error: "Enter a 10 or 13 digit ISBN." }, { status: 422 });
-
-  const donor = await requireDonor(request, env);
-  const parishId = String(request.headers.get("X-AGAPAY-Parish-Id") || donor?.defaultParishId || "").trim();
-  if (donor?.email && parishId && d1(env)) {
-    const row = await d1First(env, `
-      SELECT p.id, p.name, p.description, p.item_category, p.default_sku, p.default_tax_code,
-             p.fulfillment_type, p.image_url,
-             v.id AS variant_id, v.sku, v.barcode, v.unit_price_cents, v.sale_price_cents, v.tax_code,
-             v.fulfillment_type AS variant_fulfillment_type, v.stock_quantity, v.track_inventory
-      FROM commerce_product_variants v
-      JOIN commerce_products p ON p.id = v.product_id
-      WHERE v.parish_id = ? AND v.commerce_module = 'bookstore'
-        AND v.status = 'active' AND p.status = 'active'
-        AND (v.barcode = ? OR v.sku = ? OR p.default_sku = ?)
-      LIMIT 1
-    `, parishId, isbn, isbn, isbn);
-    if (row) return json({ found: true, source: "catalog", product: normalizeBookstoreProduct(row) });
-  }
-
-  try {
-    const response = await fetch(`https://openlibrary.org/isbn/${encodeURIComponent(isbn)}.json`, { headers: { Accept: "application/json" } });
-    if (!response.ok) return json({ found: false });
-    const book = await response.json();
-    let author = "";
-    const authorKey = Array.isArray(book.authors) && book.authors[0]?.key ? book.authors[0].key : "";
-    if (authorKey) {
-      try {
-        const authorRes = await fetch(`https://openlibrary.org${authorKey}.json`, { headers: { Accept: "application/json" } });
-        if (authorRes.ok) author = (await authorRes.json()).name || "";
-      } catch { /* best effort only */ }
-    }
-    return json({ found: true, source: "open_library", title: book.title || "", author, isbn });
-  } catch {
-    return json({ found: false });
-  }
-}
-
-export async function handleDonorBookstoreRequestFeature(request, env) {
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  const donor = await requireDonor(request, env);
-  if (!donor?.email) return unauthorized();
-  return json({ ok: true, alreadySent: false });
-}
-
-export async function normalizeBookstoreCartItems(env, parishId, items) {
-  const normalized = [];
-  for (const raw of items) {
-    const productId = String(raw.productId || "").trim();
-    const variantId = String(raw.variantId || "").trim();
-    const quantity = normalizeBookstoreQuantity(raw.quantity);
-    if (productId || variantId) {
-      const row = await d1First(env, `
-        SELECT p.id, p.name, p.description, p.item_category, p.default_sku, p.default_tax_code,
-               p.fulfillment_type, p.image_url,
-               v.id AS variant_id, v.sku, v.barcode, v.unit_price_cents, v.sale_price_cents, v.tax_code,
-               v.fulfillment_type AS variant_fulfillment_type, v.stock_quantity, v.track_inventory
-        FROM commerce_product_variants v
-        JOIN commerce_products p ON p.id = v.product_id
-        WHERE p.parish_id = ? AND p.commerce_module = 'bookstore'
-          AND p.status = 'active' AND v.status = 'active'
-          AND (? = '' OR p.id = ?)
-          AND (? = '' OR v.id = ?)
-        LIMIT 1
-      `, parishId, productId, productId, variantId, variantId);
-      if (!row) throw new Error("One of the selected products is no longer available.");
-      const product = normalizeBookstoreProduct(row);
-      if (product.trackInventory && quantity > product.stockQuantity) {
-        throw new Error(product.stockQuantity <= 0
-          ? `${product.name} is currently out of stock.`
-          : `${product.name} only has ${product.stockQuantity} available.`);
-      }
-      normalized.push({
-        source: "catalog",
-        productId: product.id,
-        variantId: product.variantId,
-        sku: product.sku,
-        barcode: product.barcode,
-        itemCategory: product.category,
-        itemName: product.name,
-        itemDescription: product.description || product.name,
-        quantity,
-        unitPriceCents: product.priceCents,
-        taxCode: product.taxCode,
-        fulfillmentType: product.fulfillmentType,
-        snapshot: product
-      });
-      continue;
-    }
-
-    const category = BOOKSTORE_ITEM_FIELD_CATEGORIES.some(entry => entry.category === raw.itemCategory) ? String(raw.itemCategory) : "other";
-    const specifics = raw.specifics && typeof raw.specifics === "object" ? raw.specifics : {};
-    const unitPriceCents = centsFromBookstoreAmount(raw.unitPrice);
-    const itemName = describeManualBookstoreItem(category, specifics);
-    if (!unitPriceCents) throw new Error("Enter a valid price for every manual item.");
-    if (!itemName || itemName === "Item") throw new Error("Describe every manual item before checkout.");
-    normalized.push({
-      source: raw.source === "scan_and_go" ? "scan_and_go" : raw.source === "shopper_added" ? "shopper_added" : "manual_entry",
-      productId: "",
-      variantId: "",
-      sku: String(specifics.isbn || raw.barcode || "").slice(0, 80),
-      barcode: String(specifics.isbn || raw.barcode || "").slice(0, 80),
-      itemCategory: category,
-      itemName,
-      itemDescription: itemName,
-      quantity,
-      unitPriceCents,
-      taxCode: "",
-      fulfillmentType: "physical_pickup",
-      snapshot: { specifics }
-    });
-  }
-  if (!normalized.length) throw new Error("Add at least one item before checkout.");
-  if (normalized.length > 20) throw new Error("Checkout can include up to 20 items at a time.");
-  return normalized;
-}
-
-export async function handleParishBookstoreReadiness(request, env, parishId) {
-  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
-  if (!hasProductionStore(env)) return missingProductionStoreResponse();
-  const found = await findRegistrationByParishId(env, parishId);
-  if (!found) return json({ error: "Parish not found" }, { status: 404 });
-  const token = getBearerToken(request);
-  if (!(await verifyParishDashboardBearer(found.registration, token))) return unauthorized();
-
-  return json(bookstoreReadinessSummary(found.registration));
-}
-
-export async function handleDonorBookstore(request, env, publicParishId = "") {
-  if (!["GET", "POST"].includes(request.method)) return json({ error: "Method not allowed" }, { status: 405 });
-  if (!hasProductionStore(env)) return missingProductionStoreResponse();
-  const limited = await rateLimit(request, env, "donor-bookstore", { limit: 40, windowSeconds: 300 });
-  if (limited) return limited;
-
-  const isGuestCheckout = Boolean(publicParishId);
-  const donor = isGuestCheckout ? null : await requireDonor(request, env);
-  if (!isGuestCheckout && !donor?.email) return unauthorized();
-
-  if (request.method === "GET") {
-    const resolved = isGuestCheckout
-      ? await resolvePublicBookstoreParish(env, publicParishId)
-      : await resolveDonorBookstoreParish(request, env, donor);
-    if (resolved.error) return resolved.error;
-    return json({
-      available: Boolean(resolved.available),
-      parish: { id: resolved.parishId, name: resolved.registration?.name || resolved.registration?.parishName || "" },
-      sellerDisclosure: resolved.registration ? bookstoreSellerDisclosure(resolved.registration.commerceSellerDisplayName || resolved.registration.name || resolved.registration.parishName) : "",
-      products: resolved.available ? await loadDonorBookstoreProducts(env, resolved.parishId) : [],
-      orders: isGuestCheckout ? [] : await loadDonorBookstoreOrders(env, resolved.parishId, normalizeEmail(donor.email))
-    });
-  }
-
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const resolved = isGuestCheckout
-    ? await resolvePublicBookstoreParish(env, publicParishId)
-    : await resolveDonorBookstoreParish(request, env, donor, body.parishId);
-  if (resolved.error) return resolved.error;
-  if (!resolved.available) return json({ error: "Your parish hasn't turned on Bookstore Payments yet." }, { status: 409 });
-  if (!resolved.registration?.stripeAccountId) {
-    return json({ error: "Your parish needs to connect Stripe before bookstore payments can be accepted." }, { status: 422 });
-  }
-  if (!d1(env)) return missingProductionStoreResponse();
-
-  const submittedItems = Array.isArray(body.items) && body.items.length ? body.items : [body];
-  const guestItemError = isGuestCheckout ? guestBookstoreItemError(submittedItems) : "";
-  if (guestItemError) return json({ error: guestItemError }, { status: 422 });
-
-  let items;
-  try {
-    items = await normalizeBookstoreCartItems(env, resolved.parishId, submittedItems);
-  } catch (err) {
-    return json({ error: err.message || "Check your cart and try again." }, { status: 422 });
-  }
-
-  const subtotalCents = items.reduce((sum, item) => sum + (item.unitPriceCents * item.quantity), 0);
-  const donorEmail = normalizeEmail(donor?.email || body.email);
-  if (!donorEmail || !donorEmail.includes("@")) {
-    return json({ error: "Enter a valid email address for your receipt." }, { status: 422 });
-  }
-  const guestName = String(body.name || "").trim().replace(/\s+/g, " ").slice(0, 160);
-  if (isGuestCheckout && !guestName) {
-    return json({ error: "Enter your name before checkout." }, { status: 422 });
-  }
-  const normalizedDonorName = isGuestCheckout ? guestName : (donorName({
-    firstName: donor?.firstName || "",
-    lastName: donor?.lastName || "",
-    householdName: donor?.householdName || donor?.donorName || ""
-  }) || donor?.householdName || donor?.donorName || donorEmail);
-  const pickupNote = String(body.pickupNote || "").trim().slice(0, 240);
-  const orderId = `bookstore_${generateSecret(18)}`;
-  const checkoutLocalId = `checkout_${generateSecret(18)}`;
-  const now = new Date().toISOString();
-  const firstItem = items[0];
-  const itemDescription = items.length === 1 ? firstItem.itemName : `${items.length} bookstore items`;
-  const quantityTotal = items.reduce((sum, item) => sum + item.quantity, 0);
-  const customer = await findOrCreateDonorCustomer(env, {
-    id: resolved.parishId,
-    name: resolved.registration.name || "",
-    stripeAccountId: resolved.registration.stripeAccountId || ""
-  }, { email: donorEmail, firstName: normalizedDonorName, lastName: "" });
-  if (!customer.ok) {
-    return json({ error: "Stripe customer setup failed", detail: customer.body.error?.message || "Unknown Stripe error" }, { status: 502 });
-  }
-
-  const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-  const sellerDisplayName = resolved.registration.commerceSellerDisplayName || resolved.registration.name || resolved.registration.parishName || "";
-  const sellerDisclosure = bookstoreSellerDisclosure(sellerDisplayName);
-  const publicStorePath = `/${encodeURIComponent(resolved.parishId)}/bookstore`;
-  const form = new URLSearchParams({
-    mode: "payment",
-    success_url: isGuestCheckout
-      ? `${appUrl}${publicStorePath}?order_success=1&session_id={CHECKOUT_SESSION_ID}`
-      : `${appUrl}/myagapay/bookstore?order_success=1&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: isGuestCheckout
-      ? `${appUrl}${publicStorePath}?order_canceled=1`
-      : `${appUrl}/myagapay/bookstore?order_canceled=1`,
-    customer: customer.body.id,
-    "automatic_tax[enabled]": "true",
-    "customer_update[address]": "auto",
-    // Seller-identity disclosure surfaced on the Stripe-hosted Checkout
-    // page itself via the submit-type/custom text field -- reinforces the
-    // parish, not AGAPAY, as the seller at the one checkout surface every
-    // bookstore order already passes through. Storefront/cart/receipt
-    // placements are a documented follow-up (see Phase 3 report).
-    "custom_text[submit][message]": sellerDisclosure.slice(0, 499)
-  });
-  // Parish Commerce is included in AGAPAY Parish +. Do not add any AGAPAY platform/application fee to bookstore or future commerce checkouts; Stripe may still charge its own processing fee and show any applicable tax.
-  const bookstoreFallbackTaxCode =
-    env.BOOKSTORE_STRIPE_TAX_CODE ||
-    env.PARISH_COMMERCE_DEFAULT_TAX_CODE ||
-    "";
-  
-  items.forEach((item, index) => {
-    const lineTaxCode = item.taxCode || bookstoreFallbackTaxCode;
-  
-    form.set(`line_items[${index}][quantity]`, String(item.quantity));
-    form.set(`line_items[${index}][price_data][currency]`, "usd");
-    form.set(`line_items[${index}][price_data][unit_amount]`, String(item.unitPriceCents));
-    form.set(`line_items[${index}][price_data][tax_behavior]`, "exclusive");
-    form.set(`line_items[${index}][price_data][product_data][name]`, item.itemName.slice(0, 180));
-  
-    if (item.itemDescription && item.itemDescription !== item.itemName) {
-      form.set(`line_items[${index}][price_data][product_data][description]`, item.itemDescription.slice(0, 280));
-    }
-  
-    if (lineTaxCode) {
-      form.set(`line_items[${index}][price_data][product_data][tax_code]`, lineTaxCode);
-    }
-  });
-  const metadata = {
-    order_id: orderId,
-    parish_id: resolved.parishId,
-    commerce_module: "bookstore",
-    agapay_payment_class: "nonqualifying_commerce",
-    agapay_classification_version: "1",
-    donor_email: donorEmail,
-    donor_name: normalizedDonorName,
-    item_count: String(items.length),
-    subtotal_cents: String(subtotalCents)
-  };
-  for (const [key, value] of Object.entries(metadata)) {
-    form.set(`metadata[${key}]`, value);
-    form.set(`payment_intent_data[metadata][${key}]`, value);
-  }
-
-  const session = await stripeFormConnectedRequest(env, "/v1/checkout/sessions", form, resolved.registration.stripeAccountId);
-  if (!session.ok) {
-    return json({ error: "Stripe checkout session failed", detail: session.body.error?.message || "Unknown Stripe error" }, { status: 502 });
-  }
-
-  const settlementProfileId = await resolveSettlementProfileId(env, resolved.parishId, "bookstore");
-
-  await d1Run(env, `
-    INSERT INTO commerce_orders
-      (id, commerce_module, source, parish_id, donor_email, donor_name,
-       product_id, product_sku, variant_id, tax_code, product_snapshot_json,
-       item_category, item_description, quantity, unit_price_cents, subtotal_cents,
-       tax_cents, agapay_fee_cents, stripe_fee_cents, cover_fees, total_charged_cents,
-       parish_net_cents, status, payment_status, checkout_session_local_id,
-       checkout_session_id, checkout_url, stripe_customer_id, fulfillment_status,
-       pickup_note, settlement_profile_id, created_at, updated_at)
-    VALUES (?, 'bookstore', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?, ?,
-            'checkout_created', 'pending', ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
-  `,
-    orderId,
-    bookstoreOrderSource(items, isGuestCheckout),
-    resolved.parishId,
-    donorEmail,
-    normalizedDonorName,
-    firstItem.productId,
-    firstItem.sku,
-    firstItem.variantId,
-    firstItem.taxCode,
-    JSON.stringify({ items: items.map(item => item.snapshot) }).slice(0, 12000),
-    firstItem.itemCategory,
-    itemDescription,
-    quantityTotal,
-    firstItem.unitPriceCents,
-    subtotalCents,
-    body.coverFees === false ? 0 : 1,
-    subtotalCents,
-    subtotalCents,
-    checkoutLocalId,
-    session.body.id,
-    session.body.url || "",
-    customer.body.id || "",
-    pickupNote,
-    settlementProfileId,
-    now,
-    now
-  );
-
-  for (const item of items) {
-    const itemSubtotal = item.unitPriceCents * item.quantity;
-    await d1Run(env, `
-      INSERT INTO commerce_order_items
-        (id, order_id, parish_id, commerce_module, product_id, variant_id, sku, barcode,
-         barcode_type, item_category, item_name, item_description, quantity, unit_price_cents,
-         subtotal_cents, tax_cents, total_cents, tax_code, snapshot_json,
-         fulfillment_type, fulfillment_status, created_at, updated_at)
-      VALUES (?, ?, ?, 'bookstore', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 'pending', ?, ?)
-    `,
-      `bookstore_item_${generateSecret(18)}`,
-      orderId,
-      resolved.parishId,
-      item.productId,
-      item.variantId,
-      item.sku,
-      item.barcode,
-      item.barcode ? "isbn_or_sku" : "",
-      item.itemCategory,
-      item.itemName,
-      item.itemDescription,
-      item.quantity,
-      item.unitPriceCents,
-      itemSubtotal,
-      itemSubtotal,
-      item.taxCode,
-      JSON.stringify(item.snapshot).slice(0, 4000),
-      item.fulfillmentType,
-      now,
-      now
-    );
-  }
-
-  return json({ ok: true, id: session.body.id, orderId, url: session.body.url }, { status: 201 });
-}
-
-const SACRAMENT_TYPES = new Set([
-  "house_blessing", "baptism", "chrismation", "wedding", "funeral",
-  "memorial_service", "confession", "home_visit", "office_visit", "anointing", "counseling", "other"
-]);
-const SACRAMENT_ACTIVE_STATUSES = new Set(["requested", "acknowledged", "scheduled"]);
-
-function publicSacramentRequest(row = {}) {
-  return {
-    id: row.id,
-    parishId: row.parish_id,
-    sacramentType: row.sacrament_type,
-    otherTypeLabel: row.other_type_label || "",
-    status: row.status,
-    requestedDate: row.requested_date || "",
-    requestedTimeWindow: row.requested_time_window || "",
-    participantNames: row.participant_names || "",
-    locationType: row.location_type || "",
-    locationAddress: row.location_address || "",
-    notes: row.notes || "",
-    phone: row.phone || "",
-    confirmedDate: row.confirmed_date || "",
-    confirmedTime: row.confirmed_time || "",
-    clergyAssigned: row.clergy_assigned || "",
-    declineReason: row.status === "declined" ? (row.decline_reason || "") : "",
-    createdAt: row.created_at,
-    updatedAt: row.updated_at
-    // parish_notes is intentionally omitted — internal to the parish only.
-  };
-}
-
-function donorSacramentOfferings(registration = {}) {
-  const defaults = ["house_blessing", "confession", "counseling", "baptism", "wedding"];
-  const priests = Array.isArray(registration.sacramentPriests) && registration.sacramentPriests.length
-    ? registration.sacramentPriests
-    : [{ serviceTypes: defaults, customServices: [] }];
-  const types = new Set();
-  const customById = new Map();
-  for (const priest of priests) {
-    const serviceTypes = Array.isArray(priest?.serviceTypes) ? priest.serviceTypes : defaults;
-    serviceTypes.forEach((type) => types.add(String(type || "")));
-    (Array.isArray(priest?.customServices) ? priest.customServices : []).forEach((service) => {
-      const id = String(service?.id || "").trim();
-      const label = String(service?.label || "").trim();
-      const mode = service?.mode === "schedule" ? "schedule" : "request";
-      if (id && label) customById.set(id, { id, label, mode });
-    });
-  }
-  return { types: [...types], custom: [...customById.values()] };
-}
-
-// Structured detail for baptism/chrismation and wedding requests. Lives in
-// satellite tables keyed on sacrament_requests.id — see
-// migration_sacrament_details.sql. Every other sacrament type has no detail
-// row, which is fine; attachSacramentDetails() just returns null for them.
-
-function publicBaptismDetails(row) {
-  if (!row) return null;
-  return {
-    candidateName: row.candidate_name,
-    candidateDob: row.candidate_dob || "",
-    candidateIsAdult: !!row.candidate_is_adult,
-    parentNames: row.parent_names || "",
-    patronSaint: row.patron_saint || "",
-    godparent1Name: row.godparent_1_name || "",
-    godparent1HomeParish: row.godparent_1_home_parish || "",
-    godparent1OrthodoxAttested: !!row.godparent_1_orthodox_attested,
-    godparent2Name: row.godparent_2_name || "",
-    godparent2HomeParish: row.godparent_2_home_parish || "",
-    godparent2OrthodoxAttested: !!row.godparent_2_orthodox_attested,
-  };
-}
-
-function publicWeddingDetails(row) {
-  if (!row) return null;
-  return {
-    partyAName: row.party_a_name,
-    partyAOrthodox: !!row.party_a_orthodox,
-    partyAPriorMarriage: !!row.party_a_prior_marriage,
-    partyBName: row.party_b_name,
-    partyBOrthodox: !!row.party_b_orthodox,
-    partyBPriorMarriage: !!row.party_b_prior_marriage,
-    koumbaroName: row.koumbaro_name || "",
-    koumbaroHomeParish: row.koumbaro_home_parish || "",
-    marriageLicenseStatus: row.marriage_license_status || "not_started",
-    premaritalCounselComplete: !!row.premarital_counsel_complete,
-  };
-}
-
-async function attachSacramentDetails(env, row) {
-  const base = publicSacramentRequest(row);
-  if (!row) return base;
-  let detailed = base;
-  if (row.sacrament_type === "baptism" || row.sacrament_type === "chrismation") {
-    const detail = await d1First(env, "SELECT * FROM sacrament_baptism_details WHERE request_id = ?", row.id).catch(() => null);
-    detailed = { ...base, baptismDetails: publicBaptismDetails(detail) };
-  }
-  if (row.sacrament_type === "wedding") {
-    const detail = await d1First(env, "SELECT * FROM sacrament_wedding_details WHERE request_id = ?", row.id).catch(() => null);
-    detailed = { ...base, weddingDetails: publicWeddingDetails(detail) };
-  }
-  const [prepared] = await attachPreparationToRequests(env, [detailed]);
-  return prepared;
-}
-
-// Batched version for lists -- at most two IN(...) queries total instead of
-// one extra D1 round-trip per baptism/wedding row. See the matching helper
-// in src/handlers/parish.js for why this matters (N+1 was slow to load).
-async function attachSacramentDetailsBatch(env, rows = []) {
-  const baptismRows = rows.filter((r) => r.sacrament_type === "baptism" || r.sacrament_type === "chrismation");
-  const weddingRows = rows.filter((r) => r.sacrament_type === "wedding");
-
-  const baptismDetailsById = new Map();
-  if (baptismRows.length) {
-    const placeholders = baptismRows.map(() => "?").join(",");
-    const details = await d1All(env,
-      `SELECT * FROM sacrament_baptism_details WHERE request_id IN (${placeholders})`,
-      ...baptismRows.map((r) => r.id)
-    ).catch(() => []);
-    for (const detail of details) baptismDetailsById.set(detail.request_id, detail);
-  }
-
-  const weddingDetailsById = new Map();
-  if (weddingRows.length) {
-    const placeholders = weddingRows.map(() => "?").join(",");
-    const details = await d1All(env,
-      `SELECT * FROM sacrament_wedding_details WHERE request_id IN (${placeholders})`,
-      ...weddingRows.map((r) => r.id)
-    ).catch(() => []);
-    for (const detail of details) weddingDetailsById.set(detail.request_id, detail);
-  }
-
-  const detailedRows = rows.map((row) => {
-    const base = publicSacramentRequest(row);
-    if (row.sacrament_type === "baptism" || row.sacrament_type === "chrismation") {
-      return { ...base, baptismDetails: publicBaptismDetails(baptismDetailsById.get(row.id) || null) };
-    }
-    if (row.sacrament_type === "wedding") {
-      return { ...base, weddingDetails: publicWeddingDetails(weddingDetailsById.get(row.id) || null) };
-    }
-    return base;
-  });
-  return attachPreparationToRequests(env, detailedRows);
-}
-
-// GET  /api/donor/sacraments        — list the signed-in donor's own requests
-//   ?parishId= also returns { available } for that parish's AGAPAY Parish + status,
-//   so the frontend knows whether to show the "Request a sacrament" form at all.
-// POST /api/donor/sacraments        — submit a new request
-export async function handleDonorSacraments(request, env) {
-  const donor = await requireDonor(request, env);
-  if (!donor) return unauthorized();
-  if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
-  if (request.method === "GET") {
-    const rows = await d1All(env,
-      "SELECT * FROM sacrament_requests WHERE donor_email = ? ORDER BY created_at DESC LIMIT 100",
-      normalizeEmail(donor.email)
-    ).catch(() => []);
-
-    // Sacraments & Services is an AGAPAY Parish + feature, currently in
-    // soft rollout — only tell the donor it's available if their home
-    // parish both has active AGAPAY Parish + access AND has been enabled by
-    // an AGAPAY admin. This is purely informational for the GET (so the UI
-    // can show/hide the "new request" form); it never blocks viewing
-    // requests already on file, even from a parish no longer enabled.
-    let available = false;
-    let offerings = donorSacramentOfferings();
-    const parishId = String(request.headers.get("X-AGAPAY-Parish-Id") || donor.defaultParishId || "").trim();
-    if (parishId) {
-      const found = await findRegistrationByParishId(env, parishId);
-      available = Boolean(found && sacramentsEnabledFor(found.registration));
-      if (found) offerings = donorSacramentOfferings(found.registration);
-    }
-
-    const requestsWithDetails = await attachSacramentDetailsBatch(env, rows || []);
-    return json({ requests: requestsWithDetails, available, parishId, offerings });
-  }
-
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-
-  const limited = await rateLimit(request, env, "donor-sacrament-request", { limit: 10, windowSeconds: 3600 });
-  if (limited) return limited;
-
-  let body = {};
-  try { body = await request.json(); } catch { body = {}; }
-
-  const parishId = String(body.parishId || donor.defaultParishId || "").trim();
-  if (!parishId) {
-    return json({ error: "Choose a parish before submitting a request.", detail: "Set a home parish in Settings, or include parishId." }, { status: 400 });
-  }
-  const found = await findRegistrationByParishId(env, parishId);
-  if (!found) return json({ error: "Parish not found." }, { status: 404 });
-
-  // Gate: Sacraments & Services requires both active AGAPAY Parish + access
-  // (paid subscription, trial, or a comp grant) AND an admin having flipped
-  // on the soft-rollout flag for this specific parish.
-  if (!sacramentsEnabledFor(found.registration)) {
-    return json({
-      error: "This parish has not enabled Sacraments & Services.",
-      detail: hasModuleAccess(found.registration, "sacraments")
-        ? "Your parish can enable online requests in its dashboard settings."
-        : "Online requests require the Sacraments add-on or Parish."
-    }, { status: 402 });
-  }
-
-  const sacramentType = String(body.sacramentType || "").trim();
-  if (!SACRAMENT_TYPES.has(sacramentType)) {
-    return json({ error: "Choose a valid sacrament or service type." }, { status: 400 });
-  }
-  if (sacramentType !== "other" && !donorSacramentOfferings(found.registration).types.includes(sacramentType)) {
-    return json({ error: "This priest is not currently accepting that request online." }, { status: 400 });
-  }
-  const otherTypeLabel = sacramentType === "other" ? String(body.otherTypeLabel || "").trim().slice(0, 120) : "";
-  if (sacramentType === "other" && !otherTypeLabel) {
-    return json({ error: "Describe what you're requesting." }, { status: 400 });
-  }
-
-  const locationType = ["church", "home", "other"].includes(body.locationType) ? body.locationType : "church";
-  const locationAddress = String(body.locationAddress || "").trim().slice(0, 400);
-  if ((sacramentType === "house_blessing" || sacramentType === "home_visit" || locationType === "home") && !locationAddress) {
-    return json({ error: "An address is required for a house blessing or home visit." }, { status: 400 });
-  }
-
-  const requestedDate = String(body.requestedDate || "").trim().slice(0, 10);
-  const requestedTimeWindow = String(body.requestedTimeWindow || "").trim().slice(0, 200);
-  const notes = String(body.notes || "").trim().slice(0, 2000);
-  const phone = String(body.phone || "").trim().slice(0, 40);
-
-  const baptismDetails = (sacramentType === "baptism" || sacramentType === "chrismation")
-    ? (body.baptismDetails || {}) : null;
-  const weddingDetails = sacramentType === "wedding" ? (body.weddingDetails || {}) : null;
-
-  if (baptismDetails && !String(baptismDetails.candidateName || "").trim()) {
-    return json({ error: "Candidate name is required." }, { status: 400 });
-  }
-  if (weddingDetails && (!String(weddingDetails.partyAName || "").trim() || !String(weddingDetails.partyBName || "").trim())) {
-    return json({ error: "Both parties' names are required." }, { status: 400 });
-  }
-
-  // Fall back to a derived label so existing dashboard views that only know
-  // about participant_names (not yet updated to read the detail tables)
-  // still show something sensible.
-  let participantNames = String(body.participantNames || "").trim().slice(0, 1000);
-  if (!participantNames && baptismDetails) {
-    participantNames = String(baptismDetails.candidateName || "").trim().slice(0, 1000);
-  }
-  if (!participantNames && weddingDetails) {
-    participantNames = `${weddingDetails.partyAName || ""} & ${weddingDetails.partyBName || ""}`.trim().slice(0, 1000);
-  }
-
-  const id = generateSecret("sac");
-  const now = new Date().toISOString();
-
-  await d1Run(env, `
-    INSERT INTO sacrament_requests
-      (id, parish_id, donor_email, sacrament_type, other_type_label, status,
-       requested_date, requested_time_window, participant_names,
-       location_type, location_address, notes, phone, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, 'requested', ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `,
-    id, parishId, normalizeEmail(donor.email), sacramentType, otherTypeLabel || null,
-    requestedDate || null, requestedTimeWindow || null, participantNames || null,
-    locationType, locationAddress || null, notes || null, phone || null, now, now
-  );
-
-  if (baptismDetails) {
-    await d1Run(env, `
-      INSERT INTO sacrament_baptism_details
-        (request_id, candidate_name, candidate_dob, candidate_is_adult,
-         parent_names, patron_saint,
-         godparent_1_name, godparent_1_home_parish, godparent_1_orthodox_attested,
-         godparent_2_name, godparent_2_home_parish, godparent_2_orthodox_attested)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `,
-      id,
-      String(baptismDetails.candidateName || "").trim().slice(0, 200),
-      String(baptismDetails.candidateDob || "").trim().slice(0, 10) || null,
-      baptismDetails.candidateIsAdult ? 1 : 0,
-      String(baptismDetails.parentNames || "").trim().slice(0, 400) || null,
-      String(baptismDetails.patronSaint || "").trim().slice(0, 200) || null,
-      String(baptismDetails.godparent1Name || "").trim().slice(0, 200) || null,
-      String(baptismDetails.godparent1HomeParish || "").trim().slice(0, 200) || null,
-      baptismDetails.godparent1OrthodoxAttested ? 1 : 0,
-      String(baptismDetails.godparent2Name || "").trim().slice(0, 200) || null,
-      String(baptismDetails.godparent2HomeParish || "").trim().slice(0, 200) || null,
-      baptismDetails.godparent2OrthodoxAttested ? 1 : 0
-    );
-  }
-
-  if (weddingDetails) {
-    await d1Run(env, `
-      INSERT INTO sacrament_wedding_details
-        (request_id, party_a_name, party_a_orthodox, party_a_prior_marriage,
-         party_b_name, party_b_orthodox, party_b_prior_marriage,
-         koumbaro_name, koumbaro_home_parish,
-         marriage_license_status, premarital_counsel_complete)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `,
-      id,
-      String(weddingDetails.partyAName || "").trim().slice(0, 200),
-      weddingDetails.partyAOrthodox ? 1 : 0,
-      weddingDetails.partyAPriorMarriage ? 1 : 0,
-      String(weddingDetails.partyBName || "").trim().slice(0, 200),
-      weddingDetails.partyBOrthodox ? 1 : 0,
-      weddingDetails.partyBPriorMarriage ? 1 : 0,
-      String(weddingDetails.koumbaroName || "").trim().slice(0, 200) || null,
-      String(weddingDetails.koumbaroHomeParish || "").trim().slice(0, 200) || null,
-      ["not_started", "applied", "obtained"].includes(weddingDetails.marriageLicenseStatus)
-        ? weddingDetails.marriageLicenseStatus : "not_started",
-      weddingDetails.premaritalCounselComplete ? 1 : 0
-    );
-  }
-
-  // Best-effort notification to the parish — never blocks the request itself.
-  try {
-    await notifyParishOfNewSacramentRequest(env, {
-      request, registration: found.registration, donor, sacramentType, otherTypeLabel,
-      participantNames, requestedDate, requestedTimeWindow, locationAddress, notes, phone
-    });
-  } catch { /* notification failure never blocks the request */ }
-
-  const row = await d1First(env, "SELECT * FROM sacrament_requests WHERE id = ?", id);
-  return json({ ok: true, request: await attachSacramentDetails(env, row) });
-}
-
-/**
- * Best-effort "new sacrament request" email to the parish/priest. Shared by
- * the regular request POST above and the native availability booking
- * endpoint below -- `booked` swaps the copy from "requested" to "booked and
- * confirmed" since a booking skips the acknowledge/schedule review step.
- */
-async function notifyParishOfNewSacramentRequest(env, {
-  request, registration, donor, sacramentType, otherTypeLabel,
-  participantNames, requestedDate, requestedTimeWindow, locationAddress, notes, phone,
-  booked = false, confirmedDate = "", confirmedTime = ""
-}) {
-  const to = [registration.priestEmail, registration.treasurerEmail, registration.email, registration.contactEmail]
-    .filter(Boolean);
-  if (!to.length) return;
-
-  const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-  const typeLabel = otherTypeLabel || sacramentTypeLabel(sacramentType);
-  const heading = booked ? "New Sacrament Booking" : "New Sacrament Request";
-  const verb = booked ? "booked" : "requested";
-  const when = booked && confirmedDate
-    ? `${confirmedDate}${confirmedTime ? ` at ${confirmedTime}` : ""}`
-    : "";
-
-  await sendEmail(env, {
-    from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
-    to: [...new Set(to.map((a) => String(a).trim().toLowerCase()))],
-    reply_to: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
-    subject: booked ? `New booking: ${typeLabel} on ${confirmedDate}` : `New request: ${typeLabel}`,
-    html: agapayEmailHtml(appUrl, heading, `
-      <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#171715;">A parishioner has ${verb} <strong>${htmlEscape(typeLabel)}</strong> through AGAPAY${when ? ` for <strong>${htmlEscape(when)}</strong>` : ""}.</p>
-      <table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.6;">
-        <tr><td style="padding:6px 10px 6px 0;color:#595959;width:140px;vertical-align:top;"><strong>${booked ? "Booked by" : "Requested by"}</strong></td><td style="padding:6px 0;">${htmlEscape(donor.donorName || donor.email)}</td></tr>
-        <tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Contact</strong></td><td style="padding:6px 0;"><a href="mailto:${htmlEscape(donor.email)}" style="color:#0A365B;">${htmlEscape(donor.email)}</a>${phone ? " · " + htmlEscape(phone) : ""}</td></tr>
-        ${participantNames ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>For</strong></td><td style="padding:6px 0;">${htmlEscape(participantNames)}</td></tr>` : ""}
-        ${!booked && requestedDate ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Preferred date</strong></td><td style="padding:6px 0;">${htmlEscape(requestedDate)}</td></tr>` : ""}
-        ${!booked && requestedTimeWindow ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Preferred time</strong></td><td style="padding:6px 0;">${htmlEscape(requestedTimeWindow)}</td></tr>` : ""}
-        ${locationAddress ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Location</strong></td><td style="padding:6px 0;">${htmlEscape(locationAddress)}</td></tr>` : ""}
-        ${notes ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Notes</strong></td><td style="padding:6px 0;white-space:pre-wrap;">${htmlEscape(notes)}</td></tr>` : ""}
-      </table>
-      <p style="margin:18px 0 0;font-size:13px;color:#6F6A60;">${booked ? "This slot was booked automatically from your published availability." : "Review and respond to this request"} from your parish dashboard, under Sacraments &amp; Services.</p>
-    `),
-    text: `${booked ? "New sacrament booking" : "New sacrament request"}: ${typeLabel}${when ? " (" + when + ")" : ""}\nFrom: ${donor.donorName || donor.email} <${donor.email}>${phone ? " / " + phone : ""}\n${participantNames ? "For: " + participantNames + "\n" : ""}${!booked && requestedDate ? "Preferred date: " + requestedDate + "\n" : ""}${notes ? "\nNotes:\n" + notes : ""}`
-  });
-}
-
-// GET /api/donor/sacraments/availability?parishId=&sacramentType=
-// Real-time open slots for the "schedulable" types, computed natively (no
-// third-party calendar). Empty slots (no error) means the donor UI should
-// fall back to the free-text preferred-date/time fields.
-export async function handleDonorSacramentAvailability(request, env) {
-  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
-  const donor = await requireDonor(request, env);
-  if (!donor) return unauthorized();
-  if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
-  const url = new URL(request.url);
-  const parishId = String(url.searchParams.get("parishId") || donor.defaultParishId || "").trim();
-  const offeringKey = String(url.searchParams.get("sacramentType") || "").trim();
-  if (!parishId || !isSchedulableOfferingKey(offeringKey)) {
-    return json({ slots: [], timezone: "" });
-  }
-
-  const found = await findRegistrationByParishId(env, parishId);
-  if (!found || !sacramentsEnabledFor(found.registration)) {
-    return json({ slots: [], timezone: "" });
-  }
-  const offerings = donorSacramentOfferings(found.registration);
-  const isBuiltInOffering = offerings.types.includes(offeringKey) && SCHEDULABLE_SACRAMENT_TYPES.has(offeringKey);
-  const isCustomScheduledOffering = offerings.custom.some((service) => service.id === offeringKey && service.mode === "schedule");
-  if (!isBuiltInOffering && !isCustomScheduledOffering) {
-    return json({ slots: [], timezone: found.registration.timezone || "" });
-  }
-
-  const result = await computeAvailableSlots(env, {
-    parishId, sacramentType: offeringKey, timezone: found.registration.timezone || ""
-  });
-  return json(result);
-}
-
-// POST /api/donor/sacraments/book
-// Books a real open slot directly -- for configured schedulable service types.
-// only. Skips the requested->acknowledged->scheduled review step entirely:
-// the row is created as status='scheduled' with confirmed_date/confirmed_time
-// already set, since the slot was only offered because it was open.
-export async function handleDonorSacramentBook(request, env) {
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  const donor = await requireDonor(request, env);
-  if (!donor) return unauthorized();
-  if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
-  const limited = await rateLimit(request, env, "donor-sacrament-request", { limit: 10, windowSeconds: 3600 });
-  if (limited) return limited;
-
-  let body = {};
-  try { body = await request.json(); } catch { body = {}; }
-
-  const parishId = String(body.parishId || donor.defaultParishId || "").trim();
-  if (!parishId) {
-    return json({ error: "Choose a parish before booking." }, { status: 400 });
-  }
-  const found = await findRegistrationByParishId(env, parishId);
-  if (!found) return json({ error: "Parish not found." }, { status: 404 });
-  if (!sacramentsEnabledFor(found.registration)) {
-    return json({ error: "Sacraments & Services is not enabled for this parish." }, { status: 402 });
-  }
-
-  const sacramentType = String(body.sacramentType || "").trim();
-  const schedulingType = String(body.schedulingType || sacramentType).trim();
-  const offerings = donorSacramentOfferings(found.registration);
-  const customOffering = offerings.custom.find((service) => service.id === schedulingType && service.mode === "schedule") || null;
-  const builtInOffering = SCHEDULABLE_SACRAMENT_TYPES.has(sacramentType)
-    && schedulingType === sacramentType
-    && offerings.types.includes(sacramentType);
-  if (!isSchedulableOfferingKey(schedulingType) || (!builtInOffering && !customOffering)) {
-    return json({ error: "This sacrament type can't be self-booked." }, { status: 400 });
-  }
-  if (customOffering && sacramentType !== "other") {
-    return json({ error: "This custom offering is not valid for online booking." }, { status: 400 });
-  }
-  const otherTypeLabel = customOffering?.label || "";
-  const date = String(body.date || "").trim();
-  const time = String(body.time || "").trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) {
-    return json({ error: "Choose a valid date and time." }, { status: 400 });
-  }
-
-  const locationType = ["church", "home", "other"].includes(body.locationType) ? body.locationType : "church";
-  const locationAddress = String(body.locationAddress || "").trim().slice(0, 400);
-  if ((sacramentType === "home_visit" || locationType === "home") && !locationAddress) {
-    return json({ error: "An address is required for a home visit." }, { status: 400 });
-  }
-  const participantNames = String(body.participantNames || "").trim().slice(0, 1000);
-  const phone = String(body.phone || "").trim().slice(0, 40);
-  const notes = String(body.notes || "").trim().slice(0, 2000);
-  const priestName = String(body.priestName || "").trim().slice(0, 120);
-
-  // Soft pre-check (nice error message on the common case) -- the real,
-  // race-safe guarantee is the DB-level unique index caught below.
-  const stillOpen = await isSlotStillOpen(env, { parishId, date, time, priestName });
-  if (!stillOpen) {
-    return json({ error: "That time was just taken — please pick another.", slotTaken: true }, { status: 409 });
-  }
-
-  const id = generateSecret("sac");
-  const now = new Date().toISOString();
-  try {
-    await d1Run(env, `
-      INSERT INTO sacrament_requests
-        (id, parish_id, donor_email, sacrament_type, other_type_label, status,
-         requested_date, participant_names, location_type, location_address,
-         notes, phone, confirmed_date, confirmed_time, clergy_assigned, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `,
-    id, parishId, normalizeEmail(donor.email), sacramentType, otherTypeLabel || null, date, participantNames || null,
-      locationType, locationAddress || null, notes || null, phone || null, date, time, priestName || null, now, now
-    );
-  } catch (error) {
-    if (/UNIQUE constraint failed/i.test(String(error?.message || error || ""))) {
-      return json({ error: "That time was just taken — please pick another.", slotTaken: true }, { status: 409 });
-    }
-    throw error;
-  }
-
-  // Best-effort notification to the parish — never blocks the booking itself.
-  try {
-    await notifyParishOfNewSacramentRequest(env, {
-      request, registration: found.registration, donor, sacramentType, otherTypeLabel,
-      participantNames, locationAddress, notes, phone,
-      booked: true, confirmedDate: date, confirmedTime: time
-    });
-  } catch { /* notification failure never blocks the booking */ }
-
-  const row = await d1First(env, "SELECT * FROM sacrament_requests WHERE id = ?", id);
-  const calendarSync = await syncSacramentRequestToGoogleCalendar(env, found.registration, row);
-  return json({ ok: true, request: await attachSacramentDetails(env, row), calendarSync });
-}
-
-// POST /api/donor/sacraments/:id/cancel — donor withdraws their own pending request
-export async function handleDonorSacramentCancel(request, env, requestId) {
-  // No rollout-allowlist check needed here: a request can only exist in the
-  // table if it was created via handleDonorSacraments' POST gate, which
-  // already restricts creation to allowlisted parishes. Cancelling an
-  // existing request is safe regardless of the parish's current rollout status.
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  const donor = await requireDonor(request, env);
-  if (!donor) return unauthorized();
-  if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
-  const row = await d1First(env, "SELECT * FROM sacrament_requests WHERE id = ? AND donor_email = ?", requestId, normalizeEmail(donor.email));
-  if (!row) return json({ error: "Request not found." }, { status: 404 });
-  if (!SACRAMENT_ACTIVE_STATUSES.has(row.status)) {
-    return json({ error: "This request can no longer be cancelled." }, { status: 409 });
-  }
-
-  const now = new Date().toISOString();
-  await d1Run(env, "UPDATE sacrament_requests SET status = 'cancelled', updated_at = ? WHERE id = ?", now, requestId);
-  const updated = await d1First(env, "SELECT * FROM sacrament_requests WHERE id = ?", requestId);
-  const found = await findRegistrationByParishId(env, row.parish_id);
-  const calendarSync = found?.registration
-    ? await syncSacramentRequestToGoogleCalendar(env, found.registration, updated, row)
-    : { status: "parish_not_found" };
-  return json({ ok: true, request: await attachSacramentDetails(env, updated), calendarSync });
 }
 
 export async function handleDonorCommemorations(request, env) {
@@ -2640,12 +1284,18 @@ export async function handleDonorCommemorations(request, env) {
   const parishId = String(body.parishId || donor.defaultParishId || "").trim();
   const namesLiving = String(body.namesLiving || body.living || "").trim();
   const namesDeparted = String(body.namesDeparted || body.departed || "").trim();
-  const commemorationKind = String(body.commemorationKind || "") === "molieben_panikhida"
-    ? "molieben_panikhida"
-    : "proskomedia_liturgy";
-  const note = String(body.note || body.inMemoriam || "").trim().slice(0, 2000);
+  const commemorationKind = String(body.commemorationKind || "") === "molieben_panikhida" ? "molieben_panikhida" : "proskomedia_liturgy";
+  const note = String(body.note || body.inMemoriam || "")
+    .trim()
+    .slice(0, 2000);
   if (!parishId) {
-    return json({ error: "Choose a parish before submitting commemorations.", detail: "Set a home parish in Settings, or include parishId." }, { status: 400 });
+    return json(
+      {
+        error: "Choose a parish before submitting commemorations.",
+        detail: "Set a home parish in Settings, or include parishId.",
+      },
+      { status: 400 }
+    );
   }
   if (!namesLiving && !namesDeparted) {
     return json({ error: "Add at least one living or departed name." }, { status: 400 });
@@ -2667,7 +1317,7 @@ export async function handleDonorCommemorations(request, env) {
       frequency: "none",
       names_living: namesLiving,
       names_departed: namesDeparted,
-      note
+      note,
     },
     {
       parishId,
@@ -2681,7 +1331,7 @@ export async function handleDonorCommemorations(request, env) {
       namesDeparted,
       commemorationKind,
       note,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     }
   );
 
@@ -2690,169 +1340,4 @@ export async function handleDonorCommemorations(request, env) {
   const offerings = await reconcilePendingDonorOfferings(env, await loadDonorOfferings(env, donor.email, 100));
   const entries = await loadReconciledDonorCommemorations(env, donor.email, offerings, 100);
   return json({ ok: true, entry, entries });
-}
-
-export function adminRegistrationSummary(registration = {}, fallbackReference = "") {
-  registration = registration || {};
-  return {
-    reference: registration.reference || fallbackReference || "",
-    status: registration.status || "pending",
-    parishName: registration.parishName || "",
-    communityType: registration.communityType || "",
-    liturgicalCalendar: registration.liturgicalCalendar || "julian",
-    jurisdiction: registration.jurisdiction || "",
-    city: registration.city || "",
-    state: registration.state || "",
-    priestEmail: registration.priestEmail || "",
-    treasurerEmail: registration.treasurerEmail || "",
-    givingStatus: registration.givingStatus || "active",
-    subscriptionTier: registration.subscriptionTier || defaultSubscriptionTier(registration),
-    subscriptionStatus: registration.subscriptionStatus || "not_started",
-    stripeAccountStatus: registration.stripeAccountStatus || "not_started",
-    dashboardInviteEmailStatus: registration.dashboardInviteEmailStatus || "",
-    adminNotificationEmailStatus: registration.adminNotificationEmailStatus || "",
-    receivedAt: registration.receivedAt || ""
-  };
-}
-
-export async function loadAdminRegistrationPage(env, options = {}) {
-  const limit = clampListLimit(options.limit, 100, 250);
-  const cursor = decodeListCursor(options.cursor);
-  const status = String(options.status || "").trim().toLowerCase();
-  const query = String(options.query || options.q || "").trim().toLowerCase();
-
-  if (d1(env)) {
-    const where = [];
-    const params = [];
-    if (status && status !== "all") {
-      where.push("status = ?");
-      params.push(status);
-    }
-    if (cursor) {
-      where.push("(received_at < ? OR (received_at = ? AND reference < ?))");
-      params.push(cursor.receivedAt, cursor.receivedAt, cursor.reference);
-    }
-    if (query) {
-      where.push(`(
-        LOWER(COALESCE(json_extract(data, '$.parishName'), '')) LIKE ?
-        OR LOWER(COALESCE(json_extract(data, '$.city'), '')) LIKE ?
-        OR LOWER(COALESCE(json_extract(data, '$.state'), '')) LIKE ?
-        OR LOWER(COALESCE(json_extract(data, '$.jurisdiction'), '')) LIKE ?
-        OR LOWER(COALESCE(json_extract(data, '$.priestEmail'), '')) LIKE ?
-        OR LOWER(COALESCE(json_extract(data, '$.treasurerEmail'), '')) LIKE ?
-      )`);
-      const like = `%${query}%`;
-      params.push(like, like, like, like, like, like);
-    }
-    const rows = await d1All(
-      env,
-      `SELECT reference, received_at, data
-       FROM registrations
-       ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
-       ORDER BY received_at DESC, reference DESC
-       LIMIT ?`,
-      ...params,
-      limit + 1
-    );
-    const pageRows = rows.slice(0, limit);
-    const registrations = pageRows.map((row) => {
-      try {
-        return adminRegistrationSummary(safeParseJsonRow(row), row.reference);
-      } catch {
-        return { reference: row.reference || "", status: "unreadable" };
-      }
-    });
-    return {
-      registrations,
-      cursor: rows.length > limit ? encodeListCursor(pageRows[pageRows.length - 1]) : null,
-      hasMore: rows.length > limit,
-      limit,
-      source: "d1"
-    };
-  }
-
-  const keys = await listKvKeys(env, { limit });
-  const registrations = [];
-
-  for (const key of keys) {
-    if (isSystemKvKey(key.name)) continue;
-    const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
-    if (!raw) continue;
-    try {
-      const registration = JSON.parse(raw);
-      if (status && status !== "all" && registration.status !== status) continue;
-      if (query) {
-        const haystack = [
-          registration.parishName,
-          registration.city,
-          registration.state,
-          registration.jurisdiction,
-          registration.priestEmail,
-          registration.treasurerEmail
-        ].filter(Boolean).join(" ").toLowerCase();
-        if (!haystack.includes(query)) continue;
-      }
-      registrations.push(adminRegistrationSummary(registration, key.name));
-    } catch {
-      registrations.push({ reference: key.name, status: "unreadable" });
-    }
-  }
-
-  registrations.sort((a, b) => String(b.receivedAt).localeCompare(String(a.receivedAt)));
-  return { registrations, cursor: null, hasMore: false, limit, source: "kv" };
-}
-
-
-// ── Donor notification helpers ───────────────────────────────────────────────
-
-function newNotifId() {
-  return generateSecret(16);
-}
-
-// GET /api/donor/notifications
-// Returns active (undismissed) pledge nudge notifications for the signed-in donor.
-export async function handleDonorNotifications(request, env) {
-  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
-  const donor = await requireDonor(request, env);
-  if (!donor) return unauthorized();
-  if (!d1(env)) return json({ notifications: [] });
-
-  const notifications = await d1All(env,
-    `SELECT id, parish_id, type, fiscal_year, pledge_cents, given_cents, message, sent_at
-     FROM donor_notifications
-     WHERE donor_email = ? AND dismissed_at IS NULL
-     ORDER BY sent_at DESC
-     LIMIT 10`,
-    normalizeEmail(donor.email)
-  );
-
-  return json({
-    notifications: (notifications || []).map(n => ({
-      id:          n.id,
-      parishId:    n.parish_id,
-      type:        n.type,
-      fiscalYear:  n.fiscal_year,
-      pledgeCents: n.pledge_cents,
-      givenCents:  n.given_cents,
-      message:     n.message || "",
-      sentAt:      n.sent_at
-    }))
-  });
-}
-
-// POST /api/donor/notifications/:id/dismiss
-export async function handleDonorNotificationDismiss(request, env, notifId) {
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  const donor = await requireDonor(request, env);
-  if (!donor) return unauthorized();
-  if (!d1(env)) return json({ ok: true });
-
-  await d1Run(env,
-    `UPDATE donor_notifications
-     SET dismissed_at = datetime('now')
-     WHERE id = ? AND donor_email = ?`,
-    notifId, normalizeEmail(donor.email)
-  );
-
-  return json({ ok: true });
 }

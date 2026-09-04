@@ -1,6 +1,7 @@
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { readParishHandlerSource } from './lib/parish-handler-source.mjs';
 import {
   parishHouseholdBands,
   parishPricingUsageStatus,
@@ -74,7 +75,7 @@ assert.equal(missingBandResponse.status, 422);
 const pricingPage = await readFile(new URL("../public/give/index.html", import.meta.url), "utf8");
 const registerPage = await readFile(new URL("../public/register.html", import.meta.url), "utf8");
 const parishDashboardApp = await readParishDashboardSource();
-const parishHandler = await readFile(new URL("../src/handlers/parish.js", import.meta.url), "utf8");
+const parishHandler = readParishHandlerSource();
 const parishPricingUsage = await readFile(new URL("../src/lib/parish-pricing-usage.js", import.meta.url), "utf8");
 assert.doesNotMatch(pricingPage, /early-adopter|first 20/i);
 assert.doesNotMatch(pricingPage, /Koinonia · \$49\/mo/);

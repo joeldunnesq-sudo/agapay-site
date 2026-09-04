@@ -3,10 +3,11 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
 import { fileURLToPath } from "node:url";
+import { readDonorAppSource } from './lib/donor-app-source.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => readFileSync(path.join(root, file), "utf8");
-const donorApp = read("public/donor/app.js");
+const donorApp = readDonorAppSource();
 const donorStyle = read("public/donor/style.css");
 const home = read("public/myagapay/index.html");
 const legacyHome = read("public/donor/index.html");

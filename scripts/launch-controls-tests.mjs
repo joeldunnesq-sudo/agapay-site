@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { readLearnDashboardSource } from './lib/learn-dashboard-source.mjs';
 
 const [wrangler, deploy, backup, privacy, terms, dependabot, smokeWorkflow, learnLogin, learnShell, listenOpml] = await Promise.all([
   readFile("wrangler.toml", "utf8"),
@@ -10,7 +11,7 @@ const [wrangler, deploy, backup, privacy, terms, dependabot, smokeWorkflow, lear
   readFile(".github/dependabot.yml", "utf8"),
   readFile(".github/workflows/smoke-check.yml", "utf8"),
   readFile("public/learn/odyssey/dashboard/login.html", "utf8"),
-  readFile("public/learn/dashboard-shell.js", "utf8"),
+  readLearnDashboardSource(),
   readFile("public/listen/opml.js", "utf8"),
 ]);
 

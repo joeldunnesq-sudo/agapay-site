@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { readDonorAppSource } from './lib/donor-app-source.mjs';
 
 const page = readFileSync("public/myagapay/directory.html", "utf8");
 const accountPage = readFileSync("public/myagapay/account.html", "utf8");
-const donorApp = readFileSync("public/donor/app.js", "utf8");
+const donorApp = readDonorAppSource();
 const myAgapayShell = readFileSync("public/myagapay-shell.js", "utf8");
 const worker = readFileSync("src/worker.js", "utf8");
 

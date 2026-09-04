@@ -1,4 +1,6 @@
 import fs from 'node:fs';
+import { readDonorAppSource } from './lib/donor-app-source.mjs';
+import { readDonorHandlerSource } from './lib/donor-handler-source.mjs';
 
 const dashboard = fs.readFileSync(new URL('../public/parish/dashboard.html', import.meta.url), 'utf8');
 const coreApp = fs.readFileSync(new URL('../public/parish/app.js', import.meta.url), 'utf8');
@@ -8,8 +10,8 @@ const preparationFeature = fs.readFileSync(new URL('../public/parish/features/sa
 const directoryFeature = fs.readFileSync(new URL('../public/parish/features/directory.js', import.meta.url), 'utf8');
 const app = `${coreApp}\n${sacramentsFeature}\n${pastoralFollowUp}\n${preparationFeature}`;
 const css = fs.readFileSync(new URL('../public/styles/stewardship.css', import.meta.url), 'utf8');
-const donorApp = fs.readFileSync(new URL('../public/donor/app.js', import.meta.url), 'utf8');
-const donorHandler = fs.readFileSync(new URL('../src/handlers/donor.js', import.meta.url), 'utf8');
+const donorApp = readDonorAppSource();
+const donorHandler = readDonorHandlerSource();
 const parishHandler = fs.readFileSync(new URL('../src/handlers/parish-sacraments.js', import.meta.url), 'utf8');
 const availability = fs.readFileSync(new URL('../src/lib/sacrament-availability.js', import.meta.url), 'utf8');
 const liveDashboard = dashboard.slice(

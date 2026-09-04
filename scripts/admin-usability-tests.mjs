@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { readAdminAppSource } from './lib/admin-dashboard-source.mjs';
 
 const [html, css, app] = await Promise.all([
   readFile("public/admin.html", "utf8"),
   readFile("public/admin/style.css", "utf8"),
-  readFile("public/admin/app.js", "utf8"),
+  readAdminAppSource(),
 ]);
 
 assert.match(html, /<nav class="sidebar-nav" aria-label="Admin workspace">/);

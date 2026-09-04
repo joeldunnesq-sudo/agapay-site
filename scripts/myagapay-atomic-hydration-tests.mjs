@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readDonorAppSource } from './lib/donor-app-source.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => readFileSync(path.join(root, file), "utf8");
 const shell = read("public/myagapay-shell.js");
 const styles = read("public/donor/style.css");
-const donorApp = read("public/donor/app.js");
+const donorApp = readDonorAppSource();
 const directory = read("public/myagapay/directory.html");
 const teaching = read("public/myagapay/teaching.js");
 const parishDashboard = read("public/parish/dashboard.html");
