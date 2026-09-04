@@ -27,6 +27,12 @@ function groupsEscape(value) {
     .replaceAll("'", "&#039;");
 }
 
+function renderGroupWorkspaceError(target, tab, message) {
+  target.innerHTML = '<div class="group-signups-empty"><strong data-group-error-title></strong><p data-group-error-message></p></div>';
+  target.querySelector("[data-group-error-title]").textContent = `Unable to load ${tab}`;
+  target.querySelector("[data-group-error-message]").textContent = String(message || "Please try again.");
+}
+
 function groupsHeaders() {
   return window.MyAgapayShell?.authHeaders({ "Content-Type": "application/json" }) || {};
 }
@@ -287,7 +293,7 @@ async function loadActiveGroupWorkspace(tab) {
     if(tab==='commerce'){const d=await groupsFetch(`/api/donor/groups/${encodeURIComponent(id)}/commerce`);renderMinistryCommerce(target,d.items||[],d.parishId||'');}
     if(tab==='members'){const d=await groupsFetch(`/api/donor/groups/${encodeURIComponent(id)}/members`);renderMinistryMembers(target,d.members||[]);}
     if(tab==='resources'){const d=await groupsFetch(`/api/donor/groups/${encodeURIComponent(id)}/resources`);renderMinistryResources(target,d.resources||[]);}
-  } catch(error){target.innerHTML=`<div class="group-signups-empty"><strong>Unable to load ${groupsEscape(tab)}</strong><p>${groupsEscape(error.message)}</p></div>`;}
+  } catch(error){renderGroupWorkspaceError(target,tab,error.message);}
 }
 
 async function acceptMinistryCoverage(requestId){if(!confirm('Take this serving commitment?'))return;await groupsFetch(`/api/donor/koinonia/signups/coverage/${encodeURIComponent(requestId)}/accept`,{method:'POST',body:'{}'});groupStatus('Thank you — this commitment is now yours.');await loadActiveGroupWorkspace('overview');}

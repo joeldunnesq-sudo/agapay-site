@@ -1,10 +1,12 @@
 # Accounting release-gate sign-off
 
-## Current release decision — 2026-08-01
+## Current release decision — updated 2026-09-04
 
 The product owner has accepted Accounting as ready for controlled onboarding of real churches. Automated Gates 1–3 passed in the authenticated non-production run linked below, including the complete 356-direction tenant-isolation matrix. This decision supersedes the pre-completion release conclusions in reports 132 and 133 without altering their historical evidence.
 
-Physical check-stock alignment and an authenticated production Gate 4 artifact remain explicit operational follow-ups. They do not block initial controlled onboarding, but check printing must not be represented as physically stock-validated until the physical row below is signed, and broad production reliance on authenticated Accounting workflows still requires Gate 4 credentials and a passing post-deploy artifact.
+Physical check-stock alignment remains an explicit operational follow-up. It does not block initial controlled onboarding, but check printing must not be represented as physically stock-validated until the physical row below is signed.
+
+Production Gate 4 is now complete. [Production deployment run 33654610153](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/33654610153), completed 2026-09-02, ran the public and authenticated Accounting smoke with protected credentials and uploaded the post-deploy evidence artifact successfully.
 
 This record separates automated evidence from the physical and credential-provisioning work that cannot be inferred from a green unit-test run.
 
@@ -67,8 +69,8 @@ Do not paste credentials into this document, workflow YAML, issue comments, or b
 | Physical check stock reviewed |  |  |  | Pending |
 | Gate 2 lifecycle evidence reviewed | Codex automated verification | 2026-07-30 | [Run 30586144326](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/30586144326) | Passed |
 | Gate 3 isolation matrix reviewed | Codex automated verification | 2026-07-30 | [Run 30586144326](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/30586144326) | Passed — 356/356 denied |
-| Gate 4 production credentials configured |  |  |  | Pending |
-| Gate 4 post-deploy artifact passed |  |  |  | Pending |
+| Gate 4 production credentials configured | GitHub production environment | 2026-09-02 | [Run 33654610153](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/33654610153) | Passed |
+| Gate 4 post-deploy artifact passed | Codex automated verification | 2026-09-02 | [Post-deploy Accounting smoke job](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/33654610153/job/100331541007) | Passed |
 | Controlled church-onboarding release decision | Joel Dunne, product owner | 2026-08-01 | Owner confirmation | Accepted |
 
-Accounting is accepted for controlled church onboarding. Pending rows remain visible requirements for the narrower operational capabilities stated above and must not be silently treated as completed evidence.
+Accounting is accepted for controlled church onboarding. Physical stock verification remains a visible requirement for representing check printing as stock-validated and must not be silently treated as completed evidence.

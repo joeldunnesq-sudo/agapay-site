@@ -22,7 +22,7 @@ Phase 2B's `completeDirectoryMediaUpload` copied the original upload's bytes to 
 
 ## 5. Transformer Selected
 
-`@cf-wasm/photon` (npm, pinned `^0.3.7`, actual resolved version `0.3.7`) — a WASM build of the Rust `photon` image library, published with explicit `workerd`/`node`/`edge-light` conditional exports.
+`@cf-wasm/photon` (npm, pinned `^0.4.0`, actual resolved version `0.4.0`) — a WASM build of the Rust `photon` image library, published with explicit `workerd`/`node`/`edge-light` conditional exports. The runtime upgrade on 2026-09-04 moved new transformations to `directory-media-v2`; previously verified `directory-media-v1` assets remain accepted and do not require destructive reprocessing.
 
 ## 6. Why It Is Worker-Compatible
 
@@ -47,7 +47,7 @@ One new migration: `migrations/0028_directory_media_secure_transformation.sql`.
 
 ## 10. Pipeline Version
 
-`PIPELINE_VERSION = "directory-media-v1"`, `ACCEPTED_PIPELINE_VERSIONS = ["directory-media-v1"]` — single source of truth in `src/directory/media-transform.js`, consulted by every approval-gate and delivery-gate check via `isAcceptedPipelineVersion()`.
+`PIPELINE_VERSION = "directory-media-v2"`, `ACCEPTED_PIPELINE_VERSIONS = ["directory-media-v1", "directory-media-v2"]` — single source of truth in `src/directory/media-transform.js`, consulted by every approval-gate and delivery-gate check via `isAcceptedPipelineVersion()`.
 
 ## 11. Input Formats
 
@@ -87,7 +87,7 @@ Every transformation stage fails closed (throws a controlled `DirectoryServiceEr
 
 ## 20. Secure Attestation
 
-Per variant: `transformer_name` ("@cf-wasm/photon"), `transformer_version` ("0.3.7"), `pipeline_version` ("directory-media-v1"), `secure_transformed_at`, `orientation_normalized`, `crop_applied`, `metadata_stripped`, `output_content_hash` (SHA-256 of the actual output bytes). All server-computed; no client input reaches any of these fields under any code path (confirmed: `completeDirectoryMediaUpload`'s only client-influenced inputs are the raw file bytes and optional crop rectangle — everything in the attestation set is derived server-side from the transformation's own output).
+Per newly transformed variant: `transformer_name` ("@cf-wasm/photon"), `transformer_version` ("0.4.0"), `pipeline_version` ("directory-media-v2"), `secure_transformed_at`, `orientation_normalized`, `crop_applied`, `metadata_stripped`, `output_content_hash` (SHA-256 of the actual output bytes). All server-computed; no client input reaches any of these fields under any code path (confirmed: `completeDirectoryMediaUpload`'s only client-influenced inputs are the raw file bytes and optional crop rectangle — everything in the attestation set is derived server-side from the transformation's own output).
 
 ## 21. Approval Hard Gate
 

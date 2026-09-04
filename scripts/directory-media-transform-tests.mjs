@@ -54,6 +54,14 @@ import { ensurePlatformUser, issuePlatformUserSession, PLATFORM_USER_EMAIL_HEADE
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(__dirname, "..");
+const installedPhotonVersion = JSON.parse(readFileSync(path.join(repoRoot, "node_modules", "@cf-wasm", "photon", "package.json"), "utf8")).version;
+
+assert.equal(TRANSFORMER_VERSION, installedPhotonVersion,
+  "secure media attestation must record the exact installed Photon package version");
+assert.ok(isAcceptedPipelineVersion("directory-media-v1"),
+  "assets securely transformed by the prior accepted pipeline must remain deliverable after the Photon upgrade");
+assert.ok(isAcceptedPipelineVersion(PIPELINE_VERSION),
+  "newly transformed assets must use an accepted pipeline version");
 
 function migration(name) {
   return readFileSync(path.join(repoRoot, "migrations", name), "utf8");

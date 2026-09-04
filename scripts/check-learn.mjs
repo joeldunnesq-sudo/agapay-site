@@ -115,6 +115,7 @@ assert(onboarding.onboarding.steps.some((step) => step.status === "active"), "On
 assert(onboarding.setupCompleted === false, "Unsaved Learn households should be identified as first-run setup.");
 
 const learnShell = readFileSync(new URL("../public/learn/dashboard-shell.js", import.meta.url), "utf8").replaceAll("\r\n", "\n");
+const learnSanitizedRender = readFileSync(new URL("../public/learn/sanitized-render.js", import.meta.url), "utf8").replaceAll("\r\n", "\n");
 const learnMobileGate = readFileSync(new URL("../public/learn/mobile-gate.js", import.meta.url), "utf8");
 const learnBilling = readFileSync(new URL("../src/learn/billing.js", import.meta.url), "utf8");
 const learnHandlers = readFileSync(new URL("../src/learn/handlers.js", import.meta.url), "utf8");
@@ -212,6 +213,10 @@ assert(learnDashboardHtml.includes("/learn/mobile-gate.js"), "Learn dashboard sh
 assert(learnMobileGate.includes("/learn/dashboard-shell.js"), "Learn mobile gate should dynamic-import the active dashboard shell.");
 assert(learnDashboardHtml.includes("/myagapay-shell.js"), "Learn dashboard should load the shared My AGAPAY shell.");
 assert(learnShell.includes("window.MyAgapayShell.productNav") && learnShell.includes("window.MyAgapayShell.redirectToLogin"), "Learn should share global product navigation and expired-session handling with My AGAPAY.");
+assert(learnShell.includes('renderSanitizedMarkup as renderLearnRoot'), "Every full Learn render should use the dedicated sanitized-render boundary.");
+assert(/import DOMPurify from ['"]\.\.\/vendor\/dompurify\.es\.mjs\?v=3\.4\.14['"]/.test(learnSanitizedRender), "Learn should load the reviewed DOMPurify browser build.");
+assert(learnSanitizedRender.includes("target.innerHTML = DOMPurify.sanitize"), "Learn should sanitize complete page markup before it reaches the live DOM.");
+assert((learnShell.match(/root\.innerHTML\s*=/g) || []).length === 0, "The legacy Learn shell must not bypass the dedicated sanitized-render module.");
 assert(learnShell.includes("learn-page-intro--dashboard") && learnShell.includes('"--cream:#f6f1e8"'), "Learn Today should use the navy branded intro card on the shared Giving dashboard canvas color.");
 assert(learnShell.includes("dashboard-view-models.js"), "Learn dashboard shell should import the active view model bundle.");
 assert(!learnDashboardHtml.includes("claude-shell"), "Learn dashboard should not reference legacy Claude shell filenames.");

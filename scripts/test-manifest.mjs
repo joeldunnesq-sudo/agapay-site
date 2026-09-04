@@ -24,6 +24,7 @@ const core = [
   'scripts/mobile-store-readiness-tests.mjs',
   'scripts/check.mjs',
   'scripts/check-learn.mjs',
+  'scripts/learn-html-sanitization-tests.mjs',
   'scripts/koinonia-ministries-calendar-tests.mjs',
   'scripts/koinonia-directory-milestones-tests.mjs',
   'scripts/koinonia-household-verification-tests.mjs',

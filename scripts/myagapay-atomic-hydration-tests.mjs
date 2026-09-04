@@ -81,8 +81,12 @@ assert.match(shell, /dataset\.myagapayPageReady = "true"[\s\S]*finishInternalNav
   "navigation progress and page reveal must finish together");
 assert.match(serviceWorker, /isVersionedStaticAsset\(request, url\)[\s\S]*caches\.match\(request\)[\s\S]*if \(shouldBypassCache\(request\)\) return/,
   "the PWA must serve versioned My AGAPAY shell assets cache-first before the private-route bypass");
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 for (const asset of ["/donor/style.css", "/donor/app.js", "/myagapay-shell.js"]) {
-  assert.match(staticHeaders, new RegExp(`${asset.replace(/[./]/g, "\\$&")}\\r?\\n  Cache-Control: public, max-age=31536000, immutable`),
+  assert.match(staticHeaders, new RegExp(`${escapeRegExp(asset)}\\r?\\n  Cache-Control: public, max-age=31536000, immutable`),
     `${asset} must be immutable because every app reference carries a release version`);
 }
 assert.doesNotMatch(staticHeaders, /\/donor\/\*\s+Cache-Control: no-store/,

@@ -21,6 +21,13 @@ Current evidence:
 - `docs/MONITORING_CHECKLIST.md`
 - `docs/accounting/accounting-release-gates-signoff.md`
 
+Current operational evidence as of 2026-09-04:
+
+- [Production deployment 33654610153](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/33654610153) passed quality, the full required test suite, deployment, and the authenticated post-deploy Accounting smoke on 2026-09-02.
+- [Production outside-in monitor 33860940233](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/33860940233) passed on 2026-09-04.
+- [Production D1 backup 33871601862](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/33871601862) passed on 2026-09-04.
+- The older unchecked rows later in this file remain historical planning evidence unless they are repeated in the current decision, the parish onboarding SOP, or a current subsystem release-gate record.
+
 This decision supersedes older pre-completion language inside this historical tracker when assessing the controlled first-parish launch. It does not convert every older deferred hardening item into a completed item, approve broad unattended rollout, or bypass the real-parish controls in `docs/parish-onboarding-go-live-sop.md`. Each parish must still complete identity and representative verification, personal access acceptance, fresh Stripe readiness, locked configuration review, authenticated treasurer Go-Live signoff, and the 24-hour/72-hour early-life checks.
 
 ## How to read this file

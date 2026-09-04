@@ -9,7 +9,7 @@ import {
   toPrintCenterViewModel,
   toSetupViewModel
 } from "./dashboard-view-models.js?v=20260703d";
-
+import { renderSanitizedMarkup as renderLearnRoot } from "./sanitized-render.js?v=20260904security1";
 const odysseyPageMap = {
   planner: "planner",
   formation: "formation",
@@ -22,7 +22,6 @@ const odysseyPageMap = {
   setup: "onboarding",
   onboarding: "onboarding"
 };
-
 function resolveLearnPageKey() {
   const base = document.body.dataset.learnPage || "dashboard";
   if (document.body.dataset.learnContext !== "odyssey") return base;
@@ -440,9 +439,9 @@ function html(value) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
-
 function safeExternalUrl(value) {
   try {
     const url = new URL(String(value || "").trim());
@@ -5321,7 +5320,7 @@ function wireSimpleSetupWizard(vm, draft, existingSnapshot = null) {
   if (!form) return;
   const status = form.querySelector("[data-wizard-status]");
   const rerender = () => {
-    root.innerHTML = renderSimpleSetupWizard(vm, draft);
+    renderLearnRoot(root, renderSimpleSetupWizard(vm, draft));
     wireSimpleSetupWizard(vm, draft, existingSnapshot);
     root.querySelector(".learn-wizard")?.scrollIntoView({ block: "start" });
   };
@@ -6181,7 +6180,7 @@ function wireDashboard() {
           completed,
           civilDate: localIsoDate()
         });
-        root.innerHTML = renderDashboard(prepareOdysseyViewModel(toDashboardViewModel(saved)));
+        renderLearnRoot(root, renderDashboard(prepareOdysseyViewModel(toDashboardViewModel(saved))));
         wireDashboard();
       } catch (error) {
         button.disabled = false;
@@ -6209,7 +6208,7 @@ function wireDashboard() {
           mode,
           active: mode !== "full"
         });
-        root.innerHTML = renderDashboard(prepareOdysseyViewModel(toDashboardViewModel(saved)));
+        renderLearnRoot(root, renderDashboard(prepareOdysseyViewModel(toDashboardViewModel(saved))));
         wireDashboard();
         const nextStatus = root.querySelector("[data-grace-mode-status]");
         if (nextStatus) nextStatus.textContent = "Rhythm saved.";
@@ -8312,7 +8311,7 @@ function wirePlanner(vm) {
         const scope = params.get("scope") || updatedVm.activeScope || "lessons";
         const displayView = params.get("view") || updatedVm.activeView || "week";
         const preparedVm = prepareOdysseyViewModel(updatedVm);
-        root.innerHTML = renderPlanner(preparedVm);
+        renderLearnRoot(root, renderPlanner(preparedVm));
         wirePlanner(preparedVm);
       }
     } catch (error) {
@@ -8358,7 +8357,7 @@ function wirePlanner(vm) {
         if (saved.planner) {
           const updatedVm = toPlannerViewModel({ ok: true, planner: saved.planner });
           const preparedVm = prepareOdysseyViewModel(updatedVm);
-          root.innerHTML = renderPlanner(preparedVm);
+          renderLearnRoot(root, renderPlanner(preparedVm));
           wirePlanner(preparedVm);
         }
       } catch (error) {
@@ -9043,14 +9042,14 @@ async function mount() {
   }
   const params = new URLSearchParams(window.location.search);
   const calendar = params.get("calendar") || storedLearnCalendar("");
-  root.innerHTML = `<div style="padding:32px;font-family:Georgia,serif;color:#1b2c45;">Loading AGAPAY Learn...</div>`;
+  renderLearnRoot(root, `<div style="padding:32px;font-family:Georgia,serif;color:#1b2c45;">Loading AGAPAY Learn...</div>`);
   if (pageKey === "dashboard") {
     const raw = await apiGet(learnApiUrl("/api/learn/dashboard", { calendar }));
     if (raw.setupCompleted === false && !marketingPreviewActive()) {
       window.location.replace(learnSectionHref("onboarding"));
       return;
     }
-    root.innerHTML = renderDashboard(prepareOdysseyViewModel(toDashboardViewModel(raw)));
+    renderLearnRoot(root, renderDashboard(prepareOdysseyViewModel(toDashboardViewModel(raw))));
     if (!marketingPreviewActive()) wireDashboard();
     return;
   }
@@ -9061,19 +9060,19 @@ async function mount() {
     const date = params.get("date") || "";
     const raw = await apiGet(learnApiUrl("/api/learn/planner", { calendar, view, month, termId, date }));
     const vm = prepareOdysseyViewModel(toPlannerViewModel(raw));
-    root.innerHTML = renderPlanner(vm);
+    renderLearnRoot(root, renderPlanner(vm));
     if (!marketingPreviewActive()) wirePlanner(vm);
     return;
   }
   if (pageKey === "formation") {
     const raw = await apiGet(learnApiUrl("/api/learn/formation", { calendar }));
-    root.innerHTML = renderFormation(prepareOdysseyViewModel(toFormationViewModel(raw)));
+    renderLearnRoot(root, renderFormation(prepareOdysseyViewModel(toFormationViewModel(raw))));
     if (!marketingPreviewActive()) wireFormation();
     return;
   }
   if (pageKey === "books") {
     const raw = await apiGet("/api/learn/books");
-    root.innerHTML = renderBooks(prepareOdysseyViewModel(toBooksViewModel(raw)));
+    renderLearnRoot(root, renderBooks(prepareOdysseyViewModel(toBooksViewModel(raw))));
     return;
   }
   if (pageKey === "grades") {
@@ -9084,7 +9083,7 @@ async function mount() {
     const vm = prepareOdysseyViewModel(toGradesViewModel(raw, { childId }));
     const testScoresRaw = await apiGet("/api/learn/test-scores").catch(() => null);
     vm.testScores = (testScoresRaw?.testScores?.scores || []).filter((row) => row.childId === vm.selectedChildId);
-    root.innerHTML = renderGrades(vm);
+    renderLearnRoot(root, renderGrades(vm));
     if (!marketingPreviewActive()) {
       wireGrades(vm);
       wireTestScores(vm);
@@ -9095,25 +9094,25 @@ async function mount() {
     const raw = await apiGet("/api/learn/dashboard");
     const vm = toDashboardViewModel(raw);
     vm.page = { id: "reports", title: "Reports", subtitle: "Academic records and transcript tools are coming soon.", ornament: true };
-    root.innerHTML = renderReportsComingSoon(vm);
+    renderLearnRoot(root, renderReportsComingSoon(vm));
     return;
   }
   if (pageKey === "print-center") {
     const raw = await apiGet(learnApiUrl("/api/learn/print-center", { calendar }));
     const vm = prepareOdysseyViewModel(toPrintCenterViewModel({ ...raw, printLimit: resolvedPrintLimit }));
-    root.innerHTML = renderPrintCenter(vm);
+    renderLearnRoot(root, renderPrintCenter(vm));
     if (!marketingPreviewActive()) wirePrintCenter(vm);
     return;
   }
   if (pageKey === "community") {
     const raw = await apiGet("/api/learn/community");
-    root.innerHTML = renderCommunity(prepareOdysseyViewModel(toCommunityViewModel(raw)));
+    renderLearnRoot(root, renderCommunity(prepareOdysseyViewModel(toCommunityViewModel(raw))));
     if (!learnExperience().tefaActive && !marketingPreviewActive()) wireCommunity();
     return;
   }
   if (pageKey === "co-op") {
     const raw = await apiGet("/api/learn/co-op");
-    root.innerHTML = renderCoOp(toCoOpViewModel(raw));
+    renderLearnRoot(root, renderCoOp(toCoOpViewModel(raw)));
     return;
   }
   if (pageKey === "onboarding") {
@@ -9125,19 +9124,19 @@ async function mount() {
     const simple = setupParams.get("simple") === "1";
     if ((!vm.setupCompleted && !advanced) || simple) {
       document.body.classList.add("learn-simple-setup");
-      root.innerHTML = renderSimpleSetupWizard(vm, draft);
+      renderLearnRoot(root, renderSimpleSetupWizard(vm, draft));
       if (!marketingPreviewActive()) wireSimpleSetupWizard(vm, draft, raw.onboarding?.setupSnapshot || null);
       return;
     }
     document.body.classList.remove("learn-simple-setup");
-    root.innerHTML = renderSetup(!vm.setupCompleted ? applySimpleDraftToSetupVm(vm, draft) : vm);
+    renderLearnRoot(root, renderSetup(!vm.setupCompleted ? applySimpleDraftToSetupVm(vm, draft) : vm));
     if (!marketingPreviewActive()) wireSetupPage();
     if (window.location.hash) {
       window.requestAnimationFrame(() => document.querySelector(window.location.hash)?.scrollIntoView({ block: "start" }));
     }
     return;
   }
-  root.innerHTML = `<div style="padding:32px;font-family:Georgia,serif;color:#1b2c45;">This Learn route has not been migrated to the Claude shell yet.</div>`;
+  renderLearnRoot(root, `<div style="padding:32px;font-family:Georgia,serif;color:#1b2c45;">This Learn route has not been migrated to the Claude shell yet.</div>`);
 }
 
 mount().catch((error) => {
