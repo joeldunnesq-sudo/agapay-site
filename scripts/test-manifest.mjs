@@ -47,6 +47,7 @@ const core = [
   'scripts/parish-onboarding-hardening-tests.mjs',
   'scripts/legal-acceptance-tests.mjs',
   'scripts/meta-referral-tracking-tests.mjs',
+  'scripts/lead-attribution-tests.mjs',
   'scripts/scheduled-job-observability-tests.mjs',
   'scripts/resend-webhook-tests.mjs',
   'scripts/launch-controls-tests.mjs',

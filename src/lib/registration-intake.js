@@ -1,3 +1,4 @@
+import { sanitizeAttribution } from './lead-attribution.js';
 import { registrationRequirementsForCommunityType } from "../organizations/verification-policies.js";
 
 export const REGISTRATION_TERMS_VERSION = "2026-08-30";
@@ -98,5 +99,7 @@ export function sanitizePublicRegistrationInput(input = {}) {
     sanitized.taxExemption = sanitizedExemption;
   }
 
+  const attribution = sanitizeAttribution(source.attribution);
+  if (attribution) sanitized.attribution = attribution;
   return sanitized;
 }

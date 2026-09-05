@@ -24,14 +24,13 @@ assert.equal(tagCount(requestDemoPage, new RegExp(`facebook\\.com/tr\\?id=${pixe
 assert.match(givePage, /href="\/downloads\/agapay-parish-council-overview\.pdf" download/, "the consolidated Give page must preserve the council proposal download");
 assert.match(givePage, /href="\/give\/request-demo"/, "the consolidated Give page must preserve the guided-demo path");
 
+assert.match(requestDemoPage, /attribution: window.getAgapayAttribution/);
 const backendSuccessCheck = requestDemoPage.indexOf('if (!response.ok || !payload.ok) throw new Error');
 const leadCall = requestDemoPage.indexOf("trackLeadOnce();", backendSuccessCheck);
 assert.ok(backendSuccessCheck > -1 && leadCall > backendSuccessCheck, "Lead must fire only after backend-confirmed success");
 assert.match(requestDemoPage, /trackMetaStandardEvent\("Lead", \{ content_name: "AGAPAY Parish Demo Request" \}\)/);
 assert.match(requestDemoPage, /leadTracked[\s\S]*sessionStorage\.getItem\("agapayMetaDemoLeadTracked"\)[\s\S]*sessionStorage\.setItem\("agapayMetaDemoLeadTracked", "1"\)/, "Lead must be guarded against refresh or retry double-fires");
-for (const key of ["utm_source", "utm_medium", "utm_campaign"]) {
-  assert.match(requestDemoPage, new RegExp(key), `${key} must be preserved in the accepted contact message`);
-}
+assert.doesNotMatch(requestDemoPage, /referralAttributionLines/);
 
 assert.doesNotMatch(privacy, /We do not use Google Analytics, Meta Pixel, or comparable advertising tools/);
 assert.match(privacy, /solely for its own internal (?:business|referral and campaign|campaign) analysis/);

@@ -1,3 +1,4 @@
+import { attributionEmail } from './lead-attribution.js';
 import { parishSlug } from "./format.js";
 import { agapayEmailHtml, sendEmail } from "./email.js";
 import { d1, normalizeEmail } from "./core.js";
@@ -398,6 +399,7 @@ export async function sendAdminRegistrationNotice(env, appUrl, registration) {
 
   const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
   const replyTo = registration.priestEmail || env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
+  const referral = attributionEmail(registration.attribution);
   const adminUrl = `${appUrl}/admin`;
   const parishName = htmlEscape(registration.parishName || "New parish registration");
   const tier = subscriptionTier(registration);
@@ -417,7 +419,7 @@ export async function sendAdminRegistrationNotice(env, appUrl, registration) {
 
   return sendEmail(env, {
     from,
-    to: [to],
+    to: [...new Set([to, "onboarding@agapay.app"])],
     reply_to: replyTo,
     subject: `New AGAPAY ${subscriptionTierSummary(tier)} registration: ${registration.parishName || registration.reference}`,
     html: agapayEmailHtml(appUrl, "New organization registration", `
@@ -436,6 +438,7 @@ export async function sendAdminRegistrationNotice(env, appUrl, registration) {
       </div>
       <p style="margin:0 0 8px;font-size:14px;line-height:1.7;color:#171715;"><strong>Primary contact:</strong> ${htmlEscape(`${registration.priestFirst || ""} ${registration.priestLast || ""}`.trim())} - ${htmlEscape(registration.priestEmail || "")}</p>
       <p style="margin:0 0 22px;font-size:14px;line-height:1.7;color:#171715;"><strong>Finance contact:</strong> ${htmlEscape(`${registration.treasurerFirst || ""} ${registration.treasurerLast || ""}`.trim())} - ${htmlEscape(registration.treasurerEmail || "")}</p>
+      ${referral.html}
       <p style="margin:0;"><a href="${htmlEscape(adminUrl)}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Open admin dashboard</a></p>
     `),
     text: [
@@ -454,6 +457,7 @@ export async function sendAdminRegistrationNotice(env, appUrl, registration) {
       `Primary contact: ${`${registration.priestFirst || ""} ${registration.priestLast || ""}`.trim()} - ${registration.priestEmail || ""}`,
       `Finance contact: ${`${registration.treasurerFirst || ""} ${registration.treasurerLast || ""}`.trim()} - ${registration.treasurerEmail || ""}`,
       "",
+      referral.text,
       `Open admin dashboard: ${adminUrl}`
     ].join("\n")
   });
