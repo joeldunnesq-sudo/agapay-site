@@ -2,6 +2,7 @@
 // Parish registration, giving checkout, and Stripe account/billing orchestration.
 
 import { activeFestalAlmsCampaigns } from '../festal-alms.js';
+import { registrationRetryIdentity, insertRegistrationOnce } from '../lib/registration-retries.js';
 import {
   givingCheckoutReturnUrls,
   normalizeGivingFrequency,
@@ -116,10 +117,51 @@ export async function handleRegistrations(request, env) {
     return json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const turnstile = await verifyTurnstileIfConfigured(request, env, body.turnstileToken || body.cfTurnstileToken);
-  if (turnstile) return turnstile;
-
+  if (!body || typeof body !== 'object' || Array.isArray(body))
+    return json({ error: 'Enter the registration details.' }, { status: 400 });
+  const turnstileToken = body.turnstileToken || body.cfTurnstileToken;
   body = sanitizePublicRegistrationInput(body);
+  const retry = await registrationRetryIdentity(request, body);
+  if (retry?.error) return json({ error: retry.error }, { status: 400 });
+  if (retry && !env.AGAPAY_DB?.prepare)
+    return json(
+      { error: 'Registration is temporarily unavailable. Please contact support@agapay.app.' },
+      { status: 503 }
+    );
+  const replayRegistration = async () => {
+    const existing = await loadRegistrationByReference(env, retry.reference);
+    if (!existing) return null;
+    return existing.registrationRequestHash !== retry.hash
+      ? json(
+          {
+            error:
+              'This submission was already received with different details. Contact support@agapay.app to correct it.',
+            code: 'registration_retry_changed',
+          },
+          { status: 409 }
+        )
+      : json({
+          ok: true,
+          reference: retry.reference,
+          mode: 'stored',
+          replayed: true,
+          message: 'Your registration was already received. No second registration was created.',
+          ...(body.taxExemption
+            ? {
+                taxExemption: {
+                  ok: false,
+                  error: 'Please confirm document receipt with support before resending an exemption document.',
+                },
+              }
+            : {}),
+        });
+  };
+  if (retry) {
+    const replay = await replayRegistration();
+    if (replay) return replay;
+  }
+  const turnstile = await verifyTurnstileIfConfigured(request, env, turnstileToken);
+  if (turnstile) return turnstile;
   if (body.canonicalAgreement !== true)
     return json({ error: 'Authorization and agreement to the Terms of Service are required.' }, { status: 422 });
 
@@ -149,12 +191,14 @@ export async function handleRegistrations(request, env) {
   const missing = requireFields(body, requiredFields);
   if (missing.length) return json({ error: 'Missing required fields', fields: missing }, { status: 422 });
 
-  if (
-    !String(body.priestEmail).includes('@') ||
-    !String(body.treasurerEmail).includes('@') ||
-    !String(body.acceptingEmail).includes('@')
-  ) {
-    return json({ error: 'A valid primary contact and finance contact email are required' }, { status: 422 });
+  const invalidEmails = ['priestEmail', 'treasurerEmail', 'acceptingEmail'].filter(
+    (field) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body[field])
+  );
+  if (invalidEmails.length) {
+    return json(
+      { error: 'Enter a valid email address, such as name@example.org.', fields: invalidEmails },
+      { status: 422 }
+    );
   }
 
   const communityType = String(body.communityType || '');
@@ -173,7 +217,7 @@ export async function handleRegistrations(request, env) {
   }
   if (requestedTier === 'parish' && !normalizeParishHouseholdBand(body.parishHouseholdBand))
     return json({ error: 'Choose a valid active-household range.' }, { status: 422 });
-  const reference = `AGP-REG-${Date.now().toString(36).toUpperCase()}`,
+  const reference = retry?.reference || `AGP-REG-${crypto.randomUUID()}`,
     receivedAt = new Date().toISOString();
   const subscriptionTierId = requestedTier;
   const tier =
@@ -197,6 +241,7 @@ export async function handleRegistrations(request, env) {
   const parishDashboardToken = generateDashboardToken();
   const registrationWithTier = withTaxReadinessDefaults({
     ...body,
+    ...(retry ? { registrationRequestHash: retry.hash } : {}),
     reference,
     status: 'pending',
     receivedAt,
@@ -218,10 +263,11 @@ export async function handleRegistrations(request, env) {
     : registrationWithTier;
 
   await recordOrganizationRegistrationAcceptance(env, request, { body, parishId, reference });
+  if (retry && !(await insertRegistrationOnce(env, registration))) return await replayRegistration();
 
   let taxExemptionResult = null;
   if (env.AGAPAY_REGISTRATIONS) {
-    await saveRegistrationRecord(env, reference, registration);
+    if (!retry) await saveRegistrationRecord(env, reference, registration);
     const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
     const [notice, confirmation] = await Promise.all([
       sendAdminRegistrationNotice(env, appUrl, registration),

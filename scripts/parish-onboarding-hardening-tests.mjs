@@ -214,10 +214,16 @@ const originalFetch = globalThis.fetch;
 let stripeCalls = 0;
 let nextStripeResponse = stripeAccount();
 let stripeFailure = false;
+let duringStripeRefresh = null;
 globalThis.fetch = async (input, init) => {
   const url = String(input instanceof Request ? input.url : input);
   if (url.startsWith("https://api.stripe.com/")) {
     stripeCalls++;
+    if (duringStripeRefresh) {
+      const action = duringStripeRefresh;
+      duringStripeRefresh = null;
+      await action();
+    }
     return new Response(JSON.stringify(stripeFailure ? { error: { message: "Stripe unavailable" } } : nextStripeResponse), {
       status: stripeFailure ? 503 : 200,
       headers: { "Content-Type": "application/json" }
@@ -227,6 +233,73 @@ globalThis.fetch = async (input, init) => {
 };
 
 try {
+  {
+    const { env, db } = makeD1Env();
+    db.exec(readFileSync(path.join(root, 'migrations', '0088_legal_acceptances.sql'), 'utf8'));
+    db.exec(readFileSync(path.join(root, 'migrations', '0113_portability_legal_notices.sql'), 'utf8'));
+    const body = {
+      communityType: 'Parish', subscriptionTier: 'starter', parishName: 'Retry Parish',
+      addressLine1: '10 Parish Street', city: 'Test', state: 'TX', postalCode: '75001',
+      jurisdiction: 'Orthodox Church in America', priestFirst: 'Priest', priestEmail: 'priest@example.test',
+      priestPhone: '555-0100', treasurerFirst: 'Treasurer', treasurerEmail: 'treasurer@example.test',
+      acceptingName: 'Treasurer', acceptingEmail: 'treasurer@example.test', acceptingRole: 'Treasurer', canonicalAgreement: true,
+    };
+    const key = crypto.randomUUID();
+    const submit = (payload = body) => worker.fetch(new Request('https://agapay.test/api/registrations', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key }, body: JSON.stringify(payload),
+    }), env);
+    const results = await Promise.all([submit(), submit()]);
+    for (const response of results) assert.ok([200, 201].includes(response.status), JSON.stringify(await response.clone().json()));
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM registrations').get().n, 1, 'concurrent retries create one registration');
+    const replay = await submit();
+    assert.equal((await replay.json()).replayed, true);
+    assert.equal((await submit({ ...body, parishName: 'Changed after receipt' })).status, 409);
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM legal_acceptances').get().n, 1);
+    console.log('PASS - concurrent registration retries preserve one record and acceptance');
+  }
+  {
+    const fixture = await readyFixture();
+    const workflow = await buildParishOnboardingWorkflow(fixture.registration, await workflowOptions(fixture));
+    const responses = await Promise.all([0, 1].map(() => worker.fetch(dashboardRequest(fixture, signoffBody(workflow.materialVersion)), fixture.env)));
+    for (const response of responses) assert.equal(response.status, 200, JSON.stringify(await response.clone().json()));
+    const stored = await loadRegistrationByReference(fixture.env, fixture.registration.reference);
+    assert.equal(stored.givingStatus, 'active');
+    await assert.rejects(saveRegistrationRecord(fixture.env, fixture.registration.reference, {
+      ...fixture.registration, recurringGivingEnabled: false,
+    }, fixture.registration), (error) => error.code === 'registration_publication_conflict',
+    'an in-flight prelaunch edit cannot erase a completed signoff');
+    assert.equal((await loadRegistrationByReference(fixture.env, fixture.registration.reference)).givingStatus, 'active');
+    assert.equal(responses.length, 2);
+    assert.ok((await Promise.all(responses.map((response) => response.json()))).some((body) => body.alreadyLive));
+  }
+  for (const subscriptionStatus of ['trialing', 'active']) {
+    const fixture = await readyFixture({ subscriptionStatus });
+    fixture.registration.onboardingAccess = {};
+    fixture.db.prepare('DELETE FROM parish_memberships WHERE parish_id = ?').run(fixture.registration.parishId);
+    await saveRegistrationRecord(fixture.env, fixture.registration.reference, fixture.registration);
+    const workflow = await buildParishOnboardingWorkflow(fixture.registration, await workflowOptions(fixture));
+    const response = await worker.fetch(dashboardRequest(fixture, signoffBody(workflow.materialVersion)), fixture.env);
+    assert.equal(response.status, 200, 'shared session must approve initial launch without personal memberships');
+    const stored = await loadRegistrationByReference(fixture.env, fixture.registration.reference);
+    assert.equal(stored.treasurerSignoff.authenticationMethod, 'parish_dashboard_session');
+    assert.equal(stored.treasurerSignoff.reviewVersion, 2);
+  }
+  {
+    const fixture = await readyFixture();
+    const workflow = await buildParishOnboardingWorkflow(fixture.registration, await workflowOptions(fixture));
+    duringStripeRefresh = async () => {
+      await saveRegistrationRecord(fixture.env, fixture.registration.reference, {
+        ...fixture.registration, recurringGivingEnabled: false,
+      }, fixture.registration);
+    };
+    const response = await worker.fetch(dashboardRequest(fixture, signoffBody(workflow.materialVersion)), fixture.env);
+    assert.equal(response.status, 409, 'an edit during Stripe retrieval must prevent stale publication');
+    assert.equal((await response.json()).code, 'onboarding_snapshot_changed');
+    const stored = await loadRegistrationByReference(fixture.env, fixture.registration.reference);
+    assert.equal(stored.recurringGivingEnabled, false, 'concurrent edit must not be overwritten by Stripe refresh');
+    assert.equal(stored.givingStatus, 'hidden');
+    assert.equal(stored.treasurerSignoff, undefined);
+  }
   {
     const { env } = makeD1Env();
     const trialInvite = await sendDashboardInvite(env, env.AGAPAY_APP_URL, baseRegistration({ subscriptionStatus: "trialing" }));

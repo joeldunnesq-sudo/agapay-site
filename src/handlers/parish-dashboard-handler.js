@@ -580,7 +580,13 @@ export async function handleParishDashboard(request, env, parishId) {
       reason: 'The parish changed material onboarding configuration.',
       receiptContact: env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app',
     });
-    await saveRegistrationRecord(env, found.key, updated, current);
+    try {
+      await saveRegistrationRecord(env, found.key, updated, current);
+    } catch (error) {
+      if (error.code === 'registration_publication_conflict')
+        return json({ error: error.message, code: error.code }, { status: 409 });
+      throw error;
+    }
     const responseParish = await parishDashboardPayloadWithPricingUsage(env, parishId, updated);
     responseParish.onboarding = await buildParishOnboardingWorkflow(updated, {
       appUrl: env.AGAPAY_APP_URL || new URL(request.url).origin,
