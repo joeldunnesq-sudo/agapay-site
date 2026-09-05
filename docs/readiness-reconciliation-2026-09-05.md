@@ -37,7 +37,7 @@ The protected two-parish acceptance workflow was then dispatched against `https:
 
 **Result: blocked at authentication; not passed.** Password login returned HTTP 200 without a session token, which the bootstrap script does not handle. Privileged login now requires the MFA challenge/enrollment flow. The bootstrap failure caused subsequent reconciliation, giving catalog, check-print, service-worker, and cross-parish matrix steps to be skipped. No cross-parish attempt count should be attributed to this run.
 
-The current staging registrations also use `acct_staging_*` onboarding simulation IDs, not real Stripe test-account IDs. These fixtures can exercise onboarding presentation but cannot demonstrate real Stripe checkout, payout reconciliation, recurring billing, or webhook delivery. Existing synthetic commerce history indicates earlier test activity, but does not establish that the current setup remains connected.
+At initial inspection, the staging registrations used `acct_staging_*` onboarding simulation IDs, not real Stripe test-account IDs. These fixtures can exercise onboarding presentation but cannot demonstrate real Stripe checkout, payout reconciliation, recurring billing, or webhook delivery. Existing synthetic commerce history indicated earlier test activity, but did not establish that the setup remained connected.
 
 ### Setup repairs after the initial attempt
 
@@ -49,12 +49,14 @@ Rerun [33989721765](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs
 
 The updated harness supports named-staff browser sign-in with MFA followed by the independent accounting PIN. This is the application's normal supported sign-in route; it does not remove the existing shared-dashboard factor. Shared-dashboard launch acceptance remains a separately identified check. Protected workflow credentials are restricted to the exact dedicated staging origin before any authentication request.
 
+Validation of these harness changes: `npm run quality` and all ten commands in `npm run check:release-gates` passed. This includes real local workerd/storage exercises, the RFC TOTP vector, encrypted credential round-trip, MFA destination restrictions, and named-staff session handling. These results are not represented as completed live payment or cross-parish acceptance. Changes are tracked in [draft PR 150](https://github.com/joeldunnesq-sudo/agapay-site/pull/150).
+
 The latest production smoke artifact from [deployment 33987746217](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/33987746217) reports public health passed and `authenticated.status=blocked_missing_credentials`. A green deployment job must not be described as a successful authenticated two-parish test. The staging runbook intentionally keeps staging credentials out of production deployment secrets.
 
 ## Work required to finish acceptance
 
-1. Complete staging administrator authentication and restore real Stripe test connections through normal onboarding routes; keep production keys/accounts unchanged.
-2. Enroll/verify the dedicated test principals' MFA and update the acceptance harness and protected credential storage to support it. Do not disable MFA, reset an existing factor, or fabricate authenticated sessions to make a gate pass.
+1. Both real Stripe test connections and staging administrator authentication are restored. Finish the synthetic launch setup: Parish A has passed all twelve setup checks and awaits parish signoff; Parish B's reset review must still be completed.
+2. Both named test users are enrolled and the harness is updated. Explicit authorization to store their new MFA secrets in protected GitHub storage remains pending, as does the user's St. Fiacre shared-account passkey sign-in. Do not disable MFA, reset an existing factor, or fabricate authenticated sessions to make a gate pass.
 3. Rerun all authenticated gates and retain their actual evidence.
 4. Exercise one-time and recurring Stripe test payments, delayed-payment success/failure, renewal, cancellation, refunds, replay, receipts, donor history, fund reports, and accounting effects. The current failed run proves none of these.
 5. Verify the shared-dashboard initial launch, independent accounting PIN, and 30-day trial/billing transition on the deployed test system. The prior local regression results remain useful but are not substitutes for this acceptance evidence.
