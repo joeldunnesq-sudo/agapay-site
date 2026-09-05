@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { testGroups } from './test-manifest.mjs';
 
 const requiredCriticalSuites = [
+  'scripts/payment-integrity-tests.mjs',
   'scripts/worker-hardening-tests.mjs',
   'scripts/privileged-mfa-tests.mjs',
   'scripts/consumer-passkey-tests.mjs',

@@ -15,6 +15,7 @@ const smoke = [
 ];
 
 const core = [
+  'scripts/payment-integrity-tests.mjs',
   'scripts/parish-portability-tests.mjs',
   'scripts/require-node-22.mjs',
   'node-check:src/worker.js',
@@ -210,6 +211,7 @@ const releaseGates = [
 ];
 
 const critical = [
+  'scripts/payment-integrity-tests.mjs',
   'scripts/worker-hardening-tests.mjs',
   'scripts/privileged-mfa-tests.mjs',
   'scripts/consumer-passkey-tests.mjs',

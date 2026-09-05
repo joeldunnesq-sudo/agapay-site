@@ -1,3 +1,4 @@
+import { subscriptionSetupUpdates, visibleDonationRecords } from '../payments/donation-events.js';
 import {
   COMMEMORATION_KEY_PREFIX,
   d1All,
@@ -43,11 +44,26 @@ export async function storeDonorOffering(env, offering) {
   if (!hasProductionStore(env) || !offering?.donorEmail) return null;
   const email = normalizeEmail(offering.donorEmail);
   const id = offering.id || crypto.randomUUID();
+  const previous = await loadDonorOfferingById(env, id, email);
+  if (
+    ['refunded', 'partially_refunded'].includes(offering.status) &&
+    Number(previous?.refundedCents || 0) > Number(offering.refundedCents || 0)
+  )
+    return previous;
+  const protectedStatus = ['refunded', 'partially_refunded', 'disputed', 'dispute_closed'];
+  if (
+    protectedStatus.includes(previous?.status) &&
+    ['completed', 'pending', 'failed'].includes(offering.status) &&
+    offering.disputeStatus !== 'won'
+  )
+    return previous;
+  offering = { ...previous, ...offering };
   const fees = offeringFeeBreakdown(offering);
   const settlementProfileId =
     offering.settlementProfileId ||
     (offering.parishId ? await resolveSettlementProfileId(env, offering.parishId, 'giving') : null);
   const record = {
+    ...offering,
     id,
     donorEmail: email,
     donorName: offering.donorName || '',
@@ -57,6 +73,9 @@ export async function storeDonorOffering(env, offering) {
     giftType: offering.giftType || 'stewardship',
     title: offering.title || 'AGAPAY offering',
     fund: offering.fund || '',
+    fundId: offering.fundId || '',
+    donorRestricted: Boolean(offering.donorRestricted),
+    recordType: offering.recordType || 'payment',
     campaign: offering.campaign || '',
     campaignId: offering.campaignId || '',
     campaignDescription: offering.campaignDescription || '',
@@ -84,6 +103,7 @@ export async function storeDonorOffering(env, offering) {
     stripeCustomerId: offering.stripeCustomerId || '',
     stripePaymentIntentId: offering.stripePaymentIntentId || '',
     stripeSubscriptionId: offering.stripeSubscriptionId || '',
+    stripeInvoiceId: offering.stripeInvoiceId || '',
     stripeChargeId: offering.stripeChargeId || '',
     stripeBalanceTransactionId: offering.stripeBalanceTransactionId || '',
     stripeFeeSource: offering.stripeFeeSource || '',
@@ -96,9 +116,21 @@ export async function storeDonorOffering(env, offering) {
     emailReceiptSentAt: offering.emailReceiptSentAt || '',
     completedAt: offering.completedAt || '',
     feeReconciledAt: offering.feeReconciledAt || '',
+    refundedCents: offering.refundedCents || 0,
+    refundedAt: offering.refundedAt || '',
+    failureMessage: offering.failureMessage || '',
+    failedAt: offering.failedAt || '',
+    cancelledAt: offering.cancelledAt || '',
     createdAt: offering.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
+  // A Checkout Session configures a subscription; only its invoices are gifts.
+  if (record.recordType === 'subscription_setup') {
+    record.status = ['failed', 'expired', 'cancelled'].includes(record.status) ? record.status : 'subscription_setup';
+    record.paymentStatus = 'pending';
+    record.stripePaymentIntentId = '';
+    record.completedAt = '';
+  }
   if (d1(env)) {
     await d1Run(
       env,
@@ -118,7 +150,12 @@ export async function storeDonorOffering(env, offering) {
          settlement_profile_id = excluded.settlement_profile_id,
          created_at = excluded.created_at,
          updated_at = excluded.updated_at,
-         data = excluded.data`,
+         data = excluded.data
+       WHERE NOT (donor_offerings.status IN ('refunded','partially_refunded','disputed','dispute_closed')
+         AND excluded.status IN ('completed','pending','failed')
+         AND COALESCE(json_extract(excluded.data,'$.disputeStatus'),'') != 'won')
+         AND NOT (excluded.status IN ('refunded','partially_refunded')
+           AND COALESCE(json_extract(donor_offerings.data,'$.refundedCents'),0) > COALESCE(json_extract(excluded.data,'$.refundedCents'),0))`,
       record.id,
       record.donorEmail,
       record.parishId,
@@ -132,6 +169,7 @@ export async function storeDonorOffering(env, offering) {
       record.updatedAt,
       JSON.stringify(record)
     );
+    return loadDonorOfferingById(env, id, email);
   } else {
     const key = donorOfferingKey(email, id);
     await env.AGAPAY_REGISTRATIONS.put(key, JSON.stringify(record));
@@ -145,24 +183,17 @@ export async function storeDonorOffering(env, offering) {
   return record;
 }
 
+async function loadDonorOfferingById(env, id, email = '') {
+  if (d1(env)) return parseJsonRow(await d1First(env, 'SELECT data FROM donor_offerings WHERE id = ?1', id));
+  if (!env.AGAPAY_REGISTRATIONS || !email) return null;
+  const raw = await env.AGAPAY_REGISTRATIONS.get(donorOfferingKey(normalizeEmail(email), id));
+  return raw ? JSON.parse(raw) : null;
+}
+
 export async function updateDonorOfferingByCheckout(env, checkoutSessionId, updates = {}) {
   if (!hasProductionStore(env) || !checkoutSessionId) return null;
   const current = await loadDonorOfferingByCheckout(env, checkoutSessionId);
-  if (!current) return null;
-  if (d1(env)) return storeDonorOffering(env, { ...current, ...updates });
-
-  const key = await env.AGAPAY_REGISTRATIONS.get(donorCheckoutIndexKey(checkoutSessionId));
-  if (!key) return null;
-  const updated = {
-    ...current,
-    ...updates,
-    updatedAt: new Date().toISOString(),
-  };
-  await env.AGAPAY_REGISTRATIONS.put(key, JSON.stringify(updated));
-  if (updated.stripePaymentIntentId) {
-    await env.AGAPAY_REGISTRATIONS.put(stripePaymentIntentIndexKey(updated.stripePaymentIntentId), key);
-  }
-  return updated;
+  return current ? storeDonorOffering(env, { ...current, ...updates }) : null;
 }
 
 export async function loadDonorOfferingByCheckout(env, checkoutSessionId) {
@@ -184,29 +215,8 @@ export async function loadDonorOfferingByCheckout(env, checkoutSessionId) {
 
 export async function updateDonorOfferingByPaymentIntent(env, paymentIntentId, updates = {}) {
   if (!hasProductionStore(env) || !paymentIntentId) return null;
-  if (d1(env)) {
-    const row = await d1First(
-      env,
-      'SELECT data FROM donor_offerings WHERE payment_intent_id = ?1 LIMIT 1',
-      paymentIntentId
-    );
-    const current = parseJsonRow(row);
-    if (!current) return null;
-    return storeDonorOffering(env, { ...current, ...updates });
-  }
-
-  const key = await env.AGAPAY_REGISTRATIONS.get(stripePaymentIntentIndexKey(paymentIntentId));
-  if (!key) return null;
-  const raw = await env.AGAPAY_REGISTRATIONS.get(key);
-  if (!raw) return null;
-  const current = JSON.parse(raw);
-  const updated = {
-    ...current,
-    ...updates,
-    updatedAt: new Date().toISOString(),
-  };
-  await env.AGAPAY_REGISTRATIONS.put(key, JSON.stringify(updated));
-  return updated;
+  const current = await loadDonorOfferingByPaymentIntent(env, paymentIntentId);
+  return current ? storeDonorOffering(env, { ...current, ...updates }) : null;
 }
 
 export async function loadDonorOfferingByPaymentIntent(env, paymentIntentId) {
@@ -234,7 +244,7 @@ export async function loadDonorOfferings(env, email, limit = 100) {
       normalizeEmail(email),
       limit
     );
-    return rows.map(parseJsonRow).filter(Boolean);
+    return visibleDonationRecords(rows.map(parseJsonRow).filter(Boolean));
   }
 
   if (!env.AGAPAY_REGISTRATIONS) return [];
@@ -250,7 +260,9 @@ export async function loadDonorOfferings(env, email, limit = 100) {
       // Ignore malformed donor offering records.
     }
   }
-  return offerings.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+  return visibleDonationRecords(
+    offerings.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
+  );
 }
 
 export async function loadDonorCommemorations(env, email, limit = 100) {
@@ -282,6 +294,7 @@ export async function loadDonorCommemorations(env, email, limit = 100) {
 }
 
 export function paidOfferingStatus(offering = {}) {
+  if (offering.recordType === 'subscription_setup') return false;
   const status = String(offering.status || '').toLowerCase();
   const paymentStatus = String(offering.paymentStatus || '').toLowerCase();
   return (
@@ -385,6 +398,8 @@ export async function refreshDonorOfferingFromStripeCheckout(env, offering = {})
   if (!stripe.ok) return offering;
 
   const session = stripe.body || {};
+  const setup = subscriptionSetupUpdates(session, offering);
+  if (setup) return updateDonorOfferingByCheckout(env, offering.checkoutSessionId, setup);
   const paymentStatus = normalizedCheckoutPaymentStatus(session, offering.paymentStatus);
   let status = offering.status || 'checkout_created';
   if (paymentStatus === 'paid') status = 'completed';

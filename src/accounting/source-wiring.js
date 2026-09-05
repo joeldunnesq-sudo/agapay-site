@@ -237,16 +237,29 @@ export async function wireGivingRefundsToAccounting(env, offering = {}, charge =
   });
   const refunds = Array.isArray(charge.refunds?.data) ? charge.refunds.data : [];
   const results = [];
+  const original = await db.prepare("SELECT id FROM accounting_integration_source_events WHERE source_system='agapay_give' AND source_event_id=?")
+    .bind(`give:${donationId}:succeeded`).first();
   for (const refund of refunds) {
     const refundId = text(refund.id);
     if (!refundId) continue;
+    // Preserve already-ingested refunds, including their original allocation
+    // and legacy source-object identity, when Stripe repeats the charge event.
+    const existing = await db.prepare("SELECT id,refund_amount FROM accounting_integration_source_events WHERE source_system='stripe' AND source_event_id=?")
+      .bind(`give:${donationId}:refund:${refundId}`).first();
+    if (existing) {
+      if (Number(existing.refund_amount) !== cents(refund.amount)) throw new Error('Refund amount conflicts with the recorded accounting event.');
+      results.push(await processAccountingSourceEvent(db, {
+        actor: actor("accounting.integrations.post"), entitlementTier: "parish", sourceEventId: existing.id
+      }));
+      continue;
+    }
     const source = await ingestAccountingSourceEvent(db, {
       actor: actor("accounting.integrations.post"), entitlementTier: "parish",
       event: {
         sourceSystem: "stripe",
         sourceType: cents(refund.amount) >= cents(charge.amount) ? "donation_refunded" : "donation_partially_refunded",
-        sourceEventId: `give:${donationId}:refund:${refundId}`, sourceObjectId: donationId,
-        originalSourceEventId: `give:${donationId}:succeeded`,
+        sourceEventId: `give:${donationId}:refund:${refundId}`, sourceObjectId: refundId,
+        originalSourceEventId: original?.id || "",
         occurredAt: refund.created ? new Date(refund.created * 1000).toISOString() : new Date().toISOString(),
         currency: text(refund.currency || charge.currency) || "USD", refundAmount: cents(refund.amount),
         donationId, paymentIntentId: text(offering.stripePaymentIntentId),

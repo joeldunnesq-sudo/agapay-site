@@ -1,3 +1,4 @@
+import { subscriptionSetupUpdates } from '../payments/donation-events.js';
 // src/handlers/parish-checkout.js
 // Parish registration, giving checkout, and Stripe account/billing orchestration.
 
@@ -404,6 +405,18 @@ export async function handleCheckout(request, env) {
   if (!permittedGiftType) {
     return json({ error: 'This offering type is available with Give +.' }, { status: 403 });
   }
+  if (requestedFrequency !== 'once' && parish.recurringGivingEnabled === false) {
+    return json(
+      { error: 'This parish is currently accepting one-time gifts only. Choose a one-time gift.' },
+      { status: 422 }
+    );
+  }
+  if (requestedGiftType === 'commemoration' && parish.commemorationsEnabled === false) {
+    return json(
+      { error: 'Commemoration offerings are currently unavailable. Choose another offering.' },
+      { status: 422 }
+    );
+  }
 
   const requestedFundKey = String(body.fundId || body.fund || '').trim();
   const requestedFund =
@@ -460,12 +473,38 @@ export async function handleCheckout(request, env) {
           .includes(requestedCampaignId)
       )
     : null;
+  const campaign =
+    requestedGiftType === 'campaign'
+      ? (parish.campaigns || []).find(
+          (item) =>
+            [item.id, item.slug, item.name, item.campaignName, item.title]
+              .filter(Boolean)
+              .map(String)
+              .includes(requestedCampaignId) &&
+            item.active !== false &&
+            item.enabled !== false &&
+            item.hidden !== true &&
+            ['active', 'published', 'open'].includes(String(item.status || 'active').toLowerCase())
+        )
+      : null;
+  if ((isFestalAlms && !feastCampaign) || (requestedGiftType === 'campaign' && !campaign)) {
+    return json(
+      { error: 'This campaign is no longer accepting gifts. Refresh the parish page and choose an active campaign.' },
+      { status: 422 }
+    );
+  }
   const destinationFundId = String(feastCampaign?.destinationFundId || 'benevolence-fund');
   const destinationFund = isFestalAlms
     ? (Array.isArray(parish.funds) ? parish.funds : []).find((fund) =>
         [fund?.id, fund?.code, fund?.name].filter(Boolean).map(String).includes(destinationFundId)
       )
     : null;
+  if (isFestalAlms && !destinationFund) {
+    return json(
+      { error: 'This campaign’s designated fund is unavailable. Choose another offering or contact the parish.' },
+      { status: 422 }
+    );
+  }
   const candleFund =
     requestedGiftType === 'candles' ? (Array.isArray(parish.funds) ? parish.funds : []).find(isCandleGivingFund) : null;
   const checkoutFund = isFestalAlms
@@ -484,10 +523,10 @@ export async function handleCheckout(request, env) {
         : requestedFund?.id || requestedFund?.code || '';
   const checkoutCampaign = isFestalAlms
     ? feastCampaign?.campaignName || feastCampaign?.name || body.campaign || ''
-    : body.campaign || '';
+    : campaign?.name || campaign?.campaignName || campaign?.title || '';
   const checkoutCampaignId = isFestalAlms
     ? feastCampaign?.id || feastCampaign?.feastId || requestedCampaignId
-    : body.campaignId || body.campaign || '';
+    : campaign?.id || campaign?.slug || '';
   const donor = await requireDonor(request, env);
   const donorDashboardReturn = Boolean(donor?.email && normalizeEmail(donor.email) === normalizedDonorEmail);
   const { successUrl, cancelUrl } = givingCheckoutReturnUrls({
@@ -601,6 +640,7 @@ export async function handleCheckout(request, env) {
 
   await storeDonorOffering(env, {
     id: stripeBody.id,
+    recordType: recurring ? 'subscription_setup' : 'payment',
     donorEmail: normalizedDonorEmail,
     donorName: normalizedDonorName,
     parishId: parish.id,
@@ -683,6 +723,17 @@ export async function handleCheckoutSessionStatus(request, env) {
   }
 
   const session = stripe.body || {};
+  const setup = subscriptionSetupUpdates(session, offering);
+  if (setup) {
+    await updateDonorOfferingByCheckout(env, sessionId, setup);
+    return json({
+      ok: true,
+      checkoutSessionId: sessionId,
+      status: session.payment_status === 'paid' ? 'completed' : 'pending',
+      paymentStatus: session.payment_status || 'pending',
+      paymentIntentId: '',
+    });
+  }
   const paymentIntentId = checkoutPaymentIntentId(session);
   const paymentStatus = normalizedCheckoutPaymentStatus(session, offering.paymentStatus);
   let status = offering.status || 'checkout_created';
