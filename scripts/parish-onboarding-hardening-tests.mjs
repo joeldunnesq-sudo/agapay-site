@@ -1,3 +1,4 @@
+import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
@@ -64,6 +65,7 @@ function makeD1Env(environment = "test") {
   return {
     env: {
       AGAPAY_DB,
+      AGAPAY_RATE_LIMITER: memoryRateLimiter(),
       AGAPAY_REGISTRATIONS: new MemoryKV(),
       AGAPAY_ENVIRONMENT: environment,
       AGAPAY_APP_URL: "https://agapay.test",

@@ -1,3 +1,4 @@
+import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 // scripts/tax-exemption-route-tests.mjs
 //
 // Route-level HTTP tests for the admin sync/reconciliation/expiration
@@ -81,7 +82,7 @@ function makeD1Env() {
       }
     }
   };
-  return { env: { AGAPAY_DB }, db };
+  return { env: { AGAPAY_DB, AGAPAY_RATE_LIMITER: memoryRateLimiter() }, db };
 }
 
 function seedRegistration(db, { reference, parishId, stripeCustomerId = "", stewardshipStripeCustomerId = "" }) {

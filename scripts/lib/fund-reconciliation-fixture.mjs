@@ -1,3 +1,4 @@
+import { memoryRateLimiter } from './memory-rate-limiter.mjs';
 // Local-only synthetic data. Real handlers and SQL, no Stripe or production data.
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
@@ -90,7 +91,7 @@ export async function createFundReconciliationFixture({
         new Date().toISOString()
       );
   updateRegistration();
-  const env = { AGAPAY_DB: binding, STRIPE_SECRET_KEY: 'sk_test_synthetic_never_sent', AGAPAY_ENVIRONMENT: 'test' };
+  const env = { AGAPAY_RATE_LIMITER: memoryRateLimiter(), AGAPAY_DB: binding, STRIPE_SECRET_KEY: 'sk_test_synthetic_never_sent', AGAPAY_ENVIRONMENT: 'test' };
   const payouts = [],
     transactions = new Map(),
     offerings = [];

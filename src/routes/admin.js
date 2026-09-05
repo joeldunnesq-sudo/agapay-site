@@ -36,6 +36,8 @@ const GET_ROUTES = new Map([
 ]);
 
 export async function routeAdminRequest({ request, env, url, actions }) {
+  if (url.pathname === '/api/admin/contact-leads' || url.pathname.startsWith('/api/admin/contact-leads/'))
+    return actions.handleAdminContactLeads(request, env);
   const getAction = request.method === 'GET' ? GET_ROUTES.get(url.pathname) : null;
   if (getAction) return actions[getAction](request, env);
 

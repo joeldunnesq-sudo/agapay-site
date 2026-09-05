@@ -1116,6 +1116,7 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+              submissionId: form.dataset.submissionId ||= crypto.randomUUID(),
               attribution: window.getAgapayAttribution ? window.getAgapayAttribution() : null,
             name:         data.get("name")         || "",
             email:        data.get("email")        || "",
@@ -1125,10 +1126,12 @@
           })
         });
         const payload = await res.json().catch(() => ({}));
-        if (!res.ok || !payload.ok) throw new Error(payload.error || "Something went wrong.");
+        if (res.status === 409) delete form.dataset.submissionId;
+          if (!res.ok || !payload.ok) throw new Error(payload.error || "Something went wrong.");
+        delete form.dataset.submissionId;
         form.reset();
         if (status) {
-          status.textContent = "Message sent. A real person at AGAPAY will read this and reply to you directly.";
+          status.textContent = payload.notificationStatus && payload.notificationStatus !== "sent" ? `${payload.message} Reference: ${payload.reference}` : "Message sent. A real person at AGAPAY will read this and reply to you directly.";
           status.classList.add("visible");
         }
         btn.textContent = "Send Message";

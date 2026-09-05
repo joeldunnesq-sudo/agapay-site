@@ -8,12 +8,12 @@ There was no first-touch storage, normalized source, referrer capture, or contac
 database record: /api/contact only sent an email. Registration records already
 used the registrations table's JSON data (with the existing KV fallback).
 
-Contact and demo submissions now save a JSON record under `contact:<UUID>` in
-D1 `app_settings.value`, using `d1SetSetting`, before sending notification email.
-Deployments using the existing AGAPAY_REGISTRATIONS KV fallback save the same key
-and JSON there. This follows the public waitlist/directory-intake convention.
-Registration attribution is an optional property of the existing registration
-JSON. No migration or dependency is required; old records remain readable.
+Contact and demo submissions save lead JSON in D1 `contact_leads.data` before
+notification delivery. Migration 0124 imports existing D1 `contact:*` settings
+with unknown historical delivery status. Contact submission now requires D1;
+registration records continue using their existing storage. See
+[contact recovery and security operations](operations/contact-and-security-hardening.md)
+for deployment requirements, delivery status, idempotency, and admin recovery.
 
 ## Lifecycle
 
@@ -48,11 +48,10 @@ The outer record has `version: 1`, `firstTouch`, and `lastTouch`.
 For reporting, D1 can extract fields from the existing JSON, for example:
 
 ```sql
-SELECT json_extract(value, '$.attribution.firstTouch.category') AS first_source,
-       json_extract(value, '$.attribution.lastTouch.category') AS last_source,
+SELECT json_extract(data, '$.attribution.firstTouch.category') AS first_source,
+       json_extract(data, '$.attribution.lastTouch.category') AS last_source,
        COUNT(*) AS leads
-FROM app_settings
-WHERE key LIKE 'contact:%'
+FROM contact_leads
 GROUP BY first_source, last_source;
 ```
 
@@ -77,8 +76,10 @@ GROUP BY first_source, last_source;
 - Existing records are not backfilled. Client timestamps/source evidence are
   untrusted marketing signals; they are not authentication or billing evidence.
 - Lead persistence is required before email sending. A database outage produces
-  the normal form error. Email failure can leave a saved record; a user retry can
-  create another record, since the existing form has no idempotency key.
+  a form error. Email failure leaves a saved lead visible in the admin inbox.
+  Contact and demo forms reuse a submission key for retries in the same page;
+  reloading the page starts a new key. Provider retries use a frozen payload and
+  a stable idempotency key, with manual review required after the safe retry window.
 
 ## Verification and deployment
 
@@ -94,7 +95,6 @@ routes all traffic locally. It never sends a real contact message or email.
 The unit/integration suite is included in the standard core test manifest.
 
 Deploy through the existing `.github/workflows/deploy.yml` production workflow
-after review and its quality/test gates. There is no attribution migration to
-apply, environment variable to add, or separate frontend build step. The Worker
-and public assets must ship together. No production deployment was performed as
-part of this implementation.
+after review and its quality/test gates. The notification recovery migration and
+Durable Object rate limiter binding must deploy with the Worker and public assets;
+the production workflow applies the D1 migration before publishing the Worker.

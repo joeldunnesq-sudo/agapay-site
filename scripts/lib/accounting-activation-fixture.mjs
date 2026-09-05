@@ -1,3 +1,4 @@
+import { memoryRateLimiter } from './memory-rate-limiter.mjs';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 
@@ -70,6 +71,7 @@ export function activationTestEnvironment() {
         })
       );
   return {
+    AGAPAY_RATE_LIMITER: memoryRateLimiter(),
     AGAPAY_DB: db,
     AGAPAY_ENVIRONMENT: 'test',
     PARISH_PORTABILITY_ENABLED: 'true',

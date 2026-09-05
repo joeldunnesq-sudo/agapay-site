@@ -393,12 +393,21 @@ export function clientIp(request) {
 }
 
 async function rateLimitCounter(env, key, { limit = 10, windowSeconds = 60 } = {}) {
-  if (!env.AGAPAY_REGISTRATIONS) return null;
-  const current = Number(await env.AGAPAY_REGISTRATIONS.get(key)) || 0;
-  const next = current + 1;
-  await env.AGAPAY_REGISTRATIONS.put(key, String(next), {
-    expirationTtl: Math.max(windowSeconds * 2, 60)
-  });
+  let next;
+  try {
+    if (!env.AGAPAY_RATE_LIMITER) throw new Error('Rate limiter binding unavailable');
+    const response = await env.AGAPAY_RATE_LIMITER.get(env.AGAPAY_RATE_LIMITER.idFromName(key)).fetch('https://rate-limit.internal/', {
+      method: 'POST',
+      body: JSON.stringify({ limit, expiresAt: Date.now() + windowSeconds * 2000 }),
+    });
+    if (!response.ok) throw new Error('Rate limiter request failed');
+    next = (await response.json()).attempts;
+    if (!Number.isInteger(next) || next < 1) throw new Error('Invalid rate limiter response');
+  } catch {
+    // A missing or failed security dependency must never silently disable limits.
+    console.error(JSON.stringify({ eventType: 'rate_limit.unavailable', severity: 'error' }));
+    return json({ error: 'Request protection is temporarily unavailable. Please try again.' }, { status: 503, headers: { 'Retry-After': '30' } });
+  }
   if (next <= limit) return null;
   return json(
     {
@@ -413,7 +422,6 @@ async function rateLimitCounter(env, key, { limit = 10, windowSeconds = 60 } = {
 }
 
 export async function rateLimit(request, env, bucket, { limit = 10, windowSeconds = 60 } = {}) {
-  if (!env.AGAPAY_REGISTRATIONS) return null;
   const windowId = Math.floor(Date.now() / (windowSeconds * 1000));
   const ipHash = await sha256Hex(clientIp(request));
   const key = `${RATE_LIMIT_PREFIX}${bucket}:ip:${ipHash}:${windowId}`;
@@ -421,7 +429,6 @@ export async function rateLimit(request, env, bucket, { limit = 10, windowSecond
 }
 
 export async function rateLimitByKey(request, env, bucket, identifier, { limit = 10, windowSeconds = 60 } = {}) {
-  if (!env.AGAPAY_REGISTRATIONS) return null;
   const normalizedIdentifier = String(identifier || "").trim().toLowerCase();
   if (!normalizedIdentifier) return null;
   const windowId = Math.floor(Date.now() / (windowSeconds * 1000));

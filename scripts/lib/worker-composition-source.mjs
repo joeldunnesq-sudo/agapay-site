@@ -16,6 +16,7 @@ const ROUTE_FILES = [
 const EXTRACTED_WORKER_FILES = [
   'handlers/platform-actions.js',
   'handlers/public-entry.js',
+  'handlers/contact.js',
   'handlers/stewardship-giving.js',
   'handlers/stewardship-reports.js',
   'operations/weekly-email-digests.js',

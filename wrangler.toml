@@ -299,3 +299,16 @@ bucket_name = "agapay-group-message-assets-staging"
 [[env.staging.r2_buckets]]
 binding = "SACRAMENT_DOCUMENTS"
 bucket_name = "agapay-sacrament-documents-staging"
+
+# Atomic security counters; production and staging have separate namespaces.
+[[durable_objects.bindings]]
+name = "AGAPAY_RATE_LIMITER"
+class_name = "RateLimiter"
+
+[[migrations]]
+tag = "rate-limiter-v1"
+new_sqlite_classes = ["RateLimiter"]
+
+[[env.staging.durable_objects.bindings]]
+name = "AGAPAY_RATE_LIMITER"
+class_name = "RateLimiter"

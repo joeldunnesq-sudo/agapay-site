@@ -1,3 +1,4 @@
+import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import { readAdminAppSource } from './lib/admin-dashboard-source.mjs';
 import { readStewardshipHandlerSource } from './lib/stewardship-handler-source.mjs';
@@ -473,6 +474,7 @@ assert.notEqual(
 
 async function routeFixture(registration = readyRegistration()) {
   const env = {
+    AGAPAY_RATE_LIMITER: memoryRateLimiter(),
     AGAPAY_REGISTRATIONS: new MemoryKV(),
     AGAPAY_APP_URL: 'https://agapay.test',
     AGAPAY_REPLY_TO_EMAIL: 'support@agapay.test',

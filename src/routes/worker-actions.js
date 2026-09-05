@@ -1,3 +1,4 @@
+import { handleContact, handleAdminContactLeads } from '../handlers/contact.js';
 import { getBearerToken, handleSecurityConfig, json, unauthorized, corsJson } from '../lib/core.js';
 import {
   handleAdminNonprofitPricing,
@@ -327,6 +328,8 @@ import {
 import { handleHealth, handleLearnOdysseyActivate } from '../handlers/platform-actions.js';
 
 export const ROUTE_ACTIONS = Object.freeze({
+  handleContact,
+  handleAdminContactLeads,
   addCorsHeaders,
   corsJson,
   findRegistrationByParishId,

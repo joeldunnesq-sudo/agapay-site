@@ -1,3 +1,4 @@
+import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 
@@ -13,7 +14,7 @@ export function directoryImportFixture() {
     async all() { return { results: db.prepare(sql).all(...this.params) }; },
     async run() { const result = db.prepare(sql).run(...this.params); return { success: true, meta: { changes: result.changes } }; }
   });
-  const env = { RESEND_API_KEY: 'test-key', AGAPAY_APP_URL: 'https://agapay.test', AGAPAY_DB: {
+  const env = { AGAPAY_RATE_LIMITER: memoryRateLimiter(), RESEND_API_KEY: 'test-key', AGAPAY_APP_URL: 'https://agapay.test', AGAPAY_DB: {
     prepare: wrap,
     async batch(statements) {
       db.exec('BEGIN');
