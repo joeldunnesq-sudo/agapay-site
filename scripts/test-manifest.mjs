@@ -52,6 +52,8 @@ const core = [
   'scripts/contact-recovery-tests.mjs',
   'scripts/contact-admin-browser-tests.mjs',
   'scripts/logging-safety-tests.mjs',
+  'scripts/request-diagnostics-tests.mjs',
+  'scripts/email-timeout-tests.mjs',
   'scripts/rate-limiter-tests.mjs',
   'scripts/scheduled-job-observability-tests.mjs',
   'scripts/resend-webhook-tests.mjs',

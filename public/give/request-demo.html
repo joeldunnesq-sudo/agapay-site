@@ -678,7 +678,10 @@
           });
           const payload = await response.json().catch(function () { return {}; });
           if (response.status === 409) delete form.dataset.submissionId;
-          if (!response.ok || !payload.ok) throw new Error(payload.error || "We could not send your request.");
+          if (!response.ok || !payload.ok) {
+            const requestReference = response.headers.get('X-Request-ID') || payload.requestId;
+            throw new Error((payload.error || "Unable to submit your request.") + (requestReference ? ' Reference: ' + requestReference : ''));
+          }
 
           trackLeadOnce();
           delete form.dataset.submissionId;
@@ -686,7 +689,7 @@
           showStatus(payload.notificationStatus && payload.notificationStatus !== "sent" ? `${payload.message} Reference: ${payload.reference}` : "Thank you. Your parish demo request is on its way, and a real person from AGAPAY will follow up within one business day.", false);
           submitLabel.textContent = "Request received";
         } catch (error) {
-          showStatus("We couldn’t send the form just now. Please email hello@agapay.app and we’ll take care of you.", true);
+          showStatus(error.message || "We couldn’t send the form just now. Please email hello@agapay.app and we’ll take care of you.", true);
           submit.disabled = false;
           submitLabel.textContent = "Request my parish demo";
         }

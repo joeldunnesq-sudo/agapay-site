@@ -67,7 +67,7 @@ try {
     "an alert-provider outage must preserve the original rejected job promise",
   );
   assert.ok(errors.some(([event, message]) => event === "provider_outage_job_failed" && message === "scheduled job still failed"));
-  assert.ok(errors.some(([event, name, message]) => event === "scheduled_job_alert_failed" && name === "provider_outage_job" && /Resend outage/i.test(message)));
+  assert.ok(errors.some(([event, name, message]) => event === "scheduled_job_alert_failed" && name === "provider_outage_job" && /delivery is unconfirmed/i.test(message)));
 
   const workerSource = readFileSync(new URL("../src/worker.js", import.meta.url), "utf8");
   const scheduledBody = workerSource.slice(workerSource.indexOf("async scheduled(event, env, ctx)"), workerSource.indexOf("async fetch(request, env, ctx)"));

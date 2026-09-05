@@ -1127,7 +1127,10 @@
         });
         const payload = await res.json().catch(() => ({}));
         if (res.status === 409) delete form.dataset.submissionId;
-          if (!res.ok || !payload.ok) throw new Error(payload.error || "Something went wrong.");
+          if (!res.ok || !payload.ok) {
+            const requestReference = res.headers.get('X-Request-ID') || payload.requestId;
+            throw new Error((payload.error || "Unable to submit your request.") + (requestReference ? ' Reference: ' + requestReference : ''));
+          }
         delete form.dataset.submissionId;
         form.reset();
         if (status) {
