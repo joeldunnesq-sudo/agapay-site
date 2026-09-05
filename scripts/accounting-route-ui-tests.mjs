@@ -1,3 +1,4 @@
+import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import { readAdminAppSource } from './lib/admin-dashboard-source.mjs';
 import { readParishHandlerSource } from './lib/parish-handler-source.mjs';
@@ -152,21 +153,21 @@ for (const reportAction of ["renderAccountingReportLibrary", "filterAccountingRe
 assert.ok(app.includes("accountingCustomReport"), "custom comparative and fund reports should support screen, print, and CSV output");
 for (const recurringFeature of ["Recurring expenses", "Schedule expense", "Due transactions post automatically each morning", "Every two weeks"]) assert.ok(app.includes(recurringFeature), `missing recurring transaction feature ${recurringFeature}`);
 for (const recurringAction of ["accountingRecurringPanel", "saveAccountingRecurring", "toggleAccountingRecurring"]) assert.match(app, new RegExp(`function ${recurringAction}\\b`), `missing recurring transaction action ${recurringAction}`);
-const unauthorized = await handleAccountingSetupReports(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/setup"), {}, "parish-a");
+const unauthorized = await handleAccountingSetupReports(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/setup"), { AGAPAY_RATE_LIMITER: memoryRateLimiter() }, "parish-a");
 assert.equal(unauthorized.status, 401);
 assert.equal(unauthorized.headers.get("Cache-Control"), "private, no-store");
-const phaseDUnauthorized = await handleAccountingPayablesBudgets(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/payables/overview"), {}, "parish-a");
+const phaseDUnauthorized = await handleAccountingPayablesBudgets(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/payables/overview"), { AGAPAY_RATE_LIMITER: memoryRateLimiter() }, "parish-a");
 assert.equal(phaseDUnauthorized.status, 401);
 assert.equal(phaseDUnauthorized.headers.get("Cache-Control"), "private, no-store");
-const phaseEUnauthorized = await handleAccountingReconciliationCommerce(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/bank/accounts"), {}, "parish-a");
+const phaseEUnauthorized = await handleAccountingReconciliationCommerce(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/bank/accounts"), { AGAPAY_RATE_LIMITER: memoryRateLimiter() }, "parish-a");
 assert.equal(phaseEUnauthorized.status, 401);
 assert.equal(phaseEUnauthorized.headers.get("Cache-Control"), "private, no-store");
-const phaseFUnauthorized = await handleAccountingClose(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/close/workspace"), {}, "parish-a");
+const phaseFUnauthorized = await handleAccountingClose(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/close/workspace"), { AGAPAY_RATE_LIMITER: memoryRateLimiter() }, "parish-a");
 assert.equal(phaseFUnauthorized.status, 401);
 assert.equal(phaseFUnauthorized.headers.get("Cache-Control"), "private, no-store");
-const accessUnauthorized = await handleAccountingAccess(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting-access/profiles"), {}, "parish-a");
+const accessUnauthorized = await handleAccountingAccess(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting-access/profiles"), { AGAPAY_RATE_LIMITER: memoryRateLimiter() }, "parish-a");
 assert.equal(accessUnauthorized.status, 401);
-const recurringUnauthorized = await handleAccountingRecurring(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/recurring-transactions"), {}, "parish-a");
+const recurringUnauthorized = await handleAccountingRecurring(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/recurring-transactions"), { AGAPAY_RATE_LIMITER: memoryRateLimiter() }, "parish-a");
 assert.equal(recurringUnauthorized.status, 401);
 
 console.log("Accounting route and parish UI checks passed.");

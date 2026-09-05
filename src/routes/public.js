@@ -49,6 +49,7 @@ export async function routePublicRequest({ request, env, url, actions }) {
   if (url.pathname === '/api/waitlist') return actions.handleWaitlist(request, env);
   if (url.pathname === '/api/parish-interest') return actions.handleParishInterest(request, env);
   if (request.method === 'GET' && url.pathname === '/api/security/config') return actions.handleSecurityConfig(env);
+  if (url.pathname === '/api/contact') return actions.handleContact(request, env);
   if (request.method === 'GET' && url.pathname === '/api/health') return actions.handleHealth(env);
   if (request.method === 'GET' && url.pathname === '/api/operations/canary') {
     return actions.handleOperationsCanary(request, env);

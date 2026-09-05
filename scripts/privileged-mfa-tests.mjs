@@ -1,3 +1,4 @@
+import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import { readAdminAppSource } from './lib/admin-dashboard-source.mjs';
 import assert from "node:assert/strict";
@@ -58,6 +59,7 @@ function makeD1Env() {
   return {
     db,
     env: {
+      AGAPAY_RATE_LIMITER: memoryRateLimiter(),
       AGAPAY_DB: { prepare: (sql) => wrap(sql) },
       AGAPAY_APP_URL: "https://agapay.app",
       AGAPAY_MFA_ENCRYPTION_KEY: "test-only-mfa-encryption-key-that-is-not-used-in-production",

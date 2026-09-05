@@ -1,13 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
-import { DatabaseSync } from 'node:sqlite';
+import { contactTestStore } from './lib/contact-test-store.mjs';
+import { handleContact } from '../src/handlers/contact.js';
 import * as attribution from '../public/attribution-core.js';
 import { attributionEmail } from '../src/lib/lead-attribution.js';
 import { sanitizePublicRegistrationInput } from '../src/lib/registration-intake.js';
-import { d1, d1SetSetting, hasProductionStore, json, missingProductionStoreResponse } from '../src/lib/core.js';
-import { htmlEscape } from '../src/lib/format.js';
-import { agapayEmailHtml } from '../src/lib/email.js';
 import { sendAdminRegistrationNotice } from '../src/lib/parish-notifications.js';
 
 const browserSource = readFileSync('public/attribution.js', 'utf8').replace(/^import .*\n/, '').replace('export function', 'function');
@@ -71,20 +69,16 @@ assert.equal(attributionEmail(null).text, '');
 assert.equal(sanitizePublicRegistrationInput({ attribution: demo }).attribution.firstTouch.category, 'Meta / Paid');
 assert.equal(sanitizePublicRegistrationInput({ notes: 'Legacy' }).notes, 'Legacy');
 
-// Exercise the actual contact route with SQLite-backed D1 and isolated outbound email.
-const worker = readFileSync('src/worker.js', 'utf8');
-const route = worker.slice(worker.indexOf('    if (url.pathname === "/api/contact"'), worker.indexOf('    if (url.pathname === "/api/admin/seed-demo"'));
-const execute = new (Object.getPrototypeOf(async function () {}).constructor)(
-  'request', 'env', 'url', 'json', 'sanitizeAttribution', 'attributionEmail', 'crypto', 'd1', 'd1SetSetting', 'hasProductionStore', 'missingProductionStoreResponse', 'sendEmail', 'agapayEmailHtml', 'htmlEscape', route);
-const db = new DatabaseSync(':memory:');
-db.exec('CREATE TABLE app_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT)');
-const env = { AGAPAY_DB: { prepare(sql) { return { bind(...values) { return { run() { return db.prepare(sql).run(...values); } }; } }; } } };
+// Exercise the actual exported handler, including validation, persistence and email.
+const { db, env } = contactTestStore();
 const emails = [];
+const originalFetch = globalThis.fetch;
+globalThis.fetch = async (_url, options) => { emails.push(JSON.parse(options.body)); return new Response('{"id":"local-test"}'); };
 async function submit(value, bindings = env) {
-  return execute(new Request(`${base}/api/contact`, { method: 'POST', body: JSON.stringify({ name: 'Test', email: 'test@example.com', message: 'Demo please', ...value }) }), bindings, new URL(`${base}/api/contact`), json, attribution.sanitizeAttribution, attributionEmail, crypto, d1, d1SetSetting, hasProductionStore, missingProductionStoreResponse, async (_env, email) => { emails.push(email); return { status: 'sent' }; }, agapayEmailHtml, htmlEscape);
+  return handleContact(new Request(`${base}/api/contact`, { method: 'POST', body: JSON.stringify({ name: 'Test', email: 'test@example.com', message: 'Demo please', submissionId: crypto.randomUUID(), ...value }) }), bindings);
 }
 assert.equal((await submit({ attribution: demo })).status, 200);
-const saved = JSON.parse(db.prepare('SELECT value FROM app_settings').get().value);
+const saved = JSON.parse(db.prepare('SELECT data FROM contact_leads').get().data);
 assert.equal(saved.attribution.firstTouch.source, 'facebook');
 assert.equal(saved.attribution.lastTouch.page, `${base}/give/request-demo`);
 assert.equal(saved.attribution.lastTouch.timestamp, saved.submittedAt);
@@ -93,10 +87,7 @@ assert.match(emails[0].text, /First touch: Meta \/ Paid/);
 assert.match(emails[0].html, /Conversion page:/);
 assert.equal((await submit({})).status, 200);
 assert.equal((await submit({ attribution: { firstTouch: 'broken' } })).status, 200);
-const kv = new Map();
-assert.equal((await submit({ attribution: directReturn }, { AGAPAY_REGISTRATIONS: { put: (key, value) => kv.set(key, value) } })).status, 200);
-assert.equal(JSON.parse([...kv.values()][0]).attribution.lastTouch.category, 'Direct');
-const originalFetch = globalThis.fetch;
+assert.equal((await submit({ attribution: directReturn }, { ...env, AGAPAY_DB: null })).status, 503);
 try {
   let registrationEmail;
   globalThis.fetch = async (_url, options) => {
@@ -112,4 +103,4 @@ try {
   assert.doesNotMatch(registrationEmail.text, /Referral Attribution/);
 } finally { globalThis.fetch = originalFetch; }
 db.close();
-console.log('PASS - attribution journeys, privacy, storage failures, normalization, legacy submissions, SQLite/KV persistence and contact emails');
+console.log('PASS - attribution journeys, privacy, storage failures, normalization, legacy submissions, SQLite persistence and contact emails');

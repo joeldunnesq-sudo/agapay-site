@@ -1,3 +1,4 @@
+import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
@@ -9,7 +10,8 @@ import {
 
 const values = new Map();
 const env = {
-  AGAPAY_REGISTRATIONS: {
+  AGAPAY_RATE_LIMITER: memoryRateLimiter(),
+    AGAPAY_REGISTRATIONS: {
     get: async (key) => values.get(key) || null,
     put: async (key, value) => { values.set(key, value); }
   }

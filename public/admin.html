@@ -212,6 +212,10 @@
                 <div class="community-snapshot-card"><div class="community-snapshot-value" id="snapshotMonasteries">0</div><div class="community-snapshot-label">Monasteries</div><div class="community-snapshot-note">Monastic support</div></div>
               </section>
 
+              <section class="section-card" id="contactLeadsCard" aria-label="Contact submissions">
+                <div class="section-header"><div class="section-title">Contact submissions</div><button class="secondary btn-sm" onclick="loadContactLeads()">Load contacts</button></div>
+                <div class="section-body"><p id="contactLeadsStatus" role="status">Review saved contacts and retry notifications that were not sent.</p><div id="contactLeads"></div><button id="contactLeadsMore" class="secondary btn-sm" hidden onclick="loadContactLeads(true)">Load older contacts</button></div>
+              </section>
               <section class="section-card" id="overviewEmailLogCard">
                 <div class="section-header"><div class="section-title"><div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>Recent Platform Emails</div><button class="secondary btn-sm" onclick="loadRegistrations()">Refresh</button></div>
                 <div class="section-body"><div class="email-log" id="overviewEmailLog"><div class="email-log-empty">Load registrations to see recent email activity.</div></div></div>
@@ -988,6 +992,7 @@
   <script src="/scripts/privileged-mfa.js?v=20260826mfa1"></script>
   <script src="/admin/presentation.js?v=20260904-refactor1"></script>
   <script src="/admin/controllers/tax-exemptions.js?v=20260904-controllers1"></script>
+  <script src="/admin/controllers/contact-leads.js"></script>
   <script src="/admin/app.js?v=20260904-controllers1"></script>
   <script src="/admin/pwa.js"></script>
 </body>

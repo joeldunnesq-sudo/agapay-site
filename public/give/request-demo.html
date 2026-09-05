@@ -667,6 +667,7 @@
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+              submissionId: form.dataset.submissionId ||= crypto.randomUUID(),
               attribution: window.getAgapayAttribution ? window.getAgapayAttribution() : null,
               name: data.get("name"),
               email: data.get("email"),
@@ -676,11 +677,13 @@
             })
           });
           const payload = await response.json().catch(function () { return {}; });
+          if (response.status === 409) delete form.dataset.submissionId;
           if (!response.ok || !payload.ok) throw new Error(payload.error || "We could not send your request.");
 
           trackLeadOnce();
-          form.reset();
-          showStatus("Thank you. Your parish demo request is on its way, and a real person from AGAPAY will follow up within one business day.", false);
+          delete form.dataset.submissionId;
+        form.reset();
+          showStatus(payload.notificationStatus && payload.notificationStatus !== "sent" ? `${payload.message} Reference: ${payload.reference}` : "Thank you. Your parish demo request is on its way, and a real person from AGAPAY will follow up within one business day.", false);
           submitLabel.textContent = "Request received";
         } catch (error) {
           showStatus("We couldn’t send the form just now. Please email hello@agapay.app and we’ll take care of you.", true);

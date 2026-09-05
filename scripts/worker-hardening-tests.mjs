@@ -1,11 +1,10 @@
+import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 import assert from "node:assert/strict";
 import worker from "../src/worker.js";
 import { LEARN_FREE_PRINT_LIMIT } from "../src/learn/billing.js";
 import { corsHeaders, createPasswordRecord } from "../src/lib/core.js";
-
 const TEST_ADMIN_PASSWORD = "root-admin-token-for-tests";
 const TEST_ADMIN_PASSWORD_RECORD = JSON.stringify(await createPasswordRecord(TEST_ADMIN_PASSWORD));
-
 class MemoryKV {
   constructor() {
     this.store = new Map();
@@ -36,6 +35,7 @@ function env() {
   const registrations = new MemoryKV();
   registrations.store.set("__agapay_admin_password", TEST_ADMIN_PASSWORD_RECORD);
   return {
+    AGAPAY_RATE_LIMITER: memoryRateLimiter(),
     AGAPAY_REGISTRATIONS: registrations,
     AGAPAY_APP_URL: "https://agapay.test",
     AGAPAY_ENABLED_PRODUCTS: "give,learn",

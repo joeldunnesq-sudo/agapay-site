@@ -1,3 +1,4 @@
+import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 import assert from "node:assert/strict";
 import worker from "../src/worker.js";
 import {
@@ -34,6 +35,7 @@ class MemoryKV {
 
 function testEnv() {
   return {
+    AGAPAY_RATE_LIMITER: memoryRateLimiter(),
     AGAPAY_REGISTRATIONS: new MemoryKV(),
     AGAPAY_APP_URL: "https://agapay.test",
     AGAPAY_ENVIRONMENT: "test",

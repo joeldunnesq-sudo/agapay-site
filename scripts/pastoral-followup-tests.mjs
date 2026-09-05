@@ -1,3 +1,4 @@
+import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
@@ -68,6 +69,7 @@ function statement(sql) {
 }
 
 const env = {
+  AGAPAY_RATE_LIMITER: memoryRateLimiter(),
   AGAPAY_DB: {
     prepare: statement,
     async batch(statements) {

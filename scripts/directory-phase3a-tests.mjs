@@ -1,3 +1,4 @@
+import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 import assert from "node:assert/strict";
 import { seedDirectoryEntitlement } from "./lib/directory-entitlement-fixture.mjs";
 import { DatabaseSync } from "node:sqlite";
@@ -119,7 +120,7 @@ function makeD1Env() {
       }
     }
   };
-  return { env: { AGAPAY_DB, AGAPAY_ENVIRONMENT: "test", DIRECTORY_MEDIA: new FakeR2Bucket() }, db };
+  return { env: { AGAPAY_RATE_LIMITER: memoryRateLimiter(), AGAPAY_DB, AGAPAY_ENVIRONMENT: "test", DIRECTORY_MEDIA: new FakeR2Bucket() }, db };
 }
 
 function png1x1() {

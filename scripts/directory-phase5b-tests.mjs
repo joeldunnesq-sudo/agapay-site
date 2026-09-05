@@ -1,3 +1,4 @@
+import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 import assert from "node:assert/strict";
 import { seedDirectoryEntitlement } from "./lib/directory-entitlement-fixture.mjs";
 import { DatabaseSync } from "node:sqlite";
@@ -80,6 +81,7 @@ function makeD1Env() {
 
   return {
     env: {
+      AGAPAY_RATE_LIMITER: memoryRateLimiter(),
       AGAPAY_DB: {
         prepare: (sql) => wrap(sql),
         async batch(statements) {

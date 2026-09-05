@@ -1,3 +1,4 @@
+import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 // scripts/identity-tests.mjs
 //
 // Exercises the real Accounting Package 0.75C/0.75D identity/membership/
@@ -105,7 +106,7 @@ function makeD1Env() {
   }
 
   const AGAPAY_DB = { prepare: (sql) => wrap(sql), _raw: db };
-  return { env: { AGAPAY_DB }, db };
+  return { env: { AGAPAY_DB, AGAPAY_RATE_LIMITER: memoryRateLimiter() }, db };
 }
 
 function authenticatedRequest({ email, token, url = "https://agapay.test/api/identity/session", init = {} }) {

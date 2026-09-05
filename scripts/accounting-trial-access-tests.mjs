@@ -1,3 +1,4 @@
+import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
@@ -37,7 +38,7 @@ const db = {
     };
   },
 };
-const env = { AGAPAY_DB: db, AGAPAY_ENVIRONMENT: 'production' };
+const env = { AGAPAY_RATE_LIMITER: memoryRateLimiter(), AGAPAY_DB: db, AGAPAY_ENVIRONMENT: 'production' };
 const trial = {
   parishId: 'test-lubbock',
   parishName: 'Test Parish',

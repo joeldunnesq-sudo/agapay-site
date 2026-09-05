@@ -11,8 +11,8 @@
     "parish"
   ],
   "workerRouteActions": {
-    "sha256": "e40ba9af8d8e0fd52d5e108615c6b7bf5b2f4a3f90dee1b4c7b126de3b2fde98",
-    "count": 290
+    "sha256": "88f7864a39e6b05eb3514be853936d3f60f3e39af51c3fe2ee7ecf5fc4bd3156",
+    "count": 292
   },
   "workerScheduledTaskOrder": [
     "parish_portability_jobs",
@@ -34,8 +34,8 @@
   ],
   "moduleExports": {
     "src/worker.js": {
-      "sha256": "c901a48eb37c496de3052b49ec5428e26e0aa5b03d7f0c7be505dfc9d188bda6",
-      "count": 3
+      "count": 4,
+      "sha256": "083e75175573aea5fc1d12ece9a391fe886d0ccf879964674b68191a065863ad"
     },
     "src/routes/worker-actions.js": {
       "sha256": "d486086978e44fe5cec4ab2ab51a5d6465c9041f1778fd3b283bd27ca9237004",
