@@ -1,3 +1,5 @@
+import { attributionEmail, sanitizeAttribution } from './lib/lead-attribution.js';
+import { d1, d1SetSetting } from './lib/core.js';
 import { routeAdminRequest } from "./routes/admin.js";
 import { routeAccountingRequest } from "./routes/accounting.js";
 import { routeDirectoryRequest } from "./routes/directory.js";
@@ -500,7 +502,15 @@ export default {
         if (!name || !email || !message || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           return json({ error: "Name, email, and message are required." }, { status: 400 });
         }
-        const to   = env.AGAPAY_SUPPORT_EMAIL || env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
+        const submittedAt = new Date().toISOString();
+        const attribution = sanitizeAttribution(body.attribution, submittedAt);
+        const referral = attributionEmail(attribution);
+        const lead = { id: crypto.randomUUID(), name, email, organization, topic, message, submittedAt, attribution };
+        if (!hasProductionStore(env)) return missingProductionStoreResponse();
+        const leadKey = 'contact:' + lead.id;
+        if (d1(env)) await d1SetSetting(env, leadKey, JSON.stringify(lead));
+        else await env.AGAPAY_REGISTRATIONS.put(leadKey, JSON.stringify(lead));
+        const to = [...new Set([env.AGAPAY_SUPPORT_EMAIL || env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app", env.AGAPAY_REGISTRATION_NOTIFY_EMAIL || "onboarding@agapay.app", "onboarding@agapay.app"])];
         const from = env.AGAPAY_FROM_EMAIL    || "AGAPAY <onboarding@agapay.app>";
         const emailResult = await sendEmail(env, {
           from,
@@ -517,9 +527,9 @@ export default {
               ${organization ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Organization</strong></td><td style="padding:6px 0;">${htmlEscape(organization)}</td></tr>` : ""}
               <tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Topic</strong></td><td style="padding:6px 0;">${htmlEscape(topic)}</td></tr>
               <tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Message</strong></td><td style="padding:6px 0;white-space:pre-wrap;">${htmlEscape(message)}</td></tr>
-            </table>`
+            </table>${referral.html}`
           ),
-          text: `AGAPAY Contact Form\n\nFrom: ${name} <${email}>\nOrganization: ${organization || "N/A"}\nTopic: ${topic}\n\nMessage:\n${message}`
+          text: `AGAPAY Contact Form\n\nFrom: ${name} <${email}>\nOrganization: ${organization || "N/A"}\nTopic: ${topic}\n\nMessage:\n${message}\n\n${referral.text}`
         });
         if (emailResult.status === "not_configured") {
           return json({ ok: false, error: "Email is not configured on this server." }, { status: 503 });

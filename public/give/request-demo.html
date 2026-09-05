@@ -623,16 +623,6 @@
         leadTracked = window.sessionStorage.getItem("agapayMetaDemoLeadTracked") === "1";
       } catch (_error) {}
 
-      function referralAttributionLines() {
-        const params = new URLSearchParams(window.location.search);
-        const keys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "agapay_entry", "agapay_cta"];
-        const values = keys.map(function (key) {
-          const value = String(params.get(key) || "").replace(/[\r\n]/g, " ").trim().slice(0, 120);
-          return value ? `${key}: ${value}` : "";
-        }).filter(Boolean);
-        return values.length ? ["", "Referral attribution:", ...values] : [];
-      }
-
       function trackLeadOnce() {
         if (leadTracked || typeof window.trackMetaStandardEvent !== "function") return;
         if (!window.trackMetaStandardEvent("Lead", { content_name: "AGAPAY Parish Demo Request" })) return;
@@ -666,8 +656,7 @@
           `Demo priorities: ${interests.length ? interests.join(", ") : "Not specified"}`,
           "",
           "Additional context:",
-          data.get("message") || "None provided",
-          ...referralAttributionLines()
+          data.get("message") || "None provided"
         ].join("\n");
 
         submit.disabled = true;
@@ -678,6 +667,7 @@
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+              attribution: window.getAgapayAttribution ? window.getAgapayAttribution() : null,
               name: data.get("name"),
               email: data.get("email"),
               organization: data.get("parish"),

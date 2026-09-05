@@ -1116,6 +1116,7 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+              attribution: window.getAgapayAttribution ? window.getAgapayAttribution() : null,
             name:         data.get("name")         || "",
             email:        data.get("email")        || "",
             organization: data.get("organization") || "",

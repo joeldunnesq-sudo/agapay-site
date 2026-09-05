@@ -1,10 +1,11 @@
 (function () {
   // Carry the homepage entry point into the existing demo/registration records.
   // No cookies, visitor IDs, new tracking vendor, or form values are collected.
+  void import('/attribution.js').catch(() => {});
   const params = new URLSearchParams(window.location.search);
   const homepage = ['/', '/index.html'].includes(window.location.pathname);
   const destinations = new Set(['/give', '/give/', '/give/request-demo', '/register']);
-  const referralKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'agapay_entry', 'agapay_cta'];
+  const referralKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'agapay_entry', 'agapay_cta'];
 
   function decorate(anchor) {
     const target = new URL(anchor.href, window.location.href);

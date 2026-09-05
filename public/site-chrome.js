@@ -4,6 +4,8 @@
   const isHomepage = path === "/" || path === "/index.html";
   if (/^\/(?:admin|parish|donor|myagapay)(?:\/|$)/.test(path)) return;
 
+  void import('/attribution.js').catch(() => {});
+
   const PRIMARY_LINKS = [
     { href: "/give", label: "Platform", key: "platform" },
     { href: "/about", label: "About", key: "about" },
